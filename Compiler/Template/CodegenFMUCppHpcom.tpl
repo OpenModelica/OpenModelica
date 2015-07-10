@@ -103,6 +103,23 @@ template translateModel(SimCode simCode, String FMUVersion, String FMUType)
   end match
 end translateModel;
 
+template fmuMakefile(String target, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, String FMUVersion)
+::=
+  let type = getConfigString(HPCOM_CODE)
+
+  let &additionalCFlags_GCC = buffer ""
+  let &additionalCFlags_MSVC = buffer ""
+  let &additionalLinkerFlags_GCC = buffer ""
+  let &additionalLinkerFlags_MSVC = buffer ""
+
+  let &additionalLinkerFlags_GCC += if boolOr(stringEq(type,"pthreads"), stringEq(type,"pthreads_spin")) then " -lboost_thread" else ""
+
+  <<
+  <%CodegenCppHpcom.getAdditionalMakefileFlags(additionalCFlags_GCC, additionalCFlags_MSVC, additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC)%>
+  <%CodegenFMUCpp.fmuMakefile(target, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, FMUVersion, additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC, additionalCFlags_GCC, additionalCFlags_MSVC)%>
+  >>
+end fmuMakefile;
+
 annotation(__OpenModelica_Interface="backend");
 end CodegenFMUCppHpcom;
 

@@ -10007,10 +10007,12 @@ algorithm
   (oCurrentVarIndices, oVarIndex) := match(iVar, iVarToIndexMapping, iCurrentVarIndices)
     case(SimCodeVar.SIMVAR(name=name, aliasvar=SimCodeVar.NOALIAS()),_,tmpCurrentVarIndices)
       equation
+        //print("getArrayIdxByVar: Handling common variable\n");
         (varIdx,tmpCurrentVarIndices) = getVarToArrayIndexByType(iVarType, tmpCurrentVarIndices);
       then (tmpCurrentVarIndices, varIdx);
     case(SimCodeVar.SIMVAR(name=name, aliasvar=SimCodeVar.NEGATEDALIAS(varName)),_,_)
       equation
+        //print("getArrayIdxByVar: Handling negated alias variable pointing to " + ComponentReference.printComponentRefStr(varName) + "\n");
         if(BaseHashTable.hasKey(varName, iVarToIndexMapping)) then
           varIdx::_ = BaseHashTable.get(varName, iVarToIndexMapping);
           varIdx = intMul(varIdx,-1);
@@ -10021,6 +10023,7 @@ algorithm
       then (iCurrentVarIndices, varIdx);
     case(SimCodeVar.SIMVAR(name=name, aliasvar=SimCodeVar.ALIAS(varName)),_,_)
       equation
+        //print("getArrayIdxByVar: Handling alias variable pointing to " + ComponentReference.printComponentRefStr(varName) + "\n");
         if(BaseHashTable.hasKey(varName, iVarToIndexMapping)) then
           varIdx::_ = BaseHashTable.get(varName, iVarToIndexMapping);
         else
@@ -10094,6 +10097,9 @@ algorithm
   if(BaseHashTable.hasKey(varName, iVarToArrayIndexMapping)) then
     ((arrayDimensions,varIndices)) := BaseHashTable.get(varName, iVarToArrayIndexMapping);
     arraySize := arrayLength(varIndices);
+
+    ((concreteVarIndex,_,_)) := List.fold(listReverse(arraySubscripts), getUnrolledArrayIndex, (0, 1, listReverse(arrayDimensions)));
+
     for arrayIdx in 0:(arraySize-1) loop
       idx := arrayGet(varIndices, arraySize-arrayIdx);
       if(intLt(idx, 0)) then
@@ -10107,19 +10113,7 @@ algorithm
         end if;
       end if;
     end for;
-    ((concreteVarIndex,_,_)) := List.fold(listReverse(arraySubscripts), getUnrolledArrayIndex, (0, 1, listReverse(arrayDimensions)));
-
-    // ignore all values that are undefined references and part of the same array
-    idx := 1;
-    while intLe (idx, concreteVarIndex) loop
-      if(intLt(arrayGet(varIndices, idx), 1)) then
-        concreteVarIndex := concreteVarIndex - 1;
-      end if;
-      idx := idx + 1;
-    end while;
-
-    concreteVarIndex := intAbs(arrayGet(varIndices, 1)) - 1 + concreteVarIndex;
-    oConcreteVarIndex := intString(concreteVarIndex);
+    oConcreteVarIndex := listGet(tmpVarIndexListNew, concreteVarIndex + 1);
   end if;
   if(listEmpty(tmpVarIndexListNew)) then
     Error.addMessage(Error.INTERNAL_ERROR, {"GetVarIndexListByMapping: No Element for " + ComponentReference.printComponentRefStr(varName) + " found!"});
