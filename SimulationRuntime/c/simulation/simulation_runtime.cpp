@@ -421,7 +421,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   errno = 0;
   if (omc_flag[FLAG_ALARM]) {
     char *endptr;
-    mmc_sint_t alarmVal = strtoll(omc_flagValue[FLAG_ALARM],&endptr,10);
+    mmc_sint_t alarmVal = strtol(omc_flagValue[FLAG_ALARM],&endptr,10);
     if (errno || *endptr != 0) {
       throwStreamPrint(data->threadData, "-alarm takes an integer argument (got '%s')", omc_flagValue[FLAG_ALARM]);
     }
