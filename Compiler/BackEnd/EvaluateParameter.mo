@@ -1064,26 +1064,24 @@ protected function replaceEvaluatedParametersEqns "author Frenkel TUD"
   input BackendVarTransform.VariableReplacements inRepl;
   output BackendDAE.BackendDAE outDAE;
 protected
-  BackendDAE.EquationArray remeqns, inieqns;
-  list<BackendDAE.Equation> eqnslst;
+  list<BackendDAE.Equation> lsteqns;
   BackendDAE.EqSystems systs;
   Boolean b;
   BackendDAE.Shared shared;
 algorithm
-  BackendDAE.DAE(systs, shared as BackendDAE.SHARED(initialEqs=inieqns, removedEqs=remeqns)) := inDAE;
+  BackendDAE.DAE(systs, shared) := inDAE;
 
   // do replacements in initial equations
-  eqnslst := BackendEquation.equationList(inieqns);
-  (eqnslst, b) := BackendVarTransform.replaceEquations(eqnslst, inRepl, NONE());
+  lsteqns := BackendEquation.equationList(shared.initialEqs);
+  (lsteqns, b) := BackendVarTransform.replaceEquations(lsteqns, inRepl, NONE());
   if b then
-    shared := BackendDAEUtil.setSharedInitialEqns(shared, BackendEquation.listEquation(eqnslst));
+    shared.initialEqs :=  BackendEquation.listEquation(lsteqns);
   end if;
 
-  // do replacements in simple equations
-  eqnslst := BackendEquation.equationList(remeqns);
-  (eqnslst, b) := BackendVarTransform.replaceEquations(eqnslst, inRepl, NONE());
+  lsteqns := BackendEquation.equationList(shared.removedEqs);
+  (lsteqns, b) := BackendVarTransform.replaceEquations(lsteqns, inRepl, NONE());
   if b then
-    shared := BackendDAEUtil.setSharedRemovedEqns(shared, BackendEquation.listEquation(eqnslst));
+    shared.initialEqs :=  BackendEquation.listEquation(lsteqns);
   end if;
 
   // do replacements in systems
@@ -1096,18 +1094,26 @@ protected function replaceEvaluatedParametersSystemEqns
 "author Frenkel TUD
   replace the evaluated parameters in the equationsystems"
   input BackendDAE.EqSystem isyst;
-  input BackendVarTransform.VariableReplacements repl;
-  output BackendDAE.EqSystem osyst;
+  input BackendVarTransform.VariableReplacements inRepl;
+  output BackendDAE.EqSystem osyst = isyst;
 protected
-  BackendDAE.EquationArray eqns, eqns1;
   list<BackendDAE.Equation> lsteqns;
   Boolean b;
 algorithm
-  BackendDAE.EQSYSTEM(orderedEqs=eqns) := isyst;
-  lsteqns := BackendEquation.equationList(eqns);
-  (lsteqns, b) := BackendVarTransform.replaceEquations(lsteqns, repl, NONE());
-  eqns1 := if b then BackendEquation.listEquation(lsteqns) else eqns;
-  osyst := if b then BackendDAEUtil.clearEqSyst(BackendDAEUtil.setEqSystEqs(isyst, eqns1)) else isyst;
+  lsteqns := BackendEquation.equationList(osyst.orderedEqs);
+  (lsteqns, b) := BackendVarTransform.replaceEquations(lsteqns, inRepl, NONE());
+  if b then
+    osyst.orderedEqs := BackendEquation.listEquation(lsteqns);
+    osyst := BackendDAEUtil.clearEqSyst(osyst);
+  end if;
+
+  // do replacements in simple equations
+  lsteqns := BackendEquation.equationList(osyst.removedEqs);
+  (lsteqns, b) := BackendVarTransform.replaceEquations(lsteqns, inRepl, NONE());
+  if b then
+    osyst.removedEqs := BackendEquation.listEquation(lsteqns);
+  end if;
+
 end replaceEvaluatedParametersSystemEqns;
 
 annotation(__OpenModelica_Interface="backend");

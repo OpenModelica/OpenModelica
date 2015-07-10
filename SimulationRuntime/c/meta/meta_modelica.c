@@ -72,12 +72,12 @@ void* mmc_mk_modelica_array(base_array_t arr)
   return cpy;
 }
 
-void* mmc_mk_box_arr(int slots, unsigned int ctor, void** args)
+void* mmc_mk_box_arr(mmc_sint_t slots, mmc_uint_t ctor, void** args)
 {
-    int i;
+    mmc_sint_t i;
     struct mmc_struct *p = (struct mmc_struct*)mmc_alloc_words(slots + 1);
     p->header = MMC_STRUCTHDR(slots, ctor);
-    for (i=0; i<slots; i++) {
+    for (i = 0; i < slots; i++) {
       p->data[i] = (void*) args[i];
     }
 #ifdef MMC_MK_DEBUG
@@ -88,8 +88,8 @@ void* mmc_mk_box_arr(int slots, unsigned int ctor, void** args)
 
 char* mmc_mk_scon_len_ret_ptr(size_t nbytes)
 {
-    unsigned int header = MMC_STRINGHDR(nbytes);
-    unsigned int nwords = MMC_HDRSLOTS(header) + 1;
+    mmc_uint_t header = MMC_STRINGHDR(nbytes);
+    mmc_uint_t nwords = MMC_HDRSLOTS(header) + 1;
     struct mmc_string *p;
     void *res;
     p = (struct mmc_string *)mmc_alloc_words_atomic(nwords);
@@ -102,9 +102,9 @@ modelica_boolean valueEq(modelica_metatype lhs, modelica_metatype rhs)
 {
   mmc_uint_t h_lhs;
   mmc_uint_t h_rhs;
-  int numslots;
-  unsigned int ctor;
-  int i;
+  mmc_sint_t numslots;
+  mmc_uint_t ctor;
+  mmc_sint_t i;
 
   if (lhs == rhs) {
     return 1;
@@ -149,7 +149,7 @@ modelica_boolean valueEq(modelica_metatype lhs, modelica_metatype rhs)
     if (0 != strcmp(lhs_desc->name,rhs_desc->name))
       return 0;
     */
-    for (i=2; i<=numslots; i++) {
+    for (i = 2; i <= numslots; i++) {
       void * lhs_data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),i));
       void * rhs_data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),i));
       if (0 == valueEq(lhs_data,rhs_data)) {
@@ -160,7 +160,7 @@ modelica_boolean valueEq(modelica_metatype lhs, modelica_metatype rhs)
   }
 
   if (numslots>0 && ctor == 0) { /* TUPLE */
-    for (i=0; i<numslots; i++) {
+    for (i = 0; i < numslots; i++) {
       void *tlhs, *trhs;
       tlhs = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),i+1));
       trhs = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),i+1));
@@ -204,9 +204,9 @@ void debug__print(void* prefix, void* any)
 }
 
 static char *anyStringBuf = 0;
-int anyStringBufSize = 0;
+mmc_sint_t anyStringBufSize = 0;
 
-inline static void checkAnyStringBufSize(int ix, int szNewObject)
+inline static void checkAnyStringBufSize(mmc_sint_t ix, mmc_sint_t szNewObject)
 {
   if (anyStringBufSize-ix < szNewObject+1) {
     anyStringBuf = realloc(anyStringBuf, anyStringBufSize*2 + szNewObject);
@@ -224,18 +224,18 @@ void initializeStringBuffer(void)
   *anyStringBuf = '\0';
 }
 
-inline static int anyStringWork(void* any, int ix)
+inline static mmc_sint_t anyStringWork(void* any, mmc_sint_t ix)
 {
   mmc_uint_t hdr;
-  int numslots;
-  unsigned int ctor;
-  int i;
+  mmc_sint_t numslots;
+  mmc_uint_t ctor;
+  mmc_sint_t i;
   void *data;
   /* char buf[34] = {0}; */
 
   if (MMC_IS_INTEGER(any)) {
     checkAnyStringBufSize(ix,40);
-    ix += sprintf(anyStringBuf+ix, "%ld", (signed long) MMC_UNTAGFIXNUM(any));
+    ix += sprintf(anyStringBuf+ix, "%ld", (mmc_sint_t) MMC_UNTAGFIXNUM(any));
     return ix;
   }
 
@@ -285,7 +285,7 @@ inline static int anyStringWork(void* any, int ix)
   if (numslots>=0 && ctor == MMC_ARRAY_TAG) { /* MetaModelica-style array */
     checkAnyStringBufSize(ix,40);
     ix += sprintf(anyStringBuf+ix, "MetaArray(");
-    for (i=1; i<=numslots; i++) {
+    for (i = 1; i <= numslots; i++) {
       data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
       ix = anyStringWork(data, ix);
       if (i!=numslots) {
@@ -301,7 +301,7 @@ inline static int anyStringWork(void* any, int ix)
     struct record_description * desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1));
     checkAnyStringBufSize(ix,strlen(desc->name)+2);
     ix += sprintf(anyStringBuf+ix, "%s(", desc->name);
-    for (i=2; i<=numslots; i++) {
+    for (i = 2; i <= numslots; i++) {
       data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
       checkAnyStringBufSize(ix,strlen(desc->fieldNames[i-2])+3);
       ix += sprintf(anyStringBuf+ix, "%s = ", desc->fieldNames[i-2]);
@@ -316,12 +316,12 @@ inline static int anyStringWork(void* any, int ix)
     return ix;
   }
 
-  if (numslots>0 && ctor == 0) { /* TUPLE */
+  if (numslots > 0 && ctor == 0) { /* TUPLE */
     checkAnyStringBufSize(ix,2);
     ix += sprintf(anyStringBuf+ix, "(");
-    for (i=0; i<numslots; i++) {
+    for (i = 0; i < numslots; i++) {
       ix = anyStringWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1)),ix);
-      if (i!=numslots-1) {
+      if (i != numslots-1) {
         checkAnyStringBufSize(ix,3);
         ix += sprintf(anyStringBuf+ix, ", ");
       }
@@ -331,7 +331,7 @@ inline static int anyStringWork(void* any, int ix)
     return ix;
   }
 
-  if (numslots==0 && ctor==1) /* NONE() */ {
+  if (numslots == 0 && ctor == 1) /* NONE() */ {
     checkAnyStringBufSize(ix,7);
     ix += sprintf(anyStringBuf+ix, "NONE()");
     return ix;
@@ -412,11 +412,11 @@ void printAny(void* any)
 
 static int globalId;
 
-inline static int anyStringWorkCode(void* any, int ix, int id)
+inline static mmc_sint_t anyStringWorkCode(void* any, mmc_sint_t ix, mmc_sint_t id)
 {
   mmc_uint_t hdr;
-  int numslots;
-  unsigned int ctor;
+  mmc_sint_t numslots;
+  mmc_uint_t ctor;
   int i;
   void *data;
   int base_id;
@@ -424,7 +424,7 @@ inline static int anyStringWorkCode(void* any, int ix, int id)
 
   if (MMC_IS_IMMEDIATE(any)) {
     checkAnyStringBufSize(ix,400);
-    ix += sprintf(anyStringBuf+ix, "#define omc_tmp%d ((void*)%ld)\n", id, (signed long) any);
+    ix += sprintf(anyStringBuf+ix, "#define omc_tmp%d ((void*)%" PRINT_MMC_SINT_T ")\n", id, (mmc_sint_t) any);
     return ix;
   }
 
@@ -826,12 +826,12 @@ char* getMetaTypeElement(modelica_metatype arr, modelica_integer i, metaType mt)
   /* format the anyStringBuf as array to return it */
   if (mt == record_metaType) {
     formatString = "^done,omc_element={name=\"%ld\",displayName=\"%s\",type=\"%s\"}";
-    if (-1 == GC_asprintf(&formattedString, formatString, (long)name, displayName, ty)) {
+    if (-1 == GC_asprintf(&formattedString, formatString, (mmc_uint_t)name, displayName, ty)) {
       assert(0);
     }
   } else {
     formatString = "^done,omc_element={name=\"%ld\",displayName=\"[%d]\",type=\"%s\"}";
-    if (-1 == GC_asprintf(&formattedString, formatString, (long)name, (int)i, ty)) {
+    if (-1 == GC_asprintf(&formattedString, formatString, (mmc_uint_t)name, (int)i, ty)) {
       assert(0);
     }
   }
@@ -852,7 +852,7 @@ char* getMetaTypeElement(modelica_metatype arr, modelica_integer i, metaType mt)
   return anyStringBuf;
 }
 
-static inline unsigned long djb2_hash_iter(const unsigned char *str /* data; not null-terminated */, int len, unsigned long hash /* start at 5381 */)
+static inline mmc_uint_t djb2_hash_iter(const unsigned char *str /* data; not null-terminated */, int len, mmc_uint_t hash /* start at 5381 */)
 {
   int i;
   for (i=0; i<len; i++) {
@@ -861,15 +861,15 @@ static inline unsigned long djb2_hash_iter(const unsigned char *str /* data; not
   return hash;
 }
 
-unsigned long mmc_prim_hash(void *p,unsigned long hash /* start at 5381 */)
+mmc_uint_t mmc_prim_hash(void *p, mmc_uint_t hash /* start at 5381 */)
 {
   mmc_uint_t phdr = 0;
 
   mmc_prim_hash_tail_recur:
   if (MMC_IS_INTEGER(p))
   {
-    unsigned long l = (unsigned long)MMC_UNTAGFIXNUM(p);
-    return djb2_hash_iter((unsigned char*)&l, sizeof(unsigned long), hash);
+    mmc_uint_t l = (mmc_uint_t)MMC_UNTAGFIXNUM(p);
+    return djb2_hash_iter((unsigned char*)&l, sizeof(mmc_uint_t), hash);
   }
 
   phdr = MMC_GETHDR(p);
@@ -905,13 +905,13 @@ unsigned long mmc_prim_hash(void *p,unsigned long hash /* start at 5381 */)
 
 modelica_integer valueHashMod(void *p, modelica_integer mod)
 {
-  modelica_integer res = mmc_prim_hash(p,5381) % (unsigned long) mod;
+  modelica_integer res = mmc_prim_hash(p,5381) % (mmc_uint_t) mod;
   return res;
 }
 
 void* boxptr_valueHashMod(threadData_t *threadData,void *p, void *mod)
 {
-  return mmc_mk_icon(mmc_prim_hash(p,5381) % (unsigned long) mmc_unbox_integer(mod));
+  return mmc_mk_icon(mmc_prim_hash(p,5381) % (mmc_uint_t) mmc_unbox_integer(mod));
 }
 
 pthread_once_t mmc_init_once = PTHREAD_ONCE_INIT;

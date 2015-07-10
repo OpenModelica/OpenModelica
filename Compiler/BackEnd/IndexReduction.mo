@@ -1248,7 +1248,9 @@ algorithm
   // do state selection
   ht := HashTableCrIntToExp.emptyHashTable();
   (systs, shared, ht) := mapdynamicStateSelection(systs, shared, inArgs, 1, ht);
-  shared := if intGt(BaseHashTable.hashTableCurrentSize(ht), 0) then replaceDummyDerivativesShared(shared, ht) else shared;
+  if intGt(BaseHashTable.hashTableCurrentSize(ht), 0) then
+    (systs, shared) :=  List.map1Fold(systs, replaceDummyDerivatives, ht, shared);
+  end if;
   outDAE := BackendDAE.DAE(systs, shared);
 end dynamicStateSelection;
 
@@ -3818,37 +3820,32 @@ algorithm
   end matchcontinue;
 end replaceDummyDerivativesExp;
 
-protected function replaceDummyDerivativesShared
+protected function replaceDummyDerivatives
 "author Frenkel TUD 2012-08"
-  input BackendDAE.Shared inShared;
+  input BackendDAE.EqSystem inSyst;
   input HashTableCrIntToExp.HashTable ht;
-  output BackendDAE.Shared oshared;
+  input BackendDAE.Shared inShared;
+  output BackendDAE.EqSystem outSyst = inSyst;
+  output BackendDAE.Shared outShared = inShared;
+protected
+  list<BackendDAE.WhenClause> wcl;
+  BackendDAE.EventInfo eventInfo;
 algorithm
-  oshared:= match inShared
-    local
-      list<BackendDAE.WhenClause> whenClauseLst;
-      BackendDAE.Shared shared;
-      BackendDAE.EventInfo eventInfo;
+  BackendVariable.traverseBackendDAEVarsWithUpdate(outShared.aliasVars, replaceDummyDerivativesVar, ht);
+  BackendVariable.traverseBackendDAEVarsWithUpdate(outShared.knownVars, replaceDummyDerivativesVar, ht);
+  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( outShared.initialEqs, Expression.traverseSubexpressionsHelper,
+                                                       (replaceDummyDerivativesExp, ht) );
+  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( outSyst.removedEqs, Expression.traverseSubexpressionsHelper,
+                                                       (replaceDummyDerivativesExp, ht) );
+  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( outShared.removedEqs, Expression.traverseSubexpressionsHelper,
+                                                       (replaceDummyDerivativesExp, ht) );
 
-    case shared as BackendDAE.SHARED(eventInfo=eventInfo as BackendDAE.EVENT_INFO())
-      equation
-        // replace dummy_derivatives in knvars,aliases,ineqns,remeqns
-        _ = BackendVariable.traverseBackendDAEVarsWithUpdate(shared.aliasVars, replaceDummyDerivativesVar, ht);
-        _ = BackendVariable.traverseBackendDAEVarsWithUpdate(shared.knownVars, replaceDummyDerivativesVar, ht);
-        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( shared.initialEqs, Expression.traverseSubexpressionsHelper,
-                                                                 (replaceDummyDerivativesExp, ht) );
-        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( shared.removedEqs, Expression.traverseSubexpressionsHelper,
-                                                                 (replaceDummyDerivativesExp, ht) );
-        (whenClauseLst, _) =
-            BackendDAETransform.traverseBackendDAEExpsWhenClauseLst (
-                eventInfo.whenClauseLst, Expression.traverseSubexpressionsHelper, (replaceDummyDerivativesExp, ht) );
-        eventInfo.whenClauseLst = whenClauseLst;
-        shared.eventInfo = eventInfo;
-      then
-        shared;
-
-  end match;
-end replaceDummyDerivativesShared;
+  eventInfo := outShared.eventInfo;
+  (wcl, _) := BackendDAETransform.traverseBackendDAEExpsWhenClauseLst (
+      outShared.eventInfo.whenClauseLst, Expression.traverseSubexpressionsHelper, (replaceDummyDerivativesExp, ht) );
+  eventInfo.whenClauseLst := wcl;
+  outShared.eventInfo := eventInfo;
+end replaceDummyDerivatives;
 
 protected function replaceDummyDerivativesVar
 "author: Frenkel TUD 2012-08"

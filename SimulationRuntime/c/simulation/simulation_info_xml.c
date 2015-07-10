@@ -37,6 +37,7 @@
 
 #include "simulation_runtime.h"
 #include "util/omc_msvc.h" /* for asprintf */
+#include "meta/meta_modelica.h" /* for mmc_sint_t types */
 #include <expat.h>
 #include <errno.h>
 #include <string.h>
@@ -52,9 +53,9 @@ void freeModelInfoXml(MODEL_DATA_XML*);
 
 typedef struct {
   MODEL_DATA_XML *xml;
-  long curIndex;
-  long curProfileIndex;
-  long curFunctionIndex;
+  mmc_sint_t curIndex;
+  mmc_sint_t curProfileIndex;
+  mmc_sint_t curFunctionIndex;
 } userData_t;
 
 typedef struct hash_variable
@@ -67,9 +68,9 @@ typedef struct hash_variable
 static hash_variable *variables = NULL;
 static VAR_INFO var_info;
 static FILE_INFO file_info;
-static int maxVarsBuffer = 0;
+static mmc_sint_t maxVarsBuffer = 0;
 static const char **varsBuffer = 0;
-static int isChild = 0;
+static mmc_sint_t isChild = 0;
 
 static void add_variable(VAR_INFO vi)
 {
@@ -149,7 +150,7 @@ static void XMLCALL startElement(void *voidData, const char *name, const char **
   }
   if(0 == strcmp("equation", name))
   {
-    long ix;
+    mmc_sint_t ix;
     if(userData->curIndex > userData->xml->nEquations) {
       throwStreamPrint(NULL, "%s: Info XML %s contained more equations than expected (%ld)", __FILE__, userData->xml->fileName, userData->xml->nEquations);
     }
@@ -210,7 +211,7 @@ static void XMLCALL endElement(void *voidData, const char *name)
   }
   if(0 == strcmp("equation", name))
   {
-    int i;
+    mmc_sint_t i;
     userData->xml->equationInfo[userData->curIndex].vars = (const char**) malloc(sizeof(const char*)*userData->xml->equationInfo[userData->curIndex].numVar);
     for(i=0; i<userData->xml->equationInfo[userData->curIndex].numVar; i++)
     {
@@ -280,13 +281,13 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
   if(!xml->infoXMLData)
   {
     char buf[BUFSIZ] = {0};
-    int done;
+    mmc_sint_t done;
     do {
       size_t len = fread(buf, 1, sizeof(buf), file);
       done = len < sizeof(buf);
       if(XML_Parse(parser, buf, len, done) == XML_STATUS_ERROR) {
         const char *err = XML_ErrorString(XML_GetErrorCode(parser));
-        unsigned long line = XML_GetCurrentLineNumber(parser);
+        mmc_uint_t line = XML_GetCurrentLineNumber(parser);
         fclose(file);
         XML_ParserFree(parser);
         throwStreamPrint(NULL, "%s: Error: failed to read the XML file %s: %s at line %lu", __FILE__, xml->fileName, err, line);
@@ -296,7 +297,7 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
   } else {
     if(XML_Parse(parser, xml->infoXMLData, strlen(xml->infoXMLData), 1) == XML_STATUS_ERROR) {
       const char *err = XML_ErrorString(XML_GetErrorCode(parser));
-      unsigned long line = XML_GetCurrentLineNumber(parser);
+      mmc_uint_t line = XML_GetCurrentLineNumber(parser);
       XML_ParserFree(parser);
       throwStreamPrint(NULL, "%s: Error: failed to read the XML data %s: %s at line %lu", __FILE__, xml->infoXMLData, err, line);
     }
@@ -318,7 +319,7 @@ EQUATION_INFO modelInfoXmlGetEquation(MODEL_DATA_XML* xml, size_t ix)
 
 EQUATION_INFO modelInfoXmlGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, size_t ix)
 {
-  int i;
+  mmc_sint_t i;
   if(xml->equationInfo == NULL)
   {
     modelInfoXmlInit(xml);
@@ -346,7 +347,7 @@ void freeModelInfoXml(MODEL_DATA_XML* xml)
   }
   if(xml->equationInfo)
   {
-    int i;
+    mmc_sint_t i;
     for(i=0;i<xml->nEquations;++i) {
       free(xml->equationInfo[i].vars);
       xml->equationInfo[i].vars = 0;

@@ -1446,7 +1446,7 @@ static int SystemImpl__freeLibrary(int libIndex, int printDebug)
 
 static void free_library(modelica_ptr_t lib, modelica_integer printDebug)
 {
-  if (printDebug) { fprintf(stderr, "LIB UNLOAD handle[%lu].\n", (unsigned long) lib->data.lib); fflush(stderr); }
+  if (printDebug) { fprintf(stderr, "LIB UNLOAD handle[%" PRINT_MMC_UINT_T "].\n", (mmc_uint_t) lib->data.lib); fflush(stderr); }
   if (FreeLibraryFromHandle(lib->data.lib))
   {
     fprintf(stderr,"System.freeLibrary error code: %lu while unloading dll.\n", GetLastError());

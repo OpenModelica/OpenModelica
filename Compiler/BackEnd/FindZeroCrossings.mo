@@ -59,33 +59,6 @@ protected import List;
 protected import Util;
 
 // =============================================================================
-// section for some public util functions
-//
-// =============================================================================
-
-public function getZeroCrossings
-  input BackendDAE.BackendDAE inBackendDAE;
-  output list<BackendDAE.ZeroCrossing> outZeroCrossingList;
-algorithm
-  BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst=outZeroCrossingList))) := inBackendDAE;
-end getZeroCrossings;
-
-public function getRelations
-  input BackendDAE.BackendDAE inBackendDAE;
-  output list<BackendDAE.ZeroCrossing> outZeroCrossingList;
-algorithm
-  BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(relationsLst=outZeroCrossingList))) := inBackendDAE;
-end getRelations;
-
-public function getSamples "deprecated - use EVENT_INFO.timeEvents instead"
-  input BackendDAE.BackendDAE inBackendDAE;
-  output list<BackendDAE.ZeroCrossing> outZeroCrossingList;
-algorithm
-  BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(sampleLst=outZeroCrossingList))) := inBackendDAE;
-end getSamples;
-
-
-// =============================================================================
 // section for preOptModule >>encapsulateWhenConditions<<
 //
 // This module encapsulates each when-condition in a boolean-variable
@@ -99,59 +72,29 @@ public function encapsulateWhenConditions "author: lochel"
 protected
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
-  BackendDAE.EquationArray removedEqs;
-
-  list<BackendDAE.TimeEvent> timeEvents;
-  list<BackendDAE.WhenClause> whenClauseLst;
-  list<BackendDAE.ZeroCrossing> zeroCrossingLst;
-  list<BackendDAE.ZeroCrossing> sampleLst;
-  list<BackendDAE.ZeroCrossing> relationsLst;
-  Integer numberMathEvents;
-
+  BackendDAE.EventInfo eventInfo;
+  list<BackendDAE.WhenClause> wcl;
   Integer index;
   HashTableExpToIndex.HashTable ht "is used to avoid redundant condition-variables";
   list<BackendDAE.Var> vars;
   list<BackendDAE.Equation> eqns;
   BackendDAE.Variables vars_;
   BackendDAE.EquationArray eqns_;
-  BackendDAE.ExtraInfo info;
-  BackendDAE.EventInfo eventInfo;
 
 algorithm
   BackendDAE.DAE(systs, shared) := inDAE;
-  BackendDAE.SHARED(removedEqs=removedEqs, eventInfo=eventInfo) := shared;
-  BackendDAE.EVENT_INFO( timeEvents=timeEvents,
-                         whenClauseLst=whenClauseLst,
-                         zeroCrossingLst=zeroCrossingLst,
-                         sampleLst=sampleLst,
-                         relationsLst=relationsLst,
-                         numberMathEvents=numberMathEvents ) := eventInfo;
 
   ht := HashTableExpToIndex.emptyHashTable();
-
-  // equation system
   (systs, index, ht) := List.mapFold2(systs, encapsulateWhenConditions_EqSystem, 1, ht);
 
   // when clauses
-  (whenClauseLst, vars, eqns, ht, index) := encapsulateWhenConditions_WhenClause(whenClauseLst, {}, {}, {}, ht, index);
-
-  // removed equations
-  ((removedEqs, vars, eqns, index, ht)) :=
-      BackendEquation.traverseEquationArray( removedEqs, encapsulateWhenConditions_Equation,
-                                             (BackendEquation.emptyEqns(), vars, eqns, index, ht) );
+  eventInfo := shared.eventInfo;
+  (wcl, vars, eqns, ht, index) := encapsulateWhenConditions_WhenClause(eventInfo.whenClauseLst, {}, {}, {}, ht, index);
+  eventInfo.whenClauseLst := wcl;
+  shared.eventInfo := eventInfo;
   vars_ := BackendVariable.listVar(vars);
   eqns_ := BackendEquation.listEquation(eqns);
   systs := listAppend(systs, {BackendDAEUtil.createEqSystem(vars_, eqns_)});
-
-  eventInfo := BackendDAE.EVENT_INFO(timeEvents,
-                                     whenClauseLst,
-                                     zeroCrossingLst,
-                                     sampleLst,
-                                     relationsLst,
-                                     numberMathEvents);
-
-  shared := BackendDAEUtil.setSharedEventInfo(shared, eventInfo);
-  shared := BackendDAEUtil.setSharedRemovedEqns(shared, removedEqs);
 
   outDAE := if intGt(index, 1) then BackendDAE.DAE(systs, shared) else inDAE;
   if Flags.isSet(Flags.DUMP_ENCAPSULATECONDITIONS) then
@@ -209,7 +152,7 @@ algorithm
   outEqSystem := match inEqSystem
     local
       BackendDAE.Variables orderedVars;
-      BackendDAE.EquationArray orderedEqs;
+      BackendDAE.EquationArray orderedEqs, removedEqs;
       BackendDAE.EqSystem syst;
       list<BackendDAE.Var> varLst;
       list<BackendDAE.Equation> eqnLst;
@@ -218,6 +161,13 @@ algorithm
         ((orderedEqs, varLst, eqnLst, outIndex, outHT)) :=
             BackendEquation.traverseEquationArray( orderedEqs, encapsulateWhenConditions_Equation,
                                                    (BackendEquation.emptyEqns(), {}, {}, inIndex, inHT) );
+
+        // removed equations
+        ((removedEqs, varLst, eqnLst, outIndex, outHT)) :=
+            BackendEquation.traverseEquationArray( syst.removedEqs, encapsulateWhenConditions_Equation,
+                                                   (BackendEquation.emptyEqns(), varLst, eqnLst, outIndex, outHT) );
+        syst.removedEqs := removedEqs;
+
         syst.orderedVars := BackendVariable.addVars(varLst, orderedVars);
         syst.orderedEqs := BackendEquation.addEquations(eqnLst, orderedEqs);
       then BackendDAEUtil.clearEqSyst(syst);

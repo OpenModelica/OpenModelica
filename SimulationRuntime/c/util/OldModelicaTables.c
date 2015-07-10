@@ -1324,7 +1324,7 @@ static double InterpolationTable2D_akime(double* tx, double* ty, size_t tlen, do
     if(index < tlen - 2)
     {
       double a1, a2;
-      double q[5];
+      double q[5] = {0};
       int i;
       /* calc */
       int pos = 0;

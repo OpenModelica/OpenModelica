@@ -9,7 +9,7 @@ MeasureTimeValuesPAPI::~MeasureTimeValuesPAPI() {}
 std::string MeasureTimeValuesPAPI::serializeToJson()
 {
   std::stringstream ss;
-  ss << "\"ncall\":" << _numCalcs << "\"time\":" << time << ",\"maxTime\":" << max_time << ",\"l2cacheMisses\":" << l2CacheMisses
+  ss << "\"ncall\":" << _numCalcs << ",\"time\":" << time << ",\"maxTime\":" << max_time << ",\"l2cacheMisses\":" << l2CacheMisses
           << ",\"instructions\":" << instructions
           << ",\"meanTime\":" << (_numCalcs == 0 ? 0 : time/_numCalcs)
           << ",\"meanInstructions\":" << (_numCalcs == 0 ? 0 : instructions/_numCalcs)

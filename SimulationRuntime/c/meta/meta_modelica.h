@@ -76,7 +76,7 @@ extern "C" {
  * - 2^(32-10) + 1 (header) on 32 bit systems
  * - 2^(64-10) + 1 (header) on 64 bit systems
  */
-#ifdef _LP64
+#if defined(_LP64) || defined(_LLP64) || defined(_WIN64)
 #define MMC_MAX_SLOTS (18014398509481984) /* max words slots header */
 #else
 #define MMC_MAX_SLOTS (4194304)           /* max words slots header */
@@ -85,16 +85,34 @@ extern "C" {
 /* max object size on 32/64 bit systems in bytes */
 #define MMC_MAX_OBJECT_SIZE_BYTES MMC_WORDS_TO_BYTES(MMC_MAX_SLOTS)
 
-#ifdef _LP64
+#if defined(_LP64)
 #define MMC_SIZE_DBL 8
 #define MMC_SIZE_INT 8
 #define MMC_LOG2_SIZE_INT 3
+#define PRINT_MMC_SINT_T "ld"
+#define PRINT_MMC_UINT_T "lu"
 typedef unsigned long mmc_uint_t;
 typedef long mmc_sint_t;
+#elif defined(_LLP64) || defined(_WIN64) || defined(__MINGW64__)
+#define MMC_SIZE_DBL 8
+#define MMC_SIZE_INT 8
+#define MMC_LOG2_SIZE_INT 3
+#ifndef PRIu64
+#define PRIu64 "I64u"
+#endif
+#ifndef PRId64
+#define PRId64 "I64d"
+#endif
+#define PRINT_MMC_SINT_T PRId64
+#define PRINT_MMC_UINT_T PRIu64
+typedef unsigned long long mmc_uint_t;
+typedef long long mmc_sint_t;
 #else
 #define MMC_SIZE_DBL 8
 #define MMC_SIZE_INT 4
 #define MMC_LOG2_SIZE_INT 2
+#define PRINT_MMC_SINT_T "ld"
+#define PRINT_MMC_UINT_T "lu"
 typedef unsigned int mmc_uint_t;
 typedef int mmc_sint_t;
 #endif
@@ -324,8 +342,8 @@ static inline void mmc_prim_set_real(struct mmc_real *p, double d)
 
 static inline void* mmc_alloc_scon(size_t nbytes)
 {
-    unsigned int header = MMC_STRINGHDR(nbytes);
-    unsigned int nwords = MMC_HDRSLOTS(header) + 1;
+    mmc_uint_t header = MMC_STRINGHDR(nbytes);
+    mmc_uint_t nwords = MMC_HDRSLOTS(header) + 1;
     struct mmc_string *p;
     void *res;
     if (nbytes == 0) return mmc_emptystring;
@@ -362,10 +380,10 @@ static inline void* mmc_mk_scon(const char *s)
     return res;
 }
 
-static inline void* mmc_mk_scon_len(unsigned int nbytes)
+static inline void* mmc_mk_scon_len(mmc_uint_t nbytes)
 {
-    unsigned int header = MMC_STRINGHDR(nbytes);
-    unsigned int nwords = MMC_HDRSLOTS(header) + 1;
+    mmc_uint_t header = MMC_STRINGHDR(nbytes);
+    mmc_uint_t nwords = MMC_HDRSLOTS(header) + 1;
     struct mmc_string *p;
     void *res;
     p = (struct mmc_string *) mmc_alloc_words_atomic(nwords);
@@ -379,15 +397,15 @@ char* mmc_mk_scon_len_ret_ptr(size_t nbytes);
 /* Non-varargs versions */
 #include "meta_modelica_mk_box.h"
 
-static inline void *mmc_mk_box(int _slots, unsigned int ctor, ...)
+static inline void *mmc_mk_box(mmc_sint_t _slots, mmc_uint_t ctor, ...)
 {
-  int i;
+  mmc_sint_t i;
   va_list argp;
 
   struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(_slots+1);
   p->header = MMC_STRUCTHDR(_slots, ctor);
   va_start(argp, ctor);
-  for (i=0; i<_slots; i++) {
+  for (i = 0; i < _slots; i++) {
     p->data[i] = va_arg(argp, void*);
   }
   va_end(argp);
@@ -415,8 +433,8 @@ static inline void *mmc_mk_some(void *x)
     return mmc_mk_box1(1, x);
 }
 
-extern void *mmc_mk_box_arr(int _slots, unsigned int ctor, void** args);
-static inline void *mmc_mk_box_no_assign(int _slots, unsigned int ctor)
+extern void *mmc_mk_box_arr(mmc_sint_t _slots, mmc_uint_t ctor, void** args);
+static inline void *mmc_mk_box_no_assign(mmc_sint_t _slots, mmc_uint_t ctor)
 {
     struct mmc_struct *p = (struct mmc_struct*)mmc_alloc_words(_slots+1);
     p->header = MMC_STRUCTHDR(_slots, ctor);
@@ -482,6 +500,11 @@ struct record_description {
 
 #if defined(__cplusplus)
 }
+#endif
+
+/* adrpo: undefine _inline for mingw64 */
+#if defined(_inline) && defined(__MINGW64__)
+#undef _inline
 #endif
 
 #endif

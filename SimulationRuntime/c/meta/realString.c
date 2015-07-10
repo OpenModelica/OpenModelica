@@ -49,7 +49,7 @@ modelica_string _old_realString(modelica_real r)
    * 64-bit (1+11+52) double: -d.[15 digits]E-[4 digits] = ~24 digits max.
    * Add safety margin in case some C runtime is trigger happy. */
   char buffer[32];
-  char* endptr;
+  char* endptr = '\0';
   snprintf(buffer, 32, "%.16g", r);
   /* If it looks like an integer, we need to append .0 so it looks like real */
   endptr = buffer;

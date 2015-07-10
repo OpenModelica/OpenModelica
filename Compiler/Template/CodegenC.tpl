@@ -4409,19 +4409,10 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &aux
 ::=
   match eq
     case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=NONE()) then
-      let helpIf = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
-      let initial_assign =
-        if initialCall then
-          whenAssign(left,typeof(right),right,context, &varDecls, &auxFunction)
-        else
-          '<%cref(left)%> = $P$PRE<%cref(left)%>;'
+      let helpIf = if intGt(listLength(conditions), 0) then (conditions |> e => '(<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)';separator=" || ") else '0'
       let assign = whenAssign(left,typeof(right),right,context, &varDecls, auxFunction)
       <<
-      if(initial())
-      {
-        <%initial_assign%>
-      }
-      else if(0<%helpIf%>)
+      if(<%helpIf%>)
       {
         <%assign%>
       }
@@ -4431,20 +4422,11 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &aux
       }
       >>
     case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
-      let helpIf = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
-      let initial_assign =
-        if initialCall then
-          whenAssign(left,typeof(right),right,context, &varDecls, &auxFunction)
-        else
-          '<%cref(left)%> = $P$PRE<%cref(left)%>;'
+      let helpIf = if intGt(listLength(conditions), 0) then (conditions |> e => '(<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)';separator=" || ") else '0'
       let assign = whenAssign(left,typeof(right),right,context, &varDecls, &auxFunction)
       let elseWhen = equationElseWhen(elseWhenEq,context,varDecls,&auxFunction)
       <<
-      if(initial())
-      {
-        <%initial_assign%>
-      }
-      else if(0<%helpIf%>)
+      if(<%helpIf%>)
       {
         <%assign%>
       }
@@ -4461,23 +4443,30 @@ template equationElseWhen(SimEqSystem eq, Context context, Text &varDecls, Text 
 ::=
 match eq
 case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=NONE()) then
-  let helpIf = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
-  let assign = whenAssign(left,typeof(right),right,context, &varDecls, &auxFunction)
-  <<
-  else if(0<%helpIf%>)
-  {
-    <%assign%>
-  }
-  >>
+  let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)';separator=" || ")
+  let assign = whenAssign(left, typeof(right), right, context, &varDecls, &auxFunction)
+
+  if intGt(listLength(conditions), 0) then
+    <<
+    else if(<%helpIf%>)
+    {
+      <%assign%>
+    }
+    >>
 case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
-  let helpIf = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
-  let assign = whenAssign(left,typeof(right),right,context, &varDecls, &auxFunction)
-  let elseWhen = equationElseWhen(elseWhenEq,context,varDecls,auxFunction)
+  let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)';separator=" || ")
+  let assign = whenAssign(left, typeof(right), right, context, &varDecls, &auxFunction)
+  let elseWhen = equationElseWhen(elseWhenEq, context, varDecls, auxFunction)
+  let body = if intGt(listLength(conditions), 0) then
+    <<
+    else if(<%helpIf%>)
+    {
+      <%assign%>
+    }
+    >>
+
   <<
-  else if(0<%helpIf%>)
-  {
-    <%assign%>
-  }
+  <%body%>
   <%elseWhen%>
   >>
 end equationElseWhen;

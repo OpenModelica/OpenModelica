@@ -80,7 +80,7 @@ algorithm
       BackendDAE.EqSystems eqs;
       BackendDAE.Shared shared;
 
-    case BackendDAE.DAE(eqs, shared as BackendDAE.SHARED())
+    case BackendDAE.DAE(eqs, shared)
       algorithm
         tpl := (SOME(shared.functionTree), inITLst);
         eqs := List.map1(eqs, inlineEquationSystem, tpl);
@@ -104,21 +104,11 @@ end inlineCalls;
 protected function inlineEquationSystem
   input BackendDAE.EqSystem eqs;
   input Inline.Functiontuple tpl;
-  output BackendDAE.EqSystem oeqs;
+  output BackendDAE.EqSystem oeqs = eqs;
 algorithm
-  oeqs := match eqs
-    local
-      BackendDAE.EqSystem syst;
-      BackendDAE.Variables orderedVars;
-      BackendDAE.EquationArray orderedEqs;
-
-    case syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)
-      equation
-        _ = inlineVariables(orderedVars, tpl);
-        _ = inlineEquationArray(orderedEqs, tpl);
-      then
-        syst;
-  end match;
+  inlineVariables(oeqs.orderedVars, tpl);
+  inlineEquationArray(oeqs.orderedEqs, tpl);
+  inlineEquationArray(oeqs.removedEqs, tpl);
 end inlineEquationSystem;
 
 protected function inlineEquationArray "

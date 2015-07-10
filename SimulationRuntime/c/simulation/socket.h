@@ -17,8 +17,6 @@
 #ifndef SOCKET_H_
 #define SOCKET_H_
 
-#include <string>
-
 #if defined(__MINGW32__) || defined(_MSC_VER)
   #include <winsock.h>
 #else
@@ -33,6 +31,8 @@ const int MAXCONNECTIONS = 5;
 // Max. number of data to receive at once
 const int MAXRECV = 1024;
 
+#ifdef __cplusplus
+#include <string>
 // Socket class
 class Socket
 {
@@ -74,5 +74,7 @@ public:
   void cleanup() const;
   bool is_valid() const { return m_sock != -1; }
 };
+
+#endif /* c++ */
 
 #endif

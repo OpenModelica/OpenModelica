@@ -32,9 +32,9 @@
  */
 
 #include "omc_config.h"
-#include "solver_main.h"
 #include "simulation/simulation_runtime.h"
 #include "simulation/results/simulation_result.h"
+#include "solver_main.h"
 #include "openmodelica_func.h"
 #include "initialization/initialization.h"
 #include "nonlinearSystem.h"

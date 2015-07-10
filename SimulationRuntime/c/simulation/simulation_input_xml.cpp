@@ -57,10 +57,10 @@
 
 using namespace std;
 
-typedef std::map<std::string, std::string> omc_ModelDescription;
-typedef std::map<std::string, std::string> omc_DefaultExperiment;
-typedef std::map<std::string, std::string> omc_ScalarVariable;
-typedef std::map<int, omc_ScalarVariable>  omc_ModelVariables;
+typedef std::map<std::string, std::string>       omc_ModelDescription;
+typedef std::map<std::string, std::string>       omc_DefaultExperiment;
+typedef std::map<std::string, std::string>       omc_ScalarVariable;
+typedef std::map<mmc_sint_t, omc_ScalarVariable> omc_ModelVariables;
 
 /* maybe use a map below {"rSta"  -> omc_ModelVariables} */
 /* typedef map < string, omc_ModelVariables > omc_ModelVariablesClassified; */
@@ -92,7 +92,7 @@ typedef struct omc_ModelInput
   /* these two we need to know to be able to add
      the stuff in <Real ... />, <String ... /> to
      the correct variable in the correct map */
-  int                   lastCI; /* index */
+  mmc_sint_t            lastCI; /* index */
   omc_ModelVariables*   lastCT; /* type (classification) */
 } omc_ModelInput;
 
@@ -101,7 +101,7 @@ typedef std::map<std::string, std::string> omc_CommandLineOverrides;
 // a map to find out which names were used
 #define OMC_OVERRIDE_UNUSED 0
 #define OMC_OVERRIDE_USED   1
-typedef std::map<std::string, int> omc_CommandLineOverridesUses;
+typedef std::map<std::string, mmc_sint_t> omc_CommandLineOverridesUses;
 
 // function to handle command line settings override
 void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override, const char* overrideFile);
@@ -128,7 +128,7 @@ void read_value(std::string s, modelica_boolean* str);
 static void XMLCALL startElement(void *userData, const char *name, const char **attr)
 {
   omc_ModelInput* mi = (omc_ModelInput*)userData;
-  int i = 0;
+  mmc_sint_t i = 0;
 
   /* handle fmiModelDescription */
   if(!strcmp(name, "fmiModelDescription"))
@@ -163,7 +163,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     /* fetch the class index/type  */
     ci = v["classIndex"];
     ct = v["classType"];
-    /* transform to int  */
+    /* transform to mmc_sint_t  */
     mi->lastCI = atoi(ci.c_str());
 
     /* which one of the classifications?  */
@@ -289,8 +289,8 @@ void read_input_xml(MODEL_DATA* modelData,
   std::string filename;
   FILE* file = NULL;
   XML_Parser parser = NULL;
-  std::map<std::string, long> mapAlias, mapAliasParam;
-  std::map<std::string, long>::iterator it, itParam;
+  std::map<std::string, mmc_sint_t> mapAlias, mapAliasParam;
+  std::map<std::string, mmc_sint_t>::iterator it, itParam;
 
   if(NULL == modelData->initXMLData)
   {
@@ -456,9 +456,9 @@ void read_input_xml(MODEL_DATA* modelData,
 
 #define READ_VARIABLES(out,in,attributeKind,debugName,start,nStates,mapAlias) \
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for %s", debugName); \
-  for(long i=0; i<nStates; i++) \
+  for(mmc_sint_t i = 0; i < nStates; i++) \
   { \
-    long j = start+i; \
+    mmc_sint_t j = start+i; \
     VAR_INFO &info = out[j].info; \
     attributeKind &attribute = out[j].attribute; \
     omc_ScalarVariable &v = in[i]; \
@@ -492,7 +492,7 @@ void read_input_xml(MODEL_DATA* modelData,
    * real all alias vars
    */
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for real alias vars");
-  for(long i=0; i<modelData->nAliasReal; i++)
+  for(mmc_sint_t i=0; i<modelData->nAliasReal; i++)
   {
     read_var_info(mi.rAli[i], modelData->realAlias[i].info);
 
@@ -542,7 +542,7 @@ void read_input_xml(MODEL_DATA* modelData,
    * integer all alias vars
    */
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for integer alias vars");
-  for(long i=0; i<modelData->nAliasInteger; i++)
+  for(mmc_sint_t i=0; i<modelData->nAliasInteger; i++)
   {
     read_var_info(mi.iAli[i], modelData->integerAlias[i].info);
 
@@ -590,7 +590,7 @@ void read_input_xml(MODEL_DATA* modelData,
    * boolean all alias vars
    */
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for boolean alias vars");
-  for(long i=0; i<modelData->nAliasBoolean; i++)
+  for(mmc_sint_t i=0; i<modelData->nAliasBoolean; i++)
   {
     read_var_info(mi.bAli[i], modelData->booleanAlias[i].info);
 
@@ -638,7 +638,7 @@ void read_input_xml(MODEL_DATA* modelData,
    * string all alias vars
    */
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for string alias vars");
-  for(long i=0; i<modelData->nAliasString; i++)
+  for(mmc_sint_t i=0; i<modelData->nAliasString; i++)
   {
     read_var_info(mi.sAli[i], modelData->stringAlias[i].info);
 
@@ -753,7 +753,7 @@ inline void read_value(std::string s, modelica_integer* res, modelica_integer de
   }
 }
 
-/* reads integer value from a string */
+/* reads int value from a string */
 inline void read_value(std::string s, int* res)
 {
   if(s.compare("true") == 0)
@@ -881,66 +881,66 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
     mi.de["variableFilter"] = mOverrides.count("variableFilter") ? getOverrideValue(mOverrides, mOverridesUses, "variableFilter") : mi.de["variableFilter"];
 
     // override all found!
-    for(long i=0; i<modelData->nStates; i++)
+    for(mmc_sint_t i=0; i<modelData->nStates; i++)
     {
       mi.rSta[i]["start"] = mOverrides.count(mi.rSta[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rSta[i]["name"]) : mi.rSta[i]["start"];
       mi.rDer[i]["start"] = mOverrides.count(mi.rDer[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rDer[i]["name"]) : mi.rDer[i]["start"];
     }
-    for(long i=0; i<(modelData->nVariablesReal - 2*modelData->nStates); i++)
+    for(mmc_sint_t i=0; i<(modelData->nVariablesReal - 2*modelData->nStates); i++)
     {
       mi.rAlg[i]["start"] = mOverrides.count(mi.rAlg[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rAlg[i]["name"]) : mi.rAlg[i]["start"];
     }
-    for(long i=0; i<modelData->nVariablesInteger; i++)
+    for(mmc_sint_t i=0; i<modelData->nVariablesInteger; i++)
     {
       mi.iAlg[i]["start"] = mOverrides.count(mi.iAlg[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.iAlg[i]["name"]) : mi.iAlg[i]["start"];
     }
-    for(long i=0; i<modelData->nVariablesBoolean; i++)
+    for(mmc_sint_t i=0; i<modelData->nVariablesBoolean; i++)
     {
       mi.bAlg[i]["start"] = mOverrides.count(mi.bAlg[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.bAlg[i]["name"]) : mi.bAlg[i]["start"];
     }
-    for(long i=0; i<modelData->nVariablesString; i++)
+    for(mmc_sint_t i=0; i<modelData->nVariablesString; i++)
     {
       mi.sAlg[i]["start"] = mOverrides.count(mi.sAlg[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.sAlg[i]["name"]) : mi.sAlg[i]["start"];
     }
-    for(long i=0; i<modelData->nParametersReal; i++)
+    for(mmc_sint_t i=0; i<modelData->nParametersReal; i++)
     {
       // TODO: only allow to override primary parameters
       mi.rPar[i]["start"] = mOverrides.count(mi.rPar[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rPar[i]["name"]) : mi.rPar[i]["start"];
     }
-    for(long i=0; i<modelData->nParametersInteger; i++)
+    for(mmc_sint_t i=0; i<modelData->nParametersInteger; i++)
     {
       // TODO: only allow to override primary parameters
       mi.iPar[i]["start"] = mOverrides.count(mi.iPar[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.iPar[i]["name"]) : mi.iPar[i]["start"];
     }
-    for(long i=0; i<modelData->nParametersBoolean; i++)
+    for(mmc_sint_t i=0; i<modelData->nParametersBoolean; i++)
     {
       // TODO: only allow to override primary parameters
       mi.bPar[i]["start"] = mOverrides.count(mi.bPar[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.bPar[i]["name"]) : mi.bPar[i]["start"];
     }
-    for(long i=0; i<modelData->nParametersString; i++)
+    for(mmc_sint_t i=0; i<modelData->nParametersString; i++)
     {
       // TODO: only allow to override primary parameters
       mi.sPar[i]["start"] = mOverrides.count(mi.sPar[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.sPar[i]["name"]) : mi.sPar[i]["start"];
     }
-    for(long i=0; i<modelData->nAliasReal; i++)
+    for(mmc_sint_t i=0; i<modelData->nAliasReal; i++)
     {
       mi.rAli[i]["start"] = mOverrides.count(mi.rAli[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rAli[i]["name"]) : mi.rAli[i]["start"];
     }
-    for(long i=0; i<modelData->nAliasInteger; i++)
+    for(mmc_sint_t i=0; i<modelData->nAliasInteger; i++)
     {
       mi.iAli[i]["start"] = mOverrides.count(mi.iAli[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.iAli[i]["name"]) : mi.iAli[i]["start"];
     }
-    for(long i=0; i<modelData->nAliasBoolean; i++)
+    for(mmc_sint_t i=0; i<modelData->nAliasBoolean; i++)
     {
       mi.bAli[i]["start"] = mOverrides.count(mi.bAli[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.bAli[i]["name"]) : mi.bAli[i]["start"];
     }
-    for(long i=0; i<modelData->nAliasString; i++)
+    for(mmc_sint_t i=0; i<modelData->nAliasString; i++)
     {
       mi.sAli[i]["start"] = mOverrides.count(mi.sAli[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.sAli[i]["name"]) : mi.sAli[i]["start"];
     }
 
     // give a warning if an override is not used #3204
-    for (std::map<std::string,int>::iterator it = mOverridesUses.begin(); it != mOverridesUses.end(); ++it)
+    for (std::map<std::string, mmc_sint_t>::iterator it = mOverridesUses.begin(); it != mOverridesUses.end(); ++it)
       if (it->second == OMC_OVERRIDE_UNUSED)
       {
          warningStreamPrint(LOG_STDOUT, 0, "simulation_input_xml.cpp: override variable name not found in model: %s\n", it->first.c_str());

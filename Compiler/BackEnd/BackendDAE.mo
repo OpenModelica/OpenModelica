@@ -70,13 +70,15 @@ type EqSystems = list<EqSystem>;
 public
 uniontype EqSystem "An independent system of equations (and their corresponding variables)"
   record EQSYSTEM
-    Variables orderedVars "ordered Variables, only states and alg. vars";
-    EquationArray orderedEqs "ordered Equations";
+    Variables orderedVars                   "ordered Variables, only states and alg. vars";
+    EquationArray orderedEqs                "ordered Equations";
     Option<IncidenceMatrix> m;
     Option<IncidenceMatrixT> mT;
     Matching matching;
-    StateSets stateSets "the state sets of the system";
+    StateSets stateSets                    "the state sets of the system";
     BaseClockPartitionKind partitionKind;
+    EquationArray removedEqs               "these are equations that cannot solve for a variable.
+                                            e.g. assertions, external function calls, algorithm sections without effect";
   end EQSYSTEM;
 end EqSystem;
 
