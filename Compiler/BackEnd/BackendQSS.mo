@@ -988,60 +988,12 @@ end getEquations;
 function replaceDiscontsInOde
   input SimCode.SimCode sin;
   input list<DAE.Exp> zc_exps;
-  output SimCode.SimCode sout;
+  output SimCode.SimCode sout = sin;
+protected
+  list<SimCode.SimEqSystem> eqs;
 algorithm
-  sout:=match (sin,zc_exps)
-    local
-      SimCode.ModelInfo modelInfo;
-      list<DAE.Exp> literals "shared literals";
-      list<SimCode.RecordDeclaration> recordDecls;
-      list<String> externalFunctionIncludes;
-      list<list<SimCode.SimEqSystem>> algebraicEquations,odeEquations;
-      list<SimCode.SimEqSystem> allEquations,startValueEquations,nominalValueEquations,minValueEquations,maxValueEquations,parameterEquations,removedEquations,algorithmAndEquationAsserts,jacobianEquations;
-      list<SimCode.SimEqSystem> equationsForZeroCrossings;
-      list<SimCode.StateSet> stateSets;
-      Boolean useHomotopy;
-      list<SimCode.SimEqSystem> initialEquations, removedInitialEquations;
-      list<DAE.Constraint> constraints;
-      list<DAE.ClassAttributes> classAttributes;
-      list<BackendDAE.ZeroCrossing> zeroCrossings,relations;
-      list<SimCode.SimWhenClause> whenClauses;
-      list<DAE.ComponentRef> discreteModelVars;
-      SimCode.ExtObjInfo extObjInfo;
-      SimCode.MakefileParams makefileParams;
-      SimCode.DelayedExpression delayedExps;
-      Option<SimCode.SimulationSettings> simulationSettingsOpt;
-      String fileNamePrefix;
-      SimCode.HashTableCrefToSimVar crefToSimVarHT;
-      list<SimCode.JacobianMatrix> jacobianMatrixes;
-      list<SimCode.SimEqSystem> eqs;
-      list<BackendDAE.TimeEvent> timeEvents;
-      HpcOmSimCode.HpcOmData hpcomData;
-      HashTableCrIListArray.HashTable varToArrayIndexMapping;
-      HashTableCrILst.HashTable varToIndexMapping;
-      Option<SimCode.FmiModelStructure> modelStruct;
-      list<SimCodeVar.SimVar> mixedArrayVars;
-      Option<SimCode.BackendMapping> backendMapping;
-      list<BackendDAE.BaseClockPartitionKind> partitionsKind;
-      list<DAE.ClockKind> baseClocks;
-
-    case (SimCode.SIMCODE( modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, partitionsKind, baseClocks,
-                           useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations,
-                           minValueEquations, maxValueEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings,
-                           jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses, discreteModelVars,
-                           extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcomData, varToArrayIndexMapping,
-                           varToIndexMapping, crefToSimVarHT, backendMapping, modelStruct ),_)
-    equation
-      {eqs} = odeEquations;
-      eqs = List.map1(eqs,replaceZC,zc_exps);
-    then SimCode.SIMCODE( modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, {eqs}, algebraicEquations, partitionsKind, baseClocks,
-                          useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations,
-                          minValueEquations, maxValueEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings,
-                          jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses, discreteModelVars,
-                          extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcomData, varToArrayIndexMapping,
-                          varToIndexMapping, crefToSimVarHT, backendMapping, modelStruct);
-
-  end match;
+  {eqs} := sout.odeEquations;
+  sout.odeEquations := {List.map1(eqs, replaceZC, zc_exps)};
 end replaceDiscontsInOde;
 
 

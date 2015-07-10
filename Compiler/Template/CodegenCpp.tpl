@@ -2527,12 +2527,6 @@ case var as FUNCTION_PTR(__) then
 
 end paramInit3;
 
-
-
-
-
-
-
 template simulationMainDLLib(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
 match simCode
@@ -3156,8 +3150,8 @@ match simCode
 
       //Number of equations
       <%dimension1(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-      _dimZeroFunc = <%zerocrosslength(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>;
-      _dimTimeEvent = <%timeeventlength(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>;
+      _dimZeroFunc = <%zeroCrossLength(simCode)%>;
+      _dimTimeEvent = <%timeEventLength(simCode)%>;
       //Number of residues
        _event_handling= boost::shared_ptr<EventHandling>(new EventHandling());
       <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
@@ -13071,28 +13065,6 @@ case SIMCODE(__) then
   >>
 end helpvarlength;
 
-template zerocrosslength(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
-::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
-   let size = listLength(zeroCrossings)
-  <<
-  <%intSub(listLength(zeroCrossings), vi.numTimeEvents)%>
-  >>
-end zerocrosslength;
-
-
-template timeeventlength(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
-::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
-
-  <<
-  <%vi.numTimeEvents%>
-  >>
-end timeeventlength;
-
-
 
 template dimZeroFunc(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
@@ -13826,36 +13798,36 @@ template getCondition(list<ZeroCrossing> zeroCrossings,list<SimWhenClause> whenC
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let zeroCrossingsCode = checkConditions1(zeroCrossings, &varDecls /*BUFD*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-match zeroCrossings
-case {} then
-  match simCode
-  case SIMCODE(modelInfo = MODELINFO(__)) then
-    <<
-    bool <%lastIdentOfPath(modelInfo.name)%>::getCondition(unsigned int index)
-    {
-      return false;
-    }
-    >>
-end match
-else
-  match simCode
-  case SIMCODE(modelInfo = MODELINFO(__)) then
-    <<
-    bool <%lastIdentOfPath(modelInfo.name)%>::getCondition(unsigned int index)
-    {
-      <%varDecls%>
-      switch(index)
-      {
-        <%zeroCrossingsCode%>
-        default:
+  match zeroCrossings
+    case {} then
+      match simCode
+        case SIMCODE(modelInfo = MODELINFO(__)) then
+        <<
+        bool <%lastIdentOfPath(modelInfo.name)%>::getCondition(unsigned int index)
         {
-          string error =string("Wrong condition index ") + boost::lexical_cast<string>(index);
-         throw ModelicaSimulationError(EVENT_HANDLING,error);
+          return false;
         }
-      };
-    }
-    >>
-end match
+        >>
+      end match
+    else
+      match simCode
+        case SIMCODE(modelInfo = MODELINFO(__)) then
+        <<
+        bool <%lastIdentOfPath(modelInfo.name)%>::getCondition(unsigned int index)
+        {
+          <%varDecls%>
+          switch(index)
+          {
+            <%zeroCrossingsCode%>
+            default:
+            {
+              string error =string("Wrong condition index ") + boost::lexical_cast<string>(index);
+             throw ModelicaSimulationError(EVENT_HANDLING,error);
+            }
+          };
+        }
+        >>
+      end match
 end getCondition;
 
 template checkConditions1(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
