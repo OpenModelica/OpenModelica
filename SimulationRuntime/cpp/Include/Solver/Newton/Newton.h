@@ -91,8 +91,8 @@ private:
         *_f,                        ///< Temp        - Residuals
         *_yHelp,                    ///< Temp        - Auxillary variables
         *_fHelp,                    ///< Temp        - Auxillary variables
-        *_jac;                        ///< Temp        - Jacobian
-
+        *_jac,                        ///< Temp        - Jacobian
+        * _zeroVec;
   long int *_iHelp;
 };
 /** @} */ // end of solverNewton
