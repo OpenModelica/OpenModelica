@@ -4595,7 +4595,7 @@ algorithm
       then oSchedule;
     case(_,_,_,_,_)
       algorithm
-        true := intEq(arrayLength(iTaskGraph),0);a
+        true := intEq(arrayLength(iTaskGraph),0);
        then HpcOmSimCode.EMPTYSCHEDULE(HpcOmSimCode.PARALLELTASKLIST({}));
     else
       algorithm
@@ -4704,12 +4704,14 @@ end reassignPartitions;
 public function createSingleThreadSchedule"creates a schedule in which all tasks are computed in thread 1"
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input array<list<Integer>> iSccSimEqMapping;
   input Integer numProc;
   output HpcOmSimCode.Schedule oSchedule;
 protected
   Integer nTasks, size;
+  list<Integer> order;
   HpcOmTaskGraph.TaskGraph taskGraphT;
-  list<HpcOmSimCode.Task> allTasksLst;
+  list<HpcOmSimCode.Task> allTasksLst={};
   array<list<HpcOmSimCode.Task>> thread2TaskAss;
   array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
 algorithm
@@ -4718,8 +4720,16 @@ algorithm
   taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size);
   // create the schedule
   allCalcTasks := convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
+
+  order := List.flatten(HpcOmTaskGraph.getLevelNodes(iTaskGraph));
+  for i in order loop
+    // get the correct ordered tasks, replace the scc indexes with simEq indexes
+    allTasksLst := setSimEqIdcsInTask(Util.tuple21(arrayGet(allCalcTasks,i)),iSccSimEqMapping)::allTasksLst;
+  end for;
+  allTasksLst := listReverse(allTasksLst);
+  // set the thread Index
+  allTasksLst := List.map1(allTasksLst,setThreadIdxInTask,1);
   thread2TaskAss := arrayCreate(numProc,{});
-  allTasksLst := List.map(arrayList(allCalcTasks),Util.tuple21);
   thread2TaskAss := arrayUpdate(thread2TaskAss,1,allTasksLst);
   oSchedule := HpcOmSimCode.THREADSCHEDULE(thread2TaskAss,{},{},allCalcTasks);
 end createSingleThreadSchedule;
@@ -4966,6 +4976,7 @@ algorithm
         taskLstAss = List.map6(otherParents,createDepTaskByTaskIdc,node,allCalcTasks,false,inCommCosts,inComps,iSimVarMapping);
         //relLockDepTasks = List.map1(otherChildren,getReleaseLockString,node);
         taskLstRel = List.map6(otherChildren,createDepTaskByTaskIdcR,node,allCalcTasks,true,inCommCosts,inComps,iSimVarMapping);
+
         //build the calcTask
         components = arrayGet(inComps,node);
         mark = arrayGet(nodeMark,node);
@@ -4990,6 +5001,42 @@ algorithm
         fail();
   end match;
 end createScheduleFromAssignments;
+
+protected function setSimEqIdcsInTask"updates the eqIdcs from scc-Indexes to simEq-Indexes in calctasks "
+  input HpcOmSimCode.Task taskIn;
+  input array<list<Integer>> SccSimEqMappingIn;
+  output HpcOmSimCode.Task taskOut;
+algorithm
+  taskOut := matchcontinue(taskIn)
+    local
+    Integer weighting, index, threadIdx;
+    Real calcTime, timeFinished;
+    list<Integer> eqIdc;
+  case(HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,timeFinished=timeFinished,threadIdx=threadIdx,eqIdc=eqIdc))
+    equation
+      eqIdc = List.flatten(List.map1(eqIdc,getSimEqSysIdxForComp,SccSimEqMappingIn));
+  then HpcOmSimCode.CALCTASK(weighting,index,calcTime,timeFinished,threadIdx,eqIdc);
+  else
+    then taskIn;
+  end matchcontinue;
+end setSimEqIdcsInTask;
+
+protected function setThreadIdxInTask"updates threadIdxs in calctasks "
+  input HpcOmSimCode.Task taskIn;
+  input Integer threadIdx;
+  output HpcOmSimCode.Task taskOut;
+algorithm
+  taskOut := matchcontinue(taskIn)
+    local
+    Integer weighting, index;
+    Real calcTime, timeFinished;
+    list<Integer> eqIdc;
+  case(HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,timeFinished=timeFinished,eqIdc=eqIdc))
+  then HpcOmSimCode.CALCTASK(weighting,index,calcTime,timeFinished,threadIdx,eqIdc);
+  else
+    then taskIn;
+  end matchcontinue;
+end setThreadIdxInTask;
 
 protected function tasksEqual "author: marcusw
   Checks if the given tasks are equal. The following conditions are checked:
