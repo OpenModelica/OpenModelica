@@ -697,7 +697,7 @@ int Cvode::calcFunction(const double& time, const double* y, double* f)
     f[0] = 0.0; // in case of dummy state
     _time_system->setTime(time);
     _continuous_system->setContinuousStates(y);
-    _continuous_system->evaluateODE(IContinuous::CONTINUOUS);
+    _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
     _continuous_system->getRHS(f);
     _numberOfOdeEvaluations++;
   }      //workaround until exception can be catch from c- libraries

@@ -279,7 +279,7 @@ void Arkode::initialize()
 void Arkode::solve(const SOLVERCALL action)
 {
   bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == OPT_ALL);
-  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() ==  OF_EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == OPT_EMPTY);
+  bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == OPT_NONE);
 
   if (_arkodesettings && _system)
   {
@@ -380,8 +380,8 @@ void Arkode::ArkodeCore()
   if (_idid < 0)
     throw ModelicaSimulationError(SOLVER,"ARKode::ReInit");
 
-  bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() ==  OPT_ALL);
-  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() == OF_EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == OPT_EMPTY);
+  bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == OPT_ALL);
+  bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == OPT_NONE);
 
   while (_solverStatus & ISolver::CONTINUE && !_interrupt )
   {
