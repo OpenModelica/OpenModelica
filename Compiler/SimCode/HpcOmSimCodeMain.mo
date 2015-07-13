@@ -205,6 +205,7 @@ algorithm
                        varToArrayIndexMapping, varToIndexMapping, crefToSimVarHT, backendMapping ) = simCode;
 
       //print("Number of literals pre: " + intString(listLength(simCodeLiterals)) + "\n");
+      //print("Number of zero crossings: " + intString(listLength(zeroCrossings)) + "\n");
 
       SOME(SimCode.BACKENDMAPPING(simVarMapping=simVarMapping)) = backendMapping;
 

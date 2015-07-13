@@ -386,8 +386,7 @@ static int PrintImpl__writeBufConvertLines(threadData_t *threadData,const char *
   FILE * file = NULL;
   regex_t re_begin,re_end;
   regmatch_t matches[3];
-  int i;
-  long nlines=6 /* We start at 6 because we write 6 lines before the first line */, modelicaLine = 0;
+  mmc_uint_t nlines = 6 /* We start at 6 because we write 6 lines before the first line */, modelicaLine = 0;
   /* What we try to match: */
   /*#modelicaLine [/path/to/a.mo:4:3-4:12]*/
   /*#endModelicaLine*/

@@ -903,10 +903,11 @@ algorithm
     //BackendDump.bltdump("START:reduceDynamicOptimization", inDAE);
     BackendDAE.DAE(systlst, shared) := inDAE;
     // ToDo
-    shared := BackendEquation.removeRemovedEqs(shared);
     shared := BackendVariable.removeAliasVars(shared);
 
     for syst in systlst loop
+
+      syst := BackendEquation.removeRemovedEqs(syst);
 
       BackendDAE.EQSYSTEM(orderedVars = v) := syst;
       varlst := BackendVariable.varList(v);

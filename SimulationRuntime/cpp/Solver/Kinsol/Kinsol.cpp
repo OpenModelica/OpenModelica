@@ -192,7 +192,7 @@ void Kinsol::solve()
 
     _iterationStatus = CONTINUE;
 
-    if(_algLoop->isLinear())
+    if(_algLoop->isLinear() && !_algLoop->isLinearTearing())
     {
         long int dimRHS  = 1;          // Dimension of right hand side of linear system (=b)
         long int dimSys = _dimSys;
@@ -211,17 +211,29 @@ void Kinsol::solve()
         long int dimSys = _dimSys;
         long int irtrn  = 0;          // Retrun-flag of Fortran code
 
-        _algLoop->setReal(_zeroVec);
+         _algLoop->setReal(_zeroVec);
         _algLoop->evaluate();
         _algLoop->getRHS(_f);
-        _algLoop->getReal(_y);
-        calcJacobian(_f,_y);
-        dgesv_(&dimSys, &dimRHS, _jac, &dimSys, _ihelpArray, _f,&dimSys,&irtrn);
-        for(int i=0; i<_dimSys; i++)
+
+		SparseMatrix amatrix;
+		_algLoop->getSystemMatrix(amatrix);
+
+		double* jac = new  double[dimSys*dimSys];
+		for(int i=0;i<dimSys;i++)
+			for(int j=0;j<dimSys;j++)
+				 jac[i+j*_dimSys] = amatrix(j,i);
+
+
+       // calcJacobian(_f,_y);
+        dgesv_(&dimSys, &dimRHS, jac, &dimSys, _ihelpArray, _f,&dimSys,&irtrn);
+
+		for(int i=0; i<_dimSys; i++)
           _f[i]*=-1.0;
+
         memcpy(_y, _f, _dimSys*sizeof(double));
-        _algLoop->setReal(_y);
-        //_algLoop->evaluate();
+        delete [] jac ;
+		  _algLoop->setReal(_y);
+       _algLoop->evaluate();
         if(irtrn != 0)
             throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear tearing system");
         else

@@ -9,7 +9,7 @@ MeasureTimeValuesRDTSC::~MeasureTimeValuesRDTSC() {}
 std::string MeasureTimeValuesRDTSC::serializeToJson()
 {
   std::stringstream ss;
-  ss << "\"ncall\":" << _numCalcs << "\"time\":" << _time << ",\"maxTime\":" <<  _max_time << ",\"meanTime\":" << (_numCalcs == 0 ? 0 : _time/_numCalcs);
+  ss << "\"ncall\":" << _numCalcs << ",\"time\":" << _time << ",\"maxTime\":" <<  _max_time << ",\"meanTime\":" << (_numCalcs == 0 ? 0 : _time/_numCalcs);
   return ss.str();
 }
 

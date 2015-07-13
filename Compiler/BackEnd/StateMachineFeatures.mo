@@ -210,7 +210,7 @@ algorithm
   end if;
 
   // Identify modes in the system
-  modes := identifyModes(shared);
+  modes := identifyModes(syst);
   names := List.map(BaseHashTable.hashTableKeyList(modes), ComponentReference.crefLastIdent);
   if (not listEmpty(names)) then
     if DEBUG_SMDUMP then
@@ -1462,8 +1462,7 @@ protected
   Integer orderedArrSize, removedArrSize;
   array<Option<BackendDAE.Equation>> orderedEquOptArr, removedEquOptArr;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs) := inSyst;
-  BackendDAE.SHARED(removedEqs=removedEqs) := inShared;
+  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, removedEqs=removedEqs) := inSyst;
 
   BackendDAE.EQUATION_ARRAY(orderedSize, orderedNumberOfElement, orderedArrSize, orderedEquOptArr) := orderedEqs;
   BackendDAE.EQUATION_ARRAY(removedSize, removedNumberOfElement, removedArrSize, removedEquOptArr) := removedEqs;
@@ -2347,13 +2346,12 @@ Author: BTH
 Traverse the equations, search for 'transition' and 'initialState' operators,
 extract the state arguments from them and collect them in the table.
 "
-  input BackendDAE.Shared inShared;
+  input BackendDAE.EqSystem inSyst;
   output ModeTable modes;
 protected
   BackendDAE.EquationArray removedEqs;
 algorithm
-  BackendDAE.SHARED(removedEqs=removedEqs) := inShared;
-  modes := BackendEquation.traverseEquationArray(removedEqs, extractStates, HashTableSM.emptyHashTable());
+  modes := BackendEquation.traverseEquationArray(inSyst.removedEqs, extractStates, HashTableSM.emptyHashTable());
 end identifyModes;
 
 
@@ -2461,19 +2459,13 @@ Author: BTH
 Just a workaround as long as no support of synchronous features."
   input list<BackendDAE.TimeEvent> timeEventsIn;
   input BackendDAE.Shared inShared;
-  output BackendDAE.Shared outShared;
+  output BackendDAE.Shared outShared = inShared;
+protected
+  BackendDAE.EventInfo eventInfo;
 algorithm
-  outShared := match inShared
-    local
-      BackendDAE.Shared shared;
-      BackendDAE.EventInfo eventInfo;
-      list<BackendDAE.TimeEvent> timeEvents;
-    case shared as BackendDAE.SHARED(eventInfo=eventInfo as BackendDAE.EVENT_INFO(timeEvents=timeEvents))
-      algorithm
-        eventInfo.timeEvents := listAppend(timeEvents, timeEventsIn);
-        shared.eventInfo := eventInfo;
-      then shared;
-  end match;
+  eventInfo := outShared.eventInfo;
+  eventInfo.timeEvents := listAppend(outShared.eventInfo.timeEvents, timeEventsIn);
+  outShared.eventInfo := eventInfo;
 end wrapAddTimeEventHack;
 
 protected function wrapInWhenHack "

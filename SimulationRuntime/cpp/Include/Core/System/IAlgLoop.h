@@ -55,7 +55,7 @@ public:
   virtual void getRHS(double* res) = 0;
 
   virtual void getSystemMatrix(double* A_matrix) = 0;
-  virtual void getSystemMatrix(boost::shared_ptr<SparseMatrix>) {};
+  virtual void getSystemMatrix(SparseMatrix&) = 0;
 
   virtual bool isLinear() = 0;
   virtual bool isLinearTearing() = 0;

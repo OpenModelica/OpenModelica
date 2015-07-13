@@ -19,6 +19,7 @@ Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 , _fHelp            (NULL)
 ,_iHelp        (NULL)
 , _jac                (NULL)
+, _zeroVec            (NULL)
 , _dimSys            (0)
 , _firstCall        (true)
 , _iterationStatus    (CONTINUE)
@@ -31,8 +32,10 @@ Newton::~Newton()
     if(_yHelp)    delete []    _yHelp;
     if(_f)        delete []    _f;
     if(_fHelp)    delete []    _fHelp;
-  if(_iHelp)    delete []    _iHelp;
+    if(_iHelp)    delete []    _iHelp;
     if(_jac)    delete []    _jac;
+	if(_zeroVec)  delete []   _zeroVec;
+
 }
 
 void Newton::initialize()
@@ -60,21 +63,25 @@ void Newton::initialize()
             if(_f)        delete []    _f;
             if(_yHelp)    delete []    _yHelp;
             if(_fHelp)    delete []    _fHelp;
-      if(_iHelp)    delete []    _iHelp;
+			if(_iHelp)    delete []    _iHelp;
             if(_jac)    delete []    _jac;
+			if(_zeroVec)  delete []   _zeroVec;
 
             _y            = new double[_dimSys];
             _f            = new double[_dimSys];
             _yHelp        = new double[_dimSys];
             _fHelp        = new double[_dimSys];
-      _iHelp       = new long int[_dimSys];
+			_iHelp       = new long int[_dimSys];
             _jac        = new double[_dimSys*_dimSys];
+			_zeroVec        = new double[_dimSys];
+
 
             _algLoop->getReal(_y);
             memset(_f,0,_dimSys*sizeof(double));
             memset(_yHelp,0,_dimSys*sizeof(double));
             memset(_fHelp,0,_dimSys*sizeof(double));
             memset(_jac,0,_dimSys*_dimSys*sizeof(double));
+			memset(_zeroVec,0,_dimSys*sizeof(double));
         }
         else
         {
@@ -134,7 +141,7 @@ void Newton::solve()
             if(totStps < _newtonSettings->getNewtMax())
             {
                 // Determination of Jacobian (Fortran-format)
-                if(_algLoop->isLinear())
+                if(_algLoop->isLinear()&&!_algLoop->isLinearTearing())
                 {
                     //calcFunction(_yHelp,_fHelp);
                     _algLoop->getSystemMatrix(_jac);
@@ -142,30 +149,59 @@ void Newton::solve()
                     memcpy(_y,_f,_dimSys*sizeof(double));
                     _algLoop->setReal(_y);
                     _iterationStatus = DONE;
-                    break;
 
+
+                }
+                else if(_algLoop->isLinearTearing())
+                {
+                    _algLoop->setReal(_zeroVec);
+                    _algLoop->evaluate();
+                    _algLoop->getRHS(_f);
+
+                    SparseMatrix amatrix;
+                    _algLoop->getSystemMatrix(amatrix);
+
+                    double* jac = new  double[_dimSys*_dimSys];
+                    for(int i=0;i<_dimSys;i++)
+                        for(int j=0;j<_dimSys;j++)
+                             jac[i+j*_dimSys] = amatrix(j,i);
+
+
+                   // calcJacobian(_f,_y);
+                    dgesv_(&_dimSys, &dimRHS, jac, &_dimSys, _iHelp, _f,&_dimSys,&irtrn);
+
+                    for(int i=0; i<_dimSys; i++)
+                      _f[i]*=-1.0;
+
+                    memcpy(_y, _f, _dimSys*sizeof(double));
+                    delete [] jac ;
+                      _algLoop->setReal(_y);
+                   _algLoop->evaluate();
+                    if(irtrn != 0)
+                        throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear tearing system");
+                     _iterationStatus = DONE;
                 }
                 else
                 {
                     calcJacobian();
+
+                    // Solve linear System
+                    dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_iHelp,_f,&_dimSys,&irtrn);
+
+                    if(irtrn!=0)
+                    {
+                        // TODO: Throw an error message here.
+                        _iterationStatus = SOLVERERROR;
+                        break;
+                    }
+
+                    // Increase counter
+                    ++ totStps;
+
+                    // New solution
+                    for(int i=0; i<_dimSys; ++i)
+                        _y[i] -= _newtonSettings->getDelta() * _f[i];
                 }
-                // Solve linear System
-                dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_iHelp,_f,&_dimSys,&irtrn);
-
-                if(irtrn!=0)
-                {
-                    // TODO: Throw an error message here.
-                    _iterationStatus = SOLVERERROR;
-                    break;
-                }
-
-                // Increase counter
-                ++ totStps;
-
-                // New solution
-                for(int i=0; i<_dimSys; ++i)
-                    _y[i] -= _newtonSettings->getDelta() * _f[i];
-
             }
             else
                 _iterationStatus = SOLVERERROR;

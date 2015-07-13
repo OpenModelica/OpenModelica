@@ -13,7 +13,7 @@ LDFLAGS=-L./ -lomparse -lomcruntime -L"$(OMHOME)/lib/omc" \
 
 FMILIB = -L$(TOP_DIR)/3rdParty/FMIL/install/lib -lfmilib
 GSLIB = -L$(TOP_DIR)/3rdParty/graphstream/gs-netstream/c++/ -lnetstream
-CPPFLAGS=-I"$(OMHOME)/include/omc/c" -Iinclude/ -I../../3rdParty/msgpack-0.5.8/src/ -DADD_METARECORD_DEFINITIONS=
+CPPFLAGS=-I"$(OMHOME)/include/omc/c" -Iinclude/ -DADD_METARECORD_DEFINITIONS=
 CORBALIBS=
 ULIMIT_CMD=true
 SHREXT=.dll
