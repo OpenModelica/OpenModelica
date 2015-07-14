@@ -288,14 +288,13 @@ int solveNewton(DATA *data, int sysNumber)
   {
     int indexes[2] = {1,eqSystemNumber};
     infoStreamPrintWithEquationIndexes(LOG_NLS, 1, indexes, "Start solving Non-Linear System %d at time %g with Newton Solver",
-        eqSystemNumber,
-        data->localData[0]->timeValue);
+        eqSystemNumber, data->localData[0]->timeValue);
 
     for(i = 0; i < solverData->n; i++)
     {
-      infoStreamPrint(LOG_NLS_V, 1, "x[%d] = %.15e", i, systemData->nlsx[i]);
-      infoStreamPrint(LOG_NLS_V, 0, "scaling = %f +++ old = %e +++ extrapolated = %e",
-            systemData->nominal[i], systemData->nlsxOld[i], systemData->nlsxExtrapolation[i]);
+      infoStreamPrint(LOG_NLS_V, 1, "x[%d] = %.15e", i, data->simulationInfo.discreteCall ? systemData->nlsx[i] : systemData->nlsxExtrapolation[i]);
+      infoStreamPrint(LOG_NLS_V, 0, "nominal = %g +++ nlsx = %g +++ old = %g +++ extrapolated = %g",
+            systemData->nominal[i], systemData->nlsx[i], systemData->nlsxOld[i], systemData->nlsxExtrapolation[i]);
       messageClose(LOG_NLS_V);
     }
     messageClose(LOG_NLS_V);
