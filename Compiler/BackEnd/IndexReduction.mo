@@ -2492,6 +2492,7 @@ protected
   Integer nstatevars,nassigned,nunassigned,nass1arr,n,nv,ne;
   StateSets stateSets;
 algorithm
+  try
   for seteqns in iSets loop
     if not listEmpty(List.select1r(seteqns,Matching.isUnAssigned,vec1)) then  // ignore sets without unassigned equations, because all assigned states already in dummy states
         //  print("seteqns: " + intString(listLength(seteqns)) + "\n");
@@ -2546,7 +2547,10 @@ algorithm
         outDummyVars := listAppend(varlst, outDummyVars);
     end if;
   end for;
-
+  else
+      Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.processComps4New failed!"});
+    fail();
+  end try;
 end processComps4New;
 
 protected function forceInlinEqn
@@ -3106,6 +3110,9 @@ algorithm
         unassignedEqnsSize = listLength(unassignedEqns);
         size = listLength(states);
         rang = size-unassignedEqnsSize;
+        if intLt(rang,0) then
+          Error.addMessage(Error.INTERNAL_ERROR, {"Selection of DummyDerivatives failed due to negative system rank of "+intString(rang)+"!
+           There are "+intString(unassignedEqnsSize)+" unassigned equations and 15 potential states "+intString(size)+"\n"}); end if;
         true = intEq(rang,0);
         if Flags.isSet(Flags.BLT_DUMP) then
           print("Select as dummyStates(3):\n");
@@ -3115,6 +3122,11 @@ algorithm
         varlst = List.map1r(List.map(states,Util.tuple22),BackendVariable.getVarAt,vars);
       then
         (varlst,iStateSets);
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.selectDummyDerivatives2new failed!"});
+      then
+        fail();
   end matchcontinue;
 end selectDummyDerivatives2new;
 
