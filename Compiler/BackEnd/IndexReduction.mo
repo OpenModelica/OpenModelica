@@ -3112,7 +3112,7 @@ algorithm
         rang = size-unassignedEqnsSize;
         if intLt(rang,0) then
           Error.addMessage(Error.INTERNAL_ERROR, {"Selection of DummyDerivatives failed due to negative system rank of "+intString(rang)+"!
-           There are "+intString(unassignedEqnsSize)+" unassigned equations and 15 potential states "+intString(size)+"\n"}); end if;
+           There are "+intString(unassignedEqnsSize)+" unassigned equations and "+intString(size)+" potential states.\n"}); end if;
         true = intEq(rang,0);
         if Flags.isSet(Flags.BLT_DUMP) then
           print("Select as dummyStates(3):\n");
