@@ -17,6 +17,6 @@ translateModel(M);getErrorString();
 // true
 // false
 // "[<interactive>:4:3-4:9:writable] Error: Variable y is not referenced in any equation (possibly after symbolic manipulations).
-// Error: Internal error pre-optimization module clockPartitioning failed.
+// Error: pre-optimization module clockPartitioning failed.
 // "
 // endResult

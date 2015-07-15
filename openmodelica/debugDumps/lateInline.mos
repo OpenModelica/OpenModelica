@@ -1544,7 +1544,19 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// no matching
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
 //
 //
 //
