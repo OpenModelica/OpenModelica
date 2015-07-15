@@ -40,11 +40,11 @@
 extern "C" {
 #endif
 
-typedef struct{
-		void* data;
-		int sysNumber;
-  }DATA_USER;
-
+typedef struct
+{
+  void* data;
+  int sysNumber;
+}DATA_USER;
 
 int solveNewton(DATA *data, int sysNumber);
 

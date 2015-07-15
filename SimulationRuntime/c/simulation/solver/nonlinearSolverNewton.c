@@ -92,7 +92,7 @@ int getAnalyticalJacobianNewton(DATA* data, double* jac, int sysNumber)
       if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
         data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1;
 
-    ((systemData->analyticalJacobianColumn))(data);
+    systemData->analyticalJacobianColumn(data);
 
     for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeCols; j++)
     {

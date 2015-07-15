@@ -43,7 +43,6 @@ extern "C" {
 
 typedef struct DATA_NEWTON
 {
-  int initialized; /* 1 = initialized, else = 0*/
   double* resScaling;
   double* fvecScaled;
 

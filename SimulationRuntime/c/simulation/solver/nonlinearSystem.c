@@ -50,7 +50,8 @@
 
 int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber);
 
-struct dataNewtonAndHybrid {
+struct dataNewtonAndHybrid
+{
   void* newtonData;
   void* hybridData;
 };
@@ -62,8 +63,8 @@ struct dataNewtonAndHybrid {
  *  \param [ref] [data]
  *  \param [ref] [systemData]
  */
-int initializeNLScsvData(DATA* data, NONLINEAR_SYSTEM_DATA* systemData){
-
+int initializeNLScsvData(DATA* data, NONLINEAR_SYSTEM_DATA* systemData)
+{
   struct csvStats* stats = (struct csvStats*) malloc(sizeof(struct csvStats));
   char buffer[100];
   sprintf(buffer, "%s_NLS%dStatsCall.csv", data->modelData.modelFilePrefix, (int)systemData->equationIndex);
@@ -84,7 +85,8 @@ int initializeNLScsvData(DATA* data, NONLINEAR_SYSTEM_DATA* systemData){
  *  \param [ref] [data]
  *  \param [ref] [systemData]
  */
-int print_csvLineCallStatsHeader(OMC_WRITE_CSV* csvData){
+int print_csvLineCallStatsHeader(OMC_WRITE_CSV* csvData)
+{
   unsigned char buffer[1024] = "";
 
   /* number of call */
@@ -182,7 +184,8 @@ int print_csvLineCallStats(OMC_WRITE_CSV* csvData, int num, double time,
  *  \param [ref] [data]
  *  \param [ref] [systemData]
  */
-int print_csvLineIterStatsHeader(DATA* data, NONLINEAR_SYSTEM_DATA* systemData, OMC_WRITE_CSV* csvData){
+int print_csvLineIterStatsHeader(DATA* data, NONLINEAR_SYSTEM_DATA* systemData, OMC_WRITE_CSV* csvData)
+{
   unsigned char buffer[1024];
   int j;
   int size = modelInfoGetEquation(&data->modelData.modelDataXml, systemData->equationIndex).numVar;
@@ -336,7 +339,8 @@ int initializeNonlinearSystems(DATA *data)
     assertStreamPrint(data->threadData, 0 != nonlinsys[i].residualFunc, "residual function pointer is invalid" );
 
     /* check if analytical jacobian is created */
-    if(nonlinsys[i].jacobianIndex != -1){
+    if(nonlinsys[i].jacobianIndex != -1)
+    {
       assertStreamPrint(data->threadData, 0 != nonlinsys[i].analyticalJacobianColumn, "jacobian function pointer is invalid" );
       if(nonlinsys[i].initialAnalyticalJacobian(data))
       {
@@ -356,10 +360,14 @@ int initializeNonlinearSystems(DATA *data)
     nonlinsys[i].initializeStaticNLSData(data, &nonlinsys[i]);
 
     /* csv data call stats*/
-    if (data->simulationInfo.nlsCsvInfomation){
-      if (initializeNLScsvData(data, &nonlinsys[i])){
+    if (data->simulationInfo.nlsCsvInfomation)
+    {
+      if (initializeNLScsvData(data, &nonlinsys[i]))
+      {
         throwStreamPrint(data->threadData, "csvData initialization failed");
-      }else{
+      }
+      else
+      {
         print_csvLineCallStatsHeader(((struct csvStats*) nonlinsys[i].csvData)->callStats);
         print_csvLineIterStatsHeader(data, &nonlinsys[i], ((struct csvStats*) nonlinsys[i].csvData)->iterStats);
       }
@@ -455,7 +463,8 @@ int freeNonlinearSystems(DATA *data)
     free(nonlinsys[i].min);
     free(nonlinsys[i].max);
 
-    if (data->simulationInfo.nlsCsvInfomation){
+    if (data->simulationInfo.nlsCsvInfomation)
+    {
       stats = nonlinsys[i].csvData;
       omc_write_csv_free(stats->callStats);
       omc_write_csv_free(stats->iterStats);
@@ -539,7 +548,8 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
 
   rt_ext_tp_tick(&nonlinsys->totalTimeClock);
 
-  if(data->simulationInfo.discreteCall){
+  if(data->simulationInfo.discreteCall)
+  {
     double *fvec = malloc(sizeof(double)*nonlinsys->size);
     int success = 0;
 
@@ -557,7 +567,8 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
     /*catch */
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
-    if (!success) {
+    if (!success)
+    {
       warningStreamPrint(LOG_STDOUT, 0, "Non-Linear Solver try to handle a problem with a called assert.");
     }
 
@@ -632,7 +643,8 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
   nonlinsys->totalTime += rt_ext_tp_tock(&(nonlinsys->totalTimeClock));
   nonlinsys->numberOfCall++;
 
-  if (data->simulationInfo.nlsCsvInfomation){
+  if (data->simulationInfo.nlsCsvInfomation)
+  {
     print_csvLineCallStats(((struct csvStats*) nonlinsys->csvData)->callStats,
                            nonlinsys->numberOfCall,
                            data->localData[0]->timeValue,

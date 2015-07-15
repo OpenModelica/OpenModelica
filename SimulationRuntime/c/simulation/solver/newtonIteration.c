@@ -87,9 +87,8 @@ int allocateNewtonData(int size, void** voiddata)
   DATA_NEWTON* data = (DATA_NEWTON*) malloc(sizeof(DATA_NEWTON));
 
   *voiddata = (void*)data;
-  assertStreamPrint(NULL, 0 != data, "allocationNewtonData() failed!");
+  assertStreamPrint(NULL, NULL != data, "allocationNewtonData() failed!");
 
-  data->initialized = 0;
   data->resScaling = (double*) malloc(size*sizeof(double));
   data->fvecScaled = (double*) malloc(size*sizeof(double));
 
@@ -118,8 +117,6 @@ int allocateNewtonData(int size, void** voiddata)
   data->numberOfIterations = 0;
   data->numberOfFunctionEvaluations = 0;
 
-
-  assertStreamPrint(NULL, 0 != *voiddata, "allocationNewtonData() voiddata failed!");
   return 0;
 }
 
@@ -205,7 +202,6 @@ int _omc_newton(int(*f)(int*, double*, double*, void*, int), DATA_NEWTON* solver
   (*f)(n, x, fvec, userdata, 1);
 
   solverData->nfev++;
-
 
   /* save current fvec in f_old*/
   memcpy(solverData->f_old, fvec, *n*sizeof(double));
@@ -293,7 +289,6 @@ int _omc_newton(int(*f)(int*, double*, double*, void*, int), DATA_NEWTON* solver
         solverData->nfev++;
       }
 
-
       calculatingErrors(solverData, &delta_x, &delta_x_scaled, &delta_f, &error_f, &scaledError_f, n, x, fvec);
 
       /* updating x */
@@ -321,7 +316,6 @@ int _omc_newton(int(*f)(int*, double*, double*, void*, int), DATA_NEWTON* solver
       messageClose(LOG_NLS_V);
       printErrors(delta_x, delta_x_scaled, delta_f, error_f, scaledError_f, eps);
     }
-
   }
 
   solverData->numberOfIterations  += l;
@@ -363,7 +357,6 @@ int solveLinearSystem(int* n, int* iwork, double* fvec, double *fjac, DATA_NEWTO
 {
   int i, nrsh=1, lapackinfo;
   char trans = 'N';
-
 
   /* if no factorization is given, calculate it */
   if (solverData->factorization == 0)
@@ -433,7 +426,6 @@ void calculatingErrors(DATA_NEWTON* solverData, double* delta_x, double* delta_x
   for (i=0; i<*n; i++)
     solverData->fvecScaled[i]=fvec[i]/solverData->resScaling[i];
   *scaledError_f = enorm_(n,solverData->fvecScaled);
-
 }
 
 /*! \fn calculatingErrors
@@ -522,7 +514,6 @@ void damping_heuristic(double* x, int(*f)(int*, double*, double*, void*, int),
   }
 
   *lambda = 1;
-
 
   messageClose(LOG_NLS_V);
 }
@@ -664,7 +655,6 @@ void LineSearch(double* x, int(*f)(int*, double*, double*, void*, int),
 
   for (i=0; i<*n; i++)
     solverData->x_new[i]=x[i]-lambda_minimum*solverData->x_increment[i];
-
 }
 
 /*! \fn Backtracking
@@ -701,9 +691,7 @@ void Backtracking(double* x, int(*f)(int*, double*, double*, void*, int),
   /* Backtracking only if full newton step is useless */
   if (enorm_new >= current_fvec_enorm)
   {
-
     infoStreamPrint(LOG_NLS_V, 0, "Start Backtracking\n enorm_new= %f \t current_fvec_enorm=%f",enorm_new, current_fvec_enorm);
-
 
     /* h(x) = 1/2 * ||f(x)|| ^2
      * g(lambda) = h(x_old + lambda * x_increment)
@@ -763,7 +751,6 @@ void Backtracking(double* x, int(*f)(int*, double*, double*, void*, int),
         g2 = 0.5 * enorm_f * enorm_f;
       }
     }
-
 
 
     lambda = (a+b)/2;
