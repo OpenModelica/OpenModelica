@@ -313,6 +313,8 @@ typedef struct NONLINEAR_SYSTEM_DATA
   unsigned long numberOfIterations;     /* number of iteration of non-linear solvers of this system */
   double totalTime;                     /* save the totalTime */
   rtclock_t totalTimeClock;             /* time clock for the totalTime  */
+
+  void* csvData;                        /* information to save csv data */
 }NONLINEAR_SYSTEM_DATA;
 
 typedef struct LINEAR_SYSTEM_DATA
@@ -491,6 +493,7 @@ typedef struct SIMULATION_INFO
   int mixedMethod;                     /* mixed solver */
   int nlsMethod;                       /* nonlinear solver */
   int newtonStrategy;                  /* newton damping strategy solver */
+  int nlsCsvInfomation;                /* = 1 csv files with detailed nonlinear solver process are generated */
 
   double lambda;                       /* homotopy parameter E [0, 1.0] */
 

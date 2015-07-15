@@ -41,6 +41,7 @@
 #include "util/varinfo.h"
 #include "model_help.h"
 #include "meta/meta_modelica.h"
+#include "util/write_csv.h"
 
 #include "nonlinearSystem.h"
 #include "nonlinearSolverHomotopy.h"
@@ -1087,6 +1088,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 
   int assert = 1;
   threadData_t *threadData = solverData->data->threadData;
+  NONLINEAR_SYSTEM_DATA* nonlinsys = &(solverData->data->simulationInfo.nonlinearSystemData[solverData->data->simulationInfo.currentNonlinearSystemIndex]);
 
   /* debug information */
   debugString(LOG_NLS_V, "******************************************************");
@@ -1258,6 +1260,23 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 
     countNegativeSteps += (error_f > 10*error_f_old);
     error_f_old = error_f;
+
+    if (solverData->data->simulationInfo.nlsCsvInfomation){
+      print_csvLineIterStats(((struct csvStats*) nonlinsys->csvData)->iterStats,
+                             nonlinsys->size,
+                             nonlinsys->numberOfCall+1,
+                             numberOfIterations,
+                             solverData->dy0,
+                             solverData->dxScaled,
+                             solverData->f1,
+                             solverData->fvecScaled,
+                             delta_x,
+                             delta_x_scaled,
+                             error_f,
+                             error_f_scaled,
+                             lambda
+      );
+    }
 
     if ((error_f_scaled < 1e-30*error_f) || countNegativeSteps > 20)
     {
