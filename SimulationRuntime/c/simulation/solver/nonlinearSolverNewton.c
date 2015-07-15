@@ -126,67 +126,67 @@ int getAnalyticalJacobianNewton(DATA* data, double* jac, int sysNumber)
  *
  *	fj decides whether the function values or the jacobian matrix shall be calculated
  *  fj = 1 ==> calculate function values
-*   fj = 0 ==> calculate jacobian matrix
+ *   fj = 0 ==> calculate jacobian matrix
  */
 int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
 {
-	DATA_USER* uData = (DATA_USER*) userdata;
-	DATA* data = (DATA*)(uData->data);
-	int currentSys = ((DATA_USER*)userdata)->sysNumber;
-	NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.nonlinearSystemData[currentSys]);
-	DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
-	int flag = 1;
-	int *iflag=&flag;
+  DATA_USER* uData = (DATA_USER*) userdata;
+  DATA* data = (DATA*)(uData->data);
+  int currentSys = ((DATA_USER*)userdata)->sysNumber;
+  NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.nonlinearSystemData[currentSys]);
+  DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
+  int flag = 1;
+  int *iflag=&flag;
 
-	if (fj)
-	{
-		(data->simulationInfo.nonlinearSystemData[currentSys].residualFunc)(data, x, fvec, iflag);
-	}
-	else
-	{
-		if(systemData->jacobianIndex != -1)
-		{
-		  getAnalyticalJacobianNewton(data, solverData->fjac, currentSys);
-		}
-		else
-		{
-			  double delta_h = sqrt(solverData->epsfcn);
-			  double delta_hh;
-			  double xsave;
+  if (fj)
+  {
+    (data->simulationInfo.nonlinearSystemData[currentSys].residualFunc)(data, x, fvec, iflag);
+  }
+  else
+  {
+    if(systemData->jacobianIndex != -1)
+    {
+      getAnalyticalJacobianNewton(data, solverData->fjac, currentSys);
+    }
+    else
+    {
+      double delta_h = sqrt(solverData->epsfcn);
+      double delta_hh;
+      double xsave;
 
-			  int i,j,l, linear=0;
-			  linear = systemData->method;
+      int i,j,l, linear=0;
+      linear = systemData->method;
 
-			  for(i = 0; i < *n; i++)
-			  {
-				if(linear)
-				{
-				  delta_hh = 1;
-				}
-				else
-				{
+      for(i = 0; i < *n; i++)
+      {
+        if(linear)
+        {
+          delta_hh = 1;
+        }
+        else
+        {
 
-				  delta_hh = fmax(delta_h * fmax(fabs(x[i]), fabs(fvec[i])), delta_h);
-				  delta_hh = ((fvec[i] >= 0) ? delta_hh : -delta_hh);
-				  delta_hh = x[i] + delta_hh - x[i];
-				}
-				xsave = x[i];
-				x[i] += delta_hh;
-				delta_hh = 1. / delta_hh;
+          delta_hh = fmax(delta_h * fmax(fabs(x[i]), fabs(fvec[i])), delta_h);
+          delta_hh = ((fvec[i] >= 0) ? delta_hh : -delta_hh);
+          delta_hh = x[i] + delta_hh - x[i];
+        }
+        xsave = x[i];
+        x[i] += delta_hh;
+        delta_hh = 1. / delta_hh;
 
-				wrapper_fvec_newton(n, x, solverData->rwork, userdata, 1);
-				solverData->nfev++;
+        wrapper_fvec_newton(n, x, solverData->rwork, userdata, 1);
+        solverData->nfev++;
 
-				for(j = 0; j < *n; j++)
-				{
-				  l = i * *n + j;
-				  solverData->fjac[l] = (solverData->rwork[j] - fvec[j]) * delta_hh;
-				}
-				x[i] = xsave;
-			  }
-		}
-	}
-	return *iflag;
+        for(j = 0; j < *n; j++)
+        {
+          l = i * *n + j;
+          solverData->fjac[l] = (solverData->rwork[j] - fvec[j]) * delta_hh;
+        }
+        x[i] = xsave;
+      }
+    }
+  }
+  return *iflag;
 }
 
 /*! \fn solve non-linear system with newton method
@@ -243,7 +243,7 @@ int solveNewton(DATA *data, int sysNumber)
     {
       infoStreamPrint(LOG_NLS_V, 1, "x[%d] = %.15e", i, data->simulationInfo.discreteCall ? systemData->nlsx[i] : systemData->nlsxExtrapolation[i]);
       infoStreamPrint(LOG_NLS_V, 0, "nominal = %g +++ nlsx = %g +++ old = %g +++ extrapolated = %g",
-            systemData->nominal[i], systemData->nlsx[i], systemData->nlsxOld[i], systemData->nlsxExtrapolation[i]);
+          systemData->nominal[i], systemData->nlsx[i], systemData->nlsxOld[i], systemData->nlsxExtrapolation[i]);
       messageClose(LOG_NLS_V);
     }
     messageClose(LOG_NLS_V);
@@ -260,7 +260,7 @@ int solveNewton(DATA *data, int sysNumber)
   {
 
     giveUp = 1;
-	solverData->newtonStrategy = data->simulationInfo.newtonStrategy;
+    solverData->newtonStrategy = data->simulationInfo.newtonStrategy;
     _omc_newton(wrapper_fvec_newton, solverData, (void*)userdata);
 
     /* check for proper inputs */
@@ -294,7 +294,7 @@ int solveNewton(DATA *data, int sysNumber)
       /* take the solution */
       memcpy(systemData->nlsx, solverData->x, solverData->n*(sizeof(double)));
 
-    /* Then try with old values (instead of extrapolating )*/
+      /* Then try with old values (instead of extrapolating )*/
     }
     else if(retries < 1)
     {
@@ -306,8 +306,8 @@ int solveNewton(DATA *data, int sysNumber)
       infoStreamPrint(LOG_NLS, 0, " - iteration making no progress:\t try old values.");
       /* try to vary the initial values */
 
-	  /* evaluate jacobian in every step now */
-	  solverData->calculate_jacobian = 1;
+      /* evaluate jacobian in every step now */
+      solverData->calculate_jacobian = 1;
     }
     else if(retries < 2)
     {
@@ -317,7 +317,7 @@ int solveNewton(DATA *data, int sysNumber)
       giveUp = 0;
       nfunc_evals += solverData->nfev;
       infoStreamPrint(LOG_NLS, 0, " - iteration making no progress:\t vary solution point by 1%%.");
-    /* try to vary the initial values */
+      /* try to vary the initial values */
     }
     else if(retries < 3)
     {
@@ -374,7 +374,7 @@ int solveNewton(DATA *data, int sysNumber)
     }
   }
   if(ACTIVE_STREAM(LOG_NLS))
-      messageClose(LOG_NLS);
+    messageClose(LOG_NLS);
 
   free(relationsPreBackup);
 
