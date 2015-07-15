@@ -2076,8 +2076,8 @@ algorithm
         vec2 = arrayCreate(ne,-1);
         BackendDAEEXT.getAssignment(vec1,vec2);
         if Flags.isSet(Flags.BLT_DUMP) then
-          BackendDump.dumpMatching(vec1);
-          BackendDump.dumpMatching(vec2);
+          BackendDump.dumpMatchingVars(vec1);
+          BackendDump.dumpMatchingEqns(vec2);
         end if;
         // get the matched state candidates -> dummyVars
         (dstates,_) = checkAssignment(1,nv,vec1,vars);
