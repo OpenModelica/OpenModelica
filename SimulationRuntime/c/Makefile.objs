@@ -33,7 +33,7 @@ MATH_HFILES = blaswrap.h
 
 SOLVER_OBJS_MINIMAL=delay$(OBJ_EXT) events$(OBJ_EXT) external_input$(OBJ_EXT) linearSystem$(OBJ_EXT) linearSolverLapack$(OBJ_EXT) linearSolverTotalPivot$(OBJ_EXT) mixedSystem$(OBJ_EXT) mixedSearchSolver$(OBJ_EXT) model_help$(OBJ_EXT) nonlinearSystem$(OBJ_EXT) nonlinearSolverHomotopy$(OBJ_EXT) omc_math$(OBJ_EXT) solver_main$(OBJ_EXT) stateset$(OBJ_EXT)
 ifeq ($(OMC_MINIMAL_RUNTIME),)
-SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL) kinsolSolver$(OBJ_EXT) linearSolverLis$(OBJ_EXT) linearSolverUmfpack$(OBJ_EXT) dassl$(OBJ_EXT) radau$(OBJ_EXT) nonlinearSolverHybrd$(OBJ_EXT) nonlinearSolverNewton$(OBJ_EXT)
+SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL) kinsolSolver$(OBJ_EXT) linearSolverLis$(OBJ_EXT) linearSolverUmfpack$(OBJ_EXT) dassl$(OBJ_EXT) radau$(OBJ_EXT) nonlinearSolverHybrd$(OBJ_EXT) nonlinearSolverNewton$(OBJ_EXT) newtonIteration$(OBJ_EXT)
 else
 SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL)
 endif

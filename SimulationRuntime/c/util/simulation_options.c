@@ -445,6 +445,7 @@ const char *NEWTONSTRATEGY_NAME[NEWTON_MAX+1] = {
   /* NEWTON_DAMPED */       "damped",
   /* NEWTON_DAMPED2 */      "damped2",
   /* NEWTON_DAMPED_LS */    "damped_ls",
+  /* NEWTON_DAMPED_BT */    "damped_bt",
   /* NEWTON_PURE */         "pure",
 
   "NEWTON_MAX"
@@ -456,6 +457,7 @@ const char *NEWTONSTRATEGY_DESC[NEWTON_MAX+1] = {
   /* NEWTON_DAMPED */       "Newton with a damping strategy",
   /* NEWTON_DAMPED2 */      "Newton with a damping strategy 2",
   /* NEWTON_DAMPED_LS */    "Newton with a damping line search",
+  /* NEWTON_DAMPED_BT */    "Newton with a damping backtracking and a minimum search via golden ratio method",
   /* NEWTON_PURE */         "Newton without damping strategy",
 
   "NEWTON_MAX"

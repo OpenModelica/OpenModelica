@@ -39,6 +39,7 @@
 #include "kinsolSolver.h"
 #include "nonlinearSolverHybrd.h"
 #include "nonlinearSolverNewton.h"
+#include "newtonIteration.h"
 #include "nonlinearSolverHomotopy.h"
 #include "simulation/simulation_info_xml.h"
 #include "simulation/simulation_runtime.h"
@@ -724,7 +725,7 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
 
 /*! \fn extraPolate
  *   This function extrapolates linear next value from
- *   the both old values,
+ *   the both old values.
  *
  *  \param [in]  [data]
  *

@@ -31,22 +31,57 @@
 /*! \file nonlinearSolverNewton.h
  */
 
-#ifndef _NONLINEARSOLVERNEWTON_H_
-#define _NONLINEARSOLVERNEWTON_H_
+#ifndef _NEWTONITERATION_H_
+#define _NEWTONITERATION_H_
 
 #include "simulation_data.h"
+#include "nonlinearSolverNewton.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct{
-		void* data;
-		int sysNumber;
-  }DATA_USER;
+typedef struct DATA_NEWTON
+{
+  int initialized; /* 1 = initialized, else = 0*/
+  double* resScaling;
+  double* fvecScaled;
+
+  int newtonStrategy;
+
+  int n;
+  double* x;
+  double* fvec;
+  double xtol;
+  double ftol;
+  int nfev;
+  int maxfev;
+  int info;
+  double epsfcn;
+  double* fjac;
+  double* rwork;
+  int* iwork;
+  int calculate_jacobian;
+  int factorization;
+  int numberOfIterations; /* over the whole simulation time */
+  int numberOfFunctionEvaluations; /* over the whole simulation time */
+
+  /* damped newton */
+  double* x_new;
+  double* x_increment;
+  double* f_old;
+  double* fvec_minimum;
+  double* delta_f;
+  double* delta_x_vec;
+
+   rtclock_t timeClock;
+
+} DATA_NEWTON;
 
 
-int solveNewton(DATA *data, int sysNumber);
+int allocateNewtonData(int size, void** data);
+int freeNewtonData(void** data);
+int _omc_newton(int(*f)(int*, double*, double*, void*, int), DATA_NEWTON* solverData, void* userdata);
 
 #ifdef __cplusplus
 }
