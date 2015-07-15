@@ -200,19 +200,7 @@ int solveNewton(DATA *data, int sysNumber)
 {
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.nonlinearSystemData[sysNumber]);
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
-
-  DATA_USER* userdata;
-  userdata = malloc(sizeof(DATA_USER));
-
-  userdata->data = (void*)data;
-  userdata->sysNumber = sysNumber;
-
-  /*
-   * We are given the number of the non-linear system.
-   * We want to look it up among all equations.
-   */
-  int eqSystemNumber = systemData->equationIndex;
-
+  int eqSystemNumber = 0;
   int i;
   double xerror = -1, xerror_scaled = -1;
   int success = 0;
@@ -224,8 +212,23 @@ int solveNewton(DATA *data, int sysNumber)
   int retries = 0;
   int retries2 = 0;
   int nonContinuousCase = 0;
+  modelica_boolean *relationsPreBackup = NULL;
 
-  modelica_boolean *relationsPreBackup = (modelica_boolean*) malloc(data->modelData.nRelations*sizeof(modelica_boolean));
+  DATA_USER* userdata = (DATA_USER*)malloc(sizeof(DATA_USER));
+  assert(userdata != NULL);
+
+  userdata->data = (void*)data;
+  userdata->sysNumber = sysNumber;
+
+  /*
+   * We are given the number of the non-linear system.
+   * We want to look it up among all equations.
+   */
+  eqSystemNumber = systemData->equationIndex;
+
+  local_tol = solverData->ftol;
+
+  relationsPreBackup = (modelica_boolean*) malloc(data->modelData.nRelations*sizeof(modelica_boolean));
 
   solverData->nfev = 0;
 
