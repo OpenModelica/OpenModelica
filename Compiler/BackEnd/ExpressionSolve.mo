@@ -668,8 +668,7 @@ algorithm
       orhs := DAE.IFEXP(Expression.makeNoEvent(DAE.RELATION(
                 dt,
                   DAE.EQUAL(tp),
-                DAE.RCONST(0.0),-1,NONE())),
-              Expression.makePureBuiltinCall("$_old", {X}, tp), rhs);
+                DAE.RCONST(0.0),-1,NONE())), X, rhs);
     end if;
   end if;
 

@@ -38,6 +38,7 @@
 #include "openmodelica_func.h"
 #include "initialization/initialization.h"
 #include "nonlinearSystem.h"
+#include "newtonIteration.h"
 #include "dassl.h"
 #include "delay.h"
 #include "events.h"
@@ -49,6 +50,7 @@
 #include "meta/meta_modelica.h"
 #include "simulation/solver/epsilon.h"
 #include "linearSystem.h"
+#include "sym_imp_euler.h"
 
 #include "optimization/OptimizerInterface.h"
 
@@ -136,6 +138,9 @@ int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
   case S_SYM_EULER:
     retVal = sym_euler_im_step(data, solverInfo);
     return retVal;
+  case S_SYM_IMP_EULER:
+    retVal = sym_euler_im_with_step_size_control_step(data, solverInfo);
+    return retVal;
   }
 
   TRACE_POP
@@ -173,6 +178,12 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   solverInfo->stateEvents = 0;
   solverInfo->sampleEvents = 0;
 
+  /* if FLAG_NOEQUIDISTANT_GRID is set, choose dassl step method */
+  if (omc_flag[FLAG_NOEQUIDISTANT_GRID])
+  {
+    solverInfo->integratorSteps = 1; /* TRUE */
+  }
+
   /* set tolerance for ZeroCrossings */
   setZCtol(fmin(simInfo->stepSize, simInfo->tolerance));
 
@@ -180,6 +191,11 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   {
   case S_SYM_EULER:
   case S_EULER: break;
+  case S_SYM_IMP_EULER:
+  {
+    allocateSymEulerImp(solverInfo, data->modelData.nStates);
+    break;
+  }
   case S_RUNGEKUTTA:
   {
     /* Allocate RK work arrays */
@@ -290,7 +306,11 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   int i;
 
   /* deintialize solver related workspace */
-  if(solverInfo->solverMethod == S_RUNGEKUTTA)
+  if (solverInfo->solverMethod == S_SYM_IMP_EULER)
+  {
+    freeSymEulerImp(solverInfo);
+  }
+  else if(solverInfo->solverMethod == S_RUNGEKUTTA)
   {
     /* free RK work arrays */
     for(i = 0; i < ((RK4_DATA*)(solverInfo->solverData))->work_states_ndims + 1; i++)
@@ -563,7 +583,7 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
  *  \param [in]  [solverID] selects the ode solver
  *  \param [in]  [outputVariablesAtEnd] ???
  *
- *  This is the main function of the solver it perform the simulation.
+ *  This is the main function of the solver, it performs the simulation.
  */
 int solver_main(DATA* data, const char* init_initMethod, const char* init_file,
     double init_time, int lambda_steps, int solverID, const char* outputVariablesAtEnd)
@@ -662,6 +682,7 @@ int solver_main(DATA* data, const char* init_initMethod, const char* init_file,
       retVal = data->callback->performSimulation(data, &solverInfo);
       omc_alloc_interface.collect_a_little();
       /* terminate the simulation */
+      if (solverInfo.solverMethod == S_SYM_IMP_EULER) data->callback->symEulerUpdate(data, 0);
       finishSimulation(data, &solverInfo, outputVariablesAtEnd);
       omc_alloc_interface.collect_a_little();
     }
@@ -715,7 +736,6 @@ static int sym_euler_im_step(DATA* data, SOLVER_INFO* solverInfo){
     data->localData[0]->realVars[j] = (data->localData[0]->realVars[i]-data->localData[1]->realVars[i])/solverInfo->currentStepSize;
   return retVal;
 }
-
 
 /***************************************    RK4      ***********************************/
 static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
