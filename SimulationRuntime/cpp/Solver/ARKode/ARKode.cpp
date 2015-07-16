@@ -1,6 +1,6 @@
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
- 
+
 #include <Solver/ARKode/ARKode.h>
 
 
@@ -329,20 +329,20 @@ void Arkode::solve(const SOLVERCALL action)
         _locStps = 0;
 
         // Solverstart
-        //ARKode Core !!!!      
+        //ARKode Core !!!!
       ArkodeCore();
 
       }
 
       // Integration war nicht erfolgreich und wurde auch nicht vom User unterbrochen
-      
+
       if (_idid != 0 && _idid != 1)
       {
         _solverStatus = ISolver::SOLVERERROR;
         //throw ModelicaSimulationError(SOLVER,_idid,_tCurrent,"CVode::solve()");
         throw ModelicaSimulationError(SOLVER,"CVode::solve()");
       }
-      
+
       // Abbruchkriterium (erreichen der Endzeit)
       else if ((_tEnd - _tCurrent) <= dynamic_cast<ISolverSettings*>(_arkodesettings)->getEndTimeTol())
         _solverStatus = DONE;
@@ -373,7 +373,7 @@ bool Arkode::isInterrupted()
 }
 void Arkode::ArkodeCore()
 {
-  
+
   _idid = ARKodeReInit(_arkodeMem, NULL, ARK_fCallback, _tCurrent, _ARK_y);
   _idid = ARKodeSetStopTime(_arkodeMem, _tEnd);
   _idid = ARKodeSetInitStep(_arkodeMem, 1e-12);
@@ -549,11 +549,11 @@ void Arkode::writeArkodeOutput(const double &time, const double &h, const int &s
         _time_system->setTime(_tLastWrite);
         _continuous_system->setContinuousStates(NV_DATA_S(_ARK_yWrite));
         _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
-        
+
         SolverDefaultImplementation::writeToFile(stp, _tLastWrite, h);
-        
+
         }      //end if time -_tLastWritten
-        
+
       if (_bWritten)
       {
         _time_system->setTime(time);

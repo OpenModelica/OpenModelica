@@ -3155,7 +3155,7 @@ case "vxworks69" then
       IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(CPP_RUNTIME)/Include/Core -I$(CPP_RUNTIME)/Include
 
       IDE_LIBRARIES = $(CPP_RUNTIME)/Build/VxWorks/SimCore.a
-      
+
       IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"
 
 
