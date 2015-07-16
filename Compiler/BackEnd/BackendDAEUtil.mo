@@ -6594,7 +6594,7 @@ algorithm
   end if;
 
   // pre-optimization phase
-  (optdae, Util.SUCCESS()) := preOptimizeDAE(inDAE, preOptModules);
+  optdae := preOptimizeDAE(inDAE, preOptModules);
 
   // transformation phase (matching and sorting using index reduction method)
   sode := causalizeDAE(optdae, NONE(), matchingAlgorithm, daeHandler, true);
@@ -6609,7 +6609,7 @@ algorithm
   end if;
 
   // post-optimization phase
-  (optsode, Util.SUCCESS()) := postOptimizeDAE(sode, postOptModules, matchingAlgorithm, daeHandler);
+  optsode := postOptimizeDAE(sode, postOptModules, matchingAlgorithm, daeHandler);
 
   sode1 := FindZeroCrossings.findZeroCrossings(optsode);
   SimCodeFunctionUtil.execStat("findZeroCrossings");
@@ -6648,52 +6648,46 @@ protected
   list<tuple<BackendDAEFunc.preOptimizationDAEModule,String,Boolean>> preOptModules;
 algorithm
   preOptModules := getPreOptModules(strPreOptModules);
-  (outDAE,Util.SUCCESS()) := preOptimizeDAE(inDAE,preOptModules);
+  outDAE := preOptimizeDAE(inDAE, preOptModules);
 end preOptimizeBackendDAE;
 
 protected function preOptimizeDAE "
   This function runs the pre-optimization modules."
   input BackendDAE.BackendDAE inDAE;
-  input list<tuple<BackendDAEFunc.preOptimizationDAEModule, String, Boolean>> optModules;
-  output BackendDAE.BackendDAE outDAE;
-  output Util.Status status;
+  input list<tuple<BackendDAEFunc.preOptimizationDAEModule, String, Boolean>> inPreOptModules;
+  output BackendDAE.BackendDAE outDAE = inDAE;
+protected
+  BackendDAEFunc.preOptimizationDAEModule optModule;
+  String moduleStr;
+  Boolean stopOnFailure;
+  BackendDAE.EqSystems systs;
+  BackendDAE.Shared shared;
 algorithm
-  (outDAE, status) := matchcontinue (inDAE, optModules)
-    local
-      BackendDAE.BackendDAE dae, dae1;
-      BackendDAEFunc.preOptimizationDAEModule optModule;
-      list<tuple<BackendDAEFunc.preOptimizationDAEModule,String,Boolean>> rest;
-      String str, moduleStr;
-      Boolean b;
-      BackendDAE.EqSystems systs;
-      BackendDAE.Shared shared;
-
-    case (_, {})
-      equation
-      if Flags.isSet(Flags.OPT_DAE_DUMP) then
-        print("pre-optimization done.\n");
-      end if;
-    then (inDAE,Util.SUCCESS());
-
-    case (_, (optModule, moduleStr, _)::rest) equation
-      BackendDAE.DAE(systs, shared) = optModule(inDAE);
-      (systs, shared) = filterEmptySystems(systs, shared);
-      dae = BackendDAE.DAE(systs, shared);
+  for preOptModule in inPreOptModules loop
+    (optModule, moduleStr, stopOnFailure) := preOptModule;
+    try
+      BackendDAE.DAE(systs, shared) := optModule(outDAE);
+      (systs, shared) := filterEmptySystems(systs, shared);
+      outDAE := BackendDAE.DAE(systs, shared);
       SimCodeFunctionUtil.execStat("preOpt " + moduleStr);
       if Flags.isSet(Flags.OPT_DAE_DUMP) then
         print(stringAppendList({"\npre-optimization module ", moduleStr, ":\n\n"}));
-        BackendDump.printBackendDAE(dae);
+        BackendDump.printBackendDAE(outDAE);
       end if;
-      (dae1,status) = preOptimizeDAE(dae, rest);
-    then (dae1, status);
-
-    case (_, (_, moduleStr, b)::rest) equation
+    else
       SimCodeFunctionUtil.execStat("<failed> preOpt " + moduleStr);
-      str = stringAppendList({"pre-optimization module ", moduleStr, " failed."});
-      Error.addMessage(Error.INTERNAL_ERROR, {str});
-      (dae,status) = preOptimizeDAE(inDAE,rest);
-    then (dae, if b then Util.FAILURE() else status);
-  end matchcontinue;
+      if stopOnFailure then
+        Error.addCompilerError("pre-optimization module " + moduleStr + " failed.");
+        fail();
+      else
+        Error.addCompilerWarning("pre-optimization module " + moduleStr + " failed.");
+      end if;
+    end try;
+  end for;
+
+  if Flags.isSet(Flags.OPT_DAE_DUMP) then
+    print("pre-optimization done.\n");
+  end if;
 end preOptimizeDAE;
 
 public function transformBackendDAE "
@@ -6933,55 +6927,48 @@ algorithm
   end matchcontinue;
 end dumpStrongComponents;
 
-public function postOptimizeDAE "
-  Run the post-optimization modules."
+public function postOptimizeDAE
+  "Run the post-optimization modules."
   input BackendDAE.BackendDAE inDAE;
-  input list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean>> optModules;
-  input tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
-  input tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
-  output BackendDAE.BackendDAE outDAE;
-  output Util.Status status;
+  input list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean>> inPostOptModules;
+  input tuple<BackendDAEFunc.matchingAlgorithmFunc, String> inMatchingAlgorithm;
+  input tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> inDAEHandler;
+  output BackendDAE.BackendDAE outDAE = inDAE;
+protected
+  BackendDAEFunc.postOptimizationDAEModule optModule;
+  String moduleStr;
+  Boolean stopOnFailure;
+  BackendDAE.EqSystems systs;
+  BackendDAE.Shared shared;
 algorithm
-  (outDAE, status) := matchcontinue (inDAE, optModules, matchingAlgorithm, daeHandler)
-    local
-      BackendDAE.BackendDAE dae, dae1, dae2;
-      BackendDAEFunc.postOptimizationDAEModule optModule;
-      list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean>> rest;
-      String str,moduleStr;
-      Boolean b;
-      BackendDAE.EqSystems systs;
-      BackendDAE.Shared shared;
+  for postOptModule in inPostOptModules loop
+    (optModule, moduleStr, stopOnFailure) := postOptModule;
+    try
+      BackendDAE.DAE(systs, shared) := optModule(outDAE);
+      (systs, shared) := filterEmptySystems(systs, shared);
+      outDAE := BackendDAE.DAE(systs, shared);
+      outDAE := causalizeDAE(outDAE, NONE(), inMatchingAlgorithm, inDAEHandler, false);
+      SimCodeFunctionUtil.execStat("postOpt " + moduleStr);
+      if Flags.isSet(Flags.OPT_DAE_DUMP) then
+        print(stringAppendList({"\npost-optimization module ", moduleStr, ":\n\n"}));
+        BackendDump.printBackendDAE(outDAE);
+      end if;
+    else
+      SimCodeFunctionUtil.execStat("<failed> postOpt " + moduleStr);
+      if stopOnFailure then
+        Error.addCompilerError("post-optimization module " + moduleStr + " failed.");
+        fail();
+      else
+        Error.addCompilerWarning("post-optimization module " + moduleStr + " failed.");
+      end if;
+    end try;
+  end for;
 
-    case (_, {}, _, _)
-      equation
-        if Flags.isSet(Flags.OPT_DAE_DUMP) then
-          print("post-optimization done.\n");
-        end if;
-      then (inDAE,Util.SUCCESS());
-
-    case (_, (optModule, moduleStr, _)::rest, _, _)
-      equation
-        BackendDAE.DAE(systs, shared) = optModule(inDAE);
-        (systs, shared) = filterEmptySystems(systs, shared);
-        dae = BackendDAE.DAE(systs, shared);
-        SimCodeFunctionUtil.execStat("postOpt " + moduleStr);
-        if Flags.isSet(Flags.OPT_DAE_DUMP) then
-          print(stringAppendList({"\npost-optimization module ", moduleStr, ":\n\n"}));
-          BackendDump.printBackendDAE(dae);
-        end if;
-        dae1 = causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, false);
-        (dae2, status) = postOptimizeDAE(dae1, rest, matchingAlgorithm, daeHandler);
-      then (dae2, status);
-
-    case (_, (_, moduleStr, b)::rest, _, _)
-      equation
-        SimCodeFunctionUtil.execStat("postOpt <failed> " + moduleStr);
-        str = stringAppendList({"post-optimization module ", moduleStr, " failed."});
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-        (dae,status) = postOptimizeDAE(inDAE,rest,matchingAlgorithm,daeHandler);
-      then (dae, if b then Util.FAILURE() else status);
-  end matchcontinue;
+  if Flags.isSet(Flags.OPT_DAE_DUMP) then
+    print("post-optimization done.\n");
+  end if;
 end postOptimizeDAE;
+
 
 // protected function checkCompsMatching
 // "Function check if comps are complete, they are not complete
@@ -7082,14 +7069,14 @@ algorithm
   //fcall2(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE, "dumpdaelow");
   // pre optimisation phase
   _ := traverseBackendDAEExps(inDAE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
-  (optdae,Util.SUCCESS()) := preOptimizeDAE(inDAE,preOptModules);
+  optdae := preOptimizeDAE(inDAE,preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
   sode := causalizeDAE(optdae,NONE(),matchingAlgorithm,daeHandler,true);
   //fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump",sode));
 
   // post-optimization phase
-  (outSODE,Util.SUCCESS()) := postOptimizeDAE(sode,postOptModules,matchingAlgorithm,daeHandler);
+  outSODE := postOptimizeDAE(sode,postOptModules,matchingAlgorithm,daeHandler);
   _ := traverseBackendDAEExps(outSODE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
 
   //fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
@@ -7609,7 +7596,7 @@ algorithm
   nonEmpty := BackendVariable.varsSize(syst.orderedVars) <> 0 or BackendDAEUtil.equationArraySize(syst.removedEqs) <> 0;
 end nonEmptySystem;
 
-public function filterEmptySystems
+protected function filterEmptySystems
   "Filter out equation systems leaving at least one behind"
   input BackendDAE.EqSystems inSysts;
   input BackendDAE.Shared inShared;
@@ -7617,16 +7604,15 @@ public function filterEmptySystems
   output BackendDAE.Shared outShared = inShared;
 protected
   list<BackendDAE.Equation> reqns;
-  BackendDAE.Equation eq;
 algorithm
   (reqns, outSysts) := List.fold(inSysts, filterEmptySystem, ({}, {}));
-  outSysts := match outSysts
-    local
-      BackendDAE.EqSystem syst;
-    case {}
-      then {BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())};
-    else listReverseInPlace(outSysts);
-  end match;
+
+  if listEmpty(outSysts) then
+    outSysts := {BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())};
+  else
+    outSysts := listReverseInPlace(outSysts);
+  end if;
+
   outShared.removedEqs := BackendEquation.addEquations(reqns, outShared.removedEqs);
 end filterEmptySystems;
 
