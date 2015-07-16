@@ -1694,6 +1694,25 @@ algorithm
   end match;
 end getArrayOrMatrixContents;
 
+protected function makeASUBsForDimension"makes all asubs for the complete dimension of the exp."
+  input DAE.Exp eIn;
+  output list<DAE.Exp> eLstOut={};
+protected
+  Integer size;
+  DAE.Dimensions dims;
+algorithm
+  dims := expDimensions(eIn);
+  try
+    {DAE.DIM_INTEGER(integer=size)} := dims;
+    for i in List.intRange(size) loop
+      eLstOut := makeASUBSingleSub(eIn,DAE.ICONST(i))::eLstOut;
+    end for;
+    eLstOut := listReverse(eLstOut);
+  else
+    eLstOut := {};
+  end try;
+end makeASUBsForDimension;
+
 public function getComplexContents "returns the list of expressions from a complex structure like array,record,call,tuple...
 author:Waurich TUD 2014-04"
   input DAE.Exp e;
@@ -1703,8 +1722,9 @@ algorithm
     local
       Boolean noArr;
       DAE.ComponentRef cref;
-      DAE.Exp exp;
-      list<DAE.Exp> expLst;
+      DAE.Exp exp, exp1, exp2;
+      DAE.Type ty;
+      list<DAE.Exp> expLst, expLst1, expLst2;
       list<list<DAE.Exp>> expLstLst;
       list<DAE.ComponentRef> crefs;
     case(DAE.CREF())
@@ -1716,6 +1736,26 @@ algorithm
         expLst = if noArr then {} else expLst;
       then
         expLst;
+
+    case(DAE.BINARY(exp1=exp1,operator=DAE.ADD_ARR(),exp2=exp2))
+      equation
+        if isArray(exp1) then
+          expLst1 = getComplexContents(exp1);
+        else
+          expLst1 = makeASUBsForDimension(exp1);
+        end if;
+        if isArray(exp2) then
+          expLst2 = getComplexContents(exp2);
+        else
+          expLst2 = makeASUBsForDimension(exp2);
+        end if;
+          //print("complexed expLst1:\n"+ExpressionDump.printExpListStr(expLst1)+"\n");
+          //print("complexed expLst2:\n"+ExpressionDump.printExpListStr(expLst2)+"\n");
+        ty = typeof(listHead(expLst1));
+        expLst = List.threadMap(expLst1,expLst2,function makeBinaryExp(inOp=DAE.ADD(ty)));
+      then
+        expLst;
+
     case(DAE.CALL(expLst=expLst))
       equation
          expLstLst = List.map(expLst,getComplexContentsInCall);
@@ -1968,6 +2008,8 @@ algorithm
     case DAE.MATRIX(ty = tp) then arrayDimension(tp);
     case DAE.LUNARY(exp = e) then expDimensions(e);
     case DAE.LBINARY(exp1 = e) then expDimensions(e);
+    case DAE.CALL(attr=DAE.CALL_ATTR(ty = tp)) then arrayDimension(tp);
+
   end match;
 end expDimensions;
 
@@ -8111,6 +8153,13 @@ algorithm
 
     // cast
     case (DAE.CAST(exp = e))
+      equation
+        res = containFunctioncall(e);
+      then
+        res;
+
+    // asub
+    case (DAE.ASUB(exp = e))
       equation
         res = containFunctioncall(e);
       then

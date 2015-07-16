@@ -211,6 +211,7 @@ algorithm
         addEqs = listAppend(addEqs1,addEqs);
         addEqs = listAppend(addEqs2,addEqs);
         eq = BackendDAE.EQUATION(lhsExp,rhsExp,source,attr);
+        //if changed then print("FROM EQ "+BackendDump.equationString(eqIn)+"\n");print("GOT EQ "+BackendDump.equationString(eq)+"\n"); end if;
       then
         (eq,(shared,addEqs,idx+1,changed));
     case(BackendDAE.ARRAY_EQUATION(),_)
@@ -240,6 +241,7 @@ algorithm
         eq = if intEq(size,0) then BackendDAE.EQUATION(lhsExp,rhsExp,source,attr) else BackendDAE.COMPLEX_EQUATION(size,lhsExp,rhsExp,source,attr);
         //since tuple=tuple is not supported, these equations are converted into a list of simple equations
         (eq,addEqs) = convertTupleEquations(eq,addEqs);
+        //if changed then print("FROM EQ "+BackendDump.equationString(eqIn)+"\n");print("GOT EQ "+BackendDump.equationString(eq)+"\n"); end if;
       then
         (eq,(shared,addEqs,idx+1,changed));
     else
@@ -284,13 +286,13 @@ algorithm
         exps = List.map1(exps0,evaluateConstantFunctionCallExp,funcsIn);
         scalarExp = List.map1(exps,expandComplexEpressions,funcsIn);
         allInputExps = List.flatten(scalarExp);
-        //print("allInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
+          //print("allInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
 
         // get all input crefs (from function body) (scalar and one dimensioanl)
         allInputs = List.filterOnTrue(elements,DAEUtil.isInputVar);
         scalarInputs = List.map(allInputs,expandComplexElementsToCrefs);
         allInputCrefs = List.flatten(scalarInputs);
-        //print("\nallInputCrefs\n"+stringDelimitList(List.map(allInputCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+          //print("\nallInputCrefs\n"+stringDelimitList(List.map(allInputCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
 
         if listEmpty(elements) then  // its a record
           expOut = DAE.TUPLE(allInputExps);
@@ -310,17 +312,18 @@ algorithm
         //print("\nscalarOutputs\n"+stringDelimitList(List.map(List.flatten(scalarOutputs),ComponentReference.printComponentRefStr),"\n")+"\n");
 
         // get the constant inputs
+            //print("\nallInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
+            //print("\nall algs "+intString(listLength(algs))+"\n"+DAEDump.dumpElementsStr(algs)+"\n");
         (constInputExps,constInputCrefs) = List.filterOnTrueSync(allInputExps,Expression.isConst,allInputCrefs);
-        //print("\nallInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
-        //print("\nconstInputExps\n"+stringDelimitList(List.map(constInputExps,ExpressionDump.printExpStr),"\n")+"\n");
-        //print("\nconstInputCrefs\n"+stringDelimitList(List.map(constInputCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
-        //print("\nall algs "+intString(listLength(algs))+"\n"+DAEDump.dumpElementsStr(algs)+"\n");
+          //print("\nconstInputExps\n"+stringDelimitList(List.map(constInputExps,ExpressionDump.printExpStr),"\n")+"\n");
+          //print("\nconstInputCrefs\n"+stringDelimitList(List.map(constInputCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+          //print("\nall algs "+intString(listLength(algs))+"\n"+DAEDump.dumpElementsStr(algs)+"\n");
 
         //build replacement rules
         repl = BackendVarTransform.emptyReplacements();
         repl = BackendVarTransform.addReplacements(repl,constInputCrefs,constInputExps,NONE());
         //repl = BackendVarTransform.addReplacements(repl,allInputCrefs,allInputExps,NONE());
-         //BackendVarTransform.dumpReplacements(repl);
+          //BackendVarTransform.dumpReplacements(repl);
 
         // recognize if there are statements we cannot evaluate at the moment
         hasAssert = List.fold(algs,hasAssertFold,false);
@@ -339,8 +342,8 @@ algorithm
         (constCrefs,constExps) = List.filter1OnTrueSync(constCrefs,ComponentReference.crefInLst,allOutputCrefs,constExps); // extract outputs
         (constExps,constCrefs) = List.filterOnTrueSync(constExps,Expression.isConst,constCrefs); // extract constant outputs
 
-        //print("all constant crefs \n"+stringDelimitList(List.map(constCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
-        //print("all constant exps:\n"+ExpressionDump.printExpListStr(constExps)+"\n");
+          //print("all constant crefs \n"+stringDelimitList(List.map(constCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+          //print("all constant exps:\n"+ExpressionDump.printExpListStr(constExps)+"\n");
 
         // get the completely constant complex outputs, the constant parts of complex outputs and the variable parts of complex outputs and the expressions
         (constComplexCrefs,varComplexCrefs,constScalarCrefs,varScalarCrefs) = checkIfOutputIsEvaluatedConstant(allOutputs,constCrefs,{},{},{},{});
@@ -367,7 +370,7 @@ algorithm
       end if;
 
       if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-       print("\nevaluted to: "+ExpressionDump.printExpStr(expOut)+"\n\n");
+       print("\nevaluted1 to: "+ExpressionDump.printExpStr(expOut)+"\n\n");
       end if;
 
       then expOut;
@@ -376,8 +379,9 @@ algorithm
     equation
       //this ASUB stuff occurs in the flattened DAE, check this special case because of removeSimpleEquations
      exp = evaluateConstantFunctionCallExp(DAE.CALL(path=path, expLst=exps, attr=attr1),funcsIn);
-     if not Expression.isConst(exp) then exp = expIn; end if;
      (exp,_) = ExpressionSimplify.simplify(DAE.ASUB(exp,sub));
+
+     if not Expression.isConst(exp) then exp = expIn; end if;
     then exp;
 
   else
@@ -605,6 +609,19 @@ algorithm
       then
         ((exp,outputExp,constEqs,funcs,idx,changed));
 
+  case(DAE.ASUB(DAE.CALL(path=path, expLst=exps, attr=attr1),sub),_,_,_)
+    equation
+      //this ASUB stuff occurs in the flattened DAE, check this special case because of removeSimpleEquations
+      exp = evaluateConstantFunctionCallExp(DAE.CALL(path=path, expLst=exps, attr=attr1),funcsIn);
+      (exp,_) = ExpressionSimplify.simplify(DAE.ASUB(exp,sub));
+
+      changed = true;
+      if not Expression.isConst(exp) then
+        exp = rhsExpIn;
+        changed=false;
+      end if;
+    then ((exp,lhsExpIn,{},funcsIn,eqIdx,changed));
+
     else
         ((rhsExpIn,lhsExpIn,{},funcsIn,eqIdx,false));
   end matchcontinue;
@@ -647,6 +664,8 @@ algorithm
         lst;
     else
       equation
+        //print("Could not scalarize EXP:\n");
+        //print(ExpressionDump.dumpExpStr(e,0)+"\n");
       then {e};
   end matchcontinue;
 end expandComplexEpressions;
