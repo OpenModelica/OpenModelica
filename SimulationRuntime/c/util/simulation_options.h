@@ -124,6 +124,7 @@ enum SOLVER_METHOD
   S_LOBATTO4,      /*  9 */
   S_LOBATTO6,      /* 10 */
   S_SYM_EULER,     /* 11 */
+  S_SYM_IMP_EULER, /* 12 */
   S_QSS,
 
   S_MAX

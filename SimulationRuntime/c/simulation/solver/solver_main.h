@@ -48,6 +48,7 @@ typedef struct SOLVER_INFO
   double currentStepSize;
   double laststep;
   int solverMethod;
+  double solverStepSize; /* used by implicit radau solver */
 
   /* set by solver if an internal root finding method is activated  */
   modelica_boolean solverRootFinding;
@@ -56,9 +57,15 @@ typedef struct SOLVER_INFO
   LIST* eventLst;
   int didEventStep;
 
+  /* radau_new
+  void* userdata;
+*/
   /* stats */
   unsigned long stateEvents;
   unsigned long sampleEvents;
+
+  /* further options */
+  int integratorSteps;
 
   void* solverData;
 }SOLVER_INFO;
@@ -73,8 +80,6 @@ extern int solver_main(DATA* data, const char* init_initMethod,
 
 /* Provide solver interface to interactive stuff */
 extern int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo);
-extern int freeSolverData(DATA* data, SOLVER_INFO* solverInfo);
-
 extern int freeSolverData(DATA* data, SOLVER_INFO* solverInfo);
 
 extern int initializeModel(DATA* data, const char* init_initMethod,

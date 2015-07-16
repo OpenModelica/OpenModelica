@@ -349,6 +349,7 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
   "lobatto4",
   "lobatto6",
   "symEuler",
+  "symEulerSsc",
   "qss"
 };
 
@@ -365,6 +366,7 @@ const char *SOLVER_METHOD_DESC[S_MAX] = {
   "lobatto4 [sundial/kinsol needed]",
   "lobatto6 [sundial/kinsol needed]",
   "symbolic implicit euler, [compiler flag +symEuler needed]",
+  "symbolic implicit euler with step-size control, [compiler flag +symEuler needed]",
   "qss"
 };
 
