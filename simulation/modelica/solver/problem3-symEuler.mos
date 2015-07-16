@@ -25,12 +25,21 @@ val(x2,1);
 // true
 // ""
 // record SimulationResult
-//     resultFile = "foo_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 5, tolerance = 1e-06, method = 'symEuler', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "testSolver.problem3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 5, tolerance = 1e-06, method = 'symEuler', fileNamePrefix = 'testSolver.problem3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
 // ""
 // 2.0
 // 2.2
 // 0.401877572016461
+// record SimulationResult
+//     resultFile = "testSolver.problem3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 5, tolerance = 1e-06, method = 'symEulerSsc', fileNamePrefix = 'testSolver.problem3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 2.000000000000003
+// 2.001224812305491
+// 0.368104617233827
 // endResult
