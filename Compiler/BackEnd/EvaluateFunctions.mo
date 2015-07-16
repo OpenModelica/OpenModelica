@@ -172,6 +172,7 @@ algorithm
 
   //traverse the eqSystem for function calls
   (eqLst, (shared, addEqs, _, changed)) := List.mapFold(eqLst, evalFunctions_findFuncs, (sharedIn, {}, 1, changed));
+  eqLst := listReverse(eqLst);
   eqLst := listAppend(eqLst, addEqs);
   eqs := BackendEquation.listEquation(eqLst);
   eqSysOut := BackendDAEUtil.setEqSystEqs(eqSysIn, eqs);
@@ -211,6 +212,7 @@ algorithm
         addEqs = listAppend(addEqs1,addEqs);
         addEqs = listAppend(addEqs2,addEqs);
         eq = BackendDAE.EQUATION(lhsExp,rhsExp,source,attr);
+        //if changed then print("FROM EQ "+BackendDump.equationString(eqIn)+"\n");print("GOT EQ "+BackendDump.equationString(eq)+"\n"); end if;
       then
         (eq,(shared,addEqs,idx+1,changed));
     case(BackendDAE.ARRAY_EQUATION(),_)
@@ -240,6 +242,7 @@ algorithm
         eq = if intEq(size,0) then BackendDAE.EQUATION(lhsExp,rhsExp,source,attr) else BackendDAE.COMPLEX_EQUATION(size,lhsExp,rhsExp,source,attr);
         //since tuple=tuple is not supported, these equations are converted into a list of simple equations
         (eq,addEqs) = convertTupleEquations(eq,addEqs);
+        //if changed then print("FROM EQ "+BackendDump.equationString(eqIn)+"\n");print("GOT EQ "+BackendDump.equationString(eq)+"\n"); end if;
       then
         (eq,(shared,addEqs,idx+1,changed));
     else
