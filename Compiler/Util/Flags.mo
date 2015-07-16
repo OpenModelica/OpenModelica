@@ -1108,6 +1108,10 @@ constant ConfigFlag RTEARING = CONFIG_FLAG(74, "recursiveTearing",
     })),
     Util.gettext("inline and repeat tearing."));
 
+constant ConfigFlag FLOW_THRESHOLD = CONFIG_FLAG(75, "flowThreshold",
+  NONE(), EXTERNAL(), REAL_FLAG(1e-7), NONE(),
+  Util.gettext("Sets the minium threshold for stream flow rates"));
+
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1187,7 +1191,8 @@ constant list<ConfigFlag> allConfigFlags = {
   LOOP2CON,
   FORCE_TEARING,
   SIMPLIFY_LOOPS,
-  RTEARING
+  RTEARING,
+  FLOW_THRESHOLD
 };
 
 public function new
