@@ -78,9 +78,21 @@ public:
 protected:
     int
        _dimAEq;                        ///< Number (dimension) of unknown/equations (the index denotes the data type; 0: double, 1: int, 2: bool)
+    double *
+    _xd_init,
+    * __xd;
+    int *
+    _xi_init,
+    * __xi;
+    bool *
+    _xb_init,
+    * __xb;
 
 
-  std::vector<double>
+
+
+/*
+   std::vector<double>
    _xd_init,    ///< Double values before update of loop
     __xd;     ///< Double values after update of loop
 
@@ -93,7 +105,7 @@ protected:
     std::vector<bool>
         _xb_init,            ///< Boolean values before update of loop
    __xb;       ///< Boolean values after update of loop
-
+*/
     IAlgLoop::CONSTRTYPE
         _constraintType;                ///< Typ der Bindungsgleichungen (analog, digital, binär)
 

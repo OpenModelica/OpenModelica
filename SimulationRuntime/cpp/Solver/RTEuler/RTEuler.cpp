@@ -43,10 +43,12 @@ void RTEuler::initialize()
     _dimSys  = _continuous_system->getDimContinuousStates();
 
     // Check system dimension
-    if(_dimSys <= 0 || !(_properties->isODE()))
-    {
-        throw std::invalid_argument("Euler::assemble() error");
-    }
+    if (_dimSys == 0)
+      _dimSys = 1; // introduce dummy state
+    //if(_dimSys <= 0 || !(_properties->isODE()))
+    //{
+    //    throw std::invalid_argument("Euler::assemble() error");
+    //}
     else
     {
 

@@ -3611,9 +3611,17 @@ match eq
 
    <%modelname%>Algloop<%ls.index%>::~<%modelname%>Algloop<%ls.index%>()
    {
+
      <% match eq
       case SES_LINEAR(__) then
       <<
+      >>
+      else
+      <<
+      if __xd
+        delete [] __xd;
+      if _xd_init
+        delete [] _xd_init;
       >>
      %>
    }
@@ -3676,6 +3684,13 @@ match eq
      <% match eq
       case SES_LINEAR(__) then
       <<
+      >>
+      else
+      <<
+      if __xd
+        delete [] __xd;
+      if _xd_init
+        delete [] _xd_init;
       >>
      %>
    }
@@ -6305,8 +6320,10 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
     // Number of unknowns equations
     _dimAEq = <%size%>;
     _constraintType = IAlgLoop::REAL;
-    __xd.resize(<%size%>);
-   _xd_init.resize(<%size%>);
+    __xd = new double[_dimAEq];
+    _xd_init = new double[_dimAEq];
+    //__xd.resize(<%size%>);
+    //_xd_init.resize(<%size%>);
   >>
   case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
     match ls.jacobianMatrix
@@ -6317,8 +6334,10 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
         // Number of unknowns equations
         _dimAEq = <%size%>;
         _constraintType = IAlgLoop::REAL;
-        __xd.resize(<%size%>);
-        _xd_init.resize(<%size%>);
+        __xd = new double[_dimAEq];
+        _xd_init = new double[_dimAEq];
+        //__xd.resize(<%size%>);
+        //_xd_init.resize(<%size%>);
        >>
       else
        let size = listLength(ls.vars)
@@ -7194,7 +7213,7 @@ bool  <%modelname%>Algloop<%ls.index%>::isConsistent()
 /// Provide variables with given index to the system
 void  <%modelname%>Algloop<%ls.index%>::getReal(double* vars)
 {
-    AlgLoopDefaultImplementation::getReal(vars);
+    //AlgLoopDefaultImplementation::getReal(vars);
     //workaroud until names of algloop vars are replaced in simcode
     <%giveAlgloopvars(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
 };
@@ -7211,7 +7230,7 @@ void  <%modelname%>Algloop<%ls.index%>::setReal(const double* vars)
     //workaround until names of algloop vars are replaced in simcode
 
     <%setAlgloopvars(eq,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
-    AlgLoopDefaultImplementation::setReal(vars);
+    //AlgLoopDefaultImplementation::setReal(vars);
 };
 
 
