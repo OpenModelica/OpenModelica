@@ -3618,9 +3618,9 @@ match eq
       >>
       else
       <<
-      if __xd
+      if (__xd)
         delete [] __xd;
-      if _xd_init
+      if (_xd_init)
         delete [] _xd_init;
       >>
      %>
@@ -3687,9 +3687,9 @@ match eq
       >>
       else
       <<
-      if __xd
+      if (__xd)
         delete [] __xd;
-      if _xd_init
+      if (_xd_init)
         delete [] _xd_init;
       >>
      %>
