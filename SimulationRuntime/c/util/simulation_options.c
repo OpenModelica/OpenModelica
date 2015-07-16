@@ -65,6 +65,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_MEASURETIMEPLOTFORMAT */ "measureTimePlotFormat",
   /* FLAG_NEWTON_STRATEGY */       "newton",
   /* FLAG_NLS */                   "nls",
+  /* FLAG_NLS_INFO */              "nlsInfo",
   /* FLAG_NOEMIT */                "noemit",
   /* FLAG_NOEQUIDISTANT_GRID */    "noEquidistantTimeGrid",
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/ "noEquidistantOutputFrequency",
@@ -120,6 +121,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_MEASURETIMEPLOTFORMAT */ "value specifies the output format of the measure time functionality",
   /* FLAG_NEWTON_STRATEGY */       "value specifies the damping strategy for the newton solver",
   /* FLAG_NLS */                   "value specifies the nonlinear solver",
+  /* FLAG_NLS_INFO */              "outputs detailed information about solving process of non-linear systems into csv files.",
   /* FLAG_NOEMIT */                "do not emit any results to the result file",
   /* FLAG_NOEQUIDISTANT_GRID */    "stores results not in equidistant time grid as given by stepSize or numberOfIntervals, instead the variable step size of dassl is used.",
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/ "value controls the output frequency in noEquidistantTimeGrid mode",
@@ -229,6 +231,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  * kinsol\n"
   "  * newton\n"
   "  * mixed",
+  /* FLAG_NLS_INFO */
+  "  Outputs detailed information about solving process of non-linear systems into csv files.",
   /* FLAG_NOEMIT */
   "  Do not emit any results to the result file.",
   /* FLAG_NOEQUIDISTANT_GRID */
@@ -313,6 +317,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_MEASURETIMEPLOTFORMAT */ FLAG_TYPE_OPTION,
   /* FLAG_NEWTON_STRATEGY */       FLAG_TYPE_OPTION,
   /* FLAG_NLS */                   FLAG_TYPE_OPTION,
+  /* FLAG_NLS_INFO */              FLAG_TYPE_FLAG,
   /* FLAG_NOEMIT */                FLAG_TYPE_FLAG,
   /* FLAG_NOEQUIDISTANT_GRID*/     FLAG_TYPE_FLAG,
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/ FLAG_TYPE_OPTION,
@@ -440,6 +445,7 @@ const char *NEWTONSTRATEGY_NAME[NEWTON_MAX+1] = {
   /* NEWTON_DAMPED */       "damped",
   /* NEWTON_DAMPED2 */      "damped2",
   /* NEWTON_DAMPED_LS */    "damped_ls",
+  /* NEWTON_DAMPED_BT */    "damped_bt",
   /* NEWTON_PURE */         "pure",
 
   "NEWTON_MAX"
@@ -451,6 +457,7 @@ const char *NEWTONSTRATEGY_DESC[NEWTON_MAX+1] = {
   /* NEWTON_DAMPED */       "Newton with a damping strategy",
   /* NEWTON_DAMPED2 */      "Newton with a damping strategy 2",
   /* NEWTON_DAMPED_LS */    "Newton with a damping line search",
+  /* NEWTON_DAMPED_BT */    "Newton with a damping backtracking and a minimum search via golden ratio method",
   /* NEWTON_PURE */         "Newton without damping strategy",
 
   "NEWTON_MAX"

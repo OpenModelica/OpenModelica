@@ -802,7 +802,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("tearingSystem",Util.notrans("For method selection use flag tearingMethod.")),
     ("partlintornsystem",Util.notrans("partitions linear torn systems.")),
     ("relaxSystem",Util.notrans("DESCRIBE ME")),
-    ("countOperations", Util.gettext("Count the mathematic operations of the system.")),
+    ("countOperations", Util.gettext("Count the mathematical operations of the system.")),
     ("dumpComponentsGraphStr", Util.notrans("DESCRIBE ME")),
     ("generateSymbolicJacobian", Util.gettext("Generates symbolic Jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be used to simulate with dasslColorSymJac.")),
     ("generateSymbolicLinearization", Util.gettext("Generates symbolic linearization matrices A,B,C,D for linear model:\n\t\t:math:`\\dot{x} = Ax + Bu`\n\t:math:`ty = Cx +Du`")),
@@ -816,7 +816,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("calculateStateSetsJacobians", Util.gettext("Generates analytical Jacobian for dynamic state selection sets.")),
     ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs.")),
     ("reshufflePost", Util.gettext("Reshuffles algebraic loops.")),
-    ("CSE", Util.gettext("Common Subexpression Elimination")),
+    ("CSE", Util.gettext("Common Sub-expression Elimination")),
     ("dumpDAE", Util.gettext("dumps the DAE representation of the current transformation state")),
     ("dumpDAEXML", Util.gettext("dumps the DAE as xml representation of the current transformation state")),
     ("addTimeAsState", Util.gettext("Experimental feature: this replaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0"))
@@ -1088,7 +1088,7 @@ constant ConfigFlag LOOP2CON = CONFIG_FLAG(71, "loop2con",
 
 constant ConfigFlag FORCE_TEARING = CONFIG_FLAG(72, "forceTearing",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Use tearing set even if it is not smaller than the original component.)"));
+  Util.gettext("Use tearing set even if it is not smaller than the original component."));
 
 constant ConfigFlag SIMPLIFY_LOOPS = CONFIG_FLAG(73, "simplifyLoops",
   NONE(), EXTERNAL(), INT_FLAG(0),
