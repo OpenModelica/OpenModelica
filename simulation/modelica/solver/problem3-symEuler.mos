@@ -1,25 +1,23 @@
 // name: problem3-symEuler
 // status: correct
-// teardown_command: rm -f testSolver.problem1* output.log
+// teardown_command: rm -f testSolver.problem3* output.log
 
-loadString("
-model foo
-  Real x(start=1,fixed=true);
-  Real x1(start=1,fixed=true);
-  Real x2(start=1,fixed=true);
-  parameter Real c = 1;
-equation
-  der(x) = c;
-  der(x1) = 2*time;
-  der(x2) = -x2;
-end foo;
-"); getErrorString();
+loadFile("./testSolverPackage.mo");
+getErrorString();
+
 setCommandLineOptions("+symEuler"); getErrorString();
-simulate(foo, startTime = 0, stopTime=1, numberOfIntervals=5, method="symEuler", simflags =""); getErrorString();
+simulate(testSolver.problem3, startTime = 0, stopTime=1, numberOfIntervals=5, method="symEuler", simflags =""); getErrorString();
 
 val(x,1);
 val(x1,1);
 val(x2,1);
+
+simulate(testSolver.problem3, startTime = 0, stopTime=1, numberOfIntervals=5, method="symEulerSsc", simflags =""); getErrorString();
+
+val(x,1);
+val(x1,1);
+val(x2,1);
+
 
 // Result:
 // true
