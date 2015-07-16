@@ -172,7 +172,6 @@ algorithm
 
   //traverse the eqSystem for function calls
   (eqLst, (shared, addEqs, _, changed)) := List.mapFold(eqLst, evalFunctions_findFuncs, (sharedIn, {}, 1, changed));
-  eqLst := listReverse(eqLst);
   eqLst := listAppend(eqLst, addEqs);
   eqs := BackendEquation.listEquation(eqLst);
   eqSysOut := BackendDAEUtil.setEqSystEqs(eqSysIn, eqs);

@@ -400,7 +400,7 @@ algorithm
       if intLt(linInfo, 0) then
         Error.addMessage(Error.LINEAR_SYSTEM_INVALID, {"LAPACK/dgesv", syst});
       end if;
-    then false;
+    then true;
 
     else true;
   end matchcontinue;
