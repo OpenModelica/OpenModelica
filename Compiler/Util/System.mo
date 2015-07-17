@@ -921,7 +921,31 @@ public function openModelicaPlatform "
 end openModelicaPlatform;
 
 public function dgesv
-  "dgesv from LAPACK"
+ "# dgesv from LAPACK
+
+  ## Purpose
+  DGESV computes the solution to a real system of linear equations
+    A * X = B,
+  where A is an N-by-N matrix and X and B are N-by-NRHS matrices.
+
+  The LU decomposition with partial pivoting and row interchanges is
+  used to factor A as
+    A = P * L * U,
+  where P is a permutation matrix, L is unit lower triangular, and U is
+  upper triangular. The factored form of A is then used to solve the
+  system of equations A * X = B.
+
+  ## Return values
+  ### output list<Real> X
+  On exit, if info = 0, the N-by-NRHS solution matrix X.
+
+  ### output Integer info
+  = 0:  successful exit
+  < 0:  if INFO = -i, the i-th argument had an illegal value
+  > 0:  if INFO = i, U(i,i) is exactly zero. The factorization
+        has been completed, but the factor U is exactly
+        singular, so the solution could not be computed.
+  "
   input list<list<Real>> A;
   input list<Real> B;
   output list<Real> X;
