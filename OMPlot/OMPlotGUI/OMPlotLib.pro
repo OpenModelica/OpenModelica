@@ -5,6 +5,9 @@
 #-------------------------------------------------
 
 QT += core gui svg
+greaterThan(QT_MAJOR_VERSION, 4) {
+    QT *= printsupport widgets
+}
 
 TARGET = OMPlot
 TEMPLATE = lib

@@ -31,7 +31,15 @@
  *
  */
 
+#include <QtGlobal>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#include <QtWidgets>
+#include <QApplication>
+#else
 #include <QtGui/QApplication>
+#endif
+
+
 #include "PlotMainWindow.h"
 #include "PlotApplication.h"
 

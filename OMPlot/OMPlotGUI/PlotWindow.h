@@ -22,7 +22,14 @@
 #ifndef PLOTWINDOW_H
 #define PLOTWINDOW_H
 
+#include <QtGlobal>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#include <QtWidgets>
+#include <QPrinter>
+#include <QPrintDialog>
+#else
 #include <QtGui>
+#endif
 #include <QtCore>
 
 #include <qwt_plot.h>

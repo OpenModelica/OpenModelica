@@ -34,8 +34,15 @@
 #ifndef PLOTMAINWINDOW_H
 #define PLOTMAINWINDOW_H
 
-#include <QtCore>
+#include <QtGlobal>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#include <QtWidgets>
+#include <QPrinter>
+#include <QPrintDialog>
+#else
 #include <QtGui>
+#endif
+#include <QtCore>
 
 #include "PlotWindowContainer.h"
 

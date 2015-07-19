@@ -10,6 +10,14 @@
 #ifndef QWT_GLOBAL_H
 #define QWT_GLOBAL_H
 
+#if defined(_MSC_VER)
+#  define QT_STATIC_CONST static
+#  define QT_STATIC_CONST_IMPL
+#else
+#  define QT_STATIC_CONST static const
+#  define QT_STATIC_CONST_IMPL const
+#endif
+
 #include <qglobal.h>
 
 // QWT_VERSION is (major << 16) + (minor << 8) + patch.

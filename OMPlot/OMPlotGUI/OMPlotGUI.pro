@@ -5,6 +5,9 @@
 #-------------------------------------------------
 
 QT += core gui svg
+greaterThan(QT_MAJOR_VERSION, 4) {
+    QT *= printsupport widgets
+}
 
 TARGET = OMPlot
 TEMPLATE = app
@@ -25,7 +28,7 @@ HEADERS += Plot.h \
     PlotMainWindow.h
 
 win32 {
-  QMAKE_LFLAGS += -enable-auto-import
+  #QMAKE_LFLAGS += -enable-auto-import
   CONFIG(debug, debug|release){
     LIBS += -L$$(OMBUILDDIR)/lib/omc -lOMPlot -lomqwtd
   }
