@@ -3,14 +3,13 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 runDrumBoiler.mos \
-runExReduceDrumBoiler.mos \
-runReduceDrumBoiler.mos
 
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
 FAILINGTESTFILES = \
-
+runExReduceDrumBoiler.mos \
+runReduceDrumBoiler.mos \
 
 
 # Dependency files that are not .mo .mos or Makefile

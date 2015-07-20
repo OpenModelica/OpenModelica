@@ -282,10 +282,10 @@ simulate(ThermoPower.Examples.CISE.CISESim120501); getErrorString();
 //  * candidate: Plant.Drum.feedwater.h_outflow(start = Plant.Drum.hlstart)
 //  * candidate: Plant.Drum.liquidState.h(start = 100000.0)
 // => select value from Plant.Drum.hl(start = Plant.Drum.hlstart) for variable: Plant.Drum.hl
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 // Warning: Alias set with several free start values
 //  * candidate: Plant.HeaderLower.p(start = Plant.HeaderLower.pstart)
 //  * candidate: Plant.Downcomer.p(start = Plant.Downcomer.pstart)
 // => select value from Plant.HeaderLower.p(start = Plant.HeaderLower.pstart) for variable: Plant.HeaderLower.p
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 // "
 // endResult

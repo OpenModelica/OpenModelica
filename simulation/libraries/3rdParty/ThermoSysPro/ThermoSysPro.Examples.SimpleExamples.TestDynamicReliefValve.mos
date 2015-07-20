@@ -30,20 +30,12 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // The current operational status with OpenModelica of the included examples can be found at https://test.openmodelica.org/libraries/ThermoSysPro/BuildModelRecursive.html
 // "
 // record SimulationResult
-//     resultFile = "",
+//     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestDynamicReliefValve_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestDynamicReliefValve', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "Simulation execution failed for model: ThermoSysPro.Examples.SimpleExamples.TestDynamicReliefValve
-// stdout            | warning | While solving non-linear system an assertion failed during initialization.
+//     messages = "stdout            | warning | While solving non-linear system an assertion failed at time 194.113.
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
 // |                 | |       | | For more information simulate with -lv LOG_NLS
-// stdout            | warning | While solving non-linear system an assertion failed during initialization.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
-// assert            | debug   | Solving non-linear system 119 failed at time=0.
-// |                 | |       | For more information please use -lv LOG_NLS.
-// assert            | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;
 // "[ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
@@ -124,5 +116,5 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // => select value from ReliefValve.T(nominal = 300.0) for variable: ReliefValve.T
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 // "
-// {"Error get time!"}
+// {"Files Equal!"}
 // endResult

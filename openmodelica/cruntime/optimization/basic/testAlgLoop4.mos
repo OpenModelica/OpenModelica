@@ -61,7 +61,8 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 1.16403e-15 for the constraint $OMC$con$Loop$4(time = 0.012899)
 // "
 // end SimulationResult;
-// ""
+// "Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "
 // {"Files Equal!"}
 // ""
 // endResult

@@ -12,8 +12,8 @@ equation
    x[9] = cosh(time) "hyperbolic cosine";
    x[10] = tanh(time) "hyperbolic tangent";
    x[11] = exp(time) "exponential, base e";
-   x[12] = log(if time<=0 then 0.1 else time) "natural (base e) logarithm (x > 0)";
-   x[13] = log10(if time <=0 then 0.1 else time);
+   x[12] = log(if time<=0.1 then 0.1 else time) "natural (base e) logarithm (x > 0)";
+   x[13] = log10(if time <=0.1 then 0.1 else time);
 end BuiltinMath;
 
 

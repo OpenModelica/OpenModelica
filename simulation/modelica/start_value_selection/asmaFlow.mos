@@ -520,6 +520,32 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // aimc.inertiaStator.phi -> 0.0
 // aimc.inertiaStator.w -> 0.0
 //
+// Unreplaceable Crefs: (1)
+// ========================================
+// $res1.$pDERNLSJac0.dummyVarNLSJac0
+//
+// Unreplaceable Crefs: (1)
+// ========================================
+// $res1.$pDERNLSJac0.dummyVarNLSJac0
+//
+// Unreplaceable Crefs: (6)
+// ========================================
+// $res6.$pDERNLSJac1.dummyVarNLSJac1
+// $res5.$pDERNLSJac1.dummyVarNLSJac1
+// $res4.$pDERNLSJac1.dummyVarNLSJac1
+// $res3.$pDERNLSJac1.dummyVarNLSJac1
+// $res2.$pDERNLSJac1.dummyVarNLSJac1
+// $res1.$pDERNLSJac1.dummyVarNLSJac1
+//
+// Unreplaceable Crefs: (6)
+// ========================================
+// $res6.$pDERNLSJac1.dummyVarNLSJac1
+// $res5.$pDERNLSJac1.dummyVarNLSJac1
+// $res4.$pDERNLSJac1.dummyVarNLSJac1
+// $res3.$pDERNLSJac1.dummyVarNLSJac1
+// $res2.$pDERNLSJac1.dummyVarNLSJac1
+// $res1.$pDERNLSJac1.dummyVarNLSJac1
+//
 // Unreplaceable Crefs: (0)
 // ========================================
 //
@@ -558,29 +584,61 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 //
 // Unreplaceable Crefs: (1)
 // ========================================
-// $res1.$pDERNLSJac0.dummyVarNLSJac0
+// $res1.$pDERNLSJac2.dummyVarNLSJac2
 //
 // Unreplaceable Crefs: (1)
 // ========================================
-// $res1.$pDERNLSJac0.dummyVarNLSJac0
+// $res1.$pDERNLSJac2.dummyVarNLSJac2
 //
 // Unreplaceable Crefs: (4)
 // ========================================
-// $res4.$pDERNLSJac1.dummyVarNLSJac1
-// $res3.$pDERNLSJac1.dummyVarNLSJac1
-// $res2.$pDERNLSJac1.dummyVarNLSJac1
-// $res1.$pDERNLSJac1.dummyVarNLSJac1
+// $res4.$pDERNLSJac3.dummyVarNLSJac3
+// $res3.$pDERNLSJac3.dummyVarNLSJac3
+// $res2.$pDERNLSJac3.dummyVarNLSJac3
+// $res1.$pDERNLSJac3.dummyVarNLSJac3
 //
 // Unreplaceable Crefs: (4)
 // ========================================
-// $res4.$pDERNLSJac1.dummyVarNLSJac1
-// $res3.$pDERNLSJac1.dummyVarNLSJac1
-// $res2.$pDERNLSJac1.dummyVarNLSJac1
-// $res1.$pDERNLSJac1.dummyVarNLSJac1
+// $res4.$pDERNLSJac3.dummyVarNLSJac3
+// $res3.$pDERNLSJac3.dummyVarNLSJac3
+// $res2.$pDERNLSJac3.dummyVarNLSJac3
+// $res1.$pDERNLSJac3.dummyVarNLSJac3
 //
 // ########################################
 // dumpindxdae
 // ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: aimc.inertiaStator.flange_a.tau:VARIABLE(flow=true unit = "N.m" )  "Cut torque in the flange".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Mechanics.Rotational.Components.Inertia$aimc$inertiaStator, .Modelica.Mechanics.Rotational.Interfaces.Flange_a, .Modelica.SIunits.Torque type: Real
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): aimc.inertiaStator.flange_a.tau = 0.0    [binding]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
 //
 //
 // unspecified partition
@@ -992,7 +1050,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (262)
+// Known Variables (constants) (261)
 // ========================================
 // 1: aimc.statorCore.wLimit:VARIABLE(unit = "rad/s" protected = true )  = max(abs(aimc.statorCoreParameters.wRef), 0.0003141592653589793)  "Limited angular velocity".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.Losses.InductionMachines.Core$aimc$statorCore, .Modelica.SIunits.AngularVelocity type: Real
 // 2: aimc.statorCore.Gc:VARIABLE(unit = "S" )  = 0.0  "Variable core loss conductance".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.Losses.InductionMachines.Core$aimc$statorCore, .Modelica.SIunits.Conductance type: Real
@@ -1255,7 +1313,6 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 259: aimc.friction.heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -0.0  "Heat flow rate (positive if flowing from outside into the component)".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.Losses.Friction$aimc$friction, .Modelica.Thermal.HeatTransfer.Interfaces.HeatPort_a$aimc$friction$heatPort, .Modelica.SIunits.HeatFlowRate type: Real
 // 260: aimc.strayLoad.heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -0.0  "Heat flow rate (positive if flowing from outside into the component)".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.Losses.InductionMachines.StrayLoad$aimc$strayLoad, .Modelica.Thermal.HeatTransfer.Interfaces.HeatPort_a$aimc$strayLoad$heatPort, .Modelica.SIunits.HeatFlowRate type: Real
 // 261: aimc.statorCore.heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -0.0  "Heat flow rate (positive if flowing from outside into the component)".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.Losses.InductionMachines.Core$aimc$statorCore, .Modelica.Thermal.HeatTransfer.Interfaces.HeatPort_a$aimc$statorCore$heatPort, .Modelica.SIunits.HeatFlowRate type: Real
-// 262: aimc.inertiaStator.flange_a.tau:VARIABLE(flow=true unit = "N.m" )  = 0.0  "Cut torque in the flange".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Mechanics.Rotational.Components.Inertia$aimc$inertiaStator, .Modelica.Mechanics.Rotational.Interfaces.Flange_a, .Modelica.SIunits.Torque type: Real
 //
 //
 // External Objects (0)
@@ -1588,32 +1645,6 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // ========================================
 //
 //
-//
-// Unreplaceable Crefs: (1)
-// ========================================
-// $res1.$pDERNLSJac2.dummyVarNLSJac2
-//
-// Unreplaceable Crefs: (1)
-// ========================================
-// $res1.$pDERNLSJac2.dummyVarNLSJac2
-//
-// Unreplaceable Crefs: (6)
-// ========================================
-// $res6.$pDERNLSJac3.dummyVarNLSJac3
-// $res5.$pDERNLSJac3.dummyVarNLSJac3
-// $res4.$pDERNLSJac3.dummyVarNLSJac3
-// $res3.$pDERNLSJac3.dummyVarNLSJac3
-// $res2.$pDERNLSJac3.dummyVarNLSJac3
-// $res1.$pDERNLSJac3.dummyVarNLSJac3
-//
-// Unreplaceable Crefs: (6)
-// ========================================
-// $res6.$pDERNLSJac3.dummyVarNLSJac3
-// $res5.$pDERNLSJac3.dummyVarNLSJac3
-// $res4.$pDERNLSJac3.dummyVarNLSJac3
-// $res3.$pDERNLSJac3.dummyVarNLSJac3
-// $res2.$pDERNLSJac3.dummyVarNLSJac3
-// $res1.$pDERNLSJac3.dummyVarNLSJac3
 // record SimulationResult
 //     resultFile = "asmaFlow_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'asmaFlow', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",

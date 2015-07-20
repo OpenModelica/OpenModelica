@@ -32,7 +32,7 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'nonlinear_system.problem11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: nonlinear_system.problem11
-// assert            | debug   | Solving non-linear system 5 failed at time=0.
+// assert            | debug   | Solving non-linear system 4 failed at time=0.
 // |                 | |       | For more information please use -lv LOG_NLS.
 // assert            | info    | simulation terminated by an assertion at initialization
 // "
@@ -41,6 +41,23 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 //
 //
 // true
+// START: simplifyLoops
+// ------ Tearing ------
+// ------ loop-vars ------
+// x[3]
+// x[1]
+// x[2]
+// ------------
+// update eqn[4]
+// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + log(1.0 + time) + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a + (-a) - b --old--
+// => (a ^ 2.0 + b ^ 2.0) * x[2] + ((-a ^ 2.0) - b ^ 2.0) * x[1] - x[3] = -1.0 + a ^ 2.0 + (b - log(1.0 + time)) * a --new--
+// update eqn[5]
+// x[2] ^ 2.0 = b + x[1] / b + a - a * x[2] ^ 2.0 --old--
+// => x[1] - b * x[2] ^ 2.0 * (1.0 + a) = ((-b) - a) * b --new--
+// update eqn[6]
+// x[1] = b * (x[2] ^ 2.0 + x[3] + cos(time)) --old--
+// => b * (cos(time) + x[2] ^ 2.0 + x[3]) - x[1] = 0.0 --new--
+// END: simplifyLoops
 // START: simplifyLoops
 // ------ Tearing ------
 // ------ loop-vars ------
@@ -67,6 +84,28 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 // {0.0,2.842170943040401e-16,5.861977570020825e-16,8.926193117986258e-16,2.260414078136817e-15}
 // {5.561552812808831,5.409227846355742,4.987172179760111,4.393026202256716,4.663465947951011}
 // true
+// START: simplifyLoops
+// ------ Tearing ------
+// ------ loop-vars ------
+// x[3]
+// x[1]
+// x[2]
+// ------------
+// update eqn[4]
+// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + log(1.0 + time) + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a + (-a) - b --old--
+// __OMC__1$LOOPT = -1.0 + a ^ 2.0 + (b - log(1.0 + time)) * a  -- new eqn--
+// __OMC__2$LOOPF = (-a ^ 2.0) - b ^ 2.0  -- new eqn--
+// __OMC__3$LOOPF = a ^ 2.0 + b ^ 2.0  -- new eqn--
+// => __OMC__3$LOOPF * x[2] + __OMC__2$LOOPF * x[1] - x[3] = __OMC__1$LOOPT --new--
+// update eqn[5]
+// x[2] ^ 2.0 = b + x[1] / b + a - a * x[2] ^ 2.0 --old--
+// __OMC__4$LOOPT = ((-b) - a) * b  -- new eqn--
+// => x[1] - b * x[2] ^ 2.0 * (1.0 + a) = __OMC__4$LOOPT --new--
+// update eqn[6]
+// x[1] = b * (x[2] ^ 2.0 + x[3] + cos(time)) --old--
+// __OMC__5$LOOPT = cos(time)  -- new eqn--
+// => b * (__OMC__5$LOOPT + x[2] ^ 2.0 + x[3]) - x[1] = 0.0 --new--
+// END: simplifyLoops
 // START: simplifyLoops
 // ------ Tearing ------
 // ------ loop-vars ------

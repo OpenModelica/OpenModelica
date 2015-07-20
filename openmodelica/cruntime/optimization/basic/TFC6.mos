@@ -54,7 +54,10 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "testFinalCon6_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testFinalCon6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR,LOG_LS -optimizerNP 3'",
-//     messages = "
+//     messages = "LOG_LS            | info    | Start solving Linear System 9 (size 1) at time 0 with Lapack Solver
+// LOG_LS            | info    | ###  0.000023  time to set Matrix A and vector b.
+// LOG_LS            | info    | Solve System: 0.000100
+//
 // Optimizer Variables
 // ========================================================
 // State[0]:x1(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)

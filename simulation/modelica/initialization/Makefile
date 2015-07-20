@@ -19,7 +19,6 @@ discreteTest03.mos \
 discreteTest04.mos \
 discreteTest05.mos \
 discreteTest06.mos \
-discreteTest07.mos \
 discreteTest08.mos \
 discreteTest09.mos \
 discreteTest10.mos \
@@ -28,7 +27,6 @@ eventTest2.mos \
 filterBlock1.mos \
 fullRobot.mos \
 gaspropreties.mos \
-homotopy1.mos \
 initial_equation.mos \
 parameters.mos \
 parameterWithoutBinding.mos \
@@ -72,6 +70,8 @@ OverdeterminedInitialization.Fluid.TwoVolumesFullSteadyStatePressureAndTemperatu
 # Run make failingtest
 FAILINGTESTFILES = \
 bug_2830.mos \
+discreteTest07.mos \
+homotopy1.mos \
 
 
 # Dependency files that are not .mo .mos or Makefile

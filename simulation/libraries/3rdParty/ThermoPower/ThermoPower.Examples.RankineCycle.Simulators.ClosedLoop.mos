@@ -696,13 +696,13 @@ translateModel(ThermoPower.Examples.RankineCycle.Simulators.ClosedLoop); getErro
 //  * candidate: plant.stateGasInlet.gas.T(nominal = 500.0)
 //  * candidate: plant.stateGasInlet.T(nominal = 300.0)
 // => select value from plant.stateGasInlet.T(nominal = 300.0) for variable: plant.stateGasInlet.T
-// Warning: Alias set with several free start values
-//  * candidate: plant.evaporator.water.p(start = plant.evaporator.water.pstart)
-//  * candidate: plant.economizer.fluidFlow.p(start = plant.economizer.fluidFlow.pstart)
-// => select value from plant.evaporator.water.p(start = plant.evaporator.water.pstart) for variable: plant.evaporator.water.p
 // Notification: The given system is mixed-determined.   [index > 0]
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // Warning: The initial conditions are over specified. Use +d=initialization for more information.
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Warning: Alias set with several free start values
+//  * candidate: plant.evaporator.water.p(start = plant.evaporator.water.pstart)
+//  * candidate: plant.economizer.fluidFlow.p(start = plant.economizer.fluidFlow.pstart)
+// => select value from plant.evaporator.water.p(start = plant.evaporator.water.pstart) for variable: plant.evaporator.water.p
 // "
 // endResult

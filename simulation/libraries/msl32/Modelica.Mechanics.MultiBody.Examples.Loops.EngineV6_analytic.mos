@@ -36,14 +36,33 @@ runScript(modelTesting);getErrorString();
 // Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 9016
 //  * Number of variables: 9016
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 1797
+//  * Number of states: 0 ()
+//  * Number of discrete variables: 369 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (3755):
+//  * Single equations (assignments): 3748
+//  * Array equations: 6
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details:
+//  * Linear torn systems: 1 {1 392}
+//  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
-//  * Number of independent subsystems: 23
+//  * Number of independent subsystems: 303
 //  * Number of states: 4 (load.phi,load.w,filter.x[1],filter.x[2])
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (1160):
-//  * Single equations (assignments): 1159
+// Notification: Strong component statistics for simulation (1440):
+//  * Single equations (assignments): 1439
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -55,26 +74,7 @@ runScript(modelTesting);getErrorString();
 // Notification: Torn system details:
 //  * Linear torn systems: 1 {1 331}
 //  * Non-linear torn systems: 0
-// Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 2023
-//  * Number of states: 0 ()
-//  * Number of discrete variables: 369 ('+d=discreteinfo' for list of discrete vars)
-//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
-//  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (3834):
-//  * Single equations (assignments): 3827
-//  * Array equations: 6
-//  * Algorithm blocks: 0
-//  * Record equations: 0
-//  * When equations: 0
-//  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 0
-//  * Torn equation systems: 1
-//  * Mixed (continuous/discrete) equation systems: 0
-// Notification: Torn system details:
-//  * Linear torn systems: 1 {1 331}
-//  * Non-linear torn systems: 0
-// 
+//
 // "true
 // "
 // ""

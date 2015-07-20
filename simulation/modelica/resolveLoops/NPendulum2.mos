@@ -30,14 +30,33 @@ res := OpenModelica.Scripting.compareSimulationResults("Pendulum.Pendulum2_res.m
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 1228
 //  * Number of variables: 1228
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 677
+//  * Number of states: 0 ('+d=stateselection' for list of states)
+//  * Number of discrete variables: 27 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (761):
+//  * Single equations (assignments): 760
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details:
+//  * Linear torn systems: 1 {2 7}
+//  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
-//  * Number of independent subsystems: 1
+//  * Number of independent subsystems: 56
 //  * Number of states: 4 ('+d=stateselection' for list of states)
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (48):
-//  * Single equations (assignments): 47
+// Notification: Strong component statistics for simulation (103):
+//  * Single equations (assignments): 102
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -48,25 +67,6 @@ res := OpenModelica.Scripting.compareSimulationResults("Pendulum.Pendulum2_res.m
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details:
 //  * Linear torn systems: 1 {1 7}
-//  * Non-linear torn systems: 0
-// Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 730
-//  * Number of states: 0 ('+d=stateselection' for list of states)
-//  * Number of discrete variables: 27 ('+d=discreteinfo' for list of discrete vars)
-//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
-//  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (782):
-//  * Single equations (assignments): 781
-//  * Array equations: 0
-//  * Algorithm blocks: 0
-//  * Record equations: 0
-//  * When equations: 0
-//  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 0
-//  * Torn equation systems: 1
-//  * Mixed (continuous/discrete) equation systems: 0
-// Notification: Torn system details:
-//  * Linear torn systems: 1 {1 6}
 //  * Non-linear torn systems: 0
 // "
 // {"Files Equal!"}

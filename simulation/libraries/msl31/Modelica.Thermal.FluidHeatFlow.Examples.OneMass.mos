@@ -48,6 +48,7 @@ runScript(modelTesting);getErrorString();
 // [Modelica 3.1/Thermal/FluidHeatFlow.mo:1116:9-1118:45:writable] Warning: Parameter volumeFlow.duration_1 has no value, and is fixed during initialization (fixed=true), using available start value (start=0.2) as default value.
 // [Modelica 3.1/Thermal/FluidHeatFlow.mo:1121:9-1123:45:writable] Warning: Parameter volumeFlow.duration_2 has no value, and is fixed during initialization (fixed=true), using available start value (start=0.2) as default value.
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 //
 // "true
 // "
