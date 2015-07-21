@@ -4154,7 +4154,8 @@ end compWeightsEqns;
 // =============================================================================
 // fix some bugs for complex function
 //
-// (a,-b) = f(.) -> (a,c) = f(.) with c = -b
+// e.g. (a,-b) = f(.) -> (a,c) = f(.) with c = -b
+//      (a,b) = f(a) fixed iterration var
 // author: Vitalij Ruge
 // =============================================================================
 
