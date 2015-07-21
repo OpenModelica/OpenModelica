@@ -7307,6 +7307,7 @@ algorithm
                         (SymbolicJacobian.constantLinearSystem, "constantLinearSystem", false),
                         (OnRelaxation.relaxSystem, "relaxSystem", false),
                         (BackendDAEOptimize.countOperations, "countOperations", false),
+                        (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction", false),
                         (BackendDump.dumpComponentsGraphStr, "dumpComponentsGraphStr", false),
                         (SymbolicJacobian.generateSymbolicJacobianPast, "generateSymbolicJacobian", false),
                         (SymbolicJacobian.generateSymbolicLinearizationPast, "generateSymbolicLinearization", false),

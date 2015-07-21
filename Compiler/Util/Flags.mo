@@ -450,6 +450,8 @@ constant DebugFlag DUMP_SIMPLIFY_LOOPS = DEBUG_FLAG(141, "dumpSimplifyLoops", fa
   Util.gettext("Dump between steps of simplifyLoops"));
 constant DebugFlag DUMP_RTEARING = DEBUG_FLAG(142, "dumpRecursiveTearing", false,
   Util.gettext("Dump between steps of recursiveTearing"));
+constant DebugFlag DIS_SIMP_FUN = DEBUG_FLAG(143, "disableSimplifyComplexFunction", false,
+  Util.gettext("disable simplifyComplexFunction"));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -598,7 +600,8 @@ constant list<DebugFlag> allDebugFlags = {
   DYNAMIC_TEARING_INFO,
   SORT_EQNS_AND_VARS,
   DUMP_SIMPLIFY_LOOPS,
-  DUMP_RTEARING
+  DUMP_RTEARING,
+  DIS_SIMP_FUN
 };
 
 public
@@ -761,6 +764,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "solveLinearSystem",
     "addScaledVars",
     "removeSimpleEquations",
+    "simplifyComplexFunction",
     "symEuler",
     "encapsulateWhenConditions",  // must called after remove simple equations
     "reshufflePost",

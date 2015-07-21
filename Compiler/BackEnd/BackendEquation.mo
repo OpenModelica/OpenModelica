@@ -2894,6 +2894,16 @@ algorithm
   end match;
 end isAlgorithm;
 
+public function isComplexEquation
+  input BackendDAE.Equation inEqn;
+  output Boolean b;
+algorithm
+  b := match (inEqn)
+    case BackendDAE.COMPLEX_EQUATION() then true;
+    else false;
+  end match;
+end isComplexEquation;
+
 public function isNotAlgorithm
   input BackendDAE.Equation inEqn;
   output Boolean b;
