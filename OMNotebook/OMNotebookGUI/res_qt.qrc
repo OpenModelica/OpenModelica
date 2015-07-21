@@ -57,5 +57,6 @@
         <file>Resources/sketchIcons/verpattern.png</file>
         <file>Resources/toolbarIcons/sketch.png</file>
         <file>Resources/toolbarIcons/editimage.png</file>
+        <file>Resources/toolbarIcons/eval_all.png</file>
     </qresource>
 </RCC>
