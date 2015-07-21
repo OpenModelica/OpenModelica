@@ -1,0 +1,154 @@
+// name: complexFun1
+// status: correct
+
+loadFile("ComplexFun.mo");
+getErrorString();
+
+simulate(problem1);
+getErrorString();
+
+val(x,{0.0,0.1,0.2,0.7,1.0});
+getErrorString();
+
+simulate(problem2);
+getErrorString();
+
+val(y,{0.0,0.1,0.2,0.7,1.0});
+val(z,{0.0,0.1,0.2,0.7,1.0});
+getErrorString();
+
+setCommandLineOptions("+cseEachCall"); getErrorString();
+simulate(problem1);
+getErrorString();
+
+val(x,{0.0,0.1,0.2,0.7,1.0});
+getErrorString();
+
+simulate(problem2);
+getErrorString();
+
+val(y,{0.0,0.1,0.2,0.7,1.0});
+val(z,{0.0,0.1,0.2,0.7,1.0});
+getErrorString();
+
+setCommandLineOptions("+d=disableSimplifyComplexFunction +cseEachCall=false"); getErrorString();
+simulate(problem1);
+getErrorString();
+
+val(x,{0.0,0.1,0.2,0.7,1.0});
+getErrorString();
+
+simulate(problem2);
+getErrorString();
+
+val(y,{0.0,0.1,0.2,0.7,1.0});
+getErrorString();
+
+setCommandLineOptions("+d=disableSimplifyComplexFunction +cseEachCall"); getErrorString();
+simulate(problem1);
+getErrorString();
+
+val(x,{0.0,0.1,0.2,0.7,1.0});
+getErrorString();
+
+simulate(problem2);
+getErrorString();
+
+val(y,{0.0,0.1,0.2,0.7,1.0});
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "problem1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {0.0,0.2720759220056126,0.4824045318333194,1.445553342178025,2.0}
+// ""
+// record SimulationResult
+//     resultFile = "problem2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {-1.0,-1.216227766016838,-1.247213595499958,-1.136660026534076,-1.0}
+// {1.0,1.216227766016838,1.247213595499958,1.136660026534076,1.0}
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "problem1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {0.0,0.2720759220056126,0.4824045318333194,1.445553342178025,2.0}
+// ""
+// record SimulationResult
+//     resultFile = "problem2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {-1.0,-1.216227766016838,-1.247213595499958,-1.136660026534076,-1.0}
+// {1.0,1.216227766016838,1.247213595499958,1.136660026534076,1.0}
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "problem1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {0.0,0.2720759220056126,0.4824045318333193,1.445553342178025,2.0}
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Failed to build model: problem2"
+// end SimulationResult;
+// "[CodegenCFunctions.tpl:2743:11-2743:11:writable] Error: Template error: tupleReturnVariableUpdates: Unhandled expression. -$TMP_problem2_f1.z
+// [CodegenCFunctions.tpl:2743:11-2743:11:writable] Error: Template error: tupleReturnVariableUpdates: Unhandled expression. -$TMP_problem2_f5.z
+// [CodegenCFunctions.tpl:2743:11-2743:11:writable] Error: Template error: tupleReturnVariableUpdates: Unhandled expression. -$TMP_problem2_f1.z
+// [CodegenCFunctions.tpl:2743:11-2743:11:writable] Error: Template error: tupleReturnVariableUpdates: Unhandled expression. -$TMP_problem2_f5.z
+// "
+// {0.0,-0.07207592200561265,-0.08240453183331929,-0.04555334217802521,8.980666631940483e-19}
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Failed to build model: problem1"
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// [SimCode/SimCodeUtil.mo:2389:7-2389:46:writable] Error: Internal error function createNonlinearResidualEquationsComplex failed for: (x, y) = ($cse1, $cse2)
+// [simulation/modelica/others/ComplexFun.mo:14:5-14:41:writable] Error: Internal error function createNonlinearResidualEquations failed for equation: (x, y) = ($cse1, $cse2)
+// [SimCode/SimCodeUtil.mo:2891:9-2891:50:writable] Error: Internal error function createOdeSystem failed for component torn nonlinear Equationsystem{{{2:4, 5}},
+// {3:2, 1} Size: 2
+// [SimCode/SimCodeUtil.mo:1505:9-1505:54:writable] Error: Internal error function createEquationsForSystem1 failed for component torn nonlinear Equationsystem{{{2:4, 5}},
+// {3:2, 1} Size: 2
+// [SimCode/SimCodeUtil.mo:467:5-467:146:writable] Error: Internal error function createSimCode failed [Transformation from optimised DAE to simulation code structure failed]
+// "
+// {0.0,0.2720759220056126,0.4824045318333193,1.445553342178025,2.0}
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Failed to build model: problem2"
+// end SimulationResult;
+// "[SimCode/SimCodeUtil.mo:2389:7-2389:46:writable] Error: Internal error function createNonlinearResidualEquationsComplex failed for: (x, -z) = ($cse1, $cse2)
+// [simulation/modelica/others/ComplexFun.mo:31:5-31:37:writable] Error: Internal error function createNonlinearResidualEquations failed for equation: (x, -z) = ($cse1, $cse2)
+// [SimCode/SimCodeUtil.mo:4763:7-4763:46:writable] Error: Internal error complex equations currently only supported on form v = functioncall(...). Equation: (x, -z) = ($cse1, $cse2) solve for {z,x}
+// [SimCode/SimCodeUtil.mo:2891:9-2891:50:writable] Error: Internal error function createOdeSystem failed for component ComplexEquation 3 {2, 1}
+// [SimCode/SimCodeUtil.mo:1505:9-1505:54:writable] Error: Internal error function createEquationsForSystem1 failed for component ComplexEquation 3 {2, 1}
+// [SimCode/SimCodeUtil.mo:467:5-467:146:writable] Error: Internal error function createSimCode failed [Transformation from optimised DAE to simulation code structure failed]
+// "
+// {0.0,-0.07207592200561265,-0.08240453183331929,-0.04555334217802521,8.980666631940483e-19}
+// ""
+// endResult
