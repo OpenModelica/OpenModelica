@@ -127,11 +127,9 @@ getErrorString();
 //     messages = "Failed to build model: problem1"
 // end SimulationResult;
 // "Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
-// [SimCode/SimCodeUtil.mo:2389:7-2389:46:writable] Error: Internal error function createNonlinearResidualEquationsComplex failed for: (x, y) = ($cse1, $cse2)
+// [SimCode/SimCodeUtil.mo:2278:7-2278:46:writable] Error: Internal error function createNonlinearResidualEquationsComplex failed for: (x, y) = ($cse1, $cse2)
 // [simulation/modelica/others/ComplexFun.mo:14:5-14:41:writable] Error: Internal error function createNonlinearResidualEquations failed for equation: (x, y) = ($cse1, $cse2)
-// [SimCode/SimCodeUtil.mo:2891:9-2891:50:writable] Error: Internal error function createOdeSystem failed for component torn nonlinear Equationsystem{{{2:4, 5}},
-// {3:2, 1} Size: 2
-// [SimCode/SimCodeUtil.mo:1505:9-1505:54:writable] Error: Internal error function createEquationsForSystem1 failed for component torn nonlinear Equationsystem{{{2:4, 5}},
+// [SimCode/SimCodeUtil.mo:2780:9-2780:50:writable] Error: Internal error function createOdeSystem failed for component torn nonlinear Equationsystem{{{2:4, 5}},
 // {3:2, 1} Size: 2
 // [SimCode/SimCodeUtil.mo:467:5-467:146:writable] Error: Internal error function createSimCode failed [Transformation from optimised DAE to simulation code structure failed]
 // "
@@ -142,11 +140,9 @@ getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Failed to build model: problem2"
 // end SimulationResult;
-// "[SimCode/SimCodeUtil.mo:2389:7-2389:46:writable] Error: Internal error function createNonlinearResidualEquationsComplex failed for: (x, -z) = ($cse1, $cse2)
+// "[SimCode/SimCodeUtil.mo:2278:7-2278:46:writable] Error: Internal error function createNonlinearResidualEquationsComplex failed for: (x, -z) = ($cse1, $cse2)
 // [simulation/modelica/others/ComplexFun.mo:31:5-31:37:writable] Error: Internal error function createNonlinearResidualEquations failed for equation: (x, -z) = ($cse1, $cse2)
-// [SimCode/SimCodeUtil.mo:4763:7-4763:46:writable] Error: Internal error complex equations currently only supported on form v = functioncall(...). Equation: (x, -z) = ($cse1, $cse2) solve for {z,x}
-// [SimCode/SimCodeUtil.mo:2891:9-2891:50:writable] Error: Internal error function createOdeSystem failed for component ComplexEquation 3 {2, 1}
-// [SimCode/SimCodeUtil.mo:1505:9-1505:54:writable] Error: Internal error function createEquationsForSystem1 failed for component ComplexEquation 3 {2, 1}
+// [SimCode/SimCodeUtil.mo:4652:7-4652:46:writable] Error: Internal error complex equations currently only supported on form v = functioncall(...). Equation: (x, -z) = ($cse1, $cse2) solve for {z,x}
 // [SimCode/SimCodeUtil.mo:467:5-467:146:writable] Error: Internal error function createSimCode failed [Transformation from optimised DAE to simulation code structure failed]
 // "
 // {0.0,-0.07207592200561265,-0.08240453183331929,-0.04555334217802521,8.980666631940483e-19}
