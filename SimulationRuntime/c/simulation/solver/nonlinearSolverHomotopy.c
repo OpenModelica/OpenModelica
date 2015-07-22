@@ -1083,7 +1083,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
   double lambda1, lambda2;
   double lambdaMin = 1e-4;
   double a2, a3, rhs1, rhs2, D;
-  double alpha = 1e-4;
+  double alpha = 1e-1;
   int firstrun;
 
   int assert = 1;
