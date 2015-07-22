@@ -77,6 +77,7 @@ public uniontype splitElements
     list<DAE.Element> co;
     list<DAE.Element> o;
     list<DAE.Element> ca;
+    list<compWithSplitElements> sm;
   end SPLIT_ELEMENTS;
 end splitElements;
 
@@ -2170,6 +2171,24 @@ algorithm
         Print.printBuf("NORETCALL()");
       then
         ();
+    case DAE.SM_COMP(componentRef = cr,dAElist = l)
+      equation
+        Print.printBuf("SM_COMP(");
+        ComponentReference.printComponentRef(cr);
+        Print.printBuf(",");
+        dumpDebugElist(l);
+        Print.printBuf(")");
+      then
+        ();
+    case DAE.FLAT_SM(ident = n,dAElist = l)
+      equation
+        Print.printBuf("FLAT_SM(");
+        Print.printBuf(n);
+        Print.printBuf(",");
+        dumpDebugElist(l);
+        Print.printBuf(")");
+      then
+        ();
     case _
       equation
         Print.printBuf("UNKNOWN ");
@@ -2620,6 +2639,7 @@ algorithm
       list<DAE.Element> co;
       list<DAE.Element> o;
       list<DAE.Element> ca;
+      list<compWithSplitElements> sm;
       splitElements loc_splelem;
 
       compWithSplitElements compWSplElem;
@@ -2627,13 +2647,9 @@ algorithm
 
     case (DAE.COMP(ident = n,dAElist = l,comment = c))
       equation
-
-       (v,ie,ia,e,a,ca,co,o) = DAEUtil.splitElements(l);
-
-        loc_splelem = SPLIT_ELEMENTS(v,ie,ia,e,a,ca,co,o);
-
+       (v,ie,ia,e,a,ca,co,o,sm) = DAEUtil.splitElements(l);
+        loc_splelem = SPLIT_ELEMENTS(v,ie,ia,e,a,ca,co,o,sm);
         compWSplElem = COMP_WITH_SPLIT(n, loc_splelem, c);
-
       then
         (compWSplElem);
 

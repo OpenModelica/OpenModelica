@@ -272,13 +272,6 @@ algorithm
         InnerOuter.TOP_INSTANCE(sm=sm) = topInstance;
         true = BaseHashSet.has(cref, sm);
 
-        // create equation modification to outer that sets it equal to inner
-        (cache,crefInner) = PrefixUtil.prefixCref(cache,env,ih,innerPrefix, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        crefExp = Expression.makeCrefExp(crefInner,ty);
-        aexp = Expression.unelabExp(crefExp);
-        mod = DAE.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {},
-          SOME(DAE.TYPED(crefExp, NONE(), DAE.PROP(ty, DAE.C_VAR()),aexp, info)));
-
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets);
       then
@@ -952,6 +945,7 @@ algorithm
     case (_, _, _, _, _, _, _, _, _, _, _, {}, _, _, _, _, _, _, _)
       equation
         false = ClassInf.isFunction(inState);
+        // print("InstVar.instVar2: Scalar variables case: inClass: " + SCodeDump.unparseElementStr(inClass) + "\n");
         (cache, env, ih, store, dae, csets, ty, graph) = instScalar(
             inCache, inEnv, inIH, inStore, inState, inMod, inPrefix,
             inName, inClass, inAttributes, inPrefixes, inSubscripts,
