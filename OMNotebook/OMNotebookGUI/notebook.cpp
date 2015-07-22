@@ -65,6 +65,8 @@
 #include <QtGui/QTextFrame>
 #include <QtGui/QToolBar>
 #include <QtGui/QLabel>
+#include <QtGui/QMouseEvent>
+#include <QDebug>
 #include <QSettings>
 #include <QToolButton>
 
@@ -199,81 +201,12 @@ NotebookWindow::NotebookWindow(Document *subject,
 
   isShown=false;
 
-  int count=0;
+  //int count=0;
 
   Cell *current = subject_->getMainCell()->child();
-
-  Cell *current1,*current2,*current3,*current4;
-
   cells.clear();
-
-  //find  and inserts all the present cells in document in a vector
-  if( current != 0 )
-  {
-    current = current->next();
-    while(current != 0)
-    {
-      if(current->hasChilds())
-      {
-        current1=current->child();
-        while(current1!=NULL)
-        {
-          if(!current1->hasChilds())
-          {
-            cells.push_back(current1);
-          }
-
-          if(current1->hasChilds())
-          {
-            current2=current1->child();
-            while(current2!=NULL)
-            {
-              if(!current2->hasChilds())
-              {
-                cells.push_back(current2);
-              }
-              if(current2->hasChilds())
-              {
-                current3=current2->child();
-                while(current3!=NULL)
-                {
-                  if(!current3->hasChilds())
-                  {
-                    cells.push_back(current3);
-                  }
-                  if(current3->hasChilds())
-                  {
-                    current4=current3->child();
-                    while(current4!=NULL)
-                    {
-                      cells.push_back(current4);
-                      current4=current4->next();
-
-                    }
-                  }
-
-                  current3=current3->next();
-
-                }
-
-              }
-
-              current2=current2->next();
-
-            }
-
-            current2=current1->next();
-
-          }
-          //QMessageBox::about(this,"text ",current1->text());
-          current1=current1->next();
-
-        }
-      }
-      cells.push_back(current);
-      current = current->next();
-    }
-  }
+  /**find  and inserts all the present cells in document in a vector**/
+  cells=SearchCells(current);
 
   window->readXml(subject_->getFilename());
 }
@@ -1642,6 +1575,19 @@ void NotebookWindow::createInsertMenu()
   connect(evalAction, SIGNAL(triggered()), this, SLOT(eval()));
   toolBar->addAction(evalAction);
 
+  evalallAction = new QAction(tr("EvaluateAll"), this);
+  evalallAction->setStatusTip(tr("Evaluate all cells in the document"));
+  evalallAction->setIcon(QIcon(":/Resources/toolbarIcons/eval_all.png"));
+  connect(evalallAction, SIGNAL(triggered()), this, SLOT(evalall()));
+  toolBar->addAction(evalallAction);
+
+  /*
+  shiftallAction = new QAction(tr("Shift"), this);
+  shiftallAction->setStatusTip(tr("Shift the cells up"));
+  shiftallAction->setIcon(QIcon(":/Resources/toolbarIcons/undo.png"));
+  connect(shiftallAction, SIGNAL(triggered()), this, SLOT(shiftcells()));
+  toolBar->addAction(shiftallAction); */
+
   // MENU
   insertMenu = menuBar()->addMenu( tr("&Insert") );
   insertMenu->addAction( insertImageAction );
@@ -2524,6 +2470,7 @@ void NotebookWindow::newFile()
   */
 
   // AF
+  qWarning() << "inside new function";
   if( subject_->isOpen() )
   {
     // a file is open, open a new window with the new file //AF
@@ -2553,6 +2500,7 @@ void NotebookWindow::newFile()
     update();
     updateWindowTitle();
   }
+  qWarning() << "Completed new file function";
 }
 
 void NotebookWindow::updateRecentFiles(QString filename)
@@ -2585,6 +2533,7 @@ void NotebookWindow::updateRecentFiles(QString filename)
   */
 void NotebookWindow::openFile(const QString filename)
 {
+  qWarning() << "inside open";
   try
   {
     //Open a new document
@@ -2593,7 +2542,7 @@ void NotebookWindow::openFile(const QString filename)
       //Show a dialog for choosing a file.
       filename_ = QFileDialog::getOpenFileName(
             this,
-            "OMNotebook -- File Open",
+            "OMNotebook --  New File Open",
             openDir_,
             "Notebooks (*.onb *.onbz *.nb)" );
     }
@@ -2633,6 +2582,7 @@ void NotebookWindow::openFile(const QString filename)
     QMessageBox::warning( 0, "Warning", msg, "OK" );
     openFile();
   }
+  qWarning() << "open Completed";
 }
 
 /*!
@@ -3942,10 +3892,118 @@ void NotebookWindow::setAutoIndent(bool b)
 void NotebookWindow::eval()
 {
   if(GraphCell *g = dynamic_cast<GraphCell*>(subject_->getCursor()->currentCell()))
-    g->eval();
-  else if(InputCell *g = dynamic_cast<InputCell*>(subject_->getCursor()->currentCell()))
-    g->eval();
+     {
+      g->eval();
+   }
+
+  if(InputCell *g = dynamic_cast<InputCell*>(subject_->getCursor()->currentCell()))
+         {
+          g->eval();
+    }
 
 
+}
+/*** Search and Returns the number of cells in the document ***/
+QVector<Cell*> NotebookWindow::SearchCells(Cell* current)
+{
+    QVector<Cell*> totalcells;
+    Cell *current1,*current2,*current3,*current4;
+    if( current != 0 )
+    {
+        //current = current->next();
+        while(current != 0)
+        {
+            if(current->hasChilds())
+            {
+                current1=current->child();
+                while(current1!=NULL)
+                {
+                    if(!current1->hasChilds())
+                    {
+                        totalcells.append(current1);
+                    }
+
+                    if(current1->hasChilds())
+                    {
+                        current2=current1->child();
+                        while(current2!=NULL)
+                        {
+                            if(!current2->hasChilds())
+                            {
+                                totalcells.append(current2);
+                            }
+                            if(current2->hasChilds())
+                            {
+                                current3=current2->child();
+                                while(current3!=NULL)
+                                {
+                                    if(!current3->hasChilds())
+                                    {
+                                        totalcells.append(current3);
+                                    }
+                                    if(current3->hasChilds())
+                                    {
+                                        current4=current3->child();
+                                        while(current4!=NULL)
+                                        {
+                                            totalcells.append(current4);
+                                            current4=current4->next();
+
+                                        }
+                                    }
+
+                                    current3=current3->next();
+
+                                }
+
+                            }
+
+                            current2=current2->next();
+
+                        }
+
+                        current2=current1->next();
+
+                    }
+                    current1=current1->next();
+                }
+            }
+            totalcells.append(current);
+            current = current->next();
+        }
+    }
+
+    return totalcells;
+}
+
+
+void NotebookWindow::evalall()
+{
+    bool value =subject_->isEmpty();
+    if (value==false)
+    {
+        Cell* current=subject_->getMainCell()->child();
+        QVector<Cell*> cellcount;
+        cellcount=SearchCells(current);
+        qDebug()<<"Inside eval function_1:"<< cellcount <<cellcount.size();
+
+        for (int i =0;i<cellcount.size();i++)
+        {
+            if(GraphCell *g = dynamic_cast<GraphCell*>(cellcount[i]))
+            {
+                g->eval();
+                qDebug()<< cellcount[i] << g->isEvaluated();
+            }
+            if(InputCell *g = dynamic_cast<InputCell*>(cellcount[i]))
+            {
+                g->eval();
+            }
+
+        }
+    }
+    else
+    {
+        qDebug()<<"The Document is Empty";
+    }
 }
 }
