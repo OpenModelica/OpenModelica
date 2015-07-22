@@ -1084,7 +1084,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
   double lambdaMin = 1e-4;
   double a2, a3, rhs1, rhs2, D;
   double alpha = 1e-4;
-
+  int firstrun;
 
   int assert = 1;
   threadData_t *threadData = solverData->data->threadData;
@@ -1108,6 +1108,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     numberOfIterations++;
     /* debug information */
     debugInt(LOG_NLS_V, "Iteration:", numberOfIterations);
+
     /* solve jacobian and function value (both stored in hJac, last column is fvec), side effects: jacobian matrix is changed */
     if ((numberOfIterations>1) && (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->fJac, solverData->indRow, solverData->indCol, &pos, &rank) != 0))
     {
@@ -1127,22 +1128,17 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       vecAdd(solverData->n, x, solverData->dy0, solverData->x1);
       printNewtonStep(LOG_NLS_V, solverData);
 
-      assert= 1;
-#ifndef OMC_EMCC
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
-      solverData->f(solverData, solverData->x1, solverData->f1);
-      assert = 0;
-#ifndef OMC_EMCC
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
       /* Damping strategy, performance is very sensitive on the value of lambda */
       lambda1 = 1.0;
+      assert = 1;
+      firstrun = 1;
       while (assert && (lambda1 > lambdaMin))
       {
-        lambda1 *= 0.655;
-        vecAddScal(solverData->n, x, solverData->dy0, lambda1, solverData->x1);
-        assert = 1;
+        if (!firstrun){
+          lambda1 *= 0.655;
+          vecAddScal(solverData->n, x, solverData->dy0, lambda1, solverData->x1);
+          assert = 1;
+        }
 #ifndef OMC_EMCC
     MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
@@ -1151,14 +1147,19 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 #ifndef OMC_EMCC
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
-        debugDouble(LOG_NLS_V,"Assert of Newton step: lambda1 =", lambda1);
+        firstrun = 0;
+        if (assert){
+          debugDouble(LOG_NLS_V,"Assert of Newton step: lambda1 =", lambda1);
+        }
       }
+
       if (lambda1 < lambdaMin)
       {
         debugDouble(LOG_NLS,"UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
         solverData->info = -1;
         break;
       }
+
       /* Damping (see Numerical Recipes) */
       /* calculate gradient of quadratic function for damping strategy */
       grad_f = -2.0*error_f;
@@ -1193,7 +1194,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
           break;
         }
         if ((error_f1 > error_f + alpha*lambda2*grad_f) && (error_f > 1e-12) && (error_f_scaled > 1e-12))
-          {
+        {
           rhs1 = error_f1 - grad_f*lambda1 - error_f;
           rhs2 = error_f2 - grad_f*lambda2 - error_f;
           a3 = (rhs1/(lambda1*lambda1) - rhs2/(lambda2*lambda2))/(lambda1 - lambda2);
@@ -1232,6 +1233,8 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
             break;
           }
         }
+      }else{
+        lambda = lambda1;
       }
     }
     /* updating x, fvec, error_f */
