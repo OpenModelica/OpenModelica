@@ -45,6 +45,10 @@
 #include <algorithm>
 
 //QT Headers
+#include <QtGlobal>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#include <QtWidgets>
+#else
 #include <QtCore/QTimer>
 #include <QtGui/QAction>
 #include <QtGui/QApplication>
@@ -67,6 +71,7 @@
 #include <QtGui/QLabel>
 #include <QSettings>
 #include <QToolButton>
+#endif
 
 //IAEX Headers
 #include "command.h"

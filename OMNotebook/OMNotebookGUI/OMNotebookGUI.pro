@@ -5,6 +5,9 @@
 # Adeel Asghar [adeel.asghar@ida.liu.se] 2011-03-05
 
 QT += network core gui xml svg
+greaterThan(QT_MAJOR_VERSION, 4) {
+    QT *= printsupport widgets webkitwidgets
+}
 
 TARGET = OMNotebook
 TEMPLATE = app
@@ -143,7 +146,7 @@ FORMS += ImageSizeDlg.ui \
     searchform.ui
 
 win32 {
-  QMAKE_LFLAGS += -enable-auto-import
+  QMAKE_LFLAGS += -Wl,--enable-auto-import
   DEFINES += IMPORT_INTO=1
   QMAKE_CXXFLAGS += -Wl,--stack,16777216
   PLOTLIBS = -L$$(OMBUILDDIR)/build/lib/omc -lOMPlot -lomqwt

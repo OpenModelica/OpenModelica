@@ -43,9 +43,14 @@
 #include <stdexcept>
 
 //Qt Headers
+#include <QtGlobal>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#include <QtWidgets>
+#else
 #include <QtGui/QApplication>
 #include <QtGui/QLabel>
 #include <QtGui/QPaintEvent>
+#endif
 
 //IAEX Headers
 #include "cellcursor.h"

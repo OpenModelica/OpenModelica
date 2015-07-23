@@ -43,13 +43,17 @@
 
 
 //QT Headers
+#include <QtGlobal>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#include <QtWidgets>
+#else
 #include <QtGui/QWidget>
 #include <QtGui/QTextBrowser>
-//Added by qt3to4:
 #include <QtGui/QMouseEvent>
 #include <QtGui/QGridLayout>
 #include <QtGui/QResizeEvent>
 #include <QtCore/QEvent>
+#endif
 
 //IAEX Headers
 #include "cell.h"

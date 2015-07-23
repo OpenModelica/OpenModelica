@@ -333,7 +333,11 @@ void Draw_RoundRect::setRotate(const QPointF &pnt,const QPointF &pnt1)
 
 void Draw_RoundRect::setScale(float x,float y)
 {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+   item->setTransform(QTransform::fromScale(x, y), true);
+#else
    item->scale(x,y);
+#endif
 }
 
 void Draw_RoundRect::setItemId(int id)

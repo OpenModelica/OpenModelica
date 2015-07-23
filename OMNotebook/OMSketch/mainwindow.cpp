@@ -1,8 +1,15 @@
+
+//QT Headers
+#include <QtGlobal>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#include <QtWidgets>
+#else
 #include <QtGui/QApplication>
 #include <QtGui/QMenuBar>
 #include <QtGui/QStatusBar>
 #include <QtGui/QToolBar>
 #include <QtGui/QWidget>
+#endif
 
 #include "mainwindow.h"
 
@@ -29,7 +36,11 @@ MainWindow::MainWindow(QWidget *parent) :
   statusBar->setObjectName(QString::fromUtf8("statusBar"));
   this->setStatusBar(statusBar);
 
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+  this->setWindowTitle(QApplication::translate("MainWindow", "MainWindow", 0));
+#else
   this->setWindowTitle(QApplication::translate("MainWindow", "MainWindow", 0, QApplication::UnicodeUTF8));
+#endif
 
   QMetaObject::connectSlotsByName(this);
 }

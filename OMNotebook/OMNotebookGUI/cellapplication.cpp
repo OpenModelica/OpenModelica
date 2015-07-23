@@ -32,12 +32,6 @@
 
 #define RUN_DRMODELICA_CONVERTION    false
 
-//QT Headers
-#include <QtCore/QDir>
-//#include <QtCore/QObject>
-#include <QtGui/QImageWriter>
-#include <QtGui/QMessageBox>
-
 //IAEX Headers
 #include "cellapplication.h"
 #include "celldocument.h"

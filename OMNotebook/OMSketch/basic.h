@@ -4,6 +4,10 @@
 #include <vector>
 #include <math.h>
 
+#include <QtGlobal>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#include <QtWidgets>
+#else
 #include <QtGui>
 #include <QtGui/QWidget>
 #include <QtGui/QMainWindow>
@@ -51,6 +55,7 @@
 #include <QtGui/QDialog>
 #include <QtGui/QColorDialog>
 #include <QtGui/QDialogButtonBox>
+#endif
 
 
 #endif // BASIC_H

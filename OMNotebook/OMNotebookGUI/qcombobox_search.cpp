@@ -36,10 +36,6 @@
  * \date 2006-08-24
  */
 
-
-// QT Headers
-#include <QtGui/QKeyEvent>
-
 // IAEX Headers
 #include "qcombobox_search.h"
 
