@@ -28,7 +28,7 @@ HEADERS += Plot.h \
     PlotMainWindow.h
 
 win32 {
-  QMAKE_LFLAGS += -Wl,-enable-auto-import
+  QMAKE_LFLAGS += -Wl,--enable-auto-import
   CONFIG(debug, debug|release){
     LIBS += -L$$(OMBUILDDIR)/lib/omc -lOMPlot -lomqwtd
   }
