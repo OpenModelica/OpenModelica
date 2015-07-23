@@ -1901,6 +1901,7 @@ algorithm
       DAE.DAElist dae, dae2;
       Boolean has_stream, has_expandable, has_cardinality;
       ConnectionGraph.DaeEdges broken, connected;
+      Real flow_threshold;
 
     case (true, _, _, _, _)
       equation
@@ -1917,7 +1918,8 @@ algorithm
         // we do this here so we do it once and not for every EQU set.
         (dae, connected, broken) = ConnectionGraph.handleOverconstrainedConnections(inConnectionGraph, inModelNameQualified, dae);
         // adrpo: FIXME: maybe we should just remove them from the sets then send the updates sets further
-        dae2 = List.fold2(listReverse(sets), equationsDispatch, connected, broken, DAE.emptyDae);
+        flow_threshold = Flags.getConfigReal(Flags.FLOW_THRESHOLD);
+        dae2 = equationsDispatch(listReverse(sets), connected, broken, flow_threshold);
         dae = DAEUtil.joinDaes(dae, dae2);
         has_stream = System.getHasStreamConnectors();
         has_cardinality = System.getUsesCardinality();
@@ -2470,55 +2472,49 @@ end setArrayGet2;
 protected function equationsDispatch
   "Dispatches to the correct equation generating function based on the type of
   the given set."
-  input Set inSet;
+  input list<Set> inSets;
   input ConnectionGraph.DaeEdges inConnected;
   input ConnectionGraph.DaeEdges inBroken;
-  input DAE.DAElist inDae;
-  output DAE.DAElist outDae;
+  input Real inFlowThreshold;
+  output DAE.DAElist outDae = DAE.emptyDae;
+protected
+  list<ConnectorElement> eql;
 algorithm
-  outDae := matchcontinue(inSet, inConnected, inBroken, inDae)
-    local
-      list<ConnectorElement> eql;
-      DAE.DAElist   dae;
+  for set in inSets loop
+    outDae := match set
+      // A set pointer left from generateSetList, ignore it.
+      case Connect.SET_POINTER() then outDae;
 
-    // A set pointer left from generateSetList, ignore it.
-    case (Connect.SET_POINTER(), _, _, _) then inDae;
+      case Connect.SET(ty = Connect.EQU(), elements = eql)
+        algorithm
+          // Here we do some overconstrained connection breaking.
+          eql := ConnectionGraph.removeBrokenConnects(eql, inConnected, inBroken);
+        then
+          DAEUtil.joinDaes(generateEquEquations(eql), outDae);
 
-    case (Connect.SET(ty = Connect.EQU(), elements = eql), _, _, _)
-      equation
-        // here we do some overconstrained connection breaking
-        eql = ConnectionGraph.removeBrokenConnects(eql, inConnected, inBroken);
-        dae = generateEquEquations(eql);
-      then
-        DAEUtil.joinDaes(dae, inDae);
+      case Connect.SET(ty = Connect.FLOW(), elements = eql)
+        then DAEUtil.joinDaes(generateFlowEquations(eql), outDae);
 
-    case (Connect.SET(ty = Connect.FLOW(), elements = eql), _, _, _)
-      equation
-        dae = generateFlowEquations(eql);
-      then
-        DAEUtil.joinDaes(dae, inDae);
+      case Connect.SET(ty = Connect.STREAM(), elements = eql)
+        then DAEUtil.joinDaes(generateStreamEquations(eql, inFlowThreshold), outDae);
 
-    case (Connect.SET(ty = Connect.STREAM(_), elements = eql), _, _, _)
-      equation
-        dae = generateStreamEquations(eql);
-      then
-        DAEUtil.joinDaes(dae, inDae);
+      // Should never happen.
+      case Connect.SET(ty = Connect.NO_TYPE())
+        algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,
+            {"ConnectUtil.equationsDispatch failed on connection set with no type."});
+        then
+          fail();
 
-    case (Connect.SET(ty = Connect.NO_TYPE()), _, _, _)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"ConnectUtil.equationsDispatch failed on connection set with no type."});
-      then
-        fail();
+      else
+        algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,
+            {"ConnectUtil.equationsDispatch failed because of unknown reason."});
+        then
+          fail();
 
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"ConnectUtil.equationsDispatch failed because of unknown reason."});
-      then
-        fail();
-
-  end matchcontinue;
+    end match;
+  end for;
 end equationsDispatch;
 
 protected function generateEquEquations
@@ -2714,6 +2710,7 @@ end increaseRefCount;
 protected function generateStreamEquations
   "Generates the equations for a stream connection set."
   input list<ConnectorElement> inElements;
+  input Real inFlowThreshold;
   output DAE.DAElist outDae;
 algorithm
   outDae := match(inElements)
@@ -2764,10 +2761,9 @@ algorithm
 
     // The general case with N inside connectors and M outside:
     else
-      equation
-        (outside, inside) = List.splitOnTrue(inElements, isOutsideStream);
-        dae = List.fold2(outside, streamEquationGeneral,
-          outside, inside, DAE.emptyDae);
+      algorithm
+        (outside, inside) := List.splitOnTrue(inElements, isOutsideStream);
+        dae := streamEquationGeneral(outside, inside, inFlowThreshold);
       then
         dae;
 
@@ -2787,25 +2783,26 @@ end isOutsideStream;
 
 protected function streamEquationGeneral
   "Generates an equation for an outside stream connector element."
-  input ConnectorElement inElement;
   input list<ConnectorElement> inOutsideElements;
   input list<ConnectorElement> inInsideElements;
-  input DAE.DAElist inDae;
-  output DAE.DAElist outDae;
+  input Real inFlowThreshold;
+  output DAE.DAElist outDae = DAE.emptyDae;
 protected
   list<ConnectorElement> outside;
-  DAE.ComponentRef stream_cr;
-  DAE.Exp cref_exp, outside_sum1, outside_sum2, inside_sum1, inside_sum2, res;
+  DAE.Exp cref_exp, res;
   DAE.ElementSource src;
   DAE.DAElist dae;
+  DAE.ComponentRef name;
 algorithm
-  Connect.CONNECTOR_ELEMENT(name = stream_cr, source = src) := inElement;
-  cref_exp := Expression.crefExp(stream_cr);
-  outside := removeStreamSetElement(stream_cr, inOutsideElements);
-  res := streamSumEquationExp(outside, inInsideElements);
-  src := DAEUtil.addAdditionalComment(src, " equation generated by stream handling");
-  dae := DAE.DAE({DAE.EQUATION(cref_exp, res, src)});
-  outDae := DAEUtil.joinDaes(dae, inDae);
+  for e in inOutsideElements loop
+    Connect.CONNECTOR_ELEMENT(name = name, source = src) := e;
+    cref_exp := Expression.crefExp(name);
+    outside := removeStreamSetElement(name, inOutsideElements);
+    res := streamSumEquationExp(outside, inInsideElements, inFlowThreshold);
+    src := DAEUtil.addAdditionalComment(src, " equation generated by stream handling");
+    dae := DAE.DAE({DAE.EQUATION(cref_exp, res, src)});
+    outDae := DAEUtil.joinDaes(dae, outDae);
+  end for;
 end streamEquationGeneral;
 
 protected function streamSumEquationExp
@@ -2816,77 +2813,52 @@ protected function streamSumEquationExp
      sum(max( flow_exp[i], eps) * inStream(stream_exp[i]) for i in M)) /
     (sum(max(-flow_exp[i], eps) for i in N) +
      sum(max( flow_exp[i], eps) for i in M))
+
+  where eps = inFlowThreshold.
   "
   input list<ConnectorElement> inOutsideElements;
   input list<ConnectorElement> inInsideElements;
+  input Real inFlowThreshold;
   output DAE.Exp outSumExp;
 protected
   DAE.Exp outside_sum1, outside_sum2, inside_sum1, inside_sum2, res;
 algorithm
-  outSumExp := match(inOutsideElements, inInsideElements)
+  if listEmpty(inOutsideElements) then
     // No outside components.
-    case ({}, _)
-      equation
-        inside_sum1 = sumMap(inInsideElements, sumInside1);
-        inside_sum2 = sumMap(inInsideElements, sumInside2);
-        res = Expression.expDiv(inside_sum1, inside_sum2);
-      then
-        res;
+    inside_sum1 := sumMap(inInsideElements, sumInside1, inFlowThreshold);
+    inside_sum2 := sumMap(inInsideElements, sumInside2, inFlowThreshold);
+    outSumExp := Expression.expDiv(inside_sum1, inside_sum2);
+  elseif listEmpty(inInsideElements) then
     // No inside components.
-    case (_, {})
-      equation
-        outside_sum1 = sumMap(inOutsideElements, sumOutside1);
-        outside_sum2 = sumMap(inOutsideElements, sumOutside2);
-        res = Expression.expDiv(outside_sum1, outside_sum2);
-      then
-        res;
+    outside_sum1 := sumMap(inOutsideElements, sumOutside1, inFlowThreshold);
+    outside_sum2 := sumMap(inOutsideElements, sumOutside2, inFlowThreshold);
+    outSumExp := Expression.expDiv(outside_sum1, outside_sum2);
+  else
     // Both outside and inside components.
-    else
-      equation
-        outside_sum1 = sumMap(inOutsideElements, sumOutside1);
-        outside_sum2 = sumMap(inOutsideElements, sumOutside2);
-        inside_sum1 = sumMap(inInsideElements, sumInside1);
-        inside_sum2 = sumMap(inInsideElements, sumInside2);
-        res = Expression.expDiv(Expression.expAdd(outside_sum1, inside_sum1),
-                                Expression.expAdd(outside_sum2, inside_sum2));
-      then
-        res;
-  end match;
+    outside_sum1 := sumMap(inOutsideElements, sumOutside1, inFlowThreshold);
+    outside_sum2 := sumMap(inOutsideElements, sumOutside2, inFlowThreshold);
+    inside_sum1 := sumMap(inInsideElements, sumInside1, inFlowThreshold);
+    inside_sum2 := sumMap(inInsideElements, sumInside2, inFlowThreshold);
+    outSumExp := Expression.expDiv(Expression.expAdd(outside_sum1, inside_sum1),
+                                   Expression.expAdd(outside_sum2, inside_sum2));
+  end if;
 end streamSumEquationExp;
 
 protected function sumMap
   "Creates a sum expression by applying the given function on the list of
   elements and summing up the resulting expressions."
-  input list<SetElement> inElements;
+  input list<ConnectorElement> inElements;
   input FuncType inFunc;
+  input Real inFlowThreshold;
   output DAE.Exp outExp;
 
-  replaceable type SetElement subtypeof Any;
-
   partial function FuncType
-    input SetElement inElement;
+    input ConnectorElement inElement;
+    input Real inFlowThreshold;
     output DAE.Exp outExp;
   end FuncType;
 algorithm
-  outExp := match(inElements, inFunc)
-    local
-      SetElement elem;
-      list<SetElement> rest_elem;
-      DAE.Exp e1, e2;
-
-    case ({elem}, _)
-      equation
-        e1 = inFunc(elem);
-      then
-        e1;
-
-    case (elem :: rest_elem, _)
-      equation
-        e1 = inFunc(elem);
-        e2 = sumMap(rest_elem, inFunc);
-      then
-        Expression.expAdd(e1, e2);
-  end match;
+  outExp := Expression.expAdd(inFunc(e, inFlowThreshold) for e in listReverse(inElements));
 end sumMap;
 
 protected function streamFlowExp
@@ -2918,12 +2890,14 @@ protected function sumOutside1
     max(flow_exp, eps) * inStream(stream_exp)
   given a stream set element."
   input ConnectorElement inElement;
+  input Real inFlowThreshold;
   output DAE.Exp outExp;
 protected
-  DAE.Exp stream_exp, flow_exp;
+  DAE.Exp stream_exp, flow_exp, flow_threshold;
 algorithm
   (stream_exp, flow_exp) := streamFlowExp(inElement);
-  outExp := Expression.expMul(makePositiveMaxCall(flow_exp),
+  flow_threshold := DAE.RCONST(inFlowThreshold);
+  outExp := Expression.expMul(makePositiveMaxCall(flow_exp, flow_threshold),
                               makeInStreamCall(stream_exp));
 end sumOutside1;
 
@@ -2932,15 +2906,17 @@ protected function sumInside1
     max(-flow_exp, eps) * stream_exp
   given a stream set element."
   input ConnectorElement inElement;
+  input Real inFlowThreshold;
   output DAE.Exp outExp;
 protected
-  DAE.Exp stream_exp, flow_exp;
+  DAE.Exp stream_exp, flow_exp, flow_threshold;
   DAE.Type flowTy, streamTy;
 algorithm
   (stream_exp, flow_exp) := streamFlowExp(inElement);
   flowTy := Expression.typeof(flow_exp);
   flow_exp := DAE.UNARY(DAE.UMINUS(flowTy), flow_exp);
-  outExp := Expression.expMul(makePositiveMaxCall(flow_exp), stream_exp);
+  flow_threshold := DAE.RCONST(inFlowThreshold);
+  outExp := Expression.expMul(makePositiveMaxCall(flow_exp, flow_threshold), stream_exp);
 end sumInside1;
 
 protected function sumOutside2
@@ -2948,12 +2924,13 @@ protected function sumOutside2
     max(flow_exp, eps)
   given a stream set element."
   input ConnectorElement inElement;
+  input Real inFlowThreshold;
   output DAE.Exp outExp;
 protected
   DAE.Exp flow_exp;
 algorithm
   flow_exp := flowExp(inElement);
-  outExp := makePositiveMaxCall(flow_exp);
+  outExp := makePositiveMaxCall(flow_exp, DAE.RCONST(inFlowThreshold));
 end sumOutside2;
 
 protected function sumInside2
@@ -2961,6 +2938,7 @@ protected function sumInside2
     max(-flow_exp, eps)
   given a stream set element."
   input ConnectorElement inElement;
+  input Real inFlowThreshold;
   output DAE.Exp outExp;
 protected
   DAE.Exp flow_exp;
@@ -2969,7 +2947,7 @@ algorithm
   flow_exp := flowExp(inElement);
   flowTy := Expression.typeof(flow_exp);
   flow_exp := DAE.UNARY(DAE.UMINUS(flowTy), flow_exp);
-  outExp := makePositiveMaxCall(flow_exp);
+  outExp := makePositiveMaxCall(flow_exp, DAE.RCONST(inFlowThreshold));
 end sumInside2;
 
 public function faceEqual "Test for face equality."
@@ -2999,16 +2977,29 @@ end makeInStreamCall;
 protected function makePositiveMaxCall
   "Generates a max(flow_exp, eps) call."
   input DAE.Exp inFlowExp;
+  input DAE.Exp inFlowThreshold;
   output DAE.Exp outPositiveMaxCall;
   annotation(__OpenModelica_EarlyInline = true);
 protected
   DAE.Type ty;
+  list<DAE.Var> attr;
+  Option<DAE.Exp> nominal_oexp;
+  DAE.Exp nominal_exp, flow_threshold;
 algorithm
   ty := Expression.typeof(inFlowExp);
+  nominal_oexp := Types.lookupAttributeExp(Types.getAttributes(ty), "nominal");
+
+  if isSome(nominal_oexp) then
+    SOME(nominal_exp) := nominal_oexp;
+    flow_threshold := Expression.expMul(inFlowThreshold, nominal_exp);
+  else
+    flow_threshold := inFlowThreshold;
+  end if;
+
   outPositiveMaxCall :=
      DAE.CALL(
         Absyn.IDENT("max"),
-        {inFlowExp, DAE.RCONST(1e-15)},
+        {inFlowExp, flow_threshold},
         DAE.CALL_ATTR(
           ty,
           false,
@@ -3028,46 +3019,45 @@ protected function evaluateConnectionOperators
   input array<Set> inSetArray;
   input DAE.DAElist inDae;
   output DAE.DAElist outDae;
+protected
+  Real flow_threshold;
 algorithm
-  outDae := match(inHasStream, inHasCardinality, inSets, inSetArray, inDae)
-    local
-      DAE.DAElist dae;
-
-    // Skip this phase if we have no connection operators.
-    case (false, false, _, _, _) then inDae;
-
-    else
-      equation
-        (dae, _, _) = DAEUtil.traverseDAE(inDae, DAE.emptyFuncTree, evaluateConnectionOperators2, (inHasStream, inHasCardinality, inSets, inSetArray));
-        dae = simplifyDAEElements(inHasCardinality, dae);
-      then
-        dae;
-
-  end match;
+  // Skip this phase if we have no connection operators.
+  if not inHasStream and not inHasCardinality then
+    outDae := inDae;
+  else
+    flow_threshold := Flags.getConfigReal(Flags.FLOW_THRESHOLD);
+    outDae := DAEUtil.traverseDAE(inDae, DAE.emptyFuncTree,
+      function evaluateConnectionOperators2(
+        inHasCardinality = inHasCardinality,
+        inSetArray = inSetArray,
+        inFlowThreshold = flow_threshold), inSets);
+    outDae := simplifyDAEElements(inHasCardinality, outDae);
+  end if;
 end evaluateConnectionOperators;
 
 protected function evaluateConnectionOperators2
   "Helper function to evaluateConnectionOperators."
   input DAE.Exp inExp;
-  input tuple<Boolean, Boolean, Connect.Sets, array<Set>> inTuple;
+  input Connect.Sets inSets;
+  input array<Set> inSetArray;
+  input Boolean inHasCardinality;
+  input Real inFlowThreshold;
   output DAE.Exp outExp;
-  output tuple<Boolean, Boolean, Connect.Sets, array<Set>> outTuple;
+  output Connect.Sets outSets = inSets;
+protected
+  Boolean changed;
 algorithm
-  (outExp,outTuple) := match (inExp,inTuple)
-    local
-      DAE.Exp e;
-      Connect.Sets sets;
-      array<Set> set_array;
-      Boolean changed, has_stream, has_cardinality;
+  (outExp, changed) := Expression.traverseExpBottomUp(inExp,
+    function evaluateConnectionOperatorsExp(
+      inSets = inSets,
+      inSetArray = inSetArray,
+      inFlowThreshold = inFlowThreshold), false);
 
-    case (e, (has_stream, has_cardinality, sets, set_array))
-      equation
-        (e, (_, _, sets, set_array, changed)) = Expression.traverseExpBottomUp(e, evaluateConnectionOperatorsExp, (has_stream, has_cardinality, sets, set_array, false));
-        // only apply simplify if the expression changed *AND* we have cardinality
-        changed = boolAnd(changed, has_cardinality);
-        (e, _) = ExpressionSimplify.condsimplify(changed, e);
-      then (e, (has_stream, has_cardinality, sets, set_array));
-  end match;
+  // Only apply simplify if the expression changed *AND* we have cardinality.
+  if changed and inHasCardinality then
+    outExp := ExpressionSimplify.simplify(outExp);
+  end if;
 end evaluateConnectionOperators2;
 
 protected function evaluateConnectionOperatorsExp
@@ -3075,46 +3065,45 @@ protected function evaluateConnectionOperatorsExp
    expression is a call to inStream or actualStream, and if so calls the
    appropriate function in ConnectUtil to evaluate the call."
   input DAE.Exp inExp;
-  input tuple<Boolean, Boolean, Connect.Sets, array<Set>, Boolean> inTuple;
+  input Sets inSets;
+  input array<Set> inSetArray;
+  input Real inFlowThreshold;
+  input Boolean inChanged;
   output DAE.Exp outExp;
-  output tuple<Boolean, Boolean, Connect.Sets, array<Set>, Boolean> outTuple;
+  output Boolean outChanged;
 algorithm
-  (outExp,outTuple) := match (inExp,inTuple)
+  (outExp, outChanged) := match inExp
     local
       DAE.ComponentRef cr;
       Connect.Sets sets;
       array<Set> set_arr;
       DAE.Exp e;
       DAE.Type ty;
-      Boolean has_stream, has_cardinality;
 
-    case (DAE.CALL(path = Absyn.IDENT("inStream"),
-                    expLst = {DAE.CREF(componentRef = cr)}),
-          (has_stream as true, has_cardinality as _, sets, set_arr, _))
+    case DAE.CALL(path = Absyn.IDENT("inStream"),
+                  expLst = {DAE.CREF(componentRef = cr)})
       equation
-        e = evaluateInStream(cr, (has_stream, has_cardinality, sets, set_arr));
+        e = evaluateInStream(cr, inSets, inSetArray, inFlowThreshold);
         //print("Evaluated inStream(" + ExpressionDump.dumpExpStr(DAE.CREF(cr, ty), 0) + ") ->\n" + ExpressionDump.dumpExpStr(e, 0) + "\n");
       then
-        (e, (has_stream, has_cardinality, sets, set_arr, true));
+        (e, true);
 
-    case (DAE.CALL(path = Absyn.IDENT("actualStream"),
-                    expLst = {DAE.CREF(componentRef = cr)}),
-          (has_stream as true, has_cardinality as _, sets, set_arr, _))
+    case DAE.CALL(path = Absyn.IDENT("actualStream"),
+                  expLst = {DAE.CREF(componentRef = cr)})
       equation
-        e = evaluateActualStream(cr, sets, set_arr);
+        e = evaluateActualStream(cr, inSets, inSetArray, inFlowThreshold);
         //print("Evaluated actualStream(" + ExpressionDump.dumpExpStr(DAE.CREF(cr, ty), 0) + ") ->\n" + ExpressionDump.dumpExpStr(e, 0) + "\n");
       then
-        (e, (has_stream, has_cardinality, sets, set_arr, true));
+        (e, true);
 
-    case (DAE.CALL(path = Absyn.IDENT("cardinality"),
-                    expLst = {DAE.CREF(componentRef = cr)}),
-          (has_stream as _, has_cardinality as true, sets, set_arr, _))
+    case DAE.CALL(path = Absyn.IDENT("cardinality"),
+                  expLst = {DAE.CREF(componentRef = cr)})
       equation
-        e = evaluateCardinality(cr, sets);
+        e = evaluateCardinality(cr, inSets);
       then
-        (e, (has_stream, has_cardinality, sets, set_arr, true));
+        (e, true);
 
-    else (inExp,inTuple);
+    else (inExp, inChanged);
 
   end match;
 end evaluateConnectionOperatorsExp;
@@ -3143,78 +3132,54 @@ algorithm
   end matchcontinue;
 end mkArrayIfNeeded;
 
-public function evaluateInStream
+protected function evaluateInStream
   "This function evaluates the inStream operator for a component reference,
    given the connection sets."
   input DAE.ComponentRef inStreamCref;
-  input tuple<Boolean, Boolean, Sets, array<Set>> inSets;
+  input Sets inSets;
+  input array<Set> inSetArray;
+  input Real inFlowThreshold;
   output DAE.Exp outExp;
+protected
+  ConnectorElement e;
+  list<ConnectorElement> sl;
+  Integer set;
 algorithm
-  outExp := matchcontinue(inStreamCref, inSets)
-    local
-      ConnectorElement e;
-      Sets sets;
+  try
+    e := findElement(inStreamCref, Connect.INSIDE(), Connect.STREAM(NONE()),
+      DAE.emptyElementSource, inSets);
 
-    case (_, (_, _, sets, _))
-      equation
-        e = findElement(inStreamCref, Connect.INSIDE(), Connect.STREAM(NONE()),
-          DAE.emptyElementSource, sets);
-      then
-        evaluateInStream2(inStreamCref, e, inSets);
-
+    if isNewElement(e) then
+      // A new element means that the stream element couldn't be found in the sets
+      // => unconnected stream connector.
+      sl := {e};
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- ConnectUtil.evaluateInStream failed for " +
-          ComponentReference.crefStr(inStreamCref) + "\n");
-      then
-        fail();
+      // Otherwise, fetch the set that the element belongs to and evaluate the
+      // inStream call.
+      Connect.CONNECTOR_ELEMENT(set = set) := e;
+      Connect.SET(ty = Connect.STREAM(), elements = sl) :=
+        setArrayGet(inSetArray, set);
+    end if;
 
-  end matchcontinue;
+    outExp := generateInStreamExp(inStreamCref, sl, inSets, inSetArray, inFlowThreshold);
+  else
+    true := Flags.isSet(Flags.FAILTRACE);
+    Debug.traceln("- ConnectUtil.evaluateInStream failed for " +
+      ComponentReference.crefStr(inStreamCref) + "\n");
+  end try;
 end evaluateInStream;
-
-protected function evaluateInStream2
-  "Helper function to evaluateInStream."
-  input DAE.ComponentRef inStreamCref;
-  input ConnectorElement inElement;
-  input tuple<Boolean, Boolean, Sets, array<Set>> inSets;
-  output DAE.Exp outExp;
-algorithm
-  outExp := matchcontinue(inStreamCref, inElement, inSets)
-    local
-      Integer set;
-      list<ConnectorElement> sl;
-      array<Set> set_array;
-
-    // A new element means that the stream element couldn't be found in the sets
-    // => unconnected stream connector.
-    case (_, _, _)
-      equation
-        true = isNewElement(inElement);
-      then
-        generateInStreamExp(inStreamCref, {inElement}, inSets);
-
-    // Otherwise, fetch the set that the element belongs to and evaluate the
-    // inStream call.
-    case (_, Connect.CONNECTOR_ELEMENT(set = set), (_, _, _, set_array))
-      equation
-        Connect.SET(ty = Connect.STREAM(_), elements = sl) =
-          setArrayGet(set_array, set);
-      then
-        generateInStreamExp(inStreamCref, sl, inSets);
-
-  end matchcontinue;
-end evaluateInStream2;
 
 protected function generateInStreamExp
   "Helper function to evaluateInStream. Generates an expression for inStream
   given a connection set."
   input DAE.ComponentRef inStreamCref;
   input list<ConnectorElement> inStreams;
-  input tuple<Boolean, Boolean, Connect.Sets, array<Set>> inSets;
+  input Sets inSets;
+  input array<Set> inSetArray;
+  input Real inFlowThreshold;
   output DAE.Exp outExp;
 algorithm
-  outExp := match(inStreamCref, inStreams, inSets)
+  outExp := match inStreams
     local
       DAE.ComponentRef c;
       Connect.Face f1, f2;
@@ -3223,52 +3188,53 @@ algorithm
 
     // Unconnected stream connector:
     // inStream(c) = c;
-    case (_, {Connect.CONNECTOR_ELEMENT(name = c, face = Connect.INSIDE())}, _)
+    case {Connect.CONNECTOR_ELEMENT(name = c, face = Connect.INSIDE())}
       then Expression.crefExp(c);
 
     // Two inside connected stream connectors:
     // inStream(c1) = c2;
     // inStream(c2) = c1;
-    case (_, {Connect.CONNECTOR_ELEMENT(face = Connect.INSIDE()),
-              Connect.CONNECTOR_ELEMENT(face = Connect.INSIDE())}, _)
-      equation
-        {Connect.CONNECTOR_ELEMENT(name = c)} =
+    case {Connect.CONNECTOR_ELEMENT(face = Connect.INSIDE()),
+          Connect.CONNECTOR_ELEMENT(face = Connect.INSIDE())}
+      algorithm
+        {Connect.CONNECTOR_ELEMENT(name = c)} :=
           removeStreamSetElement(inStreamCref, inStreams);
-        e = Expression.crefExp(c);
+        e := Expression.crefExp(c);
       then
         e;
 
     // One inside, one outside connected stream connector:
     // inStream(c1) = inStream(c2);
-    case (_, {Connect.CONNECTOR_ELEMENT(face = f1),
-              Connect.CONNECTOR_ELEMENT(face = f2)}, _)
-      equation
-        false = faceEqual(f1, f2);
-        {Connect.CONNECTOR_ELEMENT(name = c)} =
+    case {Connect.CONNECTOR_ELEMENT(face = f1),
+          Connect.CONNECTOR_ELEMENT(face = f2)}
+      algorithm
+        false := faceEqual(f1, f2);
+        {Connect.CONNECTOR_ELEMENT(name = c)} :=
           removeStreamSetElement(inStreamCref, inStreams);
-        e = evaluateInStream(c, inSets);
+        e := evaluateInStream(c, inSets, inSetArray, inFlowThreshold);
       then
         e;
 
     // The general case:
     else
-      equation
-        (outside, inside) = List.splitOnTrue(inStreams, isOutsideStream);
-        inside = removeStreamSetElement(inStreamCref, inside);
-        e = streamSumEquationExp(outside, inside);
+      algorithm
+        (outside, inside) := List.splitOnTrue(inStreams, isOutsideStream);
+        inside := removeStreamSetElement(inStreamCref, inside);
+        e := streamSumEquationExp(outside, inside, inFlowThreshold);
         // Evaluate any inStream calls that were generated.
-        (e, _) = evaluateConnectionOperators2(e, inSets);
+        e := evaluateConnectionOperators2(e, inSets, inSetArray, false, inFlowThreshold);
       then
         e;
   end match;
 end generateInStreamExp;
 
-public function evaluateActualStream
+protected function evaluateActualStream
   "This function evaluates the actualStream operator for a component reference,
   given the connection sets."
   input DAE.ComponentRef inStreamCref;
   input Connect.Sets inSets;
   input array<Set> inSetArray;
+  input Real inFlowThreshold;
   output DAE.Exp outExp;
 protected
   DAE.ComponentRef flow_cr;
@@ -3283,13 +3249,14 @@ algorithm
   // Select a branch if we know the flow direction, otherwise generate the whole
   // if-equation.
   if flow_dir == 1 then
-    rel_exp := evaluateInStream(inStreamCref, (true, false, inSets, inSetArray));
+    rel_exp := evaluateInStream(inStreamCref, inSets, inSetArray, inFlowThreshold);
   elseif flow_dir == -1 then
     rel_exp := Expression.crefExp(inStreamCref);
   else
     flow_exp := Expression.crefExp(flow_cr);
     stream_exp := Expression.crefExp(inStreamCref);
-    instream_exp := evaluateInStream(inStreamCref, (true, false, inSets, inSetArray));
+    instream_exp := evaluateInStream(inStreamCref, inSets, inSetArray,
+                      inFlowThreshold);
     rel_exp := DAE.IFEXP(
       DAE.RELATION(flow_exp, DAE.GREATER(ety), DAE.RCONST(0.0), -1, NONE()),
       instream_exp, stream_exp);

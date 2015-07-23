@@ -33,8 +33,7 @@ encapsulated package StateMachineFeatures
 " file:        StateMachineFeatures.mo
   package:     StateMachineFeatures
   description: Provides support for Modelica State Machines.
-
-  RCS: $Id$"
+"
 
 public import Absyn;
 public import BackendDAE;
@@ -171,6 +170,18 @@ constant String SMS_PRE = "smOf" "prefix for crefs of fresh State Machine Semant
 constant Boolean DEBUG_SMDUMP = false "enable verbose stdout debug information during elaboration";
 
 public function stateMachineElab
+  "Deactived old module, since now implemented in frontend. See function 'stateMachineElabDEACTIVATED' for old code.
+
+   Might want to reactivate (and adapt) the module at a later time, particularly when state machine support is to be
+   extended to support features that cannot be handled in a good way in the front-end.
+  "
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE := inDAE;
+end stateMachineElab;
+
+public function stateMachineElabDEACTIVATED
   "Elaborate state machines and transform them in data-flow equations."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
@@ -277,7 +288,7 @@ algorithm
     //BackendDump.printShared(shared);
   end if;
 
-end stateMachineElab;
+end stateMachineElabDEACTIVATED;
 
 protected function synthesizeAutomataEqs "
 Author: BTH
@@ -313,7 +324,7 @@ Synthesize Automaton/state machine relevant data-flow equations.
   output BackendDAE.EqSystem systOut;
 protected
   DAE.ComponentRef initRef, resetRef, stateRef, activeResetStateRef, activeStateRef, activeResetRef, activeRef;
-  BackendDAE.Var initVar, resetVar, activePlotIndicatorVar;
+  BackendDAE.Var initVar, activePlotIndicatorVar;
   DAE.ComponentRef preRef, refiningRef, refiningResetRef, refiningActiveRef;
   Composition refiningComp;
   list<Composition> stateRefiningComps, refiningComps;
@@ -2440,6 +2451,7 @@ algorithm
         mode1 = MODE(name1, isInitial1, edges1, eqs1, outgoing1,os1,ol1,ps1);
         modes = BaseHashTable.add((cstate1, mode1), inA);
 
+        // FIXME: I should just update the mode1 and not create a mode2???
         mode2 = if BaseHashTable.hasKey(cstate2, modes)
           then BaseHashTable.get(cstate2, modes)
             else MODE(ComponentReference.crefLastIdent(cstate1), false, HashSet.emptyHashSet(),

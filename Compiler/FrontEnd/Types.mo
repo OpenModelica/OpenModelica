@@ -8874,6 +8874,19 @@ algorithm
   end for;
 end lookupAttributeValue;
 
+public function lookupAttributeExp
+  input list<DAE.Var> inAttributes;
+  input String inName;
+  output Option<DAE.Exp> outExp = NONE();
+algorithm
+  for attr in inAttributes loop
+    if inName == varName(attr) then
+      outExp := DAEUtil.bindingExp(varBinding(attr));
+      break;
+    end if;
+  end for;
+end lookupAttributeExp;
+
 protected function unboxedTypeTraverseHelper<T>
   input DAE.Type ty;
   input T dummy;

@@ -154,6 +154,10 @@ protected import System;
 protected import SCodeDump;
 protected import UnitAbsynBuilder;
 protected import NFSCodeFlattenRedeclare;
+protected import InstStateMachineUtil;
+protected import HashTableSM1;
+
+protected import DAEDump; // BTH
 
 protected function instantiateClass_dispatch
 " instantiate a class.
@@ -2061,8 +2065,10 @@ algorithm
       Option<SCode.ExternalDecl> ed;
       DAE.ElementSource elementSource;
       list<Absyn.Subscript> adno;
-      list<DAE.ComponentRef> statesOfSM2;
+      list<DAE.ComponentRef> smCompCrefs "state machine components crefs";
+      list<DAE.ComponentRef> smInitialCrefs "state machine crefs of initial states";
       FCore.Ref lastRef;
+      InstStateMachineUtil.SMNodeToFlatSMGroupTable smCompToFlatSM;
 
     /*// uncomment for debugging
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,inClassDef6,
@@ -2238,9 +2244,10 @@ algorithm
         (comp_cond, compelts_2) = List.splitOnTrue(compelts_2, InstUtil.componentHasCondition);
         compelts_2 = listAppend(compelts_2, comp_cond);
 
-        // BTH: Search for Modelica State Machine states and update ih correspondingly.
-        statesOfSM2 = InstSection.getSMStatesInContext(eqs_1);
-        ih = List.fold1(statesOfSM2, InnerOuter.updateSMHierarchy, inPrefix3, ih);
+        // BTH: Search for state machine components and update ih correspondingly.
+        (smCompCrefs, smInitialCrefs) = InstStateMachineUtil.getSMStatesInContext(eqs_1, pre);
+        //ih = List.fold1(smCompCrefs, InnerOuter.updateSMHierarchy, inPrefix3, ih);
+        ih = List.fold(smCompCrefs, InnerOuter.updateSMHierarchy, ih);
 
         (cache,env5,ih,store,dae1,csets,ci_state2,vars,graph) =
           instElementList(cache, env4, ih, store, mods, pre, ci_state1,
@@ -2294,6 +2301,11 @@ algorithm
         //Instantiate Constraints  (see function "instConstraints")
         (cache,env5,dae7,_) =
           instConstraints(cache,env5, pre, ci_state6, constrs, impl);
+
+        // BTH: Relate state machine components to the flat state machine that they are part of
+        smCompToFlatSM = InstStateMachineUtil.createSMNodeToFlatSMGroupTable(dae2);
+        // BTH: Wrap state machine components (including transition statements) into corresponding flat state machine containers
+        (dae1,dae2) = InstStateMachineUtil.wrapSMCompsInFlatSMs(ih, dae1, dae2, smCompToFlatSM, smInitialCrefs);
 
         //Collect the DAE's
         dae = DAEUtil.joinDaeLst({dae1,dae2,dae3,dae4,dae5,dae6,dae7});
@@ -3415,7 +3427,7 @@ algorithm
       Connect.Sets csets;
       DAE.Attributes dae_attr;
       DAE.Binding binding;
-      DAE.ComponentRef cref, vn;
+      DAE.ComponentRef cref, vn, cref2;
       DAE.DAElist dae;
       DAE.Mod mod, mods, class_mod, mm, cmod, mod_1, var_class_mod, m_1, cls_mod;
       DAE.Type ty;
@@ -3443,6 +3455,10 @@ algorithm
       String name, id, ns, s, scope_str;
       UnitAbsyn.InstStore store;
       FCore.Node node;
+      InnerOuter.TopInstance topInstance; // BTH
+      HashSet.HashSet sm; // BTH
+      Boolean isInSM; // BTH
+      list<DAE.Element> elems; // BTH
 
     // Imports are simply added to the current frame, so that the lookup rule can find them.
     // Import have already been added to the environment so there is nothing more to do here.
@@ -3619,9 +3635,35 @@ algorithm
         //                    and add it to the cache!
         // (cache, _, _) = addRecordConstructorsToTheCache(cache, cenv, ih, mod_1, pre, ci_state, dir, cls, inst_dims);
         (cenv, cls, ih) = FGraph.createVersionScope(env2, name, pre, mod_1, cenv, cls, ih);
+
+        /* Check  whether the current class is part of a state machine */
+        (cache, cref2) = PrefixUtil.prefixCref(cache, cenv, ih, pre, cref);
+        //print("Inst.instElement: before SM check " + PrefixUtil.printPrefixStr(pre) + "." + name + " cref2: " + ComponentReference.crefStr(cref2) + " in env: " + FGraph.printGraphPathStr(env2) + "\n");
+        if not listEmpty(ih) then
+          topInstance = listHead(ih);
+          InnerOuter.TOP_INSTANCE(sm=sm) = topInstance;
+          // print("Inst.instElement: START sm:\n"); BaseHashSet.printHashSet(sm); print("\nInst.instElement: STOP sm:\n");
+          if  BaseHashSet.has(cref2, sm) then
+            //print("\n Inst.instElement: Found: "+ComponentReference.crefStr(cref2)+"\n");
+            isInSM = true;
+          else
+            isInSM = false;
+          end if;
+          else
+            isInSM = false;
+        end if;
+
         (cache, comp_env, ih, store, dae, csets, ty, graph_new) = InstVar.instVar(cache,
           cenv, ih, store, ci_state, mod_1, pre, name, cls, attr,
           prefixes, dims, {}, inst_dims, impl, comment, info, graph, csets, env2);
+
+        if isInSM then
+          // If class is in state machine, wrap its content in a DAE.SM_COMP
+          DAE.DAE(elementLst=elems) = dae;
+          dae = DAE.DAE({DAE.SM_COMP(cref2, elems)});
+          //dae = DAE.DAE({DAE.COMP(ComponentReference.crefStr(cref), elems, DAE.emptyElementSource, NONE())});
+        end if;
+
         // print("instElement -> component: " + name + " ty: " + Types.printTypeStr(ty) + "\n");
         //The environment is extended (updated) with the new variable binding.
         (cache, binding) = InstBinding.makeBinding(cache, env2, attr, mod, ty, pre, name, info);

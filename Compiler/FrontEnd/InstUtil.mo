@@ -5180,7 +5180,7 @@ public function checkFunctionInputUsed
 protected
   list<DAE.Element> invars,vars,algs;
 algorithm
-  (vars,_,_,_,algs,_,_,_) := DAEUtil.splitElements(elts);
+  (vars,_,_,_,algs,_,_,_,_) := DAEUtil.splitElements(elts);
   invars := List.filterOnTrue(vars,DAEUtil.isInputVar);
   invars := List.select(invars,checkInputUsedAnnotation);
   invars := checkExternalDeclInputUsed(invars,decl);

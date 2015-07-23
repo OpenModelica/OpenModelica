@@ -482,8 +482,8 @@ public constant Message INVALID_TYPE_PREFIX = MESSAGE(179, TRANSLATION(), ERROR(
   Util.gettext("Invalid type prefix '%s' on %s %s, due to existing type prefix '%s'."));
 public constant Message LINEAR_SYSTEM_INVALID = MESSAGE(180, SYMBOLIC(), ERROR(),
   Util.gettext("Linear solver (%s) returned invalid input for linear system %s."));
-public constant Message LINEAR_SYSTEM_SINGULAR = MESSAGE(181, SYMBOLIC(), ERROR(),
-  Util.gettext("When solving linear system %1\n  U(%2,%2) = 0.0, which means system is singular for variable %3."));
+public constant Message LINEAR_SYSTEM_SINGULAR = MESSAGE(181, SYMBOLIC(), WARNING(),
+  Util.gettext("The linear system: %1\n might be structurally or numerically singular for variable %3 since U(%2,%2) = 0.0. It might be hard to solve. Compilation continues anyway."));
 public constant Message EMPTY_ARRAY = MESSAGE(182, TRANSLATION(), ERROR(),
   Util.gettext("Array constructor may not be empty."));
 public constant Message LOAD_MODEL_DIFFERENT_VERSIONS = MESSAGE(183, SCRIPTING(), WARNING(),

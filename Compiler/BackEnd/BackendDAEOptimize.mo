@@ -4152,6 +4152,161 @@ algorithm
 end compWeightsEqns;
 
 // =============================================================================
+// fix some bugs for complex function
+//
+// e.g. (a,-b) = f(.) -> (a,c) = f(.) with c = -b
+//      (a,b) = f(a) fixed iterration var
+// author: Vitalij Ruge
+// =============================================================================
+
+public function simplifyComplexFunction
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  if Flags.isSet(Flags.DIS_SIMP_FUN) then
+    outDAE := inDAE;
+  else
+    outDAE := simplifyComplexFunction1(inDAE);
+  end if;
+end simplifyComplexFunction;
+
+
+public function simplifyComplexFunction1
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE = inDAE;
+protected
+  list<BackendDAE.EqSystem> systlst = {};
+  BackendDAE.Shared shared;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.Variables vars;
+  Integer n, size, idx = 1, m, j;
+  BackendDAE.Equation eqn, eqn1;
+  DAE.Exp left, right, e1, e2, e, e3, e4;
+  list<DAE.Exp> left_lst, right_lst;
+  list<Integer> indRemove = {};
+  DAE.ElementSource source "origin of equation";
+  BackendDAE.EquationAttributes attr;
+  Boolean update, sc;
+  Absyn.Path path;
+  list<DAE.Exp> expLst, arrayLst, arrayLst2;
+  DAE.CallAttributes cattr;
+  DAE.ComponentRef cr;
+  BackendDAE.Var tmpvar;
+
+algorithm
+
+  shared := inDAE.shared;
+  for syst in inDAE.eqs loop
+    BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) := syst;
+    BackendDAE.EQUATION_ARRAY(numberOfElement = n) := eqns;
+    update := false;
+    for i in 1:n loop
+      eqn := BackendEquation.equationNth1(eqns, i);
+      if BackendEquation.isComplexEquation(eqn) then
+        BackendDAE.COMPLEX_EQUATION(left=left, right=right, size=size, attr= attr, source=source) := eqn;
+        if Expression.isTuple(left) and Expression.isTuple(right) then // tuple() = tuple()
+          DAE.TUPLE(PR = left_lst) := left;
+          (_, expLst) := List.splitOnTrue(left_lst, Expression.isScalar);
+          if listLength(expLst) > 0 then
+            continue;
+          end if;
+          DAE.TUPLE(PR = right_lst) := right;
+          update := true;
+          indRemove := i :: indRemove;
+          for e1 in left_lst loop
+            e2 :: right_lst := right_lst;
+            if Expression.isScalar(e2) then
+              eqn1 := BackendDAE.EQUATION(e1, e2, source, attr);
+              //print(BackendDump.equationString(eqn1) + "--new--\n");
+              eqns := BackendEquation.addEquation(eqn1, eqns);
+            end if;
+          end for;
+         elseif Expression.isTuple(left) and Expression.isCall(right) then //tuple() = call()
+          DAE.TUPLE(PR = left_lst) := left;
+          DAE.CALL(path=path,expLst = expLst, attr= cattr) := right;
+          expLst := {};
+          for e1 in left_lst loop
+            if Expression.isCref(e1) then
+               DAE.CREF(componentRef = cr) := e1;
+               if Expression.expHasCrefNoPreOrStart(right, cr) then
+                update := true;
+                cr  := ComponentReference.makeCrefIdent("$OMC$CF$" + intString(idx), Expression.typeof(e1) , {});
+                idx := idx + 1;
+                e := Expression.crefExp(cr);
+                tmpvar := BackendVariable.makeVar(cr);
+                tmpvar := BackendVariable.setVarTS(tmpvar,SOME(BackendDAE.AVOID()));
+                vars := BackendVariable.addVar(tmpvar, vars);
+
+                eqn1 := BackendDAE.EQUATION(e, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+                eqns := BackendEquation.addEquation(eqn1, eqns);
+               else
+                e := e1;
+               end if;
+            elseif Expression.isUnaryCref(e1) then
+              update := true;
+              cr  := ComponentReference.makeCrefIdent("$OMC$CF$" + intString(idx), Expression.typeof(e1) , {});
+              idx := idx + 1;
+              e := Expression.crefExp(cr);
+              tmpvar := BackendVariable.makeVar(cr);
+              tmpvar := BackendVariable.setVarTS(tmpvar,SOME(BackendDAE.AVOID()));
+              vars := BackendVariable.addVar(tmpvar, vars);
+              eqn1 := BackendDAE.EQUATION(e, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+              //print(BackendDump.equationString(eqn1) + "--new--\n");
+              eqns := BackendEquation.addEquation(eqn1, eqns);
+             elseif Expression.isArray(e1) then
+              update := true;
+              DAE.ARRAY(array=arrayLst, scalar=sc) := e1;
+              m := listLength(arrayLst);
+              cr  := ComponentReference.makeCrefIdent("$OMC$CF$" + intString(idx), Expression.typeof(e1) , {});
+              idx := idx + 1;
+              e := Expression.crefExp(cr);
+              tmpvar := BackendVariable.makeVar(cr);
+              tmpvar := BackendVariable.setVarTS(tmpvar,SOME(BackendDAE.AVOID()));
+              tmpvar.arryDim := {DAE.DIM_INTEGER(m)};
+              // e[1]
+              arrayLst2 := list( Expression.makeAsubAddIndex(e,k) for k in 1:m);
+              j := 1;
+              for e2 in arrayLst2 loop
+                e3 :: arrayLst := arrayLst;
+                eqn1 := BackendDAE.EQUATION(e2, e3, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+                //print(BackendDump.equationString(eqn1) + "--new--\n");
+                eqns := BackendEquation.addEquation(eqn1, eqns);
+                cr  := ComponentReference.makeCrefIdent("$OMC$CF$" + intString(idx-1), Expression.typeof(e1) , {DAE.INDEX(DAE.ICONST(j))});
+                j := j + 1;
+                tmpvar.varName := cr;
+                vars := BackendVariable.addVar(tmpvar, vars);
+                //vars := BackendVariable.addVar(tmpvar, vars);
+              end for;
+              //BackendDump.printVariables(vars);
+            else
+              e := e1;
+            end if;
+            expLst := e :: expLst;
+          end for; // lhs
+          left := DAE.TUPLE(listReverse(expLst));
+          eqn := BackendDAE.COMPLEX_EQUATION(size, left, right, source, attr);
+          eqns := BackendEquation.setAtIndex(eqns, i, eqn);
+        end if; // lhs <-> rhs
+      end if; // complex
+    end for; //1:n
+
+
+    if update then
+      for i in indRemove loop
+        eqns := BackendEquation.equationRemove(i,eqns);
+      end for;
+      eqns := BackendEquation.listEquation(BackendEquation.equationList(eqns));
+      systlst := BackendDAEUtil.createEqSystem(vars, eqns) :: systlst;
+    else
+      systlst := syst :: systlst;
+    end if;
+
+  end for; // syst
+
+  outDAE.eqs := systlst;
+end simplifyComplexFunction1;
+
+// =============================================================================
 // section for simplifyLoops
 //
 // simplify(hopful) loops for simulation/optimization
