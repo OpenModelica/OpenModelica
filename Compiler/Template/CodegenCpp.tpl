@@ -1798,7 +1798,7 @@ extern "C"  int initSimulation(ISimController* &controller, ISimData* &data, dou
   <%defineOutputVars(simCode)%>
 
   LogSettings logsetting;
-    SimSettings settings = {"RTRK","","Kinsol",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",0,OPT_NONE, logsetting};
+    SimSettings settings = {"RTEuler","","Kinsol",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",0,OPT_NONE, logsetting};
   //                       Solver,          nonlinearsolver starttime endtime stepsize   lower limit upper limit  tolerance
   try
   {
@@ -12982,9 +12982,13 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
 let modelname = identOfPath(modelInfo.name)
 'FUNCTION_BLOCK <%modelname%>
-VAR
+VAR_INPUT
     <%inputVars%>
+END_VAR
+VAR_OUTPUT
     <%outputVars%>
+END_VAR
+VAR
     cycletime : REAL(0.05);
     bAlreadyInitialized : BOOL;
     bErrorOccured : BOOL(FALSE);

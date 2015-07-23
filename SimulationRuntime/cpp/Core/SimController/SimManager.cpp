@@ -196,13 +196,13 @@ void SimManager::runSingleStep()
             if (_cycleCounter % _sampleCycles[i] == 0)
                 _timeeventcounter[i]++;
         }
-  }
+
         //Handle time event
         _timeevent_system->handleTimeEvent(_timeeventcounter);
         _cont_system->evaluateAll(IContinuous::CONTINUOUS);
         _event_system->saveAll();
         _timeevent_system->handleTimeEvent(_timeeventcounter);
-
+    }
     // Solve
     _solver->solve(_solverTask);
 
