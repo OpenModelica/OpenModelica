@@ -14,18 +14,13 @@
 #ifndef BOOST_NUMERIC_BINDINGS_TRAITS_TYPE_TRAITS_HPP
 #define BOOST_NUMERIC_BINDINGS_TRAITS_TYPE_TRAITS_HPP
 
-#include <boost/numeric/bindings/traits/config.hpp>
-#include <boost/numeric/bindings/traits/type.h>
-#include <boost/numeric/bindings/traits/type.hpp>
+#include <Core/Utils/numeric/bindings/traits/type.h>
+#include <Core/Utils/numeric/bindings/traits/type.hpp>
 
 namespace boost { namespace numeric { namespace bindings { namespace traits {
 
   template <typename Real>
   struct type_traits {
-#ifdef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-    typedef Real type;
-    typedef Real real_type;
-#endif
   };
   template<>
   struct type_traits<float> {
@@ -54,6 +49,14 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
 
   inline       fcomplex_t*  complex_ptr(      complex_f* c) { return reinterpret_cast<      fcomplex_t*>( c ) ; }
   inline       dcomplex_t*  complex_ptr(      complex_d* c) { return reinterpret_cast<      dcomplex_t*>( c ) ; }
+
+  template< typename Type >
+  inline       void*        void_ptr(       Type* p) { return static_cast<void*>( p ); }
+  template< typename Type >
+  inline const void*        void_ptr( const Type* p) { return static_cast<const void*>( p ); }
+
+  inline complex_f complex_ret(const fcomplex_t& ret) { return reinterpret_cast<const complex_f&>( ret ) ; }
+  inline complex_d complex_ret(const dcomplex_t& ret) { return reinterpret_cast<const complex_d&>( ret ) ; }
 
 }}}}
 

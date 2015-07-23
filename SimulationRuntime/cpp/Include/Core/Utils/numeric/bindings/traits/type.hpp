@@ -26,6 +26,9 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
   template <typename T>
   T imag (std::complex<T> const& c) { return std::imag (c); }
 
+
+  struct null_t {};
+
 }}}}
 
 #endif // boost_numeric_bindings_type_hpp
