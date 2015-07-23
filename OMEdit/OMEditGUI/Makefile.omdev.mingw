@@ -21,7 +21,7 @@ install: build Resources/nls/qm.stamp
 	cp -puf $(OMDEV)/tools/OMTools/dll/mingwm10.dll $(builddir_bin)
 	cp -puf $(OMDEV)/tools/mingw/bin/libintl-8.dll $(builddir_bin)
 	cp -puf $(OMDEV)/tools/mingw/bin/libiconv-2.dll $(builddir_bin)
-	cp -puf ../../qjson-0.8.1/build/lib/libqjson*$(SHREXT)* $(builddir_bin)
+	cp -puf ../../qjson/build/lib/libqjson*$(SHREXT)* $(builddir_bin)
 	cp -puf $(OMDEV)/tools/OMTools/dll/QtCore4.dll $(builddir_bin)
 	cp -puf $(OMDEV)/tools/OMTools/dll/QtGui4.dll $(builddir_bin)
 	cp -puf $(OMDEV)/tools/OMTools/dll/QtNetwork4.dll $(builddir_bin)

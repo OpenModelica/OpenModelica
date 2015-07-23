@@ -49,7 +49,11 @@ QString OMOperation::toString()
 
 QString OMOperation::toHtml()
 {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+  return QString(toString()).toHtmlEscaped();
+#else /* Qt4 */
   return Qt::escape(toString());
+#endif
 }
 
 QString OMOperation::diffHtml(QString &before, QString &after)

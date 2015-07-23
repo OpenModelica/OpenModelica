@@ -9,9 +9,9 @@ all: omedit
 
 CC = gcc
 CXX = g++
-CFLAGS =-O2 -falign-functions
+CFLAGS =-g -falign-functions -fstack-protector-all
 AR = ar
-CMAKE=CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(OMDEV)/bin/cmake/bin/cmake
+CMAKE=cmake
 CMAKE_TARGET = "MSYS Makefiles"
 SHREXT=.dll
 
@@ -20,18 +20,18 @@ mkbuilddirs:
 	mkdir -p $(buildlib)
 	mkdir -p $(buildbin)
 
-omedit: mkbuilddirs qjson
+omedit: mkbuilddirs qjson-build
 	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.omdev.mingw
 	cp -puf common/pre-commit.sh $(shell git rev-parse --git-dir)/hooks/pre-commit
 
 clean:
-	cd qjson-0.8.1 && rm -rf build
+	cd qjson && rm -rf build
 	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.omdev.mingw clean
 
-qjson:
-	test -d qjson-0.8.1
-	mkdir -p qjson-0.8.1/build/include/qjson
-	(cd qjson-0.8.1/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" .. -G $(CMAKE_TARGET))
-	test -f qjson-0.8.1/build/lib/libqjson$(SHREXT) || $(MAKE) -C qjson-0.8.1/build
-	cp -a qjson-0.8.1/build/lib/libqjson*$(SHREXT)* $(OMBUILDDIR)/lib/omc/
-	cp -a qjson-0.8.1/src/*.h qjson-0.8.1/build/include/qjson
+qjson-build:
+	test -d qjson
+	mkdir -p qjson/build/include/qjson
+	(cd qjson/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" .. -G $(CMAKE_TARGET) -DCMAKE_INSTALL_PREFIX:PATH=`pwd`)
+	test -f qjson/build/lib/libqjson$(SHREXT) || $(MAKE) -C qjson/build install
+	cp -a qjson/build/lib/libqjson*$(SHREXT)* $(OMBUILDDIR)/lib/omc/
+	cp -a qjson/src/*.h qjson/build/include/qjson

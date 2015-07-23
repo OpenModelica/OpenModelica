@@ -39,9 +39,7 @@
 #ifndef DOCUMENTATIONWIDGET_H
 #define DOCUMENTATIONWIDGET_H
 
-#include <QtWebKit>
 #include "MainWindow.h"
-
 
 class DocumentationHistory
 {

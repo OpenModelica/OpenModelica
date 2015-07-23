@@ -20,7 +20,8 @@ extern "C" {
 #include <windows.h>
 #include <excpt.h>
 #include <imagehlp.h>
-#include <bfd.h>
+#define PACKAGE OMEdit
+#include <binutils/bfd.h>
 #include <psapi.h>
 #include <stdlib.h>
 #include <stdio.h>

@@ -21,12 +21,12 @@ endif
 
 mkbuilddirs:
 	mkdir -p build/bin @OMBUILDDIR@/share/omedit/nls @OMBUILDDIR@/lib/@host_short@/omc
-omedit: mkbuilddirs qjson
+omedit: mkbuilddirs qjson-build
 	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix
 clean:
 	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix clean
-	test ! -f qjson-0.8.1/build/Makefile || $(MAKE) -C qjson-0.8.1/build clean
-	rm -f qjson-0.8.1/build/Makefile
+	test ! -f qjson/build/Makefile || $(MAKE) -C qjson/build clean
+	rm -f qjson/build/Makefile
 distclean: clean
 	rm -f config.status configure Makefile OMEdit/OMEditGUI/Makefile.unix OMEdit/OMEditGUI/OMEdit.config
 Makefile: Makefile.in config.status
@@ -36,11 +36,11 @@ config.status: configure
 configure: configure.ac common/m4/corba.m4 common/m4/omhome.m4 common/m4/qmake.m4
 	autoconf
 
-qjson:
-	test -d qjson-0.8.1
-	mkdir -p qjson-0.8.1/build/include/qjson
-	(cd qjson-0.8.1/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" .. -G $(CMAKE_TARGET))
-	test -f qjson-0.8.1/build/lib/libqjson$(SHREXT) || $(MAKE) -C qjson-0.8.1/build
-	test "(" ! `uname` = Darwin ")" -o "(" ! -f qjson-0.8.1/build/lib/libqjson$(SHREXT) ")" || install_name_tool -id @rpath/libqjson$(SHREXT) 3rdParty/qjson-0.8.1/build/lib/libqjson$(SHREXT)
-	cp -a qjson-0.8.1/build/lib/libqjson*$(SHREXT)* @OMBUILDDIR@/lib/@host_short@/omc/
-	cp -a qjson-0.8.1/src/*.h qjson-0.8.1/build/include/qjson
+qjson-build:
+	test -d qjson
+	mkdir -p qjson/build/include/qjson
+	(cd qjson/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" .. -G $(CMAKE_TARGET))
+	test -f qjson/build/lib/libqjson$(SHREXT) || $(MAKE) -C qjson/build
+	test "(" ! `uname` = Darwin ")" -o "(" ! -f qjson/build/lib/libqjson$(SHREXT) ")" || install_name_tool -id @rpath/libqjson$(SHREXT) 3rdParty/qjson/build/lib/libqjson$(SHREXT)
+	cp -a qjson/build/lib/libqjson*$(SHREXT)* @OMBUILDDIR@/lib/@host_short@/omc/
+	cp -a qjson/src/*.h qjson/build/include/qjson

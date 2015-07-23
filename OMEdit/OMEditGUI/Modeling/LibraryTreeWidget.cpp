@@ -110,7 +110,11 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   value = index.data(Qt::CheckStateRole);
   if (value.isValid()) {
     checkState = static_cast<Qt::CheckState>(value.toInt());
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+    checkRect = doCheck(opt, opt.rect, value);
+#else /* Qt4 */
     checkRect = check(opt, opt.rect, value);
+#endif
   }
   // do the layout
   doLayout(opt, &checkRect, &decorationRect, &displayRect, false);

@@ -263,7 +263,12 @@ void MessagesWidget::openErrorMessageClass(QUrl url)
     mpMainWindow->getLibraryTreeWidget()->showModelWidget(pLibraryTreeNode);
     ModelWidget *pModelWidget = pLibraryTreeNode->getModelWidget();
     if (pModelWidget && pModelWidget->getEditor()) {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+      QUrlQuery query(url);
+	  int lineNumber = query.queryItemValue("lineNumber").toInt();
+#else /* Qt4 */
       int lineNumber = url.queryItemValue("lineNumber").toInt();
+#endif
       pModelWidget->getTextViewToolButton()->setChecked(true);
       pModelWidget->getEditor()->goToLineNumber(lineNumber);
     }

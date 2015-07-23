@@ -39,8 +39,21 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QtCore>
+#include <QtGlobal>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#include <QtWidgets>
+#include <QPrinter>
+#include <QPrintDialog>
+#include <QtWebKitWidgets>
+#include <QTextCodec>
+#include <QUrlQuery>
+#include <QItemDelegate>
+#else
 #include <QtGui>
+#include <QtWebKit>
+#endif
+
+#include <QtCore>
 #include <QDomDocument>
 
 #if (QT_VERSION < QT_VERSION_CHECK(4, 6, 0))

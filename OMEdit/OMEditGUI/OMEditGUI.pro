@@ -29,6 +29,9 @@
  #/
 
 QT += network core gui webkit xml xmlpatterns svg
+greaterThan(QT_MAJOR_VERSION, 4) {
+    QT *= printsupport widgets webkitwidgets
+}
 
 TRANSLATIONS = Resources/nls/OMEdit_de.ts \
   Resources/nls/OMEdit_es.ts \
@@ -51,7 +54,7 @@ evil_hack_to_fool_lupdate {
 # Windows libraries and includes
 win32 {
   OPENMODELICAHOME = $$(OPENMODELICAHOME)
-  QMAKE_LFLAGS += -enable-auto-import
+  QMAKE_LFLAGS += -Wl,--enable-auto-import
 
   DEFINES += IMPORT_INTO=1
 
@@ -64,7 +67,7 @@ win32 {
     QMAKE_CXXFLAGS += -g
     QMAKE_LFLAGS_RELEASE =
     # required for backtrace
-    LIBS += -L$$(OMDEV)/tools/mingw/bin -lintl-8 -lbfd -liberty -limagehlp
+    LIBS += -L$$(OMDEV)/tools/mingw/bin -limagehlp -lbfd -LF:/msys/mingw64/lib/binutils -lintl -liberty
   }
   LIBS += -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
     -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt \
@@ -217,7 +220,7 @@ HEADERS  += Util/Helper.h \
   OMC/Parser/OMCOutputLexer.h
 
 LIBS += -lqjson
-INCLUDEPATH += ../../qjson-0.8.1/build/include
+INCLUDEPATH += ../../qjson/build/include
 
 INCLUDEPATH += . \
   Annotations \
