@@ -234,8 +234,10 @@ int main(int argc, char *argv[])
   argv[(argc - 1)] = (char*)"-stylesheet=:/Resources/css/stylesheet.qss";
 
   QApplication a(argc, argv);
+#if !(QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   QTextCodec::setCodecForTr(QTextCodec::codecForName(Helper::utf8.toLatin1().data()));
   QTextCodec::setCodecForCStrings(QTextCodec::codecForName(Helper::utf8.toLatin1().data()));
+#endif
 #ifndef WIN32
   QTextCodec::setCodecForLocale(QTextCodec::codecForName(Helper::utf8.toLatin1().data()));
 #endif

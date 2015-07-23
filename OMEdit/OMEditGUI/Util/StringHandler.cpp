@@ -42,6 +42,11 @@
 #include "Helper.h"
 #include "Utilities.h"
 
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#define toAscii toLatin1
+#endif
+
+
 QString StringHandler::mLastOpenDir;
 
 //! @class StringHandler
@@ -882,7 +887,8 @@ QString StringHandler::escapeString(QString value)
   QString res;
   value = value.trimmed();
   for (int i = 0; i < value.length(); i++) {
-    switch (value[i].toAscii()) {
+    switch (value[i].toAscii())
+	{
       case '"':  res.append('\"');     break;
       case '\\': res.append("\\\\");   break;
       case '\a': res.append("\\a");    break;

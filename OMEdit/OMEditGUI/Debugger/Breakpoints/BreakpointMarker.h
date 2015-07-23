@@ -38,8 +38,16 @@
 
 #include <QIcon>
 #include <QFileInfo>
+
+#include <QtGlobal>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#include <QtWidgets>
+#include <QTextBlockUserData>
+#include <QPlainTextDocumentLayout>
+#else
 #include <QtGui/QTextBlockUserData>
 #include <QtGui/QPlainTextDocumentLayout>
+#endif
 
 class ModelicaTextEditor;
 class BreakpointsTreeModel;

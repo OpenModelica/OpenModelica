@@ -8,6 +8,10 @@
   as listed at <url: http://www.opensource.org/licenses/bsd-license.php >.
 */
 
+#define GCC_VERSION (__GNUC__ * 10000 \
+                               + __GNUC_MINOR__ * 100 \
+                               + __GNUC_PATCHLEVEL__)
+
 #ifdef QT_NO_DEBUG
 #ifdef WIN32
 #include "backtrace.h"
@@ -172,14 +176,16 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 
   STACKFRAME frame;
   memset(&frame,0,sizeof(frame));
-
+#if defined(__MINGW32__) && GCC_VERSION > 40900
+  /* adrpo: this doesn't seem to be working for MinGW GCC 4.9.2 */
+#else
   frame.AddrPC.Offset = context->Eip;
   frame.AddrPC.Mode = AddrModeFlat;
   frame.AddrStack.Offset = context->Esp;
   frame.AddrStack.Mode = AddrModeFlat;
   frame.AddrFrame.Offset = context->Ebp;
   frame.AddrFrame.Mode = AddrModeFlat;
-
+#endif
   HANDLE process = GetCurrentProcess();
   HANDLE thread = GetCurrentThread();
 

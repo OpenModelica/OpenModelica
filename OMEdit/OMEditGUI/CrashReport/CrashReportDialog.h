@@ -38,10 +38,7 @@
 #ifndef CRASHREPORTDIALOG_H
 #define CRASHREPORTDIALOG_H
 
-#include <QtCore>
-#include <QtGui>
-#include <QtNetwork>
-
+#include "MainWindow.h"
 #include "Utilities.h"
 
 class CrashReportDialog : public QDialog

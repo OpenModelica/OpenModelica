@@ -985,7 +985,13 @@ QTreeWidgetItem* TransformationsWidget::makeEquationTreeWidgetItem(int equationI
   QTreeWidgetItem *pEquationTreeItem = new IntegerTreeWidgetItem(values, mpEquationsTreeWidget);
   pEquationTreeItem->setToolTip(0, values[0]);
   pEquationTreeItem->setToolTip(1, values[1]);
-  pEquationTreeItem->setToolTip(2, "<html><div style=\"margin:3px;\">" + Qt::escape(values[2]) + "</div></html>");
+  pEquationTreeItem->setToolTip(2, "<html><div style=\"margin:3px;\">" +
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+  QString(values[2]).toHtmlEscaped()
+#else /* Qt4 */
+  Qt::escape(values[2])
+#endif
+  + "</div></html>");
   pEquationTreeItem->setToolTip(4, "Maximum execution time in a single step");
   pEquationTreeItem->setToolTip(5, "Total time excluding the overhead of measuring.");
   pEquationTreeItem->setToolTip(6, "Fraction of time, 100% is the total time of all non-child equations.");
