@@ -12,6 +12,11 @@
 #define BACKTRACE_H
 
 #ifdef QT_NO_DEBUG
+
+#define GCC_VERSION (__GNUC__ * 10000 \
+                     + __GNUC_MINOR__ * 100 \
+		     + __GNUC_PATCHLEVEL__)
+
 #ifdef WIN32
 #ifdef __cplusplus
 extern "C" {
@@ -20,8 +25,12 @@ extern "C" {
 #include <windows.h>
 #include <excpt.h>
 #include <imagehlp.h>
+#if defined(__MINGW32__) && (GCC_VERSION > 40900)
 #define PACKAGE OMEdit
 #include <binutils/bfd.h>
+#else
+#include <bfd.h>
+#endif
 #include <psapi.h>
 #include <stdlib.h>
 #include <stdio.h>

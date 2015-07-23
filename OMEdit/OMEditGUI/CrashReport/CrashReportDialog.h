@@ -38,7 +38,15 @@
 #ifndef CRASHREPORTDIALOG_H
 #define CRASHREPORTDIALOG_H
 
-#include "MainWindow.h"
+#include <QtGlobal>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#include <QtWidgets>
+#else
+#include <QtCore>
+#include <QtGui>
+#include <QtNetwork>
+#endif
+
 #include "Utilities.h"
 
 class CrashReportDialog : public QDialog

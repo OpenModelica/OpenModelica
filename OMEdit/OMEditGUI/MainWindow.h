@@ -51,10 +51,9 @@
 #else
 #include <QtGui>
 #include <QtWebKit>
-#endif
-
 #include <QtCore>
 #include <QDomDocument>
+#endif
 
 #if (QT_VERSION < QT_VERSION_CHECK(4, 6, 0))
 #error "OMEdit requires Qt 4.6.0 or newer"
