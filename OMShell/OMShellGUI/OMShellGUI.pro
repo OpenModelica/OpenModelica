@@ -1,4 +1,7 @@
 QT += core gui xml
+greaterThan(QT_MAJOR_VERSION, 4) {
+    QT *= printsupport widgets webkitwidgets
+}
 
 TRANSLATIONS = \
   OMShell_de.ts \
@@ -22,13 +25,29 @@ HEADERS += commandcompletion.h \
 
 # -------For OMNIorb
 win32 {
-  QMAKE_LFLAGS += -enable-auto-import
-  DEFINES += __x86__ \
-             __NT__ \
-             __OSVERSION__=4 \
-             __WIN32__
-  CORBAINC = $$(OMDEV)/lib/omniORB-4.1.6-mingw/include
-  CORBALIBS = -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rt -lomnithread34_rt
+  # QMAKE_CXXFLAGS += -fpermissive
+  QMAKE_LFLAGS += -Wl,--enable-auto-import
+  # win32 vs. win64
+  contains(QT_ARCH, i386) {
+    CORBAINC = $$(OMDEV)/lib/omniORB-4.1.6-mingw/include
+    CORBALIBS = -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rt -lomnithread34_rt
+    DEFINES += __x86__ \
+               __NT__ \
+               __OSVERSION__=4 \
+               __WIN32__
+  }
+  else # win64
+  {
+    CORBAINC = $$(OMDEV)/lib/omniORB-4.2.0-mingw64/include
+    CORBALIBS = -L$$(OMDEV)/lib/omniORB-4.2.0-mingw64/lib/x86_win32 -lomniORB420_rt -lomnithread40_rt
+    DEFINES += __x86__ \
+	           __x86_64__ \
+	           __NT__ \
+               __OSVERSION__=4 \
+			   __WIN32__ \
+			   _WIN64 \
+			   MS_WIN64
+  }
 } else {
   include(OMShell.config)
 }

@@ -33,9 +33,15 @@
 #include <exception>
 #include <stdexcept>
 
+// QT includes
+#include <QtGlobal>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#include <QtWidgets>
+#else
 #include <QtCore/QDir>
 #include <QtCore/QProcess>
 #include <QtGui/QMessageBox>
+#endif
 
 #include "omcinteractiveenvironment.h"
 #ifndef WIN32

@@ -21,7 +21,11 @@ clean: Makefile
 	rm -rf ../bin/$(NAME)$(EXE) omc_communication.* Makefile Makefile.Debug Makefile.Release object_script.*
 
 omc_communication.cc: $(builddir_share)/omc/omc_communication.idl
+ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 	$(OMDEV)/lib/omniORB-4.1.6-mingw/bin/x86_win32/omniidl -bcxx -Wbh=.h -Wbs=.cc $<
+else
+	$(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug $<
+endif
 omc_communication.h: omc_communication.cc
 
 $(NAME): omc_communication.cc omc_communication.h Makefile

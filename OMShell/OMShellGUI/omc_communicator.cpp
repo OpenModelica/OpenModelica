@@ -47,10 +47,14 @@
 #endif
 
 // QT includes
+#include <QtGlobal>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#include <QtWidgets>
+#else
 #include <QtGui/QApplication>
 #include <QtGui/QMessageBox>
 #include <QtCore>
-
+#endif
 
 using namespace std;
 

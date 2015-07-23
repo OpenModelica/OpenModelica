@@ -44,12 +44,31 @@
 using namespace std;
 
 
-//QT Headers
+// QT Headers
+#include <QtGlobal>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#include <QtWidgets>
+#else
+#include <QtCore/QStringList>
+#include <QtCore/QThread>
+#include <QtGui/QAction>
+#include <QtGui/QApplication>
+#include <QtGui/QFileDialog>
+#include <QtGui/QFrame>
+#include <QtGui/QKeyEvent>
+#include <QtGui/QMenu>
+#include <QtGui/QMenuBar>
+#include <QtGui/QMessageBox>
+#include <QtGui/QTextBlock>
+#include <QtGui/QScrollBar>
+#include <QtGui/QStatusBar>
+#include <QtGui/QVBoxLayout>
 #include <QtGui/QKeyEvent>
 #include <QtGui/QMainWindow>
 #include <QtGui/QTextCharFormat>
 #include <QtGui/QTextCursor>
 #include <QtGui/QPlainTextEdit>
+#endif
 
 //IAEX Headers
 #include "inputcelldelegate.h"

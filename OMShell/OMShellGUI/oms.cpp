@@ -44,24 +44,8 @@
 #include "windows.h"
 #endif
 
-//STD Headers
+// STD Headers
 #include <iostream>
-
-//QT Headers
-#include <QtCore/QStringList>
-#include <QtCore/QThread>
-#include <QtGui/QAction>
-#include <QtGui/QApplication>
-#include <QtGui/QFileDialog>
-#include <QtGui/QFrame>
-#include <QtGui/QKeyEvent>
-#include <QtGui/QMenu>
-#include <QtGui/QMenuBar>
-#include <QtGui/QMessageBox>
-#include <QtGui/QTextBlock>
-#include <QtGui/QScrollBar>
-#include <QtGui/QStatusBar>
-#include <QtGui/QVBoxLayout>
 
 //OMS Headers
 #include "oms.h"

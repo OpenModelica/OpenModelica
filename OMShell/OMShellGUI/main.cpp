@@ -36,9 +36,16 @@
  * \author Anders Fernström
  */
 
+// QT Headers
+#include <QtGlobal>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#include <QtWidgets>
+#define toAscii toLatin1
+#else
 #include <QtGui/QApplication>
 #include <QTranslator>
 #include <QLocale>
+#endif
 
 #include "oms.h"
 #include "omcinteractiveenvironment.h"
