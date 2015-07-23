@@ -105,6 +105,7 @@ public slots:
   void setState(QString);
   void setStatusMenu(QList<QAction*>);
   void recentTriggered();
+  QVector<Cell*> SearchCells(Cell* current);  // Added 2015-07-14 To search the cells in a document and return the number of cells
 protected:
   void keyPressEvent(QKeyEvent *event);
   void keyReleaseEvent(QKeyEvent *event);
@@ -170,6 +171,7 @@ private slots:
   void indent();
   void setAutoIndent(bool);
   void eval();
+  void evalall();
 private:
   void createFileMenu();
   void createEditMenu();
@@ -238,6 +240,9 @@ private:
   QAction *indentAction;
   QAction *autoIndentAction;
   QAction *evalAction;
+  QAction *evalallAction;
+  QAction *shiftallAction;
+
 public:
   QAction *undoAction;
   QAction *redoAction;
