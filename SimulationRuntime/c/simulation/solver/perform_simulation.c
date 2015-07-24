@@ -194,6 +194,8 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 
       updateContinuousSystem(data);
 
+      if (solverInfo->solverMethod == S_SYM_IMP_EULER) data->callback->symEulerUpdate(data, solverInfo->solverStepSize);
+
       saveZeroCrossings(data);
       messageClose(LOG_SOLVER);
 

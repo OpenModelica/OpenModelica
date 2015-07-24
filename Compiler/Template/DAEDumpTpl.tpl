@@ -44,8 +44,10 @@ template dumpCompStream(DAEDump.splitElements elems)
       let ial_str = dumpInitialAlgorithmSection(ia)
       let eq_str =  dumpEquationSection(e)
       let al_str = dumpAlgorithmSection(a)
+      let sm_str = (sm |> flatSM => dumpStateMachineSection(flatSM) ;separator="\n")
       <<
       <%var_str%>
+      <%sm_str%>
       <%ieq_str%>
       <%ial_str%>
       <%eq_str%>
@@ -942,6 +944,30 @@ match stmt
     reinit(<%exp_str%>, <%new_exp_str%>)<%src_str%>;
     >>
 end dumpReinitStatement;
+
+/*****************************************************************************
+ *     SECTION: STATE MACHINES                                           *
+ *****************************************************************************/
+template dumpStateMachineSection(DAEDump.compWithSplitElements fixedDae)
+::=
+match fixedDae case COMP_WITH_SPLIT(__) then
+  /* Whether we have a DAE.FLAT_SM (stateMachine) or DAE.STATE_SM (state) is encoded in the comment.
+     That is a bit hackish */
+  let kind = match comment case SOME(co) then dumpStateMachineComment(co)
+  <<
+  <%kind%> <%name%>
+    <%dumpCompStream(spltElems)%>
+  end <%name%>;<%\n%>
+  >>
+end dumpStateMachineSection;
+
+template dumpStateMachineComment(SCode.Comment cmt)
+::=
+match cmt case COMMENT(__) then
+    let kind_str = match comment case SOME(co) then co
+    '<%kind_str%>'
+end dumpStateMachineComment;
+
 
 /*****************************************************************************
  *     SECTION: EXPRESSIONS                                                  *

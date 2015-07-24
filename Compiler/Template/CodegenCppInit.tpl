@@ -16,7 +16,7 @@ template modelInitXMLFile(SimCode simCode, String numRealVars, String numIntVars
       let algLoops = (listAppend(allEquations,initialEquations) |> eq => algLoopXML(eq, simCode, varToArrayIndexMapping, '<%numRealVars%> - 1') ;separator="\n")
       let jacobianMatrixes = jacobianMatrixesXML(simCode.jacobianMatrixes)
       let descriptionTag = if generateFMUModelDescription then "fmiModelDescription" else "ModelDescription"
-      let fmiDescriptionAttributes = if generateFMUModelDescription then fmuDescriptionAttributes(simCode, FMUVersion, FMUType, FMUGuid) else 'modelName="<%dotPath(modelInfo.name)%>"'
+      let fmiDescriptionAttributes = if generateFMUModelDescription then fmiDescriptionAttributes(simCode, FMUVersion, FMUType, FMUGuid) else 'modelName="<%dotPath(modelInfo.name)%>"'
       let fmiTypeDefinitions = if generateFMUModelDescription then CodegenFMUCommon.fmiTypeDefinitions(modelInfo, FMUVersion)
       let fmiDefaultExperiment = if generateFMUModelDescription then CodegenFMUCommon.DefaultExperiment(simulationSettingsOpt)
       <<
@@ -42,11 +42,40 @@ template modelInitXMLFile(SimCode simCode, String numRealVars, String numIntVars
       >>
 end modelInitXMLFile;
 
-template fmuDescriptionAttributes(SimCode simCode, String FMUVersion, String FMUType, String FMUGuid)
+template fmiDescriptionAttributes(SimCode simCode, String FMUVersion, String FMUType, String FMUGuid)
 ::=
   if isFMIVersion20(FMUVersion) then CodegenFMU2.fmiModelDescriptionAttributes(simCode,FMUGuid)
-  else CodegenFMU1.fmiModelDescriptionAttributes(simCode,FMUGuid)
-end fmuDescriptionAttributes;
+  else fmiModelDescriptionAttributes(simCode,FMUGuid)
+end fmiDescriptionAttributes;
+
+template fmiModelDescriptionAttributes(SimCode simCode, String guid)
+ "Generates code for ModelDescription file for FMU target."
+::=
+  match simCode
+    case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(stateVars = listStates))) then
+      let fmiVersion = '1.0'
+      let modelName = dotPath(modelInfo.name)
+      let modelIdentifier = System.stringReplace(fileNamePrefix,".", "_")
+      let description = ''
+      let author = ''
+      let version= ''
+      let generationTool= 'OpenModelica Compiler <%getVersionNr()%>'
+      let generationDateAndTime = CodegenFMUCommon.xsdateTime(getCurrentDateTime())
+      let variableNamingConvention = 'structured'
+      let numberOfContinuousStates = vi.numStateVars
+      let numberOfEventIndicators = eventIndicatorsLength(simCode)
+      <<
+      fmiVersion="<%fmiVersion%>"
+      modelName="<%modelName%>"
+      modelIdentifier="<%modelIdentifier%>"
+      guid="{<%guid%>}"
+      generationTool="<%generationTool%>"
+      generationDateAndTime="<%generationDateAndTime%>"
+      variableNamingConvention="<%variableNamingConvention%>"
+      numberOfContinuousStates="<%numberOfContinuousStates%>"
+      numberOfEventIndicators="<%numberOfEventIndicators%>"
+      >>
+end fmiModelDescriptionAttributes;
 
 template modelVariablesXML(ModelInfo modelInfo, HashTableCrIListArray.HashTable varToArrayIndexMapping, String indexForUndefinedReferencesReal, String indexForUndefinedReferencesInt, String indexForUndefinedReferencesBool, Boolean generateFMUModelDescription)
  "Generates the xml code for the variable defintions."
@@ -100,7 +129,7 @@ template scalarVariableAttributeXML(SimVar simVar, HashTableCrIListArray.HashTab
   match simVar
     case SIMVAR(source = SOURCE(info = info)) then
       let valueReference = SimCodeUtil.getVarIndexByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences)
-      let alias = getAliasVar(aliasvar)
+      let alias = getAliasAttribute(aliasvar)
       let causalityAtt = CodegenFMUCommon.getCausality(causality)
       let variability = getVariablity(varKind)
       let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
@@ -110,15 +139,15 @@ template scalarVariableAttributeXML(SimVar simVar, HashTableCrIListArray.HashTab
       >>
 end scalarVariableAttributeXML;
 
-template getAliasVar(AliasVariable aliasvar)
+template getAliasAttribute(AliasVariable aliasvar)
   "Returns the alias Attribute of ScalarVariable."
   ::=
   match aliasvar
     case NOALIAS(__) then "noAlias"
     case ALIAS(__) then "alias"
     case NEGATEDALIAS(__) then "negatedAlias"
-    else "noAlias"
-end getAliasVar;
+    else "undefinedAliasType"
+end getAliasAttribute;
 
 template algLoopXML(SimEqSystem eqs, SimCode simCode, HashTableCrIListArray.HashTable varToArrayIndexMapping, String indexForUndefinedReferences)
 ::=
@@ -183,6 +212,34 @@ template jacobianMatrixXML(Integer indexJacobian, list<JacobianColumn> jacobianC
   >>
 end jacobianMatrixXML;
 
+template zeroCrossLength(SimCode simCode)
+::=
+  match simCode
+    case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
+      let size = listLength(zeroCrossings)
+      <<
+      <%intSub(listLength(zeroCrossings), vi.numTimeEvents)%>
+      >>
+end zeroCrossLength;
+
+template timeEventLength(SimCode simCode)
+::=
+  match simCode
+    case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
+      <<
+      <%vi.numTimeEvents%>
+      >>
+end timeEventLength;
+
+template eventIndicatorsLength(SimCode simCode)
+::=
+  match simCode
+    case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
+      let size = listLength(zeroCrossings)
+      <<
+      <%listLength(zeroCrossings)%>
+      >>
+end eventIndicatorsLength;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenCppInit;

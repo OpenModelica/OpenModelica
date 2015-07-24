@@ -35,61 +35,29 @@ int AlgLoopDefaultImplementation::getDimRHS() const
 /// (Re-) initialize the system of equations
 void AlgLoopDefaultImplementation::initialize()
 {
+  if ( _dimAEq == 0 )
+    throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,"AlgLoop::initialize(): No constraint defined.");
   // Anfangswerte einlesen: InitialValue = ConstrValue
   // und Dimension der Bindungsgleichungen zur Lösung der Schleife bestimmen
-  _dimAEq = 0;
+  //_dimAEq = 0;
   if(_constraintType ==IAlgLoop::REAL)
   {
-    std::vector<double>::const_iterator
-      constr_iter = __xd.begin(),
-      constr_iter_end = __xd.end();
-
-    std::vector<double>::iterator
-      init_iter = _xd_init.begin();
-
-    for (; constr_iter != constr_iter_end; ++constr_iter)
-    {
-      *init_iter++ = *constr_iter;
-      ++_dimAEq;
-    }
+    memcpy(_xd_init, __xd, sizeof(double) * _dimAEq);
   }
   else if(_constraintType == IAlgLoop::INTEGER)
   {
-    std::vector<int>::const_iterator
-      constr_iter = __xi.begin(),
-      constr_iter_end = __xi.end();
-
-    std::vector<int>::iterator
-      init_iter = _xi_init.begin();
-
-    for (; constr_iter != constr_iter_end; ++constr_iter)
-    {
-      *init_iter++ = *constr_iter;
-      ++_dimAEq;
-    }
+    memcpy(_xi_init, __xi, sizeof(int) * _dimAEq);
   }
   else if(_constraintType == IAlgLoop::BOOLEAN)
   {
-    std::vector<bool>::const_iterator
-      constr_iter = __xb.begin(),
-      constr_iter_end = __xb.end();
-
-    std::vector<bool>::iterator
-      init_iter = _xb_init.begin();
-
-    for (; constr_iter != constr_iter_end; ++constr_iter)
-    {
-      *init_iter++ = *constr_iter;
-      ++_dimAEq;
-    }
+    memcpy(_xb_init, __xb, sizeof(int) * _dimAEq);
   }
   else
     throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,"AlgLoopDefaultImplementation::initialize(): Unknown _constraintType.");
 
   //nach default algloop verschieben
   // Prüfen ob min. eine Bindungsgleichung vorhanden
-  if ( _dimAEq == 0 )
-    throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,"AlgLoop::initialize(): No constraint defined.");
+
 
 };
 
@@ -111,7 +79,7 @@ void AlgLoopDefaultImplementation::setOutput(ostream* outputStream)
 //in algloop default verschieben
 void AlgLoopDefaultImplementation::setReal(const double* lambda)
 {
-
+/*
   std::vector<double>::iterator
     constr_iter = __xd.begin(),
     constr_iter_end = __xd.end();
@@ -123,7 +91,9 @@ void AlgLoopDefaultImplementation::setReal(const double* lambda)
   // lambda zuweisen: InitialValue = ConstrValue = lambda
   for (; constr_iter != constr_iter_end; ++constr_iter)
     *init_iter++ = *constr_iter = *lambda_iter++;
-
+*/
+memcpy(__xd    , lambda, sizeof(double) * _dimAEq);
+memcpy(_xd_init, lambda, sizeof(double) * _dimAEq);
 }
 /*
 //in algloop default verschieben
@@ -164,7 +134,7 @@ for (; constr_iter != constr_iter_end; ++constr_iter)
 //in algloop default verschieben
 void AlgLoopDefaultImplementation::getReal(double* lambda)
 {
-
+/*
   std::vector<double>::iterator
     constr_iter = __xd.begin(),
     constr_iter_end = __xd.end();
@@ -174,7 +144,8 @@ void AlgLoopDefaultImplementation::getReal(double* lambda)
   // lambda zurückgeben: lambda = ConstrValue
   for (; constr_iter != constr_iter_end; ++constr_iter)
     *lambda_iter++ = *constr_iter;
-
+*/
+memcpy(lambda, __xd, sizeof(double) * _dimAEq);
 }
 /*
 //in algloop default verschieben
@@ -209,6 +180,7 @@ for (; constr_iter != constr_iter_end; ++constr_iter)
 //in algloop default verschieben
 void AlgLoopDefaultImplementation::getRHS(double* res)
 {
+/*
   std::vector<double>::iterator
     constr_iter = __xd.begin(),
     constr_iter_end = __xd.end();
@@ -219,7 +191,8 @@ void AlgLoopDefaultImplementation::getRHS(double* res)
 
   // resiudum zurückgeben: res = InitialValue - ResultValue
   for (; constr_iter != constr_iter_end; ++constr_iter)
-    *res_iter++ = /**init_iter++ - */*constr_iter;
-
+    *res_iter++ = *constr_iter;
+*/
+memcpy(res, __xd, sizeof(double) * _dimAEq);
 }
 /** @} */ // end of coreSystem

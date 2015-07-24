@@ -299,8 +299,11 @@ algorithm
       (jac, shared) = SymbolicJacobian.calculateJacobian(vars_1, eqns_1, m, true, ishared);
       // Jacobian of a Linear System is always linear
       (jac_tp, jacConstant) = SymbolicJacobian.analyzeJacobian(vars_1, eqns_1, jac);
-      // if constant check for singular jacobian
-      true = analyzeConstantJacobian(jacConstant, jac, arrayLength(mt), var_lst, eqn_lst, shared);
+
+      // if Jacobian is constant, then check if it is singular
+      if jacConstant and isSome(jac) then
+        true = analyzeConstantJacobian(Util.getOption(jac), arrayLength(mt), var_lst, eqn_lst, shared);
+      end if;
     then BackendDAE.EQUATIONSYSTEM(comp, varindxs, BackendDAE.FULL_JACOBIAN(jac), jac_tp, mixedSystem);
 
     case (_, eqn_lst, var_varindx_lst) equation
@@ -356,54 +359,60 @@ algorithm
 end crefsAreArray;
 
 protected function analyzeConstantJacobian
-  input Boolean jacConstant;
-  input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> iJac;
-  input Integer size;
-  input list<BackendDAE.Var> iVars;
-  input list<BackendDAE.Equation> iEqns;
-  input BackendDAE.Shared shared;
-  output Boolean valid;
+  input list<tuple<Integer, Integer, BackendDAE.Equation>> inJac;
+  input Integer inSize;
+  input list<BackendDAE.Var> inVars;
+  input list<BackendDAE.Equation> inEqns;
+  input BackendDAE.Shared inShared;
+  output Boolean outValid = true;
+protected
+  BackendDAE.EquationArray eqns;
+  BackendDAE.Variables vars;
+  DAE.FunctionTree funcs;
+  Integer info;
+  String infoStr, syst, varnames, varname, rhsStr, jacStr, eqnstr;
+  list<DAE.Exp> beqs;
+  list<Real> rhsVals;
+  list<list<Real>> jacVals;
 algorithm
-  valid := matchcontinue(jacConstant, iJac)
-    local
-      list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
-      list<Real> rhsVals, solvedVals;
-      list<list<Real>> jacVals;
-      Integer linInfo;
-      String infoStr, syst, varnames, varname, rhsStr, jacStr, eqnstr;
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns;
-      DAE.FunctionTree funcs;
-      list<DAE.Exp> beqs;
+  jacVals := SymbolicJacobian.evaluateConstantJacobian(inSize, inJac);
+  rhsVals := List.fill(0.0, inSize);
+  (_, info) := System.dgesv(jacVals, rhsVals);
 
-    case(true, SOME(jac)) equation
-      jacVals = SymbolicJacobian.evaluateConstantJacobian(size, jac);
-      rhsVals = List.fill(0.0, size);
-      (_, linInfo) = System.dgesv(jacVals, rhsVals);
-      false = intEq(linInfo, 0);
-      varname = ComponentReference.printComponentRefStr(BackendVariable.varCref(listGet(iVars, linInfo)));
-      infoStr = intString(linInfo);
-      varnames = stringDelimitList(List.map(List.map(iVars, BackendVariable.varCref), ComponentReference.printComponentRefStr), " ;\n  ");
-      eqns = BackendEquation.listEquation(iEqns);
-      vars = BackendVariable.listVar1(iVars);
-      funcs = BackendDAEUtil.getFunctions(shared);
-      (beqs, _) = BackendDAEUtil.getEqnSysRhs(eqns, vars, SOME(funcs));
-      beqs = listReverse(beqs);
-      rhsStr = stringDelimitList(List.map(beqs, ExpressionDump.printExpStr), " ;\n  ");
-      jacStr = stringDelimitList(List.map1(List.mapList(jacVals, realString), stringDelimitList, " , "), " ;\n  ");
-      eqnstr = BackendDump.dumpEqnsStr(iEqns);
-      syst = stringAppendList({"\n", eqnstr, "\n[\n  ", jacStr, "\n]\n  *\n[\n  ", varnames, "\n]\n  =\n[\n  ", rhsStr, "\n]"});
-      if intGt(linInfo, 0) then
-        Error.addMessage(Error.LINEAR_SYSTEM_SINGULAR, {syst, infoStr, varname});
-      end if;
-      syst = stringAppendList({eqnstr, "\n[", jacStr, "] * [", varnames, "] = [", rhsStr, "]"});
-      if intLt(linInfo, 0) then
-        Error.addMessage(Error.LINEAR_SYSTEM_INVALID, {"LAPACK/dgesv", syst});
-      end if;
-    then false;
-
-    else true;
-  end matchcontinue;
+  if info < 0 then
+    // info < 0:  if INFO = -i, the i-th argument had an illegal value
+    // this case should never happen
+    varnames := stringDelimitList(List.map(List.map(inVars, BackendVariable.varCref), ComponentReference.printComponentRefStr), " ;\n  ");
+    eqns := BackendEquation.listEquation(inEqns);
+    vars := BackendVariable.listVar1(inVars);
+    funcs := BackendDAEUtil.getFunctions(inShared);
+    (beqs, _) := BackendDAEUtil.getEqnSysRhs(eqns, vars, SOME(funcs));
+    beqs := listReverse(beqs);
+    rhsStr := stringDelimitList(List.map(beqs, ExpressionDump.printExpStr), " ;\n  ");
+    jacStr := stringDelimitList(List.map1(List.mapList(jacVals, realString), stringDelimitList, " , "), " ;\n  ");
+    eqnstr := BackendDump.dumpEqnsStr(inEqns);
+    syst := eqnstr + "\n[" + jacStr + "] * [" + varnames + "] = [" + rhsStr + "]";
+    Error.addMessage(Error.LINEAR_SYSTEM_INVALID, {"LAPACK/dgesv", syst});
+    outValid := false;
+  elseif info > 0 then
+    // info > 0:  if INFO = i, U(i,i) is exactly zero. The factorization
+    //            has been completed, but the factor U is exactly
+    //            singular, so the solution could not be computed.
+    varname := ComponentReference.printComponentRefStr(BackendVariable.varCref(listGet(inVars, info)));
+    infoStr := intString(info);
+    varnames := stringDelimitList(List.map(List.map(inVars, BackendVariable.varCref), ComponentReference.printComponentRefStr), " ;\n  ");
+    eqns := BackendEquation.listEquation(inEqns);
+    vars := BackendVariable.listVar1(inVars);
+    funcs := BackendDAEUtil.getFunctions(inShared);
+    (beqs, _) := BackendDAEUtil.getEqnSysRhs(eqns, vars, SOME(funcs));
+    beqs := listReverse(beqs);
+    rhsStr := stringDelimitList(List.map(beqs, ExpressionDump.printExpStr), " ;\n  ");
+    jacStr := stringDelimitList(List.map1(List.mapList(jacVals, realString), stringDelimitList, " , "), " ;\n  ");
+    eqnstr := BackendDump.dumpEqnsStr(inEqns);
+    syst := "\n" + eqnstr + "\n[\n  " + jacStr + "\n]\n  *\n[\n  " + varnames + "\n]\n  =\n[\n  " + rhsStr + "\n]";
+    Error.addMessage(Error.LINEAR_SYSTEM_SINGULAR, {syst, infoStr, varname});
+    //outValid := false;
+  end if;
 end analyzeConstantJacobian;
 
 protected function transformXToXd "author: PA

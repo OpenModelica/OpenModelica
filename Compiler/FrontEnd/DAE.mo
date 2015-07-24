@@ -337,6 +337,17 @@ public uniontype Element
     ClassAttributes classAttrs;
   end CLASS_ATTRIBUTES;
 
+  record FLAT_SM "Flat state machine section"
+    Ident ident;
+    list<Element> dAElist "The states/modes transitions and variable
+                      merging equations within the the flat state machine";
+  end FLAT_SM;
+
+  record SM_COMP "A state/mode component in a state machine"
+    ComponentRef componentRef;
+    list<Element> dAElist "a component with subelements";
+  end SM_COMP;
+
 
 end Element;
 
@@ -1031,7 +1042,6 @@ end EvaluateSingletonTypeFunction;
 public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),true,false,false,FUNCTION_BUILTIN(NONE()),FP_NON_PARALLEL());
 public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(NO_INLINE(),true,false,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
 public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,true,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
-//BTH
 public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,true,false,FUNCTION_BUILTIN(NONE()),FP_NON_PARALLEL());
 
 public

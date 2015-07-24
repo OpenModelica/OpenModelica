@@ -8,7 +8,7 @@
 Policy class to create nonlin solver object
 */
 template <class CreationPolicy>
-struct LinSolverVxWorksFactory : public ObjectFactory<CreationPolicy>
+struct LinSolverVxWorksFactory : virtual public ObjectFactory<CreationPolicy>
 {
 public:
     LinSolverVxWorksFactory(PATH library_path,PATH modelicasystem_path,PATH config_path)

@@ -2,6 +2,10 @@
  *
  *  @{
  */
+
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
+
 #include <SimCoreFactory/VxWorksFactory/VxWorksFactory.h>
 
 extern "C" ISimController* createSimController(PATH library_path, PATH modelicasystem_path);
@@ -37,6 +41,7 @@ boost::shared_ptr<ISettingsFactory>  VxWorksFactory::LoadSettingsFactory()
 {
     ISettingsFactory* settingsFactory = createSettingsFactory(_library_path, _modelicasystem_path);
     return boost::shared_ptr<ISettingsFactory>(settingsFactory);
+
 }
 
 boost::shared_ptr<IAlgLoopSolverFactory>  VxWorksFactory::LoadAlgLoopSolverFactory(IGlobalSettings* globalSettings)

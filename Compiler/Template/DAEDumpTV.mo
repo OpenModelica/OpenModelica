@@ -206,6 +206,7 @@ uniontype splitElements
     list<DAE.Element> co;
     list<DAE.Element> o;
     list<DAE.Element> ca;
+    list<compWithSplitElements> sm;
   end SPLIT_ELEMENTS;
 end splitElements;
 

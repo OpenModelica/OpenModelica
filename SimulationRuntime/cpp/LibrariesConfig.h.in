@@ -2,6 +2,7 @@
 #define EULER_LIB "@EULER_LIB@"
 #define RTEULER_LIB "@RTEULER_LIB@"
 #define CVODE_LIB "@CVODE_LIB@"
+#define ARKODE_LIB "@ARKODE_LIB@"
 #define PEER_LIB "@PEER_LIB@"
 #define RTRK_LIB "@RTRK_LIB@"
 #define IDAS_LIB "@IDAS_LIB@"

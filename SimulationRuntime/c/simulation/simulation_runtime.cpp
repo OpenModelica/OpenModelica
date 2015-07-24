@@ -773,6 +773,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   data->simulationInfo.nlsMethod = getNonlinearSolverMethod(argc, argv);
   data->simulationInfo.lsMethod = getlinearSolverMethod(argc, argv);
   data->simulationInfo.newtonStrategy = getNewtonStrategy(argc, argv);
+  data->simulationInfo.nlsCsvInfomation = omc_flag[FLAG_NLS_INFO];
 
   rt_tick(SIM_TIMER_INIT_XML);
   read_input_xml(&(data->modelData), &(data->simulationInfo));

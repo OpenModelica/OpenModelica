@@ -3,13 +3,7 @@
  #include <Core/Modelica.h>
 #if defined(__TRICORE__) || defined(__vxworks)
 
-
-  #include <Core/DataExchange/SimData.h>
-
-  extern "C" ISimData* createSimData()
-  {
-    return new SimData();
-  }
+#include <Core/DataExchange/SimData.h>
 
 #elif defined(OMC_BUILD)
 

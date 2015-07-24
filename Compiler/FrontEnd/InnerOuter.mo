@@ -1501,11 +1501,10 @@ public function updateSMHierarchy
 "@author: BTH
 Add State Machine state to collection of State Machine states in instance hierarchy."
   input DAE.ComponentRef smState;
-  input Prefix.Prefix inPrefix;
   input InstHierarchy inIH;
   output InstHierarchy outIH;
 algorithm
-  outIH := match (smState, inPrefix, inIH)
+  outIH := match (smState, inIH)
     local
       TopInstance tih;
       InstHierarchy restIH, ih;
@@ -1514,12 +1513,11 @@ algorithm
       InstHierarchyHashTable ht;
       Option<Absyn.Path> pathOpt;
       OuterPrefixes outerPrefixes;
-      DAE.ComponentRef cref_;
       HashSet.HashSet sm;
       HashSet.HashSet sm2;
 
     // no hashtable, create one!
-    case(_,_,{})
+    case(_,{})
       equation
         ht = emptyInstHierarchyHashTable();
         sm = HashSet.emptyHashSet();
@@ -1533,25 +1531,23 @@ algorithm
         ih;
 
     // add to the hierarchy
-    case (cref_,_,TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm)::restIH)
+    case (cref,TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm)::restIH)
       equation
-        // prefix the name!
-        cref = PrefixUtil.prefixCrefNoContext(inPrefix, cref_);
         // add to hashtable!
         sm = BaseHashSet.add(cref, sm); // add((cref,inInstInner), ht);
-
       then
         TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm)::restIH;
 
     // failure
-    case (DAE.CREF_IDENT(ident=name),_,_)
+    case (DAE.CREF_IDENT(ident=name),_)
       equation
         true = Flags.isSet(Flags.INSTANCE);
-        Debug.traceln("InnerOuter.updateSMHierarchy failure for: " + PrefixUtil.printPrefixStr(inPrefix) + "/" + name);
+        Debug.traceln("InnerOuter.updateSMHierarchy failure for: " + name);
       then
         fail();
   end match;
 end updateSMHierarchy;
+
 
 public function addClassIfInner
   input SCode.Element inClass;

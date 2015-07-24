@@ -40,8 +40,11 @@
 extern "C" {
 #endif
 
-int allocateNewtonData(int size, void** data);
-int freeNewtonData(void** data);
+typedef struct
+{
+  void* data;
+  int sysNumber;
+}DATA_USER;
 
 int solveNewton(DATA *data, int sysNumber);
 

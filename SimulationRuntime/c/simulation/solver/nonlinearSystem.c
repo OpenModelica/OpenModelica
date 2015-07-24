@@ -39,19 +39,279 @@
 #include "kinsolSolver.h"
 #include "nonlinearSolverHybrd.h"
 #include "nonlinearSolverNewton.h"
+#include "newtonIteration.h"
 #include "nonlinearSolverHomotopy.h"
 #include "simulation/simulation_info_xml.h"
 #include "simulation/simulation_runtime.h"
+#include "util/write_csv.h"
 
 /* for try and catch simulationJumpBuffer */
 #include "meta/meta_modelica.h"
 
 int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber);
 
-struct dataNewtonAndHybrid {
+struct dataNewtonAndHybrid
+{
   void* newtonData;
   void* hybridData;
 };
+
+/*! \fn int initializeNLScsvData(DATA* data, NONLINEAR_SYSTEM_DATA* systemData)
+ *
+ *  This function initializes csv files for analysis propose.
+ *
+ *  \param [ref] [data]
+ *  \param [ref] [systemData]
+ */
+int initializeNLScsvData(DATA* data, NONLINEAR_SYSTEM_DATA* systemData)
+{
+  struct csvStats* stats = (struct csvStats*) malloc(sizeof(struct csvStats));
+  char buffer[100];
+  sprintf(buffer, "%s_NLS%dStatsCall.csv", data->modelData.modelFilePrefix, (int)systemData->equationIndex);
+  stats->callStats = omc_write_csv_init(buffer, ',', '"');
+
+  sprintf(buffer, "%s_NLS%dStatsIter.csv", data->modelData.modelFilePrefix, (int)systemData->equationIndex);
+  stats->iterStats = omc_write_csv_init(buffer, ',', '"');
+
+  systemData->csvData = stats;
+
+  return 0;
+}
+
+/*! \fn int print_csvLineCallStatsHeader(OMC_WRITE_CSV* csvData)
+ *
+ *  This function initializes csv files for analysis propose.
+ *
+ *  \param [ref] [data]
+ *  \param [ref] [systemData]
+ */
+int print_csvLineCallStatsHeader(OMC_WRITE_CSV* csvData)
+{
+  unsigned char buffer[1024] = "";
+
+  /* number of call */
+  sprintf(buffer,"numberOfCall");
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* simulation time */
+  sprintf(buffer,"simulationTime");
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* solving iterations */
+  sprintf(buffer,"iterations");
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* solving fCalls */
+  sprintf(buffer,"numberOfFunctionCall");
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* solving Time */
+  sprintf(buffer,"solvingTime");
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* solving Time */
+  sprintf(buffer,"solvedSystem");
+  omc_write_csv(csvData, buffer);
+
+  /* finish line */
+  fputc('\n',csvData->handle);
+
+  return 0;
+}
+
+/*! \fn int print_csvLineCallStats(OMC_WRITE_CSV* csvData)
+ *
+ *  This function initializes csv files for analysis propose.
+ *
+ *  \param [ref] [csvData]
+ *  \param [in] [number of calls]
+ *  \param [in] [simulation time]
+ *  \param [in] [iterations]
+ *  \param [in] [number of function call]
+ *  \param [in] [solving time]
+ *  \param [in] [solved system]
+ */
+int print_csvLineCallStats(OMC_WRITE_CSV* csvData, int num, double time,
+                           int iterations, int fCalls, double solvingTime,
+                           int solved)
+{
+  unsigned char buffer[1024];
+
+  /* number of call */
+  sprintf(buffer, "%d", num);
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* simulation time */
+  sprintf(buffer, "%g", time);
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* solving iterations */
+  sprintf(buffer, "%d", iterations);
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* solving fCalls */
+  sprintf(buffer, "%d", fCalls);
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* solving Time */
+  sprintf(buffer, "%f", solvingTime);
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* solved system */
+  sprintf(buffer, "%s", solved?"TRUE":"FALSE");
+  omc_write_csv(csvData, buffer);
+
+  /* finish line */
+  fputc('\n',csvData->handle);
+
+  return 0;
+}
+
+/*! \fn int print_csvLineIterStatsHeader(OMC_WRITE_CSV* csvData)
+ *
+ *  This function initializes csv files for analysis propose.
+ *
+ *  \param [ref] [data]
+ *  \param [ref] [systemData]
+ */
+int print_csvLineIterStatsHeader(DATA* data, NONLINEAR_SYSTEM_DATA* systemData, OMC_WRITE_CSV* csvData)
+{
+  unsigned char buffer[1024];
+  int j;
+  int size = modelInfoGetEquation(&data->modelData.modelDataXml, systemData->equationIndex).numVar;
+
+  /* number of call */
+  sprintf(buffer,"numberOfCall");
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* solving iterations */
+  sprintf(buffer,"iteration");
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* variables x */
+  for(j=0; j<size; ++j) {
+    sprintf(buffer, "%s", modelInfoGetEquation(&data->modelData.modelDataXml, systemData->equationIndex).vars[j]);
+    omc_write_csv(csvData, buffer);
+    fputc(csvData->seperator,csvData->handle);
+  }
+
+  /* residuals */
+  for(j=0; j<size; ++j) {
+    sprintf(buffer, "r%d", j+1);
+    omc_write_csv(csvData, buffer);
+    fputc(csvData->seperator,csvData->handle);
+  }
+
+  /* delta x */
+  sprintf(buffer,"delta_x");
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* delta x scaled */
+  sprintf(buffer,"delta_x_scaled");
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* error in f */
+  sprintf(buffer,"error_f");
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* error in f scaled */
+  sprintf(buffer,"error_f_scaled");
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* damping lambda */
+  sprintf(buffer,"lambda");
+  omc_write_csv(csvData, buffer);
+
+  /* finish line */
+  fputc('\n',csvData->handle);
+
+  return 0;
+}
+
+/*! \fn int print_csvLineIterStatsHeader(OMC_WRITE_CSV* csvData)
+ *
+ *  This function initializes csv files for analysis propose.
+ *
+ *  \param [ref] [csvData]
+ *  \param [in] [size, num, ...]
+ */
+int print_csvLineIterStats(OMC_WRITE_CSV* csvData, int size, int num,
+                           int iteration, double* x, double* f, double error_f,
+                           double error_fs, double delta_x, double delta_xs,
+                           double lambda)
+{
+  unsigned char buffer[1024];
+  int j;
+
+  /* number of call */
+  sprintf(buffer, "%d", num);
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* simulation time */
+  sprintf(buffer, "%d", iteration);
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* x */
+  for(j=0; j<size; ++j) {
+    sprintf(buffer, "%g", x[j]);
+    omc_write_csv(csvData, buffer);
+    fputc(csvData->seperator,csvData->handle);
+  }
+
+  /* r */
+  for(j=0; j<size; ++j) {
+    sprintf(buffer, "%g", f[j]);
+    omc_write_csv(csvData, buffer);
+    fputc(csvData->seperator,csvData->handle);
+  }
+
+  /* error_f */
+  sprintf(buffer, "%g", error_f);
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* error_f */
+  sprintf(buffer, "%g", error_fs);
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* delta_x */
+  sprintf(buffer, "%g", delta_x);
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* delta_xs */
+  sprintf(buffer, "%g", delta_xs);
+  omc_write_csv(csvData, buffer);
+  fputc(csvData->seperator,csvData->handle);
+
+  /* lambda */
+  sprintf(buffer, "%g", lambda);
+  omc_write_csv(csvData, buffer);
+
+  /* finish line */
+  fputc('\n',csvData->handle);
+
+  return 0;
+}
 
 /*! \fn int initializeNonlinearSystems(DATA *data)
  *
@@ -79,7 +339,8 @@ int initializeNonlinearSystems(DATA *data)
     assertStreamPrint(data->threadData, 0 != nonlinsys[i].residualFunc, "residual function pointer is invalid" );
 
     /* check if analytical jacobian is created */
-    if(nonlinsys[i].jacobianIndex != -1){
+    if(nonlinsys[i].jacobianIndex != -1)
+    {
       assertStreamPrint(data->threadData, 0 != nonlinsys[i].analyticalJacobianColumn, "jacobian function pointer is invalid" );
       if(nonlinsys[i].initialAnalyticalJacobian(data))
       {
@@ -97,6 +358,20 @@ int initializeNonlinearSystems(DATA *data)
     nonlinsys[i].max = (double*) malloc(size*sizeof(double));
 
     nonlinsys[i].initializeStaticNLSData(data, &nonlinsys[i]);
+
+    /* csv data call stats*/
+    if (data->simulationInfo.nlsCsvInfomation)
+    {
+      if (initializeNLScsvData(data, &nonlinsys[i]))
+      {
+        throwStreamPrint(data->threadData, "csvData initialization failed");
+      }
+      else
+      {
+        print_csvLineCallStatsHeader(((struct csvStats*) nonlinsys[i].csvData)->callStats);
+        print_csvLineIterStatsHeader(data, &nonlinsys[i], ((struct csvStats*) nonlinsys[i].csvData)->iterStats);
+      }
+    }
 
     /* allocate solver data */
     switch(data->simulationInfo.nlsMethod)
@@ -175,6 +450,7 @@ int freeNonlinearSystems(DATA *data)
   TRACE_PUSH
   int i;
   NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
+  struct csvStats* stats;
 
   infoStreamPrint(LOG_NLS, 1, "free non-linear system solvers");
 
@@ -186,6 +462,13 @@ int freeNonlinearSystems(DATA *data)
     free(nonlinsys[i].nominal);
     free(nonlinsys[i].min);
     free(nonlinsys[i].max);
+
+    if (data->simulationInfo.nlsCsvInfomation)
+    {
+      stats = nonlinsys[i].csvData;
+      omc_write_csv_free(stats->callStats);
+      omc_write_csv_free(stats->iterStats);
+    }
 
     /* free solver data */
     switch(data->simulationInfo.nlsMethod)
@@ -265,7 +548,8 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
 
   rt_ext_tp_tick(&nonlinsys->totalTimeClock);
 
-  if(data->simulationInfo.discreteCall){
+  if(data->simulationInfo.discreteCall)
+  {
     double *fvec = malloc(sizeof(double)*nonlinsys->size);
     int success = 0;
 
@@ -283,7 +567,8 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
     /*catch */
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
-    if (!success) {
+    if (!success)
+    {
       warningStreamPrint(LOG_STDOUT, 0, "Non-Linear Solver try to handle a problem with a called assert.");
     }
 
@@ -341,7 +626,10 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
   default:
     throwStreamPrint(data->threadData, "unrecognized nonlinear solver");
   }
+
+
   nonlinsys->solved = success;
+
 
 #ifndef OMC_EMCC
     /*catch */
@@ -354,6 +642,18 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
 
   nonlinsys->totalTime += rt_ext_tp_tock(&(nonlinsys->totalTimeClock));
   nonlinsys->numberOfCall++;
+
+  if (data->simulationInfo.nlsCsvInfomation)
+  {
+    print_csvLineCallStats(((struct csvStats*) nonlinsys->csvData)->callStats,
+                           nonlinsys->numberOfCall,
+                           data->localData[0]->timeValue,
+                           nonlinsys->numberOfIterations,
+                           nonlinsys->numberOfFEval,
+                           nonlinsys->totalTime,
+                           nonlinsys->solved
+    );
+  }
 
   return check_nonlinear_solution(data, 1, sysNumber);
 }
@@ -437,7 +737,7 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
 
 /*! \fn extraPolate
  *   This function extrapolates linear next value from
- *   the both old values,
+ *   the both old values.
  *
  *  \param [in]  [data]
  *

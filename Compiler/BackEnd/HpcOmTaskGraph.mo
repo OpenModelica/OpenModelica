@@ -2314,9 +2314,60 @@ algorithm
   zeroFuncTaskGraphMeta := copyTaskGraphMeta(iTaskGraphMeta);
   zeroFuncTaskGraphMeta := setInCompsInMeta(zeroFuncInComps, zeroFuncTaskGraphMeta);
 
-  oTaskGraph := zeroFuncTaskGraph;
-  oTaskGraphMeta := zeroFuncTaskGraphMeta;
+  //reverse indexes
+  (oTaskGraph,oTaskGraphMeta) := reverseTaskGraphIndices(zeroFuncTaskGraph,zeroFuncTaskGraphMeta);
 end getZeroFuncsSystem;
+
+protected function reverseTaskGraphIndices"reverse the task ids in the task grah and accordingly in the inComps
+author Waurich TUD 07-2015"
+  input TaskGraph iTaskGraph;
+  input TaskGraphMeta iTaskGraphMeta;
+  output TaskGraph oTaskGraph;
+  output TaskGraphMeta oTaskGraphMeta;
+protected
+  Integer nTasks;
+  array<Integer> idxMap;
+
+  array<list<Integer>> inComps;
+  array<tuple<Integer, Integer, Integer>> varCompMapping;
+  array<tuple<Integer,Integer,Integer>>  eqCompMapping;
+  array<list<Integer>> compParamMapping;
+  array<String> compNames;
+  array<String> compDescs;
+  array<tuple<Integer,Real>> exeCosts;
+  array<Communications> commCosts;
+  array<Integer>nodeMark;
+  array<ComponentInfo> compInformations;
+algorithm
+  nTasks := arrayLength(iTaskGraph);
+  idxMap := arrayCreate(nTasks,-1);
+  TASKGRAPHMETA(inComps=inComps, varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, compParamMapping=compParamMapping, compNames=compNames, compDescs=compDescs, exeCosts=exeCosts, commCosts=commCosts, nodeMark=nodeMark, compInformations=compInformations) := iTaskGraphMeta;
+  // set an index mapping
+  for i in 1:nTasks loop
+    idxMap := arrayUpdate(idxMap,i,nTasks-i+1);
+  end for;
+  //map childNodes in taskgraph
+  oTaskGraph := Array.mapNoCopy_1(iTaskGraph,mapIntegers,idxMap);
+  oTaskGraph := Array.reverse(oTaskGraph);
+  inComps := Array.reverse(inComps);
+  oTaskGraphMeta := TASKGRAPHMETA(inComps, varCompMapping, eqCompMapping, compParamMapping, compNames, compDescs, exeCosts, commCosts, nodeMark, compInformations);
+end reverseTaskGraphIndices;
+
+protected function mapIntegers" Array.mapNoCopy_1 - function to replace integers with their mapping integer
+author Waurich TUD 07-2015"
+  input tuple<list<Integer>,array<Integer>> iTpl;
+  output tuple<list<Integer>,array<Integer>> oTpl;
+protected
+  array<Integer> map;
+  list<Integer> iLst,oLst={};
+algorithm
+  (iLst,map) := iTpl;
+  for i in iLst loop
+    oLst := arrayGet(map,i)::oLst;
+  end for;
+  oLst := listReverse(oLst);
+  oTpl := (oLst,map);
+end mapIntegers;
 
 public function getEventSystem "gets the graph and the adjacencyLst only for the EventSystem. This means that all branches which leads to a node solving
 a whencondition or another boolean condition will remain.
@@ -3493,7 +3544,6 @@ algorithm
   oneChildren := listDelete(oneChildren,listLength(oneChildren)); // remove the empty startValue {}
   oneChildren := List.removeOnTrue(1,compareListLengthOnTrue,oneChildren);  // remove paths of length 1
   //print("oneChildren "+stringDelimitList(List.map(oneChildren,intLstString),"\n")+"\n");
-  //(graphOut,graphTOut,graphDataOut,contractedTasksOut) := contractNodesInGraph(oneChildren,graphIn,graphTIn,graphDataIn,contractedTasksIn);
   (graphOut,graphTOut,graphDataOut,contractedTasksOut) := contractNodesInGraph(oneChildren,graphIn,graphTIn,graphDataIn,contractedTasksIn);
   changed := not listEmpty(oneChildren);
   //print("contractedTasksOut "+stringDelimitList(List.map(arrayList(contractedTasksOut),intString),"\n")+"\n");

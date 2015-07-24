@@ -5,9 +5,11 @@
  */
 #include <Core/SimController/ISimController.h>
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
-
+#include <Core/Modelica.h>
+#include <SimCoreFactory/Policies/FactoryConfig.h>
+/*
 class ISimController;
+*/
 
 class VxWorksFactory
 {

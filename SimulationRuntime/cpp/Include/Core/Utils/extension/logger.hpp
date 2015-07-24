@@ -38,12 +38,14 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
 
     static void write(std::string msg, LogCategory cat, LogLevel lvl)
     {
-      getInstance()->writeInternal(msg, cat, lvl);
+      Logger* instance = getInstance();
+      if(instance && instance->isEnabled())
+        instance->writeInternal(msg, cat, lvl);
     }
 
     static void write(std::string msg, std::pair<LogCategory,LogLevel> mode)
     {
-    	return write(msg, mode.first, mode.second);
+      write(msg, mode.first, mode.second);
     }
 
     static void setEnabled(bool enabled)

@@ -1959,11 +1959,11 @@ algorithm
     local
       String s1,s2,str;
       list<String> l;
-    case DAE.T_INTEGER() then "Integer ";
-    case DAE.T_REAL() then "Real ";
-    case DAE.T_BOOL() then "Boolean ";
-    case DAE.T_STRING() then "String ";
-    case DAE.T_CLOCK() then "Clock ";
+    case DAE.T_INTEGER() then "Integer";
+    case DAE.T_REAL() then "Real";
+    case DAE.T_BOOL() then "Boolean";
+    case DAE.T_STRING() then "String";
+    case DAE.T_CLOCK() then "Clock";
     case DAE.T_ENUMERATION(names = l)
       equation
         s1 = stringDelimitList(l, ", ");
@@ -1971,9 +1971,9 @@ algorithm
         str = stringAppend(s2, ")");
       then
         str;
-    case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)) then "ExternalObject ";
-    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)) then "Record ";
-    case DAE.T_ARRAY() then "Array ";
+    case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)) then "ExternalObject";
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)) then "Record";
+    case DAE.T_ARRAY() then "Array";
   end match;
 end dumpTypeStr;
 
@@ -2291,40 +2291,20 @@ public function varString "Helper function to printVarList."
   input BackendDAE.Var inVar;
   output String outStr;
 protected
-  DAE.ComponentRef cr;
-  BackendDAE.VarKind kind;
-  DAE.VarDirection dir;
-  BackendDAE.Type var_type;
-  DAE.InstDims arrayDim;
-  Option<DAE.Exp> bindExp;
-  DAE.ElementSource source;
-  Option<DAE.VariableAttributes> dae_var_attr;
-  Option<SCode.Comment> comment;
-  DAE.ConnectorType ct;
   list<Absyn.Path> paths;
   list<String> paths_lst;
-  String path_str;
-  Boolean unreplaceable;
   String unreplaceableStr;
+  String dimensions;
 algorithm
-  BackendDAE.VAR(varName=cr,
-                 varKind=kind,
-                 varDirection=dir,
-                 varType=var_type,
-                 arryDim=arrayDim,
-                 bindExp=bindExp,
-                 source=source,
-                 values=dae_var_attr,
-                 comment=comment,
-                 connectorType=ct,
-                 unreplaceable=unreplaceable) := inVar;
-  paths := DAEUtil.getElementSourceTypes(source);
+  paths := DAEUtil.getElementSourceTypes(inVar.source);
   paths_lst := List.map(paths, Absyn.pathString);
-  unreplaceableStr := if unreplaceable then " unreplaceable" else "";
-  outStr := DAEDump.dumpDirectionStr(dir) + ComponentReference.printComponentRefStr(cr) + ":"
-            + kindString(kind) + "(" + connectorTypeString(ct) + attributesString(dae_var_attr)
-            + ") " + optExpressionString(bindExp,"") + DAEDump.dumpCommentAnnotationStr(comment)
-            + stringDelimitList(paths_lst, ", ") + " type: " + dumpTypeStr(var_type) + "["+ExpressionDump.dimensionsString(arrayDim) + "]" + unreplaceableStr;
+  unreplaceableStr := if inVar.unreplaceable then " unreplaceable" else "";
+  dimensions := ExpressionDump.dimensionsString(inVar.arryDim);
+  dimensions := if dimensions <> "" then " [" + dimensions + "]" else "";
+  outStr := DAEDump.dumpDirectionStr(inVar.varDirection) + ComponentReference.printComponentRefStr(inVar.varName) + ":"
+            + kindString(inVar.varKind) + "(" + connectorTypeString(inVar.connectorType) + attributesString(inVar.values)
+            + ") " + optExpressionString(inVar.bindExp, "") + DAEDump.dumpCommentAnnotationStr(inVar.comment)
+            + stringDelimitList(paths_lst, ", ") + " type: " + dumpTypeStr(inVar.varType) + dimensions + unreplaceableStr;
 end varString;
 
 public function dumpKind

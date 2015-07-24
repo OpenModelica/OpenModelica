@@ -6,7 +6,32 @@
 
   /*Defines*/
   #define PATH string
-  #include <SimCoreFactory/VxWorksFactory/VxWorksFactory.h>
+
+  #include <Core/System/ISystemProperties.h>
+  #include <Core/System/ISystemInitialization.h>
+  #include <Core/System/IWriteOutput.h>
+  #include <Core/System/IContinuous.h>
+  #include <Core/System/ITime.h>
+  #include <Core/System/IEvent.h>
+  #include <Core/System/IStepEvent.h>
+  #include <Core/Solver/INonLinSolverSettings.h>
+  #include <Core/Solver/ILinSolverSettings.h>
+  #include <Core/DataExchange/IHistory.h>
+  #include <Core/System/IMixedSystem.h>
+  #include <Core/SimulationSettings/IGlobalSettings.h>
+  #include <Core/System/IMixedSystem.h>
+  #include <Core/System/IAlgLoop.h>
+  #include <Core/Solver/ISolverSettings.h>
+  #include <Core/Solver/ISolver.h>
+  #include <Core/Solver/IAlgLoopSolver.h>
+  #include <Core/System/IAlgLoopSolverFactory.h>
+  #include <Core/System/ISimVars.h>
+  #include <Core/DataExchange/ISimVar.h>
+  #include <Core/SimController/ISimData.h>
+  #include <Core/SimulationSettings/ISimControllerSettings.h>
+  #include <Core/SimController/ISimController.h>
+
+#include <SimCoreFactory/VxWorksFactory/VxWorksFactory.h>
 
 #elif defined(__TRICORE__)
 
@@ -83,7 +108,6 @@
   #include <Core/DataExchange/IHistory.h>
   #include <Core/System/IMixedSystem.h>
   #include <Core/SimulationSettings/IGlobalSettings.h>
-  #include <Core/System/IMixedSystem.h>
   #include <Core/System/IAlgLoop.h>
   #include <Core/Solver/ISolverSettings.h>
   #include <Core/Solver/ISolver.h>

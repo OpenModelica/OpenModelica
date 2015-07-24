@@ -710,5 +710,22 @@ algorithm
   fail();
 end getMemberOnTrue;
 
+public function reverse<T>"reverses the elements in an array"
+  input array<T> inArray;
+  output array<T> outArray;
+protected
+  Integer size,i;
+  T elem1,elem2;
+algorithm
+  outArray := inArray;
+  size := arrayLength(inArray);
+  for i in 1:(size/2) loop
+    elem1 := arrayGet(inArray,i);
+    elem2 := arrayGet(inArray,size-i+1);
+    outArray := arrayUpdate(outArray,i,elem2);
+    outArray := arrayUpdate(outArray,size-i+1,elem1);
+  end for;
+end reverse;
+
 annotation(__OpenModelica_Interface="util");
 end Array;

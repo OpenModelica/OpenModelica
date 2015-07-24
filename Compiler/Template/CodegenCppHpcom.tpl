@@ -1855,27 +1855,35 @@ template simulationMainRunScript(SimCode simCode, Text& extraFuncs, Text& extraF
   CodegenCpp.simulationMainRunScript(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, preRunCommandLinux, preRunCommandWindows, execCommandLinux)
 end simulationMainRunScript;
 
-template simulationMakefile(String target, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace)
- "Adds specific compiler flags for HPCOM mode to simulation makefile."
+template getAdditionalMakefileFlags(Text& additionalLinkerFlags_GCC, Text& additionalLinkerFlags_MSVC, Text& additionalCFlags_GCC, Text& additionalCFlags_MSVC)
 ::=
   let type = getConfigString(HPCOM_CODE)
 
-  let &additionalCFlags_GCC = buffer ""
   let &additionalCFlags_GCC += if stringEq(type,"openmp") then " -fopenmp" else ""
   let &additionalCFlags_GCC += if stringEq(type,"tbb") then ' -I"$(INTEL_TBB_INCLUDE)"' else ""
 
-  let &additionalCFlags_MSVC = buffer ""
   let &additionalCFlags_MSVC += if stringEq(type,"openmp") then "/openmp" else ""
 
-  let &additionalLinkerFlags_GCC = buffer ""
   let &additionalLinkerFlags_GCC += if stringEq(type,"tbb") then " $(INTEL_TBB_LIBRARIES) " else ""
   let &additionalLinkerFlags_GCC += if stringEq(type,"openmp") then " -fopenmp" else ""
+  <<
+  >>
+end getAdditionalMakefileFlags;
 
+template simulationMakefile(String target, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace)
+ "Adds specific compiler flags for HPCOM mode to simulation makefile."
+::=
+  let &additionalCFlags_GCC = buffer ""
+  let &additionalCFlags_MSVC = buffer ""
+  let &additionalLinkerFlags_GCC = buffer ""
   let &additionalLinkerFlags_MSVC = buffer ""
 
-  CodegenCpp.simulationMakefile(target, simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace, additionalLinkerFlags_GCC,
+  <<
+  <%getAdditionalMakefileFlags(additionalCFlags_GCC, additionalCFlags_MSVC, additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC)%>
+  <%CodegenCpp.simulationMakefile(target, simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace, additionalLinkerFlags_GCC,
                                 additionalCFlags_MSVC, additionalCFlags_GCC,
-                                additionalLinkerFlags_MSVC, Flags.isSet(Flags.USEMPI))
+                                additionalLinkerFlags_MSVC, Flags.isSet(Flags.USEMPI))%>
+  >>
 end simulationMakefile;
 
 template numPreVarsHpcom(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
