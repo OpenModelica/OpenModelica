@@ -55,9 +55,9 @@ translateModel(test_subSample); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: f:VARIABLE() .test_subSample, .Real type: Real []
-// 2: v:STATE(1)(start = 0.0 fixed = true ) .test_subSample, .Real type: Real []
-// 3: x:STATE(1)(start = 1.0 fixed = true ) .test_subSample, .Real type: Real []
+// 1: f:VARIABLE() .test_subSample, .Real type: Real
+// 2: v:STATE(1)(start = 0.0 fixed = true ) .test_subSample, .Real type: Real
+// 3: x:STATE(1)(start = 1.0 fixed = true ) .test_subSample, .Real type: Real
 //
 //
 // Equations (3, 3)
@@ -83,8 +83,8 @@ translateModel(test_subSample); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: u:DISCRETE(start = 0.0 ) .test_subSample, .Real type: Real []
-// 2: vd:DISCRETE() .test_subSample, .Real type: Real []
+// 1: u:DISCRETE(start = 0.0 ) .test_subSample, .Real type: Real
+// 2: vd:DISCRETE() .test_subSample, .Real type: Real
 //
 //
 // Equations (2, 2)
@@ -109,7 +109,7 @@ translateModel(test_subSample); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: u2:DISCRETE() .test_subSample, .Real type: Real []
+// 1: u2:DISCRETE() .test_subSample, .Real type: Real
 //
 //
 // Equations (1, 1)
@@ -133,7 +133,7 @@ translateModel(test_subSample); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: u3:DISCRETE() .test_subSample, .Real type: Real []
+// 1: u3:DISCRETE() .test_subSample, .Real type: Real
 //
 //
 // Equations (1, 1)

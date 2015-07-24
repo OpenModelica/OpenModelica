@@ -58,10 +58,10 @@ simulate(foo,stopTime=0);
 //
 // Variables (4)
 // ========================================
-// 1: u_norm:VARIABLE() .foo, .Real type: Real []
-// 2: x_norm:VARIABLE() .foo, .Real type: Real []
-// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 ) .foo, .Real type: Real []
-// 4: x__OMC$scaled_state:VARIABLE()  type: Real []
+// 1: u_norm:VARIABLE() .foo, .Real type: Real
+// 2: x_norm:VARIABLE() .foo, .Real type: Real
+// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 ) .foo, .Real type: Real
+// 4: x__OMC$scaled_state:VARIABLE()  type: Real
 //
 //
 // Equations (4, 4)
@@ -103,7 +103,7 @@ simulate(foo,stopTime=0);
 //
 // Known Variables (constants) (1)
 // ========================================
-// 1: input u:VARIABLE(nominal = 20.0 ) .foo, .Real type: Real []
+// 1: input u:VARIABLE(nominal = 20.0 ) .foo, .Real type: Real
 //
 //
 // External Objects (0)
@@ -164,10 +164,10 @@ simulate(foo,stopTime=0);
 //
 // Variables (4)
 // ========================================
-// 1: u_norm:VARIABLE() .foo, .Real type: Real []
-// 2: x_norm:VARIABLE() .foo, .Real type: Real []
-// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 ) .foo, .Real type: Real []
-// 4: u__OMC$scaled_input:VARIABLE()  type: Real []
+// 1: u_norm:VARIABLE() .foo, .Real type: Real
+// 2: x_norm:VARIABLE() .foo, .Real type: Real
+// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 ) .foo, .Real type: Real
+// 4: u__OMC$scaled_input:VARIABLE()  type: Real
 //
 //
 // Equations (4, 4)
@@ -209,7 +209,7 @@ simulate(foo,stopTime=0);
 //
 // Known Variables (constants) (1)
 // ========================================
-// 1: input u:VARIABLE(nominal = 20.0 ) .foo, .Real type: Real []
+// 1: input u:VARIABLE(nominal = 20.0 ) .foo, .Real type: Real
 //
 //
 // External Objects (0)
@@ -270,11 +270,11 @@ simulate(foo,stopTime=0);
 //
 // Variables (5)
 // ========================================
-// 1: u_norm:VARIABLE() .foo, .Real type: Real []
-// 2: x_norm:VARIABLE() .foo, .Real type: Real []
-// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 ) .foo, .Real type: Real []
-// 4: x__OMC$scaled_state:VARIABLE()  type: Real []
-// 5: u__OMC$scaled_input:VARIABLE()  type: Real []
+// 1: u_norm:VARIABLE() .foo, .Real type: Real
+// 2: x_norm:VARIABLE() .foo, .Real type: Real
+// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 ) .foo, .Real type: Real
+// 4: x__OMC$scaled_state:VARIABLE()  type: Real
+// 5: u__OMC$scaled_input:VARIABLE()  type: Real
 //
 //
 // Equations (5, 5)
@@ -319,7 +319,7 @@ simulate(foo,stopTime=0);
 //
 // Known Variables (constants) (1)
 // ========================================
-// 1: input u:VARIABLE(nominal = 20.0 ) .foo, .Real type: Real []
+// 1: input u:VARIABLE(nominal = 20.0 ) .foo, .Real type: Real
 //
 //
 // External Objects (0)

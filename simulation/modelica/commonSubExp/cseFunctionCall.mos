@@ -199,10 +199,10 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 //
 // ########### Updated Variable List ########### (4)
 // ========================================
-// 1: z:STATE(1)() .CSE.FunctionCallTest1, .Real type: Real []
-// 2: y:STATE(1)() .CSE.FunctionCallTest1, .Real type: Real []
-// 3: x:VARIABLE() .CSE.FunctionCallTest1, .Real type: Real []
-// 4: $cse3:VARIABLE()  type: Real []
+// 1: z:STATE(1)() .CSE.FunctionCallTest1, .Real type: Real
+// 2: y:STATE(1)() .CSE.FunctionCallTest1, .Real type: Real
+// 3: x:VARIABLE() .CSE.FunctionCallTest1, .Real type: Real
+// 4: $cse3:VARIABLE()  type: Real
 //
 //
 // ########### Updated Equation List ########### (4, 4)
@@ -222,13 +222,13 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 //
 // ########### Updated Variable List ########### (7)
 // ========================================
-// 1: d:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real []
-// 2: c:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real []
-// 3: b:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real []
-// 4: a:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real []
-// 5: x:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real []
-// 6: $cse4:VARIABLE()  type: Real []
-// 7: $cse3:VARIABLE()  type: Real []
+// 1: d:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real
+// 2: c:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real
+// 3: b:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real
+// 4: a:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real
+// 5: x:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real
+// 6: $cse4:VARIABLE()  type: Real
+// 7: $cse3:VARIABLE()  type: Real
 //
 //
 // ########### Updated Equation List ########### (4, 7)
@@ -247,15 +247,15 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 //
 // ########### Updated Variable List ########### (9)
 // ========================================
-// 1: d:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real []
-// 2: c:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real []
-// 3: b:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real []
-// 4: a:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real []
-// 5: z:STATE(1)() .CSE.FunctionCallTest3, .Real type: Real []
-// 6: y:STATE(1)() .CSE.FunctionCallTest3, .Real type: Real []
-// 7: x:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real []
-// 8: $cse4:VARIABLE()  type: Real []
-// 9: $cse3:VARIABLE()  type: Real []
+// 1: d:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real
+// 2: c:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real
+// 3: b:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real
+// 4: a:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real
+// 5: z:STATE(1)() .CSE.FunctionCallTest3, .Real type: Real
+// 6: y:STATE(1)() .CSE.FunctionCallTest3, .Real type: Real
+// 7: x:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real
+// 8: $cse4:VARIABLE()  type: Real
+// 9: $cse3:VARIABLE()  type: Real
 //
 //
 // ########### Updated Equation List ########### (6, 9)
@@ -277,13 +277,13 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 //
 // ########### Updated Variable List ########### (7)
 // ========================================
-// 1: z.r2:DISCRETE() .CSE.FunctionCallTest4, .CSE.types.R, .Integer type: Integer []
-// 2: z.r1:VARIABLE() .CSE.FunctionCallTest4, .CSE.types.R, .Real type: Real []
-// 3: y.r2:DISCRETE() .CSE.FunctionCallTest4, .CSE.types.R, .Integer type: Integer []
-// 4: y.r1:VARIABLE() .CSE.FunctionCallTest4, .CSE.types.R, .Real type: Real []
-// 5: x:VARIABLE() .CSE.FunctionCallTest4, .Real type: Real []
-// 6: $cse3.r2:DISCRETE()  type: Integer []
-// 7: $cse3.r1:VARIABLE()  type: Real []
+// 1: z.r2:DISCRETE() .CSE.FunctionCallTest4, .CSE.types.R, .Integer type: Integer
+// 2: z.r1:VARIABLE() .CSE.FunctionCallTest4, .CSE.types.R, .Real type: Real
+// 3: y.r2:DISCRETE() .CSE.FunctionCallTest4, .CSE.types.R, .Integer type: Integer
+// 4: y.r1:VARIABLE() .CSE.FunctionCallTest4, .CSE.types.R, .Real type: Real
+// 5: x:VARIABLE() .CSE.FunctionCallTest4, .Real type: Real
+// 6: $cse3.r2:DISCRETE()  type: Integer
+// 7: $cse3.r1:VARIABLE()  type: Real
 //
 //
 // ########### Updated Equation List ########### (4, 7)
@@ -302,18 +302,18 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 //
 // ########### Updated Variable List ########### (12)
 // ========================================
-// 1: b:VARIABLE() .CSE.FunctionCallTest5, .Real type: Real []
-// 2: a:VARIABLE() .CSE.FunctionCallTest5, .Real type: Real []
-// 3: z.r2:DISCRETE() .CSE.FunctionCallTest5, .CSE.types.R, .Integer type: Integer []
-// 4: z.r1:VARIABLE() .CSE.FunctionCallTest5, .CSE.types.R, .Real type: Real []
-// 5: y.r2:DISCRETE() .CSE.FunctionCallTest5, .CSE.types.R, .Integer type: Integer []
-// 6: y.r1:VARIABLE() .CSE.FunctionCallTest5, .CSE.types.R, .Real type: Real []
-// 7: x:VARIABLE() .CSE.FunctionCallTest5, .Real type: Real []
-// 8: $cse6.r2:DISCRETE()  type: Integer []
-// 9: $cse6.r1:VARIABLE()  type: Real []
-// 10: $cse4:VARIABLE()  type: Real []
-// 11: $cse3.r2:DISCRETE()  type: Integer []
-// 12: $cse3.r1:VARIABLE()  type: Real []
+// 1: b:VARIABLE() .CSE.FunctionCallTest5, .Real type: Real
+// 2: a:VARIABLE() .CSE.FunctionCallTest5, .Real type: Real
+// 3: z.r2:DISCRETE() .CSE.FunctionCallTest5, .CSE.types.R, .Integer type: Integer
+// 4: z.r1:VARIABLE() .CSE.FunctionCallTest5, .CSE.types.R, .Real type: Real
+// 5: y.r2:DISCRETE() .CSE.FunctionCallTest5, .CSE.types.R, .Integer type: Integer
+// 6: y.r1:VARIABLE() .CSE.FunctionCallTest5, .CSE.types.R, .Real type: Real
+// 7: x:VARIABLE() .CSE.FunctionCallTest5, .Real type: Real
+// 8: $cse6.r2:DISCRETE()  type: Integer
+// 9: $cse6.r1:VARIABLE()  type: Real
+// 10: $cse4:VARIABLE()  type: Real
+// 11: $cse3.r2:DISCRETE()  type: Integer
+// 12: $cse3.r1:VARIABLE()  type: Real
 //
 //
 // ########### Updated Equation List ########### (5, 12)
@@ -337,14 +337,14 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 // 2: b[1]:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real [2]
 // 3: a[2]:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real [2]
 // 4: a[1]:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real [2]
-// 5: z:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real []
-// 6: y:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real []
-// 7: x:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real []
-// 8: $cse6.r2:DISCRETE()  type: Integer []
-// 9: $cse6.r1:VARIABLE()  type: Real []
-// 10: $cse4[2]:VARIABLE()  type: Real []
-// 11: $cse4[1]:VARIABLE()  type: Real []
-// 12: $cse3:VARIABLE()  type: Real []
+// 5: z:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real
+// 6: y:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real
+// 7: x:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real
+// 8: $cse6.r2:DISCRETE()  type: Integer
+// 9: $cse6.r1:VARIABLE()  type: Real
+// 10: $cse4[2]:VARIABLE()  type: Real
+// 11: $cse4[1]:VARIABLE()  type: Real
+// 12: $cse3:VARIABLE()  type: Real
 //
 //
 // ########### Updated Equation List ########### (5, 12)
@@ -364,19 +364,19 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 //
 // ########### Updated Variable List ########### (13)
 // ========================================
-// 1: r.r1:VARIABLE() .CSE.FunctionCallTest7, .CSE.types.R, .Real type: Real []
+// 1: r.r1:VARIABLE() .CSE.FunctionCallTest7, .CSE.types.R, .Real type: Real
 // 2: b[2]:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real [2]
 // 3: b[1]:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real [2]
 // 4: a[2]:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real [2]
 // 5: a[1]:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real [2]
-// 6: z:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real []
-// 7: y:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real []
-// 8: x:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real []
-// 9: $cse6.r2:DISCRETE()  type: Integer []
-// 10: $cse6.r1:VARIABLE()  type: Real []
-// 11: $cse4[2]:VARIABLE()  type: Real []
-// 12: $cse4[1]:VARIABLE()  type: Real []
-// 13: $cse3:VARIABLE()  type: Real []
+// 6: z:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real
+// 7: y:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real
+// 8: x:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real
+// 9: $cse6.r2:DISCRETE()  type: Integer
+// 10: $cse6.r1:VARIABLE()  type: Real
+// 11: $cse4[2]:VARIABLE()  type: Real
+// 12: $cse4[1]:VARIABLE()  type: Real
+// 13: $cse3:VARIABLE()  type: Real
 //
 //
 // ########### Updated Equation List ########### (6, 13)

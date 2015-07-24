@@ -96,7 +96,7 @@ end HierarchicalAndParallelStateMachine;
 //           state1.stateX.i = 1 + previous(state1.stateX.i);
 //           state1.stateX.w = state1.v;
 //       end state1.stateX;
-// 
+//
 //       state state1.stateY
 //           Integer state1.stateY.j(start = 0);
 //         equation
@@ -106,26 +106,26 @@ end HierarchicalAndParallelStateMachine;
 //         transition(state1.stateX, state1.stateY, state1.stateX.i > 20, false, true, false, 1);
 //         initialState(state1.stateX);
 //     end state1.stateX;
-// 
+//
 //     stateMachine state1.stateA
 //       state state1.stateA
 //           output Integer state1.stateA.v;
 //         equation
 //           state1.stateA.v = 2 + previous(v);
 //       end state1.stateA;
-// 
+//
 //       state state1.stateB
 //           output Integer state1.stateB.v;
 //         equation
 //           state1.stateB.v = -1 + previous(v);
 //       end state1.stateB;
-// 
+//
 //       state state1.stateC
 //           output Integer state1.stateC.count;
 //         equation
 //           state1.stateC.count = 1 + previous(state1.count);
 //       end state1.stateC;
-// 
+//
 //       state state1.stateD
 //       end state1.stateD;
 //       equation
@@ -139,7 +139,7 @@ end HierarchicalAndParallelStateMachine;
 //       state1.v = if activeState(state1.stateA) then state1.stateA.v else if activeState(state1.stateB) then state1.stateB.v else previous(v);
 //       state1.count = if activeState(state1.stateC) then state1.stateC.count else previous(state1.count);
 //   end state1;
-// 
+//
 //   state state2
 //       output Integer state2.v;
 //     equation

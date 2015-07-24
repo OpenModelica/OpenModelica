@@ -40,7 +40,7 @@ end ConferenceTut1;
 //     equation
 //       state1.i = 2 + previous(i);
 //   end state1;
-// 
+//
 //   state state2
 //       output Integer state2.i;
 //     equation
