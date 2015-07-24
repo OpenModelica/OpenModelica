@@ -15,6 +15,9 @@
 #include <kinsol/kinsol_spbcgs.h>
 #include <kinsol/kinsol_sptfqmr.h>
 #include <boost/math/special_functions/fpclassify.hpp>
+#include <boost/numeric/ublas/lu.hpp>
+#include <boost/numeric/ublas/symmetric.hpp>
+
 //#include<kinsol_lapack.h>
  int kin_fCallback(N_Vector y, N_Vector fval, void *user_data);
 class Kinsol : public IAlgLoopSolver
@@ -36,8 +39,7 @@ public:
 private:
   /// Encapsulation of determination of residuals to given unknowns
   void calcFunction(const double* y, double* residual);
-  /// Encapsulation of determination of Jacobian
-  void calcJacobian(double* f, double* y);
+
 
   int check_flag(void *flagvalue, char *funcname, int opt);
 
@@ -95,7 +97,7 @@ private:
 
   realtype _fnorm,
     _currentIterateNorm;
-
+   ublas::permutation_matrix<double>* _P;
    int _counter;
 };
 /** @} */ // end of solverKinsol

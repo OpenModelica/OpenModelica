@@ -162,7 +162,7 @@ double
   // Variables for Coloured Jacobians
   int* _colorOfColumn;
   int  _maxColors;
-  SparseMatrix _jacobianA;
+  matrix_t _jacobianA;
   int _jacobianANonzeros;
   int const* _jacobianAIndex;
   int const* _jacobianALeadindex;

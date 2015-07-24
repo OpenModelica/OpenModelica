@@ -55,7 +55,7 @@ private:
     ITERATIONSTATUS
         _iterationStatus;            ///< Output        - Denotes the status of iteration
 
-     int
+    int
         _dimSys;                    ///< Temp        - Number of unknowns (=dimension of system of equations)
 
     bool
@@ -75,7 +75,8 @@ private:
         *_x_nom,                    //Nominal value of unknown variables
         *_x_ex,                 //extraplated unknown varibales
         *_x_scale,                 //current scale factor of unknown varibales
-        _t0,             //old time
+         *_zeroVec,
+		_t0,             //old time
         _t1,            //old time
         _t2;              //old time
     bool _usescale;

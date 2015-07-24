@@ -89,10 +89,11 @@ using std::vector;
 //using boost::timer::nanosecond_type;
 typedef ublas::shallow_array_adaptor<double> adaptor_t;
 typedef ublas::vector<double, adaptor_t> shared_vector_t;
-typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
-typedef boost::function<bool (unsigned int)> getCondition_type;
-typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&)> init_prevars_type;
-typedef uBlas::compressed_matrix<double, uBlas::row_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > SparseMatrix;
+typedef ublas::matrix<double,  ublas::column_major,adaptor_t> shared_matrix_t;
+//typedef boost::function<bool (unsigned int)> getCondition_type;
+//typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&)> init_prevars_type;
+typedef uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > sparsematrix_t;
+typedef ublas::matrix<double, ublas::column_major> matrix_t;
 #include <Core/SimulationSettings/ISettingsFactory.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <Core/Utils/Modelica/ModelicaSimulationError.h>
