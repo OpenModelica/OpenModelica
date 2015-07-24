@@ -9,9 +9,9 @@ all: omedit
 
 CC = gcc
 CXX = g++
-CFLAGS =-g -falign-functions -fstack-protector-all
+CFLAGS = -O2 -falign-functions -fstack-protector-all
 AR = ar
-CMAKE=cmake
+CMAKE = $(OMDEV)/bin/cmake/bin/cmake
 CMAKE_TARGET = "MSYS Makefiles"
 SHREXT=.dll
 
