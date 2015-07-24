@@ -3617,18 +3617,7 @@ match eq
    <%modelname%>Algloop<%ls.index%>::~<%modelname%>Algloop<%ls.index%>()
    {
 
-     <% match eq
-      case SES_LINEAR(__) then
-      <<
-      >>
-      else
-      <<
-      if (__xd)
-        delete [] __xd;
-      if (_xd_init)
-        delete [] _xd_init;
-      >>
-     %>
+
    }
 
    bool <%modelname%>Algloop<%ls.index%>::getUseSparseFormat()
@@ -3691,18 +3680,7 @@ match eq
 
    <%modelname%>Algloop<%nls.index%>::~<%modelname%>Algloop<%nls.index%>()
    {
-     <% match eq
-      case SES_LINEAR(__) then
-      <<
-      >>
-      else
-      <<
-      if (__xd)
-        delete [] __xd;
-      if (_xd_init)
-        delete [] _xd_init;
-      >>
-     %>
+
    }
 
    bool <%modelname%>Algloop<%nls.index%>::getUseSparseFormat()
@@ -5863,7 +5841,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      {
 
          <%initAlgloopEquation(eq,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
-         AlgLoopDefaultImplementation::initialize();
+
 
         // Update the equations once before start of simulation
         evaluate();
@@ -5875,9 +5853,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        <<
         void <%modelname%>Algloop<%ls.index%>::initialize()
         {
-           __Asparse = boost::shared_ptr<matrix_t> (new matrix_t);
+
           <%initAlgloopEquation(eq,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
-          AlgLoopDefaultImplementation::initialize();
+
 
         }
        >>
@@ -5904,7 +5882,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
    void <%modelname%>Algloop<%ls.index%>::initialize()
    {
-     //fill_array(__A,0.0);
+
     <%initAlgloopEquation(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
    }
    >>
@@ -6378,13 +6356,10 @@ match eq
 case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   let size = listLength(nls.crefs)
   <<
-    // Number of unknowns equations
+
     _dimAEq = <%size%>;
-    _constraintType = IAlgLoop::REAL;
-    __xd = new double[_dimAEq];
-    _xd_init = new double[_dimAEq];
-    //__xd.resize(<%size%>);
-    //_xd_init.resize(<%size%>);
+    AlgLoopDefaultImplementation::initialize();
+
   >>
   case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
     match ls.jacobianMatrix
@@ -6394,17 +6369,14 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
        <<
         // Number of unknowns equations
         _dimAEq = <%size%>;
-        _constraintType = IAlgLoop::REAL;
-        __xd = new double[_dimAEq];
-        _xd_init = new double[_dimAEq];
-        //__xd.resize(<%size%>);
-        //_xd_init.resize(<%size%>);
+         AlgLoopDefaultImplementation::initialize();
        >>
       else
        let size = listLength(ls.vars)
        <<
         // Number of unknowns/equations according to type (0: double, 1: int, 2: bool)
         _dimAEq = <%size%>;
+         AlgLoopDefaultImplementation::initialize();
          fill_array(__b,0.0);
        >>
 
