@@ -28,16 +28,18 @@ win32 {
   # QMAKE_CXXFLAGS += -fpermissive
   QMAKE_LFLAGS += -Wl,--enable-auto-import
   # win32 vs. win64
-  contains(QT_ARCH, i386) {
+  UNAME = $$system(uname)
+  isEmpty(UNAME): UNAME = MINGW32
+  ISMINGW32 = $$find(UNAME, MINGW32)
+  message(uname: $$UNAME)
+  count( ISMINGW32, 1 ) {
     CORBAINC = $$(OMDEV)/lib/omniORB-4.1.6-mingw/include
     CORBALIBS = -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rt -lomnithread34_rt
     DEFINES += __x86__ \
                __NT__ \
                __OSVERSION__=4 \
                __WIN32__
-  }
-  else # win64
-  {
+  } else {
     CORBAINC = $$(OMDEV)/lib/omniORB-4.2.0-mingw64/include
     CORBALIBS = -L$$(OMDEV)/lib/omniORB-4.2.0-mingw64/lib/x86_win32 -lomniORB420_rt -lomnithread40_rt
     DEFINES += __x86__ \
