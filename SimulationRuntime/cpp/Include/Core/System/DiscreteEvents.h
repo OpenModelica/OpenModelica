@@ -41,7 +41,7 @@ public:
   bool changeDiscreteVar(double& var);
   bool changeDiscreteVar(int& var);
   bool changeDiscreteVar(bool& var);
-  getCondition_type getCondition;
+  //getCondition_type getCondition;
 
 private:
    boost::shared_ptr<ISimVars> _sim_vars;

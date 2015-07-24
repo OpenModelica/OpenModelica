@@ -1,6 +1,6 @@
 #include <Core/ModelicaDefine.h>
  #include <Core/Modelica.h>
-#include <Core/Math/SparseMatrix.h>
+#include <Core/Math/matrix_t.h>
 #ifdef USE_UMFPACK
 #include "umfpack.h"
 #endif

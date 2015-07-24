@@ -26,7 +26,7 @@ void UmfPack::initialize()
     if(_algLoop->queryDensity()<1. &&_umfpackSettings->getUseSparseFormat() )
     {
         _algLoop->setUseSparseFormat(true);
-        _jacs = boost::shared_ptr<SparseMatrix> (new SparseMatrix);
+        _jacs = boost::shared_ptr<matrix_t> (new matrix_t);
     }
     else
     {

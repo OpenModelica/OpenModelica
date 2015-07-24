@@ -198,7 +198,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     let jacobianfunctions = (jacobianMatrixes |> (_,_, name, _, _, _, _) hasindex index0 =>
     <<
     void calc<%name%>JacobianColumn();
-    void get<%name%>Jacobian(SparseMatrix& matrix);
+    const matrix_t& get<%name%>Jacobian() ;
     /*needed for colored Jacs*/
     >>
     ;separator="\n";empty)
@@ -211,7 +211,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     let jacobianvars = (jacobianMatrixes |> (_,_, name, _, _, _, _) hasindex index0 =>
     <<
     private:
-      SparseMatrix _<%name%>jacobian;
+      matrix_t _<%name%>jacobian;
       ublas::vector<double> _<%name%>jac_y;
       ublas::vector<double> _<%name%>jac_tmp;
       ublas::vector<double> _<%name%>jac_x;
@@ -415,9 +415,9 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
     virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT);
     virtual IHistory* getHistory();
     /// Provide Jacobian
-    virtual void getJacobian(SparseMatrix& matrix);
-    virtual void getJacobian(SparseMatrix& matrix,unsigned int index);
-    virtual void getStateSetJacobian(unsigned int index,SparseMatrix& matrix);
+    virtual const matrix_t& getJacobian() ;
+    virtual const matrix_t& getJacobian(unsigned int index) ;
+    virtual void getStateSetJacobian(unsigned int index,matrix_t& matrix);
     /// Called to handle all events occured at same time
     virtual bool handleSystemEvents(bool* events);
     //Saves all variables before an event is handled, is needed for the pre, edge and change operator
@@ -994,24 +994,27 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      <%classname%>Jacobian::initializeColoredJacobianA();
    }
 
-   void <%classname%>Extension::getJacobian(SparseMatrix& matrix)
+   const matrix_t& <%classname%>Extension::getJacobian( )
    {
-     getAJacobian(matrix);
+      return getAJacobian();
 
    }
 
-    void <%classname%>Extension::getJacobian(SparseMatrix& matrix,unsigned int index)
+   const matrix_t& <%classname%>Extension::getJacobian(unsigned int index)
    {
      switch (index)
      {
         <%getJacobianForIndexMethods%>
+        default:
+        throw ModelicaSimulationError(MATH_FUNCTION,"Not supported jacobian matrix index");
+
      }
    }
 
 
 
 
-   void <%classname%>Extension::getStateSetJacobian(unsigned int index,SparseMatrix& matrix)
+   void <%classname%>Extension::getStateSetJacobian(unsigned int index,matrix_t& matrix)
    {
      switch (index)
      {
@@ -1156,8 +1159,8 @@ case _ then
 
     case <%indexJacobian%>:
     {
-        get<%matrixName%>Jacobian(matrix);
-        break;
+        return get<%matrixName%>Jacobian();
+
     }
   >>
 
@@ -3238,9 +3241,11 @@ match eq
        , __zDot(zDot)
    <% match eq
 
-     case SES_LINEAR(__) then
+     case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+      let size = listLength(ls.vars)
     <<
      ,__Asparse()
+     ,__A(ublas::zero_matrix<double>(<%size%>,<%size%>))
     >>
     %>
 
@@ -3275,11 +3280,15 @@ match eq
    <%algloopRHSCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then algloopResiduals(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
    <%initAlgloop(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
+   /* deactivated: should be generated with codegeneration flag usematrix_t
    <%initAlgloopTemplate(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
+   */
    <%queryDensity(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, useFlatArrayNotation)%>
    <%updateAlgloop(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, stateDerVectorName, useFlatArrayNotation)%>
    <%upateAlgloopNonLinear(simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
+   /* deactivated: should be generated with code generation flag usematrix_t
    <%upateAlgloopLinear(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, stateDerVectorName, useFlatArrayNotation)%>
+   */
    <%algloopDefaultImplementationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
    <%getAMatrixCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
    <%isLinearCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
@@ -3303,6 +3312,7 @@ match eq
      case SES_LINEAR(__) then
     <<
      ,__Asparse()
+
     >>
     %>
 
@@ -3337,11 +3347,15 @@ match eq
    <%algloopRHSCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then algloopResiduals(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
    <%initAlgloop(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
+   /*deactivated: should be generated with codegeneration flag usematrix_t
    <%initAlgloopTemplate(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
+   */
    <%queryDensity(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, useFlatArrayNotation)%>
    <%updateAlgloop(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, stateDerVectorName, useFlatArrayNotation)%>
    <%upateAlgloopNonLinear(simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
+   /* deactivated: should be generated with code generation flag usematrix_t
    <%upateAlgloopLinear(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, stateDerVectorName, useFlatArrayNotation)%>
+   */
    <%algloopDefaultImplementationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
    <%getAMatrixCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
    <%isLinearCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
@@ -3425,13 +3439,15 @@ match simCode
         }
         >>
      else
-        <<
+
+        /*<<
         void <%modelname%>Algloop<%ls.index%>::evaluate()
         {
+            deactivated: should be generated with code generation flag usematrix_t
            if(_useSparseFormat)
            {
              if(! __Asparse)
-                __Asparse = boost::shared_ptr<SparseMatrix>( new SparseMatrix);
+                __Asparse = boost::shared_ptr<matrix_t>( new matrix_t);
 
              evaluate(__Asparse.get());
            }
@@ -3442,8 +3458,38 @@ match simCode
 
              evaluate(__A.get());
            }
+
+
+
         }
-        >>
+        >>*/
+     let uid = System.tmpTick()
+  let size = listLength(ls.vars)
+  let aname = 'A<%uid%>'
+  let bname = 'b<%uid%>'
+    let &varDecls = buffer "" /*BUFD*/
+
+ let Amatrix=
+    (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+      let &preExp = buffer "" /*BUFD*/
+      let expPart = daeExp(eq.exp, context, &preExp, &varDecls, simCode, &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      '<%preExp%>__A(<%row%>,<%col%>)=<%expPart%>;'
+  ;separator="\n")
+
+ let bvector =  (ls.beqs |> exp hasindex i0 fromindex 1=>
+     let &preExp = buffer "" /*BUFD*/
+     let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+     '<%preExp%>__b(<%i0%>)=<%expPart%>;'
+  ;separator="\n")
+
+  <<
+  void <%modelname%>Algloop<%ls.index%>::evaluate()
+  {
+      <%varDecls%>
+      <%Amatrix%>
+      <%bvector%>
+  }
+  >>
 end updateAlgloop;
 
 template upateAlgloopNonLinear(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, SimEqSystem eqn, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -5458,16 +5504,19 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        <<
         void <%modelname%>Algloop<%ls.index%>::initialize()
         {
-           __Asparse = boost::shared_ptr<SparseMatrix> (new SparseMatrix);
+           __Asparse = boost::shared_ptr<matrix_t> (new matrix_t);
           <%initAlgloopEquation(eq,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
           AlgLoopDefaultImplementation::initialize();
 
         }
        >>
    else
+    /* deactivated: should be generated with codegeneration flag usematrix_t
    <<
      void <%modelname%>Algloop<%ls.index%>::initialize()
      {
+
+
         <%alocateLinearSystem(eq)%>
         if(_useSparseFormat)
           <%modelname%>Algloop<%ls.index%>::initialize(__Asparse.get());
@@ -5476,7 +5525,17 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
           fill_array(*__A,0.0);
           <%modelname%>Algloop<%ls.index%>::initialize(__A.get());
         }
+
+
      }
+   >>
+   */
+   <<
+   void <%modelname%>Algloop<%ls.index%>::initialize()
+   {
+     //fill_array(__A,0.0);
+    <%initAlgloopEquation(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
+   }
    >>
 end initAlgloop;
 
@@ -5533,34 +5592,29 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   match eq
   case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   <<
-  void <%modelname%>Algloop<%nls.index%>::getSystemMatrix(double* A_matrix)
-  {
 
-   }
-  void <%modelname%>Algloop<%nls.index%>::getSystemMatrix(SparseMatrix& A_matrix)
+  const matrix_t& <%modelname%>Algloop<%nls.index%>::getSystemMatrix()
   {
-
+        throw std::runtime_error("Symbolic jacobians not is activated");
    }
   >>
  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
   match ls.jacobianMatrix
      case SOME((_,_,_,_,_,_,index)) then
    <<
-    void <%modelname%>Algloop<%ls.index%>::getSystemMatrix(double* A_matrix)
-    {
 
-    }
-    void <%modelname%>Algloop<%ls.index%>::getSystemMatrix(SparseMatrix& A_matrix)
+    const matrix_t& <%modelname%>Algloop<%ls.index%>::getSystemMatrix( )
     {
         if(IMixedSystem* jacobian_system = dynamic_cast<IMixedSystem*>( _system))
         {
-          jacobian_system->getJacobian(A_matrix,<%index%>);
+          return jacobian_system->getJacobian(<%index%>);
          // cout << "A Matrix for system " << <%index%> << A_matrix << std::endl;
         }
 
     }
    >>
    else
+    /* deactivated: should be generated with code generation flag usematrix_t
     <<
      void <%modelname%>Algloop<%ls.index%>::getSystemMatrix(double* A_matrix)
      {
@@ -5569,15 +5623,22 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
            "memcpy(A_matrix,__A->getData(),_dimAEq*_dimAEq*sizeof(double));"
           %>
      }
-     void <%modelname%>Algloop<%ls.index%>::getSystemMatrix(SparseMatrix& A_matrix)
+     const matrix_t& <%modelname%>Algloop<%ls.index%>::getSystemMatrix( )
      {
           <% match eq
           case SES_LINEAR(__) then
-          "A_matrix=*(__Asparse.get());"
+          "return *(__Asparse.get());"
           %>
      }
 
 
+    >>
+    */
+    <<
+     const matrix_t& <%modelname%>Algloop<%ls.index%>::getSystemMatrix( )
+     {
+         return __A;
+     }
     >>
 
 end getAMatrixCode;
@@ -5773,7 +5834,7 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
     (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
       let &preExp = buffer "" /*BUFD*/
       let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      '<%preExp%>(*__A)(<%row%>+1,<%col%>+1)=<%expPart%>;'
+      '<%preExp%>__A(<%row%>,<%col%>)=<%expPart%>;'
   ;separator="\n")
 
 
@@ -5982,7 +6043,7 @@ case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
    let size = listLength(ls.vars)
    <<
     if(_useSparseFormat)
-      __Asparse = boost::shared_ptr<SparseMatrix> (new SparseMatrix);
+      __Asparse = boost::shared_ptr<matrix_t> (new matrix_t);
     else
       __A = boost::shared_ptr<AMATRIX>( new AMATRIX());
    >>
@@ -6419,7 +6480,7 @@ match modelInfo
       void defineAliasBoolVars();
       void defineMixedArrayVars();
 
-      void getJacobian(SparseMatrix& matrix);
+      matrix_t& getJacobian();
       void deleteObjects();
 
       //Variables:
@@ -6533,7 +6594,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%match eq case SES_LINEAR(__) then
         let size = listLength(ls.vars)
         <<
-        typedef StatArrayDim2<double,<%size%>,<%size%>> AMATRIX;
+        //typedef StatArrayDim2<double,<%size%>,<%size%>> AMATRIX;
+        typedef matrix_t AMATRIX;
         >>
     %>
 
@@ -6550,6 +6612,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     float queryDensity();
 
   protected:
+   /* deactivated: should be generated with code generation flag usematrix_t
    <% match eq
     case SES_LINEAR(__) then
     <<
@@ -6557,6 +6620,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     void evaluate(T* __A);
     >>
    %>
+   */
   private:
     Functions* _functions;
 
@@ -6569,15 +6633,17 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%match eq case SES_LINEAR(__) then
     let size = listLength(ls.vars)
     <<
-
+      /* deactivated: should be generated with codegeneration flag usematrix_t
       boost::shared_ptr<AMATRIX> __A; //dense
+      */
+      AMATRIX __A;
      //b vector
      StatArrayDim1<double,<%size%>> __b;
     >>
     %>
 
 
-    boost::shared_ptr<SparseMatrix> __Asparse; //sparse
+    boost::shared_ptr<matrix_t> __Asparse; //sparse
 
 
     bool* _conditions;
@@ -6598,7 +6664,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%match eq case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
         let size = listLength(ls.vars)
         <<
-        typedef StatArrayDim2<double,<%size%>,<%size%>> AMATRIX;
+        //typedef StatArrayDim2<double,<%size%>,<%size%>> AMATRIX;
+        typedef matrix_t AMATRIX;
         >>
     %>
 
@@ -6634,15 +6701,17 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%match eq case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
     let size = listLength(ls.vars)
     <<
-
+     /* deactivated: should be generated with codegeneration flag usematrix_t
       boost::shared_ptr<AMATRIX> __A; //dense
+      */
+      AMATRIX __A;
      //b vector
      StatArrayDim1<double,<%size%>> __b;
     >>
     %>
 
 
-    boost::shared_ptr<SparseMatrix> __Asparse; //sparse
+    boost::shared_ptr<matrix_t> __Asparse; //sparse
 
 
     bool* _conditions;
@@ -6838,7 +6907,7 @@ bool  <%modelname%>Algloop<%ls.index%>::isConsistent()
 /// Provide variables with given index to the system
 void  <%modelname%>Algloop<%ls.index%>::getReal(double* vars)
 {
-    AlgLoopDefaultImplementation::getReal(vars);
+    //AlgLoopDefaultImplementation::getReal(vars);
     //workaroud until names of algloop vars are replaced in simcode
     <%giveAlgloopvars(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
 };
@@ -6855,7 +6924,7 @@ void  <%modelname%>Algloop<%ls.index%>::setReal(const double* vars)
     //workaround until names of algloop vars are replaced in simcode
 
     <%setAlgloopvars(eq,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
-    AlgLoopDefaultImplementation::setReal(vars);
+    //AlgLoopDefaultImplementation::setReal(vars);
 };
 
 
@@ -6882,7 +6951,7 @@ bool  <%modelname%>Algloop<%nls.index%>::isConsistent()
 /// Provide variables with given index to the system
 void  <%modelname%>Algloop<%nls.index%>::getReal(double* vars)
 {
-    AlgLoopDefaultImplementation::getReal(vars);
+    //AlgLoopDefaultImplementation::getReal(vars);
     //workaroud until names of algloop vars are replaced in simcode
     <%giveAlgloopvars(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
 };
@@ -6899,7 +6968,7 @@ void  <%modelname%>Algloop<%nls.index%>::setReal(const double* vars)
     //workaround until names of algloop vars are replaced in simcode
 
     <%setAlgloopvars(eq,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
-    AlgLoopDefaultImplementation::setReal(vars);
+    //AlgLoopDefaultImplementation::setReal(vars);
 };
 
 
@@ -7039,8 +7108,10 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      /// (Re-) initialize the system of equations
     virtual void initialize();
 
+    /* deactivated: should be generated with codegeneration flag usematrix_t
     template <typename T>
     void initialize(T *__A);
+    */
 
     /// Provide variables with given index to the system
     virtual void getReal(double* vars);
@@ -7060,8 +7131,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual void giveResiduals(double* vars);
     >>%>
     /// Output routine (to be called by the solver after every successful integration step)
-    virtual void getSystemMatrix(double* A_matrix);
-    virtual void getSystemMatrix(SparseMatrix&);
+    virtual const matrix_t& getSystemMatrix() ;
     virtual bool isLinear();
     virtual bool isLinearTearing();
     virtual bool isConsistent();
@@ -14635,7 +14705,7 @@ template initialAnalyticJacobians(Integer indexJacobian, list<JacobianColumn> ja
           let tmpvarsSize = (jacobianColumn |> (_,vars,_) => listLength(vars);separator="\n")
           let index_ = listLength(seedVars)
           <<
-            ,_<%matrixName%>jacobian(SparseMatrix(<%index_%>,<%indexColumn%>,<%sp_size_index%>))
+            ,_<%matrixName%>jacobian(ublas::zero_matrix<double> (<%index_%>,<%indexColumn%>/*,<%sp_size_index%>*/))
             ,_<%matrixName%>jac_y(ublas::zero_vector<double>(<%indexColumn%>))
             ,_<%matrixName%>jac_tmp(ublas::zero_vector<double>(<%tmpvarsSize%>))
             ,_<%matrixName%>jac_x(ublas::zero_vector<double>(<%index_%>))
@@ -14754,10 +14824,12 @@ case {} then
   <<
   void <%classname%>Jacobian::calc<%matrixName%>JacobianColumn()
   {
+        throw std::runtime_error("Symbolic jacobians not is activated");
   }
 
-  void <%classname%>Jacobian::get<%matrixName%>Jacobian(SparseMatrix& matrix)
+  const matrix_t&  <%classname%>Jacobian::get<%matrixName%>Jacobian()
   {
+     throw std::runtime_error("Symbolic jacobians not is activated");
   }
   >>
 case _ then
@@ -14766,10 +14838,12 @@ case _ then
   <<
   void <%classname%>Jacobian::calc<%matrixName%>JacobianColumn()
   {
+     throw std::runtime_error("Symbolic jacobians not is activated");
   }
 
-  void <%classname%>Jacobian::get<%matrixName%>Jacobian(SparseMatrix& matrix)
+  const matrix_t&  <%classname%>Jacobian::get<%matrixName%>Jacobian()
   {
+     throw std::runtime_error("Symbolic jacobians not is activated");
   }
   >>
   case _ then
@@ -14785,7 +14859,7 @@ case _ then
     let jacvals = ( sparsepattern |> (index,indexes) hasindex index0 =>
     let jaccol = ( indexes |> i_index hasindex index1 =>
         (match indexColumn case "1" then '_<%matrixName%>jacobian(<%index%>,0) = _<%matrixName%>jac_y(0);/*test1<%index0%>,<%index1%>*/'
-           else '_<%matrixName%>jacobian(<%index%>,<%i_index%>) = _<%matrixName%>jac_y(<%i_index%>);/*test2<%index0%>,<%index1%>*/'
+           else '_<%matrixName%>jacobian(<%i_index%>,<%index%>) = _<%matrixName%>jac_y(<%i_index%>);/*test2<%index0%>,<%index1%>*/'
            )
           ;separator="\n" )
     '_<%matrixName%>jac_x(<%index0%>) = 1;
@@ -14798,11 +14872,11 @@ _<%matrixName%>jac_x.clear();
   <<
   <%jacMats%>
 
-  void <%classname%>Jacobian::get<%matrixName%>Jacobian(SparseMatrix& matrix)
+  const matrix_t&  <%classname%>Jacobian::get<%matrixName%>Jacobian()
   {
     /*Index <%indexJacobian%>*/
     <%jacvals%>
-    matrix = _<%matrixName%>jacobian;
+    return _<%matrixName%>jacobian;
   }
   >>
 

@@ -26,9 +26,9 @@ class IMixedSystem
 public:
   virtual ~IMixedSystem() {};
   /// Provide Jacobian
-  virtual void getJacobian(SparseMatrix& matrix) = 0;
-  virtual void getJacobian(SparseMatrix& matrix,unsigned int index) = 0;
-  virtual void getStateSetJacobian(unsigned int index, SparseMatrix& matrix) = 0;
+  virtual const matrix_t& getJacobian() = 0;
+  virtual const matrix_t& getJacobian(unsigned int index)  = 0;
+  virtual void getStateSetJacobian(unsigned int index, matrix_t& matrix) = 0;
   /// Called to handle all  events occured at same time
   virtual bool handleSystemEvents(bool* events) = 0;
 

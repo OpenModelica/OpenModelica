@@ -181,12 +181,12 @@ bool Modelica::checkConditions()
   throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"checkConditions is not yet implemented");
 }
 
-void Modelica::getJacobian(SparseMatrix& matrix)
+void Modelica::getJacobian(matrix_t& matrix)
 {
   throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"giveJacobian is not yet implemented");
 }
 
-void Modelica::getStateSetJacobian(SparseMatrix& matrix)
+void Modelica::getStateSetJacobian(matrix_t& matrix)
 {
   throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"giveStateJacobian is not yet implemented");
 }

@@ -31,7 +31,7 @@ private:
     ITERATIONSTATUS _iterationStatus;
     ILinSolverSettings *_umfpackSettings;
     IAlgLoop *_algLoop;
-    boost::shared_ptr<SparseMatrix> _jacs;
+    boost::shared_ptr<matrix_t> _jacs;
     double * _jacd;
     double * _rhs;
     double * _x;
