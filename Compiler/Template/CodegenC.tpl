@@ -643,7 +643,7 @@ template simulationFile(SimCode simCode, String guid)
        <%symbolName(modelNamePrefixStr,"output_function")%>,
        <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>,
-       <%if useHomotopy then '1' else '0'%> /* useHomotopy */,
+       <%boolStrC(useHomotopy)%> /* useHomotopy */,
        <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>,
        <%symbolName(modelNamePrefixStr,"functionRemovedInitialEquations")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>,
@@ -1980,8 +1980,8 @@ template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations, Str
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].equationIndex = <%nls.index%>;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].size = <%size%>;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].method = 0;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].homotopySupport = <%if nls.homotopySupport then '1' else '0'%>;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].mixedSystem = <%if nls.mixedSystem then '1' else '0'%>;
+       nonLinearSystemData[<%nls.indexNonLinearSystem%>].homotopySupport = <%boolStrC(nls.homotopySupport)%>;
+       nonLinearSystemData[<%nls.indexNonLinearSystem%>].mixedSystem = <%boolStrC(nls.mixedSystem)%>;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].residualFunc = residualFunc<%nls.index%>;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;

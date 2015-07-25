@@ -636,59 +636,28 @@ protected function setJacobianVars "author: unknown
   Set the given jacobian vars in the given model info. The old jacobian variables will be replaced."
   input list<SimCodeVar.SimVar> iJacobianVars;
   input SimCode.ModelInfo iModelInfo;
-  output SimCode.ModelInfo oModelInfo;
+  output SimCode.ModelInfo oModelInfo = iModelInfo;
+protected
+  SimCodeVar.SimVars vars;
 algorithm
-  oModelInfo := match(iJacobianVars, iModelInfo)
-    local
-      Absyn.Path name;
-      String description,directory;
-      SimCode.VarInfo varInfo;
-      SimCodeVar.SimVars vars;
-      list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars;
-      list<SimCodeVar.SimVar> stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobiansVars,realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayVars;
-      list<SimCode.Function> functions;
-      list<String> labels;
-      Integer maxDer;
-    case({}, _) then iModelInfo;
-    case(_, SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, maxDer))
-      equation
-        SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-               stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, _, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayVars) = vars;
-
-        vars = SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-               stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, iJacobianVars,realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayVars);
-      then
-       SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, maxDer);
-  end match;
+  if listLength(iJacobianVars) > 0 then
+    vars := oModelInfo.vars;
+    vars.jacobianVars := iJacobianVars;
+    oModelInfo.vars := vars;
+  end if;
 end setJacobianVars;
 
 protected function setMixedArrayVars "author: marcusw
   Set the given mixed array vars in the given model info. The old mixed variables will be replaced."
   input list<SimCodeVar.SimVar> iMixedArrayVars;
   input SimCode.ModelInfo iModelInfo;
-  output SimCode.ModelInfo oModelInfo;
+  output SimCode.ModelInfo oModelInfo = iModelInfo;
+protected
+  SimCodeVar.SimVars vars;
 algorithm
-  oModelInfo := match(iMixedArrayVars, iModelInfo)
-    local
-      Absyn.Path name;
-      String description,directory;
-      SimCode.VarInfo varInfo;
-      SimCodeVar.SimVars vars;
-      list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars;
-      list<SimCodeVar.SimVar> stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars;
-      list<SimCode.Function> functions;
-      list<String> labels;
-      Integer maxDer;
-    case(_,SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, maxDer))
-      equation
-        SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-               stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars) = vars;
-
-        vars = SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-               stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars,realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, iMixedArrayVars);
-      then
-       SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels,maxDer);
-  end match;
+  vars := oModelInfo.vars;
+  vars.mixedArrayVars := iMixedArrayVars;
+  oModelInfo.vars := vars;
 end setMixedArrayVars;
 
 protected function addNumEqnsandNumofSystems
@@ -698,32 +667,17 @@ protected function addNumEqnsandNumofSystems
   input Integer numNonLinearSys;
   input Integer numMixedLinearSys;
   input Integer numOfJacobians;
-  output SimCode.ModelInfo omodelInfo;
+  output SimCode.ModelInfo omodelInfo = modelInfo;
+protected
+  SimCode.VarInfo varInfo;
 algorithm
-  omodelInfo := match(modelInfo, numEqns, numLinearSys, numNonLinearSys, numMixedLinearSys, numOfJacobians)
-    local
-    Absyn.Path name;
-    String description,directory;
-    SimCode.VarInfo varInfo;
-    SimCodeVar.SimVars vars;
-    list<SimCode.Function> functions;
-    list<String> labels;
-    Integer numZeroCrossings, numTimeEvents, numRelations, numMathEvents, maxDer;
-    Integer numStateVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars;
-    Integer numParams, numIntParams, numBoolParams, numOutVars, numInVars;
-    Integer numExternalObjects, numStringAlgVars;
-    Integer numStringParamVars, numStringAliasVars, numStateSets, numJacobians, numOptimizeConstraints, numOptimizeFinalConstraints;
-
-
-    case(SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, maxDer), _, _, _, _, _) equation
-      SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams,
-      numIntParams, numBoolParams, numOutVars, numInVars, numExternalObjects, numStringAlgVars,
-      numStringParamVars, numStringAliasVars, _, _, _, _, numStateSets, _, numOptimizeConstraints,numOptimizeFinalConstraints) = varInfo;
-      varInfo = SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams,
-      numIntParams, numBoolParams, numOutVars, numInVars, numExternalObjects, numStringAlgVars,
-      numStringParamVars, numStringAliasVars, numEqns, numLinearSys, numNonLinearSys, numMixedLinearSys, numStateSets, numOfJacobians, numOptimizeConstraints,numOptimizeFinalConstraints);
-    then SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, maxDer);
-  end match;
+  varInfo := omodelInfo.varInfo;
+  varInfo.numEquations := numEqns;
+  varInfo.numLinearSystems := numLinearSys;
+  varInfo.numNonLinearSystems := numNonLinearSys;
+  varInfo.numMixedSystems := numMixedLinearSys;
+  varInfo.numJacobians := numOfJacobians;
+  omodelInfo.varInfo := varInfo;
 end addNumEqnsandNumofSystems;
 
 protected function getSystemIndexMap
@@ -6171,35 +6125,16 @@ end extractVarFromVar;
 
 protected function derVarFromStateVar
   input SimCodeVar.SimVar state;
-  output SimCodeVar.SimVar deriv;
+  output SimCodeVar.SimVar deriv = state;
 algorithm
-  deriv :=
-  match (state)
-    local
-      DAE.ComponentRef name;
-      BackendDAE.VarKind kind;
-      String comment, unit, displayUnit;
-      Integer index;
-      Option<DAE.Exp> minVal, maxVal;
-      Option<DAE.Exp> initVal, nomVal;
-      Boolean isFixed, isProtected;
-      DAE.Type type_;
-      Boolean isDiscrete, isValueChangeable;
-      DAE.ComponentRef arrayCref;
-      DAE.ElementSource source;
-      list<String> numArrayElement;
-    case (SimCodeVar.SIMVAR(name, _, comment, unit, displayUnit, index, minVal, maxVal, _, nomVal, isFixed, type_, isDiscrete, NONE(), _, source, _, NONE(), numArrayElement, _, isProtected))
-      equation
-        name = ComponentReference.crefPrefixDer(name);
-      then
-        SimCodeVar.SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, minVal, maxVal, NONE(), nomVal, isFixed, type_, isDiscrete, NONE(), SimCodeVar.NOALIAS(), source, SimCodeVar.INTERNAL(), NONE(), numArrayElement, false, isProtected);
-    case (SimCodeVar.SIMVAR(name, _, comment, unit, displayUnit, index, minVal, maxVal, _, nomVal, isFixed, type_, isDiscrete, SOME(arrayCref), _, source, _, NONE(), numArrayElement, _, isProtected))
-      equation
-        name = ComponentReference.crefPrefixDer(name);
-        arrayCref = ComponentReference.crefPrefixDer(arrayCref);
-      then
-        SimCodeVar.SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, minVal, maxVal, NONE(), nomVal, isFixed, type_, isDiscrete, SOME(arrayCref), SimCodeVar.NOALIAS(), source, SimCodeVar.INTERNAL(), NONE(), numArrayElement, false, isProtected);
-  end match;
+  deriv.arrayCref := Util.applyOption(deriv.arrayCref, ComponentReference.crefPrefixDer);
+  deriv.name := ComponentReference.crefPrefixDer(deriv.name);
+  deriv.varKind := BackendDAE.STATE_DER();
+  deriv.initialValue := NONE();
+  deriv.aliasvar := SimCodeVar.NOALIAS();
+  deriv.causality := SimCodeVar.INTERNAL();
+  deriv.variable_index := NONE();
+  deriv.isValueChangeable := false;
 end derVarFromStateVar;
 
 
