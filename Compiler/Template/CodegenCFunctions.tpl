@@ -5571,6 +5571,9 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
   case CALL(path=IDENT(name="noEvent"), expLst={e1}) then
     daeExp(e1, context, &preExp, &varDecls, &auxFunction)
 
+  case CALL(path=IDENT(name="$getPart"), expLst={e1}) then
+    daeExp(e1, context, &preExp, &varDecls, &auxFunction)
+
   case CALL(path=IDENT(name="sample"), expLst={ICONST(integer=index), _, _}) then
     '$P$sample<%index%>'
 

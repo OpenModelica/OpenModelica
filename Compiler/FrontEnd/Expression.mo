@@ -1547,6 +1547,23 @@ algorithm
   end match;
 end expInt;
 
+public function getClockIntvl
+  input DAE.ClockKind inClk;
+  output DAE.Exp outIntvl;
+protected
+  DAE.Exp e;
+  Integer res;
+algorithm
+  outIntvl := match inClk
+    case DAE.INFERRED_CLOCK()
+      then DAE.RCONST(1.0);
+    case DAE.REAL_CLOCK(e)
+      then e;
+    case DAE.INTEGER_CLOCK(e, res)
+      then DAE.BINARY(e, DAE.DIV(DAE.T_REAL_DEFAULT), DAE.ICONST(res));
+  end match;
+end getClockIntvl;
+
 public function expArrayIndex
   "Returns the array index that an expression represents as an integer."
   input DAE.Exp inExp;

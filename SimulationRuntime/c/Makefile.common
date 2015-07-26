@@ -96,7 +96,8 @@ RUNTIMEUTIL_HEADERS = \
 ./util/string_array.h \
 ./util/utility.h \
 ./util/varinfo.h \
-./util/list.h
+./util/list.h \
+./util/rational.h
 
 RUNTIMEINITIALIZATION_HEADERS = \
 ./simulation/solver/initialization/initialization.h

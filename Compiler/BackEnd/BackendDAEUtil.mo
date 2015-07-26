@@ -8236,7 +8236,8 @@ protected function collapseRemovedEqs1
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqns := listAppend(BackendEquation.equationList(inSyst.removedEqs), inEqns);
+  outEqns := if BackendDAEUtil.isClockedSyst(inSyst) then inEqns
+             else listAppend(BackendEquation.equationList(inSyst.removedEqs), inEqns);
 end collapseRemovedEqs1;
 
 public function emptyEventInfo

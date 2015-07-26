@@ -89,8 +89,7 @@ uniontype SimCode
     list<SimEqSystem> allEquations;
     list<list<SimEqSystem>> odeEquations;
     list<list<SimEqSystem>> algebraicEquations;
-    list<BackendDAE.BaseClockPartitionKind> partitionsKind;
-    list<DAE.ClockKind> baseClocks;
+    list<ClockedPartition> clockedPartitions;
     Boolean useHomotopy "true if homotopy(...) is used during initialization";
     list<SimEqSystem> initialEquations;
     list<SimEqSystem> removedInitialEquations;
@@ -130,6 +129,22 @@ uniontype SimCode
     Option<FmiModelStructure> modelStructure;
   end SIMCODE;
 end SimCode;
+
+public uniontype ClockedPartition
+  record CLOCKED_PARTITION
+    DAE.ClockKind baseClock;
+    list<SubPartition> subPartitions;
+  end CLOCKED_PARTITION;
+end ClockedPartition;
+
+public uniontype SubPartition
+  record SUBPARTITION
+    list<SimEqSystem> equations;
+    list<SimEqSystem> removedEquations;
+    BackendDAE.SubClock subClock;
+    Boolean holdEvents;
+  end SUBPARTITION;
+end SubPartition;
 
 public
 uniontype BackendMapping
@@ -180,6 +195,8 @@ uniontype ModelInfo "Container for metadata about a Modelica model."
     list<String> labels;
     //Files files "all the files from SourceInfo and DAE.ELementSource";
     Integer maxDer "the highest derivative in the model";
+    Integer nClocks;
+    Integer nSubClocks;
   end MODELINFO;
 end ModelInfo;
 

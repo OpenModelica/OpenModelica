@@ -271,6 +271,7 @@ package SimCode
       list<SimEqSystem> allEquations;
       list<list<SimEqSystem>> odeEquations;
       list<list<SimEqSystem>> algebraicEquations;
+      list<ClockedPartition> clockedPartitions;
       Boolean useSymbolicInitialization;         // true if a system to solve the initial problem symbolically is generated, otherwise false
       Boolean useHomotopy;                       // true if homotopy(...) is used during initialization
       list<SimEqSystem> initialEquations;
@@ -303,8 +304,23 @@ package SimCode
       HashTableCrIListArray.HashTable varToArrayIndexMapping;
       Option<FmiModelStructure> modelStructure;
     end SIMCODE;
-
   end SimCode;
+
+  uniontype ClockedPartition
+    record CLOCKED_PARTITION
+      DAE.ClockKind baseClock;
+      list<SubPartition> subPartitions;
+    end CLOCKED_PARTITION;
+  end ClockedPartition;
+
+  uniontype SubPartition
+    record SUBPARTITION
+      list<SimEqSystem> equations;
+      list<SimEqSystem> removedEquations;
+      BackendDAE.SubClock subClock;
+      Boolean holdEvents;
+    end SUBPARTITION;
+  end SubPartition;
 
   uniontype DelayedExpression
     record DELAYED_EXPRESSIONS
@@ -554,6 +570,8 @@ package SimCode
       list<Function> functions;
       list<String> labels;
       Integer maxDer;
+      Integer nClocks;
+      Integer nSubClocks;
     end MODELINFO;
   end ModelInfo;
 
@@ -825,6 +843,11 @@ package SimCodeUtil
     input DAE.ComponentRef iVarName;
     output Boolean oIsConsecutive;
   end isVarIndexListConsecutive;
+
+  function getSubPartitions
+    input list<SimCode.ClockedPartition> inPartitions;
+    output list<SimCode.SubPartition> outSubPartitions;
+  end getSubPartitions;
 end SimCodeUtil;
 
 package SimCodeFunctionUtil
@@ -1001,6 +1024,14 @@ package BackendDAE
       VarKind oldKind;
     end ALG_STATE;
   end VarKind;
+
+  uniontype SubClock
+    record SUBCLOCK
+      MMath.Rational factor;
+      MMath.Rational shift;
+      Option<String> solver;
+    end SUBCLOCK;
+  end SubClock;
 
   uniontype ZeroCrossing
     record ZERO_CROSSING
@@ -1248,6 +1279,14 @@ package Absyn
   constant builtin.SourceInfo dummyInfo;
 end Absyn;
 
+package MMath
+  uniontype Rational
+    record RATIONAL
+      Integer nom;
+      Integer denom;
+    end RATIONAL;
+  end Rational;
+end MMath;
 
 package DAE
 
@@ -1267,6 +1306,29 @@ package DAE
     record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
   end VarKind;
 
+  uniontype ClockKind
+    record INFERRED_CLOCK
+    end INFERRED_CLOCK;
+
+    record INTEGER_CLOCK
+      Exp intervalCounter;
+      Integer resolution;
+    end INTEGER_CLOCK;
+
+    record REAL_CLOCK
+      Exp interval;
+    end REAL_CLOCK;
+
+    record BOOLEAN_CLOCK
+      Exp condition;
+      Real startInterval;
+    end BOOLEAN_CLOCK;
+
+    record SOLVER_CLOCK
+      Exp c;
+      String solverMethod;
+    end SOLVER_CLOCK;
+  end ClockKind;
 
   uniontype Exp
     record ICONST
@@ -2907,6 +2969,11 @@ package Expression
     output DAE.Exp cref;
   end crefExp;
 
+  function expCref
+    input DAE.Exp inExp;
+    output DAE.ComponentRef outComponentRef;
+  end expCref;
+
   function subscriptConstants
     "returns true if all subscripts are known (i.e no cref) constant values (no slice or wholedim "
     input list<DAE.Subscript> inSubs;
@@ -2994,6 +3061,11 @@ package Expression
     input DAE.Exp inExp;
     output Boolean outB;
   end isMetaArray;
+
+  function getClockIntvl
+    input DAE.ClockKind inClk;
+    output DAE.Exp outIntvl;
+  end getClockIntvl;
 end Expression;
 
 package ExpressionDump
