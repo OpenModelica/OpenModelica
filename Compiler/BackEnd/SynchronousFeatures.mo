@@ -108,11 +108,14 @@ algorithm
 
   (contSysts, clockedSysts, unpartRemEqs) := baseClockPartitioning(syst, inShared);
   (contSysts, holdComps) := removeHoldExpsSyst(contSysts);
+
+  shared.removedEqs := BackendEquation.addEquations(unpartRemEqs, shared.removedEqs);
+
   (clockedSysts, baseClocks) := subClockPartitioning1(clockedSysts, inShared, holdComps);
+  clockedSysts := List.map(clockedSysts, makePreviousFixed);
 
   //Continuous systems always first in equation systems list
   systs := listAppend(contSysts, clockedSysts);
-  shared.removedEqs := BackendEquation.addEquations(unpartRemEqs, shared.removedEqs);
   outDAE := BackendDAE.DAE(systs, setClocks(inShared, baseClocks));
 
   if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
@@ -120,6 +123,67 @@ algorithm
     BackendDump.dumpClocks(baseClocks, "Base clocks");
   end if;
 end clockPartitioning1;
+
+protected function makePreviousFixed
+  input BackendDAE.EqSystem inSyst;
+  output BackendDAE.EqSystem outSyst = inSyst;
+protected
+  BackendDAE.Equation eq;
+  list<DAE.ComponentRef> fixedComps = {};
+  array<Boolean> prevVars;
+  Option<String> solverMethod;
+  list<Integer> varIxs;
+  BackendDAE.Var var;
+algorithm
+  BackendDAE.CLOCKED_PARTITION(subClock=BackendDAE.SUBCLOCK(solver=solverMethod)) := outSyst.partitionKind;
+  if isNone(solverMethod) then
+    prevVars := arrayCreate(BackendVariable.varsSize(outSyst.orderedVars), false);
+    for i in 1:BackendDAEUtil.equationSize(outSyst.orderedEqs) loop
+      eq := BackendEquation.equationNth1(outSyst.orderedEqs, i);
+      (_, fixedComps) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, fixedComps);
+    end for;
+    for i in 1:BackendDAEUtil.equationSize(outSyst.removedEqs) loop
+      eq := BackendEquation.equationNth1(outSyst.removedEqs, i);
+      (_, fixedComps) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, fixedComps);
+    end for;
+    for cr in fixedComps loop
+      varIxs := getVarIxs(cr, outSyst.orderedVars);
+      for idx in varIxs loop
+        arrayUpdate(prevVars, idx, true);
+      end for;
+    end for;
+    for i in 1:arrayLength(prevVars) loop
+      if prevVars[i] then
+        var := BackendVariable.setVarFixed(BackendVariable.getVarAt(outSyst.orderedVars, i), true);
+        BackendVariable.setVarAt(outSyst.orderedVars, i, var);
+      end if;
+    end for;
+  end if;
+end makePreviousFixed;
+
+protected function collectPrevVars
+  input DAE.Exp inExp;
+  input list<DAE.ComponentRef> inPrevVars;
+  output DAE.Exp outExp;
+  output list<DAE.ComponentRef> outPrevVars;
+algorithm
+  (outExp, outPrevVars) := Expression.traverseExpBottomUp(inExp, collectPrevVars1, inPrevVars);
+end collectPrevVars;
+
+public function collectPrevVars1
+  input DAE.Exp inExp;
+  input list<DAE.ComponentRef> inPrevCompRefs;
+  output DAE.Exp outExp = inExp;
+  output list<DAE.ComponentRef> outPrevCompRefs;
+algorithm
+  outPrevCompRefs := match inExp
+    local
+      DAE.ComponentRef cr;
+    case DAE.CALL(path=Absyn.IDENT("previous"), expLst={DAE.CREF(cr, _)})
+      then cr::inPrevCompRefs;
+    else inPrevCompRefs;
+  end match;
+end collectPrevVars1;
 
 protected function setClocks
   input BackendDAE.Shared inShared;

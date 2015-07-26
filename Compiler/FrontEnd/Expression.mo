@@ -6040,6 +6040,7 @@ algorithm
       then (inExp, false, crefs);
     case (DAE.CALL(path = Absyn.IDENT(name = "der")), _) then (inExp, false, inCrefs);
     case (DAE.CALL(path = Absyn.IDENT(name = "pre")), _) then (inExp, false, inCrefs);
+    case (DAE.CALL(path = Absyn.IDENT(name = "previous")), _) then (inExp, false, inCrefs);
     else (inExp,true,inCrefs);
   end match;
 end traversingComponentRefFinderNoPreDer;
@@ -6214,6 +6215,9 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT(name = "pre")), _)
       then (inExp,false,inTpl);
 
+    case (DAE.CALL(path = Absyn.IDENT(name = "previous")), _)
+      then (inExp,false,inTpl);
+
     case (DAE.CREF(componentRef = cr1), (cr,false))
       equation
         b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
@@ -6269,6 +6273,8 @@ algorithm
       DAE.ComponentRef cr,cr1;
 
     case (DAE.CALL(path = Absyn.IDENT(name = "pre")), _)
+      then (inExp,false,inTpl);
+    case (DAE.CALL(path = Absyn.IDENT(name = "previous")), _)
       then (inExp,false,inTpl);
     case (DAE.CALL(path = Absyn.IDENT(name = "change")), _)
       then (inExp,false,inTpl);
@@ -7853,7 +7859,7 @@ algorithm
 
     // pre is not a vector function, adrpo: 2009-03-03 -> pre is also needed here!
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"))) then false;
-
+    case (DAE.CALL(path = Absyn.IDENT(name = "previous"))) then false;
     // inStream and actualStream are not a vector function, adrpo: 2010-08-31 -> they are also needed here!
     case (DAE.CALL(path = Absyn.IDENT(name = "inStream"))) then false;
     case (DAE.CALL(path = Absyn.IDENT(name = "actualStream"))) then false;
@@ -8023,6 +8029,8 @@ algorithm
 
     // pre(x) is not a function call
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"))) then false;
+
+    case (DAE.CALL(path = Absyn.IDENT(name = "previous"))) then false;
 
     // any other call is a function call
     case (DAE.CALL()) then true;
@@ -9181,6 +9189,8 @@ algorithm
 
     // pre(v) does not contain variable v
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {_}),_) then false;
+
+    case (DAE.CALL(path = Absyn.IDENT(name = "previous"),expLst = {_}),_) then false;
 
     // special rule for no arguments
     case (DAE.CALL(expLst = {}),_) then false;

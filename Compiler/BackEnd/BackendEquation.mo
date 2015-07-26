@@ -309,6 +309,10 @@ algorithm
     case (e as DAE.CALL(path = Absyn.IDENT(name = "pre")), _)
     then (inExp, false, inTuple);
 
+    // case for previous vars
+    case (e as DAE.CALL(path = Absyn.IDENT(name = "previous")), _)
+    then (inExp, false, inTuple);
+
     // add it
     case (e as DAE.CREF(componentRef = cr), (vars, bt)) equation
       (_, ilst) = BackendVariable.getVar(cr, vars);

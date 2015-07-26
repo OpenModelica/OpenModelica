@@ -335,6 +335,9 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT("pre"), expLst={DAE.CREF()})
       then inExp;
 
+    case DAE.CALL(path=Absyn.IDENT("previous"), expLst={DAE.CREF()})
+      then inExp;
+
     case DAE.CALL(path=Absyn.IDENT("change"), expLst={DAE.CREF()})
       then inExp;
 
@@ -342,6 +345,10 @@ algorithm
       then inExp;
 
     case DAE.CALL(path=Absyn.IDENT("pre"), expLst={e as DAE.ASUB(exp = exp)})
+      equation
+        b2 = Expression.isConst(exp);
+      then if b2 then e else inExp;
+    case DAE.CALL(path=Absyn.IDENT("previous"), expLst={e as DAE.ASUB(exp = exp)})
       equation
         b2 = Expression.isConst(exp);
       then if b2 then e else inExp;
@@ -358,6 +365,10 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT("pre"), expLst={e})
       equation
         (e,_) = Expression.traverseExpTopDown(e,preCref,false);
+      then e;
+    case DAE.CALL(path=Absyn.IDENT("previous"), expLst={e})
+      equation
+        (e,_) = Expression.traverseExpTopDown(e,previousCref,false);
       then e;
     case DAE.CALL(path=Absyn.IDENT("change"), expLst={e})
       equation
@@ -456,6 +467,24 @@ algorithm
     case (e,b) then (e,not b,b);
   end match;
 end preCref;
+
+protected function previousCref
+  input DAE.Exp ie;
+  input Boolean ib;
+  output DAE.Exp oe;
+  output Boolean cont;
+  output Boolean ob;
+algorithm
+  (oe,cont,ob) := match (ie,ib)
+    local
+      DAE.Exp e;
+      Boolean b;
+      DAE.Type ty;
+    case (e as DAE.CREF(ty=ty),_) then (Expression.makeBuiltinCall("previous",{e},ty,false),false,true);
+    case (e as DAE.CALL(path=Absyn.IDENT("previous")),b) then (e,false,b);
+    case (e,b) then (e,not b,b);
+  end match;
+end previousCref;
 
 protected function changeCref
   input DAE.Exp ie;
@@ -1534,6 +1563,10 @@ algorithm
 
     // pre(constant) ==> constant
     case ("pre",DAE.CALL(expLst ={e}))
+      then e;
+
+    // previous(constant) ==> constant
+    case ("previous",DAE.CALL(expLst ={e}))
       then e;
 
     // edge(constant) ==> false

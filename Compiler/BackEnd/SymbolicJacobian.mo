@@ -3249,6 +3249,9 @@ algorithm
     case (e as DAE.CALL(path=Absyn.IDENT(name = "pre")),(vars,b))
       then (e,false,(vars,b));
 
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "previous")),(vars,b))
+      then (e,false,(vars,b));
+
     case (e,(_,b)) then (e,not b,tpl);
   end matchcontinue;
 end traverserjacobianNonlinearExp;
@@ -3308,6 +3311,8 @@ algorithm
     case (e as DAE.CALL(path=Absyn.IDENT(name = "der")),(vars,b))
       then (e,true,(vars,b));
     case (e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(vars,b))
+      then (e,false,(vars,b));
+    case (e as DAE.CALL(path = Absyn.IDENT(name = "previous")),(vars,b))
       then (e,false,(vars,b));
     case (e as DAE.CALL(expLst=expLst),(vars,b))
       equation
