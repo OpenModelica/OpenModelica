@@ -8,13 +8,10 @@
 #include <Solver/Kinsol/Kinsol.h>
 #include <Solver/Kinsol/KinsolSettings.h>
 
-
-
 //#include <Core/Utils/numeric/bindings/lapack/driver/gesv.hpp>
 #include <Core/Utils/numeric/bindings/ublas/matrix.hpp>
 #include <Core/Utils/numeric/bindings/std/vector.hpp>
 #include <Core/Utils/numeric/utils.h>
-
 
 extern "C" void dgesv_(long int *n, long int *nrhs, double *J, long int *ldj, long int *pivot,double *b, long int *ldb, long int *idid);
 
@@ -203,6 +200,7 @@ void Kinsol::initialize()
 			_iterationStatus = SOLVERERROR;
 		}
 	}
+	Logger::write("Kinsol: initialized",LC_NLS,LL_DEBUG);
 }
 
 void Kinsol::solve()

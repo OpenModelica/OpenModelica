@@ -88,8 +88,7 @@ void Newton::initialize()
 			_iterationStatus = SOLVERERROR;
 		}
 	}
-
-
+	Logger::write("Newton: initialized",LC_NLS,LL_DEBUG);
 }
 
 void Newton::solve()

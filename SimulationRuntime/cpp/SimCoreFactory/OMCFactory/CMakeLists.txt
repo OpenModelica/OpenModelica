@@ -6,7 +6,13 @@ add_library(${OMCFactoryName} SHARED OMCFactory.cpp)
 add_library(${OMCFactoryName}_static STATIC OMCFactory.cpp StaticOMCFactory.cpp StaticNonLinSolverOMCFactory.cpp StaticLinSolverOMCFactory.cpp StaticSolverOMCFactory.cpp)
 add_library(${OMCFactoryName}_FMU_static STATIC OMCFactory.cpp StaticOMCFactory.cpp StaticNonLinSolverOMCFactory.cpp StaticLinSolverOMCFactory.cpp StaticSolverOMCFactory.cpp)
 set_target_properties(${OMCFactoryName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_CVODE_STATIC;ENABLE_KINSOL_STATIC")
-set_target_properties(${OMCFactoryName}_FMU_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
+
+if(FMU_KINSOL)
+  set_target_properties(${OMCFactoryName}_FMU_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_KINSOL_STATIC")
+else(FMU_KINSOL)
+  set_target_properties(${OMCFactoryName}_FMU_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
+endif(FMU_KINSOL)
+
 include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR}/kinsol ${SUNDIALS_INCLUDE_DIR})
 
 install (TARGETS ${OMCFactoryName}_static DESTINATION ${LIBINSTALLEXT})
@@ -14,9 +20,9 @@ install (TARGETS ${OMCFactoryName}_FMU_static DESTINATION ${LIBINSTALLEXT})
 install (TARGETS ${OMCFactoryName} DESTINATION ${LIBINSTALLEXT})
 
 if (UNIX)
-        set_target_properties(${OMCFactoryName}_static PROPERTIES COMPILE_FLAGS -fPIC)
-        set_target_properties(${OMCFactoryName}_FMU_static PROPERTIES COMPILE_FLAGS -fPIC)
-        set_target_properties(${OMCFactoryName} PROPERTIES COMPILE_FLAGS -fPIC)
+  set_target_properties(${OMCFactoryName}_static PROPERTIES COMPILE_FLAGS -fPIC)
+  set_target_properties(${OMCFactoryName}_FMU_static PROPERTIES COMPILE_FLAGS -fPIC)
+  set_target_properties(${OMCFactoryName} PROPERTIES COMPILE_FLAGS -fPIC)
 endif(UNIX)
 
 target_link_libraries(${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})

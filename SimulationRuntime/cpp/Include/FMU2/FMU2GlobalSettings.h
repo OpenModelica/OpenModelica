@@ -37,8 +37,10 @@
 
 #include <Core/SimulationSettings/IGlobalSettings.h>
 
-#ifdef OFF
-#undef OFF // avoid name clash with enum LogType
+#ifdef FMU_KINSOL
+  #define DEFAULT_NLS "kinsol"
+#else
+  #define DEFAULT_NLS "newton"
 #endif
 
 class FMU2GlobalSettings : public IGlobalSettings
@@ -70,9 +72,9 @@ class FMU2GlobalSettings : public IGlobalSettings
   virtual void            setOutputPath(string) {}
   virtual string          getSelectedSolver() { return "euler"; }
   virtual void            setSelectedSolver(string) {}
-  virtual string          getSelectedLinSolver() { return "kinsol"; }
+  virtual string          getSelectedLinSolver() { return DEFAULT_NLS; }
   virtual void            setSelectedLinSolver(string) {}
-  virtual string          getSelectedNonLinSolver() { return "kinsol"; }
+  virtual string          getSelectedNonLinSolver() { return DEFAULT_NLS; }
   virtual void            setSelectedNonLinSolver(string) {}
   virtual void            load(std::string xml_file) {};
   virtual void            setResultsFileName(string) {}
