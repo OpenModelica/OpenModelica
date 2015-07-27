@@ -63,7 +63,7 @@ template fmiModelDescriptionAttributes(SimCode simCode, String guid)
       let generationDateAndTime = CodegenFMUCommon.xsdateTime(getCurrentDateTime())
       let variableNamingConvention = 'structured'
       let numberOfContinuousStates = vi.numStateVars
-      let numberOfEventIndicators = eventIndicatorsLength(simCode)
+      let numberOfEventIndicators = CodegenFMUCommon.getNumberOfEventIndicators(simCode)
       <<
       fmiVersion="<%fmiVersion%>"
       modelName="<%modelName%>"
@@ -230,16 +230,6 @@ template timeEventLength(SimCode simCode)
       <%vi.numTimeEvents%>
       >>
 end timeEventLength;
-
-template eventIndicatorsLength(SimCode simCode)
-::=
-  match simCode
-    case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
-      let size = listLength(zeroCrossings)
-      <<
-      <%listLength(zeroCrossings)%>
-      >>
-end eventIndicatorsLength;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenCppInit;

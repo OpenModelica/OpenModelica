@@ -238,7 +238,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   #define MODEL_GUID "{<%guid%>}"
 
   <%ModelDefineData(modelInfo)%>
-  #define NUMBER_OF_EVENT_INDICATORS <%CodegenCppInit.eventIndicatorsLength(simCode)%>
+  #define NUMBER_OF_EVENT_INDICATORS <%CodegenFMUCommon.getNumberOfEventIndicators(simCode)%>
 
   <%if isFMIVersion20(FMUVersion) then
     '#include "FMU2/FMU2Wrapper.cpp"'
