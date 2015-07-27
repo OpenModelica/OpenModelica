@@ -1066,7 +1066,7 @@ end splitClockVars;
 
 protected function substituteParitionOpExps
 "Each non-trivial expression (non-literal, non-constant, non-parameter, non-variable), expr_i, appearing
- as first argument of any clock conversion operator or Boolean clock is recursively replaced by a unique variable, $var_i,
+ as first argument of any clock conversion operator or in base clock constructor is recursively replaced by a unique variable, $var_i,
  and the equation $var_i = expr_i is added to the equation set."
   input BackendDAE.EqSystem inSyst;
   output BackendDAE.EqSystem outSyst;
@@ -1119,13 +1119,12 @@ algorithm
       Absyn.Path path;
       list<DAE.Exp> exps;
       DAE.CallAttributes attr;
-      DAE.Exp e;
-      Real intvl;
-    case DAE.CLKCONST(DAE.BOOLEAN_CLOCK(e, intvl))
+      DAE.ClockKind clk;
+    case DAE.CLKCONST(clk)
       equation
-        ({e}, newEqs, newVars, cnt) = substExp({e}, newEqs, newVars, cnt);
+        (clk, newEqs, newVars, cnt) = substClock(clk, newEqs, newVars, cnt);
       then
-        (DAE.CLKCONST(DAE.BOOLEAN_CLOCK(e, intvl)), (newEqs, newVars, cnt));
+        (DAE.CLKCONST(clk), (newEqs, newVars, cnt));
     case DAE.CALL(path = path, expLst = exps, attr = attr)
       then
         substituteExpsCall(path, exps, attr, newEqs, newVars, cnt);
@@ -1133,6 +1132,68 @@ algorithm
       (inExp, inTpl);
   end match;
 end substituteParitionOpExp1;
+
+protected function substClock
+  input DAE.ClockKind inClk;
+  input list<BackendDAE.Equation> inNewEqs;
+  input list<BackendDAE.Var> inNewVars;
+  input Integer inCnt;
+  output DAE.ClockKind outClk;
+  output list<BackendDAE.Equation> outNewEqs;
+  output list<BackendDAE.Var> outNewVars;
+  output Integer outCnt;
+algorithm
+  (outClk, outNewEqs, outNewVars, outCnt) := match inClk
+    local
+      DAE.Exp e;
+      Integer i;
+      Real f;
+      list<BackendDAE.Equation> eqs;
+      list<BackendDAE.Var> vars;
+      Integer cnt;
+    case DAE.BOOLEAN_CLOCK(e, f)
+      equation
+        (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt);
+      then
+        (DAE.BOOLEAN_CLOCK(e, f), eqs, vars, cnt);
+    case DAE.REAL_CLOCK(e)
+      equation
+        (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt);
+      then
+        (DAE.REAL_CLOCK(e), eqs, vars, cnt);
+    case DAE.INTEGER_CLOCK(e, i)
+      equation
+        (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt);
+      then
+        (DAE.INTEGER_CLOCK(e, i), eqs, vars, cnt);
+    else
+      (inClk, inNewEqs, inNewVars, inCnt);
+  end match;
+end substClock;
+
+protected function substClockExp
+  input DAE.Exp inExp;
+  input list<BackendDAE.Equation> inNewEqs;
+  input list<BackendDAE.Var> inNewVars;
+  input Integer inCnt;
+  output DAE.Exp outExp;
+  output list<BackendDAE.Equation> outNewEqs;
+  output list<BackendDAE.Var> outNewVars;
+  output Integer outCnt;
+protected
+  DAE.Exp e;
+  list<BackendDAE.Equation> eqs;
+  list<BackendDAE.Var> vars;
+  Integer cnt;
+algorithm
+  ({outExp}, outNewEqs, outNewVars, outCnt) := substExp({inExp}, inNewEqs, inNewVars, inCnt);
+  outExp := match outExp
+    local DAE.Type ty;
+    case DAE.CREF(_, ty)
+      then Expression.makePureBuiltinCall("previous", {outExp}, ty);
+    else outExp;
+  end match;
+end substClockExp;
 
 protected function substituteExpsCall
   input Absyn.Path inPath;
