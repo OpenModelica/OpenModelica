@@ -6,14 +6,14 @@
 loadModel(Modelica); getErrorString();
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 loadFile("cranes.mo"); getErrorString();
-//translateModelFMU(cranes.crane); getErrorString();
+translateModelFMU(cranes.crane); getErrorString();
 
 //importFMU("cranes_crane.fmu", "<default>", 6, false, true); getErrorString();
-//importFMU("cranes_crane.fmu", "<default>"); getErrorString();
-//loadFile("cranes_crane_me_FMU.mo"); getErrorString();
-//simulate(cranes_crane_me_FMU, numberOfIntervals=150); getErrorString();
+importFMU("cranes_crane.fmu", "<default>"); getErrorString();
+loadFile("cranes_crane_me_FMU.mo"); getErrorString();
+simulate(cranes_crane_me_FMU, numberOfIntervals=150); getErrorString();
 
-simulate(cranes.crane, numberOfIntervals=150, simflags="-N newton"); getErrorString();
+//simulate(cranes.crane, numberOfIntervals=150); getErrorString();
 
 val(position_s, 1);
 val(prismatic_v, 1);

@@ -2,9 +2,10 @@ TEST = ../../../../../rtest -v
 
 
 TESTFILES = \
-CoupledClutches.mos
+CoupledClutches.mos \
+crane.mos
 
-FAILINGTESTFILES = crane.mos
+FAILINGTESTFILES =
 
 DEPENDENCIES = \
 *.mo \
