@@ -6033,36 +6033,33 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     }
    >>
    else
-    /* deactivated: should be generated with code generation flag usematrix_t
+    let type = getConfigString(MATRIX_FORMAT)
+      let getDenseMatrix =  match type
+          case ("dense") then
+            <<
+            return __A;
+            >>
+          case ("sparse") then
+            'throw ModelicaSimulationError(MATH_FUNCTION,"Dense matrix is not activated");'
+          else "A matrix type is not supported"
+          end match
+      let getSparseMatrix =  match type
+          case ("dense") then
+            'throw ModelicaSimulationError(MATH_FUNCTION,"Sparse matrix is not activated");'
+          case ("sparse") then
+            <<
+            return __A;
+            >>
+          else "A matrix type is not supported"
+          end match
     <<
-     void <%modelname%>Algloop<%ls.index%>::getSystemMatrix(double* A_matrix)
-     {
-          <% match eq
-           case SES_LINEAR(__) then
-           "memcpy(A_matrix,__A->getData(),_dimAEq*_dimAEq*sizeof(double));"
-          %>
-     }
      const matrix_t& <%modelname%>Algloop<%ls.index%>::getSystemMatrix( )
      {
-          <% match eq
-          case SES_LINEAR(__) then
-          "return *(__Asparse.get());"
-          %>
-     }
-
-
-    >>
-    */
-    <<
-     const matrix_t& <%modelname%>Algloop<%ls.index%>::getSystemMatrix( )
-     {
-          throw ModelicaSimulationError(MATH_FUNCTION,"Dense matrix is not activated");
-         //return __A;
+        <%getDenseMatrix%>
      }
      const sparsematrix_t& <%modelname%>Algloop<%ls.index%>::getSystemSparseMatrix( )
      {
-        return __A;
-
+        <%getSparseMatrix%>
      }
     >>
 
