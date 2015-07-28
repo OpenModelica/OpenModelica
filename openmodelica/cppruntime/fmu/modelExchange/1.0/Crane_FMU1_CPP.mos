@@ -13,7 +13,7 @@ importFMU("cranes_crane.fmu", "<default>"); getErrorString();
 loadFile("cranes_crane_me_FMU.mo"); getErrorString();
 simulate(cranes_crane_me_FMU, numberOfIntervals=150); getErrorString();
 
-//simulate(cranes.crane, numberOfIntervals=150); getErrorString();
+//simulate(cranes.crane, numberOfIntervals=150, simflags="-N newton"); getErrorString();
 
 val(position_s, 1);
 val(prismatic_v, 1);
