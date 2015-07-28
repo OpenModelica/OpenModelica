@@ -2,8 +2,8 @@ TEST = ../../../../../rtest -v
 
 
 TESTFILES = \
-CoupledClutches.mos \
-crane.mos
+CoupledClutches_FMU1_CPP.mos \
+Crane_FMU1_CPP.mos
 
 FAILINGTESTFILES =
 
@@ -26,7 +26,7 @@ test:
 
 clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
-	@rm -f $(CLEAN)
+	@rm -rf $(CLEAN)
 
 getdeps:
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp

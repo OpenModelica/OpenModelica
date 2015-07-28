@@ -9,34 +9,34 @@
 
 loadString("
 model testEvents
- parameter Real p = 1;
- parameter Real x1 = p;
- parameter Real y1 = -p;
- Real x(start=0);
- Real y(start=0);
- Real a(start=p);
- Boolean v1,v2,v3,v4;
- Boolean w1,w2,w3,w4;
+  parameter Real p = 1;
+  Real x(start=0, fixed=true);
+  Real y(start=0, fixed=true);
+  Real a(start=p, fixed=true);
+  Boolean v1,v2,v3,v4;
+  Boolean w1,w2,w3,w4;
 equation
- der(x) = a;
- der(y) = -a;
- v1 = if x>x1 then true else false;
- v2 = if x>=x1 then true else false;
- v3 = if x<x1 then true else false;
- v4 = if x<=x1 then true else false;
- w1 = if x>y then true else false;
- w2 = if x>=y then true else false;
- w3 = if x<y then true else false;
- w4 = if x<=y then true else false;
- when sample(1,1) then
-  a = pre(a)*(-1);
- end when;
+  der(x) = a;
+  der(y) = -a;
+
+  v1 = if x >  p then true else false;
+  v2 = if x >= p then true else false;
+  v3 = if x <  p then true else false;
+  v4 = if x <= p then true else false;
+
+  w1 = if x >  y then true else false;
+  w2 = if x >= y then true else false;
+  w3 = if x <  y then true else false;
+  w4 = if x <= y then true else false;
+
+  when sample(1, 1) then
+    a = -pre(a);
+  end when;
 end testEvents;
 "); getErrorString();
 
-simulate(testEvents, tolerance=1e-6, startTime=0, stopTime=10, numberOfIntervals=100);
-res := OpenModelica.Scripting.compareSimulationResults("testEvents_res.mat",
-  "EventTests.mat","testEvents_diff.csv",0.01,0.001, {"v1","v2","v3","v4","w1","w2","w3","w4"});
+simulate(testEvents, tolerance=1e-6, startTime=0, stopTime=10, numberOfIntervals=100); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("testEvents_res.mat", "EventTests.mat", "testEvents_diff.csv", 0.01, 0.001, {"v1", "v2", "v3", "v4", "w1", "w2", "w3", "w4"}); getErrorString();
 
 // Result:
 // true
@@ -46,5 +46,7 @@ res := OpenModelica.Scripting.compareSimulationResults("testEvents_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 100, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'testEvents', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
+// ""
 // {"Files Equal!"}
+// ""
 // endResult

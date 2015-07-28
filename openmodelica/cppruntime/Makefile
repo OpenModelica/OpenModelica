@@ -40,6 +40,7 @@ staticLinking \
 genDebugSymbols \
 outputFormat \
 ReferenceFiles \
+outputFormat \
 libraries
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

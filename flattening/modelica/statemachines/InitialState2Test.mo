@@ -1,6 +1,6 @@
 // name: InitialState2Test
 // keywords: state machines features
-// status: correct
+// status: wrong
 
 model InitialState2Test
   block AState
@@ -11,8 +11,4 @@ equation
 end InitialState2Test;
 
 // Result:
-// class InitialState2Test
-// equation
-//   initialState(aState);
-// end InitialState2Test;
 // endResult
