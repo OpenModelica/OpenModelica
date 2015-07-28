@@ -1762,7 +1762,7 @@ public function countOperationstraverseComps "author: Frenkel TUD 2012-05"
 algorithm
   compInfosOut :=  matchcontinue (inComps,isyst,ishared,compInfosIn)
     local
-      Integer eqIdx, numAdd,numMul,numDiv,numTrig,numRel,numOth, numFuncs, numLog, size;
+      Integer eqIdx, numAdd,numMul,numDiv,numTrig,numRel,numOth, numFuncs, numLog, size, jacEntries;
       Real density;
       list<Integer> eqs, tornEqs,otherEqs;
       BackendDAE.StrongComponent comp,comp1;
@@ -1815,7 +1815,9 @@ algorithm
         size = listLength(eqnlst);
         (numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs) = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.listEquation(eqnlst),function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
         allOps = BackendDAE.COUNTER(comp,numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs);
-        density = realDiv(intReal(getNumJacEntries(jac)),intReal(size*size ));
+        jacEntries = getNumJacEntries(jac);
+        if intEq(jacEntries,-1) then jacEntries = size*size; end if;  // a non linear system that is too small and too dense (usually 2x2) to be torn
+        density = realDiv(intReal(jacEntries),intReal(size*size));
         compInfo = BackendDAE.SYSTEM(comp,allOps,size,density);
       then
         countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
