@@ -314,7 +314,7 @@ algorithm
       dlow := BackendDAEUtil.mapEqSystem(dlow, Vectorization.enlargeIteratedArrayVars);
     end if;
 
-    modelInfo := createModelInfo(inClassName, dlow, functions, {}, numStateSets, inFileDir);
+    modelInfo := createModelInfo(inClassName, dlow, initDAE, functions, {}, numStateSets, inFileDir);
     modelInfo := addTempVars(tempvars, modelInfo);
 
     // external objects
@@ -5517,14 +5517,15 @@ end createVarAsserts;
 
 public function createModelInfo
   input Absyn.Path class_;
-  input BackendDAE.BackendDAE dlow;
+  input BackendDAE.BackendDAE dlow "simulation";
+  input BackendDAE.BackendDAE inInitDAE "initialization";
   input list<SimCode.Function> functions;
   input list<String> labels;
   input Integer numStateSets;
   input String fileDir;
   output SimCode.ModelInfo modelInfo;
 protected
-  String description,directory;
+  String description, directory;
   SimCode.VarInfo varInfo;
   SimCodeVar.SimVars vars;
   Integer nx, ny, ndy, np, na, next, numOutVars, numInVars, ny_int, np_int, na_int, ny_bool, np_bool, dim_1, dim_2, numOptimizeConstraints, numOptimizeFinalConstraints;
@@ -5536,7 +5537,7 @@ algorithm
   try
     // name = Absyn.pathStringNoQual(class_);
     directory := System.trim(fileDir, "\"");
-    vars := createVars(dlow);
+    vars := createVars(dlow, inInitDAE);
     BackendDAE.DAE(shared=BackendDAE.SHARED(info=BackendDAE.EXTRA_INFO(description=description))) := dlow;
     nx := listLength(vars.stateVars);
     ny := listLength(vars.algVars);
@@ -5869,37 +5870,58 @@ algorithm
 end getStateInfo;
 
 protected function createVars
-  input BackendDAE.BackendDAE dlow;
+  input BackendDAE.BackendDAE inSimDAE "simulation";
+  input BackendDAE.BackendDAE inInitDAE "initialization";
   output SimCodeVar.SimVars outVars;
 protected
-  BackendDAE.Variables knvars;
-  BackendDAE.Variables extvars;
-  BackendDAE.Variables aliasVars;
-  BackendDAE.EqSystems systs;
+  BackendDAE.Variables knvars1, knvars2;
+  BackendDAE.Variables extvars1, extvars2;
+  BackendDAE.Variables aliasVars1, aliasVars2;
+  BackendDAE.EqSystems systs1, systs2;
+  HashSet.HashSet hs = HashSet.emptyHashSet();
 algorithm
-  BackendDAE.DAE(eqs=systs, shared=BackendDAE.SHARED(knownVars=knvars, externalObjects=extvars, aliasVars=aliasVars)) := dlow;
+  BackendDAE.DAE(eqs=systs1, shared=BackendDAE.SHARED(knownVars=knvars1, externalObjects=extvars1, aliasVars=aliasVars1)) := inSimDAE;
+  BackendDAE.DAE(eqs=systs2, shared=BackendDAE.SHARED(knownVars=knvars2, externalObjects=extvars2, aliasVars=aliasVars2)) := inInitDAE;
 
   if not Flags.isSet(Flags.NO_START_CALC) then
-    systs := List.map1(systs,preCalculateStartValues,knvars);
+    systs1 := List.map1(systs1, preCalculateStartValues, knvars1);
+    systs2 := List.map1(systs2, preCalculateStartValues, knvars2);
   end if;
 
-  /* Extract from variable list */
-  ((outVars, _, _)) := List.fold1(List.map(systs, BackendVariable.daeVars), BackendVariable.traverseBackendDAEVars, extractVarsFromList, (SimCodeVar.emptySimVars, aliasVars, knvars));
+  // ### simulation ###
+  // Extract from variable list
+  ((outVars, _, _, hs)) := List.fold1(List.map(systs1, BackendVariable.daeVars), BackendVariable.traverseBackendDAEVars, extractVarsFromList, (SimCodeVar.emptySimVars, aliasVars1, knvars1, hs));
 
-  /* Extract from known variable list */
-  ((outVars, _, _)) := BackendVariable.traverseBackendDAEVars(knvars, extractVarsFromList, (outVars, aliasVars, knvars));
+  // Extract from known variable list
+  ((outVars, _, _, hs)) := BackendVariable.traverseBackendDAEVars(knvars1, extractVarsFromList, (outVars, aliasVars1, knvars1, hs));
 
-  /* Extract from removed variable list */
-  ((outVars, _, _)) := BackendVariable.traverseBackendDAEVars(aliasVars, extractVarsFromList, (outVars, aliasVars, knvars));
+  // Extract from removed variable list
+  ((outVars, _, _, hs)) := BackendVariable.traverseBackendDAEVars(aliasVars1, extractVarsFromList, (outVars, aliasVars1, knvars1, hs));
 
-  /* Extract from external object list */
-  ((outVars, _, _)) := BackendVariable.traverseBackendDAEVars(extvars, extractVarsFromList, (outVars, aliasVars, knvars));
+  // Extract from external object list
+  ((outVars, _, _, hs)) := BackendVariable.traverseBackendDAEVars(extvars1, extractVarsFromList, (outVars, aliasVars1, knvars1, hs));
 
-  /* sort variables on index */
+
+  // ### initialization ###
+  // Extract from variable list
+  ((outVars, _, _, hs)) := List.fold1(List.map(systs2, BackendVariable.daeVars), BackendVariable.traverseBackendDAEVars, extractVarsFromList, (outVars, aliasVars2, knvars2, hs));
+
+  // Extract from known variable list
+  ((outVars, _, _, hs)) := BackendVariable.traverseBackendDAEVars(knvars2, extractVarsFromList, (outVars, aliasVars2, knvars2, hs));
+
+  // Extract from removed variable list
+  ((outVars, _, _, hs)) := BackendVariable.traverseBackendDAEVars(aliasVars2, extractVarsFromList, (outVars, aliasVars2, knvars2, hs));
+
+  // Extract from external object list
+  ((outVars, _, _, hs)) := BackendVariable.traverseBackendDAEVars(extvars2, extractVarsFromList, (outVars, aliasVars2, knvars2, hs));
+
+  //BaseHashSet.printHashSet(hs);
+
+  // sort variables on index
   outVars := sortSimvars(outVars);
   outVars := if stringEqual(Config.simCodeTarget(), "Cpp") then extendIncompleteArray(outVars) else outVars;
 
-  /* Index of algebraic and parameters need to fix due to separation of int Vars*/
+  // Index of algebraic and parameters need to fix due to separation of integer variables
   outVars := fixIndex(outVars);
   outVars := setVariableIndex(outVars);
 end createVars;
@@ -6016,21 +6038,24 @@ end getRecordPathFromCref;
 
 protected function extractVarsFromList
   input BackendDAE.Var inVar;
-  input tuple<SimCodeVar.SimVars, BackendDAE.Variables, BackendDAE.Variables> inTpl;
-  output BackendDAE.Var outVar;
-  output tuple<SimCodeVar.SimVars, BackendDAE.Variables, BackendDAE.Variables> outTpl;
+  input tuple<SimCodeVar.SimVars, BackendDAE.Variables, BackendDAE.Variables, HashSet.HashSet /*all processed crefs*/> inTpl;
+  output BackendDAE.Var outVar = inVar;
+  output tuple<SimCodeVar.SimVars, BackendDAE.Variables, BackendDAE.Variables, HashSet.HashSet /*all processed crefs*/> outTpl;
+protected
+  SimCodeVar.SimVars vars;
+  BackendDAE.Variables aliasVars, v;
+  HashSet.HashSet hs;
 algorithm
-  (outVar,outTpl) := matchcontinue (inVar,inTpl)
-    local
-      BackendDAE.Var var;
-      SimCodeVar.SimVars vars;
-      BackendDAE.Variables aliasVars, v;
-    case (var, (vars, aliasVars, v))
-      equation
-        vars = extractVarFromVar(var, aliasVars, v, vars);
-      then (var, (vars, aliasVars, v));
-    else (inVar,inTpl);
-  end matchcontinue;
+  (vars, aliasVars, v, hs) := inTpl;
+
+  if not BaseHashSet.has(inVar.varName, hs) and not ComponentReference.isPreCref(inVar.varName) then
+    (vars, hs) := extractVarFromVar(inVar, aliasVars, v, vars, hs);
+  //  print("Added  " + ComponentReference.crefStr(inVar.varName) + "\n");
+  //else
+  //  print("Skiped " + ComponentReference.crefStr(inVar.varName) + "\n");
+  end if;
+
+  outTpl := (vars, aliasVars, v, hs);
 end extractVarsFromList;
 
 // one dlow var can result in multiple simvars: input and output are a subset
@@ -6040,105 +6065,108 @@ protected function extractVarFromVar
   input BackendDAE.Variables inAliasVars;
   input BackendDAE.Variables inVars;
   input SimCodeVar.SimVars varsIn;
+  input HashSet.HashSet inHS "all processed crefs";
   output SimCodeVar.SimVars varsOut;
+  output HashSet.HashSet outHS = inHS;
+protected
+  list<SimCodeVar.SimVar> stateVars;
+  list<SimCodeVar.SimVar> derivativeVars;
+  list<SimCodeVar.SimVar> algVars;
+  list<SimCodeVar.SimVar> discreteAlgVars;
+  list<SimCodeVar.SimVar> intAlgVars;
+  list<SimCodeVar.SimVar> boolAlgVars;
+  list<SimCodeVar.SimVar> inputVars;
+  list<SimCodeVar.SimVar> outputVars;
+  list<SimCodeVar.SimVar> aliasVars;
+  list<SimCodeVar.SimVar> intAliasVars;
+  list<SimCodeVar.SimVar> boolAliasVars;
+  list<SimCodeVar.SimVar> paramVars;
+  list<SimCodeVar.SimVar> intParamVars;
+  list<SimCodeVar.SimVar> boolParamVars;
+  list<SimCodeVar.SimVar> stringAlgVars;
+  list<SimCodeVar.SimVar> stringParamVars;
+  list<SimCodeVar.SimVar> stringAliasVars;
+  list<SimCodeVar.SimVar> extObjVars;
+  list<SimCodeVar.SimVar> constVars;
+  list<SimCodeVar.SimVar> intConstVars;
+  list<SimCodeVar.SimVar> boolConstVars;
+  list<SimCodeVar.SimVar> stringConstVars;
+  list<SimCodeVar.SimVar> jacobianVars;
+  list<SimCodeVar.SimVar> realOptimizeConstraintsVars;
+  list<SimCodeVar.SimVar> realOptimizeFinalConstraintsVars;
+  list<SimCodeVar.SimVar> mixedArrayVars;
+  SimCodeVar.SimVar simvar;
+  SimCodeVar.SimVar derivSimvar;
+  Boolean isalias;
 algorithm
-  varsOut :=
-  match (dlowVar, inAliasVars, inVars, varsIn)
-    local
-      list<SimCodeVar.SimVar> stateVars;
-      list<SimCodeVar.SimVar> derivativeVars;
-      list<SimCodeVar.SimVar> algVars;
-      list<SimCodeVar.SimVar> discreteAlgVars;
-      list<SimCodeVar.SimVar> intAlgVars;
-      list<SimCodeVar.SimVar> boolAlgVars;
-      list<SimCodeVar.SimVar> inputVars;
-      list<SimCodeVar.SimVar> outputVars;
-      list<SimCodeVar.SimVar> aliasVars;
-      list<SimCodeVar.SimVar> intAliasVars;
-      list<SimCodeVar.SimVar> boolAliasVars;
-      list<SimCodeVar.SimVar> paramVars;
-      list<SimCodeVar.SimVar> intParamVars;
-      list<SimCodeVar.SimVar> boolParamVars;
-      list<SimCodeVar.SimVar> stringAlgVars;
-      list<SimCodeVar.SimVar> stringParamVars;
-      list<SimCodeVar.SimVar> stringAliasVars;
-      list<SimCodeVar.SimVar> extObjVars;
-      list<SimCodeVar.SimVar> constVars;
-      list<SimCodeVar.SimVar> intConstVars;
-      list<SimCodeVar.SimVar> boolConstVars;
-      list<SimCodeVar.SimVar> stringConstVars;
-      list<SimCodeVar.SimVar> jacobianVars;
-      list<SimCodeVar.SimVar> realOptimizeConstraintsVars;
-      list<SimCodeVar.SimVar> realOptimizeFinalConstraintsVars;
-      list<SimCodeVar.SimVar> mixedArrayVars;
-      SimCodeVar.SimVar simvar;
-      SimCodeVar.SimVar derivSimvar;
-      BackendDAE.Variables v;
-      Boolean isalias;
-    case (_, _, v,
-      SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars,
-          aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-          stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayVars))
-      equation
-        /* extract the sim var */
-        simvar = dlowvarToSimvar(dlowVar, SOME(inAliasVars), v);
-        derivSimvar = derVarFromStateVar(simvar);
-        isalias = isAliasVar(simvar);
-        /* figure out in which lists to put it */
-        stateVars = List.consOnTrue((not isalias) and
-          (BackendVariable.isStateVar(dlowVar) or BackendVariable.isAlgState(dlowVar)), simvar, stateVars);
-        derivativeVars = List.consOnTrue((not isalias) and
-          (BackendVariable.isStateVar(dlowVar) or BackendVariable.isAlgState(dlowVar)), derivSimvar, derivativeVars);
-        algVars = List.consOnTrue((not isalias) and
-          BackendVariable.isVarNonDiscreteAlg(dlowVar), simvar, algVars);
-        discreteAlgVars = List.consOnTrue((not isalias) and
-          BackendVariable.isVarDiscreteAlg(dlowVar), simvar, discreteAlgVars);
-        intAlgVars = List.consOnTrue((not isalias) and
-          BackendVariable.isVarIntAlg(dlowVar), simvar, intAlgVars);
-        boolAlgVars = List.consOnTrue((not isalias) and
-          BackendVariable.isVarBoolAlg(dlowVar), simvar, boolAlgVars);
-        inputVars = List.consOnTrue((not isalias) and
-          BackendVariable.isVarOnTopLevelAndInputNoDerInput(dlowVar), simvar, inputVars);
-        outputVars = List.consOnTrue((not isalias) and
-          BackendVariable.isVarOnTopLevelAndOutput(dlowVar), simvar, outputVars);
-        paramVars = List.consOnTrue((not isalias) and
-          BackendVariable.isVarParam(dlowVar), simvar, paramVars);
-        intParamVars = List.consOnTrue((not isalias) and
-          BackendVariable.isVarIntParam(dlowVar), simvar, intParamVars);
-        boolParamVars = List.consOnTrue((not isalias) and
-          BackendVariable.isVarBoolParam(dlowVar), simvar, boolParamVars);
-        stringAlgVars = List.consOnTrue((not isalias) and
-          BackendVariable.isVarStringAlg(dlowVar), simvar, stringAlgVars);
-        stringParamVars = List.consOnTrue((not isalias) and
-          BackendVariable.isVarStringParam(dlowVar), simvar, stringParamVars);
-        extObjVars = List.consOnTrue((not isalias) and
-          BackendVariable.isExtObj(dlowVar), simvar, extObjVars);
-        aliasVars = List.consOnTrue( isalias and
-          BackendVariable.isVarNonDiscreteAlg(dlowVar), simvar, aliasVars);
-        intAliasVars = List.consOnTrue( isalias and
-          BackendVariable.isVarIntAlg(dlowVar), simvar, intAliasVars);
-        boolAliasVars = List.consOnTrue( isalias and
-          BackendVariable.isVarBoolAlg(dlowVar), simvar, boolAliasVars);
-        stringAliasVars = List.consOnTrue( isalias and
-          BackendVariable.isVarStringAlg(dlowVar), simvar, stringAliasVars);
-        constVars =List.consOnTrue((not isalias) and
-          BackendVariable.isVarConst(dlowVar), simvar, constVars);
-        intConstVars = List.consOnTrue((not isalias) and
-          BackendVariable.isVarIntConst(dlowVar), simvar, intConstVars);
-        boolConstVars = List.consOnTrue((not isalias) and
-          BackendVariable.isVarBoolConst(dlowVar), simvar, boolConstVars);
-        stringConstVars = List.consOnTrue((not isalias) and
-          BackendVariable.isVarStringConst(dlowVar), simvar, stringConstVars);
-        realOptimizeConstraintsVars = List.consOnTrue((not isalias) and
-          BackendVariable.isRealOptimizeConstraintsVars(dlowVar), simvar, realOptimizeConstraintsVars);
-        realOptimizeFinalConstraintsVars = List.consOnTrue((not isalias) and
-          BackendVariable.isRealOptimizeFinalConstraintsVars(dlowVar), simvar, realOptimizeFinalConstraintsVars);
+  SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars,
+    aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
+    stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayVars) := varsIn;
 
-      then
-        SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars,
-          aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-          stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayVars);
-  end match;
+  // extract the sim var
+  simvar := dlowvarToSimvar(dlowVar, SOME(inAliasVars), inVars);
+  derivSimvar := derVarFromStateVar(simvar);
+  isalias := isAliasVar(simvar);
+
+  // update HashSet
+  outHS := BaseHashSet.add(simvar.name, outHS);
+  if (not isalias) and (BackendVariable.isStateVar(dlowVar) or BackendVariable.isAlgState(dlowVar)) then
+    outHS := BaseHashSet.add(derivSimvar.name, outHS);
+  end if;
+
+  // figure out in which lists to put it
+  stateVars := List.consOnTrue((not isalias) and
+    (BackendVariable.isStateVar(dlowVar) or BackendVariable.isAlgState(dlowVar)), simvar, stateVars);
+  derivativeVars := List.consOnTrue((not isalias) and
+    (BackendVariable.isStateVar(dlowVar) or BackendVariable.isAlgState(dlowVar)), derivSimvar, derivativeVars);
+  algVars := List.consOnTrue((not isalias) and
+    BackendVariable.isVarNonDiscreteAlg(dlowVar), simvar, algVars);
+  discreteAlgVars := List.consOnTrue((not isalias) and
+    BackendVariable.isVarDiscreteAlg(dlowVar), simvar, discreteAlgVars);
+  intAlgVars := List.consOnTrue((not isalias) and
+    BackendVariable.isVarIntAlg(dlowVar), simvar, intAlgVars);
+  boolAlgVars := List.consOnTrue((not isalias) and
+    BackendVariable.isVarBoolAlg(dlowVar), simvar, boolAlgVars);
+  inputVars := List.consOnTrue((not isalias) and
+    BackendVariable.isVarOnTopLevelAndInputNoDerInput(dlowVar), simvar, inputVars);
+  outputVars := List.consOnTrue((not isalias) and
+    BackendVariable.isVarOnTopLevelAndOutput(dlowVar), simvar, outputVars);
+  paramVars := List.consOnTrue((not isalias) and
+    BackendVariable.isVarParam(dlowVar), simvar, paramVars);
+  intParamVars := List.consOnTrue((not isalias) and
+    BackendVariable.isVarIntParam(dlowVar), simvar, intParamVars);
+  boolParamVars := List.consOnTrue((not isalias) and
+    BackendVariable.isVarBoolParam(dlowVar), simvar, boolParamVars);
+  stringAlgVars := List.consOnTrue((not isalias) and
+    BackendVariable.isVarStringAlg(dlowVar), simvar, stringAlgVars);
+  stringParamVars := List.consOnTrue((not isalias) and
+    BackendVariable.isVarStringParam(dlowVar), simvar, stringParamVars);
+  extObjVars := List.consOnTrue((not isalias) and
+    BackendVariable.isExtObj(dlowVar), simvar, extObjVars);
+  aliasVars := List.consOnTrue( isalias and
+    BackendVariable.isVarNonDiscreteAlg(dlowVar), simvar, aliasVars);
+  intAliasVars := List.consOnTrue( isalias and
+    BackendVariable.isVarIntAlg(dlowVar), simvar, intAliasVars);
+  boolAliasVars := List.consOnTrue( isalias and
+    BackendVariable.isVarBoolAlg(dlowVar), simvar, boolAliasVars);
+  stringAliasVars := List.consOnTrue( isalias and
+    BackendVariable.isVarStringAlg(dlowVar), simvar, stringAliasVars);
+  constVars := List.consOnTrue((not isalias) and
+    BackendVariable.isVarConst(dlowVar), simvar, constVars);
+  intConstVars := List.consOnTrue((not isalias) and
+    BackendVariable.isVarIntConst(dlowVar), simvar, intConstVars);
+  boolConstVars := List.consOnTrue((not isalias) and
+    BackendVariable.isVarBoolConst(dlowVar), simvar, boolConstVars);
+  stringConstVars := List.consOnTrue((not isalias) and
+    BackendVariable.isVarStringConst(dlowVar), simvar, stringConstVars);
+  realOptimizeConstraintsVars := List.consOnTrue((not isalias) and
+    BackendVariable.isRealOptimizeConstraintsVars(dlowVar), simvar, realOptimizeConstraintsVars);
+  realOptimizeFinalConstraintsVars := List.consOnTrue((not isalias) and
+    BackendVariable.isRealOptimizeFinalConstraintsVars(dlowVar), simvar, realOptimizeFinalConstraintsVars);
+
+  varsOut := SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars,
+    aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
+    stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayVars);
 end extractVarFromVar;
 
 protected function derVarFromStateVar
