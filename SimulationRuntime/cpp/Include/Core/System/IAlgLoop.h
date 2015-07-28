@@ -56,7 +56,7 @@ public:
 
 
   virtual const matrix_t& getSystemMatrix()  = 0;
-
+  virtual const sparsematrix_t& getSystemSparseMatrix()  = 0;
   virtual bool isLinear() = 0;
   virtual bool isLinearTearing() = 0;
   virtual bool isConsistent() = 0;

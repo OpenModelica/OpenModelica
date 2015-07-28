@@ -989,6 +989,7 @@ constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(52, "hpcomCode",
   NONE(), EXTERNAL(), STRING_FLAG("openmp"), NONE(),
   Util.gettext("Sets the code-type produced by hpcom (openmp | pthreads | pthreads_spin | tbb | mpi). Default: openmp."));
 
+
 constant ConfigFlag REWRITE_RULES_FILE = CONFIG_FLAG(53, "rewriteRulesFile", NONE(), EXTERNAL(),
   STRING_FLAG(""), NONE(),
   Util.gettext("Activates user given rewrite rules for Absyn expressions. The rules are read from the given file and are of the form rewrite(fromExp, toExp);"));
@@ -1116,6 +1117,9 @@ constant ConfigFlag FLOW_THRESHOLD = CONFIG_FLAG(75, "flowThreshold",
   NONE(), EXTERNAL(), REAL_FLAG(1e-7), NONE(),
   Util.gettext("Sets the minium threshold for stream flow rates"));
 
+constant ConfigFlag MATRIX_FORMAT = CONFIG_FLAG(76, "matrixFormat",
+  NONE(), EXTERNAL(), STRING_FLAG("dense"), NONE(),
+  Util.gettext("Sets the matrix format type in cpp runtime which should be used (dense | sparse ). Default: dense."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1196,7 +1200,8 @@ constant list<ConfigFlag> allConfigFlags = {
   FORCE_TEARING,
   SIMPLIFY_LOOPS,
   RTEARING,
-  FLOW_THRESHOLD
+  FLOW_THRESHOLD,
+  MATRIX_FORMAT
 };
 
 public function new

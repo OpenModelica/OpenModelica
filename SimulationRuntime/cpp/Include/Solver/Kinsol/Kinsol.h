@@ -44,7 +44,6 @@ private:
   int check_flag(void *flagvalue, char *funcname, int opt);
 
   void solveNLS();
-  bool isfinite(double* u, int dim);
   void check4EventRetry(double* y);
 
   // Member variables
@@ -97,7 +96,7 @@ private:
 
   realtype _fnorm,
     _currentIterateNorm;
-   ublas::permutation_matrix<double>* _P;
+
    int _counter;
 };
 /** @} */ // end of solverKinsol

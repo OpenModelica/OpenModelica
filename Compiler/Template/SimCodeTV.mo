@@ -3081,6 +3081,7 @@ package Flags
   constant ConfigFlag HPCOM_CODE;
   constant ConfigFlag PROFILING_LEVEL;
   constant ConfigFlag CPP_FLAGS;
+  constant ConfigFlag MATRIX_FORMAT;
 
   function isSet
     input DebugFlag inFlag;

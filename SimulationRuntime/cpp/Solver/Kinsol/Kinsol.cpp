@@ -167,7 +167,7 @@ void Kinsol::initialize()
 			_Kin_fScale = N_VMake_Serial(_dimSys, _fScale);
 			_kinMem = KINCreate();
 
-			_P = new ublas::permutation_matrix<double>(_dimSys);
+
 
 			//Set Options
 			//idid = KINSetNumMaxIters(_kinMem, _kinsolSettings->getNewtMax());
@@ -314,7 +314,7 @@ void Kinsol::solve()
 			solveNLS();
 		}
 
-		/*
+
 		if(_iterationStatus == DONE)
 		return;
 
@@ -346,7 +346,7 @@ void Kinsol::solve()
 		}
 		if(_iterationStatus == DONE)
 		return;
-
+		/*
 		for(int i=0;i<_dimSys;i++) // Reset Scaling
 		_fScale[i] = 1.0;
 
@@ -379,10 +379,10 @@ void Kinsol::solve()
 		_iterationStatus = CONTINUE;
 		return;
 		}
-
-		if(_iterationStatus == SOLVERERROR && !_eventRetry)
-		throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
 		*/
+		if(_iterationStatus == SOLVERERROR && !_eventRetry)
+			throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
+
 	}
 }
 
@@ -660,16 +660,6 @@ void Kinsol::solveNLS()
 
 
 
-}
-
-bool Kinsol::isfinite(double* u, int dim)
-{
-	for(int i=0;i<dim;i++)
-	{
-		if(!(boost::math::isfinite(u[i])))
-			return false;
-	}
-	return true;
 }
 
 
