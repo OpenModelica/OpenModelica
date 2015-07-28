@@ -9,7 +9,6 @@
 #include <Core/Utils/numeric/bindings/ublas/matrix_sparse.hpp>
 
 
-
 Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
     : SolverDefaultImplementation(system, settings),
       _cvodesettings(dynamic_cast<ISolverSettings*>(_settings)),

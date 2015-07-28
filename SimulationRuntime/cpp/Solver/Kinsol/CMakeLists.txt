@@ -17,7 +17,7 @@ if (UNIX)
 	set_target_properties(${KinsolName} PROPERTIES COMPILE_FLAGS -fPIC)
 endif(UNIX)
 
-target_link_libraries(${KinsolName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES} ${LAPACK_LIBRARIES})
+target_link_libraries(${KinsolName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES} ${LAPACK_LIBRARIES})
 
 install (TARGETS ${KinsolName} ${KinsolName}_static DESTINATION ${LIBINSTALLEXT})
 

@@ -59,9 +59,9 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
     }
 
     static std::pair<LogCategory,LogLevel> getLogMode(LogCategory cat, LogLevel lvl)
-	{
+    {
     	return std::pair<LogCategory, LogLevel>(cat, lvl);
-	}
+    }
 
     bool isOutput(LogCategory cat, LogLevel lvl) const;
 

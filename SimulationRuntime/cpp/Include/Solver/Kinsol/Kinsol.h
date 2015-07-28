@@ -18,6 +18,8 @@
 #include <boost/numeric/ublas/lu.hpp>
 #include <boost/numeric/ublas/symmetric.hpp>
 
+#include <Core/Utils/extension/logger.hpp>
+
 //#include<kinsol_lapack.h>
  int kin_fCallback(N_Vector y, N_Vector fval, void *user_data);
 class Kinsol : public IAlgLoopSolver

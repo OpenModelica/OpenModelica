@@ -1450,19 +1450,7 @@ algorithm
       BackendDAE.Variables vars, knvars;
       list<Integer> ilst;
       list<BackendDAE.Var> vlst;
-    // a = const
-    // wbraun:
-    // speacial case for Jacobains, since there are all known variablen
-    // time depending input variables
-    case (_, _, _, _, (vars, BackendDAE.SHARED(knownVars=knvars, backendDAEType = BackendDAE.JACOBIAN()), _, _, _, _, _))
-      equation
-        // collect vars and check if variable time not there
-        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(lhs, traversingTimeVarsFinder, (false, vars, knvars, true, false, {}));
-        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(rhs, traversingTimeVarsFinder, (false, vars, knvars, true, false, ilst));
-        ilst = List.uniqueIntN(ilst, BackendVariable.varsSize(vars));
-        vlst = List.map1r(ilst, BackendVariable.getVarAt, vars);
-      then
-        solveTimeIndependentAcausal(vlst, ilst, lhs, rhs, eqnAttributes, inTpl);
+
     case (_, _, _, _, (vars, BackendDAE.SHARED(knownVars=knvars), _, _, _, _, _))
       equation
         // collect vars and check if variable time not there
@@ -1496,17 +1484,7 @@ algorithm
       BackendDAE.Variables vars, knvars;
       list<Integer> ilst;
       list<BackendDAE.Var> vlst;
-    case (_, _, _, (vars, BackendDAE.SHARED(knownVars=knvars, backendDAEType = BackendDAE.JACOBIAN()), _, _, _, _, _))
-      equation
-        // collect vars and check if variable time not there
-        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(exp, traversingTimeVarsFinder, (false, vars, knvars, true, false, {}));
-        ilst = List.uniqueIntN(ilst, BackendVariable.varsSize(vars));
-        vlst = List.map1r(ilst, BackendVariable.getVarAt, vars);
-        ty = Expression.typeof(exp);
-        e2 = Expression.makeConstZero(ty);
-      then
-        // shoulde be ok since solve checks only for iszero
-        solveTimeIndependentAcausal(vlst, ilst, exp, e2, eqnAttributes, inTpl);
+
     case (_, _, _, (vars, BackendDAE.SHARED(knownVars=knvars), _, _, _, _, _))
       equation
         // collect vars and check if variable time not there
@@ -1549,11 +1527,10 @@ algorithm
       Boolean b, b1, b2;
       BackendDAE.Variables vars, knvars;
       DAE.ComponentRef cr;
-      BackendDAE.Var var;
       list<Integer> ilst, vlst;
       list<BackendDAE.Var> varlst;
 
-    case (DAE.CREF(DAE.CREF_IDENT(ident = "time", subscriptLst = {}), _), (_, vars, knvars, b1, b2, ilst))
+    case (DAE.CREF(DAE.CREF_IDENT(ident="time", subscriptLst={}), _), (_, vars, knvars, b1, b2, ilst))
     then (inExp, false, (true, vars, knvars, b1, b2, ilst));
 
     case (DAE.CREF(cr, _), (_, vars, knvars, b1, b2, ilst)) equation
@@ -1561,16 +1538,9 @@ algorithm
       false = List.mapAllValueBool(varlst, toplevelInputOrUnfixed, false);
     then (inExp, false, (true, vars, knvars, b1, b2, ilst));
 
-    case (DAE.CALL(path = Absyn.IDENT(name = "pre")), (_, vars, knvars, b1, b2, ilst)) then (inExp, false, (true, vars, knvars, b1, b2, ilst) );
-    case (DAE.CALL(path = Absyn.IDENT(name = "change")), (_, vars, knvars, b1, b2, ilst)) then (inExp, false, (true, vars, knvars, b1, b2, ilst) );
-    case (DAE.CALL(path = Absyn.IDENT(name = "edge")), (_, vars, knvars, b1, b2, ilst)) then (inExp, false, (true, vars, knvars, b1, b2, ilst) );
-
-    // case for finding simple equation in jacobians
-    // there are all known variables mark as input and they are all time-depending
-    case (DAE.CREF(cr, _), (_, vars, knvars, true, b2, ilst)) equation
-      (var::_, _::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level";
-      DAE.INPUT() = BackendVariable.getVarDirection(var);
-    then (inExp, false, (true, vars, knvars, true, b2, ilst));
+    case (DAE.CALL(path = Absyn.IDENT(name="pre")), (_, vars, knvars, b1, b2, ilst)) then (inExp, false, (true, vars, knvars, b1, b2, ilst));
+    case (DAE.CALL(path = Absyn.IDENT(name="change")), (_, vars, knvars, b1, b2, ilst)) then (inExp, false, (true, vars, knvars, b1, b2, ilst));
+    case (DAE.CALL(path = Absyn.IDENT(name="edge")), (_, vars, knvars, b1, b2, ilst)) then (inExp, false, (true, vars, knvars, b1, b2, ilst));
 
     // var
     case (DAE.CREF(cr, _), (b, vars, knvars, b1, b2, ilst)) equation
