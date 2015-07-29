@@ -5810,7 +5810,21 @@ algorithm
   end while;
 end preCalculateStartValues1;
 
-protected function replaceCrefWithStartValue"replaces a cref with its constant start value.
+protected function artificialVarKind"an artificial var is introduced during compilation and has a start-value that does not come from the model"
+  input BackendDAE.VarKind inVarKind;
+  output Boolean isVar;
+algorithm
+  isVar := match (inVarKind)
+  case (BackendDAE.VARIABLE()) then false;
+  case (BackendDAE.PARAM()) then false;
+  case (BackendDAE.CONST()) then false;
+  case (BackendDAE.DISCRETE()) then false;
+  case (BackendDAE.STATE()) then false;
+  else then true;
+  end match;
+end artificialVarKind;
+
+protected function replaceCrefWithStartValue"replaces a cref with its constant start value. Only if the BackendDAE.Varkind is not artificial in order to avoid guess-start values
 Waurich 2015-01"
   input DAE.Exp expIn;
   input BackendDAE.Variables varsIn;
@@ -5835,6 +5849,7 @@ algorithm
    case(DAE.CREF(componentRef=cref),_)
      equation
        ({var},_) = BackendVariable.getVar(cref,varsIn);
+       true =  not artificialVarKind(BackendVariable.varKind(var));// if its not of kind variable(), it is something artificial (DUMMY_DER,...) and the start value is not model based in that case
       // print("VAR: "+BackendDump.varString(var)+" -->");
        if BackendVariable.varHasBindExp(var) /*and Expression.isConst(BackendVariable.varBindExp(var))*/ then
          exp = BackendVariable.varBindExp(var);
@@ -5973,7 +5988,7 @@ algorithm
 
   if not Flags.isSet(Flags.NO_START_CALC) then
     systs1 := List.map1(systs1, preCalculateStartValues, knvars1);
-    systs2 := List.map1(systs2, preCalculateStartValues, knvars2);
+    //systs2 := List.map1(systs2, preCalculateStartValues, knvars2);
   end if;
 
   // ### simulation ###
