@@ -252,7 +252,7 @@ algorithm
     true = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
     System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
     BackendDAE.DAE(eqs=eqs,shared=shared) = inBackendDAE;
-    (linearModelMatrixes, funcs) = createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar());
+    (linearModelMatrixes, funcs) = createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar(), Flags.isSet(Flags.DIS_SYMJAC_FMI20));
     shared = BackendDAEUtil.setSharedSymJacs(shared, linearModelMatrixes);
     functionTree = BackendDAEUtil.getFunctions(shared);
     functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
@@ -1473,15 +1473,16 @@ end createBipartiteGraph;
 protected function createLinearModelMatrixes "This function creates the linear model matrices column-wise
   author: wbraun"
   input BackendDAE.BackendDAE inBackendDAE;
-  input Boolean UseOtimica;
+  input Boolean useOptimica;
+  input Boolean noGenSymbolicJac;
   output BackendDAE.SymbolicJacobians outJacobianMatrixes;
   output DAE.FunctionTree outFunctionTree;
 
 algorithm
   (outJacobianMatrixes, outFunctionTree) :=
-  match (inBackendDAE,UseOtimica)
+  match (inBackendDAE, useOptimica, noGenSymbolicJac)
     local
-      BackendDAE.BackendDAE backendDAE,backendDAE2;
+      BackendDAE.BackendDAE backendDAE,backendDAE2,emptyBDAE;
 
       list<BackendDAE.Var>  varlst, knvarlst,  states, inputvars, inputvars2, outputvars, paramvars, states_inputs, conVarsList, fconVarsList, object;
       list<DAE.ComponentRef> comref_states, comref_inputvars, comref_outputvars, comref_vars, comref_knvars;
@@ -1499,7 +1500,52 @@ algorithm
       DAE.FunctionTree funcs, functionTree;
       list<DAE.Function> funcLst;
 
- case (backendDAE, false)
+      BackendDAE.ExtraInfo ei;
+      FCore.Cache cache;
+      FCore.Graph graph;
+
+    case (backendDAE, false, true)
+      equation
+        backendDAE2 = BackendDAEUtil.copyBackendDAE(backendDAE);
+        backendDAE2 = BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
+        backendDAE2 = BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
+        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)}, BackendDAE.SHARED(knownVars = kv, functionTree = functionTree, cache=cache, graph=graph, info=ei)) = backendDAE2;
+
+
+        emptyBDAE = BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())}, BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), ei, cache, graph));
+        // Prepare all needed variables
+        varlst = BackendVariable.varList(v);
+        knvarlst = BackendVariable.varList(kv);
+        states = BackendVariable.getAllStateVarFromVariables(v);
+        inputvars = List.select(knvarlst,BackendVariable.isInput);
+        paramvars = List.select(knvarlst, BackendVariable.isParam);
+        inputvars2 = List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
+        outputvars = List.select(varlst, BackendVariable.isVarOnTopLevelAndOutput);
+
+        statesarr = BackendVariable.listVar1(states);
+        inputvarsarr = BackendVariable.listVar1(inputvars);
+        paramvarsarr = BackendVariable.listVar1(paramvars);
+        outputvarsarr = BackendVariable.listVar1(outputvars);
+
+        // Generate sparse pattern for matrices A
+        (sparsePattern, sparseColoring) = generateSparsePattern(backendDAE2, states, states);
+        linearModelMatrices = {(SOME((emptyBDAE,"A",{},{},{})), sparsePattern, sparseColoring)};
+
+        // Generate sparse pattern for matrices B
+        (sparsePattern, sparseColoring) = generateSparsePattern(backendDAE2, inputvars2, states);
+        linearModelMatrices = listAppend(linearModelMatrices,{(SOME((emptyBDAE,"B",{},{},{})), sparsePattern, sparseColoring)});
+
+        // Generate sparse pattern for matrices C
+        (sparsePattern, sparseColoring) = generateSparsePattern(backendDAE2, states, outputvars);
+        linearModelMatrices = listAppend(linearModelMatrices,{(SOME((emptyBDAE,"C",{},{},{})), sparsePattern, sparseColoring)});
+
+        // Generate sparse pattern for matrices D
+        (sparsePattern, sparseColoring) = generateSparsePattern(backendDAE2, inputvars2, outputvars);
+        linearModelMatrices = listAppend(linearModelMatrices,{(SOME((emptyBDAE,"D",{},{},{})), sparsePattern, sparseColoring)});
+      then
+        (linearModelMatrices, functionTree);
+
+    case (backendDAE, false, _)
       equation
         backendDAE2 = BackendDAEUtil.copyBackendDAE(backendDAE);
         backendDAE2 = BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
@@ -1508,18 +1554,12 @@ algorithm
 
         // Prepare all needed variables
         varlst = BackendVariable.varList(v);
-        _ = List.map(varlst,BackendVariable.varCref);
         knvarlst = BackendVariable.varList(kv);
-        _ = List.map(knvarlst,BackendVariable.varCref);
         states = BackendVariable.getAllStateVarFromVariables(v);
         inputvars = List.select(knvarlst,BackendVariable.isInput);
         paramvars = List.select(knvarlst, BackendVariable.isParam);
         inputvars2 = List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
         outputvars = List.select(varlst, BackendVariable.isVarOnTopLevelAndOutput);
-
-        _ = List.map(states,BackendVariable.varCref);
-        _ = List.map(inputvars2,BackendVariable.varCref);
-        _ = List.map(outputvars,BackendVariable.varCref);
 
         statesarr = BackendVariable.listVar1(states);
         inputvarsarr = BackendVariable.listVar1(inputvars);
@@ -1563,7 +1603,7 @@ algorithm
       then
         (linearModelMatrices, functionTree);
 
-    case (backendDAE, true) //  created linear model (matrixes) for optimization
+    case (backendDAE, true, _) //  created linear model (matrixes) for optimization
       equation
         // A := der(x)
         // B := {der(x), con(x), L(x)}
@@ -1577,9 +1617,7 @@ algorithm
 
         // Prepare all needed variables
         varlst = BackendVariable.varList(v);
-        _ = List.map(varlst,BackendVariable.varCref);
         knvarlst = BackendVariable.varList(kv);
-        _ = List.map(knvarlst,BackendVariable.varCref);
         states = BackendVariable.getAllStateVarFromVariables(v);
         inputvars = List.select(knvarlst,BackendVariable.isInput);
         paramvars = List.select(knvarlst, BackendVariable.isParam);
@@ -1589,10 +1627,6 @@ algorithm
         fconVarsList = List.select(varlst, BackendVariable.isRealOptimizeFinalConstraintsVars); // ToDo: FinalCon
 
         states_inputs = listAppend(states, inputvars2);
-        _ = List.map(states,BackendVariable.varCref);
-        _ = List.map(inputvars2,BackendVariable.varCref);
-        _ = List.map(outputvars,BackendVariable.varCref);
-
         statesarr = BackendVariable.listVar1(states);
         inputvarsarr = BackendVariable.listVar1(inputvars);
         paramvarsarr = BackendVariable.listVar1(paramvars);

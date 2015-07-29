@@ -3720,6 +3720,20 @@ algorithm
   end matchcontinue;
 end createJacobianLinearCode;
 
+protected function checkForEmptyBDAE
+  input Option<BackendDAE.SymbolicJacobian> inBDAE;
+  output Boolean result;
+algorithm
+  result := match(inBDAE)
+    case (NONE())
+      then true;
+    case (SOME((_,_,{},{},{})))
+      then true;
+    else
+      false;
+   end match;
+end checkForEmptyBDAE;
+
 protected function createSymbolicJacobianssSimCode
 "fuction creates the linear model matrices column-wise
  author: wbraun"
@@ -3761,6 +3775,7 @@ algorithm
       list<SimCode.JacobianMatrix> linearModelMatrices;
       list<tuple<Integer, list<Integer>>> sparseInts, sparseIntsT;
       list<list<Integer>> coloring;
+      Option<BackendDAE.SymbolicJacobian> optionBDAE;
 
     case ({}, _, _, _) then ({}, iuniqueEqIndex);
     // if nothing is generated
@@ -3772,7 +3787,8 @@ algorithm
         (linearModelMatrices, uniqueEqIndex);
 
     // if only sparsity pattern is generated
-    case (((NONE(), (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs)), colsColors))::rest, _, _, name::restnames)
+    case (((optionBDAE, (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs)), colsColors))::rest, _, _, name::restnames)
+      guard  checkForEmptyBDAE(optionBDAE)
       equation
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("Start sparse pattern without analytical Jacobians\n");
