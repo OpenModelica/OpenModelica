@@ -48,6 +48,7 @@
 #include <QTextCodec>
 #include <QUrlQuery>
 #include <QItemDelegate>
+#include <QDomDocument>
 #else
 #include <QtGui>
 #include <QtWebKit>
