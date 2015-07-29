@@ -142,7 +142,7 @@ getErrorString();
 // end SimulationResult;
 // "[SimCode/SimCodeUtil.mo:2364:7-2364:46:writable] Error: Internal error function createNonlinearResidualEquationsComplex failed for: (x, -z) = ($cse1, $cse2)
 // [simulation/modelica/others/ComplexFun.mo:31:5-31:37:writable] Error: Internal error function createNonlinearResidualEquations failed for equation: (x, -z) = ($cse1, $cse2)
-// [SimCode/SimCodeUtil.mo:4738:7-4738:46:writable] Error: Internal error complex equations currently only supported on form v = functioncall(...). Equation: (x, -z) = ($cse1, $cse2) solve for {z,x}
+// [SimCode/SimCodeUtil.mo:4754:7-4754:46:writable] Error: Internal error complex equations currently only supported on form v = functioncall(...). Equation: (x, -z) = ($cse1, $cse2) solve for {z,x}
 // [SimCode/SimCodeUtil.mo:474:5-474:146:writable] Error: Internal error function createSimCode failed [Transformation from optimised DAE to simulation code structure failed]
 // "
 // {0.0,-0.07207592200561265,-0.08240453183331929,-0.04555334217802521,8.980666631940483e-19}
