@@ -54,11 +54,9 @@ evil_hack_to_fool_lupdate {
 # Windows libraries and includes
 win32 {
   OPENMODELICAHOME = $$(OPENMODELICAHOME)
-  QMAKE_LFLAGS += -Wl,--enable-auto-import
+  QMAKE_LFLAGS += -Wl,--stack,16777216,--enable-auto-import
 
   DEFINES += IMPORT_INTO=1
-
-  QMAKE_CXXFLAGS += -Wl,--stack,16777216
 
   CONFIG(release, debug|release) {
     # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
