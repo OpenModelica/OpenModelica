@@ -226,6 +226,9 @@ algorithm
   if Flags.isSet(Flags.JAC_DUMP2) then
     print("analytical Jacobians -> prepared vars for symbolic matrix A time: " + realString(clock()) + "\n");
   end if;
+  if Flags.isSet(Flags.JAC_DUMP2) then
+    BackendDump.bltdump("System to create symbolic jacobian of: ",backendDAE2);
+  end if;
   (outJacobian, outSparsePattern, outSparseColoring, outFunctionTree) := createJacobian(backendDAE2,states,BackendVariable.listVar1(states),BackendVariable.listVar1(inputvars),BackendVariable.listVar1(paramvars),BackendVariable.listVar1(states),varlst,"A");
 end createSymbolicJacobianforStates;
 
@@ -1882,8 +1885,13 @@ algorithm
       comref_diffvars = List.map(diffVars, BackendVariable.varCref);
       diffData = BackendDAE.DIFFINPUTDATA(SOME(diffVarsArr), SOME(diffedVars), SOME(knownVars), SOME(orderedVars), SOME({}), SOME(comref_diffvars), SOME(matrixName));
       eqns = BackendEquation.equationList(orderedEqs);
+      if Flags.isSet(Flags.JAC_DUMP2) then
+        print("*** analytical Jacobians -> before derive all equation." + realString(clock()) + "\n");
+      end if;
       (derivedEquations, functions) = deriveAll(eqns, arrayList(ass2), x, diffData, {}, functions);
-
+      if Flags.isSet(Flags.JAC_DUMP2) then
+        print("*** analytical Jacobians -> after derive all equation." + realString(clock()) + "\n");
+      end if;
       // replace all der(x), since ExpressionSolve can't handle der(x) proper
       derivedEquations = BackendEquation.replaceDerOpInEquationList(derivedEquations);
       if Flags.isSet(Flags.JAC_DUMP2) then
@@ -1915,36 +1923,6 @@ algorithm
       jacobian = BackendDAE.DAE( BackendDAEUtil.createEqSystem(jacOrderedVars, jacOrderedEqs)::{},
                                  BackendDAEUtil.setSharedKnVars(shared, jacKnownVars) );
     then (jacobian, functions);
-
-    case( BackendDAE.DAE( BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, matching=BackendDAE.MATCHING(ass2=ass2))::{},
-                          BackendDAE.SHARED(knownVars=knownVars, functionTree=functions) ),
-          diffVars, diffedVars, _, _, _, _, matrixName ) equation
-
-      // Generate tmp varibales
-      dummyVarName = ("dummyVar" + matrixName);
-      x = DAE.CREF_IDENT(dummyVarName,DAE.T_REAL_DEFAULT,{});
-
-      // differentiate the equation system
-      if Flags.isSet(Flags.JAC_DUMP2) then
-        print("*** analytical Jacobians -> derived all algorithms time: " + realString(clock()) + "\n");
-      end if;
-      diffVarsArr = BackendVariable.listVar1(diffVars);
-      comref_diffvars = List.map(diffVars, BackendVariable.varCref);
-      diffData = BackendDAE.DIFFINPUTDATA(SOME(diffVarsArr), SOME(diffedVars), SOME(knownVars), SOME(orderedVars), SOME({}), SOME(comref_diffvars), SOME(matrixName));
-
-      diffvars = BackendVariable.varList(orderedVars);
-
-      derivedVariables = createAllDiffedVars(diffvars, x, diffedVars, 0, matrixName, {});
-      if Flags.isSet(Flags.JAC_DUMP2) then
-        print("*** analytical Jacobians -> created all derived vars: " + "No. :" + intString(listLength(comref_diffvars)) + "time: " + realString(clock()) + "\n");
-      end if;
-      (derivedEquations, functions) = deriveAll(BackendEquation.equationList(orderedEqs), arrayList(ass2), x, diffData, {}, functions);
-      false = (listLength(derivedVariables) == listLength(derivedEquations));
-      if Flags.isSet(Flags.JAC_WARNINGS) then
-        print("*** analytical Jacobians -> failed vars are not equal to equations: " + intString(listLength(derivedEquations)) + " time: " + realString(clock()) + "\n");
-      end if;
-      Error.addInternalError("function generateSymbolicJacobian failed", sourceInfo());
-    then fail();
 
     else
      equation
@@ -2033,7 +2011,7 @@ protected function deriveAll "author: lochel"
   output DAE.FunctionTree outFunctions;
 algorithm
   (outDerivedEquations, outFunctions) :=
-  match(inEquations, ass2, inDiffCref, inDiffData, inDerivedEquations, inFunctions)
+  matchcontinue(inEquations, ass2, inDiffCref, inDiffData, inDerivedEquations, inFunctions)
     local
       BackendDAE.Equation currEquation;
       DAE.FunctionTree functions;
@@ -2047,11 +2025,11 @@ algorithm
 
     case(currEquation::restEquations, _, _, BackendDAE.DIFFINPUTDATA(allVars=SOME(allVars)), _, _)
       equation
-      //fcall(Flags.JAC_DUMP_EQN, print, "Derive Equation! Left on Stack: " + intString(listLength(restEquations)) + "\n");
-      //fcall(Flags.JAC_DUMP_EQN, BackendDump.printEquationList, {currEquation});
-      //fcall(Flags.JAC_DUMP_EQN, print, "\n");
-      //dummycref = ComponentReference.makeCrefIdent("$pDERdummy", DAE.T_REAL_DEFAULT, {});
-      //fcall(Flags.JAC_DUMP_EQN,print, "*** analytical Jacobians -> derive one equation: " + realString(clock()) + "\n" );
+      if Flags.isSet(Flags.JAC_DUMP_EQN) then
+        print("Derive Equation! Left on Stack: " + intString(listLength(restEquations)) + "\n");
+        BackendDump.printEquationList({currEquation});
+        print("\n");
+      end if;
 
       // filter discrete equataions
       (solvedfor,ass2_1) = List.split(ass2, BackendEquation.equationSize(currEquation));
@@ -2062,14 +2040,20 @@ algorithm
       (currDerivedEquations, functions) = deriveAllHelper(b, currEquation, inDiffCref, inDiffData, inFunctions);
       derivedEquations = listAppend(currDerivedEquations, inDerivedEquations);
 
+      if Flags.isSet(Flags.JAC_DUMP_EQN) then
+        BackendDump.printEquationList(currDerivedEquations);
+        print("\n");
+      end if;
       (derivedEquations, functions) = deriveAll(restEquations, ass2_1, inDiffCref, inDiffData, derivedEquations, functions);
-      //fcall(Flags.JAC_DUMP_EQN, BackendDump.printEquationList, currDerivedEquations);
-      //fcall(Flags.JAC_DUMP_EQN, print, "\n");
-      //fcall(Flags.JAC_DUMP_EQN,print, "*** analytical Jacobians -> created other equations from that: " + realString(clock()) + "\n" );
      then
        (derivedEquations, functions);
 
-  end match;
+    else
+     equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"SymbolicJacobian.deriveAll failed"});
+    then fail();
+
+  end matchcontinue;
 end deriveAll;
 
 protected function deriveAllHelper "author: wbraun"
