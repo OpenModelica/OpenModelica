@@ -2031,8 +2031,8 @@ algorithm
   help := matchcontinue (inTopics)
     local
       Util.TranslatableContent desc;
-      list<String>  rest_topics, strs, data;
-      String str,name,str1,str1a,str1b,str2,str3,str4,str5,str6,str7,str7a,str7b,str8;
+      list<String> rest_topics, strs, data;
+      String str,name,str1,str1a,str1b,str2,str3,str3a,str3b,str4,str5,str5a,str5b,str6,str7,str7a,str7b,str8;
       ConfigFlag config_flag;
       list<tuple<String,String>> topics;
 
@@ -2089,13 +2089,19 @@ algorithm
         str2 = printFlagValidOptionsDesc(PRE_OPT_MODULES);
 
         // matching
-        str3 = System.gettext("The --matchingAlgorithm sets the method that is used for the matching algorithm, after the pre optimization modules. Valid options are:");
+        str3 = System.gettext("The --matchingAlgorithm sets the method that is used for the matching algorithm, after the pre optimization modules.");
         str3 = stringAppendList(StringUtil.wordWrap(str3,System.getTerminalWidth(),"\n"));
+        CONFIG_FLAG(defaultValue=STRING_FLAG(data=str3a)) = MATCHING_ALGORITHM;
+        str3a = System.gettext("The method used by default is:") + "\n--matchingAlgorithm=" + str3a;
+        str3b = System.gettext("The valid methods are:");
         str4 = printFlagValidOptionsDesc(MATCHING_ALGORITHM);
 
         // index reduction
-        str5 = System.gettext("The --indexReductionMethod sets the method that is used for the index reduction, after the pre optimization modules. Valid options are:");
+        str5 = System.gettext("The --indexReductionMethod sets the method that is used for the index reduction, after the pre optimization modules.");
         str5 = stringAppendList(StringUtil.wordWrap(str5,System.getTerminalWidth(),"\n"));
+        CONFIG_FLAG(defaultValue=STRING_FLAG(data=str5a)) = INDEX_REDUCTION_METHOD;
+        str5a = System.gettext("The method used by default is:") + "\n--indexReductionMethod=" + str5a;
+        str5b = System.gettext("The valid methods are:");
         str6 = printFlagValidOptionsDesc(INDEX_REDUCTION_METHOD);
 
         // post-optimization
@@ -2106,7 +2112,7 @@ algorithm
         str7b = System.gettext("The valid modules are:");
         str8 = printFlagValidOptionsDesc(POST_OPT_MODULES);
 
-        help = stringAppendList({str1,"\n\n",str1a,"\n\n",str1b,"\n",str2,"\n",str3,"\n\n",str4,"\n",str5,"\n\n",str6,"\n",str7,"\n\n",str7a,"\n\n",str7b,"\n",str8,"\n"});
+        help = stringAppendList({str1,"\n\n",str1a,"\n\n",str1b,"\n",str2,"\n",str3,"\n\n",str3a,"\n\n",str3b,"\n",str4,"\n",str5,"\n\n",str5a,"\n\n",str5b,"\n",str6,"\n",str7,"\n\n",str7a,"\n\n",str7b,"\n",str8,"\n"});
       then help;
 
     case {str}
