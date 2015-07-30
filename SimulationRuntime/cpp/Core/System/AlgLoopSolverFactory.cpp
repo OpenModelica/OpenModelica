@@ -26,7 +26,7 @@ boost::shared_ptr<IAlgLoopSolver> AlgLoopSolverFactory::createAlgLoopSolver(IAlg
   if(algLoop->getDimReal() > 0)
   {
 
-	/*
+
     if(algLoop->isLinear())
     {
       try
@@ -44,7 +44,7 @@ boost::shared_ptr<IAlgLoopSolver> AlgLoopSolverFactory::createAlgLoopSolver(IAlg
       {
         //the linear solver was not found -> take the nonlinear solver
       }
-    }*/
+    }
 
     string nonlinsolver_name = _global_settings->getSelectedNonLinSolver();
     boost::shared_ptr<INonLinSolverSettings> algsolversetting= createNonLinSolverSettings(nonlinsolver_name);
