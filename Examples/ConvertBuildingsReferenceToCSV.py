@@ -11,7 +11,7 @@ def convertDir(indir,outdir):
       v = {}
       for line in f.readlines():
         line = line.strip().split('=')
-        if line[1][0] == '[':
+        if (line is not None) and (line[1][0] == '['):
           l = [str(float(s)) for s in line[1].strip('[]').split(',')]
           if len(l)==2:
             diff = float(l[1])-float(l[0])
