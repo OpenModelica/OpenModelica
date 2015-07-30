@@ -3605,7 +3605,7 @@ readFile("BranchingDynamicPipes.mo");
 //     type NusseltNumber = Real(final quantity = \"NusseltNumber\", final unit = \"1\");
 //     type PrandtlNumber = Real(final quantity = \"PrandtlNumber\", final unit = \"1\");
 //   end SIunits;
-//   annotation(version = \"3.2.1\", versionBuild = 3, versionDate = \"2013-08-14\", dateModified = \"2015-07-12 19:00:00Z\"); 
+//   annotation(version = \"3.2.1\", versionBuild = 3, versionDate = \"2013-08-14\", dateModified = \"2015-07-30 09:15:00Z\"); 
 // end Modelica;
 //
 // model BranchingDynamicPipes_total  \"Multi-way connections of pipes with dynamic momentum balance, pressure wave and flow reversal\"
