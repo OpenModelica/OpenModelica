@@ -233,6 +233,7 @@ algorithm
       String description;
       Boolean symbolicJacActivated;
       Boolean fmi20;
+      Boolean flagValue;
 
     case (cache,graph,_,st as GlobalScript.SYMBOLTABLE(ast=p),FMUVersion,FMUType,filenameprefix,_, _)
       equation
@@ -248,6 +249,7 @@ algorithm
         fmi20 = FMI.isFMIVersion20(FMUVersion);
         symbolicJacActivated = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, fmi20);
+        flagValue = Flags.enableDebug(Flags.DIS_SYMJAC_FMI20);
 
         _ = FCore.getFunctionTree(cache);
         dae = DAEUtil.transformationsBeforeBackend(cache,graph,dae);
@@ -261,6 +263,7 @@ algorithm
 
         //reset config flag
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, symbolicJacActivated);
+        Flags.set(Flags.DIS_SYMJAC_FMI20, flagValue);
 
         resultValues =
         {("timeTemplates",Values.REAL(timeTemplates)),

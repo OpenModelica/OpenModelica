@@ -2802,6 +2802,10 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT(name="pre")), tpl)
     then (inExp, false, tpl);
 
+    /* previous(v) is considered a known variable */
+    case (DAE.CALL(path=Absyn.IDENT(name="previous")), tpl)
+    then (inExp, false, tpl);
+
     /* delay(...) can be used to break algebraic loops given some solver options */
     case (DAE.CALL(path=Absyn.IDENT(name="delay"), expLst = {_, _, e1, e2}), tpl) equation
       b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1, e2);
@@ -2942,6 +2946,9 @@ algorithm
     /* pre(v) is considered a known variable */
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF()}),_) then (inExp,false,inTpl);
 
+    /* previous(v) is considered a known variable */
+    case (DAE.CALL(path = Absyn.IDENT(name = "previous"),expLst = {DAE.CREF()}),_) then (inExp,false,inTpl);
+
     /* delay(e) can be used to break algebraic loops given some solver options */
     case (DAE.CALL(path = Absyn.IDENT(name = "delay"),expLst = {_,_,e1,e2}),_)
       equation
@@ -3047,6 +3054,8 @@ algorithm
       then (inExp,false,(vars,res));
     /* pre(v) is considered a known variable */
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF()}),_) then (inExp,false,inTpl);
+    /* previous(v) is considered a known variable */
+    case (DAE.CALL(path = Absyn.IDENT(name = "previous"),expLst = {DAE.CREF()}),_) then (inExp,false,inTpl);
 
     else (inExp,true,inTpl);
   end matchcontinue;
@@ -5006,6 +5015,10 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF()}), (vars, bs, (mark, rowmark), pa))
     then (inExp, false, (vars, bs, (mark, rowmark), pa));
 
+    // previous(v) is considered a known variable
+    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={DAE.CREF()}), (vars, bs, (mark, rowmark), pa))
+    then (inExp, false, (vars, bs, (mark, rowmark), pa));
+
     // delay(e) can be used to break algebraic loops given some solver options
     case (DAE.CALL(path=Absyn.IDENT(name="delay"), expLst={_, _, e1, e2}), (vars, bs, (mark, rowmark), pa)) equation
       b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1, e2);
@@ -5132,6 +5145,9 @@ algorithm
       then (e,false,bt);
     // pre(v) is considered a known variable
     case (e as DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF()}),bt)
+      then (e,false,bt);
+    // previous(v) is considered a known variable
+    case (e as DAE.CALL(path = Absyn.IDENT(name = "previous"),expLst = {DAE.CREF()}),bt)
       then (e,false,bt);
     // delay(e) can be used to break algebraic loops given some solver options
     case (e as DAE.CALL(path = Absyn.IDENT(name = "delay"),expLst = {_,_,e1,e2}),bt)
@@ -5580,6 +5596,9 @@ algorithm
     case (e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(repl,vars,funcs,b))
       then (e,false,(repl,vars,funcs,b));
 
+    case (e as DAE.CALL(path = Absyn.IDENT(name = "previous")),(repl,vars,funcs,b))
+      then (e,false,(repl,vars,funcs,b));
+
     case (e as DAE.CALL(path = Absyn.IDENT(name = "semiLinear"), expLst={cond,t,f}),(repl,vars,funcs,b))
        equation
         tp = Expression.typeof(e);
@@ -5646,6 +5665,9 @@ algorithm
       then (inExp, false, inTpl);
 
     case (DAE.CALL(path = Absyn.IDENT(name = "pre")),_)
+      then (inExp,false,inTpl);
+
+    case (DAE.CALL(path = Absyn.IDENT(name = "previous")),_)
       then (inExp,false,inTpl);
 
     // found ?
@@ -8214,7 +8236,8 @@ protected function collapseRemovedEqs1
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqns := listAppend(BackendEquation.equationList(inSyst.removedEqs), inEqns);
+  outEqns := if BackendDAEUtil.isClockedSyst(inSyst) then inEqns
+             else listAppend(BackendEquation.equationList(inSyst.removedEqs), inEqns);
 end collapseRemovedEqs1;
 
 public function emptyEventInfo

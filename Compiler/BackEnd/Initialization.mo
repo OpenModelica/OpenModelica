@@ -498,6 +498,10 @@ algorithm
       (_, outHS) = Expression.traverseExpBottomUp(inExp, collectPreVariablesTraverseExp2, inHS);
     then outHS;
 
+    case DAE.CALL(path=Absyn.IDENT(name="previous")) equation
+      (_, outHS) = Expression.traverseExpBottomUp(inExp, collectPreVariablesTraverseExp2, inHS);
+    then outHS;
+
     case DAE.CALL(path=Absyn.IDENT(name="change")) equation
       (_, outHS) = Expression.traverseExpBottomUp(inExp, collectPreVariablesTraverseExp2, inHS);
     then outHS;
@@ -2243,6 +2247,10 @@ algorithm
     then DAE.CREF(dummyder, ty);
 
     case DAE.CALL(path = Absyn.IDENT(name="pre"), expLst = {DAE.CREF(componentRef=cr)}, attr=DAE.CALL_ATTR(ty=ty)) equation
+      dummyder = ComponentReference.crefPrefixPre(cr);
+    then DAE.CREF(dummyder, ty);
+
+    case DAE.CALL(path = Absyn.IDENT(name="previous"), expLst = {DAE.CREF(componentRef=cr)}, attr=DAE.CALL_ATTR(ty=ty)) equation
       dummyder = ComponentReference.crefPrefixPre(cr);
     then DAE.CREF(dummyder, ty);
 

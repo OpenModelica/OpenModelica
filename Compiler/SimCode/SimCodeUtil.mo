@@ -161,7 +161,7 @@ public function createSimCode "entry point to create SimCode from BackendDAE."
   output SimCode.SimCode simCode;
   output tuple<Integer,list<tuple<Integer,Integer>>> outMapping; //The highest simEqIndex in the mapping and the mapping simEq-Index -> scc-Index itself
 protected
-  BackendDAE.BackendDAE dlow;
+  BackendDAE.BackendDAE dlow, dlowCont;
   BackendDAE.BackendDAE initDAE;
   BackendDAE.EquationArray removedEqs;
   BackendDAE.Shared shared;
@@ -172,7 +172,7 @@ protected
   DAE.FunctionTree functionTree;
   HashTableCrIListArray.HashTable varToArrayIndexMapping; //maps each array-variable to a array of positions
   HashTableCrILst.HashTable varToIndexMapping; //maps each variable to an array position
-  Integer maxDelayedExpIndex, uniqueEqIndex, numberofEqns, numStateSets, numberOfJacobians;
+  Integer maxDelayedExpIndex, uniqueEqIndex, numberofEqns, numStateSets, numberOfJacobians, sccOffset;
   Integer numberofLinearSys, numberofNonLinearSys, numberofMixedSys;
   Option<SimCode.FmiModelStructure> modelStruct;
   SimCode.BackendMapping backendMapping;
@@ -180,7 +180,6 @@ protected
   SimCode.HashTableCrefToSimVar crefToSimVarHT;
   SimCode.MakefileParams makefileParams;
   SimCode.ModelInfo modelInfo;
-  array<DAE.ClockKind> baseClocks;
   array<Integer> systemIndexMap;
   list<BackendDAE.BaseClockPartitionKind> partitionsKind;
   list<BackendDAE.Equation> removedInitialEquationLst, paramAsserts, remEqLst;
@@ -209,12 +208,14 @@ protected
   list<SimCode.SimWhenClause> whenClauses;
   list<SimCode.StateSet> stateSets;
   list<SimCodeVar.SimVar> mixedArrayVars;
-  list<SimCodeVar.SimVar> tempvars, jacobianSimvars;
+  list<SimCodeVar.SimVar> tempvars, clockedVars, jacobianSimvars;
   list<list<SimCode.SimEqSystem>> algebraicEquations;   // --> functionAlgebraics
   list<list<SimCode.SimEqSystem>> odeEquations;         // --> functionODE
   list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
   list<tuple<Integer,Integer>> equationSccMapping, eqBackendSimCodeMapping;
   BackendDAE.EventInfo eventInfo;
+  list<SimCode.ClockedPartition> clockedPartitions;
+  list<BackendDAE.EqSystem> clockedSysts, contSysts;
 algorithm
   try
     dlow := inBackendDAE;
@@ -260,7 +261,6 @@ algorithm
                                                       constraints=constraints,
                                                       classAttrs=classAttributes,
                                                       symjacs=symJacs,
-                                                      partitionsInfo=BackendDAE.PARTITIONS_INFO(baseClocks),
                                                       eventInfo=eventInfo)) := dlow;
       removedEqs := BackendDAEUtil.collapseRemovedEqs(dlow);
 
@@ -273,9 +273,15 @@ algorithm
       zeroCrossings := if ifcpp then listAppend(zeroCrossings, sampleZC) else zeroCrossings;
 
     // equation generation for euler, dassl2, rungekutta
+
+    (clockedSysts, contSysts) := List.splitOnTrue(dlow.eqs, BackendDAEUtil.isClockedSyst);
+
     ( uniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsForZeroCrossings, tempvars,
-      equationSccMapping, eqBackendSimCodeMapping, backendMapping) :=
-          createEquationsForSystems(dlow.eqs, shared, uniqueEqIndex, zeroCrossings, tempvars, 1, backendMapping);
+      equationSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) :=
+          createEquationsForSystems(contSysts, shared, uniqueEqIndex, zeroCrossings, tempvars, 1, backendMapping);
+    (clockedPartitions, uniqueEqIndex, backendMapping, equationSccMapping, eqBackendSimCodeMapping, tempvars) :=
+          translateClockedEquations( clockedSysts, dlow.shared, sccOffset, uniqueEqIndex,
+                                      backendMapping, equationSccMapping, eqBackendSimCodeMapping, tempvars );
     outMapping := (uniqueEqIndex /* highestSimEqIndex */, equationSccMapping);
 
     //(remEqLst,paramAsserts) := List.fold1(BackendEquation.equationList(removedEqs), getParamAsserts, knownVars,({},{}));
@@ -283,7 +289,6 @@ algorithm
     ((uniqueEqIndex, removedEquations)) := BackendEquation.traverseEquationArray(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
     // Assertions and crap
     // create parameter equations
-    partitionsKind := BackendDAEUtil.foldEqSystem(dlow, collectPartitions, {});
     ((uniqueEqIndex, startValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createStartValueEquations, (uniqueEqIndex, {}));
     ((uniqueEqIndex, nominalValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createNominalValueEquations, (uniqueEqIndex, {}));
     ((uniqueEqIndex, minValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createMinValueEquations, (uniqueEqIndex, {}));
@@ -314,7 +319,9 @@ algorithm
       dlow := BackendDAEUtil.mapEqSystem(dlow, Vectorization.enlargeIteratedArrayVars);
     end if;
 
-    modelInfo := createModelInfo(inClassName, dlow, initDAE, functions, {}, numStateSets, inFileDir);
+
+    (clockedSysts, contSysts) := List.splitOnTrue(dlow.eqs, BackendDAEUtil.isClockedSyst);
+    modelInfo := createModelInfo(inClassName, BackendDAE.DAE(contSysts, shared), initDAE, functions, {}, numStateSets, inFileDir, listLength(clockedSysts));
     modelInfo := addTempVars(tempvars, modelInfo);
 
     // external objects
@@ -411,7 +418,7 @@ algorithm
                               allEquations,
                               odeEquations,
                               algebraicEquations,
-                              partitionsKind, arrayList(baseClocks),
+                              clockedPartitions,
                               useHomotopy,
                               initialEquations,
                               removedInitialEquations,
@@ -514,19 +521,6 @@ algorithm
   end matchcontinue;
 end createFunctions;
 
-protected function collectPartitions
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
-  input list<BackendDAE.BaseClockPartitionKind> inPartitions;
-  output list<BackendDAE.BaseClockPartitionKind> outPartitions;
-algorithm
-  outPartitions := match syst
-    local
-      BackendDAE.BaseClockPartitionKind partitionKind;
-    case BackendDAE.EQSYSTEM(partitionKind = partitionKind) then partitionKind::inPartitions;
-  end match;
-end collectPartitions;
-
 protected function getParamAsserts"splits the equationArray in variable-dependent and parameter-dependent equations.
 author: Waurich  TUD-2015-04"
   input BackendDAE.Equation eqIn;
@@ -554,6 +548,143 @@ algorithm
     then ((eqIn::varDep,paramDep));
   end matchcontinue;
 end getParamAsserts;
+
+protected function translateClockedEquations
+  input BackendDAE.EqSystems inSysts;
+  input BackendDAE.Shared inShared;
+  input Integer iSccOffset;
+  input Integer iuniqueEqIndex;
+  input SimCode.BackendMapping iBackendMapping;
+  input list<tuple<Integer,Integer>> ieqSccMapping;
+  input list<tuple<Integer,Integer>> ieqBackendSimCodeMapping;
+  input list<SimCodeVar.SimVar> itempvars;
+  output list<SimCode.ClockedPartition> outSysts = {};
+  output Integer ouniqueEqIndex = iuniqueEqIndex;
+  output SimCode.BackendMapping oBackendMapping = iBackendMapping;
+  output list<tuple<Integer,Integer>> oeqSccMapping = ieqSccMapping;
+  output list<tuple<Integer,Integer>> oeqBackendSimCodeMapping = ieqBackendSimCodeMapping;
+  output list<SimCodeVar.SimVar> otempvars = itempvars;
+protected
+  array<list<SimCode.SubPartition>> subPartitionsArr;
+  Integer baseIdx;
+  BackendDAE.SubClock subClk;
+  list<SimCode.SimEqSystem> removedEquations, equations, preEquations;
+  SimCode.SubPartition subPartition;
+  Boolean holdEvents;
+  array<DAE.ClockKind> baseClocks;
+  array<Integer> ass1, stateeqnsmark, zceqnsmarks;
+  DAE.FunctionTree funcs;
+  BackendDAE.StrongComponents comps;
+  Integer sccOffset = iSccOffset;
+  list<Integer> varIxs;
+  DAE.Type ty;
+  SimCodeVar.SimVar var;
+  list<DAE.ComponentRef> prevCompRefs = {};
+  array<Boolean> previousUsed;
+  BackendDAE.Equation eq;
+  SimCodeVar.SimVar simVar;
+  DAE.ComponentRef cr;
+algorithm
+  baseClocks := inShared.partitionsInfo.clocks;
+  subPartitionsArr := arrayCreate(arrayLength(baseClocks), {});
+  funcs := BackendDAEUtil.getFunctions(inShared);
+  for syst in inSysts loop
+    BackendDAE.CLOCKED_PARTITION(baseClock=baseIdx, subClock=subClk, holdEvents=holdEvents) := syst.partitionKind;
+    BackendDAE.MATCHING(ass1=ass1, comps=comps) := syst.matching;
+
+    (syst, _, _) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.ABSOLUTE(), SOME(funcs));
+    stateeqnsmark := arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
+    stateeqnsmark := BackendDAEUtil.markStateEquations(syst, stateeqnsmark, ass1);
+    zceqnsmarks := arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
+
+    //FIXME: Add continuous clocked systems support
+    (_, _, equations, _, ouniqueEqIndex, otempvars, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping) :=
+        createEquationsForSystem(stateeqnsmark, zceqnsmarks, syst, inShared, comps, ouniqueEqIndex, otempvars,
+                                 sccOffset, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping);
+    sccOffset := listLength(comps) + sccOffset;
+    (equations, prevCompRefs) := traverseExpsEqSystems(equations, replacePreviousExps, {}, {});
+
+    (ouniqueEqIndex, removedEquations) := BackendEquation.traverseEquationArray(syst.removedEqs, traversedlowEqToSimEqSystem, (ouniqueEqIndex, {}));
+    (removedEquations, prevCompRefs) := traverseExpsEqSystems(removedEquations, replacePreviousExps, prevCompRefs, {});
+
+    previousUsed := arrayCreate(BackendVariable.varsSize(syst.orderedVars), false);
+    for cr in prevCompRefs loop
+      try
+        (_, varIxs) := BackendVariable.getVar(cr, syst.orderedVars);
+        for idx in varIxs loop
+          arrayUpdate(previousUsed, idx, true);
+        end for;
+      else
+      end try;
+    end for;
+
+    preEquations := {};
+    for i in 1:BackendVariable.varsSize(syst.orderedVars) loop
+      simVar := dlowvarToSimvar(BackendVariable.getVarAt(syst.orderedVars, i), SOME(inShared.aliasVars), inShared.knownVars);
+      otempvars := simVar::otempvars;
+      if previousUsed[i] and not isAliasVar(simVar) then
+        cr := simVar.name;
+        simVar.name := ComponentReference.crefPrefixString("$previous", simVar.name);
+        otempvars := simVar::otempvars;
+        preEquations := SimCode.SES_SIMPLE_ASSIGN(ouniqueEqIndex, simVar.name, DAE.CREF(cr, simVar.type_), DAE.emptyElementSource)::preEquations;
+        ouniqueEqIndex := ouniqueEqIndex + 1;
+      end if;
+    end for;
+
+
+    equations := List.map(listAppend(equations, preEquations), addDivExpErrorMsgtoSimEqSystem);
+    removedEquations := List.map(removedEquations, addDivExpErrorMsgtoSimEqSystem);
+
+    subPartition := SimCode.SUBPARTITION(equations, removedEquations, subClk, holdEvents);
+    arrayUpdate(subPartitionsArr, baseIdx, subPartition::subPartitionsArr[baseIdx]);
+  end for;
+  for i in 1:arrayLength(baseClocks) loop
+    outSysts := SimCode.CLOCKED_PARTITION(baseClocks[i], subPartitionsArr[i])::outSysts;
+  end for;
+end translateClockedEquations;
+
+protected function replacePreviousExps
+  input DAE.Exp inExp;
+  input list<DAE.ComponentRef> inPrevCompRefs;
+  output DAE.Exp outExp;
+  output list<DAE.ComponentRef> outPrevCompRefs;
+algorithm
+  (outExp, outPrevCompRefs) := Expression.traverseExpBottomUp(inExp, replacePreviousExps1, inPrevCompRefs);
+end replacePreviousExps;
+
+protected function replacePreviousExps1
+"Replace expressions: previous(x) --> $previous_x
+ and collect x"
+  input DAE.Exp inExp;
+  input list<DAE.ComponentRef> inPrevCompRefs;
+  output DAE.Exp outExp;
+  output list<DAE.ComponentRef> outPrevCompRefs;
+protected
+  DAE.ComponentRef cr;
+  DAE.Exp e;
+algorithm
+  (outExp, outPrevCompRefs) := match inExp
+    local
+      DAE.Type ty;
+    case DAE.CALL(path=Absyn.IDENT("previous"), expLst={e as DAE.CREF(cr, ty)})
+      then (DAE.CREF(ComponentReference.crefPrefixString("$previous", cr), ty), cr::inPrevCompRefs);
+    else (inExp, inPrevCompRefs);
+  end match;
+end replacePreviousExps1;
+
+public function getSubPartitions
+  input list<SimCode.ClockedPartition> inPartitions;
+  output list<SimCode.SubPartition> outSubPartitions;
+algorithm
+  outSubPartitions := List.flatten(List.map(inPartitions, getSubPartition));
+end getSubPartitions;
+
+public function getSubPartition
+  input SimCode.ClockedPartition inPartition;
+  output list<SimCode.SubPartition> outSubPartitions;
+algorithm
+  outSubPartitions := inPartition.subPartitions;
+end getSubPartition;
 
 protected type AddTempVarsArg =
 tuple<Integer /*numAlgVars*/, list<SimCodeVar.SimVar> /*algVars*/,
@@ -636,59 +767,28 @@ protected function setJacobianVars "author: unknown
   Set the given jacobian vars in the given model info. The old jacobian variables will be replaced."
   input list<SimCodeVar.SimVar> iJacobianVars;
   input SimCode.ModelInfo iModelInfo;
-  output SimCode.ModelInfo oModelInfo;
+  output SimCode.ModelInfo oModelInfo = iModelInfo;
+protected
+  SimCodeVar.SimVars vars;
 algorithm
-  oModelInfo := match(iJacobianVars, iModelInfo)
-    local
-      Absyn.Path name;
-      String description,directory;
-      SimCode.VarInfo varInfo;
-      SimCodeVar.SimVars vars;
-      list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars;
-      list<SimCodeVar.SimVar> stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobiansVars,realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayVars;
-      list<SimCode.Function> functions;
-      list<String> labels;
-      Integer maxDer;
-    case({}, _) then iModelInfo;
-    case(_, SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, maxDer))
-      equation
-        SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-               stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, _, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayVars) = vars;
-
-        vars = SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-               stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, iJacobianVars,realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayVars);
-      then
-       SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, maxDer);
-  end match;
+  if listLength(iJacobianVars) > 0 then
+    vars := oModelInfo.vars;
+    vars.jacobianVars := iJacobianVars;
+    oModelInfo.vars := vars;
+  end if;
 end setJacobianVars;
 
 protected function setMixedArrayVars "author: marcusw
   Set the given mixed array vars in the given model info. The old mixed variables will be replaced."
   input list<SimCodeVar.SimVar> iMixedArrayVars;
   input SimCode.ModelInfo iModelInfo;
-  output SimCode.ModelInfo oModelInfo;
+  output SimCode.ModelInfo oModelInfo = iModelInfo;
+protected
+  SimCodeVar.SimVars vars;
 algorithm
-  oModelInfo := match(iMixedArrayVars, iModelInfo)
-    local
-      Absyn.Path name;
-      String description,directory;
-      SimCode.VarInfo varInfo;
-      SimCodeVar.SimVars vars;
-      list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars;
-      list<SimCodeVar.SimVar> stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars;
-      list<SimCode.Function> functions;
-      list<String> labels;
-      Integer maxDer;
-    case(_,SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, maxDer))
-      equation
-        SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-               stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars) = vars;
-
-        vars = SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-               stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars,realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, iMixedArrayVars);
-      then
-       SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels,maxDer);
-  end match;
+  vars := oModelInfo.vars;
+  vars.mixedArrayVars := iMixedArrayVars;
+  oModelInfo.vars := vars;
 end setMixedArrayVars;
 
 protected function addNumEqnsandNumofSystems
@@ -698,32 +798,17 @@ protected function addNumEqnsandNumofSystems
   input Integer numNonLinearSys;
   input Integer numMixedLinearSys;
   input Integer numOfJacobians;
-  output SimCode.ModelInfo omodelInfo;
+  output SimCode.ModelInfo omodelInfo = modelInfo;
+protected
+  SimCode.VarInfo varInfo;
 algorithm
-  omodelInfo := match(modelInfo, numEqns, numLinearSys, numNonLinearSys, numMixedLinearSys, numOfJacobians)
-    local
-    Absyn.Path name;
-    String description,directory;
-    SimCode.VarInfo varInfo;
-    SimCodeVar.SimVars vars;
-    list<SimCode.Function> functions;
-    list<String> labels;
-    Integer numZeroCrossings, numTimeEvents, numRelations, numMathEvents, maxDer;
-    Integer numStateVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars;
-    Integer numParams, numIntParams, numBoolParams, numOutVars, numInVars;
-    Integer numExternalObjects, numStringAlgVars;
-    Integer numStringParamVars, numStringAliasVars, numStateSets, numJacobians, numOptimizeConstraints, numOptimizeFinalConstraints;
-
-
-    case(SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, maxDer), _, _, _, _, _) equation
-      SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams,
-      numIntParams, numBoolParams, numOutVars, numInVars, numExternalObjects, numStringAlgVars,
-      numStringParamVars, numStringAliasVars, _, _, _, _, numStateSets, _, numOptimizeConstraints,numOptimizeFinalConstraints) = varInfo;
-      varInfo = SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams,
-      numIntParams, numBoolParams, numOutVars, numInVars, numExternalObjects, numStringAlgVars,
-      numStringParamVars, numStringAliasVars, numEqns, numLinearSys, numNonLinearSys, numMixedLinearSys, numStateSets, numOfJacobians, numOptimizeConstraints,numOptimizeFinalConstraints);
-    then SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, maxDer);
-  end match;
+  varInfo := omodelInfo.varInfo;
+  varInfo.numEquations := numEqns;
+  varInfo.numLinearSystems := numLinearSys;
+  varInfo.numNonLinearSystems := numNonLinearSys;
+  varInfo.numMixedSystems := numMixedLinearSys;
+  varInfo.numJacobians := numOfJacobians;
+  omodelInfo.varInfo := varInfo;
 end addNumEqnsandNumofSystems;
 
 protected function getSystemIndexMap
@@ -1067,6 +1152,7 @@ protected function createEquationsForSystems "Some kind of comments would be ver
   output list<tuple<Integer,Integer>> oeqSccMapping;
   output list<tuple<Integer,Integer>> oeqBackendSimCodeMapping;
   output SimCode.BackendMapping obackendMapping;
+  output Integer oSccOffset;
 protected
   CreateEquationsForSystemsFold foldArg;
   CreateEquationsForSystemsArg arg;
@@ -1074,7 +1160,7 @@ algorithm
   arg := (shared, inAllZeroCrossings);
   foldArg := (iuniqueEqIndex, {}, {}, {}, {}, itempvars, {}, {}, iBackendMapping, iSccOffset);
   (ouniqueEqIndex, oodeEquations, oalgebraicEquations, oallEquations, oequationsForZeroCrossings, otempvars,
-  oeqSccMapping, oeqBackendSimCodeMapping, obackendMapping, _) := List.fold1(inSysts, createEquationsForSystems1, arg, foldArg);
+  oeqSccMapping, oeqBackendSimCodeMapping, obackendMapping, oSccOffset) := List.fold1(inSysts, createEquationsForSystems1, arg, foldArg);
 end createEquationsForSystems;
 
 protected function createEquationsForSystems1
@@ -3634,6 +3720,20 @@ algorithm
   end matchcontinue;
 end createJacobianLinearCode;
 
+protected function checkForEmptyBDAE
+  input Option<BackendDAE.SymbolicJacobian> inBDAE;
+  output Boolean result;
+algorithm
+  result := match(inBDAE)
+    case (NONE())
+      then true;
+    case (SOME((_,_,{},{},{})))
+      then true;
+    else
+      false;
+   end match;
+end checkForEmptyBDAE;
+
 protected function createSymbolicJacobianssSimCode
 "fuction creates the linear model matrices column-wise
  author: wbraun"
@@ -3675,6 +3775,7 @@ algorithm
       list<SimCode.JacobianMatrix> linearModelMatrices;
       list<tuple<Integer, list<Integer>>> sparseInts, sparseIntsT;
       list<list<Integer>> coloring;
+      Option<BackendDAE.SymbolicJacobian> optionBDAE;
 
     case ({}, _, _, _) then ({}, iuniqueEqIndex);
     // if nothing is generated
@@ -3686,7 +3787,8 @@ algorithm
         (linearModelMatrices, uniqueEqIndex);
 
     // if only sparsity pattern is generated
-    case (((NONE(), (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs)), colsColors))::rest, _, _, name::restnames)
+    case (((optionBDAE, (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs)), colsColors))::rest, _, _, name::restnames)
+      guard  checkForEmptyBDAE(optionBDAE)
       equation
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("Start sparse pattern without analytical Jacobians\n");
@@ -5095,7 +5197,7 @@ algorithm
   // generate equations from the known unfixed variables
   ((uniqueEqIndex, allEquations)) := BackendVariable.traverseBackendDAEVars(knvars, traverseKnVarsToSimEqSystem, (iuniqueEqIndex, {}));
   // generate equations from the solved systems
-  (uniqueEqIndex, _, _, solvedEquations, _, tempvars, _, _, _) :=
+  (uniqueEqIndex, _, _, solvedEquations, _, tempvars, _, _, _, _) :=
       createEquationsForSystems(systs, shared, uniqueEqIndex, {}, itempvars, 0, SimCode.NO_MAPPING());
   allEquations := listAppend(allEquations, solvedEquations);
   // generate equations from the removed equations
@@ -5523,6 +5625,7 @@ public function createModelInfo
   input list<String> labels;
   input Integer numStateSets;
   input String fileDir;
+  input Integer nSubClock;
   output SimCode.ModelInfo modelInfo;
 protected
   String description, directory;
@@ -5562,7 +5665,8 @@ algorithm
                              ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,
                              numStateSets, numOptimizeConstraints, numOptimizeFinalConstraints);
     maxDer := getHighestDerivation(dlow);
-    modelInfo := SimCode.MODELINFO(class_, description, directory, varInfo, vars, functions, labels, maxDer);
+    modelInfo := SimCode.MODELINFO(class_, dlow.shared.info.description, directory, varInfo, vars, functions,
+                                   labels, maxDer, arrayLength(dlow.shared.partitionsInfo.clocks), nSubClock);
   else
     Error.addInternalError("createModelInfo failed", sourceInfo());
     fail();
@@ -5722,7 +5826,21 @@ algorithm
   end while;
 end preCalculateStartValues1;
 
-protected function replaceCrefWithStartValue"replaces a cref with its constant start value.
+protected function artificialVarKind"an artificial var is introduced during compilation and has a start-value that does not come from the model"
+  input BackendDAE.VarKind inVarKind;
+  output Boolean isVar;
+algorithm
+  isVar := match (inVarKind)
+  case (BackendDAE.VARIABLE()) then false;
+  case (BackendDAE.PARAM()) then false;
+  case (BackendDAE.CONST()) then false;
+  case (BackendDAE.DISCRETE()) then false;
+  case (BackendDAE.STATE()) then false;
+  else then true;
+  end match;
+end artificialVarKind;
+
+protected function replaceCrefWithStartValue"replaces a cref with its constant start value. Only if the BackendDAE.Varkind is not artificial in order to avoid guess-start values
 Waurich 2015-01"
   input DAE.Exp expIn;
   input BackendDAE.Variables varsIn;
@@ -5747,6 +5865,7 @@ algorithm
    case(DAE.CREF(componentRef=cref),_)
      equation
        ({var},_) = BackendVariable.getVar(cref,varsIn);
+       true =  not artificialVarKind(BackendVariable.varKind(var));// if its not of kind variable(), it is something artificial (DUMMY_DER,...) and the start value is not model based in that case
       // print("VAR: "+BackendDump.varString(var)+" -->");
        if BackendVariable.varHasBindExp(var) /*and Expression.isConst(BackendVariable.varBindExp(var))*/ then
          exp = BackendVariable.varBindExp(var);
@@ -5885,7 +6004,7 @@ algorithm
 
   if not Flags.isSet(Flags.NO_START_CALC) then
     systs1 := List.map1(systs1, preCalculateStartValues, knvars1);
-    systs2 := List.map1(systs2, preCalculateStartValues, knvars2);
+    //systs2 := List.map1(systs2, preCalculateStartValues, knvars2);
   end if;
 
   // ### simulation ###
@@ -6171,35 +6290,16 @@ end extractVarFromVar;
 
 protected function derVarFromStateVar
   input SimCodeVar.SimVar state;
-  output SimCodeVar.SimVar deriv;
+  output SimCodeVar.SimVar deriv = state;
 algorithm
-  deriv :=
-  match (state)
-    local
-      DAE.ComponentRef name;
-      BackendDAE.VarKind kind;
-      String comment, unit, displayUnit;
-      Integer index;
-      Option<DAE.Exp> minVal, maxVal;
-      Option<DAE.Exp> initVal, nomVal;
-      Boolean isFixed, isProtected;
-      DAE.Type type_;
-      Boolean isDiscrete, isValueChangeable;
-      DAE.ComponentRef arrayCref;
-      DAE.ElementSource source;
-      list<String> numArrayElement;
-    case (SimCodeVar.SIMVAR(name, _, comment, unit, displayUnit, index, minVal, maxVal, _, nomVal, isFixed, type_, isDiscrete, NONE(), _, source, _, NONE(), numArrayElement, _, isProtected))
-      equation
-        name = ComponentReference.crefPrefixDer(name);
-      then
-        SimCodeVar.SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, minVal, maxVal, NONE(), nomVal, isFixed, type_, isDiscrete, NONE(), SimCodeVar.NOALIAS(), source, SimCodeVar.INTERNAL(), NONE(), numArrayElement, false, isProtected);
-    case (SimCodeVar.SIMVAR(name, _, comment, unit, displayUnit, index, minVal, maxVal, _, nomVal, isFixed, type_, isDiscrete, SOME(arrayCref), _, source, _, NONE(), numArrayElement, _, isProtected))
-      equation
-        name = ComponentReference.crefPrefixDer(name);
-        arrayCref = ComponentReference.crefPrefixDer(arrayCref);
-      then
-        SimCodeVar.SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, minVal, maxVal, NONE(), nomVal, isFixed, type_, isDiscrete, SOME(arrayCref), SimCodeVar.NOALIAS(), source, SimCodeVar.INTERNAL(), NONE(), numArrayElement, false, isProtected);
-  end match;
+  deriv.arrayCref := Util.applyOption(deriv.arrayCref, ComponentReference.crefPrefixDer);
+  deriv.name := ComponentReference.crefPrefixDer(deriv.name);
+  deriv.varKind := BackendDAE.STATE_DER();
+  deriv.initialValue := NONE();
+  deriv.aliasvar := SimCodeVar.NOALIAS();
+  deriv.causality := SimCodeVar.INTERNAL();
+  deriv.variable_index := NONE();
+  deriv.isValueChangeable := false;
 end derVarFromStateVar;
 
 
@@ -8863,11 +8963,11 @@ protected
   SimCodeVar.SimVars vars;
   list<SimCode.Function> functions;
   list<String> labels;
-  Integer maxDer;
+  Integer maxDer, nClocks, nSubClocks;
 algorithm
   if not Config.acceptMetaModelicaGrammar() then
     modelInfo := outSimCode.modelInfo;
-    SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, maxDer) := modelInfo;
+    SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, maxDer, nClocks, nSubClocks) := modelInfo;
     files := getFilesFromSimVars(vars, files);
     files := getFilesFromFunctions(functions, files);
     files := getFilesFromSimEqSystems( outSimCode.allEquations :: outSimCode.startValueEquations :: outSimCode.nominalValueEquations
@@ -8879,7 +8979,7 @@ algorithm
     files := getFilesFromExtObjInfo(outSimCode.extObjInfo, files);
     files := getFilesFromJacobianMatrixes(outSimCode.jacobianMatrixes, files);
     files := List.sort(files, greaterFileInfo);
-    modelInfo := SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, maxDer);
+    modelInfo := SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, maxDer, nClocks, nSubClocks);
     outSimCode.modelInfo := modelInfo;
   end if;
 end collectAllFiles;
@@ -9133,11 +9233,14 @@ protected
   list<DAE.Exp> literals;
   list<SimCode.SimEqSystem> eqs;
   list<list<SimCode.SimEqSystem>> eqs1;
+  list<SimCode.ClockedPartition> partitions;
 algorithm
   (literals, oa) := List.mapFold(outSimCode.literals, func, ia);
   outSimCode.literals := literals;
   (eqs, oa) := traverseExpsEqSystems(outSimCode.allEquations, func, oa, {});
   outSimCode.allEquations := eqs;
+  (partitions, oa) := List.map1Fold(outSimCode.clockedPartitions, traverseExpsPartition, func, oa);
+  outSimCode.clockedPartitions := partitions;
   (eqs1, oa) := traverseExpsEqSystemsList(outSimCode.odeEquations, func, oa, {});
   outSimCode.odeEquations := eqs1;
   (eqs1, oa) := traverseExpsEqSystemsList(outSimCode.algebraicEquations, func, oa, {});
@@ -9168,6 +9271,51 @@ algorithm
   /* TODO:extObjInfo */
   /* TODO:delayedExps */
 end traverseExpsSimCode;
+
+protected function traverseExpsPartition
+  input SimCode.ClockedPartition simPartition;
+  input Func func;
+  input A ia;
+  output SimCode.ClockedPartition outSimPartition = simPartition;
+  output A oa;
+  replaceable type A subtypeof Any;
+  partial function Func
+    input DAE.Exp inExp;
+    input A inTypeA;
+    output DAE.Exp outExp;
+    output A outA;
+  end Func;
+protected
+  DAE.ClockKind clk;
+  list<SimCode.SubPartition> subPartitions;
+algorithm
+  (DAE.CLKCONST(clk), oa) := func(DAE.CLKCONST(simPartition.baseClock), ia);
+  (subPartitions, oa) := List.map1Fold(simPartition.subPartitions, traverseExpsSubPartition, func, oa);
+  outSimPartition.baseClock := clk;
+  outSimPartition.subPartitions := subPartitions;
+end traverseExpsPartition;
+
+protected function traverseExpsSubPartition
+  input SimCode.SubPartition subPartition;
+  input Func func;
+  input A ia;
+  output SimCode.SubPartition outSubPartition = subPartition;
+  output A oa;
+  replaceable type A subtypeof Any;
+  partial function Func
+    input DAE.Exp inExp;
+    input A inTypeA;
+    output DAE.Exp outExp;
+    output A outA;
+  end Func;
+protected
+  list<SimCode.SimEqSystem> eqs;
+algorithm
+  (eqs, oa) := traverseExpsEqSystems(subPartition.equations, func, ia, {});
+  outSubPartition.equations := eqs;
+  (eqs, oa) := traverseExpsEqSystems(subPartition.removedEquations, func, oa, {});
+  outSubPartition.removedEquations := eqs;
+end traverseExpsSubPartition;
 
 protected function traverseExpsEqSystemsList
   input list<list<SimCode.SimEqSystem>> ieqs;

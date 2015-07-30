@@ -1539,6 +1539,7 @@ algorithm
     then (inExp, false, (true, vars, knvars, b1, b2, ilst));
 
     case (DAE.CALL(path = Absyn.IDENT(name="pre")), (_, vars, knvars, b1, b2, ilst)) then (inExp, false, (true, vars, knvars, b1, b2, ilst));
+    case (DAE.CALL(path = Absyn.IDENT(name="previous")), (_, vars, knvars, b1, b2, ilst)) then (inExp, false, (true, vars, knvars, b1, b2, ilst) );
     case (DAE.CALL(path = Absyn.IDENT(name="change")), (_, vars, knvars, b1, b2, ilst)) then (inExp, false, (true, vars, knvars, b1, b2, ilst));
     case (DAE.CALL(path = Absyn.IDENT(name="edge")), (_, vars, knvars, b1, b2, ilst)) then (inExp, false, (true, vars, knvars, b1, b2, ilst));
 

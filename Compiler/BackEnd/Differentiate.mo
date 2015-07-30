@@ -1323,6 +1323,10 @@ algorithm
       then
         (e,  inFunctionTree);
 
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "previous")), _, _, _, _)
+      then
+        (e,  inFunctionTree);
+
     case (DAE.CALL(path = path as Absyn.IDENT(name = "der"),expLst = {e},attr=attr), _, _, BackendDAE.DIFFERENTIATION_TIME(), _)
       then
         (DAE.CALL(path,{e,DAE.ICONST(2)},attr),  inFunctionTree);

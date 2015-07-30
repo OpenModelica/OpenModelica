@@ -452,6 +452,8 @@ constant DebugFlag DUMP_RTEARING = DEBUG_FLAG(142, "dumpRecursiveTearing", false
   Util.gettext("Dump between steps of recursiveTearing"));
 constant DebugFlag DIS_SIMP_FUN = DEBUG_FLAG(143, "disableSimplifyComplexFunction", false,
   Util.gettext("disable simplifyComplexFunction"));
+  constant DebugFlag DIS_SYMJAC_FMI20 = DEBUG_FLAG(144, "disableSymbolicLinearization", false,
+  Util.gettext("For FMI 2.0 only dependecy analysis will be perform."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -601,7 +603,8 @@ constant list<DebugFlag> allDebugFlags = {
   SORT_EQNS_AND_VARS,
   DUMP_SIMPLIFY_LOOPS,
   DUMP_RTEARING,
-  DIS_SIMP_FUN
+  DIS_SIMP_FUN,
+  DIS_SYMJAC_FMI20
 };
 
 public

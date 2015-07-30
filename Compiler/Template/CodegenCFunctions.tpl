@@ -2152,12 +2152,16 @@ template extFunCallVardeclF77(SimExtArg arg, Text &varDecls, Text &auxFunction)
     ""
 end extFunCallVardeclF77;
 
+template boolStrC(Boolean v)
+::= if v then '1' else '0'
+end boolStrC;
+
 template typeDefaultValue(DAE.Type ty)
 ::=
   match ty
   case ty as T_INTEGER(__) then '0'
   case ty as T_REAL(__) then '0.0'
-  case ty as T_BOOL(__) then '0'
+  case ty as T_BOOL(__) then boolStrC(false)
   case ty as T_STRING(__) then '0' /* Always segfault is better than only sometimes segfault :) */
   else ""
 end typeDefaultValue;
@@ -3299,7 +3303,7 @@ template literalExpConst(Exp lit, Integer litindex, Text &preLit) "These should 
     >>
   case BOX(exp=exp as BCONST(__)) then
     <<
-    <%meta%> = MMC_IMMEDIATE(MMC_TAGFIXNUM(<%if exp.bool then 1 else 0%>));
+    <%meta%> = MMC_IMMEDIATE(MMC_TAGFIXNUM(<%boolStrC(exp.bool)%>));
     >>
   case BOX(exp=exp as RCONST(__)) then
     /* We need to use #define's to be C-compliant. Yea, total crap :) */
@@ -3350,7 +3354,7 @@ template literalExpConstBoxedVal(Exp lit, Text index, Text &preLit)
   match lit
   case ICONST(__) then 'MMC_IMMEDIATE(MMC_TAGFIXNUM(<%integer%>))'
   case ENUM_LITERAL(__) then 'MMC_IMMEDIATE(MMC_TAGFIXNUM(<%index%>))'
-  case lit as BCONST(__) then 'MMC_IMMEDIATE(MMC_TAGFIXNUM(<%if lit.bool then 1 else 0%>))'
+  case lit as BCONST(__) then 'MMC_IMMEDIATE(MMC_TAGFIXNUM(<%boolStrC(lit.bool)%>))'
   case lit as RCONST(__) then
     let &preLit +=
     <<
@@ -3375,12 +3379,13 @@ template literalExpConstArrayVal(Exp lit)
 ::=
   match lit
     case ICONST(__) then integer
-    case lit as BCONST(__) then if lit.bool then 1 else 0
+    case lit as BCONST(__) then boolStrC(lit.bool)
     case RCONST(__) then real
     case ENUM_LITERAL(__) then index
     case lit as SHARED_LITERAL(__) then '_OMC_LIT<%lit.index%>'
     else error(sourceInfo(), 'literalExpConstArrayVal failed: <%printExpStr(lit)%>')
 end literalExpConstArrayVal;
+
 
 template varType(Variable var)
  "Generates type for a variable."
@@ -3742,7 +3747,7 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
         case c as SCONST(__) then
           let escstr = Util.escapeModelicaStringToCString(c.string)
           'if (<%unescapedStringLength(escstr)%> != MMC_STRLEN(<%urhs%>) || strcmp("<%escstr%>", MMC_STRINGDATA(<%urhs%>)) != 0) <%onPatternFail%>;<%\n%>'
-        case c as BCONST(__) then 'if (<%if c.bool then 1 else 0%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
+        case c as BCONST(__) then 'if (<%boolStrC(c.bool)%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
         case c as LIST(valList = {}) then 'if (!listEmpty(<%urhs%>)) <%onPatternFail%>;<%\n%>'
         case c as META_OPTION(exp = NONE()) then 'if (!optionNone(<%urhs%>)) <%onPatternFail%>;<%\n%>'
         case c as ENUM_LITERAL() then 'if (<%c.index%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
@@ -4128,7 +4133,7 @@ end getTempDeclMatchOutputName;
   case e as ICONST(__)          then '(modelica_integer) <%integer%>' /* Yes, we need to cast int to long on 64-bit arch... */
   case e as RCONST(__)          then real
   case e as SCONST(__)          then daeExpSconst(string, &preExp, &varDecls)
-  case e as BCONST(__)          then if bool then "1" else "0"
+  case e as BCONST(__)          then boolStrC(bool)
   case e as ENUM_LITERAL(__)    then index
   case e as CREF(__)            then daeExpCrefRhs(e, context, &preExp, &varDecls, &auxFunction)
   case e as BINARY(__)          then daeExpBinary(e, context, &preExp, &varDecls, &auxFunction)
@@ -5564,6 +5569,9 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     'mmc_clock()'
 
   case CALL(path=IDENT(name="noEvent"), expLst={e1}) then
+    daeExp(e1, context, &preExp, &varDecls, &auxFunction)
+
+  case CALL(path=IDENT(name="$getPart"), expLst={e1}) then
     daeExp(e1, context, &preExp, &varDecls, &auxFunction)
 
   case CALL(path=IDENT(name="sample"), expLst={ICONST(integer=index), _, _}) then
