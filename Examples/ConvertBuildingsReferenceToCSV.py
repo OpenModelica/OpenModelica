@@ -11,14 +11,16 @@ def convertDir(indir,outdir):
       v = {}
       for line in f.readlines():
         line = line.strip().split('=')
-        if (line is not None) and (line[1][0] == '['):
-          l = [str(float(s)) for s in line[1].strip('[]').split(',')]
-          if len(l)==2:
-            diff = float(l[1])-float(l[0])
-            l = [str(float(l[0])+x*diff) for x in range(101)]
-          if len(l)<>101:
-            raise Exception("Assumed buildings result format has exactly 101 data points")
-          v[line[0]] = l
+        # print "Line %s \n" % line
+        if (line is not None) and (len(line) == 2) and (line[1] != ''):
+          if (line[1][0] == '['):
+            l = [str(float(s)) for s in line[1].strip('[]').split(',')]
+            if len(l)==2:
+              diff = float(l[1])-float(l[0])
+              l = [str(float(l[0])+x*diff) for x in range(101)]
+            if len(l)<>101:
+              raise Exception("Assumed buildings result format has exactly 101 data points")
+            v[line[0]] = l
       keys = v.keys()
       keys.remove('time')
       keys.sort()
