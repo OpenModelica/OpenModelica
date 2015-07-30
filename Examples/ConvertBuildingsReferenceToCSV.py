@@ -6,6 +6,7 @@ from optparse import OptionParser
 
 def convertDir(indir,outdir):
   for fil in os.listdir(indir):
+    print "Converting file: %s\n" % indir+"/"+fil
     with open(indir+"/"+fil) as f:
       v = {}
       for line in f.readlines():
