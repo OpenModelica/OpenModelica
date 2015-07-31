@@ -72,6 +72,9 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
 {
   public:
     SimVars(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index);
+    SimVars(SimVars& instance);
+
+    ISimVars* clone();
     virtual ~SimVars();
     virtual double& initRealVar(size_t i);
     virtual int& initIntVar(size_t i);
@@ -104,15 +107,24 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     virtual void setPreVar(bool& var);
 
   protected:
+    void create(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index);
+
+    virtual size_t getDimBool() const;
+    virtual size_t getDimInt() const;
+    virtual size_t getDimPreVars() const;
+    virtual size_t getDimReal() const;
+    virtual size_t getDimStateVars() const;
+    virtual size_t getStateVectorIndex() const;
+
     //see: http://stackoverflow.com/questions/12504776/aligned-malloc-in-c
     void *alignedMalloc(size_t required_bytes, size_t alignment) {
         void *p1;
         void **p2;
 
         int offset = alignment - 1 + sizeof(void*);
-        p1 = malloc(required_bytes + offset);               // the line you are missing
-        p2=(void**)(((size_t)(p1)+offset)&~(alignment-1));  //line 5
-        p2[-1]=p1; //line 6
+        p1 = malloc(required_bytes + offset);
+        p2=(void**)(((size_t)(p1)+offset)&~(alignment-1));
+        p2[-1]=p1;
         return p2;
     }
 

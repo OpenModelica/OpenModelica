@@ -57,6 +57,34 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *global
 {
 }
 
+SystemDefaultImplementation::SystemDefaultImplementation(SystemDefaultImplementation& instance)
+  : _simTime        (0.0)
+  , _sim_data(instance.getSimData()->clone())
+  , _sim_vars(instance.getSimVars()->clone())
+  , _conditions      (NULL)
+  , _time_conditions    (NULL)
+  , _dimContinuousStates  (0)
+  , _dimRHS        (0)
+  , _dimReal        (0)
+  , _dimInteger      (0)
+  , _dimBoolean      (0)
+  , _dimString      (0)
+  , _dimZeroFunc      (0)
+  , _dimTimeEvent      (0)
+  , _dimAE        (0)
+  , _time_event_counter  (NULL)
+  , _callType        (IContinuous::UNDEF_UPDATE)
+  , _initial        (false)
+  , _delay_max      (0.0)
+  , _start_time      (0.0)
+  , _terminal        (false)
+  , _terminate      (false)
+  , _global_settings    (instance.getGlobalSettings())
+{
+  __z = _sim_vars->getStateVector();
+  __zDot = _sim_vars->getDerStateVector();
+}
+
 /*
 template<class T>
 T SystemDefaultImplementation::getStartValue(T variable,string key)
@@ -82,6 +110,7 @@ SystemDefaultImplementation::~SystemDefaultImplementation()
   if(_time_conditions) delete [] _time_conditions ;
   if(_time_event_counter) delete [] _time_event_counter;
 }
+
 void SystemDefaultImplementation::Assert(bool cond,const string& msg)
 {
   if(!cond)
@@ -230,6 +259,16 @@ void SystemDefaultImplementation::getContinuousStates(double* z)
 IGlobalSettings* SystemDefaultImplementation::getGlobalSettings()
 {
     return _global_settings;
+}
+
+boost::shared_ptr<ISimVars> SystemDefaultImplementation::getSimVars()
+{
+  return _sim_vars;
+}
+
+boost::shared_ptr<ISimData> SystemDefaultImplementation::getSimData()
+{
+  return _sim_data;
 }
 
 bool SystemDefaultImplementation::isConsistent()

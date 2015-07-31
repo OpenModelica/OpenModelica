@@ -24,6 +24,27 @@ SimVars::SimVars(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pr
     _dim_real(dim_real), _dim_int(dim_int), _dim_bool(dim_bool), _dim_pre_vars(dim_pre_vars), _dim_z(dim_state_vars), _z_i(state_index)
     ,_pre_vars(NULL)
 {
+  create(dim_real, dim_int, dim_bool, dim_pre_vars, dim_state_vars, state_index);
+}
+
+SimVars::SimVars(SimVars& instance)
+{
+  create(instance.getDimReal(), instance.getDimInt(), instance.getDimBool(), instance.getDimPreVars(), instance.getDimStateVars(), instance.getStateVectorIndex());
+  setRealVarsVector(instance.getRealVarsVector());
+  setIntVarsVector(instance.getIntVarsVector());
+  setBoolVarsVector(instance.getBoolVarsVector());
+}
+
+void SimVars::create(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index)
+{
+  _pre_vars = NULL;
+  _dim_real = dim_real;
+  _dim_int = dim_int;
+  _dim_bool = dim_bool;
+  _dim_pre_vars = dim_pre_vars;
+  _dim_z = dim_state_vars;
+  _z_i = state_index;
+
   if (_dim_real + _dim_int + _dim_bool > _dim_pre_vars)
     throw std::runtime_error("Wrong pre variable size");
   //allocate memory for all model variables
@@ -55,6 +76,12 @@ SimVars::~SimVars()
   if(_bool_vars)
     alignedFree(_bool_vars);
 }
+
+ISimVars* SimVars::clone()
+{
+  return new SimVars(*this);
+}
+
 /**
 *  \brief Initialize scalar real model variables in simvars memory
 *  \param [in] i index in simvars memory
@@ -173,7 +200,7 @@ void SimVars::setIntVarsVector(const int* vars)
 */
 void SimVars::setBoolVarsVector(const bool* vars)
 {
-  std::copy(vars, vars + _dim_real, _bool_vars);
+  std::copy(vars, vars + _dim_bool, _bool_vars);
 }
 /**\brief initialize real model array variable in simvars memory
 *  \param [in] size size of real array
@@ -387,5 +414,35 @@ bool* SimVars::getBoolVar(size_t i)
     return &_bool_vars[i];
   else
     throw std::runtime_error("Wrong variable index");
+}
+
+size_t SimVars::getDimBool() const
+{
+  return _dim_bool;
+}
+
+size_t SimVars::getDimInt() const
+{
+  return _dim_int;
+}
+
+size_t SimVars::getDimPreVars() const
+{
+  return _dim_pre_vars;
+}
+
+size_t SimVars::getDimReal() const
+{
+  return _dim_real;
+}
+
+size_t SimVars::getDimStateVars() const
+{
+  return _dim_z;
+}
+
+size_t SimVars::getStateVectorIndex() const
+{
+  return _z_i;
 }
 /** @} */ // end of coreSystem
