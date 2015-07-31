@@ -360,11 +360,13 @@ void Kinsol::calcFunction(const double *y, double *residual)
     }
     _algLoop->getRHS(residual);
 
+#if defined(__vxworks)
    for(int i=0;i<_dimSys;i++)
      {
         if(!(boost::math::isfinite(residual[i])) || !(boost::math::isfinite(y[i])))
            _fValid = false;
      }
+#endif
 }
 
 int Kinsol::kin_f(N_Vector y,N_Vector fval, void *user_data)
