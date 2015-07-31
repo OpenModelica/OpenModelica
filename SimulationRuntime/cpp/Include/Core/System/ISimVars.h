@@ -11,7 +11,9 @@ class ISimVars
 {
 public:
 
-   virtual ~ISimVars() {};
+     virtual ~ISimVars() {};
+
+     virtual ISimVars* clone() = 0;
 
       /*Methods for access model variables*/
      virtual double* getStateVector()= 0;

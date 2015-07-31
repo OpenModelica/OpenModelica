@@ -191,6 +191,23 @@ IF(WIN32)
   SET(INSTALL_OMDEV_LIBS ON)
 ENDIF(WIN32)
 
+# Find OpenMP
+FIND_PACKAGE(OpenMP)
+IF(OPENMP_FOUND)
+  MESSAGE(STATUS "OPENMP enabled")
+ELSE(OPENMP_FOUND)
+  MESSAGE(STATUS "OPENMP disabled")
+ENDIF(OPENMP_FOUND)
+SET(USE_OPENMP_ ${OPENMP_FOUND})
+
+# Find MPI
+FIND_PACKAGE(MPI)
+IF(MPI_FOUND)
+  MESSAGE(STATUS "MPI enabled")
+ELSE(MPI_FOUND)
+  MESSAGE(STATUS "MPI disabled")
+ENDIF(MPI_FOUND)
+SET(USE_MPI_ ${MPI_FOUND})
 
 # Find CMinpack
 # Note: Visual Studio libs are located in install/msvc, libs for gcc are directly in install
@@ -474,37 +491,37 @@ endif()
 
 
 
-if(USE_SUNDIALS)
-#add  Cvode solver project
-add_subdirectory (Solver/CVode)
-#add_subdirectory (Solver/ARKode)
-add_subdirectory(Solver/IDA)
-add_subdirectory (Solver/Kinsol)
-#add  Idas solver project
-##add_subdirectory (Solver/Idas/Implementation)
-##add_subdirectory (Solver/Ida/Implementation)
-GET_TARGET_PROPERTY(libCVode ${CVodeName} LOCATION)
-GET_TARGET_PROPERTY(libARKode ${ARKodeName} LOCATION)
-GET_FILENAME_COMPONENT(libCVodeName ${libCVode} NAME)
-GET_FILENAME_COMPONENT(libARKodeName ${libARKode} NAME)
+IF(USE_SUNDIALS)
+  #add  Cvode solver project
+  ADD_SUBDIRECTORY (Solver/CVode)
+  #add_subdirectory (Solver/ARKode)
+  ADD_SUBDIRECTORY(Solver/IDA)
+  ADD_SUBDIRECTORY(Solver/Kinsol)
+  #add  Idas solver project
+  ##add_subdirectory (Solver/Idas/Implementation)
+  ##add_subdirectory (Solver/Ida/Implementation)
+  GET_TARGET_PROPERTY(libCVode ${CVodeName} LOCATION)
+  GET_TARGET_PROPERTY(libARKode ${ARKodeName} LOCATION)
+  GET_FILENAME_COMPONENT(libCVodeName ${libCVode} NAME)
+  GET_FILENAME_COMPONENT(libARKodeName ${libARKode} NAME)
 
-GET_TARGET_PROPERTY(libIDA ${IDAName} LOCATION)
-GET_FILENAME_COMPONENT(libIDAName ${libIDA} NAME)
+  GET_TARGET_PROPERTY(libIDA ${IDAName} LOCATION)
+  GET_FILENAME_COMPONENT(libIDAName ${libIDA} NAME)
 
-GET_TARGET_PROPERTY(libKinsol ${KinsolName} LOCATION)
-GET_FILENAME_COMPONENT(libKinsolName ${libKinsol} NAME)
-#GET_TARGET_PROPERTY(libIdas ${IdasName} LOCATION)
-#GET_FILENAME_COMPONENT(libIdasName ${libIdas} NAME)
-#GET_TARGET_PROPERTY(libIda ${IdaName} LOCATION)
-#GET_FILENAME_COMPONENT(libIdaName ${libIda} NAME)
+  GET_TARGET_PROPERTY(libKinsol ${KinsolName} LOCATION)
+  GET_FILENAME_COMPONENT(libKinsolName ${libKinsol} NAME)
+  #GET_TARGET_PROPERTY(libIdas ${IdasName} LOCATION)
+  #GET_FILENAME_COMPONENT(libIdasName ${libIdas} NAME)
+  #GET_TARGET_PROPERTY(libIda ${IdaName} LOCATION)
+  #GET_FILENAME_COMPONENT(libIdaName ${libIda} NAME)
 
-#set (IDAS_LIB ${libIdasName})
-set (CVODE_LIB ${libCVodeName})
-set (ARKODE_LIB ${libARKodeName})
-set(IDA_LIB ${libIDAName})
-set (KINSOL_LIB ${libKinsolName})
-#set (IDA_LIB ${libIdaName})
-endIf()
+  #set (IDAS_LIB ${libIdasName})
+  SET(CVODE_LIB ${libCVodeName})
+  SET(ARKODE_LIB ${libARKodeName})
+  SET(IDA_LIB ${libIDAName})
+  SET(KINSOL_LIB ${libKinsolName})
+  #set(IDA_LIB ${libIdaName})
+ENDIF(USE_SUNDIALS)
 
 GET_TARGET_PROPERTY(libPeer ${PeerName} LOCATION)
 GET_FILENAME_COMPONENT(libPeerName ${libPeer} NAME)

@@ -122,6 +122,7 @@ let initeqs = generateEquationMemberFuncDecls(initialEquations,"initEquation")
   {
   public:
     <%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars);
+    <%lastIdentOfPath(modelInfo.name)%>Initialize(<%lastIdentOfPath(modelInfo.name)%>Initialize& instance);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>Initialize();
     virtual bool initial();
     virtual void setInitial(bool);
@@ -200,6 +201,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   %>
   public:
     <%lastIdentOfPath(modelInfo.name)%>Jacobian(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars);
+    <%lastIdentOfPath(modelInfo.name)%>Jacobian(<%lastIdentOfPath(modelInfo.name)%>Jacobian& instance);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>Jacobian();
 
   protected:
@@ -310,6 +312,7 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
   {
   public:
     <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars);
+    <%lastIdentOfPath(modelInfo.name)%>WriteOutput(<%lastIdentOfPath(modelInfo.name)%>WriteOutput& instance);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>WriteOutput();
 
 
@@ -413,7 +416,10 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
   {
   public:
     <%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars);
+    <%lastIdentOfPath(modelInfo.name)%>Extension(<%lastIdentOfPath(modelInfo.name)%>Extension &instance);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>Extension();
+
+    virtual IMixedSystem* clone();
 
     ///Intialization methods from ISystemInitialization
     virtual bool initial();
@@ -531,6 +537,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
+   {
+   }
+
+   <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(<%lastIdentOfPath(modelInfo.name)%>Initialize& instance)
+   : <%lastIdentOfPath(modelInfo.name)%>(instance)
    {
    }
 
@@ -680,6 +691,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
    }
 
+   <%lastIdentOfPath(modelInfo.name)%>Jacobian::<%lastIdentOfPath(modelInfo.name)%>Jacobian(<%lastIdentOfPath(modelInfo.name)%>Jacobian& instance)
+       : <%lastIdentOfPath(modelInfo.name)%>(instance)
+       , _AColorOfColumn(NULL)
+       <%initialjacMats%>
+       <%jacobiansVariableInit(jacobianMatrixes,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+   {
+   }
+
    <%lastIdentOfPath(modelInfo.name)%>Jacobian::~<%lastIdentOfPath(modelInfo.name)%>Jacobian()
    {
    if(_AColorOfColumn)
@@ -736,9 +755,17 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      _historyImpl = new HistoryImplType(*globalSettings);
    }
 
+   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(<%lastIdentOfPath(modelInfo.name)%>WriteOutput& instance)
+       : <%lastIdentOfPath(modelInfo.name)%>(instance.getGlobalSettings(), instance.getAlgLoopSolverFactory(), instance.getSimData(), instance.getSimVars())
+   {
+     _historyImpl = new HistoryImplType(*instance.getGlobalSettings());
+   }
+
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::~<%lastIdentOfPath(modelInfo.name)%>WriteOutput()
    {
-     delete _historyImpl;
+     if(_historyImpl)
+       delete _historyImpl;
+     _historyImpl = NULL;
    }
 
    IHistory* <%lastIdentOfPath(modelInfo.name)%>WriteOutput::getHistory()
@@ -1035,8 +1062,23 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
    }
 
+   <%classname%>Extension::<%classname%>Extension(<%classname%>Extension& instance)
+       : <%classname%>(instance)
+       , <%classname%>WriteOutput(instance)
+       , <%classname%>Initialize(instance)
+       , <%classname%>Jacobian(instance)
+       , <%classname%>StateSelection(instance)
+
+   {
+   }
+
    <%classname%>Extension::~<%classname%>Extension()
    {
+   }
+
+   IMixedSystem* <%classname%>Extension::clone()
+   {
+     return new <%classname%>Extension(*this);
    }
 
    bool <%classname%>Extension::initial()
@@ -3070,7 +3112,7 @@ case "gcc" then
             # Simulations use -O0 by default
             SIM_OR_DYNLOAD_OPT_LEVEL=-O0
             CC=<%CC%>
-            CXX=<%CXX%>
+            CXX=<%CXX%> $(OPENMP_FLAGS)
             RUNTIME_STATIC_LINKING=<%if(Flags.isSet(Flags.RUNTIME_STATIC_LINKING)) then 'ON' else 'OFF'%>
             <%MPIEnvVars%>
 
@@ -3454,33 +3496,15 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         <%additionalConstructorBodyStatements%>
     }
 
-    <%className%>::<%className%>(<%className%> &instance) : SystemDefaultImplementation(instance.getGlobalSettings(),instance._sim_data,instance._sim_vars)
+    <%className%>::<%className%>(<%className%> &instance) : SystemDefaultImplementation(instance)
         , _algLoopSolverFactory(instance.getAlgLoopSolverFactory())
+        , _pointerToRealVars(instance.getSimVars()->getRealVarsVector())
+        , _pointerToIntVars(instance.getSimVars()->getIntVarsVector())
+        , _pointerToBoolVars(instance.getSimVars()->getBoolVarsVector())
         <%additionalConstructorVarDefsBuffer%>
     {
         <%generateSimulationCppConstructorContent(simCode, context, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-        <%match modelInfo
-            case MODELINFO(vars=SIMVARS(__)) then
-              <<
-              double* realVars = new double[<%listLength(listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.aliasVars, vars.paramVars))))%> + _dimContinuousStates + _dimContinuousStates];
-              int* integerVars = new int[<%listLength(listAppend(listAppend(vars.intAlgVars, vars.intParamVars), vars.intAliasVars))%>];
-              bool* booleanVars = new bool[<%listLength(listAppend(listAppend(vars.boolAlgVars, vars.boolParamVars), vars.boolAliasVars))%>];
-              string* stringVars = new string[<%listLength(listAppend(listAppend(vars.stringAlgVars, vars.stringParamVars), vars.stringAliasVars))%>];
-              instance.getReal(realVars);
-              instance.getInteger(integerVars);
-              instance.getBoolean(booleanVars);
-              instance.getString(stringVars);
-              setReal(realVars);
-              setInteger(integerVars);
-              setBoolean(booleanVars);
-              setString(stringVars);
-              delete[] realVars;
-              delete[] integerVars;
-              delete[] booleanVars;
-              delete[] stringVars;
-              >>
-         %>
-         <%additionalConstructorBodyStatements%>
+        <%additionalConstructorBodyStatements%>
     }
 
     /* Destructor */
