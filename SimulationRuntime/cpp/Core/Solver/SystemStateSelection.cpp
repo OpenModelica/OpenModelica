@@ -76,7 +76,7 @@ return true;
   {
     boost::shared_array<int> oldColPivot(new int[_dimStateCanditates[i]]);
     boost::shared_array<int> oldRowPivot(new int[_dimDummyStates[i]]);
-    SparseMatrix stateset_matrix;
+    matrix_t stateset_matrix;
     _system->getStateSetJacobian(i,stateset_matrix);
 
     /* call pivoting function to select the states */

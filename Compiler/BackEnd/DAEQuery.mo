@@ -795,6 +795,15 @@ algorithm
       then
         pStr;
 
+    case (DAE.CALL(path = Absyn.IDENT(name = "previous"),expLst = {DAE.CREF(componentRef = cr)}),vars) /* previous(v) is considered a known variable*/
+      equation
+        (_,p) = BackendVariable.getVar(cr, vars);
+        pStr = List.map(p, intString);
+        //ss = printExpStr(cr, vars);
+        //pStr = ss;
+      then
+        pStr;
+
     case (DAE.CALL(expLst = expl),vars)
       equation
         lst = List.map1(expl, incidenceRowExp, vars);

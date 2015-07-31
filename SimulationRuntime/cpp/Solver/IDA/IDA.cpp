@@ -3,8 +3,8 @@
 #include <Solver/IDA/IDA.h>
 #include <Core/Math/Functions.h>
 
-#include <Core/Utils/numeric/bindings/traits/ublas_vector.hpp>
-#include <Core/Utils/numeric/bindings/traits/ublas_sparse.hpp>
+//#include <Core/Utils/numeric/bindings/traits/ublas_vector.hpp>
+//#include <Core/Utils/numeric/bindings/traits/ublas_sparse.hpp>
 
 Ida::Ida(IMixedSystem* system, ISolverSettings* settings)
     : SolverDefaultImplementation(system, settings),
@@ -872,13 +872,13 @@ int Ida::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight
 
 void Ida::initializeColoredJac()
 {
-  _colorOfColumn = new int[_dimSys];
+  /*_colorOfColumn = new int[_dimSys];
   _system->getAColorOfColumn( _colorOfColumn, _dimSys);
 
   _system->getJacobian(_jacobianA);
   _jacobianANonzeros  = boost::numeric::bindings::traits::spmatrix_num_nonzeros (_jacobianA);
   _jacobianAIndex     = boost::numeric::bindings::traits::spmatrix_index2_storage(_jacobianA);
-  _jacobianALeadindex = boost::numeric::bindings::traits::spmatrix_index1_storage(_jacobianA);
+  _jacobianALeadindex = boost::numeric::bindings::traits::spmatrix_index1_storage(_jacobianA);*/
 }
 
 int Ida::reportErrorMessage(ostream& messageStream)

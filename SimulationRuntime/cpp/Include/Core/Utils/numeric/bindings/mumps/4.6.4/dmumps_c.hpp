@@ -47,7 +47,7 @@
    systems. Parallel Computing Vol 32 (2), pp 136-156 (2006).
 
 */
-/* $Id: dmumps_c.hpp 39206 2007-09-12 06:58:12Z karlmeerbergen $ */
+/* $Id$ */
 /* Mostly written in march 2002 (JYL) */
 
 // This file is modified by Karl Meerbergen for C++ users

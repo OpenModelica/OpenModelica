@@ -238,7 +238,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   #define MODEL_GUID "{<%guid%>}"
 
   <%ModelDefineData(modelInfo)%>
-  #define NUMBER_OF_EVENT_INDICATORS <%CodegenCppInit.eventIndicatorsLength(simCode)%>
+  #define NUMBER_OF_EVENT_INDICATORS <%CodegenFMUCommon.getNumberOfEventIndicators(simCode)%>
 
   <%if isFMIVersion20(FMUVersion) then
     '#include "FMU2/FMU2Wrapper.cpp"'
@@ -737,13 +737,16 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
 
-  #OMCPP_LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory_static -OMCppSimulationSettings_static -lOMCppMath_static -lOMCppFMU_static -lOMCppExtensionUtilities_static -lOMCppModelicaUtilities_static
   # CVode can be used for Co-Simulation FMUs, Kinsol is available to handle non linear equation systems
-  OMCPP_LIBS=-Wl,--start-group -lOMCppOMCFactory_FMU_static -lOMCppSystem_static -lOMCppSimController_static -Wl,--end-group -lOMCppDataExchange_static -lOMCppSimulationSettings_static -lOMCppNewton_static -lOMCppSolver_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppExtensionUtilities_static -lOMCppFMU_static
-  OMCPP_SOLVER_LIBS=$(SUNDIALS_LIBRARIES)
+  OMCPP_SOLVER_LIBS=-lOMCppNewton_static
+  ifeq ($(USE_FMU_KINSOL),ON)
+  $(eval OMCPP_SOLVER_LIBS=$(OMCPP_SOLVER_LIBS) -lOMCppKinsol_static $(SUNDIALS_LIBRARIES))
+  endif
+
+  OMCPP_LIBS=-Wl,--start-group -lOMCppOMCFactory_FMU_static -lOMCppSystem_static -lOMCppSimController_static -Wl,--end-group -lOMCppDataExchange_static -lOMCppSimulationSettings_static $(OMCPP_SOLVER_LIBS) -lOMCppSolver_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppExtensionUtilities_static -lOMCppFMU_static
   MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)
   BOOST_LIBRARIES = -l$(BOOST_SYSTEM_LIB) -l$(BOOST_FILESYSTEM_LIB) -l$(BOOST_PROGRAM_OPTIONS_LIB)
-  LIBS= $(OMCPP_LIBS) $(OMCPP_SOLVER_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB) $(BOOST_LIBRARIES)
+  LIBS= $(OMCPP_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB) $(BOOST_LIBRARIES)
 
   CPPFILES=$(CALCHELPERMAINFILE)
   OFILES=$(CPPFILES:.cpp=.o)
@@ -754,13 +757,17 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   <%\t%>$(CXX) -shared -o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(LDFLAGS) $(LIBS)
   <%\t%>rm -rf binaries
   <%\t%><%mkdir%> -p "binaries/$(PLATFORM)"
-  #<%\t%><%mkdir%> -p "documentation"
   <%\t%>cp <%fileNamePrefix%>$(DLLEXT) "binaries/$(PLATFORM)/"
-  #<%\t%>cp $(SUNDIALS_LIBRARIES_KINSOL) "binaries/$(PLATFORM)/"
-  #<%\t%>cp $(OMHOME)/share/omc/runtime/cpp/licenses/sundials.license "documentation/"
   <%\t%>rm -f <%modelName%>.fmu
   <%\t%>zip -r "<%modelName%>.fmu" modelDescription.xml binaries
   <%\t%>rm -rf binaries
+  ifeq ($(USE_FMU_KINSOL),ON)
+  <%\t%>rm -rf documentation
+  <%\t%><%mkdir%> -p "documentation"
+  <%\t%>cp $(SUNDIALS_LIBRARIES_KINSOL) "binaries/$(PLATFORM)/"
+  <%\t%>cp $(OMHOME)/share/omc/runtime/cpp/licenses/sundials.license "documentation/"
+  <%\t%>rm -rf documentation
+  endif
 
   clean:
   <%\t%>rm $(SRC) <%fileNamePrefix%>$(DLLEXT)

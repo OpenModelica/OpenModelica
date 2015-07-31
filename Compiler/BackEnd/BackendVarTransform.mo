@@ -1509,6 +1509,7 @@ public function skipPreOperator "The variable/exp in the pre operator should not
 algorithm
   outBoolean := matchcontinue (inExp)
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"))) then false;
+    case (DAE.CALL(path = Absyn.IDENT(name = "previous"))) then false;
     case (_) then true;
   end matchcontinue;
 end skipPreOperator;
@@ -1522,9 +1523,11 @@ algorithm
     local
       DAE.ComponentRef cr;
     case DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF(componentRef=cr)}) then selfGeneratedVar(cr);
+    case DAE.CALL(path = Absyn.IDENT(name = "previous"),expLst = {DAE.CREF(componentRef=cr)}) then selfGeneratedVar(cr);
     case DAE.CALL(path = Absyn.IDENT(name = "change"),expLst = {DAE.CREF(componentRef=cr)}) then selfGeneratedVar(cr);
     case DAE.CALL(path = Absyn.IDENT(name = "edge"),expLst = {DAE.CREF(componentRef=cr)}) then selfGeneratedVar(cr);
     case DAE.CALL(path = Absyn.IDENT(name = "pre")) then false;
+    case DAE.CALL(path = Absyn.IDENT(name = "previous")) then false;
     case DAE.CALL(path = Absyn.IDENT(name = "change")) then false;
     case DAE.CALL(path = Absyn.IDENT(name = "edge")) then false;
     case (_) then true;

@@ -95,7 +95,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   let generationTool= 'OpenModelica Compiler <%getVersionNr()%>'
   let generationDateAndTime = xsdateTime(getCurrentDateTime())
   let variableNamingConvention = 'structured'
-  let numberOfEventIndicators = vi.numZeroCrossings
+  let numberOfEventIndicators = getNumberOfEventIndicators(simCode)
   <<
   fmiVersion="<%fmiVersion%>"
   modelName="<%modelName%>"

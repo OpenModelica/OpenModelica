@@ -154,10 +154,20 @@ algorithm
       (_::{}, _) = BackendVariable.getVar(cr, knvars);
     then(e, (knvars, aliasvars, true));
 
+    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={e as DAE.CREF(componentRef=cr)}), (knvars, aliasvars, _)) equation
+      (_::{}, _) = BackendVariable.getVar(cr, knvars);
+    then(e, (knvars, aliasvars, true));
+
     case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (knvars, aliasvars, _))
     then (e, (knvars, aliasvars, true));
 
+    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (knvars, aliasvars, _))
+    then (e, (knvars, aliasvars, true));
+
     case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={e as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")))}), (knvars, aliasvars, _))
+    then (e, (knvars, aliasvars, true));
+
+    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={e as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")))}), (knvars, aliasvars, _))
     then (e, (knvars, aliasvars, true));
 
     case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (knvars, aliasvars, _)) equation
@@ -166,6 +176,15 @@ algorithm
       e = DAE.CREF(cr, tp);
       e = if negate then Expression.negate(e) else e;
       (e, _) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("pre"), {e}, attr));
+      (e, _) = Expression.traverseExpBottomUp(e, traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasvars, false));
+    then (e, (knvars, aliasvars, true));
+
+    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (knvars, aliasvars, _)) equation
+      (var::{}, _) = BackendVariable.getVar(cr, aliasvars);
+      (cr, negate) = BackendVariable.getAlias(var);
+      e = DAE.CREF(cr, tp);
+      e = if negate then Expression.negate(e) else e;
+      (e, _) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("previous"), {e}, attr));
       (e, _) = Expression.traverseExpBottomUp(e, traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasvars, false));
     then (e, (knvars, aliasvars, true));
 
@@ -476,6 +495,7 @@ algorithm
       then (e,false,(true,vars,knvars,b1,b2));
     case (e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_,_}), (_,vars,knvars,b1,b2)) then (e,false,(true,vars,knvars,b1,b2));
     case (e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,knvars,b1,b2)) then (e,false,(true,vars,knvars,b1,b2));
+    case (e as DAE.CALL(path = Absyn.IDENT(name = "previous"), expLst = {_}), (_,vars,knvars,b1,b2)) then (e,false,(true,vars,knvars,b1,b2));
     case (e as DAE.CALL(path = Absyn.IDENT(name = "change"), expLst = {_}), (_,vars,knvars,b1,b2)) then (e,false,(true,vars,knvars,b1,b2));
     case (e as DAE.CALL(path = Absyn.IDENT(name = "edge"), expLst = {_}), (_,vars,knvars,b1,b2)) then (e,false,(true,vars,knvars,b1,b2));
     // case for finding simple equation in jacobians
@@ -1762,7 +1782,7 @@ public function countOperationstraverseComps "author: Frenkel TUD 2012-05"
 algorithm
   compInfosOut :=  matchcontinue (inComps,isyst,ishared,compInfosIn)
     local
-      Integer eqIdx, numAdd,numMul,numDiv,numTrig,numRel,numOth, numFuncs, numLog, size;
+      Integer eqIdx, numAdd,numMul,numDiv,numTrig,numRel,numOth, numFuncs, numLog, size, jacEntries;
       Real density;
       list<Integer> eqs, tornEqs,otherEqs;
       BackendDAE.StrongComponent comp,comp1;
@@ -1815,7 +1835,9 @@ algorithm
         size = listLength(eqnlst);
         (numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs) = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.listEquation(eqnlst),function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
         allOps = BackendDAE.COUNTER(comp,numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs);
-        density = realDiv(intReal(getNumJacEntries(jac)),intReal(size*size ));
+        jacEntries = getNumJacEntries(jac);
+        if intEq(jacEntries,-1) then jacEntries = size*size; end if;  // a non linear system that is too small and too dense (usually 2x2) to be torn
+        density = realDiv(intReal(jacEntries),intReal(size*size));
         compInfo = BackendDAE.SYSTEM(comp,allOps,size,density);
       then
         countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
@@ -2044,6 +2066,10 @@ algorithm
 
     case (e as DAE.CALL(path=Absyn.IDENT(name=opName)),_,(i1,i2,i3,i4,i5,i6,i7,i8)) equation
       true = stringEq(opName,"pre");
+      then (e, (i1,i2,i3,i4,i5,i6,i7,i8+1));
+
+    case (e as DAE.CALL(path=Absyn.IDENT(name=opName)),_,(i1,i2,i3,i4,i5,i6,i7,i8)) equation
+      true = stringEq(opName,"previous");
       then (e, (i1,i2,i3,i4,i5,i6,i7,i8+1));
 
     case (e as DAE.CALL(path=path),_,_) equation

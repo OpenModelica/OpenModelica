@@ -149,11 +149,217 @@ end simulationHeaderFile;
      let()= textFile(simulationFile_opt_header(simCode,guid), '<%fileNamePrefix%>_13opt.h')
      // linearization
      let()= textFileConvertLines(simulationFile_lnz(simCode,guid), '<%fileNamePrefix%>_14lnz.c')
+     // synchronous
+     let()= textFileConvertLines(simulationFile_syn(simCode,guid), '<%fileNamePrefix%>_15syn.c')
      // main file
      let()= textFileConvertLines(simulationFile(simCode,guid), '<%fileNamePrefix%>.c')
      ""
   end match
 end generateSimulationFiles;
+
+template simulationFile_syn(SimCode simCode, String guid)
+"Synchonous features"
+::= match simCode
+    case simCode as SIMCODE(__) then
+      <<
+      /* Synchronous systems */
+      <%simulationFileHeader(simCode)%>
+      #if defined(__cplusplus)
+      extern "C" {
+      #endif
+
+      <%functionInitSynchronous(clockedPartitions, modelNamePrefix(simCode))%>
+
+      <%functionUpdateSynchronous(clockedPartitions, modelNamePrefix(simCode))%>
+
+      <%functionSystemsSynchronous(clockedPartitions, modelNamePrefix(simCode))%>
+
+      #if defined(__cplusplus)
+      }
+      #endif
+      <%\n%>
+      >>
+  end match
+end simulationFile_syn;
+
+template functionInitSynchronous(list<ClockedPartition> clockedPartitions, String modelNamePrefix)
+"Synchonous features"
+::=
+  let body = clockedPartitions |> partition =>
+    match partition
+      case CLOCKED_PARTITION(__) then
+        let subClocksInfo = subPartitions |> subPartition =>
+                            subPartitionStr(subPartition); separator="\n"
+        <<
+        data->modelData.clocksInfo[i].nSubClocks = <%listLength(subPartitions)%>;
+        data->modelData.clocksInfo[i].subClocks = data->modelData.subClocksInfo + j;
+        i++;
+        <%subClocksInfo%>
+
+        >>
+  <<
+  /* Initializes the clocks of model. */
+  void <%symbolName(modelNamePrefix,"function_initSynchronous")%>(DATA *data)
+  {
+    long i=0, j=0;
+    <%body%>
+  }
+  >>
+end functionInitSynchronous;
+
+template subPartitionStr(SubPartition subPartition)
+::=
+match subPartition
+  case SUBPARTITION(subClock = SUBCLOCK(__), holdEvents=holdEvents) then
+    let methodStr = match subClock.solver
+      case NONE() then ""
+      else "External"
+    <<
+    <%rationalStr("data->modelData.subClocksInfo[j].shift", subClock.shift)%>
+    <%rationalStr("data->modelData.subClocksInfo[j].factor", subClock.factor)%>
+    data->modelData.subClocksInfo[j].solverMethod = "<%methodStr%>";
+    data->modelData.subClocksInfo[j].holdEvents = <%boolStrC(holdEvents)%>;
+    j++;
+    >>
+end subPartitionStr;
+
+template rationalStr(String prefix, Rational rational)
+::=
+match rational
+  case RATIONAL(__) then
+    <<
+    <%prefix%>.m = <%nom%>;
+    <%prefix%>.n = <%denom%>;
+    >>
+end rationalStr;
+
+template functionUpdateSynchronous(list<ClockedPartition> clockedPartitions, String modelNamePrefix)
+::=
+  let &varDecls = buffer ""
+  let &auxFunction = buffer ""
+  let body = clockedPartitions |> partition hasindex i =>
+    match partition
+      case CLOCKED_PARTITION(__) then
+        let caseBody = updatePartition(i, baseClock, &varDecls, &auxFunction)
+        <<
+        case <%i%>:
+          <%caseBody%>
+          break;
+        >>; separator = "\n"
+  <<
+  <%auxFunction%>
+  /* Update the base clock. */
+  modelica_boolean <%symbolName(modelNamePrefix,"function_updateSynchronous")%>(DATA *data, long i)
+  {
+    <%varDecls%>
+    modelica_boolean ret;
+    switch (i) {
+      <%body%>
+      default:
+        throwStreamPrint(NULL, "Internal Error: unknown base partition %ld", i);
+        ret = <%boolStrC(false)%>;
+        break;
+    }
+    return ret;
+  }
+  >>
+end functionUpdateSynchronous;
+
+template updatePartition(Integer i, DAE.ClockKind baseClock, Text &varDecls, Text &auxFunction)
+::=
+match baseClock
+  case DAE.BOOLEAN_CLOCK(__) then
+    let cond = cref(expCref(condition))
+    <<
+    if (data->simulationInfo.clocksData[i].cnt > 0)
+      data->simulationInfo.clocksData[i].interval = time - data->simulationInfo.clocksData[i].timepoint;
+    else
+      data->simulationInfo.clocksData[i].interval = <%startInterval%>;
+    data->simulationInfo.clocksData[i].timepoint = time;
+    'return <%cond%> && !$P$PRE<%cond%>;'
+    >>
+  else
+    let &preExp = buffer ""
+    let intvl = daeExp(getClockIntvl(baseClock), contextOther, &preExp, &varDecls, &auxFunction)
+    <<
+    <%preExp%>
+    if (time < data->simulationInfo.clocksData[i].timepoint)
+      ret = <%boolStrC(false)%>;
+    else {
+      data->simulationInfo.clocksData[i].interval = <%intvl%>;
+      data->simulationInfo.clocksData[i].timepoint = time + data->simulationInfo.clocksData[i].interval;
+      ret = <%boolStrC(true)%>;
+    }
+    >>
+end updatePartition;
+
+template functionSystemsSynchronous(list<ClockedPartition> clockedPartitions, String modelNamePrefix)
+::=
+  let systs = getSubPartitions(clockedPartitions) |> subPartition hasindex i =>
+    match subPartition
+      case SUBPARTITION(__) then
+        functionEquationsSynchronous(i, listAppend(equations, removedEquations), modelNamePrefix)
+    ; separator = "\n"
+  let cases = clockedPartitions |> partition hasindex i =>
+    let name = 'functionEquationsSynchronous_system<%i%>'
+    <<
+    case <%i%>:
+      return <%symbolName(modelNamePrefix, name)%>(data);
+    >>; separator = "\n"
+  <<
+
+  <%systs%>
+
+  /*Clocked systems equations */
+  int <%symbolName(modelNamePrefix,"function_equationsSynchronous")%>(DATA *data, long i)
+  {
+    TRACE_PUSH
+
+    switch (i) {
+      <%cases%>
+      default:
+        throwStreamPrint(NULL, "Internal Error: unknown sub partition %ld", i);
+        break;
+    }
+
+    TRACE_POP
+    return 0;
+  }
+  >>
+
+end functionSystemsSynchronous;
+
+template functionEquationsSynchronous(Integer i, list<SimEqSystem> equations, String modelNamePrefix)
+::=
+  let &varDecls = buffer ""
+  let &eqfuncs = buffer ""
+  let fncalls = equations |> eq => equation_(eq, contextOther, &varDecls, &eqfuncs, modelNamePrefix); separator="\n"
+  let name = 'functionEquationsSynchronous_system<%i%>'
+  <<
+  <%&eqfuncs%>
+
+  int <%symbolName(modelNamePrefix, name)%>(DATA *data)
+  {
+    TRACE_PUSH
+    <%addRootsTempArray()%>
+    <%varDecls%>
+
+    <%fncalls%>
+
+    TRACE_POP
+    return 0;
+  }
+  >>
+end functionEquationsSynchronous;
+
+template prevVarSynchronous(Integer i, SimVar var)
+::=
+match var
+    case SIMVAR(arrayCref=SOME(c), aliasvar=NOALIAS()) then
+      '$P$CLKPRE<%cref(c)%> = <%cref(c)%>;'
+    case SIMVAR(aliasvar=NOALIAS()) then
+      '$P$CLKPRE<%cref(name)%> = <%cref(name)%>;'
+end prevVarSynchronous;
 
 template simulationFile_exo(SimCode simCode, String guid)
 "External Objects"
@@ -625,6 +831,9 @@ template simulationFile(SimCode simCode, String guid)
     extern int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt);
     extern int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data, const modelica_boolean file);
     extern int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t);
+    extern void <%symbolName(modelNamePrefixStr,"function_initSynchronous")%>(DATA * data);
+    extern modelica_boolean <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>(DATA * data, long i);
+    extern modelica_boolean <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>(DATA * datav);
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
        (int (*)(DATA *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>,
@@ -643,7 +852,7 @@ template simulationFile(SimCode simCode, String guid)
        <%symbolName(modelNamePrefixStr,"output_function")%>,
        <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>,
-       <%if useHomotopy then '1' else '0'%> /* useHomotopy */,
+       <%boolStrC(useHomotopy)%> /* useHomotopy */,
        <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>,
        <%symbolName(modelNamePrefixStr,"functionRemovedInitialEquations")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>,
@@ -673,7 +882,10 @@ template simulationFile(SimCode simCode, String guid)
        <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>,
        <%symbolName(modelNamePrefixStr,"setInputData")%>,
        <%symbolName(modelNamePrefixStr,"getTimeGrid")%>,
-       <%symbolName(modelNamePrefixStr,"symEulerUpdate")%>
+       <%symbolName(modelNamePrefixStr,"symEulerUpdate")%>,
+       <%symbolName(modelNamePrefixStr,"function_initSynchronous")%>,
+       <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>,
+       <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>
     <%\n%>
     };
 
@@ -824,6 +1036,9 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData.nOptimizeFinalConstraints = <%varInfo.numOptimizeFinalConstraints%>;
 
     data->modelData.nDelayExpressions = <%match delayed case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
+
+    data->modelData.nClocks = <%nClocks%>;
+    data->modelData.nSubClocks = <%nSubClocks%>;
 
     >>
   end match
@@ -1980,8 +2195,8 @@ template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations, Str
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].equationIndex = <%nls.index%>;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].size = <%size%>;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].method = 0;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].homotopySupport = <%if nls.homotopySupport then '1' else '0'%>;
-       nonLinearSystemData[<%nls.indexNonLinearSystem%>].mixedSystem = <%if nls.mixedSystem then '1' else '0'%>;
+       nonLinearSystemData[<%nls.indexNonLinearSystem%>].homotopySupport = <%boolStrC(nls.homotopySupport)%>;
+       nonLinearSystemData[<%nls.indexNonLinearSystem%>].mixedSystem = <%boolStrC(nls.mixedSystem)%>;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].residualFunc = residualFunc<%nls.index%>;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
@@ -4716,7 +4931,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   MAINOBJ=$(FILEPREFIX).obj
   CFILES=<%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
   <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
-  <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c
+  <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c \
+  <%fileNamePrefix%>_15syn.c
   OFILES=$(CFILES:.c=.obj)
   GENERATEDFILES=$(MAINFILE) $(FILEPREFIX)_functions.h $(FILEPREFIX).makefile $(CFILES)
 
@@ -4766,7 +4982,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   MAINOBJ=<%fileNamePrefix%>.o
   CFILES=<%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
   <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
-  <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c
+  <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c \
+  <%fileNamePrefix%>_15syn.c
   OFILES=$(CFILES:.c=.o)
   GENERATEDFILES=$(MAINFILE) <%fileNamePrefix%>.makefile <%fileNamePrefix%>_literals.h <%fileNamePrefix%>_functions.h $(CFILES)
 

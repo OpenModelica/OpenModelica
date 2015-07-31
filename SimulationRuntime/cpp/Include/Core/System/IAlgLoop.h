@@ -54,9 +54,9 @@ public:
   /// Provide the right hand side (according to the index)
   virtual void getRHS(double* res) = 0;
 
-  virtual void getSystemMatrix(double* A_matrix) = 0;
-  virtual void getSystemMatrix(SparseMatrix&) = 0;
 
+  virtual const matrix_t& getSystemMatrix()  = 0;
+  virtual const sparsematrix_t& getSystemSparseMatrix()  = 0;
   virtual bool isLinear() = 0;
   virtual bool isLinearTearing() = 0;
   virtual bool isConsistent() = 0;

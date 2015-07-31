@@ -19,13 +19,36 @@
 
 
 #include <boost/noncopyable.hpp>
-#include <Core/Utils/numeric/bindings/traits/traits.hpp>
-#include <Core/Utils/numeric/bindings/traits/sparse_traits.hpp>
 #include <Core/Utils/numeric/bindings/umfpack/umfpack_overloads.hpp>
+#include <Core/Utils/numeric/bindings/value_type.hpp>
+#include <Core/Utils/numeric/bindings/begin.hpp>
+#include <Core/Utils/numeric/bindings/end.hpp>
+#include <Core/Utils/numeric/bindings/size.hpp>
+#include <Core/Utils/numeric/bindings/data_order.hpp>
+#include <Core/Utils/numeric/bindings/index_base.hpp>
 
 
 namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
 
+  template <typename MatrA>
+  void check_umfpack_structure()
+  {
+    BOOST_STATIC_ASSERT((boost::is_same<
+      typename bindings::detail::property_at< MatrA, tag::matrix_type >::type,
+      tag::general
+    >::value));
+    BOOST_STATIC_ASSERT((boost::is_same<
+      typename bindings::result_of::data_order<MatrA>::type,
+      tag::column_major
+    >::value));
+    typedef typename bindings::result_of::index_base<MatrA>::type index_b;
+    BOOST_STATIC_ASSERT(index_b::value == 0);
+    typedef typename bindings::detail::property_at<
+      MatrA, tag::data_structure >::type storage_f;
+    BOOST_STATIC_ASSERT(
+      (boost::is_same<storage_f, tag::compressed_sparse>::value ||
+       boost::is_same<storage_f, tag::coordinate_sparse>::value ));
+  }
 
   template <typename T = double>
   struct symbolic_type : private noncopyable {
@@ -100,50 +123,53 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
 
     template <typename MatrA>
     inline
-    int symbolic (traits::compressed_t,
+    int symbolic (tag::compressed_sparse,
                   MatrA const& A, void **Symbolic,
                   double const* Control = 0, double* Info = 0)
     {
-      return detail::symbolic (traits::spmatrix_size1 (A),
-                               traits::spmatrix_size2 (A),
-                               traits::spmatrix_index1_storage (A),
-                               traits::spmatrix_index2_storage (A),
-                               traits::spmatrix_value_storage (A),
+      return detail::symbolic (bindings::size_row (A),
+                               bindings::size_column (A),
+                               bindings::begin_compressed_index_major (A),
+                               bindings::begin_index_minor (A),
+                               bindings::begin_value (A),
                                Symbolic, Control, Info);
     }
 
     template <typename MatrA, typename QVec>
     inline
-    int symbolic (traits::compressed_t,
+    int symbolic (tag::compressed_sparse,
                   MatrA const& A, QVec const& Qinit, void **Symbolic,
                   double const* Control = 0, double* Info = 0)
     {
-      return detail::qsymbolic (traits::spmatrix_size1 (A),
-                                traits::spmatrix_size2 (A),
-                                traits::spmatrix_index1_storage (A),
-                                traits::spmatrix_index2_storage (A),
-                                traits::spmatrix_value_storage (A),
-                                traits::vector_storage (Qinit),
+#ifdef CHECK_TEST_COVERAGE
+      typedef typename MatrA::not_yet_tested i_m_still_here;
+#endif
+      return detail::qsymbolic (bindings::size_row (A),
+                                bindings::size_column (A),
+                                bindings::begin_compressed_index_major (A),
+                                bindings::begin_index_minor (A),
+                                bindings::begin_value (A),
+                                bindings::begin_value (Qinit),
                                 Symbolic, Control, Info);
     }
 
     template <typename MatrA>
     inline
-    int symbolic (traits::coordinate_t,
+    int symbolic (tag::coordinate_sparse,
                   MatrA const& A, void **Symbolic,
                   double const* Control = 0, double* Info = 0)
     {
-      int n_row = traits::spmatrix_size1 (A);
-      int n_col = traits::spmatrix_size2 (A);
-      int nnz = traits::spmatrix_num_nonzeros (A);
+      int n_row = bindings::size_row (A);
+      int n_col = bindings::size_column (A);
+      int nnz = bindings::end_value (A) - bindings::begin_value (A);
 
-      typedef typename traits::sparse_matrix_traits<MatrA>::value_type val_t;
+      typedef typename bindings::value_type<MatrA>::type val_t;
 
-      int const* Ti = traits::spmatrix_index2_storage (A);
-      int const* Tj = traits::spmatrix_index1_storage (A);
-      traits::detail::array<int> Ap (n_col+1);
+      int const* Ti = bindings::begin_index_minor (A);
+      int const* Tj = bindings::begin_index_major (A);
+      bindings::detail::array<int> Ap (n_col+1);
       if (!Ap.valid()) return UMFPACK_ERROR_out_of_memory;
-      traits::detail::array<int> Ai (nnz);
+      bindings::detail::array<int> Ai (nnz);
       if (!Ai.valid()) return UMFPACK_ERROR_out_of_memory;
 
       int status = detail::triplet_to_col (n_row, n_col, nnz,
@@ -154,27 +180,30 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
 
       return detail::symbolic (n_row, n_col,
                                Ap.storage(), Ai.storage(),
-                               traits::spmatrix_value_storage (A),
+                               bindings::begin_value (A),
                                Symbolic, Control, Info);
     }
 
     template <typename MatrA, typename QVec>
     inline
-    int symbolic (traits::coordinate_t,
+    int symbolic (tag::coordinate_sparse,
                   MatrA const& A, QVec const& Qinit, void **Symbolic,
                   double const* Control = 0, double* Info = 0)
     {
-      int n_row = traits::spmatrix_size1 (A);
-      int n_col = traits::spmatrix_size2 (A);
-      int nnz = traits::spmatrix_num_nonzeros (A);
+#ifdef CHECK_TEST_COVERAGE
+      typedef typename MatrA::not_yet_tested i_m_still_here;
+#endif
+      int n_row = bindings::size_row (A);
+      int n_col = bindings::size_column (A);
+      int nnz = bindings::end_value (A) - bindings::begin_value (A);
 
-      typedef typename traits::sparse_matrix_traits<MatrA>::value_type val_t;
+      typedef typename bindings::value_type<MatrA>::type val_t;
 
-      int const* Ti = traits::spmatrix_index2_storage (A);
-      int const* Tj = traits::spmatrix_index1_storage (A);
-      traits::detail::array<int> Ap (n_col+1);
+      int const* Ti = bindings::begin_index_minor (A);
+      int const* Tj = bindings::begin_index_major (A);
+      bindings::detail::array<int> Ap (n_col+1);
       if (!Ap.valid()) return UMFPACK_ERROR_out_of_memory;
-      traits::detail::array<int> Ai (nnz);
+      bindings::detail::array<int> Ai (nnz);
       if (!Ai.valid()) return UMFPACK_ERROR_out_of_memory;
 
       int status = detail::triplet_to_col (n_row, n_col, nnz,
@@ -185,8 +214,8 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
 
       return detail::qsymbolic (n_row, n_col,
                                 Ap.storage(), Ai.storage(),
-                                traits::spmatrix_value_storage (A),
-                                traits::vector_storage (Qinit),
+                                bindings::begin_value (A),
+                                bindings::begin_value (Qinit),
                                 Symbolic, Control, Info);
     }
 
@@ -196,32 +225,15 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int symbolic (MatrA const& A,
                 symbolic_type<
-                  typename traits::sparse_matrix_traits<MatrA>::value_type
+                  typename bindings::value_type<MatrA>::type
                 >& Symbolic,
                 double const* Control = 0, double* Info = 0)
   {
 #ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
-    BOOST_STATIC_ASSERT((boost::is_same<
-      typename traits::sparse_matrix_traits<MatrA>::matrix_structure,
-      traits::general_t
-    >::value));
-    BOOST_STATIC_ASSERT((boost::is_same<
-      typename traits::sparse_matrix_traits<MatrA>::ordering_type,
-      traits::column_major_t
-    >::value));
-    BOOST_STATIC_ASSERT(traits::sparse_matrix_traits<MatrA>::index_base == 0);
+    check_umfpack_structure<MatrA>();
 #endif
-
-    typedef
-      typename traits::sparse_matrix_traits<MatrA>::storage_format storage_f;
-
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
-    BOOST_STATIC_ASSERT(
-      (boost::is_same<storage_f, traits::compressed_t>::value
-       ||
-       boost::is_same<storage_f, traits::coordinate_t>::value
-       ));
-#endif
+    typedef typename bindings::detail::property_at<
+      MatrA, tag::data_structure >::type storage_f;
 
     return detail::symbolic (storage_f(), A, &Symbolic.ptr, Control, Info);
   }
@@ -230,13 +242,13 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int symbolic (MatrA const& A,
                 symbolic_type<
-                  typename traits::sparse_matrix_traits<MatrA>::value_type
+                  typename bindings::value_type<MatrA>::type
                 >& Symbolic,
                 control_type<
-                  typename traits::sparse_matrix_traits<MatrA>::value_type
+                  typename bindings::value_type<MatrA>::type
                 > const& Control,
                 info_type<
-                  typename traits::sparse_matrix_traits<MatrA>::value_type
+                  typename bindings::value_type<MatrA>::type
                 >& Info)
   {
     return symbolic (A, Symbolic, Control.ptr, Info.ptr);
@@ -246,10 +258,10 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int symbolic (MatrA const& A,
                 symbolic_type<
-                  typename traits::sparse_matrix_traits<MatrA>::value_type
+                  typename bindings::value_type<MatrA>::type
                 >& Symbolic,
                 control_type<
-                  typename traits::sparse_matrix_traits<MatrA>::value_type
+                  typename bindings::value_type<MatrA>::type
                 > const& Control)
   {
     return symbolic (A, Symbolic, Control.ptr);
@@ -259,34 +271,20 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int symbolic (MatrA const& A, QVec const& Qinit,
                 symbolic_type<
-                  typename traits::sparse_matrix_traits<MatrA>::value_type
+                  typename bindings::value_type<MatrA>::type
                 >& Symbolic,
                 double const* Control = 0, double* Info = 0)
   {
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
-    BOOST_STATIC_ASSERT((boost::is_same<
-      typename traits::sparse_matrix_traits<MatrA>::matrix_structure,
-      traits::general_t
-    >::value));
-    BOOST_STATIC_ASSERT((boost::is_same<
-      typename traits::sparse_matrix_traits<MatrA>::ordering_type,
-      traits::column_major_t
-    >::value));
-    BOOST_STATIC_ASSERT(traits::sparse_matrix_traits<MatrA>::index_base == 0);
+#ifdef CHECK_TEST_COVERAGE
+      typedef typename MatrA::not_yet_tested i_m_still_here;
 #endif
-
-    typedef
-      typename traits::sparse_matrix_traits<MatrA>::storage_format storage_f;
-
 #ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
-    BOOST_STATIC_ASSERT(
-      (boost::is_same<storage_f, traits::compressed_t>::value
-       ||
-       boost::is_same<storage_f, traits::coordinate_t>::value
-       ));
+    check_umfpack_structure<MatrA>();
 #endif
+    typedef typename bindings::detail::property_at<
+      MatrA, tag::data_structure >::type storage_f;
 
-    assert (traits::spmatrix_size2 (A) == traits::vector_size (Qinit));
+    assert (bindings::size_column (A) == bindings::size (Qinit));
 
     return detail::symbolic (storage_f(), A, Qinit,
                              &Symbolic.ptr, Control, Info);
@@ -296,13 +294,13 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int symbolic (MatrA const& A, QVec const& Qinit,
                 symbolic_type<
-                  typename traits::sparse_matrix_traits<MatrA>::value_type
+                  typename bindings::value_type<MatrA>::type
                 >& Symbolic,
                 control_type<
-                  typename traits::sparse_matrix_traits<MatrA>::value_type
+                  typename bindings::value_type<MatrA>::type
                 > const& Control,
                 info_type<
-                  typename traits::sparse_matrix_traits<MatrA>::value_type
+                  typename bindings::value_type<MatrA>::type
                 >& Info)
   {
     return symbolic (A, Qinit, Symbolic, Control.ptr, Info.ptr);
@@ -312,10 +310,10 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int symbolic (MatrA const& A, QVec const& Qinit,
                 symbolic_type<
-                  typename traits::sparse_matrix_traits<MatrA>::value_type
+                  typename bindings::value_type<MatrA>::type
                 >& Symbolic,
                 control_type<
-                  typename traits::sparse_matrix_traits<MatrA>::value_type
+                  typename bindings::value_type<MatrA>::type
                 > const& Control)
   {
     return symbolic (A, Qinit, Symbolic, Control.ptr);
@@ -336,35 +334,35 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
 
     template <typename MatrA>
     inline
-    int numeric (traits::compressed_t, MatrA const& A,
+    int numeric (tag::compressed_sparse, MatrA const& A,
                  void *Symbolic, void** Numeric,
                  double const* Control = 0, double* Info = 0)
     {
-      return detail::numeric (traits::spmatrix_size1 (A),
-                              traits::spmatrix_size2 (A),
-                              traits::spmatrix_index1_storage (A),
-                              traits::spmatrix_index2_storage (A),
-                              traits::spmatrix_value_storage (A),
+      return detail::numeric (bindings::size_row (A),
+                              bindings::size_column (A),
+                              bindings::begin_compressed_index_major (A),
+                              bindings::begin_index_minor (A),
+                              bindings::begin_value (A),
                               Symbolic, Numeric, Control, Info);
     }
 
     template <typename MatrA>
     inline
-    int numeric (traits::coordinate_t, MatrA const& A,
+    int numeric (tag::coordinate_sparse, MatrA const& A,
                  void *Symbolic, void** Numeric,
                  double const* Control = 0, double* Info = 0)
     {
-      int n_row = traits::spmatrix_size1 (A);
-      int n_col = traits::spmatrix_size2 (A);
-      int nnz = traits::spmatrix_num_nonzeros (A);
+      int n_row = bindings::size_row (A);
+      int n_col = bindings::size_column (A);
+      int nnz = bindings::end_value (A) - bindings::begin_value (A);
 
-      typedef typename traits::sparse_matrix_traits<MatrA>::value_type val_t;
+      typedef typename bindings::value_type<MatrA>::type val_t;
 
-      int const* Ti = traits::spmatrix_index2_storage (A);
-      int const* Tj = traits::spmatrix_index1_storage (A);
-      traits::detail::array<int> Ap (n_col+1);
+      int const* Ti = bindings::begin_index_minor (A);
+      int const* Tj = bindings::begin_index_major (A);
+      bindings::detail::array<int> Ap (n_col+1);
       if (!Ap.valid()) return UMFPACK_ERROR_out_of_memory;
-      traits::detail::array<int> Ai (nnz);
+      bindings::detail::array<int> Ai (nnz);
       if (!Ai.valid()) return UMFPACK_ERROR_out_of_memory;
 
       int status = detail::triplet_to_col (n_row, n_col, nnz,
@@ -375,7 +373,7 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
 
       return detail::numeric (n_row, n_col,
                               Ap.storage(), Ai.storage(),
-                              traits::spmatrix_value_storage (A),
+                              bindings::begin_value (A),
                               Symbolic, Numeric, Control, Info);
     }
 
@@ -385,35 +383,18 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int numeric (MatrA const& A,
                symbolic_type<
-                 typename traits::sparse_matrix_traits<MatrA>::value_type
+                 typename bindings::value_type<MatrA>::type
                > const& Symbolic,
                numeric_type<
-                 typename traits::sparse_matrix_traits<MatrA>::value_type
+                 typename bindings::value_type<MatrA>::type
                >& Numeric,
                double const* Control = 0, double* Info = 0)
   {
 #ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
-    BOOST_STATIC_ASSERT((boost::is_same<
-      typename traits::sparse_matrix_traits<MatrA>::matrix_structure,
-      traits::general_t
-    >::value));
-    BOOST_STATIC_ASSERT((boost::is_same<
-      typename traits::sparse_matrix_traits<MatrA>::ordering_type,
-      traits::column_major_t
-    >::value));
-    BOOST_STATIC_ASSERT(traits::sparse_matrix_traits<MatrA>::index_base == 0);
+    check_umfpack_structure<MatrA>();
 #endif
-
-    typedef
-      typename traits::sparse_matrix_traits<MatrA>::storage_format storage_f;
-
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
-    BOOST_STATIC_ASSERT(
-      (boost::is_same<storage_f, traits::compressed_t>::value
-       ||
-       boost::is_same<storage_f, traits::coordinate_t>::value
-       ));
-#endif
+    typedef typename bindings::detail::property_at<
+      MatrA, tag::data_structure >::type storage_f;
 
     return detail::numeric (storage_f(), A,
                             Symbolic.ptr, &Numeric.ptr, Control, Info);
@@ -423,16 +404,16 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int numeric (MatrA const& A,
                symbolic_type<
-                 typename traits::sparse_matrix_traits<MatrA>::value_type
+                 typename bindings::value_type<MatrA>::type
                > const& Symbolic,
                numeric_type<
-                 typename traits::sparse_matrix_traits<MatrA>::value_type
+                 typename bindings::value_type<MatrA>::type
                >& Numeric,
                control_type<
-                 typename traits::sparse_matrix_traits<MatrA>::value_type
+                 typename bindings::value_type<MatrA>::type
                > const& Control,
                info_type<
-                 typename traits::sparse_matrix_traits<MatrA>::value_type
+                 typename bindings::value_type<MatrA>::type
                >& Info)
 
   {
@@ -445,13 +426,13 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int numeric (MatrA const& A,
                symbolic_type<
-                 typename traits::sparse_matrix_traits<MatrA>::value_type
+                 typename bindings::value_type<MatrA>::type
                > const& Symbolic,
                numeric_type<
-                 typename traits::sparse_matrix_traits<MatrA>::value_type
+                 typename bindings::value_type<MatrA>::type
                >& Numeric,
                control_type<
-                 typename traits::sparse_matrix_traits<MatrA>::value_type
+                 typename bindings::value_type<MatrA>::type
                > const& Control)
   {
     return umfpack::numeric (A, Symbolic, Numeric, Control.ptr);
@@ -466,45 +447,51 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
 
     template <typename MatrA>
     inline
-    int factor (traits::compressed_t, MatrA const& A,
+    int factor (tag::compressed_sparse, MatrA const& A,
                 void** Numeric, double const* Control = 0, double* Info = 0)
     {
-      symbolic_type<typename traits::sparse_matrix_traits<MatrA>::value_type>
+#ifdef CHECK_TEST_COVERAGE
+      typedef typename MatrA::not_yet_tested i_m_still_here;
+#endif
+      symbolic_type<typename bindings::value_type<MatrA>::type>
         Symbolic;
 
       int status;
-      status = detail::symbolic (traits::spmatrix_size1 (A),
-                                 traits::spmatrix_size2 (A),
-                                 traits::spmatrix_index1_storage (A),
-                                 traits::spmatrix_index2_storage (A),
-                                 traits::spmatrix_value_storage (A),
+      status = detail::symbolic (bindings::size_row (A),
+                                 bindings::size_column (A),
+                                 bindings::begin_compressed_index_major (A),
+                                 bindings::begin_index_minor (A),
+                                 bindings::begin_value (A),
                                  &Symbolic.ptr, Control, Info);
       if (status != UMFPACK_OK) return status;
 
-      return detail::numeric (traits::spmatrix_size1 (A),
-                              traits::spmatrix_size2 (A),
-                              traits::spmatrix_index1_storage (A),
-                              traits::spmatrix_index2_storage (A),
-                              traits::spmatrix_value_storage (A),
+      return detail::numeric (bindings::size_row (A),
+                              bindings::size_column (A),
+                              bindings::begin_compressed_index_major (A),
+                              bindings::begin_index_minor (A),
+                              bindings::begin_value (A),
                               Symbolic.ptr, Numeric, Control, Info);
     }
 
     template <typename MatrA>
     inline
-    int factor (traits::coordinate_t, MatrA const& A,
+    int factor (tag::coordinate_sparse, MatrA const& A,
                 void** Numeric, double const* Control = 0, double* Info = 0)
     {
-      int n_row = traits::spmatrix_size1 (A);
-      int n_col = traits::spmatrix_size2 (A);
-      int nnz = traits::spmatrix_num_nonzeros (A);
+#ifdef CHECK_TEST_COVERAGE
+      typedef typename MatrA::not_yet_tested i_m_still_here;
+#endif
+      int n_row = bindings::size_row (A);
+      int n_col = bindings::size_column (A);
+      int nnz = bindings::end_value (A) - bindings::begin_value (A);
 
-      typedef typename traits::sparse_matrix_traits<MatrA>::value_type val_t;
+      typedef typename bindings::value_type<MatrA>::type val_t;
 
-      int const* Ti = traits::spmatrix_index2_storage (A);
-      int const* Tj = traits::spmatrix_index1_storage (A);
-      traits::detail::array<int> Ap (n_col+1);
+      int const* Ti = bindings::begin_index_minor (A);
+      int const* Tj = bindings::begin_index_major (A);
+      bindings::detail::array<int> Ap (n_col+1);
       if (!Ap.valid()) return UMFPACK_ERROR_out_of_memory;
-      traits::detail::array<int> Ai (nnz);
+      bindings::detail::array<int> Ai (nnz);
       if (!Ai.valid()) return UMFPACK_ERROR_out_of_memory;
 
       int status = detail::triplet_to_col (n_row, n_col, nnz,
@@ -513,18 +500,18 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
                                            static_cast<val_t*> (0), 0);
       if (status != UMFPACK_OK) return status;
 
-      symbolic_type<typename traits::sparse_matrix_traits<MatrA>::value_type>
+      symbolic_type<typename bindings::value_type<MatrA>::type>
         Symbolic;
 
       status = detail::symbolic (n_row, n_col,
                                  Ap.storage(), Ai.storage(),
-                                 traits::spmatrix_value_storage (A),
+                                 bindings::begin_value (A),
                                  &Symbolic.ptr, Control, Info);
       if (status != UMFPACK_OK) return status;
 
       return detail::numeric (n_row, n_col,
                               Ap.storage(), Ai.storage(),
-                              traits::spmatrix_value_storage (A),
+                              bindings::begin_value (A),
                               Symbolic.ptr, Numeric, Control, Info);
     }
 
@@ -534,32 +521,18 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int factor (MatrA const& A,
               numeric_type<
-                typename traits::sparse_matrix_traits<MatrA>::value_type
+                typename bindings::value_type<MatrA>::type
               >& Numeric,
               double const* Control = 0, double* Info = 0)
   {
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
-    BOOST_STATIC_ASSERT((boost::is_same<
-      typename traits::sparse_matrix_traits<MatrA>::matrix_structure,
-      traits::general_t
-    >::value));
-    BOOST_STATIC_ASSERT((boost::is_same<
-      typename traits::sparse_matrix_traits<MatrA>::ordering_type,
-      traits::column_major_t
-    >::value));
-    BOOST_STATIC_ASSERT(traits::sparse_matrix_traits<MatrA>::index_base == 0);
+#ifdef CHECK_TEST_COVERAGE
+      typedef typename MatrA::not_yet_tested i_m_still_here;
 #endif
-
-    typedef
-      typename traits::sparse_matrix_traits<MatrA>::storage_format storage_f;
-
 #ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
-    BOOST_STATIC_ASSERT(
-      (boost::is_same<storage_f, traits::compressed_t>::value
-       ||
-       boost::is_same<storage_f, traits::coordinate_t>::value
-       ));
+    check_umfpack_structure<MatrA>();
 #endif
+    typedef typename bindings::detail::property_at<
+      MatrA, tag::data_structure >::type storage_f;
 
     return detail::factor (storage_f(), A, &Numeric.ptr, Control, Info);
   }
@@ -568,13 +541,13 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int factor (MatrA const& A,
               numeric_type<
-                typename traits::sparse_matrix_traits<MatrA>::value_type
+                typename bindings::value_type<MatrA>::type
               >& Numeric,
               control_type<
-                typename traits::sparse_matrix_traits<MatrA>::value_type
+                typename bindings::value_type<MatrA>::type
               > const& Control,
               info_type<
-                typename traits::sparse_matrix_traits<MatrA>::value_type
+                typename bindings::value_type<MatrA>::type
               >& Info)
   {
     return factor (A, Numeric, Control.ptr, Info.ptr);
@@ -584,10 +557,10 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int factor (MatrA const& A,
               numeric_type<
-                typename traits::sparse_matrix_traits<MatrA>::value_type
+                typename bindings::value_type<MatrA>::type
               >& Numeric,
               control_type<
-                typename traits::sparse_matrix_traits<MatrA>::value_type
+                typename bindings::value_type<MatrA>::type
               > const& Control)
   {
     return factor (A, Numeric, Control.ptr);
@@ -604,36 +577,36 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
 
     template <typename MatrA, typename VecX, typename VecB>
     inline
-    int solve (traits::compressed_t, int sys,
+    int solve (tag::compressed_sparse, int sys,
                MatrA const& A, VecX& X, VecB const& B,
                void *Numeric, double const* Control = 0, double* Info = 0)
     {
-      return detail::solve (sys, traits::spmatrix_size1 (A),
-                            traits::spmatrix_index1_storage (A),
-                            traits::spmatrix_index2_storage (A),
-                            traits::spmatrix_value_storage (A),
-                            traits::vector_storage (X),
-                            traits::vector_storage (B),
+      return detail::solve (sys, bindings::size_row (A),
+                            bindings::begin_compressed_index_major (A),
+                            bindings::begin_index_minor (A),
+                            bindings::begin_value (A),
+                            bindings::begin_value (X),
+                            bindings::begin_value (B),
                             Numeric, Control, Info);
     }
 
     template <typename MatrA, typename VecX, typename VecB>
     inline
-    int solve (traits::coordinate_t, int sys,
+    int solve (tag::coordinate_sparse, int sys,
                MatrA const& A, VecX& X, VecB const& B,
                void *Numeric, double const* Control = 0, double* Info = 0)
     {
 
-      int n = traits::spmatrix_size1 (A);
-      int nnz = traits::spmatrix_num_nonzeros (A);
+      int n = bindings::size_row (A);
+      int nnz = bindings::end_value (A) - bindings::begin_value (A);
 
-      typedef typename traits::sparse_matrix_traits<MatrA>::value_type val_t;
+      typedef typename bindings::value_type<MatrA>::type val_t;
 
-      int const* Ti = traits::spmatrix_index2_storage (A);
-      int const* Tj = traits::spmatrix_index1_storage (A);
-      traits::detail::array<int> Ap (n+1);
+      int const* Ti = bindings::begin_index_minor (A);
+      int const* Tj = bindings::begin_index_major (A);
+      bindings::detail::array<int> Ap (n+1);
       if (!Ap.valid()) return UMFPACK_ERROR_out_of_memory;
-      traits::detail::array<int> Ai (nnz);
+      bindings::detail::array<int> Ai (nnz);
       if (!Ai.valid()) return UMFPACK_ERROR_out_of_memory;
 
       int status = detail::triplet_to_col (n, n, nnz,
@@ -643,9 +616,9 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
       if (status != UMFPACK_OK) return status;
 
       return detail::solve (sys, n, Ap.storage(), Ai.storage(),
-                            traits::spmatrix_value_storage (A),
-                            traits::vector_storage (X),
-                            traits::vector_storage (B),
+                            bindings::begin_value (A),
+                            bindings::begin_value (X),
+                            bindings::begin_value (B),
                             Numeric, Control, Info);
     }
 
@@ -655,36 +628,19 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int solve (int sys, MatrA const& A, VecX& X, VecB const& B,
              numeric_type<
-               typename traits::sparse_matrix_traits<MatrA>::value_type
+               typename bindings::value_type<MatrA>::type
              > const& Numeric,
              double const* Control = 0, double* Info = 0)
   {
 #ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
-    BOOST_STATIC_ASSERT((boost::is_same<
-      typename traits::sparse_matrix_traits<MatrA>::matrix_structure,
-      traits::general_t
-    >::value));
-    BOOST_STATIC_ASSERT((boost::is_same<
-      typename traits::sparse_matrix_traits<MatrA>::ordering_type,
-      traits::column_major_t
-    >::value));
-    BOOST_STATIC_ASSERT(traits::sparse_matrix_traits<MatrA>::index_base == 0);
+    check_umfpack_structure<MatrA>();
 #endif
+    typedef typename bindings::detail::property_at<
+      MatrA, tag::data_structure >::type storage_f;
 
-    typedef
-      typename traits::sparse_matrix_traits<MatrA>::storage_format storage_f;
-
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
-    BOOST_STATIC_ASSERT(
-      (boost::is_same<storage_f, traits::compressed_t>::value
-       ||
-       boost::is_same<storage_f, traits::coordinate_t>::value
-       ));
-#endif
-
-    assert (traits::spmatrix_size1 (A) == traits::spmatrix_size1 (A));
-    assert (traits::spmatrix_size2 (A) == traits::vector_size (X));
-    assert (traits::spmatrix_size2 (A) == traits::vector_size (B));
+    assert (bindings::size_row (A) == bindings::size_row (A));
+    assert (bindings::size_column (A) == bindings::size (X));
+    assert (bindings::size_column (A) == bindings::size (B));
 
     return detail::solve (storage_f(), sys, A, X, B,
                           Numeric.ptr, Control, Info);
@@ -694,13 +650,13 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int solve (int sys, MatrA const& A, VecX& X, VecB const& B,
              numeric_type<
-               typename traits::sparse_matrix_traits<MatrA>::value_type
+               typename bindings::value_type<MatrA>::type
              > const& Numeric,
              control_type<
-               typename traits::sparse_matrix_traits<MatrA>::value_type
+               typename bindings::value_type<MatrA>::type
              > const& Control,
              info_type<
-               typename traits::sparse_matrix_traits<MatrA>::value_type
+               typename bindings::value_type<MatrA>::type
              >& Info)
   {
     return solve (sys, A, X, B, Numeric, Control.ptr, Info.ptr);
@@ -710,10 +666,10 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int solve (int sys, MatrA const& A, VecX& X, VecB const& B,
              numeric_type<
-               typename traits::sparse_matrix_traits<MatrA>::value_type
+               typename bindings::value_type<MatrA>::type
              > const& Numeric,
              control_type<
-               typename traits::sparse_matrix_traits<MatrA>::value_type
+               typename bindings::value_type<MatrA>::type
              > const& Control)
   {
     return solve (sys, A, X, B, Numeric, Control.ptr);
@@ -723,7 +679,7 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int solve (MatrA const& A, VecX& X, VecB const& B,
              numeric_type<
-               typename traits::sparse_matrix_traits<MatrA>::value_type
+               typename bindings::value_type<MatrA>::type
              > const& Numeric,
              double const* Control = 0, double* Info = 0)
   {
@@ -734,13 +690,13 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int solve (MatrA const& A, VecX& X, VecB const& B,
              numeric_type<
-               typename traits::sparse_matrix_traits<MatrA>::value_type
+               typename bindings::value_type<MatrA>::type
              > const& Numeric,
              control_type<
-               typename traits::sparse_matrix_traits<MatrA>::value_type
+               typename bindings::value_type<MatrA>::type
              > const& Control,
              info_type<
-               typename traits::sparse_matrix_traits<MatrA>::value_type
+               typename bindings::value_type<MatrA>::type
              >& Info)
   {
     return solve (UMFPACK_A, A, X, B, Numeric,
@@ -751,10 +707,10 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int solve (MatrA const& A, VecX& X, VecB const& B,
              numeric_type<
-               typename traits::sparse_matrix_traits<MatrA>::value_type
+               typename bindings::value_type<MatrA>::type
              > const& Numeric,
              control_type<
-               typename traits::sparse_matrix_traits<MatrA>::value_type
+               typename bindings::value_type<MatrA>::type
              > const& Control)
   {
     return solve (UMFPACK_A, A, X, B, Numeric, Control.ptr);
@@ -769,58 +725,64 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
 
     template <typename MatrA, typename VecX, typename VecB>
     inline
-    int umf_solve (traits::compressed_t,
+    int umf_solve (tag::compressed_sparse,
                    MatrA const& A, VecX& X, VecB const& B,
                    double const* Control = 0, double* Info = 0)
     {
-      symbolic_type<typename traits::sparse_matrix_traits<MatrA>::value_type>
+#ifdef CHECK_TEST_COVERAGE
+      typedef typename MatrA::not_yet_tested i_m_still_here;
+#endif
+      symbolic_type<typename bindings::value_type<MatrA>::type>
         Symbolic;
-      numeric_type<typename traits::sparse_matrix_traits<MatrA>::value_type>
+      numeric_type<typename bindings::value_type<MatrA>::type>
         Numeric;
 
       int status;
-      status = detail::symbolic (traits::spmatrix_size1 (A),
-                                 traits::spmatrix_size2 (A),
-                                 traits::spmatrix_index1_storage (A),
-                                 traits::spmatrix_index2_storage (A),
-                                 traits::spmatrix_value_storage (A),
+      status = detail::symbolic (bindings::size_row (A),
+                                 bindings::size_column (A),
+                                 bindings::begin_compressed_index_major (A),
+                                 bindings::begin_index_minor (A),
+                                 bindings::begin_value (A),
                                  &Symbolic.ptr, Control, Info);
       if (status != UMFPACK_OK) return status;
 
-      status = detail::numeric (traits::spmatrix_size1 (A),
-                                traits::spmatrix_size2 (A),
-                                traits::spmatrix_index1_storage (A),
-                                traits::spmatrix_index2_storage (A),
-                                traits::spmatrix_value_storage (A),
+      status = detail::numeric (bindings::size_row (A),
+                                bindings::size_column (A),
+                                bindings::begin_compressed_index_major (A),
+                                bindings::begin_index_minor (A),
+                                bindings::begin_value (A),
                                 Symbolic.ptr, &Numeric.ptr, Control, Info);
       if (status != UMFPACK_OK) return status;
 
-      return detail::solve (UMFPACK_A, traits::spmatrix_size1 (A),
-                            traits::spmatrix_index1_storage (A),
-                            traits::spmatrix_index2_storage (A),
-                            traits::spmatrix_value_storage (A),
-                            traits::vector_storage (X),
-                            traits::vector_storage (B),
+      return detail::solve (UMFPACK_A, bindings::size_row (A),
+                            bindings::begin_compressed_index_major (A),
+                            bindings::begin_index_minor (A),
+                            bindings::begin_value (A),
+                            bindings::begin_value (X),
+                            bindings::begin_value (B),
                             Numeric.ptr, Control, Info);
     }
 
     template <typename MatrA, typename VecX, typename VecB>
     inline
-    int umf_solve (traits::coordinate_t,
+    int umf_solve (tag::coordinate_sparse,
                    MatrA const& A, VecX& X, VecB const& B,
                    double const* Control = 0, double* Info = 0)
     {
-      int n_row = traits::spmatrix_size1 (A);
-      int n_col = traits::spmatrix_size2 (A);
-      int nnz = traits::spmatrix_num_nonzeros (A);
+#ifdef CHECK_TEST_COVERAGE
+      typedef typename MatrAA::not_yet_tested i_m_still_here;
+#endif
+      int n_row = bindings::size_row (A);
+      int n_col = bindings::size_column (A);
+      int nnz = bindings::end_value (A) - bindings::begin_value (A);
 
-      typedef typename traits::sparse_matrix_traits<MatrA>::value_type val_t;
+      typedef typename bindings::value_type<MatrA>::type val_t;
 
-      int const* Ti = traits::spmatrix_index2_storage (A);
-      int const* Tj = traits::spmatrix_index1_storage (A);
-      traits::detail::array<int> Ap (n_col+1);
+      int const* Ti = bindings::begin_index_minor (A);
+      int const* Tj = bindings::begin_index_major (A);
+      bindings::detail::array<int> Ap (n_col+1);
       if (!Ap.valid()) return UMFPACK_ERROR_out_of_memory;
-      traits::detail::array<int> Ai (nnz);
+      bindings::detail::array<int> Ai (nnz);
       if (!Ai.valid()) return UMFPACK_ERROR_out_of_memory;
 
       int status = detail::triplet_to_col (n_row, n_col, nnz,
@@ -829,27 +791,27 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
                                            static_cast<val_t*> (0), 0);
       if (status != UMFPACK_OK) return status;
 
-      symbolic_type<typename traits::sparse_matrix_traits<MatrA>::value_type>
+      symbolic_type<typename bindings::value_type<MatrA>::type>
         Symbolic;
-      numeric_type<typename traits::sparse_matrix_traits<MatrA>::value_type>
+      numeric_type<typename bindings::value_type<MatrA>::type>
         Numeric;
 
       status = detail::symbolic (n_row, n_col,
                                  Ap.storage(), Ai.storage(),
-                                 traits::spmatrix_value_storage (A),
+                                 bindings::begin_value (A),
                                  &Symbolic.ptr, Control, Info);
       if (status != UMFPACK_OK) return status;
 
       status = detail::numeric (n_row, n_col,
                                 Ap.storage(), Ai.storage(),
-                                traits::spmatrix_value_storage (A),
+                                bindings::begin_value (A),
                                 Symbolic.ptr, &Numeric.ptr, Control, Info);
       if (status != UMFPACK_OK) return status;
 
       return detail::solve (UMFPACK_A, n_row, Ap.storage(), Ai.storage(),
-                            traits::spmatrix_value_storage (A),
-                            traits::vector_storage (X),
-                            traits::vector_storage (B),
+                            bindings::begin_value (A),
+                            bindings::begin_value (X),
+                            bindings::begin_value (B),
                             Numeric.ptr, Control, Info);
     }
 
@@ -860,32 +822,18 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   int umf_solve (MatrA const& A, VecX& X, VecB const& B,
                  double const* Control = 0, double* Info = 0)
   {
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
-    BOOST_STATIC_ASSERT((boost::is_same<
-      typename traits::sparse_matrix_traits<MatrA>::matrix_structure,
-      traits::general_t
-    >::value));
-    BOOST_STATIC_ASSERT((boost::is_same<
-      typename traits::sparse_matrix_traits<MatrA>::ordering_type,
-      traits::column_major_t
-    >::value));
-    BOOST_STATIC_ASSERT(traits::sparse_matrix_traits<MatrA>::index_base == 0);
+#ifdef CHECK_TEST_COVERAGE
+      typedef typename MatrA::not_yet_tested i_m_still_here;
 #endif
-
-    typedef
-      typename traits::sparse_matrix_traits<MatrA>::storage_format storage_f;
-
 #ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
-    BOOST_STATIC_ASSERT(
-      (boost::is_same<storage_f, traits::compressed_t>::value
-       ||
-       boost::is_same<storage_f, traits::coordinate_t>::value
-       ));
+    check_umfpack_structure<MatrA>();
 #endif
+    typedef typename bindings::detail::property_at<
+      MatrA, tag::data_structure >::type storage_f;
 
-    assert (traits::spmatrix_size1 (A) == traits::spmatrix_size1 (A));
-    assert (traits::spmatrix_size2 (A) == traits::vector_size (X));
-    assert (traits::spmatrix_size2 (A) == traits::vector_size (B));
+    assert (bindings::size_row (A) == bindings::size_row (A));
+    assert (bindings::size_column (A) == bindings::size (X));
+    assert (bindings::size_column (A) == bindings::size (B));
 
     return detail::umf_solve (storage_f(), A, X, B, Control, Info);
   }
@@ -894,10 +842,10 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int umf_solve (MatrA const& A, VecX& X, VecB const& B,
                  control_type<
-                   typename traits::sparse_matrix_traits<MatrA>::value_type
+                   typename bindings::value_type<MatrA>::type
                  > const& Control,
                  info_type<
-                   typename traits::sparse_matrix_traits<MatrA>::value_type
+                   typename bindings::value_type<MatrA>::type
                  >& Info)
   {
     return umf_solve (A, X, B, Control.ptr, Info.ptr);
@@ -907,7 +855,7 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int umf_solve (MatrA const& A, VecX& X, VecB const& B,
                  control_type<
-                   typename traits::sparse_matrix_traits<MatrA>::value_type
+                   typename bindings::value_type<MatrA>::type
                  > const& Control)
   {
     return umf_solve (A, X, B, Control.ptr);
@@ -925,12 +873,12 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int scale (VecX& X, VecB const& B,
              numeric_type<
-               typename traits::vector_traits<VecB>::value_type
+               typename bindings::value_type<VecB>::type
              > const& Numeric)
   {
-    return detail::scale (traits::vector_size (B),
-                          traits::vector_storage (X),
-                          traits::vector_storage (B),
+    return detail::scale (bindings::size (B),
+                          bindings::begin_value (X),
+                          bindings::begin_value (B),
                           Numeric.ptr);
   }
 
@@ -1005,28 +953,28 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
 
     template <typename MatrA>
     inline
-    int report_matrix (traits::compressed_t, MatrA const& A,
+    int report_matrix (tag::compressed_sparse, MatrA const& A,
                        double const* Control)
     {
-      return detail::report_matrix (traits::spmatrix_size1 (A),
-                                    traits::spmatrix_size2 (A),
-                                    traits::spmatrix_index1_storage (A),
-                                    traits::spmatrix_index2_storage (A),
-                                    traits::spmatrix_value_storage (A),
+      return detail::report_matrix (bindings::size_row (A),
+                                    bindings::size_column (A),
+                                    bindings::begin_compressed_index_major (A),
+                                    bindings::begin_index_minor (A),
+                                    bindings::begin_value (A),
                                     1, Control);
     }
 
     template <typename MatrA>
     inline
-    int report_matrix (traits::coordinate_t, MatrA const& A,
+    int report_matrix (tag::coordinate_sparse, MatrA const& A,
                        double const* Control)
     {
-      return detail::report_triplet (traits::spmatrix_size1 (A),
-                                     traits::spmatrix_size2 (A),
-                                     traits::spmatrix_num_nonzeros (A),
-                                     traits::spmatrix_index1_storage (A),
-                                     traits::spmatrix_index2_storage (A),
-                                     traits::spmatrix_value_storage (A),
+      return detail::report_triplet (bindings::size_row (A),
+                                     bindings::size_column (A),
+                                     bindings::end_value (A) - bindings::begin_value (A),
+                                     bindings::begin_index_major (A),
+                                     bindings::begin_index_minor (A),
+                                     bindings::begin_value (A),
                                      Control);
     }
 
@@ -1036,31 +984,14 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int report_matrix (MatrA const& A,
                      control_type<
-                       typename traits::sparse_matrix_traits<MatrA>::value_type
+                       typename bindings::value_type<MatrA>::type
                      > const& Control)
   {
 #ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
-    BOOST_STATIC_ASSERT((boost::is_same<
-      typename traits::sparse_matrix_traits<MatrA>::matrix_structure,
-      traits::general_t
-    >::value));
-    BOOST_STATIC_ASSERT((boost::is_same<
-      typename traits::sparse_matrix_traits<MatrA>::ordering_type,
-      traits::column_major_t
-    >::value));
-    BOOST_STATIC_ASSERT(traits::sparse_matrix_traits<MatrA>::index_base == 0);
+    check_umfpack_structure<MatrA>();
 #endif
-
-    typedef
-      typename traits::sparse_matrix_traits<MatrA>::storage_format storage_f;
-
-#ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
-    BOOST_STATIC_ASSERT(
-      (boost::is_same<storage_f, traits::compressed_t>::value
-       ||
-       boost::is_same<storage_f, traits::coordinate_t>::value
-       ));
-#endif
+    typedef typename bindings::detail::property_at<
+      MatrA, tag::data_structure >::type storage_f;
 
     return detail::report_matrix (storage_f(), A, Control.ptr);
   }
@@ -1072,11 +1003,11 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   inline
   int report_vector (VecX const& X,
                      control_type<
-                       typename traits::vector_traits<VecX>::value_type
+                       typename bindings::value_type<VecX>::type
                      > const& Control)
   {
-    return detail::report_vector (traits::vector_size (X),
-                                  traits::vector_storage (X),
+    return detail::report_vector (bindings::size (X),
+                                  bindings::begin_value (X),
                                   Control.ptr);
   }
 
@@ -1108,8 +1039,11 @@ namespace boost { namespace numeric { namespace bindings {  namespace umfpack {
   template <typename VecP, typename T>
   inline
   int report_permutation (VecP const& Perm, control_type<T> const& Control) {
+#ifdef CHECK_TEST_COVERAGE
+      typedef typename T::not_yet_tested i_m_still_here;
+#endif
     return detail::report_perm (T(), 0,
-                                traits::vector_storage (Perm),
+                                bindings::begin_value (Perm),
                                 Control.ptr);
   }
 

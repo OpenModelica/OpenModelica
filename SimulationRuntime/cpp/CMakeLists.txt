@@ -12,6 +12,7 @@
 #     if the Intel TBB library was found                                           -DUSE_INTEL_TBB
 #     if the Pugi XML library was found                                            -DUSE_PUGI_XML
 #     if profiling for the simulation runtime should be enabled                    -DRUNTIME_PROFILING
+#     if the equation systems of a FMU should be solved with kinsol                -DFMU_KINSOL
 #
 # Some of these options can be controlled by passing arguments to CMAKE
 #     if write output should be handled in parallel                                -DUSE_PARALLEL_OUTPUT=ON
@@ -36,6 +37,7 @@ OPTION(USE_PARALLEL_OUTPUT "USE_PARALLEL_OUTPUT" OFF)
 OPTION(USE_SCOREP "USE_SCOREP" OFF)
 OPTION(BOOST_STATIC_LINKING "BOOST_STATIC_LINKING" OFF)
 OPTION(RUNTIME_PROFILING "RUNTIME_PROFILING" OFF)
+OPTION(FMU_KINSOL "FMU_KINSOL" OFF)
 OPTION(SUNDIALS_ROOT "SUNDIALS ROOT" "")
 OPTION(BUILD_DOCUMENTATION "Use Doxygen to create the cpp runtime documentation" OFF)
 
@@ -139,6 +141,16 @@ IF(RUNTIME_PROFILING)
 ELSE(RUNTIME_PROFILING)
   MESSAGE(STATUS "Runtime profiling disabled")
 ENDIF(RUNTIME_PROFILING)
+
+# Handle FMU kinsol support
+IF(FMU_KINSOL)
+  ADD_DEFINITIONS(-DFMU_KINSOL)
+  SET(USE_FMU_KINSOL_ "ON")
+  MESSAGE(STATUS "FMU kinsol enabled")
+ELSE(FMU_KINSOL)
+  SET(USE_FMU_KINSOL_ "OFF")
+  MESSAGE(STATUS "FMU kinsol disabled")
+ENDIF(FMU_KINSOL)
 
 # Handle build type
 IF(OMC_BUILD)
@@ -388,10 +400,10 @@ endif()
 #Handle umfpack
 FIND_PACKAGE(SuiteSparse)
 IF(SUITESPARSE_UMFPACK_FOUND)
-  MESSAGE(STATUS "Using UmfPack")
+  MESSAGE(STATUS "Using UmfPack include path: ${SUITESPARSE_UMFPACK_INCLUDE_DIR}")
   INCLUDE_DIRECTORIES(${SUITESPARSE_UMFPACK_INCLUDE_DIR})
-  ADD_DEFINITIONS(-DUSE_UMFPACK)
-    SET(SUITESPARSE_INCLUDE ${SUITESPARSE_UMFPACK_INCLUDE_DIR})
+  #ADD_DEFINITIONS(-DUSE_UMFPACK)
+  SET(SUITESPARSE_INCLUDE ${SUITESPARSE_UMFPACK_INCLUDE_DIR})
   SET(UMFPACK_LIB ${SUITESPARSE_UMFPACK_LIBRARIES})
 ELSE(SUITESPARSE_UMFPACK_FOUND)
   MESSAGE(STATUS "UmfPack disabled")

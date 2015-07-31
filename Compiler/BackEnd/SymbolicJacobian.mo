@@ -226,6 +226,9 @@ algorithm
   if Flags.isSet(Flags.JAC_DUMP2) then
     print("analytical Jacobians -> prepared vars for symbolic matrix A time: " + realString(clock()) + "\n");
   end if;
+  if Flags.isSet(Flags.JAC_DUMP2) then
+    BackendDump.bltdump("System to create symbolic jacobian of: ",backendDAE2);
+  end if;
   (outJacobian, outSparsePattern, outSparseColoring, outFunctionTree) := createJacobian(backendDAE2,states,BackendVariable.listVar1(states),BackendVariable.listVar1(inputvars),BackendVariable.listVar1(paramvars),BackendVariable.listVar1(states),varlst,"A");
 end createSymbolicJacobianforStates;
 
@@ -249,7 +252,7 @@ algorithm
     true = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
     System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
     BackendDAE.DAE(eqs=eqs,shared=shared) = inBackendDAE;
-    (linearModelMatrixes, funcs) = createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar());
+    (linearModelMatrixes, funcs) = createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar(), Flags.isSet(Flags.DIS_SYMJAC_FMI20));
     shared = BackendDAEUtil.setSharedSymJacs(shared, linearModelMatrixes);
     functionTree = BackendDAEUtil.getFunctions(shared);
     functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
@@ -1470,15 +1473,16 @@ end createBipartiteGraph;
 protected function createLinearModelMatrixes "This function creates the linear model matrices column-wise
   author: wbraun"
   input BackendDAE.BackendDAE inBackendDAE;
-  input Boolean UseOtimica;
+  input Boolean useOptimica;
+  input Boolean noGenSymbolicJac;
   output BackendDAE.SymbolicJacobians outJacobianMatrixes;
   output DAE.FunctionTree outFunctionTree;
 
 algorithm
   (outJacobianMatrixes, outFunctionTree) :=
-  match (inBackendDAE,UseOtimica)
+  match (inBackendDAE, useOptimica, noGenSymbolicJac)
     local
-      BackendDAE.BackendDAE backendDAE,backendDAE2;
+      BackendDAE.BackendDAE backendDAE,backendDAE2,emptyBDAE;
 
       list<BackendDAE.Var>  varlst, knvarlst,  states, inputvars, inputvars2, outputvars, paramvars, states_inputs, conVarsList, fconVarsList, object;
       list<DAE.ComponentRef> comref_states, comref_inputvars, comref_outputvars, comref_vars, comref_knvars;
@@ -1496,7 +1500,52 @@ algorithm
       DAE.FunctionTree funcs, functionTree;
       list<DAE.Function> funcLst;
 
- case (backendDAE, false)
+      BackendDAE.ExtraInfo ei;
+      FCore.Cache cache;
+      FCore.Graph graph;
+
+    case (backendDAE, false, true)
+      equation
+        backendDAE2 = BackendDAEUtil.copyBackendDAE(backendDAE);
+        backendDAE2 = BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
+        backendDAE2 = BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
+        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)}, BackendDAE.SHARED(knownVars = kv, functionTree = functionTree, cache=cache, graph=graph, info=ei)) = backendDAE2;
+
+
+        emptyBDAE = BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())}, BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), ei, cache, graph));
+        // Prepare all needed variables
+        varlst = BackendVariable.varList(v);
+        knvarlst = BackendVariable.varList(kv);
+        states = BackendVariable.getAllStateVarFromVariables(v);
+        inputvars = List.select(knvarlst,BackendVariable.isInput);
+        paramvars = List.select(knvarlst, BackendVariable.isParam);
+        inputvars2 = List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
+        outputvars = List.select(varlst, BackendVariable.isVarOnTopLevelAndOutput);
+
+        statesarr = BackendVariable.listVar1(states);
+        inputvarsarr = BackendVariable.listVar1(inputvars);
+        paramvarsarr = BackendVariable.listVar1(paramvars);
+        outputvarsarr = BackendVariable.listVar1(outputvars);
+
+        // Generate sparse pattern for matrices A
+        (sparsePattern, sparseColoring) = generateSparsePattern(backendDAE2, states, states);
+        linearModelMatrices = {(SOME((emptyBDAE,"A",{},{},{})), sparsePattern, sparseColoring)};
+
+        // Generate sparse pattern for matrices B
+        (sparsePattern, sparseColoring) = generateSparsePattern(backendDAE2, inputvars2, states);
+        linearModelMatrices = listAppend(linearModelMatrices,{(SOME((emptyBDAE,"B",{},{},{})), sparsePattern, sparseColoring)});
+
+        // Generate sparse pattern for matrices C
+        (sparsePattern, sparseColoring) = generateSparsePattern(backendDAE2, states, outputvars);
+        linearModelMatrices = listAppend(linearModelMatrices,{(SOME((emptyBDAE,"C",{},{},{})), sparsePattern, sparseColoring)});
+
+        // Generate sparse pattern for matrices D
+        (sparsePattern, sparseColoring) = generateSparsePattern(backendDAE2, inputvars2, outputvars);
+        linearModelMatrices = listAppend(linearModelMatrices,{(SOME((emptyBDAE,"D",{},{},{})), sparsePattern, sparseColoring)});
+      then
+        (linearModelMatrices, functionTree);
+
+    case (backendDAE, false, _)
       equation
         backendDAE2 = BackendDAEUtil.copyBackendDAE(backendDAE);
         backendDAE2 = BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
@@ -1505,18 +1554,12 @@ algorithm
 
         // Prepare all needed variables
         varlst = BackendVariable.varList(v);
-        _ = List.map(varlst,BackendVariable.varCref);
         knvarlst = BackendVariable.varList(kv);
-        _ = List.map(knvarlst,BackendVariable.varCref);
         states = BackendVariable.getAllStateVarFromVariables(v);
         inputvars = List.select(knvarlst,BackendVariable.isInput);
         paramvars = List.select(knvarlst, BackendVariable.isParam);
         inputvars2 = List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
         outputvars = List.select(varlst, BackendVariable.isVarOnTopLevelAndOutput);
-
-        _ = List.map(states,BackendVariable.varCref);
-        _ = List.map(inputvars2,BackendVariable.varCref);
-        _ = List.map(outputvars,BackendVariable.varCref);
 
         statesarr = BackendVariable.listVar1(states);
         inputvarsarr = BackendVariable.listVar1(inputvars);
@@ -1560,7 +1603,7 @@ algorithm
       then
         (linearModelMatrices, functionTree);
 
-    case (backendDAE, true) //  created linear model (matrixes) for optimization
+    case (backendDAE, true, _) //  created linear model (matrixes) for optimization
       equation
         // A := der(x)
         // B := {der(x), con(x), L(x)}
@@ -1574,9 +1617,7 @@ algorithm
 
         // Prepare all needed variables
         varlst = BackendVariable.varList(v);
-        _ = List.map(varlst,BackendVariable.varCref);
         knvarlst = BackendVariable.varList(kv);
-        _ = List.map(knvarlst,BackendVariable.varCref);
         states = BackendVariable.getAllStateVarFromVariables(v);
         inputvars = List.select(knvarlst,BackendVariable.isInput);
         paramvars = List.select(knvarlst, BackendVariable.isParam);
@@ -1586,10 +1627,6 @@ algorithm
         fconVarsList = List.select(varlst, BackendVariable.isRealOptimizeFinalConstraintsVars); // ToDo: FinalCon
 
         states_inputs = listAppend(states, inputvars2);
-        _ = List.map(states,BackendVariable.varCref);
-        _ = List.map(inputvars2,BackendVariable.varCref);
-        _ = List.map(outputvars,BackendVariable.varCref);
-
         statesarr = BackendVariable.listVar1(states);
         inputvarsarr = BackendVariable.listVar1(inputvars);
         paramvarsarr = BackendVariable.listVar1(paramvars);
@@ -1882,8 +1919,13 @@ algorithm
       comref_diffvars = List.map(diffVars, BackendVariable.varCref);
       diffData = BackendDAE.DIFFINPUTDATA(SOME(diffVarsArr), SOME(diffedVars), SOME(knownVars), SOME(orderedVars), SOME({}), SOME(comref_diffvars), SOME(matrixName));
       eqns = BackendEquation.equationList(orderedEqs);
+      if Flags.isSet(Flags.JAC_DUMP2) then
+        print("*** analytical Jacobians -> before derive all equation." + realString(clock()) + "\n");
+      end if;
       (derivedEquations, functions) = deriveAll(eqns, arrayList(ass2), x, diffData, {}, functions);
-
+      if Flags.isSet(Flags.JAC_DUMP2) then
+        print("*** analytical Jacobians -> after derive all equation." + realString(clock()) + "\n");
+      end if;
       // replace all der(x), since ExpressionSolve can't handle der(x) proper
       derivedEquations = BackendEquation.replaceDerOpInEquationList(derivedEquations);
       if Flags.isSet(Flags.JAC_DUMP2) then
@@ -1915,36 +1957,6 @@ algorithm
       jacobian = BackendDAE.DAE( BackendDAEUtil.createEqSystem(jacOrderedVars, jacOrderedEqs)::{},
                                  BackendDAEUtil.setSharedKnVars(shared, jacKnownVars) );
     then (jacobian, functions);
-
-    case( BackendDAE.DAE( BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, matching=BackendDAE.MATCHING(ass2=ass2))::{},
-                          BackendDAE.SHARED(knownVars=knownVars, functionTree=functions) ),
-          diffVars, diffedVars, _, _, _, _, matrixName ) equation
-
-      // Generate tmp varibales
-      dummyVarName = ("dummyVar" + matrixName);
-      x = DAE.CREF_IDENT(dummyVarName,DAE.T_REAL_DEFAULT,{});
-
-      // differentiate the equation system
-      if Flags.isSet(Flags.JAC_DUMP2) then
-        print("*** analytical Jacobians -> derived all algorithms time: " + realString(clock()) + "\n");
-      end if;
-      diffVarsArr = BackendVariable.listVar1(diffVars);
-      comref_diffvars = List.map(diffVars, BackendVariable.varCref);
-      diffData = BackendDAE.DIFFINPUTDATA(SOME(diffVarsArr), SOME(diffedVars), SOME(knownVars), SOME(orderedVars), SOME({}), SOME(comref_diffvars), SOME(matrixName));
-
-      diffvars = BackendVariable.varList(orderedVars);
-
-      derivedVariables = createAllDiffedVars(diffvars, x, diffedVars, 0, matrixName, {});
-      if Flags.isSet(Flags.JAC_DUMP2) then
-        print("*** analytical Jacobians -> created all derived vars: " + "No. :" + intString(listLength(comref_diffvars)) + "time: " + realString(clock()) + "\n");
-      end if;
-      (derivedEquations, functions) = deriveAll(BackendEquation.equationList(orderedEqs), arrayList(ass2), x, diffData, {}, functions);
-      false = (listLength(derivedVariables) == listLength(derivedEquations));
-      if Flags.isSet(Flags.JAC_WARNINGS) then
-        print("*** analytical Jacobians -> failed vars are not equal to equations: " + intString(listLength(derivedEquations)) + " time: " + realString(clock()) + "\n");
-      end if;
-      Error.addInternalError("function generateSymbolicJacobian failed", sourceInfo());
-    then fail();
 
     else
      equation
@@ -2033,7 +2045,7 @@ protected function deriveAll "author: lochel"
   output DAE.FunctionTree outFunctions;
 algorithm
   (outDerivedEquations, outFunctions) :=
-  match(inEquations, ass2, inDiffCref, inDiffData, inDerivedEquations, inFunctions)
+  matchcontinue(inEquations, ass2, inDiffCref, inDiffData, inDerivedEquations, inFunctions)
     local
       BackendDAE.Equation currEquation;
       DAE.FunctionTree functions;
@@ -2047,11 +2059,11 @@ algorithm
 
     case(currEquation::restEquations, _, _, BackendDAE.DIFFINPUTDATA(allVars=SOME(allVars)), _, _)
       equation
-      //fcall(Flags.JAC_DUMP_EQN, print, "Derive Equation! Left on Stack: " + intString(listLength(restEquations)) + "\n");
-      //fcall(Flags.JAC_DUMP_EQN, BackendDump.printEquationList, {currEquation});
-      //fcall(Flags.JAC_DUMP_EQN, print, "\n");
-      //dummycref = ComponentReference.makeCrefIdent("$pDERdummy", DAE.T_REAL_DEFAULT, {});
-      //fcall(Flags.JAC_DUMP_EQN,print, "*** analytical Jacobians -> derive one equation: " + realString(clock()) + "\n" );
+      if Flags.isSet(Flags.JAC_DUMP_EQN) then
+        print("Derive Equation! Left on Stack: " + intString(listLength(restEquations)) + "\n");
+        BackendDump.printEquationList({currEquation});
+        print("\n");
+      end if;
 
       // filter discrete equataions
       (solvedfor,ass2_1) = List.split(ass2, BackendEquation.equationSize(currEquation));
@@ -2062,14 +2074,20 @@ algorithm
       (currDerivedEquations, functions) = deriveAllHelper(b, currEquation, inDiffCref, inDiffData, inFunctions);
       derivedEquations = listAppend(currDerivedEquations, inDerivedEquations);
 
+      if Flags.isSet(Flags.JAC_DUMP_EQN) then
+        BackendDump.printEquationList(currDerivedEquations);
+        print("\n");
+      end if;
       (derivedEquations, functions) = deriveAll(restEquations, ass2_1, inDiffCref, inDiffData, derivedEquations, functions);
-      //fcall(Flags.JAC_DUMP_EQN, BackendDump.printEquationList, currDerivedEquations);
-      //fcall(Flags.JAC_DUMP_EQN, print, "\n");
-      //fcall(Flags.JAC_DUMP_EQN,print, "*** analytical Jacobians -> created other equations from that: " + realString(clock()) + "\n" );
      then
        (derivedEquations, functions);
 
-  end match;
+    else
+     equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"SymbolicJacobian.deriveAll failed"});
+    then fail();
+
+  end matchcontinue;
 end deriveAll;
 
 protected function deriveAllHelper "author: wbraun"
@@ -3249,6 +3267,9 @@ algorithm
     case (e as DAE.CALL(path=Absyn.IDENT(name = "pre")),(vars,b))
       then (e,false,(vars,b));
 
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "previous")),(vars,b))
+      then (e,false,(vars,b));
+
     case (e,(_,b)) then (e,not b,tpl);
   end matchcontinue;
 end traverserjacobianNonlinearExp;
@@ -3308,6 +3329,8 @@ algorithm
     case (e as DAE.CALL(path=Absyn.IDENT(name = "der")),(vars,b))
       then (e,true,(vars,b));
     case (e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(vars,b))
+      then (e,false,(vars,b));
+    case (e as DAE.CALL(path = Absyn.IDENT(name = "previous")),(vars,b))
       then (e,false,(vars,b));
     case (e as DAE.CALL(expLst=expLst),(vars,b))
       equation

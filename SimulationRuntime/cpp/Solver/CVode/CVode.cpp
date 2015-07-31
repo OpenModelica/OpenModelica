@@ -6,9 +6,8 @@
 #include <Core/Modelica.h>
 #include <Solver/CVode/CVode.h>
 #include <Core/Math/Functions.h>
+#include <Core/Utils/numeric/bindings/ublas/matrix_sparse.hpp>
 
-#include <Core/Utils/numeric/bindings/traits/ublas_vector.hpp>
-#include <Core/Utils/numeric/bindings/traits/ublas_sparse.hpp>
 
 Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
     : SolverDefaultImplementation(system, settings),
@@ -284,8 +283,8 @@ void Cvode::initialize()
     _maxColors = _system->getAMaxColors();
     if(_maxColors < _dimSys && _continuous_system->getDimContinuousStates() > 0)
     {
-    _idid = CVDlsSetDenseJacFn(_cvodeMem, &CV_JCallback);
-    initializeColoredJac();
+   // _idid = CVDlsSetDenseJacFn(_cvodeMem, &CV_JCallback);
+   // initializeColoredJac();
   }
   #endif
 
@@ -891,13 +890,16 @@ int Cvode::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeig
 
 void Cvode::initializeColoredJac()
 {
+
+  if(_colorOfColumn)
+	  delete [] _colorOfColumn;
   _colorOfColumn = new int[_dimSys];
   _system->getAColorOfColumn( _colorOfColumn, _dimSys);
 
-  _system->getJacobian(_jacobianA);
-  _jacobianANonzeros  = boost::numeric::bindings::traits::spmatrix_num_nonzeros (_jacobianA);
-  _jacobianAIndex     = boost::numeric::bindings::traits::spmatrix_index2_storage(_jacobianA);
-  _jacobianALeadindex = boost::numeric::bindings::traits::spmatrix_index1_storage(_jacobianA);
+ // _system->getJacobian(_jacobianA);
+  //_jacobianANonzeros  = boost::numeric::bindings::traits::spmatrix_num_nonzeros (_jacobianA);
+ // _jacobianAIndex     = bindings::begin_index_minor(_jacobianA);
+  //_jacobianALeadindex = bindings::begin_index_major(_jacobianA);
 
 }
 

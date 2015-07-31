@@ -83,7 +83,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   let generationDateAndTime = xsdateTime(getCurrentDateTime())
   let variableNamingConvention = 'structured'
   let numberOfContinuousStates = if intEq(vi.numStateVars,1) then statesnumwithDummy(listStates) else vi.numStateVars
-  let numberOfEventIndicators = vi.numZeroCrossings
+  let numberOfEventIndicators = getNumberOfEventIndicators(simCode)
   <<
   fmiVersion="<%fmiVersion%>"
   modelName="<%modelName%>"

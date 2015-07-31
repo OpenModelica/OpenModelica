@@ -435,6 +435,18 @@ match varKind
   else "local"
 end getCausality2Helper;
 
+template getNumberOfEventIndicators(SimCode simCode)
+ "Get the number of event indicators, which depends on the selected code target (c or cpp)."
+::=
+match simCode
+  case SIMCODE(zeroCrossings = zeroCrossings, modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
+    match Config.simCodeTarget()
+      case "Cpp" then listLength(zeroCrossings)
+      else vi.numZeroCrossings
+    end match
+  else ""
+end getNumberOfEventIndicators;
+
 template getInitialType(VarKind varKind, Option<DAE.Exp> initialValue, Causality c, Boolean isValueChangeable)
  "Returns the Initial Attribute of ScalarVariable."
 ::=

@@ -5,8 +5,12 @@
 
 #ifdef USE_UMFPACK
 #include "umfpack.h"
+#include <Core/Utils/numeric/bindings/umfpack/umfpack.hpp>
+#include <Core/Utils/numeric/bindings/ublas/vector.hpp>
+#include <Core/Utils/numeric/bindings/ublas.hpp>
+#include <boost/numeric/ublas/io.hpp>
+namespace umf = boost::numeric::bindings::umfpack;
 #endif
-
 UmfPack::UmfPack(IAlgLoop* algLoop, ILinSolverSettings* settings) : _iterationStatus(CONTINUE), _umfpackSettings(settings), _algLoop(algLoop), _rhs(NULL), _x(NULL), _firstuse(true), _jacd(NULL)
 {
 }
@@ -26,7 +30,7 @@ void UmfPack::initialize()
     if(_algLoop->queryDensity()<1. &&_umfpackSettings->getUseSparseFormat() )
     {
         _algLoop->setUseSparseFormat(true);
-        _jacs = boost::shared_ptr<SparseMatrix> (new SparseMatrix);
+
     }
     else
     {
@@ -52,7 +56,11 @@ void UmfPack::solve()
         long int * _helpArray = new long int[_algLoop->getDimReal()];
         _algLoop->evaluate();
         _algLoop->getRHS(_rhs);
-        _algLoop->getSystemMatrix(_jacd);
+
+        const matrix_t& A = _algLoop->getSystemMatrix();
+		const double* jacd = A.data().begin();
+		memcpy(_jacd, jacd, dimSys*dimSys*sizeof(double));
+
         dgesv_(&dimSys,&dimRHS,_jacd,&dimSys,_helpArray,_rhs,&dimSys,&irtrn);
         std::memcpy(_x,_rhs,dimSys*sizeof(double));
         _algLoop->setReal(_x);
@@ -60,20 +68,41 @@ void UmfPack::solve()
     }
     else
     {
-        _algLoop->evaluate();
-        _algLoop->getRHS(_rhs);
-        _algLoop->getSystemMatrix(*(_jacs.get()));
 
-        int status, sys=0;
-        double Control [UMFPACK_CONTROL], Info [UMFPACK_INFO] ;
-        void *Symbolic, *Numeric ;
-        umfpack_di_defaults (Control) ;
-        status = umfpack_di_symbolic (_jacs->size1(), _jacs->size2(), &_jacs->index1_data()[0], &_jacs->index2_data()[0], &_jacs->value_data()[0], &Symbolic, Control, Info) ;
-        status = umfpack_di_numeric (&_jacs->index1_data()[0], &_jacs->index2_data()[0], &_jacs->value_data()[0], Symbolic, &Numeric, Control, Info);
-        status = umfpack_di_solve (sys, &_jacs->index1_data()[0], &_jacs->index2_data()[0], &_jacs->value_data()[0], _x, _rhs, Numeric, Control, Info);
-        umfpack_di_free_symbolic (&Symbolic);
-        umfpack_di_free_numeric (&Numeric);
+
+         int status;
+        // get the default control parameters
+		umf::control_type<> Control;
+		// change the default print level
+		Control [UMFPACK_PRL] = 6;
+
+		 _algLoop->evaluate();
+        _algLoop->getRHS(_rhs);
+         long int dimSys = _algLoop->getDimReal();
+        const sparsematrix_t& A = _algLoop->getSystemSparseMatrix();
+
+        adaptor_t rhs_adaptor(dimSys,_rhs);
+		shared_vector_t b(dimSys,rhs_adaptor);
+
+        adaptor_t x_adaptor(dimSys,_x);
+		shared_vector_t x(dimSys,x_adaptor);
+
+
+        umf::symbolic_type<double> Symbolic;
+        umf::numeric_type<double> Numeric;
+		status = umf::symbolic(A, Symbolic);
+        if(status<0)
+			//umf::report_status (Control, status)
+			throw ModelicaSimulationError(ALGLOOP_SOLVER,"Error in umfpack symbolic function");
+		status = umf::numeric (A, Symbolic, Numeric);
+		if(status<0)
+			throw ModelicaSimulationError(ALGLOOP_SOLVER,"Error in umfpack numeric function");
+        status = umf::solve (A, x, b, Numeric);
+		if(status<0)
+			throw ModelicaSimulationError(ALGLOOP_SOLVER,"Error in umfpack solve function");
         _algLoop->setReal(_x);
+
+
     }
 
 #endif

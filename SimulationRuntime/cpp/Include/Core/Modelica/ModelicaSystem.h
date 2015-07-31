@@ -83,8 +83,8 @@ public:
   virtual void setTime(const double& t);
 
   // Provide Jacobian
-  virtual void getJacobian(SparseMatrix& matrix);
-  virtual void getStateSetJacobian(SparseMatrix& matrix);
+  virtual void getJacobian(matrix_t& matrix);
+  virtual void getStateSetJacobian(matrix_t& matrix);
   // Provide number (dimension) of zero functions
   virtual int getDimZeroFunc() ;
 
