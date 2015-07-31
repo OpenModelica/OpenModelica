@@ -43,7 +43,6 @@
 #include <stdexcept>
 #include <fstream>
 #include <algorithm>
-
 //QT Headers
 #include <QtGlobal>
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
@@ -1580,18 +1579,30 @@ void NotebookWindow::createInsertMenu()
   connect(evalAction, SIGNAL(triggered()), this, SLOT(eval()));
   toolBar->addAction(evalAction);
 
-  evalallAction = new QAction(tr("EvaluateAll"), this);
+  evalallAction = new QAction(tr("EvaluateAllCells"), this);
   evalallAction->setStatusTip(tr("Evaluate all cells in the document"));
-  evalallAction->setIcon(QIcon(":/Resources/toolbarIcons/eval_all.png"));
+  evalallAction->setIcon(QIcon(":/Resources/toolbarIcons/evalall.png"));
   connect(evalallAction, SIGNAL(triggered()), this, SLOT(evalall()));
   toolBar->addAction(evalallAction);
 
-  /*
-  shiftallAction = new QAction(tr("Shift"), this);
-  shiftallAction->setStatusTip(tr("Shift the cells up"));
-  shiftallAction->setIcon(QIcon(":/Resources/toolbarIcons/undo.png"));
-  connect(shiftallAction, SIGNAL(triggered()), this, SLOT(shiftcells()));
-  toolBar->addAction(shiftallAction); */
+
+  shiftcellsupAction = new QAction(tr("MoveCellsUp"), this);
+  shiftcellsupAction->setStatusTip(tr("Move Cells Up, by clicking on the cell"));
+  shiftcellsupAction->setIcon(QIcon(":/Resources/toolbarIcons/up.png"));
+  connect(shiftcellsupAction, SIGNAL(triggered()), this, SLOT(shiftcellsUp()));
+  toolBar->addAction(shiftcellsupAction);
+
+  shiftcellsdownAction = new QAction(tr("MoveCellsDown"), this);
+  shiftcellsdownAction->setStatusTip(tr("Move Cells Down, by clicking on the cell"));
+  shiftcellsdownAction->setIcon(QIcon(":/Resources/toolbarIcons/down.png"));
+  connect(shiftcellsdownAction, SIGNAL(triggered()), this, SLOT(shiftcellsDown()));
+  toolBar->addAction(shiftcellsdownAction);
+
+  shiftselectedcellsAction = new QAction(tr("MoveSelectedCells"), this);
+  shiftselectedcellsAction->setStatusTip(tr("Put the cursor to a position where you want the cells to be moved, and then select the cells you would like to move that position"));
+  shiftselectedcellsAction->setIcon(QIcon(":/Resources/toolbarIcons/updown.png"));
+  connect(shiftselectedcellsAction, SIGNAL(triggered()), this, SLOT(shiftselectedcells()));
+  toolBar->addAction(shiftselectedcellsAction);
 
   // MENU
   insertMenu = menuBar()->addMenu( tr("&Insert") );
@@ -2475,7 +2486,6 @@ void NotebookWindow::newFile()
   */
 
   // AF
-  qWarning() << "inside new function";
   if( subject_->isOpen() )
   {
     // a file is open, open a new window with the new file //AF
@@ -2505,7 +2515,6 @@ void NotebookWindow::newFile()
     update();
     updateWindowTitle();
   }
-  qWarning() << "Completed new file function";
 }
 
 void NotebookWindow::updateRecentFiles(QString filename)
@@ -2538,7 +2547,6 @@ void NotebookWindow::updateRecentFiles(QString filename)
   */
 void NotebookWindow::openFile(const QString filename)
 {
-  qWarning() << "inside open";
   try
   {
     //Open a new document
@@ -2587,7 +2595,6 @@ void NotebookWindow::openFile(const QString filename)
     QMessageBox::warning( 0, "Warning", msg, "OK" );
     openFile();
   }
-  qWarning() << "open Completed";
 }
 
 /*!
@@ -3981,6 +3988,129 @@ QVector<Cell*> NotebookWindow::SearchCells(Cell* current)
     return totalcells;
 }
 
+void NotebookWindow::shiftselectedcells()
+{
+    vector<Cell *> cells = subject_->getSelection();
+    qDebug()<<cells.size();
+
+    if( !cells.empty() )
+    {
+        subject_->cursorCopyCell();
+        subject_->cursorPasteCell();
+        Cell* curpos=subject_->getCursor()->currentCell();
+        vector<Cell *>::iterator i = cells.begin();
+        for(;i != cells.end();++i)
+        {
+            subject_->getCursor()->moveAfter(*i);
+            subject_->getCursor()->deleteCurrentCell();
+        }
+        subject_->getCursor()->moveAfter(curpos);
+    }
+    else
+    {
+        QString msg="This functionality works only on the Selected Cells,Put the cursor to a position where you want to shift and then select cells you like to move and press this button";
+        QMessageBox::warning( 0, "Warning", msg, "OK" );
+    }
+}
+
+void NotebookWindow::shiftcellsUp()
+{
+    vector<Cell *> cells = subject_->getSelection();
+    if (cells.size()==0)
+    {
+
+        Cell *current=subject_->getCursor()->currentCell();
+        if (current->hasPrevious())
+        {
+            if( typeid(CellGroup) == typeid( *current->previous()))
+            {
+                QMessageBox::warning( 0, "Warning", "Cells cannot moved inside or outside to another heirarchy", "OK" );
+            }
+            else
+            {
+                qDebug()<<"not a groupcell" ;
+                QString currenttext=current->text();
+                QString style=current->style()->name();
+                subject_->cursorDeleteCell();
+                //subject_->getCursor()->moveUp();
+                subject_->cursorStepUp();
+                subject_->executeCommand(new CreateNewCellCommand(style));
+                subject_->getCursor()->currentCell()->setText(currenttext);
+
+            }
+        }
+        else
+        {
+            QMessageBox::warning( 0, "Warning", "Cells cannot moved inside or outside to another heirarchy", "OK" );
+
+        }
+    }
+    else
+    {
+        QMessageBox::warning( 0, "Warning", "This functionality does not work on Selected Cells, Click on the cell to moveup, and press this action", "OK" );
+
+    }
+    /*
+  Cell *current=subject_->getCursor()->currentCell();
+  if (current->hasPrevious())
+  {
+  QString previoustext=current->previous()->text();
+  subject_->executeCommand(new CreateNewCellCommand(current->previous()->style()->name()));
+  subject_->getCursor()->moveAfter(current->previous());
+  subject_->cursorDeleteCell();
+  subject_->executeCommand(new CursorMoveAfterCommand(current->next()));
+  subject_->getCursor()->currentCell()->setText(previoustext);
+  subject_->executeCommand(new CursorMoveAfterCommand(current));
+    }
+  else
+  {
+      qDebug()<<"Cannot be moved";
+      QMessageBox::warning( 0, "Warning", "cells cannot moved outside another heirarchy", "OK" );
+  }
+  */
+}
+
+void NotebookWindow::shiftcellsDown()
+{
+    vector<Cell *> cells = subject_->getSelection();
+    if (cells.size()==0)
+    {
+    Cell *current=subject_->getCursor()->currentCell();
+    subject_->cursorStepDown();
+    Cell *next=subject_->getCursor()->currentCell();
+
+    if (current!=next)
+    {
+        subject_->cursorStepUp();
+        if( typeid(CellGroup) == typeid(*next))
+        {
+            qDebug()<<"group cell";
+            QMessageBox::warning( 0, "Warning", "Cells cannot moved inside or outside another heirarchy", "OK" );
+
+        }
+        else
+        {
+            qDebug()<<"not a group cell";
+            QString style=current->style()->name();
+            QString currenttext=current->text();
+            subject_->cursorDeleteCell();
+            subject_->cursorStepDown();
+            subject_->executeCommand(new CreateNewCellCommand(style));
+            subject_->getCursor()->currentCell()->setText(currenttext);
+        }
+    }
+    else
+    {
+        qDebug()<<"last cell";
+    }
+    }
+    else
+    {
+        QMessageBox::warning( 0, "Warning", "This functionality does not work on Selected Cells, Click on the cell to movedown, and press this action", "OK" );
+
+    }
+
+}
 
 void NotebookWindow::evalall()
 {
