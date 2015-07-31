@@ -361,6 +361,7 @@ void Kinsol::calcFunction(const double *y, double *residual)
     _algLoop->getRHS(residual);
 
 #if defined(__vxworks)
+#else
    for(int i=0;i<_dimSys;i++)
      {
         if(!(boost::math::isfinite(residual[i])) || !(boost::math::isfinite(y[i])))
