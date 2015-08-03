@@ -8,6 +8,8 @@ add_library(${PeerName}_static STATIC Peer.cpp PeerSettings.cpp FactoryExport.cp
 SET(PEER_COMPILE_DEFINITIONS "")
 IF(OPENMP_FOUND)
 	SET(PEER_COMPILE_DEFINITIONS "USE_OPENMP")
+ELSE(OPENMP_FOUND)
+	SET(OpenMP_CXX_FLAGS "")
 ENDIF(OPENMP_FOUND)
 
 add_precompiled_header(${PeerName}_static Include/Core/Modelica.h )
