@@ -692,6 +692,8 @@ class StatArray : public BaseArray<T>
    */
   virtual void assign(const T* data)
   {
+    if (_data == NULL)
+      throw std::runtime_error("Cannot assign to uninitialized StatArray!");
     std::copy(data, data + nelems, _data);
   }
 
@@ -702,6 +704,8 @@ class StatArray : public BaseArray<T>
    */
   virtual void assign(const BaseArray<T>& b)
   {
+    if (_data == NULL)
+      throw std::runtime_error("Cannot assign to uninitialized StatArray!");
     b.getDataCopy(_data, nelems);
   }
 
@@ -869,11 +873,15 @@ class StatArrayDim1 : public StatArray<T, size, external>
 
   iterator begin()
   {
+    if (external)
+      throw std::runtime_error("Unsupported iteration over StatArray with external data");
     return StatArray<T, size, external>::_array.begin();
   }
 
   iterator end()
   {
+    if (external)
+      throw std::runtime_error("Unsupported iteration over StatArray with external data");
     return StatArray<T, size, external>::_array.end();
   }
 };
