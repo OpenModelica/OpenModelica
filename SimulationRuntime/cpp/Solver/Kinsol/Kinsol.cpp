@@ -289,7 +289,7 @@ void Kinsol::solve()
 		memcpy(_y, _f, _dimSys*sizeof(double));
 		_algLoop->setReal(_y);
 		_algLoop->evaluate();
-		if (irtrn != 0)
+		if  (irtrn != 0)
 			//throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear tearing system");
 		{
 			dgetc2_(&_dimSys, _jac, &_dimSys, _ihelpArray, _jhelpArray, &irtrn);
