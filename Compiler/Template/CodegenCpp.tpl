@@ -6838,26 +6838,6 @@ let conditionvariables =  conditionvariable(zeroCrossings,simCode , &extraFuncs 
 
 match modelInfo
   case MODELINFO(vars=SIMVARS(__)) then
-
-/* changed: handled in SimVars class
-  let getrealvars =
-  (List.partition(listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.aliasVars, vars.paramVars))), 100) |> ls hasindex idx =>
-    <<
-    void getReal_<%idx%>(double* z);
-    void setReal_<%idx%>(const double* z);
-    >>
-    ;separator="\n")
-  let getintvars = (List.partition(listAppend(listAppend(vars.intAlgVars, vars.intParamVars), vars.intAliasVars), 100) |> ls hasindex idx =>
-    <<
-    void getInteger_<%idx%>(int* z);
-    >>
-    ;separator="\n")
-  let getboolvars = (List.partition(listAppend(listAppend(vars.boolAlgVars, vars.boolParamVars), vars.boolAliasVars), 100) |> ls hasindex idx =>
-    <<
-    void getBoolean_<%idx%>(bool* z);
-    >>
-    ;separator="\n")
-  */
   let getstringvars = (List.partition(listAppend(listAppend(vars.stringAlgVars, vars.stringParamVars), vars.stringAliasVars), 100) |> ls hasindex idx =>
     <<
     void getString_<%idx%>(string* z);
@@ -9201,35 +9181,6 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
     >>
 
 end saveAll;
-
-
-
-
-
-
-
-
-/*
- <<
-  void <%className%>::initPreVars_<%partIdx%>(unordered_map<double* const,unsigned int>& vars1, unordered_map<double* const,unsigned int>& vars2)
-  {
-      insert(vars1)
-      <%(partVars |> SIMVAR(__) hasindex i0 fromindex (intMul(partIdx, multiplicator)) =>
-        '<%\t%>(&<%cref(name, useFlatArrayNotation)%>,<%i0%>)'
-        ;separator="\n")%>;
-      <%if (intLt(intMul(partIdx, multiplicator), stateVarStartIdx)) then
-        <<
-        insert(vars2)
-        <%(partVars |> SIMVAR(__) hasindex i0 fromindex (intMul(partIdx, multiplicator)) =>
-          if (intLt(i0, stateVarStartIdx)) then
-              '<%\t%>(&<%cref(name, useFlatArrayNotation)%>,<%i0%>)'
-          else ''
-          ;separator="\n")%>;
-         >>
-      %>
-  }
-  >>
-*/
 
 template saveDiscreteVars(ModelInfo modelInfo, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
@@ -12928,10 +12879,6 @@ template crefStartValueType(ComponentRef cr) "template crefType
   end match
 end crefStartValueType;
 
-
-
-
-
 template crefStartValueType2(DAE.Type ty)
 ::=
   match ty
@@ -12944,14 +12891,7 @@ template crefStartValueType2(DAE.Type ty)
     case T_ARRAY(ty=T_BOOL(__)) then 'Bool'
   else "error start value type"
 end match
-
-
 end crefStartValueType2;
-
-
-
-
-
 
 template expTypeFromExpShort(Exp exp)
 
@@ -16153,57 +16093,6 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
       }
       >>
   end match
-/*  else
-    match modelInfo
-      case MODELINFO(vars=SIMVARS(__)) then
-      <<
-      void <%lastIdentOfPath(name)%>::getReal(double* z)
-      {
-         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"getReal is not implemented yet");
-      }
-
-      void <%lastIdentOfPath(name)%>::getInteger(int* z)
-      {
-         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"getInteger is not implemented yet");
-      }
-
-      void <%lastIdentOfPath(name)%>::getBoolean(bool* z)
-      {
-         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"getBoolean is not implemented yet");
-      }
-
-      void <%lastIdentOfPath(name)%>::getString(string* z)
-      {
-         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"getString is not implemented yet");
-      }
-
-      void <%lastIdentOfPath(name)%>::setReal(const double* z)
-      {
-         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"setReal is not implemented yet");
-      }
-
-      void <%lastIdentOfPath(name)%>::setInteger(const int* z)
-      {
-         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"setInteger is not implemented yet");
-      }
-
-      void <%lastIdentOfPath(name)%>::setBoolean(const bool* z)
-      {
-         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"setBoolean is not implemented yet");
-      }
-
-      void <%lastIdentOfPath(name)%>::setString(const string* z)
-      {
-         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"setString is not implemented yet");
-      }
-      >>
-  */
-  /*
-  <%System.tmpTickReset(0)%>
-  <%vars.stringAlgVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
-  <%vars.stringParamVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
-  <%vars.stringAliasVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
-  */
 end giveVariables;
 
 template getStateVariables(SimVar simVar, Integer valueReference, String arrayName, Integer index)
