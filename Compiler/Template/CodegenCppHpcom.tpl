@@ -1879,10 +1879,10 @@ template simulationMakefile(String target, SimCode simCode, Text& extraFuncs, Te
   let &additionalLinkerFlags_MSVC = buffer ""
 
   <<
-  <%getAdditionalMakefileFlags(additionalCFlags_GCC, additionalCFlags_MSVC, additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC)%>
+  <%getAdditionalMakefileFlags(additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC, additionalCFlags_GCC, additionalCFlags_MSVC)%>
   <%CodegenCpp.simulationMakefile(target, simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace, additionalLinkerFlags_GCC,
-                                additionalCFlags_MSVC, additionalCFlags_GCC,
-                                additionalLinkerFlags_MSVC, Flags.isSet(Flags.USEMPI))%>
+                                additionalLinkerFlags_MSVC, additionalCFlags_GCC, additionalCFlags_MSVC,
+                                Flags.isSet(Flags.USEMPI))%>
   >>
 end simulationMakefile;
 
