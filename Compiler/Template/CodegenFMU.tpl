@@ -2527,7 +2527,7 @@ if boolAnd(stringEq(type, "real"), (boolAnd(stringEq(variabilityCausality, "para
 <<
 <%
 match fmiModelVariable
-  case REALVARIABLE(variability="parameter", hasStartValue=true) then
+  case REALVARIABLE(causality="parameter", hasStartValue=true) then
     if intEq(what,1) then valueReference else if intEq(what,2) then name
 %>
 >>
@@ -2535,7 +2535,7 @@ else if boolAnd(stringEq(type, "integer"), (boolAnd(stringEq(variabilityCausalit
 <<
 <%
 match fmiModelVariable
-  case INTEGERVARIABLE(variability="parameter", hasStartValue=true) then
+  case INTEGERVARIABLE(causality="parameter", hasStartValue=true) then
     if intEq(what,1) then valueReference else if intEq(what,2) then name
 %>
 >>
@@ -2543,7 +2543,7 @@ else if boolAnd(stringEq(type, "boolean"), (boolAnd(stringEq(variabilityCausalit
 <<
 <%
 match fmiModelVariable
-  case BOOLEANVARIABLE(variability="parameter", hasStartValue=true) then
+  case BOOLEANVARIABLE(causality="parameter", hasStartValue=true) then
     if intEq(what,1) then valueReference else if intEq(what,2) then name
 %>
 >>
@@ -2551,7 +2551,7 @@ else if boolAnd(stringEq(type, "string"), (boolAnd(stringEq(variabilityCausality
 <<
 <%
 match fmiModelVariable
-  case STRINGVARIABLE(variability="parameter", hasStartValue=true) then
+  case STRINGVARIABLE(causality="parameter", hasStartValue=true) then
     if intEq(what,1) then valueReference else if intEq(what,2) then name
 %>
 >>
@@ -2559,7 +2559,7 @@ else if boolAnd(stringEq(type, "real"), (boolAnd(stringEq(variabilityCausality, 
 <<
 <%
 match fmiModelVariable
-  case REALVARIABLE(variability="parameter", hasStartValue=false, isFixed=false) then
+  case REALVARIABLE(causality="parameter", hasStartValue=false, isFixed=false) then
     if intEq(what,1) then valueReference else if intEq(what,2) then name
 %>
 >>
@@ -2567,7 +2567,7 @@ else if boolAnd(stringEq(type, "integer"), (boolAnd(stringEq(variabilityCausalit
 <<
 <%
 match fmiModelVariable
-  case INTEGERVARIABLE(variability="parameter", hasStartValue=false, isFixed=false) then
+  case INTEGERVARIABLE(causality="parameter", hasStartValue=false, isFixed=false) then
     if intEq(what,1) then valueReference else if intEq(what,2) then name
 %>
 >>
@@ -2575,7 +2575,7 @@ else if boolAnd(stringEq(type, "boolean"), (boolAnd(stringEq(variabilityCausalit
 <<
 <%
 match fmiModelVariable
-  case BOOLEANVARIABLE(variability="parameter", hasStartValue=false, isFixed=false) then
+  case BOOLEANVARIABLE(causality="parameter", hasStartValue=false, isFixed=false) then
     if intEq(what,1) then valueReference else if intEq(what,2) then name
 %>
 >>
@@ -2583,7 +2583,7 @@ else if boolAnd(stringEq(type, "string"), (boolAnd(stringEq(variabilityCausality
 <<
 <%
 match fmiModelVariable
-  case STRINGVARIABLE(variability="parameter", hasStartValue=false, isFixed=false) then
+  case STRINGVARIABLE(causality="parameter", hasStartValue=false, isFixed=false) then
     if intEq(what,1) then valueReference else if intEq(what,2) then name
 %>
 >>
