@@ -2432,7 +2432,7 @@ algorithm
     case REAL_FLAG() then System.gettext("Real (default")+" ``" + realString(flag.data) + "``).";
     case STRING_FLAG("") then System.gettext("String (default *empty*).");
     case STRING_FLAG() then System.gettext("String (default")+" " + flag.data + ").";
-    case STRING_LIST_FLAG() then System.gettext("String list (default *empty*).");
+    case STRING_LIST_FLAG(data={}) then System.gettext("String list (default *empty*).");
     case STRING_LIST_FLAG() then System.gettext("String list (default")+" " + stringDelimitList(flag.data, ",") + ").";
     case ENUM_FLAG()
       algorithm
