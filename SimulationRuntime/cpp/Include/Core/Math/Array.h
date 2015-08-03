@@ -692,7 +692,7 @@ class StatArray : public BaseArray<T>
    */
   virtual void assign(const T* data)
   {
-    if (_data == NULL)
+    if (nelems > 0 && _data == NULL)
       throw std::runtime_error("Cannot assign to uninitialized StatArray!");
     std::copy(data, data + nelems, _data);
   }
@@ -704,7 +704,7 @@ class StatArray : public BaseArray<T>
    */
   virtual void assign(const BaseArray<T>& b)
   {
-    if (_data == NULL)
+    if (nelems > 0 && _data == NULL)
       throw std::runtime_error("Cannot assign to uninitialized StatArray!");
     b.getDataCopy(_data, nelems);
   }
@@ -813,8 +813,8 @@ class StatArrayDim1 : public StatArray<T, size, external>
   }
 
   /**
-   * Assignment operator to assign array of type base array to  two dim static array
-   * a=b
+   * Assign array of type base array to one dim static array
+   * a = b
    * @param b any array of type BaseArray
    */
   virtual StatArrayDim1<T, size, external>& operator=(BaseArray<T>& b)
@@ -894,7 +894,7 @@ class StatArrayDim1 : public StatArray<T, size, external>
  * @param external indicates if the memory is provided externally
  */
 template<typename T, std::size_t size1, std::size_t size2, bool external = false>
-class StatArrayDim2 : public StatArray<T, size1*size2>
+class StatArrayDim2 : public StatArray<T, size1*size2, external>
 {
  public:
   /**
@@ -967,8 +967,8 @@ class StatArrayDim2 : public StatArray<T, size1*size2>
   }
 
   /**
-   * Assignment operator to assign array of type base array to  one dim static array
-   * a=b
+   * Assign array of type base array to two dim static array
+   * a = b
    * @param b any array of type BaseArray
    */
   virtual StatArrayDim2<T, size1, size2, external>& operator=(BaseArray<T>& b)
@@ -1138,11 +1138,12 @@ class StatArrayDim3 : public StatArray<T, size1*size2*size3, external>
   }
 
   /**
-   * Assignment operator to assign array of type base array to  three dim static array
-   * a=b
+   * Assign array of type base array to three dim static array
+   * a = b
    * @param b any array of type BaseArray
    */
-  virtual StatArrayDim3<T, size1,size2,size3>& operator=(BaseArray<T>& b)
+  virtual StatArrayDim3<T, size1, size2, size3, external>&
+  operator=(BaseArray<T>& b)
   {
     StatArray<T, size1*size2*size3, external>::operator=(b);
     return *this;
