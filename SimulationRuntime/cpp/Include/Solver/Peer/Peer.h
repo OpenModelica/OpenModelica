@@ -169,7 +169,7 @@ public:
 	{}
 
 	virtual SOLVERSTATUS getSolverStatus()
-	{}
+	{ return UNDEF_STATUS; }
 
 	virtual void setTimeOut(unsigned int time_out)
 	{}
