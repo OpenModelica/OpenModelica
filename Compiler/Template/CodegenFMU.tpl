@@ -1274,57 +1274,57 @@ template importFMU1ModelExchange(FmiImport fmi)
 match fmi
 case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)) then
   /* Get Real parameters and their value references */
-  let realParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 1)
-  let realParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 2)
+  let realParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 1, "1.0")
+  let realParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 2, "1.0")
   /* Get Integer parameters and their value references */
-  let integerParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 1)
-  let integerParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 2)
+  let integerParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 1, "1.0")
+  let integerParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 2, "1.0")
   /* Get Boolean parameters and their value references */
-  let booleanParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 1)
-  let booleanParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 2)
+  let booleanParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 1, "1.0")
+  let booleanParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 2, "1.0")
   /* Get String parameters and their value references */
-  let stringParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 1)
-  let stringParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 2)
+  let stringParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 1, "1.0")
+  let stringParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 2, "1.0")
   /* Get dependent Real parameters and their value references */
-  let realDependentParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 1)
-  let realDependentParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 2)
+  let realDependentParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 1, "1.0")
+  let realDependentParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 2, "1.0")
   /* Get dependent Integer parameters and their value references */
-  let integerDependentParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 1)
-  let integerDependentParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 2)
+  let integerDependentParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 1, "1.0")
+  let integerDependentParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 2, "1.0")
   /* Get dependent Boolean parameters and their value references */
-  let booleanDependentParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 1)
-  let booleanDependentParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 2)
+  let booleanDependentParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 1, "1.0")
+  let booleanDependentParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 2, "1.0")
   /* Get dependent String parameters and their value references */
-  let stringDependentParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 1)
-  let stringDependentParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 2)
+  let stringDependentParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 1, "1.0")
+  let stringDependentParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 2, "1.0")
   /* Get input Real varibales and their value references */
-  let realInputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "input", false, 1)
-  let realInputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 2)
-  let realInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 3)
+  let realInputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "input", false, 1, "1.0")
+  let realInputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 2, "1.0")
+  let realInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 3, "1.0")
   /* Get input Integer varibales and their value references */
-  let integerInputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "input", false, 1)
-  let integerInputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 2)
-  let integerInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 3)
+  let integerInputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "input", false, 1, "1.0")
+  let integerInputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 2, "1.0")
+  let integerInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 3, "1.0")
   /* Get input Boolean varibales and their value references */
-  let booleanInputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 1)
-  let booleanInputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 2)
-  let booleanInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 3)
+  let booleanInputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 1, "1.0")
+  let booleanInputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 2, "1.0")
+  let booleanInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 3, "1.0")
   /* Get input String varibales and their value references */
-  let stringInputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "input", false, 1)
-  let stringStartVariablesNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 2)
-  let stringInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 3)
+  let stringInputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "input", false, 1, "1.0")
+  let stringStartVariablesNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 2, "1.0")
+  let stringInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 3, "1.0")
   /* Get output Real varibales and their value references */
-  let realOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "output", false, 1)
-  let realOutputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "output", false, 2)
+  let realOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "output", false, 1, "1.0")
+  let realOutputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "output", false, 2, "1.0")
   /* Get output Integer varibales and their value references */
-  let integerOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "output", false, 1)
-  let integerOutputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "output", false, 2)
+  let integerOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "output", false, 1, "1.0")
+  let integerOutputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "output", false, 2, "1.0")
   /* Get output Boolean varibales and their value references */
-  let booleanOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 1)
-  let booleanOutputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 2)
+  let booleanOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 1, "1.0")
+  let booleanOutputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 2, "1.0")
   /* Get output String varibales and their value references */
-  let stringOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "output", false, 1)
-  let stringOutputVariablesNames = dumpVariables(fmiModelVariablesList, "string", "output", false, 2)
+  let stringOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "output", false, 1, "1.0")
+  let stringOutputVariablesNames = dumpVariables(fmiModelVariablesList, "string", "output", false, 2, "1.0")
   <<
   model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
     <%dumpFMITypeDefinitions(fmiTypeDefinitionsList)%>
@@ -1628,57 +1628,57 @@ template importFMU2ModelExchange(FmiImport fmi)
 match fmi
 case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)) then
   /* Get Real parameters and their value references */
-  let realParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 1)
-  let realParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 2)
+  let realParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 1, "2.0")
+  let realParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 2, "2.0")
   /* Get Integer parameters and their value references */
-  let integerParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 1)
-  let integerParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 2)
+  let integerParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 1, "2.0")
+  let integerParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 2, "2.0")
   /* Get Boolean parameters and their value references */
-  let booleanParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 1)
-  let booleanParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 2)
+  let booleanParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 1, "2.0")
+  let booleanParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 2, "2.0")
   /* Get String parameters and their value references */
-  let stringParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 1)
-  let stringParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 2)
+  let stringParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 1, "2.0")
+  let stringParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 2, "2.0")
   /* Get dependent Real parameters and their value references */
-  let realDependentParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 1)
-  let realDependentParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 2)
+  let realDependentParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 1, "2.0")
+  let realDependentParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 2, "2.0")
   /* Get dependent Integer parameters and their value references */
-  let integerDependentParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 1)
-  let integerDependentParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 2)
+  let integerDependentParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 1, "2.0")
+  let integerDependentParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 2, "2.0")
   /* Get dependent Boolean parameters and their value references */
-  let booleanDependentParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 1)
-  let booleanDependentParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 2)
+  let booleanDependentParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 1, "2.0")
+  let booleanDependentParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 2, "2.0")
   /* Get dependent String parameters and their value references */
-  let stringDependentParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 1)
-  let stringDependentParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 2)
+  let stringDependentParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 1, "2.0")
+  let stringDependentParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 2, "2.0")
   /* Get input Real varibales and their value references */
-  let realInputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "input", false, 1)
-  let realInputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 2)
-  let realInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 3)
+  let realInputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "input", false, 1, "2.0")
+  let realInputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 2, "2.0")
+  let realInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 3, "2.0")
   /* Get input Integer varibales and their value references */
-  let integerInputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "input", false, 1)
-  let integerInputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 2)
-  let integerInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 3)
+  let integerInputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "input", false, 1, "2.0")
+  let integerInputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 2, "2.0")
+  let integerInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 3, "2.0")
   /* Get input Boolean varibales and their value references */
-  let booleanInputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 1)
-  let booleanInputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 2)
-  let booleanInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 3)
+  let booleanInputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 1, "2.0")
+  let booleanInputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 2, "2.0")
+  let booleanInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 3, "2.0")
   /* Get input String varibales and their value references */
-  let stringInputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "input", false, 1)
-  let stringStartVariablesNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 2)
-  let stringInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 3)
+  let stringInputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "input", false, 1, "2.0")
+  let stringStartVariablesNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 2, "2.0")
+  let stringInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 3, "2.0")
   /* Get output Real varibales and their value references */
-  let realOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "output", false, 1)
-  let realOutputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "output", false, 2)
+  let realOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "output", false, 1, "2.0")
+  let realOutputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "output", false, 2, "2.0")
   /* Get output Integer varibales and their value references */
-  let integerOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "output", false, 1)
-  let integerOutputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "output", false, 2)
+  let integerOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "output", false, 1, "2.0")
+  let integerOutputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "output", false, 2, "2.0")
   /* Get output Boolean varibales and their value references */
-  let booleanOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 1)
-  let booleanOutputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 2)
+  let booleanOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 1, "2.0")
+  let booleanOutputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 2, "2.0")
   /* Get output String varibales and their value references */
-  let stringOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "output", false, 1)
-  let stringOutputVariablesNames = dumpVariables(fmiModelVariablesList, "string", "output", false, 2)
+  let stringOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "output", false, 1, "2.0")
+  let stringOutputVariablesNames = dumpVariables(fmiModelVariablesList, "string", "output", false, 2, "2.0")
   <<
   model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
     <%dumpFMITypeDefinitions(fmiTypeDefinitionsList)%>
@@ -1991,57 +1991,57 @@ template importFMU1CoSimulationStandAlone(FmiImport fmi)
 match fmi
 case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)) then
   /* Get Real parameters and their value references */
-  let realParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 1)
-  let realParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 2)
+  let realParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 1, "1.0")
+  let realParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 2, "1.0")
   /* Get Integer parameters and their value references */
-  let integerParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 1)
-  let integerParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 2)
+  let integerParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 1, "1.0")
+  let integerParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 2, "1.0")
   /* Get Boolean parameters and their value references */
-  let booleanParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 1)
-  let booleanParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 2)
+  let booleanParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 1, "1.0")
+  let booleanParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 2, "1.0")
   /* Get String parameters and their value references */
-  let stringParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 1)
-  let stringParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 2)
+  let stringParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 1, "1.0")
+  let stringParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 2, "1.0")
   /* Get dependent Real parameters and their value references */
-  let realDependentParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 1)
-  let realDependentParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 2)
+  let realDependentParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 1, "1.0")
+  let realDependentParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 2, "1.0")
   /* Get dependent Integer parameters and their value references */
-  let integerDependentParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 1)
-  let integerDependentParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 2)
+  let integerDependentParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 1, "1.0")
+  let integerDependentParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 2, "1.0")
   /* Get dependent Boolean parameters and their value references */
-  let booleanDependentParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 1)
-  let booleanDependentParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 2)
+  let booleanDependentParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 1, "1.0")
+  let booleanDependentParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 2, "1.0")
   /* Get dependent String parameters and their value references */
-  let stringDependentParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 1)
-  let stringDependentParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 2)
+  let stringDependentParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 1, "1.0")
+  let stringDependentParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 2, "1.0")
   /* Get input Real varibales and their value references */
-  let realInputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "input", false, 1)
-  let realInputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 2)
-  let realInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 3)
+  let realInputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "input", false, 1, "1.0")
+  let realInputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 2, "1.0")
+  let realInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 3, "1.0")
   /* Get input Integer varibales and their value references */
-  let integerInputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "input", false, 1)
-  let integerInputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 2)
-  let integerInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 3)
+  let integerInputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "input", false, 1, "1.0")
+  let integerInputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 2, "1.0")
+  let integerInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 3, "1.0")
   /* Get input Boolean varibales and their value references */
-  let booleanInputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 1)
-  let booleanInputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 2)
-  let booleanInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 3)
+  let booleanInputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 1, "1.0")
+  let booleanInputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 2, "1.0")
+  let booleanInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 3, "1.0")
   /* Get input String varibales and their value references */
-  let stringInputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "input", false, 1)
-  let stringStartVariablesNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 2)
-  let stringInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 3)
+  let stringInputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "input", false, 1, "1.0")
+  let stringStartVariablesNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 2, "1.0")
+  let stringInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 3, "1.0")
   /* Get output Real varibales and their value references */
-  let realOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "output", false, 1)
-  let realOutputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "output", false, 2)
+  let realOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "output", false, 1, "1.0")
+  let realOutputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "output", false, 2, "1.0")
   /* Get output Integer varibales and their value references */
-  let integerOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "output", false, 1)
-  let integerOutputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "output", false, 2)
+  let integerOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "output", false, 1, "1.0")
+  let integerOutputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "output", false, 2, "1.0")
   /* Get output Boolean varibales and their value references */
-  let booleanOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 1)
-  let booleanOutputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 2)
+  let booleanOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 1, "1.0")
+  let booleanOutputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 2, "1.0")
   /* Get output String varibales and their value references */
-  let stringOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "output", false, 1)
-  let stringOutputVariablesNames = dumpVariables(fmiModelVariablesList, "string", "output", false, 2)
+  let stringOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "output", false, 1, "1.0")
+  let stringOutputVariablesNames = dumpVariables(fmiModelVariablesList, "string", "output", false, 2, "1.0")
   <<
   model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
     <%dumpFMITypeDefinitions(fmiTypeDefinitionsList)%>
@@ -2514,19 +2514,25 @@ template dumpFMIModelVariablePlacementAnnotation(Integer x1Placement, Integer x2
   else if boolAnd(generateOutputConnectors, stringEq(causality, "output")) then " annotation(Placement(transformation(extent={{"+x1Placement+","+y1Placement+"},{"+x2Placement+","+y2Placement+"}})))"
 end dumpFMIModelVariablePlacementAnnotation;
 
-template dumpVariables(list<ModelVariables> fmiModelVariablesList, String type, String variabilityCausality, Boolean dependent, Integer what)
+template dumpVariables(list<ModelVariables> fmiModelVariablesList, String type, String variabilityCausality, Boolean dependent, Integer what, String fmiVersion)
 ::=
   <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpVariable(fmiModelVariable, type, variabilityCausality, dependent, what) ;separator=", "%>
+  <%fmiModelVariablesList |> fmiModelVariable => dumpVariable(fmiModelVariable, type, variabilityCausality, dependent, what, fmiVersion) ;separator=", "%>
   >>
 end dumpVariables;
 
-template dumpVariable(ModelVariables fmiModelVariable, String type, String variabilityCausality, Boolean dependent, Integer what)
+template dumpVariable(ModelVariables fmiModelVariable, String type, String variabilityCausality, Boolean dependent, Integer what, String fmiVersion)
 ::=
 if boolAnd(stringEq(type, "real"), (boolAnd(stringEq(variabilityCausality, "parameter"), boolNot(dependent)))) then
 <<
 <%
+if stringEq(fmiVersion,"1.0") then
 match fmiModelVariable
+  case REALVARIABLE(variability="parameter", hasStartValue=true) then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+end match
+else if stringEq(fmiVersion,"2.0") then
+  match fmiModelVariable
   case REALVARIABLE(causality="parameter", hasStartValue=true) then
     if intEq(what,1) then valueReference else if intEq(what,2) then name
 %>
@@ -2534,6 +2540,12 @@ match fmiModelVariable
 else if boolAnd(stringEq(type, "integer"), (boolAnd(stringEq(variabilityCausality, "parameter"), boolNot(dependent)))) then
 <<
 <%
+if stringEq(fmiVersion,"1.0") then
+match fmiModelVariable
+  case INTEGERVARIABLE(variability="parameter", hasStartValue=true) then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+end match
+else if stringEq(fmiVersion,"2.0") then
 match fmiModelVariable
   case INTEGERVARIABLE(causality="parameter", hasStartValue=true) then
     if intEq(what,1) then valueReference else if intEq(what,2) then name
@@ -2542,6 +2554,12 @@ match fmiModelVariable
 else if boolAnd(stringEq(type, "boolean"), (boolAnd(stringEq(variabilityCausality, "parameter"), boolNot(dependent)))) then
 <<
 <%
+if stringEq(fmiVersion,"1.0") then
+match fmiModelVariable
+  case BOOLEANVARIABLE(variability="parameter", hasStartValue=true) then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+end match
+else if stringEq(fmiVersion,"2.0") then
 match fmiModelVariable
   case BOOLEANVARIABLE(causality="parameter", hasStartValue=true) then
     if intEq(what,1) then valueReference else if intEq(what,2) then name
@@ -2550,6 +2568,12 @@ match fmiModelVariable
 else if boolAnd(stringEq(type, "string"), (boolAnd(stringEq(variabilityCausality, "parameter"), boolNot(dependent)))) then
 <<
 <%
+if stringEq(fmiVersion,"1.0") then
+match fmiModelVariable
+  case STRINGVARIABLE(variability="parameter", hasStartValue=true) then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+end match
+else if stringEq(fmiVersion,"2.0") then
 match fmiModelVariable
   case STRINGVARIABLE(causality="parameter", hasStartValue=true) then
     if intEq(what,1) then valueReference else if intEq(what,2) then name
@@ -2558,6 +2582,12 @@ match fmiModelVariable
 else if boolAnd(stringEq(type, "real"), (boolAnd(stringEq(variabilityCausality, "parameter"), dependent))) then
 <<
 <%
+if stringEq(fmiVersion,"1.0") then
+match fmiModelVariable
+  case REALVARIABLE(variability="parameter",  hasStartValue=false, isFixed=false) then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+end match
+else if stringEq(fmiVersion,"2.0") then
 match fmiModelVariable
   case REALVARIABLE(causality="parameter", hasStartValue=false, isFixed=false) then
     if intEq(what,1) then valueReference else if intEq(what,2) then name
@@ -2566,6 +2596,12 @@ match fmiModelVariable
 else if boolAnd(stringEq(type, "integer"), (boolAnd(stringEq(variabilityCausality, "parameter"), dependent))) then
 <<
 <%
+if stringEq(fmiVersion,"1.0") then
+match fmiModelVariable
+  case INTEGERVARIABLE(variability="parameter",  hasStartValue=false, isFixed=false) then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+end match
+else if stringEq(fmiVersion,"2.0") then
 match fmiModelVariable
   case INTEGERVARIABLE(causality="parameter", hasStartValue=false, isFixed=false) then
     if intEq(what,1) then valueReference else if intEq(what,2) then name
@@ -2574,6 +2610,12 @@ match fmiModelVariable
 else if boolAnd(stringEq(type, "boolean"), (boolAnd(stringEq(variabilityCausality, "parameter"), dependent))) then
 <<
 <%
+if stringEq(fmiVersion,"1.0") then
+match fmiModelVariable
+  case BOOLEANVARIABLE(variability="parameter",  hasStartValue=false, isFixed=false) then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+end match
+else if stringEq(fmiVersion,"2.0") then
 match fmiModelVariable
   case BOOLEANVARIABLE(causality="parameter", hasStartValue=false, isFixed=false) then
     if intEq(what,1) then valueReference else if intEq(what,2) then name
@@ -2582,6 +2624,12 @@ match fmiModelVariable
 else if boolAnd(stringEq(type, "string"), (boolAnd(stringEq(variabilityCausality, "parameter"), dependent))) then
 <<
 <%
+if stringEq(fmiVersion,"1.0") then
+match fmiModelVariable
+  case STRINGVARIABLE(variability="parameter",  hasStartValue=false, isFixed=false) then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+end match
+else if stringEq(fmiVersion,"2.0") then
 match fmiModelVariable
   case STRINGVARIABLE(causality="parameter", hasStartValue=false, isFixed=false) then
     if intEq(what,1) then valueReference else if intEq(what,2) then name
