@@ -4,13 +4,15 @@
 #include <Core/Math/Functions.h>
 #include <Core/Math/ILapack.h>
 #include <Solver/Peer/Peer.h>
+
+#if defined(USE_MPI) || defined(USE_OPENMP)
+
 #ifdef MPIPEER
 #include "mpi.h"
 #else
 #include "omp.h"
 #endif
 
-#if defined(USE_MPI) || defined(USE_OPENMP)
 Peer::Peer(IMixedSystem* system, ISolverSettings* settings)
     : SolverDefaultImplementation(system, settings),
       _peersettings(dynamic_cast<ISolverSettings*>(_settings)),
