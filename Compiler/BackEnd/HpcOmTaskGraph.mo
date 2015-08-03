@@ -5062,7 +5062,7 @@ algorithm
           tpl2::sortedSystComps := sortedSystComps;
           (comp1,i1) := tpl1;
           (comp2,i2) := tpl2;
-          if BackendDAEUtil.componentsEqual(comp1,comp2) and intEq(i1,i2) then isEqual:= true;
+          if componentsEqual(tpl1, tpl2) then isEqual:= true;
           else
             isEqual := false;
             print("comp " + intString(i1) + BackendDump.printComponent(comp1) + " is not equal to " + "comp" + intString(i2) + BackendDump.printComponent(comp2) + "\n");
@@ -5231,7 +5231,7 @@ protected function compareComponents "author: marcusw
   output Boolean res;
 protected
   String comp1Str,comp2Str;
-  Integer minLength, comp1Idx, comp2Idx;
+  Integer minLength, compRes, comp1Idx, comp2Idx;
   BackendDAE.StrongComponent comp1, comp2;
 algorithm
   if(componentsEqual(iComp1, iComp2)) then
@@ -5242,7 +5242,12 @@ algorithm
     comp1Str := BackendDump.printComponent(comp1) + "_" + intString(comp1Idx);
     comp2Str := BackendDump.printComponent(comp2) + "_" + intString(comp2Idx);
     minLength := intMin(stringLength(comp1Str), stringLength(comp2Str));
-    res := intLt(System.strncmp(comp1Str, comp2Str, minLength), 0);
+    compRes := System.strncmp(comp1Str, comp2Str, minLength);
+    if(intEq(compRes, 0)) then
+      res := intLt(stringLength(comp1Str), stringLength(comp2Str));
+    else
+      res := intLt(compRes, 0);
+    end if;
   end if;
 end compareComponents;
 
