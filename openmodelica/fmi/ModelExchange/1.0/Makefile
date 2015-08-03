@@ -13,6 +13,7 @@ Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
 Pendulum.mos \
 SampleExample.mos \
 testAssert.mos \
+testChangeParam.mos \
 TanksConnectedPI.mos \
 CoupledClutches.mos \
 BooleanNetwork1.mos \
