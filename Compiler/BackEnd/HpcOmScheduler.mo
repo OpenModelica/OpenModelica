@@ -5704,6 +5704,11 @@ algorithm
         printPredictedExeTimeInfo(serTime,parTime,speedUp,speedUpMax,numProcIn);
       then
         criticalPathInfo;
+    case(HpcOmSimCode.TASKDEPSCHEDULE(),_,_,_,_)
+      equation
+        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC)) = HpcOmTaskGraph.getCriticalPaths(taskGraphIn,taskGraphMetaIn);
+        criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
+      then criticalPathInfo;
     else
       equation
         print("HpcOmScheduler.analyseScheduledTaskGraph failed\n");

@@ -15699,6 +15699,8 @@ algorithm
         parts2 = replacePublicList(parts, publst2);
       then
         Absyn.CLASS(a,b,c,d,e,Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,parts2,ann),file_info);
+    // Short class definitions, etc
+    else inClass;
   end match;
 end removeInnerDiffFiledClass;
 

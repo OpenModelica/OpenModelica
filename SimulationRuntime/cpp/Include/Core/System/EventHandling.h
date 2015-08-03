@@ -21,6 +21,7 @@ class BOOST_EXTENSION_EVENTHANDLING_DECL EventHandling
 {
 public:
   EventHandling();
+  EventHandling(EventHandling& instance);
   virtual ~EventHandling(void);
   //Inits the event variables
    boost::shared_ptr<DiscreteEvents> initialize(IEvent* system,boost::shared_ptr<ISimVars> sim_vars);

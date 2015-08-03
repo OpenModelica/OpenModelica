@@ -37,7 +37,6 @@
 #include "simulation/solver/delay.h"
 #include "simulation/simulation_info_xml.h"
 #include "simulation/simulation_input_xml.h"
-
 /*
 DLLExport pthread_key_t fmu2_thread_data_key;
 */
@@ -219,6 +218,7 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
 
   FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2EventUpdate: terminated by an assertion.")
+  comp->_need_update = 1;
   return fmi2Error;
 }
 
@@ -584,6 +584,7 @@ fmi2Status fmi2SetReal(fmi2Component c, const fmi2ValueReference vr[], size_t nv
     if (setReal(comp, vr[i], value[i]) != fmi2OK) // to be implemented by the includer of this file
       return fmi2Error;
   }
+  comp->_need_update = 1;
   return fmi2OK;
 }
 
@@ -605,6 +606,7 @@ fmi2Status fmi2SetInteger(fmi2Component c, const fmi2ValueReference vr[], size_t
     if (setInteger(comp, vr[i], value[i]) != fmi2OK) // to be implemented by the includer of this file
       return fmi2Error;
   }
+  comp->_need_update = 1;
   return fmi2OK;
 }
 
@@ -626,6 +628,7 @@ fmi2Status fmi2SetBoolean(fmi2Component c, const fmi2ValueReference vr[], size_t
     if (setBoolean(comp, vr[i], value[i]) != fmi2OK) // to be implemented by the includer of this file
       return fmi2Error;
   }
+  comp->_need_update = 1;
   return fmi2OK;
 }
 
@@ -648,6 +651,7 @@ fmi2Status fmi2SetString(fmi2Component c, const fmi2ValueReference vr[], size_t 
     if (setString(comp, vr[i], value[i]) != fmi2OK) // to be implemented by the includer of this file
       return fmi2Error;
   }
+  comp->_need_update = 1;
   return fmi2OK;
 }
 
@@ -768,6 +772,7 @@ fmi2Status fmi2SetTime(fmi2Component c, fmi2Real time) {
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetTime: time=%.16g", time)
   comp->fmuData->localData[0]->timeValue = time;
+  comp->_need_update = 1;
   return fmi2OK;
 }
 
@@ -793,6 +798,7 @@ fmi2Status fmi2SetContinuousStates(fmi2Component c, const fmi2Real x[], size_t n
       return fmi2Error;
   }
 #endif
+  comp->_need_update = 1;
   return fmi2OK;
 }
 
@@ -810,7 +816,12 @@ fmi2Status fmi2GetDerivatives(fmi2Component c, fmi2Real derivatives[], size_t nx
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 
-    comp->fmuData->callback->functionODE(comp->fmuData);
+    if (comp->_need_update){
+      comp->fmuData->callback->functionODE(comp->fmuData);
+      overwriteOldSimulationData(comp->fmuData);
+      comp->_need_update = 0;
+    }
+
 #if NUMBER_OF_STATES>0
     for (i = 0; i < nx; i++) {
       fmi2ValueReference vr = vrStatesDerivatives[i];
@@ -818,6 +829,7 @@ fmi2Status fmi2GetDerivatives(fmi2Component c, fmi2Real derivatives[], size_t nx
       FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetDerivatives: #r%d# = %.16g", vr, derivatives[i])
     }
 #endif
+
     return fmi2OK;
   /* catch */
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -844,7 +856,10 @@ fmi2Status fmi2GetEventIndicators(fmi2Component c, fmi2Real eventIndicators[], s
 
 #if NUMBER_OF_EVENT_INDICATORS>0
     /* eval needed equations*/
-    comp->fmuData->callback->function_ZeroCrossingsEquations(comp->fmuData);
+    if (comp->_need_update){
+      comp->fmuData->callback->functionODE(comp->fmuData);
+      comp->_need_update = 0;
+    }
     comp->fmuData->callback->function_ZeroCrossings(comp->fmuData,comp->fmuData->simulationInfo.zeroCrossings);
     for (i = 0; i < nx; i++) {
       eventIndicators[i] = comp->fmuData->simulationInfo.zeroCrossings[i];

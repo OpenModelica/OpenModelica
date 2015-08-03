@@ -11,7 +11,10 @@ class SimData : public ISimData
 {
 public:
   SimData(void);
+  SimData(SimData &instance);
   virtual ~SimData(void);
+
+  virtual ISimData* clone();
   virtual void  Add(string key, boost::shared_ptr<ISimVar> var);
   virtual ISimVar* Get(string key);
   virtual void addOutputResults(string name, uBlas::vector<double> v);

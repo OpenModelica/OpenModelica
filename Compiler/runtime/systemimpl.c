@@ -1098,7 +1098,7 @@ extern int SystemImpl__removeDirectory(const char *path)
     }
   }
 
-  return retval;
+  return retval==0;
 }
 
 extern char* SystemImpl__readFileNoNumeric(const char* filename)

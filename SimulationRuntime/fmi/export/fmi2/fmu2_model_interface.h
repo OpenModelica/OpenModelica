@@ -80,6 +80,8 @@ typedef struct {
   fmi2Real startTime;
   fmi2Boolean stopTimeDefined;
   fmi2Real stopTime;
+
+  int _need_update;
 } ModelInstance;
 
 #ifdef __cplusplus

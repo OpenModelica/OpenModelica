@@ -1850,10 +1850,9 @@ external "builtin";
 annotation(preferredView="text");
 end mkdir;
 
-function remove "removes a file or directory of given path (which may be either relative or absolute)
-  returns 0 if path was removed successfully."
-  input String newDirectory;
-  output Boolean success;
+function remove "removes a file or directory of given path (which may be either relative or absolute)."
+  input String path;
+  output Boolean success "Returns true on success.";
 external "builtin";
 annotation(preferredView="text");
 end remove;

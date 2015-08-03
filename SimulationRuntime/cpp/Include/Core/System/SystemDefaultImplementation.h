@@ -57,6 +57,7 @@ class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation
 {
 public:
   SystemDefaultImplementation(IGlobalSettings* globalSettings,boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars);
+  SystemDefaultImplementation(SystemDefaultImplementation &instance);
   virtual ~SystemDefaultImplementation();
 
   /// Provide number (dimension) of boolean variables
@@ -121,6 +122,9 @@ public:
   void setTime(const double& t);
 
   IGlobalSettings* getGlobalSettings();
+
+  virtual boost::shared_ptr<ISimVars> getSimVars();
+  virtual boost::shared_ptr<ISimData> getSimData();
 
 protected:
     void Assert(bool cond, const string& msg);
