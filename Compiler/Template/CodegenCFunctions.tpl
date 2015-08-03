@@ -2537,7 +2537,7 @@ match lhsexp
     '<%lhsStr%> = <%rhsExpStr%>;'
 
   /*This CALL on left hand side case shouldn't have been created by the compiler. It only comes because of alias eliminations. On top of that
-  at least it should have been a record_constractor not a normal call. sigh. */
+  at least it should have been a record_constructor not a normal call. sigh. */
   case CALL(path=path,expLst=expLst,attr=CALL_ATTR(ty=ty as T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)))) then
     let tmp = tempDecl(expTypeModelica(ty),&varDecls)
     /*TODO handle array record memebers. see algStmtAssign*/
@@ -2545,7 +2545,7 @@ match lhsexp
     <%preExp%>
     <%tmp%> = <%rhsExpStr%>;
     <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 1 =>
-      let re = daeExp(listGet(expLst,i1), context, &preExp, &varDecls, &auxFunction)
+      let re = daeExpCrefLhs(listGet(expLst,i1), context, &preExp, &varDecls, &auxFunction)
       '<%re%> = <%tmp%>._<%var.name%>;'
     ; separator="\n"
     %>
