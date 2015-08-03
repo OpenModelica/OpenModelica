@@ -869,12 +869,12 @@ class StatArrayDim1 : public StatArray<T, size, external>
 
   iterator begin()
   {
-    return StatArray<T, size, external>::_array_data.begin();
+    return StatArray<T, size, external>::_array.begin();
   }
 
   iterator end()
   {
-    return StatArray<T, size, external>::_array_data.end();
+    return StatArray<T, size, external>::_array.end();
   }
 };
 
@@ -1116,7 +1116,7 @@ class StatArrayDim3 : public StatArray<T, size1*size2*size3, external>
   virtual const T& operator()(const vector<size_t>& idx) const
   {
     return StatArray<T, size1*size2*size3, external>::
-      _array_data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))];
+      _data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))];
   }
 
   /**
@@ -1126,7 +1126,7 @@ class StatArrayDim3 : public StatArray<T, size1*size2*size3, external>
   virtual T& operator()(const vector<size_t>& idx)
   {
     return StatArray<T, size1*size2*size3, external>::
-      _array_data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))];
+      _data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))];
   }
 
   /**
@@ -1148,7 +1148,7 @@ class StatArrayDim3 : public StatArray<T, size1*size2*size3, external>
   inline virtual T& operator()(size_t i, size_t j, size_t k)
   {
     return StatArray<T, size1*size2*size3, external>::
-      _array_data[i-1 + size1*(j-1 + size2*(k-1))];
+      _data[i-1 + size1*(j-1 + size2*(k-1))];
   }
 
   /**
