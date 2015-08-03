@@ -666,10 +666,9 @@ class StatArray : public BaseArray<T>
   virtual StatArray<T, nelems, external>& operator=(BaseArray<T>& b)
   {
     if (this != &b) {
-      if (external)
-        _data = b.getData();
-      else
-        b.getDataCopy(_data, nelems);
+      if (nelems > 0 && _data == NULL)
+        throw std::runtime_error("Invalid assign operation to uninitialized StatArray!");
+      b.getDataCopy(_data, nelems);
     }
     return *this;
   }
@@ -693,7 +692,7 @@ class StatArray : public BaseArray<T>
   virtual void assign(const T* data)
   {
     if (nelems > 0 && _data == NULL)
-      throw std::runtime_error("Cannot assign to uninitialized StatArray!");
+      throw std::runtime_error("Cannot assign data to uninitialized StatArray!");
     std::copy(data, data + nelems, _data);
   }
 
