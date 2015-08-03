@@ -7766,7 +7766,7 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
             if SimCodeUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
               let arrayHeadIdx = listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))
               <<
-              <%arrayName%> = StatRefArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>>(&_pointerTo<%type%>Vars[<%arrayHeadIdx%>]);
+              <%arrayName%> = StatArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>, true>(&_pointerTo<%type%>Vars[<%arrayHeadIdx%>]);
               >>
             else
               let arrayIndices = SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences) |> idx => '(<%idx%>)'; separator=""
@@ -8027,7 +8027,7 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
       else
         if SimCodeUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
           <<
-          StatRefArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%>;
+          StatArrayDim<%dims%><<%typeString%>, <%array_dimensions%>, true> <%arrayName%>;
           >>
         else
           <<
