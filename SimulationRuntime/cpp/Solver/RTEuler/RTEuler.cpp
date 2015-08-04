@@ -36,6 +36,8 @@ void RTEuler::initialize()
     _mixed_system =  dynamic_cast<IMixedSystem*>(_system);
     _time_system =  dynamic_cast<ITime*>(_system);
 
+    _dimSys  = _continuous_system->getDimContinuousStates();
+
     if (_dimSys == 0)
     	return;
 
@@ -43,7 +45,7 @@ void RTEuler::initialize()
     SolverDefaultImplementation::initialize();
 
     // Dimension of the system (number of variables)
-    _dimSys  = _continuous_system->getDimContinuousStates();
+
 
     // Check system dimension
     if (_dimSys == 0)

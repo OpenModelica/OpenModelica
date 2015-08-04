@@ -1794,9 +1794,18 @@ extern "C"  void debugSimulation(void)
   getMotionCycle(cycletime);
 
   initSimulation(simController, simData, cycletime);
-  for(int i = 0; i < 1000; i++)
+  while(true)
   {
-    simController->calcOneStep();
+    try
+    {
+      wvEvent(1,NULL,0);
+      simController->calcOneStep();
+      wvEvent(2,NULL,0);
+    }
+    catch(ModelicaSimulationError& ex)
+    {
+      break;
+    }
   }
   delete simController;
 
