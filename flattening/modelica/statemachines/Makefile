@@ -3,16 +3,16 @@ TEST = ../../../rtest -v
 TESTFILES = \
 TicksInStateTest.mo \
 TimeInStateTest.mo \
-InitialStateTest.mo \
+HierarchicalAndParallelStateMachine.mo \
 ActiveStateTest.mo \
-TransitionTest.mo \
-InitialState2Test.mo \
 ConferenceTut1.mo \
 
 # test that currently fail. Move up when fixed. 
 # Run make failingtest
 FAILINGTESTFILES = \
-HierarchicalAndParallelStateMachine.mo \
+InitialStateTest.mo \
+InitialState2Test.mo \
+TransitionTest.mo \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

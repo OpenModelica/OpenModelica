@@ -7,6 +7,7 @@ HelloFMIWorld.mos \
 HelloFMIWorldEvent.mos \
 IntegerNetwork1.mos \
 testAssert.mos \
+testChangeParam.mos \
 testBug2764.mos \
 testBug3034.mos \
 testBug3049.mos \

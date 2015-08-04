@@ -1,4 +1,5 @@
 // name: DrumBoiler
+// cflags: --flowThreshold=1e-15
 // status: correct
 
 loadModel(Modelica,{"3.2"});

@@ -38,7 +38,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Fluid.Examples.Explanatory.MeasuringTemperature
 // {"openTankCold2.level","openTankCold2.medium.h","openTankCold1.level","openTankCold1.medium.h","openTankHot1.level","openTankHot1.medium.h","openTankHot2.level","openTankHot2.medium.h","openTankCold3.level","openTankCold3.medium.h","openTankHot3.level","openTankHot3.medium.h"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Fluid.Examples.Explanatory.MeasuringTemperature.mat\"
 // "
 // ""
 // Compilation succeeded

@@ -44,6 +44,7 @@ refactorGraphAnn2.mos \
 regex.mos \
 Rename.mos \
 RunScript.mos \
+saveShort.mos \
 saveTotalModel.mos \
 setComponentComment.mos \
 setComponentModifierValue.mos \

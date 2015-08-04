@@ -1,6 +1,6 @@
 // name: InitialStateTest
 // keywords: state machines features
-// status: correct
+// status: wrong
 
 model InitialStateTest
   block AState
@@ -12,9 +12,4 @@ equation
 end InitialStateTest;
 
 // Result:
-// class InitialStateTest
-//   output Real aState.dummy;
-// equation
-//   initialState(aState);
-// end InitialStateTest;
 // endResult

@@ -18,7 +18,6 @@ getErrorString(); // simulation failed, check error string.
 //     messages = "Failed to build model: HeatTank"
 // end SimulationResult;
 // "Error: Too many equations, over-determined system. The model has 10 equation(s) and 8 variable(s).
-// Error: Internal error pre-optimization module clockPartitioning failed.
-// [simulation/modelica/connectors/HeatTank.mo:28:3-28:28:writable] Error: Found equation without time-dependent variables: outlet.volumeFlowRate = 2.0
+// Error: pre-optimization module clockPartitioning failed.
 // "
 // endResult

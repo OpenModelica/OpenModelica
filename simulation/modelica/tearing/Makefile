@@ -9,6 +9,7 @@ Tearing5-celMC3.mos \
 Tearing6-celMC3.mos \
 Tearing7-celMC3.mos \
 Tearing8-celMC3.mos \
+Tearing8-celMC3sorted.mos \
 Tearing9-celMC3.mos \
 Tearing10-celMC11.mos \
 Tearing10-celMC12.mos \

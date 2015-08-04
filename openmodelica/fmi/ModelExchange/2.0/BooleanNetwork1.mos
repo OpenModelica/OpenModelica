@@ -6,13 +6,23 @@
 
 loadModel(Modelica); getErrorString();
 loadFile("BooleanNetwork1.mo"); getErrorString();
+
+simulate(BooleanNetwork1, stopTime=10, numberOfIntervals=150, variableFilter="y|y1|y2|y3|y4|Q|QI"); getErrorString();
+
+val(y1, 2.2);
+val(y2, 10);
+val(y3, 10);
+val(y4, 10);
+val(Q, 10);
+val(QI, 10);
+
 translateModelFMU(BooleanNetwork1, version="2.0"); getErrorString();
 
 importFMU("BooleanNetwork1.fmu"); getErrorString();
 loadFile("BooleanNetwork1_me_FMU.mo"); getErrorString();
 simulate(BooleanNetwork1_me_FMU, stopTime=10, numberOfIntervals=150, variableFilter="y|y1|y2|y3|y4|Q|QI"); getErrorString();
 
-val(y1, 2);
+val(y1, 2.2);
 val(y2, 10);
 val(y3, 10);
 val(y4, 10);
@@ -24,6 +34,18 @@ val(QI, 10);
 // ""
 // true
 // ""
+// record SimulationResult
+//     resultFile = "BooleanNetwork1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'BooleanNetwork1', options = '', outputFormat = 'mat', variableFilter = 'y|y1|y2|y3|y4|Q|QI', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 8.0
+// 1.0
+// 0.0
+// 0.0
+// 1.0
+// 0.0
 // "SimCode: The model BooleanNetwork1 has been translated to FMU"
 // ""
 // "BooleanNetwork1_me_FMU.mo"
@@ -36,7 +58,7 @@ val(QI, 10);
 //     messages = ""
 // end SimulationResult;
 // ""
-// 6.0
+// 8.0
 // 1.0
 // 0.0
 // 0.0

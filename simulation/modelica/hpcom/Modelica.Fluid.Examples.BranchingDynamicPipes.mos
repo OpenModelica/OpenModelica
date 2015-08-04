@@ -109,10 +109,9 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.
 // ""
 // readCalcTimesFromFile: No valid profiling-file found.
 // Warning: The costs have been estimated. Maybe Modelica.Fluid.Examples.BranchingDynamicPipes_eqs_prof-file is missing.
-// TaskgraphMeta valid
 // Using list Scheduler for the DAE system
 // Using list Scheduler for the ODE system
-// the ODE-system size is correct(738)
+// Using list Scheduler for the ZeroFunc system
 // HpcOm is still under construction.
 // record SimulationResult
 //     resultFile = "Modelica.Fluid.Examples.BranchingDynamicPipes_res.mat",

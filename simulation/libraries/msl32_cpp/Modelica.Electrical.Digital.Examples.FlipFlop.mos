@@ -32,7 +32,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Electrical.Digital.Examples.FlipFlop
 // {"J.y","CLK.y","K.y","FF.q","FF.qn",""}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Electrical.Digital.Examples.FlipFlop.mat\"
 // "
 // ""
 // Compilation succeeded

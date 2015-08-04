@@ -1,6 +1,6 @@
 TEST = ../../../rtest -v
 
-FAILINGTESTFILES = \
+FAILINGTESTFILES = 
 
 TESTFILES = \
 SimpleResistor.mos \
@@ -34,8 +34,8 @@ ReferenceGraphs \
 Profiling \
 BenchmarkSuite \
 *_ext.graphml \
-PN_Converter
-
+PN_Converter \
+cleanHpcOmTestsuite.py
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 

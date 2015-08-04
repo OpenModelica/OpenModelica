@@ -38,7 +38,7 @@ buildModel(MinimalModel); getErrroString();
 // ########################################
 //
 //
-// unspecified partition
+// unknown partition
 // ========================================
 //
 // Variables (0)
@@ -49,17 +49,15 @@ buildModel(MinimalModel); getErrroString();
 // ========================================
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
 //
-// Matching
-// ========================================
-// 0 variables and equations
-//
-//
-// StrongComponents
-// ========================================
+// no matching
 //
 //
 //
@@ -68,8 +66,8 @@ buildModel(MinimalModel); getErrroString();
 //
 // Known Variables (constants) (2)
 // ========================================
-// 1: b:VARIABLE()  = 0.0 .MinimalModel, .Real type: Real []
-// 2: const_k:PARAM(start = 1.0 )  = -15.0 .MinimalModel, .Real type: Real []
+// 1: b:VARIABLE()  = 0.0 .MinimalModel, .Real type: Real
+// 2: const_k:PARAM(start = 1.0 )  = -15.0 .MinimalModel, .Real type: Real
 //
 //
 // External Objects (0)
@@ -82,12 +80,12 @@ buildModel(MinimalModel); getErrroString();
 //
 // Alias Variables (3)
 // ========================================
-// 1: d:VARIABLE()  = -(-const_k) .MinimalModel, .Real type: Real []
-// 2: c:VARIABLE()  = -const_k .MinimalModel, .Real type: Real []
-// 3: a:VARIABLE()  = const_k .MinimalModel, .Real type: Real []
+// 1: d:VARIABLE()  = -(-const_k) .MinimalModel, .Real type: Real
+// 2: c:VARIABLE()  = -const_k .MinimalModel, .Real type: Real
+// 3: a:VARIABLE()  = const_k .MinimalModel, .Real type: Real
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //

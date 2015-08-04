@@ -1,0 +1,14 @@
+loadString(s1, "X.mo");
+print(getErrorString());
+addComponent(r1, Real, X);
+print(getErrorString());
+s2:=listFile(X);
+if answer<>diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain) then
+  print("\nFailed " + String(i) + "\n");
+  print("\nStart model:\n\n" + s1 + "\n");
+  print("\nAdded component+listFile:\n\n" + s2 + "\n");
+  print("\nDiff:\n\n" + diffModelicaFileListings(s1, s2) + "\n");
+  print(getErrorString());
+  exit(1);
+end if;
+print("OK " + String(i) + "\n");

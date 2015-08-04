@@ -38,7 +38,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.oneAxis
 // {"axis.gear.spring.phi_rel","axis.gear.spring.w_rel","axis.motor.La.i","axis.motor.C.v","axis.controller.PI.x","axis.initializeFlange.phi_flange","axis.initializeFlange.w_flange","der(axis.gear.spring.phi_rel)","der(axis.gear.spring.w_rel)","der(axis.motor.La.i)","der(axis.motor.C.v)","der(axis.controller.PI.x)"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.oneAxis.mat\"
 // "
 // ""
 // Translation succeeded

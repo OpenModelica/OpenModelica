@@ -1,0 +1,38 @@
+// name:     Modelica.Blocks.Examples.BooleanNetwork1_mat
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript(getEnvironmentVar("OMLIBRARYCOMMON")+"/ModelTestingDefaults.mos");
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+outputFormat :="mat";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Blocks.Examples.BooleanNetwork1);
+compareVars :=
+{
+   "showValue4.showActive",
+   "showValue5.showActive",
+   "showValue6.showActive"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// "mat"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Blocks.Examples.BooleanNetwork1
+// {"showValue4.showActive","showValue5.showActive","showValue6.showActive"}
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.BooleanNetwork1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Blocks.Examples.BooleanNetwork1_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

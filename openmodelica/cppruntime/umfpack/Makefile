@@ -1,7 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
-	NPendulummath.mos
+	Modelica.Electrical.Analog.Examples.CauerLowPassSC.mos
 
 FAILINGTESTFILES=
 

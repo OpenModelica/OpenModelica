@@ -28,7 +28,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces
 // {"prismatic.v","position.s"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces.mat\"
 // "
 // ""
 // Translation succeeded

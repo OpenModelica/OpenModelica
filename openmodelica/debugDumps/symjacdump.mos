@@ -1,9 +1,9 @@
 // name: symjacdump.mos
 // keywords: omc debug dump
 // status: correct
-// 
+//
 // omc debug dump: +d=symjacdump
-// 
+//
 
 loadString("
 model testSymjacdump \"testsuite/simulation/modelica/nonlinear_system/nlsTestPackage.mo: model problem6\"
@@ -34,104 +34,104 @@ buildModel(testSymjacdump); getErrorString();
 //
 // Variables (98)
 // ========================================
-// 1: $res1.$pDERNLSJac0.dummyVarNLSJac0:STATE_DER()  type: Real [] unreplaceable
-// 2: x_2_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 3: x_3_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 4: x_4_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 5: x_5_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 6: x_6_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 7: x_7_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 8: x_8_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 9: x_9_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 10: x_10_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 11: x_11_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 12: x_12_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 13: x_13_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 14: x_14_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 15: x_15_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 16: x_16_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 17: x_17_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 18: x_18_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 19: x_19_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 20: x_20_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 21: x_21_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 22: x_22_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 23: x_23_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 24: x_24_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 25: x_25_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 26: x_26_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 27: x_27_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 28: x_28_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 29: x_29_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 30: x_30_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 31: x_31_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 32: x_32_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 33: x_33_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 34: x_34_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 35: x_35_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 36: x_36_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 37: x_37_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 38: x_38_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 39: x_39_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 40: x_40_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 41: x_41_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 42: x_42_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 43: x_43_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 44: x_44_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 45: x_45_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 46: x_46_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 47: x_47_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 48: x_48_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 49: x_49_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 50: x_50_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 51: x_51_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 52: x_52_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 53: x_53_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 54: x_54_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 55: x_55_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 56: x_56_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 57: x_57_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 58: x_58_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 59: x_59_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 60: x_60_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 61: x_61_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 62: x_62_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 63: x_63_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 64: x_64_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 65: x_65_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 66: x_66_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 67: x_67_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 68: x_68_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 69: x_69_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 70: x_70_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 71: x_71_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 72: x_72_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 73: x_73_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 74: x_74_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 75: x_75_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 76: x_76_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 77: x_77_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 78: x_78_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 79: x_79_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 80: x_80_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 81: x_81_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 82: x_82_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 83: x_83_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 84: x_84_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 85: x_85_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 86: x_86_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 87: x_87_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 88: x_88_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 89: x_89_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 90: x_90_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 91: x_91_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 92: x_92_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 93: x_93_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 94: x_94_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 95: x_95_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 96: x_96_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 97: x_97_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 98: x_98_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
+// 1: $res1.$pDERNLSJac0.dummyVarNLSJac0:STATE_DER()  type: Real unreplaceable
+// 2: x_2_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 3: x_3_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 4: x_4_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 5: x_5_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 6: x_6_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 7: x_7_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 8: x_8_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 9: x_9_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 10: x_10_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 11: x_11_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 12: x_12_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 13: x_13_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 14: x_14_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 15: x_15_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 16: x_16_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 17: x_17_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 18: x_18_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 19: x_19_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 20: x_20_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 21: x_21_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 22: x_22_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 23: x_23_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 24: x_24_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 25: x_25_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 26: x_26_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 27: x_27_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 28: x_28_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 29: x_29_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 30: x_30_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 31: x_31_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 32: x_32_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 33: x_33_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 34: x_34_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 35: x_35_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 36: x_36_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 37: x_37_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 38: x_38_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 39: x_39_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 40: x_40_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 41: x_41_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 42: x_42_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 43: x_43_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 44: x_44_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 45: x_45_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 46: x_46_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 47: x_47_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 48: x_48_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 49: x_49_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 50: x_50_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 51: x_51_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 52: x_52_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 53: x_53_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 54: x_54_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 55: x_55_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 56: x_56_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 57: x_57_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 58: x_58_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 59: x_59_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 60: x_60_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 61: x_61_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 62: x_62_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 63: x_63_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 64: x_64_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 65: x_65_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 66: x_66_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 67: x_67_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 68: x_68_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 69: x_69_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 70: x_70_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 71: x_71_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 72: x_72_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 73: x_73_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 74: x_74_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 75: x_75_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 76: x_76_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 77: x_77_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 78: x_78_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 79: x_79_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 80: x_80_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 81: x_81_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 82: x_82_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 83: x_83_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 84: x_84_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 85: x_85_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 86: x_86_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 87: x_87_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 88: x_88_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 89: x_89_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 90: x_90_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 91: x_91_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 92: x_92_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 93: x_93_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 94: x_94_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 95: x_95_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 96: x_96_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 97: x_97_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 98: x_98_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
 //
 //
 // Equations (98, 98)
@@ -236,6 +236,10 @@ buildModel(testSymjacdump); getErrorString();
 // 98/98 (1): 0.0 = 2.0 * x_99_SeedNLSJac0 + 9.80296049406921e-05 * (1.98019801980198 + x[99]) * x_99_SeedNLSJac0 - x_98_.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -249,7 +253,7 @@ buildModel(testSymjacdump); getErrorString();
 //
 // Known Variables (constants) (99)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real []
+// 1: input $res1:VARIABLE()  type: Real
 // 2: input x[2]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
 // 3: input x[3]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
 // 4: input x[4]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
@@ -347,7 +351,7 @@ buildModel(testSymjacdump); getErrorString();
 // 96: input x[96]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
 // 97: input x[97]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
 // 98: input x[98]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
-// 99: input x_99_SeedNLSJac0:STATE_DER()  type: Real []
+// 99: input x_99_SeedNLSJac0:STATE_DER()  type: Real
 //
 //
 // External Objects (0)
@@ -362,7 +366,7 @@ buildModel(testSymjacdump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -396,104 +400,104 @@ buildModel(testSymjacdump); getErrorString();
 //
 // Variables (98)
 // ========================================
-// 1: $res1.$pDERNLSJac0.dummyVarNLSJac0:STATE_DER()  type: Real [] unreplaceable
-// 2: x_2_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 3: x_3_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 4: x_4_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 5: x_5_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 6: x_6_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 7: x_7_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 8: x_8_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 9: x_9_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 10: x_10_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 11: x_11_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 12: x_12_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 13: x_13_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 14: x_14_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 15: x_15_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 16: x_16_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 17: x_17_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 18: x_18_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 19: x_19_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 20: x_20_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 21: x_21_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 22: x_22_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 23: x_23_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 24: x_24_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 25: x_25_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 26: x_26_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 27: x_27_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 28: x_28_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 29: x_29_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 30: x_30_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 31: x_31_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 32: x_32_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 33: x_33_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 34: x_34_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 35: x_35_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 36: x_36_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 37: x_37_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 38: x_38_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 39: x_39_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 40: x_40_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 41: x_41_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 42: x_42_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 43: x_43_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 44: x_44_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 45: x_45_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 46: x_46_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 47: x_47_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 48: x_48_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 49: x_49_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 50: x_50_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 51: x_51_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 52: x_52_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 53: x_53_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 54: x_54_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 55: x_55_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 56: x_56_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 57: x_57_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 58: x_58_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 59: x_59_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 60: x_60_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 61: x_61_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 62: x_62_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 63: x_63_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 64: x_64_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 65: x_65_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 66: x_66_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 67: x_67_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 68: x_68_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 69: x_69_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 70: x_70_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 71: x_71_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 72: x_72_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 73: x_73_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 74: x_74_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 75: x_75_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 76: x_76_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 77: x_77_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 78: x_78_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 79: x_79_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 80: x_80_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 81: x_81_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 82: x_82_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 83: x_83_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 84: x_84_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 85: x_85_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 86: x_86_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 87: x_87_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 88: x_88_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 89: x_89_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 90: x_90_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 91: x_91_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 92: x_92_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 93: x_93_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 94: x_94_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 95: x_95_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 96: x_96_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 97: x_97_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
-// 98: x_98_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
+// 1: $res1.$pDERNLSJac0.dummyVarNLSJac0:STATE_DER()  type: Real unreplaceable
+// 2: x_2_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 3: x_3_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 4: x_4_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 5: x_5_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 6: x_6_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 7: x_7_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 8: x_8_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 9: x_9_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 10: x_10_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 11: x_11_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 12: x_12_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 13: x_13_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 14: x_14_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 15: x_15_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 16: x_16_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 17: x_17_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 18: x_18_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 19: x_19_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 20: x_20_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 21: x_21_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 22: x_22_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 23: x_23_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 24: x_24_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 25: x_25_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 26: x_26_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 27: x_27_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 28: x_28_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 29: x_29_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 30: x_30_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 31: x_31_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 32: x_32_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 33: x_33_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 34: x_34_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 35: x_35_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 36: x_36_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 37: x_37_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 38: x_38_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 39: x_39_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 40: x_40_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 41: x_41_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 42: x_42_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 43: x_43_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 44: x_44_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 45: x_45_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 46: x_46_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 47: x_47_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 48: x_48_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 49: x_49_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 50: x_50_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 51: x_51_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 52: x_52_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 53: x_53_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 54: x_54_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 55: x_55_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 56: x_56_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 57: x_57_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 58: x_58_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 59: x_59_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 60: x_60_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 61: x_61_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 62: x_62_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 63: x_63_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 64: x_64_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 65: x_65_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 66: x_66_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 67: x_67_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 68: x_68_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 69: x_69_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 70: x_70_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 71: x_71_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 72: x_72_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 73: x_73_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 74: x_74_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 75: x_75_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 76: x_76_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 77: x_77_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 78: x_78_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 79: x_79_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 80: x_80_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 81: x_81_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 82: x_82_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 83: x_83_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 84: x_84_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 85: x_85_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 86: x_86_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 87: x_87_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 88: x_88_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 89: x_89_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 90: x_90_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 91: x_91_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 92: x_92_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 93: x_93_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 94: x_94_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 95: x_95_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 96: x_96_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 97: x_97_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 98: x_98_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
 //
 //
 // Equations (98, 98)
@@ -598,6 +602,10 @@ buildModel(testSymjacdump); getErrorString();
 // 98/98 (1): x_98_.$pDERNLSJac0.dummyVarNLSJac0 = 2.0 * x_99_SeedNLSJac0 + 9.80296049406921e-05 * (1.98019801980198 + x[99]) * x_99_SeedNLSJac0    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -813,7 +821,7 @@ buildModel(testSymjacdump); getErrorString();
 //
 // Known Variables (constants) (99)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real []
+// 1: input $res1:VARIABLE()  type: Real
 // 2: input x[2]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
 // 3: input x[3]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
 // 4: input x[4]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
@@ -911,7 +919,7 @@ buildModel(testSymjacdump); getErrorString();
 // 96: input x[96]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
 // 97: input x[97]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
 // 98: input x[98]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
-// 99: input x_99_SeedNLSJac0:STATE_DER()  type: Real []
+// 99: input x_99_SeedNLSJac0:STATE_DER()  type: Real
 //
 //
 // External Objects (0)
@@ -926,7 +934,7 @@ buildModel(testSymjacdump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -960,104 +968,104 @@ buildModel(testSymjacdump); getErrorString();
 //
 // Variables (98)
 // ========================================
-// 1: $res1.$pDERNLSJac1.dummyVarNLSJac1:STATE_DER()  type: Real [] unreplaceable
-// 2: x_99_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 3: x_98_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 4: x_97_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 5: x_96_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 6: x_95_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 7: x_94_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 8: x_93_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 9: x_92_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 10: x_91_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 11: x_90_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 12: x_89_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 13: x_88_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 14: x_87_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 15: x_86_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 16: x_85_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 17: x_84_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 18: x_83_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 19: x_82_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 20: x_81_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 21: x_80_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 22: x_79_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 23: x_78_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 24: x_77_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 25: x_76_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 26: x_75_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 27: x_74_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 28: x_73_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 29: x_72_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 30: x_71_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 31: x_70_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 32: x_69_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 33: x_68_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 34: x_67_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 35: x_66_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 36: x_65_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 37: x_64_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 38: x_63_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 39: x_62_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 40: x_61_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 41: x_60_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 42: x_59_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 43: x_58_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 44: x_57_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 45: x_56_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 46: x_55_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 47: x_54_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 48: x_53_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 49: x_52_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 50: x_51_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 51: x_50_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 52: x_49_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 53: x_48_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 54: x_47_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 55: x_46_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 56: x_45_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 57: x_44_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 58: x_43_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 59: x_42_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 60: x_41_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 61: x_40_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 62: x_39_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 63: x_38_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 64: x_37_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 65: x_36_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 66: x_35_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 67: x_34_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 68: x_33_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 69: x_32_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 70: x_31_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 71: x_30_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 72: x_29_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 73: x_28_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 74: x_27_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 75: x_26_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 76: x_25_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 77: x_24_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 78: x_23_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 79: x_22_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 80: x_21_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 81: x_20_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 82: x_19_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 83: x_18_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 84: x_17_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 85: x_16_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 86: x_15_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 87: x_14_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 88: x_13_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 89: x_12_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 90: x_11_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 91: x_10_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 92: x_9_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 93: x_8_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 94: x_7_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 95: x_6_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 96: x_5_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 97: x_4_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 98: x_3_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
+// 1: $res1.$pDERNLSJac1.dummyVarNLSJac1:STATE_DER()  type: Real unreplaceable
+// 2: x_99_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 3: x_98_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 4: x_97_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 5: x_96_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 6: x_95_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 7: x_94_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 8: x_93_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 9: x_92_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 10: x_91_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 11: x_90_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 12: x_89_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 13: x_88_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 14: x_87_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 15: x_86_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 16: x_85_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 17: x_84_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 18: x_83_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 19: x_82_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 20: x_81_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 21: x_80_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 22: x_79_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 23: x_78_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 24: x_77_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 25: x_76_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 26: x_75_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 27: x_74_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 28: x_73_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 29: x_72_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 30: x_71_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 31: x_70_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 32: x_69_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 33: x_68_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 34: x_67_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 35: x_66_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 36: x_65_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 37: x_64_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 38: x_63_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 39: x_62_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 40: x_61_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 41: x_60_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 42: x_59_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 43: x_58_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 44: x_57_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 45: x_56_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 46: x_55_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 47: x_54_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 48: x_53_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 49: x_52_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 50: x_51_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 51: x_50_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 52: x_49_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 53: x_48_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 54: x_47_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 55: x_46_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 56: x_45_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 57: x_44_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 58: x_43_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 59: x_42_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 60: x_41_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 61: x_40_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 62: x_39_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 63: x_38_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 64: x_37_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 65: x_36_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 66: x_35_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 67: x_34_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 68: x_33_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 69: x_32_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 70: x_31_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 71: x_30_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 72: x_29_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 73: x_28_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 74: x_27_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 75: x_26_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 76: x_25_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 77: x_24_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 78: x_23_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 79: x_22_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 80: x_21_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 81: x_20_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 82: x_19_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 83: x_18_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 84: x_17_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 85: x_16_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 86: x_15_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 87: x_14_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 88: x_13_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 89: x_12_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 90: x_11_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 91: x_10_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 92: x_9_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 93: x_8_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 94: x_7_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 95: x_6_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 96: x_5_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 97: x_4_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 98: x_3_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
 //
 //
 // Equations (98, 98)
@@ -1162,6 +1170,10 @@ buildModel(testSymjacdump); getErrorString();
 // 98/98 (1): 0.0 = 2.0 * x_2_SeedNLSJac1 + 9.80296049406921e-05 * (1.01980198019802 + x[2]) * x_2_SeedNLSJac1 - x_3_.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -1175,7 +1187,7 @@ buildModel(testSymjacdump); getErrorString();
 //
 // Known Variables (constants) (99)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real []
+// 1: input $res1:VARIABLE()  type: Real
 // 2: input x[99]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
 // 3: input x[98]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
 // 4: input x[97]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
@@ -1273,7 +1285,7 @@ buildModel(testSymjacdump); getErrorString();
 // 96: input x[5]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
 // 97: input x[4]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
 // 98: input x[3]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
-// 99: input x_2_SeedNLSJac1:STATE_DER()  type: Real []
+// 99: input x_2_SeedNLSJac1:STATE_DER()  type: Real
 //
 //
 // External Objects (0)
@@ -1288,7 +1300,7 @@ buildModel(testSymjacdump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -1322,104 +1334,104 @@ buildModel(testSymjacdump); getErrorString();
 //
 // Variables (98)
 // ========================================
-// 1: $res1.$pDERNLSJac1.dummyVarNLSJac1:STATE_DER()  type: Real [] unreplaceable
-// 2: x_99_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 3: x_98_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 4: x_97_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 5: x_96_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 6: x_95_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 7: x_94_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 8: x_93_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 9: x_92_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 10: x_91_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 11: x_90_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 12: x_89_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 13: x_88_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 14: x_87_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 15: x_86_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 16: x_85_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 17: x_84_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 18: x_83_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 19: x_82_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 20: x_81_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 21: x_80_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 22: x_79_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 23: x_78_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 24: x_77_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 25: x_76_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 26: x_75_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 27: x_74_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 28: x_73_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 29: x_72_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 30: x_71_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 31: x_70_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 32: x_69_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 33: x_68_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 34: x_67_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 35: x_66_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 36: x_65_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 37: x_64_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 38: x_63_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 39: x_62_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 40: x_61_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 41: x_60_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 42: x_59_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 43: x_58_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 44: x_57_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 45: x_56_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 46: x_55_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 47: x_54_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 48: x_53_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 49: x_52_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 50: x_51_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 51: x_50_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 52: x_49_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 53: x_48_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 54: x_47_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 55: x_46_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 56: x_45_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 57: x_44_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 58: x_43_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 59: x_42_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 60: x_41_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 61: x_40_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 62: x_39_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 63: x_38_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 64: x_37_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 65: x_36_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 66: x_35_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 67: x_34_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 68: x_33_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 69: x_32_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 70: x_31_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 71: x_30_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 72: x_29_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 73: x_28_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 74: x_27_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 75: x_26_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 76: x_25_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 77: x_24_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 78: x_23_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 79: x_22_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 80: x_21_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 81: x_20_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 82: x_19_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 83: x_18_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 84: x_17_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 85: x_16_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 86: x_15_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 87: x_14_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 88: x_13_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 89: x_12_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 90: x_11_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 91: x_10_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 92: x_9_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 93: x_8_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 94: x_7_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 95: x_6_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 96: x_5_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 97: x_4_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
-// 98: x_3_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
+// 1: $res1.$pDERNLSJac1.dummyVarNLSJac1:STATE_DER()  type: Real unreplaceable
+// 2: x_99_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 3: x_98_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 4: x_97_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 5: x_96_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 6: x_95_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 7: x_94_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 8: x_93_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 9: x_92_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 10: x_91_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 11: x_90_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 12: x_89_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 13: x_88_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 14: x_87_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 15: x_86_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 16: x_85_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 17: x_84_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 18: x_83_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 19: x_82_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 20: x_81_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 21: x_80_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 22: x_79_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 23: x_78_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 24: x_77_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 25: x_76_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 26: x_75_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 27: x_74_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 28: x_73_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 29: x_72_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 30: x_71_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 31: x_70_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 32: x_69_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 33: x_68_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 34: x_67_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 35: x_66_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 36: x_65_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 37: x_64_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 38: x_63_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 39: x_62_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 40: x_61_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 41: x_60_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 42: x_59_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 43: x_58_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 44: x_57_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 45: x_56_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 46: x_55_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 47: x_54_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 48: x_53_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 49: x_52_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 50: x_51_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 51: x_50_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 52: x_49_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 53: x_48_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 54: x_47_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 55: x_46_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 56: x_45_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 57: x_44_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 58: x_43_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 59: x_42_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 60: x_41_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 61: x_40_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 62: x_39_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 63: x_38_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 64: x_37_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 65: x_36_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 66: x_35_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 67: x_34_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 68: x_33_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 69: x_32_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 70: x_31_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 71: x_30_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 72: x_29_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 73: x_28_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 74: x_27_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 75: x_26_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 76: x_25_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 77: x_24_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 78: x_23_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 79: x_22_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 80: x_21_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 81: x_20_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 82: x_19_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 83: x_18_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 84: x_17_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 85: x_16_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 86: x_15_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 87: x_14_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 88: x_13_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 89: x_12_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 90: x_11_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 91: x_10_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 92: x_9_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 93: x_8_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 94: x_7_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 95: x_6_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 96: x_5_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 97: x_4_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 98: x_3_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
 //
 //
 // Equations (98, 98)
@@ -1522,6 +1534,10 @@ buildModel(testSymjacdump); getErrorString();
 // 96/96 (1): x_5_.$pDERNLSJac1.dummyVarNLSJac1 = 2.0 * x_4_.$pDERNLSJac1.dummyVarNLSJac1 + 9.80296049406921e-05 * (1.03960396039604 + x[4]) * x_4_.$pDERNLSJac1.dummyVarNLSJac1 - x_3_.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
 // 97/97 (1): x_4_.$pDERNLSJac1.dummyVarNLSJac1 = 2.0 * x_3_.$pDERNLSJac1.dummyVarNLSJac1 + 9.80296049406921e-05 * (1.02970297029703 + x[3]) * x_3_.$pDERNLSJac1.dummyVarNLSJac1 - x_2_SeedNLSJac1    [dynamic]
 // 98/98 (1): x_3_.$pDERNLSJac1.dummyVarNLSJac1 = 2.0 * x_2_SeedNLSJac1 + 9.80296049406921e-05 * (1.01980198019802 + x[2]) * x_2_SeedNLSJac1    [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
 //
 //
 // State Sets
@@ -1739,7 +1755,7 @@ buildModel(testSymjacdump); getErrorString();
 //
 // Known Variables (constants) (99)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real []
+// 1: input $res1:VARIABLE()  type: Real
 // 2: input x[99]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
 // 3: input x[98]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
 // 4: input x[97]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
@@ -1837,7 +1853,7 @@ buildModel(testSymjacdump); getErrorString();
 // 96: input x[5]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
 // 97: input x[4]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
 // 98: input x[3]:VARIABLE(start = 0.5 ) .testSymjacdump, .Real type: Real [100]
-// 99: input x_2_SeedNLSJac1:STATE_DER()  type: Real []
+// 99: input x_2_SeedNLSJac1:STATE_DER()  type: Real
 //
 //
 // External Objects (0)
@@ -1852,7 +1868,7 @@ buildModel(testSymjacdump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //

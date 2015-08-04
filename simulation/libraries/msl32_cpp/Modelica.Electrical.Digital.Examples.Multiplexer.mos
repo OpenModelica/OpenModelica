@@ -36,7 +36,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Electrical.Digital.Examples.Multiplexer
 // {"D0.y","D1.y","D2.y","D3.y","CLK.y","Enable.y","FF.q","FF.qn","MUX.d",""}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Electrical.Digital.Examples.Multiplexer.mat\"
 // "
 // ""
 // Compilation succeeded

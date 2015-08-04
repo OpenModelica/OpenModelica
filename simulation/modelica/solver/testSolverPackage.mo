@@ -56,4 +56,16 @@ package testSolver
     der(y[8]) = -der(y[7]);
   end problem2;
 
+  model problem3
+    Real x(start=1,fixed=true);
+    Real x1(start=1,fixed=true);
+    Real x2(start=1,fixed=true);
+    parameter Real c = 1;
+  equation
+    der(x) = c;
+    der(x1) = 2*time;
+    der(x2) = -x2;
+  end problem3;
+
+
 end testSolver;

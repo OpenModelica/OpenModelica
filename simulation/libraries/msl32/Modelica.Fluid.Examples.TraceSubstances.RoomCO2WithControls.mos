@@ -45,40 +45,40 @@ runScript(modelTesting);getErrorString();
 // Result file: Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls_res.mat
 // Messages: assert            | warning | The following assertion has been violated at time 172.800000
 // |                 | |       | ductOut.mCs[1,1] >= 0.0
-// assert            | warning | Variable ductOut.mCs[1,1] out of [min, max] interval: ductOut.mCs[1,1] >= 0.0 has value: -1.49935e-17
+// assert            | warning | Variable ductOut.mCs[1,1] out of [min, max] interval: ductOut.mCs[1,1] >= 0.0 has value: -1.42247e-17
 // assert            | warning | The following assertion has been violated at time 172.800000
 // |                 | |       | ductOut.mCs[2,1] >= 0.0
-// assert            | warning | Variable ductOut.mCs[2,1] out of [min, max] interval: ductOut.mCs[2,1] >= 0.0 has value: -6.45958e-26
+// assert            | warning | Variable ductOut.mCs[2,1] out of [min, max] interval: ductOut.mCs[2,1] >= 0.0 has value: -5.25393e-26
 // assert            | warning | The following assertion has been violated at time 172.800000
 // |                 | |       | ductOut.mCs_scaled[1,1] >= 0.0
-// assert            | warning | Variable ductOut.mCs_scaled[1,1] out of [min, max] interval: ductOut.mCs_scaled[1,1] >= 0.0 has value: -9.87062e-15
+// assert            | warning | Variable ductOut.mCs_scaled[1,1] out of [min, max] interval: ductOut.mCs_scaled[1,1] >= 0.0 has value: -9.36454e-15
 // assert            | warning | The following assertion has been violated at time 172.800000
 // |                 | |       | ductOut.mCs_scaled[2,1] >= 0.0
-// assert            | warning | Variable ductOut.mCs_scaled[2,1] out of [min, max] interval: ductOut.mCs_scaled[2,1] >= 0.0 has value: -4.25252e-23
+// assert            | warning | Variable ductOut.mCs_scaled[2,1] out of [min, max] interval: ductOut.mCs_scaled[2,1] >= 0.0 has value: -3.45881e-23
 // assert            | warning | The following assertion has been violated at time 172.800000
 // |                 | |       | ductOut.Cs[1,1] >= 0.0
-// assert            | warning | Variable ductOut.Cs[1,1] out of [min, max] interval: ductOut.Cs[1,1] >= 0.0 has value: -2.83566e-16
+// assert            | warning | Variable ductOut.Cs[1,1] out of [min, max] interval: ductOut.Cs[1,1] >= 0.0 has value: -2.69027e-16
 // assert            | warning | The following assertion has been violated at time 172.800000
 // |                 | |       | ductOut.Cs[2,1] >= 0.0
-// assert            | warning | Variable ductOut.Cs[2,1] out of [min, max] interval: ductOut.Cs[2,1] >= 0.0 has value: -1.22168e-24
+// assert            | warning | Variable ductOut.Cs[2,1] out of [min, max] interval: ductOut.Cs[2,1] >= 0.0 has value: -9.93656e-25
 // assert            | warning | The following assertion has been violated at time 172.800000
 // |                 | |       | ductIn.mCs[2,1] >= 0.0
-// assert            | warning | Variable ductIn.mCs[2,1] out of [min, max] interval: ductIn.mCs[2,1] >= 0.0 has value: -1.83586e-17
+// assert            | warning | Variable ductIn.mCs[2,1] out of [min, max] interval: ductIn.mCs[2,1] >= 0.0 has value: -1.00662e-18
 // assert            | warning | The following assertion has been violated at time 172.800000
 // |                 | |       | ductIn.mCs_scaled[2,1] >= 0.0
-// assert            | warning | Variable ductIn.mCs_scaled[2,1] out of [min, max] interval: ductIn.mCs_scaled[2,1] >= 0.0 has value: -1.2086e-14
+// assert            | warning | Variable ductIn.mCs_scaled[2,1] out of [min, max] interval: ductIn.mCs_scaled[2,1] >= 0.0 has value: -6.62685e-16
 // assert            | warning | The following assertion has been violated at time 172.800000
 // |                 | |       | ductIn.Cs[2,1] >= 0.0
-// assert            | warning | Variable ductIn.Cs[2,1] out of [min, max] interval: ductIn.Cs[2,1] >= 0.0 has value: -3.47209e-16
-// assert            | warning | The following assertion has been violated at time 518.400000
+// assert            | warning | Variable ductIn.Cs[2,1] out of [min, max] interval: ductIn.Cs[2,1] >= 0.0 has value: -1.90378e-17
+// assert            | warning | The following assertion has been violated at time 345.600000
 // |                 | |       | ductIn.mCs[1,1] >= 0.0
-// assert            | warning | Variable ductIn.mCs[1,1] out of [min, max] interval: ductIn.mCs[1,1] >= 0.0 has value: -1.4313e-16
-// assert            | warning | The following assertion has been violated at time 518.400000
+// assert            | warning | Variable ductIn.mCs[1,1] out of [min, max] interval: ductIn.mCs[1,1] >= 0.0 has value: -8.01515e-18
+// assert            | warning | The following assertion has been violated at time 345.600000
 // |                 | |       | ductIn.mCs_scaled[1,1] >= 0.0
-// assert            | warning | Variable ductIn.mCs_scaled[1,1] out of [min, max] interval: ductIn.mCs_scaled[1,1] >= 0.0 has value: -9.42263e-14
-// assert            | warning | The following assertion has been violated at time 518.400000
+// assert            | warning | Variable ductIn.mCs_scaled[1,1] out of [min, max] interval: ductIn.mCs_scaled[1,1] >= 0.0 has value: -5.2766e-15
+// assert            | warning | The following assertion has been violated at time 345.600000
 // |                 | |       | ductIn.Cs[1,1] >= 0.0
-// assert            | warning | Variable ductIn.Cs[1,1] out of [min, max] interval: ductIn.Cs[1,1] >= 0.0 has value: -2.70696e-15
+// assert            | warning | Variable ductIn.Cs[1,1] out of [min, max] interval: ductIn.Cs[1,1] >= 0.0 has value: -1.51588e-16
 //
 // Files Equal!
 // "true

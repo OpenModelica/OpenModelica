@@ -6,6 +6,7 @@ bug2718.mos \
 bug2752.mos \
 bug2808.mos \
 bug3092.mos \
+bug3358.mos \
 ChatteringEventsTest1.mos \
 ChatteringEventsTest2.mos \
 CheckEvents.mos \
@@ -18,12 +19,13 @@ EventTests3.mos \
 IntegerZeroCrossings.mos \
 MathEventFuncs1.mos \
 MathEventFuncs2.mos \
+Reinit.mos \
 sample1.mos \
 sample2.mos \
 ServerWithQueue.mos \
+TestNoEventsFlags.mos \
 whenTest1.mos \
 ZeroCrossing.mos \
-
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing

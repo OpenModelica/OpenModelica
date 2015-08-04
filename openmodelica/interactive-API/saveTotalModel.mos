@@ -129,7 +129,7 @@ readFile("BranchingDynamicPipes.mo");
 //         parameter Boolean use_HeatTransfer = false \"= true to use the HeatTransfer model\";
 //         replaceable model HeatTransfer = Modelica.Fluid.Pipes.BaseClasses.HeatTransfer.IdealFlowHeatTransfer constrainedby Modelica.Fluid.Pipes.BaseClasses.HeatTransfer.PartialFlowHeatTransfer;
 //         Interfaces.HeatPorts_a[nNodes] heatPorts if use_HeatTransfer;
-//         HeatTransfer heatTransfer(redeclare each final package Medium = Medium, final n = n, final nParallel = nParallel, final surfaceAreas = perimeter * lengths, final lengths = lengths, final dimensions = dimensions, final roughnesses = roughnesses, final states = mediums.state, final vs = vs, final use_k = use_HeatTransfer) \"Heat transfer model\";
+//         HeatTransfer heatTransfer(redeclare final package Medium = Medium, final n = n, final nParallel = nParallel, final surfaceAreas = perimeter * lengths, final lengths = lengths, final dimensions = dimensions, final roughnesses = roughnesses, final states = mediums.state, final vs = vs, final use_k = use_HeatTransfer) \"Heat transfer model\";
 //         final parameter Real[n] dxs = lengths / sum(lengths);
 //       equation
 //         Qb_flows = heatTransfer.Q_flows;
@@ -3098,8 +3098,6 @@ readFile("BranchingDynamicPipes.mo");
 //             algorithm
 //               y := if singleState then h_T(x) else h_pT(p, x);
 //             end f_nonlinear;
-//
-//             redeclare function extends solve  end solve;
 //           end Internal;
 //         algorithm
 //           T := Internal.solve(h, T_min, T_max, p, {1}, Internal.f_nonlinear_Data());
@@ -3124,8 +3122,6 @@ readFile("BranchingDynamicPipes.mo");
 //             algorithm
 //               y := s_T(x);
 //             end f_nonlinear;
-//
-//             redeclare function extends solve  end solve;
 //           end Internal;
 //         algorithm
 //           T := Internal.solve(s, T_min, T_max, p, {1}, Internal.f_nonlinear_Data());
@@ -3609,7 +3605,7 @@ readFile("BranchingDynamicPipes.mo");
 //     type NusseltNumber = Real(final quantity = \"NusseltNumber\", final unit = \"1\");
 //     type PrandtlNumber = Real(final quantity = \"PrandtlNumber\", final unit = \"1\");
 //   end SIunits;
-//   annotation(version = \"3.2.1\", versionBuild = 3, versionDate = \"2013-08-14\", dateModified = \"2014-06-27 19:30:00Z\"); 
+//   annotation(version = \"3.2.1\", versionBuild = 3, versionDate = \"2013-08-14\", dateModified = \"2015-07-30 09:15:00Z\"); 
 // end Modelica;
 //
 // model BranchingDynamicPipes_total  \"Multi-way connections of pipes with dynamic momentum balance, pressure wave and flow reversal\"

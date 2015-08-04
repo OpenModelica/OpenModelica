@@ -30,7 +30,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Media.Examples.ReferenceAir.MoistAir
 // {"medium.p","medium.T","der_p","der_T"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Media.Examples.ReferenceAir.MoistAir.mat\"
 // "
 // ""
 // Frontend succeeded

@@ -58,10 +58,10 @@ simulate(foo,stopTime=0);
 //
 // Variables (4)
 // ========================================
-// 1: u_norm:VARIABLE() .foo, .Real type: Real []
-// 2: x_norm:VARIABLE() .foo, .Real type: Real []
-// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 ) .foo, .Real type: Real []
-// 4: x__OMC$scaled_state:VARIABLE()  type: Real []
+// 1: u_norm:VARIABLE() .foo, .Real type: Real
+// 2: x_norm:VARIABLE() .foo, .Real type: Real
+// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 ) .foo, .Real type: Real
+// 4: x__OMC$scaled_state:VARIABLE()  type: Real
 //
 //
 // Equations (4, 4)
@@ -70,6 +70,10 @@ simulate(foo,stopTime=0);
 // 2/2 (1): u_norm = 0.05 * u    [dynamic]
 // 3/3 (1): der(x) = sin(10.0 * time * u_norm)    [dynamic]
 // 4/4 (1): x__OMC$scaled_state = 0.01 * x    [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
 //
 //
 // State Sets
@@ -99,7 +103,7 @@ simulate(foo,stopTime=0);
 //
 // Known Variables (constants) (1)
 // ========================================
-// 1: input u:VARIABLE(nominal = 20.0 ) .foo, .Real type: Real []
+// 1: input u:VARIABLE(nominal = 20.0 ) .foo, .Real type: Real
 //
 //
 // External Objects (0)
@@ -114,7 +118,7 @@ simulate(foo,stopTime=0);
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -160,10 +164,10 @@ simulate(foo,stopTime=0);
 //
 // Variables (4)
 // ========================================
-// 1: u_norm:VARIABLE() .foo, .Real type: Real []
-// 2: x_norm:VARIABLE() .foo, .Real type: Real []
-// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 ) .foo, .Real type: Real []
-// 4: u__OMC$scaled_input:VARIABLE()  type: Real []
+// 1: u_norm:VARIABLE() .foo, .Real type: Real
+// 2: x_norm:VARIABLE() .foo, .Real type: Real
+// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 ) .foo, .Real type: Real
+// 4: u__OMC$scaled_input:VARIABLE()  type: Real
 //
 //
 // Equations (4, 4)
@@ -172,6 +176,10 @@ simulate(foo,stopTime=0);
 // 2/2 (1): u_norm = 0.05 * u    [dynamic]
 // 3/3 (1): der(x) = sin(10.0 * time * u_norm)    [dynamic]
 // 4/4 (1): u__OMC$scaled_input = 0.05 * u    [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
 //
 //
 // State Sets
@@ -201,7 +209,7 @@ simulate(foo,stopTime=0);
 //
 // Known Variables (constants) (1)
 // ========================================
-// 1: input u:VARIABLE(nominal = 20.0 ) .foo, .Real type: Real []
+// 1: input u:VARIABLE(nominal = 20.0 ) .foo, .Real type: Real
 //
 //
 // External Objects (0)
@@ -216,7 +224,7 @@ simulate(foo,stopTime=0);
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -262,11 +270,11 @@ simulate(foo,stopTime=0);
 //
 // Variables (5)
 // ========================================
-// 1: u_norm:VARIABLE() .foo, .Real type: Real []
-// 2: x_norm:VARIABLE() .foo, .Real type: Real []
-// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 ) .foo, .Real type: Real []
-// 4: x__OMC$scaled_state:VARIABLE()  type: Real []
-// 5: u__OMC$scaled_input:VARIABLE()  type: Real []
+// 1: u_norm:VARIABLE() .foo, .Real type: Real
+// 2: x_norm:VARIABLE() .foo, .Real type: Real
+// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 ) .foo, .Real type: Real
+// 4: x__OMC$scaled_state:VARIABLE()  type: Real
+// 5: u__OMC$scaled_input:VARIABLE()  type: Real
 //
 //
 // Equations (5, 5)
@@ -276,6 +284,10 @@ simulate(foo,stopTime=0);
 // 3/3 (1): der(x) = sin(10.0 * time * u_norm)    [dynamic]
 // 4/4 (1): x__OMC$scaled_state = 0.01 * x    [dynamic]
 // 5/5 (1): u__OMC$scaled_input = 0.05 * u    [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
 //
 //
 // State Sets
@@ -307,7 +319,7 @@ simulate(foo,stopTime=0);
 //
 // Known Variables (constants) (1)
 // ========================================
-// 1: input u:VARIABLE(nominal = 20.0 ) .foo, .Real type: Real []
+// 1: input u:VARIABLE(nominal = 20.0 ) .foo, .Real type: Real
 //
 //
 // External Objects (0)
@@ -322,7 +334,7 @@ simulate(foo,stopTime=0);
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //

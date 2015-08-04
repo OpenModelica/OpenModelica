@@ -28,7 +28,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Math.Nonlinear.Examples.quadratureLobatto3
 // {"q","qd"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Math.Nonlinear.Examples.quadratureLobatto3.mat\"
 // "
 // ""
 // Frontend succeeded

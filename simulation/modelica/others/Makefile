@@ -16,6 +16,7 @@ BugTest1830.mos \
 ChangeCorrect.mos \
 CombiTable1DBug.mos \
 ComplexAlgebraicLoop.mos \
+ComplexFun.mos \
 DiscreteVectorStateSpace.mos \
 EquationCallIntegerArray.mos \
 ExtendsBasic.mos  \
