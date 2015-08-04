@@ -6551,7 +6551,8 @@ algorithm
       equation
         s = intString(idx) +": "+ " (NONLINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
         s = s +"\t\tcrefs: "+stringDelimitList(List.map(crefs,ComponentReference.debugPrintComponentRefTypeStr)," , ")+"\n";
-        s = s + "\t"+stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n\t");
+        s = s + "\t"+stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n\t") + "\n";
+        s = s+dumpJacobianMatrix(jac)+"\n";
     then s;
 
     // dynamic tearing
@@ -6574,10 +6575,12 @@ algorithm
       equation
         s1 = "strict set:\n" + intString(idx) +": "+ " (NONLINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
         s1 = s1 +"\t\tcrefs: "+stringDelimitList(List.map(crefs,ComponentReference.debugPrintComponentRefTypeStr)," , ")+"\n";
-        s1 = s1 + "\t"+stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n\t");
+        s1 = s1 + "\t"+stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n\t") + "\n";
+        s1 = s1+dumpJacobianMatrix(jac)+"\n";
         s2 = "\ncasual set:\n" + intString(idx2) +": "+ " (NONLINEAR) index:"+intString(idxNLS2)+" jacobian: "+boolString(Util.isSome(jac2))+"\n";
         s2 = s2 +"\t\tcrefs: "+stringDelimitList(List.map(crefs2,ComponentReference.debugPrintComponentRefTypeStr)," , ")+"\n";
-        s2 = s2 + "\t"+stringDelimitList(List.map(eqs2,dumpSimEqSystem),"\n\t");
+        s2 = s2 + "\t"+stringDelimitList(List.map(eqs2,dumpSimEqSystem),"\n\t") + "\n";
+        s2 = s2+dumpJacobianMatrix(jac2)+"\n";
         s = s1 + s2;
     then s;
 
@@ -6635,7 +6638,7 @@ algorithm
       equation
         (cols,_,_,_,_,_,idx) = jac;
         colEqs = List.flatten(List.map(cols,Util.tuple31));
-        s = stringDelimitList(List.map(colEqs,dumpSimEqSystem),"\n\t\t");
+        s = stringDelimitList(List.map(colEqs,dumpSimEqSystem),"\n\t");
         s = "jacobian idx: "+intString(idx)+"\n\t"+s;
       then s;
     case(NONE())

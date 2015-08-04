@@ -46,6 +46,7 @@ const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
   "LOG_DEBUG",
   "LOG_DSS",
   "LOG_DSS_JAC",
+  "LOG_DT",
   "LOG_EVENTS",
   "LOG_EVENTS_V",
   "LOG_INIT",
@@ -86,6 +87,7 @@ const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "additional debug information",                       /* LOG_DEBUG */
   "outputs information about dynamic state selection",  /* LOG_DSS */
   "outputs jacobian of the dynamic state selection",    /* LOG_DSS_JAC */
+  "additional information about dynamic tearing",       /* LOG_DT */
   "additional information during event iteration",      /* LOG_EVENTS */
   "verbose logging of event system",                    /* LOG_EVENTS_V */
   "additional information during initialization",       /* LOG_INIT */

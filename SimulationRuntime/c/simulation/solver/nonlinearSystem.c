@@ -599,6 +599,12 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
     break;
   case NLS_NEWTON:
     success = solveNewton(data, sysNumber);
+    /* check if solution process was successful, if not use alternative tearing set if available (dynamic tearing)*/
+    if (!success && nonlinsys->strictTearingFunctionCall != NULL){
+      debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
+      success = nonlinsys->strictTearingFunctionCall(data);
+      if (success) success=2;
+    }
     break;
 #endif
   case NLS_HOMOTOPY:
@@ -731,6 +737,12 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
     messageCloseWarning(LOG_NLS);
     return 1;
   }
+  if(nonlinsys[i].solved == 2)
+  {
+    nonlinsys[i].solved = 1;
+    return 2;
+  }
+
 
   return 0;
 }

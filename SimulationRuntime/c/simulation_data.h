@@ -298,6 +298,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
 
   void (*residualFunc)(void*, const double*, double*, const int*);
   void (*initializeStaticNLSData)(void*, void*);
+  int (*strictTearingFunctionCall)(struct DATA*);
 
   void *solverData;
   modelica_real *nlsx;                 /* x */
