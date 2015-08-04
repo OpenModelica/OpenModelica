@@ -13445,10 +13445,10 @@ template daeExpCrefRhsArrayBox(ComponentRef cr,DAE.Type ty, Context context, Tex
                 let &preExp +=
                   <<
                   StatArrayDim<%ndims%><<%T%>, <%dimstr%>> <%arr%>_pre;
-                  std::transform(<%arr%>.getDataRefs(),
-                                 <%arr%>.getDataRefs() + <%arr%>.getNumElems(),
+                  std::transform(<%arr%>.getData(),
+                                 <%arr%>.getData() + <%arr%>.getNumElems(),
                                  <%arr%>_pre.getData(),
-                                 PreRefArray2CArray<<%T%>>(_discrete_events));
+                                 PreArray2CArray<<%T%>>(_discrete_events));
                   >>
                 '<%arr%>_pre'
               else
