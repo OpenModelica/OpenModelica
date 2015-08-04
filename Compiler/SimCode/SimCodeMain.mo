@@ -116,7 +116,6 @@ protected function generateModelCodeFMU "
   template-based code generator on it."
   input BackendDAE.BackendDAE inBackendDAE;
   input Absyn.Program p;
-  input DAE.DAElist dae;
   input Absyn.Path className;
   input String FMUVersion;
   input String FMUType;
@@ -143,7 +142,7 @@ algorithm
   (libs,libPaths,includes, includeDirs, recordDecls, functions, literals) :=
     SimCodeUtil.createFunctions(p, inBackendDAE);
   simCode := createSimCode(inBackendDAE,
-    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, libPaths,simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
+    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, libPaths, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   SimCodeFunctionUtil.execStat("SimCode");
 
@@ -158,7 +157,6 @@ protected function generateModelCodeXML "
   template-based code generator on it."
   input BackendDAE.BackendDAE inBackendDAE;
   input Absyn.Program p;
-  input DAE.DAElist dae;
   input Absyn.Path className;
   input String filenamePrefix;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
@@ -257,7 +255,7 @@ algorithm
         timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
         (libs,file_dir,timeSimCode,timeTemplates) =
-          generateModelCodeFMU(dlow_1, p, dae,  className, FMUVersion, FMUType, filenameprefix, inSimSettingsOpt);
+          generateModelCodeFMU(dlow_1, p, className, FMUVersion, FMUType, filenameprefix, inSimSettingsOpt);
 
         //reset config flag
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, symbolicJacActivated);
@@ -333,7 +331,7 @@ algorithm
         timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
         (libs,file_dir,timeSimCode,timeTemplates) =
-          generateModelCodeXML(dlow_1, p, dae, className, filenameprefix, inSimSettingsOpt);
+          generateModelCodeXML(dlow_1, p, className, filenameprefix, inSimSettingsOpt);
         resultValues =
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),
@@ -361,7 +359,6 @@ public function generateModelCode "
   template-based code generator on it."
   input BackendDAE.BackendDAE inBackendDAE;
   input Absyn.Program p;
-  input DAE.DAElist dae;
   input Absyn.Path className;
   input String filenamePrefix;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
@@ -649,7 +646,7 @@ algorithm
       timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
       (libs, file_dir, timeSimCode, timeTemplates) =
-        generateModelCode(dlow_1, p, dae, className, filenameprefix, inSimSettingsOpt, args);
+        generateModelCode(dlow_1, p, className, filenameprefix, inSimSettingsOpt, args);
 
       resultValues = {("timeTemplates", Values.REAL(timeTemplates)),
                       ("timeSimCode", Values.REAL(timeSimCode)),
