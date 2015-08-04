@@ -5,6 +5,7 @@ echo '#ifndef __META_MODELICA_STRING_LIT__H'
 echo '#define __META_MODELICA_STRING_LIT__H'
 echo 'extern void *mmc_emptystring;'
 echo 'extern void *mmc_strings_len1[256];'
+echo 'extern void *mmc_string_uninitialized;'
 echo '#endif'
 exit
 fi
@@ -32,6 +33,9 @@ done
 done
 echo "};"
 echo
+
+echo 'static MMC_DEFSTRINGLIT(OMC_STRINGLIT_UNINITIALIZED,23,"$#*OMC_UNINITIALIZED*#$");'
+echo 'void* mmc_string_uninitialized = MMC_REFSTRINGLIT(OMC_STRINGLIT_UNINITIALIZED);'
 
 exit
 # The rest is not used because the gain is not known

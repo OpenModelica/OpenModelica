@@ -1316,8 +1316,8 @@ case efn as EXTERNAL_FUNCTION(__) then
   {
     <%varDecls%>
     <%modelicaLine(info)%>
-    <%preExp%>
     <%outputAlloc%>
+    <%preExp%>
     <%callPart%>
     <%outVarAssign%>
     <%match outVars
@@ -2031,7 +2031,7 @@ template extFunCallC(Function fun, Text &preExp, Text &varDecls, Text &auxFuncti
 match fun
 case EXTERNAL_FUNCTION(__) then
   /* adpro: 2011-06-24 do vardecls -> extArgs as there might be some sets in there! */
-  let varDecs = (List.union(extArgs, extArgs) |> arg => extFunCallVardecl(arg, &varDecls, &auxFunction) ;separator="\n")
+  let &preExp += (List.union(extArgs, extArgs) |> arg => extFunCallVardecl(arg, &varDecls, &auxFunction) ;separator="\n")
   let _ = (biVars |> bivar => extFunCallBiVar(bivar, &preExp, &varDecls, &auxFunction) ;separator="\n")
   let fname = if dynamicLoad then 'ptr_<%extFunctionName(extName, language)%>' else '<%extName%>'
   let dynamicCheck = if dynamicLoad then
@@ -2049,7 +2049,6 @@ case EXTERNAL_FUNCTION(__) then
     else
       ""
   <<
-  <%varDecs%>
   <%match extReturn case SIMEXTARG(__) then extFunCallVardecl(extReturn, &varDecls, &auxFunction)%>
   <%dynamicCheck%>
   <%returnAssign%><%fname%>(<%args%>);
@@ -2100,6 +2099,11 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls, Text &auxFunction)
     match expTypeShort(ty)
     case "integer" then
       'pack_integer_array(&<%contextCref(c,contextFunction,&auxFunction)%>);'
+    else ""
+  case SIMEXTARG(isInput = false, isArray = true, type_ = ty, cref = c) then
+    match expTypeShort(ty)
+    case "string" then
+      'fill_string_array(&<%contextCref(c,contextFunction,&auxFunction)%>, mmc_string_uninitialized);<%\n%>'
     else ""
   case SIMEXTARG(isInput=true, isArray=false, type_=ty, cref=c) then
     match ty
@@ -2214,7 +2218,7 @@ case SIMEXTARG(outputIndex=oi, isArray=true, cref=c, type_=ty) then
   case "integer" then
   'unpack_integer_array(&<%contextCref(c,contextFunction,&auxFunction)%>);'
   case "string" then
-  'unpack_string_array(&<%contextCref(c,contextFunction,&auxFunction)%>);'
+  'unpack_string_array(&<%contextCref(c,contextFunction,&auxFunction)%>, <%contextCref(c,contextFunction,&auxFunction)%>_c89);'
   else ""
 case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     let cr = '<%extVarName(c)%>'
@@ -2251,7 +2255,9 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &auxFunctio
   case SIMEXTARG(cref=c, outputIndex=oi, isArray=true, type_=t) then
     let name = contextCref(c,contextFunction,&auxFunction)
     let shortTypeStr = expTypeShort(t)
-    '(<%extType(t,isInput,true)%>) data_of_<%shortTypeStr%>_c89_array(&(<%name%>))'
+    let &varDecls += 'void *<%name%>_c89;<%\n%>'
+    let &preExp += '<%name%>_c89 = (void*) data_of_<%shortTypeStr%>_c89_array(&(<%name%>));<%\n%>'
+    '(<%extType(t,isInput,true)%>) <%name%>_c89'
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
     let cr = match t case T_STRING(__) then contextCref(c,contextFunction,&auxFunction) else extVarName(c)
     (match t case T_STRING(__) then 'MMC_STRINGDATA(<%cr%>)' else cr)

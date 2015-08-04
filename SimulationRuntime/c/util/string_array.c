@@ -951,11 +951,10 @@ const char** data_of_string_c89_array(const string_array_t *a)
   return res;
 }
 
-void unpack_string_array(const string_array_t *a)
+void unpack_string_array(const string_array_t *a, const char **data)
 {
   size_t sz = base_array_nr_of_elements(*a);
   long i;
-  void **data = (void**) a->data;
   for (i=0; i<sz; i++) {
     data[i] = mmc_mk_scon(data[i]);
   }
