@@ -2295,7 +2295,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       try
       {
             Logger::initialize();
-            Logger::setEnabled(false);
+            Logger::setEnabled(true);
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
                 <<
                 std::vector<MeasureTimeData> measureTimeArraySimulation = std::vector<MeasureTimeData>(2); //0 all, 1 setup

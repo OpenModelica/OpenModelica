@@ -65,6 +65,8 @@ Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _Kin_fScale         (NULL)
 	, _kinMem             (NULL)
 	, _scale			  (NULL)
+  , _fValid(false)
+  , _solverErrorNotificationGiven(false)
 {
 	_data = ((void*)this);
 }
@@ -396,7 +398,12 @@ void Kinsol::solve()
 		}
 		*/
 		if(_iterationStatus == SOLVERERROR && !_eventRetry)
-			throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
+		  if(!_solverErrorNotificationGiven)
+		  {
+		    Logger::write("Kinsol: Solver error detected. The simulation will continue, but the results may be incorrect.",LC_NLS,LL_WARNING);
+		    _solverErrorNotificationGiven = true;
+		  }
+		//	throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
 
 	}
 }

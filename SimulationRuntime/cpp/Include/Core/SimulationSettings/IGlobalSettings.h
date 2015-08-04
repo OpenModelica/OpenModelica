@@ -35,7 +35,7 @@ struct LogSettings
 
 	LogSettings()
 	{
-		modes = std::vector<LogLevel>(8,LL_ERROR);
+		modes = std::vector<LogLevel>(8,LL_WARNING);
 	}
 
 	void setAll(LogLevel l)

@@ -97,7 +97,8 @@ private:
 
   bool
     _eventRetry,
-    _fValid;
+    _fValid,
+    _solverErrorNotificationGiven;
 
   realtype _fnorm,
     _currentIterateNorm;
