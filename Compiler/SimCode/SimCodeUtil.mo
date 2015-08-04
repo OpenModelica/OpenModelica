@@ -477,47 +477,31 @@ end createSimCode;
 
 public function createFunctions
   input Absyn.Program inProgram;
-  input DAE.DAElist inDAElist;
   input BackendDAE.BackendDAE inBackendDAE;
-  input Absyn.Path inPath;
-  output list<String> libs;
-  output list<String> libPaths;
-  output list<String> includes;
-  output list<String> includeDirs;
-  output list<SimCode.RecordDeclaration> recordDecls;
-  output list<SimCode.Function> functions;
-  output BackendDAE.BackendDAE outBackendDAE;
-  output DAE.DAElist outDAE;
-  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
+  output list<String> outLibs;
+  output list<String> outLibPaths;
+  output list<String> outIncludes;
+  output list<String> outIncludeDirs;
+  output list<SimCode.RecordDeclaration> outRecordDecls;
+  output list<SimCode.Function> outFunctions;
+  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> outLiterals;
+protected
+  list<DAE.Function> funcelems;
+  DAE.FunctionTree functionTree;
+  list<DAE.Exp> lits;
 algorithm
-  (libs,libPaths, includes, includeDirs, recordDecls, functions, outBackendDAE, outDAE, literals) :=
-  matchcontinue (inProgram, inDAElist, inBackendDAE, inPath)
-    local
-      list<String> libs2,libpaths2, includes2, includeDirs2;
-      list<DAE.Function> funcelems, part_func_elems, recFuncs;
-      DAE.DAElist dae;
-      BackendDAE.BackendDAE dlow;
-      DAE.FunctionTree functionTree;
-      Absyn.Path path;
-      list<SimCode.Function> fns;
-      list<DAE.Exp> lits;
-
-    case (_, dae, dlow as BackendDAE.DAE(shared=BackendDAE.SHARED(functionTree=functionTree)), _)
-      equation
-        // get all the used functions from the function tree
-        funcelems = DAEUtil.getFunctionList(functionTree);
-        funcelems = setRecordVariability(funcelems,inBackendDAE);
-        funcelems = Inline.inlineCallsInFunctions(funcelems, (NONE(), {DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}), {});
-        (funcelems, literals as (_, _, lits)) = simulationFindLiterals(dlow, funcelems);
-        (fns, recordDecls, includes2, includeDirs2, libs2,libpaths2) = SimCodeFunctionUtil.elaborateFunctions(inProgram, funcelems, {}, lits, {}); // Do we need metarecords here as well?
-      then
-        (libs2, libpaths2,includes2, includeDirs2, recordDecls, fns, dlow, dae, literals);
-    else
-      equation
-        Error.addInternalError("Creation of Modelica functions failed.", sourceInfo());
-      then
-        fail();
-  end matchcontinue;
+  try
+    BackendDAE.DAE(shared=BackendDAE.SHARED(functionTree=functionTree)) := inBackendDAE;
+    // get all the used functions from the function tree
+    funcelems := DAEUtil.getFunctionList(functionTree);
+    funcelems := setRecordVariability(funcelems, inBackendDAE);
+    funcelems := Inline.inlineCallsInFunctions(funcelems, (NONE(), {DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}), {});
+    (funcelems, outLiterals as (_, _, lits)) := simulationFindLiterals(inBackendDAE, funcelems);
+    (outFunctions, outRecordDecls, outIncludes, outIncludeDirs, outLibs, outLibPaths) := SimCodeFunctionUtil.elaborateFunctions(inProgram, funcelems, {}, lits, {}); // Do we need metarecords here as well?
+  else
+    Error.addInternalError("Creation of Modelica functions failed.", sourceInfo());
+    fail();
+  end try;
 end createFunctions;
 
 protected function getParamAsserts"splits the equationArray in variable-dependent and parameter-dependent equations.
