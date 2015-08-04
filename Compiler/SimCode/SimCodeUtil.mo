@@ -5826,17 +5826,18 @@ algorithm
   end while;
 end preCalculateStartValues1;
 
-protected function artificialVarKind"an artificial var is introduced during compilation and has a start-value that does not come from the model"
+protected function artificialVarKind "an artificial var is introduced during compilation and has a start-value that does not come from the model"
   input BackendDAE.VarKind inVarKind;
   output Boolean isVar;
 algorithm
   isVar := match (inVarKind)
-  case (BackendDAE.VARIABLE()) then false;
-  case (BackendDAE.PARAM()) then false;
-  case (BackendDAE.CONST()) then false;
-  case (BackendDAE.DISCRETE()) then false;
-  case (BackendDAE.STATE()) then false;
-  else then true;
+    case BackendDAE.VARIABLE() then false;
+    case BackendDAE.PARAM() then false;
+    case BackendDAE.CONST() then false;
+    case BackendDAE.DISCRETE() then false;
+    case BackendDAE.STATE() then false;
+    case BackendDAE.DUMMY_STATE() then false;
+    else true;
   end match;
 end artificialVarKind;
 
