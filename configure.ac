@@ -72,8 +72,13 @@ if echo $host | grep -i darwin; then
   CMAKE_LDFLAGS="-Wl,-undefined -Wl,dynamic_lookup"
 fi
 
+m4_include([common/m4/corba.m4])
 AC_SUBST(ALL_TARGETS)
-for dir_target in OMCompiler-omc OMPlot-omplot OMEdit-omedit OMNotebook-omnotebook OMOptim-omoptim OMShell-omshell; do
+if test ! -z "$USE_CORBA"; then
+  CORBA_TARGETS="OMNotebook-omnotebook OMOptim-omoptim OMShell-omshell"
+fi
+
+for dir_target in OMCompiler-omc OMPlot-omplot OMEdit-omedit $CORBA_TARGETS; do
   dir=`echo $dir_target | cut -d- -f1`
   if test ! -f "$dir/configure.ac"; then
     AC_MSG_NOTICE("Subproject $dir does not exist")
@@ -90,6 +95,10 @@ if test -f testsuite/Makefile; then
   ALL_TARGETS="$ALL_TARGETS testsuite-depends"
 fi
 
-AC_CONFIG_SUBDIRS([OMCompiler OMPlot OMEdit OMNotebook OMOptim OMShell])
+
+AC_CONFIG_SUBDIRS([OMCompiler OMPlot OMEdit])
+if test ! -z "$USE_CORBA"; then
+  AC_CONFIG_SUBDIRS([OMShell OMNotebook OMOptim])
+fi
 
 AC_OUTPUT(Makefile)
