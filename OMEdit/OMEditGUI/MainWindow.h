@@ -277,7 +277,6 @@ private:
   // Help Menu
   QAction *mpUsersGuideAction;
   QAction *mpUsersGuidePdfAction;
-  QAction *mpUsersGuideOldPdfAction;
   QAction *mpSystemDocumentationAction;
   QAction *mpOpenModelicaScriptingAction;
   QAction *mpModelicaDocumentationAction;
