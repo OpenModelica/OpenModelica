@@ -34,19 +34,14 @@ importFMU("test_ChangeParam.fmu");
 loadFile("test_ChangeParam_me_FMU.mo");
 getErrorString();
 
-simulate(test_ChangeParam_me_FMU);
+simulate(test_ChangeParam_me_FMU, numberOfIntervals=1);
 val(x, 1);
 val(a, 1);
 val(y, 1);
 getErrorString();
 
-system("./test_ChangeParam_me_FMU -override a=-2,i=-10,b=false,s=\"bar\"");
-echo(false);
-readSimulationResult("test_ChangeParam_me_FMU_res.mat", {x,a,y});
-echo(true);
-val(x, 1);
-val(a, 1);
-val(y, 1);
+system("./test_ChangeParam_me_FMU -override a=-2,i=-10,b=false,s=\"bar\" -r test_ChangeParam.mat");
+readSimulationResult("test_ChangeParam.mat", {x,a,y}, 6);
 getErrorString();
 
 
@@ -62,23 +57,20 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "test_ChangeParam_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'test_ChangeParam_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 1, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'test_ChangeParam_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "[<interactive>:14:7-14:43:writable]
 // stdout            | info    | Simulation call terminate() at time 1.000000
 // |                 | |       | Message : Simulation done by foo
 // "
 // end SimulationResult;
-// 7.389089930122212
+// 7.389089930122227
 // 2.0
-// 6.389089930122212
+// 6.389089930122227
 // ""
 // [<interactive>:14:7-14:43:writable]
 // stdout            | info    | Simulation call terminate() at time 1.000000
 // |                 | |       | Message : Simulation done by bar
 // 0
-// true
-// 0.135336321156737
-// 2.0
-// -10.13533632115674
+// {{1.0,1.0,1.0,0.1353363211567342,0.1353363211567342,0.1353363211567342},{-2.0,-2.0,-2.0,-2.0,-2.0,-2.0},{-11.0,-11.0,-11.0,-10.13533632115674,-10.13533632115674,-10.13533632115674}}
 // ""
 // endResult
