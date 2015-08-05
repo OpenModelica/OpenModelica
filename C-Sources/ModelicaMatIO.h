@@ -63,7 +63,7 @@
 
 /* Have MAT int64 / uint64 */
 #if defined(_WIN32)
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__MINGW32__)
 #define HAVE_MAT_INT64_T 1
 #define HAVE_MAT_UINT64_T 1
 #elif defined(__WATCOMC__)
