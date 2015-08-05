@@ -1498,7 +1498,16 @@ bool LibraryTreeWidget::saveSubModelsFolderHelper(LibraryTreeNode *pLibraryTreeN
       directory = directoryName;
       mpMainWindow->getStatusBar()->showMessage(QString(tr("Saving")).append(" ").append(pChildLibraryTreeNode->getNameStructure()));
       QString fileName = QString(directory).append("/").append(pChildLibraryTreeNode->getName()).append(".mo");
-      mpMainWindow->getOMCProxy()->setSourceFile(pChildLibraryTreeNode->getNameStructure(), fileName);
+      /* Ticket #3380
+       * Only create new file for nested classes if they are nested inside a package.
+       * If the nested class is replaceable then save it in the parent class.
+       */
+      if ((pLibraryTreeNode->getClassInformation().restriction.toLower().compare("package") != 0) ||
+          mpMainWindow->getOMCProxy()->isReplaceable(pChildLibraryTreeNode->getParentName(), pChildLibraryTreeNode->getName())) {
+        mpMainWindow->getOMCProxy()->setSourceFile(pChildLibraryTreeNode->getNameStructure(), pLibraryTreeNode->getFileName());
+      } else {
+        mpMainWindow->getOMCProxy()->setSourceFile(pChildLibraryTreeNode->getNameStructure(), fileName);
+      }
       if (mpMainWindow->getOMCProxy()->save(pChildLibraryTreeNode->getNameStructure())) {
         pChildLibraryTreeNode->setIsSaved(true);
         pChildLibraryTreeNode->setFileName(fileName);
