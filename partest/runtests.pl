@@ -59,6 +59,7 @@ my $thread_count = 2;
 my $check_proc_cpu = 1;
 my $withxml = 0;
 my $withxmlcmd = 0;
+my $withtxt = 0;
 my $have_dwdiff = "";
 
 {
@@ -90,6 +91,7 @@ for(@ARGV){
     print("  -nocolour     Don't use colours in output.\n");
     print("  -counttests   Don't run the test; only count them.\n");
     print("  -with-xml     Output XML log.\n");
+    print("  -with-txt     Output TXT log.\n");
     print("  -failing      Run failing tests instead of working.\n");
     print("  -veryfew      Run only a very small number of tests to see if runtests.pl is working.\n");
     print("  -gitlibs      If you have installed omc using GITLIBRARIES=Yes, you can test some of those libraries.\n");
@@ -126,6 +128,9 @@ for(@ARGV){
   elsif(/^-with-xml$/) {
     $withxml = 1;
     $withxmlcmd = '-with-xml';
+  }
+  elsif(/^-with-txt$/) {
+    $withtxt = 1;
   }
   elsif(/^-failing$/) {
     $run_failing = 1;
@@ -356,6 +361,20 @@ if(@failed_tests) {
   my @sorted = sort @failed_tests;
   foreach my $failed_test (@sorted) {
     print "\t" . $failed_test . "\n";
+  }
+
+  if($withtxt) {
+    unlink("$testsuite_root/failed.log");
+    open my $TXTOUT, '>', "$testsuite_root/failed.log" or die "Couldn't open failed.log: $!";
+    binmode $TXTOUT, ":encoding(UTF-8)";
+
+    print $TXTOUT "Failed tests:\n";
+    foreach my $failed_test (@sorted) {
+      print $TXTOUT $failed_test . "\n";
+    }
+
+    print $TXTOUT "\n$tests_failed of $test_count failed\n";
+    close $TXTOUT;
   }
 }
 
