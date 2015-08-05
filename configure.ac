@@ -34,7 +34,7 @@ OMNIORB_DEFAULT=yes
 m4_include([common/m4/corba.m4])
 
 if test -z "$USE_CORBA"; then
-  AC_MSG_ERROR([OMOptim requires using the OMC CORBA interface. Configure using --with-omniORB.])
+  AC_MSG_ERROR([OMShell requires using the OMC CORBA interface. Configure using --with-omniORB.])
 fi
 
 AC_SUBST(LIBREADLINE)
