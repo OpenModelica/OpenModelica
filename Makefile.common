@@ -49,7 +49,6 @@ mkbuilddirs:
 	@mkdir -p $(builddir_java)
 	@mkdir -p $(builddir_share)/omc/scripts/OpenTurns/
 	@mkdir -p $(builddir_doc)/omc/testmodels
-	@mkdir -p $(builddir_doc)/omc/SimulationRuntime/IntegrationAlgorithms
 	@mkdir -p $(builddir_man)/man1/
 
 release: omc
