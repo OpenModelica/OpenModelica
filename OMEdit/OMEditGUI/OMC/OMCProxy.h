@@ -121,6 +121,7 @@ public:
   bool isWhat(StringHandler::ModelicaClasses type, QString className);
   bool isProtectedClass(QString className, QString nestedClassName);
   bool isPartial(QString className);
+  bool isReplaceable(QString parentClassName, QString className);
   StringHandler::ModelicaClasses getClassRestriction(QString className);
   QString getParameterValue(QString className, QString parameter);
   QStringList getComponentModifierNames(QString className, QString name);

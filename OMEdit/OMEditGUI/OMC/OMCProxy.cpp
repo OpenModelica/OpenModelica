@@ -945,6 +945,19 @@ bool OMCProxy::isPartial(QString className)
 }
 
 /*!
+ * \brief OMCProxy::isReplaceable
+ * Returns true if the className is replaceable in parentClassName.
+ * \param parentClassName
+ * \param className
+ * \return
+ */
+bool OMCProxy::isReplaceable(QString parentClassName, QString className)
+{
+  sendCommand("isReplaceable(" + parentClassName + ", \"" + className + "\")");
+  return StringHandler::unparseBool(getResult());
+}
+
+/*!
   Gets the class type.
   \param className - is the name of the class to check.
   \return the class type.
