@@ -339,9 +339,9 @@ algorithm
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
 
     if Flags.isSet(Flags.DYNAMIC_TEARING_INFO) then
-      print("\n\n*********************\n* SimCode Equations *\n*********************\n\ninitialEquations:\n:=:=:=:=:=:=:=:=:=:=:=:=:=:=:=:=:=\n" + dumpSimEqSystemLst(initialEquations) + "\n");
-      print("\n\nparameterEquations:\n:=:=:=:=:=:=:=:=:=:=:=:=:=:=:=:=:=:=:=\n" + dumpSimEqSystemLst(parameterEquations) + "\n");
-      print("\n\nallEquations:\n:=:=:=:=:=:=:=:=:=:=:=:=:=\n" + dumpSimEqSystemLst(allEquations) + "\n\n");
+      print("\n\n*********************\n* SimCode Equations *\n*********************\n\ninitialEquations:\n=================\n" + dumpSimEqSystemLst(initialEquations) + "\n");
+      print("\n\nparameterEquations:\n===================\n" + dumpSimEqSystemLst(parameterEquations) + "\n");
+      print("\n\nallEquations:\n=============\n" + dumpSimEqSystemLst(allEquations) + "\n\n");
     end if;
 
     // collect symbolic jacobians from state selection
