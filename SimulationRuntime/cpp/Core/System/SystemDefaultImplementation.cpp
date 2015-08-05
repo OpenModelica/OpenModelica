@@ -466,21 +466,17 @@ double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value
         if(pos!=_time_buffer.end())
         {
           buffer_type::iterator first = _time_buffer.begin(); // first time entry
-          unsigned int index = std::distance(first,pos); //index of found time
-          t0 = *pos;
-          res0 = iter->second[index];
-          unsigned int length = _time_buffer.size();
-          if(index+ 1  == _time_buffer.size())
-            return res0;
-          t1 = _time_buffer[index+1];
-          double time_e = _time_buffer.back();
-          res1 = iter->second[index+1];
-
+          std::iterator_traits<buffer_type::iterator>::difference_type index = std::distance(first,pos); //index of found time
+          t1 = *pos;
+          res1 = iter->second[index];
+          if(index == 0)
+            return res1;
+          t0 = _time_buffer[index-1];
+          res0 = iter->second[index-1];
         }
         else
         {
-          double test = _time_buffer.back();
-          throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"time im delay buffer not found");
+          throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"time not found in delay buffer");
         }
       }
       if(t0==ts)//found exact time
@@ -489,7 +485,6 @@ double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value
         return res1;
       else //linear interpolation
       {
-
         double timedif = t1 - t0;
         double dt0 = t1 - ts;
         double dt1 = ts - t0;
