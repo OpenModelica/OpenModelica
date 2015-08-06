@@ -103,7 +103,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"4\"
 //     variability=\"continuous\"
 //     causality=\"input\"
-//     initial=\"approx\">
+//     >
 //     <Real start=\"-2.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"6\" -->
