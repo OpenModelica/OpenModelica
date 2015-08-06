@@ -4792,9 +4792,9 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
     <%outVarInits%>
     /* functionBodyExternalFunction: callPart */
     <%callPart%>
-
-    <%outVarAssign%>
-
+    <%outputAssign%>
+    /* functionBodyExternalFunction: return */
+    <%functionBodyExternalFunctionreturn%>
   }
   >>
   <<
