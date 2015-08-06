@@ -130,7 +130,11 @@ namespace IAEX
 #ifdef WIN32
       omc = QString( omhome ) + "/bin/omc.exe";
 #else /* unix */
-      omc = (omhome ? QString(omhome)+"/bin/omc" : QString(CONFIG_DEFAULT_OPENMODELICAHOME) + "/bin/omc");
+      omc = (omhome ? QString(omhome)+"/bin/omc" : QString(CONFIG_DEFAULT_OPENMODELICAHOME "/bin/omc"));
+      QFileInfo checkFile(omc);
+      if (!checkFile.exists() || !checkFile.isFile()) {
+        omc = "omc";
+      }
 #endif
 
       QStringList parameters;
