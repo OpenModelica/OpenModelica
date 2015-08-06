@@ -5069,7 +5069,9 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &inputAssig
     else
       '<%cr%><%match t case T_STRING(__) then ".c_str()" else "_ext"%>'
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=oi, type_=t) then
-    '&<%extVarName2(c)%>'
+    let extName = extVarName2(c)
+    let &outputAssign += '<%contextCref2(c,contextFunction)%> = <%extName%>;<%\n%>'
+    '&<%extName%>'
   case SIMEXTARGEXP(__) then
     daeExternalCExp(exp, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case SIMEXTARGSIZE(cref=c) then
