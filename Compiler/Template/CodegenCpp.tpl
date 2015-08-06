@@ -4725,8 +4725,7 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
 
   let &inputAssign = buffer "" /*BUFD*/
   let &outputAssign = buffer "" /*BUFD*/
-  // make sure the variable is named "out", doh!
-   let retVar = if outVars then '_<%fname%>'
+  let retVar = if outVars then match outVars case {var} then funArgName(var) else '_<%fname%>'
   let &outVarInits = buffer ""
   let callPart =  match outVars   case {var} then
                     extFunCall(fn, &preExp, &varDeclsExtFunCall, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, false)
@@ -4750,8 +4749,6 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
     )
    end match
 
-
-
    let &varDecls1 = buffer ""
    let &outVarInits1 = buffer ""
    let &outVarCopy1 = buffer ""
@@ -4769,9 +4766,6 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
     let functionBodyExternalFunctionreturn = match outVarAssign1
    case "" then << <%if retVar then 'output = <%retVar%>;' else '/*no output*/' %> >>
    else outVarAssign1
-
-
-
 
   let fnBody = <<
   void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var => funArgDefinition(var,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%><%if funArgs then if outVars then "," else ""%> <%if retVar then '<%retType%>& output' %>)/*function2*/
