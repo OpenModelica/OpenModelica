@@ -3,7 +3,7 @@ all: omedit
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 bindir = @bindir@
-CMAKE=CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" cmake
+CMAKE=CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" cmake
 CMAKE_TARGET = "Unix Makefiles"
 
 ifeq (@APP@,)
@@ -39,7 +39,7 @@ configure: configure.ac common/m4/corba.m4 common/m4/omhome.m4 common/m4/qmake.m
 qjson-build:
 	test -d qjson
 	mkdir -p qjson/build/include/qjson
-	(cd qjson/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" .. -G $(CMAKE_TARGET))
+	(cd qjson/build && test -f Makefile || CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" $(CMAKE) .. -G $(CMAKE_TARGET))
 	test -f qjson/build/lib/libqjson$(SHREXT) || $(MAKE) -C qjson/build
 	test "(" ! `uname` = Darwin ")" -o "(" ! -f qjson/build/lib/libqjson$(SHREXT) ")" || install_name_tool -id @rpath/libqjson$(SHREXT) 3rdParty/qjson/build/lib/libqjson$(SHREXT)
 	cp -a qjson/build/lib/libqjson*$(SHREXT)* @OMBUILDDIR@/lib/@host_short@/omc/
