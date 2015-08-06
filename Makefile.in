@@ -83,7 +83,6 @@ omc-bootstrapped: mkbuilddirs
 omc-no-sim:
 	$(MAKE) bootstrap-dependencies interactive-short
 	$(MAKE) -C Compiler/boot
-	$(MAKE) omlibrary
 
 lis: lis-configure
 	@echo Building Lis from sources
