@@ -391,14 +391,14 @@ match simVar
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
   let variability = getVariability2(varKind, type_)
   let caus = getCausality2(causality, varKind, isValueChangeable)
-  let initial = getInitialType(varKind, initialValue, causality, isValueChangeable)
+  let initial = getInitialType2(variability, caus, initialValue)
   <<
   name="<%System.stringReplace(crefStrNoUnderscore(name),"$", "_D_")%>"
   valueReference="<%valueReference%>"
   <%description%>
   variability="<%variability%>"
   causality="<%caus%>"
-  initial="<%initial%>"
+  <%if boolNot(stringEq(initial, "")) then 'initial="'+initial+'"' %>
   >>
 end ScalarVariableAttribute2;
 
@@ -447,20 +447,33 @@ match simCode
   else ""
 end getNumberOfEventIndicators;
 
-template getInitialType(VarKind varKind, Option<DAE.Exp> initialValue, Causality c, Boolean isValueChangeable)
+template getInitialType2(String variability, String causality, Option<DAE.Exp> initialValue)
  "Returns the Initial Attribute of ScalarVariable."
 ::=
-match c
-  case INPUT(__) then "approx"
-  else
-  match initialValue
-    case SOME(exp) then
-    match varKind
-      case STATE_DER(__) then "calculated"
-      case PARAM(__) then if isValueChangeable then "exact" else "calculated"
-      else "approx"
-    else "calculated"
-end getInitialType;
+match variability
+  case "constant" then
+    match causality
+      case "output"
+      case "local" then "exact"
+      else ""
+  case "fixed"
+  case "tunable" then
+    match causality
+      case "parameter" then "exact"
+      case "calculatedParameter"
+      case "local" then "calculated"
+      else ""
+  case "discrete"
+  case "continuous" then
+    match causality
+      case "output"
+      case "local" then
+        match initialValue
+        case SOME(exp) then "exact"
+        else "calculated"
+      else ""
+  else ""
+end getInitialType2;
 
 template ScalarVariableType2(SimVar simvar, list<SimVar> stateVars)
  "Generates code for ScalarVariable Type file for FMU 2.0 target.
@@ -482,7 +495,7 @@ template ScalarVariableTypeCommonAttribute2(SimVar simvar, list<SimVar> stateVar
  "Generates code for ScalarVariable Type file for FMU 2.0 target."
 ::=
 match simvar
-case SIMVAR(varKind = varKind, initialValue = initialValue, isValueChangeable = isValueChangeable, index = index) then
+case SIMVAR(varKind = varKind, isValueChangeable = isValueChangeable, index = index) then
   match varKind
   case STATE_DER(__) then ' derivative="<%getStateSimVarIndexFromIndex(stateVars, index)%>"'
   case PARAM(__) then if isValueChangeable then '<%StartString2(simvar)%><%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%>' else '<%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%>'
@@ -492,7 +505,7 @@ end ScalarVariableTypeCommonAttribute2;
 template StartString2(SimVar simvar)
 ::=
 match simvar
-case SIMVAR(initialValue = initialValue, causality = causality, type_ = type_) then
+case SIMVAR(initialValue = initialValue, varKind = varKind, causality = causality, type_ = type_, isValueChangeable = isValueChangeable) then
   match initialValue
     case SOME(e as ICONST(__)) then ' start="<%initValXml(e)%>"'
     case SOME(e as RCONST(__)) then ' start="<%initValXml(e)%>"'
@@ -500,9 +513,11 @@ case SIMVAR(initialValue = initialValue, causality = causality, type_ = type_) t
     case SOME(e as BCONST(__)) then ' start="<%initValXml(e)%>"'
     case SOME(e as ENUM_LITERAL(__)) then ' start="<%initValXml(e)%>"'
     else
-      match causality
-        case INPUT(__) then ' start="<%initDefaultValXml(type_)%>"'
-        else ''
+      let variability = getVariability2(varKind, type_)
+      let caus = getCausality2(causality, varKind, isValueChangeable)
+      let initial = getInitialType2(variability, caus, initialValue)
+      if boolOr(stringEq(initial, "exact"), boolOr(stringEq(initial, "approx"), stringEq(caus, "input"))) then ' start="<%initDefaultValXml(type_)%>"'
+      else ''
 end StartString2;
 
 template MinString2(SimVar simvar)
