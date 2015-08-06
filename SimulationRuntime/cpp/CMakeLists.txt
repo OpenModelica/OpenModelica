@@ -48,5 +48,3 @@ add_custom_target (Docs ALL
                    WORKING_DIRECTORY ${TARGET_PATH}
                    COMMENT "Generating API documentation with Doxygen" VERBATIM
                   )
-# IF you do NOT want the documentation to be generated EVERY time you build the project
-# then leave out the 'ALL' keyword from the above command.
