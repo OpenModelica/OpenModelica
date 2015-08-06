@@ -36,7 +36,30 @@ to configure. The following arguments are available at the moment:
   PARALLEL_OUTPUT
   SUNDIALS_LAPACK
 
+For further details, see the description below.
 
+
+============================================
+CONFIGURING THE SIMULATION RUNTIME (Windows)
+============================================
+If you want to change the behaviour of cpp runtime, you can pass
+arguments directly to the makefile. Multiple arguments are separated through
+spaces as usual.
+
+  BOOST_STATIC_LINKING="true"
+  BOOST_REALPATHS="true"
+  RUNTIME_PROFILING="true"
+  SCOREP_SUPPORT="true" SCOREP_HOME=”...”
+  BUILD_DOCUMENTATION="true"
+  PARALLEL_OUTPUT="true"
+  SUNDIALS_LAPACK="true"
+
+For further details, see the description below.
+
+
+==================================
+CONFIGURATION ARGUMENT DESCRIPTION
+==================================
 The following section explains the arguments that can be passed in more detail.
 
   The boost static libraries can be used for the build, by passing the

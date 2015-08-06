@@ -786,8 +786,6 @@ else
 fi
 AC_MSG_RESULT([$MODELICA_SPEC_PLATFORM])
 
-AC_ARG_WITH(cppruntime-args,  [  --with-cppruntime-args=[cpp-args]       (pass comma separated arguments to the cppruntime configuration - see the cpp runtime documentation for details)],[CPP_RUNTIME_ARGS="$withval"],[CPP_RUNTIME_ARGS=""])
-
 CFLAGS="$CFLAGS"
 
 date=`date "+%Y-%m-%d %H:%M:%S"`
