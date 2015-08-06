@@ -659,17 +659,30 @@ class StatArray : public BaseArray<T>
   virtual ~StatArray() {}
 
   /**
+   * Assign static array with external storage to static array.
+   * a = b
+   * Just copy the data pointer if this array has external storage as well.
+   * @param b any array of type StatArray
+   */
+  StatArray<T, nelems, external>& operator=(const StatArray<T, nelems, true>& b)
+  {
+    if (external)
+      _data = b._data;
+    else
+      b.getDataCopy(_data, nelems);
+    return *this;
+  }
+
+  /**
    * Assignment operator to assign array of type base array to static array
    * a = b
    * @param b any array of type BaseArray
    */
-  virtual StatArray<T, nelems, external>& operator=(BaseArray<T>& b)
+  StatArray<T, nelems, external>& operator=(const BaseArray<T>& b)
   {
-    if (this != &b) {
-      if (nelems > 0 && _data == NULL)
-        throw std::runtime_error("Invalid assign operation to uninitialized StatArray!");
-      b.getDataCopy(_data, nelems);
-    }
+    if (nelems > 0 && _data == NULL)
+      throw std::runtime_error("Invalid assign operation to uninitialized StatArray!");
+    b.getDataCopy(_data, nelems);
     return *this;
   }
 
@@ -794,6 +807,30 @@ class StatArrayDim1 : public StatArray<T, size, external>
   virtual ~StatArrayDim1() {}
 
   /**
+   * Assign static array with external storage to static array
+   * a = b
+   * Just copy the data pointer if this array has external storage as well.
+   * @param b any array of type StatArrayDim1
+   */
+  StatArrayDim1<T, size, external>&
+  operator=(const StatArrayDim1<T, size, true>& b)
+  {
+    StatArray<T, size, external>::operator=(b);
+    return *this;
+  }
+
+  /**
+   * Assign array of type base array to one dim static array
+   * a = b
+   * @param b any array of type BaseArray
+   */
+  StatArrayDim1<T, size, external>& operator=(const BaseArray<T>& b)
+  {
+    StatArray<T, size, external>::operator=(b);
+    return *this;
+  }
+
+  /**
    * Index operator to read array element
    * @param idx  vector of indices
    */
@@ -811,16 +848,6 @@ class StatArrayDim1 : public StatArray<T, size, external>
     return StatArray<T, size, external>::_data[idx[0]-1];
   }
 
-  /**
-   * Assign array of type base array to one dim static array
-   * a = b
-   * @param b any array of type BaseArray
-   */
-  virtual StatArrayDim1<T, size, external>& operator=(BaseArray<T>& b)
-  {
-    StatArray<T, size, external>::operator=(b);
-    return *this;
-  }
   /**
    * Index operator to access array element
    * @param index  index
@@ -905,13 +932,6 @@ class StatArrayDim2 : public StatArray<T, size1*size2, external>
     :StatArray<T, size1*size2, external>(data) {}
 
   /**
-   * Default constuctor for two dimensional array
-   * empty array
-   */
-  StatArrayDim2()
-    :StatArray<T, size1*size2, external>() {}
-
-  /**
    * Constuctor for two dimensional array
    * copies data from otherarray in array memory
    */
@@ -929,7 +949,37 @@ class StatArrayDim2 : public StatArray<T, size1*size2, external>
   {
   }
 
+  /**
+   * Default constuctor for two dimensional array
+   */
+  StatArrayDim2()
+    :StatArray<T, size1*size2, external>() {}
+
   virtual ~StatArrayDim2(){}
+
+  /**
+   * Assign static array with external storage to static array
+   * a = b
+   * Just copy the data pointer if this array has external storage as well.
+   * @param b any array of type StatArrayDim2
+   */
+  StatArrayDim2<T, size1, size2, external>&
+  operator=(const StatArrayDim2<T, size1, size2, true>& b)
+  {
+    StatArray<T, size1*size2, external>::operator=(b);
+    return *this;
+  }
+
+  /**
+   * Assign array of type base array to two dim static array
+   * a = b
+   * @param b any array of type BaseArray
+   */
+  StatArrayDim2<T, size1, size2, external>& operator=(const BaseArray<T>& b)
+  {
+    StatArray<T, size1*size2, external>::operator=(b);
+    return *this;
+  }
 
   /**
    * Copies one dimensional array to row i
@@ -965,16 +1015,6 @@ class StatArrayDim2 : public StatArray<T, size1*size2, external>
     return StatArray<T, size1*size2, external>::_data[idx[0]-1 + size1*(idx[1]-1)];
   }
 
-  /**
-   * Assign array of type base array to two dim static array
-   * a = b
-   * @param b any array of type BaseArray
-   */
-  virtual StatArrayDim2<T, size1, size2, external>& operator=(BaseArray<T>& b)
-  {
-    StatArray<T, size1*size2, external>::operator=(b);
-    return *this;
-  }
   /**
    * Index operator to access array element
    * @param i  index 1
@@ -1052,6 +1092,15 @@ class StatArrayDim3 : public StatArray<T, size1*size2*size3, external>
     :StatArray<T, size1*size2*size3, external>(data) {}
 
   /**
+   * Constuctor for three dimensional array
+   * copies data from otherarray in array memory
+   */
+ StatArrayDim3(const StatArrayDim3<T, size1, size2, size3, external>& otherarray)
+    :StatArray<T, size1*size2*size3, external>(otherarray)
+  {
+  }
+
+  /**
    * Constuctor for one dimensional array that
    * lets otherarray copy data into array memory
    */
@@ -1062,12 +1111,36 @@ class StatArrayDim3 : public StatArray<T, size1*size2*size3, external>
 
   /**
    * Default constuctor for two dimensional array
-   * empty array
    */
   StatArrayDim3()
     :StatArray<T, size1*size2*size3, external>() {}
 
   virtual ~StatArrayDim3() {}
+
+  /**
+   * Assign static array with external storage to static array
+   * a = b
+   * Just copy the data pointer if this array has external storage as well.
+   * @param b any array of type StatArrayDim3
+   */
+  StatArrayDim3<T, size1, size2, size3, external>&
+  operator=(const StatArrayDim3<T, size1, size2, size3, true>& b)
+  {
+    StatArray<T, size1*size2*size3, external>::operator=(b);
+    return *this;
+  }
+
+  /**
+   * Assign array of type base array to three dim static array
+   * a = b
+   * @param b any array of type BaseArray
+   */
+  StatArrayDim3<T, size1, size2, size3, external>&
+  operator=(const BaseArray<T>& b)
+  {
+    StatArray<T, size1*size2*size3, external>::operator=(b);
+    return *this;
+  }
 
   /**
    * Copies two dimensional array to row i
@@ -1136,17 +1209,6 @@ class StatArrayDim3 : public StatArray<T, size1*size2*size3, external>
       _data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))];
   }
 
-  /**
-   * Assign array of type base array to three dim static array
-   * a = b
-   * @param b any array of type BaseArray
-   */
-  virtual StatArrayDim3<T, size1, size2, size3, external>&
-  operator=(BaseArray<T>& b)
-  {
-    StatArray<T, size1*size2*size3, external>::operator=(b);
-    return *this;
-  }
   /**
    * Index operator to access array element
    * @param i  index 1
@@ -1351,11 +1413,8 @@ class DynArrayDim1 : public DynArray<T, 1>
 
   DynArrayDim1<T>& operator=(const DynArrayDim1<T>& b)
   {
-    if (this != &b)
-    {
-      _multi_array.resize(b.getDims());
-      _multi_array = b._multi_array;
-    }
+    _multi_array.resize(b.getDims());
+    _multi_array = b._multi_array;
     return *this;
   }
 
@@ -1423,11 +1482,8 @@ class DynArrayDim2 : public DynArray<T, 2>
 
   DynArrayDim2<T>& operator=(const DynArrayDim2<T>& b)
   {
-    if (this != &b)
-    {
-      _multi_array.resize(b.getDims());
-      _multi_array = b._multi_array;
-    }
+    _multi_array.resize(b.getDims());
+    _multi_array = b._multi_array;
     return *this;
   }
 
@@ -1495,11 +1551,8 @@ public:
 
   DynArrayDim3<T>& operator=(const DynArrayDim3<T>& b)
   {
-    if (this != &b)
-    {
-      _multi_array.resize(b.getDims());
-      _multi_array = b._multi_array;
-    }
+    _multi_array.resize(b.getDims());
+    _multi_array = b._multi_array;
     return *this;
   }
 
