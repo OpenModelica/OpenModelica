@@ -6,12 +6,21 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_CPP
 
-AC_ARG_WITH(cppruntime-args,  [  --with-cppruntime-ags=[cpp-args]       (pass comma separated arguments to the cppruntime configuration - see the cpp runtime documentation for details)],[CPP_RUNTIME_ARGS="$withval"],[CPP_RUNTIME_ARGS=""])
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
+
+build_short=$build_cpu-$build_os
+host_short=$host_cpu-$host_os
+
+AC_SUBST(host_short)
+
+AC_ARG_WITH(cppruntime-args,  [  --with-cppruntime-args=[cpp-args]       (pass comma separated arguments to the cppruntime configuration - see the cpp runtime documentation for details)],[CPP_RUNTIME_ARGS="$withval"],[CPP_RUNTIME_ARGS=""])
 
 BOOST_STATIC_LINKING="no"
 BOOST_REALPATHS="no"
 RUNTIME_PROFILING="no"
-USE_SCOREP="no"
+SCOREP="no"
 SCOREP_HOME=""
 FMU_KINSOL="no"
 PARALLEL_OUTPUT="no"
@@ -21,7 +30,7 @@ CMAKE_COMMANDS="CC=\"${CC}\" CXX=\"${CXX}\" CFLAGS=\"${CFLAGS}\" CXXFLAGS=\"${CX
 AC_SUBST(BOOST_STATIC_LINKING_COMMAND)
 AC_SUBST(BOOST_REALPATHS_COMMAND)
 AC_SUBST(RUNTIME_PROFILING_COMMAND)
-AC_SUBST(USE_SCOREP_COMMAND)
+AC_SUBST(SCOREP_COMMAND)
 AC_SUBST(SCOREP_HOME)
 AC_SUBST(FMU_KINSOL_COMMAND)
 AC_SUBST(PARALLEL_OUTPUT_COMMAND)
@@ -33,7 +42,7 @@ evaluateParameter() {
     BOOST_STATIC_LINKING) BOOST_STATIC_LINKING="yes" ;;
     BOOST_REALPATHS) BOOST_REALPATHS="yes" ;;
     RUNTIME_PROFILING) RUNTIME_PROFILING="yes" ;;
-    USE_SCOREP) USE_SCOREP="yes" ;;
+    SCOREP) SCOREP="yes" ;;
     SCOREP_HOME=?*) SCOREP_HOME=`echo $1| cut -d'=' -f 2` ;;
     SCOREP_HOME=) ;;
     FMU_KINSOL) FMU_KINSOL="yes" ;;
@@ -83,15 +92,15 @@ else
   AC_MSG_RESULT([no])
 fi
 
-AC_ARG_WITH(cppruntimeScorep,  [  --with-scorep       (enable scorep support)],[USE_SCOREP="$withval"],[])
+AC_ARG_WITH(cppruntimeScorep,  [  --with-scorep       (enable scorep support)],[SCOREP="$withval"],[])
 
 AC_MSG_CHECKING([if ScoreP is requested])
-if test "$USE_SCOREP" = "yes"; then
-  USE_SCOREP_COMMAND="-DUSE_SCOREP=ON"
+if test "$SCOREP" = "yes"; then
+  SCOREP_COMMAND="-DUSE_SCOREP=ON"
   CMAKE_COMMANDS="CC=\"scorep --user --nocompiler ${CC}\" CXX=\"scorep --user --nocompiler ${CXX}\""
   AC_MSG_RESULT([yes])
 else
-  USE_SCOREP_COMMAND="-DUSE_SCOREP=OFF"
+  SCOREP_COMMAND="-DUSE_SCOREP=OFF"
   AC_MSG_RESULT([no])
 fi
 

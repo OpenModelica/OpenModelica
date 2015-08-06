@@ -786,7 +786,7 @@ else
 fi
 AC_MSG_RESULT([$MODELICA_SPEC_PLATFORM])
 
-AC_ARG_WITH(cppruntime-args,  [  --with-cppruntime-ags=[cpp-args]       (pass comma separated arguments to the cppruntime configuration - see the cpp runtime documentation for details)],[CPP_RUNTIME_ARGS="$withval"],[CPP_RUNTIME_ARGS=""])
+AC_ARG_WITH(cppruntime-args,  [  --with-cppruntime-args=[cpp-args]       (pass comma separated arguments to the cppruntime configuration - see the cpp runtime documentation for details)],[CPP_RUNTIME_ARGS="$withval"],[CPP_RUNTIME_ARGS=""])
 
 CFLAGS="$CFLAGS"
 
@@ -799,6 +799,7 @@ Compiler/Template/Makefile \
 Compiler/runtime/Makefile \
 Compiler/runtime/config.unix.h \
 Parser/Makefile \
+SimulationRuntime/cpp/Makefile.env \
 SimulationRuntime/c/Makefile \
 SimulationRuntime/c/util/java_interface/Makefile \
 SimulationRuntime/ParModelica/Makefile \
