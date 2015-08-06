@@ -3,6 +3,7 @@ TEST = ../../rtest -v
 TESTFILES = \
 WhenStatement1.mos \
 BouncingBall.mos \
+solveTest.mos \
 tearnonlin1.mos 
 
 FAILINGTESTFILES= 
