@@ -66,6 +66,7 @@ utf8-iconv:
 
 clean:
 	test ! -d build || rm -r build/
+	for d in @subdirs@; do $(MAKE) -C $$d clean; done
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
