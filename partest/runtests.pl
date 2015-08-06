@@ -356,6 +356,10 @@ foreach my $thr (threads->list()) {
 print color 'reset';
 print "\n";
 
+if($withtxt) {
+  unlink("$testsuite_root/failed.log");
+}
+
 if(@failed_tests) {
   print "\nFailed tests:\n";
   my @sorted = sort @failed_tests;
@@ -364,16 +368,13 @@ if(@failed_tests) {
   }
 
   if($withtxt) {
-    unlink("$testsuite_root/failed.log");
     open my $TXTOUT, '>', "$testsuite_root/failed.log" or die "Couldn't open failed.log: $!";
     binmode $TXTOUT, ":encoding(UTF-8)";
 
-    print $TXTOUT "Failed tests:\n";
     foreach my $failed_test (@sorted) {
       print $TXTOUT $failed_test . "\n";
     }
 
-    print $TXTOUT "\n$tests_failed of $test_count failed\n";
     close $TXTOUT;
   }
 }
