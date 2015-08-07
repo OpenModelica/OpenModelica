@@ -1,10 +1,10 @@
 TEST = ../../rtest -v
 
 TESTFILES = \
+tearnonlin1.mos \
 WhenStatement1.mos \
 BouncingBall.mos \
-solveTest.mos \
-tearnonlin1.mos 
+solveTest.mos
 
 FAILINGTESTFILES= 
 

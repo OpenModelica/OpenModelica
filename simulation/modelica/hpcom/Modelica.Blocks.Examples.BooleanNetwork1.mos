@@ -1,7 +1,7 @@
-// name:     Modelica.Fluid.Examples.BranchingDynamicPipes
-// keywords: simulation MSL Examples
-// status: correct
-// depends: Modelica.Fluid.Examples.BranchingDynamicPipes_eqs_prof.json
+// name:      Modelica.Blocks.Examples.BooleanNetwork1
+// keywords:  hpcom
+// status:    correct
+// depends:   Modelica.Blocks.Examples.BooleanNetwork1_eqs_prof.json
 //
 // Simulation Results
 // Modelica Standard Library
