@@ -130,7 +130,7 @@ static void getStackBase() {
 #else
   void* addr = pthread_get_stackaddr_np(self);
   size_t size = pthread_get_stacksize_np(self);
-  stackBottom = ((long)stackBottom) - size;
+  stackBottom = ((long)addr) - size;
 #endif
 }
 
