@@ -2677,6 +2677,7 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     #include <Core/System/SimVars.h>
     #include <Core/System/DiscreteEvents.h>
     #include <Core/System/EventHandling.h>
+    #include <Core/Utils/Modelica/ModelicaUtilities.h>
 
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>.h"
@@ -4953,13 +4954,14 @@ case EXTERNAL_FUNCTION(__) then
   let args = (extArgs |> arg =>
       extArg(arg, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     ;separator=", ")
-  let returnAssign = match extReturn case SIMEXTARG(cref=c) then
-     '<%contextCref2(c,contextFunction)%> ='// '<%extVarName2(c)%> = '
+  let returnAssign = match extReturn case SIMEXTARG(cref=c, type_=ty) then
+     let extName = extVarName2(c)
+     let &outputAssign += '<%contextCref2(c,contextFunction)%> = <%extName%>;<%\n%>'
+     let &outputAssign += match ty case T_STRING(__) then
+       '_ModelicaFreeStringIfAllocated(<%extName%>);<%\n%>' else ''
+     '<%extName%> = '
     else
-      ""
-
-
-
+      ''
   <<
   <%varDecs%>
   <%match extReturn case SIMEXTARG(__) then extFunCallVardecl(extReturn, &varDecls /*BUFD*/)%>

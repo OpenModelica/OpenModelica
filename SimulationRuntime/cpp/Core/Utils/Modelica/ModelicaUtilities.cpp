@@ -54,18 +54,35 @@ void ModelicaFormatError(const char* text, ...)
   ModelicaError(ss.str().c_str());
 }
 
+static std::map<const char*, char*> _allocatedStrings;
+
 char* ModelicaAllocateString(size_t len)
 {
-   return new char[len];
+  char *res = new char[len];
+  if (!res)
+    ModelicaFormatError("%s:%d: ModelicaAllocateString failed", __FILE__, __LINE__);
+  _allocatedStrings[res] = res;
+  return res;
 }
 
 char* ModelicaAllocateStringWithErrorReturn(size_t len)
 {
- char *res = new char[len];
-  if(!res)
-    ModelicaFormatError("%s:%d: ModelicaAllocateString failed", __FILE__, __LINE__);
+  char *res = new char[len];
+  if (res)
+    _allocatedStrings[res] = res;
   return res;
 }
+
+void _ModelicaFreeStringIfAllocated(const char *str)
+{
+  std::map<const char*, char*>::iterator it;
+  it = _allocatedStrings.find(str);
+  if (it != _allocatedStrings.end()) {
+    delete [] _allocatedStrings[str];
+    _allocatedStrings.erase(it);
+  }
+}
+
 #ifdef __cplusplus
 }
 #endif
