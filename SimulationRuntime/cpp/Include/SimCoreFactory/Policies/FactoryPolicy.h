@@ -91,7 +91,7 @@
 
 #include <kinsol/kinsol_spbcgs.h>
 #include <kinsol/kinsol_sptfqmr.h>
-#include <kinsol/kinsol_klu.h>
+/*will be used with new sundials version: #include <kinsol/kinsol_klu.h>*/
 
 
 #include <boost/math/special_functions/fpclassify.hpp>
