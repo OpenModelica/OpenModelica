@@ -2161,12 +2161,16 @@ end functionSetupLinearSystemsTemp;
 template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<JacobianMatrix> jacobianMatrixes, String modelNamePrefix)
   "Generates functions in simulation file."
 ::=
+  let &tempeqns = buffer ""
+  let &tempeqns += (allEquations |> eq => match eq case eq as SES_NONLINEAR(alternativeTearing = SOME(__)) then 'int <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
   let initbody = functionInitialNonLinearSystemsTemp(initialEquations,modelNamePrefix)
   let parambody = functionInitialNonLinearSystemsTemp(parameterEquations,modelNamePrefix)
   let equationbody = functionInitialNonLinearSystemsTemp(allEquations,modelNamePrefix)
   let jacobianbody = (jacobianMatrixes |> ({(jacobianEquations,_,_)}, _, _, _, _, _, _) => functionInitialNonLinearSystemsTemp(jacobianEquations, modelNamePrefix) ;separator="\n\n")
   <<
-  /* funtion initialize non-linear systems */
+  /* function initialize non-linear systems */
+  <%tempeqns%>
+
   void <%symbolName(modelNamePrefix,"initialNonLinearSystem")%>(int nNonLinearSystems, NONLINEAR_SYSTEM_DATA* nonLinearSystemData)
   {
     <%initbody%>
@@ -2198,6 +2202,7 @@ template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations, Str
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].homotopySupport = <%boolStrC(nls.homotopySupport)%>;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].mixedSystem = <%boolStrC(nls.mixedSystem)%>;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].residualFunc = residualFunc<%nls.index%>;
+       nonLinearSystemData[<%nls.indexNonLinearSystem%>].strictTearingFunctionCall = NULL;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].jacobianIndex = <%jacIndex%>;
@@ -2225,6 +2230,7 @@ template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations, Str
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].homotopySupport = <%if nls.homotopySupport then '1' else '0'%>;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].mixedSystem = <%if nls.mixedSystem then '1' else '0'%>;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].residualFunc = residualFunc<%nls.index%>;
+       nonLinearSystemData[<%nls.indexNonLinearSystem%>].strictTearingFunctionCall = NULL;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
        nonLinearSystemData[<%nls.indexNonLinearSystem%>].jacobianIndex = <%jacIndex%>;
@@ -2238,6 +2244,7 @@ template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations, Str
        nonLinearSystemData[<%at.indexNonLinearSystem%>].homotopySupport = <%if at.homotopySupport then '1' else '0'%>;
        nonLinearSystemData[<%at.indexNonLinearSystem%>].mixedSystem = <%if at.mixedSystem then '1' else '0'%>;
        nonLinearSystemData[<%at.indexNonLinearSystem%>].residualFunc = residualFunc<%at.index%>;
+       nonLinearSystemData[<%at.indexNonLinearSystem%>].strictTearingFunctionCall = <%symbolName(modelPrefixName,"eqFunction")%>_<%nls.index%>;
        nonLinearSystemData[<%at.indexNonLinearSystem%>].analyticalJacobianColumn = <%generatedJac2%>;
        nonLinearSystemData[<%at.indexNonLinearSystem%>].initialAnalyticalJacobian = <%initialJac2%>;
        nonLinearSystemData[<%at.indexNonLinearSystem%>].jacobianIndex = <%jacIndex2%>;
@@ -4282,9 +4289,15 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, Text &eqs, S
   else
   (
   let ix = equationIndex(eq) /*System.tmpTickIndex(10)*/
+  let ix2 = match eq
+  case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
+    equationIndexAlternativeTearing(eq)
+  else
+    ""
   let &tmp = buffer ""
   let &varD = buffer ""
   let &tempeqns = buffer ""
+  let &tempeqns2 = buffer ""
   let() = System.tmpTickResetIndex(0,1) /* Boxed array indices */
   let disc = match context
   case SIMULATION_CONTEXT(genDiscrete=true) then 1
@@ -4309,8 +4322,6 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, Text &eqs, S
   // dynamic tearing
   case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
     let &tempeqns += (nls.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
-    let &tempeqns += '<%\n%>'
-    let &tempeqns += (at.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
     equationNonlinear(e, context, &varD, modelNamePrefix)
   case e as SES_WHEN(__)
     then equationWhen(e, context, &varD, &tempeqns)
@@ -4318,11 +4329,57 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, Text &eqs, S
     then "NOT IMPLEMENTED EQUATION SES_RESIDUAL"
   case e as SES_MIXED(__)
     then equationMixed(e, context, &varD, &eqs, modelNamePrefix)
-   case e as SES_FOR_LOOP(__)
+  case e as SES_FOR_LOOP(__)
     then equationForLoop(e, context, &varD, &tempeqns)
   else
     "NOT IMPLEMENTED EQUATION equation_"
+  let x2 = match eq
+  case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
+    let &tempeqns2 += (at.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
+    equationNonlinearAlternativeTearing(e, context, &varD, modelNamePrefix)
+  else
+    ""
+
   let &varD += addRootsTempArray()
+
+  match eq
+  case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
+  let &eqs +=
+  <<
+
+  <%tempeqns%>
+  /*
+   <%dumpEqs(fill(eq,1))%>
+   */
+  int <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data)
+  {
+    TRACE_PUSH
+    const int equationIndexes[2] = {1,<%ix%>};
+    <%&varD%>
+    <%x%>
+    TRACE_POP
+  }
+
+  <%tempeqns2%>
+  /*
+   <%dumpEqsAlternativeTearing(fill(eq,1))%>
+   */
+  void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix2%>(DATA *data)
+  {
+    TRACE_PUSH
+    const int equationIndexes[2] = {1,<%ix2%>};
+    <%&varD%>
+    <%x2%>
+    TRACE_POP
+  }
+  >>
+
+  <<
+  <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix2%>);' %>
+  <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix2%>(data);
+  <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix2%>);' %>
+  >>
+  else
   let &eqs +=
   <<
 
@@ -4339,6 +4396,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, Text &eqs, S
     TRACE_POP
   }
   >>
+
   <<
   <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
   <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(data);
@@ -4352,22 +4410,16 @@ template equationForward_(SimEqSystem eq, Context context, String modelNamePrefi
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
-match context
-case SIMULATION_CONTEXT(genDiscrete=true) then
  match eq
   case e as SES_ALGORITHM(statements={})
   then ""
   else
-  let ix = equationIndex(eq)
-  <<
-  extern void <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(DATA* data);
-  >>
-else
- match eq
-  case e as SES_ALGORITHM(statements={})
-  then ""
+  let ix = match eq
+  case e as SES_NONLINEAR(alternativeTearing = SOME(NONLINEARSYSTEM)) then
+    equationIndexAlternativeTearing(eq)
   else
-  let ix = equationIndex(eq)
+    equationIndex(eq)
+  end match
   <<
   extern void <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(DATA* data);
   >>
@@ -4378,24 +4430,16 @@ template equationNames_(SimEqSystem eq, Context context, String modelNamePrefixS
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
-match context
-case SIMULATION_CONTEXT(genDiscrete=true) then
  match eq
   case e as SES_ALGORITHM(statements={})
   then ""
   else
-  let ix = equationIndex(eq)
-  <<
-  <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
-  <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data);
-  <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
-  >>
-else
- match eq
-  case e as SES_ALGORITHM(statements={})
-  then ""
+  let ix = match eq
+  case e as SES_NONLINEAR(alternativeTearing = SOME(NONLINEARSYSTEM)) then
+    equationIndexAlternativeTearing(eq)
   else
-  let ix = equationIndex(eq)
+    equationIndex(eq)
+  end match
   <<
   <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
   <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data);
@@ -4546,16 +4590,18 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls, Stri
  "Generates a non linear equation system."
 ::=
   match eq
-    // No dynamic Tearing
-    case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing=NONE()) then
+    case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = at) then
       let size = listLength(nls.crefs)
       let &tmp = buffer ""
       let innerBody = (nls.eqs |> eq2 =>
          functionExtraResidualsPreBody(eq2, &varDecls, &tmp, modelNamePrefix)
        ;separator="\n")
       let nonlinindx = nls.indexNonLinearSystem
+      let returnval = match at case at as SOME(__) then 'return 1;' case at as NONE() then ''
+      let returnval2 = match at case at as SOME(__) then 'return 0;' case at as NONE() then ''
       <<
       int retValue;
+      debugDouble(LOG_DT, "Solving nonlinear system <%nls.index%> (STRICT TEARING SET if tearing enabled) at time =", time);
       <% if profileSome() then
       <<
       SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%nls.index%>).profileBlockIndex);
@@ -4572,52 +4618,58 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls, Stri
         >>
       ;separator="\n"%>
       retValue = solve_nonlinear_system(data, <%nls.indexNonLinearSystem%>);
-      /* check if solution process was sucessful */
+      /* check if solution process was successful */
       if (retValue > 0){
         const int indexes[2] = {1,<%nls.index%>};
         throwStreamPrintWithEquationIndexes(threadData, indexes, "Solving non-linear system <%nls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", time);
+        <%returnval2%>
       }
       /* write solution */
       <%nls.crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
       <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%nls.index%>).profileBlockIndex);' %>
-      >>
-
-    // Dynamic Tearing
-    case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
-      let size = listLength(nls.crefs)
-      let &tmp = buffer ""
-      let innerBody = (nls.eqs |> eq2 =>
-         functionExtraResidualsPreBody(eq2, &varDecls, &tmp, modelNamePrefix)
-       ;separator="\n")
-      let nonlinindx = nls.indexNonLinearSystem
-      <<
-      int retValue;
-      <% if profileSome() then
-      <<
-      SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%nls.index%>).profileBlockIndex);
-      SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%nls.index%>).profileBlockIndex,-1);
-      >>
-      %>
-      /* extrapolate data */
-      <%nls.crefs |> name hasindex i0 =>
-        let namestr = cref(name)
-        <<
-        data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>] = <%namestr%>;
-        data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old1*/;
-        data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(data, _<%namestr%>(1) /*old1*/, _<%namestr%>(2) /*old2*/, $P$ATTRIBUTE<%namestr%>.min, $P$ATTRIBUTE<%namestr%>.max);
-        >>
-      ;separator="\n"%>
-      retValue = solve_nonlinear_system(data, <%nls.indexNonLinearSystem%>);
-      /* check if solution process was sucessful */
-      if (retValue > 0){
-        const int indexes[2] = {1,<%nls.index%>};
-        throwStreamPrintWithEquationIndexes(threadData, indexes, "Solving non-linear system <%nls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", time);
-      }
-      /* write solution */
-      <%nls.crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
-      <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%nls.index%>).profileBlockIndex);' %>
+      <%returnval%>
       >>
 end equationNonlinear;
+
+template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, Text &varDecls, String modelNamePrefix)
+ "Generates a non linear equation system."
+::=
+  match eq
+    case eq as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
+      let size = listLength(at.crefs)
+      let &tmp = buffer ""
+      let innerBody = (at.eqs |> eq2 =>
+         functionExtraResidualsPreBody(eq2, &varDecls, &tmp, modelNamePrefix)
+       ;separator="\n")
+      let nonlinindx = at.indexNonLinearSystem
+      <<
+      int retValue;
+      debugDouble(LOG_DT, "Solving nonlinear system <%at.index%> (CASUAL TEARING SET) at time =", time);
+      <% if profileSome() then
+      <<
+      SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%at.index%>).profileBlockIndex);
+      SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%at.index%>).profileBlockIndex,-1);
+      >>
+      %>
+      /* extrapolate data */
+      <%at.crefs |> name hasindex i0 =>
+        let namestr = cref(name)
+        <<
+        data->simulationInfo.nonlinearSystemData[<%at.indexNonLinearSystem%>].nlsx[<%i0%>] = <%namestr%>;
+        data->simulationInfo.nonlinearSystemData[<%at.indexNonLinearSystem%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old1*/;
+        data->simulationInfo.nonlinearSystemData[<%at.indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(data, _<%namestr%>(1) /*old1*/, _<%namestr%>(2) /*old2*/,$P$ATTRIBUTE<%namestr%>.min, $P$ATTRIBUTE<%namestr%>.max);
+        >>
+      ;separator="\n"%>
+      retValue = solve_nonlinear_system(data, <%at.indexNonLinearSystem%>);
+
+      /* The casual tearing set found a solution */
+      if (retValue == 0){
+      /* write solution */
+      <%at.crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%at.indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
+      <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%at.index%>).profileBlockIndex);' %>
+      }
+      >>
+end equationNonlinearAlternativeTearing;
 
 template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &auxFunction)
  "Generates a when equation."

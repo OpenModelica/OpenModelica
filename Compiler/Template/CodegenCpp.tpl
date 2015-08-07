@@ -122,6 +122,7 @@ let initeqs = generateEquationMemberFuncDecls(initialEquations,"initEquation")
   {
   public:
     <%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars);
+    <%lastIdentOfPath(modelInfo.name)%>Initialize(<%lastIdentOfPath(modelInfo.name)%>Initialize& instance);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>Initialize();
     virtual bool initial();
     virtual void setInitial(bool);
@@ -200,6 +201,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   %>
   public:
     <%lastIdentOfPath(modelInfo.name)%>Jacobian(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars);
+    <%lastIdentOfPath(modelInfo.name)%>Jacobian(<%lastIdentOfPath(modelInfo.name)%>Jacobian& instance);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>Jacobian();
 
   protected:
@@ -310,6 +312,7 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
   {
   public:
     <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars);
+    <%lastIdentOfPath(modelInfo.name)%>WriteOutput(<%lastIdentOfPath(modelInfo.name)%>WriteOutput& instance);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>WriteOutput();
 
 
@@ -413,7 +416,10 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
   {
   public:
     <%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars);
+    <%lastIdentOfPath(modelInfo.name)%>Extension(<%lastIdentOfPath(modelInfo.name)%>Extension &instance);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>Extension();
+
+    virtual IMixedSystem* clone();
 
     ///Intialization methods from ISystemInitialization
     virtual bool initial();
@@ -532,6 +538,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
+   {
+   }
+
+   <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(<%lastIdentOfPath(modelInfo.name)%>Initialize& instance)
+   : <%lastIdentOfPath(modelInfo.name)%>(instance)
    {
    }
 
@@ -681,6 +692,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
    }
 
+   <%lastIdentOfPath(modelInfo.name)%>Jacobian::<%lastIdentOfPath(modelInfo.name)%>Jacobian(<%lastIdentOfPath(modelInfo.name)%>Jacobian& instance)
+       : <%lastIdentOfPath(modelInfo.name)%>(instance)
+       , _AColorOfColumn(NULL)
+       <%initialjacMats%>
+       <%jacobiansVariableInit(jacobianMatrixes,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+   {
+   }
+
    <%lastIdentOfPath(modelInfo.name)%>Jacobian::~<%lastIdentOfPath(modelInfo.name)%>Jacobian()
    {
    if(_AColorOfColumn)
@@ -737,9 +756,17 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      _historyImpl = new HistoryImplType(*globalSettings);
    }
 
+   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(<%lastIdentOfPath(modelInfo.name)%>WriteOutput& instance)
+       : <%lastIdentOfPath(modelInfo.name)%>(instance.getGlobalSettings(), instance.getAlgLoopSolverFactory(), instance.getSimData(), instance.getSimVars())
+   {
+     _historyImpl = new HistoryImplType(*instance.getGlobalSettings());
+   }
+
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::~<%lastIdentOfPath(modelInfo.name)%>WriteOutput()
    {
-     delete _historyImpl;
+     if(_historyImpl)
+       delete _historyImpl;
+     _historyImpl = NULL;
    }
 
    IHistory* <%lastIdentOfPath(modelInfo.name)%>WriteOutput::getHistory()
@@ -1072,8 +1099,23 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
    }
 
+   <%classname%>Extension::<%classname%>Extension(<%classname%>Extension& instance)
+       : <%classname%>(instance)
+       , <%classname%>WriteOutput(instance)
+       , <%classname%>Initialize(instance)
+       , <%classname%>Jacobian(instance)
+       , <%classname%>StateSelection(instance)
+
+   {
+   }
+
    <%classname%>Extension::~<%classname%>Extension()
    {
+   }
+
+   IMixedSystem* <%classname%>Extension::clone()
+   {
+     return new <%classname%>Extension(*this);
    }
 
    bool <%classname%>Extension::initial()
@@ -1890,7 +1932,7 @@ extern "C"  int initSimulation(ISimController* &controller, ISimData* &data, dou
   <%defineOutputVars(simCode)%>
 
   LogSettings logsetting;
-    SimSettings settings = {"RTRK","","Kinsol",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",0,OPT_NONE, logsetting};
+    SimSettings settings = {"RTEuler","","Kinsol",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",0,OPT_NONE, logsetting};
   //                       Solver,          nonlinearsolver starttime endtime stepsize   lower limit upper limit  tolerance
   try
   {
@@ -2288,7 +2330,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       try
       {
             Logger::initialize();
-            Logger::setEnabled(false);
+            Logger::setEnabled(true);
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
                 <<
                 std::vector<MeasureTimeData> measureTimeArraySimulation = std::vector<MeasureTimeData>(2); //0 all, 1 setup
@@ -2670,6 +2712,7 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     #include <Core/System/SimVars.h>
     #include <Core/System/DiscreteEvents.h>
     #include <Core/System/EventHandling.h>
+    #include <Core/Utils/Modelica/ModelicaUtilities.h>
 
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>.h"
@@ -3105,7 +3148,7 @@ case "gcc" then
             # Simulations use -O0 by default
             SIM_OR_DYNLOAD_OPT_LEVEL=-O0
             CC=<%CC%>
-            CXX=<%CXX%>
+            CXX=<%CXX%> $(OPENMP_FLAGS)
             RUNTIME_STATIC_LINKING=<%if(Flags.isSet(Flags.RUNTIME_STATIC_LINKING)) then 'ON' else 'OFF'%>
             <%MPIEnvVars%>
 
@@ -3489,33 +3532,15 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         <%additionalConstructorBodyStatements%>
     }
 
-    <%className%>::<%className%>(<%className%> &instance) : SystemDefaultImplementation(instance.getGlobalSettings(),instance._sim_data,instance._sim_vars)
+    <%className%>::<%className%>(<%className%> &instance) : SystemDefaultImplementation(instance)
         , _algLoopSolverFactory(instance.getAlgLoopSolverFactory())
+        , _pointerToRealVars(instance.getSimVars()->getRealVarsVector())
+        , _pointerToIntVars(instance.getSimVars()->getIntVarsVector())
+        , _pointerToBoolVars(instance.getSimVars()->getBoolVarsVector())
         <%additionalConstructorVarDefsBuffer%>
     {
         <%generateSimulationCppConstructorContent(simCode, context, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-        <%match modelInfo
-            case MODELINFO(vars=SIMVARS(__)) then
-              <<
-              double* realVars = new double[<%listLength(listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.aliasVars, vars.paramVars))))%> + _dimContinuousStates + _dimContinuousStates];
-              int* integerVars = new int[<%listLength(listAppend(listAppend(vars.intAlgVars, vars.intParamVars), vars.intAliasVars))%>];
-              bool* booleanVars = new bool[<%listLength(listAppend(listAppend(vars.boolAlgVars, vars.boolParamVars), vars.boolAliasVars))%>];
-              string* stringVars = new string[<%listLength(listAppend(listAppend(vars.stringAlgVars, vars.stringParamVars), vars.stringAliasVars))%>];
-              instance.getReal(realVars);
-              instance.getInteger(integerVars);
-              instance.getBoolean(booleanVars);
-              instance.getString(stringVars);
-              setReal(realVars);
-              setInteger(integerVars);
-              setBoolean(booleanVars);
-              setString(stringVars);
-              delete[] realVars;
-              delete[] integerVars;
-              delete[] booleanVars;
-              delete[] stringVars;
-              >>
-         %>
-         <%additionalConstructorBodyStatements%>
+        <%additionalConstructorBodyStatements%>
     }
 
     /* Destructor */
@@ -4736,8 +4761,7 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
 
   let &inputAssign = buffer "" /*BUFD*/
   let &outputAssign = buffer "" /*BUFD*/
-  // make sure the variable is named "out", doh!
-   let retVar = if outVars then '_<%fname%>'
+  let retVar = if outVars then match outVars case {var} then funArgName(var) else '_<%fname%>'
   let &outVarInits = buffer ""
   let callPart =  match outVars   case {var} then
                     extFunCall(fn, &preExp, &varDeclsExtFunCall, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, false)
@@ -4761,8 +4785,6 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
     )
    end match
 
-
-
    let &varDecls1 = buffer ""
    let &outVarInits1 = buffer ""
    let &outVarCopy1 = buffer ""
@@ -4780,9 +4802,6 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
     let functionBodyExternalFunctionreturn = match outVarAssign1
    case "" then << <%if retVar then 'output = <%retVar%>;' else '/*no output*/' %> >>
    else outVarAssign1
-
-
-
 
   let fnBody = <<
   void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var => funArgDefinition(var,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%><%if funArgs then if outVars then "," else ""%> <%if retVar then '<%retType%>& output' %>)/*function2*/
@@ -4803,9 +4822,9 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
     <%outVarInits%>
     /* functionBodyExternalFunction: callPart */
     <%callPart%>
-
-    <%outVarAssign%>
-
+    <%outputAssign%>
+    /* functionBodyExternalFunction: return */
+    <%functionBodyExternalFunctionreturn%>
   }
   >>
   <<
@@ -4970,13 +4989,14 @@ case EXTERNAL_FUNCTION(__) then
   let args = (extArgs |> arg =>
       extArg(arg, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     ;separator=", ")
-  let returnAssign = match extReturn case SIMEXTARG(cref=c) then
-     '<%contextCref2(c,contextFunction)%> ='// '<%extVarName2(c)%> = '
+  let returnAssign = match extReturn case SIMEXTARG(cref=c, type_=ty) then
+     let extName = extVarName2(c)
+     let &outputAssign += '<%contextCref2(c,contextFunction)%> = <%extName%>;<%\n%>'
+     let &outputAssign += match ty case T_STRING(__) then
+       '_ModelicaFreeStringIfAllocated(<%extName%>);<%\n%>' else ''
+     '<%extName%> = '
     else
-      ""
-
-
-
+      ''
   <<
   <%varDecs%>
   <%match extReturn case SIMEXTARG(__) then extFunCallVardecl(extReturn, &varDecls /*BUFD*/)%>
@@ -5086,7 +5106,9 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &inputAssig
     else
       '<%cr%><%match t case T_STRING(__) then ".c_str()" else "_ext"%>'
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=oi, type_=t) then
-    '&<%extVarName2(c)%>'
+    let extName = extVarName2(c)
+    let &outputAssign += '<%contextCref2(c,contextFunction)%> = <%extName%>;<%\n%>'
+    '&<%extName%>'
   case SIMEXTARGEXP(__) then
     daeExternalCExp(exp, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case SIMEXTARGSIZE(cref=c) then
@@ -6849,26 +6871,6 @@ let conditionvariables =  conditionvariable(zeroCrossings,simCode , &extraFuncs 
 
 match modelInfo
   case MODELINFO(vars=SIMVARS(__)) then
-
-/* changed: handled in SimVars class
-  let getrealvars =
-  (List.partition(listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.aliasVars, vars.paramVars))), 100) |> ls hasindex idx =>
-    <<
-    void getReal_<%idx%>(double* z);
-    void setReal_<%idx%>(const double* z);
-    >>
-    ;separator="\n")
-  let getintvars = (List.partition(listAppend(listAppend(vars.intAlgVars, vars.intParamVars), vars.intAliasVars), 100) |> ls hasindex idx =>
-    <<
-    void getInteger_<%idx%>(int* z);
-    >>
-    ;separator="\n")
-  let getboolvars = (List.partition(listAppend(listAppend(vars.boolAlgVars, vars.boolParamVars), vars.boolAliasVars), 100) |> ls hasindex idx =>
-    <<
-    void getBoolean_<%idx%>(bool* z);
-    >>
-    ;separator="\n")
-  */
   let getstringvars = (List.partition(listAppend(listAppend(vars.stringAlgVars, vars.stringParamVars), vars.stringAliasVars), 100) |> ls hasindex idx =>
     <<
     void getString_<%idx%>(string* z);
@@ -7797,7 +7799,7 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
             if SimCodeUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
               let arrayHeadIdx = listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))
               <<
-              <%arrayName%> = StatRefArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>>(&_pointerTo<%type%>Vars[<%arrayHeadIdx%>]);
+              <%arrayName%> = StatArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>, true>(&_pointerTo<%type%>Vars[<%arrayHeadIdx%>]);
               >>
             else
               let arrayIndices = SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences) |> idx => '(<%idx%>)'; separator=""
@@ -8058,7 +8060,7 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
       else
         if SimCodeUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
           <<
-          StatRefArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%>;
+          StatArrayDim<%dims%><<%typeString%>, <%array_dimensions%>, true> <%arrayName%>;
           >>
         else
           <<
@@ -9212,35 +9214,6 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
     >>
 
 end saveAll;
-
-
-
-
-
-
-
-
-/*
- <<
-  void <%className%>::initPreVars_<%partIdx%>(unordered_map<double* const,unsigned int>& vars1, unordered_map<double* const,unsigned int>& vars2)
-  {
-      insert(vars1)
-      <%(partVars |> SIMVAR(__) hasindex i0 fromindex (intMul(partIdx, multiplicator)) =>
-        '<%\t%>(&<%cref(name, useFlatArrayNotation)%>,<%i0%>)'
-        ;separator="\n")%>;
-      <%if (intLt(intMul(partIdx, multiplicator), stateVarStartIdx)) then
-        <<
-        insert(vars2)
-        <%(partVars |> SIMVAR(__) hasindex i0 fromindex (intMul(partIdx, multiplicator)) =>
-          if (intLt(i0, stateVarStartIdx)) then
-              '<%\t%>(&<%cref(name, useFlatArrayNotation)%>,<%i0%>)'
-          else ''
-          ;separator="\n")%>;
-         >>
-      %>
-  }
-  >>
-*/
 
 template saveDiscreteVars(ModelInfo modelInfo, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
@@ -12939,10 +12912,6 @@ template crefStartValueType(ComponentRef cr) "template crefType
   end match
 end crefStartValueType;
 
-
-
-
-
 template crefStartValueType2(DAE.Type ty)
 ::=
   match ty
@@ -12955,14 +12924,7 @@ template crefStartValueType2(DAE.Type ty)
     case T_ARRAY(ty=T_BOOL(__)) then 'Bool'
   else "error start value type"
 end match
-
-
 end crefStartValueType2;
-
-
-
-
-
 
 template expTypeFromExpShort(Exp exp)
 
@@ -13079,9 +13041,13 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
 let modelname = identOfPath(modelInfo.name)
 'FUNCTION_BLOCK <%modelname%>
-VAR
+VAR_INPUT
     <%inputVars%>
+END_VAR
+VAR_OUTPUT
     <%outputVars%>
+END_VAR
+VAR
     cycletime : REAL(0.05);
     bAlreadyInitialized : BOOL;
     bErrorOccured : BOOL(FALSE);
@@ -13512,10 +13478,10 @@ template daeExpCrefRhsArrayBox(ComponentRef cr,DAE.Type ty, Context context, Tex
                 let &preExp +=
                   <<
                   StatArrayDim<%ndims%><<%T%>, <%dimstr%>> <%arr%>_pre;
-                  std::transform(<%arr%>.getDataRefs(),
-                                 <%arr%>.getDataRefs() + <%arr%>.getNumElems(),
+                  std::transform(<%arr%>.getData(),
+                                 <%arr%>.getData() + <%arr%>.getNumElems(),
                                  <%arr%>_pre.getData(),
-                                 PreRefArray2CArray<<%T%>>(_discrete_events));
+                                 PreArray2CArray<<%T%>>(_discrete_events));
                   >>
                 '<%arr%>_pre'
               else
@@ -16160,57 +16126,6 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
       }
       >>
   end match
-/*  else
-    match modelInfo
-      case MODELINFO(vars=SIMVARS(__)) then
-      <<
-      void <%lastIdentOfPath(name)%>::getReal(double* z)
-      {
-         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"getReal is not implemented yet");
-      }
-
-      void <%lastIdentOfPath(name)%>::getInteger(int* z)
-      {
-         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"getInteger is not implemented yet");
-      }
-
-      void <%lastIdentOfPath(name)%>::getBoolean(bool* z)
-      {
-         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"getBoolean is not implemented yet");
-      }
-
-      void <%lastIdentOfPath(name)%>::getString(string* z)
-      {
-         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"getString is not implemented yet");
-      }
-
-      void <%lastIdentOfPath(name)%>::setReal(const double* z)
-      {
-         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"setReal is not implemented yet");
-      }
-
-      void <%lastIdentOfPath(name)%>::setInteger(const int* z)
-      {
-         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"setInteger is not implemented yet");
-      }
-
-      void <%lastIdentOfPath(name)%>::setBoolean(const bool* z)
-      {
-         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"setBoolean is not implemented yet");
-      }
-
-      void <%lastIdentOfPath(name)%>::setString(const string* z)
-      {
-         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"setString is not implemented yet");
-      }
-      >>
-  */
-  /*
-  <%System.tmpTickReset(0)%>
-  <%vars.stringAlgVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
-  <%vars.stringParamVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
-  <%vars.stringAliasVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
-  */
 end giveVariables;
 
 template getStateVariables(SimVar simVar, Integer valueReference, String arrayName, Integer index)

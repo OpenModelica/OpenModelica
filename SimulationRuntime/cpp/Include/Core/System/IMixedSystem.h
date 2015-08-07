@@ -43,5 +43,8 @@ public:
 
   virtual void getAColorOfColumn(int* aSparsePatternColorCols, int size) = 0;
   virtual int getAMaxColors() = 0;
+
+  // Copy the given IMixedSystem instance
+  virtual IMixedSystem* clone() = 0;
 };
 /** @} */ // end of coreSystem

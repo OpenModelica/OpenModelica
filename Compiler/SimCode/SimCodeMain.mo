@@ -116,13 +116,11 @@ protected function generateModelCodeFMU "
   template-based code generator on it."
   input BackendDAE.BackendDAE inBackendDAE;
   input Absyn.Program p;
-  input DAE.DAElist dae;
   input Absyn.Path className;
   input String FMUVersion;
   input String FMUType;
   input String filenamePrefix;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
-  output BackendDAE.BackendDAE outIndexedBackendDAE;
   output list<String> libs;
   output String fileDir;
   output Real timeSimCode;
@@ -141,10 +139,10 @@ algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScriptBackend.getFileDir(a_cref, p);
-  (libs,libPaths,includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
-    SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
-  simCode := createSimCode(outIndexedBackendDAE,
-    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, libPaths,simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
+  (libs,libPaths,includes, includeDirs, recordDecls, functions, literals) :=
+    SimCodeUtil.createFunctions(p, inBackendDAE);
+  simCode := createSimCode(inBackendDAE,
+    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, libPaths, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   SimCodeFunctionUtil.execStat("SimCode");
 
@@ -159,11 +157,9 @@ protected function generateModelCodeXML "
   template-based code generator on it."
   input BackendDAE.BackendDAE inBackendDAE;
   input Absyn.Program p;
-  input DAE.DAElist dae;
   input Absyn.Path className;
   input String filenamePrefix;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
-  output BackendDAE.BackendDAE outIndexedBackendDAE;
   output list<String> libs;
   output String fileDir;
   output Real timeSimCode;
@@ -182,9 +178,9 @@ algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScriptBackend.getFileDir(a_cref, p);
-  (libs, libPaths, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
-    SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
-  (simCode,_) := SimCodeUtil.createSimCode(outIndexedBackendDAE,
+  (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) :=
+    SimCodeUtil.createFunctions(p, inBackendDAE);
+  (simCode,_) := SimCodeUtil.createSimCode(inBackendDAE,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   SimCodeFunctionUtil.execStat("SimCode");
@@ -222,7 +218,7 @@ algorithm
       String FMUVersion,FMUType,filenameprefix,file_dir,resstr;
       DAE.DAElist dae;
       FCore.Graph graph;
-      BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow_1;
+      BackendDAE.BackendDAE dlow,dlow_1;
       list<String> libs;
       GlobalScript.SymbolTable st;
       Absyn.Program p;
@@ -258,8 +254,8 @@ algorithm
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix);
         timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
-        (indexed_dlow_1,libs,file_dir,timeSimCode,timeTemplates) =
-          generateModelCodeFMU(dlow_1, p, dae,  className, FMUVersion, FMUType, filenameprefix, inSimSettingsOpt);
+        (libs,file_dir,timeSimCode,timeTemplates) =
+          generateModelCodeFMU(dlow_1, p, className, FMUVersion, FMUType, filenameprefix, inSimSettingsOpt);
 
         //reset config flag
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, symbolicJacActivated);
@@ -274,7 +270,7 @@ algorithm
           resstr = Absyn.pathStringNoQual(className);
         resstr = stringAppendList({"SimCode: The model ",resstr," has been translated to FMU"});
       then
-        (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
+        (cache,Values.STRING(resstr),st,dlow_1,libs,file_dir, resultValues);
     case (_,_,_,_,_,_,_,_,_)
       equation
         resstr = Absyn.pathStringNoQual(className);
@@ -311,7 +307,7 @@ algorithm
       String filenameprefix,file_dir,resstr,description;
       DAE.DAElist dae;
       FCore.Graph graph;
-      BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow_1;
+      BackendDAE.BackendDAE dlow,dlow_1;
       list<String> libs;
       GlobalScript.SymbolTable st;
       Absyn.Program p;
@@ -334,8 +330,8 @@ algorithm
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix);
         timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
-        (indexed_dlow_1,libs,file_dir,timeSimCode,timeTemplates) =
-          generateModelCodeXML(dlow_1, p, dae, className, filenameprefix, inSimSettingsOpt);
+        (libs,file_dir,timeSimCode,timeTemplates) =
+          generateModelCodeXML(dlow_1, p, className, filenameprefix, inSimSettingsOpt);
         resultValues =
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),
@@ -345,7 +341,7 @@ algorithm
           resstr = Absyn.pathStringNoQual(className);
         resstr = stringAppendList({"SimCode: The model ",resstr," has been translated to XML"});
       then
-        (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
+        (cache,Values.STRING(resstr),st,dlow_1,libs,file_dir, resultValues);
     case (_,_,_,_,_,_, _)
       equation
         resstr = Absyn.pathStringNoQual(className);
@@ -363,12 +359,10 @@ public function generateModelCode "
   template-based code generator on it."
   input BackendDAE.BackendDAE inBackendDAE;
   input Absyn.Program p;
-  input DAE.DAElist dae;
   input Absyn.Path className;
   input String filenamePrefix;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
   input Absyn.FunctionArgs args;
-  output BackendDAE.BackendDAE outIndexedBackendDAE;
   output list<String> libs;
   output String fileDir;
   output Real timeSimCode;
@@ -382,13 +376,13 @@ protected
   tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
 algorithm
   if Flags.isSet(Flags.GRAPHML) then
-    HpcOmTaskGraph.dumpTaskGraph(inBackendDAE,filenamePrefix);
+    HpcOmTaskGraph.dumpTaskGraph(inBackendDAE, filenamePrefix);
   end if;
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScriptBackend.getFileDir(a_cref, p);
-  (libs, libPaths,includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) := SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
-  simCode := createSimCode(outIndexedBackendDAE, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args);
+  (libs, libPaths,includes, includeDirs, recordDecls, functions, literals) := SimCodeUtil.createFunctions(p, inBackendDAE);
+  simCode := createSimCode(inBackendDAE, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args);
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   SimCodeFunctionUtil.execStat("SimCode");
 
@@ -625,7 +619,7 @@ algorithm
       String filenameprefix, file_dir, resstr, description;
       DAE.DAElist dae;
       FCore.Graph graph;
-      BackendDAE.BackendDAE dlow, dlow_1, indexed_dlow_1;
+      BackendDAE.BackendDAE dlow, dlow_1;
       list<String> libs;
       GlobalScript.SymbolTable st;
       Absyn.Program p;
@@ -651,14 +645,14 @@ algorithm
       dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix);
       timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
-      (indexed_dlow_1, libs, file_dir, timeSimCode, timeTemplates) =
-        generateModelCode(dlow_1, p, dae, className, filenameprefix, inSimSettingsOpt, args);
+      (libs, file_dir, timeSimCode, timeTemplates) =
+        generateModelCode(dlow_1, p, className, filenameprefix, inSimSettingsOpt, args);
 
       resultValues = {("timeTemplates", Values.REAL(timeTemplates)),
                       ("timeSimCode", Values.REAL(timeSimCode)),
                       ("timeBackend", Values.REAL(timeBackend)),
                       ("timeFrontend", Values.REAL(timeFrontend))};
-    then (cache, st, indexed_dlow_1, libs, file_dir, resultValues);
+    then (cache, st, dlow_1, libs, file_dir, resultValues);
 
     case (_, _, _, _, _, _, _, _) equation
       true = Flags.isSet(Flags.FAILTRACE);

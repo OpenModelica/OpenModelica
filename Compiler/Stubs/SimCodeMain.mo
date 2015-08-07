@@ -19,15 +19,13 @@ algorithm
   assert(false, getInstanceName());
 end createSimulationSettings;
 
-function generateModelCode<T,A,B,C,D,E>
+function generateModelCode<T,A,C,D,E>
   input T inBackendDAE;
   input A p;
-  input B dae;
   input C className;
   input String filenamePrefix;
   input D simSettingsOpt;
   input E args;
-  output T outIndexedBackendDAE;
   output list<String> libs;
   output String fileDir;
   output Real timeSimCode;

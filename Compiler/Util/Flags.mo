@@ -2031,8 +2031,8 @@ algorithm
   help := matchcontinue (inTopics)
     local
       Util.TranslatableContent desc;
-      list<String>  rest_topics, strs;
-      String str,name,str1,str2,str3,str4,str5,str6,str7,str8;
+      list<String> rest_topics, strs, data;
+      String str,name,str1,str1a,str1b,str2,str3,str3a,str3b,str4,str5,str5a,str5b,str6,str7,str7a,str7b,str8;
       ConfigFlag config_flag;
       list<tuple<String,String>> topics;
 
@@ -2080,19 +2080,39 @@ algorithm
 
     case {"optmodules"}
       equation
-        str1 = System.gettext("The --preOptModules flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a comma-separated list, where the valid modules are:");
+        // pre-optimization
+        str1 = System.gettext("The --preOptModules flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a comma-separated list.");
         str1 = stringAppendList(StringUtil.wordWrap(str1,System.getTerminalWidth(),"\n"));
+        CONFIG_FLAG(defaultValue=STRING_LIST_FLAG(data=data)) = PRE_OPT_MODULES;
+        str1a = System.gettext("The modules used by default are:") + "\n--preOptModules=" + stringDelimitList(data, ",");
+        str1b = System.gettext("The valid modules are:");
         str2 = printFlagValidOptionsDesc(PRE_OPT_MODULES);
-        str3 = System.gettext("The --matchingAlgorithm sets the method that is used for the matching algorithm, after the pre optimization modules. Valid options are:");
+
+        // matching
+        str3 = System.gettext("The --matchingAlgorithm sets the method that is used for the matching algorithm, after the pre optimization modules.");
         str3 = stringAppendList(StringUtil.wordWrap(str3,System.getTerminalWidth(),"\n"));
+        CONFIG_FLAG(defaultValue=STRING_FLAG(data=str3a)) = MATCHING_ALGORITHM;
+        str3a = System.gettext("The method used by default is:") + "\n--matchingAlgorithm=" + str3a;
+        str3b = System.gettext("The valid methods are:");
         str4 = printFlagValidOptionsDesc(MATCHING_ALGORITHM);
-        str5 = System.gettext("The --indexReductionMethod sets the method that is used for the index reduction, after the pre optimization modules. Valid options are:");
+
+        // index reduction
+        str5 = System.gettext("The --indexReductionMethod sets the method that is used for the index reduction, after the pre optimization modules.");
         str5 = stringAppendList(StringUtil.wordWrap(str5,System.getTerminalWidth(),"\n"));
+        CONFIG_FLAG(defaultValue=STRING_FLAG(data=str5a)) = INDEX_REDUCTION_METHOD;
+        str5a = System.gettext("The method used by default is:") + "\n--indexReductionMethod=" + str5a;
+        str5b = System.gettext("The valid methods are:");
         str6 = printFlagValidOptionsDesc(INDEX_REDUCTION_METHOD);
-        str7 = System.gettext("The --postOptModules then sets the optimization modules which are used after the index reduction, specified as a comma-separated list. The valid modules are:");
+
+        // post-optimization
+        str7 = System.gettext("The --postOptModules then sets the optimization modules which are used after the index reduction, specified as a comma-separated list.");
         str7 = stringAppendList(StringUtil.wordWrap(str7,System.getTerminalWidth(),"\n"));
+        CONFIG_FLAG(defaultValue=STRING_LIST_FLAG(data=data)) = POST_OPT_MODULES;
+        str7a = System.gettext("The modules used by default are:") + "\n--postOptModules=" + stringDelimitList(data, ",");
+        str7b = System.gettext("The valid modules are:");
         str8 = printFlagValidOptionsDesc(POST_OPT_MODULES);
-        help = stringAppendList({str1,"\n\n",str2,"\n",str3,"\n\n",str4,"\n",str5,"\n\n",str6,"\n",str7,"\n\n",str8,"\n"});
+
+        help = stringAppendList({str1,"\n\n",str1a,"\n\n",str1b,"\n",str2,"\n",str3,"\n\n",str3a,"\n\n",str3b,"\n",str4,"\n",str5,"\n\n",str5a,"\n\n",str5b,"\n",str6,"\n",str7,"\n\n",str7a,"\n\n",str7b,"\n",str8,"\n"});
       then help;
 
     case {str}
@@ -2412,7 +2432,7 @@ algorithm
     case REAL_FLAG() then System.gettext("Real (default")+" ``" + realString(flag.data) + "``).";
     case STRING_FLAG("") then System.gettext("String (default *empty*).");
     case STRING_FLAG() then System.gettext("String (default")+" " + flag.data + ").";
-    case STRING_LIST_FLAG() then System.gettext("String list (default *empty*).");
+    case STRING_LIST_FLAG(data={}) then System.gettext("String list (default *empty*).");
     case STRING_LIST_FLAG() then System.gettext("String list (default")+" " + stringDelimitList(flag.data, ",") + ").";
     case ENUM_FLAG()
       algorithm

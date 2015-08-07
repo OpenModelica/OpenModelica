@@ -596,8 +596,8 @@ algorithm
   if Config.simulationCg() then
     info := BackendDAE.EXTRA_INFO(DAEUtil.daeDescription(dae), Absyn.pathString(inClassName));
     dlow := BackendDAECreate.lower(dae, inCache, inEnv, info);
-    dlow := BackendDAEUtil.getSolvedSystem(dlow,"");
-    simcodegen(dlow, inClassName, ap, dae);
+    dlow := BackendDAEUtil.getSolvedSystem(dlow, "");
+    simcodegen(dlow, inClassName, ap);
   end if;
 end optimizeDae;
 
@@ -606,7 +606,6 @@ protected function simcodegen "
   input BackendDAE.BackendDAE inBackendDAE;
   input Absyn.Path inClassName;
   input Absyn.Program inProgram;
-  input DAE.DAElist inDAE;
 protected
   String cname;
   SimCode.SimulationSettings sim_settings;
@@ -624,8 +623,7 @@ algorithm
       SimCodeMain.createSimulationSettings(0.0, 1.0, 500, 1e-6, "dassl", "", "mat", ".*", "");
 
     System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND); // Is this necessary?
-    SimCodeMain.generateModelCode(inBackendDAE, inProgram, inDAE, inClassName,
-      cname, SOME(sim_settings), Absyn.FUNCTIONARGS({}, {}));
+    SimCodeMain.generateModelCode(inBackendDAE, inProgram, inClassName, cname, SOME(sim_settings), Absyn.FUNCTIONARGS({}, {}));
     SimCodeFunctionUtil.execStat("Codegen Done");
   end if;
 end simcodegen;

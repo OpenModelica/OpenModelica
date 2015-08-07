@@ -89,6 +89,14 @@ BOOST_EXTENSION_EXPORT_DECL  char* ModelicaAllocateString(size_t len);
  */
 BOOST_EXTENSION_EXPORT_DECL char* ModelicaAllocateStringWithErrorReturn(size_t len);
 
+/**
+ * \brief Free memory allocated by ModelicaAllocateString or
+ * ModelicaAllocateStringWithErrorReturn.
+ * This function is intended for internal use by the Cpp runtime.
+ *
+ * @param str C string
+ */
+BOOST_EXTENSION_EXPORT_DECL void _ModelicaFreeStringIfAllocated(const char *str);
 
 #ifdef __cplusplus
 }

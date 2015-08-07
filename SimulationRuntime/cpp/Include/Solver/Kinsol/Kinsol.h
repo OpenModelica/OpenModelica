@@ -55,19 +55,22 @@ private:
 
   bool
     _firstCall;           ///< Temp   - Denotes the first call to the solver, init() is called
-  long int * _ihelpArray;
+  long int *_ihelpArray,
+	  *_jhelpArray;
+
   double
-    *_y,                  ///< Temp   - Unknowns
-    *_f,                  ///< Temp   - Residuals
-    *_helpArray,
-    *_y0,                 ///< Temp   - Auxillary variables
-    *_yScale,             ///< Temp   - Auxillary variables
-    *_fScale,             ///< Temp   - Auxillary variables
-    *_jac,
-    *_yHelp,              ///< Temp   - Auxillary variables
-    *_fHelp,              ///< Temp   - Auxillary variables
-    *_zeroVec,
-    *_currentIterate;
+	  *_y,                  ///< Temp   - Unknowns
+	  *_f,                  ///< Temp   - Residuals
+	  *_helpArray,
+	  *_y0,                 ///< Temp   - Auxillary variables
+	  *_yScale,             ///< Temp   - Auxillary variables
+	  *_fScale,             ///< Temp   - Auxillary variables
+	  *_jac,
+	  *_yHelp,              ///< Temp   - Auxillary variables
+	  *_fHelp,              ///< Temp   - Auxillary variables
+	  *_zeroVec,
+	  *_currentIterate,
+	  *_scale;
 
   double
     _fnormtol,
@@ -86,8 +89,12 @@ private:
   bool
     _eventRetry,
     _fValid,
+
 	_usedCompletePivoting,
-	_usedIterativeSolver;
+	_usedIterativeSolver,
+
+    _solverErrorNotificationGiven;
+
 
   realtype _fnorm,
     _currentIterateNorm;

@@ -128,20 +128,6 @@ algorithm
   end matchcontinue;
 end loadClass;
 
-protected function existRegularFile
-"Checks if a file exists"
-  input String filename;
-algorithm
-  true := System.regularFileExists(filename);
-end existRegularFile;
-
-public function existDirectoryFile
-"Checks if a directory exist"
-  input String filename;
-algorithm
-  true := System.directoryExists(filename);
-end existDirectoryFile;
-
 protected function loadClassFromMps
 "Loads a class or classes from a set of paths in OPENMODELICALIBRARY"
   input String id;
@@ -272,7 +258,10 @@ algorithm
         mp_1 = stringAppendList({mp,pd,pack});
         packagefile = stringAppendList({mp_1,pd,"package.mo"});
         orderfile = stringAppendList({mp_1,pd,"package.order"});
-        existRegularFile(packagefile);
+        if not System.regularFileExists(packagefile) then
+          Error.addInternalError("Expected file " + packagefile + " to exist", sourceInfo());
+          fail();
+        end if;
         // print("Look for " + packagefile + "\n");
         (cl as Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info)) = parsePackageFile(packagefile, strategy, true, within_, id);
         // print("Got " + packagefile + "\n");
@@ -347,14 +336,16 @@ algorithm
         pd = System.pathDelimiter();
         file = mp + pd + id + "/package.mo";
         bDirectoryAndFileExists = System.directoryExists(mp + pd + id) and System.regularFileExists(file);
-        if (bDirectoryAndFileExists)
-        then
+        if bDirectoryAndFileExists then
           cl = loadCompletePackageFromMp(id,id,mp,strategy,w1,Error.getNumErrorMessages());
           ei = Absyn.makeClassElement(cl);
           cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
         else
           file = mp + pd + id + ".mo";
-          true = System.regularFileExists(file);
+          if not System.regularFileExists(file) then
+            Error.addInternalError("Expected file " + file + " to exist", sourceInfo());
+            fail();
+          end if;
           cl = parsePackageFile(file, strategy, false, w1, id);
           ei = Absyn.makeClassElement(cl);
           cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
@@ -383,14 +374,24 @@ algorithm
   Absyn.PROGRAM(cs,w2) := getProgramFromStrategy(name, strategy);
   classNames := List.map(cs, Absyn.getClassName);
   str := stringDelimitList(classNames,", ");
-  Error.assertionOrAddSourceMessage(listLength(cs)==1, Error.LIBRARY_ONE_PACKAGE_PER_FILE, {str}, SOURCEINFO(name,true,0,0,0,0,0.0));
-  cl::{} := cs;
-  Absyn.CLASS(name=cname,body=body,info=info) := cl;
-  Error.assertionOrAddSourceMessage(stringEqual(cname,pack), Error.LIBRARY_UNEXPECTED_NAME, {pack,cname}, info);
+  if not listLength(cs)==1 then
+    Error.addSourceMessage(Error.LIBRARY_ONE_PACKAGE_PER_FILE, {str}, SOURCEINFO(name,true,0,0,0,0,0.0));
+    fail();
+  end if;
+  (cl as Absyn.CLASS(name=cname,body=body,info=info))::{} := cs;
+  if not stringEqual(cname,pack) then
+    Error.addSourceMessage(Error.LIBRARY_UNEXPECTED_NAME, {pack,cname}, info);
+    fail();
+  end if;
   s1 := Absyn.withinString(w1);
   s2 := Absyn.withinString(w2);
-  Error.assertionOrAddSourceMessage(Absyn.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.MODELICA_2_X()), Error.LIBRARY_UNEXPECTED_WITHIN, {s1,s2}, info);
-  Error.assertionOrAddSourceMessage((not expectPackage) or Absyn.isParts(body), Error.LIBRARY_EXPECTED_PARTS, {pack}, info);
+  if not (Absyn.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.MODELICA_2_X())) then
+    Error.addSourceMessage(Error.LIBRARY_UNEXPECTED_WITHIN, {s1,s2}, info);
+    fail();
+  elseif expectPackage and not Absyn.isParts(body) then
+    Error.addSourceMessage(Error.LIBRARY_EXPECTED_PARTS, {pack}, info);
+    fail();
+  end if;
 end parsePackageFile;
 
 protected function getBothPackageAndFilename

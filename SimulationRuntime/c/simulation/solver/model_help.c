@@ -56,7 +56,7 @@ static double tolZC;
 /*! \fn updateDiscreteSystem
  *
  *  Function to update the whole system with event iteration.
- *  Evaluate the functionDAE()
+ *  Evaluates functionDAE()
  *
  *  \param [ref] [data]
  */
@@ -74,16 +74,12 @@ void updateDiscreteSystem(DATA *data)
   updateRelationsPre(data);
   storeRelations(data);
 
-  /* should we print the relations before functionDAE?
-   * printRelations(data, LOG_EVENTS_V);
-   */
-
   data->callback->functionDAE(data);
   debugStreamPrint(LOG_EVENTS_V, 0, "updated discrete System");
 
   relationChanged = checkRelations(data);
   discreteChanged = data->callback->checkForDiscreteChanges(data);
-  while(!data->simulationInfo.initial && (discreteChanged || data->simulationInfo.needToIterate || relationChanged))
+  while(discreteChanged || data->simulationInfo.needToIterate || relationChanged)
   {
     if(data->simulationInfo.needToIterate)
       debugStreamPrint(LOG_EVENTS_V, 0, "reinit() call. Iteration needed!");
@@ -114,7 +110,7 @@ void updateDiscreteSystem(DATA *data)
 
 /*! \fn saveZeroCrossings
  *
- * Function saves all ZeroCrossing Values
+ * Function saves all zero-crossing values
  *
  *  \param [ref] [data]
  */
@@ -123,7 +119,7 @@ void saveZeroCrossings(DATA* data)
   TRACE_PUSH
   long i = 0;
 
-  debugStreamPrint(LOG_ZEROCROSSINGS, 0, "save all zerocrossings");
+  debugStreamPrint(LOG_ZEROCROSSINGS, 0, "save all zero-crossings");
 
   for(i=0;i<data->modelData.nZeroCrossings;i++)
     data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
@@ -351,9 +347,8 @@ void printSparseStructure(DATA *data, int stream)
   /* Will crash with a static size array */
   char *buffer = NULL;
 
-  if (!ACTIVE_STREAM(stream)) {
+  if (!ACTIVE_STREAM(stream))
     return;
-  }
 
   buffer = (char*)GC_malloc(sizeof(char)* 2*data->simulationInfo.analyticJacobians[index].sizeCols + 4);
 
@@ -382,7 +377,9 @@ void printSparseStructure(DATA *data, int stream)
       {
         buffer[j++] = '*';
         ++i;
-      } else {
+      }
+      else
+      {
         buffer[j++] = ' ';
       }
       buffer[j++] = ' ';
@@ -688,7 +685,7 @@ void setAllParamsToStart(DATA *data)
 
 /*! \fn storeOldValues
  *
- *  This function copys states and time into their old-values for event handling.
+ *  This function copies states and time into their old-values for event handling.
  *
  *  \param [ref] [data]
  *
@@ -712,7 +709,7 @@ void storeOldValues(DATA *data)
 
 /*! \fn restoreOldValues
  *
- *  This function copys old-values to currenct localData
+ *  This function copies old-values to current localData
  *
  *  \param [ref] [data]
  *
@@ -736,7 +733,7 @@ void restoreOldValues(DATA *data)
 
 /*! \fn storePreValues
  *
- *  This function copys all the values into their pre-values.
+ *  This function copies all the values into their pre-values.
  *
  *  \param [ref] [data]
  *
@@ -854,7 +851,7 @@ void initializeDataStruc(DATA *data)
   data->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
   if(!data->simulationData)
   {
-    throwStreamPrint(data->threadData, "Your memory is not strong enough for our Ringbuffer!");
+    throwStreamPrint(data->threadData, "Your memory is not strong enough for our ringbuffer!");
   }
 
   /* prepare RingBuffer */
@@ -1003,9 +1000,8 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.delayStructure = (RINGBUFFER**)malloc(data->modelData.nDelayExpressions * sizeof(RINGBUFFER*));
   assertStreamPrint(data->threadData, 0 != data->simulationInfo.delayStructure, "out of memory");
 
-  for(i=0; i<data->modelData.nDelayExpressions; i++) {
+  for(i=0; i<data->modelData.nDelayExpressions; i++)
     data->simulationInfo.delayStructure[i] = allocRingBuffer(1024, sizeof(TIME_AND_VALUE));
-  }
 
   TRACE_POP
 }
@@ -1022,7 +1018,7 @@ void deInitializeDataStruc(DATA *data)
   TRACE_PUSH
   size_t i = 0;
 
-  /* prepair RingBuffer */
+  /* prepare RingBuffer */
   for(i=0; i<SIZERINGBUFFER; i++)
   {
     SIMULATION_DATA* tmpSimData = (SIMULATION_DATA*) data->localData[i];
@@ -1036,9 +1032,8 @@ void deInitializeDataStruc(DATA *data)
   freeRingBuffer(data->simulationData);
 
   /* free modelData var arrays */
-  for(i=0; i < data->modelData.nVariablesReal;i++) {
+  for(i=0; i < data->modelData.nVariablesReal;i++)
     freeVarInfo(&((data->modelData.realVarsData[i]).info));
-  }
   GC_free(data->modelData.realVarsData);
 
   for(i=0; i < data->modelData.nVariablesInteger;i++)
@@ -1053,7 +1048,7 @@ void deInitializeDataStruc(DATA *data)
     freeVarInfo(&((data->modelData.stringVarsData[i]).info));
   GC_free(data->modelData.stringVarsData);
 
-  /* free modelica parameter static data */
+  /* free Modelica parameter static data */
   for(i=0; i < data->modelData.nParametersReal;i++)
     freeVarInfo(&((data->modelData.realParameterData[i]).info));
   GC_free(data->modelData.realParameterData);

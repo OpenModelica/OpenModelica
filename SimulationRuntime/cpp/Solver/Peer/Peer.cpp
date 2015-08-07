@@ -1,11 +1,24 @@
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
-#include <Solver/Peer/Peer.h>
+#include <Core/Modelica.h>
+
 #include <Core/Math/Functions.h>
+#include <Core/Math/ILapack.h>
+#include <Solver/Peer/Peer.h>
+
+#if defined(USE_MPI) || defined(USE_OPENMP)
+
+#ifdef MPIPEER
+#include "mpi.h"
+#else
+#include "omp.h"
+#endif
 
 Peer::Peer(IMixedSystem* system, ISolverSettings* settings)
     : SolverDefaultImplementation(system, settings),
-      _peersettings(dynamic_cast<ISolverSettings*>(_settings))
+      _peersettings(dynamic_cast<ISolverSettings*>(_settings)),
+      _h(2e-2),
+      _continuous_system(),
+      _time_system()
 /*      _cvodeMem(NULL),
       _z(NULL),
       _zInit(NULL),
@@ -36,444 +49,460 @@ Peer::Peer(IMixedSystem* system, ISolverSettings* settings)
 
 Peer::~Peer()
 {
-  /*
-  if (_z)
-    delete[] _z;
-  if (_zInit)
-    delete[] _zInit;
-  if (_zeroSign)
-    delete[] _zeroSign;
-  if (_absTol)
-    delete[] _absTol;
-  if (_zWrite)
-      delete[] _zWrite;
-  if (_cvode_initialized)
+  if (_G)
+    delete [] _G;
+  if (_E)
+    delete [] _E;
+  if (_Theta)
+    delete [] _Theta;
+  if (_c)
+    delete [] _c;
+  if (_F)
+    delete [] _F;
+  if (_Y1)
+    delete [] _Y1;
+  if (_Y2)
+    delete [] _Y2;
+  if (_Y3)
+    delete [] _Y3;
+  if (_T)
+    delete [] _T;
+  if (_P)
+    delete [] _P;
+  if (_y)
+    delete [] _y;
+
+#ifndef MPIPEER
+  for(int i = 1; i < 5; i++)
   {
-    N_VDestroy_Serial(_CV_y0);
-    N_VDestroy_Serial(_CV_y);
-    N_VDestroy_Serial(_CV_yWrite);
-    N_VDestroy_Serial(_CV_absTol);
-    CVodeFree(&_cvodeMem);
-  }
-
-
-  if (_sparsePattern_index)
-    delete [] _sparsePattern_leadindex;
-  if (_sparsePattern_colorCols)
-    delete [] _sparsePattern_colorCols;
-  if(_sparsePattern_index)
-    delete [] _sparsePattern_index;
-  if(_delta)
-    delete [] _delta;
-  if(_ysave)
-    delete [] _ysave; */
-
+    delete _continuous_system[i];
+    _continuous_system[i] = NULL;
+    _time_system[i] = NULL;
+    }
+#endif
 }
 
 void Peer::initialize()
 {
-  /*
-  _properties = dynamic_cast<ISystemProperties*>(_system);
-  _continuous_system = dynamic_cast<IContinuous*>(_system);
-  _event_system = dynamic_cast<IEvent*>(_system);
-  _mixed_system = dynamic_cast<IMixedSystem*>(_system);
-  _time_system = dynamic_cast<ITime*>(_system);
-  IGlobalSettings* global_settings = dynamic_cast<ISolverSettings*>(_cvodesettings)->getGlobalSettings();
-  // Kennzeichnung, dass initialize()() (vor der Integration) aufgerufen wurde
-  _idid = 5000;
-  _tLastEvent = 0.0;
-  _event_n = 0;
-  SolverDefaultImplementation::initialize();
-  _dimSys = _continuous_system->getDimContinuousStates();
-  _dimZeroFunc = _event_system->getDimZeroFunc();
-
-  if (_dimSys <= 0)
-  {
-    _idid = -1;
-    throw ModelicaSimulationError(SOLVER,"Peer::initialize()");
-  }
-  else
-  {
-    // Allocate state vectors, stages and temporary arrays
-    if (_z)
-      delete[] _z;
-    if (_zInit)
-      delete[] _zInit;
-    if (_zWrite)
-      delete[] _zWrite;
-    if (_zeroSign)
-      delete[] _zeroSign;
-    if (_absTol)
-      delete[] _absTol;
-  if(_delta)
-    delete [] _delta;
-    if(_ysave)
-    delete [] _ysave;
-
-    _z = new double[_dimSys];
-    _zInit = new double[_dimSys];
-    _zWrite = new double[_dimSys];
-    _zeroSign = new int[_dimZeroFunc];
-    _absTol = new double[_dimSys];
-  _delta =new double[_dimSys];
-  _ysave =new double[_dimSys];
-
-    memset(_z, 0, _dimSys * sizeof(double));
-    memset(_zInit, 0, _dimSys * sizeof(double));
-  memset(_ysave, 0, _dimSys * sizeof(double));
-
-    // Counter initialisieren
-    _outStps = 0;
-
-    if (_cvodesettings->getDenseOutput())
-    {
-      // Ausgabeschrittweite
-      _hOut = global_settings->gethOutput();
-
+    IContinuous *continuous_system = dynamic_cast<IContinuous*>(_system);
+    ITime *time_system =  dynamic_cast<ITime*>(_system);
+#ifdef MPIPEER
+    MPI_Comm_size(MPI_COMM_WORLD, &_size);
+    if(_size>=5) {
+        _size=5;
+    } else {
+        throw ModelicaSimulationError(SOLVER,"Peer::MPI initialization error");
     }
+    MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
 
-    // Allocate memory for the solver
-    _cvodeMem = CVodeCreate(CV_BDF, CV_NEWTON);
-    if (check_flag((void*) _cvodeMem, "CVodeCreate", 0))
+    for(int i = 0; i < 5; i++)
     {
-      _idid = -5;
-      throw ModelicaSimulationError(SOLVER,"Peer::initialize()");
+        _continuous_system[i] = continuous_system;
+        _time_system[i] = time_system;
     }
+#else
+    _time_system[0] = time_system;
+    _continuous_system[0] = continuous_system;
 
-    //
-    // Make Peer ready for integration
-    //
-
-    // Set initial values for CVODE
-    _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
-    _continuous_system->getContinuousStates(_zInit);
-    memcpy(_z, _zInit, _dimSys * sizeof(double));
-
-    // Get nominal values
-    _continuous_system->getNominalStates(_absTol);
-    for (int i = 0; i < _dimSys; i++)
-      _absTol[i] *= dynamic_cast<ISolverSettings*>(_cvodesettings)->getATol();
-
-    _CV_y0 = N_VMake_Serial(_dimSys, _zInit);
-    _CV_y = N_VMake_Serial(_dimSys, _z);
-    _CV_yWrite = N_VMake_Serial(_dimSys, _zWrite);
-    _CV_absTol = N_VMake_Serial(_dimSys, _absTol);
-
-    if (check_flag((void*) _CV_y0, "N_VMake_Serial", 0))
+    for(int i = 1; i < 5; i++)
     {
-      _idid = -5;
-      throw ModelicaSimulationError(SOLVER,"Peer::initialize()");
+        IMixedSystem* clonedSystem = _system->clone();
+        _continuous_system[i] = dynamic_cast<IContinuous*>(clonedSystem);
+        _time_system[i] = dynamic_cast<ITime*>(clonedSystem);
+        dynamic_cast<ISystemInitialization*>(clonedSystem)->initialize();
     }
+#endif //MPIPEER
+    SolverDefaultImplementation::initialize();
+    _dimSys = _continuous_system[0]->getDimContinuousStates();
+    _rstages = 5;
 
-    // Initialize Peer (Initial values are required)
-    _idid = CVodeInit(_cvodeMem, CV_fCallback, _tCurrent, _CV_y0);
-    if (_idid < 0)
+    _G=new double[5];
+    _G[0]=0.0681;
+    _G[1]=0.1855545484594073;
+    _G[2]=0.3756;
+    _G[3]=0.5656454515405926;
+    _G[4]=0.6831;
+
+    _E=new double[25];
+    _E[0]=-4.73606797749979e+00;
+    _E[1]=6.85410196624968e+00;
+    _E[2]=-3.23606797749979e+00;
+    _E[3]=1.61803398874989e+00;
+    _E[4]=-0.5;
+    _E[5]=-1;
+    _E[6]=-4.27050983124845e-01;
+    _E[7]=2.;
+    _E[8]=-8.09016994374946e-01;
+    _E[9]=2.36067977499789e-01;
+    _E[10]=3.09016994374947e-01;
+    _E[11]=-1.30901699437495e+00;
+    _E[12]=2.69090356243347e-15;
+    _E[13]=1.30901699437495e+00;
+    _E[14]=-3.09016994374947e-01;
+    _E[15]=-2.36067977499789e-01;
+    _E[16]=8.09016994374947e-01;
+    _E[17]=-2.;
+    _E[18]=4.27050983124842e-01;
+    _E[19]=1.;
+    _E[20]=0.5;
+    _E[21]=-1.61803398874990e+00;
+    _E[22]=3.23606797749979e+00;
+    _E[23]=-6.85410196624968e+00;
+    _E[24]=4.73606797749979e+00;
+
+    _Theta=new double[25];
+    _Theta[0]=0.;
+    _Theta[1]=0.;
+    _Theta[2]=1.;
+    _Theta[3]=0.;
+    _Theta[4]=0.;
+    _Theta[5]=0.045084971874737;
+    _Theta[6]=-0.163118960624632;
+    _Theta[7]=0.527864045000421;
+    _Theta[8]=0.690983005625053;
+    _Theta[9]=-0.100813061875578;
+    _Theta[10]=0.;
+    _Theta[11]=0.;
+    _Theta[12]=0.;
+    _Theta[13]=0.;
+    _Theta[14]=1.;
+    _Theta[15]=1.809016994374949;
+    _Theta[16]=-5.545084971874742;
+    _Theta[17]=9.472135954999576;
+    _Theta[18]=-12.399186938124409;
+    _Theta[19]=7.663118960624626;
+    _Theta[20]=5.854101966249686;
+    _Theta[21]=-17.562305898749063;
+    _Theta[22]=28.416407864998732;
+    _Theta[23]=-33.270509831248397;
+    _Theta[24]=17.562305898749038;
+
+    _c=new double[5];
+    _c[0]=-1.;
+    _c[1]=-6.18033988749895e-01;
+    _c[2]=0.;
+    _c[3]=6.18033988749895e-01;
+    _c[4]=1.;
+
+    _h = std::max(std::min(_h, _peersettings->getUpperLimit()), _peersettings->getLowerLimit());
+    _y = new double[_dimSys];
+
+#ifdef MPIPEER
+    _F=new double[_dimSys];
+    _T=new double[_dimSys*_dimSys];
+    _P=new long int[_dimSys];
+    if(_rank==0) {
+        _Y1=new double[_dimSys*_rstages];
+        _Y2=new double[_dimSys*_rstages];
+        _Y3=new double[_dimSys*_rstages];
+    } else {
+        _Y1=new double[_dimSys];
+        _Y2=new double[_dimSys];
+        _Y3=new double[_dimSys];
+    }
+#else
+    _F=new double[_dimSys*5];
+    _T=new double[_dimSys*_dimSys*5];
+    _P=new long int[_dimSys*5];
+    _Y1=new double[_dimSys*_rstages];
+    _Y2=new double[_dimSys*_rstages];
+    _Y3=new double[_dimSys*_rstages];
+#endif
+
+    _continuous_system[0]->evaluateAll(IContinuous::ALL);
+    _continuous_system[0]->getContinuousStates(_y);
+}
+
+void Peer::evalJ(const double& t, const double* y, double* T, IContinuous *continuousSystem, ITime *timeSystem, double factor)
+{
+    double* f=new double[_dimSys];
+    double* fh=new double[_dimSys];
+    double* z=new double[_dimSys];
+    std::copy(y,y+_dimSys,z);
+    evalF(t, z, f, continuousSystem, timeSystem);
+    for(int j=0; j<_dimSys; ++j)
     {
-      _idid = -5;
-      throw ModelicaSimulationError(SOLVER,"Peer::initialize()");
+        // reset m_pYhelp for every colum
+
+        z[j] += 1e-8;
+
+        // delta_f berechnen
+        evalF(t, z, fh, continuousSystem, timeSystem);
+
+        // Jacobimatrix aufbauen
+        for(int i=0; i<_dimSys; ++i)
+        {
+            T[i+j*_dimSys] = factor*(fh[i] - f[i]) / 1e-8;
+        }
+        z[j] -= 1e-8;
     }
+    delete [] f;
+    delete [] fh;
+    delete [] z;
+}
 
-    // Set Tolerances
-    _idid = CVodeSVtolerances(_cvodeMem, dynamic_cast<ISolverSettings*>(_cvodesettings)->getRTol(), _CV_absTol);    // RTOL and ATOL
-    if (_idid < 0)
-      throw ModelicaSimulationError(SOLVER,"CVode::initialize()");
-
-    // Set the pointer to user-defined data
-    _idid = CVodeSetUserData(_cvodeMem, _data);
-    if (_idid < 0)
-      throw ModelicaSimulationError(SOLVER,"Peer::initialize()");
-
-    _idid = CVodeSetInitStep(_cvodeMem, 1e-6);    // INITIAL STEPSIZE
-    if (_idid < 0)
-      throw ModelicaSimulationError(SOLVER,"Peer::initialize()");
-
-    _idid = CVodeSetMaxOrd(_cvodeMem, 5);       // Max Order
-    if (_idid < 0)
-      throw ModelicaSimulationError(SOLVER,"CVoder::initialize()");
-
-    _idid = CVodeSetMaxConvFails(_cvodeMem, 100);       // Maximale Fehler im Konvergenztest
-    if (_idid < 0)
-      throw ModelicaSimulationError(SOLVER,"CVoder::initialize()");
-
-    _idid = CVodeSetStabLimDet(_cvodeMem, TRUE);       // Stability Detection
-    if (_idid < 0)
-      throw ModelicaSimulationError(SOLVER,"CVoder::initialize()");
-
-    _idid = CVodeSetMinStep(_cvodeMem, dynamic_cast<ISolverSettings*>(_cvodesettings)->getLowerLimit());       // MINIMUM STEPSIZE
-    if (_idid < 0)
-      throw ModelicaSimulationError(SOLVER,"CVode::initialize()");
-
-    _idid = CVodeSetMaxStep(_cvodeMem, global_settings->getEndTime() / 10.0);       // MAXIMUM STEPSIZE
-    if (_idid < 0)
-      throw ModelicaSimulationError(SOLVER,"CVode::initialize()");
-
-    _idid = CVodeSetMaxNonlinIters(_cvodeMem, 5);      // Max number of iterations
-    if (_idid < 0)
-      throw ModelicaSimulationError(SOLVER,"CVode::initialize()");
-    _idid = CVodeSetMaxErrTestFails(_cvodeMem, 100);
-    if (_idid < 0)
-      throw ModelicaSimulationError(SOLVER,"CVode::initialize()");
-
-    _idid = CVodeSetMaxNumSteps(_cvodeMem, 1e3);            // Max Number of steps
-    if (_idid < 0)
-      throw ModelicaSimulationError(SOLVER,"Peer::initialize()");
-
-    // Initialize linear solver
-  _idid = CVDense(_cvodeMem, _dimSys);
-    if (_idid < 0)
-      throw ModelicaSimulationError(SOLVER,"Peer::initialize()");
-
-  // Use own jacobian matrix
-  //_idid = CVDlsSetDenseJacFn(_cvodeMem, &CV_JCallback);
-  if (_idid < 0)
-      throw ModelicaSimulationError(SOLVER,"CVode::initialize()");
-
-    if (_dimZeroFunc)
+void Peer::evalD(const double& t, const double* y, double* T, IContinuous *continuousSystem, ITime *timeSystem)
+{
+    double* f=new double[_dimSys];
+    double* fh=new double[_dimSys];
+    evalF(t, y, f, continuousSystem, timeSystem);
+    evalF(t+1e-6,y,fh,continuousSystem, timeSystem);
+    for(int j=0; j<_dimSys; ++j)
     {
-      _idid = CVodeRootInit(_cvodeMem, _dimZeroFunc, &CV_ZerofCallback);
-
-      memset(_zeroSign, 0, _dimZeroFunc * sizeof(int));
-      _idid = CVodeSetRootDirection(_cvodeMem, _zeroSign);
-      if (_idid < 0)
-        throw ModelicaSimulationError(SOLVER,"CVode::initialize()");
-      memset(_zeroSign, -1, _dimZeroFunc * sizeof(int));
-      memset(_zeroVal, -1, _dimZeroFunc * sizeof(int));
-
+            T[j] = (fh[j] - f[j]) / 1e-6;
     }
+    delete [] f;
+    delete [] fh;
+}
 
-    initializeColoredJac();
-    _cvode_initialized = true;
+void Peer::evalF(const double& t, const double* z, double* f, IContinuous *continuousSystem, ITime *timeSystem)
+{
 
-    //
-    // CVODE is ready for integration
-    //
-    // BOOST_LOG_SEV(cvode_lg::get(), cvode_info) << "CVode initialized";
-  }
-  */
+    timeSystem->setTime(t);
+    continuousSystem->setContinuousStates(z);
+    continuousSystem->evaluateODE(IContinuous::ALL);    // vxworksupdate
+    continuousSystem->getRHS(f);
+}
+
+void Peer::ros2(double * y, double& tstart, double tend, IContinuous *continuousSystem, ITime *timeSystem) {
+    double *T=new double[_dimSys*_dimSys];
+    double *D=new double[_dimSys];
+    double *k1=new double[_dimSys];
+    double *k2=new double[_dimSys];
+    long int *P=new long int[_dimSys];
+    long int info;
+    long int dim=1;
+    double t=tstart;
+    const double gamma=1.-sqrt(2.)/2.;
+    char trans='N';
+    double hu=(tend-tstart)/10.;
+    for(int count=0; count<10; ++count) {
+        evalJ(t,y,T,continuousSystem, timeSystem,-hu*gamma);
+        for(int i=0; i<_dimSys;++ i) T[i*_dimSys+i]+=1.;
+        dgetrf_(&_dimSys, &_dimSys, T, &_dimSys, P, &info);
+        evalF(t,y,k1,continuousSystem, timeSystem);
+        evalD(t,y,D,continuousSystem, timeSystem);
+        for(int i=0; i<_dimSys;++ i) k1[i]+=gamma*hu*D[i];
+        dgetrs_(&trans, &_dimSys, &dim, T, &_dimSys, P, k1, &_dimSys, &info);
+        for(int i=0; i<_dimSys;++ i) y[i]+=hu*k1[i];
+        evalF(t,y,k2,continuousSystem, timeSystem);
+        for(int i=0; i<_dimSys;++ i)  k2[i]+= hu*gamma*D[i]-2.*k1[i];
+        dgetrs_(&trans, &_dimSys, &dim, T, &_dimSys, P, k2, &_dimSys, &info);
+        for(int i=0; i<_dimSys;++ i) y[i]+=0.5*hu*(k1[i]+k2[i]);
+    }
 }
 
 void Peer::solve(const SOLVERCALL action)
 {
-  std::cerr << "using Peer" << std::endl;
-  /*
-  bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == ALL);
-  bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == EMPTY2);
-
-  if (_cvodesettings && _system)
-  {
-    // Solver und System fÃ¼r Integration vorbereiten
-    if ((action & RECORDCALL) && (action & FIRST_CALL))
-    {
-      initialize();
-      if (writeOutput)
-        writeToFile(0, _tCurrent, _h);
-      _tLastWrite = 0;
-
-      return;
+    if ((action & RECORDCALL) && (action & FIRST_CALL)) {
+        initialize();
+        return;
     }
+    double t=_tCurrent;
+  // Initialization phase
 
-    if ((action & RECORDCALL) && !(action & FIRST_CALL))
+    _continuous_system[0]->evaluateAll(IContinuous::ALL);
+    SolverDefaultImplementation::writeToFile(0, t, _h);
+
+#ifdef MPIPEER
+    std::copy(_y,_y+_dimSys,_Y1);
+    if (abs(_c[_rank]+1.)>1e-12)
     {
-      writeToFile(_accStps, _tCurrent, _h);
-      return;
-    }
 
-    // Nach einem TimeEvent wird der neue Zustand recorded
-    if (action & RECALL)
+        ros2(_Y1,_tCurrent,_tCurrent+_h*(_c[_rank]+1.));
+        t=_tCurrent;
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+    if(_rank==0) {
+        MPI_Gather(MPI_IN_PLACE,_dimSys,MPI_DOUBLE,_Y1,_dimSys,MPI_DOUBLE,0,MPI_COMM_WORLD);
+    } else {
+        MPI_Gather(_Y1,_dimSys,MPI_DOUBLE,_Y1,_dimSys,MPI_DOUBLE,0,MPI_COMM_WORLD);
+    }
+    t+=_h;
+#else
+#pragma omp parallel for
+    for(int _rank=0; _rank<5; ++_rank) {
+        std::copy(_y,_y+_dimSys,&_Y1[_rank*_dimSys]);
+        if (abs(_c[_rank]+1.)>1e-12)
+        {
+            ros2(&_Y1[_rank*_dimSys],_tCurrent,_tCurrent+_h*(_c[_rank]+1.), _continuous_system[_rank], _time_system[_rank]);
+            t=_tCurrent;
+        }
+    }
+    t+=_h;
+    _time_system[0]->setTime(t);
+    _continuous_system[0]->setContinuousStates(&_Y1[2*_dimSys]);
+    _continuous_system[0]->evaluateAll(IContinuous::ALL);
+    SolverDefaultImplementation::writeToFile(0, t, _h);
+#endif
+
+
+
+//    std::cerr << "Finished init at rank  " << _rank<<std::endl;
+// Solution phase
+    t+=_h;
+    char trans='N';
+    long int dim=1;
+    while(std::abs(t-_tEnd)>1e-8)
     {
-      _firstStep = true;
-      if (writeEventOutput)
-        writeToFile(0, _tCurrent, _h);
-      if (writeOutput)
-        writeCVodeOutput(_tCurrent, _h, _locStps);
+#ifdef MPIPEER
+        if(_rank==0)
+        {
+            for(int i=0; i<_rstages; ++i)
+            {
+                for(int j=0; j<_dimSys; ++j) {
+                    _Y2[i*_dimSys+j]=0.;
+                    for(int k=0; k<_rstages;++k) {
+                        _Y2[i*_dimSys+j]+=_Y1[k*_dimSys+j]*_Theta[i*_rstages+k];
+                    }
+                }
+ //               Y2.vector(i)=Y1*mtl::vector::trans(Theta[i][iall]);
+            }
+            std::cout<<"_Y2 vals on rank "<<_rank<<": ";
+              for(int i=0; i<_rstages*_dimSys;++i) {
+                  if(!(i%20)) std::cout<<std::endl;
+                std::cout<<_Y2[i]<<" ";
+            }
+            std::cout<<std::endl;
+            for(int i=0; i<_rstages; i++)
+            {
+                 for(int j=0; j<_dimSys; ++j) {
+                    _Y3[i*_dimSys+j]=0.;
+                    for(int k=0; k<_rstages;++k) {
+                        _Y3[i*_dimSys+j]+=_Y2[k*_dimSys+j]*_E[i*_rstages+k];
+                    }
+                }
+//                Y3.vector(i)=Y2*mtl::vector::trans(E[i][iall]);
+            }
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+//        std::cerr << "Finished rank 0 calculation step at rank  " << _rank<<std::endl;
+        if(_rank==0) {
+            MPI_Scatter( _Y2,_dimSys,MPI_DOUBLE,MPI_IN_PLACE,_dimSys,MPI_DOUBLE,0,MPI_COMM_WORLD);
+            MPI_Scatter( _Y3,_dimSys,MPI_DOUBLE,MPI_IN_PLACE,_dimSys,MPI_DOUBLE,0,MPI_COMM_WORLD);
+        } else {
+            MPI_Scatter(_Y2,_dimSys,MPI_DOUBLE,_Y2,_dimSys,MPI_DOUBLE,0,MPI_COMM_WORLD);
+            MPI_Scatter(_Y3,_dimSys,MPI_DOUBLE,_Y3,_dimSys,MPI_DOUBLE,0,MPI_COMM_WORLD);
+        }
+
+        evalF(t+_c[_rank]*_h,_Y2,_F);
+        evalJ(t+_c[_rank]*_h,_Y2,_T);
+        if(_rank==0) {
+            std::cout<<"Jac: ";
+            for(int i(0); i<_dimSys*_dimSys;++i) {
+                if(!(i%20)) std::cout<<std::endl;
+                std::cout<<_T[i]<<" ";
+            }
+            std::cout<<std::endl;
+        }
+        for(int i=0; i<_dimSys; ++i) {
+            for(int j=0; j<_dimSys; ++j) {
+                _T[i*_dimSys+j]*=-_h*_G[_rank];
+            }
+            _T[i*_dimSys+i]+=1.;
+        }
+
+
+//        std::cerr << "Finished iteration matrix calculation step at rank  " << _rank<<std::endl;
+        dgetrf_(&_dimSys, &_dimSys, _T, &_dimSys, _P, &info);
+        for(int i=0; i<_dimSys; ++i) {
+            _F[i]*=_h;
+            _F[i]-=_Y3[i];
+            _F[i]*=_G[_rank];
+        }
+        dgetrs_(&trans, &_dimSys, &dim, _T, &_dimSys, _P, _F, &_dimSys, &info);
+        for(int i=0; i<_dimSys; ++i) {
+            _Y1[i]=_F[i]+_Y2[i];
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+        if(_rank==0) {
+            MPI_Gather(MPI_IN_PLACE,_dimSys,MPI_DOUBLE,_Y1,_dimSys,MPI_DOUBLE,0,MPI_COMM_WORLD);
+        } else {
+            MPI_Gather(_Y1,_dimSys,MPI_DOUBLE,_Y1,_dimSys,MPI_DOUBLE,0,MPI_COMM_WORLD);
+        }
+
+        if(t+_h>_tEnd) _h=_tEnd-t;
+        if(_rank==0) {
+            SolverDefaultImplementation::writeToFile(0, t, _h);
+        }
+        t+=_h;
+#else
+        for(int i=0; i<_rstages; ++i)
+        {
+            for(int j=0; j<_dimSys; ++j) {
+                _Y2[i*_dimSys+j]=0.;
+                    for(int k=0; k<_rstages;++k) {
+                        _Y2[i*_dimSys+j]+=_Y1[k*_dimSys+j]*_Theta[i*_rstages+k];
+                    }
+                }
+ //               Y2.vector(i)=Y1*mtl::vector::trans(Theta[i][iall]);
+            }
+            for(int i=0; i<_rstages; i++)
+            {
+                 for(int j=0; j<_dimSys; ++j) {
+                    _Y3[i*_dimSys+j]=0.;
+                    for(int k=0; k<_rstages;++k) {
+                        _Y3[i*_dimSys+j]+=_Y2[k*_dimSys+j]*_E[i*_rstages+k];
+                    }
+                }
+//                Y3.vector(i)=Y2*mtl::vector::trans(E[i][iall]);
+            }
+
+#pragma omp parallel for
+        for(int _rank=0; _rank<5; ++_rank) {
+            long int info;
+            evalF(t+_c[_rank]*_h,&_Y2[_rank*_dimSys],&_F[_rank*_dimSys],_continuous_system[_rank], _time_system[_rank]);
+            evalJ(t+_c[_rank]*_h,&_Y2[_rank*_dimSys],&_T[_rank*_dimSys*_dimSys], _continuous_system[_rank], _time_system[_rank]);
+            for(int i=0; i<_dimSys; ++i) {
+                for(int j=0; j<_dimSys; ++j) {
+                    _T[_rank*_dimSys*_dimSys+i*_dimSys+j]*=-_h*_G[_rank];
+                }
+                _T[_rank*_dimSys*_dimSys+i*_dimSys+i]+=1.;
+            }
+
+
+    //        std::cerr << "Finished iteration matrix calculation step at rank  " << _rank<<std::endl;
+            dgetrf_(&_dimSys, &_dimSys, &_T[_rank*_dimSys*_dimSys], &_dimSys, &_P[_rank*_dimSys], &info);
+            for(int i=0; i<_dimSys; ++i) {
+                _F[_rank*_dimSys+i]*=_h;
+                _F[_rank*_dimSys+i]-=_Y3[_rank*_dimSys+i];
+                _F[_rank*_dimSys+i]*=_G[_rank];
+            }
+            dgetrs_(&trans, &_dimSys, &dim, &_T[_rank*_dimSys*_dimSys], &_dimSys, &_P[_rank*_dimSys], &_F[_rank*_dimSys], &_dimSys, &info);
+            for(int i=0; i<_dimSys; ++i) {
+                _Y1[_rank*_dimSys+i]=_F[_rank*_dimSys+i]+_Y2[_rank*_dimSys+i];
+            }
+        }
+
+
+        if(t+_h>_tEnd) _h=_tEnd-t;
+        _time_system[0]->setTime(t);
+        _continuous_system[0]->setContinuousStates(&_Y1[2*_dimSys]);
+        _continuous_system[0]->evaluateAll(IContinuous::ALL);
+        SolverDefaultImplementation::writeToFile(0, t, _h);
+        t+=_h;
+#endif
+
     }
-
-    // Solver soll fortfahren
-    _solverStatus = ISolver::CONTINUE;
-
-    while (_solverStatus & ISolver::CONTINUE)
+#ifdef MPIPEER
+    MPI_Barrier(MPI_COMM_WORLD);
+    if(_rank==0)
     {
-      // Zuvor wurde initialize aufgerufen und hat funktioniert => RESET IDID
-      if (_idid == 5000)
-        _idid = 0;
-
-      // Solveraufruf
-      if (_idid == 0)
-      {
-        // ZÃ¤hler zurÃ¼cksetzen
-        _accStps = 0;
-        _locStps = 0;
-
-        // Solverstart
-        CVodeCore();
-
-      }
-
-      // Integration war nicht erfolgreich und wurde auch nicht vom User unterbrochen
-      if (_idid != 0 && _idid != 1)
-      {
-        _solverStatus = ISolver::SOLVERERROR;
-        //throw ModelicaSimulationError(SOLVER,_idid,_tCurrent,"CVode::solve()");
-        throw ModelicaSimulationError(SOLVER,"CVode::solve()");
-      }
-
-      // Abbruchkriterium (erreichen der Endzeit)
-      else if ((_tEnd - _tCurrent) <= dynamic_cast<ISolverSettings*>(_cvodesettings)->getEndTimeTol())
-        _solverStatus = DONE;
+        for(int i=0; i<_dimSys; i++) _y[i]=_Y1[(_rstages-1)*_dimSys+i];
     }
-
-    _firstCall = false;
-
-  }
-  else
-  {
-
-    throw ModelicaSimulationError(SOLVER,"CVode::solve()");
-  }
-  */
+    MPI_Bcast(_y, _dimSys, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+#else
+    for(int i=0; i<_dimSys; i++) _y[i]=_Y1[(_rstages-1)*_dimSys+i];
+#endif
+    _tCurrent=_tEnd;
+    _time_system[0]->setTime(_tCurrent);
+    _continuous_system[0]->setContinuousStates(&_Y1[4*_dimSys]);
+    _continuous_system[0]->evaluateAll(IContinuous::ALL);
+    SolverDefaultImplementation::writeToFile(0, t, _h);
+    _solverStatus = ISolver::DONE;
 }
 
-void Peer::PeerCore()
-{
-  /*
-  _idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
-  _idid = CVodeSetStopTime(_cvodeMem, _tEnd);
-  _idid = CVodeSetInitStep(_cvodeMem, 1e-12);
-  if (_idid < 0)
-    throw ModelicaSimulationError(SOLVER,"CVode::ReInit");
 
-  bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == ALL);
-  bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == EMPTY2);
-
-  while (_solverStatus & ISolver::CONTINUE)
-  {
-    _cv_rt = CVode(_cvodeMem, _tEnd, _CV_y, &_tCurrent, CV_ONE_STEP);
-
-    _idid = CVodeGetNumSteps(_cvodeMem, &_locStps);
-    if (_idid != CV_SUCCESS)
-      throw ModelicaSimulationError(SOLVER,"CVodeGetNumSteps failed. The cvode mem pointer is NULL");
-
-    _idid = CVodeGetLastStep(_cvodeMem, &_h);
-    if (_idid != CV_SUCCESS)
-      throw ModelicaSimulationError(SOLVER,"CVodeGetLastStep failed. The cvode mem pointer is NULL");
-
-    //Check if there was at least one output-point within the last solver interval
-    //  -> Write output if true
-    if (writeOutput)
-      writeCVodeOutput(_tCurrent, _h, _locStps);
-
-    //set completed step to system and check if terminate was called
-    if(_continuous_system->stepCompleted(_tCurrent))
-        _solverStatus = DONE;
-
-    // Perform state selection
-    bool state_selection = stateSelection();
-    if (state_selection)
-      _continuous_system->getContinuousStates(_z);
-
-    _zeroFound = false;
-
-    // Check if step was successful
-    if (check_flag(&_cv_rt, "CVode", 1))
-    {
-      _solverStatus = ISolver::SOLVERERROR;
-      break;
-    }
-
-    // A root was found
-    if ((_cv_rt == CV_ROOT_RETURN))
-    {
-      // CVode is setting _tCurrent to the time where the first event occurred
-      double _abs = fabs(_tLastEvent - _tCurrent);
-      _zeroFound = true;
-
-      if ((_abs < 1e-3) && _event_n == 0)
-      {
-        _tLastEvent = _tCurrent;
-        _event_n++;
-      }
-      else if ((_abs < 1e-3) && (_event_n >= 1 && _event_n < 500))
-      {
-        _event_n++;
-      }
-      else if ((_abs >= 1e-3))
-      {
-        //restart event counter
-        _tLastEvent = _tCurrent;
-        _event_n = 0;
-      }
-      else
-        throw ModelicaSimulationError(SOLVER,"Number of events exceeded  in time interval " + boost::lexical_cast<string>(_abs) + " at time " + boost::lexical_cast<string>(_tCurrent));
-
-      // CVode has interpolated the states at time 'tCurrent'
-      _time_system->setTime(_tCurrent);
-
-      // To get steep steps in the result file, two value points (P1 and P2) must be added
-      //
-      // Y |   (P2) X...........
-      //   |        :
-      //   |        :
-      //   |........X (P1)
-      //   |---------------------------------->
-      //   |        ^                         t
-      //        _tCurrent
-
-      // Write the values of (P1)
-      if (writeEventOutput)
-      {
-        _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
-        writeToFile(0, _tCurrent, _h);
-      }
-
-      _idid = CVodeGetRootInfo(_cvodeMem, _zeroSign);
-
-      for (int i = 0; i < _dimZeroFunc; i++)
-        _events[i] = bool(_zeroSign[i]);
-
-      if (_mixed_system->handleSystemEvents(_events))
-      {
-        // State variables were reinitialized, thus we have to give these values to the cvode-solver
-        // Take care about the memory regions, _z is the same like _CV_y
-        _continuous_system->getContinuousStates(_z);
-      }
-    }
-
-    if (_zeroFound || state_selection)
-    {
-      // Write the values of (P2)
-      if (writeEventOutput)
-      {
-        // If we want to write the event-results, we should evaluate the whole system again
-        _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
-        writeToFile(0, _tCurrent, _h);
-      }
-
-      _idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
-      if (_idid < 0)
-        throw ModelicaSimulationError(SOLVER,"CVode::ReInit()");
-
-      // Der Eventzeitpunkt kann auf der Endzeit liegen (Time-Events). In diesem Fall wird der Solver beendet, da CVode sonst eine interne Warnung schmeißt
-      if (_tCurrent == _tEnd)
-        _cv_rt = CV_TSTOP_RETURN;
-    }
-
-    // ZÃ¤hler fÃ¼r die Anzahl der ausgegebenen Schritte erhÃ¶hen
-    ++_outStps;
-    _tLastSuccess = _tCurrent;
-
-    if (_cv_rt == CV_TSTOP_RETURN)
-    {
-      _time_system->setTime(_tEnd);
-//      _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
-//      _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
-      if(writeOutput)
-        writeToFile(0, _tEnd, _h);
-      _accStps += _locStps;
-      _solverStatus = DONE;
-    }
-  }
-  */
-}
 
 void Peer::writePeerOutput(const double &time, const double &h, const int &stp)
 {
@@ -530,280 +559,7 @@ bool Peer::stateSelection()
 {
   return SolverDefaultImplementation::stateSelection();
 }
-int Peer::calcFunction(const double& time, const double* y, double* f)
-{
-  /*
-  MEASURETIME_REGION_DEFINE(cvodeCalcFunctionHandler, "CVodeCalcFunction");
 
-  if(MeasureTime::getInstance() != NULL)
-  {
-      MEASURETIME_START(measuredFunctionStartValues, cvodeCalcFunctionHandler, "CVodeCalcFunction");
-  }
-  int returnValue = 0;
-  try
-  {
-    _time_system->setTime(time);
-    _continuous_system->setContinuousStates(y);
-    _continuous_system->evaluateODE(IContinuous::CONTINUOUS);
-    _continuous_system->getRHS(f);
-  }      //workaround until exception can be catch from c- libraries
-  catch (std::exception& ex)
-  {
-    std::string error = ex.what();
-    cerr << "CVode integration error: " << error;
-    returnValue = 1;
-  }
-
-  if(MeasureTime::getInstance() != NULL)
-  {
-      MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[0], cvodeCalcFunctionHandler);
-  }
-  return returnValue;
-  */
-  return 0;
-}
-
-/*int Peer::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight, N_Vector jthCol, double* y, N_Vector fy, DlsMat Jac)
-{
-  try
-  {
-    int j,k,l;
-  double fnorm, minInc, *f_data, *fHelp_data, *errorWeight_data, h, srur, delta_inv;
-
-  f_data = NV_DATA_S(fy);
-  errorWeight_data = NV_DATA_S(errorWeight);
-  fHelp_data = NV_DATA_S(fHelp);
-
-
-  //Get relevant info
-  _idid = CVodeGetErrWeights(_cvodeMem, errorWeight);
-  if (_idid < 0)
-    {
-      _idid = -5;
-      throw ModelicaSimulationError(SOLVER,"Peer::calcJacobian()");
-  }
-  _idid = CVodeGetCurrentStep(_cvodeMem, &h);
-  if (_idid < 0)
-    {
-      _idid = -5;
-      throw ModelicaSimulationError(SOLVER,"Peer::calcJacobian()");
-  }
-
-  srur = sqrt(UROUND);
-
-  fnorm = N_VWrmsNorm(fy, errorWeight);
-  minInc = (fnorm != 0.0) ?
-           (1000.0 * abs(h) * UROUND * N * fnorm) : 1.0;
-
-  for(j=0;j<N;j++)
-  {
-    _delta[j] = max(srur*abs(y[j]), minInc/errorWeight_data[j]);
-  }
-
-  // Calculation of the jacobian
-  for(int i=0; i < _sparsePattern_maxColors; i++)
-  {
-    for(int ii=0; ii < _dimSys; ii++)
-    {
-      if((_sparsePattern_colorCols[ii] - 1) == i)
-      {
-        _ysave[ii] = y[ii];
-        y[ii]+= _delta[ii];
-      }
-
-    }
-
-    calcFunction(t, y, fHelp_data);
-
-    for(int ii = 0; ii < _dimSys; ii++)
-    {
-      if((_sparsePattern_colorCols[ii] - 1) == i)
-      {
-
-        y[ii] = _ysave[ii];
-
-        if(ii==0)
-        {
-          j = 0;
-        }
-        else
-        {
-          j = _sparsePattern_leadindex[ii-1];
-
-        }
-        while(j <_sparsePattern_leadindex[ii])
-        {
-          l = _sparsePattern_index[j];
-          k = l + ii * _dimSys;
-          //Jac->data[k] = (fHelp_data[l] - f_data[l])/_delta[l];
-          delta_inv = 1.0/_delta[ii];
-          Jac->data[k] = (fHelp_data[l] - f_data[l])*delta_inv;
-          j++;
-        }
-      }
-    }
-  }
-  */
-  /*
-  //Calculation of J without colouring
-   for (j = 0; j < N; j++)
-   {
-
-
-    //N_VSetArrayPointer(DENSE_COL(Jac,j), jthCol);
-
-     _ysave[j] = y[j];
-
-    y[j] += _delta[j];
-
-    calcFunction(t, y, fHelp_data);
-
-    y[j] = _ysave[j];
-
-    delta_inv = 1.0/_delta[j];
-    N_VLinearSum(delta_inv, fHelp, -delta_inv, fy, jthCol);
-
-    for(int i=0; i<_dimSys; ++i)
-        {
-            Jac->data[i+j*_dimSys] = NV_Ith_S(jthCol,i);
-        }
-
-    //DENSE_COL(Jac,j) = N_VGetArrayPointer(jthCol);
-  }
-  */
-/*
- }      //workaround until exception can be catch from c- libraries
-  catch (std::exception& ex)
-  {
-    std::string error = ex.what();
-    cerr << "CVode integration error: " << error;
-    return 1;
-  }
-
-
-  return 0;
-}*/
-
-void Peer::initializeColoredJac()
-{
-  /*
-  _sizeof_sparsePattern_colorCols = _system->getA_sizeof_sparsePattern_colorCols();
-  _sparsePattern_colorCols = new int[_sizeof_sparsePattern_colorCols];
-  _system->getA_sparsePattern_colorCols( _sparsePattern_colorCols, _sizeof_sparsePattern_colorCols);
-
-  _sizeof_sparsePattern_leadindex = _system->getA_sizeof_sparsePattern_leadindex();
-  _sparsePattern_leadindex = new int[_sizeof_sparsePattern_leadindex];
-  _system->getA_sparsePattern_leadindex( _sparsePattern_leadindex, _sizeof_sparsePattern_leadindex);
-
-
-  _sizeof_sparsePattern_index = _system->getA_sizeof_sparsePattern_index();
-  _sparsePattern_index = new int[_sizeof_sparsePattern_index];
-  _system->getA_sparsePattern_index( _sparsePattern_index, _sizeof_sparsePattern_index);
-
-
-  _sparsePattern_maxColors = _system->getA_sparsePattern_maxColors();
-  */
-}
-
-int Peer::reportErrorMessage(ostream& messageStream)
-{
-  /*
-  if (_solverStatus == ISolver::SOLVERERROR)
-  {
-    if (_idid == -1)
-      messageStream << "Invalid system dimension." << std::endl;
-    if (_idid == -2)
-      messageStream << "Method not implemented." << std::endl;
-    if (_idid == -3)
-      messageStream << "No valid system/settings available." << std::endl;
-    if (_idid == -11)
-      messageStream << "Step size too small." << std::endl;
-  }
-
-  else if (_solverStatus == ISolver::USER_STOP)
-  {
-    messageStream << "Simulation terminated by user at t: " << _tCurrent << std::endl;
-  }
-
-  return _idid;
-  */
-  return 0;
-}
-
-void Peer::writeSimulationInfo()
-{
-  /*
-#ifdef USE_BOOST_LOG
-  src::logger lg;
-
-  // Now, let's try logging with severity
-  src::severity_logger<cvodeseverity_level> slg;
-
-  long int nst, nfe, nsetups, nni, ncfn, netf;
-  long int nfQe, netfQ;
-  long int nfSe, nfeS, nsetupsS, nniS, ncfnS, netfS;
-  long int nfQSe, netfQS;
-
-  int qlast, qcur;
-  realtype h0u, hlast, hcur, tcur;
-
-  int flag;
-
-  flag = CVodeGetIntegratorStats(_cvodeMem, &nst, &nfe, &nsetups, &netf, &qlast, &qcur, &h0u, &hlast, &hcur, &tcur);
-
-  flag = CVodeGetNonlinSolvStats(_cvodeMem, &nni, &ncfn);
-
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Number steps: " << nst;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Function evaluations " << "f: " << nfe;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Error test failures " << "netf: " << netfS;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Linear solver setups " << "nsetups: " << nsetups;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Nonlinear iterations " << "nni: " << nni;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Convergence failures " << "ncfn: " << ncfn;
-
-#endif
-  //// Solver
-  //outputStream  << "\nSolver: " << getName()
-  //  << "\nVerfahren: ";
-  //if(_cvodesettings->iMethod == EulerSettings::EULERFORWARD)
-  //  outputStream << " Expliziter Peer\n\n";
-  //else if(_cvodesettings->iMethod == EulerSettings::EULERBACKWARD)
-  //  outputStream << " Impliziter Peer\n\n";
-
-  //// System
-  //outputStream
-  //  << "Dimension  des Systems (ODE):             " << (int)_dimSys << "\n";
-  //// Status, Anzahl Schritte, Nullstellenzeugs
-  //SolverDefaultImplementation::writeSimulationInfo(outputStream);
-
-  //// Nullstellensuche
-  //if (_cvodesettings->iZeroSearchMethod == SolverSettings::NO_ZERO_SEARCH)
-  //{
-  //  outputStream << "Nullstellensuche:                         Keine\n\n" << endl;
-  //}
-  //else
-  //{
-  //  if (_cvodesettings->iZeroSearchMethod == SolverSettings::BISECTION)
-  //  {
-  //  outputStream << "Nullstellensuche:                         Bisektion\n" << endl;
-  //  }
-  //  else
-  //  {
-  //  outputStream << "Nullstellensuche:                         Lineare Interpolation\n" << endl;
-  //  }
-
-  //}
-
-  //// Schritteweite
-  //outputStream
-  //  << "ausgegebene Schritte:                     " << _outStps << "\n"
-  //  << "Anfangsschrittweite:                      " << _cvodesettings->dH_init << "\n"
-  //  << "Ausgabeschrittweite:                      " << dynamic_cast<ISolverSettings*>(_cvodesettings)->getGlobalSettings()->gethOutput() << "\n"
-  //  << "Obere Grenze fÃ¼r Schrittweite:            " << _hUpLim << "\n\n";
-  //// Status
-  //outputStream
-  //  << "Solver-Status:                            " << _idid << "\n\n";
-  */
-}
 void Peer::setTimeOut(unsigned int time_out)
   {
        SimulationMonitor::setTimeOut(time_out);
@@ -812,43 +568,11 @@ void Peer::setTimeOut(unsigned int time_out)
   {
        SimulationMonitor::stop();
   }
-int Peer::check_flag(void *flagvalue, const char *funcname, int opt)
-{
-  /*
-  int *errflag;
 
-  // Check if SUNDIALS function returned NULL pointer - no memory allocated
-
-  if (opt == 0 && flagvalue == NULL)
-  {
-    fprintf(stderr, "\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n", funcname);
-    return (1);
-  }
-
-  //Check if flag < 0
-
-  else if (opt == 1)
-  {
-    errflag = (int *) flagvalue;
-    if (*errflag < 0)
-    {
-      fprintf(stderr, "\nSUNDIALS_ERROR: %s() failed with flag = %d\n\n", funcname, *errflag);
-      return (1);
-    }
-  }
-
-  // Check if function returned NULL pointer - no memory allocated
-
-  else if (opt == 2 && flagvalue == NULL)
-  {
-    fprintf(stderr, "\nMEMORY_ERROR: %s() failed - returned NULL pointer\n\n", funcname);
-    return (1);
-  }
-
-  return (0);
-  */
-  return 0;
-}
 
 void Peer::setcycletime(double cycletime){}
-
+void Peer::writeSimulationInfo(){}
+int Peer::reportErrorMessage(std::ostream& messageStream) {
+    return 0;
+}
+#endif

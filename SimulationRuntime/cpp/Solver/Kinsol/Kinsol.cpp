@@ -16,6 +16,7 @@
   #include <kinsol/kinsol_dense.h>
 #endif //USE_SUNDIALS_LAPACK
 
+
 #include <kinsol/kinsol_spbcgs.h>
 #include <kinsol/kinsol_sptfqmr.h>
 /*will be used with new sundials version
@@ -24,6 +25,7 @@
 #include <kinsol/kinsol_direct.h>
 #include <sundials/sundials_dense.h>
 #include <kinsol/kinsol_impl.h>
+
 
 #include <Core/Utils/extension/logger.hpp>
 #include <Solver/Kinsol/KinsolLapack.h>
@@ -41,6 +43,8 @@
 Forward declarations for used external C functions
 */
 extern "C" void dgesv_(long int *n, long int *nrhs, double *J, long int *ldj, long int *pivot,double *b, long int *ldb, long int *idid);
+extern "C" void dgetc2_(long int *n, double *J, long int *ldj, long int *ipivot, long int *jpivot, long int *idid);
+extern "C" void dgesc2_(long int *n, double *J, long int *ldj, double* f, long int *ipivot, long int *jpivot, double *scale);
 int kin_fCallback(N_Vector y, N_Vector fval, void *user_data);
 /*will be used with new sundials version
 int kin_SlsSparseJacFn(N_Vector u, N_Vector fu,SlsMat J, void *user_data,N_Vector tmp1, N_Vector tmp2);
@@ -105,6 +109,7 @@ Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _f                  (NULL)
 	, _helpArray          (NULL)
 	, _ihelpArray         (NULL)
+	, _jhelpArray		  (NULL)
 	, _zeroVec            (NULL)
 	, _currentIterate     (NULL)
 	, _jac                (NULL)
@@ -122,6 +127,9 @@ Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _Kin_yScale         (NULL)
 	, _Kin_fScale         (NULL)
 	, _kinMem             (NULL)
+	, _scale			  (NULL)
+  , _fValid(false)
+  , _solverErrorNotificationGiven(false)
 {
 	_data = ((void*)this);
 }
@@ -135,11 +143,13 @@ Kinsol::~Kinsol()
 	if(_f)                delete []  _f;
 	if(_helpArray)        delete []  _helpArray;
 	if(_ihelpArray)       delete []  _ihelpArray;
+	if (_jhelpArray)       delete[]  _jhelpArray;
 	if(_jac)              delete []  _jac;
 	if(_fHelp)            delete []  _fHelp;
 	if(_zeroVec)          delete []  _zeroVec;
 	if(_currentIterate)   delete []  _currentIterate;
 	if(_yHelp)            delete []  _yHelp;
+	if (_scale)            delete[]  _scale;
 	if(_Kin_y)
 		N_VDestroy_Serial(_Kin_y);
 	if(_Kin_y0)
@@ -182,11 +192,13 @@ void Kinsol::initialize()
 			if(_f)               delete []  _f;
 			if(_helpArray)       delete []  _helpArray;
 			if(_ihelpArray)      delete []  _ihelpArray;
+			if(_jhelpArray)      delete []  _jhelpArray;
 			if(_jac)             delete []  _jac;
 			if(_yHelp)           delete []  _yHelp;
 			if(_fHelp)           delete []  _fHelp;
 			if(_zeroVec)         delete []  _zeroVec;
 			if(_currentIterate)  delete []  _currentIterate;
+			if (_scale)			 delete[]  _scale;
 
 			_y                = new double[_dimSys];
 			_y0               = new double[_dimSys];
@@ -195,8 +207,10 @@ void Kinsol::initialize()
 			_f                = new double[_dimSys];
 			_helpArray        = new double[_dimSys];
 			_ihelpArray       = new long int[_dimSys];
+			_jhelpArray		  = new long int[_dimSys];
 			_zeroVec          = new double[_dimSys];
 			_currentIterate   = new double[_dimSys];
+			_scale			  = new double[_dimSys];
 
 			_jac              = new double[_dimSys*_dimSys];
 			_yHelp            = new double[_dimSys];
@@ -208,11 +222,13 @@ void Kinsol::initialize()
 			memset(_f, 0, _dimSys*sizeof(double));
 			memset(_helpArray, 0, _dimSys*sizeof(double));
 			memset(_ihelpArray, 0, _dimSys*sizeof(long int));
+			memset(_jhelpArray, 0, _dimSys*sizeof(long int));
 			memset(_yHelp, 0, _dimSys*sizeof(double));
 			memset(_fHelp, 0, _dimSys*sizeof(double));
 			memset(_jac, 0, _dimSys*_dimSys*sizeof(double));
 			memset(_zeroVec, 0, _dimSys*sizeof(double));
 			memset(_currentIterate, 0, _dimSys*sizeof(double));
+			memset(_scale, 0, _dimSys*sizeof(double));
 
 			_algLoop->getNominalReal(_yScale);
 
@@ -381,8 +397,12 @@ void Kinsol::solve()
 		_y[i]=-_f[i];
 		_algLoop->setReal(_y);
 		_algLoop->evaluate();
-		if(irtrn != 0)
-		throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear tearing system");
+		if  (irtrn != 0)
+		{
+			dgetc2_(&_dimSys, _jac, &_dimSys, _ihelpArray, _jhelpArray, &irtrn);
+			dgesc2_(&_dimSys, _jac, &_dimSys, _f, _ihelpArray, _jhelpArray, _scale);
+			Logger::write("Kinsol: Linear system singular, using perturbed system matrix.", LC_NLS, LL_DEBUG);
+		}
 		else
 		_iterationStatus = DONE;
 
@@ -539,7 +559,9 @@ void Kinsol::solve()
 		}
 
 		if(_iterationStatus == SOLVERERROR && !_eventRetry)
-			throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
+        {
+		     throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
+        }
 
 	}
 }
@@ -563,11 +585,15 @@ void Kinsol::calcFunction(const double *y, double *residual)
 	}
 	_algLoop->getRHS(residual);
 
+
+#if defined(__vxworks)
+#else
 	for(int i=0;i<_dimSys;i++)
 	{
 		if(!(boost::math::isfinite(residual[i])) || !(boost::math::isfinite(y[i])))
 			_fValid = false;
 	}
+#endif
 }
 
 int Kinsol::kin_f(N_Vector y,N_Vector fval, void *user_data)

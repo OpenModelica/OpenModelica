@@ -85,6 +85,7 @@ SimulationRuntime/c/util/java_interface/src/org/openmodelica/corba/parser/OMCorb
 SimulationRuntime/c/util/java_interface/src/org/openmodelica/corba/parser/OMCorbaDefinitionsParser.java
 SimulationRuntime/c/util/java_interface/src/org/openmodelica/corba/parser/OMCorbaDefinitions.tokens
 SimulationRuntime/cpp/Makefile
+SimulationRuntime/cpp/Makefile.env
 SimulationRuntime/cpp/Build/
 SimulationRuntime/cpp/Debug/
 SimulationRuntime/cpp/.cproject

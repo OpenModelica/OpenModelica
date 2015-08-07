@@ -343,6 +343,16 @@ template equationIndex(SimEqSystem eq)
     then index
 end equationIndex;
 
+template equationIndexAlternativeTearing(SimEqSystem eq)
+ "Generates an equation."
+::=
+  match eq
+  case SES_LINEAR(alternativeTearing=SOME(at as LINEARSYSTEM(__)))
+    then at.index
+  case SES_NONLINEAR(alternativeTearing=SOME(at as NONLINEARSYSTEM(__)))
+    then at.index
+end equationIndexAlternativeTearing;
+
 template dumpEqs(list<SimEqSystem> eqs)
 ::= eqs |> eq hasindex i0 =>
   match eq
@@ -466,6 +476,53 @@ template dumpEqs(list<SimEqSystem> eqs)
       unknown equation
       >>
 end dumpEqs;
+
+template dumpEqsAlternativeTearing(list<SimEqSystem> eqs)
+::= eqs |> eq hasindex i0 =>
+  match eq
+    case e as SES_LINEAR(alternativeTearing=SOME(at as LINEARSYSTEM(__))) then
+      <<
+      equation index: <%equationIndexAlternativeTearing(eq)%>
+      type: LINEAR
+
+      <%at.vars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
+      <row>
+        <%at.beqs |> exp => '<cell><%escapeCComments(printExpStr(exp))%></cell>' ; separator = "\n" %><%\n%>
+      </row>
+      <matrix>
+        <%at.simJac |> (i1,i2,eq) =>
+        <<
+        <cell row="<%i1%>" col="<%i2%>">
+          <%match eq case e as SES_RESIDUAL(__) then
+            <<
+            <residual><%escapeCComments(printExpStr(e.exp))%></residual>
+            >>
+           %>
+        </cell>
+        >>
+        %>
+      </matrix>
+
+      This is the alternative tearing set with casual solvability rules.
+      If it fails, this function will call the strict tearing set.
+      >>
+    case e as SES_NONLINEAR(alternativeTearing=SOME(at as NONLINEARSYSTEM(__))) then
+      <<
+      equation index: <%equationIndexAlternativeTearing(eq)%>
+      indexNonlinear: <%at.indexNonLinearSystem%>
+      type: NONLINEAR
+
+      vars: {<%at.crefs |> cr => '<%crefStr(cr)%>' ; separator = ", "%>}
+      eqns: {<%at.eqs |> eq => '<%equationIndex(eq)%>' ; separator = ", "%>}
+
+      This is the alternative tearing set with casual solvability rules.
+      If it fails, this function will call the strict tearing set.
+      >>
+    else
+      <<
+      unknown equation
+      >>
+end dumpEqsAlternativeTearing;
 
 
 /************************************************************************************************/

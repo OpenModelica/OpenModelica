@@ -15,6 +15,7 @@
 /*****************************************************************************
 Copyright (c) 2014, IWR TU Dresden, All rights reserved
 *****************************************************************************/
+#if defined(USE_MPI) || defined(USE_OPENMP)
 class Peer
   : public ISolver,  public SolverDefaultImplementation
 {
@@ -69,103 +70,114 @@ public:
     virtual void stop();
 private:
 
-  // Solveraufruf
-  void PeerCore();
 
-  /// Kapselung der Berechnung der rechten Seite
-  int calcFunction(const double& time, const double* y, double* yd);
 
-  // Checks error flags of SUNDIALS
-  int check_flag(void *flagvalue, const char *funcname, int opt);
+
 
   // Nulltellenfunktion
   void writePeerOutput(const double &time,const double &h,const int &stp);
-
-  //int calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight, N_Vector jthcol, double* y, N_Vector fy, DlsMat Jac);
-  void initializeColoredJac();
-
+  void evalJ(const double& t, const double* z, double* T, IContinuous *continuousSystem, ITime *timeSystem, double fac=1);
+  void evalF(const double& t, const double* z, double* f, IContinuous *continuousSystem, ITime *timeSystem);
+  void evalD(const double& t, const double* y, double* T, IContinuous *continuousSystem, ITime *timeSystem);
   void setcycletime(double cycletime);
-
+  void ros2(double * y, double& tstart, double tend, IContinuous *continuousSystem, ITime *timeSystem);
 
   ISolverSettings
     *_peersettings;              ///< Input      - Solver settings
 
-/*
-  void
-    *_cvodeMem,                  ///< Temp      - Memory for the solver
-    *_data;                    ///< Temp      - User data. Contains pointer to Peer
-
   long int
-    _dimSys,                  ///< Input       - (total) Dimension of system (=number of ODE)
-    _idid,                    ///< Input, Output  - Status Flag
-    _locStps,                  ///< Output      - Number of Steps between two events
-     _cv_rt;            ///< Temp    - CVode return flag
-
-  int
-    _outStps,                  ///< Output      - Total number of output-steps
-    *_zeroSign;
+    _dimSys;                 ///< Input       - (total) Dimension of system (=number of ODE)
 
 
-  double
-    *_z,            ///< Output      - (Current) State vector
-    *_zInit,          ///< Temp      - Initial state vector
-    *_zWrite,                   ///< Temp      - Zustand den das System rausschreibt
-    *_absTol,          ///         - Vektor für absolute Toleranzen
-  *_delta,
-  *_ysave;
+    int
+        _rstages,
+        _rank,
+        _size;
+
+    long int
+        *_P;
+
+    double
+        *_G,
+        *_E,
+        *_Theta,
+        *_c,
+        *_F,
+        *_y,
+        *_Y1,
+        *_Y2,
+        *_Y3,
+        *_T,
+        _h;
 
 
-  double
-    _hOut;            ///< Temp      - Ouput step size for dense output
-
-   unsigned int
-    _event_n;
-double
-  _tLastEvent;
-
-  double
-    _tOut,            ///< Output      - Time for dense output
-    _tZero,            ///< Temp      - Nullstelle
-    _tLastWrite;        ///< Temp      - Letzter Ausgabezeitpunkt
-
-  bool
-    _bWritten,                  ///< Temp      - Is output already written
-    _zeroFound;
-
-
-
-
-  N_Vector
-    _CV_y0,                  ///< Temp      - Initial values in the Peer Format
-    _CV_y,                  ///< Temp      - State in Peer Format
-    _CV_yWrite,        ///< Temp      - Vector for dense out
-    _CV_absTol;
 
   // Variables for Coloured Jacobians
-  int  _sizeof_sparsePattern_colorCols;
-  int* _sparsePattern_colorCols;
+//  int  _sizeof_sparsePattern_colorCols;
+//  int* _sparsePattern_colorCols;
+//
+//  int  _sizeof_sparsePattern_leadindex;
+//  int* _sparsePattern_leadindex;
+//
+//
+//  int  _sizeof_sparsePattern_index;
+//  int* _sparsePattern_index;
+//
+//
+//  int  _sparsePattern_maxColors;
+//
+//  bool _cvode_initialized;
 
-  int  _sizeof_sparsePattern_leadindex;
-  int* _sparsePattern_leadindex;
 
+//   ISystemProperties* _properties;
+   IContinuous* _continuous_system[5];
+//   IEvent* _event_system;
+//   IMixedSystem* _mixed_system;
+   ITime* _time_system[5];
 
-  int  _sizeof_sparsePattern_index;
-  int* _sparsePattern_index;
+//   std::vector<MeasureTimeData> measureTimeFunctionsArray;
+//   MeasureTimeValues *measuredFunctionStartValues, *measuredFunctionEndValues;
 
-
-  int  _sparsePattern_maxColors;
-
-  bool _cvode_initialized;
-
-
-   ISystemProperties* _properties;
-   IContinuous* _continuous_system;
-   IEvent* _event_system;
-   IMixedSystem* _mixed_system;
-   ITime* _time_system;
-
-   std::vector<MeasureTimeData> measureTimeFunctionsArray;
-   MeasureTimeValues *measuredFunctionStartValues, *measuredFunctionEndValues;
-*/
 };
+#else
+class Peer : public ISolver, public SolverDefaultImplementation
+{
+public:
+	Peer(IMixedSystem* system, ISolverSettings* settings) : ISolver(), SolverDefaultImplementation(system, settings)
+	{
+		throw std::runtime_error("Peer solver is not available.");
+	}
 
+	virtual void setStartTime(const double& time)
+	{}
+
+	virtual void setEndTime(const double& time)
+	{}
+
+	virtual void setInitStepSize(const double& stepSize)
+	{}
+
+	virtual void initialize()
+	{}
+
+	virtual bool stateSelection()
+	{
+		throw std::runtime_error("Peer solver is not available.");
+	}
+
+	virtual void solve(const SOLVERCALL command = UNDEF_CALL)
+	{}
+
+	virtual SOLVERSTATUS getSolverStatus()
+	{ return UNDEF_STATUS; }
+
+	virtual void setTimeOut(unsigned int time_out)
+	{}
+
+	virtual void stop()
+	{}
+
+	virtual void writeSimulationInfo()
+	{}
+};
+#endif
