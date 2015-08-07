@@ -432,7 +432,8 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
     virtual const sparsematrix_t& getSparseJacobian(unsigned int index);
 
 
-    virtual void getStateSetJacobian(unsigned int index,matrix_t& matrix);
+    virtual  const matrix_t& getStateSetJacobian(unsigned int index);
+    virtual  const sparsematrix_t& getStateSetSparseJacobian(unsigned int index);
     /// Called to handle all events occured at same time
     virtual bool handleSystemEvents(bool* events);
     //Saves all variables before an event is handled, is needed for the pre, edge and change operator
@@ -1024,6 +1025,42 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
           else "A matrix type is not supported"
           end match
 
+     let statesetjacobian =
+     (stateSets |> set hasindex i1 fromindex 0 => (match set
+       case set as SES_STATESET(__) then
+       match jacobianMatrix case (_,_,name,_,_,_,_) then
+       match type
+       case ("dense") then
+       <<
+       case <%i1%>:
+         return get<%name%>Jacobian();
+         break;
+       >>
+       case ("sparse") then
+       'throw ModelicaSimulationError(MATH_FUNCTION,"Dense matrix is not activated");'
+       else "A matrix type is not supported"
+       )
+       ;separator="\n")
+
+
+ let statesetsparsejacobian =
+     (stateSets |> set hasindex i1 fromindex 0 => (match set
+       case set as SES_STATESET(__) then
+       match jacobianMatrix case (_,_,name,_,_,_,_) then
+       match type
+       case ("dense") then
+       'throw ModelicaSimulationError(MATH_FUNCTION,"Sparse matrix is not activated");'
+       case ("sparse") then
+       <<
+       case <%i1%>:
+         return get<%name%>Jacobian();
+         break;
+       >>
+
+       else "A matrix type is not supported"
+       )
+       ;separator="\n")
+
    <<
    <%classname%>Extension::<%classname%>Extension(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
        : <%classname%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
@@ -1078,26 +1115,24 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
 
-   void <%classname%>Extension::getStateSetJacobian(unsigned int index,matrix_t& matrix)
+   const matrix_t& <%classname%>Extension::getStateSetJacobian(unsigned int index)
    {
      switch (index)
      {
-       <%(stateSets |> set hasindex i1 fromindex 0 => (match set
-       case set as SES_STATESET(__) then
-       match jacobianMatrix case (_,_,name,_,_,_,_) then
-       <<
-       case <%i1%>:
-         get<%name%>Jacobian(matrix);
-         break;
-       >>
-       )
-       ;separator="\n")
-       %>
+       <%statesetjacobian%>
        default:
           throw ModelicaSimulationError(MATH_FUNCTION,"Not supported statset index");
       }
    }
-
+   const sparsematrix_t& <%classname%>Extension::getStateSetSparseJacobian(unsigned int index)
+   {
+     switch (index)
+     {
+       <%statesetsparsejacobian%>
+       default:
+          throw ModelicaSimulationError(MATH_FUNCTION,"Not supported statset index");
+      }
+   }
    bool <%classname%>Extension::handleSystemEvents(bool* events)
    {
      return <%classname%>::handleSystemEvents(events);
@@ -6016,8 +6051,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             <<
             if(IMixedSystem* jacobian_system = dynamic_cast<IMixedSystem*>( _system))
             {
-                return jacobian_system->getJacobian(<%index%>);
-                // cout << "A Matrix for system " << <%index%> << A_matrix << std::endl;
+                return jacobian_system->getSparseJacobian(<%index%>);
+
             }
             >>
           else "A matrix type is not supported"
