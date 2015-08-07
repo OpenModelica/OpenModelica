@@ -183,6 +183,7 @@ typedef struct OptData{
   long double **Hm;
   long double ***Hcf;
   DATA *data;
+  threadData_t *threadData;
   FILE * pFile;
 
   double *oldH;

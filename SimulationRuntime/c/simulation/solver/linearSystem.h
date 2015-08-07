@@ -48,10 +48,10 @@ extern "C" {
 
 typedef void* LS_SOLVER_DATA;
 
-int initializeLinearSystems(DATA *data);
-int updateStaticDataOfLinearSystems(DATA *data);
-int freeLinearSystems(DATA *data);
-int solve_linear_system(DATA *data, int sysNumber);
+int initializeLinearSystems(DATA *data, threadData_t *threadData);
+int updateStaticDataOfLinearSystems(DATA *data, threadData_t *threadData);
+int freeLinearSystems(DATA *data, threadData_t *threadData);
+int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber);
 int check_linear_solutions(DATA *data, int printFailingSystems);
 void printLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel);
 

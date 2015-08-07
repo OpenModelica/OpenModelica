@@ -56,7 +56,7 @@ typedef struct DATA_SYM_IMP_EULER{
 
 int allocateSymEulerImp(SOLVER_INFO* solverInfo, int size);
 int freeSymEulerImp(SOLVER_INFO* solverInfo);
-int sym_euler_im_with_step_size_control_step(DATA* data, SOLVER_INFO* solverInfo);
+int sym_euler_im_with_step_size_control_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
 
 #endif /* _SYM_IMP_EULER_H_ */

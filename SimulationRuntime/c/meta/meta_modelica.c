@@ -194,7 +194,7 @@ modelica_boolean valueEq(modelica_metatype lhs, modelica_metatype rhs)
   }
 
 
-  fprintf(stderr, "%s:%d: %d slots; ctor %u - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
+  fprintf(stderr, "%s:%d: %ld slots; ctor %lu - FAILED to detect the type\n", __FILE__, __LINE__, (long) numslots, (unsigned long) ctor);
   EXIT(1);
 }
 
@@ -279,7 +279,7 @@ inline static mmc_sint_t anyStringWork(void* any, mmc_sint_t ix)
 
   if (numslots>0 && ctor == MMC_FREE_OBJECT_CTOR) { /* FREE OBJECT! */
     checkAnyStringBufSize(ix,100);
-    ix += sprintf(anyStringBuf+ix, "FREE(%d)", numslots);
+    ix += sprintf(anyStringBuf+ix, "FREE(%ld)", (long) numslots);
     return ix;
   }
   if (numslots>=0 && ctor == MMC_ARRAY_TAG) { /* MetaModelica-style array */
@@ -362,7 +362,7 @@ inline static mmc_sint_t anyStringWork(void* any, mmc_sint_t ix)
     return ix;
   }
 
-  fprintf(stderr, "%s:%d: %d slots; ctor %u - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
+  fprintf(stderr, "%s:%d: %ld slots; ctor %lu - FAILED to detect the type\n", __FILE__, __LINE__, (long) numslots, (unsigned long) ctor);
   /* fprintf(stderr, "object: %032s||", ltoa((int)hdr, buf, 2)); */
   checkAnyStringBufSize(ix,5);
   ix += sprintf(anyStringBuf+ix, "UNK(");
@@ -424,7 +424,7 @@ inline static mmc_sint_t anyStringWorkCode(void* any, mmc_sint_t ix, mmc_sint_t 
 
   if (MMC_IS_IMMEDIATE(any)) {
     checkAnyStringBufSize(ix,400);
-    ix += sprintf(anyStringBuf+ix, "#define omc_tmp%d ((void*)%" PRINT_MMC_SINT_T ")\n", id, (mmc_sint_t) any);
+    ix += sprintf(anyStringBuf+ix, "#define omc_tmp%ld ((void*)%" PRINT_MMC_SINT_T ")\n", (long) id, (mmc_sint_t) any);
     return ix;
   }
 
@@ -436,13 +436,13 @@ inline static mmc_sint_t anyStringWorkCode(void* any, mmc_sint_t ix, mmc_sint_t 
 
   if (hdr == MMC_NILHDR) {
     checkAnyStringBufSize(ix,400);
-    ix += sprintf(anyStringBuf+ix, "#define omc_tmp%d (MMC_REFSTRUCTLIT(mmc_nil))\n", id);
+    ix += sprintf(anyStringBuf+ix, "#define omc_tmp%ld (MMC_REFSTRUCTLIT(mmc_nil))\n", (long) id);
     return ix;
   }
 
   if (hdr == MMC_REALHDR) {
     checkAnyStringBufSize(ix,500);
-    ix += sprintf(anyStringBuf+ix, "static const MMC_DEFREALLIT(omc_tmp%d_data,%g);\n#define omc_tmp%d MMC_REFREALLIT(omc_tmp%d_data)\n", id, (double) mmc_prim_get_real(any), id, id);
+    ix += sprintf(anyStringBuf+ix, "static const MMC_DEFREALLIT(omc_tmp%ld_data,%g);\n#define omc_tmp%ld MMC_REFREALLIT(omc_tmp%ld_data)\n", (long) id, (double) mmc_prim_get_real(any), (long) id, (long) id);
     return ix;
   }
   if (MMC_HDRISSTRING(hdr)) {
@@ -452,10 +452,10 @@ inline static mmc_sint_t anyStringWorkCode(void* any, mmc_sint_t ix, mmc_sint_t 
     unescapedLength = strlen(MMC_STRINGDATA(any));
     str = omc__escapedString(MMC_STRINGDATA(any), 1);
     checkAnyStringBufSize(ix,unescapedLength+800);
-    ix += sprintf(anyStringBuf+ix, "#define omc_tmp%d_data \"%s\"\n", id, str ? str : MMC_STRINGDATA(any));
-    ix += sprintf(anyStringBuf+ix, "static const size_t omc_tmp%d_strlen = %d;\n", id, unescapedLength);
-    ix += sprintf(anyStringBuf+ix, "static const MMC_DEFSTRINGLIT(omc_tmp%d_data2,%d,omc_tmp%d_data);\n", id, unescapedLength, id);
-    ix += sprintf(anyStringBuf+ix, "#define omc_tmp%d MMC_REFSTRINGLIT(omc_tmp%d_data2)\n", id, id);
+    ix += sprintf(anyStringBuf+ix, "#define omc_tmp%ld_data \"%s\"\n", (long) id, str ? str : MMC_STRINGDATA(any));
+    ix += sprintf(anyStringBuf+ix, "static const size_t omc_tmp%ld_strlen = %d;\n", (long) id, unescapedLength);
+    ix += sprintf(anyStringBuf+ix, "static const MMC_DEFSTRINGLIT(omc_tmp%ld_data2,%d,omc_tmp%ld_data);\n", (long) id, unescapedLength, (long) id);
+    ix += sprintf(anyStringBuf+ix, "#define omc_tmp%ld MMC_REFSTRINGLIT(omc_tmp%ld_data2)\n", (long) id, (long) id);
     if (str) free(str);
     return ix;
   }
@@ -489,12 +489,12 @@ inline static mmc_sint_t anyStringWorkCode(void* any, mmc_sint_t ix, mmc_sint_t 
       ix = anyStringWorkCode(data,ix,base_id+i-1);
     }
     checkAnyStringBufSize(ix,numslots*100+400);
-    ix += sprintf(anyStringBuf+ix, "static const MMC_DEFSTRUCTLIT(omc_tmp%d_data,%d,%u) {&%s__desc", id, numslots, ctor, desc->path);
+    ix += sprintf(anyStringBuf+ix, "static const MMC_DEFSTRUCTLIT(omc_tmp%ld_data,%ld,%lu) {&%s__desc", (long) id, (long) numslots, (unsigned long) ctor, desc->path);
     for (i=2; i<=numslots; i++) {
       ix += sprintf(anyStringBuf+ix, ",omc_tmp%d", base_id+i-1);
     }
     ix += sprintf(anyStringBuf+ix, "}};\n");
-    ix += sprintf(anyStringBuf+ix, "#define omc_tmp%d MMC_REFSTRUCTLIT(omc_tmp%d_data)\n", id, id);
+    ix += sprintf(anyStringBuf+ix, "#define omc_tmp%ld MMC_REFSTRUCTLIT(omc_tmp%ld_data)\n", (long) id, (long) id);
     return ix;
   }
 
@@ -505,12 +505,12 @@ inline static mmc_sint_t anyStringWorkCode(void* any, mmc_sint_t ix, mmc_sint_t 
     ix = anyStringWorkCode(data,ix,base_id+i);
   }
   checkAnyStringBufSize(ix,numslots*100+400);
-  ix += sprintf(anyStringBuf+ix, "static const MMC_DEFSTRUCTLIT(omc_tmp%d_data,%d,%u) {", id, numslots, ctor);
+  ix += sprintf(anyStringBuf+ix, "static const MMC_DEFSTRUCTLIT(omc_tmp%ld_data,%ld,%lu) {", (long) id, (long) numslots, (unsigned long) ctor);
   for (i=1; i<=numslots; i++) {
     ix += sprintf(anyStringBuf+ix, "%somc_tmp%d", i==1 ? "" : ",", base_id+i);
   }
   ix += sprintf(anyStringBuf+ix, "}};\n");
-  ix += sprintf(anyStringBuf+ix, "#define omc_tmp%d MMC_REFSTRUCTLIT(omc_tmp%d_data)\n", id, id);
+  ix += sprintf(anyStringBuf+ix, "#define omc_tmp%ld MMC_REFSTRUCTLIT(omc_tmp%ld_data)\n", (long) id, (long) id);
   return ix;
 }
 

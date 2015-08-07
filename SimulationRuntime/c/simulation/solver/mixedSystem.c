@@ -44,7 +44,7 @@
  *
  *  \param [ref] [data]
  */
-int initializeMixedSystems(DATA *data)
+int initializeMixedSystems(DATA *data, threadData_t *threadData)
 {
   int i;
   int size;
@@ -66,7 +66,7 @@ int initializeMixedSystems(DATA *data)
       allocateMixedSearchData(size, &system[i].solverData);
       break;
     default:
-      throwStreamPrint(data->threadData, "unrecognized mixed solver");
+      throwStreamPrint(threadData, "unrecognized mixed solver");
     }
   }
 
@@ -80,7 +80,7 @@ int initializeMixedSystems(DATA *data)
  *
  *  \param [ref] [data]
  */
-int freeMixedSystems(DATA *data)
+int freeMixedSystems(DATA *data, threadData_t *threadData)
 {
   int i;
   MIXED_SYSTEM_DATA* system = data->simulationInfo.mixedSystemData;
@@ -100,7 +100,7 @@ int freeMixedSystems(DATA *data)
       freeMixedSearchData(&system[i].solverData);
       break;
     default:
-      throwStreamPrint(data->threadData, "unrecognized mixed solver");
+      throwStreamPrint(threadData, "unrecognized mixed solver");
     }
 
     free(system[i].solverData);
@@ -117,7 +117,7 @@ int freeMixedSystems(DATA *data)
  *
  *  \author wbraun
  */
-int solve_mixed_system(DATA *data, int sysNumber)
+int solve_mixed_system(DATA *data, threadData_t *threadData, int sysNumber)
 {
   int success;
   MIXED_SYSTEM_DATA* system = data->simulationInfo.mixedSystemData;
@@ -129,7 +129,7 @@ int solve_mixed_system(DATA *data, int sysNumber)
     success = solveMixedSearch(data, sysNumber);
     break;
   default:
-    throwStreamPrint(data->threadData, "unrecognized mixed solver");
+    throwStreamPrint(threadData, "unrecognized mixed solver");
   }
   system[sysNumber].solved = success;
 

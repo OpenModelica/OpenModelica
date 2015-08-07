@@ -53,7 +53,7 @@ typedef struct DATA_TOTALPIVOT
 
 int allocateTotalPivotData(int size, void** data);
 int freeTotalPivotData(void** data);
-int solveTotalPivot(DATA *data, int sysNumber);
+int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber);
 
 #endif
 

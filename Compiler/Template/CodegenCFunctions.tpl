@@ -5387,7 +5387,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
     let constIndex = daeExp(index, context, &preExp, &varDecls, &auxFunction)
-    '_event_div_<%expTypeShort(ty)%>(<%var1%>, <%var2%>, <%constIndex%>, data)'
+    '_event_div_<%expTypeShort(ty)%>(<%var1%>, <%var2%>, <%constIndex%>, data, threadData)'
 
   case CALL(path=IDENT(name="integer"), expLst={inExp,index}) then
     let exp = daeExp(inExp, context, &preExp, &varDecls, &auxFunction)
@@ -5564,7 +5564,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let var1 = daeExp(e, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(d, context, &preExp, &varDecls, &auxFunction)
     let var3 = daeExp(delayMax, context, &preExp, &varDecls, &auxFunction)
-    let &preExp += '<%tvar%> = delayImpl(data, <%index%>, <%var1%>, time, <%var2%>, <%var3%>);<%\n%>'
+    let &preExp += '<%tvar%> = delayImpl(data, threadData, <%index%>, <%var1%>, time, <%var2%>, <%var3%>);<%\n%>'
     '<%tvar%>'
 
   case CALL(path=IDENT(name="Integer"), expLst={toBeCasted}) then

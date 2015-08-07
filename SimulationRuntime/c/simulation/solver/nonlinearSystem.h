@@ -48,13 +48,17 @@ extern "C" {
 
 typedef void* NLS_SOLVER_DATA;
 
-int initializeNonlinearSystems(DATA *data);
-int updateStaticDataOfNonlinearSystems(DATA *data);
-int freeNonlinearSystems(DATA *data);
+int initializeNonlinearSystems(DATA *data, threadData_t *threadData);
+int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData);
+int freeNonlinearSystems(DATA *data, threadData_t *threadData);
 void printNonLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel);
-int solve_nonlinear_system(DATA *data, int sysNumber);
+int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber);
 int check_nonlinear_solutions(DATA *data, int printFailingSystems);
 double extraPolate(DATA *data, const double old1, const double old2, const double minValue, const double maxValue);
+int print_csvLineIterStats(void* csvData, int size, int num,
+                           int iteration, double* x, double* f, double error_f,
+                           double error_fs, double delta_x, double delta_xs,
+                           double lambda);
 
 #ifdef __cplusplus
 }

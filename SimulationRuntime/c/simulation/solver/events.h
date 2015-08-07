@@ -42,14 +42,14 @@
 extern "C" {
 #endif
 
-void initSample(DATA *data, double start, double stop);
+void initSample(DATA *data, threadData_t *threadData, double start, double stop);
 
 void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
-int checkEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
+int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
 
-void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
+void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
 
-void findRoot(DATA *data, LIST *eventList, double*);
+void findRoot(DATA *data, threadData_t *threadData, LIST *eventList, double*);
 
 #ifdef __cplusplus
 }

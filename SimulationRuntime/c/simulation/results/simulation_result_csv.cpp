@@ -49,7 +49,7 @@
 
 extern "C" {
 
-void omc_csv_emit(simulation_result *self, DATA *data)
+void omc_csv_emit(simulation_result *self, DATA *data, threadData_t *threadData)
 {
   FILE *fout = (FILE*) self->storage;
   const char* format = "%.16g,";
@@ -112,7 +112,7 @@ void omc_csv_emit(simulation_result *self, DATA *data)
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
-void omc_csv_init(simulation_result *self, DATA *data)
+void omc_csv_init(simulation_result *self, DATA *data, threadData_t *threadData)
 {
   int i;
   const MODEL_DATA *mData = &(data->modelData);
@@ -120,7 +120,7 @@ void omc_csv_init(simulation_result *self, DATA *data)
   const char* format = "\"%s\",";
   FILE *fout = fopen(self->filename, "w");
 
-  assertStreamPrint(data->threadData, 0!=fout, "Error, couldn't create output file: [%s] because of %s", self->filename, strerror(errno));
+  assertStreamPrint(threadData, 0!=fout, "Error, couldn't create output file: [%s] because of %s", self->filename, strerror(errno));
 
   fprintf(fout, format, "time");
   if(self->cpuTime)
@@ -147,7 +147,7 @@ void omc_csv_init(simulation_result *self, DATA *data)
   self->storage = fout;
 }
 
-void omc_csv_free(simulation_result *self, DATA *data)
+void omc_csv_free(simulation_result *self, DATA *data, threadData_t *threadData)
 {
   FILE *fout = (FILE*) self->storage;
   rt_tick(SIM_TIMER_OUTPUT);

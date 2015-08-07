@@ -313,7 +313,7 @@ static void printProfilingDataHeader(FILE *fout, DATA *data) {
   indent(fout, 2); fprintf(fout, "</format>\n");
 }
 
-int printModelInfo(DATA *data, const char *filename, const char *plotfile, const char *plotFormat, const char *method, const char *outputFormat, const char *outputFilename)
+int printModelInfo(DATA *data, threadData_t *threadData, const char *filename, const char *plotfile, const char *plotFormat, const char *method, const char *outputFormat, const char *outputFilename)
 {
   static char buf[256];
   FILE *fout = fopen(filename, "w");
@@ -329,7 +329,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
     warningStreamPrint(LOG_UTIL, 0, "Plots of profiling data were disabled: %s\n", strerror(errno));
   }
 
-  assertStreamPrint(data->threadData, 0 != fout, "Failed to open %s: %s\n", filename, strerror(errno));
+  assertStreamPrint(threadData, 0 != fout, "Failed to open %s: %s\n", filename, strerror(errno));
 
   if(plotCommands) {
     fputs("set terminal svg\n", plotCommands);
@@ -548,7 +548,7 @@ static void printJSONProfileBlocks(FILE *fout, DATA *data) {
   }
 }
 
-int printModelInfoJSON(DATA *data, const char *filename, const char *outputFilename)
+int printModelInfoJSON(DATA *data, threadData_t *threadData, const char *filename, const char *outputFilename)
 {
   char buf[256];
   FILE *fout = fopen(filename, "wb");

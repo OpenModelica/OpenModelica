@@ -40,12 +40,12 @@
 static inline void optimizationWithIpopt(OptData*optData);
 static inline void freeOptimizerData(OptData*optData);
 
-int runOptimizer(DATA* data, SOLVER_INFO* solverInfo){
+int runOptimizer(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo){
   OptData *optData, optData_;
 
   solverInfo->solverData = &optData_;
 
-  pickUpModelData(data, solverInfo);
+  pickUpModelData(data, threadData, solverInfo);
   optData =  (OptData*) solverInfo->solverData;
 
   initial_guess_optimizer(optData, solverInfo);

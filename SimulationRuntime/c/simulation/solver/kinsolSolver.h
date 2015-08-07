@@ -36,8 +36,8 @@
 
 #include "simulation_data.h"
 
-int nls_kinsol_allocate(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData);
+int nls_kinsol_allocate(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nlsData);
 int nls_kinsol_free(NONLINEAR_SYSTEM_DATA *nlsData);
-int nonlinearSolve_kinsol(DATA *data, int sysNumber);
+int nonlinearSolve_kinsol(DATA *data, threadData_t *threadData, int sysNumber);
 
 #endif

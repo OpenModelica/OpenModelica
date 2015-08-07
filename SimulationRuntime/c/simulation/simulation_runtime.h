@@ -53,10 +53,10 @@
 
 extern "C" {
 
-extern int callSolver(DATA* simData, std::string init_initMethod,
+extern int callSolver(DATA* simData, threadData_t *threadData, std::string init_initMethod,
     std::string init_file, double init_time, int lambda_steps, std::string outputVariablesAtEnd, int cpuTime);
 
-extern int initializeResultData(DATA* simData, int cpuTime);
+extern int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime);
 
 #endif /* cplusplus */
 
@@ -85,7 +85,7 @@ extern void communicateMsg(char id, unsigned int size, const char *data);
 /* the main function of the simulation runtime!
  * simulation runtime no longer has main, is defined by the generated model code which calls this function.
  */
-extern int _main_SimulationRuntime(int argc, char**argv, DATA *data);
+extern int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData);
 
 extern void parseVariableStr(char* variableStr);
 

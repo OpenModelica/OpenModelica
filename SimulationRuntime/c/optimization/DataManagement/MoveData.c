@@ -63,7 +63,7 @@ static inline void overwriteTimeGridModel(OptDataTime * time, long double c[], c
 /* pick up model data
  * author: Vitalij Ruge
  */
-int pickUpModelData(DATA* data, SOLVER_INFO* solverInfo)
+int pickUpModelData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   const int nReal = data->modelData.nVariablesReal;
   const int nBoolean = data->modelData.nVariablesBoolean;
@@ -90,6 +90,7 @@ int pickUpModelData(DATA* data, SOLVER_INFO* solverInfo)
       optData->v[i][j] = (modelica_real*)malloc(nReal*sizeof(modelica_real));
   }
   optData->data = data;
+  optData->threadData = threadData;
 
   optData->v0 = (modelica_real*)malloc(nReal*sizeof(modelica_real));
   memcpy(optData->v0, data->localData[0]->realVars, nReal*sizeof(modelica_real));
@@ -154,7 +155,7 @@ static inline void pickUpDim(OptDataDim * dim, DATA* data, OptDataTime * time){
   dim->nReal = data->modelData.nVariablesReal;
 
   cflags = (char*)omc_flagValue[FLAG_OPTIMIZER_TGRID];
-  data->callback->getTimeGrid(data, &dim->nsi, &time->tt);
+  data->callback->getTimeGrid(data, &dim->nsi, &time->tt); /* TODO: dim->nsi is long*, expected is int* */
   time->model_grid = (modelica_boolean)(dim->nsi > 0);
 
   if(!time->model_grid)
@@ -597,6 +598,7 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
   int i,j,k, ii, jj;
   char buffer[4096];
   DATA * data = optData->data;
+  threadData_t *threadData = optData->threadData;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
 
   FILE * pFile = optData->pFile;
@@ -646,11 +648,11 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
   sData->timeValue = solverInfo->currentTime;
 
   /*updateDiscreteSystem(data);*/
-  data->callback->input_function(data);
+  data->callback->input_function(data, threadData);
   /*data->callback->functionDAE(data);*/
-  updateDiscreteSystem(data);
+  updateDiscreteSystem(data, threadData);
 
-  sim_result.emit(&sim_result,data);
+  sim_result.emit(&sim_result, data, threadData);
   /******************/
 
   for(ii = 0; ii < nsi; ++ii){
@@ -667,7 +669,7 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
       /******************/
       solverInfo->currentTime = (double)t[ii][jj];
       sData->timeValue = solverInfo->currentTime;
-      sim_result.emit(&sim_result,data);
+      sim_result.emit(&sim_result, data, threadData);
     }
   }
   fclose(pFile);
@@ -694,7 +696,7 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
   int i, j, k, shift, l;
   DATA * data = optData->data;
   const int * indexBC = optData->s.indexABCD + 3;
-  threadData_t *threadData = data->threadData;
+  threadData_t *threadData = optData->threadData;
 
   for(l = 0; l < 3; ++l)
     realVars[l] = data->localData[l]->realVars;
@@ -756,9 +758,9 @@ static inline void updateDOSystem(OptData * optData, DATA * data, threadData_t *
 #if !defined(OMC_EMCC)
     MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-    data->callback->input_function(data);
+    data->callback->input_function(data, optData->threadData);
     /*data->callback->functionDAE(data);*/
-    updateDiscreteSystem(data);
+    updateDiscreteSystem(data, optData->threadData);
 
     if(index){
       diffSynColoredOptimizerSystem(optData, optData->J[i][j], i, j, m);
@@ -808,6 +810,7 @@ static inline void setLocalVars(OptData * optData, DATA * data, const double * c
  */
 void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const int m, const int n, const int index){
   DATA * data = optData->data;
+  threadData_t *threadData = optData->threadData;
   int i,j,l,ii, ll;
 
   const int h_index = optData->s.indexABCD[index];
@@ -831,9 +834,9 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
     data->simulationInfo.analyticJacobians[h_index].seedVars = sV[i];
 
     if(index == 2){
-      data->callback->functionJacB_column(data);
+      data->callback->functionJacB_column(data, threadData);
     }else if(index == 3){
-      data->callback->functionJacC_column(data);
+      data->callback->functionJacC_column(data, threadData);
     }else
       assert(0);
 
@@ -861,6 +864,7 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
 void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J){
   if(optData->dim.ncf > 0){
     DATA * data = optData->data;
+    threadData_t *threadData = optData->threadData;
     int i,j,l,ii, ll;
     const int index = 4;
     const int h_index = optData->s.indexABCD[index];
@@ -876,7 +880,7 @@ void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J){
     for(i = 1; i < Cmax; ++i){
       data->simulationInfo.analyticJacobians[h_index].seedVars = sV[i];
 
-      data->callback->functionJacD_column(data);
+      data->callback->functionJacD_column(data, threadData);
 
       for(ii = 0; ii < nx; ++ii){
         if(cC[ii] == i){
@@ -944,9 +948,9 @@ static inline void pickUpStates(OptData* optData){
         fclose(pFile);
         printf("\n");
         /*update system*/
-        optData->data->callback->input_function(optData->data);
+        optData->data->callback->input_function(optData->data, optData->threadData);
         /*optData->data->callback->functionDAE(optData->data);*/
-        updateDiscreteSystem(optData->data);
+        updateDiscreteSystem(optData->data, optData->threadData);
       }
     }
   }

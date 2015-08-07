@@ -79,18 +79,18 @@ typedef struct RK4_DATA
 
 
 static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo);
-static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo);
-static int sym_euler_im_step(DATA* data, SOLVER_INFO* solverInfo);
+static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
+static int sym_euler_im_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
 static int radau_lobatto_step(DATA* data, SOLVER_INFO* solverInfo);
 
 #ifdef WITH_IPOPT
-static int ipopt_step(DATA* data, SOLVER_INFO* solverInfo);
+static int ipopt_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 #endif
 
 static void writeOutputVars(char* names, DATA* data);
 
-int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
+int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   TRACE_PUSH
   int retVal;
@@ -102,13 +102,13 @@ int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
     TRACE_POP
     return retVal;
   case S_RUNGEKUTTA:
-    retVal = rungekutta_step(data, solverInfo);
+    retVal = rungekutta_step(data, threadData, solverInfo);
     TRACE_POP
     return retVal;
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   case S_DASSL:
-    retVal = dassl_step(data, solverInfo);
+    retVal = dassl_step(data, threadData, solverInfo);
     TRACE_POP
     return retVal;
 #endif
@@ -116,7 +116,7 @@ int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
 #ifdef WITH_IPOPT
   case S_OPTIMIZATION:
     if((int)(data->modelData.nStates + data->modelData.nInputVars) > 0){
-      retVal = ipopt_step(data, solverInfo);
+      retVal = ipopt_step(data, threadData, solverInfo);
     }else{
       solverInfo->solverMethod = S_EULER;
       retVal = euler_ex_step(data, solverInfo);
@@ -136,10 +136,10 @@ int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
     return retVal;
 #endif
   case S_SYM_EULER:
-    retVal = sym_euler_im_step(data, solverInfo);
+    retVal = sym_euler_im_step(data, threadData, solverInfo);
     return retVal;
   case S_SYM_IMP_EULER:
-    retVal = sym_euler_im_with_step_size_control_step(data, solverInfo);
+    retVal = sym_euler_im_with_step_size_control_step(data, threadData, solverInfo);
     return retVal;
   }
 
@@ -154,7 +154,7 @@ int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
  *
  *  This function initializes solverInfo.
  */
-int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
+int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   int retValue = 0;
   int i;
@@ -214,7 +214,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   {
     /* Initial DASSL solver */
     DASSL_DATA* dasslData = (DASSL_DATA*) malloc(sizeof(DASSL_DATA));
-    retValue = dassl_initial(data, solverInfo, dasslData);
+    retValue = dassl_initial(data, threadData, solverInfo, dasslData);
     solverInfo->solverData = dasslData;
     break;
   }
@@ -233,7 +233,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     /* Allocate Radau5 IIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing Radau IIA of order 5");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, solverInfo, solverInfo->solverMethod, 3);
+    allocateKinOde(data, threadData, solverInfo, solverInfo->solverMethod, 3);
     break;
   }
   case S_RADAU3:
@@ -241,7 +241,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     /* Allocate Radau3 IIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing Radau IIA of order 3");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, solverInfo, solverInfo->solverMethod, 2);
+    allocateKinOde(data, threadData, solverInfo, solverInfo->solverMethod, 2);
     break;
   }
   case S_RADAU1:
@@ -249,7 +249,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     /* Allocate Radau1 IIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing Radau IIA of order 1 (implicit euler) ");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, solverInfo, solverInfo->solverMethod, 1);
+    allocateKinOde(data, threadData, solverInfo, solverInfo->solverMethod, 1);
     break;
   }
   case S_LOBATTO6:
@@ -257,7 +257,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     /* Allocate Lobatto2 IIIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing Lobatto IIIA of order 6");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, solverInfo, solverInfo->solverMethod, 3);
+    allocateKinOde(data, threadData, solverInfo, solverInfo->solverMethod, 3);
     break;
   }
   case S_LOBATTO4:
@@ -265,7 +265,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     /* Allocate Lobatto4 IIIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing Lobatto IIIA of order 4");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, solverInfo, solverInfo->solverMethod, 2);
+    allocateKinOde(data, threadData, solverInfo, solverInfo->solverMethod, 2);
     break;
   }
   case S_LOBATTO2:
@@ -273,7 +273,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     /* Allocate Lobatto6 IIIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing Lobatto IIIA of order 2 (trapeze rule)");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, solverInfo, solverInfo->solverMethod, 1);
+    allocateKinOde(data, threadData, solverInfo, solverInfo->solverMethod, 1);
     break;
   }
 #endif
@@ -386,39 +386,38 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
  *
  *  This function starts the initialization process of the model .
  */
-int initializeModel(DATA* data, const char* init_initMethod,
+int initializeModel(DATA* data, threadData_t *threadData, const char* init_initMethod,
     const char* init_file, double init_time, int lambda_steps)
 
 {
   int retValue = 0;
 
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
-  threadData_t *threadData = data->threadData;
 
   copyStartValuestoInitValues(data);
 
   /* read input vars */
   externalInputUpdate(data);
-  data->callback->input_function(data);
+  data->callback->input_function(data, threadData);
   /* update start values for inputs if input is set */
   if(data->simulationInfo.external_input.active){
-    data->callback->input_function_init(data);
+    data->callback->input_function_init(data, threadData);
   }
 
   data->localData[0]->timeValue = simInfo->startTime;
 
   /* instance all external Objects */
-  data->callback->callExternalObjectConstructors(data);
+  data->callback->callExternalObjectConstructors(data, threadData);
 
   /* allocate memory for state selection */
-  initializeStateSetJacobians(data);
+  initializeStateSetJacobians(data, threadData);
 
-  data->threadData->currentErrorStage = ERROR_SIMULATION;
+  threadData->currentErrorStage = ERROR_SIMULATION;
   /* try */
   {
     int success = 0;
     MMC_TRY_INTERNAL(simulationJumpBuffer)
-    if(initialization(data, init_initMethod, init_file, init_time, lambda_steps))
+    if(initialization(data, threadData, init_initMethod, init_file, init_time, lambda_steps))
     {
       warningStreamPrint(LOG_STDOUT, 0, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
       simInfo->stopTime = simInfo->startTime;
@@ -435,7 +434,7 @@ int initializeModel(DATA* data, const char* init_initMethod,
   }
 
   /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
-  sim_result.writeParameterData(&sim_result,data);
+  sim_result.writeParameterData(&sim_result,data,threadData);
   infoStreamPrint(LOG_SOLVER, 0, "Wrote parameters to the file after initialization (for output formats that support this)");
 
   /* Initialization complete */
@@ -455,7 +454,7 @@ int initializeModel(DATA* data, const char* init_initMethod,
  *  This function performs the last step
  *  and outputs some statistics, this this simulation terminal step.
  */
-int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVariablesAtEnd)
+int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, const char* outputVariablesAtEnd)
 {
   TRACE_PUSH
 
@@ -470,11 +469,11 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
 
     infoStreamPrint(LOG_EVENTS_V, 0, "terminal event at stop time %g", solverInfo->currentTime);
     data->simulationInfo.terminal = 1;
-    updateDiscreteSystem(data);
+    updateDiscreteSystem(data, threadData);
 
     /* prevent emit if noeventemit flag is used */
     if (!(omc_flag[FLAG_NOEVENTEMIT]))
-      sim_result.emit(&sim_result, data);
+      sim_result.emit(&sim_result, data, threadData);
 
     data->simulationInfo.terminal = 0;
   }
@@ -585,7 +584,7 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
  *
  *  This is the main function of the solver, it performs the simulation.
  */
-int solver_main(DATA* data, const char* init_initMethod, const char* init_file,
+int solver_main(DATA* data, threadData_t *threadData, const char* init_initMethod, const char* init_file,
     double init_time, int lambda_steps, int solverID, const char* outputVariablesAtEnd)
 {
   TRACE_PUSH
@@ -622,13 +621,13 @@ int solver_main(DATA* data, const char* init_initMethod, const char* init_file,
   }
 
   /* allocate SolverInfo memory */
-  retVal = initializeSolverData(data, &solverInfo);
+  retVal = initializeSolverData(data, threadData, &solverInfo);
   omc_alloc_interface.collect_a_little();
 
   /* initialize all parts of the model */
   if(0 == retVal)
   {
-    retVal = initializeModel(data, init_initMethod, init_file, init_time, lambda_steps);
+    retVal = initializeModel(data, threadData, init_initMethod, init_file, init_time, lambda_steps);
   }
   omc_alloc_interface.collect_a_little();
 
@@ -642,35 +641,35 @@ int solver_main(DATA* data, const char* init_initMethod, const char* init_file,
     {
       /* prevent emit if noeventemit flag is used */
       if (!(omc_flag[FLAG_NOEVENTEMIT]))
-        sim_result.emit(&sim_result, data);
+        sim_result.emit(&sim_result, data, threadData);
 
       infoStreamPrint(LOG_SOLVER, 0, "The model has no time changing variables, no integration will be performed.");
       solverInfo.currentTime = simInfo->stopTime;
       data->localData[0]->timeValue = simInfo->stopTime;
       overwriteOldSimulationData(data);
-      finishSimulation(data, &solverInfo, outputVariablesAtEnd);
+      finishSimulation(data, threadData, &solverInfo, outputVariablesAtEnd);
     }
     /* starts the simulation main loop - special solvers */
     else if(S_QSS == solverInfo.solverMethod)
     {
-      sim_result.emit(&sim_result,data);
+      sim_result.emit(&sim_result,data,threadData);
 
       /* overwrite the whole ring-buffer with initialized values */
       overwriteOldSimulationData(data);
 
       infoStreamPrint(LOG_SOLVER, 0, "Start numerical integration (startTime: %g, stopTime: %g)", simInfo->startTime, simInfo->stopTime);
-      retVal = data->callback->performQSSSimulation(data, &solverInfo);
+      retVal = data->callback->performQSSSimulation(data, threadData, &solverInfo);
       omc_alloc_interface.collect_a_little();
 
       /* terminate the simulation */
-      finishSimulation(data, &solverInfo, outputVariablesAtEnd);
+      finishSimulation(data, threadData, &solverInfo, outputVariablesAtEnd);
       omc_alloc_interface.collect_a_little();
     }
     /* starts the simulation main loop - standard solver interface */
     else
     {
       if(solverInfo.solverMethod != S_OPTIMIZATION)
-        sim_result.emit(&sim_result,data);
+        sim_result.emit(&sim_result,data,threadData);
 
       /* overwrite the whole ring-buffer with initialized values */
       overwriteOldSimulationData(data);
@@ -679,11 +678,11 @@ int solver_main(DATA* data, const char* init_initMethod, const char* init_file,
       storeOldValues(data);
 
       infoStreamPrint(LOG_SOLVER, 0, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
-      retVal = data->callback->performSimulation(data, &solverInfo);
+      retVal = data->callback->performSimulation(data, threadData, &solverInfo);
       omc_alloc_interface.collect_a_little();
       /* terminate the simulation */
       if (solverInfo.solverMethod == S_SYM_IMP_EULER) data->callback->symEulerUpdate(data, 0);
-      finishSimulation(data, &solverInfo, outputVariablesAtEnd);
+      finishSimulation(data, threadData, &solverInfo, outputVariablesAtEnd);
       omc_alloc_interface.collect_a_little();
     }
   }
@@ -715,7 +714,7 @@ static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
 }
 
 /***************************************    SYM_EULER_IMP     *********************************/
-static int sym_euler_im_step(DATA* data, SOLVER_INFO* solverInfo){
+static int sym_euler_im_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo){
   int retVal,i,j;
   /*time*/
   solverInfo->currentTime = data->localData[1]->timeValue + solverInfo->currentStepSize;
@@ -728,9 +727,9 @@ static int sym_euler_im_step(DATA* data, SOLVER_INFO* solverInfo){
   }
   /* read input vars */
   externalInputUpdate(data);
-  data->callback->input_function(data);
+  data->callback->input_function(data, threadData);
   /* eval alg equations, note ode is empty */
-  data->callback->functionODE(data);
+  data->callback->functionODE(data, threadData);
   /* update der(x)*/
   for(i=0, j=data->modelData.nStates; i<data->modelData.nStates; ++i, ++j)
     data->localData[0]->realVars[j] = (data->localData[0]->realVars[i]-data->localData[1]->realVars[i])/solverInfo->currentStepSize;
@@ -738,7 +737,7 @@ static int sym_euler_im_step(DATA* data, SOLVER_INFO* solverInfo){
 }
 
 /***************************************    RK4      ***********************************/
-static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
+static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   double** k = ((RK4_DATA*)(solverInfo->solverData))->work_states;
   double sum;
@@ -766,9 +765,9 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
     sData->timeValue = sDataOld->timeValue + rungekutta_c[j] * solverInfo->currentStepSize;
     /* read input vars */
     externalInputUpdate(data);
-    data->callback->input_function(data);
+    data->callback->input_function(data, threadData);
     /* eval ode equations */
-    data->callback->functionODE(data);
+    data->callback->functionODE(data, threadData);
     for(i = 0; i < data->modelData.nStates; i++)
     {
       k[j][i] = stateDer[i];
@@ -790,14 +789,14 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
 
 /***************************************    Run Ipopt for optimization     ***********************************/
 #if defined(WITH_IPOPT)
-static int ipopt_step(DATA* data, SOLVER_INFO* solverInfo)
+static int ipopt_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   int cJ, res;
 
-  cJ = data->threadData->currentErrorStage;
-  data->threadData->currentErrorStage = ERROR_OPTIMIZE;
-  res = runOptimizer(data, solverInfo);
-  data->threadData->currentErrorStage = cJ;
+  cJ = threadData->currentErrorStage;
+  threadData->currentErrorStage = ERROR_OPTIMIZE;
+  res = runOptimizer(data, threadData, solverInfo);
+  threadData->currentErrorStage = cJ;
   return res;
 }
 #endif

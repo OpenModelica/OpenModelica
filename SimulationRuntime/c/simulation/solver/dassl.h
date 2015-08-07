@@ -102,11 +102,11 @@ typedef struct DASSL_DATA{
 
 /* main dassl function to make a step */
 int
-dassl_step(DATA* simData, SOLVER_INFO* solverInfo);
+dassl_step(DATA* simData, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
 /* initial main dassl Data */
 int
-dassl_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData);
+dassl_initial(DATA* simData, threadData_t *threadData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData);
 
 /* deinitial main dassl Data */
 int

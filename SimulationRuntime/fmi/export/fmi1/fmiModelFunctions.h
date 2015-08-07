@@ -205,7 +205,7 @@ extern "C" {
 
 
 /* Providing independent variables and re-initialization of caching */
-   DllExport fmiStatus fmiSetTime                (fmiComponent c, fmiReal time);
+   DllExport fmiStatus fmiSetTime                (fmiComponent c, fmiReal t);
    DllExport fmiStatus fmiSetContinuousStates    (fmiComponent c, const fmiReal x[], size_t nx);
    DllExport fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate);
    DllExport fmiStatus fmiSetReal                (fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiReal    value[]);

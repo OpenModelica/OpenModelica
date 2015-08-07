@@ -76,7 +76,7 @@ extern int dgesv_(int *n, int *nrhs, doublereal *a, int *lda, int *ipiv, doubler
  *  \author wbraun
  *
  */
-int getAnalyticalJacobianNewton(DATA* data, double* jac, int sysNumber)
+int getAnalyticalJacobianNewton(DATA* data, threadData_t *threadData, double* jac, int sysNumber)
 {
   int i,j,k,l,ii,currentSys = sysNumber;
   NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]);
@@ -92,7 +92,7 @@ int getAnalyticalJacobianNewton(DATA* data, double* jac, int sysNumber)
       if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
         data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1;
 
-    systemData->analyticalJacobianColumn(data);
+    systemData->analyticalJacobianColumn(data, threadData);
 
     for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeCols; j++)
     {
@@ -124,7 +124,7 @@ int getAnalyticalJacobianNewton(DATA* data, double* jac, int sysNumber)
 /*! \fn wrapper_fvec_newton for the residual Function
  *   tensolve calls for the subroutine fcn(n, x, fvec, iflag, data)
  *
- *	fj decides whether the function values or the jacobian matrix shall be calculated
+ *  fj decides whether the function values or the jacobian matrix shall be calculated
  *  fj = 1 ==> calculate function values
  *   fj = 0 ==> calculate jacobian matrix
  */
@@ -132,24 +132,19 @@ int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
 {
   DATA_USER* uData = (DATA_USER*) userdata;
   DATA* data = (DATA*)(uData->data);
+  void *dataAndThreadData[2] = {data, uData->threadData};
   int currentSys = ((DATA_USER*)userdata)->sysNumber;
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.nonlinearSystemData[currentSys]);
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
   int flag = 1;
   int *iflag=&flag;
 
-  if (fj)
-  {
-    (data->simulationInfo.nonlinearSystemData[currentSys].residualFunc)(data, x, fvec, iflag);
-  }
-  else
-  {
-    if(systemData->jacobianIndex != -1)
-    {
-      getAnalyticalJacobianNewton(data, solverData->fjac, currentSys);
-    }
-    else
-    {
+  if (fj) {
+    (data->simulationInfo.nonlinearSystemData[currentSys].residualFunc)(dataAndThreadData, x, fvec, iflag);
+  } else {
+    if(systemData->jacobianIndex != -1) {
+      getAnalyticalJacobianNewton(data, uData->threadData, solverData->fjac, currentSys);
+    } else {
       double delta_h = sqrt(solverData->epsfcn);
       double delta_hh;
       double xsave;
@@ -157,14 +152,10 @@ int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
       int i,j,l, linear=0;
       linear = systemData->method;
 
-      for(i = 0; i < *n; i++)
-      {
-        if(linear)
-        {
+      for(i = 0; i < *n; i++) {
+        if(linear) {
           delta_hh = 1;
-        }
-        else
-        {
+        } else {
 
           delta_hh = fmax(delta_h * fmax(fabs(x[i]), fabs(fvec[i])), delta_h);
           delta_hh = ((fvec[i] >= 0) ? delta_hh : -delta_hh);
@@ -177,8 +168,7 @@ int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
         wrapper_fvec_newton(n, x, solverData->rwork, userdata, 1);
         solverData->nfev++;
 
-        for(j = 0; j < *n; j++)
-        {
+        for(j = 0; j < *n; j++) {
           l = i * *n + j;
           solverData->fjac[l] = (solverData->rwork[j] - fvec[j]) * delta_hh;
         }
@@ -196,7 +186,7 @@ int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
  *
  *  \author wbraun
  */
-int solveNewton(DATA *data, int sysNumber)
+int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
 {
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.nonlinearSystemData[sysNumber]);
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
@@ -219,6 +209,7 @@ int solveNewton(DATA *data, int sysNumber)
   assert(userdata != NULL);
 
   userdata->data = (void*)data;
+  userdata->threadData = threadData;
   userdata->sysNumber = sysNumber;
 
   /*
@@ -243,8 +234,7 @@ int solveNewton(DATA *data, int sysNumber)
     infoStreamPrintWithEquationIndexes(LOG_NLS, 1, indexes, "Start solving Non-Linear System %d at time %g with Newton Solver",
         eqSystemNumber, data->localData[0]->timeValue);
 
-    for(i = 0; i < solverData->n; i++)
-    {
+    for(i = 0; i < solverData->n; i++) {
       infoStreamPrint(LOG_NLS_V, 1, "x[%d] = %.15e", i, data->simulationInfo.discreteCall ? systemData->nlsx[i] : systemData->nlsxExtrapolation[i]);
       infoStreamPrint(LOG_NLS_V, 0, "nominal = %g +++ nlsx = %g +++ old = %g +++ extrapolated = %g",
           systemData->nominal[i], systemData->nlsx[i], systemData->nlsxOld[i], systemData->nlsxExtrapolation[i]);
@@ -254,10 +244,11 @@ int solveNewton(DATA *data, int sysNumber)
   }
 
   /* set x vector */
-  if(data->simulationInfo.discreteCall)
+  if(data->simulationInfo.discreteCall) {
     memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
-  else
+  } else {
     memcpy(solverData->x, systemData->nlsxExtrapolation, solverData->n*(sizeof(double)));
+  }
 
   /* start solving loop */
   while(!giveUp && !success)

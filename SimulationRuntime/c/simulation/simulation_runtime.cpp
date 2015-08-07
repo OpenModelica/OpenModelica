@@ -402,7 +402,7 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
 /**
  * Starts a non-interactive simulation
  */
-int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
+int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t *threadData)
 {
   TRACE_PUSH
 
@@ -423,7 +423,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     char *endptr;
     mmc_sint_t alarmVal = strtol(omc_flagValue[FLAG_ALARM],&endptr,10);
     if (errno || *endptr != 0) {
-      throwStreamPrint(data->threadData, "-alarm takes an integer argument (got '%s')", omc_flagValue[FLAG_ALARM]);
+      throwStreamPrint(threadData, "-alarm takes an integer argument (got '%s')", omc_flagValue[FLAG_ALARM]);
     }
     alarm(alarmVal);
   }
@@ -521,7 +521,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     outputVariablesAtEnd = omc_flagValue[FLAG_OUTPUT];
   }
 
-  retVal = callSolver(data, init_initMethod, init_file, init_time, init_lambda_steps, outputVariablesAtEnd, cpuTime);
+  retVal = callSolver(data, threadData, init_initMethod, init_file, init_time, init_lambda_steps, outputVariablesAtEnd, cpuTime);
 
   if (omc_flag[FLAG_ALARM]) {
     alarm(0);
@@ -529,7 +529,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
 
   if(0 == retVal && create_linearmodel) {
     rt_tick(SIM_TIMER_LINEARIZE);
-    retVal = linearize(data);
+    retVal = linearize(data, threadData);
     rt_accumulate(SIM_TIMER_LINEARIZE);
     infoStreamPrint(LOG_STDOUT, 0, "Linear model is created!");
   }
@@ -546,9 +546,9 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     const string plotFile = string(data->modelData.modelFilePrefix) + "_prof.plt";
     rt_accumulate(SIM_TIMER_TOTAL);
     const char* plotFormat = omc_flagValue[FLAG_MEASURETIMEPLOTFORMAT];
-    retVal = printModelInfo(data, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat : "svg",
+    retVal = printModelInfo(data, threadData, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat : "svg",
         MMC_STRINGDATA(data->simulationInfo.solverMethod), MMC_STRINGDATA(data->simulationInfo.outputFormat), data->modelData.resultFileName) && retVal;
-    retVal = printModelInfoJSON(data, jsonInfo.c_str(), data->modelData.resultFileName) && retVal;
+    retVal = printModelInfoJSON(data, threadData, jsonInfo.c_str(), data->modelData.resultFileName) && retVal;
   }
 
   TRACE_POP
@@ -562,7 +562,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
  *
  *  This function initializes result object to emit data.
  */
-int initializeResultData(DATA* simData, int cpuTime)
+int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime)
 {
   int resultFormatHasCheapAliasesAndParameters = 0;
   int retVal = 0;
@@ -608,7 +608,7 @@ int initializeResultData(DATA* simData, int cpuTime)
     return 1;
   }
   initializeOutputFilter(&(simData->modelData), simData->simulationInfo.variableFilter, resultFormatHasCheapAliasesAndParameters);
-  sim_result.init(&sim_result, simData);
+  sim_result.init(&sim_result, simData, threadData);
   infoStreamPrint(LOG_SOLVER, 0, "Allocated simulation result data storage for method '%s' and file='%s'", (char*) MMC_STRINGDATA(simData->simulationInfo.outputFormat), sim_result.filename);
   return 0;
 }
@@ -621,7 +621,7 @@ int initializeResultData(DATA* simData, int cpuTime)
  * "euler" calls an Euler solver
  * "rungekutta" calls a fourth-order Runge-Kutta Solver
  */
-int callSolver(DATA* simData, string init_initMethod, string init_file,
+int callSolver(DATA* simData, threadData_t *threadData, string init_initMethod, string init_file,
       double init_time, int lambda_steps, string outputVariablesAtEnd, int cpuTime)
 {
   TRACE_PUSH
@@ -629,12 +629,10 @@ int callSolver(DATA* simData, string init_initMethod, string init_file,
   mmc_sint_t i;
   mmc_sint_t solverID = S_UNKNOWN;
   const char* outVars = (outputVariablesAtEnd.size() == 0) ? NULL : outputVariablesAtEnd.c_str();
-  threadData_t *threadData = simData->threadData;
   MMC_TRY_INTERNAL(mmc_jumper)
   MMC_TRY_INTERNAL(globalJumpBuffer)
 
-  if(initializeResultData(simData, cpuTime))
-  {
+  if (initializeResultData(simData, threadData, cpuTime)) {
     TRACE_POP
     return -1;
   }
@@ -665,7 +663,7 @@ int callSolver(DATA* simData, string init_initMethod, string init_file,
     for(i=1; i<S_MAX; ++i) {
       warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", SOLVER_METHOD_NAME[i], SOLVER_METHOD_DESC[i]);
     }
-    throwStreamPrint(simData->threadData,"see last warning");
+    throwStreamPrint(threadData,"see last warning");
     retVal = 1;
   } else {
     infoStreamPrint(LOG_SOLVER, 0, "recognized solver: %s", SOLVER_METHOD_NAME[solverID]);
@@ -677,13 +675,13 @@ int callSolver(DATA* simData, string init_initMethod, string init_file,
                         simData->simulationInfo.numSteps, simData->simulationInfo.tolerance, 3);
     } else /* standard solver interface */
 #endif
-      retVal = solver_main(simData, init_initMethod.c_str(), init_file.c_str(), init_time, lambda_steps, solverID, outVars);
+      retVal = solver_main(simData, threadData, init_initMethod.c_str(), init_file.c_str(), init_time, lambda_steps, solverID, outVars);
   }
 
   MMC_CATCH_INTERNAL(mmc_jumper)
   MMC_CATCH_INTERNAL(globalJumpBuffer)
 
-  sim_result.free(&sim_result, simData);
+  sim_result.free(&sim_result, simData, threadData);
 
   TRACE_POP
   return retVal;
@@ -693,7 +691,7 @@ int callSolver(DATA* simData, string init_initMethod, string init_file,
 /**
  * Initialization is the same for interactive or non-interactive simulation
  */
-int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
+int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *threadData)
 {
   int i;
   initDumpSystem();
@@ -764,7 +762,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   }
 
   setGlobalVerboseLevel(argc, argv);
-  initializeDataStruc(data);
+  initializeDataStruc(data, threadData);
   if(!data)
   {
     std::cerr << "Error: Could not initialize the global data structure file" << std::endl;
@@ -780,9 +778,9 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   rt_accumulate(SIM_TIMER_INIT_XML);
 
   /* initialize static data of mixed/linear/non-linear system solvers */
-  initializeMixedSystems(data);
-  initializeLinearSystems(data);
-  initializeNonlinearSystems(data);
+  initializeMixedSystems(data, threadData);
+  initializeLinearSystems(data, threadData);
+  initializeNonlinearSystems(data, threadData);
 
   sim_noemit = omc_flag[FLAG_NOEMIT];
 
@@ -864,12 +862,11 @@ void communicateMsg(char id, unsigned int size, const char *data)
  * -r res.plt write result to file.
  */
 
-int _main_SimulationRuntime(int argc, char**argv, DATA *data)
+int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData)
 {
   int retVal = -1;
-  threadData_t *threadData = data->threadData;
   MMC_TRY_INTERNAL(globalJumpBuffer)
-    if (initRuntimeAndSimulation(argc, argv, data)) //initRuntimeAndSimulation returns 1 if an error occurs
+    if (initRuntimeAndSimulation(argc, argv, data, threadData)) //initRuntimeAndSimulation returns 1 if an error occurs
       return 1;
 
     /* sighandler_t oldhandler = different type on all platforms... */
@@ -878,13 +875,13 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
     signal(SIGUSR1, SimulationRuntime_printStatus);
 #endif
 
-    retVal = startNonInteractiveSimulation(argc, argv, data);
+    retVal = startNonInteractiveSimulation(argc, argv, data, threadData);
 
-    freeMixedSystems(data);        /* free mixed system data */
-    freeLinearSystems(data);       /* free linear system data */
-    freeNonlinearSystems(data);    /* free nonlinear system data */
+    freeMixedSystems(data, threadData);        /* free mixed system data */
+    freeLinearSystems(data, threadData);       /* free linear system data */
+    freeNonlinearSystems(data, threadData);    /* free nonlinear system data */
 
-    data->callback->callExternalObjectDestructors(data);
+    data->callback->callExternalObjectDestructors(data, threadData);
     deInitializeDataStruc(data);
     fflush(NULL);
   MMC_CATCH_INTERNAL(globalJumpBuffer)

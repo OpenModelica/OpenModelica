@@ -41,7 +41,7 @@
  *
  *  \author ???
  */
-void initializeStateSetJacobians(DATA *data)
+void initializeStateSetJacobians(DATA *data, threadData_t *threadData)
 {
   long i = 0;
   STATE_SET_DATA *set = NULL;
@@ -50,9 +50,9 @@ void initializeStateSetJacobians(DATA *data)
   for(i=0; i<data->modelData.nStateSets; i++)
   {
     set = &(data->simulationInfo.stateSetData[i]);
-    if(set->initialAnalyticalJacobian(data))
+    if(set->initialAnalyticalJacobian(data, threadData))
     {
-      throwStreamPrint(data->threadData, "can not initialze Jacobians for dynamic state selection");
+      throwStreamPrint(threadData, "can not initialze Jacobians for dynamic state selection");
     }
   }
   initializeStateSetPivoting(data);
@@ -128,7 +128,7 @@ void freeStateSetData(DATA *data)
  *
  *  \author wbraun
  */
-static void getAnalyticalJacobianSet(DATA* data, unsigned int index)
+static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsigned int index)
 {
   unsigned int i, j, k, l, ii;
   unsigned int jacIndex = data->simulationInfo.stateSetData[index].jacobianIndex;
@@ -153,7 +153,7 @@ static void getAnalyticalJacobianSet(DATA* data, unsigned int index)
       messageClose(LOG_DSS_JAC);
     }
 
-    (data->simulationInfo.stateSetData[index].analyticalJacobianColumn)(data);
+    (data->simulationInfo.stateSetData[index].analyticalJacobianColumn)(data, threadData);
 
     for(j=0; j < data->simulationInfo.analyticJacobians[jacIndex].sizeCols; j++)
     {
@@ -303,7 +303,7 @@ static int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, 
  *
  *  \author Frenkel TUD
  */
-int stateSelection(DATA *data, char reportError, int switchStates)
+int stateSelection(DATA *data, threadData_t *threadData, char reportError, int switchStates)
 {
   TRACE_PUSH
   long i=0;
@@ -319,7 +319,7 @@ int stateSelection(DATA *data, char reportError, int switchStates)
     modelica_integer* oldRowPivot = (modelica_integer*) malloc(set->nDummyStates * sizeof(modelica_integer));
 
     /* generate jacobian, stored in set->J */
-    getAnalyticalJacobianSet(data, i);
+    getAnalyticalJacobianSet(data, threadData, i);
 
     /* call pivoting function to select the states */
     memcpy(oldColPivot, set->colPivot, set->nCandidates*sizeof(modelica_integer));
@@ -342,7 +342,7 @@ int stateSelection(DATA *data, char reportError, int switchStates)
         warningStreamPrint(LOG_DSS, 0, "%s", set->statescandidates[i]->name);
       messageClose(LOG_DSS);
 
-      throwStreamPrint(data->threadData, "Error, singular Jacobian for dynamic state selection at time %f\nUse -lv LOG_DSS_JAC to get the Jacobian", data->localData[0]->timeValue);
+      throwStreamPrint(threadData, "Error, singular Jacobian for dynamic state selection at time %f\nUse -lv LOG_DSS_JAC to get the Jacobian", data->localData[0]->timeValue);
     }
     /* if we have a new set throw event for reinitialization
        and set the A matrix for set.x=A*(states) */

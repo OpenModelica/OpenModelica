@@ -34,7 +34,7 @@
 #include "simulation_data.h"
 
 /* initialize jacobians for state selection */
-void initializeStateSetJacobians(DATA *data);
+void initializeStateSetJacobians(DATA *data, threadData_t *threadData);
 
 /* initialize pivoting data for state selection */
 void initializeStateSetPivoting(DATA *data);
@@ -43,7 +43,7 @@ void initializeStateSetPivoting(DATA *data);
 void freeStateSetData(DATA *data);
 
 /* update the state selection */
-int stateSelection(DATA *data, char reportError, int switchStates);
+int stateSelection(DATA *data, threadData_t *threadData, char reportError, int switchStates);
 
 /* do pivoting */
 extern int pivot(double *A, modelica_integer n_rows, modelica_integer n_cols, modelica_integer *rowInd, modelica_integer *colInd);

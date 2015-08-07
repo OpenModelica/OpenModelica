@@ -53,7 +53,7 @@ int hybrj_( int(*) (const integer*, const double*, double*, double *, const inte
 
 extern int allocateHybrdData(int size, void **data);
 extern int freeHybrdData(void **data);
-extern int solveHybrd(DATA *data, int sysNumber);
+extern int solveHybrd(DATA *data, threadData_t *threadData, int sysNumber);
 
 
 typedef struct DATA_HYBRD

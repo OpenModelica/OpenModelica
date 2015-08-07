@@ -48,10 +48,10 @@
 extern "C" {
 #endif /* cplusplus */
 
-void mat4_init(simulation_result *self,DATA *data);
-void mat4_emit(simulation_result *self,DATA *data);
-void mat4_writeParameterData(simulation_result *self,DATA *data);
-void mat4_free(simulation_result *self,DATA *data);
+void mat4_init(simulation_result *self,DATA *data, threadData_t *threadData);
+void mat4_emit(simulation_result *self,DATA *data, threadData_t *threadData);
+void mat4_writeParameterData(simulation_result *self,DATA *data, threadData_t *threadData);
+void mat4_free(simulation_result *self,DATA *data, threadData_t *threadData);
 
 #ifdef __cplusplus
 }

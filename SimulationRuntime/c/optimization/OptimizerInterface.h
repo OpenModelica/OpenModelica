@@ -38,7 +38,7 @@
 #include "../simulation/solver/solver_main.h"
 
 #if !defined(OMC_MINIMAL_RUNTIME)
-int runOptimizer(DATA* data, SOLVER_INFO* solverInfo);
+int runOptimizer(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 #endif
 
 #endif

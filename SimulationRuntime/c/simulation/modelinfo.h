@@ -35,8 +35,8 @@
 extern "C" {
 #endif
 
-int printModelInfo(DATA *data, const char *modelinfo, const char *plotinfo, const char *plotFormat, const char *method, const char *outputFormat, const char *outputFilename);
-int printModelInfoJSON(DATA *data, const char *filename, const char *outputFilename);
+int printModelInfo(DATA *data, threadData_t *threadData, const char *modelinfo, const char *plotinfo, const char *plotFormat, const char *method, const char *outputFormat, const char *outputFilename);
+int printModelInfoJSON(DATA *data, threadData_t *threadData, const char *filename, const char *outputFilename);
 
 #ifdef __cplusplus
 }

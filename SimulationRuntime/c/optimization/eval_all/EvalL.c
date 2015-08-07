@@ -202,6 +202,7 @@ static inline void num_hessian0(double * v, const double * const lambda,
   const modelica_boolean la = optData->s.lagrange;
   const modelica_boolean upCost = la && objFactor != 0;
   DATA * data = optData->data;
+  threadData_t *threadData = optData->threadData;
 
   const int nv = optData->dim.nv;
   const int nx = optData->dim.nx;
@@ -235,9 +236,9 @@ static inline void num_hessian0(double * v, const double * const lambda,
       data->localData[0]->realVars[l] = v[l]*vnom[l];
     for(; l <nv; ++l)
       data->simulationInfo.inputVars[l-nx] = (modelica_real) v[l]*vnom[l];
-    data->callback->input_function(data);
+    data->callback->input_function(data, threadData);
     /*data->callback->functionDAE(data);*/
-    updateDiscreteSystem(data);
+    updateDiscreteSystem(data, threadData);
     /********************/
     diffSynColoredOptimizerSystem(optData, optData->tmpJ, i,j,2);
     /********************/
@@ -299,6 +300,7 @@ static inline void num_hessian1(double * v, const double * const lambda,
   int ii,jj, l,k;
   long double v_save, h;
   DATA * data = optData->data;
+  threadData_t *threadData = optData->threadData;
 
   modelica_real * realV[3];
 
@@ -324,9 +326,9 @@ static inline void num_hessian1(double * v, const double * const lambda,
     for(; l <nv; ++l)
       data->simulationInfo.inputVars[l-nx] = (modelica_real) v[l]*vnom[l];
 
-    data->callback->input_function(data);
+    data->callback->input_function(data, threadData);
     /*data->callback->functionDAE(data);*/
-    updateDiscreteSystem(data);
+    updateDiscreteSystem(data, threadData);
     /********************/
     diffSynColoredOptimizerSystem(optData, optData->tmpJ, i,j,indexJ);
     /********************/

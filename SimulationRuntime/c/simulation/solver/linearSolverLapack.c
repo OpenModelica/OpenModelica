@@ -97,7 +97,7 @@ int freeLapackData(void **voiddata)
  *  \author wbraun
  *
  */
-int getAnalyticalJacobianLapack(DATA* data, double* jac, int sysNumber)
+int getAnalyticalJacobianLapack(DATA* data, threadData_t *threadData, double* jac, int sysNumber)
 {
   int i,j,k,l,ii,currentSys = sysNumber;
   LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.linearSystemData[currentSys]);
@@ -113,7 +113,7 @@ int getAnalyticalJacobianLapack(DATA* data, double* jac, int sysNumber)
       if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
         data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1;
 
-    ((systemData->analyticalJacobianColumn))(data);
+    ((systemData->analyticalJacobianColumn))(data, threadData);
 
     for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeCols; j++)
     {
@@ -143,11 +143,11 @@ int getAnalyticalJacobianLapack(DATA* data, double* jac, int sysNumber)
 /*! \fn wrapper_fvec_lapack for the residual function
  *
  */
-static int wrapper_fvec_lapack(_omc_vector* x, _omc_vector* f, int* iflag, void* data, int sysNumber)
+static int wrapper_fvec_lapack(_omc_vector* x, _omc_vector* f, int* iflag, void** data, int sysNumber)
 {
   int currentSys = sysNumber;
 
-  (*((DATA*)data)->simulationInfo.linearSystemData[currentSys].residualFunc)(data, x->data, f->data, iflag);
+  (*((DATA*)data[0])->simulationInfo.linearSystemData[currentSys].residualFunc)(data, x->data, f->data, iflag);
   return 0;
 }
 
@@ -158,8 +158,9 @@ static int wrapper_fvec_lapack(_omc_vector* x, _omc_vector* f, int* iflag, void*
  *
  *  \author wbraun
  */
-int solveLapack(DATA *data, int sysNumber)
+int solveLapack(DATA *data, threadData_t *threadData, int sysNumber)
 {
+  void *dataAndThreadData[2] = {data, threadData};
   int i, j, iflag = 1;
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.linearSystemData[sysNumber]);
   DATA_LAPACK* solverData = (DATA_LAPACK*)systemData->solverData;
@@ -190,22 +191,22 @@ int solveLapack(DATA *data, int sysNumber)
     memset(systemData->A, 0, (systemData->size)*(systemData->size)*sizeof(double));
 
     /* update matrix A */
-    systemData->setA(data, systemData);
+    systemData->setA(data, threadData, systemData);
 
     /* update vector b (rhs) */
-    systemData->setb(data, systemData);
+    systemData->setb(data, threadData, systemData);
   } else {
 
     /* calculate jacobian -> matrix A*/
     if(systemData->jacobianIndex != -1){
-      getAnalyticalJacobianLapack(data, solverData->A->data, sysNumber);
+      getAnalyticalJacobianLapack(data, threadData, solverData->A->data, sysNumber);
     } else {
-      assertStreamPrint(data->threadData, 1, "jacobian function pointer is invalid" );
+      assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
     }
 
     /* calculate vector b (rhs) */
     _omc_copyVector(solverData->work, solverData->x);
-    wrapper_fvec_lapack(solverData->work, solverData->b, &iflag, data, sysNumber);
+    wrapper_fvec_lapack(solverData->work, solverData->b, &iflag, dataAndThreadData, sysNumber);
   }
   infoStreamPrint(LOG_LS, 0, "###  %f  time to set Matrix A and vector b.", rt_ext_tp_tock(&(solverData->timeClock)));
 
@@ -258,7 +259,7 @@ int solveLapack(DATA *data, int sysNumber)
       solverData->x = _omc_addVectorVector(solverData->x, solverData->work, solverData->b);
 
       /* update inner equations */
-      wrapper_fvec_lapack(solverData->x, solverData->work, &iflag, data, sysNumber);
+      wrapper_fvec_lapack(solverData->x, solverData->work, &iflag, dataAndThreadData, sysNumber);
       residualNorm = _omc_euclideanVectorNorm(solverData->work);
     } else {
       /* take the solution */

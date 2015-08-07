@@ -60,7 +60,7 @@ static double tolZC;
  *
  *  \param [ref] [data]
  */
-void updateDiscreteSystem(DATA *data)
+void updateDiscreteSystem(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
   int IterationNum = 0;
@@ -70,23 +70,26 @@ void updateDiscreteSystem(DATA *data)
 
   data->simulationInfo.callStatistics.updateDiscreteSystem++;
 
-  data->callback->function_updateRelations(data, 1);
+  data->callback->function_updateRelations(data, threadData, 1);
   updateRelationsPre(data);
   storeRelations(data);
 
-  data->callback->functionDAE(data);
+  data->callback->functionDAE(data, threadData);
   debugStreamPrint(LOG_EVENTS_V, 0, "updated discrete System");
 
   relationChanged = checkRelations(data);
-  discreteChanged = data->callback->checkForDiscreteChanges(data);
+  discreteChanged = data->callback->checkForDiscreteChanges(data, threadData);
   while(discreteChanged || data->simulationInfo.needToIterate || relationChanged)
   {
-    if(data->simulationInfo.needToIterate)
+    if(data->simulationInfo.needToIterate) {
       debugStreamPrint(LOG_EVENTS_V, 0, "reinit() call. Iteration needed!");
-    if(relationChanged)
+    }
+    if(relationChanged) {
       debugStreamPrint(LOG_EVENTS_V, 0, "relations changed. Iteration needed.");
-    if(discreteChanged)
+    }
+    if(discreteChanged) {
       debugStreamPrint(LOG_EVENTS_V, 0, "discrete Variable changed. Iteration needed.");
+    }
 
     storePreValues(data);
     updateRelationsPre(data);
@@ -94,14 +97,15 @@ void updateDiscreteSystem(DATA *data)
     printRelations(data, LOG_EVENTS_V);
     printZeroCrossings(data, LOG_EVENTS_V);
 
-    data->callback->functionDAE(data);
+    data->callback->functionDAE(data, threadData);
 
     IterationNum++;
-    if(IterationNum > IterationMax)
-      throwStreamPrint(data->threadData, "ERROR: Too many event iterations. System is inconsistent. Simulation terminate.");
+    if(IterationNum > IterationMax) {
+      throwStreamPrint(threadData, "ERROR: Too many event iterations. System is inconsistent. Simulation terminate.");
+    }
 
     relationChanged = checkRelations(data);
-    discreteChanged = data->callback->checkForDiscreteChanges(data);
+    discreteChanged = data->callback->checkForDiscreteChanges(data, threadData);
   }
   storeRelations(data);
 
@@ -114,7 +118,7 @@ void updateDiscreteSystem(DATA *data)
  *
  *  \param [ref] [data]
  */
-void saveZeroCrossings(DATA* data)
+void saveZeroCrossings(DATA* data, threadData_t *threadData)
 {
   TRACE_PUSH
   long i = 0;
@@ -124,7 +128,7 @@ void saveZeroCrossings(DATA* data)
   for(i=0;i<data->modelData.nZeroCrossings;i++)
     data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
 
-  data->callback->function_ZeroCrossings(data, data->simulationInfo.zeroCrossings);
+  data->callback->function_ZeroCrossings(data, threadData, data->simulationInfo.zeroCrossings);
 
   TRACE_POP
 }
@@ -513,12 +517,12 @@ void overwriteOldSimulationData(DATA *data)
  *
  *  \author wbraun
  */
-void copyRingBufferSimulationData(DATA *data, SIMULATION_DATA **destData, RINGBUFFER* destRing)
+void copyRingBufferSimulationData(DATA *data, threadData_t *threadData, SIMULATION_DATA **destData, RINGBUFFER* destRing)
 {
   TRACE_PUSH
   long i;
 
-  assertStreamPrint(data->threadData, ringBufferLength(data->simulationData) == ringBufferLength(destRing), "copy ring buffer failed, because of different sizes.");
+  assertStreamPrint(threadData, ringBufferLength(data->simulationData) == ringBufferLength(destRing), "copy ring buffer failed, because of different sizes.");
 
   for(i=0; i<ringBufferLength(data->simulationData); ++i)
   {
@@ -840,7 +844,7 @@ double getNextSampleTimeFMU(DATA *data)
  *  \param [ref] [data]
  *
  */
-void initializeDataStruc(DATA *data)
+void initializeDataStruc(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
   SIMULATION_DATA tmpSimData = {0};
@@ -851,7 +855,7 @@ void initializeDataStruc(DATA *data)
   data->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
   if(!data->simulationData)
   {
-    throwStreamPrint(data->threadData, "Your memory is not strong enough for our ringbuffer!");
+    throwStreamPrint(threadData, "Your memory is not strong enough for our ringbuffer!");
   }
 
   /* prepare RingBuffer */
@@ -861,13 +865,13 @@ void initializeDataStruc(DATA *data)
     tmpSimData.timeValue = 0;
     /* buffer for all variable values */
     tmpSimData.realVars = (modelica_real*) calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
-    assertStreamPrint(data->threadData, 0 != tmpSimData.realVars, "out of memory");
+    assertStreamPrint(threadData, 0 != tmpSimData.realVars, "out of memory");
     tmpSimData.integerVars = (modelica_integer*) calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
-    assertStreamPrint(data->threadData, 0 != tmpSimData.integerVars, "out of memory");
+    assertStreamPrint(threadData, 0 != tmpSimData.integerVars, "out of memory");
     tmpSimData.booleanVars = (modelica_boolean*) calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
-    assertStreamPrint(data->threadData, 0 != tmpSimData.booleanVars, "out of memory");
+    assertStreamPrint(threadData, 0 != tmpSimData.booleanVars, "out of memory");
     tmpSimData.stringVars = (modelica_string*) GC_malloc_uncollectable(data->modelData.nVariablesString * sizeof(modelica_string));
-    assertStreamPrint(data->threadData, 0 != tmpSimData.stringVars, "out of memory");
+    assertStreamPrint(threadData, 0 != tmpSimData.stringVars, "out of memory");
     appendRingData(data->simulationData, &tmpSimData);
   }
   data->localData = (SIMULATION_DATA**) GC_malloc_uncollectable(SIZERINGBUFFER * sizeof(SIMULATION_DATA));
@@ -965,7 +969,7 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.extObjs = NULL;
   data->simulationInfo.extObjs = (void**) calloc(data->modelData.nExtObjs, sizeof(void*));
 
-  assertStreamPrint(data->threadData, 0 != data->simulationInfo.extObjs, "error allocating external objects");
+  assertStreamPrint(threadData, 0 != data->simulationInfo.extObjs, "error allocating external objects");
 
   /* initial chattering info */
   data->simulationInfo.chatteringInfo.numEventLimit = 100;
@@ -998,7 +1002,7 @@ void initializeDataStruc(DATA *data)
 
   /* initial delay */
   data->simulationInfo.delayStructure = (RINGBUFFER**)malloc(data->modelData.nDelayExpressions * sizeof(RINGBUFFER*));
-  assertStreamPrint(data->threadData, 0 != data->simulationInfo.delayStructure, "out of memory");
+  assertStreamPrint(threadData, 0 != data->simulationInfo.delayStructure, "out of memory");
 
   for(i=0; i<data->modelData.nDelayExpressions; i++)
     data->simulationInfo.delayStructure[i] = allocRingBuffer(1024, sizeof(TIME_AND_VALUE));
@@ -1285,7 +1289,7 @@ modelica_real _event_ceil(modelica_real x, modelica_integer index, DATA *data)
  *
  * Returns the algebraic quotient x/y with any fractional part discarded.
  */
-modelica_integer _event_div_integer(modelica_integer x1, modelica_integer x2, modelica_integer index, DATA *data)
+modelica_integer _event_div_integer(modelica_integer x1, modelica_integer x2, modelica_integer index, DATA *data, threadData_t *threadData)
 {
   modelica_integer value1, value2;
   if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous)
@@ -1300,7 +1304,7 @@ modelica_integer _event_div_integer(modelica_integer x1, modelica_integer x2, mo
     value1 = (modelica_integer)data->simulationInfo.mathEventsValuePre[index];
     value2 = (modelica_integer)data->simulationInfo.mathEventsValuePre[index+1];
   }
-  assertStreamPrint(data->threadData, value2 != 0, "event_div_integer failt at time %f because x2 is zero!", data->localData[0]->timeValue);
+  assertStreamPrint(threadData, value2 != 0, "event_div_integer failt at time %f because x2 is zero!", data->localData[0]->timeValue);
   return ldiv(value1, value2).quot;
 }
 
@@ -1313,7 +1317,7 @@ modelica_integer _event_div_integer(modelica_integer x1, modelica_integer x2, mo
  *
  * Returns the algebraic quotient x/y with any fractional part discarded.
  */
-modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integer index, DATA *data)
+modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integer index, DATA *data, threadData_t *threadData)
 {
   modelica_real value1, value2;
   if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous)
