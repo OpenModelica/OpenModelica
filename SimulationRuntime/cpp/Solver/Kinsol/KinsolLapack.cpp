@@ -9,7 +9,7 @@
 #include <kinsol/kinsol_impl.h>
 #include <kinsol/kinsol_spbcgs.h>
 #include <kinsol/kinsol_sptfqmr.h>
-#include <kinsol/kinsol_klu.h>
+//#include <kinsol/kinsol_klu.h>
 #include <nvector/nvector_serial.h>
 #include <Solver/Kinsol/KinsolLapack.h>
 
