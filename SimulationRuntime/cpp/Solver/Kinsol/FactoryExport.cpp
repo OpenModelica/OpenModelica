@@ -44,7 +44,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_kinsol(boost::exten
 #endif //USE_SUNDIALS_LAPACK
 #include <kinsol/kinsol_spbcgs.h>
 #include <kinsol/kinsol_sptfqmr.h>
-#include <kinsol/kinsol_klu.h>
+//#include <kinsol/kinsol_klu.h>
 #include <kinsol/kinsol_direct.h>
 #include <sundials/sundials_dense.h>
 #include <kinsol/kinsol_impl.h>
