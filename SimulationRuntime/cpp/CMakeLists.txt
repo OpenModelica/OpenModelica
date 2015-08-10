@@ -40,7 +40,6 @@ OPTION(RUNTIME_PROFILING "RUNTIME_PROFILING" OFF)
 OPTION(FMU_KINSOL "FMU_KINSOL" OFF)
 OPTION(SUNDIALS_LAPACK "SUNDIALS_LAPACK" OFF)
 OPTION(SUNDIALS_ROOT "SUNDIALS ROOT" "")
-OPTION(BUILD_DOCUMENTATION "Use Doxygen to create the cpp runtime documentation" OFF)
 
 #Set Variables
 SET(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../../3rdParty/ModelicaExternalC/C-Sources")
@@ -391,29 +390,6 @@ IF(USE_SUNDIALS)
     INSTALL(FILES ${SUNDIALS_LIBRARIES} DESTINATION bin)
   ENDIF(WIN32)
 ENDIF(USE_SUNDIALS)
-
-#-- generate documentation of cpp runtime with doxygen
-if(BUILD_DOCUMENTATION)
-  FIND_PACKAGE(Doxygen)
-  if (NOT DOXYGEN_FOUND)
-    message(FATAL_ERROR
-      "Doxygen is needed to build the documentation. Please install it correctly")
-  endif()
-   MESSAGE(STATUS "Build the documentation with Doxygen")
-  #-- Configure the Template Doxyfile for our specific project
-  configure_file(cppruntimedoc.config.in
-                 ${PROJECT_BINARY_DIR}/cppruntimedoc.config  @ONLY IMMEDIATE)
-  #-- Add a custom target to run Doxygen when ever the project is built
-  add_custom_target (Docs ALL
-                     ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/cppruntimedoc.config
-                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                     COMMENT "Generating API documentation with Doxygen" VERBATIM
-                    )
-  # IF you do NOT want the documentation to be generated EVERY time you build the project
-  # then leave out the 'ALL' keyword from the above command.
-endif()
-
-
 
 #Handle umfpack
 FIND_PACKAGE(SuiteSparse)
