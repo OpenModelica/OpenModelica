@@ -676,13 +676,12 @@ class StatArray : public BaseArray<T>
   /**
    * Assign static array with internal storage to static array.
    * a = b
-   * Just copy the data pointer if this array has external storage as well.
    * @param b any array of type StatArray
    */
   StatArray<T, nelems, external>& operator=(const StatArray<T, nelems, false>& b)
   {
-    if (external)
-      throw std::runtime_error("Invalid assign operation from internal to external storage StatArray!");
+    if (nelems > 0 && _data == NULL)
+      throw std::runtime_error("Invalid assign operation from StatArray to uninitialized StatArray!");
     else
       b.getDataCopy(_data, nelems);
     return *this;
@@ -741,11 +740,7 @@ class StatArray : public BaseArray<T>
    */
   virtual T* getData()
   {
-     if (external)
-      return _data;
-    else
-      return _array.c_array();
-
+    return _data;
   }
 
   /**
@@ -753,10 +748,7 @@ class StatArray : public BaseArray<T>
    */
   virtual const T* getData() const
   {
-   if (external)
-      return _data;
-    else
-      return _array.data();
+    return _data;
   }
 
   /**
@@ -765,14 +757,7 @@ class StatArray : public BaseArray<T>
    */
   virtual void getDataCopy(T data[], size_t n) const
   {
-    if(n>0)
-	{
-		 if (external)
-      std::copy(_data, _data + n, data);
-    else
-      std::copy(_array.begin(), _array.begin() + n, data);
-
-	}
+    std::copy(_data, _data + n, data);
   }
 
   /**
