@@ -2713,6 +2713,7 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     #include <Core/System/DiscreteEvents.h>
     #include <Core/System/EventHandling.h>
     #include <Core/Utils/Modelica/ModelicaUtilities.h>
+    #include <Core/Utils/extension/logger.hpp>
 
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>.h"

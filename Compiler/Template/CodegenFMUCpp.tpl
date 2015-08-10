@@ -102,6 +102,7 @@ template fmuCalcHelperMainfile(SimCode simCode)
     #include <Core/System/SimVars.h>
     #include <Core/System/DiscreteEvents.h>
     #include <Core/System/EventHandling.h>
+    #include <Core/Utils/extension/logger.hpp>
 
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>.h"
@@ -269,6 +270,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
   // initialization
   void <%modelShortName%>FMU::initialize() {
+    Logger::write("Initializing memory and variables",LC_MOD,LL_DEBUG);
     <%modelShortName%>WriteOutput::initialize();
     <%modelShortName%>Initialize::initializeMemory();
     <%modelShortName%>Initialize::initializeFreeVariables();

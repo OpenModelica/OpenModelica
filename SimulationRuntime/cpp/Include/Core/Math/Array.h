@@ -674,6 +674,21 @@ class StatArray : public BaseArray<T>
   }
 
   /**
+   * Assign static array with internal storage to static array.
+   * a = b
+   * Just copy the data pointer if this array has external storage as well.
+   * @param b any array of type StatArray
+   */
+  StatArray<T, nelems, external>& operator=(const StatArray<T, nelems, false>& b)
+  {
+    if (external)
+      throw std::runtime_error("Invalid assign operation from internal to external storage StatArray!");
+    else
+      b.getDataCopy(_data, nelems);
+    return *this;
+  }
+
+  /**
    * Assignment operator to assign array of type base array to static array
    * a = b
    * @param b any array of type BaseArray
@@ -826,8 +841,19 @@ class StatArrayDim1 : public StatArray<T, size, external>
    * Just copy the data pointer if this array has external storage as well.
    * @param b any array of type StatArrayDim1
    */
-  StatArrayDim1<T, size, external>&
-  operator=(const StatArrayDim1<T, size, true>& b)
+  StatArrayDim1<T, size, external>& operator=(const StatArrayDim1<T, size, true>& b)
+  {
+    StatArray<T, size, external>::operator=(b);
+    return *this;
+  }
+
+  /**
+   * Assign static array with internal storage to static array
+   * a = b
+   * Copy the data to the internal storage.
+   * @param b any array of type StatArrayDim1
+   */
+  StatArrayDim1<T, size, external>& operator=(const StatArrayDim1<T, size, false>& b)
   {
     StatArray<T, size, external>::operator=(b);
     return *this;
@@ -979,6 +1005,19 @@ class StatArrayDim2 : public StatArray<T, size1*size2, external>
    */
   StatArrayDim2<T, size1, size2, external>&
   operator=(const StatArrayDim2<T, size1, size2, true>& b)
+  {
+    StatArray<T, size1*size2, external>::operator=(b);
+    return *this;
+  }
+
+  /**
+   * Assign static array with internal storage to static array
+   * a = b
+   * Copy the data to the internal storage.
+   * @param b any array of type StatArrayDim2
+   */
+  StatArrayDim2<T, size1, size2, external>&
+  operator=(const StatArrayDim2<T, size1, size2, false>& b)
   {
     StatArray<T, size1*size2, external>::operator=(b);
     return *this;
@@ -1139,6 +1178,19 @@ class StatArrayDim3 : public StatArray<T, size1*size2*size3, external>
    */
   StatArrayDim3<T, size1, size2, size3, external>&
   operator=(const StatArrayDim3<T, size1, size2, size3, true>& b)
+  {
+    StatArray<T, size1*size2*size3, external>::operator=(b);
+    return *this;
+  }
+
+  /**
+   * Assign static array with external storage to static array
+   * a = b
+   * Copy the data to the internal storage..
+   * @param b any array of type StatArrayDim3
+   */
+  StatArrayDim3<T, size1, size2, size3, external>&
+  operator=(const StatArrayDim3<T, size1, size2, size3, false>& b)
   {
     StatArray<T, size1*size2*size3, external>::operator=(b);
     return *this;
