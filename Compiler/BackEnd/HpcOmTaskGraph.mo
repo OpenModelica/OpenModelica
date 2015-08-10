@@ -6267,14 +6267,21 @@ algorithm
     local
       Integer offset,eqSys,node;
       Boolean eqSysNeq;
-  case(_,_,_,_)
-    equation
-      ((node,eqSys,offset)) = arrayGet(varCompMapping,tryThisIndex);
-      eqSysNeq = intNe(eqSys,eqSysIdx);
-      node = if eqSysNeq then getNodeForVarIdx(varIdx,eqSysIdx,varCompMapping,tryThisIndex+offset) else node;
-    then node;
-  case(-1,-1,_,_)
-    then -1;
+    case(_,_,_,_)
+      equation
+        ((node,eqSys,offset)) = arrayGet(varCompMapping,tryThisIndex);
+        eqSysNeq = intNe(eqSys,eqSysIdx);
+        if(intEq(offset, 0)) then
+          offset = 1;
+        end if;
+        node = if eqSysNeq then getNodeForVarIdx(varIdx,eqSysIdx,varCompMapping,tryThisIndex+offset) else node;
+      then node;
+    case(-1,-1,_,_)
+      then -1;
+    else
+      equation
+        print("HpcOmTaskGraph.getNodeForVarIdx failed\n");
+      then -1;
   end matchcontinue;
 end getNodeForVarIdx;
 
