@@ -67,7 +67,7 @@ bool ContinuousEvents::startEventIteration(bool& state_vars_reinitialized)
   _event_system->getConditions(_conditions1);
   bool crestart = !std::equal (_conditions1, _conditions1+dim,_conditions0);
 
-  return((drestart||crestart)); //returns true if new events occured
+  return((drestart||crestart)); //returns true if new events occurred
 }
 /** @} */ // end of coreSystem
 /*

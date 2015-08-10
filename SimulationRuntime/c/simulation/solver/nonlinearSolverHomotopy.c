@@ -972,7 +972,7 @@ int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, in
    int pCol, pRow;
    double hValue;
    double hInt;
-   double absMax;
+   double absMax, detJac;
    int r,s;
    double *res;
 
@@ -1026,7 +1026,10 @@ int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, in
     }
   }
 
+  for (detJac=1.0,k=0; k<n; k++) detJac *= A[indRow[k] + indCol[k]*n];
+
   debugMatrixPermutedDouble(LOG_NLS_JAC,"Linear System Matrix [Jac res] after decomposition",A, n, m, indRow, indCol);
+  debugDouble(LOG_NLS_JAC,"Determinante = ", detJac);
   /* Solve even singular matrices !!! */
   for (i=n-1;i>=0; i--) {
     if (i>=*rank) {

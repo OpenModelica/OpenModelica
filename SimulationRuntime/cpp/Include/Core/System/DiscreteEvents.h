@@ -51,17 +51,17 @@ private:
  * Operator class to get pre values of an array
  */
 template<typename T>
-class PreRefArray2CArray
+class PreArray2CArray
 {
   DiscreteEvents *_discrete_events;
 
  public:
-  PreRefArray2CArray(boost::shared_ptr<DiscreteEvents>& discrete_events) {
+  PreArray2CArray(boost::shared_ptr<DiscreteEvents>& discrete_events) {
     _discrete_events = discrete_events.get();
   }
 
-  const T operator()(const T* val) const {
-    return _discrete_events->pre(*val);
+  const T operator()(const T& val) const {
+    return _discrete_events->pre(val);
   }
 };
 /** @} */ // end of coreSystem

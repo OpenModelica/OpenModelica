@@ -192,11 +192,15 @@ void transpose_array(const BaseArray<T>& x, BaseArray<T>& a)
 template <typename T>
 void multiply_array(const BaseArray<T>& inputArray, const T &b, BaseArray<T>& outputArray)
 {
-  outputArray.setDims(inputArray.getDims());
-  const T* data = inputArray.getData();
-  T* aim = outputArray.getData();
-  std::transform (data, data + inputArray.getNumElems(),
+  size_t dim = inputArray.getNumElems();
+  if(dim > 0)
+  {
+	outputArray.setDims(inputArray.getDims());
+	const T* data = inputArray.getData();
+	T* aim = outputArray.getData();
+	std::transform (data, data + inputArray.getNumElems(),
                   aim, std::bind2nd(std::multiplies<T>(), b));
+  }
 };
 
 template <typename T>

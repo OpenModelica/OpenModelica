@@ -1,0 +1,143 @@
+AC_PREREQ([2.63])
+AC_INIT([SimulationRuntimeCpp],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
+
+AC_LANG([C])
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_CPP
+
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
+
+build_short=$build_cpu-$build_os
+host_short=$host_cpu-$host_os
+
+AC_SUBST(host_short)
+
+AC_ARG_WITH(cppruntime-args,  [  --with-cppruntime-args=[cpp-args]       (pass comma separated arguments to the cppruntime configuration - see the cpp runtime documentation for details)],[CPP_RUNTIME_ARGS="$withval"],[CPP_RUNTIME_ARGS=""])
+
+BOOST_STATIC_LINKING="no"
+BOOST_REALPATHS="no"
+RUNTIME_PROFILING="no"
+SCOREP="no"
+SCOREP_HOME=""
+FMU_KINSOL="no"
+PARALLEL_OUTPUT="no"
+SUNDIALS_LAPACK="no"
+CMAKE_COMMANDS="CC=\"${CC}\" CXX=\"${CXX}\" CFLAGS=\"${CFLAGS}\" CXXFLAGS=\"${CXXFLAGS}\""
+
+AC_SUBST(BOOST_STATIC_LINKING_COMMAND)
+AC_SUBST(BOOST_REALPATHS_COMMAND)
+AC_SUBST(RUNTIME_PROFILING_COMMAND)
+AC_SUBST(SCOREP_COMMAND)
+AC_SUBST(SCOREP_HOME)
+AC_SUBST(FMU_KINSOL_COMMAND)
+AC_SUBST(PARALLEL_OUTPUT_COMMAND)
+AC_SUBST(SUNDIALS_LAPACK_COMMAND)
+AC_SUBST(CMAKE_COMMANDS)
+
+evaluateParameter() {
+  case $1 in
+    BOOST_STATIC_LINKING) BOOST_STATIC_LINKING="yes" ;;
+    BOOST_REALPATHS) BOOST_REALPATHS="yes" ;;
+    RUNTIME_PROFILING) RUNTIME_PROFILING="yes" ;;
+    SCOREP) SCOREP="yes" ;;
+    SCOREP_HOME=?*) SCOREP_HOME=`echo $1| cut -d'=' -f 2` ;;
+    SCOREP_HOME=) ;;
+    FMU_KINSOL) FMU_KINSOL="yes" ;;
+    PARALLEL_OUTPUT) PARALLEL_OUTPUT="yes" ;;
+    SUNDIALS_LAPACK) SUNDIALS_LAPACK="yes" ;;
+    *) echo "Unknown Parameter given $1" ;;
+  esac
+}
+
+old_ifs=$IFS
+IFS=,
+for var in $CPP_RUNTIME_ARGS ; do
+  evaluateParameter "$var"
+done;
+IFS=$old_ifs
+
+AC_ARG_WITH(cppruntimeBoostStaticLinking,  [  --with-boost-static-linking       (use static boost libraries for linking)],[BOOST_STATIC_LINKING="$withval"],[])
+
+AC_MSG_CHECKING([if boost static linking is requested])
+if test "$BOOST_STATIC_LINKING" = "yes"; then
+  BOOST_STATIC_LINKING_COMMAND="-DBOOST_STATIC_LINKING=ON"
+  AC_MSG_RESULT([yes])
+else
+  BOOST_STATIC_LINKING_COMMAND="-DBOOST_STATIC_LINKING=OFF"
+  AC_MSG_RESULT([no])
+fi
+
+AC_ARG_WITH(cppruntimeBoostRealpaths,  [  --with-boost-realpaths       (use boost real paths for linking)],[BOOST_REALPATHS="$withval"],[])
+
+AC_MSG_CHECKING([if boost real paths are requested])
+if test "$BOOST_REALPATHS" = "yes"; then
+  BOOST_REALPATHS_COMMAND="-DUSE_BOOST_REALPATHS=ON"
+  AC_MSG_RESULT([yes])
+else
+  BOOST_REALPATHS_COMMAND="-DUSE_BOOST_REALPATHS=OFF"
+  AC_MSG_RESULT([no])
+fi
+
+AC_ARG_WITH(cppruntimeProfiling,  [  --with-runtime-profiling       (enable runtime profiling)],[RUNTIME_PROFILING="$withval"],[])
+
+AC_MSG_CHECKING([if runtime profiling is requested])
+if test "$RUNTIME_PROFILING" = "yes"; then
+  RUNTIME_PROFILING_COMMAND="-DRUNTIME_PROFILING=ON"
+  AC_MSG_RESULT([yes])
+else
+  RUNTIME_PROFILING_COMMAND="-DRUNTIME_PROFILING=OFF"
+  AC_MSG_RESULT([no])
+fi
+
+AC_ARG_WITH(cppruntimeScorep,  [  --with-scorep       (enable scorep support)],[SCOREP="$withval"],[])
+
+AC_MSG_CHECKING([if ScoreP is requested])
+if test "$SCOREP" = "yes"; then
+  SCOREP_COMMAND="-DUSE_SCOREP=ON"
+  CMAKE_COMMANDS="CC=\"scorep --user --nocompiler ${CC}\" CXX=\"scorep --user --nocompiler ${CXX}\""
+  AC_MSG_RESULT([yes])
+else
+  SCOREP_COMMAND="-DUSE_SCOREP=OFF"
+  AC_MSG_RESULT([no])
+fi
+
+AC_ARG_WITH(scorep-home,  [  --with-scorep-home=[path]       (set the home directory of scorep)],[SCOREP_HOME="$withval"],[])
+AC_MSG_RESULT([ScoreP-home is set to $SCOREP_HOME])
+
+AC_ARG_WITH(cppruntimeFmuKinsol,  [  --with-fmu-kinsol       (enable kinsol solver in FMUs)],[FMU_KINSOL="$withval"],[])
+
+AC_MSG_CHECKING([if kinsol for FMUs is requested])
+if test "$FMU_KINSOL" = "yes"; then
+  FMU_KINSOL_COMMAND="-DFMU_KINSOL=ON"
+  AC_MSG_RESULT([yes])
+else
+  FMU_KINSOL_COMMAND="-DFMU_KINSOL=OFF"
+  AC_MSG_RESULT([no])
+fi
+
+AC_ARG_WITH(cppruntimeParallelOutput,  [  --with-parallel-output       (enable parallel output (unstable))],[PARALLEL_OUTPUT="$withval"],[])
+
+AC_MSG_CHECKING([if parallel output is requested])
+if test "$PARALLEL_OUTPUT" = "yes"; then
+  PARALLEL_OUTPUT_COMMAND="-DUSE_PARALLEL_OUTPUT=ON"
+  AC_MSG_RESULT([yes])
+else
+  PARALLEL_OUTPUT_COMMAND="-DUSE_PARALLEL_OUTPUT=OFF"
+  AC_MSG_RESULT([no])
+fi
+
+AC_ARG_WITH(cppruntimeSundialsLapack,  [  --with-sundials-lapack       (enable lapack support in sundials (unstable))],[SUNDIALS_LAPACK="$withval"],[])
+
+AC_MSG_CHECKING([if lapack for sundials is requested])
+if test "$SUNDIALS_LAPACK" = "yes"; then
+  SUNDIALS_LAPACK_COMMAND="-DSUNDIALS_LAPACK=ON"
+  AC_MSG_RESULT([yes])
+else
+  SUNDIALS_LAPACK_COMMAND="-DSUNDIALS_LAPACK=OFF"
+  AC_MSG_RESULT([no])
+fi
+
+AC_OUTPUT(Makefile)

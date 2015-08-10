@@ -88,6 +88,7 @@ AC_SUBST(LIBDL)
 AC_SUBST(LIBDL)
 AC_SUBST(BOOST_INCLUDE)
 AC_SUBST(LDFLAGS_LIBSTDCXX)
+AC_SUBST(CPP_RUNTIME_ARGS)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -796,15 +797,28 @@ Compiler/Template/Makefile \
 Compiler/runtime/Makefile \
 Compiler/runtime/config.unix.h \
 Parser/Makefile \
+SimulationRuntime/cpp/Makefile.env \
 SimulationRuntime/c/Makefile \
 SimulationRuntime/c/util/java_interface/Makefile \
-SimulationRuntime/cpp/Makefile \
 SimulationRuntime/ParModelica/Makefile \
 SimulationRuntime/ParModelica/auto/Makefile \
 SimulationRuntime/ParModelica/explicit/openclrt/Makefile \
 Compiler/boot/Makefile \
 Compiler/Lexers/Makefile \
 "
+
+AC_CONFIG_SUBDIRS([SimulationRuntime/cpp])
+for dir_target in SimulationRuntime/cpp; do
+  dir=`echo $dir_target | cut -d- -f1`
+  if test ! -f "$dir/configure.ac"; then
+    AC_MSG_NOTICE("Subproject $dir does not exist")
+  else
+    if !(cd "$dir" && autoconf); then
+      AC_MSG_ERROR("Failed to autoconf $dir")
+    fi
+    ALL_TARGETS="$ALL_TARGETS `echo $dir_target | cut -d- -f2-`"
+  fi
+done
 
 AC_CONFIG_COMMANDS([config.unix.h.fix],[./configure-post.sh $ac_cs_config])
 

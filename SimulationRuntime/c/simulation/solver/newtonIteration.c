@@ -208,6 +208,8 @@ int _omc_newton(int(*f)(int*, double*, double*, void*, int), DATA_NEWTON* solver
 
   error_f = current_fvec_enorm = enorm_(n, fvec);
 
+  memcpy(solverData->fvecScaled, solverData->fvec, *n*sizeof(double));
+
   while(error_f > *eps && scaledError_f > *eps  &&  delta_x > *eps  &&  delta_f > *eps  && delta_x_scaled > *eps)
   {
     if(ACTIVE_STREAM(LOG_NLS_V))

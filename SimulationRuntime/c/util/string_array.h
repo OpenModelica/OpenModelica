@@ -177,6 +177,6 @@ extern void convert_alloc_string_array_from_f77(const string_array_t * a,
 
 extern void fill_alloc_real_array(real_array_t* dest, modelica_real value, int ndims, ...);
 
-extern void unpack_string_array(const string_array_t *a);
+extern void unpack_string_array(const string_array_t *a, const char **data);
 
 #endif

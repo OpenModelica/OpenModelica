@@ -77,13 +77,9 @@ constant String cStrWrapperCompileCmd       = "wrapper_template.compile.cmd";
 constant String cStrInvokeOpenTurnsCmd      = "invoke.cmd";
 
 public function generateOpenTURNSInterface "generates the dll and the python script for connections with OpenTURNS"
-  input FCore.Cache cache;
-  input FCore.Graph graph;
   input BackendDAE.BackendDAE inDaelow;
-  input DAE.FunctionTree inFunctionTree;
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
-  input DAE.DAElist inDAElist;
   input String templateFile "the filename to the template file (python script)";
   output String scriptFile "the name of the generated file";
 
@@ -117,7 +113,7 @@ algorithm
   //print("strippedDae :");
   //BackendDump.dump(strippedDae);
   _ := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND); // Is this necessary?
-  (_,libs,fileDir,_,_) := SimCodeMain.generateModelCode(strippedDae,inProgram,inDAElist,inPath,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
+  (libs, fileDir, _, _) := SimCodeMain.generateModelCode(strippedDae, inProgram, inPath, cname_str, SOME(simSettings), Absyn.FUNCTIONARGS({}, {}));
 
   //print("..compiling, fileNamePrefix = "+fileNamePrefix+"\n");
   CevalScript.compileModel(fileNamePrefix , libs);

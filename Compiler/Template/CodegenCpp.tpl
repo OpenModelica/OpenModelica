@@ -438,7 +438,8 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
     virtual const sparsematrix_t& getSparseJacobian(unsigned int index);
 
 
-    virtual void getStateSetJacobian(unsigned int index,matrix_t& matrix);
+    virtual  const matrix_t& getStateSetJacobian(unsigned int index);
+    virtual  const sparsematrix_t& getStateSetSparseJacobian(unsigned int index);
     /// Called to handle all events occured at same time
     virtual bool handleSystemEvents(bool* events);
     //Saves all variables before an event is handled, is needed for the pre, edge and change operator
@@ -1051,6 +1052,42 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
           else "A matrix type is not supported"
           end match
 
+     let statesetjacobian =
+     (stateSets |> set hasindex i1 fromindex 0 => (match set
+       case set as SES_STATESET(__) then
+       match jacobianMatrix case (_,_,name,_,_,_,_) then
+       match type
+       case ("dense") then
+       <<
+       case <%i1%>:
+         return get<%name%>Jacobian();
+         break;
+       >>
+       case ("sparse") then
+       'throw ModelicaSimulationError(MATH_FUNCTION,"Dense matrix is not activated");'
+       else "A matrix type is not supported"
+       )
+       ;separator="\n")
+
+
+ let statesetsparsejacobian =
+     (stateSets |> set hasindex i1 fromindex 0 => (match set
+       case set as SES_STATESET(__) then
+       match jacobianMatrix case (_,_,name,_,_,_,_) then
+       match type
+       case ("dense") then
+       'throw ModelicaSimulationError(MATH_FUNCTION,"Sparse matrix is not activated");'
+       case ("sparse") then
+       <<
+       case <%i1%>:
+         return get<%name%>Jacobian();
+         break;
+       >>
+
+       else "A matrix type is not supported"
+       )
+       ;separator="\n")
+
    <<
    <%classname%>Extension::<%classname%>Extension(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
        : <%classname%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
@@ -1120,26 +1157,24 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
 
-   void <%classname%>Extension::getStateSetJacobian(unsigned int index,matrix_t& matrix)
+   const matrix_t& <%classname%>Extension::getStateSetJacobian(unsigned int index)
    {
      switch (index)
      {
-       <%(stateSets |> set hasindex i1 fromindex 0 => (match set
-       case set as SES_STATESET(__) then
-       match jacobianMatrix case (_,_,name,_,_,_,_) then
-       <<
-       case <%i1%>:
-         get<%name%>Jacobian(matrix);
-         break;
-       >>
-       )
-       ;separator="\n")
-       %>
+       <%statesetjacobian%>
        default:
           throw ModelicaSimulationError(MATH_FUNCTION,"Not supported statset index");
       }
    }
-
+   const sparsematrix_t& <%classname%>Extension::getStateSetSparseJacobian(unsigned int index)
+   {
+     switch (index)
+     {
+       <%statesetsparsejacobian%>
+       default:
+          throw ModelicaSimulationError(MATH_FUNCTION,"Not supported statset index");
+      }
+   }
    bool <%classname%>Extension::handleSystemEvents(bool* events)
    {
      return <%classname%>::handleSystemEvents(events);
@@ -2375,7 +2410,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       try
       {
             Logger::initialize();
-            Logger::setEnabled(false);
+            Logger::setEnabled(true);
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
                 <<
                 std::vector<MeasureTimeData> measureTimeArraySimulation = std::vector<MeasureTimeData>(2); //0 all, 1 setup
@@ -2757,6 +2792,8 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     #include <Core/System/SimVars.h>
     #include <Core/System/DiscreteEvents.h>
     #include <Core/System/EventHandling.h>
+    #include <Core/Utils/Modelica/ModelicaUtilities.h>
+    #include <Core/Utils/extension/logger.hpp>
 
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>.h"
@@ -4805,8 +4842,7 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
 
   let &inputAssign = buffer "" /*BUFD*/
   let &outputAssign = buffer "" /*BUFD*/
-  // make sure the variable is named "out", doh!
-   let retVar = if outVars then '_<%fname%>'
+  let retVar = if outVars then match outVars case {var} then funArgName(var) else '_<%fname%>'
   let &outVarInits = buffer ""
   let callPart =  match outVars   case {var} then
                     extFunCall(fn, &preExp, &varDeclsExtFunCall, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, false)
@@ -4830,8 +4866,6 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
     )
    end match
 
-
-
    let &varDecls1 = buffer ""
    let &outVarInits1 = buffer ""
    let &outVarCopy1 = buffer ""
@@ -4849,9 +4883,6 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
     let functionBodyExternalFunctionreturn = match outVarAssign1
    case "" then << <%if retVar then 'output = <%retVar%>;' else '/*no output*/' %> >>
    else outVarAssign1
-
-
-
 
   let fnBody = <<
   void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var => funArgDefinition(var,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%><%if funArgs then if outVars then "," else ""%> <%if retVar then '<%retType%>& output' %>)/*function2*/
@@ -4872,9 +4903,9 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
     <%outVarInits%>
     /* functionBodyExternalFunction: callPart */
     <%callPart%>
-
-    <%outVarAssign%>
-
+    <%outputAssign%>
+    /* functionBodyExternalFunction: return */
+    <%functionBodyExternalFunctionreturn%>
   }
   >>
   <<
@@ -5039,13 +5070,14 @@ case EXTERNAL_FUNCTION(__) then
   let args = (extArgs |> arg =>
       extArg(arg, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     ;separator=", ")
-  let returnAssign = match extReturn case SIMEXTARG(cref=c) then
-     '<%contextCref2(c,contextFunction)%> ='// '<%extVarName2(c)%> = '
+  let returnAssign = match extReturn case SIMEXTARG(cref=c, type_=ty) then
+     let extName = extVarName2(c)
+     let &outputAssign += '<%contextCref2(c,contextFunction)%> = <%extName%>;<%\n%>'
+     let &outputAssign += match ty case T_STRING(__) then
+       '_ModelicaFreeStringIfAllocated(<%extName%>);<%\n%>' else ''
+     '<%extName%> = '
     else
-      ""
-
-
-
+      ''
   <<
   <%varDecs%>
   <%match extReturn case SIMEXTARG(__) then extFunCallVardecl(extReturn, &varDecls /*BUFD*/)%>
@@ -5155,7 +5187,9 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &inputAssig
     else
       '<%cr%><%match t case T_STRING(__) then ".c_str()" else "_ext"%>'
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=oi, type_=t) then
-    '&<%extVarName2(c)%>'
+    let extName = extVarName2(c)
+    let &outputAssign += '<%contextCref2(c,contextFunction)%> = <%extName%>;<%\n%>'
+    '&<%extName%>'
   case SIMEXTARGEXP(__) then
     daeExternalCExp(exp, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case SIMEXTARGSIZE(cref=c) then
@@ -6120,8 +6154,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             <<
             if(IMixedSystem* jacobian_system = dynamic_cast<IMixedSystem*>( _system))
             {
-                return jacobian_system->getJacobian(<%index%>);
-                // cout << "A Matrix for system " << <%index%> << A_matrix << std::endl;
+                return jacobian_system->getSparseJacobian(<%index%>);
+
             }
             >>
           else "A matrix type is not supported"
@@ -7846,7 +7880,7 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
             if SimCodeUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
               let arrayHeadIdx = listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))
               <<
-              <%arrayName%> = StatRefArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>>(&_pointerTo<%type%>Vars[<%arrayHeadIdx%>]);
+              <%arrayName%> = StatArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>, true>(&_pointerTo<%type%>Vars[<%arrayHeadIdx%>]);
               >>
             else
               let arrayIndices = SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences) |> idx => '(<%idx%>)'; separator=""
@@ -8107,7 +8141,7 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
       else
         if SimCodeUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
           <<
-          StatRefArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%>;
+          StatArrayDim<%dims%><<%typeString%>, <%array_dimensions%>, true> <%arrayName%>;
           >>
         else
           <<
@@ -13525,10 +13559,10 @@ template daeExpCrefRhsArrayBox(ComponentRef cr,DAE.Type ty, Context context, Tex
                 let &preExp +=
                   <<
                   StatArrayDim<%ndims%><<%T%>, <%dimstr%>> <%arr%>_pre;
-                  std::transform(<%arr%>.getDataRefs(),
-                                 <%arr%>.getDataRefs() + <%arr%>.getNumElems(),
+                  std::transform(<%arr%>.getData(),
+                                 <%arr%>.getData() + <%arr%>.getNumElems(),
                                  <%arr%>_pre.getData(),
-                                 PreRefArray2CArray<<%T%>>(_discrete_events));
+                                 PreArray2CArray<<%T%>>(_discrete_events));
                   >>
                 '<%arr%>_pre'
               else

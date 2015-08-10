@@ -32,5 +32,6 @@ private:
   std::vector<unsigned int> _dimDummyStates;
   std::vector<unsigned int> _dimStateCanditates;
   bool _initialized;
+
 };
  /** @} */ // end of coreSolver

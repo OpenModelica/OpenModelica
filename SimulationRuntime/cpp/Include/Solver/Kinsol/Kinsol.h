@@ -3,25 +3,12 @@
  *
  *  @{
  */
-#include "FactoryExport.h"
-#include <nvector/nvector_serial.h>
-#include <kinsol/kinsol.h>
-#ifdef USE_SUNDIALS_LAPACK
-  #include <kinsol/kinsol_lapack.h>
-#else
-  #include <kinsol/kinsol_spgmr.h>
-  #include <kinsol/kinsol_dense.h>
-#endif //USE_SUNDIALS_LAPACK
-#include <kinsol/kinsol_spbcgs.h>
-#include <kinsol/kinsol_sptfqmr.h>
-#include <boost/math/special_functions/fpclassify.hpp>
-#include <boost/numeric/ublas/lu.hpp>
-#include <boost/numeric/ublas/symmetric.hpp>
 
-#include <Core/Utils/extension/logger.hpp>
 
-//#include<kinsol_lapack.h>
- int kin_fCallback(N_Vector y, N_Vector fval, void *user_data);
+
+
+
+
 class Kinsol : public IAlgLoopSolver
 {
 public:
@@ -38,6 +25,10 @@ public:
   virtual ITERATIONSTATUS getIterationStatus();
   virtual void stepCompleted(double time);
   int kin_f(N_Vector y, N_Vector fval, void *user_data);
+ /*will be used with new sundials version
+  int kin_JacSparse(N_Vector u, N_Vector fu,SlsMat J, void *user_data,N_Vector tmp1, N_Vector tmp2);
+ int kin_JacDense(long int N, N_Vector u, N_Vector fu,DlsMat J, void *user_data,N_Vector tmp1, N_Vector tmp2);
+ */
 private:
   /// Encapsulation of determination of residuals to given unknowns
   void calcFunction(const double* y, double* residual);
@@ -97,7 +88,13 @@ private:
 
   bool
     _eventRetry,
-    _fValid;
+    _fValid,
+
+	_usedCompletePivoting,
+	_usedIterativeSolver,
+
+    _solverErrorNotificationGiven;
+
 
   realtype _fnorm,
     _currentIterateNorm;

@@ -7,6 +7,8 @@
  #include <Core/Modelica.h>
 
 #if defined(__vxworks) || defined(__TRICORE__)
+#include <nvector/nvector_serial.h>
+#include <kinsol/kinsol.h>
 
 #include <Solver/Kinsol/Kinsol.h>
 #include <Solver/Kinsol/KinsolSettings.h>
@@ -34,7 +36,20 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_kinsol(boost::exten
 }
 
 #elif defined(OMC_BUILD)
-
+#include <nvector/nvector_serial.h>
+#include <kinsol/kinsol.h>
+#ifdef USE_SUNDIALS_LAPACK
+  #include <kinsol/kinsol_lapack.h>
+#else
+  #include <kinsol/kinsol_spgmr.h>
+  #include <kinsol/kinsol_dense.h>
+#endif //USE_SUNDIALS_LAPACK
+#include <kinsol/kinsol_spbcgs.h>
+#include <kinsol/kinsol_sptfqmr.h>
+//#include <kinsol/kinsol_klu.h>
+#include <kinsol/kinsol_direct.h>
+#include <sundials/sundials_dense.h>
+#include <kinsol/kinsol_impl.h>
 #include <Solver/Kinsol/Kinsol.h>
 #include <Solver/Kinsol/KinsolSettings.h>
 

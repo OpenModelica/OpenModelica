@@ -31,7 +31,9 @@ public:
   virtual const sparsematrix_t& getSparseJacobian() = 0;
   virtual const sparsematrix_t& getSparseJacobian(unsigned int index)  = 0;
 
-  virtual void getStateSetJacobian(unsigned int index, matrix_t& matrix) = 0;
+  virtual const matrix_t& getStateSetJacobian(unsigned int index) = 0;
+  virtual const sparsematrix_t& getStateSetSparseJacobian(unsigned int index) = 0;
+
   /// Called to handle all  events occured at same time
   virtual bool handleSystemEvents(bool* events) = 0;
 

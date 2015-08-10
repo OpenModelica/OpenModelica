@@ -25,6 +25,7 @@ boost::shared_ptr<IAlgLoopSolver> AlgLoopSolverFactory::createAlgLoopSolver(IAlg
 {
   if(algLoop->getDimReal() > 0)
   {
+
 #if defined(__vxworks)
 #else
     if(algLoop->isLinear())

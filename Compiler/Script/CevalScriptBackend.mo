@@ -3065,7 +3065,7 @@ algorithm
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
         //print("lowered class\n");
         //print("calling generateOpenTurnsInterface\n");
-        scriptFile = OpenTURNS.generateOpenTURNSInterface(cache,inEnv,dlow,funcs,className,p,dae,templateFile);
+        scriptFile = OpenTURNS.generateOpenTURNSInterface(dlow, className, p, templateFile);
       then
         (cache,scriptFile,inSt);
 

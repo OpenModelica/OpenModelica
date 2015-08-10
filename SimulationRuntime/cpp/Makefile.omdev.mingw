@@ -16,19 +16,12 @@ BUILDTYPE = Debug
 CMAKE = $(OMDEV)/bin/cmake/bin/cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON
 
 runtimeCpp:
-ifeq ("$(BUILD_DOCUMENTATION)","true")
-	cd ./Build; echo "change to Build";	\
-	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=$(BUILDTYPE) -DBUILD_DOCUMENTATION=ON -D CMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
-	make;
-else
 	mkdir -p Build
 	cd ./Build; echo "change to Build";	\
 	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=$(BUILDTYPE) -D CMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
 	make;
-endif
 
 runtimeCPPmsvc:
-
 	test -f """${VS100COMNTOOLS}/../../VC/vcvarsall.bat"""
 	echo 'Build the cppRuntime with MSVC'
 	#rm -rf build_msvc

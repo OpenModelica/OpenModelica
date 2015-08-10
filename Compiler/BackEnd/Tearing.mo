@@ -1707,11 +1707,16 @@ protected
   BackendDAE.AdjacencyMatrixTEnhanced meT;
   BackendDAE.BackendDAEType DAEtype;
   BackendDAE.TearingSet strictTearingSet;
+  BackendDAE.StateSets stateSets;
   Option<BackendDAE.TearingSet> casualTearingSet;
   list<BackendDAE.Equation> eqn_lst;
   list<BackendDAE.Var> var_lst;
-  Boolean linear,simulation,b;
+  Boolean linear,simulation,b,noDynamicStateSelection;
 algorithm
+
+  BackendDAE.EQSYSTEM(stateSets = stateSets) := isyst;
+  noDynamicStateSelection := listEmpty(stateSets);
+
   BackendDAE.SHARED(backendDAEType=DAEtype) := ishared;
   simulation := stringEq(BackendDump.printBackendDAEType2String(DAEtype), "simulation");
 
@@ -1827,7 +1832,7 @@ algorithm
   // Determine casual tearing set if dynamic tearing is enabled
   // *****************************************************************
 
-  if simulation and Config.dynamicTearing() then
+  if simulation and noDynamicStateSelection and Config.dynamicTearing() then
 
     if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\n\nDetermine CASUAL TEARING SET\n" + BORDER + BORDER + "\n\n");
@@ -1927,6 +1932,9 @@ algorithm
     end if;
 
   else
+    if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+          print("Note:\n=====\nNo dynamic Tearing for this strong component. Check if\n- flag 'dynamicTearing' is set\n- strong component contains statesets\n- system belongs to simulation\n\n");
+    end if;
     if not b and not Flags.getConfigBool(Flags.FORCE_TEARING) then
         if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("\nNote:\n=====\nTearing set is discarded because it is not smaller than the original set. Use +forceTearing to prevent this.\n\n");

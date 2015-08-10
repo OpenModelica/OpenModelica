@@ -8,7 +8,9 @@
 #ifndef LOGGER_HPP_
 #define LOGGER_HPP_
 
-#include <Core/Modelica.h>
+
+enum LogCategory;
+enum LogLevel;
 
 class BOOST_EXTENSION_LOGGER_DECL Logger
 {
@@ -72,7 +74,7 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
 
     Logger(bool enabled);
 
-    virtual void writeInternal(std::string Msg, LogCategory cat, LogLevel lvl);
+    virtual void writeInternal(std::string msg, LogCategory cat, LogLevel lvl);
     virtual void setEnabledInternal(bool enabled);
     virtual bool isEnabledInternal();
 
