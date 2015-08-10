@@ -32,7 +32,8 @@ public:
   virtual std::pair<boost::shared_ptr<ISimController>,SimSettings> createSimulation(int argc, const char* argv[], std::map<std::string, std::string> &opts);
 
 protected:
-  std::vector<const char *> modifyArguments(int argc, const char* argv[], std::map<std::string, std::string> &opts);
+  /** merge command line args with built-in args and adapt OMEdit args to Cpp */
+  std::vector<const char *> preprocessArguments(int argc, const char* argv[], std::map<std::string, std::string> &opts);
   SimSettings readSimulationParameter(int argc, const char* argv[]);
 
   //boost::shared_ptr<ISimController> _simController;
