@@ -1713,7 +1713,7 @@ match target
 
 case "vxworks69" then
 match simCode
-case SIMCODE(modelInfo = MODELINFO(__)) then
+case SIMCODE(modelInfo = MODELINFO(__), makefileParams = MAKEFILE_PARAMS(__)) then
 let modelname = identOfPath(modelInfo.name)
 
 <<
@@ -1729,9 +1729,11 @@ let modelname = identOfPath(modelInfo.name)
 #include <Core/SimController/ISimController.h>
 #include <Core/System/FactoryExport.h>
 
-#include <wvLib.h>
 #define PATH string
 
+#if defined(__vxworks)
+
+#include <wvLib.h>
 
 #include <util/bundle.h>
 #include <util/vxwHelper.h>
@@ -1788,6 +1790,9 @@ extern "C"  int getMotionCycle(double &cycletime)
 
 extern "C"  void debugSimulation(void)
 {
+  timespec delay;
+  delay.tv_sec =  0;
+  delay.tv_nsec = 10000000;
   ISimController* simController;
   ISimData* simData;
   double cycletime;
@@ -1798,6 +1803,7 @@ extern "C"  void debugSimulation(void)
   {
     try
     {
+      nanosleep( &delay ,NULL);
       wvEvent(1,NULL,0);
       simController->calcOneStep();
       wvEvent(2,NULL,0);
@@ -1866,21 +1872,6 @@ extern "C"  int initSimulation(ISimController* &controller, ISimData* &data, dou
     return result;
   }
 
-  // Get MotionCycle time
-  /*
-  ULONG cycletime_us = 0;
-  result = mlpiParameterReadDataUlong(connection, 0, MLPI_SIDN_C(400), &cycletime_us);
-  if (MLPI_FAILED(result))
-  {
-    printf("\nERROR: failed to connect to MLPI. ErrorCode: 0x%08x", (unsigned) result);
-
-
-    return result;
-  }
-  */
-
-  // Convert mu_s to s
-  //double cycletime = (double)cycletime_us/(1e6);
 
   /*
   =============================================================================================================
@@ -1906,7 +1897,7 @@ extern "C"  int initSimulation(ISimController* &controller, ISimData* &data, dou
   <%defineOutputVars(simCode)%>
 
   LogSettings logsetting;
-    SimSettings settings = {"RTEuler","","Kinsol",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",0,OPT_NONE, logsetting};
+    SimSettings settings = {"RTEuler","","kinsol",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",0,OPT_NONE, logsetting};
   //                       Solver,          nonlinearsolver starttime endtime stepsize   lower limit upper limit  tolerance
   try
   {
@@ -2183,6 +2174,86 @@ printf("\n## onDestroy ######################################################");
 printf("\n###################################################################");
 return 0;
 }
+#else
+
+#include <tchar.h>
+
+int _tmain(int argc, const _TCHAR* argv[])
+{
+
+  /*
+  =============================================================================================================
+  ==                 Initialization of SimCore
+  =============================================================================================================
+  */
+
+
+
+
+    //nur testweise
+    std::map<std::string, std::string> opts;
+    opts["-s"] = "0.0";
+    opts["-e"] = "1.0";
+    opts["-f"] = "0.02";
+    opts["-v"] = "50";
+    opts["-y"] = "1e-006";
+    opts["-i"] = "dassl";
+    opts["-r"] = "C:/OpenModelica/build/lib//omc/cpp/msvc";
+    opts["-m"] = "c:/Users/kar2lo/Documents/PentaRobot/PentaRobotLibrary/";
+    opts["-R"] = "c:/Users/kar2lo/Documents/PentaRobot/PentaRobotLibrary//PentaLib.PentaRT_res.csv";
+
+
+
+
+
+  boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new OMCFactory());
+
+  //SimController to start simulation
+
+  std::pair<boost::shared_ptr<ISimController>, SimSettings> simulation = _factory->createSimulation(argc, argv, opts);
+  //Logger::initialize(simulation.second.logSettings);
+
+  //create Modelica system
+  boost::weak_ptr<ISimData> simData = simulation.first->LoadSimData("<%lastIdentOfPath(modelInfo.name)%>");
+  boost::weak_ptr<ISimVars> simVars = simulation.first->LoadSimVars("<%lastIdentOfPath(modelInfo.name)%>",<%numRealVars%>,<%numIntVars%>,<%numBoolVars%>,<%numPreVars%>,<%numStatevars(modelInfo)%>,<%numStateVarIndex(modelInfo)%>);
+  boost::weak_ptr<IMixedSystem> system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>  ","<%lastIdentOfPath(modelInfo.name)%>");
+  boost::shared_ptr<ISimData> simData_shared = simData.lock();
+
+  // Declare Input specify initial_values if needed!!!
+  <%defineInputVars(simCode)%>
+
+  // Declare Output
+  <%defineOutputVars(simCode)%>
+
+  LogSettings logsetting;
+    SimSettings settings = {"RTEuler","","kinsol",        0.0,      100.0,  0.005,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",0,OPT_NONE, logsetting};
+  //                       Solver,          nonlinearsolver starttime endtime stepsize   lower limit upper limit  tolerance
+
+  try
+  {
+    simulation.first->StartVxWorks(settings, "<%lastIdentOfPath(modelInfo.name)%>");
+  }
+  catch(ModelicaSimulationError& ex)
+  {
+    throw std::runtime_error("error initialize");
+  }
+
+  for( int i = 0; i < 1000; i++)
+  {
+    try
+    {
+      simulation.first->calcOneStep();
+    }
+    catch(ModelicaSimulationError& ex)
+    {
+      throw std::runtime_error("error inside step");
+    }
+  }
+
+  return 0;
+}
+#endif
+
 
 >>
 end match

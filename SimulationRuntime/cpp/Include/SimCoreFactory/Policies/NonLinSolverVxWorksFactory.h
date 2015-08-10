@@ -26,7 +26,7 @@ public:
         string nonlin_solver;
         if(solver_name.compare("Newton")==0)
             nonlin_solver_key.assign("createNewtonSettings");
-        else if(solver_name.compare("Kinsol")==0)
+        else if(solver_name.compare("kinsol")==0)
             nonlin_solver_key.assign("createKinsolSettings");
         else if(solver_name.compare("Hybrj")==0)
             nonlin_solver_key.assign("extension_export_hybrj");
@@ -44,7 +44,7 @@ public:
             string nonlin_solver_key;
             if(solver_name.compare("Newton")==0)
                 nonlin_solver_key.assign("createNewton");
-            else if(solver_name.compare("Kinsol")==0)
+            else if(solver_name.compare("kinsol")==0)
                 nonlin_solver_key.assign("createKinsol");
             else if(solver_name.compare("Hybrj")==0)
                 nonlin_solver_key.assign("extension_export_hybrj");

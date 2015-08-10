@@ -61,7 +61,7 @@ public:
             }
             solver_settings_key.assign("createPeerSettings");
         }
-    else if(solvername.compare("rtrk")==0)
+        else if(solvername.compare("rtrk")==0)
         {
             PATH rtrk_path = ObjectFactory<CreationPolicy>::_library_path;
             PATH rtrk_name(RTRK_LIB);
@@ -73,6 +73,19 @@ public:
             }
             solver_settings_key.assign("createRTRKSettings");
         }
+        else if(solvername.compare("RTEuler")==0)
+        {
+            PATH RTEuler_path = ObjectFactory<CreationPolicy>::_library_path;
+            PATH RTEuler_name(RTEULER_LIB);
+            RTEuler_path/=RTEuler_name;
+            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(RTEuler_path.string(),*_solver_type_map);
+            if (result != LOADER_SUCCESS)
+            {
+                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading RTEuler solver library!");
+            }
+            solver_settings_key.assign("createRTEulerSettings");
+        }
+
         else if(solvername.compare("idas")==0)
         {
             solver_settings_key.assign("extension_export_idas");
