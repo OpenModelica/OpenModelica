@@ -726,7 +726,11 @@ class StatArray : public BaseArray<T>
    */
   virtual T* getData()
   {
-    return _data;
+     if (external)
+      return _data;
+    else
+      return _array.c_array();
+
   }
 
   /**
@@ -734,7 +738,10 @@ class StatArray : public BaseArray<T>
    */
   virtual const T* getData() const
   {
-    return _data;
+   if (external)
+      return _data;
+    else
+      return _array.data();
   }
 
   /**
@@ -745,7 +752,11 @@ class StatArray : public BaseArray<T>
   {
     if(n>0)
 	{
-		std::copy(_data, _data + n, data);
+		 if (external)
+      std::copy(_data, _data + n, data);
+    else
+      std::copy(_array.begin(), _array.begin() + n, data);
+
 	}
   }
 
