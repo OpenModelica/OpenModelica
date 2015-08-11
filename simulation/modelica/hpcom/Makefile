@@ -7,7 +7,7 @@ SimpleResistor.mos \
 ElectricalCircuit.mos \
 MergingExample.mos \
 BouncingBall.mos \
-Modelica.Blocks.Examples.BooleanNetwork1 \
+Modelica.Blocks.Examples.BooleanNetwork1.mos \
 Modelica.Blocks.Examples.InverseModel.mos \
 Modelica.Electrical.Analog.Examples.SwitchWithArc.mos \
 Modelica.Electrical.Spice3.Examples.Graetz.mos \

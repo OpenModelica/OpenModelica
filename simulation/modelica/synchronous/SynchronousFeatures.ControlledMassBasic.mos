@@ -89,7 +89,7 @@ translateModel(SynchronousFeatures.ControlledMassBasic); getErrorString();
 // 2: vref:DISCRETE() .SynchronousFeatures.ControlledMassBasic, .Real type: Real
 // 3: vd:DISCRETE() .SynchronousFeatures.ControlledMassBasic, .Real type: Real
 // 4: uOuter:DISCRETE() .SynchronousFeatures.ControlledMassBasic, .Real type: Real
-// 5: intE:DISCRETE(start = 0.0 ) .SynchronousFeatures.ControlledMassBasic, .Real type: Real
+// 5: intE:DISCRETE(start = 0.0 fixed = true ) .SynchronousFeatures.ControlledMassBasic, .Real type: Real
 // 6: eOuter:DISCRETE() .SynchronousFeatures.ControlledMassBasic, .Real type: Real
 // 7: xd:DISCRETE() .SynchronousFeatures.ControlledMassBasic, .Real type: Real
 //

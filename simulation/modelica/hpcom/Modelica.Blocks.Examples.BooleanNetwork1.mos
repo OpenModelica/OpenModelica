@@ -1,7 +1,7 @@
-// name:     Modelica.Fluid.Examples.BranchingDynamicPipes
-// keywords: simulation MSL Examples
-// status: correct
-// depends: Modelica.Fluid.Examples.BranchingDynamicPipes_eqs_prof.json
+// name:      Modelica.Blocks.Examples.BooleanNetwork1
+// keywords:  hpcom
+// status:    correct
+// depends:   Modelica.Blocks.Examples.BooleanNetwork1_eqs_prof.json
 //
 // Simulation Results
 // Modelica Standard Library
@@ -37,7 +37,6 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Blocks.Examples
 // Using level Scheduler for the DAE system
 // Using level Scheduler for the ODE system
 // Using level Scheduler for the ZeroFunc system
-// There is no ODE system that can be parallelized!
 // HpcOm is still under construction.
 // record SimulationResult
 //     resultFile = "Modelica.Blocks.Examples.BooleanNetwork1_res.mat",

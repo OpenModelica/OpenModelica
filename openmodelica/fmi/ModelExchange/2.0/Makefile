@@ -7,6 +7,7 @@ HelloFMIWorld.mos \
 HelloFMIWorldEvent.mos \
 IntegerNetwork1.mos \
 testAssert.mos \
+testChangeParam.mos \
 testBug2764.mos \
 testBug3034.mos \
 testBug3049.mos \
@@ -15,12 +16,12 @@ ZeroStates.mos \
 EnumerationTest.mos \
 Modelica.Blocks.Sources.BooleanPulse.mos \
 Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
+Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
+Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
 FAILINGTESTFILES= \
-Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
-Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

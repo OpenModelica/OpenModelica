@@ -1,5 +1,6 @@
 #!/bin/bash
 OMC="${OPENMODELICAHOME}/bin/omc +locale=C +running-testsuite=dummy.out +d=hpcom +n=2"
+#OMC="${OPENMODELICAHOME}/bin/omc +locale=C +running-testsuite=dummy.out"
 echo $OMC
 COUNTER=0
 for f in *.mos; do
@@ -16,10 +17,10 @@ for f in *.mos; do
  			echo "- OK"
  		fi
  	fi
-	COUNTER=$((COUNTER+1))
-        if [ $COUNTER -gt 5 ]; then
-                break
-        fi
+	#COUNTER=$((COUNTER+1))
+        #if [ $COUNTER -gt 5 ]; then
+        #        break
+        #fi
 done
 
 python sortResults.py > results.txt
