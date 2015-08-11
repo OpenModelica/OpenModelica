@@ -19,6 +19,7 @@ struct SimSettings
   unsigned int timeOut;
   OutputPointType outputPointType;
   LogSettings logSettings;
+  bool nonLinearSolverContinueOnError;
 };
 
 /**

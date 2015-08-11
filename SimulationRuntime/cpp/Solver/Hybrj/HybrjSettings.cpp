@@ -9,50 +9,61 @@
 #include <Solver/Hybrj/HybrjSettings.h>
 
 HybrjSettings::HybrjSettings()
-: iNewt_max                    (50)
-, dRtol                        (1e-6)
-, dAtol                        (1.0)
-, dDelta                    (0.9)
+: _iNewt_max                    (50)
+, _dRtol                        (1e-6)
+, _dAtol                        (1.0)
+, _dDelta                    (0.9)
+, _continueOnError(false)
 {
 };
 /*max. Anzahl an Newtonititerationen pro Schritt (default: 25)*/
 long int     HybrjSettings::getNewtMax()
 {
-    return iNewt_max;
+    return _iNewt_max;
 }
 void         HybrjSettings::setNewtMax(long int max)
 {
-    iNewt_max =max;
+    _iNewt_max =max;
 }
 /* Relative Toleranz für die Newtoniteration (default: 1e-6)*/
 double         HybrjSettings::getRtol()
 {
-    return dRtol;
+    return _dRtol;
 }
 void         HybrjSettings::setRtol(double t)
 {
-    dRtol=t;
+    _dRtol=t;
 }
 /*Absolute Toleranz für die Newtoniteration (default: 1e-6)*/
 double         HybrjSettings::getAtol()
 {
-    return dAtol;
+    return _dAtol;
 }
 void         HybrjSettings::setAtol(double t)
 {
-    dAtol =t;
+    _dAtol =t;
 }
 /*Dämpfungsfaktor (default: 0.9)*/
 double         HybrjSettings::getDelta()
 {
-    return dDelta;
+    return _dDelta;
 }
 void         HybrjSettings::setDelta(double t)
 {
-    dDelta = t;
+    _dDelta = t;
 }
 
 void HybrjSettings::load(string)
 {
+}
+
+void HybrjSettings::setContinueOnError(bool value)
+{
+  _continueOnError = value;
+}
+
+bool HybrjSettings::getContinueOnError()
+{
+  return _continueOnError;
 }
 /** @} */ // end of solverHybrj

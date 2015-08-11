@@ -25,5 +25,7 @@ public:
   virtual double getDelta() = 0;
   virtual void setDelta(double) = 0;
   virtual void load(string) = 0;
+  virtual void setContinueOnError(bool) = 0;
+  virtual bool getContinueOnError() = 0;
 };
  /** @} */ // end of coreSolver

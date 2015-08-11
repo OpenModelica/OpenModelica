@@ -9,13 +9,8 @@
 #include <nvector/nvector_serial.h>
 #include <kinsol/kinsol.h>
 
-#ifdef USE_SUNDIALS_LAPACK
-  #include <kinsol/kinsol_lapack.h>
-#else
-  #include <kinsol/kinsol_spgmr.h>
-  #include <kinsol/kinsol_dense.h>
-#endif //USE_SUNDIALS_LAPACK
-
+#include <kinsol/kinsol_spgmr.h>
+#include <kinsol/kinsol_dense.h>
 
 #include <kinsol/kinsol_spbcgs.h>
 #include <kinsol/kinsol_sptfqmr.h>
@@ -255,11 +250,7 @@ void Kinsol::initialize()
 			if (check_flag(&idid, (char *)"KINSetUserData", 1))
 				throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol::initialize()");
 
-#ifdef USE_SUNDIALS_LAPACK
-			KINLapackDense(_kinMem, _dimSys);
-#else
 			KINDense(_kinMem, _dimSys);
-#endif //USE_SUNDIALS_LAPACK
 
 			/*will be used with new sundials version
 			if(_algLoop->isLinearTearing())
@@ -558,11 +549,19 @@ void Kinsol::solve()
 			return;
 		}
 
-		if(_iterationStatus == SOLVERERROR && !_eventRetry)
+    if(_iterationStatus == SOLVERERROR && !_eventRetry)
+    {
+      if(_kinsolSettings->getContinueOnError())
+      {
+        if(!_solverErrorNotificationGiven)
         {
-		     throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
+          Logger::write("Kinsol: Solver error detected. The simulation will continue, but the results may be incorrect.",LC_NLS,LL_WARNING);
+          _solverErrorNotificationGiven = true;
         }
-
+      }
+      else
+        throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
+    }
 	}
 }
 

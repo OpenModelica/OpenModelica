@@ -9,10 +9,11 @@
 #include <Solver/Newton/NewtonSettings.h>
 
 NewtonSettings::NewtonSettings()
-: iNewt_max                    (50)
-, dRtol                        (1e-6)
-, dAtol                        (1e-6)
-, dDelta                    (1)
+: _iNewt_max                    (50)
+, _dRtol                        (1e-6)
+, _dAtol                        (1e-6)
+, _dDelta                    (1)
+, _continueOnError(false)
 {
 };
 
@@ -24,41 +25,51 @@ NewtonSettings::~NewtonSettings()
 /*max. Anzahl an Newtonititerationen pro Schritt (default: 25)*/
 long int     NewtonSettings::getNewtMax()
 {
-    return iNewt_max;
+    return _iNewt_max;
 }
 void         NewtonSettings::setNewtMax(long int max)
 {
-    iNewt_max =max;
+    _iNewt_max =max;
 }
 /* Relative Toleranz für die Newtoniteration (default: 1e-6)*/
 double         NewtonSettings::getRtol()
 {
-    return dRtol;
+    return _dRtol;
 }
 void         NewtonSettings::setRtol(double t)
 {
-    dRtol=t;
+    _dRtol=t;
 }
 /*Absolute Toleranz für die Newtoniteration (default: 1e-6)*/
 double         NewtonSettings::getAtol()
 {
-    return dAtol;
+    return _dAtol;
 }
 void         NewtonSettings::setAtol(double t)
 {
-    dAtol =t;
+    _dAtol =t;
 }
 /*Dämpfungsfaktor (default: 0.9)*/
 double         NewtonSettings::getDelta()
 {
-    return dDelta;
+    return _dDelta;
 }
 void         NewtonSettings::setDelta(double t)
 {
-    dDelta = t;
+    _dDelta = t;
 }
 
 void NewtonSettings::load(string)
 {
+}
+
+void NewtonSettings::setContinueOnError(bool value)
+{
+  _continueOnError = value;
+}
+
+bool NewtonSettings::getContinueOnError()
+{
+  return _continueOnError;
 }
 /** @} */ // end of solverNewton

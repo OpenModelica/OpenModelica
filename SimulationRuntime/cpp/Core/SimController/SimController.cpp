@@ -242,6 +242,7 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         global_settings->setLogSettings(simsettings.logSettings);
         global_settings->setAlarmTime(simsettings.timeOut);
         global_settings->setOutputPointType(simsettings.outputPointType);
+        global_settings->setNonLinearSolverContinueOnError(simsettings.nonLinearSolverContinueOnError);
 
         /*boost::shared_ptr<SimManager>*/ _simMgr  = boost::shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
 

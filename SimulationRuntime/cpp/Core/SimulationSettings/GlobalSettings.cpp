@@ -19,6 +19,7 @@ GlobalSettings::GlobalSettings()
   , _selected_nonlin_solver("Newton")
   , _resultsfile_name("results.csv")
   , _endless_sim(false)
+  , _nonLinSolverContinueOnError(false)
   , _outputPointType(OPT_ALL)
   , _alarm_time(0)
 {
@@ -188,5 +189,15 @@ void GlobalSettings::setAlarmTime(unsigned int t)
 unsigned int GlobalSettings::getAlarmTime()
 {
   return _alarm_time;
+}
+
+void GlobalSettings::setNonLinearSolverContinueOnError(bool value)
+{
+  _nonLinSolverContinueOnError = value;
+}
+
+bool GlobalSettings::getNonLinearSolverContinueOnError()
+{
+  return _nonLinSolverContinueOnError;
 }
 /** @} */ // end of coreSimulationSettings
