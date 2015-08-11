@@ -541,6 +541,22 @@ algorithm
   end match;
 end copyMatching;
 
+public function getCompsOfMatching "author: mwalther
+  Get all strong connected components of the given matching. If the matching
+  has the concrete type NO_MATCHING, the returned list is empty."
+  input BackendDAE.Matching inMatching;
+  output BackendDAE.StrongComponents outComps;
+algorithm
+  outComps := match (inMatching)
+    local
+      BackendDAE.StrongComponents comps;
+    case (BackendDAE.MATCHING(comps=comps))
+      then comps;
+    else
+      then {};
+  end match;
+end getCompsOfMatching;
+
 public function addVarsToEqSystem
   input BackendDAE.EqSystem syst;
   input list<BackendDAE.Var> varlst;

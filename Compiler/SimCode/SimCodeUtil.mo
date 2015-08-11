@@ -10478,6 +10478,22 @@ algorithm
   outSimEq :=List.getMemberOnTrue(idx,allSimEqs,indexIsEqual);
 end getSimEqSysForIndex;
 
+public function getSimVarMappingOfBackendMapping "author: mwalther
+  Get the sim var mapping that is stored in the given backend-mapping. If the backend-mapping
+  has no simVarMapping, an empty array is returned.."
+  input Option<SimCode.BackendMapping> iBackendMappingOpt;
+  output array<list<SimCodeVar.SimVar>> oSimVarMapping;
+protected
+  array<list<SimCodeVar.SimVar>> simVarMapping;
+algorithm
+  oSimVarMapping := match(iBackendMappingOpt)
+    case(SOME(SimCode.BACKENDMAPPING(simVarMapping=simVarMapping)))
+      then simVarMapping;
+    else
+      then arrayCreate(0, {});
+  end match;
+end getSimVarMappingOfBackendMapping;
+
 protected function indexIsEqual
   input Integer idx;
   input SimCode.SimEqSystem ses;

@@ -194,11 +194,7 @@ algorithm
           SimCodeUtil.createSimCode( inBackendDAE, inClassName, filenamePrefix, inString11, functions,
                                      externalFunctionIncludes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args );
 
-      //print("Number of literals pre: " + intString(listLength(simCodeLiterals)) + "\n");
-      //print("Number of zero crossings: " + intString(listLength(zeroCrossings)) + "\n");
-
-      SOME(SimCode.BACKENDMAPPING(simVarMapping=simVarMapping)) = simCode.backendMapping;
-
+      simVarMapping = SimCodeUtil.getSimVarMappingOfBackendMapping(simCode.backendMapping);
       //get SCC to simEqSys-mappping
       //----------------------------
       (allComps,_) = HpcOmTaskGraph.getSystemComponents(inBackendDAE);
