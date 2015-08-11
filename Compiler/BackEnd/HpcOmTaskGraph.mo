@@ -224,7 +224,7 @@ algorithm
         comps = BackendDAEUtil.getCompsOfMatching(matching);
         //print("--getSystemComponents0 begin\n");
         tmpSystMapping = List.fold2(comps, getSystemComponents1, iSyst, currentIdx, tmpSystMapping);
-        print(stringDelimitList(List.map(comps, BackendDump.printComponent),","));
+        //print(stringDelimitList(List.map(comps, BackendDump.printComponent),","));
         tmpComps = listAppend(tmpComps,comps);
         //print("--getSystemComponents0 end (found " + intString(listLength(comps)) + " components in system " + intString(currentIdx) + ")\n");
       then ((tmpComps, tmpSystMapping, currentIdx+1));
