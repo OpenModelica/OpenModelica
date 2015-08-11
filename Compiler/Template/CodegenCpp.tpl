@@ -14955,7 +14955,7 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
         let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         <<
         <%preExp%>
-        MODELICA_TERMINATE(<%msgVar%>);
+        Terminate(<%msgVar%>);
         >>
       case ASSERT(source=SOURCE(info=info)) then
         assertCommon(condition, message, contextSimulationDiscrete, &varDecls, info,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
