@@ -749,82 +749,19 @@ algorithm
   outType := inType;
 end makeExpType;
 
-public function isDiscreteEquation
-  input BackendDAE.Equation eqn;
-  input BackendDAE.Variables vars;
-  input BackendDAE.Variables knvars;
-  output Boolean b;
-algorithm
-  b := matchcontinue(eqn)
-    local
-      DAE.Exp e1, e2;
-      DAE.ComponentRef cr;
-      list<DAE.Exp> expl;
-      list<DAE.Statement> stmts;
-
-    case BackendDAE.EQUATION(exp=e1, scalar=e2) equation
-      b = isDiscreteExp(e1, vars, knvars) and isDiscreteExp(e2, vars, knvars);
-    then b;
-
-    case BackendDAE.COMPLEX_EQUATION(left=e1, right=e2) equation
-      b = isDiscreteExp(e1, vars, knvars) and isDiscreteExp(e2, vars, knvars);
-    then b;
-
-    case BackendDAE.ARRAY_EQUATION(left=e1, right=e2) equation
-      b = isDiscreteExp(e1, vars, knvars) and isDiscreteExp(e2, vars, knvars);
-    then b;
-
-    case BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2) equation
-      e1 = Expression.crefExp(cr);
-      b = isDiscreteExp(e1, vars, knvars) and isDiscreteExp(e2, vars, knvars);
-    then b;
-
-    case BackendDAE.RESIDUAL_EQUATION(exp=e1) equation
-      b = isDiscreteExp(e1, vars, knvars);
-    then b;
-
-    case BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(stmts)) equation
-      (_, (_, _, true)) = DAEUtil.traverseDAEEquationsStmts(stmts, isDiscreteExp1, (vars, knvars, false));
-    then true;
-
-    case BackendDAE.WHEN_EQUATION()
-    then true;
-
-    else false;
-  end matchcontinue;
-end isDiscreteEquation;
-
-public function isDiscreteExp "Returns true if expression is a discrete expression."
+public function hasExpContinuousParts
+"Returns true if expression has contiuous parts,
+ and false if the expression is completely discrete.
+ Used to detect if an expression is a ZeroCrossing."
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
   input BackendDAE.Variables inKnvars;
   output Boolean outBoolean;
-protected
-  Option<Boolean> obool;
 algorithm
-  (_,(_, _, obool)) := Expression.traverseExpTopDown(inExp, traversingisDiscreteExpFinder, (inVariables, inKnvars, NONE()));
-  outBoolean := Util.getOptionOrDefault(obool, false);
-end isDiscreteExp;
+  (_,(_, _, SOME(outBoolean))) := Expression.traverseExpTopDown(inExp, traversingContinuousExpFinder, (inVariables, inKnvars, SOME(false)));
+end hasExpContinuousParts;
 
-// Why is this so similar to isDiscreteExp? What is the difference?
-protected function isDiscreteExp1 "Returns true if expression is a discrete expression."
-  input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables, BackendDAE.Variables, Boolean> inTpl;
-  output DAE.Exp outExp;
-  output tuple<BackendDAE.Variables, BackendDAE.Variables, Boolean> outTpl;
-protected
-  Option<Boolean> obool;
-  Boolean b, b1;
-  BackendDAE.Variables v, kv;
-algorithm
-  (v, kv, b) := inTpl;
-  (_,(_, _, obool)) := Expression.traverseExpTopDown(inExp, traversingisDiscreteExpFinder, (v, kv, NONE()));
-  b1 := Util.getOptionOrDefault(obool, b);
-  outExp := inExp;
-  outTpl := (v,  kv,  b or b1);
-end isDiscreteExp1;
-
-protected function traversingisDiscreteExpFinder "Helper for isDiscreteExp"
+protected function traversingContinuousExpFinder "Helper for isDiscreteExp"
   input DAE.Exp inExp;
   input tuple<BackendDAE.Variables,BackendDAE.Variables,Option<Boolean>> inTpl;
   output DAE.Exp outExp;
@@ -841,149 +778,40 @@ algorithm
       Boolean b, b1, b2;
       Boolean res;
       Var backendVar;
-
-    case (e as DAE.ICONST(), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.RCONST(), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.SCONST(), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.BCONST(), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.ENUM_LITERAL(), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
+      Absyn.Ident name;
 
     case (e as DAE.CREF(componentRef=cr), (vars, knvars, blst)) equation
-      ((BackendDAE.VAR(varKind=kind)::_), _) = BackendVariable.getVar(cr, vars);
-      res = isKindDiscrete(kind);
-      b = Util.getOptionOrDefault(blst, res);
-      b = b and res;
-    then (e, false, (vars, knvars, SOME(b)));
+      ((backendVar::_), _) = BackendVariable.getVar(cr, vars);
+      false = BackendVariable.isVarDiscrete(backendVar);
+    then (e, false, (vars, knvars, SOME(true)));
 
     // builtin variable time is not discrete
     case (e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")), (vars, knvars, _))
-    then (e, false, (vars, knvars, SOME(false)));
+    then (e, false, (vars, knvars, SOME(true)));
 
     // Known variables that are input are continuous
     case (e as DAE.CREF(componentRef=cr), (vars, knvars, _)) equation
       (backendVar::_, _) = BackendVariable.getVar(cr, knvars);
       true = BackendVariable.isInput(backendVar);
-    then (e, false, (vars, knvars, SOME(false)));
+    then (e, false, (vars, knvars, SOME(true)));
 
-    // parameters & constants are always discrete
-    case (e as DAE.CREF(componentRef=cr), (vars, knvars, blst)) equation
-      ((BackendDAE.VAR()::_), _) = BackendVariable.getVar(cr, knvars);
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
+    case (e as DAE.CALL(path=Absyn.IDENT(name=name)), (vars, knvars, blst))
+      guard stringEq("pre", name) or
+            stringEq("change", name) or
+            stringEq("ceil", name) or
+            stringEq("floor", name) or
+            stringEq("div", name) or
+            stringEq("mod", name) or
+            stringEq("rem", name)
+    then (e, false, (vars, knvars, blst));
 
-    case (e as DAE.RELATION(exp1=e1, exp2=e2), (vars, knvars, _)) equation
-      b1 = isDiscreteExp(e1, vars, knvars);
-      b2 = isDiscreteExp(e2, vars, knvars);
-      b = b1 and  b2;
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="pre")), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="edge")), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="change")), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="ceil")), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="floor")), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="div")), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="mod")), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="rem")), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="initial")), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-/*
-    This cases are wrong because of Modelica Specification:
-
-    3.8.3
-
-    Unless inside noEvent: Ordered relations (>,<,>=,<=) and the functions ceil, floor, div, mod,
-    rem, abs, sign. These will generate events if at least one subexpression is not a
-    discrete-time expression. [In other words, relations inside noEvent(), such as noEvent(x>1),
-    are not discrete-time expressions].
-
-    and
-
-    3.7.1
-
-    abs(v): Is expanded into
-      noEvent(if v >= 0 then v else -v)
-    Argument v needs to be an Integer or Real expression.
-    sign(v): Is expanded into
-      noEvent(if v>0 then 1 else if v<0 then -1 else 0)
-     Argument v needs to be an Integer or Real expression.
-
-    case (((e as DAE.CALL(path=Absyn.IDENT(name="abs")),(vars,knvars,blst))))
-      equation
-       b = Util.getOptionOrDefault(blst,true);
-      then ((e,false,(vars,knvars,SOME(b))));
-    case (((e as DAE.CALL(path=Absyn.IDENT(name="sign")),(vars,knvars,blst))))
-      equation
-       b = Util.getOptionOrDefault(blst,true);
-      then ((e,false,(vars,knvars,SOME(b))));
-*/
     case (e as DAE.CALL(path=Absyn.IDENT(name="noEvent")), (vars, knvars, _))
     then (e, false, (vars, knvars, SOME(false)));
 
-    case (e, (vars, knvars, NONE()))
-    then (e, true, (vars, knvars, NONE()));
-
-    case (e, (vars, knvars, SOME(b)))
-    then (e, b, (vars, knvars, SOME(b)));
+    case (e, (vars, knvars, blst))
+    then (e, true, (vars, knvars, blst));
   end matchcontinue;
-end traversingisDiscreteExpFinder;
-
-
-public function isVarDiscrete "returns true if variable is discrete"
-  input BackendDAE.Var inVar;
-  output Boolean res = isKindDiscrete(inVar.varKind);
-end isVarDiscrete;
-
-protected function isKindDiscrete "Returns true if VarKind is discrete."
-  input VarKind inVarKind;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := match inVarKind
-    case (BackendDAE.DISCRETE()) then true;
-    case (BackendDAE.PARAM()) then true;
-    case (BackendDAE.CONST()) then true;
-    else false;
-  end match;
-end isKindDiscrete;
+end traversingContinuousExpFinder;
 
 public function statesAndVarsExp
 "This function investigates an expression and returns as subexpressions

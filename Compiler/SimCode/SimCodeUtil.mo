@@ -4331,7 +4331,7 @@ algorithm
       DAE.ComponentRef cr;
     case (v, cr_lst)
       equation
-        true = BackendDAEUtil.isVarDiscrete(v);
+        true = BackendVariable.isVarDiscrete(v);
         cr = BackendVariable.varCref(v);
       then (v, cr::cr_lst);
     else (inVar,inTpl);

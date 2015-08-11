@@ -285,7 +285,7 @@ algorithm
     case (comp, eqn_lst, var_varindx_lst) equation
       var_lst = List.map(var_varindx_lst, Util.tuple21);
       //false = BackendVariable.hasDiscreteVar(var_lst); //lochel: mixed systems and non-linear systems are treated the same
-      true = BackendVariable.hasContinousVar(var_lst);   //lochel: pure discrete equation systems are not supported
+      true = BackendVariable.hasContinuousVar(var_lst);   //lochel: pure discrete equation systems are not supported
       varindxs = List.map(var_varindx_lst, Util.tuple22);
       eqn_lst1 = BackendEquation.replaceDerOpInEquationList(eqn_lst);
       // States are solved for der(x) not x.
@@ -309,7 +309,7 @@ algorithm
     case (_, eqn_lst, var_varindx_lst) equation
       var_lst = List.map(var_varindx_lst, Util.tuple21);
       true = BackendVariable.hasDiscreteVar(var_lst);
-      false = BackendVariable.hasContinousVar(var_lst);
+      false = BackendVariable.hasContinuousVar(var_lst);
       msg = getInstanceName() + " failed (Sorry - Support for Discrete Equation Systems is not yet implemented)\n";
       crlst = List.map(var_lst, BackendVariable.varCref);
       slst = List.map(crlst, ComponentReference.printComponentRefStr);
