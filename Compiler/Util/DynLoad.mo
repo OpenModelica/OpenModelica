@@ -39,15 +39,38 @@ encapsulated package DynLoad
 
 public import Values;
 
-public function executeFunction "
+protected
+
+import Error;
+import StackOverflow;
+
+public
+
+function executeFunction "
 Executes a function given a handle (from System.lookupFunction) and a list
 of values."
-  input Integer inFuncHandle;
-  input list<Values.Value> inValLst;
-  input Boolean inPrintDebug;
+  input Integer handle;
+  input list<Values.Value> values;
+  input Boolean debug;
   output Values.Value outVal;
+protected
 
-  external "C" outVal=DynLoad_executeFunction(OpenModelica.threadData(),inFuncHandle,inValLst,inPrintDebug) annotation(Library = "omcruntime");
+function executeFunction_internal
+  input Integer handle;
+  input list<Values.Value> values;
+  input Boolean debug;
+  output Values.Value outVal;
+  external "C" outVal=DynLoad_executeFunction(OpenModelica.threadData(),handle,values,debug) annotation(Library = "omcruntime");
+end executeFunction_internal;
+
+algorithm
+  StackOverflow.clearStacktraceMessages();
+  // executeFunction returns Values.META_FAIL on stack overflow...
+  outVal := executeFunction_internal(handle, values, debug);
+  if StackOverflow.hasStacktraceMessages() then
+    Error.addInternalError("Stack overflow when evaluating function:\n"+ stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+    // fail(); // Causes seg.fault for some reason.
+  end if;
 end executeFunction;
 
 annotation(__OpenModelica_Interface="frontend");

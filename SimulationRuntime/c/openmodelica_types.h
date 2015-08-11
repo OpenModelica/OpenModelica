@@ -141,6 +141,7 @@ enum {
   LOCAL_ROOT_ERROR_MO,
   LOCAL_ROOT_PRINT_MO,
   LOCAL_ROOT_SYSTEM_MO,
+  LOCAL_ROOT_STACK_OVERFLOW,
   MAX_LOCAL_ROOTS
 };
 #define MAX_LOCAL_ROOTS 16
@@ -169,6 +170,7 @@ typedef struct threadData_s {
   pthread_mutex_t parentMutex; /* Prevent children from all manipulating the parent at the same time */
   void *plotClassPointer;
   PlotCallback plotCB;
+  void *stackBottom; /* Actually offset 64 kB from bottom, just to never reach the bottom */
 } threadData_t;
 
 #if defined(__cplusplus)

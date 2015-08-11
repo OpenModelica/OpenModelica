@@ -193,6 +193,7 @@ if true then /* Suppress output */
     "../Util/PriorityQueue.mo",
     // "../Util/Serializer.mo",
     "../Util/Settings.mo",
+    "../Util/StackOverflow.mo",
     "../Util/StringUtil.mo",
     "../Util/Socket.mo",
     "../Util/System.mo",

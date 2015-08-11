@@ -34,11 +34,41 @@
 #define META_MODELICA_SEGV_H_
 
 #include <pthread.h>
+#include <setjmp.h>
 #define MMC_INIT_STACK_OVERFLOW()
-#define MMC_TRY_STACK() MMC_TRY_INTERNAL(mmc_stack_overflow_jumper)
-#define MMC_CATCH_STACK() MMC_CATCH_INTERNAL(mmc_stack_overflow_jumper)
+#define MMC_TRY_STACK() { jmp_buf *oldMMCJumper = threadData->mmc_jumper; { MMC_TRY_INTERNAL(mmc_stack_overflow_jumper) threadData->mmc_jumper = &new_mmc_jumper; threadData->mmc_stack_overflow_jumper = &new_mmc_jumper;
+#define MMC_ELSE_STACK() } else { threadData->mmc_jumper = oldMMCJumper; threadData->mmc_jumper = old_jumper;
+#define MMC_CATCH_STACK() MMC_CATCH_INTERNAL(mmc_stack_overflow_jumper) } threadData->mmc_jumper = oldMMCJumper; }
 
 void printStacktraceMessages();
+void mmc_setStacktraceMessages(int numSkip, int numFrames);
+void mmc_setStacktraceMessages_threadData(threadData_t *threadData, int numSkip, int numFrames);
 void init_metamodelica_segv_handler();
+void mmc_init_stackoverflow(threadData_t *threadData);
+
+#ifndef __has_builtin
+  #define __has_builtin(x) 0  /* Compatibility with non-clang compilers */
+#endif
+
+/* Does not work very well with many stack frames because we are close to the stack end when we need this data... */
+#define MMC_SEGV_TRACE_NFRAMES 1024
+
+static inline void mmc_check_stackoverflow(threadData_t *threadData)
+{
+#if __has_builtin(__builtin_frame_address) || defined(__GNUC__)
+  if (__builtin_frame_address(0) < threadData->stackBottom)
+#else
+  /* No way of getting the frame address except hoping for the best */
+  int addr;
+  if ((void*) &addr < threadData->stackBottom)
+#endif
+  {
+    /* Do the jump */
+    mmc_setStacktraceMessages_threadData(threadData, 1, MMC_SEGV_TRACE_NFRAMES);
+    longjmp(*threadData->mmc_stack_overflow_jumper, 1);
+  }
+}
+
+#define MMC_SO() mmc_check_stackoverflow(threadData)
 
 #endif

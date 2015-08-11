@@ -263,10 +263,10 @@ DLLDirection extern void mmc_init_nogc();
 
 #define MMC_THROW_INTERNAL() {longjmp(*threadData->mmc_jumper,1);}
 #define MMC_THROW() {longjmp(*((threadData_t*)pthread_getspecific(mmc_thread_data_key))->mmc_jumper,1);}
-#define MMC_ELSE() } else {
+#define MMC_ELSE() } else { threadData->mmc_jumper = old_jumper;
 
-#define MMC_TRY_TOP() { threadData_t threadDataOnStack = {0}, *oldThreadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key),*threadData = &threadDataOnStack; pthread_setspecific(mmc_thread_data_key,threadData); pthread_mutex_init(&threadData->parentMutex,NULL); MMC_TRY_INTERNAL(mmc_jumper)
-#define MMC_TRY_TOP_INTERNAL() { threadData_t *oldThreadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key); pthread_setspecific(mmc_thread_data_key,threadData); pthread_mutex_init(&threadData->parentMutex,NULL); MMC_TRY_INTERNAL(mmc_jumper)
+#define MMC_TRY_TOP() { threadData_t threadDataOnStack = {0}, *oldThreadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key),*threadData = &threadDataOnStack; pthread_setspecific(mmc_thread_data_key,threadData); pthread_mutex_init(&threadData->parentMutex,NULL); mmc_init_stackoverflow(threadData); MMC_TRY_INTERNAL(mmc_jumper) threadData->mmc_stack_overflow_jumper = threadData->mmc_jumper; /* Let the default stack overflow handler be the top-level handler */
+#define MMC_TRY_TOP_INTERNAL() { threadData_t *oldThreadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key); pthread_setspecific(mmc_thread_data_key,threadData); pthread_mutex_init(&threadData->parentMutex,NULL); mmc_init_stackoverflow(threadData); MMC_TRY_INTERNAL(mmc_jumper) threadData->mmc_stack_overflow_jumper = threadData->mmc_jumper;
 #define MMC_CATCH_TOP(X) pthread_setspecific(mmc_thread_data_key,oldThreadData); } else {pthread_setspecific(mmc_thread_data_key,oldThreadData);X;}}}
 
 /* adrpo: assume MMC_DBL_PAD always! */

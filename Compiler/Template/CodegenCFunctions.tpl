@@ -981,7 +981,7 @@ case FUNCTION(__) then
   <%functionPrototype(fname, functionArguments, outVars, false, visibility, isSimulation)%>
   {
     <%varDecls%>
-    _tailrecursive: OMC_LABEL_UNUSED
+    <% if boolNot(isSimulation) then 'MMC_SO();<%\n%>'%>_tailrecursive: OMC_LABEL_UNUSED
     <%varInits%>
     <%bodyPart%>
     _return: OMC_LABEL_UNUSED
@@ -6349,7 +6349,9 @@ template daeExpMatch2(Exp exp, list<Exp> tupleAssignExps, Text res, Text startIn
 ::=
 match exp
 case exp as MATCHEXPRESSION(__) then
-  let () = codegenPushTryThrowIndex(System.tmpTick())
+  let mydummy = match exp.matchType
+    case TRY_STACKOVERFLOW() then ""
+    else codegenPushTryThrowIndex(System.tmpTick())
   let goto = 'goto_<%codegenPeekTryThrowIndex()%>'
   let &preExpInner = buffer ""
   let &preExpRes = buffer ""
@@ -6386,6 +6388,33 @@ case exp as MATCHEXPRESSION(__) then
     else tempDecl('volatile mmc_switch_type', &varDeclsInner)
   let done = tempDecl('int', &varDeclsInner)
   let &preExp +=
+      match exp.matchType
+      case TRY_STACKOVERFLOW() then
+      let &varDeclsInner = buffer ""
+      (match exp.cases
+      case {try as CASE(__),else as CASE(__)} then
+      let tryb = (try.body |> stmt => algStatement(stmt, context, &varDeclsInner, &auxFunction); separator="\n")
+      let elseb = (else.body |> stmt => algStatement(stmt, context, &varDeclsInner, &auxFunction); separator="\n")
+      <<
+      <%endModelicaLine()%>
+      { /* stack overflow check */
+        <%varDeclsInput%>
+        <%preExpInput%>
+        <%expInput%>
+        {
+          <%varDeclsInner%>
+          <%preExpInner%>
+          MMC_TRY_STACK()
+          <%tryb%>
+          MMC_ELSE_STACK()
+          <%elseb%>
+          MMC_CATCH_STACK()
+        }
+      }
+      >>
+      else error(sourceInfo(), 'Got stack overflow block with more than 2 cases')
+      )
+      else
       <<
       <%endModelicaLine()%>
       { /* <% match exp.matchType case MATCHCONTINUE(__) then "matchcontinue expression" case MATCH(__) then "match expression" %> */
@@ -6402,7 +6431,7 @@ case exp as MATCHEXPRESSION(__) then
           <%ix%> = 0;
           <%done%> = 0;
           <% match exp.matchType case MATCHCONTINUE(__) then
-          /* One additional MMC_TRY_INTERNAL() for each caught exception
+          /* One additional MMC_TRY_INTERNAL() for each caught exceptionOne additional MMC_TRY_INTERNAL() for each caught exception
            * You would expect you could do the setjmp only once, but some counters I guess are stored in registers and would need to become volatile
            * This is still a lot faster than doing MMC_TRY_INTERNAL() inside the for-loop
            */
