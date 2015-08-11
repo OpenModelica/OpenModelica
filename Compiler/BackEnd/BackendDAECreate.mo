@@ -1861,7 +1861,9 @@ algorithm
         (cond, source, _,_) = Inline.inlineExp(cond, fns, source);
         (e, source, _,_) = Inline.inlineExp(e, fns, source);
         whenOp = BackendDAE.ASSERT(cond, e, level, source);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, whenOp::iReinitStatementLst);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
+        eq = BackendDAE.WHEN_EQUATION(0, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, iReinitStatementLst);
       then
         (eqnl, reinit);
 
@@ -1869,7 +1871,9 @@ algorithm
       equation
         (e, source, _,_) = Inline.inlineExp(e, fns, source);
         whenOp = BackendDAE.REINIT(cr, e, source);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, whenOp::iReinitStatementLst);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
+        eq = BackendDAE.WHEN_EQUATION(0, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, iReinitStatementLst);
       then
         (eqnl, reinit);
 
@@ -1877,7 +1881,9 @@ algorithm
       equation
         (e, source, _,_) = Inline.inlineExp(e, fns, source);
         whenOp = BackendDAE.TERMINATE(e, source);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, whenOp::iReinitStatementLst);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
+        eq = BackendDAE.WHEN_EQUATION(0, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, iReinitStatementLst);
       then
         (eqnl, reinit);
 
@@ -1885,7 +1891,9 @@ algorithm
       equation
         (e, source, _, _) = Inline.inlineExp(e, fns, source);
         whenOp = BackendDAE.NORETCALL(e, source);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, whenOp::iReinitStatementLst);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
+        eq = BackendDAE.WHEN_EQUATION(0, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, iReinitStatementLst);
       then
         (eqnl, reinit);
 

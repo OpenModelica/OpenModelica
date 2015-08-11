@@ -350,13 +350,18 @@ protected
   DAE.Exp crexp;
   BackendDAE.Equation eqn;
 algorithm
-  if Expression.containsInitialCall(inWEqn.condition, false) then
-    crexp := Expression.crefExp(inWEqn.left);
-    eqn := BackendEquation.generateEquation(crexp, inWEqn.right, inSource, inEqAttr);
-    outEqns := eqn::inEqns;
-  else
-    outEqns := generateInactiveWhenEquationForInitialization(ComponentReference.expandCref(inWEqn.left, true), inSource, inEqns);
-  end if;
+  outEqns := match(inWEqn)
+    case BackendDAE.WHEN_EQ() algorithm
+      if Expression.containsInitialCall(inWEqn.condition, false) then
+        crexp := Expression.crefExp(inWEqn.left);
+        eqn := BackendEquation.generateEquation(crexp, inWEqn.right, inSource, inEqAttr);
+        outEqns := eqn::inEqns;
+      else
+        outEqns := generateInactiveWhenEquationForInitialization(ComponentReference.expandCref(inWEqn.left, true), inSource, inEqns);
+      end if;
+    then outEqns;
+    else inEqns;
+    end match;
 end inlineWhenForInitializationWhenEquation;
 
 protected function inlineWhenForInitializationWhenAlgorithm "author: lochel
