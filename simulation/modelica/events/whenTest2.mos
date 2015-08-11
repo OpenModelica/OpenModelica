@@ -1,0 +1,78 @@
+// name: whenTest2
+// keywords: event, when
+// status: correct
+// cflags: +g=MetaModelica
+// teardown_command: rm -rf eventTests.whenTest2* output.log
+//
+// example for when equation without equations, just with statements e.g. reinit, terminate
+//
+
+loadString("
+within ;
+package eventTests
+  model whenTest2
+    Real x(start=1);
+  equation
+    der(x) = 10*sin(time); 
+    when x>1.5 then
+      reinit(x,1);
+    end when;
+    when sample(0,0.1) then
+      print(\"Time : \" + realString(time) + \"\\n\");
+      print(\"x : \" + realString(x) + \"\\n\");
+    end when;
+    when time >= 0.9 then
+      terminate(\"Terminate the model.\");
+    end when;
+    when x > 1.1 then
+      assert(time<0.5, \"Assert does trigger.\", AssertionLevel.warning);
+    end when;
+  end whenTest2;
+end eventTests;
+"); getErrorString();
+
+simulate(eventTests.whenTest2); getErrorString();
+val(x, 0.0);
+val(x, 0.5);
+val(x, 0.9);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "eventTests.whenTest2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'eventTests.whenTest2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Time : 0.0
+// x : 1.0
+// Time : 0.1
+// x : 1.04995554143126
+// Time : 0.2
+// x : 1.199329343347173
+// Time : 0.3
+// x : 1.446628136154938
+// Time : 0.4
+// x : 1.28937677750782
+// Time : 0.5
+// x : 1.224154173127676
+// assert            | warning | The following assertion has been violated at time 0.573518
+// |                 | |       | time < 0.5
+// assert            | warning | Assert does trigger.
+// Time : 0.6
+// x : 1.246618128997324
+// Time : 0.7
+// x : 1.35154560698076
+// Time : 0.7999999999999999
+// x : 1.032897608580735
+// Time : 0.8999999999999999
+// x : 1.283862644938836
+// [<interactive>:16:7-16:40:writable]
+// stdout            | info    | Simulation call terminate() at time 0.900000
+// |                 | |       | Message : Terminate the model.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// 1.0
+// 1.224154173127676
+// 1.283862644938837
+// endResult
