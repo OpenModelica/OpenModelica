@@ -4157,6 +4157,8 @@ algorithm
       DAE.ComponentRef left;
       BackendDAE.WhenEquation weqn;
       HashSet.HashSet hs;
+      list<BackendDAE.WhenOperator> whenStmtLst;
+
     case (BackendDAE.WHEN_EQ(left=left, elsewhenPart=NONE()), _)
       equation
         left = ComponentReference.crefStripLastSubs(left);
@@ -4169,6 +4171,7 @@ algorithm
         hs = BaseHashSet.add(left, iHs);
       then
         addUnreplaceableFromWhen(weqn, hs);
+    case (BackendDAE.WHEN_STMTS(), _) then iHs;
   end match;
 end addUnreplaceableFromWhen;
 
