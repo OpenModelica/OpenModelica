@@ -267,6 +267,8 @@ algorithm
 
       HashTableExpToIndex.HashTable ht;
 
+      list<BackendDAE.WhenOperator> whenStmtLst;
+
     // when
     case BackendDAE.WHEN_EQ(condition=condition, left=left, right=right, elsewhenPart=NONE()) equation
       (condition, vars, eqns, index, ht) = encapsulateWhenConditions_Equations1(condition, inSource, inIndex, inHT);
@@ -278,6 +280,21 @@ algorithm
       (elsewhenPart, vars1, eqns1, index, ht) = encapsulateWhenConditions_Equations(elsewhenPart, inSource, inIndex, inHT);
       (condition, vars, eqns, index, ht) = encapsulateWhenConditions_Equations1(condition, inSource, index, ht);
       whenEquation = BackendDAE.WHEN_EQ(condition, left, right, SOME(elsewhenPart));
+      vars = listAppend(vars, vars1);
+      eqns = listAppend(eqns, eqns1);
+    then (whenEquation, vars, eqns, index, ht);
+
+    // when - stmts
+    case BackendDAE.WHEN_STMTS(condition=condition, whenStmtLst=whenStmtLst, elsewhenPart=NONE()) equation
+      (condition, vars, eqns, index, ht) = encapsulateWhenConditions_Equations1(condition, inSource, inIndex, inHT);
+      whenEquation = BackendDAE.WHEN_STMTS(condition, whenStmtLst, NONE());
+    then (whenEquation, vars, eqns, index, ht);
+
+    // when - stmts - elsewhen
+    case BackendDAE.WHEN_STMTS(condition=condition, whenStmtLst=whenStmtLst, elsewhenPart=SOME(elsewhenPart)) equation
+      (elsewhenPart, vars1, eqns1, index, ht) = encapsulateWhenConditions_Equations(elsewhenPart, inSource, inIndex, inHT);
+      (condition, vars, eqns, index, ht) = encapsulateWhenConditions_Equations1(condition, inSource, index, ht);
+      whenEquation = BackendDAE.WHEN_STMTS(condition, whenStmtLst, SOME(elsewhenPart));
       vars = listAppend(vars, vars1);
       eqns = listAppend(eqns, eqns1);
     then (whenEquation, vars, eqns, index, ht);
