@@ -1382,7 +1382,8 @@ algorithm
       DAE.Exp e2,cond;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation weqn;
-    case (BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2, elsewhenPart = SOME(weqn)))
+      list<BackendDAE.WhenOperator> whenStmtLst;
+    case (BackendDAE.WHEN_EQ(condition=cond, left = cr, right = e2, elsewhenPart = SOME(weqn)))
       equation
         s1 = whenEquationString(weqn);
         s2 = ExpressionDump.printExpStr(e2);
@@ -1391,12 +1392,27 @@ algorithm
         res = stringAppendList({"elsewhen ",s3," then\n  ",cs, " := ",s2,"\n", s1});
       then
         res;
-    case (BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2, elsewhenPart = NONE()))
+    case (BackendDAE.WHEN_EQ(condition=cond, left = cr, right = e2, elsewhenPart = NONE()))
       equation
         s2 = ExpressionDump.printExpStr(e2);
         s3 = ExpressionDump.printExpStr(cond);
         cs = ComponentReference.printComponentRefStr(cr);
         res = stringAppendList({"elsewhen ",s3," then\n  ",cs, " := ",s2,"\n"});
+      then
+        res;
+    case (BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart = SOME(weqn)))
+      equation
+        s1 = whenEquationString(weqn);
+        s2 = ExpressionDump.printExpStr(cond);
+        s3 = stringDelimitList(List.map(whenStmtLst, dumpWhenOperatorStr), "  ");
+        res = stringAppendList({"elsewhen ",s2," then\n  ",s3,"\n",s1});
+      then
+        res;
+    case (BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart = NONE()))
+      equation
+        s1 = ExpressionDump.printExpStr(cond);
+        s2 = stringDelimitList(List.map(whenStmtLst, dumpWhenOperatorStr), "  ");
+        res = stringAppendList({"elsewhen ",s1," then\n  ",s2,"\n"});
       then
         res;
   end match;
@@ -1418,6 +1434,7 @@ algorithm
       DAE.ElementSource source;
       list<list<BackendDAE.Equation>> eqnstrue;
       list<BackendDAE.Equation> eqnsfalse,eqns;
+      list<BackendDAE.WhenOperator> whenStmtLst;
     case (BackendDAE.EQUATION(exp = e1,scalar = e2, attr=attr))
       equation
         s1 = ExpressionDump.printExpStr(e1);
@@ -1462,6 +1479,21 @@ algorithm
         s2 = ExpressionDump.printExpStr(e2);
         s4 = ExpressionDump.printExpStr(cond);
         res = stringAppendList({"when ",s4," then\n  ",s1," := ",s2,"\nend when"});
+      then
+        res;
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart = SOME(weqn))))
+      equation
+        s1 = stringDelimitList(List.map(whenStmtLst, dumpWhenOperatorStr), "  ");
+        s2 = whenEquationString(weqn);
+        s3 = ExpressionDump.printExpStr(cond);
+        res = stringAppendList({"when ",s3," then\n  ",s1,"\n",s2,"end when"});
+      then
+        res;
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst)))
+      equation
+        s1 = stringDelimitList(List.map(whenStmtLst, dumpWhenOperatorStr), "  ");
+        s2 = ExpressionDump.printExpStr(cond);
+        res = stringAppendList({"when ",s2," then\n  ",s1,"\nend when"});
       then
         res;
     case (BackendDAE.RESIDUAL_EQUATION(exp = e))

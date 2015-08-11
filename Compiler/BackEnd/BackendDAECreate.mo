@@ -1863,7 +1863,7 @@ algorithm
         whenOp = BackendDAE.ASSERT(cond, e, level, source);
         whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
         eq = BackendDAE.WHEN_EQUATION(0, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, iReinitStatementLst);
+        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iReinitStatementLst);
       then
         (eqnl, reinit);
 
@@ -1873,7 +1873,7 @@ algorithm
         whenOp = BackendDAE.REINIT(cr, e, source);
         whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
         eq = BackendDAE.WHEN_EQUATION(0, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, iReinitStatementLst);
+        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iReinitStatementLst);
       then
         (eqnl, reinit);
 
@@ -1883,7 +1883,7 @@ algorithm
         whenOp = BackendDAE.TERMINATE(e, source);
         whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
         eq = BackendDAE.WHEN_EQUATION(0, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, iReinitStatementLst);
+        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iReinitStatementLst);
       then
         (eqnl, reinit);
 
@@ -1893,7 +1893,7 @@ algorithm
         whenOp = BackendDAE.NORETCALL(e, source);
         whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
         eq = BackendDAE.WHEN_EQUATION(0, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, iReinitStatementLst);
+        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iReinitStatementLst);
       then
         (eqnl, reinit);
 
@@ -2223,10 +2223,16 @@ algorithm
       DAE.ElementSource source;
       Integer size;
       BackendDAE.EquationAttributes attr;
+      list<BackendDAE.WhenOperator> whenStmtLst;
 
     case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_EQ(condition=cond, left = cr, right=rightSide), source=source, attr=attr)::trueEqns, _, _) equation
       (foundEquation, elseEqnsRest) = getWhenEquationFromVariable(cr, elseEqnList, {});
       res = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_EQ(cond, cr, rightSide, SOME(foundEquation)), source, attr);
+      result = mergeClauses(trueEqns, elseEqnsRest, res::inEquationLst);
+    then result;
+
+    case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst), source=source, attr=attr)::trueEqns, (BackendDAE.WHEN_EQUATION(whenEquation=foundEquation as BackendDAE.WHEN_STMTS()))::elseEqnsRest, _) equation
+      res = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_STMTS(cond, whenStmtLst, SOME(foundEquation)), source, attr);
       result = mergeClauses(trueEqns, elseEqnsRest, res::inEquationLst);
     then result;
 

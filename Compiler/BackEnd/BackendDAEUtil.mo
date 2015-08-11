@@ -2468,12 +2468,13 @@ algorithm
       DAE.Exp e1,e2,e,expCref,cond;
       list<DAE.Exp> expl;
       DAE.ComponentRef cr;
-      BackendDAE.WhenEquation we,elsewe;
+      BackendDAE.WhenEquation we;
       Integer size;
       String eqnstr, str;
       list<DAE.Statement> statementLst;
       list<list<BackendDAE.Equation>> eqnslst;
       list<BackendDAE.Equation> eqns;
+      list<BackendDAE.WhenOperator> whenStmtLst;
 
     // EQUATION
     case BackendDAE.EQUATION(exp = e1,scalar = e2)
@@ -2517,21 +2518,9 @@ algorithm
         (res,1);
 
     // WHEN_EQUATION
-    case BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=NONE()))
+    case BackendDAE.WHEN_EQUATION(size=size,whenEquation = we)
       equation
-        e1 = Expression.crefExp(cr);
-        lst1 = incidenceRowExp(cond, vars, iRow, functionTree, inIndexType);
-        lst2 = incidenceRowExp(e1, vars, lst1, functionTree, inIndexType);
-        res = incidenceRowExp(e2, vars, lst2, functionTree, inIndexType);
-      then
-        (res,size);
-    case BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsewe)))
-      equation
-        e1 = Expression.crefExp(cr);
-        lst1 = incidenceRowExp(cond, vars, iRow, functionTree, inIndexType);
-        lst2 = incidenceRowExp(e1, vars, lst1, functionTree, inIndexType);
-        res = incidenceRowExp(e2, vars, lst2, functionTree, inIndexType);
-        res = incidenceRowWhen(vars, elsewe, inIndexType, functionTree, res);
+        res = incidenceRowWhen(we, vars, inIndexType, functionTree, iRow);
       then
         (res,size);
 
@@ -2610,33 +2599,90 @@ algorithm
 end incidenceRowLstLst;
 
 protected function incidenceRowWhen
-"author: Frenkel TUD
-  Helper function to incidenceMatrix. Calculates the indidence row
+"Helper function to incidenceMatrix. Calculates the indidence row
   in the matrix for a when equation."
-  input BackendDAE.Variables inVariables;
   input BackendDAE.WhenEquation inEquation;
+  input BackendDAE.Variables inVariables;
   input BackendDAE.IndexType inIndexType;
   input Option<DAE.FunctionTree> functionTree;
   input list<Integer> inRow;
   output list<Integer> outRow;
-protected
-  list<Integer> res;
-  DAE.Exp e1, e2, cond;
-  DAE.ComponentRef cr;
-  BackendDAE.WhenEquation elsewe;
-  Option<BackendDAE.WhenEquation> oelsewe;
 algorithm
-  BackendDAE.WHEN_EQ(condition = cond, left = cr, right = e2, elsewhenPart = oelsewe) := inEquation;
-  e1 := Expression.crefExp(cr);
-  outRow := incidenceRowExp(cond, inVariables, inRow, functionTree, inIndexType);
-  outRow := incidenceRowExp(e1, inVariables, outRow, functionTree, inIndexType);
-  outRow := incidenceRowExp(e2, inVariables, outRow, functionTree, inIndexType);
+  outRow := match (inEquation)
+    local
+      list<Integer> res;
+      DAE.Exp e1, e2, cond;
+      DAE.ComponentRef cr;
+      BackendDAE.WhenEquation elsewe;
+      Option<BackendDAE.WhenEquation> oelsewe;
+      list<BackendDAE.WhenOperator> whenStmtLst;
 
-  if isSome(oelsewe) then
-    SOME(elsewe) := oelsewe;
-    outRow := incidenceRowWhen(inVariables, elsewe, inIndexType, functionTree, outRow);
-  end if;
+    case BackendDAE.WHEN_EQ(condition = cond, left = cr, right = e2, elsewhenPart = oelsewe)
+      algorithm
+        e1 := Expression.crefExp(cr);
+        outRow := incidenceRowExp(cond, inVariables, inRow, functionTree, inIndexType);
+        outRow := incidenceRowExp(e1, inVariables, outRow, functionTree, inIndexType);
+        outRow := incidenceRowExp(e2, inVariables, outRow, functionTree, inIndexType);
+
+        if isSome(oelsewe) then
+          SOME(elsewe) := oelsewe;
+          outRow := incidenceRowWhen(elsewe, inVariables, inIndexType, functionTree, outRow);
+        end if;
+    then outRow;
+    case BackendDAE.WHEN_STMTS(condition = cond, whenStmtLst = whenStmtLst, elsewhenPart = oelsewe)
+      algorithm
+        outRow := incidenceRowExp(cond, inVariables, inRow, functionTree, inIndexType);
+        outRow := incidenceRowWhenOps(whenStmtLst, inVariables, inIndexType, functionTree, outRow);
+
+        if isSome(oelsewe) then
+          SOME(elsewe) := oelsewe;
+          outRow := incidenceRowWhen(elsewe, inVariables, inIndexType, functionTree, outRow);
+        end if;
+    then outRow;
+  end match;
 end incidenceRowWhen;
+
+protected function incidenceRowWhenOps
+"Helper function to incidenceMatrix. Calculates the indidence row
+  in the matrix for a when equation stmts."
+  input list<BackendDAE.WhenOperator>  inWhenOps;
+  input BackendDAE.Variables inVariables;
+  input BackendDAE.IndexType inIndexType;
+  input Option<DAE.FunctionTree> functionTree;
+  input list<Integer> inRow;
+  output list<Integer> outRow;
+algorithm
+  outRow := match (inWhenOps)
+    local
+      DAE.Exp e1, e2;
+      DAE.ComponentRef cr;
+      list<BackendDAE.WhenOperator> rest;
+
+    case {} then inRow;
+    case (BackendDAE.REINIT(stateVar=cr, value=e2)::rest)
+      equation
+        e1 = Expression.crefExp(cr);
+        outRow = incidenceRowExp(e2, inVariables, inRow, functionTree, inIndexType);
+        outRow = incidenceRowWhenOps(rest, inVariables, inIndexType, functionTree, outRow);
+    then outRow;
+    case (BackendDAE.ASSERT(condition = e1, message=e2)::rest)
+      equation
+        outRow = incidenceRowExp(e1, inVariables, inRow, functionTree, inIndexType);
+        outRow = incidenceRowExp(e2, inVariables, outRow, functionTree, inIndexType);
+        outRow = incidenceRowWhenOps(rest, inVariables, inIndexType, functionTree, outRow);
+    then outRow;
+    case (BackendDAE.TERMINATE(message = e1)::rest)
+      equation
+        outRow = incidenceRowExp(e1, inVariables, inRow, functionTree, inIndexType);
+        outRow = incidenceRowWhenOps(rest, inVariables, inIndexType, functionTree, outRow);
+    then outRow;
+    case (BackendDAE.NORETCALL(exp = e1)::rest)
+      equation
+        outRow = incidenceRowExp(e1, inVariables, inRow, functionTree, inIndexType);
+        outRow = incidenceRowWhenOps(rest, inVariables, inIndexType, functionTree, outRow);
+    then outRow;
+  end match;
+end incidenceRowWhenOps;
 
 protected function incidenceRowAlgorithm
   input tuple<DAE.Exp, list<Integer>> inTuple;
