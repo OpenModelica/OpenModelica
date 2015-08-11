@@ -624,8 +624,7 @@ class StatArray : public BaseArray<T>
    * copies data from otherarray in array memory
    * or holds a pointer to otherarray's data
    */
-  template<bool otherext>
-  StatArray(const StatArray<T, nelems, otherext>& otherarray)
+  StatArray(const StatArray<T, nelems, true>& otherarray)
     :BaseArray<T>(true, false)
   {
     if (external)
@@ -633,6 +632,22 @@ class StatArray : public BaseArray<T>
     else {
       _data = _array.c_array();
       otherarray.getDataCopy(_data, nelems);
+    }
+  }
+
+  /**
+   * Constuctor for static array that
+   * copies data from otherarray in array memory
+   * or holds a pointer to otherarray's data
+   */
+  StatArray(const StatArray<T, nelems, false>& otherarray)
+    :BaseArray<T>(true, false)
+  {
+    if (external)
+      _data = otherarray._data;
+    else {
+      _data = _array.c_array();
+      _array = otherarray._array;
     }
   }
 
@@ -664,17 +679,33 @@ class StatArray : public BaseArray<T>
   virtual ~StatArray() {}
 
   /**
-   * Assign static array to static array.
+   * Assign static array with external storage to static array.
    * a = b
-   * Just copy the data pointer if both a and b have external storage.
+   * Just copy the data pointer if this array has external storage as well.
    * @param b any array of type StatArray
    */
-  template<bool bext> StatArray<T, nelems, external>&
-  operator=(const StatArray<T, nelems, bext>& b)
+  StatArray<T, nelems, external>&
+  operator=(const StatArray<T, nelems, true>& b)
   {
-    if (external && bext)
+    if (external)
       _data = b._data;
     else if (nelems > 0) {
+      if (_data == NULL)
+        throw std::runtime_error("Invalid assign operation from StatArray to uninitialized StatArray!");
+      b.getDataCopy(_data, nelems);
+    }
+    return *this;
+  }
+
+  /**
+   * Assign static array with internal storage to static array.
+   * a = b
+   * @param b any array of type StatArray
+   */
+  StatArray<T, nelems, external>&
+  operator=(const StatArray<T, nelems, false>& b)
+  {
+    if (nelems > 0) {
       if (_data == NULL)
         throw std::runtime_error("Invalid assign operation from StatArray to uninitialized StatArray!");
       b.getDataCopy(_data, nelems);
@@ -798,9 +829,19 @@ class StatArrayDim1 : public StatArray<T, size, external>
   /**
    * Constuctor for one dimensional array
    * copies data from otherarray in array memory
+   * or holds a pointer to otherarray's data
    */
-  template<bool otherext>
-  StatArrayDim1(const StatArrayDim1<T, size, otherext>& otherarray)
+  StatArrayDim1(const StatArrayDim1<T, size, true>& otherarray)
+    :StatArray<T, size, external>(otherarray)
+  {
+  }
+
+  /**
+   * Constuctor for one dimensional array
+   * copies data from otherarray in array memory
+   * or holds a pointer to otherarray's data
+   */
+  StatArrayDim1(const StatArrayDim1<T, size, false>& otherarray)
     :StatArray<T, size, external>(otherarray)
   {
   }
@@ -824,13 +865,25 @@ class StatArrayDim1 : public StatArray<T, size, external>
   virtual ~StatArrayDim1() {}
 
   /**
-   * Assign static array to static array
+   * Assign static array with external storage to static array.
    * a = b
-   * Just copy the data pointer if both a and b have external storage.
-   * @param b any array of type StatArrayDim1
+   * Just copy the data pointer if this array has external storage as well.
+   * @param b any array of type StatArray
    */
-  template<bool bext> StatArrayDim1<T, size, external>&
-  operator=(const StatArrayDim1<T, size, bext>& b)
+  StatArrayDim1<T, size, external>&
+  operator=(const StatArrayDim1<T, size, true>& b)
+  {
+    StatArray<T, size, external>::operator=(b);
+    return *this;
+  }
+
+  /**
+   * Assign static array with internal storage to static array.
+   * a = b
+   * @param b any array of type StatArray
+   */
+  StatArrayDim1<T, size, external>&
+  operator=(const StatArrayDim1<T, size, false>& b)
   {
     StatArray<T, size, external>::operator=(b);
     return *this;
@@ -951,9 +1004,19 @@ class StatArrayDim2 : public StatArray<T, size1*size2, external>
   /**
    * Constuctor for two dimensional array
    * copies data from otherarray in array memory
+   * or holds a pointer to otherarray's data
    */
-  template<bool otherext>
-  StatArrayDim2(const StatArrayDim2<T, size1, size2, otherext>& otherarray)
+  StatArrayDim2(const StatArrayDim2<T, size1, size2, true>& otherarray)
+    :StatArray<T, size1*size2, external>(otherarray)
+  {
+  }
+
+  /**
+   * Constuctor for two dimensional array
+   * copies data from otherarray in array memory
+   * or holds a pointer to otherarray's data
+   */
+  StatArrayDim2(const StatArrayDim2<T, size1, size2, false>& otherarray)
     :StatArray<T, size1*size2, external>(otherarray)
   {
   }
@@ -976,13 +1039,25 @@ class StatArrayDim2 : public StatArray<T, size1*size2, external>
   virtual ~StatArrayDim2(){}
 
   /**
-   * Assign static array to static array
+   * Assign static array with external storage to static array.
    * a = b
-   * Just copy the data pointer if both a and b have external storage.
-   * @param b any array of type StatArrayDim1
+   * Just copy the data pointer if this array has external storage as well.
+   * @param b any array of type StatArray
    */
-  template<bool bext> StatArrayDim2<T, size1, size2, external>&
-  operator=(const StatArrayDim2<T, size1, size2, bext>& b)
+  StatArrayDim2<T, size1, size2, external>&
+  operator=(const StatArrayDim2<T, size1, size2, true>& b)
+  {
+    StatArray<T, size1*size2, external>::operator=(b);
+    return *this;
+  }
+
+  /**
+   * Assign static array with internal storage to static array.
+   * a = b
+   * @param b any array of type StatArray
+   */
+  StatArrayDim2<T, size1, size2, external>&
+  operator=(const StatArrayDim2<T, size1, size2, false>& b)
   {
     StatArray<T, size1*size2, external>::operator=(b);
     return *this;
@@ -1112,9 +1187,19 @@ class StatArrayDim3 : public StatArray<T, size1*size2*size3, external>
   /**
    * Constuctor for three dimensional array
    * copies data from otherarray in array memory
+   * or holds a pointer to otherarray's data
    */
-  template<bool otherext>
-  StatArrayDim3(const StatArrayDim3<T, size1, size2, size3, otherext>& otherarray)
+  StatArrayDim3(const StatArrayDim3<T, size1, size2, size3, true>& otherarray)
+    :StatArray<T, size1*size2*size3, external>(otherarray)
+  {
+  }
+
+  /**
+   * Constuctor for three dimensional array
+   * copies data from otherarray in array memory
+   * or holds a pointer to otherarray's data
+   */
+  StatArrayDim3(const StatArrayDim3<T, size1, size2, size3, false>& otherarray)
     :StatArray<T, size1*size2*size3, external>(otherarray)
   {
   }
@@ -1137,13 +1222,25 @@ class StatArrayDim3 : public StatArray<T, size1*size2*size3, external>
   virtual ~StatArrayDim3() {}
 
   /**
-   * Assign static array to static array
+   * Assign static array with external storage to static array.
    * a = b
-   * Just copy the data pointer if both a and b have external storage.
-   * @param b any array of type StatArrayDim1
+   * Just copy the data pointer if this array has external storage as well.
+   * @param b any array of type StatArray
    */
-  template<bool bext> StatArrayDim3<T, size1, size2, size3, external>&
-  operator=(const StatArrayDim3<T, size1, size2, size3, bext>& b)
+  StatArrayDim3<T, size1, size2, size3, external>&
+  operator=(const StatArrayDim3<T, size1, size2, size3, true>& b)
+  {
+    StatArray<T, size1*size2*size3, external>::operator=(b);
+    return *this;
+  }
+
+  /**
+   * Assign static array with internal storage to static array.
+   * a = b
+   * @param b any array of type StatArray
+   */
+  StatArrayDim3<T, size1, size2, size3, external>&
+  operator=(const StatArrayDim3<T, size1, size2, size3, false>& b)
   {
     StatArray<T, size1*size2*size3, external>::operator=(b);
     return *this;
