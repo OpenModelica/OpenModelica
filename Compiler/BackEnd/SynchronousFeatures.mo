@@ -1447,6 +1447,7 @@ algorithm
     case BackendDAE.RESIDUAL_EQUATION(exp = e) then isClockExp(e);
     case BackendDAE.ALGORITHM() then false;
     case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(right=e)) then isClockExp(e);
+    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS()) then false;
     case BackendDAE.COMPLEX_EQUATION(right = e) then isClockExp(e);
     case BackendDAE.IF_EQUATION(eqnstrue = trueEqs, eqnsfalse = falseEqs)
       algorithm

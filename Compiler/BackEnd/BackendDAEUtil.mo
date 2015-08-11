@@ -2659,13 +2659,14 @@ algorithm
       list<BackendDAE.WhenOperator> rest;
 
     case {} then inRow;
-    case (BackendDAE.REINIT(stateVar=cr, value=e2)::rest)
+    case (BackendDAE.REINIT(stateVar = cr, value = e2)::rest)
       equation
         e1 = Expression.crefExp(cr);
-        outRow = incidenceRowExp(e2, inVariables, inRow, functionTree, inIndexType);
+        outRow = incidenceRowExp(e1, inVariables, inRow, functionTree, inIndexType);
+        outRow = incidenceRowExp(e2, inVariables, outRow, functionTree, inIndexType);
         outRow = incidenceRowWhenOps(rest, inVariables, inIndexType, functionTree, outRow);
     then outRow;
-    case (BackendDAE.ASSERT(condition = e1, message=e2)::rest)
+    case (BackendDAE.ASSERT(condition = e1, message = e2)::rest)
       equation
         outRow = incidenceRowExp(e1, inVariables, inRow, functionTree, inIndexType);
         outRow = incidenceRowExp(e2, inVariables, outRow, functionTree, inIndexType);
