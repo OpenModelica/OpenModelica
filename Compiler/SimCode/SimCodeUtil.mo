@@ -7612,6 +7612,31 @@ algorithm
   end match;
 end addDivExpErrorMsgtosimJac;
 
+protected function addDivExpErrorMsgtosymJac "helper for addDivExpErrorMsgtoSimEqSystem."
+  input Option<SimCode.JacobianMatrix> inJac;
+  output Option<SimCode.JacobianMatrix> outJac;
+algorithm
+  outJac := match inJac
+    local
+      list<SimCode.SimEqSystem> a;
+      list<SimCodeVar.SimVar> b,c;
+      tuple<list< tuple<Integer, list<Integer>>>,list< tuple<Integer, list<Integer>>>> d;
+      list<list<Integer>> e;
+      Integer f,g;
+      String i, j;
+    case (SOME(({(a,b,i)}, c, j, d, e, f, g)))
+      equation
+        a =  List.map(a, addDivExpErrorMsgtoSimEqSystem);
+      then
+        (SOME(({(a, b, i)}, c, j, d, e, f, g)));
+    case (NONE()) then NONE();
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"SimCodeUtil.addDivExpErrorMsgtosymJac failed"});
+      then fail();
+  end match;
+end addDivExpErrorMsgtosymJac;
+
 protected function addDivExpErrorMsgtoSimEqSystem "Traverses all subexpressions of an expression of an equation."
   input SimCode.SimEqSystem inSES;
   output SimCode.SimEqSystem outSES;
@@ -7665,6 +7690,7 @@ algorithm
     case SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, elst, simJac, discEqs, symJac, sources, indexSys), NONE())
       equation
         simJac1 = List.map(simJac, addDivExpErrorMsgtosimJac);
+        symJac = addDivExpErrorMsgtosymJac(symJac);
         elst1 = List.map1(elst, addDivExpErrorMsgtoExp, DAE.emptyElementSource);
       then
         SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, elst1, simJac1, discEqs, symJac, sources, indexSys), NONE());
@@ -7672,6 +7698,7 @@ algorithm
     case SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index, eqs=discEqs, crefs=crefs, indexNonLinearSystem=indexSys, jacobianMatrix=symJac, linearTearing=linearTearing, homotopySupport=homotopySupport, mixedSystem=mixedSystem), NONE())
       equation
         discEqs =  List.map(discEqs, addDivExpErrorMsgtoSimEqSystem);
+        symJac = addDivExpErrorMsgtosymJac(symJac);
       then
         SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, discEqs, crefs, indexSys, symJac, linearTearing, homotopySupport, mixedSystem), NONE());
 
