@@ -300,7 +300,7 @@ int nonlinearSolve_kinsol(DATA *data, threadData_t *threadData, int sysNumber)
 
 #else
 
-int nls_kinsol_allocate(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData)
+int nls_kinsol_allocate(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nlsData)
 {
   throwStreamPrint(threadData,"no sundials/kinsol support activated");
   return 0;
@@ -312,7 +312,7 @@ int nls_kinsol_free(NONLINEAR_SYSTEM_DATA *nlsData)
   return 0;
 }
 
-int nonlinearSolve_kinsol(DATA *data, int sysNumber)
+int nonlinearSolve_kinsol(DATA *data, threadData_t *threadData, int sysNumber)
 {
   throwStreamPrint(threadData,"no sundials/kinsol support activated");
   return 0;
