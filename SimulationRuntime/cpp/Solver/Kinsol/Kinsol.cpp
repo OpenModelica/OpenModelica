@@ -1,4 +1,4 @@
-﻿#include <Core/ModelicaDefine.h>
+#include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 /** @addtogroup solverKinsol
 *
