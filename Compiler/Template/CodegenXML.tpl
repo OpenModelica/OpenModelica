@@ -937,15 +937,14 @@ template equationWhenXml(SimEqSystem eq, Context context, Text &varDecls /*BUFP*
  "Generates a when equation XML."
 ::=
 match eq
-  case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
+  case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions,elseWhen = NONE()) then
     let &preExp = buffer "" /*BUFD*/
     let &helpInits = buffer "" /*BUFD*/
     let helpIf = (conditions |> e =>
         let helpInit = crefToXmlStr(e)
         let &helpInits += '<%helpInit%><%\n%>'
         '';separator="\n")
-    let &preExp2 = buffer "" /*BUFD*/
-    let exp = daeExpXml(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
+    let body = whenOps(whenStmtLst, context, &varDecls /*BUFD*/)
     let cond = if preExp then preExp else helpInits
       <<
       <equ:When>
@@ -953,22 +952,18 @@ match eq
           <%cond%>
         </equ:Condition>
         <eq:Equation>
-          <exp:Sub>
-            <%crefXml(left)%>
-            <%exp%>
-          </exp:Sub>
+          <%body%>
         </eq:Equation>
       </equ:When>
       >>
-  case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
+  case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions,elseWhen = SOME(elseWhenEq)) then
     let &preExp = buffer "" /*BUFD*/
     let &helpInits = buffer "" /*BUFD*/
     let helpIf = (conditions |> e =>
         let helpInit = crefToXmlStr(e)
         let &helpInits += '<%helpInit%><%\n%>'
         '';separator=" || ")
-    let &preExp2 = buffer "" /*BUFD*/
-    let exp = daeExpXml(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
+    let body = whenOps(whenStmtLst, context, &varDecls /*BUFD*/)
     let elseWhen = equationElseWhenXml(elseWhenEq,context,preExp,helpInits, varDecls)
      let cond = if preExp then preExp else helpInits
       <<
@@ -977,10 +972,7 @@ match eq
           <%cond%>
         </equ:Condition>
         <eq:Equation>
-          <exp:Sub>
-            <%crefXml(left)%>
-            <%exp%>
-          </exp:Sub>
+          <%body%>
         </eq:Equation>
       </equ:When>
       <%elseWhen%>
@@ -991,13 +983,12 @@ template equationElseWhenXml(SimEqSystem eq, Context context, Text &preExp /*BUF
  "Generates a else when equation."
 ::=
 match eq
-case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
+case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions,elseWhen = NONE()) then
   let helpIf = (conditions |> e =>
       let helpInit = crefToXmlStr(e)
       let &helpInits += '<%helpInit%><%\n%>'
       '';separator=" || ")
-  let &preExp2 = buffer "" /*BUFD*/
-  let exp = daeExpXml(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
+   let body = whenOps(whenStmtLst, context, &varDecls /*BUFD*/)
    let cond = if preExp then preExp else helpInits
     <<
     <equ:ElseWhen>
@@ -1005,20 +996,16 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
         <%cond%>
       </equ:Condition>
       <eq:Equation>
-        <exp:Sub>
-          <%crefXml(left)%>
-          <%exp%>
-        </exp:Sub>
+        <%body%>
       </eq:Equation>
     </equ:ElseWhen>
     >>
-case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
+case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions,elseWhen = SOME(elseWhenEq)) then
   let helpIf = (conditions |> e =>
       let helpInit = crefToXmlStr(e)
       let &helpInits += '<%helpInit%><%\n%>'
       '';separator=" || ")
-  let &preExp2 = buffer "" /*BUFD*/
-  let exp = daeExpXml(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
+  let body = whenOps(whenStmtLst, context, &varDecls /*BUFD*/)
   let elseWhen = equationElseWhenXml(elseWhenEq,context,preExp,helpInits, varDecls)
    let cond = if preExp then preExp else helpInits
     <<
@@ -1027,15 +1014,51 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseW
         <%cond%>
       </equ:Condition>
       <eq:Equation>
-        <exp:Sub>
-          <%crefXml(left)%>
-          <%exp%>testwhen3
-        </exp:Sub>
+        <%body%>
       </eq:Equation>
     </equ:ElseWhen>
     <%elseWhen%>
     >>
 end equationElseWhenXml;
+
+template whenOps(list<WhenOperator> whenOps, Context context, Text &varDecls /*BUFP*/)
+ "Generates re-init statement for when equation."
+::=
+  let body = (whenOps |> whenOp =>
+    match whenOp
+    case ASSIGN(__) then
+      let &preExp = buffer "" /*BUFD*/
+      let exp = daeExpXml(right, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      <<
+        <exp:Sub>
+          <%crefXml(left)%>
+          <%exp%>
+        </exp:Sub>
+      >>
+    case REINIT(__) then
+      let &preExp = buffer "" /*BUFD*/
+      let val = daeExpXml(value, contextSimulationDiscrete,
+                   &preExp /*BUFC*/, &varDecls /*BUFD*/)
+       <<
+       <exp:Reinit>
+         <%crefXml(stateVar)%>
+         <%val%>
+       </exp:Reinit>
+       >>
+    case TERMINATE(__) then
+      let &preExp = buffer "" /*BUFD*/
+      let msgVar = daeExpXml(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+        <<
+         <%preExp%>
+         <%msgVar%>
+        >>
+  case ASSERT(source=SOURCE(info=info)) then
+    assertCommonXml(condition, message, contextSimulationDiscrete, &varDecls, info)
+  ;separator="\n")
+    <<
+    <%body%>
+    >>
+end whenOps;
 
 
 /*****************************************************************************

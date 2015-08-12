@@ -1464,27 +1464,20 @@ case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
   old impl *********/
 
 case SES_WHEN(__) then
-  let &preExp = buffer ""
-  let rightExp = daeExp(right, context, &preExp, simCode)
+  let body = whenOperators(whenStmtLst, context, simCode)
   let elseWhenConds = match elseWhen case SOME(ew) then equationElseWhen(ew, context, simCode)
   if initialCall then
     <<
     if(Initial<%if conditions then " || " + whenConditions(conditions, simCode)%>) {
-      <%preExp%>
-      <%cref(left, simCode)%> = <%rightExp%>;
+      <%body%>
     }
     <%elseWhenConds%>
     >>
-    // what is that for ??
-    // else {
-    //  <%cref(left, simCode)%> = <%preCref(left, simCode)%>;
-    //}
   else
     <<
     if( ! Initial) {
       if(<%whenConditions(conditions, simCode)%>) {
-        <%preExp%>
-        <%cref(left, simCode)%> = <%rightExp%>;
+        <%body%>
       }
       <%elseWhenConds%>
     }
@@ -1497,17 +1490,47 @@ end equation_;
 template equationElseWhen(SimEqSystem eq, Context context, SimCode simCode) ::=
 match eq
 case SES_WHEN(__) then
-  let &preExp = buffer ""
-  let rightExp = daeExp(right, context, &preExp, simCode)
+  let body = whenOperators(whenStmtLst, context, simCode)
   let elseWhenConds = match elseWhen case SOME(ew) then equationElseWhen(ew, context, simCode)
   <<
   else if(<%whenConditions(conditions, simCode)%>) {
-    <%preExp%>
-    <%cref(left, simCode)%> = <%rightExp%>;
+    <%body%>
   }
   <%elseWhenConds%>
   >>
 end equationElseWhen;
+
+template whenOperators(list<WhenOperator> whenOps, Context context, SimCode simCode)
+ "Generates re-init statement for when equation."
+::=
+  whenOps |> whenOp =>
+    match whenOp
+    case ASSIGN(__) then
+      let preExp = ""
+      let rightExp = daeExp(right, context, &preExp, simCode)
+      <<
+      <%preExp%>
+      <%cref(left, simCode)%> = <%rightExp%>;
+      >>
+    case REINIT(__) then
+      let &preExp = buffer ""
+      let val = daeExp(value, contextSimulationDiscrete, &preExp, simCode)
+      <<
+      <%preExp%>
+      <%cref(stateVar, simCode)%> = <%val%>;
+      needToIterate = true;
+      >>
+    case TERMINATE(__) then
+      let &preExp = buffer ""
+      let msgVar = daeExp(message, contextSimulationDiscrete, &preExp, simCode)
+      <<
+      <%preExp%>
+      MODELICA_TERMINATE(<%msgVar%>);
+      >>
+    case ASSERT(source=SOURCE(info=info)) then
+      assertCommon(condition, message, info, contextSimulationDiscrete, simCode)
+   ;separator="\n"
+end whenOperators;
 
 // SECTION: SIMULATION TARGET, FUNCTIONS FILE SPECIFIC TEMPLATES
 // not yet implemented

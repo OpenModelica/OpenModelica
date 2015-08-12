@@ -398,6 +398,40 @@ uniontype WhenEquation
 end WhenEquation;
 
 public
+uniontype WhenOperator
+  record ASSIGN " left_cr = right_exp"
+    .DAE.ComponentRef left     "left hand side of equation";
+    .DAE.Exp right             "right hand side of equation";
+    .DAE.ElementSource source  "origin of equation";
+  end ASSIGN;
+
+  record REINIT "Reinit Statement"
+    .DAE.ComponentRef stateVar "State variable to reinit";
+    .DAE.Exp value             "Value after reinit";
+    .DAE.ElementSource source  "origin of equation";
+  end REINIT;
+
+  record ASSERT
+    .DAE.Exp condition;
+    .DAE.Exp message;
+    .DAE.Exp level;
+    .DAE.ElementSource source "the origin of the component/equation/algorithm";
+  end ASSERT;
+
+  record TERMINATE "The Modelica built-in terminate(msg)"
+    .DAE.Exp message;
+    .DAE.ElementSource source "the origin of the component/equation/algorithm";
+  end TERMINATE;
+
+  record NORETCALL "call with no return value, i.e. no equation.
+    Typically side effect call of external function but also
+    Connections.* i.e. Connections.root(...) functions."
+    .DAE.Exp exp;
+    .DAE.ElementSource source "the origin of the component/equation/algorithm";
+  end NORETCALL;
+end WhenOperator;
+
+public
 type ExternalObjectClasses = list<ExternalObjectClass>
 "classes of external objects stored in list";
 
@@ -553,34 +587,6 @@ uniontype EventInfo
     Integer numberMathEvents           "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
   end EVENT_INFO;
 end EventInfo;
-
-public
-uniontype WhenOperator
-  record REINIT "Reinit Statement"
-    .DAE.ComponentRef stateVar "State variable to reinit";
-    .DAE.Exp value             "Value after reinit";
-    .DAE.ElementSource source  "origin of equation";
-  end REINIT;
-
-  record ASSERT
-    .DAE.Exp condition;
-    .DAE.Exp message;
-    .DAE.Exp level;
-    .DAE.ElementSource source "the origin of the component/equation/algorithm";
-  end ASSERT;
-
-  record TERMINATE "The Modelica built-in terminate(msg)"
-    .DAE.Exp message;
-    .DAE.ElementSource source "the origin of the component/equation/algorithm";
-  end TERMINATE;
-
-  record NORETCALL "call with no return value, i.e. no equation.
-    Typically side effect call of external function but also
-    Connections.* i.e. Connections.root(...) functions."
-    .DAE.Exp exp;
-    .DAE.ElementSource source "the origin of the component/equation/algorithm";
-  end NORETCALL;
-end WhenOperator;
 
 public
 uniontype WhenClause

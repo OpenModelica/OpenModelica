@@ -4696,22 +4696,18 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &aux
  "Generates a when equation."
 ::=
   match eq
-    case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=NONE()) then
+    case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=NONE()) then
       let helpIf = if intGt(listLength(conditions), 0) then (conditions |> e => '(<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)';separator=" || ") else '0'
-      let assign = whenAssign(left,typeof(right),right,context, &varDecls, auxFunction)
+      let assign = whenOperators(whenStmtLst, context, &varDecls, auxFunction)
       <<
       if(<%helpIf%>)
       {
         <%assign%>
       }
-      else
-      {
-        <%cref(left)%> = $P$PRE<%cref(left)%>;
-      }
       >>
-    case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
+    case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
       let helpIf = if intGt(listLength(conditions), 0) then (conditions |> e => '(<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)';separator=" || ") else '0'
-      let assign = whenAssign(left,typeof(right),right,context, &varDecls, &auxFunction)
+      let assign = whenOperators(whenStmtLst, context, &varDecls, auxFunction)
       let elseWhen = equationElseWhen(elseWhenEq,context,varDecls,&auxFunction)
       <<
       if(<%helpIf%>)
@@ -4719,10 +4715,6 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &aux
         <%assign%>
       }
       <%elseWhen%>
-      else
-      {
-        <%cref(left)%> = $P$PRE<%cref(left)%>;
-      }
       >>
 end equationWhen;
 
@@ -4730,9 +4722,9 @@ template equationElseWhen(SimEqSystem eq, Context context, Text &varDecls, Text 
  "Generates a else when equation."
 ::=
 match eq
-case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=NONE()) then
+case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=NONE()) then
   let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)';separator=" || ")
-  let assign = whenAssign(left, typeof(right), right, context, &varDecls, &auxFunction)
+  let assign = whenOperators(whenStmtLst, context, &varDecls, auxFunction)
 
   if intGt(listLength(conditions), 0) then
     <<
@@ -4741,9 +4733,9 @@ case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=NONE()) th
       <%assign%>
     }
     >>
-case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
+case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
   let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)';separator=" || ")
-  let assign = whenAssign(left, typeof(right), right, context, &varDecls, &auxFunction)
+  let assign = whenOperators(whenStmtLst, context, &varDecls, auxFunction)
   let elseWhen = equationElseWhen(elseWhenEq, context, varDecls, auxFunction)
   let body = if intGt(listLength(conditions), 0) then
     <<
@@ -4758,6 +4750,49 @@ case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=SOME(elseW
   <%elseWhen%>
   >>
 end equationElseWhen;
+
+template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDecls, Text &auxFunction)
+  "Generates body statements for when equation."
+::=
+  let body = (whenOps |> whenOp =>
+    match whenOp
+    case ASSIGN(__) then whenAssign(left, typeof(right), right, context, &varDecls, &auxFunction)
+    case REINIT(__) then
+      let &preExp = buffer ""
+      let val = daeExp(value, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+      let lhs = match crefTypeConsiderSubs(stateVar)
+         case DAE.T_ARRAY(__) then
+           'copy_real_array_data_mem(<%val%>, &<%cref(stateVar)%>);'
+         else
+           '<%cref(stateVar)%> = <%val%>;'
+      <<
+      <%preExp%>
+      <%lhs%>
+      infoStreamPrint(LOG_EVENTS, 0, "reinit <%cref(stateVar)%> = <%crefToPrintfArg(stateVar)%>", <%cref(stateVar)%>);
+      data->simulationInfo.needToIterate = 1;
+      >>
+    case TERMINATE(__) then
+      let &preExp = buffer ""
+      let msgVar = daeExp(message, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+      <<
+      <%preExp%>
+      FILE_INFO info = {<%infoArgs(getElementSourceFileInfo(source))%>};
+      omc_terminate(info, MMC_STRINGDATA(<%msgVar%>));
+      >>
+    case ASSERT(source=SOURCE(info=info)) then
+      assertCommon(condition, List.fill(message,1), level, contextSimulationDiscrete, &varDecls, &auxFunction, info)
+    case NORETCALL(__) then
+      let &preExp = buffer ""
+      let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+      <<
+      <%preExp%>
+      <% if isCIdentifier(expPart) then "" else '<%expPart%>;' %>
+      >>
+  ;separator="\n")
+  <<
+  <%body%>
+  >>
+end whenOperators;
 
 template whenAssign(ComponentRef left, Type ty, Exp right, Context context, Text &varDecls, Text &auxFunction)
  "Generates assignment for when."
@@ -4798,7 +4833,6 @@ match ty
     <%cref(left)%> = <%exp%>;
    >>
 end whenAssign;
-
 
 template equationIfEquationAssign(SimEqSystem eq, Context context, Text &varDecls, Text &eqnsDecls, String modelNamePrefixStr)
  "Generates a if equation."

@@ -441,12 +441,13 @@ template dumpEqs(list<SimEqSystem> eqs)
       </mixed>
       >>
     case e as SES_WHEN(__) then
+      let body = dumpWhenOps(whenStmtLst)
       <<
       equation index: <%equationIndex(eq)%>
       type: WHEN
 
       when {<%conditions |> cond => '<%crefStr(cond)%>' ; separator=", " %>} then
-        <%crefStr(e.left)%> = <%escapeCComments(printExpStr(e.right))%>;
+        <%body%>
       end when;
       >>
     case e as SES_IFEQUATION(__) then
@@ -476,6 +477,43 @@ template dumpEqs(list<SimEqSystem> eqs)
       unknown equation
       >>
 end dumpEqs;
+
+template dumpWhenOps(list<BackendDAE.WhenOperator> whenOps)
+::=
+  match whenOps
+  case ({}) then <<>>
+  case ((e as BackendDAE.ASSIGN(__))::rest) then
+    let restbody = dumpWhenOps(rest)
+    <<
+    <%crefStr(e.left)%> = <%escapeCComments(printExpStr(e.right))%>;
+    <%restbody%>
+    >>
+  case ((e as BackendDAE.REINIT(__))::rest) then
+    let restbody = dumpWhenOps(rest)
+    <<
+    reinit(<%crefStr(e.stateVar)%>,  <%escapeCComments(printExpStr(e.value))%>);
+    <%restbody%>
+    >>
+  case ((e as BackendDAE.ASSERT(__))::rest) then
+    let restbody = dumpWhenOps(rest)
+    <<
+    assert(<%escapeCComments(printExpStr(e.condition))%>, <%escapeCComments(printExpStr(e.message))%>, <%escapeCComments(printExpStr(e.level))%>);
+    <%restbody%>
+    >>
+  case ((e as BackendDAE.TERMINATE(__))::rest) then
+    let restbody = dumpWhenOps(rest)
+    <<
+    terminate(<%escapeCComments(printExpStr(e.message))%>)%>);
+    <%restbody%>
+    >>
+  case ((e as BackendDAE.NORETCALL(__))::rest) then
+    let restbody = dumpWhenOps(rest)
+    <<
+    noReturnCall(<%escapeCComments(printExpStr(e.exp))%>)%>);
+    <%restbody%>
+    >>
+  else error(sourceInfo(),"dumpEqs: Unknown equation")
+end dumpWhenOps;
 
 template dumpEqsAlternativeTearing(list<SimEqSystem> eqs)
 ::= eqs |> eq hasindex i0 =>

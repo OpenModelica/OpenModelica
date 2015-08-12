@@ -346,12 +346,12 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
       </equation>
       >>
     case e as SES_WHEN(__) then
+      let body = dumpWhenOps(whenStmtLst)
       <<
       <equation index="<%eqIndex(eq,false)%>"<%hasParent(parent)%>>
         <when>
           <%conditions |> cond => '<cond><%crefStrNoUnderscore(cond)%></cond>' ; separator="\n" %>
-          <defines name="<%crefStrNoUnderscore(e.left)%>" />
-          <rhs><%printExpStrEscaped(e.right)%></rhs>
+          <%body%>
         </when>
         <%dumpElementSource(e.source,withOperations)%>
       </equation><%\n%>
@@ -369,6 +369,52 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
       >>
     else error(sourceInfo(),"dumpEqs: Unknown equation")
 end dumpEqs;
+
+template dumpWhenOps(list<BackendDAE.WhenOperator> whenOps)
+::=
+  match whenOps
+  case ({}) then << >>
+  case ((e as BackendDAE.ASSIGN(__))::rest) then
+    let restbody = dumpWhenOps(rest)
+    <<
+    <defines name="<%crefStrNoUnderscore(e.left)%>" />
+    <rhs><%printExpStrEscaped(e.right)%></rhs>
+    <%restbody%>
+    >>
+  case ((e as BackendDAE.REINIT(__))::rest) then
+    let restbody = dumpWhenOps(rest)
+    <<
+    <whenReinit>
+      TODO: fix this case.
+    </whenReinit>
+    <%restbody%>
+    >>
+  case ((e as BackendDAE.ASSERT(__))::rest) then
+    let restbody = dumpWhenOps(rest)
+    <<
+    <whenAssertion>
+      TODO: fix this case.
+    </whenAssertion>
+    <%restbody%>
+    >>
+  case ((e as BackendDAE.TERMINATE(__))::rest) then
+    let restbody = dumpWhenOps(rest)
+    <<
+    <whenTerminate>
+      TODO: fix this case.
+    </whenTerminate>
+    <%restbody%>
+    >>
+  case ((e as BackendDAE.NORETCALL(__))::rest) then
+    let restbody = dumpWhenOps(rest)
+    <<
+    <whenNoRetCall>
+      TODO: fix this case.
+    </whenNoRetCall>
+    <%restbody%>
+    >>
+  else error(sourceInfo(),"dumpEqs: Unknown equation")
+end dumpWhenOps;
 
 template dumpWithin(Within w)
 ::=
