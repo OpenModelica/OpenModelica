@@ -2410,6 +2410,16 @@ algorithm
   end match;
 end elementSpecName;
 
+public function isClassdef
+  input Element inElement;
+  output Boolean b;
+algorithm
+  b := match inElement
+    case ELEMENT(specification=CLASSDEF()) then true;
+    else false;
+  end match;
+end isClassdef;
+
 public function printImportString
   "This function takes a Import and prints it as a flat-string."
   input Import imp;
