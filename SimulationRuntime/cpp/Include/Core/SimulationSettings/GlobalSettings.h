@@ -53,6 +53,9 @@ public:
   virtual void setAlarmTime(unsigned int);
   virtual unsigned int getAlarmTime();
 
+  virtual void setNonLinearSolverContinueOnError(bool);
+  virtual bool getNonLinearSolverContinueOnError();
+
 private:
   double
       _startTime, ///< Start time of integration (default: 0.0)
@@ -61,7 +64,8 @@ private:
   bool
       _resultsOutput,   ///< Write out results ([false,true]; default: true)
       _infoOutput,      ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
-      _endless_sim;
+      _endless_sim,
+      _nonLinSolverContinueOnError;
   string
       _output_path,
       _selected_solver,

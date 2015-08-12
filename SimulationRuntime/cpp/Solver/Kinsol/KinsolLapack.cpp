@@ -104,18 +104,23 @@ static void KINLapackCompletePivotingFree(KINMem kin_mem)
  *  \return Return_Description
  *  \details Details
  */
-static int	 KINLapackCompletePivotingSolve(KINMem kin_mem, N_Vector x, N_Vector b,realtype *res_norm/*used in new sundials: realtype *sJpnorm, realtype *sFdotJp*/)
+#if SUNDIALS_MAJOR_VERSION > 2 || (SUNDIALS_MAJOR_VERSION == 2 && SUNDIALS_MINOR_VERSION > 5)
+  static int	 KINLapackCompletePivotingSolve(KINMem kin_mem, N_Vector x, N_Vector b, realtype *sJpnorm, realtype *sFdotJp)
+#else
+  static int   KINLapackCompletePivotingSolve(KINMem kin_mem, N_Vector x, N_Vector b, realtype *res_norm)
+#endif
 {
 	int flag=0;
 	linSysData* data = (linSysData*)kin_mem->kin_lmem;
 
 	dgesc2_(&data->n,data->jac,&data->n, NV_DATA_S(b), data->ihelpArray, data->jhelpArray, data->scale);
 
-
 	memcpy(NV_DATA_S(x),NV_DATA_S(b),data->n*sizeof(double));
+#if SUNDIALS_MAJOR_VERSION > 2 || (SUNDIALS_MAJOR_VERSION == 2 && SUNDIALS_MINOR_VERSION > 5)
+	*sFdotJp = N_VDotProd(kin_mem->kin_fval, b);
+#else
 	N_VProd(b, kin_mem->kin_fscale, b);
-
-	//*used in new sundials: *sFdotJp = N_VDotProd(kin_mem->kin_fval, b);
+#endif
 
 	return(flag);
 }

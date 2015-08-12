@@ -62,6 +62,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
      desc.add_options()
           ("help", "produce help message")
           ("emit_protected", "emits protected variables to the result file")
+          ("nls_continue", po::bool_switch()->default_value(false),"non linear solver will continue if it can not reach the given precision")
           ("runtime-library,R", po::value<string>(),"path to cpp runtime libraries")
           ("Modelica-system-library,M",  po::value<string>(), "path to Modelica library")
           ("results-file,r", po::value<string>(),"name of results file")
@@ -106,6 +107,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
      double starttime =  vm["start-time"].as<double>();
      double stoptime = vm["stop-time"].as<double>();
      double stepsize =vm["step-size"].as<double>();
+     bool nlsContinueOnError = vm["nls_continue"].as<bool>();
 
      if (!(stepsize > 0.0))
        stepsize = (stoptime - starttime) / vm["number-of-intervals"].as<int>();
@@ -199,7 +201,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
 
 
 
-     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,time_out,outputPointType,logSet};
+     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,time_out,outputPointType,logSet,nlsContinueOnError};
 
 
      _library_path = libraries_path;

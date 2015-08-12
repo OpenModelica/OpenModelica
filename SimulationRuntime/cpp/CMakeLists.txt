@@ -18,7 +18,6 @@
 #     if write output should be handled in parallel                                -DUSE_PARALLEL_OUTPUT=ON
 #     if ScoreP should be used for performance analysis                            -DUSE_SCOREP=ON
 #     if the boost libraries should be linked statically                           -DBOOST_STATIC_LINKING=ON
-#     if the lapack functions and data structurs of sundials should be used        -DSUNDIALS_LAPACK=ON
 #     if boost libraries should be linked against absolute path libraries          -DUSE_BOOST_REALPATHS=ON
 #
 #     Example: "cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo" to create statically linked libraries
@@ -38,7 +37,6 @@ OPTION(USE_SCOREP "USE_SCOREP" OFF)
 OPTION(BOOST_STATIC_LINKING "BOOST_STATIC_LINKING" OFF)
 OPTION(RUNTIME_PROFILING "RUNTIME_PROFILING" OFF)
 OPTION(FMU_KINSOL "FMU_KINSOL" OFF)
-OPTION(SUNDIALS_LAPACK "SUNDIALS_LAPACK" OFF)
 OPTION(SUNDIALS_ROOT "SUNDIALS ROOT" "")
 
 #Set Variables
@@ -103,14 +101,6 @@ ELSE(NOT BOOST_STATIC_LINKING)
   SET(Boost_USE_STATIC_RUNTIME ON)
   ADD_DEFINITIONS(-DBOOST_STATIC_LINKING)
 ENDIF(NOT BOOST_STATIC_LINKING)
-
-# Handle sundials lapack
-IF(NOT SUNDIALS_LAPACK)
-  MESSAGE(STATUS "Sundials lapack functions disabled")
-ELSE(NOT SUNDIALS_LAPACK)
-  MESSAGE(STATUS "Using Sundials lapack functions")
-  ADD_DEFINITIONS(-DUSE_SUNDIALS_LAPACK)
-ENDIF(NOT SUNDIALS_LAPACK)
 
 # Handle parallel output
 IF(USE_PARALLEL_OUTPUT)
