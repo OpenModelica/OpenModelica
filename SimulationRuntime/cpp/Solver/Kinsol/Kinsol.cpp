@@ -1,4 +1,4 @@
-#include <Core/ModelicaDefine.h>
+﻿#include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 /** @addtogroup solverKinsol
 *
@@ -284,7 +284,7 @@ void Kinsol::initialize()
 			}*/
 
 			idid = KINSetErrFile(_kinMem, NULL);
-			idid = KINSetNumMaxIters(_kinMem, 1000);
+			idid = KINSetNumMaxIters(_kinMem, 50);
 			//idid = KINSetEtaForm(_kinMem, KIN_ETACHOICE2);
 
 			_fnormtol  = 1.e-12;     /* function tolerance */
@@ -412,6 +412,8 @@ void Kinsol::solve()
 		int idid;
 		_counter++;
 		_eventRetry = false;
+		_iterationStatus = CONTINUE;
+
 
 		// Try Dense first
 		////////////////////////////
@@ -443,11 +445,7 @@ void Kinsol::solve()
 				_fScale[i] = 1;
 
 			}
-			/*
-			_fScale[0] = 18.27;
-			_fScale[1] = 56.77;
-			_fScale[2] = 17.13;
-			*/
+
 			_iterationStatus = CONTINUE;
 			solveNLS();
 		}
@@ -709,7 +707,8 @@ void Kinsol::solveNLS()
 		maxStepsStart = 0,
 		maxSteps = maxStepsStart,
 		maxStepsHigh =1e8,
-		locTol = 1e-6;
+		locTol = 5e-7,
+	    delta = 1e-14;
 
 	_currentIterateNorm = 100.0;
 
@@ -775,29 +774,14 @@ void Kinsol::solveNLS()
 				check4EventRetry(_y);
 				if(method == KIN_NONE)
 				{
-					if (maxSteps > 0 && maxSteps < 1)
-					{
 						method = KIN_LINESEARCH;
 						maxSteps = maxStepsStart;
 
-					}else
-						if (maxSteps==0)
-							maxSteps = maxStepsHigh;
-						else
-							maxSteps /= 10;
-
-				}else // already trying Linesearch
-				{
-					if (maxSteps > 0 && maxSteps < 1)
-					{
-						_iterationStatus = SOLVERERROR;
-					} else
-						if (maxSteps==0)
-							maxSteps = maxStepsHigh;
-						else
-							maxSteps /= 10;
 				}
-			}
+				else // already trying Linesearch
+						_iterationStatus = SOLVERERROR;
+			  }
+
 			break;
 
 			// Max Iterations exceeded
@@ -811,16 +795,16 @@ void Kinsol::solveNLS()
 				check4EventRetry(_y);
 				if(method == KIN_NONE)
 				{
-					if (maxSteps > 0 && maxSteps < 1)
-					{
+					//if (maxsteps > 0 && maxsteps < 1)
+					//{
 						method = KIN_LINESEARCH;
 						maxSteps = maxStepsStart;
 
-					}else
+					/*}else
 						if (maxSteps==0)
 							maxSteps = maxStepsHigh;
 						else
-							maxSteps /= 10;
+							maxSteps /= 10;*/
 
 				}else // already trying Linesearch
 				{
@@ -847,14 +831,32 @@ void Kinsol::solveNLS()
 				check4EventRetry(_y);
 				// Try diffent maxStsps
 
-				if (maxSteps > 0 && maxSteps < 1)
-				{
+				if(delta > 1e-6)
 					_iterationStatus = SOLVERERROR;
-				} else // Try higher maxStep values
-					if (maxSteps==0)
-						maxSteps = maxStepsHigh;
-					else
-						maxSteps /= 10;
+				else
+				{
+					delta *= 1e4;
+					idid = KINSetRelErrFunc(_kinMem, delta);
+				}
+
+				/*
+				if(delta < 1e-14)
+					_iterationStatus = SOLVERERROR;
+				else
+				{
+					delta /= 100;
+					idid = KINSetScaledStepTol(_kinMem, delta);
+				}
+				*/
+
+				//if (maxSteps > 0 && maxSteps < 1)
+				//{
+				//	_iterationStatus = SOLVERERROR;
+				//} else // Try higher maxStep values
+				//	if (maxSteps==0)
+				//		maxSteps = maxStepsHigh;
+				//	else
+				//		maxSteps /= 10;
 
 			}
 			break;
