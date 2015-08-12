@@ -8,10 +8,6 @@
 #ifndef LOGGER_HPP_
 #define LOGGER_HPP_
 
-
-enum LogCategory;
-enum LogLevel;
-
 class BOOST_EXTENSION_LOGGER_DECL Logger
 {
   public:
