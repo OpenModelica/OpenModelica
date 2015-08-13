@@ -1,6 +1,5 @@
-#pragma once
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 #if defined(__TRICORE__) || defined(__vxworks)
 
 #include <Core/DataExchange/SimData.h>
