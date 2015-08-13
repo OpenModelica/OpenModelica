@@ -43,6 +43,7 @@ public import BackendDAE;
 public import DAE;
 public import FCore;
 
+protected import BackendDAEOptimize;
 protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;
@@ -56,6 +57,7 @@ protected import ExpressionDump;
 protected import Flags;
 protected import HashTableExpToIndex;
 protected import List;
+protected import SynchronousFeatures;
 protected import Util;
 
 // =============================================================================
@@ -70,8 +72,8 @@ public function encapsulateWhenConditions "author: lochel"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
-  BackendDAE.EqSystems systs;
-  BackendDAE.Shared shared;
+  BackendDAE.EqSystems systs, systs2;
+  BackendDAE.Shared shared, shared2;
   BackendDAE.EventInfo eventInfo;
   list<BackendDAE.WhenClause> wcl;
   Integer index;
@@ -79,7 +81,8 @@ protected
   list<BackendDAE.Var> vars;
   list<BackendDAE.Equation> eqns;
   BackendDAE.Variables vars_;
-  BackendDAE.EquationArray eqns_;
+  BackendDAE.EquationArray eqns_, removedEqs;
+  BackendDAE.BackendDAE bdae;
 
 algorithm
   BackendDAE.DAE(systs, shared) := inDAE;
@@ -88,6 +91,7 @@ algorithm
   (systs, index, ht) := List.mapFold2(systs, encapsulateWhenConditions_EqSystem, 1, ht);
 
   // when clauses
+  /*
   eventInfo := shared.eventInfo;
   (wcl, vars, eqns, ht, index) := encapsulateWhenConditions_WhenClause(eventInfo.whenClauseLst, {}, {}, {}, ht, index);
   eventInfo.whenClauseLst := wcl;
@@ -95,8 +99,24 @@ algorithm
   vars_ := BackendVariable.listVar(vars);
   eqns_ := BackendEquation.listEquation(eqns);
   systs := listAppend(systs, {BackendDAEUtil.createEqSystem(vars_, eqns_)});
+  */
+  // shared removedEqns
+  ((removedEqs, vars, eqns, index, ht)) :=
+      BackendEquation.traverseEquationArray(shared.removedEqs, encapsulateWhenConditions_Equation,
+                                             (BackendEquation.emptyEqns(), {}, {}, index, ht) );
 
-  outDAE := if intGt(index, 1) then BackendDAE.DAE(systs, shared) else inDAE;
+  shared.removedEqs := BackendEquation.emptyEqns();
+  eqns_ := BackendEquation.listEquation(eqns);
+  vars_ := BackendVariable.listVar(vars);
+  systs := listAppend(systs, {BackendDAEUtil.createEqSystem(vars_, eqns_, {}, BackendDAE.UNKNOWN_PARTITION(), removedEqs)});
+
+  if intGt(index, 1) then
+    outDAE := BackendDAE.DAE(systs, shared);
+    outDAE := SynchronousFeatures.clockPartitioning(outDAE);
+  else
+    outDAE := inDAE;
+  end if;
+
   if Flags.isSet(Flags.DUMP_ENCAPSULATECONDITIONS) then
     BackendDump.dumpBackendDAE(outDAE, "DAE after PreOptModule >>encapsulateWhenConditions<<");
   end if;
@@ -813,6 +833,8 @@ algorithm
       BackendDAE.WhenEquation we;
       list<BackendDAE.ZeroCrossing> zc, relations, samples;
       Integer countRelations, countMathFunctions;
+      list<BackendDAE.WhenOperator> whenStmtLst;
+      Option<BackendDAE.WhenEquation> oweelse;
 
     case BackendDAE.WHEN_EQ(condition=cond, left=cr, right=e, elsewhenPart=NONE()) equation
       if Flags.isSet(Flags.RELIDX) then
@@ -825,6 +847,20 @@ algorithm
       (we, countRelations, countMathFunctions, zc, relations, samples) = findZeroCrossingsWhenEqns(we, inZeroCrossings, inrelationsinZC, inSamplesLst, incountRelations, incountMathFunctions, counteq, countwc, vars, knvars);
       (cond, countRelations, countMathFunctions, zc, relations, samples) = findZeroCrossings3(cond, zc, relations, samples, countRelations, countMathFunctions, counteq, countwc, vars, knvars);
     then (BackendDAE.WHEN_EQ(cond, cr, e, SOME(we)), countRelations, countMathFunctions, zc, relations, samples);
+
+    case BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart=oweelse) equation
+      if Flags.isSet(Flags.RELIDX) then
+        BackendDump.debugStrExpStr("processed when condition: ", cond, "\n");
+      end if;
+      (cond, countRelations, countMathFunctions, zc, relations, samples) = findZeroCrossings3(cond, inZeroCrossings, inrelationsinZC, inSamplesLst, incountRelations, incountMathFunctions, counteq, countwc, vars, knvars);
+      if isSome(oweelse) then
+        SOME(we) = oweelse;
+        (we, countRelations, countMathFunctions, zc, relations, samples) = findZeroCrossingsWhenEqns(we, zc, relations, samples, countRelations, countMathFunctions, counteq, countwc, vars, knvars);
+        oweelse = SOME(we);
+      else
+        oweelse = NONE();
+      end if;
+    then (BackendDAE.WHEN_STMTS(cond, whenStmtLst, oweelse), countRelations, countMathFunctions, zc, relations, samples);
   end match;
 end findZeroCrossingsWhenEqns;
 

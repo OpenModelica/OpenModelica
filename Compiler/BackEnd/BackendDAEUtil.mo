@@ -1246,6 +1246,18 @@ public function equationSize "author: PA
   output Integer outInteger = inEquationArray.size;
 end equationSize;
 
+public function equationArraySizeBDAE
+"author: Frenkel TUD
+  Returns the size of the dae system, which correspondents to the number of variables."
+  input BackendDAE.BackendDAE inDAE;
+  output Integer outSize;
+protected
+  list<Integer> sizes;
+algorithm
+  sizes := List.map(inDAE.eqs, equationArraySizeDAE);
+  outSize := List.fold(sizes, intAdd, 0);
+end equationArraySizeBDAE;
+
 public function equationArraySizeDAE
 "author: Frenkel TUD
   Returns the number of equations in a system."

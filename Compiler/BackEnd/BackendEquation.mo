@@ -834,20 +834,38 @@ public function traverseExpsOfWhenOps<T>
 algorithm
   (outWhenOps, outTypeA) := match (inWhenOps)
     local
+      DAE.Type tp;
       DAE.Exp e1, e2, level;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr, cr1;
       list<BackendDAE.WhenOperator> rest;
       T extArg;
       DAE.ElementSource source;
 
     case {} then (listReverse(inAccum),inTypeA);
-    case (BackendDAE.REINIT(stateVar=cr, value=e2,  source = source)::rest)
+    case (BackendDAE.ASSIGN(left = cr, right = e2, source = source)::rest)
+      equation
+        tp = Expression.typeof(e2);
+        e1 = Expression.makeCrefExp(cr, tp);
+        (e1, extArg) = inFunc(e1, inTypeA);
+        if Expression.isCref(e1) then
+          DAE.CREF(cr1, _) = e1;
+        else
+          cr1=cr;
+        end if;
+        (e2, extArg) = inFunc(e2, extArg);
+        (outWhenOps, extArg) = traverseExpsOfWhenOps(rest, inFunc, extArg,  BackendDAE.ASSIGN(cr1, e2, source)::inAccum);
+      then (outWhenOps, extArg);
+    case (BackendDAE.REINIT(stateVar = cr, value = e2,  source = source)::rest)
       equation
         e1 = Expression.crefExp(cr);
         (e1, extArg) = inFunc(e1, inTypeA);
-        DAE.CREF(cr, _) = e1;
+        if Expression.isCref(e1) then
+          DAE.CREF(cr1, _) = e1;
+        else
+          cr1=cr;
+        end if;
         (e2, extArg) = inFunc(e2, extArg);
-        (outWhenOps, extArg) = traverseExpsOfWhenOps(rest, inFunc, extArg,  BackendDAE.REINIT(cr, e2, source)::inAccum);
+        (outWhenOps, extArg) = traverseExpsOfWhenOps(rest, inFunc, extArg,  BackendDAE.REINIT(cr1, e2, source)::inAccum);
     then (outWhenOps, extArg);
     case (BackendDAE.ASSERT(condition = e1, message = e2, level = level,  source = source)::rest)
       equation

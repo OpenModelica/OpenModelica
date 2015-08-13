@@ -2022,6 +2022,13 @@ algorithm
       DAE.Exp e,e1;
       Absyn.Path functionName;
       list<DAE.Exp> functionArgs;
+    case BackendDAE.ASSIGN(left=cr, right=e)
+     equation
+      scr = ComponentReference.printComponentRefStr(cr);
+      se = ExpressionDump.printExpStr(e);
+      str = stringAppendList({scr," = ",se});
+     then
+      str;
     case BackendDAE.REINIT(stateVar=cr,value=e)
      equation
       scr = ComponentReference.printComponentRefStr(cr);
