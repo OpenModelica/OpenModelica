@@ -5433,7 +5433,14 @@ template varInit(Variable var, String outStruct, Integer i, Text &varDecls, Text
 match var
 case var as VARIABLE(__) then
   let varName = '<%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
-
+  let &preExp = buffer ""
+  let recordInit = initRecordMembers(var, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  let &varInits += if recordInit then
+  <<
+    //initRecordMembers <%varName%>
+    <%preExp%>
+    <%recordInit%>
+  >>
   let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits , &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
 
 
@@ -5471,6 +5478,37 @@ case var as FUNCTION_PTR(__) then
   ""
 
 end varInit;
+
+template initRecordMembers(Variable var, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+  "Initialize members of a record variable"
+::=
+  match var
+  case VARIABLE(ty = T_COMPLEX(complexClassType = RECORD(__))) then
+    let varName = contextCref(name, contextFunction, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    (ty.varLst |> v => recordMemberInit(v, varName, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n")
+end initRecordMembers;
+
+template recordMemberInit(Var v, Text varName, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+  "Initialize one record member"
+::=
+  match v
+  case TYPES_VAR(__) then
+    let vn = '<%varName%>.<%name%>'
+    let defaultValue =
+      match binding
+      case VALBOUND(valBound = val) then
+        '<%vn%> = <%daeExp(valueExp(val), contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;'
+      case EQBOUND(evaluatedExp = SOME(val)) then
+        '<%vn%> = <%daeExp(valueExp(val), contextFunction, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;'
+      case EQBOUND(exp = exp) then
+        '<%vn%> = <%daeExp(exp, contextFunction, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;'
+      else
+        ''
+      end match
+    <<
+    <%defaultValue%>
+    >>
+end recordMemberInit;
 
 template setDims(Text testinstDimsInit, String varName , Text &varInits, String instDimsInit)
    ::=
