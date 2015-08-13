@@ -430,6 +430,7 @@ algorithm
       SimCode.LinearSystem lSystem, atL;
       SimCode.NonlinearSystem nlSystem, atNL;
       BackendDAE.WhenOperator whenOp;
+      list<DAE.ComponentRef> crefs;
 
     case SimCode.SES_RESIDUAL() equation
       File.write(file, "\n{\"eqIndex\":");
@@ -805,7 +806,9 @@ algorithm
             serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExp(whenOp.right)));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.right);
-            File.write(file, "]}");
+            File.write(file, "],\"source\":");
+            serializeSource(file,eq.source,withOperations);
+            File.write(file, "}");
           then ();
           case whenOp as BackendDAE.REINIT() equation
             File.write(file, "\",\"tag\":\"when\",\"defines\":[");
@@ -814,16 +817,40 @@ algorithm
             serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExp(whenOp.value)));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.value);
-            File.write(file, "]}");
+            File.write(file, "],\"source\":");
+            serializeSource(file,eq.source,withOperations);
+            File.write(file, "}");
           then ();
-          case whenOp as BackendDAE.ASSERT()
-            /* TODO: fix me */
+          case whenOp as BackendDAE.ASSERT() equation
+            File.write(file, "\",\"tag\":\"when\"");
+            File.write(file, ",\"uses\":[");
+            crefs = listAppend(Expression.extractUniqueCrefsFromExp(whenOp.condition), Expression.extractUniqueCrefsFromExp(whenOp.message));
+            serializeUses(file,List.union(eq.conditions,crefs));
+            File.write(file, "],\"equation\":[");
+            serializeExp(file,whenOp.message);
+            File.write(file, "],\"source\":");
+            serializeSource(file,eq.source,withOperations);
+            File.write(file, "}");
           then ();
-          case whenOp as BackendDAE.TERMINATE()
-            /* TODO: fix me */
+          case whenOp as BackendDAE.TERMINATE() equation
+            File.write(file, "\",\"tag\":\"when\"");
+            File.write(file, ",\"uses\":[");
+            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExp(whenOp.message)));
+            File.write(file, "],\"equation\":[");
+            serializeExp(file,whenOp.message);
+            File.write(file, "],\"source\":");
+            serializeSource(file,eq.source,withOperations);
+            File.write(file, "}");
           then ();
-          case whenOp as BackendDAE.NORETCALL()
-            /* TODO: fix me */
+          case whenOp as BackendDAE.NORETCALL() equation
+            File.write(file, "\",\"tag\":\"when\"");
+            File.write(file, ",\"uses\":[");
+            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExp(whenOp.exp)));
+            File.write(file, "],\"equation\":[");
+            serializeExp(file,whenOp.exp);
+            File.write(file, "],\"source\":");
+            serializeSource(file,eq.source,withOperations);
+            File.write(file, "}");
           then ();
         end match;
       end for;

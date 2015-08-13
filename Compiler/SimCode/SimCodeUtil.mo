@@ -5295,21 +5295,15 @@ algorithm
 
     // when eq
     case BackendDAE.WHEN_EQUATION(whenEquation=whenEquation, source=source) equation
-      print("dlowEqToSimEqSystem : \n");
-      print(BackendDump.equationString(inEquation));
-      print("Done : \n");
       BackendDAE.WHEN_STMTS(cond, whenStmtLst, oelseWhen) = whenEquation;
       if isSome(oelseWhen) then
         SOME(elseWhen) = oelseWhen;
-        print("Start else when equation\n");
         elseWhenEquation  = createElseWhenEquation(elseWhen, source);
-        print("Done\n");
         oelseWhenSimEq = SOME(elseWhenEquation);
       else
         oelseWhenSimEq = NONE();
       end if;
       (conditions, initialCall) = BackendDAEUtil.getConditionList(cond);
-      print("New SimCodeWhen: " + dumpSimEqSystem(SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, whenStmtLst, oelseWhenSimEq, source)) + "\n");
     then
       (SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, whenStmtLst, oelseWhenSimEq, source), iuniqueEqIndex+1);
 
