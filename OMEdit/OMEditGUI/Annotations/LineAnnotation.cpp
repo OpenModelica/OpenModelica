@@ -640,6 +640,10 @@ void LineAnnotation::handleComponentRotation()
   update();
 }
 
+/*!
+ * \brief LineAnnotation::updateConnectionAnnotation
+ * Updates the connection annotation.
+ */
 void LineAnnotation::updateConnectionAnnotation()
 {
   if (mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM) {
@@ -656,6 +660,7 @@ void LineAnnotation::updateConnectionAnnotation()
   }
   // make the model modified
   mpGraphicsView->getModelWidget()->setModelModified();
+  mpGraphicsView->getModelWidget()->updateModelicaText();
 }
 
 void LineAnnotation::duplicate()

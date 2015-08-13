@@ -520,7 +520,7 @@ QString GUIMessages::getMessage(int type)
     case ERROR_IN_MODELICA_TEXT:
       return tr("Problems are found in Modelica Text. <br />");
     case REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY:
-      return tr("<br /><br />For normal users it is recommended to choose <b>Revert from previous</b>. You can also choose <b>Fix errors manually</b> if you want to fix them by your own.");
+      return tr("<br /><br />If you cannot find the source of the error, you can always <b>revert to the last correct version</b>.");
     case NO_OPENMODELICA_KEYWORDS:
       return tr("Please make sure you are not using any OpenModelica Keywords like (model, package, record, class etc.)");
     case UNABLE_TO_LOAD_FILE:

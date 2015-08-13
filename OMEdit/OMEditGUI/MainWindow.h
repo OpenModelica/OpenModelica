@@ -270,6 +270,9 @@ private:
   QAction *mpExportFigaroAction;
   // Tools Menu
   QAction *mpShowOMCLoggerWidgetAction;
+#ifdef QT_DEBUG
+  QAction *mpShowOMCDiffWidgetAction;
+#endif
   QAction *mpExportToOMNotebookAction;
   QAction *mpImportFromOMNotebookAction;
   QAction *mpImportNgspiceNetlistAction;

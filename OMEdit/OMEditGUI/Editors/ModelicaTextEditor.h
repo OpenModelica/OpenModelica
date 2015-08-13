@@ -77,15 +77,14 @@ class ModelicaTextEditor : public BaseEditor
 public:
   ModelicaTextEditor(ModelWidget *pParent);
   void setLastValidText(QString validText);
+  QString getLastValidText() {return mLastValidText;}
   QStringList getClassNames(QString *errorString);
-  bool validateModelicaText();
+  bool validateText();
   void setModelicaTextDocument(QTextDocument *document);
 private:
   QString mLastValidText;
   bool mTextChanged;
   bool mForceSetPlainText;
-signals:
-  bool focusOut();
 private slots:
   virtual void showContextMenu(QPoint point);
 public slots:

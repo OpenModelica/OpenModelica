@@ -1339,22 +1339,32 @@ bool LibraryTreeWidget::saveLibraryTreeNodeHelper(LibraryTreeNode *pLibraryTreeN
   /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
   if (pLibraryTreeNode->getModelWidget()) {
     ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
-    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
       return false;
     }
   }
   mpMainWindow->getOMCProxy()->setSourceFile(pLibraryTreeNode->getNameStructure(), fileName);
-  // save the model through OMC
-  if (mpMainWindow->getOMCProxy()->save(pLibraryTreeNode->getNameStructure())) {
+  // save the class
+  QFile file(fileName);
+  if (file.open(QIODevice::WriteOnly)) {
+    QTextStream textStream(&file);
+    textStream.setCodec(Helper::utf8.toStdString().data());
+    textStream.setGenerateByteOrderMark(false);
+    textStream << pLibraryTreeNode->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText();
+    file.close();
+    /* mark the file as saved and update the labels. */
     pLibraryTreeNode->setIsSaved(true);
     pLibraryTreeNode->setFileName(fileName);
     if (pLibraryTreeNode->getModelWidget()) {
       pLibraryTreeNode->getModelWidget()->setWindowTitle(pLibraryTreeNode->getNameStructure());
       pLibraryTreeNode->getModelWidget()->setModelFilePathLabel(fileName);
     }
-    return true;
+  } else {
+    QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
+                             .arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE).arg(file.errorString())), Helper::ok);
+    return false;
   }
-  return false;
+  return true;
 }
 
 bool LibraryTreeWidget::saveLibraryTreeNodeOneFileHelper(LibraryTreeNode *pLibraryTreeNode)
@@ -1398,7 +1408,7 @@ bool LibraryTreeWidget::setSubModelsFileNameOneFileHelper(LibraryTreeNode *pLibr
   /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
   if (pLibraryTreeNode->getModelWidget()) {
     ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
-    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
       return false;
     }
   }
@@ -1411,7 +1421,7 @@ bool LibraryTreeWidget::setSubModelsFileNameOneFileHelper(LibraryTreeNode *pLibr
       /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
       if (pChildLibraryTreeNode->getModelWidget()) {
         ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pChildLibraryTreeNode->getModelWidget()->getEditor());
-        if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+        if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
           return false;
         }
       }
@@ -1459,7 +1469,7 @@ bool LibraryTreeWidget::saveLibraryTreeNodeFolderHelper(LibraryTreeNode *pLibrar
   /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
   if (pLibraryTreeNode->getModelWidget()) {
     ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
-    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
       return false;
     }
   }
@@ -1489,7 +1499,7 @@ bool LibraryTreeWidget::saveSubModelsFolderHelper(LibraryTreeNode *pLibraryTreeN
     /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
     if (pChildLibraryTreeNode->getModelWidget()) {
       ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pChildLibraryTreeNode->getModelWidget()->getEditor());
-      if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+      if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
         return false;
       }
     }
@@ -2055,7 +2065,7 @@ void LibraryTreeWidget::parseAndLoadModelicaText(QString modelText)
     pMessageBox->exec();
   } else {  // if no conflicting model found then just load the file simply
     // load the model text in OMC
-    if (mpMainWindow->getOMCProxy()->loadString(StringHandler::escapeString(modelText), className)) {
+    if (mpMainWindow->getOMCProxy()->loadString(modelText, className)) {
       QString modelName = StringHandler::getLastWordAfterDot(className);
       QString parentName = StringHandler::removeLastWordAfterDot(className);
       if (modelName.compare(parentName) == 0) {

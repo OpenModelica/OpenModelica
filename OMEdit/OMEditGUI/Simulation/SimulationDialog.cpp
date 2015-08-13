@@ -1024,10 +1024,7 @@ void SimulationDialog::saveSimulationOptions()
   // make the model modified
   if (mpLibraryTreeNode->getModelWidget()) {
     mpLibraryTreeNode->getModelWidget()->setModelModified();
-    if (mpLibraryTreeNode->getModelWidget()->getEditor()->isVisible()) {
-      ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpLibraryTreeNode->getModelWidget()->getEditor());
-      pModelicaTextEditor->setPlainText(mpMainWindow->getOMCProxy()->list(mpLibraryTreeNode->getNameStructure()));
-    }
+    mpLibraryTreeNode->getModelWidget()->updateModelicaText();
   }
 }
 
