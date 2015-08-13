@@ -532,6 +532,7 @@ void GraphicsView::addComponentObject(Component *pComponent)
     QString className = StringHandler::makeClassNameRelative(pComponent->getClassName(), mpModelWidget->getLibraryTreeNode()->getNameStructure());
     pMainWindow->getOMCProxy()->addComponent(pComponent->getName(), className, mpModelWidget->getLibraryTreeNode()->getNameStructure(),
                                              pComponent->getPlacementAnnotation());
+    mpModelWidget->updateModelicaText();
   } else if (mpModelWidget->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM) {
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpModelWidget->getEditor());
     QFileInfo fileInfo(pComponent->getFileName());
@@ -573,7 +574,7 @@ void GraphicsView::deleteComponentObject(Component *pComponent)
       endComponentName = mConnectionsList[i]->getEndComponent()->getRootParentComponent()->getName();
     }
     if (startComponentName == pComponent->getName() || endComponentName == pComponent->getName()) {
-      removeConnection(mConnectionsList[i]);
+      removeConnection(mConnectionsList[i], false);
       i = 0;   //Restart iteration if map has changed
     } else {
       ++i;
@@ -635,19 +636,25 @@ QList<Component*> GraphicsView::getComponentList()
   return mComponentsList;
 }
 
+/*!
+ * \brief GraphicsView::createConnection
+ * Creates connection between startComponent and endComponent.
+ * \param startComponentName
+ * \param endComponentName
+ */
 void GraphicsView::createConnection(QString startComponentName, QString endComponentName)
 {
-  if (mpModelWidget->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM)
-  {
+  if (mpModelWidget->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM) {
     /* complete the connection */
     setIsCreatingConnection(false);
     mpConnectionLineAnnotation->setStartComponentName(startComponentName);
     mpConnectionLineAnnotation->setEndComponentName(endComponentName);
     Component *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
-    if (pEndComponent->getParentComponent())
+    if (pEndComponent->getParentComponent()) {
       pEndComponent->getParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
-    else
+    } else {
       pEndComponent->addConnectionDetails(mpConnectionLineAnnotation);
+    }
     // update the last point to the center of component
     QPointF newPos = pEndComponent->mapToScene(pEndComponent->boundingRect().center());
     mpConnectionLineAnnotation->updateEndPoint(newPos);
@@ -659,50 +666,55 @@ void GraphicsView::createConnection(QString startComponentName, QString endCompo
     pTLMConnectionAttributes->show();
     // make the model modified
     mpModelWidget->setModelModified();
-  }
-  else
-  {
+  } else {
     MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
     if (pMainWindow->getOMCProxy()->addConnection(startComponentName, endComponentName, mpModelWidget->getLibraryTreeNode()->getNameStructure(),
-                                                QString("annotate=").append(mpConnectionLineAnnotation->getShapeAnnotation())))
-    {
-    /* Ticket #2450
+                                                  QString("annotate=").append(mpConnectionLineAnnotation->getShapeAnnotation()))) {
+      /* Ticket #2450
        Do not check for the ports compatibility via instantiatemodel. Just let the user create the connection.
        //pMainWindow->getOMCProxy()->instantiateModelSucceeds(mpModelWidget->getNameStructure());
       */
-    /* complete the connection */
-    setIsCreatingConnection(false);
-    mpConnectionLineAnnotation->setStartComponentName(startComponentName);
-    mpConnectionLineAnnotation->setEndComponentName(endComponentName);
-    Component *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
-    if (pEndComponent->getParentComponent())
-      pEndComponent->getParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
-    else
-      pEndComponent->addConnectionDetails(mpConnectionLineAnnotation);
-    // update the last point to the center of component
-    QPointF newPos = roundPoint(pEndComponent->mapToScene(pEndComponent->boundingRect().center()));
-    mpConnectionLineAnnotation->updateEndPoint(newPos);
-    mpConnectionLineAnnotation->update();
-    mConnectionsList.append(mpConnectionLineAnnotation);
-    // make the model modified
-    mpModelWidget->setModelModified();
+      /* complete the connection */
+      setIsCreatingConnection(false);
+      mpConnectionLineAnnotation->setStartComponentName(startComponentName);
+      mpConnectionLineAnnotation->setEndComponentName(endComponentName);
+      Component *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
+      if (pEndComponent->getParentComponent()) {
+        pEndComponent->getParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
+      } else {
+        pEndComponent->addConnectionDetails(mpConnectionLineAnnotation);
+      }
+      // update the last point to the center of component
+      QPointF newPos = roundPoint(pEndComponent->mapToScene(pEndComponent->boundingRect().center()));
+      mpConnectionLineAnnotation->updateEndPoint(newPos);
+      mpConnectionLineAnnotation->update();
+      mConnectionsList.append(mpConnectionLineAnnotation);
+      // make the model modified
+      mpModelWidget->setModelModified();
+      mpModelWidget->updateModelicaText();
     }
   }
 }
 
-//! Deletes the connection from OMC.
-//! @param startComponentName is starting component name string.
-//! @param endComponentName is ending component name string.
-void GraphicsView::deleteConnection(QString startComponentName, QString endComponentName)
+/*!
+ * \brief GraphicsView::deleteConnection
+ * Deletes the connection from OMC.
+ * \param startComponentName - is starting component name string.
+ * \param endComponentName - is ending component name string.
+ * \param updateModelicaText - updates the Modelica text if true.
+ */
+void GraphicsView::deleteConnection(QString startComponentName, QString endComponentName, bool updateModelicaText)
 {
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-  if(mpModelWidget->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM)
-  {
+  if(mpModelWidget->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM) {
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpModelWidget->getEditor());
     pTLMEditor->deleteConnection(startComponentName, endComponentName);
-  }
-  else
+  } else {
     pMainWindow->getOMCProxy()->deleteConnection(startComponentName, endComponentName, mpModelWidget->getLibraryTreeNode()->getNameStructure());
+    if (updateModelicaText) {
+      mpModelWidget->updateModelicaText();
+    }
+  }
   // make the model modified
   mpModelWidget->setModelModified();
 }
@@ -1179,24 +1191,25 @@ void GraphicsView::removeConnection()
   }
 }
 
-//! Removes the connector from the model.
-//! @param pConnector is a pointer to the connector to remove.
-void GraphicsView::removeConnection(LineAnnotation *pConnection)
+/*!
+ * \brief GraphicsView::removeConnection
+ * Removes the connector from the class.
+ * \param pConnector - is a pointer to the connector to remove.
+ * \param updateModelicaText - updates the Modelica text if true.
+ */
+void GraphicsView::removeConnection(LineAnnotation *pConnection, bool updateModelicaText)
 {
   bool doDelete = false;
   int i;
-  for(i = 0; i != mConnectionsList.size(); ++i)
-  {
-    if(mConnectionsList[i] == pConnection)
-    {
+  for(i = 0; i != mConnectionsList.size(); ++i) {
+    if(mConnectionsList[i] == pConnection) {
       doDelete = true;
       break;
     }
   }
-  if (doDelete)
-  {
+  if (doDelete) {
     // If GUI delete is successful then delete the connection from omc as well.
-    deleteConnection(pConnection->getStartComponentName(), pConnection->getEndComponentName());
+    deleteConnection(pConnection->getStartComponentName(), pConnection->getEndComponentName(), updateModelicaText);
     // delete the connector object
     pConnection->deleteLater();
     // remove connector object from local connector vector
@@ -1249,7 +1262,7 @@ void GraphicsView::selectAll()
 
 //! Adds the annotation string of Icon and Diagram layer to the model. Also creates the model icon in the tree.
 //! If some custom models are cross referenced then update them accordingly.
-void GraphicsView::addClassAnnotation()
+void GraphicsView::addClassAnnotation(bool updateModelicaText)
 {
   if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary())
     return;
@@ -1311,6 +1324,9 @@ void GraphicsView::addClassAnnotation()
   // add the class annotation to model through OMC
   if (pMainWindow->getOMCProxy()->addClassAnnotation(mpModelWidget->getLibraryTreeNode()->getNameStructure(), annotationString)) {
     mpModelWidget->setModelModified();
+    if (updateModelicaText) {
+      mpModelWidget->updateModelicaText();
+    }
     /* When something is added/changed in the icon layer then update the LibraryTreeNode in the Library Browser */
     if (mViewType == StringHandler::Icon) {
       pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
@@ -2186,11 +2202,24 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
     mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
     mpDiagramGraphicsView->hide();
     // only get the model components, connectors and shapes if the class is not a new class or class is an extends class.
+    QString contents = "";
+    OMCProxy *pOMCProxy = mpModelWidgetContainer->getMainWindow()->getOMCProxy();
     if (newClass) {
-      mpIconGraphicsView->addClassAnnotation();
+      mpIconGraphicsView->addClassAnnotation(false);
       mpIconGraphicsView->setCanAddClassAnnotation(true);
-      mpDiagramGraphicsView->addClassAnnotation();
+      mpDiagramGraphicsView->addClassAnnotation(false);
       mpDiagramGraphicsView->setCanAddClassAnnotation(true);
+      contents = pOMCProxy->listFile(mpLibraryTreeNode->getNameStructure());
+    } else if (!mpLibraryTreeNode->getFileName().isEmpty()) {
+      QFile file(mpLibraryTreeNode->getFileName());
+      if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                              GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(mpLibraryTreeNode->getFileName())
+                              .arg(file.errorString()), Helper::ok);
+      } else {
+        contents = QString(file.readAll());
+        file.close();
+      }
     }
     if (!newClass || extendsClass) {
       getModelIconDiagramShapes(getLibraryTreeNode()->getNameStructure());
@@ -2204,6 +2233,9 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
     MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
     mpModelicaTextHighlighter = new ModelicaTextHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextEditorPage(),
                                                             mpEditor->getPlainTextEdit());
+    mpEditor->getPlainTextEdit()->setPlainText(contents);
+    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpEditor);
+    pModelicaTextEditor->setLastValidText(contents);
     mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
     connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), mpModelicaTextHighlighter, SLOT(settingsChanged()));
     mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
@@ -2815,6 +2847,97 @@ void ModelWidget::refresh()
   QApplication::restoreOverrideCursor();
 }
 
+bool ModelWidget::validateModelicaText()
+{
+  ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpEditor);
+  if (pModelicaTextEditor) {
+    return pModelicaTextEditor->validateText();
+  }
+  return false;
+}
+
+bool ModelWidget::modelicaEditorTextChanged()
+{
+  QString errorString;
+  ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpEditor);
+  QStringList classNames = pModelicaTextEditor->getClassNames(&errorString);
+  LibraryTreeWidget *pLibraryTreeWidget = mpModelWidgetContainer->getMainWindow()->getLibraryTreeWidget();
+  OMCProxy *pOMCProxy = mpModelWidgetContainer->getMainWindow()->getOMCProxy();
+  if (classNames.size() == 0) {
+    if (!errorString.isEmpty()) {
+      MessagesWidget *pMessagesWidget = getModelWidgetContainer()->getMainWindow()->getMessagesWidget();
+      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString, Helper::syntaxKind, Helper::errorLevel));
+    }
+    return false;
+  }
+  /* if no errors are found with the Modelica Text then load it in OMC */
+  QString modelicaText = pModelicaTextEditor->getPlainTextEdit()->toPlainText();
+  if (!pOMCProxy->loadString("within " + mpLibraryTreeNode->getParentName() + ";" + modelicaText, classNames.at(0))) {
+    return false;
+  }
+  /* first handle the current class */
+  /* if user has changed the class then refresh it. */
+  if (classNames.contains(mpLibraryTreeNode->getNameStructure())) {
+    /* if class has children then delete them. */
+    pLibraryTreeWidget->unloadClassHelper(mpLibraryTreeNode);
+    qDeleteAll(mpLibraryTreeNode->takeChildren());
+    classNames.removeOne(mpLibraryTreeNode->getNameStructure());
+    pLibraryTreeWidget->removeFromExpandedLibraryTreeNodesList(mpLibraryTreeNode);
+    mpLibraryTreeNode->setExpanded(false);
+    refresh();
+    /* if class has children then create them. */
+    pLibraryTreeWidget->createLibraryTreeNodes(mpLibraryTreeNode);
+    setModelModified();
+  }
+  /*
+    if user has changed the class name then delete this class.
+    Update the LibraryTreeNode with new class name and then refresh it.
+    */
+  else
+  {
+    /* if class has children then delete them. */
+    pLibraryTreeWidget->unloadClassHelper(mpLibraryTreeNode);
+    qDeleteAll(mpLibraryTreeNode->takeChildren());
+    /* call setModelModified before deleting the class so we can get rid of cache commands of this object. */
+    setModelModified();
+    pOMCProxy->deleteClass(mpLibraryTreeNode->getNameStructure());
+    QString className = classNames.first();
+    classNames.removeFirst();
+    pLibraryTreeWidget->removeFromExpandedLibraryTreeNodesList(mpLibraryTreeNode);
+    mpLibraryTreeNode->setExpanded(false);
+    /* set the LibraryTreeNode name & text */
+    mpLibraryTreeNode->setName(StringHandler::getLastWordAfterDot(className));
+    mpLibraryTreeNode->setText(0, mpLibraryTreeNode->getName());
+    mpLibraryTreeNode->setNameStructure(className);
+    setModelModified();
+    /* get the model components, shapes & connectors */
+    refresh();
+    /* if class has children then create them. */
+    pLibraryTreeWidget->createLibraryTreeNodes(mpLibraryTreeNode);
+  }
+  return true;
+}
+
+/*!
+ * \brief ModelWidget::updateModelicaText
+ * Updates the Modelica Text of the class.
+ * Uses OMCProxy::listFile() and OMCProxy::diffModelicaFileListings() to get the correct Modelica Text.
+ * \sa OMCProxy::listFile()
+ * \sa OMCProxy::diffModelicaFileListings()
+ */
+void ModelWidget::updateModelicaText()
+{
+  ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpEditor);
+  if (pModelicaTextEditor) {
+    OMCProxy *pOMCProxy = mpModelWidgetContainer->getMainWindow()->getOMCProxy();
+    QString before = pModelicaTextEditor->getLastValidText();
+    QString after = pOMCProxy->listFile(mpLibraryTreeNode->getNameStructure());
+    QString contents = pOMCProxy->diffModelicaFileListings(before, after);
+    pModelicaTextEditor->setPlainText(contents);
+    pModelicaTextEditor->setLastValidText(contents);
+  }
+}
+
 /*!
  * \brief ModelWidget::showIconView
  * \param checked
@@ -2825,7 +2948,7 @@ void ModelWidget::showIconView(bool checked)
   // validate the modelica text before switching to icon view
   if (checked) {
     ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpEditor);
-    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
       mpTextViewToolButton->setChecked(true);
       return;
     }
@@ -2854,8 +2977,7 @@ void ModelWidget::showDiagramView(bool checked)
 {
   // validate the modelica text before switching to diagram view
   if (checked) {
-    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpEditor);
-    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+    if (!validateModelicaText()) {
       mpTextViewToolButton->setChecked(true);
       return;
     }
@@ -2895,12 +3017,6 @@ void ModelWidget::showTextView(bool checked)
     return;
   }
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::ModelicaText));
-  // get the modelica text of the model
-  ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpEditor);
-  if (pModelicaTextEditor) {
-    pModelicaTextEditor->setPlainText(mpModelWidgetContainer->getMainWindow()->getOMCProxy()->list(getLibraryTreeNode()->getNameStructure()));
-    pModelicaTextEditor->setLastValidText(pModelicaTextEditor->getPlainTextEdit()->toPlainText());
-  }
   mpIconGraphicsView->hide();
   mpDiagramGraphicsView->hide();
   mpEditor->show();
@@ -2928,134 +3044,12 @@ void ModelWidget::showDocumentationView()
 {
   // validate the modelica text before switching to documentation view
   ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpEditor);
-  if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+  if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
     mpTextViewToolButton->setChecked(true);
     return;
   }
   mpModelWidgetContainer->getMainWindow()->getDocumentationWidget()->showDocumentation(getLibraryTreeNode()->getNameStructure());
   mpModelWidgetContainer->getMainWindow()->getDocumentationDockWidget()->show();
-}
-
-bool ModelWidget::modelicaEditorTextChanged()
-{
-  QString errorString;
-  ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpEditor);
-  QStringList classNames = pModelicaTextEditor->getClassNames(&errorString);
-  LibraryTreeWidget *pLibraryTreeWidget = mpModelWidgetContainer->getMainWindow()->getLibraryTreeWidget();
-  OMCProxy *pOMCProxy = mpModelWidgetContainer->getMainWindow()->getOMCProxy();
-  if (classNames.size() == 0) {
-    if (!errorString.isEmpty()) {
-      MessagesWidget *pMessagesWidget = getModelWidgetContainer()->getMainWindow()->getMessagesWidget();
-      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString, Helper::syntaxKind, Helper::errorLevel));
-    }
-    return false;
-  }
-  /* if no errors are found with the Modelica Text then load it in OMC */
-  QString modelicaText = pModelicaTextEditor->getPlainTextEdit()->toPlainText();
-  if (mpLibraryTreeNode->getParentName().isEmpty()) {
-    if (!pOMCProxy->loadString(modelicaText, classNames.at(0)))
-      return false;
-  } else {
-    if (!pOMCProxy->loadString("within " + mpLibraryTreeNode->getParentName() + ";" + modelicaText, classNames.at(0))) {
-      return false;
-    }
-  }
-  /* first handle the current class */
-  /* if user has changed the class then refresh it. */
-  if (classNames.contains(mpLibraryTreeNode->getNameStructure()))
-  {
-    /* if class has children then delete them. */
-    pLibraryTreeWidget->unloadClassHelper(mpLibraryTreeNode);
-    qDeleteAll(mpLibraryTreeNode->takeChildren());
-    classNames.removeOne(mpLibraryTreeNode->getNameStructure());
-    pLibraryTreeWidget->removeFromExpandedLibraryTreeNodesList(mpLibraryTreeNode);
-    mpLibraryTreeNode->setExpanded(false);
-    refresh();
-    /* if class has children then create them. */
-    pLibraryTreeWidget->createLibraryTreeNodes(mpLibraryTreeNode);
-    setModelModified();
-  }
-  /*
-    if user has changed the class name then delete this class.
-    Update the LibraryTreeNode with new class name and then refresh it.
-    */
-  else
-  {
-    /* if class has children then delete them. */
-    pLibraryTreeWidget->unloadClassHelper(mpLibraryTreeNode);
-    qDeleteAll(mpLibraryTreeNode->takeChildren());
-    /* call setModelModified before deleting the class so we can get rid of cache commands of this object. */
-    setModelModified();
-    pOMCProxy->deleteClass(mpLibraryTreeNode->getNameStructure());
-    QString className = classNames.first();
-    classNames.removeFirst();
-    pLibraryTreeWidget->removeFromExpandedLibraryTreeNodesList(mpLibraryTreeNode);
-    mpLibraryTreeNode->setExpanded(false);
-    refresh();
-    /*
-      if user has used within keyword in the text to move the class in a package then,
-      - Find the current parent of the class and then remove the class from it and move it to the new parent.
-      - If the class is top level then remove it from the top level and add it to the new parent.
-      */
-    LibraryTreeNode *pCurrentParentLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(mpLibraryTreeNode->parent());
-    LibraryTreeNode *pNewParentLibraryTreeNode = pLibraryTreeWidget->getLibraryTreeNode(StringHandler::removeLastWordAfterDot(className));
-    /* If really a within is used then the following condition should be true. */
-    if ((pNewParentLibraryTreeNode) && (pNewParentLibraryTreeNode != mpLibraryTreeNode))
-    {
-      /* If the class has parent then use it otherwise use the tree widget to remove the class. */
-      if (pCurrentParentLibraryTreeNode)
-      {
-        pCurrentParentLibraryTreeNode->takeChild(pCurrentParentLibraryTreeNode->indexOfChild(mpLibraryTreeNode));
-        /* Remove the cache of the current parent. */
-        if (pCurrentParentLibraryTreeNode->getModelWidget())
-        {
-          pCurrentParentLibraryTreeNode->getModelWidget()->setModelModified();
-          /* update the text of the class */
-          ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pCurrentParentLibraryTreeNode->getModelWidget()->getEditor());
-          if (pModelicaTextEditor->isVisible())
-            pModelicaTextEditor->setPlainText(pOMCProxy->list(pCurrentParentLibraryTreeNode->getNameStructure()));
-        }
-      }
-      else
-      {
-        pLibraryTreeWidget->takeTopLevelItem(pLibraryTreeWidget->indexOfTopLevelItem(mpLibraryTreeNode));
-      }
-      /* Add the class to the new parent. */
-      pNewParentLibraryTreeNode->addChild(mpLibraryTreeNode);
-      /* Remove the cache of the new parent. */
-      if (pNewParentLibraryTreeNode->getModelWidget())
-      {
-        pNewParentLibraryTreeNode->getModelWidget()->setModelModified();
-        /* update the text of the class */
-        ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pNewParentLibraryTreeNode->getModelWidget()->getEditor());
-        if (pModelicaTextEditor->isVisible())
-          pModelicaTextEditor->setPlainText(pOMCProxy->list(pNewParentLibraryTreeNode->getNameStructure()));
-      }
-    }
-    /* set the LibraryTreeNode name & text */
-    mpLibraryTreeNode->setName(StringHandler::getLastWordAfterDot(className));
-    mpLibraryTreeNode->setText(0, mpLibraryTreeNode->getName());
-    mpLibraryTreeNode->setNameStructure(className);
-    setModelModified();
-    /* get the model components, shapes & connectors */
-    refresh();
-    /* if class has children then create them. */
-    pLibraryTreeWidget->createLibraryTreeNodes(mpLibraryTreeNode);
-  }
-  /* create the rest of the classes */
-  foreach (QString className, classNames)
-  {
-    QString modelName = StringHandler::getLastWordAfterDot(className);
-    QString parentName = StringHandler::removeLastWordAfterDot(className);
-    if (modelName.compare(parentName) == 0)
-      parentName = "";
-    LibraryTreeNode *pLibraryTreeNode;
-    pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(modelName, parentName, false);
-    if (pLibraryTreeNode) {
-      pLibraryTreeWidget->createLibraryTreeNodes(pLibraryTreeNode);
-    }
-  }
-  return true;
 }
 
 bool ModelWidget::TLMEditorTextChanged()
@@ -3378,13 +3372,8 @@ void ModelWidgetContainer::loadPreviousViewType(ModelWidget *pModelWidget)
 void ModelWidgetContainer::saveModelicaModelWidget(ModelWidget *pModelWidget)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
-  ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pModelWidget->getEditor());
-  if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+  if (!pModelWidget->validateModelicaText()) {
     return;
-  }
-  if (pModelicaTextEditor->isVisible()) {
-    QString text = mpMainWindow->getOMCProxy()->list(pModelWidget->getLibraryTreeNode()->getNameStructure());
-    pModelicaTextEditor->setPlainText(text);
   }
   mpMainWindow->getLibraryTreeWidget()->saveLibraryTreeNode(pModelWidget->getLibraryTreeNode());
 }
@@ -3513,7 +3502,7 @@ void ModelWidgetContainer::saveAsModelWidget()
   }
   /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
   ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pModelWidget->getEditor());
-  if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+  if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
     return;
   }
   SaveAsClassDialog *pSaveAsClassDialog = new SaveAsClassDialog(pModelWidget, mpMainWindow);
@@ -3532,12 +3521,8 @@ void ModelWidgetContainer::saveTotalModelWidget()
     return;
   }
   /* if Modelica text is changed manually by user then validate it before saving. */
-  ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pModelWidget->getEditor());
-  if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+  if (!pModelWidget->validateModelicaText()) {
     return;
-  }
-  if (pModelicaTextEditor->isVisible()) {
-    pModelicaTextEditor->setPlainText(mpMainWindow->getOMCProxy()->list(pModelWidget->getLibraryTreeNode()->getNameStructure()));
   }
   /* save total model */
   LibraryTreeNode *pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
@@ -3549,13 +3534,6 @@ void ModelWidgetContainer::saveTotalModelWidget()
                                             Helper::omFileTypes, NULL, "mo", &name);
   if (fileName.isEmpty()) { // if user press ESC
     return;
-  }
-  /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
-  if (pLibraryTreeNode->getModelWidget()) {
-    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
-    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
-      return;
-    }
   }
   // save the model through OMC
   mpMainWindow->getOMCProxy()->saveTotalSCode(fileName, pLibraryTreeNode->getNameStructure());

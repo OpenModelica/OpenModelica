@@ -190,7 +190,7 @@ public:
   bool checkComponentName(QString componentName);
   QList<Component*> getComponentList();
   void createConnection(QString startComponentName, QString endComponentName);
-  void deleteConnection(QString startComponentName, QString endComponentName);
+  void deleteConnection(QString startComponentName, QString endComponentName, bool updateModelicaText);
   void addConnectionObject(LineAnnotation *pConnectionLineAnnotation);
   void deleteConnectionObject(LineAnnotation *pConnectionLineAnnotation);
   void addShapeObject(ShapeAnnotation *pShape);
@@ -236,12 +236,12 @@ signals:
 public slots:
   void addConnection(Component *pComponent);
   void removeConnection();
-  void removeConnection(LineAnnotation *pConnection);
+  void removeConnection(LineAnnotation *pConnection, bool updateModelicaText);
   void resetZoom();
   void zoomIn();
   void zoomOut();
   void selectAll();
-  void addClassAnnotation();
+  void addClassAnnotation(bool updateModelicaText = true);
   void showGraphicsViewProperties();
 protected:
   virtual void dragMoveEvent(QDragMoveEvent *event);
@@ -326,6 +326,9 @@ public:
   void getTLMConnections();
   Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
   void refresh();
+  bool validateModelicaText();
+  bool modelicaEditorTextChanged();
+  void updateModelicaText();
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   LibraryTreeNode *mpLibraryTreeNode;
@@ -355,7 +358,6 @@ private slots:
 public slots:
   void makeFileWritAble();
   void showDocumentationView();
-  bool modelicaEditorTextChanged();
   bool TLMEditorTextChanged();
 protected:
   virtual void closeEvent(QCloseEvent *event);

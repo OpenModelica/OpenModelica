@@ -893,9 +893,10 @@ void ComponentParameters::updateComponentParameters()
   // if valueChanged is true then set the model modified.
   if (valueChanged) {
     mpComponent->getGraphicsView()->getModelWidget()->setModelModified();
-  }
-  if (modifierValueChanged) {
-    mpComponent->componentParameterHasChanged();
+    mpComponent->getGraphicsView()->getModelWidget()->updateModelicaText();
+    if (modifierValueChanged) {
+      mpComponent->componentParameterHasChanged();
+    }
   }
   accept();
 }
@@ -1173,6 +1174,7 @@ void ComponentAttributes::updateComponentAttributes()
     }
   }
   mpComponent->getGraphicsView()->getModelWidget()->setModelModified();
+  mpComponent->getGraphicsView()->getModelWidget()->updateModelicaText();
   accept();
 }
 

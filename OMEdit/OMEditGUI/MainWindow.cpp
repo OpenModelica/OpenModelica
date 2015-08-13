@@ -724,7 +724,7 @@ void MainWindow::simulate(LibraryTreeNode *pLibraryTreeNode)
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget()) {
     ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
-    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
       return;
     }
   }
@@ -736,7 +736,7 @@ void MainWindow::simulateWithTransformationalDebugger(LibraryTreeNode *pLibraryT
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget()) {
     ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
-    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
       return;
     }
   }
@@ -748,7 +748,7 @@ void MainWindow::simulateWithAlgorithmicDebugger(LibraryTreeNode *pLibraryTreeNo
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget()) {
     ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
-    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
       return;
     }
   }
@@ -760,7 +760,7 @@ void MainWindow::simulationSetup(LibraryTreeNode *pLibraryTreeNode)
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget()) {
     ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
-    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
       return;
     }
   }
@@ -772,7 +772,7 @@ void MainWindow::instantiatesModel(LibraryTreeNode *pLibraryTreeNode)
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget()) {
     ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
-    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
       return;
     }
   }
@@ -798,7 +798,7 @@ void MainWindow::checkModel(LibraryTreeNode *pLibraryTreeNode)
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget()) {
     ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
-    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
       return;
     }
   }
@@ -824,7 +824,7 @@ void MainWindow::checkAllModels(LibraryTreeNode *pLibraryTreeNode)
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget()) {
     ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
-    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
       return;
     }
   }
@@ -849,7 +849,7 @@ void MainWindow::exportModelFMU(LibraryTreeNode *pLibraryTreeNode)
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget()) {
     ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
-    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
       return;
     }
   }
@@ -877,7 +877,7 @@ void MainWindow::exportModelXML(LibraryTreeNode *pLibraryTreeNode)
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget()) {
     ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
-    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
       return;
     }
   }
@@ -902,7 +902,7 @@ void MainWindow::exportModelFigaro(LibraryTreeNode *pLibraryTreeNode)
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget()) {
     ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
-    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
       return;
     }
   }
@@ -1001,7 +1001,7 @@ void MainWindow::exportModelToOMNotebook(LibraryTreeNode *pLibraryTreeNode)
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget()) {
     ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
-    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
       return;
     }
   }
@@ -2573,6 +2573,12 @@ void MainWindow::createActions()
   mpShowOMCLoggerWidgetAction = new QAction(QIcon(":/Resources/icons/console.svg"), Helper::OpenModelicaCompilerCLI, this);
   mpShowOMCLoggerWidgetAction->setStatusTip(tr("Shows OpenModelica Compiler CLI"));
   connect(mpShowOMCLoggerWidgetAction, SIGNAL(triggered()), mpOMCProxy, SLOT(openOMCLoggerWidget()));
+#ifdef QT_DEBUG
+  // show OMC Diff widget action
+  mpShowOMCDiffWidgetAction = new QAction(QIcon(":/Resources/icons/console.svg"), tr("OpenModelica Compiler Diff"), this);
+  mpShowOMCDiffWidgetAction->setStatusTip(tr("Shows OpenModelica Compiler Diff"));
+  connect(mpShowOMCDiffWidgetAction, SIGNAL(triggered()), mpOMCProxy, SLOT(openOMCDiffWidget()));
+#endif
   // export to OMNotebook action
   mpExportToOMNotebookAction = new QAction(QIcon(":/Resources/icons/export-omnotebook.svg"), Helper::exportToOMNotebook, this);
   mpExportToOMNotebookAction->setStatusTip(Helper::exportToOMNotebookTip);
@@ -2856,6 +2862,9 @@ void MainWindow::createMenus()
   pToolsMenu->setTitle(tr("&Tools"));
   // add actions to Tools menu
   pToolsMenu->addAction(mpShowOMCLoggerWidgetAction);
+#ifdef QT_DEBUG
+  pToolsMenu->addAction(mpShowOMCDiffWidgetAction);
+#endif
   pToolsMenu->addSeparator();
   pToolsMenu->addAction(mpExportToOMNotebookAction);
   pToolsMenu->addAction(mpImportFromOMNotebookAction);

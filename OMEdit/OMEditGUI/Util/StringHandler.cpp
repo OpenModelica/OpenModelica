@@ -889,7 +889,7 @@ QString StringHandler::escapeString(QString value)
   for (int i = 0; i < value.length(); i++) {
     switch (value[i].toAscii())
 	{
-      case '"':  res.append('\"');     break;
+      case '"':  res.append("\\\"");   break;
       case '\\': res.append("\\\\");   break;
       case '\a': res.append("\\a");    break;
       case '\b': res.append("\\b");    break;

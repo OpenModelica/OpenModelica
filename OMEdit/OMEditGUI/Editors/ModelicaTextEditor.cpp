@@ -133,7 +133,6 @@ ModelicaTextEditor::ModelicaTextEditor(ModelWidget *pParent)
   /* set the document marker */
   mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
   setModelicaTextDocument(mpPlainTextEdit->document());
-  connect(this, SIGNAL(focusOut()), mpModelWidget, SLOT(modelicaEditorTextChanged()));
 }
 
 void ModelicaTextEditor::setLastValidText(QString validText)
@@ -188,12 +187,16 @@ QStringList ModelicaTextEditor::getClassNames(QString *errorString)
   return classNames;
 }
 
-//! When user make some changes in the ModelicaEditor text then this method validates the text and show text correct options.
-bool ModelicaTextEditor::validateModelicaText()
+/*!
+ * \brief ModelicaTextEditor::validateText
+ * When user make some changes in the ModelicaTextEditor text then this method validates the text and show text correct options.
+ * \return
+ */
+bool ModelicaTextEditor::validateText()
 {
   if (mTextChanged) {
     // if the user makes few mistakes in the text then dont let him change the perspective
-    if (!emit focusOut()) {
+    if (!mpModelWidget->modelicaEditorTextChanged()) {
       QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
@@ -201,25 +204,23 @@ bool ModelicaTextEditor::validateModelicaText()
       pMessageBox->setText(GUIMessages::getMessage(GUIMessages::ERROR_IN_MODELICA_TEXT)
                            .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER))
                            .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY)));
-      pMessageBox->addButton(tr("Revert from previous"), QMessageBox::AcceptRole);
-      pMessageBox->addButton(tr("Fix errors manually"), QMessageBox::RejectRole);
+      pMessageBox->addButton(tr("Fix error(s) manually"), QMessageBox::AcceptRole);
+      pMessageBox->addButton(tr("Revert to last correct version"), QMessageBox::RejectRole);
       int answer = pMessageBox->exec();
       switch (answer) {
-        case QMessageBox::AcceptRole:
+        case QMessageBox::RejectRole:
           mTextChanged = false;
-          // revert back to last valid block
+          // revert back to last correct version
           setPlainText(mLastValidText);
           return true;
-        case QMessageBox::RejectRole:
-          mTextChanged = true;
-          return false;
+        case QMessageBox::AcceptRole:
         default:
-          // should never be reached
           mTextChanged = true;
           return false;
       }
     } else {
       mTextChanged = false;
+      setLastValidText(mpPlainTextEdit->toPlainText());
     }
   }
   return true;

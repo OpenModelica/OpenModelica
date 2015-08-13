@@ -879,8 +879,7 @@ void Component::duplicateHelper(GraphicsView *pGraphicsView)
     /* get original component modifiers and apply them to duplicated one. */
     QStringList componentModifiersList = mpOMCProxy->getComponentModifierNames(className, mName);
     bool modifierValueChanged = false;
-    foreach (QString componentModifier, componentModifiersList)
-    {
+    foreach (QString componentModifier, componentModifiersList) {
       QString originalModifierName = QString(mName).append(".").append(componentModifier);
       QString duplicatedModifierName = QString(pComponent->getName()).append(".").append(componentModifier);
       if (mpOMCProxy->setComponentModifierValue(className, duplicatedModifierName,
@@ -888,12 +887,10 @@ void Component::duplicateHelper(GraphicsView *pGraphicsView)
         modifierValueChanged = true;
 
     }
-    if (modifierValueChanged)
-    {
+    if (modifierValueChanged) {
       pComponent->componentParameterHasChanged();
       pComponent->update();
     }
-    pGraphicsView->getModelWidget()->setModelModified();
   }
 }
 
@@ -908,6 +905,7 @@ void Component::updatePlacementAnnotation()
   } else {
     mpOMCProxy->updateComponent(mName, mClassName, mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getNameStructure(),
                                 getPlacementAnnotation());
+    mpGraphicsView->getModelWidget()->updateModelicaText();
   }
   // set the model modified
   mpGraphicsView->getModelWidget()->setModelModified();
@@ -1029,6 +1027,7 @@ void Component::deleteMe()
   delete mpOriginItem;
   // make the model modified
   mpGraphicsView->getModelWidget()->setModelModified();
+  mpGraphicsView->getModelWidget()->updateModelicaText();
   /* When something is deleted from the icon layer then update the LibraryTreeNode in the Library Browser */
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
     MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();

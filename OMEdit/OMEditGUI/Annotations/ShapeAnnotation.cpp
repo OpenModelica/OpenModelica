@@ -1332,9 +1332,8 @@ void ShapeAnnotation::manhattanizeShape()
 void ShapeAnnotation::deleteConnection()
 {
   LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-  if (pLineAnnotation)
-  {
-    mpGraphicsView->deleteConnection(pLineAnnotation->getStartComponentName(), pLineAnnotation->getEndComponentName());
+  if (pLineAnnotation) {
+    mpGraphicsView->deleteConnection(pLineAnnotation->getStartComponentName(), pLineAnnotation->getEndComponentName(), true);
     mpGraphicsView->deleteConnectionObject(pLineAnnotation);
     deleteLater();
   }

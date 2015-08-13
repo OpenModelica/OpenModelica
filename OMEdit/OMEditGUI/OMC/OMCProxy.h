@@ -68,6 +68,13 @@ private:
   QPushButton *mpOMCLoggerSendButton;
   QPlainTextEdit *mpOMCLoggerTextBox;
   Label *mpOMCLoggerEnableHintLabel;
+  QWidget *mpOMCDiffWidget;
+  Label *mpOMCDiffBeforeLabel;
+  QPlainTextEdit *mpOMCDiffBeforeTextBox;
+  Label *mpOMCDiffAfterLabel;
+  QPlainTextEdit *mpOMCDiffAfterTextBox;
+  Label *mpOMCDiffMergedLabel;
+  QPlainTextEdit *mpOMCDiffMergedTextBox;
   QString mObjectRefFile;
   QList<QString> mCommandsList;
   int mCurrentCommandIndex;
@@ -160,6 +167,8 @@ public:
   bool saveModifiedModel(QString modelText);
   bool saveTotalSCode(QString fileName, QString className);
   QString list(QString className);
+  QString listFile(QString className);
+  QString diffModelicaFileListings(QString before, QString after);
   QString instantiateModel(QString className);
   bool addClassAnnotation(QString className, QString annotation);
   QString getDefaultComponentName(QString className);
@@ -222,6 +231,9 @@ public slots:
   void showException(QString exception);
   void openOMCLoggerWidget();
   void sendCustomExpression();
+#ifdef QT_DEBUG
+  void openOMCDiffWidget();
+#endif
 };
 
 class CustomExpressionBox : public QLineEdit
