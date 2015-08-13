@@ -3,6 +3,7 @@ TEST = ../../rtest
 
 TESTFILES = \
 AddComponent.mos \
+ChangeSourceFile.mos \
 TestDiffListAPI.mos
 
 # test that currently fail. Move up when fixed.

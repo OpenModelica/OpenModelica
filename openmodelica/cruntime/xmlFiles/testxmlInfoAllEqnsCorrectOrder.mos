@@ -943,7 +943,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <depends name=\"L\" />
 //       <depends name=\"FoSeedNLSJac0\" />
 //       <depends name=\"x\" />
-//       <rhs>2.0 * (-x) * FoSeedNLSJac0 / L</rhs>
+//       <rhs>2.0 * (-x) * DIVISION(FoSeedNLSJac0, L)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"21\" lineEnd=\"21\" colStart=\"3\" colEnd=\"24\"/>
@@ -956,7 +956,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <depends name=\"L\" />
 //       <depends name=\"y\" />
 //       <depends name=\"FoSeedNLSJac0\" />
-//       <rhs>2.0 * (-FoSeedNLSJac0) * y / L</rhs>
+//       <rhs>2.0 * (-FoSeedNLSJac0) * DIVISION(y, L)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"22\" lineEnd=\"22\" colStart=\"3\" colEnd=\"33\"/>
@@ -1071,7 +1071,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <depends name=\"a\" />
 //       <depends name=\"vSeedNLSJac1\" />
 //       <depends name=\"b\" />
-//       <rhs>b * vSeedNLSJac1 / a</rhs>
+//       <rhs>DIVISION(b * vSeedNLSJac1, a)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"18\" lineEnd=\"18\" colStart=\"3\" colEnd=\"12\"/>
