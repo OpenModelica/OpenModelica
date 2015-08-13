@@ -2010,22 +2010,22 @@ match v
 case TYPES_VAR(__) then
    let vn = '<%varName%>._<%name%>'
    let defaultArrayValue =
-	    match ty
+      match ty
          case ty as T_ARRAY(__) then
           let arrayType = expType(ty, true)
           let dims = (ty.dims |> dim => dimension(dim) ;separator=", ")
-	      'alloc_<%arrayType%>(&<%vn%>, <%listLength(ty.dims)%>, <%dims%>);'
-		 else
-		  ''
-		end match
+        'alloc_<%arrayType%>(&<%vn%>, <%listLength(ty.dims)%>, <%dims%>);'
+     else
+      ''
+    end match
   let defaultValue =
     match binding
-	  case VALBOUND(valBound = val) then
-	    '<%vn%> = <%daeExp(valueExp(val), contextFunction, &varInits, &varDecls, &auxFunction)%>;'
-	  case EQBOUND(evaluatedExp = SOME(val)) then
-	    '<%vn%> = <%daeExp(valueExp(val), contextFunction, &varInits, &varDecls, &auxFunction)%>;'
-	  case EQBOUND(exp = exp) then
-	    '<%vn%> = <%daeExp(exp, contextFunction, &varInits, &varDecls, &auxFunction)%>;'
+    case VALBOUND(valBound = val) then
+      '<%vn%> = <%daeExp(valueExp(val), contextFunction, &varInits, &varDecls, &auxFunction)%>;'
+    case EQBOUND(evaluatedExp = SOME(val)) then
+      '<%vn%> = <%daeExp(valueExp(val), contextFunction, &varInits, &varDecls, &auxFunction)%>;'
+    case EQBOUND(exp = exp) then
+      '<%vn%> = <%daeExp(exp, contextFunction, &varInits, &varDecls, &auxFunction)%>;'
       else
         '<%defaultArrayValue%>'
     end match
@@ -3872,7 +3872,7 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   let msgVar = messages |> message => expToFormatString(message,context,&preExpMsg,&varDecls,&auxFunction) ; separator = ", "
   let eqnsindx = match context case FUNCTION_CONTEXT(__) then '' else 'equationIndexes, '
   let AddionalFuncName = match context case FUNCTION_CONTEXT(__) then '' else '_withEquationIndexes'
-  let addInfoTextContext = match context case FUNCTION_CONTEXT(__) then '' else '<%\n%>omc_assert_warning(info, "The following assertion has been violated at time %f\n<%Util.escapeModelicaStringToCString(printExpStr(condition))%>", time);'
+  let addInfoTextContext = match context case FUNCTION_CONTEXT(__) then '' else '<%\n%>omc_assert_warning(info, "The following assertion has been violated at time %f\n<%Util.escapeModelicaStringToCString(printExpStr(condition))%>", data->localData[0]->timeValue);'
   let omcAssertFunc = match level case ENUM_LITERAL(index=2) then 'omc_assert_warning<%AddionalFuncName%>(' else 'omc_assert<%AddionalFuncName%>(threadData, '
   let warningTriggered = tempDeclZero("static int", &varDecls)
   let TriggerIf = match level case ENUM_LITERAL(index=2) then 'if(!<%warningTriggered%>)<%\n%>' else ''
@@ -3918,7 +3918,7 @@ template assertCommonVar(Text condVar, Text msgVar, Context context, Text &preEx
         <%preExpMsg%>
         {
           FILE_INFO info = {<%infoArgs(info)%>};
-          omc_assert_warning(info, "The following assertion has been violated at time %f", time);
+          omc_assert_warning(info, "The following assertion has been violated at time %f", data->localData[0]->timeValue);
           throwStreamPrintWithEquationIndexes(threadData, equationIndexes, <%msgVar%>);
         }
     }<%\n%>
@@ -3962,7 +3962,7 @@ end contextIteratorName;
 ::=
   match cr
   case CREF_IDENT(ident = "xloc") then crefStr(cr)
-  case CREF_IDENT(ident = "time") then "time"
+  case CREF_IDENT(ident = "time") then "data->localData[0]->timeValue"
   case WILD(__) then ''
   else "$P" + crefToCStr(cr)
 end cref;
@@ -5594,7 +5594,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let var1 = daeExp(e, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(d, context, &preExp, &varDecls, &auxFunction)
     let var3 = daeExp(delayMax, context, &preExp, &varDecls, &auxFunction)
-    let &preExp += '<%tvar%> = delayImpl(data, threadData, <%index%>, <%var1%>, time, <%var2%>, <%var3%>);<%\n%>'
+    let &preExp += '<%tvar%> = delayImpl(data, threadData, <%index%>, <%var1%>, data->localData[0]->timeValue, <%var2%>, <%var3%>);<%\n%>'
     '<%tvar%>'
 
   case CALL(path=IDENT(name="Integer"), expLst={toBeCasted}) then
