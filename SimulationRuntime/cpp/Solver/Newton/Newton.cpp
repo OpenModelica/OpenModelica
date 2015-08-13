@@ -166,36 +166,15 @@ void Newton::solve()
 					_algLoop->evaluate();
 					_algLoop->getRHS(_f);
 
-
-					/*  adaptor_t f_adaptor(_dimSys,_f);
-					shared_matrix_t b(_dimSys,1,f_adaptor);*/
-
-
-					//print_m (b, "b vector");
-
-
 					const matrix_t& A_sparse = _algLoop->getSystemMatrix();
 					//m_t A_dense(A_sparse);
 
 					const double* jac = A_sparse.data().begin();
 
-					/*double* jac = new  double[dimSys*dimSys];
-					for(int i=0;i<dimSys;i++)
-					for(int j=0;j<dimSys;j++)
-					jac[i*_dimSys+j] = A_sparse(i,j);*/
-
-
 					memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
-
-
 					dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f,&_dimSys,&irtrn);
-					// std::vector< int > ipiv (_dimSys);  // pivot vector
-					//lapack::gesv (A_sparse, ipiv,b);   // solving the system, b contains x
-
 					for(int i=0; i<_dimSys; i++)
-						_f[i]=-_f[i];
-
-					memcpy(_y, _f, _dimSys*sizeof(double));
+						_y[i]=-_f[i];
 					_algLoop->setReal(_y);
 					_algLoop->evaluate();
 					if(irtrn != 0)
@@ -226,7 +205,11 @@ void Newton::solve()
 				}
 			}
 			else
-				_iterationStatus = SOLVERERROR;
+            {
+                _iterationStatus = SOLVERERROR;
+                throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving non linear system");
+
+            }
 		}
 	}
 }

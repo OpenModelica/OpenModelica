@@ -549,6 +549,7 @@ void Kinsol::solve()
 
     if(_iterationStatus == SOLVERERROR && !_eventRetry)
     {
+      /*Always throw an exception if kinsol stops with error
       if(_kinsolSettings->getContinueOnError())
       {
         if(!_solverErrorNotificationGiven)
@@ -558,6 +559,7 @@ void Kinsol::solve()
         }
       }
       else
+      */
         throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
     }
 	}
@@ -602,7 +604,7 @@ int Kinsol::kin_f(N_Vector y,N_Vector fval, void *user_data)
 	else
 		return(1);
 }
-/**\brief internal function called by Kinsol callback function to calculate dense jacobian
+/**\brief internal function called by Kinsol callback function to calculate sparse jacobian
  *  \param [in] u  variables vector
  *  \param [in] fu right hand side vector
  *  \param [out] J sparse jacobian
