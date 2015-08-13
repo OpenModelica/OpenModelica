@@ -1593,6 +1593,7 @@ algorithm
       Boolean addMMLCode;
       list<DAE.Statement> stmts;
       DAE.ElementSource source;
+      list<BackendDAE.WhenOperator> whenStmtLst;
 
     case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,true)
       equation
@@ -1708,7 +1709,7 @@ algorithm
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition = e1,left = cr,right = e2)),indexS,true)
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition = e1, left = cr, right = e2)),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = printExpStr(e2);
@@ -1735,7 +1736,7 @@ algorithm
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition = e1,left = cr,right = e2)),indexS,false)
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition = e1, left = cr, right = e2)),indexS,false)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = printExpStr(e2);
@@ -1743,6 +1744,15 @@ algorithm
         res = stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
         Print.printBuf(res);
+        dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION),is);
+        dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
+      then ();
+
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition = e1,whenStmtLst=whenStmtLst)),indexS,_)
+      equation
+        is = printExpStr(e1);
+        dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
+        dumpWhenOperatorLst(whenStmtLst, addMathMLCode);
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION),is);
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
@@ -3559,14 +3569,30 @@ algorithm
   _:=
   match (inWhenOperators,addMathMLCode)
     local
-      DAE.ComponentRef stateVar;
+      DAE.ComponentRef stateVar, left;
       DAE.Exp cond, msg, level, e, value, call;
       list<DAE.Exp> exps;
       list<BackendDAE.WhenOperator> lst;
-      String str;
+      String str, s1, s2;
       Absyn.Path fn;
 
     case ({}, _) then ();
+
+    case (BackendDAE.ASSIGN(left, value, _) :: lst, _)
+      equation
+        s1 = ComponentReference.printComponentRefStr(left);
+        s2 = printExpStr(value);
+        str = stringAppendList({s1," := ",s2});
+
+        dumpStrOpenTag(WHEN_OPERATOR);
+        Print.printBuf("\n");
+        Print.printBuf(str);
+        dumpStrCloseTag(WHEN_OPERATOR);
+
+        dumpWhenOperatorLst(lst, addMathMLCode);
+
+      then
+        ();
 
     case (BackendDAE.REINIT(stateVar, value, _) :: lst, _)
       equation
