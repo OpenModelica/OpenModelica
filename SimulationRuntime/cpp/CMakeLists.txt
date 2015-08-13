@@ -13,6 +13,7 @@
 #     if the Pugi XML library was found                                            -DUSE_PUGI_XML
 #     if profiling for the simulation runtime should be enabled                    -DRUNTIME_PROFILING
 #     if the equation systems of a FMU should be solved with kinsol                -DFMU_KINSOL
+#     if the logger should be used                                                 -DUSE_LOGGER
 #
 # Some of these options can be controlled by passing arguments to CMAKE
 #     if write output should be handled in parallel                                -DUSE_PARALLEL_OUTPUT=ON
@@ -142,6 +143,16 @@ ELSE(FMU_KINSOL)
   MESSAGE(STATUS "FMU kinsol disabled")
 ENDIF(FMU_KINSOL)
 
+# Handle Logger usage
+IF(USE_LOGGER)
+  ADD_DEFINITIONS(-DUSE_LOGGER)
+  SET(USE_LOGGER_ "ON")
+  MESSAGE(STATUS "Logger enabled")
+ELSE(USE_LOGGER)
+  MESSAGE(STATUS "Logger disabled")
+  SET(USE_LOGGER_ "OFF")
+ENDIF(USE_LOGGER)
+
 # Handle build type
 IF(OMC_BUILD)
   ADD_DEFINITIONS(-DOMC_BUILD)
@@ -185,19 +196,21 @@ ENDIF(WIN32)
 FIND_PACKAGE(OpenMP)
 IF(OPENMP_FOUND)
   MESSAGE(STATUS "OPENMP enabled")
+  SET(USE_OPENMP_ "ON")
 ELSE(OPENMP_FOUND)
   MESSAGE(STATUS "OPENMP disabled")
+  SET(USE_OPENMP_ "OFF")
 ENDIF(OPENMP_FOUND)
-SET(USE_OPENMP_ ${OPENMP_FOUND})
 
 # Find MPI
 FIND_PACKAGE(MPI)
 IF(MPI_FOUND)
   MESSAGE(STATUS "MPI enabled")
+  SET(USE_MPI_ "ON")
 ELSE(MPI_FOUND)
   MESSAGE(STATUS "MPI disabled")
+  SET(USE_MPI_ "OFF")
 ENDIF(MPI_FOUND)
-SET(USE_MPI_ ${MPI_FOUND})
 
 # Find CMinpack
 # Note: Visual Studio libs are located in install/msvc, libs for gcc are directly in install
