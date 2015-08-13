@@ -42,5 +42,6 @@ protected:
   std::string _defaultNonLinSolver;
   PATH _library_path;
   PATH _modelicasystem_path;
+  std::string _overrideOMEdit; // unrecognized options if called from OMEdit
 };
 /** @} */ // end of simcorefactoryOMCFactory
