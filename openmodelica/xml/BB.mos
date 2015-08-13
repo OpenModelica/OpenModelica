@@ -228,33 +228,8 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </MathML>
 // </equation>
 // </equations>
-// <WhenClausesList dimension=\"1\">
-// <WhenClause index=\"1\">
-// <whenEquationCondition>
-// b1.y &lt;= 0.0 and b1.vy &lt;= 0.0
-// <MathML>
-// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <apply>
-// <and/>
-// <apply>
-// <leq/>
-// <ci> b1.y 
-// </ci>
-// <cn type=\"real\"> 0.0 
-// </cn>
-// </apply>
-// <apply>
-// <leq/>
-// <ci> b1.vy 
-// </ci>
-// <cn type=\"real\"> 0.0 
-// </cn>
-// </apply>
-// </apply>
-// </math>
-// </MathML>
-// </whenEquationCondition>
-// <WhenOperatorsList dimension=\"1\">
+// <simpleEquations dimension=\"1\">
+// <whenEquation id=\"1\">
 // <WhenOperator>
 // reinit(b1.vy, (-e) * pre(b1.vy))
 // <MathML>
@@ -280,9 +255,11 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </math>
 // </MathML>
 // </WhenOperator>
-// </WhenOperatorsList>
-// </WhenClause>
-// </WhenClausesList>
+// <whenEquationCondition>
+// b1.y &lt;= 0.0 and b1.vy &lt;= 0.0
+// </whenEquationCondition>
+// </whenEquation>
+// </simpleEquations>
 // <zeroCrossingList dimension=\"1\">
 // <zeroCrossingElement string=\"b1.y &lt;= 0.0 and b1.vy &lt;= 0.0\">
 // <MathML>
