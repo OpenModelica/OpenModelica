@@ -1882,6 +1882,26 @@ algorithm
     BackendDAE.WhenEquation weqn,elsePart,elsePart2;
     Boolean b1,b2,b3,b4;
     DAE.ElementSource source;
+    list<BackendDAE.WhenOperator> whenStmtLst;
+    Option<BackendDAE.WhenEquation> oelsewhenPart;
+    BackendDAE.WhenEquation elsewhenPart;
+
+    case (BackendDAE.WHEN_STMTS(condition=cond,whenStmtLst=whenStmtLst,elsewhenPart=oelsewhenPart),_,_,_)
+      equation
+        (cond1, b1) = replaceExp(cond, repl, inFuncTypeExpExpToBooleanOption);
+        (cond2, _) = ExpressionSimplify.condsimplify(b1, cond1);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b1, isource, cond, cond2);
+        (whenStmtLst,b2) = replaceWhenOperator(whenStmtLst, repl, inFuncTypeExpExpToBooleanOption, false, {});
+        if isSome(oelsewhenPart) then
+          SOME(elsewhenPart) = oelsewhenPart;
+          (elsewhenPart,source,b3) = replaceWhenEquation(elsewhenPart,repl,inFuncTypeExpExpToBooleanOption,source);
+          oelsewhenPart = SOME(elsewhenPart);
+        else
+          oelsewhenPart = NONE();
+        end if;
+        b4 = b1 or b2 or b3;
+        weqn = if b4 then BackendDAE.WHEN_STMTS(cond2,whenStmtLst,oelsewhenPart) else whenEqn;
+      then (weqn,source,b4);
 
     case (BackendDAE.WHEN_EQ(cond,cr,e,NONE()),_,_,_)
       equation
@@ -2025,6 +2045,21 @@ algorithm
       list<Boolean> blst;
 
     case ({},_,_,_,_) then (listReverse(iAcc),replacementPerformed);
+
+    case ((wop as BackendDAE.ASSIGN(left=cr,right=exp,source=source))::res,_,_,_,_)
+      equation
+        cre = Expression.crefExp(cr);
+        (cre1,b1) = replaceExp(cre,repl,inFuncTypeExpExpToBooleanOption);
+        (cr1,_) = validWhenLeftHandSide(cre1,cre,cr);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,cre,cre1);
+        (exp1,b2) = replaceExp(exp,repl,inFuncTypeExpExpToBooleanOption);
+        (exp1,_) = ExpressionSimplify.condsimplify(b2,exp1);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,exp,exp1);
+        b = b1 or b2;
+        wop1 = if b then BackendDAE.ASSIGN(cr1,exp1,source) else wop;
+        (res1,b) =  replaceWhenOperator(res,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed or b,wop1::iAcc);
+      then
+        (res1,b);
 
     case ((wop as BackendDAE.REINIT(stateVar=cr,value=cond,source=source))::res,_,_,_,_)
       equation

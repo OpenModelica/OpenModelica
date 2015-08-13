@@ -798,6 +798,8 @@ algorithm
           SOME(elsewe) = oelsewe;
           (elsewe, extArg) = traverseExpsOfWhenEquation(elsewe, inFunc, extArg);
           oelsewe = SOME(elsewe);
+        else
+          oelsewe = NONE();
         end if;
       then (BackendDAE.WHEN_EQ(cond, cr1, e_2, oelsewe), extArg);
     case BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst=whenStmtLst, elsewhenPart = oelsewe)
@@ -809,11 +811,12 @@ algorithm
           SOME(elsewe) = oelsewe;
           (elsewe, extArg) = traverseExpsOfWhenEquation(elsewe, inFunc, extArg);
           oelsewe = SOME(elsewe);
+        else
+          oelsewe = NONE();
         end if;
       then (BackendDAE.WHEN_STMTS(cond, whenStmtLst, oelsewe), extArg);
   end match;
 end traverseExpsOfWhenEquation;
-
 
 public function traverseExpsOfWhenOps<T>
 "Traverses all expressions of a when equation.

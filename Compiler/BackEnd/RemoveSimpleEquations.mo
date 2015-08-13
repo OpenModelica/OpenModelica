@@ -4158,6 +4158,7 @@ algorithm
       BackendDAE.WhenEquation weqn;
       HashSet.HashSet hs;
       list<BackendDAE.WhenOperator> whenStmtLst;
+      Option<BackendDAE.WhenEquation> oweqn;
 
     case (BackendDAE.WHEN_EQ(left=left, elsewhenPart=NONE()), _)
       equation
@@ -4171,9 +4172,38 @@ algorithm
         hs = BaseHashSet.add(left, iHs);
       then
         addUnreplaceableFromWhen(weqn, hs);
-    case (BackendDAE.WHEN_STMTS(), _) then iHs;
+    case (BackendDAE.WHEN_STMTS(whenStmtLst=whenStmtLst,elsewhenPart=oweqn), _)
+      equation
+       hs = addUnreplaceableFromWhenOps(whenStmtLst, iHs);
+       if isSome(oweqn) then
+         SOME(weqn) = oweqn;
+         hs = addUnreplaceableFromWhen(weqn, hs);
+       end if;
+       then hs;
   end match;
 end addUnreplaceableFromWhen;
+
+protected function addUnreplaceableFromWhenOps
+"This is a helper function for addUnreplaceableFromWhenEqn."
+  input list<BackendDAE.WhenOperator> inWhenOps;
+  input HashSet.HashSet iHs;
+  output HashSet.HashSet oHs;
+algorithm
+  oHs := match(inWhenOps)
+  local
+    DAE.ComponentRef left;
+    list<BackendDAE.WhenOperator> rest;
+    HashSet.HashSet hs;
+
+    case BackendDAE.ASSIGN(left = left)::rest
+      equation
+        left = ComponentReference.crefStripLastSubs(left);
+        hs = BaseHashSet.add(left, iHs);
+      then addUnreplaceableFromWhenOps(rest, hs);
+    else
+      then iHs;
+  end match;
+end addUnreplaceableFromWhenOps;
 
 protected function traverserExpUnreplaceable
   input DAE.Exp e;
