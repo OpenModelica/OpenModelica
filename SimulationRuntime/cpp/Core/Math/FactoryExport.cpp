@@ -1,5 +1,5 @@
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 #if defined(__vxworks) || defined(__TRICORE__)
 
 #elif defined(SIMSTER_BUILD)

@@ -1,10 +1,9 @@
-#pragma once
 /** @addtogroup solverCvode
  *
  *  @{
  */
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 #if defined(__vxworks)
 
 #include <Solver/RTEuler/RTEuler.h>
