@@ -312,11 +312,12 @@ match baseClock
   case DAE.BOOLEAN_CLOCK(__) then
     let cond = cref(expCref(condition))
     <<
-    if (data->simulationInfo.clocksData[i].cnt > 0)
-      data->simulationInfo.clocksData[i].interval = time - data->simulationInfo.clocksData[i].timepoint;
-    else
+    if (data->simulationInfo.clocksData[i].cnt > 0) {
+      data->simulationInfo.clocksData[i].interval = data->localData[0]->timeValue - data->simulationInfo.clocksData[i].timepoint;
+    } else {
       data->simulationInfo.clocksData[i].interval = <%startInterval%>;
-    data->simulationInfo.clocksData[i].timepoint = time;
+    }
+    data->simulationInfo.clocksData[i].timepoint = data->localData[0]->timeValue;
     'return <%cond%> && !$P$PRE<%cond%>;'
     >>
   else
@@ -324,11 +325,11 @@ match baseClock
     let intvl = daeExp(getClockIntvl(baseClock), contextOther, &preExp, &varDecls, &auxFunction)
     <<
     <%preExp%>
-    if (time < data->simulationInfo.clocksData[i].timepoint)
+    if (data->localData[0]->timeValue < data->simulationInfo.clocksData[i].timepoint)
       ret = <%boolStrC(false)%>;
     else {
       data->simulationInfo.clocksData[i].interval = <%intvl%>;
-      data->simulationInfo.clocksData[i].timepoint = time + data->simulationInfo.clocksData[i].interval;
+      data->simulationInfo.clocksData[i].timepoint = data->localData[0]->timeValue + data->simulationInfo.clocksData[i].interval;
       ret = <%boolStrC(true)%>;
     }
     >>
@@ -1102,8 +1103,6 @@ template variableDefinitions(ModelInfo modelInfo, list<BackendDAE.TimeEvent> tim
   match modelInfo
     case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars, numDiscreteReal=numDiscreteReal, numOptimizeConstraints=numOptimizeConstraints, numOptimizeFinalConstraints=numOptimizeFinalConstraints), vars=SIMVARS(__)) then
       <<
-      #define time data->localData[0]->timeValue
-
       /* States */
       <%vars.stateVars |> var =>
         globalDataVarDefine(var, "realVars", 0)
@@ -2731,7 +2730,7 @@ template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
       let delayExpMax = daeExp(delayMax, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
       <<
       <%preExp%>
-      storeDelayedExpression(data, threadData, <%id%>, <%eRes%>, time, <%delayExp%>, <%delayExpMax%>);<%\n%>
+      storeDelayedExpression(data, threadData, <%id%>, <%eRes%>, data->localData[0]->timeValue, <%delayExp%>, <%delayExpMax%>);<%\n%>
       >>
     ))
   <<
@@ -4623,7 +4622,7 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls, Stri
       let returnval2 = match at case at as SOME(__) then 'return 0;' case at as NONE() then ''
       <<
       int retValue;
-      debugDouble(LOG_DT, "Solving nonlinear system <%nls.index%> (STRICT TEARING SET if tearing enabled) at time =", time);
+      debugDouble(LOG_DT, "Solving nonlinear system <%nls.index%> (STRICT TEARING SET if tearing enabled) at time =", data->localData[0]->timeValue);
       <% if profileSome() then
       <<
       SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%nls.index%>).profileBlockIndex);
@@ -4643,7 +4642,7 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls, Stri
       /* check if solution process was successful */
       if (retValue > 0){
         const int indexes[2] = {1,<%nls.index%>};
-        throwStreamPrintWithEquationIndexes(threadData, indexes, "Solving non-linear system <%nls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", time);
+        throwStreamPrintWithEquationIndexes(threadData, indexes, "Solving non-linear system <%nls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", data->localData[0]->timeValue);
         <%returnval2%>
       }
       /* write solution */
@@ -4666,7 +4665,7 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, Te
       let nonlinindx = at.indexNonLinearSystem
       <<
       int retValue;
-      debugDouble(LOG_DT, "Solving nonlinear system <%at.index%> (CASUAL TEARING SET) at time =", time);
+      debugDouble(LOG_DT, "Solving nonlinear system <%at.index%> (CASUAL TEARING SET) at time =", data->localData[0]->timeValue);
       <% if profileSome() then
       <<
       SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%at.index%>).profileBlockIndex);

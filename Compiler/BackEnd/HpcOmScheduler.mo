@@ -2475,10 +2475,11 @@ algorithm
           extInfo = HpcOmSchedulerExt.scheduleMetis(xadj, adjncy, vwgt, adjwgt, iNumberOfThreads);
           extInfoArr = listArray(extInfo);
         else
-          extInfoArr = arrayCreate(arrayLength(iTaskGraph), -1);
+          extInfoArr = arrayCreate(arrayLength(iTaskGraph), 1);
+          extInfo = arrayList(extInfoArr);
         end if;
 
-        //print("External scheduling info: " + stringDelimitList(List.map(extInfo, intString), ",") + "\n");
+        //print("Metis scheduling info: " + stringDelimitList(List.map(extInfo, intString), ",") + "\n");
         true = intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
         taskGraphT = BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
         rootNodes = HpcOmTaskGraph.getRootNodes(iTaskGraph);

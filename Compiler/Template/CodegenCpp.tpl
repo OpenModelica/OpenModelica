@@ -3140,6 +3140,10 @@ case "gcc" then
             $(eval CFLAGS_COMMON=$(CFLAGS_COMMON) -DMEASURETIME_PROFILEBLOCKS)
             endif
 
+            ifeq ($(USE_LOGGER),ON)
+            $(eval CFLAGS_COMMON=$(CFLAGS_COMMON) -DUSE_LOGGER)
+            endif
+
             CFLAGS_DYNAMIC=$(CFLAGS_COMMON)
             CFLAGS_STATIC=$(CFLAGS_COMMON) <%staticIncludes%> -DRUNTIME_STATIC_LINKING
 

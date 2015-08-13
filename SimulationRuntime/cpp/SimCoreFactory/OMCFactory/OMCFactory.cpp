@@ -218,7 +218,7 @@ std::vector<const char *> OMCFactory::preprocessArguments(int argc, const char* 
   std::map<std::string, std::string>::const_iterator oit;
   std::vector<const char *> optv;
   optv.push_back(argv[0]);
-  std::string override;                // OMEdit override option
+  _overrideOMEdit = "-override=";      // unrecognized OMEdit overrides
   for (int i = 1; i < argc; i++) {
       string arg = argv[i];
       int j;
@@ -240,18 +240,16 @@ std::vector<const char *> OMCFactory::preprocessArguments(int argc, const char* 
                   opts[oit->second] = strs[++j];
               }
               else {
-                  // leave untreated overrides
-                  if (override.size() > 0)
-                      override += ",";
-                  else
-                      override = "-override=";
-                  override += strs[j];
+                  // leave unrecognized overrides
+                  if (_overrideOMEdit.size() > 10)
+                      _overrideOMEdit += ",";
+                  _overrideOMEdit += strs[j];
                   if (j < strs.size() - 1)
-                      override += "=" + strs[++j];
+                      _overrideOMEdit += "=" + strs[++j];
               }
           }
-          if (override.size() > 10)
-              optv.push_back(override.c_str());
+          if (_overrideOMEdit.size() > 10)
+              optv.push_back(_overrideOMEdit.c_str());
       }
       else
           optv.push_back(argv[i]);     // pass through
