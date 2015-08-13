@@ -4,6 +4,7 @@ TESTFILES = \
 tearnonlin1.mos \
 WhenStatement1.mos \
 BouncingBall.mos \
+recordTupleReturnTest.mos \
 solveTest.mos
 
 FAILINGTESTFILES= 
