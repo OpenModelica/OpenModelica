@@ -30,33 +30,12 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Utilities.Examp
 // ""
 // true
 // ""
-// true
-// ""
-// Not possible to open file "C:/Projekte/OpenModelica/testsuite/simulation/libraries/msl32/modelica:/Modelica/Resources/Data/Utilities/Examples_readRealParameters.txt" for reading:
-// Invalid argument
-// Not possible to open file "C:/Projekte/OpenModelica/testsuite/simulation/libraries/msl32/modelica:/Modelica/Resources/Data/Utilities/Examples_readRealParameters.txt" for reading:
-// Invalid argument
-// Not possible to open file "C:/Projekte/OpenModelica/testsuite/simulation/libraries/msl32/modelica:/Modelica/Resources/Data/Utilities/Examples_readRealParameters.txt" for reading:
-// Invalid argument
-// Not possible to open file "C:/Projekte/OpenModelica/testsuite/simulation/libraries/msl32/modelica:/Modelica/Resources/Data/Utilities/Examples_readRealParameters.txt" for reading:
-// Invalid argument
-// Not possible to open file "C:/Projekte/OpenModelica/testsuite/simulation/libraries/msl32/modelica:/Modelica/Resources/Data/Utilities/Examples_readRealParameters.txt" for reading:
-// Invalid argument
-// Not possible to open file "C:/Projekte/OpenModelica/testsuite/simulation/libraries/msl32/modelica:/Modelica/Resources/Data/Utilities/Examples_readRealParameters.txt" for reading:
-// Invalid argument
-// Not possible to open file "C:/Projekte/OpenModelica/testsuite/simulation/libraries/msl32/modelica:/Modelica/Resources/Data/Utilities/Examples_readRealParameters.txt" for reading:
-// Invalid argument
-// Not possible to open file "C:/Projekte/OpenModelica/testsuite/simulation/libraries/msl32/modelica:/Modelica/Resources/Data/Utilities/Examples_readRealParameters.txt" for reading:
-// Invalid argument
-// Not possible to open file "C:/Projekte/OpenModelica/testsuite/simulation/libraries/msl32/modelica:/Modelica/Resources/Data/Utilities/Examples_readRealParameters.txt" for reading:
-// Invalid argument
 // record SimulationResult
-//     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Utilities.Examples.readRealParameterModel', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "Simulation execution failed for model: Modelica.Utilities.Examples.readRealParameterModel
-// File too large"
+//     resultFile = "Modelica.Utilities.Examples.readRealParameterModel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Utilities.Examples.readRealParameterModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
 // end SimulationResult;
-// "Error: File too large to fit into a MetaModelica string: output.log.
-// "
-// "Error opening file: Modelica.Utilities.Examples.readRealParameterModel_res.mat"
+// ""
+// {"Files Equal!"}
+// ""
 // endResult
