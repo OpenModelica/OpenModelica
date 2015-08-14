@@ -332,6 +332,28 @@ OriginItem::OriginItem()
 }
 
 /*!
+ * \brief OriginItem::setActive
+ * Sets the pen to active color.
+ * Sets the zValue of item to 4000 so that it shows on top of everything.
+ */
+void OriginItem::setActive()
+{
+  setZValue(4000);
+  mPen = mActivePen;
+}
+
+/*!
+ * \brief OriginItem::setPassive
+ * Sets the pen to passive color.
+ * Sets the zValue of item to -4000 so that it shows on bottom of everything.
+ */
+void OriginItem::setPassive()
+{
+  setZValue(-4000);
+  mPen = mPassivePen;
+}
+
+/*!
   Reimplementation of paint.\n
   Draws the cross shape for the OriginItem.
   \param painter - pointer to QPainter
