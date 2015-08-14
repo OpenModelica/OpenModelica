@@ -4160,18 +4160,6 @@ algorithm
       list<BackendDAE.WhenOperator> whenStmtLst;
       Option<BackendDAE.WhenEquation> oweqn;
 
-    case (BackendDAE.WHEN_EQ(left=left, elsewhenPart=NONE()), _)
-      equation
-        left = ComponentReference.crefStripLastSubs(left);
-        hs = BaseHashSet.add(left, iHs);
-      then
-        hs;
-    case (BackendDAE.WHEN_EQ(left=left, elsewhenPart=SOME(weqn)), _)
-      equation
-        left = ComponentReference.crefStripLastSubs(left);
-        hs = BaseHashSet.add(left, iHs);
-      then
-        addUnreplaceableFromWhen(weqn, hs);
     case (BackendDAE.WHEN_STMTS(whenStmtLst=whenStmtLst,elsewhenPart=oweqn), _)
       equation
        hs = addUnreplaceableFromWhenOps(whenStmtLst, iHs);

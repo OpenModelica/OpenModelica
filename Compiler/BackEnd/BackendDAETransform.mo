@@ -642,6 +642,7 @@ algorithm
       BackendDAE.Equation res;
       BackendDAE.WhenEquation elsepartRes;
       BackendDAE.WhenEquation elsepart;
+      Option<BackendDAE.WhenEquation> oelsepart;
       DAE.ElementSource source;
       list<Integer> dimSize;
       list<DAE.SymbolicOperation> ops;
@@ -651,6 +652,7 @@ algorithm
       Type_a ext_arg_1, ext_arg_2, ext_arg_3;
       DAE.Expand crefExpand;
       BackendDAE.EquationAttributes eqAttr;
+      list<BackendDAE.WhenOperator> whenStmtLst;
 
     case BackendDAE.EQUATION(exp = e1, scalar = e2, source = source, attr=eqAttr) equation
       (e1_1, (ops, ext_arg_1)) = func(e1, ({}, inTypeA));
@@ -683,22 +685,20 @@ algorithm
       source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
     then (BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(statementLst), source, crefExpand, eqAttr), ext_arg_1);
 
-    case BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_EQ(condition=cond, left = cr, right = e1, elsewhenPart=NONE()), source = source, attr=eqAttr) equation
-      e2 = Expression.crefExp(cr);
-      (e1_1, (ops, ext_arg_1)) = func(e1, ({}, inTypeA));
-      (DAE.CREF(cr1, _), (ops, ext_arg_2)) = func(e2, (ops, ext_arg_1));
-      (cond, (ops, ext_arg_3)) = func(cond, (ops, ext_arg_2));
+    case BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst=whenStmtLst, elsewhenPart=oelsepart), source = source, attr=eqAttr) equation
+      (whenStmtLst, ext_arg_1) = traverseBackendDAEExpsWhenOperatorWithSymbolicOperation(whenStmtLst, func, inTypeA);
+      (cond, (ops, ext_arg_2)) = func(cond, ({}, ext_arg_1));
       source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
-      res = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_EQ(cond, cr1, e1_1, NONE()), source, eqAttr);
+      if isSome(oelsepart) then
+        SOME(elsepart) = oelsepart;
+        (BackendDAE.WHEN_EQUATION(whenEquation=elsepartRes, source=source), ext_arg_3) = traverseBackendDAEExpsEqnWithSymbolicOperation(BackendDAE.WHEN_EQUATION(size, elsepart, source, eqAttr), func, ext_arg_2);
+        oelsepart = SOME(elsepartRes);
+      else
+        oelsepart = NONE();
+        ext_arg_3 = ext_arg_2;
+      end if;
+      res = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_STMTS(cond, whenStmtLst, oelsepart), source, eqAttr);
    then (res, ext_arg_3);
-
-    case BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_EQ(condition=cond, left = cr, right = e1, elsewhenPart=SOME(elsepart)), source = source, attr=eqAttr) equation
-      (e1_1, (ops, ext_arg_1)) = func(e1, ({}, inTypeA));
-      (cond, (ops, ext_arg_2)) = func(cond, (ops, ext_arg_1));
-      source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
-      (BackendDAE.WHEN_EQUATION(whenEquation=elsepartRes, source=source), ext_arg_3) = traverseBackendDAEExpsEqnWithSymbolicOperation(BackendDAE.WHEN_EQUATION(size, elsepart, source, eqAttr), func, ext_arg_2);
-      res = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_EQ(cond, cr, e1_1, SOME(elsepartRes)), source, eqAttr);
-    then (res, ext_arg_3);
 
     case BackendDAE.COMPLEX_EQUATION(size=size, left = e1, right = e2, source = source, attr=eqAttr) equation
       (e1_1, (ops, ext_arg_1)) = func(e1, ({}, inTypeA));
@@ -810,6 +810,61 @@ algorithm
         (eqnslst, arg);
   end match;
 end traverseBackendDAEExpsEqnLstLstWithSymbolicOperation;
+
+protected function traverseBackendDAEExpsWhenOperatorWithSymbolicOperation<ArgT>
+" Traverse all expressions of a list of Equations. It is possible to change the equations
+  and the multidim equations and the algorithms."
+  input list<BackendDAE.WhenOperator> inStmtLst;
+  input FuncExpType func;
+  input ArgT inArg;
+  output list<BackendDAE.WhenOperator> outStmtLst = {};
+  output ArgT outArg = inArg;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input tuple<list<DAE.SymbolicOperation>, ArgT> inTpl;
+    output DAE.Exp outExp;
+    output tuple<list<DAE.SymbolicOperation>, ArgT> outTpl;
+  end FuncExpType;
+algorithm
+  for rs in inStmtLst loop
+    rs := match(rs)
+      local
+        DAE.ComponentRef cr;
+        DAE.Exp cond, msg, level, exp;
+        DAE.ElementSource src;
+        list<DAE.SymbolicOperation> ops;
+
+      case BackendDAE.ASSIGN(cr, cond, src) equation
+        (cond, (ops, outArg)) = func(cond, ({}, inArg));
+        (DAE.CREF(componentRef = cr), (ops, outArg)) = func(Expression.crefExp(cr), (ops,outArg));
+        src = List.foldr(ops, DAEUtil.addSymbolicTransformation, src);
+      then BackendDAE.ASSIGN(cr, cond, src);
+
+      case BackendDAE.REINIT(cr, cond, src) equation
+        (cond, (ops, outArg)) = func(cond, ({}, inArg));
+        (DAE.CREF(componentRef = cr), (ops, outArg)) = func(Expression.crefExp(cr), (ops,outArg));
+        src = List.foldr(ops, DAEUtil.addSymbolicTransformation, src);
+      then BackendDAE.REINIT(cr, cond, src);
+
+      case BackendDAE.ASSERT(cond, msg, level, src) equation
+        (cond, (ops, outArg)) = func(cond, ({}, inArg));
+        src = List.foldr(ops, DAEUtil.addSymbolicTransformation, src);
+      then BackendDAE.ASSERT(cond, msg, level, src);
+
+      case BackendDAE.NORETCALL(exp, src) equation
+        (exp, (ops, outArg)) = Expression.traverseExpBottomUp(exp, func, ({}, outArg));
+        src = List.foldr(ops, DAEUtil.addSymbolicTransformation, src);
+      then BackendDAE.NORETCALL(exp, src);
+
+      else rs;
+    end match;
+
+    outStmtLst := rs::outStmtLst;
+  end for;
+
+  outStmtLst := listReverse(outStmtLst);
+end traverseBackendDAEExpsWhenOperatorWithSymbolicOperation;
+
 
 protected function traverseBackendDAEExpsWhenOperator<ArgT> "author: Frenkel TUD 2010-11
   Traverse all expressions of a list of Equations. It is possible to change the equations

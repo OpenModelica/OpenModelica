@@ -383,13 +383,6 @@ end Equation;
 
 public
 uniontype WhenEquation
-  record WHEN_EQ "equation when condition then left = right; [elsewhenPart] end when;"
-    .DAE.Exp condition                "the when-condition";
-    .DAE.ComponentRef left            "left hand side of equation";
-    .DAE.Exp right                    "right hand side of equation";
-    Option<WhenEquation> elsewhenPart "elsewhen equation with the same cref on the left hand side.";
-  end WHEN_EQ;
-
   record WHEN_STMTS "equation when condition then reinit(...), terminate(...) or assert(...)"
     .DAE.Exp condition                "the when-condition" ;
     list<WhenOperator> whenStmtLst;

@@ -1903,40 +1903,6 @@ algorithm
         weqn = if b4 then BackendDAE.WHEN_STMTS(cond2,whenStmtLst,oelsewhenPart) else whenEqn;
       then (weqn,source,b4);
 
-    case (BackendDAE.WHEN_EQ(cond,cr,e,NONE()),_,_,_)
-      equation
-        (e1,b1) = replaceExp(e, repl,inFuncTypeExpExpToBooleanOption);
-        cre = Expression.crefExp(cr);
-        (cre1,b3) = replaceExp(cre,repl,inFuncTypeExpExpToBooleanOption);
-        (cr1,e1) = validWhenLeftHandSide(cre1,e1,cr);
-        (cond1,b2) = replaceExp(cond, repl,inFuncTypeExpExpToBooleanOption);
-        (e2,_) = ExpressionSimplify.condsimplify(b1,e1);
-        source = DAEUtil.addSymbolicTransformationSubstitution(b1,isource,e,e2);
-        (cond2,_) = ExpressionSimplify.condsimplify(b2,cond1);
-        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,cond,cond2);
-        source = DAEUtil.addSymbolicTransformationSubstitution(b3,source,cre,cre1);
-        b4 = b1 or b2 or b3;
-        weqn = if b4 then BackendDAE.WHEN_EQ(cond2,cr1,e2,NONE()) else whenEqn;
-      then
-        (weqn,source,b4);
-
-    case (BackendDAE.WHEN_EQ(cond,cr,e,SOME(elsePart)),_,_,_)
-      equation
-        (elsePart2,source,b4) = replaceWhenEquation(elsePart,repl,inFuncTypeExpExpToBooleanOption,isource);
-        (e1,b1) = replaceExp(e, repl,inFuncTypeExpExpToBooleanOption);
-        cre = Expression.crefExp(cr);
-        (cre1,b3) = replaceExp(cre,repl,inFuncTypeExpExpToBooleanOption);
-        (cr1,e1) = validWhenLeftHandSide(cre1,e1,cr);
-        (cond1,b2) = replaceExp(cond, repl,inFuncTypeExpExpToBooleanOption);
-        (e2,_) = ExpressionSimplify.condsimplify(b1,e1);
-        source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e,e2);
-        (cond2,_) = ExpressionSimplify.condsimplify(b2,cond1);
-        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,cond,cond2);
-        source = DAEUtil.addSymbolicTransformationSubstitution(b3,source,cre,cre1);
-        b1 = b1 or b2 or b3 or b4;
-        weqn = if b1 then BackendDAE.WHEN_EQ(cond2,cr1,e2,SOME(elsePart2)) else whenEqn;
-      then
-        (weqn,source,b1);
   end match;
 end replaceWhenEquation;
 

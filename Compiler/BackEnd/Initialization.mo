@@ -347,21 +347,29 @@ protected function inlineWhenForInitializationWhenEquation "author: lochel"
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
 protected
-  DAE.Exp crexp;
+  DAE.Exp crexp, condition, e;
   BackendDAE.Equation eqn;
+  list<BackendDAE.WhenOperator> whenStmtLst;
+  DAE.ComponentRef cr;
 algorithm
   outEqns := match(inWEqn)
-    case BackendDAE.WHEN_EQ() algorithm
-      if Expression.containsInitialCall(inWEqn.condition, false) then
-        crexp := Expression.crefExp(inWEqn.left);
-        eqn := BackendEquation.generateEquation(crexp, inWEqn.right, inSource, inEqAttr);
-        outEqns := eqn::inEqns;
-      else
-        outEqns := generateInactiveWhenEquationForInitialization(ComponentReference.expandCref(inWEqn.left, true), inSource, inEqns);
-      end if;
+    case BackendDAE.WHEN_STMTS(condition=condition,whenStmtLst=whenStmtLst) algorithm
+      for stmt in whenStmtLst loop
+        _ := match stmt
+          case BackendDAE.ASSIGN(left = cr, right = e) equation
+            if Expression.containsInitialCall(condition, false) then
+              crexp = Expression.crefExp(cr);
+              eqn = BackendEquation.generateEquation(crexp, e, inSource, inEqAttr);
+              outEqns = eqn::inEqns;
+            else
+              outEqns = generateInactiveWhenEquationForInitialization(ComponentReference.expandCref(cr, true), inSource, inEqns);
+            end if;
+          then ();
+        end match;
+      end for;
     then outEqns;
     else inEqns;
-    end match;
+  end match;
 end inlineWhenForInitializationWhenEquation;
 
 protected function inlineWhenForInitializationWhenAlgorithm "author: lochel

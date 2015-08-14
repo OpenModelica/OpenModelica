@@ -139,7 +139,7 @@ algorithm
       then
         res;
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=condition,left = cr,right = e2)), _)
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition=condition,whenStmtLst={BackendDAE.ASSIGN(left = cr,right = e2)})), _)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);

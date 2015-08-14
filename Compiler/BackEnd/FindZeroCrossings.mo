@@ -289,21 +289,6 @@ algorithm
 
       list<BackendDAE.WhenOperator> whenStmtLst;
 
-    // when
-    case BackendDAE.WHEN_EQ(condition=condition, left=left, right=right, elsewhenPart=NONE()) equation
-      (condition, vars, eqns, index, ht) = encapsulateWhenConditions_Equations1(condition, inSource, inIndex, inHT);
-      whenEquation = BackendDAE.WHEN_EQ(condition, left, right, NONE());
-    then (whenEquation, vars, eqns, index, ht);
-
-    // when - elsewhen
-    case BackendDAE.WHEN_EQ(condition=condition, left=left, right=right, elsewhenPart=SOME(elsewhenPart)) equation
-      (elsewhenPart, vars1, eqns1, index, ht) = encapsulateWhenConditions_Equations(elsewhenPart, inSource, inIndex, inHT);
-      (condition, vars, eqns, index, ht) = encapsulateWhenConditions_Equations1(condition, inSource, index, ht);
-      whenEquation = BackendDAE.WHEN_EQ(condition, left, right, SOME(elsewhenPart));
-      vars = listAppend(vars, vars1);
-      eqns = listAppend(eqns, eqns1);
-    then (whenEquation, vars, eqns, index, ht);
-
     // when - stmts
     case BackendDAE.WHEN_STMTS(condition=condition, whenStmtLst=whenStmtLst, elsewhenPart=NONE()) equation
       (condition, vars, eqns, index, ht) = encapsulateWhenConditions_Equations1(condition, inSource, inIndex, inHT);
@@ -835,18 +820,6 @@ algorithm
       Integer countRelations, countMathFunctions;
       list<BackendDAE.WhenOperator> whenStmtLst;
       Option<BackendDAE.WhenEquation> oweelse;
-
-    case BackendDAE.WHEN_EQ(condition=cond, left=cr, right=e, elsewhenPart=NONE()) equation
-      if Flags.isSet(Flags.RELIDX) then
-        BackendDump.debugStrExpStr("processed when condition: ", cond, "\n");
-      end if;
-      (cond, countRelations, countMathFunctions, zc, relations, samples) = findZeroCrossings3(cond, inZeroCrossings, inrelationsinZC, inSamplesLst, incountRelations, incountMathFunctions, counteq, countwc, vars, knvars);
-    then (BackendDAE.WHEN_EQ(cond, cr, e, NONE()), countRelations, countMathFunctions, zc, relations, samples);
-
-    case BackendDAE.WHEN_EQ(condition=cond, left=cr, right=e, elsewhenPart=SOME(we)) equation
-      (we, countRelations, countMathFunctions, zc, relations, samples) = findZeroCrossingsWhenEqns(we, inZeroCrossings, inrelationsinZC, inSamplesLst, incountRelations, incountMathFunctions, counteq, countwc, vars, knvars);
-      (cond, countRelations, countMathFunctions, zc, relations, samples) = findZeroCrossings3(cond, zc, relations, samples, countRelations, countMathFunctions, counteq, countwc, vars, knvars);
-    then (BackendDAE.WHEN_EQ(cond, cr, e, SOME(we)), countRelations, countMathFunctions, zc, relations, samples);
 
     case BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart=oweelse) equation
       if Flags.isSet(Flags.RELIDX) then

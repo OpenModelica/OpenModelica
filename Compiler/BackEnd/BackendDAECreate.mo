@@ -1779,7 +1779,8 @@ algorithm
     case DAE.EQUEQUATION(cr1 = cr, cr2 = cr2, source = source)::xs
       equation
         e = Expression.crefExp(cr2);
-        whenEq = BackendDAE.WHEN_EQ(inCond, cr, e, NONE());
+        whenOp = BackendDAE.ASSIGN(cr, e, source);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
         eq = BackendDAE.WHEN_EQUATION(1, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
         (eqnl, reqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iREquationLst, iReinitStatementLst);
       then
@@ -1788,7 +1789,8 @@ algorithm
     case DAE.DEFINE(componentRef = cr, exp = e, source = source)::xs
       equation
         (DAE.PARTIAL_EQUATION(e), source) = Inline.simplifyAndInlineEquationExp(DAE.PARTIAL_EQUATION(e), fns, source);
-        whenEq = BackendDAE.WHEN_EQ(inCond, cr, e, NONE());
+        whenOp = BackendDAE.ASSIGN(cr, e, source);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
         eq = BackendDAE.WHEN_EQUATION(1, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
         (eqnl, reqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iREquationLst, iReinitStatementLst);
       then
@@ -1805,7 +1807,8 @@ algorithm
     case DAE.EQUATION(exp = (cre as DAE.CREF(componentRef = cr)), scalar = e, source = source)::xs
       equation
         (DAE.EQUALITY_EXPS(_,e), source) = Inline.simplifyAndInlineEquationExp(DAE.EQUALITY_EXPS(cre,e), fns, source);
-        whenEq = BackendDAE.WHEN_EQ(inCond, cr, e, NONE());
+        whenOp = BackendDAE.ASSIGN(cr, e, source);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
         eq = BackendDAE.WHEN_EQUATION(1, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
         (eqnl, reqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iREquationLst,  iReinitStatementLst);
       then
@@ -1815,7 +1818,8 @@ algorithm
       equation
         size = Expression.sizeOf(Expression.typeof(cre));
         (DAE.EQUALITY_EXPS(_,e), source) = Inline.simplifyAndInlineEquationExp(DAE.EQUALITY_EXPS(cre,e), fns, source);
-        whenEq = BackendDAE.WHEN_EQ(inCond, cr, e, NONE());
+        whenOp = BackendDAE.ASSIGN(cr, e, source);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
         eq = BackendDAE.WHEN_EQUATION(size, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
         (eqnl, reqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iREquationLst,  iReinitStatementLst);
       then
@@ -1849,7 +1853,8 @@ algorithm
       equation
         size = List.fold(Expression.dimensionsSizes(ds), intMul, 1);
         (DAE.EQUALITY_EXPS(_,e), source) = Inline.simplifyAndInlineEquationExp(DAE.EQUALITY_EXPS(cre,e), fns, source);
-        whenEq = BackendDAE.WHEN_EQ(inCond, cr, e, NONE());
+        whenOp = BackendDAE.ASSIGN(cr, e, source);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
         eq = BackendDAE.WHEN_EQUATION(size, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
         (eqnl, reqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iREquationLst, iReinitStatementLst);
       then
@@ -1939,12 +1944,17 @@ algorithm
       list<DAE.Exp> rest;
       Integer size;
       DAE.Type ty;
+      BackendDAE.WhenEquation whenEq;
+      BackendDAE.WhenOperator whenOp;
+
     case ({}, _, _, _, _, _) then iEquationLst;
     case (DAE.CREF(componentRef = cr, ty=ty)::rest, _, _, _, _, _)
       equation
         size = Expression.sizeOf(ty);
+        whenOp = BackendDAE.ASSIGN(cr, DAE.TSUB(e, i, ty), source);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
       then
-        lowerWhenTupleEqn(rest, inCond, e, source, i+1, BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_EQ(inCond, cr, DAE.TSUB(e, i, ty), NONE()), source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC) ::iEquationLst);
+        lowerWhenTupleEqn(rest, inCond, e, source, i+1, BackendDAE.WHEN_EQUATION(size, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC) ::iEquationLst);
   end match;
 end lowerWhenTupleEqn;
 
@@ -1964,6 +1974,9 @@ algorithm
       DAE.ElementSource source;
       list<tuple<DAE.ComponentRef, tuple<DAE.Exp, DAE.ElementSource>>> rest;
       Integer size;
+      BackendDAE.WhenEquation whenEq;
+      BackendDAE.WhenOperator whenOp;
+
     case ({}, _, _, _)
       then
         inEqns;
@@ -1971,8 +1984,10 @@ algorithm
       equation
         source = DAEUtil.mergeSources(iSource, source);
         size = Expression.sizeOf(Expression.typeof(e));
+        whenOp = BackendDAE.ASSIGN(cr, e, source);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
       then
-       lowerWhenIfEqns2(rest, inCond, iSource, BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_EQ(inCond, cr, e, NONE()), source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inEqns);
+       lowerWhenIfEqns2(rest, inCond, iSource, BackendDAE.WHEN_EQUATION(size, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inEqns);
   end match;
 end lowerWhenIfEqns2;
 
@@ -2222,26 +2237,60 @@ protected function mergeClauses
 algorithm
   outEquationLst := matchcontinue (trueEqnList, elseEqnList, inEquationLst)
     local
-      DAE.ComponentRef cr;
-      DAE.Exp rightSide, cond;
-      BackendDAE.Equation res;
+      DAE.Exp cond;
+      BackendDAE.Equation res, inEqn;
       list<BackendDAE.Equation> trueEqns, elseEqnsRest, result;
-      BackendDAE.WhenEquation foundEquation;
       DAE.ElementSource source;
       Integer size;
       BackendDAE.EquationAttributes attr;
       list<BackendDAE.WhenOperator> whenStmtLst;
 
-    case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_EQ(condition=cond, left = cr, right=rightSide), source=source, attr=attr)::trueEqns, _, _) equation
-      (foundEquation, elseEqnsRest) = getWhenEquationFromVariable(cr, elseEqnList, {});
-      res = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_EQ(cond, cr, rightSide, SOME(foundEquation)), source, attr);
-      result = mergeClauses(trueEqns, elseEqnsRest, res::inEquationLst);
-    then result;
-
-    case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst), source=source, attr=attr)::trueEqns, (BackendDAE.WHEN_EQUATION(whenEquation=foundEquation as BackendDAE.WHEN_STMTS()))::elseEqnsRest, _) equation
-      res = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_STMTS(cond, whenStmtLst, SOME(foundEquation)), source, attr);
-      result = mergeClauses(trueEqns, elseEqnsRest, res::inEquationLst);
-    then result;
+    case ((inEqn as BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst), source=source, attr=attr))::trueEqns, _, _)
+      algorithm
+        //print(" Start mergeWhen: " + BackendDump.equationString(inEqn) + "\n");
+        result := inEquationLst;
+        elseEqnsRest := {};
+        for eqn in elseEqnList loop
+          _ := match eqn
+            local
+              BackendDAE.WhenEquation eq;
+              list<BackendDAE.WhenOperator> whenStmtLst2;
+            case BackendDAE.WHEN_EQUATION(whenEquation=eq as BackendDAE.WHEN_STMTS(whenStmtLst=whenStmtLst2) ) algorithm
+              //print(" Start mergeWhen: " + BackendDump.equationString(eqn) + "\n");
+              for elem in whenStmtLst loop
+                _ := match elem
+                  local
+                    DAE.ComponentRef left;
+                  case BackendDAE.ASSIGN(left=left) algorithm
+                    for stmt in whenStmtLst2 loop
+                      _ := matchcontinue stmt
+                        local
+                          DAE.ComponentRef left2;
+                        case BackendDAE.ASSIGN(left=left2) equation
+                          true = ComponentReference.crefEqualNoStringCompare(left, left2);
+                          res = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_STMTS(cond, whenStmtLst, SOME(eq)), source, attr);
+                          result = res::result;
+                        then ();
+                        else equation
+                          elseEqnsRest = eqn::elseEqnsRest;
+                        then ();
+                      end matchcontinue;
+                    end for;
+                  then ();
+                  else equation
+                    res = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_STMTS(cond, whenStmtLst, SOME(eq)), source, attr);
+                    result = res::result;
+                  then ();
+                end match;
+              end for;
+            then ();
+            else ();
+          end match;
+        end for;
+        result := mergeClauses(trueEqns, elseEqnsRest, result);
+        //print("Result: :\n");
+        //BackendDump.printEquationList(result);
+      then result;
 
     case ({}, {}, _)
     then inEquationLst;
@@ -2251,42 +2300,6 @@ algorithm
     then fail();
   end matchcontinue;
 end mergeClauses;
-
-protected function getWhenEquationFromVariable
-"Finds the when equation solving the variable given by inCr among equations in inEquations
- the found equation is then taken out of the list."
-  input DAE.ComponentRef inCr;
-  input list<BackendDAE.Equation> inEquations;
-  input list<BackendDAE.Equation> inEquations2;
-  output BackendDAE.WhenEquation outEquation;
-  output list<BackendDAE.Equation> outEquations;
-algorithm
-  (outEquation, outEquations) := matchcontinue(inCr, inEquations, inEquations2)
-    local
-      DAE.ComponentRef cr1, cr2;
-      BackendDAE.WhenEquation wheneq;
-      BackendDAE.Equation eq;
-      list<BackendDAE.Equation> rest, rest2;
-
-    case (cr1, BackendDAE.WHEN_EQUATION(whenEquation=wheneq as BackendDAE.WHEN_EQ(left=cr2))::rest, rest2)
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(cr1, cr2);
-        rest = listAppend(rest2, rest);
-      then (wheneq, rest);
-
-    case (cr1, (eq as BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ()))::rest, rest2)
-      equation
-        (wheneq, rest) = getWhenEquationFromVariable(cr1, rest, eq::rest2);
-      then (wheneq, rest);
-
-    case (_, {}, _)
-      equation
-        Error.addMessage(Error.DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN, {});
-      then
-        fail();
-  end matchcontinue;
-end getWhenEquationFromVariable;
-
 
 protected function lowerTupleAssignment
   "Used by lower2 to split a tuple-tuple assignment into one equation for each
@@ -2984,7 +2997,8 @@ algorithm
       DAE.ComponentRef cr;
       list<BackendDAE.Var> vars;
       list<DAE.Statement> statementLst;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = cr)), _, _)
+      list<BackendDAE.WhenOperator> whenStmts;
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(whenStmtLst = {BackendDAE.ASSIGN(left=cr)})), _, _)
       equation
         (vars, _) = BackendVariable.getVar(cr, inVariables);
         vars = List.map1(vars, BackendVariable.setVarKind, BackendDAE.DISCRETE());

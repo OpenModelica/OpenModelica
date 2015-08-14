@@ -48,6 +48,7 @@ public import SCode;
 public import Values;
 
 protected import Debug;
+protected import ExpressionDump;
 protected import Flags;
 protected import List;
 
@@ -322,7 +323,7 @@ protected function inlineWhenEq
   output DAE.ElementSource outSource;
   output Boolean inlined;
 algorithm
-  (outWhenEquation,outSource,inlined) := matchcontinue(inWhenEquation,fns,inSource)
+  (outWhenEquation,outSource,inlined) := matchcontinue(inWhenEquation)
     local
       DAE.ComponentRef cref;
       DAE.Exp e,e_1,cond;
@@ -330,26 +331,82 @@ algorithm
       DAE.ElementSource source;
       Boolean b1,b2,b3;
       list<DAE.Statement> assrtLst;
-    case (BackendDAE.WHEN_EQ(cond,cref,e,NONE()),_,_)
+      BackendDAE.WhenEquation we, elsewe;
+      Option<BackendDAE.WhenEquation> oelsewe;
+      list<BackendDAE.WhenOperator> whenStmtLst;
+
+    case BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst=whenStmtLst, elsewhenPart = oelsewe)
       equation
-        (e_1,source,b1,_) = Inline.inlineExp(e,fns,inSource);
-        (cond,source,b2,_) = Inline.inlineExp(cond,fns,source);
-        true = b1 or b2;
-      then
-        (BackendDAE.WHEN_EQ(cond,cref,e_1,NONE()),source,true);
-    case (BackendDAE.WHEN_EQ(cond,cref,e,SOME(weq)),_,_)
-      equation
-        (e_1,source,b1,_) = Inline.inlineExp(e,fns,inSource);
-        (cond,source,b2,_) = Inline.inlineExp(cond,fns,source);
-        (weq_1,source,b3) = inlineWhenEq(weq,fns,source);
-        true = b1 or b2 or b3;
-      then
-        (BackendDAE.WHEN_EQ(cond,cref,e_1,SOME(weq_1)),source,true);
-    else
-      then
-        (inWhenEquation,inSource,false);
+        (cond, source, b1,_) = Inline.inlineExp(cond, fns, inSource);
+        (whenStmtLst, b2) = inlineWhenOps(whenStmtLst, fns);
+
+        if isSome(oelsewe) then
+          SOME(elsewe) = oelsewe;
+          (elsewe, source, b3) = inlineWhenEq(elsewe, fns, source);
+          oelsewe = SOME(elsewe);
+        else
+          oelsewe = NONE();
+        end if;
+      then (BackendDAE.WHEN_STMTS(cond, whenStmtLst, oelsewe), source, b1 or b2 or b3);
+
   end matchcontinue;
 end inlineWhenEq;
+
+protected function inlineWhenOps
+  input list<BackendDAE.WhenOperator> inWhenOps;
+  input Inline.Functiontuple fns;
+  output list<BackendDAE.WhenOperator> outWhenOps = {};
+  output Boolean inlined = false;
+protected
+
+algorithm
+  for whenOp in inWhenOps loop
+    _ := match (whenOp)
+    local
+      Boolean b, b2;
+      DAE.Exp e1, e2, level;
+      DAE.ComponentRef cr;
+      list<BackendDAE.WhenOperator> rest;
+      DAE.ElementSource source;
+
+    case BackendDAE.ASSIGN(left = cr, right = e2, source = source)
+      equation
+        (e2, source, b,_) = Inline.inlineExp(e2, fns, source);
+        outWhenOps = BackendDAE.ASSIGN(cr, e2, source)::outWhenOps;
+        inlined = inlined or b;
+      then ();
+
+    case BackendDAE.REINIT(stateVar = cr, value = e2,  source = source)
+      equation
+        (e2, source, b,_) = Inline.inlineExp(e2, fns, source);
+        outWhenOps = BackendDAE.REINIT(cr, e2, source)::outWhenOps;
+        inlined = inlined or b;
+      then ();
+
+    case BackendDAE.ASSERT(condition = e1, message = e2, level = level,  source = source)
+      equation
+        (e1, source, b,_) = Inline.inlineExp(e1, fns, source);
+        (e2, source, b2,_) = Inline.inlineExp(e2, fns, source);
+        outWhenOps = BackendDAE.ASSERT(e1, e2, level, source)::outWhenOps;
+        inlined = inlined or b or b2;
+      then ();
+
+    case BackendDAE.TERMINATE(message = e1,  source = source)
+      equation
+        (e1, source, b,_) = Inline.inlineExp(e1, fns, source);
+        outWhenOps = BackendDAE.TERMINATE(e1, source)::outWhenOps;
+        inlined = inlined or b;
+      then ();
+
+    case BackendDAE.NORETCALL(exp = e1,  source = source)
+      equation
+        (e1, source, b,_) = Inline.inlineExp(e1, fns, source);
+        outWhenOps = BackendDAE.NORETCALL(e1, source)::outWhenOps;
+        inlined = inlined or b;
+      then ();
+  end match;
+  end for;
+end inlineWhenOps;
 
 protected function inlineVariables
 "inlines function calls in variables"

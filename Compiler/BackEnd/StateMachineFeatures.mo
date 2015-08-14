@@ -2511,8 +2511,10 @@ algorithm
     scalar := Expression.traverseExpBottomUp(scalar, subsPreForPrevious, NONE());
     // sample(0, samplingTime)
     expCond := DAE.ARRAY(DAE.T_ARRAY_BOOL_NODIM, true, {DAE.CALL(Absyn.IDENT("sample"), {DAE.ICONST(1), DAE.RCONST(0), DAE.RCONST(samplingTime)}, DAE.callAttrBuiltinImpureBool),DAE.CALL(Absyn.IDENT("initial"), {}, DAE.callAttrBuiltinImpureBool)});
-    whenEquation := BackendDAE.WHEN_EQ(expCond, left, scalar, NONE());
-    size := 1; // Fixme what is "size" for? does it reference the "sample index" of a corresponding (time)event BackendDAE.Shared.eventInfo.timeEvents
+    whenEquation := BackendDAE.WHEN_STMTS(expCond, {BackendDAE.ASSIGN(left, scalar, source)}, NONE());
+    // wbraun: size states how many scalar variable this equation is for
+    size := Expression.sizeOf(Expression.typeof(exp));
+    //size := 1; // Fixme what is "size" for? does it reference the "sample index" of a corresponding (time)event BackendDAE.Shared.eventInfo.timeEvents
     outEq := BackendDAE.WHEN_EQUATION(size, whenEquation, source,
       BackendDAE.EQUATION_ATTRIBUTES(differentiated, BackendDAE.DYNAMIC_EQUATION(), loopInfo));
   else

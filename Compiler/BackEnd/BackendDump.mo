@@ -756,6 +756,7 @@ algorithm
       Boolean diffed;
       DAE.ComponentRef cr;
       BackendDAE.EquationKind eqKind;
+      BackendDAE.WhenEquation weqn;
 
     case ({}, _) then ();
 
@@ -842,16 +843,16 @@ algorithm
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(right=e/*TODO handle elsewhe also*/),  attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) equation
+    case (BackendDAE.WHEN_EQUATION(whenEquation=weqn,  attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) equation
       print("WHEN_EQUATION: ");
-      str = ExpressionDump.printExpStr(e);
+      str = whenEquationString(weqn, true);
       print(str);
       str = str + " (" + equationKindString(eqKind) + ")\n";
+      e = weqn.condition;
       str = ExpressionDump.dumpExpStr(e,0);
       str = if printExpTree then str else "";
       print(str);
       print("\n");
-      dumpBackendDAEEqnList2(res,printExpTree);
     then ();
 
     case (_::res, _) equation
@@ -1372,47 +1373,44 @@ algorithm
   end match;
 end strongComponentString;
 
-protected function whenEquationString "Helper function to equationString"
+public function whenEquationString "Helper function to equationString"
   input BackendDAE.WhenEquation inWhenEqn;
+  input Boolean inStart;
   output String outString;
 algorithm
-  outString := match (inWhenEqn)
+  outString := match (inWhenEqn, inStart)
     local
       String s1,s2,res,s3,cs;
       DAE.Exp e2,cond;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation weqn;
+      Option<BackendDAE.WhenEquation> oweqn;
       list<BackendDAE.WhenOperator> whenStmtLst;
-    case (BackendDAE.WHEN_EQ(condition=cond, left = cr, right = e2, elsewhenPart = SOME(weqn)))
-      equation
-        s1 = whenEquationString(weqn);
-        s2 = ExpressionDump.printExpStr(e2);
-        s3 = ExpressionDump.printExpStr(cond);
-        cs = ComponentReference.printComponentRefStr(cr);
-        res = stringAppendList({"elsewhen ",s3," then\n  ",cs, " := ",s2,"\n", s1});
-      then
-        res;
-    case (BackendDAE.WHEN_EQ(condition=cond, left = cr, right = e2, elsewhenPart = NONE()))
-      equation
-        s2 = ExpressionDump.printExpStr(e2);
-        s3 = ExpressionDump.printExpStr(cond);
-        cs = ComponentReference.printComponentRefStr(cr);
-        res = stringAppendList({"elsewhen ",s3," then\n  ",cs, " := ",s2,"\n"});
-      then
-        res;
-    case (BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart = SOME(weqn)))
-      equation
-        s1 = whenEquationString(weqn);
-        s2 = ExpressionDump.printExpStr(cond);
-        s3 = stringDelimitList(List.map(whenStmtLst, dumpWhenOperatorStr), "  ");
-        res = stringAppendList({"elsewhen ",s2," then\n  ",s3,"\n",s1});
-      then
-        res;
-    case (BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart = NONE()))
+   case (BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart = oweqn), true)
       equation
         s1 = ExpressionDump.printExpStr(cond);
         s2 = stringDelimitList(List.map(whenStmtLst, dumpWhenOperatorStr), "  ");
-        res = stringAppendList({"elsewhen ",s1," then\n  ",s2,"\n"});
+        if isSome(oweqn) then
+          SOME(weqn) = oweqn;
+          s3 = whenEquationString(weqn, false);
+        else
+          s3 = "";
+        end if;
+        res = stringAppendList({"when ",s1," then\n  ",s2,"\n",s3,"\nend when"});
+      then
+        res;
+
+   case (BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart = oweqn), false)
+      equation
+        s1 = ExpressionDump.printExpStr(cond);
+        s2 = stringDelimitList(List.map(whenStmtLst, dumpWhenOperatorStr), "  ");
+        if isSome(oweqn) then
+          SOME(weqn) = oweqn;
+          s3 = whenEquationString(weqn, false);
+        else
+          s3 = "";
+        end if;
+        res = stringAppendList({"elsewhen ",s1," then\n  ",s2,"\n",s3});
       then
         res;
   end match;
@@ -1464,36 +1462,9 @@ algorithm
         res = stringAppendList({s1," := ",s2});
       then
         res;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2, elsewhenPart = SOME(weqn))))
+    case (BackendDAE.WHEN_EQUATION(whenEquation = weqn))
       equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = ExpressionDump.printExpStr(e2);
-        s3 = whenEquationString(weqn);
-        s4 = ExpressionDump.printExpStr(cond);
-        res = stringAppendList({"when ",s4," then\n  ",s1," := ",s2,"\n",s3,"end when"});
-      then
-        res;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2)))
-      equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = ExpressionDump.printExpStr(e2);
-        s4 = ExpressionDump.printExpStr(cond);
-        res = stringAppendList({"when ",s4," then\n  ",s1," := ",s2,"\nend when"});
-      then
-        res;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart = SOME(weqn))))
-      equation
-        s1 = stringDelimitList(List.map(whenStmtLst, dumpWhenOperatorStr), "  ");
-        s2 = whenEquationString(weqn);
-        s3 = ExpressionDump.printExpStr(cond);
-        res = stringAppendList({"when ",s3," then\n  ",s1,"\n",s2,"end when"});
-      then
-        res;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst)))
-      equation
-        s1 = stringDelimitList(List.map(whenStmtLst, dumpWhenOperatorStr), "  ");
-        s2 = ExpressionDump.printExpStr(cond);
-        res = stringAppendList({"when ",s2," then\n  ",s1,"\nend when"});
+        res = whenEquationString(weqn, true);
       then
         res;
     case (BackendDAE.RESIDUAL_EQUATION(exp = e))
@@ -2026,7 +1997,7 @@ algorithm
      equation
       scr = ComponentReference.printComponentRefStr(cr);
       se = ExpressionDump.printExpStr(e);
-      str = stringAppendList({scr," = ",se});
+      str = stringAppendList({scr," := ",se});
      then
       str;
     case BackendDAE.REINIT(stateVar=cr,value=e)
