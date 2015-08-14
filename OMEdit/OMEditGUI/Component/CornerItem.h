@@ -109,8 +109,8 @@ class OriginItem : public QGraphicsItem
 {
 public:
   OriginItem();
-  void setActive() {mPen = mActivePen;}
-  void setPassive() {mPen = mPassivePen;}
+  void setActive();
+  void setPassive();
   QRectF boundingRect() const {return mRectangle;}
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
 private:
