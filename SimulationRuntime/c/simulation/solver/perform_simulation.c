@@ -72,7 +72,212 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
   TRACE_POP
 }
 
+static void simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+{
+  int eventType;
 
+  prefixedName_updateContinuousSystem(data, threadData);
+
+  if (solverInfo->solverMethod == S_SYM_IMP_EULER) data->callback->symEulerUpdate(data, solverInfo->solverStepSize);
+
+  saveZeroCrossings(data, threadData);
+  messageClose(LOG_SOLVER);
+
+  /***** Event handling *****/
+  if (measure_time_flag) rt_tick(SIM_TIMER_EVENT);
+
+  eventType = checkEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
+  if(eventType > 0) /* event */
+  {
+    threadData->currentErrorStage = ERROR_EVENTHANDLING;
+    infoStreamPrint(LOG_EVENTS, 1, "%s event at time=%.12g", eventType == 1 ? "time" : "state", solverInfo->currentTime);
+    /* prevent emit if noEventEmit flag is used */
+    if (!(omc_flag[FLAG_NOEVENTEMIT])) /* output left limit */
+      sim_result.emit(&sim_result, data, threadData);
+    handleEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
+    messageClose(LOG_EVENTS);
+    threadData->currentErrorStage = ERROR_SIMULATION;
+
+    solverInfo->didEventStep = 1;
+    overwriteOldSimulationData(data);
+  }
+  else /* no event */
+  {
+    solverInfo->laststep = solverInfo->currentTime;
+    solverInfo->didEventStep = 0;
+  }
+
+  if (measure_time_flag) rt_accumulate(SIM_TIMER_EVENT);
+  /***** End event handling *****/
+
+
+  /***** check state selection *****/
+  if (stateSelection(data, threadData, 1, 1))
+  {
+    /* if new set is calculated reinit the solver */
+    solverInfo->didEventStep = 1;
+    overwriteOldSimulationData(data);
+  }
+
+  /* Check for warning of variables out of range assert(min<x || x>xmax, ...)*/
+  data->callback->checkForAsserts(data, threadData);
+
+  storePreValues(data);
+  storeOldValues(data);
+}
+
+static int simulationStep(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+{
+  SIMULATION_INFO *simInfo = &(data->simulationInfo);
+
+  infoStreamPrint(LOG_SOLVER, 1, "call solver from %g to %g (stepSize: %.15g)", solverInfo->currentTime, solverInfo->currentTime + solverInfo->currentStepSize, solverInfo->currentStepSize);
+  if(0 != strcmp("ia", MMC_STRINGDATA(data->simulationInfo.outputFormat)))
+  {
+    communicateStatus("Running", (solverInfo->currentTime - simInfo->startTime)/(simInfo->stopTime - simInfo->startTime));
+  }
+  return solver_main_step(data, threadData, solverInfo);
+}
+
+typedef struct MEASURE_TIME {
+  FILE *fmtReal;
+  FILE *fmtInt;
+  unsigned int stepNo;
+} MEASURE_TIME;
+
+static void fmtInit(DATA* data, MEASURE_TIME* mt)
+{
+  mt->fmtReal = NULL;
+  mt->fmtInt = NULL;
+  if(measure_time_flag)
+  {
+    size_t len = strlen(data->modelData.modelFilePrefix);
+    char* filename = (char*) malloc((len+15) * sizeof(char));
+    strncpy(filename,data->modelData.modelFilePrefix,len);
+    strncpy(&filename[len],"_prof.realdata",15);
+    mt->fmtReal = fopen(filename, "wb");
+    if(!mt->fmtReal)
+    {
+      warningStreamPrint(LOG_STDOUT, 0, "Time measurements output file %s could not be opened: %s", filename, strerror(errno));
+    }
+    strncpy(&filename[len],"_prof.intdata",14);
+    mt->fmtInt = fopen(filename, "wb");
+    if(!mt->fmtInt)
+    {
+      warningStreamPrint(LOG_STDOUT, 0, "Time measurements output file %s could not be opened: %s", filename, strerror(errno));
+      fclose(mt->fmtReal);
+      mt->fmtReal = NULL;
+    }
+    free(filename);
+  }
+}
+
+static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, int didEventStep)
+{
+  if(mt->fmtReal)
+  {
+    int i, flag=1;
+    double tmpdbl;
+    unsigned int tmpint;
+    int total = data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks;
+    rt_tick(SIM_TIMER_OVERHEAD);
+    rt_accumulate(SIM_TIMER_STEP);
+
+    /* Disable time measurements if we have trouble writing to the file... */
+    flag = flag && 1 == fwrite(&mt->stepNo, sizeof(unsigned int), 1, mt->fmtInt);
+    mt->stepNo++;
+    flag = flag && 1 == fwrite(&(data->localData[0]->timeValue), sizeof(double), 1, mt->fmtReal);
+    tmpdbl = rt_accumulated(SIM_TIMER_STEP);
+    flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, mt->fmtReal);
+    flag = flag && total == fwrite(rt_ncall_arr(SIM_TIMER_FIRST_FUNCTION), sizeof(uint32_t), total, mt->fmtInt);
+    for(i=0; i<data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++) {
+      tmpdbl = rt_accumulated(i + SIM_TIMER_FIRST_FUNCTION);
+      flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, mt->fmtReal);
+    }
+    rt_accumulate(SIM_TIMER_OVERHEAD);
+
+    if(!flag)
+    {
+      warningStreamPrint(LOG_SOLVER, 0, "Disabled time measurements because the output file could not be generated: %s", strerror(errno));
+      fclose(mt->fmtInt);
+      fclose(mt->fmtReal);
+      mt->fmtInt = NULL;
+      mt->fmtReal = NULL;
+    }
+  }
+
+  /* prevent emit if noEventEmit flag is used, if it's an event */
+  if ((omc_flag[FLAG_NOEVENTEMIT] && didEventStep == 0) || !omc_flag[FLAG_NOEVENTEMIT])
+  {
+    sim_result.emit(&sim_result, data, threadData);
+  }
+
+  printAllVarsDebug(data, 0, LOG_DEBUG);  /* ??? */
+}
+
+static void fmtClose(MEASURE_TIME* mt)
+{
+  if(mt->fmtInt)
+  {
+    fclose(mt->fmtInt);
+    mt->fmtInt = NULL;
+  }
+  if(mt->fmtReal)
+  {
+    fclose(mt->fmtReal);
+    mt->fmtReal = NULL;
+  }
+}
+
+static void checkSimulationTerminated(DATA* data, SOLVER_INFO* solverInfo)
+{
+  if(terminationTerminate)
+  {
+    printInfo(stdout, TermInfo);
+    fputc('\n', stdout);
+    infoStreamPrint(LOG_STDOUT, 0, "Simulation call terminate() at time %f\nMessage : %s", data->localData[0]->timeValue, TermMsg);
+    data->simulationInfo.stopTime = solverInfo->currentTime;
+  }
+}
+
+static void clear_rt_step(DATA* data)
+{
+  int i;
+  if(measure_time_flag)
+  {
+    for(i=0; i<data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++)
+    {
+      rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
+    }
+    rt_clear(SIM_TIMER_STEP);
+    rt_tick(SIM_TIMER_STEP);
+  }
+}
+
+static void retrySimulationStep(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+{
+  /* reduce step size by a half and try again */
+  solverInfo->laststep = solverInfo->currentTime - solverInfo->laststep;
+
+  /* restore old values and try another step with smaller step-size by dassl*/
+  restoreOldValues(data);
+  solverInfo->currentTime = data->localData[0]->timeValue;
+  overwriteOldSimulationData(data);
+  updateDiscreteSystem(data, threadData);
+  warningStreamPrint(LOG_STDOUT, 0, "Integrator attempt to handle a problem with a called assert.");
+  solverInfo->didEventStep = 1;
+}
+
+static void saveDasslStats(SOLVER_INFO* solverInfo)
+{
+  int ui;
+  if (solverInfo->didEventStep == 1 && solverInfo->solverMethod == S_DASSL)
+  {
+    for(ui=0; ui<numStatistics; ui++)
+    {
+      ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[ui] += ((DASSL_DATA*)solverInfo->solverData)->dasslStatisticsTmp[ui];
+    }
+  }
+}
 
 /*! \fn performSimulation(DATA* data, SOLVER_INFO* solverInfo)
  *
@@ -87,36 +292,15 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
 
   int retValIntegrator=0;
   int retValue=0;
-  int i, ui, eventType, retry=0;
+  int i, retry=0;
 
-  FILE *fmtReal = NULL, *fmtInt = NULL;
-  unsigned int stepNo=0;
   unsigned int __currStepNo = 0;
 
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
   solverInfo->currentTime = simInfo->startTime;
 
-  if(measure_time_flag)
-  {
-    size_t len = strlen(data->modelData.modelFilePrefix);
-    char* filename = (char*) malloc((len+15) * sizeof(char));
-    strncpy(filename,data->modelData.modelFilePrefix,len);
-    strncpy(&filename[len],"_prof.realdata",15);
-    fmtReal = fopen(filename, "wb");
-    if(!fmtReal)
-    {
-      warningStreamPrint(LOG_STDOUT, 0, "Time measurements output file %s could not be opened: %s", filename, strerror(errno));
-    }
-    strncpy(&filename[len],"_prof.intdata",14);
-    fmtInt = fopen(filename, "wb");
-    if(!fmtInt)
-    {
-      warningStreamPrint(LOG_STDOUT, 0, "Time measurements output file %s could not be opened: %s", filename, strerror(errno));
-      fclose(fmtReal);
-      fmtReal = NULL;
-    }
-    free(filename);
-  }
+  MEASURE_TIME fmt;
+  fmtInit(data, &fmt);
 
   printAllVarsDebug(data, 0, LOG_DEBUG); /* ??? */
   printSparseStructure(data, LOG_SOLVER);
@@ -139,16 +323,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
     MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
     {
-      if(measure_time_flag)
-      {
-        for(i=0; i<data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++)
-        {
-          rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
-        }
-        rt_clear(SIM_TIMER_STEP);
-        rt_tick(SIM_TIMER_STEP);
-      }
-
+      clear_rt_step(data);
       rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
 
       /***** Calculation next step size *****/
@@ -179,129 +354,19 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         continue;
       }
 
-      /*
-       * integration step determine all states by a integration method
-       * update continuous system
-       */
-      infoStreamPrint(LOG_SOLVER, 1, "call solver from %g to %g (stepSize: %.15g)", solverInfo->currentTime, solverInfo->currentTime + solverInfo->currentStepSize, solverInfo->currentStepSize);
-      if(0 != strcmp("ia", MMC_STRINGDATA(data->simulationInfo.outputFormat)))
-      {
-        communicateStatus("Running", (solverInfo->currentTime-simInfo->startTime)/(simInfo->stopTime-simInfo->startTime));
-      }
-      retValIntegrator = solver_main_step(data, threadData, solverInfo);
+    /*
+     * integration step determine all states by a integration method
+     * update continuous system
+     */
+      retValIntegrator = simulationStep(data, threadData, solverInfo);
 
       if (S_OPTIMIZATION == solverInfo->solverMethod) break;
-
-      prefixedName_updateContinuousSystem(data, threadData);
-
-      if (solverInfo->solverMethod == S_SYM_IMP_EULER) data->callback->symEulerUpdate(data, solverInfo->solverStepSize);
-
-      saveZeroCrossings(data, threadData);
-      messageClose(LOG_SOLVER);
-
-      /***** Event handling *****/
-      if (measure_time_flag) rt_tick(SIM_TIMER_EVENT);
-
-      eventType = checkEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
-      if(eventType > 0) /* event */
-      {
-        threadData->currentErrorStage = ERROR_EVENTHANDLING;
-        infoStreamPrint(LOG_EVENTS, 1, "%s event at time=%.12g", eventType == 1 ? "time" : "state", solverInfo->currentTime);
-        /* prevent emit if noEventEmit flag is used */
-        if (!(omc_flag[FLAG_NOEVENTEMIT])) { /* output left limit */
-          sim_result.emit(&sim_result,data,threadData);
-        }
-        handleEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
-        messageClose(LOG_EVENTS);
-        threadData->currentErrorStage = ERROR_SIMULATION;
-
-        solverInfo->didEventStep = 1;
-        overwriteOldSimulationData(data);
-      }
-      else /* no event */
-      {
-        solverInfo->laststep = solverInfo->currentTime;
-        solverInfo->didEventStep = 0;
-      }
-
-      if (measure_time_flag) rt_accumulate(SIM_TIMER_EVENT);
-      /***** End event handling *****/
-
-
-      /***** check state selection *****/
-      if (stateSelection(data, threadData, 1, 1))
-      {
-        /* if new set is calculated reinit the solver */
-        solverInfo->didEventStep = 1;
-        overwriteOldSimulationData(data);
-      }
-
-      /* Check for warning of variables out of range assert(min<x || x>xmax, ...)*/
-      data->callback->checkForAsserts(data, threadData);
-
+      simulationUpdate(data, threadData, solverInfo);
       retry = 0; /* reset retry */
 
-      storePreValues(data);
-      storeOldValues(data);
-
-      /***** Emit this time step *****/
-      if (fmtReal)
-      {
-        int flag = 1;
-        double tmpdbl;
-        unsigned int tmpint;
-        int total = data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks;
-        rt_tick(SIM_TIMER_OVERHEAD);
-        rt_accumulate(SIM_TIMER_STEP);
-
-        /* Disable time measurements if we have trouble writing to the file... */
-        flag = flag && 1 == fwrite(&stepNo, sizeof(unsigned int), 1, fmtInt);
-        stepNo++;
-        flag = flag && 1 == fwrite(&(data->localData[0]->timeValue), sizeof(double), 1, fmtReal);
-        tmpdbl = rt_accumulated(SIM_TIMER_STEP);
-        flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmtReal);
-        flag = flag && total == fwrite(rt_ncall_arr(SIM_TIMER_FIRST_FUNCTION), sizeof(uint32_t), total, fmtInt);
-        for(i=0; i<data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++) {
-          tmpdbl = rt_accumulated(i + SIM_TIMER_FIRST_FUNCTION);
-          flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmtReal);
-        }
-        rt_accumulate(SIM_TIMER_OVERHEAD);
-        if (!flag)
-        {
-          warningStreamPrint(LOG_SOLVER, 0, "Disabled time measurements because the output file could not be generated: %s", strerror(errno));
-          fclose(fmtInt);
-          fclose(fmtReal);
-          fmtInt = NULL;
-          fmtReal = NULL;
-        }
-      }
-
-      /* prevent emit if noEventEmit flag is used, if it's an event */
-      if ((omc_flag[FLAG_NOEVENTEMIT] && solverInfo->didEventStep == 0) || !omc_flag[FLAG_NOEVENTEMIT])
-      {
-        sim_result.emit(&sim_result, data, threadData);
-      }
-
-      printAllVarsDebug(data, 0, LOG_DEBUG);  /* ??? */
-      /***** End of Emit this time step *****/
-
-      /* save dassl stats before reset */
-      if (solverInfo->didEventStep == 1 && solverInfo->solverMethod == S_DASSL)
-      {
-        for(ui=0; ui<numStatistics; ui++)
-        {
-          ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[ui] += ((DASSL_DATA*)solverInfo->solverData)->dasslStatisticsTmp[ui];
-        }
-      }
-
-      /* Check if terminate()=true */
-      if(terminationTerminate)
-      {
-        printInfo(stdout, TermInfo);
-        fputc('\n', stdout);
-        infoStreamPrint(LOG_STDOUT, 0, "Simulation call terminate() at time %f\nMessage : %s", data->localData[0]->timeValue, TermMsg);
-        simInfo->stopTime = solverInfo->currentTime;
-      }
+      fmtEmitStep(data, threadData, &fmt, solverInfo->didEventStep);
+      saveDasslStats(solverInfo);
+      checkSimulationTerminated(data, solverInfo);
 
       /* terminate for some cases:
        * - integrator fails
@@ -341,17 +406,8 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
     {
       if(0 == retry)
       {
-        /* reduce step size by a half and try again */
-        solverInfo->laststep = solverInfo->currentTime - solverInfo->laststep;
-
-        /* restore old values and try another step with smaller step-size by dassl*/
-        restoreOldValues(data);
-        solverInfo->currentTime = data->localData[0]->timeValue;
-        overwriteOldSimulationData(data);
-        updateDiscreteSystem(data, threadData);
-        warningStreamPrint(LOG_STDOUT, 0, "Integrator attempt to handle a problem with a called assert.");
+        retrySimulationStep(data, threadData, solverInfo);
         retry = 1;
-        solverInfo->didEventStep = 1;
       }
       else
       {
@@ -364,16 +420,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
     TRACE_POP /* pop loop */
   } /* end while solver */
 
-  if(fmtInt)
-  {
-    fclose(fmtInt);
-    fmtInt = NULL;
-  }
-  if(fmtReal)
-  {
-    fclose(fmtReal);
-    fmtReal = NULL;
-  }
+  fmtClose(&fmt);
 
   TRACE_POP
   return retValue;
