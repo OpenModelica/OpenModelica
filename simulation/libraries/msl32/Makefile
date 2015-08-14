@@ -1,6 +1,8 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+
+TESTFILES_bak = \
 Modelica.Blocks.Examples.BooleanNetwork1.mos \
 Modelica.Blocks.Examples.BusUsage.mos \
 Modelica.Blocks.Examples.Filter.mos \
