@@ -36,6 +36,8 @@ for Open Modelica", September, 10 th, 2008
 Copyright (c) 2008, OSMC
 *****************************************************************************/
 
+#define MODELICA_TERMINATE(msg) Terminate(msg)
+
 //typedef boost::unordered_map<std::string, boost::any> SValuesMap;
 
 template <class T>
