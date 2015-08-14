@@ -6283,32 +6283,22 @@ public function testExternMatchingAlgorithms1
   input Integer cheapId;
   input Integer nv;
   input Integer ne;
+protected
+  String str;
+  Integer matchingAlgorithm;
+  Real t;
 algorithm
-  _ :=
-  matchcontinue (matchingAlgorithms,cheapId,nv,ne)
-      local
-        list<tuple<String,Integer>> rest;
-        String str;
-        Integer matchingAlgorithm;
-        Real t;
-    case ({},_,_,_)
-      then ();
-    case ((str,matchingAlgorithm)::rest,_,_,_)
-      equation
-        System.realtimeTick(ClockIndexes.RT_PROFILER0);
-        testExternMatchingAlgorithm(10,matchingAlgorithm,cheapId,nv,ne);
-        t = System.realtimeTock(ClockIndexes.RT_PROFILER0);
-        print(str + realString(realDiv(t,10.0)) + "\n");
-        testExternMatchingAlgorithms1(rest,cheapId,nv,ne);
-      then
-        ();
-    case ((str,_)::rest,_,_,_)
-      equation
-        print(str + "failed!\n");
-        testExternMatchingAlgorithms1(rest,cheapId,nv,ne);
-      then
-        ();
-  end matchcontinue;
+  for alg in matchingAlgorithms loop
+    (str,matchingAlgorithm) := alg;
+    try
+      System.realtimeTick(ClockIndexes.RT_PROFILER0);
+      testExternMatchingAlgorithm(10,matchingAlgorithm,cheapId,nv,ne);
+      t := System.realtimeTock(ClockIndexes.RT_PROFILER0);
+      print(str + realString(realDiv(t,10.0)) + "\n");
+    else
+      print(str + "failed!\n");
+    end try;
+  end for;
 end testExternMatchingAlgorithms1;
 
 public function testExternMatchingAlgorithm
