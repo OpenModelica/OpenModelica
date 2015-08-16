@@ -148,7 +148,7 @@ algorithm
                                                     extObjCls,
                                                     BackendDAE.SIMULATION(),
                                                     symjacs,inExtraInfo,
-                                                    BackendDAE.PARTITIONS_INFO(BackendDAEUtil.emptyClocks())));
+                                                    BackendDAEUtil.emptyPartitionsInfo()));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
   neqStr := intString(BackendDAEUtil.equationSize(eqnarr));
   nvarStr := intString(BackendVariable.varsSize(vars_1));
@@ -275,29 +275,20 @@ algorithm
           ();
 
       // when equations
-      case DAE.WHEN_EQUATION(condition = e, equations = dae_elts, source = src)
+      case DAE.WHEN_EQUATION(condition = e, equations = dae_elts)
         algorithm
-          if intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33)
-                and Types.isClockOrSubTypeClock(Expression.typeof(e)) then
-            cr := DAE.CREF_IDENT(BackendDAE.WHENCLK_PRREFIX + intString(whenClkCnt), DAE.T_CLOCK_DEFAULT, {});
-            outVars := BackendDAE.VAR (
-                  varName = cr, varKind = BackendDAE.VARIABLE(),
-                  varDirection = DAE.BIDIR(), varParallelism = DAE.NON_PARALLEL(),
-                  varType = DAE.T_CLOCK_DEFAULT, bindExp = NONE(),
-                  bindValue = NONE(), arryDim = {}, source = DAE.emptyElementSource,
-                  values = NONE(), tearingSelectOption = SOME(BackendDAE.DEFAULT()),
-                  comment = NONE(), connectorType = DAE.NON_CONNECTOR(),
-                  innerOuter = DAE.NOT_INNER_OUTER(), unreplaceable = true ) :: outVars;
-            outEqns := BackendDAE.EQUATION( exp = DAE.CREF(componentRef = cr, ty = DAE.T_CLOCK_DEFAULT),
-                                           scalar = e,  source = DAE.emptyElementSource,
-                                           attr = BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC ) :: outEqns;
-            eq_attrs := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.CLOCKED_EQUATION(whenClkCnt), BackendDAE.NO_LOOP());
-            ( outVars, outKnVars, outExVars, eqns, outREqns, outIEqns, outConstraints, outClassAttributes,
-              outExtObjClasses, outAliasEqns, outInlineHT ) :=
-                  lower2( dae_elts, inFunctions, outInlineHT, outVars, outKnVars, outExVars, {}, outREqns, outIEqns,
-                          outConstraints, outClassAttributes,outExtObjClasses, outAliasEqns );
-            outEqns := listAppend(List.map1(eqns, BackendEquation.setEquationAttributes, eq_attrs), outEqns);
+          if intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33) and Types.isClockOrSubTypeClock(Expression.typeof(e)) then
+
+            (outEqns, outVars, eq_attrs) := createWhenClock(whenClkCnt, e, outEqns, outVars);
             whenClkCnt := whenClkCnt + 1;
+
+            ( outVars, outKnVars, outExVars, eqns, reqns, outIEqns, outConstraints, outClassAttributes,
+              outExtObjClasses, outAliasEqns, outInlineHT ) :=
+                  lower2( dae_elts, inFunctions, outInlineHT, outVars, outKnVars, outExVars, {}, {}, outIEqns,
+                          outConstraints, outClassAttributes, outExtObjClasses, outAliasEqns );
+
+            outEqns := listAppend(List.map1(eqns, BackendEquation.setEquationAttributes, eq_attrs), outEqns);
+            outREqns := listAppend(List.map1(reqns, BackendEquation.setEquationAttributes, eq_attrs), outREqns);
           else
             (eqns, reqns) := lowerWhenEqn(el, inFunctions, {}, {});
             outEqns := listAppend(outEqns, eqns);
@@ -1670,6 +1661,35 @@ algorithm
       then generateEquations(e1lst, e2lst, source, inEqKind, BackendDAE.EQUATION(e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, BackendDAE.NO_LOOP()))::iAcc);
   end match;
 end generateEquations;
+
+protected function createWhenClock
+  input Integer whenClkCnt;
+  input DAE.Exp e;
+  input list<BackendDAE.Equation> inEqs;
+  input list<BackendDAE.Var> inVars;
+  output list<BackendDAE.Equation> outEqs;
+  output list<BackendDAE.Var> outVars;
+  output BackendDAE.EquationAttributes outEqAttrs;
+protected
+  BackendDAE.EquationAttributes eqAttrs;
+  DAE.ComponentRef cr;
+  BackendDAE.Equation eq;
+  BackendDAE.Var var;
+algorithm
+  cr := DAE.CREF_IDENT(BackendDAE.WHENCLK_PRREFIX + intString(whenClkCnt), DAE.T_CLOCK_DEFAULT, {});
+  outVars := BackendDAE.VAR (
+                  varName = cr, varKind = BackendDAE.VARIABLE(),
+                  varDirection = DAE.BIDIR(), varParallelism = DAE.NON_PARALLEL(),
+                  varType = DAE.T_CLOCK_DEFAULT, bindExp = NONE(),
+                  bindValue = NONE(), arryDim = {}, source = DAE.emptyElementSource,
+                  values = NONE(), tearingSelectOption = SOME(BackendDAE.DEFAULT()),
+                  comment = NONE(), connectorType = DAE.NON_CONNECTOR(),
+                  innerOuter = DAE.NOT_INNER_OUTER(), unreplaceable = true ) :: inVars;
+  outEqs := BackendDAE.EQUATION( exp = DAE.CREF(componentRef = cr, ty = DAE.T_CLOCK_DEFAULT),
+                                scalar = e,  source = DAE.emptyElementSource,
+                                attr = BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC ) :: inEqs;
+  outEqAttrs := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.CLOCKED_EQUATION(whenClkCnt), BackendDAE.NO_LOOP());
+end createWhenClock;
 
 
 protected function lowerWhenEqn

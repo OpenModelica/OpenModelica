@@ -90,13 +90,13 @@ public uniontype SubClock
   end SUBCLOCK;
 end SubClock;
 
+public constant SubClock DEFAULT_SUBCLOCK = SUBCLOCK(MMath.RAT1, MMath.RAT0, NONE());
+
 public
 uniontype BaseClockPartitionKind
   record UNKNOWN_PARTITION end UNKNOWN_PARTITION;
   record CLOCKED_PARTITION
-    Integer baseClock;
-    SubClock subClock;
-    Boolean holdEvents;
+    Integer subPartIdx;
   end CLOCKED_PARTITION;
   record CONTINUOUS_TIME_PARTITION end CONTINUOUS_TIME_PARTITION;
   record UNSPECIFIED_PARTITION "treated as CONTINUOUS_TIME_PARTITION" end UNSPECIFIED_PARTITION;
@@ -132,9 +132,24 @@ uniontype Shared "Data shared for all equation-systems"
   end SHARED;
 end Shared;
 
+uniontype BasePartition
+  record BASE_PARTITION
+    .DAE.ClockKind clock;
+    Integer nSubClocks;
+  end BASE_PARTITION;
+end BasePartition;
+
+uniontype SubPartition
+  record SUB_PARTITION
+    SubClock clock;
+    Boolean holdEvents;
+  end SUB_PARTITION;
+end SubPartition;
+
 uniontype PartitionsInfo
   record PARTITIONS_INFO
-    array<.DAE.ClockKind> clocks;
+    array<BasePartition> basePartitions;
+    array<SubPartition> subPartitions;
   end PARTITIONS_INFO;
 end PartitionsInfo;
 

@@ -93,9 +93,10 @@ protected
   Integer i;
   BackendDAE.EqSystem syst;
   list<BackendDAE.EqSystem> contSysts, clockedSysts;
-  array<DAE.ClockKind> baseClocks;
-  DAE.ClockKind clock;
+  array<BackendDAE.BasePartition> basePartitions;
+  array<BackendDAE.SubPartition> subPartitions;
   BackendDAE.Shared shared = inShared;
+  BackendDAE.PartitionsInfo partitionsInfo;
   list<BackendDAE.EqSystem> systs;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqs;
@@ -107,25 +108,32 @@ algorithm
   syst := substituteParitionOpExps(inSyst);
 
   (contSysts, clockedSysts, unpartRemEqs) := baseClockPartitioning(syst, inShared);
+
   (contSysts, holdComps) := removeHoldExpsSyst(contSysts);
 
   shared.removedEqs := BackendEquation.addEquations(unpartRemEqs, shared.removedEqs);
 
-  (clockedSysts, baseClocks) := subClockPartitioning1(clockedSysts, inShared, holdComps);
-  clockedSysts := List.map(clockedSysts, makePreviousFixed);
+  (clockedSysts, basePartitions, subPartitions) := subClockPartitioning1(clockedSysts, inShared, holdComps);
 
-  //Continuous systems always first in equation systems list
+  partitionsInfo := shared.partitionsInfo;
+  partitionsInfo.basePartitions := basePartitions;
+  partitionsInfo.subPartitions := subPartitions;
+  shared.partitionsInfo := partitionsInfo;
+
+  clockedSysts := List.map1(clockedSysts, makePreviousFixed, shared);
   systs := listAppend(contSysts, clockedSysts);
-  outDAE := BackendDAE.DAE(systs, setClocks(inShared, baseClocks));
 
+  outDAE := BackendDAE.DAE(systs, shared);
   if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
-    BackendDump.dumpEqSystems(systs, "base-clock partitioning");
-    BackendDump.dumpClocks(baseClocks, "Base clocks");
+    BackendDump.dumpEqSystems(systs, "clock partitioning");
+    BackendDump.dumpBasePartitions(partitionsInfo.basePartitions, "Base clocks");
+    BackendDump.dumpSubPartitions(partitionsInfo.subPartitions, "Sub clocks");
   end if;
 end clockPartitioning1;
 
 protected function makePreviousFixed
   input BackendDAE.EqSystem inSyst;
+  input BackendDAE.Shared inShared;
   output BackendDAE.EqSystem outSyst = inSyst;
 protected
   BackendDAE.Equation eq;
@@ -135,14 +143,14 @@ protected
   list<Integer> varIxs;
   BackendDAE.Var var;
 algorithm
-  BackendDAE.CLOCKED_PARTITION(subClock=BackendDAE.SUBCLOCK(solver=solverMethod)) := outSyst.partitionKind;
+  SOME(BackendDAE.SUBCLOCK(solver=solverMethod)) := BackendDAEUtil.getSubClock(inSyst, inShared);
   if isNone(solverMethod) then
     prevVars := arrayCreate(BackendVariable.varsSize(outSyst.orderedVars), false);
-    for i in 1:BackendDAEUtil.equationSize(outSyst.orderedEqs) loop
+    for i in 1:BackendDAEUtil.equationArraySize(outSyst.orderedEqs) loop
       eq := BackendEquation.equationNth1(outSyst.orderedEqs, i);
       (_, fixedComps) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, fixedComps);
     end for;
-    for i in 1:BackendDAEUtil.equationSize(outSyst.removedEqs) loop
+    for i in 1:BackendDAEUtil.equationArraySize(outSyst.removedEqs) loop
       eq := BackendEquation.equationNth1(outSyst.removedEqs, i);
       (_, fixedComps) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, fixedComps);
     end for;
@@ -185,76 +193,51 @@ algorithm
   end match;
 end collectPrevVars1;
 
-protected function setClocks
-  input BackendDAE.Shared inShared;
-  input array<DAE.ClockKind> inClocks;
-  output BackendDAE.Shared outShared;
-protected
-  BackendDAE.EventInfo eventInfo;
-  list<BackendDAE.TimeEvent> timeEvents;
-  list<BackendDAE.ZeroCrossing> zeroCrossingLst;
-  list<BackendDAE.ZeroCrossing> sampleLst;
-  list<BackendDAE.ZeroCrossing> relationsLst;
-  Integer numberMathEvents;
-algorithm
-  outShared := match inShared
-    local
-      BackendDAE.Shared shared;
-    case shared as BackendDAE.SHARED()
-      algorithm shared.partitionsInfo := BackendDAE.PARTITIONS_INFO(inClocks);
-      then shared;
-  end match;
-end setClocks;
-
-protected type UnresolvedPartitionData = tuple<BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.SubClock>;
-
 protected function subClockPartitioning1
 "Do subclock partitioning and inferencing and create clocked partitions and base clocks array."
   input list<BackendDAE.EqSystem> inSysts;
   input BackendDAE.Shared inShared;
   input list<DAE.ComponentRef> inHoldComps;
   output list<BackendDAE.EqSystem> outSysts = {};
-  output array<DAE.ClockKind> outClocks;
+  output array<BackendDAE.BasePartition> outBasePartitions;
+  output array<BackendDAE.SubPartition> outSubPartitions;
 protected
-  DAE.ClockKind clock;
+  DAE.ClockKind baseClock;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqs;
   BackendDAE.SubClock subclock;
-  list<list<UnresolvedPartitionData>> tpls = {};
-  list<UnresolvedPartitionData> tpls1;
-  UnresolvedPartitionData tpl;
   HashTable.HashTable varsPartition;
-  Integer i, j;
+  Integer i, j, n, nBaseClocks;
   DAE.ComponentRef cr;
   array<Boolean> hasHoldOperator;
   BackendDAE.BaseClockPartitionKind partitionKind;
+  list<BackendDAE.EqSystem> systs;
+  list<BackendDAE.SubClock> lstSubClocks1, lstSubClocks = {};
 algorithm
-  outClocks := arrayCreate(listLength(inSysts), DAE.INFERRED_CLOCK());
+  nBaseClocks := listLength(inSysts);
+  outBasePartitions := arrayCreate(nBaseClocks, BackendDAE.BASE_PARTITION(DAE.INFERRED_CLOCK(), 0));
   varsPartition := HashTable.emptyHashTable();
-  i := 1;
+
+  i := 0; j := 1;
   for syst in inSysts loop
-    (tpls1, clock) := subClockPartitioning(syst, inShared);
-    tpls := tpls1 :: tpls;
-    arrayUpdate(outClocks, i, clock);
-    i := i + 1;
+    (systs, baseClock, lstSubClocks1) := subClockPartitioning(syst, inShared, i);
+    n := listLength(systs);
+    arrayUpdate(outBasePartitions, j, BackendDAE.BASE_PARTITION(baseClock, n));
+    outSysts := listAppend(outSysts, systs);
+    lstSubClocks := listAppend(lstSubClocks, lstSubClocks1);
+    i := i + n;
+    j := j + 1;
   end for;
-  //Get count of subpartitions
-  i := 0;
-  for tpls1 in tpls loop
-    i := i + listLength(tpls1);
-  end for;
-  hasHoldOperator := arrayCreate(i, false);
+
+  hasHoldOperator := arrayCreate(listLength(lstSubClocks), false);
   //Create hash cr -> subpartition index
   i := 1;
-  for tpls1 in tpls loop
-    for tpl in tpls1 loop
-      (vars, _, _) := tpl;
-      for j in 1:BackendVariable.varsSize(vars) loop
-        BackendDAE.VAR(varName=cr) := BackendVariable.getVarAt(vars, j);
-        varsPartition := BaseHashTable.add((cr, i), varsPartition);
-      end for;
-      i := i + 1;
+  for syst in outSysts loop
+    for j in 1:BackendVariable.varsSize(syst.orderedVars) loop
+      BackendDAE.VAR(varName=cr) := BackendVariable.getVarAt(syst.orderedVars, j);
+      varsPartition := BaseHashTable.add((cr, i), varsPartition);
     end for;
+    i := i + 1;
   end for;
   //Detect subpartitions whose variables are used in hold operator
   for cr in inHoldComps loop
@@ -262,14 +245,11 @@ algorithm
     arrayUpdate(hasHoldOperator, i, true);
   end for;
 
-  i := 1; j := 1;
-  for tpls1 in tpls loop
-    for tpl in tpls1 loop
-      (vars, eqs, subclock) := tpl;
-      partitionKind := BackendDAE.CLOCKED_PARTITION(i, subclock, arrayGet(hasHoldOperator, j));
-      outSysts := BackendDAEUtil.createEqSystem(vars, eqs, {}, partitionKind)::outSysts;
-      j := j + 1;
-    end for;
+  i := 1;
+  outSubPartitions := arrayCreate( listLength(lstSubClocks),
+                                   BackendDAE.SUB_PARTITION(BackendDAE.DEFAULT_SUBCLOCK, false) );
+  for subclock in lstSubClocks loop
+    arrayUpdate(outSubPartitions, i, BackendDAE.SUB_PARTITION(subclock, hasHoldOperator[i]));
     i := i + 1;
   end for;
 end subClockPartitioning1;
@@ -336,42 +316,47 @@ protected function subClockPartitioning
  and vars, equations and sub-clocks of subpartitions."
   input BackendDAE.EqSystem inEqSystem;
   input BackendDAE.Shared inShared;
-  output list<UnresolvedPartitionData> outTpl = {};
-  output DAE.ClockKind outClock;
+  input Integer off;
+  output list<BackendDAE.EqSystem> outSysts;
+  output DAE.ClockKind outBaseClock;
+  output list<BackendDAE.SubClock> outSubClocks;
 protected
   DAE.FunctionTree funcs;
   BackendDAE.EquationArray eqs, clockEqs;
   BackendDAE.Variables vars, clockVars;
-  BackendDAE.EqSystem syst, clockSyst;
+  BackendDAE.EqSystem clockSyst;
   BackendDAE.IncidenceMatrix m, mT, rm, rmT;
   Integer i, partitionsCnt;
   array<Integer> partitions, reqsPartitions;
   list<BackendDAE.Equation> newClockEqs;
   list<BackendDAE.Var> newClockVars;
   array<Option<Boolean>> contPartitions;
-  array<BackendDAE.SubClock> subclocks;
+  array<tuple<BackendDAE.SubClock, Integer>> subclocksTree;
   BackendDAE.StrongComponents clockComps;
   array<Integer> subclksCnt;
   list<BackendDAE.EqSystem> systs;
+  array<Integer> order;
+  array<BackendDAE.SubClock> subclocks;
+  array<Boolean> clockedEqsMask, clockedVarsMask;
+  list<Integer> varIxs;
 algorithm
 
   funcs := BackendDAEUtil.getFunctions(inShared);
   BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs) := inEqSystem;
 
-  (clockEqs, eqs) := splitClockEqs(eqs);
-  (clockVars, vars) := splitClockVars(vars);
+  (clockEqs, clockedEqsMask) := splitClockEqs(eqs);
+  (clockVars, clockedVarsMask)  := splitClockVars(vars);
 
-  syst := BackendDAEUtil.createEqSystem(vars, eqs);
+  (m, mT) := BackendDAEUtil.incidenceMatrixMasked(inEqSystem, BackendDAE.SUBCLOCK_IDX(), clockedEqsMask, SOME(funcs));
+  (rm, rmT) := BackendDAEUtil.removedIncidenceMatrix(inEqSystem, BackendDAE.SUBCLOCK_IDX(), SOME(funcs));
 
-  (syst, m, mT) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.SUBCLOCK_IDX(), SOME(funcs));
-  (rm, rmT) := BackendDAEUtil.removedIncidenceMatrix(syst, BackendDAE.SUBCLOCK_IDX(), SOME(funcs));
-  partitions := arrayCreate(arrayLength(m), 0);
   reqsPartitions := arrayCreate(arrayLength(rm), 0);
-  partitionsCnt := partitionIndependentBlocks0(m, mT, rm, rmT, partitions, reqsPartitions);
+  partitions := arrayCreate(arrayLength(m), 0);
+  partitionsCnt := partitionIndependentBlocksMasked(m, mT, rm, rmT, clockedEqsMask, partitions, reqsPartitions);
 
   //Detect clocked continuous partitions and create new subclock equations
-  (eqs, newClockEqs, newClockVars, contPartitions, subclksCnt)
-      := collectSubclkInfo(eqs, partitionsCnt, partitions, vars, mT);
+  (newClockEqs, newClockVars, contPartitions, subclksCnt)
+      := collectSubclkInfo(eqs, inEqSystem.removedEqs, partitionsCnt, partitions, reqsPartitions, vars, mT);
 
   clockEqs := BackendEquation.addEquations(newClockEqs, clockEqs);
   clockVars := BackendVariable.addVars(newClockVars, clockVars);
@@ -383,30 +368,56 @@ algorithm
   BackendDAE.EQSYSTEM( orderedVars=clockVars, orderedEqs=clockEqs,
                        matching=BackendDAE.MATCHING(_, _, clockComps) ) := clockSyst;
 
-  syst :=  BackendDAEUtil.createEqSystem(vars, eqs);
-  systs :=
-    if partitionsCnt > 1 then
-      partitionIndependentBlocksSplitBlocks(partitionsCnt, syst, partitions, reqsPartitions, mT, false)
-    else
-      {syst};
+  maskMatrix(mT, clockedVarsMask);
+  maskMatrix(rmT, clockedVarsMask);
 
-  (subclocks, outClock) := resolveClocks(clockVars, clockEqs, clockComps);
-  subclocks := collectSubClocks(clockVars, partitionsCnt, partitions, contPartitions, subclksCnt, subclocks);
+  outSysts := partitionIndependentBlocksSplitBlocks(partitionsCnt, inEqSystem, partitions, reqsPartitions, mT, rmT, false);
 
-  i := 1;
-  for syst in systs loop
-    BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs) := syst;
-    outTpl := (vars, eqs, arrayGet(subclocks, i))::outTpl;
-    i := i + 1;
+  (subclocksTree, outBaseClock) := resolveClocks(clockVars, clockEqs, clockComps);
+  (subclocks, order) := collectSubClocks(clockVars, partitionsCnt, contPartitions, subclksCnt, subclocksTree);
+
+  if arrayLength(subclocks) <> partitionsCnt and arrayLength(order) <> partitionsCnt then
+    Error.addInternalError("SynchronousFeatures.subClockPartitioning failed", sourceInfo());
+    fail();
+  end if;
+
+  (outSysts, _) := List.map2Fold(outSysts, makeClockedSyst, order, off, 1);
+  outSubClocks := {};
+  for i in arrayLength(order):-1:1 loop
+    outSubClocks := subclocks[order[i]]::outSubClocks;
   end for;
 end subClockPartitioning;
+
+protected function maskMatrix
+  input array<list<Integer>> m;
+  input array<Boolean> mask;
+protected
+  list<Integer> ixs;
+algorithm
+  for i in 1:arrayLength(m) loop
+    if not mask[i] then
+      arrayUpdate(m, i, {});
+    end if;
+  end for;
+end maskMatrix;
+
+protected function makeClockedSyst
+  input BackendDAE.EqSystem inSyst;
+  input array<Integer> order;
+  input Integer inOff;
+  input Integer inIdx;
+  output BackendDAE.EqSystem outSyst = inSyst;
+  output Integer outIdx = inIdx + 1;
+algorithm
+  outSyst.partitionKind := BackendDAE.CLOCKED_PARTITION(order[inIdx] + inOff);
+end makeClockedSyst;
 
 protected function resolveClocks
 "Get from clock equation system array sub-clocks[varIdx] and base clock."
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqs;
   input BackendDAE.StrongComponents inComps;
-  output array<BackendDAE.SubClock> outSubClocks;
+  output array<tuple<BackendDAE.SubClock, Integer>> outSubClocks;
   output DAE.ClockKind outClockKind = DAE.INFERRED_CLOCK();
 protected
   Integer i;
@@ -415,11 +426,11 @@ protected
   DAE.Exp exp;
   BackendDAE.Var var;
   DAE.ClockKind clockKind;
-  BackendDAE.SubClock subClock;
+  tuple<BackendDAE.SubClock, Integer> subClock;
   BackendDAE.StrongComponent comp;
   Integer eqIdx, varIdx;
 algorithm
-  outSubClocks := arrayCreate(BackendVariable.varsSize(inVars), BackendDAE.SUBCLOCK(rat0, rat0, NONE()));
+  outSubClocks := arrayCreate(BackendVariable.varsSize(inVars), (BackendDAE.SUBCLOCK(MMath.RAT0, MMath.RAT0, NONE()), 0));
   for comp in inComps loop
     outClockKind := matchcontinue comp
       case BackendDAE.SINGLEEQUATION(eqIdx, varIdx)
@@ -442,77 +453,106 @@ algorithm
   end for;
 end resolveClocks;
 
-protected constant MMath.Rational rat0 = MMath.RATIONAL(0, 1);
-protected constant MMath.Rational rat1 = MMath.RATIONAL(1, 1);
-
 protected function getSubClock
 "Get base clock and subclock from expression"
   input DAE.Exp inExp;
   input BackendDAE.Variables inVars;
-  input array<BackendDAE.SubClock> inSubClocks;
+  input array<tuple<BackendDAE.SubClock, Integer>> inSubClocks;
   output DAE.ClockKind outClockKind;
-  output BackendDAE.SubClock outSubClock;
-protected
-  DAE.Exp e1, e2, e3;
-  String solverMethodStr;
-  Option<String> solverMethod;
-  BackendDAE.SubClock subClock;
-  DAE.ClockKind clockKind;
-  MMath.Rational factor, shift;
-  DAE.ComponentRef cr;
-  list<Integer> varIxs;
-  BackendDAE.Var var;
-  Integer i1, i2;
-  String err = "Internal error -- Function SynchronousFeatures.getSubClock failed for ";
+  output tuple<BackendDAE.SubClock, Integer> outSubClock;
 algorithm
   (outClockKind, outSubClock) := match inExp
+    local
+      DAE.Exp e1, e2, e3;
+      String solverMethodStr;
+      Option<String> solverMethod;
+      BackendDAE.SubClock subClock;
+      DAE.ClockKind clockKind;
+      MMath.Rational factor, shift;
+      DAE.ComponentRef cr;
+      list<Integer> varIxs;
+      BackendDAE.Var var;
+      Integer i1, i2, parentIdx;
+
     case DAE.CLKCONST(DAE.SOLVER_CLOCK(e1, solverMethodStr))
       algorithm
-        (clockKind, BackendDAE.SUBCLOCK(factor, shift, _)) := getSubClock(e1, inVars, inSubClocks);
-      then (clockKind, BackendDAE.SUBCLOCK(factor, shift, SOME(solverMethodStr)));
+        (clockKind, (subClock, parentIdx)) := getSubClock1(e1, inVars, inSubClocks);
+        subClock.solver := SOME(solverMethodStr);
+      then
+        (clockKind, (subClock, parentIdx));
+
     case DAE.CLKCONST(outClockKind)
-      then (outClockKind, BackendDAE.SUBCLOCK(rat1, rat0, NONE()));
+      then
+        (outClockKind, (BackendDAE.DEFAULT_SUBCLOCK, 0));
+
     case DAE.CALL(path = Absyn.IDENT("subSample"), expLst = {e1, e2})
       algorithm
-        (clockKind, BackendDAE.SUBCLOCK(factor, shift, solverMethod)) := getSubClock(e1, inVars, inSubClocks);
+        (clockKind, (subClock, parentIdx)) := getSubClock1(e1, inVars, inSubClocks);
         DAE.ICONST(i1) := e2;
-        factor := MMath.multRational(factor, MMath.RATIONAL(1, i1));
+        subClock.factor := MMath.multRational(subClock.factor, MMath.RATIONAL(i1, 1));
       then
-        (clockKind, BackendDAE.SUBCLOCK(factor, shift, solverMethod));
+        (clockKind, (subClock, parentIdx));
+
     case DAE.CALL(path = Absyn.IDENT("superSample"), expLst = {e1, e2})
       algorithm
-        (clockKind, BackendDAE.SUBCLOCK(factor, shift, solverMethod)) := getSubClock(e1, inVars, inSubClocks);
+        (clockKind, (subClock, parentIdx)) := getSubClock1(e1, inVars, inSubClocks);
         DAE.ICONST(i1) := e2;
-        factor := MMath.multRational(factor, MMath.RATIONAL(i1, 1));
+        subClock.factor := MMath.multRational(subClock.factor, MMath.RATIONAL(1, i1));
       then
-        (clockKind, BackendDAE.SUBCLOCK(factor, shift, solverMethod));
+        (clockKind, (subClock, parentIdx));
+
     case DAE.CALL(path = Absyn.IDENT("shiftSample"), expLst = {e1, e2, e3})
       algorithm
-        (clockKind, BackendDAE.SUBCLOCK(factor, shift, solverMethod)) := getSubClock(e1, inVars, inSubClocks);
+        (clockKind, (subClock, parentIdx)) := getSubClock1(e1, inVars, inSubClocks);
         DAE.ICONST(i1) := e2; DAE.ICONST(i2) := e3;
-        shift := MMath.addRational(factor, MMath.RATIONAL(i1, i2));
+        subClock.shift := MMath.addRational(subClock.shift, MMath.RATIONAL(i1, i2));
       then
-        (clockKind, BackendDAE.SUBCLOCK(factor, shift, solverMethod));
+        (clockKind, (subClock, parentIdx));
+
     case DAE.CALL(path = Absyn.IDENT("backSample"), expLst = {e1, e2, e3})
       algorithm
-        (clockKind, BackendDAE.SUBCLOCK(factor, shift, solverMethod)) := getSubClock(e1, inVars, inSubClocks);
+        (clockKind, (subClock, parentIdx)) := getSubClock1(e1, inVars, inSubClocks);
         DAE.ICONST(i1) := e2; DAE.ICONST(i2) := e3;
-        shift := MMath.subRational(factor, MMath.RATIONAL(i1, i2));
+        subClock.shift := MMath.subRational(subClock.shift, MMath.RATIONAL(i1, i2));
       then
-        (clockKind, BackendDAE.SUBCLOCK(factor, shift, solverMethod));
+        (clockKind, (subClock, parentIdx));
+
     case DAE.CREF(cr, _)
       algorithm
-        varIxs := getVarIxs(cr, inVars);
-        assert(listLength(varIxs) == 1, err + ExpressionDump.printExpStr(inExp) + ".\n");
+        i1 := getVarIdx(cr, inVars);
+       (subClock, _) := arrayGet(inSubClocks, i1);
       then
-        (DAE.INFERRED_CLOCK(), arrayGet(inSubClocks, List.first(varIxs)));
+        (DAE.INFERRED_CLOCK(), (subClock, i1));
+
     else
       algorithm
-        print(err + ExpressionDump.printExpStr(inExp) + ".\n");
+        print("Internal error -- Function SynchronousFeatures.getSubClock failed for " +
+              ExpressionDump.printExpStr(inExp) + ".\n");
       then
         fail();
   end match;
 end getSubClock;
+
+protected function getSubClock1
+  input DAE.Exp inExp;
+  input BackendDAE.Variables inVars;
+  input array<tuple<BackendDAE.SubClock, Integer>> inSubClocks;
+  output DAE.ClockKind outClockKind;
+  output tuple<BackendDAE.SubClock, Integer> outSubClock;
+protected
+  BackendDAE.SubClock subClk;
+  Integer parent;
+algorithm
+  (outClockKind, (subClk, parent)) := getSubClock(inExp, inVars, inSubClocks);
+  parent := match inExp
+    local
+      DAE.ComponentRef cr;
+    case DAE.CREF(cr, _)
+      then getVarIdx(cr, inVars);
+    else parent;
+  end match;
+  outSubClock := (subClk, parent);
+end getSubClock1;
 
 protected function setClockKind
   input DAE.ClockKind inOldClockKind;
@@ -532,46 +572,72 @@ protected function getSubClkFromVars
   input Integer partitionIdx;
   input Integer clkIdx;
   input BackendDAE.Variables inVars;
-  input array<BackendDAE.SubClock> inSubClocks;
+  input array<tuple<BackendDAE.SubClock, Integer>> inSubClocks;
+  input array<list<Integer>> parents;
+  input array<Integer> partitions;
   output BackendDAE.SubClock osubClk;
 protected
   String clkName;
   DAE.ComponentRef cr;
-  list<Integer> varIxs;
-  String err = "Internal error -- Function SynchronousFeatures.getSubClkFromVars failed\n";
+  Integer varIdx, parent;
+  list<Integer> lstParents;
+
 algorithm
   clkName := "$subclk" + intString(partitionIdx) + "_" + intString(clkIdx);
   cr := DAE.CREF_IDENT(clkName, DAE.T_CLOCK_DEFAULT, {});
-  varIxs := getVarIxs(cr, inVars);
+  varIdx := getVarIdx(cr, inVars);
 
-  assert(listLength(varIxs) == 1, err);
-  osubClk := arrayGet(inSubClocks, List.first(varIxs));
+  arrayUpdate(partitions, varIdx, partitionIdx);
+
+  lstParents := parents[partitionIdx];
+  (osubClk, parent) := arrayGet(inSubClocks, varIdx);
+  if parent <> 0 then
+    arrayUpdate(parents, partitionIdx, parent::lstParents);
+  end if;
 end getSubClkFromVars;
+
+protected function getVarIdx
+  input DAE.ComponentRef cr;
+  input BackendDAE.Variables vars;
+  output Integer idx;
+protected
+  list<Integer> ixs;
+algorithm
+  ixs := getVarIxs(cr, vars);
+  if listLength(ixs) <> 1 then
+    Error.addInternalError( "Internal error -- Function SynchronousFeatures.getVarIdx failed for " +
+                            ComponentReference.crefStr(cr) + ".\n", sourceInfo() );
+    fail();
+  end if;
+  idx := List.first(ixs);
+end getVarIdx;
 
 protected function collectSubClocks
   input BackendDAE.Variables inVars;
   input Integer inPartitionsCnt;
-  input array<Integer> inPartitions;
   input array<Option<Boolean>> contPartitions;
   input array<Integer> clocksCnt;
-  input array<BackendDAE.SubClock> inSubClocks "idx: var";
+  input array<tuple<BackendDAE.SubClock, Integer>> inSubClocks "idx: var";
   output array<BackendDAE.SubClock> outSubClocks "idx: partition";
+  output array<Integer> order;
 protected
   Integer i, j, partClocksCnt;
   BackendDAE.SubClock subClk, subClk1;
   Option<Boolean> isCont;
   MMath.Rational factor, shift;
-  array<Option<BackendDAE.SubClock>> subClocks;
+  array<list<Integer>> parents;
+  array<Integer> partitions;
 algorithm
-  subClocks := arrayCreate(inPartitionsCnt, NONE());
-  outSubClocks := arrayCreate(inPartitionsCnt, BackendDAE.SUBCLOCK(rat0, rat0, NONE()));
+  parents := arrayCreate(inPartitionsCnt, {});
+  partitions := arrayCreate(BackendVariable.varsSize(inVars), 0);
+  outSubClocks := arrayCreate(inPartitionsCnt, BackendDAE.DEFAULT_SUBCLOCK);
   for i in 1:inPartitionsCnt loop
     partClocksCnt := arrayGet(clocksCnt, i) - 1;
-    assert(partClocksCnt > 0, "Internal error -- Function SynchronousFeatures.collectSubClocks failed");
-    subClk := getSubClkFromVars(i, 1, inVars, inSubClocks);
+    assert(partClocksCnt <> 0, "SynchronousFeatures.collectSubClocks failed");
+    subClk := getSubClkFromVars(i, 1, inVars, inSubClocks, parents, partitions);
     if partClocksCnt > 1 then
         for j in 2:partClocksCnt loop
-          subClk1 := getSubClkFromVars(i, j, inVars, inSubClocks);
+          subClk1 := getSubClkFromVars(i, j, inVars, inSubClocks, parents, partitions);
           subClk := setSubClock(SOME(subClk), subClk1);
         end for;
       end if;
@@ -583,7 +649,60 @@ algorithm
     end match;
     arrayUpdate(outSubClocks, i, subClk);
   end for;
+
+  order := arrayCreate(inPartitionsCnt, 0);
+  i := 1;
+  for j in sortSubPartitions(inPartitionsCnt, parents, partitions) loop
+    arrayUpdate(order, j, i);
+    i := i + 1;
+  end for;
 end collectSubClocks;
+
+protected function sortSubPartitions
+  input Integer partitionsCnt;
+  input array<list<Integer>> parents;
+  input array<Integer> partitions;
+  output list<Integer> order = {};
+protected
+  Integer partIdx;
+  array<list<Integer>> children = arrayCreate(partitionsCnt, {});
+  array<Integer> colors = arrayCreate(partitionsCnt, 0);
+algorithm
+  /*Build subpartitions dependenct graph*/
+  for i in 1:partitionsCnt loop
+    for parent in parents[i] loop
+      partIdx := partitions[parent];
+      if partIdx <> 0 then
+        arrayUpdate(children, partIdx, List.unionElt(i, children[partIdx]));
+      end if;
+    end for;
+  end for;
+  /*Toposort with loop detection*/
+  for i in 1:partitionsCnt loop
+    order := dfs(children, i, colors, order);
+  end for;
+end sortSubPartitions;
+
+protected function dfs
+  input array<list<Integer>> children;
+  input Integer i;
+  input array<Integer> colors;
+  input list<Integer> inOrder;
+  output list<Integer> outOrder = inOrder;
+algorithm
+  if colors[i] == 1 then
+    Error.addCompilerError("Loop detected in subclock partitioning");
+    fail();
+  end if;
+  if colors[i] == 0 then
+    arrayUpdate(colors, i, 1);
+    for child in children[i] loop
+        outOrder := dfs(children, child, colors, outOrder);
+    end for;
+    outOrder := i::outOrder;
+    arrayUpdate(colors, i, 2);
+  end if;
+end dfs;
 
 protected function setSolverMethod
   input Option<String> oldSolverMethod;
@@ -937,60 +1056,38 @@ protected function collectSubclkInfo
   If a clocked partition is not a clocked continuous partition and it contains operator previous
   , or interval, it is a clocked discrete equation."
   input BackendDAE.EquationArray inEqs;
+  input BackendDAE.EquationArray inRemovedEqs;
   input Integer inPartitionCnt;
   input array<Integer> inPartitions;
+  input array<Integer> inReqsPartitions;
   input BackendDAE.Variables inVars;
   input BackendDAE.IncidenceMatrix mT;
-  output BackendDAE.EquationArray outEqs = inEqs;
-  output list<BackendDAE.Equation> outNewEqs = {};
-  output list<BackendDAE.Var> outNewVars = {};
+  output list<BackendDAE.Equation> outNewEqs;
+  output list<BackendDAE.Var> outNewVars;
   output array<Option<Boolean>> outContPartitions;
   output array<Integer> oClksCnt;
 protected
   BackendDAE.Equation eq;
-  Integer i, j, eqsSize, partitionIdx, cnt;
+  Integer i, j, eqsSize, cnt;
   BackendDAE.Equation eq;
   list<Integer> intLst;
-  BackendDAE.EquationAttributes eqAttr;
-  array<Integer> whenClocks;
-  array<list<Integer>> partitionsWhenClocks;
-  list<Integer> partitionWhenClocks;
   DAE.ComponentRef cr;
   BackendDAE.Var var;
-  SourceInfo source;
+  array<list<Integer>> partitionsWhenClocks;
 algorithm
-  eqsSize := BackendDAEUtil.equationArraySize(outEqs);
   outContPartitions := arrayCreate(inPartitionCnt, NONE());
+  partitionsWhenClocks := arrayCreate(inPartitionCnt, {});
   oClksCnt := arrayCreate(inPartitionCnt, 1);
-  whenClocks := arrayCreate(eqsSize, 0);
-  for i in 1 : eqsSize loop
-    eq := BackendEquation.equationNth1(outEqs, i);
-    eqAttr := BackendEquation.getEquationAttributes(eq);
-    eqAttr := match eqAttr
-      local
-        Integer whenIdx;
-        Boolean diff;
-        BackendDAE.LoopInfo loopInfo;
-      case BackendDAE.EQUATION_ATTRIBUTES(diff, BackendDAE.CLOCKED_EQUATION(whenIdx), loopInfo)
-        algorithm arrayUpdate(whenClocks, i, whenIdx) "Set when clock no for equation";
-        then BackendDAE.EQUATION_ATTRIBUTES(diff, BackendDAE.DYNAMIC_EQUATION(), loopInfo);
-      else eqAttr;
-    end match;
-    eq := BackendEquation.setEquationAttributes(eq, eqAttr);
-    partitionIdx := arrayGet(inPartitions, i);
-    DAE.SOURCE(info = source) := BackendEquation.equationSource(eq);
-    (eq, (outNewEqs, outNewVars, outContPartitions, _, oClksCnt, _, _, _, _))
-        := BackendEquation.traverseExpsOfEquation (
-            eq, collectSubclkInfoExp1, ( outNewEqs, outNewVars, outContPartitions, source,
-                                         oClksCnt,  partitionIdx, inPartitions, inVars, mT ) );
-    BackendEquation.setAtIndex(outEqs, i, eq);
-    j := arrayGet(whenClocks, i);
-    partitionsWhenClocks := arrayCreate(inPartitionCnt, {});
-    partitionWhenClocks := arrayGet(partitionsWhenClocks, partitionIdx);
-    if j <> 0 and List.notMember(j, partitionWhenClocks) then
-      arrayUpdate(partitionsWhenClocks, partitionIdx, j::partitionWhenClocks);
-    end if;
-  end for;
+
+  (outNewEqs, outNewVars) := collectEquationArrayClocks (
+      inEqs, inPartitionCnt, inPartitions, partitionsWhenClocks, oClksCnt,
+      outContPartitions, inVars, mT, {}, {}
+  );
+  (outNewEqs, outNewVars) := collectEquationArrayClocks (
+      inRemovedEqs, inPartitionCnt, inReqsPartitions, partitionsWhenClocks, oClksCnt,
+      outContPartitions, inVars, mT, outNewEqs, outNewVars
+  );
+
   for i in 1:inPartitionCnt loop
     for j in arrayGet(partitionsWhenClocks, i) loop
       //For each when clock j in partition i create equation "$subclki_n = $whenclkj"
@@ -1011,6 +1108,58 @@ algorithm
   end for;
 end collectSubclkInfo;
 
+protected function collectEquationArrayClocks
+  input BackendDAE.EquationArray eqs;
+  input Integer partitionsCnt;
+  input array<Integer> partitions;
+  input array<list<Integer>> partitionsWhenClocks;
+  input array<Integer> clksCnt;
+  input array<Option<Boolean>> contPartitions;
+  input BackendDAE.Variables inVars;
+  input BackendDAE.IncidenceMatrix mT;
+  input list<BackendDAE.Equation> inNewEqs;
+  input list<BackendDAE.Var> inNewVars;
+  output list<BackendDAE.Equation> outNewEqs = inNewEqs;
+  output list<BackendDAE.Var> outNewVars = inNewVars;
+protected
+  BackendDAE.Equation eq;
+  BackendDAE.EquationAttributes eqAttr;
+  Integer partitionIdx;
+  SourceInfo source;
+algorithm
+  for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
+    eq := BackendEquation.equationNth1(eqs, i);
+    partitionIdx := arrayGet(partitions, i);
+    DAE.SOURCE(info = source) := BackendEquation.equationSource(eq);
+
+    if partitionIdx <>0 then
+      eqAttr := BackendEquation.getEquationAttributes(eq);
+      eqAttr := match eqAttr
+        local
+          Integer whenIdx;
+          Boolean diff;
+          list<Integer> partitionsWhenClocksLst;
+          BackendDAE.LoopInfo loopInfo;
+        case BackendDAE.EQUATION_ATTRIBUTES(diff, BackendDAE.CLOCKED_EQUATION(whenIdx), loopInfo)
+          algorithm
+            partitionsWhenClocksLst := partitionsWhenClocks[partitionIdx];
+            if whenIdx <> 0 and List.notMember(whenIdx, partitionsWhenClocksLst) then
+              arrayUpdate(partitionsWhenClocks, partitionIdx, whenIdx::partitionsWhenClocksLst);
+            end if;
+          then BackendDAE.EQUATION_ATTRIBUTES(diff, BackendDAE.DYNAMIC_EQUATION(), loopInfo);
+        else eqAttr;
+      end match;
+      eq := BackendEquation.setEquationAttributes(eq, eqAttr);
+
+      (eq, (outNewEqs, outNewVars, _, _, _, _, _, _, _))
+          := BackendEquation.traverseExpsOfEquation (
+              eq, collectSubclkInfoExp1, ( outNewEqs, outNewVars, contPartitions, source,
+                                           clksCnt,  partitionIdx, partitions, inVars, mT ) );
+      BackendEquation.setAtIndex(eqs, i, eq);
+    end if;
+  end for;
+end collectEquationArrayClocks;
+
 protected function collectSubclkInfoExp1
   input DAE.Exp inExp;
   input tuple< list<BackendDAE.Equation>, list<BackendDAE.Var>, array<Option<Boolean>>, SourceInfo,
@@ -1025,42 +1174,41 @@ end collectSubclkInfoExp1;
 protected function splitClockEqs
   input BackendDAE.EquationArray inEqs;
   output BackendDAE.EquationArray outClockEqs;
-  output BackendDAE.EquationArray outClockedEqs;
+  output array<Boolean> outClockEqsMask;
 protected
-  list<BackendDAE.Equation> clockEqs = {}, clockedEqs = {};
+  list<BackendDAE.Equation> clockEqs = {};
   BackendDAE.Equation eq;
   Boolean notClock;
   Integer i;
 algorithm
+  outClockEqsMask := arrayCreate(BackendDAEUtil.equationArraySize(inEqs), true);
   for i in 1:BackendDAEUtil.equationArraySize(inEqs) loop
     eq := BackendEquation.equationNth1(inEqs, i);
-    (clockEqs, clockedEqs) := if isClockEquation(eq)
-                              then (eq::clockEqs, clockedEqs) else (clockEqs, eq::clockedEqs);
+    if isClockEquation(eq) then
+      clockEqs := eq::clockEqs;
+      arrayUpdate(outClockEqsMask, i, false);
+    end if;
   end for;
   outClockEqs := BackendEquation.listEquation(clockEqs);
-  outClockedEqs := BackendEquation.listEquation(clockedEqs);
 end splitClockEqs;
 
 protected function splitClockVars
   input BackendDAE.Variables inVars;
   output BackendDAE.Variables outClockVars;
-  output BackendDAE.Variables outClockedVars;
+  output array<Boolean> outClockVarsMask;
 protected
-  list<BackendDAE.Var> listVars, clockVars = {}, clockedVars = {};
+  list<BackendDAE.Var> clockVars = {};
   BackendDAE.Var var;
-  DAE.Type ty;
 algorithm
-  listVars := BackendVariable.varList(inVars);
-  for var in listVars loop
-    BackendDAE.VAR(varType = ty) := var;
-    if Types.isClockOrSubTypeClock(ty) then
+  outClockVarsMask := arrayCreate(BackendVariable.varsSize(inVars), true);
+  for i in 1:BackendVariable.varsSize(inVars) loop
+    var := BackendVariable.getVarAt(inVars, i);
+    if Types.isClockOrSubTypeClock(var.varType) then
         clockVars := var :: clockVars;
-    else
-        clockedVars := var :: clockedVars;
+        arrayUpdate(outClockVarsMask, i, false);
     end if;
   end for;
   outClockVars := BackendVariable.listVar(clockVars);
-  outClockedVars := BackendVariable.listVar(clockedVars);
 end splitClockVars;
 
 protected function substituteParitionOpExps
@@ -1365,14 +1513,16 @@ algorithm
   BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs) := syst;
   eqsPartition := arrayCreate(arrayLength(m), 0);
   reqsPartition := arrayCreate(arrayLength(rm), 0);
+
   partitionCnt := partitionIndependentBlocks0(m, mT, rm, rmT, eqsPartition, reqsPartition);
+
   if partitionCnt > 1 then
-    (systs, outUnpartRemEqs) := partitionIndependentBlocksSplitBlocks(partitionCnt, syst, eqsPartition, reqsPartition, mT, false);
+    (systs, outUnpartRemEqs) := partitionIndependentBlocksSplitBlocks(partitionCnt, syst, eqsPartition, reqsPartition, mT, rmT, false);
   else
     (systs, outUnpartRemEqs) := ({syst}, {});
   end if;
 
-  //Partition finished
+  //Partitioning finished
   clockedEqs := arrayCreate(BackendDAEUtil.equationArraySize(eqs), NONE());
   clockedVars := arrayCreate(BackendVariable.varsSize(vars), NONE());
   clockedPartitions := arrayCreate(if partitionCnt > 0 then partitionCnt else 1, NONE());
@@ -1445,11 +1595,20 @@ algorithm
     case BackendDAE.SOLVED_EQUATION(exp = e) then isClockExp(e);
     case BackendDAE.RESIDUAL_EQUATION(exp = e) then isClockExp(e);
     case BackendDAE.ALGORITHM() then false;
-    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(right=e)})) then isClockExp(e);
-    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.REINIT(value=e)})) then isClockExp(e);
-    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSERT(condition=e, message=message)})) then isClockExp(e) or isClockExp(message);
-    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.TERMINATE(message=message)})) then isClockExp(message);
-    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.NORETCALL(exp=e)})) then isClockExp(e);
+    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(right=e)}))
+      algorithm
+        if isClockExp(e) then
+          DAE.SOURCE(info = info) := BackendEquation.equationSource(inEq);
+          Error.addSourceMessageAndFail(Error.INVALID_CLOCK_EQUATION, {}, info);
+        end if;
+      then false;
+    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.REINIT(value=e)}))
+      algorithm
+        if isClockExp(e) then
+          DAE.SOURCE(info = info) := BackendEquation.equationSource(inEq);
+          Error.addSourceMessageAndFail(Error.INVALID_CLOCK_EQUATION, {}, info);
+        end if;
+      then false;
     case BackendDAE.COMPLEX_EQUATION(right = e) then isClockExp(e);
     case BackendDAE.IF_EQUATION(eqnstrue = trueEqs, eqnsfalse = falseEqs)
       algorithm
@@ -1688,6 +1847,26 @@ algorithm
   end for;
 end partitionIndependentBlocks0;
 
+public function partitionIndependentBlocksMasked
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.IncidenceMatrix rm;
+  input BackendDAE.IncidenceMatrixT rmT;
+  input array<Boolean> mask;
+  input array<Integer> ixs;
+  input array<Integer> rixs;
+  output Integer on = 0;
+algorithm
+  for i in arrayLength(m):-1:1 loop
+    if mask[i] then
+      on := if partitionIndependentBlocksEq(i, on + 1, m, mT, rm, rmT, ixs, rixs) then on + 1 else on;
+    end if;
+  end for;
+  for i in arrayLength(rm):-1:1 loop
+    on := if partitionIndependentBlocksReq(i, on + 1, m, mT, rm, rmT, ixs, rixs) then on + 1 else on;
+  end for;
+end partitionIndependentBlocksMasked;
+
 protected function partitionIndependentBlocksEq
   input Integer ix;
   input Integer n;
@@ -1726,6 +1905,7 @@ protected function partitionIndependentBlocksReq
   output Boolean ochange;
 algorithm
   ochange := arrayGet(rixs, ix) == 0;
+
   if ochange then
     arrayUpdate(rixs, ix, n);
     for i in arrayGet(rm, ix) loop
@@ -1747,9 +1927,10 @@ public function partitionIndependentBlocksSplitBlocks
   input array<Integer> ixs;
   input array<Integer> rixs;
   input BackendDAE.IncidenceMatrix mT;
+  input BackendDAE.IncidenceMatrix rmT;
   input Boolean throwNoError;
   output list<BackendDAE.EqSystem> systs = {};
-  output list<BackendDAE.Equation> unpartRemovedEqs = {};
+  output list<BackendDAE.Equation> unpartRemovedEqs;
 protected
   array<list<BackendDAE.Equation>> ea, rea;
   array<list<BackendDAE.Var>> va;
@@ -1757,7 +1938,8 @@ protected
   String s1, s2;
   Boolean b, b1 = true;
   BackendDAE.EqSystem syst;
-  list<BackendDAE.Equation> rest;
+  array<Integer> varsPartition;
+  list<BackendDAE.Var> lstVars;
 algorithm
   ea := arrayCreate(n, {});
   rea := arrayCreate(n, {});
@@ -1773,10 +1955,20 @@ algorithm
     fail();
   end if;
 
-  rest := partitionEquations(BackendDAEUtil.equationArraySize(inSyst.orderedEqs), inSyst.orderedEqs, ixs, ea);
-  assert(listLength(rest) == 0, "Equations partitioning failure in SynchronousFeatures.partitionIndependentBlocksSplitBlocks");
-  unpartRemovedEqs := partitionEquations(BackendDAEUtil.equationArraySize(inSyst.removedEqs), inSyst.removedEqs, rixs, rea);
-  partitionVars(i2, inSyst.orderedEqs, inSyst.orderedVars, ixs, mT, va);
+  partitionEquations(inSyst.orderedEqs, ixs, ea);
+  unpartRemovedEqs := partitionEquations(inSyst.removedEqs, rixs, rea);
+
+  varsPartition := arrayCreate(BackendVariable.varsSize(inSyst.orderedVars), 0);
+  for i in 1:BackendVariable.varsSize(inSyst.orderedVars) loop
+    setVarPartition(varsPartition, i, mT[i], ixs);
+    setVarPartition(varsPartition, i, rmT[i], rixs);
+  end for;
+  for i in arrayLength(varsPartition):-1:1 loop
+    if varsPartition[i] <> 0 then
+      lstVars := va[varsPartition[i]];
+      arrayUpdate(va, varsPartition[i], BackendVariable.getVarAt(inSyst.orderedVars, i)::lstVars);
+    end if;
+  end for;
 
   for i in 1:n loop
     (syst, (b, _)) := createEqSystem(ea[i], va[i], rea[i], (true, throwNoError));
@@ -1785,8 +1977,24 @@ algorithm
   end for;
   true := throwNoError or b1;
   systs := listReverse(systs);
-
 end partitionIndependentBlocksSplitBlocks;
+
+protected function setVarPartition
+  input array<Integer> varsPartition;
+  input Integer i;
+  input list<Integer> eqsIxs;
+  input array<Integer> eqsPartitions;
+protected
+  Integer partitionIdx;
+algorithm
+  for eq in eqsIxs loop
+    partitionIdx := eqsPartitions[eq];
+    if partitionIdx <> 0 then
+      assert(varsPartition[i] == 0 or varsPartition[i] == partitionIdx, "SynchronousFeatures.setVarPartition failed");
+      arrayUpdate(varsPartition, i, partitionIdx);
+    end if;
+  end for;
+end setVarPartition;
 
 protected function createEqSystem
   input list<BackendDAE.Equation> el;
@@ -1827,7 +2035,6 @@ algorithm
 end createEqSystem;
 
 protected function partitionEquations
-  input Integer n;
   input BackendDAE.EquationArray arr;
   input array<Integer> ixs;
   input array<list<BackendDAE.Equation>> ea;
@@ -1837,7 +2044,7 @@ protected
   list<BackendDAE.Equation> lst;
   BackendDAE.Equation eq;
 algorithm
-  for i in n:-1:1 loop
+  for i in BackendDAEUtil.equationArraySize(arr):-1:1 loop
     ix := ixs[i];
     eq := BackendEquation.equationNth1(arr, i);
     if ix == 0 then
@@ -1850,80 +2057,6 @@ algorithm
     end if;
   end for;
 end partitionEquations;
-
-protected function partitionVars
-  input Integer n;
-  input BackendDAE.EquationArray arr;
-  input BackendDAE.Variables vars;
-  input array<Integer> ixs;
-  input BackendDAE.IncidenceMatrix mT;
-  input array<list<BackendDAE.Var>> va;
-protected
-  Integer ix, eqix;
-  list<BackendDAE.Var> lst;
-  BackendDAE.Var v;
-  Boolean b;
-  DAE.ComponentRef cr;
-  String name;
-  SourceInfo info;
-algorithm
-  for i in n:-1:1 loop
-    v := BackendVariable.getVarAt(vars, i);
-    cr := BackendVariable.varCref(v);
-
-    // Select any equation that could define this variable
-    if listEmpty(mT[i]) then
-      name := ComponentReference.printComponentRefStr(cr);
-      info := DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(v));
-      Error.addSourceMessage(Error.EQUATIONS_VAR_NOT_DEFINED, {name}, info);
-      fail();
-    end if;
-
-    // print("adding var " + intString(i) + " to group ???\n");
-    eqix::_ := mT[i];
-    eqix := intAbs(eqix);
-    // print("var " + intString(i) + " has eq " + intString(eqix) + "\n");
-    // That's the index of the indep.system
-    ix := ixs[eqix];
-    lst := va[ix];
-    lst := v::lst;
-    // print("adding var " + intString(i) + " to group " + intString(ix) + " (comes from eq: "+ intString(eqix) +")\n");
-    arrayUpdate(va, ix, lst);
-  end for;
-end partitionVars;
-
-protected function setValue
-  input BackendDAE.Var inVar;
-  input Values.Value inVal;
-  output BackendDAE.Var outVar;
-protected
-  DAE.ComponentRef varName;
-  BackendDAE.VarKind varKind;
-  DAE.VarDirection varDirection;
-  DAE.VarParallelism varParallelism;
-  BackendDAE.Type varType;
-  Option<DAE.Exp> bindExp;
-  DAE.InstDims arryDim;
-  DAE.ElementSource source;
-  Option<DAE.VariableAttributes> values;
-  Option<BackendDAE.TearingSelect> tearingSelectOption;
-  Option<SCode.Comment> comment;
-  DAE.ConnectorType connectorType;
-  DAE.VarInnerOuter innerOuter;
-  Boolean unreplaceable;
-algorithm
-  BackendDAE.VAR( varName = varName, varKind = varKind, varDirection = varDirection,
-                  varParallelism = varParallelism, varType = varType, bindExp = bindExp,
-                  arryDim = arryDim, source = source, values = values,
-                  tearingSelectOption = tearingSelectOption, comment = comment,
-                  connectorType = connectorType, innerOuter = innerOuter, unreplaceable = unreplaceable) := inVar;
-  outVar := BackendDAE.VAR( varName = varName, varKind = varKind, varDirection = varDirection,
-                            varParallelism = varParallelism, varType = varType, bindExp = bindExp,
-                            arryDim = arryDim, source = source, values = values, bindValue = SOME(inVal),
-                            tearingSelectOption = tearingSelectOption, comment = comment,
-                            connectorType = connectorType, innerOuter = innerOuter, unreplaceable = unreplaceable);
-end setValue;
-
 
 annotation(__OpenModelica_Interface="backend");
 end SynchronousFeatures;

@@ -578,7 +578,7 @@ protected
   BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, partitionKind=partitionKind) := inSyst;
-  (outSyst, outShared) := match partitionKind
+  (outSyst, outShared) := match BackendDAEUtil.getSubClock(inSyst, inShared)
     local
       BackendDAE.Variables knvars;
       BackendDAE.EquationArray eqns1;
@@ -589,7 +589,7 @@ algorithm
       list<BackendDAE.ZeroCrossing> relations, sampleLst;
       Integer countMathFunctions;
     //No zero crossing for clocked discrete partitions;
-    case BackendDAE.CLOCKED_PARTITION(subClock=BackendDAE.SUBCLOCK(solver=NONE()))
+    case SOME(BackendDAE.SUBCLOCK(solver=NONE()))
       then (inSyst, inShared);
     else
       algorithm

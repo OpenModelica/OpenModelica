@@ -321,9 +321,7 @@ algorithm
       dlow := BackendDAEUtil.mapEqSystem(dlow, Vectorization.enlargeIteratedArrayVars);
     end if;
 
-
-    (clockedSysts, contSysts) := List.splitOnTrue(dlow.eqs, BackendDAEUtil.isClockedSyst);
-    modelInfo := createModelInfo(inClassName, BackendDAE.DAE(contSysts, shared), initDAE, functions, {}, numStateSets, inFileDir, listLength(clockedSysts));
+    modelInfo := createModelInfo(inClassName, dlow, initDAE, functions, {}, numStateSets, inFileDir, listLength(clockedSysts));
     modelInfo := addTempVars(tempvars, modelInfo);
 
     // external objects
@@ -543,39 +541,38 @@ protected function translateClockedEquations
   input list<tuple<Integer,Integer>> ieqSccMapping;
   input list<tuple<Integer,Integer>> ieqBackendSimCodeMapping;
   input list<SimCodeVar.SimVar> itempvars;
-  output list<SimCode.ClockedPartition> outSysts = {};
+  output list<SimCode.ClockedPartition> outPartitions = {};
   output Integer ouniqueEqIndex = iuniqueEqIndex;
   output SimCode.BackendMapping oBackendMapping = iBackendMapping;
   output list<tuple<Integer,Integer>> oeqSccMapping = ieqSccMapping;
   output list<tuple<Integer,Integer>> oeqBackendSimCodeMapping = ieqBackendSimCodeMapping;
   output list<SimCodeVar.SimVar> otempvars = itempvars;
 protected
-  array<list<SimCode.SubPartition>> subPartitionsArr;
-  Integer baseIdx;
+  Integer baseIdx, subPartIdx, cnt;
   BackendDAE.SubClock subClk;
   list<SimCode.SimEqSystem> removedEquations, equations, preEquations;
-  SimCode.SubPartition subPartition;
+  SimCode.SubPartition simSubPartition;
   Boolean holdEvents;
-  array<DAE.ClockKind> baseClocks;
   array<Integer> ass1, stateeqnsmark, zceqnsmarks;
   DAE.FunctionTree funcs;
   BackendDAE.StrongComponents comps;
   Integer sccOffset = iSccOffset;
   list<Integer> varIxs;
   DAE.Type ty;
-  SimCodeVar.SimVar var;
-  list<DAE.ComponentRef> prevCompRefs = {};
-  array<Boolean> previousUsed;
+  BackendDAE.Var var;
   BackendDAE.Equation eq;
   SimCodeVar.SimVar simVar;
   DAE.ComponentRef cr;
+  list<SimCodeVar.SimVar> clockedVars;
+  array<Option<SimCode.SubPartition>> simSubPartitions;
+  BackendDAE.SubPartition subPartition;
 algorithm
-  baseClocks := inShared.partitionsInfo.clocks;
-  subPartitionsArr := arrayCreate(arrayLength(baseClocks), {});
+  simSubPartitions := arrayCreate(arrayLength(inShared.partitionsInfo.subPartitions), NONE());
   funcs := BackendDAEUtil.getFunctions(inShared);
   for syst in inSysts loop
-    BackendDAE.CLOCKED_PARTITION(baseClock=baseIdx, subClock=subClk, holdEvents=holdEvents) := syst.partitionKind;
+    BackendDAE.CLOCKED_PARTITION(subPartIdx) := syst.partitionKind;
     BackendDAE.MATCHING(ass1=ass1, comps=comps) := syst.matching;
+    subPartition := inShared.partitionsInfo.subPartitions[subPartIdx];
 
     (syst, _, _) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.ABSOLUTE(), SOME(funcs));
     stateeqnsmark := arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
@@ -583,79 +580,49 @@ algorithm
     zceqnsmarks := arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
 
     //FIXME: Add continuous clocked systems support
-    (_, _, equations, _, ouniqueEqIndex, otempvars, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping) :=
-        createEquationsForSystem(stateeqnsmark, zceqnsmarks, syst, inShared, comps, ouniqueEqIndex, otempvars,
+    (_, _, equations, _, ouniqueEqIndex, clockedVars, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping) :=
+        createEquationsForSystem(stateeqnsmark, zceqnsmarks, syst, inShared, comps, ouniqueEqIndex, {},
                                  sccOffset, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping);
     sccOffset := listLength(comps) + sccOffset;
-    (equations, prevCompRefs) := traverseExpsEqSystems(equations, replacePreviousExps, {}, {});
 
     (ouniqueEqIndex, removedEquations) := BackendEquation.traverseEquationArray(syst.removedEqs, traversedlowEqToSimEqSystem, (ouniqueEqIndex, {}));
-    (removedEquations, prevCompRefs) := traverseExpsEqSystems(removedEquations, replacePreviousExps, prevCompRefs, {});
 
-    previousUsed := arrayCreate(BackendVariable.varsSize(syst.orderedVars), false);
-    for cr in prevCompRefs loop
-      try
-        (_, varIxs) := BackendVariable.getVar(cr, syst.orderedVars);
-        for idx in varIxs loop
-          arrayUpdate(previousUsed, idx, true);
-        end for;
-      else
-      end try;
-    end for;
-
-    preEquations := {};
-    for i in 1:BackendVariable.varsSize(syst.orderedVars) loop
-      simVar := dlowvarToSimvar(BackendVariable.getVarAt(syst.orderedVars, i), SOME(inShared.aliasVars), inShared.knownVars);
-      otempvars := simVar::otempvars;
-      if previousUsed[i] and not isAliasVar(simVar) then
-        cr := simVar.name;
-        simVar.name := ComponentReference.crefPrefixString("$previous", simVar.name);
-        otempvars := simVar::otempvars;
-        preEquations := SimCode.SES_SIMPLE_ASSIGN(ouniqueEqIndex, simVar.name, DAE.CREF(cr, simVar.type_), DAE.emptyElementSource)::preEquations;
-        ouniqueEqIndex := ouniqueEqIndex + 1;
-      end if;
-    end for;
-
-
-    equations := List.map(listAppend(equations, preEquations), addDivExpErrorMsgtoSimEqSystem);
+    equations := List.map(equations, addDivExpErrorMsgtoSimEqSystem);
     removedEquations := List.map(removedEquations, addDivExpErrorMsgtoSimEqSystem);
 
-    subPartition := SimCode.SUBPARTITION(equations, removedEquations, subClk, holdEvents);
-    arrayUpdate(subPartitionsArr, baseIdx, subPartition::subPartitionsArr[baseIdx]);
+    simSubPartition := SimCode.SUBPARTITION(equations, removedEquations, subPartition.clock, subPartition.holdEvents);
+
+    assert(isNone(simSubPartitions[subPartIdx]), "SimCodeUtil.translateClockedEquations failed");
+    arrayUpdate(simSubPartitions, subPartIdx, SOME(simSubPartition));
+    otempvars := listAppend(clockedVars, otempvars);
   end for;
-  for i in 1:arrayLength(baseClocks) loop
-    outSysts := SimCode.CLOCKED_PARTITION(baseClocks[i], subPartitionsArr[i])::outSysts;
-  end for;
+  outPartitions := createClockedSimPartitions(inShared.partitionsInfo.basePartitions, simSubPartitions);
 end translateClockedEquations;
 
-protected function replacePreviousExps
-  input DAE.Exp inExp;
-  input list<DAE.ComponentRef> inPrevCompRefs;
-  output DAE.Exp outExp;
-  output list<DAE.ComponentRef> outPrevCompRefs;
-algorithm
-  (outExp, outPrevCompRefs) := Expression.traverseExpBottomUp(inExp, replacePreviousExps1, inPrevCompRefs);
-end replacePreviousExps;
-
-protected function replacePreviousExps1
-"Replace expressions: previous(x) --> $previous_x
- and collect x"
-  input DAE.Exp inExp;
-  input list<DAE.ComponentRef> inPrevCompRefs;
-  output DAE.Exp outExp;
-  output list<DAE.ComponentRef> outPrevCompRefs;
+protected function createClockedSimPartitions
+  input array<BackendDAE.BasePartition> basePartitions;
+  input array<Option<SimCode.SubPartition>> subPartitions;
+  output list<SimCode.ClockedPartition> clockedPartitions = {};
 protected
-  DAE.ComponentRef cr;
-  DAE.Exp e;
+  Integer off = 1;
+  BackendDAE.BasePartition basePartition;
+  list<SimCode.SubPartition> simSubPartitions;
 algorithm
-  (outExp, outPrevCompRefs) := match inExp
-    local
-      DAE.Type ty;
-    case DAE.CALL(path=Absyn.IDENT("previous"), expLst={e as DAE.CREF(cr, ty)})
-      then (DAE.CREF(ComponentReference.crefPrefixString("$previous", cr), ty), cr::inPrevCompRefs);
-    else (inExp, inPrevCompRefs);
-  end match;
-end replacePreviousExps1;
+  for i in 1:arrayLength(basePartitions) loop
+    basePartition := basePartitions[i];
+    simSubPartitions := List.map(Array.getRange(off, off + basePartition.nSubClocks - 1, subPartitions), Util.getOption);
+    simSubPartitions := listReverse(simSubPartitions);
+    off := off + basePartition.nSubClocks;
+    clockedPartitions := SimCode.CLOCKED_PARTITION(basePartition.clock, simSubPartitions)::clockedPartitions;
+  end for;
+end createClockedSimPartitions;
+
+protected function getSimVarCompRef
+  input SimCodeVar.SimVar inVar;
+  output DAE.ComponentRef outComp;
+algorithm
+  outComp := inVar.name;
+end getSimVarCompRef;
 
 public function getSubPartitions
   input list<SimCode.ClockedPartition> inPartitions;
@@ -5643,7 +5610,8 @@ algorithm
                              numStateSets, numOptimizeConstraints, numOptimizeFinalConstraints);
     maxDer := getHighestDerivation(dlow);
     modelInfo := SimCode.MODELINFO(class_, dlow.shared.info.description, directory, varInfo, vars, functions,
-                                   labels, maxDer, arrayLength(dlow.shared.partitionsInfo.clocks), nSubClock);
+                                   labels, maxDer, arrayLength(dlow.shared.partitionsInfo.basePartitions),
+                                   arrayLength(dlow.shared.partitionsInfo.subPartitions));
   else
     Error.addInternalError("createModelInfo failed", sourceInfo());
     fail();

@@ -45,6 +45,9 @@ record RATIONAL "represents a rational number, e.g. 6/7"
   end RATIONAL;
 end Rational;
 
+public constant Rational RAT0 = RATIONAL(0, 1);
+public constant Rational RAT1 = RATIONAL(1, 1);
+
 public function addRational "adds two rationals"
   input Rational r1;
   input Rational r2;

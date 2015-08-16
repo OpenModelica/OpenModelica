@@ -272,15 +272,40 @@ algorithm
   dumpConstraintList(inShared.constraints, "Constraints");
 end printShared;
 
-public function printClocks
-  input array<DAE.ClockKind> clocks;
+public function printBasePartitions
+  input array<BackendDAE.BasePartition> basePartitions;
 protected
-    Integer i;
+  String clkExpStr, nSubClocksStr;
 algorithm
-  for i in 1:arrayLength(clocks) loop
-    print(intString(i) + ": " + Tpl.tplString2(ExpressionDumpTpl.dumpClockKind, arrayGet(clocks, i), "") + "\n");
+  for i in 1:arrayLength(basePartitions) loop
+    clkExpStr := Tpl.tplString2( ExpressionDumpTpl.dumpClockKind,
+                                 basePartitions[i].clock, "");
+    nSubClocksStr := intString(basePartitions[i].nSubClocks);
+    print(intString(i) + ": " + clkExpStr + "[" + nSubClocksStr + "]" + "\n");
   end for;
-end printClocks;
+end printBasePartitions;
+
+public function printSubPartitions
+  input array<BackendDAE.SubPartition> subPartitions;
+protected
+  String factorStr, shiftStr, solverStr, eventStr;
+  BackendDAE.SubClock clk;
+algorithm
+  for i in 1:arrayLength(subPartitions) loop
+    clk := subPartitions[i].clock;
+    factorStr := "factor(" + MMath.rationalString(clk.factor) + ")";
+    shiftStr := "shift(" + MMath.rationalString(clk.shift) + ")";
+    solverStr := match clk.solver
+      local
+        String s;
+      case NONE() then "";
+      case SOME(s) then "solver(" + s + ")";
+    end match;
+    eventStr := "event(" + boolString(subPartitions[i].holdEvents) + ")";
+    print( intString(i) + ": " + factorStr + " " + shiftStr + " " +
+           solverStr + " " + eventStr + "\n");
+  end for;
+end printSubPartitions;
 
 public function printBackendDAEType "This is a helper for printShared."
   input BackendDAE.BackendDAEType btp;
@@ -558,14 +583,24 @@ algorithm
   print("\n");
 end dumpEqSystems;
 
-public function dumpClocks
-  input array<DAE.ClockKind> clocks;
+public function dumpBasePartitions
+  input array<BackendDAE.BasePartition> basePartitions;
   input String heading;
 algorithm
-  print("\n" + heading + " (" + intString(arrayLength(clocks)) + ")\n" + UNDERLINE + "\n");
-  printClocks(clocks);
+  print("\n" + heading + " (" + intString(arrayLength(basePartitions)) + ")\n" + UNDERLINE + "\n");
+  printBasePartitions(basePartitions);
   print("\n");
-end dumpClocks;
+end dumpBasePartitions;
+
+public function dumpSubPartitions
+  input array<BackendDAE.SubPartition> subPartitions;
+  input String heading;
+algorithm
+  print("\n" + heading + " (" + intString(arrayLength(subPartitions)) + ")\n" + UNDERLINE + "\n");
+  printSubPartitions(subPartitions);
+  print("\n");
+end dumpSubPartitions;
+
 
 public function dumpVariables "function dumpVariables"
   input BackendDAE.Variables inVars;
@@ -2565,20 +2600,8 @@ public function partitionKindString
 algorithm
   outString := match(inPartitionKind)
     local
-      String solver;
-      Integer baseClock;
-      MMath.Rational factor, shift;
-      Option<String> solverMethod;
-      String solver;
-    case BackendDAE.CLOCKED_PARTITION( baseClock,
-                                       BackendDAE.SUBCLOCK(factor, shift, solverMethod) )
-      algorithm
-        solver := match solverMethod
-          case NONE() then "";
-          case SOME(solver) then ", " + solver;
-        end match;
-      then "clocked partition(" + intString(baseClock) + ", " + MMath.rationalString(factor)
-            + ", " + MMath.rationalString(shift) + solver + ")";
+      Integer idx;
+    case BackendDAE.CLOCKED_PARTITION(idx) then "clocked partition(" + intString(idx) + ")";
     case BackendDAE.CONTINUOUS_TIME_PARTITION() then "continuous time partition";
     case BackendDAE.UNSPECIFIED_PARTITION() then "unspecified partition";
     case BackendDAE.UNKNOWN_PARTITION() then "unknown partition";
