@@ -159,16 +159,6 @@ algorithm
   end matchcontinue;
 end intGcd;
 
-public function printNumber
-  input Rational inp;
-  output String out;
-protected
-  Integer i1, i2;
-algorithm
-  RATIONAL(i1, i2) := inp;
-  out := intString(i1) + "/" + intString(i2);
-end printNumber;
-
 /* Tests */
 
 public function testRational "test rational operators"

@@ -2577,8 +2577,8 @@ algorithm
           case NONE() then "";
           case SOME(solver) then ", " + solver;
         end match;
-      then "clocked partition(" + intString(baseClock) + ", " + MMath.printNumber(factor)
-            + ", " + MMath.printNumber(shift) + solver + ")";
+      then "clocked partition(" + intString(baseClock) + ", " + MMath.rationalString(factor)
+            + ", " + MMath.rationalString(shift) + solver + ")";
     case BackendDAE.CONTINUOUS_TIME_PARTITION() then "continuous time partition";
     case BackendDAE.UNSPECIFIED_PARTITION() then "unspecified partition";
     case BackendDAE.UNKNOWN_PARTITION() then "unknown partition";
