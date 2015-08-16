@@ -48,7 +48,7 @@
 #include <errno.h>
 #include <float.h>
 
-
+#include "simulation/solver/synchronous.h"
 
 /*! \fn updateContinuousSystem
  *
@@ -72,10 +72,8 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
   TRACE_POP
 }
 
-static void simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
-  int eventType;
-
   prefixedName_updateContinuousSystem(data, threadData);
 
   if (solverInfo->solverMethod == S_SYM_IMP_EULER) data->callback->symEulerUpdate(data, solverInfo->solverStepSize);
@@ -86,8 +84,9 @@ static void simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* 
   /***** Event handling *****/
   if (measure_time_flag) rt_tick(SIM_TIMER_EVENT);
 
-  eventType = checkEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
-  if(eventType > 0) /* event */
+  int syncRet = handleTimers(data, threadData, solverInfo);
+  int eventType = checkEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
+  if(eventType > 0 || syncRet == 2) /* event */
   {
     threadData->currentErrorStage = ERROR_EVENTHANDLING;
     infoStreamPrint(LOG_EVENTS, 1, "%s event at time=%.12g", eventType == 1 ? "time" : "state", solverInfo->currentTime);
@@ -124,6 +123,8 @@ static void simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* 
 
   storePreValues(data);
   storeOldValues(data);
+
+  return syncRet;
 }
 
 static int simulationStep(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
@@ -305,6 +306,8 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
   printAllVarsDebug(data, 0, LOG_DEBUG); /* ??? */
   printSparseStructure(data, LOG_SOLVER);
 
+  modelica_boolean syncStep = 0;
+
   /***** Start main simulation loop *****/
   while(solverInfo->currentTime < simInfo->stopTime)
   {
@@ -326,8 +329,10 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
       clear_rt_step(data);
       rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
 
+      modelica_boolean syncEventStep = solverInfo->didEventStep || syncStep;
+
       /***** Calculation next step size *****/
-      if(solverInfo->didEventStep == 1)
+      if(syncEventStep)
       {
         infoStreamPrint(LOG_SOLVER, 0, "offset value for the next step: %.16g", (solverInfo->currentTime - solverInfo->laststep));
       }
@@ -344,12 +349,13 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
       }
       /***** End calculation next step size *****/
 
+      checkForSynchronous(data, solverInfo);
       /* check for next time event */
       checkForSampleEvent(data, solverInfo);
 
       /* if regular output point and last time events are almost equals
        * skip that step and go further */
-      if (solverInfo->currentStepSize < 1e-15 && solverInfo->didEventStep == 1){
+      if (solverInfo->currentStepSize < 1e-15 && syncEventStep){
         __currStepNo++;
         continue;
       }
@@ -361,7 +367,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
       retValIntegrator = simulationStep(data, threadData, solverInfo);
 
       if (S_OPTIMIZATION == solverInfo->solverMethod) break;
-      simulationUpdate(data, threadData, solverInfo);
+      syncStep = simulationUpdate(data, threadData, solverInfo);
       retry = 0; /* reset retry */
 
       fmtEmitStep(data, threadData, &fmt, solverInfo->didEventStep);

@@ -42,6 +42,7 @@
 #include "util/omc_error.h"
 #include "util/rtclock.h"
 #include "util/rational.h"
+#include "util/list.h"
 
 #define omc_dummyVarInfo {-1,"","",omc_dummyFileInfo}
 #define omc_dummyEquationInfo {-1,0,"",-1,NULL}
@@ -428,6 +429,7 @@ typedef struct SUBCLOCK_INFO {
 typedef struct CLOCK_INFO {
   long nSubClocks;
   SUBCLOCK_INFO* subClocks;
+  modelica_boolean isBoolClock;
 } CLOCK_INFO;
 
 typedef struct MODEL_DATA
@@ -538,6 +540,7 @@ typedef struct SIMULATION_INFO
   double *nextSampleTimes;             /* array of next sample time */
   modelica_boolean *samples;           /* array of the current value for all sample-calls */
 
+  LIST* intvlTimers;
   CLOCK_DATA *clocksData;
 
   modelica_real* zeroCrossings;

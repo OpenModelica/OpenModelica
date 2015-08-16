@@ -55,6 +55,7 @@ RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/delay.h \
 ./simulation/solver/perform_qss_simulation.c \
 ./simulation/solver/dassl.h \
 ./simulation/solver/events.h \
+./simulation/solver/synchronous.h \
 ./simulation/solver/external_input.h\
 ./simulation/solver/solver_main.h
 

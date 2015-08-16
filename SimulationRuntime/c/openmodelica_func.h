@@ -296,9 +296,9 @@ int (*symEulerUpdate)(DATA * data, modelica_real dt);
 void (*function_initSynchronous)(DATA * data, threadData_t *threadData);
 
 /*
- * Check if clock is fired. In that case function updates base clock's timepoint and interval in CLOCK_DATA struct.
+ * Update clock interval.
  */
-modelica_boolean (*function_updateSynchronous)(DATA *data, threadData_t *threadData, long i);
+void (*function_updateSynchronous)(DATA *data, threadData_t *threadData, long i);
 
 /*
  * Sub-partition's equations

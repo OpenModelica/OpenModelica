@@ -28,30 +28,36 @@
  *
  */
 
-#ifndef _RATIONAL_H_
-#define _RATIONAL_H_
+/*! \file synchronous.h
+ */
+
+#ifndef _SYNCHRONOUS_H_
+#define _SYNCHRONOUS_H_
+
+#include "simulation_data.h"
+#include "simulation/solver/solver_main.h"
+#include "util/list.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// m/n
-typedef struct RATIONAL {
-  long m;
-  long n;
-} RATIONAL;
+typedef enum SYNC_TIMER_TYPE {
+  SYNC_BASE_CLOCK, SYNC_SUB_CLOCK
+} SYNC_TIMER_TYPE;
 
-RATIONAL addInt2Rat(long a, RATIONAL b);
-RATIONAL subInt2Rat(long a, RATIONAL b);
-RATIONAL addRat2Rat(RATIONAL a, RATIONAL b);
-RATIONAL multRat2Rat(RATIONAL a, RATIONAL b);
-RATIONAL divRat2Rat(RATIONAL a, RATIONAL b);
-RATIONAL multInt2Rat(long a, RATIONAL b);
-double rat2Real(RATIONAL a);
-long ceilRat(RATIONAL a);
-long ceilRatStrict(RATIONAL a);
-long floorRat(RATIONAL a);
-long floorRatStrict(RATIONAL a);
+typedef struct SYNC_TIMER {
+  long idx;
+  SYNC_TIMER_TYPE type;
+  double activationTime;
+} SYNC_TIMER;
+
+
+void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTime);
+void checkForSynchronous(DATA *data, SOLVER_INFO* solverInfo);
+void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curTime);
+int handleTimers(DATA *data, threadData_t *threadData, SOLVER_INFO* solverInfo);
+
 
 #ifdef __cplusplus
 }

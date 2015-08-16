@@ -38,6 +38,9 @@
 static
 const double SAMPLE_EPS = 1e-14;
 
+static
+const double SYNC_EPS = 1e-14;
+
 /*
  * used in dassl.c for function dasrt_step
  * to prevent dassl errors, because of too small step size.
