@@ -110,7 +110,7 @@ readFile("testParameters_init.tmp.xml");
 //   <ScalarVariable
 //   name = \"a\"
 //   valueReference = \"1002\"
-//   variability = \"parameter\" isDiscrete = \"false\"
+//   variability = \"parameter\" isDiscrete = \"true\"
 //   causality = \"internal\" isValueChangeable = \"true\"
 //   alias = \"noAlias\"
 //   classIndex = \"0\" classType = \"rPar\"
@@ -121,7 +121,7 @@ readFile("testParameters_init.tmp.xml");
 //   <ScalarVariable
 //   name = \"a0\"
 //   valueReference = \"1003\"
-//   variability = \"parameter\" isDiscrete = \"false\"
+//   variability = \"parameter\" isDiscrete = \"true\"
 //   causality = \"internal\" isValueChangeable = \"true\"
 //   alias = \"noAlias\"
 //   classIndex = \"1\" classType = \"rPar\"
@@ -132,7 +132,7 @@ readFile("testParameters_init.tmp.xml");
 //   <ScalarVariable
 //   name = \"b\"
 //   valueReference = \"1004\"
-//   variability = \"parameter\" isDiscrete = \"false\"
+//   variability = \"parameter\" isDiscrete = \"true\"
 //   causality = \"internal\" isValueChangeable = \"false\"
 //   alias = \"noAlias\"
 //   classIndex = \"2\" classType = \"rPar\"
@@ -143,7 +143,7 @@ readFile("testParameters_init.tmp.xml");
 //   <ScalarVariable
 //   name = \"c\"
 //   valueReference = \"1005\"
-//   variability = \"parameter\" isDiscrete = \"false\"
+//   variability = \"parameter\" isDiscrete = \"true\"
 //   causality = \"internal\" isValueChangeable = \"false\"
 //   alias = \"noAlias\"
 //   classIndex = \"3\" classType = \"rPar\"
@@ -154,7 +154,7 @@ readFile("testParameters_init.tmp.xml");
 //   <ScalarVariable
 //   name = \"d\"
 //   valueReference = \"1006\"
-//   variability = \"parameter\" isDiscrete = \"false\"
+//   variability = \"parameter\" isDiscrete = \"true\"
 //   causality = \"internal\" isValueChangeable = \"false\"
 //   alias = \"noAlias\"
 //   classIndex = \"4\" classType = \"rPar\"
