@@ -1898,6 +1898,7 @@ algorithm
           oelsewhenPart = SOME(elsewhenPart);
         else
           oelsewhenPart = NONE();
+          b3 = false;
         end if;
         b4 = b1 or b2 or b3;
         weqn = if b4 then BackendDAE.WHEN_STMTS(cond2,whenStmtLst,oelsewhenPart) else whenEqn;
