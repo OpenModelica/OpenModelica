@@ -346,6 +346,7 @@ algorithm
           oelsewe = SOME(elsewe);
         else
           oelsewe = NONE();
+          b3 = false;
         end if;
       then (BackendDAE.WHEN_STMTS(cond, whenStmtLst, oelsewe), source, b1 or b2 or b3);
 
