@@ -1560,23 +1560,19 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 //
 // Zero Crossings (3)
 // ========================================
-// time < sinevoltage1.sineVoltage[3].signalSource.startTime with index = 0 in equations [24] and when conditions []
-// time < sinevoltage1.sineVoltage[2].signalSource.startTime with index = 1 in equations [25] and when conditions []
-// time < sinevoltage1.sineVoltage[1].signalSource.startTime with index = 2 in equations [26] and when conditions []
+// time < sinevoltage1.sineVoltage[3].signalSource.startTime with index = 0 in equations [24]
+// time < sinevoltage1.sineVoltage[2].signalSource.startTime with index = 1 in equations [25]
+// time < sinevoltage1.sineVoltage[1].signalSource.startTime with index = 2 in equations [26]
 //
 //
 // Relations (3)
 // ========================================
-// time < sinevoltage1.sineVoltage[3].signalSource.startTime with index = 0 in equations [24] and when conditions []
-// time < sinevoltage1.sineVoltage[2].signalSource.startTime with index = 1 in equations [25] and when conditions []
-// time < sinevoltage1.sineVoltage[1].signalSource.startTime with index = 2 in equations [26] and when conditions []
+// time < sinevoltage1.sineVoltage[3].signalSource.startTime with index = 0 in equations [24]
+// time < sinevoltage1.sineVoltage[2].signalSource.startTime with index = 1 in equations [25]
+// time < sinevoltage1.sineVoltage[1].signalSource.startTime with index = 2 in equations [26]
 //
 //
 // Time Events (0)
-// ========================================
-//
-//
-// When Clauses (0)
 // ========================================
 //
 //
