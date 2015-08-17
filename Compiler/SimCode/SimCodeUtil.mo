@@ -566,10 +566,13 @@ protected
   list<SimCodeVar.SimVar> clockedVars;
   array<Option<SimCode.SubPartition>> simSubPartitions;
   BackendDAE.SubPartition subPartition;
+  BackendDAE.Var var;
 algorithm
   simSubPartitions := arrayCreate(arrayLength(inShared.partitionsInfo.subPartitions), NONE());
   funcs := BackendDAEUtil.getFunctions(inShared);
   for syst in inSysts loop
+    syst := preCalculateStartValues(syst, inShared.knownVars);
+
     BackendDAE.CLOCKED_PARTITION(subPartIdx) := syst.partitionKind;
     BackendDAE.MATCHING(ass1=ass1, comps=comps) := syst.matching;
     subPartition := inShared.partitionsInfo.subPartitions[subPartIdx];
@@ -584,17 +587,24 @@ algorithm
         createEquationsForSystem(stateeqnsmark, zceqnsmarks, syst, inShared, comps, ouniqueEqIndex, {},
                                  sccOffset, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping);
     sccOffset := listLength(comps) + sccOffset;
+    otempvars := listAppend(clockedVars, otempvars);
 
     (ouniqueEqIndex, removedEquations) := BackendEquation.traverseEquationArray(syst.removedEqs, traversedlowEqToSimEqSystem, (ouniqueEqIndex, {}));
 
     equations := List.map(equations, addDivExpErrorMsgtoSimEqSystem);
     removedEquations := List.map(removedEquations, addDivExpErrorMsgtoSimEqSystem);
 
+    for i in 1:BackendVariable.varsSize(syst.orderedVars) loop
+      var := BackendVariable.getVarAt(syst.orderedVars, i);
+      clockedVars := dlowvarToSimvar(var, SOME(inShared.aliasVars), inShared.knownVars)::clockedVars;
+    end for;
+
+    otempvars := listAppend(clockedVars, otempvars);
     simSubPartition := SimCode.SUBPARTITION(equations, removedEquations, subPartition.clock, subPartition.holdEvents);
 
     assert(isNone(simSubPartitions[subPartIdx]), "SimCodeUtil.translateClockedEquations failed");
     arrayUpdate(simSubPartitions, subPartIdx, SOME(simSubPartition));
-    otempvars := listAppend(clockedVars, otempvars);
+
   end for;
   outPartitions := createClockedSimPartitions(inShared.partitionsInfo.basePartitions, simSubPartitions);
 end translateClockedEquations;
@@ -5947,6 +5957,9 @@ protected
 algorithm
   BackendDAE.DAE(eqs=systs1, shared=BackendDAE.SHARED(knownVars=knvars1, externalObjects=extvars1, aliasVars=aliasVars1)) := inSimDAE;
   BackendDAE.DAE(eqs=systs2, shared=BackendDAE.SHARED(knownVars=knvars2, externalObjects=extvars2, aliasVars=aliasVars2)) := inInitDAE;
+
+  systs1 := List.filterOnFalse(systs1, BackendDAEUtil.isClockedSyst);
+  systs2 := List.filterOnFalse(systs1, BackendDAEUtil.isClockedSyst);
 
   if not Flags.isSet(Flags.NO_START_CALC) then
     systs1 := List.map1(systs1, preCalculateStartValues, knvars1);
