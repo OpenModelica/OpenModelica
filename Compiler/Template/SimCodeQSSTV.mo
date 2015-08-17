@@ -120,16 +120,6 @@ package BackendQSS
     output DAE.Exp exp_out;
   end replaceVarsInputs;
 
-  function simpleWhens
-    input list<SimCode.SimWhenClause> i;
-    output list<SimCode.SimWhenClause> o;
-  end simpleWhens;
-
-  function sampleWhens
-    input list<SimCode.SimWhenClause> i;
-    output list<SimCode.SimWhenClause> o;
-  end sampleWhens;
-
   function getZCOffset
     input QSSinfo qssInfo;
     output Integer o;

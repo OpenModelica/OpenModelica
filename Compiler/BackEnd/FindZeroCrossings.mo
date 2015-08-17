@@ -75,7 +75,6 @@ protected
   BackendDAE.EqSystems systs, systs2;
   BackendDAE.Shared shared, shared2;
   BackendDAE.EventInfo eventInfo;
-  list<BackendDAE.WhenClause> wcl;
   Integer index;
   HashTableExpToIndex.HashTable ht "is used to avoid redundant condition-variables";
   list<BackendDAE.Var> vars;
@@ -90,16 +89,6 @@ algorithm
   ht := HashTableExpToIndex.emptyHashTable();
   (systs, index, ht) := List.mapFold2(systs, encapsulateWhenConditions_EqSystem, 1, ht);
 
-  // when clauses
-  /*
-  eventInfo := shared.eventInfo;
-  (wcl, vars, eqns, ht, index) := encapsulateWhenConditions_WhenClause(eventInfo.whenClauseLst, {}, {}, {}, ht, index);
-  eventInfo.whenClauseLst := wcl;
-  shared.eventInfo := eventInfo;
-  vars_ := BackendVariable.listVar(vars);
-  eqns_ := BackendEquation.listEquation(eqns);
-  systs := listAppend(systs, {BackendDAEUtil.createEqSystem(vars_, eqns_)});
-  */
   // shared removedEqns
   ((removedEqs, vars, eqns, index, ht)) :=
       BackendEquation.traverseEquationArray(shared.removedEqs, encapsulateWhenConditions_Equation,
@@ -121,45 +110,6 @@ algorithm
     BackendDump.dumpBackendDAE(outDAE, "DAE after PreOptModule >>encapsulateWhenConditions<<");
   end if;
 end encapsulateWhenConditions;
-
-protected function encapsulateWhenConditions_WhenClause "author: lochel"
-  input list<BackendDAE.WhenClause> inWhenClause;
-  input list<BackendDAE.WhenClause> inWhenClause_done;
-  input list<BackendDAE.Var> inVars;
-  input list<BackendDAE.Equation> inEqns;
-  input HashTableExpToIndex.HashTable inHT;
-  input Integer inIndex;
-  output list<BackendDAE.WhenClause> outWhenClause;
-  output list<BackendDAE.Var> outVars;
-  output list<BackendDAE.Equation> outEqns;
-  output HashTableExpToIndex.HashTable outHT;
-  output Integer outIndex;
-algorithm
-  (outWhenClause, outVars, outEqns, outHT, outIndex) := match(inWhenClause)
-    local
-      HashTableExpToIndex.HashTable ht;
-      Integer index;
-      DAE.Exp condition;
-      list<BackendDAE.WhenOperator> reinitStmtLst;
-      Option<Integer> elseClause;
-
-      list<BackendDAE.Var> vars;
-      list<BackendDAE.Equation> eqns;
-      list<BackendDAE.WhenClause> rest, whenClause_done;
-
-    case {}
-    then (inWhenClause_done, inVars, inEqns, inHT, inIndex);
-
-    case BackendDAE.WHEN_CLAUSE(condition, reinitStmtLst, elseClause)::rest equation
-      (condition, vars, eqns, index, ht) = encapsulateWhenConditions_Equations1(condition, DAE.emptyElementSource, inIndex, inHT);
-      vars = listAppend(vars, inVars);
-      eqns = listAppend(eqns, inEqns);
-      whenClause_done = listAppend({BackendDAE.WHEN_CLAUSE(condition, reinitStmtLst, elseClause)}, inWhenClause_done);
-
-      (whenClause_done, vars, eqns, ht, index) = encapsulateWhenConditions_WhenClause(rest, whenClause_done, vars, eqns, ht, index);
-    then (whenClause_done, vars, eqns, ht, index);
-  end match;
-end encapsulateWhenConditions_WhenClause;
 
 protected function encapsulateWhenConditions_EqSystem "author: lochel"
   input BackendDAE.EqSystem inEqSystem;
@@ -633,7 +583,6 @@ algorithm
       BackendDAE.Variables knvars;
       BackendDAE.EquationArray eqns1;
       BackendDAE.EventInfo einfo;
-      list<BackendDAE.WhenClause> whenclauses;
       list<BackendDAE.Equation> eqs_lst, eqs_lst1;
       list<BackendDAE.TimeEvent> timeEvents;
       list<BackendDAE.ZeroCrossing> zero_crossings;
@@ -646,19 +595,19 @@ algorithm
       algorithm
         BackendDAE.SHARED( knownVars=knvars, eventInfo=einfo) := inShared;
         BackendDAE.EVENT_INFO( timeEvents=timeEvents, zeroCrossingLst=zero_crossings,
-                               sampleLst=sampleLst, whenClauseLst=whenclauses, relationsLst=relations,
+                               sampleLst=sampleLst, relationsLst=relations,
                                numberMathEvents=countMathFunctions ) := einfo;
         eqs_lst := BackendEquation.equationList(eqns);
-        (zero_crossings, eqs_lst1, _, _, countMathFunctions, relations, sampleLst) :=
-        findZeroCrossings2( vars, knvars, eqs_lst, 0, {}, 0, listLength(relations),
-                            countMathFunctions, zero_crossings, relations, sampleLst, {}, {} );
+        (zero_crossings, eqs_lst1, _, countMathFunctions, relations, sampleLst) :=
+        findZeroCrossings2( vars, knvars, eqs_lst, 0, listLength(relations),
+                            countMathFunctions, zero_crossings, relations, sampleLst, {});
         eqs_lst1 := listReverse(eqs_lst1);
         if Flags.isSet(Flags.RELIDX) then
           print("findZeroCrossings1 number of relations: " + intString(listLength(relations)) + "\n");
           print("findZeroCrossings1 sample index: " + intString(listLength(sampleLst)) + "\n");
         end if;
         eqns1 := BackendEquation.listEquation(eqs_lst1);
-        einfo := BackendDAE.EVENT_INFO( timeEvents, whenclauses, zero_crossings, sampleLst, relations,
+        einfo := BackendDAE.EVENT_INFO( timeEvents, zero_crossings, sampleLst, relations,
                                            countMathFunctions );
       then (BackendDAEUtil.setEqSystEqs(inSyst, eqns1), BackendDAEUtil.setSharedEventInfo(inShared, einfo));
   end match;
@@ -669,39 +618,30 @@ protected function findZeroCrossings2
   input BackendDAE.Variables knvars;
   input list<BackendDAE.Equation> inEquationLst2;
   input Integer inEqnCount;
-  input list<BackendDAE.WhenClause> inWhenClauseLst4;
-  input Integer inWhenClauseCount;
-
   input Integer inNumberOfRelations;
   input Integer inNumberOfMathFunctions;
   input list<BackendDAE.ZeroCrossing> inZeroCrossingLst;
   input list<BackendDAE.ZeroCrossing> inRelationsLst;
   input list<BackendDAE.ZeroCrossing> inSamplesLst;
   input list<BackendDAE.Equation> inEquationLstAccum;
-  input list<BackendDAE.WhenClause> inWhenClauseAccum;
-
   output list<BackendDAE.ZeroCrossing> outZeroCrossingLst;
   output list<BackendDAE.Equation> outEquationLst;
-  output list<BackendDAE.WhenClause> outWhenClauseLst;
   output Integer outNumberOfRelations;
   output Integer outNumberOfMathFunctions;
   output list<BackendDAE.ZeroCrossing> outRelationsLst;
   output list<BackendDAE.ZeroCrossing> outSamplesLst;
 algorithm
-  (outZeroCrossingLst, outEquationLst, outWhenClauseLst, outNumberOfRelations, outNumberOfMathFunctions, outRelationsLst, outSamplesLst) := match (inEquationLst2, inWhenClauseLst4)
+  (outZeroCrossingLst, outEquationLst, outNumberOfRelations, outNumberOfMathFunctions, outRelationsLst, outSamplesLst) := match (inEquationLst2)
     local
       list<BackendDAE.ZeroCrossing> zcs, zcs1, res, res1, relationsLst, sampleLst;
-      Integer size, countRelations, eq_count_1, eq_count, wc_count, countMathFunctions;
+      Integer size, countRelations, eq_count_1, eq_count, countMathFunctions;
       BackendDAE.Equation e;
       list<BackendDAE.Equation> xs, el, eq_reslst, eqnsAccum;
       DAE.Exp daeExp, e1, e2, eres1, eres2;
-      BackendDAE.WhenClause wc;
-      list<BackendDAE.WhenClause> xsWhen, wc_reslst;
       DAE.ElementSource source, source_;
       list<DAE.Statement> stmts, stmts_1;
       DAE.ComponentRef cref;
       list<BackendDAE.WhenOperator> whenOperations;
-      list<BackendDAE.WhenClause> whenClauseAccum;
       Option<Integer> elseClause_;
       list<Integer> dimsize;
       BackendDAE.WhenEquation weqn;
@@ -709,87 +649,76 @@ algorithm
       DAE.Expand expand;
       BackendDAE.EquationAttributes eqAttr;
 
-    case ({}, {})
-    then (inZeroCrossingLst, inEquationLstAccum, inWhenClauseAccum, inNumberOfRelations, inNumberOfMathFunctions, inRelationsLst, inSamplesLst);
+    case ({})
+    then (inZeroCrossingLst, inEquationLstAccum, inNumberOfRelations, inNumberOfMathFunctions, inRelationsLst, inSamplesLst);
 
     // all algorithm stmts are processed firstly
-    case (BackendDAE.ALGORITHM(size=size, alg=DAE.ALGORITHM_STMTS(stmts), source=source_, expand=expand, attr=eqAttr)::xs, {}) equation
+    case (BackendDAE.ALGORITHM(size=size, alg=DAE.ALGORITHM_STMTS(stmts), source=source_, expand=expand, attr=eqAttr)::xs) equation
       eq_count = inEqnCount + 1;
       ((stmts_1, (_, _, _, (res, relationsLst, sampleLst, countRelations, countMathFunctions), (_, _, _)))) = traverseStmtsExps(stmts, (DAE.RCONST(0.0), {}, DAE.RCONST(0.0), (inZeroCrossingLst, inRelationsLst, inSamplesLst, inNumberOfRelations, inNumberOfMathFunctions), (eq_count, inVariables1, knvars)), knvars);
       eqnsAccum = BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(stmts_1), source_, expand, eqAttr)::inEquationLstAccum;
-      (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, xs, eq_count, {}, 0, countRelations, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum, inWhenClauseAccum);
-    then (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
-
-    // then all when clauses are processed
-    case (el, (BackendDAE.WHEN_CLAUSE(condition=daeExp, reinitStmtLst=whenOperations , elseClause=elseClause_ ))::xsWhen) equation
-      if Flags.isSet(Flags.RELIDX) then
-        BackendDump.debugStrExpStr("processed when clause: ", daeExp, "\n");
-      end if;
-      wc_count = inWhenClauseCount + 1;
-      (eres1, countRelations, countMathFunctions, res, relationsLst, sampleLst) = findZeroCrossings3(daeExp, inZeroCrossingLst, inRelationsLst, inSamplesLst, inNumberOfRelations, inNumberOfMathFunctions, -1, wc_count, inVariables1, knvars);
-      whenClauseAccum = BackendDAE.WHEN_CLAUSE(eres1, whenOperations, elseClause_)::inWhenClauseAccum;
-      (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, el, inEqnCount, xsWhen, wc_count, countRelations, countMathFunctions, res, relationsLst, sampleLst, inEquationLstAccum, whenClauseAccum);
-    then (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
+      (res1, eq_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, xs, eq_count, countRelations, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum);
+    then (res1, eq_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
 
     // check when equation condition
-    case ((BackendDAE.WHEN_EQUATION(size=size, whenEquation=weqn, source=source_, attr=eqAttr))::xs, {}) equation
+    case ((BackendDAE.WHEN_EQUATION(size=size, whenEquation=weqn, source=source_, attr=eqAttr))::xs) equation
       eq_count = inEqnCount + 1;
       (weqn, countRelations, countMathFunctions, res, relationsLst, sampleLst) = findZeroCrossingsWhenEqns(weqn, inZeroCrossingLst, inRelationsLst, inSamplesLst, inNumberOfRelations, inNumberOfMathFunctions, eq_count, -1, inVariables1, knvars);
       eqnsAccum = BackendDAE.WHEN_EQUATION(size, weqn, source_, eqAttr)::inEquationLstAccum;
-      (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, xs, eq_count, {}, 0, countRelations, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum, inWhenClauseAccum);
-    then (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
+      (res1, eq_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, xs, eq_count, countRelations, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum);
+    then (res1, eq_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
 
     // after all algorithms and when clauses are processed, all equations are processed
-    case ((BackendDAE.EQUATION(exp=e1, scalar=e2, source=source_, attr=eqAttr))::xs, {}) equation
+    case ((BackendDAE.EQUATION(exp=e1, scalar=e2, source=source_, attr=eqAttr))::xs) equation
       eq_count = inEqnCount + 1;
       (eres1, countRelations, countMathFunctions, zcs1, relationsLst, sampleLst) = findZeroCrossings3(e1, inZeroCrossingLst, inRelationsLst, inSamplesLst, inNumberOfRelations, inNumberOfMathFunctions, eq_count, -1, inVariables1, knvars);
       (eres2, countRelations, countMathFunctions, res, relationsLst, sampleLst) = findZeroCrossings3(e2, zcs1, relationsLst, sampleLst, countRelations, countMathFunctions, eq_count, -1, inVariables1, knvars);
        eqnsAccum = BackendDAE.EQUATION(eres1, eres2, source_, eqAttr)::inEquationLstAccum;
-      (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, xs, eq_count, {}, 0, countRelations, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum, inWhenClauseAccum);
-    then (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
+      (res1, eq_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, xs, eq_count, countRelations, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum);
+    then (res1, eq_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
 
-    case ((BackendDAE.COMPLEX_EQUATION(size=size, left=e1, right=e2, source=source, attr=eqAttr))::xs, {}) equation
+    case ((BackendDAE.COMPLEX_EQUATION(size=size, left=e1, right=e2, source=source, attr=eqAttr))::xs) equation
       eq_count = inEqnCount + 1;
       (eres1, countRelations, countMathFunctions, zcs1, relationsLst, sampleLst) = findZeroCrossings3(e1, inZeroCrossingLst, inRelationsLst, inSamplesLst, inNumberOfRelations, inNumberOfMathFunctions, eq_count, -1, inVariables1, knvars);
       (eres2, countRelations, countMathFunctions, res, relationsLst, sampleLst) = findZeroCrossings3(e2, zcs1, relationsLst, sampleLst, countRelations, countMathFunctions, eq_count, -1, inVariables1, knvars);
        eqnsAccum = BackendDAE.COMPLEX_EQUATION(size, eres1, eres2, source, eqAttr)::inEquationLstAccum;
-      (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, xs, eq_count, {}, 0, countRelations, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum, inWhenClauseAccum);
-    then (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
+      (res1, eq_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, xs, eq_count, countRelations, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum);
+    then (res1, eq_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
 
-    case ((BackendDAE.ARRAY_EQUATION(dimSize=dimsize, left=e1, right=e2, source=source, attr=eqAttr))::xs, {}) equation
+    case ((BackendDAE.ARRAY_EQUATION(dimSize=dimsize, left=e1, right=e2, source=source, attr=eqAttr))::xs) equation
       eq_count = inEqnCount + 1;
       (eres1, countRelations, countMathFunctions, zcs1, relationsLst, sampleLst) = findZeroCrossings3(e1, inZeroCrossingLst, inRelationsLst, inSamplesLst, inNumberOfRelations, inNumberOfMathFunctions, eq_count, -1, inVariables1, knvars);
       (eres2, countRelations, countMathFunctions, res, relationsLst, sampleLst) = findZeroCrossings3(e2, zcs1, relationsLst, sampleLst, countRelations, countMathFunctions, eq_count, -1, inVariables1, knvars);
        eqnsAccum = BackendDAE.ARRAY_EQUATION(dimsize, eres1, eres2, source, eqAttr)::inEquationLstAccum;
-      (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, xs, eq_count, {}, 0, countRelations, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum, inWhenClauseAccum);
-    then (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
+      (res1, eq_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, xs, eq_count, countRelations, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum);
+    then (res1, eq_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
 
-    case ((BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e1, source=source_, attr=eqAttr))::xs, {}) equation
+    case ((BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e1, source=source_, attr=eqAttr))::xs) equation
       (eres1, countRelations, countMathFunctions, res, relationsLst, sampleLst) = findZeroCrossings3(e1, inZeroCrossingLst, inRelationsLst, inSamplesLst, inNumberOfRelations, inNumberOfMathFunctions, inEqnCount, -1, inVariables1, knvars);
        eqnsAccum = BackendDAE.SOLVED_EQUATION(cref, eres1, source_, eqAttr)::inEquationLstAccum;
-      (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, xs, inEqnCount, {}, 0, countRelations, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum, inWhenClauseAccum);
-    then (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
+      (res1, eq_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, xs, inEqnCount, countRelations, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum);
+    then (res1, eq_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
 
-    case ((BackendDAE.RESIDUAL_EQUATION(exp=e1, source=source_, attr=eqAttr))::xs, {}) equation
+    case ((BackendDAE.RESIDUAL_EQUATION(exp=e1, source=source_, attr=eqAttr))::xs) equation
       eq_count = inEqnCount + 1;
       (eres1, countRelations, countMathFunctions, relationsLst, res, sampleLst) = findZeroCrossings3(e1, inZeroCrossingLst, inRelationsLst, inSamplesLst, inNumberOfRelations, inNumberOfMathFunctions, eq_count, -1, inVariables1, knvars);
        eqnsAccum = BackendDAE.RESIDUAL_EQUATION(eres1, source_, eqAttr)::inEquationLstAccum;
-      (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, xs, eq_count, {}, 0, countRelations, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum, inWhenClauseAccum);
-    then (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
+      (res1, eq_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, xs, eq_count, countRelations, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum);
+    then (res1, eq_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
 
-    case ((e as BackendDAE.IF_EQUATION())::xs, {}) equation
+    case ((e as BackendDAE.IF_EQUATION())::xs) equation
       eq_count = inEqnCount + 1;
       (e, countRelations, countMathFunctions, res, relationsLst, sampleLst) = findZeroCrossingsIfEqns(e, inZeroCrossingLst, inRelationsLst, inSamplesLst, inNumberOfRelations, inNumberOfMathFunctions, eq_count, -1, inVariables1, knvars);
       eqnsAccum = e::inEquationLstAccum;
-      (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, xs, eq_count, {}, 0, countRelations, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum, inWhenClauseAccum);
-    then (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
+      (res1, eq_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, xs, eq_count, countRelations, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum);
+    then (res1, eq_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
 
     // let when equation pass they are discrete and can't contain ZeroCrossings
-    case (e::xs, {}) equation
+    case (e::xs) equation
       eq_count = inEqnCount + 1;
       eqnsAccum = e::inEquationLstAccum;
-      (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, xs, eq_count, {}, 0, inNumberOfRelations, inNumberOfMathFunctions, inZeroCrossingLst, inRelationsLst, inSamplesLst, eqnsAccum, inWhenClauseAccum);
-    then (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
+      (res1, eq_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, xs, eq_count, inNumberOfRelations, inNumberOfMathFunctions, inZeroCrossingLst, inRelationsLst, inSamplesLst, eqnsAccum);
+    then (res1, eq_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
   end match;
 end findZeroCrossings2;
 
@@ -848,7 +777,6 @@ protected function findZeroCrossingsIfEqns
   input Integer countwc;
   input BackendDAE.Variables vars;
   input BackendDAE.Variables knvars;
-
   output BackendDAE.Equation outIfEqn;
   output Integer outCountRelations;
   output Integer outCountMathFunctions;
@@ -862,7 +790,6 @@ algorithm
       list<DAE.Exp> conditions, restconditions;
       BackendDAE.Equation ifeqn;
       list<BackendDAE.Equation> eqnstrue, elseeqns, eqnsAccum;
-      list<BackendDAE.WhenClause> whenClauseAccum;
       list<list<BackendDAE.Equation>> eqnsTrueLst, resteqns;
       list<BackendDAE.ZeroCrossing> zc, relations, samples;
       Integer countRelations, countMathFunctions;
@@ -870,13 +797,13 @@ algorithm
       BackendDAE.EquationAttributes eqAttr;
 
     case BackendDAE.IF_EQUATION(conditions={}, eqnstrue={}, eqnsfalse=elseeqns, source=source_, attr=eqAttr) equation
-      (zc, elseeqns, _, countRelations, countMathFunctions, relations, samples) = findZeroCrossings2(vars, knvars, elseeqns, counteq, {}, countwc, incountRelations, incountMathFunctions, inZeroCrossings, inrelationsinZC, inSamplesLst, {}, {});
+      (zc, elseeqns, countRelations, countMathFunctions, relations, samples) = findZeroCrossings2(vars, knvars, elseeqns, counteq, incountRelations, incountMathFunctions, inZeroCrossings, inrelationsinZC, inSamplesLst, {});
       elseeqns = listReverse(elseeqns);
     then (BackendDAE.IF_EQUATION({}, {}, elseeqns, source_, eqAttr), countRelations, countMathFunctions, zc, relations, samples);
 
     case BackendDAE.IF_EQUATION(conditions=condition::restconditions, eqnstrue=eqnstrue::resteqns, eqnsfalse=elseeqns, source=source_, attr=eqAttr) equation
       (condition, countRelations, countMathFunctions, zc, relations, samples) = findZeroCrossings3(condition, inZeroCrossings, inrelationsinZC, inSamplesLst, incountRelations, incountMathFunctions, counteq, countwc, vars, knvars);
-      (zc, eqnstrue, _, countRelations, countMathFunctions, relations, samples) = findZeroCrossings2(vars, knvars, eqnstrue, counteq, {}, countwc, countRelations, countMathFunctions, zc, relations, samples, {}, {});
+      (zc, eqnstrue, countRelations, countMathFunctions, relations, samples) = findZeroCrossings2(vars, knvars, eqnstrue, counteq, countRelations, countMathFunctions, zc, relations, samples, {});
       eqnstrue = listReverse(eqnstrue);
       ifeqn = BackendDAE.IF_EQUATION(restconditions, resteqns, elseeqns, source_, eqAttr);
       (BackendDAE.IF_EQUATION(conditions=conditions, eqnstrue=eqnsTrueLst, eqnsfalse=elseeqns, source=source_), countRelations, countMathFunctions, zc, relations, samples) = findZeroCrossingsIfEqns(ifeqn, zc, relations, samples, countRelations, countMathFunctions, counteq, countwc, vars, knvars);
@@ -907,16 +834,16 @@ algorithm
   if Flags.isSet(Flags.RELIDX) then
     BackendDump.debugStrExpStr("start: ", e, "\n");
   end if;
-  (eres, ((outZeroCrossings, outrelationsinZC, outSamplesLst, outCountRelations, outCountMathFunctions), _)) := Expression.traverseExpTopDown(e, collectZC, ((inZeroCrossings, inrelationsinZC, inSamplesLst, incountRelations, incountMathFunctions), (counteq, countwc, vars, knvars)));
+  (eres, ((outZeroCrossings, outrelationsinZC, outSamplesLst, outCountRelations, outCountMathFunctions), _)) := Expression.traverseExpTopDown(e, collectZC, ((inZeroCrossings, inrelationsinZC, inSamplesLst, incountRelations, incountMathFunctions), (counteq, vars, knvars)));
 end findZeroCrossings3;
 
 protected function collectZC
   "Collects zero crossings in equations"
   input DAE.Exp inExp;
-  input tuple<tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, Integer, BackendDAE.Variables, BackendDAE.Variables>> inTpl;
+  input tuple<tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>> inTpl;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, Integer, BackendDAE.Variables, BackendDAE.Variables>> outTpl;
+  output tuple<tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>> outTpl;
 algorithm
   (outExp,cont,outTpl) := matchcontinue (inExp, inTpl)
     local
@@ -924,7 +851,7 @@ algorithm
       BackendDAE.Variables vars, knvars;
       list<BackendDAE.ZeroCrossing> zeroCrossings, zc_lst, relations, samples;
       DAE.Operator op;
-      Integer eq_count, wc_count, itmp, numRelations, numRelations1, numMathFunctions;
+      Integer eq_count, itmp, numRelations, numRelations1, numMathFunctions;
       BackendDAE.ZeroCrossing zc;
       DAE.CallAttributes attr;
       DAE.Type ty;
@@ -935,8 +862,8 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT(name="smooth")), _)
     then (inExp, false, inTpl);
 
-    case (DAE.CALL(path=Absyn.IDENT(name="sample")), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
-      zc = createZeroCrossing(inExp, {eq_count}, {wc_count});
+    case (DAE.CALL(path=Absyn.IDENT(name="sample")), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars))) equation
+      zc = createZeroCrossing(inExp, {eq_count});
       samples = listAppend(samples, {zc});
       samples = mergeZeroCrossings(samples, {});
       //itmp = (listLength(zc_lst)-listLength(zeroCrossings));
@@ -944,85 +871,85 @@ algorithm
       if Flags.isSet(Flags.RELIDX) then
         print("sample index: " + intString(listLength(samples)) + "\n");
       end if;
-    then (inExp, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+    then (inExp, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars)));
 
     // function with discrete expressions generate no zerocrossing
-    case (DAE.LUNARY(exp=e1), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.LUNARY(exp=e1), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars))) equation
       true = BackendDAEUtil.isDiscreteExp(e1, vars, knvars);
       if Flags.isSet(Flags.RELIDX) then
         print("discrete LUNARY: " + intString(numRelations) + "\n");
       end if;
       //fcall(Flags.RELIDX, BackendDump.debugExpStr, (inExp, "\n"));
-    then (inExp, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+    then (inExp, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars)));
 
-    case (DAE.LBINARY(exp1=e1, exp2=e2), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.LBINARY(exp1=e1, exp2=e2), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars))) equation
       true = BackendDAEUtil.isDiscreteExp(e1, vars, knvars);
       true = BackendDAEUtil.isDiscreteExp(e2, vars, knvars);
       if Flags.isSet(Flags.RELIDX) then
         print("discrete LBINARY: " + intString(numRelations) + "\n");
       end if;
       //fcall(Flags.RELIDX, BackendDump.debugExpStr, (inExp, "\n"));
-    then (inExp, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+    then (inExp, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars)));
 
     // coditions that are zerocrossings.
-    case (DAE.LUNARY(exp=e1, operator=op), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.LUNARY(exp=e1, operator=op), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars))) equation
       if Flags.isSet(Flags.RELIDX) then
         print("continues LUNARY: " + intString(numRelations) + "\n");
       end if;
-      (e1, ((_, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) = Expression.traverseExpTopDown(e1, collectZC, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+      (e1, ((_, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars))) = Expression.traverseExpTopDown(e1, collectZC, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars)));
       e_1 = DAE.LUNARY(op, e1);
-      zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
+      zc = createZeroCrossing(e_1, {eq_count});
       zc_lst = List.select1(zeroCrossings, zcEqual, zc);
       zeroCrossings = if listEmpty(zc_lst) then listAppend(zeroCrossings, {zc}) else zeroCrossings;
       if Flags.isSet(Flags.RELIDX) then
         BackendDump.debugExpStr(e_1, "\n");
       end if;
-    then (e_1, false, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+    then (e_1, false, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars)));
 
-    case (DAE.LBINARY(exp1=e1, operator=op, exp2=e2), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.LBINARY(exp1=e1, operator=op, exp2=e2), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars))) equation
       if Flags.isSet(Flags.RELIDX) then
         print("continues LBINARY: " + intString(numRelations) + "\n");
         BackendDump.debugExpStr(inExp, "\n");
       end if;
-      (e_1, ((_, relations, samples, numRelations1, numMathFunctions), (eq_count, wc_count, vars, knvars))) = Expression.traverseExpTopDown(e1, collectZC, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
-      (e_2, ((_, relations, samples, numRelations1, numMathFunctions), (eq_count, wc_count, vars, knvars))) = Expression.traverseExpTopDown(e2, collectZC, ((zeroCrossings, relations, samples, numRelations1, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+      (e_1, ((_, relations, samples, numRelations1, numMathFunctions), (eq_count, vars, knvars))) = Expression.traverseExpTopDown(e1, collectZC, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars)));
+      (e_2, ((_, relations, samples, numRelations1, numMathFunctions), (eq_count, vars, knvars))) = Expression.traverseExpTopDown(e2, collectZC, ((zeroCrossings, relations, samples, numRelations1, numMathFunctions), (eq_count, vars, knvars)));
       true = intGt(numRelations1, numRelations);
       e_1 = DAE.LBINARY(e_1, op, e_2);
-      zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
+      zc = createZeroCrossing(e_1, {eq_count});
       zc_lst = List.select1(zeroCrossings, zcEqual, zc);
       zeroCrossings = if listEmpty(zc_lst) then listAppend(zeroCrossings, {zc}) else zeroCrossings;
       if Flags.isSet(Flags.RELIDX) then
         BackendDump.dumpZeroCrossingList(zeroCrossings, "");
       end if;
-    then (e_1, false, ((zeroCrossings, relations, samples, numRelations1, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+    then (e_1, false, ((zeroCrossings, relations, samples, numRelations1, numMathFunctions), (eq_count, vars, knvars)));
 
     // function with discrete expressions generate no zerocrossing
-    case (DAE.RELATION(exp1=e1, exp2=e2), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.RELATION(exp1=e1, exp2=e2), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars))) equation
       true = BackendDAEUtil.isDiscreteExp(e1, vars, knvars);
       true = BackendDAEUtil.isDiscreteExp(e2, vars, knvars);
       if Flags.isSet(Flags.RELIDX) then
         print("discrete RELATION: " + intString(numRelations) + "\n");
       end if;
-    then (inExp, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+    then (inExp, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars)));
 
     // All other functions generate zerocrossing.
-    case (DAE.RELATION(exp1=e1, operator=op, exp2=e2), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.RELATION(exp1=e1, operator=op, exp2=e2), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars))) equation
       true = Flags.isSet(Flags.EVENTS);
       if Flags.isSet(Flags.RELIDX) then
         print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numRelations: " +intString(numRelations) + "\n");
       end if;
       e_1 = DAE.RELATION(e1, op, e2, numRelations, NONE());
-      zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
+      zc = createZeroCrossing(e_1, {eq_count});
       (eres, relations, numRelations) = zcIndex(e_1, numRelations, relations, zc);
-      zc = createZeroCrossing(eres, {eq_count}, {wc_count});
+      zc = createZeroCrossing(eres, {eq_count});
       (DAE.RELATION(index=itmp), zeroCrossings, _) = zcIndex(eres, numRelations, zeroCrossings, zc);
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + " index: " + intString(itmp) + "\n");
       end if;
-    then (eres, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+    then (eres, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars)));
 
     // math function that triggering events
-    case (DAE.CALL(path=Absyn.IDENT("integer"), expLst={e1}, attr=attr), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.CALL(path=Absyn.IDENT("integer"), expLst={e1}, attr=attr), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars))) equation
       true = Flags.isSet(Flags.EVENTS);
       if Flags.isSet(Flags.RELIDX) then
         print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
@@ -1030,15 +957,15 @@ algorithm
 
       e_1 = DAE.CALL(Absyn.IDENT("integer"), {e1, DAE.ICONST(numMathFunctions)}, attr);
 
-      zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
+      zc = createZeroCrossing(e_1, {eq_count});
       (eres, zeroCrossings, numMathFunctions) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
 
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
       end if;
-    then (eres, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+    then (eres, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars)));
 
-    case (DAE.CALL(path=Absyn.IDENT("floor"), expLst={e1}, attr=attr), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.CALL(path=Absyn.IDENT("floor"), expLst={e1}, attr=attr), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars))) equation
       true = Flags.isSet(Flags.EVENTS);
       if Flags.isSet(Flags.RELIDX) then
         print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
@@ -1046,15 +973,15 @@ algorithm
 
       e_1 = DAE.CALL(Absyn.IDENT("floor"), {e1, DAE.ICONST(numMathFunctions)}, attr);
 
-      zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
+      zc = createZeroCrossing(e_1, {eq_count});
       (eres, zeroCrossings, numMathFunctions) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
 
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
       end if;
-    then (eres, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+    then (eres, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars)));
 
-    case (DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e1}, attr=attr), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e1}, attr=attr), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars))) equation
       true = Flags.isSet(Flags.EVENTS);
       if Flags.isSet(Flags.RELIDX) then
         print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
@@ -1062,15 +989,15 @@ algorithm
 
       e_1 = DAE.CALL(Absyn.IDENT("ceil"), {e1, DAE.ICONST(numMathFunctions)}, attr);
 
-      zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
+      zc = createZeroCrossing(e_1, {eq_count});
       (eres, zeroCrossings, numMathFunctions) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
 
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
       end if;
-    then (eres, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+    then (eres, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars)));
 
-    case (DAE.CALL(path=Absyn.IDENT("div"), expLst={e1, e2}, attr=attr), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.CALL(path=Absyn.IDENT("div"), expLst={e1, e2}, attr=attr), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars))) equation
       true = Flags.isSet(Flags.EVENTS);
       if Flags.isSet(Flags.RELIDX) then
         print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
@@ -1078,16 +1005,16 @@ algorithm
 
       e_1 = DAE.CALL(Absyn.IDENT("div"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
 
-      zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
+      zc = createZeroCrossing(e_1, {eq_count});
       (eres, zeroCrossings, numMathFunctions) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
 
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
       end if;
-    then (eres, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+    then (eres, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars)));
 
     // mod is rewritten to x-floor(x/y)*y
-    case (DAE.CALL(path=Absyn.IDENT("mod"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty=ty)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.CALL(path=Absyn.IDENT("mod"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty=ty)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars))) equation
       true = Flags.isSet(Flags.EVENTS);
       if Flags.isSet(Flags.RELIDX) then
         print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
@@ -1095,17 +1022,17 @@ algorithm
 
       e_1 = DAE.CALL(Absyn.IDENT("floor"), {DAE.BINARY(e1, DAE.DIV(ty), e2), DAE.ICONST(numMathFunctions)}, attr);
 
-      zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
+      zc = createZeroCrossing(e_1, {eq_count});
       (eres, zeroCrossings, numMathFunctions) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
       e_2 = DAE.BINARY(e1, DAE.SUB(ty), DAE.BINARY(eres, DAE.MUL(ty), e2));
 
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
       end if;
-    then (e_2, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+    then (e_2, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars)));
 
     // rem is rewritten to div(x/y)*y - x
-    case (DAE.CALL(path=Absyn.IDENT("rem"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty=ty)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.CALL(path=Absyn.IDENT("rem"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty=ty)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars))) equation
       true = Flags.isSet(Flags.EVENTS);
       if Flags.isSet(Flags.RELIDX) then
         print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
@@ -1113,14 +1040,14 @@ algorithm
 
       e_1 = DAE.CALL(Absyn.IDENT("div"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
 
-      zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
+      zc = createZeroCrossing(e_1, {eq_count});
       (eres, zeroCrossings, numMathFunctions) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
       e_2 = DAE.BINARY(e1, DAE.SUB(ty), DAE.BINARY(eres, DAE.MUL(ty), e2));
 
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
       end if;
-    then (e_2, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+    then (e_2, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, vars, knvars)));
 
     else (inExp, true, inTpl);
   end matchcontinue;
@@ -1160,7 +1087,7 @@ algorithm
 
     case (DAE.CALL(path=Absyn.IDENT(name="sample")), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
       eqs = {alg_indx};
-      zc = createZeroCrossing(inExp, eqs, {});
+      zc = createZeroCrossing(inExp, eqs);
       samples = listAppend(samples, {zc});
       // lochel: don't merge zero crossings in algorithms (see #3358)
       // samples = mergeZeroCrossings(samples, {});
@@ -1184,7 +1111,7 @@ algorithm
       (e1, (iterator, inExpLst, range2, (_, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
       e_1 = DAE.LUNARY(op, e1);
       (explst, itmp) = replaceIteratorWithStaticValues(e_1, iterator, inExpLst, numRelations);
-      zc_lst = createZeroCrossings(explst, {alg_indx}, {});
+      zc_lst = createZeroCrossings(explst, {alg_indx});
       zc_lst = listAppend(zeroCrossings, zc_lst);
       // lochel: don't merge zero crossings in algorithms (see #3358)
       // zc_lst = mergeZeroCrossings(zc_lst, {});
@@ -1203,7 +1130,7 @@ algorithm
       end if;
       (e1, (iterator, inExpLst, range, (_, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
       e_1 = DAE.LUNARY(op, e1);
-      zc = createZeroCrossing(e_1, {alg_indx}, {});
+      zc = createZeroCrossing(e_1, {alg_indx});
       zc_lst = List.select1(zeroCrossings, zcEqual, zc);
       zeroCrossings = if listEmpty(zc_lst) then listAppend(zeroCrossings, {zc}) else zeroCrossings;
       if Flags.isSet(Flags.RELIDX) then
@@ -1232,7 +1159,7 @@ algorithm
       true = intGt(numRelations1, numRelations);
       e_1 = DAE.LBINARY(e_1, op, e_2);
       (explst, itmp) = replaceIteratorWithStaticValues(e_1, iterator, inExpLst, numRelations1);
-      zc_lst = createZeroCrossings(explst, {alg_indx}, {});
+      zc_lst = createZeroCrossings(explst, {alg_indx});
       zc_lst = listAppend(zeroCrossings, zc_lst);
       // lochel: don't merge zero crossings in algorithms (see #3358)
       // zc_lst = mergeZeroCrossings(zc_lst, {});
@@ -1252,7 +1179,7 @@ algorithm
       (e_2, (iterator, inExpLst, range, (_, relations, samples, numRelations1, numMathFunctions), (alg_indx, vars, knvars))) = Expression.traverseExpTopDown(e2, collectZCAlgsFor, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations1, numMathFunctions), (alg_indx, vars, knvars)));
       true = intGt(numRelations1, numRelations);
       e_1 = DAE.LBINARY(e_1, op, e_2);
-      zc = createZeroCrossing(e_1, {alg_indx}, {});
+      zc = createZeroCrossing(e_1, {alg_indx});
       zc_lst = List.select1(zeroCrossings, zcEqual, zc);
       zeroCrossings = if listEmpty(zc_lst) then listAppend(zeroCrossings, {zc}) else zeroCrossings;
       if Flags.isSet(Flags.RELIDX) then
@@ -1283,7 +1210,7 @@ algorithm
       if Flags.isSet(Flags.RELIDX) then
         print(" number of new zc: " + intString(listLength(explst)) + "\n");
       end if;
-      zcLstNew = createZeroCrossings(explst, {alg_indx}, {});
+      zcLstNew = createZeroCrossings(explst, {alg_indx});
       zc_lst = listAppend(relations, zcLstNew);
       // lochel: don't merge zero crossings in algorithms (see #3358)
       // zc_lst = mergeZeroCrossings(zc_lst, {});
@@ -1310,7 +1237,7 @@ algorithm
       b2 = Expression.expContains(e2, iterator);
       false = Util.boolOrList({b1, b2});
       eres = DAE.RELATION(e1, op, e2, numRelations, NONE());
-      zc = createZeroCrossing(eres, {alg_indx}, {});
+      zc = createZeroCrossing(eres, {alg_indx});
       zc_lst = listAppend(relations, {zc});
       // lochel: don't merge zero crossings in algorithms (see #3358)
       // zc_lst = mergeZeroCrossings(zc_lst, {});
@@ -1333,7 +1260,7 @@ algorithm
 
       e_1 = DAE.CALL(Absyn.IDENT("integer"), {e1, DAE.ICONST(numMathFunctions)}, attr);
 
-      zc = createZeroCrossing(e_1, {alg_indx}, {});
+      zc = createZeroCrossing(e_1, {alg_indx});
       ((eres, zeroCrossings, numMathFunctions)) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
 
       if Flags.isSet(Flags.RELIDX) then
@@ -1349,7 +1276,7 @@ algorithm
 
       e_1 = DAE.CALL(Absyn.IDENT("floor"), {e1, DAE.ICONST(numMathFunctions)}, attr);
 
-      zc = createZeroCrossing(e_1, {alg_indx}, {});
+      zc = createZeroCrossing(e_1, {alg_indx});
       ((eres, zeroCrossings, numMathFunctions)) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
 
       if Flags.isSet(Flags.RELIDX) then
@@ -1365,7 +1292,7 @@ algorithm
 
       e_1 = DAE.CALL(Absyn.IDENT("ceil"), {e1, DAE.ICONST(numMathFunctions)}, attr);
 
-      zc = createZeroCrossing(e_1, {alg_indx}, {});
+      zc = createZeroCrossing(e_1, {alg_indx});
       ((eres, zeroCrossings, numMathFunctions)) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
 
       if Flags.isSet(Flags.RELIDX) then
@@ -1381,7 +1308,7 @@ algorithm
 
       e_1 = DAE.CALL(Absyn.IDENT("div"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
 
-      zc = createZeroCrossing(e_1, {alg_indx}, {});
+      zc = createZeroCrossing(e_1, {alg_indx});
       ((eres, zeroCrossings, numMathFunctions)) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
 
       if Flags.isSet(Flags.RELIDX) then
@@ -1398,7 +1325,7 @@ algorithm
 
       e_1 = DAE.CALL(Absyn.IDENT("floor"), {DAE.BINARY(e1, DAE.DIV(ty), e2), DAE.ICONST(numMathFunctions)}, attr);
 
-      zc = createZeroCrossing(e_1, {alg_indx}, {});
+      zc = createZeroCrossing(e_1, {alg_indx});
       ((eres, zeroCrossings, numMathFunctions)) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
       e_2 = DAE.BINARY(e1, DAE.SUB(ty), DAE.BINARY(eres, DAE.MUL(ty), e2));
 
@@ -1416,7 +1343,7 @@ algorithm
 
       e_1 = DAE.CALL(Absyn.IDENT("div"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
 
-      zc = createZeroCrossing(e_1, {alg_indx}, {});
+      zc = createZeroCrossing(e_1, {alg_indx});
       ((eres, zeroCrossings, numMathFunctions)) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
       e_2 = DAE.BINARY(e1, DAE.SUB(ty), DAE.BINARY(eres, DAE.MUL(ty), e2));
 
@@ -1552,12 +1479,11 @@ protected
   list<Integer> eq, wc, eq1, wc1, eq2, wc2;
   DAE.Exp e1, e2, res;
 algorithm
-  BackendDAE.ZERO_CROSSING(relation_=e1, occurEquLst=eq1, occurWhenLst=wc1) := inZeroCrossing1;
-  BackendDAE.ZERO_CROSSING(relation_=e2, occurEquLst=eq2, occurWhenLst=wc2) := inZeroCrossing2;
+  BackendDAE.ZERO_CROSSING(relation_=e1, occurEquLst=eq1) := inZeroCrossing1;
+  BackendDAE.ZERO_CROSSING(relation_=e2, occurEquLst=eq2) := inZeroCrossing2;
   res := getMinZeroCrossings(e1, e2);
   eq := List.union(eq1, eq2);
-  wc := List.union(wc1, wc2);
-  outZeroCrossing := BackendDAE.ZERO_CROSSING(res, eq, wc);
+  outZeroCrossing := BackendDAE.ZERO_CROSSING(res, eq);
 end mergeZeroCrossing;
 
 protected function getMinZeroCrossings "
@@ -1841,26 +1767,21 @@ protected function createZeroCrossings "
   crossing gets the same equation indices and when clause indices."
   input list<DAE.Exp> inExpExpLst1;
   input list<Integer> inOccurEquLst;
-  input list<Integer> inOccurWhenLst;
   output list<BackendDAE.ZeroCrossing> outZeroCrossingLst;
 algorithm
-  outZeroCrossingLst := List.map2(inExpExpLst1, createZeroCrossing, inOccurEquLst, inOccurWhenLst);
+  outZeroCrossingLst := List.map1(inExpExpLst1, createZeroCrossing, inOccurEquLst);
 end createZeroCrossings;
 
 protected function createZeroCrossing
   input DAE.Exp inRelation;
   input list<Integer> inOccurEquLst;
-  input list<Integer> inOccurWhenLst;
   output BackendDAE.ZeroCrossing outZeroCrossing;
 algorithm
-  outZeroCrossing := match(inOccurEquLst, inOccurWhenLst)
-    case ({-1}, _)
-    then BackendDAE.ZERO_CROSSING(inRelation, {}, inOccurWhenLst);
+  outZeroCrossing := match(inOccurEquLst)
+    case ({-1})
+    then BackendDAE.ZERO_CROSSING(inRelation, {});
 
-    case (_, {-1})
-    then BackendDAE.ZERO_CROSSING(inRelation, inOccurEquLst, {});
-
-    else BackendDAE.ZERO_CROSSING(inRelation, inOccurEquLst, inOccurWhenLst);
+    else BackendDAE.ZERO_CROSSING(inRelation, inOccurEquLst);
   end match;
 end createZeroCrossing;
 

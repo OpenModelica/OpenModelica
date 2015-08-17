@@ -383,7 +383,7 @@ end Equation;
 
 public
 uniontype WhenEquation
-  record WHEN_STMTS "equation when condition then reinit(...), terminate(...) or assert(...)"
+  record WHEN_STMTS "equation when condition then cr = exp, reinit(...), terminate(...) or assert(...)"
     .DAE.Exp condition                "the when-condition" ;
     list<WhenOperator> whenStmtLst;
     Option<WhenEquation> elsewhenPart "elsewhen equation with the same cref on the left hand side.";
@@ -573,7 +573,6 @@ public
 uniontype EventInfo
   record EVENT_INFO
     list<TimeEvent> timeEvents         "stores all information related to time events";
-    list<WhenClause> whenClauseLst     "list of when clauses. The WhenEquation data type refer to this list by position";
     list<ZeroCrossing> zeroCrossingLst "list of zero crossing conditions";
     list<ZeroCrossing> sampleLst       "[deprecated] list of sample as before, only used by cpp runtime (TODO: REMOVE ME)";
     list<ZeroCrossing> relationsLst    "list of zero crossing function as before";
@@ -582,25 +581,10 @@ uniontype EventInfo
 end EventInfo;
 
 public
-uniontype WhenClause
-  record WHEN_CLAUSE
-    .DAE.Exp condition               "the when-condition";
-    list<WhenOperator> reinitStmtLst "list of reinit statements associated to the when clause.";
-    Option<Integer> elseClause       "index of elsewhen clause";
-
-    // HL only needs to know if it is an elsewhen the equations take care of which clauses are related.
-
-    // The equations associated to the clause are linked to this when clause by the index in the
-    // when clause list where this when clause is stored.
-  end WHEN_CLAUSE;
-end WhenClause;
-
-public
 uniontype ZeroCrossing
   record ZERO_CROSSING
     .DAE.Exp relation_         "function";
     list<Integer> occurEquLst  "list of equations where the function occurs";
-    list<Integer> occurWhenLst "list of when clauses where the function occurs";
   end ZERO_CROSSING;
 end ZeroCrossing;
 

@@ -192,7 +192,6 @@ protected function setClocks
 protected
   BackendDAE.EventInfo eventInfo;
   list<BackendDAE.TimeEvent> timeEvents;
-  list<BackendDAE.WhenClause> whenClauseLst;
   list<BackendDAE.ZeroCrossing> zeroCrossingLst;
   list<BackendDAE.ZeroCrossing> sampleLst;
   list<BackendDAE.ZeroCrossing> relationsLst;

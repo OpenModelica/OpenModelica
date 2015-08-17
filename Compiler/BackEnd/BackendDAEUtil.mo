@@ -119,7 +119,6 @@ type ExternalObjectClasses = BackendDAE.ExternalObjectClasses;
 type BackendDAEType = BackendDAE.BackendDAEType;
 type SymbolicJacobians = BackendDAE.SymbolicJacobians;
 type EqSystems = BackendDAE.EqSystems;
-type WhenClause = BackendDAE.WhenClause;
 type ZeroCrossing = BackendDAE.ZeroCrossing;
 
 public function isInitializationDAE
@@ -281,8 +280,7 @@ algorithm
         ((_, expcrefs)) = traverseBackendDAEExpsEqns(syst.orderedEqs, checkBackendDAEExp, (allvars, expcrefs));
         ((_, expcrefs)) = traverseBackendDAEExpsEqns(syst.removedEqs, checkBackendDAEExp, (allvars, expcrefs));
         ((_, expcrefs)) = traverseBackendDAEExpsEqns(shared.initialEqs, checkBackendDAEExp, (allvars, expcrefs));
-        (_, (_, expcrefs)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst( shared.eventInfo.whenClauseLst, checkBackendDAEExp,
-                                                                                      (allvars, expcrefs) );
+
         wrongEqns = BackendEquation.traverseEquationArray(syst.orderedEqs, checkEquationSize, {});
         wrongEqns = BackendEquation.traverseEquationArray(shared.removedEqs, checkEquationSize, wrongEqns);
         wrongEqns = BackendEquation.traverseEquationArray(syst.removedEqs, checkEquationSize, wrongEqns);
@@ -1800,19 +1798,6 @@ algorithm
     then (eqnsNew,varsNew);
  end match;
 end splitoutEquationAndVars;
-
-public function whenClauseAddDAE
-"author: Frenkel TUD 2011-05"
-  input list<BackendDAE.WhenClause> inWcLst;
-  input BackendDAE.Shared inShared;
-  output BackendDAE.Shared outShared = inShared;
-protected
-  BackendDAE.EventInfo eventInfo;
-algorithm
-  eventInfo := outShared.eventInfo;
-  eventInfo.whenClauseLst := listAppend(inShared.eventInfo.whenClauseLst, inWcLst);
-  outShared.eventInfo := eventInfo;
-end whenClauseAddDAE;
 
 public function getStrongComponents
 "author: Frenkel TUD 2011-11
@@ -5794,7 +5779,6 @@ algorithm
         outTypeA = traverseBackendDAEExpsVars(shared.knownVars, func, outTypeA);
         outTypeA = traverseBackendDAEExpsEqns(shared.initialEqs, func, outTypeA);
         outTypeA = traverseBackendDAEExpsEqns(shared.removedEqs, func, outTypeA);
-        (_, outTypeA) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(shared.eventInfo.whenClauseLst, func, outTypeA);
       then
         outTypeA;
 
@@ -5968,7 +5952,6 @@ algorithm
         outTypeA = traverseBackendDAEExpsVarsWithUpdate(shared.knownVars, func, outTypeA);
         outTypeA = traverseBackendDAEExpsEqnsWithUpdate(shared.initialEqs, func, outTypeA);
         outTypeA = traverseBackendDAEExpsEqnsWithUpdate(shared.removedEqs, func, outTypeA);
-        (_, outTypeA) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(shared.eventInfo.whenClauseLst, func, outTypeA);
       then
         outTypeA;
 
@@ -6574,38 +6557,6 @@ algorithm
   end match;
 end traverseAlgorithmExpsWithUpdate;
 
-public function traverseWhenClauseExps
-  replaceable type Type_a subtypeof Any;
-  input list<BackendDAE.WhenClause> iWhenClauses;
-  input FuncExpType func;
-  input Type_a inTypeA;
-  input list<BackendDAE.WhenClause> iAcc;
-  output list<BackendDAE.WhenClause> oWhenClauses;
-  output Type_a outTypeA;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output DAE.Exp outExp;
-    output Type_a outA;
-  end FuncExpType;
-algorithm
-  (oWhenClauses,outTypeA) := match(iWhenClauses,func,inTypeA,iAcc)
-    local
-      list<BackendDAE.WhenClause> whenClause;
-      DAE.Exp condition;
-      list<BackendDAE.WhenOperator> reinitStmtLst;
-      Option<Integer> elseClause;
-      Type_a arg;
-    case({},_,_,_) then (listReverse(iAcc),inTypeA);
-    case(BackendDAE.WHEN_CLAUSE(condition,reinitStmtLst,elseClause)::whenClause,_,_,_)
-      equation
-        (condition,arg) = Expression.traverseExpBottomUp(condition,func,inTypeA);
-        (whenClause,arg) = traverseWhenClauseExps(whenClause,func,arg,BackendDAE.WHEN_CLAUSE(condition,reinitStmtLst,elseClause)::iAcc);
-      then
-        (whenClause,arg);
-  end match;
-end traverseWhenClauseExps;
-
 public function traverseZeroCrossingExps
   replaceable type Type_a subtypeof Any;
   input list<BackendDAE.ZeroCrossing> iZeroCrossing;
@@ -6625,13 +6576,13 @@ algorithm
     local
       list<BackendDAE.ZeroCrossing> zeroCrossing;
       DAE.Exp relation_;
-      list<Integer> occurEquLst,occurWhenLst;
+      list<Integer> occurEquLst;
       Type_a arg;
     case({},_,_,_) then (listReverse(iAcc),inTypeA);
-    case(BackendDAE.ZERO_CROSSING(relation_,occurEquLst,occurWhenLst)::zeroCrossing,_,_,_)
+    case(BackendDAE.ZERO_CROSSING(relation_,occurEquLst)::zeroCrossing,_,_,_)
       equation
         (relation_,arg) = Expression.traverseExpBottomUp(relation_,func,inTypeA);
-        (zeroCrossing,arg) = traverseZeroCrossingExps(zeroCrossing,func,arg,BackendDAE.ZERO_CROSSING(relation_,occurEquLst,occurWhenLst)::iAcc);
+        (zeroCrossing,arg) = traverseZeroCrossingExps(zeroCrossing,func,arg,BackendDAE.ZERO_CROSSING(relation_,occurEquLst)::iAcc);
       then
         (zeroCrossing,arg);
   end match;
@@ -8296,7 +8247,7 @@ end collapseRemovedEqs1;
 public function emptyEventInfo
   output BackendDAE.EventInfo info;
 algorithm
-  info := BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0);
+  info := BackendDAE.EVENT_INFO({}, {}, {}, {}, 0);
 end emptyEventInfo;
 
 public function emptyClocks

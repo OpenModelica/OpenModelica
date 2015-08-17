@@ -917,7 +917,7 @@ template zeroCrossingEqns(list<ZeroCrossing> zeroCrossings)
   >>
 end zeroCrossingEqns;
 
-template allEqns(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, list<SimEqSystem> removedEqns)
+template allEqns(list<SimEqSystem> allEquationsPlusWhen, list<SimEqSystem> removedEqns)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let eqs = (allEquationsPlusWhen |> eq =>
@@ -926,17 +926,12 @@ template allEqns(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whe
   let aliasEqs = (removedEqns |> eq =>
       equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/)
     ;separator="\n")
-  let reinit = (whenClauses |> when hasindex i0 =>
-      genreinits(when, &varDecls,i0)
-    ;separator="\n")
   <<
   <%varDecls%>
   // Primary equations
   <%eqs%>
   // Alias equations
   <%aliasEqs%>
-  // Reinits
-  <%reinit%>
   >>
 end allEqns;
 
@@ -950,76 +945,6 @@ template lastIdentOfPath(Path modelName) ::=
 end lastIdentOfPath;
 
 // Below here is from the C template but modified in many instances
-
-template functionWhenReinitStatement(WhenOperator reinit, Text &varDecls /*BUFP*/)
- "Generates re-init statement for when equation."
-::=
-match reinit
-case REINIT(__) then
-  let &preExp = buffer "" /*BUFD*/
-  let val = daeExp(value, contextSimulationDiscrete,
-                 &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  <<
-  <%preExp%>  <%cref(stateVar)%> = <%val%>;
-  >>
-case TERMINATE(__) then
-  let &preExp = buffer "" /*BUFD*/
-  let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  <<
-  <%preExp%>  MODELICA_TERMINATE(<%msgVar%>);
-  >>
-case ASSERT(source=SOURCE(info=info)) then
-  assertCommon(condition, message, contextSimulationDiscrete, &varDecls, info)
-end functionWhenReinitStatement;
-
-template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int)
-" Generates reinit statemeant"
-::=
-  match whenClauses
-    case SIM_WHEN_CLAUSE(__) then
-      let helpIf = (conditions |> e => '(<%cref(e)%> && !_PRE<%cref(e)%> /* edge */)';separator=" || ")
-      let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)
-
-      if reinits then
-      <<
-      //Reinit inside whenclause index: <%int%>
-      if (atEvent) {
-         if (<%helpIf%>) {
-         <%ifthen%>
-         }
-      }
-      >>
-end genreinits;
-
-template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDecls /*BUFP*/)
- "Generates re-init statement for when equation."
-::=
-  let body = (reinits |> reinit =>
-    match reinit
-    case REINIT(__) then
-      let &preExp = buffer "" /*BUFD*/
-      let val = daeExp(value, contextSimulationDiscrete,
-                   &preExp /*BUFC*/, &varDecls /*BUFD*/)
-     <<
-      <%preExp%>
-                double <%cref(stateVar)%>_tmp = <%cref(stateVar)%>;
-                <%cref(stateVar)%> = <%val%>;
-                reInit = reInit || (<%cref(stateVar)%>_tmp != <%cref(stateVar)%>);
-                >>
-    case TERMINATE(__) then
-      let &preExp = buffer "" /*BUFD*/
-    let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    <<
-                <%preExp%>
-                MODELICA_TERMINATE(<%msgVar%>);
-                >>
-  case ASSERT(source=SOURCE(info=info)) then
-    assertCommon(condition, message, contextSimulationDiscrete, &varDecls, info)
-  ;separator="\n")
-  <<
-   <%body%>
-  >>
-end functionWhenReinitStatementThen;
 
 template zeroCrossingEquation(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
  "Generates code for a zero crossing relations."

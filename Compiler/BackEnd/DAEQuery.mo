@@ -91,23 +91,22 @@ protected
   list<String> ls1;
 algorithm
     BackendDAE.DAE({syst}, shared) := inBackendDAE;
-    ls1 := List.map1(BackendEquation.equationList(syst.orderedEqs), equationStr, shared.eventInfo.whenClauseLst);
+    ls1 := List.map(BackendEquation.equationList(syst.orderedEqs), equationStr);
     strEqs := "EqStr = {" + stringDelimitList(ls1, ",") + "};";
 end getEquations;
 
 public function equationStr
 "Helper function to getEqustions."
   input BackendDAE.Equation inEquation;
-  input list<BackendDAE.WhenClause> wcLst;
   output String outString;
 algorithm
-  outString := match (inEquation, wcLst)
+  outString := match (inEquation)
     local
       String s1,s2,s3,res;
       DAE.Exp e1,e2,e,condition;
       DAE.ComponentRef cr;
 
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2), _)
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2))
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
@@ -115,7 +114,7 @@ algorithm
       then
         res;
 
-    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2), _)
+    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2))
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
@@ -123,7 +122,7 @@ algorithm
       then
         res;
 
-    case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2), _)
+    case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2))
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
@@ -131,7 +130,7 @@ algorithm
       then
         res;
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2), _)
+    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2))
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
@@ -139,7 +138,7 @@ algorithm
       then
         res;
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition=condition,whenStmtLst={BackendDAE.ASSIGN(left = cr,right = e2)})), _)
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition=condition,whenStmtLst={BackendDAE.ASSIGN(left = cr,right = e2)})))
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
@@ -148,14 +147,14 @@ algorithm
       then
         res;
 
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e),_)
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e))
       equation
         s1 = ExpressionDump.printExpStr(e);
         res = stringAppendList({"'", s1,"= 0", ";'"});
       then
         res;
 
-    case (BackendDAE.ALGORITHM(),_)
+    case (BackendDAE.ALGORITHM())
       equation
         res = stringAppendList({"Algorithm\n"});
       then

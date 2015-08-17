@@ -3840,7 +3840,6 @@ protected function replaceDummyDerivatives
   output BackendDAE.EqSystem outSyst = inSyst;
   output BackendDAE.Shared outShared = inShared;
 protected
-  list<BackendDAE.WhenClause> wcl;
   BackendDAE.EventInfo eventInfo;
 algorithm
   BackendVariable.traverseBackendDAEVarsWithUpdate(outShared.aliasVars, replaceDummyDerivativesVar, ht);
@@ -3851,12 +3850,6 @@ algorithm
                                                        (replaceDummyDerivativesExp, ht) );
   BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( outShared.removedEqs, Expression.traverseSubexpressionsHelper,
                                                        (replaceDummyDerivativesExp, ht) );
-
-  eventInfo := outShared.eventInfo;
-  (wcl, _) := BackendDAETransform.traverseBackendDAEExpsWhenClauseLst (
-      outShared.eventInfo.whenClauseLst, Expression.traverseSubexpressionsHelper, (replaceDummyDerivativesExp, ht) );
-  eventInfo.whenClauseLst := wcl;
-  outShared.eventInfo := eventInfo;
 end replaceDummyDerivatives;
 
 protected function replaceDummyDerivativesVar

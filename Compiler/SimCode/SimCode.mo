@@ -109,7 +109,6 @@ uniontype SimCode
     list<BackendDAE.ZeroCrossing> zeroCrossings;
     list<BackendDAE.ZeroCrossing> relations "only used by c runtime";
     list<BackendDAE.TimeEvent> timeEvents "only used by c runtime yet";
-    list<SimWhenClause> whenClauses;
     list<DAE.ComponentRef> discreteModelVars;
     ExtObjInfo extObjInfo;
     MakefileParams makefileParams;
@@ -494,16 +493,6 @@ uniontype StateSet
     JacobianMatrix jacobianMatrix;
   end SES_STATESET;
 end StateSet;
-
-uniontype SimWhenClause
-  record SIM_WHEN_CLAUSE
-    list<DAE.ComponentRef> conditionVars "is no longer needed";
-    list<DAE.ComponentRef> conditions "list of boolean variables as conditions";
-    Boolean initialCall "true, if top-level branch with initial()";
-    list<BackendDAE.WhenOperator> reinits;
-    Option<BackendDAE.WhenEquation> whenEq;
-  end SIM_WHEN_CLAUSE;
-end SimWhenClause;
 
 uniontype ExtObjInfo
   record EXTOBJINFO

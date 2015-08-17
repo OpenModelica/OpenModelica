@@ -557,19 +557,16 @@ algorithm
   outEventInfo := matchcontinue(inEventInfo, inElementList)
     local
       Inline.Functiontuple fns;
-      list<BackendDAE.WhenClause> wclst, wclst_1;
       list<BackendDAE.ZeroCrossing> zclst, zclst_1, relations, samples;
       Integer numberOfMathEvents;
       BackendDAE.EventInfo ev;
       Boolean b1, b2, b3;
       list<BackendDAE.TimeEvent> timeEvents;
 
-    case(BackendDAE.EVENT_INFO(timeEvents, wclst, zclst, samples, relations, numberOfMathEvents), fns) equation
-      (wclst_1, b1) = inlineWhenClauses(wclst, fns, {}, false);
-      (zclst_1, b2) = inlineZeroCrossings(zclst, fns, {}, false);
-      (relations, b3) = inlineZeroCrossings(relations, fns, {}, false);
-      ev = if b1 or b2 or b3 then BackendDAE.EVENT_INFO(timeEvents, wclst_1, zclst_1, samples, relations, numberOfMathEvents)
-                             else inEventInfo;
+    case(BackendDAE.EVENT_INFO(timeEvents, zclst, samples, relations, numberOfMathEvents), fns) equation
+      (zclst_1, b1) = inlineZeroCrossings(zclst, fns, {}, false);
+      (relations, b2) = inlineZeroCrossings(relations, fns, {}, false);
+      ev = if b1 or b2 then BackendDAE.EVENT_INFO(timeEvents, zclst_1, samples, relations, numberOfMathEvents) else inEventInfo;
     then ev;
 
     else
@@ -614,67 +611,16 @@ algorithm
     local
       Inline.Functiontuple fns;
       DAE.Exp e, e_1;
-      list<Integer> ilst1, ilst2;
+      list<Integer> ilst1;
       list<DAE.Statement> assrtLst;
 
-    case(BackendDAE.ZERO_CROSSING(e, ilst1, ilst2), fns) equation
+    case(BackendDAE.ZERO_CROSSING(e, ilst1), fns) equation
       (e_1, _, true, _) = Inline.inlineExp(e, fns, DAE.emptyElementSource/*TODO: Propagate operation info*/);
-    then (BackendDAE.ZERO_CROSSING(e_1, ilst1, ilst2), true);
+    then (BackendDAE.ZERO_CROSSING(e_1, ilst1), true);
 
     else (inZeroCrossing, false);
   end matchcontinue;
 end inlineZeroCrossing;
-
-protected function inlineWhenClauses
-"inlines function calls in reinit statements"
-  input list<BackendDAE.WhenClause> inStmts;
-  input Inline.Functiontuple fns;
-  input list<BackendDAE.WhenClause> iAcc;
-  input Boolean iInlined;
-  output list<BackendDAE.WhenClause> outStmts;
-  output Boolean oInlined;
-algorithm
-  (outStmts,oInlined) := match (inStmts,fns,iAcc,iInlined)
-    local
-      BackendDAE.WhenClause wc;
-      list<BackendDAE.WhenClause> rest,stmts;
-      Boolean b;
-
-    case ({},_,_,_) then (listReverse(iAcc),iInlined);
-    case (wc::rest,_,_,_)
-      equation
-        (wc,b) = inlineWhenClause(wc,fns);
-        (stmts,b) = inlineWhenClauses(rest,fns,wc::iAcc,b or iInlined);
-      then
-        (stmts,b);
-  end match;
-end inlineWhenClauses;
-
-protected function inlineWhenClause
-"inlines function calls in a when clause"
-  input BackendDAE.WhenClause inWhenClause;
-  input Inline.Functiontuple inElementList;
-  output BackendDAE.WhenClause outWhenClause;
-  output Boolean inlined;
-algorithm
-  (outWhenClause,inlined) := matchcontinue(inWhenClause,inElementList)
-    local
-      Inline.Functiontuple fns;
-      DAE.Exp e,e_1;
-      list<BackendDAE.WhenOperator> rslst,rslst_1;
-      Option<Integer> io;
-      Boolean b1,b2;
-      list<DAE.Statement> assrtLst;
-    case(BackendDAE.WHEN_CLAUSE(e,rslst,io),fns)
-      equation
-        (e_1,_,b1,_) = Inline.inlineExp(e,fns,DAE.emptyElementSource/*TODO: Propagate operation info*/);
-        (rslst_1,b2) = inlineReinitStmts(rslst,fns,{},false);
-        true = b1 or b2;
-      then
-        (BackendDAE.WHEN_CLAUSE(e_1,rslst_1,io),true);
-    else (inWhenClause,false);
-  end matchcontinue;
-end inlineWhenClause;
 
 protected function inlineReinitStmts
 "inlines function calls in reinit statements"

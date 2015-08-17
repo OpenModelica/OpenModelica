@@ -207,7 +207,6 @@ protected
   list<SimCode.SimEqSystem> removedEquations;
   list<SimCode.SimEqSystem> removedInitialEquations;    // -->
   list<SimCode.SimEqSystem> startValueEquations;        // --> updateBoundStartValues
-  list<SimCode.SimWhenClause> whenClauses;
   list<SimCode.StateSet> stateSets;
   list<SimCodeVar.SimVar> mixedArrayVars;
   list<SimCodeVar.SimVar> tempvars, jacobianSimvars;
@@ -267,7 +266,6 @@ algorithm
 
  // created event suff e.g. zeroCrossings, samples, ...
     timeEvents := eventInfo.timeEvents;
-    whenClauses := {};
     zeroCrossings := if ifcpp then eventInfo.relationsLst else eventInfo.zeroCrossingLst;
     relations := eventInfo.relationsLst;
     sampleZC := eventInfo.sampleLst;
@@ -438,7 +436,6 @@ algorithm
                               zeroCrossings,
                               relations,
                               timeEvents,
-                              whenClauses,
                               discreteModelVars,
                               extObjInfo,
                               makefileParams,
@@ -1686,7 +1683,7 @@ protected function zeroCrossingEquations "
   input BackendDAE.ZeroCrossing inZC;
   output list<Integer> outLst;
 algorithm
-  BackendDAE.ZERO_CROSSING(_, outLst, _) := inZC;
+  BackendDAE.ZERO_CROSSING(_, outLst) := inZC;
 end zeroCrossingEquations;
 
 protected function whenEquationsIndices "
@@ -1732,16 +1729,14 @@ algorithm
  local
     DAE.Exp exp;
     list<Integer> occurEquLst;
-    list<Integer> occurWhenLst;
     list<BackendDAE.ZeroCrossing> rest;
 
    case ({}, _, _) then listReverse(iAccum);
 
-   case (BackendDAE.ZERO_CROSSING(relation_=exp, occurEquLst=occurEquLst, occurWhenLst=occurWhenLst)::rest, _, _)
+   case (BackendDAE.ZERO_CROSSING(relation_=exp, occurEquLst=occurEquLst)::rest, _, _)
      equation
        occurEquLst = convertListIndx(occurEquLst, eqBackendSimCodeMappingArray);
-       occurWhenLst = convertListIndx(occurWhenLst, eqBackendSimCodeMappingArray);
-       ozeroCrossings = updateZeroCrossEqnIndexHelp(rest, eqBackendSimCodeMappingArray, BackendDAE.ZERO_CROSSING(exp, occurEquLst, occurWhenLst)::iAccum);
+       ozeroCrossings = updateZeroCrossEqnIndexHelp(rest, eqBackendSimCodeMappingArray, BackendDAE.ZERO_CROSSING(exp, occurEquLst)::iAccum);
      then
        ozeroCrossings;
 
@@ -1817,7 +1812,6 @@ algorithm
       list<DAE.Statement> algStatements;
       list<DAE.ComponentRef> conditions, solveCr;
       list<SimCode.SimEqSystem> resEqs;
-      list<BackendDAE.WhenClause> wcl;
       DAE.ComponentRef left, varOutput;
       DAE.Exp e1, e2, varexp, exp_, right, cond, prevarexp;
       BackendDAE.WhenEquation whenEquation, elseWhen;
@@ -8593,6 +8587,7 @@ algorithm
       list<SimCode.SimEqSystem> systems;
       SimCode.SimEqSystem system;
       Option<SimCode.SimEqSystem> systemOpt;
+      list<BackendDAE.WhenOperator> whenStmtLst;
 
     case (SimCode.SES_RESIDUAL(source = source), files)
       equation
@@ -8645,9 +8640,10 @@ algorithm
       then
         (inSimEqSystem, files);
 
-    case (SimCode.SES_WHEN(source = source, elseWhen = systemOpt), files)
+    case (SimCode.SES_WHEN(source = source, whenStmtLst = whenStmtLst, elseWhen = systemOpt), files)
       equation
         files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromWhenOperators(whenStmtLst, files);
         files = getFilesFromSimEqSystemOpt(systemOpt, files);
       then
         (inSimEqSystem, files);
@@ -8838,7 +8834,7 @@ algorithm
   end match;
 end getFilesFromStatements;
 
-protected function getFilesFromWhenClausesReinits
+protected function getFilesFromWhenOperators
   input list<BackendDAE.WhenOperator> inWhenOperators;
   input SimCode.Files inFiles;
   output SimCode.Files outFiles;
@@ -8852,39 +8848,43 @@ algorithm
     // handle empty
     case ({}, files) then files;
 
+    case (BackendDAE.ASSIGN(source = source)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromWhenOperators(rest, files);
+      then
+        files;
+
     case (BackendDAE.REINIT(source = source)::rest, files)
       equation
         files = getFilesFromDAEElementSource(source, files);
-        files = getFilesFromWhenClausesReinits(rest, files);
+        files = getFilesFromWhenOperators(rest, files);
       then
         files;
 
-  end match;
-end getFilesFromWhenClausesReinits;
-
-protected function getFilesFromWhenClauses
-  input list<SimCode.SimWhenClause> inSimWhenClauses;
-  input SimCode.Files inFiles;
-  output SimCode.Files outFiles;
-algorithm
-  outFiles := match(inSimWhenClauses, inFiles)
-    local
-      SimCode.Files files;
-      list<SimCode.SimWhenClause> rest;
-      list<BackendDAE.WhenOperator> reinits;
-
-    // handle empty
-    case ({}, files) then files;
-
-    case (SimCode.SIM_WHEN_CLAUSE(reinits = reinits)::rest, files)
+    case (BackendDAE.ASSERT(source = source)::rest, files)
       equation
-        files = getFilesFromWhenClausesReinits(reinits, files);
-        files = getFilesFromWhenClauses(rest, files);
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromWhenOperators(rest, files);
+      then
+        files;
+
+    case (BackendDAE.TERMINATE(source = source)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromWhenOperators(rest, files);
+      then
+        files;
+
+    case (BackendDAE.NORETCALL(source = source)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromWhenOperators(rest, files);
       then
         files;
 
   end match;
-end getFilesFromWhenClauses;
+end getFilesFromWhenOperators;
 
 protected function getFilesFromExtObjInfo
   input SimCode.ExtObjInfo inExtObjInfo;
@@ -8983,7 +8983,6 @@ algorithm
                                        :: outSimCode.removedEquations :: outSimCode.algorithmAndEquationAsserts
                                        :: outSimCode.odeEquations, files );
     files := getFilesFromSimEqSystems(outSimCode.algebraicEquations, files);
-    files := getFilesFromWhenClauses(outSimCode.whenClauses, files);
     files := getFilesFromExtObjInfo(outSimCode.extObjInfo, files);
     files := getFilesFromJacobianMatrixes(outSimCode.jacobianMatrixes, files);
     files := List.sort(files, greaterFileInfo);
@@ -9274,7 +9273,6 @@ algorithm
   (eqs, oa) := traverseExpsEqSystems(outSimCode.jacobianEquations, func, oa, {});
   outSimCode.jacobianEquations := eqs;
   /* TODO:zeroCrossing */
-  /* TODO:whenClauses */
   /* TODO:discreteModelVars */
   /* TODO:extObjInfo */
   /* TODO:delayedExps */

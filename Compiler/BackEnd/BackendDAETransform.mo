@@ -888,6 +888,11 @@ algorithm
         DAE.Exp cond, msg, level, exp;
         DAE.ElementSource src;
 
+      case BackendDAE.ASSIGN(cr, cond, src) equation
+        (cond, outArg) = func(cond, outArg);
+        (DAE.CREF(componentRef = cr), outArg) = func(Expression.crefExp(cr), outArg);
+      then BackendDAE.ASSIGN(cr, cond, src);
+
       case BackendDAE.REINIT(cr, cond, src) equation
         (cond, outArg) = func(cond, outArg);
         (DAE.CREF(componentRef = cr), outArg) = func(Expression.crefExp(cr), outArg);
@@ -909,43 +914,6 @@ algorithm
 
   outReinitStmtLst := listReverse(outReinitStmtLst);
 end traverseBackendDAEExpsWhenOperator;
-
-public function traverseBackendDAEExpsWhenClauseLst<ArgT> "author: Frenkel TUD 2010-11
-  Traverse all expressions of a when clause list. It is possible to change the expressions"
-  input list<BackendDAE.WhenClause> inWhenClauseLst;
-  input FuncExpType func;
-  input ArgT inArg;
-  output list<BackendDAE.WhenClause> outWhenClauseLst = {};
-  output ArgT outArg = inArg;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input ArgT inArg;
-    output DAE.Exp outExp;
-    output ArgT outArg;
-  end FuncExpType;
-algorithm
-  for wc in inWhenClauseLst loop
-    wc := matchcontinue(wc)
-      local
-        DAE.Exp cond;
-        list<BackendDAE.WhenOperator> reinit_lst;
-        Option<Integer> else_idx;
-
-      case BackendDAE.WHEN_CLAUSE(cond, reinit_lst, else_idx) equation
-        (cond, outArg) = func(cond, inArg);
-        (reinit_lst, outArg) = traverseBackendDAEExpsWhenOperator(reinit_lst, func, outArg);
-      then BackendDAE.WHEN_CLAUSE(cond, reinit_lst, else_idx);
-
-      else equation
-        Error.addInternalError("function traverseBackendDAEExpsWhenClauseLst failed.", sourceInfo());
-      then fail();
-    end matchcontinue;
-
-    outWhenClauseLst := wc :: outWhenClauseLst;
-  end for;
-
-  outWhenClauseLst := listReverse(outWhenClauseLst);
-end traverseBackendDAEExpsWhenClauseLst;
 
 public function traverseExpsOfEquationList<ArgT> "author: Frenkel TUD 2010-11
   Traverse all expressions of a list of Equations. It is possible to change the equations

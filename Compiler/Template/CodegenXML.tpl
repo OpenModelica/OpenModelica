@@ -49,7 +49,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     <%bindingEquationsXml(modelInfo)%>
 
-    <%equationsXml(allEquations, whenClauses)%>
+    <%equationsXml(allEquations)%>
 
     <%initialEquationsXml(modelInfo)%>
 
@@ -557,86 +557,6 @@ end underscorePathXml;
  *         SECTION: GENERATE All Function IN SIMULATION FILE
  *****************************************************************************/
 
-template functionWhenReinitStatementXml(WhenOperator reinit, Text &varDecls /*BUFP*/)
- "Generates re-init statement for when equation."
-::=
-match reinit
-case REINIT(__) then
-  let &preExp = buffer "" /*BUFD*/
-  let val = daeExpXml(value, contextSimulationDiscrete,
-                 &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    <<
-    <exp:Reinit>
-      <%crefXml(stateVar)%>
-      <%val%>
-    </exp:Reinit>
-    >>
-case TERMINATE(__) then
-  let &preExp = buffer "" /*BUFD*/
-  let msgVar = daeExpXml(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    <<
-    <%preExp%>
-    <%msgVar%>
-    >>
-case ASSERT(source=SOURCE(info=info)) then
-  assertCommonXml(condition, message, contextSimulationDiscrete, &varDecls, info)
-end functionWhenReinitStatementXml;
-
-template genreinitsXml(SimWhenClause whenClauses, Text &varDecls, Integer int)
-" Generates reinit statemeant"
-::=
-
-match whenClauses
-case SIM_WHEN_CLAUSE(__) then
-  let &preExp = buffer "" /*BUFD*/
-  let &helpInits = buffer "" /*BUFD*/
-  let helpIf = (conditions |> e =>
-      let helpInit = crefToXmlStr(e)
-      let &helpInits += '<%helpInit%>'
-      '';separator=" || ")
-  let ifthen = functionWhenReinitStatementThenXml(reinits, &varDecls /*BUFP*/)
-  let cond = if preExp then preExp else helpInits
-  if reinits then
-   <<
-   <equ:When>
-     <equ:Condition>
-       <%&cond%>
-     </equ:Condition>
-     <%ifthen%>
-   </equ:When>
-   >>
-end genreinitsXml;
-
-template functionWhenReinitStatementThenXml(list<WhenOperator> reinits, Text &varDecls /*BUFP*/)
- "Generates re-init statement for when equation."
-::=
-  let body = (reinits |> reinit =>
-    match reinit
-    case REINIT(__) then
-      let &preExp = buffer "" /*BUFD*/
-      let val = daeExpXml(value, contextSimulationDiscrete,
-                   &preExp /*BUFC*/, &varDecls /*BUFD*/)
-       <<
-       <exp:Reinit>
-         <%crefXml(stateVar)%>
-         <%val%>
-       </exp:Reinit>
-       >>
-    case TERMINATE(__) then
-      let &preExp = buffer "" /*BUFD*/
-      let msgVar = daeExpXml(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-        <<
-         <%preExp%>
-         <%msgVar%>
-        >>
-  case ASSERT(source=SOURCE(info=info)) then
-    assertCommonXml(condition, message, contextSimulationDiscrete, &varDecls, info)
-  ;separator="\n")
-    <<
-    <%body%>
-    >>
-end functionWhenReinitStatementThenXml;
-
 template bindingEquationsXml(ModelInfo modelInfo)
  "Function for Binding Equations"
 ::=
@@ -674,8 +594,7 @@ template bindingEquationXml(SimVar var)
         >>
 end bindingEquationXml;
 
-template equationsXml( list<SimEqSystem> allEquationsPlusWhen,
-                list<SimWhenClause> whenClauses)
+template equationsXml( list<SimEqSystem> allEquationsPlusWhen)
   "Function for all equations"
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -684,14 +603,10 @@ template equationsXml( list<SimEqSystem> allEquationsPlusWhen,
   let eqs = (allEquationsPlusWhen |> eq =>
       equation_Xml(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)
     ;separator="\n")
-  let reinit = (whenClauses |> when hasindex i0 =>
-      genreinitsXml(when, &varDecls,i0)
-    ;separator="\n")
   <<
   <equ:DynamicEquations>
     <%&tmp%>
     <%eqs%>
-    <%reinit%>
   </equ:DynamicEquations>
   >>
 end equationsXml;

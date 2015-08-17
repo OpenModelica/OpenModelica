@@ -263,49 +263,15 @@ protected function traverseEventInfoExps<T>
   end FuncExpType;
 protected
   list<BackendDAE.TimeEvent> timeEvents;
-  list<BackendDAE.WhenClause> whenClauseLst;
   list<BackendDAE.ZeroCrossing> zeroCrossingLst, sampleLst, relationsLst;
   Integer numberMathEvents;
 algorithm
-  BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberMathEvents) := iEventInfo;
-  (whenClauseLst, outTypeA) := traverseWhenClauseExps(whenClauseLst, func, inTypeA, {});
-  (zeroCrossingLst, outTypeA) := traverseZeroCrossingExps(zeroCrossingLst, func, outTypeA, {});
+  BackendDAE.EVENT_INFO(timeEvents, zeroCrossingLst, sampleLst, relationsLst, numberMathEvents) := iEventInfo;
+  (zeroCrossingLst, outTypeA) := traverseZeroCrossingExps(zeroCrossingLst, func, inTypeA, {});
   (sampleLst, outTypeA) := traverseZeroCrossingExps(sampleLst, func, outTypeA, {});
   (relationsLst, outTypeA) := traverseZeroCrossingExps(relationsLst, func, outTypeA, {});
-  oEventInfo := BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberMathEvents);
+  oEventInfo := BackendDAE.EVENT_INFO(timeEvents, zeroCrossingLst, sampleLst, relationsLst, numberMathEvents);
 end traverseEventInfoExps;
-
-protected function traverseWhenClauseExps<T>
-  input list<BackendDAE.WhenClause> iWhenClauses;
-  input FuncExpType func;
-  input T inTypeA;
-  input list<BackendDAE.WhenClause> iAcc;
-  output list<BackendDAE.WhenClause> oWhenClauses;
-  output T outTypeA;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input T inTypeA;
-    output DAE.Exp outExp;
-    output T outA;
-  end FuncExpType;
-algorithm
-  (oWhenClauses, outTypeA) := match (iWhenClauses)
-    local
-      list<BackendDAE.WhenClause> whenClause;
-      DAE.Exp condition;
-      list<BackendDAE.WhenOperator> reinitStmtLst;
-      Option<Integer> elseClause;
-      T arg;
-
-    case {}
-    then (listReverse(iAcc), inTypeA);
-
-    case BackendDAE.WHEN_CLAUSE(condition, reinitStmtLst, elseClause)::whenClause equation
-      (condition, arg) = Expression.traverseExpBottomUp(condition, func, inTypeA);
-      (whenClause, arg) = traverseWhenClauseExps(whenClause, func, arg, BackendDAE.WHEN_CLAUSE(condition, reinitStmtLst, elseClause)::iAcc);
-    then (whenClause, arg);
-  end match;
-end traverseWhenClauseExps;
 
 protected function traverseZeroCrossingExps<T>
   input list<BackendDAE.ZeroCrossing> iZeroCrossing;
@@ -325,15 +291,15 @@ algorithm
     local
       list<BackendDAE.ZeroCrossing> zeroCrossing;
       DAE.Exp relation_;
-      list<Integer> occurEquLst,occurWhenLst;
+      list<Integer> occurEquLst;
       T arg;
 
     case {}
     then (listReverse(iAcc), inTypeA);
 
-    case BackendDAE.ZERO_CROSSING(relation_, occurEquLst, occurWhenLst)::zeroCrossing equation
+    case BackendDAE.ZERO_CROSSING(relation_, occurEquLst)::zeroCrossing equation
       (relation_, arg) = Expression.traverseExpBottomUp(relation_, func, inTypeA);
-      (zeroCrossing, arg) = traverseZeroCrossingExps(zeroCrossing, func, arg, BackendDAE.ZERO_CROSSING(relation_, occurEquLst, occurWhenLst)::iAcc);
+      (zeroCrossing, arg) = traverseZeroCrossingExps(zeroCrossing, func, arg, BackendDAE.ZERO_CROSSING(relation_, occurEquLst)::iAcc);
     then (zeroCrossing, arg);
   end match;
 end traverseZeroCrossingExps;
@@ -1182,7 +1148,6 @@ algorithm
         ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(shared.aliasVars, checkUnusedParameter, (knvars,knvars1));
         ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.removedEqs, checkUnusedParameter, (knvars,knvars1));
         ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.initialEqs, checkUnusedParameter, (knvars,knvars1));
-        (_, (_,knvars1)) := BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(shared.eventInfo.whenClauseLst, checkUnusedParameter, (knvars,knvars1));
         shared.knownVars := knvars1;
       then
         BackendDAE.DAE(eqs, shared);
@@ -1308,7 +1273,6 @@ algorithm
         ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(shared.aliasVars, checkUnusedVariables, (knvars,knvars1));
         ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.removedEqs, checkUnusedVariables, (knvars,knvars1));
         ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.initialEqs, checkUnusedVariables, (knvars,knvars1));
-        (_, (_,knvars1)) := BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(shared.eventInfo.whenClauseLst, checkUnusedVariables, (knvars,knvars1));
         shared.knownVars := knvars1;
       then
         BackendDAE.DAE(eqs, shared);
@@ -1424,7 +1388,6 @@ algorithm
         usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(shared.aliasVars, func, usedfuncs);
         usedfuncs := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.removedEqs, func, usedfuncs);
         usedfuncs := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.initialEqs, func, usedfuncs);
-        (_, usedfuncs) := BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(shared.eventInfo.whenClauseLst, func, usedfuncs);
         usedfuncs := removeUnusedFunctionsSymJacs(shared.symjacs, funcs, usedfuncs);
         shared.functionTree := usedfuncs;
       then

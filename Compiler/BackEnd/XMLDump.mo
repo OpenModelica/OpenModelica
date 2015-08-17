@@ -142,7 +142,6 @@ protected import System;        // for stringReplace
   protected constant String INTERVAL = "interval";
   protected constant String START = "start";
   protected constant String VALUE = "value";
-  protected constant String ELSE_WHEN_CLAUSE = "elseWhenClause";
 
 
   protected constant String LIST_ = "List";
@@ -289,8 +288,6 @@ protected import System;        // for stringReplace
   protected constant String SOLVED_      = "Solved";
   protected constant String WHEN         = "when";
   protected constant String WHEN_        = "When";
-  protected constant String WHEN_CLAUSES = "WhenClauses";
-  protected constant String WHEN_CLAUSE = "WhenClause";
   protected constant String WHEN_OPERATORS = "WhenOperators";
   protected constant String WHEN_OPERATOR = "WhenOperator";
   protected constant String RESIDUAL     = "residual";
@@ -1127,15 +1124,12 @@ algorithm
   _ := match(inEventInfo, addMML)
     local
       list<BackendDAE.TimeEvent> timeEvents;
-      list<BackendDAE.WhenClause> whenClauseLst;
       list<BackendDAE.ZeroCrossing> zc;
 
     case (BackendDAE.EVENT_INFO(timeEvents=timeEvents,
-                                whenClauseLst=whenClauseLst,
                                 zeroCrossingLst=zc), _)
       equation
         dumpTimeEvents(timeEvents, stringAppend(SAMPLES, LIST_), addMML);
-        dumpWhenClauses(whenClauseLst, stringAppend(WHEN_CLAUSES, LIST_), addMML);
         dumpZeroCrossing(zc, stringAppend(ZERO_CROSSING, LIST_), addMML);
       then
         ();
@@ -3412,91 +3406,8 @@ algorithm
   end match;
 end dumpVarsAdds2;
 
-protected function dumpWhenClauses "
-This function prints the list of WhenClauses
-elements in a XML format. It takes also as input
-a string in order to know what is the content of
-the zero crossing list. The output is:
-<WhenClauses DIMENSION=...>
-...
-</WhenClauses>
-"
-  input list<BackendDAE.WhenClause> inWhenClauseLst;
-  input String inContent;
-  input Boolean addMathMLCode;
-algorithm
-  _:=
-  matchcontinue (inWhenClauseLst,inContent,addMathMLCode)
-    local
-      Integer len;
-      list<BackendDAE.WhenClause> lst;
-
-    case ({},_,_) then ();
-
-    case (lst, _, _)
-      equation
-        len = listLength(lst);
-        len >= 1 = false;
-      then ();
-
-    case (lst, _, _)
-      equation
-        len = listLength(lst);
-        len >= 1 = true;
-        dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
-        dumpWhenClauseLst(lst, 1, addMathMLCode);
-        dumpStrCloseTag(inContent);
-      then ();
-
-  end matchcontinue;
-end dumpWhenClauses;
-
-protected function dumpWhenClauseLst "
-This function prints the content of a when clause
- "
-  input list<BackendDAE.WhenClause> inWhenClauseLst;
-  input Integer inIndex;
-  input Boolean addMathMLCode;
-algorithm
-  _:=
-  match (inWhenClauseLst,inIndex,addMathMLCode)
-    local
-      DAE.Exp condition;
-      list<BackendDAE.WhenClause> lst;
-      list<BackendDAE.WhenOperator> whenOperators;
-      Option<Integer> elseClause;
-      String str;
-
-    case ({}, _, _) then ();
-
-    case (BackendDAE.WHEN_CLAUSE(condition = condition, reinitStmtLst = whenOperators, elseClause = elseClause) :: lst, _, _)
-      equation
-        str = printExpStr(condition);
-
-        dumpStrOpenTagAttr(WHEN_CLAUSE, INDEX, intString(inIndex));
-
-        dumpStrOpenTag(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION));
-        Print.printBuf("\n");
-        Print.printBuf(str);
-        dumpExp(condition, addMathMLCode);
-        dumpStrCloseTag(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION));
-
-        dumpWhenOperators(whenOperators, stringAppend(WHEN_OPERATORS, LIST_), addMathMLCode);
-
-        dumpOptInteger(elseClause, ELSE_WHEN_CLAUSE, addMathMLCode);
-
-        dumpStrCloseTag(WHEN_CLAUSE);
-
-        dumpWhenClauseLst(lst, inIndex + 1, addMathMLCode);
-
-      then
-        ();
-
-  end match;
-end dumpWhenClauseLst;
-
 protected function dumpWhenOperators "
-This function prints the list of WhenClauses
+This function prints the list of WhenOperators
 elements in a XML format. It takes also as input
 a string in order to know what is the content of
 the zero crossing list. The output is:
@@ -3827,12 +3738,11 @@ algorithm
 
     case ({},_) then ();
 
-    case (BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc) :: zcLst,addMMLCode)
+    case (BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq) :: zcLst,addMMLCode)
       equation
         dumpStrOpenTagAttr(stringAppend(ZERO_CROSSING,ELEMENT_),EXP_STRING,printExpStr(e));
         dumpExp(e,addMMLCode);
         dumpLstIntAttr(eq,stringAppend(INVOLVED,EQUATIONS_),stringAppend(EQUATION,ID_));
-        dumpLstIntAttr(wc,stringAppend(INVOLVED,stringAppend(WHEN_,EQUATIONS_)),stringAppend(WHEN,stringAppend(EQUATION_,ID_)));
         dumpStrCloseTag(stringAppend(ZERO_CROSSING,ELEMENT_));
         dumpZcLst(zcLst,addMMLCode);
       then ();

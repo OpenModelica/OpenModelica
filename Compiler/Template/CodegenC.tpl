@@ -826,7 +826,7 @@ template simulationFile(SimCode simCode, String guid)
 
     <%functionOutput(modelInfo, modelNamePrefixStr)%>
 
-    <%functionDAE(allEquations, whenClauses, modelNamePrefixStr)%>
+    <%functionDAE(allEquations, modelNamePrefixStr)%>
 
     <%functionSymEuler(modelInfo, modelNamePrefixStr)%>
 
@@ -2748,66 +2748,6 @@ template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
   >>
 end functionStoreDelayed;
 
-template genreinits(SimWhenClause whenClauses, Text &varDecls, Text &auxFunction, Integer int)
-  "Generates reinit statemeant"
-::=
-  match whenClauses
-    case SIM_WHEN_CLAUSE(__) then
-      let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)';separator=" || ")
-      let ifthen = functionWhenReinitStatementThen(reinits, &varDecls, &auxFunction)
-
-      if boolAnd(intGt(listLength(conditions), 0), intGt(listLength(reinits), 0)) then
-        <<
-        /* for whenclause index <%int%> */
-        if(<%helpIf%>)
-        {
-          <%ifthen%>
-        }
-        >>
-end genreinits;
-
-
-template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDecls, Text &auxFunction)
-  "Generates re-init statement for when equation."
-::=
-  let body = (reinits |> reinit =>
-    match reinit
-    case REINIT(__) then
-      let &preExp = buffer ""
-      let val = daeExp(value, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
-      let lhs = match crefTypeConsiderSubs(stateVar)
-         case DAE.T_ARRAY(__) then
-           'copy_real_array_data_mem(<%val%>, &<%cref(stateVar)%>);'
-         else
-           '<%cref(stateVar)%> = <%val%>;'
-      <<
-      <%preExp%>
-      <%lhs%>
-      infoStreamPrint(LOG_EVENTS, 0, "reinit <%cref(stateVar)%> = <%crefToPrintfArg(stateVar)%>", <%cref(stateVar)%>);
-      data->simulationInfo.needToIterate = 1;
-      >>
-    case TERMINATE(__) then
-      let &preExp = buffer ""
-      let msgVar = daeExp(message, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
-      <<
-      <%preExp%>
-      FILE_INFO info = {<%infoArgs(getElementSourceFileInfo(source))%>};
-      omc_terminate(info, MMC_STRINGDATA(<%msgVar%>));
-      >>
-    case ASSERT(source=SOURCE(info=info)) then
-      assertCommon(condition, List.fill(message,1), level, contextSimulationDiscrete, &varDecls, &auxFunction, info)
-    case NORETCALL(__) then
-      let &preExp = buffer ""
-      let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
-      <<
-      <%preExp%>
-      <% if isCIdentifier(expPart) then "" else '<%expPart%>;' %>
-      >>
-  ;separator="\n")
-  <<
-  <%body%>
-  >>
-end functionWhenReinitStatementThen;
 
 //------------------------------------
 // Begin: Modified functions for HpcOm
@@ -3600,7 +3540,7 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   >>
 end functionAlgebraic;
 
-template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, String modelNamePrefix)
+template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePrefix)
   "Generates function in simulation file.
   This is a helper of template simulationFile."
 ::=
@@ -3617,11 +3557,6 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause>
                 (allEquationsPlusWhen |> eq hasindex i0 =>
                     equation_(eq, contextSimulationDiscrete, &varDecls, &eqfuncs, modelNamePrefix)
                     ;separator="\n")
-
-  let reinit = (whenClauses |> when hasindex i0 =>
-    genreinits(when, &varDecls, &auxFunction,i0)
-    ;separator="\n";empty)
-
 
   let eqArrayDecl = if Flags.isSet(Flags.PARMODAUTO) then
                 <<
@@ -3650,7 +3585,6 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause>
     data->simulationInfo.discreteCall = 1;
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionDAE(<%nrfuncs%>, data, functionDAE_systems);'
     else '<%fncalls%>' %>
-    <%reinit%>
     data->simulationInfo.discreteCall = 0;
 
     TRACE_POP

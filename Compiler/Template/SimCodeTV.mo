@@ -292,7 +292,6 @@ package SimCode
       list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<BackendDAE.ZeroCrossing> relations;
       list<BackendDAE.TimeEvent> timeEvents;
-      list<SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
       ExtObjInfo extObjInfo;
       MakefileParams makefileParams;
@@ -548,16 +547,6 @@ package SimCode
       JacobianMatrix jacobianMatrix;
     end SES_STATESET;
   end StateSet;
-
-  uniontype SimWhenClause
-    record SIM_WHEN_CLAUSE
-      list<DAE.ComponentRef> conditionVars; // is no longer needed
-      list<DAE.ComponentRef> conditions;    // list of boolean variables as conditions
-      Boolean initialCall;                  // true, if top-level branch with initial()
-      list<BackendDAE.WhenOperator> reinits;
-      Option<BackendDAE.WhenEquation> whenEq;
-    end SIM_WHEN_CLAUSE;
-  end SimWhenClause;
 
   uniontype ModelInfo
     record MODELINFO
