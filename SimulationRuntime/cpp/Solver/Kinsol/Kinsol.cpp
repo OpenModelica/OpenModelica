@@ -549,7 +549,6 @@ void Kinsol::solve()
 
     if(_iterationStatus == SOLVERERROR && !_eventRetry)
     {
-      /*Always throw an exception if kinsol stops with error
       if(_kinsolSettings->getContinueOnError())
       {
         if(!_solverErrorNotificationGiven)
@@ -559,7 +558,6 @@ void Kinsol::solve()
         }
       }
       else
-      */
         throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
     }
 	}
