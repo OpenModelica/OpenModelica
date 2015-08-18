@@ -179,6 +179,28 @@ algorithm
   BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=outComponentRef, right=outExp)}) := inWhenEquation;
 end getWhenEquationExpr;
 
+public function setWhenElsePart
+"Set the else part of an whenEquation"
+  input BackendDAE.WhenEquation inWhenEquation;
+  input BackendDAE.WhenEquation inElseWhenEquation;
+  output BackendDAE.WhenEquation outWhenEquation;
+algorithm
+  outWhenEquation := match(inWhenEquation)
+  local
+    DAE.Exp cond;
+    BackendDAE.WhenEquation elsewhenPart;
+    list<BackendDAE.WhenOperator> whenStmtLst;
+
+    case (BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart=NONE()))
+    then BackendDAE.WHEN_STMTS(cond, whenStmtLst, SOME(inElseWhenEquation));
+
+    case (BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart=SOME(elsewhenPart)))
+    then BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart=SOME(setWhenElsePart(elsewhenPart, inElseWhenEquation)));
+
+    else fail();
+  end match;
+end setWhenElsePart;
+
 public function copyEquationArray "Performs a deep copy of an expandable equation array."
   input BackendDAE.EquationArray inEquationArray;
   output BackendDAE.EquationArray outEquationArray = inEquationArray;

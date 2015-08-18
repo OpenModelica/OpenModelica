@@ -192,7 +192,7 @@ protected
   DAE.ComponentRef cr;
   Integer whenClkCnt = 1;
   DAE.Exp e;
-  list<BackendDAE.Equation> eqns;
+  list<BackendDAE.Equation> eqns, reqns;
 algorithm
   for el in inElements loop
     _ := match(el)
@@ -299,7 +299,9 @@ algorithm
             outEqns := listAppend(List.map1(eqns, BackendEquation.setEquationAttributes, eq_attrs), outEqns);
             whenClkCnt := whenClkCnt + 1;
           else
-            (outEqns, outREqns) := lowerWhenEqn(el, inFunctions, outEqns, outREqns);
+            (eqns, reqns) := lowerWhenEqn(el, inFunctions, {}, {});
+            outEqns := listAppend(outEqns, eqns);
+            outREqns := listAppend(outREqns, reqns);
           end if;
         then
           ();
@@ -1685,7 +1687,7 @@ algorithm
     local
       list<BackendDAE.Equation> res, rEqns;
       list<BackendDAE.Equation> trueEqnLst, elseEqnLst;
-      list<BackendDAE.Equation> trueREqns, elsREqnLst;
+      list<BackendDAE.Equation> trueREqns, elseREqnLst;
       DAE.Exp cond;
       list<DAE.Element> eqnl;
       DAE.Element elsePart;
@@ -1696,7 +1698,9 @@ algorithm
       equation
         (DAE.PARTIAL_EQUATION(cond), source) =
             Inline.simplifyAndInlineEquationExp(DAE.PARTIAL_EQUATION(cond), fns, source);
-        (res, rEqns) = lowerWhenEqn2(listReverse(eqnl), cond, functionTree, inEquationLst, inREquationLst);
+        (res, rEqns) = lowerWhenEqn2(listReverse(eqnl), cond, functionTree, {}, {});
+        res = mergeWhenEqns(inEquationLst, res, {});
+        rEqns = mergeWhenEqns(inREquationLst, rEqns, {});
       then
         (res, rEqns);
 
@@ -1705,10 +1709,11 @@ algorithm
       equation
         (DAE.PARTIAL_EQUATION(cond), source) =
             Inline.simplifyAndInlineEquationExp(DAE.PARTIAL_EQUATION(cond), fns, source);
-        (elseEqnLst, elsREqnLst) = lowerWhenEqn(elsePart, functionTree, {}, {});
+
         (trueEqnLst, trueREqns) = lowerWhenEqn2(listReverse(eqnl), cond, functionTree, {}, {});
-        res = mergeWhenEqns(trueEqnLst, elseEqnLst, inEquationLst);
-        rEqns = mergeWhenEqns(trueREqns, elsREqnLst, inREquationLst);
+        res = mergeWhenEqns(inEquationLst, trueEqnLst, {});
+        rEqns = mergeWhenEqns(inREquationLst, trueREqns, {});
+        (res, rEqns) = lowerWhenEqn(elsePart, functionTree, res, rEqns);
       then
         (res, rEqns);
 
@@ -2206,19 +2211,38 @@ algorithm
       Integer size;
       BackendDAE.EquationAttributes attr;
       list<BackendDAE.WhenOperator> whenStmtLst;
+      BackendDAE.WhenEquation whenEq, whenEqRes;
+      Option<BackendDAE.WhenEquation> whenElsePart;
+      Boolean added;
 
-    case ((inEqn as BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst), source=source, attr=attr))::trueEqns, _, _)
+    case ({}, {}, _)
+    then inEquationLst;
+
+    case (_, {}, {})
+    then trueEqnList;
+
+    case ({}, _, {})
+    then elseEqnList;
+
+    case ({}, _, _)
+    then listAppend(inEquationLst, elseEqnList);
+
+    case (_, {}, _)
+    then listAppend(inEquationLst, trueEqnList);
+
+    case ((inEqn as BackendDAE.WHEN_EQUATION(size=size, whenEquation=(whenEq as BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart=whenElsePart)), source=source, attr=attr))::trueEqns, _, _)
       algorithm
-        //print(" Start mergeWhen: " + BackendDump.equationString(inEqn) + "\n");
+        //print(" Start mergeWhen: \n" + BackendDump.equationString(inEqn) + "\n");
         result := inEquationLst;
         elseEqnsRest := {};
+        added := false;
         for eqn in elseEqnList loop
+          //print(" check when equation: \n" + BackendDump.equationString(eqn) + "\n");
           _ := match eqn
             local
               BackendDAE.WhenEquation eq;
               list<BackendDAE.WhenOperator> whenStmtLst2;
             case BackendDAE.WHEN_EQUATION(whenEquation=eq as BackendDAE.WHEN_STMTS(whenStmtLst=whenStmtLst2) ) algorithm
-              //print(" Start mergeWhen: " + BackendDump.equationString(eqn) + "\n");
               for elem in whenStmtLst loop
                 _ := match elem
                   local
@@ -2230,8 +2254,30 @@ algorithm
                           DAE.ComponentRef left2;
                         case BackendDAE.ASSIGN(left=left2) equation
                           true = ComponentReference.crefEqualNoStringCompare(left, left2);
-                          res = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_STMTS(cond, whenStmtLst, SOME(eq)), source, attr);
+                          //print(" added when else case: \n" + BackendDump.whenEquationString(eq, true) + "\n");
+                          whenEqRes = BackendEquation.setWhenElsePart(whenEq, eq);
+                          res = BackendDAE.WHEN_EQUATION(size, whenEqRes, source, attr);
                           result = res::result;
+                          added = true;
+                        then ();
+                        else equation
+                          elseEqnsRest = eqn::elseEqnsRest;
+                        then ();
+                      end matchcontinue;
+                    end for;
+                  then ();
+                  case BackendDAE.REINIT(stateVar=left) algorithm
+                    for stmt in whenStmtLst2 loop
+                      _ := matchcontinue stmt
+                        local
+                          DAE.ComponentRef left2;
+                        case BackendDAE.REINIT(stateVar=left2) equation
+                          true = ComponentReference.crefEqualNoStringCompare(left, left2);
+                          //print(" added when else case: \n" + BackendDump.whenEquationString(eq, true) + "\n");
+                          whenEqRes = BackendEquation.setWhenElsePart(whenEq, eq);
+                          res = BackendDAE.WHEN_EQUATION(size, whenEqRes, source, attr);
+                          result = res::result;
+                          added = true;
                         then ();
                         else equation
                           elseEqnsRest = eqn::elseEqnsRest;
@@ -2240,22 +2286,27 @@ algorithm
                     end for;
                   then ();
                   else equation
-                    res = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_STMTS(cond, whenStmtLst, SOME(eq)), source, attr);
+                    whenEqRes = BackendEquation.setWhenElsePart(whenEq, eq);
+                    res = BackendDAE.WHEN_EQUATION(size, whenEqRes, source, attr);
                     result = res::result;
+                    added = true;
                   then ();
                 end match;
               end for;
             then ();
-            else ();
+            else equation
+              res = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_STMTS(cond, whenStmtLst, whenElsePart), source, attr);
+              result = res::result;
+            then ();
           end match;
         end for;
-        result := mergeWhenEqns(trueEqns, elseEqnsRest, result);
+        if not added then
+          result := inEqn::result;
+        end if;
         //print("Result: :\n");
         //BackendDump.printEquationList(result);
+        result := mergeWhenEqns(trueEqns, elseEqnsRest, result);
       then result;
-
-    case ({}, {}, _)
-    then inEquationLst;
 
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAECreate.mergeWhenEqns: Error in mergeWhenEqns."});
