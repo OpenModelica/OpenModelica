@@ -176,7 +176,7 @@ public function getWhenEquationExpr "Get the left and right hand parts from an e
   output DAE.ComponentRef outComponentRef;
   output DAE.Exp outExp;
 algorithm
-  BackendDAE.WHEN_EQ(left=outComponentRef, right=outExp) := inWhenEquation;
+  BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=outComponentRef, right=outExp)}) := inWhenEquation;
 end getWhenEquationExpr;
 
 public function copyEquationArray "Performs a deep copy of an expandable equation array."
@@ -691,11 +691,11 @@ public function traverseExpsOfEquation<T> "author: Frenkel TUD 2010-11
 algorithm
   (outEquation, outTypeA) := match(inEquation)
     local
-      DAE.Exp e1, e2, e_1, e_2, cond, start, stop, iter;
+      DAE.Exp e1, e2, e_1, e_2, start, stop, iter;
       list<DAE.Exp> expl;
       DAE.Type tp;
       DAE.ComponentRef cr, cr1;
-      BackendDAE.WhenEquation elsePart, elsePart1;
+      BackendDAE.WhenEquation we;
       DAE.ElementSource source;
       Integer size;
       T extArg;
@@ -728,32 +728,9 @@ algorithm
       (e_1, extArg) = inFunc(e1, inTypeA);
     then (BackendDAE.RESIDUAL_EQUATION(e_1, source, attr), extArg);
 
-    case BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_EQ(condition=cond, left=cr, right=e2, elsewhenPart=NONE()), source=source, attr=attr) equation
-      tp = Expression.typeof(e2);
-      e1 = Expression.makeCrefExp(cr, tp);
-      (e1, extArg) = inFunc(e1, inTypeA);
-      if Expression.isCref(e1) then
-        DAE.CREF(cr1, _) = e1;
-      else
-        cr1=cr;
-      end if;
-      (e_2, extArg) = inFunc(e2, extArg);
-      (cond, extArg) = inFunc(cond, extArg);
-    then (BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_EQ(cond, cr1, e_2, NONE()), source, attr), extArg);
-
-    case BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_EQ(condition=cond, left=cr, right=e2, elsewhenPart=SOME(elsePart)), source=source, attr=attr) equation
-      tp = Expression.typeof(e2);
-      e1 = Expression.makeCrefExp(cr, tp);
-      (e1, extArg) = inFunc(e1, inTypeA);
-      if Expression.isCref(e1) then
-        DAE.CREF(cr1, _) = e1;
-      else
-        cr1=cr;
-      end if;
-      (e_2, extArg) = inFunc(e2, extArg);
-      (cond, extArg) = inFunc(cond, extArg);
-      (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1), extArg) = traverseExpsOfEquation(BackendDAE.WHEN_EQUATION(size, elsePart, source, attr), inFunc, extArg);
-    then (BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_EQ(cond, cr1, e_2, SOME(elsePart1)), source, attr), extArg);
+    case BackendDAE.WHEN_EQUATION(size=size, whenEquation= we, source=source, attr=attr) equation
+      (we, extArg) = traverseExpsOfWhenEquation(we, inFunc, inTypeA);
+    then (BackendDAE.WHEN_EQUATION(size, we, source, attr), extArg);
 
     case BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts), source=source, expand=crefExpand, attr=attr) equation
       (stmts1, extArg) = DAEUtil.traverseDAEEquationsStmts(stmts, inFunc, inTypeA);
@@ -778,6 +755,7 @@ algorithm
   end match;
 end traverseExpsOfEquation;
 
+
 public function traverseExpsOfEquation_WithStop<T> "author: Frenkel TUD 2010-11
   Traverses all expressions of a equation.
   It is possible to change the equation."
@@ -801,7 +779,7 @@ algorithm
       list<DAE.Exp> expl;
       DAE.Type tp;
       DAE.ComponentRef cr;
-      BackendDAE.WhenEquation elsePart;
+      BackendDAE.WhenEquation we;
       DAE.ElementSource source;
       Integer size;
       T ext_arg, ext_arg_1, ext_arg_2, ext_arg_3;
@@ -844,34 +822,10 @@ algorithm
         (_, b, ext_arg) = func(e1, inTypeA);
       then (b, ext_arg);
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=cond, left=cr, right=e2, elsewhenPart=NONE())), _, _)
+    case (BackendDAE.WHEN_EQUATION(whenEquation= we), _, _)
       equation
-        tp = Expression.typeof(e2);
-        e1 = Expression.makeCrefExp(cr, tp);
-        (_, b, ext_arg) = func(e1, inTypeA);
-        if b then
-          (_, b, ext_arg) = func(e2, ext_arg);
-        end if;
-        if b then
-          (_, b, ext_arg) = func(cond, ext_arg);
-        end if;
-      then (b, ext_arg);
-
-    case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_EQ(condition=cond, left=cr, right=e2, elsewhenPart=SOME(elsePart)), source=source, attr=eqAttr), _, _)
-      equation
-        tp = Expression.typeof(e2);
-        e1 = Expression.makeCrefExp(cr, tp);
-        (_, b, ext_arg) = func(e1, inTypeA);
-        if b then
-          (_, b, ext_arg) = func(e2, ext_arg);
-        end if;
-        if b then
-          (_, b, ext_arg) = func(cond, ext_arg);
-        end if;
-        if b then
-          (b, ext_arg) = traverseExpsOfEquation_WithStop(BackendDAE.WHEN_EQUATION(size, elsePart, source, eqAttr), func, ext_arg);
-        end if;
-      then (b, ext_arg);
+        (b, ext_arg) = traverseExpsOfWhenEquation_WithStop(we, func, inTypeA);
+    then (b, ext_arg);
 
     case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS()), _, _)
       equation
@@ -900,6 +854,244 @@ algorithm
       then (b, ext_arg);
   end match;
 end traverseExpsOfEquation_WithStop;
+
+public function traverseExpsOfWhenEquation<T>
+"Traverses all expressions of a when equation.
+  Helper function of traverseExpsOfEquation."
+  input BackendDAE.WhenEquation inWhenEquation;
+  input FuncExpType inFunc;
+  input T inTypeA;
+  output BackendDAE.WhenEquation outWhenEquation;
+  output T outTypeA;
+
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input T inTypeA;
+    output DAE.Exp outExp;
+    output T outTypeA;
+  end FuncExpType;
+algorithm
+  (outWhenEquation, outTypeA) := match(inWhenEquation)
+  local
+    BackendDAE.WhenEquation we, elsewe;
+    Option<BackendDAE.WhenEquation> oelsewe;
+    DAE.Exp cond;
+    list<BackendDAE.WhenOperator> whenStmtLst;
+    T extArg;
+
+    case BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst=whenStmtLst, elsewhenPart = oelsewe)
+      equation
+        (cond, extArg) = inFunc(cond, inTypeA);
+        (whenStmtLst, extArg) = traverseExpsOfWhenOps(whenStmtLst, inFunc, extArg, {});
+
+        if isSome(oelsewe) then
+          SOME(elsewe) = oelsewe;
+          (elsewe, extArg) = traverseExpsOfWhenEquation(elsewe, inFunc, extArg);
+          oelsewe = SOME(elsewe);
+        else
+          oelsewe = NONE();
+        end if;
+      then (BackendDAE.WHEN_STMTS(cond, whenStmtLst, oelsewe), extArg);
+  end match;
+end traverseExpsOfWhenEquation;
+
+public function traverseExpsOfWhenOps<T>
+"Traverses all expressions of a when equation.
+  Helper function of traverseExpsOfEquation."
+  input list<BackendDAE.WhenOperator> inWhenOps;
+  input FuncExpType inFunc;
+  input T inTypeA;
+  input list<BackendDAE.WhenOperator> inAccum;
+  output list<BackendDAE.WhenOperator> outWhenOps;
+  output T outTypeA;
+
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input T inTypeA;
+    output DAE.Exp outExp;
+    output T outTypeA;
+  end FuncExpType;
+algorithm
+  (outWhenOps, outTypeA) := match (inWhenOps)
+    local
+      DAE.Type tp;
+      DAE.Exp e1, e2, level;
+      DAE.ComponentRef cr, cr1;
+      list<BackendDAE.WhenOperator> rest;
+      T extArg;
+      DAE.ElementSource source;
+
+    case {} then (listReverse(inAccum),inTypeA);
+    case (BackendDAE.ASSIGN(left = cr, right = e2, source = source)::rest)
+      equation
+        tp = Expression.typeof(e2);
+        e1 = Expression.makeCrefExp(cr, tp);
+        (e1, extArg) = inFunc(e1, inTypeA);
+        if Expression.isCref(e1) then
+          DAE.CREF(cr1, _) = e1;
+        else
+          cr1=cr;
+        end if;
+        (e2, extArg) = inFunc(e2, extArg);
+        (outWhenOps, extArg) = traverseExpsOfWhenOps(rest, inFunc, extArg,  BackendDAE.ASSIGN(cr1, e2, source)::inAccum);
+      then (outWhenOps, extArg);
+    case (BackendDAE.REINIT(stateVar = cr, value = e2,  source = source)::rest)
+      equation
+        e1 = Expression.crefExp(cr);
+        (e1, extArg) = inFunc(e1, inTypeA);
+        if Expression.isCref(e1) then
+          DAE.CREF(cr1, _) = e1;
+        else
+          cr1=cr;
+        end if;
+        (e2, extArg) = inFunc(e2, extArg);
+        (outWhenOps, extArg) = traverseExpsOfWhenOps(rest, inFunc, extArg,  BackendDAE.REINIT(cr1, e2, source)::inAccum);
+    then (outWhenOps, extArg);
+    case (BackendDAE.ASSERT(condition = e1, message = e2, level = level,  source = source)::rest)
+      equation
+        (e1, extArg) = inFunc(e1, inTypeA);
+        (e2, extArg) = inFunc(e2, extArg);
+        (outWhenOps, extArg) = traverseExpsOfWhenOps(rest, inFunc, extArg,  BackendDAE.ASSERT(e1, e2, level, source)::inAccum);
+    then (outWhenOps, extArg);
+    case (BackendDAE.TERMINATE(message = e1,  source = source)::rest)
+      equation
+        (e1, extArg) = inFunc(e1, inTypeA);
+        (outWhenOps, extArg) = traverseExpsOfWhenOps(rest, inFunc, extArg,  BackendDAE.TERMINATE(e1, source)::inAccum);
+    then (outWhenOps, extArg);
+    case (BackendDAE.NORETCALL(exp = e1,  source = source)::rest)
+      equation
+        (e1, extArg) = inFunc(e1, inTypeA);
+        (outWhenOps, extArg) = traverseExpsOfWhenOps(rest, inFunc, extArg,  BackendDAE.NORETCALL(e1, source)::inAccum);
+    then (outWhenOps, extArg);
+  end match;
+end traverseExpsOfWhenOps;
+
+public function traverseExpsOfWhenEquation_WithStop<T>
+"Traverses all expressions of a when equation.
+  Helper function of traverseExpsOfEquation."
+  input BackendDAE.WhenEquation inWhenEquation;
+  input FuncExpType inFunc;
+  input T inTypeA;
+  output Boolean outCont;
+  output T outTypeA;
+
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input T inTypeA;
+    output DAE.Exp outExp;
+    output Boolean cont;
+    output T outTypeA;
+  end FuncExpType;
+algorithm
+  (outCont, outTypeA) := match(inWhenEquation)
+  local
+    BackendDAE.WhenEquation elsewe;
+    Option<BackendDAE.WhenEquation> oelsewe;
+    DAE.Exp cond;
+    list<BackendDAE.WhenOperator> whenStmtLst;
+    T extArg;
+    Boolean b;
+
+    case BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst=whenStmtLst, elsewhenPart = oelsewe)
+      equation
+        (_, b, extArg) = inFunc(cond, inTypeA);
+        if b then
+          (b, extArg) = traverseExpsOfWhenOps_WithStop(whenStmtLst, inFunc, extArg, b);
+        end if;
+
+        if b then
+          if isSome(oelsewe) then
+            SOME(elsewe) = oelsewe;
+            (b, extArg) = traverseExpsOfWhenEquation_WithStop(elsewe, inFunc, extArg);
+          end if;
+        end if;
+      then (b, extArg);
+  end match;
+end traverseExpsOfWhenEquation_WithStop;
+
+public function traverseExpsOfWhenOps_WithStop<T>
+"Traverses all expressions of a when equation.
+  Helper function of traverseExpsOfEquation."
+  input list<BackendDAE.WhenOperator> inWhenOps;
+  input FuncExpType inFunc;
+  input T inTypeA;
+  input Boolean inCont;
+  output Boolean outCont;
+  output T outTypeA;
+
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input T inTypeA;
+    output DAE.Exp outExp;
+    output Boolean cont;
+    output T outTypeA;
+  end FuncExpType;
+algorithm
+  (outCont, outTypeA) := match (inWhenOps)
+    local
+      DAE.Type tp;
+      DAE.Exp e1, e2, level;
+      DAE.ComponentRef cr, cr1;
+      list<BackendDAE.WhenOperator> rest;
+      T extArg;
+      DAE.ElementSource source;
+      Boolean b;
+
+    case {} then (inCont,inTypeA);
+    case (BackendDAE.ASSIGN(left = cr, right = e2)::rest)
+      equation
+        tp = Expression.typeof(e2);
+        e1 = Expression.makeCrefExp(cr, tp);
+        if inCont then
+         (_, b, extArg) = inFunc(e1, inTypeA);
+        end if;
+        if b then
+         (_, b, extArg) = inFunc(e2, extArg);
+        end if;
+        (b, extArg) = traverseExpsOfWhenOps_WithStop(rest, inFunc, extArg,  b);
+      then (b, extArg);
+
+    case (BackendDAE.REINIT(stateVar = cr, value = e2)::rest)
+      equation
+        tp = Expression.typeof(e2);
+        e1 = Expression.makeCrefExp(cr, tp);
+        if inCont then
+         (_, b, extArg) = inFunc(e1, inTypeA);
+        end if;
+        if b then
+         (_, b, extArg) = inFunc(e2, extArg);
+        end if;
+        (b, extArg) = traverseExpsOfWhenOps_WithStop(rest, inFunc, extArg,  b);
+      then (b, extArg);
+
+    case (BackendDAE.ASSERT(condition = e1, message = e2, level = level)::rest)
+      equation
+        if inCont then
+         (_, b, extArg) = inFunc(e1, inTypeA);
+        end if;
+        if b then
+         (_, b, extArg) = inFunc(e2, extArg);
+        end if;
+        (b, extArg) = traverseExpsOfWhenOps_WithStop(rest, inFunc, extArg,  b);
+      then (b, extArg);
+
+    case (BackendDAE.TERMINATE(message = e1)::rest)
+      equation
+        if inCont then
+         (_, b, extArg) = inFunc(e1, inTypeA);
+        end if;
+        (b, extArg) = traverseExpsOfWhenOps_WithStop(rest, inFunc, extArg,  b);
+      then (b, extArg);
+
+    case (BackendDAE.NORETCALL(exp = e1,  source = source)::rest)
+      equation
+        if inCont then
+         (_, b, extArg) = inFunc(e1, inTypeA);
+        end if;
+        (b, extArg) = traverseExpsOfWhenOps_WithStop(rest, inFunc, extArg,  b);
+      then (b, extArg);
+  end match;
+end traverseExpsOfWhenOps_WithStop;
 
 protected function traverseExpsOfExpList<T> "author Frenkel TUD:
   Calls user function for each element of list."
@@ -1167,7 +1359,7 @@ algorithm
       res = List.isEqualOnTrue(explst1, explst2, Expression.expEqual);
     then res;
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left=cr1, right=exp1)), BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(left=cr2, right=exp2))) equation
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=cr1, right=exp1)})), BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=cr2, right=exp2)}))) equation
       res = boolAnd(ComponentReference.crefEqualNoStringCompare(cr1, cr2), Expression.expEqual(exp1, exp2));
     then res;
 
@@ -3015,7 +3207,7 @@ algorithm
       then exp1;
     case(BackendDAE.COMPLEX_EQUATION(right = exp1))
       then exp1;
-    case(BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=DAE.BCONST(bool=true),right=exp1)))
+    case(BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(condition=DAE.BCONST(bool=true),whenStmtLst={BackendDAE.ASSIGN(right=exp1)})))
       then exp1;
     else
       //equation print("BackendEquation.getEquationRHS failed!\n!");
@@ -3040,7 +3232,7 @@ algorithm
       then Expression.crefExp(cref);
     case(BackendDAE.COMPLEX_EQUATION(left = exp1))
       then exp1;
-    case(BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=DAE.BCONST(bool=true),left=cref)))
+    case(BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(condition=DAE.BCONST(bool=true),whenStmtLst={BackendDAE.ASSIGN(left=cref)})))
       then Expression.crefExp(cref);
     else
       //equation print("BackendEquation.getEquationLHS failed!\n");

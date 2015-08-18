@@ -119,7 +119,6 @@ type ExternalObjectClasses = BackendDAE.ExternalObjectClasses;
 type BackendDAEType = BackendDAE.BackendDAEType;
 type SymbolicJacobians = BackendDAE.SymbolicJacobians;
 type EqSystems = BackendDAE.EqSystems;
-type WhenClause = BackendDAE.WhenClause;
 type ZeroCrossing = BackendDAE.ZeroCrossing;
 
 public function isInitializationDAE
@@ -281,8 +280,7 @@ algorithm
         ((_, expcrefs)) = traverseBackendDAEExpsEqns(syst.orderedEqs, checkBackendDAEExp, (allvars, expcrefs));
         ((_, expcrefs)) = traverseBackendDAEExpsEqns(syst.removedEqs, checkBackendDAEExp, (allvars, expcrefs));
         ((_, expcrefs)) = traverseBackendDAEExpsEqns(shared.initialEqs, checkBackendDAEExp, (allvars, expcrefs));
-        (_, (_, expcrefs)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst( shared.eventInfo.whenClauseLst, checkBackendDAEExp,
-                                                                                      (allvars, expcrefs) );
+
         wrongEqns = BackendEquation.traverseEquationArray(syst.orderedEqs, checkEquationSize, {});
         wrongEqns = BackendEquation.traverseEquationArray(shared.removedEqs, checkEquationSize, wrongEqns);
         wrongEqns = BackendEquation.traverseEquationArray(syst.removedEqs, checkEquationSize, wrongEqns);
@@ -751,82 +749,19 @@ algorithm
   outType := inType;
 end makeExpType;
 
-public function isDiscreteEquation
-  input BackendDAE.Equation eqn;
-  input BackendDAE.Variables vars;
-  input BackendDAE.Variables knvars;
-  output Boolean b;
-algorithm
-  b := matchcontinue(eqn)
-    local
-      DAE.Exp e1, e2;
-      DAE.ComponentRef cr;
-      list<DAE.Exp> expl;
-      list<DAE.Statement> stmts;
-
-    case BackendDAE.EQUATION(exp=e1, scalar=e2) equation
-      b = isDiscreteExp(e1, vars, knvars) and isDiscreteExp(e2, vars, knvars);
-    then b;
-
-    case BackendDAE.COMPLEX_EQUATION(left=e1, right=e2) equation
-      b = isDiscreteExp(e1, vars, knvars) and isDiscreteExp(e2, vars, knvars);
-    then b;
-
-    case BackendDAE.ARRAY_EQUATION(left=e1, right=e2) equation
-      b = isDiscreteExp(e1, vars, knvars) and isDiscreteExp(e2, vars, knvars);
-    then b;
-
-    case BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2) equation
-      e1 = Expression.crefExp(cr);
-      b = isDiscreteExp(e1, vars, knvars) and isDiscreteExp(e2, vars, knvars);
-    then b;
-
-    case BackendDAE.RESIDUAL_EQUATION(exp=e1) equation
-      b = isDiscreteExp(e1, vars, knvars);
-    then b;
-
-    case BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(stmts)) equation
-      (_, (_, _, true)) = DAEUtil.traverseDAEEquationsStmts(stmts, isDiscreteExp1, (vars, knvars, false));
-    then true;
-
-    case BackendDAE.WHEN_EQUATION()
-    then true;
-
-    else false;
-  end matchcontinue;
-end isDiscreteEquation;
-
-public function isDiscreteExp "Returns true if expression is a discrete expression."
+public function hasExpContinuousParts
+"Returns true if expression has contiuous parts,
+ and false if the expression is completely discrete.
+ Used to detect if an expression is a ZeroCrossing."
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
   input BackendDAE.Variables inKnvars;
   output Boolean outBoolean;
-protected
-  Option<Boolean> obool;
 algorithm
-  (_,(_, _, obool)) := Expression.traverseExpTopDown(inExp, traversingisDiscreteExpFinder, (inVariables, inKnvars, NONE()));
-  outBoolean := Util.getOptionOrDefault(obool, false);
-end isDiscreteExp;
+  (_,(_, _, SOME(outBoolean))) := Expression.traverseExpTopDown(inExp, traversingContinuousExpFinder, (inVariables, inKnvars, SOME(false)));
+end hasExpContinuousParts;
 
-// Why is this so similar to isDiscreteExp? What is the difference?
-protected function isDiscreteExp1 "Returns true if expression is a discrete expression."
-  input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables, BackendDAE.Variables, Boolean> inTpl;
-  output DAE.Exp outExp;
-  output tuple<BackendDAE.Variables, BackendDAE.Variables, Boolean> outTpl;
-protected
-  Option<Boolean> obool;
-  Boolean b, b1;
-  BackendDAE.Variables v, kv;
-algorithm
-  (v, kv, b) := inTpl;
-  (_,(_, _, obool)) := Expression.traverseExpTopDown(inExp, traversingisDiscreteExpFinder, (v, kv, NONE()));
-  b1 := Util.getOptionOrDefault(obool, b);
-  outExp := inExp;
-  outTpl := (v,  kv,  b or b1);
-end isDiscreteExp1;
-
-protected function traversingisDiscreteExpFinder "Helper for isDiscreteExp"
+protected function traversingContinuousExpFinder "Helper for isDiscreteExp"
   input DAE.Exp inExp;
   input tuple<BackendDAE.Variables,BackendDAE.Variables,Option<Boolean>> inTpl;
   output DAE.Exp outExp;
@@ -843,149 +778,40 @@ algorithm
       Boolean b, b1, b2;
       Boolean res;
       Var backendVar;
-
-    case (e as DAE.ICONST(), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.RCONST(), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.SCONST(), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.BCONST(), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.ENUM_LITERAL(), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
+      Absyn.Ident name;
 
     case (e as DAE.CREF(componentRef=cr), (vars, knvars, blst)) equation
-      ((BackendDAE.VAR(varKind=kind)::_), _) = BackendVariable.getVar(cr, vars);
-      res = isKindDiscrete(kind);
-      b = Util.getOptionOrDefault(blst, res);
-      b = b and res;
-    then (e, false, (vars, knvars, SOME(b)));
+      ((backendVar::_), _) = BackendVariable.getVar(cr, vars);
+      false = BackendVariable.isVarDiscrete(backendVar);
+    then (e, false, (vars, knvars, SOME(true)));
 
     // builtin variable time is not discrete
     case (e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")), (vars, knvars, _))
-    then (e, false, (vars, knvars, SOME(false)));
+    then (e, false, (vars, knvars, SOME(true)));
 
     // Known variables that are input are continuous
     case (e as DAE.CREF(componentRef=cr), (vars, knvars, _)) equation
       (backendVar::_, _) = BackendVariable.getVar(cr, knvars);
       true = BackendVariable.isInput(backendVar);
-    then (e, false, (vars, knvars, SOME(false)));
+    then (e, false, (vars, knvars, SOME(true)));
 
-    // parameters & constants are always discrete
-    case (e as DAE.CREF(componentRef=cr), (vars, knvars, blst)) equation
-      ((BackendDAE.VAR()::_), _) = BackendVariable.getVar(cr, knvars);
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
+    case (e as DAE.CALL(path=Absyn.IDENT(name=name)), (vars, knvars, blst))
+      guard stringEq("pre", name) or
+            stringEq("change", name) or
+            stringEq("ceil", name) or
+            stringEq("floor", name) or
+            stringEq("div", name) or
+            stringEq("mod", name) or
+            stringEq("rem", name)
+    then (e, false, (vars, knvars, blst));
 
-    case (e as DAE.RELATION(exp1=e1, exp2=e2), (vars, knvars, _)) equation
-      b1 = isDiscreteExp(e1, vars, knvars);
-      b2 = isDiscreteExp(e2, vars, knvars);
-      b = b1 and  b2;
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="pre")), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="edge")), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="change")), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="ceil")), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="floor")), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="div")), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="mod")), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="rem")), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="initial")), (vars, knvars, blst)) equation
-      b = Util.getOptionOrDefault(blst, true);
-    then (e, false, (vars, knvars, SOME(b)));
-/*
-    This cases are wrong because of Modelica Specification:
-
-    3.8.3
-
-    Unless inside noEvent: Ordered relations (>,<,>=,<=) and the functions ceil, floor, div, mod,
-    rem, abs, sign. These will generate events if at least one subexpression is not a
-    discrete-time expression. [In other words, relations inside noEvent(), such as noEvent(x>1),
-    are not discrete-time expressions].
-
-    and
-
-    3.7.1
-
-    abs(v): Is expanded into
-      noEvent(if v >= 0 then v else -v)
-    Argument v needs to be an Integer or Real expression.
-    sign(v): Is expanded into
-      noEvent(if v>0 then 1 else if v<0 then -1 else 0)
-     Argument v needs to be an Integer or Real expression.
-
-    case (((e as DAE.CALL(path=Absyn.IDENT(name="abs")),(vars,knvars,blst))))
-      equation
-       b = Util.getOptionOrDefault(blst,true);
-      then ((e,false,(vars,knvars,SOME(b))));
-    case (((e as DAE.CALL(path=Absyn.IDENT(name="sign")),(vars,knvars,blst))))
-      equation
-       b = Util.getOptionOrDefault(blst,true);
-      then ((e,false,(vars,knvars,SOME(b))));
-*/
     case (e as DAE.CALL(path=Absyn.IDENT(name="noEvent")), (vars, knvars, _))
     then (e, false, (vars, knvars, SOME(false)));
 
-    case (e, (vars, knvars, NONE()))
-    then (e, true, (vars, knvars, NONE()));
-
-    case (e, (vars, knvars, SOME(b)))
-    then (e, b, (vars, knvars, SOME(b)));
+    case (e, (vars, knvars, blst))
+    then (e, true, (vars, knvars, blst));
   end matchcontinue;
-end traversingisDiscreteExpFinder;
-
-
-public function isVarDiscrete "returns true if variable is discrete"
-  input BackendDAE.Var inVar;
-  output Boolean res = isKindDiscrete(inVar.varKind);
-end isVarDiscrete;
-
-protected function isKindDiscrete "Returns true if VarKind is discrete."
-  input VarKind inVarKind;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := match inVarKind
-    case (BackendDAE.DISCRETE()) then true;
-    case (BackendDAE.PARAM()) then true;
-    case (BackendDAE.CONST()) then true;
-    else false;
-  end match;
-end isKindDiscrete;
+end traversingContinuousExpFinder;
 
 public function statesAndVarsExp
 "This function investigates an expression and returns as subexpressions
@@ -1245,6 +1071,18 @@ public function equationSize "author: PA
   input BackendDAE.EquationArray inEquationArray;
   output Integer outInteger = inEquationArray.size;
 end equationSize;
+
+public function equationArraySizeBDAE
+"author: Frenkel TUD
+  Returns the size of the dae system, which correspondents to the number of variables."
+  input BackendDAE.BackendDAE inDAE;
+  output Integer outSize;
+protected
+  list<Integer> sizes;
+algorithm
+  sizes := List.map(inDAE.eqs, equationArraySizeDAE);
+  outSize := List.fold(sizes, intAdd, 0);
+end equationArraySizeBDAE;
 
 public function equationArraySizeDAE
 "author: Frenkel TUD
@@ -1788,19 +1626,6 @@ algorithm
     then (eqnsNew,varsNew);
  end match;
 end splitoutEquationAndVars;
-
-public function whenClauseAddDAE
-"author: Frenkel TUD 2011-05"
-  input list<BackendDAE.WhenClause> inWcLst;
-  input BackendDAE.Shared inShared;
-  output BackendDAE.Shared outShared = inShared;
-protected
-  BackendDAE.EventInfo eventInfo;
-algorithm
-  eventInfo := outShared.eventInfo;
-  eventInfo.whenClauseLst := listAppend(inShared.eventInfo.whenClauseLst, inWcLst);
-  outShared.eventInfo := eventInfo;
-end whenClauseAddDAE;
 
 public function getStrongComponents
 "author: Frenkel TUD 2011-11
@@ -2468,12 +2293,13 @@ algorithm
       DAE.Exp e1,e2,e,expCref,cond;
       list<DAE.Exp> expl;
       DAE.ComponentRef cr;
-      BackendDAE.WhenEquation we,elsewe;
+      BackendDAE.WhenEquation we;
       Integer size;
       String eqnstr, str;
       list<DAE.Statement> statementLst;
       list<list<BackendDAE.Equation>> eqnslst;
       list<BackendDAE.Equation> eqns;
+      list<BackendDAE.WhenOperator> whenStmtLst;
 
     // EQUATION
     case BackendDAE.EQUATION(exp = e1,scalar = e2)
@@ -2517,21 +2343,9 @@ algorithm
         (res,1);
 
     // WHEN_EQUATION
-    case BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=NONE()))
+    case BackendDAE.WHEN_EQUATION(size=size,whenEquation = we)
       equation
-        e1 = Expression.crefExp(cr);
-        lst1 = incidenceRowExp(cond, vars, iRow, functionTree, inIndexType);
-        lst2 = incidenceRowExp(e1, vars, lst1, functionTree, inIndexType);
-        res = incidenceRowExp(e2, vars, lst2, functionTree, inIndexType);
-      then
-        (res,size);
-    case BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsewe)))
-      equation
-        e1 = Expression.crefExp(cr);
-        lst1 = incidenceRowExp(cond, vars, iRow, functionTree, inIndexType);
-        lst2 = incidenceRowExp(e1, vars, lst1, functionTree, inIndexType);
-        res = incidenceRowExp(e2, vars, lst2, functionTree, inIndexType);
-        res = incidenceRowWhen(vars, elsewe, inIndexType, functionTree, res);
+        res = incidenceRowWhen(we, vars, inIndexType, functionTree, iRow);
       then
         (res,size);
 
@@ -2610,33 +2424,87 @@ algorithm
 end incidenceRowLstLst;
 
 protected function incidenceRowWhen
-"author: Frenkel TUD
-  Helper function to incidenceMatrix. Calculates the indidence row
+"Helper function to incidenceMatrix. Calculates the indidence row
   in the matrix for a when equation."
-  input BackendDAE.Variables inVariables;
   input BackendDAE.WhenEquation inEquation;
+  input BackendDAE.Variables inVariables;
   input BackendDAE.IndexType inIndexType;
   input Option<DAE.FunctionTree> functionTree;
   input list<Integer> inRow;
   output list<Integer> outRow;
-protected
-  list<Integer> res;
-  DAE.Exp e1, e2, cond;
-  DAE.ComponentRef cr;
-  BackendDAE.WhenEquation elsewe;
-  Option<BackendDAE.WhenEquation> oelsewe;
 algorithm
-  BackendDAE.WHEN_EQ(condition = cond, left = cr, right = e2, elsewhenPart = oelsewe) := inEquation;
-  e1 := Expression.crefExp(cr);
-  outRow := incidenceRowExp(cond, inVariables, inRow, functionTree, inIndexType);
-  outRow := incidenceRowExp(e1, inVariables, outRow, functionTree, inIndexType);
-  outRow := incidenceRowExp(e2, inVariables, outRow, functionTree, inIndexType);
+  outRow := match (inEquation)
+    local
+      list<Integer> res;
+      DAE.Exp e1, e2, cond;
+      DAE.ComponentRef cr;
+      BackendDAE.WhenEquation elsewe;
+      Option<BackendDAE.WhenEquation> oelsewe;
+      list<BackendDAE.WhenOperator> whenStmtLst;
 
-  if isSome(oelsewe) then
-    SOME(elsewe) := oelsewe;
-    outRow := incidenceRowWhen(inVariables, elsewe, inIndexType, functionTree, outRow);
-  end if;
+    case BackendDAE.WHEN_STMTS(condition = cond, whenStmtLst = whenStmtLst, elsewhenPart = oelsewe)
+      algorithm
+        outRow := incidenceRowExp(cond, inVariables, inRow, functionTree, inIndexType);
+        outRow := incidenceRowWhenOps(whenStmtLst, inVariables, inIndexType, functionTree, outRow);
+
+        if isSome(oelsewe) then
+          SOME(elsewe) := oelsewe;
+          outRow := incidenceRowWhen(elsewe, inVariables, inIndexType, functionTree, outRow);
+        end if;
+    then outRow;
+  end match;
 end incidenceRowWhen;
+
+protected function incidenceRowWhenOps
+"Helper function to incidenceMatrix. Calculates the indidence row
+  in the matrix for a when equation stmts."
+  input list<BackendDAE.WhenOperator>  inWhenOps;
+  input BackendDAE.Variables inVariables;
+  input BackendDAE.IndexType inIndexType;
+  input Option<DAE.FunctionTree> functionTree;
+  input list<Integer> inRow;
+  output list<Integer> outRow;
+algorithm
+  outRow := match (inWhenOps)
+    local
+      DAE.Exp e1, e2;
+      DAE.ComponentRef cr;
+      list<BackendDAE.WhenOperator> rest;
+
+    case {} then inRow;
+    case (BackendDAE.ASSIGN(left = cr, right = e2)::rest)
+      equation
+        e1 = Expression.crefExp(cr);
+        outRow = incidenceRowExp(e1, inVariables, inRow, functionTree, inIndexType);
+        outRow = incidenceRowExp(e2, inVariables, outRow, functionTree, inIndexType);
+        outRow = incidenceRowWhenOps(rest, inVariables, inIndexType, functionTree, outRow);
+    then outRow;
+
+    case (BackendDAE.REINIT(stateVar = cr, value = e2)::rest)
+      equation
+        e1 = Expression.crefExp(cr);
+        outRow = incidenceRowExp(e1, inVariables, inRow, functionTree, inIndexType);
+        outRow = incidenceRowExp(e2, inVariables, outRow, functionTree, inIndexType);
+        outRow = incidenceRowWhenOps(rest, inVariables, inIndexType, functionTree, outRow);
+    then outRow;
+    case (BackendDAE.ASSERT(condition = e1, message = e2)::rest)
+      equation
+        outRow = incidenceRowExp(e1, inVariables, inRow, functionTree, inIndexType);
+        outRow = incidenceRowExp(e2, inVariables, outRow, functionTree, inIndexType);
+        outRow = incidenceRowWhenOps(rest, inVariables, inIndexType, functionTree, outRow);
+    then outRow;
+    case (BackendDAE.TERMINATE(message = e1)::rest)
+      equation
+        outRow = incidenceRowExp(e1, inVariables, inRow, functionTree, inIndexType);
+        outRow = incidenceRowWhenOps(rest, inVariables, inIndexType, functionTree, outRow);
+    then outRow;
+    case (BackendDAE.NORETCALL(exp = e1)::rest)
+      equation
+        outRow = incidenceRowExp(e1, inVariables, inRow, functionTree, inIndexType);
+        outRow = incidenceRowWhenOps(rest, inVariables, inIndexType, functionTree, outRow);
+    then outRow;
+  end match;
+end incidenceRowWhenOps;
 
 protected function incidenceRowAlgorithm
   input tuple<DAE.Exp, list<Integer>> inTuple;
@@ -4187,28 +4055,11 @@ algorithm
         row = adjacencyRowEnhanced1(lst,e,DAE.RCONST(0.0),vars,kvars,mark,rowmark,{},trytosolve);
       then
         (row,1);
+
     // WHEN_EQUATION
-    case (vars,BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=NONE())),_,_,_)
+    case (vars,BackendDAE.WHEN_EQUATION(size=size,whenEquation = elsewe),_,_,_)
       equation
-        lst = adjacencyRowExpEnhanced(cond, vars, (mark,rowmark), {});
-        lst = adjacencyRowExpEnhanced(e2, vars, (mark,rowmark), lst);
-        // mark all negative because the when condition cannot used to solve a variable
-        _ = List.fold1(lst,markNegativ,rowmark,mark);
-        e1 = Expression.crefExp(cr);
-        lst = adjacencyRowExpEnhanced(e1, vars, (mark,rowmark), lst);
-        row = adjacencyRowEnhanced1(lst,e1,e2,vars,kvars,mark,rowmark,{},trytosolve);
-      then
-        (row,1);
-    case (vars,BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsewe))),_,_,_)
-      equation
-        lst = adjacencyRowExpEnhanced(cond, vars, (mark,rowmark), {});
-        lst = adjacencyRowExpEnhanced(e2, vars, (mark,rowmark), lst);
-        // mark all negative because the when condition cannot used to solve a variable
-        _ = List.fold1(lst,markNegativ,rowmark,mark);
-        e1 = Expression.crefExp(cr);
-        lst = adjacencyRowExpEnhanced(e1, vars, (mark,rowmark), lst);
-        lst = adjacencyRowWhenEnhanced(vars,elsewe,mark,rowmark,kvars,lst);
-        row = adjacencyRowEnhanced1(lst,e1,e2,vars,kvars,mark,rowmark,{},trytosolve);
+        row = adjacencyRowWhenEnhanced(elsewe, mark, rowmark, vars, kvars, {}, {});
       then
         (row,size);
 
@@ -4439,47 +4290,46 @@ protected function adjacencyRowWhenEnhanced
 "author: Frenkel TUD
   Helper function to adjacencyMatrixDispatchEnhanced. Calculates the adjacency row
   in the matrix for one equation."
-  input BackendDAE.Variables inVariables;
   input BackendDAE.WhenEquation inEquation;
   input Integer mark;
   input array<Integer> rowmark;
+  input BackendDAE.Variables vars;
   input BackendDAE.Variables kvars;
-  input list<Integer> iRow;
-  output list<Integer> outRow;
+  input list<Integer> iLst;
+  input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
+  output BackendDAE.AdjacencyMatrixElementEnhanced outRow = iRow;
+protected
+  DAE.Exp condition;
+  list<BackendDAE.WhenOperator> whenStmtLst;
+  Option<BackendDAE.WhenEquation> oelsepart;
+  list<Integer> lst;
+  BackendDAE.WhenEquation elsepart;
 algorithm
-  outRow := match (inVariables,inEquation,mark,rowmark,kvars,iRow)
-    local
-      list<Integer> lst;
-      BackendDAE.Variables vars;
-      DAE.Exp e1,e2,cond;
-      DAE.ComponentRef cr;
-      BackendDAE.WhenEquation elsewe;
+  BackendDAE.WHEN_STMTS(condition = condition, whenStmtLst = whenStmtLst, elsewhenPart = oelsepart) := inEquation;
+  lst := adjacencyRowExpEnhanced(condition, vars, (mark,rowmark), iLst);
+  for rs in whenStmtLst loop
+    _ := match(rs)
+      local
+        DAE.ComponentRef left;
+        DAE.Exp right, leftexp;
 
-    case (vars,BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=NONE()),_,_,_,_)
-      equation
+      case BackendDAE.ASSIGN(left, right) equation
+        lst = adjacencyRowExpEnhanced(right, vars, (mark,rowmark), lst);
         // mark all negative because the when condition cannot used to solve a variable
-        lst = adjacencyRowExpEnhanced(cond, vars, (mark,rowmark), {});
-        lst = adjacencyRowExpEnhanced(e2, vars, (mark,rowmark), lst);
         _ = List.fold1(lst,markNegativ,rowmark,mark);
-        lst = listAppend(lst,iRow);
-        e1 = Expression.crefExp(cr);
-        lst = adjacencyRowExpEnhanced(e1, vars, (mark,rowmark), {});
-      then
-        lst;
-    case (vars,BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsewe)),_,_,_,_)
-      equation
-        // mark all negative because the when condition cannot used to solve a variable
-        lst = adjacencyRowExpEnhanced(cond, vars, (mark,rowmark), {});
-        lst = adjacencyRowExpEnhanced(e2, vars, (mark,rowmark), lst);
-        _ = List.fold1(lst,markNegativ,rowmark,mark);
-        lst = listAppend(lst,iRow);
-        e1 = Expression.crefExp(cr);
-        lst = adjacencyRowExpEnhanced(e1, vars, (mark,rowmark), lst);
-        lst = adjacencyRowWhenEnhanced(vars,elsewe,mark,rowmark,kvars,lst);
-      then
-        lst;
+        leftexp = Expression.crefExp(left);
+        lst = adjacencyRowExpEnhanced(leftexp, vars, (mark,rowmark), lst);
+        outRow = adjacencyRowEnhanced1(lst,leftexp,right,vars,kvars,mark,rowmark,outRow,false);
+      then ();
 
-  end match;
+      else ();
+    end match;
+
+  end for;
+  if isSome(oelsepart) then
+    SOME(elsepart) := oelsepart;
+    outRow := adjacencyRowWhenEnhanced(elsepart, mark, rowmark, vars, kvars, lst, outRow);
+  end if;
 end adjacencyRowWhenEnhanced;
 
 protected function markNegativ
@@ -5757,7 +5607,6 @@ algorithm
         outTypeA = traverseBackendDAEExpsVars(shared.knownVars, func, outTypeA);
         outTypeA = traverseBackendDAEExpsEqns(shared.initialEqs, func, outTypeA);
         outTypeA = traverseBackendDAEExpsEqns(shared.removedEqs, func, outTypeA);
-        (_, outTypeA) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(shared.eventInfo.whenClauseLst, func, outTypeA);
       then
         outTypeA;
 
@@ -5931,7 +5780,6 @@ algorithm
         outTypeA = traverseBackendDAEExpsVarsWithUpdate(shared.knownVars, func, outTypeA);
         outTypeA = traverseBackendDAEExpsEqnsWithUpdate(shared.initialEqs, func, outTypeA);
         outTypeA = traverseBackendDAEExpsEqnsWithUpdate(shared.removedEqs, func, outTypeA);
-        (_, outTypeA) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(shared.eventInfo.whenClauseLst, func, outTypeA);
       then
         outTypeA;
 
@@ -6537,38 +6385,6 @@ algorithm
   end match;
 end traverseAlgorithmExpsWithUpdate;
 
-public function traverseWhenClauseExps
-  replaceable type Type_a subtypeof Any;
-  input list<BackendDAE.WhenClause> iWhenClauses;
-  input FuncExpType func;
-  input Type_a inTypeA;
-  input list<BackendDAE.WhenClause> iAcc;
-  output list<BackendDAE.WhenClause> oWhenClauses;
-  output Type_a outTypeA;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output DAE.Exp outExp;
-    output Type_a outA;
-  end FuncExpType;
-algorithm
-  (oWhenClauses,outTypeA) := match(iWhenClauses,func,inTypeA,iAcc)
-    local
-      list<BackendDAE.WhenClause> whenClause;
-      DAE.Exp condition;
-      list<BackendDAE.WhenOperator> reinitStmtLst;
-      Option<Integer> elseClause;
-      Type_a arg;
-    case({},_,_,_) then (listReverse(iAcc),inTypeA);
-    case(BackendDAE.WHEN_CLAUSE(condition,reinitStmtLst,elseClause)::whenClause,_,_,_)
-      equation
-        (condition,arg) = Expression.traverseExpBottomUp(condition,func,inTypeA);
-        (whenClause,arg) = traverseWhenClauseExps(whenClause,func,arg,BackendDAE.WHEN_CLAUSE(condition,reinitStmtLst,elseClause)::iAcc);
-      then
-        (whenClause,arg);
-  end match;
-end traverseWhenClauseExps;
-
 public function traverseZeroCrossingExps
   replaceable type Type_a subtypeof Any;
   input list<BackendDAE.ZeroCrossing> iZeroCrossing;
@@ -6588,13 +6404,13 @@ algorithm
     local
       list<BackendDAE.ZeroCrossing> zeroCrossing;
       DAE.Exp relation_;
-      list<Integer> occurEquLst,occurWhenLst;
+      list<Integer> occurEquLst;
       Type_a arg;
     case({},_,_,_) then (listReverse(iAcc),inTypeA);
-    case(BackendDAE.ZERO_CROSSING(relation_,occurEquLst,occurWhenLst)::zeroCrossing,_,_,_)
+    case(BackendDAE.ZERO_CROSSING(relation_,occurEquLst)::zeroCrossing,_,_,_)
       equation
         (relation_,arg) = Expression.traverseExpBottomUp(relation_,func,inTypeA);
-        (zeroCrossing,arg) = traverseZeroCrossingExps(zeroCrossing,func,arg,BackendDAE.ZERO_CROSSING(relation_,occurEquLst,occurWhenLst)::iAcc);
+        (zeroCrossing,arg) = traverseZeroCrossingExps(zeroCrossing,func,arg,BackendDAE.ZERO_CROSSING(relation_,occurEquLst)::iAcc);
       then
         (zeroCrossing,arg);
   end match;
@@ -8259,7 +8075,7 @@ end collapseRemovedEqs1;
 public function emptyEventInfo
   output BackendDAE.EventInfo info;
 algorithm
-  info := BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0);
+  info := BackendDAE.EVENT_INFO({}, {}, {}, {}, 0);
 end emptyEventInfo;
 
 public function emptyClocks

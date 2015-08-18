@@ -84,7 +84,7 @@ template translateModel(SimCode simCode, String FMUVersion, String FMUType)
       let()= textFile(fmuMakefile(target,simCode, extraFuncs, extraFuncsDecl, "", FMUVersion), '<%fileNamePrefix%>_FMU.makefile')
       let()= textFile(fmuCalcHelperMainfile(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
 
-      let() = textFile(CodegenCpp.simulationCppFile(simCode, contextOther, updateHpcom(allEquations, whenClauses, simCode, &extraFuncs, &extraFuncsDecl, "", contextOther, stateDerVectorName, false),
+      let() = textFile(CodegenCpp.simulationCppFile(simCode, contextOther, updateHpcom(allEquations, simCode, &extraFuncs, &extraFuncsDecl, "", contextOther, stateDerVectorName, false),
                                          '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', &extraFuncs, &extraFuncsDecl, className,
                                          additionalHpcomConstructorDefinitions(hpcomData.schedules),
                                          additionalHpcomConstructorBodyStatements(hpcomData.schedules, className, CodegenUtil.dotPath(modelInfo.name)),

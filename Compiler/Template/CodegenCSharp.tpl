@@ -125,7 +125,7 @@ namespace Bodylight.Models<%modelNameSpace(modelInfo.name)%>
     <%functionAlgebraic(algebraicEquations, simCode)%>
 
     <% wrapIntoExtraFileIfModelTooBig(
-       functionDAE(allEquations, whenClauses, simCode),
+       functionDAE(allEquations, simCode),
        "FunctionDAE", simCode) %>
 
     <%functionZeroCrossing(zeroCrossings, simCode)%>
@@ -814,8 +814,8 @@ template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, SimCode simCo
 end functionInitSample;
 
 
-template functionDAE(list<SimEqSystem> allEquationsPlusWhen,
-                     list<SimWhenClause> whenClauses, SimCode simCode) ::=
+template functionDAE(list<SimEqSystem> allEquationsPlusWhen, SimCode simCode)
+::=
 let()= System.tmpTickReset(1)
 <<
 public override bool FunDAE()
@@ -825,10 +825,6 @@ public override bool FunDAE()
   var needToIterate = false;
 
   <%allEquationsPlusWhen |> eq => equation_(eq, contextSimulationDiscrete, simCode) ;separator="\n"%>
-
-  <%whenClauses |> when hasindex i0 =>  genreinits(when, i0, simCode)
-     ;separator="\n"
-  %>
 
   return needToIterate;
 }
@@ -842,50 +838,6 @@ template whenConditions(list<ComponentRef> conditions, SimCode simCode)
   (conditions |> cr => '<%cref(cr, simCode)%> && !<%preCref(cr, simCode)%> /* edge */';separator=" || ")
   //else "false"
 end whenConditions;
-
-template genreinits(SimWhenClause whenClauses, Integer widx, SimCode simCode)
-" Generates reinit statemeant"
-::=
-
-match whenClauses
-case SIM_WHEN_CLAUSE(__) then
-if reinits then
-  <<
-  //For whenclause index: <%widx%>
-  if (<%whenConditions(conditions, simCode)%>) {
-    <%functionWhenReinitStatementThen(reinits, simCode)%>
-  }
-  >>
-
-end genreinits;
-
-
-template functionWhenReinitStatementThen(list<WhenOperator> reinits, SimCode simCode)
- "Generates re-init statement for when equation."
-::=
-  reinits |> reinit =>
-    match reinit
-    case REINIT(__) then
-      let &preExp = buffer ""
-      let val = daeExp(value, contextSimulationDiscrete, &preExp, simCode)
-      <<
-      <%preExp%>
-      <%cref(stateVar, simCode)%> = <%val%>;
-      needToIterate = true;
-      >>
-    case TERMINATE(__) then
-      let &preExp = buffer ""
-      let msgVar = daeExp(message, contextSimulationDiscrete, &preExp, simCode)
-      <<
-      <%preExp%>
-      MODELICA_TERMINATE(<%msgVar%>);
-      >>
-    case ASSERT(source=SOURCE(info=info)) then
-      assertCommon(condition, message, info, contextSimulationDiscrete, simCode)
-   ;separator="\n"
-
-end functionWhenReinitStatementThen;
-
 
 template infoArgs(builtin.SourceInfo info)
 ::=
@@ -1464,27 +1416,20 @@ case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
   old impl *********/
 
 case SES_WHEN(__) then
-  let &preExp = buffer ""
-  let rightExp = daeExp(right, context, &preExp, simCode)
+  let body = whenOperators(whenStmtLst, context, simCode)
   let elseWhenConds = match elseWhen case SOME(ew) then equationElseWhen(ew, context, simCode)
   if initialCall then
     <<
     if(Initial<%if conditions then " || " + whenConditions(conditions, simCode)%>) {
-      <%preExp%>
-      <%cref(left, simCode)%> = <%rightExp%>;
+      <%body%>
     }
     <%elseWhenConds%>
     >>
-    // what is that for ??
-    // else {
-    //  <%cref(left, simCode)%> = <%preCref(left, simCode)%>;
-    //}
   else
     <<
     if( ! Initial) {
       if(<%whenConditions(conditions, simCode)%>) {
-        <%preExp%>
-        <%cref(left, simCode)%> = <%rightExp%>;
+        <%body%>
       }
       <%elseWhenConds%>
     }
@@ -1497,17 +1442,47 @@ end equation_;
 template equationElseWhen(SimEqSystem eq, Context context, SimCode simCode) ::=
 match eq
 case SES_WHEN(__) then
-  let &preExp = buffer ""
-  let rightExp = daeExp(right, context, &preExp, simCode)
+  let body = whenOperators(whenStmtLst, context, simCode)
   let elseWhenConds = match elseWhen case SOME(ew) then equationElseWhen(ew, context, simCode)
   <<
   else if(<%whenConditions(conditions, simCode)%>) {
-    <%preExp%>
-    <%cref(left, simCode)%> = <%rightExp%>;
+    <%body%>
   }
   <%elseWhenConds%>
   >>
 end equationElseWhen;
+
+template whenOperators(list<WhenOperator> whenOps, Context context, SimCode simCode)
+ "Generates re-init statement for when equation."
+::=
+  whenOps |> whenOp =>
+    match whenOp
+    case ASSIGN(__) then
+      let preExp = ""
+      let rightExp = daeExp(right, context, &preExp, simCode)
+      <<
+      <%preExp%>
+      <%cref(left, simCode)%> = <%rightExp%>;
+      >>
+    case REINIT(__) then
+      let &preExp = buffer ""
+      let val = daeExp(value, contextSimulationDiscrete, &preExp, simCode)
+      <<
+      <%preExp%>
+      <%cref(stateVar, simCode)%> = <%val%>;
+      needToIterate = true;
+      >>
+    case TERMINATE(__) then
+      let &preExp = buffer ""
+      let msgVar = daeExp(message, contextSimulationDiscrete, &preExp, simCode)
+      <<
+      <%preExp%>
+      MODELICA_TERMINATE(<%msgVar%>);
+      >>
+    case ASSERT(source=SOURCE(info=info)) then
+      assertCommon(condition, message, info, contextSimulationDiscrete, simCode)
+   ;separator="\n"
+end whenOperators;
 
 // SECTION: SIMULATION TARGET, FUNCTIONS FILE SPECIFIC TEMPLATES
 // not yet implemented

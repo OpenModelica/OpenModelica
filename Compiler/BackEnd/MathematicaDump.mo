@@ -32,6 +32,7 @@
 encapsulated package MathematicaDump
 
   import BackendDAE;
+  import BackendDump;
   import BackendVariable;
   import ComponentReference;
   import DAE;
@@ -135,7 +136,7 @@ algorithm
       str = "Missing[\"Algorithm\",\""+escapeMmaString(dumpSingleAlgorithmStr(alg))+"\"]";
     then str;
     case (BackendDAE.WHEN_EQUATION(whenEquation = whenEq),(_,_)) equation
-      str = "Missing[\"When\",\""+escapeMmaString(whenEquationStr(whenEq))+"\"]";
+      str = "Missing[\"When\",\""+escapeMmaString(BackendDump.whenEquationString(whenEq, true))+"\"]";
     then str;
     case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2),(vars,knvars))
       equation
@@ -678,29 +679,6 @@ algorithm
     then str;
   end match;
 end dumpSingleAlgorithmStr;
-
-
-protected function whenEquationStr "prints a WhenEquation to a string"
-  input BackendDAE.WhenEquation whenEq;
-  output String str;
-algorithm
-  str := match(whenEq)
-  local
-    DAE.Exp cond;
-    DAE.ComponentRef cr;
-    //BackendDAE.Equation eqn;
-    DAE.Exp eqn;
-    BackendDAE.WhenEquation elseEqn;
-
-    case(BackendDAE.WHEN_EQ(cond,cr,eqn,NONE())) equation
-      str = "when "+ExpressionDump.printExpStr(cond)+" then\n"+ComponentReference.crefStr(cr)+":="+ExpressionDump.printExpStr(eqn)+"\nend when"; //TODO: I'm not sure if the WHEN_EQ data is the same still
-    then str;
-
-    case(BackendDAE.WHEN_EQ(cond,cr,eqn,SOME(elseEqn))) equation
-      str = "when "+ExpressionDump.printExpStr(cond)+" then\n"+ComponentReference.crefStr(cr)+":="+ExpressionDump.printExpStr(eqn)+"\n else"+whenEquationStr(elseEqn);
-    then str;
-  end match;
-end whenEquationStr;
 
 public function printMmaVarsStr "print variables on a form suitable for Mathematica to a string.
 $p,$lb, $rb, $leftParentesis, $rightParentesis removed.

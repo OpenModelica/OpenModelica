@@ -477,42 +477,45 @@ protected function differentiateWhenEquations
   input DAE.FunctionTree inFunctionTree;
   output BackendDAE.WhenEquation outWhenEquations;
   output DAE.FunctionTree outFunctionTree;
+protected
+  BackendDAE.WhenEquation elsewhenPart, delsewhenPart;
+  Option<BackendDAE.WhenEquation> oelsepart;
+  list<BackendDAE.WhenOperator> whenStmtLst, stmtLst;
+  DAE.FunctionTree funcs;
+  DAE.Exp condition;
 algorithm
-  (outWhenEquations, outFunctionTree) := matchcontinue (inWhenEquations, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
-    local
-      DAE.FunctionTree funcs;
-      String msg;
-      DAE.ElementSource source;
-      DAE.Exp condition;
-      DAE.ComponentRef left, dleft;
-      DAE.Exp right, dright, eleft;
-      BackendDAE.WhenEquation elsewhenPart, delsewhenPart;
+  BackendDAE.WHEN_STMTS(condition = condition, whenStmtLst = whenStmtLst, elsewhenPart = oelsepart) := inWhenEquations;
+  funcs := inFunctionTree;
+  stmtLst := {};
+  for rs in whenStmtLst loop
+    rs := match(rs)
+      local
+        DAE.ElementSource src;
+        DAE.ComponentRef left, dleft;
+        DAE.Exp right, dright, eleft;
 
-    // equations
-    case (BackendDAE.WHEN_EQ(condition=condition, left=left, right=right, elsewhenPart=NONE()) ,_,_,_,_)
-      equation
+      case BackendDAE.ASSIGN(left, right, src) equation
         eleft = Expression.crefExp(left);
-        (eleft,funcs) = differentiateExp(eleft, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, defaultMaxIter, {});
-        (dright,funcs) = differentiateExp(right, inDiffwrtCref, inInputData, inDiffType, funcs, defaultMaxIter, {});
+        (eleft, funcs) = differentiateExp(eleft, inDiffwrtCref, inInputData, inDiffType, funcs, defaultMaxIter, {});
+        (dright, funcs) = differentiateExp(right, inDiffwrtCref, inInputData, inDiffType, funcs, defaultMaxIter, {});
         dleft = Expression.expCref(eleft);
-      then (BackendDAE.WHEN_EQ(condition, dleft, dright, NONE()), funcs);
+      then BackendDAE.ASSIGN(dleft, dright, src);
 
-    case (BackendDAE.WHEN_EQ(condition=condition, left=left, right=right, elsewhenPart=SOME(elsewhenPart)) ,_,_,_,_)
-      equation
-        eleft = Expression.crefExp(left);
-        (eleft,funcs) = differentiateExp(eleft, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, defaultMaxIter, {});
-        (dright,funcs) = differentiateExp(right, inDiffwrtCref, inInputData, inDiffType, funcs, defaultMaxIter, {});
-        dleft = Expression.expCref(eleft);
-        (delsewhenPart, funcs) = differentiateWhenEquations(elsewhenPart, inDiffwrtCref, inInputData, inDiffType, funcs);
-      then (BackendDAE.WHEN_EQ(condition, dleft, dright, SOME(delsewhenPart)), funcs);
+      else rs;
+    end match;
 
-    case (_,_,_,_,_)
-      equation
-        msg = "\nDifferentiate.differentiateWhenEquations failed.\n\n";
-        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
-      then
-        fail();
-  end matchcontinue;
+    stmtLst := rs::stmtLst;
+  end for;
+  if isSome(oelsepart) then
+    SOME(elsewhenPart) := oelsepart;
+    (delsewhenPart, funcs) := differentiateWhenEquations(elsewhenPart, inDiffwrtCref, inInputData, inDiffType, funcs);
+    oelsepart := SOME(delsewhenPart);
+  else
+    oelsepart := NONE();
+  end if;
+
+  outWhenEquations := BackendDAE.WHEN_STMTS(condition, stmtLst, oelsepart);
+  outFunctionTree := funcs;
 end differentiateWhenEquations;
 
 // =============================================================================

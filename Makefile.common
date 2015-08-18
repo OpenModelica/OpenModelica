@@ -174,7 +174,7 @@ runtimeCPP: CMinpack
 CMAKE_ARGS=$(filter CMAKE_%, $(MAKEFLAGS))
 
 
-runtimeCPPinstall: CMinpack copycppheader
+runtimeCPPinstall: CMinpack copycppheader omc
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR)
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppCVode.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppCVode.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppDataExchange.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppDataExchange.dylib
@@ -412,7 +412,7 @@ git-clean:
 	git clean -fdx
 
 git-sanity-check: git-clean
-	test "./Compiler/boot/bootstrap-sources.tar.xz" = "`find . -type f -size +800k | grep -v 3rdParty`"
+	test "./Compiler/boot/bootstrap-sources.tar.xz" = "`find . -type f -size +684k | grep -v 3rdParty`"
 	for commit in `git rev-list origin/master..HEAD`; do \
 	  (! git ls-tree --name-only -r $$commit | egrep "(.*[.](html|png|svg|o|so|la|stamp|a|dll|exe|cab|lnk|msi|log|class|jar|pyc|db|zip|DS_Store|pdf|tex|md5|dep)$$)|SimulationRuntime/cpp/Doc") || exit 1; \
 	done

@@ -292,7 +292,6 @@ package SimCode
       list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<BackendDAE.ZeroCrossing> relations;
       list<BackendDAE.TimeEvent> timeEvents;
-      list<SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
       ExtObjInfo extObjInfo;
       MakefileParams makefileParams;
@@ -493,8 +492,7 @@ package SimCode
       Integer index;
       list<DAE.ComponentRef> conditions;    // list of boolean variables as conditions
       Boolean initialCall;                  // true, if top-level branch with initial()
-      DAE.ComponentRef left;
-      DAE.Exp right;
+      list<BackendDAE.WhenOperator> whenStmtLst;
       Option<SimEqSystem> elseWhen;
       DAE.ElementSource source;
     end SES_WHEN;
@@ -549,16 +547,6 @@ package SimCode
       JacobianMatrix jacobianMatrix;
     end SES_STATESET;
   end StateSet;
-
-  uniontype SimWhenClause
-    record SIM_WHEN_CLAUSE
-      list<DAE.ComponentRef> conditionVars; // is no longer needed
-      list<DAE.ComponentRef> conditions;    // list of boolean variables as conditions
-      Boolean initialCall;                  // true, if top-level branch with initial()
-      list<BackendDAE.WhenOperator> reinits;
-      Option<BackendDAE.WhenEquation> whenEq;
-    end SIM_WHEN_CLAUSE;
-  end SimWhenClause;
 
   uniontype ModelInfo
     record MODELINFO
@@ -1056,6 +1044,12 @@ package BackendDAE
   end TimeEvent;
 
   uniontype WhenOperator "- Reinit Statement"
+    record ASSIGN " left_cr = right_exp"
+      DAE.ComponentRef left     "left hand side of equation";
+      DAE.Exp right             "right hand side of equation";
+      DAE.ElementSource source  "origin of equation";
+    end ASSIGN;
+
     record REINIT
       DAE.ComponentRef stateVar "State variable to reinit" ;
       DAE.Exp value             "Value after reinit" ;
@@ -1089,6 +1083,11 @@ package BackendDAE
       DAE.Exp right;
       Option<WhenEquation> elsewhenPart;
     end WHEN_EQ;
+    record WHEN_STMTS "equation when condition then reinit(...), terminate(...) or assert(...)"
+      DAE.Exp condition                "the when-condition" ;
+      list<WhenOperator> whenStmtLst;
+      Option<WhenEquation> elsewhenPart "elsewhen equation with the same cref on the left hand side.";
+    end WHEN_STMTS;
   end WhenEquation;
 
   constant String optimizationMayerTermName;

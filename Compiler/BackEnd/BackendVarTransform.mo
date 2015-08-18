@@ -1882,120 +1882,30 @@ algorithm
     BackendDAE.WhenEquation weqn,elsePart,elsePart2;
     Boolean b1,b2,b3,b4;
     DAE.ElementSource source;
+    list<BackendDAE.WhenOperator> whenStmtLst;
+    Option<BackendDAE.WhenEquation> oelsewhenPart;
+    BackendDAE.WhenEquation elsewhenPart;
 
-    case (BackendDAE.WHEN_EQ(cond,cr,e,NONE()),_,_,_)
+    case (BackendDAE.WHEN_STMTS(condition=cond,whenStmtLst=whenStmtLst,elsewhenPart=oelsewhenPart),_,_,_)
       equation
-        (e1,b1) = replaceExp(e, repl,inFuncTypeExpExpToBooleanOption);
-        cre = Expression.crefExp(cr);
-        (cre1,b3) = replaceExp(cre,repl,inFuncTypeExpExpToBooleanOption);
-        (cr1,e1) = validWhenLeftHandSide(cre1,e1,cr);
-        (cond1,b2) = replaceExp(cond, repl,inFuncTypeExpExpToBooleanOption);
-        (e2,_) = ExpressionSimplify.condsimplify(b1,e1);
-        source = DAEUtil.addSymbolicTransformationSubstitution(b1,isource,e,e2);
-        (cond2,_) = ExpressionSimplify.condsimplify(b2,cond1);
-        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,cond,cond2);
-        source = DAEUtil.addSymbolicTransformationSubstitution(b3,source,cre,cre1);
+        (cond1, b1) = replaceExp(cond, repl, inFuncTypeExpExpToBooleanOption);
+        (cond2, _) = ExpressionSimplify.condsimplify(b1, cond1);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b1, isource, cond, cond2);
+        (whenStmtLst,b2) = replaceWhenOperator(whenStmtLst, repl, inFuncTypeExpExpToBooleanOption, false, {});
+        if isSome(oelsewhenPart) then
+          SOME(elsewhenPart) = oelsewhenPart;
+          (elsewhenPart,source,b3) = replaceWhenEquation(elsewhenPart,repl,inFuncTypeExpExpToBooleanOption,source);
+          oelsewhenPart = SOME(elsewhenPart);
+        else
+          oelsewhenPart = NONE();
+          b3 = false;
+        end if;
         b4 = b1 or b2 or b3;
-        weqn = if b4 then BackendDAE.WHEN_EQ(cond2,cr1,e2,NONE()) else whenEqn;
-      then
-        (weqn,source,b4);
+        weqn = if b4 then BackendDAE.WHEN_STMTS(cond2,whenStmtLst,oelsewhenPart) else whenEqn;
+      then (weqn,source,b4);
 
-    case (BackendDAE.WHEN_EQ(cond,cr,e,SOME(elsePart)),_,_,_)
-      equation
-        (elsePart2,source,b4) = replaceWhenEquation(elsePart,repl,inFuncTypeExpExpToBooleanOption,isource);
-        (e1,b1) = replaceExp(e, repl,inFuncTypeExpExpToBooleanOption);
-        cre = Expression.crefExp(cr);
-        (cre1,b3) = replaceExp(cre,repl,inFuncTypeExpExpToBooleanOption);
-        (cr1,e1) = validWhenLeftHandSide(cre1,e1,cr);
-        (cond1,b2) = replaceExp(cond, repl,inFuncTypeExpExpToBooleanOption);
-        (e2,_) = ExpressionSimplify.condsimplify(b1,e1);
-        source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e,e2);
-        (cond2,_) = ExpressionSimplify.condsimplify(b2,cond1);
-        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,cond,cond2);
-        source = DAEUtil.addSymbolicTransformationSubstitution(b3,source,cre,cre1);
-        b1 = b1 or b2 or b3 or b4;
-        weqn = if b1 then BackendDAE.WHEN_EQ(cond2,cr1,e2,SOME(elsePart2)) else whenEqn;
-      then
-        (weqn,source,b1);
   end match;
 end replaceWhenEquation;
-
-/*********************************************************/
-/* replace WhenClauses  */
-/*********************************************************/
-
-public function replaceWhenClauses
-"This function takes a list of when clauses ana a set of variable
-  replacements and applies the replacements on all clauses.
-  The function returns the updated list of clauses"
-  input list<BackendDAE.WhenClause> iWhenclauses;
-  input VariableReplacements repl;
-  input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
-  output list<BackendDAE.WhenClause> oWhenclauses;
-  output Boolean replacementPerformed;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
-protected
-  HashTable2.HashTable ht;
-algorithm
-  (oWhenclauses,replacementPerformed) := matchcontinue(iWhenclauses,repl,inFuncTypeExpExpToBooleanOption)
-    local
-      list<BackendDAE.WhenClause> whenclauses;
-    case(_,REPLACEMENTS(hashTable = ht),_)
-      equation
-        // Do not do empty replacements; it just takes time ;)
-        true = intGt(BaseHashTable.hashTableCurrentSize(ht),0);
-        (whenclauses,replacementPerformed) =
-          replaceWhenClausesLst(iWhenclauses,repl,inFuncTypeExpExpToBooleanOption,false,{});
-      then
-        (whenclauses,replacementPerformed);
-    else
-      then
-        (iWhenclauses,false);
-  end matchcontinue;
-end replaceWhenClauses;
-
-protected function replaceWhenClausesLst
-"author: Frenkel TUD 2012-09
-  Traverse all expressions of a when clause list. It is possible to change the expressions"
-  input list<BackendDAE.WhenClause> inWhenClauseLst;
-  input VariableReplacements repl;
-  input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
-  input Boolean replacementPerformed;
-  input list<BackendDAE.WhenClause> iAcc;
-  output list<BackendDAE.WhenClause> oWhenclauses;
-  output Boolean oReplacementPerformed;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
-algorithm
-  (oWhenclauses,oReplacementPerformed) :=
-   match (inWhenClauseLst,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed,iAcc)
-    local
-      Option<Integer> elsindx;
-      list<BackendDAE.WhenOperator> reinitStmtLst,reinitStmtLst1;
-      DAE.Exp cond,cond1;
-      list<BackendDAE.WhenClause> wclst,wclst1;
-      Boolean b,b1,b2;
-      BackendDAE.WhenClause wc,wc1;
-
-    case ({},_,_,_,_) then (listReverse(iAcc),replacementPerformed);
-
-    case ((wc as BackendDAE.WHEN_CLAUSE(cond,reinitStmtLst,elsindx))::wclst,_,_,_,_)
-      equation
-        (cond1,b1) = replaceExp(cond,repl,inFuncTypeExpExpToBooleanOption);
-        (cond1,_) = ExpressionSimplify.condsimplify(b1,cond1);
-        (reinitStmtLst1,b2) = replaceWhenOperator(reinitStmtLst,repl,inFuncTypeExpExpToBooleanOption,false,{});
-        b = b1 or b2;
-        wc1 = if b then BackendDAE.WHEN_CLAUSE(cond1,reinitStmtLst1,elsindx) else wc;
-        (wclst1,b) = replaceWhenClausesLst(wclst,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed or b,wc1::iAcc);
-      then
-        (wclst1,b);
-  end match;
-end replaceWhenClausesLst;
 
 protected function replaceWhenOperator
 "author: Frenkel TUD 2012-09"
@@ -2025,6 +1935,21 @@ algorithm
       list<Boolean> blst;
 
     case ({},_,_,_,_) then (listReverse(iAcc),replacementPerformed);
+
+    case ((wop as BackendDAE.ASSIGN(left=cr,right=exp,source=source))::res,_,_,_,_)
+      equation
+        cre = Expression.crefExp(cr);
+        (cre1,b1) = replaceExp(cre,repl,inFuncTypeExpExpToBooleanOption);
+        (cr1,_) = validWhenLeftHandSide(cre1,cre,cr);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,cre,cre1);
+        (exp1,b2) = replaceExp(exp,repl,inFuncTypeExpExpToBooleanOption);
+        (exp1,_) = ExpressionSimplify.condsimplify(b2,exp1);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,exp,exp1);
+        b = b1 or b2;
+        wop1 = if b then BackendDAE.ASSIGN(cr1,exp1,source) else wop;
+        (res1,b) =  replaceWhenOperator(res,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed or b,wop1::iAcc);
+      then
+        (res1,b);
 
     case ((wop as BackendDAE.REINIT(stateVar=cr,value=cond,source=source))::res,_,_,_,_)
       equation

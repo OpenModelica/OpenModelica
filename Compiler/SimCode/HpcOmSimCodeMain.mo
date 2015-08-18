@@ -111,7 +111,6 @@ algorithm
       list<DAE.Constraint> constraints;
       list<DAE.ClassAttributes> classAttributes;
       list<BackendDAE.ZeroCrossing> zeroCrossings, sampleZC, relations;
-      list<SimCode.SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
       SimCode.ExtObjInfo extObjInfo;
       SimCode.MakefileParams makefileParams;

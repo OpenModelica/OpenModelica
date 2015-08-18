@@ -1079,7 +1079,7 @@ algorithm
         end if;
 
         // prepare data for getSparsePattern
-        eqnSparse = arrayCreate(adjSizeT, {});
+        eqnSparse = arrayCreate(adjSize, {});
         varSparse = arrayCreate(adjSizeT, {});
         mark = arrayCreate(adjSizeT, 0);
         usedvar = arrayCreate(adjSizeT, 0);

@@ -93,7 +93,7 @@ case SIMCODE(__) then
   algorithm
   /* Discontinuities(<% listLength(zeroCrossings) %>) */
   <% generateDiscont(zeroCrossings,BackendQSS.getStates(qssInfo),BackendQSS.getDisc(qssInfo),BackendQSS.getAlgs(qssInfo),
-                     whenClauses,BackendQSS.getEqs(qssInfo),0,BackendQSS.getZCExps(qssInfo), BackendQSS.getZCOffset(qssInfo)) %>
+                     BackendQSS.getEqs(qssInfo),0,BackendQSS.getZCExps(qssInfo), BackendQSS.getZCOffset(qssInfo)) %>
   end <% getName(modelInfo) %>;
   >>
 end generateQsmModel;
@@ -336,43 +336,6 @@ template generateOneZC(BackendDAE.ZeroCrossing zc,list<DAE.ComponentRef> states,
   >>
 end generateOneZC;
 
-template generateWhen(SimCode.SimWhenClause when, list<DAE.ComponentRef> states, list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs, Integer index)
-::=
-match when
-case SIM_WHEN_CLAUSE(conditions=conditions, initialCall=initialCall, whenEq=SOME(WHEN_EQ(left=left, right=right, elsewhenPart=NONE()))) then
-let &extraCode = buffer "" /*BUFD*/
-<<
-  /* When <% index %> */
-  when <% generateCond(conditions, states, disc, algs, extraCode, index) %> then
-   <% BackendQSS.replaceCref(left,states,disc,algs) %> := <% ExpressionDump.printExpStr(BackendQSS.replaceVars(right,states,disc,algs)) %>;
-   <% extraCode %>
-  end when;
->>
-case SIM_WHEN_CLAUSE(conditions=conditions, initialCall=initialCall, whenEq=SOME(WHEN_EQ(left=left, right=right, elsewhenPart=SOME(__)))) then
-let &extraCode = buffer "" /*BUFD*/
-<<
-  /* When <% index %> */
-  when <% generateCond(conditions, states, disc, algs, extraCode, index) %> then
-    <% BackendQSS.replaceCref(left,states,disc,algs) %> := <% ExpressionDump.printExpStr(BackendQSS.replaceVars(right,states,disc,algs)) %>;
-    <% extraCode %>
-  end when;
->>
-/*
-case SIM_WHEN_CLAUSE(conditions=conditions,whenEq= SOME(WHEN_EQ(left=left,right=right,elsewhenPart=NONE()))) then
-let &extraCode = buffer "" /*BUFD*/
-(conditions |> cond => <<
-  when <% generateCond(cond, states, disc, algs, extraCode, index) %> then
-    <% BackendQSS.replaceCref(left,states,disc,algs) %> := <% ExpressionDump.printExpStr(BackendQSS.replaceVars(right,states,disc,algs)) %>;
-    <% extraCode %>
-  end when;
->>; separator="\n")
-*/
-else
-  <<
-  /*  NOT MATCHED WHEN */
-  >>
-end generateWhen;
-
 template generateCond(list<DAE.ComponentRef> conds, list<DAE.ComponentRef> states,
                       list<DAE.ComponentRef> disc,list<DAE.ComponentRef> algs,Text &extraCode, Integer index)
 ::=
@@ -384,14 +347,11 @@ template generateCond(list<DAE.ComponentRef> conds, list<DAE.ComponentRef> state
 end generateCond;
 
 template generateDiscont(list<BackendDAE.ZeroCrossing> zcs, list<DAE.ComponentRef> states,
-  list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs, list<SimCode.SimWhenClause> whens,BackendDAE.EquationArray eqs,
+  list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs, BackendDAE.EquationArray eqs,
   Integer nSamples,list<DAE.Exp> zc_exps, Integer offset)
 ::=
   <<
   <% generateZC(zcs,states,disc,algs,eqs,zc_exps,offset) %>
-  <% BackendQSS.simpleWhens(whens) |> w hasindex i0 => generateWhen(w,states,disc,algs,0);separator="\n" %>
-  <% BackendQSS.sampleWhens(whens) |> w hasindex i0 =>
-    generateWhen(w,states,disc,algs,intAdd(i0,intSub(listLength(disc),nSamples)));separator="\n" %>
   >>
 end generateDiscont;
 

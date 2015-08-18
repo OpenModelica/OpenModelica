@@ -990,7 +990,7 @@ algorithm
       explst2 = Algorithm.getAllExps(alg2);
       res = List.isEqualOnTrue(explst1, explst2, expEqualNoCrefSubs);
     then res;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left=cr1, right=exp1)), BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(left=cr2, right=exp2))) equation
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=cr1, right=exp1)})), BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=cr2, right=exp2)}))) equation
       res = boolAnd(ComponentReference.crefEqualWithoutSubs(cr1, cr2), expEqualNoCrefSubs(exp1, exp2));
     then res;
     else false;

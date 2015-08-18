@@ -2904,11 +2904,21 @@ case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
     >>
   else
     '<%lhsStr%> = -<%rhsStr%>;'
+case CREF(componentRef = cr, ty=DAE.T_COMPLEX(varLst = varLst, complexClassType=RECORD(__))) then
+  match context
+  case FUNCTION_CONTEXT(__) then
+    writeLhsCref1(exp, rhsStr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  else
+    let lhsStr = contextCref(crefStripSubs(cr), context, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    <<
+    <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
+      '_<%lhsStr%>_P_<%var.name%> = <%rhsStr%>.<%var.name%>;'
+    ; separator="\n"
+    %>
+    >>
+  end match
 case CREF(__) then
-  let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  <<
-  <%lhsStr%> = <%rhsStr%> /*writeLhsCref1*/;
-  >>
+  writeLhsCref1(exp, rhsStr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 case UNARY(exp = e as CREF(__)) then
   let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   <<
@@ -2936,7 +2946,14 @@ else
 
 end writeLhsCref;
 
-
+template writeLhsCref1(Exp exp, String rhsStr, Context context, Text &preExp,Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generate a simple assignment of a tuple element"
+::=
+  let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  <<
+  <%lhsStr%> = <%rhsStr%> /*writeLhsCref1*/;
+  >>
+end writeLhsCref1;
 
 template scalarLhsCref(Exp ecr, Context context, Text &preExp,Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
 match ecr

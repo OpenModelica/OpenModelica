@@ -36,7 +36,7 @@ template translateModel(SimCode simCode)
                                           (if Flags.isSet(USEMPI) then mpiFinalize() else ""),
                                           numRealVars, numIntVars, numBoolVars, numPreVars),
                                           'OMCpp<%fileNamePrefix%>Main.cpp')
-      let() = textFile(simulationCppFile(simCode, contextOther, updateHpcom(allEquations, whenClauses, simCode, &extraFuncs, &extraFuncsDecl, "", contextOther, stateDerVectorName, false),
+      let() = textFile(simulationCppFile(simCode, contextOther, updateHpcom(allEquations, simCode, &extraFuncs, &extraFuncsDecl, "", contextOther, stateDerVectorName, false),
                                          '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', &extraFuncs, &extraFuncsDecl, className,
                                          additionalHpcomConstructorDefinitions(hpcomData.schedules),
                                          additionalHpcomConstructorBodyStatements(hpcomData.schedules, className, dotPath(modelInfo.name)),
@@ -696,18 +696,18 @@ template additionalHpcomDestructorBodyStatements(Option<tuple<Schedule,Schedule,
   end match
 end additionalHpcomDestructorBodyStatements;
 
-template updateHpcom(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template updateHpcom(list<SimEqSystem> allEquationsPlusWhen, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
   let &varDecls = buffer "" /*BUFD*/
 
   match simCode
     case SIMCODE(modelInfo = MODELINFO(__), hpcomData=HPCOMDATA(__)) then
       let &extraFuncsPar = buffer ""
-      let parCode = generateParallelEvaluate(allEquationsPlusWhen, modelInfo.name, whenClauses, simCode, extraFuncsPar ,extraFuncsDecl, extraFuncsNamespace, hpcomData.schedules, context, stateDerVectorName, lastIdentOfPath(modelInfo.name), useFlatArrayNotation)
+      let parCode = generateParallelEvaluate(allEquationsPlusWhen, modelInfo.name, simCode, extraFuncsPar ,extraFuncsDecl, extraFuncsNamespace, hpcomData.schedules, context, stateDerVectorName, lastIdentOfPath(modelInfo.name), useFlatArrayNotation)
       <<
-      <%equationFunctions(allEquations,whenClauses, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextSimulationDiscrete,stateDerVectorName,useFlatArrayNotation,false)%>
+      <%equationFunctions(allEquations, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextSimulationDiscrete,stateDerVectorName,useFlatArrayNotation,false)%>
 
-      <%createEvaluateConditions(allEquations,whenClauses, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)%>
+      <%createEvaluateConditions(allEquations, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)%>
 
       <%parCode%>
 
@@ -717,14 +717,10 @@ template updateHpcom(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause>
 end updateHpcom;
 
 template generateParallelEvaluate(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name,
-                 list<SimWhenClause> whenClauses, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Option<tuple<Schedule, Schedule, Schedule>> schedulesOpt, Context context, Text stateDerVectorName /*=__zDot*/,
+                 SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Option<tuple<Schedule, Schedule, Schedule>> schedulesOpt, Context context, Text stateDerVectorName /*=__zDot*/,
                  String modelNamePrefixStr, Boolean useFlatArrayNotation)
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let reinit = (whenClauses |> when hasindex i0 =>
-         genreinits(when, &varDecls,i0,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context, stateDerVectorName, useFlatArrayNotation)
-    ;separator="\n";empty)
-
   let measureTimeEvaluateOdeStart = if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE", "MEASURETIME_MODELFUNCTIONS") else ""
   let measureTimeEvaluateOdeEnd = if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS") else ""
 
@@ -756,7 +752,6 @@ template generateParallelEvaluate(list<SimEqSystem> allEquationsPlusWhen, Absyn.
     <%varDecls%>
 
     evaluateParallel(command, -1);
-    <%reinit%>
     <%measureTimeEvaluateAllEnd%>
 
     return state_var_reinitialized;

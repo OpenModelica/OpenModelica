@@ -142,7 +142,6 @@ protected import System;        // for stringReplace
   protected constant String INTERVAL = "interval";
   protected constant String START = "start";
   protected constant String VALUE = "value";
-  protected constant String ELSE_WHEN_CLAUSE = "elseWhenClause";
 
 
   protected constant String LIST_ = "List";
@@ -289,8 +288,6 @@ protected import System;        // for stringReplace
   protected constant String SOLVED_      = "Solved";
   protected constant String WHEN         = "when";
   protected constant String WHEN_        = "When";
-  protected constant String WHEN_CLAUSES = "WhenClauses";
-  protected constant String WHEN_CLAUSE = "WhenClause";
   protected constant String WHEN_OPERATORS = "WhenOperators";
   protected constant String WHEN_OPERATOR = "WhenOperator";
   protected constant String RESIDUAL     = "residual";
@@ -1127,15 +1124,12 @@ algorithm
   _ := match(inEventInfo, addMML)
     local
       list<BackendDAE.TimeEvent> timeEvents;
-      list<BackendDAE.WhenClause> whenClauseLst;
       list<BackendDAE.ZeroCrossing> zc;
 
     case (BackendDAE.EVENT_INFO(timeEvents=timeEvents,
-                                whenClauseLst=whenClauseLst,
                                 zeroCrossingLst=zc), _)
       equation
         dumpTimeEvents(timeEvents, stringAppend(SAMPLES, LIST_), addMML);
-        dumpWhenClauses(whenClauseLst, stringAppend(WHEN_CLAUSES, LIST_), addMML);
         dumpZeroCrossing(zc, stringAppend(ZERO_CROSSING, LIST_), addMML);
       then
         ();
@@ -1593,6 +1587,7 @@ algorithm
       Boolean addMMLCode;
       list<DAE.Statement> stmts;
       DAE.ElementSource source;
+      list<BackendDAE.WhenOperator> whenStmtLst;
 
     case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,true)
       equation
@@ -1708,23 +1703,11 @@ algorithm
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition = e1,left = cr,right = e2)),indexS,true)
+    case (BackendDAE.WHEN_EQUATION(whenEquation =  BackendDAE.WHEN_STMTS(condition = e1,whenStmtLst=whenStmtLst)),indexS,true)
       equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = printExpStr(e2);
         is = printExpStr(e1);
-        res = stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
-        Print.printBuf(res);
-        dumpStrOpenTag(MathML);
-        dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
-        dumpStrOpenTag(MathMLApply);
-        dumpStrVoidTag(MathMLEquivalent);
-        dumpStrMathMLVariable(s1);
-        dumpExp2(e2);
-        dumpStrCloseTag(MathMLApply);
-        dumpStrCloseTag(MATH);
-        dumpStrCloseTag(MathML);
+        dumpWhenOperatorLst(whenStmtLst, addMathMLCode);
 
         dumpStrOpenTag(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION));
         Print.printBuf("\n");
@@ -1735,14 +1718,11 @@ algorithm
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition = e1,left = cr,right = e2)),indexS,false)
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition = e1,whenStmtLst=whenStmtLst)),indexS,false)
       equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = printExpStr(e2);
         is = printExpStr(e1);
-        res = stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
-        Print.printBuf(res);
+        dumpWhenOperatorLst(whenStmtLst, addMathMLCode);
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION),is);
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
@@ -3426,91 +3406,8 @@ algorithm
   end match;
 end dumpVarsAdds2;
 
-protected function dumpWhenClauses "
-This function prints the list of WhenClauses
-elements in a XML format. It takes also as input
-a string in order to know what is the content of
-the zero crossing list. The output is:
-<WhenClauses DIMENSION=...>
-...
-</WhenClauses>
-"
-  input list<BackendDAE.WhenClause> inWhenClauseLst;
-  input String inContent;
-  input Boolean addMathMLCode;
-algorithm
-  _:=
-  matchcontinue (inWhenClauseLst,inContent,addMathMLCode)
-    local
-      Integer len;
-      list<BackendDAE.WhenClause> lst;
-
-    case ({},_,_) then ();
-
-    case (lst, _, _)
-      equation
-        len = listLength(lst);
-        len >= 1 = false;
-      then ();
-
-    case (lst, _, _)
-      equation
-        len = listLength(lst);
-        len >= 1 = true;
-        dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
-        dumpWhenClauseLst(lst, 1, addMathMLCode);
-        dumpStrCloseTag(inContent);
-      then ();
-
-  end matchcontinue;
-end dumpWhenClauses;
-
-protected function dumpWhenClauseLst "
-This function prints the content of a when clause
- "
-  input list<BackendDAE.WhenClause> inWhenClauseLst;
-  input Integer inIndex;
-  input Boolean addMathMLCode;
-algorithm
-  _:=
-  match (inWhenClauseLst,inIndex,addMathMLCode)
-    local
-      DAE.Exp condition;
-      list<BackendDAE.WhenClause> lst;
-      list<BackendDAE.WhenOperator> whenOperators;
-      Option<Integer> elseClause;
-      String str;
-
-    case ({}, _, _) then ();
-
-    case (BackendDAE.WHEN_CLAUSE(condition = condition, reinitStmtLst = whenOperators, elseClause = elseClause) :: lst, _, _)
-      equation
-        str = printExpStr(condition);
-
-        dumpStrOpenTagAttr(WHEN_CLAUSE, INDEX, intString(inIndex));
-
-        dumpStrOpenTag(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION));
-        Print.printBuf("\n");
-        Print.printBuf(str);
-        dumpExp(condition, addMathMLCode);
-        dumpStrCloseTag(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION));
-
-        dumpWhenOperators(whenOperators, stringAppend(WHEN_OPERATORS, LIST_), addMathMLCode);
-
-        dumpOptInteger(elseClause, ELSE_WHEN_CLAUSE, addMathMLCode);
-
-        dumpStrCloseTag(WHEN_CLAUSE);
-
-        dumpWhenClauseLst(lst, inIndex + 1, addMathMLCode);
-
-      then
-        ();
-
-  end match;
-end dumpWhenClauseLst;
-
 protected function dumpWhenOperators "
-This function prints the list of WhenClauses
+This function prints the list of WhenOperators
 elements in a XML format. It takes also as input
 a string in order to know what is the content of
 the zero crossing list. The output is:
@@ -3559,14 +3456,57 @@ algorithm
   _:=
   match (inWhenOperators,addMathMLCode)
     local
-      DAE.ComponentRef stateVar;
+      DAE.ComponentRef stateVar, left;
       DAE.Exp cond, msg, level, e, value, call;
       list<DAE.Exp> exps;
       list<BackendDAE.WhenOperator> lst;
-      String str;
+      String str, s1, s2;
       Absyn.Path fn;
 
     case ({}, _) then ();
+
+    case (BackendDAE.ASSIGN(left, value, _) :: lst, true)
+      equation
+        s1 = ComponentReference.printComponentRefStr(left);
+        s2 = printExpStr(value);
+        str = stringAppendList({s1," := ",s2});
+
+        dumpStrOpenTag(WHEN_OPERATOR);
+        Print.printBuf("\n");
+        Print.printBuf(str);
+        dumpStrCloseTag(WHEN_OPERATOR);
+
+        dumpStrOpenTag(MathML);
+        dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
+        dumpStrOpenTag(MathMLApply);
+        dumpStrVoidTag(MathMLEquivalent);
+        dumpStrMathMLVariable(s1);
+        dumpExp2(value);
+        dumpStrCloseTag(MathMLApply);
+        dumpStrCloseTag(MATH);
+        dumpStrCloseTag(MathML);
+
+        dumpWhenOperatorLst(lst, addMathMLCode);
+
+      then
+        ();
+
+
+    case (BackendDAE.ASSIGN(left, value, _) :: lst, false)
+      equation
+        s1 = ComponentReference.printComponentRefStr(left);
+        s2 = printExpStr(value);
+        str = stringAppendList({s1," := ",s2});
+
+        dumpStrOpenTag(WHEN_OPERATOR);
+        Print.printBuf("\n");
+        Print.printBuf(str);
+        dumpStrCloseTag(WHEN_OPERATOR);
+
+        dumpWhenOperatorLst(lst, addMathMLCode);
+
+      then
+        ();
 
     case (BackendDAE.REINIT(stateVar, value, _) :: lst, _)
       equation
@@ -3798,12 +3738,11 @@ algorithm
 
     case ({},_) then ();
 
-    case (BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc) :: zcLst,addMMLCode)
+    case (BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq) :: zcLst,addMMLCode)
       equation
         dumpStrOpenTagAttr(stringAppend(ZERO_CROSSING,ELEMENT_),EXP_STRING,printExpStr(e));
         dumpExp(e,addMMLCode);
         dumpLstIntAttr(eq,stringAppend(INVOLVED,EQUATIONS_),stringAppend(EQUATION,ID_));
-        dumpLstIntAttr(wc,stringAppend(INVOLVED,stringAppend(WHEN_,EQUATIONS_)),stringAppend(WHEN,stringAppend(EQUATION_,ID_)));
         dumpStrCloseTag(stringAppend(ZERO_CROSSING,ELEMENT_));
         dumpZcLst(zcLst,addMMLCode);
       then ();
@@ -4056,7 +3995,7 @@ algorithm
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition = e1,left = cr,right = e2)),indexS,true)
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition = e1,whenStmtLst={BackendDAE.ASSIGN(left = cr,right = e2)})),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = printExpStr(e2);
@@ -4087,7 +4026,7 @@ algorithm
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition = e1,left = cr,right = e2)),indexS,false)
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition = e1,whenStmtLst={BackendDAE.ASSIGN(left = cr,right = e2)})),indexS,false)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = printExpStr(e2);
