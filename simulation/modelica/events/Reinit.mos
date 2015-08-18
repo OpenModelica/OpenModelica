@@ -18,11 +18,38 @@ package TestReinit
       reinit(x, x+1);
     end when;
   end test1;
+  model test2
+    Real x, y, z;
+  initial equation
+    x = 0;
+    y = -1;
+    z = 0;
+  equation
+    der(x) = sin(time*10);
+    der(y) = cos(time*10);
+    der(z) = sin(time*10);
+    when {time > 0.1, time > 0.2} then
+      reinit(x, x+1);
+      reinit(y, y+1);
+    elsewhen time>0.5 then 
+      reinit(x, x-1);
+      reinit(y, y-1);
+    elsewhen time>0.7 then
+      reinit(z, 0);
+    end when;
+  end test2;
+
 end TestReinit;
 "); getErrorString();
 
+
 simulate(TestReinit.test1); getErrorString();
 val(x, 1.0); getErrorString();
+
+simulate(TestReinit.test2); getErrorString();
+val(x, 1.0);
+val(y, 1.0);
+val(z, 1.0);
 
 // Result:
 // true
@@ -35,4 +62,13 @@ val(x, 1.0); getErrorString();
 // ""
 // 2.0
 // ""
+// record SimulationResult
+//     resultFile = "TestReinit.test2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestReinit.test2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 1.183906246342699
+// -0.05440157804372458
+// 0.1592945666777535
 // endResult
