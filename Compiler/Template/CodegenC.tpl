@@ -338,7 +338,7 @@ template functionSystemsSynchronous(list<SubPartition> subPartitions, String mod
   let systs = subPartitions |> subPartition hasindex i =>
     match subPartition
       case SUBPARTITION(__) then
-        functionEquationsSynchronous(i, listAppend(equations, removedEquations), modelNamePrefix)
+        functionEquationsSynchronous(i, vars, listAppend(equations, removedEquations), modelNamePrefix)
     ; separator = "\n"
   let cases = subPartitions |> subPartition hasindex i =>
     let name = 'functionEquationsSynchronous_system<%i%>'
@@ -372,7 +372,7 @@ template functionSystemsSynchronous(list<SubPartition> subPartitions, String mod
 
 end functionSystemsSynchronous;
 
-template functionEquationsSynchronous(Integer i, list<SimEqSystem> equations, String modelNamePrefix)
+template functionEquationsSynchronous(Integer i, list<tuple<SimCodeVar.SimVar, Boolean>> vars, list<SimEqSystem> equations, String modelNamePrefix)
 ::=
   let &varDecls = buffer ""
   let &eqfuncs = buffer ""
@@ -386,7 +386,6 @@ template functionEquationsSynchronous(Integer i, list<SimEqSystem> equations, St
     int i;
 
     <%addRootsTempArray()%>
-    <%varDecls%>
 
     <%fncalls%>
 
@@ -395,15 +394,6 @@ template functionEquationsSynchronous(Integer i, list<SimEqSystem> equations, St
   }
   >>
 end functionEquationsSynchronous;
-
-template prevVarSynchronous(Integer i, SimVar var)
-::=
-match var
-    case SIMVAR(arrayCref=SOME(c), aliasvar=NOALIAS()) then
-      '$P$CLKPRE<%cref(c)%> = <%cref(c)%>;'
-    case SIMVAR(aliasvar=NOALIAS()) then
-      '$P$CLKPRE<%cref(name)%> = <%cref(name)%>;'
-end prevVarSynchronous;
 
 template simulationFile_exo(SimCode simCode, String guid)
 "External Objects"

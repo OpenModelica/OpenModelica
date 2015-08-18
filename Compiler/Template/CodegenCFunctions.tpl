@@ -5276,6 +5276,8 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     error(sourceInfo(), 'Code generation does not support der(<%printExpStr(exp)%>)')
   case CALL(path=IDENT(name="pre"), expLst={arg}) then
     daeExpCallPre(arg, context, preExp, varDecls, &auxFunction)
+  case CALL(path=IDENT(name="previous"), expLst={arg as CREF(__)}) then
+    '$P$CLKPRE<%cref(arg.componentRef)%>'
   // a $_start is used to get get start value of a variable
   case CALL(path=IDENT(name="$_start"), expLst={arg}) then
     daeExpCallStart(arg, context, preExp, varDecls, &auxFunction)
