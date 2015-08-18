@@ -37,9 +37,7 @@ runScript(modelTesting);getErrorString();
 // Result file: Modelica.Mechanics.Rotational.Examples.LossyGearDemo1_res.mat
 // Files Equal!
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
-//
-// Error: Could not read variable der(Inertia1.w) in file Modelica.Mechanics.Rotational.Examples.LossyGearDemo1_res.mat.
-//
+// 
 // "true
 // "
 // ""

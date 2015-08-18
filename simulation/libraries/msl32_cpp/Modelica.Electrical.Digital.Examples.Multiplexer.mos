@@ -8,7 +8,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Digital.Examples.Multiplexer);
 compareVars :=
 {
@@ -32,14 +32,21 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.Compilation
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Digital.Examples.Multiplexer
 // {"D0.y","D1.y","D2.y","D3.y","CLK.y","Enable.y","FF.q","FF.qn","MUX.d",""}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
 // "
 // ""
-// Compilation succeeded
-// "true
-// "
-// ""
+// Simulation options: startTime = 0.0, stopTime = 250.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Digital.Examples.Multiplexer', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Digital.Examples.Multiplexer_res.mat
+// Failed variables: MUX.dFF.qnFF.q
+// Error: Could not read variable  in file Modelica.Electrical.Digital.Examples.Multiplexer.mat.
+// Warning: Get data of variable  from file Modelica.Electrical.Digital.Examples.Multiplexer.mat failed!
+// Warning: Files not Equal
+// Failed variables: MUX.dFF.qnFF.q
+// Error: Could not read variable  in file Modelica.Electrical.Digital.Examples.Multiplexer_res.mat.
+// Created diff file Modelica.Electrical.Digital.Examples.Multiplexer.FF.qn.html
+// Created diff file Modelica.Electrical.Digital.Examples.Multiplexer.FF.q.html
+// This test cannot succeed automated testing because the test kind is wrong
 // endResult
