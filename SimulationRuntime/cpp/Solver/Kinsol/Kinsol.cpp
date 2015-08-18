@@ -278,8 +278,8 @@ void Kinsol::initialize()
 			idid = KINSetNumMaxIters(_kinMem, 50);
 			//idid = KINSetEtaForm(_kinMem, KIN_ETACHOICE2);
 
-			_fnormtol  = 1.e-12;     /* function tolerance */
-			_scsteptol = 1.e-12;     /* step tolerance */
+			_fnormtol  = 1.e-13;     /* function tolerance */
+			_scsteptol = 1.e-13;     /* step tolerance */
 
 			idid = KINSetFuncNormTol(_kinMem, _fnormtol);
 			idid = KINSetScaledStepTol(_kinMem, _scsteptol);
@@ -420,7 +420,11 @@ void Kinsol::solve()
 
 		solveNLS();
 		if(_iterationStatus == DONE)
+		{
+			_algLoop->setReal(_y);
+			_algLoop->evaluate();
 			return;
+		}
 		else  // Try Scaling
 		{
 			_iterationStatus = CONTINUE;
@@ -442,7 +446,11 @@ void Kinsol::solve()
 		}
 
 		if(_iterationStatus == DONE)
+		{
+			_algLoop->setReal(_y);
+			_algLoop->evaluate();
 			return;
+		}
 
 		// Try complete pivoting
 		///////////////////////////////////////
@@ -494,7 +502,11 @@ void Kinsol::solve()
 		solveNLS();
 
 		if(_iterationStatus == DONE)
+		{
+			_algLoop->setReal(_y);
+			_algLoop->evaluate();
 			return;
+		}
 		else  // Try Scaling
 		{
 			_iterationStatus = CONTINUE;
@@ -512,7 +524,11 @@ void Kinsol::solve()
 			solveNLS();
 		}
 		if(_iterationStatus == DONE)
+		{
+			_algLoop->setReal(_y);
+			_algLoop->evaluate();
 			return;
+		}
 
 		for(int i=0;i<_dimSys;i++) // Reset Scaling
 			_fScale[i] = 1.0;
@@ -521,7 +537,11 @@ void Kinsol::solve()
 		_iterationStatus = CONTINUE;
 		solveNLS();
 		if(_iterationStatus == DONE)
+		{
+			_algLoop->setReal(_y);
+			_algLoop->evaluate();
 			return;
+		}
 		else  // Try Scaling
 		{
 			_iterationStatus = CONTINUE;
@@ -538,7 +558,11 @@ void Kinsol::solve()
 			solveNLS();
 		}
 		if(_iterationStatus == DONE)
+		{
+			_algLoop->setReal(_y);
+			_algLoop->evaluate();
 			return;
+		}
 
 		if(_eventRetry)
 		{
@@ -708,7 +732,7 @@ void Kinsol::solveNLS()
 		maxStepsStart = 0,
 		maxSteps = maxStepsStart,
 		maxStepsHigh =1e8,
-		locTol = 5e-7,
+		locTol =5e-7,
 	    delta = 1e-14;
 
 	_currentIterateNorm = 100.0;
@@ -775,9 +799,12 @@ void Kinsol::solveNLS()
 				check4EventRetry(_y);
 				if(method == KIN_NONE)
 				{
+					if (maxSteps == maxStepsHigh)
+					{
 						method = KIN_LINESEARCH;
 						maxSteps = maxStepsStart;
-
+					} else
+						maxSteps = maxStepsHigh;
 				}
 				else // already trying Linesearch
 						_iterationStatus = SOLVERERROR;
@@ -796,16 +823,8 @@ void Kinsol::solveNLS()
 				check4EventRetry(_y);
 				if(method == KIN_NONE)
 				{
-					//if (maxsteps > 0 && maxsteps < 1)
-					//{
 						method = KIN_LINESEARCH;
 						maxSteps = maxStepsStart;
-
-					/*}else
-						if (maxSteps==0)
-							maxSteps = maxStepsHigh;
-						else
-							maxSteps /= 10;*/
 
 				}else // already trying Linesearch
 				{
@@ -830,34 +849,14 @@ void Kinsol::solveNLS()
 			}else
 			{
 				check4EventRetry(_y);
-				// Try diffent maxStsps
 
-				if(delta > 1e-6)
+				if(delta < 1e-16)
 					_iterationStatus = SOLVERERROR;
 				else
 				{
-					delta *= 1e4;
+					delta /= 1e2;
 					idid = KINSetRelErrFunc(_kinMem, delta);
 				}
-
-				/*
-				if(delta < 1e-14)
-					_iterationStatus = SOLVERERROR;
-				else
-				{
-					delta /= 100;
-					idid = KINSetScaledStepTol(_kinMem, delta);
-				}
-				*/
-
-				//if (maxSteps > 0 && maxSteps < 1)
-				//{
-				//	_iterationStatus = SOLVERERROR;
-				//} else // Try higher maxStep values
-				//	if (maxSteps==0)
-				//		maxSteps = maxStepsHigh;
-				//	else
-				//		maxSteps /= 10;
 
 			}
 			break;

@@ -108,6 +108,7 @@ template simulationInitHeaderFile(SimCode simCode ,Text& extraFuncs,Text& extraF
 match simCode
 case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)),fileNamePrefix=fileNamePrefix) then
 let initeqs = generateEquationMemberFuncDecls(initialEquations,"initEquation")
+let initparameqs = generateEquationMemberFuncDecls(parameterEquations,"initParameterEquation")
   match modelInfo
   case modelInfo as MODELINFO(vars=SIMVARS(__)) then
   <<
@@ -131,11 +132,12 @@ let initeqs = generateEquationMemberFuncDecls(initialEquations,"initEquation")
     virtual void initializeMemory();
     virtual void initializeFreeVariables();
     virtual void initializeBoundVariables();
+    virtual void  initParameterEquations();
     virtual void initEquations();
 
   private:
     <%initeqs%>
-
+    <%initparameqs%>
     <%List.partition(vars.algVars, 100) |> ls hasindex idx => 'void initializeAlgVars_<%idx%>();';separator="\n"%>
     <%initExtVarsDecl(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, false)%>
     void initializeAlgVars();
@@ -5708,7 +5710,8 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    let initAlgloopSolvers = initAlgloopsolvers(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
    let initAlgloopvars = initAlgloopVars(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
 
-   let initialequations  = functionInitialEquations(initialEquations,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, false)
+   let initialequations  = functionInitialEquations(initialEquations,"initEquation",simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, false)
+   let  boundparameterequations  = functionInitialEquations(parameterEquations,"initParameterEquation",simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, false)
    <<
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
@@ -5716,6 +5719,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
       //IPropertyReader *reader = new XmlPropertyReader("OMCpp<%fileNamePrefix%>Init.xml");
       //reader->readInitialValues(_sim_vars);
       initializeFreeVariables();
+      initParameterEquations();
       initializeBoundVariables();
       saveAll();
       //delete reader;
@@ -5796,6 +5800,13 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
                     ;separator="\n")%>
    }
    <%initialequations%>
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::initParameterEquations()
+   {
+      <%(parameterEquations |> eq  =>
+                    equation_function_call(eq,  contextOther, &varDecls /*BUFC*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,"initParameterEquation")
+                    ;separator="\n")%>
+   }
+   <%boundparameterequations%>
    <%init2(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, modelInfo, stateDerVectorName, useFlatArrayNotation)%>
     >>
   end match
@@ -5897,12 +5908,13 @@ template functionCallExternalObjectConstructorsDecl(Text funcNamePrefix,ExtObjIn
 end functionCallExternalObjectConstructorsDecl;
 
 
-template functionInitialEquations(list<SimEqSystem> initalEquations, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean createMeasureTime)
+template functionInitialEquations(list<SimEqSystem> initalEquations, Text methodName, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean createMeasureTime)
   "Generates function in simulation file."
 ::=
   let equation_func_calls = (initalEquations |> eq =>
-        equation_function_create_single_func(eq, contextOther, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, "initEquation", "Initialize", stateDerVectorName, useFlatArrayNotation, createMeasureTime)
+        equation_function_create_single_func(eq, contextOther, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,methodName, "Initialize", stateDerVectorName, useFlatArrayNotation, createMeasureTime)
       ;separator="\n")
+
   <<
   <%equation_func_calls%>
   >>
@@ -6972,7 +6984,7 @@ template generateEquationMemberFuncDecls(list<SimEqSystem> allEquations,Text met
     <<
     /*! Index of the first equation. We use this to calculate the offset of an equation in the
        equation array given the index of the equation.*/
-     int first_equation_index;
+
       <%equation_func_decls%>
     >>
   end match
