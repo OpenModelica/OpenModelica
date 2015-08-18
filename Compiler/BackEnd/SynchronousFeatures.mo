@@ -387,7 +387,7 @@ algorithm
   (subclocksTree, outBaseClock) := resolveClocks(clockVars, clockEqs, clockComps);
   (subclocks, order) := collectSubClocks(clockVars, partitionsCnt, contPartitions, subclksCnt, subclocksTree);
 
-  if arrayLength(subclocks) <> partitionsCnt and arrayLength(order) <> partitionsCnt then
+  if arrayLength(subclocks) <> partitionsCnt or arrayLength(order) <> partitionsCnt then
     Error.addInternalError("SynchronousFeatures.subClockPartitioning failed", sourceInfo());
     fail();
   end if;
