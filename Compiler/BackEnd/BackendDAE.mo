@@ -143,6 +143,7 @@ uniontype SubPartition
   record SUB_PARTITION
     SubClock clock;
     Boolean holdEvents;
+    list<.DAE.ComponentRef> prevVars;
   end SUB_PARTITION;
 end SubPartition;
 

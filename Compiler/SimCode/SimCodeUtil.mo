@@ -564,9 +564,12 @@ protected
   SimCodeVar.SimVar simVar;
   DAE.ComponentRef cr;
   list<SimCodeVar.SimVar> clockedVars;
+  list<tuple<SimCodeVar.SimVar, Boolean>> prevClockedVars;
   array<Option<SimCode.SubPartition>> simSubPartitions;
   BackendDAE.SubPartition subPartition;
   BackendDAE.Var var;
+  array<Boolean> isPrevVar;
+  SimCode.SimEqSystem simEq;
 algorithm
   simSubPartitions := arrayCreate(arrayLength(inShared.partitionsInfo.subPartitions), NONE());
   funcs := BackendDAEUtil.getFunctions(inShared);
@@ -594,13 +597,31 @@ algorithm
     equations := List.map(equations, addDivExpErrorMsgtoSimEqSystem);
     removedEquations := List.map(removedEquations, addDivExpErrorMsgtoSimEqSystem);
 
+    prevClockedVars := {};
+    isPrevVar := arrayCreate(BackendVariable.varsSize(syst.orderedVars), false);
+    for cr in subPartition.prevVars loop
+      (_, varIxs) := BackendVariable.getVar(cr, syst.orderedVars);
+      for i in varIxs loop
+        arrayUpdate(isPrevVar, i, true);
+      end for;
+    end for;
     for i in 1:BackendVariable.varsSize(syst.orderedVars) loop
       var := BackendVariable.getVarAt(syst.orderedVars, i);
-      clockedVars := dlowvarToSimvar(var, SOME(inShared.aliasVars), inShared.knownVars)::clockedVars;
+      simVar := dlowvarToSimvar(var, SOME(inShared.aliasVars), inShared.knownVars);
+      prevClockedVars := (simVar, isPrevVar[i])::prevClockedVars;
+      clockedVars := simVar::clockedVars;
+      if isPrevVar[i] then
+        cr := simVar.name;
+        simVar.name := ComponentReference.crefPrefixString("$CLKPRE", cr);
+        clockedVars := simVar::clockedVars;
+        simEq := SimCode.SES_SIMPLE_ASSIGN(ouniqueEqIndex, simVar.name, DAE.CREF(cr, simVar.type_), DAE.emptyElementSource);
+        equations := simEq::equations;
+        ouniqueEqIndex := ouniqueEqIndex + 1;
+      end if;
     end for;
 
     otempvars := listAppend(clockedVars, otempvars);
-    simSubPartition := SimCode.SUBPARTITION(equations, removedEquations, subPartition.clock, subPartition.holdEvents);
+    simSubPartition := SimCode.SUBPARTITION(prevClockedVars, equations, removedEquations, subPartition.clock, subPartition.holdEvents);
 
     assert(isNone(simSubPartitions[subPartIdx]), "SimCodeUtil.translateClockedEquations failed");
     arrayUpdate(simSubPartitions, subPartIdx, SOME(simSubPartition));

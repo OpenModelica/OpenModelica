@@ -96,7 +96,6 @@ protected
   array<BackendDAE.BasePartition> basePartitions;
   array<BackendDAE.SubPartition> subPartitions;
   BackendDAE.Shared shared = inShared;
-  BackendDAE.PartitionsInfo partitionsInfo;
   list<BackendDAE.EqSystem> systs;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqs;
@@ -107,66 +106,72 @@ protected
 algorithm
   syst := substituteParitionOpExps(inSyst);
 
-  (contSysts, clockedSysts, unpartRemEqs) := baseClockPartitioning(syst, inShared);
+  (contSysts, clockedSysts, unpartRemEqs) := baseClockPartitioning(syst, shared);
 
   (contSysts, holdComps) := removeHoldExpsSyst(contSysts);
 
   shared.removedEqs := BackendEquation.addEquations(unpartRemEqs, shared.removedEqs);
 
-  (clockedSysts, basePartitions, subPartitions) := subClockPartitioning1(clockedSysts, inShared, holdComps);
+  (clockedSysts, shared) := subClockPartitioning1(clockedSysts, shared, holdComps);
+  shared := List.fold(clockedSysts, makePreviousFixed, shared);
 
-  partitionsInfo := shared.partitionsInfo;
-  partitionsInfo.basePartitions := basePartitions;
-  partitionsInfo.subPartitions := subPartitions;
-  shared.partitionsInfo := partitionsInfo;
-
-  clockedSysts := List.map1(clockedSysts, makePreviousFixed, shared);
   systs := listAppend(contSysts, clockedSysts);
-
   outDAE := BackendDAE.DAE(systs, shared);
+
   if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
     BackendDump.dumpEqSystems(systs, "clock partitioning");
-    BackendDump.dumpBasePartitions(partitionsInfo.basePartitions, "Base clocks");
-    BackendDump.dumpSubPartitions(partitionsInfo.subPartitions, "Sub clocks");
+    BackendDump.dumpBasePartitions(shared.partitionsInfo.basePartitions, "Base clocks");
+    BackendDump.dumpSubPartitions(shared.partitionsInfo.subPartitions, "Sub clocks");
   end if;
 end clockPartitioning1;
 
 protected function makePreviousFixed
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.Shared inShared;
-  output BackendDAE.EqSystem outSyst = inSyst;
+  output BackendDAE.Shared outShared = inShared;
 protected
   BackendDAE.Equation eq;
-  list<DAE.ComponentRef> fixedComps = {};
-  array<Boolean> prevVars;
-  Option<String> solverMethod;
+  list<DAE.ComponentRef> prevVars = {};
+  BackendDAE.EqSystem syst;
+  array<Boolean> isPrevVarArr;
   list<Integer> varIxs;
   BackendDAE.Var var;
+  Integer idx;
+  BackendDAE.SubPartition subPartition;
 algorithm
-  SOME(BackendDAE.SUBCLOCK(solver=solverMethod)) := BackendDAEUtil.getSubClock(inSyst, inShared);
-  if isNone(solverMethod) then
-    prevVars := arrayCreate(BackendVariable.varsSize(outSyst.orderedVars), false);
-    for i in 1:BackendDAEUtil.equationArraySize(outSyst.orderedEqs) loop
-      eq := BackendEquation.equationNth1(outSyst.orderedEqs, i);
-      (_, fixedComps) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, fixedComps);
+  BackendDAE.CLOCKED_PARTITION(idx) := inSyst.partitionKind;
+  subPartition := outShared.partitionsInfo.subPartitions[idx];
+
+  if isNone(subPartition.clock.solver) then
+    isPrevVarArr := arrayCreate(BackendVariable.varsSize(inSyst.orderedVars), false);
+
+    for i in 1:BackendDAEUtil.equationArraySize(inSyst.orderedEqs) loop
+      eq := BackendEquation.equationNth1(inSyst.orderedEqs, i);
+      (_, prevVars) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, prevVars);
     end for;
-    for i in 1:BackendDAEUtil.equationArraySize(outSyst.removedEqs) loop
-      eq := BackendEquation.equationNth1(outSyst.removedEqs, i);
-      (_, fixedComps) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, fixedComps);
+    for i in 1:BackendDAEUtil.equationArraySize(inSyst.removedEqs) loop
+      eq := BackendEquation.equationNth1(inSyst.removedEqs, i);
+      (_, prevVars) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, prevVars);
     end for;
-    for cr in fixedComps loop
-      varIxs := getVarIxs(cr, outSyst.orderedVars);
+    for cr in prevVars loop
+      varIxs := getVarIxs(cr, inSyst.orderedVars);
       for idx in varIxs loop
-        arrayUpdate(prevVars, idx, true);
+        arrayUpdate(isPrevVarArr, idx, true);
       end for;
     end for;
-    for i in 1:arrayLength(prevVars) loop
-      if prevVars[i] then
-        var := BackendVariable.setVarFixed(BackendVariable.getVarAt(outSyst.orderedVars, i), true);
-        BackendVariable.setVarAt(outSyst.orderedVars, i, var);
+    prevVars := {};
+    for i in 1:arrayLength(isPrevVarArr) loop
+      if isPrevVarArr[i] then
+        var := BackendVariable.setVarFixed(BackendVariable.getVarAt(inSyst.orderedVars, i), true);
+        BackendVariable.setVarAt(inSyst.orderedVars, i, var);
+        prevVars := var.varName::prevVars;
       end if;
     end for;
+
+    subPartition.prevVars := prevVars;
+    arrayUpdate(outShared.partitionsInfo.subPartitions, idx, subPartition);
   end if;
+
 end makePreviousFixed;
 
 protected function collectPrevVars
@@ -199,13 +204,11 @@ protected function subClockPartitioning1
   input BackendDAE.Shared inShared;
   input list<DAE.ComponentRef> inHoldComps;
   output list<BackendDAE.EqSystem> outSysts = {};
-  output array<BackendDAE.BasePartition> outBasePartitions;
-  output array<BackendDAE.SubPartition> outSubPartitions;
+  output BackendDAE.Shared outShared = inShared;
 protected
   DAE.ClockKind baseClock;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqs;
-  BackendDAE.SubClock subclock;
   HashTable.HashTable varsPartition;
   Integer i, j, n, nBaseClocks;
   DAE.ComponentRef cr;
@@ -213,16 +216,19 @@ protected
   BackendDAE.BaseClockPartitionKind partitionKind;
   list<BackendDAE.EqSystem> systs;
   list<BackendDAE.SubClock> lstSubClocks1, lstSubClocks = {};
+  BackendDAE.PartitionsInfo partitionsInfo;
+  array<BackendDAE.BasePartition> basePartitions;
+  array<BackendDAE.SubPartition> subPartitions;
 algorithm
   nBaseClocks := listLength(inSysts);
-  outBasePartitions := arrayCreate(nBaseClocks, BackendDAE.BASE_PARTITION(DAE.INFERRED_CLOCK(), 0));
+  basePartitions := arrayCreate(nBaseClocks, BackendDAE.BASE_PARTITION(DAE.INFERRED_CLOCK(), 0));
   varsPartition := HashTable.emptyHashTable();
 
   i := 0; j := 1;
   for syst in inSysts loop
-    (systs, baseClock, lstSubClocks1) := subClockPartitioning(syst, inShared, i);
+    (systs, baseClock, lstSubClocks1) := subClockPartitioning(syst, outShared, i);
     n := listLength(systs);
-    arrayUpdate(outBasePartitions, j, BackendDAE.BASE_PARTITION(baseClock, n));
+    arrayUpdate(basePartitions, j, BackendDAE.BASE_PARTITION(baseClock, n));
     outSysts := listAppend(outSysts, systs);
     lstSubClocks := listAppend(lstSubClocks, lstSubClocks1);
     i := i + n;
@@ -246,12 +252,17 @@ algorithm
   end for;
 
   i := 1;
-  outSubPartitions := arrayCreate( listLength(lstSubClocks),
-                                   BackendDAE.SUB_PARTITION(BackendDAE.DEFAULT_SUBCLOCK, false) );
+  subPartitions := arrayCreate( listLength(lstSubClocks),
+                                   BackendDAE.SUB_PARTITION(BackendDAE.DEFAULT_SUBCLOCK, false, {}) );
   for subclock in lstSubClocks loop
-    arrayUpdate(outSubPartitions, i, BackendDAE.SUB_PARTITION(subclock, hasHoldOperator[i]));
+    arrayUpdate(subPartitions, i, BackendDAE.SUB_PARTITION(subclock, hasHoldOperator[i], {}));
     i := i + 1;
   end for;
+
+  partitionsInfo := outShared.partitionsInfo;
+  partitionsInfo.basePartitions := basePartitions;
+  partitionsInfo.subPartitions := subPartitions;
+  outShared.partitionsInfo := partitionsInfo;
 end subClockPartitioning1;
 
 protected function removeHoldExpsSyst

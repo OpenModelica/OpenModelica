@@ -7867,7 +7867,7 @@ protected
   array<BackendDAE.SubPartition> subPartitions;
 algorithm
   basePartitions := arrayCreate(0, BackendDAE.BASE_PARTITION(DAE.INFERRED_CLOCK(), 0));
-  subPartitions := arrayCreate(0, BackendDAE.SUB_PARTITION(BackendDAE.DEFAULT_SUBCLOCK, false));
+  subPartitions := arrayCreate(0, BackendDAE.SUB_PARTITION(BackendDAE.DEFAULT_SUBCLOCK, false, {}));
   partitionsInfo := BackendDAE.PARTITIONS_INFO(basePartitions, subPartitions);
 end emptyPartitionsInfo;
 
