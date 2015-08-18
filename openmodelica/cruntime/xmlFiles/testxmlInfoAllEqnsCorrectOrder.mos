@@ -416,7 +416,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </variable>
-//   <variable name=\"L\" comment=\"\" variability = \"parameter\" isDiscrete = \"false\">
+//   <variable name=\"L\" comment=\"\" variability = \"parameter\" isDiscrete = \"true\">
 //     <Real useStart=\"true\" start=\"1.0\" fixed=\"true\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"7\" lineEnd=\"7\" colStart=\"3\" colEnd=\"21\"/>
@@ -434,7 +434,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <type>Real</type>
 //     </source>
 //   </variable>
-//   <variable name=\"a\" comment=\"\" variability = \"parameter\" isDiscrete = \"false\">
+//   <variable name=\"a\" comment=\"\" variability = \"parameter\" isDiscrete = \"true\">
 //     <Real useStart=\"true\" start=\"0.7\" fixed=\"true\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"3\" lineEnd=\"3\" colStart=\"3\" colEnd=\"23\"/>
@@ -452,7 +452,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <type>Real</type>
 //     </source>
 //   </variable>
-//   <variable name=\"b\" comment=\"\" variability = \"parameter\" isDiscrete = \"false\">
+//   <variable name=\"b\" comment=\"\" variability = \"parameter\" isDiscrete = \"true\">
 //     <Real useStart=\"false\" fixed=\"true\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"4\" lineEnd=\"4\" colStart=\"3\" colEnd=\"23\"/>
@@ -470,7 +470,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <type>Real</type>
 //     </source>
 //   </variable>
-//   <variable name=\"g\" comment=\"\" variability = \"parameter\" isDiscrete = \"false\">
+//   <variable name=\"g\" comment=\"\" variability = \"parameter\" isDiscrete = \"true\">
 //     <Real useStart=\"true\" start=\"9.82\" fixed=\"true\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"6\" lineEnd=\"6\" colStart=\"3\" colEnd=\"24\"/>
@@ -488,7 +488,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <type>Real</type>
 //     </source>
 //   </variable>
-//   <variable name=\"m\" comment=\"\" variability = \"parameter\" isDiscrete = \"false\">
+//   <variable name=\"m\" comment=\"\" variability = \"parameter\" isDiscrete = \"true\">
 //     <Real useStart=\"true\" start=\"0.5\" fixed=\"true\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"5\" lineEnd=\"5\" colStart=\"3\" colEnd=\"23\"/>

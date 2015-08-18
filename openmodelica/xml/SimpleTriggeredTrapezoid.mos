@@ -345,7 +345,10 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </math>
 // </MathML>
 // </equation>
-// <whenEquation id=\"2\">tt.T := if b and not tt.rising &gt; 0.0 or not b and not tt.falling &gt; 0.0 or not abs(tt.amplitude) &gt; 0.0 or initial() then time else time + (tt.endValue - pre(tt.y)) / tt.rate
+// <whenEquation id=\"2\">
+// <WhenOperator>
+// tt.T := if b and not tt.rising &gt; 0.0 or not b and not tt.falling &gt; 0.0 or not abs(tt.amplitude) &gt; 0.0 or initial() then time else time + (tt.endValue - pre(tt.y)) / tt.rate
+// </WhenOperator>
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <apply>
@@ -466,7 +469,10 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </MathML>
 // </whenEquationCondition>
 // </whenEquation>
-// <whenEquation id=\"3\">tt.rate := if b and tt.rising &gt; 0.0 then tt.amplitude / tt.rising else if not b and tt.falling &gt; 0.0 then (-tt.amplitude) / tt.falling else 0.0
+// <whenEquation id=\"3\">
+// <WhenOperator>
+// tt.rate := if b and tt.rising &gt; 0.0 then tt.amplitude / tt.rising else if not b and tt.falling &gt; 0.0 then (-tt.amplitude) / tt.falling else 0.0
+// </WhenOperator>
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <apply>
@@ -561,7 +567,10 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </MathML>
 // </whenEquationCondition>
 // </whenEquation>
-// <whenEquation id=\"4\">tt.endValue := if b then tt.offset + tt.amplitude else tt.offset
+// <whenEquation id=\"4\">
+// <WhenOperator>
+// tt.endValue := if b then tt.offset + tt.amplitude else tt.offset
+// </WhenOperator>
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <apply>

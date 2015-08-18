@@ -25,6 +25,7 @@ sample2.mos \
 ServerWithQueue.mos \
 TestNoEventsFlags.mos \
 whenTest1.mos \
+whenTest2.mos \
 ZeroCrossing.mos \
 
 # test that currently fail. Move up when fixed. 
