@@ -41,9 +41,6 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 30.0, numberOfIntervals = 6000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator_res.mat
 // Files Equal!
-// [Modelica 3.2.1/Magnetic/FundamentalWave.mo:2772:14-2772:24:writable] Warning: Non-array modification 'true' for array component, possibly due to missing 'each'.
-// [Modelica 3.2.1/Magnetic/FundamentalWave.mo:2807:14-2807:24:writable] Warning: Non-array modification 'true' for array component, possibly due to missing 'each'.
-// 
 // "true
 // "
 // ""

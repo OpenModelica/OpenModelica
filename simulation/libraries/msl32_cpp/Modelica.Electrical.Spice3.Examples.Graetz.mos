@@ -8,7 +8,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.Translation;
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
 modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Graetz);
 compareVars :=
 {
@@ -24,13 +24,13 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.Translation
+// OpenModelicaModelTesting.Kind.Compilation
 // Modelica.Electrical.Spice3.Examples.Graetz
 // {"D1.pin","D3.n.v"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
 // "
 // ""
-// Translation succeeded
+// Compilation succeeded
 // "true
 // "
 // ""

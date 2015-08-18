@@ -8,7 +8,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.Transformers.Rectifier6pulse);
 compareVars :=
 {
