@@ -6352,7 +6352,7 @@ algorithm
   outResult := true;
 end all;
 
-public function separateOnTrue<T, ArgT1>
+public function separateOnTrue<T>
   "Takes a list of values and a filter function over the values and returns 2
    sub lists of values for which the matching function returns true and false."
   input list<T> inList;

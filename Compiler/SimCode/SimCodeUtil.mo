@@ -4219,7 +4219,8 @@ algorithm
 end createExtObjInfo;
 
 protected function orderExtVars"External Variables have to be ordered.
-It might occure that their binding expressions are dependent on other external variables and therefore, these vars and their binding exps have to be causalized."
+It might occure that their binding expressions are dependent on other external variables and therefore, these vars and their binding exps have to be causalized.
+author: waurich TUD 08.2015"
   input list<BackendDAE.Var> varLstIn;
   output list<BackendDAE.Var> varLstOut;
 protected
@@ -4232,21 +4233,25 @@ protected
   list<DAE.Exp> bindExps;
   list<BackendDAE.Equation> eqs;
 algorithm
-  (varsWithBind,varsWithoutBind) := List.separateOnTrue(varLstIn,BackendVariable.varHasBindExp);
-  bindExps := List.map(varsWithBind,BackendVariable.varBindExp);
-  eqs := List.threadMap2(List.map(varsWithBind,BackendVariable.varExp), bindExps, BackendEquation.generateEquation, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-  (m, mT) := BackendDAEUtil.incidenceMatrixDispatch(BackendVariable.listVar1(varsWithBind), BackendEquation.listEquation(eqs), BackendDAE.ABSOLUTE(), NONE());
-  nVars := listLength(varsWithBind);
-  nEqs := listLength(eqs);
-  ass1 := arrayCreate(listLength(varsWithBind), -1);
-  ass2 := arrayCreate(listLength(eqs), -1);
-  Matching.matchingExternalsetIncidenceMatrix(nVars, nEqs, m);
-  BackendDAEEXT.matching(nVars, nEqs, 5, -1, 0.0, 1);
-  BackendDAEEXT.getAssignment(ass2, ass1);
-  comps := Sorting.TarjanTransposed(mT, ass2);
-  order := List.map1(List.flatten(comps),Array.getIndexFirst,ass1);
-  varsWithBind := List.map1(order,List.getIndexFirst,varsWithBind);
-  varLstOut := listAppend(varsWithoutBind,varsWithBind);
+  try
+	  (varsWithBind,varsWithoutBind) := List.separateOnTrue(varLstIn,BackendVariable.varHasBindExp);
+	  bindExps := List.map(varsWithBind,BackendVariable.varBindExp);
+	  eqs := List.threadMap2(List.map(varsWithBind,BackendVariable.varExp), bindExps, BackendEquation.generateEquation, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+	  (m, mT) := BackendDAEUtil.incidenceMatrixDispatch(BackendVariable.listVar1(varsWithBind), BackendEquation.listEquation(eqs), BackendDAE.ABSOLUTE(), NONE());
+	  nVars := listLength(varsWithBind);
+	  nEqs := listLength(eqs);
+	  ass1 := arrayCreate(listLength(varsWithBind), -1);
+	  ass2 := arrayCreate(listLength(eqs), -1);
+	  Matching.matchingExternalsetIncidenceMatrix(nVars, nEqs, m);
+	  BackendDAEEXT.matching(nVars, nEqs, 5, -1, 0.0, 1);
+	  BackendDAEEXT.getAssignment(ass2, ass1);
+	  comps := Sorting.TarjanTransposed(mT, ass2);
+	  order := List.map1(List.flatten(comps),Array.getIndexFirst,ass1);
+	  varsWithBind := List.map1(order,List.getIndexFirst,varsWithBind);
+	  varLstOut := listAppend(varsWithoutBind,varsWithBind);
+  else
+    varLstOut := varLstIn;
+  end try;
 end orderExtVars;
 
 protected function extractExtObjInfo2
