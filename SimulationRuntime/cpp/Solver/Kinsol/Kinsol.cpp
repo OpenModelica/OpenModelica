@@ -384,18 +384,20 @@ void Kinsol::solve()
 		//std::vector< int > ipiv (_dimSys);  // pivot vector
 		//lapack::gesv (A, ipiv,b);   // solving the system, b contains x
 
-		for(int i=0; i<_dimSys; i++)
-		_y[i]=-_f[i];
-		_algLoop->setReal(_y);
-		_algLoop->evaluate();
+
 		if  (irtrn != 0)
 		{
 			dgetc2_(&_dimSys, _jac, &_dimSys, _ihelpArray, _jhelpArray, &irtrn);
 			dgesc2_(&_dimSys, _jac, &_dimSys, _f, _ihelpArray, _jhelpArray, _scale);
 			Logger::write("Kinsol: Linear system singular, using perturbed system matrix.", LC_NLS, LL_DEBUG);
+			_iterationStatus = DONE;
 		}
 		else
 		_iterationStatus = DONE;
+	   for(int i=0; i<_dimSys; i++)
+		_y[i]=-_f[i];
+		_algLoop->setReal(_y);
+		_algLoop->evaluate();
 
 	}
 	else
