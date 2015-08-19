@@ -1301,7 +1301,7 @@ case efn as EXTERNAL_FUNCTION(__) then
   let &varFrees = buffer ""
   let &outputAlloc = buffer ""
   let &auxFunction = buffer ""
-  let callPart = extFunCall(fn, &preExp, &varDecls, &auxFunction)
+  let callPart = extFunCall(fn, &preExp, &varDecls, &outputAlloc, &auxFunction)
   let _ = ( outVars |> var =>
             varInit(var, "", &varDecls, &outputAlloc, &varFrees, &auxFunction)
             ; empty /* increase the counter! */ )
@@ -2038,14 +2038,14 @@ template extVarName(ComponentRef cr)
 ::= '_<%crefToMStr(appendStringFirstIdent("_ext", cr))%>'
 end extVarName;
 
-template extFunCall(Function fun, Text &preExp, Text &varDecls, Text &auxFunction)
+template extFunCall(Function fun, Text &preExp, Text &varDecls, Text &varInit, Text &auxFunction)
  "Generates the call to an external function."
 ::=
 match fun
 case EXTERNAL_FUNCTION(__) then
   match language
   case "C" then extFunCallC(fun, &preExp, &varDecls, &auxFunction)
-  case "FORTRAN 77" then extFunCallF77(fun, &preExp, &varDecls, &auxFunction)
+  case "FORTRAN 77" then extFunCallF77(fun, &preExp, &varDecls, &varInit, &auxFunction)
 end extFunCall;
 
 template extFunCallC(Function fun, Text &preExp, Text &varDecls, Text &auxFunction)
@@ -2080,7 +2080,7 @@ case EXTERNAL_FUNCTION(__) then
   >>
 end extFunCallC;
 
-template extFunCallF77(Function fun, Text &preExp, Text &varDecls, Text &auxFunction)
+template extFunCallF77(Function fun, Text &preExp, Text &varDecls, Text &varInit, Text &auxFunction)
  "Generates the call to an external Fortran 77 function."
 ::=
 match fun
@@ -2090,7 +2090,7 @@ case EXTERNAL_FUNCTION(__) then
   let varDecs = (List.union(extArgs, extArgs) |> arg => extFunCallVardeclF77(arg, &varDecls, &auxFunction) ;separator="\n")
   let &varDecls += '/* extFunCallF77: biVarDecs */<%\n%>'
   let &preExp += '/* extFunCallF77: biVarDecs */<%\n%>'
-  let biVarDecs = (biVars |> arg => extFunCallBiVarF77(arg, &preExp, &varDecls, &auxFunction) ;separator="\n")
+  let biVarDecs = (biVars |> arg => extFunCallBiVarF77(arg, &varInit, &varDecls, &auxFunction) ;separator="\n")
   let &varDecls += '/* extFunCallF77: args */<%\n%>'
   let &preExp += '/* extFunCallF77: args */<%\n%>'
   let args = (extArgs |> arg => extArgF77(arg, &preExp, &varDecls, &auxFunction) ;separator=", ")
