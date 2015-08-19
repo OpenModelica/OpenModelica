@@ -16,8 +16,7 @@ compareVars :=
    "CLK.y",
    "K.y",
    "FF.q",
-   "FF.qn",
-   ""
+   "FF.qn"
 };
 
 runScript("common.mos");getErrorString();
