@@ -21,8 +21,7 @@ compareVars :=
    "FF.q",
    "FF.qn",
    "MUX.d",
-   ""
-};
+ };
 
 runScript("common.mos");getErrorString();
 
