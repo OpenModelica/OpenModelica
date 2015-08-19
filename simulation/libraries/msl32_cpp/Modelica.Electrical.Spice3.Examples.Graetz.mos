@@ -8,6 +8,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
+
 modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
 modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Graetz);
 compareVars :=

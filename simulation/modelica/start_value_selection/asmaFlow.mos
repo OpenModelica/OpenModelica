@@ -1611,7 +1611,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 //     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'asmaFlow', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "[Modelica 3.2.1/Electrical/Machines.mo:15354:7-15356:33:writable] Warning: Parameter terminalBox.terminalConnection has no value, and is fixed during initialization (fixed=true), using available start value (start="Y") as default value.
+// "[Modelica 3.2.1/Electrical/Machines.mo:15353:7-15355:33:writable] Warning: Parameter terminalBox.terminalConnection has no value, and is fixed during initialization (fixed=true), using available start value (start="Y") as default value.
 // [Modelica 3.2.1/Electrical/Machines.mo:12921:7-12923:69:writable] Warning: Parameter aimc.TsOperational has no value, and is fixed during initialization (fixed=true), using available start value (start=293.15) as default value.
 // [Modelica 3.2.1/Electrical/Machines.mo:12927:7-12929:71:writable] Warning: Parameter aimc.TsRef has no value, and is fixed during initialization (fixed=true), using available start value (start=293.15) as default value.
 // [Modelica 3.2.1/Electrical/Machines.mo:12930:7-12932:71:writable] Warning: Parameter aimc.alpha20s has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.

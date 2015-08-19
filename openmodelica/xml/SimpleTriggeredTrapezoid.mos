@@ -309,43 +309,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </aliasVariables>
 // </variables>
 // <equations dimension=\"5\">
-// <equation id=\"1\">b = if time &gt; 5.0 then time &lt; 9.0 else false
-// <MathML>
-// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <apply>
-// <equivalent/>
-// <ci> b 
-// </ci>
-// <apply>
-// <piecewise>
-// <piece>
-// <apply>
-// <lt/>
-// <ci> time 
-// </ci>
-// <cn type=\"real\"> 9.0 
-// </cn>
-// </apply>
-// <apply>
-// <gt/>
-// <ci> time 
-// </ci>
-// <cn type=\"real\"> 5.0 
-// </cn>
-// </apply>
-// </piece>
-// <otherwise>
-// <apply>
-// <false/>
-// </apply>
-// </otherwise>
-// </piecewise>
-// </apply>
-// </apply>
-// </math>
-// </MathML>
-// </equation>
-// <whenEquation id=\"2\">
+// <whenEquation id=\"1\">
 // <WhenOperator>
 // tt.T := if b and not tt.rising &gt; 0.0 or not b and not tt.falling &gt; 0.0 or not abs(tt.amplitude) &gt; 0.0 or initial() then time else time + (tt.endValue - pre(tt.y)) / tt.rate
 // </WhenOperator>
@@ -469,7 +433,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </MathML>
 // </whenEquationCondition>
 // </whenEquation>
-// <whenEquation id=\"3\">
+// <whenEquation id=\"2\">
 // <WhenOperator>
 // tt.rate := if b and tt.rising &gt; 0.0 then tt.amplitude / tt.rising else if not b and tt.falling &gt; 0.0 then (-tt.amplitude) / tt.falling else 0.0
 // </WhenOperator>
@@ -567,7 +531,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </MathML>
 // </whenEquationCondition>
 // </whenEquation>
-// <whenEquation id=\"4\">
+// <whenEquation id=\"3\">
 // <WhenOperator>
 // tt.endValue := if b then tt.offset + tt.amplitude else tt.offset
 // </WhenOperator>
@@ -622,6 +586,42 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </MathML>
 // </whenEquationCondition>
 // </whenEquation>
+// <equation id=\"4\">b = if time &gt; 5.0 then time &lt; 9.0 else false
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <equivalent/>
+// <ci> b 
+// </ci>
+// <apply>
+// <piecewise>
+// <piece>
+// <apply>
+// <lt/>
+// <ci> time 
+// </ci>
+// <cn type=\"real\"> 9.0 
+// </cn>
+// </apply>
+// <apply>
+// <gt/>
+// <ci> time 
+// </ci>
+// <cn type=\"real\"> 5.0 
+// </cn>
+// </apply>
+// </piece>
+// <otherwise>
+// <apply>
+// <false/>
+// </apply>
+// </otherwise>
+// </piecewise>
+// </apply>
+// </apply>
+// </math>
+// </MathML>
+// </equation>
 // <equation id=\"5\">tt.y = if time &lt; tt.T then tt.endValue + (time - tt.T) * tt.rate else tt.endValue
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
@@ -683,7 +683,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </MathML>
 // <involvedEquations>
 // <equationId>
-// 1
+// 4
 // </equationId>
 // </involvedEquations>
 // </zeroCrossingElement>
@@ -701,7 +701,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </MathML>
 // <involvedEquations>
 // <equationId>
-// 1
+// 4
 // </equationId>
 // </involvedEquations>
 // </zeroCrossingElement>
