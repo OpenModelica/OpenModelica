@@ -3,6 +3,7 @@ Makefile.unix
 OMEdit*/bin/
 OMEdit*/build/release/
 autom4te.cache/
+qmake.sh
 config.guess
 config.sub
 config.log
