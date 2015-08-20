@@ -108,13 +108,14 @@ void checkForSynchronous(DATA *data, SOLVER_INFO* solverInfo)
   TRACE_POP
 }
 
-void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curTime)
+void fireClock(DATA* data, threadData_t *threadData, long idx, double curTime)
 {
   const CLOCK_INFO* clk = data->modelData.clocksInfo + idx;
   CLOCK_DATA* clkData = data->simulationInfo.clocksData + idx;
   data->callback->function_updateSynchronous(data, threadData, idx);
   double nextBaseTime = curTime + clkData->interval;
   long off = clk->subClocks - data->modelData.subClocksInfo;
+
   long i;
   for(i=0; i<clk->nSubClocks; i++)
   {
@@ -133,14 +134,26 @@ void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curT
       insertTimer(data->simulationInfo.intvlTimers, &nextTimer);
     }
   }
+
+}
+
+static void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curTime)
+{
+  TRACE_PUSH
+
+  CLOCK_DATA* clkData = data->simulationInfo.clocksData + idx;
+  fireClock(data, threadData, idx, curTime);
+
   SYNC_TIMER timer;
   timer.idx = idx;
   timer.type = SYNC_BASE_CLOCK;
-  timer.activationTime = nextBaseTime;
+  timer.activationTime = curTime + clkData->interval;;
   insertTimer(data->simulationInfo.intvlTimers, &timer);
 
   clkData->timepoint = curTime;
   clkData->cnt++;
+
+  TRACE_POP
 }
 
 /**
@@ -176,6 +189,7 @@ int handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
             ret = ret == 2 ? ret : 1;
           break;
       }
+      if (listLen(data->simulationInfo.intvlTimers) == 0) break;
       nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo.intvlTimers));
     }
   }

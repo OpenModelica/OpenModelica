@@ -132,10 +132,12 @@ algorithm
 
   (contSysts, holdComps) := removeHoldExpsSyst(contSysts);
 
-  shared.removedEqs := BackendEquation.addEquations(unpartRemEqs, shared.removedEqs);
-
   (clockedSysts, shared) := subClockPartitioning1(clockedSysts, shared, holdComps);
   shared := List.fold(clockedSysts, makePreviousFixed, shared);
+
+  unpartRemEqs := createBoolClockWhenClauses(shared, unpartRemEqs);
+  shared.removedEqs := BackendEquation.addEquations(unpartRemEqs, shared.removedEqs);
+
 
   systs := listAppend(contSysts, clockedSysts);
   outDAE := BackendDAE.DAE(systs, shared);
@@ -146,6 +148,32 @@ algorithm
     BackendDump.dumpSubPartitions(shared.partitionsInfo.subPartitions, "Sub clocks");
   end if;
 end clockPartitioning1;
+
+protected function createBoolClockWhenClauses
+  input BackendDAE.Shared inShared;
+  input list<BackendDAE.Equation> inRemovedEqs;
+  output list<BackendDAE.Equation> outRemovedEqs = inRemovedEqs;
+protected
+  BackendDAE.BasePartition basePartition;
+  list<BackendDAE.Equation> eqs = {};
+algorithm
+  for i in 1:arrayLength(inShared.partitionsInfo.basePartitions) loop
+    basePartition := inShared.partitionsInfo.basePartitions[i];
+    outRemovedEqs := match basePartition.clock
+      local
+        DAE.Exp c, e;
+        BackendDAE.WhenEquation whenEq;
+        BackendDAE.Equation eq;
+      case DAE.BOOLEAN_CLOCK(c, _)
+        equation
+          e = DAE.CALL(Absyn.IDENT("$_clkfire"), {DAE.ICONST(i)}, DAE.callAttrBuiltinOther);
+          whenEq = BackendDAE.WHEN_STMTS(c, {BackendDAE.NORETCALL(e, DAE.emptyElementSource)}, NONE());
+          eq = BackendDAE.WHEN_EQUATION(0, whenEq, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+        then eq::outRemovedEqs;
+      else outRemovedEqs;
+    end match;
+  end for;
+end createBoolClockWhenClauses;
 
 protected function makePreviousFixed
   input BackendDAE.EqSystem inSyst;
@@ -1247,7 +1275,8 @@ end splitClockVars;
 protected function substituteParitionOpExps
 "Each non-trivial expression (non-literal, non-constant, non-parameter, non-variable), expr_i, appearing
  as first argument of any clock conversion operator or in base clock constructor is recursively replaced by a unique variable, $var_i,
- and the equation $var_i = expr_i is added to the equation set."
+ and the equation $var_i = expr_i is added to the equation set.
+ Also when clauses are created for boolean clocks."
   input BackendDAE.EqSystem inSyst;
   output BackendDAE.EqSystem outSyst;
 algorithm
@@ -1333,7 +1362,7 @@ algorithm
       Integer cnt;
     case DAE.BOOLEAN_CLOCK(e, f)
       equation
-        (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt);
+        ({e}, eqs, vars, cnt) = substExp({e}, inNewEqs, inNewVars, inCnt);
       then
         (DAE.BOOLEAN_CLOCK(e, f), eqs, vars, cnt);
     case DAE.REAL_CLOCK(e)

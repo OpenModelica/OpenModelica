@@ -85,45 +85,51 @@ static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* s
   if (measure_time_flag) rt_tick(SIM_TIMER_EVENT);
 
   int syncRet = handleTimers(data, threadData, solverInfo);
-  int eventType = checkEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
-  if(eventType > 0 || syncRet == 2) /* event */
+  int syncRet1;
+  do
   {
-    threadData->currentErrorStage = ERROR_EVENTHANDLING;
-    infoStreamPrint(LOG_EVENTS, 1, "%s event at time=%.12g", eventType == 1 ? "time" : "state", solverInfo->currentTime);
-    /* prevent emit if noEventEmit flag is used */
-    if (!(omc_flag[FLAG_NOEVENTEMIT])) /* output left limit */
-      sim_result.emit(&sim_result, data, threadData);
-    handleEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
-    messageClose(LOG_EVENTS);
-    threadData->currentErrorStage = ERROR_SIMULATION;
+    int eventType = checkEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
+    if(eventType > 0 || syncRet == 2) /* event */
+    {
+      threadData->currentErrorStage = ERROR_EVENTHANDLING;
+      infoStreamPrint(LOG_EVENTS, 1, "%s event at time=%.12g", eventType == 1 ? "time" : "state", solverInfo->currentTime);
+      /* prevent emit if noEventEmit flag is used */
+      if (!(omc_flag[FLAG_NOEVENTEMIT])) /* output left limit */
+        sim_result.emit(&sim_result, data, threadData);
+      handleEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
+      messageClose(LOG_EVENTS);
+      threadData->currentErrorStage = ERROR_SIMULATION;
 
-    solverInfo->didEventStep = 1;
-    overwriteOldSimulationData(data);
-  }
-  else /* no event */
-  {
-    solverInfo->laststep = solverInfo->currentTime;
-    solverInfo->didEventStep = 0;
-  }
+      solverInfo->didEventStep = 1;
+      overwriteOldSimulationData(data);
+    }
+    else /* no event */
+    {
+      solverInfo->laststep = solverInfo->currentTime;
+      solverInfo->didEventStep = 0;
+    }
 
-  if (measure_time_flag) rt_accumulate(SIM_TIMER_EVENT);
-  /***** End event handling *****/
+    if (measure_time_flag) rt_accumulate(SIM_TIMER_EVENT);
+    /***** End event handling *****/
 
 
-  /***** check state selection *****/
-  if (stateSelection(data, threadData, 1, 1))
-  {
-    /* if new set is calculated reinit the solver */
-    solverInfo->didEventStep = 1;
-    overwriteOldSimulationData(data);
-  }
+    /***** check state selection *****/
+    if (stateSelection(data, threadData, 1, 1))
+    {
+      /* if new set is calculated reinit the solver */
+      solverInfo->didEventStep = 1;
+      overwriteOldSimulationData(data);
+    }
 
-  /* Check for warning of variables out of range assert(min<x || x>xmax, ...)*/
-  data->callback->checkForAsserts(data, threadData);
+    /* Check for warning of variables out of range assert(min<x || x>xmax, ...)*/
+    data->callback->checkForAsserts(data, threadData);
 
-  storePreValues(data);
-  storeOldValues(data);
+    storePreValues(data);
+    storeOldValues(data);
 
+    syncRet1 = handleTimers(data, threadData, solverInfo);
+    syncRet = syncRet1 == 0 ? syncRet : syncRet1;
+  } while (syncRet1);
   return syncRet;
 }
 
