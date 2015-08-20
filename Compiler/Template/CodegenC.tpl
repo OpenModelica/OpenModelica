@@ -146,6 +146,7 @@ end translateInitFile;
     extern void <%symbolName(modelNamePrefixStr,"function_initSynchronous")%>(DATA * data, threadData_t *threadData);
     extern void <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>(DATA * data, threadData_t *threadData, long i);
     extern int <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>(DATA * data, threadData_t *threadData, long i);
+    extern void <%symbolName(modelNamePrefixStr,"function_savePreSynchronous")%>(DATA *data, threadData_t *threadData);
     <%\n%>
     >>
   end match
@@ -215,6 +216,8 @@ template simulationFile_syn(SimCode simCode, String guid)
 
       <%functionSystemsSynchronous(getSubPartitions(clockedPartitions), modelNamePrefix(simCode))%>
 
+      <%functionSavePreSynchronous(getSubPartitions(clockedPartitions), modelNamePrefix(simCode))%>
+
       #if defined(__cplusplus)
       }
       #endif
@@ -222,6 +225,45 @@ template simulationFile_syn(SimCode simCode, String guid)
       >>
   end match
 end simulationFile_syn;
+
+template functionSavePreSynchronous(list<SimCode.SubPartition> subPartitions, String modelNamePrefix)
+::=
+  let preVars = subPartitions |> subPartition =>
+    functionSavePreSynchronous1(subPartition); separator="\n"
+  <<
+  /* $P$PRE%v% = %v% */
+  void <%symbolName(modelNamePrefix,"function_savePreSynchronous")%>(DATA *data, threadData_t *threadData)
+  {
+    TRACE_PUSH
+
+    <%preVars%>
+
+    TRACE_POP
+  }
+  >>
+end functionSavePreSynchronous;
+
+template functionSavePreSynchronous1(SimCode.SubPartition subPartition)
+::=
+match subPartition
+  case SUBPARTITION(__) then functionSavePreSynchronous2(vars)
+end functionSavePreSynchronous1;
+
+template functionSavePreSynchronous2(list<tuple<SimCodeVar.SimVar, Boolean>> vars)
+::=
+  vars |> var => functionSavePreSynchronous3(var); separator = "\n"
+end functionSavePreSynchronous2;
+
+template functionSavePreSynchronous3(tuple<SimCodeVar.SimVar, Boolean> var)
+::=
+match var
+  case (simVar, previous) then
+    match simVar
+      case SIMVAR(arrayCref=SOME(c), aliasvar=NOALIAS()) then
+        '<%cref(c)%> = $P$PRE<%cref(c)%>;'
+      case SIMVAR(aliasvar=NOALIAS()) then
+        '<%cref(name)%> = $P$PRE<%cref(name)%>;'
+end functionSavePreSynchronous3;
 
 template isBoolClock(DAE.ClockKind clock)
 ::=
@@ -3525,6 +3567,8 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
 
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionAlg(<%nrfuncs%>, data, functionAlg_systems);'
     else '<%fncalls%>' %>
+
+    <%symbolName(modelNamePrefix,"function_savePreSynchronous")%>(data, threadData);
 
     TRACE_POP
     return 0;
