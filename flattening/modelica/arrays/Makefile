@@ -147,6 +147,7 @@ TestArrayUnknown.mo \
 TestFill.mo \
 TypeTest.mos \
 UnknownDimensionMod.mo \
+VectorizeConstCref2D.mo \
 VectorizeOneReturnValue.mo \
 VectorizeSeveralArguments.mo \
 WrongNumberOfSubscripts1.mo \
