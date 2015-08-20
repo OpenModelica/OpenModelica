@@ -30,6 +30,7 @@
 
 #include "simulation/solver/synchronous.h"
 #include "simulation/solver/epsilon.h"
+#include "simulation/results/simulation_result.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -167,6 +168,7 @@ int handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
           handleBaseClock(data, threadData, idx, activationTime);
           break;
         case SYNC_SUB_CLOCK:
+          sim_result.emit(&sim_result, data, threadData);
           data->callback->function_equationsSynchronous(data, threadData, idx);
           if (data->modelData.subClocksInfo[idx].holdEvents)
             ret = 2;
