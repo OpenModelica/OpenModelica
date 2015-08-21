@@ -6540,9 +6540,8 @@ algorithm
       equation
         s = intString(idx) +": "+ " (LINEAR) index:"+intString(idxLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
         s = s+"\t"+stringDelimitList(List.map(residual,dumpSimEqSystem),"\n\t")+"\n";
-        eqs = List.map(simJac,Util.tuple33);
-        s = s+"\tsimJac:\n"+stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n");
         s = s+dumpJacobianMatrix(jac)+"\n";
+        s = s+"\tsimJac:\n"+dumpSimJac(simJac)+"\n";
     then s;
 
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,eqs=eqs, crefs=crefs), NONE()))
@@ -6558,13 +6557,11 @@ algorithm
       equation
         s1 = "strict set:\n" + intString(idx) +": "+ " (LINEAR) index:"+intString(idxLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
         s1 = s1+"\t"+stringDelimitList(List.map(residual,dumpSimEqSystem),"\n\t")+"\n";
-        eqs = List.map(simJac,Util.tuple33);
-        s1 = s1+"\tsimJac:\n"+stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n");
+        s1 = s1+"\tsimJac:\n"+dumpSimJac(simJac)+"\n";
         s1 = s1+dumpJacobianMatrix(jac)+"\n";
         s2 = "\ncasual set:\n" + intString(idx2) +": "+ " (LINEAR) index:"+intString(idxLS2)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
         s2 = s2+"\t"+stringDelimitList(List.map(residual2,dumpSimEqSystem),"\n\t")+"\n";
-        eqs = List.map(simJac2,Util.tuple33);
-        s2 = s2+"\tsimJac:\n"+stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n");
+        s2 = s2+"\tsimJac:\n"+dumpSimJac(simJac2)+"\n";
         s2 = s2+dumpJacobianMatrix(jac2)+"\n";
         s = s1 + s2;
     then s;
@@ -6610,6 +6607,23 @@ algorithm
     then "SOMETHING DIFFERENT\n";
   end matchcontinue;
 end dumpSimEqSystem;
+
+protected function dumpSimJac
+  input list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
+  output String res;
+protected
+  Integer i1, i2;
+  SimCode.SimEqSystem simEqSys;
+  tuple<Integer, Integer, SimCode.SimEqSystem> tpl;
+algorithm
+  if listEmpty(simJac) then res := "no simJac";
+  else res := "";
+  end if;
+  for tpl in simJac loop
+   (i1,i2,simEqSys) := tpl;
+    res := res + "["+intString(i1) + ", " + intString(i2)+ "] ->" + dumpSimEqSystem(simEqSys)+"\n";
+  end for;
+end dumpSimJac;
 
 protected function dumpWhenOps
   input list<BackendDAE.WhenOperator> whenStmtLst;
@@ -6660,7 +6674,7 @@ algorithm
         (cols,_,_,_,_,_,idx) = jac;
         colEqs = List.flatten(List.map(cols,Util.tuple31));
         s = stringDelimitList(List.map(colEqs,dumpSimEqSystem),"\n\t");
-        s = "jacobian idx: "+intString(idx)+"\n\t"+s;
+        s = "\tJacobian idx: "+intString(idx)+"\n\t"+s;
       then s;
     case(NONE())
       then "";
