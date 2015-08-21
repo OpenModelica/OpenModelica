@@ -166,6 +166,7 @@ private slots:
   void moveCursorDown();
   void groupCellsAction();
   void inputCellsAction();
+  //void latexCellsAction();
   void textCellsAction();
   void updateRecentFiles(QString);
 
@@ -272,6 +273,8 @@ private:
 
   QAction *groupAction;
   QAction *inputAction;
+  //QAction *latexAction;
+
   QAction *textAction;
 
   QAction *aboutAction;

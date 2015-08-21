@@ -72,7 +72,9 @@
 #include <QDebug>
 #include <QSettings>
 #include <QToolButton>
+#include <QObject>
 #endif
+#include <QDir>
 
 //IAEX Headers
 #include "command.h"
@@ -88,7 +90,6 @@
 #include "xmlparser.h"
 #include "removehighlightervisitor.h"
 #include "omcinteractiveenvironment.h"
-
 using namespace std;
 
 namespace IAEX
@@ -311,6 +312,7 @@ NotebookWindow::~NotebookWindow()
 
   delete groupAction;
   delete inputAction;
+  //delete latexAction;
   delete textAction;
 
   delete aboutAction;
@@ -774,6 +776,14 @@ void NotebookWindow::createCellMenu()
   inputAction->setShortcut( tr("Ctrl+Shift+I") );
   inputAction->setStatusTip( tr("Add an input cell") );
   connect(inputAction, SIGNAL(triggered()), this, SLOT(inputCellsAction()));
+  /*
+  latexAction = new QAction( tr("Add &Latexcell"), this);
+  latexAction->setShortcut( tr("Ctrl+Shift+I") );
+  latexAction->setStatusTip( tr("Add Latex cell") );
+  connect(latexAction, SIGNAL(triggered()), this, SLOT(latexCellsAction())); */
+
+
+
   /// fjass
   textAction = new QAction( tr("Add &Textcell"), this);
   textAction->setShortcut( tr("Ctrl+Shift+T") );
@@ -833,6 +843,7 @@ void NotebookWindow::createCellMenu()
   //cellMenu->addSeparator();
   cellMenu->addAction( addCellAction );
   cellMenu->addAction( inputAction );
+  //cellMenu->addAction(latexAction);
   cellMenu->addAction( textAction );
 
   cellMenu->addAction( groupAction );
@@ -1584,7 +1595,6 @@ void NotebookWindow::createInsertMenu()
   evalallAction->setIcon(QIcon(":/Resources/toolbarIcons/evalall.png"));
   connect(evalallAction, SIGNAL(triggered()), this, SLOT(evalall()));
   toolBar->addAction(evalallAction);
-
 
   shiftcellsupAction = new QAction(tr("MoveCellsUp"), this);
   shiftcellsupAction->setStatusTip(tr("Move Cells Up, by clicking on the cell"));
@@ -3876,6 +3886,14 @@ void NotebookWindow::inputCellsAction()
   subject_->updateScrollArea();
   updateChapterCounters();
 }
+/*
+void NotebookWindow::latexCellsAction()
+{
+  subject_->executeCommand(new CreateNewCellCommand("Latex"));
+  subject_->updateScrollArea();
+  updateChapterCounters();
+}
+*/
 
 void NotebookWindow::textCellsAction()
 {
@@ -4031,12 +4049,41 @@ void NotebookWindow::shiftcellsUp()
                 qDebug()<<"not a groupcell" ;
                 QString currenttext=current->text();
                 QString style=current->style()->name();
+                if (style=="Graph")
+                {
+                 GraphCell *g = dynamic_cast<GraphCell *>(current);
+                 bool eval= g->isEvaluated();
+                 if(eval==true)
+                 {
+                 QString currentinput=g->text();
+                 QString currentoutput=g->textOutputHtml();
+                 subject_->cursorDeleteCell();
+                 subject_->cursorStepUp();
+                 subject_->executeCommand(new CreateNewCellCommand("Graph"));
+                 GraphCell *newcell = dynamic_cast<GraphCell *>(subject_->getCursor()->currentCell());
+                 newcell->setEvaluated(true);
+                 newcell->setClosed(false);
+                 newcell->setText(currentinput);
+                 newcell->setTextOutputHtml(currentoutput);
+                  }
+                 else
+                 {
+                   subject_->cursorDeleteCell();
+                     //subject_->getCursor()->moveUp();
+                   subject_->cursorStepUp();
+                   subject_->executeCommand(new CreateNewCellCommand("Graph"));
+                   subject_->getCursor()->currentCell()->setText(currenttext);
+                 }
+                }
+               if(style=="Text")
+                {
+                QString textoutput=current->textHtml();
                 subject_->cursorDeleteCell();
                 //subject_->getCursor()->moveUp();
                 subject_->cursorStepUp();
-                subject_->executeCommand(new CreateNewCellCommand(style));
-                subject_->getCursor()->currentCell()->setText(currenttext);
-
+                subject_->executeCommand(new CreateNewCellCommand("Text"));
+                subject_->getCursor()->currentCell()->setTextHtml(textoutput);
+                }
             }
         }
         else
@@ -4093,10 +4140,41 @@ void NotebookWindow::shiftcellsDown()
             qDebug()<<"not a group cell";
             QString style=current->style()->name();
             QString currenttext=current->text();
+
+            if (style=="Graph")
+            {
+             GraphCell *d = dynamic_cast<GraphCell *>(current);
+             bool eval= d->isEvaluated();
+             if(eval==true)
+             {
+             QString currentinput=d->text();
+             QString currentoutput=d->textOutputHtml();
+             subject_->cursorDeleteCell();
+             subject_->cursorStepDown();
+             subject_->executeCommand(new CreateNewCellCommand("Graph"));
+             GraphCell *gcell = dynamic_cast<GraphCell *>(subject_->getCursor()->currentCell());
+             gcell->setEvaluated(true);
+             gcell->setClosed(false);
+             gcell->setText(currentinput);
+             gcell->setTextOutputHtml(currentoutput);
+              }
+             else
+             {
+                 subject_->cursorDeleteCell();
+                 subject_->cursorStepDown();
+                 subject_->executeCommand(new CreateNewCellCommand("Graph"));
+                 subject_->getCursor()->currentCell()->setText(currenttext);
+             }
+            }
+
+            if(style=="Text")
+            {
+            QString textoutput=current->textHtml();
             subject_->cursorDeleteCell();
             subject_->cursorStepDown();
-            subject_->executeCommand(new CreateNewCellCommand(style));
-            subject_->getCursor()->currentCell()->setText(currenttext);
+            subject_->executeCommand(new CreateNewCellCommand("Text"));
+            subject_->getCursor()->currentCell()->setTextHtml(textoutput);
+            }
         }
     }
     else
@@ -4120,15 +4198,15 @@ void NotebookWindow::evalall()
         Cell* current=subject_->getMainCell()->child();
         QVector<Cell*> cellcount;
         cellcount=SearchCells(current);
-        qDebug()<<"Inside eval function_1:"<< cellcount <<cellcount.size();
+        //qDebug()<<"Inside eval function_1:"<< cellcount <<cellcount.size();
 
         for (int i =0;i<cellcount.size();i++)
         {
             if(GraphCell *g = dynamic_cast<GraphCell*>(cellcount[i]))
             {
                 g->eval();
-                qDebug()<< cellcount[i] << g->isEvaluated();
             }
+
             if(InputCell *g = dynamic_cast<InputCell*>(cellcount[i]))
             {
                 g->eval();
@@ -4141,4 +4219,5 @@ void NotebookWindow::evalall()
         qDebug()<<"The Document is Empty";
     }
 }
+
 }
