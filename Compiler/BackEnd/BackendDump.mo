@@ -270,6 +270,8 @@ algorithm
     dumpTimeEvents(inShared.eventInfo.timeEvents, "Time Events");
   end if;
   dumpConstraintList(inShared.constraints, "Constraints");
+  dumpBasePartitions(inShared.partitionsInfo.basePartitions, "Base partitions");
+  dumpSubPartitions(inShared.partitionsInfo.subPartitions, "Sub partitions");
 end printShared;
 
 public function printBasePartitions
