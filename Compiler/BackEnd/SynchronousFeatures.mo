@@ -85,6 +85,28 @@ algorithm
   end match;
 end clockPartitioning;
 
+public function contPartitioning
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EqSystems systs, clockedSysts, clockedSysts1;
+  BackendDAE.Shared shared;
+  BackendDAE.EqSystem syst;
+  list<BackendDAE.Equation> unpartRemEqs;
+algorithm
+  (clockedSysts, systs) := List.splitOnTrue(inDAE.eqs, BackendDAEUtil.isClockedSyst);
+  shared := inDAE.shared;
+
+  if listLength(systs) > 0 then
+    BackendDAE.DAE({syst}, shared) := BackendDAEOptimize.collapseIndependentBlocks(BackendDAE.DAE(systs, shared));
+    (systs, clockedSysts1, unpartRemEqs) := baseClockPartitioning(syst, shared);
+    assert(listLength(clockedSysts1) == 0, "Get clocked system in SynchronousFeatures.addContVarsEqs");
+    shared.removedEqs := BackendEquation.addEquations(unpartRemEqs, shared.removedEqs);
+  end if;
+
+  outDAE := BackendDAE.DAE(listAppend(systs, clockedSysts), shared);
+end contPartitioning;
+
 protected function clockPartitioning1
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.Shared inShared;

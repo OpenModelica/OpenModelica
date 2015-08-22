@@ -72,17 +72,15 @@ public function encapsulateWhenConditions "author: lochel"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
-  BackendDAE.EqSystems systs, systs2;
-  BackendDAE.Shared shared, shared2;
-  BackendDAE.EventInfo eventInfo;
+  BackendDAE.EqSystems systs;
+  BackendDAE.EqSystem syst;
+  BackendDAE.Shared shared;
   Integer index;
   HashTableExpToIndex.HashTable ht "is used to avoid redundant condition-variables";
   list<BackendDAE.Var> vars;
   list<BackendDAE.Equation> eqns;
   BackendDAE.Variables vars_;
   BackendDAE.EquationArray eqns_, removedEqs;
-  BackendDAE.BackendDAE bdae;
-
 algorithm
   BackendDAE.DAE(systs, shared) := inDAE;
 
@@ -93,17 +91,15 @@ algorithm
   ((removedEqs, vars, eqns, index, ht)) :=
       BackendEquation.traverseEquationArray(shared.removedEqs, encapsulateWhenConditions_Equation,
                                              (BackendEquation.emptyEqns(), {}, {}, index, ht) );
-
-  shared.removedEqs := BackendEquation.emptyEqns();
+  shared.removedEqs := removedEqs;
   eqns_ := BackendEquation.listEquation(eqns);
   vars_ := BackendVariable.listVar(vars);
-  systs := listAppend(systs, {BackendDAEUtil.createEqSystem(vars_, eqns_, {}, BackendDAE.UNKNOWN_PARTITION(), removedEqs)});
+  syst := BackendDAEUtil.createEqSystem(vars_, eqns_, {}, BackendDAE.UNSPECIFIED_PARTITION(), BackendEquation.emptyEqns());
+  systs := listAppend(systs, {syst});
 
-  if intGt(index, 1) then
-    outDAE := BackendDAE.DAE(systs, shared);
-    outDAE := SynchronousFeatures.clockPartitioning(outDAE);
-  else
-    outDAE := inDAE;
+  outDAE := BackendDAE.DAE(systs, shared);
+  if index > 1 then
+    outDAE := SynchronousFeatures.contPartitioning(outDAE);
   end if;
 
   if Flags.isSet(Flags.DUMP_ENCAPSULATECONDITIONS) then
