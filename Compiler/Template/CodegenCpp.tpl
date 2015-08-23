@@ -2693,8 +2693,8 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     #include <Core/Utils/extension/logger.hpp>
 
     #include "OMCpp<%fileNamePrefix%>Types.h"
-    #include "OMCpp<%fileNamePrefix%>.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
+    #include "OMCpp<%fileNamePrefix%>.h"
     #include "OMCpp<%fileNamePrefix%>Jacobian.h"
     #include "OMCpp<%fileNamePrefix%>StateSelection.h"
     #include "OMCpp<%fileNamePrefix%>WriteOutput.h"
@@ -4561,25 +4561,27 @@ match fn
 case FUNCTION(outVars={}) then
   let fname = underscorePath(name)
   <<
-        void <%fname%>(<%functionArguments |> var => funArgDefinition(var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%>);
+  <%functionTemplates(functionArguments)%>
+  void <%fname%>(<%functionArguments |> var => funArgDefinition(var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%>);
   >>
 case FUNCTION(outVars=_) then
   let fname = underscorePath(name)
   <<
-        /* functionHeaderRegularFunction2 */
-        void /*<%fname%>RetType*/ <%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%><%if functionArguments then "," else ""%> <%fname%>RetType& output);
+  /* functionHeaderRegularFunction2 */
+  <%functionTemplates(functionArguments)%>
+  void /*<%fname%>RetType*/ <%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%><%if functionArguments then "," else ""%> <%fname%>RetType& output);
   >>
 case EXTERNAL_FUNCTION(outVars=var::_) then
-let fname = underscorePath(name)
-   <<
-        /* functionHeaderRegularFunction2 */
-        void /*<%fname%>RetType*/ <%fname%>(<%funArgs |> var => funArgDefinition(var,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%><%if funArgs then "," else ""%> <%fname%>RetType& output);
-   >>
+  let fname = underscorePath(name)
+  <<
+  /* functionHeaderRegularFunction2 */
+  void /*<%fname%>RetType*/ <%fname%>(<%funArgs |> var => funArgDefinition(var,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%><%if funArgs then "," else ""%> <%fname%>RetType& output);
+  >>
 case EXTERNAL_FUNCTION(outVars={}) then
-let fname = underscorePath(name)
-   <<
-        void <%fname%>(<%funArgs |> var => funArgDefinition(var,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%>);
-   >>
+  let fname = underscorePath(name)
+  <<
+  void <%fname%>(<%funArgs |> var => funArgDefinition(var,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%>);
+  >>
 end functionHeaderRegularFunction2;
 
 template functionHeaderRegularFunction3(Function fn,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
@@ -4590,14 +4592,14 @@ case FUNCTION(outVars={}) then ""
 case FUNCTION(outVars=_) then
   let fname = underscorePath(name)
   <<
-        /* functionHeaderRegularFunction3 */
-        <%fname%>RetType _<%fname%>;
+  /* functionHeaderRegularFunction3 */
+  <%fname%>RetType _<%fname%>;
   >>
- case EXTERNAL_FUNCTION(outVars=var::_) then
- let fname = underscorePath(name)
- <<
-        /* functionHeaderRegularFunction3 */
-        <%fname%>RetType _<%fname%>;
+case EXTERNAL_FUNCTION(outVars=var::_) then
+  let fname = underscorePath(name)
+  <<
+  /* functionHeaderRegularFunction3 */
+  <%fname%>RetType _<%fname%>;
   >>
 end functionHeaderRegularFunction3;
 
@@ -4640,29 +4642,25 @@ case FUNCTION(__) then
   return <%if outVars then '<%outVarAssign%>' %>
 */
 
-
-
-
-
   //let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
   //if outvars missing
+  <%functionTemplates(functionArguments)%>
   void /*<%retType%>*/ Functions::<%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%><%if functionArguments then if outVars then "," else ""%><%if outVars then '<%retType%>& output' %> )
   {
     //functionBodyRegularFunction
+    <%(functionArguments |> var => match var case FUNCTION_PTR(name=fnptrName) then 'typedef double <%fnptrName%>RetType;' ;separator="\n")%>
     <%varDecls%>
-  //outvars
+    //outvars
     <%outVarInits%>
-
-
-  <%varInits%>
+    <%varInits%>
     do
     {
-        <%bodyPart%>
+      <%bodyPart%>
     }
     while(false);
     <%outVarAssign%>
-  <%if outVars then '/*output = _<%fname%>;*/' %>
+    <%if outVars then '/*output = _<%fname%>;*/' %>
   }
 
   <% if inFunc then
@@ -4793,6 +4791,14 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
 
   >>
 end functionBodyExternalFunction;
+
+template functionTemplates(list<Variable> functionArguments)
+  "Generates template prefix for functions with function arguments"
+::=
+  // TODO: generate specific names if type of modelica_fnptr known
+  let funcPtrs = (functionArguments |> var => match var case FUNCTION_PTR(__) then 'modelica_fnptr' ;separator=", ")
+  '<%if funcPtrs then 'template <class modelica_fnptr>'%>'
+end functionTemplates;
 
 template funArgName(Variable var)
 ::=
@@ -11508,6 +11514,10 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
     <<
      StatArrayDim<%listLength(ty.dims)%><<%expTypeShort(ty)%>,<%(ty.dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")%> > <%name%>;
     >>
+  case BOX(exp=exp as RCONST(__)) then
+    <<
+    double <%name%>;
+    >>
   else error(sourceInfo(), 'literalExpConst failed: <%printExpStr(lit)%>')
 end literalExpConst;
 
@@ -11521,9 +11531,6 @@ template literalExpConstArrayVal(Exp lit)
   case lit as SHARED_LITERAL(__) then '_OMC_LIT<%lit.index%>'
   else error(sourceInfo(), 'literalExpConstArrayVal failed: <%printExpStr(lit)%>')
 end literalExpConstArrayVal;
-
-
-
 
 template literalExpConstImpl(Exp lit, Integer index) "These should all be declared static X const"
 ::=
@@ -11561,15 +11568,12 @@ template literalExpConstImpl(Exp lit, Integer index) "These should all be declar
     <%arrayTypeStr%> <%name%>_data[] = {<%data%>};
     assignRowMajorData(<%name%>_data, <%name%>);
     >>
-
+  case BOX(exp=exp as RCONST(__)) then
+    <<
+    <%name%> = <%exp.real%>;
+    >>
   else error(sourceInfo(), 'literalExpConst failed: <%printExpStr(lit)%>')
 end literalExpConstImpl;
-
-
-
-
-
-
 
 template handleEvent(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
