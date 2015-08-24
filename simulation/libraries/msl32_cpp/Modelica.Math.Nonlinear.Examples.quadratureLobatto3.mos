@@ -31,7 +31,5 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // Frontend succeeded
-// "true
-// "
-// ""
+// The model now translates (generates code). Please update the test.
 // endResult

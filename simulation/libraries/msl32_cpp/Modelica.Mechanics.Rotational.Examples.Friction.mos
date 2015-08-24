@@ -41,10 +41,5 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // Simulation options: startTime = 0.0, stopTime = 3.0, numberOfIntervals = 3000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.Friction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
-// Error: Simulation did not produce a result-file
-// Errors: Simulation execution failed for model: Modelica.Mechanics.Rotational.Examples.Friction
-// Simulation stopped with error in simulation manager: simulation error message : Simulation failed for Modelica.Mechanics.Rotational.Examples.Friction_res.mat with error in algloop equation system: 
-// simulation error message : Nonlinear solver stopped stopped at time 0 with error in algloop solver: 
-// simulation error message : Nonlinear solver failed!Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
-// 
+// Result file: Modelica.Mechanics.Rotational.Examples.Friction_res.mat
 // endResult

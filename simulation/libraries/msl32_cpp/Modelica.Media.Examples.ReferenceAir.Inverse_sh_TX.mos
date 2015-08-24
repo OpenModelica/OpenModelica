@@ -8,7 +8,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.Instantiation;
+modelTestingType := OpenModelicaModelTesting.Kind.Translation;
 modelName := $TypeName(Modelica.Media.Examples.ReferenceAir.Inverse_sh_TX);
 compareVars :=
 {
@@ -28,13 +28,13 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.Instantiation
+// OpenModelicaModelTesting.Kind.Translation
 // Modelica.Media.Examples.ReferenceAir.Inverse_sh_TX
 // {"h1","s1","Th","Ts","h2","s2"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
 // "
 // ""
-// Frontend succeeded
+// Translation succeeded
 // "true
 // "
 // ""
