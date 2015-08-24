@@ -1,0 +1,7 @@
+/*!
+  \page Eventhandling
+  This page describes the basic workflow of event handling, which is performed by the solver in the c++ simulation runtime. There are several
+  important classes that are part of the workflow.
+    - Solver (e.g. CVode): Will estimate the step width and call the evaluation of state derivatives and zero crossing conditions
+    - Model: Implements the evaluation of state derivatives and zero crossings
+ */
