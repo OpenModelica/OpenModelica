@@ -22,19 +22,30 @@ runScript("common.mos");getErrorString();
 
 runScript(modelTesting);getErrorString();
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> cb21b1cdd47e23157d3c6430b5a48b2e2364dc84
 // Result:
 // "true
 // "
 // ""
+<<<<<<< HEAD
 // OpenModelicaModelTesting.Kind.SimpleSimulation
+=======
+// OpenModelicaModelTesting.Kind.Compilation
+>>>>>>> cb21b1cdd47e23157d3c6430b5a48b2e2364dc84
 // Modelica.Electrical.Machines.Examples.Transformers.Rectifier6pulse
 // {"cDC1.v","cDC2.v","transformer1.l2sigma.inductor[1].i","transformer1.l2sigma.inductor[3].i"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
 // "
 // ""
+<<<<<<< HEAD
 // Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.Transformers.Rectifier6pulse', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Electrical.Machines.Examples.Transformers.Rectifier6pulse_res.mat
+=======
+// Compilation succeeded
+>>>>>>> cb21b1cdd47e23157d3c6430b5a48b2e2364dc84
 // "true
 // "
 // ""

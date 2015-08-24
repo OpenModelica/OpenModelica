@@ -8,8 +8,12 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
+<<<<<<< HEAD
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+=======
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+>>>>>>> cb21b1cdd47e23157d3c6430b5a48b2e2364dc84
 modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Graetz);
 compareVars :=
 {
@@ -33,7 +37,10 @@ runScript(modelTesting);getErrorString();
 // ""
 // Simulation options: startTime = 0.0, stopTime = 0.025, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Graetz', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Electrical.Spice3.Examples.Graetz_res.mat
+<<<<<<< HEAD
 // Files Equal!
+=======
+>>>>>>> cb21b1cdd47e23157d3c6430b5a48b2e2364dc84
 // "true
 // "
 // ""

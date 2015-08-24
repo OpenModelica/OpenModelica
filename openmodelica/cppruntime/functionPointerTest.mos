@@ -1,0 +1,66 @@
+// name: functionPointer
+// keywords: function pointer
+// status: correct
+// teardown_command: rm -f *FunctionPointer.Test*
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadModel(Modelica);
+loadString("
+package FunctionPointer
+  partial function pfunc
+    input Real u;
+    output Real y;
+  end pfunc;
+
+  function func
+    input Real u;
+    input Real v;
+    output Real y;
+  algorithm
+    y := u + v;
+  end func;
+
+  function feval
+    input FunctionPointer.pfunc f;
+    input Real u;
+    output Real y;
+  algorithm
+    y := f(u);
+  end feval;
+
+  function feval2
+    input FunctionPointer.pfunc f;
+    input Real u;
+    output Real y;
+  algorithm
+    y := f(u) + feval(function func(v = u), u);
+  end feval2;
+
+  model Test
+    input Real u = 0; // prevent presolving
+    Real y;
+  equation
+    y = feval2(function func(v = 2), u + 1);
+  end Test;
+end FunctionPointer;
+");
+getErrorString();
+
+simulate(FunctionPointer.Test);
+val(y, 0);
+getErrorString();
+
+// Result:
+// true
+// true
+// true
+// ""
+// record SimulationResult
+// resultFile = "FunctionPointer.Test_res.mat",
+// simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'FunctionPointer.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+// messages = ""
+// end SimulationResult;
+// 5.0
+// ""
+// endResult
