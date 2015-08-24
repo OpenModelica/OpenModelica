@@ -66,6 +66,7 @@ import BackendDAETransform;
 import BackendDAEUtil;
 import BackendDump;
 import BackendEquation;
+import BackendDAEEXT;
 import BackendVariable;
 import BackendVarTransform;
 import BaseHashTable;
@@ -92,10 +93,12 @@ import HpcOmSimCode;
 import Initialization;
 import Inline;
 import List;
+import Matching;
 import PriorityQueue;
 import SimCodeDump;
 import SimCodeFunctionUtil;
 import SimCodeFunctionUtil.{execStat,varName};
+import Sorting;
 import SymbolicJacobian;
 import System;
 import Util;
@@ -4209,10 +4212,47 @@ protected
 algorithm
   BackendDAE.SHARED(externalObjects=evars) := shared;
   evarLst := BackendVariable.varList(evars);
-  evarLst := listReverse(evarLst);
+  evarLst := orderExtVars(evarLst);
+  //evarLst := listReverse(evarLst);
   (simvars, aliases) := extractExtObjInfo2(evarLst, evars, {}, {});
   extObjInfo := SimCode.EXTOBJINFO(simvars, aliases);
 end createExtObjInfo;
+
+protected function orderExtVars"External Variables have to be ordered.
+It might occure that their binding expressions are dependent on other external variables and therefore, these vars and their binding exps have to be causalized.
+author: waurich TUD 08.2015"
+  input list<BackendDAE.Var> varLstIn;
+  output list<BackendDAE.Var> varLstOut;
+protected
+  Integer nVars,nEqs;
+  list<Integer> order;
+  array<Integer> ass1,ass2;
+  BackendDAE.IncidenceMatrix m,  mT;
+  list<list<Integer>> comps;
+  list<BackendDAE.Var> varsWithBind, varsWithoutBind;
+  list<DAE.Exp> bindExps;
+  list<BackendDAE.Equation> eqs;
+algorithm
+  try
+	  (varsWithBind,varsWithoutBind) := List.separateOnTrue(varLstIn,BackendVariable.varHasBindExp);
+	  bindExps := List.map(varsWithBind,BackendVariable.varBindExp);
+	  eqs := List.threadMap2(List.map(varsWithBind,BackendVariable.varExp), bindExps, BackendEquation.generateEquation, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+	  (m, mT) := BackendDAEUtil.incidenceMatrixDispatch(BackendVariable.listVar1(varsWithBind), BackendEquation.listEquation(eqs), BackendDAE.ABSOLUTE(), NONE());
+	  nVars := listLength(varsWithBind);
+	  nEqs := listLength(eqs);
+	  ass1 := arrayCreate(listLength(varsWithBind), -1);
+	  ass2 := arrayCreate(listLength(eqs), -1);
+	  Matching.matchingExternalsetIncidenceMatrix(nVars, nEqs, m);
+	  BackendDAEEXT.matching(nVars, nEqs, 5, -1, 0.0, 1);
+	  BackendDAEEXT.getAssignment(ass2, ass1);
+	  comps := Sorting.TarjanTransposed(mT, ass2);
+	  order := List.map1(List.flatten(comps),Array.getIndexFirst,ass1);
+	  varsWithBind := List.map1(order,List.getIndexFirst,varsWithBind);
+	  varLstOut := listAppend(varsWithoutBind,varsWithBind);
+  else
+    varLstOut := varLstIn;
+  end try;
+end orderExtVars;
 
 protected function extractExtObjInfo2
   input list<BackendDAE.Var> varLst;
@@ -6341,13 +6381,15 @@ protected
   list<SimCodeVar.SimVar> intAliasVars;
   list<SimCodeVar.SimVar> paramVars;
   list<SimCodeVar.SimVar> intParamVars;
+  list<SimCodeVar.SimVar> extObjVars;
   list<SimCodeVar.SimVar> constVars;
   list<SimCodeVar.SimVar> intConstVars;
   list<SimCodeVar.SimVar> stringConstVars;
   list<SimCode.Function> functions;
 algorithm
   SimCode.MODELINFO(vars=simVars, varInfo=varInfo, functions=functions) := modelInfo;
-  SimCodeVar.SIMVARS(stateVars=stateVars,derivativeVars=derivativeVars,algVars=algVars,intAlgVars=intAlgVars,discreteAlgVars=discreteAlgVars,aliasVars=aliasVars,intAliasVars=intAliasVars,paramVars=paramVars,intParamVars=intParamVars, constVars=constVars,intConstVars=intConstVars,stringConstVars=stringConstVars) := simVars;
+  SimCodeVar.SIMVARS(stateVars=stateVars,derivativeVars=derivativeVars,algVars=algVars,intAlgVars=intAlgVars,discreteAlgVars=discreteAlgVars,aliasVars=aliasVars,intAliasVars=intAliasVars,
+  paramVars=paramVars,intParamVars=intParamVars,extObjVars=extObjVars,constVars=constVars,intConstVars=intConstVars,stringConstVars=stringConstVars) := simVars;
   SimCode.VARINFO(numStateVars=nsv,numAlgVars=nalgv) := varInfo;
   dumpVarLst(stateVars,"stateVars ("+intString(nsv)+")");
   dumpVarLst(derivativeVars,"derivativeVars");
@@ -6358,6 +6400,7 @@ algorithm
   dumpVarLst(intAliasVars,"intAliasVars");
   dumpVarLst(paramVars,"paramVars");
   dumpVarLst(intParamVars,"intParamVars");
+  dumpVarLst(extObjVars,"extObjVars");
   dumpVarLst(constVars,"constVars");
   dumpVarLst(intConstVars,"intConstVars");
   dumpVarLst(stringConstVars,"stringConstVars");
@@ -6497,9 +6540,8 @@ algorithm
       equation
         s = intString(idx) +": "+ " (LINEAR) index:"+intString(idxLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
         s = s+"\t"+stringDelimitList(List.map(residual,dumpSimEqSystem),"\n\t")+"\n";
-        eqs = List.map(simJac,Util.tuple33);
-        s = s+"\tsimJac:\n"+stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n");
         s = s+dumpJacobianMatrix(jac)+"\n";
+        s = s+"\tsimJac:\n"+dumpSimJac(simJac)+"\n";
     then s;
 
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,eqs=eqs, crefs=crefs), NONE()))
@@ -6515,13 +6557,11 @@ algorithm
       equation
         s1 = "strict set:\n" + intString(idx) +": "+ " (LINEAR) index:"+intString(idxLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
         s1 = s1+"\t"+stringDelimitList(List.map(residual,dumpSimEqSystem),"\n\t")+"\n";
-        eqs = List.map(simJac,Util.tuple33);
-        s1 = s1+"\tsimJac:\n"+stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n");
+        s1 = s1+"\tsimJac:\n"+dumpSimJac(simJac)+"\n";
         s1 = s1+dumpJacobianMatrix(jac)+"\n";
         s2 = "\ncasual set:\n" + intString(idx2) +": "+ " (LINEAR) index:"+intString(idxLS2)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
         s2 = s2+"\t"+stringDelimitList(List.map(residual2,dumpSimEqSystem),"\n\t")+"\n";
-        eqs = List.map(simJac2,Util.tuple33);
-        s2 = s2+"\tsimJac:\n"+stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n");
+        s2 = s2+"\tsimJac:\n"+dumpSimJac(simJac2)+"\n";
         s2 = s2+dumpJacobianMatrix(jac2)+"\n";
         s = s1 + s2;
     then s;
@@ -6567,6 +6607,23 @@ algorithm
     then "SOMETHING DIFFERENT\n";
   end matchcontinue;
 end dumpSimEqSystem;
+
+protected function dumpSimJac
+  input list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
+  output String res;
+protected
+  Integer i1, i2;
+  SimCode.SimEqSystem simEqSys;
+  tuple<Integer, Integer, SimCode.SimEqSystem> tpl;
+algorithm
+  if listEmpty(simJac) then res := "no simJac";
+  else res := "";
+  end if;
+  for tpl in simJac loop
+   (i1,i2,simEqSys) := tpl;
+    res := res + "["+intString(i1) + ", " + intString(i2)+ "] ->" + dumpSimEqSystem(simEqSys)+"\n";
+  end for;
+end dumpSimJac;
 
 protected function dumpWhenOps
   input list<BackendDAE.WhenOperator> whenStmtLst;
@@ -6617,12 +6674,22 @@ algorithm
         (cols,_,_,_,_,_,idx) = jac;
         colEqs = List.flatten(List.map(cols,Util.tuple31));
         s = stringDelimitList(List.map(colEqs,dumpSimEqSystem),"\n\t");
-        s = "jacobian idx: "+intString(idx)+"\n\t"+s;
+        s = "\tJacobian idx: "+intString(idx)+"\n\t"+s;
       then s;
     case(NONE())
       then "";
   end match;
 end dumpJacobianMatrix;
+
+protected function extObjInfoString
+  input SimCode.ExtObjInfo info;
+protected
+  list<SimCodeVar.SimVar> vars;
+  list<SimCode.ExtAlias> aliases;
+algorithm
+  SimCode.EXTOBJINFO(vars=vars, aliases=aliases) := info;
+    dumpVarLst(vars,"external object info\n-----------------------\n");
+end extObjInfoString;
 
 public function dumpSimCode
   input SimCode.SimCode simCode;
@@ -6630,6 +6697,7 @@ protected
   Integer nls,nnls,nms,ne;
   list<SimCode.SimEqSystem> allEquations,jacobianEquations,equationsForZeroCrossings,algorithmAndEquationAsserts,initialEquations,parameterEquations,
   removedInitialEquations,startValueEquations,nominalValueEquations,minValueEquations,maxValueEquations;
+  SimCode.ExtObjInfo extObjInfo;
   SimCode.ModelInfo modelInfo;
   SimCode.VarInfo varInfo;
   list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
@@ -6638,7 +6706,7 @@ protected
 algorithm
   SimCode.SIMCODE(modelInfo = modelInfo,allEquations = allEquations, odeEquations=odeEquations, algebraicEquations=algebraicEquations, initialEquations=initialEquations, removedInitialEquations=removedInitialEquations,
   startValueEquations=startValueEquations,nominalValueEquations=nominalValueEquations, minValueEquations=minValueEquations, maxValueEquations=maxValueEquations,  algorithmAndEquationAsserts=algorithmAndEquationAsserts, parameterEquations=parameterEquations,
-  equationsForZeroCrossings=equationsForZeroCrossings, jacobianEquations=jacobianEquations ,jacobianMatrixes=jacobianMatrixes) := simCode;
+  equationsForZeroCrossings=equationsForZeroCrossings,jacobianEquations=jacobianEquations,extObjInfo=extObjInfo,jacobianMatrixes=jacobianMatrixes) := simCode;
   SimCode.MODELINFO(varInfo=varInfo) := modelInfo;
   SimCode.VARINFO(numEquations=ne,numLinearSystems=nls,numNonLinearSystems=nnls,numMixedSystems=nms) := varInfo;
   print("allEquations:("+intString(ne)+"),numLS:("+intString(nls)+"),numNLS:("+intString(nnls)+"),numMS:("+intString(nms)+") \n-----------------------\n");
@@ -6667,6 +6735,7 @@ algorithm
   print(dumpSimEqSystemLst(equationsForZeroCrossings)+"\n");
   print("jacobianEquations: \n-----------------------\n");
   print(dumpSimEqSystemLst(jacobianEquations)+"\n");
+  extObjInfoString(extObjInfo);
   print("jacobianMatrixes: \n-----------------------\n");
   jacObs := List.map(jacobianMatrixes,Util.makeOption);
   print(stringDelimitList(List.map(jacObs,dumpJacobianMatrix),"\n")+"\n");

@@ -6352,11 +6352,31 @@ algorithm
   outResult := true;
 end all;
 
+public function separateOnTrue<T>
+  "Takes a list of values and a filter function over the values and returns 2
+   sub lists of values for which the matching function returns true and false."
+  input list<T> inList;
+  input FilterFunc inFilterFunc;
+  output list<T> outListTrue = {};
+  output list<T> outListFalse = {};
+
+  partial function FilterFunc
+    input T inElement;
+    output Boolean outResult;
+  end FilterFunc;
+algorithm
+  for e in inList loop
+    if inFilterFunc(e) then
+      outListTrue := e::outListTrue;
+    else
+      outListFalse := e::outListFalse;
+    end if;
+  end for;
+end separateOnTrue;
+
 public function separate1OnTrue<T, ArgT1>
   "Takes a list of values and a filter function over the values and returns 2
-   sub lists of values for which the matching function returns true and false.
-     Example:
-       filter1OnTrue({1, 2, 3, 1, 5}, intEq, 1) => {1, 1},{2, 3, 5}"
+   sub lists of values for which the matching function returns true and false."
   input list<T> inList;
   input FilterFunc inFilterFunc;
   input ArgT1 inArg1;

@@ -382,7 +382,7 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp, Text &varDecls, S
   case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_FUNC(__)) then
     '((modelica_fnptr)boxptr_<%crefFunctionName(cr)%>)'
   case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
-    '((modelica_fnptr) _<%crefStr(cr)%>)'
+    '<%crefStr(cr)%>'
   else '<%daeExpCrefRhs2(exp, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
 end daeExpCrefRhs;
 
@@ -995,6 +995,9 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as SIZE(__)            then     daeExpSize(e, context, &preExp, &varDecls, simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as SHARED_LITERAL(__)  then     daeExpSharedLiteral(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, useFlatArrayNotation)
   case e as SUM(__)             then     daeExpSum(e, context, &preExp, &varDecls, simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as PARTEVALFUNCTION(__)then daeExpPartEvalFunction(e, context, &preExp, &varDecls, simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as BOX(__)             then daeExpBox(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as UNBOX(__)           then daeExpUnbox(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 
   else error(sourceInfo(), 'Unknown exp:<%printExpStr(exp)%>')
 end daeExp;
@@ -3113,7 +3116,60 @@ template daeExpSum(Exp exp, Context context, Text &preExp, Text &varDecls, SimCo
   //}
 end daeExpSum;
 
+template daeExpPartEvalFunction(Exp exp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates code for a function reference and a closure."
+::=
+  match exp
+  case PARTEVALFUNCTION(ty=T_FUNCTION_REFERENCE_VAR(functionType = t as T_FUNCTION(functionAttributes=attr as FUNCTION_ATTRIBUTES(__))), origType=T_FUNCTION_REFERENCE_VAR(functionType=t_orig as T_FUNCTION(functionAttributes=attr_orig as FUNCTION_ATTRIBUTES(__), source={name}))) then
+    let funcName = '<%underscorePath(name)%>'
+    let closureName = '_Closure<%System.tmpTickIndex(2/*auxFunction*/)%>_<%funcName%>'
+    let functionsObject = match context case FUNCTION_CONTEXT(__) then 'this' else '_functions'
+    let createClosure = (expList |> e => ', <%daeExp(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>')
+    let closureArgsDecl = (setDifference(t_orig.funcArg, t.funcArg) |> a as FUNCARG(__) hasindex i1 fromindex 1 => ', <%expTypeShort(a.ty)%> <%a.name%>')
+    let callArgsDecl = (t.funcArg |> a as FUNCARG(__) hasindex i1 fromindex 1 => '<%expTypeShort(a.ty)%> <%a.name%>, ')
+    let callArgsOrig = (t_orig.funcArg |> a as FUNCARG(__) hasindex i1 fromindex 1 => '<%a.name%>, ')
+    let &extraFuncsDecl +=
+    <<
 
+    template <typename metatype> // TODO: remove this if actual types known
+    class <%closureName%>
+    {
+      Functions *_functions;
+      <%setDifference(t_orig.funcArg, t.funcArg) |> a as FUNCARG(__) hasindex i1 fromindex 1 => '<%expTypeShort(a.ty)%> <%a.name%>;<%\n%>'%>
+     public:
+      <%closureName%>(Functions *functions<%closureArgsDecl%>) {
+        _functions = functions;
+        <%setDifference(t_orig.funcArg, t.funcArg) |> a as FUNCARG(__) hasindex i1 fromindex intAdd(listLength(t.funcArg), 1) => 'this-><%a.name%> = <%a.name%>;<%\n%>'%>
+      }
+      void operator()(<%callArgsDecl%><%funcName%>RetType &output) {
+        _functions-><%funcName%>(<%callArgsOrig%>output);
+      }
+    };<%\n%>
+    >>
+    '<%closureName%><double>(<%functionsObject%><%createClosure%>)'
+  case PARTEVALFUNCTION(__) then
+    error(sourceInfo(), 'PARTEVALFUNCTION: <%ExpressionDump.printExpStr(exp)%>, ty=<%unparseType(ty)%>, origType=<%unparseType(origType)%>')
+end daeExpPartEvalFunction;
+
+template daeExpBox(Exp exp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Not needed; just returns exp"
+::=
+  match exp
+  case BOX(__) then
+    let ty = if isArrayType(typeof(exp)) then "modelica_array" else expTypeFromExpShort(exp)
+    let res = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    '/*box <%ty%>*/<%res%>'
+end daeExpBox;
+
+template daeExpUnbox(Exp exp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Not needed; just returns exp.exp"
+::=
+  match exp
+  case exp as UNBOX(__) then
+    let ty = expTypeShort(exp.ty)
+    let res = daeExp(exp.exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    '/*unbox <%ty%>*/<%res%>'
+end daeExpUnbox;
 
 /*******************************************************************************************************************************************************
 * end of exp to string template functions
