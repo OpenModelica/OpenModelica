@@ -475,4 +475,14 @@ void Hybrj::fcn(const int *n, const double *x, double *fvec, double *fjac, const
 	}
 
 }
+void Hybrj::restoreOldValues()
+{
+
+}
+
+void Hybrj::restoreNewValues()
+{
+
+}
+
 /** @} */ // end of solverHybrj

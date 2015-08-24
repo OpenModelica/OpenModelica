@@ -42,5 +42,7 @@ public:
   /// Returns the status of iteration
   virtual ITERATIONSTATUS getIterationStatus() = 0;
   virtual void stepCompleted(double time) = 0;
+  virtual void restoreOldValues() = 0;
+  virtual void restoreNewValues() = 0;
 };
  /** @} */ // end of coreSolver

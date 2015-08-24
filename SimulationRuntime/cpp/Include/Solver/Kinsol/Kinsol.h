@@ -24,7 +24,10 @@ public:
   /// Returns the status of iteration
   virtual ITERATIONSTATUS getIterationStatus();
   virtual void stepCompleted(double time);
+  virtual void restoreOldValues();
+  virtual void restoreNewValues();
   int kin_f(N_Vector y, N_Vector fval, void *user_data);
+
  /*will be used with new sundials version
   int kin_JacSparse(N_Vector u, N_Vector fu,SlsMat J, void *user_data,N_Vector tmp1, N_Vector tmp2);
  int kin_JacDense(long int N, N_Vector u, N_Vector fu,DlsMat J, void *user_data,N_Vector tmp1, N_Vector tmp2);
@@ -70,8 +73,9 @@ private:
 	  *_fHelp,              ///< Temp   - Auxillary variables
 	  *_zeroVec,
 	  *_currentIterate,
-	  *_scale;
-
+	  *_scale,
+      *_y_old,
+      *_y_new;
   double
     _fnormtol,
     _scsteptol;

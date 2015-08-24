@@ -87,7 +87,10 @@ public:
 
     /// Provide the right hand side
     virtual void setRHS(const double* f) = 0;
-
+    ///Restores all algloop variables for a output step
+     virtual void restoreOldValues() = 0;
+     ///Restores all algloop variables for last output step
+     virtual void restoreNewValues() = 0;
     /// Update transfer behavior of the system of equations according to command given by solver
 
     virtual bool evaluateAll(const UPDATETYPE command = UNDEF_UPDATE) = 0;  // vxworks

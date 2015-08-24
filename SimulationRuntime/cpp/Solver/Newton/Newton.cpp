@@ -255,6 +255,17 @@ void Newton::calcJacobian()
 		_yHelp[j] -=stepsize;
 	}
 }
+void Newton::restoreOldValues()
+{
+
+}
+
+void Newton::restoreNewValues()
+{
+
+}
+
+
 
 /** @} */ // end of solverNewton
 

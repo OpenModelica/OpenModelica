@@ -468,6 +468,10 @@ void Cvode::CVodeCore()
     if (_idid != CV_SUCCESS)
       throw ModelicaSimulationError(SOLVER,"CVodeGetLastStep failed. The cvode mem pointer is NULL");
 
+  //set completed step to system and check if terminate was called
+    if(_continuous_system->stepCompleted(_tCurrent))
+        _solverStatus = DONE;
+
     //Check if there was at least one output-point within the last solver interval
     //  -> Write output if true
     if (writeOutput)
@@ -483,9 +487,7 @@ void Cvode::CVodeCore()
     }
     #endif
 
-    //set completed step to system and check if terminate was called
-    if(_continuous_system->stepCompleted(_tCurrent))
-        _solverStatus = DONE;
+
 
     #ifdef RUNTIME_PROFILING
     if(MeasureTime::getInstance() != NULL)
@@ -626,16 +628,18 @@ void Cvode::writeCVodeOutput(const double &time, const double &h, const int &stp
     if (_cvodesettings->getDenseOutput())
     {
       _bWritten = false;
-      double *oldValues = NULL;
+     /* double *oldValues = NULL;*/
 
       //We have to find all output-points within the last solver step
       while (_tLastWrite + dynamic_cast<ISolverSettings*>(_cvodesettings)->getGlobalSettings()->gethOutput() <= time)
       {
         if (!_bWritten)
         {
-          //Rescue the calculated derivatives
-          oldValues = new double[_continuous_system->getDimRHS()];
-          _continuous_system->getRHS(oldValues);
+           _continuous_system->restoreOldValues();
+		   ////Rescue the calculated derivatives
+     //      oldValues = new double[_continuous_system->getDimRHS()];
+     //      _continuous_system->getRHS(oldValues);
+
         }
         _bWritten = true;
         _tLastWrite = _tLastWrite + dynamic_cast<ISolverSettings*>(_cvodesettings)->getGlobalSettings()->gethOutput();
@@ -650,9 +654,9 @@ void Cvode::writeCVodeOutput(const double &time, const double &h, const int &stp
       {
         _time_system->setTime(time);
         _continuous_system->setContinuousStates(_z);
-        _continuous_system->setRHS(oldValues);
-        delete[] oldValues;
-        //_continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+        _continuous_system->restoreNewValues();
+        /* _continuous_system->setRHS(oldValues);
+         delete[] oldValues;*/
       }
       else if (time == _tEnd && _tLastWrite != time)
       {
