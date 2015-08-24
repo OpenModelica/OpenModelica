@@ -123,7 +123,9 @@ Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _Kin_fScale         (NULL)
 	, _kinMem             (NULL)
 	, _scale			  (NULL)
-  , _fValid(false)
+    , _fValid(false)
+    , _y_old(NULL)
+    , _y_new(NULL)
   , _solverErrorNotificationGiven(false)
 {
 	_data = ((void*)this);
@@ -133,6 +135,8 @@ Kinsol::~Kinsol()
 {
 	if(_y)                delete []  _y;
 	if(_y0)               delete []  _y0;
+    if(_y_old)            delete [] _y_old;
+    if(_y_new)            delete [] _y_new;
 	if(_yScale)           delete []  _yScale;
 	if(_fScale)           delete []  _fScale;
 	if(_f)                delete []  _f;
@@ -146,6 +150,7 @@ Kinsol::~Kinsol()
 	if(_yHelp)            delete []  _yHelp;
 	if (_scale)            delete[]  _scale;
 	if(_Kin_y)
+
 		N_VDestroy_Serial(_Kin_y);
 	if(_Kin_y0)
 		N_VDestroy_Serial(_Kin_y0);
@@ -194,7 +199,8 @@ void Kinsol::initialize()
 			if(_zeroVec)         delete []  _zeroVec;
 			if(_currentIterate)  delete []  _currentIterate;
 			if (_scale)			 delete[]  _scale;
-
+            if(_y_old)           delete [] _y_old;
+            if(_y_new)           delete [] _y_new;
 			_y                = new double[_dimSys];
 			_y0               = new double[_dimSys];
 			_yScale           = new double[_dimSys];
@@ -206,14 +212,16 @@ void Kinsol::initialize()
 			_zeroVec          = new double[_dimSys];
 			_currentIterate   = new double[_dimSys];
 			_scale			  = new double[_dimSys];
-
+            _y_old            = new double[_dimSys];
+            _y_new            = new double[_dimSys];
 			_jac              = new double[_dimSys*_dimSys];
 			_yHelp            = new double[_dimSys];
 			_fHelp            = new double[_dimSys];
 
 			_algLoop->getReal(_y);
 			_algLoop->getReal(_y0);
-
+            _algLoop->getReal(_y_new);
+            _algLoop->getReal(_y_old);
 			memset(_f, 0, _dimSys*sizeof(double));
 			memset(_helpArray, 0, _dimSys*sizeof(double));
 			memset(_ihelpArray, 0, _dimSys*sizeof(long int));
@@ -575,6 +583,7 @@ void Kinsol::solve()
 
     if(_iterationStatus == SOLVERERROR && !_eventRetry)
     {
+
       if(_kinsolSettings->getContinueOnError())
       {
         if(!_solverErrorNotificationGiven)
@@ -584,6 +593,7 @@ void Kinsol::solve()
         }
       }
       else
+
         throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
     }
 	}
@@ -686,6 +696,8 @@ int Kinsol::kin_JacDense(long int N, N_Vector u, N_Vector fu,DlsMat J, void *use
 void Kinsol::stepCompleted(double time)
 {
 	memcpy(_y0,_y,_dimSys*sizeof(double));
+    memcpy(_y_old,_y_new,_dimSys*sizeof(double));
+    memcpy(_y_new,_y,_dimSys*sizeof(double));
 }
 
 int Kinsol::check_flag(void *flagvalue, char *funcname, int opt)
@@ -882,7 +894,25 @@ void Kinsol::solveNLS()
 
 
 }
+/**
+ *  \brief Restores all algloop variables for a output step
+ *  \return Return_Description
+ *  \details Details
+ */
+void Kinsol::restoreOldValues()
+{
+     memcpy(_y,_y_old,_dimSys*sizeof(double));
 
+}
+    /**
+ *  \brief Restores all algloop variables for last output step
+ *  \return Return_Description
+ *  \details Details
+ */
+void Kinsol::restoreNewValues()
+{
+    memcpy(_y,_y_new,_dimSys*sizeof(double));
+}
 
 
 

@@ -62,7 +62,8 @@ public:
     /// Returns the status of iteration
     virtual ITERATIONSTATUS getIterationStatus();
     virtual void stepCompleted(double time);
-
+    virtual void restoreOldValues();
+    virtual void restoreNewValues();
 private:
     /// Encapsulation of determination of residuals to given unknowns
     void calcFunction(const double* y, double* residual);
@@ -94,6 +95,8 @@ private:
         *_yHelp,                    ///< Temp        - Auxillary variables
         *_fHelp,                    ///< Temp        - Auxillary variables
         *_jac,                        ///< Temp        - Jacobian
+        *_y_old,
+        *_y_new,
         * _zeroVec;
   long int *_iHelp;
 };
