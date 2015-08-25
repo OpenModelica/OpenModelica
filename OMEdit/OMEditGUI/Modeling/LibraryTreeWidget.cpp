@@ -666,6 +666,12 @@ QModelIndex LibraryTreeModel::index(int row, int column, const QModelIndex &pare
   }
 }
 
+/*!
+ * \brief LibraryTreeModel::parent
+ * Finds the parent for QModelIndex
+ * \param index
+ * \return
+ */
 QModelIndex LibraryTreeModel::parent(const QModelIndex &index) const
 {
   if (!index.isValid()) {
@@ -680,6 +686,13 @@ QModelIndex LibraryTreeModel::parent(const QModelIndex &index) const
   return createIndex(pParentLibraryTreeItem->row(), 0, pParentLibraryTreeItem);
 }
 
+/*!
+ * \brief LibraryTreeModel::data
+ * Returns the LibraryTreeItem data.
+ * \param index
+ * \param role
+ * \return
+ */
 QVariant LibraryTreeModel::data(const QModelIndex &index, int role) const
 {
   if (!index.isValid()) {
@@ -690,6 +703,12 @@ QVariant LibraryTreeModel::data(const QModelIndex &index, int role) const
   return pLibraryTreeItem->data(index.column(), role);
 }
 
+/*!
+ * \brief LibraryTreeModel::flags
+ * Returns the LibraryTreeItem flags.
+ * \param index
+ * \return
+ */
 Qt::ItemFlags LibraryTreeModel::flags(const QModelIndex &index) const
 {
   if (!index.isValid()) {
@@ -699,12 +718,19 @@ Qt::ItemFlags LibraryTreeModel::flags(const QModelIndex &index) const
   }
 }
 
-LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QString &name, LibraryTreeItem *root) const
+/*!
+ * \brief LibraryTreeModel::findLibraryTreeItem
+ * Finds the LibraryTreeItem based on the name and case sensitivity.
+ * \param name
+ * \param root
+ * \return
+ */
+LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QString &name, LibraryTreeItem *root, Qt::CaseSensitivity caseSensitivity) const
 {
   if (!root) {
     root = mpRootLibraryTreeItem;
   }
-  if (root->getNameStructure() == name) {
+  if (root->getNameStructure().compare(name, caseSensitivity) == 0) {
     return root;
   }
   for (int i = root->getChildren().size(); --i >= 0; ) {
@@ -715,6 +741,13 @@ LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QString &name, Libr
   return 0;
 }
 
+/*!
+ * \brief LibraryTreeModel::findLibraryTreeItem
+ * Finds the LibraryTreeItem based on the Regular Expression.
+ * \param regExp
+ * \param root
+ * \return
+ */
 LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QRegExp &regExp, LibraryTreeItem *root) const
 {
   if (!root) {
@@ -731,27 +764,15 @@ LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QRegExp &regExp, Li
   return 0;
 }
 
+/*!
+ * \brief LibraryTreeModel::libraryTreeItemIndex
+ * Finds the QModelIndex attached to LibraryTreeItem.
+ * \param pLibraryTreeItem
+ * \return
+ */
 QModelIndex LibraryTreeModel::libraryTreeItemIndex(const LibraryTreeItem *pLibraryTreeItem) const
 {
   return libraryTreeItemIndexHelper(pLibraryTreeItem, mpRootLibraryTreeItem, QModelIndex());
-}
-
-QModelIndex LibraryTreeModel::libraryTreeItemIndexHelper(const LibraryTreeItem *pLibraryTreeItem,
-                                                         const LibraryTreeItem *pParentLibraryTreeItem,
-                                                         const QModelIndex &parentIndex) const
-{
-  if (pLibraryTreeItem == pParentLibraryTreeItem) {
-    return parentIndex;
-  }
-  for (int i = pParentLibraryTreeItem->getChildren().size(); --i >= 0; ) {
-    const LibraryTreeItem *childItem = pParentLibraryTreeItem->getChildren().at(i);
-    QModelIndex childIndex = index(i, 0, parentIndex);
-    QModelIndex index = libraryTreeItemIndexHelper(pLibraryTreeItem, childItem, childIndex);
-    if (index.isValid()) {
-      return index;
-    }
-  }
-  return QModelIndex();
 }
 
 /*!
@@ -1152,6 +1173,14 @@ LibraryTreeItem* LibraryTreeModel::getLibraryTreeItemFromFile(QString fileName, 
   return getLibraryTreeItemFromFileHelper(mpRootLibraryTreeItem, fileName, lineNumber);
 }
 
+/*!
+ * \brief LibraryTreeModel::showModelWidget
+ * Shows the ModelWidget
+ * \param pLibraryTreeItem
+ * \param text
+ * \param show
+ * \param newModel
+ */
 void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, QString text, bool show, bool newModel)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
@@ -1178,6 +1207,11 @@ void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, QStrin
   QApplication::restoreOverrideCursor();
 }
 
+/*!
+ * \brief LibraryTreeModel::showHideProtectedClasses
+ * Shows/hides the protected LibraryTreeItems by invalidating the view.
+ * The LibraryTreeProxyModel shows/hides the LibraryTreeItems in LibraryTreeProxyModel::filterAcceptsRow() based on the settings value.
+ */
 void LibraryTreeModel::showHideProtectedClasses()
 {
   /* invalidate the view so that the items show the updated values. */
@@ -1223,9 +1257,7 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
     If deleteClass is successfull remove the class from Library Browser and delete the corresponding ModelWidget.
     */
   if (mpLibraryWidget->getMainWindow()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
-    /* remove the child items first */
     unloadClassChildren(pLibraryTreeItem);
-    unloadClassHelper(pLibraryTreeItem, pLibraryTreeItem->parent());
     mpLibraryWidget->getMainWindow()->getOMCProxy()->removeCachedOMCCommand(pLibraryTreeItem->getNameStructure());
     /* Update the model switcher toolbar button. */
     mpLibraryWidget->getMainWindow()->updateModelSwitcherMenu(0);
@@ -1235,22 +1267,6 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
                           GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(mpLibraryWidget->getMainWindow()->getOMCProxy()->getResult())
                           .append(tr("while deleting ") + pLibraryTreeItem->getNameStructure()), Helper::ok);
     return false;
-  }
-}
-
-/*!
- * \brief LibraryTreeModel::unloadClassChildren
- * Unloads/deletes the LibraryTreeItem childrens.
- * \param pParentLibraryTreeItem
- */
-void LibraryTreeModel::unloadClassChildren(LibraryTreeItem *pParentLibraryTreeItem)
-{
-  for (int i = 0 ; i < pParentLibraryTreeItem->getChildren().size(); i++) {
-    LibraryTreeItem *pChildLibraryTreeItem = pParentLibraryTreeItem->child(i);
-    if (pChildLibraryTreeItem->getChildren().size() > 0) {
-      unloadClassChildren(pChildLibraryTreeItem);
-    }
-    unloadClassHelper(pChildLibraryTreeItem, pParentLibraryTreeItem);
   }
 }
 
@@ -1324,6 +1340,31 @@ QString LibraryTreeModel::getUniqueTopLevelItemName(QString name, int number)
 }
 
 /*!
+ * \brief LibraryTreeModel::libraryTreeItemIndexHelper
+ * Helper function for LibraryTreeModel::libraryTreeItemIndex()
+ * \param pLibraryTreeItem
+ * \param pParentLibraryTreeItem
+ * \param parentIndex
+ * \return
+ */
+QModelIndex LibraryTreeModel::libraryTreeItemIndexHelper(const LibraryTreeItem *pLibraryTreeItem,
+                                                         const LibraryTreeItem *pParentLibraryTreeItem, const QModelIndex &parentIndex) const
+{
+  if (pLibraryTreeItem == pParentLibraryTreeItem) {
+    return parentIndex;
+  }
+  for (int i = pParentLibraryTreeItem->getChildren().size(); --i >= 0; ) {
+    const LibraryTreeItem *childItem = pParentLibraryTreeItem->getChildren().at(i);
+    QModelIndex childIndex = index(i, 0, parentIndex);
+    QModelIndex index = libraryTreeItemIndexHelper(pLibraryTreeItem, childItem, childIndex);
+    if (index.isValid()) {
+      return index;
+    }
+  }
+  return QModelIndex();
+}
+
+/*!
  * \brief LibraryTreeModel::getLibraryTreeItemFromFileHelper
  * Helper function for LibraryTreeModel::getLibraryTreeItemFromFile()
  * \param pLibraryTreeItem
@@ -1373,6 +1414,25 @@ void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, Libr
   endRemoveRows();
 }
 
+/*!
+ * \brief LibraryTreeModel::unloadClassChildren
+ * Unloads/deletes the LibraryTreeItem childrens.
+ * \param pLibraryTreeItem
+ */
+void LibraryTreeModel::unloadClassChildren(LibraryTreeItem *pLibraryTreeItem)
+{
+  int i = 0;
+  while(i < pLibraryTreeItem->getChildren().size()) {
+    unloadClassChildren(pLibraryTreeItem->child(i));
+    i = 0;  //Restart iteration
+  }
+  unloadClassHelper(pLibraryTreeItem, pLibraryTreeItem->parent());
+}
+
+/*!
+ * \brief LibraryTreeModel::supportedDropActions
+ * \return
+ */
 Qt::DropActions LibraryTreeModel::supportedDropActions() const
 {
   return Qt::CopyAction;
