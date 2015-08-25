@@ -65,6 +65,10 @@ void* generic_array_element_addr(const base_array_t* source, size_t sze, int ndi
   return tmp;
 }
 
+void* generic_array_element_addr1(const base_array_t* source, size_t sze, int dim1) {
+  return generic_ptrget(source, dim1-1, sze);
+}
+
 
 void alloc_generic_array_data(base_array_t* a, size_t sze)
 {
