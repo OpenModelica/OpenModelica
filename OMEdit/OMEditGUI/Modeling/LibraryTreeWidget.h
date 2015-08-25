@@ -207,8 +207,7 @@ public:
   void showHideProtectedClasses();
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   void unloadClassChildren(LibraryTreeItem *pParentLibraryTreeItem);
-  bool unloadTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
-  bool unloadTLMFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
+  bool unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   QString getUniqueTopLevelItemName(QString name, int number = 1);
 private:
   LibraryWidget *mpLibraryWidget;
@@ -239,7 +238,6 @@ private:
   QAction *mpSimulationSetupAction;
   QAction *mpDuplicateClassAction;
   QAction *mpUnloadClassAction;
-  QAction *mpUnloadTextFileAction;
   QAction *mpUnloadTLMFileAction;
   QAction *mpRefreshAction;
   QAction *mpExportFMUAction;
@@ -265,8 +263,7 @@ public slots:
   void simulationSetup();
   void duplicateClass();
   void unloadClass();
-  void unloadTextFile();
-  void unloadTLMFile();
+  void unloadTLMOrTextFile();
   void exportModelFMU();
   void exportModelXML();
   void exportModelFigaro();
@@ -289,7 +286,7 @@ public:
   LibraryTreeView* getLibraryTreeView() {return mpLibraryTreeView;}
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false);
   void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
-  void openTLMFile(QFileInfo fileInfo, bool showProgress = true);
+  void openTLMOrTextFile(QFileInfo fileInfo, bool showProgress = true);
   void parseAndLoadModelicaText(QString modelText);
   bool saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void openLibraryTreeItem(QString nameStructure);

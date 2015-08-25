@@ -332,7 +332,7 @@ public:
   void getTLMConnections();
   Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
   void refresh();
-  bool validateModelicaText();
+  bool validateText();
   bool modelicaEditorTextChanged();
   void updateModelicaText();
 private:
