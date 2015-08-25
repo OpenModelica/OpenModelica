@@ -8,50 +8,61 @@
 #include <Solver/Kinsol/KinsolSettings.h>
 
 KinsolSettings::KinsolSettings()
-: iNewt_max         (700)
-, dRtol           (1e-12)
-, dAtol           (1.0)
-, dDelta          (0.9)
+: _iNewt_max         (700)
+, _dRtol           (1e-12)
+, _dAtol           (1.0)
+, _dDelta          (0.9)
+, _continueOnError(false)
 {
 };
 /*max. Anzahl an Newtonititerationen pro Schritt (default: 25)*/
 long int     KinsolSettings::getNewtMax()
 {
-  return iNewt_max;
+  return _iNewt_max;
 }
 void     KinsolSettings::setNewtMax(long int max)
 {
-  iNewt_max =max;
+  _iNewt_max =max;
 }
 /* Relative Toleranz für die Newtoniteration (default: 1e-6)*/
 double     KinsolSettings::getRtol()
 {
-  return dRtol;
+  return _dRtol;
 }
 void     KinsolSettings::setRtol(double t)
 {
-  dRtol=t;
+  _dRtol=t;
 }
 /*Absolute Toleranz für die Newtoniteration (default: 1e-6)*/
 double     KinsolSettings::getAtol()
 {
-  return dAtol;
+  return _dAtol;
 }
 void     KinsolSettings::setAtol(double t)
 {
-  dAtol =t;
+  _dAtol =t;
 }
 /*Dämpfungsfaktor (default: 0.9)*/
 double       KinsolSettings::getDelta()
 {
-  return dDelta;
+  return _dDelta;
 }
 void       KinsolSettings::setDelta(double t)
 {
-  dDelta = t;
+  _dDelta = t;
 }
 
 void KinsolSettings::load(string)
 {
+}
+
+void KinsolSettings::setContinueOnError(bool value)
+{
+  _continueOnError = value;
+}
+
+bool KinsolSettings::getContinueOnError()
+{
+  return _continueOnError;
 }
 /** @} */ // end of solverKinsol

@@ -45,10 +45,10 @@ extern "C" {
 #endif /* cplusplus */
 
 #if !defined(OMC_MINIMAL_RUNTIME)
-void recon_wall_init(simulation_result *self,DATA *data);
-void recon_wall_emit(simulation_result *self,DATA *data);
-void recon_wall_writeParameterData(simulation_result *self,DATA *data);
-void recon_wall_free(simulation_result *self,DATA *data);
+void recon_wall_init(simulation_result *self,DATA *data, threadData_t *threadData);
+void recon_wall_emit(simulation_result *self,DATA *data, threadData_t *threadData);
+void recon_wall_writeParameterData(simulation_result *self,DATA *data, threadData_t *threadData);
+void recon_wall_free(simulation_result *self,DATA *data, threadData_t *threadData);
 #endif
 
 #ifdef __cplusplus

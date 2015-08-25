@@ -78,15 +78,15 @@ static int findTime(double time, RINGBUFFER *delayStruct)
   return (start);
 }
 
-void storeDelayedExpression(DATA* data, int exprNumber, double exprValue, double time, double delayTime, double delayMax)
+void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber, double exprValue, double time, double delayTime, double delayMax)
 {
   int i;
   TIME_AND_VALUE tpl;
 
   /* Allocate more space for expressions */
-  assertStreamPrint(data->threadData, exprNumber < data->modelData.nDelayExpressions, "storeDelayedExpression: invalid expression number %d", exprNumber);
-  assertStreamPrint(data->threadData, 0 <= exprNumber, "storeDelayedExpression: invalid expression number %d", exprNumber);
-  assertStreamPrint(data->threadData, data->simulationInfo.tStart <= time, "storeDelayedExpression: time is smaller than starting time. Value ignored");
+  assertStreamPrint(threadData, exprNumber < data->modelData.nDelayExpressions, "storeDelayedExpression: invalid expression number %d", exprNumber);
+  assertStreamPrint(threadData, 0 <= exprNumber, "storeDelayedExpression: invalid expression number %d", exprNumber);
+  assertStreamPrint(threadData, data->simulationInfo.tStart <= time, "storeDelayedExpression: time is smaller than starting time. Value ignored");
 
   tpl.t = time;
   tpl.value = exprValue;
@@ -102,7 +102,7 @@ void storeDelayedExpression(DATA* data, int exprNumber, double exprValue, double
 }
 
 
-double delayImpl(DATA* data, int exprNumber, double exprValue, double time, double delayTime, double delayMax)
+double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double exprValue, double time, double delayTime, double delayMax)
 {
   RINGBUFFER* delayStruct = data->simulationInfo.delayStructure[exprNumber];
   int length = ringBufferLength(delayStruct);
@@ -111,8 +111,8 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
 
   /* Check for errors */
 
-  assertStreamPrint(data->threadData, 0 <= exprNumber, "invalid exprNumber = %d", exprNumber);
-  assertStreamPrint(data->threadData, exprNumber < data->modelData.nDelayExpressions, "invalid exprNumber = %d", exprNumber);
+  assertStreamPrint(threadData, 0 <= exprNumber, "invalid exprNumber = %d", exprNumber);
+  assertStreamPrint(threadData, exprNumber < data->modelData.nDelayExpressions, "invalid exprNumber = %d", exprNumber);
 
   if(time <= data->simulationInfo.tStart)
   {
@@ -122,7 +122,7 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
 
   if(delayTime < 0.0)
   {
-    throwStreamPrint(data->threadData, "Negative delay requested %g", delayTime);
+    throwStreamPrint(threadData, "Negative delay requested %g", delayTime);
   }
 
   if(length == 0)
@@ -155,7 +155,7 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
     double time0, time1, value0, value1;
     int i;
 
-    assertStreamPrint(data->threadData, 0.0 <= delayTime, "Negative delay requested: delayTime = %g", delayTime);
+    assertStreamPrint(threadData, 0.0 <= delayTime, "Negative delay requested: delayTime = %g", delayTime);
 
     /* find the row for the lower limit */
     if(timeStamp > ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->t)
@@ -172,7 +172,7 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
     else
     {
       i = findTime(timeStamp, delayStruct);
-      assertStreamPrint(data->threadData, i < length, "%d = i < length = %d", i, length);
+      assertStreamPrint(threadData, i < length, "%d = i < length = %d", i, length);
       time0 = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->t;
       value0 = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->value;
 

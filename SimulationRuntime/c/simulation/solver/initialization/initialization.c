@@ -154,7 +154,7 @@ void dumpInitialSolution(DATA *simData)
  *
  *  \author lochel
  */
-static int symbolic_initialization(DATA *data, long numLambdaSteps)
+static int symbolic_initialization(DATA *data, threadData_t *threadData, long numLambdaSteps)
 {
   TRACE_PUSH
   long step;
@@ -179,10 +179,10 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
     modelica_string* stringVars = (modelica_string*) GC_malloc_uncollectable(data->modelData.nVariablesString * sizeof(modelica_string));
     MODEL_DATA *mData = &(data->modelData);
 
-    assertStreamPrint(data->threadData, 0 != realVars, "out of memory");
-    assertStreamPrint(data->threadData, 0 != integerVars, "out of memory");
-    assertStreamPrint(data->threadData, 0 != booleanVars, "out of memory");
-    assertStreamPrint(data->threadData, 0 != stringVars, "out of memory");
+    assertStreamPrint(threadData, 0 != realVars, "out of memory");
+    assertStreamPrint(threadData, 0 != integerVars, "out of memory");
+    assertStreamPrint(threadData, 0 != booleanVars, "out of memory");
+    assertStreamPrint(threadData, 0 != stringVars, "out of memory");
 
     for(i=0; i<mData->nVariablesReal; ++i) {
       realVars[i] = mData->realVarsData[i].attribute.start;
@@ -212,10 +212,11 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
     {
       data->simulationInfo.lambda = ((double)step)/(numLambdaSteps-1);
 
-      if(data->simulationInfo.lambda > 1.0)
+      if(data->simulationInfo.lambda > 1.0) {
         data->simulationInfo.lambda = 1.0;
+      }
 
-      data->callback->functionInitialEquations(data);
+      data->callback->functionInitialEquations(data, threadData);
 
       infoStreamPrint(LOG_INIT, 0, "lambda = %g done", data->simulationInfo.lambda);
 
@@ -252,16 +253,14 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
     free(integerVars);
     free(booleanVars);
     GC_free(stringVars);
-  }
-  else
-  {
+  } else {
     data->simulationInfo.lambda = 1.0;
-    data->callback->functionInitialEquations(data);
+    data->callback->functionInitialEquations(data, threadData);
   }
   storeRelations(data);
 
   /* check for over-determined systems */
-  retVal = data->callback->functionRemovedInitialEquations(data);
+  retVal = data->callback->functionRemovedInitialEquations(data, threadData);
 
   TRACE_POP
   return retVal;
@@ -338,7 +337,7 @@ static char *mapToDymolaVars(const char *varname)
  *
  *  \author lochel
  */
-int importStartValues(DATA *data, const char *pInitFile, const double initTime)
+int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFile, const double initTime)
 {
   ModelicaMatReader reader;
   ModelicaMatVariable_t *pVar = NULL;
@@ -360,7 +359,7 @@ int importStartValues(DATA *data, const char *pInitFile, const double initTime)
   pError = omc_new_matlab4_reader(pInitFile, &reader);
   if(pError)
   {
-    throwStreamPrint(data->threadData, "unable to read input-file <%s> [%s]", pInitFile, pError);
+    throwStreamPrint(threadData, "unable to read input-file <%s> [%s]", pInitFile, pError);
     return 1;
   }
   else
@@ -499,7 +498,7 @@ int importStartValues(DATA *data, const char *pInitFile, const double initTime)
  *
  *  \author lochel
  */
-int initialization(DATA *data, const char* pInitMethod, const char* pInitFile, double initTime, int lambda_steps)
+int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod, const char* pInitFile, double initTime, int lambda_steps)
 {
   TRACE_PUSH
   int initMethod = IIM_SYMBOLIC; /* default method */
@@ -513,10 +512,10 @@ int initialization(DATA *data, const char* pInitMethod, const char* pInitFile, d
   /* import start values from extern mat-file */
   if(pInitFile && strcmp(pInitFile, ""))
   {
-    data->callback->updateBoundParameters(data);
-    data->callback->updateBoundVariableAttributes(data);
+    data->callback->updateBoundParameters(data, threadData);
+    data->callback->updateBoundVariableAttributes(data, threadData);
 
-    if(importStartValues(data, pInitFile, initTime))
+    if(importStartValues(data, threadData, pInitFile, initTime))
     {
       TRACE_POP
       return 1;
@@ -528,14 +527,14 @@ int initialization(DATA *data, const char* pInitMethod, const char* pInitFile, d
 
   if(!(pInitFile && strcmp(pInitFile, "")))
   {
-    data->callback->updateBoundParameters(data);
-    data->callback->updateBoundVariableAttributes(data);
+    data->callback->updateBoundParameters(data, threadData);
+    data->callback->updateBoundVariableAttributes(data, threadData);
     setAllVarsToStart(data);
   }
 
   /* update static data of linear/non-linear system solvers */
-  updateStaticDataOfLinearSystems(data);
-  updateStaticDataOfNonlinearSystems(data);
+  updateStaticDataOfLinearSystems(data, threadData);
+  updateStaticDataOfNonlinearSystems(data, threadData);
 
   /* if there are user-specified options, use them! */
   if(pInitMethod && strcmp(pInitMethod, ""))
@@ -558,7 +557,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pInitFile, d
       {
         warningStreamPrint(LOG_STDOUT, 0, "| %-15s [%s]", INIT_METHOD_NAME[i], INIT_METHOD_DESC[i]);
       }
-      throwStreamPrint(data->threadData, "see last warning");
+      throwStreamPrint(threadData, "see last warning");
     }
   }
 
@@ -591,17 +590,17 @@ int initialization(DATA *data, const char* pInitMethod, const char* pInitFile, d
   }
   else if(IIM_SYMBOLIC == initMethod)
   {
-    retVal = symbolic_initialization(data, lambda_steps);
+    retVal = symbolic_initialization(data, threadData, lambda_steps);
   }
   else
   {
-    throwStreamPrint(data->threadData, "unsupported option -iim");
+    throwStreamPrint(threadData, "unsupported option -iim");
   }
 
   /* do pivoting for dynamic state selection if selection changed try again */
-  if(stateSelection(data, 0, 1) == 1)
+  if(stateSelection(data, threadData, 0, 1) == 1)
   {
-    if(stateSelection(data, 1, 1) == 1)
+    if(stateSelection(data, threadData, 1, 1) == 1)
     {
       /* report a warning about strange start values */
       warningStreamPrint(LOG_STDOUT, 0, "Cannot initialize the dynamic state selection in an unique way. Use -lv LOG_DSS to see the switching state set.");
@@ -633,12 +632,12 @@ int initialization(DATA *data, const char* pInitMethod, const char* pInitFile, d
 
   overwriteOldSimulationData(data);     /* overwrite the whole ring-buffer with initialized values */
   storePreValues(data);                 /* save pre-values */
-  updateDiscreteSystem(data);           /* evaluate discrete variables (event iteration) */
-  saveZeroCrossings(data);
+  updateDiscreteSystem(data, threadData);           /* evaluate discrete variables (event iteration) */
+  saveZeroCrossings(data, threadData);
 
-  initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
-  data->callback->function_storeDelayed(data);
-  data->callback->function_updateRelations(data, 1);
+  initSample(data, threadData, data->simulationInfo.startTime, data->simulationInfo.stopTime);
+  data->callback->function_storeDelayed(data, threadData);
+  data->callback->function_updateRelations(data, threadData, 1);
 
   printRelations(data, LOG_EVENTS);
   printZeroCrossings(data, LOG_EVENTS);

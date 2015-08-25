@@ -20,7 +20,8 @@ public:
     /// Returns the status of iteration
     virtual ITERATIONSTATUS getIterationStatus();
     virtual void stepCompleted(double time);
-
+    virtual void restoreOldValues();
+    virtual void restoreNewValues();
 private:
     ITERATIONSTATUS _iterationStatus;
     ILinSolverSettings *_umfpackSettings;
@@ -28,6 +29,8 @@ private:
 
     double * _jacd;
     double * _rhs;
-    double * _x;
+    double * _x,
+           *_x_old,
+           *_x_new;
     bool _firstuse;
 };

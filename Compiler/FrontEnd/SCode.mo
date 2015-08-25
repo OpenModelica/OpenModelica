@@ -3798,7 +3798,7 @@ protected
   list<SubMod> submods;
 algorithm
   ANNOTATION(modification = MOD(subModLst = submods)) := inAnnotation;
-  NAMEMOD(mod = MOD(info = info, binding = SOME(exp))) := List.selectFirst1(submods, hasNamedAnnotation, inName);
+  NAMEMOD(mod = MOD(info = info, binding = SOME(exp))) := List.find1(submods, hasNamedAnnotation, inName);
 end getNamedAnnotation;
 
 protected function hasNamedAnnotation
@@ -3937,7 +3937,7 @@ algorithm
 
     case ANNOTATION(MOD(fp, ep, submods, _, info))
       equation
-        inline_mod = List.selectFirst(submods, isInlineTypeSubMod);
+        inline_mod = List.find(submods, isInlineTypeSubMod);
       then
         SOME(ANNOTATION(MOD(fp, ep, {inline_mod}, NONE(), info)));
 

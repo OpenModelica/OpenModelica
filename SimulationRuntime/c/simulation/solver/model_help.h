@@ -73,16 +73,13 @@ extern "C" {
 }
 
 
-void initializeDataStruc(DATA *data);
+void initializeDataStruc(DATA *data, threadData_t *threadData);
 
 void deInitializeDataStruc(DATA *data);
 
-void updateDiscreteSystem(DATA *data);
+void updateDiscreteSystem(DATA *data, threadData_t *threadData);
 
-/* Defined in perform_simulation.c and omp_perform_simulation.c */
-extern void updateContinuousSystem(DATA *data);
-
-void saveZeroCrossings(DATA *data);
+void saveZeroCrossings(DATA *data, threadData_t *threadData);
 
 void copyStartValuestoInitValues(DATA *data);
 
@@ -102,7 +99,7 @@ void printParameters(DATA *data, int stream);
 void printSparseStructure(DATA *data, int stream);
 
 void overwriteOldSimulationData(DATA *data);
-void copyRingBufferSimulationData(DATA *data, SIMULATION_DATA **destData, RINGBUFFER* destRing);
+void copyRingBufferSimulationData(DATA *data, threadData_t *threadData, SIMULATION_DATA **destData, RINGBUFFER* destRing);
 
 void restoreExtrapolationDataOld(DATA *data);
 
@@ -130,8 +127,8 @@ void storeOldValues(DATA *data);
 modelica_integer _event_integer(modelica_real x, modelica_integer index, DATA *data);
 modelica_real _event_floor(modelica_real x, modelica_integer index, DATA *data);
 modelica_real _event_ceil(modelica_real x, modelica_integer index, DATA *data);
-modelica_integer _event_div_integer(modelica_integer x1, modelica_integer x2, modelica_integer index, DATA *data);
-modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integer index, DATA *data);
+modelica_integer _event_div_integer(modelica_integer x1, modelica_integer x2, modelica_integer index, DATA *data, threadData_t *threadData);
+modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integer index, DATA *data, threadData_t *threadData);
 modelica_integer _event_mod_integer(modelica_integer x1, modelica_integer x2, modelica_integer index, DATA *data);
 modelica_integer _event_rem_integer(modelica_integer x1, modelica_integer x2, modelica_integer index, DATA *data);
 

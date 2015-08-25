@@ -44,11 +44,11 @@
 #include "linearSolverTotalPivot.h"
 #include "simulation/simulation_info_xml.h"
 
-static void setAElement(int row, int col, double value, int nth, void *data);
-static void setAElementLis(int row, int col, double value, int nth, void *data);
-static void setAElementUmfpack(int row, int col, double value, int nth, void *data );
-static void setBElement(int row, double value, void *data );
-static void setBElementLis(int row, double value, void *data );
+static void setAElement(int row, int col, double value, int nth, void *data, threadData_t *);
+static void setAElementLis(int row, int col, double value, int nth, void *data, threadData_t *);
+static void setAElementUmfpack(int row, int col, double value, int nth, void *data, threadData_t *);
+static void setBElement(int row, double value, void *data, threadData_t*);
+static void setBElementLis(int row, double value, void *data, threadData_t*);
 
 int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber);
 
@@ -67,7 +67,7 @@ struct dataLapackAndTotalPivot{
  *
  *  \param [ref] [data]
  */
-int initializeLinearSystems(DATA *data)
+int initializeLinearSystems(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
   int i, nnz;
@@ -94,9 +94,9 @@ int initializeLinearSystems(DATA *data)
     {
       if(linsys[i].jacobianIndex != -1)
       {
-        assertStreamPrint(data->threadData, 0 != linsys[i].analyticalJacobianColumn, "jacobian function pointer is invalid" );
+        assertStreamPrint(threadData, 0 != linsys[i].analyticalJacobianColumn, "jacobian function pointer is invalid" );
       }
-      if(linsys[i].initialAnalyticalJacobian(data))
+      if(linsys[i].initialAnalyticalJacobian(data, threadData))
       {
         linsys[i].jacobianIndex = -1;
       }
@@ -109,7 +109,7 @@ int initializeLinearSystems(DATA *data)
     linsys[i].min = (double*) malloc(size*sizeof(double));
     linsys[i].max = (double*) malloc(size*sizeof(double));
 
-    linsys[i].initializeStaticLSData(data, &linsys[i]);
+    linsys[i].initializeStaticLSData(data, threadData, &linsys[i]);
 
     /* allocate solver data */
     /* the implementation of matrix A is solver-specific */
@@ -137,7 +137,7 @@ int initializeLinearSystems(DATA *data)
       break;
 #else
     case LS_UMFPACK:
-      throwStreamPrint(data->threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
+      throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
       break;
 #endif
 
@@ -161,7 +161,7 @@ int initializeLinearSystems(DATA *data)
       break;
 
     default:
-      throwStreamPrint(data->threadData, "unrecognized linear solver");
+      throwStreamPrint(threadData, "unrecognized linear solver");
     }
   }
 
@@ -177,7 +177,7 @@ int initializeLinearSystems(DATA *data)
  *
  *  \param [ref] [data]
  */
-int updateStaticDataOfLinearSystems(DATA *data)
+int updateStaticDataOfLinearSystems(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
   int i, nnz;
@@ -188,7 +188,7 @@ int updateStaticDataOfLinearSystems(DATA *data)
 
   for(i=0; i<data->modelData.nLinearSystems; ++i)
   {
-    linsys[i].initializeStaticLSData(data, &linsys[i]);
+    linsys[i].initializeStaticLSData(data, threadData, &linsys[i]);
   }
 
   messageClose(LOG_LS_V);
@@ -222,7 +222,7 @@ void printLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel)
  *
  *  \param [ref] [data]
  */
-int freeLinearSystems(DATA *data)
+int freeLinearSystems(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
   int i;
@@ -257,7 +257,7 @@ int freeLinearSystems(DATA *data)
       break;
 #else
     case LS_UMFPACK:
-      throwStreamPrint(data->threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
+      throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
       break;
 #endif
 
@@ -273,7 +273,7 @@ int freeLinearSystems(DATA *data)
       break;
 
     default:
-      throwStreamPrint(data->threadData, "unrecognized linear solver");
+      throwStreamPrint(threadData, "unrecognized linear solver");
     }
 
     free(linsys[i].solverData);
@@ -292,7 +292,7 @@ int freeLinearSystems(DATA *data)
  *
  *  \author wbraun
  */
-int solve_linear_system(DATA *data, int sysNumber)
+int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber)
 {
   TRACE_PUSH
   int success;
@@ -305,33 +305,33 @@ int solve_linear_system(DATA *data, int sysNumber)
   switch(data->simulationInfo.lsMethod)
   {
   case LS_LAPACK:
-    success = solveLapack(data, sysNumber);
+    success = solveLapack(data, threadData, sysNumber);
     break;
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   case LS_LIS:
-    success = solveLis(data, sysNumber);
+    success = solveLis(data, threadData, sysNumber);
     break;
 #endif
 #ifdef WITH_UMFPACK
   case LS_UMFPACK:
-    success = solveUmfPack(data, sysNumber);
+    success = solveUmfPack(data, threadData, sysNumber);
     break;
 #else
   case LS_UMFPACK:
-    throwStreamPrint(data->threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
+    throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
     break;
 #endif
 
   case LS_TOTALPIVOT:
-    success = solveTotalPivot(data, sysNumber);
+    success = solveTotalPivot(data, threadData, sysNumber);
     break;
 
   case LS_DEFAULT:
     defaultSolverData = linsys->solverData;
     linsys->solverData = defaultSolverData->lapackData;
 
-    success = solveLapack(data, sysNumber);
+    success = solveLapack(data, threadData, sysNumber);
     if (!success){
       if (linsys->failed){
         logLevel = LOG_LS;
@@ -340,7 +340,7 @@ int solve_linear_system(DATA *data, int sysNumber)
       }
       warningStreamPrint(logLevel, 0, "The default linear solver fails, the fallback solver with total pivoting is started at time %f. That might raise performance issues, for more information use -lv LOG_LS.", data->localData[0]->timeValue);
       linsys->solverData = defaultSolverData->totalpivotData;
-      success = solveTotalPivot(data, sysNumber);
+      success = solveTotalPivot(data, threadData, sysNumber);
       linsys->failed = 1;
     }else{
       linsys->failed = 0;
@@ -348,7 +348,7 @@ int solve_linear_system(DATA *data, int sysNumber)
     linsys->solverData = defaultSolverData;
     break;
   default:
-    throwStreamPrint(data->threadData, "unrecognized linear solver");
+    throwStreamPrint(threadData, "unrecognized linear solver");
   }
   linsys->solved = success;
 
@@ -458,7 +458,7 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
  *  \param [ref] [data]
  *
  */
-static void setAElement(int row, int col, double value, int nth, void *data)
+static void setAElement(int row, int col, double value, int nth, void *data, threadData_t *threadData)
 {
   LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
   linsys->A[row + col * linsys->size] = value;
@@ -471,21 +471,21 @@ static void setAElement(int row, int col, double value, int nth, void *data)
  *  \param [in]  [value]
  *  \param [ref] [data]
  */
-static void setBElement(int row, double value, void *data)
+static void setBElement(int row, double value, void *data, threadData_t *threadData)
 {
   LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
   linsys->b[row] = value;
 }
 
 #if !defined(OMC_MINIMAL_RUNTIME)
-static void setAElementLis(int row, int col, double value, int nth, void *data)
+static void setAElementLis(int row, int col, double value, int nth, void *data, threadData_t *threadData)
 {
   LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
   DATA_LIS* sData = (DATA_LIS*) linsys->solverData;
   lis_matrix_set_value(LIS_INS_VALUE, row, col, value, sData->A);
 }
 
-static void setBElementLis(int row, double value, void *data )
+static void setBElementLis(int row, double value, void *data, threadData_t *threadData)
 {
   LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
   DATA_LIS* sData = (DATA_LIS*) linsys->solverData;
@@ -494,7 +494,7 @@ static void setBElementLis(int row, double value, void *data )
 #endif
 
 #ifdef WITH_UMFPACK
-static void setAElementUmfpack(int row, int col, double value, int nth, void *data)
+static void setAElementUmfpack(int row, int col, double value, int nth, void *data, threadData_t *threadData)
 {
   LINEAR_SYSTEM_DATA* linSys = (LINEAR_SYSTEM_DATA*) data;
   DATA_UMFPACK* sData = (DATA_UMFPACK*) linSys->solverData;

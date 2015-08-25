@@ -43,10 +43,11 @@ extern "C" {
 typedef struct
 {
   void* data;
+  threadData_t *threadData;
   int sysNumber;
-}DATA_USER;
+} DATA_USER;
 
-int solveNewton(DATA *data, int sysNumber);
+int solveNewton(DATA *data, threadData_t *threadData, int sysNumber);
 
 #ifdef __cplusplus
 }

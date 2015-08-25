@@ -39,6 +39,10 @@
 int allocateHomotopyData(int size, void** data);
 int freeHomotopyData(void** data);
 
-int solveHomotopy(DATA *data, int sysNumber);
+int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber);
+
+void debugString(int logName, char* message);
+void debugInt(int logName, char* message, int value);
+void debugDouble(int logName, char* message, double value);
 
 #endif

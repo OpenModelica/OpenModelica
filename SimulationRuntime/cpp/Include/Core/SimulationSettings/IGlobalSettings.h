@@ -86,5 +86,8 @@ public:
   virtual string getResultsFileName() = 0;
   virtual void setRuntimeLibrarypath(string) = 0;
   virtual string getRuntimeLibrarypath() = 0;
+
+  virtual void setNonLinearSolverContinueOnError(bool) = 0;
+  virtual bool getNonLinearSolverContinueOnError() = 0;
 };
 /** @} */ // end of coreSimulationSettings

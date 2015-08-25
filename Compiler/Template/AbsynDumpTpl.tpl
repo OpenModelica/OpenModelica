@@ -267,7 +267,7 @@ template dumpElement(Absyn.Element elem, DumpOptions options)
 ::=
 match elem
   case ELEMENT(__) then
-    if boolUnparseFileFromInfo(info, options) then
+    if boolOr(boolUnparseFileFromInfo(info, options), boolNot(isClassdef(elem))) then
     let final_str = dumpFinal(finalPrefix)
     let redecl_str = match redeclareKeywords case SOME(re) then dumpRedeclare(re)
     let repl_str = match redeclareKeywords case SOME(re) then dumpReplaceable(re)

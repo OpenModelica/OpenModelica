@@ -100,7 +100,6 @@ protected
   list<BackendDAE.Equation> eqns, reqns, ieqns, algeqns, algeqns1, ialgeqns, multidimeqns, imultidimeqns, eqns_1, ceeqns, iceeqns;
   list<DAE.Constraint> constrs;
   list<DAE.ClassAttributes> clsAttrs;
-  list<BackendDAE.WhenClause> whenclauses, whenclauses_1;
   BackendDAE.EquationArray eqnarr, reqnarr, ieqnarr;
   BackendDAE.ExternalObjectClasses extObjCls;
   BackendDAE.SymbolicJacobians symjacs;
@@ -116,24 +115,23 @@ algorithm
   functionTree := FCore.getFunctionTree(inCache);
   //deactivated because of some codegen errors: functionTree := renameFunctionParameter(functionTree);
   (DAE.DAE(elems), functionTree, timeEvents) := processBuiltinExpressions(lst, functionTree);
-  (varlst, knvarlst, extvarlst, eqns, reqns, ieqns, constrs, clsAttrs, whenclauses, extObjCls, aliaseqns, _) :=
+  (varlst, knvarlst, extvarlst, eqns, reqns, ieqns, constrs, clsAttrs, extObjCls, aliaseqns, _) :=
     lower2(listReverse(elems), functionTree, HashTableExpToExp.emptyHashTable());
   vars := BackendVariable.listVar(varlst);
   knvars := BackendVariable.listVar(knvarlst);
   extVars := BackendVariable.listVar(extvarlst);
-  whenclauses_1 := listReverse(whenclauses);
   aliasVars := BackendVariable.emptyVars();
   if Flags.isSet(Flags.VECTORIZE) then
     (vars,eqns) := Vectorization.buildForLoops(vars,eqns);
   end if;
   // handle alias equations
-  (vars, knvars, extVars, aliasVars, eqns, reqns, ieqns, whenclauses_1) := handleAliasEquations(aliaseqns, vars, knvars, extVars, aliasVars, eqns, reqns, ieqns, whenclauses_1);
+  (vars, knvars, extVars, aliasVars, eqns, reqns, ieqns) := handleAliasEquations(aliaseqns, vars, knvars, extVars, aliasVars, eqns, reqns, ieqns);
   vars_1 := detectImplicitDiscrete(vars, knvars, eqns);
   (vars_1, eqns, clsAttrs) := DynamicOptimization.addOptimizationVarsEqns(vars_1, eqns, Config.acceptOptimicaGrammar(), clsAttrs, constrs, knvars,Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM));
   eqnarr := BackendEquation.listEquation(eqns);
   reqnarr := BackendEquation.listEquation(reqns);
   ieqnarr := BackendEquation.listEquation(ieqns);
-  einfo := BackendDAE.EVENT_INFO(timeEvents, whenclauses_1, {}, {}, {}, 0);
+  einfo := BackendDAE.EVENT_INFO(timeEvents, {}, {}, {}, 0);
   symjacs := {(NONE(), ({}, {}, ({}, {})), {}), (NONE(), ({}, {}, ({}, {})), {}), (NONE(), ({}, {}, ({}, {})), {}), (NONE(), ({}, {}, ({}, {})), {})};
   outBackendDAE := BackendDAE.DAE(BackendDAEUtil.createEqSystem(vars_1, eqnarr, {}, BackendDAE.UNKNOWN_PARTITION(), reqnarr)::{},
                                   BackendDAE.SHARED(knvars,
@@ -170,7 +168,6 @@ protected function lower2
   input list<BackendDAE.Equation> inIEqns = {};
   input list<DAE.Constraint> inConstraints = {};
   input list<DAE.ClassAttributes> inClassAttributes = {};
-  input list<BackendDAE.WhenClause> inWhenClauses = {};
   input list<BackendDAE.ExternalObjectClass> inExtObjClasses = {};
   input list<DAE.Element> inAliasEqns = {};
   output list<BackendDAE.Var> outVars = inVars "Time dependent variables.";
@@ -181,7 +178,6 @@ protected function lower2
   output list<BackendDAE.Equation> outIEqns = inIEqns "Initial equations.";
   output list<DAE.Constraint> outConstraints = inConstraints;
   output list<DAE.ClassAttributes> outClassAttributes = inClassAttributes;
-  output list<BackendDAE.WhenClause> outWhenClauses = inWhenClauses;
   output list<BackendDAE.ExternalObjectClass> outExtObjClasses = inExtObjClasses;
   output list<DAE.Element> outAliasEqns = inAliasEqns "List with all EqualityEquations.";
   output HashTableExpToExp.HashTable outInlineHT = inInlineHT;
@@ -196,7 +192,7 @@ protected
   DAE.ComponentRef cr;
   Integer whenClkCnt = 1;
   DAE.Exp e;
-  list<BackendDAE.Equation> eqns;
+  list<BackendDAE.Equation> eqns, reqns;
 algorithm
   for el in inElements loop
     _ := match(el)
@@ -297,13 +293,15 @@ algorithm
                                            attr = BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC ) :: outEqns;
             eq_attrs := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.CLOCKED_EQUATION(whenClkCnt), BackendDAE.NO_LOOP());
             ( outVars, outKnVars, outExVars, eqns, outREqns, outIEqns, outConstraints, outClassAttributes,
-              outWhenClauses, outExtObjClasses, outAliasEqns, outInlineHT ) :=
+              outExtObjClasses, outAliasEqns, outInlineHT ) :=
                   lower2( dae_elts, inFunctions, outInlineHT, outVars, outKnVars, outExVars, {}, outREqns, outIEqns,
-                          outConstraints, outClassAttributes, outWhenClauses, outExtObjClasses, outAliasEqns );
+                          outConstraints, outClassAttributes,outExtObjClasses, outAliasEqns );
             outEqns := listAppend(List.map1(eqns, BackendEquation.setEquationAttributes, eq_attrs), outEqns);
             whenClkCnt := whenClkCnt + 1;
           else
-            (outEqns, outWhenClauses) := lowerWhenEqn(el, inFunctions, outEqns, outWhenClauses);
+            (eqns, reqns) := lowerWhenEqn(el, inFunctions, {}, {});
+            outEqns := listAppend(outEqns, eqns);
+            outREqns := listAppend(outREqns, reqns);
           end if;
         then
           ();
@@ -342,10 +340,10 @@ algorithm
       case DAE.COMP(dAElist = dae_elts)
         algorithm
           (outVars, outKnVars, outExVars, outEqns, outREqns, outIEqns, outConstraints,
-           outClassAttributes, outWhenClauses, outExtObjClasses, outAliasEqns, outInlineHT)
+           outClassAttributes, outExtObjClasses, outAliasEqns, outInlineHT)
           := lower2(listReverse(dae_elts), inFunctions, outInlineHT, outVars,
             outKnVars, outExVars, outEqns, outREqns, outIEqns, outConstraints,
-            outClassAttributes, outWhenClauses, outExtObjClasses, outAliasEqns);
+            outClassAttributes, outExtObjClasses, outAliasEqns);
         then
           ();
 
@@ -1675,27 +1673,21 @@ end generateEquations;
 
 
 protected function lowerWhenEqn
-"This function lowers a when clause. The condition expresion is put in the
-  BackendDAE.WhenClause list and the equations inside are put in the equation list.
-  For each equation in the clause a new entry in the BackendDAE.WhenClause list is generated
-  and one extra for all the reinit statements.
-  inputs:  (DAE.Element, int /* when-clause index */, BackendDAE.WhenClause list)
-  outputs: (Equation list, BackendDAE.Variables, int /* when-clause index */, BackendDAE.WhenClause list)"
+"This function lowers a when eqn."
   input DAE.Element inElement;
   input DAE.FunctionTree functionTree;
   input list<BackendDAE.Equation> inEquationLst;
-  input list<BackendDAE.WhenClause> inWhenClauseLst;
+  input list<BackendDAE.Equation> inREquationLst;
   output list<BackendDAE.Equation> outEquationLst;
-  output list<BackendDAE.WhenClause> outWhenClauseLst;
+  output list<BackendDAE.Equation> outREquationLst;
 protected
   Inline.Functiontuple fns = (SOME(functionTree), {DAE.NORM_INLINE()});
 algorithm
-  (outEquationLst, outWhenClauseLst):= matchcontinue inElement
+  (outEquationLst, outREquationLst):= matchcontinue inElement
     local
-      list<BackendDAE.Equation> res;
+      list<BackendDAE.Equation> res, rEqns;
       list<BackendDAE.Equation> trueEqnLst, elseEqnLst;
-      list<BackendDAE.WhenOperator> reinit;
-      list<BackendDAE.WhenClause> whenClauseList;
+      list<BackendDAE.Equation> trueREqns, elseREqnLst;
       DAE.Exp cond;
       list<DAE.Element> eqnl;
       DAE.Element elsePart;
@@ -1706,22 +1698,24 @@ algorithm
       equation
         (DAE.PARTIAL_EQUATION(cond), source) =
             Inline.simplifyAndInlineEquationExp(DAE.PARTIAL_EQUATION(cond), fns, source);
-        (res, reinit) = lowerWhenEqn2(listReverse(eqnl), cond, functionTree, inEquationLst, {});
-        whenClauseList = makeWhenClauses(not listEmpty(reinit), cond, reinit, inWhenClauseLst);
+        (res, rEqns) = lowerWhenEqn2(listReverse(eqnl), cond, functionTree, {}, {});
+        res = mergeWhenEqns(inEquationLst, res, {});
+        rEqns = mergeWhenEqns(inREquationLst, rEqns, {});
       then
-        (res, whenClauseList);
+        (res, rEqns);
 
 
     case DAE.WHEN_EQUATION(condition = cond, equations = eqnl, elsewhen_ = SOME(elsePart), source = source)
       equation
         (DAE.PARTIAL_EQUATION(cond), source) =
             Inline.simplifyAndInlineEquationExp(DAE.PARTIAL_EQUATION(cond), fns, source);
-        (elseEqnLst, whenClauseList) = lowerWhenEqn(elsePart, functionTree, {}, inWhenClauseLst);
-        (trueEqnLst, reinit) = lowerWhenEqn2(listReverse(eqnl), cond, functionTree, {}, {});
-        whenClauseList = makeWhenClauses(not listEmpty(reinit), cond, reinit, whenClauseList);
-        res = mergeClauses(trueEqnLst, elseEqnLst, inEquationLst);
+
+        (trueEqnLst, trueREqns) = lowerWhenEqn2(listReverse(eqnl), cond, functionTree, {}, {});
+        res = mergeWhenEqns(inEquationLst, trueEqnLst, {});
+        rEqns = mergeWhenEqns(inREquationLst, trueREqns, {});
+        (res, rEqns) = lowerWhenEqn(elsePart, functionTree, res, rEqns);
       then
-        (res, whenClauseList);
+        (res, rEqns);
 
     else
       equation
@@ -1740,18 +1734,18 @@ protected function lowerWhenEqn2
   input DAE.Exp inCond;
   input DAE.FunctionTree functionTree;
   input list<BackendDAE.Equation> iEquationLst;
-  input list<BackendDAE.WhenOperator> iReinitStatementLst;
+  input list<BackendDAE.Equation> iREquationLst;
   output list<BackendDAE.Equation> outEquationLst;
-  output list<BackendDAE.WhenOperator> outReinitStatementLst;
+  output list<BackendDAE.Equation> outREquationLst;
 protected
   Inline.Functiontuple fns = (SOME(functionTree), {DAE.NORM_INLINE()});
 algorithm
-  (outEquationLst, outReinitStatementLst):=
+  (outEquationLst, outREquationLst):=
   matchcontinue inDAEElementLst
     local
       Integer size;
       list<BackendDAE.Equation> eqnl;
-      list<BackendDAE.WhenOperator> reinit;
+      list<BackendDAE.Equation> reqnl;
       DAE.Exp cre, e, cond, level;
       DAE.ComponentRef cr, cr2;
       list<DAE.Element> xs, eqns;
@@ -1768,59 +1762,63 @@ algorithm
       BackendDAE.WhenEquation whenEq;
       BackendDAE.WhenOperator whenOp;
 
-    case {} then (iEquationLst, iReinitStatementLst);
+    case {} then (iEquationLst, iREquationLst);
     case DAE.EQUEQUATION(cr1 = cr, cr2 = cr2, source = source)::xs
       equation
         e = Expression.crefExp(cr2);
-        whenEq = BackendDAE.WHEN_EQ(inCond, cr, e, NONE());
+        whenOp = BackendDAE.ASSIGN(cr, e, source);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
         eq = BackendDAE.WHEN_EQUATION(1, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iReinitStatementLst);
+        (eqnl, reqnl) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iREquationLst);
       then
-        (eqnl, reinit);
+        (eqnl, reqnl);
 
     case DAE.DEFINE(componentRef = cr, exp = e, source = source)::xs
       equation
         (DAE.PARTIAL_EQUATION(e), source) = Inline.simplifyAndInlineEquationExp(DAE.PARTIAL_EQUATION(e), fns, source);
-        whenEq = BackendDAE.WHEN_EQ(inCond, cr, e, NONE());
+        whenOp = BackendDAE.ASSIGN(cr, e, source);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
         eq = BackendDAE.WHEN_EQUATION(1, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iReinitStatementLst);
+        (eqnl, reqnl) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iREquationLst);
       then
-        (eqnl, reinit);
+        (eqnl, reqnl);
 
     case DAE.EQUATION(exp = cre as DAE.TUPLE(PR=expl), scalar = e, source = source)::xs
       equation
         (DAE.EQUALITY_EXPS(_,e), source) = Inline.simplifyAndInlineEquationExp(DAE.EQUALITY_EXPS(cre,e), fns, source);
         eqnl = lowerWhenTupleEqn(expl, inCond, e, source, 1, iEquationLst);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, eqnl, iReinitStatementLst);
+        (eqnl, reqnl) = lowerWhenEqn2(xs, inCond, functionTree, eqnl, iREquationLst);
       then
-        (eqnl, reinit);
+        (eqnl, reqnl);
 
     case DAE.EQUATION(exp = (cre as DAE.CREF(componentRef = cr)), scalar = e, source = source)::xs
       equation
         (DAE.EQUALITY_EXPS(_,e), source) = Inline.simplifyAndInlineEquationExp(DAE.EQUALITY_EXPS(cre,e), fns, source);
-        whenEq = BackendDAE.WHEN_EQ(inCond, cr, e, NONE());
+        whenOp = BackendDAE.ASSIGN(cr, e, source);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
         eq = BackendDAE.WHEN_EQUATION(1, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iReinitStatementLst);
+        (eqnl, reqnl) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iREquationLst);
       then
-        (eqnl, reinit);
+        (eqnl, reqnl);
 
     case DAE.COMPLEX_EQUATION(lhs = (cre as DAE.CREF(componentRef = cr)), rhs = e, source = source)::xs
       equation
         size = Expression.sizeOf(Expression.typeof(cre));
         (DAE.EQUALITY_EXPS(_,e), source) = Inline.simplifyAndInlineEquationExp(DAE.EQUALITY_EXPS(cre,e), fns, source);
-        whenEq = BackendDAE.WHEN_EQ(inCond, cr, e, NONE());
+        whenOp = BackendDAE.ASSIGN(cr, e, source);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
         eq = BackendDAE.WHEN_EQUATION(size, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iReinitStatementLst);
+        (eqnl, reqnl) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iREquationLst);
       then
-        (eqnl, reinit);
+        (eqnl, reqnl);
 
     case DAE.COMPLEX_EQUATION(lhs = cre as DAE.TUPLE(PR=expl), rhs = e, source = source)::xs
       equation
         (DAE.EQUALITY_EXPS(_,e), source) = Inline.simplifyAndInlineEquationExp(DAE.EQUALITY_EXPS(cre,e), fns, source);
         eqnl = lowerWhenTupleEqn(expl, inCond, e, source, 1, iEquationLst);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, eqnl, iReinitStatementLst);
+        (eqnl, reqnl) = lowerWhenEqn2(xs, inCond, functionTree, eqnl, iREquationLst);
       then
-        (eqnl, reinit);
+        (eqnl, reqnl);
 
     case (DAE.IF_EQUATION(condition1=expl, equations2=eqnslst, equations3=eqns, source = source))::xs
       equation
@@ -1834,60 +1832,69 @@ algorithm
         ht = lowerWhenIfEqns(listReverse(expl), listReverse(eqnslst), functionTree, ht);
         crexplst = BaseHashTable.hashTableList(ht);
         eqnl = lowerWhenIfEqns2(crexplst, inCond, source, iEquationLst);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, eqnl, iReinitStatementLst);
+        (eqnl, reqnl) = lowerWhenEqn2(xs, inCond, functionTree, eqnl, iREquationLst);
       then
-        (eqnl, reinit);
+        (eqnl, reqnl);
 
     case DAE.ARRAY_EQUATION(dimension=ds, exp = (cre as DAE.CREF(componentRef = cr)), array = e, source = source)::xs
       equation
         size = List.fold(Expression.dimensionsSizes(ds), intMul, 1);
         (DAE.EQUALITY_EXPS(_,e), source) = Inline.simplifyAndInlineEquationExp(DAE.EQUALITY_EXPS(cre,e), fns, source);
-        whenEq = BackendDAE.WHEN_EQ(inCond, cr, e, NONE());
+        whenOp = BackendDAE.ASSIGN(cr, e, source);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
         eq = BackendDAE.WHEN_EQUATION(size, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iReinitStatementLst);
+        (eqnl, reqnl) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iREquationLst);
       then
-        (eqnl, reinit);
+        (eqnl, reqnl);
 
     case DAE.ARRAY_EQUATION(exp = cre as DAE.TUPLE(PR=expl), array = e, source = source)::xs
       equation
         (DAE.EQUALITY_EXPS(_,e), source) = Inline.simplifyAndInlineEquationExp(DAE.EQUALITY_EXPS(cre,e), fns, source);
         eqnl = lowerWhenTupleEqn(expl, inCond, e, source, 1, iEquationLst);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, eqnl, iReinitStatementLst);
+        (eqnl, reqnl) = lowerWhenEqn2(xs, inCond, functionTree, eqnl, iREquationLst);
       then
-        (eqnl, reinit);
+        (eqnl, reqnl);
 
     case DAE.ASSERT(condition=cond, message = e, level = level, source = source)::xs
       equation
         (cond, source, _,_) = Inline.inlineExp(cond, fns, source);
         (e, source, _,_) = Inline.inlineExp(e, fns, source);
         whenOp = BackendDAE.ASSERT(cond, e, level, source);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, whenOp::iReinitStatementLst);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
+        eq = BackendDAE.WHEN_EQUATION(0, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+        (eqnl, reqnl) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, eq::iREquationLst);
       then
-        (eqnl, reinit);
+        (eqnl, reqnl);
 
     case DAE.REINIT(componentRef = cr, exp = e, source = source)::xs
       equation
         (e, source, _,_) = Inline.inlineExp(e, fns, source);
         whenOp = BackendDAE.REINIT(cr, e, source);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, whenOp::iReinitStatementLst);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
+        eq = BackendDAE.WHEN_EQUATION(0, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+        (eqnl, reqnl) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, eq::iREquationLst);
       then
-        (eqnl, reinit);
+        (eqnl, reqnl);
 
     case DAE.TERMINATE(message = e, source = source)::xs
       equation
         (e, source, _,_) = Inline.inlineExp(e, fns, source);
         whenOp = BackendDAE.TERMINATE(e, source);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, whenOp::iReinitStatementLst);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
+        eq = BackendDAE.WHEN_EQUATION(0, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+        (eqnl, reqnl) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, eq::iREquationLst);
       then
-        (eqnl, reinit);
+        (eqnl, reqnl);
 
     case DAE.NORETCALL(exp=e, source=source)::xs
       equation
         (e, source, _, _) = Inline.inlineExp(e, fns, source);
         whenOp = BackendDAE.NORETCALL(e, source);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, whenOp::iReinitStatementLst);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
+        eq = BackendDAE.WHEN_EQUATION(0, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+        (eqnl, reqnl) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, eq::iREquationLst);
       then
-        (eqnl, reinit);
+        (eqnl, reqnl);
 
     // failure
     case el::_
@@ -1903,9 +1910,9 @@ algorithm
     case _::xs
       equation
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, iReinitStatementLst);
+        (eqnl, reqnl) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, iREquationLst);
       then
-        (eqnl, reinit);
+        (eqnl, reqnl);
   end matchcontinue;
 end lowerWhenEqn2;
 
@@ -1924,12 +1931,17 @@ algorithm
       list<DAE.Exp> rest;
       Integer size;
       DAE.Type ty;
+      BackendDAE.WhenEquation whenEq;
+      BackendDAE.WhenOperator whenOp;
+
     case ({}, _, _, _, _, _) then iEquationLst;
     case (DAE.CREF(componentRef = cr, ty=ty)::rest, _, _, _, _, _)
       equation
         size = Expression.sizeOf(ty);
+        whenOp = BackendDAE.ASSIGN(cr, DAE.TSUB(e, i, ty), source);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
       then
-        lowerWhenTupleEqn(rest, inCond, e, source, i+1, BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_EQ(inCond, cr, DAE.TSUB(e, i, ty), NONE()), source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC) ::iEquationLst);
+        lowerWhenTupleEqn(rest, inCond, e, source, i+1, BackendDAE.WHEN_EQUATION(size, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC) ::iEquationLst);
   end match;
 end lowerWhenTupleEqn;
 
@@ -1949,6 +1961,9 @@ algorithm
       DAE.ElementSource source;
       list<tuple<DAE.ComponentRef, tuple<DAE.Exp, DAE.ElementSource>>> rest;
       Integer size;
+      BackendDAE.WhenEquation whenEq;
+      BackendDAE.WhenOperator whenOp;
+
     case ({}, _, _, _)
       then
         inEqns;
@@ -1956,8 +1971,10 @@ algorithm
       equation
         source = DAEUtil.mergeSources(iSource, source);
         size = Expression.sizeOf(Expression.typeof(e));
+        whenOp = BackendDAE.ASSIGN(cr, e, source);
+        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
       then
-       lowerWhenIfEqns2(rest, inCond, iSource, BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_EQ(inCond, cr, e, NONE()), source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inEqns);
+       lowerWhenIfEqns2(rest, inCond, iSource, BackendDAE.WHEN_EQUATION(size, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inEqns);
   end match;
 end lowerWhenIfEqns2;
 
@@ -2176,27 +2193,7 @@ algorithm
   end match;
 end lowerWhenIfEqnsElse;
 
-protected function makeWhenClauses
-"Constructs a list of identical BackendDAE.WhenClause elements
-  Arg1: Number of elements to construct
-  Arg2: condition expression of the when clause
-  outputs: (WhenClause list)"
-  input Boolean do;
-  input DAE.Exp inCondition "the condition expression";
-  input list<BackendDAE.WhenOperator> inReinitStatementLst;
-  input list<BackendDAE.WhenClause> inWhenClauseLst;
-  output list<BackendDAE.WhenClause> outWhenClauseLst;
-algorithm
-  outWhenClauseLst:=
-  match (do, inCondition, inReinitStatementLst, inWhenClauseLst)
-    case (false, _, _, _) then inWhenClauseLst;
-    case (true, _, _, _)
-      then
-        (BackendDAE.WHEN_CLAUSE(inCondition, inReinitStatementLst, NONE())::inWhenClauseLst);
-  end match;
-end makeWhenClauses;
-
-protected function mergeClauses
+protected function mergeWhenEqns
 " merges the true part end the elsewhen part of a set of when equations.
    For each equation in trueEqnList, find an equation in elseEqnList solving
    the same variable and put it in the else elseWhenPart of the first equation."
@@ -2207,65 +2204,115 @@ protected function mergeClauses
 algorithm
   outEquationLst := matchcontinue (trueEqnList, elseEqnList, inEquationLst)
     local
-      DAE.ComponentRef cr;
-      DAE.Exp rightSide, cond;
-      BackendDAE.Equation res;
+      DAE.Exp cond;
+      BackendDAE.Equation res, inEqn;
       list<BackendDAE.Equation> trueEqns, elseEqnsRest, result;
-      BackendDAE.WhenEquation foundEquation;
       DAE.ElementSource source;
       Integer size;
       BackendDAE.EquationAttributes attr;
-
-    case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_EQ(condition=cond, left = cr, right=rightSide), source=source, attr=attr)::trueEqns, _, _) equation
-      (foundEquation, elseEqnsRest) = getWhenEquationFromVariable(cr, elseEqnList, {});
-      res = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_EQ(cond, cr, rightSide, SOME(foundEquation)), source, attr);
-      result = mergeClauses(trueEqns, elseEqnsRest, res::inEquationLst);
-    then result;
+      list<BackendDAE.WhenOperator> whenStmtLst;
+      BackendDAE.WhenEquation whenEq, whenEqRes;
+      Option<BackendDAE.WhenEquation> whenElsePart;
+      Boolean added;
 
     case ({}, {}, _)
     then inEquationLst;
 
-    else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAECreate.mergeClauses: Error in mergeClauses."});
-    then fail();
-  end matchcontinue;
-end mergeClauses;
+    case (_, {}, {})
+    then trueEqnList;
 
-protected function getWhenEquationFromVariable
-"Finds the when equation solving the variable given by inCr among equations in inEquations
- the found equation is then taken out of the list."
-  input DAE.ComponentRef inCr;
-  input list<BackendDAE.Equation> inEquations;
-  input list<BackendDAE.Equation> inEquations2;
-  output BackendDAE.WhenEquation outEquation;
-  output list<BackendDAE.Equation> outEquations;
-algorithm
-  (outEquation, outEquations) := matchcontinue(inCr, inEquations, inEquations2)
-    local
-      DAE.ComponentRef cr1, cr2;
-      BackendDAE.WhenEquation wheneq;
-      BackendDAE.Equation eq;
-      list<BackendDAE.Equation> rest, rest2;
+    case ({}, _, {})
+    then elseEqnList;
 
-    case (cr1, BackendDAE.WHEN_EQUATION(whenEquation=wheneq as BackendDAE.WHEN_EQ(left=cr2))::rest, rest2)
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(cr1, cr2);
-        rest = listAppend(rest2, rest);
-      then (wheneq, rest);
-
-    case (cr1, (eq as BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ()))::rest, rest2)
-      equation
-        (wheneq, rest) = getWhenEquationFromVariable(cr1, rest, eq::rest2);
-      then (wheneq, rest);
+    case ({}, _, _)
+    then listAppend(inEquationLst, elseEqnList);
 
     case (_, {}, _)
-      equation
-        Error.addMessage(Error.DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN, {});
-      then
-        fail();
-  end matchcontinue;
-end getWhenEquationFromVariable;
+    then listAppend(inEquationLst, trueEqnList);
 
+    case ((inEqn as BackendDAE.WHEN_EQUATION(size=size, whenEquation=(whenEq as BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart=whenElsePart)), source=source, attr=attr))::trueEqns, _, _)
+      algorithm
+        //print(" Start mergeWhen: \n" + BackendDump.equationString(inEqn) + "\n");
+        result := inEquationLst;
+        elseEqnsRest := {};
+        added := false;
+        for eqn in elseEqnList loop
+          //print(" check when equation: \n" + BackendDump.equationString(eqn) + "\n");
+          _ := match eqn
+            local
+              BackendDAE.WhenEquation eq;
+              list<BackendDAE.WhenOperator> whenStmtLst2;
+            case BackendDAE.WHEN_EQUATION(whenEquation=eq as BackendDAE.WHEN_STMTS(whenStmtLst=whenStmtLst2) ) algorithm
+              for elem in whenStmtLst loop
+                _ := match elem
+                  local
+                    DAE.ComponentRef left;
+                  case BackendDAE.ASSIGN(left=left) algorithm
+                    for stmt in whenStmtLst2 loop
+                      _ := matchcontinue stmt
+                        local
+                          DAE.ComponentRef left2;
+                        case BackendDAE.ASSIGN(left=left2) equation
+                          true = ComponentReference.crefEqualNoStringCompare(left, left2);
+                          //print(" added when else case: \n" + BackendDump.whenEquationString(eq, true) + "\n");
+                          whenEqRes = BackendEquation.setWhenElsePart(whenEq, eq);
+                          res = BackendDAE.WHEN_EQUATION(size, whenEqRes, source, attr);
+                          result = res::result;
+                          added = true;
+                        then ();
+                        else equation
+                          elseEqnsRest = eqn::elseEqnsRest;
+                        then ();
+                      end matchcontinue;
+                    end for;
+                  then ();
+                  case BackendDAE.REINIT(stateVar=left) algorithm
+                    for stmt in whenStmtLst2 loop
+                      _ := matchcontinue stmt
+                        local
+                          DAE.ComponentRef left2;
+                        case BackendDAE.REINIT(stateVar=left2) equation
+                          true = ComponentReference.crefEqualNoStringCompare(left, left2);
+                          //print(" added when else case: \n" + BackendDump.whenEquationString(eq, true) + "\n");
+                          whenEqRes = BackendEquation.setWhenElsePart(whenEq, eq);
+                          res = BackendDAE.WHEN_EQUATION(size, whenEqRes, source, attr);
+                          result = res::result;
+                          added = true;
+                        then ();
+                        else equation
+                          elseEqnsRest = eqn::elseEqnsRest;
+                        then ();
+                      end matchcontinue;
+                    end for;
+                  then ();
+                  else equation
+                    whenEqRes = BackendEquation.setWhenElsePart(whenEq, eq);
+                    res = BackendDAE.WHEN_EQUATION(size, whenEqRes, source, attr);
+                    result = res::result;
+                    added = true;
+                  then ();
+                end match;
+              end for;
+            then ();
+            else equation
+              res = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_STMTS(cond, whenStmtLst, whenElsePart), source, attr);
+              result = res::result;
+            then ();
+          end match;
+        end for;
+        if not added then
+          result := inEqn::result;
+        end if;
+        //print("Result: :\n");
+        //BackendDump.printEquationList(result);
+        result := mergeWhenEqns(trueEqns, elseEqnsRest, result);
+      then result;
+
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAECreate.mergeWhenEqns: Error in mergeWhenEqns."});
+    then fail();
+  end matchcontinue;
+end mergeWhenEqns;
 
 protected function lowerTupleAssignment
   "Used by lower2 to split a tuple-tuple assignment into one equation for each
@@ -2404,7 +2451,6 @@ protected function handleAliasEquations
   input list<BackendDAE.Equation> iEqns;
   input list<BackendDAE.Equation> iREqns;
   input list<BackendDAE.Equation> iIEqns;
-  input list<BackendDAE.WhenClause> iWhenclauses;
   output BackendDAE.Variables oVars;
   output BackendDAE.Variables oKnVars;
   output BackendDAE.Variables oExtVars;
@@ -2412,20 +2458,18 @@ protected function handleAliasEquations
   output list<BackendDAE.Equation> oEqns;
   output list<BackendDAE.Equation> oREqns;
   output list<BackendDAE.Equation> oIEqns;
-  output list<BackendDAE.WhenClause> oWhenclauses;
 algorithm
-  (oVars, oKnVars, oExtVars, oAVars, oEqns, oREqns, oIEqns, oWhenclauses) :=
-  match (iAliasEqns, iVars, iKnVars, iExtVars, iAVars, iEqns, iREqns, iIEqns, iWhenclauses)
+  (oVars, oKnVars, oExtVars, oAVars, oEqns, oREqns, oIEqns) :=
+  match (iAliasEqns, iVars, iKnVars, iExtVars, iAVars, iEqns, iREqns, iIEqns)
     local
       BackendDAE.Variables vars, knvars, extvars, avars;
       list<BackendDAE.Equation> eqns, reqns, ieqns;
-      list<BackendDAE.WhenClause> whenclauses;
-    case ({}, _, _, _, _, _, _, _, _) then (iVars, iKnVars, iExtVars, iAVars, iEqns, iREqns, iIEqns, iWhenclauses);
-    case (_, _, _, _, _, _, _, _, _)
+    case ({}, _, _, _, _, _, _, _) then (iVars, iKnVars, iExtVars, iAVars, iEqns, iREqns, iIEqns);
+    case (_, _, _, _, _, _, _, _)
       equation
-        (vars, knvars, extvars, avars, eqns, reqns, ieqns, whenclauses) = handleAliasEquations1(iAliasEqns, iVars, iKnVars, iExtVars, iAVars, iEqns, iREqns, iIEqns, iWhenclauses);
+        (vars, knvars, extvars, avars, eqns, reqns, ieqns) = handleAliasEquations1(iAliasEqns, iVars, iKnVars, iExtVars, iAVars, iEqns, iREqns, iIEqns);
       then
-        (vars, knvars, extvars, avars, eqns, reqns, ieqns, whenclauses);
+        (vars, knvars, extvars, avars, eqns, reqns, ieqns);
   end match;
 end handleAliasEquations;
 
@@ -2439,7 +2483,6 @@ protected function handleAliasEquations1
   input list<BackendDAE.Equation> iEqns;
   input list<BackendDAE.Equation> iREqns;
   input list<BackendDAE.Equation> iIEqns;
-  input list<BackendDAE.WhenClause> iWhenclauses;
   output BackendDAE.Variables oVars;
   output BackendDAE.Variables oKnVars;
   output BackendDAE.Variables oExtVars;
@@ -2447,7 +2490,6 @@ protected function handleAliasEquations1
   output list<BackendDAE.Equation> oEqns;
   output list<BackendDAE.Equation> oREqns;
   output list<BackendDAE.Equation> oIEqns;
-  output list<BackendDAE.WhenClause> oWhenclauses;
 protected
   BackendVarTransform.VariableReplacements repl;
 algorithm
@@ -2462,7 +2504,6 @@ algorithm
   (oEqns, _) := BackendVarTransform.replaceEquations(oEqns, repl, NONE());
   (oREqns, _) := BackendVarTransform.replaceEquations(iREqns, repl, NONE());
   (oIEqns, _) := BackendVarTransform.replaceEquations(iIEqns, repl, NONE());
-  (oWhenclauses, _) := BackendVarTransform.replaceWhenClauses(iWhenclauses, repl, NONE());
 end handleAliasEquations1;
 
 protected function replaceAliasVarTraverser
@@ -2963,7 +3004,8 @@ algorithm
       DAE.ComponentRef cr;
       list<BackendDAE.Var> vars;
       list<DAE.Statement> statementLst;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = cr)), _, _)
+      list<BackendDAE.WhenOperator> whenStmts;
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(whenStmtLst = {BackendDAE.ASSIGN(left=cr)})), _, _)
       equation
         (vars, _) = BackendVariable.getVar(cr, inVariables);
         vars = List.map1(vars, BackendVariable.setVarKind, BackendDAE.DISCRETE());

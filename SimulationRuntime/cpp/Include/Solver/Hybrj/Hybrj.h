@@ -33,7 +33,8 @@ public:
     /// Returns the status of iteration
     virtual ITERATIONSTATUS getIterationStatus();
     virtual void stepCompleted(double time);
-
+    virtual void restoreOldValues();
+    virtual void restoreNewValues();
 
 private:
     /// Encapsulation of determination of residuals to given unknowns
@@ -75,7 +76,9 @@ private:
         *_x_nom,                    //Nominal value of unknown variables
         *_x_ex,                 //extraplated unknown varibales
         *_x_scale,                 //current scale factor of unknown varibales
-         *_zeroVec,
+        *_zeroVec,
+        *_x_old,
+        *_x_new,
 		_t0,             //old time
         _t1,            //old time
         _t2;              //old time

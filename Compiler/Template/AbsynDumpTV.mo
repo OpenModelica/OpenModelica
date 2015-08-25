@@ -7,6 +7,23 @@ package builtin
     replaceable type T subtypeof Any;
   end listReverse;
 
+  function boolAnd
+    input Boolean b1;
+    input Boolean b2;
+    output Boolean b;
+  end boolAnd;
+
+  function boolOr
+    input Boolean a;
+    input Boolean b;
+    output Boolean c;
+  end boolOr;
+
+  function boolNot
+    input Boolean b;
+    output Boolean nb;
+  end boolNot;
+
   uniontype SourceInfo
     record SOURCEINFO
       String fileName;
@@ -828,6 +845,12 @@ package Absyn
       Option<Annotation> annotation_;
     end EXTERNALDECL;
   end ExternalDecl;
+
+  function isClassdef
+    input Element inElement;
+    output Boolean b;
+  end isClassdef;
+
 end Absyn;
 
 package Config

@@ -33,7 +33,16 @@
 
 #include "simulation_data.h"
 
-int linearize(DATA* data);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int linearize(DATA* data, threadData_t *threadData);
+
+#ifdef __cplusplus
+}
+#endif
+
 /*int argc, char** argv, string method, double start,
 //double stop, double stepSize , long outputSteps, double tolerance);
 

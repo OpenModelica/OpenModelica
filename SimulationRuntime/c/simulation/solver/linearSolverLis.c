@@ -136,7 +136,7 @@ void printLisMatrixCSR(LIS_MATRIX A, int n)
  *  \author wbraun
  *
  */
-int getAnalyticalJacobianLis(DATA* data, int sysNumber)
+int getAnalyticalJacobianLis(DATA* data, threadData_t *threadData, int sysNumber)
 {
   int i,j,k,l,ii;
   LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.linearSystemData[sysNumber]);
@@ -149,7 +149,7 @@ int getAnalyticalJacobianLis(DATA* data, int sysNumber)
   {
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 1;
 
-    ((systemData->analyticalJacobianColumn))(data);
+    ((systemData->analyticalJacobianColumn))(data, threadData);
 
     for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeCols; j++)
     {
@@ -163,7 +163,7 @@ int getAnalyticalJacobianLis(DATA* data, int sysNumber)
         {
           l  = data->simulationInfo.analyticJacobians[index].sparsePattern.index[ii];
           /*infoStreamPrint(LOG_LS_V, 0, "set on Matrix A (%d, %d)(%d) = %f", i, l, nth, -data->simulationInfo.analyticJacobians[index].resultVars[l]); */
-          systemData->setAElement(i, l, -data->simulationInfo.analyticJacobians[index].resultVars[l], nth, (void*) systemData);
+          systemData->setAElement(i, l, -data->simulationInfo.analyticJacobians[index].resultVars[l], nth, (void*) systemData, threadData);
           nth++;
           ii++;
         };
@@ -178,11 +178,11 @@ int getAnalyticalJacobianLis(DATA* data, int sysNumber)
 /*! \fn wrapper_fvec_umfpack for the residual function
  *
  */
-static int wrapper_fvec_lis(double* x, double* f, void* data, int sysNumber)
+static int wrapper_fvec_lis(double* x, double* f, void** data, int sysNumber)
 {
   int iflag = 0;
 
-  (*((DATA*)data)->simulationInfo.linearSystemData[sysNumber].residualFunc)(data, x, f, &iflag);
+  (*((DATA*)data[0])->simulationInfo.linearSystemData[sysNumber].residualFunc)(data, x, f, &iflag);
   return 0;
 }
 
@@ -195,8 +195,9 @@ static int wrapper_fvec_lis(double* x, double* f, void* data, int sysNumber)
  */
 
 int
-solveLis(DATA *data, int sysNumber)
+solveLis(DATA *data, threadData_t *threadData, int sysNumber)
 {
+  void *dataAndThreadData[2] = {data, threadData};
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.linearSystemData[sysNumber]);
   DATA_LIS* solverData = (DATA_LIS*)systemData->solverData;
   int i, ret, success = 1, ni, iflag = 1, n = systemData->size, eqSystemNumber = systemData->equationIndex;
@@ -219,26 +220,26 @@ solveLis(DATA *data, int sysNumber)
 
     lis_matrix_set_size(solverData->A, solverData->n_row, 0);
     /* set A matrix */
-    systemData->setA(data, systemData);
+    systemData->setA(data, threadData, systemData);
     lis_matrix_assemble(solverData->A);
 
     /* set b vector */
-    systemData->setb(data, systemData);
+    systemData->setb(data, threadData, systemData);
 
   } else {
 
     lis_matrix_set_size(solverData->A, solverData->n_row, 0);
     /* calculate jacobian -> matrix A*/
     if(systemData->jacobianIndex != -1){
-      getAnalyticalJacobianLis(data, sysNumber);
+      getAnalyticalJacobianLis(data, threadData, sysNumber);
     } else {
-      assertStreamPrint(data->threadData, 1, "jacobian function pointer is invalid" );
+      assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
     }
     lis_matrix_assemble(solverData->A);
 
     /* calculate vector b (rhs) */
     memcpy(solverData->work, systemData->x, sizeof(double)*solverData->n_row);
-    wrapper_fvec_lis(solverData->work, systemData->b, data, sysNumber);
+    wrapper_fvec_lis(solverData->work, systemData->b, dataAndThreadData, sysNumber);
     /* set b vector */
     for(i=0; i<n; i++){
       err = lis_vector_set_value(LIS_INS_VALUE, i, systemData->b[i], solverData->b);
@@ -286,7 +287,7 @@ solveLis(DATA *data, int sysNumber)
         systemData->x[i] += solverData->work[i];
 
       /* update inner equations */
-      wrapper_fvec_lis(systemData->x, solverData->work, data, sysNumber);
+      wrapper_fvec_lis(systemData->x, solverData->work, dataAndThreadData, sysNumber);
     } else {
       /* write solution */
       lis_vector_get_values(solverData->x, 0, solverData->n_row, systemData->x);

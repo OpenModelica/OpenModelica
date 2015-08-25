@@ -43,6 +43,7 @@ void* generic_ptrget(const base_array_t *a, size_t sze, size_t i);
 void alloc_generic_array(base_array_t* dest, size_t sze, int ndims,...);
 
 void* generic_array_element_addr(const base_array_t* source, size_t sze, int ndims,...);
+void* generic_array_element_addr1(const base_array_t* source, size_t sze, int dim1);
 
 void alloc_generic_array_data(base_array_t* a, size_t sze);
 

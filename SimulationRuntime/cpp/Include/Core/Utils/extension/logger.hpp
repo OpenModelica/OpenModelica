@@ -8,10 +8,6 @@
 #ifndef LOGGER_HPP_
 #define LOGGER_HPP_
 
-
-enum LogCategory;
-enum LogLevel;
-
 class BOOST_EXTENSION_LOGGER_DECL Logger
 {
   public:
@@ -38,16 +34,24 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
       initialize(LogSettings());
     }
 
-    static void write(std::string msg, LogCategory cat, LogLevel lvl)
+    static inline void write(std::string msg, LogCategory cat, LogLevel lvl)
     {
+#ifndef USE_LOGGER
+      return;
+#else
       Logger* instance = getInstance();
       if(instance && instance->isEnabled())
         instance->writeInternal(msg, cat, lvl);
+#endif
     }
 
-    static void write(std::string msg, std::pair<LogCategory,LogLevel> mode)
+    static inline void write(std::string msg, std::pair<LogCategory,LogLevel> mode)
     {
+#ifndef USE_LOGGER
+      return;
+#else
       write(msg, mode.first, mode.second);
+#endif
     }
 
     static void setEnabled(bool enabled)

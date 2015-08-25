@@ -81,6 +81,7 @@
       KDATAODE *kData;
       NLPODE *nlp;
       DATA *data;
+      threadData_t *threadData;
       SOLVER_INFO *solverInfo;
       int N;
       int flag;
@@ -97,7 +98,7 @@
     }KINODE;
 
 #endif /* SUNDIALS */
-  int allocateKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N);
+  int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, int flag, int N);
   int freeKinOde(DATA* data, SOLVER_INFO* solverInfo, int N);
   int kinsolOde(void* ode);
 #ifdef __cplusplus

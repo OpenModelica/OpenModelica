@@ -308,7 +308,7 @@ int freeTotalPivotData(void** voiddata)
  *  \author wbraun
  *
  */
-int getAnalyticalJacobianTotalPivot(DATA* data, double* jac, int sysNumber)
+int getAnalyticalJacobianTotalPivot(DATA* data, threadData_t *threadData, double* jac, int sysNumber)
 {
   int i,j,k,l,ii,currentSys = sysNumber;
   LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.linearSystemData[currentSys]);
@@ -324,27 +324,28 @@ int getAnalyticalJacobianTotalPivot(DATA* data, double* jac, int sysNumber)
       if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
         data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1;
 
-    ((systemData->analyticalJacobianColumn))(data);
+    ((systemData->analyticalJacobianColumn))(data, threadData);
 
     for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeCols; j++)
     {
       if(data->simulationInfo.analyticJacobians[index].seedVars[j] == 1)
       {
-        if(j==0)
+        if(j==0) {
           ii = 0;
-        else
+        } else {
           ii = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j-1];
-        while(ii < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j])
-        {
+        }
+        while(ii < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j]) {
           l  = data->simulationInfo.analyticJacobians[index].sparsePattern.index[ii];
           k  = j*data->simulationInfo.analyticJacobians[index].sizeRows + l;
           jac[k] = data->simulationInfo.analyticJacobians[index].resultVars[l];
           ii++;
-        };
+        }
       }
       /* de-activate seed variable for the corresponding color */
-      if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[j]-1 == i)
+      if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[j]-1 == i) {
         data->simulationInfo.analyticJacobians[index].seedVars[j] = 0;
+      }
     }
 
   }
@@ -356,14 +357,14 @@ int getAnalyticalJacobianTotalPivot(DATA* data, double* jac, int sysNumber)
  *
  *
  */
-static int wrapper_fvec_totalpivot(double* x, double* f, void* data, int sysNumber)
+static int wrapper_fvec_totalpivot(double* x, double* f, void** data, int sysNumber)
 {
   int currentSys = sysNumber;
   int iflag = 0;
   /* NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]); */
   /* DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData); */
 
-  (*((DATA*)data)->simulationInfo.linearSystemData[currentSys].residualFunc)(data, x, f, &iflag);
+  (*((DATA*)data[0])->simulationInfo.linearSystemData[currentSys].residualFunc)(data, x, f, &iflag);
   return 0;
 }
 
@@ -374,8 +375,9 @@ static int wrapper_fvec_totalpivot(double* x, double* f, void* data, int sysNumb
  *
  *  \author bbachmann
  */
-int solveTotalPivot(DATA *data, int sysNumber)
+int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber)
 {
+  void *dataAndThreadData[2] = {data, threadData};
   int i, j;
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.linearSystemData[sysNumber]);
   DATA_TOTALPIVOT* solverData = (DATA_TOTALPIVOT*)systemData->solverData;
@@ -405,24 +407,24 @@ int solveTotalPivot(DATA *data, int sysNumber)
     /* reset matrix A */
     vecConstLS(n*n, 0.0, systemData->A);
     /* update matrix A -> first n columns of matrix Ab*/
-    systemData->setA(data, systemData);
+    systemData->setA(data, threadData, systemData);
     vecCopyLS(n*n, systemData->A, solverData->Ab);
 
     /* update vector b (rhs) -> -b is last column of matrix Ab*/
     rt_ext_tp_tick(&(solverData->timeClock));
-    systemData->setb(data, systemData);
+    systemData->setb(data, threadData, systemData);
     vecScalarMultLS(n, systemData->b, -1.0, solverData->Ab + n*n);
 
   } else {
 
     /* calculate jacobian -> first n columns of matrix Ab*/
     if(systemData->jacobianIndex != -1){
-      getAnalyticalJacobianTotalPivot(data, solverData->Ab, sysNumber);
+      getAnalyticalJacobianTotalPivot(data, threadData, solverData->Ab, sysNumber);
     } else {
-      assertStreamPrint(data->threadData, 1, "jacobian function pointer is invalid" );
+      assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
     }
     /* calculate vector b (rhs) -> -b is last column of matrix Ab */
-    wrapper_fvec_totalpivot(systemData->x, solverData->Ab + n*n, data, sysNumber);
+    wrapper_fvec_totalpivot(systemData->x, solverData->Ab + n*n, dataAndThreadData, sysNumber);
   }
   infoStreamPrint(LOG_LS, 0, "###  %f  time to set Matrix A and vector b.", rt_ext_tp_tock(&(solverData->timeClock)));
   debugMatrixDoubleLS(LOG_LS_V,"LGS: matrix Ab",solverData->Ab, n, n+1);
@@ -441,7 +443,7 @@ int solveTotalPivot(DATA *data, int sysNumber)
     if (1 == systemData->method){
       /* add the solution to old solution vector*/
       vecAddLS(n, systemData->x, solverData->x, systemData->x);
-      wrapper_fvec_totalpivot(systemData->x, solverData->b, data, sysNumber);
+      wrapper_fvec_totalpivot(systemData->x, solverData->b, dataAndThreadData, sysNumber);
     } else {
        /* take the solution */
        vecCopyLS(n, solverData->x, systemData->x);

@@ -59,6 +59,7 @@ typedef struct {
   fmiEventInfo eventInfo;
   ModelState state;
   DATA* fmuData;
+  threadData_t *threadData;
 } ModelInstance;
 
 #ifdef __cplusplus

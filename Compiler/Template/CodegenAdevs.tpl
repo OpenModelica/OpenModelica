@@ -1015,7 +1015,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
           <%(vars.stateVars |> SIMVAR(__) => '<%cref(name)%>=q[<%index%>];') ;separator="\n"%>
       }
       bound_params();
-      <%allEqns(allEquations,whenClauses,removedEquations)%>
+      <%allEqns(allEquations, removedEquations)%>
       // Alias assignments
       <%aliasAssign%>
       <%intAliasAssign%>
@@ -1030,7 +1030,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
   >>
 end makeDerFuncCalculator;
 
-template allEqns(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, list<SimEqSystem> removedEqns)
+template allEqns(list<SimEqSystem> allEquationsPlusWhen, list<SimEqSystem> removedEqns)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let eqs = (allEquationsPlusWhen |> eq =>
@@ -1039,17 +1039,12 @@ template allEqns(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whe
   let aliasEqs = (removedEqns |> eq =>
       equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/)
     ;separator="\n")
-  let reinit = (whenClauses |> when hasindex i0 =>
-      genreinits(when, &varDecls,i0)
-    ;separator="\n")
   <<
   <%varDecls%>
   // Primary equations
   <%eqs%>
   // Alias equations
   <%aliasEqs%>
-  // Reinits
-  <%reinit%>
   >>
 end allEqns;
 
@@ -1139,76 +1134,6 @@ template functionBoundParameters(list<SimEqSystem> parameterEquations)
   <%divbody%>
   >>
 end functionBoundParameters;
-
-template functionWhenReinitStatement(WhenOperator reinit, Text &varDecls /*BUFP*/)
- "Generates re-init statement for when equation."
-::=
-match reinit
-case REINIT(__) then
-  let &preExp = buffer "" /*BUFD*/
-  let val = daeExp(value, contextSimulationDiscrete,
-                 &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  <<
-  <%preExp%>  <%cref(stateVar)%> = <%val%>;
-  >>
-case TERMINATE(__) then
-  let &preExp = buffer "" /*BUFD*/
-  let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  <<
-  <%preExp%>  MODELICA_TERMINATE(<%msgVar%>);
-  >>
-case ASSERT(source=SOURCE(info=info)) then
-  assertCommon(condition, message, contextSimulationDiscrete, &varDecls, info)
-end functionWhenReinitStatement;
-
-template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int)
-" Generates reinit statemeant"
-::=
-  match whenClauses
-    case SIM_WHEN_CLAUSE(__) then
-      let helpIf = (conditions |> e => '(<%cref(e)%> && !_PRE<%cref(e)%> /* edge */)';separator=" || ")
-      let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)
-
-      if reinits then
-      <<
-      //Reinit inside whenclause index: <%int%>
-      if (atEvent) {
-         if (<%helpIf%>) {
-         <%ifthen%>
-         }
-      }
-      >>
-end genreinits;
-
-template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDecls /*BUFP*/)
- "Generates re-init statement for when equation."
-::=
-  let body = (reinits |> reinit =>
-    match reinit
-    case REINIT(__) then
-      let &preExp = buffer "" /*BUFD*/
-      let val = daeExp(value, contextSimulationDiscrete,
-                   &preExp /*BUFC*/, &varDecls /*BUFD*/)
-     <<
-      <%preExp%>
-                double <%cref(stateVar)%>_tmp = <%cref(stateVar)%>;
-                <%cref(stateVar)%> = <%val%>;
-                reInit = reInit || (<%cref(stateVar)%>_tmp != <%cref(stateVar)%>);
-                >>
-    case TERMINATE(__) then
-      let &preExp = buffer "" /*BUFD*/
-    let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    <<
-                <%preExp%>
-                MODELICA_TERMINATE(<%msgVar%>);
-                >>
-  case ASSERT(source=SOURCE(info=info)) then
-    assertCommon(condition, message, contextSimulationDiscrete, &varDecls, info)
-  ;separator="\n")
-  <<
-   <%body%>
-  >>
-end functionWhenReinitStatementThen;
 
 template zeroCrossingsRelationsTpl(list<ZeroCrossing> relations, Text &varDecls /*BUFP*/)
  "Generates code for zero crossings."
@@ -1486,35 +1411,26 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
  "Generates a when equation."
 ::=
 match eq
-case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
+case SES_WHEN(whenStmtLst = whenStmtLst,conditions=conditions,elseWhen = NONE()) then
   let helpIf = (conditions |> e => '(<%cref(e)%> && !_PRE<%cref(e)%> /* edge */)';separator=" || ")
-  let &preExp2 = buffer "" /*BUFD*/
-  let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
+  let body = whenOps(whenStmtLst, varDecls, context)
   <<
   if (atEvent) {
       if (<%helpIf%>) {
-          <%preExp2%>
-          <%cref(left)%> = <%exp%>;
-      } else {
-          <%cref(left)%> = _PRE<%cref(left)%>;
+          <%body%>
       }
   }
   >>
-  case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
+  case SES_WHEN(whenStmtLst = whenStmtLst,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
   let helpIf = (conditions |> e => '(<%cref(e)%> && !_PRE<%cref(e)%> /* edge */)';separator=" || ")
-  let &preExp2 = buffer "" /*BUFD*/
-  let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
+  let body = whenOps(whenStmtLst, varDecls, context)
   let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)
   <<
   if (atEvent) {
       if (<%helpIf%>) {
-          <%preExp2%>
-          <%cref(left)%> = <%exp%>;
+          <%body%>
       }
       <%elseWhen%>
-      else {
-         <%cref(left)%> = _PRE<%cref(left)%>;
-      }
   }
   >>
 end equationWhen;
@@ -1523,29 +1439,62 @@ template equationElseWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP
  "Generates a else when equation."
 ::=
 match eq
-case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
+case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen = NONE()) then
   let helpIf = (conditions |> e => '(<%cref(e)%> && !_PRE<%cref(e)%> /* edge */)';separator=" || ")
-  let &preExp2 = buffer "" /*BUFD*/
-  let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
+  let body = whenOps(whenStmtLst, varDecls, context)
   <<
   else if (<%helpIf%>) {
-    <%preExp2%>
-    <%cref(left)%> = <%exp%>;
+    <%body%>
   }
   >>
-case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
+case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen = SOME(elseWhenEq)) then
   let helpIf = (conditions |> e => '(<%cref(e)%> && !_PRE<%cref(e)%> /* edge */)';separator=" || ")
-  let &preExp2 = buffer "" /*BUFD*/
-  let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
+  let body = whenOps(whenStmtLst, varDecls, context)
   let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)
   <<
   else if (<%helpIf%>) {
-    <%preExp2%>
-    <%cref(left)%> = <%exp%>;
+    <%body%>
   }
   <%elseWhen%>
   >>
 end equationElseWhen;
+
+template whenOps(list<WhenOperator> whenOps, Text &varDecls /*BUFP*/, Context context)
+ "Generates re-init statement for when equation."
+::=
+  let body = (whenOps |> whenOp =>
+    match whenOp
+    case ASSIGN(__) then
+    let &preExp = buffer "" /*BUFD*/
+    let exp = daeExp(right, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    <<
+    <%preExp%>
+    <%cref(left)%> = <%exp%>;
+    >>
+    case REINIT(__) then
+    let &preExp = buffer "" /*BUFD*/
+    let val = daeExp(value, contextSimulationDiscrete,
+                   &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    <<
+    <%preExp%>
+    double <%cref(stateVar)%>_tmp = <%cref(stateVar)%>;
+    <%cref(stateVar)%> = <%val%>;
+    reInit = reInit || (<%cref(stateVar)%>_tmp != <%cref(stateVar)%>);
+    >>
+    case TERMINATE(__) then
+    let &preExp = buffer "" /*BUFD*/
+    let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    <<
+    <%preExp%>
+    MODELICA_TERMINATE(<%msgVar%>);
+    >>
+  case ASSERT(source=SOURCE(info=info)) then
+    assertCommon(condition, message, contextSimulationDiscrete, &varDecls, info)
+  ;separator="\n")
+  <<
+   <%body%>
+  >>
+end whenOps;
 
 template allocArray(SimVar var, Text& prefix) ::=
   match var

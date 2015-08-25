@@ -24,7 +24,7 @@ SCOREP="no"
 SCOREP_HOME=""
 FMU_KINSOL="no"
 PARALLEL_OUTPUT="no"
-SUNDIALS_LAPACK="no"
+LOGGER="yes"
 CMAKE_COMMANDS="CC=\"${CC}\" CXX=\"${CXX}\" CFLAGS=\"${CFLAGS}\" CXXFLAGS=\"${CXXFLAGS}\""
 
 AC_SUBST(BOOST_STATIC_LINKING_COMMAND)
@@ -34,7 +34,7 @@ AC_SUBST(SCOREP_COMMAND)
 AC_SUBST(SCOREP_HOME)
 AC_SUBST(FMU_KINSOL_COMMAND)
 AC_SUBST(PARALLEL_OUTPUT_COMMAND)
-AC_SUBST(SUNDIALS_LAPACK_COMMAND)
+AC_SUBST(LOGGER_COMMAND)
 AC_SUBST(CMAKE_COMMANDS)
 
 evaluateParameter() {
@@ -47,7 +47,7 @@ evaluateParameter() {
     SCOREP_HOME=) ;;
     FMU_KINSOL) FMU_KINSOL="yes" ;;
     PARALLEL_OUTPUT) PARALLEL_OUTPUT="yes" ;;
-    SUNDIALS_LAPACK) SUNDIALS_LAPACK="yes" ;;
+    DISABLE_LOGGER) LOGGER="no" ;;
     *) echo "Unknown Parameter given $1" ;;
   esac
 }
@@ -129,14 +129,14 @@ else
   AC_MSG_RESULT([no])
 fi
 
-AC_ARG_WITH(cppruntimeSundialsLapack,  [  --with-sundials-lapack       (enable lapack support in sundials (unstable))],[SUNDIALS_LAPACK="$withval"],[])
+AC_ARG_WITH(cppruntimeLogger,  [  --with-logger       (enable or disable the logger of the cpp-runtime (on by default))],[LOGGER="$withval"],[])
 
-AC_MSG_CHECKING([if lapack for sundials is requested])
-if test "$SUNDIALS_LAPACK" = "yes"; then
-  SUNDIALS_LAPACK_COMMAND="-DSUNDIALS_LAPACK=ON"
+AC_MSG_CHECKING([if logger should be used])
+if test "$LOGGER" = "yes"; then
+  LOGGER_COMMAND="-DUSE_LOGGER=ON"
   AC_MSG_RESULT([yes])
 else
-  SUNDIALS_LAPACK_COMMAND="-DSUNDIALS_LAPACK=OFF"
+  LOGGER_COMMAND="-DUSE_LOGGER=OFF"
   AC_MSG_RESULT([no])
 fi
 

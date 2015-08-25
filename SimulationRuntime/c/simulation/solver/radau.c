@@ -81,7 +81,7 @@ static int lobatto2Res(N_Vector z, N_Vector f, void* user_data);
 static int lobatto4Res(N_Vector z, N_Vector f, void* user_data);
 static int lobatto6Res(N_Vector z, N_Vector f, void* user_data);
 
-int allocateKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N)
+int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, int flag, int N)
 {
   KINODE *kinOde = (KINODE*) solverInfo->solverData;
   kinOde->kData = (KDATAODE*) malloc(sizeof(KDATAODE));
@@ -89,6 +89,7 @@ int allocateKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N)
   kinOde->N = N;
   kinOde->flag = flag;
   kinOde->data = data;
+  kinOde->threadData = threadData;
   allocateNlpOde(kinOde);
   allocateKINSOLODE(kinOde);
   kinOde->solverInfo = solverInfo;
@@ -100,8 +101,9 @@ int allocateKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N)
   KINSetFuncNormTol(kinOde->kData->kmem, kinOde->kData->fnormtol);
   KINSetScaledStepTol(kinOde->kData->kmem, kinOde->kData->scsteptol);
   KINSetNumMaxIters(kinOde->kData->kmem, 10000);
-  if(ACTIVE_STREAM(LOG_SOLVER))
+  if (ACTIVE_STREAM(LOG_SOLVER)) {
     KINSetPrintLevel(kinOde->kData->kmem,2);
+  }
   //KINSetEtaForm(kinOde->kData->kmem, KIN_ETACHOICE2);
   KINSetMaxSetupCalls(kinOde->kData->kmem, kinOde->kData->mset);
   kinOde->nlp->currentStep = &kinOde->solverInfo->currentStepSize;
@@ -430,7 +432,7 @@ static int initKinsol(KINODE *kinOde)
   return 0;
 }
 
-static int refreshModell(DATA* data, double* x, double time)
+static int refreshModell(DATA* data, threadData_t *threadData, double* x, double time)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
 
@@ -438,8 +440,8 @@ static int refreshModell(DATA* data, double* x, double time)
   sData->timeValue = time;
   /* read input vars */
   externalInputUpdate(data);
-  data->callback->input_function(data);
-  data->callback->functionODE(data);
+  data->callback->input_function(data, threadData);
+  data->callback->functionODE(data, threadData);
 
   return 0;
 }
@@ -449,6 +451,7 @@ static int radau5Res(N_Vector x, N_Vector f, void* user_data)
   int i,k;
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
+  threadData_t *threadData = kinOde->threadData;
 
   double *x0,*x1,*x2,*x3;
   double*derx = nlp->derx;
@@ -460,7 +463,7 @@ static int radau5Res(N_Vector x, N_Vector f, void* user_data)
   x2 = x1 + nlp->nStates;
   x3 = x2 + nlp->nStates;
 
-  refreshModell(kinOde->data, x1,nlp->t0 + a[0]*nlp->dt);
+  refreshModell(kinOde->data, threadData, x1, nlp->t0 + a[0]*nlp->dt);
   for(i = 0;i<nlp->nStates;i++)
   {
     feq[i] = (nlp->c[0][0]*x0[i] + nlp->c[0][3]*x3[i] + nlp->dt*derx[i]) -
@@ -468,7 +471,7 @@ static int radau5Res(N_Vector x, N_Vector f, void* user_data)
     if(isnan(feq[i])) return -1;
   }
 
-  refreshModell(kinOde->data, x2,nlp->t0 + a[1]*nlp->dt);
+  refreshModell(kinOde->data, threadData, x2, nlp->t0 + a[1]*nlp->dt);
   for(i = 0, k=nlp->nStates; i<nlp->nStates; i++, k++)
   {
     feq[k] = (nlp->c[1][1]*x1[i] + nlp->dt*derx[i]) -
@@ -476,7 +479,7 @@ static int radau5Res(N_Vector x, N_Vector f, void* user_data)
    if(isnan(feq[k])) return -1;
   }
 
-  refreshModell(kinOde->data, x3, nlp->t0 + nlp->dt);
+  refreshModell(kinOde->data, threadData, x3, nlp->t0 + nlp->dt);
   for(i = 0;i<nlp->nStates;i++,k++)
   {
     feq[k] =  (nlp->c[2][0]*x0[i] + nlp->c[2][2]*x2[i] + nlp->dt*derx[i]) -
@@ -493,6 +496,7 @@ static int radau3Res(N_Vector x, N_Vector f, void* user_data)
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
   DATA *data = kinOde->data;
+  threadData_t *threadData = kinOde->threadData;
 
   double* feq = NV_DATA_S(f);
 
@@ -504,7 +508,7 @@ static int radau3Res(N_Vector x, N_Vector f, void* user_data)
   x1 = NV_DATA_S(x);
   x2 = x1 + nlp->nStates;
 
-  refreshModell(data, x1,nlp->t0 + 0.5*nlp->dt);
+  refreshModell(data, threadData, x1, nlp->t0 + 0.5*nlp->dt);
   for(i = 0;i<nlp->nStates;i++)
   {
     feq[i] = (nlp->c[0][0]*x0[i] + nlp->dt*derx[i]) -
@@ -512,7 +516,7 @@ static int radau3Res(N_Vector x, N_Vector f, void* user_data)
     if(isnan(feq[i])) return -1;
   }
 
-  refreshModell(data, x2,nlp->t0 + nlp->dt);
+  refreshModell(data, threadData, x2, nlp->t0 + nlp->dt);
   for(i = 0, k=nlp->nStates;i<nlp->nStates;i++,k++)
   {
     feq[k] = (nlp->c[1][1]*x1[i] + nlp->dt*derx[i]) -
@@ -529,6 +533,7 @@ static int radau1Res(N_Vector x, N_Vector f, void* user_data)
   int i;
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
+  threadData_t *threadData = kinOde->threadData;
   double* feq = NV_DATA_S(f);
 
   double *x0,*x1;
@@ -537,7 +542,7 @@ static int radau1Res(N_Vector x, N_Vector f, void* user_data)
   x0 = nlp->x0;
   x1 = NV_DATA_S(x);
 
-  refreshModell(kinOde->data, x1, nlp->t0 + nlp->dt);
+  refreshModell(kinOde->data, threadData, x1, nlp->t0 + nlp->dt);
   for(i = 0; i<nlp->nStates; ++i)
   {
     feq[i] = x0[i] - x1[i] + nlp->dt*derx[i];
@@ -552,6 +557,7 @@ static int lobatto2Res(N_Vector x, N_Vector f, void* user_data)
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
   DATA *data = kinOde->data;
+  threadData_t *threadData = kinOde->threadData;
 
   double *feq = NV_DATA_S(f);
   double *x0,*x1, *f0;
@@ -561,7 +567,7 @@ static int lobatto2Res(N_Vector x, N_Vector f, void* user_data)
   f0 = nlp->f0;
   x1 = NV_DATA_S(x);
 
-  refreshModell(data, x1,nlp->t0 + nlp->dt);
+  refreshModell(data, threadData, x1, nlp->t0 + nlp->dt);
   for(i = 0;i<nlp->nStates;i++)
   {
     feq[i] = x0[i] - x1[i] + 0.5*nlp->dt*(f0[i]+derx[i]);
@@ -576,6 +582,7 @@ static int lobatto4Res(N_Vector x, N_Vector f, void* user_data)
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
   DATA *data = kinOde->data;
+  threadData_t *threadData = kinOde->threadData;
 
   double* feq = NV_DATA_S(f);
 
@@ -587,14 +594,14 @@ static int lobatto4Res(N_Vector x, N_Vector f, void* user_data)
   x1 = NV_DATA_S(x);
   x2 = x1 + nlp->nStates;
 
-  refreshModell(data, x1,nlp->t0 + 0.5*nlp->dt);
+  refreshModell(data, threadData, x1,nlp->t0 + 0.5*nlp->dt);
   for(i = 0;i<nlp->nStates;i++)
   {
     feq[i] = (nlp->dt*(2.0*derx[i] +f0[i]) + 5.0*x0[i]) - (4*x1[i] + x2[i]);
     if(isnan(feq[i])) return -1;
   }
 
-  refreshModell(data, x2,nlp->t0 + nlp->dt);
+  refreshModell(data, threadData, x2,nlp->t0 + nlp->dt);
   for(i = 0,k=nlp->nStates;i<nlp->nStates;i++,k++)
   {
     feq[k] = (2.0*nlp->dt*derx[i] + 16.0*x1[i]) - (8.0*(x0[i] + x2[i]) +2.0*nlp->dt*f0[i]);
@@ -609,6 +616,7 @@ static int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
   DATA *data = kinOde->data;
+  threadData_t *threadData = kinOde->threadData;
 
   double* feq = NV_DATA_S(f);
   double *x0, *x1, *x2, *x3, *f0;
@@ -620,21 +628,21 @@ static int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
   x2 = x1 + nlp->nStates;
   x3 = x2 + nlp->nStates;
 
-  refreshModell(data, x1,nlp->t0 + nlp->a[0]*nlp->dt);
+  refreshModell(data, threadData, x1, nlp->t0 + nlp->a[0]*nlp->dt);
   for(i = 0;i<nlp->nStates;i++)
   {
     feq[i] = (nlp->dt*(derx[i] + nlp->c[0][4]*f0[i]) + nlp->c[0][0]*x0[i] + nlp->c[0][3]*x3[i]) - (nlp->c[0][1]*x1[i] + nlp->c[0][2]*x2[i]);
    if(isnan(feq[i])) return -1;
   }
 
-  refreshModell(data, x2,nlp->t0 + nlp->a[1]*nlp->dt);
+  refreshModell(data, threadData, x2,nlp->t0 + nlp->a[1]*nlp->dt);
   for(i = 0,k=nlp->nStates;i<nlp->nStates;i++,k++)
   {
     feq[k] = (nlp->dt*derx[i] + nlp->c[1][1]*x1[i]) - (nlp->dt*nlp->c[1][4]*f0[i] + nlp->c[1][0]*x0[i] + nlp->c[1][2]*x2[i] + nlp->c[1][3]*x3[i]);
    if(isnan(feq[k])) return -1;
   }
 
-  refreshModell(data, x3,nlp->t0 + nlp->dt);
+  refreshModell(data, threadData, x3,nlp->t0 + nlp->dt);
   for(i = 0;i<nlp->nStates;i++,k++)
   {
     feq[k] = (nlp->dt*(f0[i] + derx[i]) +  nlp->c[2][0]*x0[i] + nlp->c[2][2]*x2[i]) - (nlp->c[2][1]*x1[i] + nlp->c[2][3]*x3[i]);

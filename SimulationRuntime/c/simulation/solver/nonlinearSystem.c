@@ -87,7 +87,7 @@ int initializeNLScsvData(DATA* data, NONLINEAR_SYSTEM_DATA* systemData)
  */
 int print_csvLineCallStatsHeader(OMC_WRITE_CSV* csvData)
 {
-  unsigned char buffer[1024] = "";
+  char buffer[1024] = "";
 
   /* number of call */
   sprintf(buffer,"numberOfCall");
@@ -140,7 +140,7 @@ int print_csvLineCallStats(OMC_WRITE_CSV* csvData, int num, double time,
                            int iterations, int fCalls, double solvingTime,
                            int solved)
 {
-  unsigned char buffer[1024];
+  char buffer[1024];
 
   /* number of call */
   sprintf(buffer, "%d", num);
@@ -186,7 +186,7 @@ int print_csvLineCallStats(OMC_WRITE_CSV* csvData, int num, double time,
  */
 int print_csvLineIterStatsHeader(DATA* data, NONLINEAR_SYSTEM_DATA* systemData, OMC_WRITE_CSV* csvData)
 {
-  unsigned char buffer[1024];
+  char buffer[1024];
   int j;
   int size = modelInfoGetEquation(&data->modelData.modelDataXml, systemData->equationIndex).numVar;
 
@@ -251,12 +251,13 @@ int print_csvLineIterStatsHeader(DATA* data, NONLINEAR_SYSTEM_DATA* systemData, 
  *  \param [ref] [csvData]
  *  \param [in] [size, num, ...]
  */
-int print_csvLineIterStats(OMC_WRITE_CSV* csvData, int size, int num,
+int print_csvLineIterStats(void* voidCsvData, int size, int num,
                            int iteration, double* x, double* f, double error_f,
                            double error_fs, double delta_x, double delta_xs,
                            double lambda)
 {
-  unsigned char buffer[1024];
+  OMC_WRITE_CSV* csvData = voidCsvData;
+  char buffer[1024];
   int j;
 
   /* number of call */
@@ -319,7 +320,7 @@ int print_csvLineIterStats(OMC_WRITE_CSV* csvData, int size, int num,
  *
  *  \param [ref] [data]
  */
-int initializeNonlinearSystems(DATA *data)
+int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
   int i;
@@ -336,13 +337,13 @@ int initializeNonlinearSystems(DATA *data)
     nonlinsys[i].numberOfIterations = 0;
 
     /* check if residual function pointer are valid */
-    assertStreamPrint(data->threadData, 0 != nonlinsys[i].residualFunc, "residual function pointer is invalid" );
+    assertStreamPrint(threadData, 0 != nonlinsys[i].residualFunc, "residual function pointer is invalid" );
 
     /* check if analytical jacobian is created */
     if(nonlinsys[i].jacobianIndex != -1)
     {
-      assertStreamPrint(data->threadData, 0 != nonlinsys[i].analyticalJacobianColumn, "jacobian function pointer is invalid" );
-      if(nonlinsys[i].initialAnalyticalJacobian(data))
+      assertStreamPrint(threadData, 0 != nonlinsys[i].analyticalJacobianColumn, "jacobian function pointer is invalid" );
+      if(nonlinsys[i].initialAnalyticalJacobian(data, threadData))
       {
         nonlinsys[i].jacobianIndex = -1;
       }
@@ -357,14 +358,14 @@ int initializeNonlinearSystems(DATA *data)
     nonlinsys[i].min = (double*) malloc(size*sizeof(double));
     nonlinsys[i].max = (double*) malloc(size*sizeof(double));
 
-    nonlinsys[i].initializeStaticNLSData(data, &nonlinsys[i]);
+    nonlinsys[i].initializeStaticNLSData(data, threadData, &nonlinsys[i]);
 
     /* csv data call stats*/
     if (data->simulationInfo.nlsCsvInfomation)
     {
       if (initializeNLScsvData(data, &nonlinsys[i]))
       {
-        throwStreamPrint(data->threadData, "csvData initialization failed");
+        throwStreamPrint(threadData, "csvData initialization failed");
       }
       else
       {
@@ -381,7 +382,7 @@ int initializeNonlinearSystems(DATA *data)
       allocateHybrdData(size, &nonlinsys[i].solverData);
       break;
     case NLS_KINSOL:
-      nls_kinsol_allocate(data, &nonlinsys[i]);
+      nls_kinsol_allocate(data, threadData, &nonlinsys[i]);
       break;
     case NLS_NEWTON:
       allocateNewtonData(size, &nonlinsys[i].solverData);
@@ -402,7 +403,7 @@ int initializeNonlinearSystems(DATA *data)
       break;
 #endif
     default:
-      throwStreamPrint(data->threadData, "unrecognized nonlinear solver");
+      throwStreamPrint(threadData, "unrecognized nonlinear solver");
     }
   }
 
@@ -418,7 +419,7 @@ int initializeNonlinearSystems(DATA *data)
  *
  *  \param [ref] [data]
  */
-int updateStaticDataOfNonlinearSystems(DATA *data)
+int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
   int i;
@@ -430,7 +431,7 @@ int updateStaticDataOfNonlinearSystems(DATA *data)
 
   for(i=0; i<data->modelData.nNonLinearSystems; ++i)
   {
-    nonlinsys[i].initializeStaticNLSData(data, &nonlinsys[i]);
+    nonlinsys[i].initializeStaticNLSData(data, threadData, &nonlinsys[i]);
   }
 
   messageClose(LOG_NLS);
@@ -445,7 +446,7 @@ int updateStaticDataOfNonlinearSystems(DATA *data)
  *
  *  \param [ref] [data]
  */
-int freeNonlinearSystems(DATA *data)
+int freeNonlinearSystems(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
   int i;
@@ -494,7 +495,7 @@ int freeNonlinearSystems(DATA *data)
       break;
 #endif
     default:
-      throwStreamPrint(data->threadData, "unrecognized nonlinear solver");
+      throwStreamPrint(threadData, "unrecognized nonlinear solver");
     }
     free(nonlinsys[i].solverData);
   }
@@ -532,11 +533,11 @@ void printNonLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLev
  *
  *  \author wbraun
  */
-int solve_nonlinear_system(DATA *data, int sysNumber)
+int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 {
+  void *dataAndThreadData[2] = {data, threadData};
   int success = 0, saveJumpState;
   NONLINEAR_SYSTEM_DATA* nonlinsys = &(data->simulationInfo.nonlinearSystemData[sysNumber]);
-  threadData_t *threadData = data->threadData;
   struct dataNewtonAndHybrid *mixedSolverData;
 
   data->simulationInfo.currentNonlinearSystemIndex = sysNumber;
@@ -559,7 +560,7 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
 #endif
 
     ((DATA*)data)->simulationInfo.solveContinuous = 0;
-    nonlinsys->residualFunc((void*) data, nonlinsys->nlsx, fvec, (int*)&nonlinsys->size);
+    nonlinsys->residualFunc((void*) dataAndThreadData, nonlinsys->nlsx, fvec, (int*)&nonlinsys->size);
     ((DATA*)data)->simulationInfo.solveContinuous = 1;
 
     success = 1;
@@ -589,48 +590,48 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
   {
 #if !defined(OMC_MINIMAL_RUNTIME)
   case NLS_HYBRID:
-    saveJumpState = data->threadData->currentErrorStage;
-    data->threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
-    success = solveHybrd(data, sysNumber);
-    data->threadData->currentErrorStage = saveJumpState;
+    saveJumpState = threadData->currentErrorStage;
+    threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
+    success = solveHybrd(data, threadData, sysNumber);
+    threadData->currentErrorStage = saveJumpState;
     break;
   case NLS_KINSOL:
-    success = nonlinearSolve_kinsol(data, sysNumber);
+    success = nonlinearSolve_kinsol(data, threadData, sysNumber);
     break;
   case NLS_NEWTON:
-    success = solveNewton(data, sysNumber);
+    success = solveNewton(data, threadData, sysNumber);
     /* check if solution process was successful, if not use alternative tearing set if available (dynamic tearing)*/
     if (!success && nonlinsys->strictTearingFunctionCall != NULL){
       debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
-      success = nonlinsys->strictTearingFunctionCall(data);
+      success = nonlinsys->strictTearingFunctionCall(data, threadData);
       if (success) success=2;
     }
     break;
 #endif
   case NLS_HOMOTOPY:
-    saveJumpState = data->threadData->currentErrorStage;
-    data->threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
-    success = solveHomotopy(data, sysNumber);
-    data->threadData->currentErrorStage = saveJumpState;
+    saveJumpState = threadData->currentErrorStage;
+    threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
+    success = solveHomotopy(data, threadData, sysNumber);
+    threadData->currentErrorStage = saveJumpState;
     break;
 #if !defined(OMC_MINIMAL_RUNTIME)
   case NLS_MIXED:
     mixedSolverData = nonlinsys->solverData;
     nonlinsys->solverData = mixedSolverData->newtonData;
 
-    saveJumpState = data->threadData->currentErrorStage;
-    data->threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
-    success = solveHomotopy(data, sysNumber);
+    saveJumpState = threadData->currentErrorStage;
+    threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
+    success = solveHomotopy(data, threadData, sysNumber);
     if (!success) {
       nonlinsys->solverData = mixedSolverData->hybridData;
-      success = solveHybrd(data, sysNumber);
+      success = solveHybrd(data, threadData, sysNumber);
     }
-    data->threadData->currentErrorStage = saveJumpState;
+    threadData->currentErrorStage = saveJumpState;
     nonlinsys->solverData = mixedSolverData;
     break;
 #endif
   default:
-    throwStreamPrint(data->threadData, "unrecognized nonlinear solver");
+    throwStreamPrint(threadData, "unrecognized nonlinear solver");
   }
 
 

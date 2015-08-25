@@ -52,6 +52,7 @@ extern double enorm_(integer *n, double *x);
 
 struct dataAndSys {
   DATA* data;
+  threadData_t *threadData;
   int sysNumber;
 };
 
@@ -258,6 +259,7 @@ static int getAnalyticalJacobian(struct dataAndSys* dataSys, double* jac)
 {
   int i, j, k, l, ii;
   DATA *data = (dataSys->data);
+  threadData_t *threadData = dataSys->threadData;
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.nonlinearSystemData[dataSys->sysNumber]);
   DATA_HYBRD* solverData = (DATA_HYBRD*)(systemData->solverData);
   const int index = systemData->jacobianIndex;
@@ -272,7 +274,7 @@ static int getAnalyticalJacobian(struct dataAndSys* dataSys, double* jac)
       if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
         data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1;
 
-    ((systemData->analyticalJacobianColumn))(data);
+    ((systemData->analyticalJacobianColumn))(data, threadData);
 
     for(j=0; j<data->simulationInfo.analyticJacobians[index].sizeCols; j++)
     {
@@ -310,6 +312,7 @@ static int wrapper_fvec_hybrj(const integer* n, const double* x, double* f, doub
   int i,j;
   struct dataAndSys *dataSys = (struct dataAndSys*) dataAndSysNum;
   DATA *data = (dataSys->data);
+  void *dataAndThreadData[2] = {data, dataSys->threadData};
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.nonlinearSystemData[dataSys->sysNumber]);
   DATA_HYBRD* solverData = (DATA_HYBRD*)(systemData->solverData);
   int continuous = data->simulationInfo.solveContinuous;
@@ -331,9 +334,9 @@ static int wrapper_fvec_hybrj(const integer* n, const double* x, double* f, doub
 
     /* call residual function */
     if(solverData->useXScaling){
-      (systemData->residualFunc)(data, (const double*) solverData->xScaled, f, (const int*)iflag);
+      (systemData->residualFunc)(dataAndThreadData, (const double*) solverData->xScaled, f, (const int*)iflag);
     } else {
-      (systemData->residualFunc)(data, x, f, (const int*)iflag);
+      (systemData->residualFunc)(dataAndThreadData, x, f, (const int*)iflag);
     }
 
     /* debug output */
@@ -387,7 +390,7 @@ static int wrapper_fvec_hybrj(const integer* n, const double* x, double* f, doub
     break;
 
   default:
-    throwStreamPrint(data->threadData, "Well, this is embarrasing. The non-linear solver should never call this case.%d", (int)*iflag);
+    throwStreamPrint(NULL, "Well, this is embarrasing. The non-linear solver should never call this case.%d", (int)*iflag);
     break;
   }
 
@@ -401,7 +404,7 @@ static int wrapper_fvec_hybrj(const integer* n, const double* x, double* f, doub
  *
  *  \author wbraun
  */
-int solveHybrd(DATA *data, int sysNumber)
+int solveHybrd(DATA *data, threadData_t *threadData, int sysNumber)
 {
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.nonlinearSystemData[sysNumber]);
   DATA_HYBRD* solverData = (DATA_HYBRD*)systemData->solverData;
@@ -410,7 +413,6 @@ int solveHybrd(DATA *data, int sysNumber)
    * We want to look it up among all equations.
    */
   int eqSystemNumber = systemData->equationIndex;
-  threadData_t *threadData = data->threadData;
 
   int i, j;
   integer iflag = 1;
@@ -432,7 +434,7 @@ int solveHybrd(DATA *data, int sysNumber)
 
   modelica_boolean* relationsPreBackup;
 
-  struct dataAndSys dataAndSysNumber = {data, sysNumber};
+  struct dataAndSys dataAndSysNumber = {data, threadData, sysNumber};
 
   relationsPreBackup = (modelica_boolean*) malloc(data->modelData.nRelations*sizeof(modelica_boolean));
 

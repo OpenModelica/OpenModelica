@@ -57,16 +57,16 @@
  *
  *  \param [ref] [data]
  */
-void updateContinuousSystem(DATA *data)
+static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
 
   externalInputUpdate(data);
-  data->callback->input_function(data);
-  data->callback->functionODE(data);
-  data->callback->functionAlgebraics(data);
-  data->callback->output_function(data);
-  data->callback->function_storeDelayed(data);
+  data->callback->input_function(data, threadData);
+  data->callback->functionODE(data, threadData);
+  data->callback->functionAlgebraics(data, threadData);
+  data->callback->output_function(data, threadData);
+  data->callback->function_storeDelayed(data, threadData);
   storePreValues(data);
 
   TRACE_POP
@@ -81,7 +81,7 @@ void updateContinuousSystem(DATA *data)
  *
  *  This function performs the simulation controlled by solverInfo.
  */
-int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
+int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   TRACE_PUSH
 
@@ -188,29 +188,30 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       {
         communicateStatus("Running", (solverInfo->currentTime-simInfo->startTime)/(simInfo->stopTime-simInfo->startTime));
       }
-      retValIntegrator = solver_main_step(data, solverInfo);
+      retValIntegrator = solver_main_step(data, threadData, solverInfo);
 
       if (S_OPTIMIZATION == solverInfo->solverMethod) break;
 
-      updateContinuousSystem(data);
+      prefixedName_updateContinuousSystem(data, threadData);
 
       if (solverInfo->solverMethod == S_SYM_IMP_EULER) data->callback->symEulerUpdate(data, solverInfo->solverStepSize);
 
-      saveZeroCrossings(data);
+      saveZeroCrossings(data, threadData);
       messageClose(LOG_SOLVER);
 
       /***** Event handling *****/
       if (measure_time_flag) rt_tick(SIM_TIMER_EVENT);
 
-      eventType = checkEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
+      eventType = checkEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
       if(eventType > 0) /* event */
       {
         threadData->currentErrorStage = ERROR_EVENTHANDLING;
         infoStreamPrint(LOG_EVENTS, 1, "%s event at time=%.12g", eventType == 1 ? "time" : "state", solverInfo->currentTime);
         /* prevent emit if noEventEmit flag is used */
-        if (!(omc_flag[FLAG_NOEVENTEMIT])) /* output left limit */
-          sim_result.emit(&sim_result,data);
-        handleEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
+        if (!(omc_flag[FLAG_NOEVENTEMIT])) { /* output left limit */
+          sim_result.emit(&sim_result,data,threadData);
+        }
+        handleEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
         messageClose(LOG_EVENTS);
         threadData->currentErrorStage = ERROR_SIMULATION;
 
@@ -228,7 +229,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 
 
       /***** check state selection *****/
-      if (stateSelection(data, 1, 1))
+      if (stateSelection(data, threadData, 1, 1))
       {
         /* if new set is calculated reinit the solver */
         solverInfo->didEventStep = 1;
@@ -236,7 +237,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       }
 
       /* Check for warning of variables out of range assert(min<x || x>xmax, ...)*/
-      data->callback->checkForAsserts(data);
+      data->callback->checkForAsserts(data, threadData);
 
       retry = 0; /* reset retry */
 
@@ -278,7 +279,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       /* prevent emit if noEventEmit flag is used, if it's an event */
       if ((omc_flag[FLAG_NOEVENTEMIT] && solverInfo->didEventStep == 0) || !omc_flag[FLAG_NOEVENTEMIT])
       {
-        sim_result.emit(&sim_result, data);
+        sim_result.emit(&sim_result, data, threadData);
       }
 
       printAllVarsDebug(data, 0, LOG_DEBUG);  /* ??? */
@@ -347,7 +348,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         restoreOldValues(data);
         solverInfo->currentTime = data->localData[0]->timeValue;
         overwriteOldSimulationData(data);
-        updateDiscreteSystem(data);
+        updateDiscreteSystem(data, threadData);
         warningStreamPrint(LOG_STDOUT, 0, "Integrator attempt to handle a problem with a called assert.");
         retry = 1;
         solverInfo->didEventStep = 1;

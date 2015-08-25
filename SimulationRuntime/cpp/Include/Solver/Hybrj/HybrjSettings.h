@@ -22,11 +22,15 @@ public:
     virtual double        getDelta();
     virtual void        setDelta(double);
     virtual void load(string);
-private:
-    long int    iNewt_max;                    ///< max. Anzahl an Newtonititerationen pro Schritt (default: 25)
 
-    double        dRtol;                        ///< Relative Toleranz für die Newtoniteration (default: 1e-6)
-    double        dAtol;                        ///< Absolute Toleranz für die Newtoniteration (default: 1e-6)
-    double        dDelta;                        ///< Dämpfungsfaktor (default: 0.9)
+    virtual void setContinueOnError(bool);
+    virtual bool getContinueOnError();
+private:
+    long int    _iNewt_max;                    ///< max. Anzahl an Newtonititerationen pro Schritt (default: 25)
+
+    double        _dRtol;                        ///< Relative Toleranz für die Newtoniteration (default: 1e-6)
+    double        _dAtol;                        ///< Absolute Toleranz für die Newtoniteration (default: 1e-6)
+    double        _dDelta;                        ///< Dämpfungsfaktor (default: 0.9)
+    bool _continueOnError;
 };
 /** @} */ // end of solverHybrj

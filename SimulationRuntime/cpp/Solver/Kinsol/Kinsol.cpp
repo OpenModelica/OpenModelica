@@ -10,13 +10,8 @@
 #include <nvector/nvector_serial.h>
 #include <kinsol/kinsol.h>
 
-#ifdef USE_SUNDIALS_LAPACK
-  #include <kinsol/kinsol_lapack.h>
-#else
-  #include <kinsol/kinsol_spgmr.h>
-  #include <kinsol/kinsol_dense.h>
-#endif //USE_SUNDIALS_LAPACK
-
+#include <kinsol/kinsol_spgmr.h>
+#include <kinsol/kinsol_dense.h>
 
 #include <kinsol/kinsol_spbcgs.h>
 #include <kinsol/kinsol_sptfqmr.h>
@@ -134,8 +129,9 @@ Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _Kin_fScale         (NULL)
 	, _kinMem             (NULL)
 	, _scale			  (NULL)
-
-  , _fValid(false)
+    , _fValid(false)
+    , _y_old(NULL)
+    , _y_new(NULL)
   , _solverErrorNotificationGiven(false)
 {
 	_data = ((void*)this);
@@ -146,6 +142,8 @@ Kinsol::~Kinsol()
 {
 	if(_y)                delete []  _y;
 	if(_y0)               delete []  _y0;
+    if(_y_old)            delete [] _y_old;
+    if(_y_new)            delete [] _y_new;
 	if(_yScale)           delete []  _yScale;
 	if(_fScale)           delete []  _fScale;
 	if(_f)                delete []  _f;
@@ -159,6 +157,7 @@ Kinsol::~Kinsol()
 	if(_yHelp)            delete []  _yHelp;
 	if (_scale)            delete[]  _scale;
 	if(_Kin_y)
+
 		N_VDestroy_Serial(_Kin_y);
 	if(_Kin_y0)
 		N_VDestroy_Serial(_Kin_y0);
@@ -209,7 +208,8 @@ void Kinsol::initialize()
 			if(_zeroVec)         delete []  _zeroVec;
 			if(_currentIterate)  delete []  _currentIterate;
 			if (_scale)			 delete[]  _scale;
-
+            if(_y_old)           delete [] _y_old;
+            if(_y_new)           delete [] _y_new;
 			_y                = new double[_dimSys];
 			_y0               = new double[_dimSys];
 			_yScale           = new double[_dimSys];
@@ -221,14 +221,16 @@ void Kinsol::initialize()
 			_zeroVec          = new double[_dimSys];
 			_currentIterate   = new double[_dimSys];
 			_scale			  = new double[_dimSys];
-
+            _y_old            = new double[_dimSys];
+            _y_new            = new double[_dimSys];
 			_jac              = new double[_dimSys*_dimSys];
 			_yHelp            = new double[_dimSys];
 			_fHelp            = new double[_dimSys];
 
 			_algLoop->getReal(_y);
 			_algLoop->getReal(_y0);
-
+            _algLoop->getReal(_y_new);
+            _algLoop->getReal(_y_old);
 			memset(_f, 0, _dimSys*sizeof(double));
 			memset(_helpArray, 0, _dimSys*sizeof(double));
 			memset(_ihelpArray, 0, _dimSys*sizeof(long int));
@@ -264,11 +266,7 @@ void Kinsol::initialize()
 			if (check_flag(&idid, (char *)"KINSetUserData", 1))
 				throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol::initialize()");
 
-#ifdef USE_SUNDIALS_LAPACK
-			KINLapackDense(_kinMem, _dimSys);
-#else
 			KINDense(_kinMem, _dimSys);
-#endif //USE_SUNDIALS_LAPACK
 
 			/*will be used with new sundials version
 			if(_algLoop->isLinearTearing())
@@ -293,11 +291,11 @@ void Kinsol::initialize()
 			}*/
 
 			idid = KINSetErrFile(_kinMem, NULL);
-			idid = KINSetNumMaxIters(_kinMem, 1000);
+			idid = KINSetNumMaxIters(_kinMem, 50);
 			//idid = KINSetEtaForm(_kinMem, KIN_ETACHOICE2);
 
-			_fnormtol  = 1.e-12;     /* function tolerance */
-			_scsteptol = 1.e-12;     /* step tolerance */
+			_fnormtol  = 1.e-13;     /* function tolerance */
+			_scsteptol = 1.e-13;     /* step tolerance */
 
 			idid = KINSetFuncNormTol(_kinMem, _fnormtol);
 			idid = KINSetScaledStepTol(_kinMem, _scsteptol);
@@ -381,18 +379,20 @@ void Kinsol::solve()
 		//std::vector< int > ipiv (_dimSys);  // pivot vector
 		//lapack::gesv (A, ipiv,b);   // solving the system, b contains x
 
-		for(int i=0; i<_dimSys; i++)
-		_y[i]=-_f[i];
-		_algLoop->setReal(_y);
-		_algLoop->evaluate();
+
 		if  (irtrn != 0)
 		{
 			dgetc2_(&_dimSys, _jac, &_dimSys, _ihelpArray, _jhelpArray, &irtrn);
 			dgesc2_(&_dimSys, _jac, &_dimSys, _f, _ihelpArray, _jhelpArray, _scale);
 			Logger::write("Kinsol: Linear system singular, using perturbed system matrix.", LC_NLS, LL_DEBUG);
+			_iterationStatus = DONE;
 		}
 		else
 		_iterationStatus = DONE;
+	   for(int i=0; i<_dimSys; i++)
+		_y[i]=-_f[i];
+		_algLoop->setReal(_y);
+		_algLoop->evaluate();
 
 	}
 	else
@@ -400,6 +400,8 @@ void Kinsol::solve()
 		int idid;
 		_counter++;
 		_eventRetry = false;
+		_iterationStatus = CONTINUE;
+
 
 		// Try Dense first
 		////////////////////////////
@@ -415,7 +417,11 @@ void Kinsol::solve()
 
 		solveNLS();
 		if(_iterationStatus == DONE)
+		{
+			_algLoop->setReal(_y);
+			_algLoop->evaluate();
 			return;
+		}
 		else  // Try Scaling
 		{
 			_iterationStatus = CONTINUE;
@@ -431,17 +437,17 @@ void Kinsol::solve()
 				_fScale[i] = 1;
 
 			}
-			/*
-			_fScale[0] = 18.27;
-			_fScale[1] = 56.77;
-			_fScale[2] = 17.13;
-			*/
+
 			_iterationStatus = CONTINUE;
 			solveNLS();
 		}
 
 		if(_iterationStatus == DONE)
+		{
+			_algLoop->setReal(_y);
+			_algLoop->evaluate();
 			return;
+		}
 
 		// Try complete pivoting
 		///////////////////////////////////////
@@ -493,7 +499,11 @@ void Kinsol::solve()
 		solveNLS();
 
 		if(_iterationStatus == DONE)
+		{
+			_algLoop->setReal(_y);
+			_algLoop->evaluate();
 			return;
+		}
 		else  // Try Scaling
 		{
 			_iterationStatus = CONTINUE;
@@ -511,7 +521,11 @@ void Kinsol::solve()
 			solveNLS();
 		}
 		if(_iterationStatus == DONE)
+		{
+			_algLoop->setReal(_y);
+			_algLoop->evaluate();
 			return;
+		}
 
 		for(int i=0;i<_dimSys;i++) // Reset Scaling
 			_fScale[i] = 1.0;
@@ -520,7 +534,11 @@ void Kinsol::solve()
 		_iterationStatus = CONTINUE;
 		solveNLS();
 		if(_iterationStatus == DONE)
+		{
+			_algLoop->setReal(_y);
+			_algLoop->evaluate();
 			return;
+		}
 		else  // Try Scaling
 		{
 			_iterationStatus = CONTINUE;
@@ -537,7 +555,11 @@ void Kinsol::solve()
 			solveNLS();
 		}
 		if(_iterationStatus == DONE)
+		{
+			_algLoop->setReal(_y);
+			_algLoop->evaluate();
 			return;
+		}
 
 		if(_eventRetry)
 		{
@@ -546,11 +568,21 @@ void Kinsol::solve()
 			return;
 		}
 
-		if(_iterationStatus == SOLVERERROR && !_eventRetry)
-        {
-		     throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
-        }
+    if(_iterationStatus == SOLVERERROR && !_eventRetry)
+    {
 
+      if(_kinsolSettings->getContinueOnError())
+      {
+        if(!_solverErrorNotificationGiven)
+        {
+          Logger::write("Kinsol: Solver error detected. The simulation will continue, but the results may be incorrect.",LC_NLS,LL_WARNING);
+          _solverErrorNotificationGiven = true;
+        }
+      }
+      else
+
+        throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
+    }
 	}
 }
 
@@ -593,7 +625,7 @@ int Kinsol::kin_f(N_Vector y,N_Vector fval, void *user_data)
 	else
 		return(1);
 }
-/**\brief internal function called by Kinsol callback function to calculate dense jacobian
+/**\brief internal function called by Kinsol callback function to calculate sparse jacobian
  *  \param [in] u  variables vector
  *  \param [in] fu right hand side vector
  *  \param [out] J sparse jacobian
@@ -651,6 +683,8 @@ int Kinsol::kin_JacDense(long int N, N_Vector u, N_Vector fu,DlsMat J, void *use
 void Kinsol::stepCompleted(double time)
 {
 	memcpy(_y0,_y,_dimSys*sizeof(double));
+    memcpy(_y_old,_y_new,_dimSys*sizeof(double));
+    memcpy(_y_new,_y,_dimSys*sizeof(double));
 }
 
 int Kinsol::check_flag(void *flagvalue, char *funcname, int opt)
@@ -697,7 +731,8 @@ void Kinsol::solveNLS()
 		maxStepsStart = 0,
 		maxSteps = maxStepsStart,
 		maxStepsHigh =1e8,
-		locTol = 1e-6;
+		locTol =5e-7,
+	    delta = 1e-14;
 
 	_currentIterateNorm = 100.0;
 
@@ -763,29 +798,17 @@ void Kinsol::solveNLS()
 				check4EventRetry(_y);
 				if(method == KIN_NONE)
 				{
-					if (maxSteps > 0 && maxSteps < 1)
+					if (maxSteps == maxStepsHigh)
 					{
 						method = KIN_LINESEARCH;
 						maxSteps = maxStepsStart;
-
-					}else
-						if (maxSteps==0)
-							maxSteps = maxStepsHigh;
-						else
-							maxSteps /= 10;
-
-				}else // already trying Linesearch
-				{
-					if (maxSteps > 0 && maxSteps < 1)
-					{
-						_iterationStatus = SOLVERERROR;
 					} else
-						if (maxSteps==0)
-							maxSteps = maxStepsHigh;
-						else
-							maxSteps /= 10;
+						maxSteps = maxStepsHigh;
 				}
-			}
+				else // already trying Linesearch
+						_iterationStatus = SOLVERERROR;
+			  }
+
 			break;
 
 			// Max Iterations exceeded
@@ -799,16 +822,8 @@ void Kinsol::solveNLS()
 				check4EventRetry(_y);
 				if(method == KIN_NONE)
 				{
-					if (maxSteps > 0 && maxSteps < 1)
-					{
 						method = KIN_LINESEARCH;
 						maxSteps = maxStepsStart;
-
-					}else
-						if (maxSteps==0)
-							maxSteps = maxStepsHigh;
-						else
-							maxSteps /= 10;
 
 				}else // already trying Linesearch
 				{
@@ -833,16 +848,14 @@ void Kinsol::solveNLS()
 			}else
 			{
 				check4EventRetry(_y);
-				// Try diffent maxStsps
 
-				if (maxSteps > 0 && maxSteps < 1)
-				{
+				if(delta < 1e-16)
 					_iterationStatus = SOLVERERROR;
-				} else // Try higher maxStep values
-					if (maxSteps==0)
-						maxSteps = maxStepsHigh;
-					else
-						maxSteps /= 10;
+				else
+				{
+					delta /= 1e2;
+					idid = KINSetRelErrFunc(_kinMem, delta);
+				}
 
 			}
 			break;
@@ -868,7 +881,25 @@ void Kinsol::solveNLS()
 
 
 }
+/**
+ *  \brief Restores all algloop variables for a output step
+ *  \return Return_Description
+ *  \details Details
+ */
+void Kinsol::restoreOldValues()
+{
+     memcpy(_y,_y_old,_dimSys*sizeof(double));
 
+}
+    /**
+ *  \brief Restores all algloop variables for last output step
+ *  \return Return_Description
+ *  \details Details
+ */
+void Kinsol::restoreNewValues()
+{
+    memcpy(_y,_y_new,_dimSys*sizeof(double));
+}
 
 
 

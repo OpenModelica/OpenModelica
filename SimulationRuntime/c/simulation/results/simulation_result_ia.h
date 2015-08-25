@@ -39,10 +39,10 @@ extern "C" {
 #endif
 
 #if !defined(OMC_MINIMAL_RUNTIME)
-void ia_init(simulation_result *self, DATA *data);
-void ia_emit(simulation_result *self, DATA *data);
-void ia_writeParameterData(simulation_result *self, DATA *data);
-void ia_free(simulation_result *self, DATA *data);
+void ia_init(simulation_result *self, DATA *data, threadData_t *threadData);
+void ia_emit(simulation_result *self, DATA *data, threadData_t *threadData);
+void ia_writeParameterData(simulation_result *self, DATA *data, threadData_t *threadData);
+void ia_free(simulation_result *self, DATA *data, threadData_t *threadData);
 #endif
 
 #ifdef __cplusplus

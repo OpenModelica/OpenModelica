@@ -42,6 +42,8 @@
 #include <stdint.h>
 #include <assert.h>
 
+extern "C" {
+
 typedef std::pair<void*,int> indx_type;
 typedef std::map<int,int> INTMAP;
 
@@ -64,11 +66,11 @@ typedef struct mat_data {
   int numVars;
 } mat_data;
 
-long flattenStrBuf(int dims, const struct VAR_INFO** src, char* &dest, int& longest, int& nstrings, bool fixNames, bool useComment);
-void writeMatVer4MatrixHeader(simulation_result *self,DATA *data,const char *name, int rows, int cols, unsigned int size);
-void writeMatVer4Matrix(simulation_result *self,DATA *data,const char *name, int rows, int cols, const void *, unsigned int size);
-void generateDataInfo(simulation_result *self,DATA *data,int* &dataInfo, int& rows, int& cols, int nVars, int nParams);
-void generateData_1(DATA *data, double* &data_1, int& rows, int& cols, double tstart, double tstop);
+static long flattenStrBuf(int dims, const struct VAR_INFO** src, char* &dest, int& longest, int& nstrings, bool fixNames, bool useComment);
+static void mat_writeMatVer4MatrixHeader(simulation_result *self,DATA *data, threadData_t *threadData,const char *name, int rows, int cols, unsigned int size);
+static void mat_writeMatVer4Matrix(simulation_result *self,DATA *data, threadData_t *threadData, const char *name, int rows, int cols, const void *, unsigned int size);
+static void generateDataInfo(simulation_result *self,DATA *data, threadData_t *threadData,int* &dataInfo, int& rows, int& cols, int nVars, int nParams);
+static void generateData_1(DATA *data, threadData_t *threadData, double* &data_1, int& rows, int& cols, double tstart, double tstop);
 
 static int calcDataSize(simulation_result *self,DATA *data);
 static const VAR_INFO** calcDataNames(simulation_result *self,DATA *data,int dataSize);
@@ -166,7 +168,7 @@ static const VAR_INFO** calcDataNames(simulation_result *self,DATA *data,int dat
 }
 
 /* write the parameter data after updateBoundParameters is called */
-void mat4_writeParameterData(simulation_result *self,DATA *data)
+void mat4_writeParameterData(simulation_result *self,DATA *data, threadData_t *threadData)
 {
   mat_data *matData = (mat_data*) self->storage;
   int rows, cols;
@@ -176,9 +178,9 @@ void mat4_writeParameterData(simulation_result *self,DATA *data)
     std::ofstream::pos_type remember = matData->fp.tellp();
     matData->fp.seekp(matData->data1HdrPos);
     /* generate `data_1' matrix (with parameter data) */
-    generateData_1(data, doubleMatrix, rows, cols, matData->startTime, matData->stopTime);
+    generateData_1(data, threadData, doubleMatrix, rows, cols, matData->startTime, matData->stopTime);
     /*  write `data_1' matrix */
-    writeMatVer4Matrix(self,data,"data_1", cols, rows, doubleMatrix, sizeof(double));
+    mat_writeMatVer4Matrix(self,data, threadData,"data_1", cols, rows, doubleMatrix, sizeof(double));
     free(doubleMatrix); doubleMatrix = NULL;
     matData->fp.seekp(remember);
   }
@@ -190,7 +192,7 @@ void mat4_writeParameterData(simulation_result *self,DATA *data)
   }
 }
 
-void mat4_init(simulation_result *self,DATA *data)
+void mat4_init(simulation_result *self,DATA *data, threadData_t *threadData)
 {
   mat_data *matData = new mat_data();
   self->storage = matData;
@@ -219,41 +221,41 @@ void mat4_init(simulation_result *self,DATA *data)
     /* open file */
     matData->fp.open(self->filename, std::ofstream::binary|std::ofstream::trunc);
     if(!matData->fp) {
-      throwStreamPrint(data->threadData, "Cannot open File %s for writing",self->filename);
+      throwStreamPrint(threadData, "Cannot open File %s for writing",self->filename);
     }
 
     /* write `AClass' matrix */
-    writeMatVer4Matrix(self,data,"Aclass", 4, 11, Aclass, sizeof(int8_t));
+    mat_writeMatVer4Matrix(self,data, threadData,"Aclass", 4, 11, Aclass, sizeof(int8_t));
     /* flatten variables' names */
     flattenStrBuf(matData->numVars+nParams, names, stringMatrix, rows, cols, false /* We cannot plot derivatives if we fix the names ... */, false);
     /* write `name' matrix */
-    writeMatVer4Matrix(self,data,"name", rows, cols, stringMatrix, sizeof(int8_t));
+    mat_writeMatVer4Matrix(self,data,threadData,"name", rows, cols, stringMatrix, sizeof(int8_t));
     free(stringMatrix); stringMatrix = NULL;
 
     /* flatten variables' comments */
     flattenStrBuf(matData->numVars+nParams, names, stringMatrix, rows, cols, false, true);
     /* write `description' matrix */
-    writeMatVer4Matrix(self,data,"description", rows, cols, stringMatrix, sizeof(int8_t));
+    mat_writeMatVer4Matrix(self,data,threadData,"description", rows, cols, stringMatrix, sizeof(int8_t));
     free(stringMatrix); stringMatrix = NULL;
 
     /* generate dataInfo table */
-    generateDataInfo(self, data, intMatrix, rows, cols, matData->numVars, nParams);
+    generateDataInfo(self, data, threadData, intMatrix, rows, cols, matData->numVars, nParams);
     /* write `dataInfo' matrix */
-    writeMatVer4Matrix(self, data, "dataInfo", cols, rows, intMatrix, sizeof(int32_t));
+    mat_writeMatVer4Matrix(self, data, threadData, "dataInfo", cols, rows, intMatrix, sizeof(int32_t));
 
     /* remember data1HdrPos */
     matData->data1HdrPos = matData->fp.tellp();
 
     /* adrpo: i cannot use writeParameterData here as it would return back to dataHdr1Pos */
     /* generate `data_1' matrix (with parameter data) */
-    generateData_1(data, doubleMatrix, rows, cols, matData->startTime, matData->stopTime);
+    generateData_1(data, threadData, doubleMatrix, rows, cols, matData->startTime, matData->stopTime);
     /*  write `data_1' matrix */
-    writeMatVer4Matrix(self,data,"data_1", cols, rows, doubleMatrix, sizeof(double));
+    mat_writeMatVer4Matrix(self,data,threadData,"data_1", cols, rows, doubleMatrix, sizeof(double));
 
     /* remember data2HdrPos */
     matData->data2HdrPos = matData->fp.tellp();
     /* write `data_2' header */
-    writeMatVer4MatrixHeader(self,data,"data_2", matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + matData->negatedboolaliases + 1 /* add one more for timeValue*/ + self->cpuTime, 0, sizeof(double));
+    mat_writeMatVer4MatrixHeader(self,data,threadData,"data_2", matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + matData->negatedboolaliases + 1 /* add one more for timeValue*/ + self->cpuTime, 0, sizeof(double));
 
     free(doubleMatrix);
     free(intMatrix);
@@ -270,13 +272,13 @@ void mat4_init(simulation_result *self,DATA *data)
     free(doubleMatrix);
     free(intMatrix);
     rt_accumulate(SIM_TIMER_OUTPUT);
-    throwStreamPrint(data->threadData, "Error while writing mat file %s",self->filename);
+    throwStreamPrint(threadData, "Error while writing mat file %s",self->filename);
   }
   free(names); names=NULL;
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
-void mat4_free(simulation_result *self,DATA *data)
+void mat4_free(simulation_result *self,DATA *data, threadData_t *threadData)
 {
   mat_data *matData = (mat_data*) self->storage;
   rt_tick(SIM_TIMER_OUTPUT);
@@ -289,7 +291,7 @@ void mat4_free(simulation_result *self,DATA *data)
     try
     {
       matData->fp.seekp(matData->data2HdrPos);
-      writeMatVer4MatrixHeader(self,data,"data_2", matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + matData->negatedboolaliases + 1 /* add one more for timeValue*/ + self->cpuTime, matData->ntimepoints, sizeof(double));
+      mat_writeMatVer4MatrixHeader(self,data,threadData,"data_2", matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + matData->negatedboolaliases + 1 /* add one more for timeValue*/ + self->cpuTime, matData->ntimepoints, sizeof(double));
       matData->fp.close();
     }
     catch (...)
@@ -302,7 +304,7 @@ void mat4_free(simulation_result *self,DATA *data)
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
-void mat4_emit(simulation_result *self,DATA *data)
+void mat4_emit(simulation_result *self,DATA *data, threadData_t *threadData)
 {
   mat_data *matData = (mat_data*) self->storage;
   double datPoint=0;
@@ -339,7 +341,7 @@ void mat4_emit(simulation_result *self,DATA *data)
       }
     }
   if (!matData->fp) {
-    throwStreamPrint(data->threadData, "Error while writing file %s",self->filename);
+    throwStreamPrint(threadData, "Error while writing file %s",self->filename);
   }
   ++matData->ntimepoints;
   rt_accumulate(SIM_TIMER_OUTPUT);
@@ -397,7 +399,7 @@ long flattenStrBuf(int dims, const struct VAR_INFO** src, char* &dest, int& long
 }
 
 // writes MAT-file matrix header to file
-void writeMatVer4MatrixHeader(simulation_result *self,DATA *data,const char *name, int rows, int cols, unsigned int size)
+void mat_writeMatVer4MatrixHeader(simulation_result *self, DATA *data, threadData_t *threadData, const char *name, int rows, int cols, unsigned int size)
 {
   mat_data *matData = (mat_data*) self->storage;
   typedef struct MHeader {
@@ -424,27 +426,29 @@ void writeMatVer4MatrixHeader(simulation_result *self,DATA *data,const char *nam
   hdr.namelen = strlen(name)+1;
   /* write header to file */
   matData->fp.write((char*)&hdr, sizeof(MHeader_t));
-  if(!matData->fp)
-    throwStreamPrint(data->threadData, "Cannot write to file %s",self->filename);
+  if (!matData->fp) {
+    throwStreamPrint(threadData, "Cannot write to file %s",self->filename);
+  }
   matData->fp.write(name, sizeof(char)*hdr.namelen);
-  if(!matData->fp)
-    throwStreamPrint(data->threadData, "Cannot write to file %s",self->filename);
+  if (!matData->fp) {
+    throwStreamPrint(threadData, "Cannot write to file %s",self->filename);
+  }
 }
 
-void writeMatVer4Matrix(simulation_result *self,DATA *data,const char *name, int rows, int cols, const void *matrixData, unsigned int size)
+void mat_writeMatVer4Matrix(simulation_result *self, DATA *data, threadData_t *threadData, const char *name, int rows, int cols, const void *matrixData, unsigned int size)
 {
   mat_data *matData = (mat_data*) self->storage;
-  writeMatVer4MatrixHeader(self,data,name,rows,cols,size);
+  mat_writeMatVer4MatrixHeader(self, data, threadData, name, rows, cols, size);
 
   /* write data */
   matData->fp.write((const char*)matrixData, (size)*rows*cols);
   if(!matData->fp) {
-    throwStreamPrint(data->threadData, "Cannot write to file %s",self->filename);
+    throwStreamPrint(threadData, "Cannot write to file %s",self->filename);
   }
 }
 
 
-void generateDataInfo(simulation_result *self,DATA *data,int32_t* &dataInfo, int& rows, int& cols, int nVars, int nParams)
+void generateDataInfo(simulation_result *self, DATA *data, threadData_t *threadData, int32_t* &dataInfo, int& rows, int& cols, int nVars, int nParams)
 {
   mat_data *matData = (mat_data*) self->storage;
   const MODEL_DATA *mdl_data = &(data->modelData);
@@ -460,7 +464,7 @@ void generateDataInfo(simulation_result *self,DATA *data,int32_t* &dataInfo, int
   cols = 4;
 
   dataInfo = (int*) calloc(rows*cols,sizeof(int));
-  assertStreamPrint(data->threadData, 0!=dataInfo,"Cannot alloc memory");
+  assertStreamPrint(threadData, 0!=dataInfo,"Cannot alloc memory");
   /* continuous and discrete variables, including time */
   for(size_t i = 0; i < (size_t)(matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + 1 /* add one more for timeValue*/ + self->cpuTime); ++i) {
       /* row 1 - which table */
@@ -607,7 +611,7 @@ void generateDataInfo(simulation_result *self,DATA *data,int32_t* &dataInfo, int
   /* ccol += mdl_data->nParameters*4; */
 }
 
-void generateData_1(DATA *data, double* &data_1, int& rows, int& cols, double tstart, double tstop)
+void generateData_1(DATA *data, threadData_t *threadData, double* &data_1, int& rows, int& cols, double tstart, double tstop)
 {
   const SIMULATION_INFO *sInfo = &(data->simulationInfo);
   const MODEL_DATA      *mData = &(data->modelData);
@@ -623,7 +627,7 @@ void generateData_1(DATA *data, double* &data_1, int& rows, int& cols, double ts
 
   /* allocate data buffer */
   data_1 = (double*)calloc(rows*cols, sizeof(double));
-  assertStreamPrint(data->threadData, 0!=data_1, "Malloc failed");
+  assertStreamPrint(threadData, 0!=data_1, "Malloc failed");
   data_1[0] = tstart;     /* start time */
   data_1[cols] = tstop;   /* stop time */
 
@@ -649,4 +653,6 @@ void generateData_1(DATA *data, double* &data_1, int& rows, int& cols, double ts
     data_1[offset+i] = (double)sInfo->booleanParameter[i];
     data_1[offset+i+cols] = (double)sInfo->booleanParameter[i];
   }
+}
+
 }

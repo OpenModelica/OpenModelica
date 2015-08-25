@@ -13,12 +13,12 @@
 #     if the Pugi XML library was found                                            -DUSE_PUGI_XML
 #     if profiling for the simulation runtime should be enabled                    -DRUNTIME_PROFILING
 #     if the equation systems of a FMU should be solved with kinsol                -DFMU_KINSOL
+#     if the logger should be used                                                 -DUSE_LOGGER
 #
 # Some of these options can be controlled by passing arguments to CMAKE
 #     if write output should be handled in parallel                                -DUSE_PARALLEL_OUTPUT=ON
 #     if ScoreP should be used for performance analysis                            -DUSE_SCOREP=ON
 #     if the boost libraries should be linked statically                           -DBOOST_STATIC_LINKING=ON
-#     if the lapack functions and data structurs of sundials should be used        -DSUNDIALS_LAPACK=ON
 #     if boost libraries should be linked against absolute path libraries          -DUSE_BOOST_REALPATHS=ON
 #
 #     Example: "cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo" to create statically linked libraries
@@ -38,7 +38,6 @@ OPTION(USE_SCOREP "USE_SCOREP" OFF)
 OPTION(BOOST_STATIC_LINKING "BOOST_STATIC_LINKING" OFF)
 OPTION(RUNTIME_PROFILING "RUNTIME_PROFILING" OFF)
 OPTION(FMU_KINSOL "FMU_KINSOL" OFF)
-OPTION(SUNDIALS_LAPACK "SUNDIALS_LAPACK" OFF)
 OPTION(SUNDIALS_ROOT "SUNDIALS ROOT" "")
 
 #Set Variables
@@ -105,14 +104,6 @@ ELSE(NOT BOOST_STATIC_LINKING)
   ADD_DEFINITIONS(-DBOOST_STATIC_LINKING)
 ENDIF(NOT BOOST_STATIC_LINKING)
 
-# Handle sundials lapack
-IF(NOT SUNDIALS_LAPACK)
-  MESSAGE(STATUS "Sundials lapack functions disabled")
-ELSE(NOT SUNDIALS_LAPACK)
-  MESSAGE(STATUS "Using Sundials lapack functions")
-  ADD_DEFINITIONS(-DUSE_SUNDIALS_LAPACK)
-ENDIF(NOT SUNDIALS_LAPACK)
-
 # Handle parallel output
 IF(USE_PARALLEL_OUTPUT)
   ADD_DEFINITIONS(-DUSE_PARALLEL_OUTPUT)
@@ -152,6 +143,16 @@ ELSE(FMU_KINSOL)
   SET(USE_FMU_KINSOL_ "OFF")
   MESSAGE(STATUS "FMU kinsol disabled")
 ENDIF(FMU_KINSOL)
+
+# Handle Logger usage
+IF(USE_LOGGER)
+  ADD_DEFINITIONS(-DUSE_LOGGER)
+  SET(USE_LOGGER_ "ON")
+  MESSAGE(STATUS "Logger enabled")
+ELSE(USE_LOGGER)
+  MESSAGE(STATUS "Logger disabled")
+  SET(USE_LOGGER_ "OFF")
+ENDIF(USE_LOGGER)
 
 # Handle build type
 IF(OMC_BUILD)
@@ -196,19 +197,21 @@ ENDIF(WIN32)
 FIND_PACKAGE(OpenMP)
 IF(OPENMP_FOUND)
   MESSAGE(STATUS "OPENMP enabled")
+  SET(USE_OPENMP_ "ON")
 ELSE(OPENMP_FOUND)
   MESSAGE(STATUS "OPENMP disabled")
+  SET(USE_OPENMP_ "OFF")
 ENDIF(OPENMP_FOUND)
-SET(USE_OPENMP_ ${OPENMP_FOUND})
 
 # Find MPI
 FIND_PACKAGE(MPI)
 IF(MPI_FOUND)
   MESSAGE(STATUS "MPI enabled")
+  SET(USE_MPI_ "ON")
 ELSE(MPI_FOUND)
   MESSAGE(STATUS "MPI disabled")
+  SET(USE_MPI_ "OFF")
 ENDIF(MPI_FOUND)
-SET(USE_MPI_ ${MPI_FOUND})
 
 # Find CMinpack
 # Note: Visual Studio libs are located in install/msvc, libs for gcc are directly in install

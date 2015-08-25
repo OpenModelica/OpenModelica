@@ -2410,6 +2410,16 @@ algorithm
   end match;
 end elementSpecName;
 
+public function isClassdef
+  input Element inElement;
+  output Boolean b;
+algorithm
+  b := match inElement
+    case ELEMENT(specification=CLASSDEF()) then true;
+    else false;
+  end match;
+end isClassdef;
+
 public function printImportString
   "This function takes a Import and prints it as a flat-string."
   input Import imp;
@@ -5391,16 +5401,18 @@ protected
   list<ClassPart> class_parts;
 algorithm
   CLASS(body = PARTS(classParts = class_parts)) := inCls;
-  outExternal := List.find(class_parts, getExternalFromClassPart);
+  outExternal := List.find(class_parts, isExternalPart);
 end getExternalDecl;
 
-protected function getExternalFromClassPart
+protected function isExternalPart
   input ClassPart inClassPart;
-  output ClassPart outExternal;
+  output Boolean outFound;
 algorithm
-  EXTERNAL() := inClassPart;
-  outExternal := inClassPart;
-end getExternalFromClassPart;
+  outFound := match inClassPart
+    case EXTERNAL() then true;
+    else false;
+  end match;
+end isExternalPart;
 
 public function isParts
   input ClassDef cl;

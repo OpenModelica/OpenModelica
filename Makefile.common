@@ -174,7 +174,7 @@ runtimeCPP: CMinpack
 CMAKE_ARGS=$(filter CMAKE_%, $(MAKEFLAGS))
 
 
-runtimeCPPinstall: CMinpack copycppheader
+runtimeCPPinstall: CMinpack copycppheader omc
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR)
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppCVode.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppCVode.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppDataExchange.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppDataExchange.dylib

@@ -68,7 +68,7 @@ static uinteger minStep( const modelica_real* tqp, const uinteger size );
  *
  *  This function performs the simulation controlled by solverInfo.
  */
-modelica_integer prefixedName_performQSSSimulation(DATA* data, SOLVER_INFO* solverInfo)
+modelica_integer prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   TRACE_PUSH
 
@@ -83,7 +83,7 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, SOLVER_INFO* solv
 
   warningStreamPrint(LOG_STDOUT, 0, "This QSS method is under development and should not be used yet.");
 
-  if (data->callback->initialAnalyticJacobianA(data))
+  if (data->callback->initialAnalyticJacobianA(data, threadData))
   {
     infoStreamPrint(LOG_STDOUT, 0, "Jacobian or sparse pattern is not generated or failed to initialize.");
     return UNKNOWN;
@@ -303,11 +303,11 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, SOLVER_INFO* solv
     /* update continous system */
     sData->timeValue = solverInfo->currentTime;
     externalInputUpdate(data);
-    data->callback->input_function(data);
-    data->callback->functionODE(data);
-    data->callback->functionAlgebraics(data);
-    data->callback->output_function(data);
-    data->callback->function_storeDelayed(data);
+    data->callback->input_function(data, threadData);
+    data->callback->functionODE(data, threadData);
+    data->callback->functionAlgebraics(data, threadData);
+    data->callback->output_function(data, threadData);
+    data->callback->function_storeDelayed(data, threadData);
 
     for (i = 0; i < STATES; i++)
     {
@@ -346,7 +346,7 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, SOLVER_INFO* solv
     /*sData->timeValue = solverInfo->currentTime;*/
     solverInfo->laststep = solverInfo->currentTime;
 
-    sim_result.emit(&sim_result, data);
+    sim_result.emit(&sim_result, data, threadData);
 
     /* check if terminate()=true */
     if (terminationTerminate)

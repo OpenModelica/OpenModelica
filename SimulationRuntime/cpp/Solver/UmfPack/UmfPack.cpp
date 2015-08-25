@@ -116,3 +116,12 @@ IAlgLoopSolver::ITERATIONSTATUS UmfPack::getIterationStatus()
 void UmfPack::stepCompleted(double time)
 {
 }
+void UmfPack::restoreOldValues()
+{
+
+}
+
+void UmfPack::restoreNewValues()
+{
+
+}

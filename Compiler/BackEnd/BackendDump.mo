@@ -269,7 +269,6 @@ algorithm
   else
     dumpTimeEvents(inShared.eventInfo.timeEvents, "Time Events");
   end if;
-  dumpWhenClauseList(inShared.eventInfo.whenClauseLst, "When Clauses");
   dumpConstraintList(inShared.constraints, "Constraints");
 end printShared;
 
@@ -648,15 +647,6 @@ algorithm
   print("\n");
 end dumpTimeEvents;
 
-protected function dumpWhenClauseList
-  input list<BackendDAE.WhenClause> inWhenClauseList;
-  input String heading;
-algorithm
-  print("\n" + heading + " (" + intString(listLength(inWhenClauseList)) + ")\n" + UNDERLINE + "\n");
-  print(whenClauseListString(inWhenClauseList));
-  print("\n");
-end dumpWhenClauseList;
-
 protected function dumpConstraintList
   input list<DAE.Constraint> inConstraintArray;
   input String heading;
@@ -756,6 +746,7 @@ algorithm
       Boolean diffed;
       DAE.ComponentRef cr;
       BackendDAE.EquationKind eqKind;
+      BackendDAE.WhenEquation weqn;
 
     case ({}, _) then ();
 
@@ -842,16 +833,16 @@ algorithm
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(right=e/*TODO handle elsewhe also*/),  attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) equation
+    case (BackendDAE.WHEN_EQUATION(whenEquation=weqn,  attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) equation
       print("WHEN_EQUATION: ");
-      str = ExpressionDump.printExpStr(e);
+      str = whenEquationString(weqn, true);
       print(str);
       str = str + " (" + equationKindString(eqKind) + ")\n";
+      e = weqn.condition;
       str = ExpressionDump.dumpExpStr(e,0);
       str = if printExpTree then str else "";
       print(str);
       print("\n");
-      dumpBackendDAEEqnList2(res,printExpTree);
     then ();
 
     case (_::res, _) equation
@@ -1282,7 +1273,6 @@ end printComponent;
 //   - componentRef_DIVISION_String
 //   - equationString
 //   - strongComponentString
-//   - whenClauseString
 // =============================================================================
 
 public function strongComponentString
@@ -1372,31 +1362,44 @@ algorithm
   end match;
 end strongComponentString;
 
-protected function whenEquationString "Helper function to equationString"
+public function whenEquationString "Helper function to equationString"
   input BackendDAE.WhenEquation inWhenEqn;
+  input Boolean inStart;
   output String outString;
 algorithm
-  outString := match (inWhenEqn)
+  outString := match (inWhenEqn, inStart)
     local
       String s1,s2,res,s3,cs;
       DAE.Exp e2,cond;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation weqn;
-    case (BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2, elsewhenPart = SOME(weqn)))
+      Option<BackendDAE.WhenEquation> oweqn;
+      list<BackendDAE.WhenOperator> whenStmtLst;
+   case (BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart = oweqn), true)
       equation
-        s1 = whenEquationString(weqn);
-        s2 = ExpressionDump.printExpStr(e2);
-        s3 = ExpressionDump.printExpStr(cond);
-        cs = ComponentReference.printComponentRefStr(cr);
-        res = stringAppendList({"elsewhen ",s3," then\n  ",cs, " := ",s2,"\n", s1});
+        s1 = ExpressionDump.printExpStr(cond);
+        s2 = stringDelimitList(List.map(whenStmtLst, dumpWhenOperatorStr), "  ");
+        if isSome(oweqn) then
+          SOME(weqn) = oweqn;
+          s3 = whenEquationString(weqn, false);
+        else
+          s3 = "";
+        end if;
+        res = stringAppendList({"when ",s1," then\n  ",s2,"\n",s3,"\nend when"});
       then
         res;
-    case (BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2, elsewhenPart = NONE()))
+
+   case (BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart = oweqn), false)
       equation
-        s2 = ExpressionDump.printExpStr(e2);
-        s3 = ExpressionDump.printExpStr(cond);
-        cs = ComponentReference.printComponentRefStr(cr);
-        res = stringAppendList({"elsewhen ",s3," then\n  ",cs, " := ",s2,"\n"});
+        s1 = ExpressionDump.printExpStr(cond);
+        s2 = stringDelimitList(List.map(whenStmtLst, dumpWhenOperatorStr), "  ");
+        if isSome(oweqn) then
+          SOME(weqn) = oweqn;
+          s3 = whenEquationString(weqn, false);
+        else
+          s3 = "";
+        end if;
+        res = stringAppendList({"elsewhen ",s1," then\n  ",s2,"\n",s3});
       then
         res;
   end match;
@@ -1418,6 +1421,7 @@ algorithm
       DAE.ElementSource source;
       list<list<BackendDAE.Equation>> eqnstrue;
       list<BackendDAE.Equation> eqnsfalse,eqns;
+      list<BackendDAE.WhenOperator> whenStmtLst;
     case (BackendDAE.EQUATION(exp = e1,scalar = e2, attr=attr))
       equation
         s1 = ExpressionDump.printExpStr(e1);
@@ -1447,21 +1451,9 @@ algorithm
         res = stringAppendList({s1," := ",s2});
       then
         res;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2, elsewhenPart = SOME(weqn))))
+    case (BackendDAE.WHEN_EQUATION(whenEquation = weqn))
       equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = ExpressionDump.printExpStr(e2);
-        s3 = whenEquationString(weqn);
-        s4 = ExpressionDump.printExpStr(cond);
-        res = stringAppendList({"when ",s4," then\n  ",s1," := ",s2,"\n",s3,"end when"});
-      then
-        res;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2)))
-      equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = ExpressionDump.printExpStr(e2);
-        s4 = ExpressionDump.printExpStr(cond);
-        res = stringAppendList({"when ",s4," then\n  ",s1," := ",s2,"\nend when"});
+        res = whenEquationString(weqn, true);
       then
         res;
     case (BackendDAE.RESIDUAL_EQUATION(exp = e))
@@ -1499,47 +1491,39 @@ protected function zeroCrossingString "Dumps a zerocrossing into a string, for d
 algorithm
   outString:= match(inZeroCrossing)
     local
-      list<String> eq_s_list,wc_s_list;
-      String eq_s,wc_s,str,str2,str_index;
+      list<String> eq_s_list;
+      String eq_s,str,str2,str_index;
       DAE.Exp e;
       Integer index_;
-      list<Integer> eq,wc;
+      list<Integer> eq;
 
-    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.RELATION(index=index_),occurEquLst = eq,occurWhenLst = wc) equation
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.RELATION(index=index_),occurEquLst = eq) equation
       eq_s_list = List.map(eq, intString);
       eq_s = stringDelimitList(eq_s_list, ",");
-      wc_s_list = List.map(wc, intString);
-      wc_s = stringDelimitList(wc_s_list, ",");
       str = ExpressionDump.printExpStr(e);
       str_index=intString(index_);
-      str2 = stringAppendList({str," with index = ",str_index," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
+      str2 = stringAppendList({str," with index = ",str_index," in equations [",eq_s,"]"});
     then str2;
 
-    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LBINARY(),occurEquLst = eq,occurWhenLst = wc) equation
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LBINARY(),occurEquLst = eq) equation
       eq_s_list = List.map(eq, intString);
       eq_s = stringDelimitList(eq_s_list, ",");
-      wc_s_list = List.map(wc, intString);
-      wc_s = stringDelimitList(wc_s_list, ",");
       str = ExpressionDump.printExpStr(e);
-      str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
+      str2 = stringAppendList({str," in equations [",eq_s,"]"});
     then str2;
 
-    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LUNARY(),occurEquLst = eq,occurWhenLst = wc) equation
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LUNARY(),occurEquLst = eq) equation
       eq_s_list = List.map(eq, intString);
       eq_s = stringDelimitList(eq_s_list, ",");
-      wc_s_list = List.map(wc, intString);
-      wc_s = stringDelimitList(wc_s_list, ",");
       str = ExpressionDump.printExpStr(e);
-      str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
+      str2 = stringAppendList({str," in equations [",eq_s,"]"});
     then str2;
 
-    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.CALL(path = Absyn.IDENT()),occurEquLst = eq,occurWhenLst = wc) equation
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.CALL(path = Absyn.IDENT()),occurEquLst = eq) equation
       eq_s_list = List.map(eq, intString);
       eq_s = stringDelimitList(eq_s_list, ",");
-      wc_s_list = List.map(wc, intString);
-      wc_s = stringDelimitList(wc_s_list, ",");
       str = ExpressionDump.printExpStr(e);
-      str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
+      str2 = stringAppendList({str," in equations [",eq_s,"]"});
     then str2;
 
     else "";
@@ -1561,43 +1545,6 @@ algorithm
   end match;
 end timeEventString;
 
-protected function whenClauseListString "function whenClauseListString"
-  input list<BackendDAE.WhenClause> inWhenClauseList;
-  output String outString;
-protected
-  list<String> strList;
-algorithm
-  strList := List.map(inWhenClauseList, whenClauseString);
-  outString := stringDelimitList(strList, ",\n");
-end whenClauseListString;
-
-public function whenClauseString "Dumps a whenclause into a string, for debugging purposes."
-  input BackendDAE.WhenClause inWhenClause;
-  output String outString;
-algorithm
-  outString:= match(inWhenClause)
-    local
-      String sc,s1,si,str;
-      DAE.Exp c;
-      list<BackendDAE.WhenOperator> reinitStmtLst;
-      Integer i;
-
-    case BackendDAE.WHEN_CLAUSE(condition = c,reinitStmtLst = reinitStmtLst,elseClause = SOME(i)) equation
-      sc = ExpressionDump.printExpStr(c);
-      s1 = stringDelimitList(List.map(reinitStmtLst,dumpWhenOperatorStr),"  ");
-      si = intString(i);
-      str = stringAppendList({" whenclause = ",sc," then ",s1," else whenclause",si});
-    then str;
-
-    case BackendDAE.WHEN_CLAUSE(condition = c,reinitStmtLst = reinitStmtLst,elseClause = NONE()) equation
-      sc = ExpressionDump.printExpStr(c);
-      s1 = stringDelimitList(List.map(reinitStmtLst,dumpWhenOperatorStr),"  ");
-      str = stringAppendList({" whenclause = ",sc," then ",s1});
-    then str;
-
-    else "";
-  end match;
-end whenClauseString;
 
 public function componentRef_DIVISION_String
   input DAE.ComponentRef inCref;
@@ -1990,6 +1937,13 @@ algorithm
       DAE.Exp e,e1;
       Absyn.Path functionName;
       list<DAE.Exp> functionArgs;
+    case BackendDAE.ASSIGN(left=cr, right=e)
+     equation
+      scr = ComponentReference.printComponentRefStr(cr);
+      se = ExpressionDump.printExpStr(e);
+      str = stringAppendList({scr," := ",se});
+     then
+      str;
     case BackendDAE.REINIT(stateVar=cr,value=e)
      equation
       scr = ComponentReference.printComponentRefStr(cr);

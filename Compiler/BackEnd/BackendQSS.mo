@@ -884,46 +884,6 @@ algorithm
 
 end getDiscRHSVars;
 
-
-public function simpleWhens
-  input list<SimCode.SimWhenClause> i;
-  output list<SimCode.SimWhenClause> o;
-algorithm
-  o:=
-    match i
-    local
-      list<SimCode.SimWhenClause> tail;
-      SimCode.SimWhenClause head;
-    case {} then {};
-    /* lochel: conditions is now a list of ComponentRefs
-    case (SimCode.SIM_WHEN_CLAUSE(conditions={DAE.CALL(path=Absyn.IDENT(name="sample"))}) :: tail)
-      then simpleWhens(tail);
-     */
-    case (head :: tail)
-      then listAppend({head},simpleWhens(tail));
-    end match;
-end simpleWhens;
-
-
-public function sampleWhens
-  input list<SimCode.SimWhenClause> i;
-  output list<SimCode.SimWhenClause> o;
-algorithm
-  o:=
-    match i
-    local
-      list<SimCode.SimWhenClause> tail;
-      SimCode.SimWhenClause head;
-    case {} then {};
-    /* lochel: conditions is now a list of ComponentRefs
-    case ((head as SimCode.SIM_WHEN_CLAUSE(conditions={DAE.CALL(path=Absyn.IDENT(name="sample"))})) :: tail)
-      then listAppend({head},sampleWhens(tail));
-     */
-    case (_ :: tail)
-      then sampleWhens(tail);
-    end match;
-end sampleWhens;
-
 function newDiscreteVariables
   input list<BackendDAE.Equation> inEquationLst;
   input Integer zc;

@@ -297,7 +297,7 @@ static void write_header(std::ofstream &fp, MODEL_DATA *modelData) {
    - Adjust header length
    - Seek to end of header
 */
-void recon_wall_init(simulation_result *self,DATA *data)
+void recon_wall_init(simulation_result *self,DATA *data, threadData_t *threadData)
 {
   wall_storage *storage = new wall_storage();
   static char header[14] = {0x72, 0x65, 0x63, 0x6f, 0x6e, 0x3a, 0x77,
@@ -307,7 +307,7 @@ void recon_wall_init(simulation_result *self,DATA *data)
   try {
     storage->fp.open(self->filename, std::ofstream::binary|std::ofstream::trunc);
     if(!storage->fp) {
-      throwStreamPrint(data->threadData, "Cannot open File %s for writing",self->filename);
+      throwStreamPrint(threadData, "Cannot open File %s for writing",self->filename);
     }
     /* Write ID */
     storage->fp.write(header, 14);
@@ -326,7 +326,7 @@ void recon_wall_init(simulation_result *self,DATA *data)
   catch(...)
   {
     storage->fp.close();
-    throwStreamPrint(data->threadData, "Error while writing mat file %s",self->filename);
+    throwStreamPrint(threadData, "Error while writing mat file %s",self->filename);
   }
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
@@ -357,7 +357,7 @@ void write_parameter_data(std::ofstream &fp, double t,
   fp.seekp(end_pos);
 }
 
-void recon_wall_writeParameterData(simulation_result *self,DATA *data)
+void recon_wall_writeParameterData(simulation_result *self,DATA *data, threadData_t *threadData)
 {
   wall_storage *storage = (wall_storage *)self->storage;
   std::ofstream &fp = storage->fp;
@@ -367,7 +367,7 @@ void recon_wall_writeParameterData(simulation_result *self,DATA *data)
   write_parameter_data(fp, sInfo->stopTime, modelData, sInfo);
 }
 
-void recon_wall_emit(simulation_result *self,DATA *data)
+void recon_wall_emit(simulation_result *self,DATA *data, threadData_t *threadData)
 {
   wall_storage *storage = (wall_storage *)self->storage;
   std::ofstream &fp = storage->fp;
@@ -405,7 +405,7 @@ void recon_wall_emit(simulation_result *self,DATA *data)
   fp.seekp(end_pos);
 }
 
-void recon_wall_free(simulation_result *self,DATA *data)
+void recon_wall_free(simulation_result *self,DATA *data, threadData_t *threadData)
 {
   wall_storage *storage = (wall_storage *)self->storage;
   storage->fp.close();

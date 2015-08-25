@@ -111,6 +111,7 @@ Compiler/Template/CodegenCFunctions.mo
 Compiler/Template/CodegenC.mo.log
 Compiler/Template/CodegenCSharp.mo
 Compiler/Template/CodegenCpp.mo
+Compiler/Template/CodegenCppCommon.mo
 Compiler/Template/CodegenCppHpcom.mo
 Compiler/Template/CodegenCppInit.mo
 Compiler/Template/CodegenFMU.mo

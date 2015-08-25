@@ -54,12 +54,14 @@ extern "C" {
 #include "util/utility.h"
 
 struct OpenModelicaGeneratedFunctionCallbacks {
-int (*performSimulation)(DATA* data, void* solverInfo);
-int (*performQSSSimulation)(DATA* data, void* solverInfo);
+/* Defined in perform_simulation.c and omp_perform_simulation.c */
+int (*performSimulation)(DATA* data, threadData_t*, void* solverInfo);
+int (*performQSSSimulation)(DATA* data, threadData_t*, void* solverInfo);
+void (*updateContinuousSystem)(DATA *data, threadData_t*);
 /* Function for calling external object constructors */
-void (*callExternalObjectConstructors)(DATA *data);
+void (*callExternalObjectConstructors)(DATA *data, threadData_t*);
 /* Function for calling external object deconstructors */
-void (*callExternalObjectDestructors)(DATA *_data);
+void (*callExternalObjectDestructors)(DATA *_data, threadData_t*);
 
 /*! \fn initialNonLinearSystem
  *
@@ -95,25 +97,25 @@ void (*initializeStateSets)(int nStateSets, STATE_SET_DATA* statesetData, DATA *
 
 /* functionODE contains those equations that are needed
  * to calculate the dynamic part of the system */
-int (*functionODE)(DATA *data);
+int (*functionODE)(DATA *data, threadData_t*);
 
 /* functionAlgebraics contains all continuous equations that
  * are not part of the dynamic part of the system */
-int (*functionAlgebraics)(DATA *data);
+int (*functionAlgebraics)(DATA *data, threadData_t*);
 
 /* function for calculating all equation sorting order
    uses in EventHandle  */
-int (*functionDAE)(DATA *data);
+int (*functionDAE)(DATA *data, threadData_t*);
 
 /* functions for input and output */
-int (*input_function)(DATA*);
-int (*input_function_init)(DATA*);
-int (*output_function)(DATA*);
+int (*input_function)(DATA*, threadData_t*);
+int (*input_function_init)(DATA*, threadData_t*);
+int (*output_function)(DATA*, threadData_t*);
 
 /* function for storing value histories of delayed expressions
  * called from functionDAE_output()
  */
-int (*function_storeDelayed)(DATA *data);
+int (*function_storeDelayed)(DATA *data, threadData_t*);
 
 /*! \fn updateBoundVariableAttributes
  *
@@ -121,7 +123,7 @@ int (*function_storeDelayed)(DATA *data);
  *
  *  \param [ref] [data]
  */
-int (*updateBoundVariableAttributes)(DATA *data);
+int (*updateBoundVariableAttributes)(DATA *data, threadData_t*);
 
 /*! \var useHomotopy
  *
@@ -135,7 +137,7 @@ const int useHomotopy;
  *
  *  \param [ref] [data]
  */
-int (*functionInitialEquations)(DATA *data);
+int (*functionInitialEquations)(DATA *data, threadData_t*);
 
 /*! \fn functionRemovedInitialEquations
  *
@@ -145,7 +147,7 @@ int (*functionInitialEquations)(DATA *data);
  *
  *  \param [ref] [data]
  */
-int (*functionRemovedInitialEquations)(DATA *data);
+int (*functionRemovedInitialEquations)(DATA *data, threadData_t*);
 
 /*! \fn updateBoundParameters
  *
@@ -155,10 +157,10 @@ int (*functionRemovedInitialEquations)(DATA *data);
  *
  *  \param [ref] [data]
  */
-int (*updateBoundParameters)(DATA *data);
+int (*updateBoundParameters)(DATA *data, threadData_t*);
 
 /* function for checking for asserts and terminate */
-int (*checkForAsserts)(DATA *data);
+int (*checkForAsserts)(DATA *data, threadData_t*);
 
 /*! \fn function_ZeroCrossingsEquations
  *
@@ -166,7 +168,7 @@ int (*checkForAsserts)(DATA *data);
  *
  *  \param [ref] [data]
  */
-int (*function_ZeroCrossingsEquations)(DATA *data);
+int (*function_ZeroCrossingsEquations)(DATA *data, threadData_t*);
 
 /*! \fn function_ZeroCrossings
  *
@@ -175,7 +177,7 @@ int (*function_ZeroCrossingsEquations)(DATA *data);
  *  \param [ref] [data]
  *  \param [ref] [gout]
  */
-int (*function_ZeroCrossings)(DATA *data, double* gout);
+int (*function_ZeroCrossings)(DATA *data, threadData_t*, double* gout);
 
 /*! \fn function_updateRelations
  *
@@ -185,7 +187,7 @@ int (*function_ZeroCrossings)(DATA *data, double* gout);
  *  \param [in]  [evalZeroCross] flag for evaluating Relation with hysteresis
  *                              function or without
  */
-int (*function_updateRelations)(DATA *data, int evalZeroCross);
+int (*function_updateRelations)(DATA *data, threadData_t*, int evalZeroCross);
 
 /*! \fn checkForDiscreteChanges
  *
@@ -193,7 +195,7 @@ int (*function_updateRelations)(DATA *data, int evalZeroCross);
  *
  *  \param [ref] [data]
  */
-int (*checkForDiscreteChanges)(DATA *data);
+int (*checkForDiscreteChanges)(DATA *data, threadData_t*);
 
 /*! \var zeroCrossingDescription
  *
@@ -213,7 +215,7 @@ const char *(*relationDescription)(int i);
  *
  *  \param [ref] [data]
  */
-void (*function_initSample)(DATA *data);
+void (*function_initSample)(DATA *data, threadData_t*);
 
 /* function for calculation Jacobian */
 /*#ifdef D_OMC_JACOBIAN*/
@@ -227,18 +229,18 @@ const int INDEX_JAC_D;
  * Return-value 0: jac is present
  * Return-value 1: jac is not present
  */
-int (*initialAnalyticJacobianA)(void* data);
-int (*initialAnalyticJacobianB)(void* data);
-int (*initialAnalyticJacobianC)(void* data);
-int (*initialAnalyticJacobianD)(void* data);
+int (*initialAnalyticJacobianA)(void* data, threadData_t *threadData);
+int (*initialAnalyticJacobianB)(void* data, threadData_t *threadData);
+int (*initialAnalyticJacobianC)(void* data, threadData_t *threadData);
+int (*initialAnalyticJacobianD)(void* data, threadData_t *threadData);
 
 /*
  * These functions calculate specific jacobian column.
  */
-int (*functionJacA_column)(void* data);
-int (*functionJacB_column)(void* data);
-int (*functionJacC_column)(void* data);
-int (*functionJacD_column)(void* data);
+int (*functionJacA_column)(void* data, threadData_t *threadData);
+int (*functionJacB_column)(void* data, threadData_t *threadData);
+int (*functionJacC_column)(void* data, threadData_t *threadData);
+int (*functionJacD_column)(void* data, threadData_t *threadData);
 
 /*#endif*/
 
@@ -291,17 +293,17 @@ int (*symEulerUpdate)(DATA * data, modelica_real dt);
 /*
  * initialize clocks and subclocks info in modelData
  */
-void (*function_initSynchronous)(DATA * data);
+void (*function_initSynchronous)(DATA * data, threadData_t *threadData);
 
 /*
  * Check if clock is fired. In that case function updates base clock's timepoint and interval in CLOCK_DATA struct.
  */
-modelica_boolean (*function_updateSynchronous)(DATA *data, long i);
+modelica_boolean (*function_updateSynchronous)(DATA *data, threadData_t *threadData, long i);
 
 /*
  * Sub-partition's equations
  */
-modelica_boolean (*function_equationsSynchronous)(DATA *data, long i);
+int (*function_equationsSynchronous)(DATA *data, threadData_t *threadData, long i);
 };
 
 #ifdef __cplusplus

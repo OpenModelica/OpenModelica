@@ -125,7 +125,7 @@ freeUmfPackData(void **voiddata)
  *  \author wbraun
  *
  */
-int getAnalyticalJacobianUmfPack(DATA* data, int sysNumber)
+int getAnalyticalJacobianUmfPack(DATA* data, threadData_t *threadData, int sysNumber)
 {
   int i,ii,j,k,l;
   LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.linearSystemData[sysNumber]);
@@ -138,7 +138,7 @@ int getAnalyticalJacobianUmfPack(DATA* data, int sysNumber)
   {
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 1;
 
-    ((systemData->analyticalJacobianColumn))(data);
+    ((systemData->analyticalJacobianColumn))(data, threadData);
 
     for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeCols; j++)
     {
@@ -152,7 +152,7 @@ int getAnalyticalJacobianUmfPack(DATA* data, int sysNumber)
         {
           l  = data->simulationInfo.analyticJacobians[index].sparsePattern.index[ii];
           /* infoStreamPrint(LOG_LS_V, 0, "set on Matrix A (%d, %d)(%d) = %f", i, l, nth, -data->simulationInfo.analyticJacobians[index].resultVars[l]); */
-          systemData->setAElement(i, l, -data->simulationInfo.analyticJacobians[index].resultVars[l], nth, (void*) systemData);
+          systemData->setAElement(i, l, -data->simulationInfo.analyticJacobians[index].resultVars[l], nth, (void*) systemData, threadData);
           nth++;
           ii++;
         };
@@ -169,11 +169,11 @@ int getAnalyticalJacobianUmfPack(DATA* data, int sysNumber)
 /*! \fn wrapper_fvec_umfpack for the residual function
  *
  */
-static int wrapper_fvec_umfpack(double* x, double* f, void* data, int sysNumber)
+static int wrapper_fvec_umfpack(double* x, double* f, void** data, int sysNumber)
 {
   int iflag = 0;
 
-  (*((DATA*)data)->simulationInfo.linearSystemData[sysNumber].residualFunc)(data, x, f, &iflag);
+  (*((DATA*)data[0])->simulationInfo.linearSystemData[sysNumber].residualFunc)(data, x, f, &iflag);
   return 0;
 }
 
@@ -186,8 +186,9 @@ static int wrapper_fvec_umfpack(double* x, double* f, void* data, int sysNumber)
  * author: kbalzereit, wbraun
  */
 int
-solveUmfPack(DATA *data, int sysNumber)
+solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber)
 {
+  void *dataAndThreadData[2] = {data, threadData};
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.linearSystemData[sysNumber]);
   DATA_UMFPACK* solverData = (DATA_UMFPACK*)systemData->solverData;
 
@@ -203,7 +204,7 @@ solveUmfPack(DATA *data, int sysNumber)
   {
     /* set A matrix */
     solverData->Ap[0] = 0;
-    systemData->setA(data, systemData);
+    systemData->setA(data, threadData, systemData);
     solverData->Ap[solverData->n_row] = solverData->nnz;
 
     if (ACTIVE_STREAM(LOG_LS_V))
@@ -214,21 +215,21 @@ solveUmfPack(DATA *data, int sysNumber)
     }
 
     /* set b vector */
-    systemData->setb(data, systemData);
+    systemData->setb(data, threadData, systemData);
   } else {
 
     solverData->Ap[0] = 0;
     /* calculate jacobian -> matrix A*/
     if(systemData->jacobianIndex != -1){
-      getAnalyticalJacobianUmfPack(data, sysNumber);
+      getAnalyticalJacobianUmfPack(data, threadData, sysNumber);
     } else {
-      assertStreamPrint(data->threadData, 1, "jacobian function pointer is invalid" );
+      assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
     }
     solverData->Ap[solverData->n_row] = solverData->nnz;
 
     /* calculate vector b (rhs) */
     memcpy(solverData->work, systemData->x, sizeof(double)*solverData->n_row);
-    wrapper_fvec_umfpack(solverData->work, systemData->b, data, sysNumber);
+    wrapper_fvec_umfpack(solverData->work, systemData->b, dataAndThreadData, sysNumber);
   }
 
   infoStreamPrint(LOG_LS, 0, "###  %f  time to set Matrix A and vector b.", rt_ext_tp_tock(&(solverData->timeClock)));
@@ -298,7 +299,7 @@ solveUmfPack(DATA *data, int sysNumber)
         systemData->x[i] += solverData->work[i];
 
       /* update inner equations */
-      wrapper_fvec_umfpack(systemData->x, solverData->work, data, sysNumber);
+      wrapper_fvec_umfpack(systemData->x, solverData->work, dataAndThreadData, sysNumber);
     } else {
       /* the solution is automatically in x */
     }

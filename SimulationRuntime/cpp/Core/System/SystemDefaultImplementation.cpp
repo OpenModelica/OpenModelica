@@ -119,7 +119,9 @@ void SystemDefaultImplementation::Assert(bool cond,const string& msg)
 
 void SystemDefaultImplementation::Terminate(string msg)
 {
-  throw ModelicaSimulationError(MODEL_EQ_SYSTEM,msg);
+  cerr << "Model terminate() at " << _simTime << std::endl;
+  cerr << "Message: " << msg << std::endl;
+  _terminate = true;
 }
 
 int SystemDefaultImplementation::getDimBoolean() const

@@ -74,24 +74,24 @@ typedef struct SOLVER_INFO
   extern "C" {
 #endif
 
-extern int solver_main(DATA* data, const char* init_initMethod,
+extern int solver_main(DATA* data, threadData_t *threadData, const char* init_initMethod,
     const char* init_file, double init_time, int lambda_steps,
     int solverID, const char* outputVariablesAtEnd);
 
 /* Provide solver interface to interactive stuff */
-extern int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo);
+extern int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 extern int freeSolverData(DATA* data, SOLVER_INFO* solverInfo);
 
-extern int initializeModel(DATA* data, const char* init_initMethod,
+extern int initializeModel(DATA* data, threadData_t *threadData, const char* init_initMethod,
     const char* init_file, double init_time, int lambda_steps);
 
-extern int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVariablesAtEnd);
+extern int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, const char* outputVariablesAtEnd);
 
-extern int solver_main_step(DATA* data, SOLVER_INFO* solverInfo);
+extern int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
 void checkTermination(DATA* data);
 
-extern int stateSelection(DATA *data, char reportError, int switchStates);
+extern int stateSelection(DATA *data, threadData_t *threadData, char reportError, int switchStates);
 
 #ifdef __cplusplus
   }

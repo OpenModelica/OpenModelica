@@ -429,6 +429,8 @@ algorithm
       list<SimCode.SimEqSystem> eqs,jeqs;
       SimCode.LinearSystem lSystem, atL;
       SimCode.NonlinearSystem nlSystem, atNL;
+      BackendDAE.WhenOperator whenOp;
+      list<DAE.ComponentRef> crefs;
 
     case SimCode.SES_RESIDUAL() equation
       File.write(file, "\n{\"eqIndex\":");
@@ -786,7 +788,7 @@ algorithm
       File.write(file, "]}");
     then true;
 
-    case SimCode.SES_WHEN() equation
+    case SimCode.SES_WHEN() algorithm
       File.write(file, "\n{\"eqIndex\":");
       File.write(file, intString(eq.index));
       if parent <> 0 then
@@ -795,14 +797,64 @@ algorithm
       end if;
       File.write(file, ",\"section\":\"");
       File.write(file, section);
-      File.write(file, "\",\"tag\":\"when\",\"defines\":[");
-      serializeCref(file,eq.left);
-      File.write(file, "],\"uses\":[");
-      serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExp(eq.right)));
-      File.write(file, "],\"equation\":[");
-      serializeExp(file,eq.right);
-      File.write(file, "]}");
-      _ = match eq.elseWhen
+      for whenOps in eq.whenStmtLst loop
+        _ := match whenOps
+          case whenOp as BackendDAE.ASSIGN() equation
+            File.write(file, "\",\"tag\":\"when\",\"defines\":[");
+            serializeCref(file,whenOp.left);
+            File.write(file, "],\"uses\":[");
+            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExp(whenOp.right)));
+            File.write(file, "],\"equation\":[");
+            serializeExp(file,whenOp.right);
+            File.write(file, "],\"source\":");
+            serializeSource(file,eq.source,withOperations);
+            File.write(file, "}");
+          then ();
+          case whenOp as BackendDAE.REINIT() equation
+            File.write(file, "\",\"tag\":\"when\",\"defines\":[");
+            serializeCref(file,whenOp.stateVar);
+            File.write(file, "],\"uses\":[");
+            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExp(whenOp.value)));
+            File.write(file, "],\"equation\":[");
+            serializeExp(file,whenOp.value);
+            File.write(file, "],\"source\":");
+            serializeSource(file,eq.source,withOperations);
+            File.write(file, "}");
+          then ();
+          case whenOp as BackendDAE.ASSERT() equation
+            File.write(file, "\",\"tag\":\"when\"");
+            File.write(file, ",\"uses\":[");
+            crefs = listAppend(Expression.extractUniqueCrefsFromExp(whenOp.condition), Expression.extractUniqueCrefsFromExp(whenOp.message));
+            serializeUses(file,List.union(eq.conditions,crefs));
+            File.write(file, "],\"equation\":[");
+            serializeExp(file,whenOp.message);
+            File.write(file, "],\"source\":");
+            serializeSource(file,eq.source,withOperations);
+            File.write(file, "}");
+          then ();
+          case whenOp as BackendDAE.TERMINATE() equation
+            File.write(file, "\",\"tag\":\"when\"");
+            File.write(file, ",\"uses\":[");
+            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExp(whenOp.message)));
+            File.write(file, "],\"equation\":[");
+            serializeExp(file,whenOp.message);
+            File.write(file, "],\"source\":");
+            serializeSource(file,eq.source,withOperations);
+            File.write(file, "}");
+          then ();
+          case whenOp as BackendDAE.NORETCALL() equation
+            File.write(file, "\",\"tag\":\"when\"");
+            File.write(file, ",\"uses\":[");
+            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExp(whenOp.exp)));
+            File.write(file, "],\"equation\":[");
+            serializeExp(file,whenOp.exp);
+            File.write(file, "],\"source\":");
+            serializeSource(file,eq.source,withOperations);
+            File.write(file, "}");
+          then ();
+        end match;
+      end for;
+      _ := match eq.elseWhen
         local
           SimCode.SimEqSystem e;
         case SOME(e) equation if SimCodeUtil.simEqSystemIndex(e) <>0 then serializeEquation(file,e,section,withOperations); end if; then ();

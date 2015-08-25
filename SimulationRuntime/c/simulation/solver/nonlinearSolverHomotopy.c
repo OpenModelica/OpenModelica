@@ -124,6 +124,7 @@ typedef struct DATA_HOMOTOPY
   int (*hJac_dh)   (struct DATA_HOMOTOPY*, double*, double*);
 
   DATA* data;
+  threadData_t *threadData;
   int sysNumber;
   int eqSystemNumber;
   double timeValue;
@@ -725,6 +726,7 @@ void swapPointer(double* *p1, double* *p2)
 int getAnalyticalJacobianHomotopy(DATA_HOMOTOPY* solverData, double* jac)
 {
   DATA* data = solverData->data;
+  threadData_t *threadData = solverData->threadData;
   int i,j,k,l,ii;
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.nonlinearSystemData[solverData->sysNumber]);
   const int index = systemData->jacobianIndex;
@@ -738,7 +740,7 @@ int getAnalyticalJacobianHomotopy(DATA_HOMOTOPY* solverData, double* jac)
       if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
         data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1;
 
-    ((systemData->analyticalJacobianColumn))(data);
+    ((systemData->analyticalJacobianColumn))(data, threadData);
 
     for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeCols; j++)
     {
@@ -810,10 +812,11 @@ static int getNumericalJacobianHomotopy(DATA_HOMOTOPY* solverData, double *x, do
  */
 static int wrapper_fvec(DATA_HOMOTOPY* solverData, double* x, double* f)
 {
+  void *dataAndThreadData[2] = {solverData->data, solverData->threadData};
   int iflag = 0;
 
   /*TODO: change input to residualFunc from data to systemData */
-  (solverData->data)->simulationInfo.nonlinearSystemData[solverData->sysNumber].residualFunc(solverData->data, x, f, &iflag);
+  (solverData->data)->simulationInfo.nonlinearSystemData[solverData->sysNumber].residualFunc(dataAndThreadData, x, f, &iflag);
   solverData->numberOfFunctionEvaluations++;
 
   return 0;
@@ -1090,7 +1093,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
   int firstrun;
 
   int assert = 1;
-  threadData_t *threadData = solverData->data->threadData;
+  threadData_t *threadData = solverData->threadData;
   NONLINEAR_SYSTEM_DATA* nonlinsys = &(solverData->data->simulationInfo.nonlinearSystemData[solverData->data->simulationInfo.currentNonlinearSystemIndex]);
 
   /* debug information */
@@ -1406,7 +1409,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
   int initialStep = 1;
 
   int assert = 1;
-  threadData_t *threadData = solverData->data->threadData;
+  threadData_t *threadData = solverData->threadData;
 
   /* Initialize vector dy2 using chosen startDirection */
   /* set start vector, lambda = 0.0 */
@@ -1663,12 +1666,11 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
  *
  *  \author bbachmann
  */
-int solveHomotopy(DATA *data, int sysNumber)
+int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
 {
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.nonlinearSystemData[sysNumber]);
   DATA_HOMOTOPY* solverData = (DATA_HOMOTOPY*)(systemData->solverData);
   DATA_HYBRD* solverDataHybrid;
-  threadData_t *threadData = data->threadData;
 
   /*
    * Get non-linear equation system
@@ -1706,6 +1708,7 @@ int solveHomotopy(DATA *data, int sysNumber)
   solverData->fJac_f = wrapper_fvec_der;
 
   solverData->data = data;
+  solverData->threadData = threadData;
   solverData->sysNumber = sysNumber;
   solverData->eqSystemNumber = systemData->equationIndex;
   solverData->mixedSystem = mixedSystem;
@@ -1844,7 +1847,7 @@ int solveHomotopy(DATA *data, int sysNumber)
         solverDataHybrid = (DATA_HYBRD*)(solverData->dataHybrid);
         systemData->solverData = solverDataHybrid;
 
-        solverData->info = solveHybrd(data, sysNumber);
+        solverData->info = solveHybrd(data, threadData, sysNumber);
 
         memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
         systemData->solverData = solverData;

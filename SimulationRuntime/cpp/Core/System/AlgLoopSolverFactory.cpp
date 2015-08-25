@@ -49,6 +49,7 @@ boost::shared_ptr<IAlgLoopSolver> AlgLoopSolverFactory::createAlgLoopSolver(IAlg
 #endif
     string nonlinsolver_name = _global_settings->getSelectedNonLinSolver();
     boost::shared_ptr<INonLinSolverSettings> algsolversetting= createNonLinSolverSettings(nonlinsolver_name);
+    algsolversetting->setContinueOnError(_global_settings->getNonLinearSolverContinueOnError());
     _algsolversettings.push_back(algsolversetting);
 
     boost::shared_ptr<IAlgLoopSolver> algsolver= createNonLinSolver(algLoop,nonlinsolver_name,algsolversetting);

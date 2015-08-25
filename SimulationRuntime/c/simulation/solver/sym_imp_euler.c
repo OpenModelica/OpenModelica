@@ -97,7 +97,7 @@ int freeSymEulerImp(SOLVER_INFO* solverInfo)
  *   using the implicit midpoint rule
  *
  */
-int sym_euler_im_with_step_size_control_step(DATA* data, SOLVER_INFO* solverInfo)
+int sym_euler_im_with_step_size_control_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   int retVal = 0;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
@@ -143,8 +143,8 @@ int sym_euler_im_with_step_size_control_step(DATA* data, SOLVER_INFO* solverInfo
 
       /* evaluate function ODE */
       externalInputUpdate(data);
-      data->callback->input_function(data);
-      data->callback->functionODE(data);
+      data->callback->input_function(data, threadData);
+      data->callback->functionODE(data,threadData);
 
       /* save values in y05 */
       memcpy(userdata->y05, sData->realVars, data->modelData.nStates*sizeof(double));
@@ -170,8 +170,8 @@ int sym_euler_im_with_step_size_control_step(DATA* data, SOLVER_INFO* solverInfo
 
       /* evaluate function ODE */
       externalInputUpdate(data);
-      data->callback->input_function(data);
-      data->callback->functionODE(data);
+      data->callback->input_function(data, threadData);
+      data->callback->functionODE(data, threadData);
 
       /* save values in y2 */
       memcpy(userdata->y2, sData->realVars, data->modelData.nStates*sizeof(double));
@@ -224,7 +224,7 @@ int sym_euler_im_with_step_size_control_step(DATA* data, SOLVER_INFO* solverInfo
   }
 
   /* update first derivative  */
-  infoStreamPrint(LOG_SOLVER,0, "%Time  %e", sData->timeValue);
+  infoStreamPrint(LOG_SOLVER,0, "Time  %e", sData->timeValue);
   for(i=0, j=data->modelData.nStates; i<data->modelData.nStates; ++i, ++j)
   {
     a = 4.0 * (userdata->y2[i] - 2.0 * userdata->y05[i] + userdata->radauVarsOld[i]) / (userdata->radauStepSizeOld * userdata->radauStepSizeOld);

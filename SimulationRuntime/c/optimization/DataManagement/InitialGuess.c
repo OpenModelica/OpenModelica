@@ -43,7 +43,7 @@
 
 
 static int initial_guess_ipopt_cflag(OptData *optData, char* cflags);
-static inline void smallIntSolverStep(DATA* data, SOLVER_INFO* solverInfo, const double tstop);
+static inline void smallIntSolverStep(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, const double tstop);
 static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, const short o);
 static inline void init_ipopt_data(OptData *optData, const short o);
 
@@ -100,6 +100,7 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
   char *cflags = (char*)omc_flagValue[FLAG_IIF];
 
   DATA* data = optData->data;
+  threadData_t *threadData = optData->threadData;
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
 
   if(!data->simulationInfo.external_input.active){
@@ -114,7 +115,7 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
    infoStreamPrint(LOG_SOLVER, 0, "Initial Guess: Initializing DASSL");
    sInfo->solverMethod = "dassl";
    solverInfo->solverMethod = S_DASSL;
-   dassl_initial(data, solverInfo, dasslData);
+   dassl_initial(data, threadData, solverInfo, dasslData);
    solverInfo->solverMethod = S_OPTIMIZATION;
    solverInfo->solverData = dasslData;
 
@@ -146,9 +147,9 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
      }
      while(t < optData->time.t0){
        externalInputUpdate(data);
-       smallIntSolverStep(data, solverInfo, fmin(t += optData->time.dt[0], optData->time.t0));
+       smallIntSolverStep(data, threadData, solverInfo, fmin(t += optData->time.dt[0], optData->time.t0));
        printf("\ndone: time[%i] = %g",0,(double)data->localData[0]->timeValue);
-       sim_result.emit(&sim_result,data);
+       sim_result.emit(&sim_result,data,threadData);
        fprintf(pFile, "%lf ",(double)data->localData[0]->timeValue);
        for(i = 0; i < nu; ++i){
          fprintf(pFile, "%lf ", (float)data->simulationInfo.inputVars[i]);
@@ -185,10 +186,10 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
      for(j = 0; j < np; ++j, ++k){
        externalInputUpdate(data);
        if(op==1)
-         smallIntSolverStep(data, solverInfo, (double)optData->time.t[i][j]);
+         smallIntSolverStep(data, threadData, solverInfo, (double)optData->time.t[i][j]);
        else{
          rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
-         importStartValues(data, cflags, (double)optData->time.t[i][j]);
+         importStartValues(data, threadData, cflags, (double)optData->time.t[i][j]);
          for(l=0; l<nReal; ++l){
             data->localData[0]->realVars[l] = data->modelData.realVarsData[l].attribute.start;
          }
@@ -330,7 +331,7 @@ static inline void init_ipopt_data(OptData *optData, const short op){
 
 }
 
-static inline void smallIntSolverStep(DATA* data, SOLVER_INFO* solverInfo, const double tstop){
+static inline void smallIntSolverStep(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, const double tstop){
   long double a;
   int iter;
   int err;
@@ -348,7 +349,7 @@ static inline void smallIntSolverStep(DATA* data, SOLVER_INFO* solverInfo, const
         break;
       }
       solverInfo->currentStepSize = a*(tstop - solverInfo->currentTime);
-      err = dassl_step(data, solverInfo);
+      err = dassl_step(data, threadData, solverInfo);
       a *= 0.5;
       if(++iter >  10){
         printf("\n");
@@ -357,7 +358,7 @@ static inline void smallIntSolverStep(DATA* data, SOLVER_INFO* solverInfo, const
       }
     }while(err < 0);
 
-    updateContinuousSystem(data);
+    data->callback->updateContinuousSystem(data, threadData);
 
   }
 }

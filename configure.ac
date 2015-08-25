@@ -149,10 +149,12 @@ fi
 fi
 
 TRY_FLAGS="-fno-stack-protector"
-# GCC 4.8 generates bad code with some optimisation flags. Let's try to disable them.
-if $CC --version | head -n1 | grep -q gcc | sed "s/ *[(].*[)]//" | grep -q 4[.]8; then
-  TRY_FLAGS="$TRY_FLAGS -fno-tree-ch -fno-tree-vrp -fno-tree-pre"
+
+# GCC 5.x generates bad code due to detecting some impure functions as pure
+if $CC --version | grep -q gcc && $CC -dumpversion | grep -q "^5"; then
+  TRY_FLAGS="$TRY_FLAGS -fno-ipa-pure-const"
 fi
+
 for flag in $TRY_FLAGS; do
   OLD_CFLAGS="$CFLAGS"
   CFLAGS="$RUNTIMECFLAGS $flag -Werror"

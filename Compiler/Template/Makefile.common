@@ -1,6 +1,6 @@
 .PHONY : all
 
-GENERATED_FILES=AbsynDumpTpl.mo CodegenUtil.mo CodegenC.mo CodegenCFunctions.mo CodegenFMUCommon.mo CodegenFMU.mo CodegenFMU1.mo CodegenFMU2.mo CodegenCSharp.mo CodegenQSS.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo CodegenFMUCppHpcom.mo CodegenCppInit.mo CodegenModelica.mo DAEDumpTpl.mo ExpressionDumpTpl.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo CodegenSparseFMI.mo CodegenXML.mo CodegenJava.mo CodegenJS.mo TplCodegen.mo TaskSystemDump.mo GenerateAPIFunctionsTpl.mo VisualXMLTpl.mo
+GENERATED_FILES=AbsynDumpTpl.mo CodegenUtil.mo CodegenC.mo CodegenCFunctions.mo CodegenFMUCommon.mo CodegenFMU.mo CodegenFMU1.mo CodegenFMU2.mo CodegenCSharp.mo CodegenQSS.mo CodegenCppCommon.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo CodegenFMUCppHpcom.mo CodegenCppInit.mo CodegenModelica.mo DAEDumpTpl.mo ExpressionDumpTpl.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo CodegenSparseFMI.mo CodegenXML.mo CodegenJava.mo CodegenJS.mo TplCodegen.mo TaskSystemDump.mo GenerateAPIFunctionsTpl.mo VisualXMLTpl.mo
 
 all : $(GENERATED_FILES)
 
@@ -56,11 +56,11 @@ CodegenFMU2.mo : CodegenFMU2.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCod
 	@echo " ** CodegenFMU2 template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
-CodegenFMUCpp.mo : CodegenFMUCpp.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenUtil.tpl CodegenCpp.tpl CodegenFMU.tpl
+CodegenFMUCpp.mo : CodegenFMUCpp.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenUtil.tpl CodegenCpp.tpl  CodegenCppCommon.tpl CodegenFMU.tpl
 	@echo " ** CodegenFMUCpp template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
-CodegenFMUCppHpcom.mo : CodegenFMUCppHpcom.tpl CodegenFMUCpp.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenCppHpcom.tpl CodegenUtil.tpl CodegenCpp.tpl CodegenFMU.tpl
+CodegenFMUCppHpcom.mo : CodegenFMUCppHpcom.tpl CodegenFMUCpp.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenCppHpcom.tpl CodegenUtil.tpl CodegenCppCommon.tpl CodegenCpp.tpl CodegenFMU.tpl
 	@echo " ** CodegenFMUCppHpcom template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
@@ -95,7 +95,7 @@ CodegenQSS.mo : CodegenQSS.tpl SimCodeTV.mo SimCodeQSSTV.mo CodegenCFunctions.tp
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
 
-CodegenCpp.mo : CodegenCpp.tpl SimCodeTV.mo CodegenUtil.tpl CodegenCppInit.tpl
+CodegenCpp.mo : CodegenCpp.tpl SimCodeTV.mo CodegenUtil.tpl CodegenCppInit.tpl CodegenCppCommon.tpl
 	@echo " ** CodegenCpp template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
@@ -107,6 +107,10 @@ CodegenCppHpcom.mo : CodegenCppHpcom.tpl SimCodeTV.mo SimCodeBackendTV.mo Codege
 
 CodegenCppInit.mo : CodegenCppInit.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenUtil.tpl CodegenFMUCommon.tpl
 	@echo " ** CodegenCppInit template compilation ** "
+	$(OMC) $< > $@.log || (cat $@.log && false)
+	@echo " "
+CodegenCppCommon.mo : CodegenCppCommon.tpl SimCodeTV.mo
+	@echo " ** CodegenCppCommon template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
 

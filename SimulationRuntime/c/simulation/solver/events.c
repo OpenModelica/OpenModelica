@@ -50,9 +50,9 @@
 extern "C" {
 #endif
 
-double bisection(DATA* data, double*, double*, double*, double*, LIST*, LIST*);
+double bisection(DATA* data, threadData_t *threadData, double*, double*, double*, double*, LIST*, LIST*);
 int checkZeroCrossings(DATA *data, LIST *list, LIST*);
-void saveZeroCrossingsAfterEvent(DATA *data);
+void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData);
 
 int checkForStateEvent(DATA* data, LIST *eventList);
 
@@ -65,12 +65,12 @@ int checkForStateEvent(DATA* data, LIST *eventList);
  *
  *  This function initializes sample-events.
  */
-void initSample(DATA* data, double startTime, double stopTime)
+void initSample(DATA* data, threadData_t *threadData, double startTime, double stopTime)
 {
   TRACE_PUSH
   long i;
 
-  data->callback->function_initSample(data);              /* set-up sample */
+  data->callback->function_initSample(data, threadData);              /* set-up sample */
   data->simulationInfo.nextSampleEvent = stopTime + 1.0;  /* should never be reached */
   for(i=0; i<data->modelData.nSamples; ++i)
   {
@@ -183,7 +183,7 @@ int checkForStateEvent(DATA* data, LIST *eventList)
  *  \param [ref] [solverInfo]
  *  \return 0: no event; 1: time event; 2: state event
  */
-int checkEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo)
+int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo)
 {
   TRACE_PUSH
 
@@ -191,7 +191,7 @@ int checkEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solv
   {
     if (!solverInfo->solverRootFinding)
     {
-      findRoot(data, solverInfo->eventLst, &(solverInfo->currentTime));
+      findRoot(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime));
     }
   }
 
@@ -219,7 +219,7 @@ int checkEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solv
  *
  *  This handles all zero crossing events from event list at event time
  */
-void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo)
+void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo)
 {
   TRACE_PUSH
   double time = data->localData[0]->timeValue;
@@ -276,23 +276,21 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
         data->simulationInfo.chatteringInfo.messageEmitted = 1;
         if (omc_flag[FLAG_ABORT_SLOW])
         {
-          throwStreamPrintWithEquationIndexes(data->threadData, eq_indexes, "Aborting simulation due to chattering being detected and the simulation flags requesting we do not continue further.");
+          throwStreamPrintWithEquationIndexes(threadData, eq_indexes, "Aborting simulation due to chattering being detected and the simulation flags requesting we do not continue further.");
         }
       }
     }
 
     listClear(eventLst);
-  }
-  else
-  {
+  } else {
     data->simulationInfo.chatteringInfo.lastSteps[data->simulationInfo.chatteringInfo.currentIndex]=0;
     /* Setting time does not matter */
   }
   data->simulationInfo.chatteringInfo.currentIndex = (data->simulationInfo.chatteringInfo.currentIndex+1) % data->simulationInfo.chatteringInfo.numEventLimit;
 
   /* update the whole system */
-  updateDiscreteSystem(data);
-  saveZeroCrossingsAfterEvent(data);
+  updateDiscreteSystem(data, threadData);
+  saveZeroCrossingsAfterEvent(data, threadData);
   /*sim_result_emit(data);*/
 
   /* time event */
@@ -330,7 +328,7 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
  *
  *  This function perform a root finding for Intervall = [oldTime, timeValue]
  */
-void findRoot(DATA* data, LIST *eventList, double *eventTime)
+void findRoot(DATA* data, threadData_t *threadData, LIST *eventList, double *eventTime)
 {
   TRACE_PUSH
 
@@ -360,7 +358,7 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
   memcpy(states_right, data->localData[0]->realVars    , data->modelData.nStates * sizeof(double));
 
   /* Search for event time and event_id with bisection method */
-  *eventTime = bisection(data, &time_left, &time_right, states_left, states_right, tmpEventList, eventList);
+  *eventTime = bisection(data, threadData, &time_left, &time_right, states_left, states_right, tmpEventList, eventList);
 
   if(listLen(tmpEventList) == 0)
   {
@@ -416,7 +414,7 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
   }
 
   /* determined continuous system */
-  updateContinuousSystem(data);
+  data->callback->updateContinuousSystem(data, threadData);
   updateRelationsPre(data);
   /*sim_result_emit(data);*/
 
@@ -445,7 +443,7 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
  *
  *  Method to find root in Intervall [oldTime, timeValue]
  */
-double bisection(DATA* data, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList)
+double bisection(DATA* data, threadData_t *threadData, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList)
 {
   TRACE_PUSH
 
@@ -474,11 +472,11 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
     /*calculates Values dependents on new states*/
     /* read input vars */
     externalInputUpdate(data);
-    data->callback->input_function(data);
+    data->callback->input_function(data, threadData);
     /* eval needed equations*/
-    data->callback->function_ZeroCrossingsEquations(data);
+    data->callback->function_ZeroCrossingsEquations(data, threadData);
 
-    data->callback->function_ZeroCrossings(data, data->simulationInfo.zeroCrossings);
+    data->callback->function_ZeroCrossings(data, threadData, data->simulationInfo.zeroCrossings);
 
     if(checkZeroCrossings(data, tmpEventList, eventList))  /* If Zerocrossing in left Section */
     {
@@ -549,14 +547,14 @@ int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
  *
  *  \param [ref] [data]
  */
-void saveZeroCrossingsAfterEvent(DATA *data)
+void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
   long i=0;
 
   infoStreamPrint(LOG_ZEROCROSSINGS, 0, "save all zerocrossings after an event at time=%g", data->localData[0]->timeValue); /* ??? */
 
-  data->callback->function_ZeroCrossings(data, data->simulationInfo.zeroCrossings);
+  data->callback->function_ZeroCrossings(data, threadData, data->simulationInfo.zeroCrossings);
   for(i=0; i<data->modelData.nZeroCrossings; i++)
     data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
 

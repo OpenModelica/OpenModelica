@@ -65,7 +65,7 @@ typedef struct IA_DATA
   unsigned int nString;
 } IA_DATA;
 
-void ia_init(simulation_result *self, DATA *data)
+void ia_init(simulation_result *self, DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
 
@@ -198,7 +198,7 @@ void ia_init(simulation_result *self, DATA *data)
   TRACE_POP
 }
 
-void ia_emit(simulation_result *self, DATA *data)
+void ia_emit(simulation_result *self, DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
   rt_tick(SIM_TIMER_OUTPUT);
@@ -294,7 +294,7 @@ void ia_emit(simulation_result *self, DATA *data)
   TRACE_POP
 }
 
-void ia_free(simulation_result *self, DATA *data)
+void ia_free(simulation_result *self, DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
   rt_tick(SIM_TIMER_OUTPUT);

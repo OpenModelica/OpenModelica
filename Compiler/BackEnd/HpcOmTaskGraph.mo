@@ -163,9 +163,11 @@ protected
   tuple<TaskGraph,TaskGraphMeta,Integer> tplOut;
 
   BackendDAE.EqSystem syst;
+  BackendDAE.Matching matching;
   BackendDAE.IncidenceMatrix incidenceMatrix;
 algorithm
-  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps), orderedVars=vars, orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfEqs)) := iSyst;
+  BackendDAE.EQSYSTEM(matching=matching, orderedVars=vars, orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfEqs)) := iSyst;
+  comps := BackendDAEUtil.getCompsOfMatching(matching);
   BackendDAE.SHARED(functionTree=sharedFuncs) := iShared;
   (iGraph,iGraphData,eqSysIdx) := iGraphInfo;
 
@@ -212,12 +214,14 @@ protected function getSystemComponents0 "author: marcusw
   output tuple<BackendDAE.StrongComponents, list<tuple<BackendDAE.EqSystem,Integer>>, Integer> oSystMapping; //Map each component to <eqSystem, eqSystemIdx>
 protected
   BackendDAE.StrongComponents tmpComps, comps;
+  BackendDAE.Matching matching;
   list<tuple<BackendDAE.EqSystem,Integer>> tmpSystMapping;
   Integer currentIdx;
 algorithm
   oSystMapping := match(iSyst, iSystMapping)
-    case(BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)), (tmpComps,tmpSystMapping,currentIdx))
+    case(BackendDAE.EQSYSTEM(matching=matching), (tmpComps,tmpSystMapping,currentIdx))
       equation
+        comps = BackendDAEUtil.getCompsOfMatching(matching);
         //print("--getSystemComponents0 begin\n");
         tmpSystMapping = List.fold2(comps, getSystemComponents1, iSyst, currentIdx, tmpSystMapping);
         //print(stringDelimitList(List.map(comps, BackendDump.printComponent),","));
@@ -226,7 +230,7 @@ algorithm
       then ((tmpComps, tmpSystMapping, currentIdx+1));
     else
       equation
-        print("getSystemComponents0 failed");
+        print("getSystemComponents0 failed\n");
       then fail();
   end match;
 end getSystemComponents0;
@@ -260,8 +264,10 @@ public function getNumberOfEqSystemComponents "author: marcusw
   output Integer oNumOfComps;
 protected
   BackendDAE.StrongComponents comps;
+  BackendDAE.Matching matching;
 algorithm
-  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)) := iEqSystem;
+  BackendDAE.EQSYSTEM(matching=matching) := iEqSystem;
+  comps := BackendDAEUtil.getCompsOfMatching(matching);
   oNumOfComps := iNumOfComps + listLength(comps);
 end getNumberOfEqSystemComponents;
 
@@ -791,12 +797,14 @@ author: Waurich TUD 2013-06"
   output tuple<list<Integer>,Integer> eventInfoOut;
 protected
   BackendDAE.StrongComponents comps;
+  BackendDAE.Matching matching;
   list<Integer> eventEqs;
   list<Integer> eventEqsIn;
   Integer numOfEqs;
   Integer offset;
 algorithm
-  BackendDAE.EQSYSTEM(orderedEqs = BackendDAE.EQUATION_ARRAY(numberOfElement=numOfEqs),matching=BackendDAE.MATCHING(comps = comps)) := systIn;
+  BackendDAE.EQSYSTEM(orderedEqs = BackendDAE.EQUATION_ARRAY(numberOfElement=numOfEqs),matching=matching) := systIn;
+  comps := BackendDAEUtil.getCompsOfMatching(matching);
   (eventEqsIn,offset) := eventInfoIn;
   eventEqs := getEventNodeEqs1(comps,offset,{});
   offset := offset+numOfEqs;
@@ -2526,12 +2534,14 @@ protected function getDiscreteNodesEqs
 protected
   BackendDAE.StrongComponents comps;
   BackendDAE.Variables orderedVars;
+  BackendDAE.Matching matching;
   list<Integer> eventEqs;
   list<Integer> eventEqsIn;
   Integer numOfEqs;
   Integer offset;
 algorithm
-  BackendDAE.EQSYSTEM(orderedEqs = BackendDAE.EQUATION_ARRAY(numberOfElement=numOfEqs),orderedVars=orderedVars,matching=BackendDAE.MATCHING(comps = comps)) := systIn;
+  BackendDAE.EQSYSTEM(orderedEqs = BackendDAE.EQUATION_ARRAY(numberOfElement=numOfEqs),orderedVars=orderedVars,matching=matching) := systIn;
+  comps := BackendDAEUtil.getCompsOfMatching(matching);
   (eventEqsIn,offset) := eventInfoIn;
   eventEqs := getDiscreteNodesEqs1(comps,offset,orderedVars,{});
   offset := offset+numOfEqs;
@@ -6267,14 +6277,21 @@ algorithm
     local
       Integer offset,eqSys,node;
       Boolean eqSysNeq;
-  case(_,_,_,_)
-    equation
-      ((node,eqSys,offset)) = arrayGet(varCompMapping,tryThisIndex);
-      eqSysNeq = intNe(eqSys,eqSysIdx);
-      node = if eqSysNeq then getNodeForVarIdx(varIdx,eqSysIdx,varCompMapping,tryThisIndex+offset) else node;
-    then node;
-  case(-1,-1,_,_)
-    then -1;
+    case(_,_,_,_)
+      equation
+        ((node,eqSys,offset)) = arrayGet(varCompMapping,tryThisIndex);
+        eqSysNeq = intNe(eqSys,eqSysIdx);
+        if(intEq(offset, 0)) then
+          offset = 1;
+        end if;
+        node = if eqSysNeq then getNodeForVarIdx(varIdx,eqSysIdx,varCompMapping,tryThisIndex+offset) else node;
+      then node;
+    case(-1,-1,_,_)
+      then -1;
+    else
+      equation
+        print("HpcOmTaskGraph.getNodeForVarIdx failed\n");
+      then -1;
   end matchcontinue;
 end getNodeForVarIdx;
 

@@ -736,6 +736,8 @@ public function isVarDiscrete
 algorithm
   outBoolean := match (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())) then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM())) then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.CONST())) then true;
     case (BackendDAE.VAR(varType = DAE.T_INTEGER())) then true;
     case (BackendDAE.VAR(varType = DAE.T_BOOL())) then true;
     case (BackendDAE.VAR(varType = DAE.T_ENUMERATION())) then true;
@@ -777,8 +779,8 @@ algorithm
 
 end hasDiscreteVar;
 
-public function hasContinousVar
-"Returns true if var list contains a continous time variable."
+public function hasContinuousVar
+"Returns true if var list contains a continuous time variable."
   input list<BackendDAE.Var> inBackendDAEVarLst;
   output Boolean outBoolean;
 algorithm
@@ -800,10 +802,10 @@ algorithm
     case ((BackendDAE.VAR(varKind=BackendDAE.OPT_TGRID()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.OPT_LOOP_INPUT()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.ALG_STATE()) :: _)) then true;
-    case ((_ :: vs)) then hasContinousVar(vs);
+    case ((_ :: vs)) then hasContinuousVar(vs);
     case ({}) then false;
   end match;
-end hasContinousVar;
+end hasContinuousVar;
 
 public function isVarNonDiscreteAlg
   input BackendDAE.Var var;
@@ -3135,7 +3137,7 @@ protected function traversingisisVarDiscreteFinder
   output list<BackendDAE.Var> v_lst;
 algorithm
   v := inVar;
-  v_lst := List.consOnTrue(BackendDAEUtil.isVarDiscrete(v),v,inVars);
+  v_lst := List.consOnTrue(isVarDiscrete(v),v,inVars);
 end traversingisisVarDiscreteFinder;
 
 public function getAllStateVarFromVariables

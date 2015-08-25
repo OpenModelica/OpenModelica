@@ -62,20 +62,21 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
      desc.add_options()
           ("help", "produce help message")
           ("emit_protected", "emits protected variables to the result file")
-          ("runtime-library,r", po::value<string>(),"path to cpp runtime libraries")
-          ("Modelica-system-library,m",  po::value<string>(), "path to Modelica library")
-          ("results-file,R", po::value<string>(),"name of results file")
-          //("config-path,c", po::value< string >(),  "path to xml files")
-          ("start-time,s", po::value< double >()->default_value(0.0),  "simulation start time")
-          ("stop-time,e", po::value< double >()->default_value(1.0),  "simulation stop time")
-          ("step-size,f", po::value< double >()->default_value(0.0),  "simulation step size")
-          ("solver,i", po::value< string >()->default_value("euler"),  "solver method")
+          ("nls_continue", po::bool_switch()->default_value(false),"non linear solver will continue if it can not reach the given precision")
+          ("runtime-library,R", po::value<string>(),"path to cpp runtime libraries")
+          ("Modelica-system-library,M",  po::value<string>(), "path to Modelica library")
+          ("results-file,r", po::value<string>(),"name of results file")
+          //("config-path,f", po::value< string >(),  "path to xml files")
+          ("start-time,S", po::value< double >()->default_value(0.0),  "simulation start time")
+          ("stop-time,E", po::value< double >()->default_value(1.0),  "simulation stop time")
+          ("step-size,H", po::value< double >()->default_value(0.0),  "simulation step size")
+          ("solver,I", po::value< string >()->default_value("euler"),  "solver method")
           ("lin-solver,L", po::value< string >()->default_value(_defaultLinSolver),  "linear solver method")
           ("non-lin-solver,N", po::value< string >()->default_value(_defaultNonLinSolver),  "non linear solver method")
-          ("number-of-intervals,v", po::value< int >()->default_value(500),  "number of intervals")
-          ("tolerance,y", po::value< double >()->default_value(1e-6),  "solver tolerance")
-          ("log-settings,l", po::value< std::vector<std::string> >(),  "log information: init, nls, ls, solv, output, event, model, other")
-          ("alarm,a", po::value<unsigned int >()->default_value(360),  "sets timeout in seconds for simulation")
+          ("number-of-intervals,G", po::value< int >()->default_value(500),  "number of intervals in equidistant grid")
+          ("tolerance,T", po::value< double >()->default_value(1e-6),  "solver tolerance")
+          ("log-settings,V", po::value< std::vector<std::string> >(),  "log information: init, nls, ls, solv, output, event, model, other")
+          ("alarm,A", po::value<unsigned int >()->default_value(360),  "sets timeout in seconds for simulation")
           ("output-type,O", po::value< string >()->default_value("all"),  "the points in time written to result file: all (output steps + events), step (just output points), none")
           ("OMEdit", po::value<vector<string> >(), "OMEdit options")
           ;
@@ -106,9 +107,10 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
      double starttime =  vm["start-time"].as<double>();
      double stoptime = vm["stop-time"].as<double>();
      double stepsize =vm["step-size"].as<double>();
+     bool nlsContinueOnError = vm["nls_continue"].as<bool>();
 
      if (!(stepsize > 0.0))
-       stepsize =  stoptime/vm["number-of-intervals"].as<int>();
+       stepsize = (stoptime - starttime) / vm["number-of-intervals"].as<int>();
 
      double tolerance =vm["tolerance"].as<double>();
      string solver =  vm["solver"].as<string>();
@@ -161,7 +163,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
      }
      else
      {
-          throw ModelicaSimulationError(MODEL_FACTORY,"results-filename  is not set");
+         throw ModelicaSimulationError(MODEL_FACTORY, "output-type is not set");
      }
 
      LogSettings logSet;
@@ -199,7 +201,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
 
 
 
-     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,time_out,outputPointType,logSet};
+     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,time_out,outputPointType,logSet,nlsContinueOnError};
 
 
      _library_path = libraries_path;
@@ -211,19 +213,25 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
 
 }
 
-std::vector<const char *> OMCFactory::modifyArguments(int argc, const char* argv[], std::map<std::string, std::string> &opts)
+std::vector<const char *> OMCFactory::preprocessArguments(int argc, const char* argv[], std::map<std::string, std::string> &opts)
 {
   std::map<std::string, std::string>::const_iterator oit;
   std::vector<const char *> optv;
   optv.push_back(argv[0]);
-  std::string override;                // OMEdit override option
+  _overrideOMEdit = "-override=";      // unrecognized OMEdit overrides
   for (int i = 1; i < argc; i++) {
-      if ((oit = opts.find(argv[i])) != opts.end() && i < argc - 1)
+      string arg = argv[i];
+      int j;
+      if (arg[0] == '-' && arg[1] != '-' && (j = arg.find('=')) > 0
+          && (oit = opts.find(arg.substr(0, j))) != opts.end())
+          opts[oit->first] = arg.substr(j + 1); // split at = and override
+      else if ((oit = opts.find(arg)) != opts.end() && i < argc - 1)
           opts[oit->first] = argv[++i]; // regular override
       else if (strncmp(argv[i], "-override=", 10) == 0) {
           std::map<std::string, std::string> supported = map_list_of
-              ("startTime", "-s")("stopTime", "-e")("stepSize", "-f")
-              ("tolerance", "-y")("solver", "-i");
+              ("startTime", "-S")("stopTime", "-E")("stepSize", "-H")
+              ("numberOfIntervals", "-G")("solver", "-I")("tolerance", "-T")
+              ("outputFormat", "-O");
           std::vector<std::string> strs;
           boost::split(strs, argv[i], boost::is_any_of(",="));
           for (int j = 1; j < strs.size(); j++) {
@@ -232,18 +240,16 @@ std::vector<const char *> OMCFactory::modifyArguments(int argc, const char* argv
                   opts[oit->second] = strs[++j];
               }
               else {
-                  // leave untreated overrides
-                  if (override.size() > 0)
-                      override += ",";
-                  else
-                      override = "-override=";
-                  override += strs[j];
+                  // leave unrecognized overrides
+                  if (_overrideOMEdit.size() > 10)
+                      _overrideOMEdit += ",";
+                  _overrideOMEdit += strs[j];
                   if (j < strs.size() - 1)
-                      override += "=" + strs[++j];
+                      _overrideOMEdit += "=" + strs[++j];
               }
           }
-          if (override.size() > 10)
-              optv.push_back(override.c_str());
+          if (_overrideOMEdit.size() > 10)
+              optv.push_back(_overrideOMEdit.c_str());
       }
       else
           optv.push_back(argv[i]);     // pass through
@@ -260,7 +266,7 @@ std::pair<boost::shared_ptr<ISimController>,SimSettings>
 OMCFactory::createSimulation(int argc, const char* argv[],
                              std::map<std::string, std::string> &opts)
 {
-     std::vector<const char *> optv = modifyArguments(argc, argv, opts);
+     std::vector<const char *> optv = preprocessArguments(argc, argv, opts);
 
      SimSettings settings = readSimulationParameter(optv.size(), &optv[0]);
      type_map simcontroller_type_map;

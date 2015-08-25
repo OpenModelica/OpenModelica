@@ -2915,7 +2915,7 @@ algorithm
 
     case DAE.MOD(subModLst = submods)
       equation
-        _ = List.selectFirst(submods, isUntypedSubMod);
+        _ = List.find(submods, isUntypedSubMod);
       then
         true;
 

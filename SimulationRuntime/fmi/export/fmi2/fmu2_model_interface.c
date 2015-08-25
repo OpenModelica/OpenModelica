@@ -126,7 +126,7 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
 {
   int i;
   ModelInstance* comp = (ModelInstance *)c;
-  threadData_t *threadData = comp->fmuData->threadData;
+  threadData_t *threadData = comp->threadData;
 
   if (nullPointer(comp, "fmi2EventUpdate", "eventInfo", eventInfo))
     return fmi2Error;
@@ -137,7 +137,7 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 
-    if (stateSelection(comp->fmuData, 1, 1))
+    if (stateSelection(comp->fmuData, comp->threadData, 1, 1))
     {
       FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: Need to iterate state values changed!")
       /* if new set is calculated reinit the solver */
@@ -156,7 +156,7 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
       }
     }
 
-    comp->fmuData->callback->functionDAE(comp->fmuData);
+    comp->fmuData->callback->functionDAE(comp->fmuData, comp->threadData);
 
     /* deactivate sample events */
     for(i=0; i<comp->fmuData->modelData.nSamples; ++i)
@@ -172,7 +172,7 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
       if((i == 0) || (comp->fmuData->simulationInfo.nextSampleTimes[i] < comp->fmuData->simulationInfo.nextSampleEvent))
         comp->fmuData->simulationInfo.nextSampleEvent = comp->fmuData->simulationInfo.nextSampleTimes[i];
 
-    if(comp->fmuData->callback->checkForDiscreteChanges(comp->fmuData) || comp->fmuData->simulationInfo.needToIterate || checkRelations(comp->fmuData) || eventInfo->valuesOfContinuousStatesChanged)
+    if(comp->fmuData->callback->checkForDiscreteChanges(comp->fmuData, comp->threadData) || comp->fmuData->simulationInfo.needToIterate || checkRelations(comp->fmuData) || eventInfo->valuesOfContinuousStatesChanged)
     {
       FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: Need to iterate(discrete changes)!")
       eventInfo->newDiscreteStatesNeeded  = fmi2True;
@@ -294,7 +294,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
     pthread_setspecific(fmu2_thread_data_key, threadData);
     */
 
-    fmudata->threadData = threadData;
+    comp->threadData = threadData;
     comp->fmuData = fmudata;
     if (!comp->fmuData) {
       functions->logger(functions->componentEnvironment, instanceName, fmi2Error, "error", "fmi2Instantiate: Could not initialize the global data structure file.");
@@ -321,7 +321,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   fmu2_model_interface_setupDataStruc(comp->fmuData);
   useStream[LOG_STDOUT] = 1;
   useStream[LOG_ASSERT] = 1;
-  initializeDataStruc(comp->fmuData);
+  initializeDataStruc(comp->fmuData, comp->threadData);
   /* setup model data with default start data */
   setDefaultStartValues(comp);
   setAllVarsToStart(comp->fmuData);
@@ -332,15 +332,15 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   /* read input vars */
   //input_function(comp->fmuData);
   /* initial sample and delay before initial the system */
-  comp->fmuData->callback->callExternalObjectConstructors(comp->fmuData);
+  comp->fmuData->callback->callExternalObjectConstructors(comp->fmuData, comp->threadData);
   /* allocate memory for non-linear system solvers */
-  initializeNonlinearSystems(comp->fmuData);
+  initializeNonlinearSystems(comp->fmuData, comp->threadData);
   /* allocate memory for non-linear system solvers */
-  initializeLinearSystems(comp->fmuData);
+  initializeLinearSystems(comp->fmuData, comp->threadData);
   /* allocate memory for mixed system solvers */
-  initializeMixedSystems(comp->fmuData);
+  initializeMixedSystems(comp->fmuData, comp->threadData);
   /* allocate memory for state selection */
-  initializeStateSetJacobians(comp->fmuData);
+  initializeStateSetJacobians(comp->fmuData, comp->threadData);
 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Instantiate: GUID=%s", fmuGUID)
   return comp;
@@ -354,7 +354,7 @@ void fmi2FreeInstance(fmi2Component c) {
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2FreeInstance")
 
   /* free fmuData */
-  comp->functions->freeMemory(comp->fmuData->threadData);
+  comp->functions->freeMemory(comp->threadData);
   GC_free(comp->fmuData);
   /* free instanceName & GUID */
   if (comp->instanceName) comp->functions->freeMemory((void*)comp->instanceName);
@@ -380,7 +380,7 @@ fmi2Status fmi2SetupExperiment(fmi2Component c, fmi2Boolean toleranceDefined, fm
 
 fmi2Status fmi2EnterInitializationMode(fmi2Component c) {
   ModelInstance *comp = (ModelInstance *)c;
-  threadData_t *threadData = comp->fmuData->threadData;
+  threadData_t *threadData = comp->threadData;
   threadData->currentErrorStage = ERROR_SIMULATION;
   if (invalidState(comp, "fmi2EnterInitializationMode", modelInstantiated))
     return fmi2Error;
@@ -394,7 +394,7 @@ fmi2Status fmi2EnterInitializationMode(fmi2Component c) {
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 
-    if (initialization(comp->fmuData, "", "", 0.0, 5)) {
+    if (initialization(comp->fmuData, comp->threadData, "", "", 0.0, 5)) {
       comp->state = modelError;
       FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2EnterInitializationMode: failed")
       return fmi2Error;
@@ -403,7 +403,7 @@ fmi2Status fmi2EnterInitializationMode(fmi2Component c) {
     {
       /*TODO: Simulation stop time is need to calculate in before hand all sample events
                   We shouldn't generate them all in beforehand */
-      initSample(comp->fmuData, comp->fmuData->localData[0]->timeValue, 100 /*should be stopTime*/);
+      initSample(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, 100 /*should be stopTime*/);
       initDelay(comp->fmuData, comp->fmuData->localData[0]->timeValue);
 
       /* due to an event overwrite old values */
@@ -452,13 +452,13 @@ fmi2Status fmi2Terminate(fmi2Component c) {
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Terminate")
 
   /* call external objects destructors */
-  comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData);
+  comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData, comp->threadData);
   /* free nonlinear system data */
-  freeNonlinearSystems(comp->fmuData);
+  freeNonlinearSystems(comp->fmuData, comp->threadData);
   /* free mixed system data */
-  freeMixedSystems(comp->fmuData);
+  freeMixedSystems(comp->fmuData, comp->threadData);
   /* free linear system data */
-  freeLinearSystems(comp->fmuData);
+  freeLinearSystems(comp->fmuData, comp->threadData);
   /* free stateset data */
   freeStateSetData(comp->fmuData);
 
@@ -481,7 +481,7 @@ fmi2Status fmi2Reset(fmi2Component c) {
   if (comp->state & modelTerminated) {
     /* intialize modelData */
     fmu2_model_interface_setupDataStruc(comp->fmuData);
-    initializeDataStruc(comp->fmuData);
+    initializeDataStruc(comp->fmuData, comp->threadData);
   }
   /* reset the values to start */
   setDefaultStartValues(comp);
@@ -728,7 +728,7 @@ fmi2Status fmi2EnterContinuousTimeMode(fmi2Component c) {
 
 fmi2Status fmi2CompletedIntegratorStep(fmi2Component c, fmi2Boolean noSetFMUStatePriorToCurrentPoint, fmi2Boolean* enterEventMode, fmi2Boolean* terminateSimulation) {
   ModelInstance *comp = (ModelInstance *)c;
-  threadData_t *threadData = comp->fmuData->threadData;
+  threadData_t *threadData = comp->threadData;
   if (invalidState(comp, "fmi2CompletedIntegratorStep", modelContinuousTimeMode))
     return fmi2Error;
   if (nullPointer(comp, "fmi2CompletedIntegratorStep", "enterEventMode", enterEventMode))
@@ -740,14 +740,14 @@ fmi2Status fmi2CompletedIntegratorStep(fmi2Component c, fmi2Boolean noSetFMUStat
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 
-    comp->fmuData->callback->functionAlgebraics(comp->fmuData);
-    comp->fmuData->callback->output_function(comp->fmuData);
-    comp->fmuData->callback->function_storeDelayed(comp->fmuData);
+    comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
+    comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
+    comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
     storePreValues(comp->fmuData);
     *enterEventMode = fmi2False;
     *terminateSimulation = fmi2False;
     /******** check state selection ********/
-    if (stateSelection(comp->fmuData,1, 0))
+    if (stateSelection(comp->fmuData, comp->threadData, 1, 0))
     {
       /* if new set is calculated reinit the solver */
       *enterEventMode = fmi2True;
@@ -766,12 +766,12 @@ fmi2Status fmi2CompletedIntegratorStep(fmi2Component c, fmi2Boolean noSetFMUStat
   return fmi2Error;
 }
 
-fmi2Status fmi2SetTime(fmi2Component c, fmi2Real time) {
+fmi2Status fmi2SetTime(fmi2Component c, fmi2Real t) {
   ModelInstance *comp = (ModelInstance *)c;
   if (invalidState(comp, "fmi2SetTime", modelInstantiated|modelEventMode|modelContinuousTimeMode))
     return fmi2Error;
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetTime: time=%.16g", time)
-  comp->fmuData->localData[0]->timeValue = time;
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetTime: time=%.16g", t)
+  comp->fmuData->localData[0]->timeValue = t;
   comp->_need_update = 1;
   return fmi2OK;
 }
@@ -805,7 +805,7 @@ fmi2Status fmi2SetContinuousStates(fmi2Component c, const fmi2Real x[], size_t n
 fmi2Status fmi2GetDerivatives(fmi2Component c, fmi2Real derivatives[], size_t nx) {
   int i;
   ModelInstance* comp = (ModelInstance *)c;
-  threadData_t *threadData = comp->fmuData->threadData;
+  threadData_t *threadData = comp->threadData;
   if (invalidState(comp, "fmi2GetDerivatives", modelEventMode|modelContinuousTimeMode|modelTerminated|modelError))
     return fmi2Error;
   if (invalidNumber(comp, "fmi2GetDerivatives", "nx", nx, NUMBER_OF_STATES))
@@ -817,7 +817,7 @@ fmi2Status fmi2GetDerivatives(fmi2Component c, fmi2Real derivatives[], size_t nx
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 
     if (comp->_need_update){
-      comp->fmuData->callback->functionODE(comp->fmuData);
+      comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
       overwriteOldSimulationData(comp->fmuData);
       comp->_need_update = 0;
     }
@@ -841,7 +841,7 @@ fmi2Status fmi2GetDerivatives(fmi2Component c, fmi2Real derivatives[], size_t nx
 fmi2Status fmi2GetEventIndicators(fmi2Component c, fmi2Real eventIndicators[], size_t nx) {
   int i;
   ModelInstance *comp = (ModelInstance *)c;
-  threadData_t *threadData = comp->fmuData->threadData;
+  threadData_t *threadData = comp->threadData;
   /* According to FMI RC2 specification fmi2GetEventIndicators should only be allowed in Event Mode, Continuous-Time Mode & terminated.
    * The following code is done only to make the FMUs compatible with Dymola because Dymola is trying to call fmi2GetEventIndicators after fmi2EnterInitializationMode.
    */
@@ -857,10 +857,10 @@ fmi2Status fmi2GetEventIndicators(fmi2Component c, fmi2Real eventIndicators[], s
 #if NUMBER_OF_EVENT_INDICATORS>0
     /* eval needed equations*/
     if (comp->_need_update){
-      comp->fmuData->callback->functionODE(comp->fmuData);
+      comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
       comp->_need_update = 0;
     }
-    comp->fmuData->callback->function_ZeroCrossings(comp->fmuData,comp->fmuData->simulationInfo.zeroCrossings);
+    comp->fmuData->callback->function_ZeroCrossings(comp->fmuData, comp->threadData, comp->fmuData->simulationInfo.zeroCrossings);
     for (i = 0; i < nx; i++) {
       eventIndicators[i] = comp->fmuData->simulationInfo.zeroCrossings[i];
       FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetEventIndicators: z%d = %.16g", i, eventIndicators[i])

@@ -39,7 +39,7 @@
 
 using namespace std;
 
-string array2string(double* array, int row, int col){
+static string array2string(double* array, int row, int col){
 
   int i=0;
   int j=0;
@@ -61,7 +61,9 @@ string array2string(double* array, int row, int col){
   return retVal.str();
 }
 
-int functionJacA(DATA* data, double* jac){
+extern "C" {
+
+int functionJacA(DATA* data, threadData_t *threadData, double* jac){
 
   const int index = data->callback->INDEX_JAC_A;
   unsigned int i,j,k;
@@ -78,7 +80,7 @@ int functionJacA(DATA* data, double* jac){
       }
     }
 
-    data->callback->functionJacA_column(data);
+    data->callback->functionJacA_column(data, threadData);
 
     for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeRows; j++)
     {
@@ -102,7 +104,7 @@ int functionJacA(DATA* data, double* jac){
 
   return 0;
 }
-int functionJacB(DATA* data, double* jac){
+int functionJacB(DATA* data, threadData_t *threadData, double* jac){
 
   const int index = data->callback->INDEX_JAC_B;
   unsigned int i,j,k;
@@ -119,7 +121,7 @@ int functionJacB(DATA* data, double* jac){
       }
     }
 
-    data->callback->functionJacB_column(data);
+    data->callback->functionJacB_column(data, threadData);
 
     for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeRows; j++)
     {
@@ -142,7 +144,7 @@ int functionJacB(DATA* data, double* jac){
 
   return 0;
 }
-int functionJacC(DATA* data, double* jac){
+int functionJacC(DATA* data, threadData_t *threadData, double* jac){
 
   const int index = data->callback->INDEX_JAC_C;
   unsigned int i,j,k;
@@ -157,7 +159,7 @@ int functionJacC(DATA* data, double* jac){
         infoStreamPrint(LOG_JAC,0,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
     }
 
-    data->callback->functionJacC_column(data);
+    data->callback->functionJacC_column(data, threadData);
 
     for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeRows; j++)
     {
@@ -180,7 +182,7 @@ int functionJacC(DATA* data, double* jac){
 
   return 0;
 }
-int functionJacD(DATA* data, double* jac){
+int functionJacD(DATA* data, threadData_t *threadData, double* jac){
 
   const int index = data->callback->INDEX_JAC_D;
   unsigned int i,j,k;
@@ -196,7 +198,7 @@ int functionJacD(DATA* data, double* jac){
       }
     }
 
-    data->callback->functionJacD_column(data);
+    data->callback->functionJacD_column(data, threadData);
 
     for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeRows; j++)
     {
@@ -222,7 +224,7 @@ int functionJacD(DATA* data, double* jac){
 
 
 
-int linearize(DATA* data)
+int linearize(DATA* data, threadData_t *threadData)
 {
     /* init linearization sizes */
     int size_A = data->modelData.nStates;
@@ -234,32 +236,32 @@ int linearize(DATA* data)
     double* matrixD = (double*)calloc(size_Outputs*size_Inputs,sizeof(double));
     string strA, strB, strC, strD, strX, strU, filename;
 
-    assertStreamPrint(data->threadData,0!=matrixA,"calloc failed");
-    assertStreamPrint(data->threadData,0!=matrixB,"calloc failed");
-    assertStreamPrint(data->threadData,0!=matrixC,"calloc failed");;
-    assertStreamPrint(data->threadData,0!=matrixD,"calloc failed");
+    assertStreamPrint(threadData,0!=matrixA,"calloc failed");
+    assertStreamPrint(threadData,0!=matrixB,"calloc failed");
+    assertStreamPrint(threadData,0!=matrixC,"calloc failed");;
+    assertStreamPrint(threadData,0!=matrixD,"calloc failed");
 
     /* Determine Matrix A */
-    if(!data->callback->initialAnalyticJacobianA(data)){
-      assertStreamPrint(data->threadData,0==functionJacA(data, matrixA),"Error, can not get Matrix A ");
+    if(!data->callback->initialAnalyticJacobianA(data, threadData)){
+      assertStreamPrint(threadData,0==functionJacA(data, threadData, matrixA),"Error, can not get Matrix A ");
     }
     strA = array2string(matrixA,size_A,size_A);
 
     /* Determine Matrix B */
-    if(!data->callback->initialAnalyticJacobianB(data)){
-      assertStreamPrint(data->threadData,0==functionJacB(data, matrixB),"Error, can not get Matrix B ");
+    if(!data->callback->initialAnalyticJacobianB(data, threadData)){
+      assertStreamPrint(threadData,0==functionJacB(data, threadData, matrixB),"Error, can not get Matrix B ");
     }
     strB = array2string(matrixB,size_A,size_Inputs);
 
     /* Determine Matrix C */
-    if(!data->callback->initialAnalyticJacobianC(data)){
-      assertStreamPrint(data->threadData,0==functionJacC(data, matrixC),"Error, can not get Matrix C ");
+    if(!data->callback->initialAnalyticJacobianC(data, threadData)){
+      assertStreamPrint(threadData,0==functionJacC(data, threadData, matrixC),"Error, can not get Matrix C ");
     }
     strC = array2string(matrixC,size_Outputs,size_A);
 
     /* Determine Matrix D */
-    if(!data->callback->initialAnalyticJacobianD(data)){
-      assertStreamPrint(data->threadData,0==functionJacD(data, matrixD),"Error, can not get Matrix D ");
+    if(!data->callback->initialAnalyticJacobianD(data, threadData)){
+      assertStreamPrint(threadData,0==functionJacD(data, threadData, matrixD),"Error, can not get Matrix D ");
     }
     strD = array2string(matrixD,size_Outputs,size_Inputs);
 
@@ -284,7 +286,7 @@ int linearize(DATA* data)
     filename = "linear_" + string(data->modelData.modelName) + ".mo";
 
     FILE *fout = fopen(filename.c_str(),"wb");
-    assertStreamPrint(data->threadData,0!=fout,"Cannot open File %s",filename.c_str());
+    assertStreamPrint(threadData,0!=fout,"Cannot open File %s",filename.c_str());
     fprintf(fout, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
     if(ACTIVE_STREAM(LOG_STATS)) {
       infoStreamPrint(LOG_STATS, 0, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
@@ -295,3 +297,4 @@ int linearize(DATA* data)
     return 0;
 }
 
+}

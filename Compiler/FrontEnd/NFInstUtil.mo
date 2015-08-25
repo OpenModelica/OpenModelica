@@ -1653,7 +1653,7 @@ public import SCode;
 //    case NFInstTypes.SINGLE_CONDITION(condition = cond) then cond;
 //    case NFInstTypes.ARRAY_CONDITION(conditions = condl)
 //      equation
-//        _ = List.selectFirst(condl, conditionFalse);
+//        _ = List.find(condl, conditionFalse);
 //      then
 //        false;
 //
@@ -1673,7 +1673,7 @@ public import SCode;
 //    case NFInstTypes.SINGLE_CONDITION(condition = cond) then not cond;
 //    case NFInstTypes.ARRAY_CONDITION(conditions = condl)
 //      equation
-//        _ = List.selectFirst(condl, conditionTrue);
+//        _ = List.find(condl, conditionTrue);
 //      then
 //        false;
 //

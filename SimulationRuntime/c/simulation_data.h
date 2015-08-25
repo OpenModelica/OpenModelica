@@ -292,13 +292,13 @@ typedef struct NONLINEAR_SYSTEM_DATA
    *
    * if analyticalJacobianColumn == NULL no analyticalJacobian is available
    */
-  int (*analyticalJacobianColumn)(void*);
-  int (*initialAnalyticalJacobian)(void*);
+  int (*analyticalJacobianColumn)(void*, threadData_t*);
+  int (*initialAnalyticalJacobian)(void*, threadData_t*);
   modelica_integer jacobianIndex;
 
-  void (*residualFunc)(void*, const double*, double*, const int*);
-  void (*initializeStaticNLSData)(void*, void*);
-  int (*strictTearingFunctionCall)(struct DATA*);
+  void (*residualFunc)(void**, const double*, double*, const int*);
+  void (*initializeStaticNLSData)(void*, threadData_t *threadData, void*);
+  int (*strictTearingFunctionCall)(struct DATA*, threadData_t *threadData);
 
   void *solverData;
   modelica_real *nlsx;                 /* x */
@@ -317,24 +317,24 @@ typedef struct NONLINEAR_SYSTEM_DATA
   rtclock_t totalTimeClock;             /* time clock for the totalTime  */
 
   void* csvData;                        /* information to save csv data */
-}NONLINEAR_SYSTEM_DATA;
+} NONLINEAR_SYSTEM_DATA;
 
 typedef struct LINEAR_SYSTEM_DATA
 {
   /* set matrix A */
-  void (*setA)(void* data, void* systemData);
+  void (*setA)(void* data, threadData_t *threadData, void* systemData);
   /* set vector b (rhs) */
-  void (*setb)(void* data, void* systemData);
+  void (*setb)(void* data, threadData_t *threadData, void* systemData);
 
-  void (*setAElement)(int row, int col, double value, int nth, void *data);
-  void (*setBElement)(int row, double value, void *data);
+  void (*setAElement)(int row, int col, double value, int nth, void *data, threadData_t *threadData);
+  void (*setBElement)(int row, double value, void *data, threadData_t *threadData);
 
-  int (*analyticalJacobianColumn)(void*);
-  int (*initialAnalyticalJacobian)(void*);
+  int (*analyticalJacobianColumn)(void*, threadData_t*);
+  int (*initialAnalyticalJacobian)(void*, threadData_t*);
   modelica_integer jacobianIndex;
 
-  void (*residualFunc)(void*, const double*, double*, const int*);
-  void (*initializeStaticLSData)(void*, void*);
+  void (*residualFunc)(void**, const double*, double*, const int*);
+  void (*initializeStaticLSData)(void*, threadData_t *threadData, void*);
 
 
   /* attributes of iteration variables */
@@ -401,8 +401,8 @@ typedef struct STATE_SET_DATA
    *
    * if analyticalJacobianColumn == NULL no analyticalJacobian is available
    */
-  int (*analyticalJacobianColumn)(void*);
-  int (*initialAnalyticalJacobian)(void*);
+  int (*analyticalJacobianColumn)(void*, threadData_t*);
+  int (*initialAnalyticalJacobian)(void*, threadData_t*);
   modelica_integer jacobianIndex;
 }STATE_SET_DATA;
 
@@ -612,7 +612,6 @@ typedef struct DATA
   SIMULATION_DATA **localData;
   MODEL_DATA modelData;                /* static stuff */
   SIMULATION_INFO simulationInfo;
-  threadData_t *threadData; /* NOTE: Each thread needs to have its own version of DATA */
   struct OpenModelicaGeneratedFunctionCallbacks *callback;
 } DATA;
 

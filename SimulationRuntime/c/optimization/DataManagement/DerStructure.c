@@ -46,6 +46,7 @@ static inline void copy_JacVars(OptData *optData);
  * author: Vitalij Ruge
  */
 inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* data, OptData *optData){
+  threadData_t *threadData = optData->threadData;
   const int nv = dim->nv;
   const int nsi = dim->nsi;
   const int np = dim->np;
@@ -73,10 +74,10 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
   s->indexABCD[3] = data->callback->INDEX_JAC_C;
   s->indexABCD[4] = data->callback->INDEX_JAC_D;
   s->matrix[0] = (modelica_boolean)0;
-  s->matrix[1] = (modelica_boolean)(data->callback->initialAnalyticJacobianA((void*) data) == 0);
-  s->matrix[2] = (modelica_boolean)(data->callback->initialAnalyticJacobianB((void*) data) == 0);
-  s->matrix[3] = (modelica_boolean)(data->callback->initialAnalyticJacobianC((void*) data) == 0);
-  s->matrix[4] = (modelica_boolean)(data->callback->initialAnalyticJacobianD((void*) data) == 0);
+  s->matrix[1] = (modelica_boolean)(data->callback->initialAnalyticJacobianA((void*) data, threadData) == 0);
+  s->matrix[2] = (modelica_boolean)(data->callback->initialAnalyticJacobianB((void*) data, threadData) == 0);
+  s->matrix[3] = (modelica_boolean)(data->callback->initialAnalyticJacobianC((void*) data, threadData) == 0);
+  s->matrix[4] = (modelica_boolean)(data->callback->initialAnalyticJacobianD((void*) data, threadData) == 0);
 
   dim->nJderx = 0;
   dim->nJfderx = 0;

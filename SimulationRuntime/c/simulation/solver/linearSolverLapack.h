@@ -54,7 +54,7 @@ typedef struct DATA_LAPACK
 
 int allocateLapackData(int size, void **data);
 int freeLapackData(void **data);
-int solveLapack(DATA *data, int sysNumber);
+int solveLapack(DATA *data, threadData_t *threadData, int sysNumber);
 
 #endif
 

@@ -80,7 +80,7 @@ static int calcDataSize(simulation_result *self,const MODEL_DATA *modelData)
   return sz;
 }
 
-void plt_emit(simulation_result *self,DATA *data)
+void plt_emit(simulation_result *self,DATA *data, threadData_t *threadData)
 {
   plt_data *pltData = (plt_data*) self->storage;
   rt_tick(SIM_TIMER_OUTPUT);
@@ -91,7 +91,7 @@ void plt_emit(simulation_result *self,DATA *data)
     /* cerr << "realloc simulationResultData to a size of " << maxPoints * dataSize * sizeof(double) << endl; */
     pltData->simulationResultData = (double*)realloc(pltData->simulationResultData, pltData->maxPoints * pltData->dataSize * sizeof(double));
     if(!pltData->simulationResultData) {
-      throwStreamPrint(data->threadData, "Error allocating simulation result data of size %ld",pltData->maxPoints * pltData->dataSize);
+      throwStreamPrint(threadData, "Error allocating simulation result data of size %ld",pltData->maxPoints * pltData->dataSize);
     }
     add_result(self,data,pltData->simulationResultData,&pltData->actualPoints);
   }
@@ -187,7 +187,7 @@ static void add_result(simulation_result *self,DATA *data,double *data_, long *a
   (*actualPoints)++;
 }
 
-void plt_init(simulation_result *self,DATA *data)
+void plt_init(simulation_result *self,DATA *data, threadData_t *threadData)
 {
   plt_data *pltData = (plt_data*) malloc(sizeof(plt_data));
   rt_tick(SIM_TIMER_OUTPUT);
@@ -200,13 +200,13 @@ void plt_init(simulation_result *self,DATA *data)
   pltData->dataSize = 0;
   pltData->maxPoints = self->numpoints;
 
-  assertStreamPrint(data->threadData, self->numpoints >= 0, "Automatic output steps not supported in OpenModelica yet. Set numpoints >= 0.");
+  assertStreamPrint(threadData, self->numpoints >= 0, "Automatic output steps not supported in OpenModelica yet. Set numpoints >= 0.");
 
   pltData->num_vars = calcDataSize(self,&(data->modelData));
   pltData->dataSize = calcDataSize(self,&(data->modelData));
   pltData->simulationResultData = (double*)malloc(self->numpoints * pltData->dataSize * sizeof(double));
   if(!pltData->simulationResultData) {
-    throwStreamPrint(data->threadData, "Error allocating simulation result data of size %ld failed",self->numpoints * pltData->dataSize);
+    throwStreamPrint(threadData, "Error allocating simulation result data of size %ld failed",self->numpoints * pltData->dataSize);
   }
   pltData->currentPos = 0;
   self->storage = pltData;
@@ -237,7 +237,7 @@ static void printPltLine(FILE* f, double time, double val)
 /*
 * output the result before destroying the datastructure.
 */
-void plt_free(simulation_result *self,DATA *data)
+void plt_free(simulation_result *self,DATA *data, threadData_t *threadData)
 {
   plt_data *pltData = (plt_data*) self->storage;
   const MODEL_DATA *modelData = &(data->modelData);
@@ -250,7 +250,7 @@ void plt_free(simulation_result *self,DATA *data)
   if(!f)
   {
     deallocResult(pltData);
-    throwStreamPrint(data->threadData, "Error, couldn't create output file: [%s] because of %s", self->filename, strerror(errno));
+    throwStreamPrint(threadData, "Error, couldn't create output file: [%s] because of %s", self->filename, strerror(errno));
   }
 
   /* Rather ugly numbers than unneccessary rounding.
@@ -347,7 +347,7 @@ void plt_free(simulation_result *self,DATA *data)
   deallocResult(pltData);
   if(fclose(f))
   {
-    throwStreamPrint(data->threadData, "Error, couldn't write to output file %s\n", self->filename);
+    throwStreamPrint(threadData, "Error, couldn't write to output file %s\n", self->filename);
   }
   free(self->storage);
   self->storage = NULL;

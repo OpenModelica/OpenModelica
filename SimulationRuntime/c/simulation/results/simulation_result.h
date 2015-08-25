@@ -43,10 +43,10 @@ typedef struct simulation_result {
   long numpoints;
   int cpuTime;
   void *storage; /* Internal data used for each storage scheme */
-  void (*init)(struct simulation_result*,DATA*);
-  void (*emit)(struct simulation_result*,DATA*);
-  void (*writeParameterData)(struct simulation_result*,DATA*);
-  void (*free)(struct simulation_result*,DATA*);
+  void (*init)(struct simulation_result*,DATA*,threadData_t *threadData);
+  void (*emit)(struct simulation_result*,DATA*,threadData_t *threadData);
+  void (*writeParameterData)(struct simulation_result*,DATA*,threadData_t *threadData);
+  void (*free)(struct simulation_result*,DATA*,threadData_t *threadData);
 } simulation_result;
 
 extern simulation_result sim_result;

@@ -192,7 +192,6 @@ protected function setClocks
 protected
   BackendDAE.EventInfo eventInfo;
   list<BackendDAE.TimeEvent> timeEvents;
-  list<BackendDAE.WhenClause> whenClauseLst;
   list<BackendDAE.ZeroCrossing> zeroCrossingLst;
   list<BackendDAE.ZeroCrossing> sampleLst;
   list<BackendDAE.ZeroCrossing> relationsLst;
@@ -1436,7 +1435,7 @@ protected function isClockEquation
 algorithm
   out := match inEq
     local
-      DAE.Exp e;
+      DAE.Exp e, message, cond;
       list<list<BackendDAE.Equation>> trueEqs;
       list<BackendDAE.Equation> falseEqs, listEqs;
       BackendDAE.Equation eq;
@@ -1446,7 +1445,11 @@ algorithm
     case BackendDAE.SOLVED_EQUATION(exp = e) then isClockExp(e);
     case BackendDAE.RESIDUAL_EQUATION(exp = e) then isClockExp(e);
     case BackendDAE.ALGORITHM() then false;
-    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(right=e)) then isClockExp(e);
+    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(right=e)})) then isClockExp(e);
+    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.REINIT(value=e)})) then isClockExp(e);
+    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSERT(condition=e, message=message)})) then isClockExp(e) or isClockExp(message);
+    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.TERMINATE(message=message)})) then isClockExp(message);
+    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.NORETCALL(exp=e)})) then isClockExp(e);
     case BackendDAE.COMPLEX_EQUATION(right = e) then isClockExp(e);
     case BackendDAE.IF_EQUATION(eqnstrue = trueEqs, eqnsfalse = falseEqs)
       algorithm

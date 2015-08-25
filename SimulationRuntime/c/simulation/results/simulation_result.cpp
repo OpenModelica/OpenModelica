@@ -32,7 +32,7 @@
 
 extern "C" {
 
-static void sim_result_doNothing(simulation_result* self, DATA *data)
+static void sim_result_doNothing(simulation_result* self, DATA *data, threadData_t *threadData)
 {
   /* Do nothing */
 }
