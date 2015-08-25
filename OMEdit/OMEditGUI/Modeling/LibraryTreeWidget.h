@@ -185,11 +185,9 @@ public:
   QModelIndex parent(const QModelIndex & index) const;
   QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
   Qt::ItemFlags flags(const QModelIndex &index) const;
-  LibraryTreeItem* findLibraryTreeItem(const QString &name, LibraryTreeItem *root = 0) const;
+  LibraryTreeItem* findLibraryTreeItem(const QString &name, LibraryTreeItem *root = 0, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   LibraryTreeItem* findLibraryTreeItem(const QRegExp &regExp, LibraryTreeItem *root = 0) const;
   QModelIndex libraryTreeItemIndex(const LibraryTreeItem *pLibraryTreeItem) const;
-  QModelIndex libraryTreeItemIndexHelper(const LibraryTreeItem *pLibraryTreeItem, const LibraryTreeItem *pParentLibraryTreeItem,
-                                           const QModelIndex &parentIndex) const;
   void addModelicaLibraries(QSplashScreen *pSplashScreen);
   void createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true);
@@ -206,14 +204,16 @@ public:
   void showModelWidget(LibraryTreeItem *pLibraryTreeItem, QString text = QString(), bool show = true, bool newModel = false);
   void showHideProtectedClasses();
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
-  void unloadClassChildren(LibraryTreeItem *pParentLibraryTreeItem);
   bool unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   QString getUniqueTopLevelItemName(QString name, int number = 1);
 private:
   LibraryWidget *mpLibraryWidget;
   LibraryTreeItem *mpRootLibraryTreeItem;
+  QModelIndex libraryTreeItemIndexHelper(const LibraryTreeItem *pLibraryTreeItem, const LibraryTreeItem *pParentLibraryTreeItem,
+                                         const QModelIndex &parentIndex) const;
   LibraryTreeItem* getLibraryTreeItemFromFileHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName, int lineNumber);
   void unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
+  void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem);
 protected:
   Qt::DropActions supportedDropActions() const;
 };
