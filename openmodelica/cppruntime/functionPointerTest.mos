@@ -16,9 +16,10 @@ package FunctionPointer
   function func
     input Real u;
     input Real v;
+    input Integer[:] w;
     output Real y;
   algorithm
-    y := u + v;
+    y := u + v + sum(w);
   end func;
 
   function feval
@@ -34,14 +35,14 @@ package FunctionPointer
     input Real u;
     output Real y;
   algorithm
-    y := f(u) + feval(function func(v = u), u);
+    y := f(u) + feval(function func(v = u, w = {integer(u)}), u);
   end feval2;
 
   model Test
     input Real u = 0; // prevent presolving
     Real y;
   equation
-    y = feval2(function func(v = 2), u + 1);
+    y = feval2(function func(v = 1, w = {2, 3}), u + 4);
   end Test;
 end FunctionPointer;
 ");
@@ -61,6 +62,6 @@ getErrorString();
 // simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'FunctionPointer.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 // messages = ""
 // end SimulationResult;
-// 5.0
+// 22.0
 // ""
 // endResult
