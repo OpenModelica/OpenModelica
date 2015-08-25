@@ -12403,9 +12403,9 @@ template initialAnalyticJacobians(Integer indexJacobian, list<JacobianColumn> ja
           let type = getConfigString(MATRIX_FORMAT)
           let matrixinit =  match type
           case ("dense") then
-            'ublas::zero_matrix<double> (<%index_%>,<%indexColumn%>)'
+            'ublas::zero_matrix<double> (<%indexColumn%>,<%index_%>)'
           case ("sparse") then
-            '<%index_%>,<%indexColumn%>,<%sp_size_index%>'
+            '<%indexColumn%>,<%index_%>,<%sp_size_index%>'
           else "A matrix type is not supported"
           end match
           <<
