@@ -1186,7 +1186,7 @@ void LibraryTreeModel::showHideProtectedClasses()
 
 /*!
  * \brief LibraryTreeModel::unloadClass
- * unloads/deletes the Modelica class.
+ * Unloads/deletes the Modelica class.
  * \param pLibraryTreeItem
  * \param askQuestion
  * \return
@@ -1254,10 +1254,16 @@ void LibraryTreeModel::unloadClassChildren(LibraryTreeItem *pParentLibraryTreeIt
   }
 }
 
-bool LibraryTreeModel::unloadTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
+/*!
+ * \brief LibraryTreeModel::unloadTLMOrTextFile
+ * Unloads/deletes the TLM/Text class.
+ * \param pLibraryTreeItem
+ * \param askQuestion
+ * \return
+ */
+bool LibraryTreeModel::unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
 {
-  if (askQuestion)
-  {
+  if (askQuestion) {
     QMessageBox *pMessageBox = new QMessageBox(mpLibraryWidget->getMainWindow());
     pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
     pMessageBox->setIcon(QMessageBox::Question);
@@ -1266,8 +1272,7 @@ bool LibraryTreeModel::unloadTextFile(LibraryTreeItem *pLibraryTreeItem, bool as
     pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     pMessageBox->setDefaultButton(QMessageBox::Yes);
     int answer = pMessageBox->exec();
-    switch (answer)
-    {
+    switch (answer) {
       case QMessageBox::Yes:
         // Yes was clicked. Don't return.
         break;
@@ -1279,36 +1284,22 @@ bool LibraryTreeModel::unloadTextFile(LibraryTreeItem *pLibraryTreeItem, bool as
         return false;
     }
   }
-//  mpLibraryWidget->unloadLibraryTreeItemAndModelWidget(pLibraryTreeItem);
-  return true;
-}
-
-bool LibraryTreeModel::unloadTLMFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
-{
-  if (askQuestion)
-  {
-    QMessageBox *pMessageBox = new QMessageBox(mpLibraryWidget->getMainWindow());
-    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
-    pMessageBox->setIcon(QMessageBox::Question);
-    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::DELETE_TEXT_FILE_MSG).arg(pLibraryTreeItem->getNameStructure()));
-    pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    pMessageBox->setDefaultButton(QMessageBox::Yes);
-    int answer = pMessageBox->exec();
-    switch (answer)
-    {
-      case QMessageBox::Yes:
-        // Yes was clicked. Don't return.
-        break;
-      case QMessageBox::No:
-        // No was clicked. Return
-        return false;
-      default:
-        // should never be reached
-        return false;
+  /* remove the ModelWidget of LibraryTreeItem and remove the QMdiSubWindow from MdiArea and delete it. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    QMdiSubWindow *pMdiSubWindow = mpLibraryWidget->getMainWindow()->getModelWidgetContainer()->getMdiSubWindow(pLibraryTreeItem->getModelWidget());
+    if (pMdiSubWindow) {
+      pMdiSubWindow->close();
+      pMdiSubWindow->deleteLater();
     }
+    pLibraryTreeItem->getModelWidget()->deleteLater();
   }
-//  mpLibraryWidget->unloadLibraryTreeItemAndModelWidget(pLibraryTreeItem);
+  // remove the LibraryTreeItem from Libraries Browser
+  int row = pLibraryTreeItem->row();
+  beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem), row, row);
+  pLibraryTreeItem->removeChildren();
+  mpRootLibraryTreeItem->removeChild(pLibraryTreeItem);
+  delete pLibraryTreeItem;
+  endRemoveRows();
   return true;
 }
 
@@ -1466,14 +1457,10 @@ void LibraryTreeView::createActions()
   mpUnloadClassAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
   mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
   connect(mpUnloadClassAction, SIGNAL(triggered()), SLOT(unloadClass()));
-  // unload text file Action
-  mpUnloadTextFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
-  mpUnloadTextFileAction->setStatusTip(Helper::unloadClassTip);
-  connect(mpUnloadTextFileAction, SIGNAL(triggered()), SLOT(unloadTextFile()));
-  // unload xml file Action
+  // unload TLM/Text file Action
   mpUnloadTLMFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
-  mpUnloadTLMFileAction->setStatusTip(Helper::unloadXMLTip);
-  connect(mpUnloadTLMFileAction, SIGNAL(triggered()), SLOT(unloadTLMFile()));
+  mpUnloadTLMFileAction->setStatusTip(Helper::unloadTLMOrTextTip);
+  connect(mpUnloadTLMFileAction, SIGNAL(triggered()), SLOT(unloadTLMOrTextFile()));
   /*
   // refresh Action
   mpRefreshAction = new QAction(QIcon(":/Resources/icons/refresh.svg"), Helper::refresh, this);
@@ -1612,7 +1599,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
         menu.addAction(mpExportFigaroAction);
         break;
       case LibraryTreeItem::Text:
-        menu.addAction(mpUnloadTextFileAction);
+        menu.addAction(mpUnloadTLMFileAction);
         break;
       case LibraryTreeItem::TLM:
         menu.addAction(mpFetchInterfaceDataAction);
@@ -1774,26 +1761,14 @@ void LibraryTreeView::unloadClass()
 }
 
 /*!
- * \brief LibraryTreeView::unloadTextFile
- * Unloads/Deletes the Text LibraryTreeItem.
+ * \brief LibraryTreeView::unloadTLMOrTextFile
+ * Unloads/Deletes the TLM/Text LibraryTreeItem.
  */
-void LibraryTreeView::unloadTextFile()
+void LibraryTreeView::unloadTLMOrTextFile()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getLibraryTreeModel()->unloadTextFile(pLibraryTreeItem);
-  }
-}
-
-/*!
- * \brief LibraryTreeView::unloadTLMFile
- * Unloads/Deletes the TLM LibraryTreeItem.
- */
-void LibraryTreeView::unloadTLMFile()
-{
-  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
-  if (pLibraryTreeItem) {
-    mpLibraryWidget->getLibraryTreeModel()->unloadTLMFile(pLibraryTreeItem);
+    mpLibraryWidget->getLibraryTreeModel()->unloadTLMOrTextFile(pLibraryTreeItem);
   }
 }
 
@@ -1959,11 +1934,8 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
   }
   if (fileInfo.suffix().compare("mo") == 0) {
     openModelicaFile(fileName, encoding, showProgress);
-  } else if (fileInfo.suffix().compare("xml") == 0) {
-    openTLMFile(fileInfo, showProgress);
   } else {
-    QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
-                             .arg(tr("Unable to open the file, unknown file type.")), Helper::ok);
+    openTLMOrTextFile(fileInfo, showProgress);
   }
 }
 
@@ -2041,7 +2013,7 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
   if (showProgress) mpMainWindow->getStatusBar()->clearMessage();
 }
 
-void LibraryWidget::openTLMFile(QFileInfo fileInfo, bool showProgress)
+void LibraryWidget::openTLMOrTextFile(QFileInfo fileInfo, bool showProgress)
 {
   if (showProgress) mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
   // check if the file is already loaded.
@@ -2061,12 +2033,18 @@ void LibraryWidget::openTLMFile(QFileInfo fileInfo, bool showProgress)
       return;
     }
   }
-  // create a LibraryTreeItem for new loaded TLM file.
-  LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::TLM, fileInfo.completeBaseName(), true);
+  // create a LibraryTreeItem for new loaded file.
+  LibraryTreeItem *pLibraryTreeItem = 0;
+  if (fileInfo.suffix().compare("xml") == 0) {
+    pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::TLM, fileInfo.completeBaseName(), true);
+  } else {
+    pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.completeBaseName(), true);
+  }
   if (pLibraryTreeItem) {
     pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveInOneFile);
     pLibraryTreeItem->setIsSaved(true);
     pLibraryTreeItem->setFileName(fileInfo.absoluteFilePath());
+    mpLibraryTreeModel->readLibraryTreeItemClassText(pLibraryTreeItem);
     mpMainWindow->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
   }
   if (showProgress) mpMainWindow->getStatusBar()->clearMessage();

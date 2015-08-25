@@ -2875,11 +2875,20 @@ void ModelWidget::refresh()
   QApplication::restoreOverrideCursor();
 }
 
-bool ModelWidget::validateModelicaText()
+/*!
+ * \brief ModelWidget::validateText
+ * Validates the text of the editor.
+ * \return Returns true if validation is successful otherwise return false.
+ */
+bool ModelWidget::validateText()
 {
   ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpEditor);
   if (pModelicaTextEditor) {
     return pModelicaTextEditor->validateText();
+  }
+  TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpEditor);
+  if (pTLMEditor) {
+    return pTLMEditor->validateMetaModelText();
   }
   return false;
 }
@@ -2961,8 +2970,7 @@ void ModelWidget::showIconView(bool checked)
 {
   // validate the modelica text before switching to icon view
   if (checked) {
-    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpEditor);
-    if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
+    if (!validateText()) {
       mpTextViewToolButton->setChecked(true);
       return;
     }
@@ -2991,12 +2999,7 @@ void ModelWidget::showDiagramView(bool checked)
 {
   // validate the modelica text before switching to diagram view
   if (checked) {
-    if (!validateModelicaText()) {
-      mpTextViewToolButton->setChecked(true);
-      return;
-    }
-    TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpEditor);
-    if (pTLMEditor && !pTLMEditor->validateMetaModelText()) {
+    if (!validateText()) {
       mpTextViewToolButton->setChecked(true);
       return;
     }
@@ -3388,7 +3391,7 @@ void ModelWidgetContainer::loadPreviousViewType(ModelWidget *pModelWidget)
 void ModelWidgetContainer::saveModelicaModelWidget(ModelWidget *pModelWidget)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
-  if (!pModelWidget->validateModelicaText()) {
+  if (!pModelWidget->validateText()) {
     return;
   }
   mpMainWindow->getLibraryWidget()->saveLibraryTreeItem(pModelWidget->getLibraryTreeItem());
@@ -3537,7 +3540,7 @@ void ModelWidgetContainer::saveTotalModelWidget()
     return;
   }
   /* if Modelica text is changed manually by user then validate it before saving. */
-  if (!pModelWidget->validateModelicaText()) {
+  if (!pModelWidget->validateText()) {
     return;
   }
   /* save total model */

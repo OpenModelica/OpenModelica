@@ -1373,13 +1373,7 @@ void MainWindow::loadExternalModels()
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
     } else {
-      QFileInfo fileInfo(file);
-      LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.completeBaseName(), true);
-      if (pLibraryTreeItem) {
-        pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveInOneFile);
-        pLibraryTreeItem->setIsSaved(true);
-        pLibraryTreeItem->setFileName(fileInfo.absoluteFilePath());
-      }
+      mpLibraryWidget->openFile(file, Helper::utf8, false);
     }
   }
   mpStatusBar->clearMessage();
