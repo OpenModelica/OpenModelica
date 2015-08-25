@@ -1841,7 +1841,7 @@ case var as VARIABLE(__) then
     let &preExp = buffer ""
     let params = (arr.array |> e hasindex i1 fromindex 1 =>
       let prefix = if arr.scalar then '(<%expTypeFromExpModelica(e)%>)' else '&'
-      '(*((<%rec_name%>*)generic_array_element_addr(&<%varName%>, sizeof(<%rec_name%>), 1, <%i1%>))) = <%prefix%><%daeExp(e, contextFunction, &preExp, &varDecls, &auxFunction)%>;'
+      '(*((<%rec_name%>*)generic_array_element_addr1(&<%varName%>, sizeof(<%rec_name%>), <%i1%>))) = <%prefix%><%daeExp(e, contextFunction, &preExp, &varDecls, &auxFunction)%>;'
     ;separator="\n")
     <<
     <%preExp%>
@@ -4520,7 +4520,7 @@ template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
                     >>
                   else
                     <<
-                    (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
+                    (*<%arrayType%>_element_addr<%match listLength(crefSubs(cr)) case 1 case 2 then dimsLenStr%>(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
                     >>
               case PARALLEL_FUNCTION_CONTEXT(__) then
                 <<
@@ -4570,7 +4570,7 @@ template arrayScalarRhs(Type ty, list<Exp> subs, String arrName, Context context
           >>
         else
           <<
-          (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
+          (*<%arrayType%>_element_addr<%if intLt(listLength(subs), 3) then listLength(subs)%>(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
           >>
 end arrayScalarRhs;
 
@@ -4658,7 +4658,7 @@ template daeExpCrefLhsFunContext(Exp ecr, Context context, Text &preExp,
                >>
            case FUNCTION_CONTEXT(__) then
                <<
-               (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
+               (*<%arrayType%>_element_addr<%if intLt(listLength(crefSubs(cr)),3) then dimsLenStr%>(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
                >>
            else
              error(sourceInfo(),'This should have been handled in the new daeExpCrefLhsSimContext function. <%printExpStr(ecr)%>')
@@ -5774,7 +5774,7 @@ case ARRAY(array = array, scalar = scalar, ty = T_ARRAY(ty = t as T_COMPLEX(__))
   let &preExp += '<%\n%>alloc_generic_array(&<%arrayVar%>, sizeof(<%rec_name%>), 1, <%listLength(array)%>);<%\n%>'
   let params = (array |> e hasindex i1 fromindex 1 =>
       let prefix = if scalar then '(<%expTypeFromExpModelica(e)%>)' else '&'
-      '(*((<%rec_name%>*)generic_array_element_addr(&<%arrayVar%>, sizeof(<%rec_name%>), 1, <%i1%>))) = <%prefix%><%daeExp(e, context, &preExp, &varDecls, &auxFunction)%>;'
+      '(*((<%rec_name%>*)generic_array_element_addr1(&<%arrayVar%>, sizeof(<%rec_name%>), <%i1%>))) = <%prefix%><%daeExp(e, context, &preExp, &varDecls, &auxFunction)%>;'
       ;separator="\n")
   let &preExp += '<%params%><%\n%>'
   arrayVar
@@ -6140,7 +6140,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       match typeof(r.expr)
         case T_COMPLEX(complexClassType = record_state) then
           let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
-          '*((<%rec_name%>*)generic_array_element_addr(&<%res%>, sizeof(<%rec_name%>), 1, <%arrIndex%>++)) = <%reductionBodyExpr%>;'
+          '*((<%rec_name%>*)generic_array_element_addr1(&<%res%>, sizeof(<%rec_name%>), <%arrIndex%>++)) = <%reductionBodyExpr%>;'
         case T_ARRAY(__) then
           let tmp = tempDecl("index_spec_t", &varDecls)
           let nridx_str = intAdd(1,listLength(dims))
@@ -6213,7 +6213,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       let addr = match iter.ty
         case T_ARRAY(ty=T_COMPLEX(complexClassType = record_state)) then
           let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
-          '*((<%rec_name%>*)generic_array_element_addr(&<%loopVar%>, sizeof(<%rec_name%>), 1, <%firstIndex%>++))'
+          '*((<%rec_name%>*)generic_array_element_addr1(&<%loopVar%>, sizeof(<%rec_name%>), <%firstIndex%>++))'
         else
           '*(<%arrayType%>_element_addr1(&<%loopVar%>, 1, <%firstIndex%>++))'
       <<

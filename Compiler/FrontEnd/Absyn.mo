@@ -5401,16 +5401,18 @@ protected
   list<ClassPart> class_parts;
 algorithm
   CLASS(body = PARTS(classParts = class_parts)) := inCls;
-  outExternal := List.find(class_parts, getExternalFromClassPart);
+  outExternal := List.find(class_parts, isExternalPart);
 end getExternalDecl;
 
-protected function getExternalFromClassPart
+protected function isExternalPart
   input ClassPart inClassPart;
-  output ClassPart outExternal;
+  output Boolean outFound;
 algorithm
-  EXTERNAL() := inClassPart;
-  outExternal := inClassPart;
-end getExternalFromClassPart;
+  outFound := match inClassPart
+    case EXTERNAL() then true;
+    else false;
+  end match;
+end isExternalPart;
 
 public function isParts
   input ClassDef cl;

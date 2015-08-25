@@ -15278,7 +15278,7 @@ protected
   list<Absyn.Class> classes;
 algorithm
   Absyn.PROGRAM(classes=classes) := inProgram;
-  cl := List.selectFirst1(classes,getClassInProgramWork,inString);
+  cl := List.find1(classes,getClassInProgramWork,inString);
 end getClassInProgram;
 
 protected function getClassInProgramWork

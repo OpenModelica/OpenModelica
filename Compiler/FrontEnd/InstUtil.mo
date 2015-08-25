@@ -214,7 +214,7 @@ algorithm
         //print(" Ceval res: ("+stringDelimitList(List.map(valList,ValuesUtil.printValStr),",")+")\n");
 
         blist = List.map(valList,ValuesUtil.valueBool);
-        selectedBranch = List.selectFirstBoolList(blist, tbs, fb);
+        selectedBranch = List.findBoolList(blist, tbs, fb);
         selectedBranch = makeDAEElementInitial(selectedBranch);
       then listAppend(selectedBranch,acc);
     else elem::acc;
@@ -2014,14 +2014,14 @@ algorithm
     case (exp as Absyn.CREF(componentRef = cref), (all_el, stack, accum_el, b))
       equation
         id = Absyn.crefFirstIdent(cref);
-        e = List.selectFirst1(all_el, isElementNamed, id);
+        e = List.find1(all_el, isElementNamed, id);
       then
         (exp, (all_el, stack, e :: accum_el, b));
 
     case (exp as Absyn.CALL(function_ = cref), (all_el, stack, accum_el, b))
       equation
         id = Absyn.crefFirstIdent(cref);
-        e = List.selectFirst1(all_el, isElementNamed, id);
+        e = List.find1(all_el, isElementNamed, id);
       then
         (exp, (all_el, stack, e :: accum_el, b));
 

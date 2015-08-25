@@ -535,7 +535,7 @@ protected
 algorithm
   DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path)) := ty;
   name := Absyn.pathStringUnquoteReplaceDot(path, "_");
-  decl := List.selectFirst1(allDecls, isRecordDecl, name);
+  decl := List.find1(allDecls, isRecordDecl, name);
 end getRecordDependenciesFromType;
 
 protected function isRecordDecl
@@ -1042,11 +1042,11 @@ algorithm
       list<SimCode.Variable> inVars;
     case (_, SimCode.FUNCTION(functionArguments = inVars))
       equation
-        failure(_ = List.selectFirst(inVars, isFunctionPtr));
+        failure(_ = List.find(inVars, isFunctionPtr));
       then ();
     case (_, SimCode.EXTERNAL_FUNCTION(inVars = inVars))
       equation
-        failure(_ = List.selectFirst(inVars, isFunctionPtr));
+        failure(_ = List.find(inVars, isFunctionPtr));
       then ();
     else
       equation
