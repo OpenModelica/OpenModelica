@@ -1501,3 +1501,36 @@ QString StringHandler::toCamelCase(QString str)
   s[0] = s[0].toLower();
   return s;
 }
+
+/*!
+ * \brief StringHandler::getTrailingSpacesSize
+ * \param str
+ * \return the number of trailing spaces in a string.
+ */
+int StringHandler::getTrailingSpacesSize(QString str)
+{
+  int i = 0;
+  while (i < str.size()) {
+    if (!str.at(i).isSpace()) {
+      break;
+    }
+    i++;
+  }
+  return i;
+}
+
+/*!
+ * \brief StringHandler::isFileWritAble
+ * Checks if file is writable or not.
+ * \param filePath
+ * \return
+ */
+bool StringHandler::isFileWritAble(QString filePath)
+{
+  QFile file(filePath);
+  if (file.exists()) {
+    return file.permissions().testFlag(QFile::WriteUser);
+  } else {
+    return true;
+  }
+}

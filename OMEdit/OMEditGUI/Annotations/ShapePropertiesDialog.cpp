@@ -436,7 +436,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpApplyButton = new QPushButton(Helper::apply);
   mpApplyButton->setAutoDefault(false);
   connect(mpApplyButton, SIGNAL(clicked()), this, SLOT(applyShapeProperties()));
-  if (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() || mpShapeAnnotation->isInheritedShape())
+  if (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() || mpShapeAnnotation->isInheritedShape())
   {
     mpOkButton->setDisabled(true);
     mpApplyButton->setDisabled(true);
@@ -798,7 +798,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
       {
         QUrl fileUrl(mpFileTextBox->text());
         QFileInfo fileInfo(mpFileTextBox->text());
-        QFileInfo classFileInfo(mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getFileName());
+        QFileInfo classFileInfo(mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getFileName());
         MainWindow *pMainWindow = mpShapeAnnotation->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow();
         /* if its a modelica:// link then make it absolute path */
         QString fileName;
@@ -821,14 +821,14 @@ bool ShapePropertiesDialog::applyShapeProperties()
     {
       /* find the class to create a relative path */
       MainWindow *pMainWindow = mpShapeAnnotation->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-      LibraryTreeNode *pLibraryTreeNode;
-      pLibraryTreeNode = mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeNode();
-      pLibraryTreeNode = pMainWindow->getLibraryTreeWidget()->getLibraryTreeNode(StringHandler::getFirstWordBeforeDot(pLibraryTreeNode->getNameStructure()));
+      LibraryTreeItem *pLibraryTreeItem = mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem();
+      QString nameStructure = StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure());
+      pLibraryTreeItem = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(nameStructure);
       /* get the class directory path and use it to get the relative path of the choosen bitmap file */
-      QFileInfo classFileInfo(pLibraryTreeNode->getFileName());
+      QFileInfo classFileInfo(pLibraryTreeItem->getFileName());
       QDir classDirectory = classFileInfo.absoluteDir();
       QString relativeImagePath = classDirectory.relativeFilePath(mpFileTextBox->text());
-      mpShapeAnnotation->setFileName(QString("modelica://").append(pLibraryTreeNode->getNameStructure()).append("/").append(relativeImagePath));
+      mpShapeAnnotation->setFileName(QString("modelica://").append(pLibraryTreeItem->getNameStructure()).append("/").append(relativeImagePath));
       mpShapeAnnotation->setImageSource("");
       mpShapeAnnotation->setImage(mpPreviewImageLabel->pixmap()->toImage());
     }
@@ -876,7 +876,7 @@ void ShapePropertiesDialog::storeImageInModelToggled(bool checked)
   if (!checked)
   {
     MainWindow *pMainWindow = mpBitmapAnnotation->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-    if (mpBitmapAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getFileName().isEmpty())
+    if (mpBitmapAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getFileName().isEmpty())
     {
       if (pMainWindow->getOptionsDialog()->getNotificationsPage()->getSaveModelForBitmapInsertionCheckBox()->isChecked())
       {

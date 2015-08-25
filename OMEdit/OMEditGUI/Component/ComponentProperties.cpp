@@ -510,7 +510,7 @@ QVBoxLayout *ParametersScrollArea::getLayout()
 ComponentParameters::ComponentParameters(Component *pComponent, MainWindow *pMainWindow)
   : QDialog(pMainWindow, Qt::WindowTitleHint)
 {
-  QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure();
+  QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   setWindowTitle(tr("%1 - %2 - %3 in %4").arg(Helper::applicationName).arg(tr("Component Parameters")).arg(pComponent->getName())
                  .arg(className));
   setAttribute(Qt::WA_DeleteOnClose);
@@ -566,7 +566,7 @@ void ComponentParameters::setUpDialog()
   pParametersScrollArea->addGroupBox(pGroupBox);
   mTabsMap.insert("General", mpParametersTabWidget->addTab(pParametersScrollArea, "General"));
   // create parameters tabs and groupboxes
-  QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure();
+  QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   createTabsAndGroupBoxes(mpComponent->getOMCProxy(), className, "", mpComponent->getClassName(), mpComponent->getName());
   // create the parameters controls
   createParameters(mpComponent->getOMCProxy(), className, "", mpComponent->getClassName(), mpComponent->getName(),
@@ -586,7 +586,7 @@ void ComponentParameters::setUpDialog()
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
   connect(mpOkButton, SIGNAL(clicked()), this, SLOT(updateComponentParameters()));
-  if (mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
+  if (mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary())
     mpOkButton->setDisabled(true);
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
@@ -838,7 +838,7 @@ void ComponentParameters::updateComponentParameters()
   bool valueChanged = false;
   bool modifierValueChanged = false;
   foreach (Parameter *pParameter, mParametersList) {
-    QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure();
+    QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
     QString componentModifier = QString(mpComponent->getName()).append(".").append(pParameter->getNameLabel()->text());
     if (pParameter->isValueModified()) {
       valueChanged = true;
@@ -878,7 +878,7 @@ void ComponentParameters::updateComponentParameters()
     foreach (QString modifier, modifiers) {
       modifier = modifier.trimmed();
       if (modifierRegExp.exactMatch(modifier)) {
-        QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure();
+        QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
         QString componentModifier = QString(mpComponent->getName()).append(".").append(modifier.mid(0, modifier.indexOf("(")));
         QString componentModifierValue = modifier.mid(modifier.indexOf("("));
         mpComponent->getOMCProxy()->setComponentModifierValue(className, componentModifier, componentModifierValue);
@@ -892,8 +892,8 @@ void ComponentParameters::updateComponentParameters()
   }
   // if valueChanged is true then set the model modified.
   if (valueChanged) {
-    mpComponent->getGraphicsView()->getModelWidget()->setModelModified();
     mpComponent->getGraphicsView()->getModelWidget()->updateModelicaText();
+    mpComponent->getGraphicsView()->getModelWidget()->setModelModified();
     if (modifierValueChanged) {
       mpComponent->componentParameterHasChanged();
     }
@@ -912,7 +912,7 @@ void ComponentParameters::updateComponentParameters()
 ComponentAttributes::ComponentAttributes(Component *pComponent, MainWindow *pMainWindow)
   : QDialog(pMainWindow, Qt::WindowTitleHint)
 {
-  QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure();
+  QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   setWindowTitle(tr("%1 - %2 - %3 in %4").arg(Helper::applicationName).arg(tr("Component Attributes")).arg(pComponent->getName())
                  .arg(className));
   setAttribute(Qt::WA_DeleteOnClose);
@@ -1015,7 +1015,7 @@ void ComponentAttributes::setUpDialog()
   connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
-  if (mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() || mpComponent->isInheritedComponent()) {
+  if (mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() || mpComponent->isInheritedComponent()) {
     mpOkButton->setDisabled(true);
   }
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
@@ -1042,7 +1042,7 @@ void ComponentAttributes::initializeDialog()
   if (mpComponent->isInheritedComponent()) {
     className = mpComponent->getInheritedClassName();
   } else {
-    className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure();
+    className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   }
   /* get the components of the class */
   QList<ComponentInfo*> componentInfoList = mpComponent->getOMCProxy()->getComponents(className);
@@ -1111,7 +1111,7 @@ void ComponentAttributes::updateComponentAttributes()
       return;
     }
   }
-  QString modelName = pModelWidget->getLibraryTreeNode()->getNameStructure();
+  QString modelName = pModelWidget->getLibraryTreeItem()->getNameStructure();
   QString isFinal = mpFinalCheckBox->isChecked() ? "true" : "false";
   QString isProtected = mpProtectedCheckBox->isChecked() ? "true" : "false";
   QString isReplaceAble = mpReplaceAbleCheckBox->isChecked() ? "true" : "false";
@@ -1173,8 +1173,8 @@ void ComponentAttributes::updateComponentAttributes()
       pOMCProxy->printMessagesStringInternal();
     }
   }
-  mpComponent->getGraphicsView()->getModelWidget()->setModelModified();
   mpComponent->getGraphicsView()->getModelWidget()->updateModelicaText();
+  mpComponent->getGraphicsView()->getModelWidget()->setModelModified();
   accept();
 }
 

@@ -42,60 +42,35 @@
 #include "StringHandler.h"
 #include "ModelWidgetContainer.h"
 
-LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, LibraryTreeWidget *pParent)
+LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, LibraryWidget *pLibraryWidget)
   : QDialog(0, Qt::WindowTitleHint)
 {
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(title));
   resize(250, 500);
   mpLineEdit = pLineEdit;
-  mpLibraryTreeWidget = pParent;
-  mpFindClassTextBox = new QLineEdit;
-  mpFindClassTextBox->setPlaceholderText(Helper::findClasses);
-  connect(mpFindClassTextBox, SIGNAL(textEdited(QString)), SLOT(findModelicaClasses()));
-  connect(mpFindClassTextBox, SIGNAL(returnPressed()), SLOT(useModelicaClass()));
-  mpLibraryBrowseTreeWidget = new QTreeWidget;
-  mpLibraryBrowseTreeWidget->setObjectName("TreeWithBranches");
-  /*! @note: this is needed to hide the icon of the tree item.
-      Since the icons of the tree items are only created when we expand the node. So its better to hide them here.
-    */
-  //mpLibraryBrowseTreeWidget->setIconSize(QSize(0,0));
-  /*! @note: Commented the above line because Qt flush too many warnings if IconSize is 0.
-      We will see icons for the expanded models otherwise default icon is shown. Fair enough!
-    */
-  mpLibraryBrowseTreeWidget->setItemDelegate(new ItemDelegate(mpLibraryBrowseTreeWidget));
-  mpLibraryBrowseTreeWidget->setTextElideMode(Qt::ElideMiddle);
-  mpLibraryBrowseTreeWidget->setHeaderLabel(Helper::libraries);
-  mpLibraryBrowseTreeWidget->setIndentation(Helper::treeIndentation);
-  mpLibraryBrowseTreeWidget->setExpandsOnDoubleClick(false);
-  connect(mpLibraryBrowseTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(useModelicaClass()));
-  for (int i = 0; i < mpLibraryTreeWidget->topLevelItemCount(); i++)
-  {
-    QTreeWidgetItem *pLibraryTreeItem = mpLibraryTreeWidget->topLevelItem(i)->clone();
-    mpLibraryBrowseTreeWidget->addTopLevelItem(pLibraryTreeItem);
-  }
-  // if the text box has some value then expand the tree and select the item accordingly.
-  if (!pLineEdit->text().isEmpty())
-  {
-    QTreeWidgetItemIterator it(mpLibraryBrowseTreeWidget);
-    while (*it)
-    {
-      QTreeWidgetItem *pTreeWidgetItem = dynamic_cast<QTreeWidgetItem*>((*it));
-      if (pTreeWidgetItem->data(0, Qt::UserRole).toString().compare(pLineEdit->text()) == 0)
-      {
-        pTreeWidgetItem->setSelected(true);
-        pTreeWidgetItem->setExpanded(true);
-        // we must expand the parent items of the item we just selected.
-        while (pTreeWidgetItem->parent())
-        {
-          pTreeWidgetItem = pTreeWidgetItem->parent();
-          pTreeWidgetItem->setExpanded(true);
-        }
-        break;
-      }
-      ++it;
-    }
-  }
+  mpLibraryWidget = pLibraryWidget;
+  mpTreeSearchFilters = new TreeSearchFilters(this);
+  mpTreeSearchFilters->getSearchTextBox()->setPlaceholderText(Helper::searchClasses);
+  connect(mpTreeSearchFilters->getSearchTextBox(), SIGNAL(returnPressed()), SLOT(searchClasses()));
+  connect(mpTreeSearchFilters->getSearchTextBox(), SIGNAL(textEdited(QString)), SLOT(searchClasses()));
+  connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), SIGNAL(toggled(bool)), SLOT(searchClasses()));
+  connect(mpTreeSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(searchClasses()));
+  // create the tree
+  mpLibraryTreeView = new QTreeView;
+  mpLibraryTreeView->setObjectName("TreeWithBranches");
+  mpLibraryTreeView->setItemDelegate(new ItemDelegate(this));
+  mpLibraryTreeView->setTextElideMode(Qt::ElideMiddle);
+  mpLibraryTreeView->setIndentation(Helper::treeIndentation);
+  mpLibraryTreeView->setDragEnabled(true);
+  int libraryIconSize = mpLibraryWidget->getMainWindow()->getOptionsDialog()->getGeneralSettingsPage()->getLibraryIconSizeSpinBox()->value();
+  mpLibraryTreeView->setIconSize(QSize(libraryIconSize, libraryIconSize));
+  mpLibraryTreeView->setContextMenuPolicy(Qt::CustomContextMenu);
+  mpLibraryTreeView->setExpandsOnDoubleClick(false);
+  mpLibraryTreeView->setModel(mpLibraryWidget->getLibraryTreeProxyModel());
+  // try to automatically select of user has something in the text box.
+  mpTreeSearchFilters->getSearchTextBox()->setText(mpLineEdit->text());
+  searchClasses();
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -110,80 +85,65 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
   // Create a layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-  pMainLayout->addWidget(mpFindClassTextBox, 0, 0);
-  pMainLayout->addWidget(mpLibraryBrowseTreeWidget, 1, 0);
+  pMainLayout->addWidget(mpTreeSearchFilters, 0, 0);
+  pMainLayout->addWidget(mpLibraryTreeView, 1, 0);
   pMainLayout->addWidget(mpButtonBox, 2, 0, 1, 1, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
-void LibraryBrowseDialog::unHideChildItems(QTreeWidgetItem *pTreeWidgetItem)
+/*!
+ * \brief LibraryBrowseDialog::searchClasses
+ * Searches the classes.
+ */
+void LibraryBrowseDialog::searchClasses()
 {
-  QTreeWidgetItem *pChildItem;
-  for (int i = 0 ; i < pTreeWidgetItem->childCount() ; i++)
-  {
-    pChildItem = pTreeWidgetItem->child(i);
-    pChildItem->setExpanded(true);
-    pChildItem->setHidden(false);
-    if (pChildItem->childCount() > 0)
-      unHideChildItems(pChildItem);
+  mpLibraryTreeView->selectionModel()->clearSelection();
+  QString searchText = mpTreeSearchFilters->getSearchTextBox()->text();
+  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
+  Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
+  QRegExp regExp(searchText, caseSensitivity, syntax);
+  mpLibraryWidget->getLibraryTreeProxyModel()->setFilterRegExp(regExp);
+  QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->index(0, 0);
+  if (proxyIndex.isValid()) {
+    QModelIndex modelIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapToSource(proxyIndex);
+    LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(regExp, static_cast<LibraryTreeItem*>(modelIndex.internalPointer()));
+    if (pLibraryTreeItem) {
+      modelIndex = mpLibraryWidget->getLibraryTreeModel()->libraryTreeItemIndex(pLibraryTreeItem);
+      proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+      mpLibraryTreeView->selectionModel()->select(proxyIndex, QItemSelectionModel::Select);
+      while (proxyIndex.parent().isValid()) {
+        proxyIndex = proxyIndex.parent();
+        mpLibraryTreeView->expand(proxyIndex);
+      }
+    }
   }
 }
 
-void LibraryBrowseDialog::findModelicaClasses()
-{
-  mpLibraryBrowseTreeWidget->clearSelection();
-  mpLibraryBrowseTreeWidget->collapseAll();
-  if (mpFindClassTextBox->text().isEmpty())
-  {
-    QTreeWidgetItemIterator it(mpLibraryBrowseTreeWidget);
-    while (*it)
-    {
-      QTreeWidgetItem *pTreeWidgetItem = dynamic_cast<QTreeWidgetItem*>((*it));
-      pTreeWidgetItem->setHidden(false);
-      ++it;
-    }
-    return;
-  }
-  QList<QTreeWidgetItem*> foundedItemsList;
-  foundedItemsList = mpLibraryBrowseTreeWidget->findItems(mpFindClassTextBox->text(), Qt::MatchContains | Qt::MatchRecursive);
-  // hide all the items first
-  QTreeWidgetItemIterator it(mpLibraryBrowseTreeWidget);
-  while (*it)
-  {
-    QTreeWidgetItem *pTreeWidgetItem = dynamic_cast<QTreeWidgetItem*>((*it));
-    pTreeWidgetItem->setHidden(true);
-    ++it;
-  }
-  // unhide the founded items
-  foreach (QTreeWidgetItem *pTreeWidgetItem, foundedItemsList)
-  {
-    pTreeWidgetItem->setExpanded(true);
-    pTreeWidgetItem->setHidden(false);
-    // if the item has childs then unhide all the child items as well
-    if (pTreeWidgetItem->childCount() > 0)
-      unHideChildItems(pTreeWidgetItem);
-    // we must unhide all the parent items as well
-    while (pTreeWidgetItem->parent())
-    {
-      pTreeWidgetItem = pTreeWidgetItem->parent();
-      pTreeWidgetItem->setExpanded(true);
-      pTreeWidgetItem->setHidden(false);
-    }
-  }
-  // select the first found item.
-  if (!foundedItemsList.isEmpty())
-    foundedItemsList.at(0)->setSelected(true);
-}
-
+/*!
+ * \brief LibraryBrowseDialog::useModelicaClass
+ * Uses the selected Modelica class.
+ */
 void LibraryBrowseDialog::useModelicaClass()
 {
-  QList<QTreeWidgetItem*> selectedTreeWidgetItems = mpLibraryBrowseTreeWidget->selectedItems();
-  if (!selectedTreeWidgetItems.isEmpty())
-  {
-    QTreeWidgetItem *pSelectedTreeWidgetItem = selectedTreeWidgetItems.at(0);
-    mpLineEdit->setText(pSelectedTreeWidgetItem->data(0, Qt::UserRole).toString());
+  const QModelIndexList modelIndexes = mpLibraryTreeView->selectionModel()->selectedIndexes();
+  if (!modelIndexes.isEmpty()) {
+    QModelIndex index = modelIndexes.at(0);
+    index = mpLibraryWidget->getLibraryTreeProxyModel()->mapToSource(index);
+    LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(index.internalPointer());
+    mpLineEdit->setText(pLibraryTreeItem->getNameStructure());
   }
   accept();
+  mpLibraryWidget->searchClasses();
+}
+
+/*!
+ * \brief LibraryBrowseDialog::reject
+ * Re-implmentation of QDialog::reject() slot.
+ */
+void LibraryBrowseDialog::reject()
+{
+  QDialog::reject();
+  mpLibraryWidget->searchClasses();
 }
 
 /*!
@@ -307,13 +267,13 @@ void ModelicaClassDialog::showHideSaveContentsInOneFileCheckBox(QString text)
 
 void ModelicaClassDialog::browseExtendsClass()
 {
-  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Extends Class"), mpExtendsClassTextBox, mpMainWindow->getLibraryTreeWidget());
+  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Extends Class"), mpExtendsClassTextBox, mpMainWindow->getLibraryWidget());
   pLibraryBrowseDialog->exec();
 }
 
 void ModelicaClassDialog::browseParentClass()
 {
-  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Parent Class"), mpParentClassTextBox, mpMainWindow->getLibraryTreeWidget());
+  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Parent Class"), mpParentClassTextBox, mpMainWindow->getLibraryWidget());
   pLibraryBrowseDialog->exec();
 }
 
@@ -345,10 +305,13 @@ void ModelicaClassDialog::createModelicaClass()
     }
   }
   /* if insert in class is system library. */
-  LibraryTreeWidget *pLibraryTreeWidget = mpMainWindow->getLibraryTreeWidget();
-  LibraryTreeNode *pParentLibraryTreeNode = pLibraryTreeWidget->getLibraryTreeNode(mpParentClassTextBox->text());
-  if (pParentLibraryTreeNode) {
-    if (pParentLibraryTreeNode->isSystemLibrary()) {
+  LibraryTreeModel *pLibraryTreeModel = mpMainWindow->getLibraryWidget()->getLibraryTreeModel();
+  LibraryTreeItem *pParentLibraryTreeItem = 0;
+  if (!mpParentClassTextBox->text().isEmpty()) {
+    pParentLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mpParentClassTextBox->text());
+  }
+  if (pParentLibraryTreeItem) {
+    if (pParentLibraryTreeItem->isSystemLibrary()) {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
                               GUIMessages::INSERT_IN_SYSTEM_LIBRARY_NOT_ALLOWED).arg(mpParentClassTextBox->text()), Helper::ok);
       return;
@@ -363,7 +326,7 @@ void ModelicaClassDialog::createModelicaClass()
     parentPackage = QString("in Package '").append(mpParentClassTextBox->text().trimmed()).append("'");
   }
   // Check whether model exists or not.
-  if (mpMainWindow->getOMCProxy()->existClass(model) || mpMainWindow->getLibraryTreeWidget()->getLibraryTreeNode(model)) {
+  if (mpMainWindow->getOMCProxy()->existClass(model) || mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(model)) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
                             GUIMessages::MODEL_ALREADY_EXISTS).arg(mpSpecializationComboBox->currentText()).arg(model)
                           .arg(parentPackage), Helper::ok);
@@ -389,12 +352,20 @@ void ModelicaClassDialog::createModelicaClass()
     }
   }
   //open the new tab in central widget and add the model to library tree.
-  LibraryTreeNode *pLibraryTreeNode;
-  pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(mpNameTextBox->text().trimmed(), mpParentClassTextBox->text().trimmed(), false);
-  if (pLibraryTreeNode) {
-    pLibraryTreeNode->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeNode::SaveInOneFile : LibraryTreeNode::SaveFolderStructure);
-    pLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
-    pLibraryTreeWidget->showModelWidget(pLibraryTreeNode, true, !mpExtendsClassTextBox->text().isEmpty());
+  LibraryTreeItem *pLibraryTreeItem;
+  if (pParentLibraryTreeItem) {
+    pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pParentLibraryTreeItem, false);
+  } else {
+    pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pLibraryTreeModel->getRootLibraryTreeItem(), false);
+  }
+  if (pLibraryTreeItem) {
+    pLibraryTreeItem->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeItem::SaveInOneFile : LibraryTreeItem::SaveFolderStructure);
+    // read the LibraryTreeItem text
+    pLibraryTreeModel->readLibraryTreeItemClassText(pLibraryTreeItem);
+    // load the LibraryTreeItem pixmap
+    pLibraryTreeModel->loadLibraryTreeItemPixmap(pLibraryTreeItem);
+    // show the ModelWidget
+    pLibraryTreeModel->showModelWidget(pLibraryTreeItem, "", true, true);
     accept();
   }
 }
@@ -545,9 +516,9 @@ void OpenModelicaFile::openModelicaFiles(bool convertedToUTF8)
     else
     {
       if (convertedToUTF8)
-        mpMainWindow->getLibraryTreeWidget()->openFile(fileName, Helper::utf8, false);
+        mpMainWindow->getLibraryWidget()->openFile(fileName, Helper::utf8, false);
       else
-        mpMainWindow->getLibraryTreeWidget()->openFile(fileName, mpEncodingComboBox->itemData(mpEncodingComboBox->currentIndex()).toString(), false);
+        mpMainWindow->getLibraryWidget()->openFile(fileName, mpEncodingComboBox->itemData(mpEncodingComboBox->currentIndex()).toString(), false);
     }
   }
   mpMainWindow->getStatusBar()->clearMessage();
@@ -610,7 +581,7 @@ SaveAsClassDialog::SaveAsClassDialog(ModelWidget *pModelWidget, MainWindow *pPar
   setModal(true);
   // Create the name label and text box
   mpNameLabel = new Label(Helper::name);
-  mpNameTextBox = new QLineEdit(pModelWidget->getLibraryTreeNode()->getName());
+  mpNameTextBox = new QLineEdit(pModelWidget->getLibraryTreeItem()->getName());
   // Create the parent package label, text box, browse button
   mpParentPackageLabel = new Label(tr("Insert in class (optional):"));
   mpParentClassComboBox = new QComboBox;
@@ -620,15 +591,14 @@ SaveAsClassDialog::SaveAsClassDialog(ModelWidget *pModelWidget, MainWindow *pPar
   pParentClassComboBoxCompleter->setCaseSensitivity(Qt::CaseSensitive);
   mpParentClassComboBox->setCompleter(pParentClassComboBoxCompleter);
   mpParentClassComboBox->addItem("");
-//  mpParentClassComboBox->addItems(mpMainWindow->getLibraryTreeWidget()->getNonSystemLibraryTreeNodeStringList());
-  int currentIndex = mpParentClassComboBox->findText(pModelWidget->getLibraryTreeNode()->getParentName(), Qt::MatchExactly);
+  int currentIndex = mpParentClassComboBox->findText(pModelWidget->getLibraryTreeItem()->parent()->getNameStructure(), Qt::MatchExactly);
   if (currentIndex > -1)
     mpParentClassComboBox->setCurrentIndex(currentIndex);
   connect(mpParentClassComboBox, SIGNAL(editTextChanged(QString)), SLOT(showHideSaveContentsInOneFileCheckBox(QString)));
   // create save contents of package in one file checkbox
   mpSaveContentsInOneFileCheckBox = new QCheckBox(tr("Save contents in one file"));
   mpSaveContentsInOneFileCheckBox->setChecked(true);
-  if (pModelWidget->getLibraryTreeNode()->getRestriction() == StringHandler::Package && mpParentClassComboBox->currentText().isEmpty())
+  if (pModelWidget->getLibraryTreeItem()->getRestriction() == StringHandler::Package && mpParentClassComboBox->currentText().isEmpty())
     mpSaveContentsInOneFileCheckBox->setVisible(true);
   else
     mpSaveContentsInOneFileCheckBox->setVisible(false);
@@ -666,7 +636,7 @@ QComboBox* SaveAsClassDialog::getParentClassComboBox()
   */
 void SaveAsClassDialog::saveAsModelicaClass()
 {
-  QString type = StringHandler::getModelicaClassType(mpModelWidget->getLibraryTreeNode()->getRestriction());
+  QString type = StringHandler::getModelicaClassType(mpModelWidget->getLibraryTreeItem()->getRestriction());
   if (mpNameTextBox->text().isEmpty())
   {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
@@ -684,11 +654,10 @@ void SaveAsClassDialog::saveAsModelicaClass()
     }
   }
   /* if insert in class is system library. */
-  LibraryTreeWidget *pLibraryTreeWidget = mpMainWindow->getLibraryTreeWidget();
-  LibraryTreeNode *pParentLibraryTreeNode = pLibraryTreeWidget->getLibraryTreeNode(mpParentClassComboBox->currentText());
-  if (pParentLibraryTreeNode)
-  {
-    if (pParentLibraryTreeNode->isSystemLibrary())
+  LibraryTreeModel *pLibraryTreeModel = mpMainWindow->getLibraryWidget()->getLibraryTreeModel();
+  LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mpParentClassComboBox->currentText());
+  if (pParentLibraryTreeItem) {
+    if (pParentLibraryTreeItem->isSystemLibrary())
     {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
                               GUIMessages::INSERT_IN_SYSTEM_LIBRARY_NOT_ALLOWED).arg(mpParentClassComboBox->currentText()), Helper::ok);
@@ -715,11 +684,11 @@ void SaveAsClassDialog::saveAsModelicaClass()
     return;
   }
   // duplicate the model.
-  QString sourceModelText = mpMainWindow->getOMCProxy()->list(mpModelWidget->getLibraryTreeNode()->getNameStructure());
+  QString sourceModelText = mpMainWindow->getOMCProxy()->list(mpModelWidget->getLibraryTreeItem()->getNameStructure());
   QString duplicateModelText = sourceModelText;
   /* remove the starting and ending text strings of the model. */
-  duplicateModelText.remove(0, QString(type.toLower()).append(" ").append(mpModelWidget->getLibraryTreeNode()->getName()).length());
-  QString endString = QString("end ").append(mpModelWidget->getLibraryTreeNode()->getName()).append(";");
+  duplicateModelText.remove(0, QString(type.toLower()).append(" ").append(mpModelWidget->getLibraryTreeItem()->getName()).length());
+  QString endString = QString("end ").append(mpModelWidget->getLibraryTreeItem()->getName()).append(";");
   duplicateModelText.remove(duplicateModelText.lastIndexOf(endString), endString.length());
   /* add the starting and ending text strings. */
   duplicateModelText.prepend(QString(type.toLower()).append(" ").append(mpNameTextBox->text()));
@@ -737,19 +706,28 @@ void SaveAsClassDialog::saveAsModelicaClass()
     return;
   }
   //open the new tab in central widget and add the model to library tree.
-  LibraryTreeNode *pLibraryTreeNode;
-  pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(mpNameTextBox->text(), mpParentClassComboBox->currentText(), false);
-  if (pLibraryTreeNode) {
-    pLibraryTreeNode->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeNode::SaveInOneFile : LibraryTreeNode::SaveFolderStructure);
-    pLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
-    pLibraryTreeWidget->showModelWidget(pLibraryTreeNode);
+  LibraryTreeItem *pLibraryTreeItem;
+  if (pParentLibraryTreeItem) {
+    pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), pParentLibraryTreeItem, false);
+  } else {
+    pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), pLibraryTreeModel->getRootLibraryTreeItem(), false);
+  }
+
+  if (pLibraryTreeItem) {
+    pLibraryTreeItem->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeItem::SaveInOneFile : LibraryTreeItem::SaveFolderStructure);
+    // read the LibraryTreeItem text
+    pLibraryTreeModel->readLibraryTreeItemClassText(pLibraryTreeItem);
+    // load the LibraryTreeItem pixmap
+    pLibraryTreeModel->loadLibraryTreeItemPixmap(pLibraryTreeItem);
+    // show the ModelWidget
+    pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
     accept();
   }
 }
 
 void SaveAsClassDialog::showHideSaveContentsInOneFileCheckBox(QString text)
 {
-  if (text.isEmpty() && mpModelWidget->getLibraryTreeNode()->getRestriction() == StringHandler::Package)
+  if (text.isEmpty() && mpModelWidget->getLibraryTreeItem()->getRestriction() == StringHandler::Package)
     mpSaveContentsInOneFileCheckBox->setVisible(true);
   else
     mpSaveContentsInOneFileCheckBox->setVisible(false);
@@ -765,11 +743,11 @@ void SaveAsClassDialog::showHideSaveContentsInOneFileCheckBox(QString text)
   \param nameStructure - qualified name of Modelica class
   \param pParent - pointer to MainWindow
   */
-DuplicateClassDialog::DuplicateClassDialog(LibraryTreeNode *pLibraryTreeNode, MainWindow *pMainWindow)
-  : QDialog(pMainWindow, Qt::WindowTitleHint), mpLibraryTreeNode(pLibraryTreeNode), mpMainWindow(pMainWindow)
+DuplicateClassDialog::DuplicateClassDialog(LibraryTreeItem *pLibraryTreeItem, MainWindow *pMainWindow)
+  : QDialog(pMainWindow, Qt::WindowTitleHint), mpLibraryTreeItem(pLibraryTreeItem), mpMainWindow(pMainWindow)
 {
   setAttribute(Qt::WA_DeleteOnClose);
-  setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(Helper::duplicate).arg(mpLibraryTreeNode->getNameStructure()));
+  setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(Helper::duplicate).arg(mpLibraryTreeItem->getNameStructure()));
   mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit;
   mpPathLabel = new Label(Helper::path);
@@ -802,7 +780,7 @@ DuplicateClassDialog::DuplicateClassDialog(LibraryTreeNode *pLibraryTreeNode, Ma
 
 void DuplicateClassDialog::browsePath()
 {
-  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Path"), mpPathTextBox, mpMainWindow->getLibraryTreeWidget());
+  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Path"), mpPathTextBox, mpMainWindow->getLibraryWidget());
   pLibraryBrowseDialog->exec();
 }
 
@@ -827,21 +805,30 @@ void DuplicateClassDialog::duplicateClass()
   }
   // check if new class already exists
   QString newClassPath = (mpPathTextBox->text().isEmpty() ? "" : mpPathTextBox->text() + ".") + mpNameTextBox->text();
-  if (mpMainWindow->getOMCProxy()->existClass(newClassPath) || mpMainWindow->getLibraryTreeWidget()->getLibraryTreeNode(newClassPath)) {
+  if (mpMainWindow->getOMCProxy()->existClass(newClassPath) || mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(newClassPath)) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg("class").arg(mpNameTextBox->text())
                           .arg((mpPathTextBox->text().isEmpty() ? "Top Level" : mpPathTextBox->text())), Helper::ok);
     return;
   }
   // if everything is fine then duplicate the class.
-  if (mpMainWindow->getOMCProxy()->copyClass(mpLibraryTreeNode->getNameStructure(), mpNameTextBox->text(), mpPathTextBox->text())) {
-    LibraryTreeWidget *pLibraryTreeWidget = mpMainWindow->getLibraryTreeWidget();
-    LibraryTreeNode *pLibraryTreeNode;
+  if (mpMainWindow->getOMCProxy()->copyClass(mpLibraryTreeItem->getNameStructure(), mpNameTextBox->text(), mpPathTextBox->text())) {
+    LibraryTreeModel *pLibraryTreeModel = mpMainWindow->getLibraryWidget()->getLibraryTreeModel();
+    LibraryTreeItem *pLibraryTreeItem;
     QString className = mpNameTextBox->text().trimmed();
-    pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(className, mpPathTextBox->text().trimmed(), false);
-    if (pLibraryTreeNode) {
-      pLibraryTreeNode->setSaveContentsType(mpLibraryTreeNode->getSaveContentsType());
-      pLibraryTreeWidget->createLibraryTreeNodes(pLibraryTreeNode);
+    LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mpPathTextBox->text().trimmed());
+    if (pParentLibraryTreeItem) {
+      pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(className, pParentLibraryTreeItem, false);
+    } else {
+      pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(className, pLibraryTreeModel->getRootLibraryTreeItem(), false);
+    }
+    if (pLibraryTreeItem) {
+      pLibraryTreeItem->setSaveContentsType(mpLibraryTreeItem->getSaveContentsType());
+      // read the LibraryTreeItem text
+      pLibraryTreeModel->readLibraryTreeItemClassText(pLibraryTreeItem);
+      // load the LibraryTreeItem pixmap
+      pLibraryTreeModel->loadLibraryTreeItemPixmap(pLibraryTreeItem);
+      pLibraryTreeModel->createLibraryTreeItems(pLibraryTreeItem);
     }
   }
   accept();
@@ -1080,7 +1067,7 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
   connect(mpOkButton, SIGNAL(clicked()), SLOT(saveGraphicsViewProperties()));
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary())
     mpOkButton->setDisabled(true);
   mpCancelButton = new QPushButton(Helper::cancel);
   connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
@@ -1196,25 +1183,25 @@ SaveChangesDialog::SaveChangesDialog(MainWindow *pMainWindow)
 bool SaveChangesDialog::getUnsavedClasses()
 {
   bool hasUnsavedClasses = false;
-  foreach (LibraryTreeNode* pLibraryTreeNode, mpMainWindow->getLibraryTreeWidget()->getLibraryTreeNodesList()) {
-    if (!pLibraryTreeNode->isSaved()) {
-      if (pLibraryTreeNode->getParentName().isEmpty()) {
-        hasUnsavedClasses = true;
-        QListWidgetItem *pListItem = new QListWidgetItem(mpUnsavedClassesListWidget);
-        pListItem->setText(pLibraryTreeNode->getNameStructure());
-      } else {
-        LibraryTreeNode *pParentLibraryTreeNode = mpMainWindow->getLibraryTreeWidget()->getLibraryTreeNode(StringHandler::getFirstWordBeforeDot(pLibraryTreeNode->getNameStructure()));
-        if (pParentLibraryTreeNode) {
-          QFileInfo fileInfo(pParentLibraryTreeNode->getFileName());
-          if ((pParentLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveFolderStructure) || (fileInfo.fileName().compare("package.mo") == 0)) {
-            hasUnsavedClasses = true;
-            QListWidgetItem *pListItem = new QListWidgetItem(mpUnsavedClassesListWidget);
-            pListItem->setText(pParentLibraryTreeNode->getNameStructure());
-          }
-        }
-      }
-    }
-  }
+//  foreach (LibraryTreeNode* pLibraryTreeNode, mpMainWindow->getLibraryWidget()->getLibraryTreeNodesList()) {
+//    if (!pLibraryTreeNode->isSaved()) {
+//      if (pLibraryTreeNode->getParentName().isEmpty()) {
+//        hasUnsavedClasses = true;
+//        QListWidgetItem *pListItem = new QListWidgetItem(mpUnsavedClassesListWidget);
+//        pListItem->setText(pLibraryTreeNode->getNameStructure());
+//      } else {
+//        LibraryTreeNode *pParentLibraryTreeNode = mpMainWindow->getLibraryWidget()->getLibraryTreeNode(StringHandler::getFirstWordBeforeDot(pLibraryTreeNode->getNameStructure()));
+//        if (pParentLibraryTreeNode) {
+//          QFileInfo fileInfo(pParentLibraryTreeNode->getFileName());
+//          if ((pParentLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveFolderStructure) || (fileInfo.fileName().compare("package.mo") == 0)) {
+//            hasUnsavedClasses = true;
+//            QListWidgetItem *pListItem = new QListWidgetItem(mpUnsavedClassesListWidget);
+//            pListItem->setText(pParentLibraryTreeNode->getNameStructure());
+//          }
+//        }
+//      }
+//    }
+//  }
   mpUnsavedClassesListWidget->selectAll();
   return hasUnsavedClasses;
 }
@@ -1228,8 +1215,8 @@ void SaveChangesDialog::saveChanges()
   bool saveResult = true;
   for (int i = 0; i < mpUnsavedClassesListWidget->count(); i++) {
     QListWidgetItem *pListItem = mpUnsavedClassesListWidget->item(i);
-    LibraryTreeNode *pLibraryTreeNode = mpMainWindow->getLibraryTreeWidget()->getLibraryTreeNode(pListItem->text());
-    if (!mpMainWindow->getLibraryTreeWidget()->saveLibraryTreeNode(pLibraryTreeNode)) {
+    LibraryTreeItem *pLibraryTreeItem = mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pListItem->text());
+    if (!mpMainWindow->getLibraryWidget()->saveLibraryTreeItem(pLibraryTreeItem)) {
       saveResult = false;
     }
   }
@@ -1258,13 +1245,13 @@ int SaveChangesDialog::exec()
 /*!
   \param pMainWindow - pointer to MainWindow
   */
-ExportFigaroDialog::ExportFigaroDialog(MainWindow *pMainWindow, LibraryTreeNode *pLibraryTreeNode)
+ExportFigaroDialog::ExportFigaroDialog(MainWindow *pMainWindow, LibraryTreeItem *ppLibraryTreeItem)
   : QDialog(pMainWindow, Qt::WindowTitleHint)
 {
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::exportFigaro));
   mpMainWindow = pMainWindow;
-  mpLibraryTreeNode = pLibraryTreeNode;
+  mpLibraryTreeItem = ppLibraryTreeItem;
   // figaro mode
   mpFigaroModeLabel = new Label(tr("Figaro Mode:"));
   mpFigaroModeComboBox = new QComboBox;
@@ -1317,7 +1304,7 @@ void ExportFigaroDialog::exportModelFigaro()
   QString mode = mpFigaroModeComboBox->currentText();
   QString options = pFigaroPage->getFigaroOptionsTextBox()->text();
   QString processor = pFigaroPage->getFigaroProcessTextBox()->text();
-  if (mpMainWindow->getOMCProxy()->exportToFigaro(mpLibraryTreeNode->getNameStructure(), directory, library, mode, options, processor)) {
+  if (mpMainWindow->getOMCProxy()->exportToFigaro(mpLibraryTreeItem->getNameStructure(), directory, library, mode, options, processor)) {
     mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                                  GUIMessages::getMessage(GUIMessages::FIGARO_GENERATED),
                                                                  Helper::scriptingKind, Helper::notificationLevel));

@@ -44,7 +44,7 @@ FetchInterfaceDataThread::FetchInterfaceDataThread(FetchInterfaceDataDialog *pFe
 void FetchInterfaceDataThread::run()
 {
   mpManagerProcess = new QProcess;
-  QFileInfo fileInfo(mpFetchInterfaceDataDialog->getLibraryTreeNode()->getFileName());
+  QFileInfo fileInfo(mpFetchInterfaceDataDialog->getLibraryTreeItem()->getFileName());
   mpManagerProcess->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
   qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
   qRegisterMetaType<StringHandler::SimulationMessageType>("StringHandler::SimulationMessageType");

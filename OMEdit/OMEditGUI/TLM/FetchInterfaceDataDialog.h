@@ -40,13 +40,13 @@ class FetchInterfaceDataDialog : public QDialog
 {
   Q_OBJECT
 public:
-  FetchInterfaceDataDialog(LibraryTreeNode *pLibraryTreeNode, MainWindow *pMainWindow);
+  FetchInterfaceDataDialog(LibraryTreeItem *pLibraryTreeItem, MainWindow *pMainWindow);
   void closeEvent(QCloseEvent *event);
   MainWindow* getMainWindow() {return mpMainWindow;}
-  LibraryTreeNode* getLibraryTreeNode() {return mpLibraryTreeNode;}
+  LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
 private:
   MainWindow *mpMainWindow;
-  LibraryTreeNode *mpLibraryTreeNode;
+  LibraryTreeItem *mpLibraryTreeItem;
   Label *mpProgressLabel;
   QProgressBar *mpProgressBar;
   QPushButton *mpCancelButton;
@@ -61,7 +61,7 @@ public slots:
   void writeManagerOutput(QString output, StringHandler::SimulationMessageType type);
   void managerProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 signals:
-  void readInterfaceData(LibraryTreeNode *pLibraryTreeNode);
+  void readInterfaceData(LibraryTreeItem *pLibraryTreeItem);
 };
 
 #endif // FETCHINTERFACEDATADIALOG_H

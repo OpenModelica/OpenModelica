@@ -236,8 +236,9 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
     /* paint line numbers */
     if (block.isVisible() && bottom >= event->rect().top()) {
       QString number;
-      if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::Modelica) {
-        number = QString::number(blockNumber + mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getClassInformation().lineNumberStart);
+      if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isInPackageOneFile() &&
+          mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+        number = QString::number(blockNumber + mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getClassInformation().lineNumberStart);
       } else {
         number = QString::number(blockNumber + 1);
       }
@@ -295,11 +296,11 @@ void BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
     }
   } else if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonDblClick) {
     /* Do not allow breakpoints if file is not saved. */
-    if (!mpBaseEditor->getModelWidget()->getLibraryTreeNode()->isSaved()) {
+    if (!mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isSaved()) {
       mpBaseEditor->getMainWindow()->getInfoBar()->showMessage(tr("<b>Information: </b>Breakpoints are only allowed on saved classes."));
       return;
     }
-    QString fileName = mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getFileName();
+    QString fileName = mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getFileName();
     int lineNumber = cursor.blockNumber() + 1;
     if (event->button() == Qt::LeftButton) {  //! left clicked: add/remove breakpoint
       toggleBreakpoint(fileName, lineNumber);
@@ -319,8 +320,9 @@ void BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
  */
 void BaseEditor::PlainTextEdit::goToLineNumber(int lineNumber)
 {
-  if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::Modelica) {
-    int lineNumberStart = mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getClassInformation().lineNumberStart;
+  if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isInPackageOneFile() &&
+      mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    int lineNumberStart = mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getClassInformation().lineNumberStart;
     int lineNumberDifferenceFromStart = lineNumberStart - 1;
     lineNumber -= lineNumberDifferenceFromStart;
   }
@@ -436,7 +438,7 @@ void BaseEditor::PlainTextEdit::toggleBreakpoint(const QString fileName, int lin
     /* Add the marker to document marker */
     mpBaseEditor->getDocumentMarker()->addMark(pBreakpointMarker, lineNumber);
     /* insert the breakpoint in BreakpointsWidget */
-    pBreakpointsTreeModel->insertBreakpoint(pBreakpointMarker, mpBaseEditor->getModelWidget()->getLibraryTreeNode(), pBreakpointsTreeModel->getRootBreakpointTreeItem());
+    pBreakpointsTreeModel->insertBreakpoint(pBreakpointMarker, mpBaseEditor->getModelWidget()->getLibraryTreeItem(), pBreakpointsTreeModel->getRootBreakpointTreeItem());
   } else {
     mpBaseEditor->getDocumentMarker()->removeMark(pBreakpointMarker);
     pBreakpointsTreeModel->removeBreakpoint(pBreakpointMarker);
@@ -1121,8 +1123,9 @@ GotoLineDialog::GotoLineDialog(BaseEditor *pBaseEditor)
  */
 int GotoLineDialog::exec()
 {
-  if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::Modelica) {
-    int lineNumberStart = mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getClassInformation().lineNumberStart;
+  if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isInPackageOneFile() &&
+      mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    int lineNumberStart = mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getClassInformation().lineNumberStart;
     mpLineNumberLabel->setText(tr("Enter line number (%1 to %2):").arg(QString::number(lineNumberStart))
                                .arg(QString::number(mpBaseEditor->getPlainTextEdit()->blockCount() + lineNumberStart - 1)));
   } else {
