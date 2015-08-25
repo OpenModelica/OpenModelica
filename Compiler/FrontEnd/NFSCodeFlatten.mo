@@ -75,7 +75,7 @@ protected
   String name;
 algorithm
   prog := listReverse(inProgram);
-  SCode.CLASS(name = name) := List.selectFirst(prog, isClass);
+  SCode.CLASS(name = name) := List.find(prog, isClass);
   outClassName := Absyn.IDENT(name);
 end getLastClassNameInProgram;
 

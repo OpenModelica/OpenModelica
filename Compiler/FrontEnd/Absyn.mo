@@ -5401,7 +5401,7 @@ protected
   list<ClassPart> class_parts;
 algorithm
   CLASS(body = PARTS(classParts = class_parts)) := inCls;
-  outExternal := List.selectFirst(class_parts, isExternalPart);
+  outExternal := List.find(class_parts, isExternalPart);
 end getExternalDecl;
 
 protected function isExternalPart

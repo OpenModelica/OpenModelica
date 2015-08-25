@@ -4408,7 +4408,7 @@ algorithm
          * Exponentation is very expensive compared to the inner expressions.
          */
         ((exp_lst as (_ :: _ :: _ :: _))) = Expression.factors(e1);
-        _ = List.selectFirst(exp_lst,Expression.isConstValue);
+        _ = List.find(exp_lst,Expression.isConstValue);
         exp_lst_1 = simplifyBinaryDistributePow(exp_lst, e2);
       then Expression.makeProductLst(exp_lst_1);
     // (e1^e2)^e3 => e1^(e2*e3)

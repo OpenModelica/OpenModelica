@@ -5265,7 +5265,7 @@ public function select1 = filter1OnTrue;
 public function select1r = filter1rOnTrue;
 public function select2 = filter2OnTrue;
 
-public function selectFirst<T>
+public function find<T>
   "This function retrieves the first element of a list for which the passed
    function evaluates to true."
   input list<T> inList;
@@ -5284,31 +5284,9 @@ algorithm
     end if;
   end for;
   fail();
-end selectFirst;
+end find;
 
-public function selectFirstBoolList<T>
-  "This function returns the first value in the given list for which the
-   corresponding element in the boolean list is true."
-  input list<Boolean> inBooleans;
-  input list<T> inList;
-  input T inFalseValue;
-  output T outElement;
-protected
-  T e;
-  list<T> rest = inList;
-algorithm
-  for b in inBooleans loop
-    e :: rest := rest;
-
-    if b then
-      outElement := e;
-      return;
-    end if;
-  end for;
-  outElement := inFalseValue;
-end selectFirstBoolList;
-
-public function selectFirst1<T, ArgT1>
+public function find1<T, ArgT1>
   "This function retrieves the first element of a list for which the passed
    function evaluates to true."
   input list<T> inList;
@@ -5329,7 +5307,29 @@ algorithm
     end if;
   end for;
   fail();
-end selectFirst1;
+end find1;
+
+public function findBoolList<T>
+  "This function returns the first value in the given list for which the
+   corresponding element in the boolean list is true."
+  input list<Boolean> inBooleans;
+  input list<T> inList;
+  input T inFalseValue;
+  output T outElement;
+protected
+  T e;
+  list<T> rest = inList;
+algorithm
+  for b in inBooleans loop
+    e :: rest := rest;
+
+    if b then
+      outElement := e;
+      return;
+    end if;
+  end for;
+  outElement := inFalseValue;
+end findBoolList;
 
 public function deleteMember<T>
   "Takes a list and a value, and deletes the first occurence of the value in the
@@ -5872,28 +5872,6 @@ algorithm
   outList := {a, b};
 end first2FromTuple3;
 
-public function find<TI, TO>
-  "Takes a list of elements and a map function, and returns the first element
-   that the map function succeeds for."
-  input list<TI> inList;
-  input FindFunc inFindFunc;
-  output TO outElement;
-
-  partial function FindFunc
-    input TI inElement;
-    output TO outElement;
-  end FindFunc;
-algorithm
-  for e in inList loop
-    try
-      outElement := inFindFunc(e);
-      return;
-    else
-    end try;
-  end for;
-  fail();
-end find;
-
 public function findMap<T>
   "Same as map, but stops when it find a certain element as indicated by the
    mapping function. Returns the new list, and whether the element was found or
@@ -6397,6 +6375,30 @@ algorithm
     end if;
   end for;
 end separate1OnTrue;
+
+public function mapFirst<TI, TO>
+  input list<TI> inList;
+  input FindMapFunc inFunc;
+  output TO outElement;
+
+  partial function FindMapFunc
+    input TI inElement;
+    output TO outElement;
+    output Boolean outFound;
+  end FindMapFunc;
+protected
+  Boolean found;
+algorithm
+  for e in inList loop
+    (outElement, found) := inFunc(e);
+
+    if found then
+      return;
+    end if;
+  end for;
+  fail();
+end mapFirst;
+
 
 annotation(__OpenModelica_Interface="util");
 end List;

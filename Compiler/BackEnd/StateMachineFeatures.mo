@@ -352,7 +352,7 @@ algorithm
   bindingKind := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), BackendDAE.NO_LOOP());
 
   R(initialState, refining) := comp;
-  flatA := List.selectFirst1(flatAs, findInitialState, initialState);
+  flatA := List.find1(flatAs, findInitialState, initialState);
   FLAT_AUTOMATON(initialState, states, sms) := flatA;
   preRef := ComponentReference.crefPrefixString(SMS_PRE, initialState);
   nStates := arrayLength(states);
@@ -522,7 +522,7 @@ algorithm
         outLocalEqns :=  BackendDAE.EQUATION(exp, rhs, source, attr) :: outLocalEqns;
 
         // Find variable corresponding to componentRef
-        var := List.selectFirst1(outLocal,cmpVarCref,componentRef);
+        var := List.find1(outLocal,cmpVarCref,componentRef);
 
         // If lhs "x" is a state variable, i.e., "x" appears somewhere in the global equation system as "previous(x)",
         // than substitute all "previous(x)" by a fresh variable "x_previous" which is defined by an equation "x_previous = if resetOfState than initialValueOfX else previous(x)"

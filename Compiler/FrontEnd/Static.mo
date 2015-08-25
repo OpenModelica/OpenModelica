@@ -7925,7 +7925,7 @@ algorithm
 
     case DAE.T_METARECORD(source = {fq_path})
       algorithm
-        DAE.TYPES_VAR(name = str) := List.selectFirst(inType.fields, Types.varHasMetaRecordType);
+        DAE.TYPES_VAR(name = str) := List.find(inType.fields, Types.varHasMetaRecordType);
         fn_str := Absyn.pathString(fq_path);
         Error.addSourceMessage(Error.METARECORD_CONTAINS_METARECORD_MEMBER,
           {fn_str, str}, inInfo);
