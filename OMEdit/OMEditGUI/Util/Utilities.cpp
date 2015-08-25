@@ -85,8 +85,10 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   mpSyntaxComboBox->setItemData(2, tr("Fixed string matching."), Qt::ToolTipRole);
   // expand all button
   mpExpandAllButton = new QPushButton(Helper::expandAll);
+  mpExpandAllButton->setAutoDefault(false);
   // collapse all button
   mpCollapseAllButton = new QPushButton(Helper::collapseAll);
+  mpCollapseAllButton->setAutoDefault(false);
   // create the layout
   QGridLayout *pFiltersWidgetLayout = new QGridLayout;
   pFiltersWidgetLayout->setContentsMargins(0, 0, 0, 0);

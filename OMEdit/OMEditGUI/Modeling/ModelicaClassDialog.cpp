@@ -68,6 +68,8 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
   mpLibraryTreeView->setContextMenuPolicy(Qt::CustomContextMenu);
   mpLibraryTreeView->setExpandsOnDoubleClick(false);
   mpLibraryTreeView->setModel(mpLibraryWidget->getLibraryTreeProxyModel());
+  connect(mpTreeSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpLibraryTreeView, SLOT(expandAll()));
+  connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpLibraryTreeView, SLOT(collapseAll()));
   // try to automatically select of user has something in the text box.
   mpTreeSearchFilters->getSearchTextBox()->setText(mpLineEdit->text());
   searchClasses();
@@ -103,17 +105,20 @@ void LibraryBrowseDialog::searchClasses()
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
   QRegExp regExp(searchText, caseSensitivity, syntax);
   mpLibraryWidget->getLibraryTreeProxyModel()->setFilterRegExp(regExp);
-  QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->index(0, 0);
-  if (proxyIndex.isValid()) {
-    QModelIndex modelIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapToSource(proxyIndex);
-    LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(regExp, static_cast<LibraryTreeItem*>(modelIndex.internalPointer()));
-    if (pLibraryTreeItem) {
-      modelIndex = mpLibraryWidget->getLibraryTreeModel()->libraryTreeItemIndex(pLibraryTreeItem);
-      proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
-      mpLibraryTreeView->selectionModel()->select(proxyIndex, QItemSelectionModel::Select);
-      while (proxyIndex.parent().isValid()) {
-        proxyIndex = proxyIndex.parent();
-        mpLibraryTreeView->expand(proxyIndex);
+  // if we have really searched something
+  if (!searchText.isEmpty()) {
+    QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->index(0, 0);
+    if (proxyIndex.isValid()) {
+      QModelIndex modelIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapToSource(proxyIndex);
+      LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(regExp, static_cast<LibraryTreeItem*>(modelIndex.internalPointer()));
+      if (pLibraryTreeItem) {
+        modelIndex = mpLibraryWidget->getLibraryTreeModel()->libraryTreeItemIndex(pLibraryTreeItem);
+        proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+        mpLibraryTreeView->selectionModel()->select(proxyIndex, QItemSelectionModel::Select);
+        while (proxyIndex.parent().isValid()) {
+          proxyIndex = proxyIndex.parent();
+          mpLibraryTreeView->expand(proxyIndex);
+        }
       }
     }
   }
