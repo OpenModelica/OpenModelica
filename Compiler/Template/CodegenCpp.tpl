@@ -1748,8 +1748,17 @@ match target
 
 case "vxworks69" then
 match simCode
-case SIMCODE(modelInfo = MODELINFO(__), makefileParams = MAKEFILE_PARAMS(__)) then
+case SIMCODE(modelInfo = MODELINFO(__), makefileParams = MAKEFILE_PARAMS(__), simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
 let modelname = identOfPath(modelInfo.name)
+let start     = settings.startTime
+let end       = settings.stopTime
+let stepsize  = settings.stepSize
+let intervals = settings.numberOfIntervals
+let tol       = settings.tolerance
+let solver    = settings.method
+let moLib     = makefileParams.compileDir
+let home      = makefileParams.omhome
+let &includeMeasure = buffer "" /*BUFD*/
 
 <<
 //Includes
@@ -1833,7 +1842,7 @@ extern "C"  void debugSimulation(void)
   double cycletime;
   getMotionCycle(cycletime);
 
-  initSimulation(simController, simData, cycletime);
+  initSimulation(simController, simData, 0.005);
   while(true)
   {
     try
@@ -1932,7 +1941,7 @@ extern "C"  int initSimulation(ISimController* &controller, ISimData* &data, dou
   <%defineOutputVars(simCode)%>
 
   LogSettings logsetting;
-    SimSettings settings = {"RTEuler","","kinsol",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",0,OPT_NONE, logsetting};
+    SimSettings settings = {"RTRK","","kinsol",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",0,OPT_NONE, logsetting};
   //                       Solver,          nonlinearsolver starttime endtime stepsize   lower limit upper limit  tolerance
   try
   {
@@ -2227,15 +2236,15 @@ int _tmain(int argc, const _TCHAR* argv[])
 
     //nur testweise
     std::map<std::string, std::string> opts;
-    opts["-s"] = "0.0";
-    opts["-e"] = "1.0";
-    opts["-f"] = "0.02";
-    opts["-v"] = "50";
-    opts["-y"] = "1e-006";
-    opts["-i"] = "dassl";
-    opts["-r"] = "C:/OpenModelica/build/lib//omc/cpp/msvc";
-    opts["-m"] = "c:/Users/kar2lo/Documents/PentaRobot/PentaRobotLibrary/";
-    opts["-R"] = "c:/Users/kar2lo/Documents/PentaRobot/PentaRobotLibrary//PentaLib.PentaRT_res.csv";
+      opts["-s"] = "<%start%>";
+      opts["-e"] = "<%end%>";
+      opts["-f"] = "<%stepsize%>";
+      opts["-v"] = "<%intervals%>";
+      opts["-y"] = "<%tol%>";
+      opts["-i"] = "<%solver%>";
+      opts["-r"] = "<%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>/msvc";
+      opts["-m"] = "<%moLib%>";
+      opts["-R"] = "<%simulationResults(getRunningTestsuite(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
 
 
 
@@ -2261,7 +2270,7 @@ int _tmain(int argc, const _TCHAR* argv[])
   <%defineOutputVars(simCode)%>
 
   LogSettings logsetting;
-    SimSettings settings = {"RTEuler","","kinsol",        0.0,      100.0,  0.005,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",0,OPT_NONE, logsetting};
+    SimSettings settings = {"RTRK","","kinsol",        0.0,      100.0,  0.005,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",0,OPT_NONE, logsetting};
   //                       Solver,          nonlinearsolver starttime endtime stepsize   lower limit upper limit  tolerance
 
   try
@@ -3361,7 +3370,7 @@ case "vxworks69" then
       CPU = ATOM
       TOOL_FAMILY = gnu
       TOOL = gnu
-      TOOL_PATH =
+      TOOL_PATH = $(WIND_HOME)/gnu/4.3.3-vxworks-6.9/x86-win32/bin/
       CC_ARCH_SPEC = -march=atom -nostdlib -fno-builtin -fno-defer-pop -fno-implicit-fp
       VSB_DIR = $(WIND_BASE)/target/lib
       VSB_CONFIG_FILE = $(VSB_DIR)/h/config/vsbConfig.h
@@ -3427,7 +3436,7 @@ case "vxworks69" then
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : CPU = ATOM
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : TOOL_FAMILY = gnu
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : TOOL = gnu
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : TOOL_PATH =
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : TOOL_PATH = $(WIND_HOME)/gnu/4.3.3-vxworks-6.9/x86-win32/bin/
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : CC_ARCH_SPEC = -march=atom -nostdlib -fno-builtin -fno-defer-pop -fno-implicit-fp
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : VSB_DIR = $(WIND_BASE)/target/lib
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : VSB_CONFIG_FILE = $(VSB_DIR)/h/config/vsbConfig.h
@@ -3479,7 +3488,7 @@ case "vxworks69" then
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : CPU = ATOM
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : TOOL_FAMILY = gnu
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : TOOL = gnu
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : TOOL_PATH =
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : TOOL_PATH = $(WIND_HOME)/gnu/4.3.3-vxworks-6.9/x86-win32/bin/
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : CC_ARCH_SPEC = -march=atom -nostdlib -fno-builtin -fno-defer-pop -fno-implicit-fp
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : VSB_DIR = $(WIND_BASE)/target/lib
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : VSB_CONFIG_FILE = $(VSB_DIR)/h/config/vsbConfig.h
@@ -3487,8 +3496,6 @@ case "vxworks69" then
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : LIBS =
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : OBJ_DIR := com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)
 
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME).o : OMCpp$(MODEL_NAME).cpp $(FORCE_FILE_BUILD)
-      <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
 
 
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain.o : OMCpp$(MODEL_NAME)CalcHelperMain.cpp $(FORCE_FILE_BUILD)
@@ -3499,8 +3506,7 @@ case "vxworks69" then
       <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
 
 
-      OBJECTS_com.boschrexroth.$(MODEL_NAME)_partialImage = com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME).o \
-      <%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain.o \
+      OBJECTS_com.boschrexroth.$(MODEL_NAME)_partialImage = com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain.o \
       <%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)Main.o
 
       ifeq ($(TARGET_JOBS),1)
@@ -3524,8 +3530,7 @@ case "vxworks69" then
       %_jobs :
       <%\t%>$(TRACE_FLAG)$(TARGET_JOBS_RULE)
 
-      DEP_FILES := com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME).d com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain.d \
-      <%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/com.boschrexroth.$(MODEL_NAME).d
+      DEP_FILES := com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain.d com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)Main.d
       -include $(DEP_FILES)
 
 
@@ -3794,33 +3799,59 @@ match eq
    <% match eq
 
      case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
-      let size = listLength(ls.vars)
-      let nonzeros = listLength(ls.simJac)
-      let type = getConfigString(MATRIX_FORMAT)
-      let matrixinit =  match type
+     let size = listLength(ls.vars)
+     let nonzeros = listLength(ls.simJac)
+     let type = getConfigString(MATRIX_FORMAT)
+     let helpdata = match ls.jacobianMatrix
+     case SOME(__) then
+     <<
+     >>
+     else
+     <<
+     _AData = new double[<%listLength(ls.simJac)%>];
+     _indexValue = new int[<%listLength(ls.simJac)%>];
+     sortIndex();
+     >>
+
+      let inits =   match type
           case ("dense") then
-            'ublas::zero_matrix<double>(<%size%>,<%size%>)'
+            <<
+            ,__A(ublas::zero_matrix<double>(<%size%>,<%size%>))
+            , _useSparseFormat(false)
+            , _conditions(conditions)
+            , _discrete_events(discrete_events)
+            , _functions(system->_functions)
+            , _indexValue(NULL)
+            {
+            >>
           case ("sparse") then
-            '<%size%>,<%size%>,<%nonzeros%>'
+            <<
+            ,__A(<%size%>,<%size%>,<%nonzeros%>)
+            , _useSparseFormat(true)
+            , _conditions(conditions)
+            , _discrete_events(discrete_events)
+            , _functions(system->_functions)
+            , _indexValue(NULL)
+            {
+              <%helpdata%>
+            >>
           else "A matrix type is not supported"
           end match
-    <<
-     ,__A(<%matrixinit%>)
-    >>
+
+
+   <<
+   <%inits%>
+   >>
     %>
 
-   //<%alocateLinearSystemConstructor(eq, useFlatArrayNotation)%>
-       , _conditions(conditions)
-       , _discrete_events(discrete_events)
-       , _useSparseFormat(false)
-       , _functions(system->_functions)
-   {
+
      <%initAlgloopDimension(eq,varDecls)%>
    }
 
    <%modelname%>Algloop<%ls.index%>::~<%modelname%>Algloop<%ls.index%>()
    {
-
+		if(_AData)
+			delete [] _AData;
 
    }
 
@@ -3832,6 +3863,11 @@ match eq
    void <%modelname%>Algloop<%ls.index%>::setUseSparseFormat(bool value)
    {
      _useSparseFormat = value;
+   }
+
+   void <%modelname%>Algloop<%ls.index%>::getSparseAdata(double* data, int nonzeros)
+   {
+     memcpy(data, _AData, sizeof(double) * nonzeros);
    }
 
    <%algloopRHSCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
@@ -3858,6 +3894,7 @@ match eq
        , _system(system)
        , __z(z)
        , __zDot(zDot)
+       , _useSparseFormat(false)
    <% match eq
 
      case SES_LINEAR(__) then
@@ -3870,7 +3907,6 @@ match eq
    //<%alocateLinearSystemConstructor(eq, useFlatArrayNotation)%>
        , _conditions(conditions)
        , _discrete_events(discrete_events)
-       , _useSparseFormat(false)
        , _functions(system->_functions)
    {
      <%initAlgloopDimension(eq,varDecls)%>
@@ -3891,6 +3927,10 @@ match eq
      _useSparseFormat = value;
    }
 
+   void <%modelname%>Algloop<%nls.index%>::getSparseAdata(double* data, int nonzeros)
+   {
+     throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,"Adata not used in nonlinear algloop");
+   }
    <%algloopRHSCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then algloopResiduals(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
    <%initAlgloop(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
@@ -3957,6 +3997,7 @@ match simCode
         >>
       */
   case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+    let type = getConfigString(MATRIX_FORMAT)
     match ls.jacobianMatrix
        case SOME(__) then
          let &varDecls = buffer "" /*BUFD*/
@@ -4013,16 +4054,46 @@ match simCode
     let &varDecls = buffer "" /*BUFD*/
 
  let Amatrix=
-    (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+    (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) hasindex i0 fromindex 0=>
       let &preExp = buffer "" /*BUFD*/
       let expPart = daeExp(eq.exp, context, &preExp, &varDecls, simCode, &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      '<%preExp%>__A(<%row%>,<%col%>)=<%expPart%>;'
+      match eq.exp
+      case e as RCONST(__) then match type case "sparse" then
+      <<
+	  <%preExp%>
+      ///*comment out again!*/__A(<%row%>,<%col%>)=<%expPart%>;
+      _AData[_indexValue[<%i0%>]] = <%expPart%>;
+      >>
+	  else
+	  <<
+	  <%preExp%>
+      /*comment out again!*/__A(<%row%>,<%col%>)=<%expPart%>;
+      >>
+	  end match
+      else match type case "sparse" then
+      <<
+	  <%preExp%>
+	  ///*comment out again!*/__A(<%row%>,<%col%>)=<%expPart%>;
+	  _AData[_indexValue[<%i0%>]] = <%expPart%>;
+	  >>
+	  else
+	  <<
+	  <%preExp%>
+	  /*comment out again!*/__A(<%row%>,<%col%>)=<%expPart%>;
+	  //_AData[_indexValue[<%i0%>]] = <%expPart%>;
+	  >>
+	  end match
+
   ;separator="\n")
 
  let bvector =  (ls.beqs |> exp hasindex i0 fromindex 1=>
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-     '<%preExp%>__b(<%i0%>)=<%expPart%>;'
+     match exp
+	 case e as RCONST(__) then '/*comment out again!*/<%preExp%>__b(<%i0%>)=<%expPart%>;'
+	 else
+
+	'<%preExp%>__b(<%i0%>)=<%expPart%>;'
   ;separator="\n")
 
   <<
@@ -4030,6 +4101,8 @@ match simCode
   {
       <%varDecls%>
       <%Amatrix%>
+      //double const* Ax = bindings::begin_value (As);
+      //memcpy(Ax,_AData,sizeof(double)* <%listLength(ls.simJac)%> );
       <%bvector%>
   }
   >>
@@ -6031,6 +6104,18 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      }
    >>
  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+  let type = getConfigString(MATRIX_FORMAT)
+  let sort = match type
+  case "sparse" then
+  <<
+   void <%modelname%>Algloop<%ls.index%>::sortIndex()
+   {
+    /*jupp2*/
+    <%initSort(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
+   }
+  >>
+  else ''
+
   match ls.jacobianMatrix
        case SOME(__) then
        <<
@@ -6060,6 +6145,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    >>
    */
    <<
+   <%sort%>
+
    void <%modelname%>Algloop<%ls.index%>::initialize()
    {
     <%initAlgloopEquation(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
@@ -6356,6 +6443,7 @@ template initAlgloopEquation(SimEqSystem eq, SimCode simCode, Text& extraFuncs, 
  "Generates a non linear equation system."
 ::=
 let &varDeclsCref = buffer "" /*BUFD*/
+let type = getConfigString(MATRIX_FORMAT)
 match eq
 case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   let size = listLength(nls.crefs)
@@ -6391,10 +6479,18 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   else
    let &varDecls = buffer "" /*BUFD*/
    let Amatrix=
-    (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+    (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) hasindex i0 fromindex 0 =>
       let &preExp = buffer "" /*BUFD*/
       let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      '<%preExp%>__A(<%row%>,<%col%>)=<%expPart%>;'
+      match type case "sparse" then
+      <<
+      <%preExp%>__A(<%row%>,<%col%>)=<%expPart%>;
+      _AData[_indexValue[<%i0%>]] = <%expPart%>;
+      >>
+      else
+      <<
+      <%preExp%>__A(<%row%>,<%col%>)=<%expPart%>;
+      >>
   ;separator="\n")
 
 
@@ -6410,6 +6506,66 @@ let bvector =  (ls.beqs |> exp hasindex i0 fromindex 1=>
   >>
 
 end initAlgloopEquation;
+
+
+
+
+template initSort(SimEqSystem eq, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates a non linear equation system."
+::=
+let &varDeclsCref = buffer "" /*BUFD*/
+match eq
+ case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))then
+   match ls.jacobianMatrix
+       case SOME(__) then
+<<
+>>
+  else
+
+   let Amatrix=
+    (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) hasindex i0 fromindex 0 =>
+      <<
+      //__A(<%row%>,<%col%>);
+      data.push_back(mytuple(<%row%> + <%col%> * _dimAEq ,<%i0%>));
+      >>
+  ;separator="\n")
+
+
+  <<
+      std::vector<mytuple> data;
+      <%Amatrix%>
+      std::sort(data.begin(),data.end(),mycompare);
+      std::vector<mytuple> data2;
+      for (int i = 0; i < <%listLength(ls.simJac)%>; i++)
+      {
+        data2.push_back(mytuple((data[i].ele2),i));
+      }
+      std::sort(data2.begin(), data2.end(), mycompare);
+
+      /*int help[<%listLength(ls.simJac)%>];
+      for (int i = 0; i < <%listLength(ls.simJac)%>; i++)
+      {
+        help[i] = get<0>(data2[i]);
+      }*/
+      for (int i = 0; i < <%listLength(ls.simJac)%>; i++)
+      {
+         _indexValue[i] = (data2[i]).ele2;
+      }
+
+  >>
+
+end initSort;
+
+
+
+
+
+
+
+
+
+
+
 
 
 template giveAlgloopvars(SimEqSystem eq, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -7124,12 +7280,16 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     case ("dense") then
     <<
      matrix_t __A; //dense
+
+     int * _indexValue;
      //b vector
      StatArrayDim1<double,<%size%>> __b;
     >>
     case ("sparse") then
     <<
      sparsematrix_t __A; //sparse
+
+      int * _indexValue;
      //b vector
      StatArrayDim1<double,<%size%>> __b;
     >>
@@ -7139,6 +7299,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let constructorParams = constructorParamAlgloop(modelInfo, useFlatArrayNotation)
   match eq
  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+   let type = getConfigString(MATRIX_FORMAT)
+
+   let sortIndex = match ls.jacobianMatrix
+       case SOME(__) then ''
+   else match type case "sparse" then'virtual void  sortIndex();'
+   end match
   <<
   class <%modelname%>Algloop<%ls.index%>: public IAlgLoop, public AlgLoopDefaultImplementation
   {
@@ -7154,6 +7320,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        <%generateAlgloopMethodDeclarationCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
 
       bool getUseSparseFormat();
+
+      <%sortIndex%>
       void setUseSparseFormat(bool value);
     float queryDensity();
 
@@ -7620,6 +7788,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual bool isLinear();
     virtual bool isLinearTearing();
     virtual bool isConsistent();
+    virtual void getSparseAdata(double* data, int nonzeros);
 
 >>
 //void writeOutput(HistoryImplType::value_type_v& v ,vector<string>& head ,const IMixedSystem::OUTPUT command  = IMixedSystem::UNDEF_OUTPUT);
@@ -11743,21 +11912,21 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as CREF(__)            then    daeExpCrefRhs(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as CAST(__)            then    daeExpCast(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as CONS(__)            then    "Cons not supported yet"
-  case e as SCONST(__)          then     daeExpSconst(string, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as UNARY(__)           then     daeExpUnary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as LBINARY(__)         then     daeExpLbinary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as LUNARY(__)          then     daeExpLunary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as BINARY(__)          then     daeExpBinary(operator, exp1, exp2, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as IFEXP(__)           then     daeExpIf(expCond, expThen, expElse, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as RELATION(__)        then     daeExpRelation(e, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as CALL(__)            then     daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as RECORD(__)          then     daeExpRecord(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as ASUB(__)            then     '/*t1*/<%daeExpAsub(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
+  case e as SCONST(__)          then      daeExpSconst(string, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as UNARY(__)           then      daeExpUnary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as LBINARY(__)         then      daeExpLbinary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as LUNARY(__)          then      daeExpLunary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as BINARY(__)          then      daeExpBinary(operator, exp1, exp2, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as IFEXP(__)           then      daeExpIf(expCond, expThen, expElse, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as RELATION(__)        then      daeExpRelation(e, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as CALL(__)            then      daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as RECORD(__)          then      daeExpRecord(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as ASUB(__)            then     '<%daeExpAsub(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
   case e as MATRIX(__)          then     daeExpMatrix(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as RANGE(__)           then     '/*t2*/<%daeExpRange(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
-  case e as TSUB(__)            then     '/*t3*/<%daeExpTsub(e, context,  &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation )%>'
+  case e as RANGE(__)           then     '<%daeExpRange(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
+  case e as TSUB(__)            then     '<%daeExpTsub(e, context,  &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation )%>'
   case e as REDUCTION(__)       then     daeExpReduction(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as ARRAY(__)           then     '/*t4*/<%daeExpArray(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
+  case e as ARRAY(__)           then     '<%daeExpArray(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
   case e as SIZE(__)            then     daeExpSize(e, context, &preExp, &varDecls, simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as SHARED_LITERAL(__)  then     daeExpSharedLiteral(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, useFlatArrayNotation)
   case e as SUM(__)             then     daeExpSum(e, context, &preExp, &varDecls, simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)

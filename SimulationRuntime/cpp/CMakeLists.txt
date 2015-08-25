@@ -62,6 +62,7 @@ SET(IDAName ${LIBPREFIX}IDA)
 SET(PeerName ${LIBPREFIX}Peer)
 SET(RTRKName ${LIBPREFIX}RTRK)
 SET(EulerName ${LIBPREFIX}Euler)
+SET(kluName ${LIBPREFIX}klu)
 SET(RTEulerName ${LIBPREFIX}RTEuler)
 SET(IdaName ${LIBPREFIX}Ida)
 SET(IdasName ${LIBPREFIX}Idas)
@@ -433,6 +434,10 @@ message(STATUS "Boost dirs '${Boost_LIBRARY_DIRS}', '${Boost_INCLUDE_DIR}'")
 #build of simulation.core
 include_directories ("Include")
 include_directories ("Solver")
+include_directories ("Include/Solver/KLU")
+
+add_subdirectory (Solver/KLU)
+
 add_subdirectory (Core/Modelica)
 add_subdirectory (Core/Math)
 add_subdirectory (SimCoreFactory/OMCFactory)
@@ -453,6 +458,7 @@ add_subdirectory (Core/SimController)
 
 #add  Euler solver project
 add_subdirectory (Solver/Euler)
+
 add_subdirectory (Solver/RTEuler)
 add_subdirectory (Solver/Newton)
 add_subdirectory (Solver/Hybrj)
@@ -515,6 +521,9 @@ GET_FILENAME_COMPONENT(libUmfPackName ${libUmfPack} NAME)
 GET_TARGET_PROPERTY(libEuler ${EulerName} LOCATION)
 GET_FILENAME_COMPONENT(libEulerName ${libEuler} NAME)
 
+GET_TARGET_PROPERTY(libKlu ${kluName} LOCATION)
+GET_FILENAME_COMPONENT(libKluName ${libKlu} NAME)
+
 GET_TARGET_PROPERTY(libRTEuler ${RTEulerName} LOCATION)
 GET_FILENAME_COMPONENT(libRTEulerName ${libRTEuler} NAME)
 
@@ -552,6 +561,7 @@ GET_FILENAME_COMPONENT(libSimObjFactoryName ${libSimObjFactory} NAME)
 GET_TARGET_PROPERTY(libFMU ${FMUName} LOCATION)
 GET_FILENAME_COMPONENT(libFMUName ${libFMU} NAME)
 
+set (KLU_LIB ${libKluName})
 set (EULER_LIB ${libEulerName})
 set (RTEULER_LIB ${libRTEulerName})
 set (SETTINGSFACTORY_LIB ${libSetFactoryName})

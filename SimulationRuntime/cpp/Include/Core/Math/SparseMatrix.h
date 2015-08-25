@@ -1,9 +1,6 @@
 #pragma once
 
 
-using std::map;
-using std::pair;
-using std::make_pair;
 
 struct BOOST_EXTENSION_EXPORT_DECL sparse_inserter  {
     struct t2 {

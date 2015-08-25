@@ -17,6 +17,7 @@ Abstract interface class for algebraic loop in equations in open modelica.
 Copyright (c) 2008, OSMC
 *****************************************************************************/
 
+
 class IAlgLoop
 {
 public:
@@ -54,6 +55,8 @@ public:
   /// Provide the right hand side (according to the index)
   virtual void getRHS(double* res) = 0;
 
+  virtual void getSparseAdata(double* data, int nonzeros) = 0;
+
 
   virtual const matrix_t& getSystemMatrix()  = 0;
   virtual const sparsematrix_t& getSystemSparseMatrix()  = 0;
@@ -73,5 +76,6 @@ public:
   /// Definiert die übergebene Größe als Schnittgröße
   void addConstraint(double& constr_value);
   */
+  //public : double * _AData;
 };
 /** @} */ // end of coreSystem

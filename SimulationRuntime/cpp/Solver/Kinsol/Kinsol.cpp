@@ -4,6 +4,7 @@
 *
 *  @{
 */
+
 #include <Solver/Kinsol/FactoryExport.h>
 
 #include <nvector/nvector_serial.h>
@@ -38,6 +39,11 @@
 //#include <Core/Utils/numeric/bindings/lapack/driver/gesv.hpp>
 #include <Core/Utils/numeric/bindings/ublas.hpp>
 #include <Core/Utils/numeric/utils.h>
+
+
+
+
+
 
 /**
 Forward declarations for used external C functions
@@ -128,10 +134,12 @@ Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _Kin_fScale         (NULL)
 	, _kinMem             (NULL)
 	, _scale			  (NULL)
+
   , _fValid(false)
   , _solverErrorNotificationGiven(false)
 {
 	_data = ((void*)this);
+
 }
 
 Kinsol::~Kinsol()
@@ -160,6 +168,7 @@ Kinsol::~Kinsol()
 		N_VDestroy_Serial(_Kin_fScale);
 	if(_kinMem)
 		KINFree(&_kinMem);
+
 }
 
 void Kinsol::initialize()
@@ -181,6 +190,7 @@ void Kinsol::initialize()
 	if (dimDouble != _dimSys)
 	{
 		_dimSys = dimDouble;
+
 
 		if(_dimSys > 0)
 		{
@@ -243,7 +253,6 @@ void Kinsol::initialize()
 			_Kin_yScale = N_VMake_Serial(_dimSys, _yScale);
 			_Kin_fScale = N_VMake_Serial(_dimSys, _fScale);
 			_kinMem = KINCreate();
-
 
 
 			//Set Options
@@ -324,10 +333,7 @@ void Kinsol::solve()
 		long int irtrn  = 0;          // Retrun-flag of Fortran code        _algLoop->getReal(_y);
 		_algLoop->evaluate();
 		_algLoop->getRHS(_f);
-		const matrix_t& A = _algLoop->getSystemMatrix();
-		const double* jac = A.data().begin();
-		memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
-		dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_ihelpArray,_f,&_dimSys,&irtrn);
+
 		memcpy(_y,_f,_dimSys*sizeof(double));
 		_algLoop->setReal(_y);
 		if(irtrn != 0)
@@ -372,24 +378,6 @@ void Kinsol::solve()
 
 
 		//print_m (b, "b vector");
-
-
-		const matrix_t& A = _algLoop->getSystemMatrix();
-		//matrix_t  A_copy(A);
-
-
-		const double* jac = A.data().begin();
-
-		//double* jac = new  double[dimSys*dimSys];
-		//for(int i=0;i<dimSys;i++)
-		//for(int j=0;j<dimSys;j++)
-		//jac[i*_dimSys+j] = A_sparse(i,j);
-
-
-		memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
-
-
-		dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _ihelpArray, _f,&_dimSys,&irtrn);
 		//std::vector< int > ipiv (_dimSys);  // pivot vector
 		//lapack::gesv (A, ipiv,b);   // solving the system, b contains x
 
@@ -586,14 +574,14 @@ void Kinsol::calcFunction(const double *y, double *residual)
 	_algLoop->getRHS(residual);
 
 
-#if defined(__vxworks)
-#else
+
+
 	for(int i=0;i<_dimSys;i++)
 	{
 		if(!(boost::math::isfinite(residual[i])) || !(boost::math::isfinite(y[i])))
 			_fValid = false;
 	}
-#endif
+
 }
 
 int Kinsol::kin_f(N_Vector y,N_Vector fval, void *user_data)

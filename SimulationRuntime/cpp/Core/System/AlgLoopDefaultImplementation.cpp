@@ -7,13 +7,17 @@
 #include <Core/System/FactoryExport.h>
 #include <Core/System/AlgLoopDefaultImplementation.h>
 
-
+bool BOOST_EXTENSION_EXPORT_DECL mycompare ( mytuple lhs, mytuple rhs)
+{
+	return lhs.ele1 < rhs.ele1;
+}
 
 AlgLoopDefaultImplementation::AlgLoopDefaultImplementation()
   : _dimAEq         (0)
   , _constraintType(IAlgLoop::UNDEF)
   ,__xd(NULL)
   ,_xd_init(NULL)
+  ,_AData(NULL)
 {
 }
 
@@ -49,6 +53,8 @@ void AlgLoopDefaultImplementation::initialize()
     delete [] _xd_init;
   __xd     = new double[_dimAEq];
   _xd_init = new double[_dimAEq];
+  memset(__xd,0,_dimAEq*sizeof(double));
+  memset(_xd_init,0,_dimAEq*sizeof(double));
 };
 
 /// Output routine (to be called by the solver after every successful integration step)
@@ -73,4 +79,8 @@ void AlgLoopDefaultImplementation::getRHS(double* res)
 {
   memcpy(res, __xd, sizeof(double) * _dimAEq);
 }
+//void AlgLoopDefaultImplementation::getSparseAdata(double* data, int nonzeros)
+//{
+//  memcpy(data, _AData, sizeof(double) * nonzeros);
+//}
 /** @} */ // end of coreSystem

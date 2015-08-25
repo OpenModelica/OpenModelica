@@ -1,3 +1,4 @@
+#define KLU_LIB "@KLU_LIB@"
 
 #define EULER_LIB "@EULER_LIB@"
 #define RTEULER_LIB "@RTEULER_LIB@"
