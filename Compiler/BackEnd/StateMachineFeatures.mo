@@ -352,7 +352,7 @@ algorithm
   bindingKind := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), BackendDAE.NO_LOOP());
 
   R(initialState, refining) := comp;
-  flatA := List.find(flatAs, function findInitialState(crefCmp=initialState));
+  flatA := List.selectFirst1(flatAs, findInitialState, initialState);
   FLAT_AUTOMATON(initialState, states, sms) := flatA;
   preRef := ComponentReference.crefPrefixString(SMS_PRE, initialState);
   nStates := arrayLength(states);
@@ -933,13 +933,11 @@ Succeeds if initialState in flatAIn equals the crefCmp, otherwise fails.
 Helper function to find flat automaton within a list of flat automata"
   input FlatAutomaton flatAIn;
   input DAE.ComponentRef crefCmp;
-  output FlatAutomaton flatAOut;
+  output Boolean outFound;
 algorithm
-  flatAOut := match flatAIn
-    local
-      DAE.ComponentRef cref;
-    case FLAT_AUTOMATON(initialState=cref) guard ComponentReference.crefEqual(cref,crefCmp) then flatAIn;
-    else fail();
+  outFound := match flatAIn
+    case FLAT_AUTOMATON() then ComponentReference.crefEqual(flatAIn.initialState, crefCmp);
+    else false;
   end match;
 end findInitialState;
 
