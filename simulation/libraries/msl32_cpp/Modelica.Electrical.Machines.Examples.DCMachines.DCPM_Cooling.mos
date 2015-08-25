@@ -8,7 +8,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling);
 compareVars :=
 {
@@ -29,7 +29,7 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.SimpleSimulation
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling
 // {"dcpm.la.i","loadInertia.phi","loadInertia.w","cooling.T","armature.T","core.T","volumeFlow.T"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp

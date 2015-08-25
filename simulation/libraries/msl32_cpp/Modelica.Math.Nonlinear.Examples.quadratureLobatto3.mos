@@ -8,7 +8,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.Instantiation;
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
 modelName := $TypeName(Modelica.Math.Nonlinear.Examples.quadratureLobatto3);
 compareVars :=
 {
@@ -24,12 +24,14 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.Instantiation
+// OpenModelicaModelTesting.Kind.Compilation
 // Modelica.Math.Nonlinear.Examples.quadratureLobatto3
 // {"q","qd"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
 // "
 // ""
-// Frontend succeeded
-// The model now translates (generates code). Please update the test.
+// Compilation succeeded
+// "true
+// "
+// ""
 // endResult
