@@ -77,6 +77,7 @@ protected import Ceval;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Error;
+protected import EvaluateFunctions;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
@@ -102,6 +103,112 @@ end selectParameterFunc;
  * public section
  *
  */
+
+public function evaluateAllParameters
+"author Waurich TUD
+  evaluates and replaces all parameters"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.Variables knvars, vars, extVars, aliasVars;
+  BackendDAE.EquationArray eqArr,initEqs,remEqs, remEqsSys;
+  BackendDAE.EqSystem sys;
+  BackendDAE.EqSystems systs, systs2;
+  BackendDAE.Shared shared;
+  BackendDAE.EventInfo eventInfo;
+  DAE.FunctionTree functionTree;
+  list<BackendDAE.Var> knVarsLst, varLst;
+  BackendVarTransform.VariableReplacements repl;
+  array<Integer> ass1, ass2;
+  list<Integer> order;
+  list<list<Integer>> comps;
+algorithm
+  if Flags.isSet(Flags.EVAL_ALL_PARAMS) then
+    BackendDAE.DAE (systs, shared as BackendDAE.SHARED(knownVars=knvars, functionTree=functionTree)) := inDAE;
+    knVarsLst := BackendVariable.varList(knvars);
+    // bring all params in the correct order
+    (comps,ass1,ass2) := BackendDAEUtil.causalizeVarBindSystem(knVarsLst);
+    order := List.map1(List.flatten(comps), Array.getIndexFirst,ass1);
+	  knVarsLst := List.map1(order,BackendVariable.getVarAtIndexFirst,knvars);
+	  repl := BackendVarTransform.emptyReplacements();
+    (repl,knVarsLst) := List.fold1(knVarsLst,evaluateAllParameters0,functionTree,(repl,{}));
+    systs2 := {};
+    // replace all equations and all bindExps of the vars
+    for sys in systs loop
+      vars := sys.orderedVars;
+      varLst := BackendVariable.varList(vars);
+      varLst := List.map1(varLst,BackendVarTransform.replaceBindingExp,repl);
+      varLst := List.map1(varLst,BackendVarTransform.replaceVariableAttributesInVar,repl);
+      sys.orderedVars := BackendVariable.listVar1(varLst);
+      eqArr := sys.orderedEqs;
+      remEqsSys := sys.removedEqs;
+      (eqArr,_) := BackendVarTransform.replaceEquationsArr(eqArr,repl,NONE());
+      (remEqsSys,_) := BackendVarTransform.replaceEquationsArr(remEqsSys,repl,NONE());
+      sys.orderedEqs := eqArr;
+      sys.removedEqs := remEqsSys;
+      systs2 := sys::systs2;
+    end for;
+    systs2 := listReverse(systs2);
+
+    // replace all init eqs, removed eqs, external var-bindings and alias var bindings, event-infos
+    initEqs := shared.initialEqs;
+    remEqs := shared.removedEqs;
+    extVars := shared.externalObjects;
+    aliasVars := shared.aliasVars;
+    eventInfo := shared.eventInfo;
+    (initEqs,_) := BackendVarTransform.replaceEquationsArr(initEqs,repl,NONE());
+    (remEqs,_) := BackendVarTransform.replaceEquationsArr(remEqs,repl,NONE());
+    extVars := BackendVariable.listVar1(List.map1(BackendVariable.varList(extVars),BackendVarTransform.replaceBindingExp,repl));
+    aliasVars := BackendVariable.listVar1(List.map1(BackendVariable.varList(aliasVars),BackendVarTransform.replaceBindingExp,repl));
+    eventInfo := BackendVarTransform.replaceEventInfo(eventInfo,repl,NONE());
+    shared.initialEqs := initEqs;
+    shared.removedEqs := remEqs;
+    shared.externalObjects := extVars;
+    shared.aliasVars := aliasVars;
+    shared.eventInfo := eventInfo;
+	  // set remaining, not evaluated params
+	  shared.knownVars := BackendVariable.listVar(knVarsLst);
+	  outDAE := BackendDAE.DAE(systs2,shared);
+  else
+    outDAE := inDAE;
+	end if;
+	BackendDump.dumpBackendDAE(outDAE, "OUTDAE");
+end evaluateAllParameters;
+
+
+protected function evaluateAllParameters0"evaluates a single parameter to constant or puts it in the knownVarsFold. The first array elements have to remain."
+  input BackendDAE.Var var;
+  input DAE.FunctionTree funcsIn;
+  input tuple<BackendVarTransform.VariableReplacements,list<BackendDAE.Var>> tplIn;
+  output tuple<BackendVarTransform.VariableReplacements,list<BackendDAE.Var>> tplOut;
+algorithm
+  tplOut := matchcontinue(var,funcsIn,tplIn)
+    local
+      BackendVarTransform.VariableReplacements repl;
+      DAE.Exp bindExp;
+      DAE.ComponentRef cref;
+      list<BackendDAE.Var> knVarsFold;
+  case(BackendDAE.VAR(varName = cref, bindExp = SOME(bindExp)),_,(repl,knVarsFold))
+    algorithm
+      (bindExp,_) := BackendVarTransform.replaceExp(bindExp,repl,NONE());
+      bindExp := ExpressionSimplify.simplify(bindExp);
+      bindExp := EvaluateFunctions.evaluateConstantFunctionCallExp(bindExp,funcsIn);
+      if ComponentReference.crefHaveSubs(BackendVariable.varCref(var)) and Expression.isConst(bindExp) then
+      // since we need the arrays to iterate over them, otherwise we would have to expand loops
+        repl := BackendVarTransform.addReplacement(repl,cref,bindExp,NONE());
+        var.bindExp := SOME(bindExp);
+        knVarsFold := var::knVarsFold;
+      elseif Expression.isConst(bindExp) then
+        repl := BackendVarTransform.addReplacement(repl,cref,bindExp,NONE());
+      else
+        knVarsFold := var::knVarsFold;
+      end if;
+    then (repl,knVarsFold);
+  else
+    tplIn;
+  end matchcontinue;
+end evaluateAllParameters0;
+
 
 public function evaluateFinalParameters
 "author Frenkel TUD

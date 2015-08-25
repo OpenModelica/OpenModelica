@@ -452,8 +452,10 @@ constant DebugFlag DUMP_RTEARING = DEBUG_FLAG(142, "dumpRecursiveTearing", false
   Util.gettext("Dump between steps of recursiveTearing"));
 constant DebugFlag DIS_SIMP_FUN = DEBUG_FLAG(143, "disableSimplifyComplexFunction", false,
   Util.gettext("disable simplifyComplexFunction"));
-  constant DebugFlag DIS_SYMJAC_FMI20 = DEBUG_FLAG(144, "disableSymbolicLinearization", false,
+constant DebugFlag DIS_SYMJAC_FMI20 = DEBUG_FLAG(144, "disableSymbolicLinearization", false,
   Util.gettext("For FMI 2.0 only dependecy analysis will be perform."));
+constant DebugFlag EVAL_ALL_PARAMS = DEBUG_FLAG(145, "evalAllParams", false,
+  Util.gettext("Evaluates all parameters in order to increase simulation speed."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -604,7 +606,9 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_SIMPLIFY_LOOPS,
   DUMP_RTEARING,
   DIS_SIMP_FUN,
-  DIS_SYMJAC_FMI20
+  DIS_SYMJAC_FMI20,
+  EVAL_ALL_PARAMS
+
 };
 
 public
@@ -661,6 +665,7 @@ public
 constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "unitChecking",
+    "evaluateAllParameters",
     "evaluateReplaceProtectedFinalEvaluateParameters",
     "stateMachineElab",
     "simplifyIfEquations",
@@ -692,6 +697,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("evaluateReplaceEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
     ("evaluateReplaceFinalEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
     ("evaluateReplaceProtectedFinalEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final or protected are removed and replaced with their value. They may no longer be changed in the init file.")),
+    ("evaluateAllParameters", Util.gettext("Evaluates all parameters to increase simulation speed.")),
     ("removeEqualFunctionCalls", Util.notrans("DESCRIBE ME")),
     ("removeProtectedParameters", Util.gettext("Replace all parameters with protected=true in the system.")),
     ("removeUnusedParameter", Util.gettext("Strips all parameter not present in the equations from the system.")),

@@ -60,6 +60,7 @@ protected import BackendDAEOptimize;
 protected import BackendDAETransform;
 protected import BackendDump;
 protected import BackendEquation;
+protected import BackendDAEEXT;
 protected import BackendInline;
 protected import BackendVariable;
 protected import BackendVarTransform;
@@ -100,6 +101,7 @@ protected import RemoveSimpleEquations;
 protected import ResolveLoops;
 protected import SCode;
 protected import SimCodeFunctionUtil;
+protected import Sorting;
 protected import StateMachineFeatures;
 protected import SymbolicJacobian;
 protected import SynchronousFeatures;
@@ -7167,6 +7169,7 @@ algorithm
                        (EvaluateParameter.evaluateReplaceEvaluateParameters, "evaluateReplaceEvaluateParameters", false),
                        (EvaluateParameter.evaluateReplaceFinalEvaluateParameters, "evaluateReplaceFinalEvaluateParameters", false),
                        (EvaluateParameter.evaluateReplaceProtectedFinalEvaluateParameters, "evaluateReplaceProtectedFinalEvaluateParameters", false),
+                       (EvaluateParameter.evaluateAllParameters, "evaluateAllParameters", false),
                        (BackendDAEOptimize.removeEqualFunctionCalls, "removeEqualFunctionCalls", false),
                        (BackendDAEOptimize.removeProtectedParameters, "removeProtectedParameters", false),
                        (BackendDAEOptimize.removeUnusedParameter, "removeUnusedParameter", false),
@@ -8232,6 +8235,33 @@ algorithm
     then false;
   end matchcontinue;
 end otherEqnVarTplEqual;
+
+
+public function causalizeVarBindSystem"causalizes a system of variables and their binding-equations.
+author: waurich TUD 08.2015"
+  input list<BackendDAE.Var> varLstIn;
+  output list<list<Integer>> comps;
+  output array<Integer> ass1;
+  output array<Integer> ass2;
+protected
+  Integer nVars,nEqs;
+  list<Integer> order;
+  BackendDAE.IncidenceMatrix m,  mT;
+  list<DAE.Exp> bindExps;
+  list<BackendDAE.Equation> eqs;
+algorithm
+  bindExps := List.map(varLstIn,BackendVariable.varBindExp);
+  eqs := List.threadMap2(List.map(varLstIn,BackendVariable.varExp), bindExps, BackendEquation.generateEquation, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+	(m, mT) := BackendDAEUtil.incidenceMatrixDispatch(BackendVariable.listVar1(varLstIn), BackendEquation.listEquation(eqs), BackendDAE.ABSOLUTE(), NONE());
+	nVars := listLength(varLstIn);
+	nEqs := listLength(eqs);
+	ass1 := arrayCreate(nVars, -1);
+	ass2 := arrayCreate(nEqs, -1);
+	Matching.matchingExternalsetIncidenceMatrix(nVars, nEqs, m);
+	BackendDAEEXT.matching(nVars, nEqs, 5, -1, 0.0, 1);
+	BackendDAEEXT.getAssignment(ass2, ass1);
+	comps := Sorting.TarjanTransposed(mT, ass2);
+end causalizeVarBindSystem;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;
