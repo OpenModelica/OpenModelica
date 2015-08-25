@@ -77,8 +77,8 @@ public:
   SimulationDialog(MainWindow *pParent = 0);
   ~SimulationDialog();
   QTreeWidget* getArchivedSimulationsTreeWidget() {return mpArchivedSimulationsTreeWidget;}
-  void show(LibraryTreeNode *pLibraryTreeNode, bool isReSimulate, SimulationOptions simulationOptions);
-  void directSimulate(LibraryTreeNode *pLibraryTreeNode, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger);
+  void show(LibraryTreeItem *pLibraryTreeItem, bool isReSimulate, SimulationOptions simulationOptions);
+  void directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger);
 private:
   MainWindow *mpMainWindow;
   Label *mpSimulationHeading;
@@ -192,7 +192,7 @@ private:
   QPushButton *mpSimulateButton;
   QDialogButtonBox *mpButtonBox;
   QList<SimulationOutputWidget*> mSimulationOutputWidgetsList;
-  LibraryTreeNode *mpLibraryTreeNode;
+  LibraryTreeItem *mpLibraryTreeItem;
   QString mClassName;
   QString mFileName;
   bool mIsReSimulate;

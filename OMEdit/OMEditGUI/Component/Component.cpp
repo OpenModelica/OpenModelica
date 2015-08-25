@@ -52,7 +52,7 @@ Component::Component(QString annotation, QString name, QString className, QStrin
   mComponentType = Component::Root;
   initialize();
   setComponentFlags(true);
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::TLM) {
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
     mType = StringHandler::Connector;
     parseAnnotationString(Helper::defaultComponentAnnotationString);
   } else {
@@ -367,21 +367,45 @@ void Component::getClassComponents()
 bool Component::canUseDefaultAnnotation(Component *pComponent)
 {
   bool draw = false;
-  if (pComponent->mShapesList.isEmpty())
+  if (pComponent->getShapesList().isEmpty())
     draw = true;
   else
     return false;
-  /* We don't check the components list because even if components/connectors exist still we want default annotation.
-     Remove the components list check in r22603.
-    */
+  // We don't check the components list because even if components/connectors exist still we want default annotation.
   // check inherited components list
-  foreach (Component *pInheritedComponent, pComponent->mInheritanceList)
-  {
+  foreach (Component *pInheritedComponent, pComponent->getInheritanceList()) {
     draw = canUseDefaultAnnotation(pInheritedComponent);
     if (!draw)
       return draw;    // return whenever we get false
   }
   return draw;
+}
+
+/*!
+ * \brief Component::hasShapeAnnotation
+ * Checks if Component has any ShapeAnnotation
+ * \param pComponent
+ * \return
+ */
+bool Component::hasShapeAnnotation(Component *pComponent)
+{
+  if (!pComponent->getShapesList().isEmpty()) {
+    return true;
+  }
+  bool iconAnnotationFound = false;
+  foreach (Component *pInheritedComponent, pComponent->getInheritanceList()) {
+    iconAnnotationFound = hasShapeAnnotation(pInheritedComponent);
+    if (iconAnnotationFound) {
+      return iconAnnotationFound;
+    }
+  }
+  foreach (Component *pChildComponent, pComponent->getComponentsList()) {
+    iconAnnotationFound = hasShapeAnnotation(pChildComponent);
+    if (iconAnnotationFound) {
+      return iconAnnotationFound;
+    }
+  }
+  return iconAnnotationFound;
 }
 
 void Component::createActions()
@@ -410,7 +434,7 @@ void Component::createActions()
 
 void Component::createResizerItems()
 {
-  bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary();
+  bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary();
   qreal x1, y1, x2, y2;
   getResizerItemsPositions(&x1, &y1, &x2, &y2);
   //Bottom left resizer
@@ -655,7 +679,7 @@ void Component::setComponentFlags(bool enable)
     Only set the ItemIsMovable & ItemSendsGeometryChanges flags on component if the class is not a system library class
     AND component is not an inherited shape.
     */
-  if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedComponent()) {
+  if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedComponent()) {
     setFlag(QGraphicsItem::ItemIsMovable, enable);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, enable);
   }
@@ -785,7 +809,7 @@ QString Component::getParameterDisplayString(QString parameterName)
     3.3 If there is no extends modifier then finally check if value is present in extends classes.
     */
   QString displayString = "";
-  QString modelName = mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getNameStructure();
+  QString modelName = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   /* case 1 */
   displayString = mpOMCProxy->getComponentModifierValue(modelName, mName + "." + parameterName);
   /* case 2 */
@@ -845,7 +869,7 @@ void Component::duplicateHelper(GraphicsView *pGraphicsView)
     pComponent->getTransformation()->setRotateAngle(mpTransformation->getRotateAngle());
     pComponent->setTransform(pComponent->getTransformation()->getTransformationMatrix());
     /* get the original component attributes */
-    QString className = pGraphicsView->getModelWidget()->getLibraryTreeNode()->getNameStructure();
+    QString className = pGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
     QList<ComponentInfo*> componentInfoList = mpOMCProxy->getComponents(className);
     foreach (ComponentInfo *pComponentInfo, componentInfoList) {
       if (pComponentInfo->getName() == mName) {
@@ -897,22 +921,22 @@ void Component::duplicateHelper(GraphicsView *pGraphicsView)
 void Component::updatePlacementAnnotation()
 {
   // Add component annotation.
-  LibraryTreeNode *pLibraryTreeNode = mpGraphicsView->getModelWidget()->getLibraryTreeNode();
-  if (pLibraryTreeNode->getLibraryType()== LibraryTreeNode::TLM) {
+  LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
+  if (pLibraryTreeItem->getLibraryType()== LibraryTreeItem::TLM) {
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpGraphicsView->getModelWidget()->getEditor());
     pTLMEditor->updateSubModelPlacementAnnotation(mName, getTransformation()->getVisible()? "true" : "false", getTransformationOrigin(),
                                                   getTransformationExtent(), QString::number(getTransformation()->getRotateAngle()));
   } else {
-    mpOMCProxy->updateComponent(mName, mClassName, mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getNameStructure(),
+    mpOMCProxy->updateComponent(mName, mClassName, mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(),
                                 getPlacementAnnotation());
     mpGraphicsView->getModelWidget()->updateModelicaText();
   }
   // set the model modified
   mpGraphicsView->getModelWidget()->setModelModified();
-  /* When something is changed in the icon layer then update the LibraryTreeNode in the Library Browser */
+  /* When something is changed in the icon layer then update the LibraryTreeItem in the Library Browser */
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
     MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-    pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpGraphicsView->getModelWidget()->getLibraryTreeNode());
+//    pMainWindow->getLibraryWidget()->xloadLibraryComponent(mpGraphicsView->getModelWidget()->getLibraryTreeItem());
   }
 }
 
@@ -1026,12 +1050,12 @@ void Component::deleteMe()
   deleteLater();
   delete mpOriginItem;
   // make the model modified
-  mpGraphicsView->getModelWidget()->setModelModified();
   mpGraphicsView->getModelWidget()->updateModelicaText();
-  /* When something is deleted from the icon layer then update the LibraryTreeNode in the Library Browser */
+  mpGraphicsView->getModelWidget()->setModelModified();
+  /* When something is deleted from the icon layer then update the LibraryTreeItem in the Library Browser */
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
     MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-    pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpGraphicsView->getModelWidget()->getLibraryTreeNode());
+//    pMainWindow->getLibraryWidget()->loadLibraryComponent(mpGraphicsView->getModelWidget()->getLibraryTreeItem());
   }
 }
 
@@ -1403,7 +1427,7 @@ void Component::showAttributes()
 //! Slot that opens up the component Modelica class in a new tab/window.
 void Component::viewClass()
 {
-  mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getLibraryTreeWidget()->openLibraryTreeNode(getClassName());
+  mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getLibraryWidget()->openLibraryTreeItem(getClassName());
 }
 
 //! Slot that opens up the component Modelica class in a documentation view.
@@ -1430,11 +1454,10 @@ void Component::showTLMAttributes()
 void Component::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
   Q_UNUSED(event);
-  LibraryTreeNode *pLibraryTreeNode = mpGraphicsView->getModelWidget()->getLibraryTreeNode();
-  if(pLibraryTreeNode->getLibraryType()== LibraryTreeNode::TLM)
+  LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
+  if(pLibraryTreeItem->getLibraryType()== LibraryTreeItem::TLM) {
     emit showTLMAttributes();
-  else
-  {
+  } else {
     if (!mpParentComponent) { // if root component is double clicked then show parameters.
       mpGraphicsView->removeConnection();
       emit showParameters();
@@ -1461,11 +1484,11 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
   menu.addAction(pComponent->getViewClassAction());
   menu.addAction(pComponent->getViewDocumentationAction());
   menu.addSeparator();
-  LibraryTreeNode *pLibraryTreeNode = mpGraphicsView->getModelWidget()->getLibraryTreeNode();
-  if (pLibraryTreeNode) {
+  LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
+  if (pLibraryTreeItem) {
     QMenu menu(mpGraphicsView);
-    switch (pLibraryTreeNode->getLibraryType()) {
-      case LibraryTreeNode::Modelica:
+    switch (pLibraryTreeItem->getLibraryType()) {
+      case LibraryTreeItem::Modelica:
       default:
         menu.addAction(pComponent->getParametersAction());
         menu.addAction(pComponent->getAttributesAction());
@@ -1489,7 +1512,7 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         menu.addAction(mpGraphicsView->getFlipHorizontalAction());
         menu.addAction(mpGraphicsView->getFlipVerticalAction());
         break;
-      case LibraryTreeNode::TLM:
+      case LibraryTreeItem::TLM:
         menu.addAction(pComponent->getTLMAttributesAction());
         break;
     }
@@ -1505,7 +1528,7 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
       showResizerItems();
       setCursor(Qt::SizeAllCursor);
       // Only allow manipulations on component if the class is not a system library class OR component is not an inherited component.
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedComponent()) {
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedComponent()) {
         connect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), this, SLOT(deleteMe()), Qt::UniqueConnection);
         connect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()), Qt::UniqueConnection);
         connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
@@ -1538,12 +1561,12 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         hideResizerItems();
       }
       /* Always hide ResizerItem's for system library class and inherited components. */
-      if (mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() || isInheritedComponent()) {
+      if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() || isInheritedComponent()) {
         hideResizerItems();
       }
       unsetCursor();
       /* Only allow manipulations on component if the class is not a system library class OR component is not an inherited component. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedComponent()) {
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedComponent()) {
         disconnect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), this, SLOT(deleteMe()));
         disconnect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()));
         disconnect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwise()));

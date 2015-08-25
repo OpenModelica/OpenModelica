@@ -85,11 +85,11 @@ SimulationDialog::~SimulationDialog()
 
 /*!
   Reimplementation of QDialog::show method.
-  \param pLibraryTreeNode - pointer to LibraryTreeNode
+  \param pLibraryTreeItem - pointer to LibraryTreeItem
   */
-void SimulationDialog::show(LibraryTreeNode *pLibraryTreeNode, bool isReSimulate, SimulationOptions simulationOptions)
+void SimulationDialog::show(LibraryTreeItem *pLibraryTreeItem, bool isReSimulate, SimulationOptions simulationOptions)
 {
-  mpLibraryTreeNode = pLibraryTreeNode;
+  mpLibraryTreeItem = pLibraryTreeItem;
   initializeFields(isReSimulate, simulationOptions);
   setVisible(true);
 }
@@ -97,13 +97,13 @@ void SimulationDialog::show(LibraryTreeNode *pLibraryTreeNode, bool isReSimulate
 /*!
  * \brief SimulationDialog::directSimulate
  * Directly simulates the model without showing the simulation dialog.
- * \param pLibraryTreeNode
+ * \param pLibraryTreeItem
  * \param launchTransformationalDebugger
  * \param launchAlgorithmicDebugger
  */
-void SimulationDialog::directSimulate(LibraryTreeNode *pLibraryTreeNode, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger)
+void SimulationDialog::directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger)
 {
-  mpLibraryTreeNode = pLibraryTreeNode;
+  mpLibraryTreeItem = pLibraryTreeItem;
   initializeFields(false, SimulationOptions());
   mpBuildOnlyCheckBox->setChecked(false);
   mpLaunchTransformationalDebuggerCheckBox->setChecked(launchTransformationalDebugger);
@@ -567,8 +567,8 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
 {
   if (!isReSimulate) {
     mIsReSimulate = false;
-    mClassName = mpLibraryTreeNode->getNameStructure();
-    mFileName = mpLibraryTreeNode->getFileName();
+    mClassName = mpLibraryTreeItem->getNameStructure();
+    mFileName = mpLibraryTreeItem->getFileName();
     setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::simulationSetup).append(" - ").append(mClassName));
     mpSimulationHeading->setText(QString(Helper::simulationSetup).append(" - ").append(mClassName));
     // if the class has experiment annotation then read it.
@@ -721,8 +721,8 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   }
   /* save the model before translating */
   if (mpMainWindow->getOptionsDialog()->getSimulationPage()->getSaveClassBeforeSimulationCheckBox()->isChecked() &&
-      !mpLibraryTreeNode->isSaved() &&
-      !mpMainWindow->getLibraryTreeWidget()->saveLibraryTreeNode(mpLibraryTreeNode)) {
+      !mpLibraryTreeItem->isSaved() &&
+      !mpMainWindow->getLibraryWidget()->saveLibraryTreeItem(mpLibraryTreeItem)) {
     return false;
   }
   /*
@@ -1020,11 +1020,14 @@ void SimulationDialog::saveSimulationOptions()
   annotationString.append("Interval=").append(QString::number(interval));
   annotationString.append(")");
   // send the simulations options annotation to OMC
-  mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeNode->getNameStructure(), annotationString);
+  mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), annotationString);
   // make the model modified
-  if (mpLibraryTreeNode->getModelWidget()) {
-    mpLibraryTreeNode->getModelWidget()->setModelModified();
-    mpLibraryTreeNode->getModelWidget()->updateModelicaText();
+  if (mpLibraryTreeItem->getModelWidget()) {
+    mpLibraryTreeItem->getModelWidget()->updateModelicaText();
+    mpLibraryTreeItem->getModelWidget()->setModelModified();
+  } else {
+    LibraryTreeModel *pLibraryTreeModel = mpMainWindow->getLibraryWidget()->getLibraryTreeModel();
+    pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
   }
 }
 

@@ -579,7 +579,7 @@ void LineAnnotation::setShapeFlags(bool enable)
       Only set the ItemIsMovable & ItemSendsGeometryChanges flags on Line if the class is not a system library class
       AND Line is not an inherited Line AND Line type is not ConnectionType.
       */
-    bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary();
+    bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary();
     if (!isSystemLibrary && !isInheritedShape() && mLineType != LineAnnotation::ConnectionType) {
       setFlag(QGraphicsItem::ItemIsMovable, enable);
       setFlag(QGraphicsItem::ItemSendsGeometryChanges, enable);
@@ -646,7 +646,7 @@ void LineAnnotation::handleComponentRotation()
  */
 void LineAnnotation::updateConnectionAnnotation()
 {
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM) {
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpGraphicsView->getModelWidget()->getEditor());
     pTLMEditor->updateTLMConnectiontAnnotation(getStartComponentName(), getEndComponentName(), getTLMShapeAnnotation());
 
@@ -656,11 +656,11 @@ void LineAnnotation::updateConnectionAnnotation()
     // update the connection
     OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
     pOMCProxy->updateConnection(getStartComponentName(), getEndComponentName(),
-                                mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getNameStructure(), annotationString);
+                                mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), annotationString);
   }
   // make the model modified
-  mpGraphicsView->getModelWidget()->setModelModified();
   mpGraphicsView->getModelWidget()->updateModelicaText();
+  mpGraphicsView->getModelWidget()->setModelModified();
 }
 
 void LineAnnotation::duplicate()

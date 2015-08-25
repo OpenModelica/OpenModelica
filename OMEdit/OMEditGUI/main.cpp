@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
   }
   // open the files passed as command line arguments
   foreach (QString fileName, fileNames) {
-    mainwindow.getLibraryTreeWidget()->openFile(fileName);
+    mainwindow.getLibraryWidget()->openFile(fileName);
   }
   // hide OMCLogger send custom expression feature if OMCLogger is false
   mainwindow.getOMCProxy()->enableCustomExpression(OMCLogger);

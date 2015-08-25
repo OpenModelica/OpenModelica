@@ -120,7 +120,6 @@ QString Helper::REAL = QString("Real");
 /* Global translated variables */
 QString Helper::newModelicaClass;
 QString Helper::createNewModelicaClass;
-QString Helper::findClasses;
 QString Helper::openModelicaFiles;
 QString Helper::openConvertModelicaFiles;
 QString Helper::libraries;
@@ -248,7 +247,7 @@ QString Helper::iconView;
 QString Helper::diagramView;
 QString Helper::textView;
 QString Helper::documentationView;
-QString Helper::searchModelicaClass;
+QString Helper::searchClasses;
 QString Helper::findReplaceModelicaText;
 QString Helper::left;
 QString Helper::center;
@@ -305,7 +304,6 @@ void Helper::initHelperVariables()
   /* Global translated variables */
   Helper::newModelicaClass = tr("New Modelica Class");
   Helper::createNewModelicaClass = tr("Create New Modelica Class");
-  Helper::findClasses = tr("Find Classes");
   Helper::openModelicaFiles = tr("Open Model/Library File(s)");
   Helper::openConvertModelicaFiles = tr("Open/Convert Modelica File(s) With Encoding");
   Helper::libraries = tr("Libraries");
@@ -434,7 +432,7 @@ void Helper::initHelperVariables()
   Helper::diagramView = tr("Diagram View");
   Helper::textView = tr("Text View");
   Helper::documentationView = tr("Documentation View");
-  Helper::searchModelicaClass = tr("Search Modelica Class");
+  Helper::searchClasses = tr("Search Classes");
   Helper::findReplaceModelicaText = tr("Find/Replace...");
   Helper::left = tr("Left");
   Helper::center = tr("Center");

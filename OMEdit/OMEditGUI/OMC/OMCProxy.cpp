@@ -744,10 +744,11 @@ QString OMCProxy::getVersion(QString className)
 }
 
 /*!
-  Loads the Modelica System Libraries.\n
-  Reads the omedit.ini file to get the libraries to load.
-  */
-void OMCProxy::loadSystemLibraries(QSplashScreen *pSplashScreen)
+ * \brief OMCProxy::loadSystemLibraries
+ * Loads the Modelica System Libraries.\n
+ * Reads the omedit.ini file to get the libraries to load.
+ */
+void OMCProxy::loadSystemLibraries()
 {
   QSettings *pSettings = OpenModelica::getApplicationSettings();
   bool forceModelicaLoad = true;
@@ -772,7 +773,6 @@ void OMCProxy::loadSystemLibraries(QSplashScreen *pSplashScreen)
     }
   }
   foreach (QString lib, libraries) {
-    pSplashScreen->showMessage(QString(Helper::loading).append(" ").append(lib), Qt::AlignRight, Qt::white);
     QString version = pSettings->value("libraries/" + lib).toString();
     loadModel(lib, version);
   }
@@ -780,10 +780,11 @@ void OMCProxy::loadSystemLibraries(QSplashScreen *pSplashScreen)
 }
 
 /*!
-  Loads the Modelica User Libraries.
-  Reads the omedit.ini file to get the libraries to load.
-  */
-void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
+ * \brief OMCProxy::loadUserLibraries
+ * Loads the Modelica User Libraries.
+ * Reads the omedit.ini file to get the libraries to load.
+ */
+void OMCProxy::loadUserLibraries()
 {
   QSettings *pSettings = OpenModelica::getApplicationSettings();
   pSettings->beginGroup("userlibraries");
@@ -792,7 +793,6 @@ void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
   foreach (QString lib, libraries) {
     QString encoding = pSettings->value("userlibraries/" + lib).toString();
     QString fileName = QUrl::fromPercentEncoding(QByteArray(lib.toStdString().c_str()));
-    pSplashScreen->showMessage(QString(Helper::loading).append(" ").append(fileName), Qt::AlignRight, Qt::white);
     QStringList classesList = parseFile(fileName, encoding);
     if (!classesList.isEmpty()) {
       /*
@@ -842,13 +842,16 @@ void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
 }
 
 /*!
-  Gets the list of classes from OMC.
-  \param className - is the name of the class whose sub classes are retrieved.
-  \param recursive - recursively retrieve all the sub classes.
-  \param qualified - returns the class names as qualified path.
-  \param showProtected - returns the protected classes as well.
-  \return the list of classes
-  */
+ * \brief OMCProxy::getClassNames
+ * Gets the list of classes from OMC.
+ * \param className - is the name of the class whose sub classes are retrieved.
+ * \param recursive - recursively retrieve all the sub classes.
+ * \param qualified - returns the class names as qualified path.
+ * \param sort
+ * \param builtin
+ * \param showProtected - returns the protected classes as well.
+ * \return
+ */
 QStringList OMCProxy::getClassNames(QString className, bool recursive, bool qualified, bool sort, bool builtin, bool showProtected)
 {
   return mpOMCInterface->getClassNames(className, recursive, qualified, sort, builtin, showProtected);
@@ -971,7 +974,11 @@ bool OMCProxy::isWhat(StringHandler::ModelicaClasses type, QString className)
   */
 bool OMCProxy::isProtectedClass(QString className, QString nestedClassName)
 {
-  return mpOMCInterface->isProtectedClass(className, nestedClassName);
+  if (className.isEmpty()) {
+    return false;
+  } else {
+    return mpOMCInterface->isProtectedClass(className, nestedClassName);
+  }
 }
 
 /*!
@@ -1333,7 +1340,7 @@ QString OMCProxy::getDocumentationAnnotation(QString className)
     * This tells QWebview that these links doesn't have any host.
     * Why we are doing this. Because,
     * QUrl converts the url host to lowercase. So if we use modelica:// then links like modelica://Modelica.Icons will be converted to
-    * modelica://modelica.Icons. We use the LibraryTreeWidget->getLibraryTreeNode() method to find the classname
+    * modelica://modelica.Icons. We use the LibraryTreeModel->findLibraryTreeItem() method to find the classname
     * by doing the search using the Qt::CaseInsensitive. This will be wrong if we have Modelica classes like Modelica.Icons and modelica.Icons
     * \see DocumentationViewer::processLinkClick
     */
@@ -1912,7 +1919,7 @@ bool OMCProxy::translateModel(QString className, QString simualtionParameters)
   sendCommand("translateModel(" + className + "," + simualtionParameters + ")");
   bool res = StringHandler::unparseBool(getResult());
   printMessagesStringInternal();
-  mpMainWindow->getLibraryTreeWidget()->loadDependentLibraries(getClassNames());
+  mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   return res;
 }
 
@@ -1956,7 +1963,7 @@ QString OMCProxy::checkModel(QString className)
   sendCommand("checkModel(" + className + ")");
   QString result = StringHandler::unparse(getResult());
   printMessagesStringInternal();
-  mpMainWindow->getLibraryTreeWidget()->loadDependentLibraries(getClassNames());
+  mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   return result;
 }
 
@@ -1983,7 +1990,7 @@ QString OMCProxy::checkAllModelsRecursive(QString className)
   sendCommand("checkAllModelsRecursive(" + className + ")");
   QString result = StringHandler::unparse(getResult());
   printMessagesStringInternal();
-  mpMainWindow->getLibraryTreeWidget()->loadDependentLibraries(getClassNames());
+  mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   return result;
 }
 
@@ -1997,7 +2004,7 @@ QString OMCProxy::instantiateModel(QString className)
   sendCommand("instantiateModel(" + className + ")");
   QString result = StringHandler::unparse(getResult());
   printMessagesStringInternal();
-  mpMainWindow->getLibraryTreeWidget()->loadDependentLibraries(getClassNames());
+  mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   return result;
 }
 
@@ -2036,7 +2043,7 @@ bool OMCProxy::translateModelFMU(QString className, double version, QString file
   QString res = mpOMCInterface->translateModelFMU(className, QString::number(version), "me", fileNamePrefix);
   if (res.compare("SimCode: The model " + className + " has been translated to FMU") == 0) {
     result = true;
-    mpMainWindow->getLibraryTreeWidget()->loadDependentLibraries(getClassNames());
+    mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   }
   printMessagesStringInternal();
   return result;
@@ -2053,7 +2060,7 @@ bool OMCProxy::translateModelXML(QString className)
   sendCommand("translateModelXML(" + className + ")");
   if (StringHandler::unparse(getResult()).compare("SimCode: The model " + className + " has been translated to XML") == 0) {
     result = true;
-    mpMainWindow->getLibraryTreeWidget()->loadDependentLibraries(getClassNames());
+    mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   }
   printMessagesStringInternal();
   return result;

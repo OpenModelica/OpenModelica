@@ -591,7 +591,7 @@ void OptionsDialog::saveGeneralSettings()
   // save show protected classes
   mpSettings->setValue("showProtectedClasses", mpGeneralSettingsPage->getShowProtectedClasses());
   // show/hide the protected classes
-  getMainWindow()->getLibraryTreeWidget()->showProtectedClasses(mpGeneralSettingsPage->getShowProtectedClasses());
+  getMainWindow()->getLibraryWidget()->getLibraryTreeModel()->showHideProtectedClasses();
   // save modeling view mode
   mpSettings->setValue("modeling/viewmode", mpGeneralSettingsPage->getModelingViewMode());
   if (mpGeneralSettingsPage->getModelingViewMode().compare(Helper::subWindow) == 0) {

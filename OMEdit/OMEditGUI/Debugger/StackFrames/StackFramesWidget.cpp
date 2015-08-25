@@ -292,9 +292,8 @@ void StackFramesTreeWidget::createStackFrames(GDBMIValue *pGDBMIValue)
 void StackFramesTreeWidget::showContextMenu(QPoint point)
 {
   int adjust = 24;
-  StackFrameItem *pLibraryTreeNode = dynamic_cast<StackFrameItem*>(itemAt(point));
-  if (pLibraryTreeNode)
-  {
+  StackFrameItem *pStackFrameItem = dynamic_cast<StackFrameItem*>(itemAt(point));
+  if (pStackFrameItem) {
     QMenu menu(this);
     menu.addAction(mpCreateFullBacktraceAction);
     point.setY(point.y() + adjust);

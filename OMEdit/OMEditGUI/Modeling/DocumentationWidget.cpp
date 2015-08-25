@@ -223,10 +223,10 @@ void DocumentationViewer::processLinkClick(QUrl url)
       QString resourceAbsoluteFileName = mpDocumentationWidget->getMainWindow()->getOMCProxy()->uriToFilename("modelica://" + resourceLink);
       QDesktopServices::openUrl("file:///" + resourceAbsoluteFileName);
     } else {
-      LibraryTreeNode *pLibraryTreeNode = mpDocumentationWidget->getMainWindow()->getLibraryTreeWidget()->getLibraryTreeNode(resourceLink);
+      LibraryTreeItem *pLibraryTreeItem = mpDocumentationWidget->getMainWindow()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(resourceLink);
       // send the new className to DocumentationWidget
-      if (pLibraryTreeNode) {
-        mpDocumentationWidget->showDocumentation(pLibraryTreeNode->getNameStructure());
+      if (pLibraryTreeItem) {
+        mpDocumentationWidget->showDocumentation(pLibraryTreeItem->getNameStructure());
       }
     }
   } else { // if it is normal http request then check if its not redirected to https

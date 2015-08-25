@@ -116,11 +116,11 @@ public:
   QString getErrorKind();
   QString getErrorLevel();
   QString getVersion(QString className = QString("OpenModelica"));
-  void loadSystemLibraries(QSplashScreen *pSplashScreen);
-  void loadUserLibraries(QSplashScreen *pSplashScreen);
-  QStringList getClassNames(QString className = QString("AllLoadedClasses"), bool recursive = false, bool qualified = "false",
-                            bool sort = false, bool builtin = false, bool showProtected = "true");
-  QStringList searchClassNames(QString searchText, bool findInText = "false");
+  void loadSystemLibraries();
+  void loadUserLibraries();
+  QStringList getClassNames(QString className = QString("AllLoadedClasses"), bool recursive = false, bool qualified = false,
+                            bool sort = false, bool builtin = false, bool showProtected = true);
+  QStringList searchClassNames(QString searchText, bool findInText = false);
   OMCInterface::getClassInformation_res getClassInformation(QString className);
   bool isPackage(QString className);
   bool isBuiltinType(QString typeName);

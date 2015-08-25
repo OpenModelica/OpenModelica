@@ -96,7 +96,7 @@ public:
   StringHandler::ViewType mViewType;
 };
 
-class LibraryTreeNode;
+class LibraryTreeItem;
 class GraphicsView : public QGraphicsView
 {
   Q_OBJECT
@@ -116,6 +116,7 @@ private:
   bool mIsCreatingBitmapShape;
   Component *mpClickedComponent;
   bool mIsMovingComponentsAndShapes;
+  bool mRenderingLibraryPixmap;
   QList<Component*> mComponentsList;
   QList<LineAnnotation*> mConnectionsList;
   QList<ShapeAnnotation*> mShapesList;
@@ -167,6 +168,8 @@ public:
   void setItemsFlags(bool enable);
   void setIsMovingComponentsAndShapes(bool enable);
   bool isMovingComponentsAndShapes();
+  void setRenderingLibraryPixmap(bool renderingLibraryPixmap) {mRenderingLibraryPixmap = renderingLibraryPixmap;}
+  bool isRenderingLibraryPixmap() {return mRenderingLibraryPixmap;}
   QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
   QAction* getDeleteConnectionAction();
   QAction* getDeleteAction();
@@ -212,9 +215,10 @@ public:
   QPointF snapPointToGrid(QPointF point);
   QPointF movePointByGrid(QPointF point);
   QPointF roundPoint(QPointF point);
+  bool hasIconAnnotation();
 private:
   void createActions();
-  bool isClassDroppedOnItself(LibraryTreeNode *pLibraryTreeNode);
+  bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
 signals:
   void keyPressDelete();
   void keyPressRotateClockwise();
@@ -304,8 +308,8 @@ class ModelWidget : public QWidget
 {
   Q_OBJECT
 public:
-  ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer *pModelWidgetContainer, bool newClass, bool extendsClass, QString text);
-  LibraryTreeNode* getLibraryTreeNode() {return mpLibraryTreeNode;}
+  ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text, bool newModel = false);
+  LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   GraphicsView* getDiagramGraphicsView() {return mpDiagramGraphicsView;}
   GraphicsView* getIconGraphicsView() {return mpIconGraphicsView;}
@@ -318,9 +322,11 @@ public:
   Label* getCursorPositionLabel() {return mpCursorPositionLabel;}
   void setModelModified();
   void updateParentModelsText(QString className);
-  void getModelComponents(QString className, bool inheritedCycle = false);
-  void getModelIconDiagramShapes(QString className, bool inheritedCycle = false);
+  void getModelIconShapes(QString className, bool inheritedCycle = false);
+  void getModelDiagramShapes(QString className, bool inheritedCycle = false);
   void getModelIconDiagramShapes(QString className, QString annotationString, StringHandler::ViewType viewType, bool inheritedCycle = false);
+  void getModelComponents(QString className, StringHandler::ViewType viewType, bool inheritedCycle = false);
+  void loadModelDiagramView();
   void getModelConnections(QString className, bool inheritedCycle = false);
   void getTLMComponents();
   void getTLMConnections();
@@ -331,7 +337,7 @@ public:
   void updateModelicaText();
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
-  LibraryTreeNode *mpLibraryTreeNode;
+  LibraryTreeItem *mpLibraryTreeItem;
   QToolButton *mpIconViewToolButton;
   QToolButton *mpDiagramViewToolButton;
   QToolButton *mpTextViewToolButton;
@@ -351,6 +357,7 @@ private:
   ModelicaTextHighlighter *mpModelicaTextHighlighter;
   TLMHighlighter *mpTLMHighlighter;
   QStatusBar *mpModelStatusBar;
+  bool mloadModelDiagramView;
 private slots:
   void showIconView(bool checked);
   void showDiagramView(bool checked);

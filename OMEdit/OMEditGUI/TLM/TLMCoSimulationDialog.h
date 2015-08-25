@@ -51,13 +51,13 @@ class TLMCoSimulationDialog : public QDialog
 public:
   TLMCoSimulationDialog(MainWindow *pMainWindow);
   ~TLMCoSimulationDialog();
-  void show(LibraryTreeNode *pLibraryTreeNode);
+  void show(LibraryTreeItem *pLibraryTreeItem);
   void simulationProcessFinished(TLMCoSimulationOptions tlmCoSimulationOptions, QDateTime resultFileLastModifiedDateTime);
   bool isTLMCoSimulationRunning() {return mIsTLMCoSimulationRunning;}
   void setIsTLMCoSimulationRunning(bool isTLMCoSimulationRunning) {mIsTLMCoSimulationRunning = isTLMCoSimulationRunning;}
 private:
   MainWindow *mpMainWindow;
-  LibraryTreeNode *mpLibraryTreeNode;
+  LibraryTreeItem *mpLibraryTreeItem;
   bool mIsTLMCoSimulationRunning;
   Label *mpHeadingLabel;
   QFrame *mpHorizontalLine;

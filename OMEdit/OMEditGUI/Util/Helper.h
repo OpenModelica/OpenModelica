@@ -122,7 +122,6 @@ public:
   /* Global translated variables */
   static QString newModelicaClass;
   static QString createNewModelicaClass;
-  static QString findClasses;
   static QString openModelicaFiles;
   static QString openConvertModelicaFiles;
   static QString libraries;
@@ -250,7 +249,7 @@ public:
   static QString diagramView;
   static QString textView;
   static QString documentationView;
-  static QString searchModelicaClass;
+  static QString searchClasses;
   static QString findReplaceModelicaText;
   static QString left;
   static QString center;

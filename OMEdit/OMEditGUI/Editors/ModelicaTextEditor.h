@@ -76,7 +76,6 @@ class ModelicaTextEditor : public BaseEditor
   Q_OBJECT
 public:
   ModelicaTextEditor(ModelWidget *pParent);
-  void setLastValidText(QString validText);
   QString getLastValidText() {return mLastValidText;}
   QStringList getClassNames(QString *errorString);
   bool validateText();

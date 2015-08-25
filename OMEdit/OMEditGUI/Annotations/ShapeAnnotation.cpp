@@ -1261,7 +1261,7 @@ void ShapeAnnotation::setShapeFlags(bool enable)
     Only set the ItemIsMovable & ItemSendsGeometryChanges flags on shape if the class is not a system library class
     AND shape is not an inherited shape.
     */
-  if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape()) {
+  if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()) {
     setFlag(QGraphicsItem::ItemIsMovable, enable);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, enable);
   }
@@ -1831,7 +1831,7 @@ bool ShapeAnnotation::isLineStraight(QPointF point1, QPointF point2)
   */
 void ShapeAnnotation::showShapeProperties()
 {
-  if (!mpGraphicsView || mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM)
+  if (!mpGraphicsView || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM)
     return;
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
   ShapePropertiesDialog *pShapePropertiesDialog = new ShapePropertiesDialog(this, pMainWindow);
@@ -1855,7 +1855,7 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
   }
 
   QMenu menu(mpGraphicsView);
-  if(mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM){
+  if(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM){
     menu.addAction(mpGraphicsView->getDeleteConnectionAction());
   } else {
     menu.addAction(mpShapePropertiesAction);
@@ -1910,7 +1910,7 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
       setCornerItemsActive();
       setCursor(Qt::SizeAllCursor);
       /* Only allow manipulations on shapes if the class is not a system library class OR shape is not an inherited component. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape()) {
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()) {
         if (lineType == LineAnnotation::ConnectionType) {
           connect(mpGraphicsView->getDeleteConnectionAction(), SIGNAL(triggered()), SLOT(deleteConnection()), Qt::UniqueConnection);
           connect(mpGraphicsView, SIGNAL(keyPressDelete()), SLOT(deleteConnection()), Qt::UniqueConnection);
@@ -1946,7 +1946,7 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
       setCornerItemsPassive();
       unsetCursor();
       /* Only allow manipulations on shapes if the class is not a system library class OR shape is not an inherited component. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape()) {
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()) {
         if (lineType == LineAnnotation::ConnectionType) {
           disconnect(mpGraphicsView->getDeleteConnectionAction(), SIGNAL(triggered()), this, SLOT(deleteConnection()));
           disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteConnection()));

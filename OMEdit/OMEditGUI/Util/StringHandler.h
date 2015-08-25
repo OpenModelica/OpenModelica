@@ -54,7 +54,7 @@ class StringHandler : public QObject
 public:
   StringHandler();
   ~StringHandler();
-  enum ViewType {Icon, Diagram, ModelicaText, NoView};
+  enum ViewType {Icon, Diagram, ModelicaText, IconDiagram, NoView};
   enum ModelicaClasses {Model, Class, Connector, ExpandableConnector, Record, Block, Function, Package, Primitive, Type, Operator,
                         OperatorRecord, OperatorFunction, Optimization, Parameter, Constant, Protected, Enumeration};
   enum OpenModelicaErrors {Notification, Warning, OMError, NoOMError};
@@ -155,6 +155,8 @@ public:
   static QColor getSimulationMessageTypeColor(StringHandler::SimulationMessageType type);
   static QString makeClassNameRelative(QString draggedClassName, QString droppedClassName);
   static QString toCamelCase(QString str);
+  static int getTrailingSpacesSize(QString str);
+  static bool isFileWritAble(QString filePath);
 protected:
   static QString mLastOpenDir;
 };

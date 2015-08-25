@@ -91,6 +91,7 @@ public:
   void parseAnnotationString(QString annotation);
   void getClassComponents();
   bool canUseDefaultAnnotation(Component *pComponent);
+  bool hasShapeAnnotation(Component *pComponent);
   void createActions();
   void createResizerItems();
   void getResizerItemsPositions(qreal *x1, qreal *y1, qreal *x2, qreal *y2);

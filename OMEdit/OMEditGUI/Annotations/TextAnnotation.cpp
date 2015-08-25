@@ -198,6 +198,9 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
+  if (mpGraphicsView && mpGraphicsView->isRenderingLibraryPixmap()) {
+    return;
+  }
   if (mVisible) {
     drawTextAnnotaion(painter);
   }

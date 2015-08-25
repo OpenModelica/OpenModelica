@@ -135,31 +135,26 @@ ModelicaTextEditor::ModelicaTextEditor(ModelWidget *pParent)
   setModelicaTextDocument(mpPlainTextEdit->document());
 }
 
-void ModelicaTextEditor::setLastValidText(QString validText)
-{
-  mLastValidText = validText;
-}
-
 //! Uses the OMC parseString API to check the class names inside the Modelica Text
 //! @return QStringList a list of class names
 QStringList ModelicaTextEditor::getClassNames(QString *errorString)
 {
   OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
   QStringList classNames;
-  LibraryTreeNode *pLibraryTreeNode = mpModelWidget->getLibraryTreeNode();
+  LibraryTreeItem *pLibraryTreeItem = mpModelWidget->getLibraryTreeItem();
   if (mpPlainTextEdit->toPlainText().isEmpty()) {
     *errorString = tr("Start and End modifiers are different");
     return QStringList();
   } else {
-    if (pLibraryTreeNode->getParentName().isEmpty()) {
-      classNames = pOMCProxy->parseString(mpPlainTextEdit->toPlainText(), pLibraryTreeNode->getNameStructure());
+    if (pLibraryTreeItem->isTopLevel()) {
+      classNames = pOMCProxy->parseString(mpPlainTextEdit->toPlainText(), pLibraryTreeItem->getNameStructure());
     } else {
-      classNames = pOMCProxy->parseString("within " + pLibraryTreeNode->getParentName() + ";" + mpPlainTextEdit->toPlainText(), pLibraryTreeNode->getNameStructure());
+      classNames = pOMCProxy->parseString("within " + pLibraryTreeItem->parent()->getNameStructure() + ";" + mpPlainTextEdit->toPlainText(), pLibraryTreeItem->getNameStructure());
     }
   }
   // if user is defining multiple top level classes.
   if (classNames.size() > 1) {
-    *errorString = QString(GUIMessages::getMessage(GUIMessages::MULTIPLE_TOP_LEVEL_CLASSES)).arg(pLibraryTreeNode->getNameStructure())
+    *errorString = QString(GUIMessages::getMessage(GUIMessages::MULTIPLE_TOP_LEVEL_CLASSES)).arg(pLibraryTreeItem->getNameStructure())
         .arg(classNames.join(","));
     return QStringList();
   }
@@ -168,7 +163,7 @@ QStringList ModelicaTextEditor::getClassNames(QString *errorString)
   // check if the class already exists
   foreach(QString className, classNames)
   {
-    if (pLibraryTreeNode->getNameStructure().compare(className) != 0)
+    if (pLibraryTreeItem->getNameStructure().compare(className) != 0)
     {
       if (pOMCProxy->existClass(className))
       {
@@ -220,7 +215,7 @@ bool ModelicaTextEditor::validateText()
       }
     } else {
       mTextChanged = false;
-      setLastValidText(mpPlainTextEdit->toPlainText());
+      mLastValidText = mpPlainTextEdit->toPlainText();
     }
   }
   return true;
@@ -259,7 +254,7 @@ void ModelicaTextEditor::setPlainText(const QString &text)
     mForceSetPlainText = true;
     mpPlainTextEdit->setPlainText(text);
     mForceSetPlainText = false;
-    //updateLineNumberAreaWidth(0);
+    mLastValidText = text;
   }
 }
 
@@ -273,9 +268,9 @@ void ModelicaTextEditor::contentsHasChanged(int position, int charsRemoved, int 
       return;
     }
     /* if user is changing the system library class. */
-    if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary() && !mForceSetPlainText) {
+    if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() && !mForceSetPlainText) {
       mpMainWindow->getInfoBar()->showMessage(tr("<b>Warning: </b>You are changing a system library class. System libraries are always read-only. Your changes will not be saved."));
-    } else if (mpModelWidget->getLibraryTreeNode()->isReadOnly() && !mForceSetPlainText) {
+    } else if (mpModelWidget->getLibraryTreeItem()->isReadOnly() && !mForceSetPlainText) {
       /* if user is changing the read-only class. */
       mpMainWindow->getInfoBar()->showMessage(tr("<b>Warning: </b>You are changing a read-only class."));
     } else {
