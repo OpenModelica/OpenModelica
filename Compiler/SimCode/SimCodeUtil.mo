@@ -5773,6 +5773,7 @@ algorithm
 
   //evaluate function calls in variable attributes (start-value)
   (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,evaluateStartValues,funcTree);
+
     //BackendDump.dumpVariables(vars,"VAR AFTER");
   systOut := BackendDAEUtil.setEqSystVars(systIn, vars);
 end preCalculateStartValues;
@@ -6016,7 +6017,8 @@ algorithm
   systs2 := List.filterOnFalse(systs1, BackendDAEUtil.isClockedSyst);
 
   if not Flags.isSet(Flags.NO_START_CALC) then
-    systs1 := List.map2(systs1, preCalculateStartValues, knvars1, funcTree);
+    (systs1) := List.map2(systs1, preCalculateStartValues, knvars1, funcTree);
+    (knvars1,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(knvars1,evaluateStartValues,funcTree);
     //systs2 := List.map1(systs2, preCalculateStartValues, knvars2);
   end if;
 
