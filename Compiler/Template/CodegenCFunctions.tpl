@@ -951,7 +951,7 @@ case FUNCTION(__) then
 
   let &varDecls = buffer ""
   let &auxFunction = buffer ""
-  let bodyPart = (body |> stmt  => extractParFors(stmt, &varDecls, &auxFunction) ;separator="\n")
+  let bodyPart = extractParFors(body, &varDecls, &auxFunction)
   <<
   <%auxFunction%>
   <%bodyPart%>
@@ -972,10 +972,14 @@ case FUNCTION(__) then
   let &varInits = buffer ""
   let &varFrees = buffer ""
   let &auxFunction = buffer ""
+  let restoreJmpbuf = (if statementsContainReturn(body) then
+    (if statementsContainTryBlock(body) then
+      let &varDecls += 'jmp_buf *old_mmc_jumper = threadData->mmc_jumper;<%\n%>'
+      'threadData->mmc_jumper = old_mmc_jumper;<%\n%>'))
   let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
       varInit(var, "", &varDecls, &varInits, &varFrees, &auxFunction) ; empty /* increase the counter! */
     )
-  let bodyPart = (body |> stmt  => funStatement(stmt, &varDecls, &auxFunction) ;separator="\n")
+  let bodyPart = funStatement(body, &varDecls, &auxFunction)
   let outVarAssign = (List.restOrEmpty(outVars) |> var => varOutput(var))
 
   let freeConstructedExternalObjects = (variableDeclarations |> var as VARIABLE(ty=T_COMPLEX(complexClassType=EXTERNAL_OBJ(path=path_ext))) => 'omc_<%underscorePath(path_ext)%>_destructor(threadData,<%contextCref(var.name,contextFunction,&auxFunction)%>);'; separator = "\n")
@@ -993,7 +997,7 @@ case FUNCTION(__) then
     <%varInits%>
     <%bodyPart%>
     _return: OMC_LABEL_UNUSED
-    <%outVarAssign%>
+    <%outVarAssign%><%restoreJmpbuf%>
     <%if acceptParModelicaGrammar() then
     '/* Free GPU/OpenCL CPU memory */<%\n%><%varFrees%>'%>
     <%freeConstructedExternalObjects%>
@@ -1095,7 +1099,7 @@ case KERNEL_FUNCTION(__) then
       reconstructKernelArrays(var, &reconstrucedArrays)
     )
 
-  let bodyPart = (body |> stmt  => parModelicafunStatement(stmt, &varDecls, &auxFunction) ;separator="\n")
+  let bodyPart = parModelicafunStatement(body, &varDecls, &auxFunction)
 
   /* Needs to be done last as it messes with the tmp ticks :) */
   let &varDecls += addRootsTempArray()
@@ -1142,7 +1146,7 @@ case PARALLEL_FUNCTION(__) then
       varInitParallel(var, "", i1, &varDecls, &varInits, &varFrees, &auxFunction)
       ;empty
     )
-  let bodyPart = (body |> stmt  => parModelicafunStatement(stmt, &varDecls, &auxFunction) ;separator="\n")
+  let bodyPart = parModelicafunStatement(body, &varDecls, &auxFunction)
   let &outVarInits = buffer ""
   let &outVarCopy = buffer ""
   let &outVarAssign = buffer ""
@@ -2338,43 +2342,25 @@ template tempSizeVarName(ComponentRef c, DAE.Exp indices, Text &auxFunction)
   else error(sourceInfo(), 'tempSizeVarName:UNHANDLED_EXPRESSION')
 end tempSizeVarName;
 
-template funStatement(Statement stmt, Text &varDecls, Text &auxFunction)
+template funStatement(list<DAE.Statement> statementLst, Text &varDecls, Text &auxFunction)
  "Generates function statements."
 ::=
-  match stmt
-  case ALGORITHM(__) then
-    (statementLst |> stmt =>
-      algStatement(stmt, contextFunction, &varDecls, &auxFunction)
-    ;separator="\n")
-  else
-    error(sourceInfo(), 'funStatement:NOT IMPLEMENTED FUN STATEMENT')
+  statementLst |> stmt => algStatement(stmt, contextFunction, &varDecls, &auxFunction) ; separator="\n"
 end funStatement;
 
-template parModelicafunStatement(Statement stmt, Text &varDecls, Text &auxFunction)
+template parModelicafunStatement(list<DAE.Statement> statementLst, Text &varDecls, Text &auxFunction)
  "Generates function statements With PARALLEL context. Similar to Function context.
  Except in some cases like assignments."
 ::=
-  match stmt
-  case ALGORITHM(__) then
-    (statementLst |> stmt =>
-      algStatement(stmt, contextParallelFunction, &varDecls, &auxFunction)
-    ;separator="\n")
-  else
-    error(sourceInfo(), 'parModelicafunStatement:NOT IMPLEMENTED FUN STATEMENT')
+  statementLst |> stmt => algStatement(stmt, contextParallelFunction, &varDecls, &auxFunction) ; separator="\n"
 end parModelicafunStatement;
 
-template extractParFors(Statement stmt, Text &varDecls, Text &auxFunction)
+template extractParFors(list<DAE.Statement> statementLst, Text &varDecls, Text &auxFunction)
  "Generates bodies of parfor loops to the kernel file.
  The sequential C operations needed to implement the parallel
  for loop will be handled by the normal funStatment template."
 ::=
-  match stmt
-  case ALGORITHM(__) then
-    (statementLst |> stmt =>
-      extractParFors_impl(stmt, contextParallelFunction, &varDecls, &auxFunction)
-    ;separator="\n")
-  else
-    error(sourceInfo(), 'extractParFors:NOT IMPLEMENTED FUN STATEMENT')
+  statementLst |> stmt => extractParFors_impl(stmt, contextParallelFunction, &varDecls, &auxFunction) ; separator="\n"
 end extractParFors;
 
 
