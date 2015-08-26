@@ -1066,7 +1066,7 @@ case FUNCTION(__) then
   let fname = underscorePathXml(name)
   let &varDecls = buffer "" /*BUFD*/
   let &varInits = buffer "" /*BUFD*/
-  let bodyPart = (body |> stmt  => funStatementXml(stmt, &varDecls /*BUFD*/) ;separator="\n")
+  let bodyPart = funStatementXml(body, &varDecls)
   <<
   <fun:Function>
     <fun:Name>
@@ -1479,16 +1479,10 @@ end constraintXml;
  *         SECTION: GENERATE All Algorithm IN SIMULATION FILE
  *****************************************************************************/
 
-template funStatementXml(Statement stmt, Text &varDecls /*BUFP*/)
+template funStatementXml(list<DAE.Statement> statementLst, Text &varDecls /*BUFP*/)
  "Generates function statements."
 ::=
-  match stmt
-  case ALGORITHM(__) then
-    (statementLst |> stmt =>
-      algStatementXml(stmt, contextFunction, &varDecls /*BUFD*/)
-    ;separator="\n")
-  else
-    "NOT IMPLEMENTED FUN STATEMENT"
+  statementLst |> stmt => algStatementXml(stmt, contextFunction, &varDecls /*BUFD*/) ;separator="\n"
 end funStatementXml;
 
 template algStatementXml(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)

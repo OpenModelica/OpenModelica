@@ -256,7 +256,7 @@ uniontype Function
     list<Variable> outVars;
     list<Variable> functionArguments;
     list<Variable> variableDeclarations;
-    list<Statement> body;
+    list<DAE.Statement> body;
     SCode.Visibility visibility;
     SourceInfo info;
   end FUNCTION;
@@ -266,7 +266,7 @@ uniontype Function
     list<Variable> outVars;
     list<Variable> functionArguments;
     list<Variable> variableDeclarations;
-    list<Statement> body;
+    list<DAE.Statement> body;
     SourceInfo info;
   end PARALLEL_FUNCTION;
 
@@ -275,7 +275,7 @@ uniontype Function
     list<Variable> outVars;
     list<Variable> functionArguments;
     list<Variable> variableDeclarations;
-    list<Statement> body;
+    list<DAE.Statement> body;
     SourceInfo info;
   end KERNEL_FUNCTION;
 
@@ -364,13 +364,6 @@ uniontype Variable
     Option<DAE.Exp> defaultValue "default value";
   end FUNCTION_PTR;
 end Variable;
-
-// TODO: Replace Statement with just list<DAE.Statement>?
-uniontype Statement
-  record ALGORITHM
-    list<DAE.Statement> statementLst; // in functions
-  end ALGORITHM;
-end Statement;
 
 uniontype SimEqSystem
   "Represents a single equation or a system of equations that must be solved together."

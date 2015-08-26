@@ -4625,7 +4625,7 @@ case FUNCTION(__) then
   //let addRootsInputs = (functionArguments |> var => addRoots(var) ;separator="\n")
   //let addRootsOutputs = (outVars |> var => addRoots(var) ;separator="\n")
   //let funArgs = (functionArguments |> var => functionArg(var, &varInits) ;separator="\n")
-  let bodyPart = (body |> stmt  => funStatement(stmt, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n")
+  let bodyPart = funStatement(body, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   let &outVarInits = buffer ""
   let &outVarCopy = buffer ""
   let &outVarAssign = buffer ""
@@ -5665,16 +5665,10 @@ case var as VARIABLE(__) then
      end match
 end varType3;
 
-template funStatement(Statement stmt, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template funStatement(list<DAE.Statement> statementLst, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates function statements."
 ::=
-  match stmt
-  case ALGORITHM(__) then
-    (statementLst |> stmt =>
-      algStatement(stmt, contextFunction, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    ;separator="\n")
-  else
-    "NOT IMPLEMENTED FUN STATEMENT"
+  statementLst |> stmt => algStatement(stmt, contextFunction, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ; separator="\n"
 end funStatement;
 
 template initExtVars(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)

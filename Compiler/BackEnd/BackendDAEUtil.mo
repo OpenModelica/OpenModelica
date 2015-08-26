@@ -1909,20 +1909,16 @@ protected function collateArrExpStmt "author: Frenkel TUD 2010-07
   wbraun: added as workaround for when condition.
   As long as we don't support fully array helpVars,
   we can't collate the expression of a when condition."
-  input tuple<DAE.Exp, DAE.Statement, Option<DAE.FunctionTree>> itpl;
-  output tuple<DAE.Exp, Option<DAE.FunctionTree>> otpl;
+  input DAE.Exp inExp;
+  input DAE.Statement inStmt;
+  input Option<DAE.FunctionTree> funcs;
+  output DAE.Exp outExp = inExp;
+  output Option<DAE.FunctionTree> oarg = funcs;
 algorithm
-  otpl := matchcontinue itpl
-    local
-      DAE.Exp e;
-      DAE.Statement x;
-      Option<DAE.FunctionTree> funcs;
-    case ((e, x, funcs))
-      equation
-       (e, (_, _)) = Expression.traverseExpBottomUp(e, traversingcollateArrExpStmt, (x, funcs));
-      then ((e,funcs));
-    case ((e, _, funcs)) then ((e,funcs));
-  end matchcontinue;
+  try
+    outExp := Expression.traverseExpBottomUp(outExp, traversingcollateArrExpStmt, (inStmt, funcs));
+  else
+  end try;
 end collateArrExpStmt;
 
 protected function traversingcollateArrExpStmt "wbraun: added as workaround for when condition.
