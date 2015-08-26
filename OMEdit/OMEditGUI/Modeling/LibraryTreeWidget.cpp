@@ -303,7 +303,6 @@ LibraryTreeItem::LibraryTreeItem()
  * \brief LibraryTreeItem::LibraryTreeItem
  * \param type
  * \param text
- * \param parentName
  * \param nameStructure
  * \param classInformation
  * \param fileName
@@ -335,12 +334,21 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
   updateAttributes();
 }
 
+/*!
+ * \brief LibraryTreeItem::~LibraryTreeItem
+ * Destructor for LibraryTreeItem
+ */
 LibraryTreeItem::~LibraryTreeItem()
 {
   qDeleteAll(mChildren);
   mChildren.clear();
 }
 
+/*!
+ * \brief LibraryTreeItem::setClassInformation
+ * Sets the OMCInterface::getClassInformation_res
+ * \param classInformation
+ */
 void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res classInformation)
 {
   if (mLibraryType == LibraryTreeItem::Modelica) {
@@ -375,7 +383,7 @@ void LibraryTreeItem::setFileName(QString fileName)
  * Updates the LibraryTreeItem icon, text and tooltip.
  */
 void LibraryTreeItem::updateAttributes() {
-  setIcon(getModelicaNodeIcon());
+  setIcon(getLibraryTreeItemIcon());
   QString tooltip;
   if (mLibraryType == LibraryTreeItem::Modelica) {
     tooltip = QString("%1: %2<br />%3: %4<br />%5: %6<br />%7: %8<br />%9: %10")
@@ -393,10 +401,10 @@ void LibraryTreeItem::updateAttributes() {
 }
 
 /*!
- * \brief LibraryTreeItem::getModelicaNodeIcon
+ * \brief LibraryTreeItem::getLibraryTreeItemIcon
  * \return QIcon - the LibraryTreeItem icon
  */
-QIcon LibraryTreeItem::getModelicaNodeIcon()
+QIcon LibraryTreeItem::getLibraryTreeItemIcon()
 {
   if (mLibraryType == LibraryTreeItem::Text) {
     return QIcon(":/Resources/icons/txt.svg");
@@ -445,27 +453,45 @@ bool LibraryTreeItem::isInPackageOneFile()
   }
 }
 
+/*!
+ * \brief LibraryTreeItem::insertChild
+ * Inserts a child LibraryTreeItem at the given position.
+ * \param position
+ * \param pLibraryTreeItem
+ */
 void LibraryTreeItem::insertChild(int position, LibraryTreeItem *pLibraryTreeItem)
 {
   mChildren.insert(position, pLibraryTreeItem);
 }
 
+/*!
+ * \brief LibraryTreeItem::child
+ * Returns the child LibraryTreeItem stored at given row.
+ * \param row
+ * \return
+ */
 LibraryTreeItem* LibraryTreeItem::child(int row)
 {
   return mChildren.value(row);
 }
 
-void LibraryTreeItem::removeChildren()
-{
-  qDeleteAll(mChildren);
-  mChildren.clear();
-}
-
+/*!
+ * \brief LibraryTreeItem::removeChild
+ * Removes the child LibraryTreeItem.
+ * \param pLibraryTreeItem
+ */
 void LibraryTreeItem::removeChild(LibraryTreeItem *pLibraryTreeItem)
 {
   mChildren.removeOne(pLibraryTreeItem);
 }
 
+/*!
+ * \brief LibraryTreeItem::data
+ * Returns the data stored under the given role for the item referred to by the column.
+ * \param column
+ * \param role
+ * \return
+ */
 QVariant LibraryTreeItem::data(int column, int role) const
 {
   switch (column) {
@@ -485,6 +511,11 @@ QVariant LibraryTreeItem::data(int column, int role) const
   }
 }
 
+/*!
+ * \brief LibraryTreeItem::row
+ * Returns the row number corresponding to LibraryTreeItem.
+ * \return
+ */
 int LibraryTreeItem::row() const
 {
   if (mpParentLibraryTreeItem) {
@@ -492,24 +523,6 @@ int LibraryTreeItem::row() const
   }
 
   return 0;
-}
-
-LibraryTreeItem* LibraryTreeItem::parent()
-{
-  return mpParentLibraryTreeItem;
-}
-
-LibraryTreeItem* LibraryTreeItem::rootParent()
-{
-  // since we have global mpRootVariablesTreeItem so we return one level down from this function in order to get the top level item.
-  LibraryTreeItem *pLibraryTreeItem, *pLibraryTreeItem1;
-  pLibraryTreeItem = this;
-  pLibraryTreeItem1 = this;
-  while (pLibraryTreeItem->parent()) {
-    pLibraryTreeItem1 = pLibraryTreeItem;
-    pLibraryTreeItem = pLibraryTreeItem->parent();
-  }
-  return pLibraryTreeItem1;
 }
 
 /*!
@@ -547,6 +560,14 @@ bool LibraryTreeItem::isSimulationAllowed()
   }
 }
 
+/*!
+ * \class LibraryTreeProxyModel
+ * \brief A sort filter proxy model for Libraries Browser.
+ */
+/*!
+ * \brief LibraryTreeProxyModel::LibraryTreeProxyModel
+ * \param pLibraryWidget
+ */
 LibraryTreeProxyModel::LibraryTreeProxyModel(LibraryWidget *pLibraryWidget)
   : QSortFilterProxyModel(pLibraryWidget)
 {
@@ -608,6 +629,14 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
   }
 }
 
+/*!
+ * \class LibraryTreeModel
+ * \brief A model for Libraries Browser.
+ */
+/*!
+ * \brief LibraryTreeModel::LibraryTreeModel
+ * \param pLibraryWidget
+ */
 LibraryTreeModel::LibraryTreeModel(LibraryWidget *pLibraryWidget)
   : QAbstractItemModel(pLibraryWidget)
 {
@@ -615,12 +644,25 @@ LibraryTreeModel::LibraryTreeModel(LibraryWidget *pLibraryWidget)
   mpRootLibraryTreeItem = new LibraryTreeItem;
 }
 
+/*!
+ * \brief LibraryTreeModel::columnCount
+ * Returns the number of columns for the children of the given parent.
+ * \param parent
+ * \return
+ */
 int LibraryTreeModel::columnCount(const QModelIndex &parent) const
 {
   Q_UNUSED(parent);
   return 1;
 }
 
+/*!
+ * \brief LibraryTreeModel::rowCount
+ * Returns the number of rows under the given parent.
+ * When the parent is valid it means that rowCount is returning the number of children of parent.
+ * \param parent
+ * \return
+ */
 int LibraryTreeModel::rowCount(const QModelIndex &parent) const
 {
   LibraryTreeItem *pParentLibraryTreeItem;
@@ -636,6 +678,14 @@ int LibraryTreeModel::rowCount(const QModelIndex &parent) const
   return pParentLibraryTreeItem->getChildren().size();
 }
 
+/*!
+ * \brief LibraryTreeModel::headerData
+ * Returns the data for the given role and section in the header with the specified orientation.
+ * \param section
+ * \param orientation
+ * \param role
+ * \return
+ */
 QVariant LibraryTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
   Q_UNUSED(section);
@@ -645,6 +695,14 @@ QVariant LibraryTreeModel::headerData(int section, Qt::Orientation orientation, 
   return QVariant();
 }
 
+/*!
+ * \brief LibraryTreeModel::index
+ * Returns the index of the item in the model specified by the given row, column and parent index.
+ * \param row
+ * \param column
+ * \param parent
+ * \return
+ */
 QModelIndex LibraryTreeModel::index(int row, int column, const QModelIndex &parent) const
 {
   if (!hasIndex(row, column, parent)) {
@@ -1312,7 +1370,6 @@ bool LibraryTreeModel::unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bo
   // remove the LibraryTreeItem from Libraries Browser
   int row = pLibraryTreeItem->row();
   beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem), row, row);
-  pLibraryTreeItem->removeChildren();
   mpRootLibraryTreeItem->removeChild(pLibraryTreeItem);
   delete pLibraryTreeItem;
   endRemoveRows();
@@ -1408,7 +1465,6 @@ void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, Libr
   // remove the LibraryTreeItem from Libraries Browser
   int row = pLibraryTreeItem->row();
   beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem), row, row);
-  pLibraryTreeItem->removeChildren();
   pParentLibraryTreeItem->removeChild(pLibraryTreeItem);
   delete pLibraryTreeItem;
   endRemoveRows();
@@ -1939,7 +1995,14 @@ void LibraryTreeView::startDrag(Qt::DropActions supportedActions)
   }
 }
 
-
+/*!
+ * \class LibraryWidget
+ * \brief A widget for Libraries Browser.
+ */
+/*!
+ * \brief LibraryWidget::LibraryWidget
+ * \param pMainWindow
+ */
 LibraryWidget::LibraryWidget(MainWindow *pMainWindow)
   : QWidget(pMainWindow), mpMainWindow(pMainWindow)
 {
@@ -1970,6 +2033,14 @@ LibraryWidget::LibraryWidget(MainWindow *pMainWindow)
   setLayout(pMainLayout);
 }
 
+/*!
+ * \brief LibraryWidget::openFile
+ * Opens a file.
+ * \param fileName
+ * \param encoding
+ * \param showProgress
+ * \param checkFileExists
+ */
 void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgress, bool checkFileExists)
 {
   /* if the file doesn't exist then remove it from the recent files list. */
@@ -1999,6 +2070,13 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
   }
 }
 
+/*!
+ * \brief LibraryWidget::openModelicaFile
+ * Opens a Modelica file and creates a LibraryTreeItem for it.
+ * \param fileName
+ * \param encoding
+ * \param showProgress
+ */
 void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool showProgress)
 {
   // get the class names now to check if they are already loaded or not
@@ -2073,6 +2151,12 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
   if (showProgress) mpMainWindow->getStatusBar()->clearMessage();
 }
 
+/*!
+ * \brief LibraryWidget::openTLMOrTextFile
+ * Opens a TLM/Text file and creates a LibraryTreeItem for it.
+ * \param fileInfo
+ * \param showProgress
+ */
 void LibraryWidget::openTLMOrTextFile(QFileInfo fileInfo, bool showProgress)
 {
   if (showProgress) mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
@@ -2110,6 +2194,11 @@ void LibraryWidget::openTLMOrTextFile(QFileInfo fileInfo, bool showProgress)
   if (showProgress) mpMainWindow->getStatusBar()->clearMessage();
 }
 
+/*!
+ * \brief LibraryWidget::parseAndLoadModelicaText
+ * Parses and loads the Modelica text and creates a LibraryTreeItems based on the text.
+ * \param modelText
+ */
 void LibraryWidget::parseAndLoadModelicaText(QString modelText)
 {
   QStringList classNames = mpMainWindow->getOMCProxy()->parseString(modelText, "");
@@ -2160,6 +2249,12 @@ void LibraryWidget::parseAndLoadModelicaText(QString modelText)
   }
 }
 
+/*!
+ * \brief LibraryWidget::saveLibraryTreeItem
+ * Saves the LibraryTreeItem
+ * \param pLibraryTreeItem
+ * \return
+ */
 bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
   bool result = false;
@@ -2181,6 +2276,11 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   return result;
 }
 
+/*!
+ * \brief LibraryWidget::openLibraryTreeItem
+ * Opens a ModelWidget associated with the LibraryTreeItem.
+ * \param nameStructure
+ */
 void LibraryWidget::openLibraryTreeItem(QString nameStructure)
 {
   LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(nameStructure);
@@ -2191,6 +2291,12 @@ void LibraryWidget::openLibraryTreeItem(QString nameStructure)
   }
 }
 
+/*!
+ * \brief LibraryWidget::saveModelicaLibraryTreeItem
+ * Saves a Modelica LibraryTreeItem.
+ * \param pLibraryTreeItem
+ * \return
+ */
 bool LibraryWidget::saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
   bool result = false;
@@ -2267,6 +2373,12 @@ bool LibraryWidget::saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeIte
   return result;
 }
 
+/*!
+ * \brief LibraryWidget::saveTextLibraryTreeItem
+ * Saves a Text LibraryTreeItem.
+ * \param pLibraryTreeItem
+ * \return
+ */
 bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
   QString fileName;
@@ -2303,6 +2415,12 @@ bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   return true;
 }
 
+/*!
+ * \brief LibraryWidget::saveTLMLibraryTreeItem
+ * Saves a TLM LibraryTreeItem.
+ * \param pLibraryTreeItem
+ * \return
+ */
 bool LibraryWidget::saveTLMLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
   QString fileName;
@@ -2365,6 +2483,12 @@ bool LibraryWidget::saveTLMLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   return true;
 }
 
+/*!
+ * \brief LibraryWidget::saveLibraryTreeItemHelper
+ * Helper function for saving a LibraryTreeItem
+ * \param pLibraryTreeItem
+ * \return
+ */
 bool LibraryWidget::saveLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem)
 {
   mpMainWindow->getStatusBar()->showMessage(QString(tr("Saving")).append(" ").append(pLibraryTreeItem->getNameStructure()));
@@ -2410,6 +2534,12 @@ bool LibraryWidget::saveLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem)
   return true;
 }
 
+/*!
+ * \brief LibraryWidget::saveLibraryTreeItemOneFileHelper
+ * Helper function for saving a LibraryTreeItem.
+ * \param pLibraryTreeItem
+ * \return
+ */
 bool LibraryWidget::saveLibraryTreeItemOneFileHelper(LibraryTreeItem *pLibraryTreeItem)
 {
   mpMainWindow->getStatusBar()->showMessage(QString(tr("Saving")).append(" ").append(pLibraryTreeItem->getNameStructure()));
@@ -2446,6 +2576,13 @@ bool LibraryWidget::saveLibraryTreeItemOneFileHelper(LibraryTreeItem *pLibraryTr
   }
 }
 
+/*!
+ * \brief LibraryWidget::setSubModelsFileNameOneFileHelper
+ * Helper function for saving a LibraryTreeItem.
+ * \param pLibraryTreeItem
+ * \param filePath
+ * \return
+ */
 bool LibraryWidget::setSubModelsFileNameOneFileHelper(LibraryTreeItem *pLibraryTreeItem, QString filePath)
 {
   /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
@@ -2476,6 +2613,11 @@ bool LibraryWidget::setSubModelsFileNameOneFileHelper(LibraryTreeItem *pLibraryT
   return true;
 }
 
+/*!
+ * \brief LibraryWidget::setSubModelsSavedOneFileHelper
+ * Helper function for saving a LibraryTreeItem.
+ * \param pLibraryTreeItem
+ */
 void LibraryWidget::setSubModelsSavedOneFileHelper(LibraryTreeItem *pLibraryTreeItem)
 {
   for (int i = 0 ; i < pLibraryTreeItem->getChildren().size(); i++) {
@@ -2491,6 +2633,12 @@ void LibraryWidget::setSubModelsSavedOneFileHelper(LibraryTreeItem *pLibraryTree
   }
 }
 
+/*!
+ * \brief LibraryWidget::saveLibraryTreeItemFolderHelper
+ * Helper function for saving a LibraryTreeItem.
+ * \param pLibraryTreeItem
+ * \return
+ */
 bool LibraryWidget::saveLibraryTreeItemFolderHelper(LibraryTreeItem *pLibraryTreeItem)
 {
   mpMainWindow->getStatusBar()->showMessage(QString(tr("Saving")).append(" ").append(pLibraryTreeItem->getNameStructure()));
@@ -2535,6 +2683,13 @@ bool LibraryWidget::saveLibraryTreeItemFolderHelper(LibraryTreeItem *pLibraryTre
   }
 }
 
+/*!
+ * \brief LibraryWidget::saveSubModelsFolderHelper
+ * Helper function for saving a LibraryTreeItem.
+ * \param pLibraryTreeItem
+ * \param directoryName
+ * \return
+ */
 bool LibraryWidget::saveSubModelsFolderHelper(LibraryTreeItem *pLibraryTreeItem, QString directoryName)
 {
   for (int i = 0 ; i < pLibraryTreeItem->getChildren().size(); i++) {
@@ -2601,6 +2756,12 @@ bool LibraryWidget::saveSubModelsFolderHelper(LibraryTreeItem *pLibraryTreeItem,
   return true;
 }
 
+/*!
+ * \brief LibraryWidget::saveLibraryTreeItemOneFileOrFolderHelper
+ * Helper function for saving a LibraryTreeItem.
+ * \param pLibraryTreeItem
+ * \return
+ */
 bool LibraryWidget::saveLibraryTreeItemOneFileOrFolderHelper(LibraryTreeItem *pLibraryTreeItem)
 {
   QFileInfo fileInfo(pLibraryTreeItem->getFileName());

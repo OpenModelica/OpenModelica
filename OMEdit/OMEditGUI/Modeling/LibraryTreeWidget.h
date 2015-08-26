@@ -121,18 +121,15 @@ public:
   bool isExpanded() const {return mExpanded;}
   void setExpanded(bool expanded) {mExpanded = expanded;}
   void updateAttributes();
-  QIcon getModelicaNodeIcon();
+  QIcon getLibraryTreeItemIcon();
   bool inRange(int lineNumber) {return (lineNumber >= mClassInformation.lineNumberStart) && (lineNumber <= mClassInformation.lineNumberEnd);}
   bool isInPackageOneFile();
   void insertChild(int position, LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* child(int row);
-  void removeChildren();
   void removeChild(LibraryTreeItem *pLibraryTreeItem);
-  int columnCount() const;
   QVariant data(int column, int role = Qt::DisplayRole) const;
   int row() const;
-  LibraryTreeItem* parent();
-  LibraryTreeItem* rootParent();
+  LibraryTreeItem* parent() {return mpParentLibraryTreeItem;}
   bool isTopLevel();
   bool isSimulationAllowed();
 private:
