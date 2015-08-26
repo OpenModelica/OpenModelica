@@ -356,35 +356,28 @@ template parallelFunctionHeader(Function fn, Boolean inFunc)
   match fn
     case PARALLEL_FUNCTION(__) then
       <<
-      <%functionHeaderParallelImpl(underscorePath(name), functionArguments, outVars, inFunc, false)%>
+      <%functionHeaderParallelImpl(underscorePath(name), functionArguments, outVars, inFunc, false)%>;
       >>
 end parallelFunctionHeader;
 
 template functionHeaderParallelImpl(String fname, list<Variable> fargs, list<Variable> outVars, Boolean inFunc, Boolean boxed)
  "Generates parmodelica paralell function header part in kernels files."
 ::=
-    let fargsStr =  (fargs |> var => funArgDefinition(var) ;separator=", ")
-    if outVars then
-  <<
-    <%outVars |> _ hasindex i1 fromindex 1 => '#define <%fname%>_rettype_<%i1%> c<%i1%>' ;separator="\n"%>
-    typedef struct <%fname%>_rettype_s
-    {
-      <%outVars |> var hasindex i1 fromindex 1 =>
-        match var
-        case VARIABLE(__) then
-          let dimStr = match ty case T_ARRAY(__)
-                       then '[<%dims |> dim => dimension(dim) ;separator=", "%>]'
-          let typeStr = if boxed then varTypeBoxed(var) else varType(var)
-          '<%typeStr%> c<%i1%>; /* <%crefStr(name)%><%dimStr%> */'
-        case FUNCTION_PTR(__) then
-          'modelica_fnptr c<%i1%>; /* <%name%> */'
-      ;separator="\n";empty
-      %>
-    } <%fname%>_rettype;
+  let fargsStr = (fargs |> var => funArgDefinitionKernelFunctionInterface(var) ;separator=", ")
+  // let &fargsStr += if outVars then ", " + (outVars |> var => tupleOutfunArgDefinitionKernelFunctionInterface(var) ;separator=", ")
+  // 'void omc_<%fname%>(<%fargsStr%>)'
 
-  <%fname%>_rettype omc_<%fname%>(<%fargsStr%>);
+  match outVars
+    case {} then
+      'void omc_<%fname%>(<%fargsStr%>)'
 
-    >>
+    case fvar::rest then
+      let rettype = functionArgTypeKernelInterface(fvar)
+      let &fargsStr += if rest then ", " + (rest |> var => tupleOutfunArgDefinitionKernelFunctionInterface(var) ;separator=", ")
+      '<%rettype%> omc_<%fname%>(<%fargsStr%>)'
+
+    else
+      error(sourceInfo(), 'functionHeaderParallelImpl failed')
 end functionHeaderParallelImpl;
 
 template recordDeclaration(RecordDeclaration recDecl)
@@ -1138,49 +1131,47 @@ template functionBodyParallelFunction(Function fn, Boolean inFunc)
 ::=
 match fn
 case PARALLEL_FUNCTION(__) then
+  let &auxFunction = buffer ""
+  let()= codegenResetTryThrowIndex()
   let()= System.tmpTickReset(1)
+  let()= System.tmpTickResetIndex(0,1) /* Boxed array indices */
   let fname = underscorePath(name)
-  let retType = if outVars then '<%fname%>_rettype' else "void"
   let &varDecls = buffer ""
   let &varInits = buffer ""
   let &varFrees = buffer ""
+  let &outVarFrees = buffer "" /*we don't free them. this is just ignored*/
   let &auxFunction = buffer ""
-  let retVar = if outVars then tempDecl(retType, &varDecls)
-  let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
-      varInitParallel(var, "", i1, &varDecls, &varInits, &varFrees, &auxFunction)
-      ;empty
-    )
-  let bodyPart = parModelicafunStatement(body, &varDecls, &auxFunction)
-  let &outVarInits = buffer ""
-  let &outVarCopy = buffer ""
-  let &outVarAssign = buffer ""
-  let _1 = (outVars |> var hasindex i1 fromindex 1 =>
-      varOutputParallel(var, retVar, i1, &varDecls, &outVarInits, &outVarCopy, &outVarAssign, &auxFunction)
-      ;separator="\n"; empty
-    )
 
+  let _ = (variableDeclarations |> var =>
+      varInit(var, "", &varDecls, &varInits, &varFrees, &auxFunction) ; empty
+    )
+  // let _ = (outVars |> var =>
+      // varInit(var, "", &varDecls, &varInits, &outVarFrees, &auxFunction) ; empty
+    // )
+  let bodyPart = parModelicafunStatement(body, &varDecls, &auxFunction)
+  let outVarAssign = (List.restOrEmpty(outVars) |> var => varOutput(var))
+
+  /* Needs to be done last as it messes with the tmp ticks :) */
+  let &varDecls += addRootsTempArray()
 
   <<
   <%auxFunction%>
-  <%retType%> omc_<%fname%>(<%functionArguments |> var => funArgDefinition(var) ;separator=", "%>)
+  <%functionHeaderParallelImpl(fname, functionArguments, outVars, false, false)%>
   {
     <%varDecls%>
-    <%outVarInits%>
 
     <%varInits%>
 
     <%bodyPart%>
 
-    <%outVarCopy%>
     <%outVarAssign%>
 
-    /*mahge: Free unwanted meomory allocated*/
-    <%varFrees%>
-
-    return<%if outVars then ' <%retVar%>' %>;
-  }
-
-  >>
+    <%match outVars
+       case {} then 'return;'
+       case v::_ then 'return <%funArgName(v)%>;'
+    %>
+   }
+   >>
 end functionBodyParallelFunction;
 
 template functionBodyKernelFunctionInterface(Function fn, Boolean inFunc)
