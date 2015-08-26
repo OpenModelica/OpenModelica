@@ -96,6 +96,7 @@ Polymorphic.mos \
 Polymorphic2.mos \
 PolymorphicReduction.mos \
 Recursive.mos \
+ReturnInTryBlock.mos \
 Shadowing1.mos \
 Shadowing2.mos \
 Simplify1.mos \
