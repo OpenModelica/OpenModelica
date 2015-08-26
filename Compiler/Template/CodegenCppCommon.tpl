@@ -1957,6 +1957,12 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     'boost::math::trunc(<%var1%>/<%var2%>)'
 
+  case CALL(path=IDENT(name="div"), expLst={e1,e2,index}) then
+    // TODO: should trigger event if result changes discontinuously
+    let var1 = daeExp(e1, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let var2 = daeExp(e2, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    'boost::math::trunc(<%var1%>/<%var2%>)'
+
   case CALL(path=IDENT(name="mod"), expLst={e1,e2}, attr=attr as CALL_ATTR(__)) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
