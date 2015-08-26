@@ -153,6 +153,17 @@ template functionsFile(String filePrefix,
 
   #include "<%filePrefix%>_includes.h"
 
+  <%if acceptParModelicaGrammar() then
+  <<
+  /* the OpenCL Kernels file name needed in libOMOCLRuntime.a */
+  const char* omc_ocl_kernels_source = "<%filePrefix%>_kernels.cl";
+  /* the OpenCL program. Made global to avoid repeated builds */
+  extern cl_program omc_ocl_program;
+  /* The default OpenCL device. If not set (=0) show the selection option.*/
+  unsigned int default_ocl_device = <%getDefaultOpenCLDevice()%>;
+  >>
+  %>
+
   <%if staticPrototypes then
   <<
   /* default, do not make protected functions static */
@@ -249,12 +260,6 @@ template commonHeader(String filePrefix)
   <%if acceptParModelicaGrammar() then
   <<
   #include <ParModelica/explicit/openclrt/omc_ocl_interface.h>
-  /* the OpenCL Kernels file name needed in libOMOCLRuntime.a */
-  const char* omc_ocl_kernels_source = "<%filePrefix%>_kernels.cl";
-  /* the OpenCL program. Made global to avoid repeated builds */
-  extern cl_program omc_ocl_program;
-  /* The default OpenCL device. If not set (=0) show the selection option.*/
-  unsigned int default_ocl_device = <%getDefaultOpenCLDevice()%>;
   >>
   %>
 
@@ -3233,7 +3238,7 @@ template functionsParModelicaKernelsFile(String filePrefix, Option<Function> mai
   let()= System.tmpTickResetIndex(0,20) /* parfor index */
 
   <<
-  #include <ParModelica/explicit/openclrt/OCLRuntimeUtil.cl>
+  #include "OCLRuntimeUtil.cl"
 
   // ParModelica Parallel Function headers.
   <%functionHeadersParModelica(filePrefix, functions)%>
