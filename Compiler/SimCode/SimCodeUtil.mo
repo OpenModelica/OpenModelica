@@ -81,6 +81,7 @@ import DAEUtil;
 import Debug;
 import Differentiate;
 import Error;
+import EvaluateFunctions;
 import Expression;
 import ExpressionDump;
 import ExpressionSimplify;
@@ -5674,6 +5675,43 @@ algorithm
           next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints);
 end createVarInfo;
 
+protected function evaluateStartValues"evaluates functions in the start values in the variableAttributes"
+  input BackendDAE.Var inVar;
+  input DAE.FunctionTree funcTreeIn;
+  output BackendDAE.Var outVar;
+  output DAE.FunctionTree funcTreeOut;
+algorithm
+  (outVar,funcTreeOut) := matchcontinue(inVar,funcTreeIn)
+    local
+      DAE.Exp startValue;
+      DAE.VariableAttributes attr;
+  case(BackendDAE.VAR(values = SOME(attr)), _)
+    equation
+      attr = evaluateVariableAttributes(attr,funcTreeIn);
+      inVar.values = SOME(attr);
+    then (inVar,funcTreeIn);
+    else
+      then (inVar,funcTreeIn);
+  end matchcontinue;
+end evaluateStartValues;
+
+protected function evaluateVariableAttributes"evaluates functions in the start values, if necessary"
+  input DAE.VariableAttributes attrIn;
+  input DAE.FunctionTree funcTree;
+  output DAE.VariableAttributes attrOut;
+algorithm
+  attrOut := matchcontinue(attrIn, funcTree)
+    local
+      DAE.Exp exp;
+  case(DAE.VAR_ATTR_REAL(start=SOME(exp)),_)
+    equation
+      exp = EvaluateFunctions.evaluateConstantFunctionCallExp(exp,funcTree);
+      attrIn.start = SOME(exp);
+    then attrIn;
+  else
+  then attrIn;
+  end matchcontinue;
+end evaluateVariableAttributes;
 
 protected function preCalculateStartValues"calculates start values of variables which have none. The calculation is based on the start values of the vars in the assigned equation.
 This is a possible solution to equip vars with proper start values (would be computed anyway).
@@ -5682,6 +5720,7 @@ If the var is a torn var, there is no way to compute the proper start value befo
 author:Waurich TUD 2015-01"
   input BackendDAE.EqSystem systIn;
   input BackendDAE.Variables knownVars;
+  input DAE.FunctionTree funcTree;
   output BackendDAE.EqSystem systOut;
 protected
   list<Integer> varMap;
@@ -5731,6 +5770,9 @@ algorithm
   stateIdcs := List.map(stateInfo, Util.tuple21);
   stateKinds := List.map(stateInfo, Util.tuple22);
   vars := List.threadFold(stateIdcs, stateKinds,BackendVariable.setVarKindForVar, vars);
+
+  //evaluate function calls in variable attributes (start-value)
+  (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,evaluateStartValues,funcTree);
     //BackendDump.dumpVariables(vars,"VAR AFTER");
   systOut := BackendDAEUtil.setEqSystVars(systIn, vars);
 end preCalculateStartValues;
@@ -5964,16 +6006,17 @@ protected
   BackendDAE.Variables extvars1, extvars2;
   BackendDAE.Variables aliasVars1, aliasVars2;
   BackendDAE.EqSystems systs1, systs2;
+  DAE.FunctionTree funcTree;
   HashSet.HashSet hs = HashSet.emptyHashSet();
 algorithm
-  BackendDAE.DAE(eqs=systs1, shared=BackendDAE.SHARED(knownVars=knvars1, externalObjects=extvars1, aliasVars=aliasVars1)) := inSimDAE;
+  BackendDAE.DAE(eqs=systs1, shared=BackendDAE.SHARED(knownVars=knvars1, externalObjects=extvars1, aliasVars=aliasVars1, functionTree=funcTree)) := inSimDAE;
   BackendDAE.DAE(eqs=systs2, shared=BackendDAE.SHARED(knownVars=knvars2, externalObjects=extvars2, aliasVars=aliasVars2)) := inInitDAE;
 
   systs1 := List.filterOnFalse(systs1, BackendDAEUtil.isClockedSyst);
   systs2 := List.filterOnFalse(systs1, BackendDAEUtil.isClockedSyst);
 
   if not Flags.isSet(Flags.NO_START_CALC) then
-    systs1 := List.map1(systs1, preCalculateStartValues, knvars1);
+    systs1 := List.map2(systs1, preCalculateStartValues, knvars1, funcTree);
     //systs2 := List.map1(systs2, preCalculateStartValues, knvars2);
   end if;
 

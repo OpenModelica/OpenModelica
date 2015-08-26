@@ -1730,22 +1730,23 @@ algorithm
         isCon = Expression.isConst(exp2);
         eqDim = listLength(scalars) == listLength(expLst);  // so it can be partly constant
         isRec = ComponentReference.isRecord(cref);
+        isArr = ComponentReference.isArrayElement(cref);
         isTpl = Expression.isTuple(exp1) and Expression.isTuple(exp2);
         _ = Expression.isCall(exp2);
-        //print("is it const? "+boolString(isCon)+" ,is it rec: "+boolString(isRec)+" ,is it tpl: "+boolString(isTpl)+" ,is it call: "+boolString(isCall)+"\n");
+          //print("is it const? "+boolString(isCon)+" ,is it rec: "+boolString(isRec)+" ,is it tpl: "+boolString(isTpl)+" ,is it arr: "+boolString(isArr)+"\n");
 
         // remove the variable crefs and add the constant crefs to the replacements
-        //print("scalars\n"+stringDelimitList(List.map(scalars,ComponentReference.printComponentRefStr),"\n")+"\n");
-        //print("expLst\n"+stringDelimitList(List.map(expLst,ExpressionDump.printExpStr),"\n")+"\n");
-        scalars = if isRec and eqDim then scalars else {};
-        expLst = if isRec and eqDim then expLst else {};
+        scalars = if (isRec or isArr) and eqDim then scalars else {};
+        expLst = if (isRec or isArr) and eqDim then expLst else {};
         (_,varScalars) = List.filterOnTrueSync(expLst,Expression.isNotConst,scalars);
         (expLst,constScalars) = List.filterOnTrueSync(expLst,Expression.isConst,scalars);
+        //print("scalars\n"+stringDelimitList(List.map(scalars,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("expLst\n"+stringDelimitList(List.map(expLst,ExpressionDump.printExpStr),"\n")+"\n");
         //print("variable scalars\n"+stringDelimitList(List.map(varScalars,ComponentReference.printComponentRefStr),"\n")+"\n");
-        //BackendVarTransform.dumpReplacements(replIn);
 
         repl = if isCon and not isRec then BackendVarTransform.addReplacement(repl,cref,exp2,NONE()) else repl;
         repl = if isCon and isRec then BackendVarTransform.addReplacements(repl,scalars,expLst,NONE()) else repl;
+        repl = if isCon and isArr then BackendVarTransform.addReplacements(repl,scalars,expLst,NONE()) else repl;
         repl = if not isCon and not isRec then BackendVarTransform.removeReplacement(repl,cref,NONE()) else repl;
         repl = if not isCon and isRec then BackendVarTransform.removeReplacements(repl,varScalars,NONE()) else repl;
         repl = if not isCon and isRec then BackendVarTransform.addReplacements(repl,constScalars,expLst,NONE()) else repl;
@@ -1786,18 +1787,18 @@ algorithm
         outputs = List.map(lhsExps,Expression.expCref);
 
         //check if the conditions can be evaluated, get evaluated stmts
-        (isEval,stmts1) = evaluateIfStatement(alg,FUNCINFO(replIn,funcTree,idx));
+        (isEval,stmts1,repl) = evaluateIfStatement(alg,FUNCINFO(replIn,funcTree,idx));
 
         // if its not definite which case, try to predict a constant output, maybe its partially constant, then remove function outputs replacements
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isEval then
           print("-->try to predict the outputs \n");
         end if;
         if not isEval then
-          ((stmtsNew,addStmts),FUNCINFO(repl,funcTree,idx)) = predictIfOutput(alg,FUNCINFO(replIn,funcTree,idx));
+          ((stmtsNew,addStmts),FUNCINFO(repl,funcTree,idx)) = predictIfOutput(alg,FUNCINFO(repl,funcTree,idx));
         else
           stmtsNew = stmts1;
           addStmts = {};
-          repl = replIn;
+          //repl = replIn;
         end if;
         predicted = (not listEmpty(addStmts)) or listEmpty(stmtsNew) and not isEval;
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isEval then
@@ -1990,8 +1991,9 @@ author: Waurich TUD 2014-04"
   input FuncInfo info;
   output Boolean isEval;
   output list<DAE.Statement> stmtsOut;
+  output BackendVarTransform.VariableReplacements replOut;
 algorithm
-  (isEval,stmtsOut) := matchcontinue(stmtIn,info)
+  (isEval,stmtsOut,replOut) := matchcontinue(stmtIn,info)
     local
       Boolean  isIf, isCon, isElse, eval;
       Integer idx;
@@ -2006,7 +2008,8 @@ algorithm
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
           print("-->try to check if its the if case\n");
         end if;
-        (exp1,(_,_,_,_)) = Expression.traverseExpTopDown(expIf,evaluateConstantFunctionWrapper,(expIf,funcTree,idx,{}));
+        (exp1,_) = BackendVarTransform.replaceExp(expIf,replIn,NONE());
+        (exp1,(_,_,_,_)) = Expression.traverseExpTopDown(exp1,evaluateConstantFunctionWrapper,(exp1,funcTree,idx,{}));
         (exp1,_) = BackendVarTransform.replaceExp(exp1,replIn,NONE());
         (exp1,_) = ExpressionSimplify.simplify(exp1);
         isCon = Expression.isConst(exp1);
@@ -2018,9 +2021,10 @@ algorithm
         end if;
         //(stmts1,(funcTree,repl,idx)) = bcallret3_2(isIf and isCon,evaluateFunctions_updateStatement,stmtsIf,(funcTree,replIn,idx),lstIn,stmtsIf,(funcTree,replIn,idx));
         if isIf and isCon then
-          (stmts1,(funcTree,_,idx)) = evaluateFunctions_updateStatement(stmtsIf,(funcTree,replIn,idx),{});  // without listIn
+          (stmts1,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(stmtsIf,(funcTree,replIn,idx),{});  // without listIn
         else
           stmts1 = {stmtIn};
+          repl = replIn;
         end if;
 
         // if its definitly not the if, check the else
@@ -2037,12 +2041,12 @@ algorithm
           print("-->is it an other case? "+boolString(isElse)+"\n");
         end if;
         if isCon and isElse then
-          (stmts1,(funcTree,_,idx)) = evaluateFunctions_updateStatement(stmtsElse,(funcTree,replIn,idx),{});
+          (stmts1,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(stmtsElse,(funcTree,replIn,idx),{});
         else
         end if;
         eval = isCon and (isIf or isElse);
      then
-       (eval,stmts1);
+       (eval,stmts1,repl);
      else
        equation
          if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
