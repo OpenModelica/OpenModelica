@@ -3073,6 +3073,12 @@ package Expression
   output list<Integer> outValues;
   end dimensionsList;
 
+  function expDimensionsList
+  input list<DAE.Exp> inDims;
+  output list<Integer> outValues;
+  end expDimensionsList;
+
+
   function isMetaArray
     input DAE.Exp inExp;
     output Boolean outB;

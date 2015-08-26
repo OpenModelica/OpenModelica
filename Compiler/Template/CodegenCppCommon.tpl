@@ -517,7 +517,7 @@ template daeExpCrefRhsArrayBox2(Text var,DAE.Type type, Context context, Text &p
 
     let arraytype =   match dimstr
       case "" then 'DynArrayDim<%listLength(dims)%><<%expTypeShort(type)%>>'
-      else   'StatArrayDim<%listLength(dims)%><<%expTypeShort(type)%>,<%dimstr%>>'
+      else   'StatArrayDim<%listLength(dims)%><<%expTypeShort(type)%>,<%dimstr%>> /*testarray3*/'
       end match
     let &tmpdecl = buffer "" /*BUFD*/
     let arrayVar = tempDecl(arraytype, &tmpdecl /*BUFD*/)
@@ -680,6 +680,11 @@ template checkDimension(Dimensions dims)
 
 end checkDimension;
 
+template checkExpDimension(list<DAE.Exp> dims)
+::=
+  expDimensionsList(dims) |> dim as Integer   =>  '<%dim%>';separator=","
+end checkExpDimension;
+
 
 template expTypeShort(DAE.Type type)
 
@@ -757,7 +762,7 @@ template expTypeFlag(DAE.Type ty, Integer flag)
    match dimstr
    case "" then 'DynArrayDim<%listLength(dims)%><<%expTypeShort(type)%>>'
    //case
-   else   'StatArrayDim<%listLength(dims)%><<%expTypeShort(type)%>,<%dimstr%>>'
+   else   'StatArrayDim<%listLength(dims)%><<%expTypeShort(type)%>,<%dimstr%>>/*testarray4*/'
     end match
    else expTypeFlag(ty, 2)
     end match
@@ -1126,7 +1131,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
   let loopHeadIter = (iterators |> iter as REDUCTIONITER(__) =>
     let identType = expTypeFromExpModelica(iter.exp)
     let ty_str = expTypeArray(ty)
-    let arrayType = 'DynArrayDim1<<%ty_str%>>'//expTypeFromExpArray(iter.exp)
+    let arrayType = 'DynArrayDim1<<%identType%>>'//expTypeFromExpArray(iter.exp)
     let loopVar = '<%iter.id%>_loopVar'
     let &guardExpPre = buffer ""
     let &tmpVarDecls += '<%arrayType%> <%loopVar%>;/*testloopvar*/<%\n%>'
@@ -2708,7 +2713,7 @@ case ARRAY(__) then
    */
    let &preExp += '
    //tmp array
-   <%StatArrayDim%><%arrayVar%>;<%\n%>'
+   <%StatArrayDim%><%arrayVar%>;/*testarray6*/<%\n%>'
   arrayVar
   else
     match typeof(exp)
