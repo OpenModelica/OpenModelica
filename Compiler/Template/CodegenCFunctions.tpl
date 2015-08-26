@@ -968,7 +968,6 @@ template functionBodyRegularFunction(Function fn, Boolean inFunc, Boolean isSimu
 ::=
 match fn
 case FUNCTION(__) then
-  let &auxFunction = buffer ""
   let()= codegenResetTryThrowIndex()
   let()= System.tmpTickReset(1)
   let()= System.tmpTickResetIndex(0,1) /* Boxed array indices */
@@ -1189,15 +1188,19 @@ template functionBodyKernelFunctionInterface(Function fn, Boolean inFunc)
 ::=
 match fn
 case KERNEL_FUNCTION(__) then
+  let()= codegenResetTryThrowIndex()
   let()= System.tmpTickReset(1)
   let()= System.tmpTickResetIndex(0,1) /* Boxed array indices */
   let fname = underscorePath(name)
-  let &auxFunction = buffer ""
-
   let &varDecls = buffer ""
   let &varInits = buffer ""
   let &varFrees = buffer ""
-  let _ = (listGet(outVars,1) |> var hasindex i1 fromindex 1 =>
+  let &auxFunction = buffer ""
+
+  let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
+      varInit(var, "", &varDecls, &varInits, &varFrees, &auxFunction) ; empty /* increase the counter! */
+    )
+  let _ = (outVars |> var hasindex i1 fromindex 1 =>
       varInit(var, "", &varDecls, &varInits, &varFrees, &auxFunction) ; empty /* increase the counter! */
     )
 
@@ -1214,17 +1217,16 @@ case KERNEL_FUNCTION(__) then
       setKernelArg_ith(var, &cl_kernelVar, &kernel_arg_number, &kernelArgSets)
     )
 
-  let defines = (List.restOrEmpty(outVars) |> var as VARIABLE(__) => '#define <%contextCref(name,contextFunction,&auxFunction)%> (*out<%contextCref(name,contextFunction,&auxFunction)%>)' ;separator="\n")
-  let undefines = (List.restOrEmpty(outVars) |> var as VARIABLE(__) => '#undef <%contextCref(name,contextFunction,&auxFunction)%>' ;separator="\n")
+  // let defines = (List.restOrEmpty(outVars) |> var as VARIABLE(__) => '#define <%contextCref(name,contextFunction,&auxFunction)%> (*out<%contextCref(name,contextFunction,&auxFunction)%>)' ;separator="\n")
+  // let undefines = (List.restOrEmpty(outVars) |> var as VARIABLE(__) => '#undef <%contextCref(name,contextFunction,&auxFunction)%>' ;separator="\n")
 
   <<
 
   <%functionHeaderKernelFunctionInterfacePrototype(fname, functionArguments, outVars)%>
   {
-  <%defines%>
-
+    // declerations
     <%varDecls%>
-
+    // inits
     <%varInits%>
 
     /* functionBodyKernelFunctionInterface : <%fname%> Kernel creation and execution */
@@ -1235,16 +1237,19 @@ case KERNEL_FUNCTION(__) then
     clReleaseKernel(<%cl_kernelVar%>);
     /*functionBodyKernelFunctionInterface : <%fname%> kernel execution ends here.*/
 
+    // outvar assign
     <%outVarAssign%>
 
+    //varfree
+    /*
     <%varFrees%>
+    */
 
+    // return
     <%match outVars
        case {} then 'return;'
        case var::_ then 'return <%funArgName(var)%>;'
     %>
-
-  <%undefines%>
   }
 
   >>
@@ -1872,9 +1877,28 @@ template varOutput(Variable var)
   match var
   case FUNCTION_PTR(__) then
     'if (out<%funArgName(var)%>) { *out<%funArgName(var)%> = (modelica_fnptr)<%funArgName(var)%>; }<%\n%>'
+  case VARIABLE(ty=T_ARRAY(__), parallelism = PARGLOBAL(__)) then
+    // If the info (for parallel arrays) is NULL, the output is an array with unknown dimensions. Copy the array.
+    'if (out<%funArgName(var)%>) { if (out<%funArgName(var)%>->info == NULL) {copy_<%expTypeShort(var.ty)%>_array(<%funArgName(var)%>, out<%funArgName(var)%>);} else {copy_<%expTypeShort(var.ty)%>_array_data(<%funArgName(var)%>, out<%funArgName(var)%>);} }<%\n%>'
   case VARIABLE(ty=T_ARRAY(__)) then
     // If the dim_size is NULL, the output is an array with unknown dimensions. Copy the array.
     'if (out<%funArgName(var)%>) { if (out<%funArgName(var)%>->dim_size == NULL) {copy_<%expTypeShort(var.ty)%>_array(<%funArgName(var)%>, out<%funArgName(var)%>);} else {copy_<%expTypeShort(var.ty)%>_array_data(<%funArgName(var)%>, out<%funArgName(var)%>);} }<%\n%>'
+  case VARIABLE(parallelism = PARGLOBAL(__)) then
+    /*Seems like we still get an array var with the wrong type here. It have instdims though >_<. TODO I guess*/
+    if instDims then
+      <<
+      if (out<%funArgName(var)%>) {
+        if (out<%funArgName(var)%>->info == NULL) {
+          FILE_INFO info = omc_dummyFileInfo;
+          omc_assert(threadData, info, "Unknown size parallel array.");
+        }
+        else {
+          copy_<%expTypeShort(var.ty)%>_array_data(<%funArgName(var)%>, out<%funArgName(var)%>);
+        }
+      }<%\n%>
+      >>
+    else
+    'if (out<%funArgName(var)%>) { *out<%funArgName(var)%> = <%funArgName(var)%>; }<%\n%>'
   case VARIABLE(__) then
     /*Seems like we still get an array var with the wrong type here. It have instdims though >_<. TODO I guess*/
     if instDims then

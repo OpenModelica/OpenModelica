@@ -80,17 +80,12 @@
 #define sin(v,m) (sin(v))
 #define cos(v,m) (cos(v))
 
-
-#ifdef __x86_64__
-typedef long  modelica_integer;
-#else
-typedef int  modelica_integer;
-#endif
-
 #ifdef DOUBLE_PREC_AVAILABLE
+typedef long  modelica_integer;
 typedef double modelica_real;
 #else
 typedef float modelica_real;
+typedef int  modelica_integer;
 #endif
 
 typedef bool modelica_boolean;

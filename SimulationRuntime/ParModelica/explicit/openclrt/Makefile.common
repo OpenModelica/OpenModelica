@@ -1,9 +1,3 @@
-TOP_BUILDDIR = $(OMBUILDDIR)
-
-OPENMODELICA_INC=$(TOP_BUILDDIR)/include/omc/c/
-PARMODELICAEXPOCL_INC=$(OPENMODELICA_INC)/ParModelica/explicit/openclrt/
-OPENMODELICA_LIB=$(TOP_BUILDDIR)/lib/omc/
-OPENMODELICA_BIN=$(TOP_BUILDDIR)/bin/
 
 # cp -u is a GNU extension. Do not rely on it.
 COPY=cp -rp
