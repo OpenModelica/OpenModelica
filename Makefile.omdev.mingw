@@ -9,6 +9,9 @@ DBUS_PATH = $(OMDEV)/lib/dbus-1.6.0-win32/
 BOOST_PATH = $(OMDEV)/lib/3rdParty/boost-1_55/
 PKG_CONFIG_PATH = $(OMDEV)/lib/gtk+-2.24.10/bin/
 OSG_PATH = $(OMDEV)/lib/openscenegraph-2.8.3-mingw/
+ifeq ($(BUILDTYPE),)
+BUILDTYPE=Debug
+endif
 
 .PHONY: omc omc-diff omlibrary-core omplot omedit omnotebook omshell omoptim modelica3d
 
@@ -52,10 +55,10 @@ simulationruntimecmsvc:
 	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) simulationruntimecmsvc
 
 runtimeCPPmsvcinstall:
-	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) runtimeCPPmsvcinstall
+	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) runtimeCPPmsvcinstall
 
 runtimeCPPinstall:
-	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) runtimeCPPinstall
+	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) runtimeCPPinstall
 
 testlogwindows:
 	$(MAKE) -C testsuite -f Makefile ReferenceFiles
@@ -132,3 +135,10 @@ clean-python:
 clean:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler clean OMBUILDDIR=$(OMBUILDDIR)
 	test ! -d $(OMBUILDDIR) || rm -rf $(OMBUILDDIR)
+
+LIBGITDIRS = `ls libraries/git`
+	
+gitclean:
+	git submodule foreach --recursive 'git clean -fdx -e /git -e /svn'
+	git clean -fdx -e OpenModelicaSetup -e .project -e .externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch
+	for d in $(LIBGITDIRS); do git clean -fdx libraries/git/$$d; done
