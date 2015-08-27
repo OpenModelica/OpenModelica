@@ -1406,11 +1406,16 @@ QProcessEnvironment StringHandler::simulationProcessEnvironment()
   if (QString(OMDEV).isEmpty()) {
     QString OMHOME = QString(Helper::OpenModelicaHome).replace("/", "\\");
     QString MinGWBin = OMHOME + "\\MinGW\\bin";
-    environment.insert("PATH", MinGWBin + ";" + environment.value("PATH"));
+	QString OMBin = OMHOME + "\\bin";
+	QString OMCPP = OMHOME + "\\lib\\omc\\cpp";
+    environment.insert("PATH", MinGWBin + ";" + OMCPP + ";" + OMBin + ";" + environment.value("PATH"));
   } else {
+    QString OMHOME = QString(Helper::OpenModelicaHome).replace("/", "\\");
     QString qOMDEV = QString(OMDEV).replace("/", "\\");
     QString MinGWBin = qOMDEV + "\\tools\\mingw\\bin";
-    environment.insert("PATH", MinGWBin + ";" + environment.value("PATH"));
+	QString OMBin = OMHOME + "\\bin";
+	QString OMCPP = OMHOME + "\\lib\\omc\\cpp";
+    environment.insert("PATH", MinGWBin + ";" + OMCPP + ";" + OMBin + ";" + environment.value("PATH"));
   }
   return environment;
 }
