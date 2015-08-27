@@ -5683,13 +5683,25 @@ protected function evaluateStartValues"evaluates functions in the start values i
 algorithm
   (outVar,funcTreeOut) := matchcontinue(inVar,funcTreeIn)
     local
+      Option<DAE.Exp> o1;
+      Option<DAE.VariableAttributes> o2;
       DAE.Exp startValue;
       DAE.VariableAttributes attr;
-  case(BackendDAE.VAR(values = SOME(attr)), _)
+  case(BackendDAE.VAR(bindExp = o1, values = o2), _)
     equation
-      attr = evaluateVariableAttributes(attr,funcTreeIn);
-      inVar.values = SOME(attr);
+      if isSome(o1) then
+        startValue = Util.getOption(o1);
+        startValue = EvaluateFunctions.evaluateConstantFunctionCallExp(startValue,funcTreeIn);
+        inVar.bindExp = SOME(startValue);
+      end if;
+
+      if isSome(o2) then
+        attr = Util.getOption(o2);
+        attr = evaluateVariableAttributes(attr,funcTreeIn);
+        inVar.values = SOME(attr);
+      end if;
     then (inVar,funcTreeIn);
+
     else
       then (inVar,funcTreeIn);
   end matchcontinue;
@@ -5709,6 +5721,7 @@ algorithm
       attrIn.start = SOME(exp);
     then attrIn;
   else
+  equation
   then attrIn;
   end matchcontinue;
 end evaluateVariableAttributes;
