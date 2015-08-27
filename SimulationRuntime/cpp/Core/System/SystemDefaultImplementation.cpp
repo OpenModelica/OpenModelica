@@ -54,6 +54,8 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *global
   , _terminal        (false)
   , _terminate      (false)
   , _global_settings    (globalSettings)
+  ,_conditions0(NULL)
+  ,_event_system(NULL)
 {
 }
 
@@ -109,6 +111,8 @@ SystemDefaultImplementation::~SystemDefaultImplementation()
   if(_conditions) delete [] _conditions ;
   if(_time_conditions) delete [] _time_conditions ;
   if(_time_event_counter) delete [] _time_event_counter;
+  if(_conditions0) delete [] _conditions0;
+
 }
 
 void SystemDefaultImplementation::Assert(bool cond,const string& msg)
@@ -179,8 +183,9 @@ void SystemDefaultImplementation::initialize()
   if(_dimZeroFunc > 0)
   {
     if(_conditions) delete [] _conditions ;
-
+    if(_conditions0) delete [] _conditions0 ;
     _conditions = new bool[_dimZeroFunc];
+    _conditions0= new bool[_dimZeroFunc];
 
     memset(_conditions,false,(_dimZeroFunc)*sizeof(bool));
 
@@ -200,6 +205,8 @@ void SystemDefaultImplementation::initialize()
   _start_time = 0.0;
   _terminal = false;
   _terminate = false;
+   _event_system = dynamic_cast<IEvent*>(this);
+
 };
 
 
@@ -275,24 +282,18 @@ boost::shared_ptr<ISimData> SystemDefaultImplementation::getSimData()
 
 bool SystemDefaultImplementation::isConsistent()
 {
-  if(IEvent* system = dynamic_cast<IEvent*>(this))
+  if(_event_system)
   {
-    unsigned int dim = system->getDimZeroFunc();
-    bool* conditions0 = new bool[dim];
-    bool* conditions1 = new bool[dim];
-    getConditions(conditions0);
+     getConditions(_conditions0);
     IContinuous::UPDATETYPE pre_call_type=_callType;
     _callType = IContinuous::DISCRETE;
-    for(int i=0;i<dim;i++)
+    for(int i=0;i<_dimZeroFunc;i++)
     {
-      system->getCondition(i);
+      _event_system->getCondition(i);
     }
-    getConditions(conditions1);
-    bool isConsistent =  std::equal (conditions1, conditions1+_dimZeroFunc,conditions0);
+    bool isConsistent =  std::equal (_conditions, _conditions+_dimZeroFunc,_conditions0);
     _callType = pre_call_type;
-    setConditions(conditions0);
-    delete[] conditions0;
-    delete[] conditions1;
+    setConditions(_conditions0);
     return isConsistent;
   }
   else
