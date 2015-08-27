@@ -172,7 +172,6 @@ algorithm
   else
     outDAE := inDAE;
 	end if;
-	BackendDump.dumpBackendDAE(outDAE, "OUTDAE");
 end evaluateAllParameters;
 
 
