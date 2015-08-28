@@ -9,7 +9,7 @@ elif test -z "$SOURCE_REVISION" && test -e .git; then
   DESCRIBE_SHORT=`git describe --match "v[0-9]*.[0-9]*.[0-9]*" --always`
   DESCRIBE_LONG=`git describe --match "v[0-9]*.[0-9]*.[0-9]*" --always --long`
   if test "$DESCRIBE_SHORT" != "$DESCRIBE_LONG"; then
-    SOURCE_VERSION="$DESCRIBE_SHORT"
+    SOURCE_REVISION="$DESCRIBE_SHORT"
   else
     HASH=`echo $DESCRIBE_SHORT | rev | cut -d- -f1 | rev`
     COMMIT_SINCE_LAST=`echo $DESCRIBE_SHORT | rev | cut -d- -f2 | rev`
