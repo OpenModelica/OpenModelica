@@ -8,6 +8,7 @@
 *.la
 *.log
 *.stamp
+**/*.dylib.dSYM/
 
 # autoconf
 autom4te.cache/
@@ -89,6 +90,7 @@ SimulationRuntime/cpp/Makefile.env
 SimulationRuntime/cpp/Build/
 SimulationRuntime/cpp/Debug/
 SimulationRuntime/cpp/.cproject
+SimulationRuntime/cpp/confdefs.h
 SimulationRuntime/ParModelica/Makefile
 SimulationRuntime/ParModelica/auto/Makefile
 SimulationRuntime/ParModelica/explicit/Makefile
