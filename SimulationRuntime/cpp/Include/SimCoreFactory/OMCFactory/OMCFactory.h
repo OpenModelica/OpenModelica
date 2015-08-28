@@ -35,6 +35,8 @@ protected:
   /** merge command line args with built-in args and adapt OMEdit args to Cpp */
   std::vector<const char *> preprocessArguments(int argc, const char* argv[], std::map<std::string, std::string> &opts);
   SimSettings readSimulationParameter(int argc, const char* argv[]);
+  pair<string, string> parseIngoredAndWrongFormatOption(const string &s);
+  void fillArgumentsToIgnore();
 
   //boost::shared_ptr<ISimController> _simController;
   std::map<string,shared_library> _modules;
@@ -42,6 +44,7 @@ protected:
   std::string _defaultNonLinSolver;
   PATH _library_path;
   PATH _modelicasystem_path;
+  boost::unordered_set<string> _argumentsToIgnore; //a set of arguments that should be ignored,
   std::string _overrideOMEdit; // unrecognized options if called from OMEdit
 };
 /** @} */ // end of simcorefactoryOMCFactory

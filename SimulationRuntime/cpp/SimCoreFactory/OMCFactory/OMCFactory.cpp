@@ -18,6 +18,7 @@ OMCFactory::OMCFactory(PATH library_path, PATH modelicasystem_path)
     , _defaultLinSolver("kinsol")
     , _defaultNonLinSolver("kinsol")
 {
+  fillArgumentsToIgnore();
 }
 
 OMCFactory::OMCFactory()
@@ -26,6 +27,7 @@ OMCFactory::OMCFactory()
     , _defaultLinSolver("kinsol")
     , _defaultNonLinSolver("kinsol")
 {
+  fillArgumentsToIgnore();
 }
 
 OMCFactory::~OMCFactory()
@@ -42,11 +44,15 @@ void OMCFactory::UnloadAllLibs(void)
 }
 
 // parse a long option that starts with one dash, like -port=12345
-static pair<string, string> checkOMEditOption(const string &s)
+// remove all options that are part of the ignore-set
+pair<string, string> OMCFactory::parseIngoredAndWrongFormatOption(const string &s)
 {
     int sep = s.find("=");
-    if (sep > 2 && s[0] == '-' && s[1] != '-')
-        return make_pair(string("OMEdit"), s);
+    string key = s;
+    if(sep > 0)
+      s.substr(0, sep);
+    if (_argumentsToIgnore.find(key) != _argumentsToIgnore.end() || (sep > 2 && s[0] == '-' && s[1] != '-'))
+        return make_pair(string("Ignored"), s);
     else
         return make_pair(string(), string());
 }
@@ -61,7 +67,6 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
      po::options_description desc("Allowed options");
      desc.add_options()
           ("help", "produce help message")
-          ("emit_protected", "emits protected variables to the result file")
           ("nls_continue", po::bool_switch()->default_value(false),"non linear solver will continue if it can not reach the given precision")
           ("runtime-library,R", po::value<string>(),"path to cpp runtime libraries")
           ("Modelica-system-library,M",  po::value<string>(), "path to Modelica library")
@@ -78,13 +83,14 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
           ("log-settings,V", po::value< std::vector<std::string> >(),  "log information: init, nls, ls, solv, output, event, model, other")
           ("alarm,A", po::value<unsigned int >()->default_value(360),  "sets timeout in seconds for simulation")
           ("output-type,O", po::value< string >()->default_value("all"),  "the points in time written to result file: all (output steps + events), step (just output points), none")
-          ("OMEdit", po::value<vector<string> >(), "OMEdit options")
+          ("Ignored", po::value<vector<string> >(), "Ignored options")
           ;
      po::variables_map vm;
+     boost::function<pair<string, string> (const string&)> parserFunction(boost::bind(&OMCFactory::parseIngoredAndWrongFormatOption, this, _1));
      po::parsed_options parsed = po::command_line_parser(argc, argv)
          .options(desc)
          .style((po::command_line_style::default_style | po::command_line_style::allow_long_disguise) & ~po::command_line_style::allow_guessing)
-         .extra_parser(checkOMEditOption)
+         .extra_parser(parserFunction)
          .allow_unregistered()
          .run();
      po::store(parsed, vm);
@@ -92,9 +98,9 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
 
      // warn about unrecognized command line options, including OMEdit for now
      vector<string> unrecognized = po::collect_unrecognized(parsed.options, po::include_positional);
-     if (vm.count("OMEdit")) {
-         vector<string> opts = vm["OMEdit"].as<vector<string> >();
-         unrecognized.insert(unrecognized.begin(), opts.begin(), opts.end());
+     if (vm.count("Ignored")) {
+         //vector<string> opts = vm["Ignored"].as<vector<string> >();
+         //unrecognized.insert(unrecognized.begin(), opts.begin(), opts.end());
      }
      if (unrecognized.size() > 0) {
          std::cerr << "Warning: unrecognized command line options ";
@@ -116,7 +122,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
      string solver =  vm["solver"].as<string>();
      string nonLinSolver =  vm["non-lin-solver"].as<string>();
      string linSolver =  vm["lin-solver"].as<string>();
-     unsigned int time_out =  vm["alarm"].as<unsigned int>();;
+     unsigned int timeOut =  vm["alarm"].as<unsigned int>();
      if (vm.count("runtime-library"))
      {
           //cout << "runtime library path set to " << vm["runtime-library"].as<string>() << std::endl;
@@ -201,7 +207,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
 
 
 
-     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,time_out,outputPointType,logSet,nlsContinueOnError};
+     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,timeOut,outputPointType,logSet,nlsContinueOnError};
 
 
      _library_path = libraries_path;
@@ -260,6 +266,13 @@ std::vector<const char *> OMCFactory::preprocessArguments(int argc, const char* 
   }
 
   return optv;
+}
+
+void OMCFactory::fillArgumentsToIgnore()
+{
+  _argumentsToIgnore = boost::unordered_set<string>();
+  _argumentsToIgnore.insert("-w");
+  _argumentsToIgnore.insert("-emit_protected");
 }
 
 std::pair<boost::shared_ptr<ISimController>,SimSettings>
