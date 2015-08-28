@@ -319,7 +319,7 @@ template functionHeader(Function fn, Boolean inFunc, Boolean isSimulation, Text 
     case FUNCTION(__) then
       <<
       <%functionHeaderNormal(underscorePath(name), functionArguments, outVars, inFunc, visibility, false, isSimulation, staticPrototypes)%>
-      <%functionHeaderBoxed(underscorePath(name), functionArguments, outVars, inFunc, isBoxedFunction(fn), visibility, false, isSimulation, staticPrototypes)%>
+      <%if not funcHasParallelInOutArrays(fn) then functionHeaderBoxed(underscorePath(name), functionArguments, outVars, inFunc, isBoxedFunction(fn), visibility, false, isSimulation, staticPrototypes)%>
       >>
     case KERNEL_FUNCTION(__) then
       <<
@@ -983,7 +983,7 @@ case FUNCTION(__) then
   /* Needs to be done last as it messes with the tmp ticks :) */
   let &varDecls += addRootsTempArray()
 
-  let boxedFn = functionBodyBoxed(fn, isSimulation)
+  let boxedFn = if not funcHasParallelInOutArrays(fn) then functionBodyBoxed(fn, isSimulation) else ""
   <<
   <%auxFunction%>
   <% match visibility case PUBLIC(__) then "DLLExport" %>
@@ -1510,6 +1510,10 @@ end boxRecordConstructor;
 template funArgUnbox(Variable var, Text &varDecls, Text &varBox, Text &auxFunction)
 ::=
 match var
+case VARIABLE(ty=T_ARRAY(__), parallelism = PARGLOBAL(__)) then
+  error(sourceInfo(), 'Trying to generate a boxed function with non protected parglobal array.')
+case VARIABLE(ty=T_ARRAY(__), parallelism = PARLOCAL(__)) then
+   error(sourceInfo(), 'Trying to generate a boxed function with non protected parlocal array.')
 case VARIABLE(__) then
   let varName = contextCref(name,contextFunction,&auxFunction)
   unboxVariable(varName, ty, &varBox, &varDecls)
@@ -1756,7 +1760,7 @@ case var as VARIABLE(parallelism = PARGLOBAL(__)) then
     let defaultValue = varAllocDefaultValue(var, outStruct, varName, defaultAlloc, &varDecls, &varInits, &auxFunction)
     let &varInits += defaultValue
 
-    let &varFrees += 'free_device_array(&<%varName%>);<%\n%>'
+    // let &varFrees += 'free_device_array(&<%varName%>);<%\n%>'
     ""
   else
     (match var.value
@@ -3426,6 +3430,7 @@ end literalExpConstArrayVal;
 
 template varType(Variable var)
  "Generates type for a variable."
+ // TODO: mahge: rewrite from here downstream
 ::=
 match var
 case var as VARIABLE(parallelism = NON_PARALLEL()) then
@@ -3433,11 +3438,15 @@ case var as VARIABLE(parallelism = NON_PARALLEL()) then
     expTypeArray(var.ty)
   else
     expTypeArrayIf(var.ty)
+case var as VARIABLE(ty=T_ARRAY(__), parallelism = PARGLOBAL(__)) then
+  'device_<%expTypeArray(var.ty)%>'
 case var as VARIABLE(parallelism = PARGLOBAL()) then
   if instDims then
     'device_<%expTypeArray(var.ty)%>'
   else
     '<%expTypeArrayIf(var.ty)%>'
+case var as VARIABLE(ty=T_ARRAY(__), parallelism = PARLOCAL(__)) then
+  'device_local_<%expTypeArray(var.ty)%>'
 case var as VARIABLE(parallelism = PARLOCAL()) then
   if instDims then
     'device_local_<%expTypeArray(var.ty)%>'

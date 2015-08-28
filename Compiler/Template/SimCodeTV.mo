@@ -934,6 +934,11 @@ package SimCodeFunctionUtil
     output Boolean b;
   end isBoxedFunction;
 
+  function funcHasParallelInOutArrays
+    input SimCode.Function fn;
+    output Boolean b;
+  end funcHasParallelInOutArrays;
+
   function incrementInt
     input Integer inInt;
     input Integer increment;

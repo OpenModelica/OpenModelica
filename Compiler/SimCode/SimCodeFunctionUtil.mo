@@ -1086,6 +1086,45 @@ algorithm
   end match;
 end isBoxedArg;
 
+public function funcHasParallelInOutArrays
+"checks if a boxed function can be generated.
+currently this is not the case if the input/output
+involves parallel (global/local) array variables."
+  input SimCode.Function fn;
+  output Boolean b;
+protected
+  list<SimCode.Variable> inVars, outVars;
+algorithm
+  SimCode.FUNCTION(functionArguments = inVars, outVars = outVars) := fn;
+  for e in inVars loop
+    if isParallelArrayVar(e) then
+      b := true;
+      return;
+    end if;
+  end for;
+
+  for e in outVars loop
+    if isParallelArrayVar(e) then
+      b := true;
+      return;
+    end if;
+  end for;
+
+  b := false;
+end funcHasParallelInOutArrays;
+
+protected function isParallelArrayVar
+"Checks if a variable is a boxed datatype"
+  input SimCode.Variable var;
+  output Boolean b;
+algorithm
+  b := match var
+    case SimCode.VARIABLE(ty = DAE.T_ARRAY(), parallelism = DAE.PARGLOBAL()) then true;
+    case SimCode.VARIABLE(ty = DAE.T_ARRAY(), parallelism = DAE.PARLOCAL()) then true;
+    else false;
+  end match;
+end isParallelArrayVar;
+
 public function findLiterals
   "Finds all literal expressions in functions"
   input list<DAE.Function> fns;
