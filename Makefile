@@ -24,6 +24,7 @@ cppruntimeFMU1.log \
 cppruntimeFMU2.log \
 cppruntimeUmfpack.log \
 cppruntimeStaticLinking.log \
+cppruntimeOMEdit.log \
 taskGraph.log \
 debugDumps.log \
 dumpCruntime.log \
@@ -373,6 +374,9 @@ cppruntime.log: omc-diff
 cppruntimeHpcom.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/cppruntime/hpcom -f Makefile test  > $@
 	@echo $@ done
+cppruntimeOMEdit.log: omc-diff
+	$(MAKE) -j1 -C openmodelica/cppruntime/omedit -f Makefile test  > $@
+	@echo $@ done
 cppruntimeFMU1.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/cppruntime/fmu/modelExchange/1.0 -f Makefile test  > $@
 	@echo $@ done
@@ -587,6 +591,7 @@ clean_g_2 :
 	$(MAKE) -C metamodelica/meta -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/hpcom -f Makefile clean
+	$(MAKE) -C openmodelica/cppruntime/omedit -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/fmu/modelExchange/1.0 -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/fmu/modelExchange/2.0 -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/umfpack -f Makefile clean
