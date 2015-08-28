@@ -249,45 +249,6 @@ algorithm
   end matchcontinue;
 end evalFunctions_findFuncs;
 
-/*
-protected function getInputReplacements
-  input list<DAE.Exp> inputExps;
-  input list<DAE.Element> inputElements;
-  input DAE.FunctionTree funcTree;
-  input BackendVarTransform.VariableReplacements replIn;
-  output BackendVarTransform.VariableReplacements replOut;
-protected
-  Boolean isComplex;
-  BackendVarTransform.VariableReplacements repl;
-  DAE.ComponentRef cref;
-  DAE.Exp exp;
-  DAE.Element inp;
-  list<DAE.Element> elems, scalarElements;
-  list<DAE.Exp> scalarExps;
-algorithm
-  elems := inputElements;
-  repl := replIn;
-  for exp in inputExps loop
-    inp::elems := elems;
-    cref := DAEUtil.varCref(inp);
-      //print("One Input Exp\n"+stringDelimitList(List.map1({exp},ExpressionDump.dumpExpStr,1),"\n")+"\n");
-      //print("\nOne Input Element \n"+DAEDump.dumpElementsStr({inp})+"\n");
-    scalarExps := expandComplexEpressions(exp,funcTree);
-      //print("Scalar Exp\n"+stringDelimitList(List.map1(scalarExps,ExpressionDump.dumpExpStr,1),"\n")+"\n");
-    scalarElements := expandComplexVar(inp);
-      //print("\nScalar Elements \n"+DAEDump.dumpElementsStr(scalarElements)+"\n");
-    isComplex := not (listLength(scalarExps) == 1 and Expression.expEqual(listHead(scalarExps),exp));
-    if isComplex then
-      repl := BackendVarTransform.addReplacement(repl,cref,exp,NONE());
-      repl := getInputReplacements(scalarExps,scalarElements,funcTree,repl);
-    elseif Expression.isConst(exp) then
-      repl := BackendVarTransform.addReplacement(repl,cref,exp,NONE());
-    end if;
-  end for;
-  replOut := repl;
-end getInputReplacements;
-*/
-
 public function evaluateConstantFunctionCallExp"checks if the expression is a call and can be evaluated to a constant value.
 the output is either a constant expression or the input exp. no partial evaluation is performed in here."
   input DAE.Exp expIn;
@@ -666,131 +627,6 @@ algorithm
         ((rhsExpIn,lhsExpIn,{},funcsIn,eqIdx,false));
   end matchcontinue;
 end evaluateConstantFunction;
-
-/*
-protected function makeVarElement"builds an DAE.Element of uniontype var from cref and type"
-  input DAE.ComponentRef cref;
-  input DAE.Type ty;
-  output DAE.Element elem;
-algorithm
-  elem := DAE.VAR(cref,DAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.PUBLIC(),ty,NONE(),Types.getDimensions(ty),DAE.NON_CONNECTOR(),DAE.emptyElementSource,NONE(),NONE(),Absyn.NOT_INNER_OUTER());
-end makeVarElement;
-
-protected function expandComplexVar "gets var-elements for the scalar values of complex vars and multidimensional vars.
-author: Waurich TUD 2014-03"
-  input DAE.Element inElem;
-  output list<DAE.Element> varLstOut={};
-algorithm
-  varLstOut := matchcontinue(inElem)
-    local
-      list<Integer> dim;
-      list<String> names;
-      list<DAE.Dimension> dims;
-      DAE.ComponentRef cref;
-      DAE.Dimensions dimensions, dimensions2;
-      DAE.Type ty;
-      DAE.Element elem;
-      DAE.Exp exp;
-      list<DAE.Exp> exps;
-      list<DAE.Element> varsFold = {};
-      list<DAE.ComponentRef> crefs;
-      list<DAE.Type> types;
-      list<DAE.Var> varLst;
-      list<DAE.Subscript> subs, subs2;
-      list<list<DAE.Subscript>> subslst, subslst1, subslst2;
-
-    case(DAE.VAR(componentRef = cref,ty=DAE.T_COMPLEX(varLst = varLst)))
-      algorithm
-        names := List.map(varLst,DAEUtil.typeVarIdent);
-        types := List.map(varLst,DAEUtil.varType);
-        crefs := List.map1(names,ComponentReference.appendStringCref,cref);
-        crefs := setTypesForScalarCrefs(crefs,types);
-        for ty in types loop
-          cref::crefs := crefs;
-          elem := makeVarElement(cref,ty);
-          varsFold := elem::varsFold;
-        end for;
-      then
-        listReverse(varsFold);
-
-    case(DAE.VAR(dims={}))
-      algorithm
-      then {inElem};
-
-    case(DAE.VAR(componentRef=cref,ty=DAE.T_REAL(), dims=dims ))
-      algorithm
-        dim := List.map(dims, Expression.dimensionSize);
-        subslst := expandDimension(dims,{});
-        crefs := List.map1r(subslst,ComponentReference.subscriptCref,cref);
-        for cref in crefs loop
-          elem := makeVarElement(cref,DAE.T_REAL_DEFAULT);
-          varsFold := elem::varsFold;
-        end for;
-      then
-        listReverse(varsFold);
-
-    case(DAE.VAR(componentRef=cref,ty=DAE.T_INTEGER(), dims=dims ))
-      algorithm
-        subslst := expandDimension(dims,{});
-        crefs := List.map1r(subslst,ComponentReference.subscriptCref,cref);
-        for cref in crefs loop
-          elem := makeVarElement(cref,DAE.T_INTEGER_DEFAULT);
-          varsFold := elem::varsFold;
-        end for;
-      then
-        listReverse(varsFold);
-
-    case(DAE.VAR(componentRef=cref,ty=DAE.T_ARRAY(ty=DAE.T_ARRAY(ty=ty, dims=dimensions2), dims=dimensions)))// a 2-dim array
-      algorithm
-        subslst1 := expandDimension(dimensions,{});
-        subslst2 := expandDimension(dimensions2,{});
-        subslst := {};
-        for subs in subslst1 loop
-          for subs2 in subslst2 loop
-            subslst := listAppend(subs,subs2)::subslst;
-          end for;
-        end for;
-        crefs := List.map1r(subslst,ComponentReference.subscriptCref,cref);
-        for cref in crefs loop
-          elem := makeVarElement(cref,ty);
-          varsFold := elem::varsFold;
-        end for;
-      then
-        varsFold;
-
-     case(DAE.VAR(componentRef=cref,ty=DAE.T_ARRAY(ty=ty, dims=dimensions))) // a 1-dim array
-      algorithm
-        subslst := expandDimension(dimensions,{});
-        crefs := List.map1r(subslst,ComponentReference.subscriptCref,cref);
-        for cref in crefs loop
-          elem := makeVarElement(cref,ty);
-          varsFold := elem::varsFold;
-        end for;
-      then
-        listReverse(varsFold);
-
-    case(DAE.VAR(componentRef=cref,ty=DAE.T_ENUMERATION()))
-      equation
-        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("update expandComplexVar for enumerations: the enum cref is :"+stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+"\n");
-        end if;
-      then
-        {};
-
-    case(DAE.VAR(componentRef=cref,ty=DAE.T_TUPLE()))
-      equation
-        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("update expandComplexVar for tuple types: the tupl cref is :\n"+stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+"\n");
-        end if;
-      then
-        {};
-
-    else
-      then {inElem};
-
-  end matchcontinue;
-end expandComplexVar;
-*/
 
 protected function expandComplexEpressions "gets the complex contents or if its not complex, then the exp itself, if its a call, get the scalar outputs.
 it would be possible to evaluate the exp before.
@@ -2112,10 +1948,11 @@ algorithm
         (msg) = evaluateConstantFunctionCallExp(msg,funcTree);
         (msg,_) = ExpressionSimplify.simplify(msg);
         if Expression.expEqual(cond,DAE.BCONST(false)) and Expression.expString(lvl)=="AssertionLevel.error" then
-          print("ERROR: "+ExpressionDump.printExpStr(msg)+"\n");
+          if Flags.isSet(Flags.EVAL_FUNC_DUMP) then print("ERROR: "+ExpressionDump.printExpStr(msg)+"\n"); end if;
           fail();
         elseif Expression.expEqual(cond,DAE.BCONST(false)) and Expression.expString(lvl)=="AssertionLevel.warning" then
-          print("WARNING: "+ExpressionDump.printExpStr(msg)+"\n");
+          if Flags.isSet(Flags.EVAL_FUNC_DUMP) then print("WARNING: "+ExpressionDump.printExpStr(msg)+"\n"); end if;
+          fail();
         end if;
 
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
@@ -2364,8 +2201,7 @@ algorithm
       expLst = listAppend(expLst,expsIn);
     then expLst;
   case(DAE.STMT_ASSIGN_ARR(lhs=exp),_)
-    then {exp};
-    // then exp::expsIn;
+    then exp::expsIn;
   case(DAE.STMT_IF(statementLst=stmtLst1,else_=else_),_)
     equation
       stmtLstLst = getDAEelseStatemntLsts(else_,{});
