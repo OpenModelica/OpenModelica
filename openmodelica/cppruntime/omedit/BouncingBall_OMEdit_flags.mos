@@ -11,7 +11,7 @@ loadFile("../BouncingBall.mo");
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 simulate(BouncingBall,method="dassl",stopTime=1.0, tolerance=1e-10, numberOfIntervals=100,outputFormat="mat",simflags="-port=41442 -logFormat=xml -override=startTime=0,stopTime=4,stepSize=0.008,tolerance=0.0001,solver=dassl,outputFormat=mat,variableFilter=.* -r=BouncingBall_res.mat -dasslJacobian=coloredNumerical -emit_protected -w -lv=LOG_STATS");
 res := OpenModelica.Scripting.compareSimulationResults("BouncingBall_res.mat",
-  "ReferenceFiles/BouncingBall.mat",
+  "../ReferenceFiles/BouncingBall.mat",
   "BouncingBall_diff.csv",0.01,0.0001,
   {"h","v"});
 
