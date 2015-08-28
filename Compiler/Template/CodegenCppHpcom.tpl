@@ -176,7 +176,9 @@ template additionalHpcomProtectedMemberDeclaration(SimCode simCode, Text& extraF
       <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
       <<
       std::vector<MeasureTimeData> measureTimeArrayHpcom;
-      std::vector<MeasureTimeData> measureTimeSchedulerArrayHpcom;
+      std::vector<MeasureTimeData> measureTimeSchedulerArrayHpcom_evaluateODE;
+      std::vector<MeasureTimeData> measureTimeSchedulerArrayHpcom_evaluateDAE;
+      std::vector<MeasureTimeData> measureTimeSchedulerArrayHpcom_evaluateZeroFunc;
       //MeasureTimeValues *measuredStartValuesODE, *measuredEndValuesODE;
       MeasureTimeValues *measuredSchedulerStartValues, *measuredSchedulerEndValues;
 
@@ -447,23 +449,23 @@ template additionalHpcomConstructorBodyStatements(Option<tuple<Schedule,Schedule
           <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
             <<
             #ifdef MEASURETIME_MODELFUNCTIONS
-            MeasureTime::addResultContentBlock("<%fullModelName%>","functions_HPCOM_Sections",&measureTimeSchedulerArrayHpcom_functionODE);
-            measureTimeSchedulerArrayHpcom_functionODE = std::vector<MeasureTimeData>(<%listLength(odeSchedule.tasksOfLevels)%>);
+            MeasureTime::addResultContentBlock("<%fullModelName%>","functions_HPCOM_Sections",&measureTimeSchedulerArrayHpcom_evaluateODE);
+            measureTimeSchedulerArrayHpcom_evaluateODE = std::vector<MeasureTimeData>(<%listLength(odeSchedule.tasksOfLevels)%>);
             measuredSchedulerStartValues = MeasureTime::getZeroValues();
             measuredSchedulerEndValues = MeasureTime::getZeroValues();
-            <%List.intRange(listLength(odeSchedule.tasksOfLevels)) |> levelIdx => 'measureTimeSchedulerArrayHpcom_functionODE[<%intSub(levelIdx,1)%>] = MeasureTimeData("evaluateODE_level_<%levelIdx%>");'; separator="\n"%>
+            <%List.intRange(listLength(odeSchedule.tasksOfLevels)) |> levelIdx => 'measureTimeSchedulerArrayHpcom_evaluateODE[<%intSub(levelIdx,1)%>] = MeasureTimeData("evaluateODE_level_<%levelIdx%>");'; separator="\n"%>
 
-            MeasureTime::addResultContentBlock("<%fullModelName%>","functions_HPCOM_Sections",&measureTimeSchedulerArrayHpcom_functionDAE);
-            measureTimeSchedulerArrayHpcom_functionDAE = std::vector<MeasureTimeData>(<%listLength(daeSchedule.tasksOfLevels)%>);
+            MeasureTime::addResultContentBlock("<%fullModelName%>","functions_HPCOM_Sections",&measureTimeSchedulerArrayHpcom_evaluateDAE);
+            measureTimeSchedulerArrayHpcom_evaluateDAE = std::vector<MeasureTimeData>(<%listLength(daeSchedule.tasksOfLevels)%>);
             measuredSchedulerStartValues = MeasureTime::getZeroValues();
             measuredSchedulerEndValues = MeasureTime::getZeroValues();
-            <%List.intRange(listLength(daeSchedule.tasksOfLevels)) |> levelIdx => 'measureTimeSchedulerArrayHpcom_functionDAE[<%intSub(levelIdx,1)%>] = MeasureTimeData("evaluateDAE_level_<%levelIdx%>");'; separator="\n"%>
+            <%List.intRange(listLength(daeSchedule.tasksOfLevels)) |> levelIdx => 'measureTimeSchedulerArrayHpcom_evaluateDAE[<%intSub(levelIdx,1)%>] = MeasureTimeData("evaluateDAE_level_<%levelIdx%>");'; separator="\n"%>
 
-            MeasureTime::addResultContentBlock("<%fullModelName%>","functions_HPCOM_Sections",&measureTimeSchedulerArrayHpcom_functionZeroFunc);
-            measureTimeSchedulerArrayHpcom_functionZeroFunc = std::vector<MeasureTimeData>(<%listLength(odeSchedule.tasksOfLevels)%>);
+            MeasureTime::addResultContentBlock("<%fullModelName%>","functions_HPCOM_Sections",&measureTimeSchedulerArrayHpcom_evaluateZeroFunc);
+            measureTimeSchedulerArrayHpcom_evaluateZeroFunc = std::vector<MeasureTimeData>(<%listLength(odeSchedule.tasksOfLevels)%>);
             measuredSchedulerStartValues = MeasureTime::getZeroValues();
             measuredSchedulerEndValues = MeasureTime::getZeroValues();
-            <%List.intRange(listLength(zeroFuncSchedule.tasksOfLevels)) |> levelIdx => 'measureTimeSchedulerArrayHpcom_functionZeroFunc[<%intSub(levelIdx,1)%>] = MeasureTimeData("evaluateZeroFunc_level_<%levelIdx%>");'; separator="\n"%>
+            <%List.intRange(listLength(zeroFuncSchedule.tasksOfLevels)) |> levelIdx => 'measureTimeSchedulerArrayHpcom_evaluateZeroFunc[<%intSub(levelIdx,1)%>] = MeasureTimeData("evaluateZeroFunc_level_<%levelIdx%>");'; separator="\n"%>
             #endif //MEASURETIME_MODELFUNCTIONS
             >>
           %>
@@ -1209,7 +1211,7 @@ template generateLevelFixedCodeForThreadLevel(list<SimEqSystem> allEquationsPlus
 
   <%if intEq(iThreadIdx, 0) then
     <<
-    <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", 'measureTimeSchedulerArrayHpcom[<%iLevelIdx%>]', '<%functionName%>_level_<%intAdd(iLevelIdx,1)%>', "MEASURETIME_MODELFUNCTIONS")%>
+    <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", 'measureTimeSchedulerArrayHpcom_<%functionName%>[<%iLevelIdx%>]', '<%functionName%>_level_<%intAdd(iLevelIdx,1)%>', "MEASURETIME_MODELFUNCTIONS")%>
     >>
   %>
   //End of Level <%iLevelIdx%>
