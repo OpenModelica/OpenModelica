@@ -3305,6 +3305,10 @@ package Types
     input DAE.Type ty;
     output list<DAE.Var> fields;
   end getMetaRecordFields;
+  function unboxedType
+    input DAE.Type boxedType;
+    output DAE.Type ty;
+  end unboxedType;
 end Types;
 
 package HashTableCrIListArray
