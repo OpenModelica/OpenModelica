@@ -3136,7 +3136,7 @@ template daeExpPartEvalFunction(Exp exp, Context context, Text &preExp, Text &va
     let closureName = '_Closure<%System.tmpTickIndex(2/*auxFunction*/)%>_<%funcName%>'
     let functionsObject = match context case FUNCTION_CONTEXT(__) then 'this' else '_functions'
     let createClosure = (expList |> e => ', <%daeExp(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>')
-    let closureArgsDecl = (setDifference(t_orig.funcArg, t.funcArg) |> a as FUNCARG(__) hasindex i1 fromindex 1 => ', <%partEvalUnboxedType(a.ty)%> &<%a.name%>')
+    let closureArgsDecl = (setDifference(t_orig.funcArg, t.funcArg) |> a as FUNCARG(__) hasindex i1 fromindex 1 => ', <%partEvalUnboxedType(a.ty)%> <%a.name%>')
     let callArgsDecl = (t.funcArg |> a as FUNCARG(__) hasindex i1 fromindex 1 => '<%partEvalUnboxedType(a.ty)%> <%a.name%>, ')
     let callArgsOrig = (t_orig.funcArg |> a as FUNCARG(__) hasindex i1 fromindex 1 => '<%a.name%>, ')
     let &extraFuncsDecl +=
@@ -3144,10 +3144,10 @@ template daeExpPartEvalFunction(Exp exp, Context context, Text &preExp, Text &va
 
     class <%closureName%>
     {
-      Functions *_functions;
-      <%setDifference(t_orig.funcArg, t.funcArg) |> a as FUNCARG(__) hasindex i1 fromindex 1 => '<%partEvalUnboxedType(a.ty)%> &<%a.name%>;<%\n%>'%>
+      Functions* _functions;
+      <%setDifference(t_orig.funcArg, t.funcArg) |> a as FUNCARG(__) hasindex i1 fromindex 1 => '<%partEvalUnboxedType(a.ty)%> <%a.name%>;<%\n%>'%>
      public:
-      <%closureName%>(Functions *functions<%closureArgsDecl%>)
+      <%closureName%>(Functions* functions<%closureArgsDecl%>)
         : _functions(functions)
         <%setDifference(t_orig.funcArg, t.funcArg) |> a as FUNCARG(__) hasindex i1 fromindex 1 => ', <%a.name%>(<%a.name%>)<%\n%>'%>
       {}
@@ -3167,7 +3167,7 @@ template partEvalUnboxedType(Type boxedType)
   match boxedType
   case T_METABOXED(__) then
     let elty = expTypeShort(Types.unboxedType(boxedType))
-    let ty = if isArrayType(Types.unboxedType(boxedType)) then 'BaseArray< <%elty%> >' else '<%elty%>'
+    let ty = if isArrayType(Types.unboxedType(boxedType)) then 'BaseArray<'+'<%elty%>'+'>&' else '<%elty%>'
     '<%ty%>'
   else
     error(sourceInfo(), 'Wrong input of type <%unparseType(boxedType)%> to partEvalUnboxedType')
@@ -3179,7 +3179,7 @@ template daeExpBox(Exp exp, Context context, Text &preExp, Text &varDecls, SimCo
   match exp
   case BOX(__) then
     let elty = expTypeFromExpShort(exp)
-    let ty = if isArrayType(typeof(exp)) then 'BaseArray< <%elty%> >' else '<%elty%>'
+    let ty = if isArrayType(typeof(exp)) then 'BaseArray<'+'<%elty%>'+'>' else '<%elty%>'
     let res = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     '/*box <%ty%>*/<%res%>'
 end daeExpBox;
