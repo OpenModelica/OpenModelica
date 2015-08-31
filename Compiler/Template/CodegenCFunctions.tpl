@@ -120,6 +120,7 @@ end mainTop;
   match functionCode
   case fc as FUNCTIONCODE(__) then
     let()= System.tmpTickResetIndex(0,2) /* auxFunction index */
+    let()= System.tmpTickResetIndex(0,20)  /*parfor index*/
     let &staticPrototypes = buffer ""
     let filePrefix = name
     let _= (if mainFunction then textFile(functionsMakefile(functionCode), '<%filePrefix%>.makefile'))
@@ -372,7 +373,7 @@ template functionHeaderParallelImpl(String fname, list<Variable> fargs, list<Var
       'void omc_<%fname%>(<%fargsStr%>)'
 
     case fvar::rest then
-      let rettype = functionArgTypeKernelInterface(fvar)
+      let rettype = varType(fvar)
       let &fargsStr += if rest then ", " + (rest |> var => tupleOutfunArgDefinitionKernelFunctionInterface(var) ;separator=", ")
       '<%rettype%> omc_<%fname%>(<%fargsStr%>)'
 
@@ -546,7 +547,7 @@ template functionHeaderKernelFunctionInterfacePrototype(String fname, list<Varia
       'void omc_<%fname%>(<%fargsStr%>)'
 
     case fvar::rest then
-      let rettype = functionArgTypeKernelInterface(fvar)
+      let rettype = varType(fvar)
       let &fargsStr += if rest then ", " + (rest |> var => tupleOutfunArgDefinitionKernelFunctionInterface(var) ;separator=", ")
       '<%rettype%> omc_<%fname%>(<%fargsStr%>)'
 
@@ -575,7 +576,7 @@ template funArgDefinitionKernelFunctionInterface(Variable var)
   let &auxFunction = buffer ""
   match var
   case VARIABLE(__) then
-    '<%functionArgTypeKernelInterface(var)%> <%funArgName(var)%>'
+    '<%varType(var)%> <%funArgName(var)%>'
   else error(sourceInfo(), 'funArgDefinitionKernelFunctionInterface : unsupported function argument type')
 end funArgDefinitionKernelFunctionInterface;
 
@@ -584,18 +585,9 @@ template tupleOutfunArgDefinitionKernelFunctionInterface(Variable var)
   let &auxFunction = buffer ""
   match var
   case VARIABLE(__) then
-    '<%functionArgTypeKernelInterface(var)%> *out<%funArgName(var)%>'
+    '<%varType(var)%> *out<%funArgName(var)%>'
   else error(sourceInfo(), 'tupleOutfunArgDefinitionKernelFunctionInterface : unsupported function argument type')
 end tupleOutfunArgDefinitionKernelFunctionInterface;
-
-template functionArgTypeKernelInterface(Variable var)
-::=
-  match var
-    case VARIABLE(ty=T_ARRAY(__), parallelism = PARGLOBAL(__)) then 'device_<%varType(var)%>'
-    case VARIABLE(ty=T_ARRAY(__), parallelism = PARLOCAL(__)) then 'device_local_<%varType(var)%>'
-    case VARIABLE(__) then '<%varType(var)%>'
-    else 'Invalid function argument to Kernel function Interface.'
-end functionArgTypeKernelInterface;
 
 template funArgDefinitionKernelFunctionBody(Variable var)
  "Generates code to initialize variables.
@@ -619,7 +611,7 @@ case var as VARIABLE(__) then
     case PARGLOBAL(__) then
       '__global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>    __global modelica_integer* info_<%varName%>'
     case PARLOCAL(__) then
-      '__global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>    __global modelica_integer* info_<%varName%>'
+      '__local modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>    __local modelica_integer* info_<%varName%>'
     )
   else
     'modelica_<%expTypeShort(var.ty)%> <%varName%>'
@@ -944,7 +936,6 @@ template extractParforBodies(Function fn, Boolean inFunc)
 ::=
 match fn
 case FUNCTION(__) then
-  let()= System.tmpTickReset(1)
   let()= System.tmpTickResetIndex(0,1) /* Boxed array indices */
 
   let &varDecls = buffer ""
@@ -2969,8 +2960,14 @@ case RANGE(__) then
       daeExp(eo, context, &preExp, &varDecls, &auxFunction)
     else "1"
   let stopValue = daeExp(stop, context, &preExp, &varDecls, &auxFunction)
-  let eqnsindx = match context case FUNCTION_CONTEXT(__) then '' else 'equationIndexes, '
-  let AddionalFuncName = match context case FUNCTION_CONTEXT(__) then '' else '_withEquationIndexes'
+  let eqnsindx = match context
+                    case FUNCTION_CONTEXT(__)
+                    case PARALLEL_FUNCTION_CONTEXT(__) then ''
+                    else 'equationIndexes, '
+  let AddionalFuncName = match context
+                    case FUNCTION_CONTEXT(__)
+                    case PARALLEL_FUNCTION_CONTEXT(__) then ''
+                    else '_withEquationIndexes'
   <<
   <%preExp%>
   <%startVar%> = <%startValue%>; <%stepVar%> = <%stepValue%>; <%stopVar%> = <%stopValue%>;
@@ -3253,7 +3250,7 @@ template functionsParModelicaKernelsFile(String filePrefix, Option<Function> mai
  "Generates the content of the C file for functions in the simulation case."
 ::=
 
-  /* Reset the parfor loop id counter to 0*/
+  /* Reset the parfor loop id counter to 1*/
   let()= System.tmpTickResetIndex(0,20) /* parfor index */
 
   <<
@@ -3885,9 +3882,18 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   let condVar = daeExp(condition, context, &preExpCond, &varDecls, &auxFunction)
   let &preExpMsg = buffer ""
   let msgVar = messages |> message => expToFormatString(message,context,&preExpMsg,&varDecls,&auxFunction) ; separator = ", "
-  let eqnsindx = match context case FUNCTION_CONTEXT(__) then '' else 'equationIndexes, '
-  let AddionalFuncName = match context case FUNCTION_CONTEXT(__) then '' else '_withEquationIndexes'
-  let addInfoTextContext = match context case FUNCTION_CONTEXT(__) then '' else '<%\n%>omc_assert_warning(info, "The following assertion has been violated at time %f\n<%Util.escapeModelicaStringToCString(printExpStr(condition))%>", data->localData[0]->timeValue);'
+  let eqnsindx = match context
+            case FUNCTION_CONTEXT(__)
+            case PARALLEL_FUNCTION_CONTEXT(__) then ''
+            else 'equationIndexes, '
+  let AddionalFuncName = match context
+            case FUNCTION_CONTEXT(__)
+            case PARALLEL_FUNCTION_CONTEXT(__)
+            then '' else '_withEquationIndexes'
+  let addInfoTextContext = match context
+            case FUNCTION_CONTEXT(__)
+            case PARALLEL_FUNCTION_CONTEXT(__) then ''
+            else '<%\n%>omc_assert_warning(info, "The following assertion has been violated at time %f\n<%Util.escapeModelicaStringToCString(printExpStr(condition))%>", data->localData[0]->timeValue);'
   let omcAssertFunc = match level case ENUM_LITERAL(index=2) then 'omc_assert_warning<%AddionalFuncName%>(' else 'omc_assert<%AddionalFuncName%>(threadData, '
   let warningTriggered = tempDeclZero("static int", &varDecls)
   let TriggerIf = match level case ENUM_LITERAL(index=2) then 'if(!<%warningTriggered%>)<%\n%>' else ''
@@ -3925,6 +3931,16 @@ template assertCommonVar(Text condVar, Text msgVar, Context context, Text &preEx
         FILE_INFO info = {<%infoArgs(info)%>};
         omc_assert(threadData, info, <%msgVar%>);
     }<%\n%>
+    >>
+  // OpenCL doesn't have support for variadic args. So message should be just a single string.
+  case PARALLEL_FUNCTION_CONTEXT(__) then
+    <<
+    if(!<%condVar%>)
+    {
+        <%preExpMsg%>
+        FILE_INFO info = omc_dummyFileInfo;
+        omc_assert(threadData, info, "Common assertion failed");
+    }
     >>
   else
     <<
@@ -5279,7 +5295,8 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
     let var3 = Util.escapeModelicaStringToCString(printExpStr(e2))
     (match context
-      case FUNCTION_CONTEXT(__) then
+      case FUNCTION_CONTEXT(__)
+      case PARALLEL_FUNCTION_CONTEXT(__) then
         'DIVISION(<%var1%>,<%var2%>,"<%var3%>")'
       else
         'DIVISION_SIM(<%var1%>,<%var2%>,"<%var3%>",equationIndexes)'
@@ -5470,7 +5487,9 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
       if acceptMetaModelicaGrammar()
         then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
         else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(call))%>");}<%\n%>'
-    'ldiv(<%var1%>,<%tvar%>).quot'
+      /*ldiv not available in opencl c*/
+    if acceptParModelicaGrammar() then '(modelica_integer)(<%var1%>/<%tvar%>)'
+    else 'ldiv(<%var1%>,<%tvar%>).quot'
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
