@@ -488,7 +488,7 @@ typedef struct MODEL_DATA
   long nLinearSystems;
   long nNonLinearSystems;
   long nStateSets;
-  long nInlineVars;                    /* number of additional variables for the inline solverr */
+  long nInlineVars;                    /* number of additional variables for the inline solver */
   long nOptimizeConstraints;           /* number of additional variables for constraint in dynamic optimization*/
   long nOptimizeFinalConstraints;      /* number of additional variables for final constraint in dynamic optimization*/
 
