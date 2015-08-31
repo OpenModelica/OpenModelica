@@ -1,3 +1,5 @@
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/StaticNonLinSolverOMCFactory.h>
 #include <SimCoreFactory/Policies/FactoryPolicy.h>
 #include <Solver/Newton/NewtonSettings.h>

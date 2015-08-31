@@ -2,6 +2,8 @@
  *
  *  @{
  */
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
 #include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
 #include <Core/SimController/SimController.h>
 #include <Core/System/AlgLoopSolverFactory.h>

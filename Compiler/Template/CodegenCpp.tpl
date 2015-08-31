@@ -499,6 +499,9 @@ case SIMCODE(modelInfo=MODELINFO()) then
   }
 
   #elif defined (RUNTIME_STATIC_LINKING)
+  #include <Core/System/FactoryExport.h>
+  #include <Core/DataExchange/SimData.h>
+  #include <Core/System/SimVars.h>
     boost::shared_ptr<ISimData> createSimDataFunction()
     {
         boost::shared_ptr<ISimData> data( new SimData() );
@@ -2329,11 +2332,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
             %>
             <%additionalPreRunCommands%>
 
-            #ifdef RUNTIME_STATIC_LINKING
-              boost::shared_ptr<StaticOMCFactory>  _factory =  boost::shared_ptr<StaticOMCFactory>(new StaticOMCFactory());
-            #else
-              boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new OMCFactory());
-            #endif
+
+            boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new OMCFactory());
+
             //SimController to start simulation
 
             std::pair<boost::shared_ptr<ISimController>, SimSettings> simulation = _factory->createSimulation(argc, argv, opts);
@@ -2684,13 +2685,9 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     #include <Core/ModelicaDefine.h>
     #include <Core/Modelica.h>
     #include <Core/System/FactoryExport.h>
-    #include <Core/DataExchange/SimData.h>
-    #include <Core/DataExchange/XmlPropertyReader.h>
-    #include <Core/System/SimVars.h>
     #include <Core/System/DiscreteEvents.h>
     #include <Core/System/EventHandling.h>
-    #include <Core/Utils/Modelica/ModelicaUtilities.h>
-    #include <Core/Utils/extension/logger.hpp>
+
 
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"

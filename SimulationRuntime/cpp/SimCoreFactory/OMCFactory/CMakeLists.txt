@@ -3,8 +3,8 @@ cmake_minimum_required (VERSION 2.8.6)
 project(${OMCFactoryName})
 
 add_library(${OMCFactoryName} SHARED OMCFactory.cpp)
-add_library(${OMCFactoryName}_static STATIC OMCFactory.cpp StaticOMCFactory.cpp StaticNonLinSolverOMCFactory.cpp StaticLinSolverOMCFactory.cpp StaticSolverOMCFactory.cpp)
-add_library(${OMCFactoryName}_FMU_static STATIC OMCFactory.cpp StaticOMCFactory.cpp StaticNonLinSolverOMCFactory.cpp StaticLinSolverOMCFactory.cpp StaticSolverOMCFactory.cpp)
+add_library(${OMCFactoryName}_static STATIC OMCFactory.cpp )
+add_library(${OMCFactoryName}_FMU_static STATIC OMCFactory.cpp )
 set_target_properties(${OMCFactoryName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_CVODE_STATIC;ENABLE_KINSOL_STATIC")
 
 if(FMU_KINSOL)

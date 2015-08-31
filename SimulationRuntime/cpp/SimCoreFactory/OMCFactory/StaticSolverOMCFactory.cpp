@@ -1,3 +1,5 @@
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/StaticSolverOMCFactory.h>
 #include <SimCoreFactory/Policies/FactoryPolicy.h>
 #ifdef ENABLE_CVODE_STATIC
@@ -18,9 +20,7 @@ StaticSolverOMCFactory<CreationPolicy>::~StaticSolverOMCFactory()
 
 template <class CreationPolicy>
 boost::shared_ptr<ISettingsFactory> StaticSolverOMCFactory<CreationPolicy>::createSettingsFactory()
-{
-  return ObjectFactory<CreationPolicy>::_factory->createSettingsFactory();
-}
+
 
 template <class CreationPolicy>
 boost::shared_ptr<ISolver> StaticSolverOMCFactory<CreationPolicy>::createSolver(IMixedSystem* system, string solvername, boost::shared_ptr<ISolverSettings> solver_settings)

@@ -50,7 +50,7 @@ int kin_DlsDenseJacFn(long int N, N_Vector u, N_Vector fu,DlsMat J, void *user_d
 /**\Callback function for Kinsol to calculate right hand side, calls internal Kinsol member function
  *  \param [in] y variables vector
  *  \param [in] fval right hand side vecotre
- *  \param [in] user_data user date pointer is used to acces Kinsol instance
+ *  \param [in] user_data user data pointer is used to access Kinsol instance
  *  \return status value
  */
 int kin_fCallback(N_Vector y,N_Vector fval, void *user_data)

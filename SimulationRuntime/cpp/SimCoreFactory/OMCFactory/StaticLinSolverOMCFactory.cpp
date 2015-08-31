@@ -1,3 +1,5 @@
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/StaticLinSolverOMCFactory.h>
 #include <SimCoreFactory/Policies/FactoryPolicy.h>
 
