@@ -1592,7 +1592,7 @@ algorithm
 
   else
     equation
-      print("unknown type in evaluateFunctions_updateAlgElements "+DAEDump.dumpElementsStr({algIn})+"\n");
+      //print("unknown type in evaluateFunctions_updateAlgElements "+DAEDump.dumpElementsStr({algIn})+"\n");
     then(algIn,tplIn);
   end matchcontinue;
 end evaluateFunctions_updateAlgElements;
@@ -2526,8 +2526,6 @@ algorithm
         {};
     else
     equation
-              print("test5\n");
-
       then
         {};
   end matchcontinue;
