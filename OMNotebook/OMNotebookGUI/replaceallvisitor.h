@@ -56,6 +56,7 @@
 #include "document.h"
 #include "inputcell.h"
 #include "textcell.h"
+#include "latexcell.h"
 #include "graphcell.h"
 
 
@@ -170,6 +171,37 @@ namespace IAEX
       }
     }
     void visitGraphCellNodeAfter( GraphCell *node ){}
+
+    void visitLatexCellNodeBefore( LatexCell *node )
+    {
+      if( node->textEdit() )
+      {
+        int options( 0 );
+
+        // move cursor to start of text
+        QTextCursor cursor = node->textEdit()->textCursor();
+        cursor.movePosition( QTextCursor::Start );
+        node->textEdit()->setTextCursor( cursor );
+
+        // match case & match word
+        if( matchCase_ && matchWord_ )
+          options = QTextDocument::FindCaseSensitively | QTextDocument::FindWholeWords;
+        else if( matchCase_ )
+          options = QTextDocument::FindCaseSensitively;
+        else if( matchWord_ )
+          options = QTextDocument::FindWholeWords;
+
+        // replace all
+        while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
+        {
+          node->textEdit()->textCursor().insertText( replaceText_ );
+          if( count_ )
+            (*count_)++;
+        }
+      }
+    }
+
+    void visitLatexCellNodeAfter( LatexCell *node ){}
 
     // Visitor function - CURSORCELL
     void visitCellCursorNodeBefore( CellCursor *cursor ){}

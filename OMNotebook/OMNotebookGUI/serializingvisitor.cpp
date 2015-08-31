@@ -56,6 +56,7 @@
 #include "serializingvisitor.h"
 #include "cellgroup.h"
 #include "textcell.h"
+#include "latexcell.h"
 #include "inputcell.h"
 #include "cellcursor.h"
 #include "celldocument.h"
@@ -350,6 +351,65 @@ namespace IAEX
   void SerializingVisitor::visitGraphCellNodeAfter(GraphCell *)
   {}
 
+  //LATEXCELL
+
+  void SerializingVisitor::visitLatexCellNodeBefore(LatexCell *node)
+  {
+
+    QDomElement latexcell = domdoc_.createElement( XML_LATEXCELL );
+
+    // Add style setting to inputcell element
+    latexcell.setAttribute( XML_STYLE, node->style()->name() );
+
+
+    // Add close setting to inputcell element
+    if( node->isClosed() )
+      latexcell.setAttribute( XML_CLOSED, XML_TRUE );
+    else
+      latexcell.setAttribute( XML_CLOSED, XML_FALSE );
+
+    // Create an text element (for input) and append it to the element
+    QDomElement textelement = domdoc_.createElement( XML_INPUTPART );
+    QDomText textnode = domdoc_.createTextNode( node->text() );
+    textelement.appendChild( textnode );
+    latexcell.appendChild( textelement );
+
+    // Create an text element (for output) and append it to the element
+    QDomElement outputelement = domdoc_.createElement( XML_OUTPUTPART );
+
+    QDomText outputnode;
+    outputnode = domdoc_.createTextNode( node->textOutput() );
+
+    outputelement.appendChild( outputnode );
+    latexcell.appendChild( outputelement );
+
+    // Creates ruleelemetns
+    Cell::rules_t r = node->rules();
+    Cell::rules_t::const_iterator r_iter = r.begin();
+    for( ; r_iter != r.end(); ++r_iter )
+    {
+      QDomElement ruleelement = domdoc_.createElement( XML_RULE );
+      ruleelement.setAttribute( XML_NAME, (*r_iter)->attribute() );
+
+      QDomText rulenode = domdoc_.createTextNode( (*r_iter)->value() );
+      ruleelement.appendChild( rulenode );
+
+      latexcell.appendChild( ruleelement );
+    }
+
+    // Check if any image have been include in the text and add them
+    // to the the the inputcell element
+    QString xoyz = node->textOutputHtml();
+    saveImages( latexcell, xoyz );
+
+    // Add inputcell element to current element
+    currentElement_.appendChild( latexcell );
+  }
+
+  void SerializingVisitor::visitLatexCellNodeAfter(LatexCell *)
+  {}
+
+
   //CELLCURSOR
   // ******************************************************************
   void SerializingVisitor::visitCellCursorNodeBefore(CellCursor *)
@@ -384,7 +444,6 @@ namespace IAEX
 
         // get the image name
         QString imagename = text.mid( start, end - start );
-
         CellDocument *doc = dynamic_cast<CellDocument*>(doc_);
         QImage *image = doc->getImage( imagename );
 

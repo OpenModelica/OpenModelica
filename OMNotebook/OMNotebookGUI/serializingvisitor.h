@@ -83,6 +83,9 @@ namespace IAEX
     virtual void visitGraphCellNodeBefore(GraphCell *node);
     virtual void visitGraphCellNodeAfter(GraphCell *node);
 
+    virtual void visitLatexCellNodeBefore(LatexCell *node);
+    virtual void visitLatexCellNodeAfter(LatexCell *node);
+
     virtual void visitCellCursorNodeBefore(CellCursor *cursor);
     virtual void visitCellCursorNodeAfter(CellCursor *cursor);
 

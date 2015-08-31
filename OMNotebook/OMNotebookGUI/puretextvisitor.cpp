@@ -43,6 +43,7 @@
 #include "puretextvisitor.h"
 #include "cellgroup.h"
 #include "textcell.h"
+#include "latexcell.h"
 #include "inputcell.h"
 #include "cellcursor.h"
 #include "celldocument.h"
@@ -176,6 +177,29 @@ namespace IAEX
 
   void PureTextVisitor::visitGraphCellNodeAfter(GraphCell *)
   {}
+
+  //LATEXCELL
+
+  void PureTextVisitor::visitLatexCellNodeBefore(LatexCell *node)
+  {
+    // 2006-03-03 AF, export chapter counter
+    if( !node->ChapterCounter().isNull() )
+      (*ts_) << node->ChapterCounter() << QString(" ");
+
+    (*ts_) << node->text();
+    (*ts_) << QString( "\r\n\r\n" );
+
+    // 2006-03-03 AF, export output if not an image
+    if( node->textOutputHtml().indexOf( "<img src=", 0, Qt::CaseInsensitive ) < 0 )
+    {
+      (*ts_) << node->textOutput();
+      (*ts_) << QString( "\r\n\r\n\r\n" );
+    }
+  }
+
+  void PureTextVisitor::visitLatexCellNodeAfter(LatexCell *)
+  {}
+
 
   //CELLCURSOR
   void PureTextVisitor::visitCellCursorNodeBefore(CellCursor *)

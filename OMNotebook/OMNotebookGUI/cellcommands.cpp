@@ -50,6 +50,7 @@
 //IAEX Headers
 #include "cellcommands.h"
 #include "graphcell.h"
+#include "latexcell.h"
 #include "inputcell.h"
 #include "textcell.h"
 #include "cellgroup.h"
@@ -424,6 +425,27 @@ namespace IAEX
 
       newGraphCell->setClosed( oldGraphCell->isClosed() );
     }
+
+    else if( typeid(LatexCell) == typeid( *newCell ))
+    {
+      LatexCell *newLatexCell = dynamic_cast<LatexCell *>( newCell );
+      LatexCell *oldLatexCell = dynamic_cast<LatexCell *>( cell );
+
+      newLatexCell->setStyle( style );
+      newLatexCell->setText( oldLatexCell->text() );
+
+      if( oldLatexCell->isEvaluated() )
+      {
+        newLatexCell->setEvaluated( true );
+        //newLatexCell->setTextOutput( oldLatexCell->textOutput() );
+        newLatexCell->setTextOutputHtml(oldLatexCell->textOutputHtml());
+      }
+      else
+        newLatexCell->setEvaluated( false );
+
+      newLatexCell->setClosed( oldLatexCell->isClosed() );
+    }
+
     else if( typeid(TextCell) == typeid( *newCell ))
     {
       newCell->setStyle( style );

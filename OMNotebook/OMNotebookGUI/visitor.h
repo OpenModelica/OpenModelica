@@ -39,7 +39,6 @@
 //using namespace std;
 
 namespace IAEX{
-
    class Cell;
    class CellGroup;
    class TextCell;
@@ -47,8 +46,8 @@ namespace IAEX{
    class InputCell;
    class ImageCell;
    class CellCursor;
+   class LatexCell;
    class GraphCell;
-
    /*! \interface Visitor
     * \author Ingemar Axelsson (and Anders Ferström)
   * \date 2005-11-30 (update)
@@ -74,8 +73,11 @@ namespace IAEX{
       virtual void visitInputCellNodeBefore(InputCell *node) = 0;
       virtual void visitInputCellNodeAfter(InputCell *node) = 0;
 
-    virtual void visitGraphCellNodeBefore(GraphCell *node) = 0;
+      virtual void visitGraphCellNodeBefore(GraphCell *node) = 0;
       virtual void visitGraphCellNodeAfter(GraphCell *node) = 0;
+
+      virtual void visitLatexCellNodeBefore(LatexCell *node) = 0;
+      virtual void visitLatexCellNodeAfter(LatexCell *node) = 0;
 
       virtual void visitCellCursorNodeBefore(CellCursor *cursor) = 0;
       virtual void visitCellCursorNodeAfter(CellCursor *cursor) = 0;

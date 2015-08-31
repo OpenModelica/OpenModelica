@@ -82,6 +82,14 @@ namespace IAEX
     virtual void visitGraphCellNodeAfter(GraphCell *node){}
 
 
+    virtual void visitLatexCellNodeBefore(LatexCell *node)
+    {
+      HighlighterThread *thread = HighlighterThread::instance();
+      thread->removeEditor( node->textEdit() );
+    }
+    virtual void visitLatexCellNodeAfter(LatexCell *node){}
+
+
     virtual void visitCellCursorNodeBefore(CellCursor *cursor){}
     virtual void visitCellCursorNodeAfter(CellCursor *cursor){}
   };

@@ -51,7 +51,6 @@
 #include "document.h"
 #include "documentview.h"
 #include "Tools.h"
-
 //Forward declaration
 class QAction;
 class QActionGroup;
@@ -166,7 +165,7 @@ private slots:
   void moveCursorDown();
   void groupCellsAction();
   void inputCellsAction();
-  //void latexCellsAction();
+  void latexCellsAction();
   void textCellsAction();
   void updateRecentFiles(QString);
 
@@ -246,6 +245,7 @@ private:
   QAction *autoIndentAction;
   QAction *evalAction;
   QAction *evalallAction;
+  QAction *evalLatexAction;
   QAction *shiftcellsupAction;
   QAction *shiftcellsdownAction;
   QAction *shiftselectedcellsAction;
@@ -273,7 +273,7 @@ private:
 
   QAction *groupAction;
   QAction *inputAction;
-  //QAction *latexAction;
+  QAction *latexAction;
 
   QAction *textAction;
 

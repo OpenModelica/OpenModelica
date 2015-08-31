@@ -312,7 +312,7 @@ NotebookWindow::~NotebookWindow()
 
   delete groupAction;
   delete inputAction;
-  //delete latexAction;
+  delete latexAction;
   delete textAction;
 
   delete aboutAction;
@@ -776,11 +776,11 @@ void NotebookWindow::createCellMenu()
   inputAction->setShortcut( tr("Ctrl+Shift+I") );
   inputAction->setStatusTip( tr("Add an input cell") );
   connect(inputAction, SIGNAL(triggered()), this, SLOT(inputCellsAction()));
-  /*
+
   latexAction = new QAction( tr("Add &Latexcell"), this);
-  latexAction->setShortcut( tr("Ctrl+Shift+I") );
+  latexAction->setShortcut( tr("Ctrl+Shift+E") );
   latexAction->setStatusTip( tr("Add Latex cell") );
-  connect(latexAction, SIGNAL(triggered()), this, SLOT(latexCellsAction())); */
+  connect(latexAction, SIGNAL(triggered()), this, SLOT(latexCellsAction()));
 
 
 
@@ -843,7 +843,7 @@ void NotebookWindow::createCellMenu()
   //cellMenu->addSeparator();
   cellMenu->addAction( addCellAction );
   cellMenu->addAction( inputAction );
-  //cellMenu->addAction(latexAction);
+  cellMenu->addAction(latexAction);
   cellMenu->addAction( textAction );
 
   cellMenu->addAction( groupAction );
@@ -3886,14 +3886,13 @@ void NotebookWindow::inputCellsAction()
   subject_->updateScrollArea();
   updateChapterCounters();
 }
-/*
+
 void NotebookWindow::latexCellsAction()
 {
   subject_->executeCommand(new CreateNewCellCommand("Latex"));
   subject_->updateScrollArea();
   updateChapterCounters();
 }
-*/
 
 void NotebookWindow::textCellsAction()
 {
@@ -3922,6 +3921,11 @@ void NotebookWindow::setAutoIndent(bool b)
 void NotebookWindow::eval()
 {
   if(GraphCell *g = dynamic_cast<GraphCell*>(subject_->getCursor()->currentCell()))
+     {
+      g->eval();
+   }
+
+  if(LatexCell *g = dynamic_cast<LatexCell*>(subject_->getCursor()->currentCell()))
      {
       g->eval();
    }
@@ -4046,7 +4050,7 @@ void NotebookWindow::shiftcellsUp()
             }
             else
             {
-                qDebug()<<"not a groupcell" ;
+                //qDebug()<<"not a groupcell" ;
                 QString currenttext=current->text();
                 QString style=current->style()->name();
                 if (style=="Graph")
@@ -4074,6 +4078,34 @@ void NotebookWindow::shiftcellsUp()
                    subject_->executeCommand(new CreateNewCellCommand("Graph"));
                    subject_->getCursor()->currentCell()->setText(currenttext);
                  }
+                }
+                if(style=="Latex")
+                {
+                    LatexCell *l = dynamic_cast<LatexCell *>(current);
+                    bool eval= l->isEvaluated();
+                    //qDebug()<<"latexcells"<<eval << l->textOutputHtml();
+                    if(eval==true)
+                    {
+                    QString latexinput=l->text();
+                    QString latexoutput=l->textOutputHtml();
+                    subject_->cursorDeleteCell();
+                    subject_->cursorStepUp();
+                    subject_->executeCommand(new CreateNewCellCommand("Latex"));
+                    LatexCell *newcell = dynamic_cast<LatexCell *>(subject_->getCursor()->currentCell());
+                    newcell->setEvaluated(true);
+                    newcell->setClosed(false);
+                    newcell->setText(latexinput);
+                    newcell->setTextOutputHtml(latexoutput);
+                    }
+                    else
+                    {
+                     subject_->cursorDeleteCell();
+                          //subject_->getCursor()->moveUp();
+                     subject_->cursorStepUp();
+                     subject_->executeCommand(new CreateNewCellCommand("Latex"));
+                     subject_->getCursor()->currentCell()->setText(currenttext);
+                    }
+
                 }
                if(style=="Text")
                 {
@@ -4131,13 +4163,13 @@ void NotebookWindow::shiftcellsDown()
         subject_->cursorStepUp();
         if( typeid(CellGroup) == typeid(*next))
         {
-            qDebug()<<"group cell";
+            //qDebug()<<"group cell";
             QMessageBox::warning( 0, "Warning", "Cells cannot moved inside or outside another heirarchy", "OK" );
 
         }
         else
         {
-            qDebug()<<"not a group cell";
+            //qDebug()<<"not a group cell";
             QString style=current->style()->name();
             QString currenttext=current->text();
 
@@ -4166,7 +4198,34 @@ void NotebookWindow::shiftcellsDown()
                  subject_->getCursor()->currentCell()->setText(currenttext);
              }
             }
+            if(style=="Latex")
+            {
+                LatexCell *ld = dynamic_cast<LatexCell *>(current);
+                bool eval= ld->isEvaluated();
+                //qDebug()<<"latexcells"<<eval << ld->textOutputHtml();
+                if(eval==true)
+                {
+                QString latexinput_d=ld->text();
+                QString latexoutput_d=ld->textOutputHtml();
+                subject_->cursorDeleteCell();
+                subject_->cursorStepDown();
+                subject_->executeCommand(new CreateNewCellCommand("Latex"));
+                LatexCell *newcell_d = dynamic_cast<LatexCell *>(subject_->getCursor()->currentCell());
+                newcell_d->setEvaluated(true);
+                newcell_d->setClosed(false);
+                newcell_d->setText(latexinput_d);
+                newcell_d->setTextOutputHtml(latexoutput_d);
+                }
+                else
+                {
+                 subject_->cursorDeleteCell();
+                      //subject_->getCursor()->moveUp();
+                 subject_->cursorStepDown();
+                 subject_->executeCommand(new CreateNewCellCommand("Latex"));
+                 subject_->getCursor()->currentCell()->setText(currenttext);
+                }
 
+            }
             if(style=="Text")
             {
             QString textoutput=current->textHtml();
@@ -4206,6 +4265,12 @@ void NotebookWindow::evalall()
             {
                 g->eval();
             }
+
+            if(LatexCell *g = dynamic_cast<LatexCell*>(cellcount[i]))
+            {
+                g->eval();
+            }
+
 
             if(InputCell *g = dynamic_cast<InputCell*>(cellcount[i]))
             {

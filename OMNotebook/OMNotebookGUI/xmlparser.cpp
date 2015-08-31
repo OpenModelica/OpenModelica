@@ -69,6 +69,7 @@
 #include "xmlparser.h"
 #include "factory.h"
 #include "inputcell.h"
+#include "latexcell.h"
 #include "textcell.h"
 #include "celldocument.h"
 #include "graphcell.h"
@@ -334,6 +335,8 @@ namespace IAEX
             traverseInputCell( parent, element );
           else if( element.tagName() == XML_GRAPHCELL )
             traverseGraphCell( parent, element );
+          else if( element.tagName() == XML_LATEXCELL )
+            traverseLatexCell( parent, element );
           else
           {
             string msg = "Unknow tag name: " + element.tagName().toStdString() + ", in file " + filename_.toStdString();
@@ -551,10 +554,9 @@ namespace IAEX
   void XMLParser::traverseGraphCell( Cell *parent, QDomElement &element )
   {
 
+
     // Get the style value
     QString style = element.attribute( XML_STYLE, "Graph" );
-
-
     // create inputcell with the saved style
     Cell *graphcell = factory_->createCell( style, parent );
 
@@ -709,6 +711,76 @@ namespace IAEX
     parent->addChild( graphcell );
   }
 
+  void XMLParser::traverseLatexCell( Cell *parent, QDomElement &element )
+  {
+
+      // Get the style value
+      QString style = element.attribute( XML_STYLE, "Latex" );
+      // create latexcell with the saved style
+      Cell *latexcell = factory_->createCell( style, parent );
+
+      // go through all children in input cell/element
+      QString text;
+      QDomNode node = element.firstChild();
+      while( !node.isNull() )
+      {
+        QDomElement e = node.toElement();
+        if( !e.isNull() )
+        {
+          if( e.tagName() == XML_INPUTPART )
+          {
+            text = e.text();
+            LatexCell *gCell = dynamic_cast<LatexCell*>(latexcell);
+            gCell->setText(text);
+          }
+          else if( e.tagName() == XML_OUTPUTPART )
+          {
+            LatexCell *iCell = dynamic_cast<LatexCell*>(latexcell);
+            iCell->setTextOutput( e.text() );
+          }
+          else if( e.tagName() == XML_IMAGE )
+          {
+            addImage( latexcell, e );
+          }
+          else if( e.tagName() == XML_RULE )
+          {
+            latexcell->addRule(
+              new Rule( e.attribute( XML_NAME, "" ), e.text() ));
+          }
+          else
+          {
+            string msg = "Unknown tagname " + e.tagName().toStdString() + ", in Latex cell";
+            throw runtime_error( msg.c_str() );
+          }
+        }
+
+        node = node.nextSibling();
+      }
+
+      // set style, before set text, so all rules are applied to the style
+
+      //    graphcell->setStyle(QString("Graph"));
+
+      //    graphcell->setText( text ); //fjass
+
+      LatexCell *gCell = dynamic_cast<LatexCell*>(latexcell);
+
+      QString closed = element.attribute( XML_CLOSED, XML_FALSE );
+      if( closed == XML_TRUE )
+        gCell->setClosed( true,true );
+      else if( closed == XML_FALSE )
+        gCell->setClosed( false,true );
+      else
+        throw runtime_error( "Unknown closed value in latexcell" );
+
+      parent->addChild(latexcell);
+
+
+  }
+
+
+
+
   /*!
   * \author Anders Fernstrom
   * \date 2005-11-30
@@ -745,7 +817,6 @@ namespace IAEX
     if( !image->isNull() )
     {
       QString newname = doc_->addImage( image );
-
       // replace old imagename with the new name
       if( typeid(TextCell) == typeid(*parent) )
       {
@@ -771,6 +842,17 @@ namespace IAEX
 
         graphcell->setTextOutputHtml( html );
       }
+      else if( typeid(LatexCell) == typeid(*parent) )
+      {
+        LatexCell *latexcell = dynamic_cast<LatexCell*>(parent);
+
+        QString html = latexcell->textOutputHtml();
+        html.replace( imagename, newname );
+
+        latexcell->setTextOutputHtml( html );
+        latexcell->output_->textCursor().insertImage(newname);
+      }
+
       else
       {
         string msg = "Unknown typeid of parent cell";

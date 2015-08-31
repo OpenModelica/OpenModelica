@@ -45,6 +45,7 @@
 //IAEX Headers
 #include "updatelinkvisitor.h"
 #include "cellgroup.h"
+#include "latexcell.h"
 #include "textcell.h"
 #include "inputcell.h"
 #include "cellcursor.h"
@@ -152,6 +153,7 @@ namespace IAEX
   void UpdateLinkVisitor::visitInputCellNodeAfter(InputCell *)
   {}
 
+
   //GRAPHCELL
   void UpdateLinkVisitor::visitGraphCellNodeBefore(GraphCell *node)
   {}
@@ -159,6 +161,12 @@ namespace IAEX
   void UpdateLinkVisitor::visitGraphCellNodeAfter(GraphCell *)
   {}
 
+  //LatexCELL
+  void UpdateLinkVisitor::visitLatexCellNodeBefore(LatexCell *node)
+  {}
+
+  void UpdateLinkVisitor::visitLatexCellNodeAfter(LatexCell *)
+  {}
 
   //CELLCURSOR
   void UpdateLinkVisitor::visitCellCursorNodeBefore(CellCursor *)

@@ -701,7 +701,7 @@ namespace IAEX
       image = images_[name];
     else
     {
-      cout << "Could not find image: " << name.toStdString() << endl;
+      //cout << "Could not find image: " << name.toStdString() << endl;
       image = new QImage();
     }
 

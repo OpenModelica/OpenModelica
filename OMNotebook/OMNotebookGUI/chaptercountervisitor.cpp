@@ -42,6 +42,7 @@
 #include "chaptercountervisitor.h"
 #include "cellgroup.h"
 #include "textcell.h"
+#include "latexcell.h"
 #include "inputcell.h"
 #include "cellcursor.h"
 #include "graphcell.h"
@@ -201,6 +202,44 @@ namespace IAEX
 
   void ChapterCounterVisitor::visitGraphCellNodeAfter(GraphCell *)
   {}
+
+  // LATEXCELL
+  void ChapterCounterVisitor::visitLatexCellNodeBefore(LatexCell *node)
+  {
+    int level = node->style()->chapterLevel();
+    if( level > 0 && level <= COUNTERS )
+    {
+      // Add on chapter couner
+      counters_[ level - 1 ]++;
+
+      QString counter;
+      QString number;
+      for( int i = 0; i < level; ++i )
+      {
+        number.setNum( counters_[i] );
+
+        if( !counter.isEmpty() )
+          counter += ".";
+
+        counter += number;
+      }
+
+      // reset all counters avter counter[level]
+      for( int i = level; i < COUNTERS; ++i )
+        counters_[i] = 0;
+
+      node->setChapterCounter( counter );
+    }
+    else
+    {
+      // clear chapter counter
+      node->setChapterCounter( "" );
+    }
+  }
+
+  void ChapterCounterVisitor::visitLatexCellNodeAfter(LatexCell *)
+  {}
+
   //CELLCURSOR
   void ChapterCounterVisitor::visitCellCursorNodeBefore(CellCursor *)
   {}

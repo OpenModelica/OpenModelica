@@ -43,6 +43,7 @@ SOURCES += \
     cellgroup.cpp \
     serializingvisitor.cpp \
     graphcell.cpp \
+    latexcell.cpp \
     evalthread.cpp \
     indent.cpp \
     ../OMSketch/Tools.cpp \
@@ -118,6 +119,7 @@ HEADERS += \
     notebook.h \
     searchform.h \
     graphcell.h \
+    latexcell.h \
     evalthread.h \
     indent.h \
     ../OMSketch/Tools.h \

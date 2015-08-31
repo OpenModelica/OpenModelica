@@ -100,6 +100,13 @@ namespace IAEX
         position_ += node->height();
     }
 
+    virtual void visitLatexCellNodeBefore(LatexCell *node) {}
+    virtual void visitLatexCellNodeAfter(LatexCell *node)
+    {
+      if( count_ && !closed_ )
+        position_ += node->height();
+    }
+
     virtual void visitInputCellNodeBefore(InputCell *node){}
     virtual void visitInputCellNodeAfter(InputCell *node)
     {

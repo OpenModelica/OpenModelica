@@ -60,6 +60,7 @@
 #include "notebook.h"
 
 #include <string>
+#include "latexcell.h"
 #include "graphcell.h"
 #include "omcinteractiveenvironment.h"
 using namespace std;
@@ -181,9 +182,71 @@ namespace IAEX
 
       return text;
     }
+
+    else if (style == "Latex")
+    {
+      LatexCell *text = new LatexCell(doc_, parent);
+
+      try
+      {
+        Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
+        CellStyle cstyle = sheet->getStyle( "Latex" );
+
+        if( cstyle.name() != "null" )
+
+          text->setStyle( cstyle );
+        else
+          throw runtime_error("No Input style defened, the inputcell may not work correctly, please define a Input style in stylesheet.xml");
+      }
+      catch( exception e )
+      {
+
+        QMessageBox::warning( 0, "Warrning", e.what(), "OK" );
+      }
+
+      QObject::connect(text, SIGNAL(cellselected(Cell *,Qt::KeyboardModifiers)),
+        doc_, SLOT(selectedACell(Cell*,Qt::KeyboardModifiers)));
+      QObject::connect(text, SIGNAL(clicked(Cell *)),
+        doc_, SLOT(mouseClickedOnCell(Cell*)));
+      QObject::connect(text, SIGNAL(clickedOutput(Cell *)),
+        doc_, SLOT(mouseClickedOnCellOutput(Cell*)));
+
+      // 2005-11-29 AF
+      QObject::connect( text, SIGNAL( heightChanged() ),
+        doc_, SLOT( updateScrollArea() ));
+
+      // 2006-01-17 AF
+      QObject::connect( text, SIGNAL( textChanged(bool) ),
+        doc_, SLOT( setChanged(bool) ));
+
+      // 2006-04-27 AF
+      QObject::connect( text, SIGNAL( forwardAction(int) ),
+        doc_, SIGNAL( forwardAction(int) ));
+
+
+      QObject::connect( text, SIGNAL( updatePos(int, int)), doc_, SIGNAL(updatePos(int, int)));
+      QObject::connect( text, SIGNAL( newState(QString)), doc_, SIGNAL(newState(QString)));
+      QObject::connect(text, SIGNAL( setStatusMenu(QList<QAction*>)), doc_, SIGNAL(setStatusMenu(QList<QAction*>)));
+
+
+      QObject::connect(text->input_, SIGNAL(copyAvailable(bool)), doc_, SIGNAL(copyAvailable(bool)));
+      QObject::connect(text->input_, SIGNAL(undoAvailable(bool)), doc_, SIGNAL(undoAvailable(bool)));
+      QObject::connect(text->input_, SIGNAL(redoAvailable(bool)), doc_, SIGNAL(redoAvailable(bool)));
+      QObject::connect(text->output_, SIGNAL(copyAvailable(bool)), doc_, SIGNAL(copyAvailable(bool)));
+
+      //      if(CellDocument* d = dynamic_cast<CellDocument*>(doc_))
+      QObject::connect(doc_, SIGNAL(setAutoIndent(bool)), text->input_, SLOT(setAutoIndent(bool)));
+      //QObject::connect(doc_, SIGNAL(evaluate()), text->input_, SIGNAL(eval()));
+      text->input_->setAutoIndent(dynamic_cast<CellDocument*>(doc_)->autoIndent);
+
+      return text;
+    }
+
     else if (style == "Graph")
     {
+
       GraphCell *text = new GraphCell(doc_, parent);
+
       try
       {
         Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
@@ -263,6 +326,7 @@ namespace IAEX
       */
       return text;
     }
+
     else //All other styles will be implemented with a TextCell.
     {
       TextCell *text = new TextCell(parent);
