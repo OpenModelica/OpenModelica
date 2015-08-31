@@ -5721,7 +5721,6 @@ algorithm
       attrIn.start = SOME(exp);
     then attrIn;
   else
-  equation
   then attrIn;
   end matchcontinue;
 end evaluateVariableAttributes;
@@ -5786,7 +5785,6 @@ algorithm
 
   //evaluate function calls in variable attributes (start-value)
   (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,evaluateStartValues,funcTree);
-
     //BackendDump.dumpVariables(vars,"VAR AFTER");
   systOut := BackendDAEUtil.setEqSystVars(systIn, vars);
 end preCalculateStartValues;
