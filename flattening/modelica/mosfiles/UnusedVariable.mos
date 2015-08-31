@@ -16,7 +16,11 @@ translateModel(M);getErrorString();
 // Result:
 // true
 // false
-// "[<interactive>:4:3-4:9:writable] Error: Variable y is not referenced in any equation (possibly after symbolic manipulations).
+// "Error: An independent subset of the model has imbalanced number of equations (1) and variables (0).
+// variables:
+//
+// equations:
+// 1 : 1.5 = 5.0
 // Error: pre-optimization module clockPartitioning failed.
 // "
 // endResult

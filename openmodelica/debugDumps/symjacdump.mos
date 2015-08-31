@@ -389,6 +389,14 @@ buildModel(testSymjacdump); getErrorString();
 // Constraints (0)
 // ========================================
 //
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
 // Symbolic Jacobian:
 //
 // unknown partition
@@ -953,6 +961,14 @@ buildModel(testSymjacdump); getErrorString();
 // Constraints (0)
 // ========================================
 //
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
 // Symbolic Jacobian:
 //
 // unknown partition
@@ -1313,6 +1329,14 @@ buildModel(testSymjacdump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 // Symbolic Jacobian:
@@ -1877,6 +1901,14 @@ buildModel(testSymjacdump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 // {"testSymjacdump","testSymjacdump_init.xml"}

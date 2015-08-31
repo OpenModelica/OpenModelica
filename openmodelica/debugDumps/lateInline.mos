@@ -105,6 +105,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // pre-optimization module evaluateReplaceProtectedFinalEvaluateParameters:
 //
 //
@@ -175,6 +183,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -251,6 +267,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // pre-optimization module simplifyIfEquations:
 //
 //
@@ -321,6 +345,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -397,6 +429,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // pre-optimization module removeEqualFunctionCalls:
 //
 //
@@ -467,6 +507,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -543,6 +591,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // pre-optimization module findStateOrder:
 //
 //
@@ -613,6 +669,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -689,6 +753,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // pre-optimization module inputDerivativesForDynOpt:
 //
 //
@@ -759,6 +831,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -835,6 +915,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // pre-optimization module inlineArrayEqn:
 //
 //
@@ -905,6 +993,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -981,6 +1077,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // pre-optimization module comSubExp:
 //
 //
@@ -1051,6 +1155,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -1127,6 +1239,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // pre-optimization module evalFunc:
 //
 //
@@ -1200,6 +1320,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // pre-optimization module sortEqnsVars:
 //
 //
@@ -1270,6 +1398,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 // pre-optimization done.
@@ -1357,6 +1493,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module simplifyConstraints:
 //
 //
@@ -1437,6 +1581,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -1527,6 +1679,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module relaxSystem:
 //
 //
@@ -1611,6 +1771,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -1701,6 +1869,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module constantLinearSystem:
 //
 //
@@ -1785,6 +1961,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -1875,6 +2059,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module solveLinearSystem:
 //
 //
@@ -1959,6 +2151,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -2049,6 +2249,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module removeSimpleEquations:
 //
 //
@@ -2133,6 +2341,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -2223,6 +2439,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module symEuler:
 //
 //
@@ -2307,6 +2531,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -2397,6 +2629,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module reshufflePost:
 //
 //
@@ -2481,6 +2721,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -2571,6 +2819,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module tearingSystem:
 //
 //
@@ -2655,6 +2911,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -2745,6 +3009,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module recursiveTearing:
 //
 //
@@ -2829,6 +3101,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -2919,6 +3199,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module countOperations:
 //
 //
@@ -3003,6 +3291,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -3093,6 +3389,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module extendDynamicOptimization:
 //
 //
@@ -3177,6 +3481,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -3267,6 +3579,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module calculateStrongComponentJacobians:
 //
 //
@@ -3351,6 +3671,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -3441,6 +3769,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module detectJacobianSparsePattern:
 //
 //
@@ -3525,6 +3861,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -3615,6 +3959,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module generateSymbolicLinearization:
 //
 //
@@ -3699,6 +4051,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -3789,6 +4149,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module removeConstants:
 //
 //
@@ -3875,6 +4243,14 @@ buildModel(testOptdaedump); getErrorString();
 // Constraints (0)
 // ========================================
 //
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
 // post-optimization done.
 //
 // created initial system:
@@ -3949,6 +4325,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -4041,6 +4425,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module constantLinearSystem:
 //
 //
@@ -4125,6 +4517,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -4215,6 +4615,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module calculateStrongComponentJacobians:
 //
 //
@@ -4302,6 +4710,14 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module solveSimpleEquations:
 //
 //
@@ -4386,6 +4802,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 // post-optimization done.

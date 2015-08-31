@@ -142,6 +142,14 @@ simulate(foo,stopTime=0);
 // ========================================
 //
 //
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // record SimulationResult
 //     resultFile = "foo_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
@@ -241,6 +249,14 @@ simulate(foo,stopTime=0);
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
@@ -347,6 +363,14 @@ simulate(foo,stopTime=0);
 //
 //
 // Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
 // ========================================
 //
 //
