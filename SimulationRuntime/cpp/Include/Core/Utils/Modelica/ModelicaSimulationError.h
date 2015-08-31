@@ -30,6 +30,14 @@ class ModelicaSimulationError : public std::runtime_error
     ModelicaSimulationError(SIMULATION_ERROR error_id, const std::string& error_info)
     : runtime_error("simulation error message : " + error_info)
     , _error_id(error_id)
+    , _suppress(false)
+    {
+    }
+
+    ModelicaSimulationError(SIMULATION_ERROR error_id, const std::string& error_info, bool suppress)
+    : runtime_error("simulation error message : " + error_info)
+    , _error_id(error_id)
+    , _suppress(suppress)
     {
     }
 
@@ -38,8 +46,14 @@ class ModelicaSimulationError : public std::runtime_error
       return _error_id;
     }
 
+    bool isSuppressed()
+    {
+      return _suppress;
+    }
+
   private:
     SIMULATION_ERROR _error_id;
+    bool _suppress;
 };
 
  //Helper functions to convert the error id to a readable format
