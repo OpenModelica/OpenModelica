@@ -244,7 +244,7 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         global_settings->setOutputPointType(simsettings.outputPointType);
         global_settings->setNonLinearSolverContinueOnError(simsettings.nonLinearSolverContinueOnError);
 
-        /*boost::shared_ptr<SimManager>*/ _simMgr  = boost::shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
+        /*boost::shared_ptr<SimManager>*/ _simMgr = boost::shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
 
         ISolverSettings* solver_settings = _config->getSolverSettings();
         solver_settings->setLowerLimit(simsettings.lower_limit);
@@ -281,7 +281,7 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         IHistory* history = writeoutput_system->getHistory();
         //simulation results (output variables)
         ublas::matrix<double> Ro;
-        //query simulation result otuputs
+        //query simulation result outputs
         history->getOutputResults(Ro);
         vector<string> output_names;
         history->getOutputNames(output_names);

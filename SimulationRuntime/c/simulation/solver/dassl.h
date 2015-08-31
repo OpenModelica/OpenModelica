@@ -38,7 +38,6 @@
 static const unsigned int maxOrder = 5;
 static const unsigned int numStatistics = 5;
 static const unsigned int infoLength = 20;
-static const unsigned int SIZERINGBUFFER = 3;
 
 enum DASSL_JACOBIAN
 {

@@ -57,11 +57,11 @@ std::string Logger::getPrefix(LogCategory cat, LogLevel lvl) const
 	switch(lvl)
 	{
 	case(LL_DEBUG):
-		return "DEBUG: ";
+		return "  DEBUG: ";
 	case(LL_ERROR):
-		return "ERROR: ";
+		return "  ERROR: ";
 	case(LL_INFO):
-		return "INFO: ";
+		return "   INFO: ";
 	case(LL_WARNING):
 		return "WARNING: ";
 	default:

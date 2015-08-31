@@ -9,9 +9,11 @@ builddir_lib=$(OMBUILDDIR)/lib/omc
 builddir_inc=$(OMBUILDDIR)/include/omc
 
 #use this call to use precompiled headers
-BUILDTYPE = Release
+#BUILDTYPE = Release
 #use this call if you want to debug the cpp runtime
-#BUILDTYPE = Debug
+ifeq ($(BUILDTYPE),)
+BUILDTYPE=Debug
+endif
 
 CMAKE = $(OMDEV)/bin/cmake/bin/cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON
 

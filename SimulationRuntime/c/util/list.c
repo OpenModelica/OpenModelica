@@ -76,7 +76,7 @@ void freeList(LIST *list)
   }
 }
 
-void listPushFront(LIST *list, void *data)
+void listPushFront(LIST *list, const void *data)
 {
   LIST_NODE *tmpNode = NULL;
   assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
@@ -96,7 +96,7 @@ void listPushFront(LIST *list, void *data)
     list->last = list->first;
 }
 
-void listPushBack(LIST *list, void *data)
+void listPushBack(LIST *list, const void *data)
 {
   LIST_NODE *tmpNode = NULL;
   assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
@@ -118,6 +118,23 @@ void listPushBack(LIST *list, void *data)
 
   if(!list->first)
     list->first = list->last;
+}
+
+void listInsert(LIST *list, LIST_NODE* prevNode, const void *data)
+{
+  LIST_NODE *tmpNode = (LIST_NODE*)malloc(sizeof(LIST_NODE));
+  assertStreamPrint(NULL, 0 != tmpNode, "out of memory");
+
+  tmpNode->data = malloc(list->itemSize);
+  assertStreamPrint(NULL, 0 != tmpNode->data, "out of memory");
+  memcpy(tmpNode->data, data, list->itemSize);
+
+  tmpNode->next = prevNode->next;
+  prevNode->next = tmpNode;
+
+  ++(list->length);
+  if(list->last == prevNode)
+    list->last = tmpNode;
 }
 
 int listLen(LIST *list)

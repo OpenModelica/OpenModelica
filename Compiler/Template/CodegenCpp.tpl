@@ -2363,9 +2363,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       }
       catch(ModelicaSimulationError& ex)
       {
-
-           std::cerr << "Simulation stopped with error in " << error_id_string(ex.getErrorID()) << ": "  << ex.what();
-           return 1;
+          if(!ex.isSuppressed())
+              std::cerr << "Simulation stopped with error in " << error_id_string(ex.getErrorID()) << ": "  << ex.what();
+          return 1;
       }
   }
   >>

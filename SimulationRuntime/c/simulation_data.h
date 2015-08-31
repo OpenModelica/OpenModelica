@@ -42,11 +42,12 @@
 #include "util/omc_error.h"
 #include "util/rtclock.h"
 #include "util/rational.h"
+#include "util/list.h"
 
 #define omc_dummyVarInfo {-1,"","",omc_dummyFileInfo}
 #define omc_dummyEquationInfo {-1,0,"",-1,NULL}
 #define omc_dummyFunctionInfo {-1,"",omc_dummyFileInfo}
-#define omc_dummyRealAttribute {"","","",DBL_MAX,DBL_MIN,0,0,1.0,0,0.0}
+#define omc_dummyRealAttribute {NULL,NULL,NULL,DBL_MAX,DBL_MIN,0,0,1.0,0,0.0}
 
 #if defined(_MSC_VER)
 #define set_struct(TYPE, x, info) { const TYPE tmp = info; x = tmp; }
@@ -428,6 +429,7 @@ typedef struct SUBCLOCK_INFO {
 typedef struct CLOCK_INFO {
   long nSubClocks;
   SUBCLOCK_INFO* subClocks;
+  modelica_boolean isBoolClock;
 } CLOCK_INFO;
 
 typedef struct MODEL_DATA
@@ -486,7 +488,7 @@ typedef struct MODEL_DATA
   long nLinearSystems;
   long nNonLinearSystems;
   long nStateSets;
-  long nInlineVars;                    /* number of additional variables for the inline solverr */
+  long nInlineVars;                    /* number of additional variables for the inline solver */
   long nOptimizeConstraints;           /* number of additional variables for constraint in dynamic optimization*/
   long nOptimizeFinalConstraints;      /* number of additional variables for final constraint in dynamic optimization*/
 
@@ -538,6 +540,7 @@ typedef struct SIMULATION_INFO
   double *nextSampleTimes;             /* array of next sample time */
   modelica_boolean *samples;           /* array of the current value for all sample-calls */
 
+  LIST* intvlTimers;
   CLOCK_DATA *clocksData;
 
   modelica_real* zeroCrossings;

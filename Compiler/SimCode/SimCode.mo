@@ -138,6 +138,7 @@ end ClockedPartition;
 
 public uniontype SubPartition
   record SUBPARTITION
+    list<tuple<SimCodeVar.SimVar, Boolean /*previous*/>> vars;
     list<SimEqSystem> equations;
     list<SimEqSystem> removedEquations;
     BackendDAE.SubClock subClock;

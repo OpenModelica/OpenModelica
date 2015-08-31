@@ -314,6 +314,7 @@ package SimCode
 
   uniontype SubPartition
     record SUBPARTITION
+      list<tuple<SimCodeVar.SimVar, Boolean>> vars;
       list<SimEqSystem> equations;
       list<SimEqSystem> removedEquations;
       BackendDAE.SubClock subClock;
@@ -932,6 +933,11 @@ package SimCodeFunctionUtil
     input SimCode.Function fn;
     output Boolean b;
   end isBoxedFunction;
+
+  function funcHasParallelInOutArrays
+    input SimCode.Function fn;
+    output Boolean b;
+  end funcHasParallelInOutArrays;
 
   function incrementInt
     input Integer inInt;
@@ -3305,6 +3311,10 @@ package Types
     input DAE.Type ty;
     output list<DAE.Var> fields;
   end getMetaRecordFields;
+  function unboxedType
+    input DAE.Type boxedType;
+    output DAE.Type ty;
+  end unboxedType;
 end Types;
 
 package HashTableCrIListArray

@@ -34,7 +34,27 @@ public:
 protected:
   /** merge command line args with built-in args and adapt OMEdit args to Cpp */
   std::vector<const char *> preprocessArguments(int argc, const char* argv[], std::map<std::string, std::string> &opts);
+
+  /**
+   * Evaluate all given command line arguments and store their values into the SimSettings structure.
+   * @param argc Number of arguments in the argv-array.
+   * @param argv The command line arguments as c-string array.
+   * @throws SIMULATION_ERROR If "--help" was passed as argument - the error code is set to "SUPRESS".
+   * @return The created SimSettings-structure.
+   */
   SimSettings readSimulationParameter(int argc, const char* argv[]);
+
+  /**
+   * This helper-function is invoked by the boost program option library and will handle options in the c-runtime
+   * format and options that should be ignored.
+   * It parses a long option that starts with one dash, like '-port=12345' and put it into the 'unrecognized' category.
+   * If an option is detected which is part of the arguments to ignore list, it is put into the 'ignored' category.
+   * @param The argument that should be handled.
+   * @return The pair of category and value that should be used for the given argument.
+   */
+  pair<string, string> parseIngoredAndWrongFormatOption(const string &s);
+
+  void fillArgumentsToIgnore();
 
   //boost::shared_ptr<ISimController> _simController;
   std::map<string,shared_library> _modules;
@@ -42,6 +62,7 @@ protected:
   std::string _defaultNonLinSolver;
   PATH _library_path;
   PATH _modelicasystem_path;
+  boost::unordered_set<string> _argumentsToIgnore; //a set of arguments that should be ignored,
   std::string _overrideOMEdit; // unrecognized options if called from OMEdit
 };
 /** @} */ // end of simcorefactoryOMCFactory

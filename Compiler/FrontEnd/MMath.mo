@@ -45,6 +45,9 @@ record RATIONAL "represents a rational number, e.g. 6/7"
   end RATIONAL;
 end Rational;
 
+public constant Rational RAT0 = RATIONAL(0, 1);
+public constant Rational RAT1 = RATIONAL(1, 1);
+
 public function addRational "adds two rationals"
   input Rational r1;
   input Rational r2;
@@ -158,16 +161,6 @@ algorithm
     else intGcd(i2,intMod(i1,i2));
   end matchcontinue;
 end intGcd;
-
-public function printNumber
-  input Rational inp;
-  output String out;
-protected
-  Integer i1, i2;
-algorithm
-  RATIONAL(i1, i2) := inp;
-  out := intString(i1) + "/" + intString(i2);
-end printNumber;
 
 /* Tests */
 

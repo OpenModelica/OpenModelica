@@ -51,8 +51,9 @@ extern "C" {
   LIST *allocList(unsigned int itemSize);
   void freeList(LIST *list);
 
-  void listPushFront(LIST *list, void *data);
-  void listPushBack(LIST *list, void *data);
+  void listPushFront(LIST *list, const void *data);
+  void listPushBack(LIST *list, const void *data);
+  void listInsert(LIST *list, LIST_NODE* prevNode, const void *data);
 
   int listLen(LIST *list);
 

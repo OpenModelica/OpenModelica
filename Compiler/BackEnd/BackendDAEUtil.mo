@@ -60,6 +60,7 @@ protected import BackendDAEOptimize;
 protected import BackendDAETransform;
 protected import BackendDump;
 protected import BackendEquation;
+protected import BackendDAEEXT;
 protected import BackendInline;
 protected import BackendVariable;
 protected import BackendVarTransform;
@@ -100,6 +101,7 @@ protected import RemoveSimpleEquations;
 protected import ResolveLoops;
 protected import SCode;
 protected import SimCodeFunctionUtil;
+protected import Sorting;
 protected import StateMachineFeatures;
 protected import SymbolicJacobian;
 protected import SynchronousFeatures;
@@ -2115,6 +2117,27 @@ algorithm
   end try;
 end incidenceMatrix;
 
+public function incidenceMatrixMasked
+  input BackendDAE.EqSystem inEqSystem;
+  input BackendDAE.IndexType inIndexType;
+  input array<Boolean> inMask;
+  input Option<DAE.FunctionTree> functionTree;
+  output BackendDAE.IncidenceMatrix outIncidenceMatrix;
+  output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
+protected
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+algorithm
+  try
+    BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns) := inEqSystem;
+    (outIncidenceMatrix, outIncidenceMatrixT) :=
+      incidenceMatrixDispatchMasked(vars, eqns, inIndexType, inMask, functionTree);
+  else
+    Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEUtil.incidenceMatrix failed."});
+    fail();
+  end try;
+end incidenceMatrixMasked;
+
 public function incidenceMatrixScalar
 "author: PA, adrpo
   Calculates the incidence matrix, i.e. which variables are present in each equation.
@@ -2186,6 +2209,37 @@ algorithm
     outIncidenceArrayT := fillincidenceMatrixT(row, {idx}, outIncidenceArrayT);
   end for;
 end incidenceMatrixDispatch;
+
+public function incidenceMatrixDispatchMasked
+  input BackendDAE.Variables inVars;
+  input BackendDAE.EquationArray inEqns;
+  input BackendDAE.IndexType inIndexType;
+  input array<Boolean> inMask;
+  input Option<DAE.FunctionTree> functionTree = NONE();
+  output BackendDAE.IncidenceMatrix outIncidenceArray;
+  output BackendDAE.IncidenceMatrixT outIncidenceArrayT;
+protected
+  Integer num_eqs, num_vars;
+  BackendDAE.Equation eq;
+  list<Integer> row;
+algorithm
+  num_eqs := equationArraySize(inEqns);
+  num_vars := BackendVariable.varsSize(inVars);
+  outIncidenceArray := arrayCreate(num_eqs, {});
+  outIncidenceArrayT := arrayCreate(num_vars, {});
+
+  for idx in 1:num_eqs loop
+    if inMask[idx] then
+      // Get the equation.
+      eq := BackendEquation.equationNth1(inEqns, idx);
+      // Compute the row.
+      row := incidenceRow(eq, inVars, inIndexType, functionTree, {});
+      // Put it in the arrays.
+      arrayUpdate(outIncidenceArray, idx, row);
+      outIncidenceArrayT := fillincidenceMatrixT(row, {idx}, outIncidenceArrayT);
+    end if;
+  end for;
+end incidenceMatrixDispatchMasked;
 
 protected function incidenceMatrixDispatchScalar
 "@author: adrpo
@@ -2275,6 +2329,13 @@ algorithm
       Integer i;
       list<Integer> varIxs;
     case BackendDAE.BASECLOCK_IDX()
+      equation
+        BackendDAE.EQUATION_ATTRIBUTES(kind = kind) = BackendEquation.getEquationAttributes(inEquation);
+        BackendDAE.CLOCKED_EQUATION(i) = kind;
+        cr = DAE.CREF_IDENT(BackendDAE.WHENCLK_PRREFIX + intString(i), DAE.T_CLOCK_DEFAULT, {});
+        (_, varIxs) = BackendVariable.getVar(cr, vars);
+      then varIxs;
+    case BackendDAE.SUBCLOCK_IDX()
       equation
         BackendDAE.EQUATION_ATTRIBUTES(kind = kind) = BackendEquation.getEquationAttributes(inEquation);
         BackendDAE.CLOCKED_EQUATION(i) = kind;
@@ -3515,6 +3576,17 @@ public function removedIncidenceMatrix
 algorithm
   (outM, outMT) := incidenceMatrixDispatch(inSyst.orderedVars, inSyst.removedEqs, inIndxType, inFunctionTree);
 end removedIncidenceMatrix;
+
+public function removedIncidenceMatrixMasked
+  input BackendDAE.EqSystem inSyst;
+  input BackendDAE.IndexType inIndxType;
+  input array<Boolean> inMask;
+  input Option<DAE.FunctionTree> inFunctionTree;
+  output BackendDAE.IncidenceMatrix outM;
+  output BackendDAE.IncidenceMatrix outMT;
+algorithm
+  (outM, outMT) := incidenceMatrixDispatchMasked(inSyst.orderedVars, inSyst.removedEqs, inIndxType, inMask, inFunctionTree);
+end removedIncidenceMatrixMasked;
 
 protected function traverseStmts "Author: Frenkel TUD 2012-06
   traverese DAE.Statement without change possibility."
@@ -7097,6 +7169,7 @@ algorithm
                        (EvaluateParameter.evaluateReplaceEvaluateParameters, "evaluateReplaceEvaluateParameters", false),
                        (EvaluateParameter.evaluateReplaceFinalEvaluateParameters, "evaluateReplaceFinalEvaluateParameters", false),
                        (EvaluateParameter.evaluateReplaceProtectedFinalEvaluateParameters, "evaluateReplaceProtectedFinalEvaluateParameters", false),
+                       (EvaluateParameter.evaluateAllParameters, "evaluateAllParameters", false),
                        (BackendDAEOptimize.removeEqualFunctionCalls, "removeEqualFunctionCalls", false),
                        (BackendDAEOptimize.removeProtectedParameters, "removeProtectedParameters", false),
                        (BackendDAEOptimize.removeUnusedParameter, "removeUnusedParameter", false),
@@ -7787,8 +7860,19 @@ protected
 algorithm
   shared := BackendDAE.SHARED( emptyVars, emptyVars, emptyVars, emptyEqs, emptyEqs, {}, {}, cache, graph,
                                DAEUtil.avlTreeNew(), emptyEventInfo(), {}, backendDAEType, {}, ei,
-                               BackendDAE.PARTITIONS_INFO(emptyClocks()) );
+                               emptyPartitionsInfo() );
 end createEmptyShared;
+
+public function emptyPartitionsInfo
+  output BackendDAE.PartitionsInfo partitionsInfo;
+protected
+  array<BackendDAE.BasePartition> basePartitions;
+  array<BackendDAE.SubPartition> subPartitions;
+algorithm
+  basePartitions := arrayCreate(0, BackendDAE.BASE_PARTITION(DAE.INFERRED_CLOCK(), 0));
+  subPartitions := arrayCreate(0, BackendDAE.SUB_PARTITION(BackendDAE.DEFAULT_SUBCLOCK, false, {}));
+  partitionsInfo := BackendDAE.PARTITIONS_INFO(basePartitions, subPartitions);
+end emptyPartitionsInfo;
 
 public function makeSingleEquationComp
   input Integer eqIdx;
@@ -8074,11 +8158,19 @@ algorithm
   info := BackendDAE.EVENT_INFO({}, {}, {}, {}, 0);
 end emptyEventInfo;
 
-public function emptyClocks
-  output array<DAE.ClockKind> clocks;
+public function getSubClock
+  input BackendDAE.EqSystem inSyst;
+  input BackendDAE.Shared inShared;
+  output Option<BackendDAE.SubClock> outSubClock;
 algorithm
-  clocks := arrayCreate(0, DAE.INFERRED_CLOCK());
-end emptyClocks;
+  outSubClock := match inSyst.partitionKind
+    local
+      Integer idx;
+    case BackendDAE.CLOCKED_PARTITION(idx)
+      then SOME(inShared.partitionsInfo.subPartitions[idx].clock);
+    else NONE();
+  end match;
+end getSubClock;
 
 public function componentsEqual"outputs true if 1 strongly connected components are equal"
   input BackendDAE.StrongComponent comp1;
@@ -8143,6 +8235,33 @@ algorithm
     then false;
   end matchcontinue;
 end otherEqnVarTplEqual;
+
+
+public function causalizeVarBindSystem"causalizes a system of variables and their binding-equations.
+author: waurich TUD 08.2015"
+  input list<BackendDAE.Var> varLstIn;
+  output list<list<Integer>> comps;
+  output array<Integer> ass1;
+  output array<Integer> ass2;
+protected
+  Integer nVars,nEqs;
+  list<Integer> order;
+  BackendDAE.IncidenceMatrix m,  mT;
+  list<DAE.Exp> bindExps;
+  list<BackendDAE.Equation> eqs;
+algorithm
+  bindExps := List.map(varLstIn,BackendVariable.varBindExp);
+  eqs := List.threadMap2(List.map(varLstIn,BackendVariable.varExp), bindExps, BackendEquation.generateEquation, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+	(m, mT) := BackendDAEUtil.incidenceMatrixDispatch(BackendVariable.listVar1(varLstIn), BackendEquation.listEquation(eqs), BackendDAE.ABSOLUTE(), NONE());
+	nVars := listLength(varLstIn);
+	nEqs := listLength(eqs);
+	ass1 := arrayCreate(nVars, -1);
+	ass2 := arrayCreate(nEqs, -1);
+	Matching.matchingExternalsetIncidenceMatrix(nVars, nEqs, m);
+	BackendDAEEXT.matching(nVars, nEqs, 5, -1, 0.0, 1);
+	BackendDAEEXT.getAssignment(ass2, ass1);
+	comps := Sorting.TarjanTransposed(mT, ass2);
+end causalizeVarBindSystem;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;
