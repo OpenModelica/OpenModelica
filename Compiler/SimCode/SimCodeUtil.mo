@@ -575,7 +575,7 @@ algorithm
   simSubPartitions := arrayCreate(arrayLength(inShared.partitionsInfo.subPartitions), NONE());
   funcs := BackendDAEUtil.getFunctions(inShared);
   for syst in inSysts loop
-    syst := preCalculateStartValues(syst, inShared.knownVars);
+    //syst := preCalculateStartValues(syst, inShared.knownVars, funcs);
 
     BackendDAE.CLOCKED_PARTITION(subPartIdx) := syst.partitionKind;
     BackendDAE.MATCHING(ass1=ass1, comps=comps) := syst.matching;
