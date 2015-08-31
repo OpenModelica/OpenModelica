@@ -29,6 +29,13 @@
  */
 
 #include "rational.h"
+#include "omc_msvc.h"
+
+RATIONAL makeRATIONAL(long a, long b)
+{
+  RATIONAL x = {a, b};
+  return x;
+}
 
 static long long gcd(long long a, long long b)
 {
@@ -52,55 +59,49 @@ RATIONAL addInt2Rat(long a, RATIONAL b) {
   long long m = (long long)a * b.n + b.m;
   long long n = b.n;
   simplifyRat(&m, &n);
-  RATIONAL x = {m, n};
-  return x;
+  return makeRATIONAL(m, n);
 }
 
 RATIONAL subInt2Rat(long a, RATIONAL b) {
   long long m = (long long)a * b.n - b.m;
   long long n = b.n;
   simplifyRat(&m, &n);
-  RATIONAL x = {m, n};
-  return x;
+  return makeRATIONAL(m, n);
 }
 
 RATIONAL addRat2Rat(RATIONAL a, RATIONAL b) {
   long long m = (long long)a.m * b.n + (long long)b.m * a.n;
   long long n = (long long)a.n * b.n;
   simplifyRat(&m, &n);
-  RATIONAL x = {m, n};
-  return x;
+  return makeRATIONAL(m, n);
 }
 
 RATIONAL multRat2Rat(RATIONAL a, RATIONAL b) {
   long long m = (long long)a.m * b.m;
   long long n = (long long)a.n * b.n;
   simplifyRat(&m, &n);
-  RATIONAL x = {m, n};
-  return x;
+  return makeRATIONAL(m, n);
 }
 
 RATIONAL divRat2Rat(RATIONAL a, RATIONAL b) {
   long long m = (long long)a.m * b.n;
   long long n = (long long)a.n * b.m;
   simplifyRat(&m, &n);
-  RATIONAL x = {m, n};
-  return x;
+  return makeRATIONAL(m, n);
 }
 
 RATIONAL multInt2Rat(long a, RATIONAL b) {
   long long m = (long long)a * b.m;
   long long n = b.n;
   simplifyRat(&m, &n);
-  RATIONAL x = {m, n};
-  return x;
+  return makeRATIONAL(m, n);
 }
 
 double rat2Real(RATIONAL a) {
-    return (double)a.m / a.n;
+  return (double)a.m / a.n;
 }
 
-static inline int sign(long n) {
+static OMC_INLINE int sign(long n) {
   return n > 0 ? 1 : -1;
 }
 

@@ -41,6 +41,7 @@ typedef struct RATIONAL {
   long n;
 } RATIONAL;
 
+RATIONAL makeRATIONAL(long a, long b);
 RATIONAL addInt2Rat(long a, RATIONAL b);
 RATIONAL subInt2Rat(long a, RATIONAL b);
 RATIONAL addRat2Rat(RATIONAL a, RATIONAL b);
