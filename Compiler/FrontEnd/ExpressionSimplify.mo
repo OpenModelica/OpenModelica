@@ -276,8 +276,10 @@ protected function simplifyAsubExp
 algorithm
   outExp := matchcontinue (origExp,inExp,inSubs)
     local
+      Integer sub;
       DAE.Type tp;
       DAE.Exp e;
+      list<DAE.Exp> eLst;
     // ASUB(CAST(e)) -> CAST(liftArray(t), ASUB(e))
     case (_, DAE.CAST(tp,e), _)
       equation
@@ -285,8 +287,15 @@ algorithm
         e = DAE.CAST(tp, DAE.ASUB(e, inSubs));
       then e;
 
+    // Simplify asubs which result from function calls
+    case (_, DAE.TUPLE(PR=eLst), {DAE.ICONST(sub)})
+      equation
+        true = sub<=listLength(eLst);
+      then listGet(eLst,sub);
+
     // Simplify asubs where some of the subscripts are slices.
     case (_, _, _)
+      equation
       then simplifyAsubSlicing(inExp, inSubs);
 
     // other subscripting/asub simplifications where e is not simplified first.
@@ -309,6 +318,7 @@ algorithm
       DAE.CallAttributes attr;
       DAE.Type tp;
       Boolean b2;
+      Real r1,r2;
       String idn;
       Integer n;
 
@@ -434,7 +444,11 @@ algorithm
      then DAE.BINARY(DAE.RCONST(1.570796326794896619231321691639751442),DAE.MUL(DAE.T_REAL_DEFAULT),e);
     // atan2(0,x) = 0
     case (DAE.CALL(path=Absyn.IDENT("atan2"),expLst={e1 as DAE.RCONST(0.0),_}))
+      equation
       then e1;
+    case (DAE.CALL(path=Absyn.IDENT("atan2"), expLst={DAE.RCONST(r1),DAE.RCONST(r2)}))
+      equation
+      then DAE.RCONST(atan2(r1,r2));
     // abs(-x) = abs(x)
     case(DAE.CALL(path=Absyn.IDENT("abs"),expLst={DAE.UNARY(operator = DAE.UMINUS(ty = tp),exp = e1)}))
       equation

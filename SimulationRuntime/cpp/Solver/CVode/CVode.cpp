@@ -585,6 +585,8 @@ void Cvode::CVodeCore()
       // Der Eventzeitpunkt kann auf der Endzeit liegen (Time-Events). In diesem Fall wird der Solver beendet, da CVode sonst eine interne Warnung schmeißt
       if (_tCurrent == _tEnd)
         _cv_rt = CV_TSTOP_RETURN;
+      if(_continuous_system->stepCompleted(_tCurrent))
+        _solverStatus = DONE;
     }
 
     // ZÃ¤hler fÃ¼r die Anzahl der ausgegebenen Schritte erhÃ¶hen

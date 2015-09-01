@@ -499,6 +499,9 @@ case SIMCODE(modelInfo=MODELINFO()) then
   }
 
   #elif defined (RUNTIME_STATIC_LINKING)
+  #include <Core/System/FactoryExport.h>
+  #include <Core/DataExchange/SimData.h>
+  #include <Core/System/SimVars.h>
     boost::shared_ptr<ISimData> createSimDataFunction()
     {
         boost::shared_ptr<ISimData> data( new SimData() );
@@ -2453,11 +2456,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
             %>
             <%additionalPreRunCommands%>
 
-            #ifdef RUNTIME_STATIC_LINKING
-              boost::shared_ptr<StaticOMCFactory>  _factory =  boost::shared_ptr<StaticOMCFactory>(new StaticOMCFactory());
-            #else
-              boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new OMCFactory());
-            #endif
+
+            boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new OMCFactory());
+
             //SimController to start simulation
 
             std::pair<boost::shared_ptr<ISimController>, SimSettings> simulation = _factory->createSimulation(argc, argv, opts);
@@ -2486,9 +2487,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       }
       catch(ModelicaSimulationError& ex)
       {
-
-           std::cerr << "Simulation stopped with error in " << error_id_string(ex.getErrorID()) << ": "  << ex.what();
-           return 1;
+          if(!ex.isSuppressed())
+              std::cerr << "Simulation stopped with error in " << error_id_string(ex.getErrorID()) << ": "  << ex.what();
+          return 1;
       }
   }
   >>
@@ -2840,13 +2841,9 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     #include <Core/ModelicaDefine.h>
     #include <Core/Modelica.h>
     #include <Core/System/FactoryExport.h>
-    #include <Core/DataExchange/SimData.h>
-    #include <Core/DataExchange/XmlPropertyReader.h>
-    #include <Core/System/SimVars.h>
     #include <Core/System/DiscreteEvents.h>
     #include <Core/System/EventHandling.h>
-    #include <Core/Utils/Modelica/ModelicaUtilities.h>
-    #include <Core/Utils/extension/logger.hpp>
+
 
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
@@ -3063,7 +3060,7 @@ template funParamDecl3(Variable var,String varName, list<DAE.Exp> instDims, SimC
   let type = '<%varType(var)%>'
   let testinstDimsInit = (instDims |> exp => testDaeDimensionExp(exp);separator="")
   let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits , &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
-  let arrayexpression1 = (if instDims then 'StatArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>,<%instDimsInit%>> <%varName%>;<%\n%>'
+  let arrayexpression1 = (if instDims then 'StatArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>,<%instDimsInit%>> <%varName%>;/*testarray*/<%\n%>'
   else '<%type%> <%varName%>')
   let arrayexpression2 = (if instDims then 'DynArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>> <%varName%>;<%\n%>'
   else '<%type%> <%varName%>')
@@ -4844,7 +4841,7 @@ case FUNCTION(__) then
   //let addRootsInputs = (functionArguments |> var => addRoots(var) ;separator="\n")
   //let addRootsOutputs = (outVars |> var => addRoots(var) ;separator="\n")
   //let funArgs = (functionArguments |> var => functionArg(var, &varInits) ;separator="\n")
-  let bodyPart = (body |> stmt  => funStatement(stmt, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n")
+  let bodyPart = funStatement(body, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   let &outVarInits = buffer ""
   let &outVarCopy = buffer ""
   let &outVarAssign = buffer ""
@@ -5565,26 +5562,27 @@ end varOutputTuple;
 
 template varDeclForVarInit(Variable var,String varName, list<DAE.Exp> instDims, Text &varDecls, Text &varInits, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
-  let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
+  //let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName,  useFlatArrayNotation);separator=",")
+  let instDimsInit = checkExpDimension(instDims)
     match var
         case var as VARIABLE(__) then
             let type = '<%varType(var)%>'
             let initVar =  match type case "modelica_metatype" then ' = NULL' else ''
             let addRoot =  match type case "modelica_metatype" then ' mmc_GC_add_root(&<%varName%>, mmc_GC_local_state, "<%varName%>");' else ''
-            let testinstDimsInit = (instDims |> exp => testDaeDimensionExp(exp);separator="")
-            let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
-            let arrayexpression1 = (if instDims then 'StatArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>,<%instDimsInit%>> <%varName%>;<%\n%>'
+            //let testinstDimsInit = (instDims |> exp => testDaeDimensionExp(exp);separator="")
+            //let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
+            let arrayexpression1 = (if instDims then 'StatArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>,<%instDimsInit%>> <%varName%>;/*testarray5*/<%\n%>'
         else '<%type%> <%varName%><%initVar%>;<%addRoot%><%\n%>')
             let arrayexpression2 = (if instDims then 'DynArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>> <%varName%>;<%\n%>'
         else '<%type%> <%varName%><%initVar%>;<%addRoot%><%\n%>'
   )
 
-  match testinstDimsInit
+  match instDimsInit
     case "" then
-        let &varDecls += arrayexpression1
+        let &varDecls += arrayexpression2
         ""
     else
-        let &varDecls += arrayexpression2
+        let &varDecls += arrayexpression1
         ""
 end varDeclForVarInit;
 
@@ -5877,23 +5875,17 @@ case var as VARIABLE(__) then
      match testinstDimsInit
      case "" then
       let instDimsInit = (instDims |> exp => daeDimensionExp(exp);separator=",")
-     if instDims then 'StatArrayDim<%listLength(instDims)%>< <%expTypeShort(var.ty)%>, <%instDimsInit%>> ' else expTypeFlag(var.ty, 6)
+     if instDims then 'StatArrayDim<%listLength(instDims)%>< <%expTypeShort(var.ty)%>, <%instDimsInit%>> /*testarray2*/' else expTypeFlag(var.ty, 6)
      else
      if instDims then 'DynArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>> ' else expTypeFlag(var.ty, 6)
 
      end match
 end varType3;
 
-template funStatement(Statement stmt, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template funStatement(list<DAE.Statement> statementLst, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates function statements."
 ::=
-  match stmt
-  case ALGORITHM(__) then
-    (statementLst |> stmt =>
-      algStatement(stmt, contextFunction, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    ;separator="\n")
-  else
-    "NOT IMPLEMENTED FUN STATEMENT"
+  statementLst |> stmt => algStatement(stmt, contextFunction, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ; separator="\n"
 end funStatement;
 
 template initExtVars(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)

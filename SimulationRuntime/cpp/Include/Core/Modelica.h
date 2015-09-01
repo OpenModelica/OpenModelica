@@ -15,6 +15,7 @@
 #include <boost/assign/std/vector.hpp> // for 'operator+=()'
 #include <boost/assign/list_of.hpp> // for 'list_of()'
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
 #include <boost/ref.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
@@ -97,6 +98,7 @@ typedef ublas::matrix<double, ublas::column_major> matrix_t;
 #include <Core/SimulationSettings/ISettingsFactory.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <Core/Utils/Modelica/ModelicaSimulationError.h>
+#include <Core/Utils/Modelica/ModelicaUtilities.h>
 #include <Core/Math/Array.h>
 #include <Core/System/IStateSelection.h>
 #include <Core/System/ISystemProperties.h>

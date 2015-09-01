@@ -314,6 +314,7 @@ package SimCode
 
   uniontype SubPartition
     record SUBPARTITION
+      list<tuple<SimCodeVar.SimVar, Boolean>> vars;
       list<SimEqSystem> equations;
       list<SimEqSystem> removedEquations;
       BackendDAE.SubClock subClock;
@@ -416,12 +417,6 @@ package SimCode
       Option<DAE.Exp> defaultValue;
     end FUNCTION_PTR;
   end Variable;
-
-  uniontype Statement
-    record ALGORITHM
-       list<DAE.Statement> statementLst;
-    end ALGORITHM;
-  end Statement;
 
   uniontype ExtObjInfo
     record EXTOBJINFO
@@ -603,7 +598,7 @@ package SimCode
       list<Variable> outVars;
       list<Variable> functionArguments;
       list<Variable> variableDeclarations;
-      list<Statement> body;
+      list<DAE.Statement> body;
       SCode.Visibility visibility;
       builtin.SourceInfo info;
     end FUNCTION;
@@ -612,7 +607,7 @@ package SimCode
       list<Variable> outVars;
       list<Variable> functionArguments;
       list<Variable> variableDeclarations;
-      list<Statement> body;
+      list<DAE.Statement> body;
       builtin.SourceInfo info;
     end PARALLEL_FUNCTION;
     record KERNEL_FUNCTION
@@ -620,7 +615,7 @@ package SimCode
       list<Variable> outVars;
       list<Variable> functionArguments;
       list<Variable> variableDeclarations;
-      list<Statement> body;
+      list<DAE.Statement> body;
       builtin.SourceInfo info;
     end KERNEL_FUNCTION;
     record EXTERNAL_FUNCTION
@@ -938,6 +933,11 @@ package SimCodeFunctionUtil
     input SimCode.Function fn;
     output Boolean b;
   end isBoxedFunction;
+
+  function funcHasParallelInOutArrays
+    input SimCode.Function fn;
+    output Boolean b;
+  end funcHasParallelInOutArrays;
 
   function incrementInt
     input Integer inInt;
@@ -3073,6 +3073,12 @@ package Expression
   output list<Integer> outValues;
   end dimensionsList;
 
+  function expDimensionsList
+  input list<DAE.Exp> inDims;
+  output list<Integer> outValues;
+  end expDimensionsList;
+
+
   function isMetaArray
     input DAE.Exp inExp;
     output Boolean outB;
@@ -3252,6 +3258,17 @@ package DAEUtil
     input DAE.ElementSource source;
     output builtin.SourceInfo info;
   end getElementSourceFileInfo;
+
+  function statementsContainReturn
+    input list<DAE.Statement> stmts;
+    output Boolean b;
+  end statementsContainReturn;
+
+  function statementsContainTryBlock
+    input list<DAE.Statement> stmts;
+    output Boolean b;
+  end statementsContainTryBlock;
+
 end DAEUtil;
 
 package Types
@@ -3294,6 +3311,10 @@ package Types
     input DAE.Type ty;
     output list<DAE.Var> fields;
   end getMetaRecordFields;
+  function unboxedType
+    input DAE.Type boxedType;
+    output DAE.Type ty;
+  end unboxedType;
 end Types;
 
 package HashTableCrIListArray

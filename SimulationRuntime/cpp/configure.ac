@@ -25,7 +25,9 @@ SCOREP_HOME=""
 FMU_KINSOL="no"
 PARALLEL_OUTPUT="no"
 LOGGER="yes"
-CMAKE_COMMANDS="CC=\"${CC}\" CXX=\"${CXX}\" CFLAGS=\"${CFLAGS}\" CXXFLAGS=\"${CXXFLAGS}\""
+#CMAKE_COMMANDS="CC=\"${CC}\" CXX=\"${CXX}\" CFLAGS=\"${CFLAGS}\" CXXFLAGS=\"${CXXFLAGS}\""
+CMAKE_COMMANDS="CC=\"${CC}\" CXX=\"${CXX}\""
+CMAKE_BUILDTYPE="RelWithDebInfo"
 
 AC_SUBST(BOOST_STATIC_LINKING_COMMAND)
 AC_SUBST(BOOST_REALPATHS_COMMAND)
@@ -36,6 +38,7 @@ AC_SUBST(FMU_KINSOL_COMMAND)
 AC_SUBST(PARALLEL_OUTPUT_COMMAND)
 AC_SUBST(LOGGER_COMMAND)
 AC_SUBST(CMAKE_COMMANDS)
+AC_SUBST(CMAKE_BUILDTYPE)
 
 evaluateParameter() {
   case $1 in
@@ -48,6 +51,8 @@ evaluateParameter() {
     FMU_KINSOL) FMU_KINSOL="yes" ;;
     PARALLEL_OUTPUT) PARALLEL_OUTPUT="yes" ;;
     DISABLE_LOGGER) LOGGER="no" ;;
+    BUILD_TYPE=?*) CMAKE_BUILDTYPE=`echo $1| cut -d'=' -f 2` ;;
+    BUILD_TYPE=) ;;
     *) echo "Unknown Parameter given $1" ;;
   esac
 }
@@ -139,5 +144,8 @@ else
   LOGGER_COMMAND="-DUSE_LOGGER=OFF"
   AC_MSG_RESULT([no])
 fi
+
+AC_ARG_WITH(build-type,  [  --with-build-type=[Release|Debug|RelWithDebInfo]       (set the cmake build type)],[CMAKE_BUILDTYPE="$withval"],[])
+AC_MSG_RESULT([Build type is set to $CMAKE_BUILDTYPE])
 
 AC_OUTPUT(Makefile)

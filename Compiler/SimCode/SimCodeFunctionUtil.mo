@@ -673,7 +673,7 @@ algorithm
       DAE.ExternalDecl extdecl;
       list<SimCode.Variable> outVars, inVars, biVars, funArgs, varDecls;
       list<SimCode.RecordDeclaration> recordDecls;
-      list<SimCode.Statement> bodyStmts;
+      list<DAE.Statement> bodyStmts;
       list<DAE.Element> daeElts;
       Absyn.Path name;
       DAE.ElementSource source;
@@ -699,8 +699,7 @@ algorithm
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
         vars = List.filter(daeElts, isVarQ);
         varDecls = List.map(vars, daeInOutSimVar);
-        algs = List.filterOnTrue(daeElts, DAEUtil.isAlgorithm);
-        bodyStmts = List.map(algs, elaborateStatement);
+        bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
         info = DAEUtil.getElementSourceFileInfo(source);
       then
         (SimCode.FUNCTION(fpath, outVars, funArgs, varDecls, bodyStmts, visibility, info), rt_1, recordDecls, includes, includeDirs, libs,libPaths);
@@ -719,8 +718,7 @@ algorithm
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
         vars = List.filter(daeElts, isVarNotInputNotOutput);
         varDecls = List.map(vars, daeInOutSimVar);
-        algs = List.filterOnTrue(daeElts, DAEUtil.isAlgorithm);
-        bodyStmts = List.map(algs, elaborateStatement);
+        bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
         info = DAEUtil.getElementSourceFileInfo(source);
       then
         (SimCode.KERNEL_FUNCTION(fpath, outVars, funArgs, varDecls, bodyStmts, info), rt_1, recordDecls, includes, includeDirs, libs,libPaths);
@@ -739,8 +737,7 @@ algorithm
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
         vars = List.filter(daeElts, isVarQ);
         varDecls = List.map(vars, daeInOutSimVar);
-        algs = List.filterOnTrue(daeElts, DAEUtil.isAlgorithm);
-        bodyStmts = List.map(algs, elaborateStatement);
+        bodyStmts = listAppend(elaborateStatement(e) for e guard DAEUtil.isAlgorithm(e) in daeElts);
         info = DAEUtil.getElementSourceFileInfo(source);
       then
         (SimCode.PARALLEL_FUNCTION(fpath, outVars, funArgs, varDecls, bodyStmts, info), rt_1, recordDecls, includes, includeDirs, libs,libPaths);
@@ -1012,22 +1009,9 @@ end findIndexInList;
 
 protected function elaborateStatement
   input DAE.Element inElement;
-  output SimCode.Statement outStatement;
+  output list<DAE.Statement> stmts;
 algorithm
-  (outStatement):=
-  matchcontinue (inElement)
-    local
-      list<DAE.Statement> stmts;
-    case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)))
-    then
-      SimCode.ALGORITHM(stmts);
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("# SimCode.elaborateStatement failed\n");
-      then
-        fail();
-  end matchcontinue;
+  DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)) := inElement;
 end elaborateStatement;
 
 
@@ -1101,6 +1085,45 @@ algorithm
     case SimCode.VARIABLE(ty = DAE.T_STRING()) then ();
   end match;
 end isBoxedArg;
+
+public function funcHasParallelInOutArrays
+"checks if a boxed function can be generated.
+currently this is not the case if the input/output
+involves parallel (global/local) array variables."
+  input SimCode.Function fn;
+  output Boolean b;
+protected
+  list<SimCode.Variable> inVars, outVars;
+algorithm
+  SimCode.FUNCTION(functionArguments = inVars, outVars = outVars) := fn;
+  for e in inVars loop
+    if isParallelArrayVar(e) then
+      b := true;
+      return;
+    end if;
+  end for;
+
+  for e in outVars loop
+    if isParallelArrayVar(e) then
+      b := true;
+      return;
+    end if;
+  end for;
+
+  b := false;
+end funcHasParallelInOutArrays;
+
+protected function isParallelArrayVar
+"Checks if a variable is a boxed datatype"
+  input SimCode.Variable var;
+  output Boolean b;
+algorithm
+  b := match var
+    case SimCode.VARIABLE(ty = DAE.T_ARRAY(), parallelism = DAE.PARGLOBAL()) then true;
+    case SimCode.VARIABLE(ty = DAE.T_ARRAY(), parallelism = DAE.PARLOCAL()) then true;
+    else false;
+  end match;
+end isParallelArrayVar;
 
 public function findLiterals
   "Finds all literal expressions in functions"

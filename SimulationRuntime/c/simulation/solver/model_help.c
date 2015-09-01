@@ -899,6 +899,10 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo.nextSampleTimes = (double*) calloc(data->modelData.nSamples, sizeof(double));
   data->simulationInfo.samples = (modelica_boolean*) calloc(data->modelData.nSamples, sizeof(modelica_boolean));
 
+  data->modelData.clocksInfo = (CLOCK_INFO*) GC_malloc_uncollectable(data->modelData.nClocks * sizeof(CLOCK_INFO));
+  data->modelData.subClocksInfo = (SUBCLOCK_INFO*) GC_malloc_uncollectable(data->modelData.nSubClocks * sizeof(SUBCLOCK_INFO));
+  data->simulationInfo.clocksData = (CLOCK_DATA*) calloc(data->modelData.nClocks, sizeof(CLOCK_DATA));
+
   /* set default solvers for algebraic loops */
 #if !defined(OMC_MINIMAL_RUNTIME)
   data->simulationInfo.nlsMethod = NLS_HYBRID;
@@ -1086,6 +1090,9 @@ void deInitializeDataStruc(DATA *data)
   GC_free(data->modelData.samplesInfo);
   free(data->simulationInfo.nextSampleTimes);
   free(data->simulationInfo.samples);
+
+  GC_free(data->modelData.clocksInfo);
+  GC_free(data->modelData.subClocksInfo);
 
   /* free simulationInfo arrays */
   free(data->simulationInfo.zeroCrossings);
@@ -1342,4 +1349,3 @@ modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integ
   return trunc(value1/value2);
 #endif
 }
-

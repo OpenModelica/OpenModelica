@@ -260,7 +260,7 @@ case FUNCTION(__) then
                case (fv as VARIABLE(__)) :: _ then crefStr(fv.name,simCode)
   let varInits = variableDeclarations |> var => varInit(var, simCode)
                  ;separator="\n" //TODO:special end of line,see varInit
-  let bodyPart = (body |> stmt  => funStatement(stmt, simCode) ;separator="\n")
+  let bodyPart = funStatement(body, simCode)
   <<
   <%retType%> _<%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode) ;separator=", "%>)
   {
@@ -364,16 +364,10 @@ template funArgDefinition(Variable var, SimCode simCode)
   else "UNSUPPORTED_VARIABLE_funArgDefinition"
 end funArgDefinition;
 
-template funStatement(Statement stmt, SimCode simCode)
+template funStatement(list<DAE.Statement> statementLst, SimCode simCode)
  "Generates function statements."
 ::=
-  match stmt
-  case ALGORITHM(__) then
-    (statementLst |> stmt =>
-      algStatement(stmt, contextFunction, simCode)
-    ;separator="\n")
-  else
-    "NOT IMPLEMENTED FUN STATEMENT"
+  statementLst |> stmt => algStatement(stmt, contextFunction, simCode)
 end funStatement;
 
 constant String localRepresentationArrayDefines =

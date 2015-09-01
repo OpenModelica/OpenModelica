@@ -4,22 +4,57 @@
  *  @{
  */
 
-#include <Core/ModelicaDefine.h>
-#include <Core/Modelica.h>
-#include <SimCoreFactory/Policies/NonLinSolverOMCFactory.h>
+#include <SimCoreFactory/ObjectFactory.h>
 
-template<class T>
-struct ObjectFactory;
 
 template <class CreationPolicy>
-class StaticNonLinSolverOMCFactory : public NonLinSolverOMCFactory<CreationPolicy>
+class StaticNonLinSolverOMCFactory : virtual public ObjectFactory<CreationPolicy>
 {
 
 public:
-    StaticNonLinSolverOMCFactory(PATH library_path,PATH modelicasystem_path,PATH config_path);
-    virtual ~StaticNonLinSolverOMCFactory();
+    StaticNonLinSolverOMCFactory(PATH library_path,PATH modelicasystem_path,PATH config_path)
+    :ObjectFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
+      {
+      };
+    virtual ~StaticNonLinSolverOMCFactory(){};
 
-   virtual boost::shared_ptr<INonLinSolverSettings> createNonLinSolverSettings(string nonlin_solver);
-   virtual boost::shared_ptr<IAlgLoopSolver> createNonLinSolver(IAlgLoop* algLoop, string solver_name, boost::shared_ptr<INonLinSolverSettings> solver_settings);
+   virtual boost::shared_ptr<INonLinSolverSettings> createNonLinSolverSettings(string nonlin_solver)
+   {
+      string nonlin_solver_key;
+
+      if(nonlin_solver.compare("newton")==0)
+      {
+        boost::shared_ptr<INonLinSolverSettings> settings = boost::shared_ptr<INonLinSolverSettings>(new NewtonSettings());
+        return settings;
+      }
+
+      #ifdef ENABLE_KINSOL_STATIC
+      if(nonlin_solver.compare("kinsol")==0)
+      {
+          boost::shared_ptr<INonLinSolverSettings> settings = boost::shared_ptr<INonLinSolverSettings>(new KinsolSettings());
+          return settings;
+      }
+      #endif //ENABLE_KINSOL_STATIC
+      throw ModelicaSimulationError(MODEL_FACTORY,"Selected nonlin solver is not available");
+      //return NonLinSolverOMCFactory<CreationPolicy>::createNonLinSolverSettings(nonlin_solver);
+   }
+   virtual boost::shared_ptr<IAlgLoopSolver> createNonLinSolver(IAlgLoop* algLoop, string solver_name, boost::shared_ptr<INonLinSolverSettings> solver_settings)
+   {
+      if(solver_name.compare("newton")==0)
+      {
+        boost::shared_ptr<IAlgLoopSolver> solver = boost::shared_ptr<IAlgLoopSolver>(new Newton(algLoop,solver_settings.get()));
+        return solver;
+      }
+
+      #ifdef ENABLE_KINSOL_STATIC
+      if(solver_name.compare("kinsol")==0)
+      {
+        boost::shared_ptr<IAlgLoopSolver> settings = boost::shared_ptr<IAlgLoopSolver>(new Kinsol(algLoop,solver_settings.get()));
+        return settings;
+      }
+      #endif //ENABLE_KINSOL_STATIC
+      throw ModelicaSimulationError(MODEL_FACTORY,"Selected nonlin solver is not available");
+      //return NonLinSolverOMCFactory<CreationPolicy>::createNonLinSolver(algLoop, solver_name, solver_settings);
+    }
 };
 /** @} */ // end of simcorefactoriesPolicies

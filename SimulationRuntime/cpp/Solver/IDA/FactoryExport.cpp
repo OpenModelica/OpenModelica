@@ -16,7 +16,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_ida(boost::extensio
     //fm.get<ISolverSettings,int, IGlobalSettings* >()[2].set<IDASettings>();
 }
 
-#elif defined(OMC_BUILD)
+#elif defined(OMC_BUILD) && !defined(RUNTIME_STATIC_LINKING)
 
 #include <Solver/IDA/IDA.h>
 #include <Solver/IDA/IDASettings.h>
@@ -29,6 +29,19 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_ida(boost::extensio
     ["idaSolver"].set<Ida>();
     types.get<std::map<std::string, factory<ISolverSettings, IGlobalSettings* > > >()
     ["idaSettings"].set<IDASettings>();
+    }
+#elif defined(OMC_BUILD) && defined(RUNTIME_STATIC_LINKING)
+#include <Solver/IDA/IDA.h>
+#include <Solver/IDA/IDASettings.h>
+    boost::shared_ptr<ISolver> createIda(IMixedSystem* system, boost::shared_ptr<ISolverSettings> solver_settings)
+    {
+        boost::shared_ptr<ISolver> ida = boost::shared_ptr<ISolver>(new Ida(system,solver_settings));
+        return ida;
+    }
+    boost::shared_ptr<ISolverSettings> createIdaSettings(boost::shared_ptr<IGlobalSettings> globalSettings)
+    {
+         boost::shared_ptr<ISolverSettings> ida_settings = boost::shared_ptr<ISolverSettings>(new IDASettings(globalSettings));
+         return ida_settings;
     }
 
 #else

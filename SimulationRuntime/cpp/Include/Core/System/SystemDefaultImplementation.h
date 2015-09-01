@@ -150,7 +150,8 @@ protected:
 
 
     bool
-        * _conditions,        ///< External conditions changed by the solver
+        * _conditions,   ///< External conditions changed by the solver
+        * _conditions0,
         * _time_conditions;
 
     int
@@ -191,5 +192,6 @@ protected:
     boost::shared_ptr<ISimData> _sim_data;
     boost::shared_ptr<ISimVars> _sim_vars;
     IGlobalSettings* _global_settings; //this should be a reference, but this is not working if the libraries are linked statically
+    IEvent* _event_system; ///this pointer to event system
 };
 /** @} */ // end of coreSystem

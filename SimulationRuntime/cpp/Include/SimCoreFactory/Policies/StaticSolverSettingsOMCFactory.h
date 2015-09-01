@@ -12,6 +12,8 @@
 /*
 Policy class to create solver settings object
 */
+boost::shared_ptr<ISolverSettings> createIdaSettings(boost::shared_ptr<IGlobalSettings> globalSettings);
+boost::shared_ptr<ISolverSettings> createCVodeSettings(boost::shared_ptr<IGlobalSettings> globalSettings);
 template <class CreationPolicy>
 struct StaticSolverSettingsOMCFactory : public  SolverSettingsOMCFactory<CreationPolicy>
 {
@@ -28,10 +30,15 @@ public:
 
     virtual boost::shared_ptr<ISolverSettings> createSolverSettings(string solvername,boost::shared_ptr<IGlobalSettings> globalSettings)
     {
-        if((solvername.compare("cvode")==0)||(solvername.compare("dassl")==0)||(solvername.compare("ida")==0))
+        if((solvername.compare("cvode")==0)||(solvername.compare("dassl")==0))
         {
-          boost::shared_ptr<ISolverSettings> _solver_settings = boost::shared_ptr<ISolverSettings>(new SolverSettings(globalSettings.get()));
+          boost::shared_ptr<ISolverSettings> _solver_settings = createCVodeSettings(globalSettings);
           return _solver_settings;
+        }
+        else if((solvername.compare("ida")==0))
+        {
+           boost::shared_ptr<ISolverSettings> _solver_settings = createIdaSettings(globalSettings);
+           return _solver_settings;
         }
         else
             throw ModelicaSimulationError(MODEL_FACTORY,"Selected Solver is not available");

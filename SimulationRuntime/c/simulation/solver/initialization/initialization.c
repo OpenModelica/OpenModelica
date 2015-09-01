@@ -639,6 +639,8 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   data->callback->function_storeDelayed(data, threadData);
   data->callback->function_updateRelations(data, threadData, 1);
 
+  initSynchronous(data, threadData, data->simulationInfo.startTime);
+
   printRelations(data, LOG_EVENTS);
   printZeroCrossings(data, LOG_EVENTS);
 

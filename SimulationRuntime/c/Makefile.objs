@@ -19,7 +19,7 @@ meta_modelica_mk_box.h \
 gc/mmc_gc.h
 
 # Files for util functions
-UTIL_OBJS_MINIMAL=base_array$(OBJ_EXT) boolean_array$(OBJ_EXT) omc_error$(OBJ_EXT) division$(OBJ_EXT) generic_array$(OBJ_EXT) index_spec$(OBJ_EXT) integer_array$(OBJ_EXT) list$(OBJ_EXT) memory_pool$(OBJ_EXT) modelica_string$(OBJ_EXT) read_write$(OBJ_EXT) write_matlab4$(OBJ_EXT) read_matlab4$(OBJ_EXT) real_array$(OBJ_EXT) ringbuffer$(OBJ_EXT) rtclock$(OBJ_EXT) string_array$(OBJ_EXT) utility$(OBJ_EXT) varinfo$(OBJ_EXT) ModelicaUtilities$(OBJ_EXT) omc_msvc$(OBJ_EXT) simulation_options$(OBJ_EXT) tinymt64$(OBJ_EXT) omc_mmap$(OBJ_EXT) cJSON$(OBJ_EXT)
+UTIL_OBJS_MINIMAL=base_array$(OBJ_EXT) boolean_array$(OBJ_EXT) omc_error$(OBJ_EXT) division$(OBJ_EXT) generic_array$(OBJ_EXT) index_spec$(OBJ_EXT) integer_array$(OBJ_EXT) list$(OBJ_EXT) memory_pool$(OBJ_EXT) modelica_string$(OBJ_EXT) read_write$(OBJ_EXT) write_matlab4$(OBJ_EXT) read_matlab4$(OBJ_EXT) real_array$(OBJ_EXT) ringbuffer$(OBJ_EXT) rtclock$(OBJ_EXT) string_array$(OBJ_EXT) utility$(OBJ_EXT) varinfo$(OBJ_EXT) ModelicaUtilities$(OBJ_EXT) omc_msvc$(OBJ_EXT) simulation_options$(OBJ_EXT) tinymt64$(OBJ_EXT) omc_mmap$(OBJ_EXT) cJSON$(OBJ_EXT) rational$(OBJ_EXT)
 ifeq ($(OMC_MINIMAL_RUNTIME),)
 UTIL_OBJS=$(UTIL_OBJS_MINIMAL) java_interface$(OBJ_EXT) libcsv$(OBJ_EXT) read_csv$(OBJ_EXT) OldModelicaTables$(OBJ_EXT) write_csv$(OBJ_EXT)
 else
@@ -31,7 +31,7 @@ UTIL_HFILES=base_array.h boolean_array.h division.h generic_array.h omc_error.h 
 MATH_OBJS=pivot$(OBJ_EXT)
 MATH_HFILES = blaswrap.h
 
-SOLVER_OBJS_MINIMAL=delay$(OBJ_EXT) events$(OBJ_EXT) external_input$(OBJ_EXT) linearSystem$(OBJ_EXT) linearSolverLapack$(OBJ_EXT) linearSolverTotalPivot$(OBJ_EXT) mixedSystem$(OBJ_EXT) mixedSearchSolver$(OBJ_EXT) model_help$(OBJ_EXT) nonlinearSystem$(OBJ_EXT) nonlinearSolverHomotopy$(OBJ_EXT) omc_math$(OBJ_EXT) solver_main$(OBJ_EXT) stateset$(OBJ_EXT)
+SOLVER_OBJS_MINIMAL=delay$(OBJ_EXT) events$(OBJ_EXT) external_input$(OBJ_EXT) linearSystem$(OBJ_EXT) linearSolverLapack$(OBJ_EXT) linearSolverTotalPivot$(OBJ_EXT) mixedSystem$(OBJ_EXT) mixedSearchSolver$(OBJ_EXT) model_help$(OBJ_EXT) nonlinearSystem$(OBJ_EXT) nonlinearSolverHomotopy$(OBJ_EXT) omc_math$(OBJ_EXT) solver_main$(OBJ_EXT) stateset$(OBJ_EXT) synchronous$(OBJ_EXT)
 ifeq ($(OMC_MINIMAL_RUNTIME),)
 SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL) kinsolSolver$(OBJ_EXT) linearSolverLis$(OBJ_EXT) linearSolverUmfpack$(OBJ_EXT) dassl$(OBJ_EXT) radau$(OBJ_EXT) sym_imp_euler$(OBJ_EXT) nonlinearSolverHybrd$(OBJ_EXT) nonlinearSolverNewton$(OBJ_EXT) newtonIteration$(OBJ_EXT)
 else

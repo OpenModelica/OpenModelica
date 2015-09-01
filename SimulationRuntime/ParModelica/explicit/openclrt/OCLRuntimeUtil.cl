@@ -56,10 +56,14 @@
 #endif
 
 #ifdef PRINTF_AVAILABLE
-  #define omc_assert(i,s) (printf("Assertion: %s\n File %s, Line %d\n", s, __LINE__, i))
+  #define omc_assert(td,i,s) (printf("Assertion: %s, Line %d, info %d\n", s, __LINE__, i))
+  #define omc_assert_withEquationIndexes(td,i,idx,s) (printf("Assertion: %s, Line %d, info %d\n", s, __LINE__, i))
+  #define throwStreamPrint(td,str,exp) (printf("Assertion: %s\n, expression %s, Line %d\n", str, exp, __LINE__))
   #define printline() printf("At line %d\n", __LINE__)
 #else
-  #define omc_assert(i,s)
+  #define omc_assert(td,i,s)
+  #define omc_assert_withEquationIndexes(td,i,idx,s)
+  #define throwStreamPrint(td,str,exp)
   #define printline()
 #endif
 
@@ -75,22 +79,19 @@
 
 
 #define FILE_INFO modelica_integer
+#define threadData_t integer
+#define threadData NULL
 #define omc_dummyFileInfo __LINE__
 
 #define sin(v,m) (sin(v))
 #define cos(v,m) (cos(v))
 
-
-#ifdef __x86_64__
-typedef long  modelica_integer;
-#else
-typedef int  modelica_integer;
-#endif
-
 #ifdef DOUBLE_PREC_AVAILABLE
+typedef long  modelica_integer;
 typedef double modelica_real;
 #else
 typedef float modelica_real;
+typedef int  modelica_integer;
 #endif
 
 typedef bool modelica_boolean;

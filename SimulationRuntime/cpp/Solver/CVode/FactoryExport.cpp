@@ -9,7 +9,7 @@
 
 #elif defined(SIMSTER_BUILD)
 
-#include <Solver/CVode/CVode.h>
+
 
 
 /*Simster factory*/
@@ -19,7 +19,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_cvode(boost::extens
     //fm.get<ISolverSettings,int, IGlobalSettings* >()[2].set<CVodeSettings>();
 }
 
-#elif defined(OMC_BUILD)
+#elif defined(OMC_BUILD) && !defined(RUNTIME_STATIC_LINKING)
 
 #include <Solver/CVode/CVode.h>
 #include <Solver/CVode/CVodeSettings.h>
@@ -33,7 +33,20 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_cvode(boost::extens
     types.get<std::map<std::string, factory<ISolverSettings, IGlobalSettings* > > >()
     ["cvodeSettings"].set<CVodeSettings>();
     }
+#elif defined(OMC_BUILD) && defined(RUNTIME_STATIC_LINKING)
+#include <Solver/CVode/CVodeSettings.h>
+#include <Solver/CVode/CVode.h>
 
+    boost::shared_ptr<ISolver> createCVode(IMixedSystem* system, boost::shared_ptr<ISolverSettings> solver_settings)
+    {
+        boost::shared_ptr<ISolver> cvode = boost::shared_ptr<ISolver>(new Cvode(system,solver_settings.get()));
+        return cvode;
+    }
+    boost::shared_ptr<ISolverSettings> createCVodeSettings(boost::shared_ptr<IGlobalSettings> globalSettings)
+    {
+         boost::shared_ptr<ISolverSettings> cvode_settings = boost::shared_ptr<ISolverSettings>(new CVodeSettings(globalSettings.get()));
+         return cvode_settings;
+    }
 #else
 error "operating system not supported"
 #endif

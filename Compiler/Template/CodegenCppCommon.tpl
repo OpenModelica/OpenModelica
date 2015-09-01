@@ -517,7 +517,7 @@ template daeExpCrefRhsArrayBox2(Text var,DAE.Type type, Context context, Text &p
 
     let arraytype =   match dimstr
       case "" then 'DynArrayDim<%listLength(dims)%><<%expTypeShort(type)%>>'
-      else   'StatArrayDim<%listLength(dims)%><<%expTypeShort(type)%>,<%dimstr%>>'
+      else   'StatArrayDim<%listLength(dims)%><<%expTypeShort(type)%>,<%dimstr%>> /*testarray3*/'
       end match
     let &tmpdecl = buffer "" /*BUFD*/
     let arrayVar = tempDecl(arraytype, &tmpdecl /*BUFD*/)
@@ -680,6 +680,11 @@ template checkDimension(Dimensions dims)
 
 end checkDimension;
 
+template checkExpDimension(list<DAE.Exp> dims)
+::=
+  expDimensionsList(dims) |> dim as Integer   =>  '<%dim%>';separator=","
+end checkExpDimension;
+
 
 template expTypeShort(DAE.Type type)
 
@@ -757,7 +762,7 @@ template expTypeFlag(DAE.Type ty, Integer flag)
    match dimstr
    case "" then 'DynArrayDim<%listLength(dims)%><<%expTypeShort(type)%>>'
    //case
-   else   'StatArrayDim<%listLength(dims)%><<%expTypeShort(type)%>,<%dimstr%>>'
+   else   'StatArrayDim<%listLength(dims)%><<%expTypeShort(type)%>,<%dimstr%>>/*testarray4*/'
     end match
    else expTypeFlag(ty, 2)
     end match
@@ -1126,7 +1131,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
   let loopHeadIter = (iterators |> iter as REDUCTIONITER(__) =>
     let identType = expTypeFromExpModelica(iter.exp)
     let ty_str = expTypeArray(ty)
-    let arrayType = 'DynArrayDim1<<%ty_str%>>'//expTypeFromExpArray(iter.exp)
+    let arrayType = 'DynArrayDim1<<%identType%>>'//expTypeFromExpArray(iter.exp)
     let loopVar = '<%iter.id%>_loopVar'
     let &guardExpPre = buffer ""
     let &tmpVarDecls += '<%arrayType%> <%loopVar%>;/*testloopvar*/<%\n%>'
@@ -1748,7 +1753,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
   case CALL(path=IDENT(name="integer"), expLst={inExp,index}) then
     let exp = daeExp(inExp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
    // let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)
-    'boost::numeric_cast<int>(<%exp%>)'
+    'integer(<%exp%>)'
 
 
   case CALL(path=IDENT(name="floor"), expLst={inExp,index}, attr=CALL_ATTR(ty = ty)) then
@@ -1770,7 +1775,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
 
   case CALL(path=IDENT(name="integer"), expLst={inExp}) then
     let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-   'boost::numeric_cast<int>(<%exp%>)'
+   'integer(<%exp%>)'
 
    case CALL(path=IDENT(name="modelica_mod_int"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -1948,6 +1953,12 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     'ldiv(<%var1%>,<%var2%>).quot'
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2}) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let var2 = daeExp(e2, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    'boost::math::trunc(<%var1%>/<%var2%>)'
+
+  case CALL(path=IDENT(name="div"), expLst={e1,e2,index}) then
+    // TODO: should trigger event if result changes discontinuously
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     'boost::math::trunc(<%var1%>/<%var2%>)'
@@ -2708,7 +2719,7 @@ case ARRAY(__) then
    */
    let &preExp += '
    //tmp array
-   <%StatArrayDim%><%arrayVar%>;<%\n%>'
+   <%StatArrayDim%><%arrayVar%>;/*testarray6*/<%\n%>'
   arrayVar
   else
     match typeof(exp)
@@ -3125,19 +3136,18 @@ template daeExpPartEvalFunction(Exp exp, Context context, Text &preExp, Text &va
     let closureName = '_Closure<%System.tmpTickIndex(2/*auxFunction*/)%>_<%funcName%>'
     let functionsObject = match context case FUNCTION_CONTEXT(__) then 'this' else '_functions'
     let createClosure = (expList |> e => ', <%daeExp(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>')
-    let closureArgsDecl = (setDifference(t_orig.funcArg, t.funcArg) |> a as FUNCARG(__) hasindex i1 fromindex 1 => ', <%partEvalBoxedType(listGet(expList, i1))%> &<%a.name%>')
-    let callArgsDecl = (t.funcArg |> a as FUNCARG(__) hasindex i1 fromindex 1 => '<%expTypeShort(a.ty)%> <%a.name%>, ')
+    let closureArgsDecl = (setDifference(t_orig.funcArg, t.funcArg) |> a as FUNCARG(__) hasindex i1 fromindex 1 => ', <%partEvalUnboxedType(a.ty)%> <%a.name%>')
+    let callArgsDecl = (t.funcArg |> a as FUNCARG(__) hasindex i1 fromindex 1 => '<%partEvalUnboxedType(a.ty)%> <%a.name%>, ')
     let callArgsOrig = (t_orig.funcArg |> a as FUNCARG(__) hasindex i1 fromindex 1 => '<%a.name%>, ')
     let &extraFuncsDecl +=
     <<
 
-    template <typename metatype> // TODO: remove metatype if actual types known
     class <%closureName%>
     {
-      Functions *_functions;
-      <%setDifference(t_orig.funcArg, t.funcArg) |> a as FUNCARG(__) hasindex i1 fromindex 1 => '<%partEvalBoxedType(listGet(expList, i1))%> &<%a.name%>;<%\n%>'%>
+      Functions* _functions;
+      <%setDifference(t_orig.funcArg, t.funcArg) |> a as FUNCARG(__) hasindex i1 fromindex 1 => '<%partEvalUnboxedType(a.ty)%> <%a.name%>;<%\n%>'%>
      public:
-      <%closureName%>(Functions *functions<%closureArgsDecl%>)
+      <%closureName%>(Functions* functions<%closureArgsDecl%>)
         : _functions(functions)
         <%setDifference(t_orig.funcArg, t.funcArg) |> a as FUNCARG(__) hasindex i1 fromindex 1 => ', <%a.name%>(<%a.name%>)<%\n%>'%>
       {}
@@ -3146,22 +3156,22 @@ template daeExpPartEvalFunction(Exp exp, Context context, Text &preExp, Text &va
       }
     };<%\n%>
     >>
-    '<%closureName%><double>(<%functionsObject%><%createClosure%>)'
+    '<%closureName%>(<%functionsObject%><%createClosure%>)'
   case PARTEVALFUNCTION(__) then
     error(sourceInfo(), 'PARTEVALFUNCTION: <%ExpressionDump.printExpStr(exp)%>, ty=<%unparseType(ty)%>, origType=<%unparseType(origType)%>')
 end daeExpPartEvalFunction;
 
-template partEvalBoxedType(Exp exp)
-  "Returns the type of a boxed expression"
+template partEvalUnboxedType(Type boxedType)
+  "Returns the actual type in the box"
 ::=
-  match exp
-  case exp as BOX(__) then
-    let elty = expTypeFromExpShort(exp.exp)
-    let ty = if isArrayType(typeof(exp.exp)) then 'BaseArray< <%elty%> >' else '<%elty%>'
+  match boxedType
+  case T_METABOXED(__) then
+    let elty = expTypeShort(Types.unboxedType(boxedType))
+    let ty = if isArrayType(Types.unboxedType(boxedType)) then 'BaseArray<'+'<%elty%>'+'>&' else '<%elty%>'
     '<%ty%>'
   else
-    '<%expTypeFromExpShort(exp)%>'
-end partEvalBoxedType;
+    error(sourceInfo(), 'Wrong input of type <%unparseType(boxedType)%> to partEvalUnboxedType')
+end partEvalUnboxedType;
 
 template daeExpBox(Exp exp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Not needed; just returns exp"
@@ -3169,7 +3179,7 @@ template daeExpBox(Exp exp, Context context, Text &preExp, Text &varDecls, SimCo
   match exp
   case BOX(__) then
     let elty = expTypeFromExpShort(exp)
-    let ty = if isArrayType(typeof(exp)) then 'BaseArray< <%elty%> >' else '<%elty%>'
+    let ty = if isArrayType(typeof(exp)) then 'BaseArray<'+'<%elty%>'+'>' else '<%elty%>'
     let res = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     '/*box <%ty%>*/<%res%>'
 end daeExpBox;

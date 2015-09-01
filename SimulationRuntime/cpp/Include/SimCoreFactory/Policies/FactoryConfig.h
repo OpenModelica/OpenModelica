@@ -119,7 +119,7 @@
   #include <Core/SimulationSettings/ISimControllerSettings.h>
   #include <Core/SimController/ISimController.h>
   #include <SimCoreFactory/OMCFactory/OMCFactory.h>
-  #include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
+  //#include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
 
 
 #else

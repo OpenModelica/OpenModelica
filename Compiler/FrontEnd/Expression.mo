@@ -11238,17 +11238,28 @@ algorithm
   outExp := DAE.BINARY(inLhs, inOp, inRhs);
 end makeBinaryExp;
 
+public function checkExpDimensionSizes
+  "Extracts an integer from an exp"
+  input DAE.Exp dim;
+  output Boolean value;
+algorithm
+  value := matchcontinue(dim)
+    case DAE.ICONST() then if dim.integer > 0 then true else false;
+    else
+     false;
+  end matchcontinue;
+end checkExpDimensionSizes;
+
 public function checkDimensionSizes
-  "Extracts an integer from an array dimension. Also handles DIM_EXP and
+ "Extracts an integer from an array dimension. Also handles DIM_EXP and
   DIM_UNKNOWN if checkModel is used."
-  input DAE.Dimension dim;
+  input DAE.Dimension  dim;
   output Boolean value;
   protected
       Integer i;
       DAE.Exp e;
 algorithm
   value := matchcontinue(dim)
-
     case DAE.DIM_INTEGER(integer = i) then true;
     case DAE.DIM_ENUM(size = i) then true;
     case DAE.DIM_BOOLEAN() then true;
@@ -11281,6 +11292,27 @@ algorithm
       then {};
    end matchcontinue;
 end dimensionsList;
+
+
+public function expDimensionsList
+  "Extracts a list of integers from a list of expressions"
+  input list<DAE.Exp> inDims;
+  output list<Integer> outValues;
+protected
+  list<Boolean> boolHelperList;
+  list<Integer> dims;
+algorithm
+ outValues := matchcontinue(inDims)
+    case (_)
+    equation
+     boolHelperList = List.map(inDims, checkExpDimensionSizes);
+    true = List.reduce(boolHelperList,boolAnd);
+    dims = List.map(inDims, expInt);
+    then dims;
+    case (_)
+      then {};
+   end matchcontinue;
+end expDimensionsList;
 
 public function isCrefListWithEqualIdents
   "Checks if all expressions in the given list are crefs with the same identifiers.

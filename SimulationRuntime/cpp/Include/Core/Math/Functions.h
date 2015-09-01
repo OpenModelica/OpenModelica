@@ -144,6 +144,16 @@ inline static int round (const double &n)
     return (fabs(n)-floor(fabs(n)) < 0.5) ? (int)(sgn(n)*floor(fabs(n))) : (int)(sgn(n)*ceil(fabs(n)));
 }
 
+/// Modelica integer function
+inline static int integer (const double &n)
+{
+    int castValue = boost::numeric_cast<int>(n);
+    if(n < castValue)
+      return castValue - 1;
+    else
+      return castValue;
+}
+
 /// Horner-Schema (William George Horner)
 inline double Phorner(double &x, int degree_P, double* P)
 {
