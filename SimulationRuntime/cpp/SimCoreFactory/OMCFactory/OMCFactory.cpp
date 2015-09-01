@@ -19,6 +19,7 @@ OMCFactory::OMCFactory(PATH library_path, PATH modelicasystem_path)
     , _defaultNonLinSolver("kinsol")
 {
   fillArgumentsToIgnore();
+  fillArgumentsToReplace();
 }
 
 OMCFactory::OMCFactory()
@@ -28,6 +29,7 @@ OMCFactory::OMCFactory()
     , _defaultNonLinSolver("kinsol")
 {
   fillArgumentsToIgnore();
+  fillArgumentsToReplace();
 }
 
 OMCFactory::~OMCFactory()
@@ -48,7 +50,7 @@ pair<string, string> OMCFactory::parseIngoredAndWrongFormatOption(const string &
     int sep = s.find("=");
     string key = s;
     if(sep > 0)
-      s.substr(0, sep);
+      key = s.substr(0, sep);
 
     if (_argumentsToIgnore.find(key) != _argumentsToIgnore.end())
         return make_pair(string("ignored"), s);
@@ -59,7 +61,7 @@ pair<string, string> OMCFactory::parseIngoredAndWrongFormatOption(const string &
         return make_pair(string(), string());
 }
 
-SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
+SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
 {
      int opt;
      int portnum;
@@ -67,13 +69,17 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
      std::map<std::string,LogLevel> logLvlMap = map_list_of("error", LL_ERROR)("warning", LL_WARNING)("info", LL_INFO)("debug", LL_DEBUG);
      std::map<std::string,OutputPointType> outputPointTypeMap = map_list_of("all", OPT_ALL)("step", OPT_STEP)("none", OPT_NONE);
      po::options_description desc("Allowed options");
+
+     //program options that can be overwritten by OMEdit must be declared as vector
+     //so that the same value can be set multiple times
+     //(e.g. 'executable -F arg1 -r=arg2' -> 'executable -F arg1 -F=arg2')
+     //the variables of OMEdit are always the first elements of the result vectors, if they are set
      desc.add_options()
           ("help", "produce help message")
           ("nls_continue", po::bool_switch()->default_value(false),"non linear solver will continue if it can not reach the given precision")
           ("runtime-library,R", po::value<string>(),"path to cpp runtime libraries")
           ("modelica-system-library,M",  po::value<string>(), "path to Modelica library")
-          ("results-file,r", po::value<string>(),"name of results file")
-          //("config-path,f", po::value< string >(),  "path to xml files")
+          ("results-file,F", po::value<vector<string> >(),"name of results file")
           ("start-time,S", po::value< double >()->default_value(0.0),  "simulation start time")
           ("stop-time,E", po::value< double >()->default_value(1.0),  "simulation stop time")
           ("step-size,H", po::value< double >()->default_value(0.0),  "simulation step size")
@@ -161,7 +167,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
      if (vm.count("results-file"))
      {
          //cout << "results file: " << vm["results-file"].as<string>() << std::endl;
-         resultsfilename = vm["results-file"].as<string>();
+         resultsfilename = vm["results-file"].as<vector<string> >().front();
      }
      else
          throw ModelicaSimulationError(MODEL_FACTORY,"results-filename is not set");
@@ -183,7 +189,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
     	   std::vector<std::string> log_vec = vm["log-settings"].as<std::vector<string> >(),tmpvec;
     	   for(unsigned i=0;i<log_vec.size();++i)
     	   {
-    		     cout << i << ". " << log_vec[i] << std::endl;
+    		     //cout << i << ". " << log_vec[i] << std::endl;
     		     tmpvec.clear();
     		     boost::split(tmpvec,log_vec[i],boost::is_any_of("="));
 
@@ -216,7 +222,60 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
      return settings;
 }
 
-std::vector<const char *> OMCFactory::preprocessArguments(int argc, const char* argv[], std::map<std::string, std::string> &opts)
+std::vector<const char *> OMCFactory::handleArgumentsToReplace(int argc, const char* argv[], std::map<std::string, std::string> &opts)
+{
+    std::vector<const char *> optv;
+    optv.push_back(argv[0]);
+    for(int i = 1; i < argc; i++)
+    {
+        string arg = argv[i];
+
+        int sep = arg.find("=");
+        string key = arg;
+        string value = "";
+        if(sep > 0)
+        {
+            key = arg.substr(0, sep);
+            value = arg.substr(sep+1);
+        }
+
+        std::map<std::string, std::string>::iterator oldValue = opts.find(key);
+
+        map<string,string>::iterator iter = _argumentsToReplace.find(key);
+        if(iter != _argumentsToReplace.end())
+        {
+            //if(opts.find(iter->second) != opts.end()) //if the new key is already part of the argument list, prevent double insertion
+            //  continue;
+
+            if(oldValue != opts.end())
+            {
+                opts.insert(pair<string,string>(iter->second, oldValue->second));
+                opts.erase(arg);
+            }
+            key = iter->second;
+        }
+
+        if(sep > 0)
+            arg = key + "=" + value;
+        else
+            arg = key;
+
+        //maybe we have replaced a simple through a complex value with spaces
+        std::vector<std::string> strs;
+        boost::split(strs, arg, boost::is_any_of(" "));
+        for(int j = 0; j < strs.size(); j++)
+        {
+          char *copyStr = new char[strs[j].size() + 1];
+          strcpy(copyStr, strs[j].c_str());
+          copyStr[strs[j].size()] = '\0';
+          optv.push_back(copyStr);
+        }
+    }
+
+    return optv;
+}
+
+std::vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const char* argv[], std::map<std::string, std::string> &opts)
 {
   std::map<std::string, std::string>::const_iterator oit;
   std::vector<const char *> optv;
@@ -271,13 +330,21 @@ void OMCFactory::fillArgumentsToIgnore()
   _argumentsToIgnore.insert("-emit_protected");
 }
 
+void OMCFactory::fillArgumentsToReplace()
+{
+  _argumentsToReplace = map<string, string>();
+  _argumentsToReplace.insert(std::pair<string,string>("-r","-F"));
+  _argumentsToReplace.insert(std::pair<string,string>("-w","-V all=warning"));
+}
+
 std::pair<boost::shared_ptr<ISimController>,SimSettings>
 OMCFactory::createSimulation(int argc, const char* argv[],
                              std::map<std::string, std::string> &opts)
 {
-     std::vector<const char *> optv = preprocessArguments(argc, argv, opts);
+     std::vector<const char *> optv = handleComplexCRuntimeArguments(argc, argv, opts);
+     std::vector<const char *> optv2 = handleArgumentsToReplace(optv.size(), &optv[0], opts);
 
-     SimSettings settings = readSimulationParameter(optv.size(), &optv[0]);
+     SimSettings settings = readSimulationParameter(optv2.size(), &optv2[0]);
      type_map simcontroller_type_map;
      PATH simcontroller_path = _library_path;
      PATH simcontroller_name(SIMCONTROLLER_LIB);
