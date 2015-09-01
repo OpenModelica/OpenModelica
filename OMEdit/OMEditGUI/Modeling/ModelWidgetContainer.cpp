@@ -43,6 +43,7 @@
 #include "MainWindow.h"
 #include "ShapePropertiesDialog.h"
 #include "ComponentProperties.h"
+#include "Commands.h"
 
 CoOrdinateSystem::CoOrdinateSystem()
 {
@@ -456,14 +457,7 @@ bool GraphicsView::addComponent(QString className, QString fileName, QPointF pos
         // if item is a class, model, block, connector or record. then we can drop it to the graphicsview
         if ((type == StringHandler::Class) || (type == StringHandler::Model) || (type == StringHandler::Block) ||
             (type == StringHandler::Connector) || (type == StringHandler::Record)) {
-          if (type == StringHandler::Connector) {
-            addComponentToView(name, className, "", position, new ComponentInfo(""), type, false);
-            mpModelWidget->getIconGraphicsView()->addComponentToView(name, className, "", position, new ComponentInfo(""), type);
-            /* When something is added in the icon layer then update the LibraryTreeItem in the Library Browser */
-//            pMainWindow->getLibraryWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeItem());
-          } else {
-            addComponentToView(name, className, "", position, new ComponentInfo(""), type);
-          }
+          addComponentToView(name, className, "", position, new ComponentInfo(""), type);
           return true;
         } else {
           QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
@@ -474,10 +468,7 @@ bool GraphicsView::addComponent(QString className, QString fileName, QPointF pos
       } else if (mViewType == StringHandler::Icon) { // if dropping an item on the icon layer
         // if item is a connector. then we can drop it to the graphicsview
         if (type == StringHandler::Connector) {
-          addComponentToView(name, className, "", position, new ComponentInfo(""), type, false);
-          mpModelWidget->getDiagramGraphicsView()->addComponentToView(name, className, "", position, new ComponentInfo(""), type);
-          /* When something is added in the icon layer then update the LibraryTreeItem in the Library Browser */
-//          pMainWindow->getLibraryWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeItem());
+          addComponentToView(name, className, "", position, new ComponentInfo(""), type);
           return true;
         } else {
           QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
@@ -491,38 +482,39 @@ bool GraphicsView::addComponent(QString className, QString fileName, QPointF pos
   return false;
 }
 
+/*!
+ * \brief GraphicsView::addComponentToView
+ * Adds the Component to the Graphical Views.
+ * \param name
+ * \param className
+ * \param transformationString
+ * \param point
+ * \param pComponentInfo
+ * \param type
+ * \param addObject
+ * \param openingClass
+ * \param inheritedClass
+ * \param inheritedClassName
+ * \param fileName
+ */
 void GraphicsView::addComponentToView(QString name, QString className, QString transformationString, QPointF point,
                                       ComponentInfo *pComponentInfo, StringHandler::ModelicaClasses type, bool addObject, bool openingClass,
-                                      bool inheritedClass, QString inheritedClassName, QString fileName)
+                                      bool inheritedClass, QString inheritedClassName, QString fileName, bool addOnlyToCurrentView)
 {
-  MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-  QString annotation;
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    // if the component is a connector then we need to get the diagram annotation of it.
-    if (type == StringHandler::Connector && mViewType == StringHandler::Diagram) {
-      annotation = pMainWindow->getOMCProxy()->getDiagramAnnotation(className);
-      // if diagram annotation is empty then use the icon annotation of the connector.
-      if (StringHandler::removeFirstLastCurlBrackets(annotation).isEmpty()) {
-        annotation = pMainWindow->getOMCProxy()->getIconAnnotation(className);
-      }
-    } else {
-      annotation = pMainWindow->getOMCProxy()->getIconAnnotation(className);
-    }
-  }
-  Component *pComponent = new Component(annotation, name, className, fileName, pComponentInfo, type, transformationString, point,
-                                        inheritedClass, inheritedClassName, pMainWindow->getOMCProxy(), this);
-  if (!openingClass) {
-    // unselect all items
-    foreach (QGraphicsItem *pItem, items()) {
-      pItem->setSelected(false);
-    }
-    pComponent->setSelected(true);
-  }
-  if (addObject) {
-    addComponentObject(pComponent);
-  } else {
-    mComponentsList.append(pComponent);
-  }
+  AddComponentCommand *pAddComponentCommand;
+  pAddComponentCommand = new AddComponentCommand(name, className, transformationString, point, pComponentInfo, type, addObject, openingClass,
+                                                 inheritedClass, inheritedClassName, fileName, addOnlyToCurrentView, this);
+  mpModelWidget->getUndoStack()->push(pAddComponentCommand);
+}
+
+/*!
+ * \brief GraphicsView::addComponentToList
+ * Adds the Component to components list.
+ * \param pComponent
+ */
+void GraphicsView::addComponentToList(Component *pComponent)
+{
+  mComponentsList.append(pComponent);
 }
 
 void GraphicsView::addComponentObject(Component *pComponent)
@@ -553,17 +545,16 @@ void GraphicsView::addComponentObject(Component *pComponent)
   }
   // make the model modified
   mpModelWidget->setModelModified();
-  // add the component to the local list
-  mComponentsList.append(pComponent);
 }
 
 /*!
- * \brief GraphicsView::deleteComponentObject
+ * \brief GraphicsView::deleteComponent
  * Delete the component and its corresponding connectors from the components list and OMC.
  * \param component is the object to be deleted.
  */
-void GraphicsView::deleteComponentObject(Component *pComponent)
+void GraphicsView::deleteComponent(Component *pComponent)
 {
+  mpModelWidget->getUndoStack()->push(new DeleteComponentCommand(pComponent, this));
   // First Remove the Connector associated to this component
   int i = 0;
   while(i != mConnectionsList.size()) {
@@ -581,16 +572,34 @@ void GraphicsView::deleteComponentObject(Component *pComponent)
       ++i;
     }
   }
-  // remove the component now from local list
-  mComponentsList.removeOne(pComponent);
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
-    TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpModelWidget->getEditor());
-    pTLMEditor->deleteSubModel(pComponent->getName());
-  } else {
+}
+
+/*!
+ * \brief GraphicsView::deleteComponentObject
+ * Deletes the Component.
+ * \param pComponent
+ */
+void GraphicsView::deleteComponentObject(Component *pComponent)
+{
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     OMCProxy *pOMCProxy = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
     // delete the component from OMC
     pOMCProxy->deleteComponent(pComponent->getName(), mpModelWidget->getLibraryTreeItem()->getNameStructure());
+    mpModelWidget->updateModelicaText();
+  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
+    TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpModelWidget->getEditor());
+    pTLMEditor->deleteSubModel(pComponent->getName());
   }
+}
+
+/*!
+ * \brief GraphicsView::deleteComponentFromList
+ * Deletes the Component from components list.
+ * \param pComponent
+ */
+void GraphicsView::deleteComponentFromList(Component *pComponent)
+{
+  mComponentsList.removeOne(pComponent);
 }
 
 /*!
@@ -1079,6 +1088,7 @@ void GraphicsView::createActions()
   mpDeleteAction->setStatusTip(tr("Deletes the item"));
   mpDeleteAction->setShortcut(QKeySequence::Delete);
   mpDeleteAction->setDisabled(isSystemLibrary);
+  connect(mpDeleteAction, SIGNAL(triggered()), SLOT(deleteComponents()));
   // Duplicate Action
   mpDuplicateAction = new QAction(QIcon(":/Resources/icons/duplicate.svg"), Helper::duplicate, this);
   mpDuplicateAction->setStatusTip(Helper::duplicateTip);
@@ -1359,10 +1369,25 @@ void GraphicsView::addClassAnnotation(bool updateModelicaText)
   }
 }
 
+/*!
+ * \brief GraphicsView::showGraphicsViewProperties
+ * Opens the GraphicsViewProperties dialog.
+ */
 void GraphicsView::showGraphicsViewProperties()
 {
   GraphicsViewProperties *pGraphicsViewProperties = new GraphicsViewProperties(this);
   pGraphicsViewProperties->show();
+}
+
+/*!
+ * \brief GraphicsView::deleteComponents
+ * Emits the
+ */
+void GraphicsView::deleteComponents()
+{
+  mpModelWidget->getUndoStack()->beginMacro("Deleting Components by mouse");
+  emit mouseDelete();
+  mpModelWidget->getUndoStack()->endMacro();
 }
 
 /*!
@@ -1695,7 +1720,9 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
   bool shiftModifier = event->modifiers().testFlag(Qt::ShiftModifier);
   bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
   if (event->key() == Qt::Key_Delete) {
+    mpModelWidget->getUndoStack()->beginMacro("Deleting Components by key press");
     emit keyPressDelete();
+    mpModelWidget->getUndoStack()->endMacro();
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Up) {
     emit keyPressUp();
   } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Up) {
@@ -2222,6 +2249,11 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpDiagramGraphicsView = new GraphicsView(StringHandler::Diagram, this);
     mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
     mpDiagramGraphicsView->hide();
+    // Undo stack for model
+    mpUndoStack = new QUndoStack;
+    connect(mpUndoStack, SIGNAL(canUndoChanged(bool)), SLOT(handleCanUndoChanged(bool)));
+    connect(mpUndoStack, SIGNAL(canRedoChanged(bool)), SLOT(handleCanRedoChanged(bool)));
+    mpUndoView = new QUndoView(mpUndoStack);
     if (newModel) {
       mpIconGraphicsView->addClassAnnotation(false);
       mpIconGraphicsView->setCanAddClassAnnotation(true);
@@ -2232,8 +2264,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     // Only get the class icon representation here. The diagram representation is loaded via loadModelDiagramView() when we show the class.
     getModelIconShapes(getLibraryTreeItem()->getNameStructure());
     getModelComponents(getLibraryTreeItem()->getNameStructure(), StringHandler::Icon);
-    mpIconGraphicsScene->clearSelection();
-    mpDiagramGraphicsScene->clearSelection();
+    mpUndoStack->clear();
     // modelica text editor
     mpEditor = new ModelicaTextEditor(this);
     MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
@@ -2250,6 +2281,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
     mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
     // set layout
+    pMainLayout->addWidget(mpUndoView);
     pMainLayout->addWidget(mpDiagramGraphicsView, 1);
     pMainLayout->addWidget(mpIconGraphicsView, 1);
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
@@ -2260,6 +2292,9 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     // diagram graphics framework
     mpDiagramGraphicsScene = 0;
     mpDiagramGraphicsView = 0;
+    // undo stack for model
+    mpUndoStack = 0;
+    mpUndoView = 0;
     mpEditor = new TextEditor(this);
     TextEditor *pTextEditor = dynamic_cast<TextEditor*>(mpEditor);
     if (mpLibraryTreeItem->getFileName().isEmpty()) {
@@ -2289,6 +2324,11 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpDiagramGraphicsView = new GraphicsView(StringHandler::Diagram, this);
     mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
     mpDiagramGraphicsView->hide();
+    // Undo stack for model
+    mpUndoStack = new QUndoStack;
+    connect(mpUndoStack, SIGNAL(canUndoChanged(bool)), SLOT(handleCanUndoChanged(bool)));
+    connect(mpUndoStack, SIGNAL(canRedoChanged(bool)), SLOT(handleCanRedoChanged(bool)));
+    mpUndoView = new QUndoView(mpUndoStack);
     // create an xml editor for TLM
     mpEditor = new TLMEditor(this);
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpEditor);
@@ -2329,6 +2369,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
     // set layout
     pMainLayout->addWidget(mpModelStatusBar);
+    pMainLayout->addWidget(mpUndoView);
     pMainLayout->addWidget(mpDiagramGraphicsView, 1);
   }
   pMainLayout->addWidget(mpEditor, 1);
@@ -2680,13 +2721,13 @@ void ModelWidget::getModelComponents(QString className, StringHandler::ViewType 
       if (viewType == StringHandler::Icon || viewType == StringHandler::IconDiagram) {
         if (type == StringHandler::Connector && !pComponentInfo->getProtected()) {
           // add the component to the icon view.
-          mpIconGraphicsView->addComponentToView(pComponentInfo->getName(), pComponentInfo->getClassName(), transformation,
-                                                 QPointF(0.0, 0.0), new ComponentInfo(pComponentInfo), type, false, true, inheritedCycle, className);
+          mpIconGraphicsView->addComponentToView(pComponentInfo->getName(), pComponentInfo->getClassName(), transformation, QPointF(0.0, 0.0),
+                                                 new ComponentInfo(pComponentInfo), type, false, true, inheritedCycle, className, "", true);
         }
       }
       if (viewType == StringHandler::Diagram || viewType == StringHandler::IconDiagram) {
-        mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pComponentInfo->getClassName(), transformation,
-                                                  QPointF(0.0, 0.0), pComponentInfo, type, false, true, inheritedCycle, className);
+        mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pComponentInfo->getClassName(), transformation, QPointF(0.0, 0.0),
+                                                  pComponentInfo, type, false, true, inheritedCycle, className, "", true);
       }
     }
     i++;
@@ -2703,6 +2744,7 @@ void ModelWidget::loadModelDiagramView()
     getModelDiagramShapes(getLibraryTreeItem()->getNameStructure());
     getModelComponents(getLibraryTreeItem()->getNameStructure(), StringHandler::Diagram);
     getModelConnections(getLibraryTreeItem()->getNameStructure());
+    mpUndoStack->clear();
     mloadModelDiagramView = true;
   }
 }
@@ -2962,6 +3004,24 @@ void ModelWidget::updateModelicaText()
 }
 
 /*!
+ * \brief ModelWidget::updateUndoRedoActions
+ * Enables/disables the Undo/Redo actions based on the stack situation.
+ */
+void ModelWidget::updateUndoRedoActions()
+{
+  if (mpIconGraphicsView && mpIconGraphicsView->isVisible()) {
+    mpModelWidgetContainer->getMainWindow()->getUndoAction()->setEnabled(mpUndoStack->canUndo());
+    mpModelWidgetContainer->getMainWindow()->getRedoAction()->setEnabled(mpUndoStack->canRedo());
+  } else if (mpDiagramGraphicsView && mpDiagramGraphicsView->isVisible()) {
+    mpModelWidgetContainer->getMainWindow()->getUndoAction()->setEnabled(mpUndoStack->canUndo());
+    mpModelWidgetContainer->getMainWindow()->getRedoAction()->setEnabled(mpUndoStack->canRedo());
+  } else {
+    mpModelWidgetContainer->getMainWindow()->getUndoAction()->setEnabled(false);
+    mpModelWidgetContainer->getMainWindow()->getRedoAction()->setEnabled(false);
+  }
+}
+
+/*!
  * \brief ModelWidget::showIconView
  * \param checked
  * Slot activated when mpIconViewToolButton toggled SIGNAL is raised. Shows the icon view.
@@ -2988,6 +3048,7 @@ void ModelWidget::showIconView(bool checked)
   mpEditor->hide();
   mpIconGraphicsView->show();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Icon);
+  updateUndoRedoActions();
 }
 
 /*!
@@ -3017,6 +3078,7 @@ void ModelWidget::showDiagramView(bool checked)
   mpEditor->hide();
   mpDiagramGraphicsView->show();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Diagram);
+  updateUndoRedoActions();
 }
 
 /*!
@@ -3039,6 +3101,7 @@ void ModelWidget::showTextView(bool checked)
   mpEditor->show();
   mpEditor->getPlainTextEdit()->setFocus();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::ModelicaText);
+  updateUndoRedoActions();
 }
 
 void ModelWidget::makeFileWritAble()
@@ -3099,6 +3162,26 @@ bool ModelWidget::TLMEditorTextChanged()
   /* get the model components and connectors */
   refresh();
   return true;
+}
+
+/*!
+ * \brief ModelWidget::handleCanUndoChanged
+ * Enables/disables the Edit menu Undo action depending on the stack situation.
+ * \param canUndo
+ */
+void ModelWidget::handleCanUndoChanged(bool canUndo)
+{
+  mpModelWidgetContainer->getMainWindow()->getUndoAction()->setEnabled(canUndo);
+}
+
+/*!
+ * \brief ModelWidget::handleCanRedoChanged
+ * Enables/disables the Edit menu Redo action depending on the stack situation.
+ * \param canRedo
+ */
+void ModelWidget::handleCanRedoChanged(bool canRedo)
+{
+  mpModelWidgetContainer->getMainWindow()->getRedoAction()->setEnabled(canRedo);
 }
 
 void ModelWidget::closeEvent(QCloseEvent *event)
@@ -3448,7 +3531,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   //  getMainWindow()->getSaveAsAction()->setEnabled(enabled);
   //  getMainWindow()->getSaveAllAction()->setEnabled(enabled);
   getMainWindow()->getSaveTotalModelAction()->setEnabled(enabled && modelica);
-  getMainWindow()->getShowGridLinesAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getShowGridLinesAction()->setEnabled(enabled);
   getMainWindow()->getResetZoomAction()->setEnabled(enabled && modelica);
   getMainWindow()->getZoomInAction()->setEnabled(enabled && modelica);
   getMainWindow()->getZoomOutAction()->setEnabled(enabled && modelica);
@@ -3475,6 +3558,8 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
       getMainWindow()->getSaveAsAction()->setEnabled(false);
       getMainWindow()->getSaveAllAction()->setEnabled(false);
     }
+    // update the Undo/Redo actions
+    pModelWidget->updateUndoRedoActions();
   }
   /* enable/disable the find/replace and goto line actions depending on the text editor visibility. */
   if (pModelWidget && pModelWidget->getEditor()->isVisible()) {

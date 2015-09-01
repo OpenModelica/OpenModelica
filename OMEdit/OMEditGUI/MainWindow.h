@@ -125,6 +125,8 @@ public:
   QAction* getSaveTotalModelAction() {return mpSaveTotalModelAction;}
   QAction* getPrintModelAction();
   QAction* getSaveAllAction();
+  QAction* getUndoAction() {return mpUndoAction;}
+  QAction* getRedoAction() {return mpRedoAction;}
   QAction* getShowGridLinesAction();
   QAction* getResetZoomAction();
   QAction* getZoomInAction();
@@ -236,6 +238,8 @@ private:
   QAction *mpPrintModelAction;
   QAction *mpQuitAction;
   // Edit Menu
+  QAction *mpUndoAction;
+  QAction *mpRedoAction;
   QAction *mpCutAction;
   QAction *mpCopyAction;
   QAction *mpPasteAction;
@@ -336,6 +340,8 @@ public slots:
   void readErrorFile(qint64 bytes);
   void openRecentFile();
   void clearRecentFilesList();
+  void undo();
+  void redo();
   void setShowGridLines(bool On);
   void resetZoom();
   void zoomIn();

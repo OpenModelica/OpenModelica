@@ -1,6 +1,8 @@
 <RCC>
     <qresource prefix="/">
         <file>Resources/icons/console.svg</file>
+        <file>Resources/icons/undo.svg</file>
+        <file>Resources/icons/redo.svg</file>
         <file>Resources/icons/copy.svg</file>
         <file>Resources/icons/cut.svg</file>
         <file>Resources/icons/delete.svg</file>

@@ -111,6 +111,7 @@ public:
   Component* getRootParentComponent();
   ComponentType getComponentType() {return mComponentType;}
   Transformation* getTransformation();
+  OriginItem* getOriginItem() {return mpOriginItem;}
   QAction* getParametersAction();
   QAction* getAttributesAction();
   QAction* getViewClassAction();

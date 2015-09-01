@@ -97,6 +97,7 @@ SOURCES += main.cpp \
   OMC/OMCProxy.cpp \
   Modeling/MessagesWidget.cpp \
   Modeling/LibraryTreeWidget.cpp \
+  Modeling/Commands.cpp \
   Modeling/ModelWidgetContainer.cpp \
   Modeling/ModelicaClassDialog.cpp \
   Options/OptionsDialog.cpp \
@@ -160,6 +161,7 @@ HEADERS  += Util/Helper.h \
   OMC/OMCProxy.h \
   Modeling/MessagesWidget.h \
   Modeling/LibraryTreeWidget.h \
+  Modeling/Commands.h \
   Modeling/ModelWidgetContainer.h \
   Modeling/ModelicaClassDialog.h \
   Options/OptionsDialog.h \

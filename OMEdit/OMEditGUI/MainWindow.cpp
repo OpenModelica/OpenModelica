@@ -1449,16 +1449,42 @@ void MainWindow::clearRecentFilesList()
   mpWelcomePageWidget->addRecentFilesListItems();
 }
 
+/*!
+ * \brief MainWindow::undo
+ * Calls the undo command for the selected view.
+ */
+void MainWindow::undo()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget &&
+      (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) ||
+      (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible())) {
+    pModelWidget->getUndoStack()->undo();
+  }
+}
+
+/*!
+ * \brief MainWindow::redo
+ * Calls the redo command for the selected view.
+ */
+void MainWindow::redo()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget &&
+      (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) ||
+      (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible())) {
+    pModelWidget->getUndoStack()->redo();
+  }
+}
+
 void MainWindow::setShowGridLines(bool showLines)
 {
   mpModelWidgetContainer->setShowGridLines(showLines);
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget)
-  {
-    if (pModelWidget->getDiagramGraphicsView()->isVisible())
-      pModelWidget->getDiagramGraphicsView()->scene()->update();
-    else if (pModelWidget->getIconGraphicsView()->isVisible())
-      pModelWidget->getIconGraphicsView()->scene()->update();
+  if (pModelWidget && pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
+    pModelWidget->getIconGraphicsView()->scene()->update();
+  } else if (pModelWidget && pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
+    pModelWidget->getDiagramGraphicsView()->scene()->update();
   }
 }
 
@@ -2365,6 +2391,16 @@ void MainWindow::createActions()
   mpQuitAction->setShortcut(QKeySequence("Ctrl+q"));
   connect(mpQuitAction, SIGNAL(triggered()), SLOT(close()));
   // Edit Menu
+  // undo action
+  mpUndoAction = new QAction(QIcon(":/Resources/icons/undo.svg"), tr("Undo"), this);
+  mpUndoAction->setShortcut(QKeySequence::Undo);
+  mpUndoAction->setEnabled(false);
+  connect(mpUndoAction, SIGNAL(triggered()), SLOT(undo()));
+  // redo action
+  mpRedoAction = new QAction(QIcon(":/Resources/icons/redo.svg"), tr("Redo"), this);
+  mpRedoAction->setShortcut(QKeySequence::Redo);
+  mpRedoAction->setEnabled(false);
+  connect(mpRedoAction, SIGNAL(triggered()), SLOT(redo()));
   // cut action
   mpCutAction = new QAction(QIcon(":/Resources/icons/cut.svg"), tr("Cut"), this);
   mpCutAction->setShortcut(QKeySequence("Ctrl+x"));
@@ -2694,6 +2730,9 @@ void MainWindow::createMenus()
   QMenu *pEditMenu = new QMenu(menuBar());
   pEditMenu->setTitle(tr("&Edit"));
   // add actions to Edit menu
+  pEditMenu->addAction(mpUndoAction);
+  pEditMenu->addAction(mpRedoAction);
+  pEditMenu->addSeparator();
   pEditMenu->addAction(mpCutAction);
   pEditMenu->addAction(mpCopyAction);
   pEditMenu->addAction(mpPasteAction);
@@ -2765,7 +2804,7 @@ void MainWindow::createMenus()
   menuBar()->addAction(pFMIMenu->menuAction());
   // Export menu
   QMenu *pExportMenu = new QMenu(menuBar());
-  pExportMenu->setTitle(tr("&Export"));
+  pExportMenu->setTitle(tr("E&xport"));
   // add actions to Export menu
   pExportMenu->addAction(mpExportXMLAction);
   pExportMenu->addAction(mpExportFigaroAction);

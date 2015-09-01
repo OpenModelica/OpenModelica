@@ -185,9 +185,12 @@ public:
   bool addComponent(QString className, QString fileName, QPointF position);
   void addComponentToView(QString name, QString className, QString transformationString, QPointF point, ComponentInfo *pComponentInfo,
                           StringHandler::ModelicaClasses type, bool addObject = true, bool openingClass = false, bool inheritedClass = false,
-                          QString inheritedClassName = QString(), QString fileName = QString());
+                          QString inheritedClassName = QString(), QString fileName = QString(), bool addOnlyToCurrentView = false);
+  void addComponentToList(Component *pComponent);
   void addComponentObject(Component *pComponent);
+  void deleteComponent(Component *pComponent);
   void deleteComponentObject(Component *pComponent);
+  void deleteComponentFromList(Component *pComponent);
   Component* getComponentObject(QString componentName);
   QString getUniqueComponentName(QString componentName, int number = 1);
   bool checkComponentName(QString componentName);
@@ -220,6 +223,7 @@ private:
   void createActions();
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
 signals:
+  void mouseDelete();
   void keyPressDelete();
   void keyPressRotateClockwise();
   void keyPressRotateAntiClockwise();
@@ -247,6 +251,7 @@ public slots:
   void selectAll();
   void addClassAnnotation(bool updateModelicaText = true);
   void showGraphicsViewProperties();
+  void deleteComponents();
 protected:
   virtual void dragMoveEvent(QDragMoveEvent *event);
   virtual void dropEvent(QDropEvent *event);
@@ -313,6 +318,7 @@ public:
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   GraphicsView* getDiagramGraphicsView() {return mpDiagramGraphicsView;}
   GraphicsView* getIconGraphicsView() {return mpIconGraphicsView;}
+  QUndoStack* getUndoStack() {return mpUndoStack;}
   BaseEditor* getEditor() {return mpEditor;}
   QToolButton* getIconViewToolButton() {return mpIconViewToolButton;}
   QToolButton* getDiagramViewToolButton() {return mpDiagramViewToolButton;}
@@ -335,6 +341,7 @@ public:
   bool validateText();
   bool modelicaEditorTextChanged();
   void updateModelicaText();
+  void updateUndoRedoActions();
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   LibraryTreeItem *mpLibraryTreeItem;
@@ -353,6 +360,8 @@ private:
   GraphicsScene *mpDiagramGraphicsScene;
   GraphicsView *mpIconGraphicsView;
   GraphicsScene *mpIconGraphicsScene;
+  QUndoStack *mpUndoStack;
+  QUndoView *mpUndoView;
   BaseEditor *mpEditor;
   ModelicaTextHighlighter *mpModelicaTextHighlighter;
   TLMHighlighter *mpTLMHighlighter;
@@ -366,6 +375,8 @@ public slots:
   void makeFileWritAble();
   void showDocumentationView();
   bool TLMEditorTextChanged();
+  void handleCanUndoChanged(bool canUndo);
+  void handleCanRedoChanged(bool canRedo);
 protected:
   virtual void closeEvent(QCloseEvent *event);
 };

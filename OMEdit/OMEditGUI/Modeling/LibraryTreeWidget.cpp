@@ -118,7 +118,21 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   }
   // do the layout
   doLayout(opt, &checkRect, &decorationRect, &displayRect, false);
-  // draw the item
+  /* We check if item belongs to QTreeView and QTreeView model is LibraryTreeProxyModel.
+   * If LibraryTreeItem is unsaved then draw its background as Qt::darkRed.
+   */
+  if (parent() && qobject_cast<QTreeView*>(parent())) {
+    QTreeView *pTreeView = qobject_cast<QTreeView*>(parent());
+    LibraryTreeProxyModel *pLibraryTreeProxyModel = qobject_cast<LibraryTreeProxyModel*>(pTreeView->model());
+    if (pLibraryTreeProxyModel) {
+      QModelIndex sourceIndex = pLibraryTreeProxyModel->mapToSource(index);
+      LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(sourceIndex.internalPointer());
+      if (!pLibraryTreeItem->isSaved()) {
+        opt.palette.setBrush(QPalette::Highlight, Qt::darkRed);
+      }
+    }
+  }
+  // draw background
   drawBackground(painter, opt, index);
   // hover
   /* Ticket #2245. Do not draw hover effect for items. Doesn't seem to work on few versions of Linux. */
@@ -223,10 +237,6 @@ QSize ItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelInd
     initTextDocument(&textDocument, option.font, width);  /* we can't use option.rect.width() here since it will be empty. */
     textDocument.setHtml(text);
     size.rheight() = qMax(textDocument.size().height(), (qreal)24.0);
-  } else if (parent() && qobject_cast<LibraryTreeView*>(parent())) {
-    size.rheight() = size.height() + 2;
-  } else {
-    size.rheight() = qMax(size.height(), 24);
   }
   return size;
 }
@@ -503,6 +513,8 @@ QVariant LibraryTreeItem::data(int column, int role) const
           return mPixmap.isNull() ? mIcon : mPixmap;
         case Qt::ToolTipRole:
           return mToolTip;
+        case Qt::ForegroundRole:
+          return mIsSaved ? QVariant() : Qt::darkRed;
         default:
           return QVariant();
       }
@@ -756,6 +768,7 @@ QVariant LibraryTreeModel::data(const QModelIndex &index, int role) const
   if (!index.isValid()) {
     return QVariant();
   }
+
 
   LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(index.internalPointer());
   return pLibraryTreeItem->data(index.column(), role);
@@ -1653,9 +1666,14 @@ void LibraryTreeView::libraryTreeItemExpanded(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryTreeView::libraryTreeItemExpanded(QModelIndex index)
 {
-  index = mpLibraryWidget->getLibraryTreeProxyModel()->mapToSource(index);
-  LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(index.internalPointer());
+  // since expanded SIGNAL is triggered when tree has expanded the index so we must collapse it first and then load data and expand it back.
+  collapse(index);
+  QModelIndex sourceIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapToSource(index);
+  LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(sourceIndex.internalPointer());
   libraryTreeItemExpanded(pLibraryTreeItem);
+  bool state = blockSignals(true);
+  expand(index);
+  blockSignals(state);
 }
 
 /*!
