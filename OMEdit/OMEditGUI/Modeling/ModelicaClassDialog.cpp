@@ -59,7 +59,7 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
   // create the tree
   mpLibraryTreeView = new QTreeView;
   mpLibraryTreeView->setObjectName("TreeWithBranches");
-  mpLibraryTreeView->setItemDelegate(new ItemDelegate(this));
+  mpLibraryTreeView->setItemDelegate(new ItemDelegate(mpLibraryTreeView));
   mpLibraryTreeView->setTextElideMode(Qt::ElideMiddle);
   mpLibraryTreeView->setIndentation(Helper::treeIndentation);
   mpLibraryTreeView->setDragEnabled(true);

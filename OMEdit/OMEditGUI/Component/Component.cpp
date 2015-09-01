@@ -83,9 +83,6 @@ Component::Component(QString annotation, QString name, QString className, QStrin
   mpOriginItem = new OriginItem();
   createResizerItems();
   setToolTip(QString("<b>").append(mClassName).append("</b> ").append(mName));
-  // if everything is fine with icon then add it to scene
-  mpGraphicsView->scene()->addItem(this);
-  mpGraphicsView->scene()->addItem(mpOriginItem);
   connect(this, SIGNAL(componentTransformHasChanged()), SLOT(updatePlacementAnnotation()));
   connect(this, SIGNAL(componentTransformHasChanged()), SLOT(updateOriginItem()));
 }
@@ -1043,20 +1040,14 @@ void Component::finishResizeComponent()
   }
 }
 
+/*!
+ * \brief Component::deleteMe
+ * Deletes the Component from the current view.
+ */
 void Component::deleteMe()
 {
   // delete the component from model
-  mpGraphicsView->deleteComponentObject(this);
-  deleteLater();
-  delete mpOriginItem;
-  // make the model modified
-  mpGraphicsView->getModelWidget()->updateModelicaText();
-  mpGraphicsView->getModelWidget()->setModelModified();
-  /* When something is deleted from the icon layer then update the LibraryTreeItem in the Library Browser */
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-    MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-//    pMainWindow->getLibraryWidget()->loadLibraryComponent(mpGraphicsView->getModelWidget()->getLibraryTreeItem());
-  }
+  mpGraphicsView->deleteComponent(this);
 }
 
 void Component::duplicate()
@@ -1529,7 +1520,7 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
       setCursor(Qt::SizeAllCursor);
       // Only allow manipulations on component if the class is not a system library class OR component is not an inherited component.
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedComponent()) {
-        connect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), this, SLOT(deleteMe()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteMe()), Qt::UniqueConnection);
         connect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()), Qt::UniqueConnection);
         connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
         connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
@@ -1567,7 +1558,7 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
       unsetCursor();
       /* Only allow manipulations on component if the class is not a system library class OR component is not an inherited component. */
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedComponent()) {
-        disconnect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), this, SLOT(deleteMe()));
+        disconnect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteMe()));
         disconnect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()));
         disconnect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwise()));
         disconnect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SIGNAL(componentTransformHasChanged()));
