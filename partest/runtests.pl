@@ -356,8 +356,9 @@ foreach my $thr (threads->list()) {
 print color 'reset';
 print "\n";
 
+chomp(my $ext = `(git symbolic-ref --short HEAD 2>/dev/null) || (echo 'log')`);
 if($withtxt) {
-  unlink("$testsuite_root/failed.log");
+  unlink("$testsuite_root/failed.".$ext);
 }
 
 if(@failed_tests) {
@@ -368,14 +369,19 @@ if(@failed_tests) {
   }
 
   if($withtxt) {
-    open my $TXTOUT, '>', "$testsuite_root/failed.log" or die "Couldn't open failed.log: $!";
+    open my $TXTOUT, '>', "$testsuite_root/failed.".$ext or die "Couldn't open failed.".$ext.": $!";
     binmode $TXTOUT, ":encoding(UTF-8)";
+
+    print $TXTOUT localtime(time)."\n\n";
 
     foreach my $failed_test (@sorted) {
       print $TXTOUT $failed_test . "\n";
     }
 
+    print $TXTOUT "\n$tests_failed of $test_count failed\n";
     close $TXTOUT;
+
+    print "\n[Statistics have been stored in failed.".$ext."]\n";
   }
 }
 
