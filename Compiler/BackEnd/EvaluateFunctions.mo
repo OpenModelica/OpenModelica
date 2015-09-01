@@ -1646,7 +1646,6 @@ algorithm
       DAE.Type typ;
       list<BackendDAE.Equation> addEqs;
       list<DAE.ComponentRef> scalars, varScalars,constScalars, outputs, initOutputs;
-      list<list<DAE.Exp>> lhsExpLst;
       list<DAE.Statement> stmts1, stmts2, stmtsIf, rest, addStmts, stmtsNew, allStmts, initStmts, tplStmts;
       list<list<DAE.Statement>> stmtsLst;
       list<DAE.Exp> expLst,tplExpsLHS,tplExpsRHS,lhsExps,lhsExpsInit,rhsExps;
@@ -1916,16 +1915,7 @@ algorithm
 
         // lets see if we can evaluate it
         (stmts1,funcTree,repl,idx) = evaluateForStatement(listHead(algsIn), funcTree,replIn,idx);
-/*
-        // at least remove the replacements for the lhs so we dont declare something as constant which isnt
-        lhsExps = List.fold(stmts1,getStatementLHS,{});
-        lhsExps = List.unique(lhsExps);
-        lhsExpLst = List.map(lhsExps,Expression.getComplexContents); //consider arrays etc.
-        lhsExps = listAppend(List.flatten(lhsExpLst),lhsExps);
-        lhsExps = List.filterOnTrue(lhsExps,Expression.isCref); //remove e.g. ASUBs and consider only the scalar subs
-        outputs = List.map(lhsExps,Expression.expCref);
-        repl = if true then BackendVarTransform.removeReplacements(replIn,outputs,NONE()) else replIn;
-*/
+
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
           print("evaluated for-statements to:\n"+stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+"\n");
         end if;
@@ -2033,10 +2023,13 @@ protected
   DAE.Ident iter;
   DAE.Exp range;
   BackendVarTransform.VariableReplacements repl;
+  list<DAE.ComponentRef> outputs;
+  list<DAE.Exp> lhsExps;
+  list<list<DAE.Exp>> lhsExpLst;
   list<DAE.Statement> stmts,stmtsIn;
 algorithm
+  DAE.STMT_FOR(iter=iter, range=range, statementLst=stmtsIn) :=  stmtIn;
   try
-    DAE.STMT_FOR(iter=iter, range=range, statementLst=stmtsIn) :=  stmtIn;
     (range,_) := BackendVarTransform.replaceExp(range,replIn,NONE());
     (start,stop,step) := getRangeBounds(range);
     true := intEq(step,1);
@@ -2050,8 +2043,15 @@ algorithm
     idxOut := idxIn;
     stmtsOut := stmts;
   else
+    // at least remove the replacements for the lhs so we dont declare something as constant which isnt
+    lhsExps := List.fold(stmtsIn,getStatementLHS,{});
+    lhsExps := List.unique(lhsExps);
+    lhsExpLst := List.map(lhsExps,Expression.getComplexContents); //consider arrays etc.
+    lhsExps := listAppend(List.flatten(lhsExpLst),lhsExps);
+    lhsExps := List.filterOnTrue(lhsExps,Expression.isCref); //remove e.g. ASUBs and consider only the scalar subs
+    outputs := List.map(lhsExps,Expression.expCref);
+    replOut := if true then BackendVarTransform.removeReplacements(replIn,outputs,NONE()) else replIn;
     stmtsOut := {stmtIn};
-    replOut := replIn;
     funcTreeOut := funcTreeIn;
     idxOut := idxIn;
   end try;
@@ -2072,7 +2072,7 @@ algorithm
     then (i1,i2,i3);
   else
   equation
-    print("getRangeBounds failed!\n");
+    //print("getRangeBounds failed!"+ExpressionDump.printExpStr(range)+"\n");
     then fail();
   end matchcontinue;
 end getRangeBounds;
