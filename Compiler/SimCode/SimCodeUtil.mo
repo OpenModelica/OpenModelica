@@ -2817,6 +2817,7 @@ algorithm
       (beqs, sources) = BackendDAEUtil.getEqnSysRhs(inEquationArray, inVars, SOME(inFuncs));
       beqs = listReverse(beqs);
       simJac = List.map1(jac, jacToSimjac, inVars);
+      //simJac = simJacCSRToCSC(simJac);
     then ({SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(iuniqueEqIndex, mixedEvent, simVars, beqs, simJac, {}, NONE(), sources, 0), NONE())}, iuniqueEqIndex+1, itempvars);
 
     // Time varying nonlinear jacobian. Non-linear system of equations.
@@ -4388,6 +4389,40 @@ algorithm
         ((row - 1, col - 1, SimCode.SES_RESIDUAL(0, e, source)));
   end match;
 end jacToSimjac;
+
+protected function simJacCSRToCSC"transforms the simjac from compact spars row matrix format to compact sparse column matrix"
+  input list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJacIn;
+  output list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJacOut;
+protected
+  Integer row,col,i;
+  SimCode.SimEqSystem simEqSys;
+  tuple<Integer,Integer,SimCode.SimEqSystem> entry;
+  list<tuple<Integer,Integer,SimCode.SimEqSystem>> simJac={};
+algorithm
+  // swap row and col indexes
+  for entry in simJacIn loop
+    (row,col,simEqSys) := entry;
+    simJac := (col,row,simEqSys)::simJac;
+  end for;
+  // order column indexes
+  simJacOut := List.sort(simJac,simJacCSRToCSC1);
+end simJacCSRToCSC;
+
+protected function simJacCSRToCSC1
+  input tuple<Integer,Integer,SimCode.SimEqSystem> e1;
+  input tuple<Integer,Integer,SimCode.SimEqSystem> e2;
+  output Boolean isGt;
+protected
+  Integer i11,i12,i21,i22;
+algorithm
+  (i11,i12,_) := e1;
+  (i21,i22,_) := e2;
+  if intNe(i11,i21) then
+    isGt := intGt(i11,i21);
+  else
+    isGt := intGt(i12,i22);
+  end if;
+end simJacCSRToCSC1;
 
 protected function createSingleWhenEqnCode
   input BackendDAE.Equation inEquation;
