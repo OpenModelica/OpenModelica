@@ -116,7 +116,7 @@ void SimManager::initialize()
     catch (std::exception& ex)
     {
         //ex << error_id(SIMMANAGER);
-    	throw ModelicaSimulationError(SIMMANAGER,"Could initialize system.");
+    	throw ModelicaSimulationError(SIMMANAGER,"Could not initialize system.",string(ex.what()),false);
     }
 
     if (_timeevent_system)
