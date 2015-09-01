@@ -2192,16 +2192,30 @@ function cevalCallFunctionEvaluateOrGenerate
   output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outSymTab;
+protected
+  Integer numCheckpoints;
 algorithm
-  try
-    (outCache,outValue,outSymTab) := cevalCallFunctionEvaluateOrGenerate2(inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg,bIsCompleteFunction);
+  // Only add a stack overflow checkpoint for the top-most cevalCallFunctionEvaluateOrGenerate
+  if isNone(getGlobalRoot(Global.stackoverFlowIndex)) then
+    setGlobalRoot(Global.stackoverFlowIndex, SOME(1));
+    numCheckpoints:=ErrorExt.getNumCheckpoints();
+    try
+      StackOverflow.clearStacktraceMessages();
+      (outCache,outValue,outSymTab) := cevalCallFunctionEvaluateOrGenerate2(inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg,bIsCompleteFunction);
+    else
+      setGlobalRoot(Global.stackoverFlowIndex, NONE());
+      ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
+      Error.addInternalError("Stack overflow when evaluating function call: "+ExpressionDump.printExpStr(inExp)+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), match inMsg local SourceInfo info; case Absyn.MSG(info) then info; else sourceInfo(); end match);
+      /* Do not fail or we can loop too much */
+      StackOverflow.clearStacktraceMessages();
+      outCache := inCache;
+      outSymTab := inSymTab;
+      outValue := Values.META_FAIL();
+    end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
+    setGlobalRoot(Global.stackoverFlowIndex, NONE());
   else
-    Error.addInternalError("Stack overflow when evaluating function call: "+ExpressionDump.printExpStr(inExp)+"...\n"+stringDelimitList(StackOverflow.getStacktraceMessages(), "\n"), match inMsg local SourceInfo info; case Absyn.MSG(info) then info; else sourceInfo(); end match);
-    /* Do not fail or we can loop too much */
-    outCache := inCache;
-    outSymTab := inSymTab;
-    outValue := Values.META_FAIL();
-  end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
+    (outCache,outValue,outSymTab) := cevalCallFunctionEvaluateOrGenerate2(inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg,bIsCompleteFunction);
+  end if;
 end cevalCallFunctionEvaluateOrGenerate;
 
 function cevalCallFunctionEvaluateOrGenerate2

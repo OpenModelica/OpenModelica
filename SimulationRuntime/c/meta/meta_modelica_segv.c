@@ -178,6 +178,7 @@ static void* getStackBase() {
 
 void init_metamodelica_segv_handler()
 {
+#if 0
   char *stack = (char*)malloc(SIGSTKSZ);
   stack_t ss = {
       .ss_size = SIGSTKSZ,
@@ -191,6 +192,7 @@ void init_metamodelica_segv_handler()
   sigfillset(&sa.sa_mask);
   sigaction(SIGSEGV, &sa, &default_segv_action);
   sigfillset(&segvset);
+#endif
 }
 
 void mmc_init_stackoverflow(threadData_t *threadData)

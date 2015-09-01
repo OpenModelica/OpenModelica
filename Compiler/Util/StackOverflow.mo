@@ -33,6 +33,7 @@ encapsulated package StackOverflow
 
 protected
 
+import Config;
 import System;
 
 function unmangle
@@ -75,6 +76,10 @@ protected
   String prev = "";
   Integer n = 1, prevN = 1;
 algorithm
+  if Config.getRunningTestsuite() then
+    symbols := {"[bt] [Symbols are not generated when running the test suite]"};
+    return;
+  end if;
   for symbol in list(stripAddresses(s) for s in getStacktraceMessages()) loop
     if prev == "" then
 

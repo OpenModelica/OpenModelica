@@ -70,6 +70,10 @@ encapsulated package Error
 public import Util;
 public import Flags;
 
+protected
+
+import Config;
+
 public
 uniontype Severity "severity of message"
   record INTERNAL "Error because of a failure in the tool" end INTERNAL;
@@ -1279,8 +1283,15 @@ public function addInternalError "
   Used to make an internal error"
   input String message;
   input SourceInfo info;
+protected
+  String filename;
 algorithm
-  addSourceMessage(INTERNAL_ERROR, {message}, info);
+  if Config.getRunningTestsuite() then
+    SOURCEINFO(fileName=filename):=info;
+    addSourceMessage(INTERNAL_ERROR, {message}, SOURCEINFO(filename,false,0,0,0,0,0));
+  else
+    addSourceMessage(INTERNAL_ERROR, {message}, info);
+  end if;
 end addInternalError;
 
 annotation(__OpenModelica_Interface="util");
