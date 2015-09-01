@@ -9,7 +9,7 @@
   - -help                                                             | Produce the help message                                                                                 |
   -R \<PATH\>                                                         | Path to the cpp runtime libraries (required)                                                             |
   -M \<PATH\>                                                         | Path to the modelica system library (required)                                                           |
-  -r \<NAME\>                                                         | Name of the results file (required)                                                                      |
+  -F \<NAME\>                                                         | Name of the results file (required)                                                                      |
   -S \<VALUE\>                                                        | Simulation start time (default: 0.0)                                                                     |
   -E \<VALUE\>                                                        | Simulation stop time (default: 1.0)                                                                      |
   -H \<VALUE\>                                                        | Simulation step size (default: 0.0)                                                                      |
@@ -21,7 +21,6 @@
   -V \<VALUE\>                                                        | This flag can be added multiple times. Pass a key=value pair as argument. See the description below.     |
   -A \<VALUE\>                                                        | Timeout in seconds for the simulation (default: 360)                                                     |
   -O \[\"all\"\|\"step\"\|\"none\"\]                                  | The time points that should be written to the result file (default: all)                                 |
-  --emit_protected                                                    | Unused variable                                                                                          |
   --nls-continue                                                      | The non linear solver will continue if it does not reach the given accuracy                              |
 
   There are several settings available to control the behavior of the logger. You can specify multiple key-value-pairs to set the log-output for several log-categories. All key-value-pairs have the form LOG_CATEGORY=LOG_LEVEL. The following categories are available:
@@ -39,4 +38,6 @@
    - \b warning Contains messages that can influence the simulation performance or simulation results
    - \b info Just some information, e.g. the number of steps the time integration algorithm took
    - \b debug Output related to debug information like function invocations etc.
+
+  To set a specific level for all categories, use all=LOG_LEVEL.
 */
