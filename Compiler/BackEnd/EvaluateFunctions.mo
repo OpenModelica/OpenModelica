@@ -1913,6 +1913,10 @@ algorithm
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
           print("For-statement:\n"+DAEDump.ppStatementStr(alg));
         end if;
+
+        // lets see if we can evaluate it
+        (stmts1,funcTree,repl,idx) = evaluateForStatement(listHead(algsIn), funcTree,replIn,idx);
+/*
         // at least remove the replacements for the lhs so we dont declare something as constant which isnt
         lhsExps = List.fold(stmts1,getStatementLHS,{});
         lhsExps = List.unique(lhsExps);
@@ -1921,13 +1925,11 @@ algorithm
         lhsExps = List.filterOnTrue(lhsExps,Expression.isCref); //remove e.g. ASUBs and consider only the scalar subs
         outputs = List.map(lhsExps,Expression.expCref);
         repl = if true then BackendVarTransform.removeReplacements(replIn,outputs,NONE()) else replIn;
-
-        // lets see if we can evaluate it
-
+*/
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("evaluated For-statement to:\n"+DAEDump.ppStatementStr(alg));
+          print("evaluated for-statements to:\n"+stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+"\n");
         end if;
-        stmts2 = alg::lstIn;
+        stmts2 = listAppend(listReverse(stmts1),lstIn);
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts2);
       then (rest,(funcTree,repl,idx));
 
@@ -2016,6 +2018,65 @@ algorithm
         fail();
   end matchcontinue;
 end evaluateFunctions_updateStatement;
+
+protected function evaluateForStatement"evaluates a for statement. neste for loops wont work"
+  input DAE.Statement stmtIn;
+  input DAE.FunctionTree funcTreeIn;
+  input BackendVarTransform.VariableReplacements replIn;
+  input Integer idxIn;
+  output list<DAE.Statement> stmtsOut;
+  output DAE.FunctionTree funcTreeOut;
+  output BackendVarTransform.VariableReplacements replOut;
+  output Integer idxOut;
+protected
+  Integer i, start, stop ,step;
+  DAE.Ident iter;
+  DAE.Exp range;
+  BackendVarTransform.VariableReplacements repl;
+  list<DAE.Statement> stmts,stmtsIn;
+algorithm
+  try
+    DAE.STMT_FOR(iter=iter, range=range, statementLst=stmtsIn) :=  stmtIn;
+    (range,_) := BackendVarTransform.replaceExp(range,replIn,NONE());
+    (start,stop,step) := getRangeBounds(range);
+    true := intEq(step,1);
+    repl := replIn;
+    for i in List.intRange2(start,stop) loop
+      repl := BackendVarTransform.addReplacement(repl, ComponentReference.makeCrefIdent(iter,DAE.T_INTEGER_DEFAULT,{}),DAE.ICONST(i),NONE());
+      (stmts,((_,repl,_))) := evaluateFunctions_updateStatement(stmtsIn,(funcTreeIn,repl,i),{});
+    end for;
+    replOut :=  BackendVarTransform.removeReplacement(repl,ComponentReference.makeCrefIdent(iter,DAE.T_INTEGER_DEFAULT,{}),NONE());
+    funcTreeOut := funcTreeIn;
+    idxOut := idxIn;
+    stmtsOut := stmts;
+  else
+    stmtsOut := {stmtIn};
+    replOut := replIn;
+    funcTreeOut := funcTreeIn;
+    idxOut := idxIn;
+  end try;
+end evaluateForStatement;
+
+protected function getRangeBounds
+  input DAE.Exp range;
+  output Integer start;
+  output Integer stop;
+  output Integer step;
+algorithm
+  (start, stop, step) := matchcontinue(range)
+    local
+      Integer i1,i2,i3;
+  case(DAE.RANGE(start= DAE.ICONST(i1),step=NONE(),stop=DAE.ICONST(i2)))
+    then (i1,i2,1);
+  case(DAE.RANGE(start= DAE.ICONST(i1),step=SOME(DAE.ICONST(i3)),stop=DAE.ICONST(i2)))
+    then (i1,i2,i3);
+  else
+  equation
+    print("getRangeBounds failed!\n");
+    then fail();
+  end matchcontinue;
+end getRangeBounds;
+
 
 protected function evaluateIfStatement "check if the cases are constant and if so evaluate them.
 author: Waurich TUD 2014-04"
