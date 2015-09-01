@@ -7,6 +7,9 @@
 #include <Core/Math/Functions.h>
 #include <stdexcept>
 
+#include <Core/Utils/numeric/bindings/ublas.hpp>
+#include <Core/Utils/numeric/utils.h>
+
 /* Matrixes using column major order (as in Fortran) */
 #ifndef set_matrix_elt
 #define set_matrix_elt(A,r,c,n_rows,value) A[r + n_rows * c] = value
@@ -147,4 +150,10 @@ int pivot(double *A, int n_rows, int n_cols, int *rowInd, int *colInd)
   /* all fine */
   return 0;
 }
+void getSparseMatrixData(sparsematrix_t& A, double** px)
+{
+  *px = bindings::begin_value(A);
+}
+
+
 /** @} */ // end of math

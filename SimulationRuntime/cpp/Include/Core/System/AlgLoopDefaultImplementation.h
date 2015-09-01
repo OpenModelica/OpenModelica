@@ -117,6 +117,7 @@ protected:
   IAlgLoop::CONSTRTYPE
   _constraintType;                ///< Typ der Bindungsgleichungen (analog, digital, binär)
   double * _AData;
+  double* _Ax;
 
 };
 /** @} */ // end of coreSystem

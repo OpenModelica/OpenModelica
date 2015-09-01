@@ -1676,6 +1676,7 @@ template simulationLibDir(String target, SimCode simCode ,Text& extraFuncs,Text&
  "Generates code for header file for simulation target."
 ::=
   match target
+    case "debugrt"
     case "msvc" then
       match simCode
         case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
@@ -1723,6 +1724,123 @@ template simulationMainFile(String target, SimCode simCode ,Text& extraFuncs,Tex
 ::=
 match target
 
+case "debugrt" then
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__), makefileParams = MAKEFILE_PARAMS(__), simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
+let modelname = identOfPath(modelInfo.name)
+let start     = settings.startTime
+let end       = settings.stopTime
+let stepsize  = settings.stepSize
+let intervals = settings.numberOfIntervals
+let tol       = settings.tolerance
+let solver    = settings.method
+let moLib     = makefileParams.compileDir
+let home      = makefileParams.omhome
+let &includeMeasure = buffer "" /*BUFD*/
+<<
+//Includes
+
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
+#include <stdio.h>
+#include <string>
+
+#include <Core/DataExchange/SimDouble.h>
+#include <Core/DataExchange/SimBoolean.h>
+#include <Core/SimController/ISimController.h>
+#include <Core/System/FactoryExport.h>
+
+#define PATH string
+
+#include <tchar.h>
+#include <fstream>
+
+int _tmain(int argc, const _TCHAR* argv[])
+{
+
+  /*
+  =============================================================================================================
+  ==                 Initialization of SimCore
+  =============================================================================================================
+  */
+
+
+
+
+    //nur testweise
+    std::map<std::string, std::string> opts;
+      opts["-s"] = "<%start%>";
+      opts["-e"] = "<%end%>";
+      opts["-f"] = "<%stepsize%>";
+      opts["-v"] = "<%intervals%>";
+      opts["-y"] = "<%tol%>";
+      opts["-i"] = "<%solver%>";
+      opts["-r"] = "<%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
+      opts["-m"] = "<%moLib%>";
+      opts["-R"] = "<%simulationResults(getRunningTestsuite(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
+
+
+
+
+
+  boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new OMCFactory());
+
+  //SimController to start simulation
+
+  std::pair<boost::shared_ptr<ISimController>, SimSettings> simulation = _factory->createSimulation(argc, argv, opts);
+  //Logger::initialize(simulation.second.logSettings);
+
+  //create Modelica system
+  boost::weak_ptr<ISimData> simData = simulation.first->LoadSimData("<%lastIdentOfPath(modelInfo.name)%>");
+  boost::weak_ptr<ISimVars> simVars = simulation.first->LoadSimVars("<%lastIdentOfPath(modelInfo.name)%>",<%numRealVars%>,<%numIntVars%>,<%numBoolVars%>,<%numPreVars%>,<%numStatevars(modelInfo)%>,<%numStateVarIndex(modelInfo)%>);
+  boost::weak_ptr<IMixedSystem> system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>  ","<%lastIdentOfPath(modelInfo.name)%>");
+  boost::shared_ptr<ISimData> data = simData.lock();
+  boost::shared_ptr<ISimData> simData_shared = simData.lock();
+
+  // Declare Input specify initial_values if needed!!!
+  <%defineInputVars(simCode)%>
+
+  // Declare Output
+  <%defineOutputVars(simCode)%>
+
+  LogSettings logsetting;
+    SimSettings settings = {"RTEuler","","kinsol",        0.0,      100.0,  0.005,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",0,OPT_NONE, logsetting};
+  //                       Solver,          nonlinearsolver starttime endtime stepsize   lower limit upper limit  tolerance
+
+
+  try
+  {
+    simulation.first->StartVxWorks(settings, "<%lastIdentOfPath(modelInfo.name)%>");
+  }
+  catch(ModelicaSimulationError& ex)
+  {
+    throw std::runtime_error("error initialize");
+  }
+    fstream f;
+    f.open("output_rt.csv", ios::out);
+
+
+  for( int i = 0; i < 1000; i++)
+  {
+    try
+    {
+      simulation.first->calcOneStep();
+      <%streamOutputVars(simCode)%>
+    }
+    catch(ModelicaSimulationError& ex)
+    {
+      f.close();
+      throw std::runtime_error("error inside step");
+    }
+  }
+  f.close();
+  return 0;
+}
+
+
+
+>>
+end match
 case "vxworks69" then
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__), makefileParams = MAKEFILE_PARAMS(__), simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
@@ -1751,8 +1869,6 @@ let &includeMeasure = buffer "" /*BUFD*/
 #include <Core/System/FactoryExport.h>
 
 #define PATH string
-
-#if defined(__vxworks)
 
 #include <wvLib.h>
 
@@ -2195,87 +2311,6 @@ printf("\n## onDestroy ######################################################");
 printf("\n###################################################################");
 return 0;
 }
-#else
-
-#include <tchar.h>
-
-int _tmain(int argc, const _TCHAR* argv[])
-{
-
-  /*
-  =============================================================================================================
-  ==                 Initialization of SimCore
-  =============================================================================================================
-  */
-
-
-
-
-    //nur testweise
-    std::map<std::string, std::string> opts;
-      opts["-s"] = "<%start%>";
-      opts["-e"] = "<%end%>";
-      opts["-f"] = "<%stepsize%>";
-      opts["-v"] = "<%intervals%>";
-      opts["-y"] = "<%tol%>";
-      opts["-i"] = "<%solver%>";
-      opts["-r"] = "<%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>/msvc";
-      opts["-m"] = "<%moLib%>";
-      opts["-R"] = "<%simulationResults(getRunningTestsuite(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
-
-
-
-
-
-  boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new OMCFactory());
-
-  //SimController to start simulation
-
-  std::pair<boost::shared_ptr<ISimController>, SimSettings> simulation = _factory->createSimulation(argc, argv, opts);
-  //Logger::initialize(simulation.second.logSettings);
-
-  //create Modelica system
-  boost::weak_ptr<ISimData> simData = simulation.first->LoadSimData("<%lastIdentOfPath(modelInfo.name)%>");
-  boost::weak_ptr<ISimVars> simVars = simulation.first->LoadSimVars("<%lastIdentOfPath(modelInfo.name)%>",<%numRealVars%>,<%numIntVars%>,<%numBoolVars%>,<%numPreVars%>,<%numStatevars(modelInfo)%>,<%numStateVarIndex(modelInfo)%>);
-  boost::weak_ptr<IMixedSystem> system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>  ","<%lastIdentOfPath(modelInfo.name)%>");
-  boost::shared_ptr<ISimData> simData_shared = simData.lock();
-
-  // Declare Input specify initial_values if needed!!!
-  <%defineInputVars(simCode)%>
-
-  // Declare Output
-  <%defineOutputVars(simCode)%>
-
-  LogSettings logsetting;
-    SimSettings settings = {"RTRK","","kinsol",        0.0,      100.0,  0.005,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",0,OPT_NONE, logsetting};
-  //                       Solver,          nonlinearsolver starttime endtime stepsize   lower limit upper limit  tolerance
-
-  try
-  {
-    simulation.first->StartVxWorks(settings, "<%lastIdentOfPath(modelInfo.name)%>");
-  }
-  catch(ModelicaSimulationError& ex)
-  {
-    throw std::runtime_error("error initialize");
-  }
-
-  for( int i = 0; i < 1000; i++)
-  {
-    try
-    {
-      simulation.first->calcOneStep();
-    }
-    catch(ModelicaSimulationError& ex)
-    {
-      throw std::runtime_error("error inside step");
-    }
-  }
-
-  return 0;
-}
-#endif
-
-
 >>
 end match
 else
@@ -2759,6 +2794,38 @@ then
 
 end getOutputVars;
 
+template streamOutputVars(SimCode simCode )
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  match simCode
+case SIMCODE(modelInfo = MODELINFO(__))
+then
+   let outputs = match simCode
+             case simCode as SIMCODE(__) then
+                 match modelInfo
+                   case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
+                    let &varOptDecls = buffer "" /*BUFD*/
+          let &optpreExp = buffer "" /*BUFD*/
+
+          let outputnames = vars.outputVars |>  SIMVAR(__) hasindex i0 =>
+      <<
+      f << dynamic_cast<SimDouble*>(data->Get("<%cref(name, false)%>"))->getValue() << ";" ;
+      >>
+      ;separator="\n"
+
+    <<
+    <%outputnames%>
+
+    f << endl;
+    >>
+
+  <<
+  <%outputs%>
+  >>
+
+end streamOutputVars;
+
+
 template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
   match simCode
@@ -3117,6 +3184,7 @@ template simulationMakefile(String target, SimCode simCode ,Text& extraFuncs,Tex
 ::=
 let &timeMeasureLink = buffer "" /*BUFD*/
 match target
+case "debugrt"
 case "msvc" then
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
@@ -3806,6 +3874,7 @@ match eq
             , _functions(system->_functions)
             , _indexValue(NULL)
             {
+              <%initAlgloopDimension(eq,varDecls)%>
             >>
           case ("sparse") then
             <<
@@ -3816,6 +3885,7 @@ match eq
             , _functions(system->_functions)
             , _indexValue(NULL)
             {
+              <%initAlgloopDimension(eq,varDecls)%>
               <%helpdata%>
             >>
           else "A matrix type is not supported"
@@ -3826,9 +3896,6 @@ match eq
    <%inits%>
    >>
     %>
-
-
-     <%initAlgloopDimension(eq,varDecls)%>
    }
 
    <%modelname%>Algloop<%ls.index%>::~<%modelname%>Algloop<%ls.index%>()
@@ -4044,7 +4111,7 @@ match simCode
       case e as RCONST(__) then match type case "sparse" then
       <<
 	  <%preExp%>
-      ///*comment out again!*/__A(<%row%>,<%col%>)=<%expPart%>;
+      /*comment out again!*/__A(<%row%>,<%col%>)=<%expPart%>;
       _AData[_indexValue[<%i0%>]] = <%expPart%>;
       >>
 	  else
@@ -4056,14 +4123,14 @@ match simCode
       else match type case "sparse" then
       <<
 	  <%preExp%>
-	  ///*comment out again!*/__A(<%row%>,<%col%>)=<%expPart%>;
+	  /*comment out again!*/__A(<%row%>,<%col%>)=<%expPart%>;
+	  //_Ax[<%i0%>] = <%expPart%>;// to be commented in lateron
 	  _AData[_indexValue[<%i0%>]] = <%expPart%>;
 	  >>
 	  else
 	  <<
 	  <%preExp%>
-	  /*comment out again!*/__A(<%row%>,<%col%>)=<%expPart%>;
-	  //_AData[_indexValue[<%i0%>]] = <%expPart%>;
+	  __A(<%row%>,<%col%>)=<%expPart%>;
 	  >>
 	  end match
 
@@ -4084,7 +4151,6 @@ match simCode
   {
       <%varDecls%>
       <%Amatrix%>
-      //double const* Ax = bindings::begin_value (As);
       //memcpy(Ax,_AData,sizeof(double)* <%listLength(ls.simJac)%> );
       <%bvector%>
   }
@@ -6483,12 +6549,20 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
       <<
       <%preExp%>__A(<%row%>,<%col%>)=<%expPart%>;
       _AData[_indexValue[<%i0%>]] = <%expPart%>;
+
       >>
       else
       <<
       <%preExp%>__A(<%row%>,<%col%>)=<%expPart%>;
       >>
   ;separator="\n")
+   let getSparse = match type case "sparse" then
+   <<
+     getSparseMatrixData(__A, &_Ax);
+   >>
+   else
+   <<
+   >>
 
 
 let bvector =  (ls.beqs |> exp hasindex i0 fromindex 1=>
@@ -6499,6 +6573,7 @@ let bvector =  (ls.beqs |> exp hasindex i0 fromindex 1=>
  <<
      <%varDecls%>
       <%Amatrix%>
+      <%getSparse%>
       <%bvector%>
   >>
 

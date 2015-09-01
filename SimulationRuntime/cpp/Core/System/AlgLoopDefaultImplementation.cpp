@@ -18,6 +18,7 @@ AlgLoopDefaultImplementation::AlgLoopDefaultImplementation()
   ,__xd(NULL)
   ,_xd_init(NULL)
   ,_AData(NULL)
+  ,_Ax(NULL)
 {
 }
 

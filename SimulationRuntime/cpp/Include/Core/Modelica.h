@@ -133,5 +133,4 @@ typedef ublas::matrix<double, ublas::column_major> matrix_t;
 #include <Core/DataExchange/Policies/BufferReaderWriter.h>
 #include <Core/HistoryImpl.h>
 #include <Core/DataExchange/SimDouble.h>
-
 /** @} */ // end of group1
