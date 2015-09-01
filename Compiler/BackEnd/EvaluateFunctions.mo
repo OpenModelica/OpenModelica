@@ -1679,9 +1679,9 @@ algorithm
         repl = BackendVarTransform.removeReplacements(repl,outputs,NONE());
 
         // check if its constant, a record or a tuple
-        isCon = Expression.isConstValue(exp2);
+        isCon = Expression.isConst(exp2) and not Expression.isCall(exp2);
         eqDim = listLength(scalars) == listLength(expLst);  // so it can be partly constant
-        isRec = ComponentReference.isRecord(cref) or Expression.isCall(exp2);
+        isRec = ComponentReference.isRecord(cref) or Expression.isRecordCall(exp2,funcTree);
         isTpl = Expression.isTuple(exp1) and Expression.isTuple(exp2);
         //print("is it const? "+boolString(isCon)+" ,is it rec: "+boolString(isRec)+" ,is it tpl: "+boolString(isTpl)+"\n");
 
@@ -1698,7 +1698,7 @@ algorithm
         repl = if isCon and not isRec then BackendVarTransform.addReplacement(repl,cref,exp2,NONE()) else repl;
         repl = if isCon and isRec then BackendVarTransform.addReplacements(repl,scalars,expLst,NONE()) else repl;
         repl = if not isCon and not isRec then BackendVarTransform.removeReplacement(repl,cref,NONE()) else repl;
-        repl = if not isCon and isRec then BackendVarTransform.removeReplacements(repl,cref::varScalars,NONE()) else repl;
+        repl = if not isCon and isRec then BackendVarTransform.removeReplacements(repl,varScalars,NONE()) else repl;
         repl = if not isCon and isRec then BackendVarTransform.addReplacements(repl,constScalars,expLst,NONE()) else repl;
 
         //bcall(isCon and not isRec,print,"add the replacement: "+ComponentReference.crefStr(cref)+" --> "+ExpressionDump.printExpStr(exp2)+"\n");
@@ -1744,7 +1744,7 @@ algorithm
         repl = BackendVarTransform.removeReplacements(repl,outputs,NONE());
 
         // check if its constant, a record or a tuple
-        isCon = Expression.isConstValue(exp2);
+        isCon = Expression.isConst(exp2) and not Expression.isCall(exp2);
         eqDim = listLength(scalars) == listLength(expLst);  // so it can be partly constant
         isRec = ComponentReference.isRecord(cref);
         isArr = ComponentReference.isArrayElement(cref);
@@ -1866,7 +1866,7 @@ algorithm
         //print("\nthe RHS after\n");
         //print(ExpressionDump.printExpStr(exp1));
         //BackendDump.dumpEquationList(addEqs,"the additional equations after");
-        isCon = Expression.isConstValue(exp1);
+        isCon = Expression.isConst(exp1);
         exp1 = if isCon then exp1 else exp0;
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
           print("--> is the tuple const? "+boolString(isCon)+"\n");
@@ -2105,7 +2105,7 @@ algorithm
         (exp1,(_,_,_,_)) = Expression.traverseExpTopDown(exp1,evaluateConstantFunctionWrapper,(exp1,funcTree,idx,{}));
         (exp1,_) = BackendVarTransform.replaceExp(exp1,replIn,NONE());
         (exp1,_) = ExpressionSimplify.simplify(exp1);
-        isCon = Expression.isConstValue(exp1);
+        isCon = Expression.isConst(exp1);
         isIf = if isCon then Expression.toBool(exp1) else false;
 
         // check if its the IF case, if true then evaluate:
@@ -2175,7 +2175,7 @@ algorithm
         (exp1,(_,_,_,_)) = Expression.traverseExpTopDown(expIf,evaluateConstantFunctionWrapper,(expIf,funcTree,idx,{}));
         (exp1,_) = BackendVarTransform.replaceExp(exp1,replIn,NONE());
         (exp1,_) = ExpressionSimplify.simplify(exp1);
-        isCon = Expression.isConstValue(exp1);
+        isCon = Expression.isConst(exp1);
         isElseIf = if isCon then Expression.toBool(exp1) else false;
         if isCon and not isElseIf then
           (stmts,isElseIf) = evaluateElse(else_,info);
