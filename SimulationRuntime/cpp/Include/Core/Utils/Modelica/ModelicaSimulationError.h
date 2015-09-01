@@ -27,15 +27,15 @@ Exception class for all simulation errors
 class ModelicaSimulationError : public std::runtime_error
 {
   public:
-    ModelicaSimulationError(SIMULATION_ERROR error_id, const std::string& error_info)
-    : runtime_error("simulation error message : " + error_info)
-    , _error_id(error_id)
-    , _suppress(false)
-    {
-    }
-
-    ModelicaSimulationError(SIMULATION_ERROR error_id, const std::string& error_info, bool suppress)
-    : runtime_error("simulation error message : " + error_info)
+    /**
+     * Create a new modelica error object with the given arguments.
+     * @param error_id The identifier related to the sender of the error. \see SIMULATION_ERROR for detail.
+     * @param error_info Error message that should be shown.
+     * @param description More detailed description of the occurred error i.e. the error-message of the inner exception
+     * @param suppress Set to true if the error should not appear on std::err and std::out.
+     */
+    ModelicaSimulationError(SIMULATION_ERROR error_id, const std::string& error_info, std::string description = "", bool suppress = false)
+    : runtime_error("simulation error message: " + error_info + (description.size() > 0 ? "/n" + description : ""))
     , _error_id(error_id)
     , _suppress(suppress)
     {

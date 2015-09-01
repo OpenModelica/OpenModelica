@@ -111,7 +111,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
 
      if (vm.count("help")) {
          cout << desc << "\n";
-         throw ModelicaSimulationError(MODEL_FACTORY, "Cannot parse command line arguments correctly, because the help message was requested.", true);
+         throw ModelicaSimulationError(MODEL_FACTORY, "Cannot parse command line arguments correctly, because the help message was requested.", "",true);
      }
 
      // warn about unrecognized command line options, including OMEdit for now
