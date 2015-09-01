@@ -590,15 +590,21 @@ algorithm
         attr2 = if intEq(listLength(newOutputVars),1) then attr1 else attr2;
         //DAEDump.dumpCallAttr(attr2);
 
-        exp2 = if List.hasOneElement(constComplexExps) and funcIsConst then listHead(constComplexExps) else DAE.TUPLE(constComplexExps);  // either a single equation or a tuple equation
-        exp = if funcIsConst then exp2 else rhsExpIn;
-        exp = if funcIsPartConst then DAE.CALL(path, expsIn, attr2) else exp;
-        exp = if isConstRec then DAE.TUPLE(constScalarExps) else exp;
+        if List.hasOneElement(listAppend(constComplexExps,constScalarExps)) and funcIsConst then
+          exp = listHead(listAppend(constComplexExps,constScalarExps)); // either a single equation
+        elseif funcIsConst and not List.hasOneElement(listAppend(constComplexExps,constScalarExps)) then
+          exp =  DAE.TUPLE(listAppend(constComplexExps,constScalarExps));// or a tuple equation
+        else
+          exp = rhsExpIn;
+        end if;
+
+        exp = if funcIsPartConst then DAE.CALL(path, expsIn, attr2) else exp;  //its partially constant and we have to keep a function call to calc the rest
+        exp = if isConstRec then DAE.TUPLE(constScalarExps) else exp; // gather all constant record scalars in a tuple
+        outputExp = setRecordTypes(outputExp);
 
           //BackendDump.dumpEquationList(constEqs,"the additional equations\n");
           //print("LHS EXP:\n");
           //ExpressionDump.dumpExp(outputExp);
-        outputExp = setRecordTypes(outputExp,FUNCINFO(repl,funcs,idx));
           //print("RHS EXP:\n");
           //ExpressionDump.dumpExp(exp);
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
@@ -753,10 +759,9 @@ they are used a s a cast for record types, but they should be a cast instead of 
  this function removes the call and sets the type
  author:Waurich TUD 2014-04"
   input DAE.Exp inExp;
-  input FuncInfo info;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(inExp,info)
+  outExp := matchcontinue(inExp)
     local
       Integer idx;
       DAE.CallAttributes attr;
@@ -766,7 +771,7 @@ algorithm
       DAE.FunctionTree funcTree;
       DAE.Type ty;
       BackendVarTransform.VariableReplacements repl;
-    case(DAE.CALL(expLst=expLst,attr=DAE.CALL_ATTR(ty=ty)),FUNCINFO())
+    case(DAE.CALL(expLst=expLst,attr=DAE.CALL_ATTR(ty=ty)))
       equation
         true = Expression.isCall(inExp);
         true = listLength(expLst) == 1;
@@ -774,7 +779,12 @@ algorithm
         cref = Expression.expCref(exp1);
         exp1 = Expression.makeCrefExp(cref,ty);
       then exp1;
+    case(DAE.TUPLE(PR=expLst))
+      equation
+        expLst = List.map(expLst,setRecordTypes);
+      then DAE.TUPLE(expLst);
     else
+    equation
       then inExp;
   end matchcontinue;
 end setRecordTypes;
