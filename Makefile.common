@@ -119,6 +119,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/libipopt.la: 3rdParty/Ipopt/Makefile
 	$(MAKE) -C 3rdParty/Ipopt install
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libipopt.0.0.0.dylib 3rdParty/Ipopt/lib/libipopt.0.0.0.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libcoinmumps.1.5.2.dylib 3rdParty/Ipopt/lib/libcoinmumps.1.5.2.dylib
+	test ! `uname` = Darwin || install_name_tool -change "`pwd`/3rdParty/Ipopt/lib/libcoinmumps.1.dylib" @rpath/libcoinmumps.1.dylib 3rdParty/Ipopt/lib/libipopt.0.0.0.dylib
 	cp -a 3rdParty/Ipopt/lib*/*.* $(OMBUILDDIR)/$(LIB_OMC)
 
 ipopt: $(OMBUILDDIR)/$(LIB_OMC)/libipopt.la
@@ -403,9 +404,11 @@ $(LIBMODELICAEXTERNALC):
 	(cd "$(MODELICAEXTERNALC)/BuildProjects/autotools" && (test -f Makefile || (./configure ${MSL321_CONFIG_EXTRA_FLAGS} "--host=$(host)" --libdir="$(OMBUILDDIR)/$(LIB_OMC)/" CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" $(MSL_EXTRA_ARGS) && $(MAKE) clean)))
 	$(MAKE) -C "$(MODELICAEXTERNALC)/BuildProjects/autotools"
 	$(MAKE) -C "$(MODELICAEXTERNALC)/BuildProjects/autotools" install
-	@test -f $@
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libModelicaExternalC.0.dylib "$@"
+	@test -f "$@"
 $(LIBMODELICASTANDARDTABLES): $(LIBMODELICAEXTERNALC)
-	@test -f $@
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libModelicaStandardTables.0.dylib "$@"
+	@test -f "$@"
 
 git-clean:
 	test -e .git
