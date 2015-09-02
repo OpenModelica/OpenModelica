@@ -2019,6 +2019,7 @@ protected function evaluateForStatement"evaluates a for statement. neste for loo
   output BackendVarTransform.VariableReplacements replOut;
   output Integer idxOut;
 protected
+  Boolean hasNoRepl;
   Integer i, start, stop ,step;
   DAE.Ident iter;
   DAE.Exp range;
@@ -2037,6 +2038,16 @@ algorithm
     for i in List.intRange2(start,stop) loop
       repl := BackendVarTransform.addReplacement(repl, ComponentReference.makeCrefIdent(iter,DAE.T_INTEGER_DEFAULT,{}),DAE.ICONST(i),NONE());
       (stmts,((_,repl,_))) := evaluateFunctions_updateStatement(stmtsIn,(funcTreeIn,repl,i),{});
+
+      // check if any variable has been evaluated. If not, skip the loop (this is necessary for testsuite/modelica/linear_systems/problem1.mos)
+      lhsExps := List.fold1(stmts,getStatementLHSScalar,funcTreeIn,{});
+      lhsExps := List.unique(lhsExps);
+      outputs := List.map(lhsExps,Expression.expCref);
+      hasNoRepl := List.fold(List.map1(outputs,BackendVarTransform.hasNoReplacementCrefFirst,repl),boolAnd,true);
+      if Flags.isSet(Flags.EVAL_FUNC_DUMP) and hasNoRepl then
+        print("For-loop evaluation is skipped, since the first loop evaluated nothing.\n");
+        fail();
+      end if;
     end for;
     replOut :=  BackendVarTransform.removeReplacement(repl,ComponentReference.makeCrefIdent(iter,DAE.T_INTEGER_DEFAULT,{}),NONE());
     funcTreeOut := funcTreeIn;
