@@ -188,7 +188,7 @@ void SystemDefaultImplementation::initialize()
     _conditions0= new bool[_dimZeroFunc];
 
     memset(_conditions,false,(_dimZeroFunc)*sizeof(bool));
-
+	_event_system = dynamic_cast<IEvent*>(this);
   }
   if(_dimTimeEvent > 0)
   {
@@ -205,7 +205,7 @@ void SystemDefaultImplementation::initialize()
   _start_time = 0.0;
   _terminal = false;
   _terminate = false;
-   _event_system = dynamic_cast<IEvent*>(this);
+
 
 };
 
@@ -282,7 +282,7 @@ boost::shared_ptr<ISimData> SystemDefaultImplementation::getSimData()
 
 bool SystemDefaultImplementation::isConsistent()
 {
-  if(_event_system)
+  if(_dimZeroFunc > 0)
   {
      getConditions(_conditions0);
     IContinuous::UPDATETYPE pre_call_type=_callType;
