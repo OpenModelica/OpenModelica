@@ -25,7 +25,7 @@ INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 
-.PHONY : interactive omc release all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc
+.PHONY : interactive omc release all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc $(MINGW_EXTRA_LIBS)
 
 mkbuilddirs:
 	@echo Making build directories under $(OMBUILDDIR)
@@ -53,7 +53,7 @@ mkbuilddirs:
 
 release: omc
 
-bootstrap-dependencies: graphstream $(BOOTSTRAP_FMIL_DEP)
+bootstrap-dependencies: graphstream $(BOOTSTRAP_FMIL_DEP) $(MINGW_EXTRA_LIBS)
 	# NOTE: OpenModelicaBootstrappingHeader.h has to be regenerated without any other process writing to so/etc or you get bus errors
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler OpenModelicaBootstrappingHeader.h OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/runtime install OMBUILDDIR=$(OMBUILDDIR)
@@ -393,6 +393,37 @@ $(OMBUILDDIR)/share/omc/java/org.omc.graphstream.jar: mkbuilddirs
 
 graphstream-clean:
 	if test -f 3rdParty/graphstream/Makefile; then $(MAKE) -C 3rdParty/graphstream/ clean; fi
+
+# build lpsolve
+lpsolve: 3rdParty/lpsolve/Makefile
+	$(MAKE) -C 3rdParty/lpsolve/ install CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)"
+3rdParty/lpsolve/Makefile: 3rdParty/lpsolve/configure.ac
+	(cd 3rdParty/lpsolve && autoreconf -vif && ./configure --prefix=`pwd`/build "--host=$(host)" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)")
+clean-lpsolve:
+	rm -rf 3rdParty/lpsolve/build
+# build sqlite3
+sqlite3: 3rdParty/sqlite3/Makefile
+	$(MAKE) -C 3rdParty/sqlite3/ install CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)"
+3rdParty/sqlite3/Makefile: 3rdParty/sqlite3/configure.ac
+	(cd 3rdParty/sqlite3 && autoreconf -vif && automake --add-missing && ./configure --prefix=`pwd`/build "--host=$(host)" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)")
+clean-sqlite3:
+	rm -rf 3rdParty/sqlite3/build
+# build sundials
+sundials: 3rdParty/sundials/CMakeLists.txt
+	mkdir -p 3rdParty/sundials/build
+	cd 3rdParty/sundials/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX=`pwd`
+	$(MAKE) -C 3rdParty/sundials/build install
+	# adrpo: do not copy the headers as they are not needed!
+	mkdir -p $(OMBUILDDIR)/include/omc/c/sundials
+	(cp -pufr 3rdParty/sundials/build/include/* $(OMBUILDDIR)/include/omc/c/sundials)
+	# copy the libs to the build/lib/omc directory
+	(cp -puf 3rdParty/sundials/build/lib/* $(builddir_lib_omc))
+	# copy the dlls to the build bin directory
+	(cp -puf 3rdParty/sundials/build/lib/*.dll $(builddir_bin))
+clean-sundials:
+	if test -d 3rdParty/sundials/build ; then cd 3rdParty/sundials/build && make clean ; fi
+	rm -rf $(OMBUILDDIR)/include/omc/cpp/sundials
+	rm -f $(builddir_lib_omc)/libsundials*
 
 sanity-check: omc
 	$(OMBUILDDIR)/bin/omc Examples/SanityCheck.mos
