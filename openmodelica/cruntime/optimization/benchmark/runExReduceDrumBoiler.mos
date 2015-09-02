@@ -958,10 +958,6 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 2.63678e-05 for the constraint $OMC$con$Loop$9(time = 144)
 // LOG_IPOPT_ERROR   | info    | max violation is 2.63678e-05 for the constraint $OMC$con$Loop$9(time = 144)
 // LOG_IPOPT_ERROR   | info    | max violation is 3.40872e-05 for the constraint $OMC$con$Loop$9(time = 144)
-// Restoration phase is called at point that is almost feasible,
-// with constraint violation 6.263140e-11. Abort.
-// stdout | warning | No optimal solution found!
-// | | |       | Use -lv=LOG_IPOPT for more information.
 // "
 // end SimulationResult;
 // ""

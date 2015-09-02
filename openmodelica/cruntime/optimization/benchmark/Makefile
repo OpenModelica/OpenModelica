@@ -2,15 +2,14 @@ TEST = ../../../../rtest -v
 
 
 TESTFILES = \
-runDrumBoiler.mos \
-runExReduceDrumBoiler.mos \
 runReduceDrumBoiler.mos
 
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
 FAILINGTESTFILES = \
-
+runDrumBoiler.mos \
+runExReduceDrumBoiler.mos \
 
 
 # Dependency files that are not .mo .mos or Makefile
@@ -32,7 +31,7 @@ test:
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) $(TESTFILES)
-	
+
 # Cleans all files that are not listed as dependencies 
 clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp

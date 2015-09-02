@@ -71,7 +71,6 @@ getErrorString();
 // "
 // end SimulationResult;
 // ""
-// {"Files not Equal!","temperature.T","massFlowRate.port_b.h_outflow","evaporator.h_S","T_S","SteamValve.port_b_T"}
-// "Warning: Files not Equal
+// {"Files Equal!"}
 // "
 // endResult
