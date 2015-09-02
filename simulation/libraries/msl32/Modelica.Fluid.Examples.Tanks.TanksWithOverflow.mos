@@ -49,6 +49,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: upperTank.ports[3].h_outflow(start = 100000.0)
 //  * candidate: overflow.flowModel.states[1].h(start = 100000.0)
 //  * candidate: upperTank.ports[2].h_outflow(start = 100000.0)
+//  * candidate: pipe.flowModel.states[1].h(start = 100000.0)
 //  * candidate: upperTank.ports[1].h_outflow(start = 100000.0)
 //  * candidate: upperTank.medium.state.h(start = 100000.0)
 //  * candidate: upperTank.heatTransfer.states[1].h(start = 100000.0)

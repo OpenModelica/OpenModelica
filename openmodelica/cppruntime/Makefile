@@ -44,7 +44,9 @@ genDebugSymbols \
 outputFormat \
 ReferenceFiles \
 outputFormat \
-libraries
+libraries \
+peer \
+omedit
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 HPCOM_DIR = hpcom/
@@ -55,6 +57,7 @@ FMI_2_0_DIR = fmu/modelExchange/2.0
 STATIC_LINKING_DIR = staticLinking
 DEBUG_SYMBOLS_DIR = genDebugSymbols
 OUTPUT_FORMAT_DIR = outputFormat
+OMEDIT_DIR = omedit
 
 .PHONY : test clean getdeps failingtest
 
@@ -72,6 +75,7 @@ test:
 	@$(MAKE) -C $(STATIC_LINKING_DIR)
 	@$(MAKE) -C $(DEBUG_SYMBOLS_DIR)
 	@$(MAKE) -C $(OUTPUT_FORMAT_DIR)
+	@$(MAKE) -C $(OMEDIT_DIR)
 
 
 # Cleans all files that are not listed as dependencies 
@@ -86,6 +90,7 @@ clean :
 	@$(MAKE) -C $(STATIC_LINKING_DIR) clean
 	@$(MAKE) -C $(DEBUG_SYMBOLS_DIR) clean
 	@$(MAKE) -C $(OUTPUT_FORMAT_DIR) clean
+	@$(MAKE) -C $(OMEDIT_DIR) clean
 
 
 # Run this if you want to list out the files (dependencies).

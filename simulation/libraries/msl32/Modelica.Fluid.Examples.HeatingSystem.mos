@@ -225,6 +225,17 @@ runScript(modelTesting);getErrorString();
 //  * candidate: pipe.statesFM[1].T(nominal = 500.0)
 // => select value from pipe.statesFM[1].T(nominal = 500.0) for variable: pipe.statesFM[1].T
 // Warning: Alias set with several free start values
+// * candidate: tank.medium.h(start = tank.h_start)
+// * candidate: tank.ports[2].h_outflow(start = 100000.0)
+// * candidate: pump.monitoring.state_in.h(start = 100000.0)
+// * candidate: tank.ports[1].h_outflow(start = 100000.0)
+// * candidate: radiator.state_b.h(start = 100000.0)
+// * candidate: radiator.statesFM[3].h(start = 100000.0)
+// * candidate: radiator.flowModel.states[3].h(start = 100000.0)
+// * candidate: tank.medium.state.h(start = 100000.0)
+// * candidate: tank.heatTransfer.states[1].h(start = 100000.0)
+// => select value from tank.medium.h(start = tank.h_start) for variable: tank.medium.h
+// Warning: Alias set with several free start values
 //  * candidate: radiator.mediums[1].p(start = 110000.0)
 //  * candidate: radiator.mediums[1].state.p(start = 5000000.0)
 //  * candidate: radiator.statesFM[2].p(start = 5000000.0)
@@ -268,14 +279,6 @@ runScript(modelTesting);getErrorString();
 //  * candidate: pump.monitoring.state.h(start = 100000.0)
 //  * candidate: pump.heatTransfer.states[1].h(start = 100000.0)
 // => select value from pump.medium.h(start = pump.h_start) for variable: pump.medium.h
-// Warning: Alias set with several free start values
-//  * candidate: tank.medium.h(start = tank.h_start)
-//  * candidate: tank.ports[2].h_outflow(start = 100000.0)
-//  * candidate: pump.monitoring.state_in.h(start = 100000.0)
-//  * candidate: tank.ports[1].h_outflow(start = 100000.0)
-//  * candidate: tank.medium.state.h(start = 100000.0)
-//  * candidate: tank.heatTransfer.states[1].h(start = 100000.0)
-// => select value from tank.medium.h(start = tank.h_start) for variable: tank.medium.h
 // Warning: Alias set with several free start values
 //  * candidate: pump.heatTransfer.states[1].T(start = 500.0)
 //  * candidate: pump.medium.state.T(start = 500.0)

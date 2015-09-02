@@ -34,7 +34,6 @@ runScript(modelTesting);getErrorString();
 //  * candidate: volume.medium.Xi[1](start = volume.X_start[1])
 //  * candidate: volume.medium.X[1](start = 0.01)
 // => select value from volume.medium.Xi[1](start = volume.X_start[1]) for variable: volume.medium.Xi[1]
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 //
 // "true
 // "

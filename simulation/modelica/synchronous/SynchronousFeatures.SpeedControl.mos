@@ -36,7 +36,7 @@ translateModel(SynchronousFeatures.SpeedControl); getErrorString();
 // ""
 //
 // ########################################
-// base-clock partitioning (2 partitions)
+// clock partitioning (2 partitions)
 // ########################################
 //
 //
@@ -68,7 +68,7 @@ translateModel(SynchronousFeatures.SpeedControl); getErrorString();
 // no matching
 //
 //
-// clocked partition(1, 1/1, 0/1)
+// clocked partition(1)
 // ========================================
 //
 // Variables (2)
@@ -79,8 +79,8 @@ translateModel(SynchronousFeatures.SpeedControl); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u = K * (vref - vd)    [dynamic]
-// 2/2 (1): vd = $getPart(v)    [dynamic]
+// 1/1 (1): vd = $getPart(v)    [dynamic]
+// 2/2 (1): u = K * (vref - vd)    [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -97,7 +97,12 @@ translateModel(SynchronousFeatures.SpeedControl); getErrorString();
 //
 // Base clocks (1)
 // ========================================
-// 1: Clock(0.01)
+// 1: Clock(0.01)[1]
+//
+//
+// Sub clocks (1)
+// ========================================
+// 1: factor(1/1) shift(0/1)  event(true)
 //
 // true
 // ""

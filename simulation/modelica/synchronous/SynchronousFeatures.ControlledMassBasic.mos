@@ -48,7 +48,7 @@ translateModel(SynchronousFeatures.ControlledMassBasic); getErrorString();
 // ""
 //
 // ########################################
-// base-clock partitioning (2 partitions)
+// clock partitioning (2 partitions)
 // ########################################
 //
 //
@@ -80,7 +80,7 @@ translateModel(SynchronousFeatures.ControlledMassBasic); getErrorString();
 // no matching
 //
 //
-// clocked partition(1, 1/1, 0/1)
+// clocked partition(1)
 // ========================================
 //
 // Variables (7)
@@ -96,13 +96,13 @@ translateModel(SynchronousFeatures.ControlledMassBasic); getErrorString();
 //
 // Equations (7, 7)
 // ========================================
-// 1/1 (1): uInner = KInner * (vref - vd)    [dynamic]
-// 2/2 (1): vref = uOuter    [dynamic]
-// 3/3 (1): vd = $getPart(v)    [dynamic]
+// 1/1 (1): xd = $getPart(x)    [dynamic]
+// 2/2 (1): eOuter = xref - xd    [dynamic]
+// 3/3 (1): intE = previous(intE) + eOuter    [dynamic]
 // 4/4 (1): uOuter = KOuter * (eOuter + intE / Ti)    [dynamic]
-// 5/5 (1): intE = previous(intE) + eOuter    [dynamic]
-// 6/6 (1): eOuter = xref - xd    [dynamic]
-// 7/7 (1): xd = $getPart(x)    [dynamic]
+// 5/5 (1): vd = $getPart(v)    [dynamic]
+// 6/6 (1): vref = uOuter    [dynamic]
+// 7/7 (1): uInner = KInner * (vref - vd)    [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -119,7 +119,12 @@ translateModel(SynchronousFeatures.ControlledMassBasic); getErrorString();
 //
 // Base clocks (1)
 // ========================================
-// 1: Clock(0.01)
+// 1: Clock(0.01)[1]
+//
+//
+// Sub clocks (1)
+// ========================================
+// 1: factor(1/1) shift(0/1)  event(true)
 //
 // true
 // ""

@@ -147,7 +147,6 @@ TestArrayUnknown.mo \
 TestFill.mo \
 TypeTest.mos \
 UnknownDimensionMod.mo \
-VectorizeConstCref2D.mo \
 VectorizeOneReturnValue.mo \
 VectorizeSeveralArguments.mo \
 WrongNumberOfSubscripts1.mo \
@@ -183,6 +182,7 @@ NonExpModif1.mo \
 NonExpModif2.mo \
 PointInst.mo \
 SubArrayIndex.mo  \
+VectorizeConstCref2D.mo \
 VectorizeSumVec.mo \
 WrongSubscriptType1.mo \
 
