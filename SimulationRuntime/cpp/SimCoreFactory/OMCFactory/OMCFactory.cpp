@@ -253,12 +253,19 @@ std::vector<const char *> OMCFactory::handleArgumentsToReplace(int argc, const c
                 opts.erase(arg);
             }
             key = iter->second;
-        }
 
-        if(sep > 0)
-            arg = key + " " + value;
+            if(sep > 0)
+                arg = key + " " + value;
+            else
+                arg = key;
+        }
         else
-            arg = key;
+        {
+          if(sep > 0)
+              arg = key + "=" + value;
+          else
+              arg = key;
+        }
 
         //maybe we have replaced a simple through a complex value with spaces
         std::vector<std::string> strs;
