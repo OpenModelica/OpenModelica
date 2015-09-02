@@ -1,5 +1,6 @@
 // name:     ComparePSD.mo [BUG: #2739]
 // keywords: redeclare function
+// cflags: -d=nogen
 // status:   correct
 //
 // Checks that it's possible to uniquely modify packages in different components having the same type
