@@ -6060,11 +6060,11 @@ algorithm
   BackendDAE.DAE(eqs=systs2, shared=BackendDAE.SHARED(knownVars=knvars2, externalObjects=extvars2, aliasVars=aliasVars2)) := inInitDAE;
 
   systs1 := List.filterOnFalse(systs1, BackendDAEUtil.isClockedSyst);
-  systs2 := List.filterOnFalse(systs1, BackendDAEUtil.isClockedSyst);
+  systs2 := List.filterOnFalse(systs2, BackendDAEUtil.isClockedSyst);
 
   if not Flags.isSet(Flags.NO_START_CALC) then
     (systs1) := List.map2(systs1, preCalculateStartValues, knvars1, funcTree);
-    (knvars1,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(knvars1,evaluateStartValues,funcTree);
+    (knvars1, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(knvars1, evaluateStartValues, funcTree);
     //systs2 := List.map1(systs2, preCalculateStartValues, knvars2);
   end if;
 
@@ -6230,9 +6230,9 @@ algorithm
 
   if not BaseHashSet.has(inVar.varName, hs) and not ComponentReference.isPreCref(inVar.varName) then
     (vars, hs) := extractVarFromVar(inVar, aliasVars, v, vars, hs);
-  //  print("Added  " + ComponentReference.crefStr(inVar.varName) + "\n");
+  //  print("Added  " + ComponentReference.printComponentRefStr(inVar.varName) + "\n");
   //else
-  //  print("Skiped " + ComponentReference.crefStr(inVar.varName) + "\n");
+  //  print("Skiped " + ComponentReference.printComponentRefStr(inVar.varName) + "\n");
   end if;
 
   outTpl := (vars, aliasVars, v, hs);

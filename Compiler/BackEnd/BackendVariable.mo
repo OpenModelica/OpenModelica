@@ -2131,7 +2131,7 @@ algorithm
   end match;
 end equationSystemsVarsLst;
 
-public function daeVars
+public function daeVars "returns orderedVars"
   input BackendDAE.EqSystem inEqSystem;
   output BackendDAE.Variables vars = inEqSystem.orderedVars;
 end daeVars;
