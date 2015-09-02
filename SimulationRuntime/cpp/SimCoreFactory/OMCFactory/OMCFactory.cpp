@@ -256,7 +256,7 @@ std::vector<const char *> OMCFactory::handleArgumentsToReplace(int argc, const c
         }
 
         if(sep > 0)
-            arg = key + "=" + value;
+            arg = key + " " + value;
         else
             arg = key;
 
