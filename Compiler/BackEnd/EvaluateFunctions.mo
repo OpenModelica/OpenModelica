@@ -2044,8 +2044,8 @@ algorithm
       lhsExps := List.unique(lhsExps);
       outputs := List.map(lhsExps,Expression.expCref);
       hasNoRepl := List.fold(List.map1(outputs,BackendVarTransform.hasNoReplacementCrefFirst,repl),boolAnd,true);
-      if Flags.isSet(Flags.EVAL_FUNC_DUMP) and hasNoRepl then
-        print("For-loop evaluation is skipped, since the first loop evaluated nothing.\n");
+      if hasNoRepl then
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then print("For-loop evaluation is skipped, since the first loop evaluated nothing.\n"); end if;
         fail();
       end if;
     end for;
