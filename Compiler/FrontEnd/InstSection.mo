@@ -1768,24 +1768,18 @@ protected function instArrayElEq
   input list<DAE.Exp> inRhsIndices;
   input DAE.ElementSource inSource;
   input SCode.Initial inInitial;
-  output DAE.DAElist outDAE;
+  output DAE.DAElist outDAE = DAE.emptyDae;
+protected
+  DAE.Exp rhs_idx;
+  list<DAE.Exp> rhs_idxs = listReverse(inRhsIndices);
+  DAE.DAElist dae;
 algorithm
-  outDAE := match(inLhsExp, inRhsExp, inType, inConst, inLhsIndices,
-      inRhsIndices, inSource, inInitial)
-    local
-      DAE.Exp lhs, rhs, lhs_idx, rhs_idx;
-      DAE.Type t;
-      list<DAE.Exp> lhs_idxs, rhs_idxs;
-      DAE.DAElist dae1, dae2;
-    case (_, _, _, _, {}, {}, _, _) then DAE.emptyDae;
-    case (lhs, rhs, t, _, lhs_idx :: lhs_idxs, rhs_idx :: rhs_idxs, _, _)
-      equation
-        dae1 = instEqEquation2(lhs_idx, rhs_idx, t, inConst, inSource, inInitial);
-        dae2 = instArrayElEq(lhs, rhs, t, inConst, lhs_idxs, rhs_idxs, inSource, inInitial);
-        dae1 = DAEUtil.joinDaes(dae1, dae2);
-      then
-        dae1;
-  end match;
+  for lhs_idx in listReverse(inLhsIndices) loop
+    rhs_idx :: rhs_idxs := rhs_idxs;
+
+    dae := instEqEquation2(lhs_idx, rhs_idx, inType, inConst, inSource, inInitial);
+    outDAE := DAEUtil.joinDaes(dae, outDAE);
+  end for;
 end instArrayElEq;
 
 protected function unrollForLoop

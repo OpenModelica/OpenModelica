@@ -745,40 +745,63 @@ protected function elabExp_Matrix
   extends PartialElabExpFunc;
 protected
   list<list<Absyn.Exp>> ess;
-  list<list<DAE.Exp>> dess;
+  list<list<DAE.Exp>> dess, dess2;
   list<list<DAE.Properties>> props;
   list<list<DAE.Type>> tps;
-  list<DAE.Type> tys;
+  list<DAE.Type> tys, tys2;
   Integer nmax;
   Boolean have_real;
   DAE.Type ty;
   DAE.Const c;
   DAE.Dimension dim1, dim2;
+  list<DAE.Exp> expl;
 algorithm
+  // Elaborate the individual expressions.
   Absyn.MATRIX(matrix = ess) := inExp;
   (outCache, dess, props) := elabExpListList(inCache, inEnv, ess, inImplicit,
     inST, inDoVect, inPrefix, inInfo);
 
-  tps := List.mapList(props, Types.getPropType);
-  tys := List.flatten(tps);
+  // Check if any of the expressions is of Real type.
+  tys := listAppend(list(Types.getPropType(p) for p in pl) for pl in props);
   nmax := matrixConstrMaxDim(tys);
   have_real := Types.containReal(tys);
+
+  // If we have any Real expressions, cast any Integer expressions to Real.
+  if have_real then
+    (dess, props) := List.threadMapList_2(dess, props, elabExp_Matrix_realCast);
+  end if;
 
   (outCache, outExp, DAE.PROP(ty, c), dim1, dim2) := elabMatrixSemi(outCache,
     inEnv, dess, props, inImplicit, inST, have_real, nmax, inDoVect, inPrefix, inInfo);
 
-  if have_real then
-    outExp := DAE.CAST(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {dim1, dim2}, DAE.emptyTypeSource), outExp);
-  end if;
-
-  // TODO: Should this be moved into the if-statement above?
-  outExp := ExpressionSimplify.simplify1(outExp); // To propagate cast down to scalar elts.
   outExp := elabMatrixToMatrixExp(outExp);
   ty := Types.unliftArray(Types.unliftArray(ty)); // All elts promoted to matrix, therefore unlifting.
   ty := DAE.T_ARRAY(ty, {dim2}, DAE.emptyTypeSource);
   ty := DAE.T_ARRAY(ty, {dim1}, DAE.emptyTypeSource);
   outProperties := DAE.PROP(ty, c);
 end elabExp_Matrix;
+
+protected function elabExp_Matrix_realCast
+  "Casts an expression and property to Real if it's current type is Integer."
+  input DAE.Exp inExp;
+  input DAE.Properties inProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+protected
+  DAE.Type ty;
+algorithm
+  ty := Types.getPropType(inProperties);
+
+  if Types.isInteger(ty) then
+    ty := Types.setArrayElementType(ty, DAE.T_REAL_DEFAULT);
+    outProperties := Types.setPropType(inProperties, ty);
+    ty := Types.simplifyType(ty);
+    outExp := ExpressionSimplify.simplify1(DAE.CAST(ty, inExp));
+  else
+    outExp := inExp;
+    outProperties := inProperties;
+  end if;
+end elabExp_Matrix_realCast;
 
 protected function elabExp_Code
   extends PartialElabExpFunc;
@@ -2782,7 +2805,6 @@ algorithm
     (exp, outProperties as DAE.PROP(type_ = ty)) := promoteExp(exp, prop, inDims);
     accum_expl := exp :: accum_expl;
     (_, outDim1 :: outDim2 :: _) := Types.flattenArrayTypeOpt(ty);
-    sty := Expression.liftArrayLeft(Types.simplifyType(ty), DAE.DIM_INTEGER(1));
 
     while not listEmpty(rest_expl) loop
       exp :: rest_expl := rest_expl;
@@ -2796,6 +2818,7 @@ algorithm
       outProperties := Types.matchWithPromote(prop, outProperties, inHaveReal);
     end while;
 
+    sty := Expression.liftArrayLeftList(Expression.unliftArrayX(ty, 2), {outDim1, outDim2});
     outExp := DAE.ARRAY(sty, false, listReverse(accum_expl));
   else
     true := Flags.isSet(Flags.FAILTRACE);
@@ -2856,7 +2879,7 @@ algorithm
   DAE.ARRAY(array = expl2) := inExp2;
   expl1 := list(elabMatrixCatTwo3(e1, e2) threaded for e1 in expl1, e2 in expl2);
   ty := Expression.typeof(listHead(expl1));
-  ty := Expression.liftArrayLeft(ty, DAE.DIM_INTEGER(1));
+  ty := Expression.liftArrayLeft(ty, DAE.DIM_INTEGER(listLength(expl1)));
   outExp := DAE.ARRAY(ty, sc, expl1);
 end elabMatrixCatTwo2;
 
