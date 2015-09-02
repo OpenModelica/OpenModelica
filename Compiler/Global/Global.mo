@@ -56,6 +56,7 @@ constant Integer profilerTime2Index = 15;
 constant Integer flagsIndex = 16;
 constant Integer builtinGraphIndex = 17;
 constant Integer rewriteRulesIndex = 18;
+constant Integer stackoverFlowIndex = 19;
 
 // indexes in System.tick
 // ----------------------
@@ -73,6 +74,7 @@ public function initialize "Called to initialize global roots (when needed)"
 algorithm
   setGlobalRoot(instOnlyForcedFunctions,  NONE());
   setGlobalRoot(rewriteRulesIndex,  NONE());
+  setGlobalRoot(stackoverFlowIndex, NONE());
 end initialize;
 
 annotation(__OpenModelica_Interface="util");

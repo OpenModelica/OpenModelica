@@ -1637,7 +1637,7 @@ annotation(preferredView="text");
 end getMessagesString;
 
 record SourceInfo
-  String filename;
+  String fileName;
   Boolean readonly;
   Integer lineStart;
   Integer columnStart;

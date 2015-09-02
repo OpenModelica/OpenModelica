@@ -90,7 +90,7 @@ Remark: this is still under development
 
 idea:
 we have the algebraic equations (other equations): g(xa,xt) : 0 = Ag*xt + Bg*xa + cg;
-and the      residual equations                  h(xa,xt,r) : r = Ah*xt + Bh*xt + ch;
+and the      residual equations                  h(xa,xt,r) : r = Ah*xt + Bh*xa + ch;
 and we want something like this:
             new algebraic equations               gs(xa,xt) : xa = B_*xt + dg;
             new residual equations                hs(xt,r)  : r = A_*xt +dh;
@@ -244,7 +244,7 @@ algorithm
         comp = listGet(compsIn,compIdx);
         BackendDAE.EQUATIONSYSTEM(vars = varIdcs, eqns = eqIdcs) = comp;
         true = intLe(listLength(varIdcs),3);
-        false = compHasDummyState(comp,systIn);
+        //false = compHasDummyState(comp,systIn);
 
         //print("EQUATION SYSTEM OF SIZE "+intString(listLength(varIdcs))+"\n");
           //print("Jac:\n" + BackendDump.jacobianString(jac) + "\n");
@@ -296,7 +296,7 @@ algorithm
         ass2All = Array.copy(ass2,ass2All);
         List.map2_0(compsNew,updateAssignmentsByComp,ass1All,ass2All);
         syst.matching = BackendDAE.MATCHING(ass1All, ass2All, compsTmp);
-           //BackendDump.dumpFullMatching(matching);
+           //BackendDump.dumpFullMatching(syst.matching);
 
         //build new DAE-EqSystem
         syst = BackendDAEUtil.setEqSystMatrices(syst);
@@ -1053,6 +1053,9 @@ algorithm
         BackendDAEEXT.getAssignment(ass2, ass1);
         matching = BackendDAE.MATCHING(ass1, ass2, {});
         sysTmp = BackendDAEUtil.createEqSystem(vars, eqArr);
+        (sysTmp,_,_) = BackendDAEUtil.getIncidenceMatrix(sysTmp,BackendDAE.ABSOLUTE(),NONE());
+        sysTmp = BackendDAEUtil.setEqSystMatching(sysTmp, matching);
+
         // perform BLT to order the StrongComponents
         mapIncRowEqn = listArray(List.intRange(nEqs));
         mapEqnIncRow = Array.map(mapIncRowEqn,List.create);
@@ -1546,15 +1549,46 @@ algorithm
   (allTerms,coeffsIn) := foldIn;
   (coeffs,allTerms) := List.extract1OnTrue(allTerms,Expression.expHasCref,cref);
   coeff := List.fold(coeffs,Expression.expAdd,DAE.RCONST(0));
-  if Expression.containFunctioncall(coeff) then
-  //print("This system of equations cannot be decomposed because its actually not linear (the coeffs are function calls of x).\n");
-  fail();
+  if containsFunctioncallOfCref(coeff,cref) then
+    print("This system of equations cannot be decomposed because its actually not linear (the coeffs are function calls of x).\n");
+    fail();
   end if;
   (coeff,_) := Expression.replaceExp(coeff,Expression.crefExp(cref),DAE.RCONST(1.0));
   (coeff,_) := ExpressionSimplify.simplify(coeff);
   foldOut := (allTerms,coeff::coeffsIn);
 end getEqSystem3;
 
+protected function containsFunctioncallOfCref"outputs true if the expIn contains a function call which has cref as input"
+  input DAE.Exp expIn;
+  input DAE.ComponentRef cref;
+  output Boolean hasCrefInCall;
+protected
+  list<DAE.Exp> expLst;
+algorithm
+  if Expression.containFunctioncall(expIn) then
+    (_,expLst) := Expression.traverseExpBottomUp(expIn,getCallExpLst,{});
+    hasCrefInCall := List.fold(List.map1(expLst,Expression.expHasCref,cref),boolOr,false);
+  else
+    hasCrefInCall := false;
+  end if;
+end containsFunctioncallOfCref;
+
+public function getCallExpLst "returns the list of expressions from a call.
+author:Waurich TUD 2015-08"
+  input DAE.Exp eIn;
+  input list<DAE.Exp> eLstIn;
+  output DAE.Exp eOut;
+  output list<DAE.Exp> eLstOut;
+algorithm
+  (eOut,eLstOut) := matchcontinue(eIn,eLstIn)
+    local
+      list<DAE.Exp> expLst;
+    case(DAE.CALL(expLst=expLst),_)
+      then (eIn,listAppend(expLst,eLstIn));
+    else
+      then (eIn,eLstIn);
+  end matchcontinue;
+end getCallExpLst;
 
 protected function getSummands"gets all sum-terms in the equation"
   input BackendDAE.Equation eq;

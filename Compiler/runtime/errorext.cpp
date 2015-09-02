@@ -284,6 +284,28 @@ extern void ErrorImpl__delCheckpoint(threadData_t *threadData,const char* id)
     exit(-1);
   }
 }
+extern void ErrorImpl__deleteNumCheckpoints(threadData_t *threadData, int n)
+{
+  errorext_members *members = getMembers(threadData);
+  pair<int,string> cp;
+  // fprintf(stderr, "delCheckpoint(%s)\n",id); fflush(stderr);
+  if (members->checkPoints->size() < n) {
+    fprintf(stderr, "ERROREXT: calling ErrorImpl__rollbackNumCheckpoints with n: %d > %d\n", n, members->checkPoints->size());
+    exit(1);
+  }
+  while (--n >= 0) {
+    // extract last checkpoint
+    cp = (*members->checkPoints)[members->checkPoints->size()-1];
+    // remember the last deleted checkpoint
+    *members->lastDeletedCheckpoint = cp.second;
+    members->checkPoints->pop_back();
+  }
+}
+
+extern int ErrorImpl__getNumCheckpoints(threadData_t *threadData)
+{
+  return getMembers(threadData)->checkPoints->size();
+}
 
 extern void ErrorImpl__rollBack(threadData_t *threadData,const char* id)
 {
@@ -320,6 +342,21 @@ extern void ErrorImpl__rollBack(threadData_t *threadData,const char* id)
     printf("ERROREXT: caling rollback with id: %s on empty checkpoint stack\n",id);
       exit(-1);
     }
+}
+
+extern void ErrorImpl__rollbackNumCheckpoints(threadData_t *threadData, int n)
+{
+  errorext_members *members = getMembers(threadData);
+  if (members->checkPoints->size() < n) {
+    fprintf(stderr, "ERROREXT: calling ErrorImpl__rollbackNumCheckpoints with n: %d > %d\n", n, members->checkPoints->size());
+    exit(1);
+  }
+  while (--n >= 0) {
+    while(members->errorMessageQueue->size() > members->checkPoints->back().first && !members->errorMessageQueue->empty()){
+      pop_message(threadData,true);
+    }
+    members->checkPoints->pop_back();
+  }
 }
 
 extern char* ErrorImpl__rollBackAndPrint(threadData_t *threadData,const char* id)

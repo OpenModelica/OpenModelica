@@ -40,13 +40,7 @@ extern "C" {
 #define ADD_METARECORD_DEFINITIONS static
 #include "OpenModelicaBootstrappingHeader.h"
 
-modelica_boolean omc_Absyn_isDerCref(threadData_t*, void*);
-/* static inline */ modelica_boolean call_looks_like_der_cr(void* exp)
-{
-   modelica_boolean isDer = omc_Absyn_isDerCref(NULL,exp);
-   /* fprintf(stderr, "looks like der: %d\n", isDer); fflush(stderr); */
-   return isDer;
-}
+modelica_boolean omc_Absyn_isDerCref(threadData_t* threadData, void* exp);
 
 #include "ModelicaParser.c"
 

@@ -277,6 +277,7 @@ public:
    */
   virtual void getDataCopy(T data[], size_t n) const
   {
+    assert(n <= nelems);
     const T* const * simvars_data  = _ref_array.begin();
     std::transform(simvars_data, simvars_data + n, data, RefArray2CArray<T>());
   }
@@ -349,6 +350,7 @@ public:
    */
   virtual const T& operator()(const vector<size_t>& idx) const
   {
+    assert(size > (idx[0] - 1));
     return *(RefArray<T, size>::_ref_array[idx[0]-1]);
   }
 
@@ -358,6 +360,7 @@ public:
    */
   virtual T& operator()(const vector<size_t>& idx)
   {
+    assert(size > (idx[0] - 1));
     return *(RefArray<T, size>::_ref_array[idx[0]-1]);
   }
 
@@ -367,6 +370,7 @@ public:
    */
   inline virtual T& operator()(size_t index)
   {
+    assert(size > (index - 1));
     return *(RefArray<T, size>::_ref_array[index-1]);
   }
 
@@ -432,6 +436,7 @@ public:
    */
   virtual const T& operator()(const vector<size_t>& idx) const
   {
+    assert((size1*size2) > ((idx[0]-1)*size2 + (idx[1]-1)));
     return *(RefArray<T, size1*size2>::
              _ref_array[(idx[0]-1)*size2 + (idx[1]-1)]);
   }
@@ -442,6 +447,7 @@ public:
    */
   virtual T& operator()(const vector<size_t>& idx)
   {
+    assert((size1*size2) > ((idx[0]-1)*size2 + (idx[1]-1)));
     return *(RefArray<T, size1*size2>::
              _ref_array[(idx[0]-1)*size2 + (idx[1]-1)]);
   }
@@ -453,6 +459,7 @@ public:
    */
   inline virtual T& operator()(size_t i, size_t j)
   {
+    assert((size1*size2) > ((i-1)*size2 + (j-1)));
     return *(RefArray<T, size1*size2>::
              _ref_array[(i-1)*size2 + (j-1)]);
   }
@@ -557,6 +564,7 @@ public:
    */
   virtual const T& operator()(const vector<size_t>& idx) const
   {
+    assert((size1*size2*size3) > (size3*(idx[0]-1 + size2*(idx[1]-1)) + idx[2]-1));
     return *(RefArray<T, size1*size2*size3>::
              _ref_array[size3*(idx[0]-1 + size2*(idx[1]-1)) + idx[2]-1]);
   }
@@ -567,6 +575,7 @@ public:
    */
   virtual T& operator()(const vector<size_t>& idx)
   {
+    assert((size1*size2*size3) > (size3*(idx[0]-1 + size2*(idx[1]-1)) + idx[2]-1));
     return *(RefArray<T, size1*size2*size3>::
              _ref_array[size3*(idx[0]-1 + size2*(idx[1]-1)) + idx[2]-1]);
   }
@@ -579,6 +588,7 @@ public:
    */
   inline virtual T& operator()(size_t i, size_t j, size_t k)
   {
+    assert((size1*size2*size3) > (size3*(i-1 + size2*(j-1)) + (k-1)));
     return *(RefArray<T, size1*size2*size3>::
              _ref_array[size3*(i-1 + size2*(j-1)) + (k-1)]);
   }
@@ -723,6 +733,7 @@ class StatArray : public BaseArray<T>
     if (nelems > 0) {
       if (_data == NULL)
         throw std::runtime_error("Invalid assign operation to uninitialized StatArray!");
+      assert(b.getNumElems() == nelems);
       b.getDataCopy(_data, nelems);
     }
     return *this;
@@ -763,6 +774,7 @@ class StatArray : public BaseArray<T>
     if (nelems > 0) {
       if (_data == NULL)
         throw std::runtime_error("Cannot assign to uninitialized StatArray!");
+      assert(b.getNumElems() == nelems);
       b.getDataCopy(_data, nelems);
     }
   }

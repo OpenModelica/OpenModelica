@@ -2064,7 +2064,8 @@ package DAE
   end Subscript;
 
   uniontype MatchType
-    record MATCHCONTINUE end MATCHCONTINUE;
+  record MATCHCONTINUE end MATCHCONTINUE;
+  record TRY_STACKOVERFLOW end TRY_STACKOVERFLOW;
     record MATCH
       Option<tuple<Integer,Type,Integer>> switch;
     end MATCH;
