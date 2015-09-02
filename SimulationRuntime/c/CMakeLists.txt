@@ -21,19 +21,33 @@ INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc ${OMDEV}/include/lis ${OMDEV}/
 link_directories(${OMDEV}/lib/expat-win32-msvc)
 link_directories(${OMDEV}/lib/lapack-win32-msvc)
 
+IF(MSVC)
+  SET(Sundials_Path ${OMCTRUNCHOME}/OMCompiler/3rdParty/sundials/build_msvc)
+ELSEIF(MSVC)
+  SET(Sundials_Path ${OMCTRUNCHOME}/OMCompiler/3rdParty/sundials/build)
+ENDIF(MSVC)
+
+MESSAGE(STATUS "Sundials path:")
+MESSAGE(STATUS "${Sundials_Path}")
+
 # SUNDIALS Header
-FIND_PATH(SUNDIALS_INCLUDE_DIR sundials/sundials_config.h /usr/include /usr/local/include $ENV{INCLUDE} ${OMDEV}/lib/3rdParty/Sundials/include)
+FIND_PATH(SUNDIALS_INCLUDE_DIR sundials/sundials_config.h /usr/include /usr/local/include $ENV{INCLUDE} ${Sundials_Path}/include)
+
+MESSAGE(STATUS "Sundials include:")
+MESSAGE(STATUS "${SUNDIALS_INCLUDE_DIR}")
 
 # SUNDIALS Libraires
-FIND_LIBRARY(SUNDIALS_LIBRARY_CVODE      NAMES sundials_cvode      PATHS /usr/lib /usr/local/lib $ENV{LIB} ${OMDEV}/lib/3rdParty/Sundials/lib/release/vc100)
-FIND_LIBRARY(SUNDIALS_LIBRARY_IDA        NAMES sundials_ida        PATHS /usr/lib /usr/local/lib $ENV{LIB} ${OMDEV}/lib/3rdParty/Sundials/lib/release/vc100)
-FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC       NAMES sundials_nvecserial        PATHS /usr/lib /usr/local/lib $ENV{LIB} ${OMDEV}/lib/3rdParty/Sundials/lib/release/vc100)
-FIND_LIBRARY(SUNDIALS_KINSOL       NAMES sundials_kinsol        PATHS /usr/lib /usr/local/lib $ENV{LIB} ${OMDEV}/lib/3rdParty/Sundials/lib/release/vc100)
-
-FIND_LIBRARY(SUNDIALS_LIBRARY_CVODED      NAMES sundials_cvoded      PATHS /usr/lib /usr/local/lib $ENV{LIB} ${OMDEV}/lib/3rdParty/Sundials/lib/debug/vc100)
-FIND_LIBRARY(SUNDIALS_LIBRARY_IDAD        NAMES sundials_idad        PATHS /usr/lib /usr/local/lib $ENV{LIB} ${OMDEV}/lib/3rdParty/Sundials/lib/debug/vc100)
-FIND_LIBRARY(SUNDIALS_LIBRARY_NVECD       NAMES sundials_nvecseriald        PATHS /usr/lib /usr/local/lib $ENV{LIB} ${OMDEV}/lib/3rdParty/Sundials/lib/debug/vc100)
-FIND_LIBRARY(SUNDIALS_KINSOLD       NAMES sundials_kinsold        PATHS /usr/lib /usr/local/lib $ENV{LIB} ${OMDEV}/lib/3rdParty/Sundials/lib/debug/vc100)
+if(MSVC)
+FIND_LIBRARY(SUNDIALS_LIBRARY_CVODE      NAMES sundials_cvode      PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+FIND_LIBRARY(SUNDIALS_LIBRARY_IDA        NAMES sundials_ida        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC       NAMES sundials_nvecserial        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+FIND_LIBRARY(SUNDIALS_KINSOL       NAMES sundials_kinsol        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+else(MSVC)
+FIND_LIBRARY(SUNDIALS_LIBRARY_CVODE      NAMES libsundials_cvode      PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+FIND_LIBRARY(SUNDIALS_LIBRARY_IDA        NAMES libsundials_ida        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC       NAMES libsundials_nvecserial        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+FIND_LIBRARY(SUNDIALS_KINSOL       NAMES libsundials_kinsol        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+endif(MSVC)
 
 IF(SUNDIALS_INCLUDE_DIR)
 
@@ -50,18 +64,6 @@ ENDIF(SUNDIALS_LIBRARY_CVODE AND
       SUNDIALS_LIBRARY_IDA AND
    SUNDIALS_LIBRARY_NVEC AND
    SUNDIALS_KINSOL)
-
-  if(SUNDIALS_LIBRARY_CVODED AND
-   SUNDIALS_LIBRARY_IDAD AND
-   SUNDIALS_LIBRARY_NVECD AND
-   SUNDIALS_KINSOLD)
-
-  SET(SUNDIALS_DEBUG_LIBRARIES ${SUNDIALS_LIBRARY_CVODED} ${SUNDIALS_LIBRARY_IDAD} ${SUNDIALS_LIBRARY_NVECD} ${SUNDIALS_KINSOLD})
-
-ENDIF(SUNDIALS_LIBRARY_CVODED AND
-      SUNDIALS_LIBRARY_IDAD AND
-   SUNDIALS_LIBRARY_NVECD AND
-   SUNDIALS_KINSOLD)
 
 ENDIF(SUNDIALS_INCLUDE_DIR)
 

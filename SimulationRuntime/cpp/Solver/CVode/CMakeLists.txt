@@ -10,6 +10,8 @@ add_precompiled_header(${CVodeName}_static Include/Core/Modelica.h )
 set_target_properties(${CVodeName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 install (TARGETS ${CVodeName}_static DESTINATION ${LIBINSTALLEXT})
 
+MESSAGE(STATUS "Sundials Libraries used for linking:")
+MESSAGE(STATUS "${SUNDIALS_LIBRARIES}")
 add_library(${CVodeName} SHARED CVode.cpp CVodeSettings.cpp FactoryExport.cpp  )
 target_link_libraries (${CVodeName} ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES})
 add_precompiled_header(${CVodeName} Include/Core/Modelica.h )
