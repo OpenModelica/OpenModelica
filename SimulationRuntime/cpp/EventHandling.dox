@@ -1,0 +1,26 @@
+/*!
+  \page Eventhandling
+  This page describes the basic workflow of event handling, which is performed by the solver in the c++ simulation runtime. There are two
+  important classes that are part of the workflow.
+    - Solver (e.g. CVode): Will estimate the step width and call the evaluation of state derivatives and zero crossing conditions
+    - Model: Implements the evaluation of state derivatives and zero crossings
+
+  \image html EventHandling.jpg "The image should visualize the basic principle of event handling. The numbers next to the circles indicate the order of execution."
+
+  Consider a model with a variable x and a condition x > 0. The behavior of x is shown in the figure above. At an arbitrary point of the simulation, 
+  the solver will evaluate the state derivatives and zero crossing conditions, shown as blue circles. As long as the condition x > 0 will stay the same, no event handling
+  is performed (steps 1 - 4). At step 5 the condition has changed from true to false, so the detailed event-point must be found. The solver will now start to evaluate all 
+  equations that are required to analyze the condition x > 0 for various points in time. These calculation are displayed as orange circles. Note that it's not necessary to
+  calculate the state derivatives at these evaluation points, because the solver can approximate the states out of the already known values. Now the solver will hopefully find the 
+  point in time that triggered the event (green circle).
+
+  For the implementation, the following functions are important:
+    - Blue Circle:
+      - evaluateODE
+      - evluateZeroFunc
+    - Orange Circle:
+      - setStates
+      - evaluateZeroFunc
+    - Green Circle:
+      - evaluateConditions
+ */
