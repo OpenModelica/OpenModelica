@@ -30,11 +30,30 @@
 
 /* Stack overflow handling */
 
+#include "meta_modelica.h"
+
+void* mmc_getStacktraceMessages_threadData(threadData_t *threadData)
+{
+  if (!threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW]) {
+    MMC_THROW_INTERNAL();
+  }
+  return threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW];
+}
+
+void* mmc_clearStacktraceMessages(threadData_t *threadData)
+{
+  threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW] = 0;
+}
+
+int mmc_hasStacktraceMessages(threadData_t *threadData)
+{
+  return threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW] != 0;
+}
+
 #if defined(linux) && !defined(_GNU_SOURCE)
 #define _GNU_SOURCE 1
 /* for pthread_getattr_np */
 #endif
-#include "meta_modelica.h"
 
 pthread_key_t mmc_stack_overflow_jumper;
 
@@ -114,24 +133,6 @@ void mmc_setStacktraceMessages_threadData(threadData_t *threadData, int numSkip,
   threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW] = res;
 }
 
-void* mmc_getStacktraceMessages_threadData(threadData_t *threadData)
-{
-  if (!threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW]) {
-    MMC_THROW_INTERNAL();
-  }
-  return threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW];
-}
-
-void* mmc_clearStacktraceMessages(threadData_t *threadData)
-{
-  threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW] = 0;
-}
-
-int mmc_hasStacktraceMessages(threadData_t *threadData)
-{
-  return threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW] != 0;
-}
-
 static sigset_t segvset;
 
 static void handler(int signo, siginfo_t *si, void *ptr)
@@ -178,7 +179,6 @@ static void* getStackBase() {
 
 void init_metamodelica_segv_handler()
 {
-#if 0
   char *stack = (char*)malloc(SIGSTKSZ);
   stack_t ss = {
       .ss_size = SIGSTKSZ,
@@ -192,7 +192,6 @@ void init_metamodelica_segv_handler()
   sigfillset(&sa.sa_mask);
   sigaction(SIGSEGV, &sa, &default_segv_action);
   sigfillset(&segvset);
-#endif
 }
 
 void mmc_init_stackoverflow(threadData_t *threadData)
@@ -201,10 +200,22 @@ void mmc_init_stackoverflow(threadData_t *threadData)
 }
 
 #else
+
+void mmc_setStacktraceMessages_threadData(threadData_t *threadData, int numSkip, int numFrames)
+{
+  threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW] = mmc_mk_cons(mmc_mk_scon("[... unsupported platform for backtraces]"), mmc_mk_nil());
+}
+
 void printStacktraceMessages()
 {
 }
+
 void init_metamodelica_segv_handler()
 {
+}
+
+void mmc_init_stackoverflow(threadData_t *threadData)
+{
+  threadData->stackBottom = 0x1; /* Dummy until Windows detects the stack bottom */
 }
 #endif
