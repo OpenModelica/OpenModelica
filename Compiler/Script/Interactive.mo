@@ -14649,11 +14649,14 @@ protected function addClassInElementitemlist
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Absyn.Class inClass;
   output list<Absyn.ElementItem> outAbsynElementItemLst;
+protected
+  Absyn.Info info;
 algorithm
+  Absyn.CLASS(info=info) := inClass;
   outAbsynElementItemLst := listAppend(inAbsynElementItemLst,
           {Absyn.ELEMENTITEM(
              Absyn.ELEMENT(false,NONE(),Absyn.NOT_INNER_OUTER(),Absyn.CLASSDEF(false,inClass),
-             Absyn.dummyInfo,NONE()))});
+             info,NONE()))});
 end addClassInElementitemlist;
 
 protected function getInnerClass
