@@ -53,6 +53,7 @@ DLLDirection extern pthread_key_t modelicaParserKey;
 #define ModelicaParser_langStd ((parser_members*)pthread_getspecific(modelicaParserKey))->langStd
 #define ModelicaParser_lexerError ((parser_members*)pthread_getspecific(modelicaParserKey))->lexerError
 #define ModelicaParser_encoding ((parser_members*)pthread_getspecific(modelicaParserKey))->encoding
+#define ModelicaParser_threadData ((parser_members*)pthread_getspecific(mmc_thread_data_key))
 
 typedef struct antlr_members_struct {
   int lexerError;
@@ -65,6 +66,7 @@ typedef struct antlr_members_struct {
   int readonly;
   int flags;
   int langStd;
+  threadData_t *threadData;
 } parser_members;
 
 #define PARSE_MODELICA        0

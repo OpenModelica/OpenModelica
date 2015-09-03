@@ -4593,7 +4593,11 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls, Stri
       let returnval2 = match at case at as SOME(__) then 'return 0;' case at as NONE() then ''
       <<
       int retValue;
-      debugDouble(LOG_DT, "Solving nonlinear system <%nls.index%> (STRICT TEARING SET if tearing enabled) at time =", data->localData[0]->timeValue);
+      if(ACTIVE_STREAM(LOG_DT))
+      {
+        infoStreamPrint(LOG_DT, 1, "Solving nonlinear system <%nls.index%> (STRICT TEARING SET if tearing enabled) at time = %18.10e", data->localData[0]->timeValue);
+        messageClose(LOG_DT);
+      }
       <% if profileSome() then
       <<
       SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%nls.index%>).profileBlockIndex);
@@ -4636,7 +4640,11 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, Te
       let nonlinindx = at.indexNonLinearSystem
       <<
       int retValue;
-      debugDouble(LOG_DT, "Solving nonlinear system <%at.index%> (CASUAL TEARING SET) at time =", data->localData[0]->timeValue);
+      if(ACTIVE_STREAM(LOG_DT))
+      {
+        infoStreamPrint(LOG_DT, 1, "Solving nonlinear system <%at.index%> (CASUAL TEARING SET) at time = %18.10e", data->localData[0]->timeValue);
+        messageClose(LOG_DT);
+      }
       <% if profileSome() then
       <<
       SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%at.index%>).profileBlockIndex);

@@ -6,7 +6,10 @@
 
 #include <SimCoreFactory/ObjectFactory.h>
 
-
+boost::shared_ptr<INonLinSolverSettings> createNewtonSettings();
+ boost::shared_ptr<INonLinSolverSettings> createKinsolSettings();
+ boost::shared_ptr<IAlgLoopSolver> createNewtonSolver(IAlgLoop* algLoop, boost::shared_ptr<INonLinSolverSettings> solver_settings);
+ boost::shared_ptr<IAlgLoopSolver> createKinsolSolver(IAlgLoop* algLoop, boost::shared_ptr<INonLinSolverSettings> solver_settings);
 template <class CreationPolicy>
 class StaticNonLinSolverOMCFactory : virtual public ObjectFactory<CreationPolicy>
 {
@@ -24,14 +27,14 @@ public:
 
       if(nonlin_solver.compare("newton")==0)
       {
-        boost::shared_ptr<INonLinSolverSettings> settings = boost::shared_ptr<INonLinSolverSettings>(new NewtonSettings());
+        boost::shared_ptr<INonLinSolverSettings> settings = createNewtonSettings();
         return settings;
       }
 
       #ifdef ENABLE_KINSOL_STATIC
       if(nonlin_solver.compare("kinsol")==0)
       {
-          boost::shared_ptr<INonLinSolverSettings> settings = boost::shared_ptr<INonLinSolverSettings>(new KinsolSettings());
+          boost::shared_ptr<INonLinSolverSettings> settings = createKinsolSettings();
           return settings;
       }
       #endif //ENABLE_KINSOL_STATIC
@@ -42,15 +45,15 @@ public:
    {
       if(solver_name.compare("newton")==0)
       {
-        boost::shared_ptr<IAlgLoopSolver> solver = boost::shared_ptr<IAlgLoopSolver>(new Newton(algLoop,solver_settings.get()));
-        return solver;
+        boost::shared_ptr<IAlgLoopSolver> newton = createNewtonSolver(algLoop,solver_settings);
+        return newton;
       }
 
       #ifdef ENABLE_KINSOL_STATIC
       if(solver_name.compare("kinsol")==0)
       {
-        boost::shared_ptr<IAlgLoopSolver> settings = boost::shared_ptr<IAlgLoopSolver>(new Kinsol(algLoop,solver_settings.get()));
-        return settings;
+        boost::shared_ptr<IAlgLoopSolver> kinsol = createKinsolSolver(algLoop,solver_settings);
+        return kinsol;
       }
       #endif //ENABLE_KINSOL_STATIC
       throw ModelicaSimulationError(MODEL_FACTORY,"Selected nonlin solver is not available");

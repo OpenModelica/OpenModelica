@@ -1646,7 +1646,6 @@ algorithm
       DAE.Type typ;
       list<BackendDAE.Equation> addEqs;
       list<DAE.ComponentRef> scalars, varScalars,constScalars, outputs, initOutputs;
-      list<list<DAE.Exp>> lhsExpLst;
       list<DAE.Statement> stmts1, stmts2, stmtsIf, rest, addStmts, stmtsNew, allStmts, initStmts, tplStmts;
       list<list<DAE.Statement>> stmtsLst;
       list<DAE.Exp> expLst,tplExpsLHS,tplExpsRHS,lhsExps,lhsExpsInit,rhsExps;
@@ -1680,9 +1679,9 @@ algorithm
         repl = BackendVarTransform.removeReplacements(repl,outputs,NONE());
 
         // check if its constant, a record or a tuple
-        isCon = Expression.isConst(exp2);
+        isCon = Expression.isConst(exp2) and not Expression.isCall(exp2);
         eqDim = listLength(scalars) == listLength(expLst);  // so it can be partly constant
-        isRec = ComponentReference.isRecord(cref) or Expression.isCall(exp2);
+        isRec = ComponentReference.isRecord(cref) or Expression.isRecordCall(exp2,funcTree);
         isTpl = Expression.isTuple(exp1) and Expression.isTuple(exp2);
         //print("is it const? "+boolString(isCon)+" ,is it rec: "+boolString(isRec)+" ,is it tpl: "+boolString(isTpl)+"\n");
 
@@ -1745,7 +1744,7 @@ algorithm
         repl = BackendVarTransform.removeReplacements(repl,outputs,NONE());
 
         // check if its constant, a record or a tuple
-        isCon = Expression.isConst(exp2);
+        isCon = Expression.isConst(exp2) and not Expression.isCall(exp2);
         eqDim = listLength(scalars) == listLength(expLst);  // so it can be partly constant
         isRec = ComponentReference.isRecord(cref);
         isArr = ComponentReference.isArrayElement(cref);
@@ -1780,7 +1779,7 @@ algorithm
         tplStmts = List.map2(List.intRange(listLength(tplExpsLHS)),makeAssignmentMap,tplExpsLHS,tplExpsRHS);
         stmts1 = if isTpl then tplStmts else {alg};
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("evaluated assignment to:\n"+stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+"\n");
+          print("evaluated array assignment to:\n"+stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+"\n");
         end if;
 
         //stmts1 = listAppend({alg},lstIn);
@@ -1913,21 +1912,14 @@ algorithm
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
           print("For-statement:\n"+DAEDump.ppStatementStr(alg));
         end if;
-        // at least remove the replacements for the lhs so we dont declare something as constant which isnt
-        lhsExps = List.fold(stmts1,getStatementLHS,{});
-        lhsExps = List.unique(lhsExps);
-        lhsExpLst = List.map(lhsExps,Expression.getComplexContents); //consider arrays etc.
-        lhsExps = listAppend(List.flatten(lhsExpLst),lhsExps);
-        lhsExps = List.filterOnTrue(lhsExps,Expression.isCref); //remove e.g. ASUBs and consider only the scalar subs
-        outputs = List.map(lhsExps,Expression.expCref);
-        repl = if true then BackendVarTransform.removeReplacements(replIn,outputs,NONE()) else replIn;
 
         // lets see if we can evaluate it
+        (stmts1,funcTree,repl,idx) = evaluateForStatement(listHead(algsIn), funcTree,replIn,idx);
 
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("evaluated For-statement to:\n"+DAEDump.ppStatementStr(alg));
+          print("evaluated for-statements to:\n"+stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+"\n");
         end if;
-        stmts2 = alg::lstIn;
+        stmts2 = listAppend(listReverse(stmts1),lstIn);
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts2);
       then (rest,(funcTree,repl,idx));
 
@@ -2016,6 +2008,86 @@ algorithm
         fail();
   end matchcontinue;
 end evaluateFunctions_updateStatement;
+
+protected function evaluateForStatement"evaluates a for statement. neste for loops wont work"
+  input DAE.Statement stmtIn;
+  input DAE.FunctionTree funcTreeIn;
+  input BackendVarTransform.VariableReplacements replIn;
+  input Integer idxIn;
+  output list<DAE.Statement> stmtsOut;
+  output DAE.FunctionTree funcTreeOut;
+  output BackendVarTransform.VariableReplacements replOut;
+  output Integer idxOut;
+protected
+  Boolean hasNoRepl;
+  Integer i, start, stop ,step;
+  DAE.Ident iter;
+  DAE.Exp range;
+  BackendVarTransform.VariableReplacements repl;
+  list<DAE.ComponentRef> outputs;
+  list<DAE.Exp> lhsExps;
+  list<list<DAE.Exp>> lhsExpLst;
+  list<DAE.Statement> stmts,stmtsIn;
+algorithm
+  DAE.STMT_FOR(iter=iter, range=range, statementLst=stmtsIn) :=  stmtIn;
+  try
+    (range,_) := BackendVarTransform.replaceExp(range,replIn,NONE());
+    (start,stop,step) := getRangeBounds(range);
+    true := intEq(step,1);
+    repl := replIn;
+    for i in List.intRange2(start,stop) loop
+      repl := BackendVarTransform.addReplacement(repl, ComponentReference.makeCrefIdent(iter,DAE.T_INTEGER_DEFAULT,{}),DAE.ICONST(i),NONE());
+      (stmts,((_,repl,_))) := evaluateFunctions_updateStatement(stmtsIn,(funcTreeIn,repl,i),{});
+
+      // check if any variable has been evaluated. If not, skip the loop (this is necessary for testsuite/modelica/linear_systems/problem1.mos)
+      lhsExps := List.fold1(stmts,getStatementLHSScalar,funcTreeIn,{});
+      lhsExps := List.unique(lhsExps);
+      outputs := List.map(lhsExps,Expression.expCref);
+      hasNoRepl := List.fold(List.map1(outputs,BackendVarTransform.hasNoReplacementCrefFirst,repl),boolAnd,true);
+      if hasNoRepl then
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then print("For-loop evaluation is skipped, since the first loop evaluated nothing.\n"); end if;
+        fail();
+      end if;
+    end for;
+    replOut :=  BackendVarTransform.removeReplacement(repl,ComponentReference.makeCrefIdent(iter,DAE.T_INTEGER_DEFAULT,{}),NONE());
+    funcTreeOut := funcTreeIn;
+    idxOut := idxIn;
+    stmtsOut := stmts;
+  else
+    // at least remove the replacements for the lhs so we dont declare something as constant which isnt
+    lhsExps := List.fold(stmtsIn,getStatementLHS,{});
+    lhsExps := List.unique(lhsExps);
+    lhsExpLst := List.map(lhsExps,Expression.getComplexContents); //consider arrays etc.
+    lhsExps := listAppend(List.flatten(lhsExpLst),lhsExps);
+    lhsExps := List.filterOnTrue(lhsExps,Expression.isCref); //remove e.g. ASUBs and consider only the scalar subs
+    outputs := List.map(lhsExps,Expression.expCref);
+    replOut := if true then BackendVarTransform.removeReplacements(replIn,outputs,NONE()) else replIn;
+    stmtsOut := {stmtIn};
+    funcTreeOut := funcTreeIn;
+    idxOut := idxIn;
+  end try;
+end evaluateForStatement;
+
+protected function getRangeBounds
+  input DAE.Exp range;
+  output Integer start;
+  output Integer stop;
+  output Integer step;
+algorithm
+  (start, stop, step) := matchcontinue(range)
+    local
+      Integer i1,i2,i3;
+  case(DAE.RANGE(start= DAE.ICONST(i1),step=NONE(),stop=DAE.ICONST(i2)))
+    then (i1,i2,1);
+  case(DAE.RANGE(start= DAE.ICONST(i1),step=SOME(DAE.ICONST(i3)),stop=DAE.ICONST(i2)))
+    then (i1,i2,i3);
+  else
+  equation
+    //print("getRangeBounds failed!"+ExpressionDump.printExpStr(range)+"\n");
+    then fail();
+  end matchcontinue;
+end getRangeBounds;
+
 
 protected function evaluateIfStatement "check if the cases are constant and if so evaluate them.
 author: Waurich TUD 2014-04"

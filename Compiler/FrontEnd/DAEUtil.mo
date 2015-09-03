@@ -3982,6 +3982,14 @@ algorithm
         (maybeCrExp,extraArg) = func(Expression.crefExp(cr), extraArg);
         // If the result is DAE.CREF, we replace the name of the variable.
         // Otherwise, we only use the extraArg
+        dims = list(match d
+            case DAE.DIM_EXP(e)
+              equation
+                (e2,extraArg) = func(e, extraArg);
+              then if referenceEq(e,e2) then d else DAE.DIM_EXP(e2);
+            else d;
+          end match
+          for d in dims);
         cr2 = Util.makeValueOrDefault(Expression.expCref,maybeCrExp,cr);
         (optExp,extraArg) = traverseDAEOptExp(optExp,func,extraArg);
         (attr,extraArg) = traverseDAEVarAttr(attr,func,extraArg);

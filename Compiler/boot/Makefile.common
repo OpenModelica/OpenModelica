@@ -102,14 +102,14 @@ interfaces: $(ALL_INTERFACES) $(ALL_SOURCES)
 %.stamp.mo:
 	@mkdir -p build
 	@echo 'echo(false);inFile := "$<";outFile := "$@.tmp"; runScript("GenerateInterface.mos"); print(getErrorString()); print("Something went horribly wrong for $@\\n"); exit(1);' > "$@.mos"
-	$(OMC) +n=1 $@.mos
+	$(OMC) -n=1 $@.mos
 	@touch $@
 %.interface.mo: %.stamp.mo
 
 ifeq ($(wildcard $(OMC)),)
 else
 Makefile.sources: LoadCompilerSources.mos MakeSources.mos
-	$(OMC) +n=1 MakeSources.mos
+	$(OMC) -n=1 MakeSources.mos
 	mv Makefile.sources.tmp Makefile.sources
 	mv LoadCompilerInterface.mos.tmp LoadCompilerInterface.mos
 
@@ -117,13 +117,13 @@ LoadCompilerInterface.mos: Makefile.sources
 	@test -f $@ || (rm -f $< && $(MAKE) -f $(defaultMakefileTarget) $<)
 Makefile.depends: MakeDepends.mos LoadCompilerInterface.mos Makefile.sources $(ALL_INTERFACES:%.stamp.mo=%.interface.mo)
 	@rm -f $@
-	$(OMC) +n=1 $<
+	$(OMC) -n=1 $<
 endif
 
 $(GEN_DIR)%.stamp:
 	@test ! -z "$^" || (echo Empty dependencies for $@ ; false)
 	@echo 'echo(false);files:={"'`echo $^ | sed 's/ /","/g'`'"};mainClass:=$$TypeName('`basename $@ | sed "s/[.]stamp//"`');runScript("CompileFile.mos");print("Something went horribly wrong for '$@'\\n");exit(1);' > $@.mos
-	$(OMC) +n=1 $@.mos
+	$(OMC) -n=1 $@.mos
 	@touch $@
 
 $(GEN_DIR)_main.c:

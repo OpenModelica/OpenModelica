@@ -47,6 +47,8 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_cvode(boost::extens
          boost::shared_ptr<ISolverSettings> cvode_settings = boost::shared_ptr<ISolverSettings>(new CVodeSettings(globalSettings.get()));
          return cvode_settings;
     }
+
+
 #else
 error "operating system not supported"
 #endif

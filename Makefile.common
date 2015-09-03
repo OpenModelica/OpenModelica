@@ -25,7 +25,7 @@ INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 
-.PHONY : interactive omc release all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc
+.PHONY : interactive omc release all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc $(MINGW_EXTRA_LIBS)
 
 mkbuilddirs:
 	@echo Making build directories under $(OMBUILDDIR)
@@ -53,7 +53,7 @@ mkbuilddirs:
 
 release: omc
 
-bootstrap-dependencies: graphstream $(BOOTSTRAP_FMIL_DEP)
+bootstrap-dependencies: graphstream $(BOOTSTRAP_FMIL_DEP) $(MINGW_EXTRA_LIBS)
 	# NOTE: OpenModelicaBootstrappingHeader.h has to be regenerated without any other process writing to so/etc or you get bus errors
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler OpenModelicaBootstrappingHeader.h OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/runtime install OMBUILDDIR=$(OMBUILDDIR)
@@ -75,7 +75,7 @@ interactive-common: .testvariables mkbuilddirs boehm-gc idl ModelicaExternalC
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
 
-interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack docs $(IPOPT_TARGET) $(UMFPACK_TARGET)
+interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack docs $(IPOPT_TARGET) $(UMFPACK_TARGET) $(MINGW_EXTRA_LIBS)
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
 docs:
@@ -119,6 +119,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/libipopt.la: 3rdParty/Ipopt/Makefile
 	$(MAKE) -C 3rdParty/Ipopt install
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libipopt.0.0.0.dylib 3rdParty/Ipopt/lib/libipopt.0.0.0.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libcoinmumps.1.5.2.dylib 3rdParty/Ipopt/lib/libcoinmumps.1.5.2.dylib
+	test ! `uname` = Darwin || install_name_tool -change "`pwd`/3rdParty/Ipopt/lib/libcoinmumps.1.dylib" @rpath/libcoinmumps.1.dylib 3rdParty/Ipopt/lib/libipopt.0.0.0.dylib
 	cp -a 3rdParty/Ipopt/lib*/*.* $(OMBUILDDIR)/$(LIB_OMC)
 
 ipopt: $(OMBUILDDIR)/$(LIB_OMC)/libipopt.la
@@ -168,13 +169,13 @@ omc-and-runtimeCPPinstall: mkbuilddirs
 	$(MAKE) CMinpack
 	$(MAKE) omc runtimeCPPinstall OMBUILDDIR=$(OMBUILDDIR)
 
-runtimeCPP: CMinpack
+runtimeCPP: CMinpack $(MINGW_EXTRA_LIBS)
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
 CMAKE_ARGS=$(filter CMAKE_%, $(MAKEFLAGS))
 
 
-runtimeCPPinstall: CMinpack copycppheader omc
+runtimeCPPinstall: CMinpack $(MINGW_EXTRA_LIBS) copycppheader omc
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR)
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppCVode.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppCVode.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppDataExchange.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppDataExchange.dylib
@@ -393,6 +394,37 @@ $(OMBUILDDIR)/share/omc/java/org.omc.graphstream.jar: mkbuilddirs
 graphstream-clean:
 	if test -f 3rdParty/graphstream/Makefile; then $(MAKE) -C 3rdParty/graphstream/ clean; fi
 
+# build lpsolve
+lpsolve: 3rdParty/lpsolve/Makefile
+	$(MAKE) -C 3rdParty/lpsolve/ install CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)"
+3rdParty/lpsolve/Makefile: 3rdParty/lpsolve/configure.ac
+	(cd 3rdParty/lpsolve && autoreconf -vif && ./configure --prefix=`pwd`/build "--host=$(host)" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)")
+clean-lpsolve:
+	rm -rf 3rdParty/lpsolve/build
+# build sqlite3
+sqlite3: 3rdParty/sqlite3/Makefile
+	$(MAKE) -C 3rdParty/sqlite3/ install CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)"
+3rdParty/sqlite3/Makefile: 3rdParty/sqlite3/configure.ac
+	(cd 3rdParty/sqlite3 && autoreconf -vif && automake --add-missing && ./configure --prefix=`pwd`/build "--host=$(host)" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)")
+clean-sqlite3:
+	rm -rf 3rdParty/sqlite3/build
+# build sundials
+sundials: 3rdParty/sundials/CMakeLists.txt
+	mkdir -p 3rdParty/sundials/build
+	cd 3rdParty/sundials/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX=`pwd`
+	$(MAKE) -C 3rdParty/sundials/build install
+	# adrpo: do not copy the headers as they are not needed!
+	mkdir -p $(OMBUILDDIR)/include/omc/c/sundials
+	(cp -pufr 3rdParty/sundials/build/include/* $(OMBUILDDIR)/include/omc/c/sundials)
+	# copy the libs to the build/lib/omc directory
+	(cp -puf 3rdParty/sundials/build/lib/* $(builddir_lib_omc))
+	# copy the dlls to the build bin directory
+	(cp -puf 3rdParty/sundials/build/lib/*.dll $(builddir_bin))
+clean-sundials:
+	if test -d 3rdParty/sundials/build ; then cd 3rdParty/sundials/build && make clean ; fi
+	rm -rf $(OMBUILDDIR)/include/omc/cpp/sundials
+	rm -f $(builddir_lib_omc)/libsundials*
+
 sanity-check: omc
 	$(OMBUILDDIR)/bin/omc Examples/SanityCheck.mos
 
@@ -403,9 +435,11 @@ $(LIBMODELICAEXTERNALC):
 	(cd "$(MODELICAEXTERNALC)/BuildProjects/autotools" && (test -f Makefile || (./configure ${MSL321_CONFIG_EXTRA_FLAGS} "--host=$(host)" --libdir="$(OMBUILDDIR)/$(LIB_OMC)/" CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" $(MSL_EXTRA_ARGS) && $(MAKE) clean)))
 	$(MAKE) -C "$(MODELICAEXTERNALC)/BuildProjects/autotools"
 	$(MAKE) -C "$(MODELICAEXTERNALC)/BuildProjects/autotools" install
-	@test -f $@
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libModelicaExternalC.0.dylib "$@"
+	@test -f "$@"
 $(LIBMODELICASTANDARDTABLES): $(LIBMODELICAEXTERNALC)
-	@test -f $@
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libModelicaStandardTables.0.dylib "$@"
+	@test -f "$@"
 
 git-clean:
 	test -e .git

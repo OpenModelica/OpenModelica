@@ -2436,7 +2436,7 @@ algorithm
           DAE.CASE({}, NONE(), {}, else_branch, SOME(DAE.TUPLE({})), info, 0, info)
         };
 
-        exp := DAE.MATCHEXPRESSION(DAE.MATCHCONTINUE(), {}, {}, {}, cases,
+        exp := DAE.MATCHEXPRESSION(if SCode.commentHasBooleanNamedAnnotation(inStatement.comment, "__OpenModelica_stackOverflowCheckpoint") then DAE.TRY_STACKOVERFLOW() else DAE.MATCHCONTINUE(), {}, {}, {}, cases,
           DAE.T_NORETCALL_DEFAULT);
       then
         {DAE.STMT_NORETCALL(exp, source)};

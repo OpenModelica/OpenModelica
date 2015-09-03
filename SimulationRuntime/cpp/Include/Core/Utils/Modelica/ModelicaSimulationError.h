@@ -31,7 +31,7 @@ class ModelicaSimulationError : public std::runtime_error
      * Create a new modelica error object with the given arguments.
      * @param error_id The identifier related to the sender of the error. \see SIMULATION_ERROR for detail.
      * @param error_info Error message that should be shown.
-     * @param description More detailed description of the occurred error i.e. the error-message of the inner exception
+     * @param description More detailed description of the occurred error e.g. the error-message of the inner exception
      * @param suppress Set to true if the error should not appear on std::err and std::out.
      */
     ModelicaSimulationError(SIMULATION_ERROR error_id, const std::string& error_info, std::string description = "", bool suppress = false)

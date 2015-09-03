@@ -2860,7 +2860,6 @@ algorithm
   flow_exp := flowExp(inElement);
   ty := Expression.typeof(flow_exp);
   attr_oexp := Types.lookupAttributeExp(Types.getAttributes(ty), attr);
-  isZero := false;
   if isSome(attr_oexp) then
     SOME(attr_exp) := attr_oexp;
     isZero := Expression.isZero(attr_exp);

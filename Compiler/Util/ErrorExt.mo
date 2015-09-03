@@ -122,6 +122,21 @@ function clearMessages
   external "C" ErrorImpl__clearMessages(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end clearMessages;
 
+function getNumCheckpoints "Used to rollback/delete checkpoints without considering the identifier. Used to reset the error messages after a stack overflow exception."
+  output Integer n;
+  external "C" n=ErrorImpl__getNumCheckpoints(OpenModelica.threadData()) annotation(Library = "omcruntime");
+end getNumCheckpoints;
+
+function rollbackNumCheckpoints "Used to rollback/delete checkpoints without considering the identifier. Used to reset the error messages after a stack overflow exception."
+  input Integer n;
+  external "C" ErrorImpl__rollbackNumCheckpoints(OpenModelica.threadData(), n) annotation(Library = "omcruntime");
+end rollbackNumCheckpoints;
+
+function deleteNumCheckpoints "Used to rollback/delete checkpoints without considering the identifier. Used to reset the error messages after a stack overflow exception."
+  input Integer n;
+  external "C" ErrorImpl__deleteNumCheckpoints(OpenModelica.threadData(), n) annotation(Library = "omcruntime");
+end deleteNumCheckpoints;
+
 function setCheckpoint "sets a checkpoint for the error messages, so error messages can be rolled back (i.e. deleted) up to this point
 A unique identifier for this checkpoint must be provided. It is checked when doing rollback or deletion"
   input String id "uniqe identifier for the checkpoint (up to the programmer to guarantee uniqueness)";

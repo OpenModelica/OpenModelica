@@ -32,8 +32,25 @@ public:
   virtual std::pair<boost::shared_ptr<ISimController>,SimSettings> createSimulation(int argc, const char* argv[], std::map<std::string, std::string> &opts);
 
 protected:
-  /** merge command line args with built-in args and adapt OMEdit args to Cpp */
-  std::vector<const char *> preprocessArguments(int argc, const char* argv[], std::map<std::string, std::string> &opts);
+  /**
+   * This function handles complex c-runtime arguments like "-override=startTime=0,...". The
+   * arguments are separated correctly returned as vector. Furthermore the are added to the given
+   * opts-map (old values are overwritten).
+   * @param argc Number of arguments in the argv-array.
+   * @param argv The command line arguments as c-string array.
+   * @param opts Already parsed command line arguments (as key-value-pairs)
+   * @return All arguments as simple entries.
+   */
+  std::vector<const char *> handleComplexCRuntimeArguments(int argc, const char* argv[], std::map<std::string, std::string> &opts);
+
+  /**
+   * Replace all argument names that are part of the arguments-to-replace-map.
+   * @param argc Number of arguments in the argv-array.
+   * @param argv The command line arguments as c-string array.
+   * @param opts Already parsed command line arguments (as key-value-pairs)
+   * @return All arguments including the replaced strings.
+   */
+  std::vector<const char *> handleArgumentsToReplace(int argc, const char* argv[], std::map<std::string, std::string> &opts);
 
   /**
    * Evaluate all given command line arguments and store their values into the SimSettings structure.
@@ -55,14 +72,16 @@ protected:
   pair<string, string> parseIngoredAndWrongFormatOption(const string &s);
 
   void fillArgumentsToIgnore();
+  void fillArgumentsToReplace();
 
   //boost::shared_ptr<ISimController> _simController;
-  std::map<string,shared_library> _modules;
-  std::string _defaultLinSolver;
-  std::string _defaultNonLinSolver;
+  map<string,shared_library> _modules;
+  string _defaultLinSolver;
+  string _defaultNonLinSolver;
   PATH _library_path;
   PATH _modelicasystem_path;
-  boost::unordered_set<string> _argumentsToIgnore; //a set of arguments that should be ignored,
+  boost::unordered_set<string> _argumentsToIgnore; //a set of arguments that should be ignored
+  std::map<string, string> _argumentsToReplace; //a mapping to replace arguments (e.g. -r=... -> -F=...)
   std::string _overrideOMEdit; // unrecognized options if called from OMEdit
 };
 /** @} */ // end of simcorefactoryOMCFactory

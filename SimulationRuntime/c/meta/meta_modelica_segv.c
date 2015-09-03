@@ -30,11 +30,30 @@
 
 /* Stack overflow handling */
 
+#include "meta_modelica.h"
+
+void* mmc_getStacktraceMessages_threadData(threadData_t *threadData)
+{
+  if (!threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW]) {
+    MMC_THROW_INTERNAL();
+  }
+  return threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW];
+}
+
+void* mmc_clearStacktraceMessages(threadData_t *threadData)
+{
+  threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW] = 0;
+}
+
+int mmc_hasStacktraceMessages(threadData_t *threadData)
+{
+  return threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW] != 0;
+}
+
 #if defined(linux) && !defined(_GNU_SOURCE)
 #define _GNU_SOURCE 1
 /* for pthread_getattr_np */
 #endif
-#include "meta_modelica.h"
 
 pthread_key_t mmc_stack_overflow_jumper;
 
@@ -52,15 +71,12 @@ pthread_key_t mmc_stack_overflow_jumper;
 #include <setjmp.h>
 #include <unistd.h>
 
-/* Really 64kB memory for this? Oh well... */
-#define TRACE_NFRAMES 65536
 /* If we find a SIGSEGV near the end of the stack, it is probably due to a stack overflow. 64kB for a function frame seems reasonable. */
 #define LIMIT_FOR_STACK_OVERFLOW 65536
 
-static void *trace[TRACE_NFRAMES];
+static void *trace[MMC_SEGV_TRACE_NFRAMES];
 static int trace_size;
 static int trace_size_skip=0; /* First index we should use; that is skip handler, etc */
-static void *stackBottom;
 static struct sigaction default_segv_action;
 
 void printStacktraceMessages() {
@@ -82,16 +98,39 @@ void printStacktraceMessages() {
       fprintf(stderr,"%s\n", messages[i]);
     }
   }
-  if (trace_size==TRACE_NFRAMES) {
+  if (trace_size==MMC_SEGV_TRACE_NFRAMES) {
     fprintf(stderr,"[bt] [...]\n");
   }
   free(messages);
 }
 
-static inline void setTrace(int numSkip, int numFrames) {
+void mmc_setStacktraceMessages(int numSkip, int numFrames) {
   trace_size = 0;
-  trace_size = backtrace(trace, numFrames == 0 ? TRACE_NFRAMES : numFrames > TRACE_NFRAMES ? TRACE_NFRAMES : numFrames);
+  trace_size = backtrace(trace, numFrames == 0 ? MMC_SEGV_TRACE_NFRAMES : numFrames > MMC_SEGV_TRACE_NFRAMES ? MMC_SEGV_TRACE_NFRAMES : numFrames);
   trace_size_skip = numSkip;
+}
+
+void mmc_setStacktraceMessages_threadData(threadData_t *threadData, int numSkip, int numFrames)
+{
+  assert(numFrames > 0);
+  void **trace = (void**) GC_malloc_atomic(numFrames*sizeof(void*));
+  char **messages;
+  void *res;
+  int i;
+  int trace_size = backtrace(trace, numFrames);
+
+  res = mmc_mk_nil();
+  messages = backtrace_symbols(trace, trace_size);
+
+  if (trace_size==numFrames) {
+    res = mmc_mk_cons(mmc_mk_scon("[...]"), res);
+  }
+  for (i=trace_size-1; i>=trace_size_skip; --i) {
+    res = mmc_mk_cons(mmc_mk_scon(messages[i]), res);
+  }
+  GC_free(trace);
+  free(messages);
+  threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW] = res;
 }
 
 static sigset_t segvset;
@@ -99,25 +138,27 @@ static sigset_t segvset;
 static void handler(int signo, siginfo_t *si, void *ptr)
 {
   int unused __attribute__((unused)), isStackOverflow;
-  isStackOverflow = si->si_addr < stackBottom && (si->si_addr > stackBottom - LIMIT_FOR_STACK_OVERFLOW);
+  threadData_t *threadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  isStackOverflow = si->si_addr < threadData->stackBottom && si->si_addr > threadData->stackBottom-LIMIT_FOR_STACK_OVERFLOW;
   if (isStackOverflow) {
-    setTrace(1,0);
+    mmc_setStacktraceMessages(1,0);
     sigprocmask(SIG_UNBLOCK, &segvset, NULL);
-    longjmp(*((threadData_t*)pthread_getspecific(mmc_thread_data_key))->mmc_stack_overflow_jumper,1);
+    longjmp(*threadData->mmc_stack_overflow_jumper,1);
   }
   /* This backtrace uses very little stack-space, and segmentation faults we always want to print... */
-  setTrace(1,16);
+  mmc_setStacktraceMessages(1,16);
   unused=write(2, "\nLimited backtrace at point of segmentation fault\n", 50);
   backtrace_symbols_fd(trace+trace_size_skip, trace_size-trace_size_skip, 2);
   sigaction(SIGSEGV, &default_segv_action, 0);
 }
 
-static void getStackBase() {
+static void* getStackBase() {
   /* Warning: These functions are highly non-portable and are recommended to not be used.
    * We only tested them on Linux and OSX.
    * On OSX we get the top of the stack and the size
    * On Linux we get the bottom, so we don't need the size... YMMV
    */
+  void* stackBottom;
   pthread_t self = pthread_self();
 #if !defined(__APPLE_CC__)
   size_t size = 0;
@@ -132,6 +173,8 @@ static void getStackBase() {
   size_t size = pthread_get_stacksize_np(self);
   stackBottom = ((long)addr) - size;
 #endif
+  assert(size > 128*1024);
+  return stackBottom + 64*1024;
 }
 
 void init_metamodelica_segv_handler()
@@ -145,18 +188,34 @@ void init_metamodelica_segv_handler()
       .sa_sigaction = handler,
       .sa_flags = SA_ONSTACK | SA_SIGINFO
   };
-  getStackBase();
   sigaltstack(&ss, 0);
   sigfillset(&sa.sa_mask);
   sigaction(SIGSEGV, &sa, &default_segv_action);
   sigfillset(&segvset);
 }
 
+void mmc_init_stackoverflow(threadData_t *threadData)
+{
+  threadData->stackBottom = getStackBase();
+}
+
 #else
+
+void mmc_setStacktraceMessages_threadData(threadData_t *threadData, int numSkip, int numFrames)
+{
+  threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW] = mmc_mk_cons(mmc_mk_scon("[... unsupported platform for backtraces]"), mmc_mk_nil());
+}
+
 void printStacktraceMessages()
 {
 }
+
 void init_metamodelica_segv_handler()
 {
+}
+
+void mmc_init_stackoverflow(threadData_t *threadData)
+{
+  threadData->stackBottom = 0x1; /* Dummy until Windows detects the stack bottom */
 }
 #endif

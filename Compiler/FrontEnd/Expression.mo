@@ -8346,6 +8346,25 @@ algorithm
   end match;
 end isCall;
 
+public function isRecordCall
+  "Returns true if the given expression is a record call,i.e. a function call without elements
+   otherwise false."
+  input DAE.Exp inExp;
+  input DAE.FunctionTree funcsIn;
+  output Boolean outIsCall;
+algorithm
+  outIsCall := match(inExp,funcsIn)
+    local
+      Absyn.Path path;
+      DAE.Function func;
+    case (DAE.CALL(path=path),_)
+      equation
+        SOME(func) = DAEUtil.avlTreeGet(funcsIn,path);
+         then listEmpty(DAEUtil.getFunctionElements(func));
+    else false;
+  end match;
+end isRecordCall;
+
 public function isNotCref
   "Returns true if the given expression is a not component reference,
    otherwise false."

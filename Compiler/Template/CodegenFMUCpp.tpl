@@ -734,13 +734,12 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
 
   FMU_CFLAGS=$(SYSTEM_CFLAGS:-O0=$(SIM_OR_DYNLOAD_OPT_LEVEL))
-  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(FMU_CFLAGS) -DRUNTIME_STATIC_LINKING -I"$(OMHOME)/include/omc/cpp" -I"$(UMFPACK_INCLUDE)" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%additionalCFlags_GCC%>
+  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(FMU_CFLAGS) -DRUNTIME_STATIC_LINKING -I"$(OMHOME)/include/omc/cpp" -I"$(UMFPACK_INCLUDE)" -I"$(SUNDIALS_INCLUDE)" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%additionalCFlags_GCC%>
 
   ifeq ($(USE_LOGGER),ON)
   $(eval CFLAGS=$(CFLAGS) -DUSE_LOGGER)
   endif
 
-  CPPFLAGS = $(CFLAGS)
   LDFLAGS=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" -L"$(BOOST_LIBS)" <%additionalLinkerFlags_GCC%>
   PLATFORM="<%platformstr%>"
 
@@ -751,6 +750,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   ifeq ($(USE_FMU_KINSOL),ON)
   $(eval OMCPP_SOLVER_LIBS=$(OMCPP_SOLVER_LIBS) -lOMCppKinsol_static $(SUNDIALS_LIBRARIES))
   endif
+
+  CPPFLAGS = $(CFLAGS)
 
   OMCPP_LIBS=-Wl,--start-group -lOMCppOMCFactory_FMU_static -lOMCppSystem_static -lOMCppSimController_static -Wl,--end-group -lOMCppDataExchange_static -lOMCppSimulationSettings_static $(OMCPP_SOLVER_LIBS) -lOMCppSolver_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppExtensionUtilities_static -lOMCppFMU_static
   MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)

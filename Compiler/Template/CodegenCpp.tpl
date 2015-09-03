@@ -2400,7 +2400,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       opts["-I"] = "<%solver%>";
       opts["-R"] = "<%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
       opts["-M"] = "<%moLib%>";
-      opts["-r"] = "<%simulationResults(getRunningTestsuite(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
+      opts["-F"] = "<%simulationResults(getRunningTestsuite(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
       <%if (stringEq(settings.outputFormat, "empty")) then 'opts["-O"] = "none";' else ""%>
       <%
       match(getConfigString(PROFILING_LEVEL))
@@ -3212,9 +3212,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /DNOMINMAX - Define NOMINMAX (does what it says)
   # /TP - Use C++ Compiler
   !IF "$(PCH_FILE)" == ""
-  CFLAGS=  $(SYSTEM_CFLAGS) /I"<%makefileParams.omhome%>/include/omc/cpp/" /I. <%makefileParams.includes%>  /I"$(BOOST_INCLUDE)" /I"$(UMFPACK_INCLUDE)" /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY <%additionalCFlags_MSVC%>
+  CFLAGS=  $(SYSTEM_CFLAGS) /I"<%makefileParams.omhome%>/include/omc/cpp/" /I. <%makefileParams.includes%>  /I"$(BOOST_INCLUDE)" /I"$(UMFPACK_INCLUDE)" /I"$(SUNDIALS_INCLUDE)" /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY <%additionalCFlags_MSVC%>
   !ELSE
-  CFLAGS=  $(SYSTEM_CFLAGS) /I"<%makefileParams.omhome%>/include/omc/cpp/" /I. <%makefileParams.includes%>  /I"$(BOOST_INCLUDE)" /I"$(UMFPACK_INCLUDE)" /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  /Fp<%makefileParams.omhome%>/include/omc/cpp/Core/$(PCH_FILE)  /YuCore/$(H_FILE) <%additionalCFlags_MSVC%>
+  CFLAGS=  $(SYSTEM_CFLAGS) /I"<%makefileParams.omhome%>/include/omc/cpp/" /I. <%makefileParams.includes%>  /I"$(BOOST_INCLUDE)" /I"$(UMFPACK_INCLUDE)" /I"$(SUNDIALS_INCLUDE)" /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  /Fp<%makefileParams.omhome%>/include/omc/cpp/Core/$(PCH_FILE)  /YuCore/$(H_FILE) <%additionalCFlags_MSVC%>
   !ENDIF
   CPPFLAGS =
   # /ZI enable Edit and Continue debug info
@@ -3287,7 +3287,7 @@ case "gcc" then
             EXEEXT=<%makefileParams.exeext%>
             DLLEXT=<%makefileParams.dllext%>
 
-            CFLAGS_COMMON=<%extraCflags%> -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(SCOREP_INCLUDE)" -I"$(OMHOME)/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(UMFPACK_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%> <%extraCppFlags%>
+            CFLAGS_COMMON=<%extraCflags%> -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(SCOREP_INCLUDE)" -I"$(OMHOME)/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(UMFPACK_INCLUDE)" -I"$(SUNDIALS_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%> <%extraCppFlags%>
 
             ifeq ($(USE_SCOREP),ON)
             $(eval CC=scorep --user --nocompiler $(CC))
@@ -12782,9 +12782,9 @@ template initialAnalyticJacobians(Integer indexJacobian, list<JacobianColumn> ja
           let type = getConfigString(MATRIX_FORMAT)
           let matrixinit =  match type
           case ("dense") then
-            'ublas::zero_matrix<double> (<%index_%>,<%indexColumn%>)'
+            'ublas::zero_matrix<double> (<%indexColumn%>,<%index_%>)'
           case ("sparse") then
-            '<%index_%>,<%indexColumn%>,<%sp_size_index%>'
+            '<%indexColumn%>,<%index_%>,<%sp_size_index%>'
           else "A matrix type is not supported"
           end match
           <<
@@ -12948,7 +12948,7 @@ case _ then
     ;separator="\n")
     let jacvals = ( sparsepattern |> (index,indexes) hasindex index0 =>
     let jaccol = ( indexes |> i_index hasindex index1 =>
-        (match indexColumn case "1" then '_<%matrixName%>jacobian(<%index%>,0) = _<%matrixName%>jac_y(0);/*test1<%index0%>,<%index1%>*/'
+        (match indexColumn case "1" then '_<%matrixName%>jacobian(0,<%index%>) = _<%matrixName%>jac_y(0);/*test1<%index0%>,<%index1%>*/'
            else '_<%matrixName%>jacobian(<%i_index%>,<%index%>) = _<%matrixName%>jac_y(<%i_index%>);/*test2<%index0%>,<%index1%>*/'
            )
           ;separator="\n" )
