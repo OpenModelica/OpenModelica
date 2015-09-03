@@ -659,7 +659,7 @@ public function cevalInteractiveFunctions3
   output Values.Value outValue;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
 protected
-  import LexerModelicaDiff.{Token,TokenId,tokenContent,scanString,filterModelicaDiff,modelicaDiffTokenEq};
+  import LexerModelicaDiff.{Token,TokenId,tokenContent,scanString,filterModelicaDiff,modelicaDiffTokenEq,modelicaDiffTokenWhitespace};
   import DiffAlgorithm.{Diff,diff,printActual,printDiffTerminalColor,printDiffXml};
 algorithm
   (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (inCache,inEnv,inFunctionName,inVals,inSt,msg)
@@ -829,14 +829,14 @@ algorithm
       algorithm
         tokens1 := scanString(s1);
         tokens2 := scanString(s2);
-        diffs := diff(tokens1, tokens2, modelicaDiffTokenEq);
+        diffs := diff(tokens1, tokens2, modelicaDiffTokenEq, modelicaDiffTokenWhitespace, tokenContent);
         // print("Before filtering:\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
         diffs := filterModelicaDiff(diffs,removeWhitespace=false);
         // Scan a second time, with comments filtered into place
         str := printActual(diffs, tokenContent);
         // print("Intermediate string:\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
         tokens2 := scanString(str);
-        diffs := diff(tokens1, tokens2, modelicaDiffTokenEq);
+        diffs := diff(tokens1, tokens2, modelicaDiffTokenEq, modelicaDiffTokenWhitespace, tokenContent);
         // print("Before filtering (2):\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
         diffs := filterModelicaDiff(diffs);
         str := match Absyn.pathLastIdent(path)

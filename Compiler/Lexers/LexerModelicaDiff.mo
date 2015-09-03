@@ -1368,6 +1368,17 @@ algorithm
   end match;
 end modelicaDiffTokenEq;
 
+function modelicaDiffTokenWhitespace
+  import LexerModelicaDiff.{Token,TokenId,tokenContent};
+  input Token t;
+  output Boolean b;
+protected
+  LexerModelicaDiff.TokenId id;
+algorithm
+  LexerModelicaDiff.TOKEN(id=id) := t;
+  b := id==TokenId.BLOCK_COMMENT or id==TokenId.LINE_COMMENT or id==TokenId.WHITESPACE or id==TokenId.NEWLINE;
+end modelicaDiffTokenWhitespace;
+
 function filterModelicaDiff
   import LexerModelicaDiff.{Token,TokenId,tokenContent,TOKEN};
   import DiffAlgorithm.Diff;
@@ -1428,8 +1439,12 @@ algorithm
   while not listEmpty(simpleDiff) loop
     (lastIsNewline,simpleDiff,tmp) := match simpleDiff
       local
-        tuple<Diff, Token> e;
-        Token t;
+        tuple<Diff, Token> e,e1,e2;
+        Token t,t1,t2;
+      // Do not delete whitespace in-between two tokens
+      case (e1 as (Diff.Equal,_))::(Diff.Delete,t1 as TOKEN(id=TokenId.NEWLINE))::(Diff.Delete,t2 as TOKEN(id=TokenId.WHITESPACE))::(e2 as (Diff.Equal,_))::rest then (false,e1::(Diff.Equal,t1)::(Diff.Equal,t2)::e2::rest,tmp);
+      case (e1 as (Diff.Equal,_))::(Diff.Delete,t as TOKEN(id=TokenId.WHITESPACE))::(e2 as (Diff.Equal,_))::rest then (false,e1::(Diff.Equal,t)::e2::rest,tmp);
+
       case (Diff.Add,TOKEN(id=TokenId.NEWLINE))::(Diff.Add,TOKEN(id=TokenId.WHITESPACE))::(rest as (_,TOKEN(id=TokenId.NEWLINE))::_)
         then (false,rest,tmp);
       case (Diff.Add,TOKEN(id=TokenId.NEWLINE))::(rest as (_,TOKEN(id=TokenId.NEWLINE))::_)

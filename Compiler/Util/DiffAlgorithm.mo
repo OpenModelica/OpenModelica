@@ -45,17 +45,33 @@ Other resources used to understand the paper and optimize the algorithm:
 
 import Print;
 
+protected
+
+import System;
+
+public
+
 type Diff = enumeration(Add,Delete,Equal);
 
 function diff<T>
   input list<T> seq1;
   input list<T> seq2;
   input FunEquals equals;
+  input FunWhitespace isWhitespace;
+  input ToString toString;
   output list<tuple<Diff,list<T>>> out;
   partial function FunEquals
     input T t1,t2;
     output Boolean b;
   end FunEquals;
+  partial function FunWhitespace
+    input T t;
+    output Boolean b;
+  end FunWhitespace;
+  partial function ToString
+    input T t;
+    output String o;
+  end ToString;
 protected
   Integer start1, end1, start2, end2, len1, len2;
   array<T> arr1, arr2;
@@ -67,7 +83,7 @@ algorithm
   start2 := 1;
   end1 := arrayLength(arr1);
   end2 := arrayLength(arr2);
-  out := diffSeq(arr1,arr2,equals,1,arrayLength(arr1),1,arrayLength(arr2));
+  out := diffSeq(arr1,arr2,equals,isWhitespace,toString,1,arrayLength(arr1),1,arrayLength(arr2));
 end diff;
 
 partial function partialPrintDiff<T>
@@ -159,6 +175,8 @@ function diffSeq<T>
   input array<T> arr1;
   input array<T> arr2;
   input FunEquals equals;
+  input FunWhitespace isWhitespace;
+  input ToString toString;
   input Integer inStart1, inEnd1, inStart2, inEnd2;
   input list<tuple<Diff,list<T>>> inPrefixes = {}, inSuffixes = {};
   output list<tuple<Diff,list<T>>> out;
@@ -166,6 +184,14 @@ function diffSeq<T>
     input T t1,t2;
     output Boolean b;
   end FunEquals;
+  partial function FunWhitespace
+    input T t;
+    output Boolean b;
+  end FunWhitespace;
+  partial function ToString
+    input T t;
+    output String o;
+  end ToString;
 protected
   Integer start1=inStart1, end1=inEnd1, start2=inStart2, end2=inEnd2, len1, len2;
   list<tuple<Diff,list<T>>> prefixes = inPrefixes, suffixes = inSuffixes;
@@ -193,22 +219,129 @@ algorithm
     out := {(Diff.Equal, list(arr1[e] for e in start1:end1))};
     return;
   end if;
+
   // trim off common prefix; guaranteed to be a good solution
   (prefixes, start1, start2) := trimCommonPrefix(arr1, start1, end1, arr2, start2, end2, equals, prefixes);
   // trim off common suffix; guaranteed to be a good solution
   (suffixes, end1, end2) := trimCommonSuffix(arr1, start1, end1, arr2, start2, end2, equals, suffixes);
+
   // Check if anything changed and iterate. A sequence could now be empty.
   if start1<>inStart1 or start2<>inStart2 or end1<>inEnd1 or end2<>inEnd2 then
-    out := diffSeq(arr1,arr2,equals,start1,end1,start2,end2,inPrefixes=prefixes,inSuffixes=suffixes);
+    out := diffSeq(arr1,arr2,equals,isWhitespace,toString,start1,end1,start2,end2,inPrefixes=prefixes,inSuffixes=suffixes);
     return;
   else
-    out := myersGreedyDiff(arr1,arr2,equals,start1,end1,start2,end2);
+    out := matchcontinue ()
+      case () then onlyAdditions(arr1,arr2,equals,isWhitespace,toString,start1,end1,start2,end2);
+      else myersGreedyDiff(arr1,arr2,equals,start1,end1,start2,end2);
+    end matchcontinue;
     // TODO: cleanup
     out := listAppend(listReverse(prefixes), listAppend(out, suffixes));
     return;
   end if;
   fail();
 end diffSeq;
+
+function addToList<T>
+  input list<tuple<Diff,list<T>>> inlst;
+  input Diff ind;
+  input list<T> inacc;
+  input Diff newd;
+  input T t;
+  output list<tuple<Diff,list<T>>> lst=inlst;
+  output Diff d=newd;
+  output list<T> acc=inacc;
+algorithm
+  if ind==newd then
+    acc := t::acc;
+  else
+    if not listEmpty(inacc) then
+      lst := (ind,listReverse(acc))::lst;
+    end if;
+    acc := {t};
+  end if;
+end addToList;
+
+function endList<T>
+  input list<tuple<Diff,list<T>>> inlst;
+  input Diff ind;
+  input list<T> inacc;
+  output list<tuple<Diff,list<T>>> lst=inlst;
+algorithm
+  if not listEmpty(inacc) then
+    lst := (ind,listReverse(inacc))::lst;
+  end if;
+end endList;
+
+function onlyAdditions<T>
+  input array<T> arr1;
+  input array<T> arr2;
+  input FunEquals equals;
+  input FunWhitespace isWhitespace;
+  input ToString toString;
+  input Integer start1, end1, start2, end2;
+  output list<tuple<Diff,list<T>>> out;
+  partial function FunEquals
+    input T t1,t2;
+    output Boolean b;
+  end FunEquals;
+  partial function FunWhitespace
+    input T t;
+    output Boolean b;
+  end FunWhitespace;
+  partial function ToString
+    input T t;
+    output String o;
+  end ToString;
+protected
+  Integer x=0,y=0;
+  Diff d=Diff.Equal;
+  list<T> lst={};
+algorithm
+  out := {};
+  // print("Try only additions\n");
+  while start1+x<=end1 and start2+y<=end2 loop
+    // print("Try only additions"+String(x)+","+String(y)+"\n");
+    // print("1: " + System.trim(toString(arr1[start1+x]))+"\n");
+    // print("2: " + System.trim(toString(arr2[start2+y]))+"\n");
+    if equals(arr1[start1+x],arr2[start2+y]) then
+      (out,d,lst) := addToList(out,d,lst,Diff.Equal,arr1[start1+x]);
+      x:=x+1;
+      y:=y+1;
+      // print("Both equal\n");
+    elseif isWhitespace(arr1[start1+x]) then
+      (out,d,lst) := addToList(out,d,lst,Diff.Delete,arr1[start1+x]);
+      // print("Deleting: " + toString(arr1[start1+x])+"\n");
+      x:=x+1;
+    else
+      (out,d,lst) := addToList(out,d,lst,Diff.Add,arr2[start2+y]);
+      // print("Adding: " + toString(arr2[start2+y])+"\n");
+      y:=y+1;
+    end if;
+  end while;
+
+  while start1+x<=end1 loop
+    if isWhitespace(arr1[start1+x]) then
+      (out,d,lst) := addToList(out,d,lst,Diff.Delete,arr1[start1+x]);
+      x:=x+1;
+    else
+      fail();
+    end if;
+  end while;
+
+  while start2+y<=end2 loop
+    if isWhitespace(arr2[start2+y]) then
+      (out,d,lst) := addToList(out,d,lst,Diff.Add,arr2[start2+y]);
+      y:=y+1;
+    else
+      fail();
+    end if;
+  end while;
+
+  out := endList(out, d, lst);
+
+  // print("It is only additions :)\n");
+  out := listReverse(out);
+end onlyAdditions;
 
 function myersGreedyDiff<T>
   input array<T> arr1;
