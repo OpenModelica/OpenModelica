@@ -4108,7 +4108,7 @@ match simCode
       case e as RCONST(__) then match type case "sparse" then
       <<
 	  <%preExp%>
-      /*comment out again!*/__A(<%row%>,<%col%>)=<%expPart%>;
+      /*comment out again!*///__A(<%row%>,<%col%>)=<%expPart%>;
       _AData[_indexValue[<%i0%>]] = <%expPart%>;
       >>
 	  else
@@ -4120,7 +4120,7 @@ match simCode
       else match type case "sparse" then
       <<
 	  <%preExp%>
-	  /*comment out again!*/__A(<%row%>,<%col%>)=<%expPart%>;
+	  /*comment out again!*///__A(<%row%>,<%col%>)=<%expPart%>;
 	  //_Ax[<%i0%>] = <%expPart%>;// to be commented in lateron
 	  _AData[_indexValue[<%i0%>]] = <%expPart%>;
 	  >>
