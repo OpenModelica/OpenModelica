@@ -3,6 +3,7 @@ TEST = ../../rtest
 
 TESTFILES = \
 AddComponent.mos \
+AddComponent2.mos \
 ChangeSourceFile.mos \
 TestDiffListAPI.mos
 
