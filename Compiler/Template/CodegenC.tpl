@@ -4926,7 +4926,7 @@ template simulationParModelicaKernelsFile(String filePrefix, list<Function> func
   let()= System.tmpTickResetIndex(0,20) /* parfor index */
 
   <<
-  #include "OCLRuntimeUtil.cl"
+  #include <ParModelica/explicit/openclrt/OCLRuntimeUtil.cl>
 
   // ParModelica Parallel Function headers.
   <%functionHeadersParModelica(filePrefix, functions)%>
