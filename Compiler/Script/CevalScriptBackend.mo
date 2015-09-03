@@ -2168,8 +2168,6 @@ algorithm
         },
         st,_)
       equation
-        // get the variables
-        str = ValuesUtil.printCodeVariableName(cvar) + "\" \"" + ValuesUtil.printCodeVariableName(cvar2);
         // get OPENMODELICAHOME
         omhome = Settings.getInstallationDirectoryPath();
         // get the simulation filename
@@ -2182,6 +2180,8 @@ algorithm
         // check if plot callback is defined
         b = System.plotCallBackDefined();
         if boolOr(forceOMPlot, boolNot(b)) then
+          // get the variables
+          str = ValuesUtil.printCodeVariableName(cvar) + "\" \"" + ValuesUtil.printCodeVariableName(cvar2);
           // create the path till OMPlot
           str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
           // create the list of arguments for OMPlot
@@ -2189,6 +2189,8 @@ algorithm
           call = stringAppendList({"\"",str2,"\""," ",str3});
           0 = System.spawnCall(str2, call);
         elseif b then
+          // get the variables
+          str = ValuesUtil.printCodeVariableName(cvar) + " " + ValuesUtil.printCodeVariableName(cvar2);
           logXStr = boolString(logX);
           logYStr = boolString(logY);
           x1Str = realString(x1);
