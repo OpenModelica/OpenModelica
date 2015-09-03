@@ -350,111 +350,109 @@ constant DebugFlag TEARING_DUMPVERBOSE = DEBUG_FLAG(92, "tearingdumpV", false,
   Util.gettext("Dumps verbose tearing information."));
 constant DebugFlag DISABLE_SINGLE_FLOW_EQ = DEBUG_FLAG(93, "disableSingleFlowEq", false,
   Util.gettext("Disables the generation of single flow equations."));
-constant DebugFlag PARTLINTORNSYSTEM = DEBUG_FLAG(94, "partlintornsystem", false,
-  Util.gettext("Disassembles linear torn systems to various singleEquations and a reduced tornSystem."));
-constant DebugFlag DUMP_DISCRETEVARS_INFO = DEBUG_FLAG(95, "discreteinfo", false,
+constant DebugFlag DUMP_DISCRETEVARS_INFO = DEBUG_FLAG(94, "discreteinfo", false,
   Util.gettext("Enables dumping of discrete variables. Extends -d=backenddaeinfo."));
-constant DebugFlag ADDITIONAL_GRAPHVIZ_DUMP = DEBUG_FLAG(96, "graphvizDump", false,
+constant DebugFlag ADDITIONAL_GRAPHVIZ_DUMP = DEBUG_FLAG(95, "graphvizDump", false,
   Util.gettext("Activates additional graphviz dumps (as .dot files). It can be used in addition to one of the following flags: {dumpdaelow|dumpinitialsystems|dumpindxdae}."));
-constant DebugFlag INFO_XML_OPERATIONS = DEBUG_FLAG(97, "infoXmlOperations", false,
+constant DebugFlag INFO_XML_OPERATIONS = DEBUG_FLAG(96, "infoXmlOperations", false,
   Util.gettext("Enables output of the operations in the _info.xml file when translating models."));
-constant DebugFlag HPCOM_DUMP = DEBUG_FLAG(98, "hpcomDump", false,
+constant DebugFlag HPCOM_DUMP = DEBUG_FLAG(97, "hpcomDump", false,
   Util.gettext("Dumps additional information on the parallel execution with hpcom."));
-constant DebugFlag RESOLVE_LOOPS = DEBUG_FLAG(99, "resolveLoops", false,
+constant DebugFlag RESOLVE_LOOPS = DEBUG_FLAG(98, "resolveLoops", false,
   Util.gettext("Activates the resolveLoops module."));
-constant DebugFlag DISABLE_WINDOWS_PATH_CHECK_WARNING = DEBUG_FLAG(100, "disableWindowsPathCheckWarning", false,
+constant DebugFlag DISABLE_WINDOWS_PATH_CHECK_WARNING = DEBUG_FLAG(99, "disableWindowsPathCheckWarning", false,
   Util.gettext("Disables warnings on Windows if OPENMODELICAHOME/MinGW is missing."));
-constant DebugFlag DISABLE_RECORD_CONSTRUCTOR_OUTPUT = DEBUG_FLAG(101, "disableRecordConstructorOutput", false,
+constant DebugFlag DISABLE_RECORD_CONSTRUCTOR_OUTPUT = DEBUG_FLAG(100, "disableRecordConstructorOutput", false,
   Util.gettext("Disables output of record constructors in the flat code."));
-constant DebugFlag DUMP_TRANSFORMED_MODELICA_MODEL = DEBUG_FLAG(102, "dumpTransformedModelica", false,
+constant DebugFlag DUMP_TRANSFORMED_MODELICA_MODEL = DEBUG_FLAG(101, "dumpTransformedModelica", false,
   Util.gettext("Dumps the back-end DAE to a Modelica-like model after all symbolic transformations are applied."));
-constant DebugFlag EVALUATE_CONST_FUNCTIONS = DEBUG_FLAG(103, "evalConstFuncs", true,
+constant DebugFlag EVALUATE_CONST_FUNCTIONS = DEBUG_FLAG(102, "evalConstFuncs", true,
   Util.gettext("Evaluates functions complete and partially and checks for constant output."));
-constant DebugFlag IMPL_ODE = DEBUG_FLAG(104, "implOde", false,
+constant DebugFlag IMPL_ODE = DEBUG_FLAG(103, "implOde", false,
   Util.gettext("activates implicit codegen"));
-constant DebugFlag EVAL_FUNC_DUMP = DEBUG_FLAG(105, "evalFuncDump", false,
+constant DebugFlag EVAL_FUNC_DUMP = DEBUG_FLAG(104, "evalFuncDump", false,
   Util.gettext("dumps debug information about the function evaluation"));
-constant DebugFlag PRINT_STRUCTURAL = DEBUG_FLAG(106, "printStructuralParameters", false,
+constant DebugFlag PRINT_STRUCTURAL = DEBUG_FLAG(105, "printStructuralParameters", false,
   Util.gettext("Prints the structural parameters identified by the front-end"));
-constant DebugFlag ITERATION_VARS = DEBUG_FLAG(107, "iterationVars", false,
+constant DebugFlag ITERATION_VARS = DEBUG_FLAG(106, "iterationVars", false,
   Util.gettext("Shows a list of all iteration variables."));
-constant DebugFlag ALLOW_RECORD_TOO_MANY_FIELDS = DEBUG_FLAG(108, "acceptTooManyFields", false,
+constant DebugFlag ALLOW_RECORD_TOO_MANY_FIELDS = DEBUG_FLAG(107, "acceptTooManyFields", false,
   Util.gettext("Accepts passing records with more fields than expected to a function. This is not allowed, but is used in Fluid.Dissipation. See https://trac.modelica.org/Modelica/ticket/1245 for details."));
-constant DebugFlag HPCOM_MEMORY_OPT = DEBUG_FLAG(109, "hpcomMemoryOpt", false,
+constant DebugFlag HPCOM_MEMORY_OPT = DEBUG_FLAG(108, "hpcomMemoryOpt", false,
   Util.gettext("Optimize the memory structure regarding the selected scheduler"));
-constant DebugFlag DUMP_SYNCHRONOUS = DEBUG_FLAG(110, "dumpSynchronous", false,
+constant DebugFlag DUMP_SYNCHRONOUS = DEBUG_FLAG(109, "dumpSynchronous", false,
   Util.gettext("Dumps information of the clock partitioning."));
-constant DebugFlag STRIP_PREFIX = DEBUG_FLAG(111, "stripPrefix", true,
+constant DebugFlag STRIP_PREFIX = DEBUG_FLAG(110, "stripPrefix", true,
   Util.gettext("Strips the environment prefix from path/crefs. Defaults to true."));
-constant DebugFlag DO_SCODE_DEP = DEBUG_FLAG(112, "scodeDep", true,
+constant DebugFlag DO_SCODE_DEP = DEBUG_FLAG(111, "scodeDep", true,
   Util.gettext("Does scode dependency analysis prior to instantiation. Defaults to true."));
-constant DebugFlag SHOW_INST_CACHE_INFO = DEBUG_FLAG(113, "showInstCacheInfo", false,
+constant DebugFlag SHOW_INST_CACHE_INFO = DEBUG_FLAG(112, "showInstCacheInfo", false,
   Util.gettext("Prints information about instantiation cache hits and additions. Defaults to false."));
-constant DebugFlag DUMP_UNIT = DEBUG_FLAG(114, "dumpUnits", false,
+constant DebugFlag DUMP_UNIT = DEBUG_FLAG(113, "dumpUnits", false,
   Util.gettext("Dumps all the calculated units."));
-constant DebugFlag DUMP_EQ_UNIT = DEBUG_FLAG(115, "dumpEqInUC", false,
+constant DebugFlag DUMP_EQ_UNIT = DEBUG_FLAG(114, "dumpEqInUC", false,
   Util.gettext("Dumps all equations handled by the unit checker."));
-constant DebugFlag DUMP_EQ_UNIT_STRUCT = DEBUG_FLAG(116, "dumpEqUCStruct", false,
+constant DebugFlag DUMP_EQ_UNIT_STRUCT = DEBUG_FLAG(115, "dumpEqUCStruct", false,
   Util.gettext("Dumps all the equations handled by the unit checker as tree-structure."));
-constant DebugFlag SHOW_DAE_GENERATION = DEBUG_FLAG(117, "showDaeGeneration", false,
+constant DebugFlag SHOW_DAE_GENERATION = DEBUG_FLAG(116, "showDaeGeneration", false,
   Util.gettext("Show the dae variable declarations as they happen."));
-constant DebugFlag RESHUFFLE_POST = DEBUG_FLAG(118, "reshufflePost", false,
+constant DebugFlag RESHUFFLE_POST = DEBUG_FLAG(117, "reshufflePost", false,
   Util.gettext("Reshuffles the systems of equations."));
-constant DebugFlag SHOW_EXPANDABLE_INFO = DEBUG_FLAG(119, "showExpandableInfo", false,
+constant DebugFlag SHOW_EXPANDABLE_INFO = DEBUG_FLAG(118, "showExpandableInfo", false,
   Util.gettext("Show information about expandable connector handling."));
-constant DebugFlag DUMP_HOMOTOPY = DEBUG_FLAG(120, "dumpHomotopy", false,
+constant DebugFlag DUMP_HOMOTOPY = DEBUG_FLAG(119, "dumpHomotopy", false,
   Util.gettext("Dumps the results of the postOptModule optimizeHomotopyCalls."));
-constant DebugFlag MODEL_INFO_JSON = DEBUG_FLAG(121, "modelInfoJson", true,
+constant DebugFlag MODEL_INFO_JSON = DEBUG_FLAG(120, "modelInfoJson", true,
   Util.gettext("Experimental: Generates a file with suffix _info.json instead of _info.xml."));
-constant DebugFlag GRAPHML = DEBUG_FLAG(122, "graphml", false,
+constant DebugFlag GRAPHML = DEBUG_FLAG(121, "graphml", false,
   Util.gettext("Dumps .graphml files for the bipartite graph after Index Reduction and a task graph for the SCCs. Can be displayed with yEd. "));
-constant DebugFlag USEMPI = DEBUG_FLAG(123, "useMPI", false,
+constant DebugFlag USEMPI = DEBUG_FLAG(122, "useMPI", false,
   Util.gettext("Add MPI init and finalize to main method (CPPruntime). "));
-constant DebugFlag DUMP_CSE = DEBUG_FLAG(124, "dumpCSE", false,
+constant DebugFlag DUMP_CSE = DEBUG_FLAG(123, "dumpCSE", false,
   Util.gettext("Additional output for CSE module."));
-constant DebugFlag DUMP_CSE_VERBOSE = DEBUG_FLAG(125, "dumpCSE_verbose", false,
+constant DebugFlag DUMP_CSE_VERBOSE = DEBUG_FLAG(124, "dumpCSE_verbose", false,
   Util.gettext("Additional output for CSE module."));
-constant DebugFlag ADD_DER_ALIASES = DEBUG_FLAG(126, "addDerAliases", false,
+constant DebugFlag ADD_DER_ALIASES = DEBUG_FLAG(125, "addDerAliases", false,
   Util.gettext("Adds for every der-call an alias equation e.g. dx = der(x). It's a work-a-round flag,
                 which helps im some cases to simulate the models e.g.
                 Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation."));
-constant DebugFlag DISABLE_COMSUBEXP = DEBUG_FLAG(127, "disableComSubExp", false,
+constant DebugFlag DISABLE_COMSUBEXP = DEBUG_FLAG(126, "disableComSubExp", false,
   Util.gettext("Deactivates module 'comSubExp'"));
-constant DebugFlag NO_START_CALC = DEBUG_FLAG(128, "disableStartCalc", false,
+constant DebugFlag NO_START_CALC = DEBUG_FLAG(127, "disableStartCalc", false,
   Util.gettext("Deactivates the pre-calculation of start values during compile-time."));
-constant DebugFlag NO_PARTITIONING = DEBUG_FLAG(129, "disablePartitioning", false,
+constant DebugFlag NO_PARTITIONING = DEBUG_FLAG(128, "disablePartitioning", false,
   Util.gettext("Deactivates partitioning of entire equation system."));
-constant DebugFlag ADVANCE_TEARING = DEBUG_FLAG(130, "advanceTearing", false,
+constant DebugFlag ADVANCE_TEARING = DEBUG_FLAG(129, "advanceTearing", false,
   Util.gettext("Using ExpressionSolve in adjacencyRowEnhanced"));
-constant DebugFlag CONSTJAC = DEBUG_FLAG(131, "constjac", false,
+constant DebugFlag CONSTJAC = DEBUG_FLAG(130, "constjac", false,
   Util.gettext("solves linear systems with constant Jacobian and variable b-Vector symbolically"));
-constant DebugFlag REDUCE_DYN_OPT = DEBUG_FLAG(132, "reduceDynOpt", false,
+constant DebugFlag REDUCE_DYN_OPT = DEBUG_FLAG(131, "reduceDynOpt", false,
   Util.gettext("remove eqs which not need for the calculations of cost and constraints"));
-constant DebugFlag VISUAL_XML = DEBUG_FLAG(133, "visxml", false,
+constant DebugFlag VISUAL_XML = DEBUG_FLAG(132, "visxml", false,
   Util.gettext("Outputs a xml-file that contains information for visualization."));
-constant DebugFlag ADD_SCALED_VARS = DEBUG_FLAG(134, "addScaledVars", false,
+constant DebugFlag ADD_SCALED_VARS = DEBUG_FLAG(133, "addScaledVars", false,
   Util.gettext("Adds an alias equation var_nrom = var/nominal where var is state"));
-constant DebugFlag ADD_SCALED_VARS_INPUT = DEBUG_FLAG(135, "addScaledVarsInput", false,
+constant DebugFlag ADD_SCALED_VARS_INPUT = DEBUG_FLAG(134, "addScaledVarsInput", false,
   Util.gettext("Adds an alias equation var_nrom = var/nominal where var is input"));
-constant DebugFlag VECTORIZE = DEBUG_FLAG(136, "vectorize", false,
+constant DebugFlag VECTORIZE = DEBUG_FLAG(135, "vectorize", false,
   Util.gettext("Activates vectorization in the backend."));
-constant DebugFlag CHECK_EXT_LIBS = DEBUG_FLAG(137, "buildExternalLibs", true,
+constant DebugFlag CHECK_EXT_LIBS = DEBUG_FLAG(136, "buildExternalLibs", true,
   Util.gettext("Use the autotools project in the Resources folder of the library to build missing external libraries."));
-constant DebugFlag RUNTIME_STATIC_LINKING = DEBUG_FLAG(138, "runtimeStaticLinking", false,
+constant DebugFlag RUNTIME_STATIC_LINKING = DEBUG_FLAG(137, "runtimeStaticLinking", false,
   Util.gettext("Use the static simulation runtime libraries (C++ simulation runtime)."));
-constant DebugFlag DYNAMIC_TEARING_INFO = DEBUG_FLAG(139, "dynamicTearingInfo", false,
+constant DebugFlag DYNAMIC_TEARING_INFO = DEBUG_FLAG(138, "dynamicTearingInfo", false,
   Util.gettext("Dumps information about the strict and casual sets of the tearing system."));
-constant DebugFlag SORT_EQNS_AND_VARS = DEBUG_FLAG(140, "sortEqnsAndVars", false,
+constant DebugFlag SORT_EQNS_AND_VARS = DEBUG_FLAG(139, "sortEqnsAndVars", false,
   Util.gettext("Heuristic sorting for equations and variables. Influenced: removeSimpleEquations and tearing."));
-constant DebugFlag DUMP_SIMPLIFY_LOOPS = DEBUG_FLAG(141, "dumpSimplifyLoops", false,
+constant DebugFlag DUMP_SIMPLIFY_LOOPS = DEBUG_FLAG(140, "dumpSimplifyLoops", false,
   Util.gettext("Dump between steps of simplifyLoops"));
-constant DebugFlag DUMP_RTEARING = DEBUG_FLAG(142, "dumpRecursiveTearing", false,
+constant DebugFlag DUMP_RTEARING = DEBUG_FLAG(141, "dumpRecursiveTearing", false,
   Util.gettext("Dump between steps of recursiveTearing"));
-constant DebugFlag DIS_SIMP_FUN = DEBUG_FLAG(143, "disableSimplifyComplexFunction", false,
+constant DebugFlag DIS_SIMP_FUN = DEBUG_FLAG(142, "disableSimplifyComplexFunction", false,
   Util.gettext("disable simplifyComplexFunction"));
-constant DebugFlag DIS_SYMJAC_FMI20 = DEBUG_FLAG(144, "disableSymbolicLinearization", false,
+constant DebugFlag DIS_SYMJAC_FMI20 = DEBUG_FLAG(143, "disableSymbolicLinearization", false,
   Util.gettext("For FMI 2.0 only dependecy analysis will be perform."));
-constant DebugFlag EVAL_ALL_PARAMS = DEBUG_FLAG(145, "evalAllParams", false,
+constant DebugFlag EVAL_ALL_PARAMS = DEBUG_FLAG(144, "evalAllParams", false,
   Util.gettext("Evaluates all parameters in order to increase simulation speed."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -556,7 +554,6 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_SCC_GRAPHML,
   TEARING_DUMPVERBOSE,
   DISABLE_SINGLE_FLOW_EQ,
-  PARTLINTORNSYSTEM,
   DUMP_DISCRETEVARS_INFO,
   ADDITIONAL_GRAPHVIZ_DUMP,
   INFO_XML_OPERATIONS,
@@ -1130,6 +1127,10 @@ constant ConfigFlag MATRIX_FORMAT = CONFIG_FLAG(76, "matrixFormat",
   NONE(), EXTERNAL(), STRING_FLAG("dense"), NONE(),
   Util.gettext("Sets the matrix format type in cpp runtime which should be used (dense | sparse ). Default: dense."));
 
+constant ConfigFlag PARTLINTORN = CONFIG_FLAG(77, "partlintorn",
+  NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
+  Util.gettext("Sets the limit for partitionin of linear torn systems."));
+
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -1210,7 +1211,8 @@ constant list<ConfigFlag> allConfigFlags = {
   SIMPLIFY_LOOPS,
   RTEARING,
   FLOW_THRESHOLD,
-  MATRIX_FORMAT
+  MATRIX_FORMAT,
+  PARTLINTORN
 };
 
 public function new

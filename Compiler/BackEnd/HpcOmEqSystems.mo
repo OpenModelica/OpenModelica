@@ -85,7 +85,7 @@ end EqSys;
 //-------------------------------------------------//
 
 public function partitionLinearTornSystem"checks the EqSystem for tornSystems in order to dissassemble them into various SingleEquation and a reduced EquationSystem.
-This is useful in order to reduce the execution costs of the equationsystem and generate a bunch of parallel singleEquations. use +d=doLienarTearing,partlintornsystem to activate it.
+This is useful in order to reduce the execution costs of the equationsystem and generate a bunch of parallel singleEquations. use +d=doLienarTearing +partlintorn=x to activate it.
 Remark: this is still under development
 
 idea:
@@ -105,7 +105,7 @@ algorithm
       BackendDAE.Shared shared;
     case(BackendDAE.DAE(eqs=eqs,shared=shared))
      equation
-       true = Flags.isSet(Flags.PARTLINTORNSYSTEM);
+       true = intGt(Flags.getConfigInt(Flags.PARTLINTORN),0);
        (eqs,_) = List.map1Fold(eqs,reduceLinearTornSystem,shared,1);
     then BackendDAE.DAE(eqs,shared);
     else daeIn;
@@ -114,7 +114,7 @@ end partitionLinearTornSystem;
 
 
 public function reduceLinearTornSystem  "checks the EqSystem for tornSystems in order to dissassemble them into various SingleEquation and a reduced EquationSystem.
-This is useful in order to reduce the execution costs of the equationsystem and generate a bunch of parallel singleEquations. use +d=doLienarTearing,partlintornsystem to activate it.
+This is useful in order to reduce the execution costs of the equationsystem and generate a bunch of parallel singleEquations. use +d=doLienarTearing +partlintorn=x to activate it.
 Remark: this is still under development
 author:Waurich TUD 2013-09"
   input BackendDAE.EqSystem systIn;
@@ -196,7 +196,7 @@ algorithm
         comp = listGet(compsIn,compIdx);
         BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl), linear = linear) = comp;
         true = linear;
-        true = intLe(listLength(tvarIdcs),3);
+        true = intLe(listLength(tvarIdcs),Flags.getConfigInt(Flags.PARTLINTORN));
         //print("LINEAR TORN SYSTEM OF SIZE "+intString(listLength(tvarIdcs))+"\n");
         false = compHasDummyState(comp,systIn);
         // build the new components, the new variables and the new equations
@@ -243,7 +243,7 @@ algorithm
         true = listLength(compsIn) >= compIdx;
         comp = listGet(compsIn,compIdx);
         BackendDAE.EQUATIONSYSTEM(vars = varIdcs, eqns = eqIdcs) = comp;
-        true = intLe(listLength(varIdcs),3);
+        true = intLe(listLength(varIdcs),2);
         //false = compHasDummyState(comp,systIn);
 
         //print("EQUATION SYSTEM OF SIZE "+intString(listLength(varIdcs))+"\n");
