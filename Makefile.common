@@ -305,8 +305,8 @@ clean: fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-cl
 	if test -f 3rdParty/Ipopt/Ipopt/Makefile; then true; else rm -f 3rdParty/Ipopt/Makefile || true; fi
 	if test -f 3rdParty/Ipopt/Makefile; then $(MAKE) -C 3rdParty/Ipopt distclean || true; fi
 	(rm -rf SimulationRuntime/build_c)
-	rm -rf build/share build/lib build/include build/bin/OMShell* build/bin/OMNotebook* \
-	build/bin/omc build/bin/omc.exe build/bin/omc-diff build/bin/omc-diff.exe \
+	rm -rf $(OMBUILDDIR)/share $(OMBUILDDIR)/lib $(OMBUILDDIR)/include $(OMBUILDDIR)/bin/OMShell* $(OMBUILDDIR)/bin/OMNotebook* \
+	$(OMBUILDDIR)/bin/omc $(OMBUILDDIR)/bin/omc.exe $(OMBUILDDIR)/bin/omc-diff $(OMBUILDDIR)/bin/omc-diff.exe \
 	bom-error.log bom-error.sh tab-error.log
 install-dirs:
 	@test ! "${DESTDIR}/${prefix}" -ef "${top_builddir}/build" || (echo Error: Install and build dirs are the same && false)

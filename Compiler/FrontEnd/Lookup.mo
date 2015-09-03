@@ -1333,6 +1333,8 @@ algorithm
             then ();
         end match;
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env5,cref,prevFrames,inState);
+         // Add the class name to the spliced exp so that the name is correct.
+         splicedExpData = prefixSplicedExp(ComponentReference.crefFirstCref(inComponentRef), splicedExpData);
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
 
@@ -3196,6 +3198,27 @@ algorithm
 
   end matchcontinue;
 end isFunctionCallViaComponent;
+
+protected function prefixSplicedExp
+  "Prefixes a spliced exp that contains a cref with another cref."
+  input DAE.ComponentRef inCref;
+  input InstTypes.SplicedExpData inSplicedExp;
+  output InstTypes.SplicedExpData outSplicedExp;
+algorithm
+  outSplicedExp := match inSplicedExp
+    local
+      DAE.Type ety, ty;
+      DAE.ComponentRef cref;
+
+    case InstTypes.SPLICEDEXPDATA(SOME(DAE.CREF(cref, ety)), ty)
+      algorithm
+        cref := ComponentReference.joinCrefs(inCref, cref);
+      then
+        InstTypes.SPLICEDEXPDATA(SOME(DAE.CREF(cref, ety)), ty);
+
+    else inSplicedExp;
+  end match;
+end prefixSplicedExp;
 
 annotation(__OpenModelica_Interface="frontend");
 end Lookup;
