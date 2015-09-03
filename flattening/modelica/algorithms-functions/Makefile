@@ -90,7 +90,7 @@ MRFcall.mo \
 MultFuncCall.mo \
 RecursiveCallExtends.mo \
 RecursiveFunctionCall.mo \
-SumForLoop.mo \
+StackOverflowTest.mos \
 Summation.mo \
 SumSeriesWhile.mo \
 SumVectorForIf.mo \
