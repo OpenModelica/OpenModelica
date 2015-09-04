@@ -3,6 +3,7 @@ HOST_SHORT = @host_short@
 
 OPENMODELICA_INC=$(TOP_BUILDDIR)/include/omc/c/
 PARMODELICAEXPOCL_INC=$(OPENMODELICA_INC)/ParModelica/explicit/openclrt/
+OPENMODELICA_BUILTIN_DIR=$(TOP_BUILDDIR)/lib/omc
 OPENMODELICA_LIB=$(TOP_BUILDDIR)/lib/$(HOST_SHORT)/omc
 OPENMODELICA_BIN=$(TOP_BUILDDIR)/bin/
 
@@ -24,7 +25,7 @@ transfer: libOMOCLRuntime.a
 	$(COPY) omc_ocl_common_header.h $(PARMODELICAEXPOCL_INC)
 	$(COPY) omc_ocl_memory_ops.h $(PARMODELICAEXPOCL_INC)
 	$(COPY) libOMOCLRuntime.a $(OPENMODELICA_LIB)
-	$(COPY) ParModelicaBuiltin.mo $(OPENMODELICA_LIB)
+	$(COPY) ParModelicaBuiltin.mo $(OPENMODELICA_BUILTIN_DIR)
 	$(COPY) OCLRuntimeUtil.cl $(PARMODELICAEXPOCL_INC)
 
 Makefile: Makefile.in
