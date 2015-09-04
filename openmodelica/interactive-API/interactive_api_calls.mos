@@ -45,6 +45,7 @@ getDerivedClassModifierValue(Resistance, quantity);
 getClassInformation(vector3D); getErrorString();
 getInheritanceCount(vector3D); getErrorString();
 getNthInheritedClass(vector3D, 1); getErrorString();
+getInheritedClasses(vector3D);
 getNthComponentCondition(M, 1); getErrorString();
 getNthComponentCondition(M, 2); getErrorString();
 getNthComponentCondition(M, 3); getErrorString();
@@ -271,6 +272,8 @@ getMessagesStringInternal(unique = false); // not unique
 // Real
 // Evaluating: getErrorString()
 // ""
+// Evaluating: getInheritedClasses(vector3D)
+// {Real}
 // Evaluating: getNthComponentCondition(M, 1)
 // ""
 // Evaluating: getErrorString()
@@ -611,7 +614,7 @@ getMessagesStringInternal(unique = false); // not unique
 // parameters and variables are specified separately. In this section it is summarized how to refer to
 // Modelica code in the HTML documentation.
 // </p>
-//
+// 
 // <ol>
 // <li> For constants, parameters and variables in code segments <code>&lt;code&gt;</code> and <code>&lt;/code&gt;</code>
 //      should to be used, e.g., <br>
@@ -621,9 +624,9 @@ getMessagesStringInternal(unique = false); // not unique
 // <li> Inline code segments may be typeset with <code>&lt;code&gt;</code> and <code>&lt;/code&gt;</code>.</li>
 // <li> In code segments use bold to emphasize Modelica keywords.</li>
 // </ol>
-//
+// 
 // <h5>Example 1</h5>
-//
+// 
 // <pre>
 // &lt;pre&gt;
 // &lt;b&gt;connector&lt;/b&gt; Frame
@@ -631,26 +634,26 @@ getMessagesStringInternal(unique = false); // not unique
 //    &lt;b&gt;flow&lt;/b&gt; SI.Force f[Woehrnschimmel1998] &lt;b&gt;annotation&lt;/b&gt;(unassignedMessage=\\\"...\\\");
 // &lt;b&gt;end&lt;/b&gt; Frame;
 // &lt;/pre&gt;</pre>
-//
+// 
 // <p>appears as</p>
-//
+// 
 // <pre>
 // <b>connector</b> Frame
 //    ...
 //    <b>flow</b> SI.Force f[Woehrnschimmel1998] <b>annotation</b>(unassignedMessage=\\\"...\\\");
 // <b>end</b> Frame;
 // </pre>
-//
+// 
 // <h5>Example 2</h5>
-//
+// 
 // <pre>
 // &lt;pre&gt;
 // &lt;b&gt;parameter&lt;/b&gt; Modelica.SIunits.Conductance G=1 &quot;Conductance&quot;;
 // &lt;/pre&gt;
 // </pre>
-//
+// 
 // <p>appears as</p>
-//
+// 
 // <pre>
 // <b>parameter</b> Modelica.SIunits.Conductance G=1 &quot;Conductance&quot;;
 // </pre>
