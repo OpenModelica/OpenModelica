@@ -355,6 +355,7 @@ We test code instantiation of the model to flat code:
 We plot part of the simulated result:
 
 .. omc-gnuplot :: dcmotor
+  :caption: Rotation and rotational velocity of the DC motor
 
   load.w
   load.phi
@@ -435,6 +436,7 @@ val(variableName, time) function:
 Plot itot and open:
 
 .. omc-gnuplot :: switch
+  :caption: Plot when the switch opens
 
   itot
   open
@@ -478,6 +480,7 @@ It is simulated:
 It is plotted:
 
 .. omc-gnuplot :: VanDerPol
+  :caption: VanDerPol plotParametric(x,y)
   :parametric:
 
   x

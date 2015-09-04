@@ -81,7 +81,7 @@ if os.path.exists('../../../.git'):
     docprevrelease = re.search("^v[0-9]+[.][0-9]+[.][0-9]+", docrepo.git.describe(["--tags","--match=v*.*.*[0-9]", release + "~1"])).group(0)
     link = "`%s <https://github.com/OpenModelica/OpenModelica/releases/tag/%s>`__ `(diff) <https://github.com/OpenModelica/OpenModelica-doc/compare/%s...%s>`__" % (release,release,docprevrelease,release)
   else:
-    releasex = re.search("^(v[0-9]+[.][0-9]+[.][0-9]+-[A-Za-z]*)-([0-9]+)-(.*)$", release)
+    releasex = re.search("^(v[0-9]+[.][0-9]+[.][0-9]+-[A-Za-z0-9.]*)-([0-9]+)-(.*)$", release)
     release = "%s.%d+%s" % (releasex.group(1),int(releasex.group(2)),releasex.group(3))
     docrepo = git.repo.Repo('../../')
     doctag = re.search("^v[0-9]+[.][0-9]+[.][0-9]+", docrepo.git.describe(["--tags","--match=v*.*.*[0-9]"])).group(0)
