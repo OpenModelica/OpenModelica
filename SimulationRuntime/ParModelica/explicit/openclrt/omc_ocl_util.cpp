@@ -101,6 +101,12 @@ void ocl_get_device(){
     size_t arg_nr;
     clGetPlatformIDs(MAX_DEVICE, NULL, &nr_dev);
 
+    if (nr_dev < 1) {
+        printf("- %d OpenCL devices available.\n\n", nr_dev);
+        printf("No valid OpenCL device found. Make sure you have installed the correct OpenCL drivers and have registered the ICDs (Installable Client Drivers) for your devices.\n");
+        exit(1);
+    }
+
     //Get an OpenCL platform
     cl_platform_id* cpPlatform = new cl_platform_id[nr_dev];
     clGetPlatformIDs(nr_dev, cpPlatform, NULL);

@@ -29,6 +29,6 @@ transfer: libOMOCLRuntime.a
 	$(COPY) OCLRuntimeUtil.cl $(PARMODELICAEXPOCL_INC)
 
 Makefile: Makefile.in
-	(cd ../../../ && ./config.status)
+	(cd ../../../../ && ./config.status)
 
 include Makefile.common
