@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 translateFlueGasZones.mos \
+translateHeatExchanger.mos \
 translateJunctions.mos \
 translatePipes.mos \
 valve_test.mos \
@@ -11,7 +12,6 @@ valve_test.mos \
 # Run make testfailing
 FAILINGTESTFILES= \
 paralleFlowEVA_test.mos \
-translateHeatExchanger.mos \
 
 
 # Dependency files that are not .mo .mos or Makefile
