@@ -68,6 +68,13 @@ clean:
 	test ! -d build || rm -r build/
 	for d in @subdirs@; do $(MAKE) -C $$d clean; done
 
+LIBGITDIRS = `ls -f libraries/git`
+
+gitclean:
+	git submodule foreach --recursive 'git clean -fdx -e /git -e /svn'
+	git clean -fdx -e OpenModelicaSetup -e .project -e .externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch
+	for d in $(LIBGITDIRS); do git clean -fdx libraries/git/$$d; done
+	
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 datarootdir = @datarootdir@

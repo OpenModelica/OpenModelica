@@ -136,7 +136,7 @@ clean:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler clean OMBUILDDIR=$(OMBUILDDIR)
 	test ! -d $(OMBUILDDIR) || rm -rf $(OMBUILDDIR)
 
-LIBGITDIRS = `ls libraries/git`
+LIBGITDIRS = `ls -f libraries/git`
 	
 gitclean:
 	git submodule foreach --recursive 'git clean -fdx -e /git -e /svn'
