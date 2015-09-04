@@ -2824,8 +2824,16 @@ protected
   DAE.Exp outside_sum1, outside_sum2, inside_sum1, inside_sum2, res;
   list<ConnectorElement> insideElements, outsideElements;
 algorithm
-  (_, insideElements) := List.splitOnTrue(inInsideElements, function isZeroFlow(attr="min"));
-  (_, outsideElements) := List.splitOnTrue(inOutsideElements, function isZeroFlow(attr="max"));
+  insideElements := List.filterOnFalse(inInsideElements, function isZeroFlow(attr="min"));
+  outsideElements := List.filterOnFalse(inOutsideElements, function isZeroFlow(attr="max"));
+  // adrpo: TODO! FIXME! HACK!
+  //   what happens if both these filtered lists are empty, what do we return?
+  //   Test with model: ThermoPower.PowerPlants.SteamTurbineGroup.Tests.TestST3LRh_bypass
+  //   as this seems to happen there! For now I unfilter the lists!
+  if listEmpty(outsideElements) and listEmpty(insideElements) then
+    insideElements := inInsideElements;
+    outsideElements := inOutsideElements;
+  end if;
   if listEmpty(outsideElements) then
     // No outside components.
     inside_sum1 := sumMap(insideElements, sumInside1, inFlowThreshold);
@@ -2851,7 +2859,7 @@ protected function isZeroFlow
   "Returns true if the given flow attribute of a connector is zero."
   input ConnectorElement inElement;
   input String attr;
-  output Boolean isZero;
+  output Boolean isZero = false;
 protected
   DAE.Type ty;
   Option<DAE.Exp> attr_oexp;
