@@ -3,7 +3,114 @@ Major OpenModelica Releases
 
 This Appendix lists the most important OpenModelica releases and a brief
 description of their contents. Right now the versions from 1.3.1 to
-1.9.2 are described.
+1.9.3 are described.
+
+.. _openmodelica_1.9.3 :
+
+OpenModelica 1.9.3, September 2015
+---------------------------------
+
+The most important enhancements in the OpenModelica 1.9.3 release:
+
+* Enhanced collaborative development and testing of OpenModelica by moving to the `GitHub <https://github.com/OpenModelica/OpenModelica>`_ framework for versioning and parallel development.
+
+* More accessible and up-to-date automatically generated documentation provided in both `html <https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/>`_ and `pdf <https://openmodelica.org/doc/OpenModelicaUsersGuide/OpenModelicaUsersGuide-latest.pdf>`_.
+
+* Further improved simulation speed and coverage of several libraries.
+
+* OMEdit graphic connection editor improvements.
+
+* OMNotebook improvements.
+
+OpenModelica Compiler (OMC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This release mainly includes improvements of the OpenModelica Compiler (OMC), including, but not restricted to the following:
+
+* Further improved simulation speed and coverage for several libraries.
+
+* Faster generated code for functions involving arrays, factor 2 speedup for many power generation models.
+
+* Better initialization.
+
+* An implicit inline Euler solver available.
+
+An implicit inline Euler solver with adaptive step size control available.
+
+* Code generation to enable vectorization of for-loops.
+
+* Improved non-linear, linear and mixed system solving.
+
+* Cross-compilation for the ARMhf architecture.
+
+* A prototype state machine implementation.
+
+* Improved performance and stability of the C++ runtime option.
+
+* More accessible and up-to-date automatically generated documentation provided in both html and .pdf.
+
+OpenModelica Notebook (OMNotebook)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Several improvements:
+
+* Support for moving cells from one place to another in a notebook.
+
+* A button for evaluation of whole notebooks.
+
+* A new cell type called Latex cells, supporting Latex formatted input that provides mathematical typesetting of formulae when evaluated.
+
+OpenModelica Shell (OMShell)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+No changes.
+
+OpenModelica Eclipse Plug-in (MDT)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+No changes apart from bug fixing.
+
+OpenModelica Development Environment (OMDev)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A big change: version handling and parallel development has been improved
+by moving from SVN to GIThub.
+This makes it easier for each developer to test his/her fixes and
+enhancements before committing the code.
+Automatic mirroring of all code is still performed to the OpenModelica
+site.
+
+Graphic Editor OMEdit
+~~~~~~~~~~~~~~~~~~~~~
+
+There are several improvements to the OpenModelica graphic connection editor OMEdit:
+
+* Support for uses annotations.
+
+* Support for declaring components as vectors.
+
+* Faster messages browser with clickable error messages.
+
+* Support for managing the stacking order of graphical shapes.
+
+* Several improvements to the plot tool and text editor in OMEdit.
+
+Optimization
+~~~~~~~~~~~~
+
+Several improvements of the Dynamic Optimization module with collocation, using Ipopt:
+
+* Better performance due to smart treatment of algebraic loops for optimization.
+
+* Improved formulation of optimization problems with an annotation approach which also allows graphical problem formulation.
+
+* It is now possible to formulate final constraints.
+
+
+FMI Support
+~~~~~~~~~~~
+
+Further improved FMI 2.0 co-simulation support.
 
 .. _openmodelica_1.9.2 :
 
