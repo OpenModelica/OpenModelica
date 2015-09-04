@@ -3877,6 +3877,18 @@ algorithm
   end match;
 end crefToPath;
 
+public function elementSpecToPath "This function converts a ElementSpec to a Path, if possible.
+  If the ElementSpec is not EXTENDS, it will silently fail."
+  input ElementSpec inElementSpec;
+  output Path outPath;
+algorithm
+  outPath:= match (inElementSpec)
+    local
+      Path p;
+    case EXTENDS(path = p) then p;
+  end match;
+end elementSpecToPath;
+
 public function crefToPathIgnoreSubs
   "Converts a ComponentRef to a Path, ignoring any subscripts."
   input ComponentRef inComponentRef;

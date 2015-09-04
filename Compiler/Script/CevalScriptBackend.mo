@@ -1569,6 +1569,16 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
+    case (cache,_,"getInheritedClasses",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        paths = Interactive.getInheritedClasses(classpath, st);
+        vals = List.map(paths,ValuesUtil.makeCodeTypeName);
+      then
+        (cache,ValuesUtil.makeArray(vals),st);
+
+    case (cache,_,"getInheritedClasses",_,st as GlobalScript.SYMBOLTABLE(),_)
+      then (cache,ValuesUtil.makeArray({}),st);
+
     case (cache,_,"getComponentsTest",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(classpath, p);

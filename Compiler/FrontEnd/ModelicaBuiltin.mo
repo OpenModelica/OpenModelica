@@ -3277,6 +3277,17 @@ algorithm
 annotation(preferredView="text");
 end ngspicetoModelica;
 
+function getInheritedClasses
+  input TypeName name;
+  output TypeName inheritedClasses[:];
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the list of inherited classes.
+</html>"),
+  preferredView="text");
+end getInheritedClasses;
+
 function getComponentsTest
   input TypeName name;
   output Component[:] components;
