@@ -964,6 +964,7 @@ constant Integer RT_CLOCK_UNCERTAINTIES = 18;
 constant Integer RT_CLOCK_USER_RESERVED = 19;
 
 function readableTime
+"returns time in format AhBmTs [X.YYYY]"
   input Real sec;
   output String str;
 protected
@@ -974,6 +975,7 @@ algorithm
   hr := div(min,60);
   min := mod(min,60);
   str := (if hr>0 then String(hr) + "h" else "") + (if min>0 then String(min) + "m" else "") + String(tmp) + "s";
+  str := str + " [" + String(sec, significantDigits=4) + "]";
 end readableTime;
 
 function timerTick
