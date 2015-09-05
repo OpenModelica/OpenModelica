@@ -527,6 +527,8 @@ runScript(modelTesting);getErrorString();
 //  * candidate: B3.ports[1].h_outflow(start = 100000.0)
 //  * candidate: V11.state_a.h(start = 100000.0)
 //  * candidate: V11.port_b.h_outflow(start = 100000.0)
+//  * candidate: V11.state_b.h(start = 100000.0)
+//  * candidate: V11.port_a.h_outflow(start = 100000.0)
 //  * candidate: B3.medium.state.h(start = 100000.0)
 //  * candidate: B3.heatTransfer.states[1].h(start = 100000.0)
 // => select value from B3.medium.h(start = B3.h_start) for variable: B3.medium.h

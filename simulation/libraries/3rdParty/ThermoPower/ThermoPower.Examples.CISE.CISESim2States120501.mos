@@ -142,6 +142,7 @@ simulate(ThermoPower.Examples.CISE.CISESim2States120501); getErrorString();
 //  * candidate: Plant.Pipe2Valve.heatTransfer.fluidState[2].h(start = 100000.0)
 //  * candidate: Plant.Pipe2Valve.outfl.h_outflow(start = Plant.Pipe2Valve.hstartout)
 //  * candidate: Plant.Valve.outlet.h_outflow(start = 100000.0)
+//  * candidate: Plant.Valve.inlet.h_outflow(start = 100000.0)
 //  * candidate: Plant.Valve.fluidState.h(start = 100000.0)
 //  * candidate: Plant.Pipe2Valve.infl.h_outflow(start = Plant.Pipe2Valve.hstartin)
 // => select value from Plant.Pipe2Valve.htilde[1](start = Plant.Pipe2Valve.hstart[2]) for variable: Plant.Pipe2Valve.htilde[1]
