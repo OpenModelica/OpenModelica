@@ -2553,6 +2553,54 @@ algorithm
   end match;
 end getConstrainedByModifiers;
 
+protected function expandEnumerationSubMod
+  input SCode.SubMod inSubMod;
+  input Boolean inChanged;
+  output SCode.SubMod outSubMod;
+  output Boolean outChanged;
+algorithm
+  (outSubMod, outChanged) := match inSubMod
+    local
+      SCode.Mod mod, mod1;
+      SCode.Ident ident;
+    case SCode.NAMEMOD(ident=ident, mod=mod)
+      equation
+        mod1 = expandEnumerationMod(mod);
+      then
+        if referenceEq(mod, mod1) then (inSubMod, inChanged) else (SCode.NAMEMOD(ident, mod1), true);
+    else
+      (inSubMod, inChanged);
+  end match;
+end expandEnumerationSubMod;
+
+public function expandEnumerationMod
+  input SCode.Mod inMod;
+  output SCode.Mod outMod;
+protected
+  SCode.Final f;
+  SCode.Each e;
+  SCode.Element el, el1;
+  list<SCode.SubMod> submod;
+  Option<Absyn.Exp> binding;
+  SourceInfo info;
+  Boolean changed;
+algorithm
+  outMod := match inMod
+    case SCode.REDECL(f, e, el)
+      equation
+        el1 = expandEnumerationClass(el);
+      then
+        if referenceEq(el, el1) then inMod else SCode.REDECL(f, e, el1);
+
+    case SCode.MOD(f, e, submod, binding, info)
+      equation
+        (submod, changed) = List.mapFold(submod, expandEnumerationSubMod, false);
+      then if changed then SCode.MOD(f, e, submod, binding, info) else inMod;
+
+    else inMod;
+  end match;
+end expandEnumerationMod;
+
 public function expandEnumerationClass
 "@author: PA, adrpo
  this function expands the enumeration from a list into a class with components
@@ -2567,13 +2615,25 @@ algorithm
       SCode.Comment cmt;
       SourceInfo info;
       SCode.Element c;
+      SCode.Prefixes prefixes;
+      SCode.Mod m, m1;
+      Absyn.Path p;
+      SCode.Visibility v;
+      Option<SCode.Annotation> ann;
 
-    case SCode.CLASS(name = n,restriction = SCode.R_TYPE(),
+    case SCode.CLASS(name = n,restriction = SCode.R_TYPE(), prefixes = prefixes,
                      classDef = SCode.ENUMERATION(enumLst=l),cmt=cmt,info = info)
       equation
-        c = expandEnumeration(n, l, cmt, info);
+        c = expandEnumeration(n, l, prefixes, cmt, info);
       then
         c;
+
+    case SCode.EXTENDS(baseClassPath = p, visibility = v, modifications = m, ann = ann, info = info)
+      equation
+
+        m1 = expandEnumerationMod(m);
+      then
+        if referenceEq(m, m1) then inElement else SCode.EXTENDS(p, v, m1, ann, info);
 
     else inElement;
 
@@ -2585,24 +2645,30 @@ public function expandEnumeration
   This function takes an Ident and list of strings, and returns an enumeration class."
   input SCode.Ident n;
   input list<SCode.Enum> l;
+  input SCode.Prefixes prefixes;
   input SCode.Comment cmt;
   input SourceInfo info;
   output SCode.Element outClass;
-protected
-  list<SCode.Element> comp;
 algorithm
-  comp := makeEnumComponents(l, info);
   outClass :=
     SCode.CLASS(
      n,
-     SCode.defaultPrefixes,
+     prefixes,
      SCode.NOT_ENCAPSULATED(),
      SCode.NOT_PARTIAL(),
      SCode.R_ENUMERATION(),
-     SCode.PARTS(comp,{},{},{},{},{},{},NONE()),
+     makeEnumParts(l, info),
      cmt,
      info);
 end expandEnumeration;
+
+public function makeEnumParts
+  input list<SCode.Enum> inEnumLst;
+  input SourceInfo info;
+  output SCode.ClassDef classDef;
+algorithm
+  classDef := SCode.PARTS(makeEnumComponents(inEnumLst, info),{},{},{},{},{},{},NONE());
+end makeEnumParts;
 
 public function makeEnumComponents
   "Translates a list of Enums to a list of elements of type EnumType."
