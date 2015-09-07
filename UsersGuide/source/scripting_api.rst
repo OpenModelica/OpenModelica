@@ -31,7 +31,7 @@ The following are brief descriptions of the scripting commands available
 in the OpenModelica environment.
 
 OpenModelica API Calls
-##########################
+######################
 
 All OpenModelica API commands shown in alphabetic order:
 
