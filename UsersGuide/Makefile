@@ -26,34 +26,35 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) sou
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 
-.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest coverage gettext readme
+.PHONY: help clean html htmlmathpng dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest coverage gettext readme
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
-	@echo "  html       to make standalone HTML files"
-	@echo "  dirhtml    to make HTML files named index.html in directories"
-	@echo "  singlehtml to make a single large HTML file"
-	@echo "  pickle     to make pickle files"
-	@echo "  json       to make JSON files"
-	@echo "  htmlhelp   to make HTML files and a HTML help project"
-	@echo "  qthelp     to make HTML files and a qthelp project"
-	@echo "  applehelp  to make an Apple Help Book"
-	@echo "  devhelp    to make HTML files and a Devhelp project"
-	@echo "  epub       to make an epub"
-	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
-	@echo "  latexpdf   to make LaTeX files and run them through pdflatex"
-	@echo "  latexpdfja to make LaTeX files and run them through platex/dvipdfmx"
-	@echo "  text       to make text files"
-	@echo "  man        to make manual pages"
-	@echo "  texinfo    to make Texinfo files"
-	@echo "  info       to make Texinfo files and run them through makeinfo"
-	@echo "  gettext    to make PO message catalogs"
-	@echo "  changes    to make an overview of all changed/added/deprecated items"
-	@echo "  xml        to make Docutils-native XML files"
-	@echo "  pseudoxml  to make pseudoxml-XML files for display purposes"
-	@echo "  linkcheck  to check all external links for integrity"
-	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
-	@echo "  coverage   to run coverage check of the documentation (if enabled)"
+	@echo "  html           to make standalone HTML files"
+	@echo "  htmlmathpng    to make standalone HTML files using dvipng instead of dvisvgm"
+	@echo "  dirhtml        to make HTML files named index.html in directories"
+	@echo "  singlehtml     to make a single large HTML file"
+	@echo "  pickle         to make pickle files"
+	@echo "  json           to make JSON files"
+	@echo "  htmlhelp       to make HTML files and a HTML help project"
+	@echo "  qthelp         to make HTML files and a qthelp project"
+	@echo "  applehelp      to make an Apple Help Book"
+	@echo "  devhelp        to make HTML files and a Devhelp project"
+	@echo "  epub           to make an epub"
+	@echo "  latex          to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
+	@echo "  latexpdf       to make LaTeX files and run them through pdflatex"
+	@echo "  latexpdfja     to make LaTeX files and run them through platex/dvipdfmx"
+	@echo "  text           to make text files"
+	@echo "  man            to make manual pages"
+	@echo "  texinfo        to make Texinfo files"
+	@echo "  info           to make Texinfo files and run them through makeinfo"
+	@echo "  gettext        to make PO message catalogs"
+	@echo "  changes        to make an overview of all changed/added/deprecated items"
+	@echo "  xml            to make Docutils-native XML files"
+	@echo "  pseudoxml      to make pseudoxml-XML files for display purposes"
+	@echo "  linkcheck      to check all external links for integrity"
+	@echo "  doctest        to run all doctests embedded in the documentation (if enabled)"
+	@echo "  coverage       to run coverage check of the documentation (if enabled)"
 
 clean:
 	rm -rf $(BUILDDIR)/*
@@ -62,6 +63,11 @@ html: dvisvgm.sh all-dep
 	test -f dvisvgm.sh
 	$(SPHINXBUILD) -b html -t nomathjax -D pngmath_dvipng="`pwd`"/dvisvgm.sh $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	./fix-math.sh build/html/*.html
+	@echo
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+
+htmlmathpng: all-dep
+	$(SPHINXBUILD) -b html -t nomathjax $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 

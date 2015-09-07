@@ -30,52 +30,8 @@ OpenModelica Modelica Scripting Commands
 The following are brief descriptions of the scripting commands available
 in the OpenModelica environment.
 
-OpenModelica Basic Commands
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-This is a selection of the most common commands related to simulation
-and plotting:
-
-* `buildModel`_
-* `checkModel`_
-* `clear`_
-* `getErrorString`_
-* `help`_
-* `importFMU`_
-* `instantiateModel`_
-* `list`_
-* `listVariables`_
-* `loadFile`_
-* `loadModel`_
-* `plot`_
-* `plotParametric`_
-* `save`_
-* `saveAll`_
-* `saveModel`_
-* `saveTotalModel`_
-* `setCommandLineOptions`_
-* `setInitXmlStartValue`_
-* `simulate`_
-* `translateModel`_
-* `typeOf`_
-
-OpenModelica System Commands
-############################
-
-This is a selection of common OpenModelica commands related to the
-operating system:
-
-* `cd`_
-* `deleteFile`_
-* `dirName`_
-* `readFile`_
-* `runScript`_
-* `setModelicaPath`_
-* `system`_
-* `writeFile`_
-
-All OpenModelica API Calls
-##########################
+OpenModelica API Calls
+######################
 
 All OpenModelica API commands shown in alphabetic order:
 

@@ -70,8 +70,15 @@ Then simulate the DoublePendulum:
 
 >>> simulate(DoublePendulum)
 
-If everything goes fine a visualization window will pop-up. To visualize
-any models from the MultiBody library you can use this script and change
+If everything goes fine a :ref:`modelica3d_png` will pop-up.
+
+.. _modelica3d_png:
+
+.. figure :: media/modelica3d.png
+
+  3D visualization of DoublePendulum
+
+To visualize any models from the MultiBody library you can use this script and change
 the extends to point to the model you want. Note that you will need to
 add visualisers to your model similarly to what Modelica.MultiBody
 library has. The documentation of the visualizers is available `here <https://build.openmodelica.org/Documentation/Modelica.Mechanics.MultiBody.Visualizers.html>`__.
