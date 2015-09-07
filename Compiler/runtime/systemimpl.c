@@ -623,9 +623,14 @@ int SystemImpl__systemCall(const char* str, const char* outFile)
     return -1;
   } else {
 
-    if (waitpid(pID, &status, 0) == -1) {
-      const char *tokens[2] = {strerror(errno),str};
-      c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error, gettext("system(%s) failed: %s"),tokens,2);
+    while (waitpid(pID, &status, 0) == -1) {
+      if (errno == EINTR) {
+        continue;
+      } else {
+        const char *tokens[2] = {strerror(errno),str};
+        c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error, gettext("system(%s) failed: %s"),tokens,2);
+        break;
+      }
     }
   }
 #endif
