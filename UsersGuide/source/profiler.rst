@@ -62,6 +62,7 @@ We simulate as usual, but set measureTime=true to activate the profiling:
   system("mv ProfilingTest_prof.rst ../source/ProfilingTest_prof.inc")
   system("rm ProfilingTest_prof.html")
   system("cp ProfilingTest_prof* ../source/")
+  system("cp ProfilingTest_prof.xml ProfilingTest_res.mat ProfilingTest_prof.data ../build/html/")
 
 .. include :: ProfilingTest_prof.inc
 
