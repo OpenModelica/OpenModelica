@@ -15,6 +15,7 @@ OpenModelica User's Guide
   introduction
   omedit
   plotting
+  debugger
   omnotebook
   fmi
   optimization

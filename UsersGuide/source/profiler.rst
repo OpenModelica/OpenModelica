@@ -71,3 +71,23 @@ Genenerated JSON for the Example
 .. literalinclude :: ../tmp/ProfilingTest_prof.json
   :caption: ProfilingTest_prof.json
   :language: json
+
+Using the Profiler from OMEdit
+==============================
+
+When running a simulation from OMEdit, it is possible to enable profiling
+information, which can be combined with the :ref:`transformations browser <transformations-browser>`.
+
+.. figure :: media/profiling-setup.*
+  :alt: Profiling setup
+
+  Setting up the profiler from OMEdit.
+
+When profiling the DoublePendulum example from MSL, the following output in :numref:`profiling-doublependulum` is a typical result.
+This information clearly shows which system takes longest to simulate (a linear system, where most of the time overhead probably comes from initializing `LAPACK <http://www.netlib.org/lapack/>`_ over and over).
+
+.. figure :: media/profiling-results.*
+  :alt: Profiling results
+  :name: profiling-doublependulum
+
+  Profiling results of the Modelica standard library DoublePendulum example, sorted by execution time.
