@@ -65,6 +65,7 @@ import Util;
   public constant Integer VARDATATYPE_FLOAT        = 1;
   public constant Integer VARDATATYPE_INTEGER      = 2;
   public constant Integer VARDATATYPE_BOOLEAN      = 3;
+  public constant Integer VARDATATYPE_STRING       = 4;
 
   public constant Integer VARTYPE_STATE        = 1;
   public constant Integer VARTYPE_STATEDER     = 2;
@@ -164,10 +165,10 @@ import Util;
     output HashTableCrILst.HashTable oVarToIndexMapping;
   protected
     SimCodeVar.SimVars simCodeVars;
-    list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, paramVars, intParamVars, boolParamVars, intAliasVars, boolAliasVars;
-    list<Option<SimCodeVar.SimVar>> notOptimizedVarsFloatOpt, notOptimizedVarsIntOpt, notOptimizedVarsBoolOpt;
-    list<SimCodeVar.SimVar> notOptimizedVarsFloat, notOptimizedVarsInt, notOptimizedVarsBool;
-    tuple<list<Integer>,list<Integer>,list<Integer>> notOptimizedVars;
+    list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars, inputVars, outputVars, aliasVars, paramVars, intParamVars, boolParamVars, stringParamVars, intAliasVars, boolAliasVars, stringAliasVars;
+    list<Option<SimCodeVar.SimVar>> notOptimizedVarsFloatOpt, notOptimizedVarsIntOpt, notOptimizedVarsBoolOpt, notOptimizedVarsStringOpt;
+    list<SimCodeVar.SimVar> notOptimizedVarsFloat, notOptimizedVarsInt, notOptimizedVarsBool, notOptimizedVarsString;
+    tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>> notOptimizedVars;
     array<Option<SimCodeVar.SimVar>> allVarsMapping;
     HashTableCrILst.HashTable simVarIdxMappingHashTable;
     Integer numScVars, numCL, threadAttIdx;
@@ -185,7 +186,7 @@ import Util;
     BackendDAE.IncidenceMatrix incidenceMatrix;
     Option<HpcOmSimCode.MemoryMap> tmpMemoryMapOpt;
     Integer varCount;
-    Integer VARSIZE_FLOAT, VARSIZE_INTEGER, VARSIZE_BOOLEAN, CACHELINE_SIZE;
+    Integer VARSIZE_FLOAT, VARSIZE_INTEGER, VARSIZE_BOOLEAN, VARSIZE_STRING, CACHELINE_SIZE;
     array<tuple<Integer,Integer, Integer>> simCodeVarTypes; //<varDataType, varSize, varType>
 
     array<list<Integer>> taskSolvedVarsMapping;
@@ -203,12 +204,13 @@ import Util;
           VARSIZE_FLOAT = 8;
           VARSIZE_INTEGER = 4;
           VARSIZE_BOOLEAN = 1;
+          VARSIZE_STRING = 4; //32 bit pointer
           CACHELINE_SIZE = 64;
           //HpcOmTaskGraph.printTaskGraphMeta(iTaskGraphMeta);
           //Create var hash table
           SimCode.MODELINFO(vars=simCodeVars) = iModelInfo;
-          SimCodeVar.SIMVARS(stateVars=stateVars, derivativeVars=derivativeVars, algVars=algVars, discreteAlgVars=discreteAlgVars, intAlgVars=intAlgVars, boolAlgVars=boolAlgVars, inputVars=inputVars,
-                             outputVars=outputVars, aliasVars=aliasVars, intAliasVars=intAliasVars, boolAliasVars=boolAliasVars, paramVars=paramVars, intParamVars=intParamVars, boolParamVars=boolParamVars) = simCodeVars;
+          SimCodeVar.SIMVARS(stateVars=stateVars, derivativeVars=derivativeVars, algVars=algVars, discreteAlgVars=discreteAlgVars, intAlgVars=intAlgVars, boolAlgVars=boolAlgVars, stringAlgVars=stringAlgVars, inputVars=inputVars,
+                             outputVars=outputVars, aliasVars=aliasVars, intAliasVars=intAliasVars, boolAliasVars=boolAliasVars, stringAliasVars=stringAliasVars, paramVars=paramVars, intParamVars=intParamVars, boolParamVars=boolParamVars, stringParamVars=stringParamVars) = simCodeVars;
           allVarsMapping = SimCodeUtil.createIdxSCVarMapping(simCodeVars);
           //SimCodeUtil.dumpIdxScVarMapping(allVarsMapping);
 
@@ -227,6 +229,8 @@ import Util;
           varCount = varCount + listLength(intAlgVars);
           simVarIdxMappingHashTable = fillSimVarHashTable(boolAlgVars,varCount,VARDATATYPE_BOOLEAN,simVarIdxMappingHashTable);
           varCount = varCount + listLength(boolAlgVars);
+          simVarIdxMappingHashTable = fillSimVarHashTable(stringAlgVars,varCount,VARDATATYPE_STRING,simVarIdxMappingHashTable);
+          varCount = varCount + listLength(stringAlgVars);
           simVarIdxMappingHashTable = fillSimVarHashTable(inputVars,varCount,VARDATATYPE_FLOAT,simVarIdxMappingHashTable);
           varCount = varCount + listLength(inputVars);
           simVarIdxMappingHashTable = fillSimVarHashTable(outputVars,varCount,VARDATATYPE_FLOAT,simVarIdxMappingHashTable);
@@ -237,12 +241,16 @@ import Util;
           varCount = varCount + listLength(intAliasVars);
           //simVarIdxMappingHashTable = fillSimVarHashTable(boolAliasVars,varCount,VARDATATYPE_BOOLEAN,simVarIdxMappingHashTable);
           varCount = varCount + listLength(boolAliasVars);
+          simVarIdxMappingHashTable = fillSimVarHashTable(stringAliasVars,varCount,VARDATATYPE_STRING,simVarIdxMappingHashTable);
+          varCount = varCount + listLength(stringAliasVars);
           simVarIdxMappingHashTable = fillSimVarHashTable(paramVars,varCount,VARDATATYPE_FLOAT,simVarIdxMappingHashTable);
           varCount = varCount + listLength(paramVars);
           simVarIdxMappingHashTable = fillSimVarHashTable(intParamVars,varCount,VARDATATYPE_INTEGER,simVarIdxMappingHashTable);
           varCount = varCount + listLength(intParamVars);
           simVarIdxMappingHashTable = fillSimVarHashTable(boolParamVars,varCount,VARDATATYPE_BOOLEAN,simVarIdxMappingHashTable);
           varCount = varCount + listLength(boolParamVars);
+          simVarIdxMappingHashTable = fillSimVarHashTable(stringParamVars,varCount,VARDATATYPE_STRING,simVarIdxMappingHashTable);
+          varCount = varCount + listLength(stringParamVars);
 
           simCodeVarTypes = arrayCreate(varCount, (-1,-1,-1));
           varCount = 0;
@@ -271,6 +279,10 @@ import Util;
             List.map_0(List.intRange2(varCount+1, varCount+listLength(boolAlgVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_BOOLEAN,VARSIZE_BOOLEAN,VARTYPE_OTHER), inArray=simCodeVarTypes));
           end if;
           varCount = varCount + listLength(boolAlgVars);
+          if(intGt(listLength(stringAlgVars), 0)) then
+            List.map_0(List.intRange2(varCount+1, varCount+listLength(stringAlgVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_STRING,VARSIZE_STRING,VARTYPE_OTHER), inArray=simCodeVarTypes));
+          end if;
+          varCount = varCount + listLength(stringAlgVars);
           if(intGt(listLength(inputVars), 0)) then
             List.map_0(List.intRange2(varCount+1, varCount+listLength(inputVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_FLOAT,VARSIZE_FLOAT,VARTYPE_OTHER), inArray=simCodeVarTypes));
           end if;
@@ -291,6 +303,7 @@ import Util;
             List.map_0(List.intRange2(varCount+1, varCount+listLength(boolAliasVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_BOOLEAN,VARSIZE_BOOLEAN,VARTYPE_ALIAS), inArray=simCodeVarTypes));
           end if;*/
           varCount = varCount + listLength(boolAliasVars);
+          varCount = varCount + listLength(stringAliasVars);
           if(intGt(listLength(paramVars), 0)) then
             List.map_0(List.intRange2(varCount+1, varCount+listLength(paramVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_FLOAT,VARSIZE_FLOAT,VARTYPE_PARAM), inArray=simCodeVarTypes));
           end if;
@@ -303,6 +316,10 @@ import Util;
             List.map_0(List.intRange2(varCount+1, varCount+listLength(boolParamVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_BOOLEAN,VARSIZE_BOOLEAN,VARTYPE_PARAM), inArray=simCodeVarTypes));
           end if;
           varCount = varCount + listLength(boolParamVars);
+          if(intGt(listLength(stringParamVars), 0)) then
+            List.map_0(List.intRange2(varCount+1, varCount+listLength(stringParamVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_STRING,VARSIZE_STRING,VARTYPE_PARAM), inArray=simCodeVarTypes));
+          end if;
+          varCount = varCount + listLength(stringParamVars);
           //printSimCodeVarTypes(simCodeVarTypes);
 
           //print("-------------------------------------\n");
@@ -323,7 +340,6 @@ import Util;
           (taskSolvedVarsMapping, taskUnsolvedVarsMapping) = getTaskSimVarMapping(sccEqMapping, nodeSccMapping, flatEqSimCodeVarMapping, scVarSolvedTaskMapping, simCodeVarTypes);
           scVarUnsolvedTaskMapping = transposeTasksScVarsMapping(taskUnsolvedVarsMapping, varCount);
           scVarInfos = createVarInfos(scVarSolvedTaskMapping, scVarUnsolvedTaskMapping, iSchedulerInfo);
-
           //printScVarInfos(scVarInfos);
 
           //print("\nSolved variables\n==============\n");
@@ -342,14 +358,15 @@ import Util;
           //Get not optimized variables (e.g. paramters that are not part of the task graph)
           //--------------------------------------------------------------------------------
           notOptimizedVars = getNotOptimizedVarsByCacheLineMapping(scVarCLMapping, allVarsMapping, simCodeVarTypes);
-          notOptimizedVarsFloatOpt = List.map(Util.tuple31(notOptimizedVars), function arrayGet(allVarsMapping));
-          notOptimizedVarsIntOpt = List.map(Util.tuple32(notOptimizedVars), function arrayGet(allVarsMapping));
-          notOptimizedVarsBoolOpt = List.map(Util.tuple33(notOptimizedVars), function arrayGet(allVarsMapping));
+          notOptimizedVarsFloatOpt = List.map(Util.tuple41(notOptimizedVars), function arrayGet(allVarsMapping));
+          notOptimizedVarsIntOpt = List.map(Util.tuple42(notOptimizedVars), function arrayGet(allVarsMapping));
+          notOptimizedVarsBoolOpt = List.map(Util.tuple43(notOptimizedVars), function arrayGet(allVarsMapping));
+          notOptimizedVarsStringOpt = List.map(Util.tuple44(notOptimizedVars), function arrayGet(allVarsMapping));
 
           notOptimizedVarsFloat = List.map(notOptimizedVarsFloatOpt, Util.getOption);
           notOptimizedVarsInt = List.map(notOptimizedVarsIntOpt, Util.getOption);
           notOptimizedVarsBool = List.map(notOptimizedVarsBoolOpt, Util.getOption);
-
+          notOptimizedVarsString = List.map(notOptimizedVarsStringOpt, Util.getOption);
           //Append cache line nodes to graph
           //--------------------------------
           graphInfo = GraphML.createGraphInfo();
@@ -364,7 +381,7 @@ import Util;
           GraphML.dumpGraph(graphInfo, fileName);
           //printCacheMap(cacheMap);
           if(Flags.isSet(Flags.HPCOM_MEMORY_OPT)) then
-            (varToArrayIndexMapping, varToIndexMapping, tmpMemoryMapOpt) = convertCacheToVarArrayMapping(cacheMap,CACHELINE_SIZE,stateVars,derivativeVars,aliasVars,intAliasVars,boolAliasVars,(VARSIZE_FLOAT,VARSIZE_INTEGER,VARSIZE_BOOLEAN),(notOptimizedVarsFloat,notOptimizedVarsInt,notOptimizedVarsBool));
+            (varToArrayIndexMapping, varToIndexMapping, tmpMemoryMapOpt) = convertCacheToVarArrayMapping(cacheMap,CACHELINE_SIZE,stateVars,derivativeVars,aliasVars,intAliasVars,boolAliasVars,stringAliasVars,(VARSIZE_FLOAT,VARSIZE_INTEGER,VARSIZE_BOOLEAN),(notOptimizedVarsFloat,notOptimizedVarsInt,notOptimizedVarsBool,notOptimizedVarsString));
           else
             tmpMemoryMapOpt = NONE();
           end if;
@@ -1906,8 +1923,9 @@ import Util;
     input list<SimCodeVar.SimVar> iAliasVars;
     input list<SimCodeVar.SimVar> iIntAliasVars;
     input list<SimCodeVar.SimVar> iBoolAliasVars;
+    input list<SimCodeVar.SimVar> iStringAliasVars;
     input tuple<Integer,Integer,Integer> iVarSizes; //size of float, int and bool variables (in bytes)
-    input tuple<list<SimCodeVar.SimVar>, list<SimCodeVar.SimVar>, list<SimCodeVar.SimVar>> iNotOptimizedVars;
+    input tuple<list<SimCodeVar.SimVar>, list<SimCodeVar.SimVar>, list<SimCodeVar.SimVar>, list<SimCodeVar.SimVar>> iNotOptimizedVars;
     output HashTableCrIListArray.HashTable oVarToArrayIndexMapping;
     output HashTableCrILst.HashTable oVarToIndexMapping;
     output Option<HpcOmSimCode.MemoryMap> oMemoryMap;
@@ -1919,14 +1937,14 @@ import Util;
     HashTableCrIListArray.HashTable varArrayIndexMappingHashTable;
     HashTableCrILst.HashTable varIndexMappingHashTable; //maps each variable to a memory "slot"
     array<tuple<Integer,Integer>> positionMappingArray;
-    Integer varSizeFloat, varSizeInt, varSizeBool;
+    Integer varSizeFloat, varSizeInt, varSizeBool, varSizeString;
     list<tuple<Integer, Integer, Integer>> positionMappingList; //<scVarIdx, arrayPosition, arrayIdx>
     array<Integer> varIdxOffsets;
-    list<SimCodeVar.SimVar> notOptimizedVarsFloat, notOptimizedVarsInt, notOptimizedVarsBool;
-    tuple<Integer,Integer,Integer> currentVarIndices;
+    list<SimCodeVar.SimVar> notOptimizedVarsFloat, notOptimizedVarsInt, notOptimizedVarsBool, notOptimizedVarsString;
+    tuple<Integer,Integer,Integer,Integer> currentVarIndices;
   algorithm
-    (oVarToArrayIndexMapping,oVarToIndexMapping,oMemoryMap) := match(iCacheMap, iCacheLineSize, iStateVars, iDerivativeVars, iAliasVars, iIntAliasVars, iBoolAliasVars, iVarSizes, iNotOptimizedVars)
-      case(CACHEMAP(cacheLineSize=cacheLineSize, cacheVariables=cacheVariables, cacheLinesFloat=cacheLinesFloat, cacheLinesInt=cacheLinesInt, cacheLinesBool=cacheLinesBool),_,_,_,_,_,_,(varSizeFloat, varSizeInt, varSizeBool),(notOptimizedVarsFloat,notOptimizedVarsInt,notOptimizedVarsBool))
+    (oVarToArrayIndexMapping,oVarToIndexMapping,oMemoryMap) := match(iCacheMap, iCacheLineSize, iStateVars, iDerivativeVars, iAliasVars, iIntAliasVars, iBoolAliasVars, iStringAliasVars, iVarSizes, iNotOptimizedVars)
+      case(CACHEMAP(cacheLineSize=cacheLineSize, cacheVariables=cacheVariables, cacheLinesFloat=cacheLinesFloat, cacheLinesInt=cacheLinesInt, cacheLinesBool=cacheLinesBool),_,_,_,_,_,_,_,(varSizeFloat, varSizeInt, varSizeBool),(notOptimizedVarsFloat,notOptimizedVarsInt,notOptimizedVarsBool,notOptimizedVarsString))
         equation
           maxNumElemsFloat = intDiv(iCacheLineSize, varSizeFloat);
           maxNumElemsInt = intDiv(iCacheLineSize, varSizeInt);
@@ -1936,37 +1954,38 @@ import Util;
           varArrayIndexMappingHashTable = HashTableCrIListArray.emptyHashTable();
           varIndexMappingHashTable = HashTableCrILst.emptyHashTable();
 
-          currentVarIndices = (1,1,1);
+          currentVarIndices = (1,1,1,1);
           //The first array elements are reserved for state and state derivative variables
           ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(iStateVars, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_FLOAT), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
           ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(iDerivativeVars, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_FLOAT), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
 
           stateAndStateDerSize = intAdd(listLength(iStateVars), listLength(iDerivativeVars));
           if(intEq(intMod(stateAndStateDerSize, maxNumElemsFloat), 0)) then
-            currentVarIndices = (stateAndStateDerSize + 1, 1, 1);
+            currentVarIndices = (stateAndStateDerSize + 1, 1, 1, 1);
           else
-            currentVarIndices = (stateAndStateDerSize + (maxNumElemsFloat - intMod(stateAndStateDerSize, maxNumElemsFloat)) + 1, 1, 1);
+            currentVarIndices = (stateAndStateDerSize + (maxNumElemsFloat - intMod(stateAndStateDerSize, maxNumElemsFloat)) + 1, 1, 1, 1);
           end if;
 
           //print("convertCacheToVarArrayMapping: The first " + intString(Util.tuple31(currentVarIndices)) + " elements are reserved for states and state derivatives\n");
-          varSizeFloat = Util.tuple31(currentVarIndices);
+          varSizeFloat = Util.tuple41(currentVarIndices);
 
           varIdxOffsets = arrayCreate(3,1);
-          varIdxOffsets = arrayUpdate(varIdxOffsets, 1, Util.tuple31(currentVarIndices) + 1);
+          varIdxOffsets = arrayUpdate(varIdxOffsets, 1, Util.tuple41(currentVarIndices) + 1);
           allCacheLines = List.sort(getAllCacheLinesOfCacheMap(iCacheMap), compareCacheLineMapByIdx);
           ((varArrayIndexMappingHashTable,varIndexMappingHashTable)) = List.fold(allCacheLines, function addCacheLineMapToVarArrayMapping(iCacheLineSize=cacheLineSize, iVarIdxOffsets=varIdxOffsets, iCacheVariables=cacheVariablesArray), (varArrayIndexMappingHashTable,varIndexMappingHashTable));
 
-          currentVarIndices = (Util.tuple31(currentVarIndices) + intMul(listLength(cacheLinesFloat), maxNumElemsFloat), intMul(listLength(cacheLinesInt), maxNumElemsInt) + 1, intMul(listLength(cacheLinesBool), maxNumElemsBool) + 1);
+          currentVarIndices = (Util.tuple41(currentVarIndices) + intMul(listLength(cacheLinesFloat), maxNumElemsFloat), intMul(listLength(cacheLinesInt), maxNumElemsInt) + 1, intMul(listLength(cacheLinesBool), maxNumElemsBool) + 1, 1);
 
           ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(listReverse(notOptimizedVarsFloat), function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_FLOAT), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
           ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(listReverse(notOptimizedVarsInt), function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_INTEGER), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-          //print("convertCacheToVarArrayMapping: " + intString(Util.tuple33(currentVarIndices)) + " is the start index for bool variables\n");
           ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(listReverse(notOptimizedVarsBool), function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_BOOLEAN), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
+          ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(listReverse(notOptimizedVarsString), function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_STRING), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
 
           //BaseHashTable.dumpHashTable(varArrayIndexMappingHashTable);
           ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(iAliasVars, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_FLOAT), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
           ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(iIntAliasVars, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_INTEGER), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
           ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(iBoolAliasVars, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_BOOLEAN), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
+          ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(iStringAliasVars, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_STRING), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
 
           varSizeFloat = varSizeFloat + intMul(listLength(cacheLinesFloat), maxNumElemsFloat) + listLength(notOptimizedVarsFloat);
           //SimCodeUtil.dumpVarLst(notOptimizedVarsFloat, "convertCacheToVarArrayMapping: Not optimized float vars");
@@ -1979,9 +1998,10 @@ import Util;
           varSizeInt = intMul(listLength(cacheLinesInt), maxNumElemsInt) + listLength(notOptimizedVarsInt);
           //print("convertCacheToVarArrayMapping: " + intString(intMul(listLength(cacheLinesBool), maxNumElemsBool)) + " elements are reserved for optimized variables [bool]\n");
           varSizeBool = intMul(listLength(cacheLinesBool), maxNumElemsBool) + listLength(notOptimizedVarsBool);
+          varSizeString = listLength(notOptimizedVarsString);
 
-        then (varArrayIndexMappingHashTable, varIndexMappingHashTable, SOME(HpcOmSimCode.MEMORYMAP_ARRAY(varSizeFloat,varSizeInt,varSizeBool)));
-      case(UNIFORM_CACHEMAP(),_,_,_,_,_,_,_,_)
+        then (varArrayIndexMappingHashTable, varIndexMappingHashTable, SOME(HpcOmSimCode.MEMORYMAP_ARRAY(varSizeFloat,varSizeInt,varSizeBool,varSizeString)));
+      case(UNIFORM_CACHEMAP(),_,_,_,_,_,_,_,_,_)
         equation
           Error.addMessage(Error.INTERNAL_ERROR, {"ConvertCacheToVarArrayMapping: Uniform-CacheMap not supported!"});
         then fail();
@@ -2042,7 +2062,7 @@ import Util;
     Integer clIdx, clSize;
     list<tuple<Integer, Integer, Integer>> iPositionMappingList;
     Integer scVarIdx, start, size, arrayPosition, highestIdx, offset, arridx;
-    tuple<Integer,Integer,Integer> currentVarIndices;
+    tuple<Integer,Integer,Integer,Integer> currentVarIndices;
   algorithm
     oPositionMapping := match(iCacheLineEntry, iArrayIdx, iClIdxSize, iVarIdxOffsets, iCacheVariables, iPositionMapping)
       case(CACHELINEENTRY(scVarIdx=scVarIdx, start=start, size=size),_,(clIdx, clSize),_,_,(varArrayIndexMappingHashTable, varIndexMappingHashTable))
@@ -2051,7 +2071,7 @@ import Util;
           //arrayPosition = intDiv(start, size) + (clIdx - 1)*intDiv(clSize, size) + offset;
           arrayPosition = intDiv(start, size) + offset;
           //print("convertCacheMapToMemoryMap2: offset=" + intString(offset) + " array-index=" + intString(iArrayIdx) + " array-position=" + intString(arrayPosition) + "\n");
-          currentVarIndices = (arrayPosition, arrayPosition, arrayPosition);
+          currentVarIndices = (arrayPosition, arrayPosition, arrayPosition, arrayPosition);
           //print("convertCacheMapToMemoryMap2: number of variables=" + intString(arrayLength(iCacheVariables)) + " arrayPosition=" + intString(arrayPosition) + "\n");
           (_, varArrayIndexMappingHashTable, varIndexMappingHashTable) = SimCodeUtil.addVarToArrayIndexMapping(arrayGet(iCacheVariables, arrayLength(iCacheVariables) - scVarIdx + 1), iArrayIdx, (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
           //iPositionMappingList = (realScVarIdx,arrayPosition,iArrayIdx)::iPositionMappingList;
@@ -2091,9 +2111,9 @@ import Util;
     input array<tuple<Integer,Integer>> iScVarCLMapping;
     input array<Option<SimCodeVar.SimVar>> iAllVarsMapping;
     input array<tuple<Integer,Integer, Integer>> iSimCodeVarTypes; //<varDataType, varSize, varType>
-    output tuple<list<Integer>, list<Integer>, list<Integer>> oNotOptimizedVars;
+    output tuple<list<Integer>, list<Integer>, list<Integer>, list<Integer>> oNotOptimizedVars;
   algorithm
-    ((oNotOptimizedVars,_)) := Array.fold(iScVarCLMapping, function getNotOptimizedVarsByCacheLineMapping0(iAllVarsMapping=iAllVarsMapping,iSimCodeVarTypes=iSimCodeVarTypes), (({},{},{}),1));
+    ((oNotOptimizedVars,_)) := Array.fold(iScVarCLMapping, function getNotOptimizedVarsByCacheLineMapping0(iAllVarsMapping=iAllVarsMapping,iSimCodeVarTypes=iSimCodeVarTypes), (({},{},{},{}),1));
   end getNotOptimizedVarsByCacheLineMapping;
 
   protected function getNotOptimizedVarsByCacheLineMapping0 "author: marcusw
@@ -2101,14 +2121,14 @@ import Util;
     input tuple<Integer,Integer> iScVarCLMapping;
     input array<Option<SimCodeVar.SimVar>> iAllVarsMapping;
     input array<tuple<Integer,Integer, Integer>> iSimCodeVarTypes; //<varDataType, varSize, varType>
-    input tuple<tuple<list<Integer>, list<Integer>, list<Integer>>, Integer> iEntries; //<input-list,scVarindex>
-    output tuple<tuple<list<Integer>, list<Integer>, list<Integer>>, Integer> oEntries; //<input-list,scVarindex>
+    input tuple<tuple<list<Integer>, list<Integer>, list<Integer>, list<Integer>>, Integer> iEntries; //<input-list,scVarindex>
+    output tuple<tuple<list<Integer>, list<Integer>, list<Integer>, list<Integer>>, Integer> oEntries; //<input-list,scVarindex>
   protected
-    list<Integer> tmpSimVarsFloat, tmpSimVarsInt, tmpSimVarsBool;
+    list<Integer> tmpSimVarsFloat, tmpSimVarsInt, tmpSimVarsBool, tmpSimVarsString;
     Integer scVarIdx, dataType;
   algorithm
     oEntries := matchcontinue(iScVarCLMapping, iAllVarsMapping, iSimCodeVarTypes, iEntries)
-      case((-1,_),_,_,((tmpSimVarsFloat, tmpSimVarsInt, tmpSimVarsBool), scVarIdx))
+      case((-1,_),_,_,((tmpSimVarsFloat, tmpSimVarsInt, tmpSimVarsBool, tmpSimVarsString), scVarIdx))
         equation
           dataType = Util.tuple31(arrayGet(iSimCodeVarTypes, scVarIdx));
           if(intEq(dataType, VARDATATYPE_FLOAT)) then
@@ -2119,12 +2139,16 @@ import Util;
             else
               if(intEq(dataType, VARDATATYPE_BOOLEAN)) then
                 tmpSimVarsBool = scVarIdx::tmpSimVarsBool;
+              else
+                if(intEq(dataType, VARDATATYPE_STRING)) then
+                  tmpSimVarsString = scVarIdx::tmpSimVarsString;
+                end if;
               end if;
             end if;
           end if;
-        then (((tmpSimVarsFloat, tmpSimVarsInt, tmpSimVarsBool), scVarIdx+1));
-      case(_,_,_,((tmpSimVarsFloat, tmpSimVarsInt, tmpSimVarsBool), scVarIdx))
-        then (((tmpSimVarsFloat, tmpSimVarsInt, tmpSimVarsBool), scVarIdx+1));
+        then (((tmpSimVarsFloat, tmpSimVarsInt, tmpSimVarsBool, tmpSimVarsString), scVarIdx+1));
+      case(_,_,_,((tmpSimVarsFloat, tmpSimVarsInt, tmpSimVarsBool, tmpSimVarsString), scVarIdx))
+        then (((tmpSimVarsFloat, tmpSimVarsInt, tmpSimVarsBool, tmpSimVarsString), scVarIdx+1));
     end matchcontinue;
   end getNotOptimizedVarsByCacheLineMapping0;
 
@@ -2864,6 +2888,7 @@ import Util;
     //add all variables as a node first
     for varIdx in 1:iNumberOfScVars loop
       isValidVar := true;
+      //print("Handling variable " + intString(varIdx) + " out of var-mapping with size " + intString(arrayLength(iAllVarsMapping)) + "\n");
       simVarOpt := arrayGet(iAllVarsMapping, varIdx);
       description := "unknown";
       threadText := "Th -1";

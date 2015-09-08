@@ -76,7 +76,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      //the variables of OMEdit are always the first elements of the result vectors, if they are set
      desc.add_options()
           ("help", "produce help message")
-          ("nls_continue", po::bool_switch()->default_value(false),"non linear solver will continue if it can not reach the given precision")
+          ("nls-continue", po::bool_switch()->default_value(false),"non linear solver will continue if it can not reach the given precision")
           ("runtime-library,R", po::value<string>(),"path to cpp runtime libraries")
           ("modelica-system-library,M",  po::value<string>(), "path to Modelica library")
           ("results-file,F", po::value<vector<string> >(),"name of results file")
@@ -137,7 +137,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      double starttime =  vm["start-time"].as<double>();
      double stoptime = vm["stop-time"].as<double>();
      double stepsize =vm["step-size"].as<double>();
-     bool nlsContinueOnError = vm["nls_continue"].as<bool>();
+     bool nlsContinueOnError = vm["nls-continue"].as<bool>();
 
      if (!(stepsize > 0.0))
          stepsize = (stoptime - starttime) / vm["number-of-intervals"].as<int>();

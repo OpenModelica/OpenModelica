@@ -17,8 +17,10 @@ Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _yHelp            (NULL)
 	, _f                (NULL)
 	, _fHelp            (NULL)
-	,_iHelp        (NULL)
+	, _iHelp            (NULL)
 	, _jac                (NULL)
+  , _y_old              (NULL)
+  , _y_new              (NULL)
 	, _zeroVec            (NULL)
 	, _dimSys            (0)
 	, _firstCall        (true)
@@ -88,7 +90,7 @@ void Newton::initialize()
 			_iterationStatus = SOLVERERROR;
 		}
 	}
-	Logger::write("Newton: initialized",LC_NLS,LL_DEBUG);
+	LOGGER_WRITE("Newton: initialized",LC_NLS,LL_DEBUG);
 }
 
 void Newton::solve()

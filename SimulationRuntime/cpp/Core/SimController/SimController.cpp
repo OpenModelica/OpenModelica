@@ -115,7 +115,7 @@ boost::weak_ptr<ISimData> SimController::LoadSimData(string modelKey)
     return sim_data;
 }
 
-boost::weak_ptr<ISimVars> SimController::LoadSimVars(string modelKey, size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pre_vars, size_t dim_z, size_t z_i)
+boost::weak_ptr<ISimVars> SimController::LoadSimVars(string modelKey, size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_string, size_t dim_pre_vars, size_t dim_z, size_t z_i)
 {
     //if the simdata is already loaded
     std::map<string,boost::shared_ptr<ISimVars> > ::iterator iter = _sim_vars.find(modelKey);
@@ -125,7 +125,7 @@ boost::weak_ptr<ISimVars> SimController::LoadSimVars(string modelKey, size_t dim
         _sim_vars.erase(iter);
     }
     //create system
-    boost::shared_ptr<ISimVars> sim_vars = createSimVars(dim_real, dim_int, dim_bool, dim_pre_vars, dim_z,z_i);
+    boost::shared_ptr<ISimVars> sim_vars = createSimVars(dim_real, dim_int, dim_bool, dim_string, dim_pre_vars, dim_z,z_i);
     _sim_vars[modelKey] = sim_vars;
     return sim_vars;
 }

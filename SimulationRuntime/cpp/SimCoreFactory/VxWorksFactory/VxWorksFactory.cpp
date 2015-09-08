@@ -12,7 +12,7 @@ extern "C" ISimController* createSimController(PATH library_path, PATH modelicas
 extern "C" ISettingsFactory* createSettingsFactory(PATH library_path,PATH modelicasystem_path);
 extern "C" IAlgLoopSolverFactory* createAlgLoopSolverFactory(IGlobalSettings* globalSettings,PATH library_path,PATH modelicasystem_path);
 extern "C" ISimData* createSimData();
-extern "C" ISimVars* createSimVars(size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_pre_vars,size_t dim_z,size_t z_i);
+extern "C" ISimVars* createSimVars(size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_string,size_t dim_pre_vars,size_t dim_z,size_t z_i);
 extern "C" ISolver* createRTEuler(IMixedSystem* system, ISolverSettings* settings);
 extern "C" ISolver* createRTRK(IMixedSystem* system, ISolverSettings* settings);
 extern "C" ISolverSettings* createRTEulerSettings(IGlobalSettings* globalSettings);

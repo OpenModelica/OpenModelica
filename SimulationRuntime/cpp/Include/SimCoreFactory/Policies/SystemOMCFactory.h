@@ -63,16 +63,16 @@ public:
 
   }
 
-  virtual boost::shared_ptr<ISimVars> createSimVars(size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_pre_vars,size_t dim_z,size_t z_i)
+  virtual boost::shared_ptr<ISimVars> createSimVars(size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_string,size_t dim_pre_vars,size_t dim_z,size_t z_i)
   {
-    std::map<std::string, factory<ISimVars,size_t,size_t,size_t,size_t,size_t,size_t > >::iterator simvars_iter;
-    std::map<std::string, factory<ISimVars,size_t,size_t,size_t,size_t,size_t,size_t > >& simvars_factory(_system_type_map->get());
+    std::map<std::string, factory<ISimVars,size_t,size_t,size_t,size_t,size_t,size_t,size_t > >::iterator simvars_iter;
+    std::map<std::string, factory<ISimVars,size_t,size_t,size_t,size_t,size_t,size_t,size_t > >& simvars_factory(_system_type_map->get());
     simvars_iter = simvars_factory.find("SimVars");
     if (simvars_iter == simvars_factory.end())
     {
       throw ModelicaSimulationError(MODEL_FACTORY,"No simvars found");
     }
-    boost::shared_ptr<ISimVars> simVars(simvars_iter->second.create(dim_real,dim_int,dim_bool,dim_pre_vars,dim_z,z_i));
+    boost::shared_ptr<ISimVars> simVars(simvars_iter->second.create(dim_real,dim_int,dim_bool,dim_string,dim_pre_vars,dim_z,z_i));
     return simVars;
 
   }

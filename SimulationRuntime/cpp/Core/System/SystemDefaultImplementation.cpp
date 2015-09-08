@@ -12,9 +12,13 @@
 
 
 template <class T>
-void InitVars<T>::setStartValue(T& variable,T val)
+void InitVars<T>::setStartValue(T& variable,T val,bool overwriteOldValue)
 {
-  _start_values[&variable] = val;
+  //only add a start value if it was not already defined
+  if(!_start_values.count(&variable) || overwriteOldValue)
+    _start_values[&variable] = val;
+  else
+    LOGGER_WRITE("SystemDefaultImplementation: start value for variable is already defined",LC_INIT,LL_DEBUG);
 };
 
 template <class T>
@@ -47,6 +51,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *global
   , _dimTimeEvent      (0)
   , _dimAE        (0)
   , _time_event_counter  (NULL)
+  , _outputStream(NULL)
   , _callType        (IContinuous::UNDEF_UPDATE)
   , _initial        (false)
   , _delay_max      (0.0)
@@ -75,6 +80,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(SystemDefaultImplementa
   , _dimTimeEvent      (0)
   , _dimAE        (0)
   , _time_event_counter  (NULL)
+  , _outputStream(NULL)
   , _callType        (IContinuous::UNDEF_UPDATE)
   , _initial        (false)
   , _delay_max      (0.0)
@@ -518,27 +524,49 @@ string& SystemDefaultImplementation::getStringStartValue(string& var)
 {
   return _string_start_values.getGetStartValue(var);
 }
+
 void SystemDefaultImplementation::setRealStartValue(double& var,double val)
 {
+  setRealStartValue(var,val,false);
+}
+
+void SystemDefaultImplementation::setRealStartValue(double& var,double val,bool overwriteOldValue)
+{
   var=val;
-  _real_start_values.setStartValue(var,val);
+  _real_start_values.setStartValue(var,val,overwriteOldValue);
 }
 
 void SystemDefaultImplementation::setBoolStartValue(bool& var,bool val)
 {
+  setBoolStartValue(var,val,false);
+}
+
+void SystemDefaultImplementation::setBoolStartValue(bool& var,bool val,bool overwriteOldValue)
+{
   var=val;
-  _bool_start_values.setStartValue(var,val);
+  _bool_start_values.setStartValue(var,val,overwriteOldValue);
 }
 
 void SystemDefaultImplementation::setIntStartValue(int& var,int val)
 {
-  var=val;
-  _int_start_values.setStartValue(var,val);
+  setIntStartValue(var,val,false);
 }
-void SystemDefaultImplementation::setStringStartValue(string& var,string val)
+
+void SystemDefaultImplementation::setIntStartValue(int& var,int val,bool overwriteOldValue)
 {
   var=val;
-  _string_start_values.setStartValue(var,val);
+  _int_start_values.setStartValue(var,val,overwriteOldValue);
+}
+
+void SystemDefaultImplementation::setStringStartValue(string& var,string val)
+{
+  setStringStartValue(var,val,false);
+}
+
+void SystemDefaultImplementation::setStringStartValue(string& var,string val,bool overwriteOldValue)
+{
+  var=val;
+  _string_start_values.setStartValue(var,val,overwriteOldValue);
 }
 /** @} */ // end of coreSystem
 

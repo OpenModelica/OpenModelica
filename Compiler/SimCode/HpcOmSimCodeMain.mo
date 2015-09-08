@@ -333,17 +333,17 @@ algorithm
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       (numProc,_) = setNumProc(numProc,cpCostsWoC,taskGraphDataOde);//in case n-flag is not set
 
-      (scheduleDae,simCode,taskGraphDaeScheduled,taskGraphDataDaeScheduled,sccSimEqMapping) = createSchedule(taskGraphDaeSimplified,taskGraphDataDaeSimplified,daeSccSimEqMapping,simVarMapping,filenamePrefix,numProc,simCode,scheduledTasksDae,"DAE system",Flags.getConfigString(Flags.HPCOM_SCHEDULER));
+      (scheduleDae,simCode,taskGraphDaeScheduled,taskGraphDataDaeScheduled,sccSimEqMapping) = createSchedule(taskGraphDaeSimplified,taskGraphDataDaeSimplified,daeSccSimEqMapping,simVarMapping,filenamePrefix,numProc,numProc,simCode,scheduledTasksDae,"DAE system",Flags.getConfigString(Flags.HPCOM_SCHEDULER));
            //HpcOmScheduler.printSchedule(scheduleDae);
            //schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(scheduleDae,arrayLength(taskGraphDaeScheduled));
            //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphDaeScheduled, taskGraphDataDaeScheduled, "taskGraph"+filenamePrefix+"DAE_scheduled.graphml", "", HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,false,false));
 
-      (scheduleOde,simCode,taskGraphOdeScheduled,taskGraphDataOdeScheduled,sccSimEqMapping) = createSchedule(taskGraphOdeSimplified,taskGraphDataOdeSimplified,sccSimEqMapping,simVarMapping,filenamePrefix,numProc,simCode,scheduledTasksOde,"ODE system",Flags.getConfigString(Flags.HPCOM_SCHEDULER));
+      (scheduleOde,simCode,taskGraphOdeScheduled,taskGraphDataOdeScheduled,sccSimEqMapping) = createSchedule(taskGraphOdeSimplified,taskGraphDataOdeSimplified,sccSimEqMapping,simVarMapping,filenamePrefix,numProc,numProc,simCode,scheduledTasksOde,"ODE system",Flags.getConfigString(Flags.HPCOM_SCHEDULER));
            //HpcOmScheduler.printSchedule(scheduleOde);
            //schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(scheduleOde,arrayLength(taskGraphOdeScheduled));
            //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOdeScheduled, taskGraphDataOdeScheduled, "taskGraph"+filenamePrefix+"ODE_scheduled.graphml", "", HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,false,false));
 
-      (scheduleZeroFunc,simCode,taskGraphZeroFuncScheduled,taskGraphDataZeroFuncScheduled,sccSimEqMapping) = createSchedule(taskGraphZeroFuncSimplified,taskGraphDataZeroFuncSimplified,daeSccSimEqMapping,simVarMapping,filenamePrefix,numProc,simCode,scheduledTasksZeroFunc,"ZeroFunc system",Flags.getConfigString(Flags.HPCOM_SCHEDULER));
+      (scheduleZeroFunc,simCode,taskGraphZeroFuncScheduled,taskGraphDataZeroFuncScheduled,sccSimEqMapping) = createSchedule(taskGraphZeroFuncSimplified,taskGraphDataZeroFuncSimplified,daeSccSimEqMapping,simVarMapping,filenamePrefix,numProc,numProc,simCode,scheduledTasksZeroFunc,"ZeroFunc system",Flags.getConfigString(Flags.HPCOM_SCHEDULER));
            //HpcOmScheduler.printSchedule(scheduleZeroFunc);
            //schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(scheduleZeroFunc,arrayLength(taskGraphZeroFuncScheduled));
            //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphZeroFuncScheduled, taskGraphDataZeroFuncScheduled, "taskGraph"+filenamePrefix+"ZF_scheduled.graphml", "", HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,false,false));
@@ -743,7 +743,8 @@ author: mwalther, Waurich TUD"
   input array<list<Integer>> iSccSimEqMapping;
   input array<list<SimCodeVar.SimVar>> iSimVarMapping;
   input String iFilenamePrefix;
-  input Integer iNumProc;
+  input Integer iNumProc; //the max. number of processors
+  input Integer iNumProcToUse; //the number of processors that should be used to calculate the given task graph (iNumProcToUse <= iNumProc)
   input SimCode.SimCode iSimCode;
   input list<HpcOmSimCode.Task> iScheduledTasks;
   input String iSystemName; //e.g. "ODE system" or "DAE system"
@@ -756,12 +757,19 @@ author: mwalther, Waurich TUD"
 protected
   list<String> knownScheduler = {"none","level","levelfix","ext","metis","hmet","listr","rand","list","mcp","part","taskdep","tds","bls","sbs","sts"};
   String schedulerName = iSchedulerName;
+  HpcOmSimCode.Schedule tmpSchedule;
+  Integer numProcToUse = iNumProcToUse;
 algorithm
   if(boolNot(List.exist1(knownScheduler,stringEq,schedulerName))) then
     print("HpcOmScheduler.createSchedule warning: The scheduler '" + iSchedulerName + "' is unknown. The list-scheduling algorithm is used instead for the " + iSystemName + ".\n");
     schedulerName := "list";
   end if;
-  (oSchedule,oSimCode,oTaskGraph,oTaskGraphMeta,oSccSimEqMapping) := createSchedule1(iTaskGraph, iTaskGraphMeta, iSccSimEqMapping, iSimVarMapping, iFilenamePrefix, iNumProc, iSimCode, iScheduledTasks, iSystemName, schedulerName);
+  if(intGt(iNumProcToUse, iNumProc)) then
+    print("HpcOmScheduler.createSchedule warning: Cannot schedule the the task graph to " + intString(iNumProcToUse) + " processors, because the number is larger than the available processors (" + intString(iNumProc) + ").\n");
+    numProcToUse := iNumProc;
+  end if;
+  (tmpSchedule,oSimCode,oTaskGraph,oTaskGraphMeta,oSccSimEqMapping) := createSchedule1(iTaskGraph, iTaskGraphMeta, iSccSimEqMapping, iSimVarMapping, iFilenamePrefix, numProcToUse, iSimCode, iScheduledTasks, iSystemName, schedulerName);
+  oSchedule := HpcOmScheduler.expandSchedule(iNumProc, numProcToUse, tmpSchedule);
 end createSchedule;
 
 protected function createSchedule1 "check if the given scheduler is known and create it, otherwise fail

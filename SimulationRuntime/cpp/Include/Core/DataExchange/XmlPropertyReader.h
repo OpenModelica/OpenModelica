@@ -3,13 +3,15 @@
 #include <Core/DataExchange/IPropertyReader.h>
 #include <string>
 
+class IContinuous;
+
 class XmlPropertyReader : public IPropertyReader
 {
   public:
     XmlPropertyReader(std::string propertyFile);
     ~XmlPropertyReader();
 
-    void readInitialValues(boost::shared_ptr<ISimVars> sim_vars);
+    void readInitialValues(IContinuous& system, boost::shared_ptr<ISimVars> sim_vars);
 
     std::string getPropertyFile();
     void setPropertyFile(std::string file);

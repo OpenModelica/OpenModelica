@@ -638,10 +638,12 @@ template crefStartValueType2(DAE.Type ty)
     case T_INTEGER(__) then 'Int'
     case T_REAL(__) then 'Real'
     case T_BOOL(__) then 'Bool'
+    case T_STRING(__) then 'String'
     case T_ENUMERATION(__) then 'Int'
     case T_ARRAY(ty=T_INTEGER(__)) then 'Int'
     case T_ARRAY(ty=T_REAL(__)) then 'Real'
     case T_ARRAY(ty=T_BOOL(__)) then 'Bool'
+    case T_ARRAY(ty=T_STRING(__)) then 'String'
   else "error start value type"
 end match
 end crefStartValueType2;
@@ -2221,7 +2223,7 @@ template daeExpCallStart(Exp exp, Context context, Text &preExp /*BUFP*/,
     case  ALGLOOP_CONTEXT(genInitialisation=false) then
     '_system->get<%crefStartValueType(cr.componentRef)%>StartValue(<%cref1(cr.componentRef, simCode , extraFuncs, extraFuncsDecl, extraFuncsNamespace,  context,  &varDecls,  stateDerVectorName ,  useFlatArrayNotation)%>)'
     else
-    'get<%crefStartValueType(cr.componentRef)%>StartValue(<%cref1(cr.componentRef, simCode , extraFuncs, extraFuncsDecl, extraFuncsNamespace,  context,  &varDecls,  stateDerVectorName ,  useFlatArrayNotation)%>)'
+    'SystemDefaultImplementation::get<%crefStartValueType(cr.componentRef)%>StartValue(<%cref1(cr.componentRef, simCode , extraFuncs, extraFuncsDecl, extraFuncsNamespace,  context,  &varDecls,  stateDerVectorName ,  useFlatArrayNotation)%>)'
   case ASUB(exp = cr as CREF(__), sub = {sub_exp}) then
     let offset = daeExp(sub_exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let cref = cref1(cr.componentRef,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)

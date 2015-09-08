@@ -44,7 +44,7 @@ public:
      @param dim_z number of all state variables
      @param z_i start index of state vector in real_vars list
      */
-  virtual boost::weak_ptr<ISimVars> LoadSimVars(string modelKey,size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_pre_vars,size_t dim_z,size_t z_i) = 0;
+  virtual boost::weak_ptr<ISimVars> LoadSimVars(string modelKey,size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_string,size_t dim_pre_vars,size_t dim_z,size_t z_i) = 0;
   /**
   Starts the simulation
   @param modelKey Modelica model name

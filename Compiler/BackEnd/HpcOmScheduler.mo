@@ -6758,6 +6758,32 @@ algorithm
   s := stringDelimitList(List.map(lstIn,intListString)," | ");
 end intListListString;
 
+public function expandSchedule "increase the size of the scheduler datastructure from
+  iNumUsedProc to iNumProc, by adding empty task lists to the scheduler structure.
+  author:marcusw"
+  input Integer iNumProc;
+  input Integer iNumUsedProc;
+  input HpcOmSimCode.Schedule iSchedule;
+  output HpcOmSimCode.Schedule oSchedule;
+protected
+  array<list<HpcOmSimCode.Task>> threadTasks;
+  list<HpcOmSimCode.Task> outgoingDepTasks;
+  list<HpcOmSimCode.Task> scheduledTasks;
+  array<tuple<HpcOmSimCode.Task, Integer>> allCalcTasks;
+algorithm
+  oSchedule := match(iNumProc, iNumUsedProc, iSchedule)
+    case(_,_,HpcOmSimCode.LEVELSCHEDULE())
+      then iSchedule;
+    case(_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,outgoingDepTasks=outgoingDepTasks,scheduledTasks=scheduledTasks,allCalcTasks=allCalcTasks))
+      equation
+        threadTasks = Array.expandToSize(iNumProc, threadTasks, {});
+      then HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,scheduledTasks,allCalcTasks);
+    case(_,_,HpcOmSimCode.TASKDEPSCHEDULE())
+      then iSchedule;
+    case(_,_,HpcOmSimCode.EMPTYSCHEDULE())
+      then iSchedule;
+  end match;
+end expandSchedule;
 
 annotation(__OpenModelica_Interface="backend");
 end HpcOmScheduler;

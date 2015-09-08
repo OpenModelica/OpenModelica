@@ -245,13 +245,34 @@ private:
 };
 
 template <typename T>
-inline bool IsEqual(T x, T y,T t)
+inline bool IsEqual(T x, T y, T t)
 {
-    static close_at_tolerance<T> comp( t /*std::numeric_limits<T>::epsilon()/2*10*/);
+    close_at_tolerance<T> comp( t /*std::numeric_limits<T>::epsilon()/2*10*/);
     return comp(fpt_abs(x),fpt_abs(y));
 };
 
+template <typename T>
+inline bool IsEqual(T x, T y)
+{
+    return x == y;
+};
 
+template <>
+inline bool IsEqual(double x, double y)
+{
+    return IsEqual(x, y, 1e-10);
+};
+
+template <>
+inline bool IsEqual(std::string x, std::string y)
+{
+    return x.compare(y) == 0;
+};
+
+inline bool IsEqual(std::string x, const char* y)
+{
+    return x.compare(y) == 0;
+};
 
 template < typename T >
 struct floatCompare {

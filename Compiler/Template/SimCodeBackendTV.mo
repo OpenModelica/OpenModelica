@@ -80,6 +80,7 @@ package HpcOmSimCode
       Integer floatArraySize;
       Integer intArraySize;
       Integer boolArraySize;
+      Integer stringArraySize;
     end MEMORYMAP_ARRAY;
   end MemoryMap;
 end HpcOmSimCode;

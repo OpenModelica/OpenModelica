@@ -100,6 +100,15 @@ public:
 
     virtual bool stepCompleted(double time) = 0;
     virtual bool stepStarted(double time) = 0;
+
+    virtual double& getRealStartValue(double& var) = 0;
+    virtual bool& getBoolStartValue(bool& var) = 0;
+    virtual int& getIntStartValue(int& var) = 0;
+    virtual string& getStringStartValue(string& var) = 0;
+    virtual void setRealStartValue(double& var,double val) = 0;
+    virtual void setBoolStartValue(bool& var,bool val) = 0;
+    virtual void setIntStartValue(int& var,int val) = 0;
+    virtual void setStringStartValue(string& var,string val) = 0;
 };
 /** @} */ // end of coreSystem
 /*
