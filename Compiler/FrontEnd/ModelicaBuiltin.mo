@@ -970,12 +970,15 @@ function readableTime
 protected
   Integer tmp,min,hr;
 algorithm
+  /*
   tmp := mod(integer(sec),60);
   min := div(integer(sec),60);
   hr := div(min,60);
   min := mod(min,60);
   str := (if hr>0 then String(hr) + "h" else "") + (if min>0 then String(min) + "m" else "") + String(tmp) + "s";
   str := str + " [" + String(sec, significantDigits=4) + "]";
+  */
+  str := String(sec, significantDigits=4);
 end readableTime;
 
 function timerTick
