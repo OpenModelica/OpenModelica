@@ -175,17 +175,17 @@ template additionalHpcomProtectedMemberDeclaration(SimCode simCode, Text& extraF
       }
       <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
       <<
-      std::vector<MeasureTimeData> measureTimeArrayHpcom;
-      std::vector<MeasureTimeData> measureTimeSchedulerArrayHpcom_evaluateODE;
-      std::vector<MeasureTimeData> measureTimeSchedulerArrayHpcom_evaluateDAE;
-      std::vector<MeasureTimeData> measureTimeSchedulerArrayHpcom_evaluateZeroFuncs;
+      std::vector<MeasureTimeData*> *measureTimeArrayHpcom;
+      std::vector<MeasureTimeData*> *measureTimeSchedulerArrayHpcom_evaluateODE;
+      std::vector<MeasureTimeData*> *measureTimeSchedulerArrayHpcom_evaluateDAE;
+      std::vector<MeasureTimeData*> *measureTimeSchedulerArrayHpcom_evaluateZeroFuncs;
       //MeasureTimeValues *measuredStartValuesODE, *measuredEndValuesODE;
       MeasureTimeValues *measuredSchedulerStartValues, *measuredSchedulerEndValues;
 
       #ifdef MEASURETIME_MODELFUNCTIONS
-      std::vector<MeasureTimeData> measureTimeThreadArrayOdeHpcom;
-      std::vector<MeasureTimeData> measureTimeThreadArrayDaeHpcom;
-      std::vector<MeasureTimeData> measureTimeThreadArrayZeroFuncHpcom;
+      std::vector<MeasureTimeData*> *measureTimeThreadArrayOdeHpcom;
+      std::vector<MeasureTimeData*> *measureTimeThreadArrayDaeHpcom;
+      std::vector<MeasureTimeData*> *measureTimeThreadArrayZeroFuncHpcom;
       <%List.intRange(getConfigInt(NUM_PROC)) |> threadIdx => 'MeasureTimeValues* measuredSchedulerStartValues_<%intSub(threadIdx,1)%>;'; separator="\n"%>
       <%List.intRange(getConfigInt(NUM_PROC)) |> threadIdx => 'MeasureTimeValues* measuredSchedulerEndValues_<%intSub(threadIdx,1)%>;'; separator="\n"%>
       #endif //MEASURETIME_MODELFUNCTIONS
@@ -449,23 +449,23 @@ template additionalHpcomConstructorBodyStatements(Option<tuple<Schedule,Schedule
           <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
             <<
             #ifdef MEASURETIME_MODELFUNCTIONS
-            MeasureTime::addResultContentBlock("<%fullModelName%>","functions_HPCOM_Sections",&measureTimeSchedulerArrayHpcom_evaluateODE);
-            measureTimeSchedulerArrayHpcom_evaluateODE = std::vector<MeasureTimeData>(<%listLength(odeSchedule.tasksOfLevels)%>);
+            measureTimeSchedulerArrayHpcom_evaluateODE = new std::vector<MeasureTimeData*>(<%listLength(odeSchedule.tasksOfLevels)%>, NULL);
+            MeasureTime::addResultContentBlock("<%fullModelName%>","functions_HPCOM_Sections",measureTimeSchedulerArrayHpcom_evaluateODE);
             measuredSchedulerStartValues = MeasureTime::getZeroValues();
             measuredSchedulerEndValues = MeasureTime::getZeroValues();
-            <%List.intRange(listLength(odeSchedule.tasksOfLevels)) |> levelIdx => 'measureTimeSchedulerArrayHpcom_evaluateODE[<%intSub(levelIdx,1)%>] = MeasureTimeData("evaluateODE_level_<%levelIdx%>");'; separator="\n"%>
+            <%List.intRange(listLength(odeSchedule.tasksOfLevels)) |> levelIdx => '(*measureTimeSchedulerArrayHpcom_evaluateODE)[<%intSub(levelIdx,1)%>] = new MeasureTimeData("evaluateODE_level_<%levelIdx%>");'; separator="\n"%>
 
-            MeasureTime::addResultContentBlock("<%fullModelName%>","functions_HPCOM_Sections",&measureTimeSchedulerArrayHpcom_evaluateDAE);
-            measureTimeSchedulerArrayHpcom_evaluateDAE = std::vector<MeasureTimeData>(<%listLength(daeSchedule.tasksOfLevels)%>);
+            measureTimeSchedulerArrayHpcom_evaluateDAE = new std::vector<MeasureTimeData*>(<%listLength(daeSchedule.tasksOfLevels)%>, NULL);
+            MeasureTime::addResultContentBlock("<%fullModelName%>","functions_HPCOM_Sections",measureTimeSchedulerArrayHpcom_evaluateDAE);
             measuredSchedulerStartValues = MeasureTime::getZeroValues();
             measuredSchedulerEndValues = MeasureTime::getZeroValues();
-            <%List.intRange(listLength(daeSchedule.tasksOfLevels)) |> levelIdx => 'measureTimeSchedulerArrayHpcom_evaluateDAE[<%intSub(levelIdx,1)%>] = MeasureTimeData("evaluateDAE_level_<%levelIdx%>");'; separator="\n"%>
+            <%List.intRange(listLength(daeSchedule.tasksOfLevels)) |> levelIdx => '(*measureTimeSchedulerArrayHpcom_evaluateDAE)[<%intSub(levelIdx,1)%>] = new MeasureTimeData("evaluateDAE_level_<%levelIdx%>");'; separator="\n"%>
 
-            MeasureTime::addResultContentBlock("<%fullModelName%>","functions_HPCOM_Sections",&measureTimeSchedulerArrayHpcom_evaluateZeroFuncs);
-            measureTimeSchedulerArrayHpcom_evaluateZeroFuncs = std::vector<MeasureTimeData>(<%listLength(odeSchedule.tasksOfLevels)%>);
+            measureTimeSchedulerArrayHpcom_evaluateZeroFuncs = new std::vector<MeasureTimeData*>(<%listLength(odeSchedule.tasksOfLevels)%>, NULL);
+            MeasureTime::addResultContentBlock("<%fullModelName%>","functions_HPCOM_Sections",measureTimeSchedulerArrayHpcom_evaluateZeroFuncs);
             measuredSchedulerStartValues = MeasureTime::getZeroValues();
             measuredSchedulerEndValues = MeasureTime::getZeroValues();
-            <%List.intRange(listLength(zeroFuncSchedule.tasksOfLevels)) |> levelIdx => 'measureTimeSchedulerArrayHpcom_evaluateZeroFuncs[<%intSub(levelIdx,1)%>] = MeasureTimeData("evaluateZeroFunc_level_<%levelIdx%>");'; separator="\n"%>
+            <%List.intRange(listLength(zeroFuncSchedule.tasksOfLevels)) |> levelIdx => '(*measureTimeSchedulerArrayHpcom_evaluateZeroFuncs)[<%intSub(levelIdx,1)%>] = new MeasureTimeData("evaluateZeroFunc_level_<%levelIdx%>");'; separator="\n"%>
             #endif //MEASURETIME_MODELFUNCTIONS
             >>
           %>
@@ -539,17 +539,17 @@ template generateThreadMeasureTimeDeclaration(String fullModelName, Integer numb
 ::=
   <<
   #ifdef MEASURETIME_MODELFUNCTIONS
-  measureTimeThreadArrayOdeHpcom = std::vector<MeasureTimeData>(<%numberOfThreads%>);
-  measureTimeThreadArrayDaeHpcom = std::vector<MeasureTimeData>(<%numberOfThreads%>);
-  measureTimeThreadArrayZeroFuncHpcom = std::vector<MeasureTimeData>(<%numberOfThreads%>);
-  MeasureTime::addResultContentBlock("<%fullModelName%>","evaluateODE_threads",&measureTimeThreadArrayOdeHpcom);
-  MeasureTime::addResultContentBlock("<%fullModelName%>","evaluateDAE_threads",&measureTimeThreadArrayDaeHpcom);
-  MeasureTime::addResultContentBlock("<%fullModelName%>","evaluateZeroFunc_threads",&measureTimeThreadArrayZeroFuncHpcom);
+  measureTimeThreadArrayOdeHpcom = new std::vector<MeasureTimeData*>(<%numberOfThreads%>, NULL);
+  measureTimeThreadArrayDaeHpcom = new std::vector<MeasureTimeData*>(<%numberOfThreads%>, NULL);
+  measureTimeThreadArrayZeroFuncHpcom = new std::vector<MeasureTimeData*>(<%numberOfThreads%>, NULL);
+  MeasureTime::addResultContentBlock("<%fullModelName%>","evaluateODE_threads",measureTimeThreadArrayOdeHpcom);
+  MeasureTime::addResultContentBlock("<%fullModelName%>","evaluateDAE_threads",measureTimeThreadArrayDaeHpcom);
+  MeasureTime::addResultContentBlock("<%fullModelName%>","evaluateZeroFunc_threads",measureTimeThreadArrayZeroFuncHpcom);
   <%List.intRange(numberOfThreads) |> threadIdx => 'measuredSchedulerStartValues_<%intSub(threadIdx,1)%> = MeasureTime::getZeroValues();'; separator="\n"%>
   <%List.intRange(numberOfThreads) |> threadIdx => 'measuredSchedulerEndValues_<%intSub(threadIdx,1)%> = MeasureTime::getZeroValues();'; separator="\n"%>
-  <%List.intRange(numberOfThreads) |> threadIdx => 'measureTimeThreadArrayOdeHpcom[<%intSub(threadIdx,1)%>] = MeasureTimeData("evaluateODE_thread_<%threadIdx%>");'; separator="\n"%>
-  <%List.intRange(numberOfThreads) |> threadIdx => 'measureTimeThreadArrayDaeHpcom[<%intSub(threadIdx,1)%>] = MeasureTimeData("evaluateDAE_thread_<%threadIdx%>");'; separator="\n"%>
-  <%List.intRange(numberOfThreads) |> threadIdx => 'measureTimeThreadArrayZeroFuncHpcom[<%intSub(threadIdx,1)%>] = MeasureTimeData("evaluateZeroFunc_thread_<%threadIdx%>");'; separator="\n"%>
+  <%List.intRange(numberOfThreads) |> threadIdx => '(*measureTimeThreadArrayOdeHpcom)[<%intSub(threadIdx,1)%>] = new MeasureTimeData("evaluateODE_thread_<%threadIdx%>");'; separator="\n"%>
+  <%List.intRange(numberOfThreads) |> threadIdx => '(*measureTimeThreadArrayDaeHpcom)[<%intSub(threadIdx,1)%>] = new MeasureTimeData("evaluateDAE_thread_<%threadIdx%>");'; separator="\n"%>
+  <%List.intRange(numberOfThreads) |> threadIdx => '(*measureTimeThreadArrayZeroFuncHpcom)[<%intSub(threadIdx,1)%>] = new MeasureTimeData("evaluateZeroFunc_thread_<%threadIdx%>");'; separator="\n"%>
   #endif //MEASURETIME_MODELFUNCTIONS
   >>
 end generateThreadMeasureTimeDeclaration;
@@ -644,7 +644,8 @@ end destroyArrayLocks;
 template additionalHpcomDestructorBodyStatements(Option<tuple<Schedule,Schedule,Schedule>> schedulesOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
-  match schedulesOpt
+
+  let schedulerSpecificCode = match schedulesOpt
     case SOME((odeSchedule as LEVELSCHEDULE(useFixedAssignments=true),_,_)) then
       match type
         case ("pthreads")
@@ -703,6 +704,13 @@ template additionalHpcomDestructorBodyStatements(Option<tuple<Schedule,Schedule,
         else ""
     else ""
   end match
+  <<
+  #ifdef MEASURETIME_MODELFUNCTIONS
+  <%List.intRange(getConfigInt(NUM_PROC)) |> threadIdx => 'delete measuredSchedulerStartValues_<%intSub(threadIdx,1)%>;'; separator="\n"%>
+  <%List.intRange(getConfigInt(NUM_PROC)) |> threadIdx => 'delete measuredSchedulerEndValues_<%intSub(threadIdx,1)%>;'; separator="\n"%>
+  #endif //MEASURETIME_MODELFUNCTIONS
+  <%schedulerSpecificCode%>
+  >>
 end additionalHpcomDestructorBodyStatements;
 
 template updateHpcom(list<SimEqSystem> allEquationsPlusWhen, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -731,13 +739,13 @@ template generateParallelEvaluate(list<SimEqSystem> allEquationsPlusWhen, Absyn.
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let measureTimeEvaluateOdeStart = if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE", "MEASURETIME_MODELFUNCTIONS") else ""
-  let measureTimeEvaluateOdeEnd = if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS") else ""
+  let measureTimeEvaluateOdeEnd = if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS") else ""
 
   let measureTimeEvaluateAllStart = if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateAll", "MEASURETIME_MODELFUNCTIONS") else ""
-  let measureTimeEvaluateAllEnd = if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[1]", "evaluateAll", "MEASURETIME_MODELFUNCTIONS") else ""
+  let measureTimeEvaluateAllEnd = if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[1]", "evaluateAll", "MEASURETIME_MODELFUNCTIONS") else ""
 
   let measureTimeEvaluateZeroFuncStart = if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateZeroFuncs", "MEASURETIME_MODELFUNCTIONS") else ""
-  let measureTimeEvaluateZeroFuncEnd = if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[4]", "evaluateZeroFuncs", "MEASURETIME_MODELFUNCTIONS") else ""
+  let measureTimeEvaluateZeroFuncEnd = if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[4]", "evaluateZeroFuncs", "MEASURETIME_MODELFUNCTIONS") else ""
 
   let type = getConfigString(HPCOM_CODE)
 
@@ -1159,7 +1167,7 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
               evaluateThreadFuncODE_<%iThreadIdx%>();
               <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
               <<
-              <%generateMeasureTimeEndCode("valuesStart", "valuesEnd", 'measureTimeThreadArrayOdeHpcom[<%iThreadIdx%>]', 'evaluateODEThread<%iThreadIdx%>', "MEASURETIME_MODELFUNCTIONS")%>
+              <%generateMeasureTimeEndCode("valuesStart", "valuesEnd", '(*measureTimeThreadArrayOdeHpcom)[<%iThreadIdx%>]', 'evaluateODEThread<%iThreadIdx%>', "MEASURETIME_MODELFUNCTIONS")%>
               >>%>
             }
             else if(_evaluateMode < 0)
@@ -1167,7 +1175,7 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
               evaluateThreadFuncAll_<%iThreadIdx%>();
               <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
               <<
-              <%generateMeasureTimeEndCode("valuesStart", "valuesEnd", 'measureTimeThreadArrayDaeHpcom[<%iThreadIdx%>]', 'evaluateDaeThread<%iThreadIdx%>', "MEASURETIME_MODELFUNCTIONS")%>
+              <%generateMeasureTimeEndCode("valuesStart", "valuesEnd", '(*measureTimeThreadArrayDaeHpcom)[<%iThreadIdx%>]', 'evaluateDaeThread<%iThreadIdx%>', "MEASURETIME_MODELFUNCTIONS")%>
               >>%>
             }
             else
@@ -1175,7 +1183,7 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
               evaluateThreadFuncZeroFunc_<%iThreadIdx%>();
               <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
               <<
-              <%generateMeasureTimeEndCode("valuesStart", "valuesEnd", 'measureTimeThreadArrayZeroFuncHpcom[<%iThreadIdx%>]', 'evaluateZeroFuncThread<%iThreadIdx%>', "MEASURETIME_MODELFUNCTIONS")%>
+              <%generateMeasureTimeEndCode("valuesStart", "valuesEnd", '(*measureTimeThreadArrayZeroFuncHpcom)[<%iThreadIdx%>]', 'evaluateZeroFuncThread<%iThreadIdx%>', "MEASURETIME_MODELFUNCTIONS")%>
               >>%>
             }
 
@@ -1345,19 +1353,19 @@ template function_HPCOM_Thread(list<SimEqSystem> allEquationsPlusWhen, array<lis
       {
         <%generateMeasureTimeStartCode("measuredSchedulerStartValues", "evaluateODE_threads", "MEASURETIME_MODELFUNCTIONS")%>
         <%odeEqs%>
-        <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", "measureTimeThreadArrayOdeHpcom[threadNum]", "evaluateODE_threads", "MEASURETIME_MODELFUNCTIONS")%>
+        <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", "(*measureTimeThreadArrayOdeHpcom)[threadNum]", "evaluateODE_threads", "MEASURETIME_MODELFUNCTIONS")%>
       }
       else if(_evaluateMode < 0)
       {
         <%generateMeasureTimeStartCode("measuredSchedulerStartValues", "evaluateDAE_threads", "MEASURETIME_MODELFUNCTIONS")%>
         <%daeEqs%>
-        <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", "measureTimeThreadArrayDaeHpcom[threadNum]", "evaluateDAE_threads", "MEASURETIME_MODELFUNCTIONS")%>
+        <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", "(*measureTimeThreadArrayDaeHpcom)[threadNum]", "evaluateDAE_threads", "MEASURETIME_MODELFUNCTIONS")%>
       }
       else
       {
         <%generateMeasureTimeStartCode("measuredSchedulerStartValues", "evaluateZeroFunc_threads", "MEASURETIME_MODELFUNCTIONS")%>
         <%zeroFuncEqs%>
-        <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", "measureTimeThreadArrayZeroFuncHpcom[threadNum]", "evaluateZeroFunc_threads", "MEASURETIME_MODELFUNCTIONS")%>
+        <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", "(*measureTimeThreadArrayZeroFuncHpcom)[threadNum]", "evaluateZeroFunc_threads", "MEASURETIME_MODELFUNCTIONS")%>
       }
       >>
   end match

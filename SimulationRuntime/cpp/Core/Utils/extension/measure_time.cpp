@@ -2,8 +2,8 @@
 #include <Core/Modelica.h>
 #include <Core/Utils/extension/measure_time.hpp>
 
-MeasureTime * MeasureTime::instance = 0;
-MeasureTime::file_map MeasureTime::toWrite;
+MeasureTime * MeasureTime::_instance = NULL;
+MeasureTime::file_map MeasureTime::_valuesToWrite;
 
 MeasureTimeValues::MeasureTimeValues() : _numCalcs(0){}
 
@@ -11,115 +11,159 @@ MeasureTimeValues::~MeasureTimeValues()
 {
 }
 
+void MeasureTimeValues::reset()
+{
+  _numCalcs = 0;
+}
 
-MeasureTimeValuesSolver::MeasureTimeValuesSolver() : MeasureTimeValues(), functionEvaluations(0), errorTestFailures(0)
+MeasureTimeValuesSolver::MeasureTimeValuesSolver() : MeasureTimeValues(), _functionEvaluations(0), _errorTestFailures(0)
 {}
 
 MeasureTimeValuesSolver::MeasureTimeValuesSolver(unsigned long long functionEvaluations, unsigned long long errorTestFailures) :
-        MeasureTimeValues(), functionEvaluations(functionEvaluations), errorTestFailures(errorTestFailures)
+        MeasureTimeValues(), _functionEvaluations(functionEvaluations), _errorTestFailures(errorTestFailures)
+{}
+
+MeasureTimeValuesSolver::MeasureTimeValuesSolver(const MeasureTimeValuesSolver &timeValues) :
+        MeasureTimeValues(), _functionEvaluations(timeValues._functionEvaluations), _errorTestFailures(timeValues._errorTestFailures)
 {}
 
 MeasureTimeValuesSolver::~MeasureTimeValuesSolver() {}
 
-std::string MeasureTimeValuesSolver::serializeToJson()
+std::string MeasureTimeValuesSolver::serializeToJson() const
 {
   std::stringstream ss;
-  ss << "\"functionEvaluations\":" <<  functionEvaluations << ",\"errorTestFailures\":" << errorTestFailures;
+  ss << "\"functionEvaluations\":" <<  _functionEvaluations << ",\"errorTestFailures\":" << _errorTestFailures;
   return ss.str();
 }
 
 void MeasureTimeValuesSolver::add(MeasureTimeValues *values)
 {
-   MeasureTimeValuesSolver *val = static_cast<MeasureTimeValuesSolver*>(values);
-   functionEvaluations += val->functionEvaluations;
-   errorTestFailures += val->errorTestFailures;
+  MeasureTimeValuesSolver *val = static_cast<MeasureTimeValuesSolver*>(values);
+  _functionEvaluations += val->_functionEvaluations;
+  _errorTestFailures += val->_errorTestFailures;
 }
 
 void MeasureTimeValuesSolver::sub(MeasureTimeValues *values)
 {
-    MeasureTimeValuesSolver *val = static_cast<MeasureTimeValuesSolver*>(values);
-    functionEvaluations -= val->functionEvaluations;
-    errorTestFailures -= val->errorTestFailures;
+  MeasureTimeValuesSolver *val = static_cast<MeasureTimeValuesSolver*>(values);
+  _functionEvaluations -= val->_functionEvaluations;
+  _errorTestFailures -= val->_errorTestFailures;
 }
 
 void MeasureTimeValuesSolver::div(int counter)
 {
-    functionEvaluations = functionEvaluations / counter;
-    errorTestFailures = errorTestFailures / counter;
+  _functionEvaluations = _functionEvaluations / counter;
+  _errorTestFailures = _errorTestFailures / counter;
 }
 
+MeasureTimeValues* MeasureTimeValuesSolver::clone() const
+{
+  return new MeasureTimeValuesSolver(*this);
+}
 
-MeasureTimeData::MeasureTimeData() : id(""), sumMeasuredValues(MeasureTime::getZeroValues()) {}
+void MeasureTimeValuesSolver::reset()
+{
+  MeasureTimeValues::reset();
+  _functionEvaluations = 0;
+  _errorTestFailures = 0;
+}
 
-MeasureTimeData::MeasureTimeData(std::string id) : id(id), sumMeasuredValues(MeasureTime::getZeroValues()) {}
+MeasureTimeData::MeasureTimeData() : _id(""), _sumMeasuredValues(MeasureTime::getZeroValues())
+{
+
+}
+
+MeasureTimeData::MeasureTimeData(std::string id) : _id(id), _sumMeasuredValues(MeasureTime::getZeroValues())
+{
+
+}
+
+MeasureTimeData::MeasureTimeData(const MeasureTimeData &data): _id(data._id), _sumMeasuredValues(data._sumMeasuredValues->clone())
+{
+
+}
 
 MeasureTimeData::~MeasureTimeData()
 {
-  //if(sumMeasuredValues != NULL)
-    //delete sumMeasuredValues;
+  if(_sumMeasuredValues != NULL)
+    delete _sumMeasuredValues;
 }
 
-std::string MeasureTimeData::serializeToJson()
+std::string MeasureTimeData::serializeToJson() const
 {
   std::stringstream ss("");
-  ss << sumMeasuredValues->serializeToJson();
+  ss << _sumMeasuredValues->serializeToJson();
   return ss.str();
 }
 
-MeasureTime::MeasureTime() : overhead(NULL) {}
+MeasureTime::MeasureTime() : _measuredOverhead(NULL) {}
 
 MeasureTime::~MeasureTime()
 {
-  if(overhead != NULL)
-    delete overhead;
+  for(file_map::iterator it = _valuesToWrite.begin(); it != _valuesToWrite.end(); it++)
+  {
+    for(block_map::iterator iter = it->second.begin(); iter != it->second.end(); iter++)
+    {
+      for(int i = 0; i < iter->second->size(); i++)
+        delete iter->second->at(i);
+
+      iter->second->clear();
+      delete iter->second;
+    }
+    it->second.clear();
+  }
+  _valuesToWrite.clear();
+
+  if(_measuredOverhead != NULL)
+    delete _measuredOverhead;
+
+  _measuredOverhead = NULL;
 }
 
 MeasureTime* MeasureTime::getInstance()
 {
-  return instance;
+  return _instance;
 }
 
 void MeasureTime::deinitialize()
 {
-  std::cerr << "Deinit:" << std::endl;
-  if (instance != 0)
+  if (_instance != NULL)
   {
-    std::cerr << "try is " << std::endl;
-    delete instance;
-  std::cerr << "succed!" << std::endl;
+    delete _instance;
   }
+  _instance = NULL;
 }
 
 MeasureTimeValues* MeasureTime::getZeroValues()
 {
-  if (instance == 0)
-    return 0;
+  if (_instance == NULL)
+    return NULL;
 
-  return instance->getZeroValuesP();
+  return _instance->getZeroValuesP();
 }
 
 MeasureTimeValues* MeasureTime::getOverhead()
 {
-  if (instance == 0)
-    return 0;
+  if (_instance == NULL)
+    return NULL;
 
-  return instance->overhead;
+  return _instance->_measuredOverhead;
 }
 
 void MeasureTime::setOverheadToZero()
 {
-  if(overhead != NULL)
-    delete overhead;
+  if(_measuredOverhead != NULL)
+    delete _measuredOverhead;
 
-  overhead = getZeroValuesP();
+  _measuredOverhead = getZeroValuesP();
 }
 
 void MeasureTime::benchOverhead()
 {
-  if(overhead != NULL)
-    delete overhead;
+  if(_measuredOverhead != NULL)
+    delete _measuredOverhead;
 
-  overhead = getZeroValues();
+  _measuredOverhead = getZeroValues();
 
   MeasureTimeValues *overheadMeasureStart = getZeroValues();
   MeasureTimeValues *overheadMeasureEnd = getZeroValues();
@@ -135,17 +179,17 @@ void MeasureTime::benchOverhead()
     MeasureTime::getTimeValuesStart(overheadMeasureStart);
     MeasureTime::getTimeValuesEnd(overheadMeasureEnd);
     overheadMeasureEnd->sub(overheadMeasureStart);
-    overhead->add(overheadMeasureEnd);
+    _measuredOverhead->add(overheadMeasureEnd);
   }
-  overhead->div(100);
+  _measuredOverhead->div(100);
 
   delete overheadMeasureStart;
   delete overheadMeasureEnd;
 }
 
-void MeasureTime::addResultContentBlock(std::string model_name, std::string blockname, std::vector<MeasureTimeData> * in)
+void MeasureTime::addResultContentBlock(std::string modelName, std::string blockName, std::vector<MeasureTimeData*> *data)
 {
-  toWrite[model_name][blockname] = in;
+  _valuesToWrite[modelName][blockName] = data;
 }
 
 void MeasureTime::writeToJson()
@@ -157,7 +201,7 @@ void MeasureTime::writeToJson()
   tm * date_t = localtime(&sec);
   date << date_t->tm_year + 1900 << "-" << date_t->tm_mon + 1 << "-" << date_t->tm_mday << " " << date_t->tm_hour << ":" << date_t->tm_min << ":" << date_t->tm_sec;
 
-  for( file_map::iterator model = toWrite.begin() ; model != toWrite.end() ; ++model ) // iterate files
+  for( file_map::iterator model = _valuesToWrite.begin() ; model != _valuesToWrite.end() ; ++model ) // iterate files
   {
     std::ofstream os;
     os.open((model->first + std::string("_prof.json")).c_str());
@@ -169,7 +213,7 @@ void MeasureTime::writeToJson()
     bool isFirstBlock = true;
     for( block_map::iterator block = model->second.begin() ; block != model->second.end() ; ++block ) // iterate blocks
     {
-      std::vector<MeasureTimeData> * data = block->second;
+      std::vector<MeasureTimeData*> *data = block->second;
 
       if(isFirstBlock) isFirstBlock = false;
       else
@@ -181,11 +225,11 @@ void MeasureTime::writeToJson()
       //write data
       for (unsigned i = 0; i < data->size()-1; ++i)
       {
-    	  tmpS = (*data)[i].serializeToJson();
+    	  tmpS = (*data)[i]->serializeToJson();
     	  if(tmpS != "")
-    		  os << "{\"id\":\"" << (*data)[i].id << "\"," << tmpS << "},\n";
+    		  os << "{\"id\":\"" << (*data)[i]->_id << "\"," << tmpS << "},\n";
       }
-      if( data->size() > 0 ) os << "{\"id\":\"" << (*data)[data->size()-1].id << "\"," << (*data)[data->size()-1].serializeToJson() << "}]";
+      if( data->size() > 0 ) os << "{\"id\":\"" << (*data)[data->size()-1]->_id << "\"," << (*data)[data->size()-1]->serializeToJson() << "}]";
       else os << "]";
 
     } // end blocks

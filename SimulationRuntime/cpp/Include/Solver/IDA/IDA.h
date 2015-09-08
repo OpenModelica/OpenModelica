@@ -154,7 +154,7 @@ double
   N_Vector
     _CV_y0,                  ///< Temp      - Initial values in the ida Format
     _CV_y,                  ///< Temp      - State in ida Format
-  _CV_yp,    ///<Temp   - Stateders in ida Format
+    _CV_yp,    ///<Temp   - Stateders in ida Format
     _CV_yWrite,        ///< Temp      - Vector for dense out
     _CV_ypWrite,
     _CV_absTol;
@@ -178,7 +178,7 @@ double
    ITime* _time_system;
 
    #ifdef RUNTIME_PROFILING
-   std::vector<MeasureTimeData> measureTimeFunctionsArray;
+   std::vector<MeasureTimeData*> *measureTimeFunctionsArray;
    MeasureTimeValues *measuredFunctionStartValues, *measuredFunctionEndValues, *solveFunctionStartValues, *solveFunctionEndValues;
    MeasureTimeValuesSolver *solverValues;
    #endif

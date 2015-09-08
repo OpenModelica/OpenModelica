@@ -20,20 +20,21 @@ SimController::SimController(PATH library_path, PATH modelicasystem_path)
     _algloopsolverfactory = createAlgLoopSolverFactory(_config->getGlobalSettings());
 
     #ifdef RUNTIME_PROFILING
+    measuredFunctionStartValues = NULL;
+    measuredFunctionEndValues = NULL;
+
     if(MeasureTime::getInstance() != NULL)
     {
-        measureTimeFunctionsArray = std::vector<MeasureTimeData>(2); //0 initialize //1 solveInitialSystem
+        measureTimeFunctionsArray = new std::vector<MeasureTimeData*>(2, NULL); //0 initialize //1 solveInitialSystem
+        (*measureTimeFunctionsArray)[0] = new MeasureTimeData("initialize");
+        (*measureTimeFunctionsArray)[1] = new MeasureTimeData("solveInitialSystem");
+
         measuredFunctionStartValues = MeasureTime::getZeroValues();
         measuredFunctionEndValues = MeasureTime::getZeroValues();
-
-        measureTimeFunctionsArray[0] = MeasureTimeData("initialize");
-        measureTimeFunctionsArray[1] = MeasureTimeData("solveInitialSystem");
     }
     else
     {
-      measureTimeFunctionsArray = std::vector<MeasureTimeData>();
-      measuredFunctionStartValues = NULL;
-      measuredFunctionEndValues = NULL;
+      measureTimeFunctionsArray = new std::vector<MeasureTimeData*>();
     }
     #endif
 }
@@ -255,9 +256,9 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         #ifdef RUNTIME_PROFILING
         if(MeasureTime::getInstance() != NULL)
         {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[0], simControllerInitializeHandler);
-            measuredFunctionStartValues = MeasureTime::getZeroValues();
-            measuredFunctionEndValues = MeasureTime::getZeroValues();
+            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[0], simControllerInitializeHandler);
+            measuredFunctionStartValues->reset();
+            measuredFunctionEndValues->reset();
             MEASURETIME_START(measuredFunctionStartValues, simControllerSolveInitialSystemHandler, "SolveInitialSystem");
         }
         #endif
@@ -267,8 +268,8 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         #ifdef RUNTIME_PROFILING
         if(MeasureTime::getInstance() != NULL)
         {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[1], simControllerSolveInitialSystemHandler);
-            MeasureTime::addResultContentBlock(mixedsystem->getModelName(),"simController",&measureTimeFunctionsArray);
+            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[1], simControllerSolveInitialSystemHandler);
+            MeasureTime::addResultContentBlock(mixedsystem->getModelName(),"simController",measureTimeFunctionsArray);
         }
         #endif
 

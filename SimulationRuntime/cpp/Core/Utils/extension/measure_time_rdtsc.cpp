@@ -2,14 +2,16 @@
 #include <Core/Modelica.h>
 #include <Core/Utils/extension/measure_time_rdtsc.hpp>
 
-MeasureTimeValuesRDTSC::MeasureTimeValuesRDTSC(unsigned long long time) : MeasureTimeValues(), _time(time), _max_time(time) {}
+MeasureTimeValuesRDTSC::MeasureTimeValuesRDTSC(unsigned long long time) : MeasureTimeValues(), _time(time), _maxTime(time) {}
+
+MeasureTimeValuesRDTSC::MeasureTimeValuesRDTSC(const MeasureTimeValuesRDTSC &timeValues) : MeasureTimeValues(timeValues), _time(timeValues._time), _maxTime(timeValues._maxTime) {}
 
 MeasureTimeValuesRDTSC::~MeasureTimeValuesRDTSC() {}
 
-std::string MeasureTimeValuesRDTSC::serializeToJson()
+std::string MeasureTimeValuesRDTSC::serializeToJson() const
 {
   std::stringstream ss;
-  ss << "\"ncall\":" << _numCalcs << ",\"time\":" << _time << ",\"maxTime\":" <<  _max_time << ",\"meanTime\":" << (_numCalcs == 0 ? 0 : _time/_numCalcs);
+  ss << "\"ncall\":" << _numCalcs << ",\"time\":" << _time << ",\"maxTime\":" <<  _maxTime << ",\"meanTime\":" << (_numCalcs == 0 ? 0 : _time/_numCalcs);
   return ss.str();
 }
 
@@ -18,8 +20,8 @@ void MeasureTimeValuesRDTSC::add(MeasureTimeValues *values)
   MeasureTimeValuesRDTSC *val = static_cast<MeasureTimeValuesRDTSC*>(values);
   _time += val->_time;
 
-  if( val->_time > _max_time )
-    _max_time = val->_time;
+  if( val->_time > _maxTime )
+    _maxTime = val->_time;
 }
 
 void MeasureTimeValuesRDTSC::sub(MeasureTimeValues *values)
@@ -34,6 +36,18 @@ void MeasureTimeValuesRDTSC::sub(MeasureTimeValues *values)
 void MeasureTimeValuesRDTSC::div(int counter)
 {
   _time = _time / counter;
+}
+
+MeasureTimeValuesRDTSC* MeasureTimeValuesRDTSC::clone() const
+{
+  return new MeasureTimeValuesRDTSC(*this);
+}
+
+void MeasureTimeValuesRDTSC::reset()
+{
+  MeasureTimeValues::reset();
+  _time = 0;
+  _maxTime = 0;
 }
 
 MeasureTimeRDTSC::MeasureTimeRDTSC() : MeasureTime()
@@ -54,21 +68,21 @@ void MeasureTimeRDTSC::deinitializeThread()
 
 }
 
-void MeasureTimeRDTSC::getTimeValuesStartP(MeasureTimeValues *res)
+void MeasureTimeRDTSC::getTimeValuesStartP(MeasureTimeValues *res) const
 {
   MeasureTimeValuesRDTSC *val = static_cast<MeasureTimeValuesRDTSC*>(res);
   unsigned long long time = RDTSC();
   val->_time = time;
 }
 
-void MeasureTimeRDTSC::getTimeValuesEndP(MeasureTimeValues *res)
+void MeasureTimeRDTSC::getTimeValuesEndP(MeasureTimeValues *res) const
 {
   unsigned long long time = RDTSC();
   MeasureTimeValuesRDTSC *val = static_cast<MeasureTimeValuesRDTSC*>(res);
   val->_time = time;
 }
 
-MeasureTimeValues* MeasureTimeRDTSC::getZeroValuesP()
+MeasureTimeValues* MeasureTimeRDTSC::getZeroValuesP() const
 {
   return new MeasureTimeValuesRDTSC(0ull);
 }

@@ -45,7 +45,7 @@ private:
     boost::shared_ptr<SimManager> _simMgr;
 
     #ifdef RUNTIME_PROFILING
-    std::vector<MeasureTimeData> measureTimeFunctionsArray;
+    std::vector<MeasureTimeData*> *measureTimeFunctionsArray;
     MeasureTimeValues *measuredFunctionStartValues, *measuredFunctionEndValues;
     #endif
 };

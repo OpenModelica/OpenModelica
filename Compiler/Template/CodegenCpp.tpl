@@ -2313,21 +2313,21 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
             Logger::setEnabled(true);
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
                 <<
-                std::vector<MeasureTimeData> measureTimeArraySimulation = std::vector<MeasureTimeData>(2); //0 all, 1 setup
+                std::vector<MeasureTimeData*> *measureTimeArraySimulation = new std::vector<MeasureTimeData*>(2, NULL); //0 all, 1 setup
+                (*measureTimeArraySimulation)[0] = new MeasureTimeData("all");
+                (*measureTimeArraySimulation)[1] = new MeasureTimeData("setup");
                 MeasureTimeValues *measuredSimStartValues, *measuredSimEndValues, *measuredSetupStartValues, *measuredSetupEndValues;
 
-                MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","main",&measureTimeArraySimulation);
+                MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","main",measureTimeArraySimulation);
 
                 measuredSimStartValues = MeasureTime::getZeroValues();
                 measuredSimEndValues = MeasureTime::getZeroValues();
                 measuredSetupStartValues = MeasureTime::getZeroValues();
                 measuredSetupEndValues = MeasureTime::getZeroValues();
 
-                measureTimeArraySimulation[0] = MeasureTimeData("all");
-                measureTimeArraySimulation[1] = MeasureTimeData("setup");
-
                 <%generateMeasureTimeStartCode('measuredSimStartValues', "all", "")%>
                 <%generateMeasureTimeStartCode('measuredSetupStartValues', "setup", "")%>
+
                 >>
             %>
             <%additionalPreRunCommands%>
@@ -2346,15 +2346,21 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
             boost::weak_ptr<IMixedSystem> system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>","<%lastIdentOfPath(modelInfo.name)%>");
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
               <<
-              <%generateMeasureTimeEndCode("measuredSetupStartValues", "measuredSetupEndValues", "measureTimeArraySimulation[1]", "setup", "")%>
+              <%generateMeasureTimeEndCode("measuredSetupStartValues", "measuredSetupEndValues", "(*measureTimeArraySimulation)[1]", "setup", "")%>
               >>
             %>
             simulation.first->Start(simulation.second, "<%lastIdentOfPath(modelInfo.name)%>");
 
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
               <<
-              <%generateMeasureTimeEndCode("measuredSimStartValues", "measuredSimEndValues", "measureTimeArraySimulation[0]", "all", "")%>
+              <%generateMeasureTimeEndCode("measuredSimStartValues", "measuredSimEndValues", "(*measureTimeArraySimulation)[0]", "all", "")%>
               MeasureTime::getInstance()->writeToJson();
+              MeasureTime::deinitialize();
+
+              delete measuredSimStartValues;
+              delete measuredSimEndValues;
+              delete measuredSetupStartValues;
+              delete measuredSetupEndValues;
               >>
             %>
 
@@ -3526,6 +3532,20 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%className%>::~<%className%>()
     {
       deleteObjects();
+      <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+        let numOfEqs = SimCodeUtil.getMaxSimEqSystemIndex(simCode)
+        <<
+        #ifdef MEASURETIME_PROFILEBLOCKS
+        delete measuredProfileBlockStartValues;
+        delete measuredProfileBlockEndValues;
+        #endif //MEASURETIME_PROFILEBLOCKS
+
+        #ifdef MEASURETIME_MODELFUNCTIONS
+        delete measuredFunctionStartValues;
+        delete measuredFunctionEndValues;
+        #endif //MEASURETIME_MODELFUNCTIONS
+        >>
+      %>
       <%additionalDestructorBodyStatements%>
     }
 
@@ -3623,30 +3643,30 @@ match simCode
             let numOfEqs = SimCodeUtil.getMaxSimEqSystemIndex(simCode)
             <<
             #ifdef MEASURETIME_PROFILEBLOCKS
-            measureTimeProfileBlocksArray = std::vector<MeasureTimeData>(<%numOfEqs%>);
-            MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","profileBlocks",&measureTimeProfileBlocksArray);
-            measuredProfileBlockStartValues = MeasureTime::getZeroValues();
-            measuredProfileBlockEndValues = MeasureTime::getZeroValues();
-
+            measureTimeProfileBlocksArray = new std::vector<MeasureTimeData*>(<%numOfEqs%>, NULL);
             for(int i = 0; i < <%numOfEqs%>; i++)
             {
                 ostringstream ss;
                 ss << (i+1);
-                measureTimeProfileBlocksArray[i] = MeasureTimeData(ss.str());
+                (*measureTimeProfileBlocksArray)[i] = new MeasureTimeData(ss.str());
             }
+
+            MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","profileBlocks",measureTimeProfileBlocksArray);
+            measuredProfileBlockStartValues = MeasureTime::getZeroValues();
+            measuredProfileBlockEndValues = MeasureTime::getZeroValues();
             #endif //MEASURETIME_PROFILEBLOCKS
 
             #ifdef MEASURETIME_MODELFUNCTIONS
-            MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","functions",&measureTimeFunctionsArray);
-            measureTimeFunctionsArray = std::vector<MeasureTimeData>(5); //1 evaluateODE ; 2 evaluateAll; 3 writeOutput; 4 handleTimeEvents; 5 evaluateZeroFuncs
+            measureTimeFunctionsArray = new std::vector<MeasureTimeData*>(5, NULL); //1 evaluateODE ; 2 evaluateAll; 3 writeOutput; 4 handleTimeEvents; 5 evaluateZeroFuncs
+            MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","functions",measureTimeFunctionsArray);
+            (*measureTimeFunctionsArray)[0] = new MeasureTimeData("evaluateODE");
+            (*measureTimeFunctionsArray)[1] = new MeasureTimeData("evaluateAll");
+            (*measureTimeFunctionsArray)[2] = new MeasureTimeData("writeOutput");
+            (*measureTimeFunctionsArray)[3] = new MeasureTimeData("handleTimeEvents");
+            (*measureTimeFunctionsArray)[4] = new MeasureTimeData("evaluateZeroFuncs");
+
             measuredFunctionStartValues = MeasureTime::getZeroValues();
             measuredFunctionEndValues = MeasureTime::getZeroValues();
-
-            measureTimeFunctionsArray[0] = MeasureTimeData("evaluateODE");
-            measureTimeFunctionsArray[1] = MeasureTimeData("evaluateAll");
-            measureTimeFunctionsArray[2] = MeasureTimeData("writeOutput");
-            measureTimeFunctionsArray[3] = MeasureTimeData("handleTimeEvents");
-            measureTimeFunctionsArray[4] = MeasureTimeData("evaluateZeroFuncs");
             #endif //MEASURETIME_MODELFUNCTIONS
             >>
         %>
@@ -6658,13 +6678,13 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation));separator=","%>};
       for(int i=0;i<<%numResidues(allEquations)%>;i++) v3(i) = residues[i];
 
-      <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[2]", "writeOutput", "MEASURETIME_MODELFUNCTIONS")%>
+      <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[2]", "writeOutput", "MEASURETIME_MODELFUNCTIONS")%>
 
       _historyImpl->write(v,v2,v3,_simTime);
       >>
     else
       <<
-      <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[2]", "writeOutput", "MEASURETIME_MODELFUNCTIONS")%>
+      <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[2]", "writeOutput", "MEASURETIME_MODELFUNCTIONS")%>
 
       //_historyImpl->write(v,v2,_simTime);
       _historyImpl->addContainerToWriteQueue(container);
@@ -6951,11 +6971,11 @@ match modelInfo
       <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
       <<
       #ifdef MEASURETIME_PROFILEBLOCKS
-      std::vector<MeasureTimeData> measureTimeProfileBlocksArray;
+      std::vector<MeasureTimeData*> *measureTimeProfileBlocksArray;
       MeasureTimeValues *measuredProfileBlockStartValues, *measuredProfileBlockEndValues;
       #endif //MEASURETIME_PROFILEBLOCKS
       #ifdef MEASURETIME_MODELFUNCTIONS
-      std::vector<MeasureTimeData> measureTimeFunctionsArray;
+      std::vector<MeasureTimeData*> *measureTimeFunctionsArray;
       MeasureTimeValues *measuredFunctionStartValues, *measuredFunctionEndValues;
       #endif //MEASURETIME_MODELFUNCTIONS
       >>%>
@@ -9712,7 +9732,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
       "NOT IMPLEMENTED EQUATION"
   end match
   let &measureTimeStartVar += if createMeasureTime then generateMeasureTimeStartCode("measuredProfileBlockStartValues", 'evaluate<%ix_str%>', "MEASURETIME_PROFILEBLOCKS") else ""
-  let &measureTimeEndVar += if createMeasureTime then generateMeasureTimeEndCode("measuredProfileBlockStartValues", "measuredProfileBlockEndValues", 'measureTimeProfileBlocksArray[<%ix_str_array%>]', 'evaluate<%ix_str%>', "MEASURETIME_PROFILEBLOCKS") else ""
+  let &measureTimeEndVar += if createMeasureTime then generateMeasureTimeEndCode("measuredProfileBlockStartValues", "measuredProfileBlockEndValues", '(*measureTimeProfileBlocksArray)[<%ix_str_array%>]', 'evaluate<%ix_str%>', "MEASURETIME_PROFILEBLOCKS") else ""
     <<
     <%additionalFuncs%>
     /*
@@ -9988,7 +10008,7 @@ then
   let &measureTimeStartVar = buffer "" /*BUFD*/
   let &measureTimeEndVar = buffer "" /*BUFD*/
   let &measureTimeStartVar += if createMeasureTime then generateMeasureTimeStartCode("measuredFunctionStartValues", "handleTimeEvents", "MEASURETIME_MODELFUNCTIONS") else ""
-  let &measureTimeEndVar += if createMeasureTime then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[3]", "handleTimeEvents", "MEASURETIME_MODELFUNCTIONS") else ""
+  let &measureTimeEndVar += if createMeasureTime then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[3]", "handleTimeEvents", "MEASURETIME_MODELFUNCTIONS") else ""
   <<
   void <%lastIdentOfPath(modelInfo.name)%>::handleTimeEvent(int* time_events)
   {
@@ -12080,7 +12100,7 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen, SimCode simC
     // Evaluate Equations
     <%equation_all_func_calls%>
 
-    <%if createMeasureTime then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[1]", "evaluateAll", "MEASURETIME_MODELFUNCTIONS") else ""%>
+    <%if createMeasureTime then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[1]", "evaluateAll", "MEASURETIME_MODELFUNCTIONS") else ""%>
     return _state_var_reinitialized;
   }
   >>
@@ -12119,7 +12139,7 @@ template createEvaluate(list<list<SimEqSystem>> odeEquations, SimCode simCode ,T
     <%varDecls%>
     // Evaluate Equations
     <%equation_ode_func_calls%>
-    <%if createMeasureTime then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS") else ""%>
+    <%if createMeasureTime then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS") else ""%>
   }
   >>
 end createEvaluate;

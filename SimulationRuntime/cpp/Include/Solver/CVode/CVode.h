@@ -187,7 +187,7 @@ double
    int _numberOfOdeEvaluations;
 
    #ifdef RUNTIME_PROFILING
-   std::vector<MeasureTimeData> measureTimeFunctionsArray;
+   std::vector<MeasureTimeData*> *measureTimeFunctionsArray;
    MeasureTimeValues *measuredFunctionStartValues, *measuredFunctionEndValues, *solveFunctionStartValues, *solveFunctionEndValues;
    MeasureTimeValuesSolver *solverValues;
    #endif

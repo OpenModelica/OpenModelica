@@ -25,20 +25,20 @@ SimManager::SimManager(boost::shared_ptr<IMixedSystem> system, Configuration* co
     #ifdef RUNTIME_PROFILING
     if(MeasureTime::getInstance() != NULL)
     {
-        measureTimeFunctionsArray = std::vector<MeasureTimeData>(2); //0 runSimulation, initializeSimulation
-        MeasureTime::addResultContentBlock(system->getModelName(),"simmanager",&measureTimeFunctionsArray);
+        measureTimeFunctionsArray = new std::vector<MeasureTimeData*>(2, NULL); //0 runSimulation, initializeSimulation
+        (*measureTimeFunctionsArray)[0] = new MeasureTimeData("initializeSimulation");
+        (*measureTimeFunctionsArray)[1] = new MeasureTimeData("runSimulation");
+
+        MeasureTime::addResultContentBlock(system->getModelName(),"simmanager",measureTimeFunctionsArray);
 
         initSimStartValues = MeasureTime::getZeroValues();
         initSimEndValues = MeasureTime::getZeroValues();
         runSimStartValues = MeasureTime::getZeroValues();
         runSimEndValues = MeasureTime::getZeroValues();
-
-        measureTimeFunctionsArray[0] = MeasureTimeData("initializeSimulation");
-        measureTimeFunctionsArray[1] = MeasureTimeData("runSimulation");
     }
     else
     {
-        measureTimeFunctionsArray = std::vector<MeasureTimeData>();
+        measureTimeFunctionsArray = new std::vector<MeasureTimeData*>();
         initSimStartValues = NULL;
         initSimEndValues = NULL;
         runSimStartValues = NULL;
@@ -169,7 +169,7 @@ void SimManager::initialize()
     #ifdef RUNTIME_PROFILING
     if (MeasureTime::getInstance() != NULL)
     {
-        MEASURETIME_END(initSimStartValues, initSimEndValues, measureTimeFunctionsArray[0], initSimHandler);
+        MEASURETIME_END(initSimStartValues, initSimEndValues, (*measureTimeFunctionsArray)[0], initSimHandler);
     }
     #endif
 }
@@ -275,7 +275,7 @@ void SimManager::runSimulation()
     #ifdef RUNTIME_PROFILING
     if (MeasureTime::getInstance() != NULL)
     {
-        MEASURETIME_END(runSimStartValues, runSimEndValues, measureTimeFunctionsArray[1], runSimHandler);
+        MEASURETIME_END(runSimStartValues, runSimEndValues, (*measureTimeFunctionsArray)[1], runSimHandler);
     }
     #endif
 }

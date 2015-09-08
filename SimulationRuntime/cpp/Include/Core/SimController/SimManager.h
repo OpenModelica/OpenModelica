@@ -61,7 +61,7 @@ private:
     int* _sampleCycles;
 
     #ifdef RUNTIME_PROFILING
-    std::vector<MeasureTimeData> measureTimeFunctionsArray;
+    std::vector<MeasureTimeData*> *measureTimeFunctionsArray;
     MeasureTimeValues *runSimStartValues, *runSimEndValues, *initSimStartValues, *initSimEndValues;
     #endif
 };

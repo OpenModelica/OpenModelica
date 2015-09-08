@@ -37,7 +37,6 @@ SimVars::SimVars(SimVars& instance)
 
 void SimVars::create(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index)
 {
-  _pre_vars = NULL;
   _dim_real = dim_real;
   _dim_int = dim_int;
   _dim_bool = dim_bool;
@@ -50,12 +49,20 @@ void SimVars::create(size_t dim_real, size_t dim_int, size_t dim_bool, size_t di
   //allocate memory for all model variables
   if(dim_bool>0)
     _bool_vars = (bool*)alignedMalloc(sizeof(bool) * dim_bool, 64);
+  else
+    _bool_vars = NULL;
   if(dim_int>0)
     _int_vars = (int*)alignedMalloc(sizeof(int) * dim_int, 64);
+  else
+    _int_vars = NULL;
   if(dim_real>0)
     _real_vars = (double*)alignedMalloc(sizeof(double) * dim_real, 64);
+  else
+    _real_vars = NULL;
   if (dim_pre_vars > 0)
     _pre_vars =  new double[dim_pre_vars];
+  else
+    _pre_vars = NULL;
   //initialize all model variables
   if (dim_bool > 0)
     std::fill(_bool_vars, _bool_vars + dim_bool, false);
