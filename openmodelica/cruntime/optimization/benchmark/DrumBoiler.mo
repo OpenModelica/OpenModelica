@@ -144,7 +144,10 @@ package drumBoiler
     drumBoiler.optimizationFormulation.ObjectFunction.Minimize cost_qm_S(u = (qm_S - 180) ^ 2, gain = 1e-4);
     drumBoiler.optimizationFormulation.Constraints.Band conSigma(MaxValue = 150, MinValue = -150, u = (-1.0e3 * der(evaporator.T_D)) + 1.0e-05 * evaporator.p);
     input Real dq_F(min = -25 / 60, max = 25 / 60, start = 0.1);
+	Real der_V_v(min = -0.02, max =0.025) = der(evaporator.V_v);
+	//Real der_evaporator_p(min=0, max=3.2e4) = der(evaporator.p);
   equation
+  
     der(q_F) = dq_F;
     annotation(experiment(StopTime = 3600, Tolerance = 1e-5));
   end optDrumBoiler;

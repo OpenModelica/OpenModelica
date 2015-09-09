@@ -31,20 +31,20 @@ getErrorString();
 // ========================================================
 // State[0]:controller.x(start = 0, nominal = 10, min = -Inf, max = +Inf, init = 0)
 // State[1]:evaporator.V_l(start = 67, nominal = 68, min = -Inf, max = +Inf, init = 67)
-// State[2]:evaporator.p(start = 100000, nominal = 1e+06, min = 611.657, max = 1e+08, init = 100000)
+// State[2]:evaporator.p(start = 100000, nominal = 1e+006, min = 611.657, max = 1e+008, init = 100000)
 // State[3]:q_F(start = 0, nominal = 400, min = 0, max = 500, init = 0)
 // Input[4]:Y_Valve(start = 0.5, nominal = 1, min = 0, max = 1)
 // Input[5]:dq_F(start = 0.1, nominal = 0.416667, min = -0.416667, max = 0.416667)
 // --------------------------------------------------------
 // number of nonlinear constraints: 1
 // ========================================================
-//
+// 
 // ******************************************************************************
 // This program contains Ipopt, a library for large-scale nonlinear optimization.
 //  Ipopt is released as open source code under the Eclipse Public License (EPL).
 //          For more information visit http://projects.coin-or.org/Ipopt
 // ******************************************************************************
-//
+// 
 // LOG_IPOPT_ERROR   | info    | max violation is 2.49596 for the constraint $OMC$constarintTerm1(time = 936)
 // LOG_IPOPT_ERROR   | info    | max violation is 214.785 for the constraint $OMC$constarintTerm1(time = 1368)
 // LOG_IPOPT_ERROR   | info    | max violation is 214.653 for the constraint $OMC$constarintTerm1(time = 1368)
