@@ -4884,7 +4884,7 @@ algorithm
     case (cache,env,_,pre,SCode.ALG_ASSIGN(assignComponent=var,value=value,info=info),_,_,_,_,_)
       equation
         (cache,e_1,eprop,_) = Static.elabExp(cache,env,value,impl,NONE(),true,pre,info);
-        (cache,stmts) = instAssignment2(cache,env,ih,pre,var,e_1,eprop,info,source,initial_,impl,unrollForLoops,numError);
+        (cache,stmts) = instAssignment2(cache,env,ih,pre,var,value,e_1,eprop,info,source,initial_,impl,unrollForLoops,numError);
       then (cache,stmts);
 
     case (cache,env,_,pre,SCode.ALG_ASSIGN(value=value,info=info),_,_,_,_,_)
@@ -4903,6 +4903,7 @@ protected function instAssignment2
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPre;
   input Absyn.Exp var;
+  input Absyn.Exp inRhs;
   input DAE.Exp value;
   input DAE.Properties props;
   input SourceInfo info;
@@ -4914,16 +4915,14 @@ protected function instAssignment2
   output FCore.Cache outCache;
   output list<DAE.Statement> stmts "more statements due to loop unrolling";
 algorithm
-  (outCache,stmts) := matchcontinue (inCache,inEnv,inIH,inPre,var,value,props,info,inSource,initial_,inImpl,unrollForLoops,numError)
+  (outCache,stmts) := matchcontinue (inCache,var,value,props)
     local
       DAE.ComponentRef ce,ce_1;
       DAE.Properties cprop,eprop,prop,prop1,prop2;
       DAE.Exp e_1, e_2, cre, cre2, e2_2, e2_2_2, lhs, rhs;
       DAE.Statement stmt;
-      FCore.Graph env;
       Absyn.ComponentRef cr;
       Absyn.Exp e,e1,e2, left;
-      Boolean impl;
       list<Absyn.Exp> expl;
       list<DAE.Exp> expl_1,expl_2;
       list<DAE.Properties> cprops, eprops;
@@ -4931,8 +4930,6 @@ algorithm
       DAE.Type lt,rt,ty,t;
       String s,lhs_str,rhs_str,lt_str,rt_str,s1,s2;
       FCore.Cache cache;
-      Prefix.Prefix pre;
-      InstanceHierarchy ih;
       DAE.Pattern pattern;
       DAE.Attributes attr;
       DAE.ElementSource source;
@@ -4940,12 +4937,13 @@ algorithm
       list<DAE.Exp> lhs_idxs, rhs_idxs;
 
     // v := expr; where v or expr are size 0
-    case (cache,env,_,pre,Absyn.CREF(cr),e_1,_,_,_,_,impl,_,_)
+    case (cache,Absyn.CREF(cr),e_1,_)
       equation
-        (cache,lhs as DAE.CREF(_,t),_,attr) = Static.elabCrefNoEval(cache, env, cr, impl, false, pre, info);
+        (cache,lhs as DAE.CREF(_,t),_,attr) =
+          Static.elabCrefNoEval(cache, inEnv, cr, inImpl, false, inPre, info);
         DAE.T_ARRAY( dims = {_}) = t;
         rhs = e_1;
-        Static.checkAssignmentToInput(var, attr, env, false, info);
+        Static.checkAssignmentToInput(var, attr, inEnv, false, info);
         DAE.T_ARRAY(dims = lhs_dim :: _) = Expression.typeof(lhs);
         DAE.T_ARRAY(dims = rhs_dim :: _) = Expression.typeof(rhs);
         {} = expandArrayDimension(lhs_dim, lhs);
@@ -4954,112 +4952,119 @@ algorithm
         (cache,{});
 
     // v := expr;
-    case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,_,source,_,impl,_,_)
+    case (cache,Absyn.CREF(cr),e_1,eprop)
       equation
-        (cache,DAE.CREF(ce,t),cprop,attr) = Static.elabCrefNoEval(cache, env, cr, impl, false, pre, info);
-        Static.checkAssignmentToInput(var, attr, env, false, info);
-        (cache, ce_1) = Static.canonCref(cache, env, ce, impl);
-        (cache, ce_1) = PrefixUtil.prefixCref(cache, env, ih, pre, ce_1);
+        (cache,DAE.CREF(ce,t),cprop,attr) =
+          Static.elabCrefNoEval(cache, inEnv, cr, inImpl, false, inPre, info);
+        Static.checkAssignmentToInput(var, attr, inEnv, false, info);
+        (cache, ce_1) = Static.canonCref(cache, inEnv, ce, inImpl);
+        (cache, ce_1) = PrefixUtil.prefixCref(cache, inEnv, inIH, inPre, ce_1);
 
-        (cache, t) = PrefixUtil.prefixExpressionsInType(cache, env, ih, pre, t);
+        (cache, t) = PrefixUtil.prefixExpressionsInType(cache, inEnv, inIH, inPre, t);
 
         lt = Types.getPropType(cprop);
-        (cache, lt) = PrefixUtil.prefixExpressionsInType(cache, env, ih, pre, lt);
+        (cache, lt) = PrefixUtil.prefixExpressionsInType(cache, inEnv, inIH, inPre, lt);
         cprop = Types.setPropType(cprop, lt);
 
-        (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
-        (cache, e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
+        (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, inEnv, e_1, eprop, inImpl, info);
+        (cache, e_2) = PrefixUtil.prefixExp(cache, inEnv, inIH, e_1, inPre);
 
         rt = Types.getPropType(eprop);
-        (cache, rt) = PrefixUtil.prefixExpressionsInType(cache, env, ih, pre, rt);
+        (cache, rt) = PrefixUtil.prefixExpressionsInType(cache, inEnv, inIH, inPre, rt);
         eprop = Types.setPropType(eprop, rt);
 
-        source = DAEUtil.addElementSourceFileInfo(source, info);
+        source = DAEUtil.addElementSourceFileInfo(inSource, info);
         stmt = makeAssignment(Expression.makeCrefExp(ce_1,t), cprop, e_2, eprop, attr, initial_, source);
       then
         (cache,{stmt});
 
     // der(x) := ...
-    case (cache,env,ih,pre,e2 as Absyn.CALL(function_ = Absyn.CREF_IDENT(name="der"),functionArgs=(Absyn.FUNCTIONARGS(args={Absyn.CREF(cr)})) ),e_1,eprop,_,source,_,impl,_,_)
+    case (cache,e2 as Absyn.CALL(function_ = Absyn.CREF_IDENT(name="der"),functionArgs=(Absyn.FUNCTIONARGS(args={Absyn.CREF(cr)})) ),e_1,eprop)
       equation
-        (cache,_,cprop,attr) = Static.elabCrefNoEval(cache,env, cr, impl,false,pre,info);
-        (cache,(e2_2 as DAE.CALL()),_,_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
-        (cache,e2_2_2) = PrefixUtil.prefixExp(cache, env, ih, e2_2, pre);
-        (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
-        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        source = DAEUtil.addElementSourceFileInfo(source, info);
+        (cache,_,cprop,attr) =
+          Static.elabCrefNoEval(cache,inEnv, cr, inImpl,false,inPre,info);
+        (cache,(e2_2 as DAE.CALL()),_,_) =
+          Static.elabExp(cache,inEnv, e2, inImpl,NONE(),true,inPre,info);
+        (cache,e2_2_2) = PrefixUtil.prefixExp(cache, inEnv, inIH, e2_2, inPre);
+        (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, inEnv, e_1, eprop, inImpl, info);
+        (cache,e_2) = PrefixUtil.prefixExp(cache, inEnv, inIH, e_1, inPre);
+        source = DAEUtil.addElementSourceFileInfo(inSource, info);
         stmt = makeAssignment(e2_2_2, cprop, e_2, eprop, attr /*SCode.RW()*/, initial_, source);
       then
         (cache,{stmt});
 
     // v[i] := expr (in e.g. for loops)
-    case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,_,source,_,impl,_,_)
+    case (cache,Absyn.CREF(cr),e_1,eprop)
       equation
-        (cache,cre,cprop,attr) = Static.elabCrefNoEval(cache,env, cr, impl,false,pre,info);
-        Static.checkAssignmentToInput(var, attr, env, false, info);
-        (cache,cre2) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
-        (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
-        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        source = DAEUtil.addElementSourceFileInfo(source, info);
+        (cache,cre,cprop,attr) =
+          Static.elabCrefNoEval(cache,inEnv, cr, inImpl,false,inPre,info);
+        Static.checkAssignmentToInput(var, attr, inEnv, false, info);
+        (cache,cre2) = PrefixUtil.prefixExp(cache, inEnv, inIH, cre, inPre);
+        (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, inEnv, e_1, eprop, inImpl, info);
+        (cache,e_2) = PrefixUtil.prefixExp(cache, inEnv, inIH, e_1, inPre);
+        source = DAEUtil.addElementSourceFileInfo(inSource, info);
         stmt = makeAssignment(cre2, cprop, e_2, eprop, attr, initial_, source);
       then
         (cache,{stmt});
 
     // (v1,v2,..,vn) := func(...)
-    case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,eprop,_,source,_,impl,_,_)
+    case (cache,Absyn.TUPLE(expressions = expl),e_1,eprop)
       equation
         true = List.all(expl, Absyn.isCref);
-        (cache, e_1 as DAE.CALL(), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
-        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        (cache,expl_1,cprops,attrs,_) = Static.elabExpCrefNoEvalList(cache, env, expl, impl, NONE(), false, pre, info);
-        Static.checkAssignmentToInputs(expl, attrs, env, info);
-        (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_1, pre);
-        source = DAEUtil.addElementSourceFileInfo(source, info);
+        (cache, e_1 as DAE.CALL(), eprop) = Ceval.cevalIfConstant(cache, inEnv, e_1, eprop, inImpl, info);
+        (cache,e_2) = PrefixUtil.prefixExp(cache, inEnv, inIH, e_1, inPre);
+        (cache,expl_1,cprops,attrs,_) =
+          Static.elabExpCrefNoEvalList(cache, inEnv, expl, inImpl, NONE(), false, inPre, info);
+        Static.checkAssignmentToInputs(expl, attrs, inEnv, info);
+        (cache,expl_2) = PrefixUtil.prefixExpList(cache, inEnv, inIH, expl_1, inPre);
+        source = DAEUtil.addElementSourceFileInfo(inSource, info);
         stmt = Algorithm.makeTupleAssignment(expl_2, cprops, e_2, eprop, initial_, source);
       then
         (cache,{stmt});
 
     // (v1,v2,..,vn) := match...
-    case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,eprop,_,source,_,impl,_,_)
+    case (cache,Absyn.TUPLE(expressions = expl),e_1,eprop)
       equation
         true = Config.acceptMetaModelicaGrammar();
         true = List.all(expl, Absyn.isCref);
         true = Types.isTuple(Types.getPropType(eprop));
-        (cache, e_1 as DAE.MATCHEXPRESSION(), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
-        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        (cache,expl_1,cprops,attrs,_) = Static.elabExpCrefNoEvalList(cache, env, expl, impl, NONE(), false, pre, info);
-        Static.checkAssignmentToInputs(expl, attrs, env, info);
-        (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_1, pre);
-        source = DAEUtil.addElementSourceFileInfo(source, info);
+        (cache, e_1 as DAE.MATCHEXPRESSION(), eprop) = Ceval.cevalIfConstant(cache, inEnv, e_1, eprop, inImpl, info);
+        (cache,e_2) = PrefixUtil.prefixExp(cache, inEnv, inIH, e_1, inPre);
+        (cache,expl_1,cprops,attrs,_) =
+          Static.elabExpCrefNoEvalList(cache, inEnv, expl, inImpl, NONE(), false, inPre, info);
+        Static.checkAssignmentToInputs(expl, attrs, inEnv, info);
+        (cache,expl_2) = PrefixUtil.prefixExpList(cache, inEnv, inIH, expl_1, inPre);
+        source = DAEUtil.addElementSourceFileInfo(inSource, info);
         stmt = Algorithm.makeTupleAssignment(expl_2, cprops, e_2, eprop, initial_, source);
       then
         (cache,{stmt});
 
-    case (cache,env,_,_,left,e_1,prop,_,source,_,_,_,_)
+    case (cache,left,e_1,prop)
       equation
         true = Config.acceptMetaModelicaGrammar();
         ty = Types.getPropType(prop);
         (e_1,ty) = Types.convertTupleToMetaTuple(e_1,ty);
-        (cache,pattern) = Patternm.elabPattern(cache,env,left,ty,info);
-        source = DAEUtil.addElementSourceFileInfo(source, info);
+        (cache,pattern) = Patternm.elabPattern(cache,inEnv,left,ty,info);
+        source = DAEUtil.addElementSourceFileInfo(inSource, info);
         stmt = if Types.isEmptyOrNoRetcall(ty) then DAE.STMT_NORETCALL(e_1,source) else DAE.STMT_ASSIGN(DAE.T_UNKNOWN_DEFAULT,DAE.PATTERN(pattern),e_1,source);
       then (cache,{stmt});
 
     /* Tuple with rhs constant */
-    case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,eprop,_,source,_,impl,_,_)
+    case (cache,Absyn.TUPLE(expressions = expl),e_1,eprop)
       equation
-        (cache, e_1 as DAE.TUPLE(PR = expl_1), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
-        (cache,expl_2,cprops,attrs,_) = Static.elabExpCrefNoEvalList(cache,env, expl, impl,NONE(),false,pre,info);
-        Static.checkAssignmentToInputs(expl, attrs, env, info);
-        (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_2, pre);
+        (cache, e_1 as DAE.TUPLE(PR = expl_1), eprop) = Ceval.cevalIfConstant(cache, inEnv, e_1, eprop, inImpl, info);
+        (cache,expl_2,cprops,attrs,_) =
+          Static.elabExpCrefNoEvalList(cache,inEnv, expl, inImpl,NONE(),false,inPre,info);
+        Static.checkAssignmentToInputs(expl, attrs, inEnv, info);
+        (cache,expl_2) = PrefixUtil.prefixExpList(cache, inEnv, inIH, expl_2, inPre);
         eprops = Types.propTuplePropList(eprop);
-        source = DAEUtil.addElementSourceFileInfo(source, info);
+        source = DAEUtil.addElementSourceFileInfo(inSource, info);
         stmts = Algorithm.makeAssignmentsList(expl_2, cprops, expl_1, eprops, /* SCode.RW() */ DAE.dummyAttrVar, initial_, source);
       then
         (cache,stmts);
 
     /* Tuple with lhs being a tuple NOT of crefs => Error */
-    case (_,_,_,_,e as Absyn.TUPLE(expressions = expl),_,_,_,_,_,_,_,_)
+    case (_,e as Absyn.TUPLE(expressions = expl),_,_)
       equation
         failure(_ = List.map(expl,Absyn.expCref));
         s = Dump.printExpStr(e);
@@ -5067,16 +5072,16 @@ algorithm
       then
         fail();
 
-    case (cache,env,_,pre,e1 as Absyn.TUPLE(expressions = expl),e_2,prop2,_,_,_,impl,_,_)
+    case (cache,e1 as Absyn.TUPLE(expressions = expl),e_2,prop2)
       equation
-        DAE.CALL() = e_2;
+        Absyn.CALL() = inRhs;
         _ = List.map(expl,Absyn.expCref);
-        (cache,e_1,prop1,_) = Static.elabExp(cache,env,e1,impl,NONE(),false,pre,info);
+        (cache,e_1,prop1,_) = Static.elabExp(cache,inEnv,e1,inImpl,NONE(),false,inPre,info);
         lt = Types.getPropType(prop1);
         rt = Types.getPropType(prop2);
         false = Types.subtype(lt, rt);
         lhs_str = ExpressionDump.printExpStr(e_1);
-        rhs_str = ExpressionDump.printExpStr(e_2);
+        rhs_str = Dump.printExpStr(inRhs);
         lt_str = Types.unparseTypeNoAttr(lt);
         rt_str = Types.unparseTypeNoAttr(rt);
         Types.typeErrorSanityCheck(lt_str, rt_str, info);
@@ -5085,20 +5090,20 @@ algorithm
         fail();
 
     /* Tuple with rhs not CALL or CONSTANT => Error */
-    case (_,_,_,_,Absyn.TUPLE(expressions = expl),e_1,_,_,_,_,_,_,_)
+    case (_,Absyn.TUPLE(expressions = expl),e_1,_)
       equation
         _ = List.map(expl,Absyn.expCref);
-        failure(DAE.CALL() = e_1);
+        failure(Absyn.CALL() = inRhs);
         s = ExpressionDump.printExpStr(e_1);
         Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s}, info);
       then
         fail();
 
-    case (_,_,_,_,_,e_1,_,_,_,_,_,_,_)
+    else
       equation
         true = numError == Error.getNumErrorMessages();
         s1 = Dump.printExpStr(var);
-        s2 = ExpressionDump.printExpStr(e_1);
+        s2 = ExpressionDump.printExpStr(value);
         Error.addSourceMessage(Error.ASSIGN_UNKNOWN_ERROR, {s1,s2}, info);
       then
         fail();
