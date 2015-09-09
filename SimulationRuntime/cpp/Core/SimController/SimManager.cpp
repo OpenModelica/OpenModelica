@@ -4,6 +4,8 @@
  */
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
+#include <Core/SimController/FactoryExport.h>
+#include <Core/Utils/extension/logger.hpp>
 #include <Core/SimController/SimManager.h>
 
 #include <sstream>

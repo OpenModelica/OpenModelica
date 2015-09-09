@@ -1,5 +1,7 @@
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
+#include <Core/DataExchange/FactoryExport.h>
+#include <Core/Utils/extension/logger.hpp>
 #include <Core/DataExchange/XmlPropertyReader.h>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/ptree.hpp>

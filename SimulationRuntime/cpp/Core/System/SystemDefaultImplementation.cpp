@@ -6,6 +6,7 @@
 #include <Core/Modelica.h>
 
 #include <Core/System/FactoryExport.h>
+#include <Core/Utils/extension/logger.hpp>
 #include <Core/System/EventHandling.h>
 #include <Core/System/SystemDefaultImplementation.h>
 #include <Core/System/AlgLoopSolverFactory.h>

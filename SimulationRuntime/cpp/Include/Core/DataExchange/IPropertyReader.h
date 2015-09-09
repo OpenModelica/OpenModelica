@@ -5,8 +5,8 @@
 #include <boost/shared_ptr.hpp>
 #include <Core/System/ISimVars.h>
 
-#include "FactoryExport.h"
-#include <Core/Utils/extension/logger.hpp>
+//#include "FactoryExport.h"
+//#include <Core/Utils/extension/logger.hpp>
 
 class IPropertyReader
 {
