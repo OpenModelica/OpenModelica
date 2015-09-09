@@ -127,7 +127,9 @@ algorithm
   (outDAElist, _, (_,nOfSubstitutions)) := DAEUtil.traverseDAE(outDAElist, FCore.getFunctionTree(cache), Expression.traverseSubexpressionsHelper, (traversingSubsActiveState, 0));
 
   // FIXME Wrap equations in when clauses hack (as long as clocked features are not fully supported)
-  //outDAElist := wrapHack(cache, outDAElist);
+  if (not listEmpty(flatSmLst)) then
+    outDAElist := wrapHack(cache, outDAElist);
+  end if;
 
   //print("StateMachineFlatten.stateMachineToDataFlow: outDAElist:\n" + DAEDump.dumpStr(outDAElist,FCore.getFunctionTree(cache)));
 end stateMachineToDataFlow;
