@@ -15,6 +15,7 @@ AlgorithmFor5.mo \
 AlgorithmFor6.mo \
 AlgorithmNoRetCall.mo \
 AlgorithmSection.mo \
+ArrayRange.mo \
 AssignmentToInput.mo \
 AssignmentErrorConstant.mo\
 AssignmentErrorInput.mo \
