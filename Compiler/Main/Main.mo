@@ -76,6 +76,7 @@ import SimCode;
 import SimCodeMain;
 import SimCodeFunctionUtil;
 import Socket;
+import StackOverflow;
 import System;
 import TplMain;
 import Util;
@@ -819,6 +820,7 @@ protected
   GC.ProfStats stats;
 algorithm
   try
+  try
     args_1 := init(args);
     if Flags.isSet(Flags.GC_PROF) then
       print(GC.profStatsStr(GC.getProfStats(), head="GC stats after initialization:") + "\n");
@@ -833,6 +835,13 @@ algorithm
   if Flags.isSet(Flags.GC_PROF) then
     print(GC.profStatsStr(GC.getProfStats(), head="GC stats at end of program:") + "\n");
   end if;
+  else
+    print("Stack overflow detected and was not caught.\nSend us a bug report at https://trac.openmodelica.org/OpenModelica/newticket\n    Include the following trace:\n");
+    for s in StackOverflow.readableStacktraceMessages() loop
+      print(s);
+      print("\n");
+    end for;
+  end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
 end main;
 
 protected function main2
