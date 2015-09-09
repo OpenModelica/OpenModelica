@@ -1808,7 +1808,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
 
   case CALL(path=IDENT(name="abs"), expLst={e1}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    'labs(<%var1%>)'
+    'std::labs(<%var1%>)'
 
   case CALL(path=IDENT(name="abs"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -1819,107 +1819,27 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=", ")
     let typeStr = expTypeShort(attr.ty )
     let retVar = tempDecl(typeStr, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = sqrt(<%argStr%>);<%\n%>'
+    let &preExp += '<%retVar%> = std::sqrt(<%argStr%>);<%\n%>'
     '<%retVar%>'
 
-  case CALL(path=IDENT(name="sin"),
-            expLst={e1},attr=attr as CALL_ATTR(__)) then
+  // built-in mathematical functions
+  case CALL(path=IDENT(name="sin"), expLst={e1})
+  case CALL(path=IDENT(name="cos"), expLst={e1})
+  case CALL(path=IDENT(name="tan"), expLst={e1})
+  case CALL(path=IDENT(name="asin"), expLst={e1})
+  case CALL(path=IDENT(name="acos"), expLst={e1})
+  case CALL(path=IDENT(name="atan"), expLst={e1})
+  case CALL(path=IDENT(name="sinh"), expLst={e1})
+  case CALL(path=IDENT(name="cosh"), expLst={e1})
+  case CALL(path=IDENT(name="tanh"), expLst={e1})
+  case CALL(path=IDENT(name="exp"), expLst={e1})
+  case CALL(path=IDENT(name="log"), expLst={e1})
+  case CALL(path=IDENT(name="log10"), expLst={e1}) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
-    let retType = 'double'
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
+    'std::<%funName%>(<%argStr%>)'
 
-   case CALL(path=IDENT(name="sinh"),
-            expLst={e1},attr=attr as CALL_ATTR(__)) then
-    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=", ")
-    let funName = '<%underscorePath(path)%>'
-    let retType = 'double'
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
-   case CALL(path=IDENT(name="asin"),
-            expLst={e1},attr=attr as CALL_ATTR(__)) then
-    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=", ")
-    let funName = '<%underscorePath(path)%>'
-    let retType = 'double'
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
-   case CALL(path=IDENT(name="cos"),
-            expLst={e1},attr=attr as CALL_ATTR(__)) then
-    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=", ")
-    let funName = '<%underscorePath(path)%>'
-    let retType = 'double'
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
- case CALL(path=IDENT(name="cosh"),
-            expLst={e1},attr=attr as CALL_ATTR(__)) then
-    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=", ")
-    let funName = '<%underscorePath(path)%>'
-    let retType = 'double'
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
-   case CALL(path=IDENT(name="log"),
-            expLst={e1},attr=attr as CALL_ATTR(__)) then
-    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=", ")
-    let funName = '<%underscorePath(path)%>'
-    let retType = 'double'
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
-
-   case CALL(path=IDENT(name="log10"),
-            expLst={e1},attr=attr as CALL_ATTR(__)) then
-    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=", ")
-    let funName = '<%underscorePath(path)%>'
-    let retType = 'double'
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
-
-
-
-   case CALL(path=IDENT(name="acos"),
-            expLst={e1},attr=attr as CALL_ATTR(__)) then
-    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=", ")
-    let funName = '<%underscorePath(path)%>'
-    let retType = 'double'
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
-
-   case CALL(path=IDENT(name="tan"),
-            expLst={e1},attr=attr as CALL_ATTR(__)) then
-    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=", ")
-    let funName = '<%underscorePath(path)%>'
-    let retType = 'double'
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
-
-    case CALL(path=IDENT(name="tanh"),
-            expLst={e1},attr=attr as CALL_ATTR(__)) then
-    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=", ")
-    let funName = '<%underscorePath(path)%>'
-    let retType = 'double'
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
-
-   case CALL(path=IDENT(name="atan"),
-            expLst={e1},attr=attr as CALL_ATTR(__)) then
-    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=", ")
-    let funName = '<%underscorePath(path)%>'
-    let retType = 'double'
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
-
-   case CALL(path=IDENT(name="atan2"),
+  case CALL(path=IDENT(name="atan2"),
             expLst={e1,e2},attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=", ")
 
@@ -1927,28 +1847,22 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
     let &preExp += '<%retVar%> = std::atan2(<%argStr%>);<%\n%>'
     '<%retVar%>'
-    case CALL(path=IDENT(name="smooth"),
+
+  case CALL(path=IDENT(name="smooth"),
             expLst={e1,e2},attr=attr as CALL_ATTR(__)) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     '<%var2%>'
-    case CALL(path=IDENT(name="homotopy"),
+
+  case CALL(path=IDENT(name="homotopy"),
             expLst={e1,e2},attr=attr as CALL_ATTR(__)) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     '<%var1%>'
-     case CALL(path=IDENT(name="homotopyParameter"),
+
+  case CALL(path=IDENT(name="homotopyParameter"),
             expLst={},attr=attr as CALL_ATTR(__)) then
      '1.0'
-
-   case CALL(path=IDENT(name="exp"),
-            expLst={e1},attr=attr as CALL_ATTR(__)) then
-    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=", ")
-    let funName = '<%underscorePath(path)%>'
-    let retType = 'double'
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -2232,15 +2146,6 @@ template daeExpCallStart(Exp exp, Context context, Text &preExp /*BUFP*/,
   else
     error(sourceInfo(), 'Code generation does not support start(<%printExpStr(exp)%>)')
 end daeExpCallStart;
-
-template daeExpCallBuiltinPrefix(Boolean builtin)
- "Helper to daeExpCall."
-::=
-  match builtin
-  case true  then ""
-  case false then "_"
-end daeExpCallBuiltinPrefix;
-
 
 template daeExpLunary(Exp exp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                       Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
