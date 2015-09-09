@@ -644,8 +644,9 @@ template crefStartValueType2(DAE.Type ty)
     case T_ARRAY(ty=T_REAL(__)) then 'Real'
     case T_ARRAY(ty=T_BOOL(__)) then 'Bool'
     case T_ARRAY(ty=T_STRING(__)) then 'String'
-  else "error start value type"
-end match
+    case T_ARRAY(ty=T_ENUMERATION(__)) then 'Int'
+    else "error start value type"
+  end match
 end crefStartValueType2;
 
 /*******************************************************************************************************************************************************
