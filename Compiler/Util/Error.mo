@@ -732,7 +732,7 @@ public constant Message WARNING_JACOBIAN_EQUATION_SOLVE = MESSAGE(523, SYMBOLIC(
 public constant Message SIMPLIFICATION_COMPLEXITY = MESSAGE(523, SYMBOLIC(), NOTIFICATION(),
   Util.gettext("Simplification produced a higher complexity (%s) than the original (%s). The simplification was: %s => %s."));
 public constant Message ITERATOR_NON_ARRAY = MESSAGE(524, TRANSLATION(), ERROR(),
-  Util.gettext("Iterator %s, has type %s, but expected an array expression."));
+  Util.gettext("Iterator %s, has type %s, but expected a 1D array expression."));
 public constant Message INST_INVALID_RESTRICTION = MESSAGE(525, TRANSLATION(), ERROR(),
   Util.gettext("Cannot instantiate %s due to class specialization %s."));
 public constant Message INST_NON_LOADED = MESSAGE(526, TRANSLATION(), WARNING(),

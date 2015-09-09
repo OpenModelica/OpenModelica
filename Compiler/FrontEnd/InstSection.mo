@@ -5135,6 +5135,11 @@ algorithm
   oty := match ty
     local
       String str;
+    case DAE.T_ARRAY(ty = DAE.T_ARRAY())
+      equation
+        str = Types.unparseType(ty);
+        Error.addSourceMessage(Error.ITERATOR_NON_ARRAY,{id,str},info);
+      then fail();
     case DAE.T_ARRAY(ty = oty) then oty;
     case DAE.T_METALIST(ty = oty) then Types.boxIfUnboxedType(oty);
     case DAE.T_METAARRAY(ty = oty) then Types.boxIfUnboxedType(oty);
