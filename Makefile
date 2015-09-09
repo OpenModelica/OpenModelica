@@ -52,6 +52,7 @@ simulationenums.log \
 simulationequations.log \
 simulationevents.log \
 simulationsynchronous.log \
+simulationstatemachines.log \
 simulationexternal-functions.log \
 simulationindexreduction.log \
 simulationinheritances.log \
@@ -100,6 +101,7 @@ simulationenums.log \
 simulationequations.log \
 simulationevents.log \
 simulationsynchronous.log \
+simulationstatemachines.log \
 simulationexternal-functions.log \
 simulationindexreduction.log \
 simulationinheritances.log \
@@ -305,6 +307,9 @@ simulationevents.log: omc-diff
 	@echo $@ done
 simulationsynchronous.log: omc-diff
 	$(MAKE) -C simulation/modelica/synchronous -f Makefile test > $@
+	@echo $@ done
+simulationstatemachines.log: omc-diff
+	$(MAKE) -C simulation/modelica/statemachines -f Makefile test > $@
 	@echo $@ done
 simulationexternal-functions.log: omc-diff
 	$(MAKE) -C simulation/modelica/external_functions -f Makefile test > $@
