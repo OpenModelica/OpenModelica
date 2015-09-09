@@ -97,6 +97,7 @@ SumSeriesWhile.mo \
 SumVectorForIf.mo \
 TestGravityAcceleration.mo \
 TupleSingleAssign.mo \
+TupleAssignmentMismatch1.mo \
 tupleSubset.mo \
 UnusedInput.mo \
 UnknownDimensionFunctionCall.mo \
