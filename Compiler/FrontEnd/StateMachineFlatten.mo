@@ -119,6 +119,11 @@ algorithm
   (flatSmLst, otherLst) := List.extractOnTrue(dAElist, isFlatSm);
   elementLst2 := List.fold2(flatSmLst, flatSmToDataFlow, NONE(), NONE(), {});
 
+  // FIXME HACK1 Wrap equations in when clauses hack (as long as clocked features are not fully supported)
+  if (not listEmpty(flatSmLst)) then
+    elementLst2 := wrapHack(cache, elementLst2);
+  end if;
+
   elementLst3 := listAppend(otherLst, elementLst2);
   outDAElist := DAE.DAE({DAE.COMP(ident, elementLst3, source, comment)});
   //print("StateMachineFlatten.stateMachineToDataFlow: outDAElist before global subs:\n" + DAEDump.dumpStr(outDAElist,FCore.getFunctionTree(cache)));
@@ -126,11 +131,10 @@ algorithm
   // traverse dae expressions for making substitutions activeState(x) -> x.active
   (outDAElist, _, (_,nOfSubstitutions)) := DAEUtil.traverseDAE(outDAElist, FCore.getFunctionTree(cache), Expression.traverseSubexpressionsHelper, (traversingSubsActiveState, 0));
 
-  // FIXME Wrap equations in when clauses hack (as long as clocked features are not fully supported)
   if (not listEmpty(flatSmLst)) then
-    outDAElist := wrapHack(cache, outDAElist);
+    // FIXME HACK2 traverse dae expressions for making substitutions previous(x) -> pre(x) (as long as clocked features are not fully supported)
+    (outDAElist, _, (_,nOfSubstitutions)) := DAEUtil.traverseDAE(outDAElist, FCore.getFunctionTree(cache), Expression.traverseSubexpressionsHelper, (traversingSubsPreForPrevious, 0));
   end if;
-
   //print("StateMachineFlatten.stateMachineToDataFlow: outDAElist:\n" + DAEDump.dumpStr(outDAElist,FCore.getFunctionTree(cache)));
 end stateMachineToDataFlow;
 
@@ -1220,24 +1224,17 @@ protected function wrapHack "
 Author: BTH
 Wrap equations in when-clauses as long as Synchronous Features are not supported"
   input FCore.Cache cache;
-  input DAE.DAElist inDAElist;
-  output DAE.DAElist outDAElist;
+  input list<DAE.Element> inElementLst;
+  output list<DAE.Element> outElementLst;
 protected
   Integer nOfSubstitutions;
-  list<DAE.Element> elementLst, eqnLst, otherLst, elementLst1;
+  list<DAE.Element> eqnLst, otherLst;
   DAE.Element whenEq;
   DAE.Exp cond1, cond2, condition;
   DAE.Type tArrayBool;
-  // COMP
-  DAE.Ident ident;
-  list<DAE.Element> dAElist "a component with subelements, normally only used at top level.";
-  DAE.ElementSource source "the origin of the component/equation/algorithm";
-  Option<SCode.Comment> comment;
 algorithm
-  DAE.DAE(elementLst=elementLst) := inDAElist;
-  DAE.COMP(ident, dAElist, source, comment) := listHead(elementLst);
 
-  (eqnLst, otherLst) := List.extractOnTrue(dAElist, isEquation);
+  (eqnLst, otherLst) := List.extractOnTrue(inElementLst, isEquation);
 
   // == {initial(), sample(1.0, 1.0)} ==
   cond1 := DAE.CALL(Absyn.IDENT("initial"),
@@ -1251,12 +1248,7 @@ algorithm
   whenEq := DAE.WHEN_EQUATION(condition,
     eqnLst, NONE(), DAE.emptyElementSource);
 
-  elementLst1 := listAppend(otherLst, {whenEq});
-
-  outDAElist := DAE.DAE({DAE.COMP(ident, elementLst1, source, comment)});
-
-  // traverse dae expressions for making substitutions previous(x) -> pre(x)
-  (outDAElist, _, (_,nOfSubstitutions)) := DAEUtil.traverseDAE(outDAElist, FCore.getFunctionTree(cache), Expression.traverseSubexpressionsHelper, (traversingSubsPreForPrevious, 0));
+  outElementLst := listAppend(otherLst, {whenEq});
 end wrapHack;
 
 
