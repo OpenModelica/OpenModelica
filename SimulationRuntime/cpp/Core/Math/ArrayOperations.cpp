@@ -43,15 +43,19 @@ void cat_array(int k, const vector<const BaseArray<T>*>& x, BaseArray<T>& a)
     new_k_dim_size = x[0]->getDims()[k-1];
     for(int i = 1; i < n; i++)
     {
-        if(x[0]->getDims().size() != x[i]->getDims().size())
+        //arrays must have same number of dimensions
+		if(x[0]->getDims().size() != x[i]->getDims().size())
            throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong dimension for input array");
-        for(int j = 0; j < (k - 1); j++)
+        //Size matching: Arrays must have identical array sizes with the exception of the size of dimension k
+		for(int j = 0; j < (k - 1); j++)
         {
             if (x[0]->getDims()[j] != x[i]->getDims()[j])
                 throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong size for input array");
         }
+		//calculate new size of dimension k
         new_k_dim_size += x[i]->getDims()[k-1];
-        for(int j = k; j < x[0]->getDims().size(); j++)
+         //Size matching: Arrays must have identical array sizes with the exception of the size of dimension k
+		for(int j = k; j < x[0]->getDims().size(); j++)
         {
           if (x[0]->getDims()[j] != x[i]->getDims()[j])
             throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong size for input array");

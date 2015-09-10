@@ -20,9 +20,9 @@ XmlPropertyReader::~XmlPropertyReader()
 void XmlPropertyReader::readInitialValues(IContinuous& system, boost::shared_ptr<ISimVars> sim_vars)
 {
   using boost::property_tree::ptree;
-  std::ifstream file(propertyFile.c_str());
-
-  if(file)
+  std::ifstream file;
+  file.open (propertyFile.c_str(), std::ifstream::in);
+  if(file.good())
   {
     double *realVars = sim_vars->getRealVarsVector();
     int *intVars = sim_vars->getIntVarsVector();

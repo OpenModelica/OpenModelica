@@ -5811,7 +5811,7 @@ end initExtVarsDecl;
 template init(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Text& complexStartExpressions)
 ::=
 match simCode
-case SIMCODE(modelInfo = MODELINFO(__))  then
+case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  then
    //let () = System.tmpTickReset(0)
    let &varDecls = buffer "" /*BUFD*/
 
@@ -5828,7 +5828,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
       initializeMemory();
-      IPropertyReader *reader = new XmlPropertyReader("OMCpp<%fileNamePrefix%>Init.xml");
+      IPropertyReader *reader = new XmlPropertyReader("<%makefileParams.compileDir%>OMCpp/<%fileNamePrefix%>Init.xml");
       reader->readInitialValues(*this, _sim_vars);
       initializeFreeVariables();
       /*Start complex expressions */
