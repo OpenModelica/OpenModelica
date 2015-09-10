@@ -1141,7 +1141,7 @@ algorithm
         (cache,env_1,ih) = InstUtil.addComponentsToEnv(cache,env,ih, mods, pre, ci_state_1, comp, comp, {}, inst_dims, impl);
 
         // we should instantiate with no modifications, they don't belong to the class, they belong to the component!
-        (cache,env_2,ih,store,_,csets,ci_state_1,tys1,graph) =
+        (cache,env_2,ih,store,_,csets,ci_state_1,tys1,graph,_) =
           instElementList(cache,env_1,ih,store, /* DAE.NOMOD() */ mods, pre,
             ci_state_1, comp, inst_dims, impl,callscope,graph, inSets, true);
 
@@ -1905,7 +1905,7 @@ algorithm
         cdefelts_2 = cdefelts_1;
 
         //(cache, cdefelts_2) = removeConditionalComponents(cache, env2, cdefelts_2, pre);
-        (cache,env3,ih,store,dae1,csets,_,tys,graph) =
+        (cache,env3,ih,store,dae1,csets,_,tys,graph,_) =
           instElementList(cache, env2, ih, store, mods , pre, ci_state,
             cdefelts_2, inst_dims, impl, InstTypes.INNER_CALL(), graph, inSets, true);
         mods = Mod.removeFirstSubsRedecl(mods);
@@ -2039,6 +2039,7 @@ algorithm
       list<DAE.ComponentRef> smInitialCrefs "state machine crefs of initial states";
       FCore.Ref lastRef;
       InstStateMachineUtil.SMNodeToFlatSMGroupTable smCompToFlatSM;
+      List<Tuple<String,DAE.ComponentRef>> fieldDomLst;
 
     /*// uncomment for debugging
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,inClassDef6,
@@ -2219,7 +2220,7 @@ algorithm
         //ih = List.fold1(smCompCrefs, InnerOuter.updateSMHierarchy, inPrefix3, ih);
         ih = List.fold(smCompCrefs, InnerOuter.updateSMHierarchy, ih);
 
-        (cache,env5,ih,store,dae1,csets,ci_state2,vars,graph) =
+        (cache,env5,ih,store,dae1,csets,ci_state2,vars,graph,fieldDomLst) =
           instElementList(cache, env4, ih, store, mods, pre, ci_state1,
             compelts_2, inst_dims, impl, callscope, graph, csets, true);
 
@@ -2994,7 +2995,7 @@ algorithm
           inInstDims, false);
 
         // Instantiate constants.
-        (outCache, outEnv, outIH, _, _, _, outState, outVars) := instElementList(
+        (outCache, outEnv, outIH, _, _, _, outState, outVars, _, _) := instElementList(
           outCache, outEnv, outIH, UnitAbsyn.noStore, mod, inPrefix, outState,
           const_els, inInstDims, true, InstTypes.INNER_CALL(),
           ConnectionGraph.EMPTY, Connect.emptySet, false);
@@ -3089,6 +3090,7 @@ public function instElementList
   output ClassInf.State outState = inState;
   output list<DAE.Var> outVars;
   output ConnectionGraph.ConnectionGraph outGraph = inGraph;
+  output List<Tuple<String,DAE.ComponentRef>> fieldDomLst = {};
 protected
   list<tuple<SCode.Element, DAE.Mod>> el;
   FCore.Cache cache;
@@ -3096,6 +3098,7 @@ protected
   list<DAE.Element> dae;
   list<list<DAE.Var>> varsl = {};
   list<list<DAE.Element>> dael = {};
+  Option<Tuple<String,DAE.ComponentRef>> fieldDomOpt;
   list<Integer> element_order;
   array<tuple<SCode.Element, DAE.Mod>> el_arr;
   array<list<DAE.Var>> var_arr;
@@ -3133,11 +3136,12 @@ algorithm
   else
     // For functions, use the sorted elements instead, otherwise things break.
     for e in el loop
-      (cache, outEnv, outIH, outStore, dae, outSets, outState, vars, outGraph) :=
+      (cache, outEnv, outIH, outStore, dae, outSets, outState, vars, outGraph, fieldDomOpt) :=
         instElement2(cache, outEnv, outIH, outStore, inMod, inPrefix, outState, e,
           inInstDims, inImplInst, inCallingScope, outGraph, outSets, inStopOnError);
       varsl := vars :: varsl;
       dael := dae :: dael;
+      fieldDomLst := List.consOption(fieldDomOpt,fieldDomLst);
     end for;
 
     outVars := List.flattenReverse(varsl);
@@ -3210,6 +3214,7 @@ public function instElement2
   output ClassInf.State outState = inState;
   output list<DAE.Var> outVars = {};
   output ConnectionGraph.ConnectionGraph outGraph = inGraph;
+  output Option<Tuple<String,DAE.ComponentRef>> outFieldDomOpt;
 protected
   tuple<SCode.Element, DAE.Mod> elt;
   Boolean is_deleted;
@@ -3227,7 +3232,7 @@ algorithm
     ErrorExt.setCheckpoint("instElement2");
     (outCache, outEnv, outIH, {elt}) := updateCompeltsMods(inCache, outEnv,
       outIH, inPrefix, {inElement}, outState, inImplicit);
-    (outCache, outEnv, outIH, outStore, DAE.DAE(outDae), outSets, outState, outVars, outGraph) :=
+    (outCache, outEnv, outIH, outStore, DAE.DAE(outDae), outSets, outState, outVars, outGraph, outFieldDomOpt) :=
       instElement(outCache, outEnv, outIH, outStore, inMod, inPrefix, outState, elt, inInstDims,
         inImplicit, inCallingScope, outGraph, inSets);
     Error.updateCurrentComponent("", Absyn.dummyInfo);
@@ -3324,6 +3329,7 @@ public function instElement "
   output ClassInf.State outState;
   output list<DAE.Var> outVars;
   output ConnectionGraph.ConnectionGraph outGraph;
+  output Option<Tuple<String,DAE.ComponentRef>> outFieldDomOpt = NONE();
 algorithm
   (outCache, outEnv, outIH, outUnitStore, outDae, outSets, outState, outVars, outGraph):=
   matchcontinue (inCache, inEnv, inIH, inUnitStore, inMod, inPrefix, inState,
@@ -3374,6 +3380,8 @@ algorithm
       HashSet.HashSet sm; // BTH
       Boolean isInSM; // BTH
       list<DAE.Element> elems; // BTH
+      Option<DAE.ComponentRef> domainCROpt;
+
 
     // Imports are simply added to the current frame, so that the lookup rule can find them.
     // Import have already been added to the environment so there is nothing more to do here.
@@ -3546,7 +3554,7 @@ algorithm
         is_function_input = InstUtil.isFunctionInput(ci_state, dir);
         (cache, dims) = InstUtil.elabArraydim(cache, env2, own_cref, t, ad, eq, impl,
           NONE(), true, is_function_input, pre, info, inst_dims);
-        (dims, mod_1) = InstUtil.elabField(attr, dims, mod_1);
+        (dims, mod_1, outFieldDomOpt) = InstUtil.elabField(name, attr, dims, mod_1, info);
 
         // adrpo: 2011-11-18: see if the component is an INPUT or OUTPUT and class is a record
         //                    and add it to the cache!

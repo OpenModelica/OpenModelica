@@ -4605,35 +4605,42 @@ public function elabField
 //For field variables: finds the "domain" modifier,
 //finds domain.N - length of discretized field array
 //and removes "domain" from the modifiers list.
+  input String name;
   input SCode.Attributes attr;
   input DAE.Dimensions inDims;
   input DAE.Mod inMod;
+  input SourceInfo info;
   output DAE.Dimensions outDims;
   output DAE.Mod outMod;
-  protected DAE.Dimension dim_f;
-  protected SCode.Final finalPrefix;
-  protected SCode.Each  eachPrefix;
-  protected list<DAE.SubMod> subModLst;
-  protected Option<DAE.EqMod> eqModOption;
-  protected Integer N;
+  output Option<Tuple<String,DAE.ComponentRef>> outFieldDomOpt;
 algorithm
-  (outDims, outMod) := match(attr)
+  (outDims, outMod, outFieldDomOpt) := match(attr)
+    local
+      DAE.Dimension dim_f;
+      SCode.Final finalPrefix;
+      SCode.Each  eachPrefix;
+      list<DAE.SubMod> subModLst;
+      Option<DAE.EqMod> eqModOption;
+      Integer N;
+      DAE.ComponentRef dcr;
     case(SCode.ATTR(isField=Absyn.NONFIELD()))
       //TODO: check that the domain attribute (modifier) is not present.
       then
-        (inDims,inMod);
+        (inDims,inMod,NONE());
     case(SCode.ATTR(isField=Absyn.FIELD()))
       equation
         DAE.MOD(finalPrefix = finalPrefix, eachPrefix = eachPrefix, subModLst = subModLst, eqModOption = eqModOption) = inMod;
         //get N from the domain and remove domain from the subModLst:
-        (N, subModLst) = List.fold20(subModLst,domainSearchFun,-1,{});
+        (N, subModLst, SOME(dcr)) = List.fold30(subModLst,domainSearchFun,-1,{},NONE());
+        if (N == -1) then Error.addSourceMessageAndFail(Error.PDEModelica_ERROR,
+            {"Domain of the field variable '" + name + "' not found."}, info);
+        end if;
         subModLst = listReverse(subModLst);
         subModLst = List.map(subModLst,addEach);
         outMod = DAE.MOD(finalPrefix, eachPrefix, subModLst, eqModOption);
         dim_f = DAE.DIM_INTEGER(N);
-        //TODO: add check wheter the field is realy present (N>-1) and give error if not!
       then
-        (dim_f::inDims, outMod);
+        (dim_f::inDims, outMod, SOME((name,dcr)));
   end match;
 end elabField;
 
@@ -4656,15 +4663,20 @@ protected function addEach
     end match;
 end addEach;
 
+
 protected function domainSearchFun
 "fold function to find domain modifier in modifiers list"
+//TODO: simplify this function, perhaps not use fold
   input DAE.SubMod subMod;
   input Integer inN;
   input list<DAE.SubMod> inSubModLst;
+  input Option<DAE.ComponentRef> inCrOpt;
   output Integer outN;
   output list<DAE.SubMod> outSubModLst;
+  output Option<DAE.ComponentRef> outCrOpt;
+
   algorithm
-    (outSubModLst,outN) := matchcontinue subMod
+    (outSubModLst,outN,outCrOpt) := matchcontinue subMod
     local
       DAE.Mod mod;
       list<DAE.SubMod>  subModLst;
@@ -4672,39 +4684,41 @@ protected function domainSearchFun
       list<Values.Value> values;
       list<String> names;
       Integer N;
+      DAE.ComponentRef cr;
     case DAE.NAMEMOD(ident="domain", mod=mod)
       equation
         DAE.MOD(eqModOption=SOME(
-          DAE.TYPED(modifierAsValue=SOME(
-            Values.RECORD(
-              record_=Absyn.FULLYQUALIFIED(
-                path=Absyn.IDENT(name="DomainLineSegment1D")
-              ), orderd = values, comp = names
-            )
-          ))
+          DAE.TYPED(
+            modifierAsValue=SOME(
+              Values.RECORD(
+                record_=Absyn.FULLYQUALIFIED(
+                  path=Absyn.IDENT(name="DomainLineSegment1D")
+                ), orderd = values, comp = names
+              )
+            ),
+            modifierAsExp=DAE.CREF(componentRef=cr)
+          )
         ))=mod;
-        N = List.find(List.threadTuple(names,values), findN);
-      then (inSubModLst,N);
+        ("N", Values.INTEGER(N)) = List.find(List.threadTuple(names,values),findN);
+      then (inSubModLst,N,SOME(cr));
     case DAE.NAMEMOD(ident="domain")
       equation
         print("cant find N in the domain");
       then
         fail();
-    else (subMod::inSubModLst,inN);
+    else (subMod::inSubModLst,inN,inCrOpt);
     end matchcontinue;
 end domainSearchFun;
 
 protected function findN
 "a map function to find N in domain class modifiers"
   input Tuple<String,Values.Value> inEl;
-  output Integer N;
+  output Boolean found;
   algorithm
-    N := match inEl
-    local
-      Integer NN;
-      case(("N", Values.INTEGER(NN)))
-        then NN;
-      else fail();
+    found := match inEl
+      case(("N", Values.INTEGER(_)))
+      then true;
+      else false;
     end match;
 end findN;
 

@@ -2404,7 +2404,7 @@ algorithm
         (cache,env2,_) = InstUtil.addComponentsToEnv(cache, env2,
           InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
           dummyFunc, ld_mod, {}, {}, {}, impl);
-        (cache,env2,_,_,dae1,_,_,_,_) = Inst.instElementList(
+        (cache,env2,_,_,dae1,_,_,_,_,_) = Inst.instElementList(
           cache,env2, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), dummyFunc, ld_mod, {},
           impl, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);

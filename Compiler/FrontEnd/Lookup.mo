@@ -3176,7 +3176,7 @@ algorithm
   // print("buildMetaRecordType " + id + " in scope " + FGraph.printGraphPathStr(env) + "\n");
   (cache,utPath) := Inst.makeFullyQualified(inCache,env,utPath);
   path := Absyn.joinPaths(utPath, Absyn.IDENT(id));
-  (outCache,outEnv,_,_,_,_,_,varlst,_) := Inst.instElementList(
+  (outCache,outEnv,_,_,_,_,_,varlst,_,_) := Inst.instElementList(
     cache,env,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
     DAE.NOMOD(),Prefix.NOPRE(),
     ClassInf.META_RECORD(Absyn.IDENT("")), List.map1(els,Util.makeTuple,DAE.NOMOD()),

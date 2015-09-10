@@ -3453,6 +3453,35 @@ algorithm
   end for;
 end fold20;
 
+public function fold30<T, FT1, FT2, FT3>
+  "Takes a list and a function operating on list elements having three extra
+   arguments that are 'updated', thus returned from the function. fold will call
+   the function for each element in a sequence, updating the start value."
+  input list<T> inList;
+  input FoldFunc inFoldFunc;
+  input FT1 inStartValue1;
+  input FT2 inStartValue2;
+  input FT3 inStartValue3;
+  output FT1 outResult1 = inStartValue1;
+  output FT2 outResult2 = inStartValue2;
+  output FT3 outResult3 = inStartValue3;
+
+  partial function FoldFunc
+    input T inElement;
+    input FT1 inFoldArg1;
+    input FT2 inFoldArg2;
+    input FT3 inFoldArg3;
+    output FT1 outFoldArg1;
+    output FT2 outFoldArg2;
+    output FT3 outFoldArg3;
+  end FoldFunc;
+algorithm
+  for e in inList loop
+    (outResult1, outResult2, outResult3) := inFoldFunc(e, outResult1,outResult2,outResult3);
+  end for;
+end fold30;
+
+
 public function fold5<T, FT, ArgT1, ArgT2, ArgT3, ArgT4, ArgT5>
   "Takes a list and a function operating on list elements having an extra
    argument that is 'updated', thus returned from the function, and five constant

@@ -938,6 +938,8 @@ public constant Message FIGARO_ERROR = MESSAGE(7010, SCRIPTING(), ERROR(),
   Util.notrans("Figaro: %s."));
 public constant Message SUSAN_NOTIFY = MESSAGE(7011, TRANSLATION(), NOTIFICATION(),
   Util.notrans("%s"));
+public constant Message PDEModelica_ERROR = MESSAGE(7012, TRANSLATION(), ERROR(),
+  Util.gettext("PDEModelica: %s"));
 
 protected import ErrorExt;
 
