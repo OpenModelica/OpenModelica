@@ -5582,50 +5582,87 @@ algorithm
   outAnnotation:=
   match (inAnnotation1,inAnnotation2)
     local
-      list<ElementArg> neweltargs,oldrest,eltargs,eltargs_1;
-      ElementArg mod;
+      list<ElementArg> oldmods,newmods;
       Annotation a;
-      Path p;
-
-    case (ANNOTATION(elementArgs = ((mod as MODIFICATION(path = p)) :: oldrest)),ANNOTATION(elementArgs = eltargs))
-      equation
-        ANNOTATION(neweltargs) = mergeAnnotations(ANNOTATION(oldrest), ANNOTATION(eltargs));
-      then
-        if modificationInElementargs(eltargs, p)
-        then ANNOTATION(neweltargs)
-        else ANNOTATION(mod :: neweltargs);
-
     case (ANNOTATION(elementArgs = {}),a) then a;
 
+    case (ANNOTATION(elementArgs = oldmods),ANNOTATION(elementArgs = newmods))
+      then ANNOTATION(mergeAnnotations2(oldmods, newmods));
   end match;
 end mergeAnnotations;
 
-protected function modificationInElementargs
+protected
+
+function mergeAnnotations2
+  input list<ElementArg> oldmods;
+  input list<ElementArg> newmods;
+  output list<ElementArg> res = listReverse(oldmods);
+protected
+  list<ElementArg> mods;
+  Boolean b;
+  Path p;
+  ElementArg mod1,mod2;
+algorithm
+  for mod in newmods loop
+    MODIFICATION(path=p) := mod;
+    try
+      mod2 := List.find(res, function isModificationOfPath(path=p));
+      mod1 := subModsInSameOrder(mod2, mod);
+      (res, true) := List.replaceOnTrue(mod1, res, function isModificationOfPath(path=p));
+    else
+      res := mod::res;
+    end try;
+  end for;
+  res := listReverse(res);
+end mergeAnnotations2;
+
+function isModificationOfPath
 "returns true or false if the given path is in the list of modifications"
-  input list<ElementArg> inAbsynElementArgLst;
-  input Path inPath;
+  input ElementArg mod;
+  input Path path;
   output Boolean yes;
 algorithm
-  yes := match (inAbsynElementArgLst,inPath)
+  yes := match (mod,path)
     local
       String id1,id2;
-      ElementArg m;
-      list<ElementArg> xs;
-      Boolean b;
-
-    case ((MODIFICATION(path = IDENT(name = id1)) :: xs),IDENT(name = id2))
-      equation
-        b = match(stringEq(id1, id2))
-              case (true) then true;
-              case (false) then modificationInElementargs(xs, inPath);
-            end match;
-      then
-        b;
-
+    case (MODIFICATION(path = IDENT(name = id1)),IDENT(name = id2)) then id1==id2;
     else false;
-
   end match;
-end modificationInElementargs;
+end isModificationOfPath;
+
+function subModsInSameOrder
+  input ElementArg oldmod;
+  input ElementArg newmod;
+  output ElementArg mod;
+algorithm
+  mod := match (oldmod,newmod)
+    local
+      list<ElementArg> args1,args2,res;
+      ElementArg arg2;
+      EqMod eq1,eq2;
+      Path p;
+
+    // mod1 or mod2 has no submods
+    case (_, MODIFICATION(modification=NONE())) then newmod;
+    case (MODIFICATION(modification=NONE()), _) then newmod;
+    // mod1
+    case (MODIFICATION(modification=SOME(CLASSMOD(args1,eq1))), arg2 as MODIFICATION(modification=SOME(CLASSMOD(args2,eq2))))
+      algorithm
+        // Delete all items from args2 that are not in args1
+        res := {};
+        for arg1 in args1 loop
+          MODIFICATION(path=p) := arg1;
+          if List.exist(args2, function isModificationOfPath(path=p)) then
+            res := arg1::res;
+          end if;
+        end for;
+        res := listReverse(res);
+        // Merge the annotations
+        res := mergeAnnotations2(res, args2);
+        arg2.modification := SOME(CLASSMOD(res,eq2));
+      then arg2;
+  end match;
+end subModsInSameOrder;
 
 public function annotationToElementArgs
   input Annotation ann;
