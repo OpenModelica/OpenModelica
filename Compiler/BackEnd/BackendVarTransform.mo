@@ -54,6 +54,7 @@ protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
+protected import EvaluateFunctions;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
@@ -878,6 +879,30 @@ algorithm
         then true;
   end matchcontinue;
 end hasNoReplacementCrefFirst;
+
+public function varHasNoReplacement "
+  Outputs true if the replacements contains no rule for the var
+"
+  input BackendDAE.Var var;
+  input VariableReplacements inVariableReplacements;
+  output Boolean bOut;
+algorithm
+  bOut:=
+  matchcontinue (var,inVariableReplacements)
+    local
+      DAE.ComponentRef src;
+      DAE.Exp dst;
+      HashTable2.HashTable ht;
+    case (BackendDAE.VAR(varName=src),REPLACEMENTS(hashTable=ht))
+      equation
+        _ = BaseHashTable.get(src,ht);
+      then
+        false;
+      else
+      equation
+        then true;
+  end matchcontinue;
+end varHasNoReplacement;
 
 public function getReplacementVarArraySize
   input VariableReplacements inVariableReplacements;
@@ -2972,6 +2997,33 @@ algorithm
   extht := Util.getOptionOrDefault(derConst,HashTable2.emptyHashTable());
   print("derConst: " + intString(BaseHashTable.hashTableCurrentSize(extht)) + "\n");
 end dumpStatistics;
+
+public function simplifyReplacements"applies ExpressionSimplify.simplify on all replacement expressions"
+  input VariableReplacements replIn;
+  input DAE.FunctionTree functions;
+  output VariableReplacements replOut;
+protected
+  list<DAE.ComponentRef> crefs;
+  list<DAE.Exp> exps;
+algorithm
+  (crefs,exps) := getAllReplacements(replIn);
+  (exps,_) := List.map_2(exps,ExpressionSimplify.simplify);
+  exps := List.map1(exps, EvaluateFunctions.evaluateConstantFunctionCallExp,functions);
+  replOut := addReplacements(replIn,crefs,exps,NONE());
+end simplifyReplacements;
+
+public function getConstantReplacements"gets a clean replacement set containing only constant replacement rules"
+  input VariableReplacements replIn;
+  output VariableReplacements replOut;
+protected
+  list<DAE.ComponentRef> crefs;
+  list<DAE.Exp> exps;
+algorithm
+  (crefs,exps) := getAllReplacements(replIn);
+  (exps,crefs):= List.filterOnTrueSync(exps,Expression.isEvaluatedConst,crefs);
+  replOut := emptyReplacements();
+  replOut := addReplacements(replOut,crefs,exps,NONE());
+end getConstantReplacements;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendVarTransform;
