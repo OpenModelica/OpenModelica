@@ -12,7 +12,6 @@ OMCC/OMCC:
 	cd OMCC && git fetch && git pull --ff-only
 	$(MAKE) -C OMCC omcc OMC="@OMBUILDDIR@/bin/omc"
 flex:
-	$(MAKE) -C ../../3rdParty/flex-2.5.35
-	cp ../../3rdParty/flex-2.5.35/flex "@OMBUILDDIR@/bin/flex"
+	cd ../../3rdParty/flex-2.5.35 && ./autogen.sh && ./configure && $(MAKE) && cp ./flex "@OMBUILDDIR@/bin/flex"
 Makefile: Makefile.in
 	cd @top_builddir@ && ./config.status
