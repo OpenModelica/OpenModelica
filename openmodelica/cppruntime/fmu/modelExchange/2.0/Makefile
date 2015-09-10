@@ -25,7 +25,7 @@ test:
 
 clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
-	@rm -f $(CLEAN)
+	@rm -rf $(CLEAN)
 
 getdeps:
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp

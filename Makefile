@@ -24,6 +24,7 @@ cppruntimeFMU1.log \
 cppruntimeFMU2.log \
 cppruntimeUmfpack.log \
 cppruntimeStaticLinking.log \
+cppruntimeGenDebugSymbols.log \
 cppruntimeOMEdit.log \
 taskGraph.log \
 debugDumps.log \
@@ -51,6 +52,7 @@ simulationenums.log \
 simulationequations.log \
 simulationevents.log \
 simulationsynchronous.log \
+simulationstatemachines.log \
 simulationexternal-functions.log \
 simulationindexreduction.log \
 simulationinheritances.log \
@@ -99,6 +101,7 @@ simulationenums.log \
 simulationequations.log \
 simulationevents.log \
 simulationsynchronous.log \
+simulationstatemachines.log \
 simulationexternal-functions.log \
 simulationindexreduction.log \
 simulationinheritances.log \
@@ -305,6 +308,9 @@ simulationevents.log: omc-diff
 simulationsynchronous.log: omc-diff
 	$(MAKE) -C simulation/modelica/synchronous -f Makefile test > $@
 	@echo $@ done
+simulationstatemachines.log: omc-diff
+	$(MAKE) -C simulation/modelica/statemachines -f Makefile test > $@
+	@echo $@ done
 simulationexternal-functions.log: omc-diff
 	$(MAKE) -C simulation/modelica/external_functions -f Makefile test > $@
 	@echo $@ done
@@ -388,6 +394,9 @@ cppruntimeUmfpack.log: omc-diff
 	@echo $@ done
 cppruntimeStaticLinking.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/cppruntime/staticLinking -f Makefile test  > $@
+	@echo $@ done
+cppruntimeGenDebugSymbols.log: omc-diff
+	$(MAKE) -j1 -C openmodelica/cppruntime/genDebugSymbols -f Makefile test  > $@
 	@echo $@ done
 linearization.log: omc-diff
 	$(MAKE) -C openmodelica/linearization -f Makefile test > $@
@@ -596,6 +605,7 @@ clean_g_2 :
 	$(MAKE) -C openmodelica/cppruntime/fmu/modelExchange/2.0 -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/umfpack -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/staticLinking -f Makefile clean
+	$(MAKE) -C openmodelica/cppruntime/genDebugSymbols -f Makefile clean
 	$(MAKE) -C openmodelica/cruntime/optimization/basic -f Makefile clean
 	$(MAKE) -C openmodelica/cruntime/xmlFiles -f Makefile clean
 	$(MAKE) -C openmodelica/debugDumps -f Makefile clean

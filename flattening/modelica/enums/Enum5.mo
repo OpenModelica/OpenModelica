@@ -25,7 +25,8 @@ end Enumeration5;
 
 // Result:
 // Error processing file: Enum5.mo
-// [flattening/modelica/enums/Enum5.mo:12:3-12:13:writable] Error: Variable E not found in scope P.h$tt.
+// [flattening/modelica/enums/Enum5.mo:14:3-14:16:writable] Error: Variable E.j not found in scope P.h$tt.
+// [flattening/modelica/enums/Enum5.mo:14:3-14:16:writable] Error: Variable hh[E.j] not found in scope P.h$tt.
 // Error: Error occurred while flattening model Enumeration5
 //
 // # Error encountered! Exiting...

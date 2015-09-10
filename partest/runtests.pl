@@ -53,6 +53,7 @@ my $file;
 my $slowest:shared = 0;
 my $slowest_name:shared = "";
 my $gitlibs = 0;
+my $parmodexp = 0;
 
 # Default is two threads.
 my $thread_count = 2;
@@ -95,6 +96,7 @@ for(@ARGV){
     print("  -failing      Run failing tests instead of working.\n");
     print("  -veryfew      Run only a very small number of tests to see if runtests.pl is working.\n");
     print("  -gitlibs      If you have installed omc using GITLIBRARIES=Yes, you can test some of those libraries.\n");
+    print("  -parmodexp    Run the OpenCL ParModelica tests.\n");
     exit 1;
   }
   if(/^-f$/) {
@@ -143,6 +145,9 @@ for(@ARGV){
   }
   elsif(/^-gitlibs$/) {
     $gitlibs = 1;
+  }
+  elsif(/^-parmodexp$/) {
+    $parmodexp = 1;
   }
   else {
     print("Unknown flag " . $_ . "!\n");
@@ -283,6 +288,8 @@ if (!defined($file)) {
 
   if ($cppruntime == 1) {
     read_makefile("./simulation/libraries/msl32_cpp", "TESTFILES");
+  } elsif ($parmodexp == 1) {
+    read_makefile("./parmodelica/explicit", "TESTFILES");
   } elsif($veryfew == 1) {
     read_makefile("./flattening/modelica/modification", "TESTFILES");
   } elsif($run_failing == 0) {

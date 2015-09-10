@@ -1,7 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
-Modelica.Fluid.Examples.BranchingDynamicPipes.mos
+Modelica.Fluid.Examples.BranchingDynamicPipes_genDebugSymbols.mos
 
 # Run make failingtest
 FAILINGTESTFILES =

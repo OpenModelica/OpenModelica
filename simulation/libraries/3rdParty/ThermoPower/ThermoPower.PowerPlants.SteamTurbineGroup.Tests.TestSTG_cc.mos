@@ -15,6 +15,7 @@ translateModel(ThermoPower.PowerPlants.SteamTurbineGroup.Tests.TestSTG_cc); getE
 //  * candidate: sTG_3LRh.steamTurbines.mixLP.h(start = sTG_3LRh.steamTurbines.mixLP.hstart)
 //  * candidate: sTG_3LRh.steamTurbines.mixLP.out.h_outflow(start = sTG_3LRh.steamTurbines.mixLP.hstart)
 //  * candidate: sTG_3LRh.steamTurbines.valveLP.outlet.h_outflow(start = 100000.0)
+//  * candidate: sTG_3LRh.steamTurbines.valveLP.inlet.h_outflow(start = 100000.0)
 //  * candidate: sTG_3LRh.steamTurbines.ST_LP.hin(start = 100000.0)
 //  * candidate: sTG_3LRh.steamTurbines.ST_LP.steamState_in.h(start = 100000.0)
 //  * candidate: sTG_3LRh.steamTurbines.valveLP.fluidState.h(start = 100000.0)

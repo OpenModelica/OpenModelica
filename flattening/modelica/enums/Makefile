@@ -25,7 +25,8 @@ EnumInnerOuterDim.mo \
 EnumInvalidLiteral.mo \
 EnumMatrixProduct.mo \
 EnumRange.mo \
-EnumDuplicateLiteral.mo
+EnumDuplicateLiteral.mo \
+EnumRedeclaration.mo
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

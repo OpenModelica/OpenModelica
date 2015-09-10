@@ -1,33 +1,31 @@
-TEST = ../../../../rtest -v
+TEST = ../../../rtest -v
 
 TESTFILES = \
-translateFlueGasZones.mos \
-translateHeatExchanger.mos \
-translateJunctions.mos \
-translatePipes.mos \
-valve_test.mos \
+bug_3326.mos \
+bug_3334.mos \
+bug_3335.mos \
+bug_3336.mos \
+bug_3339.mos \
+bug_3347.mos \
+bug_3349.mos 
 
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
 FAILINGTESTFILES= \
-paralleFlowEVA_test.mos \
-
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
 DEPENDENCIES = \
 *.mo \
 *.mos \
-Makefile \
-SiemensPowerOMCtest \
-SiemensPower \
+Makefile 
 
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 
-.PHONY : test clean getdeps failingtest
+.PHONY : test clean getdeps
 
 test:
 	@echo
@@ -35,13 +33,18 @@ test:
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) $(TESTFILES)
-
+	
 # Cleans all files that are not listed as dependencies 
 clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
 	@rm -f $(CLEAN)
 
-# Get the dependency files
+# Run this if you want to list out the files (dependencies).
+# do it after cleaning and updating the folder
+# then you can get a list of file names (which must be dependencies
+# since you got them from repository + your own new files)
+# then add them to the DEPENDENCIES. You can find the 
+# list in deps.txt 
 getdeps: 
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
 	@echo $(CLEAN) | sed -r 's/deps.txt|deps.tmp//g' | sed 's/ / \\\n/g' > deps.txt	

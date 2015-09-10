@@ -3,6 +3,11 @@ function id<T>
   output T o=i;
 end id;
 
+function isWhitespace<T>
+  input T t;
+  output Boolean b = false;
+end isWhitespace;
+
 function TestDiffAlgorithm
 protected
   list<tuple<DiffAlgorithm.Diff, list<Integer>>> intDiffs;
@@ -49,5 +54,5 @@ algorithm
   print("  seq1={" + stringDelimitList(list(toString(e) for e in seq1), ", ") + "},\n");
   print("  seq2={" + stringDelimitList(list(toString(e) for e in seq2), ", ") + "}\n");
   print(")\n");
-  out := DiffAlgorithm.diff(seq1, seq2, equals);
+  out := DiffAlgorithm.diff(seq1, seq2, equals, isWhitespace, toString);
 end debug_diff;
