@@ -2,9 +2,9 @@ TEST = ../../../../../rtest -v
 
 
 TESTFILES = \
-CoupledClutches_FMU2_CPP.mos
 
-FAILINGTESTFILES =
+FAILINGTESTFILES = \
+CoupledClutches_FMU2_CPP.mos
 
 DEPENDENCIES = \
 *.mo \
