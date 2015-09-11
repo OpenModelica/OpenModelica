@@ -91,6 +91,7 @@ protected import Flags;
 protected import Global;
 protected import HpcOmEqSystems;
 protected import HpcOmTaskGraph;
+protected import HpcOmSimCodeMain;
 protected import IndexReduction;
 protected import Inline;
 protected import InlineArrayEquations;
@@ -3559,10 +3560,7 @@ public function getIncidenceMatrixScalar "function getIncidenceMatrixScalar"
   output BackendDAE.IncidenceMatrix outMT;
   output array<list<Integer>> outMapEqnIncRow;
   output array<Integer> outMapIncRowEqn;
-protected
-  BackendDAE.EquationArray eq;
 algorithm
-  BackendDAE.EQSYSTEM(orderedEqs=eq) := syst;
   (outM, outMT, outMapEqnIncRow, outMapIncRowEqn) := incidenceMatrixScalar(syst, inIndxType, functionTree);
   osyst := BackendDAEUtil.setEqSystMatrices(syst, SOME(outM), SOME(outMT));
 end getIncidenceMatrixScalar;
@@ -6530,6 +6528,11 @@ algorithm
     BackendDump.bltdump("bltdump", sode);
   end if;
 
+  if Flags.isSet(Flags.EVAL_OUTPUT_ONLY) then
+    // prepare the equations
+    sode := BackendDAEOptimize.evaluateOutputsOnly(sode);
+  end if;
+
   // post-optimization phase
   optsode := postOptimizeDAE(sode, postOptModules, matchingAlgorithm, daeHandler);
 
@@ -6816,7 +6819,6 @@ algorithm
     funcs := getFunctions(inShared);
     (syst, _, _, mapEqnIncRow, mapIncRowEqn) := getIncidenceMatrixScalar(inSystem, BackendDAE.NORMAL(), SOME(funcs));
     (outSystem, _) := BackendDAETransform.strongComponentsScalar(syst, inShared, mapEqnIncRow, mapIncRowEqn);
-    dumpStrongComponents(outSystem, inShared);
   else
     //BackendDump.dumpEqSystem(inSystem, "Transformation module sort components failed for following system:");
     Error.addInternalError("Transformation module sort components failed", sourceInfo());
@@ -8262,6 +8264,86 @@ algorithm
 	BackendDAEEXT.getAssignment(ass2, ass1);
 	comps := Sorting.TarjanTransposed(mT, ass2);
 end causalizeVarBindSystem;
+
+public function getStrongComponentVarsAndEquations"gets the variables and and the equations from the sccs.
+author: Waurich TUD 09-2015"
+  input BackendDAE.StrongComponent comp;
+  input BackendDAE.Variables varArr;
+  input BackendDAE.EquationArray eqArr;
+  output list<BackendDAE.Var> varsOut;
+  output list<Integer> varIdxs;
+  output list<BackendDAE.Equation> eqsOut;
+  output list<Integer> eqIdcxs;
+algorithm
+  (varsOut,varIdxs,eqsOut,eqIdcxs) := matchcontinue(comp,varArr,eqArr)
+    local
+      Integer vidx,eidx;
+      list<Integer> vidxs,eidxs;
+      BackendDAE.Equation eq;
+      BackendDAE.Var var;
+      list<BackendDAE.Equation> eqs;
+      list<BackendDAE.Var> vars;
+      list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
+  case(BackendDAE.SINGLEEQUATION(eqn=eidx,var=vidx),_,_)
+    equation
+      var = BackendVariable.getVarAt(varArr,vidx);
+      eq = BackendEquation.equationNth1(eqArr,eidx);
+    then ({var},{vidx},{eq},{eidx});
+  case(BackendDAE.EQUATIONSYSTEM(eqns=eidxs,vars=vidxs),_,_)
+    equation
+      vars = List.map1(vidxs,BackendVariable.getVarAtIndexFirst,varArr);
+      eqs = BackendEquation.getEqns(eidxs,eqArr);
+    then (vars,vidxs,eqs,eidxs);
+  case(BackendDAE.SINGLEARRAY(eqn=eidx,vars=vidxs),_,_)
+    equation
+      vars = List.map1(vidxs,BackendVariable.getVarAtIndexFirst,varArr);
+      eq = BackendEquation.equationNth1(eqArr,eidx);
+    then (vars,vidxs,{eq},{eidx});
+  case(BackendDAE.SINGLEALGORITHM(eqn=eidx,vars=vidxs),_,_)
+    equation
+      vars = List.map1(vidxs,BackendVariable.getVarAtIndexFirst,varArr);
+      eq = BackendEquation.equationNth1(eqArr,eidx);
+    then (vars,vidxs,{eq},{eidx});
+  case(BackendDAE.SINGLECOMPLEXEQUATION(eqn=eidx,vars=vidxs),_,_)
+    equation
+      vars = List.map1(vidxs,BackendVariable.getVarAtIndexFirst,varArr);
+      eq = BackendEquation.equationNth1(eqArr,eidx);
+    then (vars,vidxs,{eq},{eidx});
+  case(BackendDAE.SINGLEWHENEQUATION(eqn=eidx,vars=vidxs),_,_)
+    equation
+      vars = List.map1(vidxs,BackendVariable.getVarAtIndexFirst,varArr);
+      eq = BackendEquation.equationNth1(eqArr,eidx);
+    then (vars,vidxs,{eq},{eidx});
+  case(BackendDAE.SINGLEIFEQUATION(eqn=eidx,vars=vidxs),_,_)
+    equation
+      vars = List.map1(vidxs,BackendVariable.getVarAtIndexFirst,varArr);
+      eq = BackendEquation.equationNth1(eqArr,eidx);
+    then (vars,vidxs,{eq},{eidx});
+  case(BackendDAE.TORNSYSTEM(strictTearingSet = BackendDAE.TEARINGSET(residualequations=eidxs,tearingvars=vidxs, otherEqnVarTpl=otherEqnVarTpl)),_,_)
+    equation
+      eidxs = listAppend(eidxs,List.map(otherEqnVarTpl,Util.tuple21));
+      vidxs = listAppend(vidxs,List.flatten(List.map(otherEqnVarTpl,Util.tuple22)));
+      vars = List.map1(vidxs,BackendVariable.getVarAtIndexFirst,varArr);
+      eqs = BackendEquation.getEqns(eidxs,eqArr);
+    then (vars,vidxs,eqs,eidxs);
+  end matchcontinue;
+end getStrongComponentVarsAndEquations;
+
+public function getStrongComponentEquations"gets all equations from a component"
+  input list<BackendDAE.StrongComponent> comps;
+  input BackendDAE.EquationArray eqs;
+  input BackendDAE.Variables vars;
+  output list<BackendDAE.Equation> eqsOut;
+protected
+  BackendDAE.StrongComponent comp;
+  list<BackendDAE.Equation> eqLst;
+algorithm
+  eqsOut := {};
+  for comp in comps loop
+    (_,_,eqLst,_) := BackendDAEUtil.getStrongComponentVarsAndEquations(comp,vars,eqs);
+    eqsOut := listAppend(eqLst,eqsOut);
+  end for;
+end getStrongComponentEquations;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;

@@ -130,7 +130,7 @@ algorithm
   ((oGraph,oGraphData,_)) := List.fold(systs, function createTaskGraph0(iShared=shared, iAnalyzeParameters=iAnalyzeParameters), (graph,graphData,1));
 end createTaskGraph;
 
-protected function createTaskGraph0 "author: marcusw,waurich
+public function createTaskGraph0 "author: marcusw,waurich
   Creates a task graph out of the given system."
   input BackendDAE.EqSystem iSyst; //The input system which should be analysed
   input BackendDAE.Shared iShared;
@@ -1815,7 +1815,7 @@ algorithm
   end matchcontinue;
 end getCompInComps;
 
-protected function getAllSuccessors"gets all successors including all childNodes of the childNodes...
+public function getAllSuccessors"gets all successors including all childNodes of the childNodes...
 author:Waurich TUD 2014-09"
   input list<Integer> nodes;
   input TaskGraph graph;

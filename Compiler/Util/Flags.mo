@@ -454,6 +454,9 @@ constant DebugFlag DIS_SYMJAC_FMI20 = DEBUG_FLAG(143, "disableSymbolicLinearizat
   Util.gettext("For FMI 2.0 only dependecy analysis will be perform."));
 constant DebugFlag EVAL_ALL_PARAMS = DEBUG_FLAG(144, "evalAllParams", false,
   Util.gettext("Evaluates all parameters in order to increase simulation speed."));
+constant DebugFlag EVAL_OUTPUT_ONLY = DEBUG_FLAG(145, "evalOutputOnly", false,
+  Util.gettext("Generates equations to calculate outputs only."));
+
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -604,8 +607,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_RTEARING,
   DIS_SIMP_FUN,
   DIS_SYMJAC_FMI20,
-  EVAL_ALL_PARAMS
-
+  EVAL_ALL_PARAMS,
+  EVAL_OUTPUT_ONLY
 };
 
 public

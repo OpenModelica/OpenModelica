@@ -54,6 +54,7 @@ protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;
+protected import BackendDAEEXT;
 protected import BackendVarTransform;
 protected import BackendVariable;
 protected import BaseHashTable;
@@ -71,9 +72,12 @@ protected import ExpressionSimplify;
 protected import Error;
 protected import Flags;
 protected import HashTableExpToIndex;
+protected import HpcOmTaskGraph;
 protected import List;
+protected import Matching;
 protected import RewriteRules;
 protected import SCode;
+protected import Sorting;
 protected import SynchronousFeatures;
 protected import Types;
 protected import Util;
@@ -5384,6 +5388,161 @@ algorithm
     else inExp;
   end match;
 end addTimeAsState4;
+
+//-------------------------------------
+//Evaluate Output Variables Only.
+//-------------------------------------
+
+
+public function evaluateOutputsOnly"Computes only the scc which are necessary in order to calculate the output vars.
+author: Waurich TUD 09/2015"
+  input BackendDAE.BackendDAE daeIn;
+  output BackendDAE.BackendDAE daeOut;
+protected
+  Integer size, nVars, nEqs;
+  array<Integer> ass1,ass2, varVisited;
+  list<Integer> outputVarIndxs, stateIndxs, stateTasks, stateTasks1 , outputTasks, predecessors, tasks, varIdcs, eqIdcs, stateDerIdcs;
+  list<BackendDAE.StrongComponent> comps, compsNew, addComps;
+  BackendDAE.StrongComponent comp;
+  BackendDAE.EqSystem syst;
+  BackendDAE.EqSystems systs, systsNew;
+  BackendDAE.Equation eq;
+  BackendDAE.EquationArray eqs;
+  BackendDAE.IncidenceMatrix m, mT;
+  BackendDAE.Matching matching;
+  BackendDAE.Shared shared;
+  BackendDAE.Variables vars;
+  DAE.FunctionTree funcTree;
+  list<BackendDAE.Equation> eqLst, eqLstNew;
+  list<BackendDAE.Var> varLst, varLstNew, states;
+  list<DAE.ComponentRef> crefs;
+  HpcOmTaskGraph.TaskGraph taskGraph, taskGraphT;
+  HpcOmTaskGraph.TaskGraphMeta taskGraphData;
+  array<tuple<Integer,Integer,Integer>> varCompMapping;
+  array<tuple<Integer,Integer,Integer>> eqCompMapping;
+
+  array<list<Integer>> mapEqnIncRow;
+  array<Integer> mapIncRowEqn;
+algorithm
+  daeOut := daeIn;
+
+  BackendDAE.DAE(systs,shared) := daeIn;
+  BackendDAE.SHARED(functionTree = funcTree) := shared;
+  systsNew := {};
+  //traverse the simulation-DAE systems
+  for syst in systs loop
+    BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs=eqs, matching=matching) := syst;
+    BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps) := matching;
+
+    // get taskgraph and transposed taskgraph for simulation eqsystem
+    (taskGraph,taskGraphData) := HpcOmTaskGraph.getEmptyTaskGraph(0,0,0);
+    (taskGraph,taskGraphData,_) := HpcOmTaskGraph.createTaskGraph0(syst,shared,false,(taskGraph,taskGraphData,1));
+    HpcOmTaskGraph.TASKGRAPHMETA(varCompMapping=varCompMapping, eqCompMapping=eqCompMapping) := taskGraphData;
+    size := arrayLength(taskGraph);
+    taskGraphT := BackendDAEUtil.transposeMatrix(taskGraph,size);
+
+    //get output variables
+    BackendDAE.EQSYSTEM(orderedVars = vars) := syst;
+    varLst := BackendVariable.varList(vars);
+    varLst := List.filterOnTrue(varLst,BackendVariable.isOutputVar);
+    if listEmpty(varLst) then
+      //print("No output variables in this system\n");
+
+    //THIS SYSTEM CONTAINS OUTPUT VARIABLES
+    //-------------------------------------
+    else
+      outputVarIndxs := BackendVariable.getVarIndexFromVars(varLst,vars);
+      outputTasks := List.map(List.map1(outputVarIndxs,Array.getIndexFirst,varCompMapping),Util.tuple31);
+        //print("outputTasks "+stringDelimitList(List.map(outputTasks,intString),", ")+"\n");
+
+      //get all necessary components to calculate the outputs
+      predecessors := HpcOmTaskGraph.getAllSuccessors(outputTasks,taskGraphT);
+      predecessors := List.sort(predecessors,intGt);
+      compsNew := List.map1(listAppend(outputTasks,predecessors),List.getIndexFirst,comps);
+         //print("predecessors of outputs "+stringDelimitList(List.map(predecessors,intString),", ")+"\n");
+
+      //get equations from the new reduced set of comps
+      eqLstNew := BackendDAEUtil.getStrongComponentEquations(compsNew,eqs,vars);
+
+      // Get all state-variables which are needed in these equations and apply the same search for these equations.
+      // The according state-derivatives have to be computed.
+      stateTasks := {};
+      varVisited := arrayCreate(BackendVariable.varsSize(vars),-1);
+      while not listEmpty(eqLstNew) loop
+        eq::eqLstNew := eqLstNew;
+          //print("eq: "+BackendDump.equationString(eq)+"\n");
+        crefs := BackendEquation.equationCrefs(eq);
+        crefs := List.filter1OnTrue(crefs,BackendVariable.isState,vars);
+        (states,stateIndxs) := BackendVariable.getVarLst(crefs,vars,{},{});
+        (stateIndxs,states) := List.filter1OnTrueSync(stateIndxs,stateVarIsNotVisited,varVisited,states);//not yet visited
+        if not listEmpty(stateIndxs) then
+            //print("states "+stringDelimitList(List.map(states,BackendDump.varString),"\n ")+"\n");
+          List.map2_0(stateIndxs,Array.updateIndexFirst,1,varVisited);
+          //add the new tasks which are necessary for the states
+          stateTasks1 := List.map(List.map1(stateIndxs,Array.getIndexFirst,varCompMapping),Util.tuple31);
+          stateTasks := listAppend(stateTasks,stateTasks1);
+          //get their predecessor tasks, the corresponding comps and add their equations
+          predecessors := HpcOmTaskGraph.getAllSuccessors(stateTasks1,taskGraphT);
+          addComps := List.map1(listAppend(stateTasks1,predecessors),List.getIndexFirst,comps);
+          eqLstNew := List.unique(listAppend(eqLstNew,BackendDAEUtil.getStrongComponentEquations(addComps,eqs,vars)));
+        end if;
+      end while;
+
+      //get all necessary components to calculate the outputs and the state derivatives
+      predecessors := HpcOmTaskGraph.getAllSuccessors(listAppend(outputTasks,stateTasks),taskGraphT);
+      tasks := List.sort(listAppend(predecessors,listAppend(stateTasks,outputTasks)),intGt);
+        //print("predecessors of outputs and states "+stringDelimitList(List.map(tasks,intString),", ")+"\n");
+      compsNew := List.map1(tasks,List.getIndexFirst,comps);
+        print("There have been "+intString(listLength(comps))+" SCCs and now there are "+intString(listLength(compsNew))+" SCCs.\n");
+
+      //get vars and equations from the new reduced set of comps and make a equationIdxMap
+      eqLstNew := {};
+      varLstNew := {};
+      for comp in compsNew loop
+        (varLst,_,eqLst,_) := BackendDAEUtil.getStrongComponentVarsAndEquations(comp,vars,eqs);
+        varLstNew := listAppend(varLst,varLstNew);
+        eqLstNew := listAppend(eqLst,eqLstNew);
+      end for;
+
+      // causalize again
+      syst.orderedVars := BackendVariable.listVar1(listReverse(varLstNew));
+      syst.orderedEqs := BackendEquation.listEquation(listReverse(eqLstNew));
+
+      syst.m :=NONE();
+      syst.mT :=NONE();
+      syst.matching := BackendDAE.NO_MATCHING();
+      (m,mT) := BackendDAEUtil.incidenceMatrix(syst,BackendDAE.NORMAL(),NONE());
+      syst.m := SOME(m);
+      syst.mT := SOME(mT);
+      nVars := listLength(varLstNew);
+	    nEqs := listLength(eqLstNew);
+	    ass1 := arrayCreate(nVars, -1);
+ 	    ass2 := arrayCreate(nEqs, -1);
+   	  Matching.matchingExternalsetIncidenceMatrix(nVars, nEqs, m);
+      BackendDAEEXT.matching(nVars, nEqs, 5, -1, 0.0, 1);
+	    BackendDAEEXT.getAssignment(ass2, ass1);
+	    matching := BackendDAE.MATCHING(ass1,ass2,compsNew);
+	    syst.matching := matching;
+
+	    (syst, _, _, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.NORMAL(), SOME(funcTree));
+	    syst := BackendDAETransform.strongComponentsScalar(syst,shared,mapEqnIncRow,mapIncRowEqn);
+
+      systsNew := syst::systsNew;
+    end if;
+  end for;
+
+   //alias vars are not necessary anymore
+   shared.aliasVars := BackendVariable.emptyVars();
+   daeOut := BackendDAE.DAE(systsNew,shared);
+end evaluateOutputsOnly;
+
+protected function stateVarIsNotVisited"checks if the indexed entry in the array is less than 0"
+  input Integer idx;
+  input array<Integer> varArr;
+  output Boolean b;
+algorithm
+  b := intLt(arrayGet(varArr,idx),0);
+end stateVarIsNotVisited;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEOptimize;
