@@ -309,7 +309,7 @@ struct cluster_merge_level_for_cost {
                 target_cost = sys_graph[current_level.front()].cost;
             }
 
-            target_cost = std::max(target_cost, 0.01);
+            target_cost = std::max(target_cost,0.0);
 
             int cluster_count = 0;
             typename SameLevelClusterIdsType::iterator clustid_iter = current_level.begin();
