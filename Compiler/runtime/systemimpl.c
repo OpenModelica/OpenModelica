@@ -702,13 +702,13 @@ int System_numProcessors(void)
 {
 #ifdef WITH_HWLOC
   hwloc_topology_t topology;
-  hwloc_topology_init(&topology);
-  hwloc_topology_load(topology);
-  int depth = hwloc_get_type_depth(topology, HWLOC_OBJ_CORE);
-  if(depth != HWLOC_TYPE_DEPTH_UNKNOWN) {
-    int res = hwloc_get_nbobjs_by_depth(topology, depth);
-    hwloc_topology_destroy(topology);
-    return intMax(res,1);
+  if (0==hwloc_topology_init(&topology) && 0==hwloc_topology_load(topology)) {
+    int depth = hwloc_get_type_depth(topology, HWLOC_OBJ_CORE);
+    if(depth != HWLOC_TYPE_DEPTH_UNKNOWN) {
+      int res = hwloc_get_nbobjs_by_depth(topology, depth);
+      hwloc_topology_destroy(topology);
+      return intMax(res,1);
+    }
   }
 #endif
 #if defined(__MINGW32__) || defined(_MSC_VER)
