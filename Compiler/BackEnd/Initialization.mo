@@ -93,7 +93,7 @@ protected
   HashSet.HashSet hs "contains all pre variables";
   list<BackendDAE.Equation> removedEqns;
   list<BackendDAE.Var> dumpVars, dumpVars2;
-  list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean>> pastOptModules;
+  list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean>> initOptModules;
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
 algorithm
@@ -178,18 +178,7 @@ algorithm
     initdae := BackendDAEUtil.mapEqSystem(initdae, solveInitialSystemEqSystem);
 
     // transform and optimize DAE
-    pastOptModules := BackendDAEUtil.getPostOptModules(SOME({
-      "constantLinearSystem",
-      "simplifyComplexFunction",
-        //"reduceDynamicOptimization", // before tearing
-      "tearingSystem",
-        "simplifyLoops",
-        "recursiveTearing",
-      "calculateStrongComponentJacobians",
-      "solveSimpleEquations"
-        //"inputDerivativesUsed",
-        //"extendDynamicOptimization"
-      }));
+    initOptModules := BackendDAEUtil.getInitOptModules(NONE());
 
     matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(NONE());
     daeHandler := BackendDAEUtil.getIndexReductionMethod(NONE());
@@ -198,7 +187,7 @@ algorithm
     initdae := BackendDAEUtil.transformBackendDAE(initdae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
 
     // simplify system
-    initdae := BackendDAEUtil.postOptimizeDAE(initdae, pastOptModules, matchingAlgorithm, daeHandler);
+    initdae := BackendDAEUtil.postOptimizeDAE(initdae, initOptModules, matchingAlgorithm, daeHandler);
     if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
       BackendDump.dumpBackendDAE(initdae, "solved initial system");
       if Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP) then

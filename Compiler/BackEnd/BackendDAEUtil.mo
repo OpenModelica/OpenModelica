@@ -7275,6 +7275,32 @@ algorithm
   postOptModules := listReverse(postOptModules);
 end getPostOptModules;
 
+public function getInitOptModules
+  input Option<list<String>> inInitOptModules;
+  output list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean>> outInitOptModules;
+protected
+  list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean/*stopOnFailure*/>> allInitOptModules;
+  list<String> initOptModules;
+algorithm
+  allInitOptModules := {(SymbolicJacobian.constantLinearSystem, "constantLinearSystem", false),
+                        (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction", false),
+                        (SymbolicJacobian.inputDerivativesUsed, "inputDerivativesUsed", false),
+                        (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations", false),
+                        (Tearing.tearingSystem, "tearingSystem", false),
+                        (Tearing.recursiveTearing, "recursiveTearing", false),
+                        (DynamicOptimization.removeLoops, "extendDynamicOptimization", false),
+                        (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization", false),
+                        (DynamicOptimization.simplifyConstraints, "simplifyConstraints", false),
+                        (BackendDAEOptimize.simplifyLoops, "simplifyLoops", false),
+                        (SymbolicJacobian.calculateStrongComponentJacobians, "calculateStrongComponentJacobians", false)
+                        };
+
+  initOptModules := Config.getInitOptModules();
+  initOptModules := Util.getOptionOrDefault(inInitOptModules, initOptModules);
+  outInitOptModules := selectOptModules(initOptModules, allInitOptModules, {});
+  outInitOptModules := listReverse(outInitOptModules);
+end getInitOptModules;
+
 protected function selectOptModules
   input list<String> strOptModules;
   input list<tuple<Type_a,String,Boolean>> inOptModules;

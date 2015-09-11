@@ -1136,6 +1136,28 @@ constant ConfigFlag PARTLINTORN = CONFIG_FLAG(77, "partlintorn",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Sets the limit for partitionin of linear torn systems."));
 
+constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(78, "initOptModules",
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({
+    "constantLinearSystem",
+    "simplifyComplexFunction",
+      //"reduceDynamicOptimization", // before tearing
+    "tearingSystem",
+    "simplifyLoops",
+    "recursiveTearing",
+    "calculateStrongComponentJacobians",
+    "solveSimpleEquations"
+      //"inputDerivativesUsed",
+      //"extendDynamicOptimization"
+    }),
+  SOME(STRING_DESC_OPTION({
+    ("extendDynamicOptimization", Util.gettext("Move loops to constraints.")),
+    ("constantLinearSystem", Util.gettext("Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time.")),
+    ("tearingSystem",Util.notrans("For method selection use flag tearingMethod.")),
+    ("inputDerivativesUsed", Util.gettext("Checks if derivatives of inputs are need to calculate the model.")),
+    ("calculateStrongComponentJacobians", Util.gettext("Generates analytical Jacobian for non-linear strong components."))
+    })),
+  Util.gettext("Sets the initialization optimization modules to use in the back end. See --help=optmodules for more info."));
+
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -1217,7 +1239,8 @@ constant list<ConfigFlag> allConfigFlags = {
   RTEARING,
   FLOW_THRESHOLD,
   MATRIX_FORMAT,
-  PARTLINTORN
+  PARTLINTORN,
+  INIT_OPT_MODULES
 };
 
 public function new
