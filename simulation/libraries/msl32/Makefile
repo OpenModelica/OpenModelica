@@ -58,6 +58,7 @@ Modelica.Electrical.Digital.Examples.Multiplexer.mos \
 Modelica.Electrical.Digital.Examples.MUX2x1.mos \
 Modelica.Electrical.Digital.Examples.NRXFER.mos \
 Modelica.Electrical.Digital.Examples.NXFER.mos \
+Modelica.Electrical.Digital.Examples.RAM.mos \
 Modelica.Electrical.Digital.Examples.VectorDelay.mos \
 Modelica.Electrical.Digital.Examples.WiredX.mos \
 Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_DOL.mos \
@@ -280,7 +281,6 @@ Modelica.Media.Examples.R134a.R134a2.mos \
 
 # Run make failingtest
 FAILINGTESTFILES = \
-Modelica.Electrical.Digital.Examples.RAM.mos \
 Modelica.Fluid.Examples.PumpingSystem.mos \
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator_MultiPhase.mos \
 
