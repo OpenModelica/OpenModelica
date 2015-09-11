@@ -14,8 +14,8 @@ template modelInitXMLFile(SimCode simCode, String numRealVars, String numIntVars
   match simCode
     case SIMCODE(modelInfo = MODELINFO(__)) then
       let variables = modelVariablesXML(simCode, modelInfo, varToArrayIndexMapping, '<%numRealVars%> - 1', '<%numIntVars%> - 1', '<%numBoolVars%> - 1', '<%numStringVars%> - 1', generateFMUModelDescription, complexStartExpressions, stateDerVectorName)
-      let algLoops = (listAppend(allEquations,initialEquations) |> eq => algLoopXML(eq, simCode, varToArrayIndexMapping, '<%numRealVars%> - 1') ;separator="\n")
-      let jacobianMatrixes = jacobianMatrixesXML(simCode.jacobianMatrixes)
+      //let algLoops = (listAppend(allEquations,initialEquations) |> eq => algLoopXML(eq, simCode, varToArrayIndexMapping, '<%numRealVars%> - 1') ;separator="\n")
+      //let jacobianMatrixes = jacobianMatrixesXML(simCode.jacobianMatrixes)
       let descriptionTag = if generateFMUModelDescription then "fmiModelDescription" else "ModelDescription"
       let fmiDescriptionAttributes = if generateFMUModelDescription then fmiDescriptionAttributes(simCode, FMUVersion, FMUType, FMUGuid) else 'modelName="<%dotPath(modelInfo.name)%>"'
       let fmiTypeDefinitions = if generateFMUModelDescription then CodegenFMUCommon.fmiTypeDefinitions(modelInfo, FMUVersion)
@@ -29,6 +29,9 @@ template modelInitXMLFile(SimCode simCode, String numRealVars, String numIntVars
         <ModelVariables>
           <%variables%>
         </ModelVariables>
+      </<%descriptionTag%>>
+      >>
+      /*
         <%if boolNot(generateFMUModelDescription) then
         <<
         <AlgLoops>
@@ -39,8 +42,7 @@ template modelInitXMLFile(SimCode simCode, String numRealVars, String numIntVars
         </Jacobian>
         >>
         %>
-      </<%descriptionTag%>>
-      >>
+      */
 end modelInitXMLFile;
 
 template fmiDescriptionAttributes(SimCode simCode, String FMUVersion, String FMUType, String FMUGuid)
