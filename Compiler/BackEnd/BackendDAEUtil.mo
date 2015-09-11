@@ -6537,6 +6537,8 @@ algorithm
     sode := BackendDAEOptimize.evaluateOutputsOnly(sode);
   end if;
 
+  sode := BackendDAEOptimize.removeUnusedFunctions(sode);
+
   // generate system for initialization
   (outInitDAE, outUseHomotopy, outRemovedInitialEquationLst, outPrimaryParameters, outAllPrimaryParameters) := Initialization.solveInitialSystem(sode);
 
@@ -7243,7 +7245,6 @@ algorithm
                         (BackendDump.dumpComponentsGraphStr, "dumpComponentsGraphStr", false),
                         (SymbolicJacobian.generateSymbolicJacobianPast, "generateSymbolicJacobian", false),
                         (SymbolicJacobian.generateSymbolicLinearizationPast, "generateSymbolicLinearization", false),
-                        (BackendDAEOptimize.removeUnusedFunctions, "removeUnusedFunctions", false),
                         (BackendDAEOptimize.simplifyTimeIndepFuncCalls, "simplifyTimeIndepFuncCalls", false),
                         (SymbolicJacobian.inputDerivativesUsed, "inputDerivativesUsed", false),
                         (BackendDAEOptimize.simplifysemiLinear, "simplifysemiLinear", false),
