@@ -5311,8 +5311,8 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls,
       let nDims = listLength(dims)
       if stringEq(elType, "bool") then
         let &varDecls += 'DynArrayDim<%nDims%><<%extType%>> <%extName%>;<%\n%>'
-        let &inputAssign += 'convertBoolToInt(<%varName%>, <%extName%>);<%\n%>'
-        let &outputAssign += if intGt(oi, 0) then 'convertIntToBool(<%extName%>, <%varName%>);<%\n%>'
+        let &inputAssign += 'cast_array<bool, int>(<%varName%>, <%extName%>);<%\n%>'
+        let &outputAssign += if intGt(oi, 0) then 'cast_array<int, bool>(<%extName%>, <%varName%>);<%\n%>'
         <<
         <%extName%>.getData()
         >>

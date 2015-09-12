@@ -359,36 +359,15 @@ std::pair<T,T> min_max(const BaseArray<T>& x)
   return std::make_pair(*(ret.first), *(ret.second));
 }
 
-void convertBoolToInt(const BaseArray<bool>& a, BaseArray<int>& b)
+template <typename S, typename T>
+void cast_array(const BaseArray<S>& a, BaseArray<T>& b)
 {
   b.setDims(a.getDims());
-  int numEle = a.getNumElems();
-  const bool* source_data = a.getData();
-  int* dest_data = b.getData();
-  for (int i = 0; (numEle > 0) && (i <= numEle); i++)
-  {
-    if(source_data[i])
-      dest_data[i]=1;
-    else
-      dest_data[i]=0;
-  }
-}
-
-void convertIntToBool(const BaseArray<int>& a, BaseArray<bool>& b)
-{
-  b.setDims(a.getDims());
-  int numEle = a.getNumElems();
-  for (int i = 0; i <= numEle; i++)
-  {
-    if (a(i))
-    {
-      b(i) = true;
-    }
-    else
-    {
-      b(i) = false;
-    }
-  }
+  int numElems = a.getNumElems();
+  const S* src_data = a.getData();
+  T* dst_data = b.getData();
+  for (int i = 0; i < numElems; i++)
+    *dst_data++ = (T)(*src_data++);
 }
 
 /**
@@ -563,10 +542,12 @@ min_max(const BaseArray<int>& x);
 template std::pair<bool,bool> BOOST_EXTENSION_EXPORT_DECL
 min_max(const BaseArray<bool>& x);
 
-void BOOST_EXTENSION_EXPORT_DECL
-convertBoolToInt(const BaseArray<bool>& a, BaseArray<int>& b);
-void BOOST_EXTENSION_EXPORT_DECL
-convertIntToBool(BaseArray<int>& a, BaseArray<bool>& b);
+template void BOOST_EXTENSION_EXPORT_DECL
+cast_array(const BaseArray<int> &a, BaseArray<double> &b);
+template void BOOST_EXTENSION_EXPORT_DECL
+cast_array(const BaseArray<int> &a, BaseArray<bool> &b);
+template void BOOST_EXTENSION_EXPORT_DECL
+cast_array(const BaseArray<bool> &a, BaseArray<int> &b);
 
 template void BOOST_EXTENSION_EXPORT_DECL
 convertArrayLayout(const BaseArray<double> &s, BaseArray<double> &d);

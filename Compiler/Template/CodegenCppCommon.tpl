@@ -1625,14 +1625,17 @@ case CAST(__) then
   match ty
   case T_INTEGER(__)   then '((int)<%expVar%>)'
   case T_REAL(__)  then '((double)<%expVar%>)'
-  case T_ENUMERATION(__)   then '((modelica_integer)<%expVar%>)'
+  case T_ENUMERATION(__)   then '((int)<%expVar%>)'
   case T_BOOL(__)   then '((bool)<%expVar%>)'
-  case T_ARRAY(__) then
-    let arrayTypeStr = expTypeArrayforDim(ty)
-    let tvar = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
+  case T_ARRAY(dims=dims) then
     let to = expTypeShort(ty)
     let from = expTypeFromExpShort(exp)
-    let &preExp += 'cast_<%from%>_array_to_<%to%>(&<%expVar%>, &<%tvar%>);<%\n%>'
+    let dimensions = checkDimension(dims)
+    let toArrayTypeStr = match dimensions case ""
+      then 'DynArrayDim<%listLength(dims)%><<%to%>>'
+      else 'StatArrayDim<%listLength(dims)%><<%to%>, <%dimensions%>>'
+    let tvar = tempDecl(toArrayTypeStr, &varDecls /*BUFD*/)
+    let &preExp += 'cast_array<<%from%>, <%to%>>(<%expVar%>, <%tvar%>);<%\n%>'
     '<%tvar%>'
 
   //'(*((<%underscorePath(rec.path)%>*)&<%expVar%>))'
