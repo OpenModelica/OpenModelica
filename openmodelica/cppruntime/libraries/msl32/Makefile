@@ -9,6 +9,7 @@ Modelica.Electrical.Spice3.Examples.CoupledInductors.mos \
 Modelica.Electrical.Analog.Examples.ShowSaturatingInductor.mos \
 Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum.mos \
 Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving.mos \
+Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass.mos \
 Modelica.Mechanics.Rotational.Examples.Backlash.mos \
 Modelica.Mechanics.Rotational.Examples.RollingWheel.mos \
 Modelica.Mechanics.Translational.Examples.Accelerate.mos \
@@ -22,6 +23,7 @@ Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature.mos \
 Modelica.Thermal.HeatTransfer.Examples.TwoMasses.mos \
 Modelica.Electrical.Digital.Examples.Counter.mos \
 Modelica.Utilities.Examples.readRealParameterModel.mos \
+
 
 # tested features:
 # readRealParameterModel: string handling, variable name string
