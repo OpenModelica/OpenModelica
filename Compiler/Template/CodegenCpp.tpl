@@ -11018,6 +11018,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, SimCode s
  "Generates a when equation."
 ::=
   let &varDeclsCref = buffer "" /*BUFD*/
+  let sysderef = match context case ALGLOOP_CONTEXT(__) then '_system->'
   match eq
      case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=NONE()) then
       let helpIf = (conditions |> e => ' || (<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> && !_discrete_events->pre(<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>))')
@@ -11030,18 +11031,18 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, SimCode s
       let body = whenOperators(whenStmtLst, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       let pre_call = preCall(whenStmtLst, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       <<
-      if(_initial)
+      if (<%sysderef%>_initial)
       {
         <%pre_call%>
       }
       else if (0<%helpIf%>)
       {
-        <%body%>;
+        <%body%>
       }
       else
       {
-            <%pre_call%>
-       }
+        <%pre_call%>
+      }
       >>
     case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
        let helpIf = (conditions |> e => ' || (<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> && !_discrete_events->pre(<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>))')
@@ -11054,7 +11055,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, SimCode s
       let elseWhen = equationElseWhen(elseWhenEq, context, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       let pre_call = preCall(whenStmtLst, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       <<
-      if(_initial)
+      if (<%sysderef%>_initial)
       {
         <%initial_assign%>
       }
@@ -11128,9 +11129,10 @@ template whenAssign(ComponentRef left, Type ty, Exp right, Context context, Text
 ::=
     let &preExp = buffer "" /*BUFD*/
     let exp = daeExp(right, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let lhs = cref1(left, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
     <<
     <%preExp%>
-    <%cref(left, useFlatArrayNotation)%> = <%exp%>;
+    <%lhs%> = <%exp%>;
     >>
 end whenAssign;
 
