@@ -3100,6 +3100,10 @@ package ExpressionDump
     input DAE.Exp e;
     output String s;
   end printCrefsFromExpStr;
+  function binopSymbol
+    input DAE.Operator inOperator;
+    output String outString;
+  end binopSymbol;
 end ExpressionDump;
 
 package Config

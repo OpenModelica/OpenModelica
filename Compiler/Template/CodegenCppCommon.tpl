@@ -2399,7 +2399,7 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
   case EQUAL(__) then "daeExpBinary:ERR EQUAL not supported"
   case NEQUAL(__) then "daeExpBinary:ERR NEQUAL not supported"
   case USERDEFINED(__) then "daeExpBinary:ERR POW_ARR not supported"
-  case _   then 'daeExpBinary:ERR'
+  case _   then 'daeExpBinary:ERR <%printExpStr(exp1)%> <%binopSymbol(it)%> <%printExpStr(exp2)%>'
 end daeExpBinary;
 
 
