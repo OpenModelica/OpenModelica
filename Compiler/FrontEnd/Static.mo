@@ -4649,7 +4649,7 @@ algorithm
         ty2 = Types.arrayElementType(Types.getPropType(prop2));
         (c,_) = Types.matchType(c,ty1,DAE.T_CLOCK_DEFAULT,true);
         (solverMethod,_) = Types.matchType(solverMethod,ty2,DAE.T_STRING_DEFAULT,true);
-        strSolverMethod = Expression.expString(solverMethod);
+        strSolverMethod = Expression.sconstEnumNameString(solverMethod);
         call = DAE.CLKCONST(DAE.SOLVER_CLOCK(c, strSolverMethod));
       then (cache, call, prop);
 
