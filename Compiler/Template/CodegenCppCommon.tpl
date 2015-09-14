@@ -896,6 +896,15 @@ SimArray<%dims%><<%expTypeShort(ty)%>>
 >>
 end expTypeArray1;
 
+template expTypeArrayDims(DAE.Type ty, DAE.Dimensions dims)
+ "Generate type string for static or dynamic array, depending on dims"
+::=
+  let typeShort = expTypeShort(ty)
+  let dimstr = checkDimension(dims)
+  match dimstr
+    case "" then 'DynArrayDim<%listLength(dims)%><<%typeShort%>>'
+    else 'StatArrayDim<%listLength(dims)%><<%typeShort%>, <%dimstr%>>'
+end expTypeArrayDims;
 
 template allocateDimensions(DAE.Type ty,Context context)
 ::=
@@ -1625,23 +1634,19 @@ case CAST(__) then
   match ty
   case T_INTEGER(__)   then '((int)<%expVar%>)'
   case T_REAL(__)  then '((double)<%expVar%>)'
-  case T_ENUMERATION(__)   then '((modelica_integer)<%expVar%>)'
+  case T_ENUMERATION(__)   then '((int)<%expVar%>)'
   case T_BOOL(__)   then '((bool)<%expVar%>)'
-  case T_ARRAY(__) then
-    let arrayTypeStr = expTypeArrayforDim(ty)
-    let tvar = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
-    let to = expTypeShort(ty)
+  case T_ARRAY(dims=dims) then
     let from = expTypeFromExpShort(exp)
-    let &preExp += 'cast_<%from%>_array_to_<%to%>(&<%expVar%>, &<%tvar%>);<%\n%>'
+    let to = expTypeShort(ty)
+    let tvar = tempDecl(expTypeArrayDims(ty, dims), &varDecls /*BUFD*/)
+    let &preExp += 'cast_array<<%from%>, <%to%>>(<%expVar%>, <%tvar%>);<%\n%>'
     '<%tvar%>'
-
-  //'(*((<%underscorePath(rec.path)%>*)&<%expVar%>))'
   case T_COMPLEX(varLst=vl,complexClassType=rec as RECORD(__))   then
-
-      let tvar = tempDecl(underscorePath(rec.path)+"Type", &varDecls /*BUFD*/)
-      let &preExp += '<%structParams(expVar,tvar,vl)%><%\n%>'
-     '<%tvar%>'
-   else
+    let tvar = tempDecl(underscorePath(rec.path)+"Type", &varDecls /*BUFD*/)
+    let &preExp += '<%structParams(expVar,tvar,vl)%><%\n%>'
+    '<%tvar%>'
+  else
     '(<%expVar%>) /* could not cast, using the variable as it is */'
 end daeExpCast;
 
@@ -2268,123 +2273,45 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
   case AND(__) then '(<%e1%> && <%e2%>)'
   case OR(__)  then '(<%e1%> || <%e2%>)'
   case MUL_ARRAY_SCALAR(ty=T_ARRAY(dims=dims)) then
-    //let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
-    let dimensions = checkDimension(dims)
-    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'multi_array<int,<%listLength(dims)%>>'
-                        case T_ARRAY(ty=T_ENUMERATION(__)) then 'multi_array<int,<%listLength(dims)%>>'
-            //previous multi_array multi_array<double,<%listLength(dims)%>>
-                        else match dimensions
-                case "" then 'DynArrayDim<%listLength(dims)%><double>'
-                else 'StatArrayDim<%listLength(dims)%><double, <%dimensions%> > '
-
-
-
-  let type1 = match ty case T_ARRAY(ty=T_INTEGER(__)) then "int"
-                        case T_ARRAY(ty=T_ENUMERATION(__)) then "int"
-                        else "double"
-    //let var = tempDecl(type,&varDecls /*BUFD*/)
-    let var1 = tempDecl1(type,e1,&varDecls /*BUFD*/)
-    //let &preExp += '<%var1%>=multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>);<%\n%>'
-  // previous multiarray let &preExp += 'assign_array(<%var1%>,multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));<%\n%>'
-    let &preExp +='multiply_array<<%type1%>>(<%e1%>, <%e2%>, <%var1%>);<%\n%>'
-    '<%var1%>'
+    let type = expTypeShort(ty.ty)
+    let tvar = tempDecl(expTypeArrayDims(ty.ty, dims), &varDecls /*BUFD*/)
+    let &preExp += 'multiply_array<<%type%>>(<%e1%>, <%e2%>, <%tvar%>);<%\n%>'
+    '<%tvar%>'
   case MUL_MATRIX_PRODUCT(ty=T_ARRAY(dims=dims)) then
-    //let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
-     let dimstr = checkDimension(dims)
-    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'multi_array<int,<%listLength(dims)%>>'
-                        case T_ARRAY(ty=T_ENUMERATION(__)) then 'multi_array<int,<%listLength(dims)%>>'
-                        else match dimstr
-                case "" then 'DynArrayDim<%listLength(dims)%><double>'
-                else 'StatArrayDim<%listLength(dims)%><double, <%dimstr%> >'
-    let type1 = match ty case T_ARRAY(ty=T_INTEGER(__)) then "int"
-                        case T_ARRAY(ty=T_ENUMERATION(__)) then "int"
-                        else "double"
-    //let var = tempDecl(type,&varDecls /*BUFD*/)
-    let var1 = tempDecl1(type,e1,&varDecls /*BUFD*/)
-  // previous multi_array let &preExp += 'assign_array(<%var1%>,multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));<%\n%>'
-    let &preExp +='multiply_array<<%type1%>>(<%e1%>, <%e2%>, <%var1%>);<%\n%>'
-    '<%var1%>'
+    let type = expTypeShort(ty.ty)
+    let tvar = tempDecl(expTypeArrayDims(ty.ty, dims), &varDecls /*BUFD*/)
+    let &preExp += 'multiply_array<<%type%>>(<%e1%>, <%e2%>, <%tvar%>);<%\n%>'
+    '<%tvar%>'
   case DIV_ARRAY_SCALAR(ty=T_ARRAY(dims=dims)) then
- //let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
-    let dimensions = checkDimension(dims)
-    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'multi_array<int,<%listLength(dims)%>>'
-                        case T_ARRAY(ty=T_ENUMERATION(__)) then 'multi_array<int,<%listLength(dims)%>>'
-            //previous multi_array multi_array<double,<%listLength(dims)%>>
-                        else match dimensions
-                case "" then 'DynArrayDim<%listLength(dims)%><double>'
-                else 'StatArrayDim<%listLength(dims)%><double, <%dimensions%> >'
-
-
-
-  let type1 = match ty case T_ARRAY(ty=T_INTEGER(__)) then "int"
-                        case T_ARRAY(ty=T_ENUMERATION(__)) then "int"
-                        else "double"
-    //let var = tempDecl(type,&varDecls /*BUFD*/)
-  let &tempvarDecl = buffer ""
-    let var1 = tempDecl(type,&tempvarDecl /*BUFD*/)
-  let &preExp +='<%tempvarDecl%><%\n%> '
-    //let &preExp += '<%var1%>=multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>);<%\n%>'
-  // previous multiarray let &preExp += 'assign_array(<%var1%>,multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));<%\n%>'
-    let &preExp +='divide_array<<%type1%>>(<%e1%>, <%e2%>, <%var1%>);<%\n%>'
-    '<%var1%>'
-  case DIV_SCALAR_ARRAY(ty=T_ARRAY(dims=dims)) then
-    //let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
-    let dimstr = checkDimension(dims)
-    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'int'
-                        case T_ARRAY(ty=T_ENUMERATION(__)) then 'int'
-                        else 'double'
-  let var =  match dimstr
-        case "" then tempDecl('DynArrayDim<%listLength(dims)%><<%type%>>', &varDecls /*BUFD*/)
-        else tempDecl('StatArrayDim<%listLength(dims)%><<%type%>, <%dimstr%> > ', &varDecls /*BUFD*/)
-    //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
-    //let &preExp += 'assign_array(<%var%>,divide_array<<%type%>,<%listLength(dims)%>>(<%e2%>, <%e1%>));<%\n%>'
-    '<%var%>'
+    let type = expTypeShort(ty.ty)
+    let tvar = tempDecl(expTypeArrayDims(ty.ty, dims), &varDecls /*BUFD*/)
+    let &preExp += 'divide_array<<%type%>>(<%e1%>, <%e2%>, <%tvar%>);<%\n%>'
+    '<%tvar%>'
+  case DIV_SCALAR_ARRAY(__) then "daeExpBinary:ERR DIV_SCALAR_ARR not supported"
   case UMINUS(__) then "daeExpBinary:ERR UMINUS not supported"
   case UMINUS_ARR(__) then "daeExpBinary:ERR UMINUS_ARR not supported"
-
   case ADD_ARR(ty=T_ARRAY(dims=dims)) then
-  //let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
-   let dimstr = checkDimension(dims)
-  let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "int"
-                        case T_ARRAY(ty=T_ENUMERATION(__)) then "int"
-                        else "double"
-  let var =  match dimstr
-          case "" then tempDecl('DynArrayDim<%listLength(dims)%><<%type%>>', &varDecls /*BUFD*/)
-          else tempDecl('StatArrayDim<%listLength(dims)%><<%type%>, <%dimstr%> > ', &varDecls /*BUFD*/)
-    //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
-    let &preExp += 'add_array<<%type%>>(<%e1%>, <%e2%>,<%var%>);<%\n%>'
-    '<%var%>'
+    let type = expTypeShort(ty.ty)
+    let tvar = tempDecl(expTypeArrayDims(ty.ty, dims), &varDecls /*BUFD*/)
+    let &preExp += 'add_array<<%type%>>(<%e1%>, <%e2%>, <%tvar%>);<%\n%>'
+    '<%tvar%>'
   case SUB_ARR(ty=T_ARRAY(dims=dims)) then
-  //let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
-  let dimstr = checkDimension(dims)
-  let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "int"
-                        case T_ARRAY(ty=T_ENUMERATION(__)) then  "int"
-                        else "double"
-  let var =  match dimstr
-        case "" then tempDecl('DynArrayDim<%listLength(dims)%><<%type%>>', &varDecls /*BUFD*/)
-        else tempDecl('StatArrayDim<%listLength(dims)%><<%type%>, <%dimstr%>> ', &varDecls /*BUFD*/)
-
-    //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
-    let &preExp += 'subtract_array<<%type%>>(<%e1%>, <%e2%>, <%var%>);<%\n%>'
-    '<%var%>'
+    let type = expTypeShort(ty.ty)
+    let tvar = tempDecl(expTypeArrayDims(ty.ty, dims), &varDecls /*BUFD*/)
+    let &preExp += 'subtract_array<<%type%>>(<%e1%>, <%e2%>, <%tvar%>);<%\n%>'
+    '<%tvar%>'
   case MUL_ARR(__) then "daeExpBinary:ERR MUL_ARR not supported"
   case DIV_ARR(__) then "daeExpBinary:ERR DIV_ARR not supported"
   case ADD_ARRAY_SCALAR(__) then "daeExpBinary:ERR ADD_ARRAY_SCALAR not supported"
   case SUB_SCALAR_ARRAY(__) then "daeExpBinary:ERR SUB_SCALAR_ARRAY not supported"
   case MUL_SCALAR_PRODUCT(__) then
-    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'int'
-                        case T_ARRAY(ty=T_ENUMERATION(__)) then 'int'
-                        else 'double'
+    let type = expTypeShort(ty)
     'dot_array<<%type%>>(<%e1%>, <%e2%>)'
   case DIV_SCALAR_ARRAY(__) then "daeExpBinary:ERR DIV_SCALAR_ARRAY not supported"
   case POW_ARRAY_SCALAR(ty=T_ARRAY(dims=dims)) then
-    let dimstr = checkDimension(dims)
-    let type = "double"
-    let var = match dimstr // copy to contiguous memory and pow in situ
-      case "" then tempDecl1('DynArrayDim<%listLength(dims)%><<%type%>>', e1, &preExp)
-      else tempDecl1('StatArrayDim<%listLength(dims)%><<%type%>, <%dimstr%>>', e1, &preExp)
-    let &preExp += 'pow_array_scalar(<%var%>, <%e2%>, <%var%>);<%\n%>'
-    '<%var%>'
+    let tvar = tempDecl(expTypeArrayDims(ty.ty, dims), &varDecls /*BUFD*/)
+    let &preExp += 'pow_array_scalar(<%e1%>, <%e2%>, <%tvar%>);<%\n%>'
+    '<%tvar%>'
   case POW_SCALAR_ARRAY(__) then "daeExpBinary:ERR POW_SCALAR_ARRAY not supported"
   case POW_ARR(__) then "daeExpBinary:ERR POW_ARR not supported"
   case POW_ARR2(__) then "daeExpBinary:ERR POW_ARR2 not supported"
@@ -2396,9 +2323,8 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
   case EQUAL(__) then "daeExpBinary:ERR EQUAL not supported"
   case NEQUAL(__) then "daeExpBinary:ERR NEQUAL not supported"
   case USERDEFINED(__) then "daeExpBinary:ERR POW_ARR not supported"
-  case _   then 'daeExpBinary:ERR'
+  case _   then 'daeExpBinary:ERR <%printExpStr(exp1)%> <%binopSymbol(it)%> <%printExpStr(exp2)%>'
 end daeExpBinary;
-
 
 
 template daeExpSconst(String string, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,

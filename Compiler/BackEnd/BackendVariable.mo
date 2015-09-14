@@ -2449,6 +2449,22 @@ algorithm
   end try;
 end existsVar;
 
+public function existsAnyVar
+"author: PA
+  Return true if a variable exists in the vector"
+  input list<DAE.ComponentRef> inComponentRefs;
+  input BackendDAE.Variables inVariables;
+  input Boolean skipDiscrete = false;
+  output Boolean outExists = false;
+algorithm
+  for cref in inComponentRefs loop
+    if existsVar(cref, inVariables, skipDiscrete) and not isState(cref, inVariables) then
+      outExists := true;
+      break;
+    end if;
+  end for;
+end existsAnyVar;
+
 public function makeVar
  input DAE.ComponentRef cr;
  output BackendDAE.Var v = BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);

@@ -34,8 +34,7 @@ encapsulated package Initialization
   package:     Initialization
   description: Initialization.mo contains everything needed to set up the
                BackendDAE for the initial system.
-
-  RCS: $Id$"
+"
 
 public import Absyn;
 public import BackendDAE;
@@ -94,20 +93,25 @@ protected
   HashSet.HashSet hs "contains all pre variables";
   list<BackendDAE.Equation> removedEqns;
   list<BackendDAE.Var> dumpVars, dumpVars2;
-  list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean>> pastOptModules;
+  list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean>> initOptModules;
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
 algorithm
   try
-    // TODO: remove this once the initialization is moved before post-optimization
-    dae := BackendDAEOptimize.symEulerInit(inDAE);
+    //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
+    //  BackendDump.dumpBackendDAE(inDAE, "inDAE for initialization");
+    //end if;
 
     // inline all when equations, if active with body else with lhs=pre(lhs)
-    dae := inlineWhenForInitialization(dae);
-    // fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, dae, "inlineWhenForInitialization");
+    dae := inlineWhenForInitialization(inDAE);
+    //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
+    //  BackendDump.dumpBackendDAE(dae, "inlineWhenForInitialization");
+    //end if;
 
     (initVars, outPrimaryParameters, outAllPrimaryParameters) := selectInitializationVariablesDAE(dae);
-    // fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpVariables, initVars, "selected initialization variables");
+    //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
+    //  BackendDump.dumpVariables(initVars, "selected initialization variables");
+    //end if;
     hs := collectPreVariables(dae);
 
     // collect vars and eqns for initial system
@@ -120,7 +124,9 @@ algorithm
     ((vars, fixvars, eqns, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.knownVars, collectInitialVars, (vars, fixvars, eqns, hs));
     ((eqns, reeqns)) := BackendEquation.traverseEquationArray(dae.shared.initialEqs, collectInitialEqns, (eqns, reeqns));
 
-    // fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpEquationArray, eqns, "initial equations");
+    //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
+    //  BackendDump.dumpEquationArray(eqns, "initial equations");
+    //end if;
 
     ((vars, fixvars, eqns, reeqns, _)) := List.fold(dae.eqs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns, hs)));
 
@@ -172,7 +178,8 @@ algorithm
     initdae := BackendDAEUtil.mapEqSystem(initdae, solveInitialSystemEqSystem);
 
     // transform and optimize DAE
-    pastOptModules := BackendDAEUtil.getPostOptModules(SOME({"constantLinearSystem", "tearingSystem", "calculateStrongComponentJacobians", "solveSimpleEquations"}));
+    initOptModules := BackendDAEUtil.getInitOptModules(NONE());
+
     matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(NONE());
     daeHandler := BackendDAEUtil.getIndexReductionMethod(NONE());
 
@@ -180,7 +187,7 @@ algorithm
     initdae := BackendDAEUtil.transformBackendDAE(initdae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
 
     // simplify system
-    initdae := BackendDAEUtil.postOptimizeDAE(initdae, pastOptModules, matchingAlgorithm, daeHandler);
+    initdae := BackendDAEUtil.postOptimizeDAE(initdae, initOptModules, matchingAlgorithm, daeHandler);
     if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
       BackendDump.dumpBackendDAE(initdae, "solved initial system");
       if Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP) then
@@ -2309,6 +2316,52 @@ algorithm
     then fail();
   end match;
 end collectInitialBindings;
+
+
+// =============================================================================
+// section for post-optimization module "removeInitializationStuff"
+//
+// =============================================================================
+
+public function removeInitializationStuff
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE = inDAE;
+algorithm
+  for eqs in outDAE.eqs loop
+    _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs.orderedEqs, removeInitializationStuff1, false);
+  end for;
+end removeInitializationStuff;
+
+protected function removeInitializationStuff1
+  input DAE.Exp inExp;
+  input Boolean inUseHomotopy;
+  output DAE.Exp outExp;
+  output Boolean outUseHomotopy;
+algorithm
+  (outExp, outUseHomotopy) := Expression.traverseExpBottomUp(inExp, removeInitializationStuff2, inUseHomotopy);
+end removeInitializationStuff1;
+
+protected function removeInitializationStuff2
+  input DAE.Exp inExp;
+  input Boolean inUseHomotopy;
+  output DAE.Exp outExp;
+  output Boolean outUseHomotopy;
+algorithm
+  (outExp, outUseHomotopy) := match (inExp, inUseHomotopy)
+    local
+      DAE.Exp e1, e2, e3, actual, simplified;
+
+    // replace initial() with false
+    case (DAE.CALL(path=Absyn.IDENT(name="initial")), _)
+    then (DAE.BCONST(false), inUseHomotopy);
+
+    // replace homotopy(actual, simplified) with actual
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst=actual::simplified::_), _)
+    then (actual, true);
+
+    else (inExp, inUseHomotopy);
+  end match;
+end removeInitializationStuff2;
 
 annotation(__OpenModelica_Interface="backend");
 end Initialization;

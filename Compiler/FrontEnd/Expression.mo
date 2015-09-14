@@ -1576,7 +1576,7 @@ algorithm
   end match;
 end expArrayIndex;
 
-public function expString
+public function sconstEnumNameString
   input DAE.Exp exp;
   output String str;
 algorithm
@@ -1587,7 +1587,7 @@ algorithm
     case DAE.SCONST(s) then s;
     case DAE.ENUM_LITERAL(name) then Absyn.pathString(name);
   end match;
-end expString;
+end sconstEnumNameString;
 
 public function varName "Returns the name of a Var"
   input DAE.Var v;

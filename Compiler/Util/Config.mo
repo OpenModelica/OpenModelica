@@ -314,6 +314,12 @@ algorithm
   outStringLst := Flags.getConfigStringList(Flags.POST_OPT_MODULES);
 end getPostOptModules;
 
+public function getInitOptModules
+  output list<String> outStringLst;
+algorithm
+  outStringLst := Flags.getConfigStringList(Flags.INIT_OPT_MODULES);
+end getInitOptModules;
+
 public function setPreOptModules
   input list<String> inStringLst;
 algorithm

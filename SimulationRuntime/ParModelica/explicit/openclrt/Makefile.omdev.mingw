@@ -16,12 +16,12 @@ OPENLC_LIB= -lOpenCL
 
 all: transfer
 
-transfer: libOMOCLRuntime.a
+transfer: libParModelicaExpl.a
 	mkdir -p $(PARMODELICAEXPOCL_INC)
 	$(COPY) omc_ocl_interface.h $(PARMODELICAEXPOCL_INC)
 	$(COPY) omc_ocl_common_header.h $(PARMODELICAEXPOCL_INC)
 	$(COPY) omc_ocl_memory_ops.h $(PARMODELICAEXPOCL_INC)
-	$(COPY) libOMOCLRuntime.a $(OPENMODELICA_LIB)
+	$(COPY) libParModelicaExpl.a $(OPENMODELICA_LIB)
 	$(COPY) ParModelicaBuiltin.mo $(OPENMODELICA_LIB)
 	$(COPY) OCLRuntimeUtil.cl $(PARMODELICAEXPOCL_INC)
 

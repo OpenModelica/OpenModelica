@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenModelica trunk\n"
 "Report-Msgid-Bugs-To: openmodelica at ida.liu.se\n"
-"POT-Creation-Date: 2014-10-20 15:13+0200\n"
+"POT-Creation-Date: 2015-09-10 13:57+0200\n"
 "PO-Revision-Date: 2012-08-28 16:55+0200\n"
 "Last-Translator: Martin Sjölund <martin.sjolund at liu.se>\n"
 "Language-Team: Swedish <openmodelica at ida.liu.se>\n"
@@ -22,82 +22,68 @@ msgstr ""
 "X-Language: sv_SE\n"
 "X-Source-Language: C\n"
 
-#: ../FrontEnd/Mod.mo:937
+#: ../FrontEnd/Mod.mo:950
 msgid "component "
 msgstr "komponent"
 
-#: ../FrontEnd/Mod.mo:938
+#: ../FrontEnd/Mod.mo:951
 msgid "extends "
 msgstr "extends"
 
-#: ../FrontEnd/Mod.mo:939
+#: ../FrontEnd/Mod.mo:952
 msgid "inherited class "
 msgstr "ärvd klass"
 
-#: ../FrontEnd/NFLookup.mo:547 ../FrontEnd/NFLookup.mo:548
-#: ../FrontEnd/NFLookup.mo:554
-msgid "component"
-msgstr "komponent"
+#: ../Main/Main.mo:553
+msgid "File does not exist: "
+msgstr "Filen finns inte: "
 
-#: ../FrontEnd/NFLookup.mo:549 ../FrontEnd/NFLookup.mo:552
-#: ../FrontEnd/NFLookup.mo:555
-msgid "class"
-msgstr "klass"
-
-#: ../FrontEnd/NFLookup.mo:550 ../FrontEnd/NFLookup.mo:553
-msgid "function"
-msgstr "funktion"
-
-#: ../FrontEnd/NFLookup.mo:551
-msgid "package"
-msgstr "paket"
-
-#: ../Util/Error.mo:133
+#: ../Util/Error.mo:136
 #, c-format
 msgid "Class %s not found in scope %s."
 msgstr "Klass %s hittades inte i definitionsområde %s."
 
-#: ../Util/Error.mo:135
+#: ../Util/Error.mo:138
 #, c-format
 msgid "Class %s not found in scope %s while instantiating %s."
 msgstr "Klass %s hittades inte i definitionsområde %s då %s instansierades."
 
-#: ../Util/Error.mo:137
+#: ../Util/Error.mo:140
 #, c-format
 msgid "Variable %s not found in scope %s."
 msgstr "Variabel %s hittades inte i definitionsområde %s."
 
-#: ../Util/Error.mo:139
+#: ../Util/Error.mo:142
 #, c-format
 msgid "Trying to assign to constant component in %s := %s"
 msgstr "Försök till tilldelning av konstant komponent i %s := %s"
 
-#: ../Util/Error.mo:141
+#: ../Util/Error.mo:144
 #, c-format
 msgid "Trying to assign to parameter component in %s := %s"
 msgstr "Försök till tilldelning av parameterkomponent i %s := %s"
 
-#: ../Util/Error.mo:143
+#: ../Util/Error.mo:146
 #, c-format
 msgid "Trying to assign to %s component %s."
 msgstr "Försökte göra en tilldelning till %s komponent %s."
 
-#: ../Util/Error.mo:145
+#: ../Util/Error.mo:148
 #, c-format
 msgid "Type mismatch in assignment in %s := %s of %s := %s"
 msgstr "Typfel i tilldelning %s := %s av typ %s := %s"
 
-#: ../Util/Error.mo:147
+#: ../Util/Error.mo:150
 #, c-format
 msgid "Type error in conditional '%s'. Expected Boolean, got %s."
 msgstr "Typfel i villkorligt uttryck '%s'. Förväntade Boolean, fick %s."
 
-#: ../Util/Error.mo:149
+#: ../Util/Error.mo:152
 #, c-format
 msgid "Type error in iteration range '%s'. Expected array got %s."
 msgstr "Typfel i uttryck '%s'. Förväntade array, fick %s."
 
-#: ../Util/Error.mo:151
+#: ../Util/Error.mo:154
 #, c-format
 msgid ""
 "Type error in when conditional '%s'. Expected Boolean scalar or vector, got "
@@ -105,76 +91,76 @@ msgid ""
 msgstr ""
 "Typfel i when-villkor '%s'. Förväntade Boolean skalär eller vektor, fick %s."
 
-#: ../Util/Error.mo:153
+#: ../Util/Error.mo:156
 #, c-format
 msgid "Type error in while conditional '%s'. Expected Boolean got %s."
 msgstr "Typfel i while-villkor '%s'. Förväntade Boolean, fick %s."
 
-#: ../Util/Error.mo:155
+#: ../Util/Error.mo:158
 msgid "'end' can not be used outside array subscripts."
 msgstr "'end' kan inte användas utanför subskript av arrayer."
 
-#: ../Util/Error.mo:157
+#: ../Util/Error.mo:160
 #, c-format
 msgid "Division by zero in %s / %s"
 msgstr "Division med noll i %s / %s"
 
-#: ../Util/Error.mo:159
+#: ../Util/Error.mo:162
 #, c-format
 msgid "Modulo by zero in mod(%s,%s)."
 msgstr "Modulo av noll i mod(%s,%s)."
 
-#: ../Util/Error.mo:161
+#: ../Util/Error.mo:164
 #, c-format
 msgid "Second argument in rem is zero in rem(%s,%s)."
 msgstr "Andra argumentet i rem är noll i rem(%s,%s)."
 
-#: ../Util/Error.mo:163
+#: ../Util/Error.mo:166
 msgid "Error reading simulation result."
 msgstr "Fel vid läsning av simuleringsresultat."
 
-#: ../Util/Error.mo:165
+#: ../Util/Error.mo:168
 #, c-format
 msgid "Extending %s is not allowed, since it is an enclosing class."
 msgstr "Ärvning av %s är ej tillåtet, eftersom det är en omslutande klass."
 
-#: ../Util/Error.mo:167
+#: ../Util/Error.mo:170
 #, c-format
 msgid "Class %s not found."
 msgstr "Klass %s hittades inte."
 
-#: ../Util/Error.mo:169 ../runtime/printimpl.c:340 ../runtime/printimpl.c:359
-#: ../runtime/printimpl.c:426 ../runtime/systemimpl.c:402
-#: ../runtime/systemimpl.c:420
+#: ../Util/Error.mo:172 ../runtime/printimpl.c:340 ../runtime/printimpl.c:359
+#: ../runtime/printimpl.c:425 ../runtime/systemimpl.c:426
+#: ../runtime/systemimpl.c:444
 #, c-format
 msgid "Error writing to file %s."
 msgstr "Fel vid skrivning till fil %s."
 
-#: ../Util/Error.mo:171
+#: ../Util/Error.mo:174
 #, c-format
 msgid "Error building simulator. Build log: %s"
 msgstr "Fel vid bygge av simulator. Loggfil: %s"
 
-#: ../Util/Error.mo:173
+#: ../Util/Error.mo:176
 #, c-format
 msgid "Dimensions must be parameter or constant expression (in %s)."
 msgstr "Dimensioner måste vara parameter- eller konstant-uttryck (i %s)."
 
-#: ../Util/Error.mo:175
+#: ../Util/Error.mo:178
 #, c-format
 msgid "Variable %s has no value."
 msgstr "Variabel %s saknar värde."
 
-#: ../Util/Error.mo:177
+#: ../Util/Error.mo:180
 msgid "Negative value as argument to sqrt."
 msgstr "Negativt värde som argument till sqrt."
 
-#: ../Util/Error.mo:179
+#: ../Util/Error.mo:182
 #, c-format
 msgid "No constant value for variable %s in scope %s."
 msgstr "Inget konstant värde för variabel %s i definitionsområde %s."
 
-#: ../Util/Error.mo:181
+#: ../Util/Error.mo:184
 #, c-format
 msgid ""
 "In class %s, class specialization 'type' can only be derived from predefined "
@@ -183,27 +169,27 @@ msgstr ""
 "I klass %s får klass-specialisering 'type' enbart komma från fördefinierade "
 "typer."
 
-#: ../Util/Error.mo:183
+#: ../Util/Error.mo:186
 #, c-format
 msgid "Cannot connect %s %s to non-constant/parameter %s."
 msgstr "Kan inte ansluta %s %s till icke-konstant/parameter %s."
 
-#: ../Util/Error.mo:185
+#: ../Util/Error.mo:188
 #, c-format
 msgid "Connector element %s may not be both %s and %s."
 msgstr "Kopplingselementet %s får ej vara både %s och %s."
 
-#: ../Util/Error.mo:187
+#: ../Util/Error.mo:190
 #, c-format
 msgid "%s is a composite connector element, and may not be declared as %s."
 msgstr "%s är ett sammansatt kopplingselement, och får ej deklareras som %s."
 
-#: ../Util/Error.mo:189
+#: ../Util/Error.mo:192
 #, c-format
 msgid "Different number of equations in the branches of the if equation: %s"
 msgstr "Olika antal ekvationer i grenarna av if-ekvationen: %s"
 
-#: ../Util/Error.mo:191
+#: ../Util/Error.mo:194
 #, c-format
 msgid ""
 "Too few equations, under-determined system. The model has %s equation(s) and "
@@ -212,7 +198,7 @@ msgstr ""
 "För få ekvationer, underbestämt system. Modellen har %s ekvationer och %s "
 "variabler."
 
-#: ../Util/Error.mo:193
+#: ../Util/Error.mo:196
 #, c-format
 msgid ""
 "Too many equations, over-determined system. The model has %s equation(s) and "
@@ -221,7 +207,7 @@ msgstr ""
 "För många ekvationer, överbestämt system. Modellen har %s ekvationer och %s "
 "variabler."
 
-#: ../Util/Error.mo:195
+#: ../Util/Error.mo:198
 #, c-format
 msgid ""
 "Model is structurally singular, error found sorting equations \n"
@@ -233,47 +219,46 @@ msgstr ""
 " %s för variablerna\n"
 " %s"
 
-#: ../Util/Error.mo:197
+#: ../Util/Error.mo:200
 #, c-format
 msgid "The language feature %s is not supported. Suggested workaround: %s"
 msgstr "Språkfunktionen %s stöds ej. Förslag på lösning: %s"
 
-#: ../Util/Error.mo:199
+#: ../Util/Error.mo:202
 #, c-format
 msgid "Derivative of expression %s is non-existent."
 msgstr "Derivatan av uttrycket %s existerar ej."
 
-#: ../Util/Error.mo:201
+#: ../Util/Error.mo:204
 msgid "No classes are loaded."
 msgstr "Inga klasser är laddade."
 
-#: ../Util/Error.mo:203
+#: ../Util/Error.mo:206
 #, c-format
 msgid "Illegal to instantiate partial class %s."
 msgstr "Förbjudet att instansiera partiell klass %s."
 
-#: ../Util/Error.mo:205
+#: ../Util/Error.mo:208
 #, c-format
 msgid "Base class %s not found in scope %s."
 msgstr "Basklass %s hittades inte i definitionsområde %s."
 
-#: ../Util/Error.mo:207
+#: ../Util/Error.mo:210
 #, c-format
 msgid "Invalid redeclaration of %s %s as %s."
 msgstr "Ogiltig omdeklarering av %s %s som %s."
 
-#: ../Util/Error.mo:209
-#, qt-format
+#: ../Util/Error.mo:212
 msgid "Trying to redeclare %1 %2 but %1 not declared as replaceable."
 msgstr "Försöker omdeklarera %1 %2 men %1 är ej deklarerad som replaceable."
 
-#: ../Util/Error.mo:211
+#: ../Util/Error.mo:214
 #, c-format
 msgid "Component declared as %s when having the variable %s declared as %s."
 msgstr ""
 "Komponent deklarerad som %s när variabeln %s redan är deklarerad som %s."
 
-#: ../Util/Error.mo:213
+#: ../Util/Error.mo:216
 #, c-format
 msgid ""
 "Array dimension mismatch, expression %s has type %s, expected array "
@@ -282,41 +267,41 @@ msgstr ""
 "Vektor-dimensioner är missanpassade, uttryck %s har typ %s, förväntade "
 "dimensioner [%s]."
 
-#: ../Util/Error.mo:215
+#: ../Util/Error.mo:218
 #, c-format
 msgid "Array dimension must be integer expression in %s which has type %s."
 msgstr "Vektor-dimension måste vara ett heltalsuttryck i %s men har typ %s."
 
-#: ../Util/Error.mo:217
+#: ../Util/Error.mo:220
 #, c-format
 msgid "Type mismatch in equation %s of type %s."
 msgstr "Typfel i ekvation %s av typ %s."
 
-#: ../Util/Error.mo:219
+#: ../Util/Error.mo:222
 #, c-format
 msgid "Array equation has unknown size in %s."
 msgstr "Array-ekvation har okänd storlek i %s."
 
-#: ../Util/Error.mo:221
+#: ../Util/Error.mo:224
 #, c-format
 msgid "Tuple assignment only allowed when rhs is function call (in %s)."
 msgstr ""
 "Tupel-tilldelning är endast tillåtet då högerledet är ett funktionsanrop (i "
 "%s)."
 
-#: ../Util/Error.mo:223
+#: ../Util/Error.mo:226
 #, c-format
 msgid "Illegal connection: component %s is not a connector."
 msgstr "Otillåten anslutning: komponent %s är inte en connector."
 
-#: ../Util/Error.mo:225
+#: ../Util/Error.mo:228
 #, c-format
 msgid ""
 "Cannot connect expandable connector %s with non-expandable connector %s."
 msgstr ""
 "Kan inte ansluta expandable connector %s till icke-expandable connector %s."
 
-#: ../Util/Error.mo:227
+#: ../Util/Error.mo:230
 #, c-format
 msgid ""
 "Cannot connect undeclared connectors %s with %s. At least one of them must "
@@ -325,24 +310,23 @@ msgstr ""
 "Kan inte ansluta odeklarerade kopplingselement %s med %s. Åtminstone en av "
 "dem måste vara deklarerad."
 
-#: ../Util/Error.mo:229
-#, qt-format
+#: ../Util/Error.mo:232
 msgid "Cannot connect %1 component %2 to non-%1 component %3."
 msgstr "Kan inte ansluta %1-komponent %2 till icke-%1-komponent %3."
 
-#: ../Util/Error.mo:231
+#: ../Util/Error.mo:234
 #, c-format
 msgid ""
 "The type of variables %s and %s\n"
 "are inconsistent in connect equations."
 msgstr "Typen på variablerna %s och %s är oförenliga i anslutningsekvationen."
 
-#: ../Util/Error.mo:233
+#: ../Util/Error.mo:236
 #, c-format
 msgid "Wrong type on %s, expected %s."
 msgstr "Fel typ på %s, förväntade %s."
 
-#: ../Util/Error.mo:235
+#: ../Util/Error.mo:238
 #, c-format
 msgid ""
 "Modification or redeclaration of protected elements is not allowed.\n"
@@ -351,52 +335,52 @@ msgstr ""
 "Modifikation eller omdeklarering av skyddade element är ej tillåtet.\n"
 "\\tElement: %s, modifikation: %s."
 
-#: ../Util/Error.mo:237
+#: ../Util/Error.mo:240
 #, c-format
 msgid "Tuple %s must contain component references only."
 msgstr "Tupel %s får enbart innehålla komponent-referenser."
 
-#: ../Util/Error.mo:239
+#: ../Util/Error.mo:242
 #, c-format
 msgid "Missing redeclare keyword on redeclaration of class %s."
 msgstr "Redeclare saknas på omdeklarering av klass %s."
 
-#: ../Util/Error.mo:241
+#: ../Util/Error.mo:244
 #, c-format
 msgid "%s found in several unqualified import statements (import ABC.*)."
 msgstr "%s hittades i flera okvalificerade import-satser (import ABC.*)."
 
-#: ../Util/Error.mo:243
+#: ../Util/Error.mo:246
 #, c-format
 msgid "Found a component with same name when looking for type %s."
 msgstr "Hittade en komponent med samma namn vid namnuppslagning av typen %s."
 
-#: ../Util/Error.mo:245
+#: ../Util/Error.mo:248
 #, c-format
 msgid "The base class name %s was found in one or more base classes:"
 msgstr "Basklass-namnet %s hittades i en eller flera basklasser:"
 
-#: ../Util/Error.mo:247
+#: ../Util/Error.mo:250
 #, c-format
 msgid "Part %s of base class name %s is not a class."
 msgstr "Delen %s av basklass-namnet %s är inte en klass. "
 
-#: ../Util/Error.mo:249
+#: ../Util/Error.mo:252
 #, c-format
 msgid "%s is protected and cannot be accessed outside it's scope."
 msgstr "%s är skyddad och kan inte nås utanför sin räckvidd."
 
-#: ../Util/Error.mo:251
+#: ../Util/Error.mo:254
 #, c-format
 msgid "Illegal modification %s (of %s)."
 msgstr "Otillåten modifikation %s (av %s)."
 
-#: ../Util/Error.mo:253
+#: ../Util/Error.mo:256
 #, c-format
 msgid "Internal error %s"
 msgstr "Internt fel %s"
 
-#: ../Util/Error.mo:255
+#: ../Util/Error.mo:258
 #, c-format
 msgid ""
 "Type mismatch in array expression in component %s. %s is of type %s while "
@@ -405,7 +389,7 @@ msgstr ""
 "Typfel i vektoruttryck i komponent %s. %s är av typ %s medan elementen %s är "
 "av typ %s."
 
-#: ../Util/Error.mo:257
+#: ../Util/Error.mo:260
 #, c-format
 msgid ""
 "Type mismatch in matrix rows in component %s. %s is a row of %s, the rest of "
@@ -414,7 +398,7 @@ msgstr ""
 "Typfel i matrisrader i komponent %s. %s är en rad av typ %s medan resten av "
 "matrisen är av typ %s."
 
-#: ../Util/Error.mo:259
+#: ../Util/Error.mo:262
 #, c-format
 msgid ""
 "Incompatible row length in matrix expression in component %s. %s is a row of "
@@ -423,52 +407,52 @@ msgstr ""
 "Inkompatibla radlängder i matrisuttryck i komponent %s. %s är en rad av "
 "storlek %s, resten av matrisens rader har storlek %s."
 
-#: ../Util/Error.mo:261
+#: ../Util/Error.mo:264
 #, c-format
 msgid "Operand of %s in component %s must be builtin-type in %s."
 msgstr "Operand av %s i komponent %s måste vara av inbyggd typ i %s."
 
-#: ../Util/Error.mo:263
+#: ../Util/Error.mo:266
 #, c-format
 msgid "Wrong type or wrong number of arguments to %s (in component %s)."
 msgstr "Fel typ eller fel antal argument till %s (i komponent %s)."
 
-#: ../Util/Error.mo:265
+#: ../Util/Error.mo:268
 #, c-format
 msgid "Different dimension sizes in arguments to %s in component %s."
 msgstr "Olika antal dimensioner i argument till %s i komponent %s."
 
-#: ../Util/Error.mo:267
+#: ../Util/Error.mo:270
 #, c-format
 msgid "Import %s not found in scope %s."
 msgstr "Import %s hittades inte definitionsområde %s."
 
-#: ../Util/Error.mo:269
+#: ../Util/Error.mo:272
 #, c-format
 msgid "Import %s is shadowed by a local element."
 msgstr "Import %s skuggar ett lokalt element."
 
-#: ../Util/Error.mo:271
+#: ../Util/Error.mo:274
 #, c-format
 msgid "%s argument to %s in component %s must be Integer expression."
 msgstr "%s argument till %s i komponent %s måste vara heltalsuttryck."
 
-#: ../Util/Error.mo:273
+#: ../Util/Error.mo:276
 #, c-format
 msgid "%s argument to %s in component %s must be discrete variable."
 msgstr "%s argument till %s i komponent %s måste vara en diskret variabel."
 
-#: ../Util/Error.mo:275
+#: ../Util/Error.mo:278
 #, c-format
 msgid "Type in %s must be simple type in component %s."
 msgstr "Typ i %s måste vara en enkel typ i komponent %s."
 
-#: ../Util/Error.mo:277
+#: ../Util/Error.mo:280
 #, c-format
 msgid "%s argument to %s in component %s must be a variable."
 msgstr "%s argument till %s i komponent %s måste vara en variabel."
 
-#: ../Util/Error.mo:279
+#: ../Util/Error.mo:282
 #, c-format
 msgid ""
 "No matching function found for %s in component %s\n"
@@ -477,32 +461,32 @@ msgstr ""
 "Ingen matchande funktion för %s i komponent %s\n"
 "kandidater är %s"
 
-#: ../Util/Error.mo:281
+#: ../Util/Error.mo:284
 #, c-format
 msgid "No matching function found for %s."
 msgstr "Ingen matchande funktion för %s."
 
-#: ../Util/Error.mo:283
+#: ../Util/Error.mo:286
 #, c-format
 msgid "Component %s in function is neither input nor output."
 msgstr "Komponent %s i funktion är varken input eller output."
 
-#: ../Util/Error.mo:285
+#: ../Util/Error.mo:288
 #, c-format
 msgid "Slot %s already filled in a function call in component %s."
 msgstr "Plats %s är redan fylld i funktionsanrop i komponent %s."
 
-#: ../Util/Error.mo:287
+#: ../Util/Error.mo:290
 #, c-format
 msgid "Function %s has no argument named %s."
 msgstr "Funktionen %s har inget argument med namn %s."
 
-#: ../Util/Error.mo:289
+#: ../Util/Error.mo:292
 #, c-format
 msgid "%s is a constant or parameter with a non-constant initializer %s."
 msgstr "%s är en konstant eller parameter med icke-konstant initierare %s."
 
-#: ../Util/Error.mo:291
+#: ../Util/Error.mo:294
 #, c-format
 msgid ""
 "Subscript %s of type %s is not a subtype of Integer, Boolean or enumeration."
@@ -510,7 +494,7 @@ msgstr ""
 "Subscript %s av type %s är inte en subtyp av Integer, Boolean eller "
 "enumeration."
 
-#: ../Util/Error.mo:293
+#: ../Util/Error.mo:296
 #, c-format
 msgid ""
 "Type mismatch in if-expression in component %s. True branch: %s has type %s, "
@@ -519,14 +503,14 @@ msgstr ""
 "Typfel i if-uttryck i komponent %s. Sann gren: %s har typ %s, falsk gren: %s "
 "har typ %s."
 
-#: ../Util/Error.mo:295
+#: ../Util/Error.mo:298
 #, c-format
 msgid ""
 "Cannot resolve type of expression %s. The operands have types %s in "
 "component %s."
 msgstr "Kan inte lösa typ av uttryck %s i komponent %s."
 
-#: ../Util/Error.mo:297
+#: ../Util/Error.mo:300
 #, c-format
 msgid ""
 "Incompatible argument types to operation %s in component %s, left type: %s, "
@@ -535,7 +519,7 @@ msgstr ""
 "Inkompatibla argumenttyper till operation %s i komponent %s, vänster typ: "
 "%s, höger typ: %s"
 
-#: ../Util/Error.mo:299
+#: ../Util/Error.mo:302
 #, c-format
 msgid ""
 "Class %s does not satisfy the requirements for a package. Lookup is "
@@ -544,12 +528,12 @@ msgstr ""
 "Klassen %s uppfyller inte kraven för ett paket. Namnuppslagningen begränsas "
 "därför till element med encapsulated, men %s är inte encapsulated."
 
-#: ../Util/Error.mo:301
+#: ../Util/Error.mo:304
 #, c-format
 msgid "Class %s inherits builtin type but has components."
 msgstr "Klass %s ärver inbyggd typ men har komponenter."
 
-#: ../Util/Error.mo:303
+#: ../Util/Error.mo:306
 #, c-format
 msgid ""
 "Type mismatch in modifier of component %s, expected type %s, got modifier %s "
@@ -558,12 +542,12 @@ msgstr ""
 "Typfel i modifikation av komponent %s, förväntade typ %s, fick modifikation "
 "%s av typ %s."
 
-#: ../Util/Error.mo:305
+#: ../Util/Error.mo:308
 #, c-format
 msgid "Error occurred while flattening model %s"
 msgstr "Fel inträffade under utflatning av modell %s"
 
-#: ../Util/Error.mo:307
+#: ../Util/Error.mo:310
 #, c-format
 msgid ""
 "Duplicate elements (due to inherited elements) not identical:\n"
@@ -574,22 +558,22 @@ msgstr ""
 "  första elementet är:  %s\n"
 "  andra elementet är: %s"
 
-#: ../Util/Error.mo:309
+#: ../Util/Error.mo:312
 #, c-format
 msgid "Variable %s in package %s is not constant."
 msgstr "Variabel %s i paket %s är inte konstant."
 
-#: ../Util/Error.mo:311
+#: ../Util/Error.mo:314
 #, c-format
 msgid "Declaration of element %s causes recursive definition of class %s."
 msgstr "Deklaration av element %s skapar en rekursiv definition av klass %s."
 
-#: ../Util/Error.mo:313
+#: ../Util/Error.mo:316
 #, c-format
 msgid "Expression %s in for-statement must be an array type."
 msgstr "Uttryck %s i for-sats måste vara ett vektoruttryck."
 
-#: ../Util/Error.mo:315
+#: ../Util/Error.mo:318
 #, c-format
 msgid ""
 "Found non-class %s while looking for function via component. The only valid "
@@ -599,12 +583,12 @@ msgstr ""
 "giltiga formen är c.C1..CN.f där c är en skalär komponent och C1..CN är "
 "klasser."
 
-#: ../Util/Error.mo:317
+#: ../Util/Error.mo:320
 msgid ""
 "The same variables must me solved in elsewhen clause as in the when clause."
 msgstr "Samma variabler måste lösas i elsewhen-satsen som i when-satsen."
 
-#: ../Util/Error.mo:319
+#: ../Util/Error.mo:322
 #, c-format
 msgid ""
 "Found class %s during lookup of composite component name, expected component."
@@ -612,7 +596,7 @@ msgstr ""
 "Hittade klass %s under namnuppslagning av sammansatt komponentnamn, "
 "komponent förväntades."
 
-#: ../Util/Error.mo:321
+#: ../Util/Error.mo:324
 #, c-format
 msgid ""
 "Type mismatch in modifier of component %s, declared type %s, got modifier %s "
@@ -621,24 +605,24 @@ msgstr ""
 "Typfel i modifikation av komponent %s, deklarerad typ %s, fick modifikation "
 "%s av typ %s."
 
-#: ../Util/Error.mo:323
+#: ../Util/Error.mo:326
 #, c-format
 msgid "Assertion triggered during translation: %s."
 msgstr "Assertion utlöst under översättningen: %s."
 
-#: ../Util/Error.mo:325
+#: ../Util/Error.mo:328
 #, c-format
 msgid "Subscript '%s' for dimension %s (size = %s) of %s is out of bounds."
 msgstr ""
 "Subscriptet %s för dimension %s (storlek = %s) är utanför vektorns gränser."
 
-#: ../Util/Error.mo:327
+#: ../Util/Error.mo:330
 #, c-format
 msgid "Component condition must be parameter or constant expression (in %s)."
 msgstr ""
 "Komponentvillkor måste vara ett parameter- eller konstant-uttryck (i %s)."
 
-#: ../Util/Error.mo:329
+#: ../Util/Error.mo:332
 #, c-format
 msgid ""
 "Found class %s by name lookup via component (only component and function "
@@ -647,7 +631,7 @@ msgstr ""
 "Hittade klass %s vid namnuppslagning via komponent (endast komponent- och "
 "funktionsanrop-namn kan slås upp via en komponent)."
 
-#: ../Util/Error.mo:331
+#: ../Util/Error.mo:334
 #, c-format
 msgid ""
 "Found function %s by name lookup via component, but this is only valid when "
@@ -656,17 +640,17 @@ msgstr ""
 "Hittade funktion %s vid namnuppslagning via komponent, men detta är endast "
 "tillåtet när namnet används som ett funktionsanrop."
 
-#: ../Util/Error.mo:333
+#: ../Util/Error.mo:336
 #, c-format
 msgid "Duplicate modification of element %s on %s."
 msgstr "Upprepad modifiering av element %s på %s."
 
-#: ../Util/Error.mo:335
+#: ../Util/Error.mo:338
 #, c-format
 msgid "Illegal subscript %s for dimensions %s in component %s."
 msgstr "Otillåtet subskript %s för dimensioner %s i komponent %s."
 
-#: ../Util/Error.mo:337
+#: ../Util/Error.mo:340
 #, c-format
 msgid ""
 "Illegal type in equation %s, only builtin types (Real, String, Integer, "
@@ -675,17 +659,17 @@ msgstr ""
 "Ogiltig typ i ekvation %s, endast inbyggda typer (Real, String, Integer, "
 "Boolean eller enumeration) eller record typer tillåts i ekvationen."
 
-#: ../Util/Error.mo:339
+#: ../Util/Error.mo:342
 #, c-format
 msgid "Assertion failed in function, message: %s"
 msgstr "Assertion misslyckades i funktion, meddelande: %s"
 
-#: ../Util/Error.mo:341
+#: ../Util/Error.mo:344
 #, c-format
 msgid "%s is partial, name lookup is not allowed in partial classes."
 msgstr "%s är partiell, namnuppslagning är inte tillåtet i partiella klasser."
 
-#: ../Util/Error.mo:343
+#: ../Util/Error.mo:346
 #, c-format
 msgid ""
 "No corresponding 'inner' declaration found for component %s declared as "
@@ -706,12 +690,12 @@ msgstr ""
 "definitionsområdet.\n"
 "  Fortsätter utflatning genom att enbart överväga 'outer' komponenten."
 
-#: ../Util/Error.mo:345
+#: ../Util/Error.mo:348
 #, c-format
 msgid "The iteration range %s is not a constant or parameter expression."
 msgstr "Det första argumentet av %s måste vara ett vektoruttryck."
 
-#: ../Util/Error.mo:347
+#: ../Util/Error.mo:350
 #, c-format
 msgid ""
 "Identifier %s of implicit for iterator must be present as array subscript in "
@@ -720,7 +704,7 @@ msgstr ""
 "Identifierare %s av implicit for-iterator måste vara närvarande som "
 "vektorsubskript i loop-kroppen."
 
-#: ../Util/Error.mo:349
+#: ../Util/Error.mo:352
 #, c-format
 msgid ""
 "Lookup of element %s is not allowed via component %s when looking for %s "
@@ -729,7 +713,7 @@ msgstr ""
 "Åtkomst av element %s är ej tillåtet via komponent %s vid uppslagning av %s "
 "(endast funktionsanrop får användas via komponenter). "
 
-#: ../Util/Error.mo:351
+#: ../Util/Error.mo:354
 #, c-format
 msgid ""
 "Lookup of class %s is not allowed in composite component name %s (only "
@@ -738,12 +722,12 @@ msgstr ""
 "Uppslagning av klass %s är ej tillåten i sammansatt komponentnamn %s (endast "
 "komponenter får användas på detta sätt)."
 
-#: ../Util/Error.mo:353
+#: ../Util/Error.mo:356
 #, c-format
 msgid "Function call %s contains subscripts."
 msgstr "Funktionsanropet %s innehåller subskript."
 
-#: ../Util/Error.mo:355
+#: ../Util/Error.mo:358
 #, c-format
 msgid ""
 "In equation %s. If-equation with conditions that are not parameter "
@@ -754,11 +738,11 @@ msgstr ""
 "ha samma antal ekvationer i varje gren, ekvationsantal är %s för respektive "
 "gren."
 
-#: ../Util/Error.mo:357
+#: ../Util/Error.mo:360
 msgid "Missing else-clause in if-equation with non-parameter conditions."
 msgstr "Else-sats saknas i if-ekvation med icke-parameter-villkor."
 
-#: ../Util/Error.mo:359
+#: ../Util/Error.mo:362
 #, c-format
 msgid ""
 "connect may not be used inside if-equations with non-parametric conditions "
@@ -767,12 +751,12 @@ msgstr ""
 "connect får ej användas i if-ekvationer med icke-parametriska villkor "
 "(hittade connect(%s, %s))."
 
-#: ../Util/Error.mo:361
+#: ../Util/Error.mo:364
 #, c-format
 msgid "connect may not be used inside when-equations (found connect(%s, %s))."
 msgstr "connect får ej användas i when-ekvationer (hittade connect(%s, %s))."
 
-#: ../Util/Error.mo:363
+#: ../Util/Error.mo:366
 #, c-format
 msgid ""
 "Incompatible components in connect statement: connect(%s, %s)\n"
@@ -783,22 +767,22 @@ msgstr ""
 "- %s har komponenter %s\n"
 "- %s har komponenter %s"
 
-#: ../Util/Error.mo:365
+#: ../Util/Error.mo:368
 #, c-format
 msgid "Illegal connecting two outer connectors in statement connect(%s, %s)."
 msgstr "Otillåtet att ansluta två outer connectors i sats connect(%s, %s)."
 
-#: ../Util/Error.mo:367
+#: ../Util/Error.mo:370
 #, c-format
 msgid "in statement %s, subscript %s is not a parameter or constant."
 msgstr "I sats %s, subskript %s är varken parameter eller konstant."
 
-#: ../Util/Error.mo:369
+#: ../Util/Error.mo:372
 #, c-format
 msgid "Unmatched dimension in equation connect(%s, %s), %s != %s."
 msgstr "Dimensioner i ekvation connect(%s, %s) stämmer ej överens, %s != %s."
 
-#: ../Util/Error.mo:371
+#: ../Util/Error.mo:374
 #, c-format
 msgid ""
 "Non-array modification '%s' for array component, possibly due to missing "
@@ -807,7 +791,7 @@ msgstr ""
 "Icke-vektormodifikation '%s' för vektorkomponent, möjligen på grund av att "
 "'each' saknas."
 
-#: ../Util/Error.mo:373
+#: ../Util/Error.mo:376
 #, c-format
 msgid ""
 "In scope %s, in component %s: Invalid dimensions %s in %s, no more than one "
@@ -816,36 +800,36 @@ msgstr ""
 "I definitionsområde %s, i komponent %s: Ogiltiga dimensioner %s i %s, högst "
 "en dimension får ha längd > 1."
 
-#: ../Util/Error.mo:375
+#: ../Util/Error.mo:378
 #, c-format
 msgid "Unable to unroll for loop containing when statements or equations: %s."
 msgstr ""
 "Kan inte utföra loop unrolling i for-loop som innehåller when-satser eller "
 "when-ekvationer: %s."
 
-#: ../Util/Error.mo:377
+#: ../Util/Error.mo:380
 #, c-format
 msgid "Variable '%s' has a cyclic dependency and has variability %s."
 msgstr "Variabel '%s' har ett cykliskt beroende och har variabilitet %s."
 
-#: ../Util/Error.mo:379
+#: ../Util/Error.mo:382
 msgid "Nested when statements are not allowed."
 msgstr "Nästlade when-satser är otillåtna."
 
-#: ../Util/Error.mo:381
+#: ../Util/Error.mo:384
 #, c-format
 msgid "Invalid use of reserved attribute name %s as enumeration literal."
 msgstr ""
 "Ogiltigt användande av reserverat attributnamn %s som enumerationslitteral."
 
-#: ../Util/Error.mo:383
+#: ../Util/Error.mo:386
 #, c-format
 msgid "Function %s has not the expected inputs. Expected inputs are %s."
 msgstr ""
 "Funktion %s har inte de förväntade inparametrarna. De förväntade "
 "inparametrarna är %s."
 
-#: ../Util/Error.mo:385
+#: ../Util/Error.mo:388
 #, c-format
 msgid ""
 "Duplicate class definitions (due to inheritance) not equivalent, first "
@@ -854,18 +838,18 @@ msgstr ""
 "Duplicerad klassdefinition (på grund av arv) inte ekvivalent, första "
 "definitionen är: %s, andra definitionen är: %s."
 
-#: ../Util/Error.mo:387
+#: ../Util/Error.mo:390
 #, c-format
 msgid "Component %s of variability %s has binding %s of higher variability %s."
 msgstr ""
 "Komponent %s med variabilitet %s har bindning %s av högre variabilitet %s."
 
-#: ../Util/Error.mo:389
+#: ../Util/Error.mo:392
 #, c-format
 msgid "If-equations are only partially supported. Ignoring %s."
 msgstr "If-ekvationer stöds enbart delvis. Ignorerar %s."
 
-#: ../Util/Error.mo:391
+#: ../Util/Error.mo:394
 #, c-format
 msgid ""
 "If-equation with conditions that are not parameter expressions must have the "
@@ -877,22 +861,22 @@ msgstr ""
 "ekvationer i varje gren, ekvationsantal är %s för respektive gren:\n"
 "%s"
 
-#: ../Util/Error.mo:393
+#: ../Util/Error.mo:396
 #, c-format
 msgid "Failed to instantiate equation %s."
 msgstr "Misslyckades att instansiera ekvation %s."
 
-#: ../Util/Error.mo:395
+#: ../Util/Error.mo:398
 #, c-format
 msgid "Forcing full instantiation of partial class %s during checkModel."
 msgstr "Tvingar full instansiering av partiell klass %s under checkModel."
 
-#: ../Util/Error.mo:397
+#: ../Util/Error.mo:400
 #, c-format
 msgid "Type mismatch in binding %s = %s, expected subtype of %s, got type %s."
 msgstr "Typfel i bindning %s = %s, förväntade en deltyp av %s, fick typ %s."
 
-#: ../Util/Error.mo:399
+#: ../Util/Error.mo:402
 #, c-format
 msgid ""
 "Component %s has the same name as its type %s.\n"
@@ -902,7 +886,24 @@ msgstr ""
 "\tDetta är förbjudet enligt Modelica-specifikationen och kan leda till "
 "namnuppslagningsproblem."
 
-#: ../Util/Error.mo:401
+#: ../Util/Error.mo:404
+#, c-format
+msgid "The conditional expression %s could not be evaluated."
+msgstr ""
+
+#: ../Util/Error.mo:406
+#, c-format
+msgid ""
+"Dimension %s of %s and %s of %s differs when trying to deduce implicit "
+"iteration range."
+msgstr ""
+
+#: ../Util/Error.mo:408
+#, fuzzy
+msgid "when-clause is not allowed in initial section."
+msgstr "Connect-ekvationer är inte tillåtna i en initial equation sektion."
+
+#: ../Util/Error.mo:410
 #, c-format
 msgid ""
 "Instantiation of array component: %s failed because index modification: %s "
@@ -913,7 +914,7 @@ msgstr ""
 "modifikation %s.\n"
 "\tVektorkomponent: %s har fler dimensioner än bindning %s."
 
-#: ../Util/Error.mo:403
+#: ../Util/Error.mo:412
 #, c-format
 msgid ""
 "Duplicate modifications for attribute: %s in modifier: %s.\n"
@@ -923,7 +924,7 @@ msgstr ""
 "\tTar endast hänsyn till den första modifikationen: %s och ignorerar resten "
 "%s."
 
-#: ../Util/Error.mo:405
+#: ../Util/Error.mo:414
 #, c-format
 msgid ""
 "%s has a function pointer as input. OpenModelica does not support this "
@@ -938,12 +939,12 @@ msgstr ""
 "funktionspekare). Anropa sedan den funktionen från den interaktiva miljön "
 "istället."
 
-#: ../Util/Error.mo:407
+#: ../Util/Error.mo:416
 #, c-format
 msgid "Expected %s to be a %s, but found %s instead."
 msgstr "Förväntade att %s skulle vara %s, men hittade %s istället."
 
-#: ../Util/Error.mo:409
+#: ../Util/Error.mo:418
 #, c-format
 msgid ""
 "Duplicate elements (due to inherited elements) not syntactically identical "
@@ -956,17 +957,17 @@ msgstr ""
 "\tförsta elementet är:  %s\tandra elementet är: %s\tModelica-specificationen "
 "kräver att elementen är exakt lika."
 
-#: ../Util/Error.mo:411
+#: ../Util/Error.mo:420
 #, c-format
 msgid "Failed to instantiate function %s in scope %s."
 msgstr "Misslyckades instansiera funktion %s i definitionsområde %s."
 
-#: ../Util/Error.mo:413
+#: ../Util/Error.mo:422
 #, c-format
 msgid "Wrong number of arguments to %s."
 msgstr "Fel antal argument till %s."
 
-#: ../Util/Error.mo:415
+#: ../Util/Error.mo:424
 #, c-format
 msgid ""
 "Tuple assignment only allowed for tuple of component references in lhs (in "
@@ -975,72 +976,72 @@ msgstr ""
 "Tilldelning av tupel tillåts endast för tupler av komponentreferenser i "
 "vänsterledet (i %s)."
 
-#: ../Util/Error.mo:417
+#: ../Util/Error.mo:426
 #, c-format
 msgid "Looking for a function %s but found a %s."
 msgstr "Letade efter en funktion %s men hittade en %s."
 
-#: ../Util/Error.mo:419
+#: ../Util/Error.mo:428
 #, c-format
 msgid "Operand %s to operator %s is not a stream variable."
 msgstr "Operand %s till operator %s är inte en stream-variabel."
 
-#: ../Util/Error.mo:421
+#: ../Util/Error.mo:430
 #, c-format
 msgid "Connector %s is not balanced: %s"
 msgstr "Connector %s är inte balanserad: %s"
 
-#: ../Util/Error.mo:423
+#: ../Util/Error.mo:432
 #, c-format
 msgid "Class specialization violation: %s is a %s, not a %s."
 msgstr "Överträdelse av klass-specialisering: %s är en %s, inte en %s."
 
-#: ../Util/Error.mo:425
+#: ../Util/Error.mo:434
 #, c-format
 msgid "Step equals 0 in array constructor %s."
 msgstr "Steglängd är 0 i vektorkonstruktör %s."
 
-#: ../Util/Error.mo:427
+#: ../Util/Error.mo:436
 #, c-format
 msgid "Recursive short class definition of %s in terms of %s."
 msgstr "Rekursiv kort klassdefinition av %s i form av %s."
 
-#: ../Util/Error.mo:429
+#: ../Util/Error.mo:438
 #, c-format
 msgid "Wrong number of subscripts in %s (%s subscripts for %s dimensions)."
 msgstr "Fel antal subskript i %s (%s subskript för %s dimensioner)."
 
-#: ../Util/Error.mo:431
+#: ../Util/Error.mo:440
 #, c-format
 msgid "Element is not allowed in function context: %s"
 msgstr "Elementet är inte tillåtet i funktions-sammanhang: %s"
 
-#: ../Util/Error.mo:433
+#: ../Util/Error.mo:442
 #, c-format
 msgid "Duplicate classes on top level is not allowed (got %s)."
 msgstr "Duplicerade klasser på toppnivån är inte tillåtna (fick %s)."
 
-#: ../Util/Error.mo:435
+#: ../Util/Error.mo:444
 #, c-format
 msgid "Invalid left-hand side of when-equation: %s."
 msgstr "Ogiltigt vänsterled i when-ekvation: %s."
 
-#: ../Util/Error.mo:437
+#: ../Util/Error.mo:446
 #, c-format
 msgid "Failed to elaborate expression: %s."
 msgstr "Misslyckades med att utarbeta uttryck: %s."
 
-#: ../Util/Error.mo:439
+#: ../Util/Error.mo:448
 #, c-format
 msgid "Ignoring external declaration of the extended class: %s."
 msgstr "Ignorerar extern sektion i den ärvda klassen: %s."
 
-#: ../Util/Error.mo:441
+#: ../Util/Error.mo:450
 #, c-format
 msgid "An element with name %s is already declared in this scope."
 msgstr "Ett element med namn %s är redan deklarerat i detta definitionsområde."
 
-#: ../Util/Error.mo:443
+#: ../Util/Error.mo:452
 #, c-format
 msgid ""
 "Invalid redeclaration of class %s, class extends only allowed on inherited "
@@ -1049,32 +1050,32 @@ msgstr ""
 "Ogiltig omdeklaration av klass %s, class extends är endast tillåtet på ärvda "
 "klasser."
 
-#: ../Util/Error.mo:445
+#: ../Util/Error.mo:454
 #, c-format
 msgid "Qualified import name %s already exists in this scope."
 msgstr "Importerat namn %s finns redan i detta definitionsområde."
 
-#: ../Util/Error.mo:447
+#: ../Util/Error.mo:456
 #, c-format
 msgid "%s was found in base class %s."
 msgstr "%s hittades ej i basklass %s."
 
-#: ../Util/Error.mo:449
+#: ../Util/Error.mo:458
 #, c-format
 msgid "Function %s not found in scope %s."
 msgstr "Funktion %s hittades inte i definitionsområde %s."
 
-#: ../Util/Error.mo:451
+#: ../Util/Error.mo:460
 #, c-format
 msgid "Failed to elaborate %s as a code expression of type %s."
 msgstr "Kunde inte utveckla %s som ett code-uttryck av typ %s."
 
-#: ../Util/Error.mo:453
+#: ../Util/Error.mo:462
 #, c-format
 msgid "Equations are not allowed in %s."
 msgstr "Ekvationer tillåts inte i %s."
 
-#: ../Util/Error.mo:455
+#: ../Util/Error.mo:464
 #, c-format
 msgid ""
 "The called uniontype record (%s) contains a member (%s) that has a uniontype "
@@ -1083,19 +1084,19 @@ msgstr ""
 "Record (%s) innehåller en medlem (%s) som har en typ som refererar till ett "
 "record i en uniontype istället för en uniontype."
 
-#: ../Util/Error.mo:457
+#: ../Util/Error.mo:466
 #, c-format
 msgid "Invalid external object %s, %s."
 msgstr "Ogiltigt externt objekt %s, %s."
 
-#: ../Util/Error.mo:459
+#: ../Util/Error.mo:468
 #, c-format
 msgid "Cyclically dependent constants or parameters found in scope %s: %s."
 msgstr ""
 "Cykliskt beroende konstanter eller parametrar hittades i definitionsområde "
 "%s: %s."
 
-#: ../Util/Error.mo:461
+#: ../Util/Error.mo:470
 #, c-format
 msgid ""
 "Failed to deduce dimensions of %s due to unknown dimensions of modifier %s."
@@ -1103,21 +1104,21 @@ msgstr ""
 "Det gick inte att härleda dimensionerna i %s på grund av okända dimensioner "
 "i modifikationen %s."
 
-#: ../Util/Error.mo:463
+#: ../Util/Error.mo:472
 #, c-format
 msgid "Part %s of base class %s is replaceable."
 msgstr "Delen %s av basklassen %s är replaceable."
 
-#: ../Util/Error.mo:465
+#: ../Util/Error.mo:474
 #, c-format
 msgid "Non-replaceable base class %s in class extends."
 msgstr "Icke-replaceable basklass %s i class extends."
 
-#: ../Util/Error.mo:467
+#: ../Util/Error.mo:476
 msgid "From here:"
 msgstr "Härifrån:"
 
-#: ../Util/Error.mo:469
+#: ../Util/Error.mo:478
 #, c-format
 msgid ""
 "The lhs (result) of the external function declaration is not a component "
@@ -1126,56 +1127,54 @@ msgstr ""
 "Vänsterledet (resultatet) av den externa funktionsdeklarationen är inte en "
 "komponentreferens: %s."
 
-#: ../Util/Error.mo:471
+#: ../Util/Error.mo:480
 msgid ""
 "The lhs (result) of the external function declaration is not a variable."
 msgstr ""
 "Vänsterledet (resultatet) av den externa funktionsdeklarationen är inte en "
 "variabel."
 
-#: ../Util/Error.mo:473
+#: ../Util/Error.mo:482
 #, c-format
 msgid ""
 "The lhs (result) of the external function declaration has array type (%s), "
 "but this is not allowed in the specification. You need to pass it as an "
-"input to the function (preferably also with a size()-expression to avoid "
-"out-of-bounds errors in the external call)."
+"input to the function (preferably also with a size()-expression to avoid out-"
+"of-bounds errors in the external call)."
 msgstr ""
 "Vänsterledet (resultatet) av den externa funktionsdeklarationen har en "
 "vektortyp (%s), men detta tillåts inte i specifikationen. Du måste skicka "
 "den som argument till funktionen (gärna även med ett size()-uttryck för att "
 "undvika indexering utanför vektorns gränser i den externa koden)."
 
-#: ../Util/Error.mo:475
+#: ../Util/Error.mo:484
 #, c-format
 msgid "Redeclaration of %s %s %s is not allowed."
 msgstr "Omdeklaration av %s %s %s är inte tillåtet."
 
-#: ../Util/Error.mo:477
+#: ../Util/Error.mo:486
 #, c-format
 msgid "Invalid type prefix '%s' on %s %s, due to existing type prefix '%s'."
 msgstr ""
 "Ogiltig typprefix '%s' på %s %s, på grund av existerande typprefix '%s'."
 
-#: ../Util/Error.mo:479
+#: ../Util/Error.mo:488
 #, c-format
 msgid "Linear solver (%s) returned invalid input for linear system %s."
 msgstr "Linjär lösare (%s) returnerade ogiltig indata för linjärt system %s."
 
-#: ../Util/Error.mo:481
-#, qt-format
+#: ../Util/Error.mo:490
 msgid ""
-"When solving linear system %1\n"
-"  U(%2,%2) = 0.0, which means system is singular for variable %3."
+"The linear system: %1\n"
+" might be structurally or numerically singular for variable %3 since U(%2,"
+"%2) = 0.0. It might be hard to solve. Compilation continues anyway."
 msgstr ""
-"Under lösning av linjärt system %1\n"
-"  U(%2,%2) = 0.0, vilket betyder att systemet är singulärt för variabel %3."
 
-#: ../Util/Error.mo:483
+#: ../Util/Error.mo:492
 msgid "Array constructor may not be empty."
 msgstr "Vektorkonstruktor får inte vara tom."
 
-#: ../Util/Error.mo:485
+#: ../Util/Error.mo:494
 #, c-format
 msgid ""
 "Requested package %s of version %s, but this package was already loaded with "
@@ -1184,36 +1183,36 @@ msgstr ""
 "Begärde paket %s med version %s, men detta paket var redan laddat med "
 "version %s. Du kan uppleva problem om dessa versioner är inkompatibla."
 
-#: ../Util/Error.mo:487
+#: ../Util/Error.mo:496
 #, c-format
 msgid "Failed to load package %s (%s) using MODELICAPATH %s."
 msgstr "Misslyckades ladda paket %s (%s) med MODELICAPATH %s."
 
-#: ../Util/Error.mo:489
+#: ../Util/Error.mo:498
 #, c-format
 msgid "Base class %s is replaceable."
 msgstr "Basklass %s är replaceable."
 
-#: ../Util/Error.mo:491
+#: ../Util/Error.mo:500
 #, c-format
 msgid "Invalid index %s in call to size of %s, valid index interval is [1,%s]."
 msgstr ""
-"Ogiltigt index %s i anrop till size av %s, giltigt intervall för index är "
-"[1,%s]."
+"Ogiltigt index %s i anrop till size av %s, giltigt intervall för index är [1,"
+"%s]."
 
-#: ../Util/Error.mo:493
+#: ../Util/Error.mo:502
 #, c-format
 msgid "Algorithm section is not allowed in %s."
 msgstr "Algoritmsektion tillåts inte i %s."
 
-#: ../Util/Error.mo:495
+#: ../Util/Error.mo:504
 #, c-format
 msgid "Failed to deduce dimensions of %s due to missing binding equation."
 msgstr ""
 "Kunde inte härleda dimension av %s på grund av att en bindande ekvation "
 "saknas."
 
-#: ../Util/Error.mo:497
+#: ../Util/Error.mo:506
 #, c-format
 msgid ""
 "The behavior of multiple algorithm sections in function %s is not standard "
@@ -1226,7 +1225,7 @@ msgstr ""
 "deklarerades eller ärvdes (samma ordning som för ärvda in/ut argument, som "
 "inte heller är standardiserat)."
 
-#: ../Util/Error.mo:499
+#: ../Util/Error.mo:508
 #, c-format
 msgid ""
 "Failed to instantiate statement:\n"
@@ -1235,7 +1234,7 @@ msgstr ""
 "Misslyckades instansiera sats:\n"
 "%s"
 
-#: ../Util/Error.mo:501
+#: ../Util/Error.mo:510
 #, c-format
 msgid ""
 "%s is an unbound output in external function %s. Either add it to the "
@@ -1244,31 +1243,31 @@ msgstr ""
 "%s är en obunden utvariabel i extern funktion %s. Lägg till den i den "
 "externa deklarationen eller lägg till en bindning."
 
-#: ../Util/Error.mo:503
+#: ../Util/Error.mo:512
 #, c-format
 msgid "Unused input variable %s in function %s."
 msgstr "Oanvänd invariabel %s i funktion %s."
 
-#: ../Util/Error.mo:505
+#: ../Util/Error.mo:514
 #, c-format
 msgid "Array types mismatch: %s and %s."
 msgstr "Vektortypfel: %s och %s."
 
-#: ../Util/Error.mo:507
+#: ../Util/Error.mo:516
 #, c-format
 msgid ""
-"Could not vectorize call with unknown dimensions due to finding two "
-"for-iterators: %s and %s."
+"Could not vectorize call with unknown dimensions due to finding two for-"
+"iterators: %s and %s."
 msgstr ""
 "Kunde inte vektorisera anrop med okända dimensioner på grund av att två "
 "foreach argument hittades: %s och %s."
 
-#: ../Util/Error.mo:509
+#: ../Util/Error.mo:518
 #, c-format
 msgid "Function argument %s=%s is not a %sexpression."
 msgstr "Funktionsargument %s=%s är inte ett %s uttryck."
 
-#: ../Util/Error.mo:511
+#: ../Util/Error.mo:520
 #, c-format
 msgid ""
 "Invalid dimension %s of argument to %s, expected dimension size %s but got "
@@ -1277,17 +1276,17 @@ msgstr ""
 "Ogiltig dimension %s av argument till %s, förväntad dimensionsstorlek %s men "
 "fick %s."
 
-#: ../Util/Error.mo:513
+#: ../Util/Error.mo:522
 #, c-format
 msgid "%s is already redeclared in this scope."
 msgstr "%s är redan omdeklarerad i detta definitionsområde."
 
-#: ../Util/Error.mo:515
+#: ../Util/Error.mo:524
 #, c-format
 msgid "Invalid type %s for function component %s."
 msgstr "Ogiltig typ %s för funktionskomponent %s."
 
-#: ../Util/Error.mo:517
+#: ../Util/Error.mo:526
 #, c-format
 msgid ""
 "An independent subset of the model has imbalanced number of equations (%s) "
@@ -1304,7 +1303,7 @@ msgstr ""
 "ekvationer:\n"
 "%s"
 
-#: ../Util/Error.mo:519
+#: ../Util/Error.mo:528
 #, c-format
 msgid ""
 "Variable %s is not referenced in any equation (possibly after symbolic "
@@ -1313,7 +1312,7 @@ msgstr ""
 "Variabel %s refereras inte till i någon ekvation (kanske på grund av "
 "symboliska manipulationer)."
 
-#: ../Util/Error.mo:521
+#: ../Util/Error.mo:530
 #, c-format
 msgid ""
 "Invalid public variable %s, function variables that are not input/output "
@@ -1322,7 +1321,7 @@ msgstr ""
 "Ogiltig variabel %s, funktionsvariabler som inte är in/ut måste vara "
 "skyddade (protected)."
 
-#: ../Util/Error.mo:523
+#: ../Util/Error.mo:532
 #, c-format
 msgid ""
 "Invalid protected variable %s, function variables that are input/output must "
@@ -1331,7 +1330,7 @@ msgstr ""
 "Ogiltig skyddad variabel %s, funktionsvariabler som är in/ut måste vara i en "
 "public-sektion."
 
-#: ../Util/Error.mo:525
+#: ../Util/Error.mo:534
 #, c-format
 msgid ""
 "Function argument %s was not given by the function call, and does not have a "
@@ -1339,7 +1338,7 @@ msgid ""
 msgstr ""
 "Funktionsargument %s gavs inte av funktionsanropet och saknar standardvärde."
 
-#: ../Util/Error.mo:527
+#: ../Util/Error.mo:536
 #, c-format
 msgid ""
 "connect(%s, %s) connects the same connector instance! The connect equation "
@@ -1347,27 +1346,27 @@ msgid ""
 msgstr ""
 "connect(%s, %s) ansluter till samma instans! Connect-ekvationen ignoreras."
 
-#: ../Util/Error.mo:529
+#: ../Util/Error.mo:538
 #, c-format
 msgid "Stack overflow occurred while evaluating %s."
 msgstr "Stackspill inträffade då %s evaluerades."
 
-#: ../Util/Error.mo:531
+#: ../Util/Error.mo:540
 #, c-format
 msgid "Unknown debug flag %s."
 msgstr "Okänd debug-flagga %s."
 
-#: ../Util/Error.mo:533
+#: ../Util/Error.mo:542
 #, c-format
 msgid "Invalid type of flag %s, expected %s but got %s."
 msgstr "Ogiltig typ av flagga %s, förväntade %s men fick %s."
 
-#: ../Util/Error.mo:535
+#: ../Util/Error.mo:544
 #, c-format
 msgid "Modelica language version set to %s due to loading of MSL %s."
 msgstr "Modelica språkversion satt till %s på grund av laddning av MSL %s."
 
-#: ../Util/Error.mo:537
+#: ../Util/Error.mo:546
 #, c-format
 msgid ""
 "Expression simplification iterated to the fix-point maximum, which may be a "
@@ -1376,16 +1375,16 @@ msgstr ""
 "Förenkling av uttryck konvergerade inte till fixpunkt, vilket kan vara en "
 "flaskhals. De två sista iterationerna var: %s och %s."
 
-#: ../Util/Error.mo:539
+#: ../Util/Error.mo:548
 #, c-format
 msgid "Unknown option %s."
 msgstr "Okänt alternativ %s."
 
-#: ../Util/Error.mo:541
+#: ../Util/Error.mo:550
 msgid "Subscripted modifier is illegal."
 msgstr "Modifikation med subskript är inte tillåtet."
 
-#: ../Util/Error.mo:543
+#: ../Util/Error.mo:552
 #, c-format
 msgid ""
 "Class specialization violation: %s is a %s, which may not contain an %s."
@@ -1393,26 +1392,26 @@ msgstr ""
 "Överträdelse av klass-specialisering: %s är en %s, som inte får innehålla en "
 "%s."
 
-#: ../Util/Error.mo:545
+#: ../Util/Error.mo:554
 #, c-format
 msgid "Failed to insert class %s %s the available classes were:%s"
 msgstr "Misslyckades infoga klass %s %s de tillgängliga klasserna var:%s"
 
-#: ../Util/Error.mo:547
+#: ../Util/Error.mo:556
 #, c-format
 msgid "Modified element %s not found in class %s."
 msgstr "Modifierat element %s hittades inte i klass %s."
 
-#: ../Util/Error.mo:549
+#: ../Util/Error.mo:558
 msgid "Invalid redeclaration, attributes of basic types can not be redeclared."
 msgstr "Ogiltig omdeklaration, attribut för grundtyper kan inte omdeklareras."
 
-#: ../Util/Error.mo:551
+#: ../Util/Error.mo:560
 #, c-format
 msgid "Invalid stream connector %s: %s"
 msgstr "Ogiltig stream connector %s: %s"
 
-#: ../Util/Error.mo:553
+#: ../Util/Error.mo:562
 #, c-format
 msgid ""
 "Type mismatch in condition '%s' of component %s. Expected a Boolean "
@@ -1421,7 +1420,7 @@ msgstr ""
 "Fel typ i villkor '%s' hos komponent %s. Förväntade Boolean, men fick ett "
 "uttryck av typ %s."
 
-#: ../Util/Error.mo:555
+#: ../Util/Error.mo:564
 #, c-format
 msgid ""
 "The compiler failed to perform constant folding on expression %s. Please "
@@ -1432,7 +1431,7 @@ msgstr ""
 "vänlig rapportera detta fel till utvecklarna så kommer vi lösa det så snart "
 "som möjligt (använd flaggan +t till kompilatorn om det är möjligt)."
 
-#: ../Util/Error.mo:557
+#: ../Util/Error.mo:566
 #, c-format
 msgid ""
 "In sum(%s), the expression is of type %s, but is required to be of builtin "
@@ -1441,26 +1440,26 @@ msgstr ""
 "I sum(%s), uttrycket har typ %s, men måste vara av inbyggd vektortyp (av "
 "godtyckligt antal dimensioner)."
 
-#: ../Util/Error.mo:559
+#: ../Util/Error.mo:568
 #, c-format
 msgid "Invalid specialized class type '%s' for component %s."
 msgstr "Ogiltig specialiserad klasstyp '%s' för komponent %s."
 
-#: ../Util/Error.mo:561
+#: ../Util/Error.mo:570
 msgid "Connect equations are not allowed in initial equation sections."
 msgstr "Connect-ekvationer är inte tillåtna i en initial equation sektion."
 
-#: ../Util/Error.mo:563
+#: ../Util/Error.mo:572
 #, c-format
 msgid "Trying to override final component %s with modifier %s."
 msgstr "Försöker överskrida slutgiltig komponent %s med modifikation %s."
 
-#: ../Util/Error.mo:565
+#: ../Util/Error.mo:574
 #, c-format
 msgid "Automatically loaded package %s %s due to uses annotation."
 msgstr "Laddade paket %s %s med automatik tack vare en uses-annotation."
 
-#: ../Util/Error.mo:567
+#: ../Util/Error.mo:576
 #, c-format
 msgid ""
 "The first argument to reinit must be a subtype of Real, but %s has type %s."
@@ -1468,23 +1467,23 @@ msgstr ""
 "Det första argumentet till reinit måste vara en undertyp till Real, men %s "
 "har typ %s."
 
-#: ../Util/Error.mo:569
+#: ../Util/Error.mo:578
 #, c-format
 msgid "The first argument to reinit must be a variable, but %s is a %s."
 msgstr ""
 "Det första argumentet till reinit måste vara en variabel, men %s är en %s."
 
-#: ../Util/Error.mo:571
+#: ../Util/Error.mo:580
 #, c-format
 msgid "Connecting two signal sources while connecting %s to %s."
 msgstr "Ansluter två signalkällor då %s ansluts till %s."
 
-#: ../Util/Error.mo:573
+#: ../Util/Error.mo:582
 #, c-format
 msgid "Invalid prefix %son formal parameter %s."
 msgstr "Ogiltigt prefix %s på formell parameter %s."
 
-#: ../Util/Error.mo:575
+#: ../Util/Error.mo:584
 #, c-format
 msgid ""
 "Illegal redeclare of element %s, no inherited element with that name exists."
@@ -1492,12 +1491,12 @@ msgstr ""
 "Otillåten omdeklarering av element %s, inget ärvt element med det namnet "
 "finns."
 
-#: ../Util/Error.mo:577
+#: ../Util/Error.mo:586
 #, c-format
 msgid "The first argument of %s must be an array expression."
 msgstr "Det första argumentet av %s måste vara ett vektoruttryck."
 
-#: ../Util/Error.mo:579
+#: ../Util/Error.mo:588
 #, c-format
 msgid ""
 "The first argument of %s must be on the form A.R, where A is a connector and "
@@ -1506,7 +1505,7 @@ msgstr ""
 "Det första argumentet till %s måste vara på formen A.R, där A är en "
 "connector och R en överbestämd type/record."
 
-#: ../Util/Error.mo:581
+#: ../Util/Error.mo:590
 #, c-format
 msgid ""
 "The second argument of %s must be on the form A.R, where A is a connector "
@@ -1515,17 +1514,17 @@ msgstr ""
 "Det andra argumentet till %s måste vara på formen A.R, där A är en connector "
 "och R en överbestämd type/record."
 
-#: ../Util/Error.mo:583
+#: ../Util/Error.mo:592
 #, c-format
 msgid "The first argument of %s must be an over-determined type or record."
 msgstr "Det första argumentet till %s måste vara en överbestämd type/record."
 
-#: ../Util/Error.mo:585
+#: ../Util/Error.mo:594
 #, c-format
 msgid "The second argument of %s must be an over-determined type or record."
 msgstr "Det andra argumentet till %s måste vara en överbestämd type/record."
 
-#: ../Util/Error.mo:587
+#: ../Util/Error.mo:596
 #, c-format
 msgid ""
 "Modelica library files should contain exactly one package, but found the "
@@ -1534,28 +1533,28 @@ msgstr ""
 "Modelicabiblioteksfiler ska innehålla exakt ett paket, men fann följande "
 "klasser: %s."
 
-#: ../Util/Error.mo:589
+#: ../Util/Error.mo:598
 #, c-format
 msgid "Expected the package to have %s but got %s."
 msgstr "Förväntade paketet att ha %s men fick %s."
 
-#: ../Util/Error.mo:591
+#: ../Util/Error.mo:600
 #, c-format
 msgid "Expected the package to have name %s, but got %s."
 msgstr "Förväntade att paketet skulle ha namnet %s, men fick %s."
 
-#: ../Util/Error.mo:593
+#: ../Util/Error.mo:602
 #, c-format
 msgid ""
 "Elements in the package.mo-file need to be in the same relative order as the "
 "package.order file. Got element named %s but it was already added because it "
 "was not the next element in the list at that time."
 msgstr ""
-"Element i package.mo-filen måste vara i samma relativa ordning som "
-"package.order-filen. Fick ett element med namn %s, men detta element finns "
-"tidigare i package.order."
+"Element i package.mo-filen måste vara i samma relativa ordning som package."
+"order-filen. Fick ett element med namn %s, men detta element finns tidigare "
+"i package.order."
 
-#: ../Util/Error.mo:595
+#: ../Util/Error.mo:604
 #, c-format
 msgid ""
 "%s is a package.mo-file and needs to be based on class parts (i.e. not class "
@@ -1564,21 +1563,19 @@ msgstr ""
 "%s är en package.mo-fil och måste vara en lång klassdefinitions (d.v.s. inte "
 "class extends, enumeration, eller kort arv)."
 
-#: ../Util/Error.mo:597
-#, qt-format
+#: ../Util/Error.mo:606
 msgid ""
-"%1 was referenced in the package.order file, but was not found in "
-"package.mo, %1/package.mo or %1.mo."
+"%1 was referenced in the package.order file, but was not found in package."
+"mo, %1/package.mo or %1.mo."
 msgstr ""
 "%1 refererades till i package.order-filen, men hittades inte i package.mo, "
 "%1/package.mo eller %1.mo."
 
-#: ../Util/Error.mo:599
-#, qt-format
+#: ../Util/Error.mo:608
 msgid "Got element %1 that was not referenced in the package.order file."
 msgstr "Fick element %1 som inte refererades till i package.order-filen."
 
-#: ../Util/Error.mo:601
+#: ../Util/Error.mo:610
 msgid ""
 "Components referenced in the package.order file must be moved in full "
 "chunks. Either split the constants to different lines or make them "
@@ -1588,27 +1585,26 @@ msgstr ""
 "block. Dela antingen upp konstanterna till olika rader eller gör så att de "
 "kommer i rätt ordning i package.order-filen."
 
-#: ../Util/Error.mo:603
+#: ../Util/Error.mo:612
 #, c-format
 msgid "Guard expressions need to be Boolean, got expression of type %s."
 msgstr "Vaktuttryck måste vara Boolean, fick uttryck av typ %s."
 
-#: ../Util/Error.mo:605
+#: ../Util/Error.mo:614
 #, c-format
 msgid ""
 "User-defined function calls that return Array<...> are not supported: %s."
 msgstr ""
 "Användardefinierade functionsanrop som returnerar Array<...> stöds ej: %s."
 
-#: ../Util/Error.mo:607
-#, qt-format
+#: ../Util/Error.mo:616
 msgid ""
 "Failed elaborate assignment for some unknown reason: %1 := %2. File a bug "
 "report and we will make sure this error gets a better message in the future."
 msgstr ""
 "Elaborering av tillsdelningsuttryck misslyckades av okänd orsak: %1 := %2."
 
-#: ../Util/Error.mo:609
+#: ../Util/Error.mo:618
 #, c-format
 msgid ""
 "%s was used before it was defined (given a value). Additional such uses may "
@@ -1617,27 +1613,26 @@ msgstr ""
 "%s användes innan den definierades (gavs ett värde). Fler sådana fall kan "
 "existera för variabeln, men vissa meddelanden undertrycktes."
 
-#: ../Util/Error.mo:611
-#, qt-format
+#: ../Util/Error.mo:620
 msgid "Expression %1 has type %3, expected type %2."
 msgstr "Uttryck %1 har typ %3, förväntad typ %2."
 
-#: ../Util/Error.mo:613
+#: ../Util/Error.mo:622
 #, c-format
 msgid "Found duplicate names in package.order file: %s."
 msgstr "Hittade duplicerade namn i package.order-fil: %s."
 
-#: ../Util/Error.mo:615
+#: ../Util/Error.mo:624
 #, c-format
 msgid ""
 "Got type mismatch error, but matching types %s.\n"
-"This is a ***COMPILER BUG***, please report it to "
-"https://trac.openmodelica.org/OpenModelica."
+"This is a ***COMPILER BUG***, please report it to https://trac.openmodelica."
+"org/OpenModelica."
 msgstr ""
 "Fick typfel men matchande typer %s. Detta är en ***KOMPILATORBUG***, var god "
 "raportera den till https://trac.openmodelica.org/OpenModelica."
 
-#: ../Util/Error.mo:617
+#: ../Util/Error.mo:626
 msgid ""
 "The first argument to reinit must be a variable of type Real or an array of "
 "such variables."
@@ -1645,12 +1640,12 @@ msgstr ""
 "Det första argumentet till reinit måste vara en variabel av typ Real eller "
 "en array av sådana variabler."
 
-#: ../Util/Error.mo:619
+#: ../Util/Error.mo:628
 #, c-format
 msgid "Cannot assign slice to non-initialized array %s."
 msgstr "Kan inte tilldela slice till icke-initialiserad array %s."
 
-#: ../Util/Error.mo:621
+#: ../Util/Error.mo:630
 #, c-format
 msgid ""
 "Expression %s cannot be an external argument. Only identifiers, scalar "
@@ -1659,7 +1654,7 @@ msgstr ""
 "Uttrycket %s kan inte vara ett externt argument. Endast identifierare, "
 "skalärkonstanter, och size-uttryck är tillåtna."
 
-#: ../Util/Error.mo:623
+#: ../Util/Error.mo:632
 #, c-format
 msgid ""
 "Only classes of type 'operator record' may contain elements of type "
@@ -1668,7 +1663,7 @@ msgstr ""
 "Endast klasser av typen 'operator record' får innehålla element av typen "
 "'operator function'; %s hittades i en klass med restriktionen '%s'."
 
-#: ../Util/Error.mo:625
+#: ../Util/Error.mo:634
 #, c-format
 msgid ""
 "'operator record' classes may only contain elements of type 'operator "
@@ -1677,7 +1672,7 @@ msgstr ""
 "Klasser med restriktionen 'operator record' får endast innehålla element av "
 "typen 'operator funktion'; %s har restriktionen '%s'."
 
-#: ../Util/Error.mo:627
+#: ../Util/Error.mo:636
 #, c-format
 msgid ""
 "Initialization problem is structurally singular, error found sorting "
@@ -1690,7 +1685,7 @@ msgstr ""
 " %s för variablerna\n"
 " %s"
 
-#: ../Util/Error.mo:629
+#: ../Util/Error.mo:638
 #, c-format
 msgid ""
 "The parameter %s has fixed = false and a binding equation %s = %s, which is "
@@ -1709,7 +1704,7 @@ msgstr ""
 "Den bundna ekvationen bör antingen tas bort helt, eller ändras till en annan "
 "parameter med fixed = false och ingen bunden ekvation."
 
-#: ../Util/Error.mo:631
+#: ../Util/Error.mo:640
 #, c-format
 msgid ""
 "The parameter %s has fixed = false and a binding equation %s = %s, which is "
@@ -1720,7 +1715,7 @@ msgstr ""
 "förmodligen är redundant. Den bundna ekvationen kommer att ignoreras då "
 "Modelica 3.1 används. "
 
-#: ../Util/Error.mo:633
+#: ../Util/Error.mo:642
 #, c-format
 msgid ""
 "The parameter %s has fixed = false, a start value, start = %s and a binding "
@@ -1731,7 +1726,7 @@ msgstr ""
 "ekvation %s = %s, vilket förmodligen är redundant. Den bundna ekvationen "
 "kommer att ignoreras då Modelica 3.1 används."
 
-#: ../Util/Error.mo:635
+#: ../Util/Error.mo:644
 #, c-format
 msgid ""
 "Model statistics after passing the front-end and creating the data "
@@ -1744,7 +1739,7 @@ msgstr ""
 " * Antal ekvationer: %s\n"
 " * Antal variabler: %s"
 
-#: ../Util/Error.mo:637
+#: ../Util/Error.mo:646
 #, c-format
 msgid ""
 "Model statistics after passing the back-end for %s:\n"
@@ -1761,7 +1756,7 @@ msgstr ""
 " * Antal diskreta tillståndsvariabler: %s\n"
 " * Antal input-variabler på toppnivå: %s"
 
-#: ../Util/Error.mo:639
+#: ../Util/Error.mo:648
 #, c-format
 msgid ""
 "Mixed equation statistics:\n"
@@ -1788,7 +1783,7 @@ msgstr ""
 " * Mixade system med linjärt tearingsystem: %s\n"
 " * Mixade system med ickelinjärt tearingsystem: %s"
 
-#: ../Util/Error.mo:641
+#: ../Util/Error.mo:650
 #, c-format
 msgid ""
 "Strong component statistics for %s (%s):\n"
@@ -1813,7 +1808,7 @@ msgstr ""
 " * Splittrade ekvationssystem: %s\n"
 " * Mixade (kontinuerliga/diskreta) ekvationssystem: %s"
 
-#: ../Util/Error.mo:643
+#: ../Util/Error.mo:652
 #, c-format
 msgid ""
 "Equation system details:\n"
@@ -1828,7 +1823,7 @@ msgstr ""
 " * Ickelinjär Jacobian: %s\n"
 " * Utan analytisk Jacobian: %s"
 
-#: ../Util/Error.mo:645
+#: ../Util/Error.mo:654
 #, c-format
 msgid ""
 "Torn system details:\n"
@@ -1839,7 +1834,7 @@ msgstr ""
 " * Linjära splittrade system: %s\n"
 " * Ickelinjära splittrade system: %s"
 
-#: ../Util/Error.mo:647
+#: ../Util/Error.mo:656
 #, c-format
 msgid ""
 "The following Modelica-like model represents the back-end DAE for the '%s' "
@@ -1850,12 +1845,12 @@ msgstr ""
 "'%s':\n"
 "%s"
 
-#: ../Util/Error.mo:649
+#: ../Util/Error.mo:658
 #, c-format
 msgid "Negative dimension index (%s) for component %s."
 msgstr "Negativ storlek på dimension (%s) för komponenten %s."
 
-#: ../Util/Error.mo:651
+#: ../Util/Error.mo:660
 #, c-format
 msgid ""
 "Failed to get dependencies for package %s. Perhaps there is an import to a "
@@ -1864,12 +1859,12 @@ msgstr ""
 "Misslyckades att hämta beroenden för paket %s. Det kanske finns en import "
 "till ett icke-existerande paket."
 
-#: ../Util/Error.mo:653
+#: ../Util/Error.mo:662
 #, c-format
 msgid "The default value of %s causes a cyclic dependency."
 msgstr "Standardvärdet av %s orsakar ett cykliskt beroende."
 
-#: ../Util/Error.mo:655
+#: ../Util/Error.mo:664
 #, c-format
 msgid ""
 "Type mismatch for named argument in %s(%s=%s). The argument has type:\n"
@@ -1882,7 +1877,7 @@ msgstr ""
 "förväntat typ:\n"
 "  %s"
 
-#: ../Util/Error.mo:657
+#: ../Util/Error.mo:666
 #, c-format
 msgid ""
 "Type mismatch for positional argument %s in %s(%s=%s). The argument has "
@@ -1897,7 +1892,7 @@ msgstr ""
 "förväntat typ:\n"
 "  %s"
 
-#: ../Util/Error.mo:659
+#: ../Util/Error.mo:668
 #, c-format
 msgid ""
 "Operator overloading requires exactly one matching expression, but found %s "
@@ -1906,12 +1901,12 @@ msgstr ""
 "Operatoröverlagring kräver exakt ett matchande uttryck, men %s uttryck "
 "hittades: %s"
 
-#: ../Util/Error.mo:661
+#: ../Util/Error.mo:670
 #, c-format
 msgid "Operator %s is not an input to the overloaded function: %s"
 msgstr "Operatorn %s är inte indata till den överlagrade funktionen: %s"
 
-#: ../Util/Error.mo:663
+#: ../Util/Error.mo:672
 #, c-format
 msgid ""
 "The following structural parameters were evaluated in the front-end: %s\n"
@@ -1923,12 +1918,12 @@ msgstr ""
 "Strukturella parametrar är parametrar som bl.a. används för att beräkna "
 "vektordimensioner eller välja grenar i vissa if-ekvationer eller if-uttryck."
 
-#: ../Util/Error.mo:665
+#: ../Util/Error.mo:674
 #, c-format
 msgid "Expression simplification '%s' → '%s' changed the type from %s to %s."
 msgstr "Uttrycksförenklingen '%s' → '%s' ändrade typen från %s till %s."
 
-#: ../Util/Error.mo:667
+#: ../Util/Error.mo:676
 #, c-format
 msgid ""
 "Failed to vectorize function call because arguments %s=%s and %s=%s have "
@@ -1937,7 +1932,7 @@ msgstr ""
 "Misslyckades att vektorisera funktionanrop eftersom argumenten %s = %s och "
 "%s = %s har olika dimensioner %s och %s."
 
-#: ../Util/Error.mo:669
+#: ../Util/Error.mo:678
 #, c-format
 msgid ""
 "Non-tuple complex type specifiers need to have exactly one type name: %s."
@@ -1945,13 +1940,60 @@ msgstr ""
 "Specificerare för komplexa typer som ej är tupler måste ha exakt ett "
 "typenamn: %s."
 
-#: ../Util/Error.mo:671
+#: ../Util/Error.mo:680
 #, c-format
 msgid "Tuple complex type specifiers need to have more than one type name: %s."
 msgstr ""
 "Specificerare för komplexa tupletyper måste ha mer än ett typnamn: %s.  "
 
-#: ../Util/Error.mo:674
+#: ../Util/Error.mo:682
+#, c-format
+msgid "Enumeration has duplicate names: %s in list of names %s."
+msgstr ""
+
+#: ../Util/Error.mo:684
+#, c-format
+msgid "Identifier %s is reserved for the built-in type with the same name."
+msgstr ""
+
+#: ../Util/Error.mo:686
+#, c-format
+msgid "The impact package manager downloaded package %s%s to directory %s."
+msgstr ""
+
+#: ../Util/Error.mo:688
+msgid ""
+"The der() operator is not allowed in function context (possible solutions: "
+"pass the derivative as an explicit input; use a block instead of function)."
+msgstr ""
+
+#: ../Util/Error.mo:690
+#, fuzzy
+msgid "'return' may not be used outside function."
+msgstr "'end' kan inte användas utanför subskript av arrayer."
+
+#: ../Util/Error.mo:692
+#, fuzzy, c-format
+msgid "Could not find library %s in either of:%s"
+msgstr "Kunde inte läsa variabel %s i fil %s."
+
+#: ../Util/Error.mo:694
+#, c-format
+msgid ""
+"Could not find library %s despite compilation command %s in directory %s "
+"returning success."
+msgstr ""
+
+#: ../Util/Error.mo:696
+#, fuzzy, c-format
+msgid ""
+"Failed to get dependencies for package %s. %s contains an import to non-"
+"existing package %s."
+msgstr ""
+"Misslyckades att hämta beroenden för paket %s. Det kanske finns en import "
+"till ett icke-existerande paket."
+
+#: ../Util/Error.mo:699
 #, c-format
 msgid ""
 "Parameter %s has no value, and is fixed during initialization (fixed=true), "
@@ -1960,7 +2002,7 @@ msgstr ""
 "Parameter %s saknar värde, men är fast under initiering (fixed=true). "
 "Använder tillgängligt start-värde (start=%s) som standardvärde."
 
-#: ../Util/Error.mo:676
+#: ../Util/Error.mo:701
 #, c-format
 msgid ""
 "Parameter %s has neither value nor start value, and is fixed during "
@@ -1969,12 +2011,12 @@ msgstr ""
 "Parameter %s har varken värde eller startvärde, och är fast under initiering "
 "(fixed=true)."
 
-#: ../Util/Error.mo:678
+#: ../Util/Error.mo:703
 #, c-format
 msgid "Function \"product\" has scalar as argument in %s in component %s."
 msgstr "Funktionen \"product\" har en skalär som argument i %s i komponent %s."
 
-#: ../Util/Error.mo:680
+#: ../Util/Error.mo:705
 #, c-format
 msgid ""
 "Using over-determined solver for initialization. Setting fixed=false to the "
@@ -1983,12 +2025,12 @@ msgstr ""
 "Använder överbestämd lösare för initiering. Sätter fixed=false för följande "
 "variabler: %s."
 
-#: ../Util/Error.mo:682
+#: ../Util/Error.mo:707
 #, c-format
 msgid "Failed to evaluate function: %s."
 msgstr "Misslyckades evaluera funktion: %s."
 
-#: ../Util/Error.mo:684
+#: ../Util/Error.mo:709
 #, c-format
 msgid ""
 "Trying to override final variable in component %s and scope %s by using "
@@ -1997,7 +2039,7 @@ msgstr ""
 "Försöker överskrida slutgiltig variabel i komponent %s och definitionsområde "
 "%s med modifikationer: %s och %s some inte stämmer överens."
 
-#: ../Util/Error.mo:686
+#: ../Util/Error.mo:711
 #, c-format
 msgid ""
 "In component %s, in relation %s, %s on Real numbers is only allowed inside "
@@ -2006,31 +2048,27 @@ msgstr ""
 "I komponent %s, i relation %s, %s på värden av typ Real är endast tillåtet "
 "inuti funktioner."
 
-#: ../Util/Error.mo:688
+#: ../Util/Error.mo:713
 #, c-format
 msgid "Ignoring the modification on outer element: %s."
 msgstr "Ignorerar modifikationen på ett yttre element: %s."
 
-#: ../Util/Error.mo:690
+#: ../Util/Error.mo:715
 #, c-format
-msgid ""
-"Illegal derivative. der(%s) in component %s is of type %s, which is not a "
-"subtype of Real."
+msgid "Argument '%s' to der has illegal type %s, must be a subtype of Real."
 msgstr ""
-"Ogiltig derivata. der(%s) i komponent %s har typ %s, vilket inte är en "
-"undertyp till Real."
 
-#: ../Util/Error.mo:692
+#: ../Util/Error.mo:717
 #, c-format
 msgid "In modifier %s."
 msgstr "I modifierare %s."
 
-#: ../Util/Error.mo:694
+#: ../Util/Error.mo:719
 #, c-format
 msgid "Multiple modifiers in same scope for element %s, %s."
 msgstr "Flera modifikationer i samma definitionsområde för element %s, %s."
 
-#: ../Util/Error.mo:696
+#: ../Util/Error.mo:721
 #, c-format
 msgid ""
 "The system of units is inconsistent in term %s with the units %s and %s "
@@ -2039,11 +2077,11 @@ msgstr ""
 "Systemet av enheter är inkonsistent i term %s med enheter %s och %s "
 "respektive."
 
-#: ../Util/Error.mo:698
+#: ../Util/Error.mo:723
 msgid "The system of units is consistent."
 msgstr "Systemet av enheter är konsistent."
 
-#: ../Util/Error.mo:700
+#: ../Util/Error.mo:725
 msgid ""
 "The system of units is incomplete. Please provide unit information to the "
 "model by e.g. using types from the SIunits package."
@@ -2051,24 +2089,24 @@ msgstr ""
 "Systemet av enheter är ofullständigt. Ange enhetsinformation till modellen "
 "genom att t.ex. använda typer från paketet SIunits."
 
-#: ../Util/Error.mo:702
+#: ../Util/Error.mo:727
 #, c-format
 msgid "Failed to elaborate rhs of %s."
 msgstr "Kunde inte utveckla högerledet i %s."
 
-#: ../Util/Error.mo:704
+#: ../Util/Error.mo:729
 #, c-format
 msgid "Could not evaluate expression: %s"
 msgstr "Kunde inte evaluera uttryck: %s"
 
-#: ../Util/Error.mo:706
+#: ../Util/Error.mo:731
 #, c-format
 msgid "Jacobian equation %s could not solve proper for %s. Assume %s=0."
 msgstr ""
 "Jacobian-ekvation %s kunde inte göra en ordentlig lösning för %s. "
 "Förutsätter %s=0."
 
-#: ../Util/Error.mo:708
+#: ../Util/Error.mo:733
 #, c-format
 msgid ""
 "Simplification produced a higher complexity (%s) than the original (%s). The "
@@ -2077,24 +2115,24 @@ msgstr ""
 "Förenkling resulterade i en högre komplexitet (%s) än originalet (%s). "
 "Förenklingen var: %s => %s."
 
-#: ../Util/Error.mo:710
-#, c-format
-msgid "Iterator %s, has type %s, but expected an array expression."
+#: ../Util/Error.mo:735
+#, fuzzy, c-format
+msgid "Iterator %s, has type %s, but expected a 1D array expression."
 msgstr "Iterator %s har typ %s, men förväntade ett vektoruttryck."
 
-#: ../Util/Error.mo:712
+#: ../Util/Error.mo:737
 #, c-format
 msgid "Cannot instantiate %s due to class specialization %s."
 msgstr "Kan inte instansiera %s på grund av klass-specialisering %s."
 
-#: ../Util/Error.mo:714
+#: ../Util/Error.mo:739
 #, c-format
 msgid "Library %s was not loaded but is marked as used by model %s."
 msgstr ""
 "Bibliotek %s laddades inte men modell %s har markerat att den använder "
 "biblioteket."
 
-#: ../Util/Error.mo:716
+#: ../Util/Error.mo:741
 #, c-format
 msgid ""
 "The maximum recursion depth of %s was reached, probably due to mutual "
@@ -2103,14 +2141,14 @@ msgstr ""
 "Maximalt rekursiondjup på %s uppnåddes, förmodligen på grund av ömsesidig "
 "rekursion. Nuvarande definitionsområde: %s."
 
-#: ../Util/Error.mo:718
+#: ../Util/Error.mo:743
 #, c-format
 msgid ""
 "The model requires derivatives of some inputs as listed below:\n"
 "%s"
 msgstr "Modellen kräver derivator av följande input-variabler: %s"
 
-#: ../Util/Error.mo:720
+#: ../Util/Error.mo:745
 msgid ""
 "The compiler was sent command-line arguments that were not UTF-8 encoded and "
 "will abort the current execution."
@@ -2118,7 +2156,7 @@ msgstr ""
 "Kompilatorn fick kommandoradsargument some inte var UTF-8-kodade och kommer "
 "att avbryta exekveringen."
 
-#: ../Util/Error.mo:722
+#: ../Util/Error.mo:747
 #, c-format
 msgid ""
 "The package.order file does not list all .mo files and directories "
@@ -2131,7 +2169,7 @@ msgstr ""
 "Saknade namn är:\n"
 "\\t%s"
 
-#: ../Util/Error.mo:724
+#: ../Util/Error.mo:749
 msgid ""
 "Using reinit in when with condition initial() is not allowed. Use assignment "
 "or equality equation instead."
@@ -2139,7 +2177,7 @@ msgstr ""
 "Det är ej tillåtet att använda reinit i when med initial()-villkor. Använd "
 "tilldelning eller en ekvation istället."
 
-#: ../Util/Error.mo:726
+#: ../Util/Error.mo:751
 #, c-format
 msgid ""
 "No corresponding 'inner' declaration found for class %s declared as '%s'.\n"
@@ -2147,10 +2185,10 @@ msgid ""
 msgstr ""
 "Ingen motsvarande 'inner'-deklaration hittades för klass %s deklareras som "
 "'%s'.\n"
-"Fortsätter utflatningen genom att enbart ta hänsyn till "
-"'outer'-deklarationen."
+"Fortsätter utflatningen genom att enbart ta hänsyn till 'outer'-"
+"deklarationen."
 
-#: ../Util/Error.mo:728
+#: ../Util/Error.mo:753
 #, c-format
 msgid ""
 "The maximum recursion depth of %s was reached when evaluating expression %s "
@@ -2161,7 +2199,7 @@ msgstr ""
 "definitionsområde %s. Översättningen kan fortfarande lyckas men du "
 "rekommenderas fixa problemet."
 
-#: ../Util/Error.mo:730
+#: ../Util/Error.mo:755
 #, c-format
 msgid ""
 "The maximum recursion depth of %s was reached when instantiating a derived "
@@ -2170,7 +2208,7 @@ msgstr ""
 "Maximalt rekursiondjup på %s uppnåddes under instansiering av en härledd "
 "klass. Nuvarande klass %s i definitionsområde %s."
 
-#: ../Util/Error.mo:732
+#: ../Util/Error.mo:757
 #, c-format
 msgid ""
 "OpenModelica requires that all external objects input arguments are possible "
@@ -2180,17 +2218,17 @@ msgstr ""
 "OpenModelica kräver att alla externa objekts input-argument går att evaluera "
 "före initiering för att undvika konstiga körtidsfel, men %s är en variabel."
 
-#: ../Util/Error.mo:734
+#: ../Util/Error.mo:759
 #, c-format
 msgid "Could not find class annotation %s in class %s."
 msgstr "Kunde inte hitta klassannotationen %s i klass %s."
 
-#: ../Util/Error.mo:736
+#: ../Util/Error.mo:761
 #, c-format
 msgid "Failed to compile all functions in package %s."
 msgstr "Misslyckades att kompilera alla funktioner i paketet %s."
 
-#: ../Util/Error.mo:738
+#: ../Util/Error.mo:763
 #, c-format
 msgid ""
 "The operator scalar requires all dimension size to be 1, but the input has "
@@ -2199,22 +2237,22 @@ msgstr ""
 "Operatorn scalar kräver att alla dimensioner är av storlek 1, men argumentet "
 "har typ %s."
 
-#: ../Util/Error.mo:740
+#: ../Util/Error.mo:765
 msgid ""
-"classDirectory() is a non-standard operator that was replaced by "
-"Modelica.Utilities.Files.loadResource(uri) before it was added to the "
-"language specification."
+"classDirectory() is a non-standard operator that was replaced by Modelica."
+"Utilities.Files.loadResource(uri) before it was added to the language "
+"specification."
 msgstr ""
-"classDirectory() är en icke-standard operator som ersattes av "
-"Modelica.Utilities.Files.loadResource(uri) innan den lades till i "
+"classDirectory() är en icke-standard operator som ersattes av Modelica."
+"Utilities.Files.loadResource(uri) innan den lades till i "
 "språkspecifikationen."
 
-#: ../Util/Error.mo:742
+#: ../Util/Error.mo:767
 #, c-format
 msgid "The same class is defined in multiple files: %s."
 msgstr "Samma klass är definierad i flera filer: %s."
 
-#: ../Util/Error.mo:744
+#: ../Util/Error.mo:769
 #, c-format
 msgid ""
 "Integer (%s) to enumeration (%s) conversion is not valid Modelica, please "
@@ -2223,17 +2261,17 @@ msgstr ""
 "Konvertering av Integer (%s) till enumeration (%s) är inte giltig Modelica, "
 "var god använd enumeration-konstant (%s) istället."
 
-#: ../Util/Error.mo:746
+#: ../Util/Error.mo:771
 #, c-format
 msgid ""
 "The Integer to %s conversion failed, as the Integer %s is outside the range "
 "(1, ..., %s) of values corresponding to enumeration constants."
 msgstr ""
 "Konvertering av Integer till %s misslyckades, eftersom heltalet %s är "
-"utanför intervallet (1, ..., %s) av värden som motsvarar "
-"enumeration-konstanter."
+"utanför intervallet (1, ..., %s) av värden som motsvarar enumeration-"
+"konstanter."
 
-#: ../Util/Error.mo:748
+#: ../Util/Error.mo:773
 #, c-format
 msgid ""
 "The Integer (%s) to enumeration conversion failed because information about "
@@ -2242,19 +2280,19 @@ msgstr ""
 "Konverteringen av Integer (%s) till enumeration misslyckades eftersom "
 "information om enumeration-typen saknas."
 
-#: ../Util/Error.mo:750
+#: ../Util/Error.mo:775
 #, c-format
 msgid ""
 "Expression %s is not a valid statement - only function calls are allowed."
 msgstr ""
 "Uttrycket %s är inte ett giltigt uttryck - endast funktionsanrop är tillåtna."
 
-#: ../Util/Error.mo:752
+#: ../Util/Error.mo:777
 #, c-format
 msgid "Invalid type of flag %s, expected one of %s but got %s."
 msgstr "Ogiltig typ av flagga %s, förväntade %s men fick %s."
 
-#: ../Util/Error.mo:754
+#: ../Util/Error.mo:779
 #, c-format
 msgid ""
 "Function %s returns an external object, but the only function allowed to "
@@ -2263,12 +2301,7 @@ msgstr ""
 "Funktionen %s returnerar ett externt objekt, men den enda funktionen som får "
 "returnera detta objekt är %s."
 
-#: ../Util/Error.mo:756
-#, c-format
-msgid "Performance of %s: time %s/%s, memory: %s/%s MB (%s)."
-msgstr "Prestanda för %s: tid %s/%s, minne: %s/%s MB (%s)."
-
-#: ../Util/Error.mo:758
+#: ../Util/Error.mo:781
 #, c-format
 msgid ""
 "Usage of non-standard operator (not specified in the Modelica "
@@ -2278,12 +2311,12 @@ msgstr ""
 "Användning av icke-standard operator (ej i Modelicas specifikation): %s. "
 "Funktionaliteten kan vara delvis implementerad, men garanteras ej."
 
-#: ../Util/Error.mo:760
+#: ../Util/Error.mo:783
 #, c-format
 msgid "Ignoring connection of array components having size zero: %s and %s."
 msgstr "Ignorerar anslutning av vektorkomponenter av storlek noll: %s och %s."
 
-#: ../Util/Error.mo:762
+#: ../Util/Error.mo:785
 #, c-format
 msgid ""
 "Ignoring record component:\n"
@@ -2294,22 +2327,144 @@ msgstr ""
 "%svid generering av konstructor. Ett record får endast innehålla komponenter "
 "av grundtyp, vektor av grundtyp, eller recordtyp."
 
-#: ../Util/Error.mo:764
+#: ../Util/Error.mo:787
 #, c-format
 msgid "Found equation without time-dependent variables: %s = %s"
 msgstr "Hittade ekvation utan tidsberoende variabler: %s = %s"
 
-#: ../Util/Error.mo:767
+#: ../Util/Error.mo:789
+#, fuzzy, c-format
+msgid ""
+"Ignoring overconstrained operator applied to array components having size "
+"zero: %s."
+msgstr "Ignorerar anslutning av vektorkomponenter av storlek noll: %s och %s."
+
+#: ../Util/Error.mo:791
+#, fuzzy, c-format
+msgid ""
+"Returning false from overconstrained operator applied to array components "
+"having size zero: %s."
+msgstr "Ignorerar anslutning av vektorkomponenter av storlek noll: %s och %s."
+
+#: ../Util/Error.mo:793
+#, c-format
+msgid ""
+"__OpenModelica_Interface types are incompatible. Got interface type '%s', "
+"expected something compatible with '%s'."
+msgstr ""
+
+#: ../Util/Error.mo:795
+msgid ""
+"Annotation __OpenModelica_Interface is missing or the string is not in the "
+"input list."
+msgstr ""
+
+#: ../Util/Error.mo:797
+#, fuzzy, c-format
+msgid "Class %s not found inside class %s."
+msgstr "Klass %s hittades inte i definitionsområde %s."
+
+#: ../Util/Error.mo:799
+#, fuzzy, c-format
+msgid ""
+"Skipped loading package %s (%s) using MODELICAPATH %s (uses-annotation may "
+"be wrong)."
+msgstr "Misslyckades ladda paket %s (%s) med MODELICAPATH %s."
+
+#: ../Util/Error.mo:801
+msgid ""
+"You are trying to run OpenModelica as a server using the root user.\n"
+"This is a very bad idea:\n"
+"* The socket interface does not authenticate the user.\n"
+"* OpenModelica allows execution of arbitrary commands."
+msgstr ""
+
+#: ../Util/Error.mo:803
+#, c-format
+msgid ""
+"Uses-annotation is missing version for library %s. Assuming the tool-"
+"specific version=\"default\"."
+msgstr ""
+
+#: ../Util/Error.mo:805
+msgid ""
+"Clock variable can not be declared with prefixes flow, stream, discrete, "
+"parameter, or constant."
+msgstr ""
+
+#: ../Util/Error.mo:807
+msgid "Default inferred clock is used."
+msgstr ""
+
+#: ../Util/Error.mo:809
+#, c-format
+msgid "Variable %s belongs to clocked and continuous partitions."
+msgstr ""
+
+#: ../Util/Error.mo:811
+msgid "Clocked when equation can not contain elsewhen part."
+msgstr ""
+
+#: ../Util/Error.mo:813
+msgid "Operator reinit should be in body of when statement."
+msgstr ""
+
+#: ../Util/Error.mo:815
+#, fuzzy
+msgid "Nested clocked when statements are not allowed."
+msgstr "Nästlade when-satser är otillåtna."
+
+#: ../Util/Error.mo:817
+msgid "Clocked when branch in when equation."
+msgstr ""
+
+#: ../Util/Error.mo:819
+#, fuzzy
+msgid "Clocked when equation inside the body of when equation."
+msgstr ""
+"Ekvations-sektioner i match-uttryck förbjuder användandet av %s-ekvationer."
+
+#: ../Util/Error.mo:821
+msgid "Equation belongs to clocked and continuous partitions."
+msgstr ""
+
+#: ../Util/Error.mo:823
+msgid "Clocked equation contains discrete and continuous expression."
+msgstr ""
+
+#: ../Util/Error.mo:825
+msgid "Invalid form of clock equation"
+msgstr ""
+
+#: ../Util/Error.mo:827
+msgid "Partition have different sub-clocks."
+msgstr ""
+
+#: ../Util/Error.mo:829
+msgid "Partition have different base clocks."
+msgstr ""
+
+#: ../Util/Error.mo:831
+#, fuzzy, c-format
+msgid "Performance of %s: time %s/%s"
+msgstr "Prestanda för %s: tid %s/%s, minne: %s/%s MB (%s)."
+
+#: ../Util/Error.mo:833
+#, fuzzy, c-format
+msgid "Performance of %s: time %s/%s, GC stats:%s"
+msgstr "Prestanda för %s: tid %s/%s, minne: %s/%s MB (%s)."
+
+#: ../Util/Error.mo:837
 #, c-format
 msgid "Local variable '%s' shadows another variable."
 msgstr "Lokal variabel '%s' skuggar en annan variabel."
 
-#: ../Util/Error.mo:769
+#: ../Util/Error.mo:839
 #, c-format
 msgid "%s uses invalid subtypeof syntax. Only subtypeof Any is supported."
 msgstr "%s använder ogiltig subtypeof syntax. Endast subtypeof Any stöds."
 
-#: ../Util/Error.mo:771
+#: ../Util/Error.mo:841
 #, c-format
 msgid ""
 "%s is used as a function reference, but doesn't specify the partial prefix."
@@ -2317,13 +2472,13 @@ msgstr ""
 "%s används som en funktionsreferens, men specificerar inte prefixet "
 "'partial'."
 
-#: ../Util/Error.mo:773
+#: ../Util/Error.mo:843
 #, c-format
 msgid "Match expression equation sections forbid the use of %s-equations."
 msgstr ""
 "Ekvations-sektioner i match-uttryck förbjuder användandet av %s-ekvationer."
 
-#: ../Util/Error.mo:775
+#: ../Util/Error.mo:845
 #, c-format
 msgid ""
 "Uniontype %s was not generated correctly. One possible cause is "
@@ -2332,21 +2487,21 @@ msgstr ""
 "Unionstyp %s skapades inte korrekt. En möjlig förklaring är modifikationer, "
 "som inte tillåts."
 
-#: ../Util/Error.mo:777
+#: ../Util/Error.mo:847
 msgid "MetaModelica complex types may not have modifiers."
 msgstr "Komplexa typer i MetaModelica får inte ha modifikationer."
 
-#: ../Util/Error.mo:779
+#: ../Util/Error.mo:849
 #, c-format
 msgid "Cannot evaluate function pointers (got %s)."
 msgstr "Kan inte evaluera funktionspekare (fick %s)."
 
-#: ../Util/Error.mo:781
+#: ../Util/Error.mo:851
 #, c-format
 msgid "Tried to use function %s, but it was not instantiated."
 msgstr "Försökte använda funktion %s, men den var inte instansierad."
 
-#: ../Util/Error.mo:783
+#: ../Util/Error.mo:853
 #, c-format
 msgid ""
 "Could not solve the polymorphism in the function call to %s\n"
@@ -2365,22 +2520,22 @@ msgstr ""
 "  Olösta bindningar:\n"
 "%s"
 
-#: ../Util/Error.mo:785
+#: ../Util/Error.mo:855
 #, c-format
 msgid "In record constructor %s: %s"
 msgstr "I metarecordanrop %s: %s"
 
-#: ../Util/Error.mo:787
+#: ../Util/Error.mo:857
 #, c-format
 msgid "Invalid pattern: %s"
 msgstr "Ogiltigt mönster: %s"
 
-#: ../Util/Error.mo:789
+#: ../Util/Error.mo:859
 #, c-format
 msgid "Failed to elaborate match expression %s"
 msgstr "Kunde inte utveckla matchuttryck %s"
 
-#: ../Util/Error.mo:791
+#: ../Util/Error.mo:861
 #, c-format
 msgid ""
 "Failed to match types of cons expression %s. The head has type %s and the "
@@ -2389,25 +2544,16 @@ msgstr ""
 "Kunde inte matcha typer i cons-uttryck %s. Huvudet har typen %s och svansen "
 "%s."
 
-#: ../Util/Error.mo:793
-#, c-format
-msgid ""
-"%s. Strict RML enforces match expression input and output to be the same as "
-"the function's."
-msgstr ""
-"%s. Strikt RML tvingar matchuttryck input och output att vara detsamma som "
-"funktionens."
-
-#: ../Util/Error.mo:795
+#: ../Util/Error.mo:863
 msgid "NONE is not acceptable syntax. Use NONE() instead."
 msgstr "NONE är inte acceptabel syntax. Använd NONE() istället."
 
-#: ../Util/Error.mo:797
+#: ../Util/Error.mo:865
 #, c-format
 msgid "Invalid named fields: %s. Valid field names: %s."
 msgstr "Ogiltiga namngivna fält: %s. Giltiga fältnamn: %s."
 
-#: ../Util/Error.mo:799
+#: ../Util/Error.mo:867
 #, c-format
 msgid ""
 "Only components without direction are allowed in local declarations, got: %s"
@@ -2415,17 +2561,17 @@ msgstr ""
 "Endast komponenter utan riktning får användas i lokala deklarationer, fick: "
 "%s"
 
-#: ../Util/Error.mo:801
+#: ../Util/Error.mo:869
 #, c-format
 msgid "Invalid complex type name: %s"
 msgstr "Ogiltigt namn på komplex typ: %s"
 
-#: ../Util/Error.mo:803
+#: ../Util/Error.mo:871
 #, c-format
 msgid "In pattern %s: %s is not part of uniontype %s"
 msgstr "I mönster %s: %s är inte en del av unionstyp %s"
 
-#: ../Util/Error.mo:805
+#: ../Util/Error.mo:873
 #, c-format
 msgid ""
 "Type mismatch in pattern %s\n"
@@ -2440,17 +2586,17 @@ msgstr ""
 "förväntad typ:\n"
 "  %s"
 
-#: ../Util/Error.mo:807
+#: ../Util/Error.mo:875
 #, c-format
 msgid "Call pattern is not a record constructor %s"
 msgstr "Anropsmönster är inte en record-konstruktor %s"
 
-#: ../Util/Error.mo:809
+#: ../Util/Error.mo:877
 #, c-format
 msgid "Match expression has mismatched result types:%s"
 msgstr "Match-uttryck har resultattyper som inte stämmer överens:%s"
 
-#: ../Util/Error.mo:811
+#: ../Util/Error.mo:879
 msgid ""
 "This matchcontinue expression has no overlapping patterns and should be "
 "using match instead of matchcontinue."
@@ -2458,47 +2604,47 @@ msgstr ""
 "Detta matchcontinue-uttryck saknar överlappande mönster och borde använda "
 "match istället för matchcontinue."
 
-#: ../Util/Error.mo:813
+#: ../Util/Error.mo:881
 #, c-format
 msgid "Dead code elimination: %s."
 msgstr "Eliminering av död kod: %s."
 
-#: ../Util/Error.mo:815
+#: ../Util/Error.mo:883
 #, c-format
 msgid "Unused local variable: %s."
 msgstr "Oanvänd lokal variabel: %s."
 
-#: ../Util/Error.mo:817
+#: ../Util/Error.mo:885
 #, c-format
 msgid "Removing unused as-binding: %s."
 msgstr "Tar bort oanvänd as-bindning: %s."
 
-#: ../Util/Error.mo:819
+#: ../Util/Error.mo:887
 #, c-format
 msgid "Converted match expression to switch of type %s."
 msgstr "Omvandlade matchuttryck till switchuttryck av typ %s."
 
-#: ../Util/Error.mo:821
+#: ../Util/Error.mo:889
 #, c-format
 msgid ""
 "Reductions require the types of the %s and %s to be %s, but got: %s and %s."
 msgstr "Reduktioner kräver att typerna av %s och %s är %s, men fick %s och %s."
 
-#: ../Util/Error.mo:823
+#: ../Util/Error.mo:891
 #, c-format
 msgid ""
 "Expected a reduction function with type signature ('A,'B) => 'B, but got %s."
 msgstr ""
 "Förväntade en reduktionsfunktion med typsignatur ('A,'B) => 'B, men fick %s."
 
-#: ../Util/Error.mo:825
+#: ../Util/Error.mo:893
 #, c-format
 msgid "Operator %s expects numeric types as operands, but got '%s and %s'."
 msgstr ""
 "Operator %s förväntar sig numeriska typer som operander, men fick '%s' och "
 "'%s'."
 
-#: ../Util/Error.mo:827
+#: ../Util/Error.mo:895
 #, c-format
 msgid ""
 "Could not evaluate structural parameter (or constant): %s which gives "
@@ -2508,30 +2654,47 @@ msgstr ""
 "dimensioner av en array: %s. Array-dimensioner måste vara kända vid "
 "kompilering."
 
-#: ../Util/Error.mo:829
+#: ../Util/Error.mo:897
 #, c-format
 msgid "Removing unused assignment to: %s."
 msgstr "Tar bort oanvänd tilldelning till: %s."
 
-#: ../Util/Error.mo:842
+#: ../Util/Error.mo:899
+#, c-format
+msgid "Removing empty call named pattern argument: %s."
+msgstr ""
+
+#: ../Util/Error.mo:901
+#, c-format
+msgid "All patterns in call were empty: %s."
+msgstr ""
+
+#: ../Util/Error.mo:914
 #, c-format
 msgid "Template error: %s"
 msgstr "Template-fel: %s"
 
-#: ../Util/Error.mo:844 ../Util/Error.mo:846
+#: ../Util/Error.mo:916 ../Util/Error.mo:918
 #, c-format
 msgid "Operator Overloading: %s."
 msgstr "Operatoröverlagring: %s."
 
-#: ../Util/Error.mo:854
+#: ../Util/Error.mo:926
 #, c-format
 msgid "File not Found: %s."
 msgstr "Filen hittades inte: %s."
 
-#: ../Util/Error.mo:856
+#: ../Util/Error.mo:928
 #, c-format
 msgid "Unknown FMU version %s. Only version 1.0 & 2.0 are supported."
 msgstr "Okänd FMU-version %s. Endast version 1.0 och 2.0 stöds."
+
+#: ../Util/Error.mo:930
+#, c-format
+msgid ""
+"Unknown FMU type %s. Supported types are me (model exchange) & cs (co-"
+"simulation)."
+msgstr ""
 
 #: ../Util/Flags.mo:168
 msgid "Sets whether to print a failtrace or not."
@@ -2601,8 +2764,8 @@ msgid "Displays the connection graph with the GraphViz lefty tool."
 msgstr "Visar kopplingsgrafen med GraphViz-verktyget lefty."
 
 #: ../Util/Flags.mo:194
-msgid "Turns on/off dependency analysis for getTotalProgram."
-msgstr "Slår på/av beroendeanalysen för getTotalProgram."
+msgid "Prints garbage collection stats to standard output."
+msgstr ""
 
 #: ../Util/Flags.mo:196
 msgid "Enables extra type checking for cref expressions."
@@ -2644,11 +2807,11 @@ msgstr "Utför eliminering av död kod i match-uttryck."
 
 #: ../Util/Flags.mo:216
 msgid ""
-"Optimization that moves the last assignment(s) into the result of a "
-"match-expression. For example: equation c = fn(b); then c; => then fn(b);"
+"Optimization that moves the last assignment(s) into the result of a match-"
+"expression. For example: equation c = fn(b); then c; => then fn(b);"
 msgstr ""
-"Optimering som flyttar den sista tilldelningen till resultatet av "
-"match-uttrycket. Till exempel:equation c = fn(b); then c; => then fn(b);"
+"Optimering som flyttar den sista tilldelningen till resultatet av match-"
+"uttrycket. Till exempel:equation c = fn(b); then c; => then fn(b);"
 
 #: ../Util/Flags.mo:218
 msgid "Turns on custom reduction functions (OpenModelica extension)."
@@ -2867,7 +3030,8 @@ msgid "Generate code with debugging symbols."
 msgstr "Genererar kod med debugsymboler."
 
 #: ../Util/Flags.mo:310
-msgid "Enables dumping of selected states. Extends +d=backenddaeinfo."
+#, fuzzy
+msgid "Enables dumping of selected states. Extends -d=backenddaeinfo."
 msgstr ""
 "Slår på dumpning av valda tillståndsvariabler. Utökar +d=backenddaeinfo."
 
@@ -2876,128 +3040,112 @@ msgid "Enables dumping of the equations in the order they are calculated."
 msgstr "Skriv ut ekvationer i den ordning de beräknas."
 
 #: ../Util/Flags.mo:314
-msgid "Enables using of symbolic matrices for initialization (ipopt only)."
-msgstr ""
-"Slår på användandet av symboliska matriser för initiering (endast ipopt)."
-
-#: ../Util/Flags.mo:316
-msgid ""
-"Enables dumping of the optimization information when optimizing the initial "
-"system."
-msgstr "Slår på utskrift av optimeringsinformation för initialsystem."
-
-#: ../Util/Flags.mo:318
 msgid ""
 "Enables dumping of the optimization information when optimizing calls to "
 "semiLinear."
 msgstr "Slår på utskrift av optimeringsinformation för semiLinear-anrop."
 
-#: ../Util/Flags.mo:320
+#: ../Util/Flags.mo:316
 msgid "Enables dumping of status when calling modelEquationsUC."
 msgstr "Slår på statusutskrift när modelEquationsUC anropas."
 
-#: ../Util/Flags.mo:322
+#: ../Util/Flags.mo:318
 msgid "Enables dumping of the DAE startOrigin attribute of the variables."
 msgstr "Slår på utskrift av startOrigin-attributet för variabler i DAEn."
 
-#: ../Util/Flags.mo:324
-msgid ""
-"Enables tearing of linear systems, but for now they aren't handled efficent "
-"in the runtime."
-msgstr ""
-"Slår på tearing för linjära system, men för tillfället hanteras de ej "
-"effektivt under körning."
+#: ../Util/Flags.mo:320
+#, fuzzy
+msgid "Dumps the simCode model used for code generation."
+msgstr "Anger målspråket för kodgenerering."
 
-#: ../Util/Flags.mo:326
+#: ../Util/Flags.mo:322
 msgid "Dumps the initial equation system."
 msgstr "Förenklar tidsinitiala system."
 
-#: ../Util/Flags.mo:328
-msgid "Do graph based instantation."
+#: ../Util/Flags.mo:324
+#, fuzzy
+msgid "Do graph based instantiation."
 msgstr "Utför grafbaserad instantiering."
 
-#: ../Util/Flags.mo:330
-msgid "Run scode dependency analysis. Use with +d=graphInst"
+#: ../Util/Flags.mo:326
+#, fuzzy
+msgid "Run scode dependency analysis. Use with -d=graphInst"
 msgstr "Kör beroendeanalys på SCode. Används med +d=graphInst"
 
-#: ../Util/Flags.mo:332
-msgid "Dumps a graph of the program. Use with +d=graphInst"
+#: ../Util/Flags.mo:328
+#, fuzzy
+msgid "Dumps a graph of the program. Use with -d=graphInst"
 msgstr "Skriver ut en graf av programmet.. Används med +d=graphInst"
 
-#: ../Util/Flags.mo:334
-msgid "Diplay a graph of the program interactively. Use with +d=graphInst"
+#: ../Util/Flags.mo:330
+#, fuzzy
+msgid "Display a graph of the program interactively. Use with -d=graphInst"
 msgstr "Visar en graf av programmet interaktivt. Används med +d=graphInst"
 
-#: ../Util/Flags.mo:336
+#: ../Util/Flags.mo:332
 msgid "Dump the found replacements for constants."
 msgstr "Skriver ut funna ersättningar för konstanter."
 
-#: ../Util/Flags.mo:338
+#: ../Util/Flags.mo:334
 msgid "Switch into pedantic debug-mode, to get much more feedback."
 msgstr "Slår på pedantiskt debugläge för mer feedback."
 
-#: ../Util/Flags.mo:340
+#: ../Util/Flags.mo:336
 msgid ""
 "Display the element source information in the dumped DAE for easier "
 "debugging."
 msgstr ""
 "Visar källinformation för element vid utskrift av DAEn för enklare debugging."
 
-#: ../Util/Flags.mo:342
+#: ../Util/Flags.mo:338
 msgid "Generates analytical Jacobian for non-linear algebraic loops."
 msgstr "Genererar analytisk jacobian för icke-linjära algebraiska loopar."
 
-#: ../Util/Flags.mo:344
+#: ../Util/Flags.mo:340
 msgid "Generates code for inline solver."
 msgstr "Genererar kod för inline-lösare."
 
-#: ../Util/Flags.mo:346
+#: ../Util/Flags.mo:342
 msgid "Enables parallel calculation based on task-graphs."
 msgstr "Slår på parallell beräkning baserad på uppgiftsgrafer."
 
-#: ../Util/Flags.mo:348
+#: ../Util/Flags.mo:344
 msgid "Shows additional information from the initialization process."
 msgstr "Visar extra information från initieringen."
 
-#: ../Util/Flags.mo:350
+#: ../Util/Flags.mo:346
 msgid "Controls if function inlining should be performed."
 msgstr "Kontrollerar om inlining av funktioner ska utföras."
 
-#: ../Util/Flags.mo:352
+#: ../Util/Flags.mo:348
 msgid "Dumps graphml files with the strongly connected components."
 msgstr "Dumpar graphml-filer med de starkt kopplade komponenterna."
 
-#: ../Util/Flags.mo:354
+#: ../Util/Flags.mo:350
 msgid "Dumps verbose tearing information."
 msgstr "Skriver ut utförlig information från tearing."
 
-#: ../Util/Flags.mo:356
+#: ../Util/Flags.mo:352
 msgid "Disables the generation of single flow equations."
 msgstr "Stänger av genereringen av ekvationer för okopplade flow-variabler."
 
-#: ../Util/Flags.mo:358
-msgid ""
-"Disassembles linear torn systems to various singleEquations and a reduced "
-"tornSystem."
-msgstr ""
-"Särar på linjära splittrade system till diverse singleEquations och ett "
-"reducerat tornSystem."
-
-#: ../Util/Flags.mo:360
-msgid "Enables dumping of discrete variables. Extends +d=backenddaeinfo."
+#: ../Util/Flags.mo:354
+#, fuzzy
+msgid "Enables dumping of discrete variables. Extends -d=backenddaeinfo."
 msgstr "Slår på dumpning av diskreta variabler. Utökar +d=backenddaeinfo."
 
-#: ../Util/Flags.mo:362
+#: ../Util/Flags.mo:356
+#, fuzzy
 msgid ""
-"Activates additional graphviz dumps (as *.dot files). It can be used in "
-"addition to one of the following flags: "
-"{dumpdaelow|dumpinitialsystems|dumpindxdae}."
+"Activates additional graphviz dumps (as .dot files). It can be used in "
+"addition to one of the following flags: {dumpdaelow|dumpinitialsystems|"
+"dumpindxdae}."
 msgstr ""
 "Aktiverar ytterligare graphviz-dumpar (som *.dos-filer). Kan användas "
-"tillsammans med någon av följande flaggor: "
-"{dumpdaelow|dumpinitialsystems|dumpindxdae}."
+"tillsammans med någon av följande flaggor: {dumpdaelow|dumpinitialsystems|"
+"dumpindxdae}."
 
-#: ../Util/Flags.mo:364
+#: ../Util/Flags.mo:358
 msgid ""
 "Enables output of the operations in the _info.xml file when translating "
 "models."
@@ -3005,23 +3153,23 @@ msgstr ""
 "Slår på utmatning av operationer i _info.xml-filen vid översättning av "
 "modeller."
 
-#: ../Util/Flags.mo:366
+#: ../Util/Flags.mo:360
 msgid "Dumps additional information on the parallel execution with hpcom."
 msgstr "Visar ytterligare information om parallell exekvering med hpcom."
 
-#: ../Util/Flags.mo:368
+#: ../Util/Flags.mo:362
 msgid "Activates the resolveLoops module."
 msgstr "Aktiverar resolveLoops-modulen."
 
-#: ../Util/Flags.mo:370
+#: ../Util/Flags.mo:364
 msgid "Disables warnings on Windows if OPENMODELICAHOME/MinGW is missing."
 msgstr "Stänger av varningar på Windows om OPENMODELICAHOME/MinGW saknas."
 
-#: ../Util/Flags.mo:372
+#: ../Util/Flags.mo:366
 msgid "Disables output of record constructors in the flat code."
 msgstr "Stänger av utmatning av record-konstruktorer i utflatat kod."
 
-#: ../Util/Flags.mo:374
+#: ../Util/Flags.mo:368
 msgid ""
 "Dumps the back-end DAE to a Modelica-like model after all symbolic "
 "transformations are applied."
@@ -3029,69 +3177,57 @@ msgstr ""
 "Dumpar backend-DAEn till en Modelica-liknande syntax efter att alla "
 "symboliska transformationer är utförda."
 
-#: ../Util/Flags.mo:376
+#: ../Util/Flags.mo:370
 msgid ""
 "Evaluates functions complete and partially and checks for constant output."
 msgstr ""
 "Evaluerar funktioner fullständigt och partiellt och letar upp konstanta "
 "outputs."
 
-#: ../Util/Flags.mo:378
-msgid ""
-"Creates statically linked c++ - code for analyzation (requires statically "
-"build cpp-runtime)"
-msgstr ""
-"Skapar statiskt länkad C++-kod för analys (kräver statiskt länkad "
-"cpp-runtime)"
-
-#: ../Util/Flags.mo:380
-msgid "Turns on extra RML checks."
-msgstr "Slår på extra RML-test."
-
-#: ../Util/Flags.mo:382
+#: ../Util/Flags.mo:372
 msgid "activates implicit codegen"
 msgstr "Aktiverar implicit kodgenerering"
 
-#: ../Util/Flags.mo:384
+#: ../Util/Flags.mo:374
 msgid "dumps debug information about the function evaluation"
 msgstr "Skriver ut debuginformation från funktionsevalueringen"
 
-#: ../Util/Flags.mo:386
+#: ../Util/Flags.mo:376
 msgid "Prints the structural parameters identified by the front-end"
 msgstr "Skriver ut strukturella parametrar identifierade av frontend"
 
-#: ../Util/Flags.mo:388
+#: ../Util/Flags.mo:378
 msgid "Shows a list of all iteration variables."
 msgstr "Visar en lista på alla iterationsvariabler."
 
-#: ../Util/Flags.mo:390
+#: ../Util/Flags.mo:380
 msgid ""
 "Accepts passing records with more fields than expected to a function. This "
-"is not allowed, but is used in Fluid.Dissipation. See "
-"https://trac.modelica.org/Modelica/ticket/1245 for details."
+"is not allowed, but is used in Fluid.Dissipation. See https://trac.modelica."
+"org/Modelica/ticket/1245 for details."
 msgstr ""
 "Tillåter att recordinstanser med fler fält än förväntat används som "
 "funktionsargument. Detta är ej tillåtet, men används i Fluid.Dissipation. "
 "See https://trac.modelica.org/Modelica/ticket/1245 för detaljer."
 
-#: ../Util/Flags.mo:392
+#: ../Util/Flags.mo:382
 msgid "Optimize the memory structure regarding the selected scheduler"
 msgstr "Optimiserar minnesstrukturen med avseende på den valda schemaläggaren"
 
-#: ../Util/Flags.mo:394
+#: ../Util/Flags.mo:384
 msgid "Dumps information of the clock partitioning."
 msgstr "Skriver ut information om klock-partitioneringen."
 
-#: ../Util/Flags.mo:396
+#: ../Util/Flags.mo:386
 msgid "Strips the environment prefix from path/crefs. Defaults to true."
 msgstr "Strippar omgivningsprefix från paths/crefs. På som standard."
 
-#: ../Util/Flags.mo:398
+#: ../Util/Flags.mo:388
 msgid ""
 "Does scode dependency analysis prior to instantiation. Defaults to true."
 msgstr "Utför beroendeanalys på SCode för instantering. På som standard."
 
-#: ../Util/Flags.mo:400
+#: ../Util/Flags.mo:390
 msgid ""
 "Prints information about instantiation cache hits and additions. Defaults to "
 "false."
@@ -3099,77 +3235,188 @@ msgstr ""
 "Skriver ut information om träffar och tillägg i instantieringscachen. Av som "
 "standard."
 
-#: ../Util/Flags.mo:402
+#: ../Util/Flags.mo:392
 msgid "Dumps all the calculated units."
 msgstr "Dumpar alla beräknade enheter."
 
-#: ../Util/Flags.mo:404
+#: ../Util/Flags.mo:394
 msgid "Dumps all equations handled by the unit checker."
 msgstr "Dumpar alla ekvationer som hanterats av enhetskontrollen."
 
-#: ../Util/Flags.mo:406
+#: ../Util/Flags.mo:396
 msgid "Dumps all the equations handled by the unit checker as tree-structure."
 msgstr ""
 "Dumpar alla ekvationer som hanterats av enhetskontrollen som trädstruktur."
 
-#: ../Util/Flags.mo:408
+#: ../Util/Flags.mo:398
 msgid "Show the dae variable declarations as they happen."
 msgstr "Visar variabeldeklarationer i DAEn när de inträffar."
 
-#: ../Util/Flags.mo:410
+#: ../Util/Flags.mo:400
 msgid "Reshuffles the systems of equations."
 msgstr "Blandar om ekvationssystemen."
 
-#: ../Util/Flags.mo:412
+#: ../Util/Flags.mo:402
 msgid "Show information about expandable connector handling."
 msgstr "Visa information om hur expanderbara anslutningar hanteras."
 
-#: ../Util/Flags.mo:547
-msgid "Sets debug flags. Use +help=debug to see available flags."
+#: ../Util/Flags.mo:404
+#, fuzzy
+msgid "Dumps the results of the postOptModule optimizeHomotopyCalls."
+msgstr "Skriver ut resultatet från preOptModule encapsulateWhenConditions."
+
+#: ../Util/Flags.mo:406
+msgid ""
+"Experimental: Generates a file with suffix _info.json instead of _info.xml."
+msgstr ""
+
+#: ../Util/Flags.mo:408
+msgid ""
+"Dumps .graphml files for the bipartite graph after Index Reduction and a "
+"task graph for the SCCs. Can be displayed with yEd. "
+msgstr ""
+
+#: ../Util/Flags.mo:410
+msgid "Add MPI init and finalize to main method (CPPruntime). "
+msgstr ""
+
+#: ../Util/Flags.mo:412 ../Util/Flags.mo:414
+msgid "Additional output for CSE module."
+msgstr ""
+
+#: ../Util/Flags.mo:420
+msgid "Deactivates module 'comSubExp'"
+msgstr ""
+
+#: ../Util/Flags.mo:422
+msgid "Deactivates the pre-calculation of start values during compile-time."
+msgstr ""
+
+#: ../Util/Flags.mo:424
+#, fuzzy
+msgid "Deactivates partitioning of entire equation system."
+msgstr "Skriver ut ekvationssystemet från inline-lösaren."
+
+#: ../Util/Flags.mo:426
+msgid "Using ExpressionSolve in adjacencyRowEnhanced"
+msgstr ""
+
+#: ../Util/Flags.mo:428
+msgid ""
+"solves linear systems with constant Jacobian and variable b-Vector "
+"symbolically"
+msgstr ""
+
+#: ../Util/Flags.mo:430
+msgid "remove eqs which not need for the calculations of cost and constraints"
+msgstr ""
+
+#: ../Util/Flags.mo:432
+msgid "Outputs a xml-file that contains information for visualization."
+msgstr ""
+
+#: ../Util/Flags.mo:434
+msgid "Adds an alias equation var_nrom = var/nominal where var is state"
+msgstr ""
+
+#: ../Util/Flags.mo:436
+msgid "Adds an alias equation var_nrom = var/nominal where var is input"
+msgstr ""
+
+#: ../Util/Flags.mo:438
+msgid "Activates vectorization in the backend."
+msgstr ""
+
+#: ../Util/Flags.mo:440
+msgid ""
+"Use the autotools project in the Resources folder of the library to build "
+"missing external libraries."
+msgstr ""
+
+#: ../Util/Flags.mo:442
+msgid "Use the static simulation runtime libraries (C++ simulation runtime)."
+msgstr ""
+
+#: ../Util/Flags.mo:444
+msgid ""
+"Dumps information about the strict and casual sets of the tearing system."
+msgstr ""
+
+#: ../Util/Flags.mo:446
+msgid ""
+"Heuristic sorting for equations and variables. Influenced: "
+"removeSimpleEquations and tearing."
+msgstr ""
+
+#: ../Util/Flags.mo:448
+msgid "Dump between steps of simplifyLoops"
+msgstr ""
+
+#: ../Util/Flags.mo:450
+msgid "Dump between steps of recursiveTearing"
+msgstr ""
+
+#: ../Util/Flags.mo:452
+msgid "disable simplifyComplexFunction"
+msgstr ""
+
+#: ../Util/Flags.mo:454
+msgid "For FMI 2.0 only dependecy analysis will be perform."
+msgstr ""
+
+#: ../Util/Flags.mo:456
+#, fuzzy
+msgid "Evaluates all parameters in order to increase simulation speed."
+msgstr "Slår på utskrift av parametrar i den ordning de beräknas."
+
+#: ../Util/Flags.mo:615
+#, fuzzy
+msgid "Sets debug flags. Use --help=debug to see available flags."
 msgstr ""
 "Sätter debug-flaggor. Använd +help=debug för att visa tillgängliga flaggor."
 
-#: ../Util/Flags.mo:551
-msgid "Displays the help text. Use +help=topics for more information."
+#: ../Util/Flags.mo:619
+#, fuzzy
+msgid "Displays the help text. Use --help=topics for more information."
 msgstr "Visar denna hjälptext. Använd +help=topics för mer information."
 
-#: ../Util/Flags.mo:555
+#: ../Util/Flags.mo:623
 msgid "Used when running the testsuite."
 msgstr "Används då testsviten körs."
 
-#: ../Util/Flags.mo:559
+#: ../Util/Flags.mo:627
 msgid "Print the version and exit."
 msgstr "Skriver ut versionen och avslutar."
 
-#: ../Util/Flags.mo:563
+#: ../Util/Flags.mo:631
 msgid "Sets the target compiler to use."
 msgstr "Anger den kompilator som ska användas."
 
-#: ../Util/Flags.mo:568
+#: ../Util/Flags.mo:636
 msgid "Sets the grammar and semantics to accept."
 msgstr "Anger den grammatik och semantik som ska godtas."
 
-#: ../Util/Flags.mo:572
+#: ../Util/Flags.mo:640
 msgid "Sets the annotation version that should be used."
 msgstr "Anger den annotations-version som ska användas."
 
-#: ../Util/Flags.mo:578
+#: ../Util/Flags.mo:646
 msgid "Sets the language standard that should be used."
 msgstr "Anger den språkstandard som ska användas."
 
-#: ../Util/Flags.mo:582
+#: ../Util/Flags.mo:650
 msgid "Show error messages immediately when they happen."
 msgstr "Visa felmeddelanden direkt då de inträffar."
 
-#: ../Util/Flags.mo:586
+#: ../Util/Flags.mo:654
 msgid "Show annotations in the flattened code."
 msgstr "Visa annotationer i utflatat kod."
 
-#: ../Util/Flags.mo:590
+#: ../Util/Flags.mo:658
 msgid "Do not simplify expressions if set."
 msgstr "Gör inte de dyraste förenklingarna av uttryck om satt."
 
-#: ../Util/Flags.mo:591
+#: ../Util/Flags.mo:659
 msgid ""
 "Performs alias elimination and removes constant variables from the DAE, "
 "replacing all occurrences of the old variable reference with the new value "
@@ -3179,24 +3426,34 @@ msgstr ""
 "ersätter alla förekomster av gamla variabelreferenser med de nya värdena "
 "(konstanter) eller variabelreferenser  (alias-eliminering)."
 
-#: ../Util/Flags.mo:613 ../Util/Flags.mo:709
+#: ../Util/Flags.mo:686
+msgid "Common Function Call Elimination"
+msgstr ""
+
+#: ../Util/Flags.mo:687
+msgid ""
+"advanced unit checking: 1. calculation of unspecified unit information for "
+"variables; 2. unit consistency check for equations"
+msgstr ""
+
+#: ../Util/Flags.mo:689 ../Util/Flags.mo:808
 msgid "This module expands all array equations to scalar equations."
 msgstr "Denna modul expanderar alla vektorekvationer till skalärekvationer."
 
-#: ../Util/Flags.mo:614
+#: ../Util/Flags.mo:690
 msgid ""
 "Structural parameters and parameters declared as final are evalutated and "
 "replaced with their value in other vars. They may no longer be changed in "
 "the init file."
 msgstr ""
 "Strukturella parametrar och parametrar deklarerade som final beräknas och "
-"ersätts med deras värde i andra variabler. De kan inte längre ändras i "
-"init-filen."
+"ersätts med deras värde i andra variabler. De kan inte längre ändras i init-"
+"filen."
 
-#: ../Util/Flags.mo:615 ../Util/Flags.mo:616 ../Util/Flags.mo:617
-#: ../Util/Flags.mo:618 ../Util/Flags.mo:619 ../Util/Flags.mo:702
-#: ../Util/Flags.mo:703 ../Util/Flags.mo:704 ../Util/Flags.mo:705
-#: ../Util/Flags.mo:706 ../Util/Flags.mo:707
+#: ../Util/Flags.mo:691 ../Util/Flags.mo:692 ../Util/Flags.mo:693
+#: ../Util/Flags.mo:694 ../Util/Flags.mo:695 ../Util/Flags.mo:801
+#: ../Util/Flags.mo:802 ../Util/Flags.mo:803 ../Util/Flags.mo:804
+#: ../Util/Flags.mo:805 ../Util/Flags.mo:806
 msgid ""
 "Structural parameters and parameters declared as final are removed and "
 "replaced with their value. They may no longer be changed in the init file."
@@ -3204,7 +3461,7 @@ msgstr ""
 "Strukturella parametrar och parametrar deklarerade som final tas bort och "
 "ersätts av deras värde. De kan inte längre ändras i init-filen."
 
-#: ../Util/Flags.mo:620
+#: ../Util/Flags.mo:696
 msgid ""
 "Structural parameters and parameters declared as final or protected are "
 "removed and replaced with their value. They may no longer be changed in the "
@@ -3213,23 +3470,37 @@ msgstr ""
 "Strukturella parametrar och parametrar deklarerade som final eller protected "
 "tas bort och ersätts av deras värde. De kan inte längre ändras i init-filen."
 
-#: ../Util/Flags.mo:622
+#: ../Util/Flags.mo:697
+#, fuzzy
+msgid "Evaluates all parameters to increase simulation speed."
+msgstr "Beräknar parametrar med evaluate=true annotation"
+
+#: ../Util/Flags.mo:699
 msgid "Replace all parameters with protected=true in the system."
 msgstr "Byter ut alla parametrar med protected=true i ekvationssystemet."
 
-#: ../Util/Flags.mo:623 ../Util/Flags.mo:710
+#: ../Util/Flags.mo:700 ../Util/Flags.mo:809
 msgid "Strips all parameter not present in the equations from the system."
 msgstr "Tar bort alla parametrar som inte används i ekvationer i systemet."
 
-#: ../Util/Flags.mo:624
+#: ../Util/Flags.mo:701
 msgid "Strips all variables not present in the equations from the system."
 msgstr "Tar bort alla variabler som inte finns i systemets ekvationer."
 
-#: ../Util/Flags.mo:625
+#: ../Util/Flags.mo:702
 msgid "Does the clock partitioning."
 msgstr "Utför klock-partitionering."
 
-#: ../Util/Flags.mo:627
+#: ../Util/Flags.mo:703
+#, fuzzy
+msgid "Does the elaboration of state machines."
+msgstr "Stänger av genereringen av ekvationer för okopplade flow-variabler."
+
+#: ../Util/Flags.mo:707
+msgid "Allowed derivatives of inputs in dyn. optimization."
+msgstr ""
+
+#: ../Util/Flags.mo:708
 msgid ""
 "Tries to simplify if equations by use of information from evaluated "
 "parameters."
@@ -3237,46 +3508,61 @@ msgstr ""
 "Försöker förenkla if-ekvationer genom att använda information från "
 "evaluerade parametrar."
 
-#: ../Util/Flags.mo:628
+#: ../Util/Flags.mo:709
 msgid "Replace edge(b) = b and not pre(b) and change(b) = v <> pre(v)."
 msgstr "Ersätter edge(b) = b, not pre(b), och change(b) = v <> pre(v)."
 
-#: ../Util/Flags.mo:629
+#: ../Util/Flags.mo:710
 msgid "Transforms simple equations x=y to zero-sum equations 0=y-x."
 msgstr "Omvandlar enkla ekvationer x=y till en residualekvation 0=y-x."
 
-#: ../Util/Flags.mo:630 ../Util/Flags.mo:728
+#: ../Util/Flags.mo:711 ../Util/Flags.mo:827
 msgid "Expands all algorithms with initial statements for outputs."
 msgstr "Expanderar alla algoritmer med initial-satser som utdata."
 
-#: ../Util/Flags.mo:631
+#: ../Util/Flags.mo:712
 msgid "resolves linear equations in loops"
 msgstr "Löser linjära ekvationer i loopar"
 
-#: ../Util/Flags.mo:632
+#: ../Util/Flags.mo:713
 msgid "evaluates functions partially"
 msgstr "Evaluerar funktioner partiellt"
 
-#: ../Util/Flags.mo:634
+#: ../Util/Flags.mo:714
+msgid "replaces common sub expressions"
+msgstr ""
+
+#: ../Util/Flags.mo:715 ../Util/Flags.mo:830
+#, fuzzy
+msgid "dumps the DAE representation of the current transformation state"
+msgstr "Skriver ut absyn-representationen av ett program i graphviz-format."
+
+#: ../Util/Flags.mo:716 ../Util/Flags.mo:831
+#, fuzzy
+msgid "dumps the DAE as xml representation of the current transformation state"
+msgstr "Skriver ut absyn-representationen av ett program i graphviz-format."
+
+#: ../Util/Flags.mo:718
+#, fuzzy
 msgid ""
-"Sets the pre optimization modules to use in the back end. See "
-"+help=optmodules for more info."
+"Sets the pre optimization modules to use in the back end. See --"
+"help=optmodules for more info."
 msgstr ""
 "Anger de föroptimeringsmoduler som ska användas i bakändan. Se "
 "+help=optmodules för mer information."
 
-#: ../Util/Flags.mo:639
+#: ../Util/Flags.mo:723
 msgid "No cheap matching."
 msgstr "Ingen billig matchning."
 
-#: ../Util/Flags.mo:640
+#: ../Util/Flags.mo:724
 msgid ""
 "Cheap matching, traverses all equations and match the first free variable."
 msgstr ""
 "Billig matchning, går genom alla ekvationer och matchar den första lediga "
 "variabeln."
 
-#: ../Util/Flags.mo:641
+#: ../Util/Flags.mo:725
 msgid ""
 "Random Karp-Sipser: R. M. Karp and M. Sipser. Maximum matching in sparse "
 "random graphs."
@@ -3284,7 +3570,7 @@ msgstr ""
 "Slumpmässig Karp-Sipser: R. M. Karp och M. Sipser. Maximal matchning i glesa "
 "slumpmässiga grafer."
 
-#: ../Util/Flags.mo:642
+#: ../Util/Flags.mo:726
 msgid ""
 "Sets the cheap matching algorithm to use. A cheap matching algorithm gives a "
 "jump start matching by heuristics."
@@ -3292,19 +3578,19 @@ msgstr ""
 "Välj den billiga matchningsalgoritm som ska användas. En billig "
 "matchningsalgoritm ger en snabbstart till matchningen genom heuristik."
 
-#: ../Util/Flags.mo:647
+#: ../Util/Flags.mo:731
 msgid "Breadth First Search based algorithm."
 msgstr "Bredd-först sök-baserad algoritm."
 
-#: ../Util/Flags.mo:648
+#: ../Util/Flags.mo:732
 msgid "Depth First Search based algorithm."
 msgstr "Djup först sök-baserad algoritm."
 
-#: ../Util/Flags.mo:649 ../Util/Flags.mo:650
+#: ../Util/Flags.mo:733 ../Util/Flags.mo:734
 msgid "Depth First Search based algorithm with look ahead feature."
 msgstr "Djup först sök-baserad algoritm med look-ahead."
 
-#: ../Util/Flags.mo:651
+#: ../Util/Flags.mo:735
 msgid ""
 "Depth First Search based algorithm with look ahead feature and fair row "
 "traversal."
@@ -3312,30 +3598,30 @@ msgstr ""
 "Djup först sök-baserad algoritm med look-ahead och rättvis traversering av "
 "rader."
 
-#: ../Util/Flags.mo:652 ../Util/Flags.mo:653 ../Util/Flags.mo:654
+#: ../Util/Flags.mo:736 ../Util/Flags.mo:737 ../Util/Flags.mo:738
 msgid "Combined BFS and DFS algorithm."
 msgstr "Kombinerad BFS och DFS algoritm."
 
-#: ../Util/Flags.mo:655
+#: ../Util/Flags.mo:739
 msgid "Matching algorithm using push relabel mechanism."
 msgstr "Matchningsalgoritm som använder push-relabel."
 
-#: ../Util/Flags.mo:656
+#: ../Util/Flags.mo:740
 msgid "Depth First Search based Algorithm external c implementation."
 msgstr "Djup först sök-baserad algoritm (extern C-implementering)."
 
-#: ../Util/Flags.mo:657
+#: ../Util/Flags.mo:741
 msgid "Breadth First Search based Algorithm external c implementation."
 msgstr "Bredd först sök-baserad algoritm (extern C-implementering)."
 
-#: ../Util/Flags.mo:658 ../Util/Flags.mo:659
+#: ../Util/Flags.mo:742 ../Util/Flags.mo:743
 msgid ""
 "Depth First Search based Algorithm with look ahead feature external c "
 "implementation."
 msgstr ""
 "Djup först sök-baserad algoritm med look-ahead (extern C-implementering)."
 
-#: ../Util/Flags.mo:660
+#: ../Util/Flags.mo:744
 msgid ""
 "Depth First Search based Algorithm with look ahead feature and fair row "
 "traversal external c implementation."
@@ -3343,26 +3629,32 @@ msgstr ""
 "Djup först sök-baserad algoritm med look-ahead och rättvis traversering av "
 "rader (extern C-implementering)."
 
-#: ../Util/Flags.mo:661 ../Util/Flags.mo:662 ../Util/Flags.mo:663
+#: ../Util/Flags.mo:745 ../Util/Flags.mo:746 ../Util/Flags.mo:747
 msgid "Combined BFS and DFS algorithm external c implementation."
 msgstr "Kombinerad BFS och DFS algorithm (extern C-implementering)."
 
-#: ../Util/Flags.mo:664
+#: ../Util/Flags.mo:748
 msgid ""
 "Matching algorithm using push relabel mechanism external c implementation."
 msgstr "Matchningsalgoritm med push-relabel (extern C-implementering)."
 
-#: ../Util/Flags.mo:665
-msgid "Sets the matching algorithm to use. See +help=optmodules for more info."
+#: ../Util/Flags.mo:749
+msgid "BBs try."
+msgstr ""
+
+#: ../Util/Flags.mo:750
+#, fuzzy
+msgid ""
+"Sets the matching algorithm to use. See --help=optmodules for more info."
 msgstr ""
 "Anger matchningsalgoritmen som ska användas i bakändan. Se +help=optmodules "
 "för mer information."
 
-#: ../Util/Flags.mo:670
+#: ../Util/Flags.mo:755
 msgid "Use the underlying ODE without the constraints."
 msgstr "Används den underliggande ODEn utan restriktioner."
 
-#: ../Util/Flags.mo:671
+#: ../Util/Flags.mo:756
 msgid ""
 "Simple index reduction method, select (dynamic) dummy states based on "
 "analysis of the system."
@@ -3370,24 +3662,37 @@ msgstr ""
 "Enkel indexreduktion, välj (dynamiska) dummy tillstånd baserat på analys av "
 "systemet."
 
-#: ../Util/Flags.mo:672
+#: ../Util/Flags.mo:757
+#, fuzzy
 msgid ""
-"Sets the index reduction method to use. See +help=optmodules for more info."
+"Simple index reduction method, select (static) dummy states based on "
+"heuristic."
+msgstr "Enkel indexreduktion, välj dummy tillstånd baserat på heuristik"
+
+#: ../Util/Flags.mo:759
+#, fuzzy
+msgid ""
+"Sets the index reduction method to use. See --help=optmodules for more info."
 msgstr ""
 "Anger indexreduceringsmetoden som ska användas i bakändan. Se "
 "+help=optmodules för mer information."
 
-#: ../Util/Flags.mo:698
-msgid "Replace each when-condition with an discrete variable."
+#: ../Util/Flags.mo:798
+#, fuzzy
+msgid "Replace each condition/relation with a boolean variable."
 msgstr "Ersätt varje when-villkor med en diskret variabel."
 
-#: ../Util/Flags.mo:699
+#: ../Util/Flags.mo:799
 msgid "Perform function inlining for function with annotation LateInline=true."
 msgstr ""
 "Utför optimeringen \"function inlining\" för funktioner med annotering "
 "LateInline=true."
 
-#: ../Util/Flags.mo:711
+#: ../Util/Flags.mo:810
+msgid "Move loops to constraints."
+msgstr ""
+
+#: ../Util/Flags.mo:811
 msgid ""
 "Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are "
 "constants) at compile-time."
@@ -3395,33 +3700,36 @@ msgstr ""
 "Evaluerar konstanta linjära system (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f är "
 "konstanter) under kompileringen."
 
-#: ../Util/Flags.mo:715
-msgid "Count the mathematic operations of the system."
+#: ../Util/Flags.mo:815
+#, fuzzy
+msgid "Count the mathematical operations of the system."
 msgstr "Räknar antalen matematiska operationer i systemet."
 
-#: ../Util/Flags.mo:717 ../Util/Flags.mo:906
+#: ../Util/Flags.mo:817
+#, fuzzy
 msgid ""
-"Generates symbolic jacobian matrix, where der(x) is differentiated w.r.t. x. "
+"Generates symbolic Jacobian matrix, where der(x) is differentiated w.r.t. x. "
 "This matrix can be used to simulate with dasslColorSymJac."
 msgstr ""
 "Genererar en symbolisk jacobimatris, där der(x) är deriverad med avseende på "
 "x. Denna matris kan användas till att simulera med dasslColorSymJac."
 
-#: ../Util/Flags.mo:718 ../Util/Flags.mo:910
+#: ../Util/Flags.mo:818
+#, fuzzy
 msgid ""
-"Generates symbolic linearization matrixes A,B,C,D for linear model:\n"
-"\t\t\\dot x = Ax + Bu\n"
-"\t\ty = Cx +Du"
+"Generates symbolic linearization matrices A,B,C,D for linear model:\n"
+"\t\t:math:`\\dot{x} = Ax + Bu`\n"
+"\t:math:`ty = Cx +Du`"
 msgstr ""
 "Skapar symboliska linjäriseringsmatriser A,B,C,D för linjär modell:\n"
 "\t\t\\dot x = Ax + Bu\n"
 "\t\ty = Cx +Du"
 
-#: ../Util/Flags.mo:719
+#: ../Util/Flags.mo:819
 msgid "Removed all unused functions from functionTree."
 msgstr "Tar bort alla oanvända funktioner från funktionsträdet."
 
-#: ../Util/Flags.mo:720
+#: ../Util/Flags.mo:820
 msgid ""
 "Simplifies time independent built in function calls like pre(param) -> "
 "param, der(param) -> 0.0, change(param) -> false, edge(param) -> false."
@@ -3429,92 +3737,102 @@ msgstr ""
 "Förenklar tidsoberoende anrop till inbyggda funktioner som pre(param) -> "
 "param, der(param) -> 0.0, change(param) -> false, edge(param) -> false."
 
-#: ../Util/Flags.mo:721
+#: ../Util/Flags.mo:821
 msgid "Checks if derivatives of inputs are need to calculate the model."
 msgstr ""
 "Kontrollerar om derivatan av inputvariabler behövs för att beräkna modellen."
 
-#: ../Util/Flags.mo:722
+#: ../Util/Flags.mo:822
 msgid "Simplifies calls to semiLinear."
 msgstr "Förenklar anrop till semiLinear."
 
-#: ../Util/Flags.mo:723
+#: ../Util/Flags.mo:823
 msgid "Remove all constants in the system."
 msgstr "Tar bort alla konstanter i systemet."
 
-#: ../Util/Flags.mo:724
-msgid "Simplifies time initial system."
-msgstr "Förenklar tidsinitiala system."
-
-#: ../Util/Flags.mo:725
+#: ../Util/Flags.mo:824
 msgid "Detects the sparse pattern for Jacobian A."
 msgstr "Detekterar det glesa mönstret för Jacobian A."
 
-#: ../Util/Flags.mo:726
-msgid "Generates analytical jacobian for non-linear strong components."
+#: ../Util/Flags.mo:825
+#, fuzzy
+msgid "Generates analytical Jacobian for non-linear strong components."
 msgstr "Genererar analytisk jacobian för icke-linjära algebraiska loopar."
 
-#: ../Util/Flags.mo:727
-msgid "Generates analytical jacobian for dynamic state selection sets."
+#: ../Util/Flags.mo:826
+#, fuzzy
+msgid "Generates analytical Jacobian for dynamic state selection sets."
 msgstr "Genererar analytisk jacobian för dynamiskt val av tillståndsvariabler."
 
-#: ../Util/Flags.mo:729
+#: ../Util/Flags.mo:828
 msgid "Reshuffles algebraic loops."
 msgstr "Blandar om algebraiska loopar."
 
-#: ../Util/Flags.mo:731
+#: ../Util/Flags.mo:829
+msgid "Common Sub-expression Elimination"
+msgstr ""
+
+#: ../Util/Flags.mo:832 ../Util/Flags.mo:1089
 msgid ""
-"Sets the post optimization modules to use in the back end. See "
-"+help=optmodules for more info."
+"Experimental feature: this replaces each occurrence of variable time with a "
+"new introduced state $time with equation der($time) = 1.0"
+msgstr ""
+
+#: ../Util/Flags.mo:834
+#, fuzzy
+msgid ""
+"Sets the post optimization modules to use in the back end. See --"
+"help=optmodules for more info."
 msgstr ""
 "Anger de efteroptimeringsmoduler som ska användas i bakändan. Se "
 "+help=optmodules för mer information."
 
-#: ../Util/Flags.mo:736
+#: ../Util/Flags.mo:839
 msgid "Sets the target language for the code generation."
 msgstr "Anger målspråket för kodgenerering."
 
-#: ../Util/Flags.mo:740
+#: ../Util/Flags.mo:843
 msgid "Orders connect equations alphabetically if set."
 msgstr "Anger om kopplingsekvationer ska sorteras i bokstavsordning."
 
-#: ../Util/Flags.mo:744
+#: ../Util/Flags.mo:847
 msgid "Prints out extra type information if set."
 msgstr "Skriver ut extra typ-information."
 
-#: ../Util/Flags.mo:748
+#: ../Util/Flags.mo:851
 msgid "Sets whether to split arrays or not."
 msgstr "Anger om arrayer ska delas upp eller inte."
 
-#: ../Util/Flags.mo:752
+#: ../Util/Flags.mo:855
 msgid "Enables valid modelica output for flat modelica."
 msgstr "Slår på giltig Modelica-utskrift för den utplattade koden."
 
-#: ../Util/Flags.mo:756
+#: ../Util/Flags.mo:859
 msgid "Turns on silent mode."
 msgstr "Slår på tyst läge."
 
-#: ../Util/Flags.mo:760
-msgid "Sets the name of the corba session if +d=interactiveCorba is used."
+#: ../Util/Flags.mo:863
+#, fuzzy
+msgid "Sets the name of the corba session if -d=interactiveCorba is used."
 msgstr "Anger namnet på corba-sessionen om +d=interactiveCorba används."
 
-#: ../Util/Flags.mo:764
+#: ../Util/Flags.mo:867
 msgid "Sets the number of processors to use (0=default=auto)."
 msgstr "Anger antalet processorer som ska användas (0=default=auto)."
 
-#: ../Util/Flags.mo:768
+#: ../Util/Flags.mo:871
 msgid "Sets the latency for parallel execution."
 msgstr "Anger latens för parallell exekvering."
 
-#: ../Util/Flags.mo:772
+#: ../Util/Flags.mo:875
 msgid "Sets the bandwidth for parallel execution."
 msgstr "Anger bandbredd för parallell exekvering."
 
-#: ../Util/Flags.mo:776
+#: ../Util/Flags.mo:879
 msgid "Instantiate the class given by the fully qualified path."
 msgstr "Instanseriar klassen som angivits med fullständig sökväg."
 
-#: ../Util/Flags.mo:780
+#: ../Util/Flags.mo:883
 msgid ""
 "Sets the vectorization limit, arrays and matrices larger than this will not "
 "be vectorized."
@@ -3522,63 +3840,59 @@ msgstr ""
 "Ställer in gränsen för vektorisering; arrayer och matriser större än denna "
 "kommer inte vektoriseras."
 
-#: ../Util/Flags.mo:784
+#: ../Util/Flags.mo:887
 msgid "Turns on simulation code generation."
 msgstr "Slår på generering av simuleringskod."
 
-#: ../Util/Flags.mo:788
+#: ../Util/Flags.mo:891
 msgid "Sets whether to evaluate parameters in annotations or not."
 msgstr "Anger om parametrar i annoteringar ska evalueras eller inte."
 
-#: ../Util/Flags.mo:792
+#: ../Util/Flags.mo:895
 msgid "Set when checkModel is used to turn on specific features for checking."
 msgstr ""
 "Är satt då checkModel används för att slå på specifika funktioner för "
 "testning av modeller."
 
-#: ../Util/Flags.mo:808
+#: ../Util/Flags.mo:911
 msgid "Turns on labeled SimCode generation for reduction algorithms."
 msgstr "Sätter på märkning av SimCode-generering för reduktionsalgoritmer."
 
-#: ../Util/Flags.mo:812
+#: ../Util/Flags.mo:915
 msgid "Turns on reducing terms for reduction algorithms."
 msgstr "Slår på reducerande termer för reduktionsalgoritmer."
 
-#: ../Util/Flags.mo:817
+#: ../Util/Flags.mo:920
 msgid "Sets the reduction method to be used."
 msgstr "Anger den reduktionsmetod som ska användas."
 
-#: ../Util/Flags.mo:821
-msgid ""
-"Defines whether plot commands should open OMPlot or show the list of "
-"arguments that would have been sent to OMPlot."
+#: ../Util/Flags.mo:924
+msgid "Disable Warning/Error Massages."
 msgstr ""
-"Anger om plot-kommandon ska öppna OMPlot eller visa argumenten som skulle "
-"skickats till OMPlot."
 
-#: ../Util/Flags.mo:825
+#: ../Util/Flags.mo:928
 msgid "Override the locale from the environment."
 msgstr "Överskrid de nationella inställningarna i omgivningen."
 
-#: ../Util/Flags.mo:829
+#: ../Util/Flags.mo:932
 msgid "Sets the default OpenCL device to be used for parallel execution."
 msgstr "Anger vilken OpenCL-enhet som ska användas för parallell exekvering."
 
-#: ../Util/Flags.mo:833
+#: ../Util/Flags.mo:936
 msgid "Maximal traversals to find simple equations in the acausal system."
 msgstr ""
 "Slår på maximala traverseringar för att hitta enkla ekvationer i det "
 "akausala systemet."
 
-#: ../Util/Flags.mo:837
+#: ../Util/Flags.mo:940
 msgid ""
 "Redirect the dump to file. If the file ends with .html HTML code is "
 "generated."
 msgstr ""
-"Dirigerar utskrifter till fil. Om filen har ändelsen .html så genereras "
-"HTML-kod."
+"Dirigerar utskrifter till fil. Om filen har ändelsen .html så genereras HTML-"
+"kod."
 
-#: ../Util/Flags.mo:841
+#: ../Util/Flags.mo:944
 msgid ""
 "Enables (very) experimental code to break algebraic loops using the delay() "
 "operator. Probably messes with initialization."
@@ -3586,53 +3900,26 @@ msgstr ""
 "Slår på (väldigt) experimentell kod för att bryta algebraiska loopar med "
 "delay() operatorn. Förstör förmodligen initieringen."
 
-#: ../Util/Flags.mo:846
+#: ../Util/Flags.mo:949
 msgid "Skip tearing."
 msgstr "Hoppar över tearing."
 
-#: ../Util/Flags.mo:847
+#: ../Util/Flags.mo:950
 msgid "Tearing method developed by TU Dresden: Frenkel, Schubert."
 msgstr "Tearing-metod utvecklad av TU Dresden: Frenkel, Schubert."
 
-#: ../Util/Flags.mo:848
+#: ../Util/Flags.mo:951
 msgid ""
 "Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick"
 msgstr ""
 "Tearing baserad på Celliers metod, reviderad av FH Bielefeld: Täuber, Patrick"
 
-#: ../Util/Flags.mo:849
+#: ../Util/Flags.mo:952
 msgid ""
 "Sets the tearing method to use. Select no tearing or choose tearing method."
 msgstr "Anger tearing-metoden som ska användas i bakändan."
 
-#: ../Util/Flags.mo:853
-msgid "Scalarizes the builtin min/max reduction operators if true."
-msgstr "Skaläriserar de inbyggda min/max reduceringsoperatorerna om sann."
-
-#: ../Util/Flags.mo:857
-msgid "Used when running the WSM testsuite."
-msgstr "Används då WSM-testsviten körs."
-
-#: ../Util/Flags.mo:861
-msgid "Always scalarizes bindings if set."
-msgstr "Skaläriserar alltid bindningar om sann."
-
-#: ../Util/Flags.mo:865
-msgid ""
-"Sets the path for corba object reference file if +d=interactiveCorba is used."
-msgstr ""
-"Anger namnet på objektreferens-filen för corba om +d=interactiveCorba "
-"används."
-
-#: ../Util/Flags.mo:869
-msgid ""
-"Sets the scheduler for task graph scheduling (list | listr | level | "
-"levelfix | ext | mcp | taskdep | tds | bls | none). Default: levelfix."
-msgstr ""
-"Ställer in schemaläggare för uppgiftsgraf (list | listr | level | levelfix | "
-"ext | mcp | taskdep | tds | bls | none). Standard: levelfix."
-
-#: ../Util/Flags.mo:874
+#: ../Util/Flags.mo:957
 msgid ""
 "Original cellier with consideration of impossible assignments and discrete "
 "Vars."
@@ -3640,27 +3927,28 @@ msgstr ""
 "Original Cellier med hänsyn till omöjliga tilldelningar och diskreta "
 "variabler."
 
-#: ../Util/Flags.mo:875
+#: ../Util/Flags.mo:958
 msgid "Modified cellier, drop first step."
 msgstr "Modifierad Cellier, hoppa över första steget."
 
-#: ../Util/Flags.mo:876
+#: ../Util/Flags.mo:959
 msgid "Modified MC1, new last step 'count impossible assignments'."
 msgstr "Modifierad MC1, nytt sista steg 'räkna omöjliga tilldelningar'."
 
-#: ../Util/Flags.mo:877
-msgid "Modified MC2, , new last step 'count impossible assignments'."
+#: ../Util/Flags.mo:960
+#, fuzzy
+msgid "Modified MC2, new last step 'count impossible assignments'."
 msgstr "Modifierad MC2, nytt sista steg 'räkna omöjliga tilldelningar'."
 
-#: ../Util/Flags.mo:878
+#: ../Util/Flags.mo:961
 msgid "Modified MC1, step 'count impossible assignments' before last step."
 msgstr "Modifierad MC1, steg 'räkna omöjliga tilldelningar' före sista steget."
 
-#: ../Util/Flags.mo:879
+#: ../Util/Flags.mo:962
 msgid "Modified MC2, step 'count impossible assignments' before last step."
 msgstr "Modifierad MC2, steg 'räkna omöjliga tilldelningar' före sista steget."
 
-#: ../Util/Flags.mo:880
+#: ../Util/Flags.mo:963
 msgid ""
 "Modified MC1, build sum of impossible assignment and causalizable equations, "
 "choose var with biggest sum."
@@ -3668,7 +3956,7 @@ msgstr ""
 "Modifierad MC1, skapa summa av omöjliga tilldelningar och ordningsbara "
 "ekvationer, välj variabel med största summa."
 
-#: ../Util/Flags.mo:881
+#: ../Util/Flags.mo:964
 msgid ""
 "Modified MC2, build sum of impossible assignment and causalizable equations, "
 "choose var with biggest sum."
@@ -3676,11 +3964,11 @@ msgstr ""
 "Modifierad MC2, skapa summa av omöjliga tilldelningar och ordningsbara "
 "ekvationer, välj variabel med största summa."
 
-#: ../Util/Flags.mo:882
+#: ../Util/Flags.mo:965
 msgid "Modified MC23, Two rounds, choose better potentials-set."
 msgstr "Modifierad MC23, två omgångar, välj bättre potential-set."
 
-#: ../Util/Flags.mo:883
+#: ../Util/Flags.mo:966
 msgid ""
 "Modified cellier, build sum of impossible assignment and causalizable "
 "equations for all vars, choose var with biggest sum."
@@ -3688,7 +3976,7 @@ msgstr ""
 "Modifierad Cellier, skapa summa av omöjliga tilldelningar och ordningsbara "
 "ekvationer, välj variabel med största summa."
 
-#: ../Util/Flags.mo:884
+#: ../Util/Flags.mo:967
 msgid ""
 "Modified cellier, use all heuristics, choose var that occurs most in "
 "potential sets"
@@ -3696,19 +3984,56 @@ msgstr ""
 "Modifierad Cellier, använd alla heuristiker, välj variabel som förekommer "
 "mest i potential-set"
 
-#: ../Util/Flags.mo:885
+#: ../Util/Flags.mo:968
 msgid "Sets the tearing heuristic to use for Cellier-tearing."
 msgstr "Anger tearing-heuristiken att använda för Cellier-tearing."
 
-#: ../Util/Flags.mo:889
+#: ../Util/Flags.mo:972
 msgid ""
-"Sets the code-type produced by hpcom (openmp | pthreads | pthreads_spin). "
-"Default: openmp."
+"Disables the tearing of linear systems. That might improve the performance "
+"of large linear systems(N>1000) in combination with a sparse solver (e.g. "
+"umfpack) at runtime (usage with: -ls umfpack)."
+msgstr ""
+
+#: ../Util/Flags.mo:976
+msgid "Scalarizes the builtin min/max reduction operators if true."
+msgstr "Skaläriserar de inbyggda min/max reduceringsoperatorerna om sann."
+
+#: ../Util/Flags.mo:980
+msgid "Used when running the WSM testsuite."
+msgstr "Används då WSM-testsviten körs."
+
+#: ../Util/Flags.mo:984
+msgid "Always scalarizes bindings if set."
+msgstr "Skaläriserar alltid bindningar om sann."
+
+#: ../Util/Flags.mo:988
+#, fuzzy
+msgid ""
+"Sets the path for corba object reference file if -d=interactiveCorba is used."
+msgstr ""
+"Anger namnet på objektreferens-filen för corba om +d=interactiveCorba "
+"används."
+
+#: ../Util/Flags.mo:992
+#, fuzzy
+msgid ""
+"Sets123 the scheduler for task graph scheduling (list | listr | level | "
+"levelfix | ext | mcp | taskdep | tds | bls | rand | none). Default: level."
+msgstr ""
+"Ställer in schemaläggare för uppgiftsgraf (list | listr | level | levelfix | "
+"ext | mcp | taskdep | tds | bls | none). Standard: levelfix."
+
+#: ../Util/Flags.mo:996
+#, fuzzy
+msgid ""
+"Sets the code-type produced by hpcom (openmp | pthreads | pthreads_spin | "
+"tbb | mpi). Default: openmp."
 msgstr ""
 "Ställer in vilken typ av kod som produceras av hpcom (openmp | pthreads | "
 "pthreads_spin). Standard: openmp."
 
-#: ../Util/Flags.mo:893
+#: ../Util/Flags.mo:1001
 msgid ""
 "Activates user given rewrite rules for Absyn expressions. The rules are read "
 "from the given file and are of the form rewrite(fromExp, toExp);"
@@ -3716,19 +4041,19 @@ msgstr ""
 "Aktiverar användargivna omskrivningsregler för Absyn-uttryck. Reglerna läses "
 "från den givna filen och är på formen rewrite(frånUttryck, tillUttryck);"
 
-#: ../Util/Flags.mo:898
+#: ../Util/Flags.mo:1006
 msgid "Default, do not replace homotopy."
 msgstr "Standard, ersätt inte homotopy."
 
-#: ../Util/Flags.mo:899
+#: ../Util/Flags.mo:1007
 msgid "Replace homotopy(actual, simplified) with actual."
 msgstr "Ersätt homotopy(actual, simplified) med actual."
 
-#: ../Util/Flags.mo:900
+#: ../Util/Flags.mo:1008
 msgid "Replace homotopy(actual, simplified) with simplified."
 msgstr "Ersätt homotopy(actual, simplified) med simplified."
 
-#: ../Util/Flags.mo:902
+#: ../Util/Flags.mo:1010
 msgid ""
 "Replaces homotopy(actual, simplified) with the actual expression or the "
 "simplified expression. Good for debugging models which use homotopy. The "
@@ -3738,34 +4063,55 @@ msgstr ""
 "för att debugga modeller som använder homotopy. Standard är att inte ersätta "
 "homotopy. "
 
-#: ../Util/Flags.mo:914
+#: ../Util/Flags.mo:1014
+#, fuzzy
+msgid ""
+"Generates symbolic Jacobian matrix, where der(x) is differentiated w.r.t. x. "
+"This matrix can be utilise by dassl with the runtime option: -"
+"dasslJacobian=coloredSymbolical|symbolical."
+msgstr ""
+"Genererar en symbolisk jacobimatris, där der(x) är deriverad med avseende på "
+"x. Denna matris kan användas till att simulera med dasslColorSymJac."
+
+#: ../Util/Flags.mo:1018
+#, fuzzy
+msgid ""
+"Generates symbolic linearization matrices A,B,C,D for linear model:\n"
+"\t\t:math:`\\dot x = Ax + Bu`\n"
+"\t\t:math:`y = Cx +Du`"
+msgstr ""
+"Skapar symboliska linjäriseringsmatriser A,B,C,D för linjär modell:\n"
+"\t\t\\dot x = Ax + Bu\n"
+"\t\ty = Cx +Du"
+
+#: ../Util/Flags.mo:1022
 msgid "Allow Integer to enumeration conversion."
 msgstr "Tillåt konvertering av Integer till enumeration."
 
-#: ../Util/Flags.mo:918
+#: ../Util/Flags.mo:1026
 msgid "Generate code without profiling"
 msgstr "Genererar kod utan profilering"
 
-#: ../Util/Flags.mo:919
+#: ../Util/Flags.mo:1027
 msgid ""
 "Generate code for profiling function calls as well as linear and non-linear "
 "systems of equations"
 msgstr ""
-"Generera kod för profilering av funktionsanrop samt för linjära och "
-"icke-linjära ekvationssystem"
+"Generera kod för profilering av funktionsanrop samt för linjära och icke-"
+"linjära ekvationssystem"
 
-#: ../Util/Flags.mo:920
+#: ../Util/Flags.mo:1028
 msgid ""
 "Like blocks, but also run xsltproc and gnuplot to generate an html report"
 msgstr ""
-"Som blocks, men kör även xsltproc och gnuplot för att generera en "
-"html-rapport"
+"Som blocks, men kör även xsltproc och gnuplot för att generera en html-"
+"rapport"
 
-#: ../Util/Flags.mo:921
+#: ../Util/Flags.mo:1029
 msgid "Generate code for profiling of all functions and equations"
 msgstr "Generera kod för profilering av alla funktioner och ekvationer"
 
-#: ../Util/Flags.mo:922
+#: ../Util/Flags.mo:1030
 msgid ""
 "Generate code for profiling of all functions and equations with additional "
 "performance data using the papi-interface (cpp-runtime)"
@@ -3773,7 +4119,16 @@ msgstr ""
 "Generera kod för profilering av alla funktioner och ekvationer med utökad "
 "prestanda-data m.h.a. papi-interfacet (cpp-runtime)"
 
-#: ../Util/Flags.mo:924
+#: ../Util/Flags.mo:1031
+#, fuzzy
+msgid ""
+"Generate code for profiling of all functions and equations with additional "
+"statistics (cpp-runtime)"
+msgstr ""
+"Generera kod för profilering av alla funktioner och ekvationer med utökad "
+"prestanda-data m.h.a. papi-interfacet (cpp-runtime)"
+
+#: ../Util/Flags.mo:1033
 msgid ""
 "Sets the profiling level to use. Profiled equations and functions record "
 "execution time and count for each time step taken by the integrator."
@@ -3781,7 +4136,7 @@ msgstr ""
 "Ställ in profileringsnivå att använda. Profilerade ekvationer och funktioner "
 "sparar körtid och antal anrop för varje steg som integratorn tar."
 
-#: ../Util/Flags.mo:928
+#: ../Util/Flags.mo:1037
 msgid ""
 "sets tolerance of reshuffling algorithm: 1: conservative, 2: more tolerant, "
 "3 resolve all"
@@ -3789,28 +4144,162 @@ msgstr ""
 "Ställer in toleransen av blandnings-algoritmen: 1: konservativ, 2: mer "
 "tolerant, 3: lös alla"
 
-#: ../Util/Flags.mo:936
-msgid "Generate dynamic optimization problem based on annation approach."
+#: ../Util/Flags.mo:1045
+#, fuzzy
+msgid "Generate dynamic optimization problem based on annotation approach."
 msgstr "Genererar dynamiskt optimiseringsproblem baseras på annation-ansats."
 
-#: ../Util/Flags.mo:1832
+#: ../Util/Flags.mo:1049
 msgid ""
-"Help on the command-line and scripting environments, including OMShell and "
-"OMNotebook."
+"Experimental feature: cse of duplicate call expressions (this deactivates "
+"module removeEqualFunctionCalls)"
 msgstr ""
-"Hjälp angående kommandorad- och skript-miljöer, inklusive OMShell och "
-"OMNotebook."
 
-#: ../Util/Flags.mo:1833
+#: ../Util/Flags.mo:1053
+msgid "Experimental feature: cse of duplicate binary expressions"
+msgstr ""
+
+#: ../Util/Flags.mo:1057
+msgid ""
+"Experimental feature: cse of each call expression (this deactivates module "
+"removeEqualFunctionCalls)"
+msgstr ""
+
+#: ../Util/Flags.mo:1061
+msgid "Max size for solveLinearSystem."
+msgstr ""
+
+#: ../Util/Flags.mo:1065
+msgid ""
+"Sets extra flags for compilation with the C++ compiler (e.g. +cppFlags=-O3,-"
+"Wall)"
+msgstr ""
+
+#: ../Util/Flags.mo:1070 ../Util/Flags.mo:1094
+msgid "Disables module"
+msgstr ""
+
+#: ../Util/Flags.mo:1071
+msgid ""
+"Performs alias elimination and removes constant variables. Default case uses "
+"in preOpt phase the fastAcausal and in postOpt phase the causal "
+"implementation."
+msgstr ""
+
+#: ../Util/Flags.mo:1072
+msgid ""
+"Performs alias elimination and removes constant variables. Causal "
+"implementation."
+msgstr ""
+
+#: ../Util/Flags.mo:1073
+msgid ""
+"Performs alias elimination and removes constant variables. "
+"fastImplementation fastAcausal."
+msgstr ""
+
+#: ../Util/Flags.mo:1074
+msgid ""
+"Performs alias elimination and removes constant variables. Implementation "
+"allAcausal."
+msgstr ""
+
+#: ../Util/Flags.mo:1075
+msgid "New implementation (experimental)"
+msgstr ""
+
+#: ../Util/Flags.mo:1077
+msgid "Specifies method that removes simple equations."
+msgstr ""
+
+#: ../Util/Flags.mo:1081
+msgid ""
+"Activates dynamic tearing (TearingSet can be changed automatically during "
+"runtime, strict set vs. casual set.)"
+msgstr ""
+
+#: ../Util/Flags.mo:1085
+msgid "Rewrite the ode system for implicit euler."
+msgstr ""
+
+#: ../Util/Flags.mo:1095
+msgid "linear loops --> constraints"
+msgstr ""
+
+#: ../Util/Flags.mo:1096
+msgid "no linear loops --> constraints"
+msgstr ""
+
+#: ../Util/Flags.mo:1097
+msgid "loops --> constraints"
+msgstr ""
+
+#: ../Util/Flags.mo:1098
+msgid ""
+"Specifies method that transform loops in constraints. hint: using initial "
+"guess from file!"
+msgstr ""
+
+#: ../Util/Flags.mo:1102
+msgid "Use tearing set even if it is not smaller than the original component."
+msgstr ""
+
+#: ../Util/Flags.mo:1107 ../Util/Flags.mo:1116
+msgid "do nothing"
+msgstr ""
+
+#: ../Util/Flags.mo:1108
+#, fuzzy
+msgid "special modification of residual expressions"
+msgstr "Upprepad modifiering av element %s på %s."
+
+#: ../Util/Flags.mo:1109
+msgid "special modification of residual expressions with helper variables"
+msgstr ""
+
+#: ../Util/Flags.mo:1111
+#, fuzzy
+msgid "simplify algebraic loops"
+msgstr "Blandar om algebraiska loopar."
+
+#: ../Util/Flags.mo:1117
+msgid "linear tearing set of size 1"
+msgstr ""
+
+#: ../Util/Flags.mo:1118
+#, fuzzy
+msgid "linear tearing"
+msgstr "Cellier-tearing."
+
+#: ../Util/Flags.mo:1120
+#, fuzzy
+msgid "inline and repeat tearing."
+msgstr "Cellier-tearing."
+
+#: ../Util/Flags.mo:1124
+msgid "Sets the minium threshold for stream flow rates"
+msgstr ""
+
+#: ../Util/Flags.mo:1128
+msgid ""
+"Sets the matrix format type in cpp runtime which should be used (dense | "
+"sparse ). Default: dense."
+msgstr ""
+
+#: ../Util/Flags.mo:1132
+msgid "Sets the limit for partitionin of linear torn systems."
+msgstr ""
+
+#: ../Util/Flags.mo:2059
 msgid "The command-line options available for omc."
 msgstr "Kommandoradsalternativen tillgängliga för omc."
 
-#: ../Util/Flags.mo:1834
+#: ../Util/Flags.mo:2060
 msgid "Flags that enable debugging, diagnostics, and research prototypes."
 msgstr ""
 "Flaggor som aktiverar felsökning, diagnostik, och forskningsprototyper."
 
-#: ../Util/Flags.mo:1835
+#: ../Util/Flags.mo:2061
 msgid ""
 "Flags that determine which symbolic methods are used to produce the "
 "causalized equation system."
@@ -3818,7 +4307,7 @@ msgstr ""
 "Flaggor som bestämmer vilken symbolisk metod som används för att producera "
 "det kausaliserade ekvationssystemet."
 
-#: ../Util/Flags.mo:1836
+#: ../Util/Flags.mo:2062
 msgid ""
 "The command-line options available for simulation executables generated by "
 "OpenModelica."
@@ -3826,23 +4315,26 @@ msgstr ""
 "Kommandoradsalternativ tillgängliga för simuleringsprogram genererade av "
 "OpenModelica."
 
-#: ../Util/Flags.mo:1837
+#: ../Util/Flags.mo:2063
 msgid "Displays option descriptions for multi-option flag <flagname>."
 msgstr "Beskriver alternativen tillgängliga för flervalsflaggan <flagname>."
 
-#: ../Util/Flags.mo:1838
+#: ../Util/Flags.mo:2064
 msgid "This help-text."
 msgstr "Visar hjälptexten."
 
-#: ../Util/Flags.mo:1848
+#: ../Util/Flags.mo:2066
 msgid "The available topics (help(\"topics\")) are as follows:\n"
 msgstr "De tillgängliga ämnena (help(\"topics\")) är följande:\n"
 
-#: ../Util/Flags.mo:1855
-msgid "The simulation executable takes the following flags:\n"
+#: ../Util/Flags.mo:2073 ../Util/Flags.mo:2078
+#, fuzzy
+msgid ""
+"The simulation executable takes the following flags:\n"
+"\n"
 msgstr "Simuleringsprogram tar följande flaggor:\n"
 
-#: ../Util/Flags.mo:1860
+#: ../Util/Flags.mo:2083 ../Util/Flags.mo:2263
 msgid ""
 "The debug flag takes a comma-separated list of flags which are used by the\n"
 "compiler for debugging or experimental purposes.\n"
@@ -3852,7 +4344,7 @@ msgstr ""
 "kompilatorn för debuggning och experimentella funktioner.\n"
 "Flaggor med \"-\" eller \"no\" som prefix slås av.\n"
 
-#: ../Util/Flags.mo:1861
+#: ../Util/Flags.mo:2084 ../Util/Flags.mo:2264
 msgid ""
 "The available flags are (+ are enabled by default, - are disabled):\n"
 "\n"
@@ -3860,49 +4352,72 @@ msgstr ""
 "De tillgängliga flaggorna är (+ är påslagna som standard, - är avslagna):\n"
 "\n"
 
-#: ../Util/Flags.mo:1868
+#: ../Util/Flags.mo:2092
+#, fuzzy
 msgid ""
-"The +preOptModules flag sets the optimization modules which are used before "
+"The --preOptModules flag sets the optimization modules which are used before "
 "the\n"
 "matching and index reduction in the back end. These modules are specified as "
-"a comma-separated list, where the valid modules are:"
+"a comma-separated list."
 msgstr ""
 "Flaggan +preOptModules anger de optimeringsmoduler som används före "
 "matchning\n"
 "och index-reduktion i bakdelen. Dessa moduler anges som en komma-separerad "
 "lista, där de giltiga modulerna är:"
 
-#: ../Util/Flags.mo:1871
+#: ../Util/Flags.mo:2095 ../Util/Flags.mo:2119
+msgid "The modules used by default are:"
+msgstr ""
+
+#: ../Util/Flags.mo:2096 ../Util/Flags.mo:2120
+#, fuzzy
+msgid "The valid modules are:"
+msgstr ""
+"De tillgängliga flaggorna är:\n"
+"\n"
+
+#: ../Util/Flags.mo:2100
+#, fuzzy
 msgid ""
-"The +matchingAlgorithm sets the method that is used for the matching "
-"algorithm, after the pre optimization modules. Valid options are:"
+"The --matchingAlgorithm sets the method that is used for the matching "
+"algorithm, after the pre optimization modules."
 msgstr ""
 "Flaggan +matchingAlgorithm anger metoden som används för "
 "matchningsalgoritmen, efter modulerna under för-optimeringen. Giltiga val är:"
 
-#: ../Util/Flags.mo:1874
+#: ../Util/Flags.mo:2103 ../Util/Flags.mo:2111
+msgid "The method used by default is:"
+msgstr ""
+
+#: ../Util/Flags.mo:2104 ../Util/Flags.mo:2112
+msgid "The valid methods are:"
+msgstr ""
+
+#: ../Util/Flags.mo:2108
+#, fuzzy
 msgid ""
-"The +indexReductionMethod sets the method that is used for the index "
-"reduction, after the pre optimization modules. Valid options are:"
+"The --indexReductionMethod sets the method that is used for the index "
+"reduction, after the pre optimization modules."
 msgstr ""
 "Flaggan +indexReductionMethod anger metoden som används för index-reduktion, "
 "efter modulerna under för-optimeringen. Giltiga val är:"
 
-#: ../Util/Flags.mo:1877
+#: ../Util/Flags.mo:2116
+#, fuzzy
 msgid ""
-"The +postOptModules then sets the optimization modules which are used after "
-"the index reduction, specified as a comma-separated list. The valid modules "
-"are:"
+"The --postOptModules then sets the optimization modules which are used after "
+"the index reduction, specified as a comma-separated list."
 msgstr ""
-"Flaggan +postOptModules anger de optimeringsmoduler som används efter "
-"index-reduktion, specificerad som en komma-separerad lista. De giltiga "
-"modulerna är:"
+"Flaggan +postOptModules anger de optimeringsmoduler som används efter index-"
+"reduktion, specificerad som en komma-separerad lista. De giltiga modulerna "
+"är:"
 
-#: ../Util/Flags.mo:1964
-msgid "Copyright © 2013 Open Source Modelica Consortium (OSMC)\n"
+#: ../Util/Flags.mo:2207
+#, fuzzy
+msgid "Copyright © 2015 Open Source Modelica Consortium (OSMC)\n"
 msgstr "Copyright © 2013 Open Source Modelica Consortium (OSMC)\n"
 
-#: ../Util/Flags.mo:1965
+#: ../Util/Flags.mo:2208
 msgid ""
 "Distributed under OMSC-PL and GPL, see www.openmodelica.org\n"
 "\n"
@@ -3910,15 +4425,14 @@ msgstr ""
 "Distribueras under OMSC-PL och GPL, se www.openmodelica.org\n"
 "\n"
 
-#: ../Util/Flags.mo:1967
+#: ../Util/Flags.mo:2210
+#, fuzzy
 msgid ""
-"Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Script.mos) [Libraries "
-"| .mo-files] \n"
+"Usage: omc [Options] (Model.mo | Script.mos) [Libraries | .mo-files] \n"
 "* Libraries: Fully qualified names of libraries to load before processing "
 "Model or Script.\n"
 "             The libraries should be separated by spaces: Lib1 Lib2 ... "
 "LibN.\n"
-"* runtimeOptions: call omc -help to see runtime options\n"
 msgstr ""
 "Användning: omc [-runtimeFlaggor +omcFlaggor] (Modell.mo | Script.mos) "
 "[Bibliotek | .mo-files] \n"
@@ -3927,50 +4441,53 @@ msgstr ""
 "             Biblioteken ska separeras med mellanslag: Lib1 Lib2 ... LibN.\n"
 "* runtimeFlaggor: anropa omc -help för att se runtime-val\n"
 
-#: ../Util/Flags.mo:1968
+#: ../Util/Flags.mo:2211
+#, fuzzy
 msgid ""
 "\n"
-"* +omcOptions:\n"
+"* Options:\n"
 msgstr ""
 "\n"
 "* +omcFlaggor:\n"
 
-#: ../Util/Flags.mo:1970
+#: ../Util/Flags.mo:2213
+#, fuzzy
 msgid ""
 "\n"
-"For more details on a specific topic, use +help=topics or help(\"topics\")\n"
+"For more details on a specific topic, use --help=topics or help(\"topics\")\n"
 "\n"
 msgstr ""
 "\n"
-"För mer information om ett ämne, används +help=topics eller "
-"help(\"topics\")\n"
+"För mer information om ett ämne, används +help=topics eller help(\"topics"
+"\")\n"
 "\n"
 
-#: ../Util/Flags.mo:1971
+#: ../Util/Flags.mo:2214
 msgid "* Examples:\n"
 msgstr "* Exempel:\n"
 
-#: ../Util/Flags.mo:1972
+#: ../Util/Flags.mo:2215
 msgid ""
 "  omc Model.mo             will produce flattened Model on standard output.\n"
 msgstr "  omc Model.mo             producerar uflatat Model på standard ut.\n"
 
-#: ../Util/Flags.mo:1973
+#: ../Util/Flags.mo:2216
+#, fuzzy
 msgid ""
-"  omc +s Model.mo          will produce simulation code for the model:\n"
+"  omc -s Model.mo          will produce simulation code for the model:\n"
 msgstr "  omc +s Model.mo          producerar simuleringskod för modellen:\n"
 
-#: ../Util/Flags.mo:1974
+#: ../Util/Flags.mo:2217
 msgid "                            * Model.c           The model C code.\n"
 msgstr "                            * Model.c           Modellens C-kod.\n"
 
-#: ../Util/Flags.mo:1975
+#: ../Util/Flags.mo:2218
 msgid ""
 "                            * Model_functions.c The model functions C code.\n"
 msgstr ""
 "                            * Model_functions.c C-kod för funktioner.\n"
 
-#: ../Util/Flags.mo:1976
+#: ../Util/Flags.mo:2219
 msgid ""
 "                            * Model.makefile    The makefile to compile the "
 "model.\n"
@@ -3979,15 +4496,15 @@ msgstr ""
 "modellen.\n"
 
 # Översättningen kapas av Qt Linguist, men är korrekt.
-#: ../Util/Flags.mo:1977
+#: ../Util/Flags.mo:2220
 msgid "                            * Model_init.xml    The initial values.\n"
 msgstr "                            * Model_init.xml    Begynnelsevillkor.\n"
 
-#: ../Util/Flags.mo:1979
+#: ../Util/Flags.mo:2222
 msgid "  omc Script.mos           will run the commands from Script.mos.\n"
 msgstr "  omc Script.mos           kör kommandon från Script.mos.\n"
 
-#: ../Util/Flags.mo:1980
+#: ../Util/Flags.mo:2223
 msgid ""
 "  omc Model.mo Modelica    will first load the Modelica library and then "
 "produce \n"
@@ -3997,7 +4514,7 @@ msgstr ""
 "                            producerar sedan en utflatat Model på standard "
 "ut.\n"
 
-#: ../Util/Flags.mo:1981
+#: ../Util/Flags.mo:2224
 msgid ""
 "  omc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and "
 "produce \n"
@@ -4006,11 +4523,11 @@ msgstr ""
 "  omc Model1.mo Model2.mo  laddar både Model1.mo och Model2.mo och\n"
 "                            producerar utflatad Model1 på standard ut.\n"
 
-#: ../Util/Flags.mo:1982
+#: ../Util/Flags.mo:2225
 msgid "  *.mo (Modelica files) \n"
 msgstr "  *.mo (Modelica-filer) \n"
 
-#: ../Util/Flags.mo:1984
+#: ../Util/Flags.mo:2227
 msgid ""
 "  *.mos (Modelica Script files)\n"
 "\n"
@@ -4018,202 +4535,363 @@ msgstr ""
 "  *.mos (Modelica-skript)\n"
 "\n"
 
-#: ../Util/Flags.mo:1985
+#: ../Util/Flags.mo:2228
+#, fuzzy
 msgid ""
-"For available simulation flags, use +help=simulation.\n"
+"For available simulation flags, use --help=simulation.\n"
 "\n"
 msgstr ""
 "För tillgängliga simuleringsflaggor, använd +help=simulation.\n"
 "\n"
 
-#: ../Util/Flags.mo:1986
+#: ../Util/Flags.mo:2229
 msgid ""
 "Documentation is available in the built-in package OpenModelica.Scripting "
 "or\n"
-"online "
-"<https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html>.\n"
+"online <https://build.openmodelica.org/Documentation/OpenModelica.Scripting."
+"html>.\n"
 msgstr ""
 "Dokumentation är tillgänglig i det inbyggda paketet OpenModelica.Scripting "
 "eller\n"
-"online "
-"<https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html>.\n"
+"online <https://build.openmodelica.org/Documentation/OpenModelica.Scripting."
+"html>.\n"
 
-#: ../Util/Flags.mo:2061 ../Util/Flags.mo:2067
+#: ../Util/Flags.mo:2246
+#, fuzzy
+msgid ""
+"Usage: omc [Options] (Model.mo | Script.mos) [Libraries | .mo-files]\n"
+"\n"
+"* Libraries: Fully qualified names of libraries to load before processing "
+"Model or Script.\n"
+"  The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n"
+msgstr ""
+"Användning: omc [-runtimeFlaggor +omcFlaggor] (Modell.mo | Script.mos) "
+"[Bibliotek | .mo-files] \n"
+"* Bibliotek: Namn på de bibliotek som ska laddas innan bearbetning av Modell "
+"eller Script.\n"
+"             Biblioteken ska separeras med mellanslag: Lib1 Lib2 ... LibN.\n"
+"* runtimeFlaggor: anropa omc -help för att se runtime-val\n"
+
+#: ../Util/Flags.mo:2248
+#, fuzzy
+msgid "Options"
+msgstr ""
+"\n"
+"* +omcFlaggor:\n"
+
+#: ../Util/Flags.mo:2258
+#, fuzzy
+msgid "Debug flags"
+msgstr "Okänd debug-flagga %s."
+
+#: ../Util/Flags.mo:2270
+#, fuzzy
+msgid "Flags for Optimization Modules"
+msgstr "Skriver ut information från optimeringsmodulerna."
+
+#: ../Util/Flags.mo:2278
+#, fuzzy
+msgid ""
+"The :ref:`--preOptModules <omcflag-preOptModules>` flag sets the "
+"optimization modules which are used before the\n"
+"matching and index reduction in the back end. These modules are specified as "
+"a comma-separated list."
+msgstr ""
+"Flaggan +preOptModules anger de optimeringsmoduler som används före "
+"matchning\n"
+"och index-reduktion i bakdelen. Dessa moduler anges som en komma-separerad "
+"lista, där de giltiga modulerna är:"
+
+#: ../Util/Flags.mo:2280
+#, fuzzy
+msgid ""
+"The :ref:`--matchingAlgorithm <omcflag-matchingAlgorithm>` sets the method "
+"that is used for the matching algorithm, after the pre optimization modules."
+msgstr ""
+"Flaggan +matchingAlgorithm anger metoden som används för "
+"matchningsalgoritmen, efter modulerna under för-optimeringen. Giltiga val är:"
+
+#: ../Util/Flags.mo:2282
+#, fuzzy
+msgid ""
+"The :ref:`--indexReductionMethod <omcflag-indexReductionMethod>` sets the "
+"method that is used for the index reduction, after the pre optimization "
+"modules."
+msgstr ""
+"Flaggan +indexReductionMethod anger metoden som används för index-reduktion, "
+"efter modulerna under för-optimeringen. Giltiga val är:"
+
+#: ../Util/Flags.mo:2284
+#, fuzzy
+msgid ""
+"The :ref:`--postOptModules <omcflag-postOptModules>` then sets the "
+"optimization modules which are used after the index reduction, specified as "
+"a comma-separated list."
+msgstr ""
+"Flaggan +postOptModules anger de optimeringsmoduler som används efter index-"
+"reduktion, specificerad som en komma-separerad lista. De giltiga modulerna "
+"är:"
+
+#: ../Util/Flags.mo:2389 ../Util/Flags.mo:2398
 msgid "Valid options:"
 msgstr "Giltiga alternativ:"
 
-#: ../Main/Main.mo:597
-msgid "File does not exist: "
-msgstr "Filen finns inte: "
+#: ../Util/Flags.mo:2419 ../Util/Flags.mo:2424
+#, fuzzy
+msgid "Valid options"
+msgstr "Giltiga alternativ:"
 
-#: ../Main/Main.mo:1090
-msgid "You are trying to run OpenModelica as root.\n"
-msgstr "Du försöker köra OpenModelica som root.\n"
+#: ../Util/Flags.mo:2438
+msgid "Boolean (default"
+msgstr ""
 
-#: ../runtime/FMIImpl.c:53 ../runtime/FMIImpl.c:56 ../runtime/FMIImpl.c:61
+#: ../Util/Flags.mo:2439
+msgid "Integer (default"
+msgstr ""
+
+#: ../Util/Flags.mo:2440
+msgid "Real (default"
+msgstr ""
+
+#: ../Util/Flags.mo:2441
+msgid "String (default *empty*)."
+msgstr ""
+
+#: ../Util/Flags.mo:2442
+msgid "String (default"
+msgstr ""
+
+#: ../Util/Flags.mo:2443
+msgid "String list (default *empty*)."
+msgstr ""
+
+#: ../Util/Flags.mo:2444
+msgid "String list (default"
+msgstr ""
+
+#: ../Util/Flags.mo:2450
+msgid "String (default "
+msgstr ""
+
+#: ../Util/Flags.mo:416
+msgid ""
+"Adds for every der-call an alias equation e.g. dx = der(x). It's a work-a-"
+"round flag,"
+msgstr ""
+
+#: ../runtime/FMIImpl.c:74 ../runtime/FMIImpl.c:77 ../runtime/FMIImpl.c:82
 #, c-format
 msgid "module = %s, log level = %s: %s"
 msgstr "module = %s, loggningsnivå = %s: %s"
 
-#: ../runtime/FMIImpl.c:763
+#: ../runtime/FMIImpl.c:786
 #, c-format
 msgid "The FMU version is %s. Unknown/Unsupported FMU version."
 msgstr "FMU-versionen är %s. Okänd/ej stödd FMU-version."
 
-#: ../runtime/FMIImpl.c:781 ../runtime/FMIImpl.c:812
+#: ../runtime/FMIImpl.c:804 ../runtime/FMIImpl.c:835
 msgid "Error parsing the modelDescription.xml file."
 msgstr "Kunde inte tolka modelDescription.xml."
 
-#: ../runtime/FMIImpl.c:792 ../runtime/FMIImpl.c:823
-msgid "Could not create the DLL loading mechanism(C-API)."
-msgstr "Kunda inte skapa laddningsmekanismen för DLLer (C-API)."
+#: ../runtime/FMIImpl.c:815 ../runtime/FMIImpl.c:855
+msgid "Loading of FMU dynamic link library failed."
+msgstr ""
 
-#: ../runtime/printimpl.c:411
+#: ../runtime/FMIImpl.c:844
 #, c-format
-msgid "Error compiling regular expression: %s or %s."
-msgstr "Misslyckades med att kompilera reguljärt uttryck: %s eller %s."
+msgid ""
+"The FMU version is 2.0 and FMU type is %s. Unsupported FMU type. Only FMI "
+"2.0 ModelExchange is supported."
+msgstr ""
 
-#: ../runtime/SimulationResults.c:86
+#: ../runtime/SimulationResults.c:87
 #, c-format
 msgid "Unknown result-file suffix of file '%s'"
 msgstr "Okänd resultatfil med ändelse '%s'"
 
-#: ../runtime/SimulationResults.c:93 ../runtime/SimulationResults.c:101
-#: ../runtime/SimulationResults.c:109
+#: ../runtime/SimulationResults.c:94 ../runtime/SimulationResults.c:102
+#: ../runtime/SimulationResults.c:110
 #, c-format
 msgid "Failed to open simulation result %s: %s"
 msgstr "Misslyckades öppna simuleringsresultat %s: %s"
 
-#: ../runtime/SimulationResults.c:115
+#: ../runtime/SimulationResults.c:116
 #, c-format
 msgid "Failed to open simulation result %s"
 msgstr "Misslyckades öppna simuleringsresultat %s"
 
-#: ../runtime/SimulationResults.c:142 ../runtime/SimulationResults.c:170
+#: ../runtime/SimulationResults.c:143 ../runtime/SimulationResults.c:171
 #, c-format
 msgid "%s not found in %s\n"
 msgstr "%s hittades inte i %s\n"
 
-#: ../runtime/SimulationResults.c:154
+#: ../runtime/SimulationResults.c:155
 #, c-format
 msgid "%s not defined at time %s (startTime=%s, stopTime=%s)."
 msgstr "%s är inte definierad vid tidpunkt %s (start=%s, stopp=%s)."
 
-#: ../runtime/SimulationResults.c:186
+#: ../runtime/SimulationResults.c:187
 #, c-format
 msgid "%s not defined at time %s\n"
 msgstr "%s är ej definierad vid tidpunkt %s\n"
 
-#: ../runtime/SimulationResults.c:198
+#: ../runtime/SimulationResults.c:199
 #, c-format
 msgid "val() not implemented for plot format: %s\n"
 msgstr "val() stödjer ej data-format: %s\n"
 
-#: ../runtime/SimulationResults.c:217 ../runtime/SimulationResults.c:223
+#: ../runtime/SimulationResults.c:218 ../runtime/SimulationResults.c:224
 #, c-format
 msgid "Failed to read readSimulationResultSize from file: %s\n"
 msgstr "Misslyckades läsa storlek av simuleringsresultat från fil: %s\n"
 
-#: ../runtime/SimulationResults.c:228
+#: ../runtime/SimulationResults.c:229
 #, c-format
 msgid "readSimulationResultSize() not implemented for plot format: %s\n"
 msgstr "readSimulationResultSize() stödjer ej dataformat: %s\n"
 
-#: ../runtime/SimulationResults.c:268
+#: ../runtime/SimulationResults.c:284
 #, c-format
 msgid "readSimulationResultSize() not implemented for plot format: %s"
 msgstr "readSimulationResultSize() stödjer ej dataformat: %s"
 
-#: ../runtime/SimulationResults.c:322
+#: ../runtime/SimulationResults.c:337
 msgid "readDataset(...): Expected and actual dimension sizes do not match."
 msgstr ""
 "readDataset(...): Förväntade och faktiska dimensionsstorlekar stämmer ej "
 "överens."
 
-#: ../runtime/SimulationResults.c:335 ../runtime/SimulationResults.c:361
+#: ../runtime/SimulationResults.c:350 ../runtime/SimulationResults.c:376
+#: ../runtime/SimulationResults.c:447 ../runtime/SimulationResults.c:476
 #, c-format
 msgid "Could not read variable %s in file %s."
 msgstr "Kunde inte läsa variabel %s i fil %s."
 
-#: ../runtime/SimulationResults.c:375
+#: ../runtime/SimulationResults.c:390
 #, c-format
 msgid "readDataSet() not implemented for plot format: %s\n"
 msgstr "readDataSet() stödjer ej data-format: %s\n"
 
-#: ../runtime/SimulationResultsCmp.c:698 ../runtime/SimulationResultsCmp.c:713
+#: ../runtime/SimulationResults.c:397
+#, fuzzy, c-format
+msgid "Failed to write to file %s."
+msgstr "Kunde inte utveckla högerledet i %s."
+
+#: ../runtime/SimulationResults.c:623
+#, c-format
+msgid ""
+"Resampling %s from %s points to %s points, removing %s events stored in %s "
+"points.\n"
+msgstr ""
+
+#: ../runtime/SimulationResults.c:643
+#, c-format
+msgid "Resampling %s failed to get variable %s at time %s.\n"
+msgstr ""
+
+#: ../runtime/SimulationResults.c:663
+#, fuzzy, c-format
+msgid "filterSimulationResults not implemented for plot format: %s\n"
+msgstr "readSimulationResultSize() stödjer ej dataformat: %s\n"
+
+#: ../runtime/SimulationResultsCmp.c:651 ../runtime/SimulationResultsCmp.c:667
 #, c-format
 msgid "Get data of variable %s from file %s failed!\n"
 msgstr "Hämtning av data för variabel %s från fil %s misslyckades!\n"
 
-#: ../runtime/SimulationResultsCmp.c:733
+#: ../runtime/SimulationResultsCmp.c:694
 msgid "Cannot write to the difference (.csv) file!\n"
 msgstr "Kan inte skriva till differensfilen (.csv)!\n"
 
-#: ../runtime/SimulationResultsCmp.c:744
+#: ../runtime/SimulationResultsCmp.c:705
 msgid "Files not Equal\n"
 msgstr "Filerna är inte lika\n"
 
-#: ../runtime/systemimpl.c:301 ../runtime/systemimpl.c:342
+#: ../runtime/printimpl.c:410
+#, c-format
+msgid "Error compiling regular expression: %s or %s."
+msgstr "Misslyckades med att kompilera reguljärt uttryck: %s eller %s."
+
+#: ../runtime/systemimpl.c:309
 #, c-format
 msgid "Error opening file: %s."
 msgstr "Fel vid öppning av fil %s."
 
-#: ../runtime/systemimpl.c:355
+#: ../runtime/systemimpl.c:350
+#, fuzzy, c-format
+msgid "Error opening file: %s: %s."
+msgstr "Fel vid öppning av fil %s."
+
+#: ../runtime/systemimpl.c:363
 #, c-format
 msgid "File too large to fit into a MetaModelica string: %s."
 msgstr "Filen får inte plats i en MetaModelica string: %s."
 
-#: ../runtime/systemimpl.c:444
+#: ../runtime/systemimpl.c:376
+#, c-format
+msgid "Error opening file: %s (its size is known, but failed to open it): %s"
+msgstr ""
+
+#: ../runtime/systemimpl.c:388
+#, fuzzy, c-format
+msgid "Failed to read the entire file: %s: %s"
+msgstr "Misslyckades läsa storlek av simuleringsresultat från fil: %s\n"
+
+#: ../runtime/systemimpl.c:468
 #, c-format
 msgid "Error appending to file %s."
 msgstr "Fel vid tillägg till fil %s."
 
-#: ../runtime/systemimpl.c:567 ../runtime/systemimpl.c:573
+#: ../runtime/systemimpl.c:622 ../runtime/systemimpl.c:631
 #, c-format
 msgid "system(%s) failed: %s"
 msgstr "system(%s) misslyckades: %s"
 
-#: ../runtime/systemimpl.c:1003
+#: ../runtime/systemimpl.c:1122
 #, c-format
 msgid "Error opening file %s."
 msgstr "Fel vid öppning av fil %s."
 
-#: ../runtime/systemimpl.c:1153
+#: ../runtime/systemimpl.c:1239 ../runtime/systemimpl.c:1285
 #, c-format
 msgid "OMC unable to load `%s': %s.\n"
 msgstr "OMC kunde inte ladda `%s': %s.\n"
 
-#: ../runtime/systemimpl.c:1573
+#: ../runtime/systemimpl.c:1705
 #, c-format
 msgid "Modelica URI lacks classname: %s"
 msgstr "Modelica URI saknar klassnamn: %s"
 
-#: ../runtime/systemimpl.c:1582
+#: ../runtime/systemimpl.c:1714
 #, c-format
 msgid "File URI has no path: %s"
 msgstr "File URI saknar sökväg: %s"
 
-#: ../runtime/systemimpl.c:1586
+#: ../runtime/systemimpl.c:1718
 #, c-format
 msgid "File URI using hostnames is not supported: %s"
 msgstr "File URI med värdnamn stöds inte: %s"
 
-#: ../runtime/systemimpl.c:1591
+#: ../runtime/systemimpl.c:1723
 #, c-format
 msgid "Unknown uri: %s"
 msgstr "Okänd uri: %s"
 
-#: ../runtime/systemimpl.c:2058
+#: ../runtime/systemimpl.c:1785
+msgid "Not compiled with lpsolve support"
+msgstr ""
+
+#: ../runtime/systemimpl.c:2207
 #, c-format
 msgid "freopen(%s,%s,%s) failed: %s"
 msgstr "freopen(%s,%s,%s) misslyckades: %s"
 
-#: ../runtime/systemimpl.c:2097 ../runtime/systemimpl.c:2110
+#: ../runtime/systemimpl.c:2246 ../runtime/systemimpl.c:2259
 #, c-format
 msgid "iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"
 msgstr "iconv(\"%s\",to=\"%s\",from=\"%s\") misslyckades: %s"
 
-#: ../runtime/systemimpl.c:2116
+#: ../runtime/systemimpl.c:2265
 #, c-format
 msgid ""
 "iconv(to=%s) failed because the character set output null bytes in the "
@@ -4222,30 +4900,127 @@ msgstr ""
 "iconv(to=%s) misslyckades eftersom teckenuppsättningen använde en noll-byte "
 "mitt i strängen."
 
-#: ../runtime/systemimpl.c:2204
+#: ../runtime/systemimpl.c:2360
 #, c-format
 msgid "Warning: Failed to set locale: '%s'\n"
 msgstr "Varning: Misslyckades sätta nationella inställningar: '%s'\n"
 
-#: ../runtime/systemimpl.c:2224
+#: ../runtime/systemimpl.c:2380
 #, c-format
 msgid ""
-"Warning: Failed to set LC_CTYPE to UTF-8 using the chosen locale and "
-"C.UTF-8. OpenModelica assumes all input and output it makes is in UTF-8 so "
-"you might have some issues.\n"
+"Warning: Failed to set LC_CTYPE to UTF-8 using the chosen locale and C."
+"UTF-8. OpenModelica assumes all input and output it makes is in UTF-8 so you "
+"might have some issues.\n"
 msgstr ""
 "Varning: Misslyckades sätta LC_CTYPE till UTF-8 med de valda nationella "
 "inställningarna och C.UTF-8. OpenModelica antar att all in- och utdata är "
 "kodad som UTF-8 så du kan få smärre problem.\n"
 
-#: ../runtime/systemimpl.c:2494 ../runtime/systemimpl.c:2504
+#: ../runtime/systemimpl.c:2724 ../runtime/systemimpl.c:2734
 #, c-format
 msgid "Could not access file %s: %s."
 msgstr "Kunde inte få åtkomst till filen %s: %s."
 
-#: ../runtime/System_rml.c:1819
-msgid "Threads are not available when OpenModelica is compiled using RML"
-msgstr "Trådar är inte tillgängliga när OpenModelica kompilerats med RML"
+#: ../runtime/systemimpl.c:2969
+#, fuzzy, c-format
+msgid "Error creating temporary directory %s: %s."
+msgstr "Fel vid skrivning till fil %s."
+
+#~ msgid "component"
+#~ msgstr "komponent"
+
+#~ msgid "class"
+#~ msgstr "klass"
+
+#~ msgid "function"
+#~ msgstr "funktion"
+
+#~ msgid "package"
+#~ msgstr "paket"
+
+#~ msgid ""
+#~ "When solving linear system %1\n"
+#~ "  U(%2,%2) = 0.0, which means system is singular for variable %3."
+#~ msgstr ""
+#~ "Under lösning av linjärt system %1\n"
+#~ "  U(%2,%2) = 0.0, vilket betyder att systemet är singulärt för variabel "
+#~ "%3."
+
+#~ msgid ""
+#~ "Illegal derivative. der(%s) in component %s is of type %s, which is not a "
+#~ "subtype of Real."
+#~ msgstr ""
+#~ "Ogiltig derivata. der(%s) i komponent %s har typ %s, vilket inte är en "
+#~ "undertyp till Real."
+
+#~ msgid ""
+#~ "%s. Strict RML enforces match expression input and output to be the same "
+#~ "as the function's."
+#~ msgstr ""
+#~ "%s. Strikt RML tvingar matchuttryck input och output att vara detsamma "
+#~ "som funktionens."
+
+#~ msgid "Turns on/off dependency analysis for getTotalProgram."
+#~ msgstr "Slår på/av beroendeanalysen för getTotalProgram."
+
+#~ msgid "Enables using of symbolic matrices for initialization (ipopt only)."
+#~ msgstr ""
+#~ "Slår på användandet av symboliska matriser för initiering (endast ipopt)."
+
+#~ msgid ""
+#~ "Enables dumping of the optimization information when optimizing the "
+#~ "initial system."
+#~ msgstr "Slår på utskrift av optimeringsinformation för initialsystem."
+
+#~ msgid ""
+#~ "Enables tearing of linear systems, but for now they aren't handled "
+#~ "efficent in the runtime."
+#~ msgstr ""
+#~ "Slår på tearing för linjära system, men för tillfället hanteras de ej "
+#~ "effektivt under körning."
+
+#~ msgid ""
+#~ "Disassembles linear torn systems to various singleEquations and a reduced "
+#~ "tornSystem."
+#~ msgstr ""
+#~ "Särar på linjära splittrade system till diverse singleEquations och ett "
+#~ "reducerat tornSystem."
+
+#~ msgid ""
+#~ "Creates statically linked c++ - code for analyzation (requires statically "
+#~ "build cpp-runtime)"
+#~ msgstr ""
+#~ "Skapar statiskt länkad C++-kod för analys (kräver statiskt länkad cpp-"
+#~ "runtime)"
+
+#~ msgid "Turns on extra RML checks."
+#~ msgstr "Slår på extra RML-test."
+
+#~ msgid "Simplifies time initial system."
+#~ msgstr "Förenklar tidsinitiala system."
+
+#~ msgid ""
+#~ "Defines whether plot commands should open OMPlot or show the list of "
+#~ "arguments that would have been sent to OMPlot."
+#~ msgstr ""
+#~ "Anger om plot-kommandon ska öppna OMPlot eller visa argumenten som skulle "
+#~ "skickats till OMPlot."
+
+#~ msgid ""
+#~ "Help on the command-line and scripting environments, including OMShell "
+#~ "and OMNotebook."
+#~ msgstr ""
+#~ "Hjälp angående kommandorad- och skript-miljöer, inklusive OMShell och "
+#~ "OMNotebook."
+
+#~ msgid "You are trying to run OpenModelica as root.\n"
+#~ msgstr "Du försöker köra OpenModelica som root.\n"
+
+#~ msgid "Could not create the DLL loading mechanism(C-API)."
+#~ msgstr "Kunda inte skapa laddningsmekanismen för DLLer (C-API)."
+
+#~ msgid "Threads are not available when OpenModelica is compiled using RML"
+#~ msgstr "Trådar är inte tillgängliga när OpenModelica kompilerats med RML"
 
 #~ msgid ""
 #~ "Subscript is not an integer or integer array in %s which is of type %s, "
@@ -4305,9 +5080,6 @@ msgstr "Trådar är inte tillgängliga när OpenModelica kompilerats med RML"
 #~ msgid "Generates symbolic jacobian."
 #~ msgstr "Skapar symbolisk Jacobian."
 
-#~ msgid "Cellier tearing."
-#~ msgstr "Cellier-tearing."
-
 #~ msgid "Carpanzano2 tearing."
 #~ msgstr "Carpanzano2-tearing."
 
@@ -4327,8 +5099,8 @@ msgstr "Trådar är inte tillgängliga när OpenModelica kompilerats med RML"
 #~ msgid ""
 #~ "Sets the scheduler for task graph scheduling. Default: list scheduling."
 #~ msgstr ""
-#~ "Anger schemaläggaren för schemaläggning med uppgiftsgraf. Standard: "
-#~ "list-schemaläggning."
+#~ "Anger schemaläggaren för schemaläggning med uppgiftsgraf. Standard: list-"
+#~ "schemaläggning."
 
 #~ msgid ""
 #~ "Modified Cellier, drop first step, new step 'count impossible "
@@ -4409,28 +5181,14 @@ msgstr "Trådar är inte tillgängliga när OpenModelica kompilerats med RML"
 #~ msgid "performes relaxation after tearing"
 #~ msgstr "Utför relaxation efter tearing"
 
-#~ msgid "Evaluates parameter with evalute=true annotation"
-#~ msgstr "Beräknar parametrar med evaluate=true annotation"
-
 #~ msgid "Depth First Search based Algorithm with simple Look Ahead Feature"
 #~ msgstr "Depth First Search-baserad algoritm med enkel look-ahead"
 
 #~ msgid "Sets the matching algorithm to use."
 #~ msgstr "Anger den matchningsalgoritm som ska användas."
 
-#~ msgid ""
-#~ "simple index reduction method, select dummy states based on heuristics"
-#~ msgstr "Enkel indexreduktion, välj dummy tillstånd baserat på heuristik"
-
 #~ msgid "remove parameter with evalute=true annotation"
 #~ msgstr "tar bort parametrar med evaluate=true annotation"
-
-#~ msgid ""
-#~ "The available flags are:\n"
-#~ "\n"
-#~ msgstr ""
-#~ "De tillgängliga flaggorna är:\n"
-#~ "\n"
 
 #~ msgid "Only version 1.0 is supported so far."
 #~ msgstr "Endast version 1.0 stöds hittills."

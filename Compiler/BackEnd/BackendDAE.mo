@@ -33,8 +33,6 @@ encapsulated package BackendDAE
 " file:        BackendDAE.mo
   package:     BackendDAE
   description: BackendDAE contains the data-types used by the back end.
-
-  RCS: $Id$
 "
 
 public import Absyn;

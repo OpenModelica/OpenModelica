@@ -9043,6 +9043,7 @@ algorithm
         (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
         (_,(c as SCode.CLASS()),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
         lst = getInheritedClassesHelper(c, cdef, env_1);
+        failure({} = lst);
         paths = List.map(lst, Absyn.crefToPath);
       then
         paths;

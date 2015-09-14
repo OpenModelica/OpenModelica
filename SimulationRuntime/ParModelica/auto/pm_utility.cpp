@@ -47,8 +47,8 @@ std::ostringstream warning_stream;
 std::ostringstream error_stream;
 
 std::ostream& log(const char* pref = "") {
-    log_stream << pref << " : ";
-    return log_stream;
+    std::cout << pref << " : ";
+    return std::cout;
 }
 
 std::ostream& log() {

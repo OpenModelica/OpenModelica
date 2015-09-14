@@ -113,6 +113,7 @@ public:
 
     PMTimer execution_timer;
 	PMTimer clustering_timer;
+    // PMTimer extra_timer;
 
     StepLevels(TaskSystemType& ts) :
       task_system(ts)
@@ -195,6 +196,7 @@ public:
             return profile_execute();
 
         execution_timer.start_timer();
+        // extra_timer.start_timer();
 
         // GraphType& sys_graph = task_system.sys_graph;
 
@@ -227,6 +229,10 @@ public:
         }
 
         execution_timer.stop_timer();
+        // extra_timer.stop_timer();
+        // double step_cost = extra_timer.get_elapsed_time();
+        // std::cout << "E: " << step_cost << std::endl;
+        // extra_timer.reset_timer();
 
     }
 
@@ -247,6 +253,9 @@ public:
         }
 
         execution_timer.stop_timer();
+        // double step_cost = execution_timer.get_elapsed_time();
+        // std::cout << "P: " << step_cost << std::endl;
+        // execution_timer.reset_timer();
 
         this->profiled = true;
         this->schedule_valid = false;

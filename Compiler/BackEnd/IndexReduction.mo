@@ -1574,7 +1574,7 @@ protected
  list<BackendDAE.Var> setVars,aVars,varJ,otherVars,stateCandidates;
  list<DAE.ComponentRef> crstates,crset;
  DAE.ComponentRef crA,set,crJ;
- DAE.Type tp;
+ DAE.Type tp, tyExpCrStates;
  Integer rang,nStates,nStateCandidates,nUnassignedEquations,setIndex,level;
 
  DAE.Exp expcrA,mulAstates,mulAdstates,expset,expderset,expsetstart;
@@ -1605,10 +1605,11 @@ algorithm
      expcrdset := List.map(expcrset,makeder);
      expcrA := Expression.crefExp(crA);
      expcrA := DAE.CAST(tp,expcrA);
-     op := if b then DAE.MUL_MATRIX_PRODUCT(DAE.T_REAL_DEFAULT) else DAE.MUL_SCALAR_PRODUCT(DAE.T_REAL_DEFAULT);
-     mulAstates := DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource),true,expcrstates));
+     tyExpCrStates := DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource);
+     op := if b then DAE.MUL_MATRIX_PRODUCT(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)}, DAE.emptyTypeSource)) else DAE.MUL_SCALAR_PRODUCT(DAE.T_REAL_DEFAULT);
+     mulAstates := DAE.BINARY(expcrA,op,DAE.ARRAY(tyExpCrStates,true,expcrstates));
      (mulAstates,_) := Expression.extendArrExp(mulAstates,false);
-     mulAdstates := DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource),true,expcrdstates));
+     mulAdstates := DAE.BINARY(expcrA,op,DAE.ARRAY(tyExpCrStates,true,expcrdstates));
     (mulAdstates,_) := Expression.extendArrExp(mulAdstates,false);
     expset := if b then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrset) else listHead(expcrset);
     expderset := if b then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrdset) else listHead(expcrdset);
@@ -1620,7 +1621,7 @@ algorithm
     deqn := if b then BackendDAE.ARRAY_EQUATION({rang},expderset,mulAdstates,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)
                                  else BackendDAE.EQUATION(expderset,mulAdstates,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
     // start values for the set
-    expsetstart := DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource),true,expcrstatesstart));
+    expsetstart := DAE.BINARY(expcrA,op,DAE.ARRAY(tyExpCrStates,true,expcrstatesstart));
    (expsetstart,_) := Expression.extendArrExp(expsetstart,false);
    (setVars,_) := List.map2Fold(setVars,setStartExp,expsetstart,rang,1);
     // add set states

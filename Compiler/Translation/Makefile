@@ -1,6 +1,9 @@
 localedir = $(OMBUILDDIR)/share/locale/
 locales = de sv es
 
+ALL_DIRS=../FrontEnd ../BackEnd ../Main ../Script ../Util ../Global ../SimCode
+TEMPLATE_DIR=../Template
+
 release:
 	for locale in $(locales); do mkdir -p $(localedir)/$$locale/LC_MESSAGES && msgfmt -o$(localedir)/$$locale/LC_MESSAGES/openmodelica.mo $$locale.po; done
 update:
@@ -9,5 +12,3 @@ update:
 
 merge-all: update
 	for f in $(locales); do msgmerge -U $$f.po openmodelica.pot; done
-
-include ../Makefile.common
