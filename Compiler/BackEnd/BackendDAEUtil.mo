@@ -6876,6 +6876,7 @@ protected
 algorithm
   for postOptModule in inPostOptModules loop
     (optModule, moduleStr, stopOnFailure) := postOptModule;
+    moduleStr := moduleStr + " (" + BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType) + ")";
     try
       BackendDAE.DAE(systs, shared) := optModule(outDAE);
       (systs, shared) := filterEmptySystems(systs, shared);
@@ -6883,7 +6884,7 @@ algorithm
       outDAE := causalizeDAE(outDAE, NONE(), inMatchingAlgorithm, inDAEHandler, false);
       SimCodeFunctionUtil.execStat("postOpt " + moduleStr);
       if Flags.isSet(Flags.OPT_DAE_DUMP) then
-        print(stringAppendList({"\npost-optimization module ", moduleStr, ":\n\n"}));
+        print("\npost-optimization module " + moduleStr + ":\n\n");
         BackendDump.printBackendDAE(outDAE);
       end if;
     else
