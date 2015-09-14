@@ -2,10 +2,10 @@ TEST = ../../../../../rtest -v
 
 
 TESTFILES = \
-CoupledClutches_FMU1_CPP.mos \
 Crane_FMU1_CPP.mos
 
-FAILINGTESTFILES =
+FAILINGTESTFILES = \
+CoupledClutches_FMU1_CPP.mos \
 
 DEPENDENCIES = \
 *.mo \

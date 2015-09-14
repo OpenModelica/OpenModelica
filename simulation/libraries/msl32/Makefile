@@ -130,7 +130,6 @@ Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation-addDerAlias.mos \
 Modelica.Fluid.Examples.HeatingSystem.mos \
 Modelica.Fluid.Examples.IncompressibleFluidNetwork.mos \
 Modelica.Fluid.Examples.InverseParameterization.mos \
-Modelica.Fluid.Examples.PumpingSystem.mos \
 Modelica.Fluid.Examples.Tanks.EmptyTanks.mos \
 Modelica.Fluid.Examples.Tanks.TanksWithOverflow.mos \
 Modelica.Fluid.Examples.Tanks.ThreeTanks.mos \
@@ -147,7 +146,6 @@ Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMC_DOL_MultiPhase.mos
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start.mos \
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start_MultiPhase.mos \
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator.mos \
-Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator_MultiPhase.mos \
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMPM_Inverter.mos \
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMPM_Inverter_MultiPhase.mos \
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMR_Inverter.mos \
@@ -282,7 +280,9 @@ Modelica.Media.Examples.R134a.R134a2.mos \
 
 
 # Run make failingtest
-FAILINGTESTFILES=  \
+FAILINGTESTFILES = \
+Modelica.Fluid.Examples.PumpingSystem.mos \
+Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator_MultiPhase.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

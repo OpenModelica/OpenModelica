@@ -38,8 +38,8 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 //                                                 xmlns:xlink=\"http://www.w3.org/1999/xlink\"
 //                                                 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
 //                                                 xsi:noNamespaceSchemaLocation=\"http://home.dei.polimi.it/donida/Projects/AutoEdit/Images/DAE.xsd\">
-// <variables dimension=\"5\">
-// <orderedVariables dimension=\"3\">
+// <variables dimension=\"6\">
+// <orderedVariables dimension=\"4\">
 // <variablesList>
 // <variable id=\"1\" name=\"bounce_time\" variability=\"discrete\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
 // <classesNames>
@@ -107,6 +107,19 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </initialValue>
 // </attributesValues>
 // </variable>
+// <variable id=\"4\" name=\"$whenCondition1\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <attributesValues>
+// <fixed string=\"true\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <true/>
+// </apply>
+// </math>
+// </MathML>
+// </fixed>
+// </attributesValues>
+// </variable>
 // </variablesList>
 // </orderedVariables>
 // <knownVariables dimension=\"2\">
@@ -157,7 +170,7 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </variablesList>
 // </knownVariables>
 // </variables>
-// <equations dimension=\"3\">
+// <equations dimension=\"4\">
 // <whenEquation id=\"1\">
 // <WhenOperator>
 // bounce_time := time
@@ -174,26 +187,11 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </math>
 // </MathML>
 // <whenEquationCondition>
-// b1.y &lt;= 0.0 and b1.vy &lt;= 0.0
+// $whenCondition1
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <apply>
-// <and/>
-// <apply>
-// <leq/>
-// <ci> b1.y 
+// <ci> $whenCondition1 
 // </ci>
-// <cn type=\"real\"> 0.0 
-// </cn>
-// </apply>
-// <apply>
-// <leq/>
-// <ci> b1.vy 
-// </ci>
-// <cn type=\"real\"> 0.0 
-// </cn>
-// </apply>
-// </apply>
 // </math>
 // </MathML>
 // </whenEquationCondition>
@@ -230,6 +228,34 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </math>
 // </MathML>
 // </equation>
+// <equation id=\"4\">$whenCondition1 = b1.y &lt;= 0.0 and b1.vy &lt;= 0.0
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <equivalent/>
+// <ci> $whenCondition1 
+// </ci>
+// <apply>
+// <and/>
+// <apply>
+// <leq/>
+// <ci> b1.y 
+// </ci>
+// <cn type=\"real\"> 0.0 
+// </cn>
+// </apply>
+// <apply>
+// <leq/>
+// <ci> b1.vy 
+// </ci>
+// <cn type=\"real\"> 0.0 
+// </cn>
+// </apply>
+// </apply>
+// </apply>
+// </math>
+// </MathML>
+// </equation>
 // </equations>
 // <simpleEquations dimension=\"1\">
 // <whenEquation id=\"1\">
@@ -259,26 +285,11 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </MathML>
 // </WhenOperator>
 // <whenEquationCondition>
-// b1.y &lt;= 0.0 and b1.vy &lt;= 0.0
+// $whenCondition1
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <apply>
-// <and/>
-// <apply>
-// <leq/>
-// <ci> b1.y 
+// <ci> $whenCondition1 
 // </ci>
-// <cn type=\"real\"> 0.0 
-// </cn>
-// </apply>
-// <apply>
-// <leq/>
-// <ci> b1.vy 
-// </ci>
-// <cn type=\"real\"> 0.0 
-// </cn>
-// </apply>
-// </apply>
 // </math>
 // </MathML>
 // </whenEquationCondition>
@@ -309,7 +320,7 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </MathML>
 // <involvedEquations>
 // <equationId>
-// 1
+// 4
 // </equationId>
 // </involvedEquations>
 // </zeroCrossingElement>

@@ -46,8 +46,13 @@ runScript(modelTesting);getErrorString();
 // assert            | warning | The following assertion has been violated at time 0.002020
 // |                 | |       | volume1.medium.X_liquid >= 0.0 and volume1.medium.X_liquid <= 1.0
 // assert            | warning | Variable volume1.medium.X_liquid out of [min, max] interval: volume1.medium.X_liquid >= 0.0 and volume1.medium.X_liquid <= 1.0 has value: -0.0125642
+// assert            | warning | The following assertion has been violated at time 0.002020
+// |                 | |       | ambient.medium.X_liquid >= 0.0 and ambient.medium.X_liquid <= 1.0
+// assert            | warning | Variable ambient.medium.X_liquid out of [min, max] interval: ambient.medium.X_liquid >= 0.0 and ambient.medium.X_liquid <= 1.0 has value: -0.0122993
 //
 // Files Equal!
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+//
 // "true
 // "
 // ""

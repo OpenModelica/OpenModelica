@@ -37,13 +37,13 @@ val(v7,0.0); getErrorString();
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 8
 //  * Number of variables: 8
-// Notification: Model statistics after passing the back-end for simulation:
+// Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('+d=stateselection' for list of states)
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (4):
+// Notification: Strong component statistics for initialization (4):
 //  * Single equations (assignments): 2
 //  * Array equations: 0
 //  * Algorithm blocks: 0
@@ -56,13 +56,13 @@ val(v7,0.0); getErrorString();
 // Notification: Torn system details:
 //  * Linear torn systems: 0
 //  * Non-linear torn systems: 2 {1 1,2 2}
-// Notification: Model statistics after passing the back-end for initialization:
+// Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('+d=stateselection' for list of states)
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (4):
+// Notification: Strong component statistics for simulation (4):
 //  * Single equations (assignments): 2
 //  * Array equations: 0
 //  * Algorithm blocks: 0

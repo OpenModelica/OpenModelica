@@ -39,14 +39,15 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit4_res.m
 // Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 152
 //  * Number of variables: 152
-// Notification: Model statistics after passing the back-end for simulation:
-//  * Number of independent subsystems: 1
-//  * Number of states: 6 (C1.v,C2.v,C3.v,C4.v,C5.v,C6.v)
+// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 2
+//  * Number of states: 0 ()
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (41):
-//  * Single equations (assignments): 35
+// Notification: Strong component statistics for initialization (72):
+//  * Single equations (assignments): 66
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -58,15 +59,14 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit4_res.m
 // Notification: Torn system details:
 //  * Linear torn systems: 6 {1 2,1 2,1 2,1 2,1 2,1 2}
 //  * Non-linear torn systems: 0
-// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
-// Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 2
-//  * Number of states: 0 ()
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 1
+//  * Number of states: 6 (C1.v,C2.v,C3.v,C4.v,C5.v,C6.v)
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (72):
-//  * Single equations (assignments): 66
+// Notification: Strong component statistics for simulation (41):
+//  * Single equations (assignments): 35
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0

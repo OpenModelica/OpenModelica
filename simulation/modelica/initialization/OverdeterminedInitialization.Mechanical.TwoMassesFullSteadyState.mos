@@ -13,5 +13,8 @@ buildModel(OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState); ge
 // true
 // ""
 // {"OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState","OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState_init.xml"}
-// ""
+// "Notification: The following equation is consistent and got removed from the initialization problem: mass2.v = 0.0
+// Notification: The following equation is consistent and got removed from the initialization problem: mass1.a = 0.0
+// Warning: The initial conditions are over specified. Use +d=initialization for more information.
+// "
 // endResult

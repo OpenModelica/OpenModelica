@@ -47,8 +47,8 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 //                                                 xmlns:xlink=\"http://www.w3.org/1999/xlink\"
 //                                                 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
 //                                                 xsi:noNamespaceSchemaLocation=\"http://home.dei.polimi.it/donida/Projects/AutoEdit/Images/DAE.xsd\">
-// <variables dimension=\"10\">
-// <orderedVariables dimension=\"5\">
+// <variables dimension=\"12\">
+// <orderedVariables dimension=\"7\">
 // <variablesList>
 // <variable id=\"1\" name=\"b\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
 // <classesNames>
@@ -129,6 +129,32 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // Modelica.Blocks.Interfaces.RealOutput
 // </element>
 // </classesNames>
+// </variable>
+// <variable id=\"6\" name=\"$whenCondition1\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <attributesValues>
+// <fixed string=\"true\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <true/>
+// </apply>
+// </math>
+// </MathML>
+// </fixed>
+// </attributesValues>
+// </variable>
+// <variable id=\"7\" name=\"$whenCondition2\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <attributesValues>
+// <fixed string=\"true\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <true/>
+// </apply>
+// </math>
+// </MathML>
+// </fixed>
+// </attributesValues>
 // </variable>
 // </variablesList>
 // </orderedVariables>
@@ -308,7 +334,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </variablesList>
 // </aliasVariables>
 // </variables>
-// <equations dimension=\"5\">
+// <equations dimension=\"7\">
 // <whenEquation id=\"1\">
 // <WhenOperator>
 // tt.T := if b and not tt.rising &gt; 0.0 or not b and not tt.falling &gt; 0.0 or not abs(tt.amplitude) &gt; 0.0 or initial() then time else time + (tt.endValue - pre(tt.y)) / tt.rate
@@ -411,7 +437,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </math>
 // </MathML>
 // <whenEquationCondition>
-// {initial(), b, not b}
+// {initial(), $whenCondition1, $whenCondition2}
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <apply>
@@ -420,13 +446,10 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <apply>
 // <initial/>
 // </apply>
-// <ci> b 
+// <ci> $whenCondition1 
 // </ci>
-// <apply>
-// <not/>
-// <ci> b 
+// <ci> $whenCondition2 
 // </ci>
-// </apply>
 // </vector>
 // </apply>
 // </math>
@@ -509,7 +532,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </math>
 // </MathML>
 // <whenEquationCondition>
-// {initial(), b, not b}
+// {initial(), $whenCondition1, $whenCondition2}
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <apply>
@@ -518,13 +541,10 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <apply>
 // <initial/>
 // </apply>
-// <ci> b 
+// <ci> $whenCondition1 
 // </ci>
-// <apply>
-// <not/>
-// <ci> b 
+// <ci> $whenCondition2 
 // </ci>
-// </apply>
 // </vector>
 // </apply>
 // </math>
@@ -564,7 +584,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </math>
 // </MathML>
 // <whenEquationCondition>
-// {initial(), b, not b}
+// {initial(), $whenCondition1, $whenCondition2}
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <apply>
@@ -573,13 +593,10 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <apply>
 // <initial/>
 // </apply>
-// <ci> b 
+// <ci> $whenCondition1 
 // </ci>
-// <apply>
-// <not/>
-// <ci> b 
+// <ci> $whenCondition2 
 // </ci>
-// </apply>
 // </vector>
 // </apply>
 // </math>
@@ -662,6 +679,35 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </ci>
 // </otherwise>
 // </piecewise>
+// </apply>
+// </apply>
+// </math>
+// </MathML>
+// </equation>
+// <equation id=\"6\">$whenCondition1 = b
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <equivalent/>
+// <ci> $whenCondition1 
+// </ci>
+// <ci> b 
+// </ci>
+// </apply>
+// </math>
+// </MathML>
+// </equation>
+// <equation id=\"7\">$whenCondition2 = not b
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <equivalent/>
+// <ci> $whenCondition2 
+// </ci>
+// <apply>
+// <not/>
+// <ci> b 
+// </ci>
 // </apply>
 // </apply>
 // </math>

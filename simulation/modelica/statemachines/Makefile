@@ -4,6 +4,8 @@ TESTFILES = \
 ConferenceTut1.mos \
 Maraninchi2003_2.mos \
 SMMin.mos \
+TicksInState.mos \
+TimeInState.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make failingtest

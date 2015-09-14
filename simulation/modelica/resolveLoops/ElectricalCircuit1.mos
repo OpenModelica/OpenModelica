@@ -34,14 +34,34 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit1_res.m
 // Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 89
 //  * Number of variables: 89
-// Notification: Model statistics after passing the back-end for simulation:
+// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 2
+//  * Number of states: 0 ()
+//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (39):
+//  * Single equations (assignments): 35
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 4
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details:
+//  * Linear torn systems: 4 {2 6,1 2,1 2,1 2}
+//  * Non-linear torn systems: 0
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 7
 //  * Number of states: 2 (C2.v,C3.v)
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (18):
-//  * Single equations (assignments): 14
+// Notification: Strong component statistics for simulation (23):
+//  * Single equations (assignments): 19
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -52,26 +72,6 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit1_res.m
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details:
 //  * Linear torn systems: 4 {1 6,1 2,1 2,1 2}
-//  * Non-linear torn systems: 0
-// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
-// Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 6
-//  * Number of states: 0 ()
-//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
-//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
-//  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (40):
-//  * Single equations (assignments): 36
-//  * Array equations: 0
-//  * Algorithm blocks: 0
-//  * Record equations: 0
-//  * When equations: 0
-//  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 0
-//  * Torn equation systems: 4
-//  * Mixed (continuous/discrete) equation systems: 0
-// Notification: Torn system details:
-//  * Linear torn systems: 4 {2 5,1 2,1 2,1 2}
 //  * Non-linear torn systems: 0
 // "
 // {"Files Equal!"}

@@ -60,14 +60,14 @@ runScript(modelTesting);getErrorString();
 //  * candidate: cylinder6.Cylinder.s(start = -0.3)
 //  * candidate: cylinder6.gasForce.s_rel(start = 0.0)
 // => select value from cylinder6.Cylinder.s(start = -0.3) for variable: cylinder6.Cylinder.s
-// Notification: Model statistics after passing the back-end for simulation:
-//  * Number of independent subsystems: 32
-//  * Number of states: 4 (load.phi,load.w,filter.x[1],filter.x[2])
-//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 2478
+//  * Number of states: 0 ()
+//  * Number of discrete variables: 481 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (1077):
-//  * Single equations (assignments): 1052
+// Notification: Strong component statistics for initialization (4586):
+//  * Single equations (assignments): 4561
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -82,16 +82,16 @@ runScript(modelTesting);getErrorString();
 //  * Non-linear Jacobian: 0
 //  * Without analytic Jacobian: 0
 // Notification: Torn system details:
-//  * Linear torn systems: 7 {31 373,1 3,1 3,1 3,1 3,1 3,1 3}
+//  * Linear torn systems: 7 {31 425,1 5,1 5,1 5,1 5,1 5,1 5}
 //  * Non-linear torn systems: 6 {1 13,1 13,1 13,1 13,1 13,1 13}
-// Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 3135
-//  * Number of states: 0 ()
-//  * Number of discrete variables: 481 ('+d=discreteinfo' for list of discrete vars)
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 764
+//  * Number of states: 4 (load.phi,load.w,filter.x[1],filter.x[2])
+//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (4810):
-//  * Single equations (assignments): 4785
+// Notification: Strong component statistics for simulation (1809):
+//  * Single equations (assignments): 1784
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
