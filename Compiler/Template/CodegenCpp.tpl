@@ -5828,7 +5828,7 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
       initializeMemory();
-      IPropertyReader *reader = new XmlPropertyReader("<%makefileParams.compileDir%>OMCpp/<%fileNamePrefix%>Init.xml");
+      IPropertyReader *reader = new XmlPropertyReader("<%makefileParams.compileDir%>/OMCpp<%fileNamePrefix%>Init.xml");
       reader->readInitialValues(*this, _sim_vars);
       initializeFreeVariables();
       /*Start complex expressions */

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Core/DataExchange/IPropertyReader.h>
-#include <string>
+
+
 
 class IContinuous;
 

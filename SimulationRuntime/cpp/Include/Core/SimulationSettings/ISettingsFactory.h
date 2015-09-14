@@ -3,8 +3,6 @@
  *
  *  @{
  */
-#include <Core/SimulationSettings/IGlobalSettings.h>
-#include <Core/Solver/ISolverSettings.h>
 
 class ISettingsFactory
 {
