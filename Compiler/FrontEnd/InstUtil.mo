@@ -8849,5 +8849,201 @@ algorithm
   end match;
 end propagateModFinal;
 
+public function discretizePDE
+//main discretization function, converts PDE into set of ODEs
+  input SCode.Equation inEQ;
+  input List<Tuple<String,DAE.ComponentRef>> fieldDomainLst;
+  input list<Tuple<String,Integer>> domainNLst;
+  input List<SCode.Equation> inDiscretizedEQs;
+  output List<SCode.Equation> outDiscretizedEQs;
+  protected List<SCode.Equation> newDiscretizedEQs;
+algorithm
+  newDiscretizedEQs := {inEQ};
+  //TODO: fix:
+  /*
+  newDiscretizedEQs := match inEQ
+    local
+      Absyn.Exp lhs_exp, rhs_exp;
+      Absyn.ComponentRef domainCr;
+      SCode.Comment comment;
+      SCode.SourceInfo info;
+      String domainName;
+      Integer N;
+    //Normal equation withhout domain specified, no field variables present
+    case SCode.EQUATION(SCode.EQ_EQUALS(domainOpt = NONE()))
+    then {inEQ};
+    //Equation with domain specified, allow for field variables
+    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp, domainOpt = SOME(domainCr),
+                           comment = comment, info = info))
+      equation
+        Absyn.CREF_IDENT(name = domainName) = domainCr;
+        (_,N) = List.find1(domainNLst,findDomF,domainName);
+
+
+    then list(newEQFun(i, lhs_exp, rhs_exp, comment, info, domainName, fieldDomainLst) for i in 2:N-1);
+  end match;
+  */
+   outDiscretizedEQs := listAppend(inDiscretizedEQs, newDiscretizedEQs);
+end discretizePDE;
+
+protected function newEQFun
+  input Integer i;
+  input Absyn.Exp inLhs_exp;
+  input Absyn.Exp inRhs_exp;
+  input SCode.Comment comment;
+  input SCode.SourceInfo info;
+  input String domainName;
+  input list<Tuple<String,String>> fieldDomainLst;
+  output SCode.Equation outEQ;
+  protected Absyn.Exp outLhs_exp, outRhs_exp;
+algorithm
+  outLhs_exp := Absyn.traverseExpTopDown(inLhs_exp,discretzeTraverseFun,(i,domainName,fieldDomainLst,info,false));
+  outRhs_exp := Absyn.traverseExpTopDown(inRhs_exp,discretzeTraverseFun,(i,domainName,fieldDomainLst,info,false));
+  outEQ := SCode.EQUATION(SCode.EQ_EQUALS(outLhs_exp, outRhs_exp, NONE(), comment, info));
+end newEQFun;
+
+ protected function discretzeTraverseFun
+   input Absyn.Exp inExp;
+   input tuple<Integer, String, list<tuple<String,String>>,SCode.SourceInfo,Boolean> inTup;
+   output Absyn.Exp outExp;
+   output tuple<Integer, String, list<tuple<String,String>>,SCode.SourceInfo,Boolean> outTup;
+   protected Integer i;
+   protected String eqDomainName;
+   protected list<tuple<String,String>> fieldDomainLst;
+   protected SCode.SourceInfo info;
+   protected Boolean skip, failVar;
+ algorithm
+   failVar := false;
+   (i, eqDomainName, fieldDomainLst, info, skip) := inTup;
+   if skip then
+     outExp := inExp;
+     outTup := inTup;
+     return;
+   end if;
+   outExp := matchcontinue inExp
+     local
+       Absyn.Ident name, fieldDomainName;
+       list<Absyn.Subscript> subscripts;
+     case Absyn.CREF(Absyn.CREF_IDENT(name, subscripts))
+       //field
+       equation
+         (_, fieldDomainName) = List.find1(fieldDomainLst,findDomF,name);
+         if not stringEqual(fieldDomainName, eqDomainName) then
+           failVar = true;
+           Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{stringAppend(stringAppend("Field variable ",  name), " has different domain than the equation.")}, info);
+         end if;
+       then
+          Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i))::subscripts));
+     case Absyn.CALL(Absyn.CREF_IDENT("pder",subscripts),Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(name, subscripts)),Absyn.CREF(Absyn.CREF_IDENT(name="x"))},_))
+       //pder
+       equation
+         (_, fieldDomainName) = List.find1(fieldDomainLst,findDomF,name);
+         if not stringEqual(fieldDomainName, eqDomainName) then
+           failVar = true;
+           Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{stringAppend(stringAppend("Field variable ",  name), " has different domain than the equation.")}, info);
+         end if;
+         skip = true;
+       then
+         Absyn.BINARY(
+           Absyn.BINARY(
+                 Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i+1))::subscripts)),
+                 Absyn.SUB(),
+                 Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i-1))::subscripts))
+           ),
+           Absyn.DIV(),
+           Absyn.BINARY(
+                   Absyn.INTEGER(2),
+                   Absyn.MUL(),
+                   Absyn.CREF(Absyn.CREF_QUAL(fieldDomainName,{},Absyn.CREF_IDENT("dx",{})))
+           )
+         );
+     case Absyn.CALL(Absyn.CREF_IDENT("pder",subscripts),Absyn.FUNCTIONARGS({Absyn.CREF(_),Absyn.CREF(Absyn.CREF_IDENT(name="x"))},_))
+       //pder differentiation of non-field
+       equation
+         Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Partial derivative of variable that is not a field."}, info);
+       then
+         inExp;
+     case Absyn.CALL(Absyn.CREF_IDENT("pder",subscripts),Absyn.FUNCTIONARGS({Absyn.CREF(_),_},_))
+       //pder with differentiating wrt wrong equation
+       equation
+         Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"You are trying to differentiate with respect to variable that is not coordinate."}, info);
+       then
+          inExp;
+       else
+         inExp;
+   end matchcontinue;
+   if failVar then
+     fail();
+   end if;
+   outTup := (i, eqDomainName, fieldDomainLst, info, skip);
+ end discretzeTraverseFun;
+
+protected function findDomF<T>
+  input Tuple<String,T> inTup;
+  input String name;
+  output Boolean found;
+algorithm
+  found := matchcontinue inTup
+    local String nameLoc;
+    case (nameLoc,_)
+      equation
+        true = stringEqual(nameLoc,name);
+    then true;
+    else false;
+  end matchcontinue;
+end findDomF;
+
+public function findDomains
+  input SCode.Element el;
+  input list<Tuple<String,Integer>> domainLstIn;
+  output list<Tuple<String,Integer>> domainLstOut;
+algorithm
+//TODO: rewrite to use instantiated domain elements
+  domainLstOut := match el
+    local
+      String name;
+      list<SCode.SubMod> subModLst;
+      Integer N;
+    case SCode.COMPONENT(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="DomainLineSegment1D")), name = name,
+      modifications = SCode.MOD(subModLst = subModLst))
+      then
+        (name,findDomains1(subModLst))::domainLstIn;
+      else
+      domainLstIn;
+  end match;
+end findDomains;
+
+
+protected function findDomains1
+  input list<SCode.SubMod> subModLst;
+  output Integer N;
+algorithm
+  try
+    N := match List.find(subModLst,findDomains2)
+    local
+      Integer n;
+    case SCode.NAMEMOD("N",SCode.MOD(binding = SOME(Absyn.INTEGER(n))))
+    then
+      n;
+    end match;
+  else
+    print("\nError: Variable N not found in the domain.\n");
+    fail();
+  end try;
+end findDomains1;
+
+protected function findDomains2
+  input SCode.SubMod subMod;
+  output Boolean found;
+algorithm
+  found := match subMod
+    case SCode.NAMEMOD(ident = "N")
+      then
+        true;
+      else
+        false;
+  end match;
+end findDomains2;
+
 annotation(__OpenModelica_Interface="frontend");
 end InstUtil;

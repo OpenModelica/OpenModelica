@@ -1455,6 +1455,26 @@ algorithm
   (outExp,outArg) := traverseExpBidir(inExp,dummyTraverseExp,inFunc,inArg);
 end traverseExp;
 
+public function traverseExpTopDown
+" Traverses all subexpressions of an Exp expression.
+  Takes a function and an extra argument passed through the traversal."
+  input Exp inExp;
+  input FuncType inFunc;
+  input Type_a inArg;
+  output Exp outExp;
+  output Type_a outArg;
+  partial function FuncType
+    input Exp inExp;
+    input Type_a inArg;
+    output Exp outExp;
+    output Type_a outArg;
+    replaceable type Type_a subtypeof Any;
+  end FuncType;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (outExp,outArg) := traverseExpBidir(inExp,inFunc,dummyTraverseExp,inArg);
+end traverseExpTopDown;
+
 public function traverseExpList
 "calls traverseExp on each element in the given list"
   input list<Exp> inExpList;

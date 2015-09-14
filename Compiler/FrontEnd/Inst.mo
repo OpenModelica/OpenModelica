@@ -2040,6 +2040,7 @@ algorithm
       FCore.Ref lastRef;
       InstStateMachineUtil.SMNodeToFlatSMGroupTable smCompToFlatSM;
       List<Tuple<String,DAE.ComponentRef>> fieldDomLst;
+      list<Tuple<String,Integer>> domainNLst;
 
     /*// uncomment for debugging
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,inClassDef6,
@@ -2244,6 +2245,10 @@ algorithm
         // duplicate expandable to get the union
         eqs_1 = InstUtil.addExpandable(eqs_1, expandableEqs);
         ErrorExt.rollBack("expandableConnectorsOrder");
+
+        //Discretization of PDEs:
+        domainNLst = List.fold(els,InstUtil.findDomains,{});
+        eqs_1 = List.fold2(eqs_1, InstUtil.discretizePDE, fieldDomLst, domainNLst, {});
 
         //Instantiate equations (see function "instEquation")
         (cache,env5,ih,dae2,csets2,ci_state3,graph) =
