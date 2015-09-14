@@ -162,7 +162,7 @@ class CStrArray
   /**
    *  Constructor storing pointers
    */
-  CStrArray(const BaseArray<string> &stringArray)
+  CStrArray(const BaseArray<string>& stringArray)
     :_c_str_array(stringArray.getNumElems())
   {
     const string *data = stringArray.getData();
@@ -199,7 +199,7 @@ public:
     :BaseArray<T>(true, true)
   {
     std::transform(data, data + nelems,
-                   _ref_array.c_array(), CArray2RefArray<T>());
+                   _ref_array, CArray2RefArray<T>());
   }
 
   /**
@@ -210,7 +210,7 @@ public:
     :BaseArray<T>(true, true)
   {
     if (nelems > 0)
-      std::copy(ref_data, ref_data + nelems, _ref_array.c_array());
+      std::copy(ref_data, ref_data + nelems, _ref_array);
   }
 
   /**
@@ -231,9 +231,8 @@ public:
    */
   virtual void assign(const T* data)
   {
-    T **refs = _ref_array.c_array();
-    std::transform(refs, refs + nelems, data,
-                   refs, CopyCArray2RefArray<T>());
+    std::transform(_ref_array, _ref_array + nelems, data,
+                   _ref_array, CopyCArray2RefArray<T>());
   }
 
   /**
@@ -243,13 +242,12 @@ public:
    */
   virtual void assign(const BaseArray<T>& b)
   {
-    T **refs = _ref_array.c_array();
     if(b.isRefArray())
-      std::transform(refs, refs + nelems, b.getDataRefs(),
-                     refs, CopyRefArray2RefArray<T>());
+      std::transform(_ref_array, _ref_array + nelems, b.getDataRefs(),
+                     _ref_array, CopyRefArray2RefArray<T>());
     else
-      std::transform(refs, refs + nelems, b.getData(),
-                     refs, CopyCArray2RefArray<T>());
+      std::transform(_ref_array, _ref_array + nelems, b.getData(),
+                     _ref_array, CopyCArray2RefArray<T>());
   }
 
   /**
@@ -257,10 +255,8 @@ public:
    */
   virtual const T* getData() const
   {
-    const T* const* refs  = _ref_array.begin();
-    T* data  = _tmp_data.c_array();
-    std::transform(refs, refs + nelems, data, RefArray2CArray<T>());
-    return data;
+    std::transform(_ref_array, _ref_array + nelems, _tmp_data, RefArray2CArray<T>());
+    return _tmp_data;
   }
 
   /**
@@ -278,8 +274,7 @@ public:
   virtual void getDataCopy(T data[], size_t n) const
   {
     assert(n <= nelems);
-    const T* const * simvars_data  = _ref_array.begin();
-    std::transform(simvars_data, simvars_data + n, data, RefArray2CArray<T>());
+    std::transform(_ref_array, _ref_array + n, data, RefArray2CArray<T>());
   }
 
   /**
@@ -287,7 +282,7 @@ public:
    */
   virtual const T* const* getDataRefs() const
   {
-    return _ref_array.data();
+    return _ref_array;
   }
 
   /**
@@ -312,8 +307,8 @@ public:
 
 protected:
   //reference array data
-  boost::array<T*, nelems> _ref_array;
-  mutable boost::array<T, nelems> _tmp_data; // storage for const T* getData()
+  T* _ref_array[nelems == 0? 1: nelems];
+  mutable T _tmp_data[nelems == 0? 1: nelems]; // storage for const T* getData()
 };
 
 /**
@@ -623,7 +618,7 @@ class StatArray : public BaseArray<T>
     if (external)
       _data = data;
     else {
-      _data = _array.c_array();
+      _data = _array;
       if (nelems > 0)
         std::copy(data, data + nelems, _data);
     }
@@ -640,7 +635,7 @@ class StatArray : public BaseArray<T>
     if (external)
       _data = otherarray._data;
     else {
-      _data = _array.c_array();
+      _data = _array;
       otherarray.getDataCopy(_data, nelems);
     }
   }
@@ -656,7 +651,7 @@ class StatArray : public BaseArray<T>
     if (external)
       _data = otherarray._data;
     else {
-      _data = _array.c_array();
+      _data = _array;
       _array = otherarray._array;
     }
   }
@@ -670,7 +665,7 @@ class StatArray : public BaseArray<T>
   {
     if (external)
       throw std::runtime_error("Unsupported copy constructor of static array with external storage!");
-    _data = _array.c_array();
+    _data = _array;
     otherarray.getDataCopy(_data, nelems);
   }
 
@@ -683,7 +678,7 @@ class StatArray : public BaseArray<T>
     if (external)
       _data = NULL; // no data assigned yet
     else
-      _data = _array.c_array();
+      _data = _array;
   }
 
   virtual ~StatArray() {}
@@ -816,7 +811,7 @@ class StatArray : public BaseArray<T>
   virtual void setDims(const std::vector<size_t>& v) {}
 
  protected:
-  boost::array<T, external? 0: nelems> _array; // static array
+  T _array[external || nelems == 0? 1: nelems]; // static array
   T *_data; // array data
 };
 
@@ -976,21 +971,17 @@ class StatArrayDim1 : public StatArray<T, size, external>
 
   void setDims(size_t size1)  { }
 
-  typedef typename boost::array<T,size>::const_iterator const_iterator;
-  typedef typename boost::array<T,size>::iterator iterator;
+  typedef const T* const_iterator;
+  typedef T* iterator;
 
   iterator begin()
   {
-    if (external)
-      throw std::runtime_error("Unsupported iteration over StatArray with external data");
-    return StatArray<T, size, external>::_array.begin();
+    return StatArray<T, size, external>::_data;
   }
 
   iterator end()
   {
-    if (external)
-      throw std::runtime_error("Unsupported iteration over StatArray with external data");
-    return StatArray<T, size, external>::_array.end();
+    return StatArray<T, size, external>::_data + size;
   }
 };
 
