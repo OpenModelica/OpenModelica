@@ -79,7 +79,7 @@
   #include <Core/Math/Array.h>
  #include <Core/Solver/FactoryExport.h>
   #include <Core/Solver/SolverSettings.h>
-  #include <Core/SimulationSettings/IGlobalSettings.h>
+
     /*Base Policy include*/
     #include <SimCoreFactory/Policies/SolverOMCFactory.h>
     #include <SimCoreFactory/Policies/SolverSettingsOMCFactory.h>
