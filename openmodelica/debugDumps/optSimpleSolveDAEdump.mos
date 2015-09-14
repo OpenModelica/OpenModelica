@@ -294,7 +294,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module constantLinearSystem:
+// post-optimization module constantLinearSystem (initialization):
 //
 //
 // unknown partition
@@ -389,7 +389,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module simplifyComplexFunction:
+// post-optimization module simplifyComplexFunction (initialization):
 //
 //
 // unknown partition
@@ -484,7 +484,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module tearingSystem:
+// post-optimization module tearingSystem (initialization):
 //
 //
 // unknown partition
@@ -579,7 +579,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module simplifyLoops:
+// post-optimization module simplifyLoops (initialization):
 //
 //
 // unknown partition
@@ -674,7 +674,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module recursiveTearing:
+// post-optimization module recursiveTearing (initialization):
 //
 //
 // unknown partition
@@ -769,7 +769,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module calculateStrongComponentJacobians:
+// post-optimization module calculateStrongComponentJacobians (initialization):
 //
 //
 // unknown partition
@@ -864,7 +864,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module solveSimpleEquations:
+// post-optimization module solveSimpleEquations (initialization):
 //
 //
 // unknown partition
@@ -960,7 +960,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // post-optimization done.
 //
-// post-optimization module solveSimpleEquations:
+// post-optimization module solveSimpleEquations (simulation):
 //
 //
 // unknown partition
