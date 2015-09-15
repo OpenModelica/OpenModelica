@@ -5,7 +5,7 @@
 
 class IContinuous;
 
-class XmlPropertyReader : public IPropertyReader
+class BOOST_EXTENSION_XML_READER_DECL XmlPropertyReader : public IPropertyReader
 {
   public:
     XmlPropertyReader(std::string propertyFile);
