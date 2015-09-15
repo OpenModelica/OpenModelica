@@ -496,7 +496,7 @@ void NotebookWindow::createFileMenu()
 
   // CLOSE FILE
   closeFileAction = new QAction( tr("&Close"), this );
-  closeFileAction->setShortcut( tr("Ctrl+F4") );
+  closeFileAction->setShortcut( tr("Ctrl+W") );
   closeFileAction->setStatusTip( tr("Close the window") );
   connect(closeFileAction, SIGNAL(triggered()), this, SLOT(closeFile()));
 
