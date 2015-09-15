@@ -24,7 +24,7 @@ public:
     {
         string nonlin_solver_key;
         string nonlin_solver;
-        if(solver_name.compare("Newton")==0)
+        if(solver_name.compare("newton")==0)
             nonlin_solver_key.assign("createNewtonSettings");
         else if(solver_name.compare("kinsol")==0)
             nonlin_solver_key.assign("createKinsolSettings");
@@ -42,7 +42,7 @@ public:
         if(_last_selected_solver.compare(solver_name)==0)
         {
             string nonlin_solver_key;
-            if(solver_name.compare("Newton")==0)
+            if(solver_name.compare("newton")==0)
                 nonlin_solver_key.assign("createNewton");
             else if(solver_name.compare("kinsol")==0)
                 nonlin_solver_key.assign("createKinsol");
