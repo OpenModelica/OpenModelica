@@ -13,7 +13,7 @@
 #endif
 //#include<wvLib.h>
 
-
+#include<Core/Math/ILapack.h>
 #include <Solver/Kinsol/FactoryExport.h>
 
 #include <nvector/nvector_serial.h>
@@ -52,9 +52,6 @@
 /**
 Forward declarations for used external C functions
 */
-extern "C" void dgesv_(long int *n, long int *nrhs, double *J, long int *ldj, long int *pivot,double *b, long int *ldb, long int *idid);
-extern "C" void dgetc2_(long int *n, double *J, long int *ldj, long int *ipivot, long int *jpivot, long int *idid);
-extern "C" void dgesc2_(long int *n, double *J, long int *ldj, double* f, long int *ipivot, long int *jpivot, double *scale);
 int kin_fCallback(N_Vector y, N_Vector fval, void *user_data);
 /*will be used with new sundials version
 int kin_SlsSparseJacFn(N_Vector u, N_Vector fu,SlsMat J, void *user_data,N_Vector tmp1, N_Vector tmp2);
@@ -400,34 +397,36 @@ void Kinsol::solve()
 		_algLoop->getRHS(_f);
 		if(_sparse == false)
 		{
-			//wvEvent(55,NULL,0);
 			const matrix_t& A = _algLoop->getSystemMatrix();
-			//wvEvent(1,NULL,0);
 			const double* jac = A.data().begin();
-			//wvEvent(2,NULL,0);
+
+
 			memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
-			//wvEvent(3,NULL,0);
+
 
 			dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_ihelpArray,_f,&_dimSys,&irtrn);
-			//wvEvent(66,NULL,0);
+
 
 		}
 		//sparse
 		else
 		{
-			//wvEvent(55,NULL,0);
+
 			//const sparsematrix_t& As = _algLoop->getSystemSparseMatrix();
-			//wvEvent(1,NULL,0);
+
 			//double const* Ax = bindings::begin_value (As);
 			//double * Ax = (NULL);
 			_algLoop->getSparseAdata( _Ax, _nonzeros);
-			//wvEvent(2,NULL,0);
+
 			//memcpy(_Ax,Ax,sizeof(double)* _nonzeros );
-			//wvEvent(3,NULL,0);
+
 			int ok = klu_refactor (_Ap, _Ai, _Ax, _kluSymbolic, _kluNumeric, _kluCommon) ;
-			//wvEvent(4,NULL,0);
+			if (ok < 0)
+			{
+				throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system with klu");
+			}
 			klu_solve (_kluSymbolic, _kluNumeric, _dim, 1, _f, _kluCommon) ;
-			//wvEvent(66,NULL,0);
+
 		}
 
 		memcpy(_y,_f,_dimSys*sizeof(double));
@@ -476,15 +475,15 @@ void Kinsol::solve()
 		//print_m (b, "b vector");
 		if(_sparse == false)
 		{
-			//wvEvent(33,NULL,0);
+
 
 			const matrix_t& A = _algLoop->getSystemMatrix(); //klu
-			//wvEvent(1,NULL,0);
+
 			//matrix_t  A_copy(A);
 
 
 			const double* jac = A.data().begin(); //klu
-			//wvEvent(2,NULL,0);
+
 			//double* jac = new  double[dimSys*dimSys];
 			//for(int i=0;i<dimSys;i++)
 			//for(int j=0;j<dimSys;j++)
@@ -492,29 +491,29 @@ void Kinsol::solve()
 
 
 			memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double)); //klu
-			//wvEvent(3,NULL,0);
+
 
 
 
 			dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _ihelpArray, _f,&_dimSys,&irtrn);  //klu
-			//wvEvent(44,NULL,0);
+
 		}
 		//std::vector< int > ipiv (_dimSys);  // pivot vector
 		//lapack::gesv (A, ipiv,b);   // solving the system, b contains x
 		else
 		{
 			//Sparse Solve
-			//wvEvent(33,NULL,0);
+
 			const sparsematrix_t& As = _algLoop->getSystemSparseMatrix();
-			//wvEvent(1,NULL,0);
+
 			double const* Ax = bindings::begin_value (As);
-			//wvEvent(2,NULL,0);
+
 			memcpy(_Ax,Ax,sizeof(double)* _nonzeros );
-			//wvEvent(3,NULL,0);
+
 			int ok = klu_refactor (_Ap, _Ai, _Ax, _kluSymbolic, _kluNumeric, _kluCommon) ;
-			//wvEvent(4,NULL,0);
+
 			klu_solve (_kluSymbolic, _kluNumeric, _dim, 1, _f, _kluCommon) ;
-			//wvEvent(44,NULL,0);
+
 	    }
 
 
@@ -535,6 +534,7 @@ void Kinsol::solve()
 	}
 	else
 	{
+
 		int idid;
 		_counter++;
 		_eventRetry = false;
@@ -558,6 +558,7 @@ void Kinsol::solve()
 		{
 			_algLoop->setReal(_y);
 			_algLoop->evaluate();
+
 			return;
 		}
 		else  // Try Scaling
@@ -577,6 +578,7 @@ void Kinsol::solve()
 			}
 
 			_iterationStatus = CONTINUE;
+
 			solveNLS();
 		}
 
@@ -584,6 +586,7 @@ void Kinsol::solve()
 		{
 			_algLoop->setReal(_y);
 			_algLoop->evaluate();
+
 			return;
 		}
 
@@ -640,6 +643,7 @@ void Kinsol::solve()
 		{
 			_algLoop->setReal(_y);
 			_algLoop->evaluate();
+
 			return;
 		}
 		else  // Try Scaling
@@ -657,6 +661,7 @@ void Kinsol::solve()
 			}
 			_iterationStatus = CONTINUE;
 			solveNLS();
+
 		}
 		if(_iterationStatus == DONE)
 		{
@@ -721,6 +726,7 @@ void Kinsol::solve()
 
         throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
     }
+
 	}
 }
 
@@ -862,7 +868,7 @@ int Kinsol::check_flag(void *flagvalue, char *funcname, int opt)
 void Kinsol::solveNLS()
 {
 	int
-		method = KIN_NONE,
+		method = KIN_NONE,//
 		iter = 0,
 		idid;
 	double
