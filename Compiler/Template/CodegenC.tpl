@@ -888,6 +888,7 @@ template simulationFile(SimCode simCode, String guid)
        <%symbolName(modelNamePrefixStr,"functionDAE")%>,
        <%symbolName(modelNamePrefixStr,"input_function")%>,
        <%symbolName(modelNamePrefixStr,"input_function_init")%>,
+       <%symbolName(modelNamePrefixStr,"input_function_updateStartValues")%>,
        <%symbolName(modelNamePrefixStr,"output_function")%>,
        <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>,
@@ -1511,7 +1512,7 @@ template functionInput(ModelInfo modelInfo, String modelNamePrefix)
       TRACE_PUSH
 
       <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
-        '$P$ATTRIBUTE<%cref(name)%>.start = data->simulationInfo.inputVars[<%i0%>];'
+        'data->simulationInfo.inputVars[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.start;'
         ;separator="\n"
       %>
 
@@ -1519,6 +1520,18 @@ template functionInput(ModelInfo modelInfo, String modelNamePrefix)
       return 0;
     }
 
+    int <%symbolName(modelNamePrefix,"input_function_updateStartValues")%>(DATA *data, threadData_t *threadData)
+    {
+      TRACE_PUSH
+
+      <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
+        '$P$ATTRIBUTE<%cref(name)%>.start = data->simulationInfo.inputVars[<%i0%>];'
+        ;separator="\n"
+      %>
+
+      TRACE_POP
+      return 0;
+    }
     >>
   end match
 end functionInput;

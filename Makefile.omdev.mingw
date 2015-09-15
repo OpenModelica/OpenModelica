@@ -177,13 +177,15 @@ copycppheader:
 	(cp -pufr $(BOOST_PATH)/boost/serialization     $(OMBUILDDIR)/include/omc/cpp/boost)
 	(cp -pufr $(BOOST_PATH)/boost/smart_ptr         $(OMBUILDDIR)/include/omc/cpp/boost)
 	(cp -pufr $(BOOST_PATH)/boost/system            $(OMBUILDDIR)/include/omc/cpp/boost)
-	(cp -pufr $(BOOST_PATH)/boost/ratio            $(OMBUILDDIR)/include/omc/cpp/boost)
+	(cp -pufr $(BOOST_PATH)/boost/ratio             $(OMBUILDDIR)/include/omc/cpp/boost)
 	(cp -pufr $(BOOST_PATH)/boost/thread            $(OMBUILDDIR)/include/omc/cpp/boost)
 	(cp -pufr $(BOOST_PATH)/boost/tuple             $(OMBUILDDIR)/include/omc/cpp/boost)
 	(cp -pufr $(BOOST_PATH)/boost/type_traits       $(OMBUILDDIR)/include/omc/cpp/boost)
 	(cp -pufr $(BOOST_PATH)/boost/typeof            $(OMBUILDDIR)/include/omc/cpp/boost)
 	(cp -pufr $(BOOST_PATH)/boost/unordered         $(OMBUILDDIR)/include/omc/cpp/boost)
 	(cp -pufr $(BOOST_PATH)/boost/utility           $(OMBUILDDIR)/include/omc/cpp/boost)
+	(cp -pufr $(BOOST_PATH)/boost/property_tree     $(OMBUILDDIR)/include/omc/cpp/boost)
+	(cp -pufr $(BOOST_PATH)/boost/multi_index       $(OMBUILDDIR)/include/omc/cpp/boost)
 
 omc: mkbuilddirs interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) graphstream
 	(time $(MAKE) -f $(defaultMakefileTarget) CFLAGS="$(CFLAGS)" omc-bootstrapped OMBUILDDIR=$(OMBUILDDIR))
