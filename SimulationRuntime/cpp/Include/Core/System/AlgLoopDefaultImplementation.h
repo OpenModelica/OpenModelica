@@ -118,6 +118,7 @@ protected:
   _constraintType;                ///< Typ der Bindungsgleichungen (analog, digital, binär)
   double * _AData;
   double* _Ax;
+  bool _bInitialized;
 
 };
 /** @} */ // end of coreSystem
