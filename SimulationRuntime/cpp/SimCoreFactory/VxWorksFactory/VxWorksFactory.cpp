@@ -19,6 +19,8 @@ extern "C" ISolverSettings* createRTEulerSettings(IGlobalSettings* globalSetting
 extern "C" ISolverSettings* createRTRKSettings(IGlobalSettings* globalSettings);
 extern "C" IAlgLoopSolver* createKinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings);
 extern "C" INonLinSolverSettings* createKinsolSettings();
+extern "C" IAlgLoopSolver* createNewton(IAlgLoop* algLoop, INonLinSolverSettings* settings);
+extern "C" INonLinSolverSettings* createNewtonSettings();
 extern "C" IMixedSystem* createModelicaSystem(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolver, boost::shared_ptr<ISimData> simdata, boost::shared_ptr<ISimVars> sim_vars);
 
 VxWorksFactory::VxWorksFactory(string library_path, string modelicasystem_path)
@@ -104,7 +106,7 @@ boost::shared_ptr<IAlgLoopSolver> VxWorksFactory::LoadAlgLoopSolver(IAlgLoop* al
   IAlgLoopSolver* algloopsolver;
   if (solver_name.compare("createNewton") == 0)
   {
-    //algloopsolver = createNewton(algLoop, solver_settings.get());
+    algloopsolver = createNewton(algLoop, solver_settings.get());
   }
   else if (solver_name.compare("createKinsol") == 0)
   {
@@ -122,7 +124,7 @@ boost::shared_ptr<INonLinSolverSettings> VxWorksFactory::LoadAlgLoopSolverSettin
   INonLinSolverSettings* solver_settings;
   if (solver_name.compare("createNewtonSettings") == 0)
   {
-    //solver_settings = createNewtonSettings();
+  solver_settings = createNewtonSettings();
   }
   else if (solver_name.compare("createKinsolSettings") == 0)
   {
