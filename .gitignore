@@ -19,3 +19,4 @@ config.status
 config.sub
 configure
 install-sh
+qmake.sh
