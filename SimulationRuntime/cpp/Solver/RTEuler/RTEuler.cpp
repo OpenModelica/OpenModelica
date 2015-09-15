@@ -14,6 +14,8 @@ RTEuler::RTEuler(IMixedSystem* system, ISolverSettings* settings)
     , _z          (NULL)
     , _dimSys        (0)
     , _f          (NULL)
+	, _zInit          (NULL)
+
 {
 }
 
@@ -38,12 +40,16 @@ void RTEuler::initialize()
 
     _dimSys  = _continuous_system->getDimContinuousStates();
 
-    if (_dimSys == 0)
-    	return;
+
 
     //(Re-) Initialization of solver -> call default implementation service
-    SolverDefaultImplementation::initialize();
+	IGlobalSettings* globalsettings = _eulerSettings->getGlobalSettings();
+	_h = globalsettings->gethOutput();
 
+	if (_dimSys == 0)
+		return;
+
+	SolverDefaultImplementation::initialize();
     // Dimension of the system (number of variables)
 
 
@@ -86,8 +92,8 @@ void RTEuler::initialize()
 
 	memcpy(_z,_zInit,_dimSys*sizeof(double));
 
-	IGlobalSettings* globalsettings = _eulerSettings->getGlobalSettings();
-	_h = globalsettings->gethOutput();
+
+
 }
 
 /// Set start t for numerical solution
@@ -137,7 +143,11 @@ void RTEuler::solve(const SOLVERCALL command)
    _continuous_system->setContinuousStates(_z);
   }
 
+
+   _tCurrent += _h;
+   _time_system->setTime(_tCurrent);
    _continuous_system->evaluateAll();
+
    _continuous_system->stepCompleted(_tCurrent);
 }
 
