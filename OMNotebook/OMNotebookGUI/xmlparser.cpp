@@ -737,6 +737,15 @@ namespace IAEX
           {
             LatexCell *iCell = dynamic_cast<LatexCell*>(latexcell);
             iCell->setTextOutput( e.text() );
+            if(!e.text().isEmpty())
+            {
+            iCell->output_->show();
+            iCell->latexButton->show();
+            }
+            else
+            {
+             iCell->input_->show();
+            }
           }
           else if( e.tagName() == XML_IMAGE )
           {
@@ -763,7 +772,7 @@ namespace IAEX
 
       //    graphcell->setText( text ); //fjass
 
-      LatexCell *gCell = dynamic_cast<LatexCell*>(latexcell);
+      /* LatexCell *gCell = dynamic_cast<LatexCell*>(latexcell);
 
       QString closed = element.attribute( XML_CLOSED, XML_FALSE );
       if( closed == XML_TRUE )
@@ -771,10 +780,9 @@ namespace IAEX
       else if( closed == XML_FALSE )
         gCell->setClosed( false,true );
       else
-        throw runtime_error( "Unknown closed value in latexcell" );
+        throw runtime_error( "Unknown closed value in latexcell" ); */
 
       parent->addChild(latexcell);
-
 
   }
 
@@ -851,6 +859,8 @@ namespace IAEX
 
         latexcell->setTextOutputHtml( html );
         latexcell->output_->textCursor().insertImage(newname);
+        latexcell->output_->show();
+        latexcell->latexButton->show();
       }
 
       else

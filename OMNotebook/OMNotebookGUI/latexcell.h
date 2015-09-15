@@ -96,6 +96,8 @@ namespace IAEX
 
   public slots:
     void eval();
+    void hidelatexsource();
+    void showlatexsource();
     void command();
     void nextCommand();
     void nextField();
@@ -117,7 +119,7 @@ namespace IAEX
     virtual void setFocus(const bool focus);
     virtual void setFocusOutput(const bool focus);
     void setExpr(QString);
-    void showVariableButton(bool);
+    //void showVariableButton(bool);
     void setState(int state);
 
   protected:
@@ -149,7 +151,10 @@ namespace IAEX
     Document *document_;
 
   public:
-    QPushButton* variableButton;
+    //QPushButton* variableButton;
+    QPushButton* hideButton;
+    QPushButton* latexButton;
+
     QTemporaryFile* imageFile;
   };
 
@@ -184,7 +189,7 @@ namespace IAEX
     void forwardAction( int );
     void updatePos(int, int);
     void setState(int);
-    void showVariableButton(bool);
+    //void showVariableButton(bool);
 
   protected:
     void mousePressEvent(QMouseEvent *event);

@@ -105,12 +105,7 @@ namespace IAEX {
   };
 
 
-
   /*!
-  * \class MyTextEdit2
-  * \author Anders Ferström
-  * \date 2005-11-01
-  *
   * \brief Extends QTextEdit. Mostly so I can catch when a user
   * clicks on the editor
   */
@@ -183,7 +178,6 @@ namespace IAEX {
   */
   void MyTextEdit3::keyPressEvent(QKeyEvent *event )
   {
-    emit showVariableButton(false);
     // EVAL, key: SHIFT + RETURN || SHIFT + ENTER
     if( event->modifiers() == Qt::ShiftModifier &&
       (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) )
@@ -483,7 +477,7 @@ namespace IAEX {
     createLatexCell();
     createOutputCell();
 
-    connect(input_, SIGNAL(showVariableButton(bool)), this, SLOT(showVariableButton(bool)));
+    //connect(input_, SIGNAL(showVariableButton(bool)), this, SLOT(showVariableButton(bool)));
 
     //connect(output_, SIGNAL(anchorClicked(const QUrl&)), input_, SLOT(goToPos(const QUrl&)));
 
@@ -526,12 +520,13 @@ namespace IAEX {
   {
 
     input_ = new MyTextEdit3( mainWidget() );
-    variableButton = new QPushButton("D",input_);
-    variableButton->setToolTip("New simulation data available");
-    variableButton->setMaximumWidth(25);
+    hideButton = new QPushButton("H",input_);
+    hideButton->setToolTip("Hide the Latex Source");
+    hideButton->setMaximumWidth(25);
     layout_->addWidget( input_, 1, 1 );
-    layout_->addWidget(variableButton, 1, 2);
-    variableButton->hide();
+    layout_->addWidget(hideButton, 1, 2,Qt::AlignTop);
+
+    hideButton->hide();
     // 2006-03-02 AF, Add a chapter counter
     createChapterCounter();
 
@@ -551,18 +546,20 @@ namespace IAEX {
 
     input_->setPalette(palette);
 
-    variableButton->setPalette(palette);
+    hideButton->setPalette(palette);
     // is this needed, don't know /AF
     input_->installEventFilter(this);
-
-    connect( input_, SIGNAL( textChanged() ), this, SLOT( contentChanged() ));
+    connect(hideButton, SIGNAL(clicked()), this, SLOT(hidelatexsource()));
+    connect( input_, SIGNAL( textChanged() ), this, SLOT( contentChanged()));
     connect( input_, SIGNAL( clickOnCell() ), this, SLOT( clickEvent() ));
     connect( input_, SIGNAL( wheelMove(QWheelEvent*) ), this, SLOT( wheelEvent(QWheelEvent*) ));
     connect( input_, SIGNAL( eval() ), this, SLOT( eval() ));
     connect( input_, SIGNAL( command() ), this, SLOT( command() ));
     connect( input_, SIGNAL( nextCommand() ), this, SLOT( nextCommand() ));
     connect( input_, SIGNAL( nextField() ), this, SLOT( nextField() ));
-   // connect( input_, SIGNAL( textChanged() ), this, SLOT( addToHighlighter() ));
+    connect( input_, SIGNAL( nextField() ), this, SLOT( nextField() ));
+
+    // connect( input_, SIGNAL( textChanged() ), this, SLOT( addToHighlighter() ));
     connect( input_, SIGNAL( currentCharFormatChanged(const QTextCharFormat &) ),
       this, SLOT( charFormatChanged(const QTextCharFormat &) ));
     connect( input_, SIGNAL( forwardAction(int) ), this, SIGNAL( forwardAction(int) ));
@@ -574,13 +571,21 @@ namespace IAEX {
     connect(input_, SIGNAL(textChanged()), input_, SLOT(setModified()));
   }
 
-  void LatexCell::showVariableButton(bool b)
-  {
-    if(b)
-      variableButton->show();
-    else
-      variableButton->hide();
-  }
+ void LatexCell::hidelatexsource()
+ {
+     input_->hide();
+     hideButton->hide();
+     latexButton->show();
+     output_->show();
+ }
+
+ void LatexCell::showlatexsource()
+ {
+     output_->hide();
+     hideButton->show();
+     latexButton->hide();
+     input_->show();
+ }
 
   /*!
   * \brief Creates the QTextEdit for the output part of the
@@ -590,8 +595,12 @@ namespace IAEX {
   void LatexCell::createOutputCell()
   {
     output_ = new MyTextEdit3( mainWidget() );
-    layout_->addWidget( output_, 2, 1 );
-
+    layout_->addWidget( output_, 1, 1 );
+    latexButton = new QPushButton("L",output_);
+    latexButton->setToolTip("Show the Latex Source");
+    latexButton->setMaximumWidth(25);
+    layout_->addWidget( latexButton, 1, 2, Qt::AlignTop);
+    latexButton->hide();
     output_->setReadOnly( true );
 
     output_->setOpenLinks(false);
@@ -601,7 +610,7 @@ namespace IAEX {
 
     output_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     output_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-
+    connect(latexButton, SIGNAL(clicked()), this, SLOT(showlatexsource()));
     connect( output_, SIGNAL( textChanged() ), this, SLOT(contentChanged()));
     connect( output_, SIGNAL( clickOnCell() ), this, SLOT( clickEventOutput() ));
     connect( output_, SIGNAL( wheelMove(QWheelEvent*) ), this, SLOT( wheelEvent(QWheelEvent*) ));
@@ -1149,7 +1158,8 @@ void LatexCell::eval()
        *  4) Display the output as image to the output cell inorder to maintain the
        *     equations and formula structures
        */
-
+    //hideButton->hide();
+    //latexButton->show();
     input_->blockSignals(true);
     output_->blockSignals(true);
     output_->textCursor().insertText("");
@@ -1193,14 +1203,13 @@ void LatexCell::eval()
         /* Check for latex is installed */
         if (Latexversion.isEmpty())
         {
-            //qDebug()<< "Latex is not installed in your system";
-            output_->clear();
-            output_->textCursor().insertText("Error: Latex is not installed in your System");
-            setClosed(false);
+            QMessageBox::warning( 0, "Error", "Latex is not installed in your System, This cell cannot be evaluated", "OK" );
         }
         /*Generate the DVI file from tex through latex */
         if (!Latexversion.isEmpty())
         {
+            hideButton->hide();
+            latexButton->show();
             process->start("latex", QStringList() << "-halt-on-error" << Tex);
             process->waitForFinished();
             QFile logfile(log);
@@ -1244,30 +1253,35 @@ void LatexCell::eval()
                 QFileInfo checkpng(Png);
                 if(!checkpng.exists())
                 {
+                    output_->clear();
                     output_->textCursor().insertText("Error:Problem in finding dvipng executable");
                     setClosed(false);
+
                 }
                 else
                 {
                     output_->clear();
                     output_->textCursor().insertImage(Png);
-                    setClosed(false);
+                    //setClosed(false);
+                    input_->hide();
+                    output_->show();
+
                 }
             }
             else
             {
-                output_->clear();
-                output_->textCursor().insertText("Message:Maximum of 1 page document generation is supported per Latexcell, The script generates more than 1 page, Add a new Latex cell and create the document");
-                setClosed(false);
 
+                QMessageBox::warning( 0, "Warning", "Maximum of 1 page document generation is supported per Latexcell, The script generates more than 1 page", "OK" );
             }
         }
     }
     else
     {
         //qDebug()<< "Empty cells can't be evaluated";
+        hideButton->hide();
+        latexButton->show();
         output_->clear();
-        output_->textCursor().insertText("Message: Empty Cells cannot be Evaluated");
+        output_->textCursor().insertText("Message: Empty Latex Cells cannot be Evaluated");
         setClosed(false);
     }
     input_->blockSignals(false);

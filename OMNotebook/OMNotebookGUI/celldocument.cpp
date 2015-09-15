@@ -945,6 +945,7 @@ namespace IAEX
    */
   void CellDocument::mouseClickedOnCell(Cell *clickedCell)
   {
+
     // 2006-04-25, AF
     if( lastClickedCell_ == clickedCell )
       return;
@@ -978,7 +979,6 @@ namespace IAEX
 
     clickedCell->setReadOnly(false);
     clickedCell->setFocus(true);
-
     emit cursorChanged();
   }
 
@@ -1024,6 +1024,20 @@ namespace IAEX
       GraphCell *graphcell = dynamic_cast<GraphCell*>(clickedCell);
       graphcell->setReadOnly(false);
       graphcell->setFocusOutput(true);
+    }
+
+    else if(typeid(LatexCell) == typeid(*clickedCell))
+    {
+      LatexCell *latexcell = dynamic_cast<LatexCell*>(clickedCell);
+      latexcell->setReadOnly(false);
+      latexcell->setFocusOutput(true);
+     /* QString text=latexcell->textOutput();
+      if(!text.isEmpty())
+      {
+          latexcell->output_->hide();
+          latexcell->input_->show();
+          latexcell->hideButton->show();
+      } */
     }
 
     else

@@ -433,17 +433,20 @@ namespace IAEX
 
       newLatexCell->setStyle( style );
       newLatexCell->setText( oldLatexCell->text() );
-
       if( oldLatexCell->isEvaluated() )
       {
-        newLatexCell->setEvaluated( true );
+        newLatexCell->setEvaluated(true);
         //newLatexCell->setTextOutput( oldLatexCell->textOutput() );
         newLatexCell->setTextOutputHtml(oldLatexCell->textOutputHtml());
+        newLatexCell->output_->show();
+        newLatexCell->latexButton->show();
       }
       else
-        newLatexCell->setEvaluated( false );
+       {
+        newLatexCell->setEvaluated(false);
+      }
+      //newLatexCell->setClosed( oldLatexCell->isClosed() );
 
-      newLatexCell->setClosed( oldLatexCell->isClosed() );
     }
 
     else if( typeid(TextCell) == typeid( *newCell ))

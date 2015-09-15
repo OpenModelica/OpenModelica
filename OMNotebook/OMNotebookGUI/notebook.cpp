@@ -4092,10 +4092,13 @@ void NotebookWindow::shiftcellsUp()
                     subject_->cursorStepUp();
                     subject_->executeCommand(new CreateNewCellCommand("Latex"));
                     LatexCell *newcell = dynamic_cast<LatexCell *>(subject_->getCursor()->currentCell());
-                    newcell->setEvaluated(true);
-                    newcell->setClosed(false);
+                    //newcell->setEvaluated(true);
+                   // newcell->setClosed(false);
                     newcell->setText(latexinput);
                     newcell->setTextOutputHtml(latexoutput);
+                    newcell->input_->hide();
+                    newcell->output_->show();
+                    newcell->latexButton->show();
                     }
                     else
                     {
@@ -4211,10 +4214,13 @@ void NotebookWindow::shiftcellsDown()
                 subject_->cursorStepDown();
                 subject_->executeCommand(new CreateNewCellCommand("Latex"));
                 LatexCell *newcell_d = dynamic_cast<LatexCell *>(subject_->getCursor()->currentCell());
-                newcell_d->setEvaluated(true);
-                newcell_d->setClosed(false);
+                //newcell_d->setEvaluated(true);
+                //newcell_d->setClosed(false);
                 newcell_d->setText(latexinput_d);
                 newcell_d->setTextOutputHtml(latexoutput_d);
+                newcell_d->input_->hide();
+                newcell_d->output_->show();
+                newcell_d->latexButton->show();
                 }
                 else
                 {
@@ -4266,10 +4272,10 @@ void NotebookWindow::evalall()
                 g->eval();
             }
 
-            if(LatexCell *g = dynamic_cast<LatexCell*>(cellcount[i]))
+           /* if(LatexCell *g = dynamic_cast<LatexCell*>(cellcount[i]))
             {
                 g->eval();
-            }
+            } */
 
 
             if(InputCell *g = dynamic_cast<InputCell*>(cellcount[i]))
