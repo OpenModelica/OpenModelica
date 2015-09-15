@@ -38,7 +38,7 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 
   types.get<std::map<std::string, factory<IAlgLoopSolverFactory,IGlobalSettings*,PATH,PATH> > >()
     ["AlgLoopSolverFactory"].set<AlgLoopSolverFactory>();
-  types.get<std::map<std::string, factory<ISimVars,size_t,size_t,size_t,size_t,size_t,size_t> > >()
+  types.get<std::map<std::string, factory<ISimVars,size_t,size_t,size_t,size_t,size_t,size_t,size_t> > >()
     ["SimVars"].set<SimVars>();
 }
 #elif defined(OMC_BUILD) && defined(RUNTIME_STATIC_LINKING)

@@ -126,8 +126,11 @@ public function elabMod "
   input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Mod outMod;
+protected
+  SCode.Mod mod;
 algorithm
-  (outCache,outMod) := match(inCache,inEnv,inIH,inPrefix,inMod,inBoolean,inModScope,inInfo)
+  mod := SCodeUtil.expandEnumerationMod(inMod);
+  (outCache,outMod) := match(inCache,inEnv,inIH,inPrefix,mod,inBoolean,inModScope,inInfo)
     local
       Boolean impl;
       SCode.Final finalPrefix;
@@ -266,7 +269,7 @@ protected function elabModRedeclareElement
   input SourceInfo info;
   output tuple<SCode.Element, DAE.Mod> modElts "the elaborated modifiers";
 algorithm
-  modElts := matchcontinue(inCache,inEnv,inIH,inPrefix,finalPrefix,inElt,impl,inModScope,info)
+  modElts := matchcontinue inElt
     local
       FCore.Cache cache; FCore.Graph env; Prefix.Prefix pre;
       SCode.Final f,fi;
@@ -286,7 +289,6 @@ algorithm
       SourceInfo i;
       InstanceHierarchy ih;
       SCode.Attributes attr1;
-      list<SCode.Enum> enumLst;
       SCode.Comment cmt,comment;
       SCode.Element element, c;
       SCode.Prefixes prefixes;
@@ -294,64 +296,61 @@ algorithm
     /*/ search for target class locally and if it is a derived with no modifications, use it
     // replaceable package Medium = Modelica.Media.Air.MoistAir constrainedby Modelica.Media.Interfaces.PartialMedium;
     // modifier: redeclare Medium = Medium
-    case(cache,env,ih,pre,_,
-      SCode.CLASS(cn,
-        prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(Absyn.TPATH(Absyn.IDENT(bcn), NONE()),mod,attr1),cmt,i),_,_,_)
+    case SCode.CLASS(cn, prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl), enc, p, restr, SCode.DERIVED(Absyn.TPATH(Absyn.IDENT(bcn), NONE()),mod,attr1), cmt, i)
       equation
         true = stringEq(cn, bcn);
-        (c, _) = Lookup.lookupClassLocal(env, bcn);
+        (c, _) = Lookup.lookupClassLocal(inEnv, bcn);
         tp = SCode.getDerivedTypeSpec(c);
         c = SCode.mergeWithOriginal(SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1),cmt,i), c);
         SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1),cmt,i) = c;
-        (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,inModScope,info);
-        (cache,tp1) = elabModQualifyTypespec(cache,env,ih,pre,impl,info,cn,tp);
+        (cache, emod) = elabMod(inCache, inEnv, inIH, inPrefix, mod, impl, inModScope, info);
+        (cache, tp1) = elabModQualifyTypespec(cache, inEnv, inIH, inPrefix, impl, info, cn, tp);
         // unelab mod so we get constant evaluation of parameters
         mod = unelabMod(emod);
       then
-        ((SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp1,mod,attr1),cmt,i),emod));*/
+        (SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp1,mod,attr1),cmt,i), emod);*/
 
     // Only derived classdefinitions supported in redeclares for now.
     // TODO: What is allowed according to spec? adrpo: 2011-06-28: is not decided yet,
     //       but i think only derived even if in the Modelica.Media we have redeclare-as-element
     //       replacing entire functions with PARTS and everything, so i added the case below
-    case(cache,env,ih,pre,_,
-      SCode.CLASS(cn,
-        prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1),cmt,i),_,_,_)
+    case SCode.CLASS(cn, prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl), enc, p, restr, SCode.DERIVED(tp,mod,attr1), cmt, i)
       equation
         // merge modifers from the component to the modifers from the constrained by
         mod = SCode.mergeModifiers(mod, SCodeUtil.getConstrainedByModifiers(prefixes));
-        (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,inModScope,info);
-        (_,tp1) = elabModQualifyTypespec(cache,env,ih,pre,impl,info,cn,tp);
+        (cache, emod) = elabMod(inCache, inEnv, inIH, inPrefix, mod, impl, inModScope, info);
+        (_, tp1) = elabModQualifyTypespec(cache, inEnv, inIH, inPrefix, impl, info, cn, tp);
         // unelab mod so we get constant evaluation of parameters
         mod = unelabMod(emod);
       then
-        ((SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp1,mod,attr1),cmt,i),emod));
+        (SCode.CLASS(cn, SCode.PREFIXES(vis,redecl,fi,io,repl), enc, p, restr, SCode.DERIVED(tp1,mod,attr1), cmt, i), emod);
 
     // replaceable type E=enumeration(e1,...,en), E=enumeration(:)
-    case(_,_,_,_,_,
-      SCode.CLASS(cn,
-        SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.ENUMERATION(enumLst),cmt,i),_,_,_)
+    case SCode.CLASS(restriction=SCode.R_ENUMERATION())
       then
-        ((SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.ENUMERATION(enumLst),cmt,i),DAE.NOMOD()));
+        (inElt, DAE.NOMOD());
+    case SCode.CLASS(classDef=SCode.ENUMERATION())
+      then
+        (inElt, DAE.NOMOD());
 
     // redeclare of component declaration
-    case(cache,env,ih,pre,_,SCode.COMPONENT(compname,prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl),attr,tp,mod,cmt,cond,i),_,_,_)
+    case SCode.COMPONENT(compname,prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl),attr,tp,mod,cmt,cond,i)
       equation
         // merge modifers from the component to the modifers from the constrained by
         mod = SCode.mergeModifiers(mod, SCodeUtil.getConstrainedByModifiers(prefixes));
-        (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,inModScope,info);
-        (_,tp1) = elabModQualifyTypespec(cache,env,ih,pre,impl,info,compname,tp);
+        (cache,emod) = elabMod(inCache, inEnv, inIH, inPrefix, mod, impl, inModScope, info);
+        (_, tp1) = elabModQualifyTypespec(cache, inEnv, inIH, inPrefix, impl, info, compname, tp);
         // unelab mod so we get constant evaluation of parameters
         mod = unelabMod(emod);
       then
-        ((SCode.COMPONENT(compname,SCode.PREFIXES(vis,redecl,fi,io,repl),attr,tp1,mod,cmt,cond,i),emod));
+        (SCode.COMPONENT(compname, SCode.PREFIXES(vis,redecl,fi,io,repl), attr, tp1, mod, cmt, cond, i), emod);
 
     // redeclare failure?
-    case(_,_,_,_,_,element,_,_,_)
+    case element
       equation
         print("Unhandled element redeclare (we keep it as it is!): " + SCodeDump.unparseElementStr(element,SCodeDump.defaultOptions) + "\n");
       then
-        ((element,DAE.NOMOD()));
+        (element, DAE.NOMOD());
 
   end matchcontinue;
 end elabModRedeclareElement;
@@ -3350,4 +3349,3 @@ end getClassModifier;
 
 annotation(__OpenModelica_Interface="frontend");
 end Mod;
-

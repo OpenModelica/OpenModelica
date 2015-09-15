@@ -47,6 +47,7 @@ uniontype MemoryMap //stores information to organize the memory for the parallel
     Integer floatArraySize; //array size including state, state der and other float variables that are necessary for code generation
     Integer intArraySize;
     Integer boolArraySize;
+    Integer stringArraySize;
   end MEMORYMAP_ARRAY;
   record MEMORYMAP_UNIFORM
   end MEMORYMAP_UNIFORM;

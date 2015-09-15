@@ -14,13 +14,17 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValuesScoreP : public MeasureTimeVa
 {
 public:
   MeasureTimeValuesScoreP();
+  MeasureTimeValuesScoreP(const MeasureTimeValuesScoreP &timeValues);
   virtual ~MeasureTimeValuesScoreP();
 
-  virtual std::string serializeToJson();
+  virtual std::string serializeToJson() const;
 
   virtual void add(MeasureTimeValues *values);
   virtual void sub(MeasureTimeValues *values);
   virtual void div(int counter);
+
+  MeasureTimeValuesScoreP* clone() const;
+  virtual void reset();
 };
 
 class BOOST_EXTENSION_EXPORT_DECL MeasureTimeScoreP : public MeasureTime
@@ -28,17 +32,17 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTimeScoreP : public MeasureTime
  protected:
   MeasureTimeScoreP();
 
-  MeasureTimeValues* getZeroValuesP();
-  void getTimeValuesStartP(MeasureTimeValues *res);
-  void getTimeValuesEndP(MeasureTimeValues *res);
+  MeasureTimeValues* getZeroValuesP() const;
+  void getTimeValuesStartP(MeasureTimeValues *res) const;
+  void getTimeValuesEndP(MeasureTimeValues *res) const;
 
  public:
   virtual ~MeasureTimeScoreP();
 
   static void initialize()
   {
-    instance = new MeasureTimeScoreP();
-    instance->benchOverhead();
+    _instance = new MeasureTimeScoreP();
+    _instance->benchOverhead();
   }
 
   virtual void initializeThread(unsigned long int threadNumber);

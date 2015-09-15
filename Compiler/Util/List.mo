@@ -3644,7 +3644,7 @@ protected
   list<TO> res;
 algorithm
   for lst in inListList loop
-    (res, outArg) := mapFold(lst, inFunc, inArg);
+    (res, outArg) := mapFold(lst, inFunc, outArg);
     outListList := res :: outListList;
   end for;
   outListList := listReverseInPlace(outListList);
@@ -3967,6 +3967,37 @@ algorithm
   outList := listReverse(inMapFunc(e1, e2) threaded for e1 in inList1, e2 in inList2);
 end threadMapReverse;
 
+public function threadMap_2<T1, T2, TO1, TO2>
+  "Like threadMap, but returns two lists instead of one."
+  input list<T1> inList1;
+  input list<T2> inList2;
+  input MapFunc inMapFunc;
+  output list<TO1> outList1 = {};
+  output list<TO2> outList2 = {};
+
+  partial function MapFunc
+    input T1 inElement1;
+    input T2 inElement2;
+    output TO1 outElement1;
+    output TO2 outElement2;
+  end MapFunc;
+protected
+  T2 e2;
+  list<T2> rest_e2 = inList2;
+  TO1 ret1;
+  TO2 ret2;
+algorithm
+  for e1 in inList1 loop
+    e2 :: rest_e2 := rest_e2;
+    (ret1, ret2) := inMapFunc(e1, e2);
+    outList1 := ret1 :: outList1;
+    outList2 := ret2 :: outList2;
+  end for;
+
+  outList1 := listReverse(outList1);
+  outList2 := listReverse(outList2);
+end threadMap_2;
+
 public function threadMapList<T1, T2, TO>
   "Takes two lists of lists and a function and threads (interleaves) and maps
    the elements of the two lists, creating a new list.
@@ -3985,6 +4016,37 @@ algorithm
   outList := list(threadMap(lst1, lst2, inMapFunc) threaded for lst1 in inList1,
       lst2 in inList2);
 end threadMapList;
+
+public function threadMapList_2<T1, T2, TO1, TO2>
+  "Like threadMapList, but returns two lists instead of one."
+  input list<list<T1>> inList1;
+  input list<list<T2>> inList2;
+  input MapFunc inMapFunc;
+  output list<list<TO1>> outList1 = {};
+  output list<list<TO2>> outList2 = {};
+
+  partial function MapFunc
+    input T1 inElement1;
+    input T2 inElement2;
+    output TO1 outElement1;
+    output TO2 outElement2;
+  end MapFunc;
+protected
+  list<T2> l2;
+  list<list<T2>> rest_l2 = inList2;
+  list<TO1> ret1;
+  list<TO2> ret2;
+algorithm
+  for l1 in inList1 loop
+    l2 :: rest_l2 := rest_l2;
+    (ret1, ret2) := threadMap_2(l1, l2, inMapFunc);
+    outList1 := ret1 :: outList1;
+    outList2 := ret2 :: outList2;
+  end for;
+
+  outList1 := listReverse(outList1);
+  outList2 := listReverse(outList2);
+end threadMapList_2;
 
 public function threadTupleList<T1, T2>
   "Takes two lists of lists as arguments and produces a list of lists of a two

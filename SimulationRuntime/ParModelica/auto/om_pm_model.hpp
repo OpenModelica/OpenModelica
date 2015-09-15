@@ -38,7 +38,7 @@
  Mahder.Gebremedhin@liu.se  2014-02-10
 */
 
-
+#include <simulation_data.h>
 
 #include "pm_task_system.hpp"
 #include "pm_cluster_level_scheduler.hpp"
@@ -61,10 +61,11 @@ class OMModel;
 
 struct Equation : public TaskNode {
 
-    typedef void (*FunctionType)(void *);
+    typedef void (*FunctionType)(DATA *, threadData_t*);
 private:
     FunctionType* function_system;
-    void *data;
+    DATA *data;
+    threadData_t* threadData;
 
 public:
     Equation();
@@ -83,7 +84,8 @@ public:
 };
 
 
-class OMModel : boost::noncopyable {
+class OMModel
+  : boost::noncopyable {
     typedef Equation::FunctionType FunctionType;
 
     // typedef LevelSchedulerThreadAware<Equation> SchedulerT;
@@ -100,11 +102,12 @@ class OMModel : boost::noncopyable {
 private:
     std::string model_name;
     bool intialized;
-    void* data;
+    DATA* data;
+    threadData_t* threadData;
 
 public:
     OMModel();
-    void initialize(const char* , void* , FunctionType*);
+    void initialize(const char* , DATA* , threadData_t* , FunctionType*);
 
     FunctionType* ini_system_funcs;
     TaskSystemT INI_system;

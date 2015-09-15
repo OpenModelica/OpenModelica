@@ -454,6 +454,9 @@ constant DebugFlag DIS_SYMJAC_FMI20 = DEBUG_FLAG(143, "disableSymbolicLinearizat
   Util.gettext("For FMI 2.0 only dependecy analysis will be perform."));
 constant DebugFlag EVAL_ALL_PARAMS = DEBUG_FLAG(144, "evalAllParams", false,
   Util.gettext("Evaluates all parameters in order to increase simulation speed."));
+constant DebugFlag EVAL_OUTPUT_ONLY = DEBUG_FLAG(145, "evalOutputOnly", false,
+  Util.gettext("Generates equations to calculate outputs only."));
+
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -604,8 +607,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_RTEARING,
   DIS_SIMP_FUN,
   DIS_SYMJAC_FMI20,
-  EVAL_ALL_PARAMS
-
+  EVAL_ALL_PARAMS,
+  EVAL_OUTPUT_ONLY
 };
 
 public
@@ -680,7 +683,8 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     // "addInitialStmtsToAlgorithms",
     "resolveLoops",
     "evalFunc",
-    "sortEqnsVars"
+    "sortEqnsVars",
+    "encapsulateWhenConditions"
     }),
   SOME(STRING_DESC_OPTION({
     ("CSE_EachCall", Util.gettext("Common Function Call Elimination")),
@@ -713,7 +717,8 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("evalFunc", Util.gettext("evaluates functions partially")),
     ("comSubExp", Util.gettext("replaces common sub expressions")),
     ("dumpDAE", Util.gettext("dumps the DAE representation of the current transformation state")),
-    ("dumpDAEXML", Util.gettext("dumps the DAE as xml representation of the current transformation state"))
+    ("dumpDAEXML", Util.gettext("dumps the DAE as xml representation of the current transformation state")),
+    ("encapsulateWhenConditions", Util.gettext("This module replaces each when condition with a boolean variable."))
     })),
   Util.gettext("Sets the pre optimization modules to use in the back end. See --help=optmodules for more info."));
 
@@ -760,6 +765,7 @@ constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMeth
 
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
+    "removeInitializationStuff",
     "lateInlineFunction",
     "simplifyConstraints",
     "CSE",
@@ -772,7 +778,6 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "removeSimpleEquations",
     "simplifyComplexFunction",
     "symEuler",
-    "encapsulateWhenConditions",  // must called after remove simple equations
     "reshufflePost",
     "reduceDynamicOptimization", // before tearing
     "tearingSystem", // must be the last one, otherwise the torn systems are lost when throw away the matching information
@@ -788,14 +793,13 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "detectJacobianSparsePattern",
     "generateSymbolicJacobian",
     "generateSymbolicLinearization",
-    "removeUnusedFunctions",
     "removeConstants"
     //"solveSimpleEquations",
     //"partitionIndependentBlocks",
     //"addInitialStmtsToAlgorithms",
     }),
   SOME(STRING_DESC_OPTION({
-    ("encapsulateWhenConditions", Util.gettext("Replace each condition/relation with a boolean variable.")),
+    ("removeInitializationStuff", Util.gettext("Does simplifications by removing initialization information like homotopy(..) and initial().")),
     ("lateInlineFunction", Util.gettext("Perform function inlining for function with annotation LateInline=true.")),
     ("removeSimpleEquations", removeSimpleEquationDesc),
     ("evaluateFinalParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
@@ -816,7 +820,6 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("dumpComponentsGraphStr", Util.notrans("DESCRIBE ME")),
     ("generateSymbolicJacobian", Util.gettext("Generates symbolic Jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be used to simulate with dasslColorSymJac.")),
     ("generateSymbolicLinearization", Util.gettext("Generates symbolic linearization matrices A,B,C,D for linear model:\n\t\t:math:`\\dot{x} = Ax + Bu`\n\t:math:`ty = Cx +Du`")),
-    ("removeUnusedFunctions", Util.gettext("Removed all unused functions from functionTree.")),
     ("simplifyTimeIndepFuncCalls", Util.gettext("Simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false.")),
     ("inputDerivativesUsed", Util.gettext("Checks if derivatives of inputs are need to calculate the model.")),
     ("simplifysemiLinear", Util.gettext("Simplifies calls to semiLinear.")),
@@ -1131,6 +1134,28 @@ constant ConfigFlag PARTLINTORN = CONFIG_FLAG(77, "partlintorn",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Sets the limit for partitionin of linear torn systems."));
 
+constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(78, "initOptModules",
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({
+    "constantLinearSystem",
+    "simplifyComplexFunction",
+      //"reduceDynamicOptimization", // before tearing
+    "tearingSystem",
+    "simplifyLoops",
+    "recursiveTearing",
+    "calculateStrongComponentJacobians",
+    "solveSimpleEquations"
+      //"inputDerivativesUsed",
+      //"extendDynamicOptimization"
+    }),
+  SOME(STRING_DESC_OPTION({
+    ("extendDynamicOptimization", Util.gettext("Move loops to constraints.")),
+    ("constantLinearSystem", Util.gettext("Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time.")),
+    ("tearingSystem",Util.notrans("For method selection use flag tearingMethod.")),
+    ("inputDerivativesUsed", Util.gettext("Checks if derivatives of inputs are need to calculate the model.")),
+    ("calculateStrongComponentJacobians", Util.gettext("Generates analytical Jacobian for non-linear strong components."))
+    })),
+  Util.gettext("Sets the initialization optimization modules to use in the back end. See --help=optmodules for more info."));
+
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -1212,7 +1237,8 @@ constant list<ConfigFlag> allConfigFlags = {
   RTEARING,
   FLOW_THRESHOLD,
   MATRIX_FORMAT,
-  PARTLINTORN
+  PARTLINTORN,
+  INIT_OPT_MODULES
 };
 
 public function new

@@ -8,6 +8,14 @@
 #ifndef LOGGER_HPP_
 #define LOGGER_HPP_
 
+#ifdef USE_LOGGER
+  #define LOGGER_WRITE(x,y,z) Logger::write(x,y,z)
+  #define LOGGER_WRITE_TUPLE(x,y) Logger::write(x,y)
+#else
+  #define LOGGER_WRITE(x,y,z)
+  #define LOGGER_WRITE_TUPLE(x,y)
+#endif //USE_LOGGER
+
 class BOOST_EXTENSION_LOGGER_DECL Logger
 {
   public:
@@ -36,22 +44,14 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
 
     static inline void write(std::string msg, LogCategory cat, LogLevel lvl)
     {
-#ifndef USE_LOGGER
-      return;
-#else
       Logger* instance = getInstance();
       if(instance && instance->isEnabled())
         instance->writeInternal(msg, cat, lvl);
-#endif
     }
 
     static inline void write(std::string msg, std::pair<LogCategory,LogLevel> mode)
     {
-#ifndef USE_LOGGER
-      return;
-#else
       write(msg, mode.first, mode.second);
-#endif
     }
 
     static void setEnabled(bool enabled)

@@ -106,7 +106,7 @@ function cell
 algorithm
   str := if mdFile == \\\"\\\" then \\\"\\\" else \\\" <a href=\\\\\\\"files/mdpad_local.html?\\\"+mdFile+\\\"\\\\\\\"><img width=\\\\\\\"16px\\\\\\\" src=\\\\\\\"files/Modelica.Icons.Example.svg\\\\\\\"></img></a>\\\";
   str := if time==-1.0 then \\\"<td bgcolor=\\\\\\\"#FF0000\\\\\\\">&nbsp;</td>\\\" else ((if greenOnOk then \\\"<td bgcolor=\\\\\\\"\\\" + greenColor + \\\"\\\\\\\">\\\" else \\\"<td>\\\") +
-    OpenModelica.Scripting.Internal.Time.readableTime(if time < 1e-5 then 0 else time)+str+\\\"</td>\\\");
+    OpenModelica.Scripting.Internal.Time.readableTime(time)+str+\\\"</td>\\\");
 end cell;
 function length input String str; output Integer len; external \\\"C\\\" len=ModelicaStrings_length(str); end length;
 function substring input String str; input Integer i1,i2; output String out; external \\\"C\\\" out=ModelicaStrings_substring(str,i1,i2); end substring;
@@ -213,12 +213,13 @@ if err <> \"\" then
   writeFile(errFile,err);
 end if;
 
-frontend :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_FRONTEND);
-backend  :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_BACKEND);
-simcode  :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_SIMCODE);
-templates:=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_TEMPLATES);
-total    :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_SIMULATE_TOTAL);
 build    :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_BUILD_MODEL);
+total    :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_SIMULATE_TOTAL);
+templates:=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_TEMPLATES);
+simcode  :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_SIMCODE);
+backend  :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_BACKEND);
+frontend :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_FRONTEND);
+
 frontend :=if backend <> -1.0 then frontend-backend else frontend;
 backend  :=if simcode <> -1.0 then backend-simcode else backend;
 simcode  :=if templates <> -1.0 then simcode-templates else simcode;
@@ -397,7 +398,7 @@ a.messagesError {color:#FF0000;}
 a.messagesWarning {color:#FFCC66;}
 </style>
 </head><body>" + str);
-writeFile(log,"<table><tr><th>Model</th>"+(if referenceFiles == "" then "" else "<th>Verified</th>")+"<th>Simulate</th><th>Total buildModel</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Templates</th><th>Compile</th></tr>\n",append=true);getErrorString();
+writeFile(log,"<table border=\"1\"><tr><th>Model</th>"+(if referenceFiles == "" then "" else "<th>Verified</th>")+"<th>Simulate</th><th>Total buildModel</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Templates</th><th>Compile</th></tr>\n",append=true);getErrorString();
 writeFile(log,sum(readFile(s + ".stat") + "\n" for s in a),append=true);getErrorString();
 writeFile(log,"</table><hr /><p><a href=\"BuildModelRecursive.tar.gz\">Offline version</a></p></body></html>",append=true);getErrorString();
 writeFile("files/" + typeNameString(library) + ".classes",sum(typeNameString(c) + "\n" for c in getClassNames(library, recursive=true)));

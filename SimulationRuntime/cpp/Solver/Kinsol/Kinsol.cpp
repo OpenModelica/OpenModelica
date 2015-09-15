@@ -373,7 +373,7 @@ void Kinsol::initialize()
 			_iterationStatus = SOLVERERROR;
 		}
 	}
-	Logger::write("Kinsol: initialized",LC_NLS,LL_DEBUG);
+	LOGGER_WRITE("Kinsol: initialized",LC_NLS,LL_DEBUG);
 }
 
 
@@ -521,7 +521,7 @@ void Kinsol::solve()
 		{
 			dgetc2_(&_dimSys, _jac, &_dimSys, _ihelpArray, _jhelpArray, &irtrn);
 			dgesc2_(&_dimSys, _jac, &_dimSys, _f, _ihelpArray, _jhelpArray, _scale);
-			Logger::write("Kinsol: Linear system singular, using perturbed system matrix.", LC_NLS, LL_DEBUG);
+			LOGGER_WRITE("Kinsol: Linear system singular, using perturbed system matrix.", LC_NLS, LL_DEBUG);
 			_iterationStatus = DONE;
 		}
 		else
@@ -718,7 +718,7 @@ void Kinsol::solve()
       {
         if(!_solverErrorNotificationGiven)
         {
-          Logger::write("Kinsol: Solver error detected. The simulation will continue, but the results may be incorrect.",LC_NLS,LL_WARNING);
+          LOGGER_WRITE("Kinsol: Solver error detected. The simulation will continue, but the results may be incorrect.",LC_NLS,LL_WARNING);
           _solverErrorNotificationGiven = true;
         }
       }

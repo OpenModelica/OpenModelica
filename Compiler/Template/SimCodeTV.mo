@@ -199,7 +199,7 @@ package SimCodeVar
       list<SimVar> jacobianVars;
       list<SimVar> realOptimizeConstraintsVars;
       list<SimVar> realOptimizeFinalConstraintsVars;
-      list<SimCodeVar.SimVar> mixedArrayVars;
+      list<SimVar> mixedArrayVars;
     end SIMVARS;
   end SimVars;
 
@@ -3100,6 +3100,10 @@ package ExpressionDump
     input DAE.Exp e;
     output String s;
   end printCrefsFromExpStr;
+  function binopSymbol
+    input DAE.Operator inOperator;
+    output String outString;
+  end binopSymbol;
 end ExpressionDump;
 
 package Config

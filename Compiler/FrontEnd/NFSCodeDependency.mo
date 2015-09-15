@@ -2143,40 +2143,20 @@ protected function collectUsedElements2
   input Absyn.Path inClassName;
   input Absyn.Path inAccumPath;
   input Boolean inCollectConstants;
-  output list<SCode.Element> outAccumElements;
-  output Env outAccumEnv;
+  output list<SCode.Element> outAccumElements = {};
+  output Env accum_env = inAccumEnv;
+protected
+  SCode.Element accum_el;
 algorithm
-  (outAccumElements, outAccumEnv) :=
-  matchcontinue(inElements, inEnclosingEnv, inClsAndVars, inAccumElements,
-      inAccumEnv, inClassName, inAccumPath, inCollectConstants)
-    local
-      SCode.Element el;
-      list<SCode.Element> rest_el, accum_el;
-      Env accum_env;
-
-    // Tail recursive function, reverse the result list.
-    case ({}, _, _, _, _, _, _, _)
-      then (listReverse(inAccumElements), inAccumEnv);
-
-    case (el :: rest_el, _, _, accum_el, accum_env, _, _, _)
-      equation
-        (el, accum_env) = collectUsedElement(el, inEnclosingEnv, inClsAndVars,
-          accum_env, inClassName, inAccumPath, inCollectConstants);
-        accum_el = el :: accum_el;
-        (accum_el, accum_env) = collectUsedElements2(rest_el, inEnclosingEnv,
-          inClsAndVars, accum_el, accum_env, inClassName, inAccumPath, inCollectConstants);
-      then
-        (accum_el, accum_env);
-
-    case (_ :: rest_el, _, _, accum_el, accum_env, _, _, _)
-      equation
-        (accum_el, accum_env) = collectUsedElements2(rest_el,
-          inEnclosingEnv, inClsAndVars, accum_el, accum_env, inClassName,
-          inAccumPath, inCollectConstants);
-      then
-        (accum_el, accum_env);
-
-  end matchcontinue;
+  for el in inElements loop
+    try
+      (accum_el, accum_env) := collectUsedElement(el, inEnclosingEnv, inClsAndVars, accum_env, inClassName, inAccumPath, inCollectConstants);
+      outAccumElements := accum_el::outAccumElements;
+    else
+      // Skip this element
+    end try;
+  end for;
+  outAccumElements := listReverse(outAccumElements);
 end collectUsedElements2;
 
 protected function collectUsedElement

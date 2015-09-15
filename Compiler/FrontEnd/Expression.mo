@@ -1576,7 +1576,7 @@ algorithm
   end match;
 end expArrayIndex;
 
-public function expString
+public function sconstEnumNameString
   input DAE.Exp exp;
   output String str;
 algorithm
@@ -1587,7 +1587,7 @@ algorithm
     case DAE.SCONST(s) then s;
     case DAE.ENUM_LITERAL(name) then Absyn.pathString(name);
   end match;
-end expString;
+end sconstEnumNameString;
 
 public function varName "Returns the name of a Var"
   input DAE.Var v;
@@ -7345,6 +7345,33 @@ public function isConst
 algorithm
   outBoolean := isConstWork(inExp,true);
 end isConst;
+
+public function isEvaluatedConst
+"Returns true if an expression is really a constant scalar value. no calls, casts, or something"
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := isEvaluatedConstWork(inExp,true);
+end isEvaluatedConst;
+
+protected function isEvaluatedConstWork
+"Returns true if an expression is really constant"
+  input DAE.Exp inExp;
+  input Boolean inRes;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inExp,inRes)
+    local
+      DAE.Exp e;
+    case (_,false) then false;
+    case (DAE.ICONST(),_) then true;
+    case (DAE.RCONST(),_) then true;
+    case (DAE.BCONST(),_) then true;
+    case (DAE.SCONST(),_) then true;
+    case (DAE.ENUM_LITERAL(),_) then true;
+    else false;
+  end match;
+end isEvaluatedConstWork;
 
 protected function isConstWork
 "Returns true if an expression is constant"

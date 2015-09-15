@@ -8071,11 +8071,13 @@ algorithm
       DAE.Dimensions dims;
       ClassInf.State state;
       EqualityConstraint ec;
+      list<DAE.Type> tys;
 
     case DAE.T_INTEGER(vars, src) then (DAE.T_INTEGER({}, src), vars);
     case DAE.T_REAL(vars, src)    then (DAE.T_REAL({}, src), vars);
     case DAE.T_STRING(vars, src)  then (DAE.T_STRING({}, src), vars);
     case DAE.T_BOOL(vars, src)    then (DAE.T_BOOL({}, src), vars);
+    case DAE.T_TUPLE(tys, _, src) then (DAE.T_TUPLE(tys, NONE(), src), {});
 
     case DAE.T_ARRAY(ty, dims, src)
       equation

@@ -2781,6 +2781,42 @@ algorithm
   end match;
 end isOutsideStream;
 
+protected function isZeroFlowMinMax
+  "Returns true if the given flow attribute of a connector is zero."
+  input DAE.ComponentRef inStreamCref;
+  input ConnectorElement inElement;
+  output Boolean isZero;
+algorithm
+  if compareCrefStreamSet(inStreamCref, inElement) then
+    isZero := false;
+  elseif isOutsideStream(inElement) then
+    isZero := isZeroFlow(inElement, "max");
+  else
+    isZero := isZeroFlow(inElement, "min");
+  end if;
+end isZeroFlowMinMax;
+
+protected function isZeroFlow
+  "Returns true if the given flow attribute of a connector is zero."
+  input ConnectorElement inElement;
+  input String attr;
+  output Boolean isZero;
+protected
+  DAE.Type ty;
+  Option<DAE.Exp> attr_oexp;
+  DAE.Exp flow_exp, attr_exp;
+algorithm
+  flow_exp := flowExp(inElement);
+  ty := Expression.typeof(flow_exp);
+  attr_oexp := Types.lookupAttributeExp(Types.getAttributes(ty), attr);
+  if isSome(attr_oexp) then
+    SOME(attr_exp) := attr_oexp;
+    isZero := Expression.isZero(attr_exp);
+  else
+    isZero := false;
+  end if;
+end isZeroFlow;
+
 protected function streamEquationGeneral
   "Generates an equation for an outside stream connector element."
   input list<ConnectorElement> inOutsideElements;
@@ -2822,51 +2858,27 @@ protected function streamSumEquationExp
   output DAE.Exp outSumExp;
 protected
   DAE.Exp outside_sum1, outside_sum2, inside_sum1, inside_sum2, res;
-  list<ConnectorElement> insideElements, outsideElements;
 algorithm
-  (_, insideElements) := List.splitOnTrue(inInsideElements, function isZeroFlow(attr="min"));
-  (_, outsideElements) := List.splitOnTrue(inOutsideElements, function isZeroFlow(attr="max"));
-  if listEmpty(outsideElements) then
+  if listEmpty(inOutsideElements) then
     // No outside components.
-    inside_sum1 := sumMap(insideElements, sumInside1, inFlowThreshold);
-    inside_sum2 := sumMap(insideElements, sumInside2, inFlowThreshold);
+    inside_sum1 := sumMap(inInsideElements, sumInside1, inFlowThreshold);
+    inside_sum2 := sumMap(inInsideElements, sumInside2, inFlowThreshold);
     outSumExp := Expression.expDiv(inside_sum1, inside_sum2);
-  elseif listEmpty(insideElements) then
+  elseif listEmpty(inInsideElements) then
     // No inside components.
-    outside_sum1 := sumMap(outsideElements, sumOutside1, inFlowThreshold);
-    outside_sum2 := sumMap(outsideElements, sumOutside2, inFlowThreshold);
+    outside_sum1 := sumMap(inOutsideElements, sumOutside1, inFlowThreshold);
+    outside_sum2 := sumMap(inOutsideElements, sumOutside2, inFlowThreshold);
     outSumExp := Expression.expDiv(outside_sum1, outside_sum2);
   else
     // Both outside and inside components.
-    outside_sum1 := sumMap(outsideElements, sumOutside1, inFlowThreshold);
-    outside_sum2 := sumMap(outsideElements, sumOutside2, inFlowThreshold);
-    inside_sum1 := sumMap(insideElements, sumInside1, inFlowThreshold);
-    inside_sum2 := sumMap(insideElements, sumInside2, inFlowThreshold);
+    outside_sum1 := sumMap(inOutsideElements, sumOutside1, inFlowThreshold);
+    outside_sum2 := sumMap(inOutsideElements, sumOutside2, inFlowThreshold);
+    inside_sum1 := sumMap(inInsideElements, sumInside1, inFlowThreshold);
+    inside_sum2 := sumMap(inInsideElements, sumInside2, inFlowThreshold);
     outSumExp := Expression.expDiv(Expression.expAdd(outside_sum1, inside_sum1),
                                    Expression.expAdd(outside_sum2, inside_sum2));
   end if;
 end streamSumEquationExp;
-
-protected function isZeroFlow
-  "Returns true if the given flow attribute of a connector is zero."
-  input ConnectorElement inElement;
-  input String attr;
-  output Boolean isZero;
-protected
-  DAE.Type ty;
-  Option<DAE.Exp> attr_oexp;
-  DAE.Exp flow_exp, attr_exp;
-algorithm
-  flow_exp := flowExp(inElement);
-  ty := Expression.typeof(flow_exp);
-  attr_oexp := Types.lookupAttributeExp(Types.getAttributes(ty), attr);
-  if isSome(attr_oexp) then
-    SOME(attr_exp) := attr_oexp;
-    isZero := Expression.isZero(attr_exp);
-  else
-    isZero := false;
-  end if;
-end isZeroFlow;
 
 protected function sumMap
   "Creates a sum expression by applying the given function on the list of
@@ -3202,8 +3214,11 @@ protected function generateInStreamExp
   input array<Set> inSetArray;
   input Real inFlowThreshold;
   output DAE.Exp outExp;
+protected
+  list<ConnectorElement> reducedStreams;
 algorithm
-  outExp := match inStreams
+  reducedStreams := List.filterOnFalse(inStreams, function isZeroFlowMinMax(inStreamCref = inStreamCref));
+  outExp := match reducedStreams
     local
       DAE.ComponentRef c;
       Connect.Face f1, f2;
@@ -3222,7 +3237,7 @@ algorithm
           Connect.CONNECTOR_ELEMENT(face = Connect.INSIDE())}
       algorithm
         {Connect.CONNECTOR_ELEMENT(name = c)} :=
-          removeStreamSetElement(inStreamCref, inStreams);
+          removeStreamSetElement(inStreamCref, reducedStreams);
         e := Expression.crefExp(c);
       then
         e;
@@ -3234,7 +3249,7 @@ algorithm
       algorithm
         false := faceEqual(f1, f2);
         {Connect.CONNECTOR_ELEMENT(name = c)} :=
-          removeStreamSetElement(inStreamCref, inStreams);
+          removeStreamSetElement(inStreamCref, reducedStreams);
         e := evaluateInStream(c, inSets, inSetArray, inFlowThreshold);
       then
         e;
@@ -3242,7 +3257,7 @@ algorithm
     // The general case:
     else
       algorithm
-        (outside, inside) := List.splitOnTrue(inStreams, isOutsideStream);
+        (outside, inside) := List.splitOnTrue(reducedStreams, isOutsideStream);
         inside := removeStreamSetElement(inStreamCref, inside);
         e := streamSumEquationExp(outside, inside, inFlowThreshold);
         // Evaluate any inStream calls that were generated.

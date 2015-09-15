@@ -146,12 +146,12 @@ public:
             t_iter->execute();
             task_timer.stop_timer();
             elapsed = task_timer.get_elapsed_time();
-            if(elapsed == 0)
-                t_iter->cost = 0.0005;
-            else
-                t_iter->cost = elapsed * 10000;
+            // if(elapsed == 0)
+                // t_iter->cost = 0.0005;
+            // else
+                t_iter->cost = elapsed;
 
-            cost += t_iter->cost;
+            this->cost += t_iter->cost;
 
             task_timer.reset_timer();
         }

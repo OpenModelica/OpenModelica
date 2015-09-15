@@ -4,9 +4,11 @@
 
 MeasureTimeValuesScoreP::MeasureTimeValuesScoreP() : MeasureTimeValues() {}
 
+MeasureTimeValuesScoreP::MeasureTimeValuesScoreP(const MeasureTimeValuesScoreP &timeValues) : MeasureTimeValues() {}
+
 MeasureTimeValuesScoreP::~MeasureTimeValuesScoreP() {}
 
-std::string MeasureTimeValuesScoreP::serializeToJson()
+std::string MeasureTimeValuesScoreP::serializeToJson() const
 {
   return "";
 }
@@ -29,15 +31,15 @@ void MeasureTimeScoreP::deinitializeThread()
 
 }
 
-void MeasureTimeScoreP::getTimeValuesStartP(MeasureTimeValues *res)
+void MeasureTimeScoreP::getTimeValuesStartP(MeasureTimeValues *res) const
 {
 }
 
-void MeasureTimeScoreP::getTimeValuesEndP(MeasureTimeValues *res)
+void MeasureTimeScoreP::getTimeValuesEndP(MeasureTimeValues *res) const
 {
 }
 
-MeasureTimeValues* MeasureTimeScoreP::getZeroValuesP()
+MeasureTimeValues* MeasureTimeScoreP::getZeroValuesP() const
 {
   return new MeasureTimeValuesScoreP();
 }
@@ -52,4 +54,14 @@ void MeasureTimeValuesScoreP::sub(MeasureTimeValues *values)
 
 void MeasureTimeValuesScoreP::div(int counter)
 {
+}
+
+MeasureTimeValuesScoreP* MeasureTimeValuesScoreP::clone() const
+{
+  return new MeasureTimeValuesScoreP(*this);
+}
+
+void MeasureTimeValuesScoreP::reset()
+{
+  MeasureTimeValues::reset();
 }

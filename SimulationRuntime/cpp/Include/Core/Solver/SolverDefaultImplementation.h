@@ -121,7 +121,7 @@ private:
   }
 
   #ifdef RUNTIME_PROFILING
-  std::vector<MeasureTimeData> measureTimeFunctionsArray;
+  std::vector<MeasureTimeData*> *measureTimeFunctionsArray;
   MeasureTimeValues *writeFunctionStartValues, *writeFunctionEndValues;
   #endif
 };

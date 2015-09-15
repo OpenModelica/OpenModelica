@@ -43,9 +43,7 @@ encapsulated package RemoveSimpleEquations "
                             the function may needs a lots of time.
                causal:      to remove with a linear scaling with respect to the
                             number of equations in an causal system all
-                            simple equations
-
-  RCS: $Id: RemoveSimpleEquations.mo 14235 2012-12-05 04:34:35Z wbraun $"
+                            simple equations"
 
 public import Absyn;
 public import BackendDAE;
@@ -164,7 +162,7 @@ algorithm
     end match;
 
     outDAE := fixAliasVars(outDAE) "workaround for #3323";
-    outDAE := fixAliasVarsCausal(inDAE, outDAE);
+    outDAE := fixAliasAndKnownVarsCausal(inDAE, outDAE);
   else
     // This case performs "remove simple equations" on an acausal system.
     outDAE := match(Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS))
@@ -208,7 +206,7 @@ algorithm
   outDAE := BackendDAEUtil.setKnownVars(outDAE, BackendVariable.listVar(knownVarList));
 end fixAliasVars;
 
-protected function fixAliasVarsCausal "author: lochel
+protected function fixAliasAndKnownVarsCausal "author: lochel
   TODO: Remove this once removeSimpleEquations is implemented properly.
 
   This module moves back all newly introduced alias variables to the correct partition."
@@ -216,13 +214,17 @@ protected function fixAliasVarsCausal "author: lochel
   input BackendDAE.BackendDAE inDAE2 "transformed dae";
   output BackendDAE.BackendDAE outDAE = inDAE2;
 protected
-  BackendDAE.Variables aliasVars1;
-  BackendDAE.Variables aliasVars2;
+  BackendDAE.Variables aliasVars1, knownVars1;
+  BackendDAE.Variables aliasVars2, knownVars2;
   list<BackendDAE.Var> aliasVarList = {};
+  list<BackendDAE.Var> knownVarList = {};
   DAE.ComponentRef cref;
 algorithm
   aliasVars1 := BackendDAEUtil.getAliasVars(inDAE1);
   aliasVars2 := BackendDAEUtil.getAliasVars(inDAE2);
+
+  knownVars1 := BackendDAEUtil.getKnownVars(inDAE1);
+  knownVars2 := BackendDAEUtil.getKnownVars(inDAE2);
 
   for var in BackendVariable.varList(aliasVars2) loop
     cref := BackendVariable.varCref(var);
@@ -233,9 +235,21 @@ algorithm
       aliasVarList := var::aliasVarList;
     end if;
   end for;
-
   outDAE := BackendDAEUtil.setAliasVars(outDAE, BackendVariable.listVar(aliasVarList));
-end fixAliasVarsCausal;
+
+  //BackendDump.dumpVarList(knownVarList, "knownVarList in");
+  for var in BackendVariable.varList(knownVars2) loop
+    cref := BackendVariable.varCref(var);
+    if not BackendVariable.existsVar(cref, knownVars1, false) and (not BackendVariable.isInput(var)) then
+      // put var back to the correct partition
+      outDAE := fixKnownVarsCausal2(var, outDAE);
+    else
+      knownVarList := var::knownVarList;
+    end if;
+  end for;
+  //BackendDump.dumpVarList(knownVarList, "knownVarList out");
+  outDAE := BackendDAEUtil.setKnownVars(outDAE, BackendVariable.listVar(knownVarList));
+end fixAliasAndKnownVarsCausal;
 
 protected function fixAliasVarsCausal2
   input BackendDAE.Var inVar;
@@ -288,6 +302,53 @@ algorithm
     fail();
   end try;
 end fixAliasVarsCausal2;
+
+protected function fixKnownVarsCausal2
+  input BackendDAE.Var inVar;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  DAE.Exp binding;
+  list<DAE.ComponentRef> rightCrefs;
+  BackendDAE.EqSystems eqs1 = {};
+  Boolean done=false;
+
+  BackendDAE.Var var;
+  BackendDAE.Equation eqn;
+
+  BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars";
+  BackendDAE.EquationArray orderedEqs "ordered Equations";
+algorithm
+  try
+    binding := BackendVariable.varBindExp(inVar);
+    rightCrefs := Expression.getAllCrefs(binding);
+    var := BackendVariable.setBindExp(inVar, NONE());
+    eqn := BackendDAE.EQUATION(BackendVariable.varExp(var), binding, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
+    for eq in inDAE.eqs loop
+      BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs) := eq;
+      if BackendVariable.existsAnyVar(rightCrefs, orderedVars, false) then
+        orderedVars := BackendVariable.addVar(var, orderedVars);
+        orderedEqs := BackendEquation.addEquation(eqn, orderedEqs);
+        eqs1 := BackendDAEUtil.setEqSystEqs(BackendDAEUtil.setEqSystVars(eq, orderedVars), orderedEqs)::eqs1;
+        false := done;
+        done := true;
+      else
+        eqs1 := eq::eqs1;
+      end if;
+    end for;
+
+    // if no partition was selected, create a new one
+    if not done then
+      eqs1 := BackendDAEUtil.createEqSystem( BackendVariable.listVar({var}), BackendEquation.listEquation({eqn}),
+                                         {}, BackendDAE.UNSPECIFIED_PARTITION() )::eqs1;
+    end if;
+    outDAE := BackendDAE.DAE(listReverse(eqs1), inDAE.shared);
+  else
+    BackendDump.dumpVarList({inVar}, "fixKnownVarsCausal2 failed for ...");
+    Error.addCompilerError("fixKnownVarsCausal2 failed");
+    fail();
+  end try;
+end fixKnownVarsCausal2;
 
 // =============================================================================
 // section for fastAcausal

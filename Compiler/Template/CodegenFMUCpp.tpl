@@ -68,16 +68,18 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let stateDerVectorName = "__zDot"
   let &extraFuncs = buffer "" /*BUFD*/
   let &extraFuncsDecl = buffer "" /*BUFD*/
+  let &complexStartExpressions = buffer ""
 
   let numRealVars = numRealvars(modelInfo)
   let numIntVars = numIntvars(modelInfo)
   let numBoolVars = numBoolvars(modelInfo)
+  let numStringVars = numStringvars(modelInfo)
 
   let cpp = CodegenCpp.translateModel(simCode)
   let()= textFile(fmuWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
   let()= textFile(fmuModelHeaderFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.h')
   let()= textFile(fmuModelCppFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.cpp')
-  let()= textFile((if isFMIVersion20(FMUVersion) then fmuModelDescriptionFileCpp(simCode, extraFuncs, extraFuncsDecl, "", guid, FMUVersion, FMUType) else CodegenCppInit.modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars, FMUVersion, FMUType, guid, true, "cpp-runtime")), 'modelDescription.xml')
+  let()= textFile((if isFMIVersion20(FMUVersion) then fmuModelDescriptionFileCpp(simCode, extraFuncs, extraFuncsDecl, "", guid, FMUVersion, FMUType) else CodegenCppInit.modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars, numStringVars, FMUVersion, FMUType, guid, true, "cpp-runtime", complexStartExpressions, stateDerVectorName)), 'modelDescription.xml')
   let()= textFile(fmudeffile(simCode, FMUVersion), '<%fileNamePrefix%>.def')
   let()= textFile(fmuMakefile(target,simCode, extraFuncs, extraFuncsDecl, "", FMUVersion, "", "", "", ""), '<%fileNamePrefix%>_FMU.makefile')
   let()= textFile(fmuCalcHelperMainfile(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
@@ -100,6 +102,7 @@ template fmuCalcHelperMainfile(SimCode simCode)
     #include <Core/Modelica.h>
     #include <Core/System/FactoryExport.h>
     #include <Core/DataExchange/SimData.h>
+    #include <Core/DataExchange/XmlPropertyReader.h>
     #include <Core/System/SimVars.h>
     #include <Core/System/DiscreteEvents.h>
     #include <Core/System/EventHandling.h>
@@ -119,9 +122,13 @@ template fmuCalcHelperMainfile(SimCode simCode)
     #include "OMCpp<%fileNamePrefix%>FactoryExport.cpp"
     #include "OMCpp<%fileNamePrefix%>Extension.cpp"
     #include "OMCpp<%fileNamePrefix%>Functions.cpp"
+    <%if(Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then
+    <<
     #include "OMCpp<%fileNamePrefix%>InitializeParameter.cpp"
     #include "OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp"
     #include "OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp"
+    >>
+    %>
     #include "OMCpp<%fileNamePrefix%>InitializeExtVars.cpp"
     #include "OMCpp<%fileNamePrefix%>Initialize.cpp"
     #include "OMCpp<%fileNamePrefix%>Jacobian.cpp"
@@ -257,7 +264,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   #include <sstream>
 
   ISimVars *<%modelShortName%>FMU::createSimVars() {
-    return new SimVars(<%numRealvars(modelInfo)%>, <%numIntvars(modelInfo)%>, <%numBoolvars(modelInfo)%>, <%getPreVarsCount(modelInfo)%>, <%numStatevars(modelInfo)%>, <%numStateVarIndex(modelInfo)%>);
+    return new SimVars(<%numRealvars(modelInfo)%>, <%numIntvars(modelInfo)%>, <%numBoolvars(modelInfo)%>, <%numStringvars(modelInfo)%>, <%getPreVarsCount(modelInfo)%>, <%numStatevars(modelInfo)%>, <%numStateVarIndex(modelInfo)%>);
   }
 
   // constructor

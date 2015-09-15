@@ -1897,25 +1897,24 @@ end cevalGenerateFunction;
 
 protected function matchQualifiedCalls
 "Collects the packages used by the functions"
-  input DAE.Exp e;
-  input list<String> acc;
-  output DAE.Exp outExp;
+  input DAE.Exp inExp;
+  input list<String> inAcc;
+  output DAE.Exp outExp = inExp;
   output list<String> outAcc;
 algorithm
-  (outExp,outAcc) := match (e,acc)
+  outAcc := match inExp
     local
       String name;
-      DAE.ComponentRef cr;
-    case (DAE.CALL(path = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED(name=name)), attr = DAE.CALL_ATTR(builtin = false)),_)
-      equation
-        outAcc = List.consOnTrue(not listMember(name,acc),name,acc);
-      then (e,outAcc);
-    case (DAE.CREF(componentRef=cr,ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=false)),_)
-      equation
-        Absyn.QUALIFIED(name,Absyn.IDENT(_)) = ComponentReference.crefToPath(cr);
-        outAcc = List.consOnTrue(not listMember(name,acc),name,acc);
-      then (e,outAcc);
-    else (e,acc);
+
+    case DAE.CALL(path = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED(name = name)),
+                  attr = DAE.CALL_ATTR(builtin = false))
+      then List.consOnTrue(not listMember(name, inAcc), name, inAcc);
+
+    case DAE.CREF(componentRef = DAE.CREF_QUAL(ident = name),
+                  ty = DAE.T_FUNCTION_REFERENCE_FUNC(builtin = false))
+      then List.consOnTrue(not listMember(name, inAcc), name, inAcc);
+
+    else inAcc;
   end match;
 end matchQualifiedCalls;
 

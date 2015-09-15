@@ -831,7 +831,7 @@ template simulationFile(SimCode simCode, String guid)
                      MMC_INIT();
                      >>
     let &mainInit += 'omc_alloc_interface.init();'
-    let pminit = if Flags.isSet(Flags.PARMODAUTO) then 'PM_Model_init("<%fileNamePrefix%>", &simulation_data, functionODE_systems);' else ''
+    let pminit = if Flags.isSet(Flags.PARMODAUTO) then 'PM_Model_init("<%fileNamePrefix%>", &simulation_data, threadData, functionODE_systems);' else ''
     let mainBody =
       <<
       <%symbolName(modelNamePrefixStr,"setupDataStruc")%>(&simulation_data, threadData);
@@ -888,6 +888,7 @@ template simulationFile(SimCode simCode, String guid)
        <%symbolName(modelNamePrefixStr,"functionDAE")%>,
        <%symbolName(modelNamePrefixStr,"input_function")%>,
        <%symbolName(modelNamePrefixStr,"input_function_init")%>,
+       <%symbolName(modelNamePrefixStr,"input_function_updateStartValues")%>,
        <%symbolName(modelNamePrefixStr,"output_function")%>,
        <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>,
@@ -1511,7 +1512,7 @@ template functionInput(ModelInfo modelInfo, String modelNamePrefix)
       TRACE_PUSH
 
       <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
-        '$P$ATTRIBUTE<%cref(name)%>.start = data->simulationInfo.inputVars[<%i0%>];'
+        'data->simulationInfo.inputVars[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.start;'
         ;separator="\n"
       %>
 
@@ -1519,6 +1520,18 @@ template functionInput(ModelInfo modelInfo, String modelNamePrefix)
       return 0;
     }
 
+    int <%symbolName(modelNamePrefix,"input_function_updateStartValues")%>(DATA *data, threadData_t *threadData)
+    {
+      TRACE_PUSH
+
+      <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
+        '$P$ATTRIBUTE<%cref(name)%>.start = data->simulationInfo.inputVars[<%i0%>];'
+        ;separator="\n"
+      %>
+
+      TRACE_POP
+      return 0;
+    }
     >>
   end match
 end functionInput;
@@ -2689,7 +2702,7 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, String mode
     <%varDecls%>
 
     data->simulationInfo.discreteCall = 1;
-    <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionInitialEquations(<%nrfuncs%>, data, functionInitialEquations_systems);'
+    <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionInitialEquations(<%nrfuncs%>, data, threadData, functionInitialEquations_systems);'
     else '<%fncalls%>' %>
     data->simulationInfo.discreteCall = 0;
 
@@ -3496,7 +3509,7 @@ match eqlstlst
     /* forwarded equations */
     <%forwardEqs%>
 
-    static void (*function<%name%>_systems[<%nrfuncs%>])(DATA *) = {
+    static void (*function<%name%>_systems[<%nrfuncs%>])(DATA *,  threadData_t *) = {
       <%arrayEqs%>
     };
 
@@ -3535,7 +3548,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
 
     data->simulationInfo.callStatistics.functionODE++;
 
-    <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionODE(<%nrfuncs%>, data, functionODE_systems);'
+    <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionODE(<%nrfuncs%>, data, threadData, functionODE_systems);'
     else '<%fncalls%>' %>
 
     <% if profileFunctions() then "rt_accumulate(SIM_TIMER_FUNCTION_ODE);" %>
@@ -3566,7 +3579,7 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
     TRACE_PUSH
     <%varDecls%>
 
-    <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionAlg(<%nrfuncs%>, data, functionAlg_systems);'
+    <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionAlg(<%nrfuncs%>, data, threadData, functionAlg_systems);'
     else '<%fncalls%>' %>
 
     <%symbolName(modelNamePrefix,"function_savePreSynchronous")%>(data, threadData);
@@ -3620,7 +3633,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
 
     data->simulationInfo.needToIterate = 0;
     data->simulationInfo.discreteCall = 1;
-    <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionDAE(<%nrfuncs%>, data, functionDAE_systems);'
+    <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionDAE(<%nrfuncs%>, data, threadData, functionDAE_systems);'
     else '<%fncalls%>' %>
     data->simulationInfo.discreteCall = 0;
 
@@ -4890,7 +4903,7 @@ end simulationLiteralsFile;
 
   <%if acceptParModelicaGrammar() then
   <<
-  /* the OpenCL Kernels file name needed in libOMOCLRuntime.a */
+  /* the OpenCL Kernels file name needed in libParModelicaExpl.a */
   const char* omc_ocl_kernels_source = "<%filePrefix%>_kernels.cl";
   /* the OpenCL program. Made global to avoid repeated builds */
   extern cl_program omc_ocl_program;
@@ -4926,7 +4939,7 @@ template simulationParModelicaKernelsFile(String filePrefix, list<Function> func
   let()= System.tmpTickResetIndex(0,20) /* parfor index */
 
   <<
-  #include "OCLRuntimeUtil.cl"
+  #include <ParModelica/explicit/openclrt/OCLRuntimeUtil.cl>
 
   // ParModelica Parallel Function headers.
   <%functionHeadersParModelica(filePrefix, functions)%>
@@ -4989,7 +5002,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
   let libsPos1 = if not dirExtra then libsStr //else ""
   let libsPos2 = if dirExtra then libsStr // else ""
-  let ParModelicaExpLibs = if acceptParModelicaGrammar() then 'OMOCLRuntime.lib OpenCL.lib' // else ""
+  let ParModelicaExpLibs = if acceptParModelicaGrammar() then 'ParModelicaExpl.lib OpenCL.lib' // else ""
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
     match s.method case "dassljac" then "-D_OMC_JACOBIAN "
   <<
@@ -5053,8 +5066,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
   let libsPos1 = if not dirExtra then libsStr //else ""
   let libsPos2 = if dirExtra then libsStr // else ""
-  let ParModelicaExpLibs = if acceptParModelicaGrammar() then '-lOMOCLRuntime -lOpenCL' // else ""
-  let ParModelicaAutoLibs = if Flags.isSet(Flags.PARMODAUTO) then '-lom_pm_autort -L. -ltbb' // else ""
+  let ParModelicaExpLibs = if acceptParModelicaGrammar() then '-lParModelicaExpl -lOpenCL' // else ""
+  let ParModelicaAutoLibs = if Flags.isSet(Flags.PARMODAUTO) then '-lParModelicaAuto -ltbb -lpugixml -lboost_system' // else ""
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
     match s.method case "dassljac" then "-D_OMC_JACOBIAN "
 
@@ -5062,7 +5075,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # Makefile generated by OpenModelica
 
   # Simulations use -O3 by default
-  CC=<%if acceptParModelicaGrammar() then 'g++' else '<%makefileParams.ccompiler%>'%>
+  CC=<%if boolOr(Flags.isSet(Flags.PARMODAUTO),acceptParModelicaGrammar()) then 'g++' else '<%makefileParams.ccompiler%>'%>
   CXX=<%makefileParams.cxxcompiler%>
   LINK=<%makefileParams.linker%>
   EXEEXT=<%makefileParams.exeext%>

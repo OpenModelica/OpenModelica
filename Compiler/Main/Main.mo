@@ -76,6 +76,7 @@ import SimCode;
 import SimCodeMain;
 import SimCodeFunctionUtil;
 import Socket;
+import StackOverflow;
 import System;
 import TplMain;
 import Util;
@@ -592,18 +593,28 @@ protected function optimizeDae
 protected
   BackendDAE.ExtraInfo info;
   BackendDAE.BackendDAE dlow;
+  BackendDAE.BackendDAE initDAE;
+  Boolean useHomotopy "true if homotopy(...) is used during initialization";
+  list<BackendDAE.Equation> removedInitialEquationLst;
+  list<BackendDAE.Var> primaryParameters "already sorted";
+  list<BackendDAE.Var> allPrimaryParameters "already sorted";
 algorithm
   if Config.simulationCg() then
     info := BackendDAE.EXTRA_INFO(DAEUtil.daeDescription(dae), Absyn.pathString(inClassName));
     dlow := BackendDAECreate.lower(dae, inCache, inEnv, info);
-    dlow := BackendDAEUtil.getSolvedSystem(dlow, "");
-    simcodegen(dlow, inClassName, ap);
+    (dlow, initDAE, useHomotopy, removedInitialEquationLst, primaryParameters, allPrimaryParameters) := BackendDAEUtil.getSolvedSystem(dlow, "");
+    simcodegen(dlow, initDAE, useHomotopy, removedInitialEquationLst, primaryParameters, allPrimaryParameters, inClassName, ap);
   end if;
 end optimizeDae;
 
 protected function simcodegen "
   Genereates simulation code using the SimCode module"
   input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.BackendDAE inInitDAE;
+  input Boolean inUseHomotopy "true if homotopy(...) is used during initialization";
+  input list<BackendDAE.Equation> inRemovedInitialEquationLst;
+  input list<BackendDAE.Var> inPrimaryParameters "already sorted";
+  input list<BackendDAE.Var> inAllPrimaryParameters "already sorted";
   input Absyn.Path inClassName;
   input Absyn.Program inProgram;
 protected
@@ -623,7 +634,8 @@ algorithm
       SimCodeMain.createSimulationSettings(0.0, 1.0, 500, 1e-6, "dassl", "", "mat", ".*", "");
 
     System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND); // Is this necessary?
-    SimCodeMain.generateModelCode(inBackendDAE, inProgram, inClassName, cname, SOME(sim_settings), Absyn.FUNCTIONARGS({}, {}));
+    SimCodeMain.generateModelCode(inBackendDAE, inInitDAE, inUseHomotopy, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inProgram, inClassName, cname, SOME(sim_settings), Absyn.FUNCTIONARGS({}, {}));
+
     SimCodeFunctionUtil.execStat("Codegen Done");
   end if;
 end simcodegen;
@@ -819,6 +831,7 @@ protected
   GC.ProfStats stats;
 algorithm
   try
+  try
     args_1 := init(args);
     if Flags.isSet(Flags.GC_PROF) then
       print(GC.profStatsStr(GC.getProfStats(), head="GC stats after initialization:") + "\n");
@@ -833,6 +846,13 @@ algorithm
   if Flags.isSet(Flags.GC_PROF) then
     print(GC.profStatsStr(GC.getProfStats(), head="GC stats at end of program:") + "\n");
   end if;
+  else
+    print("Stack overflow detected and was not caught.\nSend us a bug report at https://trac.openmodelica.org/OpenModelica/newticket\n    Include the following trace:\n");
+    for s in StackOverflow.readableStacktraceMessages() loop
+      print(s);
+      print("\n");
+    end for;
+  end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
 end main;
 
 protected function main2

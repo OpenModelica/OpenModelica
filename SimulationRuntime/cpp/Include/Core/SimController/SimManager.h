@@ -5,8 +5,8 @@
  */
 #include <Core/SimController/Configuration.h>
 #include <Core/SimController/Initialization.h>
-#include <Core/SimController/FactoryExport.h>
-#include <Core/Utils/extension/logger.hpp>
+//#include <Core/SimController/FactoryExport.h>
+//#include <Core/Utils/extension/logger.hpp>
 
 #ifdef RUNTIME_PROFILING
 #include <Core/Utils/extension/measure_time.hpp>
@@ -61,7 +61,7 @@ private:
     int* _sampleCycles;
 
     #ifdef RUNTIME_PROFILING
-    std::vector<MeasureTimeData> measureTimeFunctionsArray;
+    std::vector<MeasureTimeData*> *measureTimeFunctionsArray;
     MeasureTimeValues *runSimStartValues, *runSimEndValues, *initSimStartValues, *initSimEndValues;
     #endif
 };

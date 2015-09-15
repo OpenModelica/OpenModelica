@@ -43,15 +43,19 @@ void cat_array(int k, const vector<const BaseArray<T>*>& x, BaseArray<T>& a)
     new_k_dim_size = x[0]->getDims()[k-1];
     for(int i = 1; i < n; i++)
     {
-        if(x[0]->getDims().size() != x[i]->getDims().size())
+        //arrays must have same number of dimensions
+		if(x[0]->getDims().size() != x[i]->getDims().size())
            throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong dimension for input array");
-        for(int j = 0; j < (k - 1); j++)
+        //Size matching: Arrays must have identical array sizes with the exception of the size of dimension k
+		for(int j = 0; j < (k - 1); j++)
         {
             if (x[0]->getDims()[j] != x[i]->getDims()[j])
                 throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong size for input array");
         }
+		//calculate new size of dimension k
         new_k_dim_size += x[i]->getDims()[k-1];
-        for(int j = k; j < x[0]->getDims().size(); j++)
+         //Size matching: Arrays must have identical array sizes with the exception of the size of dimension k
+		for(int j = k; j < x[0]->getDims().size(); j++)
         {
           if (x[0]->getDims()[j] != x[i]->getDims()[j])
             throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong size for input array");
@@ -359,36 +363,15 @@ std::pair<T,T> min_max(const BaseArray<T>& x)
   return std::make_pair(*(ret.first), *(ret.second));
 }
 
-void convertBoolToInt(const BaseArray<bool>& a, BaseArray<int>& b)
+template <typename S, typename T>
+void cast_array(const BaseArray<S>& a, BaseArray<T>& b)
 {
   b.setDims(a.getDims());
-  int numEle = a.getNumElems();
-  const bool* source_data = a.getData();
-  int* dest_data = b.getData();
-  for (int i = 0; (numEle > 0) && (i <= numEle); i++)
-  {
-    if(source_data[i])
-      dest_data[i]=1;
-    else
-      dest_data[i]=0;
-  }
-}
-
-void convertIntToBool(const BaseArray<int>& a, BaseArray<bool>& b)
-{
-  b.setDims(a.getDims());
-  int numEle = a.getNumElems();
-  for (int i = 0; i <= numEle; i++)
-  {
-    if (a(i))
-    {
-      b(i) = true;
-    }
-    else
-    {
-      b(i) = false;
-    }
-  }
+  int numElems = a.getNumElems();
+  const S* src_data = a.getData();
+  T* dst_data = b.getData();
+  for (int i = 0; i < numElems; i++)
+    *dst_data++ = (T)(*src_data++);
 }
 
 /**
@@ -563,10 +546,12 @@ min_max(const BaseArray<int>& x);
 template std::pair<bool,bool> BOOST_EXTENSION_EXPORT_DECL
 min_max(const BaseArray<bool>& x);
 
-void BOOST_EXTENSION_EXPORT_DECL
-convertBoolToInt(const BaseArray<bool>& a, BaseArray<int>& b);
-void BOOST_EXTENSION_EXPORT_DECL
-convertIntToBool(BaseArray<int>& a, BaseArray<bool>& b);
+template void BOOST_EXTENSION_EXPORT_DECL
+cast_array(const BaseArray<int> &a, BaseArray<double> &b);
+template void BOOST_EXTENSION_EXPORT_DECL
+cast_array(const BaseArray<int> &a, BaseArray<bool> &b);
+template void BOOST_EXTENSION_EXPORT_DECL
+cast_array(const BaseArray<bool> &a, BaseArray<int> &b);
 
 template void BOOST_EXTENSION_EXPORT_DECL
 convertArrayLayout(const BaseArray<double> &s, BaseArray<double> &d);

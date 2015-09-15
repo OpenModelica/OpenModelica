@@ -20,20 +20,21 @@ SimController::SimController(PATH library_path, PATH modelicasystem_path)
     _algloopsolverfactory = createAlgLoopSolverFactory(_config->getGlobalSettings());
 
     #ifdef RUNTIME_PROFILING
+    measuredFunctionStartValues = NULL;
+    measuredFunctionEndValues = NULL;
+
     if(MeasureTime::getInstance() != NULL)
     {
-        measureTimeFunctionsArray = std::vector<MeasureTimeData>(2); //0 initialize //1 solveInitialSystem
+        measureTimeFunctionsArray = new std::vector<MeasureTimeData*>(2, NULL); //0 initialize //1 solveInitialSystem
+        (*measureTimeFunctionsArray)[0] = new MeasureTimeData("initialize");
+        (*measureTimeFunctionsArray)[1] = new MeasureTimeData("solveInitialSystem");
+
         measuredFunctionStartValues = MeasureTime::getZeroValues();
         measuredFunctionEndValues = MeasureTime::getZeroValues();
-
-        measureTimeFunctionsArray[0] = MeasureTimeData("initialize");
-        measureTimeFunctionsArray[1] = MeasureTimeData("solveInitialSystem");
     }
     else
     {
-      measureTimeFunctionsArray = std::vector<MeasureTimeData>();
-      measuredFunctionStartValues = NULL;
-      measuredFunctionEndValues = NULL;
+      measureTimeFunctionsArray = new std::vector<MeasureTimeData*>();
     }
     #endif
 }
@@ -114,7 +115,7 @@ boost::weak_ptr<ISimData> SimController::LoadSimData(string modelKey)
     return sim_data;
 }
 
-boost::weak_ptr<ISimVars> SimController::LoadSimVars(string modelKey, size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pre_vars, size_t dim_z, size_t z_i)
+boost::weak_ptr<ISimVars> SimController::LoadSimVars(string modelKey, size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_string, size_t dim_pre_vars, size_t dim_z, size_t z_i)
 {
     //if the simdata is already loaded
     std::map<string,boost::shared_ptr<ISimVars> > ::iterator iter = _sim_vars.find(modelKey);
@@ -124,7 +125,7 @@ boost::weak_ptr<ISimVars> SimController::LoadSimVars(string modelKey, size_t dim
         _sim_vars.erase(iter);
     }
     //create system
-    boost::shared_ptr<ISimVars> sim_vars = createSimVars(dim_real, dim_int, dim_bool, dim_pre_vars, dim_z,z_i);
+    boost::shared_ptr<ISimVars> sim_vars = createSimVars(dim_real, dim_int, dim_bool, dim_string, dim_pre_vars, dim_z,z_i);
     _sim_vars[modelKey] = sim_vars;
     return sim_vars;
 }
@@ -255,9 +256,9 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         #ifdef RUNTIME_PROFILING
         if(MeasureTime::getInstance() != NULL)
         {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[0], simControllerInitializeHandler);
-            measuredFunctionStartValues = MeasureTime::getZeroValues();
-            measuredFunctionEndValues = MeasureTime::getZeroValues();
+            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[0], simControllerInitializeHandler);
+            measuredFunctionStartValues->reset();
+            measuredFunctionEndValues->reset();
             MEASURETIME_START(measuredFunctionStartValues, simControllerSolveInitialSystemHandler, "SolveInitialSystem");
         }
         #endif
@@ -267,8 +268,8 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         #ifdef RUNTIME_PROFILING
         if(MeasureTime::getInstance() != NULL)
         {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[1], simControllerSolveInitialSystemHandler);
-            MeasureTime::addResultContentBlock(mixedsystem->getModelName(),"simController",&measureTimeFunctionsArray);
+            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[1], simControllerSolveInitialSystemHandler);
+            MeasureTime::addResultContentBlock(mixedsystem->getModelName(),"simController",measureTimeFunctionsArray);
         }
         #endif
 

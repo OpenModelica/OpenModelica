@@ -51,6 +51,7 @@ Equation::Equation() :
     index = -1;
     function_system = NULL;
     data = NULL;
+    threadData = NULL;
 }
 
 bool Equation::depends_on(const TaskNode& other_b) const {
@@ -76,7 +77,7 @@ bool Equation::depends_on(const TaskNode& other_b) const {
 
 
 void Equation::execute() {
-    function_system[task_id](data);
+    function_system[task_id](data, threadData);
 }
 
 
@@ -90,13 +91,14 @@ OMModel::OMModel() :
 
 
 
-void OMModel::initialize(const char* model_name_, void* data_, FunctionType* ode_system_) {
+void OMModel::initialize(const char* model_name_, DATA* data_, threadData_t* threadData_, FunctionType* ode_system_) {
 
     if(intialized)
         return;
 
     model_name = model_name_;
     data = data_;
+    threadData = threadData_;
     ode_system_funcs = ode_system_;
 
     load_from_xml(ODE_system, "ode-equations", ode_system_funcs);
@@ -264,7 +266,11 @@ void OMModel::load_from_xml(TaskSystemT& task_system, const std::string& eq_to_r
         Equation current_node;
         pugi::xml_attribute index = xml_equ.first_attribute();
         current_node.index = index.as_int();
+
+        // Copy the pointers to the needed info from the Model
+        // to each equation node.
         current_node.data = this->data;
+        current_node.threadData = this->threadData;
         current_node.function_system = function_system;
 
 

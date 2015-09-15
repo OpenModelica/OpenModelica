@@ -3,18 +3,19 @@ package CodegenCppInit
 import interface SimCodeTV;
 import interface SimCodeBackendTV;
 import CodegenUtil.*;
+import CodegenCppCommon;
 import CodegenFMUCommon;
 import CodegenFMU2;
 import CodegenFMU1;
 
-template modelInitXMLFile(SimCode simCode, String numRealVars, String numIntVars, String numBoolVars, String FMUVersion, String FMUType, String FMUGuid, Boolean generateFMUModelDescription, String generatorComments)
+template modelInitXMLFile(SimCode simCode, String numRealVars, String numIntVars, String numBoolVars, String numStringVars, String FMUVersion, String FMUType, String FMUGuid, Boolean generateFMUModelDescription, String generatorComments, Text& complexStartExpressions, Text stateDerVectorName)
  "Generate a xml file that contains informations for initialization or for the FMU-structure"
 ::=
   match simCode
     case SIMCODE(modelInfo = MODELINFO(__)) then
-      let variables = modelVariablesXML(modelInfo, varToArrayIndexMapping, '<%numRealVars%> - 1', '<%numIntVars%> - 1', '<%numBoolVars%> - 1', generateFMUModelDescription)
-      let algLoops = (listAppend(allEquations,initialEquations) |> eq => algLoopXML(eq, simCode, varToArrayIndexMapping, '<%numRealVars%> - 1') ;separator="\n")
-      let jacobianMatrixes = jacobianMatrixesXML(simCode.jacobianMatrixes)
+      let variables = modelVariablesXML(simCode, modelInfo, varToArrayIndexMapping, '<%numRealVars%> - 1', '<%numIntVars%> - 1', '<%numBoolVars%> - 1', '<%numStringVars%> - 1', generateFMUModelDescription, complexStartExpressions, stateDerVectorName)
+      //let algLoops = (listAppend(allEquations,initialEquations) |> eq => algLoopXML(eq, simCode, varToArrayIndexMapping, '<%numRealVars%> - 1') ;separator="\n")
+      //let jacobianMatrixes = jacobianMatrixesXML(simCode.jacobianMatrixes)
       let descriptionTag = if generateFMUModelDescription then "fmiModelDescription" else "ModelDescription"
       let fmiDescriptionAttributes = if generateFMUModelDescription then fmiDescriptionAttributes(simCode, FMUVersion, FMUType, FMUGuid) else 'modelName="<%dotPath(modelInfo.name)%>"'
       let fmiTypeDefinitions = if generateFMUModelDescription then CodegenFMUCommon.fmiTypeDefinitions(modelInfo, FMUVersion)
@@ -28,6 +29,9 @@ template modelInitXMLFile(SimCode simCode, String numRealVars, String numIntVars
         <ModelVariables>
           <%variables%>
         </ModelVariables>
+      </<%descriptionTag%>>
+      >>
+      /*
         <%if boolNot(generateFMUModelDescription) then
         <<
         <AlgLoops>
@@ -38,8 +42,7 @@ template modelInitXMLFile(SimCode simCode, String numRealVars, String numIntVars
         </Jacobian>
         >>
         %>
-      </<%descriptionTag%>>
-      >>
+      */
 end modelInitXMLFile;
 
 template fmiDescriptionAttributes(SimCode simCode, String FMUVersion, String FMUType, String FMUGuid)
@@ -77,45 +80,46 @@ template fmiModelDescriptionAttributes(SimCode simCode, String guid)
       >>
 end fmiModelDescriptionAttributes;
 
-template modelVariablesXML(ModelInfo modelInfo, HashTableCrIListArray.HashTable varToArrayIndexMapping, String indexForUndefinedReferencesReal, String indexForUndefinedReferencesInt, String indexForUndefinedReferencesBool, Boolean generateFMUModelDescription)
+template modelVariablesXML(SimCode simCode, ModelInfo modelInfo, HashTableCrIListArray.HashTable varToArrayIndexMapping, String indexForUndefinedReferencesReal,
+                           String indexForUndefinedReferencesInt, String indexForUndefinedReferencesBool, String indexForUndefinedReferencesString,
+                           Boolean generateFMUModelDescription, Text& complexStartExpressions, Text stateDerVectorName)
  "Generates the xml code for the variable defintions."
 ::=
   match modelInfo
     case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgVars= numAlgVars, numDiscreteReal = numDiscreteReal, numOptimizeConstraints = numOptimizeConstraints)) then
       <<
-      <%vars.stateVars       |> var => scalarVariableXML(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, generateFMUModelDescription) ;separator="\n";empty%>
-      <%vars.derivativeVars  |> var => scalarVariableXML(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, generateFMUModelDescription) ;separator="\n";empty%>
-      <%vars.algVars         |> var => scalarVariableXML(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, generateFMUModelDescription) ;separator="\n";empty%>
-      <%vars.discreteAlgVars |> var => scalarVariableXML(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, generateFMUModelDescription) ;separator="\n";empty%>
+      <%vars.stateVars       |> var => scalarVariableXML(simCode, var, varToArrayIndexMapping, indexForUndefinedReferencesReal, generateFMUModelDescription, complexStartExpressions, stateDerVectorName) ;separator="\n";empty%>
+      <%vars.derivativeVars  |> var => scalarVariableXML(simCode, var, varToArrayIndexMapping, indexForUndefinedReferencesReal, generateFMUModelDescription, complexStartExpressions, stateDerVectorName) ;separator="\n";empty%>
+      <%vars.algVars         |> var => scalarVariableXML(simCode, var, varToArrayIndexMapping, indexForUndefinedReferencesReal, generateFMUModelDescription, complexStartExpressions, stateDerVectorName) ;separator="\n";empty%>
+      <%vars.discreteAlgVars |> var => scalarVariableXML(simCode, var, varToArrayIndexMapping, indexForUndefinedReferencesReal, generateFMUModelDescription, complexStartExpressions, stateDerVectorName) ;separator="\n";empty%>
       <%/*vars.realOptimizeConstraintsVars
-                             |> var hasindex i0 => scalarVariableXML(var,varToArrayIndexMapping, indexForUndefinedReferencesReal, generateFMUModelDescription) ;separator="\n";empty*/%>
+                             |> var hasindex i0 => scalarVariableXML(simCode, var,varToArrayIndexMapping, indexForUndefinedReferencesReal, generateFMUModelDescription, complexStartExpressions, stateDerVectorName) ;separator="\n";empty*/%>
       <%/*vars.realOptimizeFinalConstraintsVars
-                             |> var => scalarVariableXML(var,varToArrayIndexMapping, indexForUndefinedReferencesReal, generateFMUModelDescription) ;separator="\n";empty*/%>
-      <%vars.paramVars       |> var => scalarVariableXML(var,varToArrayIndexMapping, indexForUndefinedReferencesReal, generateFMUModelDescription) ;separator="\n";empty%>
-      <%vars.aliasVars       |> var => scalarVariableXML(var,varToArrayIndexMapping, indexForUndefinedReferencesReal, generateFMUModelDescription) ;separator="\n";empty%>
+                             |> var => scalarVariableXML(simCode, var, varToArrayIndexMapping, indexForUndefinedReferencesReal, generateFMUModelDescription, complexStartExpressions, stateDerVectorName) ;separator="\n";empty*/%>
+      <%vars.paramVars       |> var => scalarVariableXML(simCode, var, varToArrayIndexMapping, indexForUndefinedReferencesReal, generateFMUModelDescription, complexStartExpressions, stateDerVectorName) ;separator="\n";empty%>
+      <%vars.aliasVars       |> var => scalarVariableXML(simCode, var, varToArrayIndexMapping, indexForUndefinedReferencesReal, generateFMUModelDescription, complexStartExpressions, stateDerVectorName) ;separator="\n";empty%>
 
-      <%vars.intAlgVars      |> var => scalarVariableXML(var,varToArrayIndexMapping, indexForUndefinedReferencesInt, generateFMUModelDescription) ;separator="\n";empty%>
-      <%vars.intParamVars    |> var => scalarVariableXML(var,varToArrayIndexMapping, indexForUndefinedReferencesInt, generateFMUModelDescription) ;separator="\n";empty%>
-      <%vars.intAliasVars    |> var => scalarVariableXML(var,varToArrayIndexMapping, indexForUndefinedReferencesInt, generateFMUModelDescription) ;separator="\n";empty%>
+      <%vars.intAlgVars      |> var => scalarVariableXML(simCode, var, varToArrayIndexMapping, indexForUndefinedReferencesInt, generateFMUModelDescription, complexStartExpressions, stateDerVectorName) ;separator="\n";empty%>
+      <%vars.intParamVars    |> var => scalarVariableXML(simCode, var, varToArrayIndexMapping, indexForUndefinedReferencesInt, generateFMUModelDescription, complexStartExpressions, stateDerVectorName) ;separator="\n";empty%>
+      <%vars.intAliasVars    |> var => scalarVariableXML(simCode, var, varToArrayIndexMapping, indexForUndefinedReferencesInt, generateFMUModelDescription, complexStartExpressions, stateDerVectorName) ;separator="\n";empty%>
 
-      <%vars.boolAlgVars     |> var => scalarVariableXML(var,varToArrayIndexMapping, indexForUndefinedReferencesBool, generateFMUModelDescription) ;separator="\n";empty%>
-      <%vars.boolParamVars   |> var => scalarVariableXML(var,varToArrayIndexMapping, indexForUndefinedReferencesBool, generateFMUModelDescription) ;separator="\n";empty%>
-      <%vars.boolAliasVars   |> var => scalarVariableXML(var,varToArrayIndexMapping, indexForUndefinedReferencesBool, generateFMUModelDescription) ;separator="\n";empty%>
+      <%vars.boolAlgVars     |> var => scalarVariableXML(simCode, var, varToArrayIndexMapping, indexForUndefinedReferencesBool, generateFMUModelDescription, complexStartExpressions, stateDerVectorName) ;separator="\n";empty%>
+      <%vars.boolParamVars   |> var => scalarVariableXML(simCode, var, varToArrayIndexMapping, indexForUndefinedReferencesBool, generateFMUModelDescription, complexStartExpressions, stateDerVectorName) ;separator="\n";empty%>
+      <%vars.boolAliasVars   |> var => scalarVariableXML(simCode, var, varToArrayIndexMapping, indexForUndefinedReferencesBool, generateFMUModelDescription, complexStartExpressions, stateDerVectorName) ;separator="\n";empty%>
+
+      <%vars.stringAlgVars   |> var => scalarVariableXML(simCode, var, varToArrayIndexMapping, indexForUndefinedReferencesString, generateFMUModelDescription, complexStartExpressions, stateDerVectorName) ;separator="\n";empty%>
+      <%vars.stringParamVars |> var => scalarVariableXML(simCode, var, varToArrayIndexMapping, indexForUndefinedReferencesString, generateFMUModelDescription, complexStartExpressions, stateDerVectorName) ;separator="\n";empty%>
+      <%vars.stringAliasVars |> var => scalarVariableXML(simCode, var, varToArrayIndexMapping, indexForUndefinedReferencesString, generateFMUModelDescription, complexStartExpressions, stateDerVectorName) ;separator="\n";empty%>
       >>
-      /*
-      <%vars.stringAlgVars   |> var hasindex i0 => ScalarVariable(var,i0,"sAlg") ;separator="\n";empty%>
-      <%vars.stringParamVars |> var hasindex i0 => ScalarVariable(var,i0,"sPar") ;separator="\n";empty%>
-      <%vars.stringAliasVars |> var hasindex i0 => ScalarVariable(var,i0,"sAli") ;separator="\n";empty%>
-      */
 end modelVariablesXML;
 
-template scalarVariableXML(SimVar simVar, HashTableCrIListArray.HashTable varToArrayIndexMapping, String indexForUndefinedReferences, Boolean generateFMUModelDescription)
+template scalarVariableXML(SimCode simCode, SimVar simVar, HashTableCrIListArray.HashTable varToArrayIndexMapping, String indexForUndefinedReferences, Boolean generateFMUModelDescription, Text& complexStartExpressions, Text stateDerVectorName)
  "Generates code for ScalarVariable file for FMU target."
 ::=
   match simVar
     case SIMVAR(__) then
       let variableCode = if generateFMUModelDescription then CodegenFMUCommon.ScalarVariableType(simVar) else
-                                                             ScalarVariableType(unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_)
+                                                             ScalarVariableType(simCode, name, aliasvar, unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_, complexStartExpressions, stateDerVectorName)
       <<
       <ScalarVariable <%scalarVariableAttributeXML(simVar, varToArrayIndexMapping, indexForUndefinedReferences, generateFMUModelDescription)%>>
         <%variableCode%>
@@ -133,7 +137,7 @@ template scalarVariableAttributeXML(SimVar simVar, HashTableCrIListArray.HashTab
       let causalityAtt = CodegenFMUCommon.getCausality(causality)
       let variability = getVariablity(varKind)
       let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
-      let additionalAttributes = if generateFMUModelDescription then '' else 'isProtected="<%isProtected%>'
+      let additionalAttributes = if generateFMUModelDescription then '' else 'isProtected="<%isProtected%>"'
       <<
       name="<%Util.escapeModelicaStringToXmlString(crefStrNoUnderscore(name))%>" valueReference="<%valueReference%>" <%description%> variability="<%variability%>" causality="<%causalityAtt%>" alias="<%alias%>" <%additionalAttributes%>
       >>
@@ -148,6 +152,44 @@ template getAliasAttribute(AliasVariable aliasvar)
     case NEGATEDALIAS(__) then "negatedAlias"
     else "undefinedAliasType"
 end getAliasAttribute;
+
+template ScalarVariableType(SimCode simCode, DAE.ComponentRef simVarCref, AliasVariable simVarAlias, String unit, String displayUnit, Option<DAE.Exp> minValue, Option<DAE.Exp> maxValue, Option<DAE.Exp> startValue, Option<DAE.Exp> nominalValue, Boolean isFixed, DAE.Type type_, Text& complexStartExpressions, Text stateDerVectorName)
+ "Generates code for ScalarVariable Type file for FMU target."
+::=
+  match type_
+    case T_INTEGER(__) then '<Integer <%ScalarVariableTypeStartAttribute(simCode, simVarCref, simVarAlias, startValue, "Int", complexStartExpressions, stateDerVectorName)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeIntegerMinAttribute(minValue)%><%ScalarVariableTypeIntegerMaxAttribute(maxValue)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_REAL(__) then '<Real <%ScalarVariableTypeStartAttribute(simCode, simVarCref, simVarAlias, startValue, "Real", complexStartExpressions, stateDerVectorName)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeNominalAttribute(nominalValue)%><%ScalarVariableTypeRealMinAttribute(minValue)%><%ScalarVariableTypeRealMaxAttribute(maxValue)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_BOOL(__) then '<Boolean <%ScalarVariableTypeStartAttribute(simCode, simVarCref, simVarAlias, startValue, "Bool", complexStartExpressions, stateDerVectorName)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_STRING(__) then '<String <%ScalarVariableTypeStartAttribute(simCode, simVarCref, simVarAlias, startValue, "String", complexStartExpressions, stateDerVectorName)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_ENUMERATION(__) then '<Integer <%ScalarVariableTypeStartAttribute(simCode, simVarCref, simVarAlias, startValue, "Int", complexStartExpressions, stateDerVectorName)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_COMPLEX(complexClassType = ci as ClassInf.EXTERNAL_OBJ(__)) then '<ExternalObject path="<%escapeModelicaStringToXmlString(dotPath(ci.path))%>" />'
+    else error(sourceInfo(), 'ScalarVariableType: <%unparseType(type_)%>')
+end ScalarVariableType;
+
+template ScalarVariableTypeStartAttribute(SimCode simCode, DAE.ComponentRef simVarCref, AliasVariable simVarAlias, Option<DAE.Exp> startValue, Text type, Text& complexStartExpressions, Text stateDerVectorName)
+ "generates code for start attribute"
+::=
+  match startValue
+    case SOME(exp) then
+      let startString = StartString(exp)
+      match startString
+        case "" then
+          let unsued = match simVarAlias
+            case NOALIAS(__) then
+              let &complexPreExpression = buffer ""
+              let &varDecls = buffer ""
+              let &extraFuncs = buffer ""
+              let &extraFuncsDecl = buffer ""
+              let crefStr = CodegenCppCommon.cref1(simVarCref, simCode , &extraFuncs, &extraFuncsDecl, "", contextOther, varDecls, stateDerVectorName, false)
+              let expression = CodegenCppCommon.daeExp(exp, contextOther, &complexPreExpression, &varDecls, simCode, &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false)
+              let &complexStartExpressions += '<%varDecls%><%complexPreExpression%>SystemDefaultImplementation::set<%type%>StartValue(<%crefStr%>,<%expression%>);<%\n%>'
+              ''
+            else ''
+          'useStart="false"'
+        else
+          'useStart="true"<%startString%>'
+    case NONE() then 'useStart="false"'
+end ScalarVariableTypeStartAttribute;
 
 template algLoopXML(SimEqSystem eqs, SimCode simCode, HashTableCrIListArray.HashTable varToArrayIndexMapping, String indexForUndefinedReferences)
 ::=

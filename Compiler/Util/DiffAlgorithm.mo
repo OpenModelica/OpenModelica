@@ -232,6 +232,7 @@ algorithm
   else
     out := matchcontinue ()
       case () then onlyAdditions(arr1,arr2,equals,isWhitespace,toString,start1,end1,start2,end2);
+      case () then onlyRemovals(arr1,arr2,equals,isWhitespace,toString,start1,end1,start2,end2);
       else myersGreedyDiff(arr1,arr2,equals,start1,end1,start2,end2);
     end matchcontinue;
     // TODO: cleanup
@@ -342,6 +343,77 @@ algorithm
   // print("It is only additions :)\n");
   out := listReverse(out);
 end onlyAdditions;
+
+function onlyRemovals<T>
+  input array<T> arr1;
+  input array<T> arr2;
+  input FunEquals equals;
+  input FunWhitespace isWhitespace;
+  input ToString toString;
+  input Integer start1, end1, start2, end2;
+  output list<tuple<Diff,list<T>>> out;
+  partial function FunEquals
+    input T t1,t2;
+    output Boolean b;
+  end FunEquals;
+  partial function FunWhitespace
+    input T t;
+    output Boolean b;
+  end FunWhitespace;
+  partial function ToString
+    input T t;
+    output String o;
+  end ToString;
+protected
+  Integer x=0,y=0;
+  Diff d=Diff.Equal;
+  list<T> lst={};
+algorithm
+  out := {};
+  // print("Try only removals\n");
+  while start1+x<=end1 and start2+y<=end2 loop
+    // print("Try only removals"+String(x)+","+String(y)+"\n");
+    // print("1: " + System.trim(toString(arr1[start1+x]))+"\n");
+    // print("2: " + System.trim(toString(arr2[start2+y]))+"\n");
+    if equals(arr1[start1+x],arr2[start2+y]) then
+      (out,d,lst) := addToList(out,d,lst,Diff.Equal,arr1[start1+x]);
+      x:=x+1;
+      y:=y+1;
+      // print("Both equal\n");
+    elseif isWhitespace(arr2[start2+y]) then
+      (out,d,lst) := addToList(out,d,lst,Diff.Add,arr2[start2+y]);
+      // print("Deleting: " + toString(arr1[start1+x])+"\n");
+      y:=y+1;
+    else
+      (out,d,lst) := addToList(out,d,lst,Diff.Delete,arr1[start1+x]);
+      // print("Adding: " + toString(arr2[start2+y])+"\n");
+      x:=x+1;
+    end if;
+  end while;
+
+  while start1+x<=end1 loop
+    if isWhitespace(arr1[start1+x]) then
+      (out,d,lst) := addToList(out,d,lst,Diff.Delete,arr1[start1+x]);
+      x:=x+1;
+    else
+      fail();
+    end if;
+  end while;
+
+  while start2+y<=end2 loop
+    if isWhitespace(arr2[start2+y]) then
+      (out,d,lst) := addToList(out,d,lst,Diff.Add,arr2[start2+y]);
+      y:=y+1;
+    else
+      fail();
+    end if;
+  end while;
+
+  out := endList(out, d, lst);
+
+  // print("It is only additions :)\n");
+  out := listReverse(out);
+end onlyRemovals;
 
 function myersGreedyDiff<T>
   input array<T> arr1;

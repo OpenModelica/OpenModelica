@@ -66,14 +66,16 @@ template translateModel(SimCode simCode, String FMUVersion, String FMUType)
       let stateDerVectorName = "__zDot"
       let &extraFuncs = buffer "" /*BUFD*/
       let &extraFuncsDecl = buffer "" /*BUFD*/
+      let &complexStartExpressions = buffer ""
 
       let className = CodegenCpp.lastIdentOfPath(modelInfo.name)
       let numRealVars = numRealvarsHpcom(modelInfo, hpcomData.hpcOmMemory)
       let numIntVars = numIntvarsHpcom(modelInfo, hpcomData.hpcOmMemory)
       let numBoolVars = numBoolvarsHpcom(modelInfo, hpcomData.hpcOmMemory)
+      let numStringVars = numStringvarsHpcom(modelInfo, hpcomData.hpcOmMemory)
       let numPreVars = numPreVarsHpcom(modelInfo, hpcomData.hpcOmMemory)
 
-      let()= textFile(CodegenCppInit.modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars, FMUVersion, FMUType, guid, true, "hpcom cpp-runtime"), 'modelDescription.xml')
+      let()= textFile(CodegenCppInit.modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars, numStringVars, FMUVersion, FMUType, guid, true, "hpcom cpp-runtime", complexStartExpressions, stateDerVectorName), 'modelDescription.xml')
       let cpp = CodegenCpp.translateModel(simCode)
       let()= textFile(fmuWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
       let()= textFile(fmuModelHeaderFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.h')
@@ -85,7 +87,7 @@ template translateModel(SimCode simCode, String FMUVersion, String FMUType)
       let()= textFile(fmuCalcHelperMainfile(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
 
       let() = textFile(CodegenCpp.simulationCppFile(simCode, contextOther, updateHpcom(allEquations, simCode, &extraFuncs, &extraFuncsDecl, "", contextOther, stateDerVectorName, false),
-                                         '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', &extraFuncs, &extraFuncsDecl, className,
+                                         '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', '<%numStringVars%>-1', &extraFuncs, &extraFuncsDecl, className,
                                          additionalHpcomConstructorDefinitions(hpcomData.schedules),
                                          additionalHpcomConstructorBodyStatements(hpcomData.schedules, className, CodegenUtil.dotPath(modelInfo.name)),
                                          additionalHpcomDestructorBodyStatements(hpcomData.schedules),
@@ -95,8 +97,8 @@ template translateModel(SimCode simCode, String FMUVersion, String FMUType)
                       additionalHpcomIncludes(simCode, &extraFuncs, &extraFuncsDecl, className, false),
                       "",
                       additionalHpcomProtectedMemberDeclaration(simCode, &extraFuncs, &extraFuncsDecl, "", false),
-                      CodegenCpp.memberVariableDefine(modelInfo, varToArrayIndexMapping, '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', Flags.isSet(Flags.GEN_DEBUG_SYMBOLS), false),
-                      CodegenCpp.memberVariableDefinePreVariables(modelInfo, varToArrayIndexMapping, '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', Flags.isSet(Flags.GEN_DEBUG_SYMBOLS), false), false),
+                      CodegenCpp.memberVariableDefine(modelInfo, varToArrayIndexMapping, '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', '<%numStringVars%>-1', Flags.isSet(Flags.GEN_DEBUG_SYMBOLS), false),
+                      CodegenCpp.memberVariableDefinePreVariables(modelInfo, varToArrayIndexMapping, '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', '<%numStringVars%>-1', Flags.isSet(Flags.GEN_DEBUG_SYMBOLS), false), false),
                       'OMCpp<%fileNamePrefix%>.h')
       ""
       // empty result of the top-level template .., only side effects

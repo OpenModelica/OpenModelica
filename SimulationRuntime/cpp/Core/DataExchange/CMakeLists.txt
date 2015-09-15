@@ -32,6 +32,7 @@ install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/IHistory.h
                 ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/SimBoolean.h
                 ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/XmlPropertyReader.h
                 ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/IPropertyReader.h
+                ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/FactoryExport.h
   DESTINATION include/omc/cpp/Core/DataExchange)
 
 

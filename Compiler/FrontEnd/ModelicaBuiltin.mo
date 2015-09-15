@@ -964,16 +964,21 @@ constant Integer RT_CLOCK_UNCERTAINTIES = 18;
 constant Integer RT_CLOCK_USER_RESERVED = 19;
 
 function readableTime
+"returns time in format AhBmTs [X.YYYY]"
   input Real sec;
   output String str;
 protected
   Integer tmp,min,hr;
 algorithm
+  /*
   tmp := mod(integer(sec),60);
   min := div(integer(sec),60);
   hr := div(min,60);
   min := mod(min,60);
   str := (if hr>0 then String(hr) + "h" else "") + (if min>0 then String(min) + "m" else "") + String(tmp) + "s";
+  str := str + " [" + String(sec, significantDigits=4) + "]";
+  */
+  str := String(sec, significantDigits=4);
 end readableTime;
 
 function timerTick
@@ -3275,6 +3280,17 @@ algorithm
 annotation(preferredView="text");
 end ngspicetoModelica;
 
+function getInheritedClasses
+  input TypeName name;
+  output TypeName inheritedClasses[:];
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the list of inherited classes.
+</html>"),
+  preferredView="text");
+end getInheritedClasses;
+
 function getComponentsTest
   input TypeName name;
   output Component[:] components;
@@ -3977,12 +3993,18 @@ package '1.9.2' "Version 1.9.2 (2015-03-17)"
   <body>Redirecting to the <a href=\"https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/1.9.2\">on-line release notes</a>.</body>
 </html>"));
 end '1.9.2';
-package '1.9.3' "Version 1.9.3 (2015-03-17)"
+package '1.9.3' "Version 1.9.3 (2015-09-08)"
   annotation(Documentation(info = "<html>
   <head><meta http-equiv=\"refresh\" content=\"0; url=https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/1.9.3\"></head>
   <body>Redirecting to the <a href=\"https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/1.9.3\">on-line release notes</a>.</body>
 </html>"));
 end '1.9.3';
+package '1.9.4' "Version 1.9.4 (2015-09-08)"
+  annotation(Documentation(info = "<html>
+  <head><meta http-equiv=\"refresh\" content=\"0; url=https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/1.9.4\"></head>
+  <body>Redirecting to the <a href=\"https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/1.9.4\">on-line release notes</a>.</body>
+</html>"));
+end '1.9.4';
 annotation(Documentation(info="<html>
 This section summarizes the major releases of OpenModelica and what changed between the major versions.
 Note that OpenModelica is developed rapidly.

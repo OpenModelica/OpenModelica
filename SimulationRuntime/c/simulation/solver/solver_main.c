@@ -388,7 +388,6 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
  */
 int initializeModel(DATA* data, threadData_t *threadData, const char* init_initMethod,
     const char* init_file, double init_time, int lambda_steps)
-
 {
   int retValue = 0;
 
@@ -397,12 +396,10 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
   copyStartValuestoInitValues(data);
 
   /* read input vars */
+  data->callback->input_function_init(data, threadData);
   externalInputUpdate(data);
+  data->callback->input_function_updateStartValues(data, threadData);
   data->callback->input_function(data, threadData);
-  /* update start values for inputs if input is set */
-  if(data->simulationInfo.external_input.active){
-    data->callback->input_function_init(data, threadData);
-  }
 
   data->localData[0]->timeValue = simInfo->startTime;
 

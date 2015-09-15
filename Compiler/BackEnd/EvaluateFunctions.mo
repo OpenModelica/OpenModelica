@@ -1949,10 +1949,10 @@ algorithm
         (msg,_) = BackendVarTransform.replaceExp(msg,replIn,NONE());
         (msg) = evaluateConstantFunctionCallExp(msg,funcTree);
         (msg,_) = ExpressionSimplify.simplify(msg);
-        if Expression.expEqual(cond,DAE.BCONST(false)) and Expression.expString(lvl)=="AssertionLevel.error" then
+        if Expression.expEqual(cond,DAE.BCONST(false)) and Expression.sconstEnumNameString(lvl)=="AssertionLevel.error" then
           if Flags.isSet(Flags.EVAL_FUNC_DUMP) then print("ERROR: "+ExpressionDump.printExpStr(msg)+"\n"); end if;
           fail();
-        elseif Expression.expEqual(cond,DAE.BCONST(false)) and Expression.expString(lvl)=="AssertionLevel.warning" then
+        elseif Expression.expEqual(cond,DAE.BCONST(false)) and Expression.sconstEnumNameString(lvl)=="AssertionLevel.warning" then
           if Flags.isSet(Flags.EVAL_FUNC_DUMP) then print("WARNING: "+ExpressionDump.printExpStr(msg)+"\n"); end if;
           fail();
         end if;

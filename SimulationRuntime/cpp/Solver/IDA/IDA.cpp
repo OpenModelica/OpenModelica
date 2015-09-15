@@ -31,37 +31,54 @@ Ida::Ida(IMixedSystem* system, ISolverSettings* settings)
       _event_system(NULL),
       _mixed_system(NULL),
       _time_system(NULL),
-    _delta(NULL),
-  _deltaInv(NULL),
-    _ysave(NULL),
-  _colorOfColumn (NULL),
-  _jacobianAIndex(NULL),
-  _jacobianALeadindex(NULL)
-
-
+      _delta(NULL),
+      _deltaInv(NULL),
+      _ysave(NULL),
+      _colorOfColumn (NULL),
+      _jacobianAIndex(NULL),
+      _jacobianALeadindex(NULL),
+      _CV_y0(),
+      _CV_y(),
+      _CV_yp(),
+      _CV_yWrite(),
+      _CV_ypWrite(),
+      _CV_absTol(),
+      _bWritten(false),
+      _zeroFound(false),
+      _maxColors(0),
+      _tLastWrite(-1.0),
+      _jacobianANonzeros(0)
 {
   _data = ((void*) this);
- std::cout<<"Using IDA!"<<std::endl;
   #ifdef RUNTIME_PROFILING
   if(MeasureTime::getInstance() != NULL)
   {
-      measureTimeFunctionsArray = std::vector<MeasureTimeData>(7); //0 calcFunction //1 solve ... //6 solver statistics
-      MeasureTime::addResultContentBlock(system->getModelName(),"ida",&measureTimeFunctionsArray);
+      measureTimeFunctionsArray = new std::vector<MeasureTimeData*>(7, NULL); //0 calcFunction //1 solve ... //6 solver statistics
+      (*measureTimeFunctionsArray)[0] = new MeasureTimeData("calcFunction");
+      (*measureTimeFunctionsArray)[1] = new MeasureTimeData("solve");
+      (*measureTimeFunctionsArray)[2] = new MeasureTimeData("writeOutput");
+      (*measureTimeFunctionsArray)[3] = new MeasureTimeData("evaluateZeroFuncs");
+      (*measureTimeFunctionsArray)[4] = new MeasureTimeData("initialize");
+      (*measureTimeFunctionsArray)[5] = new MeasureTimeData("stepCompleted");
+      (*measureTimeFunctionsArray)[6] = new MeasureTimeData("solverStatistics");
+
+      MeasureTime::addResultContentBlock(system->getModelName(),"ida", measureTimeFunctionsArray);
       measuredFunctionStartValues = MeasureTime::getZeroValues();
       measuredFunctionEndValues = MeasureTime::getZeroValues();
       solveFunctionStartValues = MeasureTime::getZeroValues();
       solveFunctionEndValues = MeasureTime::getZeroValues();
       solverValues = new MeasureTimeValuesSolver();
 
-      measureTimeFunctionsArray[0] = MeasureTimeData("calcFunction");
-      measureTimeFunctionsArray[1] = MeasureTimeData("solve");
-      measureTimeFunctionsArray[2] = MeasureTimeData("writeOutput");
-      measureTimeFunctionsArray[3] = MeasureTimeData("evaluateZeroFuncs");
-      measureTimeFunctionsArray[4] = MeasureTimeData("initialize");
-      measureTimeFunctionsArray[5] = MeasureTimeData("stepCompleted");
-      measureTimeFunctionsArray[6] = MeasureTimeData("solverStatistics");
-
-      measureTimeFunctionsArray[6].sumMeasuredValues = solverValues;
+      (*measureTimeFunctionsArray)[6]->_sumMeasuredValues = solverValues;
+  }
+  else
+  {
+    measureTimeFunctionsArray = new std::vector<MeasureTimeData*>();
+    measuredFunctionStartValues = NULL;
+    measuredFunctionEndValues = NULL;
+    solveFunctionStartValues = NULL;
+    solveFunctionEndValues = NULL;
+    solverValues = NULL;
   }
   #endif
 }
@@ -88,8 +105,6 @@ Ida::~Ida()
     IDAFree(&_idaMem);
   }
 
-
-
   if (_colorOfColumn)
     delete [] _colorOfColumn;
   if(_delta)
@@ -108,6 +123,8 @@ Ida::~Ida()
     delete solveFunctionStartValues;
   if(solveFunctionEndValues)
     delete solveFunctionEndValues;
+  if(solverValues)
+    delete solverValues;
   #endif
 }
 
@@ -311,7 +328,7 @@ void Ida::solve(const SOLVERCALL action)
         #ifdef RUNTIME_PROFILING
         if(MeasureTime::getInstance() != NULL)
         {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[4], idaInitializeHandler);
+            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[4], idaInitializeHandler);
         }
         #endif
 
@@ -342,7 +359,7 @@ void Ida::solve(const SOLVERCALL action)
     // Solver soll fortfahren
     _solverStatus = ISolver::CONTINUE;
 
-    while (_solverStatus & ISolver::CONTINUE && !_interrupt )
+    while ((_solverStatus & ISolver::CONTINUE) && !_interrupt )
     {
       // Zuvor wurde initialize aufgerufen und hat funktioniert => RESET IDID
       if (_idid == 5000)
@@ -385,7 +402,7 @@ void Ida::solve(const SOLVERCALL action)
   #ifdef RUNTIME_PROFILING
   if(MeasureTime::getInstance() != NULL)
   {
-      MEASURETIME_END(solveFunctionStartValues, solveFunctionEndValues, measureTimeFunctionsArray[1], idaSolveFunctionHandler);
+      MEASURETIME_END(solveFunctionStartValues, solveFunctionEndValues, (*measureTimeFunctionsArray)[1], idaSolveFunctionHandler);
 
       long int nst, nfe, nsetups, netf, nni, ncfn;
       int qlast, qcur;
@@ -397,8 +414,8 @@ void Ida::solve(const SOLVERCALL action)
       flag = IDAGetNonlinSolvStats(_idaMem, &nni, &ncfn);
 
       MeasureTimeValuesSolver solverVals = MeasureTimeValuesSolver(nfe, netf);
-      measureTimeFunctionsArray[6].sumMeasuredValues->_numCalcs += nst;
-      measureTimeFunctionsArray[6].sumMeasuredValues->add(&solverVals);
+      (*measureTimeFunctionsArray)[6]->_sumMeasuredValues->_numCalcs += nst;
+      (*measureTimeFunctionsArray)[6]->_sumMeasuredValues->add(&solverVals);
   }
   #endif
 }
@@ -425,7 +442,7 @@ void Ida::IDACore()
   bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == OPT_ALL);
   bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == OPT_NONE);
 
-  while (_solverStatus & ISolver::CONTINUE && !_interrupt )
+  while ((_solverStatus & ISolver::CONTINUE) && !_interrupt )
   {
     _cv_rt = IDASolve(_idaMem, _tEnd, &_tCurrent,  _CV_y, _CV_yp, IDA_ONE_STEP);
 
@@ -459,7 +476,7 @@ void Ida::IDACore()
     #ifdef RUNTIME_PROFILING
     if(MeasureTime::getInstance() != NULL)
     {
-        MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[5], idaStepCompletedHandler);
+        MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[5], idaStepCompletedHandler);
     }
     #endif
 
@@ -617,7 +634,7 @@ void Ida::writeIDAOutput(const double &time, const double &h, const int &stp)
         #ifdef RUNTIME_PROFILING
         if(MeasureTime::getInstance() != NULL)
         {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], idaWriteOutputHandler);
+            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[2], idaWriteOutputHandler);
         }
         #endif
         SolverDefaultImplementation::writeToFile(stp, _tLastWrite, h);
@@ -625,7 +642,7 @@ void Ida::writeIDAOutput(const double &time, const double &h, const int &stp)
         MEASURETIME_REGION_DEFINE(idaWriteOutputHandler, "IDAWriteOutput");
         if(MeasureTime::getInstance() != NULL)
         {
-            measureTimeFunctionsArray[2].sumMeasuredValues->_numCalcs--;
+          (*measureTimeFunctionsArray)[2]->_sumMeasuredValues->_numCalcs--;
             MEASURETIME_START(measuredFunctionStartValues, idaWriteOutputHandler, "IDAWriteOutput");
         }
         #endif
@@ -647,7 +664,7 @@ void Ida::writeIDAOutput(const double &time, const double &h, const int &stp)
         #ifdef RUNTIME_PROFILING
         if(MeasureTime::getInstance() != NULL)
         {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], idaWriteOutputHandler);
+            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[2], idaWriteOutputHandler);
         }
         #endif
         SolverDefaultImplementation::writeToFile(stp, _tEnd, h);
@@ -658,7 +675,7 @@ void Ida::writeIDAOutput(const double &time, const double &h, const int &stp)
         #ifdef RUNTIME_PROFILING
         if(MeasureTime::getInstance() != NULL)
         {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], idaWriteOutputHandler);
+            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[2], idaWriteOutputHandler);
         }
         #endif
         SolverDefaultImplementation::writeToFile(stp, time, h);
@@ -698,7 +715,7 @@ int Ida::calcFunction(const double& time, const double* y, double* f)
   #ifdef RUNTIME_PROFILING
   if(MeasureTime::getInstance() != NULL)
   {
-      MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[0], idaCalcFunctionHandler);
+      MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[0], idaCalcFunctionHandler);
   }
   #endif
 
@@ -735,7 +752,7 @@ void Ida::giveZeroVal(const double &t, const double *y, double *zeroValue)
   #ifdef RUNTIME_PROFILING
   if(MeasureTime::getInstance() != NULL)
   {
-      MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[3], idaEvalZeroHandler);
+      MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[3], idaEvalZeroHandler);
   }
   #endif
 }
@@ -919,12 +936,12 @@ void Ida::writeSimulationInfo()
 
   flag = IDAGetNonlinSolvStats(_idaMem, &nni, &ncfn);
 
-  Logger::write("Cvode: number steps = " + boost::lexical_cast<std::string>(nst),LC_SOLV,LL_INFO);
-  Logger::write("Cvode: function evaluations 'f' = " + boost::lexical_cast<std::string>(nfe),LC_SOLV,LL_INFO);
-  Logger::write("Cvode: error test failures 'netf' = " + boost::lexical_cast<std::string>(netfS),LC_SOLV,LL_INFO);
-  Logger::write("Cvode: linear solver setups 'nsetups' = " + boost::lexical_cast<std::string>(nsetups),LC_SOLV,LL_INFO);
-  Logger::write("Cvode: nonlinear iterations 'nni' = " + boost::lexical_cast<std::string>(nni),LC_SOLV,LL_INFO);
-  Logger::write("Cvode: convergence failures 'ncfn' = " + boost::lexical_cast<std::string>(ncfn),LC_SOLV,LL_INFO);
+  LOGGER_WRITE("Cvode: number steps = " + boost::lexical_cast<std::string>(nst),LC_SOLV,LL_INFO);
+  LOGGER_WRITE("Cvode: function evaluations 'f' = " + boost::lexical_cast<std::string>(nfe),LC_SOLV,LL_INFO);
+  LOGGER_WRITE("Cvode: error test failures 'netf' = " + boost::lexical_cast<std::string>(netfS),LC_SOLV,LL_INFO);
+  LOGGER_WRITE("Cvode: linear solver setups 'nsetups' = " + boost::lexical_cast<std::string>(nsetups),LC_SOLV,LL_INFO);
+  LOGGER_WRITE("Cvode: nonlinear iterations 'nni' = " + boost::lexical_cast<std::string>(nni),LC_SOLV,LL_INFO);
+  LOGGER_WRITE("Cvode: convergence failures 'ncfn' = " + boost::lexical_cast<std::string>(ncfn),LC_SOLV,LL_INFO);
 }
 
 int Ida::check_flag(void *flagvalue, const char *funcname, int opt)

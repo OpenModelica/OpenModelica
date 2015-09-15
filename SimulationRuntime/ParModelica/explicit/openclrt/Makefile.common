@@ -11,12 +11,12 @@ omc_ocl_util.c
 
 OBJS = $(SRCS:.c=.o)
 
-.PHONY : ocloffc libOMOCLRuntime clean
+.PHONY : ocloffc libParModelicaExpl clean
 
-ocloffc: omc_ocl_util.h libOMOCLRuntime.a
-	 $(CXX) -I.  -o ocloffcomp$(EXEEXT) ocl_offcomp.c libOMOCLRuntime.a $(OPENLC_LIB) $(CFLAGS)
+ocloffc: omc_ocl_util.h libParModelicaExpl.a
+	 $(CXX) -I.  -o ocloffcomp$(EXEEXT) ocl_offcomp.cpp libParModelicaExpl.a $(OPENLC_LIB) $(CFLAGS)
 
-libOMOCLRuntime.a: $(OBJS)
+libParModelicaExpl.a: $(OBJS)
 	@rm -f $@
 	$(AR_) $@ $(OBJS)
 

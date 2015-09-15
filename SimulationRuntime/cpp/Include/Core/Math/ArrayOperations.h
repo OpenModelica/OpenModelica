@@ -96,8 +96,11 @@ cross product of two arrays (a,b type as template parameter)
 template <typename T>
 void cross_array(const BaseArray<T>& a, const BaseArray<T>& b, BaseArray<T>& res);
 
-void BOOST_EXTENSION_EXPORT_DECL convertBoolToInt(const BaseArray<bool>& a, BaseArray<int>& b);
-void BOOST_EXTENSION_EXPORT_DECL convertIntToBool(const BaseArray<int>& a, BaseArray<bool>& b);
+/**
+cast type of array elements
+*/
+template <typename S, typename T>
+void cast_array(const BaseArray<S> &a, BaseArray<T> &b);
 
 /**
  * Permutes dims between row and column major storage layout,

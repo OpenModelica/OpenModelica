@@ -2432,7 +2432,6 @@ algorithm
         false = SCode.isConnector(re);
         // check empty array dimensions
         true = boolOr(valueEq(ad, NONE()), valueEq(ad, SOME({})));
-
         (cache,SCode.CLASS(name=cn2,restriction=r),_) = Lookup.lookupClass(cache, env, cn, true);
 
         false = InstUtil.checkDerivedRestriction(re, r, cn2);
@@ -3104,7 +3103,6 @@ algorithm
         // false = SCode.isConnector(re);
         // check empty array dimensions
         true = boolOr(valueEq(ad, NONE()), valueEq(ad, SOME({})));
-
         (cache,SCode.CLASS(name=cn2,restriction=r),_) = Lookup.lookupClass(cache, env, cn, true);
 
         false = InstUtil.checkDerivedRestriction(re, r, cn2);
@@ -3523,7 +3521,7 @@ algorithm
         // and a component modification redeclare X = Z
         // update the component modification to redeclare X = Y
         m = InstUtil.chainRedeclares(mods, m);
-
+        m = SCodeUtil.expandEnumerationMod(m);
         m = InstUtil.traverseModAddDims(cache, env, pre, m, inst_dims, ad);
         comp = SCode.COMPONENT(name, prefixes, attr, ts, m, comment, cond, info);
         ci_state = ClassInf.trans(ci_state, ClassInf.FOUND_COMPONENT(name));

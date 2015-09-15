@@ -16,31 +16,33 @@
 * @param dim_real  number of all real variables (real algebraic vars,discrete algebraic vars, state vars, der state vars)
 * @param dim_int   number of all integer variables integer algebraic vars
 * @param dim_bool  number of all bool variables (boolean algebraic vars)
+* @param dim_string  number of all string variables (string algebraic vars)
 * @param dim_pre_vars number of all pre variables (real algebraic vars,discrete algebraic vars, boolean algebraic vars, integer algebraic vars, state vars, der state vars)
 * @param dim_state_vars number of all state variables
 * @param state_index start index of state vector in real_vars list
 */
-SimVars::SimVars(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index):
-    _dim_real(dim_real), _dim_int(dim_int), _dim_bool(dim_bool), _dim_pre_vars(dim_pre_vars), _dim_z(dim_state_vars), _z_i(state_index)
+SimVars::SimVars(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_string, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index):
+    _dim_real(dim_real), _dim_int(dim_int), _dim_bool(dim_bool), _dim_string(dim_string), _dim_pre_vars(dim_pre_vars), _dim_z(dim_state_vars), _z_i(state_index)
     ,_pre_vars(NULL)
 {
-  create(dim_real, dim_int, dim_bool, dim_pre_vars, dim_state_vars, state_index);
+  create(dim_real, dim_int, dim_bool, dim_string, dim_pre_vars, dim_state_vars, state_index);
 }
 
 SimVars::SimVars(SimVars& instance)
 {
-  create(instance.getDimReal(), instance.getDimInt(), instance.getDimBool(), instance.getDimPreVars(), instance.getDimStateVars(), instance.getStateVectorIndex());
+  create(instance.getDimReal(), instance.getDimInt(), instance.getDimBool(), instance.getDimString(), instance.getDimPreVars(), instance.getDimStateVars(), instance.getStateVectorIndex());
   setRealVarsVector(instance.getRealVarsVector());
   setIntVarsVector(instance.getIntVarsVector());
   setBoolVarsVector(instance.getBoolVarsVector());
+  setStringVarsVector(instance.getStringVarsVector());
 }
 
-void SimVars::create(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index)
+void SimVars::create(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_string, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index)
 {
-  _pre_vars = NULL;
   _dim_real = dim_real;
   _dim_int = dim_int;
   _dim_bool = dim_bool;
+  _dim_string = dim_string;
   _dim_pre_vars = dim_pre_vars;
   _dim_z = dim_state_vars;
   _z_i = state_index;
@@ -48,15 +50,27 @@ void SimVars::create(size_t dim_real, size_t dim_int, size_t dim_bool, size_t di
   if (_dim_real + _dim_int + _dim_bool > _dim_pre_vars)
     throw std::runtime_error("Wrong pre variable size");
   //allocate memory for all model variables
+  if(dim_string>0)
+    _string_vars = new string[dim_string];
   if(dim_bool>0)
     _bool_vars = (bool*)alignedMalloc(sizeof(bool) * dim_bool, 64);
+  else
+    _bool_vars = NULL;
   if(dim_int>0)
     _int_vars = (int*)alignedMalloc(sizeof(int) * dim_int, 64);
+  else
+    _int_vars = NULL;
   if(dim_real>0)
     _real_vars = (double*)alignedMalloc(sizeof(double) * dim_real, 64);
+  else
+    _real_vars = NULL;
   if (dim_pre_vars > 0)
     _pre_vars =  new double[dim_pre_vars];
+  else
+    _pre_vars = NULL;
   //initialize all model variables
+  if(dim_string > 0)
+    std::fill(_string_vars, _string_vars + dim_string, string());
   if (dim_bool > 0)
     std::fill(_bool_vars, _bool_vars + dim_bool, false);
   if (dim_int > 0)
@@ -75,6 +89,8 @@ SimVars::~SimVars()
     alignedFree(_int_vars);
   if(_bool_vars)
     alignedFree(_bool_vars);
+  if(_string_vars)
+    delete [] _string_vars;
 }
 
 ISimVars* SimVars::clone()
@@ -118,6 +134,15 @@ bool& SimVars::initBoolVar(size_t i)
   else
     throw std::runtime_error("Wrong variable index");
 }
+
+string& SimVars::initStringVar(size_t i)
+{
+  if (i < _dim_string)
+    return _string_vars[i];
+  else
+    throw std::runtime_error("Wrong variable index");
+}
+
 /**
 *  \brief  returns state vector of size dim_z
 *  \return Return_Description
@@ -175,6 +200,14 @@ bool* SimVars::getBoolVarsVector() const
     return NULL;
   return _bool_vars;
 }
+
+string* SimVars::getStringVarsVector() const
+{
+  if(!_string_vars)
+    return NULL;
+  return _string_vars;
+}
+
 /**
 *  \brief set real vars vector of size dim_real
 *  \param [in] vars new real vars
@@ -202,6 +235,12 @@ void SimVars::setBoolVarsVector(const bool* vars)
 {
   std::copy(vars, vars + _dim_bool, _bool_vars);
 }
+
+void SimVars::setStringVarsVector(const string* vars)
+{
+  std::copy(vars, vars + _dim_string, _string_vars);
+}
+
 /**\brief initialize real model array variable in simvars memory
 *  \param [in] size size of real array
 *  \param [in] start_index index in simvars array
@@ -254,6 +293,19 @@ bool* SimVars::initBoolArrayVar(size_t size, size_t start_index)
   else
     throw std::runtime_error("Wrong array size");
 }
+
+string* SimVars::initStringArrayVar(size_t size, size_t start_index)
+{
+  size_t length = start_index + (size - 1);
+  if (length <= _dim_string)
+  {
+    string* data = &_string_vars[start_index];
+    return data;
+  }
+  else
+    throw std::runtime_error("Wrong array size");
+}
+
 /**\brief initializes real model alias array variable in simvars memory
  *  \param [in] indices indices of orginal variables in simvars memory
  *  \param [in] n size of alias array
@@ -300,6 +352,16 @@ void SimVars::initBoolAliasArray(int indices[], size_t n, bool* ref_data[])
 void SimVars::initBoolAliasArray(std::vector<int> indices, bool* ref_data[])
 {
   initBoolAliasArray(&indices[0], indices.size(), ref_data);
+}
+
+void SimVars::initStringAliasArray(int indices[], size_t n, string* ref_data[])
+{
+  std::transform(indices,indices+n,ref_data,boost::lambda::bind(&SimVars::getStringVar,this,boost::lambda::_1));
+}
+
+void SimVars::initStringAliasArray(std::vector<int> indices, string* ref_data[])
+{
+  initStringAliasArray(&indices[0], indices.size(), ref_data);
 }
 
 /**
@@ -403,6 +465,7 @@ int* SimVars::getIntVar(size_t i)
   else
     throw std::runtime_error("Wrong variable index");
 }
+
 /**\brief returns a pointer to a bool simvar variable in simvar array
  *  \param [in] i index  of simvar in simvar array
  *  \return pointer to simvar
@@ -414,6 +477,19 @@ bool* SimVars::getBoolVar(size_t i)
     return &_bool_vars[i];
   else
     throw std::runtime_error("Wrong variable index");
+}
+
+string* SimVars::getStringVar(size_t i)
+{
+  if(i<_dim_string)
+    return &_string_vars[i];
+  else
+    throw std::runtime_error("Wrong variable index");
+}
+
+size_t SimVars::getDimString() const
+{
+  return _dim_string;
 }
 
 size_t SimVars::getDimBool() const

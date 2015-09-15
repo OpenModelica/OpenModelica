@@ -119,16 +119,24 @@ algorithm
   (flatSmLst, otherLst) := List.extractOnTrue(dAElist, isFlatSm);
   elementLst2 := List.fold2(flatSmLst, flatSmToDataFlow, NONE(), NONE(), {});
 
+  // FIXME HACK1 Wrap equations in when clauses hack (as long as clocked features are not fully supported)
+  if (not listEmpty(flatSmLst)) then
+    elementLst2 := wrapHack(cache, elementLst2);
+  end if;
+
   elementLst3 := listAppend(otherLst, elementLst2);
   outDAElist := DAE.DAE({DAE.COMP(ident, elementLst3, source, comment)});
-  //print("StateMachineFlatten.stateMachineToDataFlow: outDAElist before global subs:\n" + DAEDump.dumpStr(outDAElist,FCore.getFunctionTree(cache)));
+  // print("StateMachineFlatten.stateMachineToDataFlow: outDAElist before global subs:\n" + DAEDump.dumpStr(outDAElist,FCore.getFunctionTree(cache)));
 
   // traverse dae expressions for making substitutions activeState(x) -> x.active
   (outDAElist, _, (_,nOfSubstitutions)) := DAEUtil.traverseDAE(outDAElist, FCore.getFunctionTree(cache), Expression.traverseSubexpressionsHelper, (traversingSubsActiveState, 0));
 
-  // FIXME Wrap equations in when clauses hack (as long as clocked features are not fully supported)
-  //outDAElist := wrapHack(cache, outDAElist);
-
+  if (not listEmpty(flatSmLst)) then
+    // FIXME HACK2 traverse dae expressions for making substitutions previous(x) -> pre(x) (as long as clocked features are not fully supported)
+    (outDAElist, _, (_,nOfSubstitutions)) := DAEUtil.traverseDAE(outDAElist, FCore.getFunctionTree(cache), Expression.traverseSubexpressionsHelper, (traversingSubsPreForPrevious, 0));
+    // FIXME HACK3 traverse dae expressions for making substitutions sample(x, _) -> x (as long as clocked features are not fully supported)
+    (outDAElist, _, (_,nOfSubstitutions)) := DAEUtil.traverseDAE(outDAElist, FCore.getFunctionTree(cache), Expression.traverseSubexpressionsHelper, (traversingSubsXForSampleX, 0));
+  end if;
   //print("StateMachineFlatten.stateMachineToDataFlow: outDAElist:\n" + DAEDump.dumpStr(outDAElist,FCore.getFunctionTree(cache)));
 end stateMachineToDataFlow;
 
@@ -166,7 +174,7 @@ protected
   DAE.Element initialStateOp, initialStateComp;
   DAE.ComponentRef crefInitialState;
 
-  FlatSmSemantics flatSmSemanticsBasics, flatSmSemantics;
+  FlatSmSemantics flatSmSemanticsBasics, flatSmSemanticsWithPropagation, flatSmSemantics;
   list<Transition> transitions;
   list<DAE.Element> vars "SMS veriables";
   list<DAE.Element> knowns "SMS constants/parameters";
@@ -191,7 +199,10 @@ algorithm
   flatSmSemanticsBasics := basicFlatSmSemantics(ident, initialStateComp::smCompsLst2, transitionLst);
 
   // Add activation and reset propagation related equations
-  flatSmSemantics := addPropagationEquations(flatSmSemanticsBasics, inEnclosingStateCrefOption, inEnclosingFlatSmSemanticsOption);
+  flatSmSemanticsWithPropagation := addPropagationEquations(flatSmSemanticsBasics, inEnclosingStateCrefOption, inEnclosingFlatSmSemanticsOption);
+
+  // Elaborate on ticksInState() and timeInState() operators (MLS 17.1 Transitions)
+  flatSmSemantics := elabXInStateOps(flatSmSemanticsWithPropagation, inEnclosingStateCrefOption);
 
   // Extract semantic equations for flat state machine and add the elements to the DAE list
   FLAT_SM_SEMANTICS(vars=vars, knowns=knowns, eqs=eqs, pvars=pvars, peqs=peqs) := flatSmSemantics;
@@ -200,6 +211,146 @@ algorithm
   // Extract DAE.Elements from state components (and recurse into potential FLAT_SMs in the state component)
   outElems := List.fold1(smCompsLst, smCompToDataFlow, flatSmSemantics, outElems);
 end flatSmToDataFlow;
+
+protected function elabXInStateOps "
+Author: BTH
+  Transform ticksInState() and timeInState() operators to data-flow equations
+"
+  input FlatSmSemantics inFlatSmSemantics;
+  input Option<DAE.ComponentRef> inEnclosingStateCrefOption "Cref of state that encloses the flat state machiene (NONE() if at top hierarchy)";
+  output FlatSmSemantics outFlatSmSemantics;
+protected
+  Integer i;
+  Boolean found;
+  DAE.Exp c2, c3, c4, conditionNew, substTickExp, substTimeExp;
+  DAE.ComponentRef stateRef;
+  Transition t2;
+  list<Transition> tElab = {} "Elaborated transitions";
+  list<DAE.Exp> cElab = {} "Elaborated conditions";
+  list<DAE.Element> smeqsElab = {} "Elaborated smeqs";
+  // FLAT_SM_SEMANTICS
+  DAE.Ident ident;
+  array<DAE.Element> smComps "First element is the initial state";
+  list<Transition> t "List/Array of transition data sorted in priority";
+  list<DAE.Exp> c "Transition conditions sorted in priority";
+  list<DAE.Element> smvars "SMS veriables";
+  list<DAE.Element> smknowns "SMS constants/parameters";
+  list<DAE.Element> smeqs "SMS equations";
+  list<DAE.Element> pvars = {} "Propagation related variables";
+  list<DAE.Element> peqs = {} "Propagation equations";
+  Option<DAE.ComponentRef> enclosingStateOption "Cref to enclosing state if any"; // FIXME needed?
+  // TRANSITION
+  Integer from;
+  Integer to;
+  DAE.Exp condition;
+  Boolean immediate;
+  Boolean reset;
+  Boolean synchronize;
+  Integer priority;
+algorithm
+  FLAT_SM_SEMANTICS(ident, smComps, t, c, smvars, smknowns, smeqs, pvars, peqs, enclosingStateOption) := inFlatSmSemantics;
+
+  // We have some redundancy here (t[:].condition == c[:]) and thus need to update both
+  i := 0;
+  for tc in List.threadTuple(t,c) loop
+    i := i + 1;
+    (t2, c2) := tc;
+    TRANSITION(from, to, condition, immediate, reset, synchronize, priority) := t2;
+
+    // Need to access decorations attached to 'from' state
+    DAE.SM_COMP(componentRef=stateRef) := arrayGet(smComps, from);
+
+    // == Search whether condition contains a subexpression 'ticksInState()', if so, substitute them by 'smComps[from].$ticksInState' ==
+    substTickExp := DAE.CREF(qCref("$ticksInState", DAE.T_INTEGER_DEFAULT, {}, stateRef), DAE.T_INTEGER_DEFAULT);
+    (c3, (_, _, found)) := Expression.traverseExpTopDown(c2, traversingSubsXInState, ("ticksInState", substTickExp, false));
+    if found and isSome(inEnclosingStateCrefOption) then
+      // MLS 3.3 17.1: "can only be used in transition conditions of state machines not present in states of hierarchical state machines" violated
+      Error.addCompilerError("Found 'ticksInState()' within a state of an hierarchical state machine.");
+      fail();
+    end if;
+    // if a transition was updated we also need to update the semantic equation containing that transition's logic
+    smeqsElab := if found  then List.map5(smeqs, smeqsSubsXInState, arrayGet(smComps, 1), i, listLength(t), substTickExp, "ticksInState") else  smeqs;
+    smeqs := smeqsElab; // use updated smeqs
+
+    // == Search whether condition contains a subexpression 'timeInState()', if so, substitute them by 'smComps[from].$timeInState' ==
+    substTimeExp := DAE.CREF(qCref("$timeInState", DAE.T_REAL_DEFAULT, {}, stateRef), DAE.T_REAL_DEFAULT);
+    (c4, (_, _, found)) := Expression.traverseExpTopDown(c2, traversingSubsXInState, ("timeInState", substTimeExp, false));
+    if found and isSome(inEnclosingStateCrefOption) then
+      // MLS 3.3 17.1: "can only be used in transition conditions of state machines not present in states of hierarchical state machines" violated
+      Error.addCompilerError("Found 'timeInState()' within a state of an hierarchical state machine.");
+      fail();
+    end if;
+    // if a transition was updated we also need to update the semantic equation containing that transition's logic
+    smeqsElab := if found  then List.map5(smeqs, smeqsSubsXInState, arrayGet(smComps, 1), i, listLength(t), substTimeExp, "timeInState") else  smeqs;
+    smeqs := smeqsElab; // use updated smeqs
+
+    tElab := TRANSITION(from, to, c4, immediate, reset, synchronize, priority) :: tElab;
+    cElab := c4 :: cElab;
+  end for;
+
+  outFlatSmSemantics := FLAT_SM_SEMANTICS(ident, smComps, listReverse(tElab), listReverse(cElab), smvars, smknowns, smeqsElab, pvars, peqs, enclosingStateOption);
+end elabXInStateOps;
+
+protected function smeqsSubsXInState "
+Author: BTH
+Helper function to elabXInStateOps.
+Replace 'xInState()' in RHS of semantic equations by 'substExp', but only within the transition
+condition specified by the remaining function arguments.
+"
+  input DAE.Element inSmeqs "SMS equation";
+  input DAE.Element initialStateComp "Initial state component of governing flat state machine";
+  input Integer i "Index of transition";
+  input Integer nTransitions;
+  input DAE.Exp substExp;
+  input String xInState "Name of function that is to be replaced, e.g., 'timeInState', or 'tickInState'";
+  output DAE.Element outSmeqs "SMS equation";
+protected
+  DAE.ComponentRef preRef, cref, lhsRef, crefInitialState;
+  DAE.Type tArrayBool;
+  DAE.ElementSource elemSource;
+  DAE.Exp lhsExp, rhsExp, rhsExp2;
+  DAE.Type ty;
+algorithm
+  // Cref to initial state of governing flat state machine
+  DAE.SM_COMP(componentRef=crefInitialState) := initialStateComp;
+  preRef := ComponentReference.crefPrefixString(SMS_PRE, crefInitialState);
+  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(nTransitions)}, DAE.emptyTypeSource);
+  cref := qCref("cImmediate", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef);
+  DAE.EQUATION(lhsExp, rhsExp, elemSource) := inSmeqs;
+  DAE.CREF(lhsRef, ty) := lhsExp;
+  // print("StateMachineFlatten.smeqsSubsXInState: cref: " + ComponentReference.printComponentRefStr(cref) + "\n");
+  // print("StateMachineFlatten.smeqsSubsXInState: lhsRef: " + ComponentReference.printComponentRefStr(lhsRef) + "\n");
+  if ComponentReference.crefEqual(cref, lhsRef) then
+    // print("StateMachineFlatten.smeqsSubsXInState: rhsExp: " + ExpressionDump.printExpStr(rhsExp) + "\n");
+    (rhsExp2, _) :=  Expression.traverseExpTopDown(rhsExp, traversingSubsXInState, (xInState, substExp, false));
+    // print("StateMachineFlatten.smeqsSubsXInState: rhsExp2: " + ExpressionDump.printExpStr(rhsExp2) + "\n");
+  else
+    rhsExp2 := rhsExp;
+  end if;
+  outSmeqs := DAE.EQUATION(lhsExp, rhsExp2, elemSource);
+end smeqsSubsXInState;
+
+protected function traversingSubsXInState "
+Author: BTH
+Helper function to elabXInStateOps and smeqsSubsXInState.
+Replace 'XInState()' operators (first element of inXSubstHit) by expression given in second element of inXSubstHit tuple.
+"
+  input DAE.Exp inExp;
+  input tuple<String, DAE.Exp, Boolean> inXSubstHit;
+  output DAE.Exp outExp;
+  output Boolean cont = true;
+  output tuple<String, DAE.Exp, Boolean> outXSubstHit;
+algorithm
+  (outExp, outXSubstHit) := match (inExp, inXSubstHit)
+    local
+      DAE.Exp subsExp;
+      Boolean hit;
+      String xInState, name;
+    case (DAE.CALL(path=Absyn.IDENT(name)), (xInState, subsExp, hit)) guard name == xInState
+      then (subsExp, (xInState, subsExp, true));
+    else then (inExp, inXSubstHit);
+  end match;
+end traversingSubsXInState;
 
 protected function smCompToDataFlow "
 Author: BTH
@@ -472,9 +623,9 @@ Add activation and reset propagation related equation and variables to flat stat
   input Option<FlatSmSemantics> inEnclosingFlatSmSemanticsOption "The flat state machine semantics structure governing the enclosing state (NONE() if at top hierarchy)";
   output FlatSmSemantics outFlatSmSemantics;
 protected
-  DAE.ComponentRef preRef, initStateRef, initRef, resetRef, activeRef, stateRef;
-  DAE.Element initVar, activePlotIndicatorVar;
-  DAE.Element activePlotIndicatorEqn;
+  DAE.ComponentRef preRef, initStateRef, initRef, resetRef, activeRef, stateRef, activePlotIndicatorRef;
+  DAE.Element initVar, activePlotIndicatorVar, ticksInStateVar, timeEnteredStateVar, timeInStateVar;
+  DAE.Element activePlotIndicatorEqn, ticksInStateEqn, timeEnteredStateEqn, timeInStateEqn;
   DAE.Exp rhs, andExp, eqExp, activeResetStateRefExp, activeStateRefExp, activeResetRefExp;
   DAE.Type tArrayBool, tArrayInteger;
 
@@ -559,20 +710,140 @@ algorithm
     peqs := DAE.EQUATION(DAE.CREF(activeRef, DAE.T_BOOL_DEFAULT), rhs, DAE.emptyElementSource) :: peqs;
   end if;
 
-  // Add indication for plotting whether a state is active or not
+  // Decorate state with additional information
   for i in 1:arrayLength(smComps) loop
+    // Add indication for plotting whether a state is active or not (stateRef.active)
     DAE.SM_COMP(componentRef=stateRef) := arrayGet(smComps, i);
-   (activePlotIndicatorVar, activePlotIndicatorEqn) :=  createActiveIndication(stateRef, preRef, i);
+    (activePlotIndicatorVar, activePlotIndicatorEqn) :=  createActiveIndicator(stateRef, preRef, i);
     pvars := activePlotIndicatorVar :: pvars;
     peqs :=  activePlotIndicatorEqn :: peqs;
+
+    // Add ticksInState counter (stateRef.$ticksInState = if stateRef.active then previous(stateRef.$ticksInState) + 1 else 0)
+    DAE.VAR(componentRef=activePlotIndicatorRef) := activePlotIndicatorVar;
+    (ticksInStateVar, ticksInStateEqn) := createTicksInStateIndicator(stateRef, activePlotIndicatorRef);
+    pvars := ticksInStateVar :: pvars;
+    peqs :=  ticksInStateEqn :: peqs;
+
+    // == Add timeInState Indicator (stateRef.$timeInState(start=0)) ==
+    // Auxiliary variable holding time when state was entred (stateRef.$timeEnteredState(start=0)
+    // stateRef.$timeEnteredState = if previous(stateRef.active) == false and stateRef.active == true then sample(time) else previous(stateRef.$timeEnteredState)
+    (timeEnteredStateVar, timeEnteredStateEqn) := createTimeEnteredStateIndicator(stateRef, activePlotIndicatorRef);
+    // stateRef.$timeInState = if stateRef.active then sample(time) - stateRef.$timeEnteredState else 0
+    (timeInStateVar, timeInStateEqn) := createTimeInStateIndicator(stateRef, activePlotIndicatorRef, timeEnteredStateVar);
+    pvars := timeEnteredStateVar :: timeInStateVar :: pvars;
+    peqs :=  timeEnteredStateEqn :: timeInStateEqn :: peqs;
   end for;
 
-  // Tbd
   outFlatSmSemantics := FLAT_SM_SEMANTICS(ident, smComps, t, c, smvars, smknowns, smeqs, pvars, peqs, inEnclosingStateCrefOption);
 
 end addPropagationEquations;
 
-protected function createActiveIndication "
+protected function createTimeInStateIndicator "
+Author: BTH
+Helper function to addPropagationEquations.
+Create variable that indicates the time duration since a transition was made to the currently active state"
+  input DAE.ComponentRef stateRef "cref of state to which timeInState variable shall be added";
+  input DAE.ComponentRef stateActiveRef "cref of active indicator corresponding to stateRef";
+  input DAE.Element timeEnteredStateVar "Auxiliary variable generated in createTimeEnteredStateIndicator(..)";
+  output DAE.Element timeInStateVar;
+  output DAE.Element timeInStateEqn;
+protected
+  DAE.ComponentRef timeInStateRef, timeEnteredStateRef;
+  DAE.Type ty;
+  DAE.Exp timeInStateExp, timeEnteredStateExp, stateActiveExp, expCond, expSampleTime, expThen, expElse;
+algorithm
+  // Create Variable stateRef.$timeEnteredState
+  timeInStateRef := qCref("$timeInState", DAE.T_REAL_DEFAULT, {}, stateRef);
+  timeInStateVar := createVarWithDefaults(timeInStateRef, DAE.DISCRETE(), DAE.T_REAL_DEFAULT);
+  timeInStateVar := setVarFixedStartValue(timeInStateVar, DAE.RCONST(0));
+  timeInStateExp := DAE.CREF(timeInStateRef, DAE.T_REAL_DEFAULT);
+
+  DAE.VAR(componentRef=timeEnteredStateRef, ty=ty) := timeEnteredStateVar;
+  timeEnteredStateExp := DAE.CREF(timeEnteredStateRef, ty);
+
+  stateActiveExp := Expression.crefExp(stateActiveRef);
+
+  // == $timeInState = if active then sample(time) - $timeEnteredState else 0; ==
+  // active
+  expCond := Expression.crefExp(stateActiveRef);
+  // sample(time)
+  expSampleTime := DAE.CALL(Absyn.IDENT("sample"),
+    { DAE.CREF(DAE.CREF_IDENT("time", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT),
+      DAE.CLKCONST(DAE.INFERRED_CLOCK())},
+    DAE.callAttrBuiltinImpureReal);
+  // sample(time) - $timeEnteredState
+  expThen := DAE.BINARY(expSampleTime, DAE.SUB(DAE.T_REAL_DEFAULT), timeEnteredStateExp);
+  // 0
+  expElse := DAE.RCONST(0);
+  // $timeInState = if active then sample(time) - $timeEnteredState else 0;
+  timeInStateEqn := DAE.EQUATION(timeInStateExp, DAE.IFEXP(expCond, expThen, expElse), DAE.emptyElementSource);
+end createTimeInStateIndicator;
+
+protected function createTimeEnteredStateIndicator "
+Author: BTH
+Helper function to addPropagationEquations.
+Create auxiliary variable that remembers the time in which a state is entered"
+  input DAE.ComponentRef stateRef "cref of state to which timeEnteredState variable shall be added";
+  input DAE.ComponentRef stateActiveRef "cref of active indicator corresponding to stateRef";
+  output DAE.Element timeEnteredStateVar;
+  output DAE.Element timeEnteredStateEqn;
+protected
+  DAE.ComponentRef timeEnteredStateRef;
+  DAE.Exp timeEnteredStateExp, stateActiveExp, expCond, expThen, expElse;
+algorithm
+  // Create Variable stateRef.$timeEnteredState
+  timeEnteredStateRef := qCref("$timeEnteredState", DAE.T_REAL_DEFAULT, {}, stateRef);
+  timeEnteredStateVar := createVarWithDefaults(timeEnteredStateRef, DAE.DISCRETE(), DAE.T_REAL_DEFAULT);
+  timeEnteredStateVar := setVarFixedStartValue(timeEnteredStateVar, DAE.RCONST(0));
+  timeEnteredStateExp := DAE.CREF(timeEnteredStateRef, DAE.T_REAL_DEFAULT);
+
+  stateActiveExp := Expression.crefExp(stateActiveRef);
+
+  // == $timeEnteredState = if previous(active) == false and active == true then sample(time) else previous($timeEnteredState); ==
+  // previous(active) == false and active == true
+  expCond := DAE.LBINARY(
+    DAE.RELATION( DAE.CALL(Absyn.IDENT("previous"), {stateActiveExp}, DAE.callAttrBuiltinImpureBool), DAE.EQUAL(DAE.T_BOOL_DEFAULT), DAE.BCONST(false), -1, NONE()), // previous(active) == false
+    DAE.AND(DAE.T_BOOL_DEFAULT), // and
+    DAE.RELATION( stateActiveExp, DAE.EQUAL(DAE.T_BOOL_DEFAULT), DAE.BCONST(true), -1, NONE()) // active == true
+    );
+  // sample(time)
+  expThen := DAE.CALL(Absyn.IDENT("sample"),
+    { DAE.CREF(DAE.CREF_IDENT("time", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT),
+      DAE.CLKCONST(DAE.INFERRED_CLOCK())},
+    DAE.callAttrBuiltinImpureReal);
+  // previous($timeEnteredState)
+  expElse := DAE.CALL(Absyn.IDENT("previous"), {timeEnteredStateExp}, DAE.callAttrBuiltinImpureReal);
+  // $timeEnteredState = if previous(active) == false and active == true then sample(time) else previous($timeEnteredState);
+  timeEnteredStateEqn := DAE.EQUATION(timeEnteredStateExp, DAE.IFEXP(expCond, expThen, expElse), DAE.emptyElementSource);
+end createTimeEnteredStateIndicator;
+
+protected function createTicksInStateIndicator "
+Author: BTH
+Helper function to addPropagationEquations.
+Create variable that counts ticks within a state"
+  input DAE.ComponentRef stateRef "cref of state to which ticksInState counter shall be added";
+  input DAE.ComponentRef stateActiveRef "cref of active indicator corresponding to stateRef";
+  output DAE.Element ticksInStateVar;
+  output DAE.Element ticksInStateEqn;
+protected
+  DAE.ComponentRef ticksInStateRef;
+  DAE.Exp ticksInStateExp, expCond, expThen, expElse;
+algorithm
+  // Create Variable stateRef.$ticksInState
+  ticksInStateRef := qCref("$ticksInState", DAE.T_INTEGER_DEFAULT, {}, stateRef);
+  ticksInStateVar := createVarWithDefaults(ticksInStateRef, DAE.DISCRETE(), DAE.T_INTEGER_DEFAULT);
+  ticksInStateVar := setVarFixedStartValue(ticksInStateVar, DAE.ICONST(0));
+
+  // $ticksInState = if active then previous($ticksInState) + 1 else 0;
+  ticksInStateExp := DAE.CREF(ticksInStateRef, DAE.T_INTEGER_DEFAULT);
+  expCond := Expression.crefExp(stateActiveRef);
+  // previous($ticksInState) + 1
+  expThen := DAE.BINARY(DAE.CALL(Absyn.IDENT("previous"), {ticksInStateExp}, DAE.callAttrBuiltinImpureInteger), DAE.ADD(DAE.T_INTEGER_DEFAULT), DAE.ICONST(1));
+  expElse := DAE.ICONST(0);
+  ticksInStateEqn := DAE.EQUATION(ticksInStateExp, DAE.IFEXP(expCond, expThen, expElse), DAE.emptyElementSource);
+end createTicksInStateIndicator;
+
+protected function createActiveIndicator "
 Author: BTH
 Helper function to addPropagationEquations.
 Create indication (e.g., for plotting) whether a state is active or not"
@@ -598,7 +869,7 @@ algorithm
   // SMS_PRE.initialState.active and (SMS_PRE.initialState.activeState==i)
   andExp := DAE.LBINARY(DAE.CREF(activeRef, DAE.T_BOOL_DEFAULT), DAE.AND(DAE.T_BOOL_DEFAULT), eqExp);
   eqn := DAE.EQUATION(DAE.CREF(activePlotIndicatorRef, DAE.T_BOOL_DEFAULT), andExp, DAE.emptyElementSource);
-end createActiveIndication;
+end createActiveIndicator;
 
 
 protected function setVarFixedStartValue "
@@ -1218,24 +1489,17 @@ protected function wrapHack "
 Author: BTH
 Wrap equations in when-clauses as long as Synchronous Features are not supported"
   input FCore.Cache cache;
-  input DAE.DAElist inDAElist;
-  output DAE.DAElist outDAElist;
+  input list<DAE.Element> inElementLst;
+  output list<DAE.Element> outElementLst;
 protected
   Integer nOfSubstitutions;
-  list<DAE.Element> elementLst, eqnLst, otherLst, elementLst1;
+  list<DAE.Element> eqnLst, otherLst;
   DAE.Element whenEq;
   DAE.Exp cond1, cond2, condition;
   DAE.Type tArrayBool;
-  // COMP
-  DAE.Ident ident;
-  list<DAE.Element> dAElist "a component with subelements, normally only used at top level.";
-  DAE.ElementSource source "the origin of the component/equation/algorithm";
-  Option<SCode.Comment> comment;
 algorithm
-  DAE.DAE(elementLst=elementLst) := inDAElist;
-  DAE.COMP(ident, dAElist, source, comment) := listHead(elementLst);
 
-  (eqnLst, otherLst) := List.extractOnTrue(dAElist, isEquation);
+  (eqnLst, otherLst) := List.extractOnTrue(inElementLst, isEquation);
 
   // == {initial(), sample(1.0, 1.0)} ==
   cond1 := DAE.CALL(Absyn.IDENT("initial"),
@@ -1249,12 +1513,7 @@ algorithm
   whenEq := DAE.WHEN_EQUATION(condition,
     eqnLst, NONE(), DAE.emptyElementSource);
 
-  elementLst1 := listAppend(otherLst, {whenEq});
-
-  outDAElist := DAE.DAE({DAE.COMP(ident, elementLst1, source, comment)});
-
-  // traverse dae expressions for making substitutions previous(x) -> pre(x)
-  (outDAElist, _, (_,nOfSubstitutions)) := DAEUtil.traverseDAE(outDAElist, FCore.getFunctionTree(cache), Expression.traverseSubexpressionsHelper, (traversingSubsPreForPrevious, 0));
+  outElementLst := listAppend(otherLst, {whenEq});
 end wrapHack;
 
 
@@ -1277,6 +1536,29 @@ algorithm
     else (inExp,inHitCount);
   end match;
 end traversingSubsPreForPrevious;
+
+protected function traversingSubsXForSampleX "
+Author: BTH
+Helper function to traverse subexpressions
+Substitutes 'sample(x, _)' by 'x' "
+  input DAE.Exp inExp;
+  input Integer inHitCount;
+  output DAE.Exp outExp;
+  output Integer outHitCount;
+algorithm
+  (outExp,outHitCount) := match inExp
+    local
+      DAE.ComponentRef componentRef;
+      DAE.Exp expX;
+      DAE.CallAttributes attr;
+    case DAE.CALL(Absyn.IDENT("sample"),
+    { expX,
+      DAE.CLKCONST(DAE.INFERRED_CLOCK())},
+    attr)
+      then (expX, inHitCount + 1);
+    else (inExp,inHitCount);
+  end match;
+end traversingSubsXForSampleX;
 
  annotation(__OpenModelica_Interface="frontend");
  end StateMachineFlatten;

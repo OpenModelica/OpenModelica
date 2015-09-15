@@ -8977,6 +8977,87 @@ algorithm
   end match;
 end addClassAnnotationToClass;
 
+protected function getInheritedClassesHelper
+"Helper function to getInheritedClasses."
+  input SCode.Element inClass1;
+  input Absyn.Class inClass2;
+  input FCore.Graph inEnv4;
+  output list<Absyn.ComponentRef> outAbsynComponentRefLst;
+algorithm
+  outAbsynComponentRefLst := matchcontinue (inClass1,inClass2,inEnv4)
+    local
+      list<Absyn.ComponentRef> lst;
+      Integer n_1,n;
+      Absyn.ComponentRef cref;
+      Absyn.Path path;
+      String str,id;
+      SCode.Element c;
+      Absyn.Class cdef;
+      FCore.Graph env,env2,env_2;
+      ClassInf.State ci_state;
+      SCode.Encapsulated encflag;
+      SCode.Restriction restr;
+    /* First try without instantiating, if class is in parents */
+    case ((SCode.CLASS()),cdef,env)
+      equation
+        lst = getBaseClasses(cdef, env);
+      then
+        lst;
+    /* If that fails, instantiate, which takes more time */
+    case ((c as SCode.CLASS(name = id,encapsulatedPrefix = encflag,restriction = restr)),cdef,env)
+      equation
+        env2 = FGraph.openScope(env, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
+        ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
+        (_,env_2,_,_,_) =
+          Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
+            DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
+        lst = getBaseClasses(cdef, env_2);
+      then
+        lst;
+  end matchcontinue;
+end getInheritedClassesHelper;
+
+public function getInheritedClasses
+  input Absyn.Path inPath;
+  input GlobalScript.SymbolTable ist;
+  output list<Absyn.Path> outPaths;
+algorithm
+  outPaths := matchcontinue (inPath,ist)
+    local
+      Absyn.Path modelpath;
+      Absyn.Class cdef;
+      list<SCode.Element> p_1;
+      FCore.Graph env,env_1;
+      SCode.Element c;
+      list<Absyn.ComponentRef> lst;
+      Absyn.Program p;
+      list<Absyn.ElementSpec> extendsLst;
+      FCore.Cache cache;
+      GlobalScript.SymbolTable st;
+      list<Absyn.Path> paths;
+
+    case (modelpath,st as GlobalScript.SYMBOLTABLE(ast=p))
+      equation
+        cdef = getPathedClassInProgram(modelpath, p);
+        (p_1,st) = GlobalScriptUtil.symbolTableToSCode(st);
+        (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
+        (_,(c as SCode.CLASS()),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
+        lst = getInheritedClassesHelper(c, cdef, env_1);
+        failure({} = lst);
+        paths = List.map(lst, Absyn.crefToPath);
+      then
+        paths;
+    case (modelpath,st as GlobalScript.SYMBOLTABLE(ast=p)) /* if above fails, baseclass not defined. return its name */
+      equation
+        cdef = getPathedClassInProgram(modelpath, p);
+        extendsLst = getExtendsInClass(cdef);
+        paths = List.map(extendsLst, Absyn.elementSpecToPath);
+      then
+        paths;
+    else {};
+  end matchcontinue;
+end getInheritedClasses;
+
 protected function getInheritanceCount
 "This function takes a ComponentRef and a Program and
   returns the number of inherited classes in the class
@@ -14649,11 +14730,14 @@ protected function addClassInElementitemlist
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Absyn.Class inClass;
   output list<Absyn.ElementItem> outAbsynElementItemLst;
+protected
+  Absyn.Info info;
 algorithm
+  Absyn.CLASS(info=info) := inClass;
   outAbsynElementItemLst := listAppend(inAbsynElementItemLst,
           {Absyn.ELEMENTITEM(
              Absyn.ELEMENT(false,NONE(),Absyn.NOT_INNER_OUTER(),Absyn.CLASSDEF(false,inClass),
-             Absyn.dummyInfo,NONE()))});
+             info,NONE()))});
 end addClassInElementitemlist;
 
 protected function getInnerClass

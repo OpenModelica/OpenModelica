@@ -370,11 +370,12 @@ public function instExtendsAndClassExtendsList "
   output list<SCode.AlgorithmSection> outInitialAlgs;
 protected
   list<tuple<SCode.Element, DAE.Mod, Boolean>> elts;
-  list<SCode.Element> cdefelts,tmpelts;
+  list<SCode.Element> cdefelts, tmpelts, extendselts;
 algorithm
+  extendselts := List.map(inExtendsElementLst, SCodeUtil.expandEnumerationClass);
   //fprintln(Flags.DEBUG,"instExtendsAndClassExtendsList: " + inClassName);
   (outCache,outEnv,outIH,outMod,elts,outNormalEqs,outInitialEqs,outNormalAlgs,outInitialAlgs):=
-  instExtendsAndClassExtendsList2(inCache,inEnv,inIH,inMod,inPrefix,inExtendsElementLst,inClassExtendsElementLst,inElementsFromExtendsScope,inState,inClassName,inImpl,isPartialInst);
+  instExtendsAndClassExtendsList2(inCache,inEnv,inIH,inMod,inPrefix,extendselts,inClassExtendsElementLst,inElementsFromExtendsScope,inState,inClassName,inImpl,isPartialInst);
   // Filter out the last boolean in the tuple
   outElements := List.map(elts, Util.tuple312);
   // Create a list of the class definitions, since these can't be properly added in the recursive call
@@ -660,6 +661,7 @@ algorithm
       Option<SCode.ExternalDecl> extdecl;
       Prefix.Prefix pre;
       SourceInfo info;
+      SCode.Prefixes prefixes;
 
     // from basic types return nothing
     case (cache,env,ih,_,_,SCode.CLASS(name = name),_,_,_,_)
@@ -695,9 +697,9 @@ algorithm
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg,mod);
 
-    case (cache,env,ih,mod,pre,SCode.CLASS(name=n, classDef = SCode.ENUMERATION(enumLst), cmt = cmt, info = info),impl,_,false,_)
+    case (cache,env,ih,mod,pre,SCode.CLASS(name=n, prefixes = prefixes, classDef = SCode.ENUMERATION(enumLst), cmt = cmt, info = info),impl,_,false,_)
       equation
-        c = SCodeUtil.expandEnumeration(n, enumLst, cmt, info);
+        c = SCodeUtil.expandEnumeration(n, enumLst, prefixes, cmt, info);
         (cache,env,ih,elt,eq,ieq,alg,ialg,mod) = instDerivedClassesWork(cache, env, ih, mod, pre, c, impl,info, numIter >= Global.recursionDepthLimit, numIter+1);
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg,mod);

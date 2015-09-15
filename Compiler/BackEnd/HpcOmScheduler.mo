@@ -5786,7 +5786,7 @@ protected
   array<Real> workload;
   list<HpcOmSimCode.Task> levelTasks;
 algorithm
-  levelTasks := getLevelListTasks(iLevelTaskList);
+  levelTasks := getTasksOfTaskList(iLevelTaskList);
   workload := arrayCreate(iNumProc,0.0);
   workload := List.fold(levelTasks,function getLevelParallelTime1(iTaskGraphMeta=iTaskGraphMeta),workload);
   oLevelCost := Array.fold(workload,realMax,0.0);
@@ -5820,7 +5820,7 @@ algorithm
   end match;
 end getLevelParallelTime1;
 
-protected function getLevelListTasks
+protected function getTasksOfTaskList
   input HpcOmSimCode.TaskList iTaskList;
   output list<HpcOmSimCode.Task> oTasks;
 protected
@@ -5833,10 +5833,10 @@ algorithm
       then tasks;
     else
       equation
-        print("getLevelListTasks failed! Unsupported task list.\n");
+        print("getTasksOfTaskList failed! Unsupported task list.\n");
       then {};
   end match;
-end getLevelListTasks;
+end getTasksOfTaskList;
 
 protected function getLevelListTaskCosts
   input HpcOmSimCode.TaskList iTaskList;
@@ -5846,7 +5846,7 @@ protected
   list<HpcOmSimCode.Task> tasks;
   list<Real> costs;
 algorithm
-  tasks := getLevelListTasks(iTaskList);
+  tasks := getTasksOfTaskList(iTaskList);
   costsOut := List.map1(tasks,getLevelTaskCosts,iMeta);
 end getLevelListTaskCosts;
 
@@ -6398,6 +6398,45 @@ algorithm
   end match;
 end isEmptyTask;
 
+public function convertFixedLevelScheduleToLevelThreadLists
+  "Convert the given LevelSchedule to an array of thread-tasks for each level.
+  author:marcusw"
+  input HpcOmSimCode.Schedule iSchedule;
+  input Integer iNumOfThreads;
+  output list<array<list<HpcOmSimCode.Task>>> oLevelThreadLists;
+protected
+  list<HpcOmSimCode.TaskList> tasksOfLevels;
+  list<array<list<HpcOmSimCode.Task>>> tmpLevelThreadLists;
+algorithm
+  oLevelThreadLists := match(iSchedule, iNumOfThreads)
+    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels,useFixedAssignments=true),_)
+      equation
+        tmpLevelThreadLists = List.map(tasksOfLevels, function convertFixedLevelScheduleToLevelThreadLists0(iNumOfThreads=iNumOfThreads));
+      then tmpLevelThreadLists;
+    else
+      then {};
+  end match;
+end convertFixedLevelScheduleToLevelThreadLists;
+
+protected function convertFixedLevelScheduleToLevelThreadLists0
+  input HpcOmSimCode.TaskList iTasksOfLevel;
+  input Integer iNumOfThreads;
+  output array<list<HpcOmSimCode.Task>> oLevelThreadLists;
+protected
+  list<HpcOmSimCode.Task> tasks;
+  HpcOmSimCode.Task task;
+  Integer threadIdx;
+  array<list<HpcOmSimCode.Task>> tmpLevelThreadLists;
+algorithm
+  tasks := getTasksOfTaskList(iTasksOfLevel);
+  tmpLevelThreadLists := arrayCreate(iNumOfThreads, {});
+  for task in listReverse(tasks) loop
+    HpcOmSimCode.CALCTASK_LEVEL(threadIdx=SOME(threadIdx)) := task;
+    tmpLevelThreadLists := arrayUpdate(tmpLevelThreadLists, threadIdx, task::arrayGet(tmpLevelThreadLists, threadIdx));
+  end for;
+  oLevelThreadLists := tmpLevelThreadLists;
+end convertFixedLevelScheduleToLevelThreadLists0;
+
 public function convertFixedLevelScheduleToTaskLists
   "Convert the given LevelSchedule to an list of task for each level and each thread.
   author:marcusw"
@@ -6719,6 +6758,32 @@ algorithm
   s := stringDelimitList(List.map(lstIn,intListString)," | ");
 end intListListString;
 
+public function expandSchedule "increase the size of the scheduler datastructure from
+  iNumUsedProc to iNumProc, by adding empty task lists to the scheduler structure.
+  author:marcusw"
+  input Integer iNumProc;
+  input Integer iNumUsedProc;
+  input HpcOmSimCode.Schedule iSchedule;
+  output HpcOmSimCode.Schedule oSchedule;
+protected
+  array<list<HpcOmSimCode.Task>> threadTasks;
+  list<HpcOmSimCode.Task> outgoingDepTasks;
+  list<HpcOmSimCode.Task> scheduledTasks;
+  array<tuple<HpcOmSimCode.Task, Integer>> allCalcTasks;
+algorithm
+  oSchedule := match(iNumProc, iNumUsedProc, iSchedule)
+    case(_,_,HpcOmSimCode.LEVELSCHEDULE())
+      then iSchedule;
+    case(_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,outgoingDepTasks=outgoingDepTasks,scheduledTasks=scheduledTasks,allCalcTasks=allCalcTasks))
+      equation
+        threadTasks = Array.expandToSize(iNumProc, threadTasks, {});
+      then HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,scheduledTasks,allCalcTasks);
+    case(_,_,HpcOmSimCode.TASKDEPSCHEDULE())
+      then iSchedule;
+    case(_,_,HpcOmSimCode.EMPTYSCHEDULE())
+      then iSchedule;
+  end match;
+end expandSchedule;
 
 annotation(__OpenModelica_Interface="backend");
 end HpcOmScheduler;

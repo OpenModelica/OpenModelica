@@ -21,7 +21,7 @@ public:
     virtual boost::weak_ptr<IMixedSystem> LoadSystem(string modelLib,string modelKey);
     virtual boost::weak_ptr<IMixedSystem> LoadModelicaSystem(PATH modelica_path,string modelKey);
     virtual boost::weak_ptr<ISimData> LoadSimData(string modelKey);
-    virtual boost::weak_ptr<ISimVars> LoadSimVars(string modelKey, size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pre_vars, size_t dim_z, size_t z_i);
+    virtual boost::weak_ptr<ISimVars> LoadSimVars(string modelKey, size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_string, size_t dim_pre_vars, size_t dim_z, size_t z_i);
     /// Stops the simulation
     virtual void Stop();
     virtual void Start(SimSettings simsettings, string modelKey);
@@ -45,7 +45,7 @@ private:
     boost::shared_ptr<SimManager> _simMgr;
 
     #ifdef RUNTIME_PROFILING
-    std::vector<MeasureTimeData> measureTimeFunctionsArray;
+    std::vector<MeasureTimeData*> *measureTimeFunctionsArray;
     MeasureTimeValues *measuredFunctionStartValues, *measuredFunctionEndValues;
     #endif
 };

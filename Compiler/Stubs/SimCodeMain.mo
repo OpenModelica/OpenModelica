@@ -19,8 +19,13 @@ algorithm
   assert(false, getInstanceName());
 end createSimulationSettings;
 
-function generateModelCode<T,A,C,D,E>
+function generateModelCode<T,A,B,C,D,E>
   input T inBackendDAE;
+  input T inInitDAE;
+  input Boolean inUseHomotopy;
+  input list<BackendDAE.Equation> inRemovedInitialEquationLst;
+  input B inPrimaryParameters;
+  input B inAllPrimaryParameters;
   input A p;
   input C className;
   input String filenamePrefix;

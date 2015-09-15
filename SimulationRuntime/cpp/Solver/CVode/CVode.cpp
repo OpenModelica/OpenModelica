@@ -35,37 +35,54 @@ Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
       _mixed_system(NULL),
       _time_system(NULL),
       _numberOfOdeEvaluations(0),
-    _delta(NULL),
-  _deltaInv(NULL),
-    _ysave(NULL),
-  _colorOfColumn (NULL),
-  _jacobianAIndex(NULL),
-  _jacobianALeadindex(NULL)
-
-
+      _delta(NULL),
+      _deltaInv(NULL),
+      _ysave(NULL),
+      _colorOfColumn (NULL),
+      _jacobianAIndex(NULL),
+      _jacobianALeadindex(NULL),
+      _CV_absTol(),
+      _tLastWrite(-1.0),
+      _bWritten(false),
+      _zeroFound(false),
+      _CV_y0(),
+      _CV_y(),
+      _CV_yWrite(),
+      _maxColors(0),
+      _jacobianANonzeros(0)
 {
   _data = ((void*) this);
 
   #ifdef RUNTIME_PROFILING
   if(MeasureTime::getInstance() != NULL)
   {
-      measureTimeFunctionsArray = std::vector<MeasureTimeData>(7); //0 calcFunction //1 solve ... //6 solver statistics
-      MeasureTime::addResultContentBlock(system->getModelName(),"cvode",&measureTimeFunctionsArray);
+      measureTimeFunctionsArray = new std::vector<MeasureTimeData*>(7, NULL); //0 calcFunction //1 solve ... //6 solver statistics
+      (*measureTimeFunctionsArray)[0] = new MeasureTimeData("calcFunction");
+      (*measureTimeFunctionsArray)[1] = new MeasureTimeData("solve");
+      (*measureTimeFunctionsArray)[2] = new MeasureTimeData("writeOutput");
+      (*measureTimeFunctionsArray)[3] = new MeasureTimeData("evaluateZeroFuncs");
+      (*measureTimeFunctionsArray)[4] = new MeasureTimeData("initialize");
+      (*measureTimeFunctionsArray)[5] = new MeasureTimeData("stepCompleted");
+      (*measureTimeFunctionsArray)[6] = new MeasureTimeData("solverStatistics");
+
+      MeasureTime::addResultContentBlock(system->getModelName(),"cvode",measureTimeFunctionsArray);
       measuredFunctionStartValues = MeasureTime::getZeroValues();
       measuredFunctionEndValues = MeasureTime::getZeroValues();
       solveFunctionStartValues = MeasureTime::getZeroValues();
       solveFunctionEndValues = MeasureTime::getZeroValues();
       solverValues = new MeasureTimeValuesSolver();
 
-      measureTimeFunctionsArray[0] = MeasureTimeData("calcFunction");
-      measureTimeFunctionsArray[1] = MeasureTimeData("solve");
-      measureTimeFunctionsArray[2] = MeasureTimeData("writeOutput");
-      measureTimeFunctionsArray[3] = MeasureTimeData("evaluateZeroFuncs");
-      measureTimeFunctionsArray[4] = MeasureTimeData("initialize");
-      measureTimeFunctionsArray[5] = MeasureTimeData("stepCompleted");
-      measureTimeFunctionsArray[6] = MeasureTimeData("solverStatistics");
-
-      measureTimeFunctionsArray[6].sumMeasuredValues = solverValues;
+      delete (*measureTimeFunctionsArray)[6]->_sumMeasuredValues;
+      (*measureTimeFunctionsArray)[6]->_sumMeasuredValues = solverValues;
+  }
+  else
+  {
+    measureTimeFunctionsArray = new std::vector<MeasureTimeData*>();
+    measuredFunctionStartValues = NULL;
+    measuredFunctionEndValues = NULL;
+    solveFunctionStartValues = NULL;
+    solveFunctionEndValues = NULL;
+    solverValues = NULL;
   }
   #endif
 }
@@ -90,8 +107,6 @@ Cvode::~Cvode()
     N_VDestroy_Serial(_CV_absTol);
     CVodeFree(&_cvodeMem);
   }
-
-
 
   if (_colorOfColumn)
     delete [] _colorOfColumn;
@@ -307,7 +322,7 @@ void Cvode::initialize()
 
     _cvode_initialized = true;
 
-    Logger::write("Cvode: initialized",LC_SOLV,LL_DEBUG);
+    LOGGER_WRITE("Cvode: initialized",LC_SOLV,LL_DEBUG);
   }
 }
 
@@ -342,7 +357,7 @@ void Cvode::solve(const SOLVERCALL action)
         #ifdef RUNTIME_PROFILING
         if(MeasureTime::getInstance() != NULL)
         {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[4], cvodeInitializeHandler);
+            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[4], cvodeInitializeHandler);
         }
         #endif
 
@@ -373,7 +388,7 @@ void Cvode::solve(const SOLVERCALL action)
     // Solver soll fortfahren
     _solverStatus = ISolver::CONTINUE;
 
-    while (_solverStatus & ISolver::CONTINUE && !_interrupt )
+    while ((_solverStatus & ISolver::CONTINUE) && !_interrupt )
     {
       // Zuvor wurde initialize aufgerufen und hat funktioniert => RESET IDID
       if (_idid == 5000)
@@ -416,7 +431,7 @@ void Cvode::solve(const SOLVERCALL action)
   #ifdef RUNTIME_PROFILING
   if(MeasureTime::getInstance() != NULL)
   {
-      MEASURETIME_END(solveFunctionStartValues, solveFunctionEndValues, measureTimeFunctionsArray[1], cvodeSolveFunctionHandler);
+      MEASURETIME_END(solveFunctionStartValues, solveFunctionEndValues, (*measureTimeFunctionsArray)[1], cvodeSolveFunctionHandler);
 
       long int nst, nfe, nsetups, netf, nni, ncfn;
       int qlast, qcur;
@@ -428,8 +443,8 @@ void Cvode::solve(const SOLVERCALL action)
       flag = CVodeGetNonlinSolvStats(_cvodeMem, &nni, &ncfn);
 
       MeasureTimeValuesSolver solverVals = MeasureTimeValuesSolver(nfe, netf);
-      measureTimeFunctionsArray[6].sumMeasuredValues->_numCalcs += nst;
-      measureTimeFunctionsArray[6].sumMeasuredValues->add(&solverVals);
+      (*measureTimeFunctionsArray)[6]->_sumMeasuredValues->_numCalcs += nst;
+      (*measureTimeFunctionsArray)[6]->_sumMeasuredValues->add(&solverVals);
   }
   #endif
 }
@@ -456,7 +471,7 @@ void Cvode::CVodeCore()
   bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == OPT_ALL);
   bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == OPT_NONE);
 
-  while (_solverStatus & ISolver::CONTINUE && !_interrupt )
+  while ((_solverStatus & ISolver::CONTINUE) && !_interrupt )
   {
     _cv_rt = CVode(_cvodeMem, _tEnd, _CV_y, &_tCurrent, CV_ONE_STEP);
 
@@ -492,7 +507,7 @@ void Cvode::CVodeCore()
     #ifdef RUNTIME_PROFILING
     if(MeasureTime::getInstance() != NULL)
     {
-        MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[5], cvodeStepCompletedHandler);
+        MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[5], cvodeStepCompletedHandler);
     }
     #endif
 
@@ -677,7 +692,7 @@ void Cvode::writeCVodeOutput(const double &time, const double &h, const int &stp
   #ifdef RUNTIME_PROFILING
   if(MeasureTime::getInstance() != NULL)
   {
-      MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], cvodeWriteOutputHandler);
+      MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[2], cvodeWriteOutputHandler);
   }
   #endif
 }
@@ -716,7 +731,7 @@ int Cvode::calcFunction(const double& time, const double* y, double* f)
   #ifdef RUNTIME_PROFILING
   if(MeasureTime::getInstance() != NULL)
   {
-      MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[0], cvodeCalcFunctionHandler);
+      MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[0], cvodeCalcFunctionHandler);
   }
   #endif
 
@@ -750,7 +765,7 @@ void Cvode::giveZeroVal(const double &t, const double *y, double *zeroValue)
   #ifdef RUNTIME_PROFILING
   if(MeasureTime::getInstance() != NULL)
   {
-      MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[3], cvodeEvalZeroHandler);
+      MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[3], cvodeEvalZeroHandler);
   }
   #endif
 }
@@ -947,13 +962,13 @@ void Cvode::writeSimulationInfo()
 
   flag = CVodeGetNonlinSolvStats(_cvodeMem, &nni, &ncfn);
 
-  Logger::write("Cvode: number steps = " + boost::lexical_cast<std::string>(nst),LC_SOLV,LL_INFO);
-  Logger::write("Cvode: function evaluations 'f' = " + boost::lexical_cast<std::string>(nfe),LC_SOLV,LL_INFO);
-  Logger::write("Cvode: error test failures 'netf' = " + boost::lexical_cast<std::string>(netfS),LC_SOLV,LL_INFO);
-  Logger::write("Cvode: linear solver setups 'nsetups' = " + boost::lexical_cast<std::string>(nsetups),LC_SOLV,LL_INFO);
-  Logger::write("Cvode: nonlinear iterations 'nni' = " + boost::lexical_cast<std::string>(nni),LC_SOLV,LL_INFO);
-  Logger::write("Cvode: convergence failures 'ncfn' = " + boost::lexical_cast<std::string>(ncfn),LC_SOLV,LL_INFO);
-  Logger::write("Cvode: number of evaluateODE calls 'eODE' = " + boost::lexical_cast<std::string>(_numberOfOdeEvaluations),LC_SOLV,LL_INFO);
+  LOGGER_WRITE("Cvode: number steps = " + boost::lexical_cast<std::string>(nst),LC_SOLV,LL_INFO);
+  LOGGER_WRITE("Cvode: function evaluations 'f' = " + boost::lexical_cast<std::string>(nfe),LC_SOLV,LL_INFO);
+  LOGGER_WRITE("Cvode: error test failures 'netf' = " + boost::lexical_cast<std::string>(netfS),LC_SOLV,LL_INFO);
+  LOGGER_WRITE("Cvode: linear solver setups 'nsetups' = " + boost::lexical_cast<std::string>(nsetups),LC_SOLV,LL_INFO);
+  LOGGER_WRITE("Cvode: nonlinear iterations 'nni' = " + boost::lexical_cast<std::string>(nni),LC_SOLV,LL_INFO);
+  LOGGER_WRITE("Cvode: convergence failures 'ncfn' = " + boost::lexical_cast<std::string>(ncfn),LC_SOLV,LL_INFO);
+  LOGGER_WRITE("Cvode: number of evaluateODE calls 'eODE' = " + boost::lexical_cast<std::string>(_numberOfOdeEvaluations),LC_SOLV,LL_INFO);
 
   //// Solver
   //outputStream  << "\nSolver: " << getName()

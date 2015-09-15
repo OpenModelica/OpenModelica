@@ -39,23 +39,24 @@
  Mahder.Gebremedhin@liu.se  2014-02-19
 */
 
+#include <simulation_data.h>
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef void (*FunctionType)(void *);
+typedef void (*FunctionType)(DATA *, threadData_t*);
 
-void PM_Model_init(const char* , void* , FunctionType*);
+void PM_Model_init(const char* , DATA* , threadData_t*, FunctionType*);
 
-void PM_functionInitialEquations(int size, void* data, FunctionType*);
+void PM_functionInitialEquations(int size, DATA* data, threadData_t* threadData, FunctionType*);
 
-void PM_functionDAE(int size, void* data, FunctionType*);
+void PM_functionDAE(int size, DATA* data, threadData_t* threadData, FunctionType*);
 
-void PM_functionODE(int size, void* data, FunctionType*);
+void PM_functionODE(int size, DATA* data, threadData_t* threadData, FunctionType*);
 
-void PM_functionAlg(int size, void* data, FunctionType*);
+void PM_functionAlg(int size, DATA* data, threadData_t* threadData, FunctionType*);
 
 void dump_times();
 

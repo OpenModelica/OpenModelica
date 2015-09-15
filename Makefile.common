@@ -234,9 +234,10 @@ CMinpack:
 
 CMinpack-clean:
 	rm -rf 3rdParty/CMinpack/install
-	if test -f 3rdParty/CMinpack/build/Makefile; then make -C 3rdParty/CMinpack/build clean; fi
-	rm -f 3rdParty/CMinpack/build/Makefile
-	test ! -d 3rdParty/CMinpack/build || rm -r 3rdParty/CMinpack/build
+	#This is a bad idea, because the cache contains the absolute path to cmake that was used for build -> if the cmake location has changed, the clean command will fail
+	#if test -f 3rdParty/CMinpack/build/Makefile; then make -C 3rdParty/CMinpack/build clean; fi
+	#rm -f 3rdParty/CMinpack/build/Makefile
+	rm -rf 3rdParty/CMinpack/build
 
 metis:
 	(cd 3rdParty/metis-5.1.0 && $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -G $(CMAKE_TARGET) && CC="$(CC)" CFLAGS="$(CFLAGS)" make)

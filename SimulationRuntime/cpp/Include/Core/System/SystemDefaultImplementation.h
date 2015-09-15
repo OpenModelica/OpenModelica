@@ -3,18 +3,6 @@
  *  Core module for all algebraic and ode systems
  *  @{
  */
-/*includes removed for static linking not needed any more
-#ifdef RUNTIME_STATIC_LINKING
-#include <Core/Math/Functions.h>
-#include <Core/System/EventHandling.h>
-#include <boost/any.hpp>
-#include <boost/unordered_map.hpp>
-#include <boost/circular_buffer.hpp>
-#include <iostream>
-#include <Core/System/IContinuous.h>
-#include <Core/SimulationSettings/IGlobalSettings.h>
-#endif
-*/
 /*****************************************************************************/
 /**
 
@@ -44,18 +32,14 @@ template <class T>
 class InitVars
 {
 public:
-  void setStartValue(T& variable,T val);
+  void setStartValue(T& variable,T val,bool overwriteOldValue);
   T& getGetStartValue(T& variable);
 
 private:
   boost::unordered_map<T*, T> _start_values;
 };
-/*
-#ifdef RUNTIME_STATIC_LINKING
-class SystemDefaultImplementation
-#else*/
+
 class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation
-/*#endif*/
 {
 public:
   SystemDefaultImplementation(IGlobalSettings* globalSettings,boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars);
@@ -128,6 +112,19 @@ public:
   virtual boost::shared_ptr<ISimVars> getSimVars();
   virtual boost::shared_ptr<ISimData> getSimData();
 
+  virtual double& getRealStartValue(double& var);
+  virtual bool& getBoolStartValue(bool& var);
+  virtual int& getIntStartValue(int& var);
+  virtual string& getStringStartValue(string& var);
+  virtual void setRealStartValue(double& var,double val);
+  virtual void setRealStartValue(double& var,double val,bool overwriteOldValue);
+  virtual void setBoolStartValue(bool& var,bool val);
+  virtual void setBoolStartValue(bool& var,bool val,bool overwriteOldValue);
+  virtual void setIntStartValue(int& var,int val);
+  virtual void setIntStartValue(int& var,int val,bool overwriteOldValue);
+  virtual void setStringStartValue(string& var,string val);
+  virtual void setStringStartValue(string& var,string val,bool overwriteOldValue);
+
 protected:
     void Assert(bool cond, const string& msg);
     void Terminate(string msg);
@@ -137,14 +134,6 @@ protected:
     double delay(unsigned int expr_id,double expr_value, double delayTime, double delayMax);
     bool isConsistent();
 
-    double& getRealStartValue(double& var);
-    bool& getBoolStartValue(bool& var);
-    int& getIntStartValue(int& var);
-    string& getStringStartValue(string& var);
-    void setRealStartValue(double& var,double val);
-    void setBoolStartValue(bool& var,bool val);
-    void setIntStartValue(int& var,int val);
-    void setStringStartValue(string& var,string val);
     double
         _simTime;             ///< current simulation time (given by the solver)
 

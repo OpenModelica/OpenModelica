@@ -76,7 +76,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      //the variables of OMEdit are always the first elements of the result vectors, if they are set
      desc.add_options()
           ("help", "produce help message")
-          ("nls_continue", po::bool_switch()->default_value(false),"non linear solver will continue if it can not reach the given precision")
+          ("nls-continue", po::bool_switch()->default_value(false),"non linear solver will continue if it can not reach the given precision")
           ("runtime-library,R", po::value<string>(),"path to cpp runtime libraries")
           ("modelica-system-library,M",  po::value<string>(), "path to Modelica library")
           ("results-file,F", po::value<vector<string> >(),"name of results file")
@@ -137,7 +137,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      double starttime =  vm["start-time"].as<double>();
      double stoptime = vm["stop-time"].as<double>();
      double stepsize =vm["step-size"].as<double>();
-     bool nlsContinueOnError = vm["nls_continue"].as<bool>();
+     bool nlsContinueOnError = vm["nls-continue"].as<bool>();
 
      if (!(stepsize > 0.0))
          stepsize = (stoptime - starttime) / vm["number-of-intervals"].as<int>();
@@ -225,7 +225,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
 std::vector<const char *> OMCFactory::handleArgumentsToReplace(int argc, const char* argv[], std::map<std::string, std::string> &opts)
 {
     std::vector<const char *> optv;
-    optv.push_back(argv[0]);
+    optv.push_back(strdup(argv[0]));
     for(int i = 1; i < argc; i++)
     {
         string arg = argv[i];
@@ -271,12 +271,7 @@ std::vector<const char *> OMCFactory::handleArgumentsToReplace(int argc, const c
         std::vector<std::string> strs;
         boost::split(strs, arg, boost::is_any_of(" "));
         for(int j = 0; j < strs.size(); j++)
-        {
-          char *copyStr = new char[strs[j].size() + 1];
-          strcpy(copyStr, strs[j].c_str());
-          copyStr[strs[j].size()] = '\0';
-          optv.push_back(copyStr);
-        }
+          optv.push_back(strdup(strs[j].c_str()));
     }
 
     return optv;
@@ -286,9 +281,11 @@ std::vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, c
 {
   std::map<std::string, std::string>::const_iterator oit;
   std::vector<const char *> optv;
-  optv.push_back(argv[0]);
+
+  optv.push_back(strdup(argv[0]));
   _overrideOMEdit = "-override=";      // unrecognized OMEdit overrides
   for (int i = 1; i < argc; i++) {
+
       string arg = argv[i];
       int j;
       if (arg[0] == '-' && arg[1] != '-' && (j = arg.find('=')) > 0
@@ -318,14 +315,14 @@ std::vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, c
               }
           }
           if (_overrideOMEdit.size() > 10)
-              optv.push_back(_overrideOMEdit.c_str());
+              optv.push_back(strdup(_overrideOMEdit.c_str()));
       }
       else
-          optv.push_back(argv[i]);     // pass through
+          optv.push_back(strdup(argv[i]));     // pass through
   }
   for (oit = opts.begin(); oit != opts.end(); oit++) {
-      optv.push_back(oit->first.c_str());
-      optv.push_back(oit->second.c_str());
+      optv.push_back(strdup(oit->first.c_str()));
+      optv.push_back(strdup(oit->second.c_str()));
   }
 
   return optv;
@@ -348,31 +345,40 @@ std::pair<boost::shared_ptr<ISimController>,SimSettings>
 OMCFactory::createSimulation(int argc, const char* argv[],
                              std::map<std::string, std::string> &opts)
 {
-     std::vector<const char *> optv = handleComplexCRuntimeArguments(argc, argv, opts);
-     std::vector<const char *> optv2 = handleArgumentsToReplace(optv.size(), &optv[0], opts);
+  std::vector<const char *> optv = handleComplexCRuntimeArguments(argc, argv, opts);
+  std::vector<const char *> optv2 = handleArgumentsToReplace(optv.size(), &optv[0], opts);
 
-     SimSettings settings = readSimulationParameter(optv2.size(), &optv2[0]);
-     type_map simcontroller_type_map;
-     PATH simcontroller_path = _library_path;
-     PATH simcontroller_name(SIMCONTROLLER_LIB);
-     simcontroller_path/=simcontroller_name;
+  SimSettings settings = readSimulationParameter(optv2.size(), &optv2[0]);
+  type_map simcontroller_type_map;
+  PATH simcontroller_path = _library_path;
+  PATH simcontroller_name(SIMCONTROLLER_LIB);
+  simcontroller_path/=simcontroller_name;
 
-     LOADERRESULT result =  LoadLibrary(simcontroller_path.string(),simcontroller_type_map);
+  LOADERRESULT result =  LoadLibrary(simcontroller_path.string(),simcontroller_type_map);
 
-     if (result != LOADER_SUCCESS)
-     {
+  if (result != LOADER_SUCCESS)
+    throw ModelicaSimulationError(MODEL_FACTORY,string("Failed loading SimConroller library!") + simcontroller_path.string());
 
-        throw ModelicaSimulationError(MODEL_FACTORY,string("Failed loading SimConroller library!") + simcontroller_path.string());
-     }
-     std::map<std::string, factory<ISimController,PATH,PATH> >::iterator iter;
-     std::map<std::string, factory<ISimController,PATH,PATH> >& factories(simcontroller_type_map.get());
-     iter = factories.find("SimController");
-     if (iter ==factories.end())
-     {
-          throw ModelicaSimulationError(MODEL_FACTORY,"No such SimController library");
-     }
-     boost::shared_ptr<ISimController>  simcontroller = boost::shared_ptr<ISimController>(iter->second.create(_library_path,_modelicasystem_path));
-     return std::make_pair(simcontroller,settings);
+  std::map<std::string, factory<ISimController,PATH,PATH> >::iterator iter;
+  std::map<std::string, factory<ISimController,PATH,PATH> >& factories(simcontroller_type_map.get());
+  iter = factories.find("SimController");
+
+  if (iter ==factories.end())
+    throw ModelicaSimulationError(MODEL_FACTORY,"No such SimController library");
+
+  boost::shared_ptr<ISimController>  simcontroller = boost::shared_ptr<ISimController>(iter->second.create(_library_path,_modelicasystem_path));
+
+  for(int i = 0; i < optv.size(); i++)
+    free((char*)optv[i]);
+
+  optv.clear();
+
+  for(int i = 0; i < optv2.size(); i++)
+    free((char*)optv2[i]);
+
+  optv2.clear();
+
+  return std::make_pair(simcontroller,settings);
 }
 
 LOADERRESULT OMCFactory::LoadLibrary(string libName,type_map& current_map)

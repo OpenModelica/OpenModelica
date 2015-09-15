@@ -80,6 +80,7 @@ package HpcOmSimCode
       Integer floatArraySize;
       Integer intArraySize;
       Integer boolArraySize;
+      Integer stringArraySize;
     end MEMORYMAP_ARRAY;
   end MemoryMap;
 end HpcOmSimCode;
@@ -92,6 +93,12 @@ package HpcOmScheduler
     input Integer iNumOfThreads;
     output array<tuple<list<list<HpcOmSimCode.Task>>,list<list<HpcOmSimCode.Task>>,list<list<HpcOmSimCode.Task>>>> oThreadLevelTasks;
   end convertFixedLevelScheduleToTaskLists;
+
+  function convertFixedLevelScheduleToLevelThreadLists
+    input HpcOmSimCode.Schedule iSchedule;
+    input Integer iNumOfThreads;
+    output list<array<list<HpcOmSimCode.Task>>> oLevelThreadLists;
+  end convertFixedLevelScheduleToLevelThreadLists;
 end HpcOmScheduler;
 
 package HpcOmSimCodeMain
