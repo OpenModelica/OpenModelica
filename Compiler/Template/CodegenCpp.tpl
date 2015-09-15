@@ -1807,7 +1807,7 @@ int _tmain(int argc, const _TCHAR* argv[])
   <%defineOutputVars(simCode)%>
 
   LogSettings logsetting;
-    SimSettings settings = {"RTEuler","","kinsol",        0.0,      100.0,  0.005,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",0,OPT_NONE, logsetting};
+    SimSettings settings = {"RTEuler","","newton",        0.0,      100.0,  0.004,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",0,OPT_NONE, logsetting};
   //                       Solver,          nonlinearsolver starttime endtime stepsize   lower limit upper limit  tolerance
 
 
@@ -1938,7 +1938,7 @@ extern "C"  void debugSimulation(void)
   double cycletime;
   getMotionCycle(cycletime);
 
-  initSimulation(simController, simData, 0.005);
+  initSimulation(simController, simData, 0.004);
   while(true)
   {
     try
@@ -2037,7 +2037,7 @@ extern "C"  int initSimulation(ISimController* &controller, ISimData* &data, dou
   <%defineOutputVars(simCode)%>
 
   LogSettings logsetting;
-    SimSettings settings = {"RTRK","","kinsol",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",0,OPT_NONE, logsetting};
+    SimSettings settings = {"RTEuler","","kinsol",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",0,OPT_NONE, logsetting};
   //                       Solver,          nonlinearsolver starttime endtime stepsize   lower limit upper limit  tolerance
   try
   {
@@ -2083,9 +2083,9 @@ extern "C" int motionTriggered(ISimController* &controller, ISimData* &data)
   }
 
 
-  WCHAR16* application = L"Application";
-  MlpiApplicationState state = MLPI_STATE_NONE;
-  result = mlpiLogicGetStateOfApplication(connection, application, &state);
+  //WCHAR16* application = L"Application";
+  //MlpiApplicationState state = MLPI_STATE_NONE;
+  //result = mlpiLogicGetStateOfApplication(connection, application, &state);
 
   // Set Priority of Task
   result = mlpiTaskSetCurrentPriority(connection,  MLPI_PRIORITY_HIGH_MAX);
@@ -2102,7 +2102,7 @@ extern "C" int motionTriggered(ISimController* &controller, ISimData* &data)
    // Wait for motion interrupt
     result = mlpiTaskWaitForEvent(connection, MLPI_TASKEVENT_MOTION_CYCLE, MLPI_INFINITE);
 
-    MLPIRESULT result = mlpiLogicGetStateOfApplication(connection, application, &state);
+    //MLPIRESULT result = mlpiLogicGetStateOfApplication(connection, application, &state);
 
     if (MLPI_FAILED(result))
     {
@@ -2116,13 +2116,13 @@ extern "C" int motionTriggered(ISimController* &controller, ISimData* &data)
       printf("\ncall of MLPI function failed with 0x%08x!", (unsigned)result);
       return result;
     }
-    if(state == MLPI_STATE_STOP)
-    {
-      break;
-    }
+    //if(state == MLPI_STATE_STOP)
+    //{
+    //  break;
+    //}
 
-    if(mode == MLPI_SYSTEMMODE_BB) //
-    {
+    //if(mode == MLPI_SYSTEMMODE_BB) //
+    //{
       //Write input
       /* do something with the inputs!*/
       /*
@@ -2150,7 +2150,7 @@ extern "C" int motionTriggered(ISimController* &controller, ISimData* &data)
       }
       //Write output
       <%getOutputVars(simCode)%>
-    }
+    //}
   }
 
   result = mlpiApiDisconnect(&connection);
@@ -2251,6 +2251,7 @@ BUNDLE_INFO_END(com_boschrexroth_<%modelname%>)
 
 BUNDLE_EXPORT int com_boschrexroth_<%modelname%>_create(int param1, int param2, int param3)
 {
+/*
   MLPIHANDLE connection = MLPI_INVALIDHANDLE;
 
   // connect to API
@@ -2283,7 +2284,7 @@ BUNDLE_EXPORT int com_boschrexroth_<%modelname%>_create(int param1, int param2, 
     result = mlpiLogicPouExtensionRegister(connection, name, function);
   }
 mlpiApiDisconnect(&connection);
-
+*/
 printf("\n###################################################################");
 printf("\n## onCreate #######################################################");
 printf("\n###################################################################");
@@ -2292,7 +2293,7 @@ return 0;
 
 BUNDLE_EXPORT int com_boschrexroth_<%modelname%>_start(int param1, int param2, int param3)
 {
-
+spawnTask();
 printf("\n###################################################################");
 printf("\n## onStart ########################################################");
 printf("\n###################################################################");
@@ -3857,6 +3858,7 @@ match eq
      else
      <<
      _AData = new double[<%listLength(ls.simJac)%>];
+	 _bInitialized = false;
      _indexValue = new int[<%listLength(ls.simJac)%>];
      sortIndex();
      >>
@@ -4100,17 +4102,24 @@ match simCode
   let bname = 'b<%uid%>'
     let &varDecls = buffer "" /*BUFD*/
 
+let &help = buffer ""
  let Amatrix=
     (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) hasindex i0 fromindex 0=>
       let &preExp = buffer "" /*BUFD*/
-      let expPart = daeExp(eq.exp, context, &preExp, &varDecls, simCode, &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+	  let expPart = daeExp(eq.exp, context, &preExp, &varDecls, simCode, &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       match eq.exp
       case e as RCONST(__) then match type case "sparse" then
+      let &help +=
       <<
-	  <%preExp%>
+      <%preExp%>
       /*comment out again!*///__A(<%row%>,<%col%>)=<%expPart%>;
       _AData[_indexValue[<%i0%>]] = <%expPart%>;
       >>
+      <<
+      <%preExp%>
+	  /*comment out again!*///__A(<%row%>,<%col%>)=<%expPart%>;
+      //_AData[_indexValue[<%i0%>]] = <%expPart%>;
+	  >>
 	  else
 	  <<
 	  <%preExp%>
@@ -4137,7 +4146,11 @@ match simCode
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
      match exp
-	 case e as RCONST(__) then '/*comment out again!*/<%preExp%>__b(<%i0%>)=<%expPart%>;'
+	 case e as RCONST(__) then
+	 let &help +=  '/*comment out again!*/<%preExp%>__b(<%i0%>)=<%expPart%>; <%\n%>'
+	 <<
+	 //<%preExp%>__b(<%i0%>)=<%expPart%>;
+	 >>
 	 else
 
 	'<%preExp%>__b(<%i0%>)=<%expPart%>;'
@@ -4150,6 +4163,11 @@ match simCode
       <%Amatrix%>
       //memcpy(Ax,_AData,sizeof(double)* <%listLength(ls.simJac)%> );
       <%bvector%>
+      if (_bInitialized == false)
+      {
+        <%&help%>
+        _bInitialized = true;
+      }
   }
   >>
 end updateAlgloop;
@@ -11647,39 +11665,6 @@ end testDaeDimensionExp;
 
 
 
-template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Generates code for an expression."
-::=
-  match exp
-
-  case e as ICONST(__)          then    '<%integer%>' /* Yes, we need to cast int to long on 64-bit arch... */
-  case e as RCONST(__)          then    real
-  case e as BCONST(__)          then    if bool then "true" else "false"
-  case e as ENUM_LITERAL(__)    then    index
-  case e as CREF(__)            then    daeExpCrefRhs(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as CAST(__)            then    daeExpCast(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as CONS(__)            then    "Cons not supported yet"
-  case e as SCONST(__)          then      daeExpSconst(string, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as UNARY(__)           then      daeExpUnary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as LBINARY(__)         then      daeExpLbinary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as LUNARY(__)          then      daeExpLunary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as BINARY(__)          then      daeExpBinary(operator, exp1, exp2, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as IFEXP(__)           then      daeExpIf(expCond, expThen, expElse, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as RELATION(__)        then      daeExpRelation(e, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as CALL(__)            then      daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as RECORD(__)          then      daeExpRecord(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as ASUB(__)            then     '<%daeExpAsub(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
-  case e as MATRIX(__)          then     daeExpMatrix(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as RANGE(__)           then     '<%daeExpRange(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
-  case e as TSUB(__)            then     '<%daeExpTsub(e, context,  &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation )%>'
-  case e as REDUCTION(__)       then     daeExpReduction(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as ARRAY(__)           then     '<%daeExpArray(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
-  case e as SIZE(__)            then     daeExpSize(e, context, &preExp, &varDecls, simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as SHARED_LITERAL(__)  then     daeExpSharedLiteral(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, useFlatArrayNotation)
-  case e as SUM(__)             then     daeExpSum(e, context, &preExp, &varDecls, simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-
-  else error(sourceInfo(), 'Unknown exp:<%printExpStr(exp)%>')
-end daeExp;
 
 
 template daeExpRange(Exp exp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
