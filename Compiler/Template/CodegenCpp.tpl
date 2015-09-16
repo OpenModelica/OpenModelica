@@ -4604,38 +4604,24 @@ template recordDeclarationHeader(RecordDeclaration recDecl,SimCode simCode ,Text
  "Generates structs for a record declaration."
 ::=
   match recDecl
-  case RECORD_DECL_FULL(__) then
-    <<
-     struct <%name%>Type
-     {
-        //Constructor allocates arrays
-        <%name%>Type()
-        {
-            /* <%variables |> var as VARIABLE(__) => '<%recordDeclarationHeaderArrayAllocate(var,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,contextOther, useFlatArrayNotation)%>' ;separator="\n"%> */
-        }
-        //Public  Members
-        <%variables |> var as VARIABLE(__) => '<%varType3(var,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%> <%crefStr(var.name)%>;' ;separator="\n"%>
-    };
-    >>
+  case r as RECORD_DECL_FULL(__) then
+    match aliasName
+    case SOME(str) then
+      <<
+      typedef <%str%>Type <%r.name%>Type;
+      >>
+    else
+      <<
+      struct <%r.name%>Type
+      {
+        <%r.variables |> var as VARIABLE(__) => '<%varType3(var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%> <%crefStr(var.name)%>;' ;separator="\n"%>
+      };
+      >>
   case RECORD_DECL_DEF(__) then
     <<
     RECORD DECL DEF
     >>
 end recordDeclarationHeader;
-
-template recordDeclarationHeaderArrayAllocate(Variable v,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context,Boolean useFlatArrayNotation)
- "Generates structs for a record declaration."
-::=
-  match v
-  case var as VARIABLE(ty=ty as T_ARRAY(__)) then
-  let instDimsInit = (ty.dims |> exp =>
-     dimension(exp,context);separator="][")
-     let arrayname = crefStr(name)
-  <<
-  <%arrayname%>.resize((boost::extents[<%instDimsInit%>]));
-  <%arrayname%>.reindex(1);
-  >>
-end recordDeclarationHeaderArrayAllocate;
 
 template functionBodyRecordConstructor(Function fn,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
  "Generates the body for a record constructor."
