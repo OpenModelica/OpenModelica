@@ -44,6 +44,13 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 
 }
 
+#ifdef RUNTIME_STATIC_LINKING
+boost::shared_ptr<ISimController> createSimController(PATH library_path, PATH modelicasystem_path)
+{
+  return boost::shared_ptr<ISimController>(new SimController(library_path, modelicasystem_path));
+}
+#endif
+
 #else
 error "operating system not supported"
 #endif

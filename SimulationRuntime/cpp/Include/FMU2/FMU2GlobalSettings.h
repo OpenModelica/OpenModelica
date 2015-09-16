@@ -37,7 +37,7 @@
 
 #include <Core/SimulationSettings/IGlobalSettings.h>
 
-#ifdef FMU_KINSOL
+#ifdef ENABLE_SUNDIALS_STATIC
   #define DEFAULT_NLS "kinsol"
 #else
   #define DEFAULT_NLS "newton"

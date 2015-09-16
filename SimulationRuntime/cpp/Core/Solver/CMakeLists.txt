@@ -3,7 +3,8 @@ cmake_minimum_required (VERSION 2.8.6)
 project(${SolverName})
 
 include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
-add_library(${SolverName}_static STATIC SolverDefaultImplementation.cpp SolverSettings.cpp SystemStateSelection.cpp FactoryExport.cpp SimulationMonitor.cpp )
+add_library(${SolverName}_static STATIC SolverDefaultImplementation.cpp SolverSettings.cpp SystemStateSelection.cpp FactoryExport.cpp SimulationMonitor.cpp)
+set_target_properties(${SolverName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
 add_precompiled_header(${SolverName}_static Include/Core/Modelica.h)
 install (TARGETS ${SolverName}_static DESTINATION ${LIBINSTALLEXT})
 

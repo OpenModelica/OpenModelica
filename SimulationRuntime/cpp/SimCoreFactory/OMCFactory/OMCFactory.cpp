@@ -354,19 +354,7 @@ OMCFactory::createSimulation(int argc, const char* argv[],
   PATH simcontroller_name(SIMCONTROLLER_LIB);
   simcontroller_path/=simcontroller_name;
 
-  LOADERRESULT result =  LoadLibrary(simcontroller_path.string(),simcontroller_type_map);
-
-  if (result != LOADER_SUCCESS)
-    throw ModelicaSimulationError(MODEL_FACTORY,string("Failed loading SimConroller library!") + simcontroller_path.string());
-
-  std::map<std::string, factory<ISimController,PATH,PATH> >::iterator iter;
-  std::map<std::string, factory<ISimController,PATH,PATH> >& factories(simcontroller_type_map.get());
-  iter = factories.find("SimController");
-
-  if (iter ==factories.end())
-    throw ModelicaSimulationError(MODEL_FACTORY,"No such SimController library");
-
-  boost::shared_ptr<ISimController>  simcontroller = boost::shared_ptr<ISimController>(iter->second.create(_library_path,_modelicasystem_path));
+  boost::shared_ptr<ISimController> simcontroller = loadSimControllerLib(simcontroller_path, simcontroller_type_map);
 
   for(int i = 0; i < optv.size(); i++)
     free((char*)optv[i]);
@@ -401,5 +389,22 @@ LOADERRESULT OMCFactory::UnloadLibrary(shared_library lib)
            return LOADER_SUCCESS;
     }
     return LOADER_SUCCESS;
+}
+
+boost::shared_ptr<ISimController> OMCFactory::loadSimControllerLib(PATH simcontroller_path, type_map simcontroller_type_map)
+{
+  LOADERRESULT result = LoadLibrary(simcontroller_path.string(),simcontroller_type_map);
+
+  if (result != LOADER_SUCCESS)
+    throw ModelicaSimulationError(MODEL_FACTORY,string("Failed loading SimConroller library!") + simcontroller_path.string());
+
+  std::map<std::string, factory<ISimController,PATH,PATH> >::iterator iter;
+  std::map<std::string, factory<ISimController,PATH,PATH> >& factories(simcontroller_type_map.get());
+  iter = factories.find("SimController");
+
+  if (iter ==factories.end())
+    throw ModelicaSimulationError(MODEL_FACTORY,"No such SimController library");
+
+  return boost::shared_ptr<ISimController>(iter->second.create(_library_path,_modelicasystem_path));
 }
 /** @} */ // end of simcorefactoryOMCFactory

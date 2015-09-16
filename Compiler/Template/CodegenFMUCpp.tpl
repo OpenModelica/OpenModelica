@@ -754,13 +754,14 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   # CVode can be used for Co-Simulation FMUs, Kinsol is available to handle non linear equation systems
   OMCPP_SOLVER_LIBS=-lOMCppNewton_static
-  ifeq ($(USE_FMU_KINSOL),ON)
+  ifeq ($(USE_FMU_SUNDIALS),ON)
   $(eval OMCPP_SOLVER_LIBS=$(OMCPP_SOLVER_LIBS) -lOMCppKinsol_static $(SUNDIALS_LIBRARIES))
+  $(eval CFLAGS=-DENABLE_SUNDIALS_STATIC $(CFLAGS))
   endif
 
   CPPFLAGS = $(CFLAGS)
 
-  OMCPP_LIBS=-Wl,--start-group -lOMCppOMCFactory_FMU_static -lOMCppSystem_static -lOMCppSimController_static -Wl,--end-group -lOMCppDataExchange_static -lOMCppSimulationSettings_static $(OMCPP_SOLVER_LIBS) -lOMCppSolver_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppExtensionUtilities_static -lOMCppFMU_static
+  OMCPP_LIBS=-Wl,--start-group -lOMCppOMCFactory_FMU_static -lOMCppSystem_FMU_static -lOMCppSimController_FMU_static -Wl,--end-group -lOMCppDataExchange_static -lOMCppSimulationSettings_static $(OMCPP_SOLVER_LIBS) -lOMCppSolver_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppExtensionUtilities_static -lOMCppFMU_static
   MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)
   BOOST_LIBRARIES = -l$(BOOST_SYSTEM_LIB) -l$(BOOST_FILESYSTEM_LIB) -l$(BOOST_PROGRAM_OPTIONS_LIB)
   LIBS= $(OMCPP_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB) $(BOOST_LIBRARIES)
@@ -775,14 +776,14 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   <%\t%>rm -rf binaries
   <%\t%><%mkdir%> -p "binaries/$(PLATFORM)"
   <%\t%>cp <%fileNamePrefix%>$(DLLEXT) "binaries/$(PLATFORM)/"
-  ifeq ($(USE_FMU_KINSOL),ON)
+  ifeq ($(USE_FMU_SUNDIALS),ON)
   <%\t%>rm -rf documentation
   <%\t%><%mkdir%> -p "documentation"
   <%\t%>cp $(SUNDIALS_LIBRARIES_KINSOL) "binaries/$(PLATFORM)/"
   <%\t%>cp $(OMHOME)/share/omc/runtime/cpp/licenses/sundials.license "documentation/"
   endif
   <%\t%>rm -f <%modelName%>.fmu
-  ifeq ($(USE_FMU_KINSOL),ON)
+  ifeq ($(USE_FMU_SUNDIALS),ON)
   <%\t%>zip -r "<%modelName%>.fmu" modelDescription.xml binaries documentation
   <%\t%>rm -rf documentation
   else

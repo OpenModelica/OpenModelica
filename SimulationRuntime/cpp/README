@@ -32,7 +32,7 @@ to configure. The following arguments are available at the moment:
   RUNTIME_PROFILING
   SCOREP
   SCOREP_HOME=[path]
-  FMU_KINSOL
+  FMU_SUNDIALS
   PARALLEL_OUTPUT
   SUNDIALS_LAPACK
 
@@ -81,7 +81,7 @@ The following section explains the arguments that can be passed in more detail.
 
   The FMU export usually creates executables that use the Newton algorithm to
   solve equation systems. The kinsol solver can be used as well, by passing the
-  FMU_KINSOL argument to configure.
+  FMU_SUNDIALS argument to configure.
 
   Simulation results can be written asynchronously with the help of boost
   threads and a consumer producer algorithm (experimental). This feature is

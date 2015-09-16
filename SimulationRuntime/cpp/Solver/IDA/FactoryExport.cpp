@@ -35,12 +35,12 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_ida(boost::extensio
 #include <Solver/IDA/IDASettings.h>
     boost::shared_ptr<ISolver> createIda(IMixedSystem* system, boost::shared_ptr<ISolverSettings> solver_settings)
     {
-        boost::shared_ptr<ISolver> ida = boost::shared_ptr<ISolver>(new Ida(system,solver_settings));
+        boost::shared_ptr<ISolver> ida = boost::shared_ptr<ISolver>(new Ida(system,solver_settings.get()));
         return ida;
     }
     boost::shared_ptr<ISolverSettings> createIdaSettings(boost::shared_ptr<IGlobalSettings> globalSettings)
     {
-         boost::shared_ptr<ISolverSettings> ida_settings = boost::shared_ptr<ISolverSettings>(new IDASettings(globalSettings));
+         boost::shared_ptr<ISolverSettings> ida_settings = boost::shared_ptr<ISolverSettings>(new IDASettings(globalSettings.get()));
          return ida_settings;
     }
 
