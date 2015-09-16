@@ -59,14 +59,22 @@ TextAnnotation::TextAnnotation(QString annotation, Component *pComponent)
   setRotation(mRotation);
 }
 
+TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+  : ShapeAnnotation(pParent), mpComponent(pParent)
+{
+  updateShape(pShapeAnnotation);
+  setPos(mOrigin);
+  setRotation(mRotation);
+}
+
 /*!
  * \brief TextAnnotation::TextAnnotation
  * \param annotation - text annotation string.
  * \param inheritedShape
  * \param pGraphicsView - pointer to GraphicsView
  */
-TextAnnotation::TextAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inheritedShape, pGraphicsView, 0)
+TextAnnotation::TextAnnotation(QString annotation, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   mpComponent = 0;
   // set the default values
@@ -77,9 +85,20 @@ TextAnnotation::TextAnnotation(QString annotation, bool inheritedShape, Graphics
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
   setShapeFlags(true);
-  mpGraphicsView->addShapeObject(this);
-  mpGraphicsView->scene()->addItem(this);
   connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
+}
+
+TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(true, pGraphicsView, 0)
+{
+  mpComponent = 0;
+  updateShape(pShapeAnnotation);
+  setShapeFlags(true);
+  mpGraphicsView->scene()->addItem(this);
+  connect(pShapeAnnotation, SIGNAL(updateClassAnnotation()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
 /*!
@@ -198,8 +217,14 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
+  //! @note We don't show text annotation that contains % for Library Icons. Only static text for functions are shown.
   if (mpGraphicsView && mpGraphicsView->isRenderingLibraryPixmap()) {
-    return;
+    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getRestriction() != StringHandler::Function) {
+      return;
+    }
+    if (mOriginalTextString.contains("%")) {
+      return;
+    }
   }
   if (mVisible) {
     drawTextAnnotaion(painter);
@@ -338,6 +363,14 @@ QString TextAnnotation::getShapeAnnotation()
   return QString("Text(").append(annotationString.join(",")).append(")");
 }
 
+void TextAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
+{
+  // set the default values
+  GraphicItem::setDefaults(pShapeAnnotation);
+  FilledShape::setDefaults(pShapeAnnotation);
+  ShapeAnnotation::setDefaults(pShapeAnnotation);
+}
+
 /*!
  * \brief TextAnnotation::updateTextStringHelper
  * Helper function for TextAnnotation::updateTextString()
@@ -423,7 +456,7 @@ void TextAnnotation::updateTextString()
  */
 void TextAnnotation::duplicate()
 {
-  TextAnnotation *pTextAnnotation = new TextAnnotation("", false, mpGraphicsView);
+  TextAnnotation *pTextAnnotation = new TextAnnotation("", mpGraphicsView);
   QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
                    mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   pTextAnnotation->setOrigin(mOrigin + gridStep);

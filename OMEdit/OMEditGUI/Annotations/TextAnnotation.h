@@ -49,13 +49,16 @@ class TextAnnotation : public ShapeAnnotation
   Q_OBJECT
 public:
   TextAnnotation(QString annotation, Component *pComponent);
-  TextAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView);
+  TextAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  TextAnnotation(QString annotation, GraphicsView *pGraphicsView);
+  TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
   QRectF boundingRect() const;
   QPainterPath shape() const;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
   void drawTextAnnotaion(QPainter *painter);
   QString getShapeAnnotation();
+  void updateShape(ShapeAnnotation *pShapeAnnotation);
 private:
   Component *mpComponent;
 

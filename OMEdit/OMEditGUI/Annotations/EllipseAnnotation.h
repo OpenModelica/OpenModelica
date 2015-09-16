@@ -49,13 +49,16 @@ class EllipseAnnotation : public ShapeAnnotation
   Q_OBJECT
 public:
   EllipseAnnotation(QString annotation, Component *pParent);
-  EllipseAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView);
+  EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  EllipseAnnotation(QString annotation, GraphicsView *pGraphicsView);
+  EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
   QRectF boundingRect() const;
   QPainterPath shape() const;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
   void drawEllipseAnnotaion(QPainter *painter);
   QString getShapeAnnotation();
+  void updateShape(ShapeAnnotation *pShapeAnnotation);
 public slots:
   void duplicate();
 };

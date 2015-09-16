@@ -41,13 +41,26 @@
 #include "ShapePropertiesDialog.h"
 
 /*!
-  Sets the default value.
-  */
+ * \brief GraphicItem::setDefaults
+ * Sets the default value.
+ */
 void GraphicItem::setDefaults()
 {
   mVisible = true;
   mOrigin = QPointF(0, 0);
   mRotation = 0;
+}
+
+/*!
+ * \brief GraphicItem::setDefaults
+ * Sets the default value from ShapeAnnotation.
+ * \param pShapeAnnotation
+ */
+void GraphicItem::setDefaults(ShapeAnnotation *pShapeAnnotation)
+{
+  mVisible = pShapeAnnotation->mVisible;
+  mOrigin = pShapeAnnotation->mOrigin;
+  mRotation = pShapeAnnotation->mRotation;
 }
 
 /*!
@@ -139,9 +152,9 @@ qreal GraphicItem::getRotation()
 }
 
 /*!
-  Sets the default values.
-  \return the annotation values as a list.
-  */
+ * \brief FilledShape::setDefaults
+ * Sets the default values.
+ */
 void FilledShape::setDefaults()
 {
   mLineColor = QColor(0, 0, 0);
@@ -149,6 +162,20 @@ void FilledShape::setDefaults()
   mLinePattern = StringHandler::LineSolid;
   mFillPattern = StringHandler::FillNone;
   mLineThickness = 0.25;
+}
+
+/*!
+ * \brief FilledShape::setDefaults
+ * Sets the default value from ShapeAnnotation.
+ * \param pShapeAnnotation
+ */
+void FilledShape::setDefaults(ShapeAnnotation *pShapeAnnotation)
+{
+  mLineColor = pShapeAnnotation->mLineColor;
+  mFillColor = pShapeAnnotation->mFillColor;
+  mLinePattern = pShapeAnnotation->mLinePattern;
+  mFillPattern = pShapeAnnotation->mFillPattern;
+  mLineThickness = pShapeAnnotation->mLineThickness;
 }
 
 /*!
@@ -347,7 +374,6 @@ ShapeAnnotation::ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsVie
   : QGraphicsItem(pParent)
 {
   mpGraphicsView = pGraphicsView;
-  setZValue(mpGraphicsView->getShapesList().size() + 1);
   mpTransformation = new Transformation(StringHandler::Diagram);
   mIsCustomShape = true;
   mIsInheritedShape = inheritedShape;
@@ -365,9 +391,10 @@ ShapeAnnotation::~ShapeAnnotation()
 }
 
 /*!
-  Sets the default values for the shape annotations. Defaults valued as defined in Modelica specification 3.2 are used.
-  \sa setUserDefaults()
-  */
+ * \brief ShapeAnnotation::setDefaults
+ * Sets the default values for the shape annotations. Defaults valued as defined in Modelica specification 3.2 are used.
+ * \sa setUserDefaults()
+ */
 void ShapeAnnotation::setDefaults()
 {
   mLineColor = QColor(0, 0, 0);
@@ -392,6 +419,40 @@ void ShapeAnnotation::setDefaults()
   mFileName = "";
   mImageSource = "";
   mImage = QImage(":/Resources/icons/bitmap-shape.svg");
+}
+
+/*!
+ * \brief ShapeAnnotation::setDefaults
+ * Sets the default values for the shape annotations using another ShapeAnnotation.
+ * \param pShapeAnnotation
+ * \sa setUserDefaults()
+ */
+void ShapeAnnotation::setDefaults(ShapeAnnotation *pShapeAnnotation)
+{
+  mLineColor = pShapeAnnotation->mLineColor;
+  mLinePattern = pShapeAnnotation->mLinePattern;
+  mLineThickness = pShapeAnnotation->mLineThickness;
+  mArrow.append(StringHandler::ArrowNone);
+  mArrow.append(StringHandler::ArrowNone);
+  setStartArrow(pShapeAnnotation->getStartArrow());
+  setEndArrow(pShapeAnnotation->getEndArrow());
+  mArrowSize = pShapeAnnotation->mArrowSize;
+  mSmooth = pShapeAnnotation->mSmooth;
+  setExtents(pShapeAnnotation->getExtents());
+  mBorderPattern = pShapeAnnotation->mBorderPattern;
+  mRadius = pShapeAnnotation->mRadius;
+  mStartAngle = pShapeAnnotation->mStartAngle;
+  mEndAngle = pShapeAnnotation->mEndAngle;
+  mOriginalTextString = pShapeAnnotation->mOriginalTextString;
+  mTextString = pShapeAnnotation->mTextString;
+  mFontSize = pShapeAnnotation->mFontSize;
+  mFontName = pShapeAnnotation->mFontName;
+  mHorizontalAlignment = pShapeAnnotation->mHorizontalAlignment;
+  mOriginalFileName = mOriginalFileName;
+  mFileName = pShapeAnnotation->mFileName;
+  mClassFileName = pShapeAnnotation->mClassFileName;
+  mImageSource = pShapeAnnotation->mImageSource;
+  mImage = pShapeAnnotation->mImage;
 }
 
 /*!
@@ -491,8 +552,7 @@ void ShapeAnnotation::applyLinePattern(QPainter *painter)
   if (mBorderPattern != StringHandler::BorderRaised && mBorderPattern != StringHandler::BorderSunken) {
     pen.setCosmetic(true);
   }
-  Component *pComponent = dynamic_cast<Component*>(parentItem());
-  if (pComponent && pComponent->isLibraryComponent()) {
+  if (mpGraphicsView && mpGraphicsView->isRenderingLibraryPixmap()) {
     /* Ticket #2272, Ticket #2268.
      * If thickness is greater than 2 then don't make the pen cosmetic since cosmetic pens don't change the width with respect to zoom.
      */
@@ -1268,6 +1328,11 @@ void ShapeAnnotation::setShapeFlags(bool enable)
   setFlag(QGraphicsItem::ItemIsSelectable, enable);
 }
 
+void ShapeAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
+{
+  Q_UNUSED(pShapeAnnotation);
+}
+
 /*!
   Slot activated when mpManhattanizeShapeAction triggered signal is raised.\n
   Finds the curved lines in the Line shape and makes in manhattanize/right-angle line.
@@ -1326,6 +1391,40 @@ void ShapeAnnotation::manhattanizeShape()
 }
 
 /*!
+ * \brief ShapeAnnotation::referenceShapeAdded
+ */
+void ShapeAnnotation::referenceShapeAdded()
+{
+  ShapeAnnotation *pShapeAnnotation = qobject_cast<ShapeAnnotation*>(sender());
+  if (pShapeAnnotation) {
+    mpGraphicsView->scene()->addItem(this);
+  }
+}
+
+/*!
+ * \brief ShapeAnnotation::referenceShapeChanged
+ */
+void ShapeAnnotation::referenceShapeChanged()
+{
+  ShapeAnnotation *pShapeAnnotation = qobject_cast<ShapeAnnotation*>(sender());
+  if (pShapeAnnotation) {
+    updateShape(pShapeAnnotation);
+    setTransform(pShapeAnnotation->getTransformation()->getTransformationMatrix());
+  }
+}
+
+/*!
+ * \brief ShapeAnnotation::referenceShapeDeleted
+ */
+void ShapeAnnotation::referenceShapeDeleted()
+{
+  ShapeAnnotation *pShapeAnnotation = qobject_cast<ShapeAnnotation*>(sender());
+  if (pShapeAnnotation) {
+    mpGraphicsView->scene()->removeItem(this);
+  }
+}
+
+/*!
   Slot activated when Delete option is choosen from context menu of the shape.\n
   Deletes the connection.
   */
@@ -1340,7 +1439,7 @@ void ShapeAnnotation::deleteConnection()
 }
 
 /*!
-  Slot activated when Del key is pressed pressed while selecting the shape.\n
+  Slot activated when Del key is pressed while selecting the shape.\n
   Slot activated when Delete option is choosen from context menu of the shape.\n
   Deletes the shape. Emits the GraphicsView::updateClassAnnotation() SIGNAL.\n
   Since GraphicsView::addClassAnnotation() sets the GraphicsView::mCanAddClassAnnotation flag to false we must set it true again.
@@ -1348,10 +1447,7 @@ void ShapeAnnotation::deleteConnection()
 void ShapeAnnotation::deleteMe()
 {
   // delete the shape
-  mpGraphicsView->deleteShapeObject(this);
-  emit updateClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
-  deleteLater();
+  mpGraphicsView->deleteShape(this);
 }
 
 /*!
@@ -1915,7 +2011,7 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
           connect(mpGraphicsView->getDeleteConnectionAction(), SIGNAL(triggered()), SLOT(deleteConnection()), Qt::UniqueConnection);
           connect(mpGraphicsView, SIGNAL(keyPressDelete()), SLOT(deleteConnection()), Qt::UniqueConnection);
         } else {
-          connect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), this, SLOT(deleteMe()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteMe()), Qt::UniqueConnection);
           connect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()), Qt::UniqueConnection);
           connect(mpGraphicsView->getBringToFrontAction(), SIGNAL(triggered()), this, SLOT(bringToFront()), Qt::UniqueConnection);
           connect(mpGraphicsView->getBringForwardAction(), SIGNAL(triggered()), this, SLOT(bringForward()), Qt::UniqueConnection);
@@ -1951,7 +2047,7 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
           disconnect(mpGraphicsView->getDeleteConnectionAction(), SIGNAL(triggered()), this, SLOT(deleteConnection()));
           disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteConnection()));
         } else {
-          disconnect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), this, SLOT(deleteMe()));
+          disconnect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteMe()));
           disconnect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()));
           disconnect(mpGraphicsView->getBringToFrontAction(), SIGNAL(triggered()), this, SLOT(bringToFront()));
           disconnect(mpGraphicsView->getBringForwardAction(), SIGNAL(triggered()), this, SLOT(bringForward()));

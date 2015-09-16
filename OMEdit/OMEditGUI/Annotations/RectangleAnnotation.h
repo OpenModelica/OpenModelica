@@ -49,13 +49,16 @@ class RectangleAnnotation : public ShapeAnnotation
   Q_OBJECT
 public:
   RectangleAnnotation(QString annotation, Component *pParent);
-  RectangleAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView);
+  RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  RectangleAnnotation(QString annotation, GraphicsView *pGraphicsView);
+  RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
   QRectF boundingRect() const;
   QPainterPath shape() const;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
   void drawRectangleAnnotaion(QPainter *painter);
   QString getShapeAnnotation();
+  void updateShape(ShapeAnnotation *pShapeAnnotation);
 public slots:
   void duplicate();
 };

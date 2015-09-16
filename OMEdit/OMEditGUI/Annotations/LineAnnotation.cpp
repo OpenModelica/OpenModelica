@@ -41,7 +41,7 @@
 LineAnnotation::LineAnnotation(QString annotation, Component *pParent)
   : ShapeAnnotation(pParent)
 {
-  mLineType = LineAnnotation::ComponentType;
+  setLineType(LineAnnotation::ComponentType);
   setStartComponent(0);
   setEndComponent(0);
   // set the default values
@@ -52,10 +52,21 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pParent)
   setRotation(mRotation);
 }
 
-LineAnnotation::LineAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inheritedShape, pGraphicsView, 0)
+LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+  : ShapeAnnotation(pParent)
 {
-  mLineType = LineAnnotation::ShapeType;
+  updateShape(pShapeAnnotation);
+  setLineType(LineAnnotation::ComponentType);
+  setStartComponent(0);
+  setEndComponent(0);
+  setPos(mOrigin);
+  setRotation(mRotation);
+}
+
+LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(false, pGraphicsView, 0)
+{
+  setLineType(LineAnnotation::ShapeType);
   setStartComponent(0);
   setEndComponent(0);
   // set the default values
@@ -65,9 +76,19 @@ LineAnnotation::LineAnnotation(QString annotation, bool inheritedShape, Graphics
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
   setShapeFlags(true);
-  mpGraphicsView->addShapeObject(this);
-  mpGraphicsView->scene()->addItem(this);
   connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
+}
+
+LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(true, pGraphicsView, 0)
+{
+  updateShape(pShapeAnnotation);
+  setShapeFlags(true);
+  mpGraphicsView->scene()->addItem(this);
+  connect(pShapeAnnotation, SIGNAL(updateClassAnnotation()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
 LineAnnotation::LineAnnotation(Component *pStartComponent, GraphicsView *pGraphicsView)
@@ -544,31 +565,6 @@ void LineAnnotation::moveAllPoints(qreal offsetX, qreal offsetY)
   }
 }
 
-LineAnnotation::LineType LineAnnotation::getLineType()
-{
-  return mLineType;
-}
-
-void LineAnnotation::setStartComponentName(QString name)
-{
-  mStartComponentName = name;
-}
-
-QString LineAnnotation::getStartComponentName()
-{
-  return mStartComponentName;
-}
-
-void LineAnnotation::setEndComponentName(QString name)
-{
-  mEndComponentName = name;
-}
-
-QString LineAnnotation::getEndComponentName()
-{
-  return mEndComponentName;
-}
-
 /*!
   Sets the shape flags.
   */
@@ -586,6 +582,22 @@ void LineAnnotation::setShapeFlags(bool enable)
     }
     setFlag(QGraphicsItem::ItemIsSelectable, enable);
   }
+}
+
+void LineAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
+{
+  LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(pShapeAnnotation);
+  setLineType(pLineAnnotation->getLineType());
+  setStartComponent(pLineAnnotation->getStartComponent());
+  setEndComponent(pLineAnnotation->getEndComponent());
+  // set the default values
+  GraphicItem::setDefaults(pShapeAnnotation);
+  mPoints.clear();
+  QList<QPointF> points = pShapeAnnotation->getPoints();
+  for (int i = 0 ; i < points.size() ; i++) {
+    addPoint(points[i]);
+  }
+  ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
 void LineAnnotation::handleComponentMoved()
@@ -665,7 +677,7 @@ void LineAnnotation::updateConnectionAnnotation()
 
 void LineAnnotation::duplicate()
 {
-  LineAnnotation *pLineAnnotation = new LineAnnotation("", false, mpGraphicsView);
+  LineAnnotation *pLineAnnotation = new LineAnnotation("", mpGraphicsView);
   QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
                    mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   pLineAnnotation->setOrigin(mOrigin + gridStep);
