@@ -45,9 +45,9 @@ public:
         return system;
     }
 
-    boost::shared_ptr<ISimVars> createSimVars(size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_pre_vars,size_t dim_z,size_t z_i)
+    boost::shared_ptr<ISimVars> createSimVars(size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_string,size_t dim_pre_vars,size_t dim_z,size_t z_i)
     {
-      boost::shared_ptr<ISimVars> simVars = ObjectFactory<CreationPolicy>::_factory->LoadSimVars(dim_real,dim_int,dim_bool,dim_pre_vars,dim_z,z_i);
+      boost::shared_ptr<ISimVars> simVars = ObjectFactory<CreationPolicy>::_factory->LoadSimVars(dim_real,dim_int,dim_bool,dim_string,dim_pre_vars,dim_z,z_i);
         return simVars;
     }
 
