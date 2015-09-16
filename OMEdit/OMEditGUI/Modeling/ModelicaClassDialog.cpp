@@ -831,9 +831,9 @@ void DuplicateClassDialog::duplicateClass()
       pLibraryTreeItem->setSaveContentsType(mpLibraryTreeItem->getSaveContentsType());
       // read the LibraryTreeItem text
       pLibraryTreeModel->readLibraryTreeItemClassText(pLibraryTreeItem);
+      pLibraryTreeModel->createLibraryTreeItems(pLibraryTreeItem);
       // load the LibraryTreeItem pixmap
       pLibraryTreeModel->loadLibraryTreeItemPixmap(pLibraryTreeItem);
-      pLibraryTreeModel->createLibraryTreeItems(pLibraryTreeItem);
     }
   }
   accept();

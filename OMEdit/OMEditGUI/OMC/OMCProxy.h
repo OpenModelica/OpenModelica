@@ -145,6 +145,7 @@ public:
   QString getNthConnectionAnnotation(QString className, int num);
   int getInheritanceCount(QString className);
   QString getNthInheritedClass(QString className, int num);
+  QList<QString> getInheritedClasses(QString className);
   QList<ComponentInfo*> getComponents(QString className);
   QStringList getComponentAnnotations(QString className);
   QString getDocumentationAnnotation(QString className);

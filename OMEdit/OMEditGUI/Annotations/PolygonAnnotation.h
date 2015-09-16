@@ -49,7 +49,9 @@ class PolygonAnnotation : public ShapeAnnotation
   Q_OBJECT
 public:
   PolygonAnnotation(QString annotation, Component *pParent);
-  PolygonAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView);
+  PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  PolygonAnnotation(QString annotation, GraphicsView *pGraphicsView);
+  PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
   QPainterPath getShape() const;
   QRectF boundingRect() const;
@@ -61,6 +63,7 @@ public:
   void removePoint(int index);
   void clearPoints();
   void updateEndPoint(QPointF point);
+  void updateShape(ShapeAnnotation *pShapeAnnotation);
 public slots:
   void duplicate();
 };

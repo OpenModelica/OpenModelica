@@ -54,7 +54,7 @@ class StringHandler : public QObject
 public:
   StringHandler();
   ~StringHandler();
-  enum ViewType {Icon, Diagram, ModelicaText, IconDiagram, NoView};
+  enum ViewType {Icon, Diagram, ModelicaText, NoView};
   enum ModelicaClasses {Model, Class, Connector, ExpandableConnector, Record, Block, Function, Package, Primitive, Type, Operator,
                         OperatorRecord, OperatorFunction, Optimization, Parameter, Constant, Protected, Enumeration};
   enum OpenModelicaErrors {Notification, Warning, OMError, NoOMError};

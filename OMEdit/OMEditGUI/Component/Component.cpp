@@ -46,7 +46,6 @@ Component::Component(QString annotation, QString name, QString className, QStrin
     mpOMCProxy(pOMCProxy), mpGraphicsView(pGraphicsView), mpParentComponent(pParent)
 {
   setZValue(3000);
-  mIsLibraryComponent = false;
   mIsInheritedComponent = inheritedComponent;
   mInheritedClassName = inheritedClassName;
   mComponentType = Component::Root;
@@ -91,13 +90,12 @@ Component::Component(QString annotation, QString name, QString className, QStrin
 Component::Component(QString annotation, QString className, StringHandler::ModelicaClasses type, Component *pParent)
   : QGraphicsItem(pParent), mName(""), mClassName(className), mType(type), mpParentComponent(pParent)
 {
-  mIsLibraryComponent = mpParentComponent->isLibraryComponent() ? true : false;
   mIsInheritedComponent = mpParentComponent->isInheritedComponent() ? true : false;
   mComponentType = Component::Extend;
   mpComponentInfo = 0;
   mpTransformation = 0;
   mpOMCProxy = pParent->getOMCProxy();
-  mpGraphicsView = isLibraryComponent() ? 0 : pParent->getGraphicsView();
+  mpGraphicsView = pParent->getGraphicsView();
   initialize();
   getClassInheritedComponents();
   parseAnnotationString(annotation);
@@ -110,11 +108,10 @@ Component::Component(QString annotation, QString transformationString, Component
 {
   mName = mpComponentInfo->getName();
   mClassName = mpComponentInfo->getClassName();
-  mIsLibraryComponent = mpParentComponent->isLibraryComponent() ? true : false;
   mIsInheritedComponent = mpParentComponent->isInheritedComponent() ? true : false;
   mComponentType = Component::Port;
   mpOMCProxy = pParent->getOMCProxy();
-  mpGraphicsView = isLibraryComponent() ? 0 : pParent->getGraphicsView();
+  mpGraphicsView = pParent->getGraphicsView();
   initialize();
   getClassInheritedComponents(false, true);
   parseAnnotationString(annotation);
@@ -124,24 +121,87 @@ Component::Component(QString annotation, QString transformationString, Component
   setToolTip(QString("<b>").append(mClassName).append("</b> ").append(mName));
 }
 
-/* Used for Library Component */
-Component::Component(QString annotation, QString className, OMCProxy *pOMCProxy, Component *pParent)
-  : QGraphicsItem(pParent), mName(className), mClassName(className), mpParentComponent(pParent)
+Component::Component(QString name, QString className, QString transformation, QPointF position, bool inheritedComponent, OMCProxy *pOMCProxy,
+                     GraphicsView *pGraphicsView, Component *pParent)
+  : QGraphicsItem(pParent), mName(name), mClassName(className), mpOMCProxy(pOMCProxy), mpGraphicsView(pGraphicsView),
+    mpParentComponent(pParent)
 {
-  mIsLibraryComponent = true;
-  mIsInheritedComponent = false;
+  setZValue(3000);
+  mIsInheritedComponent = inheritedComponent;
   mInheritedClassName = "";
   mComponentType = Component::Root;
-  mpGraphicsView = 0;
-  initialize();
-  mpParentComponent = pParent;
   mpComponentInfo = 0;
-  mpOMCProxy = pOMCProxy;
-  mpTransformation = 0;
-  // parse the annotation string
-  getClassInheritedComponents(true);
-  parseAnnotationString(annotation);
-  getClassComponents();
+  initialize();
+  setComponentFlags(true);
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
+    mType = StringHandler::Connector;
+    parseAnnotationString(Helper::defaultComponentAnnotationString);
+  } else {
+    MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+    LibraryTreeItem *pLibraryTreeItem = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(mClassName);
+    if (pLibraryTreeItem) {
+      if (!pLibraryTreeItem->getModelWidget()) {
+        pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, "", false);
+      }
+      drawClassShapes(pLibraryTreeItem);
+      drawClassComponents(pLibraryTreeItem);
+    }
+//    getClassInheritedComponents(true);
+//    parseAnnotationString(annotation);
+//    /* if component doesn't exists show it as red cross box. */
+//    if (!mpOMCProxy->existClass(className)) {
+//      parseAnnotationString(Helper::errorComponentAnnotationString);
+//    } else if (canUseDefaultAnnotation(this)) { /* if component doesn't have any annotation then assign it a default one. */
+//      parseAnnotationString(Helper::defaultComponentAnnotationString);
+//    }
+//    getClassComponents();
+  }
+  // transformation
+  mTransformationString = transformation;
+  mpTransformation = new Transformation(mpGraphicsView->getViewType());
+  mpTransformation->parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
+  if (transformation.isEmpty()) {
+    // snap to grid while creating component
+    position = mpGraphicsView->snapPointToGrid(position);
+    mpTransformation->setOrigin(position);
+    qreal initialScale = mpCoOrdinateSystem->getInitialScale();
+    mpTransformation->setExtent1(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
+    mpTransformation->setExtent2(QPointF(initialScale * boundingRect().right(), initialScale * boundingRect().bottom()));
+    mpTransformation->setRotateAngle(0.0);
+  }
+  setTransform(mpTransformation->getTransformationMatrix());
+  createActions();
+  mpOriginItem = new OriginItem();
+  createResizerItems();
+  setToolTip(QString("<b>").append(mClassName).append("</b> ").append(mName));
+  connect(this, SIGNAL(componentTransformHasChanged()), SLOT(updatePlacementAnnotation()));
+  connect(this, SIGNAL(componentTransformHasChanged()), SLOT(updateOriginItem()));
+}
+
+Component::Component(Component *pComponent, Component *pParent)
+  : QGraphicsItem(pParent), mpComponentInfo(0), mpParentComponent(pParent)
+{
+  mName = pComponent->getName();
+  mClassName = pComponent->getClassName();
+  mIsInheritedComponent = pComponent->isInheritedComponent();
+  mComponentType = Component::Port;
+  mpOMCProxy = mpParentComponent->getOMCProxy();
+  mpGraphicsView = mpParentComponent->getGraphicsView();
+  initialize();
+  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+  LibraryTreeItem *pLibraryTreeItem = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(mClassName);
+  if (pLibraryTreeItem) {
+    if (!pLibraryTreeItem->getModelWidget()) {
+      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, "", false);
+    }
+    drawClassShapes(pLibraryTreeItem);
+    drawClassComponents(pLibraryTreeItem);
+  }
+  mTransformationString = pComponent->mTransformationString;
+  mpTransformation = new Transformation(StringHandler::Icon);
+  mpTransformation->parseTransformationString(mTransformationString, boundingRect().width(), boundingRect().height());
+  setTransform(mpTransformation->getTransformationMatrix());
+  setToolTip(QString("<b>").append(mClassName).append("</b> ").append(mName));
 }
 
 Component::~Component()
@@ -185,11 +245,6 @@ void Component::initialize()
   setOldPosition(QPointF(0, 0));
 }
 
-bool Component::isLibraryComponent()
-{
-  return mIsLibraryComponent;
-}
-
 bool Component::isInheritedComponent()
 {
   return mIsInheritedComponent;
@@ -198,6 +253,32 @@ bool Component::isInheritedComponent()
 QString Component::getInheritedClassName()
 {
   return mInheritedClassName;
+}
+
+void Component::drawClassShapes(LibraryTreeItem *pLibraryTreeItem)
+{
+  foreach (ShapeAnnotation *pShapeAnnotation, pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getShapesList()) {
+    if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
+      mShapesList.append(new LineAnnotation(pShapeAnnotation, this));
+    } else if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
+      mShapesList.append(new PolygonAnnotation(pShapeAnnotation, this));
+    } else if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
+      mShapesList.append(new RectangleAnnotation(pShapeAnnotation, this));
+    } else if (dynamic_cast<EllipseAnnotation*>(pShapeAnnotation)) {
+      mShapesList.append(new EllipseAnnotation(pShapeAnnotation, this));
+    } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
+      mShapesList.append(new TextAnnotation(pShapeAnnotation, this));
+    } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
+      mShapesList.append(new BitmapAnnotation(pShapeAnnotation, this));
+    }
+  }
+}
+
+void Component::drawClassComponents(LibraryTreeItem *pLibraryTreeItem)
+{
+  foreach (Component *pComponent, pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentList()) {
+    Component *pComponent1 = new Component(pComponent, this);
+  }
 }
 
 void Component::getClassInheritedComponents(bool isRootComponent, bool isPortComponent)
@@ -215,7 +296,7 @@ void Component::getClassInheritedComponents(bool isRootComponent, bool isPortCom
         // get the inherited class annotation
         StringHandler::ModelicaClasses type = mpOMCProxy->getClassRestriction(inheritedClass);
         QString annotationString;
-        if (isLibraryComponent() || !isRootComponent) {
+        if (!isRootComponent) {
           annotationString = mpOMCProxy->getIconAnnotation(inheritedClass);
         } else if (type == StringHandler::Connector && mpGraphicsView->getViewType() == StringHandler::Diagram) {
           annotationString = mpOMCProxy->getDiagramAnnotation(inheritedClass);
@@ -298,19 +379,8 @@ void Component::parseAnnotationString(QString annotation)
     }
     else if (shape.startsWith("Text"))
     {
-      QString textShapeAnnotation = shape.mid(QString("Text").length());
-      textShapeAnnotation = StringHandler::removeFirstLastBrackets(textShapeAnnotation);
-      //! @note We don't show text annotation that contains % for Library Icons. Only static text for functions are shown.
-      if (isLibraryComponent())
-      {
-        if (mType != StringHandler::Function)
-          continue;
-        QStringList list = StringHandler::getStrings(textShapeAnnotation);
-        if (list.size() < 11)
-          continue;
-        if (list.at(9).contains("%"))
-          continue;
-      }
+      shape = shape.mid(QString("Text").length());
+      shape = StringHandler::removeFirstLastBrackets(shape);
       TextAnnotation *pTextAnnotation = new TextAnnotation(shape, this);
       mShapesList.append(pTextAnnotation);
     }

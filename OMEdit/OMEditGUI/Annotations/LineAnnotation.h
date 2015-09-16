@@ -54,7 +54,9 @@ public:
     ShapeType  /* Line is a custom shape. */
   };
   LineAnnotation(QString annotation, Component *pParent);
-  LineAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView);
+  LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  LineAnnotation(QString annotation, GraphicsView *pGraphicsView);
+  LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   LineAnnotation(Component *pStartComponent, GraphicsView *pGraphicsView);
   LineAnnotation(QString annotation, bool inheritedShape, Component *pStartComponent, Component *pEndComponent, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
@@ -76,12 +78,14 @@ public:
   void updateStartPoint(QPointF point);
   void updateEndPoint(QPointF point);
   void moveAllPoints(qreal offsetX, qreal offsetY);
-  LineType getLineType();
-  void setStartComponentName(QString name);
-  QString getStartComponentName();
-  void setEndComponentName(QString name);
-  QString getEndComponentName();
+  void setLineType(LineType lineType) {mLineType = lineType;}
+  LineType getLineType() {return mLineType;}
+  void setStartComponentName(QString name) {mStartComponentName = name;}
+  QString getStartComponentName() {return mStartComponentName;}
+  void setEndComponentName(QString name) {mEndComponentName = name;}
+  QString getEndComponentName() {return mEndComponentName;}
   void setShapeFlags(bool enable);
+  void updateShape(ShapeAnnotation *pShapeAnnotation);
 private:
   LineType mLineType;
   Component *mpStartComponent;

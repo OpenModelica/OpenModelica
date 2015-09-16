@@ -94,6 +94,7 @@ public:
   GraphicsScene(StringHandler::ViewType viewType, ModelWidget *pModelWidget);
   ModelWidget *mpModelWidget;
   StringHandler::ViewType mViewType;
+  void drawItems();
 };
 
 class LibraryTreeItem;
@@ -166,6 +167,7 @@ public:
   void setIsCreatingBitmapShape(bool enable);
   bool isCreatingBitmapShape();
   void setItemsFlags(bool enable);
+  void updateUndoRedoActions(bool enable);
   void setIsMovingComponentsAndShapes(bool enable);
   bool isMovingComponentsAndShapes();
   void setRenderingLibraryPixmap(bool renderingLibraryPixmap) {mRenderingLibraryPixmap = renderingLibraryPixmap;}
@@ -200,7 +202,9 @@ public:
   void addConnectionObject(LineAnnotation *pConnectionLineAnnotation);
   void deleteConnectionObject(LineAnnotation *pConnectionLineAnnotation);
   void addShapeObject(ShapeAnnotation *pShape);
+  void deleteShape(ShapeAnnotation *pShape);
   void deleteShapeObject(ShapeAnnotation *pShape);
+  void reOrderItems();
   void bringToFront(ShapeAnnotation *pShape);
   void bringForward(ShapeAnnotation *pShape);
   void sendToBack(ShapeAnnotation *pShape);
@@ -314,6 +318,27 @@ class ModelWidget : public QWidget
   Q_OBJECT
 public:
   ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text, bool newModel = false);
+
+  class InheritedClass : public QObject
+  {
+  public:
+    InheritedClass()
+    {
+      mpLibraryTreeItem = 0;
+      mIconShapesList.clear();
+      mDiagramShapesList.clear();
+    }
+    InheritedClass(LibraryTreeItem *pLibraryTreeItem)
+    {
+      mpLibraryTreeItem = pLibraryTreeItem;
+      mIconShapesList.clear();
+      mDiagramShapesList.clear();
+    }
+    LibraryTreeItem *mpLibraryTreeItem;
+    QList<ShapeAnnotation*> mIconShapesList;
+    QList<ShapeAnnotation*> mDiagramShapesList;
+  };
+
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   GraphicsView* getDiagramGraphicsView() {return mpDiagramGraphicsView;}
@@ -324,18 +349,19 @@ public:
   QToolButton* getDiagramViewToolButton() {return mpDiagramViewToolButton;}
   QToolButton* getTextViewToolButton() {return mpTextViewToolButton;}
   QToolButton* getDocumentationViewToolButton() {return mpDocumentationViewToolButton;}
-  void setModelFilePathLabel(QString path);
+  void setModelFilePathLabel(QString path) {mpModelFilePathLabel->setText(path);}
   Label* getCursorPositionLabel() {return mpCursorPositionLabel;}
+  void addInheritedClass(LibraryTreeItem *pLibraryTreeItem);
+  void removeInheritedClass(InheritedClass *pInheritedClass) {mInheritedClassesList.removeOne(pInheritedClass);}
+  QList<InheritedClass*> getInheritedClassesList() {return mInheritedClassesList;}
+  void clearInheritedClasses() {mInheritedClassesList.clear();}
+  InheritedClass* findInheritedClass(LibraryTreeItem *pLibraryTreeItem);
   void setModelModified();
   void updateParentModelsText(QString className);
-  void getModelIconShapes(QString className, bool inheritedCycle = false);
-  void getModelDiagramShapes(QString className, bool inheritedCycle = false);
-  void getModelIconDiagramShapes(QString className, QString annotationString, StringHandler::ViewType viewType, bool inheritedCycle = false);
-  void getModelComponents(QString className, StringHandler::ViewType viewType, bool inheritedCycle = false);
-  void loadModelDiagramView();
-  void getModelConnections(QString className, bool inheritedCycle = false);
-  void getTLMComponents();
-  void getTLMConnections();
+  void modelInheritedClassLoaded(InheritedClass *pInheritedClass);
+  void modelInheritedClassUnLoaded(InheritedClass *pInheritedClass);
+  ShapeAnnotation* createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  void createWidgetComponents();
   Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
   void refresh();
   bool validateText();
@@ -366,7 +392,17 @@ private:
   ModelicaTextHighlighter *mpModelicaTextHighlighter;
   TLMHighlighter *mpTLMHighlighter;
   QStatusBar *mpModelStatusBar;
-  bool mloadModelDiagramView;
+  bool mloadWidgetComponents;
+  QList<InheritedClass*> mInheritedClassesList;
+  void getModelInheritedClasses(LibraryTreeItem *pLibraryTreeItem);
+  void drawModelInheritedClasses();
+  void parseModelInheritedClass(InheritedClass *pInheritedClass, StringHandler::ViewType viewType);
+  void getModelIconDiagramShapes(QString className);
+  void parseModelIconDiagramShapes(QString className, QString annotationString, StringHandler::ViewType viewType);
+  void getModelComponents(QString className, bool inheritedCycle = false);
+  void getModelConnections(QString className, bool inheritedCycle = false);
+  void getTLMComponents();
+  void getTLMConnections();
 private slots:
   void showIconView(bool checked);
   void showDiagramView(bool checked);

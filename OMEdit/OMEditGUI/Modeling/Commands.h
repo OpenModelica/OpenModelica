@@ -70,4 +70,26 @@ private:
   GraphicsView *mpGraphicsView;
 };
 
+class AddShapeCommand : public QUndoCommand
+{
+public:
+  AddShapeCommand(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  ShapeAnnotation *mpShapeAnnotation;
+  GraphicsView *mpGraphicsView;
+};
+
+class DeleteShapeCommand : public QUndoCommand
+{
+public:
+  DeleteShapeCommand(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  ShapeAnnotation *mpShapeAnnotation;
+  GraphicsView *mpGraphicsView;
+};
+
 #endif // COMMANDS_H

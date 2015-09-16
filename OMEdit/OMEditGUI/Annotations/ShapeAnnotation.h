@@ -56,12 +56,14 @@ class MainWindow;
 class GraphicsView;
 class CornerItem;
 class ResizerItem;
+class ShapeAnnotation;
 
 class GraphicItem
 {
 public:
   GraphicItem() {}
   void setDefaults();
+  void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void parseShapeAnnotation(QString annotation);
   QStringList getShapeAnnotation();
   void setOrigin(QPointF origin);
@@ -79,6 +81,7 @@ class FilledShape
 public:
   FilledShape() {}
   void setDefaults();
+  void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void parseShapeAnnotation(QString annotation);
   QStringList getShapeAnnotation();
   void setLineColor(QColor color);
@@ -116,6 +119,7 @@ public:
   ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsView, QGraphicsItem *pParent = 0);
   ~ShapeAnnotation();
   void setDefaults();
+  void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void setUserDefaults();
   bool isInheritedShape();
   void createActions();
@@ -185,8 +189,15 @@ public:
   void removeRedundantPointsGeometriesAndCornerItems();
   void adjustGeometries();
   virtual void setShapeFlags(bool enable);
+  virtual void updateShape(ShapeAnnotation *pShapeAnnotation);
+  void emitAdded() {emit added();}
+  void emitChanged() {emit changed();}
+  void emitDeleted() {emit deleted();}
 signals:
   void updateClassAnnotation();
+  void added();
+  void changed();
+  void deleted();
 public slots:
   void deleteConnection();
   void deleteMe();
@@ -218,6 +229,9 @@ public slots:
   bool isLineStraight(QPointF point1, QPointF point2);
   void showShapeProperties();
   void manhattanizeShape();
+  void referenceShapeAdded();
+  void referenceShapeChanged();
+  void referenceShapeDeleted();
 protected:
   GraphicsView *mpGraphicsView;
   Transformation *mpTransformation;

@@ -64,8 +64,10 @@ public:
 };
 
 class ModelWidget;
-class LibraryTreeItem
+class ShapeAnnotation;
+class LibraryTreeItem : public QObject
 {
+  Q_OBJECT
 public:
   enum LibraryType {
     InvalidType, /* Used to catch errors */
@@ -118,24 +120,39 @@ public:
   QPixmap getDragPixmap() {return mDragPixmap;}
   void setClassText(QString classText) {mClassText = classText;}
   QString getClassText() {return mClassText;}
-  bool isExpanded() const {return mExpanded;}
   void setExpanded(bool expanded) {mExpanded = expanded;}
+  bool isExpanded() const {return mExpanded;}
+  void setNonExisting(bool nonExisting) {mNonExisting = nonExisting;}
+  bool isNonExisting() const {return mNonExisting;}
   void updateAttributes();
   QIcon getLibraryTreeItemIcon();
   bool inRange(int lineNumber) {return (lineNumber >= mClassInformation.lineNumberStart) && (lineNumber <= mClassInformation.lineNumberEnd);}
   bool isInPackageOneFile();
   void insertChild(int position, LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* child(int row);
+  void addInheritedClass(LibraryTreeItem *pLibraryTreeItem);
+  void removeInheritedClass(LibraryTreeItem *pLibraryTreeItem) {mInheritedClasses.removeOne(pLibraryTreeItem);}
+  void removeAllInheritedClasses() {mInheritedClasses.clear();}
+  QList<LibraryTreeItem*> getInheritedClasses() const {return mInheritedClasses;}
   void removeChild(LibraryTreeItem *pLibraryTreeItem);
   QVariant data(int column, int role = Qt::DisplayRole) const;
   int row() const;
+  void setParent(LibraryTreeItem *pParentLibraryTreeItem) {mpParentLibraryTreeItem = pParentLibraryTreeItem;}
   LibraryTreeItem* parent() {return mpParentLibraryTreeItem;}
   bool isTopLevel();
   bool isSimulationAllowed();
+  void emitLoaded() {emit loaded(this);}
+  void emitUnLoaded() {emit unLoaded(this);}
+  void emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView) {emit shapeAdded(this, pShapeAnnotation, pGraphicsView);}
+  void addIconShape(ShapeAnnotation *pShapeAnnotation) {mIconShapesList.append(pShapeAnnotation);}
+  QList<ShapeAnnotation*> getIconShapesList() {return mIconShapesList;}
+  void addDiagramShape(ShapeAnnotation *pShapeAnnotation) {mDiagramShapesList.append(pShapeAnnotation);}
+  QList<ShapeAnnotation*> getDiagramShapesList() {return mDiagramShapesList;}
 private:
   bool mIsRootItem;
   LibraryTreeItem *mpParentLibraryTreeItem;
   QList<LibraryTreeItem*> mChildren;
+  QList<LibraryTreeItem*> mInheritedClasses;
   LibraryType mLibraryType;
   bool mSystemLibrary;
   ModelWidget *mpModelWidget;
@@ -155,6 +172,17 @@ private:
   QPixmap mDragPixmap;
   QString mClassText;
   bool mExpanded;
+  bool mNonExisting;
+  QList<ShapeAnnotation*> mIconShapesList;
+  QList<ShapeAnnotation*> mDiagramShapesList;
+signals:
+  void loaded(LibraryTreeItem *pLibraryTreeItem);
+  void unLoaded(LibraryTreeItem *pLibraryTreeItem);
+  void shapeAdded(LibraryTreeItem *pLibraryTreeItem, ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+public slots:
+  void handleLoaded(LibraryTreeItem *pLibraryTreeItem);
+  void handleUnLoaded(LibraryTreeItem *pLibraryTreeItem);
+  void handleShapeAdded(LibraryTreeItem *pLibraryTreeItem, ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
 };
 
 class LibraryWidget;
@@ -184,11 +212,16 @@ public:
   Qt::ItemFlags flags(const QModelIndex &index) const;
   LibraryTreeItem* findLibraryTreeItem(const QString &name, LibraryTreeItem *root = 0, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   LibraryTreeItem* findLibraryTreeItem(const QRegExp &regExp, LibraryTreeItem *root = 0) const;
+  LibraryTreeItem* findNonExistingLibraryTreeItem(const QString &name, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   QModelIndex libraryTreeItemIndex(const LibraryTreeItem *pLibraryTreeItem) const;
   void addModelicaLibraries(QSplashScreen *pSplashScreen);
   void createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true);
   LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, bool isSaved);
+  LibraryTreeItem* createNonExistingLibraryTreeItem(QString nameStructure);
+  void loadNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true);
+  void addNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.append(pLibraryTreeItem);}
+  void removeNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.removeOne(pLibraryTreeItem);}
   void readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   QString readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents);
   QString readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem);
@@ -206,6 +239,7 @@ public:
 private:
   LibraryWidget *mpLibraryWidget;
   LibraryTreeItem *mpRootLibraryTreeItem;
+  QList<LibraryTreeItem*> mNonExistingLibraryTreeItemsList;
   QModelIndex libraryTreeItemIndexHelper(const LibraryTreeItem *pLibraryTreeItem, const LibraryTreeItem *pParentLibraryTreeItem,
                                          const QModelIndex &parentIndex) const;
   LibraryTreeItem* getLibraryTreeItemFromFileHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName, int lineNumber);

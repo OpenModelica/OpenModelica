@@ -1218,10 +1218,12 @@ QString OMCProxy::getNthConnectionAnnotation(QString className, int num)
 }
 
 /*!
-  Returns the inheritance count of a model.
-  \param className - is the name of the model.
-  \return the inheritance count
-  */
+ * \brief OMCProxy::getInheritanceCount
+ * Returns the inheritance count of a model.
+ * \param className - is the name of the model.
+ * \return
+ * \deprecated Use OMCProxy::getInheritedClasses()
+ */
 int OMCProxy::getInheritanceCount(QString className)
 {
   QString expression = "getInheritanceCount(" + className + ")";
@@ -1241,16 +1243,33 @@ int OMCProxy::getInheritanceCount(QString className)
 }
 
 /*!
-  Returns the inherited class at a specific index from a model.
-  \param className - is the name of the model.
-  \param num - is the index of inherited class.
-  \return the inherited class.
-  */
+ * \brief OMCProxy::getNthInheritedClass
+ * Returns the inherited class at a specific index from a model.
+ * \param className - is the name of the model.
+ * \param num - is the index of inherited class.
+ * \return
+ * \deprecated Use OMCProxy::getInheritedClasses()
+ */
 QString OMCProxy::getNthInheritedClass(QString className, int num)
 {
   QString expression = "getNthInheritedClass(" + className + ", " + QString::number(num) + ")";
   sendCommand(expression, true, className);
   return getResult();
+}
+
+/*!
+ * \brief OMCProxy::getInheritedClasses
+ * Returns the list of Inherited Classes.
+ * \param className
+ * \return
+ * \sa OMCProxy::getInheritanceCount()
+ * \sa OMCProxy::getNthInheritedClass()
+ */
+QList<QString> OMCProxy::getInheritedClasses(QString className)
+{
+  QList<QString> result = mpOMCInterface->getInheritedClasses(className);
+  printMessagesStringInternal();
+  return result;
 }
 
 /*!

@@ -99,7 +99,13 @@ void CornerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
-  QPen pen(Qt::red);
+
+  QPen pen;
+  if (mpShapeAnnotation->isInheritedShape()) {
+    pen.setColor(Qt::darkRed);
+  } else {
+    pen.setColor(Qt::red);
+  }
   painter->setPen(pen);
   painter->setBrush(pen.color());
   painter->drawRect(mRectangle);

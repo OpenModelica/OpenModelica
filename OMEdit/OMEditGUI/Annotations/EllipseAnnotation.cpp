@@ -50,8 +50,16 @@ EllipseAnnotation::EllipseAnnotation(QString annotation, Component *pParent)
   setRotation(mRotation);
 }
 
-EllipseAnnotation::EllipseAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inheritedShape, pGraphicsView, 0)
+EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+  : ShapeAnnotation(pParent)
+{
+  updateShape(pShapeAnnotation);
+  setPos(mOrigin);
+  setRotation(mRotation);
+}
+
+EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   // set the default values
   GraphicItem::setDefaults();
@@ -61,9 +69,19 @@ EllipseAnnotation::EllipseAnnotation(QString annotation, bool inheritedShape, Gr
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
   setShapeFlags(true);
-  mpGraphicsView->addShapeObject(this);
-  mpGraphicsView->scene()->addItem(this);
   connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
+}
+
+EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(true, pGraphicsView, 0)
+{
+  updateShape(pShapeAnnotation);
+  setShapeFlags(true);
+  mpGraphicsView->scene()->addItem(this);
+  connect(pShapeAnnotation, SIGNAL(updateClassAnnotation()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
 void EllipseAnnotation::parseShapeAnnotation(QString annotation)
@@ -177,9 +195,17 @@ QString EllipseAnnotation::getShapeAnnotation()
   return QString("Ellipse(").append(annotationString.join(",")).append(")");
 }
 
+void EllipseAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
+{
+  // set the default values
+  GraphicItem::setDefaults(pShapeAnnotation);
+  FilledShape::setDefaults(pShapeAnnotation);
+  ShapeAnnotation::setDefaults(pShapeAnnotation);
+}
+
 void EllipseAnnotation::duplicate()
 {
-  EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation("", false, mpGraphicsView);
+  EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation("", mpGraphicsView);
   QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
                    mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   pEllipseAnnotation->setOrigin(mOrigin + gridStep);

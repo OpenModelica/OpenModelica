@@ -80,13 +80,15 @@ public:
   Component(QString annotation, QString className, StringHandler::ModelicaClasses type, Component *pParent);
   Component(QString annotation, QString transformationString, ComponentInfo *pComponentInfo, StringHandler::ModelicaClasses type,
             Component *pParent);
-  /* Used for Library Component */
-  Component(QString annotation, QString className, OMCProxy *pOMCProxy, Component *pParent = 0);
+  Component(QString name, QString className, QString transformation, QPointF position, bool inheritedComponent, OMCProxy *pOMCProxy,
+            GraphicsView *pGraphicsView, Component *pParent = 0);
+  Component(Component *pComponent, Component *pParent);
   ~Component();
   void initialize();
-  bool isLibraryComponent();
   bool isInheritedComponent();
   QString getInheritedClassName();
+  void drawClassShapes(LibraryTreeItem *pLibraryTreeItem);
+  void drawClassComponents(LibraryTreeItem *pLibraryTreeItem);
   void getClassInheritedComponents(bool isRootComponent = false, bool isPortComponent = false);
   void parseAnnotationString(QString annotation);
   void getClassComponents();
@@ -149,11 +151,11 @@ private:
   OMCProxy *mpOMCProxy;
   GraphicsView *mpGraphicsView;
   Component *mpParentComponent;
-  bool mIsLibraryComponent;
   bool mIsInheritedComponent;
   QString mInheritedClassName;
   ComponentType mComponentType;
   CoOrdinateSystem *mpCoOrdinateSystem;
+  QString mTransformationString;
   Transformation *mpTransformation;
   QGraphicsRectItem *mpResizerRectangle;
   QAction *mpParametersAction;

@@ -50,8 +50,16 @@ BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, Co
   setRotation(mRotation);
 }
 
-BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inheritedShape, pGraphicsView, 0)
+BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+  : ShapeAnnotation(pParent), mpComponent(pParent)
+{
+  updateShape(pShapeAnnotation);
+  setPos(mOrigin);
+  setRotation(mRotation);
+}
+
+BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   mpComponent = 0;
   mClassFileName = classFileName;
@@ -62,9 +70,20 @@ BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, bo
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
   setShapeFlags(true);
-  mpGraphicsView->addShapeObject(this);
-  mpGraphicsView->scene()->addItem(this);
   connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
+}
+
+BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(true, pGraphicsView, 0)
+{
+  mpComponent = 0;
+  updateShape(pShapeAnnotation);
+  setShapeFlags(true);
+  mpGraphicsView->scene()->addItem(this);
+  connect(pShapeAnnotation, SIGNAL(updateClassAnnotation()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
 void BitmapAnnotation::parseShapeAnnotation(QString annotation)
@@ -147,9 +166,17 @@ QString BitmapAnnotation::getShapeAnnotation()
   return QString("Bitmap(").append(annotationString.join(",")).append(")");
 }
 
+void BitmapAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
+{
+  // set the default values
+  GraphicItem::setDefaults(pShapeAnnotation);
+  FilledShape::setDefaults(pShapeAnnotation);
+  ShapeAnnotation::setDefaults(pShapeAnnotation);
+}
+
 void BitmapAnnotation::duplicate()
 {
-  BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(mClassFileName, "", false, mpGraphicsView);
+  BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(mClassFileName, "", mpGraphicsView);
   QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
                    mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   pBitmapAnnotation->setOrigin(mOrigin + gridStep);
