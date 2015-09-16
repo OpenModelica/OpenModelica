@@ -144,10 +144,7 @@ public:
   void emitLoaded() {emit loaded(this);}
   void emitUnLoaded() {emit unLoaded(this);}
   void emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView) {emit shapeAdded(this, pShapeAnnotation, pGraphicsView);}
-  void addIconShape(ShapeAnnotation *pShapeAnnotation) {mIconShapesList.append(pShapeAnnotation);}
-  QList<ShapeAnnotation*> getIconShapesList() {return mIconShapesList;}
-  void addDiagramShape(ShapeAnnotation *pShapeAnnotation) {mDiagramShapesList.append(pShapeAnnotation);}
-  QList<ShapeAnnotation*> getDiagramShapesList() {return mDiagramShapesList;}
+  void emitIconUpdated() {emit iconUpdated();}
 private:
   bool mIsRootItem;
   LibraryTreeItem *mpParentLibraryTreeItem;
@@ -173,16 +170,16 @@ private:
   QString mClassText;
   bool mExpanded;
   bool mNonExisting;
-  QList<ShapeAnnotation*> mIconShapesList;
-  QList<ShapeAnnotation*> mDiagramShapesList;
 signals:
   void loaded(LibraryTreeItem *pLibraryTreeItem);
   void unLoaded(LibraryTreeItem *pLibraryTreeItem);
   void shapeAdded(LibraryTreeItem *pLibraryTreeItem, ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  void iconUpdated();
 public slots:
   void handleLoaded(LibraryTreeItem *pLibraryTreeItem);
   void handleUnLoaded(LibraryTreeItem *pLibraryTreeItem);
   void handleShapeAdded(LibraryTreeItem *pLibraryTreeItem, ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  void handleIconUpdated();
 };
 
 class LibraryWidget;

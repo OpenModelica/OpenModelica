@@ -100,6 +100,9 @@ void CornerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
   Q_UNUSED(option);
   Q_UNUSED(widget);
 
+  if (mpShapeAnnotation->getGraphicsView()->isRenderingLibraryPixmap()) {
+    return;
+  }
   QPen pen;
   if (mpShapeAnnotation->isInheritedShape()) {
     pen.setColor(Qt::darkRed);
