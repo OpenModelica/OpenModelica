@@ -2066,7 +2066,7 @@ algorithm
     local
       Util.TranslatableContent desc;
       list<String> rest_topics, strs, data;
-      String str,name,str1,str1a,str1b,str2,str3,str3a,str3b,str4,str5,str5a,str5b,str6,str7,str7a,str7b,str8;
+      String str,name,str1,str1a,str1b,str2,str3,str3a,str3b,str4,str5,str5a,str5b,str6,str7,str7a,str7b,str8,str9,str9a,str9b,str10;
       ConfigFlag config_flag;
       list<tuple<String,String>> topics;
 
@@ -2138,15 +2138,23 @@ algorithm
         str5b = System.gettext("The valid methods are:");
         str6 = printFlagValidOptionsDesc(INDEX_REDUCTION_METHOD);
 
-        // post-optimization
-        str7 = System.gettext("The --postOptModules then sets the optimization modules which are used after the index reduction, specified as a comma-separated list.");
+        // post-optimization (initialization)
+        str7 = System.gettext("The --initOptModules then sets the optimization modules which are used after the index reduction to optimize the system for initialization, specified as a comma-separated list.");
         str7 = stringAppendList(StringUtil.wordWrap(str7,System.getTerminalWidth(),"\n"));
-        CONFIG_FLAG(defaultValue=STRING_LIST_FLAG(data=data)) = POST_OPT_MODULES;
-        str7a = System.gettext("The modules used by default are:") + "\n--postOptModules=" + stringDelimitList(data, ",");
+        CONFIG_FLAG(defaultValue=STRING_LIST_FLAG(data=data)) = INIT_OPT_MODULES;
+        str7a = System.gettext("The modules used by default are:") + "\n--initOptModules=" + stringDelimitList(data, ",");
         str7b = System.gettext("The valid modules are:");
-        str8 = printFlagValidOptionsDesc(POST_OPT_MODULES);
+        str8 = printFlagValidOptionsDesc(INIT_OPT_MODULES);
 
-        help = stringAppendList({str1,"\n\n",str1a,"\n\n",str1b,"\n",str2,"\n",str3,"\n\n",str3a,"\n\n",str3b,"\n",str4,"\n",str5,"\n\n",str5a,"\n\n",str5b,"\n",str6,"\n",str7,"\n\n",str7a,"\n\n",str7b,"\n",str8,"\n"});
+        // post-optimization (simulation)
+        str9 = System.gettext("The --postOptModules then sets the optimization modules which are used after the index reduction to optimize the system for simulation, specified as a comma-separated list.");
+        str9 = stringAppendList(StringUtil.wordWrap(str9,System.getTerminalWidth(),"\n"));
+        CONFIG_FLAG(defaultValue=STRING_LIST_FLAG(data=data)) = POST_OPT_MODULES;
+        str9a = System.gettext("The modules used by default are:") + "\n--postOptModules=" + stringDelimitList(data, ",");
+        str9b = System.gettext("The valid modules are:");
+        str10 = printFlagValidOptionsDesc(POST_OPT_MODULES);
+
+        help = stringAppendList({str1,"\n\n",str1a,"\n\n",str1b,"\n",str2,"\n",str3,"\n\n",str3a,"\n\n",str3b,"\n",str4,"\n",str5,"\n\n",str5a,"\n\n",str5b,"\n",str6,"\n",str7,"\n\n",str7a,"\n\n",str7b,"\n",str8,"\n",str9,"\n\n",str9a,"\n\n",str9b,"\n",str10,"\n"});
       then help;
 
     case {str}
@@ -2307,7 +2315,9 @@ algorithm
   Print.printBuf("\n\n");
   Print.printBuf(System.gettext("The :ref:`--indexReductionMethod <omcflag-indexReductionMethod>` sets the method that is used for the index reduction, after the pre optimization modules."));
   Print.printBuf("\n\n");
-  Print.printBuf(System.gettext("The :ref:`--postOptModules <omcflag-postOptModules>` then sets the optimization modules which are used after the index reduction, specified as a comma-separated list."));
+  Print.printBuf(System.gettext("The :ref:`--initOptModules <omcflag-initOptModules>` then sets the optimization modules which are used after the index reduction to optimize the system for initialization, specified as a comma-separated list."));
+  Print.printBuf("\n\n");
+  Print.printBuf(System.gettext("The :ref:`--postOptModules <omcflag-postOptModules>` then sets the optimization modules which are used after the index reduction to optimize the system for simulation, specified as a comma-separated list."));
   Print.printBuf("\n\n");
 
   usage := Print.getString();
