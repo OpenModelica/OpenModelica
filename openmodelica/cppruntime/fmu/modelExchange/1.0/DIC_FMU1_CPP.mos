@@ -20,7 +20,7 @@ equation
   der(y2) = y1;
 end DIC;
 ");
-translateModelFMU(DIC, version = "2.0"); getErrorString();
+translateModelFMU(DIC); getErrorString();
 
 loadModel(Modelica); getErrorString();
 importFMU("DIC.fmu"); getErrorString();
