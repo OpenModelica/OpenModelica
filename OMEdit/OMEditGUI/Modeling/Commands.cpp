@@ -152,14 +152,17 @@ void AddComponentCommand::undo()
   // if component is of connector type && containing class is Modelica type.
   if (mType == StringHandler::Connector && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     // first remove the component from Icon View
+    mpIconComponent->setSelected(false);
     mpIconGraphicsView->scene()->removeItem(mpIconComponent);
     mpIconGraphicsView->scene()->removeItem(mpIconComponent->getOriginItem());
     mpIconGraphicsView->deleteComponentFromList(mpIconComponent);
     // now remove the component from Diagram View
+    mpDiagramComponent->setSelected(false);
     mpDiagramGraphicsView->scene()->removeItem(mpDiagramComponent);
     mpDiagramGraphicsView->scene()->removeItem(mpDiagramComponent->getOriginItem());
     mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
   } else {
+    mpDiagramComponent->setSelected(false);
     mpDiagramGraphicsView->scene()->removeItem(mpDiagramComponent);
     mpDiagramGraphicsView->scene()->removeItem(mpDiagramComponent->getOriginItem());
     mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
@@ -191,6 +194,7 @@ void DeleteComponentCommand::redo()
     // first remove the component from Icon View
     mpIconComponent = mpIconGraphicsView->getComponentObject(mpComponent->getName());
     if (mpIconComponent) {
+      mpIconComponent->setSelected(false);
       mpIconGraphicsView->scene()->removeItem(mpIconComponent);
       mpIconGraphicsView->scene()->removeItem(mpIconComponent->getOriginItem());
       mpIconGraphicsView->deleteComponentFromList(mpIconComponent);
@@ -198,11 +202,13 @@ void DeleteComponentCommand::redo()
     // now remove the component from Diagram View
     mpDiagramComponent = mpDiagramGraphicsView->getComponentObject(mpComponent->getName());
     if (mpDiagramComponent) {
+      mpDiagramComponent->setSelected(false);
       mpDiagramGraphicsView->scene()->removeItem(mpDiagramComponent);
       mpDiagramGraphicsView->scene()->removeItem(mpDiagramComponent->getOriginItem());
       mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
     }
   } else {
+    mpDiagramComponent->setSelected(false);
     mpDiagramGraphicsView->scene()->removeItem(mpComponent);
     mpDiagramGraphicsView->scene()->removeItem(mpComponent->getOriginItem());
     mpDiagramGraphicsView->deleteComponentFromList(mpComponent);
@@ -268,8 +274,8 @@ void AddShapeCommand::redo()
 {
   mpGraphicsView->addShapeObject(mpShapeAnnotation);
   mpGraphicsView->scene()->addItem(mpShapeAnnotation);
-  mpGraphicsView->addClassAnnotation();
   mpShapeAnnotation->emitAdded();
+  mpGraphicsView->addClassAnnotation();
   mpGraphicsView->setCanAddClassAnnotation(true);
 }
 
@@ -280,9 +286,10 @@ void AddShapeCommand::redo()
 void AddShapeCommand::undo()
 {
   mpGraphicsView->deleteShapeObject(mpShapeAnnotation);
+  mpShapeAnnotation->setSelected(false);
   mpGraphicsView->scene()->removeItem(mpShapeAnnotation);
-  mpGraphicsView->addClassAnnotation();
   mpShapeAnnotation->emitDeleted();
+  mpGraphicsView->addClassAnnotation();
   mpGraphicsView->setCanAddClassAnnotation(true);
 }
 
@@ -313,9 +320,10 @@ DeleteShapeCommand::DeleteShapeCommand(ShapeAnnotation *pShapeAnnotation, Graphi
 void DeleteShapeCommand::redo()
 {
   mpGraphicsView->deleteShapeObject(mpShapeAnnotation);
+  mpShapeAnnotation->setSelected(false);
   mpGraphicsView->scene()->removeItem(mpShapeAnnotation);
-  mpGraphicsView->addClassAnnotation();
   mpShapeAnnotation->emitDeleted();
+  mpGraphicsView->addClassAnnotation();
   mpGraphicsView->setCanAddClassAnnotation(true);
 }
 
@@ -327,7 +335,7 @@ void DeleteShapeCommand::undo()
 {
   mpGraphicsView->addShapeObject(mpShapeAnnotation);
   mpGraphicsView->scene()->addItem(mpShapeAnnotation);
-  mpGraphicsView->addClassAnnotation();
   mpShapeAnnotation->emitAdded();
+  mpGraphicsView->addClassAnnotation();
   mpGraphicsView->setCanAddClassAnnotation(true);
 }

@@ -494,10 +494,11 @@ LibraryTreeItem* LibraryTreeItem::child(int row)
 void LibraryTreeItem::addInheritedClass(LibraryTreeItem *pLibraryTreeItem)
 {
   mInheritedClasses.append(pLibraryTreeItem);
-  connect(pLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), this, SLOT(handleLoaded(LibraryTreeItem*)));
-  connect(pLibraryTreeItem, SIGNAL(unLoaded(LibraryTreeItem*)), this, SLOT(handleUnLoaded(LibraryTreeItem*)));
+  connect(pLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), this, SLOT(handleLoaded(LibraryTreeItem*)), Qt::UniqueConnection);
+  connect(pLibraryTreeItem, SIGNAL(unLoaded(LibraryTreeItem*)), this, SLOT(handleUnLoaded(LibraryTreeItem*)), Qt::UniqueConnection);
   connect(pLibraryTreeItem, SIGNAL(shapeAdded(LibraryTreeItem*,ShapeAnnotation*,GraphicsView*)),
-          this, SLOT(handleShapeAdded(LibraryTreeItem*,ShapeAnnotation*,GraphicsView*)));
+          this, SLOT(handleShapeAdded(LibraryTreeItem*,ShapeAnnotation*,GraphicsView*)), Qt::UniqueConnection);
+  connect(pLibraryTreeItem, SIGNAL(iconUpdated()), this, SLOT(handleIconUpdated()), Qt::UniqueConnection);
 }
 
 /*!
@@ -642,6 +643,15 @@ void LibraryTreeItem::handleShapeAdded(LibraryTreeItem *pLibraryTreeItem, ShapeA
         emit shapeAdded(pLibraryTreeItem, pShapeAnnotation, mpModelWidget->getDiagramGraphicsView());
       }
     }
+  }
+}
+
+void LibraryTreeItem::handleIconUpdated()
+{
+  if (mpModelWidget) {
+    MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
+    pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
+    emit iconUpdated();
   }
 }
 

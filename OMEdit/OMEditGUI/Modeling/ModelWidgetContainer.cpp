@@ -910,6 +910,7 @@ void GraphicsView::createLineShape(QPointF point)
 
   if (!isCreatingLineShape()) {
     mpLineShapeAnnotation = new LineAnnotation("", this);
+    setCanAddClassAnnotation(false);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpLineShapeAnnotation, this));
     setIsCreatingLineShape(true);
     mpLineShapeAnnotation->addPoint(point);
@@ -927,6 +928,7 @@ void GraphicsView::createPolygonShape(QPointF point)
 
   if (!isCreatingPolygonShape()) {
     mpPolygonShapeAnnotation = new PolygonAnnotation("", this);
+    setCanAddClassAnnotation(false);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpPolygonShapeAnnotation, this));
     setIsCreatingPolygonShape(true);
     mpPolygonShapeAnnotation->addPoint(point);
@@ -945,6 +947,7 @@ void GraphicsView::createRectangleShape(QPointF point)
 
   if (!isCreatingRectangleShape()) {
     mpRectangleShapeAnnotation = new RectangleAnnotation("", this);
+    setCanAddClassAnnotation(false);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpRectangleShapeAnnotation, this));
     setIsCreatingRectangleShape(true);
     mpRectangleShapeAnnotation->replaceExtent(0, point);
@@ -963,9 +966,9 @@ void GraphicsView::createRectangleShape(QPointF point)
     // make the toolbar button of rectangle unchecked
     pMainWindow->getRectangleShapeAction()->setChecked(false);
     pMainWindow->getConnectModeAction()->setChecked(true);
+    mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpRectangleShapeAnnotation, this);
     addClassAnnotation();
     setCanAddClassAnnotation(true);
-    mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpRectangleShapeAnnotation, this);
   }
 }
 
@@ -977,6 +980,7 @@ void GraphicsView::createEllipseShape(QPointF point)
 
   if (!isCreatingEllipseShape()) {
     mpEllipseShapeAnnotation = new EllipseAnnotation("", this);
+    setCanAddClassAnnotation(false);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpEllipseShapeAnnotation, this));
     setIsCreatingEllipseShape(true);
     mpEllipseShapeAnnotation->replaceExtent(0, point);
@@ -995,9 +999,9 @@ void GraphicsView::createEllipseShape(QPointF point)
     // make the toolbar button of ellipse unchecked
     pMainWindow->getEllipseShapeAction()->setChecked(false);
     pMainWindow->getConnectModeAction()->setChecked(true);
+    mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpEllipseShapeAnnotation, this);
     addClassAnnotation();
     setCanAddClassAnnotation(true);
-    mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpEllipseShapeAnnotation, this);
   }
 }
 
@@ -1009,6 +1013,7 @@ void GraphicsView::createTextShape(QPointF point)
 
   if (!isCreatingTextShape()) {
     mpTextShapeAnnotation = new TextAnnotation("", this);
+    setCanAddClassAnnotation(false);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpTextShapeAnnotation, this));
     setIsCreatingTextShape(true);
     mpTextShapeAnnotation->setTextString("text");
@@ -1028,10 +1033,10 @@ void GraphicsView::createTextShape(QPointF point)
     // make the toolbar button of text unchecked
     pMainWindow->getTextShapeAction()->setChecked(false);
     pMainWindow->getConnectModeAction()->setChecked(true);
+    mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpTextShapeAnnotation, this);
     addClassAnnotation();
     setCanAddClassAnnotation(true);
     mpTextShapeAnnotation->showShapeProperties();
-    mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpTextShapeAnnotation, this);
   }
 }
 
@@ -1043,6 +1048,7 @@ void GraphicsView::createBitmapShape(QPointF point)
 
   if (!isCreatingBitmapShape()) {
     mpBitmapShapeAnnotation = new BitmapAnnotation(mpModelWidget->getLibraryTreeItem()->getFileName(), "", this);
+    setCanAddClassAnnotation(false);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpBitmapShapeAnnotation, this));
     setIsCreatingBitmapShape(true);
     mpBitmapShapeAnnotation->replaceExtent(0, point);
@@ -1367,20 +1373,18 @@ void GraphicsView::addClassAnnotation(bool updateModelicaText)
     Just set the canAddClassAnnotation flag to false to make sure this function is only used once.
     We enable back this function in the key release event.
     */
-  if (canAddClassAnnotation())
+  if (canAddClassAnnotation()) {
     setCanAddClassAnnotation(false);
-  else
+  } else {
     return;
+  }
   /* Build the annotation string */
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   QString annotationString;
   annotationString.append("annotate=");
-  if (mViewType == StringHandler::Icon)
-  {
+  if (mViewType == StringHandler::Icon) {
     annotationString.append("Icon(");
-  }
-  else if (mViewType == StringHandler::Diagram)
-  {
+  } else if (mViewType == StringHandler::Diagram) {
     annotationString.append("Diagram(");
   }
   // add the coordinate system first
@@ -1398,14 +1402,11 @@ void GraphicsView::addClassAnnotation(bool updateModelicaText)
   annotationString.append(", grid=").append("{").append(QString::number(grid.x())).append(", ").append(QString::number(grid.y())).append("})");
   // add the graphics annotations
   int counter = 0;
-  if (mShapesList.size() > 0)
-  {
+  if (mShapesList.size() > 0) {
     annotationString.append(", graphics={");
-    foreach (ShapeAnnotation *pShapeAnnotation, mShapesList)
-    {
+    foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
       /* Don't add the inherited shape to the addClassAnnotation. */
-      if (pShapeAnnotation->isInheritedShape())
-      {
+      if (pShapeAnnotation->isInheritedShape()) {
         counter++;
         continue;
       }
@@ -1425,7 +1426,9 @@ void GraphicsView::addClassAnnotation(bool updateModelicaText)
     mpModelWidget->setModelModified();
     /* When something is added/changed in the icon layer then update the LibraryTreeItem in the Library Browser */
     if (mViewType == StringHandler::Icon) {
-//      pMainWindow->getLibraryWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeItem());
+      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(mpModelWidget->getLibraryTreeItem());
+      mpModelWidget->getLibraryTreeItem()->emitIconUpdated();
+      pMainWindow->getLibraryWidget()->getLibraryTreeProxyModel()->invalidate();
     }
   } else {
     pMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
@@ -1745,9 +1748,9 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     // make the toolbar button of line unchecked
     pMainWindow->getLineShapeAction()->setChecked(false);
     pMainWindow->getConnectModeAction()->setChecked(true);
+    mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpLineShapeAnnotation, this);
     addClassAnnotation();
     setCanAddClassAnnotation(true);
-    mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpLineShapeAnnotation, this);
     return;
   } else if (isCreatingPolygonShape()) {
     // finish creating the polygon
@@ -1763,9 +1766,9 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     // make the toolbar button of polygon unchecked
     pMainWindow->getPolygonShapeAction()->setChecked(false);
     pMainWindow->getConnectModeAction()->setChecked(true);
+    mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpPolygonShapeAnnotation, this);
     addClassAnnotation();
     setCanAddClassAnnotation(true);
-    mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpPolygonShapeAnnotation, this);
     return;
   }
   ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(itemAt(event->pos()));
