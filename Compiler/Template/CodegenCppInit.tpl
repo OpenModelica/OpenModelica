@@ -57,7 +57,7 @@ template fmiModelDescriptionAttributes(SimCode simCode, String guid)
   match simCode
     case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(stateVars = listStates))) then
       let fmiVersion = '1.0'
-      let modelName = dotPath(modelInfo.name)
+      let modelName = System.stringReplace(dotPath(modelInfo.name),"$", "_D_")
       let modelIdentifier = System.stringReplace(fileNamePrefix,".", "_")
       let description = ''
       let author = ''
@@ -139,7 +139,7 @@ template scalarVariableAttributeXML(SimVar simVar, HashTableCrIListArray.HashTab
       let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
       let additionalAttributes = if generateFMUModelDescription then '' else 'isProtected="<%isProtected%>"'
       <<
-      name="<%Util.escapeModelicaStringToXmlString(crefStrNoUnderscore(name))%>" valueReference="<%valueReference%>" <%description%> variability="<%variability%>" causality="<%causalityAtt%>" alias="<%alias%>" <%additionalAttributes%>
+      name="<%System.stringReplace(Util.escapeModelicaStringToXmlString(crefStrNoUnderscore(name)),"$", "_D_")%>" valueReference="<%valueReference%>" <%description%> variability="<%variability%>" causality="<%causalityAtt%>" alias="<%alias%>" <%additionalAttributes%>
       >>
 end scalarVariableAttributeXML;
 
