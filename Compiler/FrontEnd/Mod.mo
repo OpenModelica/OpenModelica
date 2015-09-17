@@ -1315,14 +1315,21 @@ print error of duplicate modifications, if not, the one modification having a va
   input String n;
   output DAE.Mod outMod;
 algorithm
-  outMod := matchcontinue(mod1,mod2,n)
+  outMod := matchcontinue(mod1, mod2)
     local
       String s1,s2,s,n2;
 
-    case(DAE.NOMOD(),_,_) then mod2;
-    case (_,DAE.NOMOD(),_) then mod1;
+    case (DAE.NOMOD(), _) then mod2;
+    case (_, DAE.NOMOD()) then mod1;
+
+    case (DAE.REDECL(), DAE.MOD())
+      then mergeRedeclareWithBinding(mod1, mod2);
+
+    case (DAE.MOD(), DAE.REDECL())
+      then mergeRedeclareWithBinding(mod2, mod1);
+
     // if they are equal, ignoring prefix, return the second one!
-    case(_,_,_)
+    case (_, _)
       equation
         true = modEqual(mod1, mod2);
       then
@@ -1341,6 +1348,32 @@ algorithm
 
   end matchcontinue;
 end checkDuplicateModifications;
+
+protected function mergeRedeclareWithBinding
+  "Merges two modifiers where the first is a redeclare and the second a binding
+   modifier. This is to handle the case where an extended record redeclares a
+   component, and then the component gets a binding when the record type is used.
+
+   E.g. record ER = R(redeclare SomeType x);
+        ER er = ER(1.0);
+  "
+  input DAE.Mod inRedeclare;
+  input DAE.Mod inBinding;
+  output DAE.Mod outMod = inRedeclare;
+algorithm
+  outMod := match(outMod, inBinding)
+    local
+      SCode.Element el;
+
+    case (DAE.REDECL(tplSCodeElementModLst = {(el, DAE.NOMOD())}),
+          DAE.MOD(subModLst = {}, eqModOption = SOME(_)))
+      algorithm
+        outMod.tplSCodeElementModLst := {(el, inBinding)};
+      then
+        outMod;
+
+  end match;
+end mergeRedeclareWithBinding;
 
 protected function modEqualNoPrefix
   input DAE.Mod mod1;
