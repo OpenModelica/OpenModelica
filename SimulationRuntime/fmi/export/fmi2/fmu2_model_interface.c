@@ -61,6 +61,19 @@ fmi2ValueReference vrStatesDerivatives[NUMBER_OF_STATES] = STATESDERIVATIVES;
 // ---------------------------------------------------------------------------
 // Private helpers used below to validate function arguments
 // ---------------------------------------------------------------------------
+const char* stateToString(ModelInstance *comp) {
+  switch (comp->state) {
+    case modelInstantiated: return "Instantiated";
+    case modelInitializationMode: return "Initialization Mode";
+    case modelEventMode: return "Event Mode";
+    case modelContinuousTimeMode: return "Continuous-Time Mode";
+    case modelTerminated: return "Terminated";
+    case modelError: return "Error";
+    default: break;
+  }
+  return "Unknown";
+}
+
 static fmi2Boolean invalidNumber(ModelInstance *comp, const char *f, const char *arg, int n, int nExpected) {
   if (n != nExpected) {
     comp->state = modelError;
@@ -74,8 +87,8 @@ static fmi2Boolean invalidState(ModelInstance *comp, const char *f, int statesEx
   if (!comp)
     return fmi2True;
   if (!(comp->state & statesExpected)) {
+    FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "%s: Illegal call sequence. %s is not allowed in %s state.", f, f, stateToString(comp))
     comp->state = modelError;
-    FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "%s: Illegal call sequence.", f)
     return fmi2True;
   }
   return fmi2False;
