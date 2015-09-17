@@ -1183,8 +1183,9 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
          let loopVar = '<%iter.id%>_loopVar'
          let &rangeExpPre += '<%length%> = max(<%length%>, <%loopVar%>.getDim(1));<%\n%>'
          "")
-      <<
+       <<
        <%arrIndex%> = 1;
+       /* Note: skip dimensioning of <%res%> because create_array_from_shape does it
        <% match typeof(r.expr)
         case T_COMPLEX(complexClassType = record_state) then
           let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
@@ -1202,7 +1203,8 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
 
         else
           '<%res%>.setDims(<%length%>);'%>
-      >>
+       */
+       >>
      else if ri.defaultValue then
      <<
      <%&preDefault%>
