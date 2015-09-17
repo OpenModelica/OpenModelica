@@ -1248,7 +1248,7 @@ void LatexCell::eval()
             // check for number of pages tex script generates
             if(setpage==true)
             {
-                process->start("dvipng",QStringList() << Dvi << "-o" << Png);
+                process->start("dvipng",QStringList() << "-T" << "tight" << Dvi << "-o" << Png);
                 process->waitForFinished();
                 QFileInfo checkpng(Png);
                 if(!checkpng.exists())
