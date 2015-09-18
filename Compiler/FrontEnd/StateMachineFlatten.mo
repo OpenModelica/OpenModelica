@@ -859,7 +859,7 @@ algorithm
   // Create Variable stateRef.active
   // FIXME Use name that cannot possible conflict with user variable (or is .active reserved for state machines?)
   activePlotIndicatorRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, stateRef);
-  activePlotIndicatorVar := createVarWithDefaults(activePlotIndicatorRef, DAE.DISCRETE(), DAE.T_BOOL_DEFAULT);
+  activePlotIndicatorVar := createVarWithStartValue(activePlotIndicatorRef, DAE.DISCRETE(), DAE.T_BOOL_DEFAULT, DAE.BCONST(false));
 
   // stateRef.active := SMS_PRE.initialState.active and (SMS_PRE.initialState.activeState==i)
   activeRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, preRef);
@@ -1028,7 +1028,7 @@ algorithm
     cRefs := arrayUpdate(cRefs, i, qCref("c", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
     cImmediateRefs := arrayUpdate(cImmediateRefs, i, qCref("cImmediate", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
     cVars := arrayUpdate(cVars, i, createVarWithDefaults(arrayGet(cRefs,i), DAE.DISCRETE(), DAE.T_BOOL_DEFAULT));
-    cImmediateVars := arrayUpdate(cImmediateVars, i, createVarWithDefaults(arrayGet(cImmediateRefs,i), DAE.DISCRETE(), DAE.T_BOOL_DEFAULT));
+    cImmediateVars := arrayUpdate(cImmediateVars, i, createVarWithStartValue(arrayGet(cImmediateRefs,i), DAE.DISCRETE(), DAE.T_BOOL_DEFAULT, DAE.BCONST(false)));
     // TODO Binding probably needs to be turned into a proper equation. Done below
     // cVars := arrayUpdate(cVars, i, BackendVariable.setBindExp(arrayGet(cVars,i), SOME(exp)));
     vars := arrayGet(cVars, i) :: vars;
@@ -1064,11 +1064,11 @@ algorithm
   vars := activeResetVar :: vars;
   // Integer nextState
   nextStateRef := qCref("nextState", DAE.T_INTEGER_DEFAULT, {}, preRef);
-  nextStateVar := createVarWithDefaults(nextStateRef, DAE.DISCRETE(), DAE.T_INTEGER_DEFAULT);
+  nextStateVar := createVarWithStartValue(nextStateRef, DAE.DISCRETE(), DAE.T_INTEGER_DEFAULT, DAE.ICONST(0)); // is state -> start value, but value not specified in spec
   vars := nextStateVar :: vars;
   // Boolean nextReset
   nextResetRef := qCref("nextReset", DAE.T_BOOL_DEFAULT, {}, preRef);
-  nextResetVar := createVarWithDefaults(nextResetRef, DAE.DISCRETE(), DAE.T_BOOL_DEFAULT);
+  nextResetVar := createVarWithStartValue(nextResetRef, DAE.DISCRETE(), DAE.T_BOOL_DEFAULT, DAE.BCONST(false)); // is state -> start value, but not value specified in spec
   vars := nextResetVar :: vars;
   //output Boolean activeResetStates[nStates]
   activeResetStatesRefs := arrayCreate(nStates, ComponentReference.makeDummyCref());
@@ -1083,7 +1083,7 @@ algorithm
   nextResetStatesVars := arrayCreate(nStates, defaultBoolVar);
   for i in 1:nStates loop
     nextResetStatesRefs := arrayUpdate(nextResetStatesRefs, i, qCref("nextResetStates", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
-    nextResetStatesVars := arrayUpdate(nextResetStatesVars, i, createVarWithDefaults(arrayGet(nextResetStatesRefs,i), DAE.DISCRETE(), DAE.T_BOOL_DEFAULT));
+    nextResetStatesVars := arrayUpdate(nextResetStatesVars, i, createVarWithStartValue(arrayGet(nextResetStatesRefs,i), DAE.DISCRETE(), DAE.T_BOOL_DEFAULT, DAE.BCONST(false)));
     vars := arrayGet(nextResetStatesVars, i) :: vars;
   end for;
   // Boolean finalStates[nStates]
@@ -1290,6 +1290,22 @@ algorithm
   var := DAE.VAR(componentRef, kind, DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.PUBLIC(), ty, NONE(), {} /* dims */,
     DAE.NON_CONNECTOR(), DAE.emptyElementSource, NONE() /* VariableAttributes */, NONE(), Absyn.NOT_INNER_OUTER());
 end createVarWithDefaults;
+
+protected function createVarWithStartValue "
+Author: BTH
+Create a DAE.VAR with fixed start value and some defaults"
+  input DAE.ComponentRef componentRef;
+  input DAE.VarKind kind;
+  input DAE.Type ty;
+  input DAE.Exp startExp;
+  output DAE.Element outVar;
+protected
+  DAE.Element var;
+algorithm
+  var := DAE.VAR(componentRef, kind, DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.PUBLIC(), ty, NONE(), {} /* dims */,
+    DAE.NON_CONNECTOR(), DAE.emptyElementSource, NONE() /* VariableAttributes */, NONE(), Absyn.NOT_INNER_OUTER());
+  outVar := setVarFixedStartValue(var, startExp);
+end createVarWithStartValue;
 
 protected function createTandC "
 Author: BTH
