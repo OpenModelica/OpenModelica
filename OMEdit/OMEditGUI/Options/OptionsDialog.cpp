@@ -901,6 +901,7 @@ void OptionsDialog::setUpDialog()
   QHBoxLayout *horizontalLayout = new QHBoxLayout;
   horizontalLayout->addWidget(mpOptionsList);
   QScrollArea *pPagesWidgetScrollArea = new QScrollArea;
+  pPagesWidgetScrollArea->setWidgetResizable(true);
   pPagesWidgetScrollArea->setWidget(mpPagesWidget);
   horizontalLayout->addWidget(pPagesWidgetScrollArea);
   // Create a layout

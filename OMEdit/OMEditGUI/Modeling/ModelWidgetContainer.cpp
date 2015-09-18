@@ -1428,7 +1428,6 @@ void GraphicsView::addClassAnnotation(bool updateModelicaText)
     if (mViewType == StringHandler::Icon) {
       pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(mpModelWidget->getLibraryTreeItem());
       mpModelWidget->getLibraryTreeItem()->emitIconUpdated();
-      pMainWindow->getLibraryWidget()->getLibraryTreeProxyModel()->invalidate();
     }
   } else {
     pMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
@@ -2364,20 +2363,29 @@ void ModelWidget::modelInheritedClassLoaded(InheritedClass *pInheritedClass)
 
 /*!
  * \brief ModelWidget::modelInheritedClassUnLoaded
- * Removes the inherited class shapes when it is unloaded.
+ * Handles the case when inherited class is unloaded.
  * \param pInheritedClass
  */
 void ModelWidget::modelInheritedClassUnLoaded(InheritedClass *pInheritedClass)
 {
-  foreach (ShapeAnnotation *pShapeAnnotation, pInheritedClass->mIconShapesList) {
-    mpIconGraphicsView->scene()->removeItem(pShapeAnnotation);
-  }
-  pInheritedClass->mIconShapesList.clear();
-  foreach (ShapeAnnotation *pShapeAnnotation, pInheritedClass->mDiagramShapesList) {
-    mpDiagramGraphicsView->scene()->removeItem(pShapeAnnotation);
-  }
-  pInheritedClass->mDiagramShapesList.clear();
+  parseModelInheritedClass(pInheritedClass, StringHandler::Icon);
+  parseModelInheritedClass(pInheritedClass, StringHandler::Diagram);
   //! @note Do we really need to call GraphicsView::reOrderItems() here?
+}
+
+/*!
+ * \brief ModelWidget::createNonExistingInheritedShape
+ * Creates a red cross for non-existing inherited class shape.
+ * \param pGraphicsView
+ * \return
+ */
+ShapeAnnotation* ModelWidget::createNonExistingInheritedShape(GraphicsView *pGraphicsView)
+{
+  LineAnnotation *pLineAnnotation = new LineAnnotation(pGraphicsView);
+  pLineAnnotation->initializeTransformation();
+  pLineAnnotation->drawCornerItems();
+  pLineAnnotation->setCornerItemsPassive();
+  return pLineAnnotation;
 }
 
 /*!
@@ -2837,28 +2845,60 @@ void ModelWidget::drawModelInheritedClasses()
 }
 
 /*!
+ * \brief ModelWidget::removeInheritedClassShapes
+ * Removes the inherited class shapes.
+ * \param pInheritedClass
+ */
+void ModelWidget::removeInheritedClassShapes(InheritedClass *pInheritedClass, StringHandler::ViewType viewType)
+{
+  if (viewType == StringHandler::Icon) {
+    foreach (ShapeAnnotation *pShapeAnnotation, pInheritedClass->mIconShapesList) {
+      mpIconGraphicsView->scene()->removeItem(pShapeAnnotation);
+    }
+    pInheritedClass->mIconShapesList.clear();
+  } else {
+    foreach (ShapeAnnotation *pShapeAnnotation, pInheritedClass->mDiagramShapesList) {
+      mpDiagramGraphicsView->scene()->removeItem(pShapeAnnotation);
+    }
+    pInheritedClass->mDiagramShapesList.clear();
+  }
+}
+
+/*!
  * \brief ModelWidget::parseModelInheritedClass
- * Parses the inherited class shapes and draws them on the appropriate view.
+ * Parses the inherited class shape and draws its items on the appropriate view.
  * \param pLibraryTreeItem
  * \param viewType
  */
 void ModelWidget::parseModelInheritedClass(InheritedClass *pInheritedClass, StringHandler::ViewType viewType)
 {
+  removeInheritedClassShapes(pInheritedClass, viewType);
   LibraryTreeItem *pLibraryTreeItem = pInheritedClass->mpLibraryTreeItem;
-  if (pLibraryTreeItem && !pLibraryTreeItem->isNonExisting()) {
+  if (pLibraryTreeItem) {
     GraphicsView *pInheritedGraphicsView, *pGraphicsView;
-    if (viewType == StringHandler::Icon) {
-      pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
-      pGraphicsView = mpIconGraphicsView;
-    } else {
-      pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
-      pGraphicsView = mpDiagramGraphicsView;
-    }
-    foreach (ShapeAnnotation *pShapeAnnotation, pInheritedGraphicsView->getShapesList()) {
+    if (pLibraryTreeItem->isNonExisting()) {
       if (viewType == StringHandler::Icon) {
-        pInheritedClass->mIconShapesList.append(createInheritedShape(pShapeAnnotation, pGraphicsView));
+        pGraphicsView = mpIconGraphicsView;
+        pInheritedClass->mIconShapesList.append(createNonExistingInheritedShape(pGraphicsView));
       } else {
-        pInheritedClass->mDiagramShapesList.append(createInheritedShape(pShapeAnnotation, pGraphicsView));
+        pGraphicsView = mpDiagramGraphicsView;
+        pInheritedClass->mDiagramShapesList.append(createNonExistingInheritedShape(pGraphicsView));
+      }
+    } else {
+      if (viewType == StringHandler::Icon) {
+        pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
+        pGraphicsView = mpIconGraphicsView;
+      } else {
+        pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
+        pGraphicsView = mpDiagramGraphicsView;
+      }
+      // loop through the inherited class shapes
+      foreach (ShapeAnnotation *pShapeAnnotation, pInheritedGraphicsView->getShapesList()) {
+        if (viewType == StringHandler::Icon) {
+          pInheritedClass->mIconShapesList.append(createInheritedShape(pShapeAnnotation, pGraphicsView));
+        } else {
+          pInheritedClass->mDiagramShapesList.append(createInheritedShape(pShapeAnnotation, pGraphicsView));
+        }
       }
     }
   }

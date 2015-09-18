@@ -360,6 +360,7 @@ public:
   void updateParentModelsText(QString className);
   void modelInheritedClassLoaded(InheritedClass *pInheritedClass);
   void modelInheritedClassUnLoaded(InheritedClass *pInheritedClass);
+  ShapeAnnotation* createNonExistingInheritedShape(GraphicsView *pGraphicsView);
   ShapeAnnotation* createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void createWidgetComponents();
   Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
@@ -396,6 +397,7 @@ private:
   QList<InheritedClass*> mInheritedClassesList;
   void getModelInheritedClasses(LibraryTreeItem *pLibraryTreeItem);
   void drawModelInheritedClasses();
+  void removeInheritedClassShapes(InheritedClass *pInheritedClass, StringHandler::ViewType viewType);
   void parseModelInheritedClass(InheritedClass *pInheritedClass, StringHandler::ViewType viewType);
   void getModelIconDiagramShapes(QString className);
   void parseModelIconDiagramShapes(QString className, QString annotationString, StringHandler::ViewType viewType);

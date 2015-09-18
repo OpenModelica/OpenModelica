@@ -599,6 +599,12 @@ void LibraryTreeItem::handleLoaded(LibraryTreeItem *pLibraryTreeItem)
     ModelWidget::InheritedClass *pInheritedClass = mpModelWidget->findInheritedClass(pLibraryTreeItem);
     if (pInheritedClass) {
       mpModelWidget->modelInheritedClassLoaded(pInheritedClass);
+      MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
+      // load new icon for the class.
+      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
+      // update the icon in the libraries browser view.
+      QModelIndex index = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->libraryTreeItemIndex(this);
+      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->emitDataChanged(index, index);
       emit loaded(pLibraryTreeItem);
     }
   }
@@ -615,6 +621,12 @@ void LibraryTreeItem::handleUnLoaded(LibraryTreeItem *pLibraryTreeItem)
     ModelWidget::InheritedClass *pInheritedClass = mpModelWidget->findInheritedClass(pLibraryTreeItem);
     if (pInheritedClass) {
       mpModelWidget->modelInheritedClassUnLoaded(pInheritedClass);
+      MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
+      // load new icon for the class.
+      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
+      // update the icon in the libraries browser view.
+      QModelIndex index = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->libraryTreeItemIndex(this);
+      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->emitDataChanged(index, index);
       emit unLoaded(pLibraryTreeItem);
     }
   }
@@ -650,7 +662,11 @@ void LibraryTreeItem::handleIconUpdated()
 {
   if (mpModelWidget) {
     MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
+    // load new icon for the class.
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
+    // update the icon in the libraries browser view.
+    QModelIndex index = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->libraryTreeItemIndex(this);
+    pMainWindow->getLibraryWidget()->getLibraryTreeModel()->emitDataChanged(index, index);
     emit iconUpdated();
   }
 }
@@ -1645,8 +1661,8 @@ void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, Libr
   beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem), row, row);
   pParentLibraryTreeItem->removeChild(pLibraryTreeItem);
   mpLibraryWidget->getMainWindow()->getOMCProxy()->removeCachedOMCCommand(pLibraryTreeItem->getNameStructure());
-  pLibraryTreeItem->emitUnLoaded();
   pLibraryTreeItem->setNonExisting(true);
+  pLibraryTreeItem->emitUnLoaded();
   addNonExistingLibraryTreeItem(pLibraryTreeItem);
   endRemoveRows();
 }
