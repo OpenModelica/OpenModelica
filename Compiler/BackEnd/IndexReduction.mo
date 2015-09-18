@@ -731,7 +731,7 @@ end differentiateEqnsLst;
 protected function replaceDifferentiatedEqns
 "author: Frenkel TUD 2012-11
   replace the original equations with the derived"
-  input list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> inEqnTplLst;
+  input list<tuple<Integer, Option<BackendDAE.Equation>, BackendDAE.Equation>> inEqnTplLst;
   input BackendDAE.Variables vars;
   input BackendDAE.EquationArray eqns;
   input BackendDAE.StateOrder inStateOrd;
@@ -745,45 +745,39 @@ protected function replaceDifferentiatedEqns
   output list<Integer> outChangedVars;
   output BackendDAE.ConstraintEquations outOrgEqnsLst;
 algorithm
-  (outVars,outEqns,outStateOrd,outChangedVars,outOrgEqnsLst):=
-  matchcontinue (inEqnTplLst,vars,eqns,inStateOrd,mt,imapIncRowEqn,inChangedVars,inOrgEqnsLst)
+  (outVars, outEqns, outStateOrd, outChangedVars, outOrgEqnsLst) := matchcontinue (inEqnTplLst)
     local
-      list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> rest;
+      list<tuple<Integer, Option<BackendDAE.Equation>,BackendDAE.Equation>> rest;
       Integer e;
       list<Integer> changedVars;
-      BackendDAE.Equation eqn,eqn_1;
+      BackendDAE.Equation eqn, eqn_1;
       BackendDAE.EquationArray eqns1;
       BackendDAE.Variables vars1;
-      BackendDAE.StateOrder so;
       BackendDAE.ConstraintEquations orgEqnsLst;
-    case ({},_,_,_,_,_,_,_) then (vars,eqns,inStateOrd,inChangedVars,inOrgEqnsLst);
-    case ((e,SOME(eqn_1),eqn)::rest,_,_,_,_,_,_,_)
-      equation
-        (eqn_1,_) = BackendDAETransform.traverseExpsOfEquation(eqn_1, replaceStateOrderExp, vars);
-        (eqn_1,(_,(vars1,eqns1,_,changedVars,_,_,_))) = BackendDAETransform.traverseExpsOfEquation(eqn_1,Expression.traverseSubexpressionsHelper,(changeDerVariablesToStatesFinder,(vars,eqns,inStateOrd,inChangedVars,e,imapIncRowEqn,mt)));
-        if Flags.isSet(Flags.BLT_DUMP) then
-          debugdifferentiateEqns((eqn,eqn_1));
-        end if;
-        eqns1 = BackendEquation.setAtIndex(eqns1, e, eqn_1);
-        orgEqnsLst = addOrgEqn(inOrgEqnsLst,e,eqn);
-        (outVars,outEqns,outStateOrd,outChangedVars,outOrgEqnsLst) =
-           replaceDifferentiatedEqns(rest,vars1,eqns1,inStateOrd,mt,imapIncRowEqn,changedVars,orgEqnsLst);
-      then
-        (outVars,outEqns,outStateOrd,outChangedVars,outOrgEqnsLst);
-    case ((_,NONE(),_)::rest,_,_,_,_,_,_,_)
-      equation
-        //orgEqnsLst = BackendDAETransform.addOrgEqn(inOrgEqnsLst,e,eqn);
-        orgEqnsLst = inOrgEqnsLst;
-        (outVars,outEqns,outStateOrd,outChangedVars,outOrgEqnsLst) =
-           replaceDifferentiatedEqns(rest,vars,eqns,inStateOrd,mt,imapIncRowEqn,inChangedVars,orgEqnsLst);
-      then
-        (outVars,outEqns,outStateOrd,outChangedVars,outOrgEqnsLst);
 
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.replaceDifferentiatedEqns failed!"});
-      then
-        fail();
+    case {}
+    then (vars, eqns, inStateOrd, inChangedVars, inOrgEqnsLst);
+
+    case (e, SOME(eqn_1), eqn)::rest equation
+      (eqn_1, _) = BackendEquation.traverseExpsOfEquation(eqn_1, replaceStateOrderExp, vars);
+      (eqn_1, (_, (vars1, eqns1, _, changedVars, _, _, _))) = BackendEquation.traverseExpsOfEquation(eqn_1, Expression.traverseSubexpressionsHelper, (changeDerVariablesToStatesFinder, (vars, eqns, inStateOrd, inChangedVars, e, imapIncRowEqn, mt)));
+      if Flags.isSet(Flags.BLT_DUMP) then
+        debugdifferentiateEqns((eqn, eqn_1));
+      end if;
+      eqns1 = BackendEquation.setAtIndex(eqns1, e, eqn_1);
+      orgEqnsLst = addOrgEqn(inOrgEqnsLst, e, eqn);
+      (outVars, outEqns, outStateOrd, outChangedVars, outOrgEqnsLst) = replaceDifferentiatedEqns(rest, vars1, eqns1, inStateOrd, mt, imapIncRowEqn, changedVars, orgEqnsLst);
+    then (outVars, outEqns, outStateOrd, outChangedVars, outOrgEqnsLst);
+
+    case (_, NONE(), _)::rest equation
+      //orgEqnsLst = BackendDAETransform.addOrgEqn(inOrgEqnsLst, e, eqn);
+      orgEqnsLst = inOrgEqnsLst;
+      (outVars, outEqns, outStateOrd, outChangedVars, outOrgEqnsLst) = replaceDifferentiatedEqns(rest, vars, eqns, inStateOrd, mt, imapIncRowEqn, inChangedVars, orgEqnsLst);
+    then (outVars, outEqns, outStateOrd, outChangedVars, outOrgEqnsLst);
+
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.replaceDifferentiatedEqns failed!"});
+    then fail();
   end matchcontinue;
 end replaceDifferentiatedEqns;
 
@@ -793,7 +787,7 @@ protected function replaceStateOrderExp
   output DAE.Exp e;
   output BackendDAE.Variables vars;
 algorithm
-  (e,vars) := Expression.traverseExpTopDown(inExp,replaceStateOrderExpFinder,inVars);
+  (e, vars) := Expression.traverseExpTopDown(inExp, replaceStateOrderExpFinder, inVars);
 end replaceStateOrderExp;
 
 protected function replaceStateOrderExpFinder
