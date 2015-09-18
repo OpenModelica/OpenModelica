@@ -233,6 +233,7 @@ public:
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   QString getUniqueTopLevelItemName(QString name, int number = 1);
+  void emitDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight) {emit dataChanged(topLeft, bottomRight);}
 private:
   LibraryWidget *mpLibraryWidget;
   LibraryTreeItem *mpRootLibraryTreeItem;

@@ -79,6 +79,32 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
 }
 
+LineAnnotation::LineAnnotation(GraphicsView *pGraphicsView)
+  : ShapeAnnotation(true, pGraphicsView, 0)
+{
+  setLineType(LineAnnotation::ShapeType);
+  setStartComponent(0);
+  setEndComponent(0);
+  // set the default values
+  GraphicItem::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  // create a red cross
+  setLineColor(QColor(255, 0, 0));
+  // create a red cross with points
+  addPoint(QPointF(-100, -100));
+  addPoint(QPointF(100, 100));
+  addPoint(QPointF(-100, 100));
+  addPoint(QPointF(100, -100));
+  addPoint(QPointF(-100, -100));
+  addPoint(QPointF(-100, 100));
+  addPoint(QPointF(100, 100));
+  addPoint(QPointF(100, -100));
+  setShapeFlags(true);
+  mpGraphicsView->scene()->addItem(this);
+}
+
 LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, 0)
 {
