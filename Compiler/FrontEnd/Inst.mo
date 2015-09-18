@@ -2039,8 +2039,9 @@ algorithm
       list<DAE.ComponentRef> smInitialCrefs "state machine crefs of initial states";
       FCore.Ref lastRef;
       InstStateMachineUtil.SMNodeToFlatSMGroupTable smCompToFlatSM;
-      List<Tuple<String,DAE.ComponentRef>> fieldDomLst;
-      list<Tuple<String,Integer>> domainNLst;
+      //List<Tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomLst;
+      InstUtil.DomainFieldsLst domainFieldsLst;
+//      list<Tuple<String,Integer>> domainNLst;
 
     /*// uncomment for debugging
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,inClassDef6,
@@ -2221,7 +2222,7 @@ algorithm
         //ih = List.fold1(smCompCrefs, InnerOuter.updateSMHierarchy, inPrefix3, ih);
         ih = List.fold(smCompCrefs, InnerOuter.updateSMHierarchy, ih);
 
-        (cache,env5,ih,store,dae1,csets,ci_state2,vars,graph,fieldDomLst) =
+        (cache,env5,ih,store,dae1,csets,ci_state2,vars,graph,domainFieldsLst) =
           instElementList(cache, env4, ih, store, mods, pre, ci_state1,
             compelts_2, inst_dims, impl, callscope, graph, csets, true);
 
@@ -2247,8 +2248,8 @@ algorithm
         ErrorExt.rollBack("expandableConnectorsOrder");
 
         //Discretization of PDEs:
-        domainNLst = List.fold(els,InstUtil.findDomains,{});
-        eqs_1 = List.fold2(eqs_1, InstUtil.discretizePDE, fieldDomLst, domainNLst, {});
+//        domainNLst = List.fold(els,InstUtil.findDomains,{});
+        eqs_1 = List.fold1(eqs_1, InstUtil.discretizePDE, domainFieldsLst,/* domainNLst,*/ {});
 
         //Instantiate equations (see function "instEquation")
         (cache,env5,ih,dae2,csets2,ci_state3,graph) =
@@ -3095,7 +3096,8 @@ public function instElementList
   output ClassInf.State outState = inState;
   output list<DAE.Var> outVars;
   output ConnectionGraph.ConnectionGraph outGraph = inGraph;
-  output List<Tuple<String,DAE.ComponentRef>> fieldDomLst = {};
+  //output List<Tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomLst = {};
+  output InstUtil.DomainFieldsLst domainFieldsList = {};
 protected
   list<tuple<SCode.Element, DAE.Mod>> el;
   FCore.Cache cache;
@@ -3103,7 +3105,7 @@ protected
   list<DAE.Element> dae;
   list<list<DAE.Var>> varsl = {};
   list<list<DAE.Element>> dael = {};
-  Option<Tuple<String,DAE.ComponentRef>> fieldDomOpt;
+  Option<Tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomOpt;
   list<Integer> element_order;
   array<tuple<SCode.Element, DAE.Mod>> el_arr;
   array<list<DAE.Var>> var_arr;
@@ -3146,7 +3148,7 @@ algorithm
           inInstDims, inImplInst, inCallingScope, outGraph, outSets, inStopOnError);
       varsl := vars :: varsl;
       dael := dae :: dael;
-      fieldDomLst := List.consOption(fieldDomOpt,fieldDomLst);
+    domainFieldsList := InstUtil.optAppendField(domainFieldsList,fieldDomOpt);
     end for;
 
     outVars := List.flattenReverse(varsl);
@@ -3219,7 +3221,7 @@ public function instElement2
   output ClassInf.State outState = inState;
   output list<DAE.Var> outVars = {};
   output ConnectionGraph.ConnectionGraph outGraph = inGraph;
-  output Option<Tuple<String,DAE.ComponentRef>> outFieldDomOpt;
+  output Option<Tuple<Absyn.ComponentRef,DAE.ComponentRef>> outFieldDomOpt;
 protected
   tuple<SCode.Element, DAE.Mod> elt;
   Boolean is_deleted;
@@ -3334,7 +3336,7 @@ public function instElement "
   output ClassInf.State outState;
   output list<DAE.Var> outVars;
   output ConnectionGraph.ConnectionGraph outGraph;
-  output Option<Tuple<String,DAE.ComponentRef>> outFieldDomOpt = NONE();
+  output Option<Tuple<Absyn.ComponentRef,DAE.ComponentRef>> outFieldDomOpt = NONE();
 algorithm
   (outCache, outEnv, outIH, outUnitStore, outDae, outSets, outState, outVars, outGraph):=
   matchcontinue (inCache, inEnv, inIH, inUnitStore, inMod, inPrefix, inState,
@@ -3559,7 +3561,8 @@ algorithm
         is_function_input = InstUtil.isFunctionInput(ci_state, dir);
         (cache, dims) = InstUtil.elabArraydim(cache, env2, own_cref, t, ad, eq, impl,
           NONE(), true, is_function_input, pre, info, inst_dims);
-        (dims, mod_1, outFieldDomOpt) = InstUtil.elabField(name, attr, dims, mod_1, info);
+
+        (dims, mod_1, outFieldDomOpt) = InstUtil.elabField(inCache, inEnv, name, attr, dims, mod_1, info);
 
         // adrpo: 2011-11-18: see if the component is an INPUT or OUTPUT and class is a record
         //                    and add it to the cache!

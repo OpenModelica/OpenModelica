@@ -4601,127 +4601,6 @@ algorithm
   end matchcontinue;
 end elabArraydimType2;
 
-public function elabField
-//For field variables: finds the "domain" modifier,
-//finds domain.N - length of discretized field array
-//and removes "domain" from the modifiers list.
-  input String name;
-  input SCode.Attributes attr;
-  input DAE.Dimensions inDims;
-  input DAE.Mod inMod;
-  input SourceInfo info;
-  output DAE.Dimensions outDims;
-  output DAE.Mod outMod;
-  output Option<Tuple<String,DAE.ComponentRef>> outFieldDomOpt;
-algorithm
-  (outDims, outMod, outFieldDomOpt) := match(attr)
-    local
-      DAE.Dimension dim_f;
-      SCode.Final finalPrefix;
-      SCode.Each  eachPrefix;
-      list<DAE.SubMod> subModLst;
-      Option<DAE.EqMod> eqModOption;
-      Integer N;
-      DAE.ComponentRef dcr;
-    case(SCode.ATTR(isField=Absyn.NONFIELD()))
-      //TODO: check that the domain attribute (modifier) is not present.
-      then
-        (inDims,inMod,NONE());
-    case(SCode.ATTR(isField=Absyn.FIELD()))
-      equation
-        DAE.MOD(finalPrefix = finalPrefix, eachPrefix = eachPrefix, subModLst = subModLst, eqModOption = eqModOption) = inMod;
-        //get N from the domain and remove domain from the subModLst:
-        (N, subModLst, SOME(dcr)) = List.fold30(subModLst,domainSearchFun,-1,{},NONE());
-        if (N == -1) then Error.addSourceMessageAndFail(Error.PDEModelica_ERROR,
-            {"Domain of the field variable '" + name + "' not found."}, info);
-        end if;
-        subModLst = listReverse(subModLst);
-        subModLst = List.map(subModLst,addEach);
-        outMod = DAE.MOD(finalPrefix, eachPrefix, subModLst, eqModOption);
-        dim_f = DAE.DIM_INTEGER(N);
-      then
-        (dim_f::inDims, outMod, SOME((name,dcr)));
-  end match;
-end elabField;
-
-protected function addEach
-"map function that adds each prefix to given modifier"
-  input DAE.SubMod inSubMod;
-  output DAE.SubMod outSubMod;
-  protected DAE.Ident ident;
-  protected SCode.Final finalPrefix;
-  protected SCode.Each eachPrefix;
-  protected list<DAE.SubMod> subModLst;
-  protected Option<DAE.EqMod> eqModOption;
-/*  equation
-    DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, _, subModLst, eqModOption)) = inSubMod;
-    outSubMod = DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, SCode.EACH(), subModLst, eqModOption));*/
-  algorithm
-    outSubMod := match inSubMod
-      case DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, _, subModLst, eqModOption))
-      then DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, SCode.EACH(), subModLst, eqModOption));
-    end match;
-end addEach;
-
-
-protected function domainSearchFun
-"fold function to find domain modifier in modifiers list"
-//TODO: simplify this function, perhaps not use fold
-  input DAE.SubMod subMod;
-  input Integer inN;
-  input list<DAE.SubMod> inSubModLst;
-  input Option<DAE.ComponentRef> inCrOpt;
-  output Integer outN;
-  output list<DAE.SubMod> outSubModLst;
-  output Option<DAE.ComponentRef> outCrOpt;
-
-  algorithm
-    (outSubModLst,outN,outCrOpt) := matchcontinue subMod
-    local
-      DAE.Mod mod;
-      list<DAE.SubMod>  subModLst;
-      Option<DAE.EqMod> eqModOption;
-      list<Values.Value> values;
-      list<String> names;
-      Integer N;
-      DAE.ComponentRef cr;
-    case DAE.NAMEMOD(ident="domain", mod=mod)
-      equation
-        DAE.MOD(eqModOption=SOME(
-          DAE.TYPED(
-            modifierAsValue=SOME(
-              Values.RECORD(
-                record_=Absyn.FULLYQUALIFIED(
-                  path=Absyn.IDENT(name="DomainLineSegment1D")
-                ), orderd = values, comp = names
-              )
-            ),
-            modifierAsExp=DAE.CREF(componentRef=cr)
-          )
-        ))=mod;
-        ("N", Values.INTEGER(N)) = List.find(List.threadTuple(names,values),findN);
-      then (inSubModLst,N,SOME(cr));
-    case DAE.NAMEMOD(ident="domain")
-      equation
-        print("cant find N in the domain");
-      then
-        fail();
-    else (subMod::inSubModLst,inN,inCrOpt);
-    end matchcontinue;
-end domainSearchFun;
-
-protected function findN
-"a map function to find N in domain class modifiers"
-  input Tuple<String,Values.Value> inEl;
-  output Boolean found;
-  algorithm
-    found := match inEl
-      case(("N", Values.INTEGER(_)))
-      then true;
-      else false;
-    end match;
-end findN;
-
 public function addFunctionsToDAE
 "@author: adrpo
  we might need to intantiate partial functions, but we should NOT add them to the DAE!"
@@ -8849,18 +8728,190 @@ algorithm
   end match;
 end propagateModFinal;
 
+//------------------------------
+//------  PDE extension:  ------
+//------------------------------
+public function elabField
+//For field variables: finds the "domain" modifier,
+//finds domain.N - length of discretized field array
+//and removes "domain" from the modifiers list.
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input String name;
+  input SCode.Attributes attr;
+  input DAE.Dimensions inDims;
+  input DAE.Mod inMod;
+  input SourceInfo info;
+  output DAE.Dimensions outDims;
+  output DAE.Mod outMod;
+  output Option<Tuple<Absyn.ComponentRef,DAE.ComponentRef>> outFieldDomOpt;
+
+algorithm
+  (outDims, outMod, outFieldDomOpt) := match(attr, inMod)
+    local
+      DAE.Dimension dim_f;
+      SCode.Final finalPrefix;
+      SCode.Each  eachPrefix;
+      list<DAE.SubMod> subModLst;
+      Option<DAE.EqMod> eqModOption;
+      Integer N;
+      DAE.ComponentRef dcr;
+    case(SCode.ATTR(isField=Absyn.NONFIELD()),_)
+      //TODO: check that the domain attribute (modifier) is not present.
+      then
+        (inDims,inMod,NONE());
+    case(SCode.ATTR(isField=Absyn.FIELD()),DAE.MOD(finalPrefix = finalPrefix, eachPrefix = eachPrefix, subModLst = subModLst, eqModOption = eqModOption))
+      equation
+//        DAE.MOD(finalPrefix = finalPrefix, eachPrefix = eachPrefix, subModLst = subModLst, eqModOption = eqModOption) = inMod;
+        //get N from the domain and remove domain from the subModLst:
+        (N, subModLst, SOME(dcr)) = List.fold30(subModLst,domainSearchFun,-1,{},NONE());
+        if (N == -1) then Error.addSourceMessageAndFail(Error.PDEModelica_ERROR,
+            {"Domain of the field variable '" + name + "' not found."}, info);
+        end if;
+        subModLst = listReverse(subModLst);
+        subModLst = List.map(subModLst,addEach);
+        outMod = DAE.MOD(finalPrefix, eachPrefix, subModLst, eqModOption);
+        dim_f = DAE.DIM_INTEGER(N);
+      then
+        (dim_f::inDims, outMod, SOME((Absyn.CREF_IDENT(name, {}),dcr)));
+  end match;
+end elabField;
+
+protected function addEach
+"map function that adds each prefix to given modifier"
+  input DAE.SubMod inSubMod;
+  output DAE.SubMod outSubMod;
+  protected DAE.Ident ident;
+  protected SCode.Final finalPrefix;
+  protected SCode.Each eachPrefix;
+  protected list<DAE.SubMod> subModLst;
+  protected Option<DAE.EqMod> eqModOption;
+
+/*  equation
+    DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, _, subModLst, eqModOption)) = inSubMod;
+    outSubMod = DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, SCode.EACH(), subModLst, eqModOption));*/
+  algorithm
+    outSubMod := match inSubMod
+      case DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, _, subModLst, eqModOption))
+      then DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, SCode.EACH(), subModLst, eqModOption));
+    end match;
+end addEach;
+
+//public type List<Tuple<DAE.ComponentRef,List<Absyn.ComponentRef>>> LDomainFields;
+public type DomainFieldsLst = List<Tuple<DAE.ComponentRef,List<Absyn.ComponentRef>>>;
+
+public function optAppendField
+  input DomainFieldsLst inDomFieldsLst;
+  input Option<Tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomOpt;
+  output DomainFieldsLst outDomFieldsLst;
+algorithm
+  outDomFieldsLst := matchcontinue fieldDomOpt
+  local
+    Absyn.ComponentRef fieldCr;
+    DAE.ComponentRef domainCr;
+    Boolean found;
+    case NONE()
+      then inDomFieldsLst;
+    case SOME((fieldCr,domainCr))
+      equation
+        (outDomFieldsLst, found) = List.map2Fold(inDomFieldsLst,optAppendFieldMapFun,domainCr,fieldCr,false);
+        if not found then
+          outDomFieldsLst = (domainCr,{fieldCr})::inDomFieldsLst;
+        end if;
+      then
+        outDomFieldsLst;
+  end matchcontinue;
+end optAppendField;
+
+protected function optAppendFieldMapFun
+  input Tuple<DAE.ComponentRef,List<Absyn.ComponentRef>> inDomainFields;
+  input DAE.ComponentRef domainCrToAdd;
+  input Absyn.ComponentRef fieldCrToAdd;
+  input Boolean inFound;
+  output Tuple<DAE.ComponentRef,List<Absyn.ComponentRef>> outDomainFields;
+  output Boolean outFound;
+algorithm
+  (outDomainFields, outFound) := matchcontinue (inDomainFields,inFound)
+  local
+    DAE.ComponentRef domainCr;
+    List<Absyn.ComponentRef> fieldCrLst;
+  case ((domainCr,fieldCrLst),false)
+    equation
+      true = ComponentReference.crefEqual(domainCr,domainCrToAdd);
+    then
+      ((domainCr,fieldCrToAdd::fieldCrLst),true);
+    else
+      (inDomainFields,inFound);
+  end matchcontinue;
+end optAppendFieldMapFun;
+
+protected function domainSearchFun
+"fold function to find domain modifier in modifiers list"
+//TODO: simplify this function, perhaps not use fold
+  input DAE.SubMod subMod;
+  input Integer inN;
+  input list<DAE.SubMod> inSubModLst;
+  input Option<DAE.ComponentRef> inCrOpt;
+  output Integer outN;
+  output list<DAE.SubMod> outSubModLst;
+  output Option<DAE.ComponentRef> outCrOpt;
+
+  algorithm
+    (outSubModLst,outN,outCrOpt) := matchcontinue subMod
+    local
+      DAE.Mod mod;
+      list<DAE.SubMod>  subModLst;
+      Option<DAE.EqMod> eqModOption;
+//      list<Values.Value> values;
+//      list<String> names;
+      list<DAE.Var> varLst;
+      Integer N;
+      DAE.ComponentRef cr;
+    case DAE.NAMEMOD(ident="domain", mod=DAE.MOD(eqModOption=SOME(
+          DAE.TYPED(
+            //TODO: check the type of the domain
+            modifierAsExp=DAE.CREF(cr)
+          )
+        )))
+      equation
+        DAE.CREF_IDENT(identType = DAE.T_COMPLEX(varLst = varLst)) = cr;
+        N = List.findSome(varLst,findN);
+      then (inSubModLst,N,SOME(cr));
+    case DAE.NAMEMOD(ident="domain")
+      equation
+        print("cant find N in the domain");
+      then
+        fail();
+    else (subMod::inSubModLst,inN,inCrOpt);
+    end matchcontinue;
+end domainSearchFun;
+
+protected function findN
+"a map function to find N in domain class modifiers"
+  input DAE.Var inVar;
+  output Option<Integer> optN;
+  algorithm
+    optN := match inVar
+    local
+      Integer N;
+      case DAE.TYPES_VAR(name="N",binding=DAE.Binding.EQBOUND(evaluatedExp=SOME(Values.INTEGER(N))))
+      then SOME(N);
+      else NONE();
+    end match;
+end findN;
+
 public function discretizePDE
 //main discretization function, converts PDE into set of ODEs
   input SCode.Equation inEQ;
-  input List<Tuple<String,DAE.ComponentRef>> fieldDomainLst;
-  input list<Tuple<String,Integer>> domainNLst;
+  input DomainFieldsLst inDomFieldLst;
+//  input list<Tuple<String,Integer>> domainNLst;
   input List<SCode.Equation> inDiscretizedEQs;
   output List<SCode.Equation> outDiscretizedEQs;
   protected List<SCode.Equation> newDiscretizedEQs;
 algorithm
   newDiscretizedEQs := {inEQ};
   //TODO: fix:
-  /*
+
   newDiscretizedEQs := match inEQ
     local
       Absyn.Exp lhs_exp, rhs_exp;
@@ -8877,12 +8928,12 @@ algorithm
                            comment = comment, info = info))
       equation
         Absyn.CREF_IDENT(name = domainName) = domainCr;
-        (_,N) = List.find1(domainNLst,findDomF,domainName);
+//        (_,N) = List.find1(domainNLst,findDomF,domainName);
 
 
-    then list(newEQFun(i, lhs_exp, rhs_exp, comment, info, domainName, fieldDomainLst) for i in 2:N-1);
+    then {inEQ};//list(newEQFun(i, lhs_exp, rhs_exp, comment, info, domainName, fieldDomainLst) for i in 2:N-1);
   end match;
-  */
+
    outDiscretizedEQs := listAppend(inDiscretizedEQs, newDiscretizedEQs);
 end discretizePDE;
 
@@ -8992,7 +9043,7 @@ algorithm
     else false;
   end matchcontinue;
 end findDomF;
-
+/*
 public function findDomains
   input SCode.Element el;
   input list<Tuple<String,Integer>> domainLstIn;
@@ -9044,6 +9095,6 @@ algorithm
         false;
   end match;
 end findDomains2;
-
+*/
 annotation(__OpenModelica_Interface="frontend");
 end InstUtil;
