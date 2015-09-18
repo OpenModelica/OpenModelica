@@ -905,16 +905,21 @@ protected
   list<DAE.Element> vars "SMS veriables", knowns "SMS constants/parameters";
   Integer i;
 
-  Integer nStates;
   DAE.ComponentRef preRef, cref, nStatesRef, activeRef, resetRef, selectedStateRef, selectedResetRef, firedRef, activeStateRef, activeResetRef, nextStateRef, nextResetRef, stateMachineInFinalStateRef;
   DAE.Element var, nStatesVar, activeVar, resetVar, selectedStateVar, selectedResetVar, firedVar, activeStateVar, activeResetVar, nextStateVar, nextResetVar, stateMachineInFinalStateVar;
+
+  // Modeling arrays with size nStates
+  Integer nStates;
+  DAE.Type nStatesArrayBool;
+  array<DAE.ComponentRef> activeResetStatesRefs, nextResetStatesRefs, finalStatesRefs;
+  array<DAE.Element> activeResetStatesVars, nextResetStatesVars, finalStatesVars;
 
   // Modeling Transitions "t":
   list<Transition> t;
   Integer nTransitions;
   DAE.Type tArrayInteger, tArrayBool;
-  array<DAE.ComponentRef> tFromRefs, tToRefs, tImmediateRefs, tResetRefs, tSynchronizeRefs, tPriorityRefs, activeResetStatesRefs, nextResetStatesRefs, finalStatesRefs;
-  array<DAE.Element> tFromVars, tToVars, tImmediateVars, tResetVars, tSynchronizeVars, tPriorityVars, activeResetStatesVars, nextResetStatesVars, finalStatesVars;
+  array<DAE.ComponentRef> tFromRefs, tToRefs, tImmediateRefs, tResetRefs, tSynchronizeRefs, tPriorityRefs;
+  array<DAE.Element> tFromVars, tToVars, tImmediateVars, tResetVars, tSynchronizeVars, tPriorityVars;
   // TRANSITION
   Integer from;
   Integer to;
@@ -1070,11 +1075,13 @@ algorithm
   nextResetRef := qCref("nextReset", DAE.T_BOOL_DEFAULT, {}, preRef);
   nextResetVar := createVarWithStartValue(nextResetRef, DAE.DISCRETE(), DAE.T_BOOL_DEFAULT, DAE.BCONST(false)); // is state -> start value, but not value specified in spec
   vars := nextResetVar :: vars;
+  // ***** arrays with size nStates *****
+  nStatesArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource);
   //output Boolean activeResetStates[nStates]
   activeResetStatesRefs := arrayCreate(nStates, ComponentReference.makeDummyCref());
   activeResetStatesVars := arrayCreate(nStates, defaultBoolVar);
   for i in 1:nStates loop
-    activeResetStatesRefs := arrayUpdate(activeResetStatesRefs, i, qCref("activeResetStates", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
+    activeResetStatesRefs := arrayUpdate(activeResetStatesRefs, i, qCref("activeResetStates", nStatesArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
     activeResetStatesVars := arrayUpdate(activeResetStatesVars, i, createVarWithDefaults(arrayGet(activeResetStatesRefs,i), DAE.DISCRETE(), DAE.T_BOOL_DEFAULT));
     vars := arrayGet(activeResetStatesVars, i) :: vars;
   end for;
@@ -1082,7 +1089,7 @@ algorithm
   nextResetStatesRefs := arrayCreate(nStates, ComponentReference.makeDummyCref());
   nextResetStatesVars := arrayCreate(nStates, defaultBoolVar);
   for i in 1:nStates loop
-    nextResetStatesRefs := arrayUpdate(nextResetStatesRefs, i, qCref("nextResetStates", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
+    nextResetStatesRefs := arrayUpdate(nextResetStatesRefs, i, qCref("nextResetStates", nStatesArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
     nextResetStatesVars := arrayUpdate(nextResetStatesVars, i, createVarWithStartValue(arrayGet(nextResetStatesRefs,i), DAE.DISCRETE(), DAE.T_BOOL_DEFAULT, DAE.BCONST(false)));
     vars := arrayGet(nextResetStatesVars, i) :: vars;
   end for;
@@ -1090,7 +1097,7 @@ algorithm
   finalStatesRefs := arrayCreate(nStates, ComponentReference.makeDummyCref());
   finalStatesVars := arrayCreate(nStates, defaultBoolVar);
   for i in 1:nStates loop
-    finalStatesRefs := arrayUpdate(finalStatesRefs, i, qCref("finalStates", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
+    finalStatesRefs := arrayUpdate(finalStatesRefs, i, qCref("finalStates", nStatesArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
     finalStatesVars := arrayUpdate(finalStatesVars, i, createVarWithDefaults(arrayGet(finalStatesRefs,i), DAE.DISCRETE(), DAE.T_BOOL_DEFAULT));
     vars := arrayGet(finalStatesVars, i) :: vars;
   end for;
