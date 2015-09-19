@@ -138,6 +138,7 @@ algorithm
     vars := BackendVariable.rehashVariables(vars);
     fixvars := BackendVariable.rehashVariables(fixvars);
     shared := BackendDAEUtil.createEmptyShared(BackendDAE.INITIALSYSTEM(), dae.shared.info, dae.shared.cache, dae.shared.graph);
+    shared.removedEqs := inDAE.shared.removedEqs;
     shared := BackendDAEUtil.setSharedKnVars(shared, fixvars);
     shared := BackendDAEUtil.setSharedOptimica(shared, dae.shared.constraints, dae.shared.classAttrs);
     shared := BackendDAEUtil.setSharedFunctionTree(shared, dae.shared.functionTree);
@@ -2326,10 +2327,22 @@ end collectInitialBindings;
 public function removeInitializationStuff
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE = inDAE;
+protected
+  list<BackendDAE.Equation> removedEqsList = {};
+  BackendDAE.Shared shared = inDAE.shared;
 algorithm
   for eqs in outDAE.eqs loop
     _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs.orderedEqs, removeInitializationStuff1, false);
   end for;
+
+  for eq in BackendEquation.equationList(shared.removedEqs) loop
+    removedEqsList := match BackendEquation.equationKind(eq)
+      case BackendDAE.INITIAL_EQUATION() then removedEqsList;
+      else eq::removedEqsList;
+    end match;
+  end for;
+  shared.removedEqs := BackendEquation.listEquation(listReverse(removedEqsList));
+  outDAE.shared := shared;
 end removeInitializationStuff;
 
 protected function removeInitializationStuff1
