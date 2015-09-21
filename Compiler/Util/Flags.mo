@@ -680,14 +680,12 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "inlineArrayEqn",
     "removeSimpleEquations",
     "comSubExp",
-    // "addInitialStmtsToAlgorithms",
     "resolveLoops",
     "evalFunc",
     "sortEqnsVars",
     "encapsulateWhenConditions"
     }),
   SOME(STRING_DESC_OPTION({
-    ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs.")),
     ("clockPartitioning", Util.gettext("Does the clock partitioning.")),
     ("comSubExp", Util.gettext("replaces common sub expressions")),
     ("CSE_EachCall", Util.gettext("Common Function Call Elimination")),
@@ -794,10 +792,9 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "detectJacobianSparsePattern",
     "generateSymbolicJacobian",
     "generateSymbolicLinearization",
-    "removeConstants"
-    //"solveSimpleEquations",
-    //"partitionIndependentBlocks",
-    //"addInitialStmtsToAlgorithms",
+    "removeConstants",
+    "simplifyTimeIndepFuncCalls",
+    "addInitialStmtsToAlgorithms"
     }),
   SOME(STRING_DESC_OPTION({
     ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs.")),
