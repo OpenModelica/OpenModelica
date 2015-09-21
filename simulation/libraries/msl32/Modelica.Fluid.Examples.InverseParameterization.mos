@@ -98,6 +98,7 @@ runScript(modelTesting);getErrorString();
 //  * candidate: pump.heatTransfer.heatPorts[1].T(nominal = 300.0)
 //  * candidate: pump.heatTransfer.Ts[1](nominal = 300.0)
 // => select value from pump.heatTransfer.Ts[1](nominal = 300.0) for variable: pump.heatTransfer.Ts[1]
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 //
 // "true
 // "
