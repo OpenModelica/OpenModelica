@@ -54,9 +54,9 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "testAlgLoop5_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-12, method = 'optimization', fileNamePrefix = 'testAlgLoop5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1 -ipopt_init CONST'",
-//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+//     messages = "assert            | warning | The following assertion has been violated during initialization at time 0.000000
 // assert            | debug   | Model error: Argument of log(t4) was -7.46411 should be > 0
-// assert            | warning | The following assertion has been violated at time 0.000000
+// assert            | warning | The following assertion has been violated during initialization at time 0.000000
 // assert            | debug   | Model error: Argument of log(t4) was -1.78399 should be > 0
 //
 // Optimizer Variables

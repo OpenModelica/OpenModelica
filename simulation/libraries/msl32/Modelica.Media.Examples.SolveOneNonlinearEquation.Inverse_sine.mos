@@ -28,6 +28,7 @@ runScript(modelTesting);getErrorString();
 // Result file: Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sine_res.mat
 // Messages: stdout            | info    | x_zero = 0.523599, y_zero = 0.5, A*sin(w*x_zero) = 0.5
 // stdout            | info    | x_zero = 0.523599, y_zero = 0.5, A*sin(w*x_zero) = 0.5
+// stdout            | info    | x_zero = 0.523599, y_zero = 0.5, A*sin(w*x_zero) = 0.5
 //
 // Files Equal!
 // "true
