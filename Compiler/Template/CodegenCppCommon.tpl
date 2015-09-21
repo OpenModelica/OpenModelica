@@ -1440,8 +1440,6 @@ case ARRAY(array=_::_, ty = arraytype) then
                       else
                        let &varDecls += '<%ArrayType%> <%arrayVar%>;'
                        daeExpArray3(array, arrayVar, ArrayType, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-
-  let &preExp += '<%arrayassign%>'
   arrayVar
 case ARRAY(__) then
   let arrayTypeStr = expTypeArray(ty)
@@ -1461,7 +1459,7 @@ template daeExpArray3(list<Exp> array,  String arrayVar, String ArrayType, Conte
                      Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for an array expression."
 ::=
-let arraycreate = (array |> e hasindex i0  =>
+let arraycreate = (array |> e hasindex i0 fromindex 1 =>
        let subArraycall = daeExp(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
        <<
        <%arrayVar%>.append(<%i0%>, <%subArraycall%>);
