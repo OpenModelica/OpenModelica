@@ -1422,10 +1422,8 @@ template daeExpMatrixName2(ComponentRef cr)
   case WILD(__) then ' '
   else "CREF_NOT_IDENT_OR_QUAL"
 end daeExpMatrixName2;
-////////////////////////////////////////////////////////////////////////CED Functions
 
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template daeExpArray(Exp exp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                      Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for an array expression."
@@ -1440,20 +1438,8 @@ case ARRAY(array=_::_, ty = arraytype) then
                      let params =    daeExpArray2(array,arrayVar,ArrayType,arrayTypeStr,context,preExp,varDecls,simCode, &extraFuncs,&extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
                           ""
                       else
-                              let funcCalls = daeExpSubArray(array, arrayVar, ArrayType, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-                              let &extraFuncsDecl += 'void createArray_<%arrayVar%>(<%ArrayType%>& <%arrayVar%>);<%\n%>'
-                              let &extraFuncs +=
-                               <<
-                               void <%extraFuncsNamespace%>::createArray_<%arrayVar%>(<%ArrayType%>& <%arrayVar%>)
-                               {
-                                 <%arrayVar%>.setDims(<%allocateDimensions(arraytype,context)%>);
-                                 <%funcCalls%>
-                               }<%\n%>
-                               >>
-                               <<
-                               <%ArrayType%> <%arrayVar%>;
-                               createArray_<%arrayVar%>(<%arrayVar%>);<%\n%>
-                               >>
+                       let &varDecls += '<%ArrayType%> <%arrayVar%>;'
+                       daeExpArray3(array, arrayVar, ArrayType, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 
   let &preExp += '<%arrayassign%>'
   arrayVar
@@ -1471,18 +1457,108 @@ end daeExpArray;
 
 
 
-
-
-template daeExpSubArray(list<Exp> array, String arrayVar, String ArrayType, Context context, Text &preExp, Text &varDecls, SimCode simCode,
-                        Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template daeExpArray3(list<Exp> array,  String arrayVar, String ArrayType, Context context, Text &preExp,
+                     Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for an array expression."
 ::=
-(List.partition(array,50) |> subarray hasindex i0 fromindex 0 =>
-   daeExpSubArray2(subarray,i0,50,arrayVar,ArrayType,context,preExp,varDecls,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-   ;separator ="\n")
-end daeExpSubArray;
+let arraycreate = (array |> e hasindex i0  =>
+       let subArraycall = daeExp(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+       <<
+       <%arrayVar%>.append(<%i0%>, <%subArraycall%>);
+       >> ;separator="\n")
+       let &preExp +=
+       <<
+         <%arraycreate%>
+         <%\n%>
+       >>
+arraycreate
+end daeExpArray3;
 
 
+
+
+
+/*
+Array creation template functions, which splits the array creation code in separate methods
+*/
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//template daeExpArray(Exp exp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+//                     Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+// "Generates code for an array expression."
+//::=
+//match exp
+//case ARRAY(array=_::_, ty = arraytype) then
+//  let arrayTypeStr = expTypeArray(ty)
+//  let ArrayType = expTypeArrayforDim(ty)
+//  let &tmpVar = buffer ""
+//  let arrayVar = tempDecl(arrayTypeStr, &tmpVar /*BUFD*/)
+//  let arrayassign =  if scalar then
+//                     let params =    daeExpArray2(array,arrayVar,ArrayType,arrayTypeStr,context,preExp,varDecls,simCode, &extraFuncs,&extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+//                          ""
+//                      else
+//                              let funcCalls = daeExpSubArray(array, arrayVar, ArrayType, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+//                              let &extraFuncsDecl += 'void createArray_<%arrayVar%>(<%ArrayType%>& <%arrayVar%>);<%\n%>'
+//                              let &extraFuncs +=
+//                               <<
+//                               void <%extraFuncsNamespace%>::createArray_<%arrayVar%>(<%ArrayType%>& <%arrayVar%>)
+//                               {
+//                                 <%arrayVar%>.setDims(<%allocateDimensions(arraytype,context)%>);
+//                                 <%funcCalls%>
+//                               }<%\n%>
+//                               >>
+//                               <<
+//                               <%ArrayType%> <%arrayVar%>;
+//                               createArray_<%arrayVar%>(<%arrayVar%>);<%\n%>
+//                               >>
+//
+//  let &preExp += '<%arrayassign%>'
+//  arrayVar
+//case ARRAY(__) then
+//  let arrayTypeStr = expTypeArray(ty)
+//  let arrayDef = expTypeArrayforDim(ty)
+//  let &tmpdecl = buffer ""
+//  let arrayVar = tempDecl(arrayTypeStr, &tmpdecl )
+//  let &tmpVar = buffer ""
+//   let &preExp += '
+//   //tmp array
+//   <%arrayDef%><%arrayVar%>;<%\n%>'
+//  arrayVar
+//end daeExpArray;
+//
+//template daeExpSubArray(list<Exp> array, String arrayVar, String ArrayType, Context context, Text &preExp, Text &varDecls, SimCode simCode,
+//                        Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+// "Generates code for an array expression."
+//::=
+//(List.partition(array,50) |> subarray hasindex i0 fromindex 0 =>
+//   daeExpSubArray2(subarray,i0,50,arrayVar,ArrayType,context,preExp,varDecls,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+//   ;separator ="\n")
+//end daeExpSubArray;
+//
+//template daeExpSubArray2(list<Exp> array, Integer idx, Integer multiplicator, String arrayVar, String ArrayType, Context context, Text &preExp,
+//                     Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+// "Generates code for an array expression."
+//::=
+//let func = 'void createArray_<%arrayVar%>_<%idx%>(<%ArrayType%>& <%arrayVar%>);'
+//let &extraFuncsDecl += '<%func%><%\n%>'
+//let funcCall = 'createArray_<%arrayVar%>_<%idx%>(<%arrayVar%>);'
+//let &funcVarDecls = buffer ""
+//let &preExpSubArrays = buffer ""
+//let funcs = (array |> e hasindex i0 fromindex intAdd(intMul(idx, multiplicator),1) =>
+//       let subArraycall = daeExp(e, context, &preExpSubArrays, &funcVarDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+//       <<
+//       <%arrayVar%>.append(<%i0%>, <%subArraycall%>);
+//       >> ;separator="\n")
+//       let &extraFuncs +=
+//       <<
+//       void <%extraFuncsNamespace%>::createArray_<%arrayVar%>_<%idx%>(<%ArrayType%>& <%arrayVar%>)
+//       {
+//         <%funcVarDecls%>
+//         <%preExpSubArrays%>
+//         <%funcs%>
+//       }<%\n%>
+//       >>
+//funcCall
+//end daeExpSubArray2;
 
 template daeExpArray2(list<Exp> array,String arrayVar,String ArrayType,String arrayTypeStr, Context context, Text &preExp,
                      Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -1497,38 +1573,6 @@ let &preExp +=
 
 params
 end daeExpArray2;
-
-
-template daeExpSubArray2(list<Exp> array, Integer idx, Integer multiplicator, String arrayVar, String ArrayType, Context context, Text &preExp,
-                     Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Generates code for an array expression."
-::=
-let func = 'void createArray_<%arrayVar%>_<%idx%>(<%ArrayType%>& <%arrayVar%>);'
-let &extraFuncsDecl += '<%func%><%\n%>'
-let funcCall = 'createArray_<%arrayVar%>_<%idx%>(<%arrayVar%>);'
-let &funcVarDecls = buffer ""
-let &preExpSubArrays = buffer ""
-let funcs = (array |> e hasindex i0 fromindex intAdd(intMul(idx, multiplicator),1) =>
-       let subArraycall = daeExp(e, context, &preExpSubArrays, &funcVarDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-       <<
-       <%arrayVar%>.append(<%i0%>, <%subArraycall%>);
-       >> ;separator="\n")
-       let &extraFuncs +=
-       <<
-       void <%extraFuncsNamespace%>::createArray_<%arrayVar%>_<%idx%>(<%ArrayType%>& <%arrayVar%>)
-       {
-         <%funcVarDecls%>
-         <%preExpSubArrays%>
-         <%funcs%>
-       }<%\n%>
-       >>
-funcCall
-end daeExpSubArray2;
-
-
-
-
-
 
 template daeExpAsub(Exp inExp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                     Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)

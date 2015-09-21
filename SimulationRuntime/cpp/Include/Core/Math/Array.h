@@ -1565,6 +1565,12 @@ class DynArrayDim1 : public DynArray<T, 1>
     this->resize(dims);
   }
 
+  virtual void setDims(const std::vector<size_t>& dims)
+  {
+    this->resize(dims);
+  }
+
+
   typedef const T* const_iterator;
   typedef T* iterator;
 
@@ -1668,6 +1674,10 @@ class DynArrayDim2 : public DynArray<T, 2>
     dims.push_back(size2);
     this->resize(dims);
   }
+  virtual void setDims(const std::vector<size_t>& dims)
+  {
+      this->resize(dims);
+  }
 };
 
 /**
@@ -1713,6 +1723,10 @@ public:
     dims.push_back(size2);
     dims.push_back(size3);
     this->resize(dims);
+  }
+  virtual void setDims(const std::vector<size_t>& dims)
+  {
+      this->resize(dims);
   }
 
   virtual const T& operator()(const vector<size_t>& idx) const
