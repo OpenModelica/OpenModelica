@@ -6492,14 +6492,14 @@ public function getSolvedSystem "Run the equation system pipeline."
   input Option<String> strmatchingAlgorithm = NONE();
   input Option<String> strdaeHandler = NONE();
   input Option<list<String>> strPostOptModules = NONE();
-  output BackendDAE.BackendDAE outSODE;
+  output BackendDAE.BackendDAE outSimDAE;
   output BackendDAE.BackendDAE outInitDAE;
   output Boolean outUseHomotopy "true if homotopy(...) is used during initialization";
   output list<BackendDAE.Equation> outRemovedInitialEquationLst;
   output list<BackendDAE.Var> outPrimaryParameters "already sorted";
   output list<BackendDAE.Var> outAllPrimaryParameters "already sorted";
 protected
-  BackendDAE.BackendDAE optdae, sode, sode1, optsode;
+  BackendDAE.BackendDAE dae, simDAE;
   list<tuple<BackendDAEFunc.preOptimizationDAEModule, String, Boolean>> preOptModules;
   list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean>> postOptModules;
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
@@ -6518,59 +6518,62 @@ algorithm
   end if;
 
   // pre-optimization phase
-  optdae := preOptimizeDAE(inDAE, preOptModules);
+  dae := preOptimizeDAE(inDAE, preOptModules);
 
   // transformation phase (matching and sorting using index reduction method)
-  sode := causalizeDAE(optdae, NONE(), matchingAlgorithm, daeHandler, true);
+  dae := causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, true);
   SimCodeFunctionUtil.execStat("matching and sorting");
 
+  dae := BackendDAEOptimize.removeUnusedFunctions(dae);
+  SimCodeFunctionUtil.execStat("remove unused functions");
+
   if Flags.isSet(Flags.GRAPHML) then
-    HpcOmTaskGraph.dumpBipartiteGraph(sode, fileNamePrefix);
+    HpcOmTaskGraph.dumpBipartiteGraph(dae, fileNamePrefix);
   end if;
 
   if Flags.isSet(Flags.BLT_DUMP) then
-    BackendDump.bltdump("bltdump", sode);
+    BackendDump.bltdump("bltdump", dae);
   end if;
 
   if Flags.isSet(Flags.EVAL_OUTPUT_ONLY) then
     // prepare the equations
-    sode := BackendDAEOptimize.evaluateOutputsOnly(sode);
+    dae := BackendDAEOptimize.evaluateOutputsOnly(dae);
   end if;
 
-  sode := BackendDAEOptimize.removeUnusedFunctions(sode);
-
   // generate system for initialization
-  (outInitDAE, outUseHomotopy, outRemovedInitialEquationLst, outPrimaryParameters, outAllPrimaryParameters) := Initialization.solveInitialSystem(sode);
+  (outInitDAE, outUseHomotopy, outRemovedInitialEquationLst, outPrimaryParameters, outAllPrimaryParameters) := Initialization.solveInitialSystem(dae);
+
+  simDAE := Initialization.removeInitializationStuff(dae);
 
   // post-optimization phase
-  optsode := postOptimizeDAE(sode, postOptModules, matchingAlgorithm, daeHandler);
+  simDAE := postOptimizeDAE(simDAE, postOptModules, matchingAlgorithm, daeHandler);
 
-  sode1 := FindZeroCrossings.findZeroCrossings(optsode);
+  simDAE := FindZeroCrossings.findZeroCrossings(simDAE);
   SimCodeFunctionUtil.execStat("findZeroCrossings");
 
-  _ := traverseBackendDAEExpsNoCopyWithUpdate(sode1, ExpressionSimplify.simplifyTraverseHelper, 0) "simplify all expressions";
+  _ := traverseBackendDAEExpsNoCopyWithUpdate(simDAE, ExpressionSimplify.simplifyTraverseHelper, 0) "simplify all expressions";
   SimCodeFunctionUtil.execStat("SimplifyAllExp");
 
-  outSODE := calculateValues(sode1);
+  outSimDAE := calculateValues(simDAE);
   SimCodeFunctionUtil.execStat("calculateValue");
 
   if Flags.isSet(Flags.DUMP_INDX_DAE) then
-    BackendDump.dumpBackendDAE(outSODE, "dumpindxdae");
+    BackendDump.dumpBackendDAE(outSimDAE, "dumpindxdae");
     if Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP) then
-      BackendDump.graphvizBackendDAE(outSODE, "dumpindxdae");
+      BackendDump.graphvizBackendDAE(outSimDAE, "dumpindxdae");
     end if;
   end if;
   if Flags.isSet(Flags.DUMP_TRANSFORMED_MODELICA_MODEL) then
-    BackendDump.dumpBackendDAEToModelica(outSODE, "dumpindxdae");
+    BackendDump.dumpBackendDAEToModelica(outSimDAE, "dumpindxdae");
   end if;
   if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) or Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
-    BackendDump.dumpCompShort(outSODE);
+    BackendDump.dumpCompShort(outSimDAE);
   end if;
   if Flags.isSet(Flags.DUMP_EQNINORDER) then
-    BackendDump.dumpEqnsSolved(outSODE, "indxdae: eqns in order");
+    BackendDump.dumpEqnsSolved(outSimDAE, "indxdae: eqns in order");
   end if;
 
-  checkBackendDAEWithErrorMsg(outSODE);
+  checkBackendDAEWithErrorMsg(outSimDAE);
 end getSolvedSystem;
 
 public function preOptimizeBackendDAE "
@@ -7253,7 +7256,6 @@ algorithm
                         (EvaluateParameter.evaluateReplaceProtectedFinalEvaluateParameters, "evaluateReplaceProtectedFinalEvaluateParameters", false),
                         (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations", false),
                         (HpcOmEqSystems.partitionLinearTornSystem, "partlintornsystem", false),
-                        (Initialization.removeInitializationStuff, "removeInitializationStuff", true),
                         (InlineArrayEquations.inlineArrayEqn, "inlineArrayEqn", false),
                         (OnRelaxation.relaxSystem, "relaxSystem", false),
                         (RemoveSimpleEquations.removeSimpleEquations, "removeSimpleEquations", false),
