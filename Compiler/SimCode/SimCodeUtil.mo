@@ -169,7 +169,6 @@ public function createSimCode "entry point to create SimCode from BackendDAE."
   output tuple<Integer, list<tuple<Integer, Integer>>> outMapping "the highest simEqIndex in the mapping and the mapping simEq-Index -> scc-Index itself";
 protected
   BackendDAE.BackendDAE dlow;
-  BackendDAE.BackendDAE initDAE;
   BackendDAE.EquationArray removedEqs;
   BackendDAE.EventInfo eventInfo;
   BackendDAE.Shared shared;
@@ -223,7 +222,6 @@ protected
 algorithm
   try
     dlow := inBackendDAE;
-    initDAE := inInitDAE;
 
     System.tmpTickReset(0);
     uniqueEqIndex := 1;
@@ -243,14 +241,8 @@ algorithm
       BackendDAEOptimize.listAllIterationVariables(dlow);
     end if;
 
-    // replace pre(alias) in time-equations
-    dlow := BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
-
     // initialization stuff
-    (initialEquations, removedInitialEquations, uniqueEqIndex, tempvars) := createInitialEquations(initDAE, inRemovedInitialEquationLst, uniqueEqIndex, {});
-
-    // addInitialStmtsToAlgorithms
-    dlow := BackendDAEOptimize.addInitialStmtsToAlgorithms(dlow);
+    (initialEquations, removedInitialEquations, uniqueEqIndex, tempvars) := createInitialEquations(inInitDAE, inRemovedInitialEquationLst, uniqueEqIndex, {});
 
     shared as BackendDAE.SHARED(knownVars=knownVars,
                                 constraints=constraints,
@@ -258,17 +250,14 @@ algorithm
                                 symjacs=symJacs,
                                 eventInfo=eventInfo) := dlow.shared;
 
-
     removedEqs := BackendDAEUtil.collapseRemovedEqs(dlow);
 
- // created event suff e.g. zeroCrossings, samples, ...
+    // created event suff e.g. zeroCrossings, samples, ...
     timeEvents := eventInfo.timeEvents;
     zeroCrossings := if ifcpp then eventInfo.relationsLst else eventInfo.zeroCrossingLst;
     relations := eventInfo.relationsLst;
     sampleZC := eventInfo.sampleLst;
     zeroCrossings := if ifcpp then listAppend(zeroCrossings, sampleZC) else zeroCrossings;
-
-    // equation generation for euler, dassl2, rungekutta
 
     (clockedSysts, contSysts) := List.splitOnTrue(dlow.eqs, BackendDAEUtil.isClockedSyst);
 
@@ -315,7 +304,7 @@ algorithm
       dlow := BackendDAEUtil.mapEqSystem(dlow, Vectorization.enlargeIteratedArrayVars);
     end if;
 
-    modelInfo := createModelInfo(inClassName, dlow, initDAE, functions, {}, numStateSets, inFileDir, listLength(clockedSysts));
+    modelInfo := createModelInfo(inClassName, dlow, inInitDAE, functions, {}, numStateSets, inFileDir, listLength(clockedSysts));
     modelInfo := addTempVars(tempvars, modelInfo);
 
     // external objects
