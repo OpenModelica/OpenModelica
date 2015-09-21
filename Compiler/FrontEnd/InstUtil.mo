@@ -8731,6 +8731,9 @@ end propagateModFinal;
 //------------------------------
 //------  PDE extension:  ------
 //------------------------------
+
+public type DomainFieldsLst = List<Tuple<DAE.ComponentRef,List<Absyn.ComponentRef>>>;
+
 public function elabField
 //For field variables: finds the "domain" modifier,
 //finds domain.N - length of discretized field array
@@ -8776,74 +8779,6 @@ algorithm
         (dim_f::inDims, outMod, SOME((Absyn.CREF_IDENT(name, {}),dcr)));
   end match;
 end elabField;
-
-protected function addEach
-"map function that adds each prefix to given modifier"
-  input DAE.SubMod inSubMod;
-  output DAE.SubMod outSubMod;
-  protected DAE.Ident ident;
-  protected SCode.Final finalPrefix;
-  protected SCode.Each eachPrefix;
-  protected list<DAE.SubMod> subModLst;
-  protected Option<DAE.EqMod> eqModOption;
-
-/*  equation
-    DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, _, subModLst, eqModOption)) = inSubMod;
-    outSubMod = DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, SCode.EACH(), subModLst, eqModOption));*/
-  algorithm
-    outSubMod := match inSubMod
-      case DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, _, subModLst, eqModOption))
-      then DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, SCode.EACH(), subModLst, eqModOption));
-    end match;
-end addEach;
-
-//public type List<Tuple<DAE.ComponentRef,List<Absyn.ComponentRef>>> LDomainFields;
-public type DomainFieldsLst = List<Tuple<DAE.ComponentRef,List<Absyn.ComponentRef>>>;
-
-public function optAppendField
-  input DomainFieldsLst inDomFieldsLst;
-  input Option<Tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomOpt;
-  output DomainFieldsLst outDomFieldsLst;
-algorithm
-  outDomFieldsLst := matchcontinue fieldDomOpt
-  local
-    Absyn.ComponentRef fieldCr;
-    DAE.ComponentRef domainCr;
-    Boolean found;
-    case NONE()
-      then inDomFieldsLst;
-    case SOME((fieldCr,domainCr))
-      equation
-        (outDomFieldsLst, found) = List.map2Fold(inDomFieldsLst,optAppendFieldMapFun,domainCr,fieldCr,false);
-        if not found then
-          outDomFieldsLst = (domainCr,{fieldCr})::inDomFieldsLst;
-        end if;
-      then
-        outDomFieldsLst;
-  end matchcontinue;
-end optAppendField;
-
-protected function optAppendFieldMapFun
-  input Tuple<DAE.ComponentRef,List<Absyn.ComponentRef>> inDomainFields;
-  input DAE.ComponentRef domainCrToAdd;
-  input Absyn.ComponentRef fieldCrToAdd;
-  input Boolean inFound;
-  output Tuple<DAE.ComponentRef,List<Absyn.ComponentRef>> outDomainFields;
-  output Boolean outFound;
-algorithm
-  (outDomainFields, outFound) := matchcontinue (inDomainFields,inFound)
-  local
-    DAE.ComponentRef domainCr;
-    List<Absyn.ComponentRef> fieldCrLst;
-  case ((domainCr,fieldCrLst),false)
-    equation
-      true = ComponentReference.crefEqual(domainCr,domainCrToAdd);
-    then
-      ((domainCr,fieldCrToAdd::fieldCrLst),true);
-    else
-      (inDomainFields,inFound);
-  end matchcontinue;
-end optAppendFieldMapFun;
 
 protected function domainSearchFun
 "fold function to find domain modifier in modifiers list"
@@ -8899,6 +8834,75 @@ protected function findN
       else NONE();
     end match;
 end findN;
+
+protected function addEach
+"map function that adds each prefix to given modifier"
+  input DAE.SubMod inSubMod;
+  output DAE.SubMod outSubMod;
+  protected DAE.Ident ident;
+  protected SCode.Final finalPrefix;
+  protected SCode.Each eachPrefix;
+  protected list<DAE.SubMod> subModLst;
+  protected Option<DAE.EqMod> eqModOption;
+
+/*  equation
+    DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, _, subModLst, eqModOption)) = inSubMod;
+    outSubMod = DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, SCode.EACH(), subModLst, eqModOption));*/
+  algorithm
+    outSubMod := match inSubMod
+      case DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, _, subModLst, eqModOption))
+      then DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, SCode.EACH(), subModLst, eqModOption));
+    end match;
+end addEach;
+
+//----end elabField and sub funs
+
+public function optAppendField
+  input DomainFieldsLst inDomFieldsLst;
+  input Option<Tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomOpt;
+  output DomainFieldsLst outDomFieldsLst;
+algorithm
+  outDomFieldsLst := matchcontinue fieldDomOpt
+  local
+    Absyn.ComponentRef fieldCr;
+    DAE.ComponentRef domainCr;
+    Boolean found;
+    case NONE()
+      then inDomFieldsLst;
+    case SOME((fieldCr,domainCr))
+      equation
+        (outDomFieldsLst, found) = List.map2Fold(inDomFieldsLst,optAppendFieldMapFun,domainCr,fieldCr,false);
+        if not found then
+          outDomFieldsLst = (domainCr,{fieldCr})::inDomFieldsLst;
+        end if;
+      then
+        outDomFieldsLst;
+  end matchcontinue;
+end optAppendField;
+
+protected function optAppendFieldMapFun
+  input Tuple<DAE.ComponentRef,List<Absyn.ComponentRef>> inDomainFields;
+  input DAE.ComponentRef domainCrToAdd;
+  input Absyn.ComponentRef fieldCrToAdd;
+  input Boolean inFound;
+  output Tuple<DAE.ComponentRef,List<Absyn.ComponentRef>> outDomainFields;
+  output Boolean outFound;
+algorithm
+  (outDomainFields, outFound) := matchcontinue (inDomainFields,inFound)
+  local
+    DAE.ComponentRef domainCr;
+    List<Absyn.ComponentRef> fieldCrLst;
+  case ((domainCr,fieldCrLst),false)
+    equation
+      true = ComponentReference.crefEqual(domainCr,domainCrToAdd);
+    then
+      ((domainCr,fieldCrToAdd::fieldCrLst),true);
+    else
+      (inDomainFields,inFound);
+  end matchcontinue;
+end optAppendFieldMapFun;
+
+//----end optAppendField and sub funs
 
 public function discretizePDE
 //main discretization function, converts PDE into set of ODEs
