@@ -27,7 +27,7 @@ getErrorString();
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 4, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'AssertTestInst', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: AssertTestInst
-// assert            | warning | The following assertion has been violated at time 0.000000
+// assert            | warning | The following assertion has been violated during initialization at time 0.000000
 // |                 | |       | 7.0 >= assertTest.lowlimit and 7.0 <= assertTest.highlimit
 // assert            | error   | Variable x out of limit
 // assert            | info    | simulation terminated by an assertion at initialization

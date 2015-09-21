@@ -15,8 +15,7 @@ val(state2.active,4);
 //     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 0, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SMMin', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
-// "
+// ""
 // 1.0
 // 0.0
 // endResult

@@ -2,9 +2,10 @@ TEST = ../../../../../rtest -v
 
 
 TESTFILES = \
-Crane_FMU1_CPP.mos
+DIC_FMU1_CPP.mos
 
 FAILINGTESTFILES = \
+Crane_FMU1_CPP.mos \
 CoupledClutches_FMU1_CPP.mos \
 
 DEPENDENCIES = \

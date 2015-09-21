@@ -26,7 +26,7 @@ val(y,1.0);
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testAssertSolve', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: testAssertSolve
-// assert            | warning | The following assertion has been violated at time 0.000000
+// assert            | warning | The following assertion has been violated during initialization at time 0.000000
 // assert            | debug   | Model error: Argument of log(y) was 0 should be > 0
 // assert            | info    | simulation terminated by an assertion at initialization
 // "

@@ -1,12 +1,10 @@
 TEST = ../../../rtest -v
 
-TESTFILES = 
-
+TESTFILES = \
+Modelica.Electrical.Analog.Examples.CauerLowPassSC_cpp_static.mos
 
 # Run make failingtest
-FAILINGTESTFILES = \
-Modelica.Electrical.Analog.Examples.CauerLowPassSC.mos
-
+FAILINGTESTFILES =
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

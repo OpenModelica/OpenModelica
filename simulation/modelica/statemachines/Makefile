@@ -6,10 +6,13 @@ Maraninchi2003_2.mos \
 SMMin.mos \
 TicksInState.mos \
 TimeInState.mos \
+MLS33_17_3_7NA.mos \
+DeadEnd.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make failingtest
 FAILINGTESTFILES = \
+SingleState.mos \
 
 
 # Dependency files that are not .mo .mos or Makefile
