@@ -5816,21 +5816,19 @@ algorithm
   end match;
 end traverseStateSetsJacobiansExp;
 
-public function traverseBackendDAEExpsNoCopyWithUpdate "
-  This function goes through the BackendDAE structure and finds all the
+public function traverseBackendDAEExpsNoCopyWithUpdate<A>
+ "This function goes through the BackendDAE structure and finds all the
   expressions and performs the function on them in a list
-  an extra argument passed through the function.
-"
-  replaceable type Type_a subtypeof Any;
+  an extra argument passed through the function."
   input BackendDAE.BackendDAE inBackendDAE;
   input FuncExpType func;
-  input Type_a inTypeA;
-  output Type_a outTypeA;
+  input A inTypeA;
+  output A outTypeA;
   partial function FuncExpType
     input DAE.Exp inExp;
-    input Type_a inTypeA;
+    input A inTypeA;
     output DAE.Exp outExp;
-    output Type_a outA;
+    output A outA;
   end FuncExpType;
 algorithm
   outTypeA := matchcontinue inBackendDAE
@@ -6551,9 +6549,6 @@ algorithm
   simDAE := FindZeroCrossings.findZeroCrossings(simDAE);
   SimCodeFunctionUtil.execStat("findZeroCrossings");
 
-  _ := traverseBackendDAEExpsNoCopyWithUpdate(simDAE, ExpressionSimplify.simplifyTraverseHelper, 0) "simplify all expressions";
-  SimCodeFunctionUtil.execStat("SimplifyAllExp");
-
   outSimDAE := calculateValues(simDAE);
   SimCodeFunctionUtil.execStat("calculateValue");
 
@@ -7235,6 +7230,7 @@ algorithm
                         (BackendDAEOptimize.removeEqualFunctionCalls, "removeEqualFunctionCalls", false),
                         (BackendDAEOptimize.removeUnusedParameter, "removeUnusedParameter", false),
                         (BackendDAEOptimize.removeUnusedVariables, "removeUnusedVariables", false),
+                        (BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions", false),
                         (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction", false),
                         (BackendDAEOptimize.simplifyLoops, "simplifyLoops", false),
                         (BackendDAEOptimize.simplifyTimeIndepFuncCalls, "simplifyTimeIndepFuncCalls", false),
@@ -7286,7 +7282,8 @@ protected
   list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean/*stopOnFailure*/>> allInitOptModules;
   list<String> initOptModules;
 algorithm
-  allInitOptModules := {(BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction", false),
+  allInitOptModules := {(BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions", false),
+                        (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction", false),
                         (BackendDAEOptimize.simplifyLoops, "simplifyLoops", false),
                         (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization", false),
                         (DynamicOptimization.removeLoops, "extendDynamicOptimization", false),

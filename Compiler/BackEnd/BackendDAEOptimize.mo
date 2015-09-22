@@ -84,6 +84,13 @@ protected import Util;
 protected import Values;
 protected import ValuesUtil;
 
+public function simplifyAllExpressions "author: lochel"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE = inDAE;
+algorithm
+  _ := BackendDAEUtil.traverseBackendDAEExpsNoCopyWithUpdate(outDAE, ExpressionSimplify.simplifyTraverseHelper, 0);
+end simplifyAllExpressions;
+
 // =============================================================================
 // simplify time independent function calls
 //
