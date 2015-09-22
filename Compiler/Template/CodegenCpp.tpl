@@ -1877,7 +1877,7 @@ int _tmain(int argc, const _TCHAR* argv[])
 
   //create Modelica system
   boost::weak_ptr<ISimData> simData = simulation.first->LoadSimData("<%lastIdentOfPath(modelInfo.name)%>");
-  boost::weak_ptr<ISimVars> simVars = simulation.first->LoadSimVars("<%lastIdentOfPath(modelInfo.name)%>",<%numRealVars%>,<%numIntVars%>,<%numBoolVars%>,<%numPreVars%>,<%numStatevars(modelInfo)%>,<%numStateVarIndex(modelInfo)%>);
+  boost::weak_ptr<ISimVars> simVars = simulation.first->LoadSimVars("<%lastIdentOfPath(modelInfo.name)%>",<%numRealVars%>,<%numIntVars%>,<%numBoolVars%>,<%numStringVars%>,<%numPreVars%>,<%numStatevars(modelInfo)%>,<%numStateVarIndex(modelInfo)%>);
   boost::weak_ptr<IMixedSystem> system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>  ","<%lastIdentOfPath(modelInfo.name)%>");
   boost::shared_ptr<ISimData> data = simData.lock();
   boost::shared_ptr<ISimData> simData_shared = simData.lock();
@@ -2119,7 +2119,7 @@ extern "C"  int initSimulation(ISimController* &controller, ISimData* &data, dou
   <%defineOutputVars(simCode)%>
 
   LogSettings logsetting;
-    SimSettings settings = {"RTEuler","","kinsol",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",0,OPT_NONE, logsetting};
+    SimSettings settings = {"RTEuler","","newton",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",0,OPT_NONE, logsetting};
   //                       Solver,          nonlinearsolver starttime endtime stepsize   lower limit upper limit  tolerance
   try
   {
@@ -6051,7 +6051,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  then
    //let () = System.tmpTickReset(0)
    let &varDecls = buffer "" /*BUFD*/
-
+   let modelname = identOfPathDot(modelInfo.name)
    let initFunctions = functionInitial(startValueEquations, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
    let initZeroCrossings = functionOnlyZeroCrossing(zeroCrossings,varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace)
    let initEventHandling = eventHandlingInit(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
@@ -6065,7 +6065,11 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
       initializeMemory();
+   #if defined(__vxworks)
+      IPropertyReader *reader = new XmlPropertyReader("/SYSTEM/bundles/com.boschrexroth.<%modelname%>/OMCpp<%fileNamePrefix%>Init.xml");
+   #else
       IPropertyReader *reader = new XmlPropertyReader("<%makefileParams.compileDir%>/OMCpp<%fileNamePrefix%>Init.xml");
+   #endif
       reader->readInitialValues(*this, _sim_vars);
       initializeFreeVariables();
       /*Start complex expressions */
@@ -8687,6 +8691,13 @@ template identOfPath(Path modelName) ::=
   case IDENT(__)     then name
   case FULLYQUALIFIED(__) then lastIdentOfPath(path)
 end identOfPath;
+
+template identOfPathDot(Path modelName) ::=
+  match modelName
+  case QUALIFIED(__) then '<%name%>.<%lastIdentOfPath(path)%>'
+  case IDENT(__)     then name
+  case FULLYQUALIFIED(__) then lastIdentOfPath(path)
+end identOfPathDot;
 
 template lastIdentOfPathFromSimCode(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace) ::=
   match simCode
