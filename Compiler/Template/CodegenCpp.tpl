@@ -687,7 +687,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
    let &varDecls5 = buffer "" /*BUFD*/
    let &varDecls6 = buffer "" /*BUFD*/
    let &varDecls7 = buffer "" /*BUFD*/
-   let functionPrefix = if Flags.isSet(Flags.HARDCODED_START_VALUES) then "initialize" else "<%functionPrefix%>"
+   let functionPrefix = if Flags.isSet(Flags.HARDCODED_START_VALUES) then "initialize" else "check"
 
    let init3   = initValstWithSplit(varDecls3, "Real", '<%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>AlgVars', vars.algVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
    let init4   = initValst(varDecls4, "Real", vars.discreteAlgVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,contextOther, stateDerVectorName, useFlatArrayNotation)
