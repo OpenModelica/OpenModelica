@@ -4,15 +4,10 @@
  *  @{
  */
 #if defined(__vxworks)
-#include <klu.h>
+//#include <klu.h>
 #else
-#include <Solver/KLU/klu.h>
+//#include <Solver/KLU/klu.h>
 #endif
-/*
-class klu_symbolic;
-class klu_numeric  ;
-class klu_common  ;
-*/
 
 class Kinsol : public IAlgLoopSolver
 {
@@ -111,7 +106,7 @@ private:
    int _counter;
    //required for klu linear solver
    bool _sparse;
-
+/*
    klu_symbolic* _kluSymbolic ;
    klu_numeric* _kluNumeric ;
    klu_common* _kluCommon ;
@@ -119,7 +114,7 @@ private:
    int* _Ap;
    double* _Ax;
    int _nonzeros;
-
+*/
 
 };
 /** @} */ // end of solverKinsol
