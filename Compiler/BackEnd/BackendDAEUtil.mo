@@ -5816,21 +5816,19 @@ algorithm
   end match;
 end traverseStateSetsJacobiansExp;
 
-public function traverseBackendDAEExpsNoCopyWithUpdate "
-  This function goes through the BackendDAE structure and finds all the
+public function traverseBackendDAEExpsNoCopyWithUpdate<A>
+ "This function goes through the BackendDAE structure and finds all the
   expressions and performs the function on them in a list
-  an extra argument passed through the function.
-"
-  replaceable type Type_a subtypeof Any;
+  an extra argument passed through the function."
   input BackendDAE.BackendDAE inBackendDAE;
   input FuncExpType func;
-  input Type_a inTypeA;
-  output Type_a outTypeA;
+  input A inTypeA;
+  output A outTypeA;
   partial function FuncExpType
     input DAE.Exp inExp;
-    input Type_a inTypeA;
+    input A inTypeA;
     output DAE.Exp outExp;
-    output Type_a outA;
+    output A outA;
   end FuncExpType;
 algorithm
   outTypeA := matchcontinue inBackendDAE
@@ -6492,14 +6490,14 @@ public function getSolvedSystem "Run the equation system pipeline."
   input Option<String> strmatchingAlgorithm = NONE();
   input Option<String> strdaeHandler = NONE();
   input Option<list<String>> strPostOptModules = NONE();
-  output BackendDAE.BackendDAE outSODE;
+  output BackendDAE.BackendDAE outSimDAE;
   output BackendDAE.BackendDAE outInitDAE;
   output Boolean outUseHomotopy "true if homotopy(...) is used during initialization";
   output list<BackendDAE.Equation> outRemovedInitialEquationLst;
   output list<BackendDAE.Var> outPrimaryParameters "already sorted";
   output list<BackendDAE.Var> outAllPrimaryParameters "already sorted";
 protected
-  BackendDAE.BackendDAE optdae, sode, sode1, optsode;
+  BackendDAE.BackendDAE dae, simDAE;
   list<tuple<BackendDAEFunc.preOptimizationDAEModule, String, Boolean>> preOptModules;
   list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean>> postOptModules;
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
@@ -6518,59 +6516,59 @@ algorithm
   end if;
 
   // pre-optimization phase
-  optdae := preOptimizeDAE(inDAE, preOptModules);
+  dae := preOptimizeDAE(inDAE, preOptModules);
 
   // transformation phase (matching and sorting using index reduction method)
-  sode := causalizeDAE(optdae, NONE(), matchingAlgorithm, daeHandler, true);
+  dae := causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, true);
   SimCodeFunctionUtil.execStat("matching and sorting");
 
+  dae := BackendDAEOptimize.removeUnusedFunctions(dae);
+  SimCodeFunctionUtil.execStat("remove unused functions");
+
   if Flags.isSet(Flags.GRAPHML) then
-    HpcOmTaskGraph.dumpBipartiteGraph(sode, fileNamePrefix);
+    HpcOmTaskGraph.dumpBipartiteGraph(dae, fileNamePrefix);
   end if;
 
   if Flags.isSet(Flags.BLT_DUMP) then
-    BackendDump.bltdump("bltdump", sode);
+    BackendDump.bltdump("bltdump", dae);
   end if;
 
   if Flags.isSet(Flags.EVAL_OUTPUT_ONLY) then
     // prepare the equations
-    sode := BackendDAEOptimize.evaluateOutputsOnly(sode);
+    dae := BackendDAEOptimize.evaluateOutputsOnly(dae);
   end if;
 
-  sode := BackendDAEOptimize.removeUnusedFunctions(sode);
-
   // generate system for initialization
-  (outInitDAE, outUseHomotopy, outRemovedInitialEquationLst, outPrimaryParameters, outAllPrimaryParameters) := Initialization.solveInitialSystem(sode);
+  (outInitDAE, outUseHomotopy, outRemovedInitialEquationLst, outPrimaryParameters, outAllPrimaryParameters) := Initialization.solveInitialSystem(dae);
+
+  simDAE := Initialization.removeInitializationStuff(dae);
 
   // post-optimization phase
-  optsode := postOptimizeDAE(sode, postOptModules, matchingAlgorithm, daeHandler);
+  simDAE := postOptimizeDAE(simDAE, postOptModules, matchingAlgorithm, daeHandler);
 
-  sode1 := FindZeroCrossings.findZeroCrossings(optsode);
+  simDAE := FindZeroCrossings.findZeroCrossings(simDAE);
   SimCodeFunctionUtil.execStat("findZeroCrossings");
 
-  _ := traverseBackendDAEExpsNoCopyWithUpdate(sode1, ExpressionSimplify.simplifyTraverseHelper, 0) "simplify all expressions";
-  SimCodeFunctionUtil.execStat("SimplifyAllExp");
-
-  outSODE := calculateValues(sode1);
+  outSimDAE := calculateValues(simDAE);
   SimCodeFunctionUtil.execStat("calculateValue");
 
   if Flags.isSet(Flags.DUMP_INDX_DAE) then
-    BackendDump.dumpBackendDAE(outSODE, "dumpindxdae");
+    BackendDump.dumpBackendDAE(outSimDAE, "dumpindxdae");
     if Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP) then
-      BackendDump.graphvizBackendDAE(outSODE, "dumpindxdae");
+      BackendDump.graphvizBackendDAE(outSimDAE, "dumpindxdae");
     end if;
   end if;
   if Flags.isSet(Flags.DUMP_TRANSFORMED_MODELICA_MODEL) then
-    BackendDump.dumpBackendDAEToModelica(outSODE, "dumpindxdae");
+    BackendDump.dumpBackendDAEToModelica(outSimDAE, "dumpindxdae");
   end if;
   if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) or Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
-    BackendDump.dumpCompShort(outSODE);
+    BackendDump.dumpCompShort(outSimDAE);
   end if;
   if Flags.isSet(Flags.DUMP_EQNINORDER) then
-    BackendDump.dumpEqnsSolved(outSODE, "indxdae: eqns in order");
+    BackendDump.dumpEqnsSolved(outSimDAE, "indxdae: eqns in order");
   end if;
 
-  checkBackendDAEWithErrorMsg(outSODE);
+  checkBackendDAEWithErrorMsg(outSimDAE);
 end getSolvedSystem;
 
 public function preOptimizeBackendDAE "
@@ -6980,42 +6978,39 @@ end postOptimizeDAE;
 //   end match;
 // end countComponents;
 
-public function getSolvedSystemforJacobians
-"  Run the equation system pipeline."
+public function getSolvedSystemforJacobians "Run the equation system pipeline."
   input BackendDAE.BackendDAE inDAE;
   input Option<list<String>> strPreOptModules;
-  input Option<String> strmatchingAlgorithm;
-  input Option<String> strdaeHandler;
-  input Option<list<String>> strpostOptModules;
-  output BackendDAE.BackendDAE outSODE;
+  input Option<String> strMatchingAlgorithm;
+  input Option<String> strDAEHandler;
+  input Option<list<String>> strPostOptModules;
+  output BackendDAE.BackendDAE outDAE;
 protected
-  BackendDAE.BackendDAE dae,optdae,sode;
+  BackendDAE.BackendDAE dae;
   list<tuple<BackendDAEFunc.preOptimizationDAEModule,String,Boolean>> preOptModules;
   list<tuple<BackendDAEFunc.postOptimizationDAEModule,String,Boolean>> postOptModules;
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc,String,BackendDAEFunc.stateDeselectionFunc,String> daeHandler;
   tuple<BackendDAEFunc.matchingAlgorithmFunc,String> matchingAlgorithm;
 algorithm
   preOptModules := getPreOptModules(strPreOptModules);
-  postOptModules := getPostOptModules(strpostOptModules);
-  matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);
-  daeHandler := getIndexReductionMethod(strdaeHandler);
+  postOptModules := getPostOptModules(strPostOptModules);
+  matchingAlgorithm := getMatchingAlgorithm(strMatchingAlgorithm);
+  daeHandler := getIndexReductionMethod(strDAEHandler);
 
   //fcall2(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE, "dumpdaelow");
   // pre optimisation phase
-  _ := traverseBackendDAEExps(inDAE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
-  optdae := preOptimizeDAE(inDAE,preOptModules);
+  dae := preOptimizeDAE(inDAE, preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
-  sode := causalizeDAE(optdae,NONE(),matchingAlgorithm,daeHandler,true);
-  //fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump",sode));
+  dae := causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, true);
+  //fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump", dae));
 
   // post-optimization phase
-  outSODE := postOptimizeDAE(sode,postOptModules,matchingAlgorithm,daeHandler);
-  _ := traverseBackendDAEExps(outSODE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
+  outDAE := postOptimizeDAE(dae, postOptModules, matchingAlgorithm, daeHandler);
 
-  //fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
-  //bcall(Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) or Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO), BackendDump.dumpCompShort, outSODE);
-  //fcall2(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE, "system for jacobians");
+  //fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outDAE, "dumpindxdae");
+  //bcall(Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) or Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO), BackendDump.dumpCompShort, outDAE);
+  //fcall2(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outDAE, "system for jacobians");
 end getSolvedSystemforJacobians;
 
 /*************************************************
@@ -7180,6 +7175,7 @@ algorithm
                        (BackendDAEOptimize.removeUnusedVariables, "removeUnusedVariables", false),
                        (BackendDAEOptimize.replaceEdgeChange, "replaceEdgeChange", false),
                        (BackendDAEOptimize.residualForm, "residualForm", false),
+                       (BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions", false),
                        (BackendDAEOptimize.simplifyIfEquations, "simplifyIfEquations", false),
                        (BackendDAEOptimize.sortEqnsVars, "sortEqnsVars", false),
                        (BackendDump.dumpDAE, "dumpDAE", false),
@@ -7232,6 +7228,7 @@ algorithm
                         (BackendDAEOptimize.removeEqualFunctionCalls, "removeEqualFunctionCalls", false),
                         (BackendDAEOptimize.removeUnusedParameter, "removeUnusedParameter", false),
                         (BackendDAEOptimize.removeUnusedVariables, "removeUnusedVariables", false),
+                        (BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions", false),
                         (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction", false),
                         (BackendDAEOptimize.simplifyLoops, "simplifyLoops", false),
                         (BackendDAEOptimize.simplifyTimeIndepFuncCalls, "simplifyTimeIndepFuncCalls", false),
@@ -7253,7 +7250,6 @@ algorithm
                         (EvaluateParameter.evaluateReplaceProtectedFinalEvaluateParameters, "evaluateReplaceProtectedFinalEvaluateParameters", false),
                         (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations", false),
                         (HpcOmEqSystems.partitionLinearTornSystem, "partlintornsystem", false),
-                        (Initialization.removeInitializationStuff, "removeInitializationStuff", true),
                         (InlineArrayEquations.inlineArrayEqn, "inlineArrayEqn", false),
                         (OnRelaxation.relaxSystem, "relaxSystem", false),
                         (RemoveSimpleEquations.removeSimpleEquations, "removeSimpleEquations", false),
@@ -7284,7 +7280,8 @@ protected
   list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean/*stopOnFailure*/>> allInitOptModules;
   list<String> initOptModules;
 algorithm
-  allInitOptModules := {(BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction", false),
+  allInitOptModules := {(BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions", false),
+                        (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction", false),
                         (BackendDAEOptimize.simplifyLoops, "simplifyLoops", false),
                         (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization", false),
                         (DynamicOptimization.removeLoops, "extendDynamicOptimization", false),

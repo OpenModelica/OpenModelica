@@ -42,8 +42,24 @@ template translateModel(SimCode simCode)
         let &extraFuncsInit = buffer "" /*BUFD*/
         let &extraFuncsDeclInit = buffer "" /*BUFD*/
         let &complexStartExpressions = buffer ""
-        let()= textFile(modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars, numStringVars, "", "", "", false, "", complexStartExpressions, stateDerVectorName),'OMCpp<%fileNamePrefix%>Init.xml')
+
+        let _ = match Flags.isSet(Flags.HARDCODED_START_VALUES)
+          case false then
+            let()= textFile(modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars, numStringVars, "", "", "", false, "", complexStartExpressions, stateDerVectorName),'OMCpp<%fileNamePrefix%>Init.xml')
+            ""
+          else
+            ""
         let()= textFile(simulationInitCppFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false, complexStartExpressions),'OMCpp<%fileNamePrefix%>Initialize.cpp')
+
+        let _ = match boolOr(Flags.isSet(Flags.HARDCODED_START_VALUES), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))
+          case true then
+            let()= textFile(simulationInitParameterCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
+            let()= textFile(simulationInitAliasVarsCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp')
+            let()= textFile(simulationInitAlgVarsCppFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
+            ""
+          else
+            ""
+
         let()= textFile(simulationInitExtVarsCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeExtVars.cpp')
         let()= textFile(simulationInitHeaderFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%className%>Initialize'), 'OMCpp<%fileNamePrefix%>Initialize.h')
 
@@ -67,15 +83,6 @@ template translateModel(SimCode simCode)
         let alg = algloopfiles(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl, "", contextAlgloop, stateDerVectorName, false)
         let()= textFile(algloopMainfile(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl, "",contextAlgloop), 'OMCpp<%fileNamePrefix%>AlgLoopMain.cpp')
         let()= textFile(calcHelperMainfile(simCode , &extraFuncs , &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
-
-        let unused = match Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)
-          case true then
-            let()= textFile(simulationInitParameterCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
-            let()= textFile(simulationInitAliasVarsCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp')
-            let()= textFile(simulationInitAlgVarsCppFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
-            ""
-          else
-          ""
 
         match target
           case "vxworks69" then
@@ -120,85 +127,81 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)),fileNamePrefix=fileNamePrefix
 let initeqs = generateEquationMemberFuncDecls(initialEquations,"initEquation")
 let initparameqs = generateEquationMemberFuncDecls(parameterEquations,"initParameterEquation")
   match modelInfo
-  case modelInfo as MODELINFO(vars=SIMVARS(__)) then
-  <<
-  #pragma once
-
-  /*****************************************************************************
-  *
-  * Simulation code to initialize the Modelica system
-  *
-  *****************************************************************************/
-
-  class <%lastIdentOfPath(modelInfo.name)%>Initialize : virtual public <%lastIdentOfPath(modelInfo.name)%>
-  {
-  public:
-    <%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars);
-    <%lastIdentOfPath(modelInfo.name)%>Initialize(<%lastIdentOfPath(modelInfo.name)%>Initialize& instance);
-    virtual ~<%lastIdentOfPath(modelInfo.name)%>Initialize();
-    virtual bool initial();
-    virtual void setInitial(bool);
-    virtual void initialize();
-    virtual void initializeMemory();
-    virtual void initializeFreeVariables();
-    virtual void initializeBoundVariables();
-    virtual void initParameterEquations();
-    virtual void initEquations();
-    <%if(Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then
+    case modelInfo as MODELINFO(vars=SIMVARS(__)) then
+      let functionPrefix = if(Flags.isSet(Flags.HARDCODED_START_VALUES)) then "initialize" else "check"
     <<
-    virtual void checkVariables();
-    virtual void checkParameters();
+    #pragma once
+
+    /*****************************************************************************
+    *
+    * Simulation code to initialize the Modelica system
+    *
+    *****************************************************************************/
+
+    class <%lastIdentOfPath(modelInfo.name)%>Initialize : virtual public <%lastIdentOfPath(modelInfo.name)%>
+    {
+    public:
+      <%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars);
+      <%lastIdentOfPath(modelInfo.name)%>Initialize(<%lastIdentOfPath(modelInfo.name)%>Initialize& instance);
+      virtual ~<%lastIdentOfPath(modelInfo.name)%>Initialize();
+      virtual bool initial();
+      virtual void setInitial(bool);
+      virtual void initialize();
+      virtual void initializeMemory();
+      virtual void initializeFreeVariables();
+      virtual void initializeBoundVariables();
+      virtual void initParameterEquations();
+      virtual void initEquations();
+      <%if(boolAnd(boolNot(Flags.isSet(Flags.HARDCODED_START_VALUES)), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then
+        <<
+        virtual void checkVariables();
+        virtual void checkParameters();
+        >>
+      %>
+    private:
+      <%initeqs%>
+      <%initparameqs%>
+      <%initExtVarsDecl(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, false)%>
+
+      <%if(boolOr(Flags.isSet(Flags.HARDCODED_START_VALUES), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then
+        <<
+        <%List.partition(vars.algVars, 100) |> ls hasindex idx => 'void <%functionPrefix%>AlgVars_<%idx%>();';separator="\n"%>
+
+        void <%functionPrefix%>AlgVars();
+        void <%functionPrefix%>DiscreteAlgVars();
+
+        <%List.partition(vars.intAlgVars, 100) |> ls hasindex idx => 'void <%functionPrefix%>IntAlgVars_<%idx%>();';separator="\n"%>
+
+        void <%functionPrefix%>IntAlgVars();
+        void <%functionPrefix%>BoolAlgVars();
+
+        <%List.partition(vars.stringAlgVars, 100) |> ls hasindex idx => 'void <%functionPrefix%>StringAlgVars_<%idx%>();';separator="\n"%>
+
+        void <%functionPrefix%>StringAlgVars();
+
+        <%List.partition(vars.aliasVars, 100) |> ls hasindex idx => 'void <%functionPrefix%>AliasVars_<%idx%>();';separator="\n"%>
+        <%List.partition(vars.stringAliasVars, 100) |> ls hasindex idx => 'void <%functionPrefix%>StringAliasVars_<%idx%>();';separator="\n"%>
+        void <%functionPrefix%>StringAliasVars();
+        void <%functionPrefix%>AliasVars();
+        void <%functionPrefix%>IntAliasVars();
+        void <%functionPrefix%>BoolAliasVars();
+
+        <%List.partition(vars.paramVars, 100) |> ls hasindex idx => 'void <%functionPrefix%>ParameterVars_<%idx%>();';separator="\n"%>
+        <%List.partition(vars.intParamVars, 100) |> ls hasindex idx => 'void <%functionPrefix%>IntParameterVars_<%idx%>();';separator="\n"%>
+        <%List.partition(vars.boolParamVars, 100) |> ls hasindex idx => 'void <%functionPrefix%>BoolParameterVars_<%idx%>();';separator="\n"%>
+        <%List.partition(vars.stringParamVars, 100) |> ls hasindex idx => 'void <%functionPrefix%>StringParameterVars_<%idx%>();';separator="\n"%>
+        void <%functionPrefix%>ParameterVars();
+        void <%functionPrefix%>IntParameterVars();
+        void <%functionPrefix%>BoolParameterVars();
+        void <%functionPrefix%>StringParameterVars();
+        void <%functionPrefix%>StateVars();
+        void <%functionPrefix%>DerVars();
+        >>
+      %>
+      /*extraFuncs*/
+      <%extraFuncsDecl%>
+    };
     >>
-    else
-    <<
-    //virtual void checkVariables(); //available if genDebugSymbols is set
-    //virtual void checkParameters(); //available if genDebugSymbols is set
-    >>
-    %>
-  private:
-    <%initeqs%>
-    <%initparameqs%>
-    <%initExtVarsDecl(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, false)%>
-
-    <%if(Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then
-    <<
-    <%List.partition(vars.algVars, 100) |> ls hasindex idx => 'void checkAlgVars_<%idx%>();';separator="\n"%>
-
-    void checkAlgVars();
-    void checkDiscreteAlgVars();
-
-    <%List.partition(vars.intAlgVars, 100) |> ls hasindex idx => 'void checkIntAlgVars_<%idx%>();';separator="\n"%>
-
-    void checkIntAlgVars();
-    void checkBoolAlgVars();
-
-    <%List.partition(vars.stringAlgVars, 100) |> ls hasindex idx => 'void checkStringAlgVars_<%idx%>();';separator="\n"%>
-
-    void checkStringAlgVars();
-
-    <%List.partition(vars.aliasVars, 100) |> ls hasindex idx => 'void checkAliasVars_<%idx%>();';separator="\n"%>
-    <%List.partition(vars.stringAliasVars, 100) |> ls hasindex idx => 'void checkStringAliasVars_<%idx%>();';separator="\n"%>
-    void checkStringAliasVars();
-    void checkAliasVars();
-    void checkIntAliasVars();
-    void checkBoolAliasVars();
-
-    <%List.partition(vars.paramVars, 100) |> ls hasindex idx => 'void checkParameterVars_<%idx%>();';separator="\n"%>
-    <%List.partition(vars.intParamVars, 100) |> ls hasindex idx => 'void checkIntParameterVars_<%idx%>();';separator="\n"%>
-    <%List.partition(vars.boolParamVars, 100) |> ls hasindex idx => 'void checkBoolParameterVars_<%idx%>();';separator="\n"%>
-    <%List.partition(vars.stringParamVars, 100) |> ls hasindex idx => 'void checkStringParameterVars_<%idx%>();';separator="\n"%>
-    void checkParameterVars();
-    void checkIntParameterVars();
-    void checkBoolParameterVars();
-    void checkStringParameterVars();
-    void checkStateVars();
-    void checkDerVars();
-    >>
-    %>
-    /*extraFuncs*/
-    <%extraFuncsDecl%>
-  };
-  >>
   end match
 end simulationInitHeaderFile;
 
@@ -610,10 +613,11 @@ match simCode
         let &varDecls10 = buffer "" /*BUFD*/
         let &varDecls11 = buffer "" /*BUFD*/
         let &varDecls12 = buffer "" /*BUFD*/
-        let init10  = initValstWithSplit(varDecls10, "Real", '<%lastIdentOfPath(modelInfo.name)%>Initialize::checkParameterVars', vars.paramVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
-        let init11  = initValstWithSplit(varDecls11, "Int", '<%lastIdentOfPath(modelInfo.name)%>Initialize::checkIntParameterVars', vars.intParamVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
-        let init12  = initValstWithSplit(varDecls12, "Bool", '<%lastIdentOfPath(modelInfo.name)%>Initialize::checkBoolParameterVars', vars.boolParamVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
-        let init13  = initValstWithSplit(varDecls12, "String", '<%lastIdentOfPath(modelInfo.name)%>Initialize::checkStringParameterVars', vars.stringParamVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
+        let functionPrefix = if(Flags.isSet(Flags.HARDCODED_START_VALUES)) then 'initialize' else 'check'
+        let init10  = initValstWithSplit(varDecls10, "Real", '<%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>ParameterVars', vars.paramVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
+        let init11  = initValstWithSplit(varDecls11, "Int", '<%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>IntParameterVars', vars.intParamVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
+        let init12  = initValstWithSplit(varDecls12, "Bool", '<%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>BoolParameterVars', vars.boolParamVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
+        let init13  = initValstWithSplit(varDecls12, "String", '<%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>StringParameterVars', vars.stringParamVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
         <<
         <%varDecls10%>
         <%varDecls11%>
@@ -635,33 +639,34 @@ match simCode
         let &varDecls8 = buffer "" /*BUFD*/
         let &varDecls9 = buffer "" /*BUFD*/
         let &varDecls10 = buffer "" /*BUFD*/
+        let functionPrefix = if Flags.isSet(Flags.HARDCODED_START_VALUES) then "initialize" else "check"
         let init7   = ""//initAliasValstWithSplit("Real", '<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeAliasVars', vars.aliasVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
         let init8   = ""//initAliasValst(varDecls8, "Int", vars.intAliasVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
         let init9   = ""//initValst(varDecls9, "Bool",vars.boolAliasVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
-        let init10   = ""//initStringAliasValstWithSplit("String", '<%lastIdentOfPath(modelInfo.name)%>Initialize::checkStringAliasVars', vars.stringAliasVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
+        let init10   = ""//initStringAliasValstWithSplit("String", '<%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>StringAliasVars', vars.stringAliasVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
 
         <<
         <%init7%>
         /*string alias*/
         <%init10%>
 
-        void <%lastIdentOfPath(modelInfo.name)%>Initialize::checkAliasVars()
+        void <%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>AliasVars()
         {
         }
 
-        void <%lastIdentOfPath(modelInfo.name)%>Initialize::checkIntAliasVars()
+        void <%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>IntAliasVars()
         {
           <%varDecls8%>
           <%init8%>
         }
 
-        void <%lastIdentOfPath(modelInfo.name)%>Initialize::checkBoolAliasVars()
+        void <%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>BoolAliasVars()
         {
           <%varDecls9%>
           <%init9%>
         }
 
-        void <%lastIdentOfPath(modelInfo.name)%>Initialize::checkStringAliasVars()
+        void <%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>StringAliasVars()
         {
           <%varDecls10%>
           <%init10%>
@@ -682,17 +687,19 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
    let &varDecls5 = buffer "" /*BUFD*/
    let &varDecls6 = buffer "" /*BUFD*/
    let &varDecls7 = buffer "" /*BUFD*/
-   let init3   = initValstWithSplit(varDecls3, "Real", '<%lastIdentOfPath(modelInfo.name)%>Initialize::checkAlgVars', vars.algVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
+   let functionPrefix = if Flags.isSet(Flags.HARDCODED_START_VALUES) then "initialize" else "check"
+
+   let init3   = initValstWithSplit(varDecls3, "Real", '<%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>AlgVars', vars.algVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
    let init4   = initValst(varDecls4, "Real", vars.discreteAlgVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,contextOther, stateDerVectorName, useFlatArrayNotation)
-   let init5   = initValstWithSplit(varDecls5, "Int", '<%lastIdentOfPath(modelInfo.name)%>Initialize::checkIntAlgVars', vars.intAlgVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
+   let init5   = initValstWithSplit(varDecls5, "Int", '<%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>IntAlgVars', vars.intAlgVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
    let init6   = initValst(varDecls6, "Bool", vars.boolAlgVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
-   let init7   = initValstWithSplit(varDecls7, "String", '<%lastIdentOfPath(modelInfo.name)%>Initialize::checkStringAlgVars', vars.stringAlgVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
+   let init7   = initValstWithSplit(varDecls7, "String", '<%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>StringAlgVars', vars.stringAlgVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
 
    <<
 
    <%init3%>
 
-   void <%lastIdentOfPath(modelInfo.name)%>Initialize::checkDiscreteAlgVars()
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>DiscreteAlgVars()
    {
       <%varDecls4%>
       <%init4%>
@@ -700,7 +707,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
 
    <%init5%>
 
-   void <%lastIdentOfPath(modelInfo.name)%>Initialize::checkBoolAlgVars()
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>BoolAlgVars()
    {
        <%varDecls6%>
        <%init6%>
@@ -2396,7 +2403,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
             Logger::setEnabled(true);
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
                 <<
-                std::vector<MeasureTimeData*> *measureTimeArraySimulation = new std::vector<MeasureTimeData*>(2, NULL); //0 all, 1 setup
+                std::vector<MeasureTimeData*> *measureTimeArraySimulation = new std::vector<MeasureTimeData*>(size_t(2), NULL); //0 all, 1 setup
                 (*measureTimeArraySimulation)[0] = new MeasureTimeData("all");
                 (*measureTimeArraySimulation)[1] = new MeasureTimeData("setup");
                 MeasureTimeValues *measuredSimStartValues, *measuredSimEndValues, *measuredSetupStartValues, *measuredSetupEndValues;
@@ -2778,8 +2785,11 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     #include <Core/System/FactoryExport.h>
     #include <Core/System/DiscreteEvents.h>
     #include <Core/System/EventHandling.h>
+    <%if(boolNot(Flags.isSet(Flags.HARDCODED_START_VALUES))) then
+    <<
     #include <Core/DataExchange/XmlPropertyReader.h>
-
+    >>
+    %>
 
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
@@ -2794,7 +2804,7 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     #include "OMCpp<%fileNamePrefix%>FactoryExport.cpp"
     #include "OMCpp<%fileNamePrefix%>Extension.cpp"
     #include "OMCpp<%fileNamePrefix%>Functions.cpp"
-    <%if(Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then
+    <%if(boolOr(Flags.isSet(Flags.HARDCODED_START_VALUES), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then
     <<
     #include "OMCpp<%fileNamePrefix%>InitializeParameter.cpp"
     #include "OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp"
@@ -3739,7 +3749,7 @@ match simCode
             let numOfEqs = SimCodeUtil.getMaxSimEqSystemIndex(simCode)
             <<
             #ifdef MEASURETIME_PROFILEBLOCKS
-            measureTimeProfileBlocksArray = new std::vector<MeasureTimeData*>(<%numOfEqs%>, NULL);
+            measureTimeProfileBlocksArray = new std::vector<MeasureTimeData*>(size_t(<%numOfEqs%>), NULL);
             for(int i = 0; i < <%numOfEqs%>; i++)
             {
                 ostringstream ss;
@@ -3753,7 +3763,7 @@ match simCode
             #endif //MEASURETIME_PROFILEBLOCKS
 
             #ifdef MEASURETIME_MODELFUNCTIONS
-            measureTimeFunctionsArray = new std::vector<MeasureTimeData*>(5, NULL); //1 evaluateODE ; 2 evaluateAll; 3 writeOutput; 4 handleTimeEvents; 5 evaluateZeroFuncs
+            measureTimeFunctionsArray = new std::vector<MeasureTimeData*>(size_t(5), NULL); //1 evaluateODE ; 2 evaluateAll; 3 writeOutput; 4 handleTimeEvents; 5 evaluateZeroFuncs
             MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","functions",measureTimeFunctionsArray);
             (*measureTimeFunctionsArray)[0] = new MeasureTimeData("evaluateODE");
             (*measureTimeFunctionsArray)[1] = new MeasureTimeData("evaluateAll");
@@ -5818,16 +5828,23 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
       initializeMemory();
-      IPropertyReader *reader = new XmlPropertyReader("<%makefileParams.compileDir%>/OMCpp<%fileNamePrefix%>Init.xml");
-      reader->readInitialValues(*this, _sim_vars);
+      <%if(Flags.isSet(Flags.HARDCODED_START_VALUES)) then
+        <<
+        >>
+        else
+        <<
+        IPropertyReader *reader = new XmlPropertyReader("<%makefileParams.compileDir%>/OMCpp<%fileNamePrefix%>Init.xml");
+        reader->readInitialValues(*this, _sim_vars);
+        >>
+        %>
       initializeFreeVariables();
       /*Start complex expressions */
       <%complexStartExpressions%>
       /* End complex expression */
-      <%if(Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then 'checkParameters();' else '//checkParameters();'%>
+      <%if(boolAnd(boolNot(Flags.isSet(Flags.HARDCODED_START_VALUES)), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then 'checkParameters();' else '//checkParameters();'%>
       initParameterEquations();
       initializeBoundVariables();
-      <%if(Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then 'checkVariables();' else '//checkVariables();'%>
+      <%if(boolAnd(boolNot(Flags.isSet(Flags.HARDCODED_START_VALUES)), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then 'checkVariables();' else '//checkVariables();'%>
       saveAll();
       //delete reader;
    }
@@ -5844,38 +5861,54 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
       //init alg loop vars
       <%initAlgloopvars%>
    }
-   <%if(Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then
-   <<
-   void <%lastIdentOfPath(modelInfo.name)%>Initialize::checkParameters()
-   {
-      checkParameterVars();
-      checkIntParameterVars();
-      checkBoolParameterVars();
-      checkStringParameterVars();
-   }
+   <%if(boolAnd(boolNot(Flags.isSet(Flags.HARDCODED_START_VALUES)), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then
+     <<
+     void <%lastIdentOfPath(modelInfo.name)%>Initialize::checkParameters()
+     {
+        checkParameterVars();
+        checkIntParameterVars();
+        checkBoolParameterVars();
+        checkStringParameterVars();
+     }
 
-   void <%lastIdentOfPath(modelInfo.name)%>Initialize::checkVariables()
-   {
-      /*check functions are only available if genDebugSymbols was selected*/
-      checkAlgVars();
-      checkDiscreteAlgVars();
-      checkIntAlgVars();
-      checkBoolAlgVars();
-      checkStringAlgVars();
-      checkAliasVars();
-      checkIntAliasVars();
-      checkBoolAliasVars();
-      checkStringAliasVars();
-      //checkStateVars();
-      //checkDerVars();
-   }
-   >>
+     void <%lastIdentOfPath(modelInfo.name)%>Initialize::checkVariables()
+     {
+        /*check functions are only available if genDebugSymbols was selected*/
+        checkAlgVars();
+        checkDiscreteAlgVars();
+        checkIntAlgVars();
+        checkBoolAlgVars();
+        checkStringAlgVars();
+        checkAliasVars();
+        checkIntAliasVars();
+        checkBoolAliasVars();
+        checkStringAliasVars();
+        //checkStateVars();
+        //checkDerVars();
+     }
+     >>
    %>
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeFreeVariables()
    {
       _simTime = 0.0;
       _state_var_reinitialized = false;
 
+      <%if (Flags.isSet(Flags.HARDCODED_START_VALUES)) then
+      <<
+      /*initialize parameter*/
+      initializeParameterVars();
+      initializeIntParameterVars();
+      initializeBoolParameterVars();
+      initializeStringParameterVars();
+      initializeAlgVars();
+      initializeDiscreteAlgVars();
+      initializeIntAlgVars();
+      initializeBoolAlgVars();
+      initializeStringAliasVars();
+      initializeStateVars();
+      initializeDerVars();
+      >>
+      %>
        /*external vars decls*/
       initializeExternalVar();
 
@@ -5941,17 +5974,18 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
    let &varDecls1 = buffer "" /*BUFD*/
    let &varDecls2 = buffer "" /*BUFD*/
 
+   let functionPrefix = if Flags.isSet(Flags.HARDCODED_START_VALUES) then "initialize" else "check"
    let init1   = initValst(varDecls1, "Real", vars.stateVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
    let init2   = initValst(varDecls2, "Real", vars.derivativeVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
 
-   if(Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then
+   if(boolOr(Flags.isSet(Flags.HARDCODED_START_VALUES), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then
    <<
-   void <%lastIdentOfPath(modelInfo.name)%>Initialize::checkStateVars()
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>StateVars()
    {
        <%varDecls1%>
        <%init1%>
    }
-   void <%lastIdentOfPath(modelInfo.name)%>Initialize::checkDerVars()
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::<%functionPrefix%>DerVars()
    {
        <%varDecls2%>
        <%init2%>
@@ -9345,7 +9379,6 @@ template initStringAliasValstWithSplit(Text type, Text funcNamePrefix, list<SimV
     <<
     void <%funcNamePrefix%>_<%idx%>()
     {
-
        <%varDecls%>
        <%init%>
     }
@@ -9390,22 +9423,49 @@ template initValstWithSplit(Text &varDecls, Text type, Text funcNamePrefix, list
 end initValstWithSplit;
 
 
-template initValst(Text &varDecls, Text type, list<SimVar> varsLst, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
-   varsLst |> sv as SIMVAR(__) =>
+template initValst(Text &varDecls, Text type, list<SimVar> varsLst, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+::=
+  if(Flags.isSet(Flags.HARDCODED_START_VALUES)) then
+   (varsLst |> sv as SIMVAR(__) =>
      let &preExp = buffer "" /*BUFD*/
      let &varDeclsCref = buffer "" /*BUFD*/
      let &startValue = buffer ""
      let crefStr = cref1(sv.name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref, stateDerVectorName, useFlatArrayNotation)
+     match initialValue
+      case SOME(v) then
+        match daeExp(v, contextOther, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+          case vStr as "0"
+          case vStr as "0.0"
+          case vStr as "(0)" then
+          '<%preExp%>
+           SystemDefaultImplementation::set<%type%>StartValue(<%crefStr%>,<%vStr%>);'
+          case vStr as "" then
+          '<%preExp%>
+           SystemDefaultImplementation::set<%type%>StartValue(<%crefStr%>,<%vStr%>);'
+          case vStr then
+          '<%preExp%>
+           SystemDefaultImplementation::set<%type%>StartValue(<%crefStr%>,<%vStr%>);'
+        end match
+      else
+        '<%preExp%>
+         SystemDefaultImplementation::set<%type%>StartValue(<%crefStr%>,<%startValue(sv.type_)%>);'
+      ;separator="\n")
+  else
+    (varsLst |> sv as SIMVAR(__) =>
+     let &preExp = buffer "" /*BUFD*/
+     let &varDeclsCref = buffer "" /*BUFD*/
+     let &startValue = buffer ""
+     let crefStr = cref1(sv.name, simCode, &extraFuncs, &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref, stateDerVectorName, useFlatArrayNotation)
      let checkStr = match initialValue
-       case SOME(v) then
-         let &startValue += daeExp(v, contextOther, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-         '<%preExp%>
-          if(!IsEqual(SystemDefaultImplementation::get<%type%>StartValue(<%crefStr%>), <%startValue%>))
-            std::cerr << "Wrong start value for variable <%crefStr%> detected. Got " << SystemDefaultImplementation::get<%type%>StartValue(<%crefStr%>) << " Expected: " << <%startValue%> << std::endl;'
-       else
-         let &startValue += startValue(sv.type_)
-         ''
-     checkStr;separator="\n"
+      case SOME(v) then
+        let &startValue += daeExp(v, contextOther, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+        '<%preExp%>
+        if(!IsEqual(SystemDefaultImplementation::get<%type%>StartValue(<%crefStr%>), <%startValue%>))
+          std::cerr << "Wrong start value for variable <%crefStr%> detected. Got " << SystemDefaultImplementation::get<%type%>StartValue(<%crefStr%>) << " Expected: " << <%startValue%> << std::endl;'
+        else
+          let &startValue += startValue(sv.type_)
+        ''
+     checkStr;separator="\n")
 end initValst;
 
 
@@ -9424,7 +9484,8 @@ end initAliasValst;
 
 
 template initStringAliasValst(Text &varDecls, Text type, list<SimVar> varsLst, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace,
-                        Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
+                        Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+::=
   varsLst |> sv as SIMVAR(__) =>
        let &preExp = buffer ""
        let initval = getAliasInitVal(sv.aliasvar, contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)

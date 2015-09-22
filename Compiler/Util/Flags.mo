@@ -456,7 +456,8 @@ constant DebugFlag EVAL_ALL_PARAMS = DEBUG_FLAG(144, "evalAllParams", false,
   Util.gettext("Evaluates all parameters in order to increase simulation speed."));
 constant DebugFlag EVAL_OUTPUT_ONLY = DEBUG_FLAG(145, "evalOutputOnly", false,
   Util.gettext("Generates equations to calculate outputs only."));
-
+constant DebugFlag HARDCODED_START_VALUES = DEBUG_FLAG(146, "hardcodedStartValues", false,
+  Util.gettext("Embed the start values of variables and parameters into the c++ code and do not read it from xml file."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -608,7 +609,8 @@ constant list<DebugFlag> allDebugFlags = {
   DIS_SIMP_FUN,
   DIS_SYMJAC_FMI20,
   EVAL_ALL_PARAMS,
-  EVAL_OUTPUT_ONLY
+  EVAL_OUTPUT_ONLY,
+  HARDCODED_START_VALUES
 };
 
 public
@@ -714,6 +716,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("replaceEdgeChange", Util.gettext("Replace edge(b) = b and not pre(b) and change(b) = v <> pre(v).")),
     ("residualForm", Util.gettext("Transforms simple equations x=y to zero-sum equations 0=y-x.")),
     ("resolveLoops", Util.gettext("resolves linear equations in loops")),
+    ("simplifyAllExpressions", Util.notrans("Does simplifications on all expressions.")),
     ("simplifyIfEquations", Util.gettext("Tries to simplify if equations by use of information from evaluated parameters.")),
     ("sortEqnsVars", Util.notrans("Heuristic sorting for equations and variables. This module requires +d=sortEqnsAndVars.")),
     ("stateMachineElab", Util.gettext("Does the elaboration of state machines.")),
@@ -764,7 +767,6 @@ constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMeth
 
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
-    "removeInitializationStuff",
     "lateInlineFunction",
     "simplifyConstraints",
     "CSE",
@@ -794,6 +796,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "generateSymbolicLinearization",
     "removeConstants",
     "simplifyTimeIndepFuncCalls",
+    "simplifyAllExpressions",
     "addInitialStmtsToAlgorithms"
     }),
   SOME(STRING_DESC_OPTION({
@@ -828,11 +831,11 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("relaxSystem", Util.notrans("relaxation from gausian elemination")),
     ("removeConstants", Util.gettext("Remove all constants in the system.")),
     ("removeEqualFunctionCalls", Util.notrans("Detects equal function calls of the form a=f(b) and c=f(b) and substitutes them to get speed up.")),
-    ("removeInitializationStuff", Util.gettext("Does simplifications by removing initialization information like homotopy(..) and initial().")),
     ("removeSimpleEquations", removeSimpleEquationDesc),
     ("removeUnusedParameter", Util.gettext("Strips all parameter not present in the equations from the system to get speed up for compilation of target code.")),
     ("removeUnusedVariables", Util.notrans("Strips all variables not present in the equations from the system to get speed up for compilation of target code.")),
     ("reshufflePost", Util.gettext("Reshuffles algebraic loops.")),
+    ("simplifyAllExpressions", Util.notrans("Does simplifications on all expressions.")),
     ("simplifyComplexFunction", Util.notrans("Some simplifications on complex functions (complex refers to the internal data structure)")),
     ("simplifyConstraints", Util.notrans("Rewrites nonlinear constraints into box constraints if possible. This module requires +gDynOpt.")),
     ("simplifyLoops", Util.notrans("Simplifies algebraic loops. This modules requires +simplifyLoops.")),
@@ -1152,7 +1155,8 @@ constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(78, "initOptModules",
     "simplifyLoops",
     "recursiveTearing",
     "calculateStrongComponentJacobians",
-    "solveSimpleEquations"
+    "solveSimpleEquations",
+    "simplifyAllExpressions"
       //"inputDerivativesUsed",
       //"extendDynamicOptimization"
     }),
@@ -1163,6 +1167,7 @@ constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(78, "initOptModules",
     ("inputDerivativesUsed", Util.gettext("Checks if derivatives of inputs are need to calculate the model.")),
     ("recursiveTearing", Util.notrans("inline and repeat tearing")),
     ("reduceDynamicOptimization", Util.notrans("Removes equations which are not needed for the calculations of cost and constraints. This module requires +d=reduceDynOpt.")),
+    ("simplifyAllExpressions", Util.notrans("Does simplifications on all expressions.")),
     ("simplifyComplexFunction", Util.notrans("Some simplifications on complex functions (complex refers to the internal data structure)")),
     ("simplifyConstraints", Util.notrans("Rewrites nonlinear constraints into box constraints if possible. This module requires +gDynOpt.")),
     ("simplifyLoops", Util.notrans("Simplifies algebraic loops. This modules requires +simplifyLoops.")),
