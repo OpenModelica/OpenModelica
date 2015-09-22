@@ -1823,7 +1823,10 @@ algorithm
           end if;
 
           backendDAE2 = BackendDAEUtil.getSolvedSystemforJacobians(backendDAE,
-                                                                   SOME({"evalFunc","removeEqualFunctionCalls","removeSimpleEquations"}),
+                                                                   SOME({"simplifyAllExpressions",
+                                                                         "evalFunc",
+                                                                         "removeEqualFunctionCalls",
+                                                                         "removeSimpleEquations"}),
                                                                    NONE(),
                                                                    NONE(),
                                                                    SOME({"inlineArrayEqn",
@@ -1833,7 +1836,8 @@ algorithm
                                                                          "tearingSystem",
                                                                          "solveSimpleEquations",
                                                                          "simplifyTimeIndepFuncCalls",
-                                                                         "calculateStrongComponentJacobians"}));
+                                                                         "calculateStrongComponentJacobians",
+                                                                         "simplifyAllExpressions"}));
           _ = Flags.set(Flags.EXEC_STAT, b);
           if Flags.isSet(Flags.JAC_DUMP) then
             BackendDump.bltdump("Symbolic Jacobian",backendDAE2);
