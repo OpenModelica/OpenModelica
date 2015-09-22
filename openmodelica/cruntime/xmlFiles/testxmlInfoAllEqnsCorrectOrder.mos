@@ -633,7 +633,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <depends name=\"b\" />
 //       <depends name=\"s\" />
 //       <depends name=\"a\" />
-//       <rhs>DIVISION((-a) * s, b)</rhs>
+//       <rhs>(-a) * DIVISION(s, b)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"15\" lineEnd=\"15\" colStart=\"3\" colEnd=\"12\"/>
