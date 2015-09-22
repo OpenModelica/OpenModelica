@@ -7,9 +7,9 @@
 
 #if defined(__vxworks)
 #include<wvLib.h>
-#include <klu.h>
+//#include <klu.h>
 #else
-#include <Solver/KLU/klu.h>
+//#include <Solver/KLU/klu.h>
 #endif
 //#include<wvLib.h>
 
@@ -135,12 +135,14 @@ Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _Kin_fScale         (NULL)
 	, _kinMem             (NULL)
 	, _scale			  (NULL)
+	/*
 	, _kluSymbolic 			(NULL)
     , _kluNumeric			(NULL)
     , _kluCommon			(NULL)
     , _Ai					(NULL)
     , _Ap					(NULL)
     , _Ax					(NULL)
+*/
     , _fValid(false)
     , _y_old(NULL)
     , _y_new(NULL)
@@ -181,7 +183,7 @@ Kinsol::~Kinsol()
 		KINFree(&_kinMem);
 
 
-
+/*
 	if(_sparse == true)
 	{
 		if(_kluCommon)
@@ -199,7 +201,7 @@ Kinsol::~Kinsol()
 		if(_Ax)
 			delete [] _Ax;
 	}
-
+*/
 
 }
 
@@ -289,7 +291,7 @@ void Kinsol::initialize()
 			_Kin_fScale = N_VMake_Serial(_dimSys, _fScale);
 			_kinMem = KINCreate();
 
-
+			/*
 			//sparse
 			if (_algLoop->isLinear() || _algLoop->isLinearTearing())
 			{
@@ -318,7 +320,7 @@ void Kinsol::initialize()
 					_kluNumeric = klu_factor (_Ap, _Ai, _Ax, _kluSymbolic, _kluCommon) ;
 				}
 			}
-
+			*/
 
 
 			//Set Options
@@ -411,7 +413,9 @@ void Kinsol::solve()
 		//sparse
 		else
 		{
+			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system klu not implemented");
 
+		/*
 			//const sparsematrix_t& As = _algLoop->getSystemSparseMatrix();
 
 			//double const* Ax = bindings::begin_value (As);
@@ -426,7 +430,7 @@ void Kinsol::solve()
 				throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system with klu");
 			}
 			klu_solve (_kluSymbolic, _kluNumeric, _dim, 1, _f, _kluCommon) ;
-
+		*/
 		}
 
 		memcpy(_y,_f,_dimSys*sizeof(double));
@@ -503,7 +507,8 @@ void Kinsol::solve()
 		else
 		{
 			//Sparse Solve
-
+			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system klu not implemented");
+/*
 			const sparsematrix_t& As = _algLoop->getSystemSparseMatrix();
 
 			double const* Ax = bindings::begin_value (As);
@@ -513,7 +518,7 @@ void Kinsol::solve()
 			int ok = klu_refactor (_Ap, _Ai, _Ax, _kluSymbolic, _kluNumeric, _kluCommon) ;
 
 			klu_solve (_kluSymbolic, _kluNumeric, _dim, 1, _f, _kluCommon) ;
-
+*/
 	    }
 
 

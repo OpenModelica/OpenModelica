@@ -14,9 +14,9 @@
 
 #include <Core/Utils/extension/logger.hpp>
 #if defined(__vxworks)
-#include <klu.h>
+//#include <klu.h>
 #else
-#include <Solver/KLU/klu.h>
+//#include <Solver/KLU/klu.h>
 #endif
 
 /*****************************************************************************/
@@ -128,9 +128,9 @@ private:
 
 
   int _dim;
-  klu_symbolic* _kluSymbolic ;
-  klu_numeric* _kluNumeric ;
-  klu_common* _kluCommon ;
+  //klu_symbolic* _kluSymbolic ;
+  //klu_numeric* _kluNumeric ;
+  //klu_common* _kluCommon ;
   int* _Ai;
   int* _Ap;
   double* _Ax;

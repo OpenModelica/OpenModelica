@@ -11,10 +11,9 @@
 #include <Core/Math/Constants.h>        // definitializeion of constants like uround
 
 #if defined(__vxworks)
-#include<wvLib.h>
-#include <klu.h>
+//#include <klu.h>
 #else
-#include <Solver/KLU/klu.h>
+//#include <Solver/KLU/klu.h>
 #endif
 
 #include <Core/Utils/numeric/bindings/ublas.hpp>
@@ -42,13 +41,14 @@ Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _jacHelpMat2            (NULL)
 
 	, _work						(NULL)
+/*
     , _kluSymbolic 			(NULL)
     , _kluNumeric			(NULL)
     , _kluCommon			(NULL)
     , _Ai					(NULL)
     , _Ap					(NULL)
     , _Ax					(NULL)
-
+*/
 	, _dimSys            (0)
 	, _firstCall        (true)
 	, _iterationStatus    (CONTINUE)
@@ -80,6 +80,7 @@ Newton::~Newton()
 	if(_jacHelpMat1)    delete []    _jacHelpMat1;
 	if(_jacHelpMat2)    delete []    _jacHelpMat2;
 	if(_work)    delete []    _work;
+	/*
 	if(_sparse == true)
 	{
 		if(_kluCommon)
@@ -97,7 +98,7 @@ Newton::~Newton()
 		if(_Ax)
 			delete [] _Ax;
 	}
-
+	*/
 
 }
 
@@ -186,6 +187,7 @@ void Newton::initialize()
 				_identity[i + i * _dimSys] = 1.0;
 			}
 
+			/* sparse stuff
 			if (_algLoop->isLinear() || _algLoop->isLinearTearing())
 				{
 					if(_sparse == true)
@@ -213,6 +215,7 @@ void Newton::initialize()
 						_kluNumeric = klu_factor (_Ap, _Ai, _Ax, _kluSymbolic, _kluCommon) ;
 					}
 				}
+		*/
 
 
 
@@ -273,38 +276,41 @@ void Newton::solve()
 		_algLoop->getRHS(_f);
 		if(_sparse == false)
 		{
-			//wvEvent(55,NULL,0);
+
 			const matrix_t& A = _algLoop->getSystemMatrix();
-			//wvEvent(1,NULL,0);
+
 			const double* jac = A.data().begin();
 
-			//wvEvent(2,NULL,0);
+
 			memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
-			//wvEvent(3,NULL,0);
+
 
 			dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_ihelpArray,_f,&_dimSys,&irtrn);
-			//wvEvent(66,NULL,0);
+
 
 		}
 		//sparse
 		else
 		{
-			//wvEvent(55,NULL,0);
+			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system with klu not implemented");
+			/*
+
 			//const sparsematrix_t& As = _algLoop->getSystemSparseMatrix();
-			//wvEvent(1,NULL,0);
+
 			//double const* Ax = bindings::begin_value (As);
 			//double * Ax = (NULL);
 			_algLoop->getSparseAdata( _Ax, _nonzeros);
-			//wvEvent(2,NULL,0);
+
 			//memcpy(_Ax,Ax,sizeof(double)* _nonzeros );
-			//wvEvent(3,NULL,0);
+
 			int ok = klu_refactor (_Ap, _Ai, _Ax, _kluSymbolic, _kluNumeric, _kluCommon) ;
 			if (ok < 0)//wvEvent(4,NULL,0);
 			{
 				throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system with klu");
 			}
 			klu_solve (_kluSymbolic, _kluNumeric, _dim, 1, _f, _kluCommon) ;
-			//wvEvent(66,NULL,0);
+
+			*/
 		}
 
 		memcpy(_y,_f,_dimSys*sizeof(double));
@@ -353,45 +359,48 @@ void Newton::solve()
 		//print_m (b, "b vector");
 		if(_sparse == false)
 		{
-			//wvEvent(33,NULL,0);
 
-			const matrix_t& A = _algLoop->getSystemMatrix(); //klu
-			//wvEvent(1,NULL,0);
+
+			const matrix_t& A = _algLoop->getSystemMatrix();
+
 			//matrix_t  A_copy(A);
 
 
-			const double* jac = A.data().begin(); //klu
-			//wvEvent(2,NULL,0);
+			const double* jac = A.data().begin();
+
 			//double* jac = new  double[dimSys*dimSys];
 			//for(int i=0;i<dimSys;i++)
 			//for(int j=0;j<dimSys;j++)
 			//jac[i*_dimSys+j] = A_sparse(i,j);
 
 
-			memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double)); //klu
-			//wvEvent(3,NULL,0);
+			memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
 
 
 
-			dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _ihelpArray, _f,&_dimSys,&irtrn);  //klu
-			//wvEvent(44,NULL,0);
+
+			dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _ihelpArray, _f,&_dimSys,&irtrn);
+
 		}
 		//std::vector< int > ipiv (_dimSys);  // pivot vector
 		//lapack::gesv (A, ipiv,b);   // solving the system, b contains x
 		else
 		{
+			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system with klu");
+			/*
 			//Sparse Solve
-			//wvEvent(33,NULL,0);
+
 			const sparsematrix_t& As = _algLoop->getSystemSparseMatrix();
-			//wvEvent(1,NULL,0);
+
 			double const* Ax = bindings::begin_value (As);
-			//wvEvent(2,NULL,0);
+
 			memcpy(_Ax,Ax,sizeof(double)* _nonzeros );
-			//wvEvent(3,NULL,0);
+
 			int ok = klu_refactor (_Ap, _Ai, _Ax, _kluSymbolic, _kluNumeric, _kluCommon) ;
-			//wvEvent(4,NULL,0);
+
 			klu_solve (_kluSymbolic, _kluNumeric, _dim, 1, _f, _kluCommon) ;
-			//wvEvent(44,NULL,0);
+
+			*/
 	    }
 
 
@@ -418,7 +427,7 @@ void Newton::solve()
 		*/
 	while(_iterationStatus == CONTINUE)
 	{
-		//wvEvent(44,NULL,0);
+
 			if(totStps < _newtonSettings->getNewtMax())
 			{
 				// Determination of Jacobian (Fortran-format)
