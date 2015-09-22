@@ -7,7 +7,7 @@ project(${CVodeName})
 
 add_library(${CVodeName}_static STATIC CVode.cpp CVodeSettings.cpp FactoryExport.cpp)
 add_precompiled_header(${CVodeName}_static Include/Core/Modelica.h )
-set_target_properties(${CVodeName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
+set_target_properties(${CVodeName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
 install (TARGETS ${CVodeName}_static DESTINATION ${LIBINSTALLEXT})
 
 MESSAGE(STATUS "Sundials Libraries used for linking:")

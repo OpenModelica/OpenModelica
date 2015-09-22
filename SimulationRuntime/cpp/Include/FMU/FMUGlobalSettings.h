@@ -2,7 +2,7 @@
 #include <string.h>
 using std::string;
 
-#ifdef FMU_KINSOL
+#ifdef ENABLE_SUNDIALS_STATIC
   #define DEFAULT_NLS "kinsol"
 #else
   #define DEFAULT_NLS "newton"

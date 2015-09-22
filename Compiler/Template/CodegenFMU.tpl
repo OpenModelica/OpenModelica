@@ -1002,6 +1002,8 @@ match platform
   <%\t%>cp <%omhome%>/bin/libexpat.dll <%fmudirname%>/binaries/<%platform%>/
   <%\t%>cp <%omhome%>/bin/pthreadGC2.dll <%fmudirname%>/binaries/<%platform%>/
   <%\t%>cp <%omhome%>/bin/libgfortran-3.dll <%fmudirname%>/binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libsundials_kinsol.dll <%fmudirname%>/binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libsundials_nvecserial.dll <%fmudirname%>/binaries/<%platform%>/
   <%\t%>cd <%fmudirname%>&& rm -f ../<%fileNamePrefix%>.fmu&& zip -r ../<%fileNamePrefix%>.fmu *
   <%\t%>rm -rf <%fmudirname%>
   <%\t%>rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>.so <%fileNamePrefix%>_*.o

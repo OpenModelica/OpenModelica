@@ -31,13 +31,13 @@ public:
         return settings;
       }
 
-      #ifdef ENABLE_KINSOL_STATIC
+      #ifdef ENABLE_SUNDIALS_STATIC
       if(nonlin_solver.compare("kinsol")==0)
       {
           boost::shared_ptr<INonLinSolverSettings> settings = createKinsolSettings();
           return settings;
       }
-      #endif //ENABLE_KINSOL_STATIC
+      #endif //ENABLE_SUNDIALS_STATIC
       throw ModelicaSimulationError(MODEL_FACTORY,"Selected nonlin solver is not available");
       //return NonLinSolverOMCFactory<CreationPolicy>::createNonLinSolverSettings(nonlin_solver);
    }
@@ -49,13 +49,13 @@ public:
         return newton;
       }
 
-      #ifdef ENABLE_KINSOL_STATIC
+      #ifdef ENABLE_SUNDIALS_STATIC
       if(solver_name.compare("kinsol")==0)
       {
         boost::shared_ptr<IAlgLoopSolver> kinsol = createKinsolSolver(algLoop,solver_settings);
         return kinsol;
       }
-      #endif //ENABLE_KINSOL_STATIC
+      #endif //ENABLE_SUNDIALS_STATIC
       throw ModelicaSimulationError(MODEL_FACTORY,"Selected nonlin solver is not available");
       //return NonLinSolverOMCFactory<CreationPolicy>::createNonLinSolver(algLoop, solver_name, solver_settings);
     }

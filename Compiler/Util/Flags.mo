@@ -456,7 +456,8 @@ constant DebugFlag EVAL_ALL_PARAMS = DEBUG_FLAG(144, "evalAllParams", false,
   Util.gettext("Evaluates all parameters in order to increase simulation speed."));
 constant DebugFlag EVAL_OUTPUT_ONLY = DEBUG_FLAG(145, "evalOutputOnly", false,
   Util.gettext("Generates equations to calculate outputs only."));
-
+constant DebugFlag HARDCODED_START_VALUES = DEBUG_FLAG(146, "hardcodedStartValues", false,
+  Util.gettext("Embed the start values of variables and parameters into the c++ code and do not read it from xml file."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -608,7 +609,8 @@ constant list<DebugFlag> allDebugFlags = {
   DIS_SIMP_FUN,
   DIS_SYMJAC_FMI20,
   EVAL_ALL_PARAMS,
-  EVAL_OUTPUT_ONLY
+  EVAL_OUTPUT_ONLY,
+  HARDCODED_START_VALUES
 };
 
 public
@@ -680,45 +682,44 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "inlineArrayEqn",
     "removeSimpleEquations",
     "comSubExp",
-    // "addInitialStmtsToAlgorithms",
     "resolveLoops",
     "evalFunc",
     "sortEqnsVars",
     "encapsulateWhenConditions"
     }),
   SOME(STRING_DESC_OPTION({
-    ("CSE_EachCall", Util.gettext("Common Function Call Elimination")),
-    ("unitChecking", Util.gettext("advanced unit checking: 1. calculation of unspecified unit information for variables; 2. unit consistency check for equations")),
-    ("removeSimpleEquations", removeSimpleEquationDesc),
-    ("inlineArrayEqn", Util.gettext("This module expands all array equations to scalar equations.")),
-    ("evaluateFinalParameters", Util.gettext("Structural parameters and parameters declared as final are evalutated and replaced with their value in other vars. They may no longer be changed in the init file.")),
-    ("evaluateEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
-    ("evaluateFinalEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
-    ("evaluateReplaceFinalParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
-    ("evaluateReplaceEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
-    ("evaluateReplaceFinalEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
-    ("evaluateReplaceProtectedFinalEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final or protected are removed and replaced with their value. They may no longer be changed in the init file.")),
-    ("evaluateAllParameters", Util.gettext("Evaluates all parameters to increase simulation speed.")),
-    ("removeEqualFunctionCalls", Util.notrans("DESCRIBE ME")),
-    ("removeProtectedParameters", Util.gettext("Replace all parameters with protected=true in the system.")),
-    ("removeUnusedParameter", Util.gettext("Strips all parameter not present in the equations from the system.")),
-    ("removeUnusedVariables", Util.gettext("Strips all variables not present in the equations from the system.")),
     ("clockPartitioning", Util.gettext("Does the clock partitioning.")),
-    ("stateMachineElab", Util.gettext("Does the elaboration of state machines.")),
-    ("expandDerOperator", Util.notrans("DESCRIBE ME")),
-    ("findStateOrder", Util.notrans("DESCRIBE ME")),
-    ("introduceDerAlias", Util.notrans("Adds for every der-call an alias equation e.g. dx = der(x).")),
-    ("inputDerivativesForDynOpt", Util.gettext("Allowed derivatives of inputs in dyn. optimization.")),
-    ("simplifyIfEquations", Util.gettext("Tries to simplify if equations by use of information from evaluated parameters.")),
-    ("replaceEdgeChange", Util.gettext("Replace edge(b) = b and not pre(b) and change(b) = v <> pre(v).")),
-    ("residualForm", Util.gettext("Transforms simple equations x=y to zero-sum equations 0=y-x.")),
-    ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs.")),
-    ("resolveLoops", Util.gettext("resolves linear equations in loops")),
-    ("evalFunc", Util.gettext("evaluates functions partially")),
     ("comSubExp", Util.gettext("replaces common sub expressions")),
+    ("CSE_EachCall", Util.gettext("Common Function Call Elimination")),
     ("dumpDAE", Util.gettext("dumps the DAE representation of the current transformation state")),
     ("dumpDAEXML", Util.gettext("dumps the DAE as xml representation of the current transformation state")),
-    ("encapsulateWhenConditions", Util.gettext("This module replaces each when condition with a boolean variable."))
+    ("encapsulateWhenConditions", Util.gettext("This module replaces each when condition with a boolean variable.")),
+    ("evalFunc", Util.gettext("evaluates functions partially")),
+    ("evaluateAllParameters", Util.gettext("Evaluates all parameters to increase simulation speed.")),
+    ("evaluateEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
+    ("evaluateFinalEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
+    ("evaluateFinalParameters", Util.gettext("Structural parameters and parameters declared as final are evalutated and replaced with their value in other vars. They may no longer be changed in the init file.")),
+    ("evaluateReplaceEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
+    ("evaluateReplaceFinalEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
+    ("evaluateReplaceFinalParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
+    ("evaluateReplaceProtectedFinalEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final or protected are removed and replaced with their value. They may no longer be changed in the init file.")),
+    ("expandDerOperator", Util.notrans("Expands der(expr) using Derive.differentiteExpTime.")),
+    ("findStateOrder", Util.notrans("Sets derivative information to states.")),
+    ("inlineArrayEqn", Util.gettext("This module expands all array equations to scalar equations.")),
+    ("inputDerivativesForDynOpt", Util.gettext("Allowed derivatives of inputs in dyn. optimization.")),
+    ("introduceDerAlias", Util.notrans("Adds for every der-call an alias equation e.g. dx = der(x).")),
+    ("removeEqualFunctionCalls", Util.notrans("Detects equal function calls of the form a=f(b) and c=f(b) and substitutes them to get speed up.")),
+    ("removeProtectedParameters", Util.gettext("Replace all parameters with protected=true in the system.")),
+    ("removeSimpleEquations", removeSimpleEquationDesc),
+    ("removeUnusedParameter", Util.gettext("Strips all parameter not present in the equations from the system.")),
+    ("removeUnusedVariables", Util.gettext("Strips all variables not present in the equations from the system.")),
+    ("replaceEdgeChange", Util.gettext("Replace edge(b) = b and not pre(b) and change(b) = v <> pre(v).")),
+    ("residualForm", Util.gettext("Transforms simple equations x=y to zero-sum equations 0=y-x.")),
+    ("resolveLoops", Util.gettext("resolves linear equations in loops")),
+    ("simplifyIfEquations", Util.gettext("Tries to simplify if equations by use of information from evaluated parameters.")),
+    ("sortEqnsVars", Util.notrans("Heuristic sorting for equations and variables. This module requires +d=sortEqnsAndVars.")),
+    ("stateMachineElab", Util.gettext("Does the elaboration of state machines.")),
+    ("unitChecking", Util.gettext("advanced unit checking: 1. calculation of unspecified unit information for variables; 2. unit consistency check for equations"))
     })),
   Util.gettext("Sets the pre optimization modules to use in the back end. See --help=optmodules for more info."));
 
@@ -765,7 +766,6 @@ constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMeth
 
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
-    "removeInitializationStuff",
     "lateInlineFunction",
     "simplifyConstraints",
     "CSE",
@@ -793,46 +793,55 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "detectJacobianSparsePattern",
     "generateSymbolicJacobian",
     "generateSymbolicLinearization",
-    "removeConstants"
-    //"solveSimpleEquations",
-    //"partitionIndependentBlocks",
-    //"addInitialStmtsToAlgorithms",
+    "removeConstants",
+    "simplifyTimeIndepFuncCalls",
+    "addInitialStmtsToAlgorithms"
     }),
   SOME(STRING_DESC_OPTION({
-    ("removeInitializationStuff", Util.gettext("Does simplifications by removing initialization information like homotopy(..) and initial().")),
-    ("lateInlineFunction", Util.gettext("Perform function inlining for function with annotation LateInline=true.")),
-    ("removeSimpleEquations", removeSimpleEquationDesc),
-    ("evaluateFinalParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
-    ("evaluateEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
-    ("evaluateFinalEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
-    ("evaluateReplaceFinalParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
-    ("evaluateReplaceEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
-    ("evaluateReplaceFinalEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
-    ("removeEqualFunctionCalls", Util.notrans("DESCRIBE ME")),
-    ("inlineArrayEqn", Util.gettext("This module expands all array equations to scalar equations.")),
-    ("removeUnusedParameter", Util.gettext("Strips all parameter not present in the equations from the system.")),
-    ("extendDynamicOptimization", Util.gettext("Move loops to constraints.")),
-    ("constantLinearSystem", Util.gettext("Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time.")),
-    ("tearingSystem",Util.notrans("For method selection use flag tearingMethod.")),
-    ("partlintornsystem",Util.notrans("partitions linear torn systems.")),
-    ("relaxSystem",Util.notrans("DESCRIBE ME")),
-    ("countOperations", Util.gettext("Count the mathematical operations of the system.")),
-    ("dumpComponentsGraphStr", Util.notrans("DESCRIBE ME")),
-    ("generateSymbolicJacobian", Util.gettext("Generates symbolic Jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be used to simulate with dasslColorSymJac.")),
-    ("generateSymbolicLinearization", Util.gettext("Generates symbolic linearization matrices A,B,C,D for linear model:\n\t\t:math:`\\dot{x} = Ax + Bu`\n\t:math:`ty = Cx +Du`")),
-    ("simplifyTimeIndepFuncCalls", Util.gettext("Simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false.")),
-    ("inputDerivativesUsed", Util.gettext("Checks if derivatives of inputs are need to calculate the model.")),
-    ("simplifysemiLinear", Util.gettext("Simplifies calls to semiLinear.")),
-    ("removeConstants", Util.gettext("Remove all constants in the system.")),
-    ("detectJacobianSparsePattern", Util.gettext("Detects the sparse pattern for Jacobian A.")),
-    ("calculateStrongComponentJacobians", Util.gettext("Generates analytical Jacobian for non-linear strong components.")),
-    ("calculateStateSetsJacobians", Util.gettext("Generates analytical Jacobian for dynamic state selection sets.")),
     ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs.")),
-    ("reshufflePost", Util.gettext("Reshuffles algebraic loops.")),
+    ("addScaledVars", Util.notrans("added var_norm = var/nominal, where var is state")),
+    ("addTimeAsState", Util.gettext("Experimental feature: this replaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0")),
+    ("calculateStateSetsJacobians", Util.gettext("Generates analytical Jacobian for dynamic state selection sets.")),
+    ("calculateStrongComponentJacobians", Util.gettext("Generates analytical Jacobian for non-linear strong components.")),
+    ("constantLinearSystem", Util.gettext("Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time.")),
+    ("countOperations", Util.gettext("Count the mathematical operations of the system.")),
     ("CSE", Util.gettext("Common Sub-expression Elimination")),
+    ("detectJacobianSparsePattern", Util.gettext("Detects the sparse pattern for Jacobian A.")),
+    ("dumpComponentsGraphStr", Util.notrans("Dumps the assignment graph used to determine strong components to format suitable for Mathematica")),
     ("dumpDAE", Util.gettext("dumps the DAE representation of the current transformation state")),
     ("dumpDAEXML", Util.gettext("dumps the DAE as xml representation of the current transformation state")),
-    ("addTimeAsState", Util.gettext("Experimental feature: this replaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0"))
+    ("evaluateEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
+    ("evaluateFinalEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
+    ("evaluateFinalParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
+    ("evaluateReplaceEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
+    ("evaluateReplaceFinalEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
+    ("evaluateReplaceFinalParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
+    ("evaluateReplaceProtectedFinalEvaluateParameters", Util.notrans("Structural parameters and parameters declared as final and protected parameters are removed and replaced with their value. They may no longer be changed in the init file.")),
+    ("extendDynamicOptimization", Util.gettext("Move loops to constraints.")),
+    ("generateSymbolicJacobian", Util.gettext("Generates symbolic Jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be used to simulate with dasslColorSymJac.")),
+    ("generateSymbolicLinearization", Util.gettext("Generates symbolic linearization matrices A,B,C,D for linear model:\n\t\t:math:`\\dot{x} = Ax + Bu`\n\t:math:`ty = Cx +Du`")),
+    ("inlineArrayEqn", Util.gettext("This module expands all array equations to scalar equations.")),
+    ("inputDerivativesUsed", Util.gettext("Checks if derivatives of inputs are need to calculate the model.")),
+    ("lateInlineFunction", Util.gettext("Perform function inlining for function with annotation LateInline=true.")),
+    ("partlintornsystem",Util.notrans("partitions linear torn systems.")),
+    ("recursiveTearing", Util.notrans("inline and repeat tearing")),
+    ("reduceDynamicOptimization", Util.notrans("Removes equations which are not needed for the calculations of cost and constraints. This module requires +d=reduceDynOpt.")),
+    ("relaxSystem", Util.notrans("relaxation from gausian elemination")),
+    ("removeConstants", Util.gettext("Remove all constants in the system.")),
+    ("removeEqualFunctionCalls", Util.notrans("Detects equal function calls of the form a=f(b) and c=f(b) and substitutes them to get speed up.")),
+    ("removeSimpleEquations", removeSimpleEquationDesc),
+    ("removeUnusedParameter", Util.gettext("Strips all parameter not present in the equations from the system to get speed up for compilation of target code.")),
+    ("removeUnusedVariables", Util.notrans("Strips all variables not present in the equations from the system to get speed up for compilation of target code.")),
+    ("reshufflePost", Util.gettext("Reshuffles algebraic loops.")),
+    ("simplifyComplexFunction", Util.notrans("Some simplifications on complex functions (complex refers to the internal data structure)")),
+    ("simplifyConstraints", Util.notrans("Rewrites nonlinear constraints into box constraints if possible. This module requires +gDynOpt.")),
+    ("simplifyLoops", Util.notrans("Simplifies algebraic loops. This modules requires +simplifyLoops.")),
+    ("simplifyTimeIndepFuncCalls", Util.gettext("Simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false.")),
+    ("simplifysemiLinear", Util.gettext("Simplifies calls to semiLinear.")),
+    ("solveLinearSystem", Util.notrans("solve linear system with newton step")),
+    ("solveSimpleEquations", Util.notrans("Solves simple equations")),
+    ("symEuler", Util.notrans("Rewrites the ode system for implicit Euler method. This module requires +symEuler.")),
+    ("tearingSystem", Util.notrans("For method selection use flag tearingMethod."))
     })),
   Util.gettext("Sets the post optimization modules to use in the back end. See --help=optmodules for more info."));
 
@@ -1148,11 +1157,17 @@ constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(78, "initOptModules",
       //"extendDynamicOptimization"
     }),
   SOME(STRING_DESC_OPTION({
-    ("extendDynamicOptimization", Util.gettext("Move loops to constraints.")),
+    ("calculateStrongComponentJacobians", Util.gettext("Generates analytical Jacobian for non-linear strong components.")),
     ("constantLinearSystem", Util.gettext("Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time.")),
-    ("tearingSystem",Util.notrans("For method selection use flag tearingMethod.")),
+    ("extendDynamicOptimization", Util.gettext("Move loops to constraints.")),
     ("inputDerivativesUsed", Util.gettext("Checks if derivatives of inputs are need to calculate the model.")),
-    ("calculateStrongComponentJacobians", Util.gettext("Generates analytical Jacobian for non-linear strong components."))
+    ("recursiveTearing", Util.notrans("inline and repeat tearing")),
+    ("reduceDynamicOptimization", Util.notrans("Removes equations which are not needed for the calculations of cost and constraints. This module requires +d=reduceDynOpt.")),
+    ("simplifyComplexFunction", Util.notrans("Some simplifications on complex functions (complex refers to the internal data structure)")),
+    ("simplifyConstraints", Util.notrans("Rewrites nonlinear constraints into box constraints if possible. This module requires +gDynOpt.")),
+    ("simplifyLoops", Util.notrans("Simplifies algebraic loops. This modules requires +simplifyLoops.")),
+    ("solveSimpleEquations", Util.notrans("Solves simple equations")),
+    ("tearingSystem", Util.notrans("For method selection use flag tearingMethod."))
     })),
   Util.gettext("Sets the initialization optimization modules to use in the back end. See --help=optmodules for more info."));
 
@@ -2066,7 +2081,7 @@ algorithm
     local
       Util.TranslatableContent desc;
       list<String> rest_topics, strs, data;
-      String str,name,str1,str1a,str1b,str2,str3,str3a,str3b,str4,str5,str5a,str5b,str6,str7,str7a,str7b,str8;
+      String str,name,str1,str1a,str1b,str2,str3,str3a,str3b,str4,str5,str5a,str5b,str6,str7,str7a,str7b,str8,str9,str9a,str9b,str10;
       ConfigFlag config_flag;
       list<tuple<String,String>> topics;
 
@@ -2138,15 +2153,23 @@ algorithm
         str5b = System.gettext("The valid methods are:");
         str6 = printFlagValidOptionsDesc(INDEX_REDUCTION_METHOD);
 
-        // post-optimization
-        str7 = System.gettext("The --postOptModules then sets the optimization modules which are used after the index reduction, specified as a comma-separated list.");
+        // post-optimization (initialization)
+        str7 = System.gettext("The --initOptModules then sets the optimization modules which are used after the index reduction to optimize the system for initialization, specified as a comma-separated list.");
         str7 = stringAppendList(StringUtil.wordWrap(str7,System.getTerminalWidth(),"\n"));
-        CONFIG_FLAG(defaultValue=STRING_LIST_FLAG(data=data)) = POST_OPT_MODULES;
-        str7a = System.gettext("The modules used by default are:") + "\n--postOptModules=" + stringDelimitList(data, ",");
+        CONFIG_FLAG(defaultValue=STRING_LIST_FLAG(data=data)) = INIT_OPT_MODULES;
+        str7a = System.gettext("The modules used by default are:") + "\n--initOptModules=" + stringDelimitList(data, ",");
         str7b = System.gettext("The valid modules are:");
-        str8 = printFlagValidOptionsDesc(POST_OPT_MODULES);
+        str8 = printFlagValidOptionsDesc(INIT_OPT_MODULES);
 
-        help = stringAppendList({str1,"\n\n",str1a,"\n\n",str1b,"\n",str2,"\n",str3,"\n\n",str3a,"\n\n",str3b,"\n",str4,"\n",str5,"\n\n",str5a,"\n\n",str5b,"\n",str6,"\n",str7,"\n\n",str7a,"\n\n",str7b,"\n",str8,"\n"});
+        // post-optimization (simulation)
+        str9 = System.gettext("The --postOptModules then sets the optimization modules which are used after the index reduction to optimize the system for simulation, specified as a comma-separated list.");
+        str9 = stringAppendList(StringUtil.wordWrap(str9,System.getTerminalWidth(),"\n"));
+        CONFIG_FLAG(defaultValue=STRING_LIST_FLAG(data=data)) = POST_OPT_MODULES;
+        str9a = System.gettext("The modules used by default are:") + "\n--postOptModules=" + stringDelimitList(data, ",");
+        str9b = System.gettext("The valid modules are:");
+        str10 = printFlagValidOptionsDesc(POST_OPT_MODULES);
+
+        help = stringAppendList({str1,"\n\n",str1a,"\n\n",str1b,"\n",str2,"\n",str3,"\n\n",str3a,"\n\n",str3b,"\n",str4,"\n",str5,"\n\n",str5a,"\n\n",str5b,"\n",str6,"\n",str7,"\n\n",str7a,"\n\n",str7b,"\n",str8,"\n",str9,"\n\n",str9a,"\n\n",str9b,"\n",str10,"\n"});
       then help;
 
     case {str}
@@ -2307,7 +2330,9 @@ algorithm
   Print.printBuf("\n\n");
   Print.printBuf(System.gettext("The :ref:`--indexReductionMethod <omcflag-indexReductionMethod>` sets the method that is used for the index reduction, after the pre optimization modules."));
   Print.printBuf("\n\n");
-  Print.printBuf(System.gettext("The :ref:`--postOptModules <omcflag-postOptModules>` then sets the optimization modules which are used after the index reduction, specified as a comma-separated list."));
+  Print.printBuf(System.gettext("The :ref:`--initOptModules <omcflag-initOptModules>` then sets the optimization modules which are used after the index reduction to optimize the system for initialization, specified as a comma-separated list."));
+  Print.printBuf("\n\n");
+  Print.printBuf(System.gettext("The :ref:`--postOptModules <omcflag-postOptModules>` then sets the optimization modules which are used after the index reduction to optimize the system for simulation, specified as a comma-separated list."));
   Print.printBuf("\n\n");
 
   usage := Print.getString();

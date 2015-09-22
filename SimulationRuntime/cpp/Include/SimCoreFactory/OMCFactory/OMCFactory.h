@@ -74,6 +74,8 @@ protected:
   void fillArgumentsToIgnore();
   void fillArgumentsToReplace();
 
+  virtual boost::shared_ptr<ISimController> loadSimControllerLib(PATH simcontroller_path, type_map simcontroller_type_map);
+
   //boost::shared_ptr<ISimController> _simController;
   map<string,shared_library> _modules;
   string _defaultLinSolver;

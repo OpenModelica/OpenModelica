@@ -12,7 +12,7 @@
 #     if the Intel TBB library was found                                           -DUSE_INTEL_TBB
 #     if the Pugi XML library was found                                            -DUSE_PUGI_XML
 #     if profiling for the simulation runtime should be enabled                    -DRUNTIME_PROFILING
-#     if the equation systems of a FMU should be solved with kinsol                -DFMU_KINSOL
+#     if the equation systems of a FMU should be solved with sundials solvers      -DFMU_SUNDIALS
 #     if the logger should be used                                                 -DUSE_LOGGER
 #
 # Some of these options can be controlled by passing arguments to CMAKE
@@ -37,7 +37,7 @@ OPTION(USE_PARALLEL_OUTPUT "USE_PARALLEL_OUTPUT" OFF)
 OPTION(USE_SCOREP "USE_SCOREP" OFF)
 OPTION(BOOST_STATIC_LINKING "BOOST_STATIC_LINKING" OFF)
 OPTION(RUNTIME_PROFILING "RUNTIME_PROFILING" OFF)
-OPTION(FMU_KINSOL "FMU_KINSOL" OFF)
+OPTION(FMU_SUNDIALS "FMU_SUNDIALS" OFF)
 OPTION(SUNDIALS_ROOT "SUNDIALS ROOT" "")
 
 #Set Variables
@@ -134,15 +134,15 @@ ELSE(RUNTIME_PROFILING)
   MESSAGE(STATUS "Runtime profiling disabled")
 ENDIF(RUNTIME_PROFILING)
 
-# Handle FMU kinsol support
-IF(FMU_KINSOL)
-  ADD_DEFINITIONS(-DENABLE_KINSOL_STATIC)
-  SET(USE_FMU_KINSOL_ "ON")
-  MESSAGE(STATUS "FMU kinsol enabled")
-ELSE(FMU_KINSOL)
-  SET(USE_FMU_KINSOL_ "OFF")
-  MESSAGE(STATUS "FMU kinsol disabled")
-ENDIF(FMU_KINSOL)
+# Handle FMU sundials support
+IF(FMU_SUNDIALS)
+  ADD_DEFINITIONS(-DENABLE_SUNDIALS_STATIC)
+  SET(USE_FMU_SUNDIALS_ "ON")
+  MESSAGE(STATUS "FMU sundials enabled")
+ELSE(FMU_SUNDIALS)
+  SET(USE_FMU_SUNDIALS_ "OFF")
+  MESSAGE(STATUS "FMU sundials disabled")
+ENDIF(FMU_SUNDIALS)
 
 # Handle Logger usage
 IF(USE_LOGGER)

@@ -82,32 +82,29 @@ public function strongComponentsScalar "author: PA
 algorithm
   (outSystem, outComps) := matchcontinue inSystem
     local
-      list<list<Integer>> comps_m;
-      array<Integer> ass1, ass2;
-      BackendDAE.IncidenceMatrixT mt;
-      BackendDAE.EquationArray eqs;
-      BackendDAE.Variables vars;
-      array<Integer> markarray;
-      BackendDAE.StrongComponents comps;
       BackendDAE.EqSystem syst;
-    case syst as BackendDAE.EQSYSTEM(orderedEqs=eqs, m=SOME(_), mT=SOME(mt), matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2))
-      algorithm
-        comps_m := Sorting.TarjanTransposed(mt, ass2);
+      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.StrongComponents comps;
+      array<Integer> ass1, ass2;
+      array<Integer> markarray;
+      list<list<Integer>> comps_m;
 
-        markarray := arrayCreate(BackendDAEUtil.equationArraySize(eqs), -1);
-        comps := analyseStrongComponentsScalar(comps_m, inSystem, inShared, ass1, ass2, mapEqnIncRow, mapIncRowEqn, 1, markarray);
-        ass1 := varAssignmentNonScalar(ass1, mapIncRowEqn);
+    case syst as BackendDAE.EQSYSTEM(mT=SOME(mt), matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2)) algorithm
+      comps_m := Sorting.TarjanTransposed(mt, ass2);
 
-        // noscalass2 = eqnAssignmentNonScalar(1, arrayLength(mapEqnIncRow), mapEqnIncRow, ass2, {});
-        // Frenkel TUD: Do not hand over the scalar incidence Matrix because following modules does not check if scalar or not
-        syst.m := NONE(); syst.mT := NONE(); syst.matching := BackendDAE.MATCHING(ass1, ass2, comps);
-      then
-        (syst, comps);
-    else
-      algorithm
-        Error.addInternalError("function strongComponentsScalar failed (sorting strong components)", sourceInfo());
-      then
-        fail();
+      markarray := arrayCreate(BackendDAEUtil.equationArraySize(inSystem.orderedEqs), -1);
+      comps := analyseStrongComponentsScalar(comps_m, inSystem, inShared, ass1, ass2, mapEqnIncRow, mapIncRowEqn, 1, markarray);
+      ass1 := varAssignmentNonScalar(ass1, mapIncRowEqn);
+
+      // Frenkel TUD: Do not hand over the scalar incidence Matrix because following modules does not check if scalar or not
+      syst.m := NONE();
+      syst.mT := NONE();
+      syst.matching := BackendDAE.MATCHING(ass1, ass2, comps);
+    then (syst, comps);
+
+    else algorithm
+      Error.addInternalError("function strongComponentsScalar failed (sorting strong components)", sourceInfo());
+    then fail();
   end matchcontinue;
 end strongComponentsScalar;
 
@@ -161,11 +158,11 @@ protected
   Integer mark = imark;
 algorithm
   for comp in inComps loop
-      (acomp, mark) := analyseStrongComponentScalar(comp, syst, shared, inAss1, inAss2, mapEqnIncRow, mapIncRowEqn, mark, markarray);
-      outComps := acomp :: outComps;
+    (acomp, mark) := analyseStrongComponentScalar(comp, syst, shared, inAss1, inAss2, mapEqnIncRow, mapIncRowEqn, mark, markarray);
+    outComps := acomp :: outComps;
   end for;
-  outComps := listReverse(outComps);
 
+  outComps := listReverse(outComps);
 end analyseStrongComponentsScalar;
 
 protected function analyseStrongComponentScalar "author: Frenkel TUD 2011-05"
@@ -188,21 +185,22 @@ protected
   list<BackendDAE.Equation> eqn_lst;
   BackendDAE.EquationArray eqns;
 algorithm
-     try
-        BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := syst;
-        vlst := List.map1r(inComp, arrayGet, inAss2);
-        vlst := List.select1(vlst, intGt, 0);
-        varlst := List.map1r(vlst, BackendVariable.getVarAt, vars);
-        var_varindx_lst := List.threadTuple(varlst, vlst);
-        // get from scalar eqns indexes the indexes in the equation array
-        comp := List.map1r(inComp, arrayGet, mapIncRowEqn);
-        comp := List.fold2(comp, uniqueComp, imark, markarray, {});
-        //comp = List.unique(comp);
-        eqn_lst := List.map1r(comp, BackendEquation.equationNth1, eqns);
-        outComp := analyseStrongComponentBlock(comp, eqn_lst, var_varindx_lst, syst, shared);
-    else
-     Error.addInternalError("function analyseStrongComponentScalar failed", sourceInfo());
-     fail();
+  try
+    BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := syst;
+    vlst := List.map1r(inComp, arrayGet, inAss2);
+    vlst := List.select1(vlst, intGt, 0);
+    varlst := List.map1r(vlst, BackendVariable.getVarAt, vars);
+    var_varindx_lst := List.threadTuple(varlst, vlst);
+
+    // get from scalar eqns indexes the indexes in the equation array
+    comp := List.map1r(inComp, arrayGet, mapIncRowEqn);
+    comp := List.fold2(comp, uniqueComp, imark, markarray, {});
+    //comp = List.unique(comp);
+    eqn_lst := List.map1r(comp, BackendEquation.equationNth1, eqns);
+    outComp := analyseStrongComponentBlock(comp, eqn_lst, var_varindx_lst, syst, shared);
+  else
+    Error.addInternalError("function analyseStrongComponentScalar failed", sourceInfo());
+    fail();
   end try;
 end analyseStrongComponentScalar;
 
@@ -419,30 +417,13 @@ protected function transformXToXd "author: PA
   this function transforms x variables (in the state vector)
   to corresponding xd variable (in the derivatives vector)"
   input BackendDAE.Var inVar;
-  output BackendDAE.Var outVar;
+  output BackendDAE.Var outVar = inVar;
 algorithm
-  outVar := match (inVar)
-    local
-      DAE.ComponentRef cr;
-      DAE.VarDirection dir;
-      DAE.VarParallelism prl;
-      BackendDAE.Type tp;
-      Option<DAE.Exp> exp;
-      Option<Values.Value> v;
-      list<DAE.Dimension> dim;
-      Option<DAE.VariableAttributes> attr;
-      Option<BackendDAE.TearingSelect> ts;
-      Option<SCode.Comment> comment;
-      DAE.ConnectorType ct;
-      DAE.ElementSource source;
-      DAE.VarInnerOuter io;
-
-    case BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(), varDirection=dir, varParallelism=prl, varType=tp, bindExp=exp, bindValue=v, arryDim=dim, source=source, values=attr, tearingSelectOption=ts, comment=comment, connectorType=ct, innerOuter=io) equation
-      cr = ComponentReference.crefPrefixDer(cr);
-    then BackendDAE.VAR(cr, BackendDAE.STATE_DER(), dir, prl, tp, exp, v, dim, source, attr, ts, comment, ct, io, false);
-
-    else inVar;
-  end match;
+  if BackendVariable.isStateVar(inVar) then
+    outVar.varName := ComponentReference.crefPrefixDer(inVar.varName);
+    outVar.varKind := BackendDAE.STATE_DER();
+    outVar.unreplaceable := false;
+  end if;
 end transformXToXd;
 
 public function getEquationAndSolvedVar "author: PA
@@ -455,7 +436,7 @@ public function getEquationAndSolvedVar "author: PA
   output list<BackendDAE.Var> outVar;
   output Integer outIndex;
 algorithm
-  (outEquation, outVar, outIndex) := matchcontinue (inComp, inEquationArray, inVariables)
+  (outEquation, outVar, outIndex) := match inComp
     local
       Integer v, e;
       list<Integer> elst, vlst;
@@ -463,52 +444,49 @@ algorithm
       BackendDAE.Var var;
       list<BackendDAE.Equation> eqnlst, eqnlst1;
       list<BackendDAE.Var> varlst, varlst1;
-      BackendDAE.EquationArray eqns;
-      BackendDAE.Variables vars;
-      BackendDAE.StrongComponent comp;
       list<tuple<Integer, list<Integer>>> eqnvartpllst;
 
-    case (BackendDAE.SINGLEEQUATION(eqn=e, var=v), eqns, vars) equation
-      eqn = BackendEquation.equationNth1(eqns, e);
-      var = BackendVariable.getVarAt(vars, v);
+    case BackendDAE.SINGLEEQUATION(eqn=e, var=v) equation
+      eqn = BackendEquation.equationNth1(inEquationArray, e);
+      var = BackendVariable.getVarAt(inVariables, v);
     then ({eqn}, {var}, e);
 
-    case (BackendDAE.EQUATIONSYSTEM(eqns=elst, vars=vlst), eqns, vars) equation
-      eqnlst = BackendEquation.getEqns(elst, eqns);
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+    case BackendDAE.EQUATIONSYSTEM(eqns=elst, vars=vlst) equation
+      eqnlst = BackendEquation.getEqns(elst, inEquationArray);
+      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
       e = listHead(elst);
     then (eqnlst, varlst, e);
 
-    case (BackendDAE.SINGLEARRAY(eqn=e, vars=vlst), eqns, vars) equation
-      eqn = BackendEquation.equationNth1(eqns, e);
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+    case BackendDAE.SINGLEARRAY(eqn=e, vars=vlst) equation
+      eqn = BackendEquation.equationNth1(inEquationArray, e);
+      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
     then ({eqn}, varlst, e);
 
-    case (BackendDAE.SINGLEIFEQUATION(eqn=e, vars=vlst), eqns, vars) equation
-      eqn = BackendEquation.equationNth1(eqns, e);
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+    case BackendDAE.SINGLEIFEQUATION(eqn=e, vars=vlst) equation
+      eqn = BackendEquation.equationNth1(inEquationArray, e);
+      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
     then ({eqn}, varlst, e);
 
-    case (BackendDAE.SINGLEALGORITHM(eqn=e, vars=vlst), eqns, vars) equation
-      eqn = BackendEquation.equationNth1(eqns, e);
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+    case BackendDAE.SINGLEALGORITHM(eqn=e, vars=vlst) equation
+      eqn = BackendEquation.equationNth1(inEquationArray, e);
+      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
     then ({eqn}, varlst, e);
 
-    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e, vars=vlst), eqns, vars) equation
-      eqn = BackendEquation.equationNth1(eqns, e);
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+    case BackendDAE.SINGLECOMPLEXEQUATION(eqn=e, vars=vlst) equation
+      eqn = BackendEquation.equationNth1(inEquationArray, e);
+      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
     then ({eqn}, varlst, e);
 
-    case (BackendDAE.SINGLEWHENEQUATION(eqn=e, vars=vlst), eqns, vars) equation
-      eqn = BackendEquation.equationNth1(eqns, e);
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+    case BackendDAE.SINGLEWHENEQUATION(eqn=e, vars=vlst) equation
+      eqn = BackendEquation.equationNth1(inEquationArray, e);
+      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
     then ({eqn}, varlst, e);
 
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=elst, otherEqnVarTpl=eqnvartpllst)), eqns, vars) equation
-      eqnlst = BackendEquation.getEqns(elst, eqns);
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-      eqnlst1 = BackendEquation.getEqns(List.map(eqnvartpllst, Util.tuple21), eqns);
-      varlst1 = List.map1r(List.flatten(List.map(eqnvartpllst, Util.tuple22)), BackendVariable.getVarAt, vars);
+    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=elst, otherEqnVarTpl=eqnvartpllst)) equation
+      eqnlst = BackendEquation.getEqns(elst, inEquationArray);
+      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
+      eqnlst1 = BackendEquation.getEqns(List.map(eqnvartpllst, Util.tuple21), inEquationArray);
+      varlst1 = List.map1r(List.flatten(List.map(eqnvartpllst, Util.tuple22)), BackendVariable.getVarAt, inVariables);
       eqnlst = listAppend(eqnlst, eqnlst1);
       varlst = listAppend(varlst, varlst1);
       e = listHead(elst);
@@ -518,7 +496,7 @@ algorithm
       true = Flags.isSet(Flags.FAILTRACE);
       Debug.traceln("BackendDAETransform.getEquationAndSolvedVar failed!");
     then fail();
-  end matchcontinue;
+  end match;
 end getEquationAndSolvedVar;
 
 public function getEquationAndSolvedVarIndxes "author: Frenkel TUD
@@ -576,50 +554,10 @@ end getEquationAndSolvedVarIndxes;
 //
 // =============================================================================
 
-public function traverseExpsOfEquation "author: Frenkel TUD 2010-11
-  Traverse all expressions of a list of Equations. It is possible to change the equations
-  and the multidim equations and the algorithms."
-  replaceable type Type_a subtypeof Any;
-  input BackendDAE.Equation inEquation;
-  input FuncExpType func;
-  input Type_a inTypeA;
-  output BackendDAE.Equation outEquation;
-  output Type_a outTypeA;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output DAE.Exp outExp;
-    output Type_a outA;
-  end FuncExpType;
-algorithm
-  (outEquation, (_, outTypeA)) := traverseBackendDAEExpsEqnWithSymbolicOperation(inEquation, traverseBackendDAEExpsEqnWithoutSymbolicOperationHelper, (func, inTypeA));
-end traverseExpsOfEquation;
-
-protected function traverseBackendDAEExpsEqnWithoutSymbolicOperationHelper
-  replaceable type Type_a subtypeof Any;
-  input DAE.Exp inExp;
-  input tuple<list<DAE.SymbolicOperation>, tuple<FuncExpType, Type_a>> inTpl;
-  output DAE.Exp exp;
-  output tuple<list<DAE.SymbolicOperation>, tuple<FuncExpType, Type_a>> outTpl;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output DAE.Exp outExp;
-    output Type_a outA;
-  end FuncExpType;
-protected
-  FuncExpType func;
-  Type_a arg;
-  list<DAE.SymbolicOperation> ops;
-algorithm
-  (ops, (func, arg)) := inTpl;
-  (exp, arg) := func(inExp, arg);
-  outTpl := (ops, (func, arg));
-end traverseBackendDAEExpsEqnWithoutSymbolicOperationHelper;
-
 public function traverseBackendDAEExpsEqnWithSymbolicOperation
 "Traverse all expressions of a list of Equations. It is possible to change the equations
-  and the multidim equations and the algorithms."
+  and the multidim equations and the algorithms.
+  // TODO: remove this together with removeEqualFunctionCall"
   replaceable type Type_a subtypeof Any;
   input BackendDAE.Equation inEquation;
   input FuncExpType func;
@@ -864,80 +802,6 @@ algorithm
 
   outStmtLst := listReverse(outStmtLst);
 end traverseBackendDAEExpsWhenOperatorWithSymbolicOperation;
-
-
-protected function traverseBackendDAEExpsWhenOperator<ArgT> "author: Frenkel TUD 2010-11
-  Traverse all expressions of a list of Equations. It is possible to change the equations
-  and the multidim equations and the algorithms."
-  input list<BackendDAE.WhenOperator> inReinitStmtLst;
-  input FuncExpType func;
-  input ArgT inArg;
-  output list<BackendDAE.WhenOperator> outReinitStmtLst = {};
-  output ArgT outArg = inArg;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input ArgT inArg;
-    output DAE.Exp outExp;
-    output ArgT outArg;
-  end FuncExpType;
-algorithm
-  for rs in inReinitStmtLst loop
-    rs := match(rs)
-      local
-        DAE.ComponentRef cr;
-        DAE.Exp cond, msg, level, exp;
-        DAE.ElementSource src;
-
-      case BackendDAE.ASSIGN(cr, cond, src) equation
-        (cond, outArg) = func(cond, outArg);
-        (DAE.CREF(componentRef = cr), outArg) = func(Expression.crefExp(cr), outArg);
-      then BackendDAE.ASSIGN(cr, cond, src);
-
-      case BackendDAE.REINIT(cr, cond, src) equation
-        (cond, outArg) = func(cond, outArg);
-        (DAE.CREF(componentRef = cr), outArg) = func(Expression.crefExp(cr), outArg);
-      then BackendDAE.REINIT(cr, cond, src);
-
-      case BackendDAE.ASSERT(cond, msg, level, src) equation
-        (cond, outArg) = func(cond, outArg);
-      then BackendDAE.ASSERT(cond, msg, level, src);
-
-      case BackendDAE.NORETCALL(exp, src) equation
-        (exp, outArg) = Expression.traverseExpBottomUp(exp, func, outArg);
-      then BackendDAE.NORETCALL(exp, src);
-
-      else rs;
-    end match;
-
-    outReinitStmtLst := rs::outReinitStmtLst;
-  end for;
-
-  outReinitStmtLst := listReverse(outReinitStmtLst);
-end traverseBackendDAEExpsWhenOperator;
-
-public function traverseExpsOfEquationList<ArgT> "author: Frenkel TUD 2010-11
-  Traverse all expressions of a list of Equations. It is possible to change the equations
-  and the multidim equations and the algorithms."
-  input list<BackendDAE.Equation> inEquations;
-  input FuncExpType func;
-  input ArgT inArg;
-  output list<BackendDAE.Equation> outEquations = {};
-  output ArgT outArg = inArg;
-
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input ArgT inArg;
-    output DAE.Exp outExp;
-    output ArgT outArg;
-  end FuncExpType;
-algorithm
-  for eq in inEquations loop
-    (eq, outArg) := traverseExpsOfEquation(eq, func, outArg);
-    outEquations := eq :: outEquations;
-  end for;
-
-  outEquations := listReverse(outEquations);
-end traverseExpsOfEquationList;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAETransform;

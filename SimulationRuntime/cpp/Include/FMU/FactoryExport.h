@@ -19,4 +19,33 @@
     error "operating system not supported"
 #endif
 
+#ifndef ENABLE_SUNDIALS_STATIC
+ boost::shared_ptr<INonLinSolverSettings> createKinsolSettings()
+ {
+   throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol was disabled during build");
+ }
+ boost::shared_ptr<IAlgLoopSolver> createKinsolSolver(IAlgLoop* algLoop, boost::shared_ptr<INonLinSolverSettings> solver_settings)
+ {
+   throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol was disabled during build");
+ }
+#endif
+
+ boost::shared_ptr<ISolver> createCVode(IMixedSystem* system, boost::shared_ptr<ISolverSettings> solver_settings)
+ {
+   throw ModelicaSimulationError(SOLVER,"CVode was disabled during build");
+ }
+ boost::shared_ptr<ISolverSettings> createCVodeSettings(boost::shared_ptr<IGlobalSettings> globalSettings)
+ {
+   throw ModelicaSimulationError(SOLVER,"CVode was disabled during build");
+ }
+
+ boost::shared_ptr<ISolver> createIda(IMixedSystem* system, boost::shared_ptr<ISolverSettings> solver_settings)
+ {
+   throw ModelicaSimulationError(SOLVER,"IDA was disabled during build");
+ }
+ boost::shared_ptr<ISolverSettings> createIdaSettings(boost::shared_ptr<IGlobalSettings> globalSettings)
+ {
+   throw ModelicaSimulationError(SOLVER,"IDA was disabled during build");
+ }
+
 /** @} */ // end of coreSystem
