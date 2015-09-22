@@ -27,8 +27,8 @@ Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _yHelp            (NULL)
 	, _fnew             (NULL)
 	, _fold             (NULL)
-, _f                  (NULL)
-, _ihelpArray         (NULL)
+    , _f                  (NULL)
+    , _ihelpArray         (NULL)
 
 	, _fHelp			(NULL)
 	, _delta_s            (NULL)
@@ -42,12 +42,12 @@ Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _jacHelpMat2            (NULL)
 
 	, _work						(NULL)
-, _kluSymbolic 			(NULL)
-, _kluNumeric			(NULL)
-, _kluCommon			(NULL)
-, _Ai					(NULL)
-, _Ap					(NULL)
-, _Ax					(NULL)
+    , _kluSymbolic 			(NULL)
+    , _kluNumeric			(NULL)
+    , _kluCommon			(NULL)
+    , _Ai					(NULL)
+    , _Ap					(NULL)
+    , _Ax					(NULL)
 
 	, _dimSys            (0)
 	, _firstCall        (true)
@@ -224,139 +224,16 @@ void Newton::initialize()
 		}
 	}
 
-	// DEBUG AREA
-	/*
-	double
-		*DBGMatA,
-		*DBGMatB,
-		*DBGMatC,
-		*DBGVecu,
-		*DBGVecv,
-		*DBGVecw;
 
-	double dbg;
-
-	DBGMatA        = new double[9];
-	DBGMatB        = new double[9];
-	DBGMatC        = new double[9];
-
-	memset(DBGMatA,0,9*sizeof(double));
-	memset(DBGMatB,0,9*sizeof(double));
-	memset(DBGMatC,0,9*sizeof(double));
-
-	DBGVecv        = new double[3];
-	DBGVecu        = new double[3];
-	DBGVecw        = new double[3];
-
-	memset(DBGVecv,0,3*sizeof(double));
-	memset(DBGVecu,0,3*sizeof(double));
-	memset(DBGVecw,0,3*sizeof(double));
-
-	for(int i=0;i<9;i++)
-	{
-		DBGMatA[i] = 1;
-		DBGMatB[i] = i+1;
-	}
-
-	for (int i=0;i<3;i++)
-	{
-		DBGVecu[i] = i+1;
-		DBGVecv[i] = 3+i;
-		DBGVecw[i] = 1;
-	}
-
-	matVecMult(3, 3, DBGMatB, DBGVecu, DBGVecw);
-	dbg= 1;
-	vecMatMult(3, 3, DBGMatB, DBGVecu, DBGVecw);
-	dbg=1;
-	vecprod(3, DBGVecu, DBGVecv, DBGMatC);
-	dbg=1;
-
-	// DEBUG AREA
-	*/
 	long int
 		irtrn    = 0;
 
 	calcFunction(_y,_fold);
 	if(!_algLoop->isLinear())
 	{
-		/*
-		for(int i=0;i<_dimSys;i++)
-		{
-			_jac[i*_dimSys+i] = 1;
-		}
-		*/
 		calcJacobian();
-		//memcpy(_jacHelpMat1,_jac,_dimSys*_dimSys*sizeof(double));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 		if(_broydenMethod==2)
 		{
-			//dgetrf_(&_dimSys, &_dimSys, _jac, &_dimSys, _iHelp, &irtrn);
-			//dgetri_(&_dimSys, _jac, &_dimSys, _iHelp,_work, &_lwork, &irtrn);
 			dgesv_(&_dimSys,&_dimSys,_jac,&_dimSys,_ihelpArray,_identity,&_dimSys,&irtrn);
 			memcpy(_jac,_identity,_dimSys*_dimSys*sizeof(double));
 		}
@@ -365,23 +242,11 @@ void Newton::initialize()
 
 	Logger::write("Newton: initialized",LC_NLS,LL_DEBUG);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
 void Newton::solve()
 {
+
 	long int
 		dimRHS    = 1,                    // Dimension of right hand side of linear system (=b)
 		irtrn    = 0;                    // Retrun-flag of Fortran code
