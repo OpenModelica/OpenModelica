@@ -2340,7 +2340,7 @@ BUNDLE_INFO_END(com_boschrexroth_<%modelname%>)
 
 BUNDLE_EXPORT int com_boschrexroth_<%modelname%>_create(int param1, int param2, int param3)
 {
-/*
+
   MLPIHANDLE connection = MLPI_INVALIDHANDLE;
 
   // connect to API
@@ -2373,7 +2373,7 @@ BUNDLE_EXPORT int com_boschrexroth_<%modelname%>_create(int param1, int param2, 
     result = mlpiLogicPouExtensionRegister(connection, name, function);
   }
 mlpiApiDisconnect(&connection);
-*/
+
 printf("\n###################################################################");
 printf("\n## onCreate #######################################################");
 printf("\n###################################################################");
@@ -2382,7 +2382,7 @@ return 0;
 
 BUNDLE_EXPORT int com_boschrexroth_<%modelname%>_start(int param1, int param2, int param3)
 {
-spawnTask();
+//spawnTask();
 printf("\n###################################################################");
 printf("\n## onStart ########################################################");
 printf("\n###################################################################");
