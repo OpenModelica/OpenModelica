@@ -251,7 +251,6 @@ end printClassAttributes;
 public function printShared "This function dumps the BackendDAE.Shared representation to stdout."
   input BackendDAE.Shared inShared;
 algorithm
-
   print("\nBackendDAEType: ");
   printBackendDAEType(inShared.backendDAEType);
   print("\n\n");
@@ -272,6 +271,10 @@ algorithm
   dumpConstraintList(inShared.constraints, "Constraints");
   dumpBasePartitions(inShared.partitionsInfo.basePartitions, "Base partitions");
   dumpSubPartitions(inShared.partitionsInfo.subPartitions, "Sub partitions");
+
+  if Flags.isSet(Flags.DUMP_FUNCTIONS) then
+    DAEDump.dumpFunctionTree(inShared.functionTree, "Functions");
+  end if;
 end printShared;
 
 public function printBasePartitions
@@ -567,7 +570,7 @@ algorithm
   Error.addMessage(Error.BACKEND_DAE_TO_MODELICA, {suffix, str});
 end dumpBackendDAEToModelica;
 
-public function dumpEqSystem "function dumpEqSystem"
+public function dumpEqSystem
   input BackendDAE.EqSystem inEqSystem;
   input String heading;
 algorithm
