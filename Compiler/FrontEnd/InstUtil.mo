@@ -8930,30 +8930,35 @@ algorithm
 	      Absyn.ComponentRef domainCr;
 	      SCode.Comment comment;
 	      SCode.SourceInfo info;
-//	      String domainName;
 	      Integer N;
 	      List<Absyn.ComponentRef> fieldLst;
-	    //Normal equation withhout domain specified, no field variables present
+	    //Normal equation withhout domain specified, no field variables present:
 	    case SCode.EQUATION(SCode.EQ_EQUALS(domainOpt = NONE()))
 	    then {inEQ};
-	    //Equation with domain specified, allow for field variables
+	    //Equation with domain specified, allow for field variables:
 	    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp, domainOpt = SOME(domainCr),
 	                           comment = comment, info = info))
 	      equation
-	        //Absyn.CREF_IDENT(name = domainName) = domainCr;
-	        (N,fieldLst) = List.findSome1(inDomFieldLst,domNFieldsFindFun,domainCr);
-	        //DAE.CREF_IDENT(domainCr
-	        //N = 10;        , " has different domain than the equation."
+	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr,info);
 	      then list(newEQFun(i, lhs_exp, rhs_exp, domainCr, comment, info, fieldLst) for i in 2:N-1);
-	    case SCode.EQUATION(SCode.EQ_EQUALS(domainOpt = SOME(domainCr), info = info))
-	      equation
-	        //Absyn.CREF_IDENT(name = domainName) = domainCr;
-	        Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"There is no field defined within the domain of this equation."}, info);
-	      then {inEQ};
 	  end matchcontinue;
 
   outDiscretizedEQs := listAppend(inDiscretizedEQs, newDiscretizedEQs);
 end discretizePDE;
+
+protected function getDomNFields
+  input DomainFieldsLst inDomFieldLst;
+  input Absyn.ComponentRef inDomainCr;
+  input SCode.SourceInfo info;
+  output Integer outN;
+  output List<Absyn.ComponentRef> outFieldLst;
+algorithm
+  try
+    (outN,outFieldLst) := List.findSome1(inDomFieldLst,domNFieldsFindFun,inDomainCr);
+  else
+    Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"There are no fields defined within the domain of this equation."}, info);
+  end try;
+end getDomNFields;
 
 protected function domNFieldsFindFun
   input Tuple<DAE.ComponentRef,List<Absyn.ComponentRef>> inDomFields;
@@ -9007,13 +9012,12 @@ protected function newEQFun
   output SCode.Equation outEQ;
   protected Absyn.Exp outLhs_exp, outRhs_exp;
 algorithm
-  //TODO: opravit:
-  outLhs_exp := Absyn.traverseExpTopDown(inLhs_exp,discretzeTraverseFun,(i,fieldLst,domainCr,info,false));
-  outRhs_exp := Absyn.traverseExpTopDown(inRhs_exp,discretzeTraverseFun,(i,fieldLst,domainCr,info,false));
+  (outLhs_exp, _) := Absyn.traverseExpTopDown(inLhs_exp,discretizeTraverseFun,(i,fieldLst,domainCr,info,false));
+  (outRhs_exp, _) := Absyn.traverseExpTopDown(inRhs_exp,discretizeTraverseFun,(i,fieldLst,domainCr,info,false));
   outEQ := SCode.EQUATION(SCode.EQ_EQUALS(outLhs_exp, outRhs_exp, NONE(), comment, info));
 end newEQFun;
 
- protected function discretzeTraverseFun
+ protected function discretizeTraverseFun
    input Absyn.Exp inExp;
    input tuple<Integer, list<Absyn.ComponentRef>, Absyn.ComponentRef, SCode.SourceInfo,Boolean> inTup;
    output Absyn.Exp outExp;
@@ -9047,7 +9051,7 @@ end newEQFun;
        end if;
        then
           Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i))::subscripts));
-     case Absyn.CALL(fieldCr as Absyn.CREF_IDENT("pder",subscripts),Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(name, subscripts)),Absyn.CREF(Absyn.CREF_IDENT(name="x"))},_))
+     case Absyn.CALL(Absyn.CREF_IDENT("pder",subscripts),Absyn.FUNCTIONARGS({Absyn.CREF(fieldCr as Absyn.CREF_IDENT(name, subscripts)),Absyn.CREF(Absyn.CREF_IDENT(name="x"))},_))
        //pder
        equation
          if not List.isMemberOnTrue(fieldCr,fieldLst,Absyn.crefEqual) then
@@ -9088,7 +9092,7 @@ end newEQFun;
      fail();
    end if;
    outTup := (i, fieldLst, domainCr, info, skip);
- end discretzeTraverseFun;
+ end discretizeTraverseFun;
 
 protected function findDomF<T>
   input Tuple<String,T> inTup;
