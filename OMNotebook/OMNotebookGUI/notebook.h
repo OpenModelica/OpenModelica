@@ -262,8 +262,8 @@ private:
   QAction *showExprAction;
 
   //QAction *cutCellAction;
-  //QAction *copyCellAction;
-  //QAction *pasteCellAction;
+  QAction *copyCellAction;
+  QAction *pasteCellAction;
   QAction *addCellAction;
   QAction *ungroupCellAction;      // Added 2006-04-26 AF
   QAction *splitCellAction;      // Added 2006-04-26 AF

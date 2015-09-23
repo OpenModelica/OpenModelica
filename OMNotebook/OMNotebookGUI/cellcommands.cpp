@@ -288,7 +288,7 @@ namespace IAEX
   void PasteCellsCommand::execute()
   {
     try
-    {
+      {
       vector<Cell *> cells = application()->pasteboard();
 
       // Insert new cells before this position.
@@ -310,6 +310,10 @@ namespace IAEX
             throw e;
           }
         }
+      }
+      else
+      {
+          QMessageBox::warning( 0, "Warning", "No Cells Copied to paste, To paste a cell, select the cells and perform copy", "OK" );
       }
 
       //2006-01-18 AF, set docuement changed

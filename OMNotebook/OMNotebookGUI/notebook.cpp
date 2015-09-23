@@ -833,6 +833,15 @@ void NotebookWindow::createCellMenu()
   previousCellAction->setStatusTip( tr("Move to previous cell") );
   connect(previousCellAction, SIGNAL(triggered()), this, SLOT(moveCursorUp()));
 
+  copyCellAction = new QAction( tr("&Copy Cell"), this);
+  copyCellAction->setShortcut( tr("Ctrl+Shift+C") );
+  copyCellAction->setStatusTip( tr("Copy selected cell") );
+  connect(copyCellAction, SIGNAL(triggered()), this, SLOT(copyCell()));
+
+  pasteCellAction = new QAction( tr("&Paste Cell"), this);
+  pasteCellAction->setShortcut( tr("Ctrl+Shift+V") );
+  pasteCellAction->setStatusTip( tr("Paste in a cell") );
+  connect(pasteCellAction, SIGNAL(triggered()), this, SLOT(pasteCell()));
 
   // 2005-10-07 AF, Porting, new code for creating menu
   // 2006-04-27 AF, remove cut,copy,paste cell from menu
@@ -853,7 +862,8 @@ void NotebookWindow::createCellMenu()
   cellMenu->addSeparator();
   cellMenu->addAction( nextCellAction );
   cellMenu->addAction( previousCellAction );
-
+  cellMenu->addAction( copyCellAction );
+  cellMenu->addAction( pasteCellAction );
   QObject::connect(cellMenu, SIGNAL(aboutToShow()),
                    this, SLOT(updateCellMenu()));
 
@@ -2584,11 +2594,12 @@ void NotebookWindow::openFile(const QString filename)
 
 
       if(subject_->isOpen())
+      {
         application()->commandCenter()->executeCommand(new OpenFileCommand(filename_));
+         }
       else
       {
         subject_ = new CellDocument(app_, QString::null);
-
         subject_->executeCommand(new OpenFileCommand(filename_));
         subject_->attach(this);
 
