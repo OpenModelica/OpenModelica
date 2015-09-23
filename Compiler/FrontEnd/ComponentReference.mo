@@ -1637,6 +1637,13 @@ algorithm
   end match;
 end crefLastCref;
 
+public function crefRest
+  input DAE.ComponentRef inCref;
+  output DAE.ComponentRef outCref;
+algorithm
+  DAE.CREF_QUAL(componentRef = outCref) := inCref;
+end crefRest;
+
 public function crefType
   "Function for extracting the type of the first identifier of a cref."
   input DAE.ComponentRef inCref;
@@ -1725,6 +1732,17 @@ algorithm
         res;
   end match;
 end crefSubs;
+
+public function crefFirstSubs
+  input DAE.ComponentRef inCref;
+  output list<DAE.Subscript> outSubscripts;
+algorithm
+  outSubscripts := match inCref
+    case DAE.CREF_IDENT() then inCref.subscriptLst;
+    case DAE.CREF_QUAL() then inCref.subscriptLst;
+    else {};
+  end match;
+end crefFirstSubs;
 
 public function crefLastSubs "Return the last subscripts of a ComponentRef"
   input DAE.ComponentRef inComponentRef;
