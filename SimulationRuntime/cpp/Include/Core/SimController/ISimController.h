@@ -20,6 +20,7 @@ struct SimSettings
   OutputPointType outputPointType;
   LogSettings logSettings;
   bool nonLinearSolverContinueOnError;
+  int solverThreads;
 };
 
 /**

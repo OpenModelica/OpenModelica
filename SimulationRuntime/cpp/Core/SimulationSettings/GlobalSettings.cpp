@@ -200,4 +200,14 @@ bool GlobalSettings::getNonLinearSolverContinueOnError()
 {
   return _nonLinSolverContinueOnError;
 }
+
+void GlobalSettings::setSolverThreads(int val)
+{
+  _solverThreads = val;
+}
+
+int GlobalSettings::getSolverThreads()
+{
+  return _solverThreads;
+}
 /** @} */ // end of coreSimulationSettings
