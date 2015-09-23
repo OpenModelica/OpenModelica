@@ -2088,6 +2088,10 @@ buildModel(testOptdaedump); getErrorString();
 //
 // pre-optimization done.
 //
+//
+// Index reduction:
+// Index reduction done.
+//
 // created initial system:
 //
 //
