@@ -1,0 +1,32 @@
+// name: ticket-2337
+// keywords: when equations, #2337
+// status: correct
+
+loadString("
+model whenBug
+ Real x(start=2, fixed=true);
+ Real y(start=1, fixed=true);
+equation
+ when sample(0, 0.1) then
+   x = 2;
+   y = x + y; // singularity loop
+ end when;
+end whenBug;
+"); getErrorString();
+
+translateModel(whenBug); getErrorString();
+
+// Result:
+// true
+// ""
+// false
+// "Error: Failed to solve equation
+//   y = x + y;
+// [<interactive>:6:2-9:10:writable] Error: Internal error BackendDAECreate.lowerWhenEqn: equation not handled:
+// equation
+//   when sample(1, 0.0, 0.1) then
+//   x = 2.0;
+//   y = x + y;
+//   end when;
+// "
+// endResult
