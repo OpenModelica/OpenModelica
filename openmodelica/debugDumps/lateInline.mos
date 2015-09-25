@@ -5222,7 +5222,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module simplifyAllExpressions (simulation):
+// post-optimization module addInitialStmtsToAlgorithms (simulation):
 //
 //
 // unspecified partition
@@ -5317,7 +5317,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module addInitialStmtsToAlgorithms (simulation):
+// post-optimization module simplifyAllExpressions (simulation):
 //
 //
 // unspecified partition
