@@ -1402,47 +1402,32 @@ algorithm
   end match;
 end strongComponentString;
 
-public function whenEquationString "Helper function to equationString"
+public function whenEquationString
   input BackendDAE.WhenEquation inWhenEqn;
   input Boolean inStart;
   output String outString;
+protected
+  String conditionStr, whenStmtStr, elseWhenStr;
+  DAE.Exp cond;
+  BackendDAE.WhenEquation weqn;
+  Option<BackendDAE.WhenEquation> oweqn;
+  list<BackendDAE.WhenOperator> whenStmtLst;
 algorithm
-  outString := match (inWhenEqn, inStart)
-    local
-      String s1,s2,res,s3,cs;
-      DAE.Exp e2,cond;
-      DAE.ComponentRef cr;
-      BackendDAE.WhenEquation weqn;
-      Option<BackendDAE.WhenEquation> oweqn;
-      list<BackendDAE.WhenOperator> whenStmtLst;
-   case (BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart = oweqn), true)
-      equation
-        s1 = ExpressionDump.printExpStr(cond);
-        s2 = stringDelimitList(List.map(whenStmtLst, dumpWhenOperatorStr), "  ");
-        if isSome(oweqn) then
-          SOME(weqn) = oweqn;
-          s3 = whenEquationString(weqn, false);
-        else
-          s3 = "";
-        end if;
-        res = stringAppendList({"when ",s1," then\n  ",s2,"\n",s3,"\nend when"});
-      then
-        res;
+  BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst=whenStmtLst, elsewhenPart=oweqn) := inWhenEqn;
+  conditionStr := ExpressionDump.printExpStr(cond);
+  whenStmtStr := stringDelimitList(List.map(whenStmtLst, dumpWhenOperatorStr), ";\n  ") + ";\n";
+  if isSome(oweqn) then
+    SOME(weqn) := oweqn;
+    elseWhenStr := whenEquationString(weqn, false);
+  else
+    elseWhenStr := "";
+  end if;
 
-   case (BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart = oweqn), false)
-      equation
-        s1 = ExpressionDump.printExpStr(cond);
-        s2 = stringDelimitList(List.map(whenStmtLst, dumpWhenOperatorStr), "  ");
-        if isSome(oweqn) then
-          SOME(weqn) = oweqn;
-          s3 = whenEquationString(weqn, false);
-        else
-          s3 = "";
-        end if;
-        res = stringAppendList({"elsewhen ",s1," then\n  ",s2,"\n",s3});
-      then
-        res;
-  end match;
+  if inStart then
+    outString := "when " + conditionStr + " then\n  " + whenStmtStr + elseWhenStr + "end when;";
+  else
+    outString := "elsewhen " + conditionStr + " then\n  " + whenStmtStr + elseWhenStr;
+  end if;
 end whenEquationString;
 
 public function equationString "Helper function to e.g. dump."

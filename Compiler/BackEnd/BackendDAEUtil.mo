@@ -5830,27 +5830,22 @@ public function traverseBackendDAEExpsNoCopyWithUpdate<A>
     output DAE.Exp outExp;
     output A outA;
   end FuncExpType;
+protected
+  list<BackendDAE.EqSystem> systs;
+  BackendDAE.Shared shared;
+  String name;
 algorithm
-  outTypeA := matchcontinue inBackendDAE
-    local
-      list<BackendDAE.EqSystem> systs;
-      BackendDAE.Shared shared;
-      String name;
-
-    case BackendDAE.DAE(systs, shared)
-      equation
-        outTypeA = List.fold1(systs, traverseBackendDAEExpsEqSystemWithUpdate, func, inTypeA);
-        outTypeA = traverseBackendDAEExpsVarsWithUpdate(shared.knownVars, func, outTypeA);
-        outTypeA = traverseBackendDAEExpsEqnsWithUpdate(shared.initialEqs, func, outTypeA);
-        outTypeA = traverseBackendDAEExpsEqnsWithUpdate(shared.removedEqs, func, outTypeA);
-      then
-        outTypeA;
-
-    else equation
-      (_, _, name) = System.dladdr(func);
-      Error.addInternalError("traverseBackendDAEExpsNoCopyWithUpdate failed for " + name, sourceInfo());
-    then fail();
-  end matchcontinue;
+  try
+    BackendDAE.DAE(systs, shared) := inBackendDAE;
+    outTypeA := List.fold1(systs, traverseBackendDAEExpsEqSystemWithUpdate, func, inTypeA);
+    outTypeA := traverseBackendDAEExpsVarsWithUpdate(shared.knownVars, func, outTypeA);
+    outTypeA := traverseBackendDAEExpsEqnsWithUpdate(shared.initialEqs, func, outTypeA);
+    outTypeA := traverseBackendDAEExpsEqnsWithUpdate(shared.removedEqs, func, outTypeA);
+  else
+    (_, _, name) := System.dladdr(func);
+    Error.addInternalError("traverseBackendDAEExpsNoCopyWithUpdate failed for " + name, sourceInfo());
+    fail();
+  end try;
 end traverseBackendDAEExpsNoCopyWithUpdate;
 
 public function traverseBackendDAEExpsEqSystem "This function goes through the BackendDAE structure and finds all the
@@ -7697,7 +7692,8 @@ algorithm
     case {}
     then (inConditionVarList, inInitialCall);
 
-    case DAE.BCONST(false)::conditionList equation
+    // filter constant conditions
+    case exp::conditionList guard(Expression.isConst(exp)) equation
       (conditionVarList, initialCall) = getConditionList1(conditionList, inConditionVarList, inInitialCall);
     then (conditionVarList, initialCall);
 

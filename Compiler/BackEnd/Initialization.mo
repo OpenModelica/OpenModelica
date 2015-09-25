@@ -2333,6 +2333,7 @@ protected
 algorithm
   for eqs in outDAE.eqs loop
     _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs.orderedEqs, removeInitializationStuff1, false);
+    _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs.removedEqs, removeInitializationStuff1, false);
   end for;
 
   for eq in BackendEquation.equationList(shared.removedEqs) loop
