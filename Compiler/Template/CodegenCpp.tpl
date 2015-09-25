@@ -6024,11 +6024,11 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
         else
         <<
         #if defined(__vxworks)
-        _reader  = new XmlPropertyReader("/SYSTEM/bundles/com.boschrexroth.<%modelname%>/OMCpp<%fileNamePrefix%>Init.xml");
+        _reader  = boost::shared_ptr<IPropertyReader>(new XmlPropertyReader("/SYSTEM/bundles/com.boschrexroth.<%modelname%>/OMCpp<%fileNamePrefix%>Init.xml"));
         #else
-        _reader  = new XmlPropertyReader("<%makefileParams.compileDir%>/OMCpp<%fileNamePrefix%>Init.xml");
+        _reader  =  boost::shared_ptr<IPropertyReader>(new XmlPropertyReader("<%makefileParams.compileDir%>/OMCpp<%fileNamePrefix%>Init.xml"));
         #endif
-        reader->readInitialValues(*this, _sim_vars);
+        _reader->readInitialValues(*this, _sim_vars);
 
         >>
         %>      initializeFreeVariables();
@@ -7062,7 +7062,7 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       /* HistoryImplType::value_type_v v;
       HistoryImplType::value_type_dv v2; */
 
-      const HistoryImplType::values_type container = boost::make_tuple(outputRealVars.outputVars,outputIntVars.outputVars,outputBoolVars.outputVars,_simTime);
+      const HistoryImplType::values_type& container = _historyImpl->getFreeContainer();
 
 
       <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then

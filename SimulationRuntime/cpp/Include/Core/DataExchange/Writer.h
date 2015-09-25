@@ -73,17 +73,11 @@ public:
 		,_threadWorkDone(false)
 #endif
 	{
-		/*for (int i = 0; i < CONTAINER_COUNT; ++i)
+		for (int i = 0; i < CONTAINER_COUNT; ++i)
 		{
-			boost::shared_ptr<real_vars_t> realVars = boost::shared_ptr<real_vars_t>(new real_vars_t());
-			boost::shared_ptr<int_vars_t> intVars = boost::shared_ptr<int_vars_t>(new int_vars_t());
-            boost::shared_ptr<bool_vars_t> boolVars = boost::shared_ptr<bool_vars_t>(new bool_vars_t());
-			boost::shared_ptr<values_type> vars = boost::shared_ptr<values_type>(new values_type());
-			get < 0 > (*vars) = realVars;
-			get < 1 > (*vars) = intVars;
-            get < 2 > (*vars) = boolVars;
+			 values_type vars = boost::make_tuple(real_vars_t(),int_vars_t(),bool_vars_t(),0.0);
 			_freeContainers.push_back(vars);
-		}*/
+		}
 	}
 
 	virtual ~Writer()
