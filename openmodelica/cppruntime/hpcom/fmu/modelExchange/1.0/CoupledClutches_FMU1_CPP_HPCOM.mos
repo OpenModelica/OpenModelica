@@ -6,12 +6,13 @@
 
 loadModel(Modelica); getErrorString();
 setDebugFlags("hpcom,hardcodedStartValues"); getErrorString();
-setCommandLineOptions("+simCodeTarget=Cpp +n=1 +hpcomCode=openmp +hpcomScheduler=level"); getErrorString();
+setCommandLineOptions("+simCodeTarget=Cpp +n=2 +hpcomCode=openmp +hpcomScheduler=list"); getErrorString();
 loadFile("CoupledClutches.mo"); getErrorString();
 translateModelFMU(CoupledClutches); getErrorString();
 
-clearDebugFlags(); getErrorString();
+
 setCommandLineOptions("+simCodeTarget=C"); getErrorString();
+clearDebugFlags(); getErrorString();
 //importFMU("CoupledClutches.fmu", "<default>", 6, true, true); getErrorString();
 importFMU("CoupledClutches.fmu"); getErrorString();
 loadFile("CoupledClutches_me_FMU.mo"); getErrorString();
@@ -33,9 +34,9 @@ val(J4_w1, 1);
 // ""
 // readCalcTimesFromFile: No valid profiling-file found.
 // Warning: The costs have been estimated. Maybe CoupledClutches_eqs_prof-file is missing.
-// Using level Scheduler for the DAE system
-// Using level Scheduler for the ODE system
-// Using level Scheduler for the ZeroFunc system
+// Using list Scheduler for the DAE system
+// Using list Scheduler for the ODE system
+// Using list Scheduler for the ZeroFunc system
 // HpcOm is still under construction.
 // "SimCode: The model CoupledClutches has been translated to FMU"
 // "Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
@@ -56,8 +57,8 @@ val(J4_w1, 1);
 //     messages = ""
 // end SimulationResult;
 // ""
-// 3.251463040159051
-// 3.410706354037906
-// 3.41070636588118
-// 5.006873138313495e-09
+// 3.044323911098361
+// 3.242493326997348
+// 3.242493328798009
+// -1.000195481992705e-10
 // endResult
