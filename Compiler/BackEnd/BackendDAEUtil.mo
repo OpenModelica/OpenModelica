@@ -6536,7 +6536,8 @@ algorithm
   // generate system for initialization
   (outInitDAE, outUseHomotopy, outRemovedInitialEquationLst, outPrimaryParameters, outAllPrimaryParameters) := Initialization.solveInitialSystem(dae);
 
-  simDAE := Initialization.removeInitializationStuff(dae);
+  simDAE := BackendDAEOptimize.addInitialStmtsToAlgorithms(dae);
+  simDAE := Initialization.removeInitializationStuff(simDAE);
 
   // post-optimization phase
   simDAE := postOptimizeDAE(simDAE, postOptModules, matchingAlgorithm, daeHandler);
@@ -7215,8 +7216,7 @@ protected
   list<tuple<BackendDAEFunc.postOptimizationDAEModule,String,Boolean/*stopOnFailure*/>> allpostOptModules;
   list<String> strpostOptModules;
 algorithm
-  allpostOptModules := {(BackendDAEOptimize.addInitialStmtsToAlgorithms, "addInitialStmtsToAlgorithms", false),
-                        (BackendDAEOptimize.addTimeAsState, "addTimeAsState", false),
+  allpostOptModules := {(BackendDAEOptimize.addTimeAsState, "addTimeAsState", false),
                         (BackendDAEOptimize.addedScaledVars, "addScaledVars", false),
                         (BackendDAEOptimize.countOperations, "countOperations", false),
                         (BackendDAEOptimize.removeConstants, "removeConstants", false),

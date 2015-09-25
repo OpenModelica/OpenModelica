@@ -799,11 +799,9 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "generateSymbolicLinearization",
     "removeConstants",
     "simplifyTimeIndepFuncCalls",
-    "addInitialStmtsToAlgorithms",
     "simplifyAllExpressions"
     }),
   SOME(STRING_DESC_OPTION({
-    ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs.")),
     ("addScaledVars", Util.notrans("added var_norm = var/nominal, where var is state")),
     ("addTimeAsState", Util.gettext("Experimental feature: this replaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0")),
     ("calculateStateSetsJacobians", Util.gettext("Generates analytical Jacobian for dynamic state selection sets.")),
