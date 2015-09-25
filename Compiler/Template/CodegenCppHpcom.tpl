@@ -22,6 +22,7 @@ template translateModel(SimCode simCode)
       let target  = simulationCodeTarget()
       let &extraFuncs = buffer "" /*BUFD*/
       let &extraFuncsDecl = buffer "" /*BUFD*/
+      let &dummyTypeElemCreation = buffer "" //remove this workaround if GCC > 4.4 is the default compiler
       let stateDerVectorName = "__zDot"
       let useMemoryOptimization = Flags.isSet(Flags.HPCOM_MEMORY_OPT)
 
@@ -54,7 +55,7 @@ template translateModel(SimCode simCode)
                       //CodegenCpp.MemberVariablePreVariables(modelInfo,false), false),
                       'OMCpp<%fileNamePrefix%>.h')
 
-      let() = textFile(simulationTypesHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "",modelInfo.functions, literals,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Types.h')
+      let() = textFile(simulationTypesHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "", &dummyTypeElemCreation, modelInfo.functions, literals,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Types.h')
       let() = textFile(simulationMakefile(target,simCode, &extraFuncs, &extraFuncsDecl, ""), '<%fileNamePrefix%>.makefile')
 
       let &extraFuncsFun = buffer "" /*BUFD*/
@@ -65,7 +66,7 @@ template translateModel(SimCode simCode)
       let &extraFuncsDeclInit = buffer "" /*BUFD*/
       let &complexStartExpressions = buffer ""
       let() = textFile(modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars, numStringVars, "", "", "", false, "", complexStartExpressions, stateDerVectorName),'OMCpp<%fileNamePrefix%>Init.xml')
-      let() = textFile(simulationInitCppFile(simCode ,&extraFuncsInit, &extraFuncsDeclInit, "", stateDerVectorName, false, complexStartExpressions), 'OMCpp<%fileNamePrefix%>Initialize.cpp')
+      let() = textFile(simulationInitCppFile(simCode ,&extraFuncsInit, &extraFuncsDeclInit, "", dummyTypeElemCreation, stateDerVectorName, false, complexStartExpressions), 'OMCpp<%fileNamePrefix%>Initialize.cpp')
       let() = textFile(simulationInitParameterCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
       let() = textFile(simulationInitAliasVarsCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp')
       let() = textFile(simulationInitAlgVarsCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')

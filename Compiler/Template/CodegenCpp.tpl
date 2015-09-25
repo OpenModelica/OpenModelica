@@ -16,6 +16,7 @@ template translateModel(SimCode simCode)
         let target  = simulationCodeTarget()
         let &extraFuncs = buffer "" /*BUFD*/
         let &extraFuncsDecl = buffer "" /*BUFD*/
+        let &dummyTypeElemCreation = buffer "" //remove this workaround if GCC > 4.4 is the default compiler
 
         let className = lastIdentOfPath(modelInfo.name)
         let numRealVars = numRealvars(modelInfo)
@@ -31,7 +32,7 @@ template translateModel(SimCode simCode)
                                              memberVariableDefine(modelInfo, varToArrayIndexMapping, '<%numRealVars%> - 1', '<%numIntVars%> - 1', '<%numBoolVars%> - 1', '<%numStringVars%> - 1', Flags.isSet(Flags.GEN_DEBUG_SYMBOLS), false),
                                              memberVariableDefinePreVariables(modelInfo, varToArrayIndexMapping, '<%numRealVars%> - 1', '<%numIntVars%> - 1', '<%numBoolVars%> - 1', '<%numStringVars%> - 1', Flags.isSet(Flags.GEN_DEBUG_SYMBOLS), false),
                                              false), 'OMCpp<%fileNamePrefix%>.h')
-        let()= textFile(simulationTypesHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "", modelInfo.functions, literals, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Types.h')
+        let()= textFile(simulationTypesHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "", &dummyTypeElemCreation, modelInfo.functions, literals, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Types.h')
         let()= textFile(simulationMakefile(target,simCode , &extraFuncs , &extraFuncsDecl, "","","","","",false), '<%fileNamePrefix%>.makefile')
 
         let &extraFuncsFun = buffer "" /*BUFD*/
@@ -49,7 +50,7 @@ template translateModel(SimCode simCode)
             ""
           else
             ""
-        let()= textFile(simulationInitCppFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false, complexStartExpressions),'OMCpp<%fileNamePrefix%>Initialize.cpp')
+        let()= textFile(simulationInitCppFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%className%>Initialize', dummyTypeElemCreation, stateDerVectorName, false, complexStartExpressions),'OMCpp<%fileNamePrefix%>Initialize.cpp')
 
         let _ = match boolOr(Flags.isSet(Flags.HARDCODED_START_VALUES), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))
           case true then
@@ -162,6 +163,8 @@ let initparameqs = generateEquationMemberFuncDecls(parameterEquations,"initParam
       <%initeqs%>
       <%initparameqs%>
       <%initExtVarsDecl(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, false)%>
+
+      void InitializeDummyTypeElems();
 
       <%if(boolOr(Flags.isSet(Flags.HARDCODED_START_VALUES), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then
         <<
@@ -574,7 +577,7 @@ end simulationFactoryFile;
 
 
 
-template simulationInitCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Text& complexStartExpressions)
+template simulationInitCppFile(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text& dummyTypeElemCreation, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Text& complexStartExpressions)
  "Generates code for main cpp file for simulation target."
 ::=
 match simCode
@@ -585,15 +588,23 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
    {
+     InitializeDummyTypeElems();
    }
 
    <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(<%lastIdentOfPath(modelInfo.name)%>Initialize& instance)
    : <%lastIdentOfPath(modelInfo.name)%>(instance)
    {
+     InitializeDummyTypeElems();
    }
 
    <%lastIdentOfPath(modelInfo.name)%>Initialize::~<%lastIdentOfPath(modelInfo.name)%>Initialize()
    {
+   }
+
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::InitializeDummyTypeElems()
+   {
+     //This is necessary to prevent linker errors that occur with GCC 4.4 if a complex type is not used in the code and contains arrays
+     <%dummyTypeElemCreation%>
    }
 
    <%getIntialStatus(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
@@ -3044,7 +3055,7 @@ template externalFunctionIncludes(list<String> includes)
   >>
 end externalFunctionIncludes;
 
-template simulationTypesHeaderFile(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, list<Function> functions, list<Exp> literals, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template simulationTypesHeaderFile(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text& dummyElemTypeCreation, list<Function> functions, list<Exp> literals, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
@@ -3060,7 +3071,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   extern "C" {
     <%externfunctionHeaderDefinition(functions)%>
   }
-  <%functionHeaderBodies1(functions,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+  <%functionHeaderBodies1(functions,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, dummyElemTypeCreation, stateDerVectorName, useFlatArrayNotation)%>
   >>
 end simulationTypesHeaderFile;
 
@@ -4449,18 +4460,18 @@ template externfunctionHeaderDefinition(list<Function> functions)
   (functions |> fn => extFunDef(fn) ;separator="\n")
 end externfunctionHeaderDefinition;
 
-template functionHeaderBodies1(list<Function> functions,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template functionHeaderBodies1(list<Function> functions, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text& dummyElemTypeCreation, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates the body for a set of functions."
 ::=
-match simCode
+  match simCode
     case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
-   let recorddecls = (recordDecls |> rd => recordDeclarationHeader(rd,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation) ;separator="\n")
-   let rettypedecls =  (functions |> fn => functionHeaderBody1(fn,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n")
-   <<
-   <%recorddecls%>
-   <%rettypedecls%>
-   >>
-end    functionHeaderBodies1;
+      let recorddecls = (recordDecls |> rd => recordDeclarationHeader(rd,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, dummyElemTypeCreation, useFlatArrayNotation) ;separator="\n")
+      let rettypedecls =  (functions |> fn => functionHeaderBody1(fn,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n")
+      <<
+      <%recorddecls%>
+      <%rettypedecls%>
+      >>
+end functionHeaderBodies1;
 
 template functionHeaderBody1(Function fn, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates the body for a function."
@@ -4853,27 +4864,29 @@ case EXTERNAL_FUNCTION(outVars={var}) then
 
 end functionHeaderExternFunction;
 
-template recordDeclarationHeader(RecordDeclaration recDecl,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
+template recordDeclarationHeader(RecordDeclaration recDecl, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text& dummyElemCreation, Boolean useFlatArrayNotation)
  "Generates structs for a record declaration."
 ::=
   match recDecl
-  case r as RECORD_DECL_FULL(__) then
-    match aliasName
-    case SOME(str) then
+    case r as RECORD_DECL_FULL(__) then
+      match aliasName
+        case SOME(str) then
+          let &dummyElemCreation += '<%r.name%>Type dummy<%r.name%>Type();<%\n%>'
+          <<
+          typedef <%str%>Type <%r.name%>Type;
+          >>
+        else
+          let &dummyElemCreation += '<%r.name%>Type dummy<%r.name%>Type();<%\n%>'
+          <<
+          struct <%r.name%>Type
+          {
+            <%r.variables |> var as VARIABLE(__) => '<%varType3(var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%> <%crefStr(var.name)%>;' ;separator="\n"%>
+          };
+          >>
+    case RECORD_DECL_DEF(__) then
       <<
-      typedef <%str%>Type <%r.name%>Type;
+      RECORD DECL DEF
       >>
-    else
-      <<
-      struct <%r.name%>Type
-      {
-        <%r.variables |> var as VARIABLE(__) => '<%varType3(var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%> <%crefStr(var.name)%>;' ;separator="\n"%>
-      };
-      >>
-  case RECORD_DECL_DEF(__) then
-    <<
-    RECORD DECL DEF
-    >>
 end recordDeclarationHeader;
 
 template functionBodyRecordConstructor(Function fn,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
