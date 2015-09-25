@@ -4871,12 +4871,12 @@ template recordDeclarationHeader(RecordDeclaration recDecl, SimCode simCode, Tex
     case r as RECORD_DECL_FULL(__) then
       match aliasName
         case SOME(str) then
-          let &dummyElemCreation += '<%r.name%>Type dummy<%r.name%>Type();<%\n%>'
+          let &dummyElemCreation += '<%r.name%>Type dummy<%r.name%>Type;<%\n%>'
           <<
           typedef <%str%>Type <%r.name%>Type;
           >>
         else
-          let &dummyElemCreation += '<%r.name%>Type dummy<%r.name%>Type();<%\n%>'
+          let &dummyElemCreation += '<%r.name%>Type dummy<%r.name%>Type;<%\n%>'
           <<
           struct <%r.name%>Type
           {
