@@ -85,5 +85,7 @@ class FMU2GlobalSettings : public IGlobalSettings
   virtual unsigned int    getAlarmTime() { return 0; }
   virtual void setNonLinearSolverContinueOnError(bool){};
   virtual bool getNonLinearSolverContinueOnError(){ return false; };
+  virtual void setSolverThreads(int){};
+  virtual int getSolverThreads() { return 1; };
 };
 /** @} */ // end of fmu2

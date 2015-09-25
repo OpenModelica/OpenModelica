@@ -89,5 +89,8 @@ public:
 
   virtual void setNonLinearSolverContinueOnError(bool) = 0;
   virtual bool getNonLinearSolverContinueOnError() = 0;
+
+  virtual void setSolverThreads(int) = 0;
+  virtual int getSolverThreads() = 0;
 };
 /** @} */ // end of coreSimulationSettings

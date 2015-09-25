@@ -3,11 +3,11 @@
  *
  *  @{
  */
-
-
-
-
-
+#if defined(__vxworks)
+//#include <klu.h>
+#else
+//#include <Solver/KLU/klu.h>
+#endif
 
 class Kinsol : public IAlgLoopSolver
 {
@@ -55,7 +55,7 @@ private:
 
   long int
     _dimSys;              ///< Temp   - Number of unknowns (=dimension of system of equations)
-
+  int _dim;
   bool
     _firstCall;           ///< Temp   - Denotes the first call to the solver, init() is called
   long int *_ihelpArray,
@@ -104,5 +104,17 @@ private:
     _currentIterateNorm;
 
    int _counter;
+   //required for klu linear solver
+   bool _sparse;
+/*
+   klu_symbolic* _kluSymbolic ;
+   klu_numeric* _kluNumeric ;
+   klu_common* _kluCommon ;
+   int* _Ai;
+   int* _Ap;
+   double* _Ax;
+   int _nonzeros;
+*/
+
 };
 /** @} */ // end of solverKinsol

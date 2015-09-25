@@ -18,6 +18,38 @@ Services for the implementation of an algebraic loop in open modelica.
 Copyright (c) 2008, OSMC
 *****************************************************************************/
 
+//using std::map;
+//using std::pair;
+//using std::make_pair;
+
+//#include <string>
+//#include <vector>
+#include <boost/tuple/tuple.hpp>
+
+//#include <Core/Utils/numeric/bindings/ublas.hpp>
+//#include <Core/Utils/numeric/utils.h>
+
+//#include <algorithm>
+
+//typedef boost::tuple<int,int> mytuple;
+
+class mytuple
+{
+public:
+	 mytuple(int a, int b)
+	 {
+		ele1 = a;
+		ele2 = b;
+	 };
+	~mytuple(){};
+	int ele1;
+	int ele2;
+};
+
+
+
+bool BOOST_EXTENSION_EXPORT_DECL mycompare ( mytuple lhs, mytuple rhs);
+
 /// Enumeration to control the output
 enum OUTPUT
 {
@@ -63,6 +95,8 @@ public:
   /// Provide the right hand side (according to the index)
   void getRHS(double* res);
 
+  //void getSparseAdata(double* data, int nonzeros);
+
 
   /// Output routine (to be called by the solver after every successful integration step)
   void writeOutput(const OUTPUT command = UNDEF_OUTPUT);
@@ -81,7 +115,10 @@ protected:
   double* __xd;
 
   IAlgLoop::CONSTRTYPE
-    _constraintType;                ///< Typ der Bindungsgleichungen (analog, digital, binär)
+  _constraintType;                ///< Typ der Bindungsgleichungen (analog, digital, binär)
+  double * _AData;
+  double* _Ax;
+  bool _bInitialized;
 
 };
 /** @} */ // end of coreSystem

@@ -12,13 +12,15 @@ extern "C" ISimController* createSimController(PATH library_path, PATH modelicas
 extern "C" ISettingsFactory* createSettingsFactory(PATH library_path,PATH modelicasystem_path);
 extern "C" IAlgLoopSolverFactory* createAlgLoopSolverFactory(IGlobalSettings* globalSettings,PATH library_path,PATH modelicasystem_path);
 extern "C" ISimData* createSimData();
-extern "C" ISimVars* createSimVars(size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_string,size_t dim_pre_vars,size_t dim_z,size_t z_i);
+extern "C" ISimVars* createSimVars(size_t dim_real,size_t dim_int,size_t dim_bool, size_t dim_string,size_t dim_pre_vars,size_t dim_z,size_t z_i);
 extern "C" ISolver* createRTEuler(IMixedSystem* system, ISolverSettings* settings);
 extern "C" ISolver* createRTRK(IMixedSystem* system, ISolverSettings* settings);
 extern "C" ISolverSettings* createRTEulerSettings(IGlobalSettings* globalSettings);
 extern "C" ISolverSettings* createRTRKSettings(IGlobalSettings* globalSettings);
 extern "C" IAlgLoopSolver* createKinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings);
 extern "C" INonLinSolverSettings* createKinsolSettings();
+extern "C" IAlgLoopSolver* createNewton(IAlgLoop* algLoop, INonLinSolverSettings* settings);
+extern "C" INonLinSolverSettings* createNewtonSettings();
 extern "C" IMixedSystem* createModelicaSystem(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolver, boost::shared_ptr<ISimData> simdata, boost::shared_ptr<ISimVars> sim_vars);
 
 VxWorksFactory::VxWorksFactory(string library_path, string modelicasystem_path)
@@ -104,7 +106,7 @@ boost::shared_ptr<IAlgLoopSolver> VxWorksFactory::LoadAlgLoopSolver(IAlgLoop* al
   IAlgLoopSolver* algloopsolver;
   if (solver_name.compare("createNewton") == 0)
   {
-    //algloopsolver = createNewton(algLoop, solver_settings.get());
+    algloopsolver = createNewton(algLoop, solver_settings.get());
   }
   else if (solver_name.compare("createKinsol") == 0)
   {
@@ -122,7 +124,7 @@ boost::shared_ptr<INonLinSolverSettings> VxWorksFactory::LoadAlgLoopSolverSettin
   INonLinSolverSettings* solver_settings;
   if (solver_name.compare("createNewtonSettings") == 0)
   {
-    //solver_settings = createNewtonSettings();
+  solver_settings = createNewtonSettings();
   }
   else if (solver_name.compare("createKinsolSettings") == 0)
   {
@@ -134,9 +136,9 @@ boost::shared_ptr<INonLinSolverSettings> VxWorksFactory::LoadAlgLoopSolverSettin
   }
     return boost::shared_ptr<INonLinSolverSettings>(solver_settings);
 }
-boost::shared_ptr<ISimVars> VxWorksFactory::LoadSimVars(size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_pre_vars,size_t dim_z,size_t z_i)
+boost::shared_ptr<ISimVars> VxWorksFactory::LoadSimVars(size_t dim_real,size_t dim_int,size_t dim_bool, size_t dim_string, size_t dim_pre_vars,size_t dim_z,size_t z_i)
 {
-    ISimVars* simVars = createSimVars(dim_real,dim_int,dim_bool,dim_pre_vars,dim_z,z_i);
+    ISimVars* simVars = createSimVars(dim_real,dim_int,dim_bool, dim_string, dim_pre_vars,dim_z,z_i);
     return boost::shared_ptr<ISimVars>(simVars);
 }
 /** @} */ // end of simcorefactoryVxworks

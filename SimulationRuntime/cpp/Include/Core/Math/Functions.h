@@ -3,6 +3,9 @@
  *   @{
 */
 
+
+
+
 #include <math.h>                        ///< mathematical expressions
 #include <stdlib.h>
 #include <limits>
@@ -36,6 +39,9 @@ inline static int sgn (const double &c)
 
 /// Definition of Signum function
 double BOOST_EXTENSION_EXPORT_DECL division (const double &a,const double &b, const char * text);
+
+
+void BOOST_EXTENSION_EXPORT_DECL getSparseMatrixData(sparsematrix_t& A, double** px);
 
 inline static int modelica_mod_int(int v1, int v2)
 {

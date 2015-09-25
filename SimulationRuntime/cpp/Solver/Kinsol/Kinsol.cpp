@@ -4,6 +4,16 @@
 *
 *  @{
 */
+
+#if defined(__vxworks)
+#include<wvLib.h>
+//#include <klu.h>
+#else
+//#include <Solver/KLU/klu.h>
+#endif
+//#include<wvLib.h>
+
+#include<Core/Math/ILapack.h>
 #include <Solver/Kinsol/FactoryExport.h>
 
 #include <nvector/nvector_serial.h>
@@ -34,12 +44,14 @@
 #include <Core/Utils/numeric/bindings/ublas.hpp>
 #include <Core/Utils/numeric/utils.h>
 
+
+
+
+
+
 /**
 Forward declarations for used external C functions
 */
-extern "C" void dgesv_(long int *n, long int *nrhs, double *J, long int *ldj, long int *pivot,double *b, long int *ldb, long int *idid);
-extern "C" void dgetc2_(long int *n, double *J, long int *ldj, long int *ipivot, long int *jpivot, long int *idid);
-extern "C" void dgesc2_(long int *n, double *J, long int *ldj, double* f, long int *ipivot, long int *jpivot, double *scale);
 int kin_fCallback(N_Vector y, N_Vector fval, void *user_data);
 /*will be used with new sundials version
 int kin_SlsSparseJacFn(N_Vector u, N_Vector fu,SlsMat J, void *user_data,N_Vector tmp1, N_Vector tmp2);
@@ -123,12 +135,21 @@ Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _Kin_fScale         (NULL)
 	, _kinMem             (NULL)
 	, _scale			  (NULL)
+	/*
+	, _kluSymbolic 			(NULL)
+    , _kluNumeric			(NULL)
+    , _kluCommon			(NULL)
+    , _Ai					(NULL)
+    , _Ap					(NULL)
+    , _Ax					(NULL)
+*/
     , _fValid(false)
     , _y_old(NULL)
     , _y_new(NULL)
   , _solverErrorNotificationGiven(false)
 {
 	_data = ((void*)this);
+	_sparse = _algLoop->getUseSparseFormat();
 }
 
 Kinsol::~Kinsol()
@@ -160,6 +181,28 @@ Kinsol::~Kinsol()
 		N_VDestroy_Serial(_Kin_fScale);
 	if(_kinMem)
 		KINFree(&_kinMem);
+
+
+/*
+	if(_sparse == true)
+	{
+		if(_kluCommon)
+		{
+			if(_kluSymbolic)
+				klu_free_symbolic(&_kluSymbolic, _kluCommon);
+			if(_kluNumeric)
+				klu_free_numeric(&_kluNumeric, _kluCommon);
+			delete _kluCommon;
+		}
+		if(_Ap)
+			delete [] _Ap;
+		if(_Ai)
+			delete [] _Ai;
+		if(_Ax)
+			delete [] _Ax;
+	}
+*/
+
 }
 
 void Kinsol::initialize()
@@ -181,6 +224,7 @@ void Kinsol::initialize()
 	if (dimDouble != _dimSys)
 	{
 		_dimSys = dimDouble;
+		_dim = _dimSys;
 
 		if(_dimSys > 0)
 		{
@@ -247,6 +291,36 @@ void Kinsol::initialize()
 			_Kin_fScale = N_VMake_Serial(_dimSys, _fScale);
 			_kinMem = KINCreate();
 
+			/*
+			//sparse
+			if (_algLoop->isLinear() || _algLoop->isLinearTearing())
+			{
+				if(_sparse == true)
+				{
+					_kluCommon = new klu_common;
+					klu_defaults (_kluCommon);
+					const sparsematrix_t& A = _algLoop->getSystemSparseMatrix();
+
+
+					 _nonzeros = A.nnz();
+					_Ap = new int[(_dim + 1)];
+					_Ai = new int[_nonzeros];//todo + 1 ?
+					_Ax = new double[_nonzeros];//todo + 1 ?
+
+					int const* Ti = bindings::begin_compressed_index_major (A);
+					int const* Tj = bindings::begin_index_minor (A);
+
+					double const* Ax = bindings::begin_value (A);
+
+					memcpy(_Ax,Ax,sizeof(double)* _nonzeros );
+					memcpy(_Ap,Ti,sizeof(int)* (_dim + 1) );
+					memcpy(_Ai,Tj,sizeof(int)* (_nonzeros) );
+
+					_kluSymbolic = klu_analyze (_dim, _Ap, _Ai, _kluCommon);
+					_kluNumeric = klu_factor (_Ap, _Ai, _Ax, _kluSymbolic, _kluCommon) ;
+				}
+			}
+			*/
 
 
 			//Set Options
@@ -323,10 +397,42 @@ void Kinsol::solve()
 		long int irtrn  = 0;          // Retrun-flag of Fortran code        _algLoop->getReal(_y);
 		_algLoop->evaluate();
 		_algLoop->getRHS(_f);
-		const matrix_t& A = _algLoop->getSystemMatrix();
-		const double* jac = A.data().begin();
-		memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
-		dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_ihelpArray,_f,&_dimSys,&irtrn);
+		if(_sparse == false)
+		{
+			const matrix_t& A = _algLoop->getSystemMatrix();
+			const double* jac = A.data().begin();
+
+
+			memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
+
+
+			dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_ihelpArray,_f,&_dimSys,&irtrn);
+
+
+		}
+		//sparse
+		else
+		{
+			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system klu not implemented");
+
+		/*
+			//const sparsematrix_t& As = _algLoop->getSystemSparseMatrix();
+
+			//double const* Ax = bindings::begin_value (As);
+			//double * Ax = (NULL);
+			_algLoop->getSparseAdata( _Ax, _nonzeros);
+
+			//memcpy(_Ax,Ax,sizeof(double)* _nonzeros );
+
+			int ok = klu_refactor (_Ap, _Ai, _Ax, _kluSymbolic, _kluNumeric, _kluCommon) ;
+			if (ok < 0)
+			{
+				throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system with klu");
+			}
+			klu_solve (_kluSymbolic, _kluNumeric, _dim, 1, _f, _kluCommon) ;
+		*/
+		}
+
 		memcpy(_y,_f,_dimSys*sizeof(double));
 		_algLoop->setReal(_y);
 		if(irtrn != 0)
@@ -371,26 +477,49 @@ void Kinsol::solve()
 
 
 		//print_m (b, "b vector");
+		if(_sparse == false)
+		{
 
 
-		const matrix_t& A = _algLoop->getSystemMatrix();
-		//matrix_t  A_copy(A);
+			const matrix_t& A = _algLoop->getSystemMatrix(); //klu
+
+			//matrix_t  A_copy(A);
 
 
-		const double* jac = A.data().begin();
+			const double* jac = A.data().begin(); //klu
 
-		//double* jac = new  double[dimSys*dimSys];
-		//for(int i=0;i<dimSys;i++)
-		//for(int j=0;j<dimSys;j++)
-		//jac[i*_dimSys+j] = A_sparse(i,j);
-
-
-		memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
+			//double* jac = new  double[dimSys*dimSys];
+			//for(int i=0;i<dimSys;i++)
+			//for(int j=0;j<dimSys;j++)
+			//jac[i*_dimSys+j] = A_sparse(i,j);
 
 
-		dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _ihelpArray, _f,&_dimSys,&irtrn);
+			memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double)); //klu
+
+
+
+
+			dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _ihelpArray, _f,&_dimSys,&irtrn);  //klu
+
+		}
 		//std::vector< int > ipiv (_dimSys);  // pivot vector
 		//lapack::gesv (A, ipiv,b);   // solving the system, b contains x
+		else
+		{
+			//Sparse Solve
+			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system klu not implemented");
+/*
+			const sparsematrix_t& As = _algLoop->getSystemSparseMatrix();
+
+			double const* Ax = bindings::begin_value (As);
+
+			memcpy(_Ax,Ax,sizeof(double)* _nonzeros );
+
+			int ok = klu_refactor (_Ap, _Ai, _Ax, _kluSymbolic, _kluNumeric, _kluCommon) ;
+
+			klu_solve (_kluSymbolic, _kluNumeric, _dim, 1, _f, _kluCommon) ;
+*/
+	    }
 
 
 		if  (irtrn != 0)
@@ -410,6 +539,7 @@ void Kinsol::solve()
 	}
 	else
 	{
+
 		int idid;
 		_counter++;
 		_eventRetry = false;
@@ -433,6 +563,7 @@ void Kinsol::solve()
 		{
 			_algLoop->setReal(_y);
 			_algLoop->evaluate();
+
 			return;
 		}
 		else  // Try Scaling
@@ -452,6 +583,7 @@ void Kinsol::solve()
 			}
 
 			_iterationStatus = CONTINUE;
+
 			solveNLS();
 		}
 
@@ -459,6 +591,7 @@ void Kinsol::solve()
 		{
 			_algLoop->setReal(_y);
 			_algLoop->evaluate();
+
 			return;
 		}
 
@@ -515,6 +648,7 @@ void Kinsol::solve()
 		{
 			_algLoop->setReal(_y);
 			_algLoop->evaluate();
+
 			return;
 		}
 		else  // Try Scaling
@@ -532,6 +666,7 @@ void Kinsol::solve()
 			}
 			_iterationStatus = CONTINUE;
 			solveNLS();
+
 		}
 		if(_iterationStatus == DONE)
 		{
@@ -596,6 +731,7 @@ void Kinsol::solve()
 
         throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
     }
+
 	}
 }
 
@@ -619,14 +755,14 @@ void Kinsol::calcFunction(const double *y, double *residual)
 	_algLoop->getRHS(residual);
 
 
-#if defined(__vxworks)
-#else
+
+/*
 	for(int i=0;i<_dimSys;i++)
 	{
 		if(!(boost::math::isfinite(residual[i])) || !(boost::math::isfinite(y[i])))
 			_fValid = false;
 	}
-#endif
+*/
 }
 
 int Kinsol::kin_f(N_Vector y,N_Vector fval, void *user_data)
@@ -737,7 +873,7 @@ int Kinsol::check_flag(void *flagvalue, char *funcname, int opt)
 void Kinsol::solveNLS()
 {
 	int
-		method = KIN_NONE,
+		method = KIN_NONE,//
 		iter = 0,
 		idid;
 	double

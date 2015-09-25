@@ -114,6 +114,10 @@ algorithm
       BackendDAE.Shared shared;
 
     case _::_ equation
+      if Flags.isSet(Flags.OPT_DAE_DUMP) then
+        print("\n\nIndex reduction:\n");
+      end if;
+
       //  BackendDump.printEqSystem(inSystem);
       //  BackendDump.dumpMatching(inAssignments1);
       //  BackendDump.dumpMatching(inAssignments2);
@@ -137,15 +141,25 @@ algorithm
       changedeqns = if newsize>size then List.intRange2(size+1, newsize) else {};
       (changedeqns, contiEqn) = getChangedEqnsAndLowest(newsize, ass2, changedeqns, size);
       ErrorExt.delCheckpoint("Pantelides");
+
+      if Flags.isSet(Flags.OPT_DAE_DUMP) then
+        print("Index reduction done.\n");
+      end if;
     then (changedeqns, contiEqn, syst, shared, ass1, ass2, arg);
 
     case {} equation
       Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReduction called with empty list of equations!"});
+      if Flags.isSet(Flags.OPT_DAE_DUMP) then
+        print("Index reduction done.\n");
+      end if;
     then fail();
 
     case _::_ equation
       ErrorExt.delCheckpoint("Pantelides");
       Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReduction failed!"});
+            if Flags.isSet(Flags.OPT_DAE_DUMP) then
+        print("Index reduction done.\n");
+      end if;
     then fail();
   end matchcontinue;
 end pantelidesIndexReduction;

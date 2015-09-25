@@ -289,6 +289,10 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT(name="initial"))
     then (inCondition, {}, {}, inIndex, inHT);
 
+    // we do not replace constant expressions
+    case _ guard(Expression.isConst(inCondition)) equation
+    then (inCondition, {}, {}, inIndex, inHT);
+
     // array-condition
     case DAE.ARRAY(ty=ty, scalar=scalar, array=array) equation
       (array, vars, eqns, index, ht) = encapsulateWhenConditions_EquationsWithArrayConditions(array, inSource, inIndex, inHT);
@@ -475,6 +479,10 @@ algorithm
 
     // we do not replace initial()
     case (DAE.CALL(path=Absyn.IDENT(name="initial")))
+    then (inCondition, {}, {}, inIndex);
+
+    // we do not replace constant expressions
+    case _ guard(Expression.isConst(inCondition)) equation
     then (inCondition, {}, {}, inIndex);
 
     // array-condition

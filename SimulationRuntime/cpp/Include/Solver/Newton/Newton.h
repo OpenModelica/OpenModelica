@@ -13,7 +13,11 @@
 #include <Solver/Newton/NewtonSettings.h>
 
 #include <Core/Utils/extension/logger.hpp>
-
+#if defined(__vxworks)
+//#include <klu.h>
+#else
+//#include <Solver/KLU/klu.h>
+#endif
 
 /*****************************************************************************/
 /**
@@ -71,7 +75,6 @@ private:
     /// Encapsulation of determination of Jacobian
     void calcJacobian();
 
-
     // Member variables
     //---------------------------------------------------------------
     INonLinSolverSettings
@@ -84,20 +87,62 @@ private:
         _iterationStatus;            ///< Output        - Denotes the status of iteration
 
     long int
-        _dimSys;                    ///< Temp        - Number of unknowns (=dimension of system of equations)
+        _dimSys,                    ///< Temp        - Number of unknowns (=dimension of system of equations)
+		_lwork,
+		_iONE;
 
     bool
         _firstCall;                    ///< Temp        - Denotes the first call to the solver, init() is called
 
     double
         *_y,                        ///< Temp        - Unknowns
-        *_f,                        ///< Temp        - Residuals
-        *_yHelp,                    ///< Temp        - Auxillary variables
-        *_fHelp,                    ///< Temp        - Auxillary variables
+		*_yHelp,
+        *_fnew,                        ///< Temp        - Residuals
+		*_fold,                        ///< Temp        - Residuals
+		*_fHelp,
+        *_delta_s,                    ///< Temp        - Auxillary variables
+		*_delta_b,                    ///< Temp        - Auxillary variables
         *_jac,                        ///< Temp        - Jacobian
-        *_y_old,
-        *_y_new,
-        * _zeroVec;
+        *_jacHelpMat1,
+        *_jacHelpMat2,
+		*_jacHelpVec1,
+		*_jacHelpVec2,
+		*_work;
+
+	int
+		_broydenMethod;
+
+	double _fNormTol,
+		_dONE,
+		_dZERO,
+		_dMINUSONE;
+
+
   long int *_iHelp;
+
+  char
+	  _N,
+	  _T;
+
+  bool _sparse;
+
+
+  int _dim;
+  //klu_symbolic* _kluSymbolic ;
+  //klu_numeric* _kluNumeric ;
+  //klu_common* _kluCommon ;
+  int* _Ai;
+  int* _Ap;
+  double* _Ax;
+  int _nonzeros;
+
+  long int* _ihelpArray;
+  double * 	_zeroVec;
+  double *	 _f ;
+
+
+
+
+  double* _identity;
 };
 /** @} */ // end of solverNewton

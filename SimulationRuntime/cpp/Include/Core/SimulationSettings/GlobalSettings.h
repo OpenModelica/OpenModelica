@@ -56,6 +56,9 @@ public:
   virtual void setNonLinearSolverContinueOnError(bool);
   virtual bool getNonLinearSolverContinueOnError();
 
+  virtual void setSolverThreads(int);
+  virtual int getSolverThreads();
+
 private:
   double
       _startTime, ///< Start time of integration (default: 0.0)
@@ -76,5 +79,6 @@ private:
   OutputPointType _outputPointType;
   LogSettings _log_settings;
   unsigned int _alarm_time;
+  int _solverThreads;
 };
 /** @} */ // end of coreSimulationSettings
