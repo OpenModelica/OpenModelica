@@ -42,6 +42,7 @@ umfpack \
 fmu \
 staticLinking \
 genDebugSymbols \
+hardcodedStartValues \
 outputFormat \
 ReferenceFiles \
 outputFormat \
@@ -57,6 +58,7 @@ FMI_1_0_DIR = fmu/modelExchange/1.0
 FMI_2_0_DIR = fmu/modelExchange/2.0
 STATIC_LINKING_DIR = staticLinking
 DEBUG_SYMBOLS_DIR = genDebugSymbols
+HARDCODED_START_VALUES_DIR = hardcodedStartValues
 OUTPUT_FORMAT_DIR = outputFormat
 OMEDIT_DIR = omedit
 
@@ -75,6 +77,7 @@ test:
 	@$(MAKE) -C $(HPCOM_FMI_1_0_DIR)
 	@$(MAKE) -C $(STATIC_LINKING_DIR)
 	@$(MAKE) -C $(DEBUG_SYMBOLS_DIR)
+	@$(MAKE) -C $(HARDCODED_START_VALUES_DIR)
 	@$(MAKE) -C $(OUTPUT_FORMAT_DIR)
 	@$(MAKE) -C $(OMEDIT_DIR)
 
@@ -90,6 +93,7 @@ clean :
 	@$(MAKE) -C $(HPCOM_FMI_1_0_DIR) clean
 	@$(MAKE) -C $(STATIC_LINKING_DIR) clean
 	@$(MAKE) -C $(DEBUG_SYMBOLS_DIR) clean
+	@$(MAKE) -C $(HARDCODED_START_VALUES_DIR) clean
 	@$(MAKE) -C $(OUTPUT_FORMAT_DIR) clean
 	@$(MAKE) -C $(OMEDIT_DIR) clean
 

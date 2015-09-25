@@ -1,23 +1,27 @@
-// name:     CoupledClutches_FMI_1_0_CPP
-// keywords: CoupledClutches FMI-Export FMI-Import
-// status:   correct
-// teardown_command: rm -rf binaries sources modelDescription.xml CoupledClutches.fmu CoupledClutches_me_FMU.mo CoupledClutches.lib* CoupledClutches.so CoupledClutches.dll CoupledClutches_*.c CoupledClutches_*.h CoupledClutches_*.o CoupledClutches_*.json
-// Real variables, Real input variable, continuous-time states, state events, event iteration
+// name:     Modelica.Fluid.Examples.BranchingDynamicPipes_FMI_1_0
+// keywords: simulation MSL Examples FMI-Export FMI-Import
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.1"}); getErrorString();
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
-loadFile("CoupledClutches.mo"); getErrorString();
-translateModelFMU(CoupledClutches); getErrorString();
+translateModelFMU(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString();
 
 setCommandLineOptions("+simCodeTarget=C"); getErrorString();
-importFMU("CoupledClutches.fmu"); getErrorString();
-loadFile("CoupledClutches_me_FMU.mo"); getErrorString();
-simulate(CoupledClutches_me_FMU, numberOfIntervals=150, variableFilter="J1_w1|J2_w1|J3_w1|J4_w1"); getErrorString();
+importFMU("Modelica_Fluid_Examples_BranchingDynamicPipes.fmu"); getErrorString();
+loadFile("Modelica_Fluid_Examples_BranchingDynamicPipes_me_FMU.mo"); getErrorString();
+simulate(Modelica_Fluid_Examples_BranchingDynamicPipes_me_FMU); getErrorString();
 
-val(J1_w1, 1);
-val(J2_w1, 1);
-val(J3_w1, 1);
-val(J4_w1, 1);
+resultFile := "Modelica_Fluid_Examples_BranchingDynamicPipes_me_FMU_res.mat";
+referenceFile := getEnvironmentVar("REFERENCEFILES") + "/msl32/Modelica.Fluid.Examples.BranchingDynamicPipes.mat";
+
+//val(pipe1_mediums_1__p, 5);
+//val(pipe3_flowModel_m_flows_1_, 5);
+//val(pipe4_mediums_5__p, 5);
+//val(pipe3_flowModel_m_flows_5_, 5);
 
 // Result:
 // true

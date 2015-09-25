@@ -1,13 +1,14 @@
-TEST = ../../../../../../rtest -v
-
+TEST = ../../../rtest -v
 
 TESTFILES = \
-Crane_FMU1_CPP_HPCOM.mos
+Modelica.Fluid.Examples.BranchingDynamicPipes_hardcodedStartValues.mos
 
-FAILINGTESTFILES = \
-CoupledClutches_FMU1_CPP_HPCOM.mos
+# Run make failingtest
+FAILINGTESTFILES =
 
 
+# Dependency files that are not .mo .mos or Makefile
+# Add them here or they will be cleaned.
 DEPENDENCIES = \
 *.mo \
 *.mos \
@@ -25,11 +26,17 @@ test:
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) $(TESTFILES)
 
+# Cleans all files that are not listed as dependencies
 clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
-	@rm -rf $(CLEAN)
-	@rm *_me_FMU.mo
+	@rm -f $(CLEAN)
 
+# Run this if you want to list out the files (dependencies).
+# do it after cleaning and updating the folder
+# then you can get a list of file names (which must be dependencies
+# since you got them from repository + your own new files)
+# then add them to the DEPENDENCIES. You can find the
+# list in deps.txt
 getdeps:
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
 	@echo $(CLEAN) | sed -r 's/deps.txt|deps.tmp//g' | sed 's/ / \\\n/g' > deps.txt

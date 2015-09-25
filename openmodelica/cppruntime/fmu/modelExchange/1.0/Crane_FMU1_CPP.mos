@@ -8,6 +8,7 @@ setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 loadFile("cranes.mo"); getErrorString();
 translateModelFMU(cranes.crane); getErrorString();
 
+setCommandLineOptions("+simCodeTarget=C"); getErrorString();
 //importFMU("cranes_crane.fmu", "<default>", 6, false, true); getErrorString();
 importFMU("cranes_crane.fmu", "<default>"); getErrorString();
 loadFile("cranes_crane_me_FMU.mo"); getErrorString();
@@ -26,6 +27,8 @@ val(prismatic_v, 1);
 // true
 // ""
 // "SimCode: The model cranes.crane has been translated to FMU"
+// ""
+// true
 // ""
 // "cranes_crane_me_FMU.mo"
 // ""
@@ -64,6 +67,6 @@ val(prismatic_v, 1);
 // [openmodelica/cppruntime/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1695:3-1695:195:writable] Warning: Parameter world_z_label_cylinders_2__shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
 // [openmodelica/cppruntime/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1696:3-1696:195:writable] Warning: Parameter world_z_label_cylinders_3__shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
 // "
-// 0.9493545677180412
-// 0.3948240973749629
+// 0.9493545676148136
+// 0.3948240567413477
 // endResult

@@ -18,6 +18,7 @@ Connect17.mo \
 Connect18.mo \
 ConnectArray1.mo \
 ConnectArrayCond.mo \
+ConnectArrayCond2.mo \
 ConnectEnumArray.mo \
 ConnectFlowEffort.mo \
 ConnectFlowEffort2.mo\

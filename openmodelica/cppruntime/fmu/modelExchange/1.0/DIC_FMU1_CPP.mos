@@ -23,6 +23,7 @@ end DIC;
 translateModelFMU(DIC); getErrorString();
 
 loadModel(Modelica); getErrorString();
+setCommandLineOptions("+simCodeTarget=C"); getErrorString();
 importFMU("DIC.fmu"); getErrorString();
 loadFile("DIC_me_FMU.mo"); getErrorString();
 simulate(DIC_me_FMU); getErrorString();
@@ -41,6 +42,8 @@ val(y2, 1);
 // ""
 // true
 // ""
+// true
+// ""
 // "DIC_me_FMU.mo"
 // ""
 // true
@@ -55,5 +58,5 @@ val(y2, 1);
 // 1.0
 // 0.0
 // -1.0
-// 0.0
+// -1.397697929617081e-11
 // endResult

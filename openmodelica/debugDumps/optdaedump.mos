@@ -2088,6 +2088,10 @@ buildModel(testOptdaedump); getErrorString();
 //
 // pre-optimization done.
 //
+//
+// Index reduction:
+// Index reduction done.
+//
 // created initial system:
 //
 //
@@ -3023,6 +3027,98 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (0)
 // ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
+// pre-optimization module simplifyAllExpressions:
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (4)
+// ========================================
+// 1: $res1.$pDERNLSJac0.dummyVarNLSJac0:STATE_DER()  type: Real unreplaceable
+// 2: i2.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 3: u1.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+// 4: uL.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+//
+//
+// Equations (4, 4)
+// ========================================
+// 1/1 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i2.$pDERNLSJac0.dummyVarNLSJac0 - uL.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
+// 2/2 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = -uL.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
+// 3/3 (1): i1SeedNLSJac0 = i2.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
+// 4/4 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0    [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known Variables (constants) (7)
+// ========================================
+// 1: input $res1:VARIABLE()  type: Real
+// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 5: input iL:VARIABLE() .testOptdaedump, .Real type: Real
+// 6: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 7: input i1SeedNLSJac0:STATE_DER()  type: Real
 //
 //
 // External Objects (0)
@@ -4159,6 +4255,106 @@ buildModel(testOptdaedump); getErrorString();
 // Sub partitions (0)
 // ========================================
 //
+//
+// post-optimization module simplifyAllExpressions (jacobian):
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: $res1.$pDERNLSJac0.dummyVarNLSJac0:STATE_DER()  type: Real unreplaceable
+// 2: u1.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0    [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 2 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known Variables (constants) (7)
+// ========================================
+// 1: input $res1:VARIABLE()  type: Real
+// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 5: input iL:VARIABLE() .testOptdaedump, .Real type: Real
+// 6: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 7: input i1SeedNLSJac0:STATE_DER()  type: Real
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (2)
+// ========================================
+// 1: i2.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  = i1SeedNLSJac0  type: Real
+// 2: uL.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  = -u1.$pDERNLSJac0.dummyVarNLSJac0  type: Real
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
 // post-optimization done.
 //
 // post-optimization module calculateStrongComponentJacobians (initialization):
@@ -4466,38 +4662,21 @@ buildModel(testOptdaedump); getErrorString();
 // Sub partitions (0)
 // ========================================
 //
-// post-optimization done.
 //
-// post-optimization module removeInitializationStuff (simulation):
+// post-optimization module simplifyAllExpressions (initialization):
 //
 //
-// unspecified partition
+// unknown partition
 // ========================================
 //
-// Variables (9)
+// Variables (1)
 // ========================================
-// 1: iC:VARIABLE() .testOptdaedump, .Real type: Real
-// 2: iL:STATE(1)() .testOptdaedump, .Real type: Real
-// 3: i2:VARIABLE() .testOptdaedump, .Real type: Real
-// 4: i1:VARIABLE() .testOptdaedump, .Real type: Real
-// 5: i0:VARIABLE() .testOptdaedump, .Real type: Real
-// 6: uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
-// 7: uL:VARIABLE() .testOptdaedump, .Real type: Real
-// 8: u1:VARIABLE() .testOptdaedump, .Real type: Real
-// 9: $DER.uC:DUMMY_DER(fixed = false ) .testOptdaedump, .Real type: Real
+// 1: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real
 //
 //
-// Equations (9, 9)
+// Equations (1, 1)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): v0 = 0.0    [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -4510,39 +4689,87 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Matching
 // ========================================
-// 9 variables and equations
-// var 1 is solved in eqn 6
-// var 2 is solved in eqn 5
-// var 3 is solved in eqn 8
-// var 4 is solved in eqn 2
-// var 5 is solved in eqn 7
-// var 6 is solved in eqn 9
-// var 7 is solved in eqn 4
-// var 8 is solved in eqn 3
-// var 9 is solved in eqn 1
+// 1 variables and equations
+// var 1 is solved in eqn 1
 //
 //
 // StrongComponents
 // ========================================
-// {9:6}
-// {2, 8, 4, 3:8, 7, 3, 4} Size: 4 Jacobian Linear
-// {5:2}
-// {1:9}
-// {6:1}
-// {7:5}
+// {1:1}
 //
 //
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (5)
+// unknown partition
 // ========================================
-// 1: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real
-// 2: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real
-// 3: R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
-// 4: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real
-// 5: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real
+//
+// Variables (10)
+// ========================================
+// 1: iC:VARIABLE() .testOptdaedump, .Real type: Real
+// 2: $DER.iL:VARIABLE() .testOptdaedump, .Real type: Real
+// 3: iL:VARIABLE() .testOptdaedump, .Real type: Real
+// 4: i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 5: i1:VARIABLE() .testOptdaedump, .Real type: Real
+// 6: i0:VARIABLE() .testOptdaedump, .Real type: Real
+// 7: uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 8: uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 9: u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 10: $DER.uC:DUMMY_DER(fixed = false ) .testOptdaedump, .Real type: Real
+//
+//
+// Equations (10, 10)
+// ========================================
+// 1/1 (1): uC = cos(time)    [dynamic]
+// 2/2 (1): i1 = i2 + iL    [dynamic]
+// 3/3 (1): i0 = i1 + iC    [dynamic]
+// 4/4 (1): iC = C * $DER.uC    [dynamic]
+// 5/5 (1): $DER.iL = uL / L    [dynamic]
+// 6/6 (1): uL = R2 * i2    [dynamic]
+// 7/7 (1): u1 = uC - uL    [dynamic]
+// 8/8 (1): u1 = R1 * i1    [dynamic]
+// 9/9 (1): $DER.uC = -sin(time)    [dynamic]
+// 10/10 (1): iL = $_start(iL)    [initial]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 10 variables and equations
+// var 1 is solved in eqn 4
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 10
+// var 4 is solved in eqn 2
+// var 5 is solved in eqn 8
+// var 6 is solved in eqn 3
+// var 7 is solved in eqn 1
+// var 8 is solved in eqn 6
+// var 9 is solved in eqn 7
+// var 10 is solved in eqn 9
+//
+//
+// StrongComponents
+// ========================================
+// {10:3}
+// {9:10}
+// {4:1}
+// {1:7}
+// {{{8:9}, {2:4}, {7:8}}
+// ,{6:5}} Size: 1 linear
+// {5:2}
+// {3:6}
+//
+//
+//
+// BackendDAEType: initialization
+//
+//
+// Known Variables (constants) (0)
+// ========================================
 //
 //
 // External Objects (0)
@@ -4553,12 +4780,8 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Alias Variables (4)
+// Alias Variables (0)
 // ========================================
-// 1: u0:VARIABLE()  = uC .testOptdaedump, .Real type: Real
-// 2: u2:VARIABLE()  = uL .testOptdaedump, .Real type: Real
-// 3: v1:VARIABLE()  = uC .testOptdaedump, .Real type: Real
-// 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real
 //
 //
 // Simple Shared Equations (0, 0)
@@ -4592,6 +4815,7 @@ buildModel(testOptdaedump); getErrorString();
 // Sub partitions (0)
 // ========================================
 //
+// post-optimization done.
 //
 // post-optimization module lateInlineFunction (simulation):
 //
@@ -7351,6 +7575,100 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// pre-optimization module simplifyAllExpressions:
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (4)
+// ========================================
+// 1: $res1.$pDERNLSJac1.dummyVarNLSJac1:STATE_DER()  type: Real unreplaceable
+// 2: i2.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 3: u1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+// 4: uL.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+//
+//
+// Equations (4, 4)
+// ========================================
+// 1/1 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i2.$pDERNLSJac1.dummyVarNLSJac1 - uL.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
+// 2/2 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = -uL.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
+// 3/3 (1): i1SeedNLSJac1 = i2.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
+// 4/4 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1    [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known Variables (constants) (9)
+// ========================================
+// 1: input $res1:VARIABLE()  type: Real
+// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 5: input R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real
+// 6: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
+// 7: input iL:STATE(1)() .testOptdaedump, .Real type: Real
+// 8: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 9: input i1SeedNLSJac1:STATE_DER()  type: Real
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // pre-optimization module evalFunc:
 //
 //
@@ -8463,6 +8781,108 @@ buildModel(testOptdaedump); getErrorString();
 // Sub partitions (0)
 // ========================================
 //
+//
+// post-optimization module simplifyAllExpressions (jacobian):
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: $res1.$pDERNLSJac1.dummyVarNLSJac1:STATE_DER()  type: Real unreplaceable
+// 2: u1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1    [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 2 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known Variables (constants) (9)
+// ========================================
+// 1: input $res1:VARIABLE()  type: Real
+// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 5: input R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real
+// 6: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
+// 7: input iL:STATE(1)() .testOptdaedump, .Real type: Real
+// 8: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 9: input i1SeedNLSJac1:STATE_DER()  type: Real
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (2)
+// ========================================
+// 1: i2.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  = i1SeedNLSJac1  type: Real
+// 2: uL.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  = -u1.$pDERNLSJac1.dummyVarNLSJac1  type: Real
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
 // post-optimization done.
 //
 // post-optimization module calculateStrongComponentJacobians (simulation):
@@ -9096,6 +9516,384 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // post-optimization module removeConstants (simulation):
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (9)
+// ========================================
+// 1: iC:VARIABLE() .testOptdaedump, .Real type: Real
+// 2: iL:STATE(1)() .testOptdaedump, .Real type: Real
+// 3: i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 4: i1:VARIABLE() .testOptdaedump, .Real type: Real
+// 5: i0:VARIABLE() .testOptdaedump, .Real type: Real
+// 6: uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 7: uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 8: u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 9: $DER.uC:DUMMY_DER(fixed = false ) .testOptdaedump, .Real type: Real
+//
+//
+// Equations (9, 9)
+// ========================================
+// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
+// 2/2 (1): u1 = R1 * i1    [dynamic]
+// 3/3 (1): u1 = uC - uL    [dynamic]
+// 4/4 (1): uL = R2 * i2    [dynamic]
+// 5/5 (1): uL = L * der(iL)    [dynamic]
+// 6/6 (1): iC = C * $DER.uC    [dynamic]
+// 7/7 (1): i0 = i1 + iC    [dynamic]
+// 8/8 (1): i1 = i2 + iL    [dynamic]
+// 9/9 (1): uC = cos(time)    [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 9 variables and equations
+// var 1 is solved in eqn 6
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 8
+// var 4 is solved in eqn 2
+// var 5 is solved in eqn 7
+// var 6 is solved in eqn 9
+// var 7 is solved in eqn 4
+// var 8 is solved in eqn 3
+// var 9 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {9:6}
+// {{{2:8}, {8:3}, {3:7}}
+// ,{4:4}} Size: 1 linear
+// {5:2}
+// {1:9}
+// {6:1}
+// {7:5}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known Variables (constants) (5)
+// ========================================
+// 1: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real
+// 2: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real
+// 3: R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
+// 4: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real
+// 5: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (4)
+// ========================================
+// 1: u0:VARIABLE()  = uC .testOptdaedump, .Real type: Real
+// 2: u2:VARIABLE()  = uL .testOptdaedump, .Real type: Real
+// 3: v1:VARIABLE()  = uC .testOptdaedump, .Real type: Real
+// 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
+// post-optimization module simplifyTimeIndepFuncCalls (simulation):
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (9)
+// ========================================
+// 1: iC:VARIABLE() .testOptdaedump, .Real type: Real
+// 2: iL:STATE(1)() .testOptdaedump, .Real type: Real
+// 3: i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 4: i1:VARIABLE() .testOptdaedump, .Real type: Real
+// 5: i0:VARIABLE() .testOptdaedump, .Real type: Real
+// 6: uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 7: uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 8: u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 9: $DER.uC:DUMMY_DER(fixed = false ) .testOptdaedump, .Real type: Real
+//
+//
+// Equations (9, 9)
+// ========================================
+// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
+// 2/2 (1): u1 = R1 * i1    [dynamic]
+// 3/3 (1): u1 = uC - uL    [dynamic]
+// 4/4 (1): uL = R2 * i2    [dynamic]
+// 5/5 (1): uL = L * der(iL)    [dynamic]
+// 6/6 (1): iC = C * $DER.uC    [dynamic]
+// 7/7 (1): i0 = i1 + iC    [dynamic]
+// 8/8 (1): i1 = i2 + iL    [dynamic]
+// 9/9 (1): uC = cos(time)    [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 9 variables and equations
+// var 1 is solved in eqn 6
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 8
+// var 4 is solved in eqn 2
+// var 5 is solved in eqn 7
+// var 6 is solved in eqn 9
+// var 7 is solved in eqn 4
+// var 8 is solved in eqn 3
+// var 9 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {9:6}
+// {{{2:8}, {8:3}, {3:7}}
+// ,{4:4}} Size: 1 linear
+// {5:2}
+// {1:9}
+// {6:1}
+// {7:5}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known Variables (constants) (5)
+// ========================================
+// 1: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real
+// 2: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real
+// 3: R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
+// 4: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real
+// 5: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (4)
+// ========================================
+// 1: u0:VARIABLE()  = uC .testOptdaedump, .Real type: Real
+// 2: u2:VARIABLE()  = uL .testOptdaedump, .Real type: Real
+// 3: v1:VARIABLE()  = uC .testOptdaedump, .Real type: Real
+// 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
+// post-optimization module addInitialStmtsToAlgorithms (simulation):
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (9)
+// ========================================
+// 1: iC:VARIABLE() .testOptdaedump, .Real type: Real
+// 2: iL:STATE(1)() .testOptdaedump, .Real type: Real
+// 3: i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 4: i1:VARIABLE() .testOptdaedump, .Real type: Real
+// 5: i0:VARIABLE() .testOptdaedump, .Real type: Real
+// 6: uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 7: uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 8: u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 9: $DER.uC:DUMMY_DER(fixed = false ) .testOptdaedump, .Real type: Real
+//
+//
+// Equations (9, 9)
+// ========================================
+// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
+// 2/2 (1): u1 = R1 * i1    [dynamic]
+// 3/3 (1): u1 = uC - uL    [dynamic]
+// 4/4 (1): uL = R2 * i2    [dynamic]
+// 5/5 (1): uL = L * der(iL)    [dynamic]
+// 6/6 (1): iC = C * $DER.uC    [dynamic]
+// 7/7 (1): i0 = i1 + iC    [dynamic]
+// 8/8 (1): i1 = i2 + iL    [dynamic]
+// 9/9 (1): uC = cos(time)    [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 9 variables and equations
+// var 1 is solved in eqn 6
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 8
+// var 4 is solved in eqn 2
+// var 5 is solved in eqn 7
+// var 6 is solved in eqn 9
+// var 7 is solved in eqn 4
+// var 8 is solved in eqn 3
+// var 9 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {9:6}
+// {{{2:8}, {8:3}, {3:7}}
+// ,{4:4}} Size: 1 linear
+// {5:2}
+// {1:9}
+// {6:1}
+// {7:5}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known Variables (constants) (5)
+// ========================================
+// 1: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real
+// 2: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real
+// 3: R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
+// 4: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real
+// 5: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (4)
+// ========================================
+// 1: u0:VARIABLE()  = uC .testOptdaedump, .Real type: Real
+// 2: u2:VARIABLE()  = uL .testOptdaedump, .Real type: Real
+// 3: v1:VARIABLE()  = uC .testOptdaedump, .Real type: Real
+// 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
+// post-optimization module simplifyAllExpressions (simulation):
 //
 //
 // unspecified partition

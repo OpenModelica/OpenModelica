@@ -9,6 +9,7 @@ setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 loadFile("CoupledClutches.mo"); getErrorString();
 translateModelFMU(CoupledClutches, version = "2.0"); getErrorString();
 
+setCommandLineOptions("+simCodeTarget=C"); getErrorString();
 importFMU("CoupledClutches.fmu"); getErrorString();
 loadFile("CoupledClutches_me_FMU.mo"); getErrorString();
 simulate(CoupledClutches_me_FMU, numberOfIntervals=150, variableFilter="J1_w1|J2_w1|J3_w1|J4_w1"); getErrorString();

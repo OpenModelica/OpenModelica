@@ -25,6 +25,7 @@ cppruntimeFMU2.log \
 cppruntimeUmfpack.log \
 cppruntimeStaticLinking.log \
 cppruntimeGenDebugSymbols.log \
+cppruntimeHardcodedStartValues.log \
 cppruntimeOMEdit.log \
 taskGraph.log \
 debugDumps.log \
@@ -398,6 +399,9 @@ cppruntimeStaticLinking.log: omc-diff
 cppruntimeGenDebugSymbols.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/cppruntime/genDebugSymbols -f Makefile test  > $@
 	@echo $@ done
+cppruntimeHardcodedStartValues.log: omc-diff
+	$(MAKE) -j1 -C openmodelica/cppruntime/hardcodedStartValues -f Makefile test  > $@
+	@echo $@ done
 linearization.log: omc-diff
 	$(MAKE) -C openmodelica/linearization -f Makefile test > $@
 	@echo $@ done
@@ -606,6 +610,7 @@ clean_g_2 :
 	$(MAKE) -C openmodelica/cppruntime/umfpack -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/staticLinking -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/genDebugSymbols -f Makefile clean
+	$(MAKE) -C openmodelica/cppruntime/hardcodedStartValues -f Makefile clean
 	$(MAKE) -C openmodelica/cruntime/optimization/basic -f Makefile clean
 	$(MAKE) -C openmodelica/cruntime/xmlFiles -f Makefile clean
 	$(MAKE) -C openmodelica/debugDumps -f Makefile clean

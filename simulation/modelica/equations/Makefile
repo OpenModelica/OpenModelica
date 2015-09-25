@@ -17,9 +17,11 @@ HelloWorld.mos \
 HideVariableForEquations.mos \
 IfEquation.mos IfEquation2.mos IfEquation3.mos \
 IfEquation4.mos \
+IfEquation5.mos \
 IfEquation6.mos \
 IfEquationUnbalanced.mos \
 ModelBalance1.mos ModelBalance2.mos ModelBalance3.mos \
+ticket-2337.mos \
 WatchDog1AlgorithmWhen.mos WatchDog2EquationWhen.mos \
 WhenEquation.mos WhenEquation1.mos \
 WhenNoRetCall.mos \
@@ -31,7 +33,6 @@ when_sorting.mos \
 # Run make testfailing
 FAILINGTESTFILES= \
 BouncingBallExamplesDOPRI5.mos \
-IfEquation5.mos \
 WhenArrayReinit.mos \
 
 
