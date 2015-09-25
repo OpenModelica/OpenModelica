@@ -7062,8 +7062,11 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       /* HistoryImplType::value_type_v v;
       HistoryImplType::value_type_dv v2; */
 
-      const HistoryImplType::values_type& container = _historyImpl->getFreeContainer();
-
+      HistoryImplType::values_type& container = _historyImpl->getFreeContainer();
+      get<0>(container) = outputRealVars.outputVars;
+      get<1>(container) = outputIntVars.outputVars;
+      get<2>(container) = outputBoolVars.outputVars;
+      get<3>(container) = _simTime;
 
       <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
       <<

@@ -91,14 +91,14 @@ public:
 
 	virtual void write(const all_vars_t& v_list, double time) = 0;
 
-	const values_type& getFreeContainer()
+	values_type& getFreeContainer()
 	{
 
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
 		_nempty.wait();
 		_freeContainerMutex.wait();
 #endif
-		 const values_type& container = _freeContainers.front();
+		 values_type& container = _freeContainers.front();
 		_freeContainers.pop_front();
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
 		_freeContainerMutex.post();
