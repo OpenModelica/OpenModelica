@@ -3,10 +3,6 @@
  *
  *  @{
  */
-#if defined USE_PARALLEL_OUTPUT && defined USE_THREAD
-#include <Core/Utils/extension/busywaiting_barrier.hpp>
-#endif
-
 #define CONTAINER_COUNT 2
 
 template<size_t dim_1, size_t dim_2, size_t dim_3, size_t dim_4>

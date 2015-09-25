@@ -121,8 +121,6 @@ template additionalHpcomIncludesForParallelCode(SimCode simCode, Text& extraFunc
     case ("pthreads")
     case ("pthreads_spin") then
       <<
-      #include <boost/thread.hpp>
-      #include <Core/Utils/extension/busywaiting_barrier.hpp>
       >>
     case ("tbb") then
       <<

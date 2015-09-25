@@ -81,6 +81,10 @@ using std::string;
 using std::vector;
 using std::deque;
 
+#if defined(USE_THREAD)
+  #include <Core/Utils/extension/busywaiting_barrier.hpp>
+#endif //USE_THREAD
+
 #if defined(USE_CPP_ELEVEN)
   #include <array>
   #include <thread>
@@ -103,13 +107,13 @@ using std::deque;
   using std::tuple;
   using std::shared_ptr;
   using std::weak_ptr;
+  using std::dynamic_pointer_cast;
 #else
-  #if defined(USE_THREADS)
+  #if defined(USE_THREAD)
     #include <boost/array.hpp>
     #include <boost/thread.hpp>
     #include <boost/atomic.hpp>
-    #include <boost/mutex.hpp>
-    #include <boost/condition_variable.hpp>
+    #include <boost/thread/mutex.hpp>
     #include <boost/shared_ptr.hpp>
     #include <boost/weak_ptr.hpp>
     using boost::bind;
@@ -121,7 +125,8 @@ using std::deque;
     using boost::memory_order_relaxed;
     using boost::condition_variable;
     using boost::unique_lock;
-  #endif //USE_THREADS
+    using boost::dynamic_pointer_cast;
+  #endif //USE_THREAD
 
   using boost::array;
   using boost::tuple;
