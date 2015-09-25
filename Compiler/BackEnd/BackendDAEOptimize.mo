@@ -87,8 +87,22 @@ protected import ValuesUtil;
 public function simplifyAllExpressions "author: lochel"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE = inDAE;
+protected
+  list<BackendDAE.Equation> removedEqsList = {};
+  BackendDAE.Shared shared;
 algorithm
   _ := BackendDAEUtil.traverseBackendDAEExpsNoCopyWithUpdate(outDAE, ExpressionSimplify.simplifyTraverseHelper, 0);
+
+  // filter empty algorithms
+  shared := outDAE.shared;
+  for eq in BackendEquation.equationList(shared.removedEqs) loop
+    removedEqsList := match eq
+      case BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(statementLst={}))  then removedEqsList;
+      else eq::removedEqsList;
+    end match;
+  end for;
+  shared.removedEqs := BackendEquation.listEquation(listReverse(removedEqsList));
+  outDAE.shared := shared;
 end simplifyAllExpressions;
 
 // =============================================================================

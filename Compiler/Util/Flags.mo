@@ -799,8 +799,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "generateSymbolicLinearization",
     "removeConstants",
     "simplifyTimeIndepFuncCalls",
-    "simplifyAllExpressions",
-    "addInitialStmtsToAlgorithms"
+    "addInitialStmtsToAlgorithms",
+    "simplifyAllExpressions"
     }),
   SOME(STRING_DESC_OPTION({
     ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs.")),

@@ -2336,15 +2336,29 @@ algorithm
     _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs.removedEqs, removeInitializationStuff1, false);
   end for;
 
+  _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(shared.removedEqs, removeInitializationStuff1, false);
   for eq in BackendEquation.equationList(shared.removedEqs) loop
     removedEqsList := match BackendEquation.equationKind(eq)
       case BackendDAE.INITIAL_EQUATION() then removedEqsList;
-      else eq::removedEqsList;
+      else filterWhenEquation(eq, removedEqsList);
     end match;
   end for;
   shared.removedEqs := BackendEquation.listEquation(listReverse(removedEqsList));
   outDAE.shared := shared;
 end removeInitializationStuff;
+
+protected function filterWhenEquation
+  input BackendDAE.Equation inEqn;
+  input list<BackendDAE.Equation> inEqnLst;
+  output list<BackendDAE.Equation> outEqnLst;
+protected
+  DAE.Exp condition;
+algorithm
+  outEqnLst := match (inEqn)
+    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(condition=condition, elsewhenPart=NONE())) guard(listLength(BackendDAEUtil.getConditionList(condition)) == 0) then inEqnLst;
+    else inEqn::inEqnLst;
+  end match;
+end filterWhenEquation;
 
 protected function removeInitializationStuff1
   input DAE.Exp inExp;
