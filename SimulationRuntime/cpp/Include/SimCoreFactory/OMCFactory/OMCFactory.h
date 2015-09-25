@@ -29,7 +29,7 @@ public:
    * @param argv command line arguments of main function
    * @param opts default options that are overridden with argv
    */
-  virtual std::pair<boost::shared_ptr<ISimController>,SimSettings> createSimulation(int argc, const char* argv[], std::map<std::string, std::string> &opts);
+  virtual std::pair<shared_ptr<ISimController>,SimSettings> createSimulation(int argc, const char* argv[], std::map<std::string, std::string> &opts);
 
 protected:
   /**
@@ -74,9 +74,9 @@ protected:
   void fillArgumentsToIgnore();
   void fillArgumentsToReplace();
 
-  virtual boost::shared_ptr<ISimController> loadSimControllerLib(PATH simcontroller_path, type_map simcontroller_type_map);
+  virtual shared_ptr<ISimController> loadSimControllerLib(PATH simcontroller_path, type_map simcontroller_type_map);
 
-  //boost::shared_ptr<ISimController> _simController;
+  //shared_ptr<ISimController> _simController;
   map<string,shared_library> _modules;
   string _defaultLinSolver;
   string _defaultNonLinSolver;

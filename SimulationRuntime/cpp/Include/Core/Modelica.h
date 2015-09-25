@@ -33,7 +33,6 @@
 #include <boost/preprocessor/iteration/iterate.hpp>
 #include <boost/algorithm/minmax_element.hpp>
 #include <boost/multi_array.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include <functional>
 #include <boost/range/irange.hpp>
@@ -54,11 +53,9 @@
 #include <boost/unordered_map.hpp>
 #include <boost/assign/list_inserter.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/array.hpp>
 //#include <boost/timer/timer.hpp>
 #include <boost/noncopyable.hpp>
 #include <fstream>
-
 
  /*Namespaces*/
 using namespace std;
@@ -75,15 +72,62 @@ using boost::multi_array_ref;
 using boost::unordered_map;
 using boost::lexical_cast;
 using boost::numeric_cast;
-using boost::tuple;
 using boost::tie;
 using boost::get;
 using boost::make_tuple;
-using boost::array;
 using std::max;
 using std::min;
 using std::string;
 using std::vector;
+using std::deque;
+
+#if defined(USE_CPP_ELEVEN)
+  #include <array>
+  #include <thread>
+  #include <atomic>
+  #include <mutex>
+  #include <condition_variable>
+  #include <tuple>
+  #include <memory>
+  using std::bind;
+  using std::function;
+  using std::thread;
+  using std::atomic;
+  using std::mutex;
+  using std::memory_order_release;
+  using std::memory_order_relaxed;
+  using std::condition_variable;
+  using std::unique_lock;
+
+  using std::array;
+  using std::tuple;
+  using std::shared_ptr;
+  using std::weak_ptr;
+#else
+  #if defined(USE_THREADS)
+    #include <boost/array.hpp>
+    #include <boost/thread.hpp>
+    #include <boost/atomic.hpp>
+    #include <boost/mutex.hpp>
+    #include <boost/condition_variable.hpp>
+    #include <boost/shared_ptr.hpp>
+    #include <boost/weak_ptr.hpp>
+    using boost::bind;
+    using boost::function;
+    using boost::thread;
+    using boost::atomic;
+    using boost::mutex;
+    using boost::memory_order_release;
+    using boost::memory_order_relaxed;
+    using boost::condition_variable;
+    using boost::unique_lock;
+  #endif //USE_THREADS
+
+  using boost::array;
+  using boost::tuple;
+  using boost::shared_ptr;
+  using boost::weak_ptr;
+#endif //USE_CPP_ELEVEN
 
 //using boost::timer::cpu_timer;
 //using boost::timer::cpu_times;

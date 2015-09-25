@@ -44,9 +44,9 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 }
 #elif defined(OMC_BUILD) && defined(RUNTIME_STATIC_LINKING)
 #include <Core/SimulationSettings/Factory.h>
-boost::shared_ptr<ISettingsFactory> createFactory(PATH libraries_path, PATH config_path, PATH modelicasystem_path)
+shared_ptr<ISettingsFactory> createFactory(PATH libraries_path, PATH config_path, PATH modelicasystem_path)
 {
-    boost::shared_ptr<ISettingsFactory> setttingsFactory =  boost::shared_ptr<ISettingsFactory>(new SettingsFactory(libraries_path,config_path,modelicasystem_path));
+    shared_ptr<ISettingsFactory> setttingsFactory =  shared_ptr<ISettingsFactory>(new SettingsFactory(libraries_path,config_path,modelicasystem_path));
     return setttingsFactory;
 }
 

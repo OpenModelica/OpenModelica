@@ -7,7 +7,7 @@
 #include <Core/Modelica.h>
 #include <Core/SimController/Initialization.h>
 
-Initialization::Initialization(boost::shared_ptr<ISystemInitialization> system_initialization, boost::shared_ptr<ISolver> solver)
+Initialization::Initialization(shared_ptr<ISystemInitialization> system_initialization, shared_ptr<ISolver> solver)
   : _system(system_initialization)
   , _solver(solver)
 {
@@ -19,9 +19,9 @@ Initialization::~Initialization(void)
 
 void Initialization::initializeSystem()
 {
-  boost::shared_ptr<IContinuous> continous_system = boost::dynamic_pointer_cast<IContinuous>(_system);
-  boost::shared_ptr<IEvent> event_system = boost::dynamic_pointer_cast<IEvent>(_system);
-  boost::shared_ptr<IMixedSystem> mixed_system = boost::dynamic_pointer_cast<IMixedSystem>(_system);
+  shared_ptr<IContinuous> continous_system = dynamic_pointer_cast<IContinuous>(_system);
+  shared_ptr<IEvent> event_system = dynamic_pointer_cast<IEvent>(_system);
+  shared_ptr<IMixedSystem> mixed_system = dynamic_pointer_cast<IMixedSystem>(_system);
   int dim = event_system->getDimZeroFunc();
   bool* conditions0 = new bool[dim];
   bool* conditions1 = new bool[dim];

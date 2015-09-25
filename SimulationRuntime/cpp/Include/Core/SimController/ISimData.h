@@ -21,7 +21,7 @@ public:
 
   virtual ISimData* clone() = 0;
 
-  virtual void Add(std::string key, boost::shared_ptr<ISimVar> var) = 0;
+  virtual void Add(std::string key, shared_ptr<ISimVar> var) = 0;
   //Returns SimVar for a key
   virtual ISimVar* Get(std::string key) = 0;
   //Adds Results for an output var to simdata object

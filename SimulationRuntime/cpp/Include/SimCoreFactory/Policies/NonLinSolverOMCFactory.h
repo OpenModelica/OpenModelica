@@ -27,7 +27,7 @@ public:
     ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
     }
 
-   virtual boost::shared_ptr<INonLinSolverSettings> createNonLinSolverSettings(string nonlin_solver)
+   virtual shared_ptr<INonLinSolverSettings> createNonLinSolverSettings(string nonlin_solver)
    {
        string nonlin_solver_key;
 
@@ -82,12 +82,12 @@ public:
         {
             throw ModelicaSimulationError(MODEL_FACTORY,"No such nonlinear solver Settings");
         }
-        boost::shared_ptr<INonLinSolverSettings> nonlinsolversetting= boost::shared_ptr<INonLinSolverSettings>(iter->second.create());
+        shared_ptr<INonLinSolverSettings> nonlinsolversetting= shared_ptr<INonLinSolverSettings>(iter->second.create());
         return nonlinsolversetting;
 
    }
 
-   virtual boost::shared_ptr<IAlgLoopSolver> createNonLinSolver(IAlgLoop* algLoop, string solver_name, boost::shared_ptr<INonLinSolverSettings>  solver_settings)
+   virtual shared_ptr<IAlgLoopSolver> createNonLinSolver(IAlgLoop* algLoop, string solver_name, shared_ptr<INonLinSolverSettings>  solver_settings)
    {
        if(_last_selected_solver.compare(solver_name)==0)
        {
@@ -98,7 +98,7 @@ public:
             {
                 throw ModelicaSimulationError(MODEL_FACTORY,"No such non linear Solver");
             }
-            boost::shared_ptr<IAlgLoopSolver> solver = boost::shared_ptr<IAlgLoopSolver>(iter->second.create(algLoop,solver_settings.get()));
+            shared_ptr<IAlgLoopSolver> solver = shared_ptr<IAlgLoopSolver>(iter->second.create(algLoop,solver_settings.get()));
             return solver;
        }
        else

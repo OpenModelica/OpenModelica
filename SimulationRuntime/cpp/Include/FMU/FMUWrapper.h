@@ -16,7 +16,7 @@ class FMUWrapper : public IFMUInterface
 {
 private:
     FMUGlobalSettings _global_settings;
-    boost::shared_ptr<MODEL_CLASS> _model;
+    shared_ptr<MODEL_CLASS> _model;
     double _need_update;
 
     void updateModel()
@@ -34,8 +34,8 @@ public:
     FMUWrapper(fmiString instanceName, fmiString GUID, fmiCallbackFunctions functions, fmiBoolean loggingOn) : IFMUInterface(instanceName, GUID, functions, loggingOn), _need_update(true)
     {
       //FMULogger::initialize(functions.logger, this, instanceName);
-      boost::shared_ptr<IAlgLoopSolverFactory>solver_factory(new AlgLoopSolverFactory(&_global_settings,PATH(""),PATH("")));
-      _model = boost::shared_ptr<MODEL_CLASS>(new MODEL_CLASS(&_global_settings, solver_factory, boost::shared_ptr<ISimData>(new SimData()), boost::shared_ptr<ISimVars>(MODEL_SIMVARS_FACTORY())));
+      shared_ptr<IAlgLoopSolverFactory>solver_factory(new AlgLoopSolverFactory(&_global_settings,PATH(""),PATH("")));
+      _model = shared_ptr<MODEL_CLASS>(new MODEL_CLASS(&_global_settings, solver_factory, shared_ptr<ISimData>(new SimData()), shared_ptr<ISimVars>(MODEL_SIMVARS_FACTORY())));
       _model->setInitial(true);
     }
 

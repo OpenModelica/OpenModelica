@@ -42,7 +42,7 @@ private:
 class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation
 {
 public:
-  SystemDefaultImplementation(IGlobalSettings* globalSettings,boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars);
+  SystemDefaultImplementation(IGlobalSettings* globalSettings,shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars);
   SystemDefaultImplementation(SystemDefaultImplementation &instance);
   virtual ~SystemDefaultImplementation();
 
@@ -109,8 +109,8 @@ public:
 
   IGlobalSettings* getGlobalSettings();
 
-  virtual boost::shared_ptr<ISimVars> getSimVars();
-  virtual boost::shared_ptr<ISimData> getSimData();
+  virtual shared_ptr<ISimVars> getSimVars();
+  virtual shared_ptr<ISimData> getSimData();
 
   virtual double& getRealStartValue(double& var);
   virtual bool& getBoolStartValue(bool& var);
@@ -178,8 +178,8 @@ protected:
     buffer_type _time_buffer;
     double _delay_max;
     double _start_time;
-    boost::shared_ptr<ISimData> _sim_data;
-    boost::shared_ptr<ISimVars> _sim_vars;
+    shared_ptr<ISimData> _sim_data;
+    shared_ptr<ISimVars> _sim_vars;
     IGlobalSettings* _global_settings; //this should be a reference, but this is not working if the libraries are linked statically
     IEvent* _event_system; ///this pointer to event system
 };

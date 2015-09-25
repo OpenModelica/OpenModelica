@@ -343,7 +343,7 @@ void OMCFactory::fillArgumentsToReplace()
   _argumentsToReplace.insert(std::pair<string,string>("-w","-V all=warning"));
 }
 
-std::pair<boost::shared_ptr<ISimController>,SimSettings>
+std::pair<shared_ptr<ISimController>,SimSettings>
 OMCFactory::createSimulation(int argc, const char* argv[],
                              std::map<std::string, std::string> &opts)
 {
@@ -356,7 +356,7 @@ OMCFactory::createSimulation(int argc, const char* argv[],
   PATH simcontroller_name(SIMCONTROLLER_LIB);
   simcontroller_path/=simcontroller_name;
 
-  boost::shared_ptr<ISimController> simcontroller = loadSimControllerLib(simcontroller_path, simcontroller_type_map);
+  shared_ptr<ISimController> simcontroller = loadSimControllerLib(simcontroller_path, simcontroller_type_map);
 
   for(int i = 0; i < optv.size(); i++)
     free((char*)optv[i]);
@@ -393,7 +393,7 @@ LOADERRESULT OMCFactory::UnloadLibrary(shared_library lib)
     return LOADER_SUCCESS;
 }
 
-boost::shared_ptr<ISimController> OMCFactory::loadSimControllerLib(PATH simcontroller_path, type_map simcontroller_type_map)
+shared_ptr<ISimController> OMCFactory::loadSimControllerLib(PATH simcontroller_path, type_map simcontroller_type_map)
 {
   LOADERRESULT result = LoadLibrary(simcontroller_path.string(),simcontroller_type_map);
 
@@ -407,6 +407,6 @@ boost::shared_ptr<ISimController> OMCFactory::loadSimControllerLib(PATH simcontr
   if (iter ==factories.end())
     throw ModelicaSimulationError(MODEL_FACTORY,"No such SimController library");
 
-  return boost::shared_ptr<ISimController>(iter->second.create(_library_path,_modelicasystem_path));
+  return shared_ptr<ISimController>(iter->second.create(_library_path,_modelicasystem_path));
 }
 /** @} */ // end of simcorefactoryOMCFactory

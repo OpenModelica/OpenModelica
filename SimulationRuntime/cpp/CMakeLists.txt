@@ -2,7 +2,7 @@
 #
 # The following conditional defines are passed to the c++ compiler:
 #     if the Boost_log and Boost_setup_log libraries were found                    -DUSE_BOOST_LOG
-#     if the Boost_thread library was found                                        -DUSE_BOOST_THREAD
+#     if the Boost_thread library was found or C++ 11 is available                 -DUSE_THREAD
 #     if the UMFPack library of SuiteSparse was found                              -DUSE_UMFPACK
 #     if the PAPI library was found                                                -DUSE_PAPI
 #     if the Sundials libraries were found                                         -DPMC_USE_SUNDIALS
@@ -16,10 +16,12 @@
 #     if the logger should be used                                                 -DUSE_LOGGER
 #
 # Some of these options can be controlled by passing arguments to CMAKE
-#     if write output should be handled in parallel                                -DUSE_PARALLEL_OUTPUT=ON
-#     if ScoreP should be used for performance analysis                            -DUSE_SCOREP=ON
-#     if the boost libraries should be linked statically                           -DBOOST_STATIC_LINKING=ON
-#     if boost libraries should be linked against absolute path libraries          -DUSE_BOOST_REALPATHS=ON
+#     if write output should be handled in parallel                                -DUSE_PARALLEL_OUTPUT=ON [default: OFF]
+#     if ScoreP should be used for performance analysis                            -DUSE_SCOREP=ON [default: OFF]
+#     if the boost libraries should be linked statically                           -DBOOST_STATIC_LINKING=ON [default: OFF]
+#     if boost libraries should be linked against absolute path libraries          -DUSE_BOOST_REALPATHS=ON [default: OFF]
+#     disable c++11, even if the compiler is able to use it                        -DUSE_CPP_ELEVEN=OFF [default: ON]
+#     if the equation systems of a FMU should be solved with sundials solvers      -DFMU_SUNDIALS=ON [default: OFF]
 #
 #     Example: "cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo" to create statically linked libraries
 #
@@ -36,9 +38,11 @@ MESSAGE(STATUS "CMake version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CM
 OPTION(USE_PARALLEL_OUTPUT "USE_PARALLEL_OUTPUT" OFF)
 OPTION(USE_SCOREP "USE_SCOREP" OFF)
 OPTION(BOOST_STATIC_LINKING "BOOST_STATIC_LINKING" OFF)
+OPTION(USE_BOOST_REALPATHS "USE_BOOST_REALPATHS" OFF)
 OPTION(RUNTIME_PROFILING "RUNTIME_PROFILING" OFF)
 OPTION(FMU_SUNDIALS "FMU_SUNDIALS" OFF)
 OPTION(SUNDIALS_ROOT "SUNDIALS ROOT" "")
+OPTION(USE_CPP_ELEVEN "USE_CPP_ELEVEN" ON)
 
 #Set Variables
 SET(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../../3rdParty/ModelicaExternalC/C-Sources")
@@ -93,6 +97,36 @@ ELSE(USE_BOOST_REALPATHS)
 ENDIF(USE_BOOST_REALPATHS)
 
 INCLUDE(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
+
+# Check C++11
+IF(USE_CPP_ELEVEN)
+  IF(MSVC)
+    IF(MSVC_VERSION GREATER 1500)
+      SET(COMPILER_SUPPORTS_CXX11 True)
+    ELSE(MSVC_VERSION GREATER 1500)
+      SET(COMPILER_SUPPORTS_CXX11 False)
+    ENDIF(MSVC_VERSION GREATER 1500)
+  ELSE(MSVC)
+    INCLUDE(CheckCXXCompilerFlag)
+    CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+    IF(COMPILER_SUPPORTS_CXX11)
+      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+      SET(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE} "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}} -std=c++11")
+      SET(CXX11_FLAGS " -std=c++11")
+    ELSE()
+      SET(COMPILER_SUPPORTS_CXX11 False)
+    ENDIF(COMPILER_SUPPORTS_CXX11)
+  ENDIF(MSVC)
+ELSE(USE_CPP_ELEVEN)
+  SET(COMPILER_SUPPORTS_CXX11 False)
+ENDIF(USE_CPP_ELEVEN)
+
+IF(COMPILER_SUPPORTS_CXX11)
+  MESSAGE(STATUS "C++11 support enabled")
+  ADD_DEFINITIONS(-DUSE_CPP_ELEVEN)
+ELSE(COMPILER_SUPPORTS_CXX11)
+  MESSAGE(STATUS "C++11 support disabled")
+ENDIF(COMPILER_SUPPORTS_CXX11)
 
 #Handle static boost linking
 IF(NOT BOOST_STATIC_LINKING)
@@ -285,14 +319,18 @@ FIND_PACKAGE(Boost COMPONENTS log log_setup)
 
 FIND_PACKAGE(Boost COMPONENTS thread atomic)
 
-SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
-FIND_PACKAGE(Threads)
-IF(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
-  ADD_DEFINITIONS(-DUSE_BOOST_THREAD)
-  MESSAGE(STATUS "Using boost thread")
-ELSE(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
-  MESSAGE(STATUS "Boost thread disabled")
-ENDIF(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
+IF(NOT(COMPILER_SUPPORTS_CXX11))
+  SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
+  FIND_PACKAGE(Threads)
+  IF(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
+    ADD_DEFINITIONS(-DUSE_THREAD)
+    MESSAGE(STATUS "Using boost thread")
+  ELSE(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
+    MESSAGE(STATUS "Boost thread disabled")
+  ENDIF(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
+ELSE()
+  MESSAGE(STATUS "Boost thread disabled because of available C++11 support")
+ENDIF(NOT(COMPILER_SUPPORTS_CXX11))
 
 FIND_PACKAGE(Boost REQUIRED COMPONENTS filesystem system serialization program_options)
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})

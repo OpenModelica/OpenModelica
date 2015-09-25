@@ -75,13 +75,13 @@ FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
   _instanceName = instanceName;
   _GUID = GUID;
   _logCategories = loggingOn? 0xFFFF: 0x0000;
-  boost::shared_ptr<IAlgLoopSolverFactory>
+  shared_ptr<IAlgLoopSolverFactory>
     solver_factory(new AlgLoopSolverFactory(&_global_settings,
                                             PATH(""), PATH("")));
-  _model = boost::shared_ptr<MODEL_CLASS>
+  _model = shared_ptr<MODEL_CLASS>
     (new MODEL_CLASS(&_global_settings, solver_factory,
-                     boost::shared_ptr<ISimData>(new SimData()),
-                     boost::shared_ptr<ISimVars>(MODEL_CLASS::createSimVars())));
+                     shared_ptr<ISimData>(new SimData()),
+                     shared_ptr<ISimVars>(MODEL_CLASS::createSimVars())));
   _model->initialize();
   _string_buffer.resize(_model->getDimString());
 }

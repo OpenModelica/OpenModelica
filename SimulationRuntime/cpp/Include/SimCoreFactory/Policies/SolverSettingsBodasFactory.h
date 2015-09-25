@@ -15,7 +15,7 @@ public:
   {
   }
 
-  void loadGlobalSettings(boost::shared_ptr<IGlobalSettings> global_settings)
+  void loadGlobalSettings(shared_ptr<IGlobalSettings> global_settings)
   {
   }
 
@@ -23,7 +23,7 @@ public:
   {
   }
 
-  boost::shared_ptr<ISolverSettings> createSolverSettings(string solvername, boost::shared_ptr<IGlobalSettings> globalSettings)
+  shared_ptr<ISolverSettings> createSolverSettings(string solvername, shared_ptr<IGlobalSettings> globalSettings)
   {
     string solver_settings_key;
     if(solvername.compare("Euler") == 0)
@@ -49,7 +49,7 @@ public:
     else
       throw std::invalid_argument("Selected Solver is not available");
 
-    boost::shared_ptr<ISolverSettings> solver_settings = ObjectFactory<CreationPolicy>::_factory->LoadSolverSettings(solver_settings_key, globalSettings);
+    shared_ptr<ISolverSettings> solver_settings = ObjectFactory<CreationPolicy>::_factory->LoadSolverSettings(solver_settings_key, globalSettings);
     return solver_settings;
   }
 };

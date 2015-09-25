@@ -20,27 +20,27 @@ public:
     {
     }
 
-    boost::shared_ptr<IAlgLoopSolverFactory> createAlgLoopSolverFactory(IGlobalSettings* globalSettings)
+    shared_ptr<IAlgLoopSolverFactory> createAlgLoopSolverFactory(IGlobalSettings* globalSettings)
     {
-        boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory = ObjectFactory<CreationPolicy>::_factory->LoadAlgLoopSolverFactory(globalSettings);
+        shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory = ObjectFactory<CreationPolicy>::_factory->LoadAlgLoopSolverFactory(globalSettings);
         return algloopsolverfactory;
     }
 
-    boost::shared_ptr<ISimData> createSimData()
+    shared_ptr<ISimData> createSimData()
     {
-        boost::shared_ptr<ISimData> simData = ObjectFactory<CreationPolicy>::_factory->LoadSimData();
+        shared_ptr<ISimData> simData = ObjectFactory<CreationPolicy>::_factory->LoadSimData();
         return simData;
     }
 
-    boost::shared_ptr<IMixedSystem> createSystem(string modelLib, string modelKey, IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory, boost::shared_ptr<ISimData> simData)
+    shared_ptr<IMixedSystem> createSystem(string modelLib, string modelKey, IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory, shared_ptr<ISimData> simData)
     {
-        boost::shared_ptr<IMixedSystem> system = ObjectFactory<CreationPolicy>::_factory->LoadSystem(globalSettings, algloopsolverfactory, simData);
+        shared_ptr<IMixedSystem> system = ObjectFactory<CreationPolicy>::_factory->LoadSystem(globalSettings, algloopsolverfactory, simData);
         return system;
     }
 
-    boost::shared_ptr<IMixedSystem> createModelicaSystem(string modelLib, string modelKey, IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory, boost::shared_ptr<ISimData> simData)
+    shared_ptr<IMixedSystem> createModelicaSystem(string modelLib, string modelKey, IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory, shared_ptr<ISimData> simData)
     {
-        boost::shared_ptr<IMixedSystem> system = ObjectFactory<CreationPolicy>::_factory->LoadSystem(globalSettings, algloopsolverfactory, simData);
+        shared_ptr<IMixedSystem> system = ObjectFactory<CreationPolicy>::_factory->LoadSystem(globalSettings, algloopsolverfactory, simData);
         return system;
     }
 

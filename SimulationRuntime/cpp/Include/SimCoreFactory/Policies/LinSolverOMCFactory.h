@@ -24,7 +24,7 @@ public:
     // ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs(); todo solver lib wird in linsolver factory entlanden
   }
 
-  virtual boost::shared_ptr<ILinSolverSettings> createLinSolverSettings(string lin_solver)
+  virtual shared_ptr<ILinSolverSettings> createLinSolverSettings(string lin_solver)
     {
     string lin_solver_key;
 
@@ -52,11 +52,11 @@ public:
         {
             throw ModelicaSimulationError(MODEL_FACTORY,"No such linear solver Settings");
         }
-        boost::shared_ptr<ILinSolverSettings> linsolversetting = boost::shared_ptr<ILinSolverSettings>(iter->second.create());
+        shared_ptr<ILinSolverSettings> linsolversetting = shared_ptr<ILinSolverSettings>(iter->second.create());
         return linsolversetting;
   }
 
-  virtual boost::shared_ptr<IAlgLoopSolver> createLinSolver(IAlgLoop* algLoop, string solver_name, boost::shared_ptr<ILinSolverSettings> solver_settings)
+  virtual shared_ptr<IAlgLoopSolver> createLinSolver(IAlgLoop* algLoop, string solver_name, shared_ptr<ILinSolverSettings> solver_settings)
   {
     if(_last_selected_solver.compare(solver_name) == 0)
     {
@@ -67,7 +67,7 @@ public:
             {
                 throw ModelicaSimulationError(MODEL_FACTORY,"No such linear Solver");
             }
-            boost::shared_ptr<IAlgLoopSolver> solver = boost::shared_ptr<IAlgLoopSolver>(iter->second.create(algLoop,solver_settings.get()));
+            shared_ptr<IAlgLoopSolver> solver = shared_ptr<IAlgLoopSolver>(iter->second.create(algLoop,solver_settings.get()));
 
             return solver;
     }

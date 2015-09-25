@@ -20,13 +20,13 @@ public:
     {
     }
 
-    boost::shared_ptr<ISettingsFactory> createSettingsFactory()
+    shared_ptr<ISettingsFactory> createSettingsFactory()
     {
-        boost::shared_ptr<ISettingsFactory> settings_factory = ObjectFactory<CreationPolicy>::_factory->LoadSettingsFactory();
+        shared_ptr<ISettingsFactory> settings_factory = ObjectFactory<CreationPolicy>::_factory->LoadSettingsFactory();
         return settings_factory;
     }
 
-    boost::shared_ptr<ISolver> createSolver(IMixedSystem* system, string solver_name, boost::shared_ptr<ISolverSettings> solver_settings)
+    shared_ptr<ISolver> createSolver(IMixedSystem* system, string solver_name, shared_ptr<ISolverSettings> solver_settings)
     {
         string solver_key;
         if(solver_name.compare("Euler") == 0)
@@ -56,7 +56,7 @@ public:
         else
             throw std::invalid_argument("Selected Solver is not available");
 
-        boost::shared_ptr<ISolver> solver = ObjectFactory<CreationPolicy>::_factory->LoadSolver(system, solver_key, solver_settings);
+        shared_ptr<ISolver> solver = ObjectFactory<CreationPolicy>::_factory->LoadSolver(system, solver_key, solver_settings);
         return solver;
     }
 };

@@ -17,7 +17,7 @@ XmlPropertyReader::~XmlPropertyReader()
 
 }
 
-void XmlPropertyReader::readInitialValues(IContinuous& system, boost::shared_ptr<ISimVars> sim_vars)
+void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVars> sim_vars)
 {
   using boost::property_tree::ptree;
   std::ifstream file;

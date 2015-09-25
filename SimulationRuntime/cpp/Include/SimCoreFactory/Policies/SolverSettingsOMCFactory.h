@@ -21,7 +21,7 @@ public:
         _solver_type_map = new type_map();
     }
 
-    void loadGlobalSettings( boost::shared_ptr<IGlobalSettings> global_settings)
+    void loadGlobalSettings( shared_ptr<IGlobalSettings> global_settings)
     {
 
     }
@@ -33,7 +33,7 @@ public:
 
     }
 
-  virtual boost::shared_ptr<ISolverSettings> createSolverSettings(string solvername,boost::shared_ptr<IGlobalSettings> globalSettings)
+  virtual shared_ptr<ISolverSettings> createSolverSettings(string solvername,shared_ptr<IGlobalSettings> globalSettings)
     {
 
         string solver_settings_key;
@@ -145,7 +145,7 @@ public:
 
             throw ModelicaSimulationError(MODEL_FACTORY,"No such Solver " + solvername + ". Available solver factories:" + factoryStr );
         }
-        boost::shared_ptr<ISolverSettings> solver_settings  = boost::shared_ptr<ISolverSettings>(iter->second.create(globalSettings.get()));
+        shared_ptr<ISolverSettings> solver_settings  = shared_ptr<ISolverSettings>(iter->second.create(globalSettings.get()));
 
 
         return solver_settings;

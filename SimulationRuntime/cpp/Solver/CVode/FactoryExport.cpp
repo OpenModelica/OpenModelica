@@ -40,22 +40,22 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_cvode(boost::extens
 #include <Solver/IDA/IDA.h>
 
   #ifdef ENABLE_SUNDIALS_STATIC
-    boost::shared_ptr<ISolver> createCVode(IMixedSystem* system, boost::shared_ptr<ISolverSettings> solver_settings)
+    shared_ptr<ISolver> createCVode(IMixedSystem* system, shared_ptr<ISolverSettings> solver_settings)
     {
-        boost::shared_ptr<ISolver> cvode = boost::shared_ptr<ISolver>(new Cvode(system,solver_settings.get()));
+        shared_ptr<ISolver> cvode = shared_ptr<ISolver>(new Cvode(system,solver_settings.get()));
         return cvode;
     }
-    boost::shared_ptr<ISolverSettings> createCVodeSettings(boost::shared_ptr<IGlobalSettings> globalSettings)
+    shared_ptr<ISolverSettings> createCVodeSettings(shared_ptr<IGlobalSettings> globalSettings)
     {
-         boost::shared_ptr<ISolverSettings> cvode_settings = boost::shared_ptr<ISolverSettings>(new CVodeSettings(globalSettings.get()));
+         shared_ptr<ISolverSettings> cvode_settings = shared_ptr<ISolverSettings>(new CVodeSettings(globalSettings.get()));
          return cvode_settings;
     }
   #else
-    boost::shared_ptr<ISolver> createCVode(IMixedSystem* system, boost::shared_ptr<ISolverSettings> solver_settings)
+    shared_ptr<ISolver> createCVode(IMixedSystem* system, shared_ptr<ISolverSettings> solver_settings)
     {
       throw ModelicaSimulationError(SOLVER,"CVode was disabled during build");
     }
-    boost::shared_ptr<ISolverSettings> createCVodeSettings(boost::shared_ptr<IGlobalSettings> globalSettings)
+    shared_ptr<ISolverSettings> createCVodeSettings(shared_ptr<IGlobalSettings> globalSettings)
     {
       throw ModelicaSimulationError(SOLVER,"CVode was disabled during build");
     }

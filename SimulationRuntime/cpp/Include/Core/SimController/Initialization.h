@@ -11,12 +11,12 @@
 class Initialization
 {
 public:
-  Initialization(boost::shared_ptr<ISystemInitialization> system_initialization, boost::shared_ptr<ISolver>);
+  Initialization(shared_ptr<ISystemInitialization> system_initialization, shared_ptr<ISolver>);
   ~Initialization(void);
   void initializeSystem(/*double start_time, double end_time*/);
 
 private:
-  boost::shared_ptr<ISystemInitialization> _system;
-  boost::shared_ptr<ISolver> _solver;
+  shared_ptr<ISystemInitialization> _system;
+  shared_ptr<ISolver> _solver;
 };
 /** @} */ // end of coreSimcontroller

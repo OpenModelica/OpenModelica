@@ -2,10 +2,10 @@
 
 #include <Core/Modelica.h>
 
-//template class   boost::shared_ptr<IAlgLoopSolver>;
-//template class   boost::shared_ptr<IAlgLoop>;
-//template class   boost::shared_ptr<IAlgLoopSolverFactory>;
-//template class   boost::shared_ptr<ISimData>;
+//template class   shared_ptr<IAlgLoopSolver>;
+//template class   shared_ptr<IAlgLoop>;
+//template class   shared_ptr<IAlgLoopSolverFactory>;
+//template class   shared_ptr<ISimData>;
 template class   boost::multi_array<double,2>;
 template class   boost::multi_array<double,1>;
 template class   boost::multi_array<int,2>;
