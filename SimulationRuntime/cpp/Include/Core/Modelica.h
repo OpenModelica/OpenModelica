@@ -57,6 +57,7 @@
 #include <boost/array.hpp>
 //#include <boost/timer/timer.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/container/vector.hpp>
 #include <fstream>
 
 
@@ -91,6 +92,7 @@ using std::vector;
 typedef ublas::shallow_array_adaptor<double> adaptor_t;
 typedef ublas::vector<double, adaptor_t> shared_vector_t;
 typedef ublas::matrix<double,  ublas::column_major,adaptor_t> shared_matrix_t;
+
 //typedef boost::function<bool (unsigned int)> getCondition_type;
 //typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&)> init_prevars_type;
 typedef uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > sparsematrix_t;
@@ -127,8 +129,8 @@ typedef ublas::matrix<double, ublas::column_major> matrix_t;
 #include <Core/Math/ArrayOperations.h>
 #include <Core/Math/ArraySlice.h>
 #include <Core/Math/Utility.h>
-#include <Core/DataExchange/IPropertyReader.h>
 #include <Core/DataExchange/Writer.h>
+#include <Core/DataExchange/IPropertyReader.h>
 #include <Core/DataExchange/Policies/TextfileWriter.h>
 #include <Core/DataExchange/Policies/MatfileWriter.h>
 #include <Core/DataExchange/Policies/BufferReaderWriter.h>

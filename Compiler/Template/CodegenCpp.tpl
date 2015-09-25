@@ -71,9 +71,6 @@ template translateModel(SimCode simCode)
         let()= textFile(simulationExtensionCppFile(simCode  , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Extension.cpp')
         let()= textFile(simulationWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
         let()= textFile(simulationWriteOutputCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
-        let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
-        let()= textFile(simulationWriteOutputParameterCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", false),'OMCpp<%fileNamePrefix%>WriteOutputParameter.cpp')
-        let()= textFile(simulationWriteOutputAliasVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp')
         let()= textFile(simulationFactoryFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
         let()= textFile(simulationMainRunScript(simCode , &extraFuncs , &extraFuncsDecl, "", "", "", "exec"), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode , &extraFuncs , &extraFuncsDecl, "")%>')
         let jac =  (jacobianMatrixes |> (mat, _, _, _, _, _, _) =>
@@ -335,7 +332,7 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
   let numparams = match   settings.outputFormat case "csv" then "1" else n
   <<
   #pragma once
-  typedef HistoryImpl<<%outputtype%>,<%numProtectedAlgvars(modelInfo)%>+<%numProtectedAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0,<%numparams%>> HistoryImplType;
+  typedef HistoryImpl<<%outputtype%> > HistoryImplType;
 
   /*****************************************************************************
   *
@@ -358,62 +355,6 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
   protected:
     void initialize();
    private:
-    <% match modelInfo case MODELINFO(vars=SIMVARS(__)) then
-    <<
-        void writeParams(HistoryImplType::value_type_p& params);
-        <%List.partition(protectedVars(vars.paramVars), 100) |> ls hasindex idx => 'void writeParamsReal_<%idx%>(HistoryImplType::value_type_p& params );';separator="\n"%>
-        void writeParamsReal(HistoryImplType::value_type_p& params  );
-        <%List.partition(protectedVars(vars.intParamVars), 100) |> ls hasindex idx => 'void writeParamsInt_<%idx%>(HistoryImplType::value_type_p& params  );';separator="\n"%>
-        void writeParamsInt(HistoryImplType::value_type_p& params  );
-        <%List.partition(protectedVars(vars.boolParamVars), 100) |> ls hasindex idx => 'void writeParamsBool_<%idx%>(HistoryImplType::value_type_p& params  );';separator="\n"%>
-        void writeParamsBool(HistoryImplType::value_type_p& params  );
-
-
-        void writeAlgVarsValues(HistoryImplType::value_type_v *v);
-        <%List.partition( protectedVars(vars.algVars), 100) |> ls hasindex idx => 'void writeAlgVarsValues_<%idx%>(HistoryImplType::value_type_v *v);';separator="\n"    %>
-        void writeDiscreteAlgVarsValues(HistoryImplType::value_type_v *v);
-        <%List.partition( protectedVars(vars.discreteAlgVars), 100) |> ls hasindex idx => 'void writeDiscreteAlgVarsValues_<%idx%>(HistoryImplType::value_type_v *v);';separator="\n"    %>
-        void writeIntAlgVarsValues(HistoryImplType::value_type_v *v);
-        <%List.partition( protectedVars(vars.intAlgVars), 100) |> ls hasindex idx => 'void writeIntAlgVarsValues_<%idx%>(HistoryImplType::value_type_v *v);';separator="\n"    %>
-        void writeBoolAlgVarsValues(HistoryImplType::value_type_v *v);
-        <%List.partition( protectedVars(vars.boolAlgVars), 100) |> ls hasindex idx => 'void writeBoolAlgVarsValues_<%idx%>(HistoryImplType::value_type_v *v);';separator="\n"    %>
-        void writeAliasVarsValues(HistoryImplType::value_type_v *v);
-        <%List.partition( protectedVars(vars.aliasVars), 100) |> ls hasindex idx => 'void writeAliasVarsValues_<%idx%>(HistoryImplType::value_type_v *v);';separator="\n"    %>
-        void writeIntAliasVarsValues(HistoryImplType::value_type_v *v);
-        <%List.partition( protectedVars(vars.intAliasVars), 100) |> ls hasindex idx => 'void writeIntAliasVarsValues_<%idx%>(HistoryImplType::value_type_v *v);';separator="\n"    %>
-        void writeBoolAliasVarsValues(HistoryImplType::value_type_v *v);
-        <%List.partition( protectedVars(vars.boolAliasVars), 100) |> ls hasindex idx => 'void writeBoolAliasVarsValues_<%idx%>(HistoryImplType::value_type_v *v);';separator="\n"    %>
-        void writeStateValues(HistoryImplType::value_type_v *v, HistoryImplType::value_type_dv *v2);
-
-    >>
-    end match%>
-
-    void writeAlgVarsResultNames(vector<string>& names);
-    void writeDiscreteAlgVarsResultNames(vector<string>& names);
-    void writeIntAlgVarsResultNames(vector<string>& names);
-    void writeBoolAlgVarsResultNames(vector<string>& names);
-    void writeAliasVarsResultNames(vector<string>& names);
-    void writeIntAliasVarsResultNames(vector<string>& names);
-    void writeBoolAliasVarsResultNames(vector<string>& names);
-    void writeStateVarsResultNames(vector<string>& names);
-    void writeDerivativeVarsResultNames(vector<string>& names);
-    void writeParametertNames(vector<string>& names);
-    void writeIntParameterNames(vector<string>& names);
-    void writeBoolParameterNames(vector<string>& names);
-
-    void writeAlgVarsResultDescription(vector<string>& names);
-    void writeDiscreteAlgVarsResultDescription(vector<string>& names);
-    void writeIntAlgVarsResultDescription(vector<string>& names);
-    void writeBoolAlgVarsResultDescription(vector<string>& names);
-    void writeAliasVarsResultDescription(vector<string>& names);
-    void writeIntAliasVarsResultDescription(vector<string>& names);
-    void writeBoolAliasVarsResultDescription(vector<string>& names);
-    void writeStateVarsResultDescription(vector<string>& names);
-    void writeDerivativeVarsResultDescription(vector<string>& names);
-    void writeParameterDescription(vector<string>& names);
-    void writeIntParameterDescription(vector<string>& names);
-    void writeBoolParameterDescription(vector<string>& names);
-
     HistoryImplType* _historyImpl;
   };
   >>
@@ -810,13 +751,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
        : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
    {
-     _historyImpl = new HistoryImplType(*globalSettings);
+     _historyImpl = new HistoryImplType(*globalSettings,<%numAlgvars(modelInfo)%> + <%numAliasvars(modelInfo)%> + 2*<%numStatevars(modelInfo)%>);
    }
 
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(<%lastIdentOfPath(modelInfo.name)%>WriteOutput& instance)
        : <%lastIdentOfPath(modelInfo.name)%>(instance.getGlobalSettings(), instance.getAlgLoopSolverFactory(), instance.getSimData(), instance.getSimVars())
    {
-     _historyImpl = new HistoryImplType(*instance.getGlobalSettings());
+     _historyImpl = new HistoryImplType(*instance.getGlobalSettings(),<%numAlgvars(modelInfo)%>+ <%numAliasvars(modelInfo)%> + 2*<%numStatevars(modelInfo)%>);
    }
 
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::~<%lastIdentOfPath(modelInfo.name)%>WriteOutput()
@@ -2814,9 +2755,6 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     #include "OMCpp<%fileNamePrefix%>InitializeExtVars.cpp"
     #include "OMCpp<%fileNamePrefix%>Initialize.cpp"
     #include "OMCpp<%fileNamePrefix%>WriteOutput.cpp"
-    #include "OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp"
-    #include "OMCpp<%fileNamePrefix%>WriteOutputParameter.cpp"
-    #include "OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp"
     #include "OMCpp<%fileNamePrefix%>Jacobian.cpp"
     #include "OMCpp<%fileNamePrefix%>StateSelection.cpp"
     #include "OMCpp<%fileNamePrefix%>.cpp"
@@ -5833,8 +5771,8 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
         >>
         else
         <<
-        IPropertyReader *reader = new XmlPropertyReader("<%makefileParams.compileDir%>/OMCpp<%fileNamePrefix%>Init.xml");
-        reader->readInitialValues(*this, _sim_vars);
+        _reader =  boost::shared_ptr<IPropertyReader>(new XmlPropertyReader("<%makefileParams.compileDir%>/OMCpp<%fileNamePrefix%>Init.xml"));
+        _reader->readInitialValues(*this, _sim_vars);
         >>
         %>
       initializeFreeVariables();
@@ -6730,56 +6668,41 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
 
    void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeOutput(const IWriteOutput::OUTPUT command)
    {
+
+     const output_int_vars_t& outputIntVars = _reader->getIntOutVars();
+     const output_real_vars_t&  outputRealVars= _reader->getRealOutVars();
+     const output_bool_vars_t& outputBoolVars = _reader->getBoolOutVars();
     //Write head line
     if (command & IWriteOutput::HEAD_LINE)
     {
-      vector<string> varsnames;
-      vector<string> vardescs;
-      vector<string> paramnames;
-      vector<string> paramdecs;
-      writeAlgVarsResultNames(varsnames);
-      writeDiscreteAlgVarsResultNames(varsnames);
-      writeIntAlgVarsResultNames(varsnames);
-      writeBoolAlgVarsResultNames(varsnames);
-      writeAliasVarsResultNames(varsnames);
-      writeIntAliasVarsResultNames(varsnames);
-      writeBoolAliasVarsResultNames(varsnames);
-      writeStateVarsResultNames(varsnames);
-      writeDerivativeVarsResultNames(varsnames);
 
+      const all_names_t outputVarNames = boost::make_tuple(outputRealVars.ourputVarNames,outputIntVars.ourputVarNames,outputBoolVars.ourputVarNames);
+      const all_names_t outputVarDescription = boost::make_tuple(outputRealVars.ourputVarDescription,outputIntVars.ourputVarDescription,outputBoolVars.ourputVarDescription);
       <%
       match   settings.outputFormat
         case "mat" then
         <<
-        writeParametertNames(paramnames);
-        writeIntParameterNames(paramnames);
-        writeBoolParameterNames(paramnames);
-        writeAlgVarsResultDescription(vardescs);
-        writeDiscreteAlgVarsResultDescription(vardescs);
-        writeIntAlgVarsResultDescription(vardescs);
-        writeBoolAlgVarsResultDescription(vardescs);
-        writeAliasVarsResultDescription(vardescs);
-        writeIntAliasVarsResultDescription(vardescs);
-        writeBoolAliasVarsResultDescription(vardescs);
-        writeStateVarsResultDescription(vardescs);
-        writeDerivativeVarsResultDescription(vardescs);
-        writeParameterDescription(paramdecs);
-        writeIntParameterDescription(paramdecs);
-        writeBoolParameterDescription(paramdecs);
+         const all_names_t parameterVarNames =  boost::make_tuple(outputRealVars.parameterNames,outputIntVars.parameterNames,outputBoolVars.parameterNames);
+         const all_names_t parameterVarDescription =  boost::make_tuple(outputRealVars.parameterDescription,outputIntVars.parameterDescription,outputBoolVars.parameterDescription);
         >>
+       else
+       <<
+       const all_names_t parameterVarNames;
+       const all_names_t parameterVarDescription;
+       >>
       %>
-      _historyImpl->write(varsnames,vardescs,paramnames,paramdecs);
+      _historyImpl->write(outputVarNames,outputVarDescription,parameterVarNames,parameterVarDescription);
+
       <%
       match   settings.outputFormat
         case "mat" then
         <<
-        HistoryImplType::value_type_p params;
+        const all_vars_t params = boost::make_tuple(outputRealVars.outputParams,outputIntVars.outputParams,outputBoolVars.outputParams);
 
-        writeParams(params);
         >>
         else
         <<
-        HistoryImplType::value_type_p params;
+        const all_vars_t params;
         >>
       %>
       _historyImpl->write(params,_global_settings->getStartTime(),_global_settings->getEndTime());
@@ -6791,19 +6714,8 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       /* HistoryImplType::value_type_v v;
       HistoryImplType::value_type_dv v2; */
 
-      boost::shared_ptr<HistoryImplType::values_type> container = _historyImpl->getFreeContainer();
-      boost::shared_ptr<HistoryImplType::value_type_v> v = container->get<0>();
-       boost::shared_ptr<HistoryImplType::value_type_dv> v2 = container->get<1>();
-      container->get<2>() = _simTime;
+      const HistoryImplType::values_type container = boost::make_tuple(outputRealVars.outputVars,outputIntVars.outputVars,outputBoolVars.outputVars,_simTime);
 
-      writeAlgVarsValues(v.get());
-      writeDiscreteAlgVarsValues(v.get());
-      writeIntAlgVarsValues(v.get());
-      writeBoolAlgVarsValues(v.get());
-      writeAliasVarsValues(v.get());
-      writeIntAliasVarsValues(v.get());
-      writeBoolAliasVarsValues(v.get());
-      writeStateValues(v.get(),v2.get());
 
       <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
       <<
@@ -6826,9 +6738,7 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
     %>
     }
    }
-   <%generateWriteOutputFunctionsForVars(modelInfo, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, '<%lastIdentOfPath(modelInfo.name)%>WriteOutput', useFlatArrayNotation)%>
 
-   <%writeoutput1(modelInfo)%>
   >>
   //<%writeAlgloopvars(odeEquations,algebraicEquations, parameterEquations,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
 end writeoutput;
@@ -7101,7 +7011,7 @@ match modelInfo
       <%memberPreVariableDefinitions%>
       <%conditionvariables%>
       Functions* _functions;
-
+      boost::shared_ptr<IPropertyReader> _reader;
       boost::shared_ptr<IAlgLoopSolverFactory> _algLoopSolverFactory;    ///< Factory that provides an appropriate solver
       <%algloopsolver%>
       <%jacalgloopsolver%>
