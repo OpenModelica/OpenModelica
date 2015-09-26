@@ -29,6 +29,7 @@ LocalVariableInit.mos \
 ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar.mos \
 SimplePeriodicSampler.mos \
 SumSeriesWhile.mos \
+ticket-3477.mos \
 TupleReturn.mos \
 val.mos \
 whenDiscreteForLoop.mos \
