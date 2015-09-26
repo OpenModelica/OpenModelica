@@ -7943,7 +7943,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
     virtual void evaluateODE(const UPDATETYPE command = IContinuous::UNDEF_UPDATE);
     virtual void evaluateZeroFuncs(const UPDATETYPE command = IContinuous::UNDEF_UPDATE);
     virtual bool evaluateConditions(const UPDATETYPE command);
-    virtual void evaluateClocked(long i, const UPDATETYPE command = IContinuous::UNDEF_UPDATE);
+    void evaluateClocked(long i, const UPDATETYPE command = IContinuous::UNDEF_UPDATE);
 
     // Provide the right hand side (according to the index)
     virtual void getRHS(double* f);
