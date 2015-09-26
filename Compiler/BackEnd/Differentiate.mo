@@ -558,6 +558,10 @@ algorithm
       //print("\nresults to exp: " + se1);
     then (res, functionTree);
 
+    // differentiate start value
+    case DAE.CALL(path=Absyn.IDENT(name="$_start"), attr=DAE.CALL_ATTR(ty=tp))
+    then (Expression.makeConstZero(tp), inFunctionTree);
+
     // differentiate homotopy
     // lochel: see #3305 - this is commented out since it breaks Modelica.Fluid.Examples.HeatingSystem.
     //case DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst=actual::_) equation
