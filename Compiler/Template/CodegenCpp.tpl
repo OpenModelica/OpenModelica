@@ -3903,7 +3903,8 @@ match simCode
       //Number of equations
       <%dimension1(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
       _dimZeroFunc = <%zeroCrossLength(simCode)%>;
-      _dimTimeEvent = <%timeEventLength(simCode)%>;
+      // simplified treatment of clocks in model as time events
+      _dimTimeEvent = <%timeEventLength(simCode)%> + <%listLength(clockedPartitions)%>;
       //Number of residues
        _event_handling= boost::shared_ptr<EventHandling>(new EventHandling());
        initializeAlgloopSolverVariables(); //if we do not initialize it here, we get a segfault in the destructor if initialization of Solver or OMFactory has failed
@@ -7035,6 +7036,8 @@ case SIMCODE(__) then
   <<
   <%equationFunctions(allEquations, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,contextSimulationDiscrete,stateDerVectorName,useFlatArrayNotation,boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
 
+  <%clockedFunctions(getSubPartitions(clockedPartitions), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextSimulationDiscrete, stateDerVectorName, useFlatArrayNotation, boolNot(stringEq(getConfigString(PROFILING_LEVEL), "none")))%>
+
   <%createEvaluateAll(allEquations, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,contextOther, stateDerVectorName, useFlatArrayNotation, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
 
   <%createEvaluate(odeEquations, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,contextOther, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
@@ -7358,6 +7361,7 @@ let jacalgloopsolver =  (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex in
                         ;separator="")
 
 let memberfuncs = generateEquationMemberFuncDecls(allEquations,"evaluate")
+let clockedfuncs = generateClockedFuncDecls(getSubPartitions(clockedPartitions), "evaluate")
 let conditionvariables =  conditionvariable(zeroCrossings,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
 
 match modelInfo
@@ -7466,6 +7470,7 @@ match modelInfo
       >>%>
 
       <%memberfuncs%>
+      <%clockedfuncs%>
       <%additionalProtectedMembers%>
       <%extraFuncsDecl%>
    };
@@ -7482,6 +7487,19 @@ match modelInfo
     boost::array< EquFuncPtr, <%listLength(allEquations)%> > equations_array;
   */
 end generateClassDeclarationCode;
+
+template generateClockedFuncDecls(list<SubPartition> subPartitions, Text method)
+::=
+  let decls = (subPartitions |> subPartition hasindex i =>
+    match subPartition case SUBPARTITION(__) then
+      <<
+      /*! Clocked partition <%i%> */
+      void evaluateClocked<%i%>(const UPDATETYPE command);
+      <%generateEquationMemberFuncDecls(listAppend(equations, removedEquations), method)%>
+      >>
+      ; separator="\n")
+  '<%decls%>'
+end generateClockedFuncDecls;
 
 template generateEquationMemberFuncDecls(list<SimEqSystem> allEquations,Text method)
 ::=
@@ -7925,6 +7943,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
     virtual void evaluateODE(const UPDATETYPE command = IContinuous::UNDEF_UPDATE);
     virtual void evaluateZeroFuncs(const UPDATETYPE command = IContinuous::UNDEF_UPDATE);
     virtual bool evaluateConditions(const UPDATETYPE command);
+    virtual void evaluateClocked(long i, const UPDATETYPE command = IContinuous::UNDEF_UPDATE);
 
     // Provide the right hand side (according to the index)
     virtual void getRHS(double* f);
@@ -10614,6 +10633,18 @@ template generateTimeEvent(list<BackendDAE.TimeEvent> timeEvents, SimCode simCod
               >>
             else ''
           ;separator="\n\n")%>
+        // simplified treatment of clocks in model as time events
+        <%(clockedPartitions |> partition =>
+          match partition
+            case CLOCKED_PARTITION(__) then
+              let &preExp = buffer "" /*BUFD*/
+              let intvl = daeExp(getClockIntvl(baseClock), contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+              <<
+              <%preExp%>
+              time_events.push_back(std::make_pair(0.0, <%intvl%>));
+              >>
+            else ''
+          ;separator="\n\n")%>
       }
       >>
 end generateTimeEvent;
@@ -12669,6 +12700,59 @@ template equationFunctions(list<SimEqSystem> allEquationsPlusWhen, SimCode simCo
   >>
 end equationFunctions;
 
+template clockedFunctions(list<SubPartition> subPartitions, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean enableMeasureTime)
+ "Evaluate clocked synchronous equations"
+::=
+  let className = lastIdentOfPathFromSimCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
+  let parts = subPartitions |> subPartition hasindex i =>
+    match subPartition
+      case SUBPARTITION(__) then
+        clockedPartFunctions(i, vars, listAppend(equations, removedEquations), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextSimulationDiscrete, stateDerVectorName, useFlatArrayNotation, enableMeasureTime)
+    ; separator = "\n"
+  let cases = subPartitions |> subPartition hasindex i =>
+    <<
+    case <%i%>:
+      evaluateClocked<%i%>(command);
+      break;
+    >>; separator = "\n"
+  <<
+
+  <%parts%>
+
+  /* Clocked synchronous equations */
+  void <%className%>::evaluateClocked(long i, const UPDATETYPE command)
+  {
+    switch (i) {
+      <%cases%>
+      default:
+        throw ModelicaSimulationError(MODEL_EQ_SYSTEM, "Unknown partition");
+        break;
+    }
+  }
+  >>
+end clockedFunctions;
+
+template clockedPartFunctions(Integer i, list<tuple<SimCodeVar.SimVar, Boolean>> vars, list<SimEqSystem> equations, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean enableMeasureTime)
+ "Evaluate functions that belong to a clocked partition"
+::=
+  let className = lastIdentOfPathFromSimCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
+  let funcs = equations |> eq =>
+    equation_function_create_single_func(eq, context/*BUFC*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, "evaluate", "", stateDerVectorName, useFlatArrayNotation, enableMeasureTime, false, false)
+    ; separator="\n"
+  let funcName = 'evaluateClocked<%i%>'
+  let funcCalls = (List.partition(equations, 100) |> eqs hasindex i0 =>
+                   createEvaluateWithSplit(i0, context, eqs, funcName, className, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
+                   ; separator="\n")
+  <<
+  <%funcs%>
+
+  void <%className%>::<%funcName%>(const UPDATETYPE command)
+  {
+    <%funcCalls%>
+  }
+  >>
+end clockedPartFunctions;
+
 template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean createMeasureTime)
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -12686,6 +12770,12 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen, SimCode simC
     <%varDecls%>
     // Evaluate Equations
     <%equation_all_func_calls%>
+
+    // simplified treatment of clocks in model as time events
+    for (int i = <%timeEventLength(simCode)%>; i < _dimTimeEvent; i++) {
+      if (_time_conditions[i])
+        evaluateClocked(i - <%timeEventLength(simCode)%>, command);
+    }
 
     <%if createMeasureTime then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[1]", "evaluateAll", "MEASURETIME_MODELFUNCTIONS") else ""%>
 
