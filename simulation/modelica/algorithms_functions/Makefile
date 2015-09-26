@@ -4,6 +4,7 @@ TESTFILES = \
 AlgorithmCondAssign1.mos \
 AlgorithmCondAssign2.mos \
 AlgorithmForInClass.mos \
+algorithms.mos \
 AlgorithmSection.mos \
 AlgorithmTupleAssign.mos \
 ArrayInitSorting.mos \
@@ -45,7 +46,6 @@ ZeroCross.mos \
 # Run make testfailing
 FAILINGTESTFILES = \
 StatementCall.mos \
-algorithms.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
