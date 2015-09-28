@@ -26,6 +26,7 @@ SCOREP_HOME=""
 FMU_KINSOL="no"
 PARALLEL_OUTPUT="no"
 LOGGER="yes"
+CPP_ELEVEN="yes"
 #CMAKE_COMMANDS="CC=\"${CC}\" CXX=\"${CXX}\" CFLAGS=\"${CFLAGS}\" CXXFLAGS=\"${CXXFLAGS}\""
 CMAKE_COMMANDS="CC=\"${CC}\" CXX=\"${CXX}\""
 CMAKE_BUILDTYPE="RelWithDebInfo"
@@ -41,6 +42,7 @@ AC_SUBST(PARALLEL_OUTPUT_COMMAND)
 AC_SUBST(LOGGER_COMMAND)
 AC_SUBST(CMAKE_COMMANDS)
 AC_SUBST(CMAKE_BUILDTYPE)
+AC_SUBST(CPP_ELEVEN_COMMAND)
 
 evaluateParameter() {
   case $1 in
@@ -56,6 +58,7 @@ evaluateParameter() {
     DISABLE_LOGGER) LOGGER="no" ;;
     BUILD_TYPE=?*) CMAKE_BUILDTYPE=`echo $1| cut -d'=' -f 2` ;;
     BUILD_TYPE=) ;;
+    DISABLE_CPP_ELEVEN) CPP_ELEVEN="no" ;;
     *) echo "Unknown Parameter given $1" ;;
   esac
 }
@@ -90,6 +93,17 @@ if test "$BOOST_REALPATHS" = "yes"; then
   AC_MSG_RESULT([yes])
 else
   BOOST_REALPATHS_COMMAND="-DUSE_BOOST_REALPATHS=OFF"
+  AC_MSG_RESULT([no])
+fi
+
+AC_ARG_WITH(c++11,  [  --with-c++11       (enable c++11 support)],[CPP_ELEVEN="$withval"],[])
+
+AC_MSG_CHECKING([if c++11 support is requested])
+if test "$CPP_ELEVEN" = "yes"; then
+  CPP_ELEVEN_COMMAND="-DUSE_CPP_ELEVEN=ON"
+  AC_MSG_RESULT([yes])
+else
+  CPP_ELEVEN_COMMAND="-DUSE_CPP_ELEVEN=OFF"
   AC_MSG_RESULT([no])
 fi
 

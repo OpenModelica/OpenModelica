@@ -60,7 +60,7 @@
 #include <fstream>
 
  /*Namespaces*/
-//using namespace std;
+using namespace std;
 using std::ios;
 using std::endl;
 using std::cout;
