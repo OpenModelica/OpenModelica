@@ -3574,7 +3574,7 @@ algorithm
     case (_, _, _, _, _)
       equation
         true = intEq(inPotentialVars, inFlowVars) or
-          Config.languageStandardAtMost(Config.MODELICA_2_X());
+          Config.languageStandardAtMost(Config.LanguageStandard.'2.x');
         true = if intEq(inStreamVars, 0) then true else intEq(inFlowVars, 1);
       then
         true;
