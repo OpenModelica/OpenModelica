@@ -55,6 +55,8 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 //#include <boost/timer/timer.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 #include <fstream>
 
  /*Namespaces*/
