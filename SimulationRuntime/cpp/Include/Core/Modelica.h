@@ -58,12 +58,18 @@
 #include <fstream>
 
  /*Namespaces*/
-using namespace std;
+//using namespace std;
 using std::ios;
+using std::endl;
+using std::cout;
+using std::cerr;
+using std::ostream_iterator;
 using boost::unordered_map;
 namespace uBlas = boost::numeric::ublas;
 using namespace boost::numeric;
 using std::map;
+using std::pair;
+using std::make_pair;
 using namespace boost::assign;
 using boost::multi_array;
 using namespace boost::algorithm;
@@ -78,12 +84,14 @@ using boost::make_tuple;
 using std::max;
 using std::min;
 using std::string;
+using std::ostream;
+using std::ostringstream;
+using std::stringstream;
 using std::vector;
 using std::deque;
-
-#if defined(USE_THREAD)
-  #include <Core/Utils/extension/busywaiting_barrier.hpp>
-#endif //USE_THREAD
+using std::copy;
+using std::exception;
+using std::runtime_error;
 
 #if defined(USE_CPP_ELEVEN)
   #include <array>
@@ -133,6 +141,10 @@ using std::deque;
   using boost::shared_ptr;
   using boost::weak_ptr;
 #endif //USE_CPP_ELEVEN
+
+#if defined(USE_THREAD)
+  #include <Core/Utils/extension/busywaiting_barrier.hpp>
+#endif //USE_THREAD
 
 //using boost::timer::cpu_timer;
 //using boost::timer::cpu_times;

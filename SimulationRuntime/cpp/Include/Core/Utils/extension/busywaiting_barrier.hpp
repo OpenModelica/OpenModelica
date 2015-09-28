@@ -9,6 +9,7 @@
 #define BUSYWAITINGBARRIER_HPP_
 
 #ifdef USE_THREAD
+#include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 
 VAR_ALIGN_PRE class alignedLock
@@ -145,8 +146,13 @@ class busywaiting_barrier
 };
 
 class semaphore {
+  private:
+    mutex mtx;
+    condition_variable cv;
+    int count;
+
   public:
-    Semaphore (int count = 0)
+    semaphore (int count = 0)
         : count(count) {}
 
     inline void post()
@@ -165,11 +171,6 @@ class semaphore {
         }
         count--;
     }
-
-  private:
-    mutex mtx;
-    condition_variable cv;
-    int count;
 };
 
 #endif //USE_THREAD
