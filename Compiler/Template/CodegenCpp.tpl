@@ -6811,18 +6811,6 @@ match eq
 
 end initSort;
 
-
-
-
-
-
-
-
-
-
-
-
-
 template giveAlgloopvars(SimEqSystem eq, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates a non linear equation system."
 ::=
