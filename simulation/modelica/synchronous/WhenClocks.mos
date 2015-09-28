@@ -21,8 +21,7 @@ translateModel(WhenClocks); getErrorString();
 
 // Result:
 // true
-// "Notification: Modelica language version set to 3.2 due to loading of MSL 3.2.1.
-// "
+// ""
 // true
 // ""
 // true

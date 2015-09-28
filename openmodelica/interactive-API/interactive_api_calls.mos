@@ -1,7 +1,7 @@
 // name: API-Interactive Calls
 // keywords: Graphical API, component attributes
 // status: correct
-// 
+//
 //  Subset of the Graphical API for setting component attributes
 //
 
@@ -83,7 +83,7 @@ setComponentModifierValue(TestPack.MyModel, r1, $Code(=2)); getErrorString();
 list(TestPack.MyModel); getErrorString();
 getNthComponentModification(TestPack.MyModel, 1); getErrorString();
 setComponentModifierValue(TestPack.MyModel, r1.start, $Code(=2));  getErrorString();
-list(TestPack.MyModel); getErrorString(); 
+list(TestPack.MyModel); getErrorString();
 setComponentModifierValue(TestPack.MyModel, r1, $Code(=Resistor(R=2)));  getErrorString();
 list(TestPack.MyModel); getErrorString();
 getNthComponentModification(TestPack.MyModel, 1); getErrorString();
@@ -105,7 +105,8 @@ list(TestPack.MyModel); getErrorString();
 // test codeToString($Code)
 codeToString($Code(=1+2)); getErrorString();
 
-// test MSL 3.2 Code issues [from Chris Paredis and Axel Reichwein at Georgia Institute of Technology] 
+// test MSL 3.2 Code issues [from Chris Paredis and Axel Reichwein at Georgia Institute of Technology]
+deleteClass(ModelicaServices);
 loadModel(Modelica, {"3.2.1"}); getErrorString();
 getClassRestriction(Modelica.UsersGuide.Conventions.Documentation.Format.Code); getErrorString();
 getClassInformation(Modelica.UsersGuide.Conventions.Documentation.Format.Code); getErrorString();
@@ -591,12 +592,12 @@ getMessagesStringInternal(unique = false); // not unique
 // " = 1 + 2"
 // Evaluating: getErrorString()
 // ""
+// Evaluating: deleteClass(ModelicaServices)
+// true
 // Evaluating: loadModel(Modelica, {"3.2.1"})
 // true
 // Evaluating: getErrorString()
-// "Notification: Modelica language version set to 3.2 due to loading of MSL 3.2.1.
-// Warning: Requested package ModelicaServices of version 3.2.1, but this package was already loaded with version 1.0. You might experience problems if these versions are incompatible.
-// "
+// ""
 // Evaluating: getClassRestriction(Modelica.UsersGuide.Conventions.Documentation.Format.Code)
 // "class"
 // Evaluating: getErrorString()
