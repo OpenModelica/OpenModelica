@@ -30,6 +30,7 @@ referenceFiles:=getInstallationDirectoryPath()+"/../testsuite/ReferenceFiles/msl
 referenceFileExtension:="mat";
 referenceFileNameDelimiter:=".";
 
+sortFiles:=true;
 ulimitOmc:="660"; // 11 minutes to generate the C-code
 ulimitExe:="480"; // 8 additional minutes to initialize and run the simulation
 ulimitMemory:="16000000";  // ~16GB memory at most
@@ -77,7 +78,7 @@ loadModelCommand:="\n"+customCommands+"\nloadModel("+libraryString+",{\""+librar
 omc:=getInstallationDirectoryPath()+"/bin/omc";
 dygraphs:=getInstallationDirectoryPath()+"/share/doc/omc/testmodels/dygraph-combined.js";
 
-a:={typeNameString(x) for x guard isExperiment(x) in getClassNames(library,recursive=true,sort=true)};
+a:={typeNameString(x) for x guard isExperiment(x) in getClassNames(library,recursive=true,sort=sortFiles)};
 getErrorString();
 
 // writeFile("x",sum(s + "\n" for s in a));
