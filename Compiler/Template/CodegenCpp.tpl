@@ -2315,7 +2315,8 @@ extern "C" void <%modelname%>__FB_Init(<%modelname%>_FB_Init_struct* p)
   ISimController* simController;
   ISimData* simData;
 
-  double cycletime = p->instance->cycletime;
+  //double cycletime = p->instance->cycletime;
+  getMotionCycle(cycletime);
 
   int result = initSimulation(simController, simData, cycletime);
   if (result < 0)
