@@ -60,7 +60,9 @@
 #include <fstream>
 
  /*Namespaces*/
+#ifndef _MSC_VER
 using namespace std;
+#endif //_MSC_VER
 using std::ios;
 using std::endl;
 using std::cout;
@@ -119,13 +121,13 @@ using std::runtime_error;
   using std::weak_ptr;
   using std::dynamic_pointer_cast;
 #else
+  #include <boost/array.hpp>
+  #include <boost/shared_ptr.hpp>
+  #include <boost/weak_ptr.hpp>
   #if defined(USE_THREAD)
-    #include <boost/array.hpp>
     #include <boost/thread.hpp>
     #include <boost/atomic.hpp>
     #include <boost/thread/mutex.hpp>
-    #include <boost/shared_ptr.hpp>
-    #include <boost/weak_ptr.hpp>
     using boost::bind;
     using boost::function;
     using boost::thread;
