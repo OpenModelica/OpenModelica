@@ -65,288 +65,213 @@ protected
 algorithm
   DAE.DAE(lst) := inDAELst;
   hs := HashSet.emptyHashSet();
-  (varSize, eqnSize, eqns, hs) := countVarEqnSize(lst, 0, 0, {}, hs);
+  (varSize, eqnSize, eqns, hs) := List.fold(lst, countVarEqnSize, (0, 0, {}, hs));
   simpleEqnSize := countSimpleEqnSize(eqns, 0, hs);
 end checkModel;
 
+protected type CountVarEqnFoldArg =
+  tuple<Integer/*varSize*/, Integer/*eqnSize*/, list<DAE.Element>/*eqns*/, HashSet.HashSet/*vars*/>;
+
 protected function countVarEqnSize
-  input list<DAE.Element> inElements;
-  input Integer ivarSize;
-  input Integer ieqnSize;
-  input list<DAE.Element> ieqnslst;
-  input HashSet.HashSet ihs;
-  output Integer ovarSize;
-  output Integer oeqnSize;
-  output list<DAE.Element> oeqnslst;
-  output HashSet.HashSet ohs;
+  input DAE.Element inElt;
+  input CountVarEqnFoldArg inArg;
+  output CountVarEqnFoldArg outAtg;
 algorithm
-  (ovarSize, oeqnSize, oeqnslst, ohs) := match(inElements, ivarSize, ieqnSize, ieqnslst, ihs)
+  outAtg := match inElt
     local
-      DAE.Element elem;
-      list<DAE.Element>  rest, eqns, daeElts;
-      Integer varSize, eqnSize, size;
-      DAE.Exp e1, ce;
+      Boolean b;
+      DAE.Exp e, ce;
       DAE.ComponentRef cr;
       DAE.ElementSource source;
-      DAE.VarDirection dir;
       DAE.ConnectorType ct;
-      Boolean b;
-      list<DAE.ComponentRef> crlst;
-      DAE.Algorithm alg;
+      DAE.VarDirection dir;
+      Integer varSize, eqnSize, size;
+      list<DAE.Element> eqns, daeElts;
       HashSet.HashSet hs;
-      DAE.Type tp;
       DAE.Dimensions dims;
-
-    case ({}, _, _, _, _) then (ivarSize, ieqnSize, ieqnslst, ihs);
+      DAE.Algorithm alg;
+      list<DAE.ComponentRef> crlst;
+      DAE.Type tp;
 
     // external Objects
-    case (DAE.EXTOBJECTCLASS()::rest, _, _, _, _)
-      equation
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+    case DAE.EXTOBJECTCLASS()
+      then inArg;
 
     // external Variables
-    case (DAE.VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()))::rest, _, _, _, _)
-      equation
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+    case DAE.VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()))
+      then inArg;
 
-    // variable Variables
-    case (DAE.VAR(componentRef=cr, kind = DAE.VARIABLE(), direction=dir, connectorType = ct, binding=SOME(e1), source=source)::rest, _, _, _, _)
+    // variable Variables with binding
+    case DAE.VAR(componentRef=cr, kind = DAE.VARIABLE(), direction=dir, connectorType = ct, binding=SOME(e), source=source)
       equation
+        (varSize, eqnSize, eqns, hs) = inArg;
         b = topLevelInput(cr, dir, ct);
         ce = Expression.crefExp(cr);
         size = if b then 0 else 1;
-        eqns = List.consOnTrue(not b, DAE.EQUATION(ce, e1, source), ieqnslst);
-        hs = if not b then BaseHashSet.add(cr, ihs) else ihs;
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize+size, ieqnSize+size, eqns, hs);
-      then
-        (varSize, eqnSize, eqns, hs);
+        eqns = List.consOnTrue(not b, DAE.EQUATION(ce, e, source), eqns);
+        hs = if not b then BaseHashSet.add(cr, hs) else hs;
+      then (varSize+size, eqnSize+size, eqns, hs);
 
-    // discrete Variables
-    case (DAE.VAR(componentRef=cr, kind = DAE.DISCRETE(), direction=dir, connectorType = ct, binding=SOME(e1), source=source)::rest, _, _, _, _)
+    // discrete Variables with binding
+    case DAE.VAR(componentRef=cr, kind = DAE.DISCRETE(), direction=dir, connectorType = ct, binding=SOME(e), source=source)
       equation
+        (varSize, eqnSize, eqns, hs) = inArg;
         b = topLevelInput(cr, dir, ct);
         ce = Expression.crefExp(cr);
         size = if b then 0 else 1;
-        eqns = List.consOnTrue(not b, DAE.EQUATION(ce, e1, source), ieqnslst);
-        hs = if not b then BaseHashSet.add(cr, ihs) else ihs;
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize+size, ieqnSize+size, eqns, hs);
-      then
-        (varSize, eqnSize, eqns, hs);
+        eqns = List.consOnTrue(not b, DAE.EQUATION(ce, e, source), eqns);
+        hs = if not b then BaseHashSet.add(cr, hs) else hs;
+      then (varSize+size, eqnSize+size, eqns, hs);
 
     // variable Variables
-    case (DAE.VAR(componentRef=cr, kind = DAE.VARIABLE(), direction=dir, connectorType = ct)::rest, _, _, _, _)
+    case DAE.VAR(componentRef=cr, kind = DAE.VARIABLE(), direction=dir, connectorType = ct)
       equation
+        (varSize, eqnSize, eqns, hs) = inArg;
         b = topLevelInput(cr, dir, ct);
         size = if b then 0 else 1;
-        hs = if not b then BaseHashSet.add(cr, ihs) else ihs;
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize+size, ieqnSize, ieqnslst, hs);
-      then
-        (varSize, eqnSize, eqns, hs);
+        hs = if not b then BaseHashSet.add(cr, hs) else hs;
+      then (varSize+size, eqnSize, eqns, hs);
 
     // discrete Variables
-    case (DAE.VAR(componentRef=cr, kind = DAE.DISCRETE(), direction=dir, connectorType = ct)::rest, _, _, _, _)
+    case DAE.VAR(componentRef=cr, kind = DAE.DISCRETE(), direction=dir, connectorType = ct)
       equation
+        (varSize, eqnSize, eqns, hs) = inArg;
         b = topLevelInput(cr, dir, ct);
         size = if b then 0 else 1;
-        hs = if not b then BaseHashSet.add(cr, ihs) else ihs;
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize+size, ieqnSize, ieqnslst, hs);
-      then
-        (varSize, eqnSize, eqns, hs);
+        hs = if not b then BaseHashSet.add(cr, hs) else hs;
+      then (varSize+size, eqnSize, eqns, hs);
 
     // parameter Variables
-    case (DAE.VAR(kind = DAE.PARAM())::rest, _, _, _, _)
-      equation
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+    case DAE.VAR(kind = DAE.PARAM())
+      then inArg;
 
     // constant Variables
-    case (DAE.VAR(kind = DAE.CONST())::rest, _, _, _, _)
-      equation
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+    case DAE.VAR(kind = DAE.CONST())
+      then inArg;
 
     // equations
-    case((elem as DAE.EQUATION(exp=e1))::rest, _, _, _, _)
+    case DAE.EQUATION(exp=e)
       equation
-        size = Expression.sizeOf(Expression.typeof(e1));
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize+size, elem::ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+        (varSize, eqnSize, eqns, hs) = inArg;
+        size = Expression.sizeOf(Expression.typeof(e));
+      then (varSize, eqnSize+size, inElt::eqns, hs);
 
     // initial equations
-    case (DAE.INITIALEQUATION()::rest, _, _, _, _)
-      equation
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+    case DAE.INITIALEQUATION()
+      then inArg;
 
     // effort variable equality equations
-    case ((elem as DAE.EQUEQUATION(cr1 = cr))::rest, _, _, _, _)
+    case DAE.EQUEQUATION(cr1 = cr)
       equation
+        (varSize, eqnSize, eqns, hs) = inArg;
         tp = ComponentReference.crefTypeConsiderSubs(cr);
         size = Expression.sizeOf(tp);
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize+size, elem::ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+      then (varSize, eqnSize+size, inElt::eqns, hs);
 
     // a solved equation
-    case ((elem as DAE.DEFINE(componentRef = cr))::rest, _, _, _, _)
+    case DAE.DEFINE(componentRef = cr)
       equation
+        (varSize, eqnSize, eqns, hs) = inArg;
         tp = ComponentReference.crefTypeConsiderSubs(cr);
         size = Expression.sizeOf(tp);
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize+size, elem::ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+      then (varSize, eqnSize+size, inElt::eqns, hs);
 
     // complex equations
-    case ((elem as DAE.COMPLEX_EQUATION(lhs = e1))::rest, _, _, _, _)
+    case DAE.COMPLEX_EQUATION(lhs = e)
       equation
-        size = Expression.sizeOf(Expression.typeof(e1));
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize+size, elem::ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+        (varSize, eqnSize, eqns, hs) = inArg;
+        size = Expression.sizeOf(Expression.typeof(e));
+      then (varSize, eqnSize+size, inElt::eqns, hs);
 
     // complex initial equations
-    case (DAE.INITIAL_COMPLEX_EQUATION()::rest, _, _, _, _)
-      equation
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+    case DAE.INITIAL_COMPLEX_EQUATION()
+      then inArg;
 
     // array equations
-    case ((elem as DAE.ARRAY_EQUATION(dimension=dims))::rest, _, _, _, _)
+    case DAE.ARRAY_EQUATION(dimension=dims)
       equation
+        (varSize, eqnSize, eqns, hs) = inArg;
         size =  List.fold(Expression.dimensionsSizes(dims), intMul, 1);
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize+size, elem::ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+      then (varSize, eqnSize+size, inElt::eqns, hs);
 
     // initial array equations
-    case (DAE.INITIAL_ARRAY_EQUATION()::rest, _, _, _, _)
-      equation
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+    case DAE.INITIAL_ARRAY_EQUATION()
+      then inArg;
 
     // when equations
-    case (DAE.WHEN_EQUATION(equations = daeElts)::rest, _, _, _, _)
+    case DAE.WHEN_EQUATION(equations = daeElts)
       equation
-        (_, size, _, _) = countVarEqnSize(daeElts, 0, 0, {}, ihs);
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize+size, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+        (varSize, eqnSize, eqns, hs) = inArg;
+        (_, size, _, _) = List.fold(daeElts, countVarEqnSize, (0, 0, {}, hs));
+      then (varSize, eqnSize+size, eqns, hs);
 
     // if equation with condition false and no else
-    case (DAE.IF_EQUATION(condition1 = {DAE.BCONST(false)}, equations3 = {})::rest, _, _, _, _)
-      equation
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+    case DAE.IF_EQUATION(condition1 = {DAE.BCONST(false)}, equations3 = {})
+       then inArg;
 
     // if equation that cannot be translated to if expression but have initial() as condition
-    case (DAE.IF_EQUATION(condition1 = {DAE.CALL(path=Absyn.IDENT("initial"))})::rest, _, _, _, _)
-      equation
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+    case DAE.IF_EQUATION(condition1 = {DAE.CALL(path=Absyn.IDENT("initial"))})
+      then inArg;
 
     // if equation
-    case (DAE.IF_EQUATION(equations2 = daeElts::_)::rest, _, _, _, _)
+    case DAE.IF_EQUATION(equations2 = daeElts::_)
       equation
-        (_, size, _, _) = countVarEqnSize(daeElts, 0, 0, {}, ihs);
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize+size, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+        (varSize, eqnSize, eqns, hs) = inArg;
+        (_, size, _, _) = List.fold(daeElts, countVarEqnSize, (0, 0, {}, hs));
+      then (varSize, eqnSize+size, eqns, hs);
 
     // initial if equation with condition false and no else
-    case (DAE.INITIAL_IF_EQUATION(condition1 = {DAE.BCONST(false)}, equations3 = {})::rest, _, _, _, _)
-      equation
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+    case DAE.INITIAL_IF_EQUATION(condition1 = {DAE.BCONST(false)}, equations3 = {})
+      then inArg;
 
     // initial if equation
-    case (DAE.INITIAL_IF_EQUATION()::rest, _, _, _, _)
-      equation
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+    case DAE.INITIAL_IF_EQUATION()
+      then inArg;
 
     // algorithm
-    case (DAE.ALGORITHM(algorithm_ = alg, source = source)::rest, _, _, _, _)
+    case DAE.ALGORITHM(algorithm_ = alg, source = source)
       equation
+        (varSize, eqnSize, eqns, hs) = inArg;
         crlst = checkAndGetAlgorithmOutputs(alg, source, DAE.EXPAND());
         size = listLength(crlst);
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize+size, ieqnslst, ihs);
       then
-        (varSize, eqnSize, eqns, hs);
+        (varSize, eqnSize+size, eqns, hs);
 
     // initial algorithm
-    case (DAE.INITIALALGORITHM()::rest, _, _, _, _)
-      equation
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+    case DAE.INITIALALGORITHM()
+      then inArg;
 
     // flat class / COMP
-    case (DAE.COMP(dAElist = daeElts)::rest, _, _, _, _)
-      equation
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(daeElts, ivarSize, ieqnSize, ieqnslst, ihs);
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, varSize, eqnSize, eqns, hs);
-      then
-        (varSize, eqnSize, eqns, hs);
+    case DAE.COMP(dAElist = daeElts)
+      then List.fold(daeElts, countVarEqnSize, inArg);
 
     // reinit
-    case (DAE.REINIT()::rest, _, _, _, _)
-      equation
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+    case DAE.REINIT()
+      then inArg;
 
     // assert in equation
-    case (DAE.ASSERT()::rest, _, _, _, _)
-      equation
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+    case DAE.ASSERT()
+      then inArg;
 
     // terminate in equation section is converted to ALGORITHM
-    case (DAE.TERMINATE()::rest, _, _, _, _)
-      equation
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+    case DAE.TERMINATE()
+      then inArg;
 
-    case (DAE.NORETCALL()::rest, _, _, _, _)
-      equation
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+    case DAE.NORETCALL()
+      then inArg;
 
-    case (DAE.INITIAL_NORETCALL()::rest, _, _, _, _)
-      equation
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+    case DAE.INITIAL_NORETCALL()
+      then inArg;
 
     // constraint (Optimica) Just pass the constraints for now. Should anything more be done here?
-    case (DAE.CONSTRAINT()::rest, _, _, _, _)
-      equation
-        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
-      then
-        (varSize, eqnSize, eqns, hs);
+    case DAE.CONSTRAINT()
+      then inArg;
 
-    case (elem::_, _, _, _, _)
+    else
       equation
         // show only on failtrace!
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- CheckModel.countVarEqnSize failed on: " + DAEDump.dumpElementsStr({elem}));
+        Debug.traceln("- CheckModel.countVarEqnSize failed on: " + DAEDump.dumpElementsStr({inElt}));
       then
         fail();
   end match;
