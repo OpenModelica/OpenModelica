@@ -2344,6 +2344,7 @@ algorithm
     end match;
   end for;
   shared.removedEqs := BackendEquation.listEquation(listReverse(removedEqsList));
+  shared.initialEqs := BackendEquation.emptyEqns();
   outDAE.shared := shared;
 end removeInitializationStuff;
 
