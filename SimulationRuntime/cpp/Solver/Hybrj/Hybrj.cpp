@@ -381,7 +381,7 @@ void Hybrj::solve()
 				_iterationStatus = SOLVERERROR;
 
 		}
-		if((_iterationStatus == SOLVERERROR))
+		if(_iterationStatus == SOLVERERROR)
 		{
 			if(!isConsistent)
 			{

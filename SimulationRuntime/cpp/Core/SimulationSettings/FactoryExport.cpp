@@ -39,7 +39,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_simulation_settings
 using boost::extensions::factory;
 BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 
-  types.get<std::map<std::string, factory<ISettingsFactory,PATH,PATH,PATH> > >()
+  types.get<std::map<std::string, boost::extensions::factory<ISettingsFactory,PATH,PATH,PATH> > >()
     ["SettingsFactory"].set<SettingsFactory>();
 }
 #elif defined(OMC_BUILD) && defined(RUNTIME_STATIC_LINKING)

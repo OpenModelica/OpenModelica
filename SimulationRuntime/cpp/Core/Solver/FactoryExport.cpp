@@ -18,13 +18,10 @@
 #include <Core/Solver/SolverDefaultImplementation.h>
 #include <Core/Solver/SolverSettings.h>
 
-/* OMC factory*/
-using boost::extensions::factory;
-
 BOOST_EXTENSION_TYPE_MAP_FUNCTION {
-  types.get<std::map<std::string, factory<SolverDefaultImplementation,IMixedSystem*, ISolverSettings*> > >()
+  types.get<std::map<std::string, boost::extensions::factory<SolverDefaultImplementation,IMixedSystem*, ISolverSettings*> > >()
     ["DefaultsolverImpl"].set<SolverDefaultImplementation>();
-  types.get<std::map<std::string, factory<ISolverSettings, IGlobalSettings* > > >()
+  types.get<std::map<std::string, boost::extensions::factory<ISolverSettings, IGlobalSettings* > > >()
     ["SolverSettings"].set<SolverSettings>();
 }
 
