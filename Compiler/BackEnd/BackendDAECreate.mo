@@ -60,6 +60,7 @@ protected import DynamicOptimization;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import ExpressionSolve;
 protected import Flags;
 protected import Global;
 protected import HashTableExpToExp;
@@ -1760,8 +1761,7 @@ protected function lowerWhenEqn2
 protected
   Inline.Functiontuple fns = (SOME(functionTree), {DAE.NORM_INLINE()});
 algorithm
-  (outEquationLst, outREquationLst):=
-  matchcontinue inDAEElementLst
+  (outEquationLst, outREquationLst) := matchcontinue inDAEElementLst
     local
       Integer size;
       list<BackendDAE.Equation> eqnl;
@@ -1795,6 +1795,7 @@ algorithm
 
     case DAE.DEFINE(componentRef = cr, exp = e, source = source)::xs
       equation
+        (e, _) = ExpressionSolve.solve(Expression.crefExp(cr), e, Expression.crefExp(cr));
         (DAE.PARTIAL_EQUATION(e), source) = Inline.simplifyAndInlineEquationExp(DAE.PARTIAL_EQUATION(e), fns, source);
         whenOp = BackendDAE.ASSIGN(cr, e, source);
         whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
@@ -1811,15 +1812,19 @@ algorithm
       then
         (eqnl, reqnl);
 
-    case DAE.EQUATION(exp = (cre as DAE.CREF(componentRef = cr)), scalar = e, source = source)::xs
-      equation
-        (DAE.EQUALITY_EXPS(_,e), source) = Inline.simplifyAndInlineEquationExp(DAE.EQUALITY_EXPS(cre,e), fns, source);
-        whenOp = BackendDAE.ASSIGN(cr, e, source);
-        whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
-        eq = BackendDAE.WHEN_EQUATION(1, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-        (eqnl, reqnl) = lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iREquationLst);
-      then
-        (eqnl, reqnl);
+    case (el as DAE.EQUATION(exp = (cre as DAE.CREF(componentRef = cr)), scalar = e, source = source))::xs algorithm
+      try
+        e := ExpressionSolve.solve(cre, e, cre);
+      else
+        Error.addCompilerError("Failed to solve " + DAEDump.dumpElementsStr({el}));
+        fail();
+      end try;
+      (DAE.EQUALITY_EXPS(_,e), source) := Inline.simplifyAndInlineEquationExp(DAE.EQUALITY_EXPS(cre,e), fns, source);
+      whenOp := BackendDAE.ASSIGN(cr, e, source);
+      whenEq := BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
+      eq := BackendDAE.WHEN_EQUATION(1, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+      (eqnl, reqnl) := lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iREquationLst);
+    then (eqnl, reqnl);
 
     case DAE.COMPLEX_EQUATION(lhs = (cre as DAE.CREF(componentRef = cr)), rhs = e, source = source)::xs
       equation
@@ -1840,7 +1845,7 @@ algorithm
       then
         (eqnl, reqnl);
 
-    case (DAE.IF_EQUATION(condition1=expl, equations2=eqnslst, equations3=eqns, source = source))::xs
+    case DAE.IF_EQUATION(condition1=expl, equations2=eqnslst, equations3=eqns, source = source)::xs
       equation
         (expl, source, _) = Inline.inlineExps(expl, fns, source);
         // transform if eqution

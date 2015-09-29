@@ -462,7 +462,7 @@ void SimManager::computeEndTimes(std::vector<std::pair<double, int> > &tStopsSub
                     counterTimes++;
                     _solverTask = ISolver::SOLVERCALL(_solverTask | ISolver::RECALL);
                 }
-                while (iter->first + counterTimes * (iter->second) < _tEnd)
+                while (iter->first + counterTimes * (iter->second) <= _tEnd)
                 {
                     tStopsSub.push_back(std::make_pair(iter->first + counterTimes * (iter->second), counterEvents));
                     counterTimes++;

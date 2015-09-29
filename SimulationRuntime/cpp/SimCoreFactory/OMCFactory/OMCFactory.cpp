@@ -96,8 +96,9 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      // a group for all options that should not be visible if '--help' is set
      po::options_description descHidden("Hidden options");
      descHidden.add_options()
-          ("ignored", po::value<vector<string> >(), "Ignored options")
-          ("unrecognized", po::value<vector<string> >(), "Unsupported options")
+          ("ignored", po::value<vector<string> >(), "ignored options")
+          ("unrecognized", po::value<vector<string> >(), "unsupported options")
+          ("solverThreads", po::value<int>()->default_value(1), "number of threads that can be used by the solver")
           ;
 
      po::options_description descAll("All options");
@@ -138,6 +139,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      double stoptime = vm["stop-time"].as<double>();
      double stepsize =vm["step-size"].as<double>();
      bool nlsContinueOnError = vm["nls-continue"].as<bool>();
+     int solverThreads = vm["solverThreads"].as<int>();
 
      if (!(stepsize > 0.0))
          stepsize = (stoptime - starttime) / vm["number-of-intervals"].as<int>();
@@ -214,7 +216,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      libraries_path.make_preferred();
      modelica_path.make_preferred();
 
-     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,timeOut,outputPointType,logSet,nlsContinueOnError};
+     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,timeOut,outputPointType,logSet,nlsContinueOnError,solverThreads};
 
      _library_path = libraries_path;
      _modelicasystem_path = modelica_path;

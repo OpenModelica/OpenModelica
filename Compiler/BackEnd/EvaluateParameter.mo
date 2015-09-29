@@ -1238,7 +1238,7 @@ algorithm
       (bindExp,_) := BackendVarTransform.replaceExp(bindExp,repl,NONE());
       bindExp := EvaluateFunctions.evaluateConstantFunctionCallExp(bindExp,functionTree);
       bindExp := ExpressionSimplify.simplify(bindExp);
-      if Expression.isEvaluatedConst(bindExp) then
+      if Expression.isEvaluatedConst(bindExp) and not ComponentReference.isArrayElement(var.varName) then
         //print("BIND "+ExpressionDump.printExpStr(bindExp)+"\n");
         //print("BIND "+ExpressionDump.dumpExpStr(bindExp,1)+"\n");
         cref := BackendVariable.varCref(var);

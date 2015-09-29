@@ -458,6 +458,8 @@ constant DebugFlag EVAL_OUTPUT_ONLY = DEBUG_FLAG(145, "evalOutputOnly", false,
   Util.gettext("Generates equations to calculate outputs only."));
 constant DebugFlag HARDCODED_START_VALUES = DEBUG_FLAG(146, "hardcodedStartValues", false,
   Util.gettext("Embed the start values of variables and parameters into the c++ code and do not read it from xml file."));
+constant DebugFlag DUMP_FUNCTIONS = DEBUG_FLAG(147, "dumpFunctions", false,
+  Util.gettext("Add functions to backend dumps."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -610,7 +612,8 @@ constant list<DebugFlag> allDebugFlags = {
   DIS_SYMJAC_FMI20,
   EVAL_ALL_PARAMS,
   EVAL_OUTPUT_ONLY,
-  HARDCODED_START_VALUES
+  HARDCODED_START_VALUES,
+  DUMP_FUNCTIONS
 };
 
 public
@@ -796,11 +799,9 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "generateSymbolicLinearization",
     "removeConstants",
     "simplifyTimeIndepFuncCalls",
-    "simplifyAllExpressions",
-    "addInitialStmtsToAlgorithms"
+    "simplifyAllExpressions"
     }),
   SOME(STRING_DESC_OPTION({
-    ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs.")),
     ("addScaledVars", Util.notrans("added var_norm = var/nominal, where var is state")),
     ("addTimeAsState", Util.gettext("Experimental feature: this replaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0")),
     ("calculateStateSetsJacobians", Util.gettext("Generates analytical Jacobian for dynamic state selection sets.")),

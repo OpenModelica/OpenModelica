@@ -225,6 +225,14 @@ IF(MSVC)
   install (FILES
 				${PROJECT_BINARY_DIR}/ModelicaConfig_msvc.inc
 				DESTINATION include/omc/cpp)
+
+  configure_file (
+   "ModelicaLibraryConfig_msvc.inc.in"
+   "${PROJECT_BINARY_DIR}/ModelicaLibraryConfig_msvc.inc"
+   )
+  install (FILES
+  				${PROJECT_BINARY_DIR}/ModelicaLibraryConfig_msvc.inc
+  				DESTINATION include/omc/cpp)
 ENDIF(MSVC)
 
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel" OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
@@ -235,15 +243,15 @@ configure_file (
 install (FILES
 				${PROJECT_BINARY_DIR}/ModelicaConfig_gcc.inc
 				DESTINATION include/omc/cpp)  
-ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel" OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
-configure_file (
- "ModelicaLibraryConfig.inc.in"
- "${PROJECT_BINARY_DIR}/ModelicaLibraryConfig.inc"
- )
-install (FILES
-				${PROJECT_BINARY_DIR}/ModelicaLibraryConfig.inc
-				DESTINATION include/omc/cpp)
+  configure_file (
+   "ModelicaLibraryConfig_gcc.inc.in"
+   "${PROJECT_BINARY_DIR}/ModelicaLibraryConfig_gcc.inc"
+   )
+  install (FILES
+  				${PROJECT_BINARY_DIR}/ModelicaLibraryConfig_gcc.inc
+  				DESTINATION include/omc/cpp)
+ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel" OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
 
               

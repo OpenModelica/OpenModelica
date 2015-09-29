@@ -801,7 +801,7 @@ Compiler/runtime/config.unix.h \
 Parser/Makefile \
 SimulationRuntime/cpp/Makefile.env \
 SimulationRuntime/c/Makefile \
-SimulationRuntime/c/util/java_interface/Makefile \
+SimulationRuntime/java_interface/Makefile \
 SimulationRuntime/ParModelica/Makefile \
 SimulationRuntime/ParModelica/auto/Makefile \
 SimulationRuntime/ParModelica/explicit/openclrt/Makefile \

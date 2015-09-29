@@ -1119,7 +1119,7 @@ end dumpExtObjectClass;
 
 public function derivativeCondStr "
   Author BZ
-  Function for prinding conditions"
+  Function for printing conditions"
   input DAE.derivativeCond dc;
   output String str;
 algorithm
@@ -3383,6 +3383,16 @@ algorithm
   outStream := IOStream.append(inStream, Print.getString());
   Print.restoreBuf(hnd);
 end ppStatementStream;
+
+public function dumpFunctionTree
+  input DAE.FunctionTree inFunctionTree;
+  input String inHeading;
+algorithm
+  print("\n" + inHeading + "\n========================================\n");
+  for fnc in sortFunctions(DAEUtil.getFunctionList(inFunctionTree)) loop
+    print(dumpFunctionStr(fnc));
+  end for;
+end dumpFunctionTree;
 
 public function dumpFunctionStr "Dump function to a string."
   input DAE.Function inElement;

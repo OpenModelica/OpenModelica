@@ -1733,6 +1733,12 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let var1 = daeExp(arg, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     '_discrete_events->pre(<%var1%>)'
 
+  case CALL(path=IDENT(name="previous"), expLst={arg as CREF(__)}) then
+    '_$CLKPRE_P<%cref(arg.componentRef, useFlatArrayNotation)%>'
+
+  case CALL(path=IDENT(name="$getPart"), expLst={e1}) then
+    daeExp(e1, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+
   case CALL(path=IDENT(name="sample"), expLst={ICONST(integer=index), start, interval}) then
     let &preExp = buffer "" /*BUFD*/
     let eStart = daeExp(start, contextOther, &preExp, &varDecls, simCode, &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
