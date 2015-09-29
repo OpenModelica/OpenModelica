@@ -99,5 +99,9 @@ simulate(OverdeterminedInitialization.Fluid.TwoVolumesFullInitialInconsistent); 
 // Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters during compile time: V1.medium.p = V1.p_start  (V2.p_start = V1.p_start )
 // Warning: The initial conditions are over specified. Use +d=initialization for more information.
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// Warning: Alias set with several free start values
+//  * candidate: V2.medium.p(start = V2.p_start)
+//  * candidate: V1.medium.p(start = V1.p_start)
+// => select value from V2.medium.p(start = V2.p_start) for variable: V2.medium.p
 // "
 // endResult
