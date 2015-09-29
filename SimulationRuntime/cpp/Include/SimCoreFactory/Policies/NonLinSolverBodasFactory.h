@@ -20,7 +20,7 @@ public:
     {
     }
 
-    boost::shared_ptr<INonLinSolverSettings> createNonLinSolverSettings(string solver_name)
+    shared_ptr<INonLinSolverSettings> createNonLinSolverSettings(string solver_name)
     {
         string nonlin_solver_key;
         string nonlin_solver;
@@ -34,11 +34,11 @@ public:
             throw std::invalid_argument("Selected nonlinear solver is not available");
 
         _last_selected_solver = solver_name /* nonlin_solver BODAS */;
-        boost::shared_ptr<INonLinSolverSettings> nonlinsolversetting = ObjectFactory<CreationPolicy>::_factory->LoadAlgLoopSolverSettings(nonlin_solver_key);
+        shared_ptr<INonLinSolverSettings> nonlinsolversetting = ObjectFactory<CreationPolicy>::_factory->LoadAlgLoopSolverSettings(nonlin_solver_key);
         return nonlinsolversetting;
     }
 
-    boost::shared_ptr<IAlgLoopSolver> createNonLinSolver(IAlgLoop* algLoop, string solver_name, boost::shared_ptr<INonLinSolverSettings> solver_settings)
+    shared_ptr<IAlgLoopSolver> createNonLinSolver(IAlgLoop* algLoop, string solver_name, shared_ptr<INonLinSolverSettings> solver_settings)
     {
         if(_last_selected_solver.compare(solver_name) == 0)
         {
@@ -52,7 +52,7 @@ public:
             else
                 throw std::invalid_argument("Selected nonlinear solver is not available");
 
-            boost::shared_ptr<IAlgLoopSolver> nonlinsolver = ObjectFactory<CreationPolicy>::_factory->LoadAlgLoopSolver(algLoop, nonlin_solver_key, solver_settings);
+            shared_ptr<IAlgLoopSolver> nonlinsolver = ObjectFactory<CreationPolicy>::_factory->LoadAlgLoopSolver(algLoop, nonlin_solver_key, solver_settings);
             return nonlinsolver;
         }
         else

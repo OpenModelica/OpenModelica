@@ -16,12 +16,12 @@ Constructor
 */
 EventHandling::EventHandling()
 {
-  _continuousEvents =  boost::shared_ptr<ContinuousEvents>(new ContinuousEvents());
+  _continuousEvents =  shared_ptr<ContinuousEvents>(new ContinuousEvents());
 }
 
 EventHandling::EventHandling(EventHandling& instance)
 {
-  _continuousEvents =  boost::shared_ptr<ContinuousEvents>(new ContinuousEvents());
+  _continuousEvents =  shared_ptr<ContinuousEvents>(new ContinuousEvents());
 }
 
 EventHandling::~EventHandling(void)
@@ -31,10 +31,10 @@ EventHandling::~EventHandling(void)
 /**
 Inits the event variables
 */
-boost::shared_ptr<DiscreteEvents> EventHandling::initialize(IEvent* event_system,boost::shared_ptr<ISimVars> sim_vars)
+shared_ptr<DiscreteEvents> EventHandling::initialize(IEvent* event_system,shared_ptr<ISimVars> sim_vars)
 {
 
-  boost::shared_ptr<DiscreteEvents> discreteEvents = boost::shared_ptr<DiscreteEvents>(new DiscreteEvents(sim_vars));
+  shared_ptr<DiscreteEvents> discreteEvents = shared_ptr<DiscreteEvents>(new DiscreteEvents(sim_vars));
   discreteEvents->initialize();
   //initialize continuous event handling
   _continuousEvents->initialize(event_system);

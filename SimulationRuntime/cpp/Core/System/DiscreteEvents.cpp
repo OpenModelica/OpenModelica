@@ -10,7 +10,7 @@
 #include <Core/Math/Functions.h>
 
 
-DiscreteEvents::DiscreteEvents(boost::shared_ptr<ISimVars> sim_vars)
+DiscreteEvents::DiscreteEvents(shared_ptr<ISimVars> sim_vars)
 : _sim_vars(sim_vars)
 {
 }

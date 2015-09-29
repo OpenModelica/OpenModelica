@@ -25,13 +25,13 @@ public:
   virtual ~AlgLoopSolverFactory();
 
   /// Creates a solver according to given system of equations of type algebraic loop
-  virtual boost::shared_ptr<IAlgLoopSolver> createAlgLoopSolver(IAlgLoop* algLoop);
+  virtual shared_ptr<IAlgLoopSolver> createAlgLoopSolver(IAlgLoop* algLoop);
 
 private:
-  //std::vector<boost::shared_ptr<IKinsolSettings> > _algsolversettings;
-  std::vector<boost::shared_ptr<INonLinSolverSettings> > _algsolversettings;
-  std::vector<boost::shared_ptr<ILinSolverSettings> > _linalgsolversettings;
-  std::vector<boost::shared_ptr<IAlgLoopSolver> > _algsolvers;
+  //std::vector<shared_ptr<IKinsolSettings> > _algsolversettings;
+  std::vector<shared_ptr<INonLinSolverSettings> > _algsolversettings;
+  std::vector<shared_ptr<ILinSolverSettings> > _linalgsolversettings;
+  std::vector<shared_ptr<IAlgLoopSolver> > _algsolvers;
   IGlobalSettings* _global_settings;
 };
 /** @} */ // end of coreSystem

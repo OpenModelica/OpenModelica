@@ -8,7 +8,7 @@
 #include <Core/DataExchange/Policies/TextfileWriter.h>
 #include <Core/Modelica/ModelicaSystem.h>
 
-Modelica::Modelica(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
+Modelica::Modelica(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars)
     : SystemDefaultImplementation(globalSettings,sim_data,sim_vars)
 {
   _dimBoolean = 0;

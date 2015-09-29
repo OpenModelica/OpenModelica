@@ -24,14 +24,14 @@ public:
   EventHandling(EventHandling& instance);
   virtual ~EventHandling(void);
   //Inits the event variables
-   boost::shared_ptr<DiscreteEvents> initialize(IEvent* system,boost::shared_ptr<ISimVars> sim_vars);
+   shared_ptr<DiscreteEvents> initialize(IEvent* system,shared_ptr<ISimVars> sim_vars);
 
 
   //saves a variable in _pre_vars vector
   bool startEventIteration(bool& state_vars_reinitialized);
 
 private:
-boost::shared_ptr<ContinuousEvents> _continuousEvents;
+shared_ptr<ContinuousEvents> _continuousEvents;
 
 };
 /** @} */ // end of coreSystem

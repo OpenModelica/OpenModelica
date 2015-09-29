@@ -113,10 +113,12 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  OR "${CMAKE_CXX_COMPILER_ID}" STRE
 	#remove compiler flag for optimization becaus Modelica system is compiled without optimization
 	STRING(REGEX REPLACE "O[1-9]" "O0" _compiler_FLAGS "${_compiler_FLAGS}" )
 	#STRING(REGEX REPLACE "-g" "" _compiler_FLAGS ${_compiler_FLAGS} )
-
 	IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		SET(_compiler_FLAGS "${_compiler_FLAGS} -fPIC ")
 	ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	IF(${COMPILER_SUPPORTS_CXX11})
+		SET(_compiler_FLAGS "${_compiler_FLAGS} ${CXX11_FLAGS}")
+	ENDIF(${COMPILER_SUPPORTS_CXX11})
 	IF(NOT BOOST_STATIC_LINKING)
 		SET(_compiler_FLAGS "${_compiler_FLAGS} -DBOOST_ALL_DYN_LINK ")
 	ENDIF(NOT BOOST_STATIC_LINKING)	
@@ -176,7 +178,10 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		set(_compiler_FLAGS "${_compiler_FLAGS} -fPIC ")
 	ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	
+	IF(${COMPILER_SUPPORTS_CXX11})
+		SET(_compiler_FLAGS "${_compiler_FLAGS} ${CXX11_FLAGS}")
+	ENDIF(${COMPILER_SUPPORTS_CXX11})
+
 	IF(NOT BOOST_STATIC_LINKING)
 		SET(_compiler_FLAGS "${_compiler_FLAGS} -DBOOST_ALL_DYN_LINK ")
 	ENDIF(NOT BOOST_STATIC_LINKING)

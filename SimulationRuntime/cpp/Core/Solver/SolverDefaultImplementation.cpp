@@ -41,7 +41,7 @@ SolverDefaultImplementation::SolverDefaultImplementation(IMixedSystem* system, I
     , _solverStatus         (ISolver::UNDEF_STATUS)
     , _outputCommand        (IWriteOutput::WRITEOUT)
 {
-  _state_selection = boost::shared_ptr<SystemStateSelection>(new SystemStateSelection(system));
+  _state_selection = shared_ptr<SystemStateSelection>(new SystemStateSelection(system));
 
     #ifdef RUNTIME_PROFILING
     if(MeasureTime::getInstance() != NULL)

@@ -149,7 +149,7 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
   // Dummy code for FMU that writes no output file
   class <%lastIdentOfPath(modelInfo.name)%>WriteOutput {
    public:
-    <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory, boost::shared_ptr<ISimData> simData, boost::shared_ptr<ISimVars> simVars) {}
+    <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory, shared_ptr<ISimData> simData, shared_ptr<ISimVars> simVars) {}
     virtual ~<%lastIdentOfPath(modelInfo.name)%>WriteOutput() {}
 
     virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT) {}
@@ -209,9 +209,9 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
     // constructor
     <%modelShortName%>FMU(IGlobalSettings* globalSettings,
-        boost::shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory,
-        boost::shared_ptr<ISimData> simData,
-        boost::shared_ptr<ISimVars> simVars);
+        shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory,
+        shared_ptr<ISimData> simData,
+        shared_ptr<ISimVars> simVars);
 
     // initialization
     virtual void initialize();
@@ -269,9 +269,9 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
   // constructor
   <%modelShortName%>FMU::<%modelShortName%>FMU(IGlobalSettings* globalSettings,
-      boost::shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory,
-      boost::shared_ptr<ISimData> simData,
-      boost::shared_ptr<ISimVars> simVars):
+      shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory,
+      shared_ptr<ISimData> simData,
+      shared_ptr<ISimVars> simVars):
     <%modelShortName%>(globalSettings, nonLinSolverFactory, simData, simVars),
     <%modelShortName%>Extension(globalSettings, nonLinSolverFactory, simData, simVars) {
   }

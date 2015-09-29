@@ -11,7 +11,7 @@ class BOOST_EXTENSION_XML_READER_DECL XmlPropertyReader : public IPropertyReader
     XmlPropertyReader(std::string propertyFile);
     ~XmlPropertyReader();
 
-    void readInitialValues(IContinuous& system, boost::shared_ptr<ISimVars> sim_vars);
+    void readInitialValues(IContinuous& system, shared_ptr<ISimVars> sim_vars);
 
     std::string getPropertyFile();
     void setPropertyFile(std::string file);

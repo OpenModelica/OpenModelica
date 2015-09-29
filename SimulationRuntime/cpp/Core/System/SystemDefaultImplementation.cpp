@@ -34,7 +34,7 @@ bool greaterTime( pair<unsigned int,double> t1, double t2)
   return t1.second > t2;
 }
 
-SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *globalSettings,boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
+SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *globalSettings,shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars)
   : _simTime        (0.0)
   ,_sim_data(sim_data)
   , _sim_vars(sim_vars)
@@ -277,12 +277,12 @@ IGlobalSettings* SystemDefaultImplementation::getGlobalSettings()
     return _global_settings;
 }
 
-boost::shared_ptr<ISimVars> SystemDefaultImplementation::getSimVars()
+shared_ptr<ISimVars> SystemDefaultImplementation::getSimVars()
 {
   return _sim_vars;
 }
 
-boost::shared_ptr<ISimData> SystemDefaultImplementation::getSimData()
+shared_ptr<ISimData> SystemDefaultImplementation::getSimData()
 {
   return _sim_data;
 }

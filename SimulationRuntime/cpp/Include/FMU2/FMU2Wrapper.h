@@ -133,7 +133,7 @@ class FMU2Wrapper
 
  private:
   FMU2GlobalSettings _global_settings;
-  boost::shared_ptr<MODEL_CLASS> _model;
+  shared_ptr<MODEL_CLASS> _model;
   std::vector<string> _string_buffer;
   double _need_update;
   void updateModel();

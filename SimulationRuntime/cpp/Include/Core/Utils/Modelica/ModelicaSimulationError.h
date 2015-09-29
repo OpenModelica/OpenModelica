@@ -24,7 +24,7 @@ enum SIMULATION_ERROR {
 /*
 Exception class for all simulation errors
 */
-class ModelicaSimulationError : public std::runtime_error
+class ModelicaSimulationError : public runtime_error
 {
   public:
     /**
@@ -34,7 +34,7 @@ class ModelicaSimulationError : public std::runtime_error
      * @param description More detailed description of the occurred error e.g. the error-message of the inner exception
      * @param suppress Set to true if the error should not appear on std::err and std::out.
      */
-    ModelicaSimulationError(SIMULATION_ERROR error_id, const std::string& error_info, std::string description = "", bool suppress = false)
+    ModelicaSimulationError(SIMULATION_ERROR error_id, const string& error_info, string description = "", bool suppress = false)
     : runtime_error("simulation error message: " + error_info + (description.size() > 0 ? "\n" + description : ""))
     , _error_id(error_id)
     , _suppress(suppress)

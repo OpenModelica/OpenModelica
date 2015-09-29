@@ -36,11 +36,11 @@ ISolverSettings* Configuration::getSolverSettings()
   return _solver_settings.get();
 }
 
-boost::shared_ptr<ISolver> Configuration::createSelectedSolver(IMixedSystem* system)
+shared_ptr<ISolver> Configuration::createSelectedSolver(IMixedSystem* system)
 {
   string solver_name = _global_settings->getSelectedSolver();
   _solver_settings =_settings_factory->createSelectedSolverSettings();
-  _simcontroller_settings = boost::shared_ptr<ISimControllerSettings>(new ISimControllerSettings(_global_settings.get()) );
+  _simcontroller_settings = shared_ptr<ISimControllerSettings>(new ISimControllerSettings(_global_settings.get()) );
   _solver = createSolver(system, solver_name, _solver_settings);
   return _solver;
 }

@@ -65,9 +65,9 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
 {
      int opt;
      int portnum;
-     std::map<std::string,LogCategory> logCatMap = map_list_of("init", LC_INIT)("nls", LC_NLS)("ls",LC_LS)("solv", LC_SOLV)("output", LC_OUT)("event",LC_EVT)("model",LC_MOD)("other",LC_OTHER);
-     std::map<std::string,LogLevel> logLvlMap = map_list_of("error", LL_ERROR)("warning", LL_WARNING)("info", LL_INFO)("debug", LL_DEBUG);
-     std::map<std::string,OutputPointType> outputPointTypeMap = map_list_of("all", OPT_ALL)("step", OPT_STEP)("none", OPT_NONE);
+     map<string,LogCategory> logCatMap = map_list_of("init", LC_INIT)("nls", LC_NLS)("ls",LC_LS)("solv", LC_SOLV)("output", LC_OUT)("event",LC_EVT)("model",LC_MOD)("other",LC_OTHER);
+     map<string,LogLevel> logLvlMap = map_list_of("error", LL_ERROR)("warning", LL_WARNING)("info", LL_INFO)("debug", LL_DEBUG);
+     map<string,OutputPointType> outputPointTypeMap = map_list_of("all", OPT_ALL)("step", OPT_STEP)("none", OPT_NONE);
      po::options_description desc("Allowed options");
 
      //program options that can be overwritten by OMEdit must be declared as vector
@@ -88,7 +88,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
           ("non-lin-solver,N", po::value< string >()->default_value(_defaultNonLinSolver),  "non linear solver method")
           ("number-of-intervals,G", po::value< int >()->default_value(500),  "number of intervals in equidistant grid")
           ("tolerance,T", po::value< double >()->default_value(1e-6),  "solver tolerance")
-          ("log-settings,V", po::value< std::vector<std::string> >(),  "log information: init, nls, ls, solv, output, event, model, other")
+          ("log-settings,V", po::value< vector<string> >(),  "log information: init, nls, ls, solv, output, event, model, other")
           ("alarm,A", po::value<unsigned int >()->default_value(360),  "sets timeout in seconds for simulation")
           ("output-type,O", po::value< string >()->default_value("all"),  "the points in time written to result file: all (output steps + events), step (just output points), none")
           ;
@@ -128,9 +128,9 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
          unrecognized.insert(unrecognized.begin(), opts.begin(), opts.end());
      }
      if (unrecognized.size() > 0) {
-         std::cerr << "Warning: unrecognized command line options ";
-         std::copy(unrecognized.begin(), unrecognized.end(), std::ostream_iterator<string>(std::cerr, " "));
-         std::cerr << std::endl;
+         cerr << "Warning: unrecognized command line options ";
+         copy(unrecognized.begin(), unrecognized.end(), ostream_iterator<string>(cerr, " "));
+         cerr << endl;
      }
 
      string runtime_lib_path;
@@ -151,7 +151,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      unsigned int timeOut =  vm["alarm"].as<unsigned int>();
      if (vm.count("runtime-library"))
      {
-         //cout << "runtime library path set to " << vm["runtime-library"].as<string>() << std::endl;
+         //cout << "runtime library path set to " << vm["runtime-library"].as<string>() << endl;
          runtime_lib_path = vm["runtime-library"].as<string>();
      }
      else
@@ -159,7 +159,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
 
      if (vm.count("modelica-system-library"))
      {
-         //cout << "Modelica library path set to " << vm["Modelica-system-library"].as<string>()  << std::endl;
+         //cout << "Modelica library path set to " << vm["Modelica-system-library"].as<string>()  << endl;
          modelica_lib_path =vm["modelica-system-library"].as<string>();
      }
      else
@@ -168,7 +168,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      string resultsfilename;
      if (vm.count("results-file"))
      {
-         //cout << "results file: " << vm["results-file"].as<string>() << std::endl;
+         //cout << "results file: " << vm["results-file"].as<string>() << endl;
          resultsfilename = vm["results-file"].as<vector<string> >().front();
      }
      else
@@ -178,7 +178,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      OutputPointType outputPointType;
      if (vm.count("output-type"))
      {
-         //cout << "results file: " << vm["results-file"].as<string>() << std::endl;
+         //cout << "results file: " << vm["results-file"].as<string>() << endl;
          outputPointType_str = vm["output-type"].as<string>();
          outputPointType = outputPointTypeMap[outputPointType_str];
      }
@@ -188,10 +188,10 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      LogSettings logSet;
      if (vm.count("log-settings"))
      {
-    	   std::vector<std::string> log_vec = vm["log-settings"].as<std::vector<string> >(),tmpvec;
+    	   vector<string> log_vec = vm["log-settings"].as<vector<string> >(),tmpvec;
     	   for(unsigned i=0;i<log_vec.size();++i)
     	   {
-    		     //cout << i << ". " << log_vec[i] << std::endl;
+    		     //cout << i << ". " << log_vec[i] << endl;
     		     tmpvec.clear();
     		     boost::split(tmpvec,log_vec[i],boost::is_any_of("="));
 
@@ -206,7 +206,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
     				     logSet.modes[logCatMap[tmpvec[0]]] = logLvlMap[tmpvec[1]];
     	   }
     		 else
-    			   throw ModelicaSimulationError(MODEL_FACTORY,"log-settings flags not supported: " + boost::lexical_cast<std::string>(log_vec[i]) + "\n");
+    			   throw ModelicaSimulationError(MODEL_FACTORY,"log-settings flags not supported: " + boost::lexical_cast<string>(log_vec[i]) + "\n");
     	 }
      }
 
@@ -224,9 +224,9 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      return settings;
 }
 
-std::vector<const char *> OMCFactory::handleArgumentsToReplace(int argc, const char* argv[], std::map<std::string, std::string> &opts)
+vector<const char *> OMCFactory::handleArgumentsToReplace(int argc, const char* argv[], map<string, string> &opts)
 {
-    std::vector<const char *> optv;
+    vector<const char *> optv;
     optv.push_back(strdup(argv[0]));
     for(int i = 1; i < argc; i++)
     {
@@ -241,7 +241,7 @@ std::vector<const char *> OMCFactory::handleArgumentsToReplace(int argc, const c
             value = arg.substr(sep+1);
         }
 
-        std::map<std::string, std::string>::iterator oldValue = opts.find(key);
+        map<string, string>::iterator oldValue = opts.find(key);
 
         map<string,string>::iterator iter = _argumentsToReplace.find(key);
         if(iter != _argumentsToReplace.end())
@@ -270,7 +270,7 @@ std::vector<const char *> OMCFactory::handleArgumentsToReplace(int argc, const c
         }
 
         //maybe we have replaced a simple through a complex value with spaces
-        std::vector<std::string> strs;
+        vector<string> strs;
         boost::split(strs, arg, boost::is_any_of(" "));
         for(int j = 0; j < strs.size(); j++)
           optv.push_back(strdup(strs[j].c_str()));
@@ -279,10 +279,10 @@ std::vector<const char *> OMCFactory::handleArgumentsToReplace(int argc, const c
     return optv;
 }
 
-std::vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const char* argv[], std::map<std::string, std::string> &opts)
+vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const char* argv[], map<string, string> &opts)
 {
-  std::map<std::string, std::string>::const_iterator oit;
-  std::vector<const char *> optv;
+  map<string, string>::const_iterator oit;
+  vector<const char *> optv;
 
   optv.push_back(strdup(argv[0]));
   _overrideOMEdit = "-override=";      // unrecognized OMEdit overrides
@@ -296,11 +296,11 @@ std::vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, c
       else if ((oit = opts.find(arg)) != opts.end() && i < argc - 1)
           opts[oit->first] = argv[++i]; // regular override
       else if (strncmp(argv[i], "-override=", 10) == 0) {
-          std::map<std::string, std::string> supported = map_list_of
+          map<string, string> supported = map_list_of
               ("startTime", "-S")("stopTime", "-E")("stepSize", "-H")
               ("numberOfIntervals", "-G")("solver", "-I")("tolerance", "-T")
               ("outputFormat", "-O");
-          std::vector<std::string> strs;
+          vector<string> strs;
           boost::split(strs, argv[i], boost::is_any_of(",="));
           for (int j = 1; j < strs.size(); j++) {
               if ((oit = supported.find(strs[j])) != supported.end()
@@ -339,16 +339,16 @@ void OMCFactory::fillArgumentsToIgnore()
 void OMCFactory::fillArgumentsToReplace()
 {
   _argumentsToReplace = map<string, string>();
-  _argumentsToReplace.insert(std::pair<string,string>("-r","-F"));
-  _argumentsToReplace.insert(std::pair<string,string>("-w","-V all=warning"));
+  _argumentsToReplace.insert(pair<string,string>("-r","-F"));
+  _argumentsToReplace.insert(pair<string,string>("-w","-V all=warning"));
 }
 
-std::pair<boost::shared_ptr<ISimController>,SimSettings>
+pair<shared_ptr<ISimController>,SimSettings>
 OMCFactory::createSimulation(int argc, const char* argv[],
-                             std::map<std::string, std::string> &opts)
+                             map<string, string> &opts)
 {
-  std::vector<const char *> optv = handleComplexCRuntimeArguments(argc, argv, opts);
-  std::vector<const char *> optv2 = handleArgumentsToReplace(optv.size(), &optv[0], opts);
+  vector<const char *> optv = handleComplexCRuntimeArguments(argc, argv, opts);
+  vector<const char *> optv2 = handleArgumentsToReplace(optv.size(), &optv[0], opts);
 
   SimSettings settings = readSimulationParameter(optv2.size(), &optv2[0]);
   type_map simcontroller_type_map;
@@ -356,7 +356,7 @@ OMCFactory::createSimulation(int argc, const char* argv[],
   PATH simcontroller_name(SIMCONTROLLER_LIB);
   simcontroller_path/=simcontroller_name;
 
-  boost::shared_ptr<ISimController> simcontroller = loadSimControllerLib(simcontroller_path, simcontroller_type_map);
+  shared_ptr<ISimController> simcontroller = loadSimControllerLib(simcontroller_path, simcontroller_type_map);
 
   for(int i = 0; i < optv.size(); i++)
     free((char*)optv[i]);
@@ -368,7 +368,7 @@ OMCFactory::createSimulation(int argc, const char* argv[],
 
   optv2.clear();
 
-  return std::make_pair(simcontroller,settings);
+  return make_pair(simcontroller,settings);
 }
 
 LOADERRESULT OMCFactory::LoadLibrary(string libName,type_map& current_map)
@@ -377,7 +377,7 @@ LOADERRESULT OMCFactory::LoadLibrary(string libName,type_map& current_map)
     shared_library lib;
         if(!load_single_library(current_map,libName,lib))
            return LOADER_ERROR;
-     _modules.insert(std::make_pair(libName,lib));
+     _modules.insert(make_pair(libName,lib));
 return LOADER_SUCCESS;
 }
 
@@ -393,20 +393,20 @@ LOADERRESULT OMCFactory::UnloadLibrary(shared_library lib)
     return LOADER_SUCCESS;
 }
 
-boost::shared_ptr<ISimController> OMCFactory::loadSimControllerLib(PATH simcontroller_path, type_map simcontroller_type_map)
+shared_ptr<ISimController> OMCFactory::loadSimControllerLib(PATH simcontroller_path, type_map simcontroller_type_map)
 {
   LOADERRESULT result = LoadLibrary(simcontroller_path.string(),simcontroller_type_map);
 
   if (result != LOADER_SUCCESS)
     throw ModelicaSimulationError(MODEL_FACTORY,string("Failed loading SimConroller library!") + simcontroller_path.string());
 
-  std::map<std::string, factory<ISimController,PATH,PATH> >::iterator iter;
-  std::map<std::string, factory<ISimController,PATH,PATH> >& factories(simcontroller_type_map.get());
+  map<string, factory<ISimController,PATH,PATH> >::iterator iter;
+  map<string, factory<ISimController,PATH,PATH> >& factories(simcontroller_type_map.get());
   iter = factories.find("SimController");
 
   if (iter ==factories.end())
     throw ModelicaSimulationError(MODEL_FACTORY,"No such SimController library");
 
-  return boost::shared_ptr<ISimController>(iter->second.create(_library_path,_modelicasystem_path));
+  return shared_ptr<ISimController>(iter->second.create(_library_path,_modelicasystem_path));
 }
 /** @} */ // end of simcorefactoryOMCFactory

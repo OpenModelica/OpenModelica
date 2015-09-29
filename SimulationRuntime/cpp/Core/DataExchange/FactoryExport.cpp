@@ -7,13 +7,11 @@
 #elif defined(OMC_BUILD)
 
  #include <Core/DataExchange/FactoryExport.h>
-  #include <Core/DataExchange/SimData.h>
-#include <Core/DataExchange/XmlPropertyReader.h>
-  /* OMC factory*/
-  using boost::extensions::factory;
+ #include <Core/DataExchange/SimData.h>
+ #include <Core/DataExchange/XmlPropertyReader.h>
 
   BOOST_EXTENSION_TYPE_MAP_FUNCTION {
-    types.get<std::map<std::string, factory<ISimData > > >()
+    types.get<map<string, boost::extensions::factory<ISimData > > >()
       ["SimData"].set<SimData>();
    /* used late for factory methode createXMLReader
    types.get<std::map<std::string, factory<IPropertyReader,string > > >()

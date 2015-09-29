@@ -2715,10 +2715,10 @@ case STMT_TUPLE_ASSIGN(exp=CALL(__)) then
   let crefs = (expExpLst |> e => ExpressionDump.printExpStr(e) ;separator=", ")
   let marker = '(<%crefs%>) = <%ExpressionDump.printExpStr(exp)%>'
   let retStruct = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  //previous multi_array let rhsStr = 'boost::get<<%i1%>>(<%retStruct%>.data)'
+  //previous multi_array let rhsStr = 'get<<%i1%>>(<%retStruct%>.data)'
 
   let lhsCrefs = (expExpLst |> cr hasindex i1 fromindex 0 =>
-                    let rhsStr = 'boost::get<<%i1%>>(<%retStruct%>.data)'
+                    let rhsStr = 'get<<%i1%>>(<%retStruct%>.data)'
                     writeLhsCref(cr, rhsStr, context, &afterExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
                   ;separator="\n";empty)
   <<
@@ -2919,7 +2919,7 @@ template daeExpTsub(Exp inExp, Context context, Text &preExp,
   match inExp
   case TSUB(ix=1) then
     let tuple_val = daeExp(exp, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-     'boost::get<0>(<%tuple_val%>.data)'
+     'get<0>(<%tuple_val%>.data)'
   //case TSUB(exp=CALL(attr=CALL_ATTR(ty=T_TUPLE(types=tys)))) then
   case TSUB(exp=CALL(path=p,attr=CALL_ATTR(ty=tys as T_TUPLE(__)))) then
     //let v = tempDecl(expTypeArrayIf(listGet(tys,ix)), &varDecls)
@@ -2928,7 +2928,7 @@ template daeExpTsub(Exp inExp, Context context, Text &preExp,
     let retVar = tempDecl(retType, &varDecls)
      let res = daeExpCallTuple(exp,retVar, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let &preExp += '<%res%>;<%\n%>'
-    'boost::get<<%intAdd(-1,ix)%>>(<%retVar%>.data)'
+    'get<<%intAdd(-1,ix)%>>(<%retVar%>.data)'
 
   case TSUB(__) then
     error(sourceInfo(), '<%printExpStr(inExp)%>: TSUB only makes sense if the subscripted expression is a function call of tuple type')

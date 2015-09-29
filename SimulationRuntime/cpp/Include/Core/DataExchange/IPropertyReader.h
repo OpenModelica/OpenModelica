@@ -11,5 +11,5 @@ class IPropertyReader
     IPropertyReader() {}
     virtual ~IPropertyReader() {}
 
-    virtual void readInitialValues(IContinuous& system, boost::shared_ptr<ISimVars> sim_vars) = 0;
+    virtual void readInitialValues(IContinuous& system, shared_ptr<ISimVars> sim_vars) = 0;
 };

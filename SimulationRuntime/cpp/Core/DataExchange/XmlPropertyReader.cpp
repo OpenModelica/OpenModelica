@@ -3,8 +3,6 @@
 #include <Core/DataExchange/FactoryExport.h>
 #include <Core/Utils/extension/logger.hpp>
 #include <Core/DataExchange/XmlPropertyReader.h>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
 #include <fstream>
 #include <iostream>
 
@@ -17,7 +15,7 @@ XmlPropertyReader::~XmlPropertyReader()
 
 }
 
-void XmlPropertyReader::readInitialValues(IContinuous& system, boost::shared_ptr<ISimVars> sim_vars)
+void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVars> sim_vars)
 {
   using boost::property_tree::ptree;
   std::ifstream file;

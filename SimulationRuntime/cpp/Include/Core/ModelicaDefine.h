@@ -3,11 +3,11 @@
  *  @{
  */
 
-typedef  double modelica_real ;
-typedef  int modelica_integer;
-typedef  bool modelica_boolean;
-typedef  bool  edge_rettype;
-typedef  bool sample_rettype;
+typedef double modelica_real;
+typedef int modelica_integer;
+typedef bool modelica_boolean;
+typedef bool  edge_rettype;
+typedef bool sample_rettype;
 typedef double cos_rettype;
 typedef double cosh_rettype;
 typedef double sin_rettype;
