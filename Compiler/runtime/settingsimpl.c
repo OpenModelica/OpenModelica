@@ -155,12 +155,21 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
 }
 #endif /* dylib */
 
-#else
+#else /* Not linux or Apple */
 const char* SettingsImpl__getInstallationDirectoryPath(void) {
   const char *path = getenv("OPENMODELICAHOME");
   int i = 0;
-  if (path == NULL)
-    return CONFIG_DEFAULT_OPENMODELICAHOME; // On Windows, this is NULL; on Unix it is the configured --prefix
+  if (path == NULL) {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+    char filename[MAX_PATH];
+    if (0 != GetModuleFileName(NULL, filename, MAX_PATH)) {
+      path = filename;
+    } else
+#endif
+    {
+      return CONFIG_DEFAULT_OPENMODELICAHOME; // On Windows, this is NULL; on Unix it is the configured --prefix
+    }
+  }
 #if defined(__MINGW32__) || defined(_MSC_VER)
   /* adrpo: translate this to forward slashes! */
   /* already set, set it only once! */
