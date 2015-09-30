@@ -93,41 +93,42 @@ interface package GraphvizDumpTV
 
       record EQUATIONSYSTEM
         list<Integer> eqns;
-        list<Integer> vars "be carefule with states, this are solved for der(x)";
-        Option<list<tuple<Integer, Integer, Equation>>> jac;
+        list<Integer> vars "be careful with states, this are solved for der(x)";
+        Jacobian jac;
         JacobianType jacType;
+        Boolean mixedSystem "true for system that discrete dependencies to the iteration variables";
       end EQUATIONSYSTEM;
 
       record SINGLEARRAY
         Integer eqn;
-        list<Integer> vars "be carefule with states, this are solved for der(x)";
+        list<Integer> vars "be careful with states, this are solved for der(x)";
       end SINGLEARRAY;
 
       record SINGLEALGORITHM
         Integer eqn;
-        list<Integer> vars "be carefule with states, this are solved for der(x)";
+        list<Integer> vars "be careful with states, this are solved for der(x)";
       end SINGLEALGORITHM;
 
       record SINGLECOMPLEXEQUATION
         Integer eqn;
-        list<Integer> vars "be carefule with states, this are solved for der(x)";
+        list<Integer> vars "be careful with states, this are solved for der(x)";
       end SINGLECOMPLEXEQUATION;
 
       record SINGLEWHENEQUATION
         Integer eqn;
-        list<Integer> vars "be carefule with states, this are solved for der(x)";
+        list<Integer> vars "be careful with states, this are solved for der(x)";
       end SINGLEWHENEQUATION;
 
       record SINGLEIFEQUATION
         Integer eqn;
-        list<Integer> vars "be carefule with states, this are solved for der(x)";
+        list<Integer> vars "be careful with states, this are solved for der(x)";
       end SINGLEIFEQUATION;
 
       record TORNSYSTEM
-        list<Integer> tearingvars;
-        list<Integer> residualequations;
-        list<tuple<Integer,list<Integer>>> otherEqnVarTpl "list of tuples of indexes for Equation and Variable solved in the equation, in the order they have to be solved";
+        TearingSet strictTearingSet;
+        Option<TearingSet> casualTearingSet;
         Boolean linear;
+        Boolean mixedSystem "true for system that discrete dependencies to the iteration variables";
       end TORNSYSTEM;
     end StrongComponent;
 
