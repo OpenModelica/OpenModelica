@@ -2823,35 +2823,24 @@ public function execStat
   consumed by the compiler at this point in time.
   "
   input String name;
+protected
+  Real t, total;
+  String timeStr, totalTimeStr, gcStr;
 algorithm
-  execStat2(Flags.isSet(Flags.EXEC_STAT),name);
-end execStat;
-
-protected function execStat2
-  input Boolean cond;
-  input String name;
-algorithm
-  _ := match (cond,name)
-    local
-      Real t,total,used,allocated;
-      String timeStr,totalTimeStr,gcStr;
-    case (false,_) then ();
+  if Flags.isSet(Flags.EXEC_STAT) then
+    t := System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT);
+    total := System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);
+    gcStr := GC.profStatsStr(GC.getProfStats(), head="");
+    timeStr := System.snprintff("%.4g", 20, t);
+    totalTimeStr := System.snprintff("%.4g", 20, total);
+    if Flags.isSet(Flags.GC_PROF) then
+      Error.addMessage(Error.EXEC_STAT_GC, {name, timeStr, totalTimeStr, gcStr});
     else
-      equation
-        t = System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT);
-        total = System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);
-        gcStr = GC.profStatsStr(GC.getProfStats(), head="");
-        timeStr = System.snprintff("%.4g",20,t);
-        totalTimeStr = System.snprintff("%.4g",20,total);
-        if Flags.isSet(Flags.GC_PROF) then
-          Error.addMessage(Error.EXEC_STAT_GC,{name,timeStr,totalTimeStr,gcStr});
-        else
-          Error.addMessage(Error.EXEC_STAT,{name,timeStr,totalTimeStr});
-        end if;
-        System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT);
-      then ();
-  end match;
-end execStat2;
+      Error.addMessage(Error.EXEC_STAT, {name, timeStr, totalTimeStr});
+    end if;
+    System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT);
+  end if;
+end execStat;
 
 public function varIndex
   input SimCodeVar.SimVar var;
