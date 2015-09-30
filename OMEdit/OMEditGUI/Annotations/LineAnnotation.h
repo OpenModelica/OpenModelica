@@ -55,6 +55,7 @@ public:
   };
   LineAnnotation(QString annotation, Component *pParent);
   LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  LineAnnotation(Component *pParent);
   LineAnnotation(QString annotation, GraphicsView *pGraphicsView);
   LineAnnotation(GraphicsView *pGraphicsView);
   LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);

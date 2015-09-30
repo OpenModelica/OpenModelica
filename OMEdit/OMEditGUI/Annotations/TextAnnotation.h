@@ -50,6 +50,7 @@ class TextAnnotation : public ShapeAnnotation
 public:
   TextAnnotation(QString annotation, Component *pComponent);
   TextAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  TextAnnotation(Component *pParent);
   TextAnnotation(QString annotation, GraphicsView *pGraphicsView);
   TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
@@ -62,6 +63,7 @@ public:
 private:
   Component *mpComponent;
 
+  void initUpdateTextString();
   void updateTextStringHelper(QRegExp regExp);
 public slots:
   void updateTextString();

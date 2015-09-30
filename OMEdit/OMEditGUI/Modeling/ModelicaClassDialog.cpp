@@ -57,6 +57,9 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
   connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), SIGNAL(toggled(bool)), SLOT(searchClasses()));
   connect(mpTreeSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(searchClasses()));
   // create the tree
+  mpLibraryTreeProxyModel = new LibraryTreeProxyModel(mpLibraryWidget);
+  mpLibraryTreeProxyModel->setDynamicSortFilter(true);
+  mpLibraryTreeProxyModel->setSourceModel(mpLibraryWidget->getLibraryTreeModel());
   mpLibraryTreeView = new QTreeView;
   mpLibraryTreeView->setObjectName("TreeWithBranches");
   mpLibraryTreeView->setItemDelegate(new ItemDelegate(mpLibraryTreeView));
@@ -67,9 +70,10 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
   mpLibraryTreeView->setIconSize(QSize(libraryIconSize, libraryIconSize));
   mpLibraryTreeView->setContextMenuPolicy(Qt::CustomContextMenu);
   mpLibraryTreeView->setExpandsOnDoubleClick(false);
-  mpLibraryTreeView->setModel(mpLibraryWidget->getLibraryTreeProxyModel());
+  mpLibraryTreeView->setModel(mpLibraryTreeProxyModel);
   connect(mpTreeSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpLibraryTreeView, SLOT(expandAll()));
   connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpLibraryTreeView, SLOT(collapseAll()));
+  connect(mpLibraryTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(useModelicaClass()));
   // try to automatically select of user has something in the text box.
   mpTreeSearchFilters->getSearchTextBox()->setText(mpLineEdit->text());
   searchClasses();
@@ -104,16 +108,16 @@ void LibraryBrowseDialog::searchClasses()
   QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
   QRegExp regExp(searchText, caseSensitivity, syntax);
-  mpLibraryWidget->getLibraryTreeProxyModel()->setFilterRegExp(regExp);
+  mpLibraryTreeProxyModel->setFilterRegExp(regExp);
   // if we have really searched something
   if (!searchText.isEmpty()) {
-    QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->index(0, 0);
+    QModelIndex proxyIndex = mpLibraryTreeProxyModel->index(0, 0);
     if (proxyIndex.isValid()) {
-      QModelIndex modelIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapToSource(proxyIndex);
+      QModelIndex modelIndex = mpLibraryTreeProxyModel->mapToSource(proxyIndex);
       LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(regExp, static_cast<LibraryTreeItem*>(modelIndex.internalPointer()));
       if (pLibraryTreeItem) {
         modelIndex = mpLibraryWidget->getLibraryTreeModel()->libraryTreeItemIndex(pLibraryTreeItem);
-        proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+        proxyIndex = mpLibraryTreeProxyModel->mapFromSource(modelIndex);
         mpLibraryTreeView->selectionModel()->select(proxyIndex, QItemSelectionModel::Select);
         while (proxyIndex.parent().isValid()) {
           proxyIndex = proxyIndex.parent();
@@ -133,22 +137,11 @@ void LibraryBrowseDialog::useModelicaClass()
   const QModelIndexList modelIndexes = mpLibraryTreeView->selectionModel()->selectedIndexes();
   if (!modelIndexes.isEmpty()) {
     QModelIndex index = modelIndexes.at(0);
-    index = mpLibraryWidget->getLibraryTreeProxyModel()->mapToSource(index);
+    index = mpLibraryTreeProxyModel->mapToSource(index);
     LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(index.internalPointer());
     mpLineEdit->setText(pLibraryTreeItem->getNameStructure());
   }
   accept();
-  mpLibraryWidget->searchClasses();
-}
-
-/*!
- * \brief LibraryBrowseDialog::reject
- * Re-implmentation of QDialog::reject() slot.
- */
-void LibraryBrowseDialog::reject()
-{
-  QDialog::reject();
-  mpLibraryWidget->searchClasses();
 }
 
 /*!
@@ -359,20 +352,16 @@ void ModelicaClassDialog::createModelicaClass()
   //open the new tab in central widget and add the model to library tree.
   LibraryTreeItem *pLibraryTreeItem;
   if (pParentLibraryTreeItem) {
-    pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pParentLibraryTreeItem, false);
+    bool wasNonExisting = false;
+    pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pParentLibraryTreeItem, wasNonExisting, false, false, true);
   } else {
-    pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pLibraryTreeModel->getRootLibraryTreeItem(), false);
+    bool wasNonExisting = false;
+    pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pLibraryTreeModel->getRootLibraryTreeItem(), wasNonExisting, false, false, true);
   }
-  if (pLibraryTreeItem) {
-    pLibraryTreeItem->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeItem::SaveInOneFile : LibraryTreeItem::SaveFolderStructure);
-    // read the LibraryTreeItem text
-    pLibraryTreeModel->readLibraryTreeItemClassText(pLibraryTreeItem);
-    // load the LibraryTreeItem pixmap
-    pLibraryTreeModel->loadLibraryTreeItemPixmap(pLibraryTreeItem);
-    // show the ModelWidget
-    pLibraryTreeModel->showModelWidget(pLibraryTreeItem, "", true, true);
-    accept();
-  }
+  pLibraryTreeItem->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeItem::SaveInOneFile : LibraryTreeItem::SaveFolderStructure);
+  // show the ModelWidget
+  pLibraryTreeModel->showModelWidget(pLibraryTreeItem, "", true, true);
+  accept();
 }
 
 /*!
@@ -713,21 +702,16 @@ void SaveAsClassDialog::saveAsModelicaClass()
   //open the new tab in central widget and add the model to library tree.
   LibraryTreeItem *pLibraryTreeItem;
   if (pParentLibraryTreeItem) {
-    pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), pParentLibraryTreeItem, false);
+    bool wasNonExisting = false;
+    pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), pParentLibraryTreeItem, wasNonExisting, false, false, true);
   } else {
-    pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), pLibraryTreeModel->getRootLibraryTreeItem(), false);
+    bool wasNonExisting = false;
+    pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), pLibraryTreeModel->getRootLibraryTreeItem(), wasNonExisting, false, false, true);
   }
-
-  if (pLibraryTreeItem) {
-    pLibraryTreeItem->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeItem::SaveInOneFile : LibraryTreeItem::SaveFolderStructure);
-    // read the LibraryTreeItem text
-    pLibraryTreeModel->readLibraryTreeItemClassText(pLibraryTreeItem);
-    // load the LibraryTreeItem pixmap
-    pLibraryTreeModel->loadLibraryTreeItemPixmap(pLibraryTreeItem);
-    // show the ModelWidget
-    pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
-    accept();
-  }
+  pLibraryTreeItem->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeItem::SaveInOneFile : LibraryTreeItem::SaveFolderStructure);
+  // show the ModelWidget
+  pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
+  accept();
 }
 
 void SaveAsClassDialog::showHideSaveContentsInOneFileCheckBox(QString text)
@@ -823,18 +807,13 @@ void DuplicateClassDialog::duplicateClass()
     QString className = mpNameTextBox->text().trimmed();
     LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mpPathTextBox->text().trimmed());
     if (pParentLibraryTreeItem) {
-      pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(className, pParentLibraryTreeItem, false);
+      bool wasNonExisting = false;
+      pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(className, pParentLibraryTreeItem, wasNonExisting, false, false, true);
     } else {
-      pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(className, pLibraryTreeModel->getRootLibraryTreeItem(), false);
+      bool wasNonExisting = false;
+      pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(className, pLibraryTreeModel->getRootLibraryTreeItem(), wasNonExisting, false, false, true);
     }
-    if (pLibraryTreeItem) {
-      pLibraryTreeItem->setSaveContentsType(mpLibraryTreeItem->getSaveContentsType());
-      // read the LibraryTreeItem text
-      pLibraryTreeModel->readLibraryTreeItemClassText(pLibraryTreeItem);
-      pLibraryTreeModel->createLibraryTreeItems(pLibraryTreeItem);
-      // load the LibraryTreeItem pixmap
-      pLibraryTreeModel->loadLibraryTreeItemPixmap(pLibraryTreeItem);
-    }
+    pLibraryTreeItem->setSaveContentsType(mpLibraryTreeItem->getSaveContentsType());
   }
   accept();
 }

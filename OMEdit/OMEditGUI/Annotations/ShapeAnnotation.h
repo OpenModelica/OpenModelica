@@ -195,6 +195,7 @@ public:
   void emitDeleted() {emit deleted();}
 signals:
   void updateClassAnnotation();
+  void updateReferenceShapes();
   void added();
   void changed();
   void deleted();

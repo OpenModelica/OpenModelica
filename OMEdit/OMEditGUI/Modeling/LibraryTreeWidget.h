@@ -144,7 +144,6 @@ public:
   void emitLoaded() {emit loaded(this);}
   void emitUnLoaded() {emit unLoaded(this);}
   void emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView) {emit shapeAdded(this, pShapeAnnotation, pGraphicsView);}
-  void emitIconUpdated() {emit iconUpdated();}
 private:
   bool mIsRootItem;
   LibraryTreeItem *mpParentLibraryTreeItem;
@@ -177,7 +176,7 @@ signals:
   void iconUpdated();
 public slots:
   void handleLoaded(LibraryTreeItem *pLibraryTreeItem);
-  void handleUnLoaded(LibraryTreeItem *pLibraryTreeItem);
+  void handleUnloaded(LibraryTreeItem *pLibraryTreeItem);
   void handleShapeAdded(LibraryTreeItem *pLibraryTreeItem, ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void handleIconUpdated();
 };
@@ -213,12 +212,15 @@ public:
   QModelIndex libraryTreeItemIndex(const LibraryTreeItem *pLibraryTreeItem) const;
   void addModelicaLibraries(QSplashScreen *pSplashScreen);
   void createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
-  LibraryTreeItem* createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true);
+  LibraryTreeItem* createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool &wasNonExisting, bool isSaved = true,
+                                         bool isSystemLibrary = false, bool load = false);
   LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, bool isSaved);
   LibraryTreeItem* createNonExistingLibraryTreeItem(QString nameStructure);
-  void loadNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true);
+  void createNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true);
+  void loadNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void addNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.append(pLibraryTreeItem);}
   void removeNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.removeOne(pLibraryTreeItem);}
+  void updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   QString readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents);
   QString readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem);

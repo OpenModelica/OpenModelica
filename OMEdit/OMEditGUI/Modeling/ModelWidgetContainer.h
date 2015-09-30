@@ -184,10 +184,9 @@ public:
   QAction* getRotateAntiClockwiseAction();
   QAction* getFlipHorizontalAction();
   QAction* getFlipVerticalAction();
-  bool addComponent(QString className, QString fileName, QPointF position);
-  void addComponentToView(QString name, QString className, QString transformationString, QPointF point, ComponentInfo *pComponentInfo,
-                          StringHandler::ModelicaClasses type, bool addObject = true, bool openingClass = false, bool inheritedClass = false,
-                          QString inheritedClassName = QString(), QString fileName = QString(), bool addOnlyToCurrentView = false);
+  bool addComponent(QString className, QPointF position);
+  void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
+                          ComponentInfo *pComponentInfo, bool addObject = true, bool openingClass = false);
   void addComponentToList(Component *pComponent);
   void addComponentObject(Component *pComponent);
   void deleteComponent(Component *pComponent);
@@ -196,7 +195,7 @@ public:
   Component* getComponentObject(QString componentName);
   QString getUniqueComponentName(QString componentName, int number = 1);
   bool checkComponentName(QString componentName);
-  QList<Component*> getComponentList();
+  QList<Component*> getComponentsList();
   void createConnection(QString startComponentName, QString endComponentName);
   void deleteConnection(QString startComponentName, QString endComponentName, bool updateModelicaText);
   void addConnectionObject(LineAnnotation *pConnectionLineAnnotation);
@@ -222,7 +221,7 @@ public:
   QPointF snapPointToGrid(QPointF point);
   QPointF movePointByGrid(QPointF point);
   QPointF roundPoint(QPointF point);
-  bool hasIconAnnotation();
+  bool hasAnnotation();
 private:
   void createActions();
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
@@ -264,6 +263,7 @@ protected:
   virtual void mouseMoveEvent(QMouseEvent *event);
   virtual void mouseReleaseEvent(QMouseEvent *event);
   virtual void mouseDoubleClickEvent(QMouseEvent *event);
+  virtual void focusOutEvent(QFocusEvent *event);
   virtual void keyPressEvent(QKeyEvent *event);
   virtual void keyReleaseEvent(QKeyEvent *event);
   virtual void contextMenuEvent(QContextMenuEvent *event);
@@ -327,6 +327,7 @@ public:
       mpLibraryTreeItem = 0;
       mIconShapesList.clear();
       mDiagramShapesList.clear();
+
     }
     InheritedClass(LibraryTreeItem *pLibraryTreeItem)
     {
@@ -337,6 +338,8 @@ public:
     LibraryTreeItem *mpLibraryTreeItem;
     QList<ShapeAnnotation*> mIconShapesList;
     QList<ShapeAnnotation*> mDiagramShapesList;
+    QList<Component*> mIconComponentsList;
+    QList<Component*> mDiagramComponentsList;
   };
 
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
@@ -401,7 +404,7 @@ private:
   void parseModelInheritedClass(InheritedClass *pInheritedClass, StringHandler::ViewType viewType);
   void getModelIconDiagramShapes(QString className);
   void parseModelIconDiagramShapes(QString className, QString annotationString, StringHandler::ViewType viewType);
-  void getModelComponents(QString className, bool inheritedCycle = false);
+  void getModelComponents();
   void getModelConnections(QString className, bool inheritedCycle = false);
   void getTLMComponents();
   void getTLMConnections();

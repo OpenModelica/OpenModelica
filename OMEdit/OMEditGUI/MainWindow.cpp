@@ -1225,19 +1225,18 @@ void MainWindow::openModelicaFile()
   QStringList fileNames;
   fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles),
                                               NULL, Helper::omFileTypes, NULL);
-  if (fileNames.isEmpty())
+  if (fileNames.isEmpty()) {
     return;
+  }
   int progressValue = 0;
   mpProgressBar->setRange(0, fileNames.size());
   showProgressBar();
-  foreach (QString file, fileNames)
-  {
+  foreach (QString file, fileNames) {
     file = file.replace("\\", "/");
     mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(file));
     mpProgressBar->setValue(++progressValue);
     // if file doesn't exists
-    if (!QFile::exists(file))
-    {
+    if (!QFile::exists(file)) {
       QMessageBox *pMessageBox = new QMessageBox(this);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
@@ -1246,9 +1245,7 @@ void MainWindow::openModelicaFile()
       pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
-    }
-    else
-    {
+    } else {
       mpLibraryWidget->openFile(file, Helper::utf8, false);
     }
   }

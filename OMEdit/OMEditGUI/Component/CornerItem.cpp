@@ -74,7 +74,7 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
     if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
       connect(this, SIGNAL(cornerItemPositionChanged()), pLineAnnotation, SLOT(updateConnectionAnnotation()));
     } else {
-      connect(this, SIGNAL(cornerItemPositionChanged()), mpShapeAnnotation->getGraphicsView(), SLOT(addClassAnnotation()));
+      connect(this, SIGNAL(cornerItemPositionChanged()), mpShapeAnnotation, SIGNAL(updateClassAnnotation()));
     }
   }
 }
@@ -199,6 +199,7 @@ ResizerItem::ResizerItem(Component *pComponent)
   setToolTip(Helper::clickAndDragToResize);
   mpComponent = pComponent;
   mActivePen = QPen(Qt::red);
+  mInheritedActivePen = QPen(Qt::darkRed);
   mPassivePen = QPen(Qt::transparent);
   mRectangle = QRectF (-3, -3, 6, 6);
   mPen = mPassivePen;
@@ -228,7 +229,11 @@ ResizerItem::ResizePositions ResizerItem::getResizePosition()
   */
 void ResizerItem::setActive()
 {
-  mPen = mActivePen;
+  if (mpComponent->isInheritedComponent()) {
+    mPen = mInheritedActivePen;
+  } else {
+    mPen = mActivePen;
+  }
   setParentItem(mpComponent);
 }
 

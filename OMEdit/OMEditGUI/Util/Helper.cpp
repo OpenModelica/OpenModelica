@@ -92,13 +92,6 @@ QString Helper::textOutput = "Text";
 QString Helper::utf8 = "UTF-8";
 QFontInfo Helper::systemFontInfo = QFontInfo(QFont());
 QFontInfo Helper::monospacedFontInfo = QFontInfo(QFont());
-QString Helper::defaultComponentAnnotationString = QString("{-100.0,-100.0,100.0,100.0,true,0.1,2.0,2.0,"
-                                                  "{Rectangle(true, {0.0, 0.0}, 0, {0, 0, 0}, {240, 240, 240}, LinePattern.Solid, FillPattern.Solid, 0.25, BorderPattern.None, {{-100, 100}, {100, -100}}, 0),"
-                                                  "Text(true, {0.0, 0.0}, 0, {0, 0, 0}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-100, 20}, {100, -20}}, \"%name\", 0, TextAlignment.Center)}}");
-QString Helper::errorComponentAnnotationString = QString("{-100.0,-100.0,100.0,100.0,false,0.1,2.0,2.0,"
-                                                         "{Rectangle(true, {0.0, 0.0}, 0, {255, 0, 0}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, BorderPattern.None, {{-100, -100}, {100, 100}}, 0),"
-                                                         "Line(true, {0.0, 0.0}, 0, {{-100, 100}, {100, -100}}, {255, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None),"
-                                                         "Line(true, {0.0, 0.0}, 0, {{100, 100}, {-100, -100}}, {255, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None)}}");
 /* Meta Modelica Types */
 QString Helper::MODELICA_METATYPE = QString("modelica_metatype");
 QString Helper::MODELICA_STRING = QString("modelica_string");

@@ -99,8 +99,6 @@ public:
   static QString utf8;
   static QFontInfo systemFontInfo;
   static QFontInfo monospacedFontInfo;
-  static QString defaultComponentAnnotationString;
-  static QString errorComponentAnnotationString;
   /* Meta Modelica Types */
   static QString MODELICA_METATYPE;
   static QString MODELICA_STRING;

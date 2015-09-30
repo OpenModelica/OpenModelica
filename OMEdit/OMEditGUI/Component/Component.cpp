@@ -39,225 +39,322 @@
 #include "Component.h"
 #include "ComponentProperties.h"
 
-Component::Component(QString annotation, QString name, QString className, QString fileName, ComponentInfo *pComponentInfo,
-                     StringHandler::ModelicaClasses type, QString transformation, QPointF position, bool inheritedComponent,
-                     QString inheritedClassName, OMCProxy *pOMCProxy, GraphicsView *pGraphicsView, Component *pParent)
-  : QGraphicsItem(pParent), mName(name), mClassName(className), mFileName(fileName), mpComponentInfo(pComponentInfo), mType(type),
-    mpOMCProxy(pOMCProxy), mpGraphicsView(pGraphicsView), mpParentComponent(pParent)
+/*!
+ * \class ComponentInfo
+ * \brief A class containing the information about the component like visibility, stream, casuality etc.
+ */
+/*!
+ * \brief ComponentInfo::ComponentInfo
+ * \param value
+ * \param pParent
+ */
+ComponentInfo::ComponentInfo(QString value, QObject *pParent)
+  : QObject(pParent)
 {
-  setZValue(3000);
-  mIsInheritedComponent = inheritedComponent;
-  mInheritedClassName = inheritedClassName;
-  mComponentType = Component::Root;
-  initialize();
-  setComponentFlags(true);
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
-    mType = StringHandler::Connector;
-    parseAnnotationString(Helper::defaultComponentAnnotationString);
-  } else {
-    getClassInheritedComponents(true);
-    parseAnnotationString(annotation);
-    /* if component doesn't exists show it as red cross box. */
-    if (!mpOMCProxy->existClass(className)) {
-      parseAnnotationString(Helper::errorComponentAnnotationString);
-    } else if (canUseDefaultAnnotation(this)) { /* if component doesn't have any annotation then assign it a default one. */
-      parseAnnotationString(Helper::defaultComponentAnnotationString);
-    }
-    getClassComponents();
+  mClassName = "";
+  mName = "";
+  mComment = "";
+  mIsProtected = false;
+  mIsFinal = false;
+  mIsFlow = false;
+  mIsStream = false;
+  mIsReplaceable = false;
+  mVariabilityMap.insert("constant", "constant");
+  mVariabilityMap.insert("discrete", "discrete");
+  mVariabilityMap.insert("parameter", "parameter");
+  mVariabilityMap.insert("unspecified", "default");
+  mVariability = "";
+  mIsInner = false;
+  mIsOuter = false;
+  mCasualityMap.insert("input", "input");
+  mCasualityMap.insert("output", "output");
+  mCasualityMap.insert("unspecified", "none");
+  mCasuality = "";
+  mArrayIndex = "";
+  mIsArray = false;
+  parseComponentInfoString(value);
+}
+
+/*!
+ * \brief ComponentInfo::parseComponentInfoString
+ * Parses the component info string.
+ * \param value
+ */
+void ComponentInfo::parseComponentInfoString(QString value)
+{
+  if (value.isEmpty()) {
+    return;
   }
-  // transformation
-  mpTransformation = new Transformation(mpGraphicsView->getViewType());
-  mpTransformation->parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
-  if (transformation.isEmpty()) {
-    // snap to grid while creating component
-    position = mpGraphicsView->snapPointToGrid(position);
-    mpTransformation->setOrigin(position);
-    qreal initialScale = mpCoOrdinateSystem->getInitialScale();
-    mpTransformation->setExtent1(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
-    mpTransformation->setExtent2(QPointF(initialScale * boundingRect().right(), initialScale * boundingRect().bottom()));
-    mpTransformation->setRotateAngle(0.0);
-  }
-  setTransform(mpTransformation->getTransformationMatrix());
-  createActions();
-  mpOriginItem = new OriginItem();
-  createResizerItems();
-  setToolTip(QString("<b>").append(mClassName).append("</b> ").append(mName));
-  connect(this, SIGNAL(componentTransformHasChanged()), SLOT(updatePlacementAnnotation()));
-  connect(this, SIGNAL(componentTransformHasChanged()), SLOT(updateOriginItem()));
-}
-
-/* Called for inheritance annotation instance */
-Component::Component(QString annotation, QString className, StringHandler::ModelicaClasses type, Component *pParent)
-  : QGraphicsItem(pParent), mName(""), mClassName(className), mType(type), mpParentComponent(pParent)
-{
-  mIsInheritedComponent = mpParentComponent->isInheritedComponent() ? true : false;
-  mComponentType = Component::Extend;
-  mpComponentInfo = 0;
-  mpTransformation = 0;
-  mpOMCProxy = pParent->getOMCProxy();
-  mpGraphicsView = pParent->getGraphicsView();
-  initialize();
-  getClassInheritedComponents();
-  parseAnnotationString(annotation);
-}
-
-/* Called for component annotation instance */
-Component::Component(QString annotation, QString transformationString, ComponentInfo *pComponentInfo, StringHandler::ModelicaClasses type,
-                     Component *pParent)
-  : QGraphicsItem(pParent), mpComponentInfo(pComponentInfo), mType(type), mpParentComponent(pParent)
-{
-  mName = mpComponentInfo->getName();
-  mClassName = mpComponentInfo->getClassName();
-  mIsInheritedComponent = mpParentComponent->isInheritedComponent() ? true : false;
-  mComponentType = Component::Port;
-  mpOMCProxy = pParent->getOMCProxy();
-  mpGraphicsView = pParent->getGraphicsView();
-  initialize();
-  getClassInheritedComponents(false, true);
-  parseAnnotationString(annotation);
-  mpTransformation = new Transformation(StringHandler::Icon);
-  mpTransformation->parseTransformationString(transformationString, boundingRect().width(), boundingRect().height());
-  setTransform(mpTransformation->getTransformationMatrix());
-  setToolTip(QString("<b>").append(mClassName).append("</b> ").append(mName));
-}
-
-Component::Component(QString name, QString className, QString transformation, QPointF position, bool inheritedComponent, OMCProxy *pOMCProxy,
-                     GraphicsView *pGraphicsView, Component *pParent)
-  : QGraphicsItem(pParent), mName(name), mClassName(className), mpOMCProxy(pOMCProxy), mpGraphicsView(pGraphicsView),
-    mpParentComponent(pParent)
-{
-  setZValue(3000);
-  mIsInheritedComponent = inheritedComponent;
-  mInheritedClassName = "";
-  mComponentType = Component::Root;
-  mpComponentInfo = 0;
-  initialize();
-  setComponentFlags(true);
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
-    mType = StringHandler::Connector;
-    parseAnnotationString(Helper::defaultComponentAnnotationString);
+  QStringList list = StringHandler::unparseStrings(value);
+  // read the class name
+  if (list.size() > 0) {
+    mClassName = list.at(0);
   } else {
-    MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-    LibraryTreeItem *pLibraryTreeItem = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(mClassName);
-    if (pLibraryTreeItem) {
-      if (!pLibraryTreeItem->getModelWidget()) {
-        pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, "", false);
+    return;
+  }
+  // read the name
+  if (list.size() > 1) {
+    mName = list.at(1);
+  } else {
+    return;
+  }
+  // read the class comment
+  if (list.size() > 2) {
+    mComment = list.at(2);
+  } else {
+    return;
+  }
+  // read the class access
+  if (list.size() > 3) {
+    mIsProtected = StringHandler::removeFirstLastQuotes(list.at(3)).contains("protected");
+  } else {
+    return;
+  }
+  // read the final attribute
+  if (list.size() > 4) {
+    mIsFinal = list.at(4).contains("true");
+  } else {
+    return;
+  }
+  // read the flow attribute
+  if (list.size() > 5) {
+    mIsFlow = list.at(5).contains("true");
+  } else {
+    return;
+  }
+  // read the stream attribute
+  if (list.size() > 6) {
+    mIsStream = list.at(6).contains("true");
+  } else {
+    return;
+  }
+  // read the replaceable attribute
+  if (list.size() > 7) {
+    mIsReplaceable = list.at(7).contains("true");
+  } else {
+    return;
+  }
+  // read the variability attribute
+  if (list.size() > 8) {
+    QMap<QString, QString>::iterator variability_it;
+    for (variability_it = mVariabilityMap.begin(); variability_it != mVariabilityMap.end(); ++variability_it) {
+      if (variability_it.key().compare(StringHandler::removeFirstLastQuotes(list.at(8))) == 0) {
+        mVariability = variability_it.value();
+        break;
       }
-      drawClassShapes(pLibraryTreeItem);
-      drawClassComponents(pLibraryTreeItem);
     }
-//    getClassInheritedComponents(true);
-//    parseAnnotationString(annotation);
-//    /* if component doesn't exists show it as red cross box. */
-//    if (!mpOMCProxy->existClass(className)) {
-//      parseAnnotationString(Helper::errorComponentAnnotationString);
-//    } else if (canUseDefaultAnnotation(this)) { /* if component doesn't have any annotation then assign it a default one. */
-//      parseAnnotationString(Helper::defaultComponentAnnotationString);
-//    }
-//    getClassComponents();
   }
-  // transformation
+  // read the inner attribute
+  if (list.size() > 9) {
+    mIsInner = list.at(9).contains("inner");
+    mIsOuter = list.at(9).contains("outer");
+  } else {
+    return;
+  }
+  // read the casuality attribute
+  if (list.size() > 10) {
+    QMap<QString, QString>::iterator casuality_it;
+    for (casuality_it = mCasualityMap.begin(); casuality_it != mCasualityMap.end(); ++casuality_it) {
+      if (casuality_it.key().compare(StringHandler::removeFirstLastQuotes(list.at(10))) == 0) {
+        mCasuality = casuality_it.value();
+        break;
+      }
+    }
+  }
+  // read the array index value
+  if (list.size() > 11) {
+    setArrayIndex(list.at(11));
+  }
+}
+
+/*!
+ * \brief ComponentInfo::setArrayIndex
+ * Sets the array index
+ * \param arrayIndex
+ */
+void ComponentInfo::setArrayIndex(QString arrayIndex)
+{
+  mArrayIndex = arrayIndex;
+  if (mArrayIndex.compare("{}") != 0) {
+    mIsArray = true;
+  } else {
+    mIsArray = false;
+  }
+}
+
+Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformation, QPointF position, ComponentInfo *pComponentInfo,
+                     GraphicsView *pGraphicsView)
+  : QGraphicsItem(0), mpReferenceComponent(0), mpParentComponent(0)
+{
+  setZValue(3000);
+  mpLibraryTreeItem = pLibraryTreeItem;
+  mpComponentInfo = pComponentInfo;
+  mpGraphicsView = pGraphicsView;
+  mpComponentInfo->setName(name);
+  mIsInheritedComponent = false;
+  mComponentType = Component::Root;
   mTransformationString = transformation;
-  mpTransformation = new Transformation(mpGraphicsView->getViewType());
-  mpTransformation->parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
-  if (transformation.isEmpty()) {
-    // snap to grid while creating component
-    position = mpGraphicsView->snapPointToGrid(position);
-    mpTransformation->setOrigin(position);
-    qreal initialScale = mpCoOrdinateSystem->getInitialScale();
-    mpTransformation->setExtent1(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
-    mpTransformation->setExtent2(QPointF(initialScale * boundingRect().right(), initialScale * boundingRect().bottom()));
-    mpTransformation->setRotateAngle(0.0);
-  }
-  setTransform(mpTransformation->getTransformationMatrix());
-  createActions();
-  mpOriginItem = new OriginItem();
-  createResizerItems();
-  setToolTip(QString("<b>").append(mClassName).append("</b> ").append(mName));
-  connect(this, SIGNAL(componentTransformHasChanged()), SLOT(updatePlacementAnnotation()));
-  connect(this, SIGNAL(componentTransformHasChanged()), SLOT(updateOriginItem()));
-}
-
-Component::Component(Component *pComponent, Component *pParent)
-  : QGraphicsItem(pParent), mpComponentInfo(0), mpParentComponent(pParent)
-{
-  mName = pComponent->getName();
-  mClassName = pComponent->getClassName();
-  mIsInheritedComponent = pComponent->isInheritedComponent();
-  mComponentType = Component::Port;
-  mpOMCProxy = mpParentComponent->getOMCProxy();
-  mpGraphicsView = mpParentComponent->getGraphicsView();
-  initialize();
-  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-  LibraryTreeItem *pLibraryTreeItem = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(mClassName);
-  if (pLibraryTreeItem) {
-    if (!pLibraryTreeItem->getModelWidget()) {
-      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, "", false);
-    }
-    drawClassShapes(pLibraryTreeItem);
-    drawClassComponents(pLibraryTreeItem);
-  }
-  mTransformationString = pComponent->mTransformationString;
-  mpTransformation = new Transformation(StringHandler::Icon);
-  mpTransformation->parseTransformationString(mTransformationString, boundingRect().width(), boundingRect().height());
-  setTransform(mpTransformation->getTransformationMatrix());
-  setToolTip(QString("<b>").append(mClassName).append("</b> ").append(mName));
-}
-
-Component::~Component()
-{
-  if (mpCoOrdinateSystem) delete mpCoOrdinateSystem;
-  if (mpComponentInfo) delete mpComponentInfo;
-  if (mpTransformation) delete mpTransformation;
-}
-
-void Component::initialize()
-{
-  // set the coOrdinate System
-  mpCoOrdinateSystem = new CoOrdinateSystem;
-  QList<QPointF> extent;
-  qreal left = -100;
-  qreal bottom = -100;
-  qreal right = 100;
-  qreal top = 100;
-  extent << QPointF(left, bottom) << QPointF(right, top);
-  mpCoOrdinateSystem->setExtent(extent);
-  if (mpGraphicsView)
-  {
-    mpCoOrdinateSystem->setPreserveAspectRatio(mpGraphicsView->getCoOrdinateSystem()->getPreserveAspectRatio());
-    mpCoOrdinateSystem->setInitialScale(mpGraphicsView->getCoOrdinateSystem()->getInitialScale());
-  }
-  else
-  {
-    mpCoOrdinateSystem->setPreserveAspectRatio(true);
-    mpCoOrdinateSystem->setInitialScale(0.1);
-  }
-  mpCoOrdinateSystem->setGrid(QPointF(2, 2));
   //Construct the temporary polygon that is used when scaling
   mpResizerRectangle = new QGraphicsRectItem;
   mpResizerRectangle->setZValue(5000);  // set to a very high value
-  if (mpGraphicsView) mpGraphicsView->scene()->addItem(mpResizerRectangle);
+  mpGraphicsView->scene()->addItem(mpResizerRectangle);
   QPen pen;
   pen.setStyle(Qt::DotLine);
   pen.setColor(Qt::transparent);
   mpResizerRectangle->setPen(pen);
   setOldScenePosition(QPointF(0, 0));
   setOldPosition(QPointF(0, 0));
+  setComponentFlags(true);
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
+//    parseAnnotationString(Helper::defaultComponentAnnotationString);
+  } else {
+    if (mpLibraryTreeItem->isNonExisting()) {
+      createNonExistingComponent();
+    } else {
+      createClassInheritedShapes();
+      createClassShapes(mpLibraryTreeItem);
+      createClassInheritedComponents();
+      createClassComponents(mpLibraryTreeItem);
+      if (!mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->hasAnnotation()) {
+        createDefaultComponent();
+      }
+    }
+  }
+  // transformation
+  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getCoOrdinateSystem();
+  } else {
+    mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getCoOrdinateSystem();
+  }
+  mpTransformation = new Transformation(mpGraphicsView->getViewType());
+  mpTransformation->parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
+  if (transformation.isEmpty()) {
+    // snap to grid while creating component
+    position = mpGraphicsView->snapPointToGrid(position);
+    mpTransformation->setOrigin(position);
+    qreal initialScale = mpCoOrdinateSystem->getInitialScale();
+    mpTransformation->setExtent1(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
+    mpTransformation->setExtent2(QPointF(initialScale * boundingRect().right(), initialScale * boundingRect().bottom()));
+    mpTransformation->setRotateAngle(0.0);
+  }
+  setTransform(mpTransformation->getTransformationMatrix());
+  createActions();
+  mpOriginItem = new OriginItem();
+  createResizerItems();
+  setToolTip(tr("<b>%1</b> %2").arg(mpLibraryTreeItem->getNameStructure()).arg(mpComponentInfo->getName()));
+  connect(this, SIGNAL(componentTransformHasChanged()), SLOT(updatePlacementAnnotation()));
+  connect(this, SIGNAL(componentTransformHasChanged()), SLOT(updateOriginItem()));
 }
 
-bool Component::isInheritedComponent()
+Component::Component(Component *pComponent, Component *pParent)
+  : QGraphicsItem(pParent), mpReferenceComponent(pComponent), mpParentComponent(pParent)
 {
-  return mIsInheritedComponent;
+  mpLibraryTreeItem = mpReferenceComponent->getLibraryTreeItem();
+  mpComponentInfo = mpReferenceComponent->getComponentInfo();
+  mIsInheritedComponent = mpReferenceComponent->isInheritedComponent();
+  mComponentType = Component::Port;
+  mpGraphicsView = mpParentComponent->getGraphicsView();
+  mTransformationString = mpReferenceComponent->getTransformationString();
+  createClassShapes(mpLibraryTreeItem);
+  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getCoOrdinateSystem();
+  } else {
+    mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getCoOrdinateSystem();
+  }
+  mpTransformation = new Transformation(mpReferenceComponent->getTransformation());
+  setTransform(mpTransformation->getTransformationMatrix());
+  mpOriginItem = 0;
+  setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpLibraryTreeItem->getNameStructure()).arg(mpComponentInfo->getName())
+             .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+  connect(mpReferenceComponent, SIGNAL(componentAdded()), SLOT(referenceComponentAdded()));
+  connect(mpReferenceComponent, SIGNAL(componentTransformHasChanged()), SLOT(referenceComponentChanged()));
+  connect(mpReferenceComponent, SIGNAL(componentDisplayTextChanged()), SIGNAL(componentDisplayTextChanged()));
+  connect(mpReferenceComponent, SIGNAL(componentDeleted()), SLOT(referenceComponentDeleted()));
+}
+
+Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
+  : QGraphicsItem(0), mpReferenceComponent(pComponent), mpParentComponent(0)
+{
+  setZValue(3000);
+  mpLibraryTreeItem = mpReferenceComponent->getLibraryTreeItem();
+  mpComponentInfo = mpReferenceComponent->getComponentInfo();
+  mpGraphicsView = pGraphicsView;
+  mIsInheritedComponent = true;
+  mComponentType = Component::Root;
+  mTransformationString = mpReferenceComponent->getTransformationString();
+  //Construct the temporary polygon that is used when scaling
+  mpResizerRectangle = new QGraphicsRectItem;
+  mpResizerRectangle->setZValue(5000);  // set to a very high value
+  mpGraphicsView->scene()->addItem(mpResizerRectangle);
+  QPen pen;
+  pen.setStyle(Qt::DotLine);
+  pen.setColor(Qt::transparent);
+  mpResizerRectangle->setPen(pen);
+  setOldScenePosition(QPointF(0, 0));
+  setOldPosition(QPointF(0, 0));
+  setComponentFlags(true);
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
+//    parseAnnotationString(Helper::defaultComponentAnnotationString);
+  } else {
+    if (mpLibraryTreeItem->isNonExisting()) {
+      createNonExistingComponent();
+    } else {
+      createClassInheritedShapes();
+      createClassShapes(mpLibraryTreeItem);
+      createClassInheritedComponents();
+      createClassComponents(mpLibraryTreeItem);
+      if (!mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->hasAnnotation()) {
+        createDefaultComponent();
+      }
+    }
+  }
+  // transformation
+  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getCoOrdinateSystem();
+  } else {
+    mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getCoOrdinateSystem();
+  }
+  mpTransformation = new Transformation(mpReferenceComponent->getTransformation());
+  setTransform(mpTransformation->getTransformationMatrix());
+  createActions();
+  mpOriginItem = new OriginItem();
+  mpGraphicsView->scene()->addItem(mpOriginItem);
+  createResizerItems();
+  mpGraphicsView->scene()->addItem(this);
+  setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpLibraryTreeItem->getNameStructure()).arg(mpComponentInfo->getName())
+             .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+  connect(mpReferenceComponent, SIGNAL(componentAdded()), SLOT(referenceComponentAdded()));
+  connect(mpReferenceComponent, SIGNAL(componentTransformHasChanged()), SLOT(referenceComponentChanged()));
+  connect(mpReferenceComponent, SIGNAL(componentTransformHasChanged()), SLOT(updateOriginItem()));
+  connect(mpReferenceComponent, SIGNAL(componentDisplayTextChanged()), SIGNAL(componentDisplayTextChanged()));
+  connect(mpReferenceComponent, SIGNAL(componentDeleted()), SLOT(referenceComponentDeleted()));
 }
 
 QString Component::getInheritedClassName()
 {
-  return mInheritedClassName;
+  return "";
 }
 
-void Component::drawClassShapes(LibraryTreeItem *pLibraryTreeItem)
+void Component::createNonExistingComponent()
 {
-  foreach (ShapeAnnotation *pShapeAnnotation, pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getShapesList()) {
+  mShapesList.append(new LineAnnotation(this));
+}
+
+void Component::createClassInheritedShapes()
+{
+  foreach (ModelWidget::InheritedClass *pInheritedClass, mpLibraryTreeItem->getModelWidget()->getInheritedClassesList()) {
+    createClassShapes(pInheritedClass->mpLibraryTreeItem);
+  }
+}
+
+void Component::createClassShapes(LibraryTreeItem *pLibraryTreeItem)
+{
+  GraphicsView *pGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
+  if (pLibraryTreeItem->getRestriction() == StringHandler::Connector && mpGraphicsView->getViewType() == StringHandler::Diagram &&
+      mComponentType == Component::Root && pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->hasAnnotation()) {
+    pGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
+  }
+  foreach (ShapeAnnotation *pShapeAnnotation, pGraphicsView->getShapesList()) {
     if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
       mShapesList.append(new LineAnnotation(pShapeAnnotation, this));
     } else if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
@@ -274,178 +371,24 @@ void Component::drawClassShapes(LibraryTreeItem *pLibraryTreeItem)
   }
 }
 
-void Component::drawClassComponents(LibraryTreeItem *pLibraryTreeItem)
+void Component::createClassInheritedComponents()
 {
-  foreach (Component *pComponent, pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentList()) {
-    Component *pComponent1 = new Component(pComponent, this);
+  foreach (ModelWidget::InheritedClass *pInheritedClass, mpLibraryTreeItem->getModelWidget()->getInheritedClassesList()) {
+    createClassComponents(pInheritedClass->mpLibraryTreeItem);
   }
 }
 
-void Component::getClassInheritedComponents(bool isRootComponent, bool isPortComponent)
+void Component::createClassComponents(LibraryTreeItem *pLibraryTreeItem)
 {
-  // read the component inheritance
-  int inheritanceCount = mpOMCProxy->getInheritanceCount(mClassName);
-  for(int i = 1 ; i <= inheritanceCount ; i++)
-  {
-    QString inheritedClass = mpOMCProxy->getNthInheritedClass(mClassName, i);
-    // avoid cycles
-    if (inheritedClass.compare(mClassName) != 0) {
-      // If the inherited class is one of the builtin type such as Real we can
-      // stop here, because the class can not contain any components, etc.
-      if (!mpOMCProxy->isBuiltinType(inheritedClass)) {
-        // get the inherited class annotation
-        StringHandler::ModelicaClasses type = mpOMCProxy->getClassRestriction(inheritedClass);
-        QString annotationString;
-        if (!isRootComponent) {
-          annotationString = mpOMCProxy->getIconAnnotation(inheritedClass);
-        } else if (type == StringHandler::Connector && mpGraphicsView->getViewType() == StringHandler::Diagram) {
-          annotationString = mpOMCProxy->getDiagramAnnotation(inheritedClass);
-        } else {
-          annotationString = mpOMCProxy->getIconAnnotation(inheritedClass);
-        }
-        Component *pInheritedComponent;
-        pInheritedComponent  = new Component(annotationString, inheritedClass, type, this);
-        /* if component is the port component and it has inherited components then stack its inherited components behind it. */
-        if (isPortComponent) {
-          pInheritedComponent->setFlag(QGraphicsItem::ItemStacksBehindParent);
-        }
-        mInheritanceList.append(pInheritedComponent);
-      }
-    }
+  foreach (Component *pComponent, pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentsList()) {
+    mComponentsList.append(new Component(pComponent, this));
   }
 }
 
-void Component::parseAnnotationString(QString annotation)
+void Component::createDefaultComponent()
 {
-  // parse the annotation string
-  annotation = StringHandler::removeFirstLastCurlBrackets(annotation);
-  if (annotation.isEmpty())
-    return;
-  QStringList list = StringHandler::getStrings(annotation);
-  if (list.size() < 4)
-    return;
-  // read the coordinate system
-  qreal left = qMin(list.at(0).toFloat(), list.at(2).toFloat());
-  qreal bottom = qMin(list.at(1).toFloat(), list.at(3).toFloat());
-  qreal right = qMax(list.at(0).toFloat(), list.at(2).toFloat());
-  qreal top = qMax(list.at(1).toFloat(), list.at(3).toFloat());
-  QList<QPointF> extent;
-  extent << QPointF(left, bottom) << QPointF(right, top);
-  mpCoOrdinateSystem->setExtent(extent);
-  // if the list is less that 5 then return
-  if (list.size() < 8)
-    return;
-  // read aspectratio, scale, grid
-  mpCoOrdinateSystem->setPreserveAspectRatio(list.at(4).contains("true"));
-  mpCoOrdinateSystem->setInitialScale(list.at(5).toFloat());
-  qreal horizontal = list.at(6).toFloat();
-  qreal vertical = list.at(7).toFloat();
-  mpCoOrdinateSystem->setGrid(QPointF(horizontal, vertical));
-  // read the shapes
-  if (list.size() < 9)
-    return;
-  QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)), '(', ')');
-  // Now parse the shapes available in list
-  foreach (QString shape, shapesList)
-  {
-    shape = StringHandler::removeFirstLastCurlBrackets(shape);
-    if (shape.startsWith("Line"))
-    {
-      shape = shape.mid(QString("Line").length());
-      shape = StringHandler::removeFirstLastBrackets(shape);
-      LineAnnotation *pLineAnnotation = new LineAnnotation(shape, this);
-      mShapesList.append(pLineAnnotation);
-    }
-    else if (shape.startsWith("Polygon"))
-    {
-      shape = shape.mid(QString("Polygon").length());
-      shape = StringHandler::removeFirstLastBrackets(shape);
-      PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(shape, this);
-      mShapesList.append(pPolygonAnnotation);
-    }
-    else if (shape.startsWith("Rectangle"))
-    {
-      shape = shape.mid(QString("Rectangle").length());
-      shape = StringHandler::removeFirstLastBrackets(shape);
-      RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(shape, this);
-      mShapesList.append(pRectangleAnnotation);
-    }
-    else if (shape.startsWith("Ellipse"))
-    {
-      shape = shape.mid(QString("Ellipse").length());
-      shape = StringHandler::removeFirstLastBrackets(shape);
-      EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation(shape, this);
-      mShapesList.append(pEllipseAnnotation);
-    }
-    else if (shape.startsWith("Text"))
-    {
-      shape = shape.mid(QString("Text").length());
-      shape = StringHandler::removeFirstLastBrackets(shape);
-      TextAnnotation *pTextAnnotation = new TextAnnotation(shape, this);
-      mShapesList.append(pTextAnnotation);
-    }
-    else if (shape.startsWith("Bitmap"))
-    {
-      /* get the class file path */
-      OMCInterface::getClassInformation_res classInformation = mpOMCProxy->getClassInformation(mClassName);
-      /* create the bitmap shape */
-      shape = shape.mid(QString("Bitmap").length());
-      shape = StringHandler::removeFirstLastBrackets(shape);
-      BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(classInformation.fileName, shape, this);
-      mShapesList.append(pBitmapAnnotation);
-    }
-  }
-}
-
-void Component::getClassComponents()
-{
-  foreach (Component *pInheritedComponent, mInheritanceList)
-  {
-    pInheritedComponent->getClassComponents();
-  }
-  // get components
-  QList<ComponentInfo*> componentInfoList = mpOMCProxy->getComponents(mClassName);
-  if (componentInfoList.isEmpty()) {
-    return;
-  }
-  QStringList componentsAnnotations = mpOMCProxy->getComponentAnnotations(mClassName);
-  int i = 0;
-  foreach (ComponentInfo *pComponentInfo, componentInfoList) {
-    // just to be on safe-side.
-    if (componentsAnnotations.size() <= i) {
-      continue;
-    }
-    QString transformation = StringHandler::getPlacementAnnotation(componentsAnnotations.at(i));
-    // if component is protected we don't show it in the icon layer.
-    if (transformation.isEmpty() || pComponentInfo->getProtected() || mpOMCProxy->isBuiltinType(pComponentInfo->getClassName())) {
-      i++;
-      continue;
-    }
-    if (mpOMCProxy->isWhat(StringHandler::Connector, pComponentInfo->getClassName())) {
-      QString result = mpOMCProxy->getIconAnnotation(pComponentInfo->getClassName());
-      Component *pComponent = new Component(result, transformation, pComponentInfo, StringHandler::Connector,
-                                            getRootParentComponent());
-      mComponentsList.append(pComponent);
-    }
-    i++;
-  }
-}
-
-bool Component::canUseDefaultAnnotation(Component *pComponent)
-{
-  bool draw = false;
-  if (pComponent->getShapesList().isEmpty())
-    draw = true;
-  else
-    return false;
-  // We don't check the components list because even if components/connectors exist still we want default annotation.
-  // check inherited components list
-  foreach (Component *pInheritedComponent, pComponent->getInheritanceList()) {
-    draw = canUseDefaultAnnotation(pInheritedComponent);
-    if (!draw)
-      return draw;    // return whenever we get false
-  }
-  return draw;
+  mShapesList.append(new RectangleAnnotation(this));
+  mShapesList.append(new TextAnnotation(this));
 }
 
 /*!
@@ -642,38 +585,9 @@ void Component::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
   Q_UNUSED(painter);
   Q_UNUSED(option);
   Q_UNUSED(widget);
-  if (mpTransformation)
+  if (mpTransformation) {
     setVisible(mpTransformation->getVisible());
-}
-
-QString Component::getName()
-{
-  return mName;
-}
-
-QString Component::getClassName()
-{
-  return mClassName;
-}
-
-StringHandler::ModelicaClasses Component::getType()
-{
-  return mType;
-}
-
-OMCProxy* Component::getOMCProxy()
-{
-  return mpOMCProxy;
-}
-
-GraphicsView* Component::getGraphicsView()
-{
-  return mpGraphicsView;
-}
-
-Component* Component::getParentComponent()
-{
-  return mpParentComponent;
+  }
 }
 
 Component* Component::getRootParentComponent()
@@ -683,61 +597,6 @@ Component* Component::getRootParentComponent()
   while (pComponent->mpParentComponent)
     pComponent = pComponent->mpParentComponent;
   return pComponent;
-}
-
-Transformation* Component::getTransformation()
-{
-  return mpTransformation;
-}
-
-QAction* Component::getParametersAction()
-{
-  return mpParametersAction;
-}
-
-QAction* Component::getAttributesAction()
-{
-  return mpAttributesAction;
-}
-
-QAction* Component::getViewClassAction()
-{
-  return mpViewClassAction;
-}
-
-QAction* Component::getViewDocumentationAction()
-{
-  return mpViewDocumentationAction;
-}
-
-QAction* Component::getTLMAttributesAction()
-{
-  return mpTLMAttributesAction;
-}
-
-ComponentInfo* Component::getComponentInfo()
-{
-  return mpComponentInfo;
-}
-
-QList<Component*> Component::getInheritanceList()
-{
-  return mInheritanceList;
-}
-
-QList<ShapeAnnotation*> Component::getShapesList()
-{
-  return mShapesList;
-}
-
-QList<Component*> Component::getComponentsList()
-{
-  return mComponentsList;
-}
-
-QList<TLMInterfacePointInfo*> Component::getInterfacepointsList()
-{
-  return mInterfacePointsList;
 }
 
 void Component::setComponentFlags(bool enable)
@@ -785,7 +644,7 @@ QString Component::getPlacementAnnotation()
   if (mpTransformation) {
     placementAnnotationString.append("visible=").append(mpTransformation->getVisible() ? "true" : "false");
   }
-  if (mType == StringHandler::Connector) {
+  if (mpLibraryTreeItem->getRestriction() == StringHandler::Connector) {
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
       // first get the component from diagram view and get the transformations
       Component *pComponent;
@@ -849,10 +708,15 @@ void Component::addConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
   connect(this, SIGNAL(componentTransformHasChanged()), pConnectorLineAnnotation, SLOT(updateConnectionAnnotation()));
 }
 
-void Component::componentNameHasChanged(QString newName)
+void Component::componentNameHasChanged()
 {
-  mName = newName;
-  setToolTip(QString("<b>").append(mClassName).append("</b> ").append(mName));
+  if (mIsInheritedComponent || mComponentType == Component::Port) {
+    setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpLibraryTreeItem->getNameStructure())
+               .arg(mpComponentInfo->getName())
+               .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+  } else {
+    setToolTip(tr("<b>%1</b> %2").arg(mpLibraryTreeItem->getNameStructure()).arg(mpComponentInfo->getName()));
+  }
   emit componentDisplayTextChanged();
 }
 
@@ -875,16 +739,17 @@ QString Component::getParameterDisplayString(QString parameterName)
     3.  Find the value in extends classes and check if the value is present in extends modifier.
     3.3 If there is no extends modifier then finally check if value is present in extends classes.
     */
+  OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   QString displayString = "";
   QString modelName = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   /* case 1 */
-  displayString = mpOMCProxy->getComponentModifierValue(modelName, mName + "." + parameterName);
+  displayString = pOMCProxy->getComponentModifierValue(modelName, mpComponentInfo->getName() + "." + parameterName);
   /* case 2 */
   if (displayString.isEmpty()) {
-    QList<ComponentInfo*> componentInfoList = mpOMCProxy->getComponents(mClassName);
+    QList<ComponentInfo*> componentInfoList = pOMCProxy->getComponents(mpLibraryTreeItem->getNameStructure());
     foreach (ComponentInfo *pComponentInfo, componentInfoList) {
       if (pComponentInfo->getName().compare(parameterName) == 0) {
-        displayString = mpOMCProxy->getParameterValue(mClassName, parameterName);
+        displayString = pOMCProxy->getParameterValue(mpLibraryTreeItem->getNameStructure(), parameterName);
         break;
       }
     }
@@ -892,13 +757,14 @@ QString Component::getParameterDisplayString(QString parameterName)
   /* case 3 */
   if (displayString.isEmpty()) {
     foreach (Component *pInheritedComponent, mInheritanceList) {
-      QList<ComponentInfo*> componentInfoList = mpOMCProxy->getComponents(pInheritedComponent->getClassName());
+      QList<ComponentInfo*> componentInfoList = pOMCProxy->getComponents(pInheritedComponent->getLibraryTreeItem()->getNameStructure());
       foreach (ComponentInfo *pComponentInfo, componentInfoList) {
         if (pComponentInfo->getName().compare(parameterName) == 0) {
-          displayString = mpOMCProxy->getExtendsModifierValue(mClassName, pInheritedComponent->getClassName(), parameterName);
+          displayString = pOMCProxy->getExtendsModifierValue(mpLibraryTreeItem->getNameStructure(),
+                                                              pInheritedComponent->getLibraryTreeItem()->getNameStructure(), parameterName);
           /* case 3.3 */
           if (displayString.isEmpty()) {
-            displayString = mpOMCProxy->getParameterValue(pInheritedComponent->getClassName(), parameterName);
+            displayString = pOMCProxy->getParameterValue(pInheritedComponent->getLibraryTreeItem()->getNameStructure(), parameterName);
           }
           break;
         }
@@ -928,7 +794,8 @@ void Component::renameInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointIn
 
 void Component::duplicateHelper(GraphicsView *pGraphicsView)
 {
-  Component *pComponent = pGraphicsView->getComponentList().last();
+  Component *pComponent = pGraphicsView->getComponentsList().last();
+  OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   if (pComponent) {
     /* set the original component transformation to the duplicated one. */
     pComponent->getTransformation()->setExtent1(mpTransformation->getExtent1());
@@ -937,9 +804,9 @@ void Component::duplicateHelper(GraphicsView *pGraphicsView)
     pComponent->setTransform(pComponent->getTransformation()->getTransformationMatrix());
     /* get the original component attributes */
     QString className = pGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-    QList<ComponentInfo*> componentInfoList = mpOMCProxy->getComponents(className);
+    QList<ComponentInfo*> componentInfoList = pOMCProxy->getComponents(className);
     foreach (ComponentInfo *pComponentInfo, componentInfoList) {
-      if (pComponentInfo->getName() == mName) {
+      if (pComponentInfo->getName() == mpComponentInfo->getName()) {
         QString isFinal = pComponentInfo->getFinal() ? "true" : "false";
         QString isFlow = pComponentInfo->getFlow() ? "true" : "false";
         QString isProtected = pComponentInfo->getProtected() ? "true" : "false";
@@ -947,34 +814,34 @@ void Component::duplicateHelper(GraphicsView *pGraphicsView)
         QString variability = pComponentInfo->getVariablity();
         QString isInner = pComponentInfo->getInner() ? "true" : "false";
         QString isOuter = pComponentInfo->getOuter() ? "true" : "false";
-        QString causality = pComponentInfo->getCasuality();
+        QString causality = pComponentInfo->getCausality();
         // update duplicated component attributes
-        if (!mpOMCProxy->setComponentProperties(className, pComponent->getName(), isFinal, isFlow, isProtected, isReplaceAble,
+        if (!pOMCProxy->setComponentProperties(className, pComponent->getName(), isFinal, isFlow, isProtected, isReplaceAble,
                                                 variability, isInner, isOuter, causality)) {
           QMessageBox::critical(pGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow(),
-                                QString(Helper::applicationName).append(" - ").append(Helper::error), mpOMCProxy->getResult(),
+                                QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(),
                                 Helper::ok);
-          mpOMCProxy->printMessagesStringInternal();
+          pOMCProxy->printMessagesStringInternal();
         }
-        if (mpOMCProxy->setComponentDimensions(className, pComponent->getName(), pComponentInfo->getArrayIndex())) {
+        if (pOMCProxy->setComponentDimensions(className, pComponent->getName(), pComponentInfo->getArrayIndex())) {
           pComponent->getComponentInfo()->setArrayIndex(pComponentInfo->getArrayIndex());
         } else {
           QMessageBox::critical(pGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow(),
-                                QString(Helper::applicationName).append(" - ").append(Helper::error), mpOMCProxy->getResult(),
+                                QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(),
                                 Helper::ok);
-          mpOMCProxy->printMessagesStringInternal();
+          pOMCProxy->printMessagesStringInternal();
         }
         break;
       }
     }
     /* get original component modifiers and apply them to duplicated one. */
-    QStringList componentModifiersList = mpOMCProxy->getComponentModifierNames(className, mName);
+    QStringList componentModifiersList = pOMCProxy->getComponentModifierNames(className, mpComponentInfo->getName());
     bool modifierValueChanged = false;
     foreach (QString componentModifier, componentModifiersList) {
-      QString originalModifierName = QString(mName).append(".").append(componentModifier);
+      QString originalModifierName = QString(mpComponentInfo->getName()).append(".").append(componentModifier);
       QString duplicatedModifierName = QString(pComponent->getName()).append(".").append(componentModifier);
-      if (mpOMCProxy->setComponentModifierValue(className, duplicatedModifierName,
-                                                mpOMCProxy->getComponentModifierValue(className, originalModifierName).prepend("=")))
+      if (pOMCProxy->setComponentModifierValue(className, duplicatedModifierName,
+                                                pOMCProxy->getComponentModifierValue(className, originalModifierName).prepend("=")))
         modifierValueChanged = true;
 
     }
@@ -991,19 +858,20 @@ void Component::updatePlacementAnnotation()
   LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   if (pLibraryTreeItem->getLibraryType()== LibraryTreeItem::TLM) {
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpGraphicsView->getModelWidget()->getEditor());
-    pTLMEditor->updateSubModelPlacementAnnotation(mName, getTransformation()->getVisible()? "true" : "false", getTransformationOrigin(),
-                                                  getTransformationExtent(), QString::number(getTransformation()->getRotateAngle()));
+    pTLMEditor->updateSubModelPlacementAnnotation(mpComponentInfo->getName(), getTransformation()->getVisible()? "true" : "false",
+                                                  getTransformationOrigin(), getTransformationExtent(),
+                                                  QString::number(getTransformation()->getRotateAngle()));
   } else {
-    mpOMCProxy->updateComponent(mName, mClassName, mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(),
-                                getPlacementAnnotation());
+    OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+    pOMCProxy->updateComponent(mpComponentInfo->getName(), mpLibraryTreeItem->getNameStructure(),
+                               mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), getPlacementAnnotation());
     mpGraphicsView->getModelWidget()->updateModelicaText();
   }
   // set the model modified
   mpGraphicsView->getModelWidget()->setModelModified();
   /* When something is changed in the icon layer then update the LibraryTreeItem in the Library Browser */
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-    MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-//    pMainWindow->getLibraryWidget()->xloadLibraryComponent(mpGraphicsView->getModelWidget()->getLibraryTreeItem());
+    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   }
 }
 
@@ -1015,6 +883,47 @@ void Component::updateOriginItem()
 {
   if (mpTransformation->hasOrigin()) {
     mpOriginItem->setPos(mpTransformation->getOrigin());
+  }
+}
+
+/*!
+ * \brief Component::referenceComponentAdded
+ * Adds the referenced components when reference component is added.
+ */
+void Component::referenceComponentAdded()
+{
+  Component *pComponent = qobject_cast<Component*>(sender());
+  if (pComponent && mComponentType == Component::Port) {
+    setParentItem(mpParentComponent);
+  } else if (pComponent) {
+    mpGraphicsView->scene()->addItem(this);
+  }
+}
+
+/*!
+ * \brief Component::referenceComponentChanged
+ * Updates the referenced components when reference component is changed.
+ */
+void Component::referenceComponentChanged()
+{
+  Component *pComponent = qobject_cast<Component*>(sender());
+  if (pComponent) {
+    mpTransformation->updateTransformation(pComponent->getTransformation());
+    setTransform(mpTransformation->getTransformationMatrix());
+  }
+}
+
+/*!
+ * \brief Component::referenceComponentDeleted
+ * Delets the referenced components when reference component is deleted.
+ */
+void Component::referenceComponentDeleted()
+{
+  Component *pComponent = qobject_cast<Component*>(sender());
+  if (pComponent && mComponentType == Component::Port) {
+    setParentItem(0);
+  } else if (pComponent) {
+    mpGraphicsView->scene()->removeItem(this);
   }
 }
 
@@ -1124,8 +1033,8 @@ void Component::duplicate()
 {
   QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
                    mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
-  if (mpGraphicsView->addComponent(mClassName, mFileName, scenePos() + gridStep)) {
-    if (mType == StringHandler::Connector) {
+  if (mpGraphicsView->addComponent(mpLibraryTreeItem->getNameStructure(), scenePos() + gridStep)) {
+    if (mpLibraryTreeItem->getRestriction() == StringHandler::Connector) {
       if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
         duplicateHelper(mpGraphicsView);
         duplicateHelper(mpGraphicsView->getModelWidget()->getIconGraphicsView());
@@ -1462,7 +1371,8 @@ void Component::moveCtrlRight()
 void Component::showParameters()
 {
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-  pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 parameters window").arg(mClassName).arg(mName));
+  pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 parameters window").arg(mpLibraryTreeItem->getNameStructure())
+                                           .arg(mpComponentInfo->getName()));
   pMainWindow->getProgressBar()->setRange(0, 0);
   pMainWindow->showProgressBar();
   ComponentParameters *pComponentParameters = new ComponentParameters(this, pMainWindow);
@@ -1476,7 +1386,8 @@ void Component::showParameters()
 void Component::showAttributes()
 {
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-  pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 attributes window").arg(mClassName).arg(mName));
+  pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 attributes window").arg(mpLibraryTreeItem->getNameStructure())
+                                           .arg(mpComponentInfo->getName()));
   pMainWindow->getProgressBar()->setRange(0, 0);
   pMainWindow->showProgressBar();
   ComponentAttributes *pComponentAttributes = new ComponentAttributes(this, pMainWindow);
@@ -1488,14 +1399,16 @@ void Component::showAttributes()
 //! Slot that opens up the component Modelica class in a new tab/window.
 void Component::viewClass()
 {
-  mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getLibraryWidget()->openLibraryTreeItem(getClassName());
+  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+  pMainWindow->getLibraryWidget()->openLibraryTreeItem(mpLibraryTreeItem->getNameStructure());
 }
 
 //! Slot that opens up the component Modelica class in a documentation view.
 void Component::viewDocumentation()
 {
-  mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getDocumentationWidget()->showDocumentation(getClassName());
-  mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getDocumentationDockWidget()->show();
+  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+  pMainWindow->getDocumentationWidget()->showDocumentation(mpLibraryTreeItem->getNameStructure());
+  pMainWindow->getDocumentationDockWidget()->show();
 }
 
 /*!
@@ -1664,220 +1577,4 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
     return pos() + positionDifference;
   }
   return value;
-}
-
-ComponentInfo::ComponentInfo(QString value)
-{
-  mClassName = "";
-  mName = "";
-  mComment = "";
-  mIsProtected = false;
-  mIsFinal = false;
-  mIsFlow = false;
-  mIsStream = false;
-  mIsReplaceable = false;
-  mVariabilityMap.insert("constant", "constant");
-  mVariabilityMap.insert("discrete", "discrete");
-  mVariabilityMap.insert("parameter", "parameter");
-  mVariabilityMap.insert("unspecified", "default");
-  mVariability = "";
-  mIsInner = false;
-  mIsOuter = false;
-  mCasualityMap.insert("input", "input");
-  mCasualityMap.insert("output", "output");
-  mCasualityMap.insert("unspecified", "none");
-  mCasuality = "";
-  mArrayIndex = "";
-  mIsArray = false;
-  parseComponentInfoString(value);
-}
-
-ComponentInfo::ComponentInfo(ComponentInfo *pComponentInfo)
-{
-  mClassName = pComponentInfo->getClassName();
-  mName = pComponentInfo->getName();
-  mComment = pComponentInfo->getComment();
-  mIsProtected = pComponentInfo->getProtected();
-  mIsFinal = pComponentInfo->getFinal();
-  mIsFlow = pComponentInfo->getFlow();
-  mIsStream = pComponentInfo->getStream();
-  mIsReplaceable = pComponentInfo->getReplaceable();
-  mVariabilityMap.insert("constant", "constant");
-  mVariabilityMap.insert("discrete", "discrete");
-  mVariabilityMap.insert("parameter", "parameter");
-  mVariabilityMap.insert("unspecified", "default");
-  mVariability = pComponentInfo->getVariablity();
-  mIsInner = pComponentInfo->getInner();
-  mIsOuter = pComponentInfo->getOuter();
-  mCasualityMap.insert("input", "input");
-  mCasualityMap.insert("output", "output");
-  mCasualityMap.insert("unspecified", "none");
-  mCasuality = pComponentInfo->getCasuality();
-  mArrayIndex = pComponentInfo->getArrayIndex();
-  mIsArray = pComponentInfo->isArray();
-}
-
-void ComponentInfo::parseComponentInfoString(QString value)
-{
-  if (value.isEmpty())
-    return;
-  QStringList list = StringHandler::unparseStrings(value);
-  // read the class name
-  if (list.size() > 0)
-    mClassName = list.at(0);
-  else
-    return;
-  // read the name
-  if (list.size() > 1)
-    mName = list.at(1);
-  else
-    return;
-  // read the class comment
-  if (list.size() > 2)
-    mComment = list.at(2);
-  else
-    return;
-  // read the class access
-  if (list.size() > 3)
-    mIsProtected = StringHandler::removeFirstLastQuotes(list.at(3)).contains("protected");
-  else
-    return;
-  // read the final attribute
-  if (list.size() > 4)
-    mIsFinal = list.at(4).contains("true");
-  else
-    return;
-  // read the flow attribute
-  if (list.size() > 5)
-    mIsFlow = list.at(5).contains("true");
-  else
-    return;
-  // read the stream attribute
-  if (list.size() > 6)
-    mIsStream = list.at(6).contains("true");
-  else
-    return;
-  // read the replaceable attribute
-  if (list.size() > 7)
-    mIsReplaceable = list.at(7).contains("true");
-  else
-    return;
-  // read the variability attribute
-  if (list.size() > 8)
-  {
-    QMap<QString, QString>::iterator variability_it;
-    for (variability_it = mVariabilityMap.begin(); variability_it != mVariabilityMap.end(); ++variability_it)
-    {
-      if (variability_it.key().compare(StringHandler::removeFirstLastQuotes(list.at(8))) == 0)
-      {
-        mVariability = variability_it.value();
-        break;
-      }
-    }
-  }
-  // read the inner attribute
-  if (list.size() > 9)
-  {
-    mIsInner = list.at(9).contains("inner");
-    mIsOuter = list.at(9).contains("outer");
-  }
-  else
-    return;
-  // read the casuality attribute
-  if (list.size() > 10)
-  {
-    QMap<QString, QString>::iterator casuality_it;
-    for (casuality_it = mCasualityMap.begin(); casuality_it != mCasualityMap.end(); ++casuality_it)
-    {
-      if (casuality_it.key().compare(StringHandler::removeFirstLastQuotes(list.at(10))) == 0)
-      {
-        mCasuality = casuality_it.value();
-        break;
-      }
-    }
-  }
-  // read the array index value
-  if (list.size() > 11) {
-    setArrayIndex(list.at(11));
-  }
-}
-
-QString ComponentInfo::getClassName()
-{
-  return mClassName;
-}
-
-QString ComponentInfo::getName()
-{
-  return mName;
-}
-
-QString ComponentInfo::getComment()
-{
-  return StringHandler::removeFirstLastQuotes(mComment);
-}
-
-bool ComponentInfo::getProtected()
-{
-  return mIsProtected;
-}
-
-bool ComponentInfo::getFinal()
-{
-  return mIsFinal;
-}
-
-bool ComponentInfo::getFlow()
-{
-  return mIsFlow;
-}
-
-bool ComponentInfo::getStream()
-{
-  return mIsStream;
-}
-
-bool ComponentInfo::getReplaceable()
-{
-  return mIsReplaceable;
-}
-
-QString ComponentInfo::getVariablity()
-{
-  return mVariability;
-}
-
-bool ComponentInfo::getInner()
-{
-  return mIsInner;
-}
-
-bool ComponentInfo::getOuter()
-{
-  return mIsOuter;
-}
-
-QString ComponentInfo::getCasuality()
-{
-  return mCasuality;
-}
-
-void ComponentInfo::setArrayIndex(QString arrayIndex)
-{
-  mArrayIndex = arrayIndex;
-  if (mArrayIndex.compare("{}") != 0) {
-    mIsArray = true;
-  } else {
-    mIsArray = false;
-  }
-}
-
-QString ComponentInfo::getArrayIndex()
-{
-  return mArrayIndex;
-}
-
-bool ComponentInfo::isArray()
-{
-  return mIsArray;
 }

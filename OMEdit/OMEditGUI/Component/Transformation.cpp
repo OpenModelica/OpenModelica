@@ -38,7 +38,8 @@
 
 #include "Transformation.h"
 
-Transformation::Transformation(StringHandler::ViewType viewType)
+Transformation::Transformation(StringHandler::ViewType viewType, QObject *pParent)
+  : QObject(pParent)
 {
   mViewType = viewType;
   mWidth = 200.0;
@@ -58,6 +59,12 @@ Transformation::Transformation(StringHandler::ViewType viewType)
   mExtent2Icon = QPointF(0.0, 0.0);
   mRotateAngleIcon = 0.0;
   mPositionIcon = QPointF(0.0, 0.0);
+}
+
+Transformation::Transformation(Transformation *pTransformation, QObject *pParent)
+  : QObject(pParent)
+{
+  updateTransformation(pTransformation);
 }
 
 void Transformation::parseTransformationString(QString value, qreal width, qreal height)
@@ -140,6 +147,28 @@ void Transformation::parseTransformationString(QString value, qreal width, qreal
       }
     }
   }
+}
+
+void Transformation::updateTransformation(Transformation *pTransformation)
+{
+  mViewType = pTransformation->getViewType();
+  mWidth = pTransformation->getWidth();
+  mHeight = pTransformation->getHeight();
+  mVisible = pTransformation->getVisible();
+  mOriginDiagram = pTransformation->getOriginDiagram();
+  mHasOriginDiagramX = pTransformation->hasOriginDiagram();
+  mHasOriginDiagramY = pTransformation->hasOriginDiagramY();
+  mExtent1Diagram = pTransformation->getExtent1Diagram();
+  mExtent2Diagram = pTransformation->getExtent2Diagram();
+  mRotateAngleDiagram = pTransformation->getRotateAngleDiagram();
+  mPositionDiagram = pTransformation->getPositionDiagram();
+  mOriginIcon = pTransformation->getOriginIcon();
+  mHasOriginIconX = pTransformation->hasOriginIconX();
+  mHasOriginIconY = pTransformation->hasOriginIconY();
+  mExtent1Icon = pTransformation->getExtent1Icon();
+  mExtent2Icon = pTransformation->getExtent2Icon();
+  mRotateAngleIcon = pTransformation->getRotateAngleIcon();
+  mPositionIcon = pTransformation->getPositionIcon();
 }
 
 QTransform Transformation::getTransformationMatrix()
