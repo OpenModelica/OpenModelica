@@ -1149,7 +1149,7 @@ constant ConfigFlag PARTLINTORN = CONFIG_FLAG(77, "partlintorn",
 
 constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(78, "initOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
-    "constantLinearSystem",
+    //"constantLinearSystem",
     "simplifyComplexFunction",
       //"reduceDynamicOptimization", // before tearing
     "tearingSystem",
