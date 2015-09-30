@@ -63,6 +63,24 @@ TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pPa
   : ShapeAnnotation(pParent), mpComponent(pParent)
 {
   updateShape(pShapeAnnotation);
+  initUpdateTextString();
+  setPos(mOrigin);
+  setRotation(mRotation);
+  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
+}
+
+TextAnnotation::TextAnnotation(Component *pParent)
+  : ShapeAnnotation(pParent), mpComponent(pParent)
+{
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  setTextString("%name");
+  initUpdateTextString();
   setPos(mOrigin);
   setRotation(mRotation);
 }
@@ -85,6 +103,7 @@ TextAnnotation::TextAnnotation(QString annotation, GraphicsView *pGraphicsView)
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
   setShapeFlags(true);
+  connect(this, SIGNAL(updateClassAnnotation()), this, SIGNAL(updateReferenceShapes()));
   connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
 }
 
@@ -95,7 +114,7 @@ TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
   mpGraphicsView->scene()->addItem(this);
-  connect(pShapeAnnotation, SIGNAL(updateClassAnnotation()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
   connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
   connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
   connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
@@ -112,12 +131,12 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   FilledShape::parseShapeAnnotation(annotation);
   // parse the shape to get the list of attributes of Text.
   QStringList list = StringHandler::getStrings(annotation);
-  if (list.size() < 11)
+  if (list.size() < 11) {
     return;
+  }
   // 9th item of the list contains the extent points
   QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)));
-  for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++)
-  {
+  for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++) {
     QStringList extentPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(extentsList[i]));
     if (extentPoints.size() >= 2)
       mExtents.replace(i, QPointF(extentPoints.at(0).toFloat(), extentPoints.at(1).toFloat()));
@@ -125,14 +144,7 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   // 10th item of the list contains the textString.
   mOriginalTextString = StringHandler::removeFirstLastQuotes(list.at(9));
   mTextString = mOriginalTextString;
-  if (mpComponent)
-  {
-    if (mOriginalTextString.contains("%"))
-    {
-      updateTextString();
-      connect(mpComponent->getRootParentComponent(), SIGNAL(componentDisplayTextChanged()), SLOT(updateTextString()));
-    }
-  }
+  initUpdateTextString();
   // 11th item of the list contains the fontSize.
   mFontSize = list.at(10).toFloat();
   //Now comes the optional parameters; fontName and textStyle.
@@ -141,43 +153,29 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   // parse the shape to get the list of attributes of Text Annotation.
   list = StringHandler::getStrings(annotation);
   int index = 19;
-  while(index < list.size())
-  {
+  while(index < list.size()) {
     QString annotationValue = StringHandler::removeFirstLastQuotes(list.at(index));
     // check textStyles enumeration.
-    if(annotationValue == "TextStyle.Bold")
-    {
+    if(annotationValue == "TextStyle.Bold") {
       mTextStyles.append(StringHandler::TextStyleBold);
       index++;
-    }
-    else if(annotationValue == "TextStyle.Italic")
-    {
+    } else if(annotationValue == "TextStyle.Italic") {
       mTextStyles.append(StringHandler::TextStyleItalic);
       index++;
-    }
-    else if(annotationValue == "TextStyle.UnderLine")
-    {
+    } else if(annotationValue == "TextStyle.UnderLine") {
       mTextStyles.append(StringHandler::TextStyleUnderLine);
       index++;
-    }
-    // check textAlignment enumeration.
-    else if(annotationValue == "TextAlignment.Left")
-    {
+    } else if(annotationValue == "TextAlignment.Left") {
+      // check textAlignment enumeration.
       mHorizontalAlignment = StringHandler::TextAlignmentLeft;
       index++;
-    }
-    else if(annotationValue == "TextAlignment.Center")
-    {
+    } else if(annotationValue == "TextAlignment.Center") {
       mHorizontalAlignment = StringHandler::TextAlignmentCenter;
       index++;
-    }
-    else if(annotationValue == "TextAlignment.Right")
-    {
+    } else if(annotationValue == "TextAlignment.Right") {
       mHorizontalAlignment = StringHandler::TextAlignmentRight;
       index++;
-    }
-    else
-    {
+    } else {
       mFontName = annotationValue;
       index++;
     }
@@ -371,6 +369,16 @@ void TextAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
+void TextAnnotation::initUpdateTextString()
+{
+  if (mpComponent) {
+    if (mOriginalTextString.contains("%")) {
+      updateTextString();
+      connect(mpComponent->getRootParentComponent(), SIGNAL(componentDisplayTextChanged()), SLOT(updateTextString()), Qt::UniqueConnection);
+    }
+  }
+}
+
 /*!
  * \brief TextAnnotation::updateTextStringHelper
  * Helper function for TextAnnotation::updateTextString()
@@ -379,28 +387,18 @@ void TextAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 void TextAnnotation::updateTextStringHelper(QRegExp regExp)
 {
   int pos = 0;
-  while ((pos = regExp.indexIn(mTextString, pos)) != -1)
-  {
+  while ((pos = regExp.indexIn(mTextString, pos)) != -1) {
     QString variable = regExp.cap(0);
-    if ((!variable.isEmpty()) && (variable.compare("%%") != 0) && (variable.compare("%name") != 0) && (variable.compare("%class") != 0))
-    {
+    if ((!variable.isEmpty()) && (variable.compare("%%") != 0) && (variable.compare("%name") != 0) && (variable.compare("%class") != 0)) {
       variable.remove("%");
-      if (!variable.isEmpty())
-      {
+      if (!variable.isEmpty()) {
         QString textValue = mpComponent->getParameterDisplayString(variable);
-        if (!textValue.isEmpty())
-        {
+        if (!textValue.isEmpty()) {
           mTextString.replace(pos, regExp.matchedLength(), textValue);
-        }
-        /* if the value of %\\W* is empty then remove the % sign. */
-        else
-        {
+        } else { /* if the value of %\\W* is empty then remove the % sign. */
           mTextString.replace(pos, 1, "");
         }
-      }
-      /* if there is just alone % then remove it. Because if you want to print % then use %%. */
-      else
-      {
+      } else { /* if there is just alone % then remove it. Because if you want to print % then use %%. */
         mTextString.replace(pos, 1, "");
       }
     }
@@ -427,25 +425,24 @@ void TextAnnotation::updateTextString()
     - %class replaced by the name of the class.
   */
   mTextString = mOriginalTextString;
-  if (!mTextString.contains("%"))
+  if (!mTextString.contains("%")) {
     return;
-  if (mOriginalTextString.toLower().contains("%name"))
-  {
+  }
+  if (mOriginalTextString.toLower().contains("%name")) {
     mTextString.replace(QRegExp("%name"), mpComponent->getRootParentComponent()->getName());
   }
-  if (mOriginalTextString.toLower().contains("%class"))
-  {
-    mTextString.replace(QRegExp("%class"), mpComponent->getRootParentComponent()->getClassName());
+  if (mOriginalTextString.toLower().contains("%class")) {
+    mTextString.replace(QRegExp("%class"), mpComponent->getRootParentComponent()->getLibraryTreeItem()->getNameStructure());
   }
-  if (!mTextString.contains("%"))
+  if (!mTextString.contains("%")) {
     return;
+  }
   /* handle variables now */
   updateTextStringHelper(QRegExp("(%%|%\\w*)"));
   /* call again with non-word characters so invalid % can be removed. */
   updateTextStringHelper(QRegExp("(%%|%\\W*)"));
   /* handle %% */
-  if (mOriginalTextString.toLower().contains("%%"))
-  {
+  if (mOriginalTextString.toLower().contains("%%")) {
     mTextString.replace(QRegExp("%%"), "%");
   }
 }

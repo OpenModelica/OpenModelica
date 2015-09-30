@@ -158,7 +158,6 @@ public:
 private:
   Component *mpComponent;
   MainWindow *mpMainWindow;
-  ComponentInfo *mpComponentInfo;
   Label *mpAttributesHeading;
   QFrame *mHorizontalLine;
   QGroupBox *mpTypeGroupBox;

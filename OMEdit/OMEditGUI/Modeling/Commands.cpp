@@ -33,15 +33,14 @@
 
 #include "Commands.h"
 
-AddComponentCommand::AddComponentCommand(QString name, QString className, QString transformationString, QPointF point,
-                                         ComponentInfo *pComponentInfo, StringHandler::ModelicaClasses type, bool addObject, bool openingClass,
-                                         bool inheritedClass, QString inheritedClassName, QString fileName, bool addOnlyToCurrentView,
-                                         GraphicsView *pGraphicsView, QUndoCommand *pParent)
+AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
+                                         ComponentInfo *pComponentInfo, bool addObject, bool openingClass, GraphicsView *pGraphicsView,
+                                         QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
-  mType = type;
+  mpLibraryTreeItem = pLibraryTreeItem;
   mAddObject = addObject;
-  mAddOnlyToCurrentView = addOnlyToCurrentView;
+  mpComponentInfo = pComponentInfo;
   mpIconComponent = 0;
   mpDiagramComponent = 0;
   mpIconGraphicsView = pGraphicsView->getModelWidget()->getIconGraphicsView();
@@ -49,45 +48,14 @@ AddComponentCommand::AddComponentCommand(QString name, QString className, QStrin
   mpGraphicsView = pGraphicsView;
   setText(QString("Added Component %1").arg(name));
 
-  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
-  QString annotation = "";
   // if component is of connector type && containing class is Modelica type.
-  if (mType == StringHandler::Connector && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    if (mAddOnlyToCurrentView) {
-      if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-        annotation = pMainWindow->getOMCProxy()->getIconAnnotation(className);
-        mpIconComponent = new Component(annotation, name, className, fileName, pComponentInfo, type, transformationString, point,
-                                        inheritedClass, inheritedClassName, pMainWindow->getOMCProxy(), mpGraphicsView);
-      } else {
-        annotation = pMainWindow->getOMCProxy()->getDiagramAnnotation(className);
-        // if diagram annotation is empty then use the icon annotation of the connector.
-        if (StringHandler::removeFirstLastCurlBrackets(annotation).isEmpty()) {
-          annotation = pMainWindow->getOMCProxy()->getIconAnnotation(className);
-        }
-        mpDiagramComponent = new Component(annotation, name, className, fileName, pComponentInfo, type, transformationString, point,
-                                           inheritedClass, inheritedClassName, pMainWindow->getOMCProxy(), mpGraphicsView);
-      }
-    } else {
-      // first create the component for Icon View
-      annotation = pMainWindow->getOMCProxy()->getIconAnnotation(className);
-      mpIconComponent = new Component(annotation, name, className, fileName, pComponentInfo, type, transformationString, point, inheritedClass,
-                                      inheritedClassName, pMainWindow->getOMCProxy(), mpIconGraphicsView);
-      // now create the component for Diagram View
-      annotation = pMainWindow->getOMCProxy()->getDiagramAnnotation(className);
-      // if diagram annotation is empty then use the icon annotation of the connector.
-      if (StringHandler::removeFirstLastCurlBrackets(annotation).isEmpty()) {
-        annotation = pMainWindow->getOMCProxy()->getIconAnnotation(className);
-      }
-      mpDiagramComponent = new Component(annotation, name, className, fileName, new ComponentInfo(pComponentInfo), type, transformationString,
-                                         point, inheritedClass, inheritedClassName, pMainWindow->getOMCProxy(), mpDiagramGraphicsView);
-    }
+  if (mpLibraryTreeItem->getRestriction() == StringHandler::Connector && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    // first create the component for Icon View
+    mpIconComponent = new Component(name, pLibraryTreeItem, transformationString, position, pComponentInfo, mpIconGraphicsView);
+    mpDiagramComponent = new Component(name, pLibraryTreeItem, transformationString, position, pComponentInfo, mpDiagramGraphicsView);
   } else {
-    if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-      annotation = pMainWindow->getOMCProxy()->getIconAnnotation(className);
-    }
-    mpDiagramComponent = new Component(annotation, name, className, fileName, pComponentInfo, type, transformationString, point,
-                                       inheritedClass, inheritedClassName, pMainWindow->getOMCProxy(), mpDiagramGraphicsView);
+    mpDiagramComponent = new Component(name, pLibraryTreeItem, transformationString, position, pComponentInfo, mpDiagramGraphicsView);
   }
   // only select the component of the active Icon/Diagram View
   if (!openingClass) {
@@ -111,31 +79,24 @@ void AddComponentCommand::redo()
 {
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
-  if (mType == StringHandler::Connector && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    if (mAddOnlyToCurrentView) {
-      if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-        mpIconGraphicsView->scene()->addItem(mpIconComponent);
-        mpIconGraphicsView->scene()->addItem(mpIconComponent->getOriginItem());
-        mpIconGraphicsView->addComponentToList(mpIconComponent);
-      } else {
-        mpDiagramGraphicsView->scene()->addItem(mpDiagramComponent);
-        mpDiagramGraphicsView->scene()->addItem(mpDiagramComponent->getOriginItem());
-        mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
-      }
-    } else {
-      // first add the component to Icon View
+  if (mpLibraryTreeItem->getRestriction() == StringHandler::Connector && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    // first create the component for Icon View only if connector is not protected
+    if (!mpComponentInfo->getProtected()) {
       mpIconGraphicsView->scene()->addItem(mpIconComponent);
       mpIconGraphicsView->scene()->addItem(mpIconComponent->getOriginItem());
       mpIconGraphicsView->addComponentToList(mpIconComponent);
-      // now add the component to Diagram View
-      mpDiagramGraphicsView->scene()->addItem(mpDiagramComponent);
-      mpDiagramGraphicsView->scene()->addItem(mpDiagramComponent->getOriginItem());
-      mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
+      mpIconComponent->emitComponentAdded();
     }
+    // now add the component to Diagram View
+    mpDiagramGraphicsView->scene()->addItem(mpDiagramComponent);
+    mpDiagramGraphicsView->scene()->addItem(mpDiagramComponent->getOriginItem());
+    mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
+    mpDiagramComponent->emitComponentAdded();
   } else {
     mpDiagramGraphicsView->scene()->addItem(mpDiagramComponent);
     mpDiagramGraphicsView->scene()->addItem(mpDiagramComponent->getOriginItem());
     mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
+    mpDiagramComponent->emitComponentAdded();
   }
   if (mAddObject) {
     mpDiagramGraphicsView->addComponentObject(mpDiagramComponent);
@@ -150,22 +111,27 @@ void AddComponentCommand::undo()
 {
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
-  if (mType == StringHandler::Connector && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    // first remove the component from Icon View
-    mpIconComponent->setSelected(false);
-    mpIconGraphicsView->scene()->removeItem(mpIconComponent);
-    mpIconGraphicsView->scene()->removeItem(mpIconComponent->getOriginItem());
-    mpIconGraphicsView->deleteComponentFromList(mpIconComponent);
+  if (mpLibraryTreeItem->getRestriction() == StringHandler::Connector && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    // first create the component for Icon View only if connector is not protected
+    if (!mpComponentInfo->getProtected()) {
+      mpIconComponent->setSelected(false);
+      mpIconGraphicsView->scene()->removeItem(mpIconComponent);
+      mpIconGraphicsView->scene()->removeItem(mpIconComponent->getOriginItem());
+      mpIconGraphicsView->deleteComponentFromList(mpIconComponent);
+      mpIconComponent->emitComponentDeleted();
+    }
     // now remove the component from Diagram View
     mpDiagramComponent->setSelected(false);
     mpDiagramGraphicsView->scene()->removeItem(mpDiagramComponent);
     mpDiagramGraphicsView->scene()->removeItem(mpDiagramComponent->getOriginItem());
     mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
+    mpDiagramComponent->emitComponentDeleted();
   } else {
     mpDiagramComponent->setSelected(false);
     mpDiagramGraphicsView->scene()->removeItem(mpDiagramComponent);
     mpDiagramGraphicsView->scene()->removeItem(mpDiagramComponent->getOriginItem());
     mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
+    mpDiagramComponent->emitComponentDeleted();
   }
   mpGraphicsView->deleteComponentObject(mpDiagramComponent);
 }
@@ -190,7 +156,8 @@ void DeleteComponentCommand::redo()
 {
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
-  if (mpComponent->getType() == StringHandler::Connector && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mpComponent->getLibraryTreeItem()->getRestriction() == StringHandler::Connector &&
+      pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     // first remove the component from Icon View
     mpIconComponent = mpIconGraphicsView->getComponentObject(mpComponent->getName());
     if (mpIconComponent) {
@@ -198,6 +165,7 @@ void DeleteComponentCommand::redo()
       mpIconGraphicsView->scene()->removeItem(mpIconComponent);
       mpIconGraphicsView->scene()->removeItem(mpIconComponent->getOriginItem());
       mpIconGraphicsView->deleteComponentFromList(mpIconComponent);
+      mpIconComponent->emitComponentDeleted();
     }
     // now remove the component from Diagram View
     mpDiagramComponent = mpDiagramGraphicsView->getComponentObject(mpComponent->getName());
@@ -206,12 +174,14 @@ void DeleteComponentCommand::redo()
       mpDiagramGraphicsView->scene()->removeItem(mpDiagramComponent);
       mpDiagramGraphicsView->scene()->removeItem(mpDiagramComponent->getOriginItem());
       mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
+      mpDiagramComponent->emitComponentDeleted();
     }
   } else {
-    mpDiagramComponent->setSelected(false);
-    mpDiagramGraphicsView->scene()->removeItem(mpComponent);
+    mpComponent->setSelected(false);
+    mpComponent->scene()->removeItem(mpComponent);
     mpDiagramGraphicsView->scene()->removeItem(mpComponent->getOriginItem());
     mpDiagramGraphicsView->deleteComponentFromList(mpComponent);
+    mpComponent->emitComponentDeleted();
   }
   mpGraphicsView->deleteComponentObject(mpComponent);
 }
@@ -224,23 +194,27 @@ void DeleteComponentCommand::undo()
 {
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
-  if (mpComponent->getType() == StringHandler::Connector && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mpComponent->getLibraryTreeItem()->getRestriction() == StringHandler::Connector &&
+      pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     // first add the component to Icon View
     if (mpIconComponent) {
       mpIconGraphicsView->scene()->addItem(mpIconComponent);
       mpIconGraphicsView->scene()->addItem(mpIconComponent->getOriginItem());
       mpIconGraphicsView->addComponentToList(mpIconComponent);
+      mpIconComponent->emitComponentAdded();
     }
     // now add the component to Diagram View
     if (mpDiagramComponent) {
       mpDiagramGraphicsView->scene()->addItem(mpDiagramComponent);
       mpDiagramGraphicsView->scene()->addItem(mpDiagramComponent->getOriginItem());
       mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
+      mpDiagramComponent->emitComponentAdded();
     }
   } else {
     mpDiagramGraphicsView->scene()->addItem(mpComponent);
     mpDiagramGraphicsView->scene()->addItem(mpComponent->getOriginItem());
     mpDiagramGraphicsView->addComponentToList(mpComponent);
+    mpComponent->emitComponentAdded();
   }
   mpGraphicsView->addComponentObject(mpComponent);
 }

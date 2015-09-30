@@ -44,6 +44,7 @@
 class MainWindow;
 class Label;
 class LibraryWidget;
+class LibraryTreeProxyModel;
 
 class LibraryBrowseDialog : public QDialog
 {
@@ -54,6 +55,7 @@ private:
   QLineEdit *mpLineEdit;
   LibraryWidget *mpLibraryWidget;
   TreeSearchFilters *mpTreeSearchFilters;
+  LibraryTreeProxyModel *mpLibraryTreeProxyModel;
   QTreeView *mpLibraryTreeView;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
@@ -61,7 +63,6 @@ private:
 private slots:
   void searchClasses();
   void useModelicaClass();
-  void reject();
 };
 
 class ModelicaClassDialog : public QDialog

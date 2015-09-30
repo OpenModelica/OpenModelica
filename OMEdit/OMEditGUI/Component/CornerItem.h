@@ -90,6 +90,7 @@ private:
   QRectF mRectangle;
   QPen mPen;
   QPen mActivePen;
+  QPen mInheritedActivePen;
   QPen mPassivePen;
   bool mIsPressed;
   QPointF mResizerItemOldPosition;

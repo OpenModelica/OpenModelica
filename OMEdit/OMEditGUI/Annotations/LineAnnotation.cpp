@@ -61,6 +61,34 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pPa
   setEndComponent(0);
   setPos(mOrigin);
   setRotation(mRotation);
+  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
+}
+
+LineAnnotation::LineAnnotation(Component *pParent)
+  : ShapeAnnotation(pParent)
+{
+  setLineType(LineAnnotation::ComponentType);
+  setStartComponent(0);
+  setEndComponent(0);
+  // set the default values
+  GraphicItem::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // create a red cross
+  setLineColor(QColor(255, 0, 0));
+  // create a red cross with points
+  addPoint(QPointF(-100, -100));
+  addPoint(QPointF(100, 100));
+  addPoint(QPointF(-100, 100));
+  addPoint(QPointF(100, -100));
+  addPoint(QPointF(-100, -100));
+  addPoint(QPointF(-100, 100));
+  addPoint(QPointF(100, 100));
+  addPoint(QPointF(100, -100));
+  setPos(mOrigin);
+  setRotation(mRotation);
 }
 
 LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
@@ -76,6 +104,7 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
   setShapeFlags(true);
+  connect(this, SIGNAL(updateClassAnnotation()), this, SIGNAL(updateReferenceShapes()));
   connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
 }
 
@@ -111,7 +140,7 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
   mpGraphicsView->scene()->addItem(this);
-  connect(pShapeAnnotation, SIGNAL(updateClassAnnotation()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
   connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
   connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
   connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));

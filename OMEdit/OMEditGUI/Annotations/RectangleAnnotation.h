@@ -50,6 +50,7 @@ class RectangleAnnotation : public ShapeAnnotation
 public:
   RectangleAnnotation(QString annotation, Component *pParent);
   RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  RectangleAnnotation(Component *pParent);
   RectangleAnnotation(QString annotation, GraphicsView *pGraphicsView);
   RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);

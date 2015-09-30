@@ -550,7 +550,7 @@ void ComponentParameters::setUpDialog()
   mpComponentNameTextBox = new Label(mpComponent->getName());
   // Component class name
   mpComponentClassNameLabel = new Label(Helper::path);
-  mpComponentClassNameTextBox = new Label(mpComponent->getClassName());
+  mpComponentClassNameTextBox = new Label(mpComponent->getLibraryTreeItem()->getNameStructure());
   QGridLayout *pComponentGroupBoxLayout = new QGridLayout;
   pComponentGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pComponentGroupBoxLayout->addWidget(mpComponentNameLabel, 0, 0);
@@ -567,9 +567,10 @@ void ComponentParameters::setUpDialog()
   mTabsMap.insert("General", mpParametersTabWidget->addTab(pParametersScrollArea, "General"));
   // create parameters tabs and groupboxes
   QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-  createTabsAndGroupBoxes(mpComponent->getOMCProxy(), className, "", mpComponent->getClassName(), mpComponent->getName());
+  OMCProxy *pOMCProxy = mpComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  createTabsAndGroupBoxes(pOMCProxy, className, "", mpComponent->getLibraryTreeItem()->getNameStructure(), mpComponent->getName());
   // create the parameters controls
-  createParameters(mpComponent->getOMCProxy(), className, "", mpComponent->getClassName(), mpComponent->getName(),
+  createParameters(pOMCProxy, className, "", mpComponent->getLibraryTreeItem()->getNameStructure(), mpComponent->getName(),
                    mpComponent->isInheritedComponent(), mpComponent->getInheritedClassName());
   // create Modifiers tab
   QWidget *pModifiersTab = new QWidget;
@@ -837,6 +838,7 @@ void ComponentParameters::updateComponentParameters()
 {
   bool valueChanged = false;
   bool modifierValueChanged = false;
+  OMCProxy *pOMCProxy = mpComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   foreach (Parameter *pParameter, mParametersList) {
     QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
     QString componentModifier = QString(mpComponent->getName()).append(".").append(pParameter->getNameLabel()->text());
@@ -845,11 +847,11 @@ void ComponentParameters::updateComponentParameters()
       QString componentModifierValue = pParameter->getValue();
       /* If the component is inherited then add the modifier value into the extends. */
       if (mpComponent->isInheritedComponent()) {
-        if (mpComponent->getOMCProxy()->setExtendsModifierValue(className, mpComponent->getInheritedClassName(), componentModifier,
+        if (pOMCProxy->setExtendsModifierValue(className, mpComponent->getInheritedClassName(), componentModifier,
                                                                 componentModifierValue.prepend("=")))
           modifierValueChanged = true;
       } else {
-        if (mpComponent->getOMCProxy()->setComponentModifierValue(className, componentModifier, componentModifierValue.prepend("="))) {
+        if (pOMCProxy->setComponentModifierValue(className, componentModifier, componentModifierValue.prepend("="))) {
           modifierValueChanged = true;
         }
       }
@@ -860,11 +862,11 @@ void ComponentParameters::updateComponentParameters()
       QString componentModifierValue = pParameter->getFixedState();
       /* If the component is inherited then add the modifier value into the extends. */
       if (mpComponent->isInheritedComponent()) {
-        if (mpComponent->getOMCProxy()->setExtendsModifierValue(className, mpComponent->getInheritedClassName(), componentModifier,
+        if (pOMCProxy->setExtendsModifierValue(className, mpComponent->getInheritedClassName(), componentModifier,
                                                                 componentModifierValue.prepend("=")))
           modifierValueChanged = true;
       } else {
-        if (mpComponent->getOMCProxy()->setComponentModifierValue(className, componentModifier, componentModifierValue.prepend("="))) {
+        if (pOMCProxy->setComponentModifierValue(className, componentModifier, componentModifierValue.prepend("="))) {
           modifierValueChanged = true;
         }
       }
@@ -881,7 +883,7 @@ void ComponentParameters::updateComponentParameters()
         QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
         QString componentModifier = QString(mpComponent->getName()).append(".").append(modifier.mid(0, modifier.indexOf("(")));
         QString componentModifierValue = modifier.mid(modifier.indexOf("("));
-        mpComponent->getOMCProxy()->setComponentModifierValue(className, componentModifier, componentModifierValue);
+        pOMCProxy->setComponentModifierValue(className, componentModifier, componentModifierValue);
         valueChanged = true;
       } else {
         mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
@@ -902,13 +904,14 @@ void ComponentParameters::updateComponentParameters()
 }
 
 /*!
-  \class ComponentAttributes
-  \brief A dialog for displaying components attributes like visibility, stream, casuality etc.
-  */
+ * \class ComponentAttributes
+ * \brief A dialog for displaying components attributes like visibility, stream, casuality etc.
+ */
 /*!
-  \param pComponent - pointer to Component
-  \param pMainWindow - pointer to MainWindow
-  */
+ * \brief ComponentAttributes::ComponentAttributes
+ * \param pComponent
+ * \param pMainWindow
+ */
 ComponentAttributes::ComponentAttributes(Component *pComponent, MainWindow *pMainWindow)
   : QDialog(pMainWindow, Qt::WindowTitleHint)
 {
@@ -923,8 +926,9 @@ ComponentAttributes::ComponentAttributes(Component *pComponent, MainWindow *pMai
 }
 
 /*!
-  Creates the Dialog and set up all the controls with default values.
-  */
+ * \brief ComponentAttributes::setUpDialog
+ * Creates the Dialog and set up all the controls with default values.
+ */
 void ComponentAttributes::setUpDialog()
 {
   // heading label
@@ -1034,76 +1038,59 @@ void ComponentAttributes::setUpDialog()
 }
 
 /*!
-  Initialize the fields with default values.
-  */
+ * \brief ComponentAttributes::initializeDialog
+ * Initialize the fields with default values.
+ */
 void ComponentAttributes::initializeDialog()
 {
-  QString className;
-  if (mpComponent->isInheritedComponent()) {
-    className = mpComponent->getInheritedClassName();
+  // get Class Name
+  mpNameTextBox->setText(mpComponent->getComponentInfo()->getName());
+  mpNameTextBox->setCursorPosition(0);
+  // get dimensions
+  mpDimensionsTextBox->setText(mpComponent->getComponentInfo()->getArrayIndex());
+  // get Comment
+  mpCommentTextBox->setText(mpComponent->getComponentInfo()->getComment());
+  mpCommentTextBox->setCursorPosition(0);
+  // get classname
+  mpPathTextBox->setText(mpComponent->getComponentInfo()->getClassName());
+  // get Variability
+  if (mpComponent->getComponentInfo()->getVariablity() == "constant") {
+    mpConstantRadio->setChecked(true);
+  } else if (mpComponent->getComponentInfo()->getVariablity() == "parameter") {
+    mpParameterRadio->setChecked(true);
+  } else if (mpComponent->getComponentInfo()->getVariablity() == "discrete") {
+    mpDiscreteRadio->setChecked(true);
   } else {
-    className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+    mpDefaultRadio->setChecked(true);
   }
-  /* get the components of the class */
-  QList<ComponentInfo*> componentInfoList = mpComponent->getOMCProxy()->getComponents(className);
-  /* read the components */
-  foreach (ComponentInfo *pComponentInfo, componentInfoList) {
-    if (pComponentInfo->getName() == mpComponent->getName()) {
-      mpComponentInfo = pComponentInfo;
-      // get Class Name
-      mpNameTextBox->setText(pComponentInfo->getName());
-      mpNameTextBox->setCursorPosition(0);
-      // get dimensions
-      mpDimensionsTextBox->setText(pComponentInfo->getArrayIndex());
-      // get Comment
-      mpCommentTextBox->setText(pComponentInfo->getComment());
-      mpCommentTextBox->setCursorPosition(0);
-      // get classname
-      mpPathTextBox->setText(pComponentInfo->getClassName());
-      // get Variability
-      if (pComponentInfo->getVariablity() == "constant") {
-        mpConstantRadio->setChecked(true);
-      } else if (pComponentInfo->getVariablity() == "parameter") {
-        mpParameterRadio->setChecked(true);
-      } else if (pComponentInfo->getVariablity() == "discrete") {
-        mpDiscreteRadio->setChecked(true);
-      } else {
-        mpDefaultRadio->setChecked(true);
-      }
-      // get Properties
-      mpFinalCheckBox->setChecked(pComponentInfo->getFinal());
-      mpProtectedCheckBox->setChecked(pComponentInfo->getProtected());
-      mpReplaceAbleCheckBox->setChecked(pComponentInfo->getReplaceable());
-      mIsFlow = pComponentInfo->getFlow() ? "true" : "false";
-      // get Casuality
-      if (pComponentInfo->getCasuality() == "input") {
-        mpInputRadio->setChecked(true);
-      } else if (pComponentInfo->getCasuality() == "output") {
-        mpOutputRadio->setChecked(true);
-      } else {
-        mpNoneRadio->setChecked(true);
-      }
-      // get InnerOuter
-      mpInnerCheckBox->setChecked(pComponentInfo->getInner());
-      mpOuterCheckBox->setChecked(pComponentInfo->getOuter());
-      break;
-    }
+  // get Properties
+  mpFinalCheckBox->setChecked(mpComponent->getComponentInfo()->getFinal());
+  mpProtectedCheckBox->setChecked(mpComponent->getComponentInfo()->getProtected());
+  mpReplaceAbleCheckBox->setChecked(mpComponent->getComponentInfo()->getReplaceable());
+  mIsFlow = mpComponent->getComponentInfo()->getFlow() ? "true" : "false";
+  // get Casuality
+  if (mpComponent->getComponentInfo()->getCausality() == "input") {
+    mpInputRadio->setChecked(true);
+  } else if (mpComponent->getComponentInfo()->getCausality() == "output") {
+    mpOutputRadio->setChecked(true);
+  } else {
+    mpNoneRadio->setChecked(true);
   }
+  // get InnerOuter
+  mpInnerCheckBox->setChecked(mpComponent->getComponentInfo()->getInner());
+  mpOuterCheckBox->setChecked(mpComponent->getComponentInfo()->getOuter());
 }
 
 /*!
-  Slot activated when mpOkButton clicked signal is raised.\n
-  Updates the component attributes.
-  */
+ * \brief ComponentAttributes::updateComponentAttributes
+ * Slot activated when mpOkButton clicked signal is raised.\n
+ * Updates the component attributes.
+ */
 void ComponentAttributes::updateComponentAttributes()
 {
-  if (!mpComponentInfo) {
-    accept();
-    return;
-  }
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   /* Check the same component name problem before setting any attributes. */
-  if (mpComponentInfo->getName().compare(mpNameTextBox->text()) != 0) {
+  if (mpComponent->getComponentInfo()->getName().compare(mpNameTextBox->text()) != 0) {
     if (!mpComponent->getGraphicsView()->checkComponentName(mpNameTextBox->text())) {
       QMessageBox::information(pModelWidget->getModelWidgetContainer()->getMainWindow(),
                                QString(Helper::applicationName).append(" - ").append(Helper::information),
@@ -1137,26 +1124,37 @@ void ComponentAttributes::updateComponentAttributes()
   }
   OMCProxy *pOMCProxy = pModelWidget->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   // update component attributes
-  if (!pOMCProxy->setComponentProperties(modelName, mpComponentInfo->getName(), isFinal, mIsFlow, isProtected, isReplaceAble, variability,
-                                         isInner, isOuter, causality)) {
+  if (pOMCProxy->setComponentProperties(modelName, mpComponent->getComponentInfo()->getName(), isFinal, mIsFlow, isProtected, isReplaceAble,
+                                         variability, isInner, isOuter, causality)) {
+    mpComponent->getComponentInfo()->setFinal(mpFinalCheckBox->isChecked());
+    mpComponent->getComponentInfo()->setProtected(mpProtectedCheckBox->isChecked());
+    mpComponent->getComponentInfo()->setReplaceable(mpReplaceAbleCheckBox->isChecked());
+    mpComponent->getComponentInfo()->setVariablity(variability);
+    mpComponent->getComponentInfo()->setInner(mpInnerCheckBox->isChecked());
+    mpComponent->getComponentInfo()->setOuter(mpOuterCheckBox->isChecked());
+    mpComponent->getComponentInfo()->setCausality(causality);
+  } else {
     QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
                           QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
     pOMCProxy->printMessagesStringInternal();
   }
   // update the component comment only if its changed.
-  if (mpComponentInfo->getComment().compare(mpCommentTextBox->text()) != 0) {
+  if (mpComponent->getComponentInfo()->getComment().compare(mpCommentTextBox->text()) != 0) {
     QString comment = StringHandler::escapeString(mpCommentTextBox->text());
-    if (!pOMCProxy->setComponentComment(modelName, mpComponentInfo->getName(), comment)) {
+    if (pOMCProxy->setComponentComment(modelName, mpComponent->getComponentInfo()->getName(), comment)) {
+      mpComponent->getComponentInfo()->setComment(comment);
+    } else {
       QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
                             QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
       pOMCProxy->printMessagesStringInternal();
     }
   }
   // update the component name only if its changed.
-  if (mpComponentInfo->getName().compare(mpNameTextBox->text()) != 0) {
+  if (mpComponent->getComponentInfo()->getName().compare(mpNameTextBox->text()) != 0) {
     // if renameComponentInClass command is successful update the component with new name
-    if (pOMCProxy->renameComponentInClass(modelName, mpComponentInfo->getName(), mpNameTextBox->text())) {
-      mpComponent->componentNameHasChanged(mpNameTextBox->text());
+    if (pOMCProxy->renameComponentInClass(modelName, mpComponent->getComponentInfo()->getName(), mpNameTextBox->text())) {
+      mpComponent->getComponentInfo()->setName(mpNameTextBox->text());
+      mpComponent->componentNameHasChanged();
     } else {
       QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
                             QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
@@ -1164,8 +1162,8 @@ void ComponentAttributes::updateComponentAttributes()
     }
   }
   // update the component dimensions
-  if (mpComponentInfo->getArrayIndex().compare(mpDimensionsTextBox->text()) != 0) {
-    if (pOMCProxy->setComponentDimensions(modelName, mpComponentInfo->getName(), mpDimensionsTextBox->text())) {
+  if (mpComponent->getComponentInfo()->getArrayIndex().compare(mpDimensionsTextBox->text()) != 0) {
+    if (pOMCProxy->setComponentDimensions(modelName, mpComponent->getComponentInfo()->getName(), mpDimensionsTextBox->text())) {
       mpComponent->getComponentInfo()->setArrayIndex(mpDimensionsTextBox->text());
     } else {
       QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
@@ -1244,7 +1242,7 @@ void SubModelAttributes::initializeDialog()
   // get component Name
   mpNameTextBox->setText(mpComponent->getName());
   mpStartCommandTextBox->setText("StartTLMOpenModelica");
-  QFileInfo fileInfo(mpComponent->getFileName());
+  QFileInfo fileInfo(mpComponent->getLibraryTreeItem()->getFileName());
   mpModelFileTextBox->setText(fileInfo.fileName());
 }
 

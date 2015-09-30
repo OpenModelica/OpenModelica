@@ -45,11 +45,14 @@
 
 class Component;
 
-class Transformation
+class Transformation : public QObject
 {
+  Q_OBJECT
 public:
-  Transformation(StringHandler::ViewType viewType);
+  Transformation(StringHandler::ViewType viewType, QObject *pParent = 0);
+  Transformation(Transformation *pTransformation, QObject *pParent = 0);
   void parseTransformationString(QString value, qreal width, qreal height);
+  void updateTransformation(Transformation *pTransformation);
   QTransform getTransformationMatrix();
   bool getVisible();
   void adjustPosition(qreal x, qreal y);
@@ -84,8 +87,13 @@ private:
   QPointF mPositionIcon;
 
   QTransform getTransformationMatrixDiagram();
+  StringHandler::ViewType getViewType() {return mViewType;}
+  qreal getWidth() {return mWidth;}
+  qreal getHeight() {return mHeight;}
   void adjustPositionDiagram(qreal x, qreal y);
-  bool hasOriginDiagram() {return mHasOriginDiagramX && mHasOriginDiagramY;}
+  bool hasOriginDiagramX() {return mHasOriginDiagramX;}
+  bool hasOriginDiagramY() {return mHasOriginDiagramY;}
+  bool hasOriginDiagram() {return hasOriginDiagramX() && hasOriginDiagramY();}
   void setOriginDiagram(QPointF origin);
   QPointF getOriginDiagram() {return mOriginDiagram;}
   void setExtent1Diagram(QPointF extent) {mExtent1Diagram = extent;}
@@ -97,7 +105,9 @@ private:
   QPointF getPositionDiagram() {return mPositionDiagram;}
   QTransform getTransformationMatrixIcon();
   void adjustPositionIcon(qreal x, qreal y);
-  bool hasOriginIcon() {return mHasOriginIconX && mHasOriginIconY;}
+  bool hasOriginIconX() {return mHasOriginIconX;}
+  bool hasOriginIconY() {return mHasOriginIconY;}
+  bool hasOriginIcon() {return hasOriginIconX() && hasOriginIconY();}
   void setOriginIcon(QPointF origin);
   QPointF getOriginIcon() {return mOriginIcon;}
   void setExtent1Icon(QPointF extent) {mExtent1Icon = extent;}

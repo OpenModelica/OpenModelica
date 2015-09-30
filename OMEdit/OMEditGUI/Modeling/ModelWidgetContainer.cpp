@@ -403,20 +403,19 @@ QAction* GraphicsView::getFlipVerticalAction()
   return mpFlipVerticalAction;
 }
 
-bool GraphicsView::addComponent(QString className, QString fileName, QPointF position)
+bool GraphicsView::addComponent(QString className, QPointF position)
 {
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-  LibraryTreeItem *pLibraryTreeItem;
-  pLibraryTreeItem = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className);
+  LibraryTreeItem *pLibraryTreeItem = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className);
   if (!pLibraryTreeItem) {
     return false;
   }
   // if we are dropping something on meta-model editor then we can skip Modelica stuff.
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
-    if (fileName.isEmpty()) {
+    if (pLibraryTreeItem->getFileName().isEmpty()) {
       QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                               tr("The class <b>%1</b> is not saved. You can only drag & drop saved classes.").arg(className),
-                               Helper::ok);
+                               tr("The class <b>%1</b> is not saved. You can only drag & drop saved classes.")
+                               .arg(pLibraryTreeItem->getNameStructure()), Helper::ok);
       return false;
     } else {
       // item not to be dropped on itself; if dropping an item on itself
@@ -424,18 +423,18 @@ bool GraphicsView::addComponent(QString className, QString fileName, QPointF pos
         return false;
       }
       QString name = getUniqueComponentName(StringHandler::toCamelCase(pLibraryTreeItem->getName()));
-      addComponentToView(name, className, "", position, new ComponentInfo(""), StringHandler::Connector, true, false, false, "", fileName);
+      addComponentToView(name, pLibraryTreeItem, "", position, new ComponentInfo(""), true, false);
       return true;
     }
   } else {
     StringHandler::ModelicaClasses type = pLibraryTreeItem->getRestriction();
-    QString name = pLibraryTreeItem->getName();
     OptionsDialog *pOptionsDialog = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
     // item not to be dropped on itself; if dropping an item on itself
     if (isClassDroppedOnItself(pLibraryTreeItem)) {
       return false;
     } else { // check if the model is partial
-      if (pMainWindow->getOMCProxy()->isPartial(className)) {
+      QString name;
+      if (pLibraryTreeItem->isPartial()) {
         if (pOptionsDialog->getNotificationsPage()->getReplaceableIfPartialCheckBox()->isChecked()) {
           NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ReplaceableIfPartial,
                                                                               NotificationsDialog::InformationIcon,
@@ -448,11 +447,11 @@ bool GraphicsView::addComponent(QString className, QString fileName, QPointF pos
         }
       }
       // get the model defaultComponentPrefixes
-      QString defaultPrefix = pMainWindow->getOMCProxy()->getDefaultComponentPrefixes(className);
+      QString defaultPrefix = pMainWindow->getOMCProxy()->getDefaultComponentPrefixes(pLibraryTreeItem->getNameStructure());
       // get the model defaultComponentName
-      QString defaultName = pMainWindow->getOMCProxy()->getDefaultComponentName(className);
+      QString defaultName = pMainWindow->getOMCProxy()->getDefaultComponentName(pLibraryTreeItem->getNameStructure());
       if (defaultName.isEmpty()) {
-        name = getUniqueComponentName(StringHandler::toCamelCase(name));
+        name = getUniqueComponentName(StringHandler::toCamelCase(pLibraryTreeItem->getName()));
       } else {
         if (checkComponentName(defaultName)) {
           name = defaultName;
@@ -478,25 +477,22 @@ bool GraphicsView::addComponent(QString className, QString fileName, QPointF pos
         // if item is a class, model, block, connector or record. then we can drop it to the graphicsview
         if ((type == StringHandler::Class) || (type == StringHandler::Model) || (type == StringHandler::Block) ||
             (type == StringHandler::Connector) || (type == StringHandler::Record)) {
-          addComponentToView(name, className, "", position, new ComponentInfo(""), type);
-//          Component *pComponent = new Component(name, className, "", position, false, pMainWindow->getOMCProxy(), this);
-//          scene()->addItem(pComponent);
-//          addComponentToList(pComponent);
+          addComponentToView(name, pLibraryTreeItem, "", position, new ComponentInfo(""));
           return true;
         } else {
           QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                                   GUIMessages::getMessage(GUIMessages::DIAGRAM_VIEW_DROP_MSG).arg(className)
+                                   GUIMessages::getMessage(GUIMessages::DIAGRAM_VIEW_DROP_MSG).arg(pLibraryTreeItem->getNameStructure())
                                    .arg(StringHandler::getModelicaClassType(type)), Helper::ok);
           return false;
         }
       } else if (mViewType == StringHandler::Icon) { // if dropping an item on the icon layer
         // if item is a connector. then we can drop it to the graphicsview
         if (type == StringHandler::Connector) {
-          addComponentToView(name, className, "", position, new ComponentInfo(""), type);
+          addComponentToView(name, pLibraryTreeItem, "", position, new ComponentInfo(""));
           return true;
         } else {
           QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                                   GUIMessages::getMessage(GUIMessages::ICON_VIEW_DROP_MSG).arg(className)
+                                   GUIMessages::getMessage(GUIMessages::ICON_VIEW_DROP_MSG).arg(pLibraryTreeItem->getNameStructure())
                                    .arg(StringHandler::getModelicaClassType(type)), Helper::ok);
           return false;
         }
@@ -521,13 +517,12 @@ bool GraphicsView::addComponent(QString className, QString fileName, QPointF pos
  * \param inheritedClassName
  * \param fileName
  */
-void GraphicsView::addComponentToView(QString name, QString className, QString transformationString, QPointF point,
-                                      ComponentInfo *pComponentInfo, StringHandler::ModelicaClasses type, bool addObject, bool openingClass,
-                                      bool inheritedClass, QString inheritedClassName, QString fileName, bool addOnlyToCurrentView)
+void GraphicsView::addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
+                                      ComponentInfo *pComponentInfo, bool addObject, bool openingClass)
 {
   AddComponentCommand *pAddComponentCommand;
-  pAddComponentCommand = new AddComponentCommand(name, className, transformationString, point, pComponentInfo, type, addObject, openingClass,
-                                                 inheritedClass, inheritedClassName, fileName, addOnlyToCurrentView, this);
+  pAddComponentCommand = new AddComponentCommand(name, pLibraryTreeItem, transformationString, position, pComponentInfo, addObject,
+                                                 openingClass, this);
   mpModelWidget->getUndoStack()->push(pAddComponentCommand);
 }
 
@@ -546,13 +541,14 @@ void GraphicsView::addComponentObject(Component *pComponent)
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::Modelica) {
     MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
     // Add the component to model in OMC Global Scope.
-    QString className = StringHandler::makeClassNameRelative(pComponent->getClassName(), mpModelWidget->getLibraryTreeItem()->getNameStructure());
+    QString className = StringHandler::makeClassNameRelative(pComponent->getLibraryTreeItem()->getNameStructure(),
+                                                             mpModelWidget->getLibraryTreeItem()->getNameStructure());
     pMainWindow->getOMCProxy()->addComponent(pComponent->getName(), className, mpModelWidget->getLibraryTreeItem()->getNameStructure(),
                                              pComponent->getPlacementAnnotation());
     mpModelWidget->updateModelicaText();
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpModelWidget->getEditor());
-    QFileInfo fileInfo(pComponent->getFileName());
+    QFileInfo fileInfo(pComponent->getLibraryTreeItem()->getFileName());
     // create StartCommand depending on the external model file extension.
     QString startCommand;
     if (fileInfo.suffix().compare("mo") == 0) {
@@ -665,7 +661,7 @@ bool GraphicsView::checkComponentName(QString componentName)
   return true;
 }
 
-QList<Component*> GraphicsView::getComponentList()
+QList<Component*> GraphicsView::getComponentsList()
 {
   return mComponentsList;
 }
@@ -1121,14 +1117,16 @@ QPointF GraphicsView::roundPoint(QPointF point)
 
 /*!
  * \brief GraphicsView::hasIconAnnotation
- * Checks if class has icon annotation.
+ * Checks if class has annotation.
  * \return
  */
-bool GraphicsView::hasIconAnnotation()
+bool GraphicsView::hasAnnotation()
 {
   foreach (ModelWidget::InheritedClass *pInheritedClass, mpModelWidget->getInheritedClassesList()) {
-    if (pInheritedClass->mIconShapesList.size() > 0) {
+    if (mViewType == StringHandler::Icon && pInheritedClass->mIconShapesList.size() > 0) {
       return true;
+    } else if (mViewType == StringHandler::Diagram && pInheritedClass->mDiagramShapesList.size() > 0) {
+
     }
   }
   if (!mShapesList.isEmpty()) {
@@ -1426,8 +1424,7 @@ void GraphicsView::addClassAnnotation(bool updateModelicaText)
     mpModelWidget->setModelModified();
     /* When something is added/changed in the icon layer then update the LibraryTreeItem in the Library Browser */
     if (mViewType == StringHandler::Icon) {
-      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(mpModelWidget->getLibraryTreeItem());
-      mpModelWidget->getLibraryTreeItem()->emitIconUpdated();
+      mpModelWidget->getLibraryTreeItem()->handleIconUpdated();
     }
   } else {
     pMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
@@ -1502,9 +1499,9 @@ void GraphicsView::dropEvent(QDropEvent *event)
     }
     QByteArray itemData = event->mimeData()->data(Helper::modelicaComponentFormat);
     QDataStream dataStream(&itemData, QIODevice::ReadOnly);
-    QString className, fileName;
-    dataStream >> className >> fileName;
-    if (addComponent(className, fileName, mapToScene(event->pos()))) {
+    QString className;
+    dataStream >> className;
+    if (addComponent(className, mapToScene(event->pos()))) {
       event->accept();
     } else {
       event->ignore();
@@ -1622,12 +1619,12 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     if (pGraphicsItem && pGraphicsItem->parentItem()) {
       Component *pComponent = dynamic_cast<Component*>(pGraphicsItem->parentItem());
       if (pComponent && !pComponent->isSelected()) {
-        if (pMainWindow->getConnectModeAction()->isChecked() && pComponent->getType() == StringHandler::Connector &&
-            pComponent->getComponentType() != Component::Extend && !mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+        if (pMainWindow->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
+            pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::Connector &&
+            !mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
           if (!isCreatingConnection()) {
             mpClickedComponent = pComponent;
           } else if (isCreatingConnection()) {
-            QApplication::restoreOverrideCursor();
             addConnection(pComponent);  // end the connection
             eventConsumed = true; // consume the event so that connection line or end component will not become selected
           }
@@ -1651,6 +1648,33 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
   pPointerYPositionLabel->setText(QString("Y: %1").arg(QString::number(mapToScene(event->pos()).y(), 'f', 2)));
 
   QPointF snappedPoint = snapPointToGrid(mapToScene(event->pos()));
+  // if user mouse over connector show Qt::CrossCursor.
+  MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
+  bool setCrossCursor = false;
+  if (itemAt(event->pos())) {
+    QGraphicsItem *pGraphicsItem = itemAt(event->pos());
+    if (pGraphicsItem && pGraphicsItem->parentItem()) {
+      Component *pComponent = dynamic_cast<Component*>(pGraphicsItem->parentItem());
+      if (pComponent && !pComponent->isSelected()) {
+        if (pMainWindow->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
+            pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::Connector &&
+            !mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+          setCrossCursor = true;
+          /* If setOverrideCursor() has been called twice, calling restoreOverrideCursor() will activate the first cursor set.
+           * Calling this function a second time restores the original widgets' cursors.
+           * So we only set the cursor if it is not already Qt::CrossCursor.
+           */
+          if (!QApplication::overrideCursor() || QApplication::overrideCursor()->shape() != Qt::CrossCursor) {
+            QApplication::setOverrideCursor(Qt::CrossCursor);
+          }
+        }
+      }
+    }
+  }
+  // if user mouse is not on connector then reset the cursor.
+  if (!setCrossCursor && QApplication::overrideCursor()) {
+    QApplication::restoreOverrideCursor();
+  }
   //If creating connector, the end port shall be updated to the mouse position.
   if (isCreatingConnection()) {
     mpConnectionLineAnnotation->updateEndPoint(snappedPoint);
@@ -1674,7 +1698,6 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
     mpBitmapShapeAnnotation->updateEndExtent(snappedPoint);
     mpBitmapShapeAnnotation->update();
   } else if (mpClickedComponent) {
-    QApplication::setOverrideCursor(Qt::CrossCursor);
     addConnection(mpClickedComponent);  // start the connection
   }
   QGraphicsView::mouseMoveEvent(event);
@@ -1784,6 +1807,19 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
   QGraphicsView::mouseDoubleClickEvent(event);
 }
 
+/*!
+ * \brief GraphicsView::focusOutEvent
+ * \param event
+ */
+void GraphicsView::focusOutEvent(QFocusEvent *event)
+{
+  // makesure we reset the Qt::CrossCursor
+  if (QApplication::overrideCursor() && QApplication::overrideCursor()->shape() == Qt::CrossCursor) {
+    QApplication::restoreOverrideCursor();
+  }
+  QGraphicsView::focusOutEvent(event);
+}
+
 void GraphicsView::keyPressEvent(QKeyEvent *event)
 {
   bool shiftModifier = event->modifiers().testFlag(Qt::ShiftModifier);
@@ -1825,7 +1861,6 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
   } else if (shiftModifier && controlModifier && event->key() == Qt::Key_R) {
     emit keyPressRotateAntiClockwise();
   } else if (event->key() == Qt::Key_Escape && isCreatingConnection()) {
-    QApplication::restoreOverrideCursor();
     removeConnection();
   } else {
     QGraphicsView::keyPressEvent(event);
@@ -2252,7 +2287,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     getModelInheritedClasses(getLibraryTreeItem());
     drawModelInheritedClasses();
     getModelIconDiagramShapes(getLibraryTreeItem()->getNameStructure());
-    getModelComponents(getLibraryTreeItem()->getNameStructure());
+    getModelComponents();
     //getModelConnections(getLibraryTreeItem()->getNameStructure());
     mpUndoStack->clear();
     mpEditor = 0;
@@ -2355,6 +2390,10 @@ void ModelWidget::updateParentModelsText(QString className)
  */
 void ModelWidget::modelInheritedClassLoaded(InheritedClass *pInheritedClass)
 {
+  MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
+  if (!pInheritedClass->mpLibraryTreeItem->getModelWidget()) {
+    pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pInheritedClass->mpLibraryTreeItem, "", false);
+  }
   parseModelInheritedClass(pInheritedClass, StringHandler::Icon);
   parseModelInheritedClass(pInheritedClass, StringHandler::Diagram);
   mpIconGraphicsView->reOrderItems();
@@ -2679,7 +2718,7 @@ void ModelWidget::refresh()
   {
     getModelInheritedClasses(getLibraryTreeItem());
     getModelIconDiagramShapes(getLibraryTreeItem()->getNameStructure());
-    getModelComponents(getLibraryTreeItem()->getNameStructure());
+    getModelComponents();
     getModelConnections(getLibraryTreeItem()->getNameStructure());
   }
 
@@ -2808,14 +2847,13 @@ void ModelWidget::getModelInheritedClasses(LibraryTreeItem *pLibraryTreeItem)
        */
       if (!(pMainWindow->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(pLibraryTreeItem->getNameStructure()) == 0)) {
         LibraryTreeItem *pInheritedClass = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(inheritedClass);
-        if (pInheritedClass) {
-          if (!pInheritedClass->getModelWidget()) {
-            pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pInheritedClass, "", false);
-          }
-        } else {
+        if (!pInheritedClass) {
           pInheritedClass = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->createNonExistingLibraryTreeItem(inheritedClass);
         }
-        pLibraryTreeItem->addInheritedClass(pInheritedClass);
+        if (!pInheritedClass->getModelWidget()) {
+          pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pInheritedClass, "", false);
+        }
+        mpLibraryTreeItem->addInheritedClass(pInheritedClass);
         getModelInheritedClasses(pInheritedClass);
         addInheritedClass(pInheritedClass);
       }
@@ -2826,6 +2864,7 @@ void ModelWidget::getModelInheritedClasses(LibraryTreeItem *pLibraryTreeItem)
       if (!pInheritedClass->getModelWidget() && !pInheritedClass->isNonExisting()) {
         pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pInheritedClass, "", false);
       }
+      mpLibraryTreeItem->addInheritedClass(pInheritedClass);
       getModelInheritedClasses(pInheritedClass);
       addInheritedClass(pInheritedClass);
     }
@@ -3031,31 +3070,26 @@ void ModelWidget::parseModelIconDiagramShapes(QString className, QString annotat
 /*!
  * \brief ModelWidget::getModelComponents
  * Gets the components of the model and place them in the diagram and icon GraphicsView.
- * \param className
- * \param inheritedCycle
  */
-void ModelWidget::getModelComponents(QString className, bool inheritedCycle)
+void ModelWidget::getModelComponents()
 {
   MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
-//  // get the inherited components of the class
-//  int inheritanceCount = pMainWindow->getOMCProxy()->getInheritanceCount(className);
-//  for(int i = 1 ; i <= inheritanceCount ; i++) {
-//    QString inheritedClass = pMainWindow->getOMCProxy()->getNthInheritedClass(className, i);
-//    /* If the inherited class is one of the builtin type such as Real we can
-//     * stop here, because the class can not contain any components, etc.
-//     * Also check for cyclic loops.
-//     */
-//    if (!(pMainWindow->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(className) == 0)) {
-//      getModelComponents(inheritedClass, viewType, true);
-//    }
-//  }
-  GraphicsView *pIconGraphicsView, *pDiagramGraphicsView;
-  pIconGraphicsView = mpIconGraphicsView;
-  pDiagramGraphicsView = mpDiagramGraphicsView;
+  // get the inherited components of the class
+  foreach (InheritedClass *pInheritedClass, mInheritedClassesList) {
+    LibraryTreeItem *pInheritedLibraryTreeItem = pInheritedClass->mpLibraryTreeItem;
+    if (pInheritedLibraryTreeItem) {
+      if (!pInheritedLibraryTreeItem->getModelWidget()) {
+        pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pInheritedLibraryTreeItem, "", false);
+      }
+      foreach (Component *pInheritedComponent, pInheritedLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
+        pInheritedClass->mDiagramComponentsList.append(new Component(pInheritedComponent, mpDiagramGraphicsView));
+      }
+    }
+  }
   // get the components
-  QList<ComponentInfo*> componentsList = pMainWindow->getOMCProxy()->getComponents(className);
+  QList<ComponentInfo*> componentsList = pMainWindow->getOMCProxy()->getComponents(mpLibraryTreeItem->getNameStructure());
   // get the components annotations
-  QStringList componentsAnnotationsList = pMainWindow->getOMCProxy()->getComponentAnnotations(className);
+  QStringList componentsAnnotationsList = pMainWindow->getOMCProxy()->getComponentAnnotations(mpLibraryTreeItem->getNameStructure());
   int i = 0;
   foreach (ComponentInfo *pComponentInfo, componentsList) {
     /* if the component type is one of the builtin type then don't show it */
@@ -3063,45 +3097,19 @@ void ModelWidget::getModelComponents(QString className, bool inheritedCycle)
       i++;
       continue;
     }
-    StringHandler::ModelicaClasses type = pMainWindow->getOMCProxy()->getClassRestriction(pComponentInfo->getClassName());
-    /* Only non-protected connector is allowed on the icon layer. */
-    if (type == StringHandler::Connector && !pComponentInfo->getProtected()) {
-      QString transformation = "";
-      if (componentsAnnotationsList.size() >= i) {
-        transformation = StringHandler::getPlacementAnnotation(componentsAnnotationsList.at(i));
-      }
-      Component *pComponent = new Component(pComponentInfo->getName(), pComponentInfo->getClassName(), transformation, QPointF(0,  0),
-                                            inheritedCycle, pMainWindow->getOMCProxy(), pIconGraphicsView);
-      pIconGraphicsView->scene()->addItem(pComponent);
-      pIconGraphicsView->addComponentToList(pComponent);
+    LibraryTreeItem *pLibraryTreeItem = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pComponentInfo->getClassName());
+    if (!pLibraryTreeItem) {
+      pLibraryTreeItem = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->createNonExistingLibraryTreeItem(pComponentInfo->getClassName());
     }
-
-
-
-
-    /* Only model, class, connector, record or block is allowed on the diagram layer. */
-//    if (!(type == StringHandler::Model || type == StringHandler::Class || type == StringHandler::Connector ||
-//          type == StringHandler::Record || type == StringHandler::Block)) {
-//      i++;
-//      continue;
-//    }
-//    // just to be on safe-side.
-//    if (componentsAnnotationsList.size() <= i)
-//      continue;
-//    QString transformation = StringHandler::getPlacementAnnotation(componentsAnnotationsList.at(i));
-//    // add the component to the icon/diagram view.
-//    if (!transformation.isEmpty()) {
-//      if ((viewType == StringHandler::Icon || viewType == StringHandler::IconDiagram) &&
-//          (type == StringHandler::Connector && !pComponentInfo->getProtected())) {
-//        // add the component to the icon view.
-//        mpIconGraphicsView->addComponentToView(pComponentInfo->getName(), pComponentInfo->getClassName(), transformation, QPointF(0.0, 0.0),
-//                                               new ComponentInfo(pComponentInfo), type, false, true, inheritedCycle, className, "", true);
-//      }
-//      if (viewType == StringHandler::Diagram || viewType == StringHandler::IconDiagram) {
-//        mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pComponentInfo->getClassName(), transformation, QPointF(0.0, 0.0),
-//                                                  pComponentInfo, type, false, true, inheritedCycle, className, "", true);
-//      }
-//    }
+    if (!pLibraryTreeItem->getModelWidget()) {
+      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, "", false);
+    }
+    QString transformation = "";
+    if (componentsAnnotationsList.size() >= i) {
+      transformation = StringHandler::getPlacementAnnotation(componentsAnnotationsList.at(i));
+    }
+    mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pLibraryTreeItem, transformation, QPointF(0, 0), pComponentInfo,
+                                              false, true);
     i++;
   }
 }
@@ -3151,13 +3159,13 @@ void ModelWidget::getModelConnections(QString className, bool inheritedCycle)
     Component *pStartConnectorComponent = 0;
     Component *pEndConnectorComponent = 0;
     if (pStartComponent) {
-      pMainWindow->getOMCProxy()->sendCommand("getClassRestriction(" + pStartComponent->getClassName() + ")");
+      pMainWindow->getOMCProxy()->sendCommand("getClassRestriction(" + pStartComponent->getLibraryTreeItem()->getNameStructure() + ")");
       bool isExpandableConnector = pMainWindow->getOMCProxy()->getResult().toLower().contains("expandable connector");
       // if a component type is connector then we only get one item in startComponentList
       // check the startcomponentlist
       if (startComponentList.size() < 2 || isExpandableConnector) {
         pStartConnectorComponent = pStartComponent;
-      } else if (!pMainWindow->getOMCProxy()->existClass(pStartComponent->getClassName())) {
+      } else if (!pMainWindow->getOMCProxy()->existClass(pStartComponent->getLibraryTreeItem()->getNameStructure())) {
         /* if class doesn't exist then connect with the red cross box */
         pStartConnectorComponent = pStartComponent;
       } else {
@@ -3171,11 +3179,11 @@ void ModelWidget::getModelConnections(QString className, bool inheritedCycle)
     if (pEndComponent) {
       // if a component type is connector then we only get one item in endComponentList
       // check the endcomponentlist
-      pMainWindow->getOMCProxy()->sendCommand("getClassRestriction(" + pEndComponent->getClassName() + ")");
+      pMainWindow->getOMCProxy()->sendCommand("getClassRestriction(" + pEndComponent->getLibraryTreeItem()->getNameStructure() + ")");
       bool isExpandableConnector = pMainWindow->getOMCProxy()->getResult().toLower().contains("expandable connector");
       if (endComponentList.size() < 2 || isExpandableConnector) {
         pEndConnectorComponent = pEndComponent;
-      } else if (!pMainWindow->getOMCProxy()->existClass(pEndComponent->getClassName())) {
+      } else if (!pMainWindow->getOMCProxy()->existClass(pEndComponent->getLibraryTreeItem()->getNameStructure())) {
         /* if class doesn't exist then connect with the red cross box */
         pEndConnectorComponent = pEndComponent;
       } else {
@@ -3245,8 +3253,8 @@ void ModelWidget::getTLMComponents()
     QFileInfo fileInfo(mpLibraryTreeItem->getFileName());
     QString fileName = fileInfo.absolutePath() + "/" + subModel.attribute("Name") + "/" + subModel.attribute("ModelFile");
     // add the component to the the diagram view.
-    mpDiagramGraphicsView->addComponentToView(subModel.attribute("Name"), subModel.attribute("Name"), transformation, QPointF(0.0, 0.0),
-                                              new ComponentInfo(""), StringHandler::Connector, false, false, false, "", fileName);
+//    mpDiagramGraphicsView->addComponentToView(subModel.attribute("Name"), subModel.attribute("Name"), transformation, QPointF(0.0, 0.0),
+//                                              new ComponentInfo(""), StringHandler::Connector, false, false, false, "", fileName);
   }
 }
 
