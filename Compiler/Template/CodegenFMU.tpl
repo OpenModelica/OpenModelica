@@ -71,7 +71,7 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
   let()= textFile(simulationHeaderFile(simCode,guid), '<%fileNamePrefix%>_model.h')
 
-  let _ = generateSimulationFiles(simCode,guid,fileNamePrefix)
+  let _ = generateSimulationFiles(simCode,guid,fileNamePrefix,true)
 
   let()= textFile(simulationInitFile(simCode,guid), '<%fileNamePrefix%>_init.xml')
   let x = covertTextFileToCLiteral('<%fileNamePrefix%>_init.xml','<%fileNamePrefix%>_init.c')

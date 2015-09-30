@@ -74,7 +74,7 @@ import CodegenCFunctions.*;
     // adpro: write the main .c file last! Make on windows doesn't seem to realize that
     //        the .c file is newer than the .o file if we have succesive simulate commands
     //        for the same model (i.e. see testsuite/linearize/simextfunction.mos).
-    let _ = generateSimulationFiles(simCode,guid,fileNamePrefix)
+    let _ = generateSimulationFiles(simCode,guid,fileNamePrefix,false)
 
     // If ParModelica generate the kernels file too.
     if acceptParModelicaGrammar() then
@@ -153,7 +153,7 @@ end translateInitFile;
   end match
 end simulationHeaderFile;
 
-/* public */ template generateSimulationFiles(SimCode simCode, String guid, String modelNamePrefix)
+/* public */ template generateSimulationFiles(SimCode simCode, String guid, String modelNamePrefix, Boolean isModelExchangeFMU)
  "Generates code in different C files for the simulation target.
   To make the compilation faster we split the simulation files into several
   used in Compiler/Template/CodegenFMU.tpl"
@@ -195,7 +195,7 @@ end simulationHeaderFile;
      // synchronous
      let()= textFileConvertLines(simulationFile_syn(simCode,guid), '<%fileNamePrefix%>_15syn.c')
      // main file
-     let()= textFileConvertLines(simulationFile(simCode,guid), '<%fileNamePrefix%>.c')
+     let()= textFileConvertLines(simulationFile(simCode,guid,isModelExchangeFMU), '<%fileNamePrefix%>.c')
      ""
   end match
 end generateSimulationFiles;
@@ -810,7 +810,7 @@ template simulationFile_lnz(SimCode simCode, String guid)
   end match
 end simulationFile_lnz;
 
-template simulationFile(SimCode simCode, String guid)
+template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU)
   "Generates code for main C file for simulation target."
 ::=
   match simCode
@@ -842,12 +842,16 @@ template simulationFile(SimCode simCode, String guid)
     /* Main Simulation File */
     <%simulationFileHeader(simCode)%>
 
+    <% if boolNot(isModelExchangeFMU) then
+    <<
     #define prefixedName_performSimulation <%symbolName(modelNamePrefixStr,"performSimulation")%>
     #define prefixedName_updateContinuousSystem <%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>
     #include <simulation/solver/perform_simulation.c>
 
     #define prefixedName_performQSSSimulation <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>
     #include <simulation/solver/perform_qss_simulation.c>
+    >>
+    %>
 
     /* dummy VARINFO and FILEINFO */
     const FILE_INFO dummyFILE_INFO = omc_dummyFileInfo;
@@ -874,9 +878,9 @@ template simulationFile(SimCode simCode, String guid)
     #include "<%simCode.fileNamePrefix%>_13opt.h"
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
-       (int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>,
-       (int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>,
-       <%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>,
+       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>'%>,
+       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>'%>,
+       <% if isModelExchangeFMU then "NULL" else '<%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>'%>,
        <%symbolName(modelNamePrefixStr,"callExternalObjectConstructors")%>,
        <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>,
        <%symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>,
