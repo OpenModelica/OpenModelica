@@ -132,6 +132,34 @@ interface package GraphvizDumpTV
       end TORNSYSTEM;
     end StrongComponent;
 
+    uniontype Jacobian
+      record FULL_JACOBIAN
+        FullJacobian jacobian;
+      end FULL_JACOBIAN;
+
+      record GENERIC_JACOBIAN
+        SymbolicJacobian jacobian;
+        SparsePattern sparsePattern;
+        SparseColoring coloring;
+      end GENERIC_JACOBIAN;
+
+      record EMPTY_JACOBIAN end EMPTY_JACOBIAN;
+    end Jacobian;
+
+    type SymbolicJacobians = list<tuple<Option<SymbolicJacobian>, SparsePattern, SparseColoring>>;
+    type FullJacobian = Option<list<tuple<Integer, Integer, Equation>>>;
+    type SymbolicJacobian = tuple<BackendDAE,               // symbolic equation system
+                                  String,                   // Matrix name
+                                  list<Var>,                // diff vars
+                                  list<Var>,                // result diffed equation
+                                  list<Var>                 // all diffed equation
+                                  >;
+    type SparsePattern = tuple<list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>>,   // column-wise sparse pattern
+                               list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>>,   // row-wise sparse pattern
+                               tuple<list<DAE.ComponentRef>,                            // diff vars
+                                     list<DAE.ComponentRef>>>;                          // diffed vars
+    type SparseColoring = list<list<DAE.ComponentRef>>;
+
     type IncidenceMatrixElementEntry = Integer;
     type IncidenceMatrixElement = list<IncidenceMatrixElementEntry>;
     type IncidenceMatrix = array<IncidenceMatrixElement>;
