@@ -4742,7 +4742,10 @@ case BINARY(__) then
     let &preExp += '<%tmpStr%> = stringAppend(<%e1%>,<%e2%>);<%\n%>'
     tmpStr
   case ADD(__) then '<%e1%> + <%e2%>'
-  case SUB(__) then '<%e1%> - (<%e2%>)'
+  case SUB(__) then
+    if isAtomic(exp2)
+      then '<%e1%> - <%e2%>'
+      else '<%e1%> - (<%e2%>)'
   case MUL(__) then '(<%e1%>) * (<%e2%>)'
   case DIV(__) then
     let tvar = tempDecl(expTypeModelica(ty),&varDecls)
@@ -4848,7 +4851,10 @@ match exp
 case UNARY(__) then
   let e = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
   match operator
-  case UMINUS(__)     then '(-(<%e%>))'
+  case UMINUS(__) then
+    if isAtomic(exp)
+      then '(-<%e%>)'
+      else '(-(<%e%>))'
   case UMINUS_ARR(ty=T_ARRAY(ty=T_REAL(__))) then
     let var = tempDecl("real_array", &varDecls)
     let &preExp += 'usub_alloc_real_array(<%e%>,&<%var%>);<%\n%>'

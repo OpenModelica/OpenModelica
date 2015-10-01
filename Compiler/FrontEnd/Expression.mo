@@ -7278,6 +7278,19 @@ algorithm
   end match;
 end isHalf;
 
+public function isAtomic
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inExp)
+    case DAE.CREF() then true;
+    case DAE.CALL() then true;
+    case DAE.ICONST() then inExp.integer >= 0;
+    case DAE.RCONST() then inExp.real > 0.0;
+    else false;
+  end match;
+end isAtomic;
+
 public function isImpure "author: lochel
   Returns true if an expression contains an impure function call."
   input DAE.Exp inExp;

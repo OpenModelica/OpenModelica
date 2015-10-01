@@ -3007,6 +3007,11 @@ package Expression
     output DAE.Type outType;
   end typeof;
 
+  function isAtomic
+    input DAE.Exp inExp;
+    output Boolean outBoolean;
+  end isAtomic;
+
   function isHalf
     input DAE.Exp inExp;
     output Boolean outBoolean;
