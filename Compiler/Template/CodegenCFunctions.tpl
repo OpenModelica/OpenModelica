@@ -4741,9 +4741,9 @@ case BINARY(__) then
     let tmpStr = tempDecl("modelica_metatype", &varDecls)
     let &preExp += '<%tmpStr%> = stringAppend(<%e1%>,<%e2%>);<%\n%>'
     tmpStr
-  case ADD(__) then '(<%e1%> + <%e2%>)'
-  case SUB(__) then '(<%e1%> - <%e2%>)'
-  case MUL(__) then '(<%e1%> * <%e2%>)'
+  case ADD(__) then '<%e1%> + <%e2%>'
+  case SUB(__) then '<%e1%> - (<%e2%>)'
+  case MUL(__) then '(<%e1%>) * (<%e2%>)'
   case DIV(__) then
     let tvar = tempDecl(expTypeModelica(ty),&varDecls)
     let &preExp += '<%tvar%> = <%e2%>;<%\n%>'
@@ -4751,7 +4751,7 @@ case BINARY(__) then
       if acceptMetaModelicaGrammar()
         then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
         else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(exp))%>");}<%\n%>'
-    '(<%e1%> / <%e2%>)'
+    '(<%e1%>) / (<%e2%>)'
   case POW(__) then
     if isHalf(exp2) then
       (let tmp = tempDecl(expTypeFromExpModelica(exp1),&varDecls)
@@ -4848,7 +4848,7 @@ match exp
 case UNARY(__) then
   let e = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
   match operator
-  case UMINUS(__)     then '(-<%e%>)'
+  case UMINUS(__)     then '(-(<%e%>))'
   case UMINUS_ARR(ty=T_ARRAY(ty=T_REAL(__))) then
     let var = tempDecl("real_array", &varDecls)
     let &preExp += 'usub_alloc_real_array(<%e%>,&<%var%>);<%\n%>'
