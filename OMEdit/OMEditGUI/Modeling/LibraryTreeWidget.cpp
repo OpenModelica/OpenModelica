@@ -973,7 +973,7 @@ void LibraryTreeModel::addModelicaLibraries(QSplashScreen *pSplashScreen)
   OMCProxy *pOMCProxy = mpLibraryWidget->getMainWindow()->getOMCProxy();
   pOMCProxy->loadSystemLibraries();
   QStringList systemLibs = pOMCProxy->getClassNames();
-  systemLibs.prepend("OpenModelica");
+//  systemLibs.prepend("OpenModelica");
   foreach (QString lib, systemLibs) {
     pSplashScreen->showMessage(QString(Helper::loading).append(" ").append(lib), Qt::AlignRight, Qt::white);
     bool wasNonExisting = false;
@@ -1674,11 +1674,17 @@ LibraryTreeItem* LibraryTreeModel::getLibraryTreeItemFromFileHelper(LibraryTreeI
  */
 void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem)
 {
-  // remove all cached OMC commands for LibraryTreeItem
-  mpLibraryWidget->getMainWindow()->getOMCProxy()->removeCachedOMCCommand(pLibraryTreeItem->getNameStructure());
+  MainWindow *pMainWindow = mpLibraryWidget->getMainWindow();
+  // make the class non existing
+  pLibraryTreeItem->setNonExisting(true);
+  // notify the inherits classes
+  pLibraryTreeItem->emitUnLoaded();
+  // make the class non expanded
+  pLibraryTreeItem->setExpanded(false);
+  addNonExistingLibraryTreeItem(pLibraryTreeItem);
   /* remove the ModelWidget of LibraryTreeItem and remove the QMdiSubWindow from MdiArea and delete it. */
   if (pLibraryTreeItem->getModelWidget()) {
-    QMdiSubWindow *pMdiSubWindow = mpLibraryWidget->getMainWindow()->getModelWidgetContainer()->getMdiSubWindow(pLibraryTreeItem->getModelWidget());
+    QMdiSubWindow *pMdiSubWindow = pMainWindow->getModelWidgetContainer()->getMdiSubWindow(pLibraryTreeItem->getModelWidget());
     if (pMdiSubWindow) {
       pMdiSubWindow->close();
       pMdiSubWindow->deleteLater();
@@ -1690,11 +1696,8 @@ void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, Libr
   int row = pLibraryTreeItem->row();
   beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem), row, row);
   pParentLibraryTreeItem->removeChild(pLibraryTreeItem);
+  // remove all cached OMC commands for LibraryTreeItem
   mpLibraryWidget->getMainWindow()->getOMCProxy()->removeCachedOMCCommand(pLibraryTreeItem->getNameStructure());
-  pLibraryTreeItem->setNonExisting(true);
-  pLibraryTreeItem->emitUnLoaded();
-  pLibraryTreeItem->setExpanded(false);
-  addNonExistingLibraryTreeItem(pLibraryTreeItem);
   endRemoveRows();
 }
 

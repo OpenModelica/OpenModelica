@@ -298,6 +298,8 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   } else {
     if (mpLibraryTreeItem->isNonExisting()) {
       createNonExistingComponent();
+      // transformation
+      mpCoOrdinateSystem = new CoOrdinateSystem;
     } else {
       createClassInheritedShapes();
       createClassShapes(mpLibraryTreeItem);
@@ -306,13 +308,13 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
       if (!mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->hasAnnotation()) {
         createDefaultComponent();
       }
+      // transformation
+      if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+        mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getCoOrdinateSystem();
+      } else {
+        mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getCoOrdinateSystem();
+      }
     }
-  }
-  // transformation
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-    mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getCoOrdinateSystem();
-  } else {
-    mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getCoOrdinateSystem();
   }
   mpTransformation = new Transformation(mpReferenceComponent->getTransformation());
   setTransform(mpTransformation->getTransformationMatrix());
