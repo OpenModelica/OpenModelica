@@ -47,47 +47,12 @@
 
 CoOrdinateSystem::CoOrdinateSystem()
 {
-
-}
-
-void CoOrdinateSystem::setExtent(QList<QPointF> extent)
-{
-  mExtent = extent;
-}
-
-QList<QPointF> CoOrdinateSystem::getExtent()
-{
-  return mExtent;
-}
-
-void CoOrdinateSystem::setPreserveAspectRatio(bool PreserveAspectRatio)
-{
-  mPreserveAspectRatio = PreserveAspectRatio;
-}
-
-bool CoOrdinateSystem::getPreserveAspectRatio()
-{
-  return mPreserveAspectRatio;
-}
-
-void CoOrdinateSystem::setInitialScale(qreal initialScale)
-{
-  mInitialScale = initialScale;
-}
-
-qreal CoOrdinateSystem::getInitialScale()
-{
-  return mInitialScale;
-}
-
-void CoOrdinateSystem::setGrid(QPointF grid)
-{
-  mGrid = grid;
-}
-
-QPointF CoOrdinateSystem::getGrid()
-{
-  return mGrid;
+  QList<QPointF> extents;
+  extents << QPointF(-100, -100) << QPointF(100, 100);
+  setExtent(extents);
+  setPreserveAspectRatio(true);
+  setInitialScale(0.1);
+  setGrid(QPointF(2, 2));
 }
 
 qreal CoOrdinateSystem::getHorizontalGridStep()
@@ -2287,6 +2252,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     getModelInheritedClasses(getLibraryTreeItem());
     drawModelInheritedClasses();
     getModelIconDiagramShapes(getLibraryTreeItem()->getNameStructure());
+    drawModelInheritedComponents();
     getModelComponents();
     //getModelConnections(getLibraryTreeItem()->getNameStructure());
     mpUndoStack->clear();
@@ -2394,8 +2360,9 @@ void ModelWidget::modelInheritedClassLoaded(InheritedClass *pInheritedClass)
   if (!pInheritedClass->mpLibraryTreeItem->getModelWidget()) {
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pInheritedClass->mpLibraryTreeItem, "", false);
   }
-  parseModelInheritedClass(pInheritedClass, StringHandler::Icon);
-  parseModelInheritedClass(pInheritedClass, StringHandler::Diagram);
+  drawModelInheritedClassShapes(pInheritedClass, StringHandler::Icon);
+  drawModelInheritedClassShapes(pInheritedClass, StringHandler::Diagram);
+  drawModelInheritedClassComponents(pInheritedClass);
   mpIconGraphicsView->reOrderItems();
   mpDiagramGraphicsView->reOrderItems();
 }
@@ -2407,8 +2374,9 @@ void ModelWidget::modelInheritedClassLoaded(InheritedClass *pInheritedClass)
  */
 void ModelWidget::modelInheritedClassUnLoaded(InheritedClass *pInheritedClass)
 {
-  parseModelInheritedClass(pInheritedClass, StringHandler::Icon);
-  parseModelInheritedClass(pInheritedClass, StringHandler::Diagram);
+  drawModelInheritedClassShapes(pInheritedClass, StringHandler::Icon);
+  drawModelInheritedClassShapes(pInheritedClass, StringHandler::Diagram);
+  removeInheritedClassComponents(pInheritedClass);
   //! @note Do we really need to call GraphicsView::reOrderItems() here?
 }
 
@@ -2878,8 +2846,8 @@ void ModelWidget::getModelInheritedClasses(LibraryTreeItem *pLibraryTreeItem)
 void ModelWidget::drawModelInheritedClasses()
 {
   foreach (InheritedClass *pInheritedClass, mInheritedClassesList) {
-    parseModelInheritedClass(pInheritedClass, StringHandler::Icon);
-    parseModelInheritedClass(pInheritedClass, StringHandler::Diagram);
+    drawModelInheritedClassShapes(pInheritedClass, StringHandler::Icon);
+    drawModelInheritedClassShapes(pInheritedClass, StringHandler::Diagram);
   }
 }
 
@@ -2909,7 +2877,7 @@ void ModelWidget::removeInheritedClassShapes(InheritedClass *pInheritedClass, St
  * \param pLibraryTreeItem
  * \param viewType
  */
-void ModelWidget::parseModelInheritedClass(InheritedClass *pInheritedClass, StringHandler::ViewType viewType)
+void ModelWidget::drawModelInheritedClassShapes(InheritedClass *pInheritedClass, StringHandler::ViewType viewType)
 {
   removeInheritedClassShapes(pInheritedClass, viewType);
   LibraryTreeItem *pLibraryTreeItem = pInheritedClass->mpLibraryTreeItem;
@@ -3067,6 +3035,34 @@ void ModelWidget::parseModelIconDiagramShapes(QString className, QString annotat
   }
 }
 
+void ModelWidget::drawModelInheritedComponents()
+{
+  foreach (InheritedClass *pInheritedClass, mInheritedClassesList) {
+    drawModelInheritedClassComponents(pInheritedClass);
+  }
+}
+
+void ModelWidget::removeInheritedClassComponents(InheritedClass *pInheritedClass)
+{
+  foreach (Component *pComponent, pInheritedClass->mDiagramComponentsList) {
+    mpDiagramGraphicsView->scene()->removeItem(pComponent);
+  }
+  pInheritedClass->mDiagramComponentsList.clear();
+}
+
+void ModelWidget::drawModelInheritedClassComponents(InheritedClass *pInheritedClass)
+{
+  removeInheritedClassComponents(pInheritedClass);
+  LibraryTreeItem *pInheritedLibraryTreeItem = pInheritedClass->mpLibraryTreeItem;
+  foreach (Component *pInheritedComponent, pInheritedLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
+    if (pInheritedComponent->getLibraryTreeItem()->getRestriction() == StringHandler::Connector &&
+        !pInheritedComponent->getComponentInfo()->getProtected()) {
+      pInheritedClass->mIconComponentsList.append(new Component(pInheritedComponent, mpIconGraphicsView));
+    }
+    pInheritedClass->mDiagramComponentsList.append(new Component(pInheritedComponent, mpDiagramGraphicsView));
+  }
+}
+
 /*!
  * \brief ModelWidget::getModelComponents
  * Gets the components of the model and place them in the diagram and icon GraphicsView.
@@ -3074,18 +3070,6 @@ void ModelWidget::parseModelIconDiagramShapes(QString className, QString annotat
 void ModelWidget::getModelComponents()
 {
   MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
-  // get the inherited components of the class
-  foreach (InheritedClass *pInheritedClass, mInheritedClassesList) {
-    LibraryTreeItem *pInheritedLibraryTreeItem = pInheritedClass->mpLibraryTreeItem;
-    if (pInheritedLibraryTreeItem) {
-      if (!pInheritedLibraryTreeItem->getModelWidget()) {
-        pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pInheritedLibraryTreeItem, "", false);
-      }
-      foreach (Component *pInheritedComponent, pInheritedLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
-        pInheritedClass->mDiagramComponentsList.append(new Component(pInheritedComponent, mpDiagramGraphicsView));
-      }
-    }
-  }
   // get the components
   QList<ComponentInfo*> componentsList = pMainWindow->getOMCProxy()->getComponents(mpLibraryTreeItem->getNameStructure());
   // get the components annotations

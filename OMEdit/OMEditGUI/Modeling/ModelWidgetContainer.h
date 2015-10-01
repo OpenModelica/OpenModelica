@@ -70,14 +70,14 @@ class CoOrdinateSystem
 {
 public:
   CoOrdinateSystem();
-  void setExtent(QList<QPointF> extent);
-  QList<QPointF> getExtent();
-  void setPreserveAspectRatio(bool PreserveAspectRatio);
-  bool getPreserveAspectRatio();
-  void setInitialScale(qreal initialScale);
-  qreal getInitialScale();
-  void setGrid(QPointF grid);
-  QPointF getGrid();
+  void setExtent(QList<QPointF> extent) {mExtent = extent;}
+  QList<QPointF> getExtent() {return mExtent;}
+  void setPreserveAspectRatio(bool PreserveAspectRatio) {mPreserveAspectRatio = PreserveAspectRatio;}
+  bool getPreserveAspectRatio() {return mPreserveAspectRatio;}
+  void setInitialScale(qreal initialScale) {mInitialScale = initialScale;}
+  qreal getInitialScale() {return mInitialScale;}
+  void setGrid(QPointF grid) {mGrid = grid;}
+  QPointF getGrid() {return mGrid;}
   qreal getHorizontalGridStep();
   qreal getVerticalGridStep();
 private:
@@ -401,9 +401,12 @@ private:
   void getModelInheritedClasses(LibraryTreeItem *pLibraryTreeItem);
   void drawModelInheritedClasses();
   void removeInheritedClassShapes(InheritedClass *pInheritedClass, StringHandler::ViewType viewType);
-  void parseModelInheritedClass(InheritedClass *pInheritedClass, StringHandler::ViewType viewType);
+  void drawModelInheritedClassShapes(InheritedClass *pInheritedClass, StringHandler::ViewType viewType);
   void getModelIconDiagramShapes(QString className);
   void parseModelIconDiagramShapes(QString className, QString annotationString, StringHandler::ViewType viewType);
+  void drawModelInheritedComponents();
+  void removeInheritedClassComponents(InheritedClass *pInheritedClass);
+  void drawModelInheritedClassComponents(InheritedClass *pInheritedClass);
   void getModelComponents();
   void getModelConnections(QString className, bool inheritedCycle = false);
   void getTLMComponents();

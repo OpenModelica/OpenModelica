@@ -267,6 +267,9 @@ void ResizerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *optio
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
+  if (mpComponent->getGraphicsView()->isRenderingLibraryPixmap()) {
+    return;
+  }
   painter->setPen(mPen);
   painter->setBrush(mPen.color());
   painter->drawRect(mRectangle);
