@@ -289,38 +289,13 @@ public uniontype EquationAttributes
   record EQUATION_ATTRIBUTES
     Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
     EquationKind kind;
-    LoopInfo loopInfo;
   end EQUATION_ATTRIBUTES;
 end EquationAttributes;
 
-public constant EquationAttributes EQ_ATTR_DEFAULT_DYNAMIC = EQUATION_ATTRIBUTES(false, DYNAMIC_EQUATION(), NO_LOOP());
-public constant EquationAttributes EQ_ATTR_DEFAULT_BINDING = EQUATION_ATTRIBUTES(false, BINDING_EQUATION(), NO_LOOP());
-public constant EquationAttributes EQ_ATTR_DEFAULT_INITIAL = EQUATION_ATTRIBUTES(false, INITIAL_EQUATION(), NO_LOOP());
-public constant EquationAttributes EQ_ATTR_DEFAULT_UNKNOWN = EQUATION_ATTRIBUTES(false, UNKNOWN_EQUATION_KIND(), NO_LOOP());
-
-public uniontype LoopInfo "is this equation part of a for-loop"
-  record NO_LOOP
-  end NO_LOOP;
-
-  record LOOP
-    Integer loopId;
-    //Integer pos; // position in the loop, 1=start, endIt=last, needed to get the matching afterwards
-    .DAE.Exp startIt;
-    .DAE.Exp endIt;
-    list<IterCref> crefs;
-  end LOOP;
-end LoopInfo;
-
-public uniontype IterCref "which crefs occur in the for-loop and what are their iterated indexes"
-  record ITER_CREF
-    .DAE.ComponentRef cref;
-    .DAE.Exp iterator;
-  end ITER_CREF;
-    record ACCUM_ITER_CREF
-    .DAE.ComponentRef cref;
-    .DAE.Operator op; // the operator e.g. add
-  end ACCUM_ITER_CREF;
-end IterCref;
+public constant EquationAttributes EQ_ATTR_DEFAULT_DYNAMIC = EQUATION_ATTRIBUTES(false, DYNAMIC_EQUATION());
+public constant EquationAttributes EQ_ATTR_DEFAULT_BINDING = EQUATION_ATTRIBUTES(false, BINDING_EQUATION());
+public constant EquationAttributes EQ_ATTR_DEFAULT_INITIAL = EQUATION_ATTRIBUTES(false, INITIAL_EQUATION());
+public constant EquationAttributes EQ_ATTR_DEFAULT_UNKNOWN = EQUATION_ATTRIBUTES(false, UNKNOWN_EQUATION_KIND());
 
 public
 uniontype Equation

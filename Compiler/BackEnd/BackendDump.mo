@@ -1451,8 +1451,7 @@ algorithm
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
-        s3 = printEqAtts(attr);
-        res = stringAppendList({s1," = ",s2," ",s3});
+        res = stringAppendList({s1," = ",s2});
       then
         res;
     case (BackendDAE.COMPLEX_EQUATION(left = e1,right = e2))
@@ -3590,57 +3589,6 @@ algorithm
         then "Dont know this compInfo\n";
   end matchcontinue;
 end printCompInfo;
-
-protected function printEqAtts
-  input BackendDAE.EquationAttributes atts;
-  output String s;
-protected
-  BackendDAE.LoopInfo li;
-algorithm
-  BackendDAE.EQUATION_ATTRIBUTES(loopInfo=li) := atts;
-  s := printLoopInfoStr(li);
-end printEqAtts;
-
-public function printLoopInfoStr"outputs a string representation of a loopInfo"
-  input BackendDAE.LoopInfo loopInfoIn;
-  output String s;
-algorithm
-  s := match(loopInfoIn)
-    local
-      String s1,s2,s3;
-      String loopId;
-      Integer id;
-      DAE.Exp startIt;
-      DAE.Exp endIt;
-      list<BackendDAE.IterCref> crefs;
-  case(BackendDAE.LOOP(loopId=id, startIt=startIt, endIt=endIt, crefs=crefs))
-    equation
-      s1 = "LOOP"+intString(id)+":";
-      s2 = "[ "+ExpressionDump.printExpStr(startIt)+"->"+ExpressionDump.printExpStr(endIt)+" ] ";
-      s3 = stringDelimitList(List.map(crefs,printIterCrefStr),"| ");
-  then s1+s2+s3;
-  case(_)
-    then "";
-  end match;
-end printLoopInfoStr;
-
-public function printIterCrefStr"outputs a string representation of a IterCref"
-  input BackendDAE.IterCref itCref;
-  output String s;
-algorithm
-  s := match(itCref)
-    local
-      DAE.ComponentRef cref;
-      DAE.Exp it;
-      DAE.Operator op;
-    case(BackendDAE.ITER_CREF(cref=cref, iterator=it))
-      equation
-        then "{"+ComponentReference.printComponentRefStr(cref)+" :iter["+ExpressionDump.printExpStr(it)+"]}";
-    case(BackendDAE.ACCUM_ITER_CREF(cref=cref, op=op))
-      equation
-        then "ACCUM{"+ComponentReference.printComponentRefStr(cref)+" :op["+DAEDump.dumpOperatorString(op)+"]}";
-  end match;
-end printIterCrefStr;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDump;

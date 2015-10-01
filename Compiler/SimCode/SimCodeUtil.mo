@@ -227,11 +227,6 @@ algorithm
     uniqueEqIndex := 1;
     ifcpp := stringEqual(Config.simCodeTarget(), "Cpp");
 
-    if Flags.isSet(Flags.VECTORIZE) then
-      // prepare the equations
-      dlow := BackendDAEUtil.mapEqSystem(dlow, Vectorization.prepareVectorizedDAE0);
-    end if;
-
     backendMapping := setUpBackendMapping(inBackendDAE);
     if Flags.isSet(Flags.VISUAL_XML) then
       VisualXML.visualizationInfoXML(dlow, filenamePrefix);
@@ -298,12 +293,6 @@ algorithm
     (dlow, stateSets, uniqueEqIndex, tempvars, numStateSets) := createStateSets(dlow, {}, uniqueEqIndex, tempvars);
 
     // create model info
-    if Flags.isSet(Flags.VECTORIZE) then
-      // prepare the variables
-      //dlow := BackendDAEUtil.mapEqSystem(dlow, Vectorization.prepareVectorizedDAE1);
-      dlow := BackendDAEUtil.mapEqSystem(dlow, Vectorization.enlargeIteratedArrayVars);
-    end if;
-
     modelInfo := createModelInfo(inClassName, dlow, inInitDAE, functions, {}, numStateSets, inFileDir, listLength(clockedSysts));
     modelInfo := addTempVars(tempvars, modelInfo);
 
@@ -437,11 +426,6 @@ algorithm
     (simCode, (_, _, lits)) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);
 
     simCode := setSimCodeLiterals(simCode, listReverse(lits));
-
-    if Flags.isSet(Flags.VECTORIZE) then
-      // update simCode equations
-      simCode := Vectorization.updateSimCode(simCode);
-    end if;
 
     // dumpCrefToSimVarHashTable(crefToSimVarHT);
     // print("*** SimCode -> collect all files started: " + realString(clock()) + "\n");
@@ -1870,21 +1854,10 @@ algorithm
         solveCr = listReverse(solveCr);
         cr = if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
         source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
-        if Vectorization.isLoopEquation(eqn) then
-            //print("CREATE LOOP for "+BackendDump.equationString(eqn)+"\n");
-          (eqSystlst,uniqueEqIndex) = makeSolvedSES_FOR_LOOP(eqn,cr,exp_,iuniqueEqIndex);
-          if listEmpty(eqSystlst) then
-            tempvars = itempvars;
-          else
-              //print("CREATED LOOP SES: "+dumpSimEqSystemLst(eqSystlst)+"\n");
-            tempvars = createTempVarsforCrefs(List.map(solveCr, Expression.crefExp),itempvars);
-          end if;
-        else
-          (eqSystlst, uniqueEqIndex) = List.mapFold(solveEqns, makeSolved_SES_SIMPLE_ASSIGN, iuniqueEqIndex);
-          (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp_, source)}, uniqueEqIndex+1);
-          eqSystlst = List.appendNoCopy(eqSystlst,resEqs);
-          tempvars = createTempVarsforCrefs(List.map(solveCr, Expression.crefExp),itempvars);
-        end if;
+        (eqSystlst, uniqueEqIndex) = List.mapFold(solveEqns, makeSolved_SES_SIMPLE_ASSIGN, iuniqueEqIndex);
+        (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp_, source)}, uniqueEqIndex+1);
+        eqSystlst = List.appendNoCopy(eqSystlst,resEqs);
+        tempvars = createTempVarsforCrefs(List.map(solveCr, Expression.crefExp),itempvars);
       then
         (eqSystlst, uniqueEqIndex,tempvars);
 
@@ -2576,62 +2549,6 @@ algorithm
   outSimEqn := SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e, source);
   ouniqueEqIndex := iuniqueEqIndex+1;
 end makeSolved_SES_SIMPLE_ASSIGN;
-
-protected function makeSolvedSES_FOR_LOOP
-  input BackendDAE.Equation inEqn;
-  input DAE.ComponentRef lhsCrefIn;
-  input DAE.Exp rhs;
-  input Integer iuniqueEqIndex;
-  output list<SimCode.SimEqSystem> outSimEq;
-  output Integer ouniqueEqIndex;
-algorithm
-  (outSimEq,ouniqueEqIndex) := matchcontinue(inEqn,lhsCrefIn,rhs,iuniqueEqIndex)
-    local
-      Integer id, stopIdx;
-      DAE.ComponentRef cref,lhsCref;
-      DAE.Exp iterator,startIt,endIt, rhsExp, body,sigma;
-      DAE.ElementSource source;
-      list<BackendDAE.IterCref> iterCrefs;
-      BackendDAE.IterCref itCref;
-      SimCode.SimEqSystem ses;
-  case(BackendDAE.EQUATION(source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(loopId=id,startIt=startIt,endIt=endIt,crefs=iterCrefs))),_,_,_)
-    equation
-      // dont generate another for-loop
-      true = intEq(id,-1);
-    then ({},iuniqueEqIndex);
-
-  case(BackendDAE.EQUATION(source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(loopId=id,startIt=startIt,endIt=endIt,crefs=iterCrefs as BackendDAE.ACCUM_ITER_CREF(cref=cref)::{}))),_,_,_)
-    equation
-      // has an accumulated expression (i.e. SIGMA)
-      DAE.ICONST(stopIdx) = endIt;
-      iterator = DAE.CREF(ComponentReference.makeCrefIdent("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
-      (DAE.CREF(componentRef=cref),(_,_,iterCrefs)) = Expression.traverseExpTopDown(Expression.crefExp(cref),Vectorization.setIteratedSubscriptInCref,(iterator,stopIdx,iterCrefs));
-      body = DAE.CREF(cref,ComponentReference.crefType(cref));
-        //print("body:"+ExpressionDump.printExpStr(body)+"\n");
-      sigma = DAE.SUM(ComponentReference.crefType(cref),iterator,startIt,endIt,body);
-        //print("sigma:"+ExpressionDump.printExpStr(sigma)+"\n");
-      rhsExp = Vectorization.reduceLoopExpressions(rhs,1); //max subscript of one
-        //print("rhsExp red:"+ExpressionDump.printExpStr(rhsExp)+"\n");
-      (rhsExp,_) = Vectorization.insertSUMexp(rhsExp,(cref,sigma)); // replace the only left array var with the sigma exp
-        //print("rhsExp 2:"+ExpressionDump.printExpStr(rhsExp)+"\n");
-      ses = SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex,lhsCrefIn,rhsExp,source);
-    then ({ses},iuniqueEqIndex+1);
-
-  case(BackendDAE.EQUATION(source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(loopId=id,startIt=startIt,endIt=endIt,crefs=iterCrefs))),_,_,_)
-    equation
-      // is a for equation
-      DAE.ICONST(stopIdx) = endIt;
-      iterator = DAE.CREF(ComponentReference.makeCrefIdent("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
-      (DAE.CREF(componentRef=cref),(_,_,iterCrefs)) = Expression.traverseExpTopDown(Expression.crefExp(lhsCrefIn),Vectorization.setIteratedSubscriptInCref,(iterator,stopIdx,iterCrefs));
-      (rhsExp,(_,_,iterCrefs)) = Expression.traverseExpTopDown(rhs,Vectorization.setIteratedSubscriptInCref,(iterator,stopIdx,iterCrefs));
-    then ({SimCode.SES_FOR_LOOP(iuniqueEqIndex,iterator,startIt,endIt,cref,rhsExp,source)},iuniqueEqIndex+1);
-
-  else
-    equation
-      print("makeSolvedSES_FOR_LOOP failed\n");
-  then fail();
-  end matchcontinue;
-end makeSolvedSES_FOR_LOOP;
 
 protected function createOdeSystem
   input Boolean genDiscrete "if true generate discrete equations";

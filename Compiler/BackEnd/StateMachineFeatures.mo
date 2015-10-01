@@ -349,7 +349,7 @@ protected
   list<tuple<DAE.ComponentRef,list<Composition>>> refiningFiltered;
 algorithm
   AUTOMATA_EQS(vars, knowns, eqs) := synEqsAcc;
-  bindingKind := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), BackendDAE.NO_LOOP());
+  bindingKind := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION());
 
   R(initialState, refining) := comp;
   flatA := List.find1(flatAs, findInitialState, initialState);
@@ -2499,12 +2499,11 @@ protected
   Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
   BackendDAE.EquationKind kind;
 
-  BackendDAE.LoopInfo loopInfo;
 algorithm
   try
     BackendDAE.EQUATION(exp,scalar,source,attr) := inEq;
     DAE.CREF(componentRef=left) := exp;
-    BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, loopInfo) := attr;
+    BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind) := attr;
     // walk through scalar, replace previous(x) by pre(x)
     scalar := Expression.traverseExpBottomUp(scalar, subsPreForPrevious, NONE());
     // sample(0, samplingTime)
@@ -2514,7 +2513,7 @@ algorithm
     size := Expression.sizeOf(Expression.typeof(exp));
     //size := 1; // Fixme what is "size" for? does it reference the "sample index" of a corresponding (time)event BackendDAE.Shared.eventInfo.timeEvents
     outEq := BackendDAE.WHEN_EQUATION(size, whenEquation, source,
-      BackendDAE.EQUATION_ATTRIBUTES(differentiated, BackendDAE.DYNAMIC_EQUATION(), loopInfo));
+      BackendDAE.EQUATION_ATTRIBUTES(differentiated, BackendDAE.DYNAMIC_EQUATION()));
   else
     print("wrapInWhenHack: I FAILED MISERABLY FOR: " + anyString(inEq) + "\n");
     fail();

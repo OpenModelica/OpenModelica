@@ -1200,14 +1200,13 @@ algorithm
           Integer whenIdx;
           Boolean diff;
           list<Integer> partitionsWhenClocksLst;
-          BackendDAE.LoopInfo loopInfo;
-        case BackendDAE.EQUATION_ATTRIBUTES(diff, BackendDAE.CLOCKED_EQUATION(whenIdx), loopInfo)
+        case BackendDAE.EQUATION_ATTRIBUTES(diff, BackendDAE.CLOCKED_EQUATION(whenIdx))
           algorithm
             partitionsWhenClocksLst := partitionsWhenClocks[partitionIdx];
             if whenIdx <> 0 and List.notMember(whenIdx, partitionsWhenClocksLst) then
               arrayUpdate(partitionsWhenClocks, partitionIdx, whenIdx::partitionsWhenClocksLst);
             end if;
-          then BackendDAE.EQUATION_ATTRIBUTES(diff, BackendDAE.DYNAMIC_EQUATION(), loopInfo);
+          then BackendDAE.EQUATION_ATTRIBUTES(diff, BackendDAE.DYNAMIC_EQUATION());
         else eqAttr;
       end match;
       eq := BackendEquation.setEquationAttributes(eq, eqAttr);

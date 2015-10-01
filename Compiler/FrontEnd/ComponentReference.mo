@@ -960,6 +960,14 @@ algorithm
   b := List.isMemberOnTrue(cref,lst,crefEqual);
 end crefInLst;
 
+public function crefNotInLst  "returns true if the cref is not in the list of crefs"
+  input DAE.ComponentRef cref;
+  input list<DAE.ComponentRef> lst;
+  output Boolean b;
+algorithm
+  b := not List.isMemberOnTrue(cref,lst,crefEqual);
+end crefNotInLst;
+
 public function crefEqualVerySlowStringCompareDoNotUse
 "Returns true if two component references are equal,
   comparing strings if no other solution is found"
