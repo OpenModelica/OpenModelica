@@ -45,12 +45,10 @@
 #include "options.h"
 #include "util/omc_error.h"
 #include "meta/meta_modelica.h"
+#include "util/modelica_string.h"
 
-#include <fstream>
-#include <iomanip>
+#include <limits.h>
 #include <map>
-#include <list>
-#include <limits>
 #include <string>
 #include <string.h>
 #include <expat.h>
@@ -61,6 +59,8 @@ typedef std::map<std::string, std::string>       omc_ModelDescription;
 typedef std::map<std::string, std::string>       omc_DefaultExperiment;
 typedef std::map<std::string, std::string>       omc_ScalarVariable;
 typedef std::map<mmc_sint_t, omc_ScalarVariable> omc_ModelVariables;
+
+extern "C" {
 
 /* maybe use a map below {"rSta"  -> omc_ModelVariables} */
 /* typedef map < string, omc_ModelVariables > omc_ModelVariablesClassified; */
@@ -106,24 +106,23 @@ typedef std::map<std::string, mmc_sint_t> omc_CommandLineOverridesUses;
 // function to handle command line settings override
 void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override, const char* overrideFile);
 
-static double REAL_MIN = -std::numeric_limits<double>::max();
-static double REAL_MAX = std::numeric_limits<double>::max();
-static double INTEGER_MIN = std::numeric_limits<modelica_integer>::min();
-static double INTEGER_MAX = std::numeric_limits<modelica_integer>::max();
+static const double REAL_MIN = -DBL_MAX;
+static const double REAL_MAX = DBL_MAX;
+static const double INTEGER_MIN = (((modelica_integer)-1)<<(8*sizeof(modelica_integer)-1));
+/* Avoid integer overflow */
+static const double INTEGER_MAX = -((((modelica_integer)-1)<<(8*sizeof(modelica_integer)-1))+1);
 
 /* reads double value from a string */
-void read_value(std::string s, modelica_real* res, modelica_real default_value);
+static void read_value_real(std::string s, modelica_real* res, modelica_real default_value);
 /* reads integer value from a string */
-void read_value(std::string s, modelica_integer* res, modelica_integer default_value = 0);
+static void read_value_long(std::string s, modelica_integer* res, modelica_integer default_value = 0);
 /* reads integer value from a string */
-void read_value(std::string s, int* res);
-/* reads std::string value from a string */
-void read_value(std::string s, std::string* str);
+static void read_value_int(std::string s, int* res);
 /* reads modelica_string value from a string */
-void read_value(std::string s, const char** str);
-void read_value_mm(std::string s, modelica_metatype *str);
+static void read_value_string(std::string s, const char** str);
+static void read_value_mm(std::string s, modelica_metatype *str);
 /* reads boolean value from a string */
-void read_value(std::string s, modelica_boolean* str);
+static void read_value_bool(std::string s, modelica_boolean* str);
 
 static void XMLCALL startElement(void *userData, const char *name, const char **attr)
 {
@@ -211,66 +210,66 @@ static void XMLCALL endElement(void *userData, const char *name)
   /* do nothing! */
 }
 
-void read_var_info(omc_ScalarVariable &v, VAR_INFO &info)
+static void read_var_info(omc_ScalarVariable &v, VAR_INFO &info)
 {
-  read_value(v["name"], &info.name);
+  read_value_string(v["name"], &info.name);
   debugStreamPrint(LOG_DEBUG, 1, "read var %s from setup file", info.name);
 
-  read_value(v["valueReference"], &info.id);
+  read_value_int(v["valueReference"], &info.id);
   debugStreamPrint(LOG_DEBUG, 0, "read for %s id %d from setup file", info.name, info.id);
-  read_value(v["description"], &info.comment);
+  read_value_string(v["description"], &info.comment);
   debugStreamPrint(LOG_DEBUG, 0, "read for %s description \"%s\" from setup file", info.name, info.comment);
-  read_value(v["fileName"], &info.info.filename);
+  read_value_string(v["fileName"], &info.info.filename);
   debugStreamPrint(LOG_DEBUG, 0, "read for %s filename %s from setup file", info.name, info.info.filename);
-  read_value(v["startLine"], (modelica_integer*)&(info.info.lineStart));
+  read_value_long(v["startLine"], (modelica_integer*)&(info.info.lineStart));
   debugStreamPrint(LOG_DEBUG, 0, "read for %s lineStart %d from setup file", info.name, info.info.lineStart);
-  read_value(v["startColumn"], (modelica_integer*)&(info.info.colStart));
+  read_value_long(v["startColumn"], (modelica_integer*)&(info.info.colStart));
   debugStreamPrint(LOG_DEBUG, 0, "read for %s colStart %d from setup file", info.name, info.info.colStart);
-  read_value(v["endLine"], (modelica_integer*)&(info.info.lineEnd));
+  read_value_long(v["endLine"], (modelica_integer*)&(info.info.lineEnd));
   debugStreamPrint(LOG_DEBUG, 0, "read for %s lineEnd %d from setup file", info.name, info.info.lineEnd);
-  read_value(v["endColumn"], (modelica_integer*)&(info.info.colEnd));
+  read_value_long(v["endColumn"], (modelica_integer*)&(info.info.colEnd));
   debugStreamPrint(LOG_DEBUG, 0, "read for %s colEnd %d from setup file", info.name, info.info.colEnd);
-  read_value(v["fileWritable"], (modelica_integer*)&(info.info.readonly));
+  read_value_long(v["fileWritable"], (modelica_integer*)&(info.info.readonly));
   debugStreamPrint(LOG_DEBUG, 0, "read for %s readonly %d from setup file", info.name, info.info.readonly);
   if (DEBUG_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
 }
 
-void read_var_attribute(omc_ScalarVariable &v, REAL_ATTRIBUTE &attribute)
+static void read_var_attribute_real(omc_ScalarVariable &v, REAL_ATTRIBUTE &attribute)
 {
-  read_value(v["useStart"], (modelica_boolean*)&(attribute.useStart));
-  read_value(v["start"], &(attribute.start), 0.0);
-  read_value(v["fixed"], (modelica_boolean*)&(attribute.fixed));
-  read_value(v["useNominal"], (modelica_boolean*)&(attribute.useNominal));
-  read_value(v["nominal"], &(attribute.nominal), 1.0);
-  read_value(v["min"], &(attribute.min), REAL_MIN);
-  read_value(v["max"], &(attribute.max), REAL_MAX);
+  read_value_bool(v["useStart"], (modelica_boolean*)&(attribute.useStart));
+  read_value_real(v["start"], &(attribute.start), 0.0);
+  read_value_bool(v["fixed"], (modelica_boolean*)&(attribute.fixed));
+  read_value_bool(v["useNominal"], (modelica_boolean*)&(attribute.useNominal));
+  read_value_real(v["nominal"], &(attribute.nominal), 1.0);
+  read_value_real(v["min"], &(attribute.min), REAL_MIN);
+  read_value_real(v["max"], &(attribute.max), REAL_MAX);
 
   infoStreamPrint(LOG_DEBUG, 0, "Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", v["name"].c_str(), (attribute.useStart)?"":"{", attribute.start, (attribute.useStart)?"":"}", (attribute.fixed)?"true":"false", (attribute.useNominal)?"":"{", attribute.nominal, attribute.useNominal?"":"}", attribute.min, attribute.max);
 }
 
-void read_var_attribute(omc_ScalarVariable &v, INTEGER_ATTRIBUTE &attribute)
+static void read_var_attribute_int(omc_ScalarVariable &v, INTEGER_ATTRIBUTE &attribute)
 {
-  read_value(v["useStart"], &attribute.useStart);
-  read_value(v["start"], &attribute.start, 0);
-  read_value(v["fixed"], &attribute.fixed);
-  read_value(v["min"], &attribute.min, INTEGER_MIN);
-  read_value(v["max"], &attribute.max, INTEGER_MAX);
+  read_value_bool(v["useStart"], &attribute.useStart);
+  read_value_long(v["start"], &attribute.start, 0);
+  read_value_bool(v["fixed"], &attribute.fixed);
+  read_value_long(v["min"], &attribute.min, INTEGER_MIN);
+  read_value_long(v["max"], &attribute.max, INTEGER_MAX);
 
   infoStreamPrint(LOG_DEBUG, 0, "Integer %s(%sstart=%ld%s, fixed=%s, min=%ld, max=%ld)", v["name"].c_str(), attribute.useStart?"":"{", attribute.start, attribute.useStart?"":"}", attribute.fixed?"true":"false", attribute.min, attribute.max);
 }
 
-void read_var_attribute(omc_ScalarVariable &v, BOOLEAN_ATTRIBUTE &attribute)
+static void read_var_attribute_bool(omc_ScalarVariable &v, BOOLEAN_ATTRIBUTE &attribute)
 {
-  read_value(v["useStart"], &attribute.useStart);
-  read_value(v["start"], &attribute.start);
-  read_value(v["fixed"], &attribute.fixed);
+  read_value_bool(v["useStart"], &attribute.useStart);
+  read_value_bool(v["start"], &attribute.start);
+  read_value_bool(v["fixed"], &attribute.fixed);
 
   infoStreamPrint(LOG_DEBUG, 0, "Boolean %s(%sstart=%s%s, fixed=%s)", v["name"].c_str(), attribute.useStart?"":"{", attribute.start?"true":"false", attribute.useStart?"":"}", attribute.fixed?"true":"false");
 }
 
-void read_var_attribute(omc_ScalarVariable &v, STRING_ATTRIBUTE &attribute)
+static void read_var_attribute_string(omc_ScalarVariable &v, STRING_ATTRIBUTE &attribute)
 {
-  read_value(v["useStart"], &attribute.useStart);
+  read_value_bool(v["useStart"], &attribute.useStart);
   read_value_mm(v["start"], &attribute.start);
 
   infoStreamPrint(LOG_DEBUG, 0, "String %s(%sstart=%s%s)", v["name"].c_str(), attribute.useStart?"":"{", MMC_STRINGDATA(attribute.start), attribute.useStart?"":"}");
@@ -286,7 +285,7 @@ void read_input_xml(MODEL_DATA* modelData,
     SIMULATION_INFO* simulationInfo)
 {
   omc_ModelInput mi;
-  std::string filename;
+  const char *filename;
   FILE* file = NULL;
   XML_Parser parser = NULL;
   std::map<std::string, mmc_sint_t> mapAlias, mapAliasParam;
@@ -298,15 +297,17 @@ void read_input_xml(MODEL_DATA* modelData,
     if(omc_flag[FLAG_F]) {
       filename = omc_flagValue[FLAG_F];
     } else {
-      /* no file given on the command line? use the default */
-      filename = string(modelData->modelFilePrefix)+"_init.xml";  /* model_name defined in generated code for model.*/
+      /* no file given on the command line? use the default
+       * model_name defined in generated code for model.*/
+      if (0 > GC_asprintf((char**)&filename, "%s_init.xml", modelData->modelFilePrefix)) {
+        throwStreamPrint(NULL, "simulation_input_xml.cpp: Error: can not allocate memory.");
+      }
     }
 
     /* open the file and fail on error. we open it read-write to be sure other processes can overwrite it */
-    file = fopen(filename.c_str(), "r");
-    if(!file)
-    {
-      throwStreamPrint(NULL, "simulation_input_xml.cpp: Error: can not read file %s as setup file to the generated simulation code.",filename.c_str());
+    file = fopen(filename, "r");
+    if(!file) {
+      throwStreamPrint(NULL, "simulation_input_xml.cpp: Error: can not read file %s as setup file to the generated simulation code.",filename);
     }
   }
   /* create the XML parser */
@@ -332,7 +333,7 @@ void read_input_xml(MODEL_DATA* modelData,
       {
         fclose(file);
         warningStreamPrint(LOG_STDOUT, 0, "simulation_input_xml.cpp: Error: failed to read the XML file %s: %s at line %lu\n",
-            filename.c_str(),
+            filename,
             XML_ErrorString(XML_GetErrorCode(parser)),
             XML_GetCurrentLineNumber(parser));
         XML_ParserFree(parser);
@@ -361,14 +362,14 @@ void read_input_xml(MODEL_DATA* modelData,
   {
      warningStreamPrint(LOG_STDOUT, 0, "The Model GUID: %s is not set in file: %s",
         modelData->modelGUID,
-        filename.c_str());
+        filename);
   }
   else if(strcmp(modelData->modelGUID, mi.md["guid"].c_str()))
   {
     XML_ParserFree(parser);
     warningStreamPrint(LOG_STDOUT, 0, "Error, the GUID: %s from input data file: %s does not match the GUID compiled in the model: %s",
         mi.md["guid"].c_str(),
-        filename.c_str(),
+        filename,
         modelData->modelGUID);
     throwStreamPrint(NULL, "see last warning");
   }
@@ -381,16 +382,16 @@ void read_input_xml(MODEL_DATA* modelData,
   /* read all the DefaultExperiment values */
   infoStreamPrint(LOG_SIMULATION, 1, "read all the DefaultExperiment values:");
 
-  read_value(mi.de["startTime"], &(simulationInfo->startTime), 0);
+  read_value_real(mi.de["startTime"], &(simulationInfo->startTime), 0);
   infoStreamPrint(LOG_SIMULATION, 0, "startTime = %g", simulationInfo->startTime);
 
-  read_value(mi.de["stopTime"], &(simulationInfo->stopTime), 1.0);
+  read_value_real(mi.de["stopTime"], &(simulationInfo->stopTime), 1.0);
   infoStreamPrint(LOG_SIMULATION, 0, "stopTime = %g", simulationInfo->stopTime);
 
-  read_value(mi.de["stepSize"], &(simulationInfo->stepSize), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
+  read_value_real(mi.de["stepSize"], &(simulationInfo->stepSize), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
   infoStreamPrint(LOG_SIMULATION, 0, "stepSize = %g", simulationInfo->stepSize);
 
-  read_value(mi.de["tolerance"], &(simulationInfo->tolerance), 1e-5);
+  read_value_real(mi.de["tolerance"], &(simulationInfo->tolerance), 1e-5);
   infoStreamPrint(LOG_SIMULATION, 0, "tolerance = %g", simulationInfo->tolerance);
 
   read_value_mm(mi.de["solver"], &simulationInfo->solverMethod);
@@ -402,7 +403,7 @@ void read_input_xml(MODEL_DATA* modelData,
   read_value_mm(mi.de["variableFilter"], &(simulationInfo->variableFilter));
   infoStreamPrint(LOG_SIMULATION, 0, "variable filter: %s", MMC_STRINGDATA(simulationInfo->variableFilter));
 
-  read_value(mi.md["OPENMODELICAHOME"], &simulationInfo->OPENMODELICAHOME);
+  read_value_string(mi.md["OPENMODELICAHOME"], &simulationInfo->OPENMODELICAHOME);
   infoStreamPrint(LOG_SIMULATION, 0, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
   messageClose(LOG_SIMULATION);
 
@@ -411,18 +412,18 @@ void read_input_xml(MODEL_DATA* modelData,
   modelica_integer nyboolchk, npboolchk;
   modelica_integer nystrchk, npstrchk;
 
-  read_value(mi.md["numberOfContinuousStates"],          &nxchk);
-  read_value(mi.md["numberOfRealAlgebraicVariables"],    &nychk);
-  read_value(mi.md["numberOfRealParameters"],            &npchk);
+  read_value_long(mi.md["numberOfContinuousStates"],          &nxchk);
+  read_value_long(mi.md["numberOfRealAlgebraicVariables"],    &nychk);
+  read_value_long(mi.md["numberOfRealParameters"],            &npchk);
 
-  read_value(mi.md["numberOfIntegerParameters"],         &npintchk);
-  read_value(mi.md["numberOfIntegerAlgebraicVariables"], &nyintchk);
+  read_value_long(mi.md["numberOfIntegerParameters"],         &npintchk);
+  read_value_long(mi.md["numberOfIntegerAlgebraicVariables"], &nyintchk);
 
-  read_value(mi.md["numberOfBooleanParameters"],         &npboolchk);
-  read_value(mi.md["numberOfBooleanAlgebraicVariables"], &nyboolchk);
+  read_value_long(mi.md["numberOfBooleanParameters"],         &npboolchk);
+  read_value_long(mi.md["numberOfBooleanAlgebraicVariables"], &nyboolchk);
 
-  read_value(mi.md["numberOfStringParameters"],          &npstrchk);
-  read_value(mi.md["numberOfStringAlgebraicVariables"],  &nystrchk);
+  read_value_long(mi.md["numberOfStringParameters"],          &npstrchk);
+  read_value_long(mi.md["numberOfStringAlgebraicVariables"],  &nystrchk);
 
   if(nxchk != modelData->nStates
     || nychk != modelData->nVariablesReal - 2*modelData->nStates
@@ -454,7 +455,7 @@ void read_input_xml(MODEL_DATA* modelData,
 
   /* read all static data from File for every variable */
 
-#define READ_VARIABLES(out,in,attributeKind,debugName,start,nStates,mapAlias) \
+#define READ_VARIABLES(out,in,attributeKind,read_var_attribute,debugName,start,nStates,mapAlias) \
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for %s", debugName); \
   for(mmc_sint_t i = 0; i < nStates; i++) \
   { \
@@ -475,18 +476,18 @@ void read_input_xml(MODEL_DATA* modelData,
   } \
   messageClose(LOG_DEBUG);
 
-  READ_VARIABLES(modelData->realVarsData,mi.rSta,REAL_ATTRIBUTE,"real states",0,modelData->nStates,mapAlias);
-  READ_VARIABLES(modelData->realVarsData,mi.rDer,REAL_ATTRIBUTE,"real state derivatives",modelData->nStates,modelData->nStates,mapAlias);
-  READ_VARIABLES(modelData->realVarsData,mi.rAlg,REAL_ATTRIBUTE,"real algebraics",2*modelData->nStates,modelData->nVariablesReal - 2*modelData->nStates,mapAlias);
+  READ_VARIABLES(modelData->realVarsData,mi.rSta,REAL_ATTRIBUTE,read_var_attribute_real,"real states",0,modelData->nStates,mapAlias);
+  READ_VARIABLES(modelData->realVarsData,mi.rDer,REAL_ATTRIBUTE,read_var_attribute_real,"real state derivatives",modelData->nStates,modelData->nStates,mapAlias);
+  READ_VARIABLES(modelData->realVarsData,mi.rAlg,REAL_ATTRIBUTE,read_var_attribute_real,"real algebraics",2*modelData->nStates,modelData->nVariablesReal - 2*modelData->nStates,mapAlias);
 
-  READ_VARIABLES(modelData->integerVarsData,mi.iAlg,INTEGER_ATTRIBUTE,"integer variables",0,modelData->nVariablesInteger,mapAlias);
-  READ_VARIABLES(modelData->booleanVarsData,mi.bAlg,BOOLEAN_ATTRIBUTE,"boolean variables",0,modelData->nVariablesBoolean,mapAlias);
-  READ_VARIABLES(modelData->stringVarsData,mi.sAlg,STRING_ATTRIBUTE,"string variables",0,modelData->nVariablesString,mapAlias);
+  READ_VARIABLES(modelData->integerVarsData,mi.iAlg,INTEGER_ATTRIBUTE,read_var_attribute_int,"integer variables",0,modelData->nVariablesInteger,mapAlias);
+  READ_VARIABLES(modelData->booleanVarsData,mi.bAlg,BOOLEAN_ATTRIBUTE,read_var_attribute_bool,"boolean variables",0,modelData->nVariablesBoolean,mapAlias);
+  READ_VARIABLES(modelData->stringVarsData,mi.sAlg,STRING_ATTRIBUTE,read_var_attribute_string,"string variables",0,modelData->nVariablesString,mapAlias);
 
-  READ_VARIABLES(modelData->realParameterData,mi.rPar,REAL_ATTRIBUTE,"real parameters",0,modelData->nParametersReal,mapAliasParam);
-  READ_VARIABLES(modelData->integerParameterData,mi.iPar,INTEGER_ATTRIBUTE,"integer parameters",0,modelData->nParametersInteger,mapAliasParam);
-  READ_VARIABLES(modelData->booleanParameterData,mi.bPar,BOOLEAN_ATTRIBUTE,"boolean parameters",0,modelData->nParametersBoolean,mapAliasParam);
-  READ_VARIABLES(modelData->stringParameterData,mi.sPar,STRING_ATTRIBUTE,"string parameters",0,modelData->nParametersString,mapAliasParam);
+  READ_VARIABLES(modelData->realParameterData,mi.rPar,REAL_ATTRIBUTE,read_var_attribute_real,"real parameters",0,modelData->nParametersReal,mapAliasParam);
+  READ_VARIABLES(modelData->integerParameterData,mi.iPar,INTEGER_ATTRIBUTE,read_var_attribute_int,"integer parameters",0,modelData->nParametersInteger,mapAliasParam);
+  READ_VARIABLES(modelData->booleanParameterData,mi.bPar,BOOLEAN_ATTRIBUTE,read_var_attribute_bool,"boolean parameters",0,modelData->nParametersBoolean,mapAliasParam);
+  READ_VARIABLES(modelData->stringParameterData,mi.sPar,STRING_ATTRIBUTE,read_var_attribute_string,"string parameters",0,modelData->nParametersString,mapAliasParam);
 
   /*
    * real all alias vars
@@ -496,40 +497,35 @@ void read_input_xml(MODEL_DATA* modelData,
   {
     read_var_info(mi.rAli[i], modelData->realAlias[i].info);
 
-    string aliasTmp;
-    read_value(mi.rAli[i]["alias"], &aliasTmp);
-    if(aliasTmp.compare("negatedAlias") == 0)
+    const char *aliasTmp;
+    read_value_string(mi.rAli[i]["alias"], &aliasTmp);
+    if (0 == strcmp(aliasTmp,"negatedAlias")) {
       modelData->realAlias[i].negate = 1;
-    else
+    } else {
       modelData->realAlias[i].negate = 0;
-
+    }
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->realAlias[i].info.name, modelData->realAlias[i].negate);
 
     /* filter internal variables */
-    if(modelData->realAlias[i].info.name[0] == '$')
+    if(modelData->realAlias[i].info.name[0] == '$') {
       modelData->realAlias[i].filterOutput = 1;
+    }
 
-    read_value(mi.rAli[i]["aliasVariable"], &aliasTmp);
+    read_value_string(mi.rAli[i]["aliasVariable"], &aliasTmp);
 
     it = mapAlias.find(aliasTmp);
     itParam = mapAliasParam.find(aliasTmp);
 
-    if(it != mapAlias.end())
-    {
+    if(it != mapAlias.end()) {
       modelData->realAlias[i].nameID  = (*it).second;
       modelData->realAlias[i].aliasType = 0;
-    }
-    else if(itParam != mapAliasParam.end())
-    {
+    } else if (itParam != mapAliasParam.end()) {
       modelData->realAlias[i].nameID  = (*itParam).second;
       modelData->realAlias[i].aliasType = 1;
-    }
-    else if(aliasTmp.compare("time")==0)
+    } else if (0==strcmp(aliasTmp,"time")) {
       modelData->realAlias[i].aliasType = 2;
-    else
-    {
-      std::string msg = "Real Alias variable " + aliasTmp + " not found.";
-      throwStreamPrint(NULL, "%s", msg.c_str());
+    } else {
+      throwStreamPrint(NULL, "Real Alias variable %s not found.", aliasTmp);
     }
     debugStreamPrint(LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
                 modelData->realAlias[i].info.name,
@@ -546,38 +542,33 @@ void read_input_xml(MODEL_DATA* modelData,
   {
     read_var_info(mi.iAli[i], modelData->integerAlias[i].info);
 
-    string aliasTmp;
-    read_value(mi.iAli[i]["alias"], &aliasTmp);
-    if(aliasTmp.compare("negatedAlias") == 0)
+    const char *aliasTmp;
+    read_value_string(mi.iAli[i]["alias"], &aliasTmp);
+    if (0 == strcmp(aliasTmp,"negatedAlias")) {
       modelData->integerAlias[i].negate = 1;
-    else
+    } else {
       modelData->integerAlias[i].negate = 0;
+    }
 
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].negate);
 
     /* filter internal variables */
-    if(modelData->integerAlias[i].info.name[0] == '$')
+    if(modelData->integerAlias[i].info.name[0] == '$') {
       modelData->integerAlias[i].filterOutput = 1;
-
-    read_value(mi.iAli[i]["aliasVariable"], &aliasTmp);
+    }
+    read_value_string(mi.iAli[i]["aliasVariable"], &aliasTmp);
 
     it = mapAlias.find(aliasTmp);
     itParam = mapAliasParam.find(aliasTmp);
 
-    if(it != mapAlias.end())
-    {
+    if(it != mapAlias.end()) {
       modelData->integerAlias[i].nameID  = (*it).second;
       modelData->integerAlias[i].aliasType = 0;
-    }
-    else if(itParam != mapAliasParam.end())
-    {
+    } else if(itParam != mapAliasParam.end()) {
       modelData->integerAlias[i].nameID  = (*itParam).second;
       modelData->integerAlias[i].aliasType = 1;
-    }
-    else
-    {
-      std::string msg = "Integer Alias variable " + aliasTmp + " not found.";
-      throwStreamPrint(NULL, "%s", msg.c_str());
+    } else {
+      throwStreamPrint(NULL, "Integer Alias variable %s not found.", aliasTmp);
     }
     debugStreamPrint(LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
                 modelData->integerAlias[i].info.name,
@@ -594,38 +585,33 @@ void read_input_xml(MODEL_DATA* modelData,
   {
     read_var_info(mi.bAli[i], modelData->booleanAlias[i].info);
 
-    std::string aliasTmp;
-    read_value(mi.bAli[i]["alias"], &aliasTmp);
-    if(aliasTmp.compare("negatedAlias") == 0)
+    const char *aliasTmp;
+    read_value_string(mi.bAli[i]["alias"], &aliasTmp);
+    if  (0 == strcmp(aliasTmp,"negatedAlias")) {
       modelData->booleanAlias[i].negate = 1;
-    else
+    } else {
       modelData->booleanAlias[i].negate = 0;
+    }
 
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->booleanAlias[i].info.name, modelData->booleanAlias[i].negate);
 
     /* filter internal variables */
-    if(modelData->booleanAlias[i].info.name[0] == '$')
+    if(modelData->booleanAlias[i].info.name[0] == '$') {
       modelData->booleanAlias[i].filterOutput = 1;
-
-    read_value(mi.bAli[i]["aliasVariable"], &aliasTmp);
+    }
+    read_value_string(mi.bAli[i]["aliasVariable"], &aliasTmp);
 
     it = mapAlias.find(aliasTmp);
     itParam = mapAliasParam.find(aliasTmp);
 
-    if(it != mapAlias.end())
-    {
+    if (it != mapAlias.end()) {
       modelData->booleanAlias[i].nameID  = (*it).second;
       modelData->booleanAlias[i].aliasType = 0;
-    }
-    else if(itParam != mapAliasParam.end())
-    {
+    } else if(itParam != mapAliasParam.end()) {
       modelData->booleanAlias[i].nameID  = (*itParam).second;
       modelData->booleanAlias[i].aliasType = 1;
-    }
-    else
-    {
-      std::string msg = "Boolean Alias variable " + aliasTmp + " not found.";
-      throwStreamPrint(NULL, "%s", msg.c_str());
+    } else {
+      throwStreamPrint(NULL, "Boolean Alias variable %s not found.", aliasTmp);
     }
     debugStreamPrint(LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
                 modelData->booleanAlias[i].info.name,
@@ -642,38 +628,33 @@ void read_input_xml(MODEL_DATA* modelData,
   {
     read_var_info(mi.sAli[i], modelData->stringAlias[i].info);
 
-    std::string aliasTmp;
-    read_value(mi.sAli[i]["alias"], &aliasTmp);
-    if(aliasTmp.compare("negatedAlias") == 0)
+    const char *aliasTmp;
+    read_value_string(mi.sAli[i]["alias"], &aliasTmp);
+    if (0 == strcmp(aliasTmp,"negatedAlias")) {
       modelData->stringAlias[i].negate = 1;
-    else
+    } else {
       modelData->stringAlias[i].negate = 0;
-
+    }
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->stringAlias[i].info.name, modelData->stringAlias[i].negate);
 
     /* filter internal variables */
-    if(modelData->stringAlias[i].info.name[0] == '$')
+    if(modelData->stringAlias[i].info.name[0] == '$') {
       modelData->stringAlias[i].filterOutput = 1;
+    }
 
-    read_value(mi.sAli[i]["aliasVariable"], &aliasTmp);
+    read_value_string(mi.sAli[i]["aliasVariable"], &aliasTmp);
 
     it = mapAlias.find(aliasTmp);
     itParam = mapAliasParam.find(aliasTmp);
 
-    if(it != mapAlias.end())
-    {
+    if(it != mapAlias.end()) {
       modelData->stringAlias[i].nameID  = (*it).second;
       modelData->stringAlias[i].aliasType = 0;
-    }
-    else if(itParam != mapAliasParam.end())
-    {
+    } else if(itParam != mapAliasParam.end()) {
       modelData->stringAlias[i].nameID  = (*itParam).second;
       modelData->stringAlias[i].aliasType = 1;
-    }
-    else
-    {
-      std::string msg = "String Alias variable " + aliasTmp + " not found.";
-      throwStreamPrint(NULL, "%s", msg.c_str());
+    } else {
+      throwStreamPrint(NULL, "String Alias variable %s not found.", aliasTmp);
     }
     debugStreamPrint(LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
                 modelData->stringAlias[i].info.name,
@@ -685,14 +666,8 @@ void read_input_xml(MODEL_DATA* modelData,
   XML_ParserFree(parser);
 }
 
-/* reads std::string value from a string */
-inline void read_value(std::string s, std::string* str)
-{
-  *str = s;
-}
-
 /* reads modelica_string value from a string */
-inline void read_value(std::string s, const char **str)
+static inline void read_value_string(std::string s, const char **str)
 {
   if(str == NULL)
   {
@@ -702,7 +677,7 @@ inline void read_value(std::string s, const char **str)
   *str = strdup(s.c_str());
 }
 
-inline void read_value_mm(std::string s, modelica_string *str)
+static inline void read_value_mm(std::string s, modelica_string *str)
 {
   if(str == NULL) {
     warningStreamPrint(LOG_SIMULATION, 0, "error read_value, no data allocated for storing string");
@@ -712,7 +687,7 @@ inline void read_value_mm(std::string s, modelica_string *str)
 }
 
 /* reads double value from a string */
-inline void read_value(std::string s, modelica_real* res, modelica_real default_value)
+static inline void read_value_real(std::string s, modelica_real* res, modelica_real default_value)
 {
   if(s.compare("") == 0) {
     *res = default_value;
@@ -726,7 +701,7 @@ inline void read_value(std::string s, modelica_real* res, modelica_real default_
 }
 
 /* reads boolean value from a string */
-inline void read_value(std::string s, modelica_boolean* res)
+static inline void read_value_bool(std::string s, modelica_boolean* res)
 {
   if(s.compare("true") == 0)
     *res = 1;
@@ -740,7 +715,7 @@ inline void read_value(std::string s, modelica_boolean* res)
 }
 
 /* reads integer value from a string */
-inline void read_value(std::string s, modelica_integer* res, modelica_integer default_value)
+static inline void read_value_long(std::string s, modelica_integer* res, modelica_integer default_value)
 {
   if(s.compare("") == 0) {
     *res = default_value;
@@ -754,7 +729,7 @@ inline void read_value(std::string s, modelica_integer* res, modelica_integer de
 }
 
 /* reads int value from a string */
-inline void read_value(std::string s, int* res)
+static inline void read_value_int(std::string s, int* res)
 {
   if(s.compare("true") == 0)
     *res = 1;
@@ -764,13 +739,19 @@ inline void read_value(std::string s, int* res)
     *res = atoi(s.c_str());
 }
 
-std::string& ltrim(std::string& str) {
-    size_t i = 0;
-    while(i < str.size() && isspace(str[i])) { ++i; };
-    return str.erase(0, i);
+static const char* trim(char *str) {
+  char *res=str,*end=str+strlen(str)-1;
+  while (isspace(*res)) {
+    res++;
+  }
+  while (isspace(*end)) {
+    *end='\0';
+    end--;
+  }
+  return res;
 }
 
-std::string getOverrideValue(omc_CommandLineOverrides& mOverrides, omc_CommandLineOverridesUses& mOverridesUses, std::string name)
+static std::string getOverrideValue(omc_CommandLineOverrides& mOverrides, omc_CommandLineOverridesUses& mOverridesUses, std::string name)
 {
     mOverridesUses[name] = OMC_OVERRIDE_USED;
     return mOverrides[name];
@@ -786,52 +767,51 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
     throwStreamPrint(NULL, "simulation_input_xml.cpp: usage error you cannot have both -override and -overrideFile active at the same time. see Model -? for more info!");
   }
 
-  if(override != NULL)
-  {
+  if(override != NULL) {
     overrideStr = strdup(override);
   }
 
-  if(overrideFile != NULL)
-  {
+  if(overrideFile != NULL) {
     /* read override values from file */
     infoStreamPrint(LOG_SOLVER, 0, "read override values from file: %s", overrideFile);
-    std::ifstream infile;
+    FILE *infile = fopen(overrideFile, "r");
+    char *line=NULL;
+    const char *tline=NULL;
+    char *overrideLine;
+    size_t n=0;
 
-    infile.open(overrideFile, ifstream::in);
-    if(infile.is_open() == false)
-    {
+    if (0==infile) {
       throwStreamPrint(NULL, "simulation_input_xml.cpp: could not open the file given to -overrideFile=%s", overrideFile);
     }
 
-    std::string line, tline;
-    std::string overrideLine;
+    free(overrideStr);
+    fseek(infile, 0L, SEEK_END);
+    overrideLine = (char*) malloc(ftell(infile)+1);
+    overrideLine[0] = '\0';
+    fseek(infile, 0L, SEEK_SET);
+    overrideStr = overrideLine;
+
     // get the lines
-    while(std::getline(infile, line))
-    {
-      tline = ltrim(line);
+    while (getline(&line, &n, infile) != -1) {
+      tline = trim(line);
       // if is comment //, ignore line
-      if (tline.size() > 2 && tline[0] == '/' && tline[1] == '/')
-      {
+      if (tline[0] == '/' && tline[1] == '/') {
         continue;
       }
 
-      if (overrideLine.empty())
-      {
-        overrideLine += line;
-      }
-      else
-      {
-        overrideLine += "," + line;
+      if (*tline) {
+        if (overrideLine != overrideStr) {
+          overrideLine[0] = ',';
+          ++overrideLine;
+        }
+        overrideLine = strcpy(overrideLine,tline)+strlen(tline);
       }
 
     }
-
-    overrideStr = strdup(overrideLine.c_str());
-    infile.close();
+    fclose(infile);
   }
 
-  if(overrideStr != NULL)
-  {
+  if (overrideStr != NULL) {
     std::string key, value;
     /* read override values */
     infoStreamPrint(LOG_SOLVER, 0, "read override values: %s", overrideStr);
@@ -839,8 +819,7 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
     parseVariableStr(overrideStr);
     char *p = strtok(overrideStr, "!");
 
-    while(p)
-    {
+    while(p) {
       std::string key_val(p);
 
       // split it key = value => map[key]=value
@@ -881,76 +860,62 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
     mi.de["variableFilter"] = mOverrides.count("variableFilter") ? getOverrideValue(mOverrides, mOverridesUses, "variableFilter") : mi.de["variableFilter"];
 
     // override all found!
-    for(mmc_sint_t i=0; i<modelData->nStates; i++)
-    {
+    for(mmc_sint_t i=0; i<modelData->nStates; i++) {
       mi.rSta[i]["start"] = mOverrides.count(mi.rSta[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rSta[i]["name"]) : mi.rSta[i]["start"];
       mi.rDer[i]["start"] = mOverrides.count(mi.rDer[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rDer[i]["name"]) : mi.rDer[i]["start"];
     }
-    for(mmc_sint_t i=0; i<(modelData->nVariablesReal - 2*modelData->nStates); i++)
-    {
+    for(mmc_sint_t i=0; i<(modelData->nVariablesReal - 2*modelData->nStates); i++) {
       mi.rAlg[i]["start"] = mOverrides.count(mi.rAlg[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rAlg[i]["name"]) : mi.rAlg[i]["start"];
     }
-    for(mmc_sint_t i=0; i<modelData->nVariablesInteger; i++)
-    {
+    for(mmc_sint_t i=0; i<modelData->nVariablesInteger; i++) {
       mi.iAlg[i]["start"] = mOverrides.count(mi.iAlg[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.iAlg[i]["name"]) : mi.iAlg[i]["start"];
     }
-    for(mmc_sint_t i=0; i<modelData->nVariablesBoolean; i++)
-    {
+    for(mmc_sint_t i=0; i<modelData->nVariablesBoolean; i++) {
       mi.bAlg[i]["start"] = mOverrides.count(mi.bAlg[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.bAlg[i]["name"]) : mi.bAlg[i]["start"];
     }
-    for(mmc_sint_t i=0; i<modelData->nVariablesString; i++)
-    {
+    for(mmc_sint_t i=0; i<modelData->nVariablesString; i++) {
       mi.sAlg[i]["start"] = mOverrides.count(mi.sAlg[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.sAlg[i]["name"]) : mi.sAlg[i]["start"];
     }
-    for(mmc_sint_t i=0; i<modelData->nParametersReal; i++)
-    {
+    for(mmc_sint_t i=0; i<modelData->nParametersReal; i++) {
       // TODO: only allow to override primary parameters
       mi.rPar[i]["start"] = mOverrides.count(mi.rPar[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rPar[i]["name"]) : mi.rPar[i]["start"];
     }
-    for(mmc_sint_t i=0; i<modelData->nParametersInteger; i++)
-    {
+    for(mmc_sint_t i=0; i<modelData->nParametersInteger; i++) {
       // TODO: only allow to override primary parameters
       mi.iPar[i]["start"] = mOverrides.count(mi.iPar[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.iPar[i]["name"]) : mi.iPar[i]["start"];
     }
-    for(mmc_sint_t i=0; i<modelData->nParametersBoolean; i++)
-    {
+    for(mmc_sint_t i=0; i<modelData->nParametersBoolean; i++) {
       // TODO: only allow to override primary parameters
       mi.bPar[i]["start"] = mOverrides.count(mi.bPar[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.bPar[i]["name"]) : mi.bPar[i]["start"];
     }
-    for(mmc_sint_t i=0; i<modelData->nParametersString; i++)
-    {
+    for(mmc_sint_t i=0; i<modelData->nParametersString; i++) {
       // TODO: only allow to override primary parameters
       mi.sPar[i]["start"] = mOverrides.count(mi.sPar[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.sPar[i]["name"]) : mi.sPar[i]["start"];
     }
-    for(mmc_sint_t i=0; i<modelData->nAliasReal; i++)
-    {
+    for(mmc_sint_t i=0; i<modelData->nAliasReal; i++) {
       mi.rAli[i]["start"] = mOverrides.count(mi.rAli[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rAli[i]["name"]) : mi.rAli[i]["start"];
     }
-    for(mmc_sint_t i=0; i<modelData->nAliasInteger; i++)
-    {
+    for(mmc_sint_t i=0; i<modelData->nAliasInteger; i++) {
       mi.iAli[i]["start"] = mOverrides.count(mi.iAli[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.iAli[i]["name"]) : mi.iAli[i]["start"];
     }
-    for(mmc_sint_t i=0; i<modelData->nAliasBoolean; i++)
-    {
+    for(mmc_sint_t i=0; i<modelData->nAliasBoolean; i++) {
       mi.bAli[i]["start"] = mOverrides.count(mi.bAli[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.bAli[i]["name"]) : mi.bAli[i]["start"];
     }
-    for(mmc_sint_t i=0; i<modelData->nAliasString; i++)
-    {
+    for(mmc_sint_t i=0; i<modelData->nAliasString; i++) {
       mi.sAli[i]["start"] = mOverrides.count(mi.sAli[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.sAli[i]["name"]) : mi.sAli[i]["start"];
     }
 
     // give a warning if an override is not used #3204
-    for (std::map<std::string, mmc_sint_t>::iterator it = mOverridesUses.begin(); it != mOverridesUses.end(); ++it)
-      if (it->second == OMC_OVERRIDE_UNUSED)
-      {
+    for (std::map<std::string, mmc_sint_t>::iterator it = mOverridesUses.begin(); it != mOverridesUses.end(); ++it) {
+      if (it->second == OMC_OVERRIDE_UNUSED) {
          warningStreamPrint(LOG_STDOUT, 0, "simulation_input_xml.cpp: override variable name not found in model: %s\n", it->first.c_str());
       }
+    }
 
     infoStreamPrint(LOG_SOLVER, 0, "override done!");
-  }
-  else
-  {
+  } else {
     infoStreamPrint(LOG_SOLVER, 0, "NO override given on the command line.");
   }
 }
 
+}
