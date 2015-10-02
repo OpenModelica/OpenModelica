@@ -107,12 +107,16 @@ algorithm
     //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
     //  BackendDump.dumpBackendDAE(dae, "inlineWhenForInitialization");
     //end if;
+    SimCodeFunctionUtil.execStat("inlineWhenForInitialization (initialization)");
 
     (initVars, outPrimaryParameters, outAllPrimaryParameters) := selectInitializationVariablesDAE(dae);
     //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
     //  BackendDump.dumpVariables(initVars, "selected initialization variables");
     //end if;
+    SimCodeFunctionUtil.execStat("selectInitializationVariablesDAE (initialization)");
+
     hs := collectPreVariables(dae);
+    SimCodeFunctionUtil.execStat("collectPreVariables (initialization)");
 
     // collect vars and eqns for initial system
     vars := BackendVariable.emptyVars();
@@ -123,17 +127,18 @@ algorithm
     ((vars, fixvars, eqns, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.aliasVars, introducePreVarsForAliasVariables, (vars, fixvars, eqns, hs));
     ((vars, fixvars, eqns, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.knownVars, collectInitialVars, (vars, fixvars, eqns, hs));
     ((eqns, reeqns)) := BackendEquation.traverseEquationArray(dae.shared.initialEqs, collectInitialEqns, (eqns, reeqns));
-
     //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
     //  BackendDump.dumpEquationArray(eqns, "initial equations");
     //end if;
+    SimCodeFunctionUtil.execStat("collectInitialEqns (initialization)");
 
     ((vars, fixvars, eqns, reeqns, _)) := List.fold(dae.eqs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns, hs)));
-
     ((eqns, reeqns)) := BackendVariable.traverseBackendDAEVars(vars, collectInitialBindings, (eqns, reeqns));
+    SimCodeFunctionUtil.execStat("collectInitialBindings (initialization)");
 
     // replace initial(), sample(...), delay(...) and homotopy(...)
     useHomotopy := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns, simplifyInitialFunctions, false);
+    SimCodeFunctionUtil.execStat("simplifyInitialFunctions (initialization)");
 
     vars := BackendVariable.rehashVariables(vars);
     fixvars := BackendVariable.rehashVariables(fixvars);
@@ -142,12 +147,13 @@ algorithm
     shared := BackendDAEUtil.setSharedKnVars(shared, fixvars);
     shared := BackendDAEUtil.setSharedOptimica(shared, dae.shared.constraints, dae.shared.classAttrs);
     shared := BackendDAEUtil.setSharedFunctionTree(shared, dae.shared.functionTree);
+    SimCodeFunctionUtil.execStat("setup shared object (initialization)");
 
     // generate initial system and pre-balance it
     initsyst := BackendDAEUtil.createEqSystem(vars, eqns);
     initsyst := BackendDAEUtil.setEqSystRemovedEqns(initsyst, reeqns);
     (initsyst, dumpVars) := preBalanceInitialSystem(initsyst);
-    SimCodeFunctionUtil.execStat("created initial system");
+    SimCodeFunctionUtil.execStat("preBalanceInitialSystem (initialization)");
 
     // split the initial system into independend subsystems
     initdae := BackendDAE.DAE({initsyst}, shared);
@@ -158,7 +164,7 @@ algorithm
 
     (systs, shared) := BackendDAEOptimize.partitionIndependentBlocksHelper(initsyst, shared, Error.getNumErrorMessages(), true);
     initdae := BackendDAE.DAE(systs, shared);
-    SimCodeFunctionUtil.execStat("partitioned initial system");
+    SimCodeFunctionUtil.execStat("partitionIndependentBlocks (initialization)");
 
     if Flags.isSet(Flags.OPT_DAE_DUMP) then
       print(stringAppendList({"\npartitioned initial system:\n\n"}));
@@ -169,6 +175,7 @@ algorithm
     // fix over- and under-constrained subsystems
     (initdae, dumpVars2, removedEqns) := analyzeInitialSystem(initdae, dae, initVars);
     dumpVars := listAppend(dumpVars, dumpVars2);
+    SimCodeFunctionUtil.execStat("analyzeInitialSystem (initialization)");
 
     // some debug prints
     if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
@@ -177,6 +184,7 @@ algorithm
 
     // now let's solve the system!
     initdae := BackendDAEUtil.mapEqSystem(initdae, solveInitialSystemEqSystem);
+    SimCodeFunctionUtil.execStat("solveInitialSystemEqSystem (initialization)");
 
     // transform and optimize DAE
     initOptModules := BackendDAEUtil.getInitOptModules(NONE());

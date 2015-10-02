@@ -6591,6 +6591,7 @@ protected
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
 algorithm
+  SimCodeFunctionUtil.execStat("prepare preOptimizeDAE");
   for preOptModule in inPreOptModules loop
     (optModule, moduleStr, stopOnFailure) := preOptModule;
     try
@@ -6868,6 +6869,7 @@ protected
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
 algorithm
+  SimCodeFunctionUtil.execStat("prepare postOptimizeDAE");
   for postOptModule in inPostOptModules loop
     (optModule, moduleStr, stopOnFailure) := postOptModule;
     moduleStr := moduleStr + " (" + BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType) + ")";
