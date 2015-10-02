@@ -49,18 +49,58 @@
 
 #include <limits.h>
 #include <map>
+#include "util/uthash.h"
 #include <string>
 #include <string.h>
 #include <expat.h>
 
-using namespace std;
+typedef struct hash_string_string
+{
+  const char *id;
+  const char *val;
+  UT_hash_handle hh;
+} hash_string_string;
 
-typedef std::map<std::string, std::string>       omc_ModelDescription;
-typedef std::map<std::string, std::string>       omc_DefaultExperiment;
-typedef std::map<std::string, std::string>       omc_ScalarVariable;
-typedef std::map<mmc_sint_t, omc_ScalarVariable> omc_ModelVariables;
+typedef hash_string_string omc_ModelDescription;
+typedef hash_string_string omc_DefaultExperiment;
+typedef hash_string_string omc_ScalarVariable;
+typedef std::map<mmc_sint_t, omc_ScalarVariable*> omc_ModelVariables;
 
 extern "C" {
+
+static inline const char* findHashStringStringNull(hash_string_string *ht, const char *key)
+{
+  hash_string_string *res;
+  HASH_FIND_STR( ht, key, res );
+  return res ? res->val : NULL;
+}
+
+static inline const char* findHashStringStringEmpty(hash_string_string *ht, const char *key)
+{
+  const char *res = findHashStringStringNull(ht,key);
+  return res ? res : "";
+}
+
+static inline const char* findHashStringString(hash_string_string *ht, const char *key)
+{
+  const char *res = findHashStringStringNull(ht,key);
+  if (0==res) {
+    hash_string_string *c, *tmp;
+    HASH_ITER(hh, ht, c, tmp) {
+      fprintf(stderr, "HashMap contained: %s->%s\n", c->id, c->val);
+    }
+    throwStreamPrint(NULL, "Failed to lookup %s in hashmap", key);
+  }
+  return res;
+}
+
+static inline void addHashStringString(hash_string_string **ht, const char *key, const char *val)
+{
+  hash_string_string *v = (hash_string_string*) malloc(sizeof(hash_string_string));
+  v->id=strdup(key);
+  v->val=strdup(val);
+  HASH_ADD_KEYPTR( hh, *ht, key, strlen(key), v );
+}
 
 /* maybe use a map below {"rSta"  -> omc_ModelVariables} */
 /* typedef map < string, omc_ModelVariables > omc_ModelVariablesClassified; */
@@ -68,8 +108,8 @@ extern "C" {
 /* structure used to collect data from the xml input file */
 typedef struct omc_ModelInput
 {
-  omc_ModelDescription  md; /* model description */
-  omc_DefaultExperiment de; /* default experiment */
+  omc_ModelDescription  *md; /* model description */
+  omc_DefaultExperiment *de; /* default experiment */
 
   omc_ModelVariables    rSta; /* states */
   omc_ModelVariables    rDer; /* derivatives */
@@ -130,20 +170,16 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
   mmc_sint_t i = 0;
 
   /* handle fmiModelDescription */
-  if(!strcmp(name, "fmiModelDescription"))
-  {
-    for(i = 0; attr[i]; i += 2)
-    {
-      mi->md[attr[i]] = attr[i + 1];
+  if(!strcmp(name, "fmiModelDescription")) {
+    for(i = 0; attr[i]; i += 2) {
+      addHashStringString(&mi->md, attr[i], attr[i+1]);
     }
     return;
   }
   /* handle DefaultExperiment */
-  if(!strcmp(name, "DefaultExperiment"))
-  {
-    for(i = 0; attr[i]; i += 2)
-    {
-      mi->de[attr[i]] = attr[i + 1];
+  if(!strcmp(name, "DefaultExperiment")) {
+    for(i = 0; attr[i]; i += 2) {
+      addHashStringString(&mi->de, attr[i], attr[i+1]);
     }
     return;
   }
@@ -151,55 +187,54 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
   /* handle ScalarVariable */
   if(!strcmp(name, "ScalarVariable"))
   {
-    omc_ScalarVariable v;
-    string ci, ct;
+    omc_ScalarVariable *v = NULL, *vfind;
+    const char *ci, *ct;
     mi->lastCI = -1;
     mi->lastCT = NULL;
-    for(i = 0; attr[i]; i += 2)
-    {
-      v[attr[i]] = attr[i + 1];
+    for(i = 0; attr[i]; i += 2) {
+      addHashStringString(&v, attr[i], attr[i+1]);
     }
     /* fetch the class index/type  */
-    ci = v["classIndex"];
-    ct = v["classType"];
+    ci = findHashStringString(v, "classIndex");
+    ct = findHashStringString(v, "classType");
     /* transform to mmc_sint_t  */
-    mi->lastCI = atoi(ci.c_str());
+    mi->lastCI = atoi(ci);
 
     /* which one of the classifications?  */
-    mi->lastCT = ct.compare("rSta") ? mi->lastCT : &mi->rSta;
-    mi->lastCT = ct.compare("rDer") ? mi->lastCT : &mi->rDer;
-    mi->lastCT = ct.compare("rAlg") ? mi->lastCT : &mi->rAlg;
-    mi->lastCT = ct.compare("rPar") ? mi->lastCT : &mi->rPar;
-    mi->lastCT = ct.compare("rAli") ? mi->lastCT : &mi->rAli;
+    mi->lastCT = strcmp(ct,"rSta") ? mi->lastCT : &mi->rSta;
+    mi->lastCT = strcmp(ct,"rDer") ? mi->lastCT : &mi->rDer;
+    mi->lastCT = strcmp(ct,"rAlg") ? mi->lastCT : &mi->rAlg;
+    mi->lastCT = strcmp(ct,"rPar") ? mi->lastCT : &mi->rPar;
+    mi->lastCT = strcmp(ct,"rAli") ? mi->lastCT : &mi->rAli;
 
-    mi->lastCT = ct.compare("iAlg") ? mi->lastCT : &mi->iAlg;
-    mi->lastCT = ct.compare("iPar") ? mi->lastCT : &mi->iPar;
-    mi->lastCT = ct.compare("iAli") ? mi->lastCT : &mi->iAli;
+    mi->lastCT = strcmp(ct,"iAlg") ? mi->lastCT : &mi->iAlg;
+    mi->lastCT = strcmp(ct,"iPar") ? mi->lastCT : &mi->iPar;
+    mi->lastCT = strcmp(ct,"iAli") ? mi->lastCT : &mi->iAli;
 
-    mi->lastCT = ct.compare("bAlg") ? mi->lastCT : &mi->bAlg;
-    mi->lastCT = ct.compare("bPar") ? mi->lastCT : &mi->bPar;
-    mi->lastCT = ct.compare("bAli") ? mi->lastCT : &mi->bAli;
+    mi->lastCT = strcmp(ct,"bAlg") ? mi->lastCT : &mi->bAlg;
+    mi->lastCT = strcmp(ct,"bPar") ? mi->lastCT : &mi->bPar;
+    mi->lastCT = strcmp(ct,"bAli") ? mi->lastCT : &mi->bAli;
 
-    mi->lastCT = ct.compare("sAlg") ? mi->lastCT : &mi->sAlg;
-    mi->lastCT = ct.compare("sPar") ? mi->lastCT : &mi->sPar;
-    mi->lastCT = ct.compare("sAli") ? mi->lastCT : &mi->sAli;
+    mi->lastCT = strcmp(ct,"sAlg") ? mi->lastCT : &mi->sAlg;
+    mi->lastCT = strcmp(ct,"sPar") ? mi->lastCT : &mi->sPar;
+    mi->lastCT = strcmp(ct,"sAli") ? mi->lastCT : &mi->sAli;
 
-    assertStreamPrint(NULL, NULL != mi->lastCT, "simulation_input_xml.cpp: error reading the xml file, found unknown class: %s  for variable: %s",ct.c_str(),(v["name"]).c_str());
+    if (NULL == mi->lastCT) {
+      throwStreamPrint(NULL, "simulation_input_xml.cpp: error reading the xml file, found unknown class: %s  for variable: %s",ct,findHashStringString(v,"name"));
+    }
 
     /* add the ScalarVariable map to the correct map! */
     (*mi->lastCT)[mi->lastCI] = v;
     return;
   }
   /* handle Real/Integer/Boolean/String */
-  if(!strcmp(name, "Real") || !strcmp(name, "Integer") || !strcmp(name, "Boolean") || !strcmp(name, "String"))
-  {
+  if(!strcmp(name, "Real") || !strcmp(name, "Integer") || !strcmp(name, "Boolean") || !strcmp(name, "String")) {
     /* add keys/value to the last variable */
-    for(i = 0; attr[i]; i += 2)
-    {
+    for(i = 0; attr[i]; i += 2) {
       /* add more key/value pairs to the last variable */
-      ((*mi->lastCT)[mi->lastCI])[attr[i]] = attr[i + 1];
+      addHashStringString(&((*mi->lastCT)[mi->lastCI]), attr[i], attr[i+1]);
     }
-    ((*mi->lastCT)[mi->lastCI])["variableType"] = name;
+    addHashStringString(&((*mi->lastCT)[mi->lastCI]), "variableType", name);
     return;
   }
   /* anything else, we don't handle! */
@@ -210,69 +245,69 @@ static void XMLCALL endElement(void *userData, const char *name)
   /* do nothing! */
 }
 
-static void read_var_info(omc_ScalarVariable &v, VAR_INFO &info)
+static void read_var_info(omc_ScalarVariable *v, VAR_INFO &info)
 {
-  read_value_string(v["name"], &info.name);
+  read_value_string(findHashStringString(v,"name"), &info.name);
   debugStreamPrint(LOG_DEBUG, 1, "read var %s from setup file", info.name);
 
-  read_value_int(v["valueReference"], &info.id);
+  read_value_int(findHashStringString(v,"valueReference"), &info.id);
   debugStreamPrint(LOG_DEBUG, 0, "read for %s id %d from setup file", info.name, info.id);
-  read_value_string(v["description"], &info.comment);
+  read_value_string(findHashStringStringEmpty(v,"description"), &info.comment);
   debugStreamPrint(LOG_DEBUG, 0, "read for %s description \"%s\" from setup file", info.name, info.comment);
-  read_value_string(v["fileName"], &info.info.filename);
+  read_value_string(findHashStringString(v,"fileName"), &info.info.filename);
   debugStreamPrint(LOG_DEBUG, 0, "read for %s filename %s from setup file", info.name, info.info.filename);
-  read_value_long(v["startLine"], (modelica_integer*)&(info.info.lineStart));
+  read_value_long(findHashStringString(v,"startLine"), (modelica_integer*)&(info.info.lineStart));
   debugStreamPrint(LOG_DEBUG, 0, "read for %s lineStart %d from setup file", info.name, info.info.lineStart);
-  read_value_long(v["startColumn"], (modelica_integer*)&(info.info.colStart));
+  read_value_long(findHashStringString(v,"startColumn"), (modelica_integer*)&(info.info.colStart));
   debugStreamPrint(LOG_DEBUG, 0, "read for %s colStart %d from setup file", info.name, info.info.colStart);
-  read_value_long(v["endLine"], (modelica_integer*)&(info.info.lineEnd));
+  read_value_long(findHashStringString(v,"endLine"), (modelica_integer*)&(info.info.lineEnd));
   debugStreamPrint(LOG_DEBUG, 0, "read for %s lineEnd %d from setup file", info.name, info.info.lineEnd);
-  read_value_long(v["endColumn"], (modelica_integer*)&(info.info.colEnd));
+  read_value_long(findHashStringString(v,"endColumn"), (modelica_integer*)&(info.info.colEnd));
   debugStreamPrint(LOG_DEBUG, 0, "read for %s colEnd %d from setup file", info.name, info.info.colEnd);
-  read_value_long(v["fileWritable"], (modelica_integer*)&(info.info.readonly));
+  read_value_long(findHashStringString(v,"fileWritable"), (modelica_integer*)&(info.info.readonly));
   debugStreamPrint(LOG_DEBUG, 0, "read for %s readonly %d from setup file", info.name, info.info.readonly);
   if (DEBUG_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
 }
 
-static void read_var_attribute_real(omc_ScalarVariable &v, REAL_ATTRIBUTE &attribute)
+static void read_var_attribute_real(omc_ScalarVariable *v, REAL_ATTRIBUTE &attribute)
 {
-  read_value_bool(v["useStart"], (modelica_boolean*)&(attribute.useStart));
-  read_value_real(v["start"], &(attribute.start), 0.0);
-  read_value_bool(v["fixed"], (modelica_boolean*)&(attribute.fixed));
-  read_value_bool(v["useNominal"], (modelica_boolean*)&(attribute.useNominal));
-  read_value_real(v["nominal"], &(attribute.nominal), 1.0);
-  read_value_real(v["min"], &(attribute.min), REAL_MIN);
-  read_value_real(v["max"], &(attribute.max), REAL_MAX);
+  read_value_bool(findHashStringString(v,"useStart"), (modelica_boolean*)&(attribute.useStart));
+  read_value_real(findHashStringStringEmpty(v,"start"), &(attribute.start), 0.0);
+  read_value_bool(findHashStringString(v,"fixed"), (modelica_boolean*)&(attribute.fixed));
+  read_value_bool(findHashStringString(v,"useNominal"), (modelica_boolean*)&(attribute.useNominal));
+  read_value_real(findHashStringStringEmpty(v,"nominal"), &(attribute.nominal), 1.0);
+  read_value_real(findHashStringStringEmpty(v,"min"), &(attribute.min), REAL_MIN);
+  read_value_real(findHashStringStringEmpty(v,"max"), &(attribute.max), REAL_MAX);
 
-  infoStreamPrint(LOG_DEBUG, 0, "Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", v["name"].c_str(), (attribute.useStart)?"":"{", attribute.start, (attribute.useStart)?"":"}", (attribute.fixed)?"true":"false", (attribute.useNominal)?"":"{", attribute.nominal, attribute.useNominal?"":"}", attribute.min, attribute.max);
+  infoStreamPrint(LOG_DEBUG, 0, "Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", findHashStringString(v,"name"), (attribute.useStart)?"":"{", attribute.start, (attribute.useStart)?"":"}", (attribute.fixed)?"true":"false", (attribute.useNominal)?"":"{", attribute.nominal, attribute.useNominal?"":"}", attribute.min, attribute.max);
 }
 
-static void read_var_attribute_int(omc_ScalarVariable &v, INTEGER_ATTRIBUTE &attribute)
+static void read_var_attribute_int(omc_ScalarVariable *v, INTEGER_ATTRIBUTE &attribute)
 {
-  read_value_bool(v["useStart"], &attribute.useStart);
-  read_value_long(v["start"], &attribute.start, 0);
-  read_value_bool(v["fixed"], &attribute.fixed);
-  read_value_long(v["min"], &attribute.min, INTEGER_MIN);
-  read_value_long(v["max"], &attribute.max, INTEGER_MAX);
+  read_value_bool(findHashStringString(v,"useStart"), &attribute.useStart);
+  read_value_long(findHashStringStringEmpty(v,"start"), &attribute.start, 0);
+  read_value_bool(findHashStringString(v,"fixed"), &attribute.fixed);
+  read_value_long(findHashStringStringEmpty(v,"min"), &attribute.min, INTEGER_MIN);
+  read_value_long(findHashStringStringEmpty(v,"max"), &attribute.max, INTEGER_MAX);
 
-  infoStreamPrint(LOG_DEBUG, 0, "Integer %s(%sstart=%ld%s, fixed=%s, min=%ld, max=%ld)", v["name"].c_str(), attribute.useStart?"":"{", attribute.start, attribute.useStart?"":"}", attribute.fixed?"true":"false", attribute.min, attribute.max);
+  infoStreamPrint(LOG_DEBUG, 0, "Integer %s(%sstart=%ld%s, fixed=%s, min=%ld, max=%ld)", findHashStringString(v,"name"), attribute.useStart?"":"{", attribute.start, attribute.useStart?"":"}", attribute.fixed?"true":"false", attribute.min, attribute.max);
 }
 
-static void read_var_attribute_bool(omc_ScalarVariable &v, BOOLEAN_ATTRIBUTE &attribute)
+static void read_var_attribute_bool(omc_ScalarVariable *v, BOOLEAN_ATTRIBUTE &attribute)
 {
-  read_value_bool(v["useStart"], &attribute.useStart);
-  read_value_bool(v["start"], &attribute.start);
-  read_value_bool(v["fixed"], &attribute.fixed);
+  read_value_bool(findHashStringString(v,"useStart"), &attribute.useStart);
+  read_value_bool(findHashStringStringEmpty(v,"start"), &attribute.start);
+  read_value_bool(findHashStringString(v,"fixed"), &attribute.fixed);
 
-  infoStreamPrint(LOG_DEBUG, 0, "Boolean %s(%sstart=%s%s, fixed=%s)", v["name"].c_str(), attribute.useStart?"":"{", attribute.start?"true":"false", attribute.useStart?"":"}", attribute.fixed?"true":"false");
+  infoStreamPrint(LOG_DEBUG, 0, "Boolean %s(%sstart=%s%s, fixed=%s)", findHashStringString(v,"name"), attribute.useStart?"":"{", attribute.start?"true":"false", attribute.useStart?"":"}", attribute.fixed?"true":"false");
 }
 
-static void read_var_attribute_string(omc_ScalarVariable &v, STRING_ATTRIBUTE &attribute)
+static void read_var_attribute_string(omc_ScalarVariable *v, STRING_ATTRIBUTE &attribute)
 {
-  read_value_bool(v["useStart"], &attribute.useStart);
-  read_value_mm(v["start"], &attribute.start);
+  read_value_bool(findHashStringString(v,"useStart"), &attribute.useStart);
+  read_value_mm(findHashStringStringEmpty(v,"start"), &attribute.start);
 
-  infoStreamPrint(LOG_DEBUG, 0, "String %s(%sstart=%s%s)", v["name"].c_str(), attribute.useStart?"":"{", MMC_STRINGDATA(attribute.start), attribute.useStart?"":"}");
+  infoStreamPrint(LOG_DEBUG, 0, "String %s(%sstart=%s%s)", findHashStringString(v,"name"), attribute.useStart?"":"{", MMC_STRINGDATA(attribute.start), attribute.useStart?"":"}");
 }
 
 /* \brief
@@ -284,7 +319,7 @@ static void read_var_attribute_string(omc_ScalarVariable &v, STRING_ATTRIBUTE &a
 void read_input_xml(MODEL_DATA* modelData,
     SIMULATION_INFO* simulationInfo)
 {
-  omc_ModelInput mi;
+  omc_ModelInput mi = {0};
   const char *filename;
   FILE* file = NULL;
   XML_Parser parser = NULL;
@@ -358,17 +393,15 @@ void read_input_xml(MODEL_DATA* modelData,
   /* first, check the modelGUID!
      TODO! FIXME! THIS SEEMS TO FAIL!
      ARE WE READING THE OLD XML FILE?? */
-  if(mi.md.find("guid") == mi.md.end())
-  {
+  const char *guid = findHashStringStringNull(mi.md,"guid");
+  if (NULL==guid) {
      warningStreamPrint(LOG_STDOUT, 0, "The Model GUID: %s is not set in file: %s",
         modelData->modelGUID,
         filename);
-  }
-  else if(strcmp(modelData->modelGUID, mi.md["guid"].c_str()))
-  {
+  } else if (strcmp(modelData->modelGUID, guid)) {
     XML_ParserFree(parser);
     warningStreamPrint(LOG_STDOUT, 0, "Error, the GUID: %s from input data file: %s does not match the GUID compiled in the model: %s",
-        mi.md["guid"].c_str(),
+        guid,
         filename,
         modelData->modelGUID);
     throwStreamPrint(NULL, "see last warning");
@@ -382,28 +415,28 @@ void read_input_xml(MODEL_DATA* modelData,
   /* read all the DefaultExperiment values */
   infoStreamPrint(LOG_SIMULATION, 1, "read all the DefaultExperiment values:");
 
-  read_value_real(mi.de["startTime"], &(simulationInfo->startTime), 0);
+  read_value_real(findHashStringString(mi.de,"startTime"), &(simulationInfo->startTime), 0);
   infoStreamPrint(LOG_SIMULATION, 0, "startTime = %g", simulationInfo->startTime);
 
-  read_value_real(mi.de["stopTime"], &(simulationInfo->stopTime), 1.0);
+  read_value_real(findHashStringString(mi.de,"stopTime"), &(simulationInfo->stopTime), 1.0);
   infoStreamPrint(LOG_SIMULATION, 0, "stopTime = %g", simulationInfo->stopTime);
 
-  read_value_real(mi.de["stepSize"], &(simulationInfo->stepSize), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
+  read_value_real(findHashStringString(mi.de,"stepSize"), &(simulationInfo->stepSize), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
   infoStreamPrint(LOG_SIMULATION, 0, "stepSize = %g", simulationInfo->stepSize);
 
-  read_value_real(mi.de["tolerance"], &(simulationInfo->tolerance), 1e-5);
+  read_value_real(findHashStringString(mi.de,"tolerance"), &(simulationInfo->tolerance), 1e-5);
   infoStreamPrint(LOG_SIMULATION, 0, "tolerance = %g", simulationInfo->tolerance);
 
-  read_value_mm(mi.de["solver"], &simulationInfo->solverMethod);
+  read_value_mm(findHashStringString(mi.de,"solver"), &simulationInfo->solverMethod);
   infoStreamPrint(LOG_SIMULATION, 0, "solver method: %s", MMC_STRINGDATA(simulationInfo->solverMethod));
 
-  read_value_mm(mi.de["outputFormat"], &(simulationInfo->outputFormat));
+  read_value_mm(findHashStringString(mi.de,"outputFormat"), &(simulationInfo->outputFormat));
   infoStreamPrint(LOG_SIMULATION, 0, "output format: %s", MMC_STRINGDATA(simulationInfo->outputFormat));
 
-  read_value_mm(mi.de["variableFilter"], &(simulationInfo->variableFilter));
+  read_value_mm(findHashStringString(mi.de,"variableFilter"), &(simulationInfo->variableFilter));
   infoStreamPrint(LOG_SIMULATION, 0, "variable filter: %s", MMC_STRINGDATA(simulationInfo->variableFilter));
 
-  read_value_string(mi.md["OPENMODELICAHOME"], &simulationInfo->OPENMODELICAHOME);
+  read_value_string(findHashStringString(mi.md,"OPENMODELICAHOME"), &simulationInfo->OPENMODELICAHOME);
   infoStreamPrint(LOG_SIMULATION, 0, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
   messageClose(LOG_SIMULATION);
 
@@ -412,18 +445,18 @@ void read_input_xml(MODEL_DATA* modelData,
   modelica_integer nyboolchk, npboolchk;
   modelica_integer nystrchk, npstrchk;
 
-  read_value_long(mi.md["numberOfContinuousStates"],          &nxchk);
-  read_value_long(mi.md["numberOfRealAlgebraicVariables"],    &nychk);
-  read_value_long(mi.md["numberOfRealParameters"],            &npchk);
+  read_value_long(findHashStringString(mi.md,"numberOfContinuousStates"),          &nxchk);
+  read_value_long(findHashStringString(mi.md,"numberOfRealAlgebraicVariables"),    &nychk);
+  read_value_long(findHashStringString(mi.md,"numberOfRealParameters"),            &npchk);
 
-  read_value_long(mi.md["numberOfIntegerParameters"],         &npintchk);
-  read_value_long(mi.md["numberOfIntegerAlgebraicVariables"], &nyintchk);
+  read_value_long(findHashStringString(mi.md,"numberOfIntegerParameters"),         &npintchk);
+  read_value_long(findHashStringString(mi.md,"numberOfIntegerAlgebraicVariables"), &nyintchk);
 
-  read_value_long(mi.md["numberOfBooleanParameters"],         &npboolchk);
-  read_value_long(mi.md["numberOfBooleanAlgebraicVariables"], &nyboolchk);
+  read_value_long(findHashStringString(mi.md,"numberOfBooleanParameters"),         &npboolchk);
+  read_value_long(findHashStringString(mi.md,"numberOfBooleanAlgebraicVariables"), &nyboolchk);
 
-  read_value_long(mi.md["numberOfStringParameters"],          &npstrchk);
-  read_value_long(mi.md["numberOfStringAlgebraicVariables"],  &nystrchk);
+  read_value_long(findHashStringString(mi.md,"numberOfStringParameters"),          &npstrchk);
+  read_value_long(findHashStringString(mi.md,"numberOfStringAlgebraicVariables"),  &nystrchk);
 
   if(nxchk != modelData->nStates
     || nychk != modelData->nVariablesReal - 2*modelData->nStates
@@ -462,12 +495,12 @@ void read_input_xml(MODEL_DATA* modelData,
     mmc_sint_t j = start+i; \
     VAR_INFO &info = out[j].info; \
     attributeKind &attribute = out[j].attribute; \
-    omc_ScalarVariable &v = in[i]; \
+    omc_ScalarVariable *v = in[i]; \
     read_var_info(v, info); \
     read_var_attribute(v, attribute); \
     if (info.name[0] == '$') { \
       out[j].filterOutput = 1; \
-    } else if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == v["isProtected"].compare("true")) { \
+    } else if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == strcmp(findHashStringString(v,"isProtected"),"true")) { \
       infoStreamPrint(LOG_DEBUG, 0, "filtering protected variable %s", info.name); \
       out[j].filterOutput = 1; \
     } \
@@ -476,7 +509,7 @@ void read_input_xml(MODEL_DATA* modelData,
   } \
   messageClose(LOG_DEBUG);
 
-  READ_VARIABLES(modelData->realVarsData,mi.rSta,REAL_ATTRIBUTE,read_var_attribute_real,"real states",0,modelData->nStates,mapAlias);
+   READ_VARIABLES(modelData->realVarsData,mi.rSta,REAL_ATTRIBUTE,read_var_attribute_real,"real states",0,modelData->nStates,mapAlias);
   READ_VARIABLES(modelData->realVarsData,mi.rDer,REAL_ATTRIBUTE,read_var_attribute_real,"real state derivatives",modelData->nStates,modelData->nStates,mapAlias);
   READ_VARIABLES(modelData->realVarsData,mi.rAlg,REAL_ATTRIBUTE,read_var_attribute_real,"real algebraics",2*modelData->nStates,modelData->nVariablesReal - 2*modelData->nStates,mapAlias);
 
@@ -498,7 +531,7 @@ void read_input_xml(MODEL_DATA* modelData,
     read_var_info(mi.rAli[i], modelData->realAlias[i].info);
 
     const char *aliasTmp;
-    read_value_string(mi.rAli[i]["alias"], &aliasTmp);
+    read_value_string(findHashStringStringNull(mi.rAli[i],"alias"), &aliasTmp);
     if (0 == strcmp(aliasTmp,"negatedAlias")) {
       modelData->realAlias[i].negate = 1;
     } else {
@@ -511,7 +544,7 @@ void read_input_xml(MODEL_DATA* modelData,
       modelData->realAlias[i].filterOutput = 1;
     }
 
-    read_value_string(mi.rAli[i]["aliasVariable"], &aliasTmp);
+    read_value_string(findHashStringStringNull(mi.rAli[i],"aliasVariable"), &aliasTmp);
 
     it = mapAlias.find(aliasTmp);
     itParam = mapAliasParam.find(aliasTmp);
@@ -543,7 +576,7 @@ void read_input_xml(MODEL_DATA* modelData,
     read_var_info(mi.iAli[i], modelData->integerAlias[i].info);
 
     const char *aliasTmp;
-    read_value_string(mi.iAli[i]["alias"], &aliasTmp);
+    read_value_string(findHashStringStringNull(mi.iAli[i],"alias"), &aliasTmp);
     if (0 == strcmp(aliasTmp,"negatedAlias")) {
       modelData->integerAlias[i].negate = 1;
     } else {
@@ -556,7 +589,7 @@ void read_input_xml(MODEL_DATA* modelData,
     if(modelData->integerAlias[i].info.name[0] == '$') {
       modelData->integerAlias[i].filterOutput = 1;
     }
-    read_value_string(mi.iAli[i]["aliasVariable"], &aliasTmp);
+    read_value_string(findHashStringString(mi.iAli[i],"aliasVariable"), &aliasTmp);
 
     it = mapAlias.find(aliasTmp);
     itParam = mapAliasParam.find(aliasTmp);
@@ -586,7 +619,7 @@ void read_input_xml(MODEL_DATA* modelData,
     read_var_info(mi.bAli[i], modelData->booleanAlias[i].info);
 
     const char *aliasTmp;
-    read_value_string(mi.bAli[i]["alias"], &aliasTmp);
+    read_value_string(findHashStringString(mi.bAli[i],"alias"), &aliasTmp);
     if  (0 == strcmp(aliasTmp,"negatedAlias")) {
       modelData->booleanAlias[i].negate = 1;
     } else {
@@ -599,7 +632,7 @@ void read_input_xml(MODEL_DATA* modelData,
     if(modelData->booleanAlias[i].info.name[0] == '$') {
       modelData->booleanAlias[i].filterOutput = 1;
     }
-    read_value_string(mi.bAli[i]["aliasVariable"], &aliasTmp);
+    read_value_string(findHashStringString(mi.bAli[i],"aliasVariable"), &aliasTmp);
 
     it = mapAlias.find(aliasTmp);
     itParam = mapAliasParam.find(aliasTmp);
@@ -629,7 +662,7 @@ void read_input_xml(MODEL_DATA* modelData,
     read_var_info(mi.sAli[i], modelData->stringAlias[i].info);
 
     const char *aliasTmp;
-    read_value_string(mi.sAli[i]["alias"], &aliasTmp);
+    read_value_string(findHashStringString(mi.sAli[i],"alias"), &aliasTmp);
     if (0 == strcmp(aliasTmp,"negatedAlias")) {
       modelData->stringAlias[i].negate = 1;
     } else {
@@ -642,7 +675,7 @@ void read_input_xml(MODEL_DATA* modelData,
       modelData->stringAlias[i].filterOutput = 1;
     }
 
-    read_value_string(mi.sAli[i]["aliasVariable"], &aliasTmp);
+    read_value_string(findHashStringString(mi.sAli[i],"aliasVariable"), &aliasTmp);
 
     it = mapAlias.find(aliasTmp);
     itParam = mapAliasParam.find(aliasTmp);
@@ -751,10 +784,10 @@ static const char* trim(char *str) {
   return res;
 }
 
-static std::string getOverrideValue(omc_CommandLineOverrides& mOverrides, omc_CommandLineOverridesUses& mOverridesUses, std::string name)
+static const char* getOverrideValue(omc_CommandLineOverrides& mOverrides, omc_CommandLineOverridesUses& mOverridesUses, const char *name)
 {
     mOverridesUses[name] = OMC_OVERRIDE_USED;
-    return mOverrides[name];
+    return mOverrides[name].c_str();
 }
 
 void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override, const char* overrideFile)
@@ -850,59 +883,64 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
 
     free(overrideStr);
 
+
     // now we have all overrides in mOverrides, override mi now
-    mi.de["solver"]         = mOverrides.count("solver")         ? getOverrideValue(mOverrides, mOverridesUses, "solver")    : mi.de["solver"];
-    mi.de["startTime"]      = mOverrides.count("startTime")      ? getOverrideValue(mOverrides, mOverridesUses, "startTime") : mi.de["startTime"];
-    mi.de["stopTime"]       = mOverrides.count("stopTime")       ? getOverrideValue(mOverrides, mOverridesUses, "stopTime")  : mi.de["stopTime"];
-    mi.de["stepSize"]       = mOverrides.count("stepSize")       ? getOverrideValue(mOverrides, mOverridesUses, "stepSize")  : mi.de["stepSize"];
-    mi.de["tolerance"]      = mOverrides.count("tolerance")      ? getOverrideValue(mOverrides, mOverridesUses, "tolerance")      : mi.de["tolerance"];
-    mi.de["outputFormat"]   = mOverrides.count("outputFormat")   ? getOverrideValue(mOverrides, mOverridesUses, "outputFormat")   : mi.de["outputFormat"];
-    mi.de["variableFilter"] = mOverrides.count("variableFilter") ? getOverrideValue(mOverrides, mOverridesUses, "variableFilter") : mi.de["variableFilter"];
+    const char *strs[] = {"solver","startTime","stopTime","stepSize","tolerance","outputFormat","variableFilter"};
+    for (int i=0; i<sizeof(strs)/sizeof(char*); i++) {
+      if (mOverrides.count(strs[i])) {
+        addHashStringString(&mi.de, strs[i], getOverrideValue(mOverrides, mOverridesUses, strs[i]));
+      }
+    }
+
+    #define CHECK_OVERRIDE(v) \
+      if (mOverrides.count(findHashStringString(mi.v[i],"name"))) { \
+        addHashStringString(&mi.v[i], "start", getOverrideValue(mOverrides, mOverridesUses, findHashStringString(mi.v[i],"name"))); \
+      }
 
     // override all found!
     for(mmc_sint_t i=0; i<modelData->nStates; i++) {
-      mi.rSta[i]["start"] = mOverrides.count(mi.rSta[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rSta[i]["name"]) : mi.rSta[i]["start"];
-      mi.rDer[i]["start"] = mOverrides.count(mi.rDer[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rDer[i]["name"]) : mi.rDer[i]["start"];
+      CHECK_OVERRIDE(rSta);
+      CHECK_OVERRIDE(rDer);
     }
     for(mmc_sint_t i=0; i<(modelData->nVariablesReal - 2*modelData->nStates); i++) {
-      mi.rAlg[i]["start"] = mOverrides.count(mi.rAlg[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rAlg[i]["name"]) : mi.rAlg[i]["start"];
+      CHECK_OVERRIDE(rAlg);
     }
     for(mmc_sint_t i=0; i<modelData->nVariablesInteger; i++) {
-      mi.iAlg[i]["start"] = mOverrides.count(mi.iAlg[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.iAlg[i]["name"]) : mi.iAlg[i]["start"];
+      CHECK_OVERRIDE(iAlg);
     }
     for(mmc_sint_t i=0; i<modelData->nVariablesBoolean; i++) {
-      mi.bAlg[i]["start"] = mOverrides.count(mi.bAlg[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.bAlg[i]["name"]) : mi.bAlg[i]["start"];
+      CHECK_OVERRIDE(bAlg);
     }
     for(mmc_sint_t i=0; i<modelData->nVariablesString; i++) {
-      mi.sAlg[i]["start"] = mOverrides.count(mi.sAlg[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.sAlg[i]["name"]) : mi.sAlg[i]["start"];
+      CHECK_OVERRIDE(sAlg);
     }
     for(mmc_sint_t i=0; i<modelData->nParametersReal; i++) {
       // TODO: only allow to override primary parameters
-      mi.rPar[i]["start"] = mOverrides.count(mi.rPar[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rPar[i]["name"]) : mi.rPar[i]["start"];
+      CHECK_OVERRIDE(rPar);
     }
     for(mmc_sint_t i=0; i<modelData->nParametersInteger; i++) {
       // TODO: only allow to override primary parameters
-      mi.iPar[i]["start"] = mOverrides.count(mi.iPar[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.iPar[i]["name"]) : mi.iPar[i]["start"];
+      CHECK_OVERRIDE(iPar);
     }
     for(mmc_sint_t i=0; i<modelData->nParametersBoolean; i++) {
       // TODO: only allow to override primary parameters
-      mi.bPar[i]["start"] = mOverrides.count(mi.bPar[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.bPar[i]["name"]) : mi.bPar[i]["start"];
+      CHECK_OVERRIDE(bPar);
     }
     for(mmc_sint_t i=0; i<modelData->nParametersString; i++) {
       // TODO: only allow to override primary parameters
-      mi.sPar[i]["start"] = mOverrides.count(mi.sPar[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.sPar[i]["name"]) : mi.sPar[i]["start"];
+      CHECK_OVERRIDE(sPar);
     }
     for(mmc_sint_t i=0; i<modelData->nAliasReal; i++) {
-      mi.rAli[i]["start"] = mOverrides.count(mi.rAli[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rAli[i]["name"]) : mi.rAli[i]["start"];
+      CHECK_OVERRIDE(rAli);
     }
     for(mmc_sint_t i=0; i<modelData->nAliasInteger; i++) {
-      mi.iAli[i]["start"] = mOverrides.count(mi.iAli[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.iAli[i]["name"]) : mi.iAli[i]["start"];
+      CHECK_OVERRIDE(iAli);
     }
     for(mmc_sint_t i=0; i<modelData->nAliasBoolean; i++) {
-      mi.bAli[i]["start"] = mOverrides.count(mi.bAli[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.bAli[i]["name"]) : mi.bAli[i]["start"];
+      CHECK_OVERRIDE(bAli);
     }
     for(mmc_sint_t i=0; i<modelData->nAliasString; i++) {
-      mi.sAli[i]["start"] = mOverrides.count(mi.sAli[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.sAli[i]["name"]) : mi.sAli[i]["start"];
+      CHECK_OVERRIDE(sAli);
     }
 
     // give a warning if an override is not used #3204

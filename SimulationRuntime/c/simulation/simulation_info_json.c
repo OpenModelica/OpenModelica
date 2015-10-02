@@ -33,7 +33,6 @@
 #include <expat.h>
 #include <errno.h>
 #include <string.h>
-#include "util/uthash.h"
 #include <stdio.h>
 #include "util/rtclock.h"
 #include "util/omc_mmap.h"
