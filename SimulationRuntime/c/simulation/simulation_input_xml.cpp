@@ -849,8 +849,8 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
           ++overrideLine;
         }
         overrideLine = strcpy(overrideLine,tline)+strlen(tline);
-        // free our line
-        free(line);
+        // TODO! FIXME! how sould we free the line we read?
+        // free(line);
       }
 
     }
