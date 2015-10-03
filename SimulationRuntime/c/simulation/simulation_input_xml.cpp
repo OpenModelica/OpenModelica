@@ -791,10 +791,13 @@ static const char* getOverrideValue(omc_CommandLineOverrides& mOverrides, omc_Co
 }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(_MSC_VER)
+#define ssize_t intptr_t
+#endif
 ssize_t getline(char **lineptr, size_t *n, FILE *stream)
 {
-   *lineptr = (char*)malloc(5000*sizeof(char));
-   if (fgets(*lineptr, 5000, stream) == NULL)
+   *lineptr = (char*)malloc(1000*sizeof(char));
+   if (fgets(*lineptr, 1000, stream) == NULL)
      return -1;
    *n = strlen(*lineptr);
    return (ssize_t)*n;
