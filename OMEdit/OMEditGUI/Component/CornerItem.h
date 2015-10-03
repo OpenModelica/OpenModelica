@@ -109,15 +109,17 @@ protected:
 class OriginItem : public QGraphicsItem
 {
 public:
-  OriginItem();
+  OriginItem(Component *pComponent);
   void setActive();
   void setPassive();
   QRectF boundingRect() const {return mRectangle;}
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
 private:
+  Component *mpComponent;
   QRectF mRectangle;
   QPen mPen;
   QPen mActivePen;
+  QPen mInheritedActivePen;
   QPen mPassivePen;
 };
 

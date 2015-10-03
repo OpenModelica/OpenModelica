@@ -128,13 +128,13 @@ public:
   static QStringList unparseArrays(QString value);
   // Returns false on failure
   static bool unparseBool(QString value);
-  static QString getSaveFileName(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0, const QString & filter = QString(),
-                                 QString * selectedFilter = 0, const QString &defaultSuffix = QString(), const QString *purposedName = 0);
-  static QString getOpenFileName(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0, const QString & filter = QString(),
+  static QString getSaveFileName(QWidget* parent = 0, const QString &caption = "", QString * dir = 0, const QString & filter = "",
+                                 QString * selectedFilter = 0, const QString &defaultSuffix = "", const QString *purposedName = 0);
+  static QString getOpenFileName(QWidget* parent = 0, const QString &caption = "", QString * dir = 0, const QString & filter = "",
                                  QString * selectedFilter = 0);
-  static QStringList getOpenFileNames(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0, const QString & filter = QString(),
-                                 QString * selectedFilter = 0);
-  static QString getExistingDirectory(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0);
+  static QStringList getOpenFileNames(QWidget* parent = 0, const QString &caption = "", QString * dir = 0, const QString & filter = "",
+                                      QString * selectedFilter = 0);
+  static QString getExistingDirectory(QWidget* parent = 0, const QString &caption = "", QString * dir = 0);
   static void setLastOpenDirectory(QString lastOpenDirectory);
   static QString getLastOpenDirectory();
   static QStringList getDialogAnnotation(QString componentAnnotation);

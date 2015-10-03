@@ -97,7 +97,7 @@ QString StackFrameItem::cleanupFileName(const QString &fileName)
   // (a) have no drive letter and (b) are not normalized.
 #ifdef Q_OS_WIN
   if (fileName.isEmpty())
-    return QString();
+    return "";
   QFileInfo fileInfo(fileName);
   if (fileInfo.isReadable())
     cleanFilePath = QDir::cleanPath(fileInfo.absoluteFilePath());

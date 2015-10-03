@@ -125,16 +125,16 @@ public:
   };
   Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformation, QPointF position, ComponentInfo *pComponentInfo,
             GraphicsView *pGraphicsView);
-  Component(Component *pComponent, Component *pParent);
+  Component(Component *pComponent, GraphicsView *pGraphicsView, Component *pParent);
   Component(Component *pComponent, GraphicsView *pGraphicsView);
   bool isInheritedComponent() {return mIsInheritedComponent;}
   QString getInheritedClassName();
   void createNonExistingComponent();
+  void createDefaultComponent();
   void createClassInheritedShapes();
   void createClassShapes(LibraryTreeItem *pLibraryTreeItem);
   void createClassInheritedComponents();
   void createClassComponents(LibraryTreeItem *pLibraryTreeItem);
-  void createDefaultComponent();
   bool hasShapeAnnotation(Component *pComponent);
   void createActions();
   void createResizerItems();
@@ -175,12 +175,14 @@ public:
   QString getTransformationExtent();
   void applyRotation(qreal angle);
   void addConnectionDetails(LineAnnotation *pConnectorLineAnnotation);
-  void emitComponentAdded() {emit componentAdded();}
-  void emitComponentTransformHasChanged() {emit componentTransformHasChanged();}
-  void emitComponentDeleted() {emit componentDeleted();}
+  void emitAdded();
+  void emitTransformHasChanged();
+  void emitDeleted();
   void componentNameHasChanged();
   void componentParameterHasChanged();
   QString getParameterDisplayString(QString parameterName);
+  void shapeAdded();
+  void shapeDeleted();
   void addInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo);
   void removeInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo);
   void renameInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo, QString interfacePoint);
@@ -192,10 +194,13 @@ private:
   GraphicsView *mpGraphicsView;
   bool mIsInheritedComponent;
   ComponentType mComponentType;
-  CoOrdinateSystem *mpCoOrdinateSystem;
   QString mTransformationString;
-  Transformation *mpTransformation;
   QGraphicsRectItem *mpResizerRectangle;
+  LineAnnotation *mpNonExistingComponentLine;
+  RectangleAnnotation *mpDefaultComponentRectangle;
+  TextAnnotation *mpDefaultComponentText;
+  CoOrdinateSystem *mpCoOrdinateSystem;
+  Transformation *mpTransformation;
   QAction *mpParametersAction;
   QAction *mpAttributesAction;
   QAction *mpViewClassAction;
@@ -220,16 +225,21 @@ private:
   QList<TLMInterfacePointInfo*> mInterfacePointsList;
   QPointF mOldPosition;
   void duplicateHelper(GraphicsView *pGraphicsView);
+  void removeShapes();
+  void removeComponents();
 signals:
-  void componentAdded();
-  void componentTransformChange();
-  void componentTransformHasChanged();
-  void componentDisplayTextChanged();
-  void componentRotationChange();
-  void componentDeleted();
+  void added();
+  void transformChange();
+  void transformHasChanged();
+  void displayTextChanged();
+  void rotationChange();
+  void deleted();
 public slots:
   void updatePlacementAnnotation();
   void updateOriginItem();
+  void handleLoaded();
+  void handleUnloaded();
+  void handleShapeAdded();
   void referenceComponentAdded();
   void referenceComponentChanged();
   void referenceComponentDeleted();

@@ -97,7 +97,7 @@ public:
   void removeCachedOMCCommand(QString className);
   bool initializeOMC();
   void quitOMC();
-  void sendCommand(const QString expression, bool cacheCommand = false, QString className = QString(), bool dontUseCachedCommand = false);
+  void sendCommand(const QString expression, bool cacheCommand = false, QString className = "", bool dontUseCachedCommand = false);
   void setResult(QString value);
   QString getResult();
   void exitApplication();

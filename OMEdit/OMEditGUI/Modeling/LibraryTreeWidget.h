@@ -65,6 +65,7 @@ public:
 
 class ModelWidget;
 class ShapeAnnotation;
+class Component;
 class LibraryTreeItem : public QObject
 {
   Q_OBJECT
@@ -144,6 +145,7 @@ public:
   void emitLoaded() {emit loaded(this);}
   void emitUnLoaded() {emit unLoaded(this);}
   void emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView) {emit shapeAdded(this, pShapeAnnotation, pGraphicsView);}
+  void emitComponentAdded(Component *pComponent, GraphicsView *pGraphicsView) {emit componentAdded(this, pComponent, pGraphicsView);}
 private:
   bool mIsRootItem;
   LibraryTreeItem *mpParentLibraryTreeItem;
@@ -173,11 +175,13 @@ signals:
   void loaded(LibraryTreeItem *pLibraryTreeItem);
   void unLoaded(LibraryTreeItem *pLibraryTreeItem);
   void shapeAdded(LibraryTreeItem *pLibraryTreeItem, ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  void componentAdded(LibraryTreeItem *pLibraryTreeItem, Component *pComponent, GraphicsView *pGraphicsView);
   void iconUpdated();
 public slots:
   void handleLoaded(LibraryTreeItem *pLibraryTreeItem);
   void handleUnloaded(LibraryTreeItem *pLibraryTreeItem);
   void handleShapeAdded(LibraryTreeItem *pLibraryTreeItem, ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  void handleComponentAdded(LibraryTreeItem *pLibraryTreeItem, Component *pComponent, GraphicsView *pGraphicsView);
   void handleIconUpdated();
 };
 
@@ -230,7 +234,7 @@ public:
   void loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeItem);
   void loadDependentLibraries(QStringList libraries);
   LibraryTreeItem* getLibraryTreeItemFromFile(QString fileName, int lineNumber);
-  void showModelWidget(LibraryTreeItem *pLibraryTreeItem, QString text = QString(), bool show = true, bool newModel = false);
+  void showModelWidget(LibraryTreeItem *pLibraryTreeItem, QString text = QString(""), bool show = true);
   void showHideProtectedClasses();
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);

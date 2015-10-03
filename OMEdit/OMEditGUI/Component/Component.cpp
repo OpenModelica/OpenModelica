@@ -186,18 +186,18 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
                      GraphicsView *pGraphicsView)
   : QGraphicsItem(0), mpReferenceComponent(0), mpParentComponent(0)
 {
-  setZValue(3000);
+  setZValue(1000);
   mpLibraryTreeItem = pLibraryTreeItem;
   mpComponentInfo = pComponentInfo;
-  mpGraphicsView = pGraphicsView;
   mpComponentInfo->setName(name);
+  mpGraphicsView = pGraphicsView;
   mIsInheritedComponent = false;
   mComponentType = Component::Root;
   mTransformationString = transformation;
-  //Construct the temporary polygon that is used when scaling
+  // Construct the temporary polygon that is used when scaling
   mpResizerRectangle = new QGraphicsRectItem;
   mpResizerRectangle->setZValue(5000);  // set to a very high value
-  mpGraphicsView->scene()->addItem(mpResizerRectangle);
+  mpGraphicsView->addItem(mpResizerRectangle);
   QPen pen;
   pen.setStyle(Qt::DotLine);
   pen.setColor(Qt::transparent);
@@ -205,18 +205,21 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
   setOldScenePosition(QPointF(0, 0));
   setOldPosition(QPointF(0, 0));
   setComponentFlags(true);
+  createNonExistingComponent();
+  createDefaultComponent();
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
 //    parseAnnotationString(Helper::defaultComponentAnnotationString);
   } else {
     if (mpLibraryTreeItem->isNonExisting()) {
-      createNonExistingComponent();
+      mpNonExistingComponentLine->setVisible(true);
     } else {
       createClassInheritedShapes();
       createClassShapes(mpLibraryTreeItem);
       createClassInheritedComponents();
       createClassComponents(mpLibraryTreeItem);
       if (!mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->hasAnnotation()) {
-        createDefaultComponent();
+        mpDefaultComponentRectangle->setVisible(true);
+        mpDefaultComponentText->setVisible(true);
       }
     }
   }
@@ -239,21 +242,24 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
   }
   setTransform(mpTransformation->getTransformationMatrix());
   createActions();
-  mpOriginItem = new OriginItem();
+  mpOriginItem = new OriginItem(this);
   createResizerItems();
   setToolTip(tr("<b>%1</b> %2").arg(mpLibraryTreeItem->getNameStructure()).arg(mpComponentInfo->getName()));
-  connect(this, SIGNAL(componentTransformHasChanged()), SLOT(updatePlacementAnnotation()));
-  connect(this, SIGNAL(componentTransformHasChanged()), SLOT(updateOriginItem()));
+  connect(mpLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), SLOT(handleLoaded()));
+  connect(mpLibraryTreeItem, SIGNAL(unLoaded(LibraryTreeItem*)), SLOT(handleUnloaded()));
+  connect(this, SIGNAL(transformHasChanged()), SLOT(updatePlacementAnnotation()));
+  connect(this, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
 }
 
-Component::Component(Component *pComponent, Component *pParent)
+Component::Component(Component *pComponent, GraphicsView *pGraphicsView, Component *pParent)
   : QGraphicsItem(pParent), mpReferenceComponent(pComponent), mpParentComponent(pParent)
 {
+  setZValue(3000);
   mpLibraryTreeItem = mpReferenceComponent->getLibraryTreeItem();
   mpComponentInfo = mpReferenceComponent->getComponentInfo();
   mIsInheritedComponent = mpReferenceComponent->isInheritedComponent();
   mComponentType = Component::Port;
-  mpGraphicsView = mpParentComponent->getGraphicsView();
+  mpGraphicsView = pGraphicsView;
   mTransformationString = mpReferenceComponent->getTransformationString();
   createClassShapes(mpLibraryTreeItem);
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
@@ -266,16 +272,16 @@ Component::Component(Component *pComponent, Component *pParent)
   mpOriginItem = 0;
   setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpLibraryTreeItem->getNameStructure()).arg(mpComponentInfo->getName())
              .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
-  connect(mpReferenceComponent, SIGNAL(componentAdded()), SLOT(referenceComponentAdded()));
-  connect(mpReferenceComponent, SIGNAL(componentTransformHasChanged()), SLOT(referenceComponentChanged()));
-  connect(mpReferenceComponent, SIGNAL(componentDisplayTextChanged()), SIGNAL(componentDisplayTextChanged()));
-  connect(mpReferenceComponent, SIGNAL(componentDeleted()), SLOT(referenceComponentDeleted()));
+  connect(mpReferenceComponent, SIGNAL(added()), SLOT(referenceComponentAdded()));
+  connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceComponentChanged()));
+  connect(mpReferenceComponent, SIGNAL(displayTextChanged()), SIGNAL(displayTextChanged()));
+  connect(mpReferenceComponent, SIGNAL(deleted()), SLOT(referenceComponentDeleted()));
 }
 
 Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   : QGraphicsItem(0), mpReferenceComponent(pComponent), mpParentComponent(0)
 {
-  setZValue(3000);
+  setZValue(1000);
   mpLibraryTreeItem = mpReferenceComponent->getLibraryTreeItem();
   mpComponentInfo = mpReferenceComponent->getComponentInfo();
   mpGraphicsView = pGraphicsView;
@@ -285,7 +291,7 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   //Construct the temporary polygon that is used when scaling
   mpResizerRectangle = new QGraphicsRectItem;
   mpResizerRectangle->setZValue(5000);  // set to a very high value
-  mpGraphicsView->scene()->addItem(mpResizerRectangle);
+  mpGraphicsView->addItem(mpResizerRectangle);
   QPen pen;
   pen.setStyle(Qt::DotLine);
   pen.setColor(Qt::transparent);
@@ -293,11 +299,13 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   setOldScenePosition(QPointF(0, 0));
   setOldPosition(QPointF(0, 0));
   setComponentFlags(true);
+  createNonExistingComponent();
+  createDefaultComponent();
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
 //    parseAnnotationString(Helper::defaultComponentAnnotationString);
   } else {
     if (mpLibraryTreeItem->isNonExisting()) {
-      createNonExistingComponent();
+      mpNonExistingComponentLine->setVisible(true);
       // transformation
       mpCoOrdinateSystem = new CoOrdinateSystem;
     } else {
@@ -306,7 +314,8 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
       createClassInheritedComponents();
       createClassComponents(mpLibraryTreeItem);
       if (!mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->hasAnnotation()) {
-        createDefaultComponent();
+        mpDefaultComponentRectangle->setVisible(true);
+        mpDefaultComponentText->setVisible(true);
       }
       // transformation
       if (mpGraphicsView->getViewType() == StringHandler::Icon) {
@@ -319,17 +328,19 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   mpTransformation = new Transformation(mpReferenceComponent->getTransformation());
   setTransform(mpTransformation->getTransformationMatrix());
   createActions();
-  mpOriginItem = new OriginItem();
-  mpGraphicsView->scene()->addItem(mpOriginItem);
+  mpOriginItem = new OriginItem(this);
+  mpGraphicsView->addItem(mpOriginItem);
   createResizerItems();
-  mpGraphicsView->scene()->addItem(this);
+  mpGraphicsView->addItem(this);
   setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpLibraryTreeItem->getNameStructure()).arg(mpComponentInfo->getName())
              .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
-  connect(mpReferenceComponent, SIGNAL(componentAdded()), SLOT(referenceComponentAdded()));
-  connect(mpReferenceComponent, SIGNAL(componentTransformHasChanged()), SLOT(referenceComponentChanged()));
-  connect(mpReferenceComponent, SIGNAL(componentTransformHasChanged()), SLOT(updateOriginItem()));
-  connect(mpReferenceComponent, SIGNAL(componentDisplayTextChanged()), SIGNAL(componentDisplayTextChanged()));
-  connect(mpReferenceComponent, SIGNAL(componentDeleted()), SLOT(referenceComponentDeleted()));
+  connect(mpLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), SLOT(handleLoaded()));
+  connect(mpLibraryTreeItem, SIGNAL(unLoaded(LibraryTreeItem*)), SLOT(handleUnloaded()));
+  connect(mpReferenceComponent, SIGNAL(added()), SLOT(referenceComponentAdded()));
+  connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceComponentChanged()));
+  connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
+  connect(mpReferenceComponent, SIGNAL(displayTextChanged()), SIGNAL(displayTextChanged()));
+  connect(mpReferenceComponent, SIGNAL(deleted()), SLOT(referenceComponentDeleted()));
 }
 
 QString Component::getInheritedClassName()
@@ -339,7 +350,16 @@ QString Component::getInheritedClassName()
 
 void Component::createNonExistingComponent()
 {
-  mShapesList.append(new LineAnnotation(this));
+  mpNonExistingComponentLine = new LineAnnotation(this);
+  mpNonExistingComponentLine->setVisible(false);
+}
+
+void Component::createDefaultComponent()
+{
+  mpDefaultComponentRectangle = new RectangleAnnotation(this);
+  mpDefaultComponentRectangle->setVisible(false);
+  mpDefaultComponentText = new TextAnnotation(this);
+  mpDefaultComponentText->setVisible(false);
 }
 
 void Component::createClassInheritedShapes()
@@ -371,6 +391,8 @@ void Component::createClassShapes(LibraryTreeItem *pLibraryTreeItem)
       mShapesList.append(new BitmapAnnotation(pShapeAnnotation, this));
     }
   }
+  connect(pLibraryTreeItem, SIGNAL(shapeAdded(LibraryTreeItem*,ShapeAnnotation*,GraphicsView*)),
+          SLOT(handleShapeAdded()), Qt::UniqueConnection);
 }
 
 void Component::createClassInheritedComponents()
@@ -383,14 +405,8 @@ void Component::createClassInheritedComponents()
 void Component::createClassComponents(LibraryTreeItem *pLibraryTreeItem)
 {
   foreach (Component *pComponent, pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentsList()) {
-    mComponentsList.append(new Component(pComponent, this));
+    mComponentsList.append(new Component(pComponent, mpGraphicsView, this));
   }
-}
-
-void Component::createDefaultComponent()
-{
-  mShapesList.append(new RectangleAnnotation(this));
-  mShapesList.append(new TextAnnotation(this));
 }
 
 /*!
@@ -456,7 +472,7 @@ void Component::createResizerItems()
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeComponent(ResizerItem*)));
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
-  connect(mpBottomLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(componentTransformHasChanged()));
+  connect(mpBottomLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(transformHasChanged()));
   mpBottomLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
   //Top left resizer
   mpTopLeftResizerItem = new ResizerItem(this);
@@ -465,7 +481,7 @@ void Component::createResizerItems()
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeComponent(ResizerItem*)));
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
-  connect(mpTopLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(componentTransformHasChanged()));
+  connect(mpTopLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(transformHasChanged()));
   mpTopLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
   //Top Right resizer
   mpTopRightResizerItem = new ResizerItem(this);
@@ -474,7 +490,7 @@ void Component::createResizerItems()
   connect(mpTopRightResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeComponent(ResizerItem*)));
   connect(mpTopRightResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpTopRightResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
-  connect(mpTopRightResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(componentTransformHasChanged()));
+  connect(mpTopRightResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(transformHasChanged()));
   mpTopRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
   //Bottom Right resizer
   mpBottomRightResizerItem = new ResizerItem(this);
@@ -483,7 +499,7 @@ void Component::createResizerItems()
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeComponent(ResizerItem*)));
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
-  connect(mpBottomRightResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(componentTransformHasChanged()));
+  connect(mpBottomRightResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(transformHasChanged()));
   mpBottomRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
 }
 
@@ -705,9 +721,33 @@ void Component::applyRotation(qreal angle)
 void Component::addConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
 {
   // handle component position, rotation and scale changes
-  connect(this, SIGNAL(componentTransformChange()), pConnectorLineAnnotation, SLOT(handleComponentMoved()));
-  connect(this, SIGNAL(componentRotationChange()), pConnectorLineAnnotation, SLOT(handleComponentRotation()));
-  connect(this, SIGNAL(componentTransformHasChanged()), pConnectorLineAnnotation, SLOT(updateConnectionAnnotation()));
+  connect(this, SIGNAL(transformChange()), pConnectorLineAnnotation, SLOT(handleComponentMoved()));
+  connect(this, SIGNAL(rotationChange()), pConnectorLineAnnotation, SLOT(handleComponentRotation()));
+  connect(this, SIGNAL(transformHasChanged()), pConnectorLineAnnotation, SLOT(updateConnectionAnnotation()));
+}
+
+void Component::emitAdded()
+{
+  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
+  }
+  emit added();
+}
+
+void Component::emitTransformHasChanged()
+{
+  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
+  }
+  emit transformHasChanged();
+}
+
+void Component::emitDeleted()
+{
+  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
+  }
+  emit deleted();
 }
 
 void Component::componentNameHasChanged()
@@ -719,12 +759,12 @@ void Component::componentNameHasChanged()
   } else {
     setToolTip(tr("<b>%1</b> %2").arg(mpLibraryTreeItem->getNameStructure()).arg(mpComponentInfo->getName()));
   }
-  emit componentDisplayTextChanged();
+  emit displayTextChanged();
 }
 
 void Component::componentParameterHasChanged()
 {
-  emit componentDisplayTextChanged();
+  emit displayTextChanged();
 }
 
 /*!
@@ -774,6 +814,29 @@ QString Component::getParameterDisplayString(QString parameterName)
     }
   }
   return displayString;
+}
+
+void Component::shapeAdded()
+{
+  if (mComponentType == Component::Root) {
+    mpDefaultComponentRectangle->setVisible(true);
+    mpDefaultComponentText->setVisible(true);
+  }
+}
+
+void Component::shapeDeleted()
+{
+  if (mComponentType == Component::Root) {
+    GraphicsView *pGraphicsView = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView();
+    if (mpLibraryTreeItem->getRestriction() == StringHandler::Connector && mpGraphicsView->getViewType() == StringHandler::Diagram &&
+        mComponentType == Component::Root && mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->hasAnnotation()) {
+      pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
+    }
+    if (!pGraphicsView->hasAnnotation()) {
+      mpDefaultComponentRectangle->setVisible(true);
+      mpDefaultComponentText->setVisible(true);
+    }
+  }
 }
 
 void Component::addInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo)
@@ -854,6 +917,25 @@ void Component::duplicateHelper(GraphicsView *pGraphicsView)
   }
 }
 
+void Component::removeShapes()
+{
+  foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
+    delete pShapeAnnotation;
+  }
+  mShapesList.clear();
+  mpNonExistingComponentLine->setVisible(false);
+  mpDefaultComponentRectangle->setVisible(false);
+  mpDefaultComponentText->setVisible(false);
+}
+
+void Component::removeComponents()
+{
+  foreach (Component *pComponent, mComponentsList) {
+    delete pComponent;
+  }
+  mComponentsList.clear();
+}
+
 void Component::updatePlacementAnnotation()
 {
   // Add component annotation.
@@ -888,17 +970,77 @@ void Component::updateOriginItem()
   }
 }
 
+void Component::handleLoaded()
+{
+  // clear all shapes & components
+  removeShapes();
+  removeComponents();
+  if (mComponentType == Component::Port) {
+    createClassShapes(mpLibraryTreeItem);
+  } else {
+    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+      mpGraphicsView->addItem(this);
+    }
+    if (!mpLibraryTreeItem->getModelWidget() || mpLibraryTreeItem->getModelWidget()->isReloadNeeded()) {
+      MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, "", false);
+    }
+    createClassInheritedShapes();
+    createClassShapes(mpLibraryTreeItem);
+    createClassInheritedComponents();
+    createClassComponents(mpLibraryTreeItem);
+    if (!mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->hasAnnotation()) {
+      mpDefaultComponentRectangle->setVisible(true);
+      mpDefaultComponentText->setVisible(true);
+    }
+  }
+  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
+  }
+}
+
+void Component::handleUnloaded()
+{
+  // clear all shapes & components
+  removeShapes();
+  removeComponents();
+  // unload component based on type.
+  if (mComponentType == Component::Port) {
+    setVisible(false);
+  } else {
+    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+      mpGraphicsView->removeItem(this);
+    } else {
+      // show a non exisitng component
+      mpNonExistingComponentLine->setVisible(true);
+    }
+  }
+  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
+  }
+}
+
+void Component::handleShapeAdded()
+{
+  removeShapes();
+  createClassInheritedShapes();
+  createClassShapes(mpLibraryTreeItem);
+}
+
 /*!
  * \brief Component::referenceComponentAdded
  * Adds the referenced components when reference component is added.
  */
 void Component::referenceComponentAdded()
 {
-  Component *pComponent = qobject_cast<Component*>(sender());
-  if (pComponent && mComponentType == Component::Port) {
-    setParentItem(mpParentComponent);
-  } else if (pComponent) {
-    mpGraphicsView->scene()->addItem(this);
+  if (mComponentType == Component::Port) {
+    setVisible(true);
+  } else {
+    mpGraphicsView->addItem(this);
+    mpGraphicsView->addItem(mpOriginItem);
+  }
+  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   }
 }
 
@@ -913,6 +1055,9 @@ void Component::referenceComponentChanged()
     mpTransformation->updateTransformation(pComponent->getTransformation());
     setTransform(mpTransformation->getTransformationMatrix());
   }
+  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
+  }
 }
 
 /*!
@@ -921,11 +1066,14 @@ void Component::referenceComponentChanged()
  */
 void Component::referenceComponentDeleted()
 {
-  Component *pComponent = qobject_cast<Component*>(sender());
-  if (pComponent && mComponentType == Component::Port) {
-    setParentItem(0);
-  } else if (pComponent) {
-    mpGraphicsView->scene()->removeItem(this);
+  if (mComponentType == Component::Port) {
+    setVisible(false);
+  } else {
+    mpGraphicsView->removeItem(this);
+    mpGraphicsView->removeItem(mpOriginItem);
+  }
+  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   }
 }
 
@@ -1009,7 +1157,7 @@ void Component::resizeComponent(QPointF newPosition)
   mpTransformation->setExtent2(extent2);
   setTransform(mpTransformation->getTransformationMatrix());
   // let connections know that component has changed.
-  emit componentTransformChange();
+  emit transformChange();
 }
 
 void Component::finishResizeComponent()
@@ -1056,7 +1204,7 @@ void Component::rotateClockwise()
   qreal rotateIncrement = -90;
   qreal angle = oldRotation + rotateIncrement;
   applyRotation(angle);
-  emit componentRotationChange();
+  emit rotationChange();
 }
 
 void Component::rotateAntiClockwise()
@@ -1065,7 +1213,7 @@ void Component::rotateAntiClockwise()
   qreal rotateIncrement = 90;
   qreal angle = oldRotation + rotateIncrement;
   applyRotation(angle);
-  emit componentRotationChange();
+  emit rotationChange();
 }
 
 /*!
@@ -1087,8 +1235,8 @@ void Component::flipHorizontal()
     mpTransformation->setExtent2(QPointF(extent2.x(), extent1.y()));
   }
   setTransform(mpTransformation->getTransformationMatrix());
-  emit componentRotationChange();
-  emit componentTransformHasChanged();
+  emit rotationChange();
+  emit transformHasChanged();
   showResizerItems();
 }
 
@@ -1111,8 +1259,8 @@ void Component::flipVertical()
     mpTransformation->setExtent2(QPointF(extent1.x(), extent2.y()));
   }
   setTransform(mpTransformation->getTransformationMatrix());
-  emit componentRotationChange();
-  emit componentTransformHasChanged();
+  emit rotationChange();
+  emit transformHasChanged();
   showResizerItems();
 }
 
@@ -1134,7 +1282,7 @@ void Component::moveUp()
 {
   mpTransformation->adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   setTransform(mpTransformation->getTransformationMatrix());
-  emit componentTransformChange();
+  emit transformChange();
 }
 
 /*!
@@ -1155,7 +1303,7 @@ void Component::moveShiftUp()
 {
   mpTransformation->adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
   setTransform(mpTransformation->getTransformationMatrix());
-  emit componentTransformChange();
+  emit transformChange();
 }
 
 /*!
@@ -1176,7 +1324,7 @@ void Component::moveCtrlUp()
 {
   mpTransformation->adjustPosition(0, 1);
   setTransform(mpTransformation->getTransformationMatrix());
-  emit componentTransformChange();
+  emit transformChange();
 }
 
 /*!
@@ -1197,7 +1345,7 @@ void Component::moveDown()
 {
   mpTransformation->adjustPosition(0, -mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   setTransform(mpTransformation->getTransformationMatrix());
-  emit componentTransformChange();
+  emit transformChange();
 }
 
 /*!
@@ -1218,7 +1366,7 @@ void Component::moveShiftDown()
 {
   mpTransformation->adjustPosition(0, -(mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5));
   setTransform(mpTransformation->getTransformationMatrix());
-  emit componentTransformChange();
+  emit transformChange();
 }
 
 /*!
@@ -1239,7 +1387,7 @@ void Component::moveCtrlDown()
 {
   mpTransformation->adjustPosition(0, -1);
   setTransform(mpTransformation->getTransformationMatrix());
-  emit componentTransformChange();
+  emit transformChange();
 }
 
 /*!
@@ -1260,7 +1408,7 @@ void Component::moveLeft()
 {
   mpTransformation->adjustPosition(-mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
   setTransform(mpTransformation->getTransformationMatrix());
-  emit componentTransformChange();
+  emit transformChange();
 }
 
 /*!
@@ -1281,7 +1429,7 @@ void Component::moveShiftLeft()
 {
   mpTransformation->adjustPosition(-(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5), 0);
   setTransform(mpTransformation->getTransformationMatrix());
-  emit componentTransformChange();
+  emit transformChange();
 }
 
 /*!
@@ -1302,7 +1450,7 @@ void Component::moveCtrlLeft()
 {
   mpTransformation->adjustPosition(-1, 0);
   setTransform(mpTransformation->getTransformationMatrix());
-  emit componentTransformChange();
+  emit transformChange();
 }
 
 /*!
@@ -1323,7 +1471,7 @@ void Component::moveRight()
 {
   mpTransformation->adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
   setTransform(mpTransformation->getTransformationMatrix());
-  emit componentTransformChange();
+  emit transformChange();
 }
 
 /*!
@@ -1344,7 +1492,7 @@ void Component::moveShiftRight()
 {
   mpTransformation->adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5, 0);
   setTransform(mpTransformation->getTransformationMatrix());
-  emit componentTransformChange();
+  emit transformChange();
 }
 
 /*!
@@ -1365,7 +1513,7 @@ void Component::moveCtrlRight()
 {
   mpTransformation->adjustPosition(1, 0);
   setTransform(mpTransformation->getTransformationMatrix());
-  emit componentTransformChange();
+  emit transformChange();
 }
 
 //! Slot that opens up the component parameters dialog.
@@ -1508,9 +1656,9 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         connect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteMe()), Qt::UniqueConnection);
         connect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()), Qt::UniqueConnection);
         connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
-        connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
+        connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SIGNAL(transformHasChanged()), Qt::UniqueConnection);
         connect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
-        connect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
+        connect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SIGNAL(transformHasChanged()), Qt::UniqueConnection);
         connect(mpGraphicsView->getFlipHorizontalAction(), SIGNAL(triggered()), this, SLOT(flipHorizontal()), Qt::UniqueConnection);
         connect(mpGraphicsView->getFlipVerticalAction(), SIGNAL(triggered()), this, SLOT(flipVertical()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()), Qt::UniqueConnection);
@@ -1529,7 +1677,7 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         connect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyPressShiftRight()), this, SLOT(moveShiftRight()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyPressCtrlRight()), this, SLOT(moveCtrlRight()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyRelease()), this, SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(keyRelease()), this, SIGNAL(transformHasChanged()), Qt::UniqueConnection);
       }
     } else {
       if (!mpBottomLeftResizerItem->isPressed() && !mpTopLeftResizerItem->isPressed() &&
@@ -1546,9 +1694,9 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         disconnect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteMe()));
         disconnect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()));
         disconnect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwise()));
-        disconnect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SIGNAL(componentTransformHasChanged()));
+        disconnect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SIGNAL(transformHasChanged()));
         disconnect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateAntiClockwise()));
-        disconnect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SIGNAL(componentTransformHasChanged()));
+        disconnect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SIGNAL(transformHasChanged()));
         disconnect(mpGraphicsView->getFlipHorizontalAction(), SIGNAL(triggered()), this, SLOT(flipHorizontal()));
         disconnect(mpGraphicsView->getFlipVerticalAction(), SIGNAL(triggered()), this, SLOT(flipVertical()));
         disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
@@ -1567,11 +1715,11 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         disconnect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()));
         disconnect(mpGraphicsView, SIGNAL(keyPressShiftRight()), this, SLOT(moveShiftRight()));
         disconnect(mpGraphicsView, SIGNAL(keyPressCtrlRight()), this, SLOT(moveCtrlRight()));
-        disconnect(mpGraphicsView, SIGNAL(keyRelease()), this, SIGNAL(componentTransformHasChanged()));
+        disconnect(mpGraphicsView, SIGNAL(keyRelease()), this, SIGNAL(transformHasChanged()));
       }
     }
   } else if (change == QGraphicsItem::ItemPositionHasChanged) {
-    emit componentTransformChange();
+    emit transformChange();
   }
   else if (change == QGraphicsItem::ItemPositionChange) {
     // move by grid distance while dragging component

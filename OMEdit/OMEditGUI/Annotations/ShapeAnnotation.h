@@ -235,6 +235,7 @@ public slots:
   void referenceShapeDeleted();
 protected:
   GraphicsView *mpGraphicsView;
+  Component *mpParentComponent;
   Transformation *mpTransformation;
   QList<QPointF> mPoints;
   QList<LineGeometryType> mGeometries;
