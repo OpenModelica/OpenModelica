@@ -509,7 +509,7 @@ void read_input_xml(MODEL_DATA* modelData,
   } \
   messageClose(LOG_DEBUG);
 
-   READ_VARIABLES(modelData->realVarsData,mi.rSta,REAL_ATTRIBUTE,read_var_attribute_real,"real states",0,modelData->nStates,mapAlias);
+  READ_VARIABLES(modelData->realVarsData,mi.rSta,REAL_ATTRIBUTE,read_var_attribute_real,"real states",0,modelData->nStates,mapAlias);
   READ_VARIABLES(modelData->realVarsData,mi.rDer,REAL_ATTRIBUTE,read_var_attribute_real,"real state derivatives",modelData->nStates,modelData->nStates,mapAlias);
   READ_VARIABLES(modelData->realVarsData,mi.rAlg,REAL_ATTRIBUTE,read_var_attribute_real,"real algebraics",2*modelData->nStates,modelData->nVariablesReal - 2*modelData->nStates,mapAlias);
 
@@ -790,6 +790,17 @@ static const char* getOverrideValue(omc_CommandLineOverrides& mOverrides, omc_Co
     return mOverrides[name].c_str();
 }
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+ssize_t getline(char **lineptr, size_t *n, FILE *stream)
+{
+   *lineptr = (char*)malloc(5000*sizeof(char));
+   if (fgets(*lineptr, 5000, stream) == NULL)
+     return -1;
+   *n = strlen(*lineptr);
+   return (ssize_t)*n;
+}
+#endif
+
 void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override, const char* overrideFile)
 {
   omc_CommandLineOverrides mOverrides;
@@ -838,6 +849,8 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
           ++overrideLine;
         }
         overrideLine = strcpy(overrideLine,tline)+strlen(tline);
+		// free our line
+		free(line);
       }
 
     }
