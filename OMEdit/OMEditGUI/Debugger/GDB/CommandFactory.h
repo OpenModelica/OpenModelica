@@ -62,7 +62,7 @@ public:
   static QByteArray attach(QString processID);
   static QByteArray changeStdStreamBuffer();
   /* Breakpoint Commands */
-  static QByteArray breakInsert(QString fileName, int line, bool isDisabled = false, QString condition = QString(), int ignoreCount = 0,
+  static QByteArray breakInsert(QString fileName, int line, bool isDisabled = false, QString condition = "", int ignoreCount = 0,
                                 bool isPending = true);
   static QByteArray breakDelete(QStringList breakpointIDs);
   static QByteArray breakEnable(QStringList breakpointIDs);

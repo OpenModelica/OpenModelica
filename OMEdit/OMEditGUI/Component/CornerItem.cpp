@@ -234,7 +234,7 @@ void ResizerItem::setActive()
   } else {
     mPen = mActivePen;
   }
-  setParentItem(mpComponent);
+  setVisible(true);
 }
 
 /*!
@@ -244,7 +244,7 @@ void ResizerItem::setActive()
 void ResizerItem::setPassive()
 {
   mPen = mPassivePen;
-  setParentItem(0);
+  setVisible(false);
 }
 
 /*!
@@ -338,11 +338,14 @@ void ResizerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 /*!
   \param pComponent - pointer to Component.
   */
-OriginItem::OriginItem()
+OriginItem::OriginItem(Component *pComponent)
 {
   setZValue(4000);
+  mpComponent = pComponent;
   mActivePen = QPen(Qt::red, 2);
   mActivePen.setCosmetic(true);
+  mInheritedActivePen = QPen(Qt::darkRed, 2);
+  mInheritedActivePen.setCosmetic(true);
   mPassivePen = QPen(Qt::transparent);
   mRectangle = QRectF (-5, -5, 10, 10);
   mPen = mPassivePen;
@@ -356,7 +359,11 @@ OriginItem::OriginItem()
 void OriginItem::setActive()
 {
   setZValue(4000);
-  mPen = mActivePen;
+  if (mpComponent->isInheritedComponent()) {
+    mPen = mInheritedActivePen;
+  } else {
+    mPen = mActivePen;
+  }
 }
 
 /*!
@@ -381,6 +388,9 @@ void OriginItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
+  if (mpComponent->getGraphicsView()->isRenderingLibraryPixmap()) {
+    return;
+  }
   painter->setRenderHint(QPainter::Antialiasing);
   painter->setPen(mPen);
   // draw horizontal Line

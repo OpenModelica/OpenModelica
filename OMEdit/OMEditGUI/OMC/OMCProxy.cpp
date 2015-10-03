@@ -548,7 +548,7 @@ void OMCProxy::sendCustomExpression()
     return;
 
   sendCommand(mpExpressionTextBox->text());
-  mpExpressionTextBox->setText(QString());
+  mpExpressionTextBox->setText("");
 }
 
 #ifdef QT_DEBUG
@@ -1681,7 +1681,7 @@ QString OMCProxy::getDefaultComponentName(QString className)
 {
   sendCommand("getDefaultComponentName(" + className + ")", true, className);
   if (getResult().compare("{}") == 0)
-    return QString();
+    return "";
 
   return StringHandler::unparse(getResult());
 }
@@ -1695,7 +1695,7 @@ QString OMCProxy::getDefaultComponentPrefixes(QString className)
 {
   sendCommand("getDefaultComponentPrefixes(" + className + ")", true, className);
   if (getResult().compare("{}") == 0)
-    return QString();
+    return "";
 
   return StringHandler::unparse(getResult());
 }

@@ -351,16 +351,20 @@ void ModelicaClassDialog::createModelicaClass()
   }
   //open the new tab in central widget and add the model to library tree.
   LibraryTreeItem *pLibraryTreeItem;
+  bool wasNonExisting = false;
   if (pParentLibraryTreeItem) {
-    bool wasNonExisting = false;
     pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pParentLibraryTreeItem, wasNonExisting, false, false, true);
   } else {
-    bool wasNonExisting = false;
     pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pLibraryTreeModel->getRootLibraryTreeItem(), wasNonExisting, false, false, true);
   }
   pLibraryTreeItem->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeItem::SaveInOneFile : LibraryTreeItem::SaveFolderStructure);
+  if (wasNonExisting) {
+    // load the LibraryTreeItem pixmap
+    pLibraryTreeModel->loadLibraryTreeItemPixmap(pLibraryTreeItem);
+    pLibraryTreeModel->loadNonExistingLibraryTreeItem(pLibraryTreeItem);
+  }
   // show the ModelWidget
-  pLibraryTreeModel->showModelWidget(pLibraryTreeItem, "", true, true);
+  pLibraryTreeModel->showModelWidget(pLibraryTreeItem, "", true);
   accept();
 }
 
@@ -701,14 +705,18 @@ void SaveAsClassDialog::saveAsModelicaClass()
   }
   //open the new tab in central widget and add the model to library tree.
   LibraryTreeItem *pLibraryTreeItem;
+  bool wasNonExisting = false;
   if (pParentLibraryTreeItem) {
-    bool wasNonExisting = false;
     pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), pParentLibraryTreeItem, wasNonExisting, false, false, true);
   } else {
-    bool wasNonExisting = false;
     pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), pLibraryTreeModel->getRootLibraryTreeItem(), wasNonExisting, false, false, true);
   }
   pLibraryTreeItem->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeItem::SaveInOneFile : LibraryTreeItem::SaveFolderStructure);
+  if (wasNonExisting) {
+    // load the LibraryTreeItem pixmap
+    pLibraryTreeModel->loadLibraryTreeItemPixmap(pLibraryTreeItem);
+    pLibraryTreeModel->loadNonExistingLibraryTreeItem(pLibraryTreeItem);
+  }
   // show the ModelWidget
   pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
   accept();
@@ -806,14 +814,18 @@ void DuplicateClassDialog::duplicateClass()
     LibraryTreeItem *pLibraryTreeItem;
     QString className = mpNameTextBox->text().trimmed();
     LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mpPathTextBox->text().trimmed());
+    bool wasNonExisting = false;
     if (pParentLibraryTreeItem) {
-      bool wasNonExisting = false;
       pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(className, pParentLibraryTreeItem, wasNonExisting, false, false, true);
     } else {
-      bool wasNonExisting = false;
       pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(className, pLibraryTreeModel->getRootLibraryTreeItem(), wasNonExisting, false, false, true);
     }
     pLibraryTreeItem->setSaveContentsType(mpLibraryTreeItem->getSaveContentsType());
+    if (wasNonExisting) {
+      // load the LibraryTreeItem pixmap
+      pLibraryTreeModel->loadLibraryTreeItemPixmap(pLibraryTreeItem);
+      pLibraryTreeModel->loadNonExistingLibraryTreeItem(pLibraryTreeItem);
+    }
   }
   accept();
 }

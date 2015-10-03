@@ -131,7 +131,7 @@ LineAnnotation::LineAnnotation(GraphicsView *pGraphicsView)
   addPoint(QPointF(100, 100));
   addPoint(QPointF(100, -100));
   setShapeFlags(true);
-  mpGraphicsView->scene()->addItem(this);
+  mpGraphicsView->addItem(this);
 }
 
 LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
@@ -139,7 +139,7 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *
 {
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
-  mpGraphicsView->scene()->addItem(this);
+  mpGraphicsView->addItem(this);
   connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
   connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
   connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
@@ -161,7 +161,7 @@ LineAnnotation::LineAnnotation(Component *pStartComponent, GraphicsView *pGraphi
     mLineColor = pShapeAnnotation->getLineColor();
   }
   // set the graphics view
-  mpGraphicsView->scene()->addItem(this);
+  mpGraphicsView->addItem(this);
   // set the start component
   setStartComponent(pStartComponent);
   setEndComponent(0);
@@ -191,7 +191,7 @@ LineAnnotation::LineAnnotation(QString annotation, bool inheritedShape, Componen
   mPoints = points;
   mOrigin = QPointF(0, 0);
   // set the graphics view
-  mpGraphicsView->scene()->addItem(this);
+  mpGraphicsView->addItem(this);
 }
 
 void LineAnnotation::parseShapeAnnotation(QString annotation)

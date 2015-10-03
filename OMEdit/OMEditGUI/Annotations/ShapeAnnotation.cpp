@@ -359,6 +359,7 @@ ShapeAnnotation::ShapeAnnotation(QGraphicsItem *pParent)
   : QGraphicsItem(pParent)
 {
   mpGraphicsView = 0;
+  mpParentComponent = dynamic_cast<Component*>(pParent);
   mpTransformation = 0;
   mIsCustomShape = false;
   mIsInheritedShape = false;
@@ -624,7 +625,7 @@ void ShapeAnnotation::applyFillPattern(QPainter *painter)
   */
 QString ShapeAnnotation::getShapeAnnotation()
 {
-  return QString();
+  return "";
 }
 
 /*!
@@ -1397,7 +1398,12 @@ void ShapeAnnotation::referenceShapeAdded()
 {
   ShapeAnnotation *pShapeAnnotation = qobject_cast<ShapeAnnotation*>(sender());
   if (pShapeAnnotation) {
-    mpGraphicsView->scene()->addItem(this);
+    if (mpGraphicsView) {
+      mpGraphicsView->addItem(this);
+    } else if (mpParentComponent) {
+      mpParentComponent->shapeAdded();
+      setVisible(true);
+    }
   }
 }
 
@@ -1408,8 +1414,14 @@ void ShapeAnnotation::referenceShapeChanged()
 {
   ShapeAnnotation *pShapeAnnotation = qobject_cast<ShapeAnnotation*>(sender());
   if (pShapeAnnotation) {
-    updateShape(pShapeAnnotation);
-    setTransform(pShapeAnnotation->getTransformation()->getTransformationMatrix());
+    if (mpGraphicsView) {
+      updateShape(pShapeAnnotation);
+      setTransform(pShapeAnnotation->getTransformation()->getTransformationMatrix());
+    } else if (mpParentComponent) {
+      updateShape(pShapeAnnotation);
+      setPos(mOrigin);
+      setRotation(mRotation);
+    }
   }
 }
 
@@ -1420,7 +1432,12 @@ void ShapeAnnotation::referenceShapeDeleted()
 {
   ShapeAnnotation *pShapeAnnotation = qobject_cast<ShapeAnnotation*>(sender());
   if (pShapeAnnotation) {
-    mpGraphicsView->scene()->removeItem(this);
+    if (mpGraphicsView) {
+      mpGraphicsView->removeItem(this);
+    } else if (mpParentComponent) {
+      setVisible(false);
+      mpParentComponent->shapeDeleted();
+    }
   }
 }
 

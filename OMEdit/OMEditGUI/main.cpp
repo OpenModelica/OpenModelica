@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
   }
   Q_INIT_RESOURCE(resource_omedit);
   // read the second argument if specified by user.
-  QString fileName = QString();
+  QString fileName = "";
   // adding style sheet
   argc++;
   argv[(argc - 1)] = (char*)"-stylesheet=:/Resources/css/stylesheet.qss";

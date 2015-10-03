@@ -94,7 +94,6 @@ public:
   GraphicsScene(StringHandler::ViewType viewType, ModelWidget *pModelWidget);
   ModelWidget *mpModelWidget;
   StringHandler::ViewType mViewType;
-  void drawItems();
 };
 
 class LibraryTreeItem;
@@ -222,6 +221,8 @@ public:
   QPointF movePointByGrid(QPointF point);
   QPointF roundPoint(QPointF point);
   bool hasAnnotation();
+  void addItem(QGraphicsItem *pGraphicsItem);
+  void removeItem(QGraphicsItem *pGraphicsItem);
 private:
   void createActions();
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
@@ -317,7 +318,7 @@ class ModelWidget : public QWidget
 {
   Q_OBJECT
 public:
-  ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text, bool newModel = false);
+  ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text);
 
   class InheritedClass : public QObject
   {
@@ -342,18 +343,21 @@ public:
     QList<Component*> mDiagramComponentsList;
   };
 
-  LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
-  GraphicsView* getDiagramGraphicsView() {return mpDiagramGraphicsView;}
-  GraphicsView* getIconGraphicsView() {return mpIconGraphicsView;}
-  QUndoStack* getUndoStack() {return mpUndoStack;}
-  BaseEditor* getEditor() {return mpEditor;}
+  LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
   QToolButton* getIconViewToolButton() {return mpIconViewToolButton;}
   QToolButton* getDiagramViewToolButton() {return mpDiagramViewToolButton;}
   QToolButton* getTextViewToolButton() {return mpTextViewToolButton;}
   QToolButton* getDocumentationViewToolButton() {return mpDocumentationViewToolButton;}
+  GraphicsView* getDiagramGraphicsView() {return mpDiagramGraphicsView;}
+  GraphicsView* getIconGraphicsView() {return mpIconGraphicsView;}
+  QUndoStack* getUndoStack() {return mpUndoStack;}
+  BaseEditor* getEditor() {return mpEditor;}
+  void setReloadNeeded(bool reloadNeeded) {mReloadNeeded = reloadNeeded;}
+  bool isReloadNeeded() {return mReloadNeeded;}
   void setModelFilePathLabel(QString path) {mpModelFilePathLabel->setText(path);}
   Label* getCursorPositionLabel() {return mpCursorPositionLabel;}
+  void loadModelWidget();
   void addInheritedClass(LibraryTreeItem *pLibraryTreeItem);
   void removeInheritedClass(InheritedClass *pInheritedClass) {mInheritedClassesList.removeOne(pInheritedClass);}
   QList<InheritedClass*> getInheritedClassesList() {return mInheritedClassesList;}
@@ -365,6 +369,7 @@ public:
   void modelInheritedClassUnLoaded(InheritedClass *pInheritedClass);
   ShapeAnnotation* createNonExistingInheritedShape(GraphicsView *pGraphicsView);
   ShapeAnnotation* createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  Component* createInheritedComponent(Component *pComponent, GraphicsView *pGraphicsView);
   void createWidgetComponents();
   Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
   void refresh();
@@ -397,13 +402,14 @@ private:
   TLMHighlighter *mpTLMHighlighter;
   QStatusBar *mpModelStatusBar;
   bool mloadWidgetComponents;
+  bool mReloadNeeded;
   QList<InheritedClass*> mInheritedClassesList;
   void getModelInheritedClasses(LibraryTreeItem *pLibraryTreeItem);
   void drawModelInheritedClasses();
   void removeInheritedClassShapes(InheritedClass *pInheritedClass, StringHandler::ViewType viewType);
   void drawModelInheritedClassShapes(InheritedClass *pInheritedClass, StringHandler::ViewType viewType);
-  void getModelIconDiagramShapes(QString className);
-  void parseModelIconDiagramShapes(QString className, QString annotationString, StringHandler::ViewType viewType);
+  void getModelIconDiagramShapes();
+  void parseModelIconDiagramShapes(QString annotationString, StringHandler::ViewType viewType);
   void drawModelInheritedComponents();
   void removeInheritedClassComponents(InheritedClass *pInheritedClass);
   void drawModelInheritedClassComponents(InheritedClass *pInheritedClass);

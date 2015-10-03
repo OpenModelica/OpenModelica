@@ -1082,7 +1082,7 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
     mLastOpenDir = fileInfo.absolutePath();
     return fileName;
   }
-  return QString();
+  return "";
 }
 
 QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, QString * dir, const QString &filter, QString * selectedFilter)
@@ -1095,7 +1095,7 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
     dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
   }
 
-  QString fileName = QString();
+  QString fileName = "";
 #ifdef WIN32
   fileName = QFileDialog::getOpenFileName(parent, caption, dir_str, filter, selectedFilter);
 #else
@@ -1166,7 +1166,7 @@ QString StringHandler::getExistingDirectory(QWidget *parent, const QString &capt
     mLastOpenDir = dirName;
     return dirName;
   }
-  return QString();
+  return "";
 }
 
 void StringHandler::setLastOpenDirectory(QString lastOpenDirectory)
@@ -1202,11 +1202,11 @@ QStringList StringHandler::getDialogAnnotation(QString componentAnnotation)
 QString StringHandler::getPlacementAnnotation(QString componentAnnotation)
 {
   if (componentAnnotation.toLower().contains("error")) {
-    return QString();
+    return "";
   }
   componentAnnotation = StringHandler::removeFirstLastCurlBrackets(componentAnnotation);
   if (componentAnnotation.isEmpty()) {
-    return QString();
+    return "";
   }
   QStringList annotations = StringHandler::getStrings(componentAnnotation, '(', ')');
   foreach (QString annotation, annotations) {
@@ -1214,7 +1214,7 @@ QString StringHandler::getPlacementAnnotation(QString componentAnnotation)
       return StringHandler::removeFirstLastBrackets(annotation);
     }
   }
-  return QString();
+  return "";
 }
 
 /*!

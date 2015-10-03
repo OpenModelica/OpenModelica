@@ -113,7 +113,7 @@ TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *
   mpComponent = 0;
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
-  mpGraphicsView->scene()->addItem(this);
+  mpGraphicsView->addItem(this);
   connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
   connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
   connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
@@ -374,7 +374,7 @@ void TextAnnotation::initUpdateTextString()
   if (mpComponent) {
     if (mOriginalTextString.contains("%")) {
       updateTextString();
-      connect(mpComponent->getRootParentComponent(), SIGNAL(componentDisplayTextChanged()), SLOT(updateTextString()), Qt::UniqueConnection);
+      connect(mpComponent->getRootParentComponent(), SIGNAL(displayTextChanged()), SLOT(updateTextString()), Qt::UniqueConnection);
     }
   }
 }

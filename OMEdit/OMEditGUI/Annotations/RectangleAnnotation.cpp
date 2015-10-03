@@ -100,7 +100,7 @@ RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Grap
 {
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
-  mpGraphicsView->scene()->addItem(this);
+  mpGraphicsView->addItem(this);
   connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
   connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
   connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));

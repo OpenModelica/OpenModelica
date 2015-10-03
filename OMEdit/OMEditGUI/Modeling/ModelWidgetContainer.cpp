@@ -873,6 +873,7 @@ void GraphicsView::createLineShape(QPointF point)
     mpLineShapeAnnotation = new LineAnnotation("", this);
     setCanAddClassAnnotation(false);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpLineShapeAnnotation, this));
+    reOrderItems();
     setIsCreatingLineShape(true);
     mpLineShapeAnnotation->addPoint(point);
     mpLineShapeAnnotation->addPoint(point);
@@ -891,6 +892,7 @@ void GraphicsView::createPolygonShape(QPointF point)
     mpPolygonShapeAnnotation = new PolygonAnnotation("", this);
     setCanAddClassAnnotation(false);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpPolygonShapeAnnotation, this));
+    reOrderItems();
     setIsCreatingPolygonShape(true);
     mpPolygonShapeAnnotation->addPoint(point);
     mpPolygonShapeAnnotation->addPoint(point);
@@ -910,6 +912,7 @@ void GraphicsView::createRectangleShape(QPointF point)
     mpRectangleShapeAnnotation = new RectangleAnnotation("", this);
     setCanAddClassAnnotation(false);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpRectangleShapeAnnotation, this));
+    reOrderItems();
     setIsCreatingRectangleShape(true);
     mpRectangleShapeAnnotation->replaceExtent(0, point);
     mpRectangleShapeAnnotation->replaceExtent(1, point);
@@ -943,6 +946,7 @@ void GraphicsView::createEllipseShape(QPointF point)
     mpEllipseShapeAnnotation = new EllipseAnnotation("", this);
     setCanAddClassAnnotation(false);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpEllipseShapeAnnotation, this));
+    reOrderItems();
     setIsCreatingEllipseShape(true);
     mpEllipseShapeAnnotation->replaceExtent(0, point);
     mpEllipseShapeAnnotation->replaceExtent(1, point);
@@ -976,6 +980,7 @@ void GraphicsView::createTextShape(QPointF point)
     mpTextShapeAnnotation = new TextAnnotation("", this);
     setCanAddClassAnnotation(false);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpTextShapeAnnotation, this));
+    reOrderItems();
     setIsCreatingTextShape(true);
     mpTextShapeAnnotation->setTextString("text");
     mpTextShapeAnnotation->replaceExtent(0, point);
@@ -1011,6 +1016,7 @@ void GraphicsView::createBitmapShape(QPointF point)
     mpBitmapShapeAnnotation = new BitmapAnnotation(mpModelWidget->getLibraryTreeItem()->getFileName(), "", this);
     setCanAddClassAnnotation(false);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpBitmapShapeAnnotation, this));
+    reOrderItems();
     setIsCreatingBitmapShape(true);
     mpBitmapShapeAnnotation->replaceExtent(0, point);
     mpBitmapShapeAnnotation->replaceExtent(1, point);
@@ -1103,6 +1109,20 @@ bool GraphicsView::hasAnnotation()
     }
   }
   return false;
+}
+
+void GraphicsView::addItem(QGraphicsItem *pGraphicsItem)
+{
+  if (!scene()->items().contains(pGraphicsItem)) {
+    scene()->addItem(pGraphicsItem);
+  }
+}
+
+void GraphicsView::removeItem(QGraphicsItem *pGraphicsItem)
+{
+  if (scene()->items().contains(pGraphicsItem)) {
+    scene()->removeItem(pGraphicsItem);
+  }
 }
 
 void GraphicsView::createActions()
@@ -1541,12 +1561,13 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
   }
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   QPointF snappedPoint = snapPointToGrid(mapToScene(event->pos()));
+  bool eventConsumed = false;
   // if left button presses and we are creating a connector
   if (isCreatingConnection()) {
     mpConnectionLineAnnotation->addPoint(snappedPoint);
-  }
-  /* if line shape tool button is checked then create a line */
-  else if (pMainWindow->getLineShapeAction()->isChecked()) {
+    eventConsumed = true;
+  } else if (pMainWindow->getLineShapeAction()->isChecked()) {
+    /* if line shape tool button is checked then create a line */
     createLineShape(snappedPoint);
   } else if (pMainWindow->getPolygonShapeAction()->isChecked()) {
     /* if polygon shape tool button is checked then create a polygon */
@@ -1577,7 +1598,6 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
       pShapeAnnotation->setOldPosition(pShapeAnnotation->pos());
     }
   }
-  bool eventConsumed = false;
   // if some item is clicked
   if (itemAt(event->pos())) {
     QGraphicsItem *pGraphicsItem = itemAt(event->pos());
@@ -1664,6 +1684,9 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
     mpBitmapShapeAnnotation->update();
   } else if (mpClickedComponent) {
     addConnection(mpClickedComponent);  // start the connection
+    if (mpClickedComponent) { // if we creating a connection then don't select the starting component.
+      mpClickedComponent->setSelected(false);
+    }
   }
   QGraphicsView::mouseMoveEvent(event);
 }
@@ -1689,7 +1712,7 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
         pComponent->getTransformation()->adjustPosition(positionDifference.x(), positionDifference.y());
         pComponent->setTransform(pComponent->getTransformation()->getTransformationMatrix());
         // update the component placement annotation and if there are any connections associated to component update their annotations as well.
-        pComponent->emitComponentTransformHasChanged();
+        pComponent->emitTransformHasChanged();
         hasMoved = true;
       }
     }
@@ -2221,9 +2244,9 @@ void WelcomePageWidget::openLatestNewsItem(QListWidgetItem *pItem)
   QDesktopServices::openUrl(url);
 }
 
-ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text, bool newModel)
+ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text)
   : QWidget(pModelWidgetContainer), mpModelWidgetContainer(pModelWidgetContainer), mpLibraryTreeItem(pLibraryTreeItem),
-    mloadWidgetComponents(false)
+    mloadWidgetComponents(false), mReloadNeeded(false)
 {
   // create widgets based on library type
   if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
@@ -2242,20 +2265,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     connect(mpUndoStack, SIGNAL(canUndoChanged(bool)), SLOT(handleCanUndoChanged(bool)));
     connect(mpUndoStack, SIGNAL(canRedoChanged(bool)), SLOT(handleCanRedoChanged(bool)));
     mpUndoView = new QUndoView(mpUndoStack);
-    if (newModel) {
-      mpIconGraphicsView->addClassAnnotation(false);
-      mpIconGraphicsView->setCanAddClassAnnotation(true);
-      mpDiagramGraphicsView->addClassAnnotation(false);
-      mpDiagramGraphicsView->setCanAddClassAnnotation(true);
-      updateModelicaText();
-    }
-    getModelInheritedClasses(getLibraryTreeItem());
-    drawModelInheritedClasses();
-    getModelIconDiagramShapes(getLibraryTreeItem()->getNameStructure());
-    drawModelInheritedComponents();
-    getModelComponents();
-    //getModelConnections(getLibraryTreeItem()->getNameStructure());
-    mpUndoStack->clear();
+    loadModelWidget();
     mpEditor = 0;
   } else {
     // icon graphics framework
@@ -2272,6 +2282,33 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
   // store the text of LibraryTreeItem::Text
   if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text && mpLibraryTreeItem->getFileName().isEmpty()) {
     mpLibraryTreeItem->setClassText(text);
+  }
+}
+
+void ModelWidget::loadModelWidget()
+{
+  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+    if (!mpLibraryTreeItem->getFileName().endsWith(".mo")) {
+      mpIconGraphicsView->addClassAnnotation(false);
+      mpIconGraphicsView->setCanAddClassAnnotation(true);
+      mpDiagramGraphicsView->addClassAnnotation(false);
+      mpDiagramGraphicsView->setCanAddClassAnnotation(true);
+      updateModelicaText();
+    }
+    mpLibraryTreeItem->removeAllInheritedClasses();
+    mpIconGraphicsView->removeAllShapes();
+    mpIconGraphicsView->removeAllComponents();
+    mpIconGraphicsView->scene()->clear();
+    mpDiagramGraphicsView->removeAllShapes();
+    mpDiagramGraphicsView->removeAllComponents();
+    mpDiagramGraphicsView->scene()->clear();
+    getModelInheritedClasses(mpLibraryTreeItem);
+    drawModelInheritedClasses();
+    getModelIconDiagramShapes();
+    drawModelInheritedComponents();
+    getModelComponents();
+    //getModelConnections(getLibraryTreeItem()->getNameStructure());
+    mpUndoStack->clear();
   }
 }
 
@@ -2357,7 +2394,7 @@ void ModelWidget::updateParentModelsText(QString className)
 void ModelWidget::modelInheritedClassLoaded(InheritedClass *pInheritedClass)
 {
   MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
-  if (!pInheritedClass->mpLibraryTreeItem->getModelWidget()) {
+  if (!pInheritedClass->mpLibraryTreeItem->getModelWidget() || pInheritedClass->mpLibraryTreeItem->getModelWidget()->isReloadNeeded()) {
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pInheritedClass->mpLibraryTreeItem, "", false);
   }
   drawModelInheritedClassShapes(pInheritedClass, StringHandler::Icon);
@@ -2442,6 +2479,18 @@ ShapeAnnotation* ModelWidget::createInheritedShape(ShapeAnnotation *pShapeAnnota
     return pBitmapAnnotation;
   }
   return 0;
+}
+
+/*!
+ * \brief ModelWidget::createInheritedComponent
+ * Creates the inherited component.
+ * \param pComponent
+ * \param pGraphicsView
+ * \return
+ */
+Component* ModelWidget::createInheritedComponent(Component *pComponent, GraphicsView *pGraphicsView)
+{
+  return new Component(pComponent, pGraphicsView);
 }
 
 /*!
@@ -2685,7 +2734,7 @@ void ModelWidget::refresh()
   else
   {
     getModelInheritedClasses(getLibraryTreeItem());
-    getModelIconDiagramShapes(getLibraryTreeItem()->getNameStructure());
+    //getModelIconDiagramShapes(getLibraryTreeItem()->getNameStructure());
     getModelComponents();
     getModelConnections(getLibraryTreeItem()->getNameStructure());
   }
@@ -2818,7 +2867,7 @@ void ModelWidget::getModelInheritedClasses(LibraryTreeItem *pLibraryTreeItem)
         if (!pInheritedClass) {
           pInheritedClass = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->createNonExistingLibraryTreeItem(inheritedClass);
         }
-        if (!pInheritedClass->getModelWidget()) {
+        if (!pInheritedClass->getModelWidget() || pInheritedClass->getModelWidget()->isReloadNeeded()) {
           pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pInheritedClass, "", false);
         }
         mpLibraryTreeItem->addInheritedClass(pInheritedClass);
@@ -2829,7 +2878,7 @@ void ModelWidget::getModelInheritedClasses(LibraryTreeItem *pLibraryTreeItem)
   } else {
     QList<LibraryTreeItem*> inheritedClasses = pLibraryTreeItem->getInheritedClasses();
     foreach (LibraryTreeItem *pInheritedClass, inheritedClasses) {
-      if (!pInheritedClass->getModelWidget() && !pInheritedClass->isNonExisting()) {
+      if ((!pInheritedClass->getModelWidget() || pInheritedClass->getModelWidget()->isReloadNeeded()) && !pInheritedClass->isNonExisting()) {
         pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pInheritedClass, "", false);
       }
       mpLibraryTreeItem->addInheritedClass(pInheritedClass);
@@ -2860,12 +2909,12 @@ void ModelWidget::removeInheritedClassShapes(InheritedClass *pInheritedClass, St
 {
   if (viewType == StringHandler::Icon) {
     foreach (ShapeAnnotation *pShapeAnnotation, pInheritedClass->mIconShapesList) {
-      mpIconGraphicsView->scene()->removeItem(pShapeAnnotation);
+      mpIconGraphicsView->removeItem(pShapeAnnotation);
     }
     pInheritedClass->mIconShapesList.clear();
   } else {
     foreach (ShapeAnnotation *pShapeAnnotation, pInheritedClass->mDiagramShapesList) {
-      mpDiagramGraphicsView->scene()->removeItem(pShapeAnnotation);
+      mpDiagramGraphicsView->removeItem(pShapeAnnotation);
     }
     pInheritedClass->mDiagramShapesList.clear();
   }
@@ -2913,27 +2962,24 @@ void ModelWidget::drawModelInheritedClassShapes(InheritedClass *pInheritedClass,
 
 /*!
  * \brief ModelWidget::getModelIconShapes
- * Gets the Modelica model icon shapes.
- * \param className
+ * Gets the Modelica model icon & diagram shapes.
  */
-void ModelWidget::getModelIconDiagramShapes(QString className)
+void ModelWidget::getModelIconDiagramShapes()
 {
   OMCProxy *pOMCProxy = mpModelWidgetContainer->getMainWindow()->getOMCProxy();
-  QString iconAnnotationString = pOMCProxy->getIconAnnotation(className);
-  parseModelIconDiagramShapes(className, iconAnnotationString, StringHandler::Icon);
-  QString diagramAnnotationString = pOMCProxy->getDiagramAnnotation(className);
-  parseModelIconDiagramShapes(className, diagramAnnotationString, StringHandler::Diagram);
+  QString iconAnnotationString = pOMCProxy->getIconAnnotation(mpLibraryTreeItem->getNameStructure());
+  parseModelIconDiagramShapes(iconAnnotationString, StringHandler::Icon);
+  QString diagramAnnotationString = pOMCProxy->getDiagramAnnotation(mpLibraryTreeItem->getNameStructure());
+  parseModelIconDiagramShapes(diagramAnnotationString, StringHandler::Diagram);
 }
 
 /*!
  * \brief ModelWidget::parseModelIconDiagramShapes
  * Parses the Modelica icon/diagram annotation and creates shapes for it on appropriate GraphicsView.
- * \param className
  * \param annotationString
  * \param viewType
- * \param inheritedCycle
  */
-void ModelWidget::parseModelIconDiagramShapes(QString className, QString annotationString, StringHandler::ViewType viewType)
+void ModelWidget::parseModelIconDiagramShapes(QString annotationString, StringHandler::ViewType viewType)
 {
   annotationString = StringHandler::removeFirstLastCurlBrackets(annotationString);
   if (annotationString.isEmpty()) {
@@ -2979,7 +3025,7 @@ void ModelWidget::parseModelIconDiagramShapes(QString className, QString annotat
       pLineAnnotation->drawCornerItems();
       pLineAnnotation->setCornerItemsPassive();
       pGraphicsView->addShapeObject(pLineAnnotation);
-      pGraphicsView->scene()->addItem(pLineAnnotation);
+      pGraphicsView->addItem(pLineAnnotation);
     } else if (shape.startsWith("Polygon")) {
       shape = shape.mid(QString("Polygon").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
@@ -2988,7 +3034,7 @@ void ModelWidget::parseModelIconDiagramShapes(QString className, QString annotat
       pPolygonAnnotation->drawCornerItems();
       pPolygonAnnotation->setCornerItemsPassive();
       pGraphicsView->addShapeObject(pPolygonAnnotation);
-      pGraphicsView->scene()->addItem(pPolygonAnnotation);
+      pGraphicsView->addItem(pPolygonAnnotation);
     } else if (shape.startsWith("Rectangle")) {
       shape = shape.mid(QString("Rectangle").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
@@ -2997,7 +3043,7 @@ void ModelWidget::parseModelIconDiagramShapes(QString className, QString annotat
       pRectangleAnnotation->drawCornerItems();
       pRectangleAnnotation->setCornerItemsPassive();
       pGraphicsView->addShapeObject(pRectangleAnnotation);
-      pGraphicsView->scene()->addItem(pRectangleAnnotation);
+      pGraphicsView->addItem(pRectangleAnnotation);
     } else if (shape.startsWith("Ellipse")) {
       shape = shape.mid(QString("Ellipse").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
@@ -3006,7 +3052,7 @@ void ModelWidget::parseModelIconDiagramShapes(QString className, QString annotat
       pEllipseAnnotation->drawCornerItems();
       pEllipseAnnotation->setCornerItemsPassive();
       pGraphicsView->addShapeObject(pEllipseAnnotation);
-      pGraphicsView->scene()->addItem(pEllipseAnnotation);
+      pGraphicsView->addItem(pEllipseAnnotation);
     } else if (shape.startsWith("Text")) {
       shape = shape.mid(QString("Text").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
@@ -3015,22 +3061,17 @@ void ModelWidget::parseModelIconDiagramShapes(QString className, QString annotat
       pTextAnnotation->drawCornerItems();
       pTextAnnotation->setCornerItemsPassive();
       pGraphicsView->addShapeObject(pTextAnnotation);
-      pGraphicsView->scene()->addItem(pTextAnnotation);
+      pGraphicsView->addItem(pTextAnnotation);
     } else if (shape.startsWith("Bitmap")) {
-      /* get the class file path */
-      QString classFileName;
-      OMCInterface::getClassInformation_res classInformation;
-      classInformation = mpModelWidgetContainer->getMainWindow()->getOMCProxy()->getClassInformation(className);
-      classFileName = classInformation.fileName;
       /* create the bitmap shape */
       shape = shape.mid(QString("Bitmap").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
-      BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(classFileName, shape, pGraphicsView);
+      BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(mpLibraryTreeItem->getClassInformation().fileName, shape, pGraphicsView);
       pBitmapAnnotation->initializeTransformation();
       pBitmapAnnotation->drawCornerItems();
       pBitmapAnnotation->setCornerItemsPassive();
       pGraphicsView->addShapeObject(pBitmapAnnotation);
-      pGraphicsView->scene()->addItem(pBitmapAnnotation);
+      pGraphicsView->addItem(pBitmapAnnotation);
     }
   }
 }
@@ -3044,8 +3085,12 @@ void ModelWidget::drawModelInheritedComponents()
 
 void ModelWidget::removeInheritedClassComponents(InheritedClass *pInheritedClass)
 {
+  foreach (Component *pComponent, pInheritedClass->mIconComponentsList) {
+    mpIconGraphicsView->removeItem(pComponent);
+  }
+  pInheritedClass->mIconComponentsList.clear();
   foreach (Component *pComponent, pInheritedClass->mDiagramComponentsList) {
-    mpDiagramGraphicsView->scene()->removeItem(pComponent);
+    mpDiagramGraphicsView->removeItem(pComponent);
   }
   pInheritedClass->mDiagramComponentsList.clear();
 }
@@ -3054,11 +3099,10 @@ void ModelWidget::drawModelInheritedClassComponents(InheritedClass *pInheritedCl
 {
   removeInheritedClassComponents(pInheritedClass);
   LibraryTreeItem *pInheritedLibraryTreeItem = pInheritedClass->mpLibraryTreeItem;
+  foreach (Component *pInheritedComponent, pInheritedLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentsList()) {
+    pInheritedClass->mIconComponentsList.append(new Component(pInheritedComponent, mpIconGraphicsView));
+  }
   foreach (Component *pInheritedComponent, pInheritedLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
-    if (pInheritedComponent->getLibraryTreeItem()->getRestriction() == StringHandler::Connector &&
-        !pInheritedComponent->getComponentInfo()->getProtected()) {
-      pInheritedClass->mIconComponentsList.append(new Component(pInheritedComponent, mpIconGraphicsView));
-    }
     pInheritedClass->mDiagramComponentsList.append(new Component(pInheritedComponent, mpDiagramGraphicsView));
   }
 }
@@ -3085,7 +3129,7 @@ void ModelWidget::getModelComponents()
     if (!pLibraryTreeItem) {
       pLibraryTreeItem = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->createNonExistingLibraryTreeItem(pComponentInfo->getClassName());
     }
-    if (!pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget() || pLibraryTreeItem->getModelWidget()->isReloadNeeded()) {
       pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, "", false);
     }
     QString transformation = "";

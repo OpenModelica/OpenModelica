@@ -53,9 +53,12 @@ AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibrary
   if (mpLibraryTreeItem->getRestriction() == StringHandler::Connector && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     // first create the component for Icon View
     mpIconComponent = new Component(name, pLibraryTreeItem, transformationString, position, pComponentInfo, mpIconGraphicsView);
+    pModelWidget->getLibraryTreeItem()->emitComponentAdded(mpIconComponent, mpIconGraphicsView);
     mpDiagramComponent = new Component(name, pLibraryTreeItem, transformationString, position, pComponentInfo, mpDiagramGraphicsView);
+    pModelWidget->getLibraryTreeItem()->emitComponentAdded(mpDiagramComponent, mpDiagramGraphicsView);
   } else {
     mpDiagramComponent = new Component(name, pLibraryTreeItem, transformationString, position, pComponentInfo, mpDiagramGraphicsView);
+    pModelWidget->getLibraryTreeItem()->emitComponentAdded(mpDiagramComponent, mpDiagramGraphicsView);
   }
   // only select the component of the active Icon/Diagram View
   if (!openingClass) {
@@ -82,21 +85,21 @@ void AddComponentCommand::redo()
   if (mpLibraryTreeItem->getRestriction() == StringHandler::Connector && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     // first create the component for Icon View only if connector is not protected
     if (!mpComponentInfo->getProtected()) {
-      mpIconGraphicsView->scene()->addItem(mpIconComponent);
-      mpIconGraphicsView->scene()->addItem(mpIconComponent->getOriginItem());
+      mpIconGraphicsView->addItem(mpIconComponent);
+      mpIconGraphicsView->addItem(mpIconComponent->getOriginItem());
       mpIconGraphicsView->addComponentToList(mpIconComponent);
-      mpIconComponent->emitComponentAdded();
+      mpIconComponent->emitAdded();
     }
     // now add the component to Diagram View
-    mpDiagramGraphicsView->scene()->addItem(mpDiagramComponent);
-    mpDiagramGraphicsView->scene()->addItem(mpDiagramComponent->getOriginItem());
+    mpDiagramGraphicsView->addItem(mpDiagramComponent);
+    mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
     mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
-    mpDiagramComponent->emitComponentAdded();
+    mpDiagramComponent->emitAdded();
   } else {
-    mpDiagramGraphicsView->scene()->addItem(mpDiagramComponent);
-    mpDiagramGraphicsView->scene()->addItem(mpDiagramComponent->getOriginItem());
+    mpDiagramGraphicsView->addItem(mpDiagramComponent);
+    mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
     mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
-    mpDiagramComponent->emitComponentAdded();
+    mpDiagramComponent->emitAdded();
   }
   if (mAddObject) {
     mpDiagramGraphicsView->addComponentObject(mpDiagramComponent);
@@ -115,23 +118,23 @@ void AddComponentCommand::undo()
     // first create the component for Icon View only if connector is not protected
     if (!mpComponentInfo->getProtected()) {
       mpIconComponent->setSelected(false);
-      mpIconGraphicsView->scene()->removeItem(mpIconComponent);
-      mpIconGraphicsView->scene()->removeItem(mpIconComponent->getOriginItem());
+      mpIconGraphicsView->removeItem(mpIconComponent);
+      mpIconGraphicsView->removeItem(mpIconComponent->getOriginItem());
       mpIconGraphicsView->deleteComponentFromList(mpIconComponent);
-      mpIconComponent->emitComponentDeleted();
+      mpIconComponent->emitDeleted();
     }
     // now remove the component from Diagram View
     mpDiagramComponent->setSelected(false);
-    mpDiagramGraphicsView->scene()->removeItem(mpDiagramComponent);
-    mpDiagramGraphicsView->scene()->removeItem(mpDiagramComponent->getOriginItem());
+    mpDiagramGraphicsView->removeItem(mpDiagramComponent);
+    mpDiagramGraphicsView->removeItem(mpDiagramComponent->getOriginItem());
     mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
-    mpDiagramComponent->emitComponentDeleted();
+    mpDiagramComponent->emitDeleted();
   } else {
     mpDiagramComponent->setSelected(false);
-    mpDiagramGraphicsView->scene()->removeItem(mpDiagramComponent);
-    mpDiagramGraphicsView->scene()->removeItem(mpDiagramComponent->getOriginItem());
+    mpDiagramGraphicsView->removeItem(mpDiagramComponent);
+    mpDiagramGraphicsView->removeItem(mpDiagramComponent->getOriginItem());
     mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
-    mpDiagramComponent->emitComponentDeleted();
+    mpDiagramComponent->emitDeleted();
   }
   mpGraphicsView->deleteComponentObject(mpDiagramComponent);
 }
@@ -162,26 +165,26 @@ void DeleteComponentCommand::redo()
     mpIconComponent = mpIconGraphicsView->getComponentObject(mpComponent->getName());
     if (mpIconComponent) {
       mpIconComponent->setSelected(false);
-      mpIconGraphicsView->scene()->removeItem(mpIconComponent);
-      mpIconGraphicsView->scene()->removeItem(mpIconComponent->getOriginItem());
+      mpIconGraphicsView->removeItem(mpIconComponent);
+      mpIconGraphicsView->removeItem(mpIconComponent->getOriginItem());
       mpIconGraphicsView->deleteComponentFromList(mpIconComponent);
-      mpIconComponent->emitComponentDeleted();
+      mpIconComponent->emitDeleted();
     }
     // now remove the component from Diagram View
     mpDiagramComponent = mpDiagramGraphicsView->getComponentObject(mpComponent->getName());
     if (mpDiagramComponent) {
       mpDiagramComponent->setSelected(false);
-      mpDiagramGraphicsView->scene()->removeItem(mpDiagramComponent);
-      mpDiagramGraphicsView->scene()->removeItem(mpDiagramComponent->getOriginItem());
+      mpDiagramGraphicsView->removeItem(mpDiagramComponent);
+      mpDiagramGraphicsView->removeItem(mpDiagramComponent->getOriginItem());
       mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
-      mpDiagramComponent->emitComponentDeleted();
+      mpDiagramComponent->emitDeleted();
     }
   } else {
     mpComponent->setSelected(false);
-    mpComponent->scene()->removeItem(mpComponent);
-    mpDiagramGraphicsView->scene()->removeItem(mpComponent->getOriginItem());
+    mpDiagramGraphicsView->removeItem(mpComponent);
+    mpDiagramGraphicsView->removeItem(mpComponent->getOriginItem());
     mpDiagramGraphicsView->deleteComponentFromList(mpComponent);
-    mpComponent->emitComponentDeleted();
+    mpComponent->emitDeleted();
   }
   mpGraphicsView->deleteComponentObject(mpComponent);
 }
@@ -198,23 +201,23 @@ void DeleteComponentCommand::undo()
       pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     // first add the component to Icon View
     if (mpIconComponent) {
-      mpIconGraphicsView->scene()->addItem(mpIconComponent);
-      mpIconGraphicsView->scene()->addItem(mpIconComponent->getOriginItem());
+      mpIconGraphicsView->addItem(mpIconComponent);
+      mpIconGraphicsView->addItem(mpIconComponent->getOriginItem());
       mpIconGraphicsView->addComponentToList(mpIconComponent);
-      mpIconComponent->emitComponentAdded();
+      mpIconComponent->emitAdded();
     }
     // now add the component to Diagram View
     if (mpDiagramComponent) {
-      mpDiagramGraphicsView->scene()->addItem(mpDiagramComponent);
-      mpDiagramGraphicsView->scene()->addItem(mpDiagramComponent->getOriginItem());
+      mpDiagramGraphicsView->addItem(mpDiagramComponent);
+      mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
       mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
-      mpDiagramComponent->emitComponentAdded();
+      mpDiagramComponent->emitAdded();
     }
   } else {
-    mpDiagramGraphicsView->scene()->addItem(mpComponent);
-    mpDiagramGraphicsView->scene()->addItem(mpComponent->getOriginItem());
+    mpDiagramGraphicsView->addItem(mpComponent);
+    mpDiagramGraphicsView->addItem(mpComponent->getOriginItem());
     mpDiagramGraphicsView->addComponentToList(mpComponent);
-    mpComponent->emitComponentAdded();
+    mpComponent->emitAdded();
   }
   mpGraphicsView->addComponentObject(mpComponent);
 }
@@ -247,7 +250,7 @@ AddShapeCommand::AddShapeCommand(ShapeAnnotation *pShapeAnnotation, GraphicsView
 void AddShapeCommand::redo()
 {
   mpGraphicsView->addShapeObject(mpShapeAnnotation);
-  mpGraphicsView->scene()->addItem(mpShapeAnnotation);
+  mpGraphicsView->addItem(mpShapeAnnotation);
   mpShapeAnnotation->emitAdded();
   mpGraphicsView->addClassAnnotation();
   mpGraphicsView->setCanAddClassAnnotation(true);
@@ -261,7 +264,7 @@ void AddShapeCommand::undo()
 {
   mpGraphicsView->deleteShapeObject(mpShapeAnnotation);
   mpShapeAnnotation->setSelected(false);
-  mpGraphicsView->scene()->removeItem(mpShapeAnnotation);
+  mpGraphicsView->removeItem(mpShapeAnnotation);
   mpShapeAnnotation->emitDeleted();
   mpGraphicsView->addClassAnnotation();
   mpGraphicsView->setCanAddClassAnnotation(true);
@@ -295,7 +298,7 @@ void DeleteShapeCommand::redo()
 {
   mpGraphicsView->deleteShapeObject(mpShapeAnnotation);
   mpShapeAnnotation->setSelected(false);
-  mpGraphicsView->scene()->removeItem(mpShapeAnnotation);
+  mpGraphicsView->removeItem(mpShapeAnnotation);
   mpShapeAnnotation->emitDeleted();
   mpGraphicsView->addClassAnnotation();
   mpGraphicsView->setCanAddClassAnnotation(true);
@@ -308,7 +311,7 @@ void DeleteShapeCommand::redo()
 void DeleteShapeCommand::undo()
 {
   mpGraphicsView->addShapeObject(mpShapeAnnotation);
-  mpGraphicsView->scene()->addItem(mpShapeAnnotation);
+  mpGraphicsView->addItem(mpShapeAnnotation);
   mpShapeAnnotation->emitAdded();
   mpGraphicsView->addClassAnnotation();
   mpGraphicsView->setCanAddClassAnnotation(true);

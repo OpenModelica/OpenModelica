@@ -498,6 +498,8 @@ void LibraryTreeItem::addInheritedClass(LibraryTreeItem *pLibraryTreeItem)
   connect(pLibraryTreeItem, SIGNAL(unLoaded(LibraryTreeItem*)), this, SLOT(handleUnloaded(LibraryTreeItem*)), Qt::UniqueConnection);
   connect(pLibraryTreeItem, SIGNAL(shapeAdded(LibraryTreeItem*,ShapeAnnotation*,GraphicsView*)),
           this, SLOT(handleShapeAdded(LibraryTreeItem*,ShapeAnnotation*,GraphicsView*)), Qt::UniqueConnection);
+  connect(pLibraryTreeItem, SIGNAL(componentAdded(LibraryTreeItem*,Component*,GraphicsView*)),
+          this, SLOT(handleComponentAdded(LibraryTreeItem*,Component*,GraphicsView*)), Qt::UniqueConnection);
   connect(pLibraryTreeItem, SIGNAL(iconUpdated()), this, SLOT(handleIconUpdated()), Qt::UniqueConnection);
 }
 
@@ -638,17 +640,28 @@ void LibraryTreeItem::handleUnloaded(LibraryTreeItem *pLibraryTreeItem)
 void LibraryTreeItem::handleShapeAdded(LibraryTreeItem *pLibraryTreeItem, ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
 {
   if (mpModelWidget) {
-    if (pGraphicsView->getViewType() == StringHandler::Icon) {
-      ModelWidget::InheritedClass *pInheritedClass = mpModelWidget->findInheritedClass(pLibraryTreeItem);
-      if (pInheritedClass) {
+    ModelWidget::InheritedClass *pInheritedClass = mpModelWidget->findInheritedClass(pLibraryTreeItem);
+    if (pInheritedClass) {
+      if (pGraphicsView->getViewType() == StringHandler::Icon) {
         pInheritedClass->mIconShapesList.append(mpModelWidget->createInheritedShape(pShapeAnnotation, mpModelWidget->getIconGraphicsView()));
-        emit shapeAdded(pLibraryTreeItem, pShapeAnnotation, mpModelWidget->getIconGraphicsView());
+        mpModelWidget->getIconGraphicsView()->reOrderItems();
+      } else {
+        pInheritedClass->mDiagramShapesList.append(mpModelWidget->createInheritedShape(pShapeAnnotation, mpModelWidget->getDiagramGraphicsView()));
+        mpModelWidget->getDiagramGraphicsView()->reOrderItems();
       }
-    } else {
-      ModelWidget::InheritedClass *pInheritedClass = mpModelWidget->findInheritedClass(pLibraryTreeItem);
-      if (pInheritedClass) {
-        pInheritedClass->mIconShapesList.append(mpModelWidget->createInheritedShape(pShapeAnnotation, mpModelWidget->getDiagramGraphicsView()));
-        emit shapeAdded(pLibraryTreeItem, pShapeAnnotation, mpModelWidget->getDiagramGraphicsView());
+    }
+  }
+}
+
+void LibraryTreeItem::handleComponentAdded(LibraryTreeItem *pLibraryTreeItem, Component *pComponent, GraphicsView *pGraphicsView)
+{
+  if (mpModelWidget) {
+    ModelWidget::InheritedClass *pInheritedClass = mpModelWidget->findInheritedClass(pLibraryTreeItem);
+    if (pInheritedClass) {
+      if (pGraphicsView->getViewType() == StringHandler::Icon) {
+        pInheritedClass->mIconComponentsList.append(mpModelWidget->createInheritedComponent(pComponent, mpModelWidget->getIconGraphicsView()));
+      } else {
+        pInheritedClass->mDiagramComponentsList.append(mpModelWidget->createInheritedComponent(pComponent, mpModelWidget->getDiagramGraphicsView()));
       }
     }
   }
@@ -1371,7 +1384,7 @@ LibraryTreeItem* LibraryTreeModel::getContainingParentLibraryTreeItem(LibraryTre
  */
 void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeItem)
 {
-  if (!pLibraryTreeItem->getModelWidget()) {
+  if (!pLibraryTreeItem->getModelWidget() || pLibraryTreeItem->getModelWidget()->isReloadNeeded()) {
     showModelWidget(pLibraryTreeItem, "", false);
   }
   if (pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->hasAnnotation()) {
@@ -1461,9 +1474,8 @@ LibraryTreeItem* LibraryTreeModel::getLibraryTreeItemFromFile(QString fileName, 
  * \param pLibraryTreeItem
  * \param text
  * \param show
- * \param newModel
  */
-void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, QString text, bool show, bool newModel)
+void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, QString text, bool show)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   if (show) {
@@ -1471,13 +1483,18 @@ void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, QStrin
   }
   if (pLibraryTreeItem->getModelWidget()) {
     pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getNameStructure() + (pLibraryTreeItem->isSaved() ? "" : "*"));
+    if (pLibraryTreeItem->getModelWidget()->isReloadNeeded()) {
+      pLibraryTreeItem->getModelWidget()->setReloadNeeded(false);
+      pLibraryTreeItem->getModelWidget()->loadModelWidget();
+      pLibraryTreeItem->handleIconUpdated();
+    }
     if (show) {
       mpLibraryWidget->getMainWindow()->getModelWidgetContainer()->addModelWidget(pLibraryTreeItem->getModelWidget(), true);
     } else {
       pLibraryTreeItem->getModelWidget()->hide();
     }
   } else {
-    ModelWidget *pModelWidget = new ModelWidget(pLibraryTreeItem, mpLibraryWidget->getMainWindow()->getModelWidgetContainer(), text, newModel);
+    ModelWidget *pModelWidget = new ModelWidget(pLibraryTreeItem, mpLibraryWidget->getMainWindow()->getModelWidgetContainer(), text);
     pLibraryTreeItem->setModelWidget(pModelWidget);
     pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getNameStructure() + (pLibraryTreeItem->isSaved() ? "" : "*"));
     if (show) {
@@ -1682,15 +1699,14 @@ void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, Libr
   // make the class non expanded
   pLibraryTreeItem->setExpanded(false);
   addNonExistingLibraryTreeItem(pLibraryTreeItem);
-  /* remove the ModelWidget of LibraryTreeItem and remove the QMdiSubWindow from MdiArea and delete it. */
+  /* close the ModelWidget of LibraryTreeItem. */
   if (pLibraryTreeItem->getModelWidget()) {
     QMdiSubWindow *pMdiSubWindow = pMainWindow->getModelWidgetContainer()->getMdiSubWindow(pLibraryTreeItem->getModelWidget());
     if (pMdiSubWindow) {
       pMdiSubWindow->close();
-      pMdiSubWindow->deleteLater();
     }
-    pLibraryTreeItem->getModelWidget()->deleteLater();
-    pLibraryTreeItem->setModelWidget(0);
+    pLibraryTreeItem->getModelWidget()->getUndoStack()->clear();
+    pLibraryTreeItem->getModelWidget()->setReloadNeeded(true);
   }
   // remove the LibraryTreeItem from Libraries Browser
   int row = pLibraryTreeItem->row();
