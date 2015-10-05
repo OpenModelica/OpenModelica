@@ -1200,34 +1200,40 @@ algorithm
       if index > 0 then
         Error.addCompilerNotification("The given system is mixed-determined.   [index = " + intString(index) + "]");
       end if;
-      // map artificial variables to redundant equations
-      range := if nAddVars > 0 then List.intRange2(nVars+1, nVars+nAddVars) else {};
-      redundantEqns := mapIndices(range, ass1);
-      //print("{" + stringDelimitList(List.map(redundantEqns, intString), ",") + "}\n");
 
-      // symbolic consistency check
-      (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, inShared, false);
-      (_, _, _) := consistencyCheck(redundantEqns, inEqSystem.orderedEqs, inEqSystem.orderedVars, inShared, nAddVars, m_, me, ass1, ass2, mapIncRowEqn);
+      if nAddVars > 0 then
+        // map artificial variables to redundant equations
+        range := List.intRange2(nVars+1, nVars+nAddVars);
+        redundantEqns := mapIndices(range, ass1);
+        //print("{" + stringDelimitList(List.map(redundantEqns, intString), ",") + "}\n");
 
-      // remove redundant equations
-      removedEqns2 := BackendEquation.getEqns(redundantEqns, inEqSystem.orderedEqs);
-      //BackendDump.dumpEquationList(removedEqns2, "removed equations");
-      eqns2 := BackendEquation.equationDelete(inEqSystem.orderedEqs, redundantEqns);
-      //BackendDump.dumpEquationArray(eqns2, "remaining equations");
+        // symbolic consistency check
+        (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, inShared, false);
+        (_, _, _) := consistencyCheck(redundantEqns, inEqSystem.orderedEqs, inEqSystem.orderedVars, inShared, nAddVars, m_, me, ass1, ass2, mapIncRowEqn);
 
-      // map artificial equations to unfixed states
-      range := if nAddEqs > 0 then List.intRange2(nEqns+1, nEqns+nAddEqs) else {};
-      range := mapIndices(range, ass2);
-      //print("{" + stringDelimitList(List.map(range, intString), ",") + "}\n");
+        // remove redundant equations
+        removedEqns2 := BackendEquation.getEqns(redundantEqns, inEqSystem.orderedEqs);
+        //BackendDump.dumpEquationList(removedEqns2, "removed equations");
+        eqns2 := BackendEquation.equationDelete(inEqSystem.orderedEqs, redundantEqns);
+        //BackendDump.dumpEquationArray(eqns2, "remaining equations");
+        removedEqns := listAppend(removedEqns, removedEqns2);
+      else
+        eqns2 := inEqSystem.orderedEqs;
+      end if;
 
-      // introduce additional initial equations
-      initVarList := List.map1r(range, BackendVariable.getVarAt, inEqSystem.orderedVars);
-      (eqns2, dumpVars2) := addStartValueEquations(initVarList, eqns2, {});
-      //BackendDump.dumpEquationArray(eqns2, "remaining equations");
+      if nAddEqs > 0 then
+        // map artificial equations to unfixed states
+        range := List.intRange2(nEqns+1, nEqns+nAddEqs);
+        range := mapIndices(range, ass2);
+        //print("{" + stringDelimitList(List.map(range, intString), ",") + "}\n");
 
-      // add dummy var + dummy eqn
-      dumpVars := listAppend(dumpVars, dumpVars2);
-      removedEqns := listAppend(removedEqns, removedEqns2);
+        // introduce additional initial equations
+        initVarList := List.map1r(range, BackendVariable.getVarAt, inEqSystem.orderedVars);
+        (eqns2, dumpVars2) := addStartValueEquations(initVarList, eqns2, {});
+        //BackendDump.dumpEquationArray(eqns2, "remaining equations");
+        dumpVars := listAppend(dumpVars, dumpVars2);
+      end if;
+
       outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, eqns2);
       //print("index-" + intString(index) + " ende\n");
       outTpl := ((inDAE, initVars, dumpVars, removedEqns));
