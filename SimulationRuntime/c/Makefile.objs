@@ -59,8 +59,8 @@ endif
 RESULTS_HFILES = simulation_result_ia.h simulation_result.h simulation_result_csv.h simulation_result_mat.h simulation_result_plt.h simulation_result_wall.h
 RESULTS_FILES = simulation_result_ia.cpp simulation_result_csv.cpp simulation_result_mat.cpp simulation_result_plt.cpp simulation_result_wall.cpp
 
-SIM_OBJS = simulation_input_xml$(OBJ_EXT) simulation_runtime$(OBJ_EXT) ../linearization/linearize$(OBJ_EXT) socket$(OBJ_EXT)
-SIM_OBJS_C = modelinfo$(OBJ_EXT) simulation_info_xml$(OBJ_EXT) simulation_info_json$(OBJ_EXT) options$(OBJ_EXT)
+SIM_OBJS = simulation_runtime$(OBJ_EXT) ../linearization/linearize$(OBJ_EXT) socket$(OBJ_EXT)
+SIM_OBJS_C = simulation_input_xml$(OBJ_EXT) modelinfo$(OBJ_EXT) simulation_info_xml$(OBJ_EXT) simulation_info_json$(OBJ_EXT) options$(OBJ_EXT)
 SIM_HFILES = options.h simulation_input_xml.h simulation_info_xml.h simulation_info_json.h modelinfo.h simulation_runtime.h ../linearization/linearize.h socket.h
 
 FMIPATH = ./fmi/
