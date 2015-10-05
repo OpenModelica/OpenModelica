@@ -421,6 +421,7 @@ void read_input_xml(MODEL_DATA* modelData,
   XML_Parser parser = NULL;
   hash_string_long *mapAlias = NULL, *mapAliasParam = NULL;
   long *it, *itParam;
+  mmc_sint_t i;
 
   if(NULL == modelData->initXMLData)
   {
@@ -584,7 +585,7 @@ void read_input_xml(MODEL_DATA* modelData,
 
 #define READ_VARIABLES(out,in,attributeKind,read_var_attribute,debugName,start,nStates,mapAlias) \
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for %s", debugName); \
-  for(mmc_sint_t i = 0; i < nStates; i++) \
+  for(i = 0; i < nStates; i++) \
   { \
     mmc_sint_t j = start+i; \
     VAR_INFO *info = &out[j].info; \
@@ -620,7 +621,7 @@ void read_input_xml(MODEL_DATA* modelData,
    * real all alias vars
    */
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for real alias vars");
-  for(mmc_sint_t i=0; i<modelData->nAliasReal; i++)
+  for(i=0; i<modelData->nAliasReal; i++)
   {
     read_var_info(*findHashLongVar(mi.rAli,i), &modelData->realAlias[i].info);
 
@@ -665,7 +666,7 @@ void read_input_xml(MODEL_DATA* modelData,
    * integer all alias vars
    */
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for integer alias vars");
-  for(mmc_sint_t i=0; i<modelData->nAliasInteger; i++)
+  for(i=0; i<modelData->nAliasInteger; i++)
   {
     read_var_info(*findHashLongVar(mi.iAli,i), &modelData->integerAlias[i].info);
 
@@ -708,7 +709,7 @@ void read_input_xml(MODEL_DATA* modelData,
    * boolean all alias vars
    */
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for boolean alias vars");
-  for(mmc_sint_t i=0; i<modelData->nAliasBoolean; i++)
+  for(i=0; i<modelData->nAliasBoolean; i++)
   {
     read_var_info(*findHashLongVar(mi.bAli,i), &modelData->booleanAlias[i].info);
 
@@ -751,7 +752,7 @@ void read_input_xml(MODEL_DATA* modelData,
    * string all alias vars
    */
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for string alias vars");
-  for(mmc_sint_t i=0; i<modelData->nAliasString; i++)
+  for(i=0; i<modelData->nAliasString; i++)
   {
     read_var_info(*findHashLongVar(mi.sAli,i), &modelData->stringAlias[i].info);
 
@@ -881,6 +882,7 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
 {
   omc_CommandLineOverrides *mOverrides = NULL;
   omc_CommandLineOverridesUses *mOverridesUses = NULL, *it = NULL, *ittmp = NULL;
+  mmc_sint_t i;
   char* overrideStr = NULL;
   if((override != NULL) && (overrideFile != NULL)) {
     throwStreamPrint(NULL, "simulation_input_xml.cpp: usage error you cannot have both -override and -overrideFile active at the same time. see Model -? for more info!");
@@ -969,7 +971,7 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
 
     // now we have all overrides in mOverrides, override mi now
     const char *strs[] = {"solver","startTime","stopTime","stepSize","tolerance","outputFormat","variableFilter"};
-    for (int i=0; i<sizeof(strs)/sizeof(char*); i++) {
+    for (i=0; i<sizeof(strs)/sizeof(char*); i++) {
       if (findHashStringStringNull(mOverrides, strs[i])) {
         addHashStringString(&mi->de, strs[i], getOverrideValue(mOverrides, &mOverridesUses, strs[i]));
       }
@@ -981,48 +983,48 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
       }
 
     // override all found!
-    for(mmc_sint_t i=0; i<modelData->nStates; i++) {
+    for(i=0; i<modelData->nStates; i++) {
       CHECK_OVERRIDE(rSta);
       CHECK_OVERRIDE(rDer);
     }
-    for(mmc_sint_t i=0; i<(modelData->nVariablesReal - 2*modelData->nStates); i++) {
+    for(i=0; i<(modelData->nVariablesReal - 2*modelData->nStates); i++) {
       CHECK_OVERRIDE(rAlg);
     }
-    for(mmc_sint_t i=0; i<modelData->nVariablesInteger; i++) {
+    for(i=0; i<modelData->nVariablesInteger; i++) {
       CHECK_OVERRIDE(iAlg);
     }
-    for(mmc_sint_t i=0; i<modelData->nVariablesBoolean; i++) {
+    for(i=0; i<modelData->nVariablesBoolean; i++) {
       CHECK_OVERRIDE(bAlg);
     }
-    for(mmc_sint_t i=0; i<modelData->nVariablesString; i++) {
+    for(i=0; i<modelData->nVariablesString; i++) {
       CHECK_OVERRIDE(sAlg);
     }
-    for(mmc_sint_t i=0; i<modelData->nParametersReal; i++) {
+    for(i=0; i<modelData->nParametersReal; i++) {
       // TODO: only allow to override primary parameters
       CHECK_OVERRIDE(rPar);
     }
-    for(mmc_sint_t i=0; i<modelData->nParametersInteger; i++) {
+    for(i=0; i<modelData->nParametersInteger; i++) {
       // TODO: only allow to override primary parameters
       CHECK_OVERRIDE(iPar);
     }
-    for(mmc_sint_t i=0; i<modelData->nParametersBoolean; i++) {
+    for(i=0; i<modelData->nParametersBoolean; i++) {
       // TODO: only allow to override primary parameters
       CHECK_OVERRIDE(bPar);
     }
-    for(mmc_sint_t i=0; i<modelData->nParametersString; i++) {
+    for(i=0; i<modelData->nParametersString; i++) {
       // TODO: only allow to override primary parameters
       CHECK_OVERRIDE(sPar);
     }
-    for(mmc_sint_t i=0; i<modelData->nAliasReal; i++) {
+    for(i=0; i<modelData->nAliasReal; i++) {
       CHECK_OVERRIDE(rAli);
     }
-    for(mmc_sint_t i=0; i<modelData->nAliasInteger; i++) {
+    for(i=0; i<modelData->nAliasInteger; i++) {
       CHECK_OVERRIDE(iAli);
     }
-    for(mmc_sint_t i=0; i<modelData->nAliasBoolean; i++) {
+    for(i=0; i<modelData->nAliasBoolean; i++) {
       CHECK_OVERRIDE(bAli);
     }
-    for(mmc_sint_t i=0; i<modelData->nAliasString; i++) {
+    for(i=0; i<modelData->nAliasString; i++) {
       CHECK_OVERRIDE(sAli);
     }
 
