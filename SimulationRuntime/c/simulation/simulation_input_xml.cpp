@@ -29,8 +29,6 @@
  */
 
 /*
- * RCS: $Id: SimCode.mo 9167 2011-05-29 12:58:33Z Frenkel TUD $
- *
  * file simulation_input_xml.cpp
  * this file reads the model input from Model_init.xml
  * file using the Expat XML parser.
@@ -64,7 +62,15 @@ typedef struct hash_string_string
 typedef hash_string_string omc_ModelDescription;
 typedef hash_string_string omc_DefaultExperiment;
 typedef hash_string_string omc_ScalarVariable;
-typedef std::map<mmc_sint_t, omc_ScalarVariable*> omc_ModelVariables;
+
+typedef struct hash_long_var
+{
+  long id;
+  omc_ScalarVariable *val;
+  UT_hash_handle hh;
+} hash_long_var;
+
+typedef hash_long_var omc_ModelVariables;
 
 extern "C" {
 
@@ -89,7 +95,7 @@ static inline const char* findHashStringString(hash_string_string *ht, const cha
     HASH_ITER(hh, ht, c, tmp) {
       fprintf(stderr, "HashMap contained: %s->%s\n", c->id, c->val);
     }
-    throwStreamPrint(NULL, "Failed to lookup %s in hashmap", key);
+    throwStreamPrint(NULL, "Failed to lookup %s in hashmap %p", key, ht);
   }
   return res;
 }
@@ -102,6 +108,28 @@ static inline void addHashStringString(hash_string_string **ht, const char *key,
   HASH_ADD_KEYPTR( hh, *ht, key, strlen(key), v );
 }
 
+static inline omc_ScalarVariable** findHashLongVar(hash_long_var *ht, long key)
+{
+  hash_long_var *res;
+  HASH_FIND_INT( ht, &key, res );
+  if (0==res) {
+    hash_long_var *c, *tmp;
+    HASH_ITER(hh, ht, c, tmp) {
+      fprintf(stderr, "HashMap contained: %ld->*map*\n", c->id);
+    }
+    throwStreamPrint(NULL, "Failed to lookup %ld in hashmap %p", key, ht);
+  }
+  return &res->val;
+}
+
+static inline void addHashLongVar(hash_long_var **ht, long key, omc_ScalarVariable *val)
+{
+  hash_long_var *v = (hash_long_var*) malloc(sizeof(hash_long_var));
+  v->id=key;
+  v->val=val;
+  HASH_ADD_INT( *ht, id, v );
+}
+
 /* maybe use a map below {"rSta"  -> omc_ModelVariables} */
 /* typedef map < string, omc_ModelVariables > omc_ModelVariablesClassified; */
 
@@ -111,29 +139,29 @@ typedef struct omc_ModelInput
   omc_ModelDescription  *md; /* model description */
   omc_DefaultExperiment *de; /* default experiment */
 
-  omc_ModelVariables    rSta; /* states */
-  omc_ModelVariables    rDer; /* derivatives */
-  omc_ModelVariables    rAlg; /* algebraic */
-  omc_ModelVariables    rPar; /* parameters */
-  omc_ModelVariables    rAli; /* aliases */
+  omc_ModelVariables    *rSta; /* states */
+  omc_ModelVariables    *rDer; /* derivatives */
+  omc_ModelVariables    *rAlg; /* algebraic */
+  omc_ModelVariables    *rPar; /* parameters */
+  omc_ModelVariables    *rAli; /* aliases */
 
-  omc_ModelVariables    iAlg; /* int algebraic */
-  omc_ModelVariables    iPar; /* int parameters */
-  omc_ModelVariables    iAli; /* int aliases */
+  omc_ModelVariables    *iAlg; /* int algebraic */
+  omc_ModelVariables    *iPar; /* int parameters */
+  omc_ModelVariables    *iAli; /* int aliases */
 
-  omc_ModelVariables    bAlg; /* bool algebraic */
-  omc_ModelVariables    bPar; /* bool parameters */
-  omc_ModelVariables    bAli; /* bool aliases */
+  omc_ModelVariables    *bAlg; /* bool algebraic */
+  omc_ModelVariables    *bPar; /* bool parameters */
+  omc_ModelVariables    *bAli; /* bool aliases */
 
-  omc_ModelVariables    sAlg; /* string algebraic */
-  omc_ModelVariables    sPar; /* string parameters */
-  omc_ModelVariables    sAli; /* string aliases */
+  omc_ModelVariables    *sAlg; /* string algebraic */
+  omc_ModelVariables    *sPar; /* string parameters */
+  omc_ModelVariables    *sAli; /* string aliases */
 
   /* these two we need to know to be able to add
      the stuff in <Real ... />, <String ... /> to
      the correct variable in the correct map */
   mmc_sint_t            lastCI; /* index */
-  omc_ModelVariables*   lastCT; /* type (classification) */
+  omc_ModelVariables**  lastCT; /* type (classification) */
 } omc_ModelInput;
 
 // a map for overrides
@@ -189,6 +217,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
   {
     omc_ScalarVariable *v = NULL, *vfind;
     const char *ci, *ct;
+    int fail=0;
     mi->lastCI = -1;
     mi->lastCT = NULL;
     for(i = 0; attr[i]; i += 2) {
@@ -201,30 +230,65 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     mi->lastCI = atoi(ci);
 
     /* which one of the classifications?  */
-    mi->lastCT = strcmp(ct,"rSta") ? mi->lastCT : &mi->rSta;
-    mi->lastCT = strcmp(ct,"rDer") ? mi->lastCT : &mi->rDer;
-    mi->lastCT = strcmp(ct,"rAlg") ? mi->lastCT : &mi->rAlg;
-    mi->lastCT = strcmp(ct,"rPar") ? mi->lastCT : &mi->rPar;
-    mi->lastCT = strcmp(ct,"rAli") ? mi->lastCT : &mi->rAli;
+    if (strlen(ct) == 4) {
+      if (ct[0]=='r') {
+        if (0 == strcmp(ct+1,"Sta")) {
+          mi->lastCT = &mi->rSta;
+        } else if (0 == strcmp(ct+1,"Der")) {
+          mi->lastCT = &mi->rDer;
+        } else if (0 == strcmp(ct+1,"Alg")) {
+          mi->lastCT = &mi->rAlg;
+        } else if (0 == strcmp(ct+1,"Par")) {
+          mi->lastCT = &mi->rPar;
+        } else if (0 == strcmp(ct+1,"Ali")) {
+          mi->lastCT = &mi->rAli;
+        } else {
+          fail = 1;
+        }
+      } else if (ct[0]=='i') {
+        if (0 == strcmp(ct+1,"Alg")) {
+          mi->lastCT = &mi->iAlg;
+        } else if (0 == strcmp(ct+1,"Par")) {
+          mi->lastCT = &mi->iPar;
+        } else if (0 == strcmp(ct+1,"Ali")) {
+          mi->lastCT = &mi->iAli;
+        } else {
+          fail = 1;
+        }
+      } else if (ct[0]=='b') {
+        if (0 == strcmp(ct+1,"Alg")) {
+          mi->lastCT = &mi->bAlg;
+        } else if (0 == strcmp(ct+1,"Par")) {
+          mi->lastCT = &mi->bPar;
+        } else if (0 == strcmp(ct+1,"Ali")) {
+          mi->lastCT = &mi->bAli;
+        } else {
+          fail = 1;
+        }
+      } else if (ct[0]=='s') {
+        if (0 == strcmp(ct+1,"Alg")) {
+          mi->lastCT = &mi->sAlg;
+        } else if (0 == strcmp(ct+1,"Par")) {
+          mi->lastCT = &mi->sPar;
+        } else if (0 == strcmp(ct+1,"Ali")) {
+          mi->lastCT = &mi->sAli;
+        } else {
+          fail = 1;
+        }
+      } else {
+        fail = 1;
+      }
+    } else {
+      fail = 1;
+    }
 
-    mi->lastCT = strcmp(ct,"iAlg") ? mi->lastCT : &mi->iAlg;
-    mi->lastCT = strcmp(ct,"iPar") ? mi->lastCT : &mi->iPar;
-    mi->lastCT = strcmp(ct,"iAli") ? mi->lastCT : &mi->iAli;
-
-    mi->lastCT = strcmp(ct,"bAlg") ? mi->lastCT : &mi->bAlg;
-    mi->lastCT = strcmp(ct,"bPar") ? mi->lastCT : &mi->bPar;
-    mi->lastCT = strcmp(ct,"bAli") ? mi->lastCT : &mi->bAli;
-
-    mi->lastCT = strcmp(ct,"sAlg") ? mi->lastCT : &mi->sAlg;
-    mi->lastCT = strcmp(ct,"sPar") ? mi->lastCT : &mi->sPar;
-    mi->lastCT = strcmp(ct,"sAli") ? mi->lastCT : &mi->sAli;
-
-    if (NULL == mi->lastCT) {
+    if (fail) {
       throwStreamPrint(NULL, "simulation_input_xml.cpp: error reading the xml file, found unknown class: %s  for variable: %s",ct,findHashStringString(v,"name"));
     }
 
     /* add the ScalarVariable map to the correct map! */
-    (*mi->lastCT)[mi->lastCI] = v;
+    addHashLongVar(mi->lastCT, mi->lastCI, v);
+
     return;
   }
   /* handle Real/Integer/Boolean/String */
@@ -232,9 +296,9 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     /* add keys/value to the last variable */
     for(i = 0; attr[i]; i += 2) {
       /* add more key/value pairs to the last variable */
-      addHashStringString(&((*mi->lastCT)[mi->lastCI]), attr[i], attr[i+1]);
+      addHashStringString(findHashLongVar(*mi->lastCT, mi->lastCI), attr[i], attr[i+1]);
     }
-    addHashStringString(&((*mi->lastCT)[mi->lastCI]), "variableType", name);
+    addHashStringString(findHashLongVar(*mi->lastCT, mi->lastCI), "variableType", name);
     return;
   }
   /* anything else, we don't handle! */
@@ -495,7 +559,7 @@ void read_input_xml(MODEL_DATA* modelData,
     mmc_sint_t j = start+i; \
     VAR_INFO &info = out[j].info; \
     attributeKind &attribute = out[j].attribute; \
-    omc_ScalarVariable *v = in[i]; \
+    omc_ScalarVariable *v = *findHashLongVar(in, i); \
     read_var_info(v, info); \
     read_var_attribute(v, attribute); \
     if (info.name[0] == '$') { \
@@ -528,10 +592,10 @@ void read_input_xml(MODEL_DATA* modelData,
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for real alias vars");
   for(mmc_sint_t i=0; i<modelData->nAliasReal; i++)
   {
-    read_var_info(mi.rAli[i], modelData->realAlias[i].info);
+    read_var_info(*findHashLongVar(mi.rAli,i), modelData->realAlias[i].info);
 
     const char *aliasTmp;
-    read_value_string(findHashStringStringNull(mi.rAli[i],"alias"), &aliasTmp);
+    read_value_string(findHashStringStringNull(*findHashLongVar(mi.rAli,i),"alias"), &aliasTmp);
     if (0 == strcmp(aliasTmp,"negatedAlias")) {
       modelData->realAlias[i].negate = 1;
     } else {
@@ -544,7 +608,7 @@ void read_input_xml(MODEL_DATA* modelData,
       modelData->realAlias[i].filterOutput = 1;
     }
 
-    read_value_string(findHashStringStringNull(mi.rAli[i],"aliasVariable"), &aliasTmp);
+    read_value_string(findHashStringStringNull(*findHashLongVar(mi.rAli,i),"aliasVariable"), &aliasTmp);
 
     it = mapAlias.find(aliasTmp);
     itParam = mapAliasParam.find(aliasTmp);
@@ -573,10 +637,10 @@ void read_input_xml(MODEL_DATA* modelData,
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for integer alias vars");
   for(mmc_sint_t i=0; i<modelData->nAliasInteger; i++)
   {
-    read_var_info(mi.iAli[i], modelData->integerAlias[i].info);
+    read_var_info(*findHashLongVar(mi.iAli,i), modelData->integerAlias[i].info);
 
     const char *aliasTmp;
-    read_value_string(findHashStringStringNull(mi.iAli[i],"alias"), &aliasTmp);
+    read_value_string(findHashStringStringNull(*findHashLongVar(mi.iAli,i),"alias"), &aliasTmp);
     if (0 == strcmp(aliasTmp,"negatedAlias")) {
       modelData->integerAlias[i].negate = 1;
     } else {
@@ -589,7 +653,7 @@ void read_input_xml(MODEL_DATA* modelData,
     if(modelData->integerAlias[i].info.name[0] == '$') {
       modelData->integerAlias[i].filterOutput = 1;
     }
-    read_value_string(findHashStringString(mi.iAli[i],"aliasVariable"), &aliasTmp);
+    read_value_string(findHashStringString(*findHashLongVar(mi.iAli,i),"aliasVariable"), &aliasTmp);
 
     it = mapAlias.find(aliasTmp);
     itParam = mapAliasParam.find(aliasTmp);
@@ -616,10 +680,10 @@ void read_input_xml(MODEL_DATA* modelData,
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for boolean alias vars");
   for(mmc_sint_t i=0; i<modelData->nAliasBoolean; i++)
   {
-    read_var_info(mi.bAli[i], modelData->booleanAlias[i].info);
+    read_var_info(*findHashLongVar(mi.bAli,i), modelData->booleanAlias[i].info);
 
     const char *aliasTmp;
-    read_value_string(findHashStringString(mi.bAli[i],"alias"), &aliasTmp);
+    read_value_string(findHashStringString(*findHashLongVar(mi.bAli,i),"alias"), &aliasTmp);
     if  (0 == strcmp(aliasTmp,"negatedAlias")) {
       modelData->booleanAlias[i].negate = 1;
     } else {
@@ -632,7 +696,7 @@ void read_input_xml(MODEL_DATA* modelData,
     if(modelData->booleanAlias[i].info.name[0] == '$') {
       modelData->booleanAlias[i].filterOutput = 1;
     }
-    read_value_string(findHashStringString(mi.bAli[i],"aliasVariable"), &aliasTmp);
+    read_value_string(findHashStringString(*findHashLongVar(mi.bAli,i),"aliasVariable"), &aliasTmp);
 
     it = mapAlias.find(aliasTmp);
     itParam = mapAliasParam.find(aliasTmp);
@@ -659,10 +723,10 @@ void read_input_xml(MODEL_DATA* modelData,
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for string alias vars");
   for(mmc_sint_t i=0; i<modelData->nAliasString; i++)
   {
-    read_var_info(mi.sAli[i], modelData->stringAlias[i].info);
+    read_var_info(*findHashLongVar(mi.sAli,i), modelData->stringAlias[i].info);
 
     const char *aliasTmp;
-    read_value_string(findHashStringString(mi.sAli[i],"alias"), &aliasTmp);
+    read_value_string(findHashStringString(*findHashLongVar(mi.sAli,i),"alias"), &aliasTmp);
     if (0 == strcmp(aliasTmp,"negatedAlias")) {
       modelData->stringAlias[i].negate = 1;
     } else {
@@ -675,7 +739,7 @@ void read_input_xml(MODEL_DATA* modelData,
       modelData->stringAlias[i].filterOutput = 1;
     }
 
-    read_value_string(findHashStringString(mi.sAli[i],"aliasVariable"), &aliasTmp);
+    read_value_string(findHashStringString(*findHashLongVar(mi.sAli,i),"aliasVariable"), &aliasTmp);
 
     it = mapAlias.find(aliasTmp);
     itParam = mapAliasParam.find(aliasTmp);
@@ -901,8 +965,8 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
     }
 
     #define CHECK_OVERRIDE(v) \
-      if (mOverrides.count(findHashStringString(mi.v[i],"name"))) { \
-        addHashStringString(&mi.v[i], "start", getOverrideValue(mOverrides, mOverridesUses, findHashStringString(mi.v[i],"name"))); \
+      if (mOverrides.count(findHashStringString(*findHashLongVar(mi.v,i),"name"))) { \
+        addHashStringString(findHashLongVar(mi.v,i), "start", getOverrideValue(mOverrides, mOverridesUses, findHashStringString(*findHashLongVar(mi.v,i),"name"))); \
       }
 
     // override all found!
