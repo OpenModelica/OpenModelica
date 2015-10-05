@@ -1,0 +1,112 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <TextCell style="Title">
+      <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Implicit versus Explicit Connection Structures&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text">
+      <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">An implicit connection structure has the nice property that additional components can be added to the structure without the need for additional explicit connections. A new component becomes automatically connected to the system.&lt;/span>&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Consider the CircuitBoard Modelica code below. New components added to the compvec vector within the compTwo model instance become automatically connected. The reason is that all outer envHeat connectors within the compvec vector automatically reference the inner envHeat definition connector declared in the CircuitBoard.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <GraphCell style="Graph" closed="false">
+      <Input>connector HeatPort
+   Modelica.SIunits.Temp_K T "Temperature in [K]";
+   flow Modelica.SIunits.HeatFlux q "Heat flux";
+end HeatPort;</Input>
+      <Output>{HeatPort}</Output>
+    </GraphCell>
+    <GraphCell style="Graph" closed="false">
+      <Input>model Component "Component within a circuit board in an environment"
+   outer HeatPort envHeat; // Reference to environment heat interface
+   HeatPort heat; // Local heat connector of component
+equation
+   connect(heat, envHeat);
+end Component;</Input>
+      <Output>{Component}</Output>
+    </GraphCell>
+    <GraphCell style="Graph" closed="false">
+      <Input>model TwoComponents "Two Components together"
+    Component compvec[2];
+end TwoComponents;</Input>
+      <Output>{TwoComponents}</Output>
+    </GraphCell>
+    <GraphCell style="Graph" closed="false">
+      <Input>model CircuitBoard
+   inner HeatPort envHeat; // Definition of environment heat interface
+   Component comp;
+   TwoComponents compTwo;
+end CircuitBoard;</Input>
+      <Output>{CircuitBoard}</Output>
+    </GraphCell>
+    <TextCell style="Title">
+      <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Explicit Connection&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text">
+      <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="justify" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">As a comparison we show the same example modeled using traditional explicit connections depicted in with corresponding Modelica code below.Each time we add a new component to the compvec vector in the compTwo instance, an additional explicit connection has to be added into the TwoComponents class as a connect-equation&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      <Rule name="TextAlignment">Justify</Rule>
+    </TextCell>
+    <GraphCell style="Graph" closed="false">
+      <Input>connector HeatPort
+   Modelica.SIunits.Temp_K T "Temperature in [K]";
+   flow Modelica.SIunits.HeatFlux q "Heat flux";
+end HeatPort;</Input>
+      <Output>{HeatPort}</Output>
+    </GraphCell>
+    <GraphCell style="Graph" closed="false">
+      <Input>model Component
+   HeatPort heat;
+end Component;</Input>
+      <Output>{Component}</Output>
+    </GraphCell>
+    <GraphCell style="Graph" closed="false">
+      <Input>model TwoComponents
+  Component compvec[2];
+  HeatPort heat;
+equation
+  connect(compvec[1].heat, heat);
+  connect(compvec[2].heat, heat);
+end TwoComponents;</Input>
+      <Output>{TwoComponents}</Output>
+    </GraphCell>
+    <GraphCell style="Graph" closed="false">
+      <Input>model CircuitBoard
+   HeatPort envHeat;
+   Component comp;
+   TwoComponents compTwo;
+equation
+   connect(comp.heat, envHeat);
+   connect(compTwo.heat, envHeat);
+end CircuitBoard;</Input>
+      <Output>{CircuitBoard}</Output>
+    </GraphCell>
+  </GroupCell>
+</Notebook>

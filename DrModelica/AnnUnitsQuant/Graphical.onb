@@ -44,10 +44,10 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Electrical units&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell style="Graph" closed="true">
+          <GraphCell style="Graph" closed="false">
             <Input>type Voltage         = ElectricPotential;
 type Current         = ElectricCurrent;</Input>
-            <Output></Output>
+            <Output>{Voltage,Current}</Output>
           </GraphCell>
         </GroupCell>
         <GroupCell closed="false">
@@ -156,6 +156,8 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
@@ -170,6 +172,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
@@ -221,6 +225,8 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
@@ -238,6 +244,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
@@ -271,9 +279,9 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The following predefined graphical elements are used as graphical annotation elements including annotation attributes when defining the appearance of class icons. The &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Line&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> graphical element can also be used for connection lines.&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-weight:600; color:#000000;">&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell style="Graph" closed="true">
+          <GraphCell style="Graph" closed="false">
             <Input>record Line = Route;</Input>
-            <Output></Output>
+            <Output>{Line}</Output>
           </GraphCell>
           <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -284,11 +292,13 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell style="Graph" closed="true">
+          <GraphCell style="Graph" closed="false">
             <Input>record Polygon = Route;</Input>
-            <Output></Output>
+            <Output>{Polygon}</Output>
           </GraphCell>
           <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -299,14 +309,16 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell style="Graph" closed="true">
+          <GraphCell style="Graph" closed="false">
             <Input>record GraphicItem
   Extent extent;
   Style style;
 end GraphicItem;</Input>
-            <Output></Output>
+            <Output>{GraphicItem}</Output>
           </GraphCell>
           <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -317,11 +329,13 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell style="Graph" closed="true">
+          <GraphCell style="Graph" closed="false">
             <Input>record Rectangle = GraphicItem;</Input>
-            <Output></Output>
+            <Output>{Rectangle}</Output>
           </GraphCell>
           <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -332,11 +346,13 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell style="Graph" closed="true">
+          <GraphCell style="Graph" closed="false">
             <Input>record Ellipse = GraphicItem;</Input>
-            <Output></Output>
+            <Output>{Ellipse}</Output>
           </GraphCell>
           <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -347,14 +363,16 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell style="Graph" closed="true">
+          <GraphCell style="Graph" closed="false">
             <Input>record Text
   extends GraphicItem;
   String string;
 end Text;</Input>
-            <Output></Output>
+            <Output>{Text}</Output>
           </GraphCell>
           <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -365,14 +383,16 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell style="Graph" closed="true">
+          <GraphCell style="Graph" closed="false">
             <Input>record BitMap
   extends GraphicItem;
   String URL;        // Name of Bitmap file
 end BitMap;</Input>
-            <Output></Output>
+            <Output>{BitMap}</Output>
           </GraphCell>
         </GroupCell>
         <GroupCell closed="false">
@@ -396,14 +416,14 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The choices annotation is applicable to both replaceable and nonreplaceable elements. For example, consider the following Integer type called &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">KindOfController&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> used to represent a choice of controller in the modeling process. This choice is made from the following enumeration of three recommended alternatives:&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell style="Graph" closed="true">
+          <GraphCell style="Graph" closed="false">
             <Input>type KindOfController = Integer(min = 1,max = 3)
    annotation(choices(
                 choice = 1 "P",
                 choice = 2 "PI",
                 choice = 3 "PID"));
 </Input>
-            <Output></Output>
+            <Output>{KindOfController}</Output>
           </GraphCell>
           <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -415,12 +435,12 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />Assume that &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">KindOfController&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is used in a model A as below:&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell style="Graph" closed="true">
+          <GraphCell style="Graph" closed="false">
             <Input>model A
   parameter KindOfController x;
 end A;
 </Input>
-            <Output></Output>
+            <Output>{A}</Output>
           </GraphCell>
           <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -432,11 +452,11 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />If you interactively choose the third alternative from the menu this corresponds to giving the default value 3 for the instantiated variable &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">x&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> in the following code for an instance &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">a2&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> of the model &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">A&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">:&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell style="Graph" closed="true">
+          <GraphCell style="Graph" closed="false">
             <Input>class AInst
 A a2(x=3 "PID");
 end AInst;</Input>
-            <Output></Output>
+            <Output>{AInst}</Output>
           </GraphCell>
         </GroupCell>
         <GroupCell closed="false">
@@ -472,7 +492,7 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Resistor&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell style="Graph" closed="true">
+          <GraphCell style="Graph" closed="false">
             <Input>model Resistor
   Pin p annotation(extent = [-110, -10, -90, 10], style(fillPattern = 1));
   Pin n annotation(extent = [110, -10, 90, 10]);
@@ -488,7 +508,7 @@ public
     Line(points = [70, 0; 90, 0])
     ));
 end Resistor;        </Input>
-            <Output></Output>
+            <Output>{Resistor}</Output>
           </GraphCell>
         </GroupCell>
         <GroupCell closed="false">
@@ -502,7 +522,7 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">MyResistor&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell style="Graph" closed="true">
+          <GraphCell style="Graph" closed="false">
             <Input>class ResistorAnnotation
 replaceable model MyResistor = Resistor
   annotation(choices(
@@ -510,7 +530,7 @@ replaceable model MyResistor = Resistor
       choice(redeclare model MyResistor = lib2.Resistor2 "Resistor 2")));
 end ResistorAnnotation;
 </Input>
-            <Output></Output>
+            <Output>{ResistorAnnotation}</Output>
           </GraphCell>
         </GroupCell>
         <GroupCell closed="false">
@@ -534,7 +554,7 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">If the user would choose the first alternative, the following code might be produced if &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">MyResistor&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is part of the class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">MyCircuit&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and the chosen name of the instantiated component is &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">x&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell style="Graph" closed="true">
+          <GraphCell style="Graph" closed="false">
             <Input>model MyCircuit
 
   model MyResistorModel
@@ -551,7 +571,7 @@ p, li { white-space: pre-wrap; }
   // ...
 
 end MyCircuit;</Input>
-            <Output></Output>
+            <Output>{MyCircuit}</Output>
           </GraphCell>
           <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -562,13 +582,15 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell style="Graph" closed="true">
+          <GraphCell style="Graph" closed="false">
             <Input>class MyCircuitInst
   MyCircuit x(redeclare model MyResistor = lib2.Resistor);
 end MyCircuitInst;</Input>
-            <Output></Output>
+            <Output>{MyCircuitInst}</Output>
           </GraphCell>
         </GroupCell>
         <GroupCell closed="false">
@@ -592,7 +614,7 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Additional examples of replaceable class declarations with redeclaration choices are shown below. In the first example you can choose between a resistor and a capacitor as choices of components with two pins, and in the second example a friction function is implemented as a constant, a table, or defined as an exponentiation function depending on your choice.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell style="Graph" closed="true">
+          <GraphCell style="Graph" closed="false">
             <Input>class NewResistor
 replaceable Resistor Load(R=2)
   extends TwoPin;
@@ -601,7 +623,7 @@ replaceable Resistor Load(R=2)
           choice(redeclare Capacitor Load(L=3)       "Capacitor")));
 end NewResistor;
 </Input>
-            <Output></Output>
+            <Output>{NewResistor}</Output>
           </GraphCell>
           <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -612,9 +634,11 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell style="Graph" closed="true">
+          <GraphCell style="Graph" closed="false">
             <Input>class NewFrictionFunction
   replaceable FrictionFunction a(func = exp)
   extends TwoPin;
@@ -625,7 +649,7 @@ p, li { white-space: pre-wrap; }
      ));
 end NewFrictionFunction;
 </Input>
-            <Output></Output>
+            <Output>{NewFrictionFunction}</Output>
           </GraphCell>
         </GroupCell>
       </GroupCell>

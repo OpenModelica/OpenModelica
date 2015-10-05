@@ -57,9 +57,7 @@ p, li { white-space: pre-wrap; }
   parameter Real duplicate = 4.0;
   parameter Integer duplicate = 6;   // Error! Illegal duplicate field name.
 end IllegalDuplicate;</Input>
-          <Output>Error occured building AST
-Syntax Error
-[&lt;interactive>:2:3-2:33:writable] Error: An element with name duplicate is already declared in this scope.</Output>
+          <Output>{IllegalDuplicate}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -97,8 +95,16 @@ p, li { white-space: pre-wrap; }
           <Input>simulate(IllegalDuplicate)
 </Input>
           <Output>record SimulationResult
-    messages = "Simulation Failed. Model: IllegalDuplicate does not exist! Please load it first before simulation."
-end SimulationResult;</Output>
+    resultFile = "",
+    messages = "Failed to build model: IllegalDuplicate"
+end SimulationResult;
+OMC-ERROR:
+"[&lt;interactive>:3:3-3:34:writable] Notification: From here:
+[&lt;interactive>:2:3-2:33:writable] Error: Duplicate elements (due to inherited elements) not identical:
+  first element is:  parameter Integer duplicate = 6
+  second element is: parameter Real duplicate = 4.0
+Error: Error occurred while flattening model IllegalDuplicate
+"</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -154,9 +160,7 @@ p, li { white-space: pre-wrap; }
   Voltage Voltage;   // Error!
   Voltage voltage;   // Legal, Voltage and voltage are two different names
 end IllegalTypeAsField;</Input>
-            <Output>Error occured building AST
-Syntax Error
-[&lt;interactive>:2:3-2:18:writable] Error: Found a component with same name when looking for type Voltage</Output>
+            <Output>{IllegalTypeAsField}</Output>
           </GraphCell>
         </GroupCell>
       </GroupCell>
@@ -185,7 +189,8 @@ p, li { white-space: pre-wrap; }
           <Input>instantiateModel( IllegalTypeAsField );</Input>
           <Output>
 OMC-ERROR: 
-"Error: Class IllegalTypeAsField not found in scope &lt;TOP>.
+"[&lt;interactive>:2:3-2:18:writable] Error: Found a component with same name when looking for type Voltage.
+Error: Error occurred while flattening model IllegalTypeAsField
 "</Output>
         </GraphCell>
         <GroupCell closed="false">
@@ -223,15 +228,6 @@ end LegalVoltage;</Input>
   Real voltage(unit = \"V\");
 end LegalVoltage;
 "</Output>
-          </GraphCell>
-          <GraphCell style="Graph" closed="false">
-            <Input>simulate(LegalVoltage)</Input>
-            <Output>record SimulationResult
-    messages = "Simulation failed for model: LegalVoltage
-Error: Too few equations, underdetermined system. The model has 0 equation(s) and 2 variable(s)
-Error: Internal error Transformation Module omc index Reduction Method dummyDerivative failed!
-"
-end SimulationResult;</Output>
           </GraphCell>
         </GroupCell>
       </GroupCell>

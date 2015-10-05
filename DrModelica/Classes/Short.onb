@@ -23,7 +23,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />There is a short syntax for defining classes, commonly used to introduce more informative type names for existing classes.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
       </TextCell>
       <GraphCell style="Graph" closed="false">
-        <Input>type Voltage = Real(Unit = "V");</Input>
+        <Input>class Voltage = Real(Unit = "V");</Input>
         <Output>{Voltage}</Output>
       </GraphCell>
       <TextCell style="Text">

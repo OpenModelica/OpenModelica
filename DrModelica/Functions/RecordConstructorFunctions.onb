@@ -1,0 +1,80 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <TextCell style="Title">
+      <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Record Constructor Functions&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text">
+      <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">A record constructor function is a function that creates and returns a record. For example, consider a record called Person with three fields: name, age, and children&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <GraphCell style="Graph" closed="false">
+      <Input>record Person
+  String name;
+  Integer age;
+  String[2] children;
+end Person;</Input>
+      <Output>{Person}</Output>
+    </GraphCell>
+    <GraphCell style="Graph" closed="false">
+      <Input>function Person1
+  input String name;
+  input Integer age;
+  input String[2] children;
+  output Person p;
+algorithm
+  p.name := name;
+  p.age := age;
+  p.children := children;
+end Person1;</Input>
+      <Output>{Person1}</Output>
+    </GraphCell>
+    <GraphCell style="Graph" closed="false">
+      <Input>Person1("John", 35, {"clara","Eva"})</Input>
+      <Output>record Person
+    name = "John",
+    age = 35,
+    children = {"clara","Eva"}
+end Person;</Output>
+    </GraphCell>
+    <TextCell style="Text">
+      <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Another use of record constructors is to create complex numbers, as in the example model AddComplex below. The declaration of the record Complex also gives rise to a record constructor function, which in the add function is called to create and return a value for the w output formal parameter. It is also called in the equation involving the variable c2.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <GraphCell style="Graph" closed="false">
+      <Input>model AddComplex
+   record Complex "Complex number"
+     Real re "real part";
+     Real im "imaginary part";
+   end Complex;
+   function add
+     input Complex u, v;
+     output Complex w = Complex(re = u.re+v.re, im = u.im+v.re);
+   end add;
+   Complex c1, c2;
+equation
+   c2 = add(c1, Complex(sin(time), cos(time)));
+end AddComplex;</Input>
+      <Output>{AddComplex}</Output>
+    </GraphCell>
+  </GroupCell>
+</Notebook>
