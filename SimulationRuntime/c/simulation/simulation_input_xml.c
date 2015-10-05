@@ -898,10 +898,10 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
     char *overrideLine;
     size_t n=0;
 
-	/* read override values from file */
+    /* read override values from file */
     infoStreamPrint(LOG_SOLVER, 0, "read override values from file: %s", overrideFile);
 
-	infile = fopen(overrideFile, "r");
+    infile = fopen(overrideFile, "r");
     if (0==infile) {
       throwStreamPrint(NULL, "simulation_input_xml.cpp: could not open the file given to -overrideFile=%s", overrideFile);
     }
@@ -944,7 +944,7 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
 
   if (overrideStr != NULL) {
     char *value, *p;
-	const char *strs[] = {"solver","startTime","stopTime","stepSize","tolerance","outputFormat","variableFilter"};
+    const char *strs[] = {"solver","startTime","stopTime","stepSize","tolerance","outputFormat","variableFilter"};
     /* read override values */
     infoStreamPrint(LOG_SOLVER, 0, "read override values: %s", overrideStr);
     /* fix overrideStr to contain | instead of , for splitting */
