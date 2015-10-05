@@ -772,7 +772,7 @@ static inline void read_value_int(std::string s, int* res)
     *res = atoi(s.c_str());
 }
 
-static const char* trim(char *str) {
+static char* trim(char *str) {
   char *res=str,*end=str+strlen(str)-1;
   while (isspace(*res)) {
     res++;
@@ -789,20 +789,6 @@ static const char* getOverrideValue(omc_CommandLineOverrides& mOverrides, omc_Co
     mOverridesUses[name] = OMC_OVERRIDE_USED;
     return mOverrides[name].c_str();
 }
-
-#if defined(__MINGW32__) || defined(_MSC_VER)
-#if defined(_MSC_VER)
-#define ssize_t intptr_t
-#endif
-ssize_t getline(char **lineptr, size_t *n, FILE *stream)
-{
-   *lineptr = (char*)malloc(1000*sizeof(char));
-   if (fgets(*lineptr, 1000, stream) == NULL)
-     return -1;
-   *n = strlen(*lineptr);
-   return (ssize_t)*n;
-}
-#endif
 
 void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override, const char* overrideFile)
 {
@@ -822,8 +808,7 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
     /* read override values from file */
     infoStreamPrint(LOG_SOLVER, 0, "read override values from file: %s", overrideFile);
     FILE *infile = fopen(overrideFile, "r");
-    char *line=NULL;
-    const char *tline=NULL;
+    char *line=NULL, *tline=NULL, *tline2=NULL;
     char *overrideLine;
     size_t n=0;
 
@@ -833,31 +818,38 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
 
     free(overrideStr);
     fseek(infile, 0L, SEEK_END);
-    overrideLine = (char*) malloc(ftell(infile)+1);
-    overrideLine[0] = '\0';
+    n = ftell(infile);
+    line = (char*) malloc(n+1);
+    line[0] = '\0';
     fseek(infile, 0L, SEEK_SET);
+    errno = 0;
+    if (1 != fread(line, n, 1, infile)) {
+      free(line);
+      throwStreamPrint(NULL, "simulation_input_xml.cpp: could not read overrideFile %s: %s", overrideFile, strerror(errno));
+    }
+    line[n] = '\0';
+    overrideLine = (char*) malloc(n+1);
+    overrideLine[0] = '\0';
     overrideStr = overrideLine;
+    tline = line;
 
-    // get the lines
-    while (getline(&line, &n, infile) != -1) {
-      tline = trim(line);
+    /* get the lines */
+    while (0 != (tline2=strchr(tline,'\n'))) {
+      *tline2 = '\0';
+
+      tline = trim(tline);
       // if is comment //, ignore line
-      if (tline[0] == '/' && tline[1] == '/') {
-        continue;
-      }
-
-      if (*tline) {
+      if (tline[0] && tline[0] != '/' && tline[1] != '/') {
         if (overrideLine != overrideStr) {
           overrideLine[0] = ',';
           ++overrideLine;
         }
         overrideLine = strcpy(overrideLine,tline)+strlen(tline);
-        // TODO! FIXME! how sould we free the line we read?
-        // free(line);
       }
-
+      tline = tline2+1;
     }
     fclose(infile);
+    free(line);
   }
 
   if (overrideStr != NULL) {
