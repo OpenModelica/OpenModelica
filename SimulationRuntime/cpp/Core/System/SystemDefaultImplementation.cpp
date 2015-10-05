@@ -160,6 +160,11 @@ int SystemDefaultImplementation::getDimString() const
   return _dimString;
 }
 
+int SystemDefaultImplementation::getDimClock() const
+{
+  return _dimClock;
+}
+
 /// Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
 int SystemDefaultImplementation::getDimRHS() const
 {
@@ -262,6 +267,13 @@ void SystemDefaultImplementation::getString(string* z)
 
 };
 
+void SystemDefaultImplementation::getClock(bool* z)
+{
+  for(int i = _dimTimeEvent - _dimClock; i < _dimTimeEvent; i++) {
+    z[i] = _time_conditions[i];
+  }
+}
+
 void SystemDefaultImplementation::getContinuousStates(double* z)
 {
   std::copy(__z ,__z + _dimContinuousStates, z);
@@ -355,6 +367,13 @@ void SystemDefaultImplementation::setReal(const double* z)
   }
 };
 
+void SystemDefaultImplementation::setClock(const bool* z)
+{
+  for(int i = _dimTimeEvent - _dimClock; i < _dimTimeEvent; i++) {
+    _time_conditions[i] = z[i];
+  }
+}
+
 void SystemDefaultImplementation::setContinuousStates(const double* z)
 {
   std::copy(z ,z + _dimContinuousStates,__z);
@@ -378,7 +397,7 @@ void SystemDefaultImplementation::setRHS(const double* f)
 /// Provide the right hand side (according to the index)
 void SystemDefaultImplementation::getRHS(double* f)
 {
-std:copy(__zDot, __zDot+_dimRHS, f);
+  std::copy(__zDot, __zDot+_dimRHS, f);
   //     for(int i=0; i<_dimRHS; ++i)
   //      f[i] = __zDot[i];
 };

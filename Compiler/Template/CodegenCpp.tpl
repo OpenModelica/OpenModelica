@@ -3904,8 +3904,9 @@ match simCode
       //Number of equations
       <%dimension1(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
       _dimZeroFunc = <%zeroCrossLength(simCode)%>;
+      _dimClock = <%listLength(clockedPartitions)%>;
       // simplified treatment of clocks in model as time events
-      _dimTimeEvent = <%timeEventLength(simCode)%> + <%listLength(clockedPartitions)%>;
+      _dimTimeEvent = <%timeEventLength(simCode)%> + _dimClock;
       //Number of residues
        _event_handling= shared_ptr<EventHandling>(new EventHandling());
        initializeAlgloopSolverVariables(); //if we do not initialize it here, we get a segfault in the destructor if initialization of Solver or OMFactory has failed

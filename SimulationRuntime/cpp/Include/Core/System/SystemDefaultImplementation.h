@@ -61,6 +61,9 @@ public:
   /// Provide number (dimension) of string variables
   virtual int getDimString() const;
 
+  /// Provide number (dimension) of clocks
+  virtual int getDimClock() const;
+
   /// Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
   virtual int getDimRHS() const;
 
@@ -76,8 +79,11 @@ public:
   /// Provide real variables
   virtual void getReal(double* z);
 
-  /// Provide real variables
+  /// Provide string variables
   virtual void getString(std::string* z);
+
+  /// Provide clocks
+  virtual void getClock(bool* z);
 
   /// Provide the right hand side
   virtual void getRHS(double* f);
@@ -96,8 +102,11 @@ public:
   /// Provide real variables
   virtual void setReal(const double* z);
 
-  /// Provide real variables
+  /// Provide string variables
   virtual void setString(const std::string* z);
+
+  /// Provide clocks
+  virtual void setClock(const bool* z);
 
   /// Provide the right hand side
   virtual void setRHS(const double* f);
@@ -152,6 +161,7 @@ protected:
         _dimString,           ///< Anzahl der stringwertigen Variablen
         _dimZeroFunc,         ///< Dimension (=Anzahl) Nullstellenfunktion
         _dimTimeEvent,        ///< Dimension (=Anzahl) Time event (start zeit und frequenz)
+        _dimClock,            ///< Dimension (=Anzahl) Clocks (active)
         _dimAE;               ///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
 
     int
