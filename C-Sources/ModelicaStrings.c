@@ -15,16 +15,20 @@
 
 
    Release Notes:
+      Oct. 05, 2015: by Thomas Beutlich, ITI GmbH.
+                     Added function ModelicaStrings_hashString from ModelicaRandom.c
+                     of https://github.com/DLR-SR/Noise (ticket #1662)
+
       Mar. 26, 2013: by Martin Otter, DLR.
-                     Introduced three (int) casts to avoid warning messages (ticket #1032).
+                     Introduced three (int) casts to avoid warning messages (ticket #1032)
 
       Jan. 11, 2013: by Jesper Mattsson, Modelon AB.
-                     Made code C89 compatible.
+                     Made code C89 compatible
 
       Jan.  5, 2013: by Martin Otter, DLR.
-                     Removed "static" declarations from the Modelica interface functions.
+                     Removed "static" declarations from the Modelica interface functions
 
-      Sep. 24, 2004: by Martin Otter.
+      Sep. 24, 2004: by Martin Otter, DLR.
                      Final cleaning up of the code
 
       Sep.  9, 2004: by Dag Bruck, Dynasim AB.
@@ -37,7 +41,7 @@
       Jan.  7, 2002: by Martin Otter, DLR.
                      Implemented a first version
 
-   Copyright (C) 2002-2013, Modelica Association and DLR.
+   Copyright (C) 2002-2015, Modelica Association and DLR.
 
    The content of this file is free software; it can be redistributed
    and/or modified under the terms of the Modelica License 2, see the
@@ -93,13 +97,11 @@ MODELICA_EXPORT const char* ModelicaStrings_substring(const char* string, int st
      return substring;
 }
 
-
 MODELICA_EXPORT int ModelicaStrings_length(const char* string)
 /* Returns the number of characters "string" */
 {
      return (int) strlen(string);
 }
-
 
 MODELICA_EXPORT int ModelicaStrings_compare(const char* string1, const char* string2, int caseSensitive)
 /* compares two strings, optionally ignoring case */
@@ -199,7 +201,6 @@ static int MatchUnsignedInteger(const char* string, int start)
 }
 
 /* --------------- end of utility functions used in scanXXX functions ----------- */
-
 
 MODELICA_EXPORT void ModelicaStrings_scanIdentifier(const char* string, int startIndex, int* nextIndex, const char** identifier)
 {
@@ -412,7 +413,6 @@ Modelica_ERROR:
     return;
 }
 
-
 MODELICA_EXPORT void ModelicaStrings_scanString(const char* string, int startIndex,
                                 int* nextIndex, const char** result)
 {
@@ -451,4 +451,35 @@ Modelica_ERROR:
     *result = ModelicaAllocateString(0);
     *nextIndex = startIndex;
     return;
+}
+
+MODELICA_EXPORT int ModelicaStrings_hashString(const char* str) {
+    /* Compute an unsigned int hash code from a character string
+     *
+     * Author: Arash Partow - 2002                                            *
+     * URL: http://www.partow.net                                             *
+     * URL: http://www.partow.net/programming/hashfunctions/index.html        *
+     *                                                                        *
+     * Copyright notice:                                                      *
+     * Free use of the General Purpose Hash Function Algorithms Library is    *
+     * permitted under the guidelines and in accordance with the most current *
+     * version of the Common Public License.                                  *
+     * http://www.opensource.org/licenses/cpl1.0.php                          */
+
+    unsigned int hash = 0xAAAAAAAA;
+    unsigned int i    = 0;
+    unsigned int len  = strlen(str);
+
+    union hash_tag {
+        unsigned int iu;
+        int          is;
+    } h;
+
+    for(i = 0; i < len; str++, i++) {
+        hash ^= ((i & 1) == 0) ? (  (hash <<  7) ^  (*str) * (hash >> 3)) :
+                                 (~((hash << 11) + ((*str) ^ (hash >> 5))));
+    }
+
+    h.iu = hash;
+    return h.is;
 }

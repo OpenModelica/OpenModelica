@@ -23,6 +23,10 @@
 
 
     Release Notes:
+      Oct. 05, 2015, by Thomas Beutlich, ITI GmbH.
+        Added functions ModelicaInternal_getpid/_getTime from ModelicaRandom.c
+        of https://github.com/DLR-SR/Noise (ticket #1662)
+
       Nov. 20, 2014, by Thomas Beutlich, ITI GmbH.
         Fixed platform dependency of ModelicaInternal_readLine/_readFile (ticket #1580)
 
@@ -63,8 +67,7 @@
         ModelicaInternal_getFullPath
 
 
-    Copyright (C) 2002-2014, Modelica Association and DLR.
-
+   Copyright (C) 2002-2015, Modelica Association and DLR.
 
    The content of this file is free software; it can be redistributed
    and/or modified under the terms of the Modelica License 2, see the
@@ -148,20 +151,27 @@ MODELICA_EXPORT void ModelicaInternal_setenv(const char* name, const char* value
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <time.h>
 
 #if defined(__WATCOMC__)
   #include <direct.h>
   #include <sys/types.h>
   #include <sys/stat.h>
+  #include <sys/timeb.h>
+  #include <process.h>
 #elif defined(__BORLANDC__)
   #include <direct.h>
   #include <sys/types.h>
   #include <sys/stat.h>
+  #include <sys/timeb.h>
+  #include <process.h>
   #include <dirent.h>
 #elif defined(_WIN32)
   #include <direct.h>
   #include <sys/types.h>
   #include <sys/stat.h>
+  #include <sys/timeb.h>
+  #include <process.h>
 
   #if defined(__MINGW32__) || defined(__CYGWIN__) /* MinGW and Cygwin have dirent.h */
     #include <dirent.h>
@@ -174,6 +184,7 @@ MODELICA_EXPORT void ModelicaInternal_setenv(const char* name, const char* value
   #include <unistd.h>
   #include <sys/types.h>
   #include <sys/stat.h>
+  #include <sys/time.h>
 #endif
 
 #if PATH_MAX > 1024
@@ -219,11 +230,9 @@ static void ModelicaConvertFromUnixDirectorySeparator(char* string) {
 
 MODELICA_EXPORT void ModelicaInternal_mkdir(const char* directoryName) {
   /* Create directory */
-#if defined(__WATCOMC__)
+#if defined(__WATCOMC__) || defined(__LCC__)
     int result = mkdir(directoryName);
-#elif defined(__BORLANDC__)
-    int result = _mkdir(directoryName);
-#elif defined(_WIN32)
+#elif defined(__BORLANDC__) || defined(_WIN32)
     int result = _mkdir(directoryName);
 #elif defined(_POSIX_) || defined(__GNUC__)
     int result = mkdir(directoryName, S_IRUSR | S_IWUSR | S_IXUSR);
@@ -240,14 +249,10 @@ MODELICA_EXPORT void ModelicaInternal_mkdir(const char* directoryName) {
 
 MODELICA_EXPORT void ModelicaInternal_rmdir(const char* directoryName) {
   /* Remove directory */
-#if defined(__WATCOMC__)
+#if defined(__WATCOMC__) || defined(__LCC__) || defined(_POSIX_) || defined(__GNUC__)
     int result = rmdir(directoryName);
-#elif defined(__BORLANDC__)
+#elif defined(__BORLANDC__) || defined(_WIN32)
     int result = _rmdir(directoryName);
-#elif defined(_WIN32)
-    int result = _rmdir(directoryName);
-#elif defined(_POSIX_) || defined(__GNUC__)
-    int result = rmdir(directoryName);
 #else
     int result = -1;
     ModelicaNotExistError("ModelicaInternal_rmdir");
@@ -570,7 +575,7 @@ MODELICA_EXPORT const char* ModelicaInternal_temporaryFileName(void) {
 
 /* Improved for caching of the open files */
 typedef struct FileCache {
-    char* fileName; /* Key = File name*/
+    char* fileName; /* Key = File name */
     FILE* fp /* File pointer */;
     int line;
     UT_hash_handle hh; /* Hashable structure */
@@ -579,10 +584,29 @@ typedef struct FileCache {
 static FileCache* fileCache = NULL;
 #if defined(_POSIX_)
 #include <pthread.h>
+#if defined(G_HAS_CONSTRUCTORS)
+static pthread_mutex_t m;
+G_DEFINE_CONSTRUCTOR(initializeMutex)
+static void initializeMutex(void) {
+    if (pthread_mutex_init(&m, NULL) != 0) {
+    	ModelicaError("Initialization of mutex failed\n");
+    }
+}
+G_DEFINE_DESTRUCTOR(destroyMutex)
+static void destroyMutex(void) {
+    if (pthread_mutex_destroy(&m) != 0) {
+    	ModelicaError("Destruction of mutex failed\n");
+    }
+}
+#else
 static pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
+#endif
 #define MUTEX_LOCK() pthread_mutex_lock(&m)
 #define MUTEX_UNLOCK() pthread_mutex_unlock(&m)
 #elif defined(_WIN32) && defined(G_HAS_CONSTRUCTORS)
+#if !defined(WIN32_LEAN_AND_MEAN)
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <Windows.h>
 static CRITICAL_SECTION cs;
 #ifdef G_DEFINE_CONSTRUCTOR_NEEDS_PRAGMA
@@ -606,19 +630,19 @@ static void deleteCS(void) {
 #define MUTEX_UNLOCK()
 #endif
 
-static void CacheFileForReading(FILE* f, const char* fileName, int line) {
+static void CacheFileForReading(FILE* fp, const char* fileName, int line) {
     FileCache* fv;
     if (fileName == 0) {
         /* Do not add, close file */
-        if (f) {
-            fclose(f);
+        if (fp) {
+            fclose(fp);
         }
         return;
     }
     MUTEX_LOCK();
     HASH_FIND(hh, fileCache, fileName, (unsigned)strlen(fileName), fv);
     if (fv) {
-        fv->fp = f;
+        fv->fp = fp;
         fv->line = line;
     }
     else {
@@ -628,7 +652,7 @@ static void CacheFileForReading(FILE* f, const char* fileName, int line) {
             if (key) {
                 strcpy(key, fileName);
                 fv->fileName = key;
-                fv->fp = f;
+                fv->fp = fp;
                 fv->line = line;
                 HASH_ADD_KEYPTR(hh, fileCache, key, (unsigned)strlen(key), fv);
             }
@@ -874,7 +898,7 @@ MODELICA_EXPORT const char* ModelicaInternal_readLine(const char* fileName, int 
 
 MODELICA_EXPORT void ModelicaInternal_chdir(const char* directoryName) {
   /* Change current working directory */
-#if defined(__WATCOMC__)
+#if defined(__WATCOMC__) || defined(__LCC__)
     int result = chdir(directoryName);
 #elif defined(__BORLANDC__)
     int result = chdir(directoryName);
@@ -1003,6 +1027,60 @@ MODELICA_EXPORT void ModelicaInternal_setenv(const char* name, const char* value
 #else
     ModelicaNotExistError("ModelicaInternal_setenv");
 #endif
+}
+
+/* Low-level time and pid functions */
+/* Some parts from: http://nadeausoftware.com/articles/2012/04/c_c_tip_how_measure_elapsed_real_time_benchmarking */
+
+MODELICA_EXPORT int ModelicaInternal_getpid(void) {
+#if defined(_POSIX_) || defined(__GNUC__) || defined(__WATCOMC__) || defined(__BORLANDC__) || defined(__LCC__)
+    return getpid();
+#else
+    return _getpid();
+#endif
+}
+
+MODELICA_EXPORT void ModelicaInternal_getTime(int* ms, int* sec, int* min, int* hour, int* mday, int* mon, int* year) {
+    struct tm* tlocal;
+    time_t calendarTime;
+    int ms0;
+
+    time( &calendarTime );               /* Retrieve sec time */
+    tlocal = localtime( &calendarTime ); /* Time fields in local time zone */
+
+    /* Get millisecond resolution depending on platform */
+#if defined(_WIN32)
+    {
+#if defined(__BORLANDC__)
+        struct timeb timebuffer;
+#else
+        struct _timeb timebuffer;
+#endif
+#if defined(__BORLANDC__) || defined(__LCC__)
+        ftime( &timebuffer );                     /* Retrieve ms time */
+#else
+        _ftime( &timebuffer );                    /* Retrieve ms time */
+#endif
+        ms0 = (int)(timebuffer.millitm);          /* Convert unsigned int to int */
+        tlocal->tm_mon  = tlocal->tm_mon + 1;     /* Correct for month starting at 1 */
+        tlocal->tm_year = tlocal->tm_year + 1900; /* Correct for 4-digit year */
+    }
+#else
+    {
+        struct timeval tv;
+        gettimeofday(&tv,NULL);
+        ms0 = tv.tv_usec/1000; /* Convert microseconds to milliseconds */
+    }
+#endif
+
+    /* Do not memcpy as you do not know which sizes are in the struct */
+    *ms = ms0;
+    *sec = tlocal->tm_sec;
+    *min = tlocal->tm_min;
+    *hour = tlocal->tm_hour;
+    *mday = tlocal->tm_mday;
+    *mon = tlocal->tm_mon;
+    *year = tlocal->tm_year;
 }
 
 #endif
