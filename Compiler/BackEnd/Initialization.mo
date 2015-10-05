@@ -1099,6 +1099,7 @@ algorithm
       eqs := syst::eqs;
     else
       outRemovedEqns := listAppend(outRemovedEqns, BackendEquation.equationList(syst.orderedEqs));
+      outRemovedEqns := listAppend(outRemovedEqns, BackendEquation.equationList(syst.removedEqs));
     end if;
   end for;
   dae := BackendDAE.DAE(eqs, initDAE.shared);
