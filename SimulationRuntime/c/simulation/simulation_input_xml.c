@@ -416,12 +416,17 @@ void read_input_xml(MODEL_DATA* modelData,
     SIMULATION_INFO* simulationInfo)
 {
   omc_ModelInput mi = {0};
-  const char *filename;
+  const char *filename, *guid, *override, *overrideFile;
   FILE* file = NULL;
   XML_Parser parser = NULL;
   hash_string_long *mapAlias = NULL, *mapAliasParam = NULL;
   long *it, *itParam;
   mmc_sint_t i;
+
+  modelica_integer nxchk, nychk, npchk;
+  modelica_integer nyintchk, npintchk;
+  modelica_integer nyboolchk, npboolchk;
+  modelica_integer nystrchk, npstrchk;
 
   if(NULL == modelData->initXMLData)
   {
@@ -488,7 +493,7 @@ void read_input_xml(MODEL_DATA* modelData,
   /* first, check the modelGUID!
      TODO! FIXME! THIS SEEMS TO FAIL!
      ARE WE READING THE OLD XML FILE?? */
-  const char *guid = findHashStringStringNull(mi.md,"guid");
+  guid = findHashStringStringNull(mi.md,"guid");
   if (NULL==guid) {
      warningStreamPrint(LOG_STDOUT, 0, "The Model GUID: %s is not set in file: %s",
         modelData->modelGUID,
@@ -503,8 +508,8 @@ void read_input_xml(MODEL_DATA* modelData,
   }
 
   // deal with override
-  const char* override = omc_flagValue[FLAG_OVERRIDE];
-  const char* overrideFile = omc_flagValue[FLAG_OVERRIDE_FILE];
+  override = omc_flagValue[FLAG_OVERRIDE];
+  overrideFile = omc_flagValue[FLAG_OVERRIDE_FILE];
   doOverride(&mi, modelData, override, overrideFile);
 
   /* read all the DefaultExperiment values */
@@ -534,11 +539,6 @@ void read_input_xml(MODEL_DATA* modelData,
   read_value_string(findHashStringString(mi.md,"OPENMODELICAHOME"), &simulationInfo->OPENMODELICAHOME);
   infoStreamPrint(LOG_SIMULATION, 0, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
   messageClose(LOG_SIMULATION);
-
-  modelica_integer nxchk, nychk, npchk;
-  modelica_integer nyintchk, npintchk;
-  modelica_integer nyboolchk, npboolchk;
-  modelica_integer nystrchk, npstrchk;
 
   read_value_long(findHashStringString(mi.md,"numberOfContinuousStates"),          &nxchk, 0);
   read_value_long(findHashStringString(mi.md,"numberOfRealAlgebraicVariables"),    &nychk, 0);
@@ -623,9 +623,9 @@ void read_input_xml(MODEL_DATA* modelData,
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for real alias vars");
   for(i=0; i<modelData->nAliasReal; i++)
   {
+    const char *aliasTmp;
     read_var_info(*findHashLongVar(mi.rAli,i), &modelData->realAlias[i].info);
 
-    const char *aliasTmp;
     read_value_string(findHashStringStringNull(*findHashLongVar(mi.rAli,i),"alias"), &aliasTmp);
     if (0 == strcmp(aliasTmp,"negatedAlias")) {
       modelData->realAlias[i].negate = 1;
@@ -668,9 +668,9 @@ void read_input_xml(MODEL_DATA* modelData,
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for integer alias vars");
   for(i=0; i<modelData->nAliasInteger; i++)
   {
+    const char *aliasTmp;
     read_var_info(*findHashLongVar(mi.iAli,i), &modelData->integerAlias[i].info);
 
-    const char *aliasTmp;
     read_value_string(findHashStringStringNull(*findHashLongVar(mi.iAli,i),"alias"), &aliasTmp);
     if (0 == strcmp(aliasTmp,"negatedAlias")) {
       modelData->integerAlias[i].negate = 1;
@@ -711,9 +711,9 @@ void read_input_xml(MODEL_DATA* modelData,
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for boolean alias vars");
   for(i=0; i<modelData->nAliasBoolean; i++)
   {
+    const char *aliasTmp;
     read_var_info(*findHashLongVar(mi.bAli,i), &modelData->booleanAlias[i].info);
 
-    const char *aliasTmp;
     read_value_string(findHashStringString(*findHashLongVar(mi.bAli,i),"alias"), &aliasTmp);
     if  (0 == strcmp(aliasTmp,"negatedAlias")) {
       modelData->booleanAlias[i].negate = 1;
@@ -754,9 +754,9 @@ void read_input_xml(MODEL_DATA* modelData,
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for string alias vars");
   for(i=0; i<modelData->nAliasString; i++)
   {
+    const char *aliasTmp;
     read_var_info(*findHashLongVar(mi.sAli,i), &modelData->stringAlias[i].info);
 
-    const char *aliasTmp;
     read_value_string(findHashStringString(*findHashLongVar(mi.sAli,i),"alias"), &aliasTmp);
     if (0 == strcmp(aliasTmp,"negatedAlias")) {
       modelData->stringAlias[i].negate = 1;
@@ -893,13 +893,15 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
   }
 
   if(overrideFile != NULL) {
-    /* read override values from file */
-    infoStreamPrint(LOG_SOLVER, 0, "read override values from file: %s", overrideFile);
-    FILE *infile = fopen(overrideFile, "r");
+    FILE *infile = NULL;
     char *line=NULL, *tline=NULL, *tline2=NULL;
     char *overrideLine;
     size_t n=0;
 
+	/* read override values from file */
+    infoStreamPrint(LOG_SOLVER, 0, "read override values from file: %s", overrideFile);
+
+	infile = fopen(overrideFile, "r");
     if (0==infile) {
       throwStreamPrint(NULL, "simulation_input_xml.cpp: could not open the file given to -overrideFile=%s", overrideFile);
     }
@@ -941,12 +943,13 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
   }
 
   if (overrideStr != NULL) {
-    char *value;
+    char *value, *p;
+	const char *strs[] = {"solver","startTime","stopTime","stepSize","tolerance","outputFormat","variableFilter"};
     /* read override values */
     infoStreamPrint(LOG_SOLVER, 0, "read override values: %s", overrideStr);
     /* fix overrideStr to contain | instead of , for splitting */
     parseVariableStr(overrideStr);
-    char *p = strtok(overrideStr, "!");
+    p = strtok(overrideStr, "!");
 
     while (p) {
       // split it key = value => map[key]=value
@@ -970,7 +973,6 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
     free(overrideStr);
 
     // now we have all overrides in mOverrides, override mi now
-    const char *strs[] = {"solver","startTime","stopTime","stepSize","tolerance","outputFormat","variableFilter"};
     for (i=0; i<sizeof(strs)/sizeof(char*); i++) {
       if (findHashStringStringNull(mOverrides, strs[i])) {
         addHashStringString(&mi->de, strs[i], getOverrideValue(mOverrides, &mOverridesUses, strs[i]));
