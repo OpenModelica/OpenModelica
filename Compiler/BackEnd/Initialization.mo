@@ -173,7 +173,7 @@ algorithm
     // initdae := BackendDAE.DAE({initsyst}, shared);
 
     // fix over- and under-constrained subsystems
-    (initdae, dumpVars2, removedEqns) := analyzeInitialSystem(initdae, dae, initVars);
+    (initdae, dumpVars2, removedEqns) := analyzeInitialSystem(initdae, initVars);
     dumpVars := listAppend(dumpVars, dumpVars2);
     SimCodeFunctionUtil.execStat("analyzeInitialSystem (initialization)");
 
@@ -1080,8 +1080,7 @@ end preBalanceInitialSystem2;
 
 protected function analyzeInitialSystem "author: lochel
   This function fixes discrete and state variables to balance the initial equation system."
-  input BackendDAE.BackendDAE initDAE;
-  input BackendDAE.BackendDAE inDAE "original DAE";
+  input BackendDAE.BackendDAE inInitDAE;
   input BackendDAE.Variables inInitVars;
   output BackendDAE.BackendDAE outDAE;
   output list<BackendDAE.Var> outDumpVars;
@@ -1094,7 +1093,7 @@ algorithm
   // filter empty systems
   eqs := {};
   outRemovedEqns := {};
-  for syst in initDAE.eqs loop
+  for syst in inInitDAE.eqs loop
     if BackendDAEUtil.nonEmptySystem(syst) then
       eqs := syst::eqs;
     else
@@ -1102,9 +1101,9 @@ algorithm
       outRemovedEqns := listAppend(outRemovedEqns, BackendEquation.equationList(syst.removedEqs));
     end if;
   end for;
-  dae := BackendDAE.DAE(eqs, initDAE.shared);
+  dae := BackendDAE.DAE(eqs, inInitDAE.shared);
 
-  (outDAE, (_, _, outDumpVars, outRemovedEqns)) := BackendDAEUtil.mapEqSystemAndFold(dae, fixInitialSystem, (inDAE, inInitVars, {}, outRemovedEqns));
+  (outDAE, (_, outDumpVars, outRemovedEqns)) := BackendDAEUtil.mapEqSystemAndFold(dae, fixInitialSystem, (inInitVars, {}, outRemovedEqns));
 end analyzeInitialSystem;
 
 protected function getInitEqIndex
@@ -1124,12 +1123,11 @@ protected function fixInitialSystem "author: lochel
   This function handles under-, over-, and mixed-determined systems with a given index."
   input BackendDAE.EqSystem inEqSystem;
   input BackendDAE.Shared inShared;
-  input tuple<BackendDAE.BackendDAE, BackendDAE.Variables, list<BackendDAE.Var>, list<BackendDAE.Equation>> inTpl;
+  input tuple<BackendDAE.Variables, list<BackendDAE.Var>, list<BackendDAE.Equation>> inTpl;
   output BackendDAE.EqSystem outEqSystem;
   output BackendDAE.Shared outShared = inShared;
-  output tuple<BackendDAE.BackendDAE, BackendDAE.Variables, list<BackendDAE.Var>, list<BackendDAE.Equation>> outTpl;
+  output tuple<BackendDAE.Variables, list<BackendDAE.Var>, list<BackendDAE.Equation>> outTpl;
 protected
-  BackendDAE.BackendDAE inDAE;
   BackendDAE.EquationArray eqns2;
   BackendDAE.Variables initVars;
   list<BackendDAE.Var> dumpVars, dumpVars2;
@@ -1150,7 +1148,7 @@ algorithm
   for index in 0:maxMixedDeterminedIndex loop
     //print("index-" + intString(index) + " start\n");
 
-    ((inDAE, initVars, dumpVars, removedEqns)) := inTpl;
+    ((initVars, dumpVars, removedEqns)) := inTpl;
 
     // nVars = nEqns
     nVars := BackendVariable.varsSize(inEqSystem.orderedVars);
@@ -1236,7 +1234,7 @@ algorithm
 
       outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, eqns2);
       //print("index-" + intString(index) + " ende\n");
-      outTpl := ((inDAE, initVars, dumpVars, removedEqns));
+      outTpl := ((initVars, dumpVars, removedEqns));
       return;
     end if;
     //print("index-" + intString(index) + " ende\n");
