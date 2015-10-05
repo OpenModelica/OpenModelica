@@ -8769,7 +8769,7 @@ algorithm
         //get N from the domain and remove domain from the subModLst:
         (N, subModLst, SOME(dcr)) = List.fold30(subModLst,domainSearchFun,-1,{},NONE());
         if (N == -1) then Error.addSourceMessageAndFail(Error.PDEModelica_ERROR,
-            {"Domain of the field variable '" + name + "' not found."}, info);
+            {"Domain of the field variable '", name, "' not found."}, info);
         end if;
         subModLst = listReverse(subModLst);
         subModLst = List.map(subModLst,addEach);
@@ -9047,7 +9047,7 @@ end newEQFun;
        equation
        if not List.isMemberOnTrue(fieldCr,fieldLst,Absyn.crefEqual) then
          failVar = true;
-         Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{stringAppend(stringAppend("Field variable ",  name), " has different domain than the equation.")}, info);
+         Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Field variable ",  name, " has different domain than the equation."}, info);
        end if;
        then
           Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i))::subscripts));
@@ -9056,7 +9056,7 @@ end newEQFun;
        equation
          if not List.isMemberOnTrue(fieldCr,fieldLst,Absyn.crefEqual) then
            failVar = true;
-           Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{stringAppend(stringAppend("Field variable ",  name), " has different domain than the equation.")}, info);
+           Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Field variable ",  name, " has different domain than the equation or is not a field." }, info);
          end if;
          skip = true;
        then
@@ -9073,20 +9073,19 @@ end newEQFun;
                    Absyn.CREF(Absyn.CREF_QUAL("omega"/*fieldDomainName*/,{},Absyn.CREF_IDENT("dx",{})))
            )
          );
-/*     case Absyn.CALL(Absyn.CREF_IDENT("pder",subscripts),Absyn.FUNCTIONARGS({Absyn.CREF(_),Absyn.CREF(Absyn.CREF_IDENT(name="x"))},_))
-       //pder differentiation of non-field
-       equation
-         Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Partial derivative of variable that is not a field."}, info);
-       then
-         inExp;
      case Absyn.CALL(Absyn.CREF_IDENT("pder",subscripts),Absyn.FUNCTIONARGS({Absyn.CREF(_),_},_))
-       //pder with differentiating wrt wrong equation
+       //pder with differentiating wrt wrong variable
        equation
-         Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"You are trying to differentiate with respect to variable that is not coordinate."}, info);
+         Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"You are differentiating with respect to variable that is not a coordinate."}, info);
        then
-          inExp;*/
-       else
          inExp;
+     case Absyn.CALL(Absyn.CREF_IDENT("pder",subscripts),Absyn.FUNCTIONARGS({_,_},_))
+       equation
+         Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Unsupported partial derivative."}, info);
+       then
+         inExp;
+     else
+       inExp;
    end matchcontinue;
    if failVar then
      fail();
