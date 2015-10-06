@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 BouncingBall.mos \
+BouncingBallSourceFMU.mos \
 EnumerationTest.mos \
 HelloFMIWorld.mos \
 InOutTest.mos \
