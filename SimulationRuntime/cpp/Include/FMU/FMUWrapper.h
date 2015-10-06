@@ -81,7 +81,15 @@ public:
       //LOGGER_WRITE("Set real values",LC_OTHER,LL_DEBUG);
       //for(size_t i = 0; i < nvr; i++)
       //  LOGGER_WRITE("  Set real value " + boost::lexical_cast<std::string>(vr[i]) + " to " + boost::lexical_cast<std::string>(value[i]),LC_OTHER,LL_DEBUG);
-      _model->setReal(vr, nvr, value);
+      if(_model->initial())
+      {
+        double *realVars = _model->getSimVars()->getRealVarsVector();
+        for(size_t i = 0; i < nvr; i++)
+          _model->setRealStartValue(realVars[vr[i]],true);
+      }
+      else
+        _model->setReal(vr, nvr, value);
+
       _need_update = true;
       //LOGGER_WRITE("Set real values finished",LC_OTHER,LL_DEBUG);
       return fmiOK;
@@ -92,7 +100,15 @@ public:
       //LOGGER_WRITE("Set int values",LC_OTHER,LL_DEBUG);
       //for(size_t i = 0; i < nvr; i++)
       //  LOGGER_WRITE("  Set int value " + boost::lexical_cast<std::string>(vr[i]) + " to " + boost::lexical_cast<std::string>(value[i]),LC_OTHER,LL_DEBUG);
-      _model->setInteger(vr, nvr, value);
+      if(_model->initial())
+      {
+        int *intVars = _model->getSimVars()->getIntVarsVector();
+        for(size_t i = 0; i < nvr; i++)
+          _model->setIntStartValue(intVars[vr[i]],true);
+      }
+      else
+        _model->setInteger(vr, nvr, value);
+
       _need_update = true;
       //LOGGER_WRITE("Set int values finished",LC_OTHER,LL_DEBUG);
       return fmiOK;
@@ -101,12 +117,22 @@ public:
     virtual fmiStatus setBoolean(const fmiValueReference vr[], size_t nvr, const fmiBoolean value[])
     {
       //LOGGER_WRITE("Set bool values",LC_OTHER,LL_DEBUG);
-      int val;
-      for (size_t i = 0; i < nvr; i++) {
-        val = value[i];
-        //LOGGER_WRITE("  Set bool value " + boost::lexical_cast<std::string>(vr[i]) + " to " + boost::lexical_cast<std::string>(val),LC_OTHER,LL_DEBUG);
-        _model->setBoolean(vr + i, 1, &val);
+      if(_model->initial())
+      {
+        bool *boolVars = _model->getSimVars()->getBoolVarsVector();
+        for(size_t i = 0; i < nvr; i++)
+          _model->setBoolStartValue(boolVars[vr[i]],true);
       }
+      else
+      {
+        int val;
+        for(size_t i = 0; i < nvr; i++)
+        {
+          val = value[i];
+          _model->setBoolean(vr + i, 1, &val);
+        }
+      }
+
       _need_update = true;
       //LOGGER_WRITE("Set bool values finished",LC_OTHER,LL_DEBUG);
       return fmiOK;
