@@ -1005,7 +1005,7 @@ constant ConfigFlag CORBA_OBJECT_REFERENCE_FILE_PATH = CONFIG_FLAG(50, "corbaObj
 
 constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(51, "hpcomScheduler",
   NONE(), EXTERNAL(), STRING_FLAG("level"), NONE(),
-  Util.gettext("Sets123 the scheduler for task graph scheduling (list | listr | level | levelfix | ext | mcp | taskdep | tds | bls | rand | none). Default: level."));
+  Util.gettext("Sets the scheduler for task graph scheduling (list | listr | level | levelfix | ext | mcp | taskdep | tds | bls | rand | none). Default: level."));
 
 constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(52, "hpcomCode",
   NONE(), EXTERNAL(), STRING_FLAG("openmp"), NONE(),
@@ -1124,7 +1124,7 @@ constant ConfigFlag SIMPLIFY_LOOPS = CONFIG_FLAG(73, "simplifyLoops",
     ("1", Util.gettext("special modification of residual expressions")),
     ("2", Util.gettext("special modification of residual expressions with helper variables"))
     })),
-    Util.gettext("simplify algebraic loops"));
+    Util.gettext("Simplify algebraic loops."));
 
 constant ConfigFlag RTEARING = CONFIG_FLAG(74, "recursiveTearing",
   NONE(), EXTERNAL(), INT_FLAG(0),
@@ -1133,7 +1133,7 @@ constant ConfigFlag RTEARING = CONFIG_FLAG(74, "recursiveTearing",
     ("1", Util.gettext("linear tearing set of size 1")),
     ("2", Util.gettext("linear tearing"))
     })),
-    Util.gettext("inline and repeat tearing."));
+    Util.gettext("Inline and repeat tearing."));
 
 constant ConfigFlag FLOW_THRESHOLD = CONFIG_FLAG(75, "flowThreshold",
   NONE(), EXTERNAL(), REAL_FLAG(1e-7), NONE(),
