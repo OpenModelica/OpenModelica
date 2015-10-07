@@ -101,7 +101,7 @@ algorithm
   try
     funcs := BackendDAEUtil.getFunctions(inShared);
     knvars := BackendDAEUtil.getknvars(inShared);
-    diffData := BackendDAE.DIFFINPUTDATA(NONE(), SOME(inVariables), SOME(knvars), SOME(inVariables), SOME({}), NONE(), NONE());
+    diffData := BackendDAE.DIFFINPUTDATA(NONE(), SOME(inVariables), SOME(knvars), SOME(inVariables), {}, {}, NONE());
     (outEquation, funcs) := differentiateEquation(inEquation, DAE.crefTime, diffData, BackendDAE.DIFFERENTIATION_TIME(), funcs);
     outShared := BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
   else
@@ -128,7 +128,7 @@ algorithm
   try
     funcs := BackendDAEUtil.getFunctions(inShared);
     knvars := BackendDAEUtil.getknvars(inShared);
-    diffData := BackendDAE.DIFFINPUTDATA(NONE(), SOME(inVariables), SOME(knvars), SOME(inVariables), SOME({}), NONE(), NONE());
+    diffData := BackendDAE.DIFFINPUTDATA(NONE(), SOME(inVariables), SOME(knvars), SOME(inVariables), {}, {}, NONE());
     (dexp, funcs) := differentiateExp(inExp, DAE.crefTime, diffData, BackendDAE.DIFFERENTIATION_TIME(), funcs, defaultMaxIter, {});
     (outExp, _) := ExpressionSimplify.simplify(dexp);
     outShared := BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
@@ -154,7 +154,6 @@ public function differentiateExpSolve
 protected
   list<DAE.Exp> fac = Expression.factors(inExp);
   DAE.Exp dexp;
-  BackendDAE.DifferentiateInputData diffData;
   DAE.FunctionTree fun;
 algorithm
   ({}, _) := List.split1OnTrue(fac, Expression.expHasCrefInIf, inCref); // check if differentiateExpSolve is allowed
@@ -167,8 +166,7 @@ algorithm
       else DAE.emptyFuncTree;
     end match;
 
-    diffData := BackendDAE.DIFFINPUTDATA(NONE(), NONE(), NONE(), NONE(), SOME({}), NONE(), NONE());
-    (dexp, _) := differentiateExp(inExp, inCref, diffData, BackendDAE.SIMPLE_DIFFERENTIATION(), fun, defaultMaxIter, {});
+    (dexp, _) := differentiateExp(inExp, inCref, BackendDAE.emptyInputData, BackendDAE.SIMPLE_DIFFERENTIATION(), fun, defaultMaxIter, {});
     (outExp, _) := ExpressionSimplify.simplify(dexp);
   else
     if Flags.isSet(Flags.FAILTRACE) then
@@ -196,7 +194,7 @@ algorithm
   try
     funcs := BackendDAEUtil.getFunctions(inShared);
     knvars := BackendDAEUtil.getknvars(inShared);
-    diffData := BackendDAE.DIFFINPUTDATA(NONE(), SOME(inVariables), SOME(knvars), NONE(), SOME({}), NONE(), NONE());
+    diffData := BackendDAE.DIFFINPUTDATA(NONE(), SOME(inVariables), SOME(knvars), NONE(), {}, {}, NONE());
     (dexp, funcs) := differentiateExp(inExp, inCref, diffData, BackendDAE.DIFF_FULL_JACOBIAN(), funcs, defaultMaxIter, {});
     (outExp,_) := ExpressionSimplify.simplify(dexp);
     outShared := BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
@@ -2107,7 +2105,7 @@ algorithm
         (expl1,_) = List.splitOnBoolList(expl, blst);
         (dexpl, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter, inExpStack=expStack), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         funcname = Util.modelicaStringToCStr(Absyn.pathString(path), false);
-        diffFuncData = BackendDAE.DIFFINPUTDATA(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(funcname));
+        diffFuncData = BackendDAE.DIFFINPUTDATA(NONE(),NONE(),NONE(),NONE(),{},{},SOME(funcname));
         (dexplZero, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter, inExpStack=expStack), DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), diffFuncData, BackendDAE.GENERIC_GRADIENT(), functions);
         //dexpl = listAppend(expl, dexpl);
         //print("Start creation of partial Der\n");
@@ -2422,7 +2420,7 @@ algorithm
 
       path = DAEUtil.functionName(func);
       funcname = Util.modelicaStringToCStr(Absyn.pathString(path), false);
-      diffFuncData = BackendDAE.DIFFINPUTDATA(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(funcname));
+      diffFuncData = BackendDAE.DIFFINPUTDATA(NONE(),NONE(),NONE(),NONE(),{},{},SOME(funcname));
 
       (inputVarsDer, functions, inputVarsNoDer, blst) = differentiateElementVars(inputVars, inDiffwrtCref, diffFuncData, BackendDAE.DIFFERENTIATION_FUNCTION(), inFunctionTree, {}, {}, {}, maxIter, expStack);
       (outputVarsDer, functions, outputVarsNoDer, _) = differentiateElementVars(outputVars, inDiffwrtCref, diffFuncData, BackendDAE.DIFFERENTIATION_FUNCTION(), functions, {}, {}, {}, maxIter, expStack);
@@ -2797,8 +2795,8 @@ algorithm
   local
     Option<BackendDAE.Variables> indepVars, knownVars, allVars;
     BackendDAE.Variables depVars;
-    Option<list< BackendDAE.Var>> algVars;
-    Option<list< .DAE.ComponentRef>> diffCrefs;
+    list<BackendDAE.Var> algVars;
+    list< .DAE.ComponentRef> diffCrefs;
     Option<String> diffname;
 
     case ({}, _)
@@ -2825,8 +2823,8 @@ algorithm
     local
       Option<BackendDAE.Variables> depVars, knownVars, indepVars;
       BackendDAE.Variables allVars;
-      Option<list< BackendDAE.Var>> algVars;
-      Option<list< .DAE.ComponentRef>> diffCrefs;
+      list<BackendDAE.Var> algVars;
+      list< .DAE.ComponentRef> diffCrefs;
       Option<String> diffname;
 
     case ({}, _)
