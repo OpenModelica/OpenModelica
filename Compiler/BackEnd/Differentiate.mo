@@ -120,7 +120,6 @@ public function differentiateExpTime
   output DAE.Exp outExp;
   output BackendDAE.Shared outShared;
 protected
-  String msg;
   DAE.Exp dexp;
   DAE.FunctionTree funcs;
   BackendDAE.DifferentiateInputData diffData;
@@ -140,8 +139,7 @@ algorithm
     //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(DAE.emptyElementSource));
 
     if Flags.isSet(Flags.FAILTRACE) then
-      msg := "\nDifferentiate.differentiateExpTime failed for " + ExpressionDump.printExpStr(inExp) + "\n\n";
-      Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
+      Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {ExpressionDump.printExpStr(inExp), "time"}, sourceInfo());
     end if;
     fail();
   end try;
@@ -155,7 +153,6 @@ public function differentiateExpSolve
   output DAE.Exp outExp;
 protected
   list<DAE.Exp> fac = Expression.factors(inExp);
-  String msg;
   DAE.Exp dexp;
   BackendDAE.DifferentiateInputData diffData;
   DAE.FunctionTree fun;
@@ -175,8 +172,7 @@ algorithm
     (outExp, _) := ExpressionSimplify.simplify(dexp);
   else
     if Flags.isSet(Flags.FAILTRACE) then
-      msg := "\nDifferentiate.differentiateExpSolve failed for " + ExpressionDump.printExpStr(inExp) + "\n\n";
-      Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
+      Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {ExpressionDump.printExpStr(inExp), ComponentReference.crefStr(inCref)}, sourceInfo());
     end if;
     fail();
   end try;
@@ -184,7 +180,7 @@ end differentiateExpSolve;
 
 
 public function differentiateExpCrefFullJacobian
-  "Differentiates an equation with respect to the time variable."
+  "Differentiates an expression inExp with respect to inCref."
   input DAE.Exp inExp;
   input DAE.ComponentRef inCref;
   input BackendDAE.Variables inVariables;
@@ -192,7 +188,6 @@ public function differentiateExpCrefFullJacobian
   output DAE.Exp outExp;
   output BackendDAE.Shared outShared;
 protected
-  String msg;
   DAE.Exp dexp;
   DAE.FunctionTree funcs;
   BackendDAE.DifferentiateInputData diffData;
@@ -212,8 +207,7 @@ algorithm
     //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(DAE.emptyElementSource));
 
     if Flags.isSet(Flags.FAILTRACE) then
-      msg := "\nDifferentiate.differentiateCrefFullJacobian failed for " + ExpressionDump.printExpStr(inExp) + "\n\n";
-      Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
+      Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {ExpressionDump.printExpStr(inExp), ComponentReference.crefStr(inCref)}, sourceInfo());
     end if;
     fail();
   end try;
@@ -244,7 +238,6 @@ algorithm
       DAE.FunctionTree funcs;
       list<BackendDAE.Equation> rest, eqns;
       BackendDAE.Equation eqn;
-      String msg;
 
     case {} then (listReverse(inEquationsAccum), inFunctionTree);
 
@@ -258,8 +251,7 @@ algorithm
 
     case eqn::_
       equation
-        msg = "\nDifferentiate.differentiateEquations failed for " + BackendDump.equationString(eqn) + "\n\n";
-        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
+        Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {BackendDump.equationString(eqn), ComponentReference.crefStr(inDiffwrtCref)}, sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -284,7 +276,7 @@ algorithm
       list<DAE.Exp> out1, expExpLst, expExpLst1;
       DAE.Type exptyp;
       list<Integer> dimSize;
-      String msg, se1, dse1, se2, dse2;
+      String se1, dse1, se2, dse2;
       DAE.SymbolicOperation op1, op2;
       DAE.FunctionTree funcs;
       DAE.Algorithm alg;
@@ -399,8 +391,7 @@ algorithm
 
     else
       equation
-        msg = "\nDifferentiate.differentiateEquation failed for " + BackendDump.equationString(inEquation) + "\n\n";
-        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
+        Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {BackendDump.equationString(inEquation), ComponentReference.crefStr(inDiffwrtCref)}, sourceInfo());
       then
         fail();
   end match;
@@ -436,10 +427,9 @@ algorithm
         (eqnsLst, funcs) = differentiateEquationsLst(rest, inDiffwrtCref, inInputData, inDiffType, eqnsLst, funcs);
       then (eqnsLst, funcs);
 
-    else
+    case eqns::_
       equation
-        msg = "\nDifferentiate.differentiateEquationsLst failed.\n\n";
-        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
+        Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {BackendDump.equationListString(eqns, "equation list"), ComponentReference.crefStr(inDiffwrtCref)}, sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -1343,10 +1333,7 @@ algorithm
 /*
     case (e as DAE.CALL(expLst = _), _, _, _, _)
       equation
-        s1 = ExpressionDump.printExpStr(e);
-        s2 = ComponentReference.printComponentRefStr(inDiffwrtCref);
-        serr = stringAppendList({"\n- Function differentiateCalls failed. differentiateExp ",s1," w.r.t: ",s2," failed\n"});
-        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {serr});
+        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {ExpressionDump.printExpStr(e), ComponentReference.printComponentRefStr(inDiffwrtCref)});
       then
         fail();
 */

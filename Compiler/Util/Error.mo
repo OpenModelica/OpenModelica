@@ -199,7 +199,7 @@ public constant Message STRUCT_SINGULAR_SYSTEM = MESSAGE(34, SYMBOLIC(), ERROR()
 public constant Message UNSUPPORTED_LANGUAGE_FEATURE = MESSAGE(35, TRANSLATION(), ERROR(),
   Util.gettext("The language feature %s is not supported. Suggested workaround: %s"));
 public constant Message NON_EXISTING_DERIVATIVE = MESSAGE(36, SYMBOLIC(), ERROR(),
-  Util.gettext("Derivative of expression %s is non-existent."));
+  Util.gettext("Derivative of expression \"%s\" w.r.t. \"%s\" is non-existent."));
 public constant Message NO_CLASSES_LOADED = MESSAGE(37, TRANSLATION(), ERROR(),
   Util.gettext("No classes are loaded."));
 public constant Message INST_PARTIAL_CLASS = MESSAGE(38, TRANSLATION(), ERROR(),

@@ -250,22 +250,18 @@ algorithm
   ExpressionDump.dumpExpStr(inExp2,0) + " with respect to: " +
   ExpressionDump.printExpStr(inExp3) + "\n");
 */
- (outExp,outAsserts,dummy1, dummy2, dummyI) := matchcontinue(inExp1, inExp2, inExp3)
-                        case(_,_,_) then  solveSimple(inExp1, inExp2, inExp3,0);
-                        case(_,_,_) then  solveSimple(inExp2, inExp1, inExp3,0);
-                        case(_,_,_) then  solveWork(inExp1, inExp2, inExp3, NONE(), NONE(), 0);
-                        else
-                          equation
-                           if Flags.isSet(Flags.FAILTRACE) then
-                            print("\n-ExpressionSolve.solve failed:\n");
-                            print(ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2));
-                            print(" with respect to: " + ExpressionDump.printExpStr(inExp3));
-                           end if;
-                        then fail();
-                        end matchcontinue;
+  (outExp,outAsserts,dummy1, dummy2, dummyI) := matchcontinue inExp1
+    case _ then solveSimple(inExp1, inExp2, inExp3, 0);
+    case _ then solveSimple(inExp2, inExp1, inExp3, 0);
+    case _ then solveWork(inExp1, inExp2, inExp3, NONE(), NONE(), 0);
+    else equation
+      if Flags.isSet(Flags.FAILTRACE) then
+        Error.addInternalError("Failed to solve \"" + ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) + "\" w.r.t. \"" + ExpressionDump.printExpStr(inExp3) + "\"", sourceInfo());
+      end if;
+    then fail();
+  end matchcontinue;
 
  (outExp,_) := ExpressionSimplify.simplify1(outExp);
-
 end solve;
 
 
@@ -292,23 +288,19 @@ algorithm
   ExpressionDump.dumpExpStr(inExp2,0) + " with respect to: " +
   ExpressionDump.printExpStr(inExp3) + "\n");
 */
- (outExp,outAsserts,eqnForNewVars,newVarsCrefs,dummyI) := matchcontinue(inExp1, inExp2, inExp3, functions, uniqueEqIndex)
-                        case(_,_,_,_,_) then  solveSimple(inExp1, inExp2, inExp3,0);
-                        case(_,_,_,_,_) then  solveSimple(inExp2, inExp1, inExp3,0);
-                        case(_,_,_,_,_) then  solveWork(inExp1, inExp2, inExp3, functions, uniqueEqIndex, 0);
-                        else
-                          equation
-                           if Flags.isSet(Flags.FAILTRACE) then
-                            print("\n-ExpressionSolve.solve2 failed:\n");
-                            print(ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2));
-                            print(" with respect to: " + ExpressionDump.printExpStr(inExp3));
-                           end if;
-                        then fail();
-                        end matchcontinue;
+  (outExp,outAsserts,eqnForNewVars,newVarsCrefs,dummyI) := matchcontinue inExp1
+    case _ then solveSimple(inExp1, inExp2, inExp3, 0);
+    case _ then solveSimple(inExp2, inExp1, inExp3, 0);
+    case _ then solveWork(inExp1, inExp2, inExp3, functions, uniqueEqIndex, 0);
+    else equation
+      if Flags.isSet(Flags.FAILTRACE) then
+        Error.addInternalError("Failed to solve \"" + ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) + "\" w.r.t. \"" + ExpressionDump.printExpStr(inExp3) + "\"", sourceInfo());
+      end if;
+    then fail();
+  end matchcontinue;
 
- outExp := symEuler_helper(outExp, inExp3);
- (outExp,_) := ExpressionSimplify.simplify1(outExp);
-
+  outExp := symEuler_helper(outExp, inExp3);
+  (outExp,_) := ExpressionSimplify.simplify1(outExp);
 end solve2;
 
 
