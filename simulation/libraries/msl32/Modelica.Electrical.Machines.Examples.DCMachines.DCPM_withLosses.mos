@@ -8,7 +8,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.DCMachines.DCPM_withLosses);
 compareVars :=
 {
@@ -26,17 +26,15 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.SimpleSimulation
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Machines.Examples.DCMachines.DCPM_withLosses
 // {"dcpm1.la.i","dcpm2.la.i","loadInertia1.phi","loadInertia1.w","loadInertia2.phi","loadInertia2.w"}
 // Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCPM_withLosses', options = '', outputFormat = 'mat', variableFilter = 'time|dcpm1.la.i|dcpm2.la.i|loadInertia1.phi|loadInertia1.w|loadInertia2.phi|loadInertia2.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.DCMachines.DCPM_withLosses_res.mat
+// Files Equal!
 // [Modelica 3.2.1/Electrical/Machines.mo:13494:7-13498:42:writable] Error: Variable dcpm1.coreParameters: Duplicate modification of element final  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 and  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 on component m.
-// [Modelica 3.2.1/Electrical/Machines.mo:13494:7-13498:42:writable] Error: Variable dcpm1.coreParameters: Duplicate modification of element  = (typed)dcpm1.ViNominal, type:
-// DAE.PROP(Real(quantity = "ElectricPotential", unit = "V"), C_PARAM) and  = (typed)95.0 DAE.PROP(Real(min = 1e-60, quantity = "ElectricPotential", unit = "V"), C_CONST), value: 95.0 on component VRef.
-// [Modelica 3.2.1/Electrical/Machines.mo:13494:7-13498:42:writable] Error: Variable dcpm1.coreParameters: Duplicate modification of element final  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 and  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 on component m.
-// Error: Duplicate modification of element  = (typed)dcpm1.ViNominal, type:
-// DAE.PROP(Real(quantity = "ElectricPotential", unit = "V"), C_PARAM) and  = (typed)95.0 DAE.PROP(Real(min = 1e-60, quantity = "ElectricPotential", unit = "V"), C_CONST), value: 95.0 on component VRef.
+// [Modelica 3.2.1/Electrical/Machines.mo:13494:7-13498:42:writable] Error: Variable dcpm2.coreParameters: Duplicate modification of element final  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 and  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 on component m.
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 //
 // "true
 // "

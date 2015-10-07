@@ -36,6 +36,11 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 30.0, numberOfIntervals = 6000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator', options = '', outputFormat = 'mat', variableFilter = 'time|constantSpeedE.phi|constantSpeedM.phi|smeeE.idq_dr.1.|smeeE.idq_rr.2.|smeeE.idq_sr.1.|smeeE.idq_sr.2.|smeeM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.1..Phi.re|smeeM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.2..Phi.im|smeeM.stator.strayReluctance.port_p.Phi.im|smeeM.stator.strayReluctance.port_p.Phi.re', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator_res.mat
 // Files Equal!
+// [Modelica 3.2.1/Magnetic/FundamentalWave.mo:5656:9-5658:86:writable] Error: Variable smeeM.airGap.L0: Duplicate modification of element (redeclare .Modelica.SIunits.Inductance d) and final  = (typed)0.003183098861837907 DAE.PROP(Real, C_CONST), value: 0.003183098861837907 on component d.
+// [Modelica 3.2.1/Magnetic/FundamentalWave.mo:5656:9-5658:86:writable] Error: Variable smeeM.airGap.L0: Duplicate modification of element (redeclare .Modelica.SIunits.Inductance q) and final  = (typed)0.003183098861837907 DAE.PROP(Real, C_CONST), value: 0.003183098861837907 on component q.
+// Error: Duplicate modification of element (redeclare .Modelica.SIunits.Inductance d) and final  = (typed)0.003183098861837907 DAE.PROP(Real, C_CONST), value: 0.003183098861837907 on component d.
+// Error: Duplicate modification of element (redeclare .Modelica.SIunits.Inductance q) and final  = (typed)0.003183098861837907 DAE.PROP(Real, C_CONST), value: 0.003183098861837907 on component q.
+//
 // "true
 // "
 // ""

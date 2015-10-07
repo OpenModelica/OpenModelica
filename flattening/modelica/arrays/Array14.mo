@@ -20,7 +20,6 @@ end Array14;
 //   parameter Integer n2 = 2;
 //   parameter Integer m2 = 0;
 // equation
-//   a = {};
 //   b = {{}, {}};
 // end Array14;
 // endResult
