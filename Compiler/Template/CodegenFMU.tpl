@@ -64,21 +64,24 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let guid = getUUIDStr()
   let target  = simulationCodeTarget()
   let &dummy = buffer ""
-  let()= textFile(simulationLiteralsFile(fileNamePrefix, literals), '<%fileNamePrefix%>_literals.h')
-  let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls), '<%fileNamePrefix%>_functions.h')
-  let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, dummy), '<%fileNamePrefix%>_functions.c')
-  let()= textFile(externalFunctionIncludes(sc.externalFunctionIncludes), '<%fileNamePrefix%>_includes.h')
-  let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
-  let()= textFile(simulationHeaderFile(simCode,guid), '<%fileNamePrefix%>_model.h')
+  let fileNamePrefixTmpDir = '<%fileNamePrefix%>.fmutmp/sources/<%fileNamePrefix%>'
+  let()= textFile(simulationLiteralsFile(fileNamePrefix, literals), '<%fileNamePrefixTmpDir%>_literals.h')
+  let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls), '<%fileNamePrefixTmpDir%>_functions.h')
+  let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, dummy), '<%fileNamePrefixTmpDir%>_functions.c')
+  let()= textFile(externalFunctionIncludes(sc.externalFunctionIncludes), '<%fileNamePrefixTmpDir%>_includes.h')
+  let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefixTmpDir%>_records.c')
+  let()= textFile(simulationHeaderFile(simCode,guid), '<%fileNamePrefixTmpDir%>_model.h')
 
-  let _ = generateSimulationFiles(simCode,guid,fileNamePrefix,true)
+  let _ = generateSimulationFiles(simCode,guid,fileNamePrefixTmpDir,true)
 
-  let()= textFile(simulationInitFile(simCode,guid), '<%fileNamePrefix%>_init.xml')
-  let x = covertTextFileToCLiteral('<%fileNamePrefix%>_init.xml','<%fileNamePrefix%>_init.c')
-  let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion), '<%fileNamePrefix%>_FMU.c')
-  let()= textFile(fmuModelDescriptionFile(simCode,guid,FMUVersion,FMUType), 'modelDescription.xml')
-  let()= textFile(fmudeffile(simCode,FMUVersion), '<%fileNamePrefix%>.def')
-  let()= textFile(fmuMakefile(target,simCode,FMUVersion), '<%fileNamePrefix%>_FMU.makefile')
+  let()= textFile(simulationInitFile(simCode,guid), '<%fileNamePrefixTmpDir%>_init.xml')
+  let x = covertTextFileToCLiteral('<%fileNamePrefixTmpDir%>_init.xml','<%fileNamePrefixTmpDir%>_init.c')
+  let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion), '<%fileNamePrefixTmpDir%>_FMU.c')
+  let()= textFile(fmuModelDescriptionFile(simCode,guid,FMUVersion,FMUType), '<%fileNamePrefix%>.fmutmp/modelDescription.xml')
+  let()= textFile(fmudeffile(simCode,FMUVersion), '<%fileNamePrefix%>.fmutmp/<%fileNamePrefix%>.def')
+  let()= textFile(fmuMakefile(target,simCode,FMUVersion), '<%fileNamePrefix%>.fmutmp/sources/Makefile')
+  let()= textFile('# Dummy file so OMDEV Compile.bat works<%\n%>include Makefile<%\n%>', '<%fileNamePrefix%>.fmutmp/sources/<%fileNamePrefix%>.makefile')
+  let()= textFile(fmuSourceMakefile(simCode,FMUVersion), '<%fileNamePrefix%>_FMU.makefile')
   "" // Return empty result since result written to files directly
 end translateModel;
 
@@ -988,16 +991,13 @@ match platform
   <%\t%>mkdir.exe -p <%fmudirname%>
   <%\t%>mkdir.exe -p <%fmudirname%>/binaries
   <%\t%>mkdir.exe -p <%fmudirname%>/binaries/<%platform%>
-  <%\t%>mkdir.exe -p <%fmudirname%>/sources
+  <%\t%>mkdir.exe -p <%fmudirname%>/sources/include
 
   <%\t%>dlltool -d <%fileNamePrefix%>.def --dllname <%fileNamePrefix%>$(DLLEXT) --output-lib <%fileNamePrefix%>.lib --kill-at
   <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fmudirname%>/binaries/<%platform%>/
   <%\t%>cp <%fileNamePrefix%>.lib <%fmudirname%>/binaries/<%platform%>/
   <%\t%>cp $(GENERATEDFILES) <%fmudirname%>/sources/
-  <%if isFMIVersion20(FMUVersion) then
-  '<%\t%>cp <%omhome%>/include/omc/c/fmi2/fmu2_model_interface.h <%omhome%>/include/omc/c/fmi2/fmu2_model_interface.c <%fmudirname%>/sources/'
-  else
-  '<%\t%>cp <%omhome%>/include/omc/c/fmi1/fmu1_model_interface.h <%omhome%>/include/omc/c/fmi1/fmu1_model_interface.c <%fmudirname%>/sources/'%>
+  <%\t%>cp -a <%omhome%>/include/omc/c/* <%fmudirname%>/sources/include
   <%\t%>cp modelDescription.xml <%fmudirname%>/modelDescription.xml
   <%\t%>cp <%omhome%>/bin/libexpat.dll <%fmudirname%>/binaries/<%platform%>/
   <%\t%>cp <%omhome%>/bin/pthreadGC2.dll <%fmudirname%>/binaries/<%platform%>/
@@ -1010,26 +1010,12 @@ match platform
   >>
   else
   <<
-  <%fileNamePrefix%>_FMU: $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES)
-  <%\t%>$(CXX) -shared -I. -o <%modelNamePrefix%>$(DLLEXT) $(MAINOBJ) $(OFILES) $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -llis
-
-  <%\t%>mkdir -p <%fmudirname%>
-  <%\t%>mkdir -p <%fmudirname%>/binaries
-
-  <%\t%>mkdir -p <%fmudirname%>/binaries/$(PLATFORM)
-  <%\t%>mkdir -p <%fmudirname%>/sources
-
-  <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fmudirname%>/binaries/$(PLATFORM)/
-  <%\t%>cp <%fileNamePrefix%>_FMU.libs <%fmudirname%>/binaries/$(PLATFORM)/
-  <%\t%>cp $(GENERATEDFILES) <%fmudirname%>/sources/
-  <%if isFMIVersion20(FMUVersion) then
-  '<%\t%>cp <%omhome%>/include/omc/c/fmi2/fmu2_model_interface.h <%omhome%>/include/omc/c/fmi2/fmu2_model_interface.c <%fmudirname%>/sources/'
-  else
-  '<%\t%>cp <%omhome%>/include/omc/c/fmi1/fmu1_model_interface.h <%omhome%>/include/omc/c/fmi1/fmu1_model_interface.c <%fmudirname%>/sources/'%>
-  <%\t%>cp modelDescription.xml <%fmudirname%>/modelDescription.xml
-  <%\t%>cd <%fmudirname%>; rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fileNamePrefix%>.fmu *
-  <%\t%>rm -rf <%fmudirname%>
-  <%\t%>rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>.so <%fileNamePrefix%>_*.o
+  <%fileNamePrefix%>_FMU: $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(RUNTIMEFILES)
+  <%\t%>$(LD) -o <%modelNamePrefix%>$(DLLEXT) $(MAINOBJ) $(OFILES) $(RUNTIMEFILES) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(LDFLAGS)
+  <%\t%>mkdir -p ../binaries/$(FMIPLATFORM)
+  <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>_FMU.libs ../binaries/$(FMIPLATFORM)/
+  <%\t%>rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(RUNTIMEFILES)
+  <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fileNamePrefix%>.fmu *
 
   >>
 end getPlatformString2;
@@ -1037,6 +1023,28 @@ end getPlatformString2;
 template fmuMakefile(String target, SimCode simCode, String FMUVersion)
  "Generates the contents of the makefile for the simulation case. Copy libexpat & correct linux fmu"
 ::=
+let common =
+  match simCode
+  case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
+  <<
+  MAINFILE=<%fileNamePrefix%>_FMU.c
+  MAINOBJ=<%fileNamePrefix%>_FMU.o
+  CFILES=<%fileNamePrefix%>.c <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
+  <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
+  <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c \
+  <%fileNamePrefix%>_15syn.c
+  OFILES=$(CFILES:.c=.o)
+  GENERATEDFILES=$(MAINFILE) <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_literals.h <%fileNamePrefix%>_model.h <%fileNamePrefix%>_includes.h <%fileNamePrefix%>_functions.h  <%fileNamePrefix%>_11mix.h <%fileNamePrefix%>_12jac.h <%fileNamePrefix%>_13opt.h <%fileNamePrefix%>_init.c <%fileNamePrefix%>_info.c $(CFILES) <%fileNamePrefix%>_FMU.libs
+
+  # FIXME: before you push into master...
+  RUNTIMEDIR=include
+  OMC_MINIMAL_RUNTIME=1
+  OMC_FMI_RUNTIME=1
+  include $(RUNTIMEDIR)/Makefile.objs
+  ifeq ($(OPENMODELICA_DYNAMIC),)
+  RUNTIMEFILES=$(FMI_ME_OBJS:%=$(RUNTIMEDIR)/%.o)
+  endif
+  >>
 match target
 case "msvc" then
 match simCode
@@ -1061,7 +1069,6 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   EXEEXT=.exe
   DLLEXT=.dll
   FMUEXT=.fmu
-  PLATLINUX = linux32
   PLATWIN32 = win32
 
   # /Od - Optimization disabled
@@ -1085,17 +1092,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # lib names should not be appended with a d just switch to lib/omc/msvc/debug
 
 
-  FILEPREFIX=<%fileNamePrefix%>
-  MAINFILE=<%fileNamePrefix%>_FMU.c
-  MAINOBJ=<%fileNamePrefix%>_FMU.obj
-  CFILES=<%fileNamePrefix%>.c <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
-  <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
-  <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c \
-  <%fileNamePrefix%>_15syn.c
-  OFILES=$(CFILES:.c=.obj)
-  GENERATEDFILES=$(MAINFILE) <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_literals.h <%fileNamePrefix%>_model.h <%fileNamePrefix%>_includes.h <%fileNamePrefix%>_functions.h  <%fileNamePrefix%>_11mix.h <%fileNamePrefix%>_12jac.h <%fileNamePrefix%>_13opt.h <%fileNamePrefix%>_init.c <%fileNamePrefix%>_info.c $(CFILES) <%fileNamePrefix%>_FMU.libs
+  <%common%>
 
-  $(FILEPREFIX)$(FMUEXT): $(FILEPREFIX)$(DLLEXT) modelDescription.xml
+  <%fileNamePrefix%>$(FMUEXT): <%fileNamePrefix%>$(DLLEXT) modelDescription.xml
       if not exist <%fmudirname%>\binaries\$(PLATWIN32) mkdir <%fmudirname%>\binaries\$(PLATWIN32)
       if not exist <%fmudirname%>\sources mkdir <%fmudirname%>\sources
 
@@ -1120,8 +1119,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       cd ..
       rm -rf <%fmudirname%>
 
-  $(FILEPREFIX)$(DLLEXT): $(MAINOBJ) $(CFILES)
-      $(CXX) /Fe$(FILEPREFIX)$(DLLEXT) $(MAINFILE) $(FILEPREFIX)_FMU.c $(CFILES) $(CFLAGS) $(LDFLAGS)
+  <%fileNamePrefix%>$(DLLEXT): $(MAINOBJ) $(CFILES)
+      $(CXX) /Fe<%fileNamePrefix%>$(DLLEXT) $(MAINFILE) <%fileNamePrefix%>_FMU.c $(CFILES) $(CFLAGS) $(LDFLAGS)
   >>
 end match
 case "gcc" then
@@ -1140,32 +1139,27 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   <<
   # Makefile generated by OpenModelica
 
-  # Simulation of the fmu with dymola does not work
-  # with inline-small-functions
-  SIM_OR_DYNLOAD_OPT_LEVEL=-O #-O2  -fno-inline-small-functions
-  CC=<%makefileParams.ccompiler%>
-  CXX=<%makefileParams.cxxcompiler%>
-  LINK=<%makefileParams.linker%>
-  EXEEXT=<%makefileParams.exeext%>
-  DLLEXT=<%makefileParams.dllext%>
-  CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
-  PLATFORM = <%platformstr%>
-  PLAT34 = <%makefileParams.platform%>
-  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
-  CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc/c" <%if isFMIVersion20(FMUVersion) then '-I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '-I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> -I. <%makefileParams.includes ; separator=" "%>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc" -Wl,-rpath,'<%makefileParams.omhome%>/lib/<%getTriple()%>/omc' -lSimulationRuntimeC <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> <%dirExtra%>
-  PERL=perl
-  MAINFILE=<%fileNamePrefix%>_FMU.c
-  MAINOBJ=<%fileNamePrefix%>_FMU.o
-  CFILES=<%fileNamePrefix%>.c <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
-  <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
-  <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c \
-  <%fileNamePrefix%>_15syn.c
-  OFILES=$(CFILES:.c=.o)
-  GENERATEDFILES=$(MAINFILE) <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_literals.h <%fileNamePrefix%>_model.h <%fileNamePrefix%>_includes.h <%fileNamePrefix%>_functions.h  <%fileNamePrefix%>_11mix.h <%fileNamePrefix%>_12jac.h <%fileNamePrefix%>_13opt.h <%fileNamePrefix%>_init.c <%fileNamePrefix%>_info.c $(CFILES) <%fileNamePrefix%>_FMU.libs
+  # Note: Simulation of the fmu with dymola does not work with -finline-small-functions (enabled by most optimization levels)
+  override CPPFLAGS += -Iinclude/ -Iinclude/fmi<%if isFMIVersion20(FMUVersion) then "2" else "1"%> -I. <%makefileParams.includes ; separator=" "%>
+  ifeq ($(OPENMODELICA_DYNAMIC),)
+  override CPPFLAGS += -DOMC_MINIMAL_RUNTIME=1
+  else
+  override LDFLAGS += -L"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc" -Wl,-rpath,'<%makefileParams.omhome%>/lib/<%getTriple()%>/omc' <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> <%dirExtra%>
+  endif
 
-  # This is to make sure that <%fileNamePrefix%>_*.c are always compiled.
-  .PHONY: $(CFILES)
+  ifeq ($(DLLEXT),)
+  no-dll:
+  <%\t%>@echo "You need to set DLLEXT=.so or similar when calling this makefile"
+  <%\t%>@false
+  endif
+
+  ifeq ($(FMIPLATFORM),)
+  no-fmiplatform:
+  <%\t%>@echo "You need to set FMIPLATFORM=linux32 or similar when calling this makefile"
+  <%\t%>@false
+  endif
+
+  <%common%>
 
   PHONY: <%fileNamePrefix%>_FMU
   <%compilecmds%>
@@ -1174,6 +1168,30 @@ end match
 else
   error(sourceInfo(), 'target <%target%> is not handled!')
 end fmuMakefile;
+
+
+template fmuSourceMakefile(SimCode simCode, String FMUVersion)
+ "Generates the contents of the makefile for the simulation case. Copy libexpat & correct linux fmu"
+::=
+  match simCode
+  case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
+  let includedir = '<%fileNamePrefix%>.fmutmp/sources/include/'
+  <<
+  # FIXME: before you push into master...
+  RUNTIMEDIR=<%makefileParams.omhome%>/include/omc/c/
+  OMC_MINIMAL_RUNTIME=1
+  OMC_FMI_RUNTIME=1
+  include $(RUNTIMEDIR)/Makefile.objs
+  COPY_RUNTIMEFILES=$(FMI_ME_OBJS:%= && (OMCFILE=% && cp $(RUNTIMEDIR)/$$OMCFILE.c $$OMCFILE.c))
+
+  fmu:
+  <%\t%>(cd <%includedir%> && mkdir -p $(ALL_PATHS))
+  <%\t%>rm -f <%fileNamePrefix%>.fmutmp/sources/<%fileNamePrefix%>_init.xml<%/*Already translated to .c*/%>
+  <%\t%>cp -a <%makefileParams.omhome%>/include/omc/c/* <%includedir%>
+  <%\t%>cp -a <%fileNamePrefix%>_FMU.libs <%fileNamePrefix%>.fmutmp/sources/
+  <%\t%>cd <%includedir%> $(COPY_RUNTIMEFILES)
+  >>
+end fmuSourceMakefile;
 
 template fmudeffile(SimCode simCode, String FMUVersion)
  "Generates the def file of the fmu."

@@ -2608,7 +2608,10 @@ protected function translateModelFMU " author: Frenkel TUD
   output FCore.Cache outCache;
   output Values.Value outValue;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
+protected
+  Boolean staticSourceCodeFMU;
 algorithm
+  staticSourceCodeFMU := Flags.isSet(Flags.BUILD_STATIC_SOURCE_FMU);
   (outCache,outValue,outInteractiveSymbolTable):=
   match (inCache,inEnv,className,inInteractiveSymbolTable,inFMUVersion,inFMUType,inFileNamePrefix,addDummy,inSimSettingsOpt)
     local
@@ -2618,18 +2621,37 @@ algorithm
       GlobalScript.SymbolTable st;
       list<String> libs;
       Values.Value outValMsg;
-      String file_dir, FMUVersion, FMUType, fileNamePrefix, str;
+      String file_dir, FMUVersion, FMUType, fileNamePrefix, str, fmutmp;
     case (cache,env,_,st,FMUVersion,FMUType,fileNamePrefix,_,_) /* mo file directory */
       equation
         (cache, outValMsg, st,_, libs,_, _) =
           SimCodeMain.translateModelFMU(cache,env,className,st,FMUVersion,FMUType,fileNamePrefix,addDummy,inSimSettingsOpt);
 
         // compile
-        fileNamePrefix = stringAppend(fileNamePrefix,"_FMU");
-        CevalScript.compileModel(fileNamePrefix , libs);
-
-      then
-        (cache,outValMsg,st);
+        CevalScript.compileModel(fileNamePrefix+"_FMU" , libs);
+        if Config.simCodeTarget() <> "Cpp" then
+          fmutmp = fileNamePrefix + ".fmutmp";
+          /* Let's just assume we have a pristine source directory in fmutmp
+          if System.directoryExists(fmutmp) then
+            System.removeDirectory(fmutmp);
+          end if;
+          unzip(...);
+          */
+          // CevalScript.compileModel(fileNamePrefix , libs, workingDir=fmutmp+"/sources", makeVars={"CC=arm-linux-gnueabi-gcc","FMIPLATFORM=arm-linux-gnueabi","DLLEXT=.so"});
+          CevalScript.compileModel(fileNamePrefix , libs, workingDir=fmutmp+"/sources", makeVars={
+              "CC="+System.getCCompiler(),
+              "'CFLAGS="+System.getCFlags()+"'",
+              "CPPFLAGS=",
+              "'LDFLAGS="+System.getLDFlags()+" "+(if staticSourceCodeFMU then System.getRTLibsFMU() /*TODO: Should not be needed, once we remove the need for lapack/expat*/ else System.getRTLibsSim())+"'",
+              "FMIPLATFORM="+System.modelicaPlatform(),
+              "DLLEXT="+System.getDllExt(),
+              "'LD="+System.getLinker()+"'",
+              if staticSourceCodeFMU then "OPENMODELICA_DYNAMIC=" else "OPENMODELICA_DYNAMIC=1"
+          });
+          // CevalScript.compileModel(fileNamePrefix , libs, workingDir=fmutmp+"/sources", makeVars={});
+          System.removeDirectory(fmutmp);
+        end if;
+      then (cache,outValMsg,st);
     else /* mo file directory */
       equation
          str = Error.printMessagesStr(false);

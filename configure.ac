@@ -30,6 +30,7 @@ AC_SUBST(RT_LDFLAGS_SIM)
 AC_SUBST(RT_LDFLAGS_SIM_OPTIONAL)
 AC_SUBST(RT_LDFLAGS_GENERATED_CODE)
 AC_SUBST(RT_LDFLAGS_GENERATED_CODE_SIM)
+AC_SUBST(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU)
 AC_SUBST(SUNDIALS_LDFLAGS)
 AC_SUBST(IPOPT_LDFLAGS)
 AC_SUBST(IPOPT_CFLAGS)
@@ -147,6 +148,13 @@ AC_MSG_CHECKING([looking for -march=native])
 AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no]);CFLAGS="-O3"])
 fi
 fi
+
+dnl Disables the default CFLAGS="-g -O2"
+LDFLAGS_BEFORE="$LDFLAGS"
+LDFLAGS="$LDFLAGS -Wl,--no-undefined"
+AC_MSG_CHECKING([looking for --no-undefined])
+AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([yes]);LD_NOUNDEFINED=" -Wl,--no-undefined"], [AC_MSG_RESULT([no])])
+LDFLAGS="$LDFLAGS_BEFORE"
 
 TRY_FLAGS="-fno-stack-protector"
 
@@ -643,6 +651,7 @@ if test "$DARWIN" = "1"; then
   # All libraries are dynamically linked; we don't need anything else
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm"
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lomcgc"
+  RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm$LD_NOUNDEFINED"
   LINK="cp -fr"
   RPATH="-Wl,-rpath,'@loader_path/../lib/$host_short/omc/'"
   RPATH_QMAKE="-Wl,-rpath,'@loader_path/../../../../lib/$host_short/omc',-rpath,'@loader_path/../../../../lib/',-rpath,'$PREFIX/lib/$host_short/omc',-rpath,'$PREFIX/lib/'"
@@ -672,6 +681,7 @@ elif test "$host" = "i586-pc-mingw32msvc"; then
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lcdaskr $RT_LDFLAGS_SIM"
+  RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm$LD_NOUNDEFINED"
   LINK="cp -frl"
   RPATH="-Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/$host_short/omc' -Wl,-rpath,'\$\$ORIGIN'"
   RPATH_QMAKE="-Wl,-z,origin -Wl,-rpath,\\'\\\$\$ORIGIN/../lib/$host_short/omc\\' -Wl,-rpath,\\'\\\$\$ORIGIN\\'"
@@ -698,8 +708,9 @@ else
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc $LIBRT -lpthread -lm $LIBDL -lstdc++ -rdynamic"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   # All libraries are dynamically linked; we don't need anything else
-  RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm -lpthread -rdynamic"
-  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lomcgc -lpthread -rdynamic"
+  RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm -lomcgc -lpthread -rdynamic" # Some of our tests refer to the testsuite itself
+  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lomcgc -lpthread -rdynamic$LD_NOUNDEFINED"
+  RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm -lpthread -lexpat -rdynamic$LD_NOUNDEFINED"
   LINK="cp -frl"
   RPATH="-Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/$host_short/omc' -Wl,-rpath,'\$\$ORIGIN'"
   RPATH_QMAKE="-Wl,-z,origin -Wl,-rpath,\\'\\\$\$ORIGIN/../lib/$host_short/omc\\' -Wl,-rpath,\\'\\\$\$ORIGIN\\'"

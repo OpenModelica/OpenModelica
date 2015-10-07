@@ -2755,6 +2755,7 @@ public function createMakefileParams
   input list<String> libs;
   input list<String> libPaths;
   input Boolean isFunction;
+  input Boolean isFMU=false;
   output SimCode.MakefileParams makefileParams;
 protected
   String omhome, ccompiler, cxxcompiler, linker, exeext, dllext, cflags, ldflags, rtlibs, platform, fopenmp,compileDir;
@@ -2771,7 +2772,7 @@ algorithm
             (if Flags.isSet(Flags.HPCOM) then "-fopenmp" else "");
   cflags := if stringEq(Config.simCodeTarget(),"JavaScript") then "-Os -Wno-warn-absolute-paths" else cflags;
   ldflags := System.getLDFlags();
-  rtlibs := if isFunction then System.getRTLibs() else System.getRTLibsSim();
+  rtlibs := if isFunction then System.getRTLibs() else (if isFMU then System.getRTLibsFMU() else System.getRTLibsSim());
   platform := System.modelicaPlatform();
   compileDir :=  System.pwd() + System.pathDelimiter();
   makefileParams := SimCode.MAKEFILE_PARAMS(ccompiler, cxxcompiler, linker, exeext, dllext,

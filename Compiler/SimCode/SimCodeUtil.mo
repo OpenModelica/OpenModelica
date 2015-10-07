@@ -165,6 +165,7 @@ public function createSimCode "entry point to create SimCode from BackendDAE."
   input list<SimCode.RecordDeclaration> recordDecls;
   input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
   input Absyn.FunctionArgs args;
+  input Boolean isFMU=false;
   output SimCode.SimCode simCode;
   output tuple<Integer, list<tuple<Integer, Integer>>> outMapping "the highest simEqIndex in the mapping and the mapping simEq-Index -> scc-Index itself";
 protected
@@ -280,7 +281,7 @@ algorithm
 
     ((uniqueEqIndex, algorithmAndEquationAsserts)) := BackendDAEUtil.foldEqSystem(dlow, createAlgorithmAndEquationAsserts, (uniqueEqIndex, {}));
     discreteModelVars := BackendDAEUtil.foldEqSystem(dlow, extractDiscreteModelVars, {});
-    makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false);
+    makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, isFMU);
     (delayedExps, maxDelayedExpIndex) := extractDelayedExpressions(dlow);
 
     // append removed equation to all equations, since these are actually
@@ -4134,11 +4135,11 @@ protected
   list<BackendDAE.Equation> eqs;
 algorithm
   try
-	  (varsWithBind,varsWithoutBind) := List.separateOnTrue(varLstIn,BackendVariable.varHasBindExp);
-	  (comps,ass1,ass2) := BackendDAEUtil.causalizeVarBindSystem(varsWithBind);
-	  order := List.map1(List.flatten(comps),Array.getIndexFirst,ass1);
-	  varsWithBind := List.map1(order,List.getIndexFirst,varsWithBind);
-	  varLstOut := listAppend(varsWithoutBind,varsWithBind);
+    (varsWithBind,varsWithoutBind) := List.separateOnTrue(varLstIn,BackendVariable.varHasBindExp);
+    (comps,ass1,ass2) := BackendDAEUtil.causalizeVarBindSystem(varsWithBind);
+    order := List.map1(List.flatten(comps),Array.getIndexFirst,ass1);
+    varsWithBind := List.map1(order,List.getIndexFirst,varsWithBind);
+    varLstOut := listAppend(varsWithoutBind,varsWithBind);
   else
     varLstOut := varLstIn;
   end try;

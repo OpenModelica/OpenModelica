@@ -39,7 +39,11 @@ LIBFMIRUNTIME=@LIBFMIRUNTIME@
 ifeq ($(OMC_MINIMAL_RUNTIME),)
 OBJ_EXT=.o
 else
+ifeq ($(OMC_FMI_RUNTIME),)
 OBJ_EXT=.minimal.o
+else
+OBJ_EXT=.o
+endif
 endif
 
 REGEN = Makefile.in

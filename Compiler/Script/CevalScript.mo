@@ -218,16 +218,20 @@ end isCompleteFunction;
 public function compileModel "Compiles a model given a file-prefix, helper function to buildModel."
   input String fileprefix;
   input list<String> libs;
+  input String workingDir = "";
+  input list<String> makeVars = {};
 protected
   String omhome = Settings.getInstallationDirectoryPath(),omhome_1 = System.stringReplace(omhome, "\"", "");
   String pd = System.pathDelimiter();
-  String libsfilename,libs_str,s_call,filename,winCompileMode;
+  String cdWorkingDir,setMakeVars,libsfilename,libs_str,s_call,filename,winCompileMode;
   String fileDLL = fileprefix + System.getDllExt(),fileEXE = fileprefix + System.getExeExt(),fileLOG = fileprefix + ".log";
   Integer numParallel,res;
   Boolean isWindows = System.os() == "Windows_NT";
+  list<String> makeVarsNoBinding;
 algorithm
   libsfilename := fileprefix + ".libs";
   libs_str := stringDelimitList(libs, " ");
+  makeVarsNoBinding := makeVars; // OMC is stupid and wants to constant evaluate inputs with bindings for iterator variables...
 
   System.writeFile(libsfilename, libs_str);
   if isWindows then
@@ -238,11 +242,15 @@ algorithm
     //        set OPENMODELICAHOME=DIR && actually adds the space between the DIR and &&
     //        to the environment variable! Don't ask me why, ask Microsoft.
     omhome := "set OPENMODELICAHOME=\"" + System.stringReplace(omhome_1, "/", "\\") + "\"&& ";
+    setMakeVars := sum("set "+var+"&& " for var in makeVarsNoBinding);
+    cdWorkingDir := if stringLength(workingDir) == 0 then "" else ("cd \"" + workingDir + "\"");
     winCompileMode := if Config.getRunningTestsuite() then "serial" else "parallel";
-    s_call := stringAppendList({omhome,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",Config.simulationCodeTarget()," ", winCompileMode});
+    s_call := stringAppendList({omhome,cdWorkingDir,setMakeVars,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",Config.simulationCodeTarget()," ", winCompileMode});
   else
     numParallel := if Config.getRunningTestsuite() then 1 else Config.noProc();
-    s_call := stringAppendList({System.getMakeCommand()," -j",intString(numParallel)," -f ",fileprefix,".makefile"});
+    cdWorkingDir := if stringLength(workingDir) == 0 then "" else (" -C \"" + workingDir + "\"");
+    setMakeVars := sum(" "+var for var in makeVarsNoBinding);
+    s_call := stringAppendList({System.getMakeCommand()," -j",intString(numParallel),cdWorkingDir," -f ",fileprefix,".makefile",setMakeVars});
   end if;
   if Flags.isSet(Flags.DYN_LOAD) then
     Debug.traceln("compileModel: running " + s_call);

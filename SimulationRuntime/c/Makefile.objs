@@ -2,7 +2,6 @@
 #Files for meta folder
 META_OBJS = \
 meta_modelica_builtin$(OBJ_EXT) \
-meta_modelica_string_lit$(OBJ_EXT) \
 meta_modelica_segv$(OBJ_EXT) \
 realString$(OBJ_EXT) \
 meta_modelica$(OBJ_EXT) \
@@ -12,28 +11,39 @@ META_HFILES = \
 meta_modelica_builtin.h \
 meta_modelica_builtin_boxptr.h \
 meta_modelica_builtin_boxvar.h \
-meta_modelica_string_lit.h \
 meta_modelica_segv.h \
 meta_modelica.h \
 meta_modelica_mk_box.h \
 gc/mmc_gc.h
 
 # Files for util functions
-UTIL_OBJS_MINIMAL=base_array$(OBJ_EXT) boolean_array$(OBJ_EXT) omc_error$(OBJ_EXT) division$(OBJ_EXT) generic_array$(OBJ_EXT) index_spec$(OBJ_EXT) integer_array$(OBJ_EXT) list$(OBJ_EXT) memory_pool$(OBJ_EXT) modelica_string$(OBJ_EXT) read_write$(OBJ_EXT) write_matlab4$(OBJ_EXT) read_matlab4$(OBJ_EXT) real_array$(OBJ_EXT) ringbuffer$(OBJ_EXT) rtclock$(OBJ_EXT) string_array$(OBJ_EXT) utility$(OBJ_EXT) varinfo$(OBJ_EXT) ModelicaUtilities$(OBJ_EXT) omc_msvc$(OBJ_EXT) simulation_options$(OBJ_EXT) tinymt64$(OBJ_EXT) omc_mmap$(OBJ_EXT) cJSON$(OBJ_EXT) rational$(OBJ_EXT)
+ifeq ($(OMC_FMI_RUNTIME),)
+UTIL_OBJS_NO_FMI=read_write$(OBJ_EXT) write_matlab4$(OBJ_EXT) read_matlab4$(OBJ_EXT)
+else
+UTIL_OBJS_NO_FMI=
+endif
+
+UTIL_OBJS_MINIMAL=base_array$(OBJ_EXT) boolean_array$(OBJ_EXT) omc_error$(OBJ_EXT) division$(OBJ_EXT) generic_array$(OBJ_EXT) index_spec$(OBJ_EXT) integer_array$(OBJ_EXT) list$(OBJ_EXT) memory_pool$(OBJ_EXT) modelica_string$(OBJ_EXT) real_array$(OBJ_EXT) ringbuffer$(OBJ_EXT) rtclock$(OBJ_EXT) string_array$(OBJ_EXT) utility$(OBJ_EXT) varinfo$(OBJ_EXT) ModelicaUtilities$(OBJ_EXT) omc_msvc$(OBJ_EXT) simulation_options$(OBJ_EXT) cJSON$(OBJ_EXT) rational$(OBJ_EXT) modelica_string_lit$(OBJ_EXT) omc_init$(OBJ_EXT) omc_mmap$(OBJ_EXT) $(UTIL_OBJS_NO_FMI)
+
 ifeq ($(OMC_MINIMAL_RUNTIME),)
-UTIL_OBJS=$(UTIL_OBJS_MINIMAL) java_interface$(OBJ_EXT) libcsv$(OBJ_EXT) read_csv$(OBJ_EXT) OldModelicaTables$(OBJ_EXT) write_csv$(OBJ_EXT)
+UTIL_OBJS=$(UTIL_OBJS_MINIMAL) java_interface$(OBJ_EXT) libcsv$(OBJ_EXT) read_csv$(OBJ_EXT) OldModelicaTables$(OBJ_EXT) tinymt64$(OBJ_EXT) write_csv$(OBJ_EXT)
 else
 UTIL_OBJS=$(UTIL_OBJS_MINIMAL)
 endif
-UTIL_HFILES=base_array.h boolean_array.h division.h generic_array.h omc_error.h index_spec.h integer_array.h java_interface.h jni.h jni_md.h jni_md_solaris.h jni_md_windows.h list.h memory_pool.h modelica.h modelica_string.h read_write.h write_matlab4.h read_matlab4.h read_csv.h libcsv.h real_array.h ringbuffer.h rtclock.h string_array.h utility.h varinfo.h simulation_options.h tinymt64.h omc_mmap.h cJSON.h
+UTIL_HFILES=base_array.h boolean_array.h division.h generic_array.h omc_error.h index_spec.h integer_array.h java_interface.h jni.h jni_md.h jni_md_solaris.h jni_md_windows.h list.h memory_pool.h modelica.h modelica_string.h read_write.h write_matlab4.h read_matlab4.h read_csv.h libcsv.h real_array.h ringbuffer.h rtclock.h string_array.h utility.h varinfo.h simulation_options.h tinymt64.h omc_mmap.h cJSON.h modelica_string_lit.h omc_init.h
 
 # Files for math-support
 MATH_OBJS=pivot$(OBJ_EXT)
 MATH_HFILES = blaswrap.h
 
-SOLVER_OBJS_MINIMAL=delay$(OBJ_EXT) events$(OBJ_EXT) external_input$(OBJ_EXT) linearSystem$(OBJ_EXT) linearSolverLapack$(OBJ_EXT) linearSolverTotalPivot$(OBJ_EXT) mixedSystem$(OBJ_EXT) mixedSearchSolver$(OBJ_EXT) model_help$(OBJ_EXT) nonlinearSystem$(OBJ_EXT) nonlinearSolverHomotopy$(OBJ_EXT) omc_math$(OBJ_EXT) solver_main$(OBJ_EXT) stateset$(OBJ_EXT) synchronous$(OBJ_EXT)
+SOLVER_OBJS_FMU=delay$(OBJ_EXT) linearSystem$(OBJ_EXT) linearSolverLapack$(OBJ_EXT) linearSolverTotalPivot$(OBJ_EXT) mixedSystem$(OBJ_EXT) mixedSearchSolver$(OBJ_EXT) nonlinearSystem$(OBJ_EXT) nonlinearSolverHybrd$(OBJ_EXT) nonlinearSolverHomotopy$(OBJ_EXT) omc_math$(OBJ_EXT) model_help$(OBJ_EXT) stateset$(OBJ_EXT) synchronous$(OBJ_EXT)
+ifeq ($(OMC_FMI_RUNTIME),)
+SOLVER_OBJS_MINIMAL=$(SOLVER_OBJS_FMU) events$(OBJ_EXT) external_input$(OBJ_EXT) solver_main$(OBJ_EXT)
+else
+SOLVER_OBJS_MINIMAL=$(SOLVER_OBJS_FMU)
+endif
 ifeq ($(OMC_MINIMAL_RUNTIME),)
-SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL) kinsolSolver$(OBJ_EXT) linearSolverLis$(OBJ_EXT) linearSolverUmfpack$(OBJ_EXT) dassl$(OBJ_EXT) radau$(OBJ_EXT) sym_imp_euler$(OBJ_EXT) nonlinearSolverHybrd$(OBJ_EXT) nonlinearSolverNewton$(OBJ_EXT) newtonIteration$(OBJ_EXT)
+SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL) kinsolSolver$(OBJ_EXT) linearSolverLis$(OBJ_EXT) linearSolverUmfpack$(OBJ_EXT) dassl$(OBJ_EXT) radau$(OBJ_EXT) sym_imp_euler$(OBJ_EXT) nonlinearSolverNewton$(OBJ_EXT) newtonIteration$(OBJ_EXT)
 else
 SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL)
 endif
@@ -60,7 +70,12 @@ RESULTS_HFILES = simulation_result_ia.h simulation_result.h simulation_result_cs
 RESULTS_FILES = simulation_result_ia.cpp simulation_result_csv.cpp simulation_result_mat.cpp simulation_result_plt.cpp simulation_result_wall.cpp
 
 SIM_OBJS = simulation_runtime$(OBJ_EXT) ../linearization/linearize$(OBJ_EXT) socket$(OBJ_EXT)
-SIM_OBJS_C = simulation_input_xml$(OBJ_EXT) modelinfo$(OBJ_EXT) simulation_info_xml$(OBJ_EXT) simulation_info_json$(OBJ_EXT) options$(OBJ_EXT)
+ifeq ($(OMC_FMI_RUNTIME),)
+SIM_OBJS_C_FMI=modelinfo$(OBJ_EXT)
+else
+SIM_OBJS_C_FMI=
+endif
+SIM_OBJS_C = $(SIM_OBJS_C_FMI) simulation_input_xml$(OBJ_EXT) simulation_info_xml$(OBJ_EXT) simulation_info_json$(OBJ_EXT) options$(OBJ_EXT) simulation_omc_assert$(OBJ_EXT)
 SIM_HFILES = options.h simulation_input_xml.h simulation_info_xml.h simulation_info_json.h modelinfo.h simulation_runtime.h ../linearization/linearize.h socket.h
 
 FMIPATH = ./fmi/
@@ -105,6 +120,13 @@ FMIPATH = ./fmi/
 FMIOBJSPATH = $(FMI_OBJS:%=$(FMIPATH)%)
 
 ALL_OBJS = $(METAOBJSPATH) $(UTILOBJSPATH) $(MATHOBJSPATH) $(SOLVEROBJSPATH) $(INITIALIZATIONOBJSPATH) $(OPTIMIZATIONOBJSPATH) $(RESULTSOBJSPATH) $(SIMOBJSPATH) $(SIMOBJSPATHC) meta/meta_modelica_catch$(OBJ_EXT)
+
+CMINPACK_OBJS = enorm_ hybrj_ dpmpar_ qrfac_ qform_ dogleg_ r1updt_ r1mpyq_
+# Only objects needed for FMI for Modelica Exchange
+FMI_ME_OBJS = $(UTILOBJSPATH) $(MATHOBJSPATH) $(SIMOBJSPATHC) $(SOLVEROBJSPATH) $(INITIALIZATIONOBJSPATH) \
+  ./meta/meta_modelica_catch$(OBJ_EXT) \
+  $(CMINPACK_OBJS:%=./external_solvers/%$(OBJ_EXT))
+
 ALL_HEADERS = $(METAHFILESPATH) $(UTILHFILESPATH) $(MATHHFILESPATH) $(SOLVERHFILESPATH) $(INITIALIZATIONHFILESPATH) $(OPTIMIZATIONHFILESPATH) $(RESULTSHFILESPATH) $(SIMHFILESPATH)
 ALL_PATHS = $(METAPATH) $(FMIPATH) $(UTILPATH) $(MATHPATH) $(SOLVERPATH) $(INITIALIZATIONPATH) $(OPTIMIZATIONPATH) $(RESULTSPATH) $(SIMPATH) linearization/
 ALL_PATHS_CLEAN_OBJS = $(ALL_PATHS:%=%*$(OBJ_EXT)) $(ALL_PATHS:%=%*.a) meta/gc/*$(OBJ_EXT)

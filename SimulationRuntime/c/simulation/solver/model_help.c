@@ -354,7 +354,7 @@ void printSparseStructure(DATA *data, int stream)
   if (!ACTIVE_STREAM(stream))
     return;
 
-  buffer = (char*)GC_malloc(sizeof(char)* 2*data->simulationInfo.analyticJacobians[index].sizeCols + 4);
+  buffer = (char*)omc_alloc_interface.malloc(sizeof(char)* 2*data->simulationInfo.analyticJacobians[index].sizeCols + 4);
 
   infoStreamPrint(stream, 1, "sparse structure of jacobian A [size: %ux%u]", data->simulationInfo.analyticJacobians[index].sizeRows, data->simulationInfo.analyticJacobians[index].sizeCols);
   infoStreamPrint(stream, 0, "%u nonzero elements", data->simulationInfo.analyticJacobians[index].sparsePattern.numberOfNoneZeros);
@@ -392,7 +392,6 @@ void printSparseStructure(DATA *data, int stream)
   }
   messageClose(stream);
   messageClose(stream);
-  GC_free(buffer);
 }
 
 #ifdef USE_DEBUG_OUTPUT
@@ -598,7 +597,7 @@ void setAllVarsToStart(DATA *data)
   }
   for(i=0; i<mData->nVariablesString; ++i)
   {
-    sData->stringVars[i] = mData->stringVarsData[i].attribute.start;
+    sData->stringVars[i] = mmc_mk_scon_persist(mData->stringVarsData[i].attribute.start);
     debugStreamPrint(LOG_DEBUG, 0, "set String var %s = %s", mData->stringVarsData[i].info.name, MMC_STRINGDATA(sData->stringVars[i]));
   }
 
@@ -638,7 +637,7 @@ void setAllStartToVars(DATA *data)
   }
   for(i=0; i<mData->nVariablesString; ++i)
   {
-    mData->stringVarsData[i].attribute.start = sData->stringVars[i];
+    mData->stringVarsData[i].attribute.start = MMC_STRINGDATA(sData->stringVars[i]);
     debugStreamPrint(LOG_DEBUG, 0, "String var %s(start=%s)", mData->stringVarsData[i].info.name, MMC_STRINGDATA(sData->stringVars[i]));
   }
   if (DEBUG_STREAM(LOG_DEBUG)) {
@@ -870,37 +869,37 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
     assertStreamPrint(threadData, 0 != tmpSimData.integerVars, "out of memory");
     tmpSimData.booleanVars = (modelica_boolean*) calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
     assertStreamPrint(threadData, 0 != tmpSimData.booleanVars, "out of memory");
-    tmpSimData.stringVars = (modelica_string*) GC_malloc_uncollectable(data->modelData.nVariablesString * sizeof(modelica_string));
+    tmpSimData.stringVars = (modelica_string*) omc_alloc_interface.malloc_uncollectable(data->modelData.nVariablesString * sizeof(modelica_string));
     assertStreamPrint(threadData, 0 != tmpSimData.stringVars, "out of memory");
     appendRingData(data->simulationData, &tmpSimData);
   }
-  data->localData = (SIMULATION_DATA**) GC_malloc_uncollectable(SIZERINGBUFFER * sizeof(SIMULATION_DATA));
+  data->localData = (SIMULATION_DATA**) omc_alloc_interface.malloc_uncollectable(SIZERINGBUFFER * sizeof(SIMULATION_DATA));
   memset(data->localData, 0, SIZERINGBUFFER * sizeof(SIMULATION_DATA));
   rotateRingBuffer(data->simulationData, 0, (void**) data->localData);
 
   /* create modelData var arrays */
-  data->modelData.realVarsData = (STATIC_REAL_DATA*) GC_malloc_uncollectable(data->modelData.nVariablesReal * sizeof(STATIC_REAL_DATA));
-  data->modelData.integerVarsData = (STATIC_INTEGER_DATA*) GC_malloc_uncollectable(data->modelData.nVariablesInteger * sizeof(STATIC_INTEGER_DATA));
-  data->modelData.booleanVarsData = (STATIC_BOOLEAN_DATA*) GC_malloc_uncollectable(data->modelData.nVariablesBoolean * sizeof(STATIC_BOOLEAN_DATA));
-  data->modelData.stringVarsData = (STATIC_STRING_DATA*) GC_malloc_uncollectable(data->modelData.nVariablesString * sizeof(STATIC_STRING_DATA));
+  data->modelData.realVarsData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData.nVariablesReal * sizeof(STATIC_REAL_DATA));
+  data->modelData.integerVarsData = (STATIC_INTEGER_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData.nVariablesInteger * sizeof(STATIC_INTEGER_DATA));
+  data->modelData.booleanVarsData = (STATIC_BOOLEAN_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData.nVariablesBoolean * sizeof(STATIC_BOOLEAN_DATA));
+  data->modelData.stringVarsData = (STATIC_STRING_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData.nVariablesString * sizeof(STATIC_STRING_DATA));
 
-  data->modelData.realParameterData = (STATIC_REAL_DATA*) GC_malloc_uncollectable(data->modelData.nParametersReal * sizeof(STATIC_REAL_DATA));
-  data->modelData.integerParameterData = (STATIC_INTEGER_DATA*) GC_malloc_uncollectable(data->modelData.nParametersInteger * sizeof(STATIC_INTEGER_DATA));
-  data->modelData.booleanParameterData = (STATIC_BOOLEAN_DATA*) GC_malloc_uncollectable(data->modelData.nParametersBoolean * sizeof(STATIC_BOOLEAN_DATA));
-  data->modelData.stringParameterData = (STATIC_STRING_DATA*) GC_malloc_uncollectable(data->modelData.nParametersString * sizeof(STATIC_STRING_DATA));
+  data->modelData.realParameterData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData.nParametersReal * sizeof(STATIC_REAL_DATA));
+  data->modelData.integerParameterData = (STATIC_INTEGER_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData.nParametersInteger * sizeof(STATIC_INTEGER_DATA));
+  data->modelData.booleanParameterData = (STATIC_BOOLEAN_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData.nParametersBoolean * sizeof(STATIC_BOOLEAN_DATA));
+  data->modelData.stringParameterData = (STATIC_STRING_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData.nParametersString * sizeof(STATIC_STRING_DATA));
 
-  data->modelData.realAlias = (DATA_REAL_ALIAS*) GC_malloc_uncollectable(data->modelData.nAliasReal * sizeof(DATA_REAL_ALIAS));
-  data->modelData.integerAlias = (DATA_INTEGER_ALIAS*) GC_malloc_uncollectable(data->modelData.nAliasInteger * sizeof(DATA_INTEGER_ALIAS));
-  data->modelData.booleanAlias = (DATA_BOOLEAN_ALIAS*) GC_malloc_uncollectable(data->modelData.nAliasBoolean * sizeof(DATA_BOOLEAN_ALIAS));
-  data->modelData.stringAlias = (DATA_STRING_ALIAS*) GC_malloc_uncollectable(data->modelData.nAliasString * sizeof(DATA_STRING_ALIAS));
+  data->modelData.realAlias = (DATA_REAL_ALIAS*) omc_alloc_interface.malloc_uncollectable(data->modelData.nAliasReal * sizeof(DATA_REAL_ALIAS));
+  data->modelData.integerAlias = (DATA_INTEGER_ALIAS*) omc_alloc_interface.malloc_uncollectable(data->modelData.nAliasInteger * sizeof(DATA_INTEGER_ALIAS));
+  data->modelData.booleanAlias = (DATA_BOOLEAN_ALIAS*) omc_alloc_interface.malloc_uncollectable(data->modelData.nAliasBoolean * sizeof(DATA_BOOLEAN_ALIAS));
+  data->modelData.stringAlias = (DATA_STRING_ALIAS*) omc_alloc_interface.malloc_uncollectable(data->modelData.nAliasString * sizeof(DATA_STRING_ALIAS));
 
-  data->modelData.samplesInfo = (SAMPLE_INFO*) GC_malloc_uncollectable(data->modelData.nSamples * sizeof(SAMPLE_INFO));
+  data->modelData.samplesInfo = (SAMPLE_INFO*) omc_alloc_interface.malloc_uncollectable(data->modelData.nSamples * sizeof(SAMPLE_INFO));
   data->simulationInfo.nextSampleEvent = data->simulationInfo.startTime;
   data->simulationInfo.nextSampleTimes = (double*) calloc(data->modelData.nSamples, sizeof(double));
   data->simulationInfo.samples = (modelica_boolean*) calloc(data->modelData.nSamples, sizeof(modelica_boolean));
 
-  data->modelData.clocksInfo = (CLOCK_INFO*) GC_malloc_uncollectable(data->modelData.nClocks * sizeof(CLOCK_INFO));
-  data->modelData.subClocksInfo = (SUBCLOCK_INFO*) GC_malloc_uncollectable(data->modelData.nSubClocks * sizeof(SUBCLOCK_INFO));
+  data->modelData.clocksInfo = (CLOCK_INFO*) omc_alloc_interface.malloc_uncollectable(data->modelData.nClocks * sizeof(CLOCK_INFO));
+  data->modelData.subClocksInfo = (SUBCLOCK_INFO*) omc_alloc_interface.malloc_uncollectable(data->modelData.nSubClocks * sizeof(SUBCLOCK_INFO));
   data->simulationInfo.clocksData = (CLOCK_DATA*) calloc(data->modelData.nClocks, sizeof(CLOCK_DATA));
 
   /* set default solvers for algebraic loops */
@@ -930,41 +929,41 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo.realVarsOld = (modelica_real*) calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
   data->simulationInfo.integerVarsOld = (modelica_integer*) calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
   data->simulationInfo.booleanVarsOld = (modelica_boolean*) calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
-  data->simulationInfo.stringVarsOld = (modelica_string*) GC_malloc_uncollectable(data->modelData.nVariablesString * sizeof(modelica_string));
+  data->simulationInfo.stringVarsOld = (modelica_string*) omc_alloc_interface.malloc_uncollectable(data->modelData.nVariablesString * sizeof(modelica_string));
 
   /* buffer for all variable pre values */
   data->simulationInfo.realVarsPre = (modelica_real*) calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
   data->simulationInfo.integerVarsPre = (modelica_integer*) calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
   data->simulationInfo.booleanVarsPre = (modelica_boolean*) calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
-  data->simulationInfo.stringVarsPre = (modelica_string*) GC_malloc_uncollectable(data->modelData.nVariablesString * sizeof(modelica_string));
+  data->simulationInfo.stringVarsPre = (modelica_string*) omc_alloc_interface.malloc_uncollectable(data->modelData.nVariablesString * sizeof(modelica_string));
 
   /* buffer for all parameters values */
   data->simulationInfo.realParameter = (modelica_real*) calloc(data->modelData.nParametersReal, sizeof(modelica_real));
   data->simulationInfo.integerParameter = (modelica_integer*) calloc(data->modelData.nParametersInteger, sizeof(modelica_integer));
   data->simulationInfo.booleanParameter = (modelica_boolean*) calloc(data->modelData.nParametersBoolean, sizeof(modelica_boolean));
-  data->simulationInfo.stringParameter = (modelica_string*) GC_malloc_uncollectable(data->modelData.nParametersString * sizeof(modelica_string));
+  data->simulationInfo.stringParameter = (modelica_string*) omc_alloc_interface.malloc_uncollectable(data->modelData.nParametersString * sizeof(modelica_string));
   /* buffer for inputs and outputs values */
   data->simulationInfo.inputVars = (modelica_real*) calloc(data->modelData.nInputVars, sizeof(modelica_real));
   data->simulationInfo.outputVars = (modelica_real*) calloc(data->modelData.nOutputVars, sizeof(modelica_real));
 
   /* buffer for mixed systems */
-  data->simulationInfo.mixedSystemData = (MIXED_SYSTEM_DATA*) GC_malloc_uncollectable(data->modelData.nMixedSystems*sizeof(MIXED_SYSTEM_DATA));
+  data->simulationInfo.mixedSystemData = (MIXED_SYSTEM_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData.nMixedSystems*sizeof(MIXED_SYSTEM_DATA));
   data->callback->initialMixedSystem(data->modelData.nMixedSystems, data->simulationInfo.mixedSystemData);
 
   /* buffer for linear systems */
-  data->simulationInfo.linearSystemData = (LINEAR_SYSTEM_DATA*) GC_malloc_uncollectable(data->modelData.nLinearSystems*sizeof(LINEAR_SYSTEM_DATA));
+  data->simulationInfo.linearSystemData = (LINEAR_SYSTEM_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData.nLinearSystems*sizeof(LINEAR_SYSTEM_DATA));
   data->callback->initialLinearSystem(data->modelData.nLinearSystems, data->simulationInfo.linearSystemData);
 
   /* buffer for non-linear systems */
-  data->simulationInfo.nonlinearSystemData = (NONLINEAR_SYSTEM_DATA*) GC_malloc_uncollectable(data->modelData.nNonLinearSystems*sizeof(NONLINEAR_SYSTEM_DATA));
+  data->simulationInfo.nonlinearSystemData = (NONLINEAR_SYSTEM_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData.nNonLinearSystems*sizeof(NONLINEAR_SYSTEM_DATA));
   data->callback->initialNonLinearSystem(data->modelData.nNonLinearSystems, data->simulationInfo.nonlinearSystemData);
 
   /* buffer for state sets */
-  data->simulationInfo.stateSetData = (STATE_SET_DATA*) GC_malloc_uncollectable(data->modelData.nStateSets*sizeof(STATE_SET_DATA));
+  data->simulationInfo.stateSetData = (STATE_SET_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData.nStateSets*sizeof(STATE_SET_DATA));
   data->callback->initializeStateSets(data->modelData.nStateSets, data->simulationInfo.stateSetData, data);
 
   /* buffer for analytical jacobians */
-  data->simulationInfo.analyticJacobians = (ANALYTIC_JACOBIAN*) GC_malloc_uncollectable(data->modelData.nJacobians*sizeof(ANALYTIC_JACOBIAN));
+  data->simulationInfo.analyticJacobians = (ANALYTIC_JACOBIAN*) omc_alloc_interface.malloc_uncollectable(data->modelData.nJacobians*sizeof(ANALYTIC_JACOBIAN));
 
   data->modelData.modelDataXml.functionNames = NULL;
   data->modelData.modelDataXml.equationInfo = NULL;
@@ -1034,65 +1033,65 @@ void deInitializeDataStruc(DATA *data)
     free(tmpSimData->realVars);
     free(tmpSimData->integerVars);
     free(tmpSimData->booleanVars);
-    GC_free(tmpSimData->stringVars);
+    omc_alloc_interface.free_uncollectable(tmpSimData->stringVars);
   }
-  GC_free(data->localData);
+  omc_alloc_interface.free_uncollectable(data->localData);
   freeRingBuffer(data->simulationData);
 
   /* free modelData var arrays */
   for(i=0; i < data->modelData.nVariablesReal;i++)
     freeVarInfo(&((data->modelData.realVarsData[i]).info));
-  GC_free(data->modelData.realVarsData);
+  omc_alloc_interface.free_uncollectable(data->modelData.realVarsData);
 
   for(i=0; i < data->modelData.nVariablesInteger;i++)
     freeVarInfo(&((data->modelData.integerVarsData[i]).info));
-  GC_free(data->modelData.integerVarsData);
+  omc_alloc_interface.free_uncollectable(data->modelData.integerVarsData);
 
   for(i=0; i < data->modelData.nVariablesBoolean;i++)
     freeVarInfo(&((data->modelData.booleanVarsData[i]).info));
-  GC_free(data->modelData.booleanVarsData);
+  omc_alloc_interface.free_uncollectable(data->modelData.booleanVarsData);
 
   for(i=0; i < data->modelData.nVariablesString;i++)
     freeVarInfo(&((data->modelData.stringVarsData[i]).info));
-  GC_free(data->modelData.stringVarsData);
+  omc_alloc_interface.free_uncollectable(data->modelData.stringVarsData);
 
   /* free Modelica parameter static data */
   for(i=0; i < data->modelData.nParametersReal;i++)
     freeVarInfo(&((data->modelData.realParameterData[i]).info));
-  GC_free(data->modelData.realParameterData);
+  omc_alloc_interface.free_uncollectable(data->modelData.realParameterData);
 
   for(i=0; i < data->modelData.nParametersInteger;i++)
     freeVarInfo(&((data->modelData.integerParameterData[i]).info));
-  GC_free(data->modelData.integerParameterData);
+  omc_alloc_interface.free_uncollectable(data->modelData.integerParameterData);
 
   for(i=0; i < data->modelData.nParametersBoolean;i++)
     freeVarInfo(&((data->modelData.booleanParameterData[i]).info));
-  GC_free(data->modelData.booleanParameterData);
+  omc_alloc_interface.free_uncollectable(data->modelData.booleanParameterData);
 
   for(i=0; i < data->modelData.nParametersString;i++)
     freeVarInfo(&((data->modelData.stringParameterData[i]).info));
-  GC_free(data->modelData.stringParameterData);
+  omc_alloc_interface.free_uncollectable(data->modelData.stringParameterData);
 
   /* free alias static data */
   for(i=0; i < data->modelData.nAliasReal;i++)
     freeVarInfo(&((data->modelData.realAlias[i]).info));
-  GC_free(data->modelData.realAlias);
+  omc_alloc_interface.free_uncollectable(data->modelData.realAlias);
   for(i=0; i < data->modelData.nAliasInteger;i++)
     freeVarInfo(&((data->modelData.integerAlias[i]).info));
-  GC_free(data->modelData.integerAlias);
+  omc_alloc_interface.free_uncollectable(data->modelData.integerAlias);
   for(i=0; i < data->modelData.nAliasBoolean;i++)
     freeVarInfo(&((data->modelData.booleanAlias[i]).info));
-  GC_free(data->modelData.booleanAlias);
+  omc_alloc_interface.free_uncollectable(data->modelData.booleanAlias);
   for(i=0; i < data->modelData.nAliasString;i++)
     freeVarInfo(&((data->modelData.stringAlias[i]).info));
-  GC_free(data->modelData.stringAlias);
+  omc_alloc_interface.free_uncollectable(data->modelData.stringAlias);
 
-  GC_free(data->modelData.samplesInfo);
+  omc_alloc_interface.free_uncollectable(data->modelData.samplesInfo);
   free(data->simulationInfo.nextSampleTimes);
   free(data->simulationInfo.samples);
 
-  GC_free(data->modelData.clocksInfo);
-  GC_free(data->modelData.subClocksInfo);
+  omc_alloc_interface.free_uncollectable(data->modelData.clocksInfo);
+  omc_alloc_interface.free_uncollectable(data->modelData.subClocksInfo);
 
   /* free simulationInfo arrays */
   free(data->simulationInfo.zeroCrossings);
@@ -1107,34 +1106,34 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo.realVarsOld);
   free(data->simulationInfo.integerVarsOld);
   free(data->simulationInfo.booleanVarsOld);
-  GC_free(data->simulationInfo.stringVarsOld);
+  omc_alloc_interface.free_uncollectable(data->simulationInfo.stringVarsOld);
 
   /* free buffer for all variable pre values */
   free(data->simulationInfo.realVarsPre);
   free(data->simulationInfo.integerVarsPre);
   free(data->simulationInfo.booleanVarsPre);
-  GC_free(data->simulationInfo.stringVarsPre);
+  omc_alloc_interface.free_uncollectable(data->simulationInfo.stringVarsPre);
 
   /* free buffer for all parameters values */
   free(data->simulationInfo.realParameter);
   free(data->simulationInfo.integerParameter);
   free(data->simulationInfo.booleanParameter);
-  GC_free(data->simulationInfo.stringParameter);
+  omc_alloc_interface.free_uncollectable(data->simulationInfo.stringParameter);
 
   /* free buffer for state sets */
-  GC_free(data->simulationInfo.stateSetData);
+  omc_alloc_interface.free_uncollectable(data->simulationInfo.stateSetData);
 
   /* free buffer of mixed systems */
-  GC_free(data->simulationInfo.mixedSystemData);
+  omc_alloc_interface.free_uncollectable(data->simulationInfo.mixedSystemData);
 
   /* free buffer of linear systems */
-  GC_free(data->simulationInfo.linearSystemData);
+  omc_alloc_interface.free_uncollectable(data->simulationInfo.linearSystemData);
 
   /* free buffer of non-linear systems */
-  GC_free(data->simulationInfo.nonlinearSystemData);
+  omc_alloc_interface.free_uncollectable(data->simulationInfo.nonlinearSystemData);
 
   /* free buffer jacobians */
-  GC_free(data->simulationInfo.analyticJacobians);
+  omc_alloc_interface.free_uncollectable(data->simulationInfo.analyticJacobians);
 
   /* free inputs and output */
   free(data->simulationInfo.inputVars);

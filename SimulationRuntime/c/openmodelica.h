@@ -177,6 +177,10 @@ typedef struct {
   char* (*malloc_string)(size_t);
   char* (*malloc_strdup)(const char*);
   int (*collect_a_little)(void);
+  void* (*malloc_uncollectable)(size_t);
+  void (*free_uncollectable)(void*);
+  void* (*malloc_string_persist)(size_t);
+  void (*free_string_persist)(void*);
 } omc_alloc_interface_t;
 
 extern omc_alloc_interface_t omc_alloc_interface;

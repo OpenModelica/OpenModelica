@@ -460,6 +460,8 @@ constant DebugFlag HARDCODED_START_VALUES = DEBUG_FLAG(146, "hardcodedStartValue
   Util.gettext("Embed the start values of variables and parameters into the c++ code and do not read it from xml file."));
 constant DebugFlag DUMP_FUNCTIONS = DEBUG_FLAG(147, "dumpFunctions", false,
   Util.gettext("Add functions to backend dumps."));
+constant DebugFlag BUILD_STATIC_SOURCE_FMU = DEBUG_FLAG(148, "buildStaticSourceFMU", false,
+  Util.gettext("A temporary flag to not link the C run-time system when building an FMU; instead compiling the run-time sources into the FMU. The goal is to make this a truly static shared object, depending on nothing outside the FMU (all sources will be included)."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -613,7 +615,8 @@ constant list<DebugFlag> allDebugFlags = {
   EVAL_ALL_PARAMS,
   EVAL_OUTPUT_ONLY,
   HARDCODED_START_VALUES,
-  DUMP_FUNCTIONS
+  DUMP_FUNCTIONS,
+  BUILD_STATIC_SOURCE_FMU
 };
 
 public

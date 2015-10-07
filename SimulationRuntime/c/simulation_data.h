@@ -513,9 +513,9 @@ typedef struct SIMULATION_INFO
   modelica_integer numSteps;
   modelica_real stepSize;
   modelica_real tolerance;
-  modelica_string solverMethod;
-  modelica_string outputFormat;
-  modelica_string variableFilter;
+  const char *solverMethod;
+  const char *outputFormat;
+  const char *variableFilter;
   int lsMethod;                        /* linear solver */
   int mixedMethod;                     /* mixed solver */
   int nlsMethod;                       /* nonlinear solver */

@@ -461,9 +461,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
 
   /* Last step with terminal()=true */
-  if(solverInfo->currentTime >= simInfo->stopTime && solverInfo->solverMethod != S_OPTIMIZATION)
-  {
-
+  if(solverInfo->currentTime >= simInfo->stopTime && solverInfo->solverMethod != S_OPTIMIZATION) {
     infoStreamPrint(LOG_EVENTS_V, 0, "terminal event at stop time %g", solverInfo->currentTime);
     data->simulationInfo.terminal = 1;
     updateDiscreteSystem(data, threadData);
@@ -475,8 +473,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     data->simulationInfo.terminal = 0;
   }
 
-  if(0 != strcmp("ia", MMC_STRINGDATA(data->simulationInfo.outputFormat)))
-  {
+  if (0 != strcmp("ia", data->simulationInfo.outputFormat)) {
     communicateStatus("Finished", 1);
   }
 

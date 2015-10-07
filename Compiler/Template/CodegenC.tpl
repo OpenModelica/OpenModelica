@@ -161,41 +161,41 @@ end simulationHeaderFile;
   match simCode
     case simCode as SIMCODE(__) then
      // external objects
-     let()= textFileConvertLines(simulationFile_exo(simCode,guid), '<%fileNamePrefix%>_01exo.c')
+     let()= textFileConvertLines(simulationFile_exo(simCode,guid), '<%modelNamePrefix%>_01exo.c')
      // non-linear systems
-     let()= textFileConvertLines(simulationFile_nls(simCode,guid), '<%fileNamePrefix%>_02nls.c')
+     let()= textFileConvertLines(simulationFile_nls(simCode,guid), '<%modelNamePrefix%>_02nls.c')
      // linear systems
-     let()= textFileConvertLines(simulationFile_lsy(simCode,guid), '<%fileNamePrefix%>_03lsy.c')
+     let()= textFileConvertLines(simulationFile_lsy(simCode,guid), '<%modelNamePrefix%>_03lsy.c')
      // state set
-     let()= textFileConvertLines(simulationFile_set(simCode,guid), '<%fileNamePrefix%>_04set.c')
+     let()= textFileConvertLines(simulationFile_set(simCode,guid), '<%modelNamePrefix%>_04set.c')
      // events: sample, zero crossings, relations
-     let()= textFileConvertLines(simulationFile_evt(simCode,guid), '<%fileNamePrefix%>_05evt.c')
+     let()= textFileConvertLines(simulationFile_evt(simCode,guid), '<%modelNamePrefix%>_05evt.c')
      // initialization
-     let()= textFileConvertLines(simulationFile_inz(simCode,guid), '<%fileNamePrefix%>_06inz.c')
+     let()= textFileConvertLines(simulationFile_inz(simCode,guid), '<%modelNamePrefix%>_06inz.c')
      // delay
-     let()= textFileConvertLines(simulationFile_dly(simCode,guid), '<%fileNamePrefix%>_07dly.c')
+     let()= textFileConvertLines(simulationFile_dly(simCode,guid), '<%modelNamePrefix%>_07dly.c')
      // update bound start values, update bound parameters
-     let()= textFileConvertLines(simulationFile_bnd(simCode,guid), '<%fileNamePrefix%>_08bnd.c')
+     let()= textFileConvertLines(simulationFile_bnd(simCode,guid), '<%modelNamePrefix%>_08bnd.c')
      // algebraic
-     let()= textFileConvertLines(simulationFile_alg(simCode,guid), '<%fileNamePrefix%>_09alg.c')
+     let()= textFileConvertLines(simulationFile_alg(simCode,guid), '<%modelNamePrefix%>_09alg.c')
      // asserts
-     let()= textFileConvertLines(simulationFile_asr(simCode,guid), '<%fileNamePrefix%>_10asr.c')
+     let()= textFileConvertLines(simulationFile_asr(simCode,guid), '<%modelNamePrefix%>_10asr.c')
      // mixed systems
      let &mixheader = buffer ""
-     let()= textFileConvertLines(simulationFile_mix(simCode,guid,&mixheader), '<%fileNamePrefix%>_11mix.c')
-     let()= textFile(&mixheader, '<%fileNamePrefix%>_11mix.h')
+     let()= textFileConvertLines(simulationFile_mix(simCode,guid,&mixheader), '<%modelNamePrefix%>_11mix.c')
+     let()= textFile(&mixheader, '<%modelNamePrefix%>_11mix.h')
      // jacobians
-     let()= textFileConvertLines(simulationFile_jac(simCode,guid), '<%fileNamePrefix%>_12jac.c')
-     let()= textFile(simulationFile_jac_header(simCode,guid), '<%fileNamePrefix%>_12jac.h')
+     let()= textFileConvertLines(simulationFile_jac(simCode,guid), '<%modelNamePrefix%>_12jac.c')
+     let()= textFile(simulationFile_jac_header(simCode,guid), '<%modelNamePrefix%>_12jac.h')
      // optimization
-     let()= textFileConvertLines(simulationFile_opt(simCode,guid), '<%fileNamePrefix%>_13opt.c')
-     let()= textFile(simulationFile_opt_header(simCode,guid), '<%fileNamePrefix%>_13opt.h')
+     let()= textFileConvertLines(simulationFile_opt(simCode,guid), '<%modelNamePrefix%>_13opt.c')
+     let()= textFile(simulationFile_opt_header(simCode,guid), '<%modelNamePrefix%>_13opt.h')
      // linearization
-     let()= textFileConvertLines(simulationFile_lnz(simCode,guid), '<%fileNamePrefix%>_14lnz.c')
+     let()= textFileConvertLines(simulationFile_lnz(simCode,guid), '<%modelNamePrefix%>_14lnz.c')
      // synchronous
-     let()= textFileConvertLines(simulationFile_syn(simCode,guid), '<%fileNamePrefix%>_15syn.c')
+     let()= textFileConvertLines(simulationFile_syn(simCode,guid), '<%modelNamePrefix%>_15syn.c')
      // main file
-     let()= textFileConvertLines(simulationFile(simCode,guid,isModelExchangeFMU), '<%fileNamePrefix%>.c')
+     let()= textFileConvertLines(simulationFile(simCode,guid,isModelExchangeFMU), '<%modelNamePrefix%>.c')
      ""
   end match
 end generateSimulationFiles;
@@ -816,7 +816,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
   match simCode
     case simCode as SIMCODE(hpcomData=HPCOMDATA(__)) then
     let modelNamePrefixStr = modelNamePrefix(simCode)
-    let mainInit = if boolOr(Flags.isSet(Flags.PARMODAUTO), Flags.isSet(HPCOM)) then
+    let mainInit = if boolOr(isModelExchangeFMU, boolOr(Flags.isSet(Flags.PARMODAUTO), Flags.isSet(HPCOM))) then
                      <<
                      mmc_init_nogc();
                      omc_alloc_interface = omc_alloc_interface_pooled;
@@ -947,6 +947,8 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
       return 1;
     }
 
+    <% if boolNot(isModelExchangeFMU) then
+    <<
     #if defined(threadData)
     #undef threadData
     #endif
@@ -965,6 +967,8 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
       return res;
     }
     <%\n%>
+    >>
+    %>
     >>
     /* adrpo: leave a newline at the end of file to get ridsymbolName(String fileNamePrefix of the warning */
   end match

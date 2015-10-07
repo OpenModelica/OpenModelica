@@ -220,7 +220,6 @@ static void read_value_long(const char *s, modelica_integer* res, modelica_integ
 static void read_value_int(const char *s, int* res);
 /* reads modelica_string value from a string */
 static void read_value_string(const char *s, const char** str);
-static void read_value_mm(const char *s, modelica_metatype *str);
 /* reads boolean value from a string */
 static void read_value_bool(const char *s, modelica_boolean* str);
 
@@ -401,9 +400,11 @@ static void read_var_attribute_bool(omc_ScalarVariable *v, BOOLEAN_ATTRIBUTE *at
 static void read_var_attribute_string(omc_ScalarVariable *v, STRING_ATTRIBUTE *attribute)
 {
   read_value_bool(findHashStringString(v,"useStart"), &attribute->useStart);
-  read_value_mm(findHashStringStringEmpty(v,"start"), &attribute->start);
+  const char *start = NULL;
+  read_value_string(findHashStringStringEmpty(v,"start"), &start);
+  attribute->start = mmc_mk_scon_persist(start);
 
-  infoStreamPrint(LOG_DEBUG, 0, "String %s(%sstart=%s%s)", findHashStringString(v,"name"), attribute->useStart?"":"{", MMC_STRINGDATA(attribute->start), attribute->useStart?"":"}");
+  infoStreamPrint(LOG_DEBUG, 0, "String %s(%sstart=%s%s)", findHashStringString(v,"name"), attribute->useStart?"":"{", attribute->start, attribute->useStart?"":"}");
 }
 
 /* \brief
@@ -527,14 +528,14 @@ void read_input_xml(MODEL_DATA* modelData,
   read_value_real(findHashStringString(mi.de,"tolerance"), &(simulationInfo->tolerance), 1e-5);
   infoStreamPrint(LOG_SIMULATION, 0, "tolerance = %g", simulationInfo->tolerance);
 
-  read_value_mm(findHashStringString(mi.de,"solver"), &simulationInfo->solverMethod);
-  infoStreamPrint(LOG_SIMULATION, 0, "solver method: %s", MMC_STRINGDATA(simulationInfo->solverMethod));
+  read_value_string(findHashStringString(mi.de,"solver"), &simulationInfo->solverMethod);
+  infoStreamPrint(LOG_SIMULATION, 0, "solver method: %s", simulationInfo->solverMethod);
 
-  read_value_mm(findHashStringString(mi.de,"outputFormat"), &(simulationInfo->outputFormat));
-  infoStreamPrint(LOG_SIMULATION, 0, "output format: %s", MMC_STRINGDATA(simulationInfo->outputFormat));
+  read_value_string(findHashStringString(mi.de,"outputFormat"), &(simulationInfo->outputFormat));
+  infoStreamPrint(LOG_SIMULATION, 0, "output format: %s", simulationInfo->outputFormat);
 
-  read_value_mm(findHashStringString(mi.de,"variableFilter"), &(simulationInfo->variableFilter));
-  infoStreamPrint(LOG_SIMULATION, 0, "variable filter: %s", MMC_STRINGDATA(simulationInfo->variableFilter));
+  read_value_string(findHashStringString(mi.de,"variableFilter"), &(simulationInfo->variableFilter));
+  infoStreamPrint(LOG_SIMULATION, 0, "variable filter: %s", simulationInfo->variableFilter);
 
   read_value_string(findHashStringString(mi.md,"OPENMODELICAHOME"), &simulationInfo->OPENMODELICAHOME);
   infoStreamPrint(LOG_SIMULATION, 0, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
@@ -600,7 +601,7 @@ void read_input_xml(MODEL_DATA* modelData,
       out[j].filterOutput = 1; \
     } \
     addHashStringLong(&mapAlias, info->name, j); /* create a mapping for Alias variable to get the correct index */ \
-    debugStreamPrint(LOG_DEBUG, 0, "real %s: mapAlias[%s] = %ld", debugName, info->name, j); \
+    debugStreamPrint(LOG_DEBUG, 0, "real %s: mapAlias[%s] = %ld", debugName, info->name, (long) j); \
   } \
   messageClose(LOG_DEBUG);
 
@@ -803,15 +804,6 @@ static inline void read_value_string(const char *s, const char **str)
     return;
   }
   *str = strdup(s);
-}
-
-static inline void read_value_mm(const char *s, modelica_string *str)
-{
-  if(str == NULL) {
-    warningStreamPrint(LOG_SIMULATION, 0, "error read_value, no data allocated for storing string");
-    return;
-  }
-  *str = mmc_mk_scon(s);
 }
 
 /* reads double value from a string */
@@ -1040,5 +1032,17 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
     infoStreamPrint(LOG_SOLVER, 0, "override done!");
   } else {
     infoStreamPrint(LOG_SOLVER, 0, "NO override given on the command line.");
+  }
+}
+
+void parseVariableStr(char* variableStr)
+{
+  /* TODO! FIXME!: support also quoted identifiers containing comma: , */
+  unsigned int i = 0, insideArray = 0;
+  for (i = 0; i < strlen(variableStr); i++)
+  {
+    if (variableStr[i] == '[') { insideArray = 1; }
+    if (variableStr[i] == ']') { insideArray = 0; }
+    if ((insideArray == 0) && (variableStr[i] == ',')) { variableStr[i] = '!'; }
   }
 }

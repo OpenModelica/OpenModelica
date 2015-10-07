@@ -23,6 +23,7 @@ FFLAGS  = -O -fexceptions
 builddir = ../../build
 
 CDASKRDIR=$(top_builddir)/3rdParty/Cdaskr/solver/
+CMINPACKDIR=$(top_builddir)/3rdParty/CMinpack/
 
 RUNTIME_HEADERS = \
 ./omc_inline.h \
@@ -40,20 +41,28 @@ RUNTIMEOPTIMZ_HEADERS = ./optimization/OptimizerData.h ./optimization/OptimizerL
 RUNTIMESIMULATION_HEADERS = ./simulation/modelinfo.h \
 ./simulation/options.h \
 ./simulation/simulation_info_xml.h \
+./simulation/simulation_info_json.h \
 ./simulation/simulation_input_xml.h \
 ./simulation/simulation_runtime.h
 
 RUNTIMESIMRESULTS_HEADERS = ./simulation/results/simulation_result.h
 
 RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/delay.h \
+./simulation/solver/epsilon.h \
 ./simulation/solver/mixedSystem.h \
 ./simulation/solver/linearSystem.h \
+./simulation/solver/linearSolverLapack.h \
+./simulation/solver/linearSolverTotalPivot.h \
 ./simulation/solver/model_help.h \
+./simulation/solver/mixedSearchSolver.h \
 ./simulation/solver/nonlinearSystem.h \
+./simulation/solver/nonlinearSolverHomotopy.h \
+./simulation/solver/nonlinearSolverHybrd.h \
 ./simulation/solver/stateset.h \
 ./simulation/solver/perform_simulation.c \
 ./simulation/solver/perform_qss_simulation.c \
 ./simulation/solver/dassl.h \
+./simulation/solver/omc_math.h \
 ./simulation/solver/events.h \
 ./simulation/solver/synchronous.h \
 ./simulation/solver/external_input.h\
@@ -63,9 +72,9 @@ RUNTIMEMETA_HEADERS = ./meta/meta_modelica_builtin_boxptr.h \
 ./meta/meta_modelica_builtin_boxvar.h \
 ./meta/meta_modelica_builtin.h \
 ./meta/meta_modelica.h \
+./meta/meta_modelica_data.h \
 ./meta/meta_modelica_mk_box.h \
-./meta/meta_modelica_segv.h \
-./meta/meta_modelica_string_lit.h
+./meta/meta_modelica_segv.h
 
 RUNTIMEMETAGC_HEADERS = ./meta/gc/mmc_gc.h
 
@@ -81,6 +90,7 @@ RUNTIMEUTIL_HEADERS = \
 ./util/modelica.h \
 ./util/modelica_string.h \
 ./util/omc_error.h \
+./util/omc_mmap.h \
 ./util/omc_msvc.h \
 ./util/omc_spinlock.h \
 ./util/read_matlab4.c \
@@ -95,10 +105,14 @@ RUNTIMEUTIL_HEADERS = \
 ./util/rtclock.h \
 ./util/simulation_options.h \
 ./util/string_array.h \
+./util/uthash.h \
 ./util/utility.h \
 ./util/varinfo.h \
 ./util/list.h \
-./util/rational.h
+./util/rational.h \
+./util/modelica_string_lit.h \
+./util/omc_init.h \
+./util/cJSON.h
 
 RUNTIMEINITIALIZATION_HEADERS = \
 ./simulation/solver/initialization/initialization.h
@@ -214,7 +228,7 @@ bootstrap-dependencies: $(LIBRUNTIME)
 	cp -p $(RUNTIMEMETAGC_HEADERS) $(builddir_inc)/c/meta/gc/
 	cp -p $(RUNTIMEUTIL_HEADERS) $(builddir_inc)/c/util/
 
-install: bootstrap-dependencies $(LIBSIMULATION) $(LIBFMIRUNTIME) $(ALL_OBJS)
+install: bootstrap-dependencies $(LIBSIMULATION) $(LIBFMIRUNTIME) $(ALL_OBJS) sourcedist
 	# copy libraries
 	cp -p $(LIBSIMULATION) $(LIBFMIRUNTIME) $(builddir_lib)
 	test ! -f libSimulationRuntimeC.bc || cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so
@@ -234,5 +248,13 @@ clean:
 	(! test -f $(EXTERNALCBUILDDIR)/Makefile) || make -C $(EXTERNALCBUILDDIR) distclean
 
 sourcedist:
-	mkdir -p $(builddir_inc)/cruntime/
-	cp -a $(ALL_OBJS:%.o=%.c*) $(builddir_inc)/cruntime/
+	$(MAKE) OMC_MINIMAL_RUNTIME=1 OMC_FMI_RUNTIME=1 sourcedist_internal
+
+sourcedist_internal:
+	mkdir -p $(builddir_inc)/c/external_solvers external_solvers
+	cp $(CMINPACK_OBJS:%=$(CMINPACKDIR)/%.c) "external_solvers/"
+	cp "$(CMINPACKDIR)/minpack.h" "$(CMINPACKDIR)/cminpack.h" "$(builddir_inc)/c/external_solvers"
+	cd $(builddir_inc)/c/ && mkdir -p $(ALL_PATHS)
+	(D=`pwd` && cd $(builddir_inc)/c/ $(FMI_ME_OBJS:%.o= && (OMCFILE=% && cp $$D/$$OMCFILE.c $$OMCFILE.c)))
+	cp Makefile.objs $(builddir_inc)/c/
+	rm -r ./external_solvers

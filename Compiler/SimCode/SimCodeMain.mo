@@ -147,7 +147,7 @@ algorithm
   (libs,libPaths,includes, includeDirs, recordDecls, functions, literals) :=
     SimCodeUtil.createFunctions(p, inBackendDAE);
   simCode := createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters,
-    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, libPaths, simSettingsOpt, recordDecls, literals, Absyn.FUNCTIONARGS({},{}));
+    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, libPaths, simSettingsOpt, recordDecls, literals, Absyn.FUNCTIONARGS({},{}), isFMU=true);
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   SimCodeFunctionUtil.execStat("SimCode");
 
@@ -439,6 +439,7 @@ protected function createSimCode "
   input list<SimCode.RecordDeclaration> recordDecls;
   input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
   input Absyn.FunctionArgs args;
+  input Boolean isFMU=false;
   output SimCode.SimCode simCode;
 algorithm
   simCode := matchcontinue(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,simSettingsOpt, recordDecls, literals, args)
@@ -472,7 +473,7 @@ algorithm
     then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,simSettingsOpt, recordDecls, literals, args);
 
     else equation
-      (tmpSimCode, _) = SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args);
+      (tmpSimCode, _) = SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args, isFMU=isFMU);
     then tmpSimCode;
   end matchcontinue;
 end createSimCode;
@@ -591,12 +592,22 @@ algorithm
   _ := match (simCode,target)
     local
       String str;
+      String fmutmp;
 
     case (SimCode.SIMCODE(),"C")
       algorithm
+        fmutmp := simCode.fileNamePrefix + ".fmutmp";
+        if System.directoryExists(fmutmp) then
+          if not System.removeDirectory(fmutmp) then
+            print("Failed to remove directory: " + fmutmp + "\n");
+            fail();
+          end if;
+        end if;
+        Util.createDirectoryTree(fmutmp + "/sources/include/");
         if Flags.isSet(Flags.MODEL_INFO_JSON) then
           SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
-          true := System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_info.json", simCode.fileNamePrefix+"_info.c");
+          str := fmutmp + "/sources/" + simCode.fileNamePrefix;
+          true := System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_info.json", str+"_info.c");
         else
           Tpl.tplNoret2(SimCodeDump.dumpSimCodeToC, simCode, false);
         end if;

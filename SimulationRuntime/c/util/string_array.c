@@ -32,7 +32,7 @@
 #include "string_array.h"
 #include "memory_pool.h"
 #include "index_spec.h"
-#include "meta/meta_modelica.h"
+#include "modelica_string.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -944,7 +944,7 @@ const char** data_of_string_c89_array(const string_array_t *a)
 {
   long i;
   size_t sz = base_array_nr_of_elements(*a);
-  const char **res = (const char**) GC_malloc(sz*sizeof(const char*));
+  const char **res = (const char**) omc_alloc_interface.malloc(sz*sizeof(const char*));
   for (i=0; i<sz; i++) {
     res[i] = MMC_STRINGDATA(((void**)a->data)[i]);
   }
