@@ -16,7 +16,7 @@ equation
   der(y1) = p*u;
   der(y2) = y1;
   b = der(y1) > 0;
-  when b then 
+  when b then
     i = pre(i) + 1;
   end when;
 end test_Bug2764;
@@ -26,7 +26,8 @@ getErrorString();
 translateModelFMU(test_Bug2764, version="2.0");
 getErrorString();
 
-system("cat modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");
+// unzip to console, quiet, extra quiet
+system("unzip -cqq test_Bug2764.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");
 readFile("modelDescription.tmp.xml");
 
 // Result:
