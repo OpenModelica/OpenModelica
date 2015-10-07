@@ -112,7 +112,7 @@ class Simulations(object):
         """
         for i in range(len(self.sub_processes)):
             self.sub_processes[i].wait()
-            print "          Finished   %s  " % (self.sims[i])
+            print "%20s \t %s  " % ("Finished", self.sims[i])
 
     def get_simulations(self):
         """
@@ -131,7 +131,7 @@ class Simulations(object):
         :param i: Index of the simulation that will be executed.
         :type i: Integer
         """
-        print "[%d/%d]    Start      %s  " % (i, self.sims_num, self.sims[i])
+        print "[%3d/%3d] %7s \t %s  " % (i, self.sims_num, "Start", self.sims[i])
         sim = self.settings.omc_command + ' ' + self.sims[i]
         # args should be sequence of arguments (https://docs.python.org/2/library/subprocess.html#popen-constructor)
         args = sim.split(" ")  # shlex.split(sim)
@@ -143,7 +143,7 @@ class Simulations(object):
         log_file = open(self.settings.wdir + os.path.sep + self.sims[i] + ".txt", "w")
         # Call subprocess and append Popen object to list of objects
         self.sub_processes.append(
-            subprocess.Popen(args, cwd=self.settings.wdir, stdout=log_file, stderr=subprocess.STDOUT))
+           subprocess.Popen(args, cwd=self.settings.wdir, stdout=log_file, stderr=subprocess.STDOUT))
         self.scrs.append(i)
 
     def execute_first_np_simulations(self):
@@ -161,8 +161,7 @@ class Simulations(object):
             fi = self.wait_for_a_finished_simulation()
             logging.debug('Number of active subprocess is %d.', len(self.sub_processes))
             logging.debug('Sub process i=%d has finished.', fi)
-            print "          Finished   %s  " % (self.sims[self.scrs[fi]])
-            # print "Finished simulation ", self.sims[self.scrs[fi]]
+            print "%20s \t %s  " % ("Finished", self.sims[self.scrs[fi]])
             self.sub_processes.pop(fi)
             self.scrs.pop(fi)
             self.run_simulation(i)
