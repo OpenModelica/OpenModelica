@@ -1,5 +1,5 @@
 lib_LTLIBRARIES = libModelicaExternalC.la libModelicaStandardTables.la
-libModelicaExternalC_la_SOURCES = ../../C-Sources/ModelicaInternal.c ../../C-Sources/ModelicaStrings.c
+libModelicaExternalC_la_SOURCES = ../../C-Sources/ModelicaInternal.c ../../C-Sources/ModelicaRandom.c ../../C-Sources/ModelicaStrings.c
 libModelicaStandardTables_la_SOURCES = ../../C-Sources/ModelicaStandardTables.c ../../C-Sources/ModelicaMatIO.c
 # If the OS does not have zlib available, compile it and include it together with libModelicaStandardTables
 if INCLUDEZLIB
