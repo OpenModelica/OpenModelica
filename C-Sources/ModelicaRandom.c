@@ -17,15 +17,15 @@
                      Implemented a first version.
 
    This file is licensed under the BSD 2-Clause License:
- 
+
    Copyright (C) 2015, DLR and Modelica Association.
-  
+
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are met:
 
     1. Redistributions of source code must retain the above copyright notice,
        this list of conditions and the following disclaimer.
-	  
+
     2. Redistributions in binary form must reproduce the above copyright
        notice, this list of conditions and the following disclaimer in the
        documentation and/or other materials provided with the distribution.
@@ -383,10 +383,10 @@ MODELICA_EXPORT void ModelicaRandom_xorshift1024star(int state_in[], int state_o
 */
 
 /* Internal state of impure random number generator */
-#define ModelicaRandom_SIZE 33
+static const size_t ModelicaRandom_size = 33;
 static uint64_t ModelicaRandom_s[ 16 ];
 static int ModelicaRandom_p;
-static int ModelicaRandom_id=0;
+static int ModelicaRandom_id = 0;
 
 MODELICA_EXPORT void ModelicaRandom_setInternalState_xorshift1024star(int* state, size_t nState, int id) {
     /* receives the external states from Modelica */
@@ -396,8 +396,8 @@ MODELICA_EXPORT void ModelicaRandom_setInternalState_xorshift1024star(int* state
     } s;
     int i;
 
-    if ( nState > ModelicaRandom_SIZE ) {
-        ModelicaFormatError("External state vector is too large. Should be %d.",ModelicaRandom_SIZE);
+    if ( nState > ModelicaRandom_size ) {
+        ModelicaFormatError("External state vector is too large. Should be %lu.\n", (unsigned long)ModelicaRandom_size);
     }
     MUTEX_LOCK();
         for (i=0; i<16; i++) {
@@ -438,7 +438,7 @@ MODELICA_EXPORT double ModelicaRandom_impureRandom_xorshift1024star(int id) {
     MUTEX_LOCK();
         /* Check that ModelicaRandom_initializeImpureRandome_xorshift1024star was called before */
         if ( id != ModelicaRandom_id ) {
-            ModelicaError("Function impureRandom not initialized with function initializeImpureRandom");
+            ModelicaError("Function impureRandom not initialized with function initializeImpureRandom\n");
         }
 
         /* Compute random number */

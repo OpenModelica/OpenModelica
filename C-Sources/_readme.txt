@@ -4,6 +4,7 @@ to the following object libraries
 - ModelicaExternalC (.lib, .dll, .a, .so, depending on tool and OS) containing:
   ModelicaInternal.c
   ModelicaStrings.c
+  ModelicaRandom.c
   win32_dirent.c (for Visual C++ on Windows)
 
 - ModelicaStandardTables (.lib, .dll, .a, .so, depending on tool and OS) containing:
@@ -24,4 +25,4 @@ Additionally, a tool vendor has to provide library "lapack"
 and this library should be used in the linker when a model is compiled
 that uses this library in its library annotation.
 
-August 07, 2014.
+October 06, 2015.
