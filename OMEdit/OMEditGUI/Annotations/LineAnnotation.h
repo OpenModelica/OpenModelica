@@ -60,7 +60,7 @@ public:
   LineAnnotation(GraphicsView *pGraphicsView);
   LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   LineAnnotation(Component *pStartComponent, GraphicsView *pGraphicsView);
-  LineAnnotation(QString annotation, bool inheritedShape, Component *pStartComponent, Component *pEndComponent, GraphicsView *pGraphicsView);
+  LineAnnotation(QString annotation, Component *pStartComponent, Component *pEndComponent, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
   QPainterPath getShape() const;
   QRectF boundingRect() const;

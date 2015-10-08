@@ -195,8 +195,8 @@ public:
   QString getUniqueComponentName(QString componentName, int number = 1);
   bool checkComponentName(QString componentName);
   QList<Component*> getComponentsList();
-  void createConnection(QString startComponentName, QString endComponentName);
-  void deleteConnection(QString startComponentName, QString endComponentName, bool updateModelicaText);
+  void createConnection(LineAnnotation *pConnectionLineAnnotation);
+  void deleteConnection(LineAnnotation *pConnectonLineAnnotation, bool updateModelicaText);
   void addConnectionObject(LineAnnotation *pConnectionLineAnnotation);
   void deleteConnectionObject(LineAnnotation *pConnectionLineAnnotation);
   void addShapeObject(ShapeAnnotation *pShape);
@@ -247,7 +247,7 @@ signals:
   void keyRelease();
 public slots:
   void addConnection(Component *pComponent);
-  void removeConnection();
+  void removeCurrentConnection();
   void removeConnection(LineAnnotation *pConnection, bool updateModelicaText);
   void resetZoom();
   void zoomIn();
@@ -413,6 +413,7 @@ private:
   void removeInheritedClassComponents(InheritedClass *pInheritedClass);
   void drawModelInheritedClassComponents(InheritedClass *pInheritedClass);
   void getModelComponents();
+  void getModelConnections();
   void getModelConnections(QString className, bool inheritedCycle = false);
   void getTLMComponents();
   void getTLMConnections();

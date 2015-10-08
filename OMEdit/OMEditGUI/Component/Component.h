@@ -175,6 +175,7 @@ public:
   QString getTransformationExtent();
   void applyRotation(qreal angle);
   void addConnectionDetails(LineAnnotation *pConnectorLineAnnotation);
+  void removeConnectionDetails(LineAnnotation *pConnectorLineAnnotation);
   void emitAdded();
   void emitTransformHasChanged();
   void emitDeleted();
