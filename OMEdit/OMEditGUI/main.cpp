@@ -227,13 +227,9 @@ int main(int argc, char *argv[])
     }
   }
   Q_INIT_RESOURCE(resource_omedit);
-  // read the second argument if specified by user.
-  QString fileName = "";
-  // adding style sheet
-  argc++;
-  argv[(argc - 1)] = (char*)"-stylesheet=:/Resources/css/stylesheet.qss";
-
   QApplication a(argc, argv);
+  // set the stylesheet
+  a.setStyleSheet("file:///:/Resources/css/stylesheet.qss");
 #if !(QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   QTextCodec::setCodecForTr(QTextCodec::codecForName(Helper::utf8.toLatin1().data()));
   QTextCodec::setCodecForCStrings(QTextCodec::codecForName(Helper::utf8.toLatin1().data()));
@@ -285,6 +281,7 @@ int main(int argc, char *argv[])
   setlocale(LC_NUMERIC, "C");
   // if user has requested to open the file by passing it in argument then,
   bool OMCLogger = false;
+  QString fileName = "";
   QStringList fileNames;
   if (a.arguments().size() > 1) {
     for (int i = 1; i < a.arguments().size(); i++) {
