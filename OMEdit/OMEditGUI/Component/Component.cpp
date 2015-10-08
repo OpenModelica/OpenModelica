@@ -210,8 +210,13 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
 //    parseAnnotationString(Helper::defaultComponentAnnotationString);
   } else {
-    if (mpLibraryTreeItem->isNonExisting()) {
+    if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
+      mpDefaultComponentRectangle->setVisible(true);
+      mpDefaultComponentText->setVisible(true);
+      mpCoOrdinateSystem = new CoOrdinateSystem;
+    } else  if (mpLibraryTreeItem->isNonExisting()) { // if class is non existing
       mpNonExistingComponentLine->setVisible(true);
+      mpCoOrdinateSystem = new CoOrdinateSystem;
     } else {
       createClassInheritedShapes();
       createClassShapes(mpLibraryTreeItem);
@@ -221,14 +226,14 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
         mpDefaultComponentRectangle->setVisible(true);
         mpDefaultComponentText->setVisible(true);
       }
+      if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+        mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getCoOrdinateSystem();
+      } else {
+        mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getCoOrdinateSystem();
+      }
     }
   }
   // transformation
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-    mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getCoOrdinateSystem();
-  } else {
-    mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getCoOrdinateSystem();
-  }
   mpTransformation = new Transformation(mpGraphicsView->getViewType());
   mpTransformation->parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
   if (transformation.isEmpty()) {
@@ -244,9 +249,11 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
   createActions();
   mpOriginItem = new OriginItem(this);
   createResizerItems();
-  setToolTip(tr("<b>%1</b> %2").arg(mpLibraryTreeItem->getNameStructure()).arg(mpComponentInfo->getName()));
-  connect(mpLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), SLOT(handleLoaded()));
-  connect(mpLibraryTreeItem, SIGNAL(unLoaded(LibraryTreeItem*)), SLOT(handleUnloaded()));
+  setToolTip(tr("<b>%1</b> %2").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName()));
+  if (mpLibraryTreeItem) {
+    connect(mpLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), SLOT(handleLoaded()));
+    connect(mpLibraryTreeItem, SIGNAL(unLoaded(LibraryTreeItem*)), SLOT(handleUnloaded()));
+  }
   connect(this, SIGNAL(transformHasChanged()), SLOT(updatePlacementAnnotation()));
   connect(this, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
 }
@@ -270,7 +277,7 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView, Compone
   mpTransformation = new Transformation(mpReferenceComponent->getTransformation());
   setTransform(mpTransformation->getTransformationMatrix());
   mpOriginItem = 0;
-  setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpLibraryTreeItem->getNameStructure()).arg(mpComponentInfo->getName())
+  setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName())
              .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
   connect(mpReferenceComponent, SIGNAL(added()), SLOT(referenceComponentAdded()));
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceComponentChanged()));
@@ -304,9 +311,12 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
 //    parseAnnotationString(Helper::defaultComponentAnnotationString);
   } else {
-    if (mpLibraryTreeItem->isNonExisting()) {
+    if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
+      mpDefaultComponentRectangle->setVisible(true);
+      mpDefaultComponentText->setVisible(true);
+      mpCoOrdinateSystem = new CoOrdinateSystem;
+    } else  if (mpLibraryTreeItem->isNonExisting()) { // if class is non existing
       mpNonExistingComponentLine->setVisible(true);
-      // transformation
       mpCoOrdinateSystem = new CoOrdinateSystem;
     } else {
       createClassInheritedShapes();
@@ -317,7 +327,6 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
         mpDefaultComponentRectangle->setVisible(true);
         mpDefaultComponentText->setVisible(true);
       }
-      // transformation
       if (mpGraphicsView->getViewType() == StringHandler::Icon) {
         mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getCoOrdinateSystem();
       } else {
@@ -332,10 +341,12 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   mpGraphicsView->addItem(mpOriginItem);
   createResizerItems();
   mpGraphicsView->addItem(this);
-  setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpLibraryTreeItem->getNameStructure()).arg(mpComponentInfo->getName())
+  setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName())
              .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
-  connect(mpLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), SLOT(handleLoaded()));
-  connect(mpLibraryTreeItem, SIGNAL(unLoaded(LibraryTreeItem*)), SLOT(handleUnloaded()));
+  if (mpLibraryTreeItem) {
+    connect(mpLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), SLOT(handleLoaded()));
+    connect(mpLibraryTreeItem, SIGNAL(unLoaded(LibraryTreeItem*)), SLOT(handleUnloaded()));
+  }
   connect(mpReferenceComponent, SIGNAL(added()), SLOT(referenceComponentAdded()));
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceComponentChanged()));
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
@@ -662,7 +673,7 @@ QString Component::getPlacementAnnotation()
   if (mpTransformation) {
     placementAnnotationString.append("visible=").append(mpTransformation->getVisible() ? "true" : "false");
   }
-  if (mpLibraryTreeItem->getRestriction() == StringHandler::Connector) {
+  if (mpLibraryTreeItem && mpLibraryTreeItem->getRestriction() == StringHandler::Connector) {
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
       // first get the component from diagram view and get the transformations
       Component *pComponent;
@@ -753,11 +764,11 @@ void Component::emitDeleted()
 void Component::componentNameHasChanged()
 {
   if (mIsInheritedComponent || mComponentType == Component::Port) {
-    setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpLibraryTreeItem->getNameStructure())
+    setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpComponentInfo->getClassName())
                .arg(mpComponentInfo->getName())
                .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
   } else {
-    setToolTip(tr("<b>%1</b> %2").arg(mpLibraryTreeItem->getNameStructure()).arg(mpComponentInfo->getName()));
+    setToolTip(tr("<b>%1</b> %2").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName()));
   }
   emit displayTextChanged();
 }
@@ -788,27 +799,29 @@ QString Component::getParameterDisplayString(QString parameterName)
   displayString = pOMCProxy->getComponentModifierValue(modelName, mpComponentInfo->getName() + "." + parameterName);
   /* case 2 */
   if (displayString.isEmpty()) {
-    QList<ComponentInfo*> componentInfoList = pOMCProxy->getComponents(mpLibraryTreeItem->getNameStructure());
-    foreach (ComponentInfo *pComponentInfo, componentInfoList) {
-      if (pComponentInfo->getName().compare(parameterName) == 0) {
-        displayString = pOMCProxy->getParameterValue(mpLibraryTreeItem->getNameStructure(), parameterName);
-        break;
+    if (mpLibraryTreeItem) {
+      foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
+        if (pComponent->getComponentInfo()->getName().compare(parameterName) == 0) {
+          displayString = pOMCProxy->getParameterValue(mpLibraryTreeItem->getNameStructure(), parameterName);
+          break;
+        }
       }
     }
   }
   /* case 3 */
   if (displayString.isEmpty()) {
-    foreach (Component *pInheritedComponent, mInheritanceList) {
-      QList<ComponentInfo*> componentInfoList = pOMCProxy->getComponents(pInheritedComponent->getLibraryTreeItem()->getNameStructure());
-      foreach (ComponentInfo *pComponentInfo, componentInfoList) {
-        if (pComponentInfo->getName().compare(parameterName) == 0) {
-          displayString = pOMCProxy->getExtendsModifierValue(mpLibraryTreeItem->getNameStructure(),
-                                                              pInheritedComponent->getLibraryTreeItem()->getNameStructure(), parameterName);
-          /* case 3.3 */
-          if (displayString.isEmpty()) {
-            displayString = pOMCProxy->getParameterValue(pInheritedComponent->getLibraryTreeItem()->getNameStructure(), parameterName);
+    if (mpLibraryTreeItem) {
+      foreach (ModelWidget::InheritedClass *pInheritedClass, mpLibraryTreeItem->getModelWidget()->getInheritedClassesList()) {
+        foreach (Component *pComponent, pInheritedClass->mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
+          if (pComponent->getComponentInfo()->getName().compare(parameterName) == 0) {
+            displayString = pOMCProxy->getExtendsModifierValue(mpLibraryTreeItem->getNameStructure(),
+                                                               pInheritedClass->mpLibraryTreeItem->getNameStructure(), parameterName);
+            /* case 3.3 */
+            if (displayString.isEmpty()) {
+              displayString = pOMCProxy->getParameterValue(pInheritedClass->mpLibraryTreeItem->getNameStructure(), parameterName);
+            }
+            break;
           }
-          break;
         }
       }
     }
@@ -947,7 +960,7 @@ void Component::updatePlacementAnnotation()
                                                   QString::number(getTransformation()->getRotateAngle()));
   } else {
     OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
-    pOMCProxy->updateComponent(mpComponentInfo->getName(), mpLibraryTreeItem->getNameStructure(),
+    pOMCProxy->updateComponent(mpComponentInfo->getName(), mpComponentInfo->getClassName(),
                                mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), getPlacementAnnotation());
     mpGraphicsView->getModelWidget()->updateModelicaText();
   }
@@ -1591,6 +1604,10 @@ void Component::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 
 void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
+  // if user right clicks the built in type like Integer, Real etc. we don't show the context menu.
+  if (!mpLibraryTreeItem) {
+    return;
+  }
   Component *pComponent = getRootParentComponent();
   if (pComponent->isSelected()) {
     pComponent->showResizerItems();

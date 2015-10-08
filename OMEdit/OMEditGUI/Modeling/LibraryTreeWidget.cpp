@@ -1062,6 +1062,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, LibraryTr
   LibraryTreeItem *pLibraryTreeItem = findNonExistingLibraryTreeItem(nameStructure);
   if (pLibraryTreeItem && pLibraryTreeItem->isNonExisting()) {
     wasNonExisting = true;
+    pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? isSystemLibrary : pParentLibraryTreeItem->isSystemLibrary());
     createNonExistingLibraryTreeItem(pLibraryTreeItem, pParentLibraryTreeItem);
     // read the LibraryTreeItem text
     readLibraryTreeItemClassText(pLibraryTreeItem);
@@ -1177,7 +1178,7 @@ void LibraryTreeModel::createNonExistingLibraryTreeItem(LibraryTreeItem *pLibrar
   OMCProxy *pOMCProxy = mpLibraryWidget->getMainWindow()->getOMCProxy();
   pLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pLibraryTreeItem->getNameStructure()));
   pLibraryTreeItem->setIsSaved(isSaved);
-  pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem->isSystemLibrary());
+  pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? true : pParentLibraryTreeItem->isSystemLibrary());
   pLibraryTreeItem->setIsProtected(pOMCProxy->isProtectedClass(pParentLibraryTreeItem->getNameStructure(), pLibraryTreeItem->getName()));
   if (pParentLibraryTreeItem->isDocumentationClass()) {
     pLibraryTreeItem->setIsDocumentationClass(true);
@@ -1475,7 +1476,7 @@ LibraryTreeItem* LibraryTreeModel::getLibraryTreeItemFromFile(QString fileName, 
  * \param text
  * \param show
  */
-void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, QString text, bool show)
+void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, QString text, bool show, bool newModel)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   if (show) {
@@ -1494,7 +1495,7 @@ void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, QStrin
       pLibraryTreeItem->getModelWidget()->hide();
     }
   } else {
-    ModelWidget *pModelWidget = new ModelWidget(pLibraryTreeItem, mpLibraryWidget->getMainWindow()->getModelWidgetContainer(), text);
+    ModelWidget *pModelWidget = new ModelWidget(pLibraryTreeItem, mpLibraryWidget->getMainWindow()->getModelWidgetContainer(), text, newModel);
     pLibraryTreeItem->setModelWidget(pModelWidget);
     pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getNameStructure() + (pLibraryTreeItem->isSaved() ? "" : "*"));
     if (show) {
@@ -1712,8 +1713,6 @@ void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, Libr
   int row = pLibraryTreeItem->row();
   beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem), row, row);
   pParentLibraryTreeItem->removeChild(pLibraryTreeItem);
-  // remove all cached OMC commands for LibraryTreeItem
-  mpLibraryWidget->getMainWindow()->getOMCProxy()->removeCachedOMCCommand(pLibraryTreeItem->getNameStructure());
   endRemoveRows();
 }
 
