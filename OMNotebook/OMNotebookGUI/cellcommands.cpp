@@ -436,20 +436,19 @@ namespace IAEX
       LatexCell *oldLatexCell = dynamic_cast<LatexCell *>( cell );
 
       newLatexCell->setStyle( style );
-      newLatexCell->setText( oldLatexCell->text() );
+      newLatexCell->setTextHtml(oldLatexCell->textHtml());
       if( oldLatexCell->isEvaluated() )
       {
         newLatexCell->setEvaluated(true);
         //newLatexCell->setTextOutput( oldLatexCell->textOutput() );
         newLatexCell->setTextOutputHtml(oldLatexCell->textOutputHtml());
-        newLatexCell->output_->show();
-        newLatexCell->latexButton->show();
+
       }
       else
        {
         newLatexCell->setEvaluated(false);
       }
-      //newLatexCell->setClosed( oldLatexCell->isClosed() );
+      newLatexCell->setClosed( oldLatexCell->isClosed() );
 
     }
 

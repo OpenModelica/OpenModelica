@@ -731,21 +731,12 @@ namespace IAEX
           {
             text = e.text();
             LatexCell *gCell = dynamic_cast<LatexCell*>(latexcell);
-            gCell->setText(text);
+            gCell->setTextHtml(text);
           }
           else if( e.tagName() == XML_OUTPUTPART )
           {
             LatexCell *iCell = dynamic_cast<LatexCell*>(latexcell);
-            iCell->setTextOutput( e.text() );
-            if(!e.text().isEmpty())
-            {
-            iCell->output_->show();
-            iCell->latexButton->show();
-            }
-            else
-            {
-             iCell->input_->show();
-            }
+            iCell->setTextOutput(e.text());
           }
           else if( e.tagName() == XML_IMAGE )
           {
@@ -853,14 +844,17 @@ namespace IAEX
       else if( typeid(LatexCell) == typeid(*parent) )
       {
         LatexCell *latexcell = dynamic_cast<LatexCell*>(parent);
-
+        QString html = latexcell->textHtml();
+        html.replace(imagename,newname);
+        latexcell->setTextHtml(html);
+        /*
         QString html = latexcell->textOutputHtml();
         html.replace( imagename, newname );
 
         latexcell->setTextOutputHtml( html );
         latexcell->output_->textCursor().insertImage(newname);
         latexcell->output_->show();
-        latexcell->latexButton->show();
+        latexcell->latexButton->show(); */
       }
 
       else

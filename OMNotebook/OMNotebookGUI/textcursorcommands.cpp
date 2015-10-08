@@ -61,6 +61,7 @@
 #include "cellcursor.h"
 #include "inputcell.h"
 #include "graphcell.h"
+#include "latexcell.h"
 
 
 namespace IAEX
@@ -98,6 +99,18 @@ namespace IAEX
         }
         else
           graphcell->textEdit()->cut();
+      }
+
+      else if( typeid(LatexCell) == typeid(*cell) )
+      {
+        LatexCell *latexcell = dynamic_cast<LatexCell*>(cell);
+        if( latexcell->textEditOutput()->hasFocus() &&
+          latexcell->isEvaluated() )
+        {
+          latexcell->textEditOutput()->cut();
+        }
+        else
+          latexcell->textEdit()->cut();
       }
 
 
@@ -147,6 +160,17 @@ namespace IAEX
         else
           graphcell->textEdit()->copy();
       }
+      else if( typeid(LatexCell) == typeid(*cell) )
+      {
+        LatexCell *latexcell = dynamic_cast<LatexCell*>(cell);
+        if( latexcell->textEditOutput()->hasFocus() &&
+          latexcell->isEvaluated() )
+        {
+          latexcell->textEditOutput()->copy();
+        }
+        else
+          latexcell->textEdit()->copy();
+      }
       else
       {
         QTextEdit *editor = cell->textEdit();
@@ -168,11 +192,38 @@ namespace IAEX
      */
   void TextCursorPasteText::execute()
   {
-    QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
+      Cell *cell = document()->getCursor()->currentCell();
+      if( cell )
+      {
+        if( typeid(LatexCell) == typeid(*cell) )
+        {
+          LatexCell *latexcell = dynamic_cast<LatexCell*>(cell);
+          if( latexcell->textEditOutput()->hasFocus() &&
+            latexcell->isEvaluated() )
+          {
+            latexcell->textEditOutput()->paste();
+          }
+          else
+          {
+            latexcell->textEdit()->paste();
+          }
+        }
+        else
+        {
+          QTextEdit *editor = cell->textEdit();
+          if( editor )
+          {
+            editor->paste();
+          }
+        }
+
+      }
+
+  /*  QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
     if( editor )
     {
       editor->paste();
-    }
+    }*/
   }
 
 

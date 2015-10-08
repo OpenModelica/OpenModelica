@@ -4086,24 +4086,21 @@ void NotebookWindow::shiftcellsUp()
                     //qDebug()<<"latexcells"<<eval << l->textOutputHtml();
                     if(eval==true)
                     {
-                    QString latexinput=l->text();
+                    QString latexinput=l->textHtml();
                     QString latexoutput=l->textOutputHtml();
                     subject_->cursorDeleteCell();
                     subject_->cursorStepUp();
                     subject_->executeCommand(new CreateNewCellCommand("Latex"));
                     LatexCell *newcell = dynamic_cast<LatexCell *>(subject_->getCursor()->currentCell());
                     //newcell->setEvaluated(true);
-                   // newcell->setClosed(false);
-                    newcell->setText(latexinput);
+                    //newcell->setClosed(false);
+                    newcell->setTextHtml(latexinput);
                     newcell->setTextOutputHtml(latexoutput);
-                    newcell->input_->hide();
-                    newcell->output_->show();
-                    newcell->latexButton->show();
                     }
                     else
                     {
                      subject_->cursorDeleteCell();
-                          //subject_->getCursor()->moveUp();
+                     //subject_->getCursor()->moveUp();
                      subject_->cursorStepUp();
                      subject_->executeCommand(new CreateNewCellCommand("Latex"));
                      subject_->getCursor()->currentCell()->setText(currenttext);
@@ -4208,7 +4205,7 @@ void NotebookWindow::shiftcellsDown()
                 //qDebug()<<"latexcells"<<eval << ld->textOutputHtml();
                 if(eval==true)
                 {
-                QString latexinput_d=ld->text();
+                QString latexinput_d=ld->textHtml();
                 QString latexoutput_d=ld->textOutputHtml();
                 subject_->cursorDeleteCell();
                 subject_->cursorStepDown();
@@ -4216,16 +4213,13 @@ void NotebookWindow::shiftcellsDown()
                 LatexCell *newcell_d = dynamic_cast<LatexCell *>(subject_->getCursor()->currentCell());
                 //newcell_d->setEvaluated(true);
                 //newcell_d->setClosed(false);
-                newcell_d->setText(latexinput_d);
+                newcell_d->setTextHtml(latexinput_d);
                 newcell_d->setTextOutputHtml(latexoutput_d);
-                newcell_d->input_->hide();
-                newcell_d->output_->show();
-                newcell_d->latexButton->show();
                 }
                 else
                 {
                  subject_->cursorDeleteCell();
-                      //subject_->getCursor()->moveUp();
+                 //subject_->getCursor()->moveUp();
                  subject_->cursorStepDown();
                  subject_->executeCommand(new CreateNewCellCommand("Latex"));
                  subject_->getCursor()->currentCell()->setText(currenttext);

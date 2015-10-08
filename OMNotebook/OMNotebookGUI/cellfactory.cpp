@@ -233,11 +233,16 @@ namespace IAEX
       QObject::connect(text->input_, SIGNAL(undoAvailable(bool)), doc_, SIGNAL(undoAvailable(bool)));
       QObject::connect(text->input_, SIGNAL(redoAvailable(bool)), doc_, SIGNAL(redoAvailable(bool)));
       QObject::connect(text->output_, SIGNAL(copyAvailable(bool)), doc_, SIGNAL(copyAvailable(bool)));
+      QObject::connect(text->output_, SIGNAL(undoAvailable(bool)), doc_, SIGNAL(undoAvailable(bool)));
+      QObject::connect(text->output_, SIGNAL(redoAvailable(bool)), doc_, SIGNAL(redoAvailable(bool)));
 
       //      if(CellDocument* d = dynamic_cast<CellDocument*>(doc_))
       QObject::connect(doc_, SIGNAL(setAutoIndent(bool)), text->input_, SLOT(setAutoIndent(bool)));
+      QObject::connect(doc_, SIGNAL(setAutoIndent(bool)), text->output_, SLOT(setAutoIndent(bool)));
+
       //QObject::connect(doc_, SIGNAL(evaluate()), text->input_, SIGNAL(eval()));
       text->input_->setAutoIndent(dynamic_cast<CellDocument*>(doc_)->autoIndent);
+      text->output_->setAutoIndent(dynamic_cast<CellDocument*>(doc_)->autoIndent);
 
       return text;
     }

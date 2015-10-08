@@ -977,9 +977,27 @@ namespace IAEX
       getCursor()->moveAfter(clickedCell); //Results in bus error why?
     }
 
+   if( typeid(LatexCell) == typeid(*clickedCell))
+    {
+     LatexCell *latexcell = dynamic_cast<LatexCell*>(clickedCell);
+     bool r =latexcell->isEvaluated();
+     if(r==true)
+     {
+       latexcell->input_->setReadOnly(true);
+       latexcell->setFocus(true);
+     }
+     else
+     {
+       latexcell->input_->setReadOnly(false);
+     }
+    }
+    else
+    {
     clickedCell->setReadOnly(false);
     clickedCell->setFocus(true);
+      }
     emit cursorChanged();
+
   }
 
   /*!
@@ -1029,8 +1047,9 @@ namespace IAEX
     else if(typeid(LatexCell) == typeid(*clickedCell))
     {
       LatexCell *latexcell = dynamic_cast<LatexCell*>(clickedCell);
-      latexcell->setReadOnly(false);
+      //latexcell->setReadOnly(false);
       latexcell->setFocusOutput(true);
+      latexcell->output_->setReadOnly(false);
      /* QString text=latexcell->textOutput();
       if(!text.isEmpty())
       {

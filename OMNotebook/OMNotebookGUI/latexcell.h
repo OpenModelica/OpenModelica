@@ -96,8 +96,6 @@ namespace IAEX
 
   public slots:
     void eval();
-    void hidelatexsource();
-    void showlatexsource();
     void command();
     void nextCommand();
     void nextField();
@@ -143,7 +141,8 @@ namespace IAEX
 
   public:
     MyTextEdit3* input_;
-    QTextBrowser *output_;
+    MyTextEdit3* output_;
+    //QTextBrowser *output_;
   private:
     QTextBrowser *chaptercounter_;
     //InputCellDelegate *delegate_;
@@ -152,9 +151,8 @@ namespace IAEX
 
   public:
     //QPushButton* variableButton;
-    QPushButton* hideButton;
-    QPushButton* latexButton;
-
+    //QPushButton* hideButton;
+    //QPushButton* latexButton;
     QTemporaryFile* imageFile;
   };
 

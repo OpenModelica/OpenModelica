@@ -370,7 +370,7 @@ namespace IAEX
 
     // Create an text element (for input) and append it to the element
     QDomElement textelement = domdoc_.createElement( XML_INPUTPART );
-    QDomText textnode = domdoc_.createTextNode( node->text() );
+    QDomText textnode = domdoc_.createTextNode( node->textHtml());
     textelement.appendChild( textnode );
     latexcell.appendChild( textelement );
 
@@ -378,7 +378,7 @@ namespace IAEX
     QDomElement outputelement = domdoc_.createElement( XML_OUTPUTPART );
 
     QDomText outputnode;
-    outputnode = domdoc_.createTextNode( node->textOutput() );
+    outputnode = domdoc_.createTextNode( node->textOutput());
 
     outputelement.appendChild( outputnode );
     latexcell.appendChild( outputelement );
@@ -399,7 +399,8 @@ namespace IAEX
 
     // Check if any image have been include in the text and add them
     // to the the the inputcell element
-    QString xoyz = node->textOutputHtml();
+   // QString xoyz = node->textOutputHtml();
+    QString xoyz = node->textHtml();
     saveImages( latexcell, xoyz );
 
     // Add inputcell element to current element

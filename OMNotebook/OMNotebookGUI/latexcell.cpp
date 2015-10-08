@@ -520,16 +520,8 @@ namespace IAEX {
   {
 
     input_ = new MyTextEdit3( mainWidget() );
-    hideButton = new QPushButton("H",input_);
-    hideButton->setToolTip("Hide the Latex Source");
-    hideButton->setMaximumWidth(25);
     layout_->addWidget( input_, 1, 1 );
-    layout_->addWidget(hideButton, 1, 2,Qt::AlignTop);
-
-    hideButton->hide();
-    // 2006-03-02 AF, Add a chapter counter
     createChapterCounter();
-
     input_->setReadOnly( true );
     input_->setUndoRedoEnabled( true );
     input_->setFrameShape( QFrame::Box );
@@ -543,13 +535,9 @@ namespace IAEX {
 
    // palette.setColor(input_->backgroundRole(), QColor(Qt::lightGray));
     palette.setColor(input_->backgroundRole(),QColor(247,247,247));
-
     input_->setPalette(palette);
-
-    hideButton->setPalette(palette);
     // is this needed, don't know /AF
     input_->installEventFilter(this);
-    connect(hideButton, SIGNAL(clicked()), this, SLOT(hidelatexsource()));
     connect( input_, SIGNAL( textChanged() ), this, SLOT( contentChanged()));
     connect( input_, SIGNAL( clickOnCell() ), this, SLOT( clickEvent() ));
     connect( input_, SIGNAL( wheelMove(QWheelEvent*) ), this, SLOT( wheelEvent(QWheelEvent*) ));
@@ -559,9 +547,9 @@ namespace IAEX {
     connect( input_, SIGNAL( nextField() ), this, SLOT( nextField() ));
     connect( input_, SIGNAL( nextField() ), this, SLOT( nextField() ));
 
-    // connect( input_, SIGNAL( textChanged() ), this, SLOT( addToHighlighter() ));
+    //connect( input_, SIGNAL( textChanged() ), this, SLOT( addToHighlighter() ));
     connect( input_, SIGNAL( currentCharFormatChanged(const QTextCharFormat &) ),
-      this, SLOT( charFormatChanged(const QTextCharFormat &) ));
+       this, SLOT( charFormatChanged(const QTextCharFormat &) ));
     connect( input_, SIGNAL( forwardAction(int) ), this, SIGNAL( forwardAction(int) ));
 
     connect( input_, SIGNAL(updatePos(int, int)), this, SIGNAL(updatePos(int, int)));
@@ -571,22 +559,6 @@ namespace IAEX {
     connect(input_, SIGNAL(textChanged()), input_, SLOT(setModified()));
   }
 
- void LatexCell::hidelatexsource()
- {
-     input_->hide();
-     hideButton->hide();
-     latexButton->show();
-     output_->show();
- }
-
- void LatexCell::showlatexsource()
- {
-     output_->hide();
-     hideButton->show();
-     latexButton->hide();
-     input_->show();
- }
-
   /*!
   * \brief Creates the QTextEdit for the output part of the
   * LatexCell
@@ -595,27 +567,19 @@ namespace IAEX {
   void LatexCell::createOutputCell()
   {
     output_ = new MyTextEdit3( mainWidget() );
-    layout_->addWidget( output_, 1, 1 );
-    latexButton = new QPushButton("L",output_);
-    latexButton->setToolTip("Show the Latex Source");
-    latexButton->setMaximumWidth(25);
-    layout_->addWidget( latexButton, 1, 2, Qt::AlignTop);
-    latexButton->hide();
+    layout_->addWidget( output_, 2, 1 );
     output_->setReadOnly( true );
-
+    output_->setUndoRedoEnabled( true );
     output_->setOpenLinks(false);
-
     output_->setFrameShape( QFrame::Box );
     output_->setAutoFormatting( QTextEdit::AutoNone );
-
     output_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     output_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-    connect(latexButton, SIGNAL(clicked()), this, SLOT(showlatexsource()));
     connect( output_, SIGNAL( textChanged() ), this, SLOT(contentChanged()));
     connect( output_, SIGNAL( clickOnCell() ), this, SLOT( clickEventOutput() ));
     connect( output_, SIGNAL( wheelMove(QWheelEvent*) ), this, SLOT( wheelEvent(QWheelEvent*) ));
-
     connect(output_, SIGNAL(forwardAction(int)), this, SIGNAL(forwardAction(int)));
+    connect(output_, SIGNAL(textChanged()), output_, SLOT(setModified()));
 
     setOutputStyle();
 
@@ -1158,12 +1122,32 @@ void LatexCell::eval()
        *  4) Display the output as image to the output cell inorder to maintain the
        *     equations and formula structures
        */
-    //hideButton->hide();
-    //latexButton->show();
+
+    /*!
+     * transfer the latex source to output cell and display the final output in
+     * inputcell to have better view with hiding latex source and also maintain the
+     * height of the final output to keep the Notebook precise.Any changes made to
+     * latex source after first evaluation is done from outputcell.
+     */
+
+    QString expr;
+    if(!evaluated_)
+     {
+       output_->setText(input_->toPlainText());
+       QString latexexpr=output_->toPlainText();
+       expr=latexexpr;
+      }
+    else
+       {
+        QString latexexpr=output_->toPlainText();
+        expr=latexexpr;
+    }
+    //output_->setReadOnly(false);
     input_->blockSignals(true);
     output_->blockSignals(true);
-    output_->textCursor().insertText("");
+    //output_->textCursor().insertText("");
     setState(Eval_l);
+    input_->setReadOnly(true);
     bool setdvi=false;
     bool setpng=false;
     bool setpage=false;
@@ -1181,7 +1165,7 @@ void LatexCell::eval()
     QString Png = tempfname + ".png";
     QString log = tempfname + ".log";
 
-    QString expr = input_->toPlainText();
+    //QString expr = input_->toPlainText();
     if (!expr.isEmpty())
     {
         expr.replace("\\begin{document}","\\begin{document} \\thispagestyle{empty}");
@@ -1208,8 +1192,6 @@ void LatexCell::eval()
         /*Generate the DVI file from tex through latex */
         if (!Latexversion.isEmpty())
         {
-            hideButton->hide();
-            latexButton->show();
             process->start("latex", QStringList() << "-halt-on-error" << Tex);
             process->waitForFinished();
             QFile logfile(log);
@@ -1230,8 +1212,8 @@ void LatexCell::eval()
             QFileInfo checkdvi(Dvi);
             if(!checkdvi.exists())
             {
-                output_->clear();
-                output_->textCursor().insertText(texoutput);
+                input_->clear();
+                input_->textCursor().insertText(texoutput);
                 setClosed(false);
             }
             else
@@ -1253,19 +1235,16 @@ void LatexCell::eval()
                 QFileInfo checkpng(Png);
                 if(!checkpng.exists())
                 {
-                    output_->clear();
-                    output_->textCursor().insertText("Error:Problem in finding dvipng executable");
+                    input_->clear();
+                    input_->textCursor().insertText("Error:Problem in finding dvipng executable");
                     setClosed(false);
 
                 }
                 else
                 {
-                    output_->clear();
-                    output_->textCursor().insertImage(Png);
-                    //setClosed(false);
-                    input_->hide();
-                    output_->show();
-
+                    input_->clear();
+                    input_->textCursor().insertImage(Png);
+                    setClosed(true);
                 }
             }
             else
@@ -1278,10 +1257,8 @@ void LatexCell::eval()
     else
     {
         //qDebug()<< "Empty cells can't be evaluated";
-        hideButton->hide();
-        latexButton->show();
-        output_->clear();
-        output_->textCursor().insertText("Message: Empty Latex Cells cannot be Evaluated");
+        input_->clear();
+        input_->textCursor().insertText("Message: Empty Latex Cells cannot be Evaluated");
         setClosed(false);
     }
     input_->blockSignals(false);
@@ -1333,6 +1310,7 @@ void LatexCell::setState(int state_)
 
     if( commandcompletion->nextCommand( cursor ))
       input_->setTextCursor( cursor );
+
   }
 
   /*!
@@ -1345,6 +1323,7 @@ void LatexCell::setState(int state_)
 
     if( commandcompletion->nextField( cursor ))
       input_->setTextCursor( cursor );
+
   }
 
 
@@ -1353,7 +1332,6 @@ void LatexCell::setState(int state_)
   * cell is empty. This is done because otherwise the style is lost if
   * all text is removed inside a cell.
   */
-
   void LatexCell::charFormatChanged(const QTextCharFormat &)
   {
     input_->blockSignals( true );
