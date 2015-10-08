@@ -4929,7 +4929,7 @@ algorithm
       e2_1 = Expression.replaceDerOpInExp(e2);
       // create the lhs tmp var
       ty = Expression.typeof(e1);
-      (basety,dims) = Types.flattenArrayTypeOpt(ty);
+      (basety,dims) = Types.flattenArrayType(ty);
       ty = DAE.T_ARRAY(basety, dims, Types.getTypeSource(basety));
       left = ComponentReference.makeCrefIdent("$TMP_" + intString(iuniqueEqIndex), ty, {});
 

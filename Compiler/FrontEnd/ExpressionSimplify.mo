@@ -1362,11 +1362,11 @@ algorithm
       then Expression.makePureBuiltinCall("scalar", {exp}, tp);
     case (DAE.SIZE(exp=exp,sz=NONE()),_)
       equation
-        (_,{_}) = Types.flattenArrayTypeOpt(Expression.typeof(inExp));
+        (_,{_}) = Types.flattenArrayType(Expression.typeof(inExp));
       then DAE.SIZE(exp,SOME(DAE.ICONST(1)));
     else
       equation
-        (_,{}) = Types.flattenArrayTypeOpt(Expression.typeof(inExp));
+        (_,{}) = Types.flattenArrayType(Expression.typeof(inExp));
       then inExp;
   end match;
 end simplifyScalar;

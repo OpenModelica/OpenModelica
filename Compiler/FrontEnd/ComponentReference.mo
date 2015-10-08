@@ -2985,7 +2985,7 @@ algorithm
     case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(source=source), {}),true)
       equation
         // Flatten T_ARRAY(T_ARRAY(T_COMPLEX(), dim2,src), dim1,src) types to one level T_ARRAY(simpletype, alldims, src)
-        (basety as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims) = Types.flattenArrayTypeOpt(ty);
+        (basety as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims) = Types.flattenArrayType(ty);
         correctTy = DAE.T_ARRAY(basety,dims,source);
         // Create a list of : subscripts to generate all elements.
         subs = List.fill(DAE.WHOLEDIM(), listLength(dims));
@@ -2997,7 +2997,7 @@ algorithm
     case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(source=source), {}),_)
       equation
         // Flatten T_ARRAY(T_ARRAY(T_..., dim2,src), dim1,src) types to one level T_ARRAY(simpletype, alldims, src)
-        (basety, dims) = Types.flattenArrayTypeOpt(ty);
+        (basety, dims) = Types.flattenArrayType(ty);
         correctTy = DAE.T_ARRAY(basety,dims,source);
         // Create a list of : subscripts to generate all elements.
         subs = List.fill(DAE.WHOLEDIM(), listLength(dims));
@@ -3008,7 +3008,7 @@ algorithm
     case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(source=source), subs),true)
       equation
         // Flatten T_ARRAY(T_ARRAY(T_COMPLEX(), dim2,src), dim1,src) types to one level T_ARRAY(simpletype, alldims, src)
-        (basety as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims) = Types.flattenArrayTypeOpt(ty);
+        (basety as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims) = Types.flattenArrayType(ty);
         correctTy = DAE.T_ARRAY(basety,dims,source);
         // Use the subscripts to generate only the wanted elements.
          crefs = expandCref2(id, correctTy, subs, dims);
@@ -3019,7 +3019,7 @@ algorithm
     case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(source=source), subs),_)
       equation
         // Flatten T_ARRAY(T_ARRAY(T_..., dim2,src), dim1,src) types to one level T_ARRAY(simpletype, alldims, src)
-        (basety, dims) = Types.flattenArrayTypeOpt(ty);
+        (basety, dims) = Types.flattenArrayType(ty);
         correctTy = DAE.T_ARRAY(basety,dims,source);
         // Use the subscripts to generate only the wanted elements.
       then
@@ -3032,7 +3032,7 @@ algorithm
         // Expand the rest of the cref.
         crefs = expandCref_impl(cref,expandRecord);
         // Flatten T_ARRAY(T_ARRAY(T_..., dim2,src), dim1,src) types to one level T_ARRAY(simpletype, alldims, src)
-        (basety, dims) = Types.flattenArrayTypeOpt(ty);
+        (basety, dims) = Types.flattenArrayType(ty);
         correctTy = DAE.T_ARRAY(basety,dims,source);
         // Create a simple identifier for the head of the cref and expand it.
         cref = DAE.CREF_IDENT(id, correctTy, subs);

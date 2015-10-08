@@ -4534,135 +4534,67 @@ algorithm
 end compatibleArraydim;
 
 protected function elabArraydimType
-"Find out the dimension sizes of a type. The second argument is
-  used to know how many dimensions should be extracted from the
-  type."
+  "Find out the dimension sizes of a type. The second argument is used to know
+   how many dimensions should be extracted from the type."
   input DAE.Type inType;
   input Absyn.ArrayDim inArrayDim;
-  input DAE.Exp exp "Primarily used for error messages";
-  input Absyn.Path path "class of declaration, primarily used for error messages";
+  input DAE.Exp inExp "User for error messages.";
+  input Absyn.Path inPath "Class of declaration, used for error messages.";
   input Prefix.Prefix inPrefix;
-  input Absyn.ComponentRef componentRef;
-  input SourceInfo info;
+  input Absyn.ComponentRef inCref;
+  input SourceInfo inInfo;
   input list<list<DAE.Dimension>> inInstDims;
-  output DAE.Dimensions outDimensionLst;
+  output DAE.Dimensions outDimensions;
+protected
+  list<DAE.Dimension> flat_id;
+  String ad_str, ty_str, exp_str, name_str;
 algorithm
-  outDimensionLst := matchcontinue(inType,inArrayDim,exp,path,inPrefix,componentRef,info,inInstDims)
-    local
-      DAE.Type t;
-      list<Absyn.Subscript> ad;
-      String tpStr,adStr,expStr,str;
-      InstDims id;
-      list<DAE.Dimension> flat_id;
-    case(t,ad,_,_,_,_,_,_)
-      equation
-        true = Config.splitArrays();
-        true = (Types.numberOfDimensions(t) >= listLength(ad));
-        outDimensionLst = elabArraydimType2(t,ad,{});
-      then outDimensionLst;
+  flat_id := if Config.splitArrays() then {} else List.flatten(inInstDims);
 
-    case(t,ad,_,_,_,_,_,id)
-      equation
-        false = Config.splitArrays();
-        flat_id = List.flatten(id);
-        true = (Types.numberOfDimensions(t) >= listLength(ad) + listLength(flat_id));
-        outDimensionLst = elabArraydimType2(t,ad,flat_id);
-      then outDimensionLst;
-
-    case(t,ad,_,_,_,_,_,_)
-      equation
-        adStr = Absyn.pathString(path) + Dump.printArraydimStr(ad);
-        tpStr = Types.unparseTypeNoAttr(t);
-        expStr = ExpressionDump.printExpStr(exp);
-        str = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) + Absyn.printComponentRefStr(componentRef);
-        Error.addSourceMessage(Error.MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR,{str,adStr,expStr,tpStr},info);
-      then fail();
-    end matchcontinue;
+  try
+    true := Types.numberOfDimensions(inType) >= listLength(inArrayDim) + listLength(flat_id);
+    outDimensions := elabArraydimType2(inType, inArrayDim, flat_id);
+  else
+    ad_str := Absyn.pathString(inPath) + Dump.printArraydimStr(inArrayDim);
+    ty_str := Types.unparseTypeNoAttr(inType);
+    exp_str := ExpressionDump.printExpStr(inExp);
+    name_str := PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) +
+      Absyn.printComponentRefStr(inCref);
+    Error.addSourceMessageAndFail(Error.MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR,
+      {name_str, ad_str, exp_str, ty_str}, inInfo);
+  end try;
 end elabArraydimType;
 
 protected function elabArraydimType2
-"Help function to elabArraydimType."
+  "Help function to elabArraydimType."
   input DAE.Type inType;
   input Absyn.ArrayDim inArrayDim;
   input list<DAE.Dimension> inDims;
-  output DAE.Dimensions outDimensionOptionLst;
+  output DAE.Dimensions outDimensions;
 algorithm
-  outDimensionOptionLst := matchcontinue (inType,inArrayDim,inDims)
+  outDimensions := matchcontinue (inType, inArrayDim, inDims)
     local
-      DAE.Dimension d,d1;
+      DAE.Dimension d;
       DAE.Dimension dim;
-      list<DAE.Dimension> rest;
-      DAE.Dimensions l;
+      list<DAE.Dimension> rest_dims;
       DAE.Type t;
-      list<Absyn.Subscript> ad;
-      list<DAE.Subscript> subs;
-      DAE.Subscript sub;
-      DAE.TypeSource ts;
 
-    /*
-    case (DAE.T_ARRAY(dims = d::dims, ty = t, source = ts), ad, sub::subs)
-      equation
-        d1 = Expression.subscriptDimension(sub);
-         _ = compatibleArraydim(d,d1);
-        l = elabArraydimType2(DAE.T_ARRAY(t, dims, ts),ad,subs);
+    case (DAE.T_ARRAY(dims = {d}, ty = t), _, dim :: rest_dims)
+      algorithm
+        compatibleArraydim(d, dim);
       then
-        l;
+        elabArraydimType2(t, inArrayDim, rest_dims);
 
-    case (DAE.T_ARRAY(dims = {}, ty = t, source = ts), ad, subs)
-      equation
-        l = elabArraydimType2(t,ad,subs);
-      then
-        l;
+    case (DAE.T_ARRAY(dims = {d}, ty = t), _, {})
+      then d :: elabArraydimType2(t, listRest(inArrayDim), {});
 
-    case (DAE.T_ARRAY(dims = d::dims, ty = t, source = ts), (_ :: ad), {})
-      equation
-        l = elabArraydimType2(DAE.T_ARRAY(t, dims, ts),ad,{});
-      then
-        (d :: l);
+    case (_, {}, {}) then {};
 
-    case (DAE.T_ARRAY(dims = {}, ty = t, source = ts), ad,{})
-      equation
-        l = elabArraydimType2(t,ad,{});
-      then
-        l;
-    */
-    /*
-    case (DAE.T_ARRAY(dims = d::_::_, ty = t, source = ts), ad, subs)
-      equation
-        //print("Got a type with several dimensions: " + Types.printTypeStr(inType) + "\n");
-        t = Types.expTypetoTypesType(inType);
-        l = elabArraydimType2(t, ad, subs);
-      then
-        l;
-    */
-
-    case (DAE.T_ARRAY(dims = {d}, ty = t), ad, dim::rest)
-      equation
-         _ = compatibleArraydim(d,dim);
-        l = elabArraydimType2(t,ad,rest);
-      then
-        l;
-
-    case (DAE.T_ARRAY(dims = {d}, ty = t), (_ :: ad), {})
-      equation
-        l = elabArraydimType2(t,ad,{});
-      then
-        (d :: l);
-
-
-    case (_,{},{}) then {};
-    /* adrpo: handle also complex type!
-    case ((DAE.T_SUBTYPE_BASIC(complexType = t),_),ad)
-      equation
-        l = elabArraydimType2(t, ad);
-      then
-        l; */
-
-    case (t,(_ :: _),_) /* PR, for debugging */
+    case (_, (_ :: _), _) /* PR, for debugging */
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("Undefined! The type detected: ");
-        Debug.traceln(Types.printTypeStr(t));
+        Debug.traceln(Types.printTypeStr(inType));
       then
         fail();
   end matchcontinue;
