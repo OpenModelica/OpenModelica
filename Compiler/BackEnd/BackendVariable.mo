@@ -2659,6 +2659,19 @@ algorithm
   (outVarLst, outIntegerLst) := getVar(inComponentRef, inShared.knownVars);
 end getVarShared;
 
+public function containsCref
+  input DAE.ComponentRef cr;
+  input BackendDAE.Variables inVariables;
+  output Boolean outB;
+algorithm
+  try
+    getVar(cr, inVariables);
+    outB := true;
+  else
+    outB := false;
+  end try;
+end containsCref;
+
 public function getVar
 "author: PA
   Return a variable(s) and its index(es) in the vector.
