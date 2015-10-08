@@ -65,17 +65,17 @@ case SIMCODE(__) then
     <%ModelExchange(simCode)%>
     <%fmiTypeDefinitions(modelInfo, "2.0")%>
     <LogCategories>
-      <Category name="logEvents" />
-      <Category name="logSingularLinearSystems" />
-      <Category name="logNonlinearSystems" />
-      <Category name="logDynamicStateSelection" />
-      <Category name="logStatusWarning" />
-      <Category name="logStatusDiscard" />
-      <Category name="logStatusError" />
-      <Category name="logStatusFatal" />
-      <Category name="logStatusPending" />
-      <Category name="logAll" />
-      <Category name="logFmi2Call" />
+      <Category name="logEvents" description="logEvents" />
+      <Category name="logSingularLinearSystems" description="logSingularLinearSystems" />
+      <Category name="logNonlinearSystems" description="logNonlinearSystems" />
+      <Category name="logDynamicStateSelection" description="logDynamicStateSelection" />
+      <Category name="logStatusWarning" description="logStatusWarning" />
+      <Category name="logStatusDiscard" description="logStatusDiscard" />
+      <Category name="logStatusError" description="logStatusError" />
+      <Category name="logStatusFatal" description="logStatusFatal" />
+      <Category name="logStatusPending" description="logStatusPending" />
+      <Category name="logAll" description="logAll" />
+      <Category name="logFmi2Call" description="logFmi2Call" />
     </LogCategories>
     <%DefaultExperiment(simulationSettingsOpt)%>
     <%fmiModelVariables(modelInfo, "2.0")%>

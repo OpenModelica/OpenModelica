@@ -995,3 +995,40 @@ fmi2Status fmi2SetExternalFunction(fmi2Component c, fmi2ValueReference vr[], siz
   }
   return fmi2OK;
 }
+
+#ifdef FMU_EXPERIMENTAL
+fmi2Status fmi2GetOneDerivative(fmi2Component c, fmi2Real derivatives[], size_t nx) {
+  int i;
+  ModelInstance* comp = (ModelInstance *)c;
+  threadData_t *threadData = comp->threadData;
+  /* TODO
+  if (invalidState(comp, "fmi2GetSpecificDerivatives", modelEventMode|modelContinuousTimeMode|modelTerminated|modelError))
+    return fmi2Error;
+  if (invalidNumber(comp, "fmi2GetSpecificDerivatives", "nx", nx, NUMBER_OF_STATES))
+    return fmi2Error;
+  if (nullPointer(comp, "fmi2GetSpecificDerivatives", "derivatives[]", derivatives))
+    return fmi2Error;
+  */
+
+  /* try */
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+
+  comp->fmuData->callback->functionODEPartial(comp->fmuData, comp->threadData, nx);
+
+  #if NUMBER_OF_STATES>0
+  //for (i = 0; i < nx; i++) {
+  fmi2ValueReference vr = vrStatesDerivatives[nx];
+  derivatives[0] = getReal(comp, vr); // to be implemented by the includer of this file
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetDerivatives: #r%d# = %.16g", vr, derivatives[i])
+  //}
+  #endif
+
+  return fmi2OK;
+
+  /* catch */
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2GetSpecificDerivatives: terminated by an assertion.")
+  return fmi2Error;
+}
+#endif
+

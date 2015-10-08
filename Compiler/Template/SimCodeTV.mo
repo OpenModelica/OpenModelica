@@ -3187,6 +3187,7 @@ package Flags
   constant ConfigFlag PROFILING_LEVEL;
   constant ConfigFlag CPP_FLAGS;
   constant ConfigFlag MATRIX_FORMAT;
+  constant DebugFlag FMU_EXPERIMENTAL;
 
   function isSet
     input DebugFlag inFlag;

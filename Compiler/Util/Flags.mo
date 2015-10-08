@@ -463,6 +463,10 @@ constant DebugFlag DUMP_FUNCTIONS = DEBUG_FLAG(147, "dumpFunctions", false,
 constant DebugFlag BUILD_STATIC_SOURCE_FMU = DEBUG_FLAG(148, "buildStaticSourceFMU", false,
   Util.gettext("A temporary flag to not link the C run-time system when building an FMU; instead compiling the run-time sources into the FMU. The goal is to make this a truly static shared object, depending on nothing outside the FMU (all sources will be included)."));
 
+constant DebugFlag FMU_EXPERIMENTAL = DEBUG_FLAG(149, "fmuExperimental", false,
+  Util.gettext("Include an extra function in the FMU fmi2GetOneDerivative."));
+
+
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
 // initialization so that all flags are sorted by index (and thus have unique
@@ -616,7 +620,8 @@ constant list<DebugFlag> allDebugFlags = {
   EVAL_OUTPUT_ONLY,
   HARDCODED_START_VALUES,
   DUMP_FUNCTIONS,
-  BUILD_STATIC_SOURCE_FMU
+  BUILD_STATIC_SOURCE_FMU,
+  FMU_EXPERIMENTAL
 };
 
 public

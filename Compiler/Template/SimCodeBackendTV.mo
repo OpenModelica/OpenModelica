@@ -281,4 +281,12 @@ package FMI
   end getEnumerationTypeFromTypes;
 end FMI;
 
+
+package BackendQSS
+  function computeDependencies
+    input list<SimCode.SimEqSystem> eqs;
+    input DAE.ComponentRef cref;
+    output list<SimCode.SimEqSystem> deps;
+  end computeDependencies;
+end BackendQSS;
 end SimCodeBackendTV;
