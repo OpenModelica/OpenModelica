@@ -108,42 +108,51 @@ QString StringHandler::getModelicaClassType(int type)
   }
 }
 
+/*!
+ * \brief StringHandler::getModelicaClassType
+ * Returns the type of Modelica class.
+ * \param type
+ * \return
+ */
 StringHandler::ModelicaClasses StringHandler::getModelicaClassType(QString type)
 {
-  if (type.toLower().contains("model"))
+  if (type.toLower().contains("model")) {
     return StringHandler::Model;
-  else if (type.toLower().contains("class"))
+  } else if (type.toLower().contains("class")) {
     return StringHandler::Class;
-  else if (type.toLower().contains("connector"))
+  } else if (type.toLower().contains("expandable connector")) {
+    return StringHandler::ExpandableConnector;
+  } else if (type.toLower().contains("connector")) {
     return StringHandler::Connector;
-  else if (type.toLower().contains("operator record"))
+  } else if (type.toLower().contains("operator record")) {
     return StringHandler::OperatorRecord;
-  else if (type.toLower().contains("operator function"))
+  } else if (type.toLower().contains("operator function")) {
     return StringHandler::OperatorFunction;
-  else if (type.toLower().contains("record"))
+  } else if (type.toLower().contains("record")) {
     return StringHandler::Record;
-  else if (type.toLower().contains("block"))
+  } else if (type.toLower().contains("block")) {
     return StringHandler::Block;
-  else if (type.toLower().contains("function"))
+  } else if (type.toLower().contains("function")) {
     return StringHandler::Function;
-  else if (type.toLower().contains("package"))
+  } else if (type.toLower().contains("package")) {
     return StringHandler::Package;
-  else if (type.toLower().contains("type"))
+  } else if (type.toLower().contains("type")) {
     return StringHandler::Type;
-  else if (type.toLower().contains("operator"))
+  } else if (type.toLower().contains("operator")) {
     return StringHandler::Operator;
-  else if (type.toLower().contains("optimization"))
+  } else if (type.toLower().contains("optimization")) {
     return StringHandler::Optimization;
-  else if (type.toLower().contains("primitive"))
+  } else if (type.toLower().contains("primitive")) {
     return StringHandler::Primitive;
-  else if (type.toLower().contains("parameter"))
+  } else if (type.toLower().contains("parameter")) {
     return StringHandler::Parameter;
-  else if (type.toLower().contains("constant"))
+  } else if (type.toLower().contains("constant")) {
     return StringHandler::Constant;
-  else if (type.toLower().contains("protected"))
+  } else if (type.toLower().contains("protected")) {
     return StringHandler::Protected;
-  else
+  } else {
     return StringHandler::Model;
+  }
 }
 
 QString StringHandler::getViewType(int type)

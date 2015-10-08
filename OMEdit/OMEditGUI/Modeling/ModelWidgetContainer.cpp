@@ -634,78 +634,48 @@ QList<Component*> GraphicsView::getComponentsList()
 /*!
  * \brief GraphicsView::createConnection
  * Creates connection between startComponent and endComponent.
- * \param startComponentName
- * \param endComponentName
+ * \param pConnectionLineAnnotation
  */
-void GraphicsView::createConnection(QString startComponentName, QString endComponentName)
+void GraphicsView::createConnection(LineAnnotation *pConnectionLineAnnotation)
 {
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
-    /* complete the connection */
-    setIsCreatingConnection(false);
-    mpConnectionLineAnnotation->setStartComponentName(startComponentName);
-    mpConnectionLineAnnotation->setEndComponentName(endComponentName);
-    Component *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
-    if (pEndComponent->getParentComponent()) {
-      pEndComponent->getParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
-    } else {
-      pEndComponent->addConnectionDetails(mpConnectionLineAnnotation);
-    }
-    // update the last point to the center of component
-    QPointF newPos = pEndComponent->mapToScene(pEndComponent->boundingRect().center());
-    mpConnectionLineAnnotation->updateEndPoint(newPos);
-    mpConnectionLineAnnotation->update();
-    mConnectionsList.append(mpConnectionLineAnnotation);
     // show TLM connection attributes dialog
     MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-    TLMConnectionAttributes *pTLMConnectionAttributes = new TLMConnectionAttributes(mpConnectionLineAnnotation, pMainWindow);
+    TLMConnectionAttributes *pTLMConnectionAttributes = new TLMConnectionAttributes(pConnectionLineAnnotation, pMainWindow);
     pTLMConnectionAttributes->show();
-    // make the model modified
-    mpModelWidget->setModelModified();
   } else {
     MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-    if (pMainWindow->getOMCProxy()->addConnection(startComponentName, endComponentName, mpModelWidget->getLibraryTreeItem()->getNameStructure(),
-                                                  QString("annotate=").append(mpConnectionLineAnnotation->getShapeAnnotation()))) {
+    if (pMainWindow->getOMCProxy()->addConnection(pConnectionLineAnnotation->getStartComponentName(),
+                                                  pConnectionLineAnnotation->getEndComponentName(),
+                                                  mpModelWidget->getLibraryTreeItem()->getNameStructure(),
+                                                  QString("annotate=").append(pConnectionLineAnnotation->getShapeAnnotation()))) {
       /* Ticket #2450
-       Do not check for the ports compatibility via instantiatemodel. Just let the user create the connection.
-       //pMainWindow->getOMCProxy()->instantiateModelSucceeds(mpModelWidget->getNameStructure());
-      */
-      /* complete the connection */
-      setIsCreatingConnection(false);
-      mpConnectionLineAnnotation->setStartComponentName(startComponentName);
-      mpConnectionLineAnnotation->setEndComponentName(endComponentName);
-      Component *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
-      if (pEndComponent->getParentComponent()) {
-        pEndComponent->getParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
-      } else {
-        pEndComponent->addConnectionDetails(mpConnectionLineAnnotation);
-      }
-      // update the last point to the center of component
-      QPointF newPos = roundPoint(pEndComponent->mapToScene(pEndComponent->boundingRect().center()));
-      mpConnectionLineAnnotation->updateEndPoint(newPos);
-      mpConnectionLineAnnotation->update();
-      mConnectionsList.append(mpConnectionLineAnnotation);
-      // make the model modified
+       * Do not check for the ports compatibility via instantiatemodel. Just let the user create the connection.
+       */
+      //pMainWindow->getOMCProxy()->instantiateModelSucceeds(mpModelWidget->getNameStructure());
       mpModelWidget->updateModelicaText();
-      mpModelWidget->setModelModified();
     }
   }
+  // make the model modified
+  mpModelWidget->setModelModified();
 }
 
 /*!
  * \brief GraphicsView::deleteConnection
  * Deletes the connection from OMC.
- * \param startComponentName - is starting component name string.
- * \param endComponentName - is ending component name string.
+ * \param pConnectonLineAnnotation - the connection to delete.
  * \param updateModelicaText - updates the Modelica text if true.
  */
-void GraphicsView::deleteConnection(QString startComponentName, QString endComponentName, bool updateModelicaText)
+void GraphicsView::deleteConnection(LineAnnotation *pConnectonLineAnnotation, bool updateModelicaText)
 {
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   if(mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpModelWidget->getEditor());
-    pTLMEditor->deleteConnection(startComponentName, endComponentName);
+    pTLMEditor->deleteConnection(pConnectonLineAnnotation->getStartComponentName(), pConnectonLineAnnotation->getEndComponentName());
   } else {
-    pMainWindow->getOMCProxy()->deleteConnection(startComponentName, endComponentName, mpModelWidget->getLibraryTreeItem()->getNameStructure());
+    pMainWindow->getOMCProxy()->deleteConnection(pConnectonLineAnnotation->getStartComponentName(),
+                                                 pConnectonLineAnnotation->getEndComponentName(),
+                                                 mpModelWidget->getLibraryTreeItem()->getNameStructure());
     if (updateModelicaText) {
       mpModelWidget->updateModelicaText();
     }
@@ -1209,27 +1179,25 @@ void GraphicsView::addConnection(Component *pComponent)
 {
   // When clicking the start component
   if (!isCreatingConnection()) {
-    QPointF startPos = roundPoint(pComponent->mapToScene(pComponent->boundingRect().center()));
+    QPointF startPos = snapPointToGrid(pComponent->mapToScene(pComponent->boundingRect().center()));
     mpConnectionLineAnnotation = new LineAnnotation(pComponent, this);
     setIsCreatingConnection(true);
-    // if component is a connector
-    Component *pRootParentComponent = pComponent->getRootParentComponent();
-    if (pRootParentComponent) {
-      pRootParentComponent->addConnectionDetails(mpConnectionLineAnnotation);
-    } else {
-      pComponent->addConnectionDetails(mpConnectionLineAnnotation);
-    }
     mpConnectionLineAnnotation->addPoint(startPos);
     mpConnectionLineAnnotation->addPoint(startPos);
     mpConnectionLineAnnotation->addPoint(startPos);
   } else if (isCreatingConnection()) { // When clicking the end component
     mpConnectionLineAnnotation->setEndComponent(pComponent);
+    // update the last point to the center of component
+    QPointF newPos = snapPointToGrid(pComponent->mapToScene(pComponent->boundingRect().center()));
+    mpConnectionLineAnnotation->updateEndPoint(newPos);
+    mpConnectionLineAnnotation->update();
+    // check if connection is valid
     Component *pStartComponent = mpConnectionLineAnnotation->getStartComponent();
     MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
     if (pStartComponent == pComponent) {
       QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_CONNECT), Helper::ok);
-      removeConnection();
+      removeCurrentConnection();
     } else {
       bool showConnectionArrayDialog = false;
       if (pStartComponent->getComponentInfo()) {
@@ -1244,35 +1212,39 @@ void GraphicsView::addConnection(Component *pComponent)
       }
       if (showConnectionArrayDialog) {
         ConnectionArray *pConnectionArray = new ConnectionArray(this, mpConnectionLineAnnotation,
-                                                                getModelWidget()->getModelWidgetContainer()->getMainWindow());
+                                                                mpModelWidget->getModelWidgetContainer()->getMainWindow());
         pConnectionArray->exec();
       } else {
         QString startComponentName, endComponentName;
         if (pStartComponent->getParentComponent()) {
-          startComponentName = QString(pStartComponent->getRootParentComponent()->getName()).append(".").append(pStartComponent->getComponentInfo()->getName());
+          startComponentName = QString(pStartComponent->getRootParentComponent()->getName()).append(".").append(pStartComponent->getName());
         } else {
           startComponentName = pStartComponent->getName();
         }
         if (pComponent->getParentComponent()) {
-          endComponentName = QString(pComponent->getRootParentComponent()->getName()).append(".").append(pComponent->getComponentInfo()->getName());
+          endComponentName = QString(pComponent->getRootParentComponent()->getName()).append(".").append(pComponent->getName());
         } else {
           endComponentName = pComponent->getName();
         }
-        createConnection(startComponentName, endComponentName);
-        mpConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)").arg(startComponentName, endComponentName));
-        mpConnectionLineAnnotation->drawCornerItems();
-        mpConnectionLineAnnotation->setCornerItemsPassive();
+        mpConnectionLineAnnotation->setStartComponentName(startComponentName);
+        mpConnectionLineAnnotation->setEndComponentName(endComponentName);
+        mpModelWidget->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true, this));
       }
+      setIsCreatingConnection(false);
     }
   }
 }
 
-//! Removes the current connecting connector from the model.
-void GraphicsView::removeConnection()
+/*!
+ * \brief GraphicsView::removeCurrentConnection
+ * Removes the current connecting connector from the model.
+ */
+void GraphicsView::removeCurrentConnection()
 {
   if (isCreatingConnection()) {
     setIsCreatingConnection(false);
-    mpConnectionLineAnnotation->deleteLater();
+    delete mpConnectionLineAnnotation;
+    mpConnectionLineAnnotation = 0;
   }
 }
 
@@ -1294,7 +1266,7 @@ void GraphicsView::removeConnection(LineAnnotation *pConnection, bool updateMode
   }
   if (doDelete) {
     // If GUI delete is successful then delete the connection from omc as well.
-    deleteConnection(pConnection->getStartComponentName(), pConnection->getEndComponentName(), updateModelicaText);
+    deleteConnection(pConnection, updateModelicaText);
     // delete the connector object
     pConnection->deleteLater();
     // remove connector object from local connector vector
@@ -1849,7 +1821,7 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
   } else if (shiftModifier && controlModifier && event->key() == Qt::Key_R) {
     emit keyPressRotateAntiClockwise();
   } else if (event->key() == Qt::Key_Escape && isCreatingConnection()) {
-    removeConnection();
+    removeCurrentConnection();
   } else {
     QGraphicsView::keyPressEvent(event);
   }
@@ -2307,7 +2279,7 @@ void ModelWidget::loadModelWidget()
     getModelIconDiagramShapes();
     drawModelInheritedComponents();
     getModelComponents();
-    //getModelConnections(getLibraryTreeItem()->getNameStructure());
+    getModelConnections();
     mpUndoStack->clear();
   }
 }
@@ -2642,23 +2614,28 @@ void ModelWidget::createWidgetComponents()
   }
 }
 
+/*!
+ * \brief ModelWidget::getConnectorComponent
+ * Finds the Port Component within the Component.
+ * \param pConnectorComponent
+ * \param connectorName
+ * \return
+ */
 Component* ModelWidget::getConnectorComponent(Component *pConnectorComponent, QString connectorName)
 {
   Component *pConnectorComponentFound = 0;
-  foreach (Component *pComponent, pConnectorComponent->getComponentsList())
-  {
-    if (pComponent->getName().compare(connectorName) == 0)
-    {
+  foreach (Component *pComponent, pConnectorComponent->getComponentsList()) {
+    if (pComponent->getName().compare(connectorName) == 0) {
       pConnectorComponentFound = pComponent;
       return pConnectorComponentFound;
     }
   }
   /* if port is not found in components list then look into the inherited components list. */
-  foreach (Component *pInheritedComponent, pConnectorComponent->getInheritanceList())
-  {
+  foreach (Component *pInheritedComponent, pConnectorComponent->getInheritanceList()) {
     pConnectorComponentFound = getConnectorComponent(pInheritedComponent, connectorName);
-    if (pConnectorComponentFound)
+    if (pConnectorComponentFound) {
       return pConnectorComponentFound;
+    }
   }
   return pConnectorComponentFound;
 }
@@ -3101,28 +3078,15 @@ void ModelWidget::getModelComponents()
   }
 }
 
-void ModelWidget::getModelConnections(QString className, bool inheritedCycle)
+void ModelWidget::getModelConnections()
 {
   MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
-  // get the inherited connections of the class
-  int inheritanceCount = pMainWindow->getOMCProxy()->getInheritanceCount(className);
-  for(int i = 1 ; i <= inheritanceCount ; i++) {
-    QString inheritedClass = pMainWindow->getOMCProxy()->getNthInheritedClass(className, i);
-    /*
-      If the inherited class is one of the builtin type such as Real we can
-      stop here, because the class can not contain any components, etc.
-      Also check for cyclic loops.
-      */
-    if (!(pMainWindow->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(className) == 0)) {
-      getModelConnections(inheritedClass, true);
-    }
-  }
-  int connectionCount = pMainWindow->getOMCProxy()->getConnectionCount(className);
+  int connectionCount = pMainWindow->getOMCProxy()->getConnectionCount(mpLibraryTreeItem->getNameStructure());
   for (int i = 1 ; i <= connectionCount ; i++) {
     // get the connection from OMC
     QString connectionString;
     QStringList connectionList;
-    connectionString = pMainWindow->getOMCProxy()->getNthConnection(className, i);
+    connectionString = pMainWindow->getOMCProxy()->getNthConnection(mpLibraryTreeItem->getNameStructure(), i);
     connectionList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(connectionString));
     // if the connectionString only contains two items then continue the loop,
     // because connection is not valid then
@@ -3146,11 +3110,9 @@ void ModelWidget::getModelConnections(QString className, bool inheritedCycle)
     Component *pStartConnectorComponent = 0;
     Component *pEndConnectorComponent = 0;
     if (pStartComponent) {
-      pMainWindow->getOMCProxy()->sendCommand("getClassRestriction(" + pStartComponent->getLibraryTreeItem()->getNameStructure() + ")");
-      bool isExpandableConnector = pMainWindow->getOMCProxy()->getResult().toLower().contains("expandable connector");
       // if a component type is connector then we only get one item in startComponentList
       // check the startcomponentlist
-      if (startComponentList.size() < 2 || isExpandableConnector) {
+      if (startComponentList.size() < 2 || pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) {
         pStartConnectorComponent = pStartComponent;
       } else if (!pMainWindow->getOMCProxy()->existClass(pStartComponent->getLibraryTreeItem()->getNameStructure())) {
         /* if class doesn't exist then connect with the red cross box */
@@ -3166,9 +3128,7 @@ void ModelWidget::getModelConnections(QString className, bool inheritedCycle)
     if (pEndComponent) {
       // if a component type is connector then we only get one item in endComponentList
       // check the endcomponentlist
-      pMainWindow->getOMCProxy()->sendCommand("getClassRestriction(" + pEndComponent->getLibraryTreeItem()->getNameStructure() + ")");
-      bool isExpandableConnector = pMainWindow->getOMCProxy()->getResult().toLower().contains("expandable connector");
-      if (endComponentList.size() < 2 || isExpandableConnector) {
+      if (endComponentList.size() < 2 || pEndComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) {
         pEndConnectorComponent = pEndComponent;
       } else if (!pMainWindow->getOMCProxy()->existClass(pEndComponent->getLibraryTreeItem()->getNameStructure())) {
         /* if class doesn't exist then connect with the red cross box */
@@ -3182,30 +3142,128 @@ void ModelWidget::getModelConnections(QString className, bool inheritedCycle)
       }
     }
     // get the connector annotations from OMC
-    QString connectionAnnotationString = pMainWindow->getOMCProxy()->getNthConnectionAnnotation(className, i);
+    QString connectionAnnotationString = pMainWindow->getOMCProxy()->getNthConnectionAnnotation(mpLibraryTreeItem->getNameStructure(), i);
     QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(connectionAnnotationString), '(', ')');
     // Now parse the shapes available in list
     foreach (QString shape, shapesList) {
       if (shape.startsWith("Line")) {
         shape = shape.mid(QString("Line").length());
         shape = StringHandler::removeFirstLastBrackets(shape);
-        LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(shape, inheritedCycle, pStartConnectorComponent,
-                                                                       pEndConnectorComponent, mpDiagramGraphicsView);
-        if (pStartConnectorComponent) {
-          pStartConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
-        }
+        LineAnnotation *pConnectionLineAnnotation;
+        pConnectionLineAnnotation = new LineAnnotation(shape, pStartConnectorComponent, pEndConnectorComponent, mpDiagramGraphicsView);
         pConnectionLineAnnotation->setStartComponentName(connectionList.at(0));
-        if (pEndConnectorComponent) {
-          pEndConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
-        }
         pConnectionLineAnnotation->setEndComponentName(connectionList.at(1));
-        pConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)").arg(connectionList.at(0), connectionList.at(1)));
-        pConnectionLineAnnotation->drawCornerItems();
-        pConnectionLineAnnotation->setCornerItemsPassive();
-        mpDiagramGraphicsView->addConnectionObject(pConnectionLineAnnotation);
+        mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false, mpDiagramGraphicsView));
       }
     }
   }
+}
+
+void ModelWidget::getModelConnections(QString className, bool inheritedCycle)
+{
+//  MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
+//  // get the inherited connections of the class
+//  int inheritanceCount = pMainWindow->getOMCProxy()->getInheritanceCount(className);
+//  for(int i = 1 ; i <= inheritanceCount ; i++) {
+//    QString inheritedClass = pMainWindow->getOMCProxy()->getNthInheritedClass(className, i);
+//    /*
+//      If the inherited class is one of the builtin type such as Real we can
+//      stop here, because the class can not contain any components, etc.
+//      Also check for cyclic loops.
+//      */
+//    if (!(pMainWindow->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(className) == 0)) {
+//      getModelConnections(inheritedClass, true);
+//    }
+//  }
+//  int connectionCount = pMainWindow->getOMCProxy()->getConnectionCount(className);
+//  for (int i = 1 ; i <= connectionCount ; i++) {
+//    // get the connection from OMC
+//    QString connectionString;
+//    QStringList connectionList;
+//    connectionString = pMainWindow->getOMCProxy()->getNthConnection(className, i);
+//    connectionList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(connectionString));
+//    // if the connectionString only contains two items then continue the loop,
+//    // because connection is not valid then
+//    if (connectionList.size() < 3) {
+//      continue;
+//    }
+//    // get start and end components
+//    QStringList startComponentList = connectionList.at(0).split(".");
+//    QStringList endComponentList = connectionList.at(1).split(".");
+//    // get start component
+//    Component *pStartComponent = 0;
+//    if (startComponentList.size() > 0) {
+//      pStartComponent = mpDiagramGraphicsView->getComponentObject(startComponentList.at(0));
+//    }
+//    // get end component
+//    Component *pEndComponent = 0;
+//    if (endComponentList.size() > 0) {
+//      pEndComponent = mpDiagramGraphicsView->getComponentObject(endComponentList.at(0));
+//    }
+//    // get start and end connectors
+//    Component *pStartConnectorComponent = 0;
+//    Component *pEndConnectorComponent = 0;
+//    if (pStartComponent) {
+//      pMainWindow->getOMCProxy()->sendCommand("getClassRestriction(" + pStartComponent->getLibraryTreeItem()->getNameStructure() + ")");
+//      bool isExpandableConnector = pMainWindow->getOMCProxy()->getResult().toLower().contains("expandable connector");
+//      // if a component type is connector then we only get one item in startComponentList
+//      // check the startcomponentlist
+//      if (startComponentList.size() < 2 || isExpandableConnector) {
+//        pStartConnectorComponent = pStartComponent;
+//      } else if (!pMainWindow->getOMCProxy()->existClass(pStartComponent->getLibraryTreeItem()->getNameStructure())) {
+//        /* if class doesn't exist then connect with the red cross box */
+//        pStartConnectorComponent = pStartComponent;
+//      } else {
+//        // look for port from the parent component
+//        QString startComponentName = startComponentList.at(1);
+//        if (startComponentName.contains("["))
+//          startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
+//         pStartConnectorComponent = getConnectorComponent(pStartComponent, startComponentName);
+//      }
+//    }
+//    if (pEndComponent) {
+//      // if a component type is connector then we only get one item in endComponentList
+//      // check the endcomponentlist
+//      pMainWindow->getOMCProxy()->sendCommand("getClassRestriction(" + pEndComponent->getLibraryTreeItem()->getNameStructure() + ")");
+//      bool isExpandableConnector = pMainWindow->getOMCProxy()->getResult().toLower().contains("expandable connector");
+//      if (endComponentList.size() < 2 || isExpandableConnector) {
+//        pEndConnectorComponent = pEndComponent;
+//      } else if (!pMainWindow->getOMCProxy()->existClass(pEndComponent->getLibraryTreeItem()->getNameStructure())) {
+//        /* if class doesn't exist then connect with the red cross box */
+//        pEndConnectorComponent = pEndComponent;
+//      } else {
+//        QString endComponentName = endComponentList.at(1);
+//        if (endComponentName.contains("[")) {
+//          endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
+//        }
+//        pEndConnectorComponent = getConnectorComponent(pEndComponent, endComponentName);
+//      }
+//    }
+//    // get the connector annotations from OMC
+//    QString connectionAnnotationString = pMainWindow->getOMCProxy()->getNthConnectionAnnotation(className, i);
+//    QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(connectionAnnotationString), '(', ')');
+//    // Now parse the shapes available in list
+//    foreach (QString shape, shapesList) {
+//      if (shape.startsWith("Line")) {
+//        shape = shape.mid(QString("Line").length());
+//        shape = StringHandler::removeFirstLastBrackets(shape);
+//        LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(shape, inheritedCycle, pStartConnectorComponent,
+//                                                                       pEndConnectorComponent, mpDiagramGraphicsView);
+//        if (pStartConnectorComponent) {
+//          pStartConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
+//        }
+//        pConnectionLineAnnotation->setStartComponentName(connectionList.at(0));
+//        if (pEndConnectorComponent) {
+//          pEndConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
+//        }
+//        pConnectionLineAnnotation->setEndComponentName(connectionList.at(1));
+//        pConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)").arg(connectionList.at(0), connectionList.at(1)));
+//        pConnectionLineAnnotation->drawCornerItems();
+//        pConnectionLineAnnotation->setCornerItemsPassive();
+//        mpDiagramGraphicsView->addConnectionObject(pConnectionLineAnnotation);
+//      }
+//    }
+//  }
 }
 
 /*!
@@ -3278,8 +3336,8 @@ void ModelWidget::getTLMConnections()
            if (shape.startsWith("Line")) {
              shape = shape.mid(QString("Line").length());
              shape = StringHandler::removeFirstLastBrackets(shape);
-             LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(shape, false, pStartConnectorComponent,
-                                                                            pEndConnectorComponent, mpDiagramGraphicsView);
+             LineAnnotation *pConnectionLineAnnotation;
+             pConnectionLineAnnotation = new LineAnnotation(shape, pStartConnectorComponent, pEndConnectorComponent, mpDiagramGraphicsView);
              if (pStartConnectorComponent)
                pStartConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
              pConnectionLineAnnotation->setStartComponentName(StringHandler::getSubStringBeforeDots(connection.attribute("From")));

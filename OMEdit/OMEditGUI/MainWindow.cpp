@@ -2087,7 +2087,7 @@ void MainWindow::toggleShapesButton()
   if (pModelWidget) {
     GraphicsView *pGraphicsView = pModelWidget->getDiagramGraphicsView();
     if (pGraphicsView->isCreatingConnection()) {
-      pGraphicsView->removeConnection();
+      pGraphicsView->removeCurrentConnection();
     }
   }
 }

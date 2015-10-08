@@ -167,9 +167,8 @@ LineAnnotation::LineAnnotation(Component *pStartComponent, GraphicsView *pGraphi
   setEndComponent(0);
 }
 
-LineAnnotation::LineAnnotation(QString annotation, bool inheritedShape, Component *pStartComponent, Component *pEndComponent,
-                               GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inheritedShape, pGraphicsView, 0)
+LineAnnotation::LineAnnotation(QString annotation, Component *pStartComponent, Component *pEndComponent, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::ConnectionType;
@@ -880,7 +879,7 @@ void ConnectionArray::saveArrayIndex()
       }
     }
   }
-  mpGraphicsView->createConnection(startComponentName, endComponentName);
+  mpGraphicsView->createConnection(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)").arg(startComponentName, endComponentName));
   mpConnectionLineAnnotation->drawCornerItems();
   mpConnectionLineAnnotation->setCornerItemsPassive();
@@ -889,6 +888,6 @@ void ConnectionArray::saveArrayIndex()
 
 void ConnectionArray::cancelArrayIndex()
 {
-  mpGraphicsView->removeConnection();
+  mpGraphicsView->removeCurrentConnection();
   reject();
 }

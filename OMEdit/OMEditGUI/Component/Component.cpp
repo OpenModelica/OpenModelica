@@ -737,6 +737,13 @@ void Component::addConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
   connect(this, SIGNAL(transformHasChanged()), pConnectorLineAnnotation, SLOT(updateConnectionAnnotation()));
 }
 
+void Component::removeConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
+{
+  disconnect(this, SIGNAL(transformChange()), pConnectorLineAnnotation, SLOT(handleComponentMoved()));
+  disconnect(this, SIGNAL(rotationChange()), pConnectorLineAnnotation, SLOT(handleComponentRotation()));
+  disconnect(this, SIGNAL(transformHasChanged()), pConnectorLineAnnotation, SLOT(updateConnectionAnnotation()));
+}
+
 void Component::emitAdded()
 {
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
@@ -1596,7 +1603,7 @@ void Component::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
     emit showTLMAttributes();
   } else {
     if (!mpParentComponent) { // if root component is double clicked then show parameters.
-      mpGraphicsView->removeConnection();
+      mpGraphicsView->removeCurrentConnection();
       emit showParameters();
     }
   }

@@ -92,4 +92,16 @@ private:
   GraphicsView *mpGraphicsView;
 };
 
+class AddConnectionCommand : public QUndoCommand
+{
+public:
+  AddConnectionCommand(LineAnnotation *pConnectionLineAnnotation, bool addConnection, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  LineAnnotation *mpConnectionLineAnnotation;
+  bool mAddConnection;
+  GraphicsView *mpGraphicsView;
+};
+
 #endif // COMMANDS_H
