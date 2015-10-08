@@ -364,7 +364,7 @@ void ModelicaClassDialog::createModelicaClass()
     pLibraryTreeModel->loadNonExistingLibraryTreeItem(pLibraryTreeItem);
   }
   // show the ModelWidget
-  pLibraryTreeModel->showModelWidget(pLibraryTreeItem, "", true);
+  pLibraryTreeModel->showModelWidget(pLibraryTreeItem, "", true, true);
   accept();
 }
 

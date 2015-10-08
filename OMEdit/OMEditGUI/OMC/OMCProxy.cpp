@@ -215,77 +215,6 @@ void OMCProxy::getNextCommand()
 }
 
 /*!
-  Returns the cached OMC command from the hash.
-  \param className - the name of the class to search for.
-  \param command - the command to search for.
-  \return the OMC command
-  */
-cachedOMCCommand OMCProxy::getcachedOMCCommand(QString className, QString command)
-{
-  if (mCachedOMCCommandsMap.contains(className))
-  {
-    QList<cachedOMCCommand> commandsList = mCachedOMCCommandsMap.value(className);
-    foreach (cachedOMCCommand omcCommand, commandsList)
-    {
-      if (omcCommand.mOMCCommand.compare(command) == 0)
-        return omcCommand;
-    }
-  }
-  return cachedOMCCommand();
-}
-
-/*!
-  Adds the OMC command to the cached hash.
-  \param className - the name of the class.
-  \param command - the command.
-  \param commandResult - the command result
-  */
-void OMCProxy::cacheOMCCommand(QString className, QString command, QString commandResult)
-{
-  /* if the className is already in commands hash */
-  if (mCachedOMCCommandsMap.contains(className))
-  {
-    QList<cachedOMCCommand> commandsList = mCachedOMCCommandsMap.value(className);
-    /* if the commands list doesn't contain the command then add it */
-    bool found = false;
-    foreach (cachedOMCCommand omcCommand, commandsList)
-    {
-      if (omcCommand.mOMCCommand.compare(command) == 0)
-      {
-        found = true;
-        break;
-      }
-    }
-    if (!found)
-    {
-      cachedOMCCommand omcCommand;
-      omcCommand.mOMCCommand = command;
-      omcCommand.mOMCCommandResult = commandResult;
-      commandsList.append(omcCommand);
-      mCachedOMCCommandsMap.insert(className, commandsList);
-    }
-  }
-  else
-  {
-    QList<cachedOMCCommand> commandsList;
-    cachedOMCCommand omcCommand;
-    omcCommand.mOMCCommand = command;
-    omcCommand.mOMCCommandResult = commandResult;
-    commandsList.append(omcCommand);
-    mCachedOMCCommandsMap.insert(className, commandsList);
-  }
-}
-
-/*!
-  Removes the OMC command from the cached hash.
-  \param className - the name of the class.
-  */
-void OMCProxy::removeCachedOMCCommand(QString className)
-{
-  mCachedOMCCommandsMap.remove(className);
-}
-
-/*!
   Initializes the OpenModelica Compiler binary.\n
   Creates the omeditcommunication.log & omeditcommands.mos files.
   \return status - returns true if initialization is successful otherwise false.
@@ -355,34 +284,16 @@ void OMCProxy::quitOMC()
 }
 
 /*!
-  Sends the user commands to OMC.
-  \param expression - is used to send command as a string.
-  \param cacheCommand - is used to cache the OMC command.
-  \param className - the class name to store the cache command with.
-  \param dontUseCachedCommand - flag used to check whether we want to use cached command or not.
-  \see sendCommand()
-  */
-void OMCProxy::sendCommand(const QString expression, bool cacheCommand, QString className, bool dontUseCachedCommand)
+ * \brief OMCProxy::sendCommand
+ * Sends the user commands to OMC.
+ * \param expression - is used to send command as a string.
+ */
+void OMCProxy::sendCommand(const QString expression)
 {
   if (!mHasInitialized) {
-    if(!initializeOMC())      // if we are unable to start OMC. Exit the application.
-    {
+    // if we are unable to start OMC. Exit the application.
+    if(!initializeOMC()) {
       mpMainWindow->setExitApplicationStatus(true);
-      return;
-    }
-  }
-  /* if OMC command is find in the cached OMC commands then use it and return. */
-  if (!dontUseCachedCommand)
-  {
-    cachedOMCCommand pOMCCommand = getcachedOMCCommand(className, expression);
-    if (!pOMCCommand.mOMCCommandResult.isEmpty())
-    {
-      setResult(pOMCCommand.mOMCCommandResult);
-      // write command to the commands log.
-      QTime commandTime;
-      commandTime.start();
-      QString cacheString = QString("Using the cached OMC Command :: ");
-      logCommand(QString(cacheString).append(expression), &commandTime);
       return;
     }
   }
@@ -406,11 +317,6 @@ void OMCProxy::sendCommand(const QString expression, bool cacheCommand, QString 
   }
   mResult = MMC_STRINGDATA(reply_str);
   logResponse(mResult.trimmed(), &commandTime);
-
-  // cache the OMC command
-  if (cacheCommand) {
-    cacheOMCCommand(className, expression, getResult());
-  }
 
   MMC_ELSE()
     mResult = "";
@@ -1071,7 +977,7 @@ QStringList OMCProxy::getComponentModifierNames(QString className, QString name)
   */
 QString OMCProxy::getComponentModifierValue(QString className, QString name)
 {
-  sendCommand("getComponentModifierValue(" + className + "," + name + ")", true, className);
+  sendCommand("getComponentModifierValue(" + className + "," + name + ")");
   return StringHandler::getModifierValue(getResult()).trimmed();
 }
 
@@ -1099,7 +1005,7 @@ bool OMCProxy::setComponentModifierValue(QString className, QString modifierName
 
 QStringList OMCProxy::getExtendsModifierNames(QString className, QString extendsClassName)
 {
-  sendCommand("getExtendsModifierNames(" + className + "," + extendsClassName + ", useQuotes = true)", true, className);
+  sendCommand("getExtendsModifierNames(" + className + "," + extendsClassName + ", useQuotes = true)");
   return StringHandler::unparseStrings(getResult());
 }
 
@@ -1112,7 +1018,7 @@ QStringList OMCProxy::getExtendsModifierNames(QString className, QString extends
   */
 QString OMCProxy::getExtendsModifierValue(QString className, QString extendsClassName, QString modifierName)
 {
-  sendCommand("getExtendsModifierValue(" + className + "," + extendsClassName + "," + modifierName + ")", true, className);
+  sendCommand("getExtendsModifierValue(" + className + "," + extendsClassName + "," + modifierName + ")");
   return StringHandler::getModifierValue(getResult()).trimmed();
 }
 
@@ -1140,7 +1046,7 @@ bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassNa
   */
 bool OMCProxy::isExtendsModifierFinal(QString className, QString extendsClassName, QString modifierName)
 {
-  sendCommand("isExtendsModifierFinal(" + className + "," + extendsClassName + "," + modifierName + ")", true, className);
+  sendCommand("isExtendsModifierFinal(" + className + "," + extendsClassName + "," + modifierName + ")");
   return StringHandler::unparseBool(getResult());
 }
 
@@ -1152,7 +1058,7 @@ bool OMCProxy::isExtendsModifierFinal(QString className, QString extendsClassNam
 QString OMCProxy::getIconAnnotation(QString className)
 {
   QString expression = "getIconAnnotation(" + className + ")";
-  sendCommand(expression, true, className);
+  sendCommand(expression);
   return getResult();
 }
 
@@ -1164,7 +1070,7 @@ QString OMCProxy::getIconAnnotation(QString className)
 QString OMCProxy::getDiagramAnnotation(QString className)
 {
   QString expression = "getDiagramAnnotation(" + className + ")";
-  sendCommand(expression, true, className);
+  sendCommand(expression);
   return getResult();
 }
 
@@ -1176,19 +1082,18 @@ QString OMCProxy::getDiagramAnnotation(QString className)
 int OMCProxy::getConnectionCount(QString className)
 {
   QString expression = "getConnectionCount(" + className + ")";
-  sendCommand(expression, true, className);
+  sendCommand(expression);
   QString result = getResult();
-  if (!result.isEmpty())
-  {
+  if (!result.isEmpty()) {
     bool ok;
     int result_number = result.toInt(&ok);
-    if (ok)
+    if (ok) {
       return result_number;
-    else
+    } else {
       return 0;
+    }
   }
-  else
-    return 0;
+  return 0;
 }
 
 /*!
@@ -1200,7 +1105,7 @@ int OMCProxy::getConnectionCount(QString className)
 QString OMCProxy::getNthConnection(QString className, int num)
 {
   QString expression = "getNthConnection(" + className + ", " + QString::number(num) + ")";
-  sendCommand(expression, true, className);
+  sendCommand(expression);
   return getResult();
 }
 
@@ -1213,7 +1118,7 @@ QString OMCProxy::getNthConnection(QString className, int num)
 QString OMCProxy::getNthConnectionAnnotation(QString className, int num)
 {
   QString expression = "getNthConnectionAnnotation(" + className + ", " + QString::number(num) + ")";
-  sendCommand(expression, true, className);
+  sendCommand(expression);
   return getResult();
 }
 
@@ -1227,19 +1132,18 @@ QString OMCProxy::getNthConnectionAnnotation(QString className, int num)
 int OMCProxy::getInheritanceCount(QString className)
 {
   QString expression = "getInheritanceCount(" + className + ")";
-  sendCommand(expression, true, className);
+  sendCommand(expression);
   QString result = getResult();
-  if (!result.isEmpty())
-  {
+  if (!result.isEmpty()) {
     bool ok;
     int result_number = result.toInt(&ok);
-    if (ok)
+    if (ok) {
       return result_number;
-    else
+    } else {
       return 0;
+    }
   }
-  else
-    return 0;
+  return 0;
 }
 
 /*!
@@ -1253,7 +1157,7 @@ int OMCProxy::getInheritanceCount(QString className)
 QString OMCProxy::getNthInheritedClass(QString className, int num)
 {
   QString expression = "getNthInheritedClass(" + className + ", " + QString::number(num) + ")";
-  sendCommand(expression, true, className);
+  sendCommand(expression);
   return getResult();
 }
 
@@ -1281,7 +1185,7 @@ QList<QString> OMCProxy::getInheritedClasses(QString className)
 QList<ComponentInfo*> OMCProxy::getComponents(QString className)
 {
   QString expression = "getComponents(" + className + ", useQuotes = true)";
-  sendCommand(expression, true, className);
+  sendCommand(expression);
   QString result = getResult();
   QList<ComponentInfo*> componentInfoList;
   QStringList list = StringHandler::unparseArrays(result);
@@ -1304,7 +1208,7 @@ QList<ComponentInfo*> OMCProxy::getComponents(QString className)
 QStringList OMCProxy::getComponentAnnotations(QString className)
 {
   QString expression = "getComponentAnnotations(" + className + ")";
-  sendCommand(expression, true, className);
+  sendCommand(expression);
   return StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(getResult()));
 }
 
@@ -1619,7 +1523,7 @@ bool OMCProxy::saveTotalSCode(QString fileName, QString className)
  */
 QString OMCProxy::list(QString className)
 {
-  sendCommand("list(" + className + ")", true, className);
+  sendCommand("list(" + className + ")");
   return StringHandler::unparse(getResult());
 }
 
@@ -1679,7 +1583,7 @@ bool OMCProxy::addClassAnnotation(QString className, QString annotation)
   */
 QString OMCProxy::getDefaultComponentName(QString className)
 {
-  sendCommand("getDefaultComponentName(" + className + ")", true, className);
+  sendCommand("getDefaultComponentName(" + className + ")");
   if (getResult().compare("{}") == 0)
     return "";
 
@@ -1693,7 +1597,7 @@ QString OMCProxy::getDefaultComponentName(QString className)
   */
 QString OMCProxy::getDefaultComponentPrefixes(QString className)
 {
-  sendCommand("getDefaultComponentPrefixes(" + className + ")", true, className);
+  sendCommand("getDefaultComponentPrefixes(" + className + ")");
   if (getResult().compare("{}") == 0)
     return "";
 
@@ -2034,7 +1938,7 @@ QString OMCProxy::instantiateModel(QString className)
   */
 bool OMCProxy::isExperiment(QString className)
 {
-  sendCommand("isExperiment(" + className + ")", true, className);
+  sendCommand("isExperiment(" + className + ")");
   return StringHandler::unparseBool(getResult());
 }
 
@@ -2045,7 +1949,7 @@ bool OMCProxy::isExperiment(QString className)
   */
 QStringList OMCProxy::getSimulationOptions(QString className, double defaultTolerance)
 {
-  sendCommand("getSimulationOptions(" + className + ", defaultTolerance=" + QString::number(defaultTolerance) +")", true, className);
+  sendCommand("getSimulationOptions(" + className + ", defaultTolerance=" + QString::number(defaultTolerance) +")");
   QString result = StringHandler::removeFirstLastBrackets(getResult());
   return result.split(",");
 }
@@ -2327,7 +2231,7 @@ QStringList OMCProxy::getAvailableLibraries()
   */
 QString OMCProxy::getDerivedClassModifierValue(QString className, QString modifierName)
 {
-  sendCommand("getDerivedClassModifierValue(" + className + "," + modifierName + ")", true, className);
+  sendCommand("getDerivedClassModifierValue(" + className + "," + modifierName + ")");
   return StringHandler::getModifierValue(StringHandler::unparse(getResult()));
 }
 
@@ -2418,7 +2322,7 @@ bool OMCProxy::copyClass(QString className, QString newClassName, QString withIn
   */
 QStringList OMCProxy::getEnumerationLiterals(QString className)
 {
-  sendCommand("getEnumerationLiterals(" + className + ")", true, className);
+  sendCommand("getEnumerationLiterals(" + className + ")");
   QStringList enumerationLiterals = StringHandler::unparseStrings(getResult());
   printMessagesStringInternal();
   return enumerationLiterals;

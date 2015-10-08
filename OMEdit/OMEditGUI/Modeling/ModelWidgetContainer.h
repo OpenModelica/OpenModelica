@@ -318,7 +318,7 @@ class ModelWidget : public QWidget
 {
   Q_OBJECT
 public:
-  ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text);
+  ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text, bool newModel);
 
   class InheritedClass : public QObject
   {
@@ -364,7 +364,6 @@ public:
   void clearInheritedClasses() {mInheritedClassesList.clear();}
   InheritedClass* findInheritedClass(LibraryTreeItem *pLibraryTreeItem);
   void setModelModified();
-  void updateParentModelsText(QString className);
   void modelInheritedClassLoaded(InheritedClass *pInheritedClass);
   void modelInheritedClassUnLoaded(InheritedClass *pInheritedClass);
   ShapeAnnotation* createNonExistingInheritedShape(GraphicsView *pGraphicsView);
