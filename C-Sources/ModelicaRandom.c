@@ -47,7 +47,7 @@
 
 /* Have ModelicaRandom int64 / uint64 */
 #if defined (_WIN32)
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__MINGW32__)
 #define HAVE_ModelicaRandom_INT64_T 1
 #define HAVE_ModelicaRandom_UINT64_T 1
 #elif defined(__WATCOMC__)
@@ -67,7 +67,7 @@
 
 /* Define to 1 if <stdint.h> header file is available */
 #if defined(_WIN32)
-#   if defined(_MSC_VER) && _MSC_VER >= 1600
+#   if (defined(_MSC_VER) && _MSC_VER >= 1600) || defined(__MINGW32__)
 #       define ModelicaRandom_HAVE_STDINT_H 1
 #   elif defined(__WATCOMC__)
 #       define ModelicaRandom_HAVE_STDINT_H 1
