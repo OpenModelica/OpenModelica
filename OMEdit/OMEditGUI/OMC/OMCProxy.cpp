@@ -1395,7 +1395,7 @@ bool OMCProxy::createSubClass(QString type, QString className, QString parentCla
   } else {
     expression = "within " + parentClassName + "; " + type + " " + className + " extends " + extendsClass + "; end " + className + ";";
   }
-  return loadString(expression, parentClassName + "." + className, Helper::utf8, false);
+  return loadString(expression, StringHandler::getFirstWordBeforeDot(parentClassName), Helper::utf8, false);
 }
 
 /*!

@@ -186,7 +186,7 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
                      GraphicsView *pGraphicsView)
   : QGraphicsItem(0), mpReferenceComponent(0), mpParentComponent(0)
 {
-  setZValue(1000);
+  setZValue(2000);
   mpLibraryTreeItem = pLibraryTreeItem;
   mpComponentInfo = pComponentInfo;
   mpComponentInfo->setName(name);
@@ -261,7 +261,6 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
 Component::Component(Component *pComponent, GraphicsView *pGraphicsView, Component *pParent)
   : QGraphicsItem(pParent), mpReferenceComponent(pComponent), mpParentComponent(pParent)
 {
-  setZValue(3000);
   mpLibraryTreeItem = mpReferenceComponent->getLibraryTreeItem();
   mpComponentInfo = mpReferenceComponent->getComponentInfo();
   mIsInheritedComponent = mpReferenceComponent->isInheritedComponent();
@@ -288,7 +287,7 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView, Compone
 Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   : QGraphicsItem(0), mpReferenceComponent(pComponent), mpParentComponent(0)
 {
-  setZValue(1000);
+  setZValue(2000);
   mpLibraryTreeItem = mpReferenceComponent->getLibraryTreeItem();
   mpComponentInfo = mpReferenceComponent->getComponentInfo();
   mpGraphicsView = pGraphicsView;

@@ -321,7 +321,7 @@ void ModelicaClassDialog::createModelicaClass()
     parentPackage = "Global Scope";
   } else {
     model = QString(mpParentClassTextBox->text().trimmed()).append(".").append(mpNameTextBox->text().trimmed());
-    parentPackage = QString("in Package '").append(mpParentClassTextBox->text().trimmed()).append("'");
+    parentPackage = QString("Package '").append(mpParentClassTextBox->text().trimmed()).append("'");
   }
   // Check whether model exists or not.
   if (mpMainWindow->getOMCProxy()->existClass(model) || mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(model)) {
@@ -363,6 +363,7 @@ void ModelicaClassDialog::createModelicaClass()
     pLibraryTreeModel->loadLibraryTreeItemPixmap(pLibraryTreeItem);
     pLibraryTreeModel->loadNonExistingLibraryTreeItem(pLibraryTreeItem);
   }
+  pLibraryTreeItem->setExpanded(true);
   // show the ModelWidget
   pLibraryTreeModel->showModelWidget(pLibraryTreeItem, "", true, true);
   accept();
@@ -672,7 +673,7 @@ void SaveAsClassDialog::saveAsModelicaClass()
   else
   {
     model = QString(mpParentClassComboBox->currentText()).append(".").append(mpNameTextBox->text());
-    parentPackage = QString("in Package '").append(mpParentClassComboBox->currentText()).append("'");
+    parentPackage = QString("Package '").append(mpParentClassComboBox->currentText()).append("'");
   }
   // Check whether model exists or not.
   if (mpMainWindow->getOMCProxy()->existClass(model))

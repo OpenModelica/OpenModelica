@@ -335,6 +335,8 @@ private:
   bool saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveTLMLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
+  void setChildLibraryTreeItemsSaved(LibraryTreeItem *pLibraryTreeItem);
+
   bool saveLibraryTreeItemOneFileHelper(LibraryTreeItem *pLibraryTreeItem);
   bool setSubModelsFileNameOneFileHelper(LibraryTreeItem *pLibraryTreeItem, QString filePath);
   void setSubModelsSavedOneFileHelper(LibraryTreeItem *pLibraryTreeItem);

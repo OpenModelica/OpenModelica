@@ -44,7 +44,7 @@ Transformation::Transformation(StringHandler::ViewType viewType, QObject *pParen
   mViewType = viewType;
   mWidth = 200.0;
   mHeight = 200.0;
-  mVisible = false;
+  mVisible = true;
   mOriginDiagram = QPointF(0.0, 0.0);
   mHasOriginDiagramX = true;
   mHasOriginDiagramY = true;

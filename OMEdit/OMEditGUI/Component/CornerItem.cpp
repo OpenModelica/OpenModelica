@@ -340,7 +340,7 @@ void ResizerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
   */
 OriginItem::OriginItem(Component *pComponent)
 {
-  setZValue(4000);
+  setZValue(3000);
   mpComponent = pComponent;
   mActivePen = QPen(Qt::red, 2);
   mActivePen.setCosmetic(true);
@@ -358,7 +358,7 @@ OriginItem::OriginItem(Component *pComponent)
  */
 void OriginItem::setActive()
 {
-  setZValue(4000);
+  setZValue(3000);
   if (mpComponent->isInheritedComponent()) {
     mPen = mInheritedActivePen;
   } else {
@@ -373,7 +373,7 @@ void OriginItem::setActive()
  */
 void OriginItem::setPassive()
 {
-  setZValue(-4000);
+  setZValue(-3000);
   mPen = mPassivePen;
 }
 
