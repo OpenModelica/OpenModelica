@@ -1178,7 +1178,6 @@ void LibraryTreeModel::createNonExistingLibraryTreeItem(LibraryTreeItem *pLibrar
   OMCProxy *pOMCProxy = mpLibraryWidget->getMainWindow()->getOMCProxy();
   pLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pLibraryTreeItem->getNameStructure()));
   pLibraryTreeItem->setIsSaved(isSaved);
-  pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? true : pParentLibraryTreeItem->isSystemLibrary());
   pLibraryTreeItem->setIsProtected(pOMCProxy->isProtectedClass(pParentLibraryTreeItem->getNameStructure(), pLibraryTreeItem->getName()));
   if (pParentLibraryTreeItem->isDocumentationClass()) {
     pLibraryTreeItem->setIsDocumentationClass(true);
@@ -2550,76 +2549,89 @@ void LibraryWidget::openLibraryTreeItem(QString nameStructure)
 bool LibraryWidget::saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
   bool result = false;
-  if (pLibraryTreeItem->isTopLevel() && pLibraryTreeItem->getChildren().size() == 0) {
-    /*
-      A root model with no sub models.
-      If it is a package then check whether save contents type. Otherwise simply save it to file.
-      */
-    if (pLibraryTreeItem->getRestriction() == StringHandler::Package && pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
-      result = saveLibraryTreeItemOneFileHelper(pLibraryTreeItem);
-    } else if (pLibraryTreeItem->getRestriction() == StringHandler::Package && pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
-      result = saveLibraryTreeItemFolderHelper(pLibraryTreeItem);
-    } else {
-      result = saveLibraryTreeItemHelper(pLibraryTreeItem);
-    }
-    if (result) {
-      getMainWindow()->addRecentFile(pLibraryTreeItem->getFileName(), Helper::utf8);
-      /* We need to load the file again so that the line number information for model_info.xml is correct.
-       * Update to AST (makes source info WRONG), saving it (source info STILL WRONG), reload it (and omc knows the new lines)
-       * In order to get rid of it save API should update omc with new line information.
-       */
-      mpMainWindow->getOMCProxy()->loadFile(pLibraryTreeItem->getFileName());
-    }
-  } else if (pLibraryTreeItem->isTopLevel() && pLibraryTreeItem->getChildren().size() > 0) {
-    /* A root model with sub models.
-     * If its a new model then its fileName is <interactive> then check its mSaveContentsType.
-     * If mSaveContentsType is LibraryTreeItem::SaveInOneFile then we save all sub models in one file
-     */
-    if (pLibraryTreeItem->getFileName().isEmpty() && pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
-      result = saveLibraryTreeItemOneFileHelper(pLibraryTreeItem);
-    } else if (pLibraryTreeItem->getFileName().isEmpty() && pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
-      /* A root model with sub models.
-       * If its a new model then its fileName is <interactive> then check its mSaveContentsType.
-       * If mSaveContentsType is LibraryTreeItem::SaveFolderStructure then we save sub models in folder structure
-       */
-      result = saveLibraryTreeItemFolderHelper(pLibraryTreeItem);
-    } else {
-      result = saveLibraryTreeItemOneFileOrFolderHelper(pLibraryTreeItem);
-    }
-    if (result) {
-      getMainWindow()->addRecentFile(pLibraryTreeItem->getFileName(), Helper::utf8);
-      /* We need to load the file again so that the line number information for model_info.xml is correct.
-       * Update to AST (makes source info WRONG), saving it (source info STILL WRONG), reload it (and omc knows the new lines)
-       * In order to get rid of it save API should update omc with new line information.
-       */
-      mpMainWindow->getOMCProxy()->loadFile(pLibraryTreeItem->getFileName());
-    }
-  } else if (!pLibraryTreeItem->isTopLevel()) {
-    /* A sub model contained inside some other model.
-     * Find its root model.
-     * If the root model fileName is <interactive> then check its mSaveContentsType.
-     * If mSaveContentsType is LibraryTreeItem::SaveInOneFile then we save all sub models in one file.
-     */
-    pLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()));
-    if (pLibraryTreeItem->getFileName().isEmpty() && pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
-      result = saveLibraryTreeItemOneFileHelper(pLibraryTreeItem);
-    }
-    /* If mSaveContentsType is LibraryTreeItem::SaveFolderStructure then we save sub models in folder structure
-     */
-    else if (pLibraryTreeItem->getFileName().isEmpty() && pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
-      result = saveLibraryTreeItemFolderHelper(pLibraryTreeItem);
-    } else {
-      result = saveLibraryTreeItemOneFileOrFolderHelper(pLibraryTreeItem);
-    }
-    if (result) {
-      getMainWindow()->addRecentFile(pLibraryTreeItem->getFileName(), Helper::utf8);
-      /* We need to load the file again so that the line number information for model_info.xml is correct.
-       * Update to AST (makes source info WRONG), saving it (source info STILL WRONG), reload it (and omc knows the new lines)
-       * In order to get rid of it save API should update omc with new line information.
-       */
-      mpMainWindow->getOMCProxy()->loadFile(pLibraryTreeItem->getFileName());
-    }
+  LibraryTreeItem *pParentLibraryTreeItem = mpLibraryTreeModel->getContainingParentLibraryTreeItem(pLibraryTreeItem);
+  result = saveLibraryTreeItemHelper(pParentLibraryTreeItem);
+  if (result && !pLibraryTreeItem->isTopLevel()) {
+    setChildLibraryTreeItemsSaved(pParentLibraryTreeItem);
   }
+  if (result) {
+    getMainWindow()->addRecentFile(pLibraryTreeItem->getFileName(), Helper::utf8);
+    /* We need to load the file again so that the line number information for model_info.xml is correct.
+     * Update to AST (makes source info WRONG), saving it (source info STILL WRONG), reload it (and omc knows the new lines)
+     * In order to get rid of it save API should update omc with new line information.
+     */
+//    mpMainWindow->getOMCProxy()->loadFile(pLibraryTreeItem->getFileName());
+  }
+//  if (pLibraryTreeItem->isTopLevel() && pLibraryTreeItem->getChildren().size() == 0) {
+//    /*
+//      A root model with no sub models.
+//      If it is a package then check whether save contents type. Otherwise simply save it to file.
+//      */
+//    if (pLibraryTreeItem->getRestriction() == StringHandler::Package && pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
+//      result = saveLibraryTreeItemOneFileHelper(pLibraryTreeItem);
+//    } else if (pLibraryTreeItem->getRestriction() == StringHandler::Package && pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
+//      result = saveLibraryTreeItemFolderHelper(pLibraryTreeItem);
+//    } else {
+//      result = saveLibraryTreeItemHelper(pLibraryTreeItem);
+//    }
+//    if (result) {
+//      getMainWindow()->addRecentFile(pLibraryTreeItem->getFileName(), Helper::utf8);
+//      /* We need to load the file again so that the line number information for model_info.xml is correct.
+//       * Update to AST (makes source info WRONG), saving it (source info STILL WRONG), reload it (and omc knows the new lines)
+//       * In order to get rid of it save API should update omc with new line information.
+//       */
+//      mpMainWindow->getOMCProxy()->loadFile(pLibraryTreeItem->getFileName());
+//    }
+//  } else if (pLibraryTreeItem->isTopLevel() && pLibraryTreeItem->getChildren().size() > 0) {
+//    /* A root model with sub models.
+//     * If its a new model then its fileName is <interactive> then check its mSaveContentsType.
+//     * If mSaveContentsType is LibraryTreeItem::SaveInOneFile then we save all sub models in one file
+//     */
+//    if (pLibraryTreeItem->getFileName().isEmpty() && pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
+//      result = saveLibraryTreeItemOneFileHelper(pLibraryTreeItem);
+//    } else if (pLibraryTreeItem->getFileName().isEmpty() && pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
+//      /* A root model with sub models.
+//       * If its a new model then its fileName is <interactive> then check its mSaveContentsType.
+//       * If mSaveContentsType is LibraryTreeItem::SaveFolderStructure then we save sub models in folder structure
+//       */
+//      result = saveLibraryTreeItemFolderHelper(pLibraryTreeItem);
+//    } else {
+//      result = saveLibraryTreeItemOneFileOrFolderHelper(pLibraryTreeItem);
+//    }
+//    if (result) {
+//      getMainWindow()->addRecentFile(pLibraryTreeItem->getFileName(), Helper::utf8);
+//      /* We need to load the file again so that the line number information for model_info.xml is correct.
+//       * Update to AST (makes source info WRONG), saving it (source info STILL WRONG), reload it (and omc knows the new lines)
+//       * In order to get rid of it save API should update omc with new line information.
+//       */
+//      mpMainWindow->getOMCProxy()->loadFile(pLibraryTreeItem->getFileName());
+//    }
+//  } else if (!pLibraryTreeItem->isTopLevel()) {
+//    /* A sub model contained inside some other model.
+//     * Find its root model.
+//     * If the root model fileName is <interactive> then check its mSaveContentsType.
+//     * If mSaveContentsType is LibraryTreeItem::SaveInOneFile then we save all sub models in one file.
+//     */
+//    pLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()));
+//    if (pLibraryTreeItem->getFileName().isEmpty() && pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
+//      result = saveLibraryTreeItemOneFileHelper(pLibraryTreeItem);
+//    }
+//    /* If mSaveContentsType is LibraryTreeItem::SaveFolderStructure then we save sub models in folder structure
+//     */
+//    else if (pLibraryTreeItem->getFileName().isEmpty() && pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
+//      result = saveLibraryTreeItemFolderHelper(pLibraryTreeItem);
+//    } else {
+//      result = saveLibraryTreeItemOneFileOrFolderHelper(pLibraryTreeItem);
+//    }
+//    if (result) {
+//      getMainWindow()->addRecentFile(pLibraryTreeItem->getFileName(), Helper::utf8);
+//      /* We need to load the file again so that the line number information for model_info.xml is correct.
+//       * Update to AST (makes source info WRONG), saving it (source info STILL WRONG), reload it (and omc knows the new lines)
+//       * In order to get rid of it save API should update omc with new line information.
+//       */
+//      mpMainWindow->getOMCProxy()->loadFile(pLibraryTreeItem->getFileName());
+//    }
+//  }
   return result;
 }
 
@@ -2776,12 +2788,35 @@ bool LibraryWidget::saveLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem)
       pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getNameStructure());
       pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
     }
+    mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
   } else {
     QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
                              .arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE).arg(file.errorString())), Helper::ok);
     return false;
   }
   return true;
+}
+
+/*!
+ * \brief LibraryWidget::setChildLibraryTreeItemsSaved
+ * Marks the child LibraryTreeItems saved.
+ * \param pLibraryTreeItem
+ */
+void LibraryWidget::setChildLibraryTreeItemsSaved(LibraryTreeItem *pLibraryTreeItem)
+{
+  for (int i = 0; i < pLibraryTreeItem->getChildren().size(); i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
+    pChildLibraryTreeItem->setIsSaved(true);
+    pChildLibraryTreeItem->setFileName(pLibraryTreeItem->getFileName());
+    if (pChildLibraryTreeItem->getModelWidget()) {
+      pChildLibraryTreeItem->getModelWidget()->setWindowTitle(pChildLibraryTreeItem->getNameStructure());
+      pChildLibraryTreeItem->getModelWidget()->setModelFilePathLabel(pLibraryTreeItem->getFileName());
+    }
+    mpLibraryTreeModel->updateLibraryTreeItem(pChildLibraryTreeItem);
+    if (pChildLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
+      setChildLibraryTreeItemsSaved(pChildLibraryTreeItem);
+    }
+  }
 }
 
 /*!
