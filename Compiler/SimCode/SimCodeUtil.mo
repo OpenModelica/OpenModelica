@@ -11526,44 +11526,46 @@ end getHighestDerivation1;
 function computeDependenciesHelper
     input list<SimCode.SimEqSystem> eqs;
     input list<DAE.ComponentRef> unknowns;
+    input list<SimCode.SimEqSystem> res;
     output list<SimCode.SimEqSystem> deps;
 algorithm
-    deps := matchcontinue (eqs,unknowns)
+    deps := matchcontinue (eqs,unknowns,res)
         local list<SimCode.SimEqSystem> tail;
               SimCode.SimEqSystem head;
               list<DAE.ComponentRef> new_unknowns;
+              list<SimCode.SimEqSystem> r;
               DAE.ComponentRef cref;
               list<SimCodeVar.SimVar> vars;
               list<DAE.ComponentRef> linsys_unk;
+              list<DAE.ComponentRef> nlsys_unk;
               DAE.Exp exp;
               list<DAE.Exp> beqs;
-    case ({},_)
-        then {};
-    case ( (head as SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp))::tail,_)
+    case ({},_,r)
+        then r;
+    case ( (head as SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp))::tail,_,r)
         equation
-        true = List.isMemberOnTrue(cref,unknowns,ComponentReference.crefEqual);
-        // We must include this equation in the ODE
-        new_unknowns = Expression.getAllCrefs(exp);
-        // And include all those one defining the RHS
-        then head::computeDependenciesHelper(tail,listAppend(unknowns,new_unknowns));
-    case ( (head as SimCode.SES_NONLINEAR())::tail,_)
-        equation
-        print("Error in computeDependecies - NONLINEAR not supported yet\n");
-        then computeDependenciesHelper(tail,unknowns);
-    case ( (head as SimCode.SES_LINEAR(lSystem = SimCode.LINEARSYSTEM(vars=vars, beqs=beqs)))::tail,_)
+            true = List.isMemberOnTrue(cref,unknowns,ComponentReference.crefEqual);
+            // We must include this equation in the ODE
+            new_unknowns = Expression.getAllCrefs(exp);
+            // And include all those one defining the RHS
+        then computeDependenciesHelper(tail,listAppend(unknowns,new_unknowns), listAppend(r,{head}));
+    case ( (head as SimCode.SES_LINEAR(lSystem = SimCode.LINEARSYSTEM(vars=vars, beqs=beqs)))::tail,_, r)
         equation
             // This linear system defines the following crefs
             linsys_unk = List.map(vars,getSimVarCompRef);
             // If any of those are in our unkowns me must include this equation system
             false = listEmpty(List.intersectionOnTrue(linsys_unk,unknowns,ComponentReference.crefEqual));
+            // And include all the variables of the RHS to the unkowns
             new_unknowns = List.flatten(List.map(beqs, Expression.getAllCrefs));
-        then head::computeDependenciesHelper(tail,listAppend(unknowns,new_unknowns));
-    case (head ::tail,_)
-        then computeDependenciesHelper(tail,unknowns);
-    case (_,_)
-    equation
-        print("Error in computeDependecies");
-    then fail();
+        then computeDependenciesHelper(tail,listAppend(unknowns,new_unknowns),listAppend(r,{head}));
+    case ( (head as SimCode.SES_NONLINEAR(nlSystem=SimCode.NONLINEARSYSTEM(crefs=nlsys_unk)))::tail,_,r)
+        equation
+        // If any of the uknwonw of the NL system are in our unkowns me must include this equation system
+        false = listEmpty(List.intersectionOnTrue(nlsys_unk,unknowns,ComponentReference.crefEqual));
+        print("Warning: computeDependenciesHelper: Still missing RHS analisys of NON LINEAR systems\n");
+        then computeDependenciesHelper(tail,unknowns,listAppend(r,{head}));
+    case (_::tail,_,r)
+        then  computeDependenciesHelper(tail,unknowns,r);
     end matchcontinue;
 end computeDependenciesHelper;
 
@@ -11574,12 +11576,9 @@ public function computeDependencies
 algorithm
     deps := match (eqs,cref)
     case (_,_)
-        then listReverse(computeDependenciesHelper(listReverse(eqs),{cref}));
+        then listReverse(computeDependenciesHelper(listReverse(eqs),{cref},{}));
     end match;
 end computeDependencies;
-
-
-
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;
