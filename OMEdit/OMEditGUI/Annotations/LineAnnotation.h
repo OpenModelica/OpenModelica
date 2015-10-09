@@ -70,10 +70,6 @@ public:
   QPolygonF drawArrow(QPointF startPos, QPointF endPos, qreal size, int arrowType) const;
   QString getShapeAnnotation();
   QString getTLMShapeAnnotation();
-  void setStartComponent(Component *pStartComponent);
-  Component* getStartComponent();
-  void setEndComponent(Component *pEndComponent);
-  Component* getEndComponent();
   void addPoint(QPointF point);
   void removePoint(int index);
   void clearPoints();
@@ -82,8 +78,12 @@ public:
   void moveAllPoints(qreal offsetX, qreal offsetY);
   void setLineType(LineType lineType) {mLineType = lineType;}
   LineType getLineType() {return mLineType;}
+  void setStartComponent(Component *pStartComponent) {mpStartComponent = pStartComponent;}
+  Component* getStartComponent() {return mpStartComponent;}
   void setStartComponentName(QString name) {mStartComponentName = name;}
   QString getStartComponentName() {return mStartComponentName;}
+  void setEndComponent(Component *pEndComponent) {mpEndComponent = pEndComponent;}
+  Component* getEndComponent() {return mpEndComponent;}
   void setEndComponentName(QString name) {mEndComponentName = name;}
   QString getEndComponentName() {return mEndComponentName;}
   void setShapeFlags(bool enable);

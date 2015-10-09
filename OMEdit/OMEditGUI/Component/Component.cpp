@@ -350,6 +350,7 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   connect(mpReferenceComponent, SIGNAL(added()), SLOT(referenceComponentAdded()));
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceComponentChanged()));
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
+  connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SIGNAL(transformChange()));
   connect(mpReferenceComponent, SIGNAL(displayTextChanged()), SIGNAL(displayTextChanged()));
   connect(mpReferenceComponent, SIGNAL(deleted()), SLOT(referenceComponentDeleted()));
 }

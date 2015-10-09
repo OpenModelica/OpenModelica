@@ -595,9 +595,24 @@ void GraphicsView::deleteComponentFromList(Component *pComponent)
  */
 Component* GraphicsView::getComponentObject(QString componentName)
 {
-  foreach (Component *component, mComponentsList) {
-    if (component->getName().compare(componentName) == 0) {
-      return component;
+  foreach (ModelWidget::InheritedClass *pInheritedClass, mpModelWidget->getInheritedClassesList()) {
+    if (mViewType == StringHandler::Icon) {
+      foreach (Component *pComponent, pInheritedClass->mIconComponentsList) {
+        if (pComponent->getName().compare(componentName) == 0) {
+          return pComponent;
+        }
+      }
+    } else {
+      foreach (Component *pComponent, pInheritedClass->mDiagramComponentsList) {
+        if (pComponent->getName().compare(componentName) == 0) {
+          return pComponent;
+        }
+      }
+    }
+  }
+  foreach (Component *pComponent, mComponentsList) {
+    if (pComponent->getName().compare(componentName) == 0) {
+      return pComponent;
     }
   }
   return 0;
@@ -624,11 +639,6 @@ bool GraphicsView::checkComponentName(QString componentName)
     if (pComponent->getName().compare(componentName, Qt::CaseSensitive) == 0)
       return false;
   return true;
-}
-
-QList<Component*> GraphicsView::getComponentsList()
-{
-  return mComponentsList;
 }
 
 /*!
@@ -2279,6 +2289,7 @@ void ModelWidget::loadModelWidget()
     getModelIconDiagramShapes();
     drawModelInheritedComponents();
     getModelComponents();
+    drawModelInheritedConnections();
     getModelConnections();
     mpUndoStack->clear();
   }
@@ -2672,7 +2683,6 @@ void ModelWidget::refresh()
     getModelInheritedClasses(getLibraryTreeItem());
     //getModelIconDiagramShapes(getLibraryTreeItem()->getNameStructure());
     getModelComponents();
-    getModelConnections(getLibraryTreeItem()->getNameStructure());
   }
 
   QApplication::restoreOverrideCursor();
@@ -3012,6 +3022,11 @@ void ModelWidget::parseModelIconDiagramShapes(QString annotationString, StringHa
   }
 }
 
+/*!
+ * \brief ModelWidget::drawModelInheritedComponents
+ * Loops through the class inhertited classes and draws the components for all.
+ * \sa ModelWidget::drawModelInheritedClassComponents()
+ */
 void ModelWidget::drawModelInheritedComponents()
 {
   foreach (InheritedClass *pInheritedClass, mInheritedClassesList) {
@@ -3019,6 +3034,11 @@ void ModelWidget::drawModelInheritedComponents()
   }
 }
 
+/*!
+ * \brief ModelWidget::removeInheritedClassComponents
+ * Removes the class inherited class components.
+ * \param pInheritedClass - the inherited class.
+ */
 void ModelWidget::removeInheritedClassComponents(InheritedClass *pInheritedClass)
 {
   foreach (Component *pComponent, pInheritedClass->mIconComponentsList) {
@@ -3031,6 +3051,11 @@ void ModelWidget::removeInheritedClassComponents(InheritedClass *pInheritedClass
   pInheritedClass->mDiagramComponentsList.clear();
 }
 
+/*!
+ * \brief ModelWidget::drawModelInheritedClassComponents
+ * Draws the class inherited components.
+ * \param pInheritedClass - the inherited class.
+ */
 void ModelWidget::drawModelInheritedClassComponents(InheritedClass *pInheritedClass)
 {
   removeInheritedClassComponents(pInheritedClass);
@@ -3078,6 +3103,72 @@ void ModelWidget::getModelComponents()
   }
 }
 
+/*!
+ * \brief ModelWidget::drawModelInheritedConnections
+ * Loops through the class inhertited classes and draws the connections for all.
+ * \sa ModelWidget::drawModelInheritedClassConnections()
+ */
+void ModelWidget::drawModelInheritedConnections()
+{
+  foreach (InheritedClass *pInheritedClass, mInheritedClassesList) {
+    drawModelInheritedClassConnections(pInheritedClass);
+  }
+}
+
+/*!
+ * \brief ModelWidget::removeInheritedClassConnections
+ * Removes the class inherited class connections.
+ * \param pInheritedClass - the inherited class.
+ */
+void ModelWidget::removeInheritedClassConnections(InheritedClass *pInheritedClass)
+{
+  foreach (LineAnnotation *pConnectionLineAnnotation, pInheritedClass->mConnectionsList) {
+    mpDiagramGraphicsView->removeItem(pConnectionLineAnnotation);
+  }
+  pInheritedClass->mConnectionsList.clear();
+}
+
+/*!
+ * \brief ModelWidget::drawModelInheritedClassConnections
+ * Draws the class inherited connections.
+ * \param pInheritedClass - the inherited class.
+ */
+void ModelWidget::drawModelInheritedClassConnections(InheritedClass *pInheritedClass)
+{
+  removeInheritedClassConnections(pInheritedClass);
+  LibraryTreeItem *pInheritedLibraryTreeItem = pInheritedClass->mpLibraryTreeItem;
+  foreach (LineAnnotation *pConnection, pInheritedLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getConnectionsList()) {
+    LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(pConnection, mpDiagramGraphicsView);
+    pConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)<br /><br />%3 %4")
+                                          .arg(pConnectionLineAnnotation->getStartComponentName())
+                                          .arg(pConnectionLineAnnotation->getEndComponentName())
+                                          .arg(tr("Connection declared in"))
+                                          .arg(pInheritedLibraryTreeItem->getNameStructure()));
+    pConnectionLineAnnotation->drawCornerItems();
+    pConnectionLineAnnotation->setCornerItemsPassive();
+    // Add the start component connection details.
+    Component *pStartComponent = pConnectionLineAnnotation->getStartComponent();
+    if (pStartComponent->getRootParentComponent()) {
+      pStartComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
+    } else {
+      pStartComponent->addConnectionDetails(pConnectionLineAnnotation);
+    }
+    // Add the end component connection details.
+    Component *pEndComponent = pConnectionLineAnnotation->getEndComponent();
+    if (pEndComponent->getParentComponent()) {
+      pEndComponent->getParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
+    } else {
+      pEndComponent->addConnectionDetails(pConnectionLineAnnotation);
+    }
+    // add the connection to inherited connections list.
+    pInheritedClass->mConnectionsList.append(pConnectionLineAnnotation);
+  }
+}
+
+/*!
+ * \brief ModelWidget::getModelConnections
+ * Gets the connections of the model and place them in the diagram GraphicsView.
+ */
 void ModelWidget::getModelConnections()
 {
   MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
@@ -3120,9 +3211,10 @@ void ModelWidget::getModelConnections()
       } else {
         // look for port from the parent component
         QString startComponentName = startComponentList.at(1);
-        if (startComponentName.contains("["))
+        if (startComponentName.contains("[")) {
           startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
-         pStartConnectorComponent = getConnectorComponent(pStartComponent, startComponentName);
+        }
+        pStartConnectorComponent = getConnectorComponent(pStartComponent, startComponentName);
       }
     }
     if (pEndComponent) {
@@ -3159,116 +3251,10 @@ void ModelWidget::getModelConnections()
   }
 }
 
-void ModelWidget::getModelConnections(QString className, bool inheritedCycle)
-{
-//  MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
-//  // get the inherited connections of the class
-//  int inheritanceCount = pMainWindow->getOMCProxy()->getInheritanceCount(className);
-//  for(int i = 1 ; i <= inheritanceCount ; i++) {
-//    QString inheritedClass = pMainWindow->getOMCProxy()->getNthInheritedClass(className, i);
-//    /*
-//      If the inherited class is one of the builtin type such as Real we can
-//      stop here, because the class can not contain any components, etc.
-//      Also check for cyclic loops.
-//      */
-//    if (!(pMainWindow->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(className) == 0)) {
-//      getModelConnections(inheritedClass, true);
-//    }
-//  }
-//  int connectionCount = pMainWindow->getOMCProxy()->getConnectionCount(className);
-//  for (int i = 1 ; i <= connectionCount ; i++) {
-//    // get the connection from OMC
-//    QString connectionString;
-//    QStringList connectionList;
-//    connectionString = pMainWindow->getOMCProxy()->getNthConnection(className, i);
-//    connectionList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(connectionString));
-//    // if the connectionString only contains two items then continue the loop,
-//    // because connection is not valid then
-//    if (connectionList.size() < 3) {
-//      continue;
-//    }
-//    // get start and end components
-//    QStringList startComponentList = connectionList.at(0).split(".");
-//    QStringList endComponentList = connectionList.at(1).split(".");
-//    // get start component
-//    Component *pStartComponent = 0;
-//    if (startComponentList.size() > 0) {
-//      pStartComponent = mpDiagramGraphicsView->getComponentObject(startComponentList.at(0));
-//    }
-//    // get end component
-//    Component *pEndComponent = 0;
-//    if (endComponentList.size() > 0) {
-//      pEndComponent = mpDiagramGraphicsView->getComponentObject(endComponentList.at(0));
-//    }
-//    // get start and end connectors
-//    Component *pStartConnectorComponent = 0;
-//    Component *pEndConnectorComponent = 0;
-//    if (pStartComponent) {
-//      pMainWindow->getOMCProxy()->sendCommand("getClassRestriction(" + pStartComponent->getLibraryTreeItem()->getNameStructure() + ")");
-//      bool isExpandableConnector = pMainWindow->getOMCProxy()->getResult().toLower().contains("expandable connector");
-//      // if a component type is connector then we only get one item in startComponentList
-//      // check the startcomponentlist
-//      if (startComponentList.size() < 2 || isExpandableConnector) {
-//        pStartConnectorComponent = pStartComponent;
-//      } else if (!pMainWindow->getOMCProxy()->existClass(pStartComponent->getLibraryTreeItem()->getNameStructure())) {
-//        /* if class doesn't exist then connect with the red cross box */
-//        pStartConnectorComponent = pStartComponent;
-//      } else {
-//        // look for port from the parent component
-//        QString startComponentName = startComponentList.at(1);
-//        if (startComponentName.contains("["))
-//          startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
-//         pStartConnectorComponent = getConnectorComponent(pStartComponent, startComponentName);
-//      }
-//    }
-//    if (pEndComponent) {
-//      // if a component type is connector then we only get one item in endComponentList
-//      // check the endcomponentlist
-//      pMainWindow->getOMCProxy()->sendCommand("getClassRestriction(" + pEndComponent->getLibraryTreeItem()->getNameStructure() + ")");
-//      bool isExpandableConnector = pMainWindow->getOMCProxy()->getResult().toLower().contains("expandable connector");
-//      if (endComponentList.size() < 2 || isExpandableConnector) {
-//        pEndConnectorComponent = pEndComponent;
-//      } else if (!pMainWindow->getOMCProxy()->existClass(pEndComponent->getLibraryTreeItem()->getNameStructure())) {
-//        /* if class doesn't exist then connect with the red cross box */
-//        pEndConnectorComponent = pEndComponent;
-//      } else {
-//        QString endComponentName = endComponentList.at(1);
-//        if (endComponentName.contains("[")) {
-//          endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
-//        }
-//        pEndConnectorComponent = getConnectorComponent(pEndComponent, endComponentName);
-//      }
-//    }
-//    // get the connector annotations from OMC
-//    QString connectionAnnotationString = pMainWindow->getOMCProxy()->getNthConnectionAnnotation(className, i);
-//    QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(connectionAnnotationString), '(', ')');
-//    // Now parse the shapes available in list
-//    foreach (QString shape, shapesList) {
-//      if (shape.startsWith("Line")) {
-//        shape = shape.mid(QString("Line").length());
-//        shape = StringHandler::removeFirstLastBrackets(shape);
-//        LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(shape, inheritedCycle, pStartConnectorComponent,
-//                                                                       pEndConnectorComponent, mpDiagramGraphicsView);
-//        if (pStartConnectorComponent) {
-//          pStartConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
-//        }
-//        pConnectionLineAnnotation->setStartComponentName(connectionList.at(0));
-//        if (pEndConnectorComponent) {
-//          pEndConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
-//        }
-//        pConnectionLineAnnotation->setEndComponentName(connectionList.at(1));
-//        pConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)").arg(connectionList.at(0), connectionList.at(1)));
-//        pConnectionLineAnnotation->drawCornerItems();
-//        pConnectionLineAnnotation->setCornerItemsPassive();
-//        mpDiagramGraphicsView->addConnectionObject(pConnectionLineAnnotation);
-//      }
-//    }
-//  }
-}
-
 /*!
-  Gets the components of the TLM and place them in the diagram GraphicsView.
-  */
+ * \brief ModelWidget::getTLMComponents
+ * Gets the components of the TLM and place them in the diagram GraphicsView.
+ */
 void ModelWidget::getTLMComponents()
 {
   TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpEditor);

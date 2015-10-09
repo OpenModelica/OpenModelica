@@ -454,27 +454,6 @@ QString LineAnnotation::getTLMShapeAnnotation()
   return annotationString.join(",");
 }
 
-
-void LineAnnotation::setStartComponent(Component *pStartComponent)
-{
-  mpStartComponent = pStartComponent;
-}
-
-Component* LineAnnotation::getStartComponent()
-{
-  return mpStartComponent;
-}
-
-void LineAnnotation::setEndComponent(Component *pEndComponent)
-{
-  mpEndComponent = pEndComponent;
-}
-
-Component* LineAnnotation::getEndComponent()
-{
-  return mpEndComponent;
-}
-
 void LineAnnotation::addPoint(QPointF point)
 {
   mPoints.append(point);
@@ -643,7 +622,9 @@ void LineAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(pShapeAnnotation);
   setLineType(pLineAnnotation->getLineType());
   setStartComponent(pLineAnnotation->getStartComponent());
+  setStartComponentName(pLineAnnotation->getStartComponentName());
   setEndComponent(pLineAnnotation->getEndComponent());
+  setEndComponentName(pLineAnnotation->getEndComponentName());
   // set the default values
   GraphicItem::setDefaults(pShapeAnnotation);
   mPoints.clear();
