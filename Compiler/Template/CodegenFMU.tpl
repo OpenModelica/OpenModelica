@@ -1242,6 +1242,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     <%fileNamePrefix%>_fmiGetEventIndicators @33
     <%fileNamePrefix%>_fmiGetContinuousStates @34
     <%fileNamePrefix%>_fmiGetNominalsOfContinuousStates @35
+    <%fileNamePrefix%>_fmiGetSpecificDerivatives @36
   >>
   else
   <<

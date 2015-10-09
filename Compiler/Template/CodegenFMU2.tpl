@@ -64,6 +64,8 @@ case SIMCODE(__) then
     <%fmiModelDescriptionAttributes(simCode,guid)%>>
     <%ModelExchange(simCode)%>
     <%fmiTypeDefinitions(modelInfo, "2.0")%>
+    <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then
+    <<
     <LogCategories>
       <Category name="logEvents" description="logEvents" />
       <Category name="logSingularLinearSystems" description="logSingularLinearSystems" />
@@ -77,6 +79,22 @@ case SIMCODE(__) then
       <Category name="logAll" description="logAll" />
       <Category name="logFmi2Call" description="logFmi2Call" />
     </LogCategories>
+    >> else
+    <<
+    <LogCategories>
+      <Category name="logEvents" />
+      <Category name="logSingularLinearSystems" />
+      <Category name="logNonlinearSystems" />
+      <Category name="logDynamicStateSelection" />
+      <Category name="logStatusWarning" />
+      <Category name="logStatusDiscard" />
+      <Category name="logStatusError" />
+      <Category name="logStatusFatal" />
+      <Category name="logStatusPending" />
+      <Category name="logAll" />
+      <Category name="logFmi2Call" />
+    </LogCategories>
+    >> %>
     <%DefaultExperiment(simulationSettingsOpt)%>
     <%fmiModelVariables(modelInfo, "2.0")%>
     <%ModelStructureHelper(modelStructure)%>

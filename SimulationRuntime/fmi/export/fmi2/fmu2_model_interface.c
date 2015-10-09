@@ -997,8 +997,8 @@ fmi2Status fmi2SetExternalFunction(fmi2Component c, fmi2ValueReference vr[], siz
 }
 
 #ifdef FMU_EXPERIMENTAL
-fmi2Status fmi2GetOneDerivative(fmi2Component c, fmi2Real derivatives[], size_t nx) {
-  int i;
+fmi2Status fmi2GetSpecificDerivatives(fmi2Component c, fmi2Real derivatives[], const fmi2ValueReference dr[], size_t nvr) {
+  int i,nx;
   ModelInstance* comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
   /* TODO
@@ -1013,14 +1013,15 @@ fmi2Status fmi2GetOneDerivative(fmi2Component c, fmi2Real derivatives[], size_t 
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 
-  comp->fmuData->callback->functionODEPartial(comp->fmuData, comp->threadData, nx);
 
   #if NUMBER_OF_STATES>0
-  //for (i = 0; i < nx; i++) {
-  fmi2ValueReference vr = vrStatesDerivatives[nx];
-  derivatives[0] = getReal(comp, vr); // to be implemented by the includer of this file
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetDerivatives: #r%d# = %.16g", vr, derivatives[i])
-  //}
+  for (i = 0; i < nvr; i++) {
+    // This assumes that OMC layouts first the states then the derivatives
+    nx = dr[i]-NUMBER_OF_STATES;
+    comp->fmuData->callback->functionODEPartial(comp->fmuData, comp->threadData, nx);
+    derivatives[i] = getReal(comp, dr[i]); // to be implemented by the includer of this file
+    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetSpecificDerivatives: #r%d# = %.16g", dr[i], derivatives[i])
+  }
   #endif
 
   return fmi2OK;

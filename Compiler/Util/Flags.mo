@@ -464,7 +464,7 @@ constant DebugFlag BUILD_STATIC_SOURCE_FMU = DEBUG_FLAG(148, "buildStaticSourceF
   Util.gettext("A temporary flag to not link the C run-time system when building an FMU; instead compiling the run-time sources into the FMU. The goal is to make this a truly static shared object, depending on nothing outside the FMU (all sources will be included)."));
 
 constant DebugFlag FMU_EXPERIMENTAL = DEBUG_FLAG(149, "fmuExperimental", false,
-  Util.gettext("Include an extra function in the FMU fmi2GetOneDerivative."));
+  Util.gettext("Include an extra function in the FMU fmi2GetSpecificDerivatives."));
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A

@@ -222,6 +222,9 @@ Functions for FMI2 for Model Exchange
 #define fmi2SetTime                       fmi2FullName(fmi2SetTime)
 #define fmi2SetContinuousStates           fmi2FullName(fmi2SetContinuousStates)
 #define fmi2GetDerivatives                fmi2FullName(fmi2GetDerivatives)
+#ifdef FMU_EXPERIMENTAL
+#define fmi2GetSpecificDerivatives        fmi2FullName(fmi2GetSpecificDerivatives)
+#endif
 #define fmi2GetEventIndicators            fmi2FullName(fmi2GetEventIndicators)
 #define fmi2GetContinuousStates           fmi2FullName(fmi2GetContinuousStates)
 #define fmi2GetNominalsOfContinuousStates fmi2FullName(fmi2GetNominalsOfContinuousStates)
@@ -303,6 +306,9 @@ Functions for FMI2 for Model Exchange
 
 /* Evaluation of the model equations */
    FMI2_Export fmi2GetDerivativesTYPE                fmi2GetDerivatives;
+#ifdef FMU_EXPERIMENTAL
+   FMI2_Export fmi2GetSpecificDerivativesTYPE        fmi2GetSpecificDerivatives;
+#endif
    FMI2_Export fmi2GetEventIndicatorsTYPE            fmi2GetEventIndicators;
    FMI2_Export fmi2GetContinuousStatesTYPE           fmi2GetContinuousStates;
    FMI2_Export fmi2GetNominalsOfContinuousStatesTYPE fmi2GetNominalsOfContinuousStates;
