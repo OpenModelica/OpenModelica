@@ -7,7 +7,7 @@ setCommandLineOptions("+simCodeTarget=Cpp");
 
 loadString("
 model DID \"Double Integrator Discrete-time\"
-  constant Real dt = 0.1 \"sample time\";
+  parameter Real dt = 0.1 \"sample time\";
   parameter Real p = 1 \"gain for input\";
   parameter Real y1_start = 1 \"start value for first state\";
   parameter Real y2_start = 0 \"start value for second state\";
