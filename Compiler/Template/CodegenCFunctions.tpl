@@ -4754,7 +4754,7 @@ case BINARY(__) then
       if acceptMetaModelicaGrammar()
         then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
         else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(exp))%>");}<%\n%>'
-    '(<%e1%>) / (<%e2%>)'
+    '(<%e1%>) / <%tvar%>'
   case POW(__) then
     if isHalf(exp2) then
       (let tmp = tempDecl(expTypeFromExpModelica(exp1),&varDecls)
@@ -5494,7 +5494,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
         then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
         else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(call))%>");}<%\n%>'
       /*ldiv not available in opencl c*/
-    if acceptParModelicaGrammar() then '(modelica_integer)(<%var1%>/<%tvar%>)'
+    if acceptParModelicaGrammar() then '(modelica_integer)(<%var1%> / <%tvar%>)'
     else 'ldiv(<%var1%>,<%tvar%>).quot'
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2}) then
@@ -5506,7 +5506,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
       if acceptMetaModelicaGrammar()
         then 'if (<%tvar%> == 0.0) {<%generateThrow()%>;}<%\n%>'
         else 'if (<%tvar%> == 0.0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(call))%>");}<%\n%>'
-    'trunc(<%var1%>/<%var2%>)'
+    'trunc(<%var1%> / <%tvar%>)'
 
   case CALL(path=IDENT(name="mod"), expLst={e1,e2}, attr=CALL_ATTR(ty = ty)) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
