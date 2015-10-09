@@ -194,7 +194,8 @@ public:
   Component* getComponentObject(QString componentName);
   QString getUniqueComponentName(QString componentName, int number = 1);
   bool checkComponentName(QString componentName);
-  QList<Component*> getComponentsList();
+  QList<Component*> getComponentsList() {return mComponentsList;}
+  QList<LineAnnotation*> getConnectionsList() {return mConnectionsList;}
   void createConnection(LineAnnotation *pConnectionLineAnnotation);
   void deleteConnection(LineAnnotation *pConnectonLineAnnotation, bool updateModelicaText);
   void addConnectionObject(LineAnnotation *pConnectionLineAnnotation);
@@ -341,6 +342,7 @@ public:
     QList<ShapeAnnotation*> mDiagramShapesList;
     QList<Component*> mIconComponentsList;
     QList<Component*> mDiagramComponentsList;
+    QList<LineAnnotation*> mConnectionsList;
   };
 
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
@@ -413,8 +415,10 @@ private:
   void removeInheritedClassComponents(InheritedClass *pInheritedClass);
   void drawModelInheritedClassComponents(InheritedClass *pInheritedClass);
   void getModelComponents();
+  void drawModelInheritedConnections();
+  void removeInheritedClassConnections(InheritedClass *pInheritedClass);
+  void drawModelInheritedClassConnections(InheritedClass *pInheritedClass);
   void getModelConnections();
-  void getModelConnections(QString className, bool inheritedCycle = false);
   void getTLMComponents();
   void getTLMConnections();
 private slots:
