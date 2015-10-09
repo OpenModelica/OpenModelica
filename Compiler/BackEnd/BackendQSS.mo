@@ -1017,69 +1017,6 @@ algorithm
   end matchcontinue;
 end replaceInExpZC;
 
-protected function getSimVarCompRef
-  input SimCodeVar.SimVar inVar;
-  output DAE.ComponentRef outComp;
-algorithm
-  outComp := inVar.name;
-end getSimVarCompRef;
-
-function computeDependenciesHelper
-    input list<SimCode.SimEqSystem> eqs;
-    input list<DAE.ComponentRef> unknowns;
-    output list<SimCode.SimEqSystem> deps;
-algorithm
-    deps := matchcontinue (eqs,unknowns)
-        local list<SimCode.SimEqSystem> tail;
-              SimCode.SimEqSystem head;
-              list<DAE.ComponentRef> new_unknowns;
-              DAE.ComponentRef cref;
-              list<SimCodeVar.SimVar> vars;
-              list<DAE.ComponentRef> linsys_unk;
-              DAE.Exp exp;
-              list<DAE.Exp> beqs;
-    case ({},_)
-        then {};
-    case ( (head as SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp))::tail,_)
-        equation
-        true = List.isMemberOnTrue(cref,unknowns,ComponentReference.crefEqual);
-        // We must include this equation in the ODE
-        new_unknowns = Expression.getAllCrefs(exp);
-        // And include all those one defining the RHS
-        then head::computeDependenciesHelper(tail,listAppend(unknowns,new_unknowns));
-    case ( (head as SimCode.SES_NONLINEAR())::tail,_)
-        equation
-        print("Error in computeDependecies - NONLINEAR not supported yet\n");
-        then computeDependenciesHelper(tail,unknowns);
-    case ( (head as SimCode.SES_LINEAR(lSystem = SimCode.LINEARSYSTEM(vars=vars, beqs=beqs)))::tail,_)
-        equation
-            // This linear system defines the following crefs
-            linsys_unk = List.map(vars,getSimVarCompRef);
-            // If any of those are in our unkowns me must include this equation system
-            false = listEmpty(List.intersectionOnTrue(linsys_unk,unknowns,ComponentReference.crefEqual));
-            new_unknowns = List.flatten(List.map(beqs, Expression.getAllCrefs));
-        then head::computeDependenciesHelper(tail,listAppend(unknowns,new_unknowns));
-    case (head ::tail,_)
-        then computeDependenciesHelper(tail,unknowns);
-    case (_,_)
-    equation
-        print("Error in computeDependecies");
-    then fail();
-    end matchcontinue;
-end computeDependenciesHelper;
-
-public function computeDependencies
-    input list<SimCode.SimEqSystem> eqs;
-    input DAE.ComponentRef cref;
-    output list<SimCode.SimEqSystem> deps;
-algorithm
-    deps := match (eqs,cref)
-    case (_,_)
-        then listReverse(computeDependenciesHelper(listReverse(eqs),{cref}));
-    end match;
-end computeDependencies;
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /////  END OF PACKAGE
 ////////////////////////////////////////////////////////////////////////////////////////////////////

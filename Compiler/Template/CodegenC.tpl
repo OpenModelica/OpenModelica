@@ -5565,7 +5565,7 @@ template functionXXX_systemPartial(list<SimEqSystem> derivativEquations, String 
 ::=
     let code =  match modelInfo
     case MODELINFO(vars=SIMVARS(derivativeVars=ders)) then
-    (ders |> SIMVAR(__) hasindex i0 => equationNames_Partial(BackendQSS.computeDependencies(derivativEquations,name),modelNamePrefixStr,i0,crefStr(name)) ; separator="\n")
+    (ders |> SIMVAR(__) hasindex i0 => equationNames_Partial(SimCodeUtil.computeDependencies(derivativEquations,name),modelNamePrefixStr,i0,crefStr(name)) ; separator="\n")
 <<
 static void <%modelNamePrefixStr%>_function<%name%><%n%>(DATA *data, threadData_t *threadData, int i)
 {

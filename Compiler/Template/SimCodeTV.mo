@@ -831,6 +831,12 @@ package SimCodeUtil
     input list<SimCode.ClockedPartition> inPartitions;
     output list<SimCode.SubPartition> outSubPartitions;
   end getSubPartitions;
+
+  function computeDependencies
+    input list<SimCode.SimEqSystem> eqs;
+    input DAE.ComponentRef cref;
+    output list<SimCode.SimEqSystem> deps;
+  end computeDependencies;
 end SimCodeUtil;
 
 package SimCodeFunctionUtil
