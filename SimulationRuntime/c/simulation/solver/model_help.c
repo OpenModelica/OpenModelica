@@ -388,6 +388,7 @@ void printSparseStructure(DATA *data, int stream)
       }
       buffer[j++] = ' ';
     }
+    buffer[j] = '\0';
     infoStreamPrint(stream, 0, "%s", buffer);
   }
   messageClose(stream);
