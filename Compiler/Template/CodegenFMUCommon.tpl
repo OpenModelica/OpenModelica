@@ -418,11 +418,11 @@ match simVar
   <<
   name="<%System.stringReplace(crefStrNoUnderscore(name),"$", "_D_")%>"
   valueReference="<%valueReference%>"
+  <%if boolNot(stringEq(previous, "")) then 'previous="'+previous+'"' %>
   <%description%>
   variability="<%variability%>"
   causality="<%caus%>"
   <%if boolNot(stringEq(initial, "")) then 'initial="'+initial+'"' %>
-  <%if boolNot(stringEq(previous, "")) then 'previous="'+previous+'"' %>
   >>
 end ScalarVariableAttribute2;
 
