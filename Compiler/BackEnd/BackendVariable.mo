@@ -818,6 +818,9 @@ algorithm
       list<BackendDAE.VarKind> kind_lst;
 
     /* Real non discrete variable */
+    case (BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE(_)))
+    then true;
+
     case (BackendDAE.VAR(varKind = kind, varType = DAE.T_REAL(_,_))) equation
       kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DUMMY_DER(), BackendDAE.DUMMY_STATE(), BackendDAE.OPT_INPUT_WITH_DER(), BackendDAE.OPT_INPUT_DER()};
     then listMember(kind, kind_lst) or isOptLoopInput(kind);

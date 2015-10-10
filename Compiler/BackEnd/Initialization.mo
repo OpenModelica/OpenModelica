@@ -1984,7 +1984,7 @@ algorithm
       BackendDAE.EquationArray eqns;
       BackendDAE.Equation eqn;
       DAE.ComponentRef cr, preCR, derCR;
-      Boolean isFixed, isInput, b, preUsed;
+      Boolean isFixed, isInput, b, preUsed, previousUsed;
       DAE.Type ty;
       DAE.InstDims arryDim;
       Option<DAE.Exp> startValue;
@@ -2177,17 +2177,22 @@ algorithm
       true = BackendVariable.varFixed(var);
       isInput = BackendVariable.isVarOnTopLevelAndInput(var);
       startValue_ = BackendVariable.varStartValue(var);
-      preUsed = BaseHashSet.has(cr, hs) or BaseHashSet.has(cr, clkHS);
+      previousUsed = BaseHashSet.has(cr, clkHS);
+      preUsed = BaseHashSet.has(cr, hs) or previousUsed;
 
       var = BackendVariable.setVarFixed(var, false);
 
-      preCR = if BaseHashSet.has(cr, clkHS) then ComponentReference.crefPrefixString("$CLKPRE", cr) else ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
+      preCR = if previousUsed then ComponentReference.crefPrefixString("$CLKPRE", cr) else ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
       preVar = BackendVariable.copyVarNewName(preCR, var);
       preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
       preVar = BackendVariable.setBindExp(preVar, NONE());
       preVar = BackendVariable.setBindValue(preVar, NONE());
       preVar = BackendVariable.setVarFixed(preVar, true);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
+
+      if previousUsed then
+        var = BackendVariable.setVarKind(var, BackendDAE.CLOCKED_STATE(previousName = preCR));
+      end if;
 
       eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), startValue_, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
 

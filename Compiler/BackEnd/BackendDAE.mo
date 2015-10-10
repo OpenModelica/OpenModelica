@@ -243,6 +243,9 @@ uniontype VarKind "variable kind"
   record STATE_DER end STATE_DER;
   record DUMMY_DER end DUMMY_DER;
   record DUMMY_STATE end DUMMY_STATE;
+  record CLOCKED_STATE
+    .DAE.ComponentRef previousName "the name of the previous variable";
+  end CLOCKED_STATE;
   record DISCRETE end DISCRETE;
   record PARAM end PARAM;
   record CONST end CONST;
