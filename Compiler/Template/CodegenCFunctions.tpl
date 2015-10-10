@@ -5330,7 +5330,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     daeExpCallPre(arg, context, preExp, varDecls, &auxFunction)
 
   case CALL(path=IDENT(name="previous"), expLst={arg as CREF(__)}) then
-    '$P$CLKPRE<%cref(arg.componentRef)%>'
+    '<%cref(crefPrefixPrevious(arg.componentRef))%>'
   case CALL(path=IDENT(name="$_clkfire"), expLst={arg as ICONST(__)}) then
     'fireClock(data, threadData, <%arg.integer%> - 1, data->localData[0]->timeValue)'
 

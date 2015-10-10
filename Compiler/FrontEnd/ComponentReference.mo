@@ -1927,6 +1927,14 @@ algorithm
   outCref := makeCrefQual(DAE.preNamePrefix, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
 end crefPrefixPre;
 
+public function crefPrefixPrevious "public function crefPrefixPrevious
+  Appends $CLKPRE to a cref, so a => $CLKPRE.a"
+  input DAE.ComponentRef inCref;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := makeCrefQual(DAE.previousNamePrefix, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
+end crefPrefixPrevious;
+
 public function crefPrefixStart "public function crefPrefixStart
   Appends $START to a cref, so a => $START.a"
   input DAE.ComponentRef inCref;

@@ -2987,6 +2987,11 @@ package ComponentReference
     input DAE.ComponentRef inComponentRef;
     output DAE.ComponentRef outComponentRef;
   end crefArrayGetFirstCref;
+
+  function crefPrefixPrevious
+    input DAE.ComponentRef inCref;
+    output DAE.ComponentRef outCref;
+  end crefPrefixPrevious;
 end ComponentReference;
 
 package Expression

@@ -2177,12 +2177,12 @@ algorithm
       true = BackendVariable.varFixed(var);
       isInput = BackendVariable.isVarOnTopLevelAndInput(var);
       startValue_ = BackendVariable.varStartValue(var);
+      preUsed = BaseHashSet.has(cr, hs);
       previousUsed = BaseHashSet.has(cr, clkHS);
-      preUsed = BaseHashSet.has(cr, hs) or previousUsed;
 
       var = BackendVariable.setVarFixed(var, false);
 
-      preCR = if previousUsed then ComponentReference.crefPrefixString("$CLKPRE", cr) else ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
+      preCR = if previousUsed then ComponentReference.crefPrefixPrevious(cr) else ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
       preVar = BackendVariable.copyVarNewName(preCR, var);
       preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
       preVar = BackendVariable.setBindExp(preVar, NONE());
@@ -2198,7 +2198,7 @@ algorithm
 
       vars = if not isInput then BackendVariable.addVar(var, vars) else vars;
       fixvars = if isInput then BackendVariable.addVar(var, fixvars) else fixvars;
-      vars = if preUsed then BackendVariable.addVar(preVar, vars) else vars;
+      vars = if preUsed or previousUsed then BackendVariable.addVar(preVar, vars) else vars;
       eqns = BackendEquation.addEquation(eqn, eqns);
 
       // Error.addCompilerNotification("VARIABLE (fixed=true): " + BackendDump.varString(var));
@@ -2279,7 +2279,7 @@ algorithm
     then DAE.CREF(dummyder, ty);
 
     case DAE.CALL(path = Absyn.IDENT(name="previous"), expLst = {DAE.CREF(componentRef=cr)}, attr=DAE.CALL_ATTR(ty=ty)) equation
-      dummyder = ComponentReference.crefPrefixString("$CLKPRE", cr);
+      dummyder = ComponentReference.crefPrefixPrevious(cr);
     then DAE.CREF(dummyder, ty);
 
     else inExp;

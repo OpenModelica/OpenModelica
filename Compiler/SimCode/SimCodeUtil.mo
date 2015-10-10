@@ -580,7 +580,7 @@ algorithm
       clockedVars := simVar::clockedVars;
       if isPrevVar[i] then
         cr := simVar.name;
-        simVar.name := ComponentReference.crefPrefixString("$CLKPRE", cr);
+        simVar.name := ComponentReference.crefPrefixPrevious(cr);
         clockedVars := simVar::clockedVars;
         simEq := SimCode.SES_SIMPLE_ASSIGN(ouniqueEqIndex, simVar.name, DAE.CREF(cr, simVar.type_), DAE.emptyElementSource);
         equations := simEq::equations;
