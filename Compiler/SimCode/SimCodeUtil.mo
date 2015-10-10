@@ -11306,8 +11306,8 @@ public function createFMIModelStructure
 protected
    list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> spTA, spTB;
    list<tuple<Integer, list<Integer>>> sparseInts;
-   list<SimCode.FmiUnknown> derivatives, outputs;
-   list<SimCodeVar.SimVar> varsA, varsB;
+   list<SimCode.FmiUnknown> derivatives, outputs, discreteStates;
+   list<SimCodeVar.SimVar> varsA, varsB, clockedStates;
    SimCode.HashTableCrefToSimVar crefSimVarHT;
    list<DAE.ComponentRef> diffCrefsA, diffedCrefsA, derdiffCrefsA;
    list<DAE.ComponentRef> diffCrefsB, diffedCrefsB;
@@ -11363,12 +11363,36 @@ algorithm
     //print("-- sorted vars for CD\n");
 
     outputs := translateSparsePatterInts2FMIUnknown(sparseInts, {});
+
+    //TODO: create DiscreteStates with dependencies, like derivatives
+    clockedStates := List.filterOnTrue(inModelInfo.vars.algVars, isClockedStateSimVar);
+    discreteStates := List.map(clockedStates, createFmiUnknownFromSimVar);
+
     //print("-- finished createFMIModelStructure\n");
-    outFmiModelStructure := SOME(SimCode.FMIMODELSTRUCTURE(SimCode.FMIOUTPUTS(outputs), SimCode.FMIDERIVATIVES(derivatives), SimCode.FMIINITIALUNKNOWNS({})));
+    outFmiModelStructure := SOME(SimCode.FMIMODELSTRUCTURE(SimCode.FMIOUTPUTS(outputs), SimCode.FMIDERIVATIVES(derivatives), SimCode.FMIDISCRETESTATES(discreteStates), SimCode.FMIINITIALUNKNOWNS({})));
 else
   outFmiModelStructure := NONE();
 end try;
 end createFMIModelStructure;
+
+protected function isClockedStateSimVar
+"Returns true for state and der(state) variables, false otherwise."
+  input SimCodeVar.SimVar inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    case (SimCodeVar.SIMVAR(varKind = BackendDAE.CLOCKED_STATE(_))) then true;
+    else false;
+  end match;
+end isClockedStateSimVar;
+
+protected function createFmiUnknownFromSimVar
+"create a basic FMIUNKNOWN without dependencies from a SimVar"
+  input SimCodeVar.SimVar var;
+  output SimCode.FmiUnknown unknown;
+algorithm
+  unknown := SimCode.FMIUNKNOWN(var.index + 1, {}, {});
+end createFmiUnknownFromSimVar;
 
 protected function translateSparsePatterInts2FMIUnknown
 "function translates simVar integers to fmi unknowns."
