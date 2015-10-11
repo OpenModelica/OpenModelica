@@ -243,7 +243,7 @@ algorithm
     //        to the environment variable! Don't ask me why, ask Microsoft.
     omhome := "set OPENMODELICAHOME=\"" + System.stringReplace(omhome_1, "/", "\\") + "\"&& ";
     setMakeVars := sum("set "+var+"&& " for var in makeVarsNoBinding);
-    cdWorkingDir := if stringLength(workingDir) == 0 then "" else ("cd \"" + workingDir + "\"");
+    cdWorkingDir := if stringLength(workingDir) == 0 then "" else ("cd \"" + workingDir + "\"&& ");
     winCompileMode := if Config.getRunningTestsuite() then "serial" else "parallel";
     s_call := stringAppendList({omhome,cdWorkingDir,setMakeVars,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",Config.simulationCodeTarget()," ", winCompileMode});
   else

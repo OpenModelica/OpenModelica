@@ -2621,13 +2621,15 @@ algorithm
       GlobalScript.SymbolTable st;
       list<String> libs;
       Values.Value outValMsg;
-      String file_dir, FMUVersion, FMUType, fileNamePrefix, str, fmutmp;
+      String file_dir, FMUVersion, FMUType, fileNamePrefix, str, fmutmp, quote;
+      Boolean isWindows = System.os() == "Windows_NT";
     case (cache,env,_,st,FMUVersion,FMUType,fileNamePrefix,_,_) /* mo file directory */
       equation
         (cache, outValMsg, st,_, libs,_, _) =
           SimCodeMain.translateModelFMU(cache,env,className,st,FMUVersion,FMUType,fileNamePrefix,addDummy,inSimSettingsOpt);
 
         // compile
+        quote = if isWindows then "" else "'";
         CevalScript.compileModel(fileNamePrefix+"_FMU" , libs);
         if Config.simCodeTarget() <> "Cpp" then
           fmutmp = fileNamePrefix + ".fmutmp";
@@ -2640,12 +2642,12 @@ algorithm
           // CevalScript.compileModel(fileNamePrefix , libs, workingDir=fmutmp+"/sources", makeVars={"CC=arm-linux-gnueabi-gcc","FMIPLATFORM=arm-linux-gnueabi","DLLEXT=.so"});
           CevalScript.compileModel(fileNamePrefix , libs, workingDir=fmutmp+"/sources", makeVars={
               "CC="+System.getCCompiler(),
-              "'CFLAGS="+System.getCFlags()+"'",
+              "CFLAGS="+quote+System.getCFlags()+quote,
               "CPPFLAGS=",
-              "'LDFLAGS="+System.getLDFlags()+" "+(if staticSourceCodeFMU then System.getRTLibsFMU() /*TODO: Should not be needed, once we remove the need for lapack/expat*/ else System.getRTLibsSim())+"'",
+              "LDFLAGS="+quote+System.getLDFlags()+" "+(if staticSourceCodeFMU then System.getRTLibsFMU() /*TODO: Should not be needed, once we remove the need for lapack/expat*/ else System.getRTLibsSim()) + quote,
               "FMIPLATFORM="+System.modelicaPlatform(),
               "DLLEXT="+System.getDllExt(),
-              "'LD="+System.getLinker()+"'",
+              "LD="+quote+System.getLinker()+quote,
               if staticSourceCodeFMU then "OPENMODELICA_DYNAMIC=" else "OPENMODELICA_DYNAMIC=1"
           });
           // CevalScript.compileModel(fileNamePrefix , libs, workingDir=fmutmp+"/sources", makeVars={});

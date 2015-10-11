@@ -399,8 +399,8 @@ static void read_var_attribute_bool(omc_ScalarVariable *v, BOOLEAN_ATTRIBUTE *at
 
 static void read_var_attribute_string(omc_ScalarVariable *v, STRING_ATTRIBUTE *attribute)
 {
-  read_value_bool(findHashStringString(v,"useStart"), &attribute->useStart);
   const char *start = NULL;
+  read_value_bool(findHashStringString(v,"useStart"), &attribute->useStart);
   read_value_string(findHashStringStringEmpty(v,"start"), &start);
   attribute->start = mmc_mk_scon_persist(start);
 
