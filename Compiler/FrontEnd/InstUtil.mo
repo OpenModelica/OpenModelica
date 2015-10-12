@@ -8927,20 +8927,29 @@ algorithm
 	  newDiscretizedEQs := matchcontinue inEQ
 	    local
 	      Absyn.Exp lhs_exp, rhs_exp;
-	      Absyn.ComponentRef domainCr;
+	      Absyn.ComponentRef domainCr, domainCr1;
 	      SCode.Comment comment;
 	      SCode.SourceInfo info;
 	      Integer N;
 	      List<Absyn.ComponentRef> fieldLst;
+	      Absyn.Ident name;
+	      list<Absyn.Subscript> subscripts;
 	    //Normal equation withhout domain specified, no field variables present:
 	    case SCode.EQUATION(SCode.EQ_EQUALS(domainOpt = NONE()))
 	    then {inEQ};
 	    //Equation with domain specified, allow for field variables:
-	    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp, domainOpt = SOME(domainCr),
-	                           comment = comment, info = info))
+	    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp,
+	                domainOpt = SOME(domainCr as Absyn.CREF_IDENT()), comment = comment, info = info))
 	      equation
 	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr,info);
 	      then list(newEQFun(i, lhs_exp, rhs_exp, domainCr, comment, info, fieldLst) for i in 2:N-1);
+	    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp,
+	                domainOpt = SOME(domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="interior"))),
+	                comment = comment, info = info))
+	      equation
+	        domainCr1 = Absyn.CREF_IDENT(name, subscripts);
+	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
+	      then list(newEQFun(i, lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst) for i in 2:N-1);
 	  end matchcontinue;
 
   outDiscretizedEQs := listAppend(inDiscretizedEQs, newDiscretizedEQs);

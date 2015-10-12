@@ -677,10 +677,13 @@ end pder;
 */
 
 record DomainLineSegment1D
+  record Region
+  end Region;
   parameter Real L=1;
   constant Integer N=10;
   parameter Real dx = L / (N-1);
   parameter Real[N] x = array(i*dx for i in 0:N-1);
+  Region left, right, interior;
 end DomainLineSegment1D;
 
 /* Extension for uncertainty computations */
