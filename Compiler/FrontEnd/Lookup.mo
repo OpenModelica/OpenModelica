@@ -1035,7 +1035,7 @@ algorithm
     case(cache,env,DAE.CREF_QUAL())
       equation
         (cache,DAE.ATTR(ct,prl,var,dir,_,vis),ty1,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
-        cr1 = ComponentReference.crefStripLastIdent(cr);
+        cr1 = ComponentReference.crefFirstCref(cr);
         // Find innerOuter attribute from "parent"
         (cache,DAE.ATTR(innerOuter=io),_,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr1);
       then
