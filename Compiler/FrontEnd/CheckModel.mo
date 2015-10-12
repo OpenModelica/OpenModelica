@@ -42,6 +42,7 @@ public import DAE;
 
 protected import BaseHashSet;
 protected import ClassInf;
+protected import ConnectUtil;
 protected import ComponentReference;
 protected import DAEDump;
 protected import DAEUtil;
@@ -105,7 +106,7 @@ algorithm
     case DAE.VAR(componentRef=cr, kind = DAE.VARIABLE(), direction=dir, connectorType = ct, binding=SOME(e), source=source)
       equation
         (varSize, eqnSize, eqns, hs) = inArg;
-        b = topLevelInput(cr, dir, ct);
+        b = DAEUtil.topLevelInput(cr, dir, ct);
         ce = Expression.crefExp(cr);
         size = if b then 0 else 1;
         eqns = List.consOnTrue(not b, DAE.EQUATION(ce, e, source), eqns);
@@ -116,7 +117,7 @@ algorithm
     case DAE.VAR(componentRef=cr, kind = DAE.DISCRETE(), direction=dir, connectorType = ct, binding=SOME(e), source=source)
       equation
         (varSize, eqnSize, eqns, hs) = inArg;
-        b = topLevelInput(cr, dir, ct);
+        b = DAEUtil.topLevelInput(cr, dir, ct);
         ce = Expression.crefExp(cr);
         size = if b then 0 else 1;
         eqns = List.consOnTrue(not b, DAE.EQUATION(ce, e, source), eqns);
@@ -127,7 +128,7 @@ algorithm
     case DAE.VAR(componentRef=cr, kind = DAE.VARIABLE(), direction=dir, connectorType = ct)
       equation
         (varSize, eqnSize, eqns, hs) = inArg;
-        b = topLevelInput(cr, dir, ct);
+        b = DAEUtil.topLevelInput(cr, dir, ct);
         size = if b then 0 else 1;
         hs = if not b then BaseHashSet.add(cr, hs) else hs;
       then (varSize+size, eqnSize, eqns, hs);
@@ -136,7 +137,7 @@ algorithm
     case DAE.VAR(componentRef=cr, kind = DAE.DISCRETE(), direction=dir, connectorType = ct)
       equation
         (varSize, eqnSize, eqns, hs) = inArg;
-        b = topLevelInput(cr, dir, ct);
+        b = DAEUtil.topLevelInput(cr, dir, ct);
         size = if b then 0 else 1;
         hs = if not b then BaseHashSet.add(cr, hs) else hs;
       then (varSize+size, eqnSize, eqns, hs);
@@ -276,22 +277,6 @@ algorithm
         fail();
   end match;
 end countVarEqnSize;
-
-public function topLevelInput "author: PA
-  if variable is input declared at the top level of the model,
-  or if it is an input in a connector instance at top level return true."
-  input DAE.ComponentRef inComponentRef;
-  input DAE.VarDirection inVarDirection;
-  input DAE.ConnectorType inConnectorType;
-  output Boolean b;
-algorithm
-  b := match (inComponentRef, inVarDirection, inConnectorType)
-    case (DAE.CREF_IDENT(), DAE.INPUT(), _) then true;
-    case (DAE.CREF_QUAL(componentRef = DAE.CREF_IDENT()), DAE.INPUT(), DAE.FLOW()) then true;
-    case (DAE.CREF_QUAL(componentRef = DAE.CREF_IDENT()), DAE.INPUT(), DAE.POTENTIAL()) then true;
-    else false;
-  end match;
-end topLevelInput;
 
 public function checkAndGetAlgorithmOutputs
 "mahge:

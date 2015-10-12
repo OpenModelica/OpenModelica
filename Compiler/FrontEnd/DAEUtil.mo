@@ -113,6 +113,51 @@ algorithm
   end match;
 end dumpVarParallelismStr;
 
+public function topLevelInput "author: PA
+  if variable is input declared at the top level of the model,
+  or if it is an input in a connector instance at top level return true."
+  input DAE.ComponentRef inComponentRef;
+  input DAE.VarDirection inVarDirection;
+  input DAE.ConnectorType inConnectorType;
+  output Boolean isTopLevel;
+algorithm
+  isTopLevel := match (inVarDirection, inComponentRef)
+    case (DAE.INPUT(), DAE.CREF_IDENT()) then true;
+    case (DAE.INPUT(), _)
+      guard(ConnectUtil.faceEqual(ConnectUtil.componentFaceType(inComponentRef), Connect.OUTSIDE()))
+      then topLevelConnectorType(inConnectorType);
+    else false;
+  end match;
+end topLevelInput;
+
+public function topLevelOutput "author: PA
+  if variable is output declared at the top level of the model,
+  or if it is an output in a connector instance at top level return true."
+  input DAE.ComponentRef inComponentRef;
+  input DAE.VarDirection inVarDirection;
+  input DAE.ConnectorType inConnectorType;
+  output Boolean isTopLevel;
+algorithm
+  isTopLevel := match (inVarDirection, inComponentRef)
+    case (DAE.OUTPUT(), DAE.CREF_IDENT()) then true;
+    case (DAE.OUTPUT(), _)
+      guard(ConnectUtil.faceEqual(ConnectUtil.componentFaceType(inComponentRef), Connect.OUTSIDE()))
+      then topLevelConnectorType(inConnectorType);
+    else false;
+  end match;
+end topLevelOutput;
+
+protected function topLevelConnectorType
+  input DAE.ConnectorType inConnectorType;
+  output Boolean isTopLevel;
+algorithm
+  isTopLevel := match (inConnectorType)
+    case DAE.FLOW() then true;
+    case DAE.POTENTIAL() then true;
+    else false;
+  end match;
+end topLevelConnectorType;
+
 public function expTypeSimple "returns true if type is simple type"
   input DAE.Type tp;
   output Boolean isSimple;

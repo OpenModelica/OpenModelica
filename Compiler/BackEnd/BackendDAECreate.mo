@@ -917,7 +917,7 @@ algorithm
 
     else
       algorithm
-        false := BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType);
+        false := DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType);
       then
         match (inVarKind, inType)
           case (DAE.VARIABLE(), DAE.T_BOOL()) then BackendDAE.DISCRETE();
@@ -944,7 +944,7 @@ algorithm
     case (DAE.CONST(), _, _, _) then BackendDAE.CONST();
     case (DAE.VARIABLE(), _, _, _)
       equation
-        true = BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType);
+        true = DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType);
       then
         BackendDAE.VARIABLE();
     // adrpo: topLevelInput might fail!
