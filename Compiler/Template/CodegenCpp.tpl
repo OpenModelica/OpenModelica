@@ -7055,14 +7055,6 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       /* HistoryImplType::value_type_v v;
       HistoryImplType::value_type_dv v2; */
 
-
-      HistoryImplType::values_type& container = _historyImpl->getFreeContainer();
-      get<0>(container) = outputRealVars.outputVars;
-      get<1>(container) = outputIntVars.outputVars;
-      get<2>(container) = outputBoolVars.outputVars;
-      get<3>(container) = _simTime;
-
-
       <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
       <<
       HistoryImplType::value_type_r v3;
@@ -7079,7 +7071,7 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[2]", "writeOutput", "MEASURETIME_MODELFUNCTIONS")%>
 
       //_historyImpl->write(v,v2,_simTime);
-      _historyImpl->addContainerToWriteQueue(container);
+      _historyImpl->addContainerToWriteQueue(boost::make_tuple(outputRealVars.outputVars,outputIntVars.outputVars,outputBoolVars.outputVars,_simTime));
       >>
     %>
     }

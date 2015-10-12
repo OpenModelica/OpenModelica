@@ -76,11 +76,7 @@ public:
 		,_threadWorkDone(false)
 #endif
 	{
-		for (int i = 0; i < CONTAINER_COUNT; ++i)
-		{
-			 values_type vars = boost::make_tuple(real_vars_t(),int_vars_t(),bool_vars_t(),0.0);
-			_freeContainers.push_back(vars);
-		}
+
 	}
 
 	virtual ~Writer()
