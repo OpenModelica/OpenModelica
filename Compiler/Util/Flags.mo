@@ -462,6 +462,10 @@ constant DebugFlag DUMP_FUNCTIONS = DEBUG_FLAG(147, "dumpFunctions", false,
   Util.gettext("Add functions to backend dumps."));
 constant DebugFlag BUILD_STATIC_SOURCE_FMU = DEBUG_FLAG(148, "buildStaticSourceFMU", false,
   Util.gettext("A temporary flag to not link the C run-time system when building an FMU; instead compiling the run-time sources into the FMU. The goal is to make this a truly static shared object, depending on nothing outside the FMU (all sources will be included)."));
+constant DebugFlag DEBUG_DIFFERENTATION = DEBUG_FLAG(149, "debugDifferentation", false,
+  Util.gettext("Dumps debug output for the differentation process."));
+constant DebugFlag DEBUG_DIFFERENTATION_VERBOSE = DEBUG_FLAG(150, "debugDifferentationVerbose", false,
+  Util.gettext("Dumps verbose debug output for the differentation process."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -616,7 +620,9 @@ constant list<DebugFlag> allDebugFlags = {
   EVAL_OUTPUT_ONLY,
   HARDCODED_START_VALUES,
   DUMP_FUNCTIONS,
-  BUILD_STATIC_SOURCE_FMU
+  BUILD_STATIC_SOURCE_FMU,
+  DEBUG_DIFFERENTATION,
+  DEBUG_DIFFERENTATION_VERBOSE
 };
 
 public
