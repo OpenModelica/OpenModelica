@@ -4200,10 +4200,15 @@ protected
   DAE.CallAttributes cattr;
   DAE.ComponentRef cr;
   BackendDAE.Var tmpvar;
-
+  String tmpVarPrefix;
 algorithm
-
   shared := inDAE.shared;
+  tmpVarPrefix := match shared
+    case BackendDAE.SHARED(backendDAEType=BackendDAE.SIMULATION()) then "$OMC$CF$sim";
+    case BackendDAE.SHARED(backendDAEType=BackendDAE.INITIALSYSTEM()) then "$OMC$CF$init";
+    else fail();
+  end match;
+
   for syst in inDAE.eqs loop
     BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) := syst;
     BackendDAE.EQUATION_ARRAY(numberOfElement = n) := eqns;
@@ -4238,7 +4243,7 @@ algorithm
                DAE.CREF(componentRef = cr) := e1;
                if Expression.expHasCrefNoPreOrStart(right, cr) then
                 update := true;
-                cr  := ComponentReference.makeCrefIdent("$OMC$CF$" + intString(idx), Expression.typeof(e1) , {});
+                cr  := ComponentReference.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
                 idx := idx + 1;
                 e := Expression.crefExp(cr);
                 tmpvar := BackendVariable.makeVar(cr);
@@ -4252,7 +4257,7 @@ algorithm
                end if;
             elseif Expression.isUnaryCref(e1) then
               update := true;
-              cr  := ComponentReference.makeCrefIdent("$OMC$CF$" + intString(idx), Expression.typeof(e1) , {});
+              cr  := ComponentReference.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
               idx := idx + 1;
               e := Expression.crefExp(cr);
               tmpvar := BackendVariable.makeVar(cr);
@@ -4265,7 +4270,7 @@ algorithm
               update := true;
               DAE.ARRAY(array=arrayLst, scalar=sc) := e1;
               m := listLength(arrayLst);
-              cr  := ComponentReference.makeCrefIdent("$OMC$CF$" + intString(idx), Expression.typeof(e1) , {});
+              cr  := ComponentReference.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
               idx := idx + 1;
               e := Expression.crefExp(cr);
               tmpvar := BackendVariable.makeVar(cr);
@@ -4279,7 +4284,7 @@ algorithm
                 eqn1 := BackendDAE.EQUATION(e2, e3, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
                 //print(BackendDump.equationString(eqn1) + "--new--\n");
                 eqns := BackendEquation.addEquation(eqn1, eqns);
-                cr  := ComponentReference.makeCrefIdent("$OMC$CF$" + intString(idx-1), Expression.typeof(e1) , {DAE.INDEX(DAE.ICONST(j))});
+                cr  := ComponentReference.makeCrefIdent(tmpVarPrefix + intString(idx-1), Expression.typeof(e1) , {DAE.INDEX(DAE.ICONST(j))});
                 j := j + 1;
                 tmpvar.varName := cr;
                 vars := BackendVariable.addVar(tmpvar, vars);
