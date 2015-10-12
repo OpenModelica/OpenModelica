@@ -1,0 +1,41 @@
+// name:     Bug3503.mos
+// keywords: synchronous features, prefixing of clocks
+// status: correct
+//
+
+setCommandLineOptions("+std=3.3"); getErrorString();
+
+loadModel(Modelica); getErrorString();
+loadFile("ClockedSource.mo"); getErrorString();
+loadFile("ClockedModel.mo"); getErrorString();
+instantiateModel(ClockedSource); getErrorString();
+instantiateModel(ClockedModel); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "class ClockedSource
+//   parameter Real dt = 0.1;
+//   Real u = 1.0;
+//   output Real ud;
+// equation
+//   ud = sample(time * u, Clock(dt));
+// end ClockedSource;
+// "
+// ""
+// "class ClockedModel
+//   parameter Real cs.dt = 0.1;
+//   Real cs.u = 1.0;
+//   Real cs.ud;
+// equation
+//   cs.ud = sample(time * cs.u, Clock(cs.dt));
+// end ClockedModel;
+// "
+// ""
+// endResult
