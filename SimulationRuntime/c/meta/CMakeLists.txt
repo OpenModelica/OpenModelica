@@ -10,6 +10,9 @@ SET(META_HFILES meta_modelica_builtin.h
 				meta_modelica_builtin_boxptr.h
 				meta_modelica_segv.h
 				meta_modelica.h
+				meta_modelica_data.h
+				meta_modelica_mk_box.h
+				meta_modelica_segv.h
 				gc/mmc_gc.h)
 
 
