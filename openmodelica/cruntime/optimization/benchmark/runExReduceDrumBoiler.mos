@@ -19,8 +19,8 @@ getErrorString();
 echo(true);
 res.resultFile;
 if regexBool(messages, "EXIT: Optimal Solution Found.") then
-  if regexBool(messages, "Number of Iterations....: 226") then
-    print("Number of Iterations....: 226\nEXIT: Optimal Solution Found.");
+  if regexBool(messages, "Number of Iterations....: 286") then
+    print("Number of Iterations....: 286\nEXIT: Optimal Solution Found.");
   else
     print("Number of Iterations changed.\tUpdate test\n");
     exit(1);
@@ -44,7 +44,7 @@ getErrorString();
 // ""
 // true
 // "drumBoiler.optDrumBoiler_res.mat"
-// Number of Iterations....: 226
+// Number of Iterations....: 286
 // EXIT: Optimal Solution Found.
 // ""
 // {"Files Equal!"}
