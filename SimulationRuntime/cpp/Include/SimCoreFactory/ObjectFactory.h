@@ -12,13 +12,13 @@ struct ObjectFactory
             , _modelicasystem_path(modelicasystem_path)
             , _config_path(config_path)
     {
-    _factory = boost::shared_ptr<T>(new T(library_path, modelicasystem_path));
+    _factory = shared_ptr<T>(new T(library_path, modelicasystem_path));
   }
 
   virtual ~ObjectFactory() {};
 
 protected:
-    boost::shared_ptr<T> _factory;
+    shared_ptr<T> _factory;
     PATH _library_path;
     PATH _modelicasystem_path;
     PATH _config_path;

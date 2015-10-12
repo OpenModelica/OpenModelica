@@ -21,15 +21,15 @@ public:
     {
     }
 
-    boost::shared_ptr<ILinSolverSettings> createLinSolverSettings(string solver_name)
+    shared_ptr<ILinSolverSettings> createLinSolverSettings(string solver_name)
     {
-        boost::shared_ptr<ILinSolverSettings> linsolversetting;
+        shared_ptr<ILinSolverSettings> linsolversetting;
         return linsolversetting;
     }
 
-    boost::shared_ptr<IAlgLoopSolver> createLinSolver(IAlgLoop* algLoop, string solver_name, boost::shared_ptr<ILinSolverSettings>  solver_settings)
+    shared_ptr<IAlgLoopSolver> createLinSolver(IAlgLoop* algLoop, string solver_name, shared_ptr<ILinSolverSettings>  solver_settings)
     {
-        boost::shared_ptr<IAlgLoopSolver> linsolver;
+        shared_ptr<IAlgLoopSolver> linsolver;
         return linsolver;
     }
 

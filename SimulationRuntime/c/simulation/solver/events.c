@@ -56,45 +56,6 @@ void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData);
 
 int checkForStateEvent(DATA* data, LIST *eventList);
 
-
-/*! \fn initSample
- *
- *  \param [ref] [data]
- *  \param [in]  [startTime]
- *  \param [in]  [stopTime]
- *
- *  This function initializes sample-events.
- */
-void initSample(DATA* data, threadData_t *threadData, double startTime, double stopTime)
-{
-  TRACE_PUSH
-  long i;
-
-  data->callback->function_initSample(data, threadData);              /* set-up sample */
-  data->simulationInfo.nextSampleEvent = stopTime + 1.0;  /* should never be reached */
-  for(i=0; i<data->modelData.nSamples; ++i)
-  {
-    if(startTime < data->modelData.samplesInfo[i].start) {
-      data->simulationInfo.nextSampleTimes[i] = data->modelData.samplesInfo[i].start;
-    } else {
-      data->simulationInfo.nextSampleTimes[i] = data->modelData.samplesInfo[i].start + ceil((startTime-data->modelData.samplesInfo[i].start) / data->modelData.samplesInfo[i].interval) * data->modelData.samplesInfo[i].interval;
-    }
-
-    if((i == 0) || (data->simulationInfo.nextSampleTimes[i] < data->simulationInfo.nextSampleEvent)) {
-      data->simulationInfo.nextSampleEvent = data->simulationInfo.nextSampleTimes[i];
-    }
-  }
-
-  if(stopTime < data->simulationInfo.nextSampleEvent) {
-    debugStreamPrint(LOG_EVENTS, 0, "there are no sample-events");
-  } else {
-    debugStreamPrint(LOG_EVENTS, 0, "first sample-event at t = %g", data->simulationInfo.nextSampleEvent);
-  }
-
-  TRACE_POP
-}
-
-
 /*! \fn checkForSampleEvent
  *
  *  \param [ref] [data]

@@ -24,9 +24,9 @@ ISimData* SimData::clone()
     return new SimData(*this);
 }
 
-void SimData::Add(string key, boost::shared_ptr<ISimVar> var)
+void SimData::Add(string key, shared_ptr<ISimVar> var)
 {
-    std::pair<string,boost::shared_ptr<ISimVar> > elem(key,var);
+    std::pair<string,shared_ptr<ISimVar> > elem(key,var);
     std::pair<Objects_type::iterator,bool> p = _sim_vars.insert(elem);
 }
 
@@ -37,7 +37,7 @@ ISimVar* SimData::Get(string key)
     //Prüfen ob das Simobjekt in Liste ist.
     if(iter!=_sim_vars.end())
     {
-        boost::shared_ptr<ISimVar> obj = iter->second;
+        shared_ptr<ISimVar> obj = iter->second;
         return obj.get();
     }
     else

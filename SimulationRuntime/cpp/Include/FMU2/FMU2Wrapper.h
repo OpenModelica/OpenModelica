@@ -105,6 +105,8 @@ class FMU2Wrapper
                                 fmi2Boolean value[]);
   virtual fmi2Status getString (const fmi2ValueReference vr[], size_t nvr,
                                 fmi2String  value[]);
+  virtual fmi2Status getClock  (const fmi2Integer clockIndex[],
+                                size_t nClockIndex, fmi2Boolean active[]);
 
   virtual fmi2Status setReal   (const fmi2ValueReference vr[], size_t nvr,
                                 const fmi2Real    value[]);
@@ -114,6 +116,8 @@ class FMU2Wrapper
                                 const fmi2Boolean value[]);
   virtual fmi2Status setString (const fmi2ValueReference vr[], size_t nvr,
                                 const fmi2String  value[]);
+  virtual fmi2Status setClock  (const fmi2Integer clockIndex[],
+                                size_t nClockIndex);
 
   // Enter and exit the different modes for Model Exchange
   virtual fmi2Status newDiscreteStates      (fmi2EventInfo *eventInfo);
@@ -133,8 +137,10 @@ class FMU2Wrapper
 
  private:
   FMU2GlobalSettings _global_settings;
-  boost::shared_ptr<MODEL_CLASS> _model;
+  shared_ptr<MODEL_CLASS> _model;
   std::vector<string> _string_buffer;
+  bool *_clock_buffer;
+  int _nclock_active;
   double _need_update;
   void updateModel();
 

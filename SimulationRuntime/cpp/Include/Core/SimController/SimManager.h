@@ -15,7 +15,7 @@
 class SimManager
 {
 public:
-    SimManager(boost::shared_ptr<IMixedSystem> system, Configuration* _config);
+    SimManager(shared_ptr<IMixedSystem> system, Configuration* _config);
     ~SimManager();
     void runSimulation();
     void stopSimulation();
@@ -31,11 +31,11 @@ private:
     void runSingleProcess();
     void writeProperties();
 
-    boost::shared_ptr<IMixedSystem> _mixed_system;
+    shared_ptr<IMixedSystem> _mixed_system;
     Configuration* _config;
 
     std::vector<std::vector<std::pair<double,int> > > _tStops;            ///< - Stopzeitpunkte aufgrund von Time-Events
-    boost::shared_ptr<ISolver>                        _solver;            ///< - Solver
+    shared_ptr<ISolver>                        _solver;            ///< - Solver
     int                                               _dimtimeevent,      ///< Temp - Timeevent-Dimensionen-Array
                                                       _dimZeroFunc;       ///< - Number of zero functions
     int*                                              _timeEventCounter;  ///< Temp - Timeevent-Counter-Array
@@ -50,13 +50,13 @@ private:
                                                       _tStart,
                                                       _tEnd,
                                                       _lastCycleTime;
-    boost::shared_ptr<Initialization>                 _initialization;
+    shared_ptr<Initialization>                 _initialization;
 
 
-    boost::shared_ptr<ITime> _timeevent_system;
-    boost::shared_ptr<IEvent> _event_system;
-    boost::shared_ptr<IContinuous> _cont_system;
-    boost::shared_ptr<IStepEvent> _step_event_system;
+    shared_ptr<ITime> _timeevent_system;
+    shared_ptr<IEvent> _event_system;
+    shared_ptr<IContinuous> _cont_system;
+    shared_ptr<IStepEvent> _step_event_system;
 
     int* _sampleCycles;
 

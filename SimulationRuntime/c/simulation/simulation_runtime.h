@@ -87,8 +87,6 @@ extern void communicateMsg(char id, unsigned int size, const char *data);
  */
 extern int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData);
 
-extern void parseVariableStr(char* variableStr);
-
 #ifdef __cplusplus
 }
 #endif

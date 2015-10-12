@@ -2478,7 +2478,7 @@ algorithm
       equation
         DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), source = {path}) =
           Types.arrayElementType(ty);
-        (_, dims) = Types.flattenArrayTypeOpt(tp);
+        dims = Types.getDimensions(tp);
         name = Absyn.pathStringNoQual(path);
         dim_str = List.toString(dims, ExpressionDump.dimensionString, "", "[",
             ", ", "]", false);

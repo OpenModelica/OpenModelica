@@ -56,14 +56,14 @@ void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTi
     }
   }
 
-  for(i=0; i<data->modelData.nSubClocks; i++)
-  {
-    assertStreamPrint(NULL, data->modelData.subClocksInfo[i].solverMethod, "Continuous clocked systems aren't supported yet");
+  for(i=0; i<data->modelData.nSubClocks; i++) {
+    assertStreamPrint(NULL, NULL != data->modelData.subClocksInfo[i].solverMethod, "Continuous clocked systems aren't supported yet");
   }
 
   TRACE_POP
 }
 
+#if !defined(OMC_MINIMAL_RUNTIME)
 static void insertTimer(LIST* list, SYNC_TIMER* timer)
 {
   TRACE_PUSH
@@ -202,6 +202,7 @@ int handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   TRACE_POP
   return ret;
 }
+#endif /* !defined(OMC_MINIMAL_RUNTIME) */
 
 #ifdef __cplusplus
 }

@@ -45,9 +45,9 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 
 #include <Core/System/FactoryExport.h>
 #include <Core/System/AlgLoopSolverFactory.h>
- boost::shared_ptr<IAlgLoopSolverFactory> createStaticAlgLoopSolverFactory(IGlobalSettings* globalSettings,PATH library_path,PATH modelicasystem_path)
+ shared_ptr<IAlgLoopSolverFactory> createStaticAlgLoopSolverFactory(IGlobalSettings* globalSettings,PATH library_path,PATH modelicasystem_path)
  {
-     boost::shared_ptr<IAlgLoopSolverFactory> algloopSolverFactory = boost::shared_ptr<IAlgLoopSolverFactory>(new AlgLoopSolverFactory(globalSettings,library_path,modelicasystem_path));
+     shared_ptr<IAlgLoopSolverFactory> algloopSolverFactory = shared_ptr<IAlgLoopSolverFactory>(new AlgLoopSolverFactory(globalSettings,library_path,modelicasystem_path));
      return algloopSolverFactory;
  }
 

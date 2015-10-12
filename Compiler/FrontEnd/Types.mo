@@ -1366,43 +1366,27 @@ algorithm
   end match;
 end setVarType;
 
-public function semiEquivTypes "This function checks whether two types are semi-equal...
-With 'semi' we mean that they have the same base type,
-and if both are arrays the numbers of dimensions are equal, not necessarily equal dimension-sizes."
+public function semiEquivTypes
+  "This function checks whether two types are semi-equal...
+   With 'semi' we mean that they have the same base type, and if both are arrays
+   the numbers of dimensions are equal, not necessarily equal dimension-sizes."
   input DAE.Type inType1;
   input DAE.Type inType2;
-  output Boolean outBoolean;
+  output Boolean outEquiv;
+protected
+  DAE.Type ty1, ty2;
+  list<DAE.Dimension> dims1, dims2;
 algorithm
-  outBoolean := matchcontinue (inType1,inType2)
-    local
-      Type t1,t2,tf1,tf2;
-      Boolean b1;
-      list<Integer> il1,il2;
-      Integer ll1,ll2;
-    case (t1,t2)
-      equation
-        true = arrayType(t1);
-        true = arrayType(t2);
-        (tf1,il1) = flattenArrayType(t1);
-        (tf2,il2) = flattenArrayType(t2);
-        true = subtype(tf1, tf2);
-        true = subtype(tf2, tf1);
-        ll1 = listLength(il1);
-        ll2 = listLength(il2);
-        true = (ll1 == ll2);
-      then
-        true;
-    case(t1,t2)
-      equation
-        false = arrayType(t1);
-        false = arrayType(t2);
-        b1 = equivtypes(t1,t2);
-        then
-          b1;
-    else false;  /* default */
-  end matchcontinue;
+  if arrayType(inType1) and arrayType(inType2) then
+    (ty1, dims1) := flattenArrayType(inType1);
+    (ty2, dims2) := flattenArrayType(inType2);
+    outEquiv := equivtypes(inType1, inType2) and listLength(dims1) == listLength(dims2);
+  elseif not arrayType(inType1) and not arrayType(inType2) then
+    outEquiv := equivtypes(inType1, inType2);
+  else
+    outEquiv := false;
+  end if;
 end semiEquivTypes;
-
 
 public function equivtypes "This is the type equivalence function.  It is defined in terms of
   the subtype function.  Two types are considered equivalent if they
@@ -2196,7 +2180,7 @@ algorithm
 
     case (ty as DAE.T_ARRAY())
       equation
-        (ty,dimlst) = flattenArrayTypeOpt(ty);
+        (ty,dimlst) = flattenArrayType(ty);
         tystr = unparseType(ty);
         dims = printDimensionsStr(dimlst);
         res = stringAppendList({tystr,"[",dims,"]"});
@@ -3462,87 +3446,45 @@ algorithm
   outHasReal := false;
 end containReal;
 
-public function flattenArrayType " Returns the element type of a Type and the list of dimensions of the type.
-   The dimensions are in a backwards order ex:
-   a[4,5] will give {5,4} in return value."
+public function flattenArrayType
+  "Returns the element type of a Type and the dimensions of the type."
   input DAE.Type inType;
   output DAE.Type outType;
-  output list<Integer> outIntegerLst;
+  output DAE.Dimensions outDimensions;
 algorithm
-  (outType,outIntegerLst) := matchcontinue (inType)
+  (outType, outDimensions) := match inType
     local
-      Type ty_1,ty;
-      list<Integer> dimlist_1,dimlist;
-      Integer dim;
-      DAE.Dimension d;
-
-    case (DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()},ty = ty))
-      equation
-        (ty_1,dimlist_1) = flattenArrayType(ty);
-      then
-        (ty_1,dimlist_1);
-
-    case (DAE.T_ARRAY(dims = {d},ty = ty))
-      equation
-        dim = Expression.dimensionSize(d);
-        (ty_1,dimlist) = flattenArrayType(ty);
-        dimlist_1 = listAppend(dimlist, {dim});
-      then
-        (ty_1,dimlist_1);
-    // Complex type extending basetype.
-    case (DAE.T_SUBTYPE_BASIC(complexType = ty))
-      equation
-        (ty_1,dimlist) = flattenArrayType(ty);
-      then
-        (ty_1,dimlist);
-
-    case ty then (ty,{});
-
-  end matchcontinue;
-end flattenArrayType;
-
-public function flattenArrayTypeOpt "Returns the element type of a Type and the list of dimensions of the type."
-  input DAE.Type inType;
-  output DAE.Type outType;
-  output DAE.Dimensions outDimensionLst;
-algorithm
-  (outType,outDimensionLst) := matchcontinue (inType)
-    local
-      Type ty_1,ty;
-      DAE.Dimensions dimlist, dims;
+      Type ty;
+      DAE.Dimensions dims;
       DAE.Dimension dim;
 
     // Array type
-    case (DAE.T_ARRAY(dims = {dim}, ty = ty))
+    case DAE.T_ARRAY(dims = {dim})
       equation
-        (ty_1,dimlist) = flattenArrayTypeOpt(ty);
+        (ty, dims) = flattenArrayType(inType.ty);
       then
-        (ty_1, dim :: dimlist);
+        (ty, dim :: dims);
 
     // Array type
-    case (DAE.T_ARRAY(dims = dims, ty = ty))
+    case DAE.T_ARRAY()
       equation
-        (ty_1,dimlist) = flattenArrayTypeOpt(ty);
-        dimlist = listAppend(dims, dimlist);
+        (ty, dims) = flattenArrayType(inType.ty);
+        dims = listAppend(inType.dims, dims);
       then
-        (ty_1, dimlist);
+        (ty, dims);
 
     // Complex type extending basetype with equality constraint
-    case (DAE.T_SUBTYPE_BASIC(equalityConstraint = SOME(_)))
-      then
-        (inType,{});
+    case DAE.T_SUBTYPE_BASIC(equalityConstraint = SOME(_))
+      then (inType, {});
 
     // Complex type extending basetype.
-    case (DAE.T_SUBTYPE_BASIC(complexType = ty))
-      equation
-        (ty_1,dimlist) = flattenArrayTypeOpt(ty);
-      then
-        (ty_1,dimlist);
+    case DAE.T_SUBTYPE_BASIC()
+      then flattenArrayType(inType.complexType);
 
     // Element type
-    case ty then (ty,{});
-  end matchcontinue;
-end flattenArrayTypeOpt;
+    else (inType, {});
+  end match;
+end flattenArrayType;
 
 public function getTypeName "Return the type name of a Type."
   input DAE.Type inType;
@@ -3553,8 +3495,8 @@ algorithm
       String n,dimstr,tystr,str;
       ClassInf.State st;
       DAE.Type ty,arrayty;
-      list<Integer> dims;
-      list<String> dimstrs;
+      list<DAE.Dimension> dims;
+
     case (DAE.T_INTEGER()) then "Integer";
     case (DAE.T_REAL()) then "Real";
     case (DAE.T_STRING()) then "String";
@@ -3574,8 +3516,7 @@ algorithm
     case (arrayty as DAE.T_ARRAY())
       equation
         (ty,dims) = flattenArrayType(arrayty);
-        dimstrs = List.map(dims, intString);
-        dimstr = stringDelimitList(dimstrs, ", ");
+        dimstr = ExpressionDump.dimensionsString(dims);
         tystr = getTypeName(ty);
         str = stringAppendList({tystr,"[",dimstr,"]"});
       then
@@ -3906,7 +3847,7 @@ algorithm
 
     case (t as DAE.T_ARRAY())
       equation
-        (t,dims) = flattenArrayTypeOpt(t);
+        (t,dims) = flattenArrayType(t);
         t_1 = simplifyType(t);
       then
         DAE.T_ARRAY(t_1,dims,DAE.emptyTypeSource);
@@ -3933,7 +3874,7 @@ algorithm
     case (DAE.T_COMPLEX(CIS, varLst, ec, ts))
       equation
         true = Config.acceptMetaModelicaGrammar();
-        varLst = simplifyVars(varLst);
+        varLst = list(simplifyVar(v) for v in varLst);
       then
         DAE.T_COMPLEX(CIS, varLst, ec, ts);
 
@@ -3942,7 +3883,7 @@ algorithm
     // does not get expanded into the component equations.
     case (DAE.T_COMPLEX(CIS as ClassInf.RECORD(_), varLst, ec, ts))
       equation
-        varLst = simplifyVars(varLst);
+        varLst = list(simplifyVar(v) for v in varLst);
       then
         DAE.T_COMPLEX(CIS, varLst, ec, ts);
 
@@ -3973,29 +3914,74 @@ algorithm
   end matchcontinue;
 end simplifyType;
 
-protected function simplifyVars
-  input list<DAE.Var> inVars;
-  output list<DAE.Var> outVars;
+protected function simplifyVar
+  input DAE.Var inVar;
+  output DAE.Var outVar = inVar;
 algorithm
-  outVars := match(inVars)
-    local
-      String name;
-      DAE.Attributes attributes;
-      Type ty "type";
-      DAE.Binding binding "equation modification";
-      Option<DAE.Const> constOfForIteratorRange "the constant-ness of the range if this is a for iterator, NONE() if is NOT a for iterator";
-      list<DAE.Var> rest;
-
-    case ({}) then {};
-
-    case (DAE.TYPES_VAR(name, attributes, ty, binding, constOfForIteratorRange)::rest)
-      equation
-        rest = simplifyVars(rest);
-        ty = simplifyType(ty);
+  outVar := match outVar
+    case DAE.TYPES_VAR()
+      algorithm
+        outVar.ty := simplifyType(outVar.ty);
       then
-        DAE.TYPES_VAR(name, attributes, ty, binding, constOfForIteratorRange)::rest;
+        outVar;
   end match;
-end simplifyVars;
+end simplifyVar;
+
+public function complicateType
+  "Does the opposite of simplifyType, as far as it's possible."
+  input DAE.Type inType;
+  output DAE.Type outType = inType;
+algorithm
+  outType := match outType
+    local
+      DAE.Type ty;
+      list<DAE.Dimension> dims;
+
+    case DAE.T_ARRAY(dims = _ :: _)
+      algorithm
+        (ty, dims) := flattenArrayType(outType);
+      then
+        liftArrayListDims(ty, dims);
+
+    case DAE.T_FUNCTION_REFERENCE_VAR() then outType.functionType;
+    case DAE.T_METATYPE() then outType.ty;
+
+    case DAE.T_TUPLE()
+      algorithm
+        outType.types := list(complicateType(t) for t in outType.types);
+      then
+        outType;
+
+    case DAE.T_COMPLEX()
+      algorithm
+        if isRecord(inType) or Config.acceptMetaModelicaGrammar() then
+          outType.varLst := list(complicateVar(v) for v in outType.varLst);
+        end if;
+      then
+        outType;
+
+    case DAE.T_METABOXED()
+      algorithm
+        outType.ty := complicateType(outType.ty);
+      then
+        outType;
+
+    else outType;
+  end match;
+end complicateType;
+
+protected function complicateVar
+  input DAE.Var inVar;
+  output DAE.Var outVar = inVar;
+algorithm
+  outVar := match outVar
+    case DAE.TYPES_VAR()
+      algorithm
+        outVar.ty := complicateType(outVar.ty);
+      then
+        outVar;
+  end match;
+end complicateVar;
 
 protected function typeMemoryEntryEq
   input DAE.Type inType1;

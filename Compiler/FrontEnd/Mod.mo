@@ -1238,75 +1238,47 @@ algorithm
   end match;
 end selectEqMod;
 
-protected function lookupComplexCompModification "Lookups a component modification from a complex constructor
-(e.g. record constructor) by name."
-  input Option<DAE.EqMod> eqMod;
-  input Absyn.Ident n;
-  input SCode.Final finalPrefix;
-  input SCode.Each each_;
-  output DAE.Mod outMod;
+protected function lookupComplexCompModification
+  "Looks up a component modification from a complex constructor (e.g. record
+   constructor) by name."
+  input Option<DAE.EqMod> inEqMod;
+  input Absyn.Ident inName;
+  input SCode.Final inFinal;
+  input SCode.Each inEach;
+  output DAE.Mod outMod = DAE.NOMOD();
+protected
+  list<Values.Value> values;
+  list<String> names;
+  Values.Value v;
+  String name;
+  DAE.Exp e;
+  Absyn.Exp ae;
+  DAE.Type ty;
+  DAE.EqMod eq_mod;
+  SourceInfo info;
+
 algorithm
-  outMod := matchcontinue(eqMod,n,finalPrefix,each_)
-    local
-      list<Values.Value> values;
-      list<String> names;
-      list<DAE.Var> varLst;
-      DAE.Mod mod;
-      DAE.Exp e;
-      SourceInfo info;
+  try
+    SOME(DAE.TYPED(
+      modifierAsValue = SOME(Values.RECORD(orderd = values, comp = names, index = -1)),
+      info = info)) := inEqMod;
 
-    case(NONE(),_,_,_) then DAE.NOMOD();
+    for name in names loop
+      v :: values := values;
+      name :: names := names;
 
-    case(SOME(DAE.TYPED(_,SOME(Values.RECORD(_,values,names,-1)),
-                        DAE.PROP(DAE.T_COMPLEX(varLst = varLst),_),_,info)),
-         _,_,_)
-      equation
-        mod = lookupComplexCompModification2(values,names,varLst,n,finalPrefix,each_,info);
-      then mod;
-
-    else DAE.NOMOD();
-
-  end matchcontinue;
+      if name == inName then
+        e := ValuesUtil.valueExp(v);
+        ae := Expression.unelabExp(e);
+        ty := Types.complicateType(Expression.typeof(e));
+        eq_mod := DAE.TYPED(e, SOME(v), DAE.PROP(ty, DAE.C_CONST()), ae, info);
+        outMod := DAE.MOD(inFinal, inEach, {}, SOME(eq_mod));
+        break;
+      end if;
+    end for;
+  else
+  end try;
 end lookupComplexCompModification;
-
-protected function lookupComplexCompModification2 "Help function to lookupComplexCompModification"
-  input list<Values.Value> inValues;
-  input list<String> inNames;
-  input list<DAE.Var> inVars;
-  input String name;
-  input SCode.Final finalPrefix;
-  input SCode.Each each_;
-  input SourceInfo info;
-  output DAE.Mod mod;
-algorithm
-  mod := matchcontinue(inValues,inNames,inVars,name,finalPrefix,each_,info)
-    local
-      DAE.Type tp;
-      Values.Value v;
-      String name1,name2;
-      DAE.Exp e;
-      list<Values.Value> values;
-      list<String> names;
-      list<DAE.Var> vars;
-      Absyn.Exp ae;
-
-    case(v::_,name1::_,DAE.TYPES_VAR(name=name2,ty=tp)::_,_,_,_,_)
-      equation
-        true = (name1 == name2);
-        true = (name2 == name);
-        e = ValuesUtil.valueExp(v);
-        ae = Expression.unelabExp(e);
-      then
-        DAE.MOD(finalPrefix,each_,{},SOME(DAE.TYPED(e,SOME(v),DAE.PROP(tp,DAE.C_CONST()),ae,info)));
-
-    case(_::values,_::names,_::vars,_,_,_,_)
-      equation
-        mod = lookupComplexCompModification2(values,names,vars,name,finalPrefix,each_,info);
-      then
-        mod;
-
-  end matchcontinue;
-end lookupComplexCompModification2;
 
 protected function checkDuplicateModifications "Checks if two modifiers are present, and in that case
 print error of duplicate modifications, if not, the one modification having a value is returned"

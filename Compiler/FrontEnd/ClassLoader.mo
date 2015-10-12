@@ -385,7 +385,7 @@ algorithm
   end if;
   s1 := Absyn.withinString(w1);
   s2 := Absyn.withinString(w2);
-  if not (Absyn.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.MODELICA_2_X())) then
+  if not (Absyn.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.LanguageStandard.'2.x')) then
     Error.addSourceMessage(Error.LIBRARY_UNEXPECTED_WITHIN, {s1,s2}, info);
     fail();
   elseif expectPackage and not Absyn.isParts(body) then

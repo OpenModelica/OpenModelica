@@ -22,25 +22,26 @@
 Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	: _algLoop            (algLoop)
 	, _newtonSettings    ((INonLinSolverSettings*)settings)
-	, _y                (NULL)
-	, _yHelp            (NULL)
-	, _fnew             (NULL)
-	, _fold             (NULL)
-    , _f                  (NULL)
-    , _ihelpArray         (NULL)
-
-	, _fHelp			(NULL)
+	, _y                  (NULL)
+	, _yHelp              (NULL)
+	, _fnew               (NULL)
+	, _fold               (NULL)
+	, _f                  (NULL)
+	, _ihelpArray         (NULL)
+	, _fHelp              (NULL)
 	, _delta_s            (NULL)
 	, _delta_b            (NULL)
-	, _iHelp               (NULL)
-
+	, _iHelp              (NULL)
 	, _jac                (NULL)
-	, _jacHelpVec1            (NULL)
-	, _jacHelpVec2            (NULL)
-	, _jacHelpMat1            (NULL)
-	, _jacHelpMat2            (NULL)
+	, _jacHelpVec1        (NULL)
+	, _jacHelpVec2        (NULL)
+	, _jacHelpMat1        (NULL)
+	, _jacHelpMat2        (NULL)
+	, _work               (NULL)
+	,_zeroVec             (NULL)
+	, _identity           (NULL)
 
-	, _work						(NULL)
+
 /*
     , _kluSymbolic 			(NULL)
     , _kluNumeric			(NULL)
@@ -59,7 +60,7 @@ Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _dMINUSONE		(-1.0)
 	, _N				('n')
 	,_T					('t')
-	, _identity (NULL)
+
 {
 	_sparse = _algLoop->getUseSparseFormat();
 }
@@ -80,6 +81,12 @@ Newton::~Newton()
 	if(_jacHelpMat1)    delete []    _jacHelpMat1;
 	if(_jacHelpMat2)    delete []    _jacHelpMat2;
 	if(_work)    delete []    _work;
+	if(_identity) delete [] _identity;
+	if(_zeroVec) delete [] _zeroVec;
+	if(_f) delete [] _f;
+	if(_ihelpArray) delete [] _ihelpArray;
+
+
 	/*
 	if(_sparse == true)
 	{
@@ -141,6 +148,9 @@ void Newton::initialize()
 			if(_jacHelpMat2)    delete []    _jacHelpMat2;
 			if(_work)    delete []    _work;
 			if(_identity) delete [] _identity;
+			if(_zeroVec) delete [] _zeroVec;
+			if(_f) delete [] _f;
+			if(_ihelpArray) delete [] _ihelpArray;
 
 			_y            = new double[_dimSys];
 			_yHelp        = new double[_dimSys];
@@ -162,7 +172,7 @@ void Newton::initialize()
 
 			_zeroVec          = new double[_dimSys];
 			 _f                  = new double[_dimSys];
-				_ihelpArray       = new long int[_dimSys];
+			_ihelpArray       = new long int[_dimSys];
 
 
 			_algLoop->getReal(_y);
@@ -471,7 +481,7 @@ void Newton::solve()
 					//Stopping Criterion
 					if( fnorm < _fNormTol)
 					{
-						std::cout << totStps << std::endl;
+						//std::cout << totStps << std::endl;
 						_iterationStatus = DONE;
 						break;
 					}

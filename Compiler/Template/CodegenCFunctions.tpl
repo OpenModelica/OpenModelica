@@ -4741,9 +4741,12 @@ case BINARY(__) then
     let tmpStr = tempDecl("modelica_metatype", &varDecls)
     let &preExp += '<%tmpStr%> = stringAppend(<%e1%>,<%e2%>);<%\n%>'
     tmpStr
-  case ADD(__) then '(<%e1%> + <%e2%>)'
-  case SUB(__) then '(<%e1%> - <%e2%>)'
-  case MUL(__) then '(<%e1%> * <%e2%>)'
+  case ADD(__) then '<%e1%> + <%e2%>'
+  case SUB(__) then
+    if isAtomic(exp2)
+      then '<%e1%> - <%e2%>'
+      else '<%e1%> - (<%e2%>)'
+  case MUL(__) then '(<%e1%>) * (<%e2%>)'
   case DIV(__) then
     let tvar = tempDecl(expTypeModelica(ty),&varDecls)
     let &preExp += '<%tvar%> = <%e2%>;<%\n%>'
@@ -4751,7 +4754,7 @@ case BINARY(__) then
       if acceptMetaModelicaGrammar()
         then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
         else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(exp))%>");}<%\n%>'
-    '(<%e1%> / <%e2%>)'
+    '(<%e1%>) / <%tvar%>'
   case POW(__) then
     if isHalf(exp2) then
       (let tmp = tempDecl(expTypeFromExpModelica(exp1),&varDecls)
@@ -4848,7 +4851,10 @@ match exp
 case UNARY(__) then
   let e = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
   match operator
-  case UMINUS(__)     then '(-<%e%>)'
+  case UMINUS(__) then
+    if isAtomic(exp)
+      then '(-<%e%>)'
+      else '(-(<%e%>))'
   case UMINUS_ARR(ty=T_ARRAY(ty=T_REAL(__))) then
     let var = tempDecl("real_array", &varDecls)
     let &preExp += 'usub_alloc_real_array(<%e%>,&<%var%>);<%\n%>'
@@ -5324,7 +5330,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     daeExpCallPre(arg, context, preExp, varDecls, &auxFunction)
 
   case CALL(path=IDENT(name="previous"), expLst={arg as CREF(__)}) then
-    '$P$CLKPRE<%cref(arg.componentRef)%>'
+    '<%cref(crefPrefixPrevious(arg.componentRef))%>'
   case CALL(path=IDENT(name="$_clkfire"), expLst={arg as ICONST(__)}) then
     'fireClock(data, threadData, <%arg.integer%> - 1, data->localData[0]->timeValue)'
 
@@ -5488,7 +5494,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
         then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
         else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(call))%>");}<%\n%>'
       /*ldiv not available in opencl c*/
-    if acceptParModelicaGrammar() then '(modelica_integer)(<%var1%>/<%tvar%>)'
+    if acceptParModelicaGrammar() then '(modelica_integer)(<%var1%> / <%tvar%>)'
     else 'ldiv(<%var1%>,<%tvar%>).quot'
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2}) then
@@ -5500,7 +5506,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
       if acceptMetaModelicaGrammar()
         then 'if (<%tvar%> == 0.0) {<%generateThrow()%>;}<%\n%>'
         else 'if (<%tvar%> == 0.0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(call))%>");}<%\n%>'
-    'trunc(<%var1%>/<%var2%>)'
+    'trunc(<%var1%> / <%tvar%>)'
 
   case CALL(path=IDENT(name="mod"), expLst={e1,e2}, attr=CALL_ATTR(ty = ty)) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)

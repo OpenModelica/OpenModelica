@@ -83,22 +83,22 @@ error "operating system not supported"
 
 #if defined(OMC_BUILD)  && defined(RUNTIME_STATIC_LINKING)
   #if defined(ENABLE_SUNDIALS_STATIC)
-   boost::shared_ptr<INonLinSolverSettings> createKinsolSettings()
+   shared_ptr<INonLinSolverSettings> createKinsolSettings()
    {
-       boost::shared_ptr<INonLinSolverSettings> settings = boost::shared_ptr<INonLinSolverSettings>(new KinsolSettings());
+       shared_ptr<INonLinSolverSettings> settings = shared_ptr<INonLinSolverSettings>(new KinsolSettings());
         return settings;
    }
-    boost::shared_ptr<IAlgLoopSolver> createKinsolSolver(IAlgLoop* algLoop, boost::shared_ptr<INonLinSolverSettings> solver_settings)
+    shared_ptr<IAlgLoopSolver> createKinsolSolver(IAlgLoop* algLoop, shared_ptr<INonLinSolverSettings> solver_settings)
    {
-       boost::shared_ptr<IAlgLoopSolver> solver = boost::shared_ptr<IAlgLoopSolver>(new Kinsol(algLoop,solver_settings.get()));
+       shared_ptr<IAlgLoopSolver> solver = shared_ptr<IAlgLoopSolver>(new Kinsol(algLoop,solver_settings.get()));
           return solver;
    }
   #else
-   boost::shared_ptr<INonLinSolverSettings> createKinsolSettings()
+   shared_ptr<INonLinSolverSettings> createKinsolSettings()
    {
      throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol was disabled during build");
    }
-   boost::shared_ptr<IAlgLoopSolver> createKinsolSolver(IAlgLoop* algLoop, boost::shared_ptr<INonLinSolverSettings> solver_settings)
+   shared_ptr<IAlgLoopSolver> createKinsolSolver(IAlgLoop* algLoop, shared_ptr<INonLinSolverSettings> solver_settings)
    {
      throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol was disabled during build");
    }

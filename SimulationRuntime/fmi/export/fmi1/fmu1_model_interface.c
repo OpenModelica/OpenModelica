@@ -146,7 +146,7 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
     comp->instanceName = functions.allocateMemory(1 + strlen(instanceName), sizeof(char));
     comp->GUID = functions.allocateMemory(1 + strlen(GUID), sizeof(char));
     /* Cannot use functions.allocateMemory since the pointer might not be stored on the stack of the parent */
-    DATA* fmudata = (DATA *)GC_malloc_uncollectable(sizeof(DATA));
+    DATA* fmudata = (DATA *)functions.allocateMemory(1, sizeof(DATA));
 
     threadData_t *threadData = (threadData_t *)functions.allocateMemory(1, sizeof(threadData_t));
     memset(threadData, 0, sizeof(threadData_t));
@@ -835,7 +835,7 @@ fmiStatus fmiTerminate(fmiComponent c)
   freeStateSetData(comp->fmuData);
   deInitializeDataStruc(comp->fmuData);
   comp->functions.freeMemory(comp->threadData);
-  GC_free(comp->fmuData);
+  comp->functions.freeMemory(comp->fmuData);
 
   comp->state = modelTerminated;
   return fmiOK;

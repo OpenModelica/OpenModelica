@@ -15,7 +15,7 @@ extern "C" ISolver* createRTEuler(IMixedSystem* system, ISolverSettings* setting
 extern "C" ISolverSettings* createRTRKSettings(IGlobalSettings* globalSettings);
 extern "C" INonLinSolverSettings* createKinsolSettings();
 extern "C" IAlgLoopSolver* createKinsol(IAlgLoop* algloop, INonLinSolverSettings* solver_settings);
-extern "C" IMixedSystem* createModelicaSystem(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolver, boost::shared_ptr<ISimData> simdata);
+extern "C" IMixedSystem* createModelicaSystem(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolver, shared_ptr<ISimData> simdata);
 
 BodasFactory::BodasFactory(string library_path, string modelicasystem_path)
     : _library_path(library_path)
@@ -23,37 +23,37 @@ BodasFactory::BodasFactory(string library_path, string modelicasystem_path)
 {
 }
 
-boost::shared_ptr<ISimController> BodasFactory::LoadSimController()
+shared_ptr<ISimController> BodasFactory::LoadSimController()
 {
     ISimController* simController = createSimController(_library_path, _modelicasystem_path);
-    return boost::shared_ptr<ISimController>(simController);
+    return shared_ptr<ISimController>(simController);
 }
 
-boost::shared_ptr<ISettingsFactory> BodasFactory::LoadSettingsFactory()
+shared_ptr<ISettingsFactory> BodasFactory::LoadSettingsFactory()
 {
     ISettingsFactory* settingsFactory = createSettingsFactory(_library_path, _modelicasystem_path);
-    return boost::shared_ptr<ISettingsFactory>(settingsFactory);
+    return shared_ptr<ISettingsFactory>(settingsFactory);
 }
 
-boost::shared_ptr<IAlgLoopSolverFactory> BodasFactory::LoadAlgLoopSolverFactory(IGlobalSettings* globalSettings)
+shared_ptr<IAlgLoopSolverFactory> BodasFactory::LoadAlgLoopSolverFactory(IGlobalSettings* globalSettings)
 {
     IAlgLoopSolverFactory* algloopsolverFactory = createAlgLoopSolverFactory(globalSettings, _library_path, _modelicasystem_path);
-    return boost::shared_ptr<IAlgLoopSolverFactory>(algloopsolverFactory);
+    return shared_ptr<IAlgLoopSolverFactory>(algloopsolverFactory);
 }
 
-boost::shared_ptr<IMixedSystem> BodasFactory::LoadSystem(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolver, boost::shared_ptr<ISimData> simData)
+shared_ptr<IMixedSystem> BodasFactory::LoadSystem(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolver, shared_ptr<ISimData> simData)
 {
     IMixedSystem* system = createModelicaSystem(globalSettings, nonlinsolver, simData);
-    return boost::shared_ptr<IMixedSystem>(system);
+    return shared_ptr<IMixedSystem>(system);
 }
 
-boost::shared_ptr<ISimData> BodasFactory::LoadSimData()
+shared_ptr<ISimData> BodasFactory::LoadSimData()
 {
     ISimData* simData = createSimData();
-    return boost::shared_ptr<ISimData>(simData);
+    return shared_ptr<ISimData>(simData);
 }
 
-boost::shared_ptr<ISolver> BodasFactory::LoadSolver(IMixedSystem* system, string solver_name, boost::shared_ptr<ISolverSettings> solver_settings)
+shared_ptr<ISolver> BodasFactory::LoadSolver(IMixedSystem* system, string solver_name, shared_ptr<ISolverSettings> solver_settings)
 {
   ISolver* solver;
   if (solver_name.compare("createRTEuler") == 0)
@@ -68,10 +68,10 @@ boost::shared_ptr<ISolver> BodasFactory::LoadSolver(IMixedSystem* system, string
   {
   }
 
-  return boost::shared_ptr<ISolver>(solver);
+  return shared_ptr<ISolver>(solver);
 }
 
-boost::shared_ptr<ISolverSettings> BodasFactory::LoadSolverSettings(string solver_name, boost::shared_ptr<IGlobalSettings> global_settings)
+shared_ptr<ISolverSettings> BodasFactory::LoadSolverSettings(string solver_name, shared_ptr<IGlobalSettings> global_settings)
 {
   ISolverSettings* solver_settings;
   if (solver_name.compare("createRTEulerSettings") == 0)
@@ -86,10 +86,10 @@ boost::shared_ptr<ISolverSettings> BodasFactory::LoadSolverSettings(string solve
   {
 
   }
-    return boost::shared_ptr<ISolverSettings>(solver_settings);
+    return shared_ptr<ISolverSettings>(solver_settings);
 }
 
-boost::shared_ptr<IAlgLoopSolver> BodasFactory::LoadAlgLoopSolver(IAlgLoop* algLoop, string solver_name, boost::shared_ptr<INonLinSolverSettings> solver_settings)
+shared_ptr<IAlgLoopSolver> BodasFactory::LoadAlgLoopSolver(IAlgLoop* algLoop, string solver_name, shared_ptr<INonLinSolverSettings> solver_settings)
 {
     IAlgLoopSolver* algloopsolver;
     if (solver_name.compare("createNewton") == 0)
@@ -103,10 +103,10 @@ boost::shared_ptr<IAlgLoopSolver> BodasFactory::LoadAlgLoopSolver(IAlgLoop* algL
     else
     {
     }
-    return boost::shared_ptr<IAlgLoopSolver>(algloopsolver);
+    return shared_ptr<IAlgLoopSolver>(algloopsolver);
 }
 
-boost::shared_ptr<INonLinSolverSettings> BodasFactory::LoadAlgLoopSolverSettings(string solver_name)
+shared_ptr<INonLinSolverSettings> BodasFactory::LoadAlgLoopSolverSettings(string solver_name)
 {
     INonLinSolverSettings* solver_settings;
     if (solver_name.compare("createNewtonSettings") == 0)
@@ -120,6 +120,6 @@ boost::shared_ptr<INonLinSolverSettings> BodasFactory::LoadAlgLoopSolverSettings
     else
     {
     }
-    return boost::shared_ptr<INonLinSolverSettings>(solver_settings);
+    return shared_ptr<INonLinSolverSettings>(solver_settings);
 }
 /** @} */ // end of simcorefactoryBodas

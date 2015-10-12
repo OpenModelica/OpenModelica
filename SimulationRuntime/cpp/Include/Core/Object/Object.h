@@ -16,8 +16,8 @@ class Object : public IObject
 {
 public:
 
-  typedef map<string,boost::shared_ptr<IObject> > PtrMap;
-  typedef vector< boost::shared_ptr<IObject> > PtrVector;
+  typedef map<string,shared_ptr<IObject> > PtrMap;
+  typedef vector< shared_ptr<IObject> > PtrVector;
 
   /// Zur Unterscheidung unterschiedlicher Berechnungsaufrufe in updateOutput bzw. writeOutput
   DCS_API Object(string name);
@@ -36,13 +36,13 @@ public:
   */
   template <class T> static T& lookUp(const PtrMap& map, std::string obj_id, std::string param_id)
   {
-    boost::shared_ptr<T> pType;
+    shared_ptr<T> pType;
     std::string id = obj_id + "." + param_id;
     PtrMap::const_iterator iter = map.find(id);
     if (iter== map.end())
       //throw SimModelException(SimModelException::WRONG_OBJECT_ID, "  ID: " + id);
       throw ModelicaSimulationError(MODEL_EQ_SYSTEM,string("WRONG_OBJECT_ID") +id );
-    if (pType = boost::dynamic_pointer_cast<T>(iter->second))
+    if (pType = dynamic_pointer_cast<T>(iter->second))
       return *pType.get();
     else
       //throw SimModelException(SimModelException::WRONG_OBJECT_TYPE, "  ID: " + id + "  type: " + typeid(pType).name() + " ; instead of: " + typeid(iter->second).name());

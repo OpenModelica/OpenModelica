@@ -120,7 +120,6 @@ public function differentiateExpTime
   output DAE.Exp outExp;
   output BackendDAE.Shared outShared;
 protected
-  String msg;
   DAE.Exp dexp;
   DAE.FunctionTree funcs;
   BackendDAE.DifferentiateInputData diffData;
@@ -140,8 +139,7 @@ algorithm
     //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(DAE.emptyElementSource));
 
     if Flags.isSet(Flags.FAILTRACE) then
-      msg := "\nDifferentiate.differentiateExpTime failed for " + ExpressionDump.printExpStr(inExp) + "\n\n";
-      Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
+      Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {ExpressionDump.printExpStr(inExp), "time"}, sourceInfo());
     end if;
     fail();
   end try;
@@ -155,7 +153,6 @@ public function differentiateExpSolve
   output DAE.Exp outExp;
 protected
   list<DAE.Exp> fac = Expression.factors(inExp);
-  String msg;
   DAE.Exp dexp;
   BackendDAE.DifferentiateInputData diffData;
   DAE.FunctionTree fun;
@@ -175,8 +172,7 @@ algorithm
     (outExp, _) := ExpressionSimplify.simplify(dexp);
   else
     if Flags.isSet(Flags.FAILTRACE) then
-      msg := "\nDifferentiate.differentiateExpSolve failed for " + ExpressionDump.printExpStr(inExp) + "\n\n";
-      Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
+      Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {ExpressionDump.printExpStr(inExp), ComponentReference.crefStr(inCref)}, sourceInfo());
     end if;
     fail();
   end try;
@@ -184,7 +180,7 @@ end differentiateExpSolve;
 
 
 public function differentiateExpCrefFullJacobian
-  "Differentiates an equation with respect to the time variable."
+  "Differentiates an expression inExp with respect to inCref."
   input DAE.Exp inExp;
   input DAE.ComponentRef inCref;
   input BackendDAE.Variables inVariables;
@@ -192,7 +188,6 @@ public function differentiateExpCrefFullJacobian
   output DAE.Exp outExp;
   output BackendDAE.Shared outShared;
 protected
-  String msg;
   DAE.Exp dexp;
   DAE.FunctionTree funcs;
   BackendDAE.DifferentiateInputData diffData;
@@ -212,8 +207,7 @@ algorithm
     //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(DAE.emptyElementSource));
 
     if Flags.isSet(Flags.FAILTRACE) then
-      msg := "\nDifferentiate.differentiateCrefFullJacobian failed for " + ExpressionDump.printExpStr(inExp) + "\n\n";
-      Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
+      Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {ExpressionDump.printExpStr(inExp), ComponentReference.crefStr(inCref)}, sourceInfo());
     end if;
     fail();
   end try;
@@ -244,7 +238,6 @@ algorithm
       DAE.FunctionTree funcs;
       list<BackendDAE.Equation> rest, eqns;
       BackendDAE.Equation eqn;
-      String msg;
 
     case {} then (listReverse(inEquationsAccum), inFunctionTree);
 
@@ -258,8 +251,7 @@ algorithm
 
     case eqn::_
       equation
-        msg = "\nDifferentiate.differentiateEquations failed for " + BackendDump.equationString(eqn) + "\n\n";
-        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
+        Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {BackendDump.equationString(eqn), ComponentReference.crefStr(inDiffwrtCref)}, sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -284,7 +276,7 @@ algorithm
       list<DAE.Exp> out1, expExpLst, expExpLst1;
       DAE.Type exptyp;
       list<Integer> dimSize;
-      String msg, se1, dse1, se2, dse2;
+      String se1, dse1, se2, dse2;
       DAE.SymbolicOperation op1, op2;
       DAE.FunctionTree funcs;
       DAE.Algorithm alg;
@@ -308,7 +300,7 @@ algorithm
         op2 = DAE.OP_DIFFERENTIATE(inDiffwrtCref, e2, e2_1);
         source = List.foldr({op1, op2}, DAEUtil.addSymbolicTransformation, source);
       then
-        (BackendDAE.EQUATION(e1_1, e2_1, source, BackendDAE.EQUATION_ATTRIBUTES(false, eqKind, BackendDAE.NO_LOOP())), funcs);
+        (BackendDAE.EQUATION(e1_1, e2_1, source, BackendDAE.EQUATION_ATTRIBUTES(false, eqKind)), funcs);
 
     // solved equations
     case BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e2, source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))
@@ -325,7 +317,7 @@ algorithm
         op2 = DAE.OP_DIFFERENTIATE(inDiffwrtCref, e2, e2_1);
         source = List.foldr({op1, op2}, DAEUtil.addSymbolicTransformation, source);
       then
-        (BackendDAE.EQUATION(e1_1, e2_1, source, BackendDAE.EQUATION_ATTRIBUTES(false, eqKind, BackendDAE.NO_LOOP())), funcs);
+        (BackendDAE.EQUATION(e1_1, e2_1, source, BackendDAE.EQUATION_ATTRIBUTES(false, eqKind)), funcs);
 
     // RESIDUAL_EQUATION
     case BackendDAE.RESIDUAL_EQUATION(exp=e1, source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))
@@ -338,7 +330,7 @@ algorithm
         source = List.foldr({op1}, DAEUtil.addSymbolicTransformation, source);
 
       then
-        (BackendDAE.RESIDUAL_EQUATION(e1_1, source, BackendDAE.EQUATION_ATTRIBUTES(false, eqKind, BackendDAE.NO_LOOP())), funcs);
+        (BackendDAE.RESIDUAL_EQUATION(e1_1, source, BackendDAE.EQUATION_ATTRIBUTES(false, eqKind)), funcs);
 
     // complex equations
     case BackendDAE.COMPLEX_EQUATION(size=size, left=e1, right=e2, source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))
@@ -353,7 +345,7 @@ algorithm
         op2 = DAE.OP_DIFFERENTIATE(inDiffwrtCref, e2, e2_1);
         source = List.foldr({op1, op2}, DAEUtil.addSymbolicTransformation, source);
       then
-        (BackendDAE.COMPLEX_EQUATION(size, e1_1, e2_1, source, BackendDAE.EQUATION_ATTRIBUTES(false, eqKind, BackendDAE.NO_LOOP())), funcs);
+        (BackendDAE.COMPLEX_EQUATION(size, e1_1, e2_1, source, BackendDAE.EQUATION_ATTRIBUTES(false, eqKind)), funcs);
 
     // Array Equations
     case BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=e1, right=e2, source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))
@@ -368,7 +360,7 @@ algorithm
         op2 = DAE.OP_DIFFERENTIATE(inDiffwrtCref, e2, e2_1);
         source = List.foldr({op1, op2}, DAEUtil.addSymbolicTransformation, source);
       then
-        (BackendDAE.ARRAY_EQUATION(dimSize, e1_1, e2_1, source, BackendDAE.EQUATION_ATTRIBUTES(false, eqKind, BackendDAE.NO_LOOP())), funcs);
+        (BackendDAE.ARRAY_EQUATION(dimSize, e1_1, e2_1, source, BackendDAE.EQUATION_ATTRIBUTES(false, eqKind)), funcs);
 
     // differentiate algorithm
     case BackendDAE.ALGORITHM(size=size, alg=DAE.ALGORITHM_STMTS(statementLst=statementLst), source=source, expand=expand, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))
@@ -381,7 +373,7 @@ algorithm
         //op1 = DAE.OP_DIFFERENTIATE(inDiffwrtCref, e1, e2);
         //source = DAEUtil.addSymbolicTransformation(source, op1);
        then
-        (BackendDAE.ALGORITHM(size, alg, source, expand, BackendDAE.EQUATION_ATTRIBUTES(false, eqKind, BackendDAE.NO_LOOP())), funcs);
+        (BackendDAE.ALGORITHM(size, alg, source, expand, BackendDAE.EQUATION_ATTRIBUTES(false, eqKind)), funcs);
 
     // if-equations
     case BackendDAE.IF_EQUATION(conditions=expExpLst, eqnstrue=eqnslst, eqnsfalse=eqns, source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))
@@ -389,18 +381,17 @@ algorithm
         (eqnslst, funcs) = differentiateEquationsLst(eqnslst, inDiffwrtCref, inInputData, inDiffType, {}, inFunctionTree);
         (eqns, funcs) = differentiateEquations(eqns, inDiffwrtCref, inInputData, inDiffType, {}, funcs);
       then
-        (BackendDAE.IF_EQUATION(expExpLst, eqnslst, eqns, source, BackendDAE.EQUATION_ATTRIBUTES(false, eqKind, BackendDAE.NO_LOOP())), funcs);
+        (BackendDAE.IF_EQUATION(expExpLst, eqnslst, eqns, source, BackendDAE.EQUATION_ATTRIBUTES(false, eqKind)), funcs);
 
     case BackendDAE.WHEN_EQUATION(size=size, whenEquation=whenEqn, source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))
        equation
         (whenEqn, funcs) = differentiateWhenEquations(whenEqn, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
       then
-        (BackendDAE.WHEN_EQUATION(size, whenEqn, source, BackendDAE.EQUATION_ATTRIBUTES(false, eqKind, BackendDAE.NO_LOOP())), funcs);
+        (BackendDAE.WHEN_EQUATION(size, whenEqn, source, BackendDAE.EQUATION_ATTRIBUTES(false, eqKind)), funcs);
 
     else
       equation
-        msg = "\nDifferentiate.differentiateEquation failed for " + BackendDump.equationString(inEquation) + "\n\n";
-        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
+        Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {BackendDump.equationString(inEquation), ComponentReference.crefStr(inDiffwrtCref)}, sourceInfo());
       then
         fail();
   end match;
@@ -436,10 +427,9 @@ algorithm
         (eqnsLst, funcs) = differentiateEquationsLst(rest, inDiffwrtCref, inInputData, inDiffType, eqnsLst, funcs);
       then (eqnsLst, funcs);
 
-    else
+    case eqns::_
       equation
-        msg = "\nDifferentiate.differentiateEquationsLst failed.\n\n";
-        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
+        Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {BackendDump.equationListString(eqns, "equation list"), ComponentReference.crefStr(inDiffwrtCref)}, sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -557,6 +547,10 @@ algorithm
       //se1 = ExpressionDump.printExpStr(res);
       //print("\nresults to exp: " + se1);
     then (res, functionTree);
+
+    // differentiate start value
+    case DAE.CALL(path=Absyn.IDENT(name="$_start"), attr=DAE.CALL_ATTR(ty=tp))
+    then (Expression.makeConstZero(tp), inFunctionTree);
 
     // differentiate homotopy
     // lochel: see #3305 - this is commented out since it breaks Modelica.Fluid.Examples.HeatingSystem.
@@ -1339,10 +1333,7 @@ algorithm
 /*
     case (e as DAE.CALL(expLst = _), _, _, _, _)
       equation
-        s1 = ExpressionDump.printExpStr(e);
-        s2 = ComponentReference.printComponentRefStr(inDiffwrtCref);
-        serr = stringAppendList({"\n- Function differentiateCalls failed. differentiateExp ",s1," w.r.t: ",s2," failed\n"});
-        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {serr});
+        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {ExpressionDump.printExpStr(e), ComponentReference.printComponentRefStr(inDiffwrtCref)});
       then
         fail();
 */

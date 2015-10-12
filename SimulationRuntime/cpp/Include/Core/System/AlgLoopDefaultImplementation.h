@@ -31,7 +31,7 @@ Copyright (c) 2008, OSMC
 
 //#include <algorithm>
 
-//typedef boost::tuple<int,int> mytuple;
+//typedef tuple<int,int> mytuple;
 
 class mytuple
 {

@@ -58,6 +58,7 @@
 #define BASIC_LDFLAGS_RT " -lomcgc -lexpat -lregex -static-libgcc -luuid -loleaut32 -lole32 -lws2_32 -llis -lumfpack -lamd -lsundials_kinsol -lsundials_nvecserial -lipopt -lcoinmumps -lpthread -lm -lgfortranbegin -lgfortran -lmingw32 -lgcc_eh -lmoldname -lmingwex -lmsvcrt -luser32 -lkernel32 -ladvapi32 -lshell32 -llapack-mingw -lcminpack -ltmglib-mingw -lblas-mingw -lf2c"
 #define LDFLAGS_RT " -lOpenModelicaRuntimeC" BASIC_LDFLAGS_RT
 #define LDFLAGS_RT_SIM " -lSimulationRuntimeC" BASIC_LDFLAGS_RT " -lwsock32 -lstdc++"
+#define LDFLAGS_RT_SOURCE_FMU " -lregex -static-libgcc -lpthread -lm -lgfortranbegin -lgfortran -lmingw32 -lgcc_eh -lmoldname -lmingwex -lmsvcrt -luser32 -lkernel32 -ladvapi32 -lshell32 -llapack-mingw -ltmglib-mingw -lblas-mingw -lf2c"
 #define CONFIG_EXE_EXT ".exe"
 #define CONFIG_DLL_EXT ".dll"
 #define CONFIG_OS "Windows_NT"

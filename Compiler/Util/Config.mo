@@ -43,18 +43,10 @@ public import Flags;
 protected import Error;
 protected import System;
 
-public uniontype LanguageStandard
-  "Defines the various modelica language versions that OMC can use. DO NOT add
-  anything in these records, because the external functions that use these might
-  break if the records are not empty due to some RML weirdness."
-  record MODELICA_1_X end MODELICA_1_X;
-  record MODELICA_2_X end MODELICA_2_X;
-  record MODELICA_3_0 end MODELICA_3_0;
-  record MODELICA_3_1 end MODELICA_3_1;
-  record MODELICA_3_2 end MODELICA_3_2;
-  record MODELICA_3_3 end MODELICA_3_3;
-  record MODELICA_LATEST end MODELICA_LATEST;
-end LanguageStandard;
+public
+
+type LanguageStandard = enumeration('1.x', '2.x', '3.0', '3.1', '3.2', '3.3', latest)
+  "Defines the various modelica language versions that OMC can use.";
 
 public function typeinfo "+t"
   output Boolean outBoolean;
@@ -439,16 +431,10 @@ end languageStandardAtMost;
 protected function languageStandardInt
   input LanguageStandard inStandard;
   output Integer outValue;
+protected
+  constant Integer lookup[LanguageStandard] = array(10, 20, 30, 31, 32, 33, 1000);
 algorithm
-  outValue := match(inStandard)
-    case MODELICA_1_X() then 10;
-    case MODELICA_2_X() then 20;
-    case MODELICA_3_0() then 30;
-    case MODELICA_3_1() then 31;
-    case MODELICA_3_2() then 32;
-    case MODELICA_3_3() then 33;
-    case MODELICA_LATEST() then 1000;
-  end match;
+  outValue := lookup[inStandard];
 end languageStandardInt;
 
 protected function intLanguageStandard
@@ -456,55 +442,56 @@ protected function intLanguageStandard
   output LanguageStandard outStandard;
 algorithm
   outStandard := match(inValue)
-    case 10 then MODELICA_1_X();
-    case 20 then MODELICA_2_X();
-    case 30 then MODELICA_3_0();
-    case 31 then MODELICA_3_1();
-    case 32 then MODELICA_3_2();
-    case 33 then MODELICA_3_3();
-    case 1000 then MODELICA_LATEST();
+    case 10 then LanguageStandard.'1.x';
+    case 20 then LanguageStandard.'2.x';
+    case 30 then LanguageStandard.'3.0';
+    case 31 then LanguageStandard.'3.1';
+    case 32 then LanguageStandard.'3.2';
+    case 33 then LanguageStandard.'3.3';
+    case 1000 then LanguageStandard.latest;
   end match;
 end intLanguageStandard;
 
 public function languageStandardString
   input LanguageStandard inStandard;
   output String outString;
+protected
+  constant String lookup[LanguageStandard] = array("1.x","2.x","3.0","3.1","3.2","3.3","3.3" /*Change this to latest version if you add more versions!*/);
 algorithm
-  outString := match(inStandard)
-    case MODELICA_1_X() then "1.x";
-    case MODELICA_2_X() then "2.x";
-    case MODELICA_3_0() then "3.0";
-    case MODELICA_3_1() then "3.1";
-    case MODELICA_3_2() then "3.2";
-    case MODELICA_3_3() then "3.3";
-    // Change this to latest version if you add more version!
-    case MODELICA_LATEST() then "3.3";
-  end match;
+  outString := lookup[inStandard];
 end languageStandardString;
 
 public function setLanguageStandardFromMSL
   input String inLibraryName;
+protected
+  LanguageStandard current_std;
 algorithm
+  current_std := getLanguageStandard();
+  if current_std <> LanguageStandard.latest then
+    // If we selected an MSL version manually, we respect that choice.
+    return;
+  end if;
+
   _ := matchcontinue(inLibraryName)
     local
       String version, new_std_str;
-      LanguageStandard new_std, current_std;
+      LanguageStandard new_std;
       Boolean show_warning;
 
     case _
-      equation
-        "Modelica" :: version :: _ = System.strtok(inLibraryName, " ");
-        new_std = versionStringToStd(version);
-        current_std = getLanguageStandard();
-        false = valueEq(new_std, current_std);
+      algorithm
+        "Modelica" :: version :: _ := System.strtok(inLibraryName, " ");
+        new_std := versionStringToStd(version);
+        if new_std==current_std then
+          return;
+        end if;
         setLanguageStandard(new_std);
-        show_warning = hasLanguageStandardChanged(current_std);
-        new_std_str = languageStandardString(new_std);
+        show_warning := hasLanguageStandardChanged(current_std);
+        new_std_str := languageStandardString(new_std);
         if show_warning then
           Error.addMessage(Error.CHANGED_STD_VERSION, {new_std_str, version});
         end if;
-      then
-        ();
+      then ();
 
     else ();
   end matchcontinue;
@@ -514,16 +501,10 @@ protected function hasLanguageStandardChanged
   input LanguageStandard inOldStandard;
   output Boolean outHasChanged;
 algorithm
-  outHasChanged := matchcontinue(inOldStandard)
-    // If the old standard wasn't set by the user, then we consider it to have
-    // changed only if the new standard is 3.0 or less. This is to avoid
-    // printing a notice if the user loads e.g. MSL 3.1.
-    case MODELICA_LATEST()
-      then languageStandardAtMost(MODELICA_3_0());
-
-    // Otherwise is has changed.
-    else true;
-  end matchcontinue;
+  // If the old standard wasn't set by the user, then we consider it to have
+  // changed only if the new standard is 3.0 or less. This is to avoid
+  // printing a notice if the user loads e.g. MSL 3.1.
+  outHasChanged := languageStandardAtMost(LanguageStandard.'3.0');
 end hasLanguageStandardChanged;
 
 public function versionStringToStd
@@ -541,13 +522,13 @@ protected function versionStringToStd2
   output LanguageStandard outStandard;
 algorithm
   outStandard := match(inVersion)
-    case "1" :: _ then MODELICA_1_X();
-    case "2" :: _ then MODELICA_2_X();
-    case "3" :: "0" :: _ then MODELICA_3_0();
-    case "3" :: "1" :: _ then MODELICA_3_1();
-    case "3" :: "2" :: _ then MODELICA_3_2();
-    case "3" :: "3" :: _ then MODELICA_3_3();
-    case "3" :: _ then MODELICA_LATEST();
+    case "1" :: _ then LanguageStandard.'1.x';
+    case "2" :: _ then LanguageStandard.'2.x';
+    case "3" :: "0" :: _ then LanguageStandard.'3.0';
+    case "3" :: "1" :: _ then LanguageStandard.'3.1';
+    case "3" :: "2" :: _ then LanguageStandard.'3.2';
+    case "3" :: "3" :: _ then LanguageStandard.'3.3';
+    case "3" :: _ then LanguageStandard.latest;
   end match;
 end versionStringToStd2;
 

@@ -219,7 +219,7 @@ msgstr ""
 #: ../Util/Error.mo:200
 #, c-format
 msgid "The language feature %s is not supported. Suggested workaround: %s"
-msgstr ""
+msgstr "Die Sprachfunktion %s wird nicht unterstützt. Vorgeschlagener Workaround: %s"
 
 #: ../Util/Error.mo:202
 #, c-format
@@ -328,22 +328,22 @@ msgstr ""
 #: ../Util/Error.mo:240
 #, c-format
 msgid "Tuple %s must contain component references only."
-msgstr ""
+msgstr "Tuple %s darf nur Komponentenreferenzen enthalten."
 
 #: ../Util/Error.mo:242
 #, c-format
 msgid "Missing redeclare keyword on redeclaration of class %s."
-msgstr ""
+msgstr "Fehlende Redeklaration von Schlüsselwort in Redeklaration von Klasse %s."
 
 #: ../Util/Error.mo:244
 #, c-format
 msgid "%s found in several unqualified import statements (import ABC.*)."
-msgstr ""
+msgstr "%s wurde in mehreren unqualifizierten Importanweisungen gefunden (import ABC.*)."
 
 #: ../Util/Error.mo:246
 #, c-format
 msgid "Found a component with same name when looking for type %s."
-msgstr ""
+msgstr "Komponente mit gleichem Namen bei der Suche nach Type %s gefunden."
 
 #: ../Util/Error.mo:248
 #, c-format
@@ -757,7 +757,7 @@ msgstr ""
 #: ../Util/Error.mo:386
 #, c-format
 msgid "Function %s has not the expected inputs. Expected inputs are %s."
-msgstr ""
+msgstr "Funktion %s hat nicht die erwarteten Inputs. Erwartete Inputs sind %s."
 
 #: ../Util/Error.mo:388
 #, c-format
@@ -788,7 +788,7 @@ msgstr ""
 #: ../Util/Error.mo:396
 #, c-format
 msgid "Failed to instantiate equation %s."
-msgstr ""
+msgstr "Konnte Gleichung %s nicht instanziieren."
 
 #: ../Util/Error.mo:398
 #, c-format
@@ -810,7 +810,7 @@ msgstr ""
 #: ../Util/Error.mo:404
 #, c-format
 msgid "The conditional expression %s could not be evaluated."
-msgstr ""
+msgstr "Die bedingte Anweisung %s konnte nicht ausgewertet werden."
 
 #: ../Util/Error.mo:406
 #, c-format
@@ -852,7 +852,7 @@ msgstr ""
 #: ../Util/Error.mo:416
 #, c-format
 msgid "Expected %s to be a %s, but found %s instead."
-msgstr ""
+msgstr "Erwartet, dass %s ein %s ist. Aber %s gefunden."
 
 #: ../Util/Error.mo:418
 #, c-format
@@ -866,7 +866,7 @@ msgstr ""
 #: ../Util/Error.mo:420
 #, c-format
 msgid "Failed to instantiate function %s in scope %s."
-msgstr ""
+msgstr "Konnte Funktion %s in Scope %s nicht instanziieren."
 
 #: ../Util/Error.mo:422
 #, c-format
@@ -885,7 +885,7 @@ msgstr ""
 #: ../Util/Error.mo:426
 #, c-format
 msgid "Looking for a function %s but found a %s."
-msgstr ""
+msgstr "Konnte Funktion %s nicht finden. Gefunden wurde %s."
 
 #: ../Util/Error.mo:428
 #, c-format
@@ -3405,19 +3405,15 @@ msgstr "Legt fest, ob Parameter in Annotationen zu bewerten sind oder nicht."
 
 #: ../Util/Flags.mo:895
 msgid "Set when checkModel is used to turn on specific features for checking."
-msgstr ""
-"Stellen Sie, wenn checkModel wird verwendet, um auf Besonderheiten für die "
-"Prüfung zu machen."
+msgstr "Wird gesetzt, wenn checkModel genutzt wird, um spezifische Features für Pruefung anzuschalten."
 
 #: ../Util/Flags.mo:911
 msgid "Turns on labeled SimCode generation for reduction algorithms."
-msgstr "Schaltet beschriftet SimCode Generation zur Reduzierung Algorithmen."
+msgstr "Schaltet beschriftete SimCode-Erzeugung für Reduktions-Algorithmen an."
 
 #: ../Util/Flags.mo:915
 msgid "Turns on reducing terms for reduction algorithms."
-msgstr ""
-"Schaltet auf die Verringerung der Bedingungen für die Reduzierung "
-"Algorithmen."
+msgstr "Schaltet die Reduktion von Termen für Reduktions-Algorithmen an."
 
 #: ../Util/Flags.mo:920
 msgid "Sets the reduction method to be used."
@@ -3425,19 +3421,19 @@ msgstr "Legt die Methode zur Reduktion fest."
 
 #: ../Util/Flags.mo:924
 msgid "Disable Warning/Error Massages."
-msgstr ""
+msgstr "Abschalten von Warnungs-/Fehlernachrichten."
 
 #: ../Util/Flags.mo:928
-msgid "Override the locale from the environment."
-msgstr "Überschreiben Sie die Ländereinstellung aus der Umgebung."
+msgid "Overrides the locale from the environment."
+msgstr "Überschreibt die Ländereinstellung aus der Umgebung."
 
 #: ../Util/Flags.mo:932
 msgid "Sets the default OpenCL device to be used for parallel execution."
-msgstr "Legt das standard OpenCL Device für die parallele Ausführung fest."
+msgstr "Legt das Standard OpenCL Device für die parallele Ausführung fest."
 
 #: ../Util/Flags.mo:936
 msgid "Maximal traversals to find simple equations in the acausal system."
-msgstr ""
+msgstr "Maximale Traversierung um einfache Gleichungen im akausalen System zu finden."
 
 #: ../Util/Flags.mo:940
 msgid ""
@@ -3453,11 +3449,11 @@ msgstr ""
 
 #: ../Util/Flags.mo:949
 msgid "Skip tearing."
-msgstr ""
+msgstr "Überspringe Tearing."
 
 #: ../Util/Flags.mo:950
 msgid "Tearing method developed by TU Dresden: Frenkel, Schubert."
-msgstr ""
+msgstr "Tearing-Methode entwickelt an der TU Dresden (Frenkel, Schubert)."
 
 #: ../Util/Flags.mo:951
 msgid ""
@@ -3610,8 +3606,8 @@ msgid "Allow Integer to enumeration conversion."
 msgstr ""
 
 #: ../Util/Flags.mo:1026
-msgid "Generate code without profiling"
-msgstr ""
+msgid "Generate code without profiling."
+msgstr "Erzeuge Code ohne Profiling."
 
 #: ../Util/Flags.mo:1027
 msgid ""
@@ -3625,8 +3621,8 @@ msgid ""
 msgstr ""
 
 #: ../Util/Flags.mo:1029
-msgid "Generate code for profiling of all functions and equations"
-msgstr ""
+msgid "Generate code for profiling of all functions and equations."
+msgstr "Erzeuge Code für Profiling aller Funktionen und Gleichungen."
 
 #: ../Util/Flags.mo:1030
 msgid ""
@@ -3680,7 +3676,7 @@ msgstr ""
 msgid ""
 "Sets extra flags for compilation with the C++ compiler (e.g. +cppFlags=-O3,-"
 "Wall)"
-msgstr ""
+msgstr "Setzt extra Flags für C++-Compiler (z.B. +cppFlags=-O3,-Wall)."
 
 #: ../Util/Flags.mo:1070 ../Util/Flags.mo:1094
 msgid "Disables module"
@@ -3760,24 +3756,24 @@ msgid "special modification of residual expressions"
 msgstr ""
 
 #: ../Util/Flags.mo:1109
-msgid "special modification of residual expressions with helper variables"
+msgid "Special modification of residual expressions with helper variables."
 msgstr ""
 
 #: ../Util/Flags.mo:1111
-msgid "simplify algebraic loops"
-msgstr ""
+msgid "Simplify algebraic loops."
+msgstr "Vereinfache algebraische Schleifen."
 
 #: ../Util/Flags.mo:1117
-msgid "linear tearing set of size 1"
+msgid "Linear tearing set of size 1."
 msgstr ""
 
 #: ../Util/Flags.mo:1118
-msgid "linear tearing"
+msgid "Linear tearing."
 msgstr ""
 
 #: ../Util/Flags.mo:1120
-msgid "inline and repeat tearing."
-msgstr ""
+msgid "Inline and repeat tearing."
+msgstr "Tearing wird geinlined und wiederholt."
 
 #: ../Util/Flags.mo:1124
 msgid "Sets the minium threshold for stream flow rates"

@@ -2804,7 +2804,7 @@ algorithm
 
     (exp, outProperties as DAE.PROP(type_ = ty)) := promoteExp(exp, prop, inDims);
     accum_expl := exp :: accum_expl;
-    (_, outDim1 :: outDim2 :: _) := Types.flattenArrayTypeOpt(ty);
+    outDim1 :: outDim2 :: _ := Types.getDimensions(ty);
 
     while not listEmpty(rest_expl) loop
       exp :: rest_expl := rest_expl;
@@ -2812,7 +2812,7 @@ algorithm
 
       (exp, prop as DAE.PROP(type_ = ty)) := promoteExp(exp, prop, inDims);
       accum_expl := exp :: accum_expl;
-      (_, _ :: dim2 :: _) := Types.flattenArrayTypeOpt(ty);
+      _ :: dim2 :: _ := Types.getDimensions(ty);
       // Comma between matrices => concatenation along second dimension.
       outDim2 := Expression.dimensionsAdd(dim2, outDim2);
       outProperties := Types.matchWithPromote(prop, outProperties, inHaveReal);
@@ -4009,7 +4009,7 @@ algorithm
     outExp := DAE.ARRAY(Types.simplifyType(ty), sc, expl);
   // A scalar?
   else
-    ty := Types.flattenArrayType(ty);
+    ty := Types.arrayElementType(ty);
 
     if Types.basicType(ty) then
       outExp := Expression.makePureBuiltinCall("pre", {exp}, Types.simplifyType(ty));
@@ -6143,7 +6143,7 @@ algorithm
   (outCache, outExp, DAE.PROP(ty, c), _) := elabExpInExpression(inCache, inEnv,
     listHead(inPosArgs), inImplicit, NONE(), true, inPrefix, inInfo);
 
-  (scalar_ty, dims) := Types.flattenArrayTypeOpt(ty);
+  (scalar_ty, dims) := Types.flattenArrayType(ty);
 
   // Check that any known dimensions have size 1.
   for dim in dims loop

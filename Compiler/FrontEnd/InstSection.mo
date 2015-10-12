@@ -3885,7 +3885,7 @@ algorithm
     local
       DAE.Type t1, t2;
       String cs1, cs2, cref_str1, cref_str2, str1, str2;
-      list<Integer> dims1, dims2;
+      list<DAE.Dimension> dims1, dims2;
 
     case (_, _, _, _, _)
       equation
@@ -3896,8 +3896,8 @@ algorithm
     // The type is not identical hence error.
     case (_, _, _, _, _)
       equation
-        (t1, _) = Types.flattenArrayType(inLhsType);
-        (t2, _) = Types.flattenArrayType(inRhsType);
+        t1 = Types.arrayElementType(inLhsType);
+        t2 = Types.arrayElementType(inRhsType);
         false = Types.equivtypesOrRecordSubtypeOf(t1, t2);
         (_, cs1) = Types.printConnectorTypeStr(t1);
         (_, cs2) = Types.printConnectorTypeStr(t2);
@@ -3911,16 +3911,14 @@ algorithm
     // Different dimensionality.
     case (_, _, _, _, _)
       equation
-        (_, dims1) = Types.flattenArrayType(inLhsType);
-        (_, dims2) = Types.flattenArrayType(inRhsType);
-        false = List.isEqualOnTrue(dims1, dims2, intEq);
+        dims1 = Types.getDimensions(inLhsType);
+        dims2 = Types.getDimensions(inRhsType);
+        false = List.isEqualOnTrue(dims1, dims2, Expression.dimensionsEqual);
         false = (listLength(dims1) + listLength(dims2)) == 0;
         cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);
         cref_str2 = ComponentReference.printComponentRefStr(inRhsCref);
-        str1 = stringDelimitList(List.map(dims1, intString), ", ");
-        str1 = "[" + str1 + "]";
-        str2 = stringDelimitList(List.map(dims2, intString), ", ");
-        str2 = "[" + str2 + "]";
+        str1 = "[" + ExpressionDump.dimensionsString(dims1) + "]";
+        str2 = "[" + ExpressionDump.dimensionsString(dims2) + "]";
         Error.addSourceMessage(Error.CONNECTOR_ARRAY_DIFFERENT,
           {cref_str1, cref_str2, str1, str2}, inInfo);
       then

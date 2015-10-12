@@ -297,8 +297,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   if (comp) {
     comp->instanceName = (fmi2String)functions->allocateMemory(1 + strlen(instanceName), sizeof(char));
     comp->GUID = (fmi2String)functions->allocateMemory(1 + strlen(fmuGUID), sizeof(char));
-    /* Cannot use functions->allocateMemory */
-    DATA* fmudata = (DATA *)GC_malloc_uncollectable(sizeof(DATA));
+    DATA* fmudata = (DATA *)functions->allocateMemory(1, sizeof(DATA));
 
     threadData_t *threadData = (threadData_t *)functions->allocateMemory(1, sizeof(threadData_t));
     memset(threadData, 0, sizeof(threadData_t));
@@ -368,7 +367,7 @@ void fmi2FreeInstance(fmi2Component c) {
 
   /* free fmuData */
   comp->functions->freeMemory(comp->threadData);
-  GC_free(comp->fmuData);
+  comp->functions->freeMemory(comp->fmuData);
   /* free instanceName & GUID */
   if (comp->instanceName) comp->functions->freeMemory((void*)comp->instanceName);
   if (comp->GUID) comp->functions->freeMemory((void*)comp->GUID);

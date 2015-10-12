@@ -42,8 +42,9 @@ extern "C"
 {
 #endif
 
-  extern int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod, const char* pInitFile, double initTime, int lambda_steps);
-  int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFile, const double initTime);
+void initSample(DATA *data, threadData_t *threadData, double start, double stop);
+extern int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod, const char* pInitFile, double initTime, int lambda_steps);
+extern int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFile, const double initTime);
 
 #ifdef __cplusplus
 }

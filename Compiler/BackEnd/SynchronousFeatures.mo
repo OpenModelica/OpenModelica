@@ -76,7 +76,7 @@ algorithm
       BackendDAE.Shared shared;
 
     case (BackendDAE.DAE({syst}, shared)) guard(not Flags.isSet(Flags.NO_PARTITIONING))
-      then clockPartitioning1(syst, shared);
+    then clockPartitioning1(syst, shared);
     // TODO: Improve support for partitioned systems of equations
     case _ guard(not Flags.isSet(Flags.NO_PARTITIONING)) equation
       BackendDAE.DAE({syst}, shared) = BackendDAEOptimize.collapseIndependentBlocks(inDAE);
@@ -126,7 +126,7 @@ protected
   array<Integer> varsPartition;
   list<BackendDAE.Equation> unpartRemEqs;
 algorithm
-  syst := substituteParitionOpExps(inSyst);
+  syst := substituteParitionOpExps(inSyst, inShared);
 
   (contSysts, clockedSysts, unpartRemEqs) := baseClockPartitioning(syst, shared);
 
@@ -1200,14 +1200,13 @@ algorithm
           Integer whenIdx;
           Boolean diff;
           list<Integer> partitionsWhenClocksLst;
-          BackendDAE.LoopInfo loopInfo;
-        case BackendDAE.EQUATION_ATTRIBUTES(diff, BackendDAE.CLOCKED_EQUATION(whenIdx), loopInfo)
+        case BackendDAE.EQUATION_ATTRIBUTES(diff, BackendDAE.CLOCKED_EQUATION(whenIdx))
           algorithm
             partitionsWhenClocksLst := partitionsWhenClocks[partitionIdx];
             if whenIdx <> 0 and List.notMember(whenIdx, partitionsWhenClocksLst) then
               arrayUpdate(partitionsWhenClocks, partitionIdx, whenIdx::partitionsWhenClocksLst);
             end if;
-          then BackendDAE.EQUATION_ATTRIBUTES(diff, BackendDAE.DYNAMIC_EQUATION(), loopInfo);
+          then BackendDAE.EQUATION_ATTRIBUTES(diff, BackendDAE.DYNAMIC_EQUATION());
         else eqAttr;
       end match;
       eq := BackendEquation.setEquationAttributes(eq, eqAttr);
@@ -1278,6 +1277,7 @@ protected function substituteParitionOpExps
  and the equation $var_i = expr_i is added to the equation set.
  Also when clauses are created for boolean clocks."
   input BackendDAE.EqSystem inSyst;
+  input BackendDAE.Shared inShared;
   output BackendDAE.EqSystem outSyst;
 algorithm
   outSyst := match inSyst
@@ -1293,8 +1293,8 @@ algorithm
       algorithm
         for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
           eq := BackendEquation.equationNth1(eqs, i);
-          (eq, (newEqs, newVars, cnt)) :=
-          BackendEquation.traverseExpsOfEquation(eq, substituteParitionOpExp, (newEqs, newVars, cnt));
+          (eq, (newEqs, newVars, cnt, _)) :=
+          BackendEquation.traverseExpsOfEquation(eq, substituteParitionOpExp, (newEqs, newVars, cnt, inShared));
           newEqs := eq::newEqs;
         end for;
         syst.orderedEqs := BackendEquation.listEquation(listReverse(newEqs));
@@ -1305,24 +1305,25 @@ end substituteParitionOpExps;
 
 protected function substituteParitionOpExp
   input DAE.Exp inExp;
-  input tuple<list<BackendDAE.Equation>,list<BackendDAE.Var>, Integer> inTpl;
+  input tuple<list<BackendDAE.Equation>,list<BackendDAE.Var>, Integer, BackendDAE.Shared> inTpl;
   output DAE.Exp outExp;
-  output tuple<list<BackendDAE.Equation>,list<BackendDAE.Var>, Integer> outTpl;
+  output tuple<list<BackendDAE.Equation>,list<BackendDAE.Var>, Integer, BackendDAE.Shared> outTpl;
 algorithm
   (outExp, outTpl) := Expression.traverseExpBottomUp(inExp, substituteParitionOpExp1, inTpl);
 end substituteParitionOpExp;
 
 protected function substituteParitionOpExp1
   input DAE.Exp inExp;
-  input tuple<list<BackendDAE.Equation>,list<BackendDAE.Var>, Integer> inTpl;
+  input tuple<list<BackendDAE.Equation>,list<BackendDAE.Var>, Integer, BackendDAE.Shared> inTpl;
   output DAE.Exp outExp;
-  output tuple<list<BackendDAE.Equation>,list<BackendDAE.Var>, Integer> outTpl;
+  output tuple<list<BackendDAE.Equation>,list<BackendDAE.Var>, Integer, BackendDAE.Shared> outTpl;
 protected
   list<BackendDAE.Equation> newEqs;
   list<BackendDAE.Var> newVars;
   Integer cnt;
+  BackendDAE.Shared shared;
 algorithm
-  (newEqs, newVars, cnt) := inTpl;
+  (newEqs, newVars, cnt, shared) := inTpl;
   (outExp, outTpl) := match inExp
     local
       Absyn.Path path;
@@ -1331,12 +1332,12 @@ algorithm
       DAE.ClockKind clk;
     case DAE.CLKCONST(clk)
       equation
-        (clk, newEqs, newVars, cnt) = substClock(clk, newEqs, newVars, cnt);
+        (clk, newEqs, newVars, cnt) = substClock(clk, newEqs, newVars, cnt, shared);
       then
-        (DAE.CLKCONST(clk), (newEqs, newVars, cnt));
+        (DAE.CLKCONST(clk), (newEqs, newVars, cnt, shared));
     case DAE.CALL(path = path, expLst = exps, attr = attr)
       then
-        substituteExpsCall(path, exps, attr, newEqs, newVars, cnt);
+        substituteExpsCall(path, exps, attr, newEqs, newVars, cnt, shared);
     else
       (inExp, inTpl);
   end match;
@@ -1347,6 +1348,7 @@ protected function substClock
   input list<BackendDAE.Equation> inNewEqs;
   input list<BackendDAE.Var> inNewVars;
   input Integer inCnt;
+  input BackendDAE.Shared inShared;
   output DAE.ClockKind outClk;
   output list<BackendDAE.Equation> outNewEqs;
   output list<BackendDAE.Var> outNewVars;
@@ -1367,12 +1369,12 @@ algorithm
         (DAE.BOOLEAN_CLOCK(e, f), eqs, vars, cnt);
     case DAE.REAL_CLOCK(e)
       equation
-        (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt);
+        (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
       then
         (DAE.REAL_CLOCK(e), eqs, vars, cnt);
     case DAE.INTEGER_CLOCK(e, i)
       equation
-        (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt);
+        (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
       then
         (DAE.INTEGER_CLOCK(e, i), eqs, vars, cnt);
     else
@@ -1380,28 +1382,63 @@ algorithm
   end match;
 end substClock;
 
+protected function isKnownOrConstantExp "author: lochel
+  Returns true if the given expression is constant or at least known (parameter dependent)."
+  input DAE.Exp inExp;
+  input BackendDAE.Variables inKnownVars;
+  output Boolean outKnown;
+algorithm
+  (_, (outKnown, _)) := Expression.traverseExpTopDown(inExp, isKnownOrConstantExp_traverser, (true, inKnownVars));
+end isKnownOrConstantExp;
+
+protected function isKnownOrConstantExp_traverser
+  input DAE.Exp inExp;
+  input tuple<Boolean, BackendDAE.Variables> inTpl;
+  output DAE.Exp outExp = inExp;
+  output Boolean outContinue;
+  output tuple<Boolean, BackendDAE.Variables> outTpl;
+protected
+  BackendDAE.Variables knownVars;
+  Boolean isKnown;
+algorithm
+  (isKnown, knownVars) := inTpl;
+  isKnown := match inExp
+    local
+      DAE.ComponentRef componentRef;
+    case DAE.CALL() then false;
+    case DAE.CREF(componentRef=componentRef) then BackendVariable.containsCref(componentRef, knownVars);
+    else isKnown;
+  end match;
+
+  outTpl := (isKnown, knownVars);
+  outContinue := isKnown;
+end isKnownOrConstantExp_traverser;
+
 protected function substClockExp
   input DAE.Exp inExp;
   input list<BackendDAE.Equation> inNewEqs;
   input list<BackendDAE.Var> inNewVars;
   input Integer inCnt;
+  input BackendDAE.Shared inShared;
   output DAE.Exp outExp;
   output list<BackendDAE.Equation> outNewEqs;
   output list<BackendDAE.Var> outNewVars;
   output Integer outCnt;
 protected
-  DAE.Exp e;
-  list<BackendDAE.Equation> eqs;
-  list<BackendDAE.Var> vars;
-  Integer cnt;
+  DAE.Type ty;
 algorithm
-  ({outExp}, outNewEqs, outNewVars, outCnt) := substExp({inExp}, inNewEqs, inNewVars, inCnt);
-  outExp := match outExp
-    local DAE.Type ty;
-    case DAE.CREF(_, ty)
-      then Expression.makePureBuiltinCall("previous", {outExp}, ty);
-    else outExp;
-  end match;
+  if isKnownOrConstantExp(inExp, inShared.knownVars) then
+    outExp := inExp;
+    outNewEqs := inNewEqs;
+    outNewVars := inNewVars;
+    outCnt := inCnt;
+  else
+    ({outExp}, outNewEqs, outNewVars, outCnt) := substExp({inExp}, inNewEqs, inNewVars, inCnt);
+    outExp := match outExp
+      case DAE.CREF(_, ty) then Expression.makePureBuiltinCall("previous", {outExp}, ty);
+      else outExp;
+    end match;
+  end if;
 end substClockExp;
 
 protected function substituteExpsCall
@@ -1411,8 +1448,9 @@ protected function substituteExpsCall
   input list<BackendDAE.Equation> inEqs;
   input list<BackendDAE.Var> inVars;
   input Integer inCnt;
+  input BackendDAE.Shared inShared;
   output DAE.Exp outExp;
-  output tuple<list<BackendDAE.Equation>,list<BackendDAE.Var>, Integer> outTpl;
+  output tuple<list<BackendDAE.Equation>,list<BackendDAE.Var>, Integer, BackendDAE.Shared> outTpl;
 protected
   Boolean replace;
   list<DAE.Exp> exps;
@@ -1434,7 +1472,7 @@ algorithm
       if replace then substExp(inExps, inEqs, inVars, inCnt)
                  else (inExps, inEqs, inVars, inCnt);
   outExp := DAE.CALL(inPath, exps, inAttr);
-  outTpl := (eqs, vars, cnt);
+  outTpl := (eqs, vars, cnt, inShared);
 end substituteExpsCall;
 
 protected function createVar

@@ -121,8 +121,6 @@ template additionalHpcomIncludesForParallelCode(SimCode simCode, Text& extraFunc
     case ("pthreads")
     case ("pthreads_spin") then
       <<
-      #include <boost/thread.hpp>
-      #include <Core/Utils/extension/busywaiting_barrier.hpp>
       >>
     case ("tbb") then
       <<
@@ -174,8 +172,17 @@ template additionalHpcomProtectedMemberDeclaration(SimCode simCode, Text& extraF
             >>
           else
             <<
-            boost::hash<std::string> string_hash;
-            return (long unsigned int)string_hash(boost::lexical_cast<std::string>(boost::this_thread::get_id()));
+            #if defined(USE_THREAD)
+              #if defined(USE_CPP_ELEVEN)
+                boost::hash<std::string> string_hash;
+                return (long unsigned int)string_hash(boost::lexical_cast<std::string>(std::this_thread::get_id()));
+              #else
+                boost::hash<std::string> string_hash;
+                return (long unsigned int)string_hash(boost::lexical_cast<std::string>(boost::this_thread::get_id()));
+              #endif
+            #else
+              return 0;
+            #endif
             >>
         end match %>
       }
@@ -213,8 +220,8 @@ template generateAdditionalStructHeaders(Schedule odeSchedule)
           <<
           //Required for Intel TBB
           struct VoidFunctionBody {
-            boost::function<void(void)> void_function;
-            VoidFunctionBody(boost::function<void(void)> void_function) : void_function(void_function) { }
+            function<void(void)> void_function;
+            VoidFunctionBody(function<void(void)> void_function) : void_function(void_function) { }
             FORCE_INLINE void operator()( tbb::flow::continue_msg ) const
             {
               void_function();
@@ -397,7 +404,7 @@ template generateThreadHeaderDecl(Integer threadIdx, String iType)
       >>
     else
       <<
-      boost::thread* evaluateThread<%threadIdx%>;
+      thread* evaluateThread<%threadIdx%>;
       >>
   end match
 end generateThreadHeaderDecl;
@@ -1377,7 +1384,7 @@ template generateTbbConstructorExtensionNodesAndEdges(tuple<Task,list<Integer>> 
       let parentEdges = parents |> p => 'tbb::flow::make_edge(*(_tbbNodeList_<%funcSuffix%>.at(<%intSub(p,1)%>)),*(_tbbNodeList_<%funcSuffix%>.at(<%taskIndex%>)));'; separator = "\n"
       let startNodeEdge = if intEq(0, listLength(parents)) then 'tbb::flow::make_edge(_tbbStartNode,*(_tbbNodeList_<%funcSuffix%>.at(<%taskIndex%>)));' else ""
       <<
-      tbb_task = new tbb::flow::continue_node<tbb::flow::continue_msg>(_tbbGraph,VoidFunctionBody(boost::bind<void>(&<%modelNamePrefixStr%>::task_func_<%funcSuffix%>_<%task.index%>,this)));
+      tbb_task = new tbb::flow::continue_node<tbb::flow::continue_msg>(_tbbGraph,VoidFunctionBody(bind<void>(&<%modelNamePrefixStr%>::task_func_<%funcSuffix%>_<%task.index%>,this)));
       _tbbNodeList_<%funcSuffix%>.at(<%taskIndex%>) = tbb_task;
       <%parentEdges%>
       <%startNodeEdge%>
@@ -1719,7 +1726,7 @@ template generateThread(Integer threadIdx, String iType, String modelNamePrefixS
       >>
     else
       <<
-      evaluateThread<%threadIdx%> = new boost::thread(boost::bind(&<%modelNamePrefixStr%>::<%funcName%><%threadIdx%>, this));
+      evaluateThread<%threadIdx%> = new thread(bind(&<%modelNamePrefixStr%>::<%funcName%><%threadIdx%>, this));
       >>
   end match
 end generateThread;

@@ -10,7 +10,7 @@
 
 #include <sstream>
 
-SimManager::SimManager(boost::shared_ptr<IMixedSystem> system, Configuration* config)
+SimManager::SimManager(shared_ptr<IMixedSystem> system, Configuration* config)
   : _mixed_system      (system)
   , _config            (config)
   , _tStops            ()
@@ -31,7 +31,7 @@ SimManager::SimManager(boost::shared_ptr<IMixedSystem> system, Configuration* co
   , _writeFinalState   (false)
 {
     _solver = _config->createSelectedSolver(system.get());
-    _initialization = boost::shared_ptr<Initialization>(new Initialization(boost::dynamic_pointer_cast<ISystemInitialization>(_mixed_system), _solver));
+    _initialization = shared_ptr<Initialization>(new Initialization(dynamic_pointer_cast<ISystemInitialization>(_mixed_system), _solver));
 
     #ifdef RUNTIME_PROFILING
     if(MeasureTime::getInstance() != NULL)
@@ -89,10 +89,10 @@ void SimManager::initialize()
     }
     #endif
 
-    _cont_system = boost::dynamic_pointer_cast<IContinuous>(_mixed_system);
-    _timeevent_system = boost::dynamic_pointer_cast<ITime>(_mixed_system);
-    _event_system = boost::dynamic_pointer_cast<IEvent>(_mixed_system);
-    _step_event_system = boost::dynamic_pointer_cast<IStepEvent>(_mixed_system);
+    _cont_system = dynamic_pointer_cast<IContinuous>(_mixed_system);
+    _timeevent_system = dynamic_pointer_cast<ITime>(_mixed_system);
+    _event_system = dynamic_pointer_cast<IEvent>(_mixed_system);
+    _step_event_system = dynamic_pointer_cast<IStepEvent>(_mixed_system);
 
     // Check dynamic casts
     if (!_event_system)
@@ -462,7 +462,7 @@ void SimManager::computeEndTimes(std::vector<std::pair<double, int> > &tStopsSub
                     counterTimes++;
                     _solverTask = ISolver::SOLVERCALL(_solverTask | ISolver::RECALL);
                 }
-                while (iter->first + counterTimes * (iter->second) < _tEnd)
+                while (iter->first + counterTimes * (iter->second) <= _tEnd)
                 {
                     tStopsSub.push_back(std::make_pair(iter->first + counterTimes * (iter->second), counterEvents));
                     counterTimes++;

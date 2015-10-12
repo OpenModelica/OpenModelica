@@ -1,5 +1,6 @@
 #pragma once
 /** @addtogroup dataexchange
+
 *
 *  @{
 */
@@ -9,6 +10,7 @@
 #include <boost/interprocess/sync/interprocess_semaphore.hpp>
 #include <boost/thread.hpp>
 #endif
+
 
 #define CONTAINER_COUNT 2
 
@@ -58,6 +60,7 @@ class Writer
 {
 public:
 
+
 	typedef boost::tuple<real_vars_t,
                          int_vars_t,
                          bool_vars_t,
@@ -94,6 +97,7 @@ public:
 	values_type& getFreeContainer()
 	{
 
+
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
 		_nempty.wait();
 		_freeContainerMutex.wait();
@@ -106,6 +110,7 @@ public:
 		return container;
 	};
 
+
 	void addContainerToWriteQueue(const values_type& container)
 	{
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
@@ -114,12 +119,14 @@ public:
 		_writeContainers.push_back(container);
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
 		_writeContainerMutex.post();
+
 #else
 		writeContainer();
 #endif
 	};
 
 protected:
+
 	void writeContainer()
 	{
 		const values_type* container;
@@ -140,16 +147,20 @@ protected:
 		{
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
 			usleep(1);
+
 #endif
 			return;
 		}
+
 
 		const real_vars_t& v_list = get<0>(*container);
 		const int_vars_t& v2_list = get<1>(*container);
         const bool_vars_t& v3_list = get<2>(*container);
 		double time = get<3>(*container);
 
+
 		write(boost::make_tuple(v_list, v2_list, v3_list),time);
+
 
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
 		_writeContainerMutex.wait();
@@ -166,8 +177,10 @@ protected:
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
 		_freeContainerMutex.post();
 		_nempty.post();
+
 #endif
 	}
+
 
 	void writeThread()
 	{
@@ -178,17 +191,19 @@ protected:
 			writeContainer();
 		}
 
+
 		while(!_writeContainers.empty())
 			writeContainer();
 #endif
 	}
 
-	std::deque<values_type > _writeContainers;
-	std::deque<values_type > _freeContainers;
+
+	deque<values_type > _writeContainers;
+	deque<values_type > _freeContainers;
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
-	boost::interprocess::interprocess_semaphore _freeContainerMutex;
-	boost::interprocess::interprocess_semaphore _writeContainerMutex;
-	boost::interprocess::interprocess_semaphore _nempty;
+	semaphore _freeContainerMutex;
+	semaphore _writeContainerMutex;
+	semaphore _nempty;
 	boost::thread _writerThread;
 	bool _threadWorkDone;
 #endif

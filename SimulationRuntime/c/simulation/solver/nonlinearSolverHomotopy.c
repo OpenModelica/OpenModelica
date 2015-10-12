@@ -41,7 +41,9 @@
 #include "util/varinfo.h"
 #include "model_help.h"
 #include "meta/meta_modelica.h"
+#if !defined(OMC_MINIMAL_RUNTIME)
 #include "util/write_csv.h"
+#endif
 
 #include "nonlinearSystem.h"
 #include "nonlinearSolverHomotopy.h"
@@ -1270,6 +1272,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     countNegativeSteps += (error_f > 10*error_f_old);
     error_f_old = error_f;
 
+#if !defined(OMC_MINIMAL_RUNTIME)
     if (solverData->data->simulationInfo.nlsCsvInfomation){
       print_csvLineIterStats(((struct csvStats*) nonlinsys->csvData)->iterStats,
                              nonlinsys->size,
@@ -1284,7 +1287,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
                              lambda
       );
     }
-
+#endif
     if ((error_f_scaled < 1e-30*error_f) || countNegativeSteps > 20)
     {
       debugInt(LOG_NLS_V,"UPS! Something happened, NegativeSteps = ", countNegativeSteps);

@@ -25,7 +25,7 @@ if (UNIX)
   set_target_properties(${OMCFactoryName} PROPERTIES COMPILE_FLAGS -fPIC)
 endif(UNIX)
 
-target_link_libraries(${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
+target_link_libraries(${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${ExtensionUtilitiesName})
 add_precompiled_header(${OMCFactoryName}_static Include/Core/Modelica.h)
 add_precompiled_header(${OMCFactoryName}_FMU_static Include/Core/Modelica.h)
 add_precompiled_header(${OMCFactoryName} Include/Core/Modelica.h)

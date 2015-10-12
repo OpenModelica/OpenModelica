@@ -42,8 +42,6 @@
 extern "C" {
 #endif
 
-void initSample(DATA *data, threadData_t *threadData, double start, double stop);
-
 void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
 int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
 

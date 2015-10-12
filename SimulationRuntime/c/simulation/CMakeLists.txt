@@ -12,7 +12,7 @@ INCLUDE_DIRECTORIES("${OMCTRUNCHOME}/OMCompiler/3rdParty/FMIL/ThirdParty/Expat/e
 # Quellen und Header
 SET(simulation_sources
       ../linearization/linearize.cpp
-      modelinfo.c simulation_info_json.c simulation_input_xml.cpp socket.cpp
+      modelinfo.c simulation_info_json.c simulation_input_xml.c socket.cpp
       options.c simulation_info_xml.c simulation_runtime.cpp)
 
 SET(simulation_headers

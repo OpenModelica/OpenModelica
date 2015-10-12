@@ -460,6 +460,8 @@ constant DebugFlag HARDCODED_START_VALUES = DEBUG_FLAG(146, "hardcodedStartValue
   Util.gettext("Embed the start values of variables and parameters into the c++ code and do not read it from xml file."));
 constant DebugFlag DUMP_FUNCTIONS = DEBUG_FLAG(147, "dumpFunctions", false,
   Util.gettext("Add functions to backend dumps."));
+constant DebugFlag BUILD_STATIC_SOURCE_FMU = DEBUG_FLAG(148, "buildStaticSourceFMU", false,
+  Util.gettext("A temporary flag to not link the C run-time system when building an FMU; instead compiling the run-time sources into the FMU. The goal is to make this a truly static shared object, depending on nothing outside the FMU (all sources will be included)."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -613,7 +615,8 @@ constant list<DebugFlag> allDebugFlags = {
   EVAL_ALL_PARAMS,
   EVAL_OUTPUT_ONLY,
   HARDCODED_START_VALUES,
-  DUMP_FUNCTIONS
+  DUMP_FUNCTIONS,
+  BUILD_STATIC_SOURCE_FMU
 };
 
 public
@@ -799,11 +802,9 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "generateSymbolicLinearization",
     "removeConstants",
     "simplifyTimeIndepFuncCalls",
-    "addInitialStmtsToAlgorithms",
     "simplifyAllExpressions"
     }),
   SOME(STRING_DESC_OPTION({
-    ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs.")),
     ("addScaledVars", Util.notrans("added var_norm = var/nominal, where var is state")),
     ("addTimeAsState", Util.gettext("Experimental feature: this replaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0")),
     ("calculateStateSetsJacobians", Util.gettext("Generates analytical Jacobian for dynamic state selection sets.")),
@@ -1007,7 +1008,7 @@ constant ConfigFlag CORBA_OBJECT_REFERENCE_FILE_PATH = CONFIG_FLAG(50, "corbaObj
 
 constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(51, "hpcomScheduler",
   NONE(), EXTERNAL(), STRING_FLAG("level"), NONE(),
-  Util.gettext("Sets123 the scheduler for task graph scheduling (list | listr | level | levelfix | ext | mcp | taskdep | tds | bls | rand | none). Default: level."));
+  Util.gettext("Sets the scheduler for task graph scheduling (list | listr | level | levelfix | ext | mcp | taskdep | tds | bls | rand | none). Default: level."));
 
 constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(52, "hpcomCode",
   NONE(), EXTERNAL(), STRING_FLAG("openmp"), NONE(),
@@ -1126,7 +1127,7 @@ constant ConfigFlag SIMPLIFY_LOOPS = CONFIG_FLAG(73, "simplifyLoops",
     ("1", Util.gettext("special modification of residual expressions")),
     ("2", Util.gettext("special modification of residual expressions with helper variables"))
     })),
-    Util.gettext("simplify algebraic loops"));
+    Util.gettext("Simplify algebraic loops."));
 
 constant ConfigFlag RTEARING = CONFIG_FLAG(74, "recursiveTearing",
   NONE(), EXTERNAL(), INT_FLAG(0),
@@ -1135,7 +1136,7 @@ constant ConfigFlag RTEARING = CONFIG_FLAG(74, "recursiveTearing",
     ("1", Util.gettext("linear tearing set of size 1")),
     ("2", Util.gettext("linear tearing"))
     })),
-    Util.gettext("inline and repeat tearing."));
+    Util.gettext("Inline and repeat tearing."));
 
 constant ConfigFlag FLOW_THRESHOLD = CONFIG_FLAG(75, "flowThreshold",
   NONE(), EXTERNAL(), REAL_FLAG(1e-7), NONE(),
@@ -1151,7 +1152,7 @@ constant ConfigFlag PARTLINTORN = CONFIG_FLAG(77, "partlintorn",
 
 constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(78, "initOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
-    "constantLinearSystem",
+    //"constantLinearSystem",
     "simplifyComplexFunction",
       //"reduceDynamicOptimization", // before tearing
     "tearingSystem",
@@ -1178,6 +1179,10 @@ constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(78, "initOptModules",
     ("tearingSystem", Util.notrans("For method selection use flag tearingMethod."))
     })),
   Util.gettext("Sets the initialization optimization modules to use in the back end. See --help=optmodules for more info."));
+
+constant ConfigFlag MAX_MIXED_DETERMINED_INDEX = CONFIG_FLAG(79, "maxMixedDeterminedIndex",
+  NONE(), EXTERNAL(), INT_FLAG(3), NONE(),
+  Util.gettext("Sets the maximum mixed-determined index that is handled by the initialization."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1261,7 +1266,8 @@ constant list<ConfigFlag> allConfigFlags = {
   FLOW_THRESHOLD,
   MATRIX_FORMAT,
   PARTLINTORN,
-  INIT_OPT_MODULES
+  INIT_OPT_MODULES,
+  MAX_MIXED_DETERMINED_INDEX
 };
 
 public function new

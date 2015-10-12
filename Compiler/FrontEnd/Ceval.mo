@@ -857,6 +857,13 @@ algorithm
         value = backpatchArrayReduction(path, iterType, value, dims);
       then (cache, value, stOpt);
 
+    case (_, _, DAE.EMPTY(), _, _, _, _)
+      algorithm
+        s := ComponentReference.printComponentRefStr(inExp.name);
+        v := Types.typeToValue(inExp.ty);
+      then
+        (inCache, Values.EMPTY(inExp.scope, s, v, inExp.tyStr), inST);
+
     // ceval can fail and that is ok, caught by other rules...
     case (_,env,e,_,_,_,_) // Absyn.MSG())
       equation
@@ -4245,45 +4252,30 @@ protected function cevalRelation
   input DAE.Operator inOperator;
   input Values.Value inValue2;
   output Values.Value outValue;
-
 protected
   Boolean result;
 algorithm
-  result := cevalRelation_dispatch(inValue1, inOperator, inValue2);
-  outValue := Values.BOOL(result);
-end cevalRelation;
+  result := matchcontinue inOperator
+    case DAE.GREATER()   then cevalRelationLess(inValue2, inValue1);
+    case DAE.LESS()      then cevalRelationLess(inValue1, inValue2);
+    case DAE.LESSEQ()    then cevalRelationLessEq(inValue1, inValue2);
+    case DAE.GREATEREQ() then cevalRelationGreaterEq(inValue1, inValue2);
+    case DAE.EQUAL()     then cevalRelationEqual(inValue1, inValue2);
+    case DAE.NEQUAL()    then cevalRelationNotEqual(inValue1, inValue2);
 
-protected function cevalRelation_dispatch
-  "Dispatch function for cevalRelation. Call the right relation function
-  depending on the operator."
-  input Values.Value inValue1;
-  input DAE.Operator inOperator;
-  input Values.Value inValue2;
-  output Boolean result;
-algorithm
-  result := matchcontinue(inValue1, inOperator, inValue2)
-    local
-      Values.Value v1, v2;
-      DAE.Operator op;
-
-    case (v1, DAE.GREATER(), v2) then cevalRelationLess(v2, v1);
-    case (v1, DAE.LESS(), v2) then cevalRelationLess(v1, v2);
-    case (v1, DAE.LESSEQ(), v2) then cevalRelationLessEq(v1, v2);
-    case (v1, DAE.GREATEREQ(), v2) then cevalRelationGreaterEq(v1, v2);
-    case (v1, DAE.EQUAL(), v2) then cevalRelationEqual(v1, v2);
-    case (v1, DAE.NEQUAL(), v2) then cevalRelationNotEqual(v1, v2);
-
-    case (v1, op, v2)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+    else
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Ceval.cevalRelation failed on: " +
-          ValuesUtil.printValStr(v1) +
-          ExpressionDump.binopSymbol(op) +
-          ValuesUtil.printValStr(v2));
+          ValuesUtil.printValStr(inValue1) +
+          ExpressionDump.relopSymbol(inOperator) +
+          ValuesUtil.printValStr(inValue2));
       then
         fail();
   end matchcontinue;
-end cevalRelation_dispatch;
+
+  outValue := Values.BOOL(result);
+end cevalRelation;
 
 protected function cevalRelationLess
   "Returns whether the first value is less than the second value."
@@ -4292,26 +4284,15 @@ protected function cevalRelationLess
   output Boolean result;
 algorithm
   result := match(inValue1, inValue2)
-    local
-      String s1, s2;
-      Integer i1, i2;
-      Real r1, r2;
-    case (Values.STRING(string = s1), Values.STRING(string = s2))
-      then (stringCompare(s1, s2) < 0);
-    case (Values.INTEGER(integer = i1), Values.INTEGER(integer = i2))
-      then (i1 < i2);
-    case (Values.REAL(real = r1), Values.REAL(real = r2))
-      then (r1 < r2);
-    case (Values.BOOL(boolean = false), Values.BOOL(boolean = true))
-      then true;
-    case (Values.BOOL(), Values.BOOL())
-      then false;
-    case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
-      then (i1 < i2);
-    case (Values.ENUM_LITERAL(index = i1), Values.INTEGER(integer = i2))
-      then (i1 < i2);
-    case (Values.INTEGER(integer = i1), Values.ENUM_LITERAL(index = i2))
-      then (i1 < i2);
+    case (Values.STRING(),       Values.STRING())       then (stringCompare(inValue1.string, inValue2.string) < 0);
+    case (Values.BOOL(),         Values.BOOL())         then (inValue1.boolean < inValue2.boolean);
+    case (Values.INTEGER(),      Values.INTEGER())      then (inValue1.integer < inValue2.integer);
+    case (Values.REAL(),         Values.REAL())         then (inValue1.real < inValue2.real);
+    case (Values.INTEGER(),      Values.REAL())         then (intReal(inValue1.integer) < inValue2.real);
+    case (Values.REAL(),         Values.INTEGER())      then (inValue1.real < intReal(inValue2.integer));
+    case (Values.ENUM_LITERAL(), Values.ENUM_LITERAL()) then (inValue1.index < inValue2.index);
+    case (Values.ENUM_LITERAL(), Values.INTEGER())      then (inValue1.index < inValue2.integer);
+    case (Values.INTEGER(),      Values.ENUM_LITERAL()) then (inValue1.integer < inValue2.index);
   end match;
 end cevalRelationLess;
 
@@ -4322,26 +4303,15 @@ protected function cevalRelationLessEq
   output Boolean result;
 algorithm
   result := match(inValue1, inValue2)
-    local
-      String s1, s2;
-      Integer i1, i2;
-      Real r1, r2;
-    case (Values.STRING(string = s1), Values.STRING(string = s2))
-      then (stringCompare(s1, s2) <= 0);
-    case (Values.INTEGER(integer = i1), Values.INTEGER(integer = i2))
-      then (i1 <= i2);
-    case (Values.REAL(real = r1), Values.REAL(real = r2))
-      then (r1 <= r2);
-    case (Values.BOOL(boolean = true), Values.BOOL(boolean = false))
-      then false;
-    case (Values.BOOL(), Values.BOOL())
-      then true;
-    case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
-      then (i1 <= i2);
-    case (Values.ENUM_LITERAL(index = i1), Values.INTEGER(integer = i2))
-      then (i1 <= i2);
-    case (Values.INTEGER(integer = i1), Values.ENUM_LITERAL(index = i2))
-      then (i1 <= i2);
+    case (Values.STRING(),       Values.STRING())       then (stringCompare(inValue1.string, inValue2.string) <= 0);
+    case (Values.BOOL(),         Values.BOOL())         then (inValue1.boolean <= inValue2.boolean);
+    case (Values.INTEGER(),      Values.INTEGER())      then (inValue1.integer <= inValue2.integer);
+    case (Values.REAL(),         Values.REAL())         then (inValue1.real <= inValue2.real);
+    case (Values.INTEGER(),      Values.REAL())         then (intReal(inValue1.integer) <= inValue2.real);
+    case (Values.REAL(),         Values.INTEGER())      then (inValue1.real <= intReal(inValue2.integer));
+    case (Values.ENUM_LITERAL(), Values.ENUM_LITERAL()) then (inValue1.index <= inValue2.index);
+    case (Values.ENUM_LITERAL(), Values.INTEGER())      then (inValue1.index <= inValue2.integer);
+    case (Values.INTEGER(),      Values.ENUM_LITERAL()) then (inValue1.integer <= inValue2.index);
   end match;
 end cevalRelationLessEq;
 
@@ -4352,26 +4322,15 @@ protected function cevalRelationGreaterEq
   output Boolean result;
 algorithm
   result := match(inValue1, inValue2)
-    local
-      String s1, s2;
-      Integer i1, i2;
-      Real r1, r2;
-    case (Values.STRING(string = s1), Values.STRING(string = s2))
-      then (stringCompare(s1, s2) >= 0);
-    case (Values.INTEGER(integer = i1), Values.INTEGER(integer = i2))
-      then (i1 >= i2);
-    case (Values.REAL(real = r1), Values.REAL(real = r2))
-      then (r1 >= r2);
-    case (Values.BOOL(boolean = false), Values.BOOL(boolean = true))
-      then false;
-    case (Values.BOOL(), Values.BOOL())
-      then true;
-    case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
-      then (i1 >= i2);
-    case (Values.ENUM_LITERAL(index = i1), Values.INTEGER(integer = i2))
-      then (i1 >= i2);
-    case (Values.INTEGER(integer = i1), Values.ENUM_LITERAL(index = i2))
-      then (i1 >= i2);
+    case (Values.STRING(),       Values.STRING())       then (stringCompare(inValue1.string, inValue2.string) >= 0);
+    case (Values.BOOL(),         Values.BOOL())         then (inValue1.boolean >= inValue2.boolean);
+    case (Values.INTEGER(),      Values.INTEGER())      then (inValue1.integer >= inValue2.integer);
+    case (Values.REAL(),         Values.REAL())         then (inValue1.real >= inValue2.real);
+    case (Values.INTEGER(),      Values.REAL())         then (intReal(inValue1.integer) >= inValue2.real);
+    case (Values.REAL(),         Values.INTEGER())      then (inValue1.real >= intReal(inValue2.integer));
+    case (Values.ENUM_LITERAL(), Values.ENUM_LITERAL()) then (inValue1.index >= inValue2.index);
+    case (Values.ENUM_LITERAL(), Values.INTEGER())      then (inValue1.index >= inValue2.integer);
+    case (Values.INTEGER(),      Values.ENUM_LITERAL()) then (inValue1.integer >= inValue2.index);
   end match;
 end cevalRelationGreaterEq;
 
@@ -4382,25 +4341,15 @@ protected function cevalRelationEqual
   output Boolean result;
 algorithm
   result := match(inValue1, inValue2)
-    local
-      String s1, s2;
-      Integer i1, i2;
-      Real r1, r2;
-      Boolean b1, b2;
-    case (Values.STRING(string = s1), Values.STRING(string = s2))
-      then (stringCompare(s1, s2) == 0);
-    case (Values.INTEGER(integer = i1), Values.INTEGER(integer = i2))
-      then (i1 == i2);
-    case (Values.REAL(real = r1), Values.REAL(real = r2))
-      then (r1 == r2);
-    case (Values.BOOL(boolean = b1), Values.BOOL(boolean = b2))
-      then boolEq(b1, b2);
-    case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
-      then (i1 == i2);
-    case (Values.ENUM_LITERAL(index = i1), Values.INTEGER(integer = i2))
-      then (i1 == i2);
-    case (Values.INTEGER(integer = i1), Values.ENUM_LITERAL(index = i2))
-      then (i1 == i2);
+    case (Values.STRING(),       Values.STRING())       then (stringCompare(inValue1.string, inValue2.string) == 0);
+    case (Values.BOOL(),         Values.BOOL())         then (inValue1.boolean == inValue2.boolean);
+    case (Values.INTEGER(),      Values.INTEGER())      then (inValue1.integer == inValue2.integer);
+    case (Values.REAL(),         Values.REAL())         then (inValue1.real == inValue2.real);
+    case (Values.INTEGER(),      Values.REAL())         then (intReal(inValue1.integer) == inValue2.real);
+    case (Values.REAL(),         Values.INTEGER())      then (inValue1.real == intReal(inValue2.integer));
+    case (Values.ENUM_LITERAL(), Values.ENUM_LITERAL()) then (inValue1.index == inValue2.index);
+    case (Values.ENUM_LITERAL(), Values.INTEGER())      then (inValue1.index == inValue2.integer);
+    case (Values.INTEGER(),      Values.ENUM_LITERAL()) then (inValue1.integer == inValue2.index);
   end match;
 end cevalRelationEqual;
 
@@ -4411,25 +4360,15 @@ protected function cevalRelationNotEqual
   output Boolean result;
 algorithm
   result := match(inValue1, inValue2)
-    local
-      String s1, s2;
-      Integer i1, i2;
-      Real r1, r2;
-      Boolean b1, b2;
-    case (Values.STRING(string = s1), Values.STRING(string = s2))
-      then (stringCompare(s1, s2) <> 0);
-    case (Values.INTEGER(integer = i1), Values.INTEGER(integer = i2))
-      then (i1 <> i2);
-    case (Values.REAL(real = r1), Values.REAL(real = r2))
-      then (r1 <> r2);
-    case (Values.BOOL(boolean = b1), Values.BOOL(boolean = b2))
-      then not boolEq(b1, b2);
-    case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
-      then (i1 <> i2);
-    case (Values.ENUM_LITERAL(index = i1), Values.INTEGER(integer = i2))
-      then (i1 <> i2);
-    case (Values.INTEGER(integer = i1), Values.ENUM_LITERAL(index = i2))
-      then (i1 <> i2);
+    case (Values.STRING(),       Values.STRING())       then (stringCompare(inValue1.string, inValue2.string) <> 0);
+    case (Values.BOOL(),         Values.BOOL())         then (inValue1.boolean <> inValue2.boolean);
+    case (Values.INTEGER(),      Values.INTEGER())      then (inValue1.integer <> inValue2.integer);
+    case (Values.REAL(),         Values.REAL())         then (inValue1.real <> inValue2.real);
+    case (Values.INTEGER(),      Values.REAL())         then (intReal(inValue1.integer) <> inValue2.real);
+    case (Values.REAL(),         Values.INTEGER())      then (inValue1.real <> intReal(inValue2.integer));
+    case (Values.ENUM_LITERAL(), Values.ENUM_LITERAL()) then (inValue1.index <> inValue2.index);
+    case (Values.ENUM_LITERAL(), Values.INTEGER())      then (inValue1.index <> inValue2.integer);
+    case (Values.INTEGER(),      Values.ENUM_LITERAL()) then (inValue1.integer <> inValue2.index);
   end match;
 end cevalRelationNotEqual;
 
@@ -4705,19 +4644,11 @@ algorithm
       then
         (cache,res);
 
-    // arbitrary expressions, C_VAR, value exists.
-    case (cache,env,cr,DAE.EQBOUND(evaluatedExp = SOME(e_val),constant_ = DAE.C_VAR()),impl,msg,_)
+    // arbitrary expressions, value exists.
+    case (cache,env,cr,DAE.EQBOUND(evaluatedExp = SOME(e_val)),impl,msg,_)
       equation
         subsc = ComponentReference.crefLastSubs(cr);
         (cache,res) = cevalSubscriptValue(cache,env, subsc, e_val, impl,msg,numIter+1);
-      then
-        (cache,res);
-
-    // arbitrary expressions, C_PARAM, value exists.
-    case (cache,env,cr,DAE.EQBOUND(evaluatedExp = SOME(e_val),constant_ = DAE.C_PARAM()),impl,msg,_)
-      equation
-        subsc = ComponentReference.crefLastSubs(cr);
-        (cache,res)= cevalSubscriptValue(cache,env, subsc, e_val, impl,msg,numIter+1);
       then
         (cache,res);
 

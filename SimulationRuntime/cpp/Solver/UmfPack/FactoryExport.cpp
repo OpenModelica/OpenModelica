@@ -22,15 +22,15 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 #include <Solver/UmfPack/UmfPack.h>
 #include <Solver/UmfPack/UmfPackSettings.h>
 
-boost::shared_ptr<ILinSolverSettings> createUmfpackSettings()
+shared_ptr<ILinSolverSettings> createUmfpackSettings()
 {
-     boost::shared_ptr<ILinSolverSettings> settings = boost::shared_ptr<ILinSolverSettings>(new UmfPackSettings());
+     shared_ptr<ILinSolverSettings> settings = shared_ptr<ILinSolverSettings>(new UmfPackSettings());
      return settings;
 }
 
-boost::shared_ptr<IAlgLoopSolver> createUmfpackSolver(IAlgLoop* algLoop, boost::shared_ptr<ILinSolverSettings> solver_settings)
+shared_ptr<IAlgLoopSolver> createUmfpackSolver(IAlgLoop* algLoop, shared_ptr<ILinSolverSettings> solver_settings)
 {
-   boost::shared_ptr<IAlgLoopSolver> solver = boost::shared_ptr<IAlgLoopSolver>(new UmfPack(algLoop,solver_settings.get()));
+   shared_ptr<IAlgLoopSolver> solver = shared_ptr<IAlgLoopSolver>(new UmfPack(algLoop,solver_settings.get()));
    return solver;
 }
 

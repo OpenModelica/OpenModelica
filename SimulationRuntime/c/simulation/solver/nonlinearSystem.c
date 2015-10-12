@@ -36,14 +36,15 @@
 
 #include "util/omc_error.h"
 #include "nonlinearSystem.h"
+#if !defined(OMC_MINIMAL_RUNTIME)
 #include "kinsolSolver.h"
 #include "nonlinearSolverHybrd.h"
 #include "nonlinearSolverNewton.h"
 #include "newtonIteration.h"
+#endif
 #include "nonlinearSolverHomotopy.h"
 #include "simulation/simulation_info_xml.h"
 #include "simulation/simulation_runtime.h"
-#include "util/write_csv.h"
 
 /* for try and catch simulationJumpBuffer */
 #include "meta/meta_modelica.h"
@@ -56,6 +57,8 @@ struct dataNewtonAndHybrid
   void* hybridData;
 };
 
+#if !defined(OMC_MINIMAL_RUNTIME)
+#include "util/write_csv.h"
 /*! \fn int initializeNLScsvData(DATA* data, NONLINEAR_SYSTEM_DATA* systemData)
  *
  *  This function initializes csv files for analysis propose.
@@ -77,7 +80,15 @@ int initializeNLScsvData(DATA* data, NONLINEAR_SYSTEM_DATA* systemData)
 
   return 0;
 }
+#else
+int initializeNLScsvData(DATA* data, NONLINEAR_SYSTEM_DATA* systemData)
+{
+  fprintf(stderr, "initializeNLScsvData not implemented for OMC_MINIMAL_RUNTIME");
+  abort();
+}
+#endif
 
+#if !defined(OMC_MINIMAL_RUNTIME)
 /*! \fn int print_csvLineCallStatsHeader(OMC_WRITE_CSV* csvData)
  *
  *  This function initializes csv files for analysis propose.
@@ -313,6 +324,7 @@ int print_csvLineIterStats(void* voidCsvData, int size, int num,
 
   return 0;
 }
+#endif
 
 /*! \fn int initializeNonlinearSystems(DATA *data)
  *
@@ -360,6 +372,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 
     nonlinsys[i].initializeStaticNLSData(data, threadData, &nonlinsys[i]);
 
+#if !defined(OMC_MINIMAL_RUNTIME)
     /* csv data call stats*/
     if (data->simulationInfo.nlsCsvInfomation)
     {
@@ -373,7 +386,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
         print_csvLineIterStatsHeader(data, &nonlinsys[i], ((struct csvStats*) nonlinsys[i].csvData)->iterStats);
       }
     }
-
+#endif
     /* allocate solver data */
     switch(data->simulationInfo.nlsMethod)
     {
@@ -464,13 +477,14 @@ int freeNonlinearSystems(DATA *data, threadData_t *threadData)
     free(nonlinsys[i].min);
     free(nonlinsys[i].max);
 
+#if !defined(OMC_MINIMAL_RUNTIME)
     if (data->simulationInfo.nlsCsvInfomation)
     {
       stats = nonlinsys[i].csvData;
       omc_write_csv_free(stats->callStats);
       omc_write_csv_free(stats->iterStats);
     }
-
+#endif
     /* free solver data */
     switch(data->simulationInfo.nlsMethod)
     {
@@ -650,6 +664,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   nonlinsys->totalTime += rt_ext_tp_tock(&(nonlinsys->totalTimeClock));
   nonlinsys->numberOfCall++;
 
+#if !defined(OMC_MINIMAL_RUNTIME)
   if (data->simulationInfo.nlsCsvInfomation)
   {
     print_csvLineCallStats(((struct csvStats*) nonlinsys->csvData)->callStats,
@@ -661,7 +676,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
                            nonlinsys->solved
     );
   }
-
+#endif
   return check_nonlinear_solution(data, 1, sysNumber);
 }
 

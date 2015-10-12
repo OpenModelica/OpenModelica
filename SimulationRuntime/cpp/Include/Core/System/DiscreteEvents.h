@@ -11,7 +11,7 @@ class BOOST_EXTENSION_EVENTHANDLING_DECL DiscreteEvents
 /*#endif*/
 {
 public:
-  DiscreteEvents(boost::shared_ptr<ISimVars> sim_vars);
+  DiscreteEvents(shared_ptr<ISimVars> sim_vars);
   virtual ~DiscreteEvents( );
   //Inits the event variables
   void initialize();
@@ -44,7 +44,7 @@ public:
   //getCondition_type getCondition;
 
 private:
-   boost::shared_ptr<ISimVars> _sim_vars;
+   shared_ptr<ISimVars> _sim_vars;
 };
 
 /**
@@ -56,7 +56,7 @@ class PreArray2CArray
   DiscreteEvents *_discrete_events;
 
  public:
-  PreArray2CArray(boost::shared_ptr<DiscreteEvents>& discrete_events) {
+  PreArray2CArray(shared_ptr<DiscreteEvents>& discrete_events) {
     _discrete_events = discrete_events.get();
   }
 

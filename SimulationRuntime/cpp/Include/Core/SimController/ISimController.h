@@ -32,9 +32,9 @@ class ISimController
 public:
 
   virtual ~ISimController() {};
-  virtual boost::weak_ptr<IMixedSystem> LoadSystem(string modelLib,string modelKey) = 0;
-  virtual boost::weak_ptr<IMixedSystem> LoadModelicaSystem(PATH modelica_path,string modelKey) = 0;
-  virtual boost::weak_ptr<ISimData> LoadSimData(string modelKey) = 0;
+  virtual weak_ptr<IMixedSystem> LoadSystem(string modelLib,string modelKey) = 0;
+  virtual weak_ptr<IMixedSystem> LoadModelicaSystem(PATH modelica_path,string modelKey) = 0;
+  virtual weak_ptr<ISimData> LoadSimData(string modelKey) = 0;
   /**
   Creates  SimVars object, stores all model variable in continuous block of memory
      @param  model name
@@ -45,7 +45,7 @@ public:
      @param dim_z number of all state variables
      @param z_i start index of state vector in real_vars list
      */
-  virtual boost::weak_ptr<ISimVars> LoadSimVars(string modelKey,size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_string,size_t dim_pre_vars,size_t dim_z,size_t z_i) = 0;
+  virtual weak_ptr<ISimVars> LoadSimVars(string modelKey,size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_string,size_t dim_pre_vars,size_t dim_z,size_t z_i) = 0;
   /**
   Starts the simulation
   @param modelKey Modelica model name
@@ -54,9 +54,9 @@ public:
   virtual void Start(SimSettings simsettings, string modelKey)=0;
 
   virtual void StartVxWorks(SimSettings simsettings,string modelKey) = 0;
-  virtual boost::weak_ptr<ISimData> getSimData(string modelname) = 0;
-  virtual boost::weak_ptr<ISimVars> getSimVars(string modelname) = 0;
-  virtual boost::weak_ptr<IMixedSystem> getSystem(string modelname) = 0;
+  virtual weak_ptr<ISimData> getSimData(string modelname) = 0;
+  virtual weak_ptr<ISimVars> getSimVars(string modelname) = 0;
+  virtual weak_ptr<IMixedSystem> getSystem(string modelname) = 0;
   virtual void calcOneStep() = 0;
 
   /**

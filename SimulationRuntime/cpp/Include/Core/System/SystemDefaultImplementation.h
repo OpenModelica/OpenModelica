@@ -42,7 +42,7 @@ private:
 class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation
 {
 public:
-  SystemDefaultImplementation(IGlobalSettings* globalSettings,boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars);
+  SystemDefaultImplementation(IGlobalSettings* globalSettings,shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars);
   SystemDefaultImplementation(SystemDefaultImplementation &instance);
   virtual ~SystemDefaultImplementation();
 
@@ -61,6 +61,9 @@ public:
   /// Provide number (dimension) of string variables
   virtual int getDimString() const;
 
+  /// Provide number (dimension) of clocks
+  virtual int getDimClock() const;
+
   /// Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
   virtual int getDimRHS() const;
 
@@ -76,8 +79,11 @@ public:
   /// Provide real variables
   virtual void getReal(double* z);
 
-  /// Provide real variables
+  /// Provide string variables
   virtual void getString(std::string* z);
+
+  /// Provide clocks
+  virtual void getClock(bool* z);
 
   /// Provide the right hand side
   virtual void getRHS(double* f);
@@ -96,8 +102,11 @@ public:
   /// Provide real variables
   virtual void setReal(const double* z);
 
-  /// Provide real variables
+  /// Provide string variables
   virtual void setString(const std::string* z);
+
+  /// Provide clocks
+  virtual void setClock(const bool* z);
 
   /// Provide the right hand side
   virtual void setRHS(const double* f);
@@ -109,8 +118,8 @@ public:
 
   IGlobalSettings* getGlobalSettings();
 
-  virtual boost::shared_ptr<ISimVars> getSimVars();
-  virtual boost::shared_ptr<ISimData> getSimData();
+  virtual shared_ptr<ISimVars> getSimVars();
+  virtual shared_ptr<ISimData> getSimData();
 
   virtual double& getRealStartValue(double& var);
   virtual bool& getBoolStartValue(bool& var);
@@ -152,6 +161,7 @@ protected:
         _dimString,           ///< Anzahl der stringwertigen Variablen
         _dimZeroFunc,         ///< Dimension (=Anzahl) Nullstellenfunktion
         _dimTimeEvent,        ///< Dimension (=Anzahl) Time event (start zeit und frequenz)
+        _dimClock,            ///< Dimension (=Anzahl) Clocks (active)
         _dimAE;               ///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
 
     int
@@ -178,8 +188,8 @@ protected:
     buffer_type _time_buffer;
     double _delay_max;
     double _start_time;
-    boost::shared_ptr<ISimData> _sim_data;
-    boost::shared_ptr<ISimVars> _sim_vars;
+    shared_ptr<ISimData> _sim_data;
+    shared_ptr<ISimVars> _sim_vars;
     IGlobalSettings* _global_settings; //this should be a reference, but this is not working if the libraries are linked statically
     IEvent* _event_system; ///this pointer to event system
 };

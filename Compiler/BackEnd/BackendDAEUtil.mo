@@ -6536,7 +6536,8 @@ algorithm
   // generate system for initialization
   (outInitDAE, outUseHomotopy, outRemovedInitialEquationLst, outPrimaryParameters, outAllPrimaryParameters) := Initialization.solveInitialSystem(dae);
 
-  simDAE := Initialization.removeInitializationStuff(dae);
+  simDAE := BackendDAEOptimize.addInitialStmtsToAlgorithms(dae);
+  simDAE := Initialization.removeInitializationStuff(simDAE);
 
   // post-optimization phase
   simDAE := postOptimizeDAE(simDAE, postOptModules, matchingAlgorithm, daeHandler);
@@ -6590,6 +6591,7 @@ protected
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
 algorithm
+  SimCodeFunctionUtil.execStat("prepare preOptimizeDAE");
   for preOptModule in inPreOptModules loop
     (optModule, moduleStr, stopOnFailure) := preOptModule;
     try
@@ -6867,6 +6869,7 @@ protected
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
 algorithm
+  SimCodeFunctionUtil.execStat("prepare postOptimizeDAE");
   for postOptModule in inPostOptModules loop
     (optModule, moduleStr, stopOnFailure) := postOptModule;
     moduleStr := moduleStr + " (" + BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType) + ")";
@@ -7215,8 +7218,7 @@ protected
   list<tuple<BackendDAEFunc.postOptimizationDAEModule,String,Boolean/*stopOnFailure*/>> allpostOptModules;
   list<String> strpostOptModules;
 algorithm
-  allpostOptModules := {(BackendDAEOptimize.addInitialStmtsToAlgorithms, "addInitialStmtsToAlgorithms", false),
-                        (BackendDAEOptimize.addTimeAsState, "addTimeAsState", false),
+  allpostOptModules := {(BackendDAEOptimize.addTimeAsState, "addTimeAsState", false),
                         (BackendDAEOptimize.addedScaledVars, "addScaledVars", false),
                         (BackendDAEOptimize.countOperations, "countOperations", false),
                         (BackendDAEOptimize.removeConstants, "removeConstants", false),

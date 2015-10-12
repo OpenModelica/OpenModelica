@@ -6,10 +6,10 @@
 
 #include <SimCoreFactory/ObjectFactory.h>
 
-boost::shared_ptr<INonLinSolverSettings> createNewtonSettings();
- boost::shared_ptr<INonLinSolverSettings> createKinsolSettings();
- boost::shared_ptr<IAlgLoopSolver> createNewtonSolver(IAlgLoop* algLoop, boost::shared_ptr<INonLinSolverSettings> solver_settings);
- boost::shared_ptr<IAlgLoopSolver> createKinsolSolver(IAlgLoop* algLoop, boost::shared_ptr<INonLinSolverSettings> solver_settings);
+shared_ptr<INonLinSolverSettings> createNewtonSettings();
+ shared_ptr<INonLinSolverSettings> createKinsolSettings();
+ shared_ptr<IAlgLoopSolver> createNewtonSolver(IAlgLoop* algLoop, shared_ptr<INonLinSolverSettings> solver_settings);
+ shared_ptr<IAlgLoopSolver> createKinsolSolver(IAlgLoop* algLoop, shared_ptr<INonLinSolverSettings> solver_settings);
 template <class CreationPolicy>
 class StaticNonLinSolverOMCFactory : virtual public ObjectFactory<CreationPolicy>
 {
@@ -21,38 +21,38 @@ public:
       };
     virtual ~StaticNonLinSolverOMCFactory(){};
 
-   virtual boost::shared_ptr<INonLinSolverSettings> createNonLinSolverSettings(string nonlin_solver)
+   virtual shared_ptr<INonLinSolverSettings> createNonLinSolverSettings(string nonlin_solver)
    {
       string nonlin_solver_key;
 
       if(nonlin_solver.compare("newton")==0)
       {
-        boost::shared_ptr<INonLinSolverSettings> settings = createNewtonSettings();
+        shared_ptr<INonLinSolverSettings> settings = createNewtonSettings();
         return settings;
       }
 
       #ifdef ENABLE_SUNDIALS_STATIC
       if(nonlin_solver.compare("kinsol")==0)
       {
-          boost::shared_ptr<INonLinSolverSettings> settings = createKinsolSettings();
+          shared_ptr<INonLinSolverSettings> settings = createKinsolSettings();
           return settings;
       }
       #endif //ENABLE_SUNDIALS_STATIC
       throw ModelicaSimulationError(MODEL_FACTORY,"Selected nonlin solver is not available");
       //return NonLinSolverOMCFactory<CreationPolicy>::createNonLinSolverSettings(nonlin_solver);
    }
-   virtual boost::shared_ptr<IAlgLoopSolver> createNonLinSolver(IAlgLoop* algLoop, string solver_name, boost::shared_ptr<INonLinSolverSettings> solver_settings)
+   virtual shared_ptr<IAlgLoopSolver> createNonLinSolver(IAlgLoop* algLoop, string solver_name, shared_ptr<INonLinSolverSettings> solver_settings)
    {
       if(solver_name.compare("newton")==0)
       {
-        boost::shared_ptr<IAlgLoopSolver> newton = createNewtonSolver(algLoop,solver_settings);
+        shared_ptr<IAlgLoopSolver> newton = createNewtonSolver(algLoop,solver_settings);
         return newton;
       }
 
       #ifdef ENABLE_SUNDIALS_STATIC
       if(solver_name.compare("kinsol")==0)
       {
-        boost::shared_ptr<IAlgLoopSolver> kinsol = createKinsolSolver(algLoop,solver_settings);
+        shared_ptr<IAlgLoopSolver> kinsol = createKinsolSolver(algLoop,solver_settings);
         return kinsol;
       }
       #endif //ENABLE_SUNDIALS_STATIC

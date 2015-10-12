@@ -34,7 +34,7 @@ public:
 
     }
 
-    virtual boost::shared_ptr<ISettingsFactory> createSettingsFactory()
+    virtual shared_ptr<ISettingsFactory> createSettingsFactory()
     {
           std::map<std::string, factory<ISettingsFactory,PATH,PATH,PATH> >::iterator iter;
           std::map<std::string, factory<ISettingsFactory,PATH,PATH,PATH> >& factories(_settings_type_map->get());
@@ -43,12 +43,12 @@ public:
           {
                 throw ModelicaSimulationError(MODEL_FACTORY,"No such settings library");
             }
-         boost::shared_ptr<ISettingsFactory>  settings_factory = boost::shared_ptr<ISettingsFactory>(iter->second.create(ObjectFactory<CreationPolicy>::_library_path,ObjectFactory<CreationPolicy>::_modelicasystem_path,ObjectFactory<CreationPolicy>::_config_path));
+         shared_ptr<ISettingsFactory>  settings_factory = shared_ptr<ISettingsFactory>(iter->second.create(ObjectFactory<CreationPolicy>::_library_path,ObjectFactory<CreationPolicy>::_modelicasystem_path,ObjectFactory<CreationPolicy>::_config_path));
 
          return settings_factory;
     }
 
-    virtual boost::shared_ptr<ISolver> createSolver(IMixedSystem* system, string solvername, boost::shared_ptr<ISolverSettings> solver_settings)
+    virtual shared_ptr<ISolver> createSolver(IMixedSystem* system, string solvername, shared_ptr<ISolverSettings> solver_settings)
     {
 
         if(solvername.compare("euler")==0)
@@ -147,7 +147,7 @@ public:
                 throw ModelicaSimulationError(MODEL_FACTORY,"No such Solver " + solver_key);
         }
 
-        boost::shared_ptr<ISolver> solver = boost::shared_ptr<ISolver>(iter->second.create(system,solver_settings.get()));
+        shared_ptr<ISolver> solver = shared_ptr<ISolver>(iter->second.create(system,solver_settings.get()));
 
         return solver;
     }

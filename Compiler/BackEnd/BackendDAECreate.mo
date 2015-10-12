@@ -123,7 +123,8 @@ algorithm
   extVars := BackendVariable.listVar(extvarlst);
   aliasVars := BackendVariable.emptyVars();
   if Flags.isSet(Flags.VECTORIZE) then
-    (vars,eqns) := Vectorization.buildForLoops(vars,eqns);
+    (varlst,eqns) := Vectorization.collectForLoops(varlst,eqns);
+    vars := BackendVariable.listVar(varlst);
   end if;
   // handle alias equations
   (vars, knvars, extVars, aliasVars, eqns, reqns, ieqns) := handleAliasEquations(aliaseqns, vars, knvars, extVars, aliasVars, eqns, reqns, ieqns);
@@ -543,7 +544,7 @@ algorithm
         outVars := lowerDynamicVar(inElement, inFunctions) :: outVars;
         (e2, src) := Inline.inlineExp(e2, (SOME(inFunctions), {DAE.NORM_INLINE()}), src);
         e1 := Expression.crefExp(cr);
-        attr := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), BackendDAE.NO_LOOP());
+        attr := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION());
         outEqns := BackendDAE.EQUATION(e1, e2, src, attr) :: outEqns;
       then
         ();
@@ -1560,7 +1561,7 @@ algorithm
         true = DAEUtil.expTypeComplex(tp);
         size = Expression.sizeOf(tp);
       then
-        BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, BackendDAE.NO_LOOP()))::inEqns;
+        BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind))::inEqns;
 
     // array types to array equations
     case (_, _, _, _, _, _)
@@ -1578,7 +1579,7 @@ algorithm
         true = Types.isTuple(tp);
         size = Expression.sizeOf(tp);
       then
-        BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, BackendDAE.NO_LOOP()))::inEqns;
+        BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind))::inEqns;
 
     // other types
     case (_, _, _, _, _, _)
@@ -1590,7 +1591,7 @@ algorithm
         false = b1 or b2 or b3;
         //Error.assertionOrAddSourceMessage(not b1, Error.INTERNAL_ERROR, {str}, Absyn.dummyInfo);
       then
-        BackendDAE.EQUATION(inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, BackendDAE.NO_LOOP()))::inEqns;
+        BackendDAE.EQUATION(inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind))::inEqns;
     else
       equation
         // show only on failtrace!
@@ -1636,12 +1637,12 @@ algorithm
         ds = List.map1(ds, intMul, i);
         //For COMPLEX_EQUATION
         //i = List.fold(ds, intMul, 1);
-      then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, BackendDAE.NO_LOOP()))::iAcc;
+      then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind))::iAcc;
 
     case (_, _, _, _, _, _)
       equation
         ds = Expression.dimensionsSizes(dims);
-      then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, BackendDAE.NO_LOOP()))::iAcc;
+      then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind))::iAcc;
   end matchcontinue;
 end lowerArrayEqn;
 
@@ -1659,7 +1660,7 @@ algorithm
       list<DAE.Exp> e1lst, e2lst;
     case ({}, {}, _, _, _) then iAcc;
     case (e1::e1lst, e2::e2lst, _, _, _)
-      then generateEquations(e1lst, e2lst, source, inEqKind, BackendDAE.EQUATION(e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, BackendDAE.NO_LOOP()))::iAcc);
+      then generateEquations(e1lst, e2lst, source, inEqKind, BackendDAE.EQUATION(e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind))::iAcc);
   end match;
 end generateEquations;
 
@@ -1689,7 +1690,7 @@ algorithm
   outEqs := BackendDAE.EQUATION( exp = DAE.CREF(componentRef = cr, ty = DAE.T_CLOCK_DEFAULT),
                                 scalar = e,  source = DAE.emptyElementSource,
                                 attr = BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC ) :: inEqs;
-  outEqAttrs := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.CLOCKED_EQUATION(whenClkCnt), BackendDAE.NO_LOOP());
+  outEqAttrs := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.CLOCKED_EQUATION(whenClkCnt));
 end createWhenClock;
 
 

@@ -10,7 +10,7 @@
 class Modelica : public IMixedSystem, public IContinuous, public IEvent, public ISystemProperties, public SystemDefaultImplementation
 {
 public:
-  Modelica(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData>, boost::shared_ptr<ISimVars>);
+  Modelica(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, shared_ptr<ISimData>, shared_ptr<ISimVars>);
   ~Modelica();
 
   //Releases the Modelica System
