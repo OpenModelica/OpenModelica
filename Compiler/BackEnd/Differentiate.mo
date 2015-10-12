@@ -2173,8 +2173,7 @@ algorithm
         expBoolLst = List.filterOnTrue(expBoolLst, Util.tuple22);
         expl1 = List.map(expBoolLst, Util.tuple21);
         (dexpl, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter, inExpStack=expStack), inDiffwrtCref, inInputData, inDiffType, functions);
-        diffFuncData = BackendDAE.DIFFINPUTDATA(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
-        (dexplZero, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter, inExpStack=expStack), DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), diffFuncData, BackendDAE.GENERIC_GRADIENT(), functions);
+        (dexplZero, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter, inExpStack=expStack), DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), BackendDAE.emptyInputData, BackendDAE.GENERIC_GRADIENT(), functions);
         //dexpl = listAppend(expl, dexpl);
         //print("Start creation of partial Der\n");
         //print("Diffed ExpList: \n");
