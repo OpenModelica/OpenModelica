@@ -1293,7 +1293,7 @@ algorithm
   outSyst.orderedEqs := BackendEquation.listEquation(listReverse(newEqs));
   outSyst.orderedVars := BackendVariable.addVars(newVars, inSyst.orderedVars);
   outSyst := BackendDAEUtil.clearEqSyst(outSyst);
-end substituteParitionOpExps;
+end substitutePartitionOpExps;
 
 protected function substitutePartitionOpExp
   input DAE.Exp inExp;
@@ -1310,28 +1310,25 @@ protected function substitutePartitionOpExp1
   output DAE.Exp outExp;
   output tuple<list<BackendDAE.Equation>,list<BackendDAE.Var>, Integer, BackendDAE.Shared> outTpl;
 protected
+  Absyn.Path path;
+  BackendDAE.Shared shared;
+  DAE.CallAttributes attr;
+  DAE.ClockKind clk;
+  Integer cnt;
   list<BackendDAE.Equation> newEqs;
   list<BackendDAE.Var> newVars;
-  Integer cnt;
-  BackendDAE.Shared shared;
+  list<DAE.Exp> exps;
 algorithm
   (newEqs, newVars, cnt, shared) := inTpl;
   (outExp, outTpl) := match inExp
-    local
-      Absyn.Path path;
-      list<DAE.Exp> exps;
-      DAE.CallAttributes attr;
-      DAE.ClockKind clk;
-    case DAE.CLKCONST(clk)
-      equation
-        (clk, newEqs, newVars, cnt) = substClock(clk, newEqs, newVars, cnt, shared);
-      then
-        (DAE.CLKCONST(clk), (newEqs, newVars, cnt, shared));
-    case DAE.CALL(path = path, expLst = exps, attr = attr)
-      then
-        substituteExpsCall(path, exps, attr, newEqs, newVars, cnt, shared);
-    else
-      (inExp, inTpl);
+    case DAE.CLKCONST(clk) equation
+      (clk, newEqs, newVars, cnt) = substClock(clk, newEqs, newVars, cnt, shared);
+    then (DAE.CLKCONST(clk), (newEqs, newVars, cnt, shared));
+
+    case DAE.CALL(path=path, expLst=exps, attr=attr)
+    then substituteExpsCall(path, exps, attr, newEqs, newVars, cnt, shared);
+
+    else (inExp, inTpl);
   end match;
 end substitutePartitionOpExp1;
 
@@ -1345,32 +1342,28 @@ protected function substClock
   output list<BackendDAE.Equation> outNewEqs;
   output list<BackendDAE.Var> outNewVars;
   output Integer outCnt;
+protected
+  DAE.Exp e;
+  Integer cnt;
+  Integer i;
+  Real f;
+  list<BackendDAE.Equation> eqs;
+  list<BackendDAE.Var> vars;
 algorithm
   (outClk, outNewEqs, outNewVars, outCnt) := match inClk
-    local
-      DAE.Exp e;
-      Integer i;
-      Real f;
-      list<BackendDAE.Equation> eqs;
-      list<BackendDAE.Var> vars;
-      Integer cnt;
-    case DAE.BOOLEAN_CLOCK(e, f)
-      equation
-        ({e}, eqs, vars, cnt) = substExp({e}, inNewEqs, inNewVars, inCnt);
-      then
-        (DAE.BOOLEAN_CLOCK(e, f), eqs, vars, cnt);
-    case DAE.REAL_CLOCK(e)
-      equation
-        (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
-      then
-        (DAE.REAL_CLOCK(e), eqs, vars, cnt);
-    case DAE.INTEGER_CLOCK(e, i)
-      equation
-        (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
-      then
-        (DAE.INTEGER_CLOCK(e, i), eqs, vars, cnt);
-    else
-      (inClk, inNewEqs, inNewVars, inCnt);
+    case DAE.BOOLEAN_CLOCK(e, f) equation
+      ({e}, eqs, vars, cnt) = substExp({e}, inNewEqs, inNewVars, inCnt);
+    then (DAE.BOOLEAN_CLOCK(e, f), eqs, vars, cnt);
+
+    case DAE.REAL_CLOCK(e) equation
+      (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
+    then (DAE.REAL_CLOCK(e), eqs, vars, cnt);
+
+    case DAE.INTEGER_CLOCK(e, i) equation
+      (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
+    then (DAE.INTEGER_CLOCK(e, i), eqs, vars, cnt);
+
+    else (inClk, inNewEqs, inNewVars, inCnt);
   end match;
 end substClock;
 
