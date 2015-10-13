@@ -48,9 +48,11 @@ class EllipseAnnotation : public ShapeAnnotation
 {
   Q_OBJECT
 public:
-  EllipseAnnotation(QString annotation, Component *pParent);
-  EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  // Used for icon/diagram shape
   EllipseAnnotation(QString annotation, GraphicsView *pGraphicsView);
+  // Used for shape inside a component
+  EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  // Used for icon/diagram inherited shape
   EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
   QRectF boundingRect() const;

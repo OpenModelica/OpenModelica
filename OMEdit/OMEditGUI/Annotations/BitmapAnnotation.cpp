@@ -38,30 +38,6 @@
 
 #include "BitmapAnnotation.h"
 
-BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, Component *pParent)
-  : ShapeAnnotation(pParent), mpComponent(pParent)
-{
-  mClassFileName = classFileName;
-  // set the default values
-  GraphicItem::setDefaults();
-  ShapeAnnotation::setDefaults();
-  parseShapeAnnotation(annotation);
-  setPos(mOrigin);
-  setRotation(mRotation);
-}
-
-BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
-  : ShapeAnnotation(pParent), mpComponent(pParent)
-{
-  updateShape(pShapeAnnotation);
-  setPos(mOrigin);
-  setRotation(mRotation);
-  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
-  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
-  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
-  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
-}
-
 BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0)
 {
@@ -76,6 +52,18 @@ BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, Gr
   setShapeFlags(true);
   connect(this, SIGNAL(updateClassAnnotation()), this, SIGNAL(updateReferenceShapes()));
   connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
+}
+
+BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+  : ShapeAnnotation(pParent), mpComponent(pParent)
+{
+  updateShape(pShapeAnnotation);
+  setPos(mOrigin);
+  setRotation(mRotation);
+  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
 BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)

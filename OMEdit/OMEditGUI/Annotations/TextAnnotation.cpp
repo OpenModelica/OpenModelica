@@ -45,49 +45,6 @@
 /*!
  * \brief TextAnnotation::TextAnnotation
  * \param annotation - text annotation string.
- * \param pComponent - pointer to Component
- */
-TextAnnotation::TextAnnotation(QString annotation, Component *pComponent)
-  : ShapeAnnotation(pComponent), mpComponent(pComponent)
-{
-  // set the default values
-  GraphicItem::setDefaults();
-  FilledShape::setDefaults();
-  ShapeAnnotation::setDefaults();
-  parseShapeAnnotation(annotation);
-  setPos(mOrigin);
-  setRotation(mRotation);
-}
-
-TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
-  : ShapeAnnotation(pParent), mpComponent(pParent)
-{
-  updateShape(pShapeAnnotation);
-  initUpdateTextString();
-  setPos(mOrigin);
-  setRotation(mRotation);
-  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
-  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
-  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
-  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
-}
-
-TextAnnotation::TextAnnotation(Component *pParent)
-  : ShapeAnnotation(pParent), mpComponent(pParent)
-{
-  // set the default values
-  GraphicItem::setDefaults();
-  FilledShape::setDefaults();
-  ShapeAnnotation::setDefaults();
-  setTextString("%name");
-  initUpdateTextString();
-  setPos(mOrigin);
-  setRotation(mRotation);
-}
-
-/*!
- * \brief TextAnnotation::TextAnnotation
- * \param annotation - text annotation string.
  * \param inheritedShape
  * \param pGraphicsView - pointer to GraphicsView
  */
@@ -107,6 +64,19 @@ TextAnnotation::TextAnnotation(QString annotation, GraphicsView *pGraphicsView)
   connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
 }
 
+TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+  : ShapeAnnotation(pParent), mpComponent(pParent)
+{
+  updateShape(pShapeAnnotation);
+  initUpdateTextString();
+  setPos(mOrigin);
+  setRotation(mRotation);
+  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
+}
+
 TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, 0)
 {
@@ -118,6 +88,19 @@ TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *
   connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
   connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
   connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
+}
+
+TextAnnotation::TextAnnotation(Component *pParent)
+  : ShapeAnnotation(pParent), mpComponent(pParent)
+{
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  setTextString("%name");
+  initUpdateTextString();
+  setPos(mOrigin);
+  setRotation(mRotation);
 }
 
 /*!

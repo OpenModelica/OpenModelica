@@ -38,16 +38,19 @@
 
 #include "RectangleAnnotation.h"
 
-RectangleAnnotation::RectangleAnnotation(QString annotation, Component *pParent)
-  : ShapeAnnotation(pParent)
+RectangleAnnotation::RectangleAnnotation(QString annotation, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
   ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
-  setPos(mOrigin);
-  setRotation(mRotation);
+  setShapeFlags(true);
+  connect(this, SIGNAL(updateClassAnnotation()), this, SIGNAL(updateReferenceShapes()));
+  connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
 }
 
 RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
@@ -56,6 +59,18 @@ RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Comp
   updateShape(pShapeAnnotation);
   setPos(mOrigin);
   setRotation(mRotation);
+  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
+}
+
+RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(true, pGraphicsView, 0)
+{
+  updateShape(pShapeAnnotation);
+  setShapeFlags(true);
+  mpGraphicsView->addItem(this);
   connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
   connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
   connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
@@ -78,33 +93,6 @@ RectangleAnnotation::RectangleAnnotation(Component *pParent)
   setExtents(extents);
   setPos(mOrigin);
   setRotation(mRotation);
-}
-
-RectangleAnnotation::RectangleAnnotation(QString annotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0)
-{
-  // set the default values
-  GraphicItem::setDefaults();
-  FilledShape::setDefaults();
-  ShapeAnnotation::setDefaults();
-  // set users default value by reading the settings file.
-  ShapeAnnotation::setUserDefaults();
-  parseShapeAnnotation(annotation);
-  setShapeFlags(true);
-  connect(this, SIGNAL(updateClassAnnotation()), this, SIGNAL(updateReferenceShapes()));
-  connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
-}
-
-RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, 0)
-{
-  updateShape(pShapeAnnotation);
-  setShapeFlags(true);
-  mpGraphicsView->addItem(this);
-  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
-  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
-  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
-  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
 void RectangleAnnotation::parseShapeAnnotation(QString annotation)

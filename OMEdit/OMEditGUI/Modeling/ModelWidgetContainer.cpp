@@ -2290,9 +2290,11 @@ void ModelWidget::loadModelWidget()
     mpLibraryTreeItem->removeAllInheritedClasses();
     mpIconGraphicsView->removeAllShapes();
     mpIconGraphicsView->removeAllComponents();
+    mpIconGraphicsView->removeAllConnections();
     mpIconGraphicsView->scene()->clear();
     mpDiagramGraphicsView->removeAllShapes();
     mpDiagramGraphicsView->removeAllComponents();
+    mpDiagramGraphicsView->removeAllConnections();
     mpDiagramGraphicsView->scene()->clear();
     getModelInheritedClasses(mpLibraryTreeItem);
     drawModelInheritedClasses();
@@ -2368,6 +2370,7 @@ void ModelWidget::modelInheritedClassLoaded(InheritedClass *pInheritedClass)
   drawModelInheritedClassShapes(pInheritedClass, StringHandler::Icon);
   drawModelInheritedClassShapes(pInheritedClass, StringHandler::Diagram);
   drawModelInheritedClassComponents(pInheritedClass);
+  drawModelInheritedClassConnections(pInheritedClass);
   mpIconGraphicsView->reOrderItems();
   mpDiagramGraphicsView->reOrderItems();
 }
@@ -2382,6 +2385,7 @@ void ModelWidget::modelInheritedClassUnLoaded(InheritedClass *pInheritedClass)
   drawModelInheritedClassShapes(pInheritedClass, StringHandler::Icon);
   drawModelInheritedClassShapes(pInheritedClass, StringHandler::Diagram);
   removeInheritedClassComponents(pInheritedClass);
+  removeInheritedClassConnections(pInheritedClass);
   //! @note Do we really need to call GraphicsView::reOrderItems() here?
 }
 
