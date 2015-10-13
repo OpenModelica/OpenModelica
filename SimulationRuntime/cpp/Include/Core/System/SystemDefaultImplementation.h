@@ -166,6 +166,8 @@ protected:
 
     int
     * _time_event_counter;
+    double *_clockTime;       ///< time of clock ticks
+    double *_clockInterval;   ///< time interval between clock ticks
     std::ostream *_outputStream;        ///< Output stream for results
 
     IContinuous::UPDATETYPE _callType;
