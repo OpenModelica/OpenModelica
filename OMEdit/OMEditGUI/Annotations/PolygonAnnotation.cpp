@@ -38,30 +38,6 @@
 
 #include "PolygonAnnotation.h"
 
-PolygonAnnotation::PolygonAnnotation(QString annotation, Component *pParent)
-  : ShapeAnnotation(pParent)
-{
-  // set the default values
-  GraphicItem::setDefaults();
-  FilledShape::setDefaults();
-  ShapeAnnotation::setDefaults();
-  parseShapeAnnotation(annotation);
-  setPos(mOrigin);
-  setRotation(mRotation);
-}
-
-PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
-  : ShapeAnnotation(pParent)
-{
-  updateShape(pShapeAnnotation);
-  setPos(mOrigin);
-  setRotation(mRotation);
-  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
-  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
-  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
-  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
-}
-
 PolygonAnnotation::PolygonAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0)
 {
@@ -75,6 +51,18 @@ PolygonAnnotation::PolygonAnnotation(QString annotation, GraphicsView *pGraphics
   setShapeFlags(true);
   connect(this, SIGNAL(updateClassAnnotation()), this, SIGNAL(updateReferenceShapes()));
   connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
+}
+
+PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+  : ShapeAnnotation(pParent)
+{
+  updateShape(pShapeAnnotation);
+  setPos(mOrigin);
+  setRotation(mRotation);
+  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
 PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)

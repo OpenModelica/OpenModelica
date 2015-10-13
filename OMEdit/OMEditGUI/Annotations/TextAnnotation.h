@@ -48,11 +48,14 @@ class TextAnnotation : public ShapeAnnotation
 {
   Q_OBJECT
 public:
-  TextAnnotation(QString annotation, Component *pComponent);
-  TextAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
-  TextAnnotation(Component *pParent);
+  // Used for icon/diagram shape
   TextAnnotation(QString annotation, GraphicsView *pGraphicsView);
+  // Used for shape inside a component
+  TextAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  // Used for icon/diagram inherited shape
   TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  // Used for default component
+  TextAnnotation(Component *pParent);
   void parseShapeAnnotation(QString annotation);
   QRectF boundingRect() const;
   QPainterPath shape() const;

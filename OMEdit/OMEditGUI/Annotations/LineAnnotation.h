@@ -53,14 +53,20 @@ public:
     ConnectionType,  /* Line is a connection. */
     ShapeType  /* Line is a custom shape. */
   };
-  LineAnnotation(QString annotation, Component *pParent);
-  LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
-  LineAnnotation(Component *pParent);
+  // Used for icon/diagram shape
   LineAnnotation(QString annotation, GraphicsView *pGraphicsView);
-  LineAnnotation(GraphicsView *pGraphicsView);
+  // Used for shape inside a component
+  LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  // Used for icon/diagram inherited shape
   LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  // Used for creating connection
   LineAnnotation(Component *pStartComponent, GraphicsView *pGraphicsView);
+  // Used for reading a connection
   LineAnnotation(QString annotation, Component *pStartComponent, Component *pEndComponent, GraphicsView *pGraphicsView);
+  // Used for non-exisiting component
+  LineAnnotation(Component *pParent);
+  // Used for non-existing class
+  LineAnnotation(GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
   QPainterPath getShape() const;
   QRectF boundingRect() const;

@@ -48,9 +48,11 @@ class BitmapAnnotation : public ShapeAnnotation
 {
   Q_OBJECT
 public:
-  BitmapAnnotation(QString classFileName, QString annotation, Component *pParent);
-  BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  // Used for icon/diagram shape
   BitmapAnnotation(QString classFileName, QString annotation, GraphicsView *pGraphicsView);
+  // Used for shape inside a component
+  BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  // Used for icon/diagram inherited shape
   BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
   QRectF boundingRect() const;

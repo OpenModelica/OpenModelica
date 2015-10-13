@@ -48,9 +48,11 @@ class PolygonAnnotation : public ShapeAnnotation
 {
   Q_OBJECT
 public:
-  PolygonAnnotation(QString annotation, Component *pParent);
-  PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  // Used for icon/diagram shape
   PolygonAnnotation(QString annotation, GraphicsView *pGraphicsView);
+  // Used for shape inside a component
+  PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  // Used for icon/diagram inherited shape
   PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
   QPainterPath getShape() const;

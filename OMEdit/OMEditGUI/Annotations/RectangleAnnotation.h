@@ -48,11 +48,14 @@ class RectangleAnnotation : public ShapeAnnotation
 {
   Q_OBJECT
 public:
-  RectangleAnnotation(QString annotation, Component *pParent);
-  RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
-  RectangleAnnotation(Component *pParent);
+  // Used for icon/diagram shape
   RectangleAnnotation(QString annotation, GraphicsView *pGraphicsView);
+  // Used for shape inside a component
+  RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  // Used for icon/diagram inherited shape
   RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  // Used for default component
+  RectangleAnnotation(Component *pParent);
   void parseShapeAnnotation(QString annotation);
   QRectF boundingRect() const;
   QPainterPath shape() const;

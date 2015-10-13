@@ -38,59 +38,6 @@
 
 #include "LineAnnotation.h"
 
-LineAnnotation::LineAnnotation(QString annotation, Component *pParent)
-  : ShapeAnnotation(pParent)
-{
-  setLineType(LineAnnotation::ComponentType);
-  setStartComponent(0);
-  setEndComponent(0);
-  // set the default values
-  GraphicItem::setDefaults();
-  ShapeAnnotation::setDefaults();
-  parseShapeAnnotation(annotation);
-  setPos(mOrigin);
-  setRotation(mRotation);
-}
-
-LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
-  : ShapeAnnotation(pParent)
-{
-  updateShape(pShapeAnnotation);
-  setLineType(LineAnnotation::ComponentType);
-  setStartComponent(0);
-  setEndComponent(0);
-  setPos(mOrigin);
-  setRotation(mRotation);
-  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
-  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
-  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
-  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
-}
-
-LineAnnotation::LineAnnotation(Component *pParent)
-  : ShapeAnnotation(pParent)
-{
-  setLineType(LineAnnotation::ComponentType);
-  setStartComponent(0);
-  setEndComponent(0);
-  // set the default values
-  GraphicItem::setDefaults();
-  ShapeAnnotation::setDefaults();
-  // create a red cross
-  setLineColor(QColor(255, 0, 0));
-  // create a red cross with points
-  addPoint(QPointF(-100, -100));
-  addPoint(QPointF(100, 100));
-  addPoint(QPointF(-100, 100));
-  addPoint(QPointF(100, -100));
-  addPoint(QPointF(-100, -100));
-  addPoint(QPointF(-100, 100));
-  addPoint(QPointF(100, 100));
-  addPoint(QPointF(100, -100));
-  setPos(mOrigin);
-  setRotation(mRotation);
-}
-
 LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0)
 {
@@ -108,30 +55,19 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
 }
 
-LineAnnotation::LineAnnotation(GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, 0)
+LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+  : ShapeAnnotation(pParent)
 {
-  setLineType(LineAnnotation::ShapeType);
+  updateShape(pShapeAnnotation);
+  setLineType(LineAnnotation::ComponentType);
   setStartComponent(0);
   setEndComponent(0);
-  // set the default values
-  GraphicItem::setDefaults();
-  ShapeAnnotation::setDefaults();
-  // set users default value by reading the settings file.
-  ShapeAnnotation::setUserDefaults();
-  // create a red cross
-  setLineColor(QColor(255, 0, 0));
-  // create a red cross with points
-  addPoint(QPointF(-100, -100));
-  addPoint(QPointF(100, 100));
-  addPoint(QPointF(-100, 100));
-  addPoint(QPointF(100, -100));
-  addPoint(QPointF(-100, -100));
-  addPoint(QPointF(-100, 100));
-  addPoint(QPointF(100, 100));
-  addPoint(QPointF(100, -100));
-  setShapeFlags(true);
-  mpGraphicsView->addItem(this);
+  setPos(mOrigin);
+  setRotation(mRotation);
+  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
 LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
@@ -190,6 +126,56 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pStartComponent, C
   mPoints = points;
   mOrigin = QPointF(0, 0);
   // set the graphics view
+  mpGraphicsView->addItem(this);
+}
+
+LineAnnotation::LineAnnotation(Component *pParent)
+  : ShapeAnnotation(pParent)
+{
+  setLineType(LineAnnotation::ComponentType);
+  setStartComponent(0);
+  setEndComponent(0);
+  // set the default values
+  GraphicItem::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // create a red cross
+  setLineColor(QColor(255, 0, 0));
+  // create a red cross with points
+  addPoint(QPointF(-100, -100));
+  addPoint(QPointF(100, 100));
+  addPoint(QPointF(-100, 100));
+  addPoint(QPointF(100, -100));
+  addPoint(QPointF(-100, -100));
+  addPoint(QPointF(-100, 100));
+  addPoint(QPointF(100, 100));
+  addPoint(QPointF(100, -100));
+  setPos(mOrigin);
+  setRotation(mRotation);
+}
+
+LineAnnotation::LineAnnotation(GraphicsView *pGraphicsView)
+  : ShapeAnnotation(true, pGraphicsView, 0)
+{
+  setLineType(LineAnnotation::ShapeType);
+  setStartComponent(0);
+  setEndComponent(0);
+  // set the default values
+  GraphicItem::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  // create a red cross
+  setLineColor(QColor(255, 0, 0));
+  // create a red cross with points
+  addPoint(QPointF(-100, -100));
+  addPoint(QPointF(100, 100));
+  addPoint(QPointF(-100, 100));
+  addPoint(QPointF(100, -100));
+  addPoint(QPointF(-100, -100));
+  addPoint(QPointF(-100, 100));
+  addPoint(QPointF(100, 100));
+  addPoint(QPointF(100, -100));
+  setShapeFlags(true);
   mpGraphicsView->addItem(this);
 }
 
