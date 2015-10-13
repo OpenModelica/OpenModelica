@@ -1278,30 +1278,22 @@ protected function substitutePartitionOpExps
  Also when clauses are created for boolean clocks."
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.Shared inShared;
-  output BackendDAE.EqSystem outSyst;
+  output BackendDAE.EqSystem outSyst = inSyst;
+protected
+  list<BackendDAE.Equation> newEqs = {};
+  list<BackendDAE.Var> newVars = {};
+  Integer cnt = 1;
+  BackendDAE.Equation eq;
 algorithm
-  outSyst := match inSyst
-    local
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqs;
-      BackendDAE.EqSystem syst;
-      list<BackendDAE.Equation> newEqs = {};
-      list<BackendDAE.Var> newVars = {};
-      Integer cnt = 1;
-      BackendDAE.Equation eq;
-    case syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs)
-      algorithm
-        for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
-          eq := BackendEquation.equationNth1(eqs, i);
-          (eq, (newEqs, newVars, cnt, _)) :=
-          BackendEquation.traverseExpsOfEquation(eq, substitutePartitionOpExp, (newEqs, newVars, cnt, inShared));
-          newEqs := eq::newEqs;
-        end for;
-        syst.orderedEqs := BackendEquation.listEquation(listReverse(newEqs));
-        syst.orderedVars := BackendVariable.addVars(newVars, vars);
-      then BackendDAEUtil.clearEqSyst(syst);
-  end match;
-end substitutePartitionOpExps;
+  for i in 1:BackendDAEUtil.equationArraySize(inSyst.orderedEqs) loop
+    eq := BackendEquation.equationNth1(inSyst.orderedEqs, i);
+    (eq, (newEqs, newVars, cnt, _)) := BackendEquation.traverseExpsOfEquation(eq, substitutePartitionOpExp, (newEqs, newVars, cnt, inShared));
+    newEqs := eq::newEqs;
+  end for;
+  outSyst.orderedEqs := BackendEquation.listEquation(listReverse(newEqs));
+  outSyst.orderedVars := BackendVariable.addVars(newVars, inSyst.orderedVars);
+  outSyst := BackendDAEUtil.clearEqSyst(outSyst);
+end substituteParitionOpExps;
 
 protected function substitutePartitionOpExp
   input DAE.Exp inExp;
