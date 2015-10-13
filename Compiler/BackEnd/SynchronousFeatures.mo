@@ -1523,8 +1523,8 @@ algorithm
     case DAE.RCONST() then false;
     case DAE.SCONST() then false;
     case DAE.BCONST() then false;
-    case DAE.CLKCONST() then false;
     case DAE.ENUM_LITERAL() then false;
+    case DAE.CLKCONST() then true;
     else true;
   end match;
   outTpl := match create
