@@ -374,7 +374,6 @@ void printSparseStructure(DATA *data, int stream)
   for(row=0; row < data->simulationInfo.analyticJacobians[index].sizeRows; row++)
   {
     j=0;
-    buffer[0] = '\0';
     for(col=0; i < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[row]; col++)
     {
       if(data->simulationInfo.analyticJacobians[index].sparsePattern.index[i] == col)
@@ -388,6 +387,7 @@ void printSparseStructure(DATA *data, int stream)
       }
       buffer[j++] = ' ';
     }
+    buffer[j] = '\0';
     infoStreamPrint(stream, 0, "%s", buffer);
   }
   messageClose(stream);

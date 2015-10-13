@@ -14,7 +14,7 @@ dassl.c           kinsolSolver.c            linearSystem.c             nonlinear
 delay.c           linearSolverLapack.c      mixedSearchSolver.c        nonlinearSolverNewton.c  newtonIteration.c solver_main.c
 linearSolverLis.c mixedSystem.c             nonlinearSystem.c          stateset.c
 events.c          linearSolverTotalPivot.c  model_help.c               omc_math.c
-external_input.c  linearSolverUmfpack.c     nonlinearSolverHomotopy.c  sym_imp_euler.c)
+external_input.c  linearSolverUmfpack.c     nonlinearSolverHomotopy.c  sym_imp_euler.c sample.c)
 
 SET(solver_headers ../../../../3rdParty/Cdaskr/solver/ddaskr_types.h
 dassl.h    external_input.h          linearSolverUmfpack.h  nonlinearSolverHomotopy.h  radau.h
