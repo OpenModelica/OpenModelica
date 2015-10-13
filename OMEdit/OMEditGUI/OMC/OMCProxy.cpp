@@ -1364,38 +1364,45 @@ QList<QString> OMCProxy::parseString(QString value, QString fileName)
 }
 
 /*!
-  Creates a new class in OMC.
-  \param type - the class type.
-  \param className - the class name.
-  \return true on success.
-  */
-bool OMCProxy::createClass(QString type, QString className, QString extendsClass)
+ * \brief OMCProxy::createClass
+ * Creates a new class in OMC.
+ * \param type - the class type.
+ * \param className - the class name.
+ * \param pExtendsLibraryTreeItem - the extends class.
+ * \return
+ */
+bool OMCProxy::createClass(QString type, QString className, LibraryTreeItem *pExtendsLibraryTreeItem)
 {
   QString expression;
-  if (extendsClass.isEmpty()) {
-    expression = type + " " + className + " end " + className + ";";
+  if (!pExtendsLibraryTreeItem) {
+    expression = QString("%1 %2 end %3;").arg(type).arg(className).arg(className);
   } else {
-    expression = type + " " + className + " extends " + extendsClass + "; end " + className + ";";
+    expression = QString("%1 %2 extends %3; end %4;").arg(type).arg(className).arg(pExtendsLibraryTreeItem->getNameStructure())
+        .arg(className);
   }
   return loadString(expression, className, Helper::utf8, false);
 }
 
 /*!
-  Creates a new sub class in OMC.
-  \param type - the class type.
-  \param className - the class name.
-  \param parentClassName - the parent class name.
-  \return true on success.
-  */
-bool OMCProxy::createSubClass(QString type, QString className, QString parentClassName, QString extendsClass)
+ * \brief OMCProxy::createSubClass
+ * Creates a new sub class in OMC.
+ * \param type - the class type.
+ * \param className - the class name.
+ * \param pParentLibraryTreeItem - the parent class.
+ * \param pExtendsLibraryTreeItem - the extends class.
+ * \return
+ */
+bool OMCProxy::createSubClass(QString type, QString className, LibraryTreeItem *pParentLibraryTreeItem,
+                              LibraryTreeItem *pExtendsLibraryTreeItem)
 {
   QString expression;
-  if (extendsClass.isEmpty()) {
-    expression = "within " + parentClassName + "; " + type + " " + className + " end " + className + ";";
+  if (!pExtendsLibraryTreeItem) {
+    expression = QString("within %1; %2 %3 end %4;").arg(pParentLibraryTreeItem->getNameStructure()).arg(type).arg(className).arg(className);
   } else {
-    expression = "within " + parentClassName + "; " + type + " " + className + " extends " + extendsClass + "; end " + className + ";";
+    expression = QString("within %1; %2 %3 extends %4; end %5;").arg(pParentLibraryTreeItem->getNameStructure()).arg(type).arg(className)
+        .arg(pExtendsLibraryTreeItem->getNameStructure()).arg(className);
   }
-  return loadString(expression, StringHandler::getFirstWordBeforeDot(parentClassName), Helper::utf8, false);
+  return loadString(expression, pParentLibraryTreeItem->getClassInformation().fileName, Helper::utf8, false);
 }
 
 /*!

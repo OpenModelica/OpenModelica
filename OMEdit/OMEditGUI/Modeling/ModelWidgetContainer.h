@@ -355,10 +355,11 @@ public:
   GraphicsView* getIconGraphicsView() {return mpIconGraphicsView;}
   QUndoStack* getUndoStack() {return mpUndoStack;}
   BaseEditor* getEditor() {return mpEditor;}
-  void setReloadNeeded(bool reloadNeeded) {mReloadNeeded = reloadNeeded;}
-  bool isReloadNeeded() {return mReloadNeeded;}
   void setModelFilePathLabel(QString path) {mpModelFilePathLabel->setText(path);}
   Label* getCursorPositionLabel() {return mpCursorPositionLabel;}
+  bool isLoadedWidgetComponents() {return mloadWidgetComponents;}
+  void setReloadNeeded(bool reloadNeeded) {mReloadNeeded = reloadNeeded;}
+  bool isReloadNeeded() {return mReloadNeeded;}
   void loadModelWidget();
   void addInheritedClass(LibraryTreeItem *pLibraryTreeItem);
   void removeInheritedClass(InheritedClass *pInheritedClass) {mInheritedClassesList.removeOne(pInheritedClass);}

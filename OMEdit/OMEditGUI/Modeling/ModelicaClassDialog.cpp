@@ -287,33 +287,32 @@ void ModelicaClassDialog::createModelicaClass()
     return;
   }
   /* if extends class doesn't exist. */
+  LibraryTreeModel *pLibraryTreeModel = mpMainWindow->getLibraryWidget()->getLibraryTreeModel();
+  LibraryTreeItem *pExtendsLibraryTreeItem = 0;
   if (!mpExtendsClassTextBox->text().isEmpty()) {
-    if (!mpMainWindow->getOMCProxy()->existClass(mpExtendsClassTextBox->text())) {
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
-                              GUIMessages::EXTENDS_CLASS_NOT_FOUND).arg(mpExtendsClassTextBox->text()), Helper::ok);
+    pExtendsLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mpExtendsClassTextBox->text());
+    if (!pExtendsLibraryTreeItem) {
+      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                            GUIMessages::getMessage(GUIMessages::EXTENDS_CLASS_NOT_FOUND).arg(mpExtendsClassTextBox->text()), Helper::ok);
       return;
     }
   }
   /* if insert in class doesn't exist. */
+  LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeModel->getRootLibraryTreeItem();
   if (!mpParentClassTextBox->text().isEmpty()) {
-    if (!mpMainWindow->getOMCProxy()->existClass(mpParentClassTextBox->text())) {
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
-                              GUIMessages::INSERT_IN_CLASS_NOT_FOUND).arg(mpParentClassTextBox->text()), Helper::ok);
+    pParentLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mpParentClassTextBox->text());
+    if (!pParentLibraryTreeItem) {
+      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                            GUIMessages::getMessage(GUIMessages::INSERT_IN_CLASS_NOT_FOUND).arg(mpParentClassTextBox->text()), Helper::ok);
       return;
     }
   }
   /* if insert in class is system library. */
-  LibraryTreeModel *pLibraryTreeModel = mpMainWindow->getLibraryWidget()->getLibraryTreeModel();
-  LibraryTreeItem *pParentLibraryTreeItem = 0;
-  if (!mpParentClassTextBox->text().isEmpty()) {
-    pParentLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mpParentClassTextBox->text());
-  }
-  if (pParentLibraryTreeItem) {
-    if (pParentLibraryTreeItem->isSystemLibrary()) {
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
-                              GUIMessages::INSERT_IN_SYSTEM_LIBRARY_NOT_ALLOWED).arg(mpParentClassTextBox->text()), Helper::ok);
-      return;
-    }
+  if (pParentLibraryTreeItem && pParentLibraryTreeItem->isSystemLibrary()) {
+    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                          GUIMessages::getMessage(GUIMessages::INSERT_IN_SYSTEM_LIBRARY_NOT_ALLOWED)
+                          .arg(mpParentClassTextBox->text()), Helper::ok);
+    return;
   }
   QString model, parentPackage;
   if (mpParentClassTextBox->text().isEmpty()) {
@@ -335,29 +334,26 @@ void ModelicaClassDialog::createModelicaClass()
   modelicaClass.append(mpPartialCheckBox->isChecked() ? "partial " : "");
   modelicaClass.append(mpSpecializationComboBox->currentText().toLower());
   if (mpParentClassTextBox->text().isEmpty()) {
-    if (!mpMainWindow->getOMCProxy()->createClass(modelicaClass, mpNameTextBox->text().trimmed(), mpExtendsClassTextBox->text().trimmed())) {
+    if (!mpMainWindow->getOMCProxy()->createClass(modelicaClass, mpNameTextBox->text().trimmed(), pExtendsLibraryTreeItem)) {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
                               GUIMessages::ERROR_OCCURRED).arg(mpMainWindow->getOMCProxy()->getErrorString()).append("\n\n").
                             append(GUIMessages::getMessage(GUIMessages::NO_OPENMODELICA_KEYWORDS)), Helper::ok);
       return;
     }
   } else {
-    if (!mpMainWindow->getOMCProxy()->createSubClass(modelicaClass, mpNameTextBox->text().trimmed(), mpParentClassTextBox->text().trimmed(), mpExtendsClassTextBox->text().trimmed())) {
+    if (!mpMainWindow->getOMCProxy()->createSubClass(modelicaClass, mpNameTextBox->text().trimmed(), pParentLibraryTreeItem, pExtendsLibraryTreeItem)) {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
                               GUIMessages::ERROR_OCCURRED).arg(mpMainWindow->getOMCProxy()->getErrorString()).append("\n\n").
                             append(GUIMessages::getMessage(GUIMessages::NO_OPENMODELICA_KEYWORDS)), Helper::ok);
       return;
     }
   }
-  //open the new tab in central widget and add the model to library tree.
+  // open the new tab in central widget and add the model to library tree.
   LibraryTreeItem *pLibraryTreeItem;
   bool wasNonExisting = false;
-  if (pParentLibraryTreeItem) {
-    pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pParentLibraryTreeItem, wasNonExisting, false, false, true);
-  } else {
-    pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pLibraryTreeModel->getRootLibraryTreeItem(), wasNonExisting, false, false, true);
-  }
+  pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pParentLibraryTreeItem, wasNonExisting, false, false, true);
   pLibraryTreeItem->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeItem::SaveInOneFile : LibraryTreeItem::SaveFolderStructure);
+  pLibraryTreeModel->updateLibraryTreeItemClassText(pLibraryTreeItem);
   if (wasNonExisting) {
     // load the LibraryTreeItem pixmap
     pLibraryTreeModel->loadLibraryTreeItemPixmap(pLibraryTreeItem);

@@ -2292,6 +2292,20 @@ void ModelWidget::loadModelWidget()
     drawModelInheritedConnections();
     getModelConnections();
     mpUndoStack->clear();
+    if (mloadWidgetComponents) {
+      // set Project Status Bar lables
+      mpReadOnlyLabel->setText(mpLibraryTreeItem->isReadOnly() ? Helper::readOnly : tr("Writable"));
+      setModelFilePathLabel(mpLibraryTreeItem->getFileName());
+      // documentation view tool button
+      mpFileLockToolButton->setIcon(QIcon(mpLibraryTreeItem->isReadOnly() ? ":/Resources/icons/lock.svg" : ":/Resources/icons/unlock.svg"));
+      mpFileLockToolButton->setText(mpLibraryTreeItem->isReadOnly() ? tr("Make writable") : tr("File is writable"));
+      mpFileLockToolButton->setToolTip(mpFileLockToolButton->text());
+      mpFileLockToolButton->setEnabled(mpLibraryTreeItem->isReadOnly() && !mpLibraryTreeItem->isSystemLibrary());
+      mpModelicaTypeLabel->setText(StringHandler::getModelicaClassType(mpLibraryTreeItem->getRestriction()));
+      // modelica text editor
+      ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpEditor);
+      pModelicaTextEditor->setPlainText(mpLibraryTreeItem->getClassText());
+    }
   }
 }
 
