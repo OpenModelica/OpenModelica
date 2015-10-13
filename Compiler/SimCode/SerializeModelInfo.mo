@@ -941,6 +941,10 @@ algorithm
       equation
         File.write(file,"dummy state");
       then ();
+    case BackendDAE.CLOCKED_STATE()
+      equation
+        File.write(file,"clocked state");
+      then ();
     case BackendDAE.DISCRETE()
       equation
         File.write(file,"discrete");

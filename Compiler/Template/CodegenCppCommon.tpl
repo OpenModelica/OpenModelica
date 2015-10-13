@@ -1734,7 +1734,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     '_discrete_events->pre(<%var1%>)'
 
   case CALL(path=IDENT(name="previous"), expLst={arg as CREF(__)}) then
-    '_$CLKPRE_P<%cref(arg.componentRef, useFlatArrayNotation)%>'
+    '<%cref(crefPrefixPrevious(arg.componentRef), useFlatArrayNotation)%>'
 
   case CALL(path=IDENT(name="$getPart"), expLst={e1}) then
     daeExp(e1, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)

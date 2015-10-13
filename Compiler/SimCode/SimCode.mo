@@ -629,6 +629,12 @@ public uniontype FmiDerivatives
   end FMIDERIVATIVES;
 end FmiDerivatives;
 
+public uniontype FmiDiscreteStates
+  record FMIDISCRETESTATES
+    list<FmiUnknown> fmiUnknownsList;
+  end FMIDISCRETESTATES;
+end FmiDiscreteStates;
+
 public uniontype FmiInitialUnknowns
   record FMIINITIALUNKNOWNS
     list<FmiUnknown> fmiUnknownsList;
@@ -639,6 +645,7 @@ public uniontype FmiModelStructure
   record FMIMODELSTRUCTURE
     FmiOutputs fmiOutputs;
     FmiDerivatives fmiDerivatives;
+    FmiDiscreteStates fmiDiscreteStates;
     FmiInitialUnknowns fmiInitialUnknowns;
   end FMIMODELSTRUCTURE;
 end FmiModelStructure;

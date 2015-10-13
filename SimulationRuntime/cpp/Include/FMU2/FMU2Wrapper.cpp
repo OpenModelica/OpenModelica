@@ -266,6 +266,7 @@ fmi2Status FMU2Wrapper::setClock(const fmi2Integer clockIndex[],
     _clock_buffer[clockIndex[i] - 1] = true;
     _nclock_active ++;
   }
+  _need_update = true;
   return fmi2OK;
 }
 
@@ -344,7 +345,6 @@ fmi2Status FMU2Wrapper::newDiscreteStates(fmi2EventInfo *eventInfo)
       // reset clocks
       std::fill(_clock_buffer, _clock_buffer + _model->getDimClock(), false);
       _nclock_active = 0;
-      _model->setClock(_clock_buffer);
     }
   }
   // Check if an Zero Crossings happend

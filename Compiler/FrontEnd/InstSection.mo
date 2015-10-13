@@ -3796,6 +3796,8 @@ algorithm
     case (DAE.T_STRING(), _, _) then ();
     case (DAE.T_BOOL(), _, _) then ();
     case (DAE.T_ENUMERATION(), _, _) then ();
+    // clocks TODO! FIXME! check if +std=3.3
+    case (DAE.T_CLOCK(), _, _) then ();
 
     case (DAE.T_COMPLEX(complexClassType = state), _, _)
       equation

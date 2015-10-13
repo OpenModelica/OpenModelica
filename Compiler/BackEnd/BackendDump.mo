@@ -2309,6 +2309,7 @@ algorithm
     case BackendDAE.STATE_DER()   then "STATE_DER";
     case BackendDAE.DUMMY_DER()   then "DUMMY_DER";
     case BackendDAE.DUMMY_STATE() then "DUMMY_STATE";
+    case BackendDAE.CLOCKED_STATE()  then "CLOCKED_STATE";
     case BackendDAE.DISCRETE()    then "DISCRETE";
     case BackendDAE.PARAM()       then "PARAM";
     case BackendDAE.CONST()       then "CONST";

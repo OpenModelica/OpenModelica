@@ -4867,7 +4867,8 @@ algorithm
         (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
         (cache, factor, prop2, _) = elabExpInExpression(cache,env,afactor,impl,NONE(),true,pre,info);
         (factor,_) = Types.matchType(factor,Types.getPropType(prop2),DAE.T_INTEGER_DEFAULT,true);
-        true = Expression.expInt(factor) >= 0;
+        // TODO! FIXME! you cannot do this as it will fail for parameters!
+        // true = Expression.expInt(factor) >= 0;
         ty1 = Types.arrayElementType(Types.getPropType(prop1));
         ty =  DAE.T_FUNCTION(
                 {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
@@ -4926,7 +4927,8 @@ algorithm
         (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
         (cache, factor, prop2, _) = elabExpInExpression(cache,env,afactor,impl,NONE(),true,pre,info);
         (factor,_) = Types.matchType(factor,Types.getPropType(prop2),DAE.T_INTEGER_DEFAULT,true);
-        true = Expression.expInt(factor) >= 0;
+        // TODO! FIXME! you cannot do this as it will fail for parameters!
+        // true = Expression.expInt(factor) >= 0;
         ty1 = Types.arrayElementType(Types.getPropType(prop1));
         ty =  DAE.T_FUNCTION(
                 {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
@@ -4969,7 +4971,8 @@ algorithm
         (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
         (cache, shiftCounter, prop2, _) = elabExpInExpression(cache,env,ashiftCounter,impl,NONE(),true,pre,info);
         (shiftCounter,_) = Types.matchType(shiftCounter,Types.getPropType(prop2),DAE.T_INTEGER_DEFAULT,true);
-        true = Expression.expInt(shiftCounter) >= 0;
+        // TODO! FIXME! you cannot do this as it will fail for parameters!
+        // true = Expression.expInt(shiftCounter) >= 0;
         aresolution = Absyn.INTEGER(1);
         ty1 = Types.arrayElementType(Types.getPropType(prop1));
         ty =  DAE.T_FUNCTION(
@@ -4989,10 +4992,12 @@ algorithm
         (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
         (cache, shiftCounter, prop2, _) = elabExpInExpression(cache,env,ashiftCounter,impl,NONE(),true,pre,info);
         (shiftCounter,_) = Types.matchType(shiftCounter,Types.getPropType(prop2),DAE.T_INTEGER_DEFAULT,true);
-        true = Expression.expInt(shiftCounter) >= 0;
+        // TODO! FIXME! you cannot do this as it will fail for parameters!
+        // true = Expression.expInt(shiftCounter) >= 0;
         (cache, resolution, prop3, _) = elabExpInExpression(cache,env,aresolution,impl,NONE(),true,pre,info);
         (resolution,_) = Types.matchType(resolution,Types.getPropType(prop3),DAE.T_INTEGER_DEFAULT,true);
-        true = Expression.expInt(resolution) >= 1;
+        // TODO! FIXME! you cannot do this as it will fail for parameters!
+        // true = Expression.expInt(resolution) >= 1;
         ty1 = Types.arrayElementType(Types.getPropType(prop1));
         ty =  DAE.T_FUNCTION(
                 {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
@@ -5037,7 +5042,8 @@ algorithm
         (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
         (cache, backCounter, prop2, _) = elabExpInExpression(cache,env,abackCounter,impl,NONE(),true,pre,info);
         (backCounter,_) = Types.matchType(backCounter,Types.getPropType(prop2),DAE.T_INTEGER_DEFAULT,true);
-        true = Expression.expInt(backCounter) >= 0;
+        // TODO! FIXME! you cannot do this as it will fail for parameters!
+        // true = Expression.expInt(backCounter) >= 0;
         aresolution = Absyn.INTEGER(1);
         ty1 = Types.arrayElementType(Types.getPropType(prop1));
         ty =  DAE.T_FUNCTION(
@@ -5057,10 +5063,12 @@ algorithm
         (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
         (cache, backCounter, prop2, _) = elabExpInExpression(cache,env,abackCounter,impl,NONE(),true,pre,info);
         (backCounter,_) = Types.matchType(backCounter,Types.getPropType(prop2),DAE.T_INTEGER_DEFAULT,true);
-        true = Expression.expInt(backCounter) >= 0;
+        // TODO! FIXME! you cannot do this as it will fail for parameters!
+        // true = Expression.expInt(backCounter) >= 0;
         (cache, resolution, prop3, _) = elabExpInExpression(cache,env,aresolution,impl,NONE(),true,pre,info);
         (resolution,_) = Types.matchType(resolution,Types.getPropType(prop3),DAE.T_INTEGER_DEFAULT,true);
-        true = Expression.expInt(resolution) >= 1;
+        // TODO! FIXME! you cannot do this as it will fail for parameters!
+        // true = Expression.expInt(resolution) >= 1;
         ty1 = Types.arrayElementType(Types.getPropType(prop1));
         ty =  DAE.T_FUNCTION(
                 {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),

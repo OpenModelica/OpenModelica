@@ -248,7 +248,7 @@ clean:
 	(! test -f $(EXTERNALCBUILDDIR)/Makefile) || make -C $(EXTERNALCBUILDDIR) distclean
 
 sourcedist:
-	$(MAKE) OMC_MINIMAL_RUNTIME=1 OMC_FMI_RUNTIME=1 sourcedist_internal
+	$(MAKE) -f $(LIBMAKEFILE) OMC_MINIMAL_RUNTIME=1 OMC_FMI_RUNTIME=1 sourcedist_internal
 
 sourcedist_internal:
 	mkdir -p $(builddir_inc)/c/external_solvers external_solvers

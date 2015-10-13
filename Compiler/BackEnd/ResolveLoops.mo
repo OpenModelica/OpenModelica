@@ -1304,137 +1304,112 @@ end listLengthIs;
 
 public function partitionBipartiteGraph "author: Waurich TUD 2013-12
   checks if there are independent subgraphs in the BIPARTITE graph. the given
-  indeces refer to the equation indeces (rows in the incidenceMatrix)
-  The varCrossNodes will divide/cut the partitions."
+  indeces refer to the equation indeces (rows in the incidenceMatrix)."
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
   output array<list<Integer>> partitionsOut;
 protected
-  Integer numParts, numRows, startNode;
-  array<Integer> markNodes;
-  array<list<Integer>> partitions;
-  list<Integer> emptyRows, range, fullRows;
+  Integer numEqs, numVars;
+  array<Integer> markEqs, markVars;
+  list<list<Integer>> partitions;
 algorithm
-  numRows := arrayLength(m);
-  range := List.intRange(numRows);
-  emptyRows := List.fold1(range, arrayGetIsEmptyLst, m, {});
-  (_,fullRows,_) := List.intersection1OnTrue(range,emptyRows,intEq);
-  startNode := listHead(fullRows);
-  // mark the nodes
-  markNodes := arrayCreate(arrayLength(m),0);
-  List.map2_0(emptyRows,Array.updateIndexFirst,-1,markNodes);
-  (markNodes,numParts) := colorNodePartitions(m,mT,{startNode},emptyRows,markNodes,1);
-  partitions := arrayCreate(numParts,{});
-  partitionsOut := List.fold1(fullRows,getPartitions,markNodes,partitions);
+  numEqs := arrayLength(m);
+  numVars := arrayLength(mT);
+  markEqs := arrayCreate(numEqs,-1);
+  markVars := arrayCreate(numVars,-1);
+  (_,partitions) := colorNodePartitions(m,mT,{1},markEqs,markVars,1,{});
+  partitionsOut := listArray(partitions);
 end partitionBipartiteGraph;
 
-protected function getPartitions "author:Waurich TUD 2013-12
-  goes through the markedArray and writes the index to the corresponding (the
-  entry in the marked array) partition section."
-  input Integer idx;
-  input array<Integer> markedArray;
-  input array<list<Integer>> partitionArrayIn;
-  output array<list<Integer>> partitionArrayOut;
-protected
-  Boolean b;
-  Integer entry;
-  list<Integer> partition;
-algorithm
-  entry := arrayGet(markedArray,idx);
-  partition := arrayGet(partitionArrayIn,entry);
-  partition := idx::partition;
-  partitionArrayOut := arrayUpdate(partitionArrayIn,entry,partition);
-end getPartitions;
-
 protected function colorNodePartitions "author:Waurich TUD 2013-12
-  helper for partitionsGraph1."
+  helper for partitionsGraph1. Traverse the graph in a BFS manner.
+  mark all visited nodes, gather partitions, color mark-arrays"
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
   input list<Integer> checkNextIn;
-  input list<Integer> alreadyChecked;
-  input array<Integer> markNodesIn;
+  input array<Integer> markEqs;
+  input array<Integer> markVars;
   input Integer currNumberIn;
-  output array<Integer> markNodesOut;
+  input list<list<Integer>> partitionsIn;
   output Integer currNumberOut;
+  output list<list<Integer>> partitionsOut;
 protected
   Boolean hasChanged;
-  Integer node, currNumber;
+  Integer eq, currNumber;
   array<Integer> markNodes;
-  list<Integer> rest, vars, nextEqs, eqs, checked;
+  list<Integer> rest, vars, addEqs, eqs, part;
+  list<list<Integer>> restPart, partitions;
 algorithm
- (markNodesOut,currNumberOut) := matchcontinue(m,mT,checkNextIn,alreadyChecked,markNodesIn,currNumberIn)
+  (currNumberOut,partitionsOut) := matchcontinue(m,mT,checkNextIn,markEqs,markVars,currNumberIn,partitionsIn)
     local
-    case(_,_,{0},_,_,_)
+    case(_,_,{0},_,_,_,_)
       equation
+        //found no unassigned eqnode
         currNumber = currNumberIn-1;
         then
-          (markNodesIn,currNumber);
-    case(_,_,node::rest,_,_,_)
+          (currNumber, partitionsIn);
+    case(_,_,eq::rest,_,_,_,partitions)
       equation
-        // get adjacent equation nodes
-        checked = node::alreadyChecked;
-        vars = arrayGet(m,node);
-        true = not listEmpty(vars);
-        eqs = List.fold1(vars,getArrayEntryAndAppend,mT,{});
-        (_,eqs,_) = List.intersection1OnTrue(eqs,checked,intEq);
+        //check unassigned node
+        if arrayGetIsNotPositive(eq,markEqs) then
+          //mark this eq and add to partition
+          arrayUpdate(markEqs, eq, currNumberIn);
+          if listEmpty(partitions) then
+            partitions = {{eq}};
+          else
+            part::restPart = partitions;
+            part = eq::part;
+            partitions = part::restPart;
+          end if;
 
-        //write the eq as marked in the array and check if this is a new equation
-        (markNodes,hasChanged) = arrayUpdateAndCheckChange(node,currNumberIn,markNodesIn);
-        // get the next nodes
-        nextEqs = listAppend(eqs,rest);
-        nextEqs = List.unique(nextEqs);
-        (markNodes,currNumber) = colorNodePartitions(m,mT,nextEqs,checked,markNodes,currNumberIn);
+          // get adjacent equation nodes
+          vars = arrayGet(m,eq);
+          true = not listEmpty(vars);
+
+          //all vars that havent been traversed
+          vars = List.filter1OnTrue(vars,arrayGetIsNotPositive,markVars);
+          List.map2_0(vars,Array.updateIndexFirst,currNumberIn,markVars);
+
+          //all eqs that havent been traversed
+          eqs = List.fold1(vars,getArrayEntryAndAppend,mT,{});
+          eqs = List.filter1OnTrue(eqs,arrayGetIsNegative,markEqs); // all new equations which havent been queued
+          List.map2_0(eqs,Array.updateIndexFirst,0,markEqs);
+
+          // check them later
+          rest = listAppend(rest,eqs);
+        else
+          //the node has been investigated already
+          partitions = partitionsIn;
+        end if;
+        (currNumber,partitions) = colorNodePartitions(m,mT,rest,markEqs,markVars,currNumberIn,partitions);
       then
-        (markNodes,currNumber);
+        (currNumber,partitions);
 
-    case(_,_,{},_,_,_)
+    case(_,_,{},_,_,_,_)
       equation
-        node = Array.position(markNodesIn,0);
-        (markNodes,currNumber) = colorNodePartitions(m,mT,{node},alreadyChecked,markNodesIn,currNumberIn+1);
+        //nothing left in this partition
+        eq = Array.position(markEqs,-1);
+        (currNumber,partitions) = colorNodePartitions(m,mT,{eq},markEqs,markVars,currNumberIn+1,{}::partitionsIn);
         then
-          (markNodes,currNumber);
+          (currNumber,partitions);
   end matchcontinue;
 end colorNodePartitions;
 
-protected function arrayUpdateAndCheckChange
-  input Integer eq;
-  input Integer currNumber;
-  input array<Integer> markNodesIn;
-  output array<Integer> markNodesOut;
-  output Boolean changedOut;
-algorithm
-  (markNodesOut,changedOut) := match(eq,currNumber,markNodesIn)
-    local
-      Boolean hasChanged, isAnotherPartition;
-      Integer entry;
-      array<Integer> markNodes;
-    case(_,_,_)
-      equation
-        entry = arrayGet(markNodesIn,eq);
-        hasChanged = intEq(entry,0);
-        isAnotherPartition = intNe(entry,currNumber);
-        isAnotherPartition = boolAnd(boolNot(hasChanged),isAnotherPartition);
-        if isAnotherPartition then
-          print("in arrayUpdateAndGetNextEqs: "+intString(eq)+" cannot be assigned to a partition.check this"+"\n");
-        end if;
-        markNodes = arrayUpdate(markNodesIn,eq,currNumber);
-      then
-        (markNodes,hasChanged);
-  end match;
-end arrayUpdateAndCheckChange;
-
-protected function arrayGetIsEmptyLst
+protected function arrayGetIsNotPositive" outputs true if the indexed entry is not zero."
   input Integer idx;
-  input array<list<Integer>> arrayIn;
-  input list<Integer> lstIn;
-  output list<Integer> lstOut;
-protected
-  list<Integer> row;
+  input array<Integer> arrayIn;
+  output Boolean isNonZero;
 algorithm
-  row := arrayGet(arrayIn,idx);
-  row := if listEmpty(row) then {idx} else {};
-  lstOut := listAppend(lstIn,row);
-end arrayGetIsEmptyLst;
+  isNonZero := arrayGet(arrayIn,idx) <= 0;
+end arrayGetIsNotPositive;
+
+protected function arrayGetIsNegative" outputs true if the indexed entry is negative."
+  input Integer idx;
+  input array<Integer> arrayIn;
+  output Boolean isNonZero;
+algorithm
+  isNonZero := arrayGet(arrayIn,idx) < 0;
+end arrayGetIsNegative;
 
 protected function getArrayEntryAndAppend
   input Integer entry;

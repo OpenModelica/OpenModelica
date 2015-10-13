@@ -700,6 +700,12 @@ package SimCode
     end FMIDERIVATIVES;
   end FmiDerivatives;
 
+  uniontype FmiDiscreteStates
+    record FMIDISCRETESTATES
+      list<FmiUnknown> fmiUnknownsList;
+    end FMIDISCRETESTATES;
+  end FmiDiscreteStates;
+
   uniontype FmiInitialUnknowns
     record FMIINITIALUNKNOWNS
       list<FmiUnknown> fmiUnknownsList;
@@ -710,6 +716,7 @@ package SimCode
     record FMIMODELSTRUCTURE
       FmiOutputs fmiOutputs;
       FmiDerivatives fmiDerivatives;
+      FmiDiscreteStates fmiDiscreteStates;
       FmiInitialUnknowns fmiInitialUnknowns;
     end FMIMODELSTRUCTURE;
   end FmiModelStructure;
@@ -994,6 +1001,9 @@ package BackendDAE
     record STATE_DER end STATE_DER;
     record DUMMY_DER end DUMMY_DER;
     record DUMMY_STATE end DUMMY_STATE;
+    record CLOCKED_STATE
+      DAE.ComponentRef previousName "the name of the previous variable";
+    end CLOCKED_STATE;
     record DISCRETE end DISCRETE;
     record PARAM end PARAM;
     record CONST end CONST;
@@ -2977,6 +2987,11 @@ package ComponentReference
     input DAE.ComponentRef inComponentRef;
     output DAE.ComponentRef outComponentRef;
   end crefArrayGetFirstCref;
+
+  function crefPrefixPrevious
+    input DAE.ComponentRef inCref;
+    output DAE.ComponentRef outCref;
+  end crefPrefixPrevious;
 end ComponentReference;
 
 package Expression
