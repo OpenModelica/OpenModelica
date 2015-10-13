@@ -18,6 +18,6 @@ simulate(ServoSystem3.Aufgabe4_3b);  getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ServoSystem3.Aufgabe4_3b', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "[Modelica 3.2.1/Electrical/Machines.mo:12806:7-12807:76:writable] Warning: Parameter servo.motor.DCPM.Js has no value, and is fixed during initialization (fixed=true), using available start value (start=servo.motor.DCPM.Jr) as default value.
+// "[Modelica 3.2.1/Electrical/Machines.mo:12803:7-12804:76:writable] Warning: Parameter servo.motor.DCPM.Js has no value, and is fixed during initialization (fixed=true), using available start value (start=servo.motor.DCPM.Jr) as default value.
 // "
 // endResult

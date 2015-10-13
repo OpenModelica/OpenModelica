@@ -29,6 +29,7 @@ TESTFILES = \
  RecordEnumBinding.mo \
  RecordFuncParam.mo \
  RecordFuncParam.mos \
+ RecordModifications2.mo \
  RecordNonPublic.mo \
  RecordParameters.mos \
  RecordSimple.mo \

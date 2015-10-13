@@ -7,33 +7,33 @@ setModelicaPath("TestLibrary/");
 
 "3.2";
 loadModel(Modelica,{"3.2"});
-getErrorString();getNamedAnnotation(Modelica,version);clear();
+getErrorString();getNamedAnnotation(Modelica,version);clear() and setCommandLineOptions("--std=latest");
 
 "3.2.1";
 loadModel(Modelica,{"3.2.1"});
-getErrorString();getNamedAnnotation(Modelica,version);clear();
+getErrorString();getNamedAnnotation(Modelica,version);clear() and setCommandLineOptions("--std=latest");
 
 "4.1, 3.2";
 loadModel(Modelica,{"4.1","3.2"});
-getErrorString();getNamedAnnotation(Modelica,version);clear();
+getErrorString();getNamedAnnotation(Modelica,version);clear() and setCommandLineOptions("--std=latest");
 
 "4.1, 3.1, 3.2";
 loadModel(Modelica,{"4.1","3.1","3.2"});
-getErrorString();getNamedAnnotation(Modelica,version);clear();
+getErrorString();getNamedAnnotation(Modelica,version);clear() and setCommandLineOptions("--std=latest");
 
 "default, 3.2";
 loadModel(Modelica,{"default","3.2"});
-getErrorString();getNamedAnnotation(Modelica,version);clear();
+getErrorString();getNamedAnnotation(Modelica,version);clear() and setCommandLineOptions("--std=latest");
 "3.3 beta1, default, 3.2";
 loadModel(Modelica,{"3.3 beta1","default","3.2"});
-getErrorString();getNamedAnnotation(Modelica,version);clear();
+getErrorString();getNamedAnnotation(Modelica,version);clear() and setCommandLineOptions("--std=latest");
 "3.4 beta1";
 loadModel(Modelica,{"3.4 beta1"});
-getErrorString();getNamedAnnotation(Modelica,version);clear();
+getErrorString();getNamedAnnotation(Modelica,version);clear() and setCommandLineOptions("--std=latest");
 
 "3.4";
 loadModel(Modelica,{"3.4"});
-getErrorString();getNamedAnnotation(Modelica,version);clear();
+getErrorString();getNamedAnnotation(Modelica,version);clear() and setCommandLineOptions("--std=latest");
 
 "3.5 beta1";
 loadModel(Modelica,{"3.5 beta1"});
@@ -41,11 +41,11 @@ getErrorString();
 
 "CustomSort";
 loadModel(Modelica,{"CustomSort"});
-getErrorString();getNamedAnnotation(Modelica,version);clear();
+getErrorString();getNamedAnnotation(Modelica,version);clear() and setCommandLineOptions("--std=latest");
 
 "XYZ";
 loadModel(ABC,{"XYZ"});
-getErrorString();getNamedAnnotation(ABC,version);clear();
+getErrorString();getNamedAnnotation(ABC,version);clear() and setCommandLineOptions("--std=latest");
 
 "Invalid";
 loadModel(Invalid);getErrorString();
@@ -69,26 +69,22 @@ loadModel(Invalid);getErrorString();
 // true
 // "4.1, 3.1, 3.2"
 // true
-// "Notification: Modelica language version set to 3.1 due to loading of MSL 3.1.
-// "
+// ""
 // {"3.1"}
 // true
 // "default, 3.2"
 // true
-// "Notification: Modelica language version set to 3.2 due to loading of MSL 3.2.1.
-// "
+// ""
 // {"3.2.1"}
 // true
 // "3.3 beta1, default, 3.2"
 // true
-// "Notification: Modelica language version set to 3.3 due to loading of MSL 3.3.
-// "
+// ""
 // {"3.3 beta1"}
 // true
 // "3.4 beta1"
 // true
-// "Notification: Modelica language version set to 3.3 due to loading of MSL 3.4.
-// "
+// ""
 // {"3.4 beta1"}
 // true
 // "3.4"

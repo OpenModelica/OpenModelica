@@ -16,8 +16,6 @@ end EmptyAsubSliceSubscript;
 // Result:
 // class EmptyAsubSliceSubscript
 //   Integer n = 0;
-// equation
-//   arr = {};
 // algorithm
 //   arr := {}[{}[1:n]];
 // end EmptyAsubSliceSubscript;

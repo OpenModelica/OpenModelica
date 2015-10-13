@@ -1294,19 +1294,19 @@ simulate(A); getErrorString();
 //   constant Real cc.m_capgd(quantity = \"Capacitance\", unit = \"F\", min = 0.0) = 0.0;
 // end A;
 // "
-// "[simulation/modelica/records/ATotal.mo:1750:3-1750:176:writable] Error: Variable p: Duplicate modification of element  {start  =(untyped) 0.0}  and  = (typed)0.0 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.0 on component m_lambda.
-// [simulation/modelica/records/ATotal.mo:1750:3-1750:176:writable] Error: Variable p: Duplicate modification of element  {start  =(untyped) 2e-05}  and  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
-// Error: Duplicate modification of element  {start  =(untyped) 0.0}  and  = (typed)0.0 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.0 on component m_lambda.
-// Error: Duplicate modification of element  {start  =(untyped) 2e-05}  and  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
+// "[simulation/modelica/records/ATotal.mo:1750:3-1750:176:writable] Error: Variable p: Duplicate modification of element  {start  =(untyped) 0.0}  and  = (typed)0.0 DAE.PROP(Real, C_CONST), value: 0.0 on component m_lambda.
+// [simulation/modelica/records/ATotal.mo:1750:3-1750:176:writable] Error: Variable p: Duplicate modification of element  {start  =(untyped) 2e-05}  and  = (typed)2e-05 DAE.PROP(Real, C_CONST), value: 2e-05 on component m_transconductance.
+// Error: Duplicate modification of element  {start  =(untyped) 0.0}  and  = (typed)0.0 DAE.PROP(Real, C_CONST), value: 0.0 on component m_lambda.
+// Error: Duplicate modification of element  {start  =(untyped) 2e-05}  and  = (typed)2e-05 DAE.PROP(Real, C_CONST), value: 2e-05 on component m_transconductance.
 // "
 // record SimulationResult
 //     resultFile = "A_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'A', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "[simulation/modelica/records/ATotal.mo:1750:3-1750:176:writable] Error: Variable p: Duplicate modification of element  {start  =(untyped) 0.0}  and  = (typed)0.0 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.0 on component m_lambda.
-// [simulation/modelica/records/ATotal.mo:1750:3-1750:176:writable] Error: Variable p: Duplicate modification of element  {start  =(untyped) 2e-05}  and  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
-// Error: Duplicate modification of element  {start  =(untyped) 0.0}  and  = (typed)0.0 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.0 on component m_lambda.
-// Error: Duplicate modification of element  {start  =(untyped) 2e-05}  and  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
+// "[simulation/modelica/records/ATotal.mo:1750:3-1750:176:writable] Error: Variable p: Duplicate modification of element  {start  =(untyped) 0.0}  and  = (typed)0.0 DAE.PROP(Real, C_CONST), value: 0.0 on component m_lambda.
+// [simulation/modelica/records/ATotal.mo:1750:3-1750:176:writable] Error: Variable p: Duplicate modification of element  {start  =(untyped) 2e-05}  and  = (typed)2e-05 DAE.PROP(Real, C_CONST), value: 2e-05 on component m_transconductance.
+// Error: Duplicate modification of element  {start  =(untyped) 0.0}  and  = (typed)0.0 DAE.PROP(Real, C_CONST), value: 0.0 on component m_lambda.
+// Error: Duplicate modification of element  {start  =(untyped) 2e-05}  and  = (typed)2e-05 DAE.PROP(Real, C_CONST), value: 2e-05 on component m_transconductance.
 // "
 // endResult

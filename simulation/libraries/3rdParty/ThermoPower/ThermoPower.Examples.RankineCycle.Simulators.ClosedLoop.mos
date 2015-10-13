@@ -696,7 +696,7 @@ translateModel(ThermoPower.Examples.RankineCycle.Simulators.ClosedLoop); getErro
 //  * candidate: plant.stateGasInlet.gas.T(nominal = 500.0)
 //  * candidate: plant.stateGasInlet.T(nominal = 300.0)
 // => select value from plant.stateGasInlet.T(nominal = 300.0) for variable: plant.stateGasInlet.T
-// Notification: The given system is mixed-determined.   [index > 0]
+// Notification: The given system is mixed-determined.   [index = 1]
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // Warning: The initial conditions are over specified. Use +d=initialization for more information.
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.

@@ -2,7 +2,7 @@
 // keywords: Simulate, readSimulationData
 // status:   correct
 // teardown_command: rm -rf Alg1 Alg1.* Alg1_* Alg2 Alg2.* Alg2_* Alg3 Alg3.* Alg3_* output.log
-// 
+//
 //  Simulate model containing algortithms and read in data.
 //
 
@@ -78,21 +78,12 @@ val(x4,1.0);
 // 3.0
 // 4.0
 // record SimulationResult
-//     resultFile = "",
+//     resultFile = "Alg4_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Alg4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "Failed to build model: Alg4"
+//     messages = ""
 // end SimulationResult;
 // "Warning: Assuming fixed start value for the following 1 variables:
 //          x:VARIABLE() .Alg4, .Real type: Real
-// [SimCode/SimCodeUtil.mo:6364:9-6364:54:writable] Error: Internal error Inverse Algorithm needs to be solved for {y} in 
-// algorithm
-//   x := $_start(x);
-//   x := 1.0 + y;
-// This has not been implemented yet.
-// [SimCode/SimCodeUtil.mo:6369:7-6369:88:writable] Error: Internal error function createSingleAlgorithmCode failed
-// [SimCode/SimCodeUtil.mo:3915:9-3915:50:writable] Error: Internal error function createOdeSystem failed for component Algorithm 2 {1}
-// [SimCode/SimCodeUtil.mo:2600:9-2600:54:writable] Error: Internal error function createEquationsForSystem1 failed for component Algorithm 2 {1}
-// [SimCode/SimCodeUtil.mo:1760:7-1760:148:writable] Error: Internal error function createSimCode failed [Transformation from optimised DAE to simulation code structure failed]
 // "
 // record SimulationResult
 //     resultFile = "Alg5_res.mat",
@@ -100,7 +91,7 @@ val(x4,1.0);
 //     messages = ""
 // end SimulationResult;
 // "Warning: Assuming fixed start value for the following 2 variables:
-//          x2:VARIABLE() .Alg5, .Real type: Real 
+//          x2:VARIABLE() .Alg5, .Real type: Real
 //          x1:VARIABLE() .Alg5, .Real type: Real
 // "
 // 0.0

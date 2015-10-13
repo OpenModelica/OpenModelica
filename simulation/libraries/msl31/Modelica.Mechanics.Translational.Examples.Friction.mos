@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Mechanics.Translational.Examples.Friction);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.Friction_res.mat",
-  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Translational.Examples.Friction.mat","Modelica.Mechanics.Translational.Examples.Friction_diff.csv",0.01,0.0001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl31/Modelica.Mechanics.Translational.Examples.Friction.mat","Modelica.Mechanics.Translational.Examples.Friction_diff.csv",0.01,0.0001,
   {"stop1.s",
   "stop1.v",
   "stop2.s",

@@ -18,28 +18,6 @@ simulate(ZeroSizeLoopTest); getErrorString();
 //   parameter Integer activation.nOut = 0;
 //   Boolean activation.firingCon = false;
 //   Boolean activation.active;
-// equation
-//   activation.tIn = {};
-//   activation.tOut = {};
-//   activation.tIntIn = {};
-//   activation.tIntOut = {};
-//   activation.arcType = {};
-//   activation.arcWeightIn = {};
-//   activation.arcWeightOut = {};
-//   activation.arcWeightIntIn = {};
-//   activation.arcWeightIntOut = {};
-//   activation.minTokens = {};
-//   activation.maxTokens = {};
-//   activation.minTokensInt = {};
-//   activation.maxTokensInt = {};
-//   activation.fed = {};
-//   activation.emptied = {};
-//   activation.disPlaceIn = {};
-//   activation.disPlaceOut = {};
-//   activation.testValue = {};
-//   activation.testValueInt = {};
-//   activation.normalArc = {};
-//   activation.testChange = {};
 // algorithm
 //   activation.active := true;
 //   activation.active := activation.active and activation.firingCon;

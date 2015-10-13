@@ -7,6 +7,8 @@ overrideFile := uriToFilename("modelica://WasteWater/Resources/ASM1/") + "omc_be
 res:=simulate(WasteWater.ASM1.Examples.SmallPlant, variableFilter="tank[1-3][.]Out.(Q|Salk|Si)", simflags="-overrideFile '" + overrideFile + "'");
 resultFile := res.resultFile;
 if resultFile == "" then
+  messages := res.messages;
+  print(messages);
   exit(1);
 end if;
 echo(true);

@@ -119,7 +119,6 @@ end TestGas_error;
 //   Real gas_pT2.T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 0.0, start = 288.15, nominal = 300.0) = 10.0;
 // equation
 //   gas_pT1.xi = {xi1[1]};
-//   gas_pT2.xi = {};
 //   xi1[1] = 0.0009990009990009992;
 // end TestGas_error;
 // endResult

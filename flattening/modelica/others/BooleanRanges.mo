@@ -20,7 +20,6 @@ end BooleanRanges;
 //   Boolean b4[1];
 // equation
 //   b1 = {false, true};
-//   b2 = {};
 //   b3 = {false};
 //   b4 = {true};
 // end BooleanRanges;

@@ -25,7 +25,7 @@ readFile("BranchingDynamicPipes.mo");
 //   annotation(Protection(access = Access.hide), version = \"3.2.1\", versionBuild = 2, versionDate = \"2013-08-14\", dateModified = \"2013-08-14 08:44:41Z\"); 
 // end ModelicaServices;
 //
-// package Modelica  \"Modelica Standard Library - Version 3.2.1 (Build 3)\" 
+// package Modelica  \"Modelica Standard Library - Version 3.2.1 (Build 4)\" 
 //   extends Modelica.Icons.Package;
 //
 //   package Blocks  \"Library of basic input/output control blocks (continuous, discrete, logical, table blocks)\" 
@@ -2533,93 +2533,6 @@ readFile("BranchingDynamicPipes.mo");
 //           annotation(smoothOrder = 2); 
 //         end thermalConductivity;
 //
-//         package Utilities  \"Utility functions\" 
-//           extends Modelica.Icons.UtilitiesPackage;
-//
-//           function spliceFunction  \"Spline interpolation of two functions\" 
-//             extends Modelica.Icons.Function;
-//             input Real pos \"Returned value for x-deltax >= 0\";
-//             input Real neg \"Returned value for x+deltax <= 0\";
-//             input Real x \"Function argument\";
-//             input Real deltax = 1 \"Region around x with spline interpolation\";
-//             output Real out;
-//           protected
-//             Real scaledX;
-//             Real scaledX1;
-//             Real y;
-//           algorithm
-//             scaledX1 := x / deltax;
-//             scaledX := scaledX1 * Modelica.Math.asin(1);
-//             if scaledX1 <= (-0.999999999) then
-//               y := 0;
-//             elseif scaledX1 >= 0.999999999 then
-//               y := 1;
-//             else
-//               y := (Modelica.Math.tanh(Modelica.Math.tan(scaledX)) + 1) / 2;
-//             end if;
-//             out := pos * y + (1 - y) * neg;
-//             annotation(derivative = spliceFunction_der); 
-//           end spliceFunction;
-//
-//           function spliceFunction_der  \"Derivative of spliceFunction\" 
-//             extends Modelica.Icons.Function;
-//             input Real pos;
-//             input Real neg;
-//             input Real x;
-//             input Real deltax = 1;
-//             input Real dpos;
-//             input Real dneg;
-//             input Real dx;
-//             input Real ddeltax = 0;
-//             output Real out;
-//           protected
-//             Real scaledX;
-//             Real scaledX1;
-//             Real dscaledX1;
-//             Real y;
-//           algorithm
-//             scaledX1 := x / deltax;
-//             scaledX := scaledX1 * Modelica.Math.asin(1);
-//             dscaledX1 := (dx - scaledX1 * ddeltax) / deltax;
-//             if scaledX1 <= (-0.99999999999) then
-//               y := 0;
-//             elseif scaledX1 >= 0.9999999999 then
-//               y := 1;
-//             else
-//               y := (Modelica.Math.tanh(Modelica.Math.tan(scaledX)) + 1) / 2;
-//             end if;
-//             out := dpos * y + (1 - y) * dneg;
-//             if abs(scaledX1) < 1 then
-//               out := out + (pos - neg) * dscaledX1 * Modelica.Math.asin(1) / 2 / (Modelica.Math.cosh(Modelica.Math.tan(scaledX)) * Modelica.Math.cos(scaledX)) ^ 2;
-//             else
-//             end if;
-//           end spliceFunction_der;
-//
-//           function smoothMax  
-//             extends Modelica.Icons.Function;
-//             input Real x1 \"First argument of smooth max operator\";
-//             input Real x2 \"Second argument of smooth max operator\";
-//             input Real dx \"Approximate difference between x1 and x2, below which regularization starts\";
-//             output Real y \"Result of smooth max operator\";
-//           algorithm
-//             y := max(x1, x2) + .Modelica.Math.log(exp(4 / dx * (x1 - max(x1, x2))) + exp(4 / dx * (x2 - max(x1, x2)))) / (4 / dx);
-//             annotation(smoothOrder = 2); 
-//           end smoothMax;
-//
-//           function smoothMax_der  
-//             extends Modelica.Icons.Function;
-//             input Real x1 \"First argument of smooth max operator\";
-//             input Real x2 \"Second argument of smooth max operator\";
-//             input Real dx \"Approximate difference between x1 and x2, below which regularization starts\";
-//             input Real dx1;
-//             input Real dx2;
-//             input Real ddx;
-//             output Real dy \"Derivative of smooth max operator\";
-//           algorithm
-//             dy := (if x1 > x2 then dx1 else dx2) + 0.25 * (((4 * (dx1 - (if x1 > x2 then dx1 else dx2)) / dx - 4 * (x1 - max(x1, x2)) * ddx / dx ^ 2) * .Modelica.Math.exp(4 * (x1 - max(x1, x2)) / dx) + (4 * (dx2 - (if x1 > x2 then dx1 else dx2)) / dx - 4 * (x2 - max(x1, x2)) * ddx / dx ^ 2) * .Modelica.Math.exp(4 * (x2 - max(x1, x2)) / dx)) * dx / (.Modelica.Math.exp(4 * (x1 - max(x1, x2)) / dx) + .Modelica.Math.exp(4 * (x2 - max(x1, x2)) / dx)) + .Modelica.Math.log(.Modelica.Math.exp(4 * (x1 - max(x1, x2)) / dx) + .Modelica.Math.exp(4 * (x2 - max(x1, x2)) / dx)) * ddx);
-//           end smoothMax_der;
-//         end Utilities;
-//
 //         redeclare function extends velocityOfSound  
 //         algorithm
 //           a := sqrt(isentropicExponent(state) * gasConstant(state) * temperature(state));
@@ -2732,6 +2645,93 @@ readFile("BranchingDynamicPipes.mo");
 //         algorithm
 //           h_is := Modelica.Media.Air.MoistAir.h_pTX(p_downstream, Modelica.Media.Air.MoistAir.T_psX(p_downstream, Modelica.Media.Air.MoistAir.specificEntropy(refState), refState.X), refState.X);
 //         end isentropicEnthalpy;
+//
+//         package Utilities  \"Utility functions\" 
+//           extends Modelica.Icons.UtilitiesPackage;
+//
+//           function spliceFunction  \"Spline interpolation of two functions\" 
+//             extends Modelica.Icons.Function;
+//             input Real pos \"Returned value for x-deltax >= 0\";
+//             input Real neg \"Returned value for x+deltax <= 0\";
+//             input Real x \"Function argument\";
+//             input Real deltax = 1 \"Region around x with spline interpolation\";
+//             output Real out;
+//           protected
+//             Real scaledX;
+//             Real scaledX1;
+//             Real y;
+//           algorithm
+//             scaledX1 := x / deltax;
+//             scaledX := scaledX1 * Modelica.Math.asin(1);
+//             if scaledX1 <= (-0.999999999) then
+//               y := 0;
+//             elseif scaledX1 >= 0.999999999 then
+//               y := 1;
+//             else
+//               y := (Modelica.Math.tanh(Modelica.Math.tan(scaledX)) + 1) / 2;
+//             end if;
+//             out := pos * y + (1 - y) * neg;
+//             annotation(derivative = spliceFunction_der); 
+//           end spliceFunction;
+//
+//           function spliceFunction_der  \"Derivative of spliceFunction\" 
+//             extends Modelica.Icons.Function;
+//             input Real pos;
+//             input Real neg;
+//             input Real x;
+//             input Real deltax = 1;
+//             input Real dpos;
+//             input Real dneg;
+//             input Real dx;
+//             input Real ddeltax = 0;
+//             output Real out;
+//           protected
+//             Real scaledX;
+//             Real scaledX1;
+//             Real dscaledX1;
+//             Real y;
+//           algorithm
+//             scaledX1 := x / deltax;
+//             scaledX := scaledX1 * Modelica.Math.asin(1);
+//             dscaledX1 := (dx - scaledX1 * ddeltax) / deltax;
+//             if scaledX1 <= (-0.99999999999) then
+//               y := 0;
+//             elseif scaledX1 >= 0.9999999999 then
+//               y := 1;
+//             else
+//               y := (Modelica.Math.tanh(Modelica.Math.tan(scaledX)) + 1) / 2;
+//             end if;
+//             out := dpos * y + (1 - y) * dneg;
+//             if abs(scaledX1) < 1 then
+//               out := out + (pos - neg) * dscaledX1 * Modelica.Math.asin(1) / 2 / (Modelica.Math.cosh(Modelica.Math.tan(scaledX)) * Modelica.Math.cos(scaledX)) ^ 2;
+//             else
+//             end if;
+//           end spliceFunction_der;
+//
+//           function smoothMax  
+//             extends Modelica.Icons.Function;
+//             input Real x1 \"First argument of smooth max operator\";
+//             input Real x2 \"Second argument of smooth max operator\";
+//             input Real dx \"Approximate difference between x1 and x2, below which regularization starts\";
+//             output Real y \"Result of smooth max operator\";
+//           algorithm
+//             y := max(x1, x2) + .Modelica.Math.log(exp(4 / dx * (x1 - max(x1, x2))) + exp(4 / dx * (x2 - max(x1, x2)))) / (4 / dx);
+//             annotation(smoothOrder = 2); 
+//           end smoothMax;
+//
+//           function smoothMax_der  
+//             extends Modelica.Icons.Function;
+//             input Real x1 \"First argument of smooth max operator\";
+//             input Real x2 \"Second argument of smooth max operator\";
+//             input Real dx \"Approximate difference between x1 and x2, below which regularization starts\";
+//             input Real dx1;
+//             input Real dx2;
+//             input Real ddx;
+//             output Real dy \"Derivative of smooth max operator\";
+//           algorithm
+//             dy := (if x1 > x2 then dx1 else dx2) + 0.25 * (((4 * (dx1 - (if x1 > x2 then dx1 else dx2)) / dx - 4 * (x1 - max(x1, x2)) * ddx / dx ^ 2) * .Modelica.Math.exp(4 * (x1 - max(x1, x2)) / dx) + (4 * (dx2 - (if x1 > x2 then dx1 else dx2)) / dx - 4 * (x2 - max(x1, x2)) * ddx / dx ^ 2) * .Modelica.Math.exp(4 * (x2 - max(x1, x2)) / dx)) * dx / (.Modelica.Math.exp(4 * (x1 - max(x1, x2)) / dx) + .Modelica.Math.exp(4 * (x2 - max(x1, x2)) / dx)) + .Modelica.Math.log(.Modelica.Math.exp(4 * (x1 - max(x1, x2)) / dx) + .Modelica.Math.exp(4 * (x2 - max(x1, x2)) / dx)) * ddx);
+//           end smoothMax_der;
+//         end Utilities;
 //       end MoistAir;
 //     end Air;
 //
@@ -3605,7 +3605,7 @@ readFile("BranchingDynamicPipes.mo");
 //     type NusseltNumber = Real(final quantity = \"NusseltNumber\", final unit = \"1\");
 //     type PrandtlNumber = Real(final quantity = \"PrandtlNumber\", final unit = \"1\");
 //   end SIunits;
-//   annotation(version = \"3.2.1\", versionBuild = 3, versionDate = \"2013-08-14\", dateModified = \"2015-07-30 09:15:00Z\"); 
+//   annotation(version = \"3.2.1\", versionBuild = 4, versionDate = \"2013-08-14\", dateModified = \"2015-09-30 09:15:00Z\"); 
 // end Modelica;
 //
 // model BranchingDynamicPipes_total  \"Multi-way connections of pipes with dynamic momentum balance, pressure wave and flow reversal\"

@@ -4,6 +4,7 @@ TESTFILES = \
 AlgorithmCondAssign1.mos \
 AlgorithmCondAssign2.mos \
 AlgorithmForInClass.mos \
+algorithms.mos \
 AlgorithmSection.mos \
 AlgorithmTupleAssign.mos \
 ArrayInitSorting.mos \
@@ -29,6 +30,7 @@ LocalVariableInit.mos \
 ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar.mos \
 SimplePeriodicSampler.mos \
 SumSeriesWhile.mos \
+ticket-3477.mos \
 TupleReturn.mos \
 val.mos \
 whenDiscreteForLoop.mos \
@@ -44,7 +46,6 @@ ZeroCross.mos \
 # Run make testfailing
 FAILINGTESTFILES = \
 StatementCall.mos \
-algorithms.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

@@ -17,7 +17,8 @@ getErrorString();
 translateModelFMU(test_Bug3049, version="2.0");
 getErrorString();
 
-system("cat modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");
+// unzip to console, quiet, extra quiet
+system("unzip -cqq test_Bug3049.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");
 readFile("modelDescription.tmp.xml");
 
 // Result:

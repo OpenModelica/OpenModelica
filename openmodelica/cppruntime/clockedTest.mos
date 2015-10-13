@@ -1,0 +1,54 @@
+// name: clockedTest
+// keywords: synchronous clocked equations
+// status: correct
+// teardown_command: rm -f *DID*
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadString("
+model DID \"Double Integrator Discrete-time\"
+  parameter Real dt = 0.1 \"sample time\";
+  parameter Real p = 1 \"gain for input\";
+  parameter Real y1_start = 1 \"start value for first state\";
+  parameter Real y2_start = 0 \"start value for second state\";
+  input Real u(start = -2);
+  Real ud;
+  Real xd1(start = y1_start);
+  Real xd2(start = y2_start);
+  output Real y1, y2;
+equation
+  ud = sample(u, Clock(dt));
+  xd1 = previous(xd1) + p * ud * dt;
+  xd2 = previous(xd2) + previous(xd1) * dt + 0.5 * ud * dt * dt;
+  y1 = hold(previous(xd1));
+  y2 = hold(previous(xd2));
+end DID;
+");
+getErrorString();
+
+simulate(DID);
+val(y1, 0.0);
+val(y1, 0.95);
+val(y1, 1.0);
+val(y2, 0.0);
+val(y2, 0.55);
+val(y2, 1.0);
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+// resultFile = "DID_res.mat",
+// simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DID', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+// messages = ""
+// end SimulationResult;
+// 1.0
+// -0.8
+// -1.0
+// 0.0
+// 0.25
+// 0.0
+// ""
+// endResult

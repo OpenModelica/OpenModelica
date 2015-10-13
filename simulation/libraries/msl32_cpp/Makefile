@@ -302,7 +302,9 @@ simulate.cmd \
 simulate_parallel.cmd \
 simulateAll.cmd \
 simulateAll_Parallel.cmd \
-sortResults.py
+sortResults.py \
+simulateAll_parallel.py \
+posprocessing.py
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 
