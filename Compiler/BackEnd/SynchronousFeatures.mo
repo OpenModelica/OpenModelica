@@ -126,7 +126,7 @@ protected
   array<Integer> varsPartition;
   list<BackendDAE.Equation> unpartRemEqs;
 algorithm
-  syst := substituteParitionOpExps(inSyst, inShared);
+  syst := substitutePartitionOpExps(inSyst, inShared);
 
   (contSysts, clockedSysts, unpartRemEqs) := baseClockPartitioning(syst, shared);
 
@@ -1271,7 +1271,7 @@ algorithm
   outClockVars := BackendVariable.listVar(clockVars);
 end splitClockVars;
 
-protected function substituteParitionOpExps
+protected function substitutePartitionOpExps
 "Each non-trivial expression (non-literal, non-constant, non-parameter, non-variable), expr_i, appearing
  as first argument of any clock conversion operator or in base clock constructor is recursively replaced by a unique variable, $var_i,
  and the equation $var_i = expr_i is added to the equation set.
@@ -1294,25 +1294,25 @@ algorithm
         for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
           eq := BackendEquation.equationNth1(eqs, i);
           (eq, (newEqs, newVars, cnt, _)) :=
-          BackendEquation.traverseExpsOfEquation(eq, substituteParitionOpExp, (newEqs, newVars, cnt, inShared));
+          BackendEquation.traverseExpsOfEquation(eq, substitutePartitionOpExp, (newEqs, newVars, cnt, inShared));
           newEqs := eq::newEqs;
         end for;
         syst.orderedEqs := BackendEquation.listEquation(listReverse(newEqs));
         syst.orderedVars := BackendVariable.addVars(newVars, vars);
       then BackendDAEUtil.clearEqSyst(syst);
   end match;
-end substituteParitionOpExps;
+end substitutePartitionOpExps;
 
-protected function substituteParitionOpExp
+protected function substitutePartitionOpExp
   input DAE.Exp inExp;
   input tuple<list<BackendDAE.Equation>,list<BackendDAE.Var>, Integer, BackendDAE.Shared> inTpl;
   output DAE.Exp outExp;
   output tuple<list<BackendDAE.Equation>,list<BackendDAE.Var>, Integer, BackendDAE.Shared> outTpl;
 algorithm
-  (outExp, outTpl) := Expression.traverseExpBottomUp(inExp, substituteParitionOpExp1, inTpl);
-end substituteParitionOpExp;
+  (outExp, outTpl) := Expression.traverseExpBottomUp(inExp, substitutePartitionOpExp1, inTpl);
+end substitutePartitionOpExp;
 
-protected function substituteParitionOpExp1
+protected function substitutePartitionOpExp1
   input DAE.Exp inExp;
   input tuple<list<BackendDAE.Equation>,list<BackendDAE.Var>, Integer, BackendDAE.Shared> inTpl;
   output DAE.Exp outExp;
@@ -1341,7 +1341,7 @@ algorithm
     else
       (inExp, inTpl);
   end match;
-end substituteParitionOpExp1;
+end substitutePartitionOpExp1;
 
 protected function substClock
   input DAE.ClockKind inClk;
