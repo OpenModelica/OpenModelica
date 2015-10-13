@@ -117,7 +117,7 @@ algorithm
         (QSSINFO({},{},disc,{},eqsdae,zc_exps,0),sc);
     else
       equation
-        print("- Main function BackendQSS.generateStructureCodeQSS failed\n");
+        Error.addInternalError("occurred while generating QSS information.", sourceInfo());
       then
         fail();
   end matchcontinue;
