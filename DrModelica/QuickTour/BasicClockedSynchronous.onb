@@ -34,13 +34,13 @@ p, li { white-space: pre-wrap; }
     </GraphCell>
     <GraphCell style="Graph" closed="false">
       <Input>model BasicClockedSynchronous
-Clock clk;
-discrete Real x "Clocked discrete-time variable";
-Real y "Unclocked discrete-time variable";
+   Clock clk;
+   discrete Real x "Clocked discrete-time variable";
+   Real y "Unclocked discrete-time variable";
 equation
-clk = Clock(0.2); // Clock with an interval of 0.2 seconds
-x = sample(time,clk); // Sample the continuous time at clock ticks
-y = hold(x)+1; // Hold value is defined also between clock ticks
+   clk = Clock(0.2); // Clock with an interval of 0.2 seconds
+   x = sample(time,clk); // Sample the continuous time at clock ticks
+   y = hold(x)+1; // Hold value is defined also between clock ticks
 end BasicClockedSynchronous;</Input>
       <Output>{BasicClockedSynchronous}</Output>
     </GraphCell>
