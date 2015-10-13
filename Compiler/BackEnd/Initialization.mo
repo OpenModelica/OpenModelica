@@ -1963,10 +1963,17 @@ algorithm
   (vars, fixvars, eqns, reqns, hs, clkHS) := inTpl;
 
   ((vars, fixvars, eqns, hs, clkHS)) := BackendVariable.traverseBackendDAEVars(inEqSystem.orderedVars, collectInitialVars, (vars, fixvars, eqns, hs, clkHS));
-  ((eqns, reqns)) := BackendEquation.traverseEquationArray(inEqSystem.orderedEqs, collectInitialEqns, (eqns, reqns));
-  //((fixvars, eqns)) := List.fold(inEqSystem.stateSets, collectInitialStateSetVars, (fixvars, eqns));
 
-  outTpl := (vars, fixvars, eqns, reqns, hs, clkHS);
+  outTpl := match inEqSystem
+    case BackendDAE.EQSYSTEM(partitionKind = BackendDAE.CLOCKED_PARTITION(_)) equation
+      ((eqns, clkHS)) = BackendVariable.traverseBackendDAEVars(inEqSystem.orderedVars, createInitialClockedEqns, (eqns, clkHS));
+    then (vars, fixvars, eqns, reqns, hs, clkHS);
+
+    else equation
+      ((eqns, reqns)) = BackendEquation.traverseEquationArray(inEqSystem.orderedEqs, collectInitialEqns, (eqns, reqns));
+      //((fixvars, eqns)) = List.fold(inEqSystem.stateSets, collectInitialStateSetVars, (fixvars, eqns));
+    then (vars, fixvars, eqns, reqns, hs, clkHS);
+  end match;
 end collectInitialVarsEqnsSystem;
 
 protected function collectInitialVars "author: lochel
@@ -2234,6 +2241,41 @@ algorithm
     then fail();
   end matchcontinue;
 end collectInitialVars;
+
+protected function createInitialClockedEqns "author: rfranke
+  This function creates initial equations for a clocked partition.
+  Previous states are initialized with the states. All other variables are initialized with start values."
+  input BackendDAE.Var inVar;
+  input tuple<BackendDAE.EquationArray, HashSet.HashSet> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<BackendDAE.EquationArray, HashSet.HashSet> outTpl;
+protected
+  BackendDAE.EquationArray eqns;
+  HashSet.HashSet clkHS;
+algorithm
+  (eqns, clkHS) := inTpl;
+  (outVar, outTpl) := match inVar
+    local
+      BackendDAE.Var var;
+      BackendDAE.Equation eqn;
+      DAE.ComponentRef cr, previousCR;
+      DAE.Exp crExp, previousExp, startExp;
+      Boolean previousUsed;
+    case (var as BackendDAE.VAR(varName=cr)) equation
+      previousUsed = BaseHashSet.has(cr, clkHS);
+      crExp = Expression.crefExp(cr);
+      previousCR = ComponentReference.crefPrefixPrevious(cr);  // cr => $CLKPRRE.cr
+      previousExp = Expression.crefExp(previousCR);
+      startExp = BackendVariable.varStartValue(var);
+      eqn = if previousUsed
+        then
+          BackendDAE.EQUATION(previousExp, crExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL)
+	else
+	  BackendDAE.EQUATION(crExp, startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      eqns = BackendEquation.addEquation(eqn, eqns);
+    then (var, (eqns, clkHS));
+  end match;
+end createInitialClockedEqns;
 
 protected function collectInitialEqns "author: lochel"
   input BackendDAE.Equation inEq;
