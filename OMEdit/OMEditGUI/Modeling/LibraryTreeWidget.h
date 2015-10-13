@@ -99,8 +99,9 @@ public:
   const QString& getNameStructure() {return mNameStructure;}
   void setClassInformation(OMCInterface::getClassInformation_res classInformation);
   OMCInterface::getClassInformation_res getClassInformation() {return mClassInformation;}
-  void setFileName(QString fileName);
+  void setFileName(QString fileName) {mFileName = fileName;}
   const QString& getFileName() {return mFileName;}
+  bool isFilePathValid();
   void setReadOnly(bool readOnly) {mReadOnly = readOnly;}
   bool isReadOnly() {return mReadOnly;}
   void setIsSaved(bool isSaved) {mIsSaved = isSaved;}
@@ -109,9 +110,9 @@ public:
   bool isProtected() {return mIsProtected;}
   void setIsDocumentationClass(bool documentationClass) {mDocumentationClass = documentationClass;}
   bool isDocumentationClass() {return mDocumentationClass;}
-  void setSaveContentsType(LibraryTreeItem::SaveContentsType saveContentsType) {mSaveContentsType = saveContentsType;}
   StringHandler::ModelicaClasses getRestriction() {return StringHandler::getModelicaClassType(mClassInformation.restriction);}
   bool isPartial() {return mClassInformation.partialPrefix;}
+  void setSaveContentsType(LibraryTreeItem::SaveContentsType saveContentsType) {mSaveContentsType = saveContentsType;}
   SaveContentsType getSaveContentsType() {return mSaveContentsType;}
   void setToolTip(QString toolTip) {mToolTip = toolTip;}
   void setIcon(QIcon icon) {mIcon = icon;}

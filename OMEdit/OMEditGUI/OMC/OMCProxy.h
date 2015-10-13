@@ -50,6 +50,7 @@ class CustomExpressionBox;
 class ComponentInfo;
 class StringHandler;
 class OMCInterface;
+class LibraryTreeItem;
 
 struct cachedOMCCommand
 {
@@ -153,8 +154,8 @@ public:
   bool loadString(QString value, QString fileName, QString encoding = Helper::utf8, bool checkError = true);
   QList<QString> parseFile(QString fileName, QString encoding = Helper::utf8);
   QList<QString> parseString(QString value, QString fileName);
-  bool createClass(QString type, QString className, QString extendsClass);
-  bool createSubClass(QString type, QString className, QString parentClassName, QString extendsClass);
+  bool createClass(QString type, QString className, LibraryTreeItem *pExtendsLibraryTreeItem);
+  bool createSubClass(QString type, QString className, LibraryTreeItem *pParentLibraryTreeItem, LibraryTreeItem *pExtendsLibraryTreeItem);
   bool existClass(QString className);
   bool renameClass(QString oldName, QString newName);
   bool deleteClass(QString className);

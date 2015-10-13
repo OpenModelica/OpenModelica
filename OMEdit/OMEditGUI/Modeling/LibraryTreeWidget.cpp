@@ -365,7 +365,7 @@ void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res 
 {
   if (mLibraryType == LibraryTreeItem::Modelica) {
     mClassInformation = classInformation;
-    if (getFileName().isEmpty()) {
+    if (!isFilePathValid()) {
       setFileName(classInformation.fileName);
     }
     setReadOnly(classInformation.fileReadOnly);
@@ -373,21 +373,13 @@ void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res 
 }
 
 /*!
- * \brief LibraryTreeItem::setFileName
- * \param fileName
- * Sets the LibraryTreeItem file name.
+ * \brief LibraryTreeItem::isFilePathValid
+ * Returns true if file path is valid file location and not modelica class name.
+ * \return
  */
-void LibraryTreeItem::setFileName(QString fileName)
-{
-  if (mLibraryType == LibraryTreeItem::Modelica) {
-    /* Since now we set the fileName via loadString() & parseString() so might get filename as className/<interactive>.
-     * We only set the fileName field if returned value is really a file path.
-     */
-    mFileName = fileName.endsWith(".mo") ? fileName : "";
-    mFileName = mFileName.replace('\\', '/');
-  } else {
-    mFileName = fileName;
-  }
+bool LibraryTreeItem::isFilePathValid() {
+  // Since now we set the fileName via loadString() & parseString() so might get filename as className/<interactive>.
+  return QFile::exists(mFileName);
 }
 
 /*!
@@ -1063,7 +1055,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, LibraryTr
   if (pLibraryTreeItem && pLibraryTreeItem->isNonExisting()) {
     wasNonExisting = true;
     pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? isSystemLibrary : pParentLibraryTreeItem->isSystemLibrary());
-    createNonExistingLibraryTreeItem(pLibraryTreeItem, pParentLibraryTreeItem);
+    createNonExistingLibraryTreeItem(pLibraryTreeItem, pParentLibraryTreeItem, isSaved);
     // read the LibraryTreeItem text
     readLibraryTreeItemClassText(pLibraryTreeItem);
     createLibraryTreeItems(pLibraryTreeItem);
@@ -1176,6 +1168,7 @@ void LibraryTreeModel::createNonExistingLibraryTreeItem(LibraryTreeItem *pLibrar
 {
   pLibraryTreeItem->setParent(pParentLibraryTreeItem);
   OMCProxy *pOMCProxy = mpLibraryWidget->getMainWindow()->getOMCProxy();
+  pLibraryTreeItem->setFileName("");
   pLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pLibraryTreeItem->getNameStructure()));
   pLibraryTreeItem->setIsSaved(isSaved);
   pLibraryTreeItem->setIsProtected(pOMCProxy->isProtectedClass(pParentLibraryTreeItem->getNameStructure(), pLibraryTreeItem->getName()));
@@ -1225,7 +1218,7 @@ void LibraryTreeModel::updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryTreeModel::readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem)
 {
-  if (pLibraryTreeItem->getFileName().isEmpty()) {
+  if (!pLibraryTreeItem->isFilePathValid()) {
     // If class is top level then
     if (pLibraryTreeItem->isTopLevel()) {
       if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
@@ -1327,8 +1320,9 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
   }
   // if we first updated the parent class then the child classes needs to be updated as well.
   if (pParentLibraryTreeItem != pLibraryTreeItem) {
-    pOMCProxy->loadString(pParentLibraryTreeItem->getClassText(), pParentLibraryTreeItem->getNameStructure(), Helper::utf8, false);
+    pOMCProxy->loadString(pParentLibraryTreeItem->getClassText(), pParentLibraryTreeItem->getFileName(), Helper::utf8, false);
     updateChildLibraryTreeItemClassText(pParentLibraryTreeItem, contents, pParentLibraryTreeItem->getFileName());
+    pParentLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pParentLibraryTreeItem->getNameStructure()));
   }
 }
 
@@ -2551,10 +2545,8 @@ bool LibraryWidget::saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeIte
   bool result = false;
   LibraryTreeItem *pParentLibraryTreeItem = mpLibraryTreeModel->getContainingParentLibraryTreeItem(pLibraryTreeItem);
   result = saveLibraryTreeItemHelper(pParentLibraryTreeItem);
-  if (result && !pLibraryTreeItem->isTopLevel()) {
-    setChildLibraryTreeItemsSaved(pParentLibraryTreeItem);
-  }
   if (result) {
+    setChildLibraryTreeItemsSaved(pParentLibraryTreeItem);
     getMainWindow()->addRecentFile(pLibraryTreeItem->getFileName(), Helper::utf8);
     /* We need to load the file again so that the line number information for model_info.xml is correct.
      * Update to AST (makes source info WRONG), saving it (source info STILL WRONG), reload it (and omc knows the new lines)
@@ -2755,7 +2747,7 @@ bool LibraryWidget::saveLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem)
 {
   mpMainWindow->getStatusBar()->showMessage(QString(tr("Saving")).append(" ").append(pLibraryTreeItem->getNameStructure()));
   QString fileName;
-  if (pLibraryTreeItem->getFileName().isEmpty()) {
+  if (!pLibraryTreeItem->isFilePathValid()) {
     QString name = pLibraryTreeItem->getName();
     fileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(tr("Save File")), NULL,
                                               Helper::omFileTypes, NULL, "mo", &name);
@@ -2772,19 +2764,23 @@ bool LibraryWidget::saveLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem)
       return false;
     }
   }
-  mpMainWindow->getOMCProxy()->setSourceFile(pLibraryTreeItem->getNameStructure(), fileName);
+  //mpMainWindow->getOMCProxy()->setSourceFile(pLibraryTreeItem->getNameStructure(), fileName);
   // save the class
   QFile file(fileName);
   if (file.open(QIODevice::WriteOnly)) {
     QTextStream textStream(&file);
     textStream.setCodec(Helper::utf8.toStdString().data());
     textStream.setGenerateByteOrderMark(false);
-    textStream << pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText();
+    if (pLibraryTreeItem->getModelWidget()->getEditor()) {
+      textStream << pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText();
+    } else {
+      textStream << pLibraryTreeItem->getClassText();
+    }
     file.close();
     /* mark the file as saved and update the labels. */
     pLibraryTreeItem->setIsSaved(true);
     pLibraryTreeItem->setFileName(fileName);
-    if (pLibraryTreeItem->getModelWidget()) {
+    if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->isLoadedWidgetComponents()) {
       pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getNameStructure());
       pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
     }
@@ -2808,7 +2804,7 @@ void LibraryWidget::setChildLibraryTreeItemsSaved(LibraryTreeItem *pLibraryTreeI
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
     pChildLibraryTreeItem->setIsSaved(true);
     pChildLibraryTreeItem->setFileName(pLibraryTreeItem->getFileName());
-    if (pChildLibraryTreeItem->getModelWidget()) {
+    if (pChildLibraryTreeItem->getModelWidget() && pChildLibraryTreeItem->getModelWidget()->isLoadedWidgetComponents()) {
       pChildLibraryTreeItem->getModelWidget()->setWindowTitle(pChildLibraryTreeItem->getNameStructure());
       pChildLibraryTreeItem->getModelWidget()->setModelFilePathLabel(pLibraryTreeItem->getFileName());
     }
