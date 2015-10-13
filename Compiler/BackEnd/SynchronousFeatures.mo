@@ -233,7 +233,7 @@ algorithm
   (outExp, outPrevVars) := Expression.traverseExpBottomUp(inExp, collectPrevVars1, inPrevVars);
 end collectPrevVars;
 
-public function collectPrevVars1
+protected function collectPrevVars1
   input DAE.Exp inExp;
   input list<DAE.ComponentRef> inPrevCompRefs;
   output DAE.Exp outExp = inExp;
@@ -1561,23 +1561,6 @@ algorithm
   end matchcontinue;
 end getVarIxs;
 
-protected function getVars
-  input DAE.ComponentRef inComp;
-  input BackendDAE.Variables inVariables;
-  output list<BackendDAE.Var> outIntegerLst;
-algorithm
-  outIntegerLst := matchcontinue inComp
-    local
-      list<BackendDAE.Var> vars;
-    case _
-      equation
-        (vars, _) = BackendVariable.getVar(inComp, inVariables);
-      then vars;
-    else
-      then {};
-  end matchcontinue;
-end getVars;
-
 protected function baseClockPartitioning
 "Do base clock partitioning and detect kind of new partitions(clocked or continuous)."
   input BackendDAE.EqSystem inSyst;
@@ -1762,18 +1745,6 @@ algorithm
                                    else partitionType;
 end detectEqPartition;
 
-protected function reverseBoolOption
-  input Option<Boolean> inp;
-  output Option<Boolean> out;
-algorithm
-  out := match inp
-    local
-      Boolean v;
-    case SOME(v) then SOME(not v);
-    else inp;
-  end match;
-end reverseBoolOption;
-
 protected function printPartitionType
   input Option<Boolean> isClockedPartition;
   output String out;
@@ -1947,7 +1918,7 @@ algorithm
   end for;
 end partitionIndependentBlocks0;
 
-public function partitionIndependentBlocksMasked
+protected function partitionIndependentBlocksMasked
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
   input BackendDAE.IncidenceMatrix rm;
