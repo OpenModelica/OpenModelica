@@ -575,6 +575,8 @@ void GraphicsView::deleteComponentObject(Component *pComponent)
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpModelWidget->getEditor());
     pTLMEditor->deleteSubModel(pComponent->getName());
   }
+  // make the model modified
+  mpModelWidget->setModelModified();
 }
 
 /*!
@@ -1074,10 +1076,18 @@ QPointF GraphicsView::roundPoint(QPointF point)
 bool GraphicsView::hasAnnotation()
 {
   foreach (ModelWidget::InheritedClass *pInheritedClass, mpModelWidget->getInheritedClassesList()) {
-    if (mViewType == StringHandler::Icon && pInheritedClass->mIconShapesList.size() > 0) {
-      return true;
+    if (mViewType == StringHandler::Icon) {
+      if (pInheritedClass->mIconShapesList.size() > 0) {
+        return true;
+      } else {
+        foreach (Component *pInheritedComponent, pInheritedClass->mIconComponentsList) {
+          if (pInheritedComponent->hasShapeAnnotation(pInheritedComponent)) {
+            return true;
+          }
+        }
+      }
     } else if (mViewType == StringHandler::Diagram && pInheritedClass->mDiagramShapesList.size() > 0) {
-
+      return true;
     }
   }
   if (!mShapesList.isEmpty()) {
