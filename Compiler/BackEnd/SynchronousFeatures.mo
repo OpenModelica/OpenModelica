@@ -1629,7 +1629,7 @@ algorithm
   //Detect clocked equations and variables
   for j in 1:BackendDAEUtil.equationArraySize(eqs) loop
     eq := BackendEquation.equationNth1(eqs, j);
-    (partitionType, refsInfo) := detectEqPatition(eq);
+    (partitionType, refsInfo) := detectEqPartition(eq);
     info := BackendEquation.equationInfo(eq);
     arrayUpdate(clockedEqs, j, setClockedPartition(partitionType, arrayGet(clockedEqs, j), NONE(), info));
     for refInfo in refsInfo loop
@@ -1734,7 +1734,7 @@ algorithm
   end match;
 end isClockEquation;
 
-protected function detectEqPatition
+protected function detectEqPartition
 "Detect clocked equation and variables according the rule:
  - variable u in sample(u) and a variable y in y = hold(ud) is in a continuous-time partition;
  - variables u and y in y = sample(uc), y = subSample(u), y = superSample(u), y =
@@ -1756,11 +1756,11 @@ algorithm
   end match;
   info := BackendEquation.equationInfo(inEq);
   (_, (partitionType, refsInfo, _)) :=
-      BackendEquation.traverseExpsOfEquation(inEq, detectEqPatitionExp, (partitionType, {}, info));
+      BackendEquation.traverseExpsOfEquation(inEq, detectEqPartitionExp, (partitionType, {}, info));
   isClockEq := isClockEquation(inEq);
   outPartitionType := if isClockEq then setClockedPartition(SOME(true), partitionType, NONE(), info)
                                    else partitionType;
-end detectEqPatition;
+end detectEqPartition;
 
 protected function reverseBoolOption
   input Option<Boolean> inp;
@@ -1785,16 +1785,16 @@ algorithm
   end match;
 end printPartitionType;
 
-protected function detectEqPatitionExp
+protected function detectEqPartitionExp
   input DAE.Exp inExp;
   input tuple<Option<Boolean>, list<tuple<DAE.ComponentRef, Boolean>>, SourceInfo> inTpl;
   output DAE.Exp outExp;
   output tuple<Option<Boolean>, list<tuple<DAE.ComponentRef, Boolean>>, SourceInfo> outTpl;
 algorithm
-  (outExp, outTpl) := Expression.traverseExpTopDown(inExp, detectEqPatitionExp1, inTpl);
-end detectEqPatitionExp;
+  (outExp, outTpl) := Expression.traverseExpTopDown(inExp, detectEqPartitionExp1, inTpl);
+end detectEqPartitionExp;
 
-protected function detectEqPatitionExp1
+protected function detectEqPartitionExp1
   input DAE.Exp inExp;
   input tuple<Option<Boolean>, list<tuple<DAE.ComponentRef, Boolean>>, SourceInfo> inTpl;
   output DAE.Exp outExp = inExp;
@@ -1817,13 +1817,13 @@ algorithm
         DAE.CREF(cr, _) = e;
       then (partition, (cr, false)::refs, false);
     case DAE.CALL(path = path, expLst = exps)
-      then detectEqPatitionCall(path, exps, refs, partition, info);
+      then detectEqPartitionCall(path, exps, refs, partition, info);
     else (partition, refs, true);
   end match;
   outTpl := (partition, refs, info);
-end detectEqPatitionExp1;
+end detectEqPartitionExp1;
 
-protected function detectEqPatitionCall
+protected function detectEqPartitionCall
   input Absyn.Path inPath;
   input list<DAE.Exp> inExps;
   input list<tuple<DAE.ComponentRef, Boolean>> inRefs;
@@ -1837,24 +1837,24 @@ algorithm
     local
       DAE.Exp e, e1, e2;
     case (Absyn.IDENT("hold"), {e})
-      then detectEqPatitionCall1(false, true, inPartition, e, inRefs, info);
+      then detectEqPartitionCall1(false, true, inPartition, e, inRefs, info);
     case (Absyn.IDENT("sample"), {e, e1})
-      then detectEqPatitionCall1(true, false, inPartition, e, inRefs, info);
+      then detectEqPartitionCall1(true, false, inPartition, e, inRefs, info);
     case (Absyn.IDENT("subSample"), {e, e1})
-      then detectEqPatitionCall1(true, true, inPartition, e, inRefs, info);
+      then detectEqPartitionCall1(true, true, inPartition, e, inRefs, info);
     case (Absyn.IDENT("superSample"), {e, e1})
-      then detectEqPatitionCall1(true, true, inPartition, e, inRefs, info);
+      then detectEqPartitionCall1(true, true, inPartition, e, inRefs, info);
     case (Absyn.IDENT("shiftSample"), {e, e1, e2})
-      then detectEqPatitionCall1(true, true, inPartition, e, inRefs, info);
+      then detectEqPartitionCall1(true, true, inPartition, e, inRefs, info);
     case (Absyn.IDENT("backSample"), {e, e1, e2})
-      then detectEqPatitionCall1(true, true, inPartition, e, inRefs, info);
+      then detectEqPartitionCall1(true, true, inPartition, e, inRefs, info);
     case (Absyn.IDENT("noClock"), {e})
-      then detectEqPatitionCall1(true, true, inPartition, e, inRefs, info);
+      then detectEqPartitionCall1(true, true, inPartition, e, inRefs, info);
     else (inPartition, inRefs, true);
   end match;
-end detectEqPatitionCall;
+end detectEqPartitionCall;
 
-protected function detectEqPatitionCall1
+protected function detectEqPartitionCall1
   input Boolean expClocked;
   input Boolean refClocked;
   input Option<Boolean> inPartition;
@@ -1873,10 +1873,10 @@ algorithm
       then (setClockedPartition(SOME(expClocked), inPartition, NONE(), info), (cr, refClocked)::inRefs);
     else
       equation
-        print("Internal error -- Function SynchronousFeatures.detectEqPatitionCall1 failed\n");
+        print("Internal error -- Function SynchronousFeatures.detectEqPartitionCall1 failed\n");
       then fail();
   end match;
-end detectEqPatitionCall1;
+end detectEqPartitionCall1;
 
 protected function setSystPartition
   input BackendDAE.EqSystem inSyst;
