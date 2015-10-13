@@ -55,6 +55,7 @@ public import SCode;
 public import UnitAbsyn;
 
 protected import Config;
+protected import ConnectUtil;
 protected import Debug;
 protected import Dump;
 protected import DAEUtil;
@@ -1202,19 +1203,21 @@ protected function stripVarAttrDirection
   input SCode.Attributes inAttributes;
   output SCode.Attributes outAttributes;
 algorithm
-  outAttributes := matchcontinue(inCref, ih, inState, inPrefix, inAttributes)
+  outAttributes := matchcontinue (inCref, inState, inAttributes)
     local
       DAE.ComponentRef cref;
       InnerOuter.TopInstance topInstance;
       HashSet.HashSet sm;
     // Component without input/output.
-    case (_, _, _, _, SCode.ATTR(direction = Absyn.BIDIR())) then inAttributes;
+    case (_, _, SCode.ATTR(direction = Absyn.BIDIR())) then inAttributes;
     // Non-qualified identifier = top-level component.
-    case (DAE.CREF_IDENT(), _, _, _, _) then inAttributes;
-    // Single-qualified identifier in connector = component in top-level connector.
-    case (DAE.CREF_QUAL(componentRef = DAE.CREF_IDENT()), _, ClassInf.CONNECTOR(), _, _) then inAttributes;
+    case (DAE.CREF_IDENT(), _, _) then inAttributes;
+    // Outside connector
+    case (_, ClassInf.CONNECTOR(), _)
+      guard(ConnectUtil.faceEqual(ConnectUtil.componentFaceType(inCref), Connect.OUTSIDE()))
+      then inAttributes;
     // Component with input/output that is part of a state machine
-    case (_, _, _, _, _)
+    case (_, _, _)
       equation
         cref = PrefixUtil.prefixToCref(inPrefix);
         topInstance = listHead(ih);

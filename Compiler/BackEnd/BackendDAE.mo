@@ -728,13 +728,13 @@ uniontype DifferentiateInputData
     Option<Variables> dependenentVars;            // Dependent variables
     Option<Variables> knownVars;                  // known variables (e.g. parameter, constants, ...)
     Option<Variables> allVars;                    // all variables
-    Option<list< Var>> controlVars;               // variables to save control vars of for algorithm
-    Option<list< .DAE.ComponentRef>> diffCrefs;   // all crefs to differentiate, needed for generic gradient
+    list< Var> controlVars;                       // variables to save control vars of for algorithm
+    list< .DAE.ComponentRef> diffCrefs;           // all crefs to differentiate, needed for generic gradient
     Option<String> matrixName;                    // name to create temporary vars, needed for generic gradient
   end DIFFINPUTDATA;
 end DifferentiateInputData;
 
-public constant DifferentiateInputData noInputData = DIFFINPUTDATA(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+public constant DifferentiateInputData emptyInputData = DIFFINPUTDATA(NONE(),NONE(),NONE(),NONE(),{},{},NONE());
 
 public
 type DifferentiateInputArguments = tuple< .DAE.ComponentRef, DifferentiateInputData, DifferentiationType, .DAE.FunctionTree>;

@@ -96,7 +96,8 @@ static void va_omc_assert_simulation_withEquationIndexes(threadData_t *threadDat
     break;
   case ERROR_OPTIMIZE:
   default:
-    throwStreamPrint(threadData,"Unhandled Assertion-Error");
+    va_errorStreamPrintWithEquationIndexes(LOG_ASSERT, 0, indexes, msg, args);
+    throwStreamPrint(threadData, "Untreated assertion has been detected.");
   }
 }
 

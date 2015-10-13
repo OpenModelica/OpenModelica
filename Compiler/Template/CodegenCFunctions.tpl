@@ -4197,7 +4197,7 @@ end getTempDeclMatchOutputName;
   used in Compiler/Template/CodegenQSS.tpl"
 ::=
   match exp
-  case e as ICONST(__)          then '(modelica_integer) <%integer%>' /* Yes, we need to cast int to long on 64-bit arch... */
+  case e as ICONST(__)          then '((modelica_integer) <%integer%>)' /* Yes, we need to cast int to long on 64-bit arch... */
   case e as RCONST(__)          then real
   case e as SCONST(__)          then daeExpSconst(string, &preExp, &varDecls)
   case e as BCONST(__)          then boolStrC(bool)
@@ -5355,7 +5355,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
   // round
   case CALL(path=IDENT(name="$_round"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
-    '((modelica_integer)round((modelica_real)<%var1%>))'
+    '((modelica_integer)round((modelica_real)(<%var1%>)))'
   case CALL(path=IDENT(name="edge"), expLst={arg as CREF(__)}) then
     '(<%cref(arg.componentRef)%> && !$P$PRE<%cref(arg.componentRef)%>)'
   case CALL(path=IDENT(name="edge"), expLst={LUNARY(exp = arg as CREF(__))}) then
@@ -5381,7 +5381,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
   case CALL(path=IDENT(name="max"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
-    'modelica_integer_max((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'
+    'modelica_integer_max((modelica_integer)(<%var1%>),(modelica_integer)(<%var2%>))'
 
   case CALL(path=IDENT(name="sum"), attr=CALL_ATTR(ty = ty), expLst={e}) then
     let arr = daeExp(e, context, &preExp, &varDecls, &auxFunction)
@@ -5396,7 +5396,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
   case CALL(path=IDENT(name="min"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
-    'modelica_integer_min((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'
+    'modelica_integer_min((modelica_integer)(<%var1%>),(modelica_integer)(<%var2%>))'
 
   case CALL(path=IDENT(name="abs"), expLst={e1}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
@@ -5494,7 +5494,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
         then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
         else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(call))%>");}<%\n%>'
       /*ldiv not available in opencl c*/
-    if acceptParModelicaGrammar() then '(modelica_integer)(<%var1%> / <%tvar%>)'
+    if isParallelFunctionContext(context) then '(modelica_integer)((<%var1%>) / <%tvar%>)'
     else 'ldiv(<%var1%>,<%tvar%>).quot'
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2}) then
@@ -5506,7 +5506,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
       if acceptMetaModelicaGrammar()
         then 'if (<%tvar%> == 0.0) {<%generateThrow()%>;}<%\n%>'
         else 'if (<%tvar%> == 0.0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(call))%>");}<%\n%>'
-    'trunc(<%var1%> / <%tvar%>)'
+    'trunc((<%var1%>) / <%tvar%>)'
 
   case CALL(path=IDENT(name="mod"), expLst={e1,e2}, attr=CALL_ATTR(ty = ty)) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
@@ -5645,7 +5645,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
 
   case CALL(path=IDENT(name="Integer"), expLst={toBeCasted}) then
     let castedVar = daeExp(toBeCasted, context, &preExp, &varDecls, &auxFunction)
-    '((modelica_integer)<%castedVar%>)'
+    '((modelica_integer)(<%castedVar%>))'
 
   case CALL(path=IDENT(name="clock"), expLst={}) then
     'mmc_clock()'
@@ -5937,10 +5937,10 @@ match exp
 case CAST(__) then
   let expVar = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
   match ty
-  case T_INTEGER(__)   then '((modelica_integer)<%expVar%>)'
-  case T_REAL(__)  then '((modelica_real)<%expVar%>)'
-  case T_ENUMERATION(__)   then '((modelica_integer)<%expVar%>)'
-  case T_BOOL(__)   then '((modelica_boolean)<%expVar%>)'
+  case T_INTEGER(__)   then '((modelica_integer)(<%expVar%>))'
+  case T_REAL(__)  then '((modelica_real)(<%expVar%>))'
+  case T_ENUMERATION(__)   then '((modelica_integer)(<%expVar%>))'
+  case T_BOOL(__)   then '((modelica_boolean)(<%expVar%>))'
   case T_ARRAY(__) then
     let arrayTypeStr = expTypeArray(ty)
     let tvar = tempDecl(arrayTypeStr, &varDecls)
