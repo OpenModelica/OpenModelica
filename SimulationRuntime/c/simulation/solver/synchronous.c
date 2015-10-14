@@ -115,6 +115,7 @@ void checkForSynchronous(DATA *data, SOLVER_INFO* solverInfo)
 
 void fireClock(DATA* data, threadData_t *threadData, long idx, double curTime)
 {
+  TRACE_PUSH
   const CLOCK_INFO* clk = data->modelData.clocksInfo + idx;
   CLOCK_DATA* clkData = data->simulationInfo.clocksData + idx;
   data->callback->function_updateSynchronous(data, threadData, idx);
@@ -139,7 +140,7 @@ void fireClock(DATA* data, threadData_t *threadData, long idx, double curTime)
       insertTimer(data->simulationInfo.intvlTimers, &nextTimer);
     }
   }
-
+  TRACE_POP
 }
 
 static void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curTime)
