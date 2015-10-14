@@ -18,6 +18,7 @@ Modelica.Blocks.Sources.BooleanPulse.mos \
 Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
 Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
 Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
+testExperimentalFMU.mos 
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
