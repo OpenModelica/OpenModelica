@@ -3125,6 +3125,9 @@ void ModelWidget::getModelComponents()
     QString transformation = "";
     if (componentsAnnotationsList.size() >= i) {
       transformation = StringHandler::getPlacementAnnotation(componentsAnnotationsList.at(i));
+      if (transformation.isEmpty()) {
+        transformation = "Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)";
+      }
     }
     mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pLibraryTreeItem, transformation, QPointF(0, 0), pComponentInfo,
                                               false, true);
