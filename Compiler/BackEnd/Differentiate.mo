@@ -100,7 +100,7 @@ protected
   BackendDAE.Variables knvars;
 algorithm
   try
-    if Flags.isSet(Flags.DEBUG_DIFFERENTATION) then
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
       BackendDump.debugStrEqnStr("### Differentiate equation\n", inEquation, " w.r.t. time.\n");
     end if;
     funcs := BackendDAEUtil.getFunctions(inShared);
@@ -108,7 +108,7 @@ algorithm
     diffData := BackendDAE.DIFFINPUTDATA(NONE(), SOME(inVariables), SOME(knvars), SOME(inVariables), {}, {}, NONE());
     (outEquation, funcs) := differentiateEquation(inEquation, DAE.crefTime, diffData, BackendDAE.DIFFERENTIATION_TIME(), funcs);
     outShared := BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
-    if Flags.isSet(Flags.DEBUG_DIFFERENTATION) then
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
       BackendDump.debugStrEqnStr("### Result of differentiation\n --> ", outEquation, "\n");
     end if;
   else
@@ -133,7 +133,7 @@ protected
   BackendDAE.Variables knvars;
 algorithm
   try
-    if Flags.isSet(Flags.DEBUG_DIFFERENTATION) then
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
       BackendDump.debugStrExpStr("### Differentiate expression\n ", inExp, " w.r.t. time.\n");
     end if;
     funcs := BackendDAEUtil.getFunctions(inShared);
@@ -142,7 +142,7 @@ algorithm
     (dexp, funcs) := differentiateExp(inExp, DAE.crefTime, diffData, BackendDAE.DIFFERENTIATION_TIME(), funcs, defaultMaxIter, {});
     (outExp, _) := ExpressionSimplify.simplify(dexp);
     outShared := BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
-    if Flags.isSet(Flags.DEBUG_DIFFERENTATION) then
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
       BackendDump.debugStrExpStr("### Result of differentiation\n --> ", outExp, "n");
     end if;
   else
@@ -179,12 +179,12 @@ algorithm
       else DAE.emptyFuncTree;
     end match;
 
-    if Flags.isSet(Flags.DEBUG_DIFFERENTATION) then
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
       BackendDump.debugStrExpStrCrefStr("### Differentiate expression\n ", inExp, " w.r.t. ", inCref, "\n");
     end if;
     (dexp, _) := differentiateExp(inExp, inCref, BackendDAE.emptyInputData, BackendDAE.SIMPLE_DIFFERENTIATION(), fun, defaultMaxIter, {});
     (outExp, _) := ExpressionSimplify.simplify(dexp);
-    if Flags.isSet(Flags.DEBUG_DIFFERENTATION) then
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
       BackendDump.debugStrExpStr("### Result of differentiation\n --> ", outExp, "\n");
     end if;
   else
@@ -251,7 +251,7 @@ public function differentiateEquation
 algorithm
 try
   // Debug dump
-  if Flags.isSet(Flags.DEBUG_DIFFERENTATION) then
+  if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
     BackendDump.debugStrEqnStr("### Differentiate equation\n ", inEquation, " w.r.t. " + ComponentReference.crefStr(inDiffwrtCref) + "\n");
   end if;
   (outEquation, outFunctionTree) := match inEquation
@@ -380,7 +380,7 @@ try
      then fail();
   end match;
   // Debug dump
-  if Flags.isSet(Flags.DEBUG_DIFFERENTATION) then
+  if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
     BackendDump.debugStrEqnStr("### Result of differentiation\n --> ", outEquation,"\n");
   end if;
 else
@@ -2046,13 +2046,13 @@ algorithm
     case (e as DAE.CALL(), _, _, _, _)
       equation
         // Debug dump
-        if Flags.isSet(Flags.DEBUG_DIFFERENTATION) then
+        if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
           BackendDump.debugStrExpStr("### Differentiate call\n ", e, " w.r.t. " + ComponentReference.crefStr(inDiffwrtCref) + "\n");
         end if;
         (e, functions) = differentiateFunctionCallPartial(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter, expStack);
         (e,_,_,_) = Inline.inlineExp(e,(SOME(functions),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
         // Debug dump
-        if Flags.isSet(Flags.DEBUG_DIFFERENTATION) then
+        if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
           BackendDump.debugStrExpStr("### result output -> ", e, " w.r.t. " + ComponentReference.crefStr(inDiffwrtCref) + "\n");
         end if;
       then
@@ -2145,7 +2145,7 @@ algorithm
         diffFuncData = BackendDAE.DIFFINPUTDATA(NONE(),NONE(),NONE(),NONE(),{},{},SOME(funcname));
         (dexplZero, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter, inExpStack=expStack), DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), diffFuncData, BackendDAE.GENERIC_GRADIENT(), functions);
         // debug dump
-        if Flags.isSet(Flags.DEBUG_DIFFERENTATION) then
+        if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
           print("### differentiated argument list:\n");
           print("Diffed ExpList: \n");
           print(stringDelimitList(List.map(dexpl, ExpressionDump.printExpStr), ", ") + "\n");
@@ -2190,7 +2190,7 @@ algorithm
         dpath = DAEUtil.functionName(dfunc);
 
         // debug
-        if Flags.isSet(Flags.DEBUG_DIFFERENTATION_VERBOSE) then
+        if Flags.isSet(Flags.DEBUG_DIFFERENTIATION_VERBOSE) then
           funstring = Tpl.tplString(DAEDumpTpl.dumpFunction, dfunc);
           print("### Differentiate function: \n" + funstring + "\n\n");
         end if;
@@ -2202,7 +2202,7 @@ algorithm
 
         // debug
         // differentiate expl
-        if Flags.isSet(Flags.DEBUG_DIFFERENTATION_VERBOSE) then
+        if Flags.isSet(Flags.DEBUG_DIFFERENTIATION_VERBOSE) then
           print("### Detailed arguments list: \n");
           print(stringDelimitList(List.map(expl, ExpressionDump.printExpStr), ", ") + "\n");
           print("### and argument types: \n");
@@ -2217,13 +2217,13 @@ algorithm
         (dexpl, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter, inExpStack=expStack), inDiffwrtCref, inInputData, inDiffType, functions);
         (dexplZero, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter, inExpStack=expStack), DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), BackendDAE.emptyInputData, BackendDAE.GENERIC_GRADIENT(), functions);
 
-        if Flags.isSet(Flags.DEBUG_DIFFERENTATION) then
+        if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
           print("### differentiated argument list:\n");
           print("Diffed ExpList: \n");
           print(stringDelimitList(List.map(dexpl, ExpressionDump.printExpStr), ", ") + "\n");
         end if;
 /*
-        if Flags.isSet(Flags.DEBUG_DIFFERENTATION_VERBOSE) then
+        if Flags.isSet(Flags.DEBUG_DIFFERENTIATION_VERBOSE) then
           funstring = Tpl.tplString(DAEDumpTpl.dumpFunctions, DAEUtil.getFunctionList(functions));
           print("### FunctionTree: \n" + funstring + "\n\n");
         end if;
