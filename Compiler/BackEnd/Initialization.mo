@@ -1962,14 +1962,13 @@ protected
 algorithm
   (vars, fixvars, eqns, reqns, hs, clkHS) := inTpl;
 
-  ((vars, fixvars, eqns, hs, clkHS)) := BackendVariable.traverseBackendDAEVars(inEqSystem.orderedVars, collectInitialVars, (vars, fixvars, eqns, hs, clkHS));
-
   outTpl := match inEqSystem
     case BackendDAE.EQSYSTEM(partitionKind = BackendDAE.CLOCKED_PARTITION(_)) equation
-      ((eqns, clkHS)) = BackendVariable.traverseBackendDAEVars(inEqSystem.orderedVars, createInitialClockedEqns, (eqns, clkHS));
+      ((vars, eqns, clkHS)) = BackendVariable.traverseBackendDAEVars(inEqSystem.orderedVars, collectInitialClockedVarsEqns, (vars, eqns, clkHS));
     then (vars, fixvars, eqns, reqns, hs, clkHS);
 
     else equation
+      ((vars, fixvars, eqns, hs, clkHS)) = BackendVariable.traverseBackendDAEVars(inEqSystem.orderedVars, collectInitialVars, (vars, fixvars, eqns, hs, clkHS));
       ((eqns, reqns)) = BackendEquation.traverseEquationArray(inEqSystem.orderedEqs, collectInitialEqns, (eqns, reqns));
       //((fixvars, eqns)) = List.fold(inEqSystem.stateSets, collectInitialStateSetVars, (fixvars, eqns));
     then (vars, fixvars, eqns, reqns, hs, clkHS);
@@ -2185,7 +2184,7 @@ algorithm
       isInput = BackendVariable.isVarOnTopLevelAndInput(var);
       startValue_ = BackendVariable.varStartValue(var);
       preUsed = BaseHashSet.has(cr, hs);
-      previousUsed = BaseHashSet.has(cr, clkHS);
+      previousUsed = false; //BaseHashSet.has(cr, clkHS);
 
       var = BackendVariable.setVarFixed(var, false);
 
@@ -2242,40 +2241,50 @@ algorithm
   end matchcontinue;
 end collectInitialVars;
 
-protected function createInitialClockedEqns "author: rfranke
+protected function collectInitialClockedVarsEqns "author: rfranke
   This function creates initial equations for a clocked partition.
   Previous states are initialized with the states. All other variables are initialized with start values."
   input BackendDAE.Var inVar;
-  input tuple<BackendDAE.EquationArray, HashSet.HashSet> inTpl;
+  input tuple<BackendDAE.Variables, BackendDAE.EquationArray, HashSet.HashSet> inTpl;
   output BackendDAE.Var outVar;
-  output tuple<BackendDAE.EquationArray, HashSet.HashSet> outTpl;
+  output tuple<BackendDAE.Variables, BackendDAE.EquationArray, HashSet.HashSet> outTpl;
 protected
+  BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
   HashSet.HashSet clkHS;
 algorithm
-  (eqns, clkHS) := inTpl;
+  (vars, eqns, clkHS) := inTpl;
   (outVar, outTpl) := match inVar
     local
-      BackendDAE.Var var;
-      BackendDAE.Equation eqn;
+      BackendDAE.Var var, previousVar;
       DAE.ComponentRef cr, previousCR;
+      DAE.Type ty;
       DAE.Exp crExp, previousExp, startExp;
       Boolean previousUsed;
-    case (var as BackendDAE.VAR(varName=cr)) equation
+    case (var as BackendDAE.VAR(varName=cr, varType=ty)) equation
       previousUsed = BaseHashSet.has(cr, clkHS);
-      crExp = Expression.crefExp(cr);
       previousCR = ComponentReference.crefPrefixPrevious(cr);  // cr => $CLKPRRE.cr
+      previousVar = BackendVariable.copyVarNewName(previousCR, var);
+      crExp = Expression.crefExp(cr);
       previousExp = Expression.crefExp(previousCR);
       startExp = BackendVariable.varStartValue(var);
-      eqn = if previousUsed
-        then
-          BackendDAE.EQUATION(previousExp, crExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL)
-	else
-	  BackendDAE.EQUATION(crExp, startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
-      eqns = BackendEquation.addEquation(eqn, eqns);
-    then (var, (eqns, clkHS));
+      if previousUsed then
+        // create previous variable and initial equation
+        previousVar = BackendVariable.setVarDirection(previousVar, DAE.BIDIR());
+        previousVar = BackendVariable.setBindExp(previousVar, NONE());
+        previousVar = BackendVariable.setBindValue(previousVar, NONE());
+        previousVar = BackendVariable.setVarFixed(previousVar, true);
+        previousVar = BackendVariable.setVarStartValueOption(previousVar, SOME(DAE.CREF(cr, ty)));
+        vars = BackendVariable.addVar(previousVar, vars);
+        eqns = BackendEquation.addEquation(BackendDAE.EQUATION(previousExp, crExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL), eqns);
+        var = BackendVariable.setVarKind(var, BackendDAE.CLOCKED_STATE(previousName = previousCR));
+      end if;
+      // add clocked variable and initial equation
+      vars = BackendVariable.addVar(var, vars);
+      eqns = BackendEquation.addEquation(BackendDAE.EQUATION(crExp, startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL), eqns);
+    then (var, (vars, eqns, clkHS));
   end match;
-end createInitialClockedEqns;
+end collectInitialClockedVarsEqns;
 
 protected function collectInitialEqns "author: lochel"
   input BackendDAE.Equation inEq;

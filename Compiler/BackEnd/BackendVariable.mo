@@ -818,12 +818,12 @@ algorithm
       list<BackendDAE.VarKind> kind_lst;
 
     /* Real non discrete variable */
-    case (BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE(_)))
-    then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE(_), varType = DAE.T_REAL(_,_)))
+      then true;
 
     case (BackendDAE.VAR(varKind = kind, varType = DAE.T_REAL(_,_))) equation
       kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DUMMY_DER(), BackendDAE.DUMMY_STATE(), BackendDAE.OPT_INPUT_WITH_DER(), BackendDAE.OPT_INPUT_DER()};
-    then listMember(kind, kind_lst) or isOptLoopInput(kind);
+      then listMember(kind, kind_lst) or isOptLoopInput(kind);
 
     else false;
   end match;
@@ -850,7 +850,7 @@ algorithm
 
     /* Real discrete variable */
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), varType = DAE.T_REAL(_,_)))
-    then true;
+      then true;
 
     else false;
   end match;
@@ -868,9 +868,12 @@ algorithm
       list<BackendDAE.VarKind> kind_lst;
 
     /* string variable */
+    case (BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE(_), varType = DAE.T_STRING()))
+      then true;
+
     case (BackendDAE.VAR(varKind = kind, varType = DAE.T_STRING())) equation
       kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(), BackendDAE.DUMMY_STATE()};
-    then listMember(kind, kind_lst);
+      then listMember(kind, kind_lst);
 
     else false;
   end match;
@@ -886,6 +889,9 @@ algorithm
       BackendDAE.Type typeVar;
       list<BackendDAE.VarKind> kind_lst;
     /* int variable */
+    case (BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE(_), varType = DAE.T_INTEGER()))
+      then true;
+
     case (BackendDAE.VAR(varKind = kind,
                      varType = DAE.T_INTEGER()))
       equation
@@ -916,12 +922,16 @@ algorithm
       BackendDAE.Type typeVar;
       list<BackendDAE.VarKind> kind_lst;
     /* int variable */
+    case (BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE(_), varType = DAE.T_BOOL()))
+      then true;
+
     case (BackendDAE.VAR(varKind = kind,
                      varType = DAE.T_BOOL()))
       equation
         kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
                     BackendDAE.DUMMY_STATE()};
       then listMember(kind, kind_lst);
+
     else false;
   end matchcontinue;
 end isVarBoolAlg;
