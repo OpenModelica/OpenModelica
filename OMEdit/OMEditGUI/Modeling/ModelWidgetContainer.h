@@ -376,6 +376,7 @@ public:
   ShapeAnnotation* createNonExistingInheritedShape(GraphicsView *pGraphicsView);
   ShapeAnnotation* createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   Component* createInheritedComponent(Component *pComponent, GraphicsView *pGraphicsView);
+  LineAnnotation* createInheritedConnection(LineAnnotation *pConnectionLineAnnotation, LibraryTreeItem *pInheritedLibraryTreeItem);
   void createWidgetComponents();
   Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
   void refresh();

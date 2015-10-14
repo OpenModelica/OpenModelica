@@ -493,6 +493,8 @@ void LibraryTreeItem::addInheritedClass(LibraryTreeItem *pLibraryTreeItem)
           this, SLOT(handleShapeAdded(LibraryTreeItem*,ShapeAnnotation*,GraphicsView*)), Qt::UniqueConnection);
   connect(pLibraryTreeItem, SIGNAL(componentAdded(LibraryTreeItem*,Component*,GraphicsView*)),
           this, SLOT(handleComponentAdded(LibraryTreeItem*,Component*,GraphicsView*)), Qt::UniqueConnection);
+  connect(pLibraryTreeItem, SIGNAL(connectionAdded(LibraryTreeItem*,LineAnnotation*)),
+          this, SLOT(handleConnectionAdded(LibraryTreeItem*,LineAnnotation*)), Qt::UniqueConnection);
   connect(pLibraryTreeItem, SIGNAL(iconUpdated()), this, SLOT(handleIconUpdated()), Qt::UniqueConnection);
 }
 
@@ -656,6 +658,16 @@ void LibraryTreeItem::handleComponentAdded(LibraryTreeItem *pLibraryTreeItem, Co
       } else {
         pInheritedClass->mDiagramComponentsList.append(mpModelWidget->createInheritedComponent(pComponent, mpModelWidget->getDiagramGraphicsView()));
       }
+    }
+  }
+}
+
+void LibraryTreeItem::handleConnectionAdded(LibraryTreeItem *pLibraryTreeItem, LineAnnotation *pConnectionLineAnnotation)
+{
+  if (mpModelWidget) {
+    ModelWidget::InheritedClass *pInheritedClass = mpModelWidget->findInheritedClass(pLibraryTreeItem);
+    if (pInheritedClass) {
+      pInheritedClass->mConnectionsList.append(mpModelWidget->createInheritedConnection(pConnectionLineAnnotation, pInheritedClass->mpLibraryTreeItem));
     }
   }
 }

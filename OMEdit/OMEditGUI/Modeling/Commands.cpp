@@ -435,6 +435,7 @@ AddConnectionCommand::AddConnectionCommand(LineAnnotation *pConnectionLineAnnota
                                          .arg(mpConnectionLineAnnotation->getEndComponentName()));
   mpConnectionLineAnnotation->drawCornerItems();
   mpConnectionLineAnnotation->setCornerItemsPassive();
+  pGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
 }
 
 /*!
@@ -459,7 +460,7 @@ void AddConnectionCommand::redo()
   }
   mpGraphicsView->addConnectionObject(mpConnectionLineAnnotation);
   mpGraphicsView->addItem(mpConnectionLineAnnotation);
-  //mpLineAnnotation->emitAdded();
+  mpConnectionLineAnnotation->emitAdded();
   if (mAddConnection) {
     mpGraphicsView->createConnection(mpConnectionLineAnnotation);
   }
@@ -487,6 +488,6 @@ void AddConnectionCommand::undo()
   }
   mpGraphicsView->deleteConnectionObject(mpConnectionLineAnnotation);
   mpGraphicsView->removeItem(mpConnectionLineAnnotation);
-  //mpLineAnnotation->emitDeleted();
+  mpConnectionLineAnnotation->emitDeleted();
   mpGraphicsView->deleteConnection(mpConnectionLineAnnotation, true);
 }
