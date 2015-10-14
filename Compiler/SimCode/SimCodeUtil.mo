@@ -11547,5 +11547,90 @@ algorithm
   end matchcontinue;
 end getHighestDerivation1;
 
+/*****************************************************************************************************
+        FMU EXPERIMENTAL
+        author: F. Bergero. 12/10/2015
+*****************************************************************************************************/
+
+function getNLSysRHS
+    input list<SimCode.SimEqSystem> eqs;
+    input list<DAE.ComponentRef> res ;
+    output list<DAE.ComponentRef> unknowns;
+algorithm
+    unknowns := matchcontinue (eqs,res)
+        local list<SimCode.SimEqSystem> tail;
+              SimCode.SimEqSystem head;
+              DAE.Exp exp;
+        case ({},_)
+            then res;
+        case (SimCode.SES_RESIDUAL(exp=exp) :: tail,_)
+            then getNLSysRHS(tail,listAppend(res,Expression.getAllCrefs(exp)));
+        case (_,)
+            equation
+                print("getNLSysRHS failed\n");
+            then
+                fail();
+    end matchcontinue;
+end getNLSysRHS;
+
+
+function computeDependenciesHelper
+    input list<SimCode.SimEqSystem> eqs;
+    input list<DAE.ComponentRef> unknowns;
+    input list<SimCode.SimEqSystem> res;
+    output list<SimCode.SimEqSystem> deps;
+algorithm
+    deps := matchcontinue (eqs,unknowns,res)
+        local list<SimCode.SimEqSystem> tail;
+              SimCode.SimEqSystem head;
+              list<DAE.ComponentRef> new_unknowns;
+              list<SimCode.SimEqSystem> r;
+              DAE.ComponentRef cref;
+              list<SimCodeVar.SimVar> vars;
+              list<DAE.ComponentRef> linsys_unk;
+              list<DAE.ComponentRef> nlsys_unk;
+              list<SimCode.SimEqSystem> nlsys_eqs;
+              DAE.Exp exp;
+              list<DAE.Exp> beqs;
+    case ({},_,r)
+        then r;
+    case ( (head as SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp))::tail,_,r)
+        equation
+            true = List.isMemberOnTrue(cref,unknowns,ComponentReference.crefEqual);
+            // We must include this equation in the ODE
+            new_unknowns = Expression.getAllCrefs(exp);
+            // And include all those one defining the RHS
+        then computeDependenciesHelper(tail,listAppend(unknowns,new_unknowns), listAppend(r,{head}));
+    case ( (head as SimCode.SES_LINEAR(lSystem = SimCode.LINEARSYSTEM(vars=vars, beqs=beqs)))::tail,_, r)
+        equation
+            // This linear system defines the following crefs
+            linsys_unk = getSimEqSystemCrefsLHS(head);
+            // If any of those are in our unkowns me must include this equation system
+            false = listEmpty(List.intersectionOnTrue(linsys_unk,unknowns,ComponentReference.crefEqual));
+            // And include all the variables of the RHS to the unkowns
+            new_unknowns = List.flatten(List.map(beqs, Expression.getAllCrefs));
+        then computeDependenciesHelper(tail,listAppend(unknowns,new_unknowns),listAppend(r,{head}));
+    case ( (head as SimCode.SES_NONLINEAR(nlSystem=SimCode.NONLINEARSYSTEM(crefs=nlsys_unk, eqs=nlsys_eqs)))::tail,_,r)
+        equation
+        // If any of the uknwonw of the NL system are in our unkowns me must include this equation system
+        false = listEmpty(List.intersectionOnTrue(nlsys_unk,unknowns,ComponentReference.crefEqual));
+        new_unknowns = getNLSysRHS(nlsys_eqs,{});
+        then computeDependenciesHelper(tail,listAppend(unknowns,new_unknowns),listAppend(r,{head}));
+    case (_::tail,_,r)
+        then  computeDependenciesHelper(tail,unknowns,r);
+    end matchcontinue;
+end computeDependenciesHelper;
+
+public function computeDependencies
+    input list<SimCode.SimEqSystem> eqs;
+    input DAE.ComponentRef cref;
+    output list<SimCode.SimEqSystem> deps;
+algorithm
+    deps := match (eqs,cref)
+    case (_,_)
+        then listReverse(computeDependenciesHelper(listReverse(eqs),{cref},{}));
+    end match;
+end computeDependencies;
+
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

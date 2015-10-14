@@ -466,6 +466,9 @@ constant DebugFlag DEBUG_DIFFERENTIATION = DEBUG_FLAG(149, "debugDifferentiation
   Util.gettext("Dumps debug output for the differentiation process."));
 constant DebugFlag DEBUG_DIFFERENTIATION_VERBOSE = DEBUG_FLAG(150, "debugDifferentiationVerbose", false,
   Util.gettext("Dumps verbose debug output for the differentiation process."));
+constant DebugFlag FMU_EXPERIMENTAL = DEBUG_FLAG(151, "fmuExperimental", false,
+  Util.gettext("Include an extra function in the FMU fmi2GetSpecificDerivatives."));
+
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -622,7 +625,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_FUNCTIONS,
   BUILD_STATIC_SOURCE_FMU,
   DEBUG_DIFFERENTIATION,
-  DEBUG_DIFFERENTIATION_VERBOSE
+  DEBUG_DIFFERENTIATION_VERBOSE,
+  FMU_EXPERIMENTAL
 };
 
 public
