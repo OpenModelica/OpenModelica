@@ -152,7 +152,6 @@ public:
   Component* getRootParentComponent();
   ComponentType getComponentType() {return mComponentType;}
   QString getTransformationString() {return mTransformationString;}
-  Transformation* getTransformation() {return mpTransformation;}
   OriginItem* getOriginItem() {return mpOriginItem;}
   QAction* getParametersAction() {return mpParametersAction;}
   QAction* getAttributesAction() {return mpAttributesAction;}
@@ -187,6 +186,8 @@ public:
   void addInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo);
   void removeInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo);
   void renameInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo, QString interfacePoint);
+
+  Transformation mTransformation;
 private:
   Component *mpReferenceComponent;
   Component *mpParentComponent;
@@ -201,7 +202,6 @@ private:
   RectangleAnnotation *mpDefaultComponentRectangle;
   TextAnnotation *mpDefaultComponentText;
   CoOrdinateSystem *mpCoOrdinateSystem;
-  Transformation *mpTransformation;
   QAction *mpParametersAction;
   QAction *mpAttributesAction;
   QAction *mpViewClassAction;
@@ -232,6 +232,7 @@ signals:
   void added();
   void transformChange();
   void transformHasChanged();
+  void notifyTransformHasChanged(bool updateModelicaText);
   void displayTextChanged();
   void rotationChange();
   void deleted();

@@ -260,9 +260,9 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
   }
   if (mpComponent) {
     Component *pComponent = mpComponent->getRootParentComponent();
-    if (pComponent && pComponent->getTransformation()) {
-      QPointF extent1 = pComponent->getTransformation()->getExtent1();
-      QPointF extent2 = pComponent->getTransformation()->getExtent2();
+    if (pComponent && pComponent->mTransformation.isValid()) {
+      QPointF extent1 = pComponent->mTransformation.getExtent1();
+      QPointF extent2 = pComponent->mTransformation.getExtent2();
       qreal dy = ((-boundingRect().top()) - boundingRect().bottom());
       // if horizontal flip
       if (extent2.x() < extent1.x()) {
@@ -273,14 +273,14 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
         painter->scale(1.0, -1.0);
         painter->translate(0, dy);
       }
-      qreal angle = StringHandler::getNormalizedAngle(pComponent->getTransformation()->getRotateAngle());
+      qreal angle = StringHandler::getNormalizedAngle(pComponent->mTransformation.getRotateAngle());
       if (angle == 180) {
         painter->scale(-1.0, -1.0);
         painter->translate(0, dy);
       }
     }
   } else {
-    qreal angle = StringHandler::getNormalizedAngle(mpTransformation->getRotateAngle());
+    qreal angle = StringHandler::getNormalizedAngle(mTransformation.getRotateAngle());
     if (angle == 180) {
       painter->scale(-1.0, -1.0);
       painter->translate(((-boundingRect().left()) - boundingRect().right()), ((-boundingRect().top()) - boundingRect().bottom()));

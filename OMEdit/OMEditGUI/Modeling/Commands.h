@@ -36,40 +36,6 @@
 
 #include "ModelWidgetContainer.h"
 
-class AddComponentCommand : public QUndoCommand
-{
-public:
-  AddComponentCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
-                      ComponentInfo *pComponentInfo, bool addObject, bool openingClass, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
-  void redo();
-  void undo();
-private:
-  LibraryTreeItem *mpLibraryTreeItem;
-  StringHandler::ModelicaClasses mType;
-  bool mAddObject;
-  ComponentInfo *mpComponentInfo;
-  Component *mpIconComponent;
-  Component *mpDiagramComponent;
-  GraphicsView *mpIconGraphicsView;
-  GraphicsView *mpDiagramGraphicsView;
-  GraphicsView *mpGraphicsView;
-};
-
-class DeleteComponentCommand : public QUndoCommand
-{
-public:
-  DeleteComponentCommand(Component *pComponent, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
-  void redo();
-  void undo();
-private:
-  Component *mpComponent;
-  Component *mpIconComponent;
-  Component *mpDiagramComponent;
-  GraphicsView *mpIconGraphicsView;
-  GraphicsView *mpDiagramGraphicsView;
-  GraphicsView *mpGraphicsView;
-};
-
 class AddShapeCommand : public QUndoCommand
 {
 public:
@@ -89,6 +55,51 @@ public:
   void undo();
 private:
   ShapeAnnotation *mpShapeAnnotation;
+  GraphicsView *mpGraphicsView;
+};
+
+class AddComponentCommand : public QUndoCommand
+{
+public:
+  AddComponentCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
+                      ComponentInfo *pComponentInfo, bool addObject, bool openingClass, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  LibraryTreeItem *mpLibraryTreeItem;
+  StringHandler::ModelicaClasses mType;
+  bool mAddObject;
+  ComponentInfo *mpComponentInfo;
+  Component *mpIconComponent;
+  Component *mpDiagramComponent;
+  GraphicsView *mpIconGraphicsView;
+  GraphicsView *mpDiagramGraphicsView;
+  GraphicsView *mpGraphicsView;
+};
+
+class RotateComponentCommand : public QUndoCommand
+{
+public:
+  RotateComponentCommand(Component *pComponent, bool clockwise, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  Component *mpComponent;
+  bool mClockwise;
+};
+
+class DeleteComponentCommand : public QUndoCommand
+{
+public:
+  DeleteComponentCommand(Component *pComponent, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  Component *mpComponent;
+  Component *mpIconComponent;
+  Component *mpDiagramComponent;
+  GraphicsView *mpIconGraphicsView;
+  GraphicsView *mpDiagramGraphicsView;
   GraphicsView *mpGraphicsView;
 };
 

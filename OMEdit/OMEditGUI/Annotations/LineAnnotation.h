@@ -103,7 +103,7 @@ private:
 public slots:
   void handleComponentMoved();
   void handleComponentRotation();
-  void updateConnectionAnnotation();
+  void updateConnectionAnnotation(bool updateModelicaText = true);
   void duplicate();
 };
 

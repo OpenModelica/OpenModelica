@@ -33,6 +33,100 @@
 
 #include "Commands.h"
 
+AddShapeCommand::AddShapeCommand(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpShapeAnnotation = pShapeAnnotation;
+  mpGraphicsView = pGraphicsView;
+  if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
+    setText("Add Line Shape");
+  } else if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
+    setText("Add Polygon Shape");
+  } else if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
+    setText("Add Rectangle Shape");
+  } else if (dynamic_cast<EllipseAnnotation*>(pShapeAnnotation)) {
+    setText("Add Ellipse Shape");
+  } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
+    setText("Add Text Shape");
+  } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
+    setText("Add Bitmap Shape");
+  }
+}
+
+/*!
+ * \brief AddShapeCommand::redo
+ * Redo the AddShapeCommand.
+ */
+void AddShapeCommand::redo()
+{
+  mpGraphicsView->addShapeObject(mpShapeAnnotation);
+  mpGraphicsView->addItem(mpShapeAnnotation);
+  mpShapeAnnotation->emitAdded();
+  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->setCanAddClassAnnotation(true);
+}
+
+/*!
+ * \brief AddShapeCommand::undo
+ * Undo the AddShapeCommand.
+ */
+void AddShapeCommand::undo()
+{
+  mpGraphicsView->deleteShapeObject(mpShapeAnnotation);
+  mpShapeAnnotation->setSelected(false);
+  mpGraphicsView->removeItem(mpShapeAnnotation);
+  mpShapeAnnotation->emitDeleted();
+  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->setCanAddClassAnnotation(true);
+}
+
+DeleteShapeCommand::DeleteShapeCommand(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpShapeAnnotation = pShapeAnnotation;
+  mpGraphicsView = pGraphicsView;
+  if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
+    setText("Delete Line Shape");
+  } else if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
+    setText("Delete Polygon Shape");
+  } else if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
+    setText("Delete Rectangle Shape");
+  } else if (dynamic_cast<EllipseAnnotation*>(pShapeAnnotation)) {
+    setText("Delete Ellipse Shape");
+  } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
+    setText("Delete Text Shape");
+  } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
+    setText("Delete Bitmap Shape");
+  }
+}
+
+/*!
+ * \brief DeleteShapeCommand::redo
+ * Redo the DeleteShapeCommand.
+ */
+void DeleteShapeCommand::redo()
+{
+  mpGraphicsView->deleteShapeObject(mpShapeAnnotation);
+  mpShapeAnnotation->setSelected(false);
+  mpGraphicsView->removeItem(mpShapeAnnotation);
+  mpShapeAnnotation->emitDeleted();
+  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->setCanAddClassAnnotation(true);
+}
+
+/*!
+ * \brief DeleteShapeCommand::undo
+ * Undo the DeleteShapeCommand.
+ */
+void DeleteShapeCommand::undo()
+{
+  mpGraphicsView->addShapeObject(mpShapeAnnotation);
+  mpGraphicsView->addItem(mpShapeAnnotation);
+  mpShapeAnnotation->emitAdded();
+  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->setCanAddClassAnnotation(true);
+}
+
 AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
                                          ComponentInfo *pComponentInfo, bool addObject, bool openingClass, GraphicsView *pGraphicsView,
                                          QUndoCommand *pParent)
@@ -142,6 +236,53 @@ void AddComponentCommand::undo()
   mpGraphicsView->deleteComponentObject(mpDiagramComponent);
 }
 
+RotateComponentCommand::RotateComponentCommand(Component *pComponent, bool clockwise, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpComponent = pComponent;
+  mClockwise = clockwise;
+  setText(QString("Rotate %1 Component %2").arg(mClockwise ? "Clockwise" : "AntiClockwise").arg(mpComponent->getName()));
+}
+
+/*!
+ * \brief RotateComponentCommand::redo
+ * Redo the RotateComponentCommand.
+ */
+void RotateComponentCommand::redo()
+{
+  if (mClockwise) {
+    qreal oldRotation = StringHandler::getNormalizedAngle(mpComponent->mTransformation.getRotateAngle());
+    qreal rotateIncrement = -90;
+    qreal angle = oldRotation + rotateIncrement;
+    mpComponent->applyRotation(angle);
+  } else {
+    qreal oldRotation = StringHandler::getNormalizedAngle(mpComponent->mTransformation.getRotateAngle());
+    qreal rotateIncrement = 90;
+    qreal angle = oldRotation + rotateIncrement;
+    mpComponent->applyRotation(angle);
+  }
+}
+
+/*!
+ * \brief RotateComponentCommand::undo
+ * Undo the RotateComponentCommand.
+ */
+void RotateComponentCommand::undo()
+{
+  if (mClockwise) {
+    qreal oldRotation = StringHandler::getNormalizedAngle(mpComponent->mTransformation.getRotateAngle());
+    qreal rotateIncrement = 90;
+    qreal angle = oldRotation + rotateIncrement;
+    mpComponent->applyRotation(angle);
+  } else {
+    qreal oldRotation = StringHandler::getNormalizedAngle(mpComponent->mTransformation.getRotateAngle());
+    qreal rotateIncrement = -90;
+    qreal angle = oldRotation + rotateIncrement;
+    mpComponent->applyRotation(angle);
+  }
+  mpComponent->setSelected(false);
+}
+
 DeleteComponentCommand::DeleteComponentCommand(Component *pComponent, GraphicsView *pGraphicsView, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
@@ -223,101 +364,6 @@ void DeleteComponentCommand::undo()
     mpComponent->emitAdded();
   }
   mpGraphicsView->addComponentObject(mpComponent);
-}
-
-
-AddShapeCommand::AddShapeCommand(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QUndoCommand *pParent)
-  : QUndoCommand(pParent)
-{
-  mpShapeAnnotation = pShapeAnnotation;
-  mpGraphicsView = pGraphicsView;
-  if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
-    setText("Add Line Shape");
-  } else if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
-    setText("Add Polygon Shape");
-  } else if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
-    setText("Add Rectangle Shape");
-  } else if (dynamic_cast<EllipseAnnotation*>(pShapeAnnotation)) {
-    setText("Add Ellipse Shape");
-  } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
-    setText("Add Text Shape");
-  } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
-    setText("Add Bitmap Shape");
-  }
-}
-
-/*!
- * \brief AddShapeCommand::redo
- * Redo the AddShapeCommand.
- */
-void AddShapeCommand::redo()
-{
-  mpGraphicsView->addShapeObject(mpShapeAnnotation);
-  mpGraphicsView->addItem(mpShapeAnnotation);
-  mpShapeAnnotation->emitAdded();
-  mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
-}
-
-/*!
- * \brief AddShapeCommand::undo
- * Undo the AddShapeCommand.
- */
-void AddShapeCommand::undo()
-{
-  mpGraphicsView->deleteShapeObject(mpShapeAnnotation);
-  mpShapeAnnotation->setSelected(false);
-  mpGraphicsView->removeItem(mpShapeAnnotation);
-  mpShapeAnnotation->emitDeleted();
-  mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
-}
-
-DeleteShapeCommand::DeleteShapeCommand(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QUndoCommand *pParent)
-  : QUndoCommand(pParent)
-{
-  mpShapeAnnotation = pShapeAnnotation;
-  mpGraphicsView = pGraphicsView;
-  if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
-    setText("Delete Line Shape");
-  } else if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
-    setText("Delete Polygon Shape");
-  } else if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
-    setText("Delete Rectangle Shape");
-  } else if (dynamic_cast<EllipseAnnotation*>(pShapeAnnotation)) {
-    setText("Delete Ellipse Shape");
-  } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
-    setText("Delete Text Shape");
-  } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
-    setText("Delete Bitmap Shape");
-  }
-}
-
-/*!
- * \brief DeleteShapeCommand::redo
- * Redo the DeleteShapeCommand.
- */
-void DeleteShapeCommand::redo()
-{
-  mpGraphicsView->deleteShapeObject(mpShapeAnnotation);
-  mpShapeAnnotation->setSelected(false);
-  mpGraphicsView->removeItem(mpShapeAnnotation);
-  mpShapeAnnotation->emitDeleted();
-  mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
-}
-
-/*!
- * \brief DeleteShapeCommand::undo
- * Undo the DeleteShapeCommand.
- */
-void DeleteShapeCommand::undo()
-{
-  mpGraphicsView->addShapeObject(mpShapeAnnotation);
-  mpGraphicsView->addItem(mpShapeAnnotation);
-  mpShapeAnnotation->emitAdded();
-  mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
 }
 
 AddConnectionCommand::AddConnectionCommand(LineAnnotation *pConnectionLineAnnotation, bool addConnection, GraphicsView *pGraphicsView,
