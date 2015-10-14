@@ -62,7 +62,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
 					//If a start value is given for the alias and the referred variable, skip the alias declaration
 
 					bool isAlias = aliasInfo.compare("alias") == 0;
-
+                    bool isNegatedAlias = aliasInfo.compare("negatedAlias") == 0;
 
 					BOOST_FOREACH(ptree::value_type const& var, vars.second.get_child(""))
 					{
@@ -81,7 +81,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
 							if(isParameter)
 								_realVars.addParameter(name,descripton,realVarPtr);
 							else
-								_realVars.addOutputVar(name,descripton,realVarPtr);
+								_realVars.addOutputVar(name,descripton,realVarPtr,isNegatedAlias);
 						}
 						else if(var.first == "Integer")
 						{
@@ -97,7 +97,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
 							if(isParameter)
 								_intVars.addParameter(name,descripton,intVarPtr);
 							else
-								_intVars.addOutputVar(name,descripton,intVarPtr);
+								_intVars.addOutputVar(name,descripton,intVarPtr,isNegatedAlias);
 						}
 						else if(var.first == "Boolean")
 						{
@@ -113,7 +113,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
 							if(isParameter)
 								_boolVars.addParameter(name,descripton,boolVarPtr);
 							else
-								_boolVars.addOutputVar(name,descripton,boolVarPtr);
+								_boolVars.addOutputVar(name,descripton,boolVarPtr,isNegatedAlias);
 						}
 						else if(var.first == "String")
 						{

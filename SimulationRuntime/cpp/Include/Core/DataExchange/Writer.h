@@ -15,43 +15,93 @@
 #define CONTAINER_COUNT 2
 
 
-
+/** typedef for variable, parameter names*/
 typedef boost::container::vector<string> var_names_t;
+
+/**
+ *  Class the holds all information to print output variables in a output file (matlab,textfile,buffer, ...)
+ *  Holds a container of pointers for all output variable and parameter stored in the simvars array
+ */
 template<typename T>
 struct SimulationOutput
 {
-	typedef boost::container::vector<const T*> values_t;
-
+	/** typedef for the output values list, this is a container which holds pointer for all output variables stored in the simvar array*/
+    typedef boost::container::vector<const T*> values_t;
+    /** typedef for the output values kind list, this is a boolean container wich indicates if the output variable is a negate alias variable*/
+    typedef boost::container::vector<bool> negate_values_t;
+    /** Container for all output parameter name*/
 	var_names_t  parameterNames;
-	var_names_t  parameterDescription;
-	var_names_t  ourputVarNames;
-	var_names_t  ourputVarDescription;
-	values_t outputVars;
-	values_t outputParams;
+	/** Container for all output parameter description*/
+    var_names_t  parameterDescription;
+	/** Container for all output variable names*/
+    var_names_t  ourputVarNames;
+	/** Container for all output variable descriptions*/
+    var_names_t  ourputVarDescription;
+	/** Container for all output variables*/
+    values_t outputVars;
+	/** Container for all output parameter*/
+    values_t outputParams;
+    /** Container for all output variable kinds*/
+    negate_values_t negateOutputVars;
 
+    /**
+	 *  \brief adds a parameter to output list
+	 *
+	 *  \param [in] name name of parameter
+	 *  \param [in] description description of parameter
+	 *  \param [in] var pointer to parameter in simvars array
+	 */
 	void addParameter(string& name,string& description,const T* var)
 	{
 		parameterNames.push_back(name);
 		parameterDescription.push_back(description);
 		outputParams.push_back(var);
 	}
-	void addOutputVar(string& name,string& description,const T* var)
+	    /**
+	 *  \brief adds a variable to output list
+	 *  \param [in] name name of variable
+	 *  \param [in] description description of variable
+	 *  \param [in] var pointer to variable in simvars array
+	 */
+	void addOutputVar(string& name,string& description,const T* var,bool negate)
 	{
 		ourputVarNames.push_back(name);
 		ourputVarDescription.push_back(description);
 		outputVars.push_back(var);
+        negateOutputVars.push_back(negate);
 	}
 };
-
+/** typedef for all integer outputs */
 typedef SimulationOutput<int> output_int_vars_t;
+/** typedef for all boolean outputs */
 typedef SimulationOutput<bool> output_bool_vars_t;
+/** typedef for all real outputs */
 typedef SimulationOutput<double> output_real_vars_t;
 
+
+/** typedef for the integer output values list*/
 typedef  output_int_vars_t::values_t   int_vars_t;
+/** typedef for the boolean output values list*/
 typedef  output_bool_vars_t::values_t  bool_vars_t;
+/** typedef for the real output values list*/
 typedef  output_real_vars_t::values_t  real_vars_t;
+/** typedef for the integer output variable kind list*/
+typedef  output_int_vars_t::negate_values_t   neg_int_vars_t;
+/** typedef for the boolean output variable kind list*/
+typedef  output_bool_vars_t::negate_values_t  neg_bool_vars_t;
+/** typedef for the real output variable kind list*/
+typedef  output_real_vars_t::negate_values_t  neg_real_vars_t;
+/**typedef for all output variables   at one time step, all real vars, integer vars, boolean vars, simulation time*/
+typedef  boost::tuple<real_vars_t,int_vars_t,bool_vars_t,double> all_vars_time_t;
+/**typedef for all output variables  at one time step except simulation time*/
 typedef  boost::tuple<real_vars_t,int_vars_t,bool_vars_t> all_vars_t;
+/**typedef for all output variables kinds at one time step*/
+typedef  boost::tuple<neg_real_vars_t,neg_int_vars_t,neg_bool_vars_t> neg_all_vars_t;
+/**typedef for all output data at one time step*/
+typedef  boost::tuple<all_vars_time_t,neg_all_vars_t> write_data_t;
+/**typedef for all variable names*/
 typedef  boost::tuple<var_names_t,var_names_t,var_names_t> all_names_t;
+/**typedef for all variable description*/
 typedef  boost::tuple<var_names_t,var_names_t,var_names_t> all_description_t;
 
 
@@ -60,11 +110,6 @@ class Writer
 {
 public:
 
-
-	typedef boost::tuple<real_vars_t,
-                         int_vars_t,
-                         bool_vars_t,
-                         double> values_type;
 	Writer()
 		: _writeContainers()
 		,_freeContainers()
@@ -88,9 +133,9 @@ public:
 #endif
 	}
 
-	virtual void write(const all_vars_t& v_list, double time) = 0;
+	virtual void write(const all_vars_time_t& v_list,const neg_all_vars_t& neg_v_list ) = 0;
 
-	values_type& getFreeContainer()
+	write_data_t& getFreeContainer()
 	{
 
 
@@ -98,7 +143,7 @@ public:
 		_nempty.wait();
 		_freeContainerMutex.wait();
 #endif
-		 values_type& container = _freeContainers.front();
+		 write_data_t& container = _freeContainers.front();
 		_freeContainers.pop_front();
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
 		_freeContainerMutex.post();
@@ -107,12 +152,12 @@ public:
 	};
 
 
-	void addContainerToWriteQueue(const values_type& container)
+	void addContainerToWriteQueue(const all_vars_time_t& container,const neg_all_vars_t& container2)
 	{
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
 		_writeContainerMutex.wait();
 #endif
-		_writeContainers.push_back(container);
+		_writeContainers.push_back(boost::make_tuple(container,container2));
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
 		_writeContainerMutex.post();
 
@@ -125,14 +170,14 @@ protected:
 
 	void writeContainer()
 	{
-		const values_type* container;
+		const write_data_t* container;
 
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
 		_writeContainerMutex.wait();
 #endif
 		if (!_writeContainers.empty())
         {
-			const values_type& c = _writeContainers.front();
+			const write_data_t& c = _writeContainers.front();
             container = &c;
         }
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
@@ -149,13 +194,7 @@ protected:
 		}
 
 
-		const real_vars_t& v_list = get<0>(*container);
-		const int_vars_t& v2_list = get<1>(*container);
-        const bool_vars_t& v3_list = get<2>(*container);
-		double time = get<3>(*container);
-
-
-		write(boost::make_tuple(v_list, v2_list, v3_list),time);
+		write(get<0>(*container),get<1>(*container));
 
 
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
@@ -194,8 +233,8 @@ protected:
 	}
 
 
-	deque<values_type > _writeContainers;
-	deque<values_type > _freeContainers;
+	deque<write_data_t > _writeContainers;
+	deque<write_data_t > _freeContainers;
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
 	semaphore _freeContainerMutex;
 	semaphore _writeContainerMutex;

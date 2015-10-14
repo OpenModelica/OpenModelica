@@ -7054,8 +7054,6 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
     else
     {
       <%generateMeasureTimeStartCode("measuredFunctionStartValues", "writeOutput", "MEASURETIME_MODELFUNCTIONS")%>
-      /* HistoryImplType::value_type_v v;
-      HistoryImplType::value_type_dv v2; */
 
       <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
       <<
@@ -7070,10 +7068,11 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       >>
     else
       <<
-      <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[2]", "writeOutput", "MEASURETIME_MODELFUNCTIONS")%>
+      <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[2]",  "writeOutput", "MEASURETIME_MODELFUNCTIONS")%>
 
-      //_historyImpl->write(v,v2,_simTime);
-      _historyImpl->addContainerToWriteQueue(boost::make_tuple(outputRealVars.outputVars,outputIntVars.outputVars,outputBoolVars.outputVars,_simTime));
+        all_vars_time_t all_vars = boost::make_tuple(outputRealVars.outputVars,outputIntVars.outputVars,outputBoolVars.outputVars,_simTime);
+        neg_all_vars_t neg_all_vars =      boost::make_tuple(outputRealVars.negateOutputVars,outputIntVars.negateOutputVars,outputBoolVars.negateOutputVars);
+       _historyImpl->addContainerToWriteQueue(all_vars,neg_all_vars);
       >>
     %>
     }

@@ -182,14 +182,14 @@ public:
      @v2_list derivatives vars
      @time
      */
-    void write(const all_vars_t& v_list, double time)
+    void write(const all_vars_time_t& v_list,const neg_all_vars_t& neg_v_list)
     {
 
 
         try
         {
             std::pair<std::map<double, unsigned long>::iterator,bool> p;
-            p = _time_entries.insert(make_pair(time,_buffer_pos));
+            p = _time_entries.insert(make_pair(get<3>(v_list),_buffer_pos));
             if(!p.second)//if variable and derivatives for time are already inserted, erase old values
             {
                 _real_variables_buffer.pop_back();

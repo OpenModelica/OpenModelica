@@ -119,9 +119,9 @@ class TextFileWriter : public Writer
      @v2_list derivatives vars
      @time
      */
-    void write(const all_vars_t& v_list, double time)
+    void write(const all_vars_time_t& v_list,const neg_all_vars_t& neg_v_list)
     {
-        _output_stream << time << SEPERATOR;
+        _output_stream << get<3>(v_list) << SEPERATOR;
 
         for (real_vars_t::const_iterator it = get<0>(v_list).begin(); it != get<0>(v_list).end(); ++it)
             _output_stream << (*it) << SEPERATOR;
