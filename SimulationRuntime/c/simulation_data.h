@@ -121,12 +121,12 @@ typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_
  */
 typedef struct SPARSE_PATTERN
 {
-    unsigned int* leadindex;
-    unsigned int* index;
-    unsigned int sizeofIndex;
-    unsigned int* colorCols;
-    unsigned int numberOfNoneZeros;
-    unsigned int maxColors;
+  unsigned int* leadindex;
+  unsigned int* index;
+  unsigned int sizeofIndex;
+  unsigned int* colorCols;
+  unsigned int numberOfNoneZeros;
+  unsigned int maxColors;
 }SPARSE_PATTERN;
 
 /* ANALYTIC_JACOBIAN
@@ -143,15 +143,14 @@ typedef struct SPARSE_PATTERN
  */
 typedef struct ANALYTIC_JACOBIAN
 {
-    unsigned int sizeCols;
-    unsigned int sizeRows;
-    unsigned int sizeTmpVars;
-    SPARSE_PATTERN sparsePattern;
-    modelica_real* seedVars;
-    modelica_real* tmpVars;
-    modelica_real* resultVars;
-    modelica_real* jacobian;
-
+  unsigned int sizeCols;
+  unsigned int sizeRows;
+  unsigned int sizeTmpVars;
+  SPARSE_PATTERN sparsePattern;
+  modelica_real* seedVars;
+  modelica_real* tmpVars;
+  modelica_real* resultVars;
+  modelica_real* jacobian;
 }ANALYTIC_JACOBIAN;
 
 /* EXTERNAL_INPUT
@@ -161,13 +160,12 @@ typedef struct ANALYTIC_JACOBIAN
  */
 typedef struct EXTERNAL_INPUT
 {
-    modelica_boolean active;
-    modelica_real** u;
-    modelica_real* t;
-    modelica_integer N;
-    modelica_integer n;
-    modelica_integer i;
-
+  modelica_boolean active;
+  modelica_real** u;
+  modelica_real* t;
+  modelica_integer N;
+  modelica_integer n;
+  modelica_integer i;
 }EXTERNAL_INPUT;
 
 /* Alias data with various types*/
