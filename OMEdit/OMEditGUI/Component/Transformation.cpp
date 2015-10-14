@@ -38,9 +38,9 @@
 
 #include "Transformation.h"
 
-Transformation::Transformation(StringHandler::ViewType viewType, QObject *pParent)
-  : QObject(pParent)
+Transformation::Transformation(StringHandler::ViewType viewType)
 {
+  mValid = true;
   mViewType = viewType;
   mWidth = 200.0;
   mHeight = 200.0;
@@ -61,10 +61,9 @@ Transformation::Transformation(StringHandler::ViewType viewType, QObject *pParen
   mPositionIcon = QPointF(0.0, 0.0);
 }
 
-Transformation::Transformation(Transformation *pTransformation, QObject *pParent)
-  : QObject(pParent)
+Transformation::Transformation(const Transformation &transformation)
 {
-  updateTransformation(pTransformation);
+  updateTransformation(transformation);
 }
 
 void Transformation::parseTransformationString(QString value, qreal width, qreal height)
@@ -149,26 +148,27 @@ void Transformation::parseTransformationString(QString value, qreal width, qreal
   }
 }
 
-void Transformation::updateTransformation(Transformation *pTransformation)
+void Transformation::updateTransformation(const Transformation &transformation)
 {
-  mViewType = pTransformation->getViewType();
-  mWidth = pTransformation->getWidth();
-  mHeight = pTransformation->getHeight();
-  mVisible = pTransformation->getVisible();
-  mOriginDiagram = pTransformation->getOriginDiagram();
-  mHasOriginDiagramX = pTransformation->hasOriginDiagram();
-  mHasOriginDiagramY = pTransformation->hasOriginDiagramY();
-  mExtent1Diagram = pTransformation->getExtent1Diagram();
-  mExtent2Diagram = pTransformation->getExtent2Diagram();
-  mRotateAngleDiagram = pTransformation->getRotateAngleDiagram();
-  mPositionDiagram = pTransformation->getPositionDiagram();
-  mOriginIcon = pTransformation->getOriginIcon();
-  mHasOriginIconX = pTransformation->hasOriginIconX();
-  mHasOriginIconY = pTransformation->hasOriginIconY();
-  mExtent1Icon = pTransformation->getExtent1Icon();
-  mExtent2Icon = pTransformation->getExtent2Icon();
-  mRotateAngleIcon = pTransformation->getRotateAngleIcon();
-  mPositionIcon = pTransformation->getPositionIcon();
+  mValid = transformation.isValid();
+  mViewType = transformation.getViewType();
+  mWidth = transformation.getWidth();
+  mHeight = transformation.getHeight();
+  mVisible = transformation.getVisible();
+  mOriginDiagram = transformation.getOriginDiagram();
+  mHasOriginDiagramX = transformation.hasOriginDiagramX();
+  mHasOriginDiagramY = transformation.hasOriginDiagramY();
+  mExtent1Diagram = transformation.getExtent1Diagram();
+  mExtent2Diagram = transformation.getExtent2Diagram();
+  mRotateAngleDiagram = transformation.getRotateAngleDiagram();
+  mPositionDiagram = transformation.getPositionDiagram();
+  mOriginIcon = transformation.getOriginIcon();
+  mHasOriginIconX = transformation.hasOriginIconX();
+  mHasOriginIconY = transformation.hasOriginIconY();
+  mExtent1Icon = transformation.getExtent1Icon();
+  mExtent2Icon = transformation.getExtent2Icon();
+  mRotateAngleIcon = transformation.getRotateAngleIcon();
+  mPositionIcon = transformation.getPositionIcon();
 }
 
 QTransform Transformation::getTransformationMatrix()
@@ -181,11 +181,6 @@ QTransform Transformation::getTransformationMatrix()
     default:
       return getTransformationMatrixDiagram();
   }
-}
-
-bool Transformation::getVisible()
-{
-  return mVisible;
 }
 
 void Transformation::adjustPosition(qreal x, qreal y)

@@ -523,10 +523,10 @@ void GraphicsView::addComponentObject(Component *pComponent)
     } else {
       startCommand = "";
     }
-    QString visible = pComponent->getTransformation()->getVisible() ? "true" : "false";
+    QString visible = pComponent->mTransformation.getVisible() ? "true" : "false";
     // add SubModel Element
     pTLMEditor->addSubModel(pComponent->getName(), "false", fileInfo.fileName(), startCommand, visible, pComponent->getTransformationOrigin(),
-                            pComponent->getTransformationExtent(), QString::number(pComponent->getTransformation()->getRotateAngle()));
+                            pComponent->getTransformationExtent(), QString::number(pComponent->mTransformation.getRotateAngle()));
   }
   // make the model modified
   mpModelWidget->setModelModified();
@@ -1701,8 +1701,8 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
         pComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
         pComponent->setPos(0, 0);
         pComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
-        pComponent->getTransformation()->adjustPosition(positionDifference.x(), positionDifference.y());
-        pComponent->setTransform(pComponent->getTransformation()->getTransformationMatrix());
+        pComponent->mTransformation.adjustPosition(positionDifference.x(), positionDifference.y());
+        pComponent->setTransform(pComponent->mTransformation.getTransformationMatrix());
         // update the component placement annotation and if there are any connections associated to component update their annotations as well.
         pComponent->emitTransformHasChanged();
         hasMoved = true;
@@ -1713,13 +1713,13 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
     // if shape position is changed then update class annotation
     foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
       if (pShapeAnnotation->getOldPosition() != pShapeAnnotation->pos()) {
-        pShapeAnnotation->getTransformation()->setOrigin(pShapeAnnotation->scenePos());
+        pShapeAnnotation->mTransformation.setOrigin(pShapeAnnotation->scenePos());
         bool state = pShapeAnnotation->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
         pShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
         pShapeAnnotation->setPos(0, 0);
         pShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
-        pShapeAnnotation->setTransform(pShapeAnnotation->getTransformation()->getTransformationMatrix());
-        pShapeAnnotation->setOrigin(pShapeAnnotation->getTransformation()->getPosition());
+        pShapeAnnotation->setTransform(pShapeAnnotation->mTransformation.getTransformationMatrix());
+        pShapeAnnotation->setOrigin(pShapeAnnotation->mTransformation.getPosition());
         pShapeAnnotation->emitChanged();
         hasMoved = true;
       }

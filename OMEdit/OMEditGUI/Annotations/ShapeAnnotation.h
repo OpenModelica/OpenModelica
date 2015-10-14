@@ -115,9 +115,9 @@ private:
   QAction *mpManhattanizeShapeAction;
 public:
   enum LineGeometryType {VerticalLine, HorizontalLine};
+  Transformation mTransformation;
   ShapeAnnotation(QGraphicsItem *pParent);
   ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsView, QGraphicsItem *pParent = 0);
-  ~ShapeAnnotation();
   void setDefaults();
   void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void setUserDefaults();
@@ -140,7 +140,6 @@ public:
   virtual void replaceExtent(int index, QPointF point);
   virtual void updateEndExtent(QPointF point);
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
-  Transformation* getTransformation() {return mpTransformation;}
   void setPoints(QList<QPointF> points) {mPoints = points;}
   QList<QPointF> getPoints() {return mPoints;}
   void setStartArrow(StringHandler::Arrow startArrow);
@@ -236,7 +235,6 @@ public slots:
 protected:
   GraphicsView *mpGraphicsView;
   Component *mpParentComponent;
-  Transformation *mpTransformation;
   QList<QPointF> mPoints;
   QList<LineGeometryType> mGeometries;
   QList<StringHandler::Arrow> mArrow;

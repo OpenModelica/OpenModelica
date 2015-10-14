@@ -360,7 +360,7 @@ ShapeAnnotation::ShapeAnnotation(QGraphicsItem *pParent)
 {
   mpGraphicsView = 0;
   mpParentComponent = dynamic_cast<Component*>(pParent);
-  mpTransformation = 0;
+  //mTransformation = 0;
   mIsCustomShape = false;
   mIsInheritedShape = false;
   setOldPosition(QPointF(0, 0));
@@ -375,20 +375,12 @@ ShapeAnnotation::ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsVie
   : QGraphicsItem(pParent)
 {
   mpGraphicsView = pGraphicsView;
-  mpTransformation = new Transformation(StringHandler::Diagram);
+  mTransformation = Transformation(StringHandler::Diagram);
   mIsCustomShape = true;
   mIsInheritedShape = inheritedShape;
   setOldPosition(QPointF(0, 0));
   mIsCornerItemClicked = false;
   createActions();
-}
-
-/*!
-  Deletes the Transformation object.
-  */
-ShapeAnnotation::~ShapeAnnotation()
-{
-  if (mpTransformation) delete mpTransformation;
 }
 
 /*!
@@ -633,11 +625,11 @@ QString ShapeAnnotation::getShapeAnnotation()
   */
 void ShapeAnnotation::initializeTransformation()
 {
-  mpTransformation->setOrigin(mOrigin);
-  mpTransformation->setExtent1(QPointF(-100.0, -100.0));
-  mpTransformation->setExtent2(QPointF(100.0, 100.0));
-  mpTransformation->setRotateAngle(mRotation);
-  setTransform(mpTransformation->getTransformationMatrix());
+  mTransformation.setOrigin(mOrigin);
+  mTransformation.setExtent1(QPointF(-100.0, -100.0));
+  mTransformation.setExtent2(QPointF(100.0, 100.0));
+  mTransformation.setRotateAngle(mRotation);
+  setTransform(mTransformation.getTransformationMatrix());
 }
 
 /*!
@@ -1116,7 +1108,7 @@ QImage ShapeAnnotation::getImage()
   */
 void ShapeAnnotation::rotateClockwise()
 {
-  qreal oldRotation = StringHandler::getNormalizedAngle(mpTransformation->getRotateAngle());
+  qreal oldRotation = StringHandler::getNormalizedAngle(mTransformation.getRotateAngle());
   qreal rotateIncrement = -90;
   qreal angle = 0;
   if (oldRotation == -270)
@@ -1141,7 +1133,7 @@ void ShapeAnnotation::rotateClockwise()
   */
 void ShapeAnnotation::rotateAntiClockwise()
 {
-  qreal oldRotation = StringHandler::getNormalizedAngle(mpTransformation->getRotateAngle());
+  qreal oldRotation = StringHandler::getNormalizedAngle(mTransformation.getRotateAngle());
   qreal rotateIncrement = 90;
   qreal angle = 0;
   if (oldRotation == 270)
@@ -1167,8 +1159,8 @@ void ShapeAnnotation::rotateAntiClockwise()
   */
 void ShapeAnnotation::applyRotation(qreal angle)
 {
-  mpTransformation->setRotateAngle(angle);
-  setTransform(mpTransformation->getTransformationMatrix());
+  mTransformation.setRotateAngle(angle);
+  setTransform(mTransformation.getTransformationMatrix());
   mRotation = angle;
 }
 
@@ -1416,7 +1408,7 @@ void ShapeAnnotation::referenceShapeChanged()
   if (pShapeAnnotation) {
     if (mpGraphicsView) {
       updateShape(pShapeAnnotation);
-      setTransform(pShapeAnnotation->getTransformation()->getTransformationMatrix());
+      setTransform(pShapeAnnotation->mTransformation.getTransformationMatrix());
     } else if (mpParentComponent) {
       updateShape(pShapeAnnotation);
       setPos(mOrigin);
@@ -1591,9 +1583,9 @@ void ShapeAnnotation::rotateAntiClockwiseMouseRightClick()
   */
 void ShapeAnnotation::moveUp()
 {
-  mpTransformation->adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
-  setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getPosition();
+  mTransformation.adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  setTransform(mTransformation.getTransformationMatrix());
+  mOrigin = mTransformation.getPosition();
 }
 
 /*!
@@ -1612,9 +1604,9 @@ void ShapeAnnotation::moveUp()
   */
 void ShapeAnnotation::moveShiftUp()
 {
-  mpTransformation->adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
-  setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getPosition();
+  mTransformation.adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
+  setTransform(mTransformation.getTransformationMatrix());
+  mOrigin = mTransformation.getPosition();
 }
 
 /*!
@@ -1633,9 +1625,9 @@ void ShapeAnnotation::moveShiftUp()
   */
 void ShapeAnnotation::moveCtrlUp()
 {
-  mpTransformation->adjustPosition(0, 1);
-  setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getPosition();
+  mTransformation.adjustPosition(0, 1);
+  setTransform(mTransformation.getTransformationMatrix());
+  mOrigin = mTransformation.getPosition();
 }
 
 /*!
@@ -1654,9 +1646,9 @@ void ShapeAnnotation::moveCtrlUp()
   */
 void ShapeAnnotation::moveDown()
 {
-  mpTransformation->adjustPosition(0, -mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
-  setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getPosition();
+  mTransformation.adjustPosition(0, -mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  setTransform(mTransformation.getTransformationMatrix());
+  mOrigin = mTransformation.getPosition();
 }
 
 
@@ -1676,9 +1668,9 @@ void ShapeAnnotation::moveDown()
   */
 void ShapeAnnotation::moveShiftDown()
 {
-  mpTransformation->adjustPosition(0, -(mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5));
-  setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getPosition();
+  mTransformation.adjustPosition(0, -(mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5));
+  setTransform(mTransformation.getTransformationMatrix());
+  mOrigin = mTransformation.getPosition();
 }
 
 /*!
@@ -1697,9 +1689,9 @@ void ShapeAnnotation::moveShiftDown()
   */
 void ShapeAnnotation::moveCtrlDown()
 {
-  mpTransformation->adjustPosition(0, -1);
-  setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getPosition();
+  mTransformation.adjustPosition(0, -1);
+  setTransform(mTransformation.getTransformationMatrix());
+  mOrigin = mTransformation.getPosition();
 }
 
 /*!
@@ -1718,9 +1710,9 @@ void ShapeAnnotation::moveCtrlDown()
   */
 void ShapeAnnotation::moveLeft()
 {
-  mpTransformation->adjustPosition(-mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
-  setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getPosition();
+  mTransformation.adjustPosition(-mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
+  setTransform(mTransformation.getTransformationMatrix());
+  mOrigin = mTransformation.getPosition();
 }
 
 /*!
@@ -1739,9 +1731,9 @@ void ShapeAnnotation::moveLeft()
   */
 void ShapeAnnotation::moveShiftLeft()
 {
-  mpTransformation->adjustPosition(-(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5), 0);
-  setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getPosition();
+  mTransformation.adjustPosition(-(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5), 0);
+  setTransform(mTransformation.getTransformationMatrix());
+  mOrigin = mTransformation.getPosition();
 }
 
 /*!
@@ -1760,9 +1752,9 @@ void ShapeAnnotation::moveShiftLeft()
   */
 void ShapeAnnotation::moveCtrlLeft()
 {
-  mpTransformation->setOrigin(QPointF(mpTransformation->getPosition().x() - 1, mpTransformation->getPosition().y()));
-  setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getPosition();
+  mTransformation.setOrigin(QPointF(mTransformation.getPosition().x() - 1, mTransformation.getPosition().y()));
+  setTransform(mTransformation.getTransformationMatrix());
+  mOrigin = mTransformation.getPosition();
 }
 
 /*!
@@ -1781,9 +1773,9 @@ void ShapeAnnotation::moveCtrlLeft()
   */
 void ShapeAnnotation::moveRight()
 {
-  mpTransformation->adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
-  setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getPosition();
+  mTransformation.adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
+  setTransform(mTransformation.getTransformationMatrix());
+  mOrigin = mTransformation.getPosition();
 }
 
 /*!
@@ -1802,9 +1794,9 @@ void ShapeAnnotation::moveRight()
   */
 void ShapeAnnotation::moveShiftRight()
 {
-  mpTransformation->adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5, 0);
-  setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getPosition();
+  mTransformation.adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5, 0);
+  setTransform(mTransformation.getTransformationMatrix());
+  mOrigin = mTransformation.getPosition();
 }
 
 /*!
@@ -1823,9 +1815,9 @@ void ShapeAnnotation::moveShiftRight()
   */
 void ShapeAnnotation::moveCtrlRight()
 {
-  mpTransformation->setOrigin(QPointF(mpTransformation->getPosition().x() + 1, mpTransformation->getPosition().y()));
-  setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getPosition();
+  mTransformation.setOrigin(QPointF(mTransformation.getPosition().x() + 1, mTransformation.getPosition().y()));
+  setTransform(mTransformation.getTransformationMatrix());
+  mOrigin = mTransformation.getPosition();
 }
 
 /*!
