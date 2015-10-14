@@ -233,7 +233,7 @@ algorithm
   (outExp, outPrevVars) := Expression.traverseExpBottomUp(inExp, collectPrevVars1, inPrevVars);
 end collectPrevVars;
 
-public function collectPrevVars1
+protected function collectPrevVars1
   input DAE.Exp inExp;
   input list<DAE.ComponentRef> inPrevCompRefs;
   output DAE.Exp outExp = inExp;
@@ -1278,29 +1278,21 @@ protected function substitutePartitionOpExps
  Also when clauses are created for boolean clocks."
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.Shared inShared;
-  output BackendDAE.EqSystem outSyst;
+  output BackendDAE.EqSystem outSyst = inSyst;
+protected
+  list<BackendDAE.Equation> newEqs = {};
+  list<BackendDAE.Var> newVars = {};
+  Integer cnt = 1;
+  BackendDAE.Equation eq;
 algorithm
-  outSyst := match inSyst
-    local
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqs;
-      BackendDAE.EqSystem syst;
-      list<BackendDAE.Equation> newEqs = {};
-      list<BackendDAE.Var> newVars = {};
-      Integer cnt = 1;
-      BackendDAE.Equation eq;
-    case syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs)
-      algorithm
-        for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
-          eq := BackendEquation.equationNth1(eqs, i);
-          (eq, (newEqs, newVars, cnt, _)) :=
-          BackendEquation.traverseExpsOfEquation(eq, substitutePartitionOpExp, (newEqs, newVars, cnt, inShared));
-          newEqs := eq::newEqs;
-        end for;
-        syst.orderedEqs := BackendEquation.listEquation(listReverse(newEqs));
-        syst.orderedVars := BackendVariable.addVars(newVars, vars);
-      then BackendDAEUtil.clearEqSyst(syst);
-  end match;
+  for i in 1:BackendDAEUtil.equationArraySize(inSyst.orderedEqs) loop
+    eq := BackendEquation.equationNth1(inSyst.orderedEqs, i);
+    (eq, (newEqs, newVars, cnt, _)) := BackendEquation.traverseExpsOfEquation(eq, substitutePartitionOpExp, (newEqs, newVars, cnt, inShared));
+    newEqs := eq::newEqs;
+  end for;
+  outSyst.orderedEqs := BackendEquation.listEquation(listReverse(newEqs));
+  outSyst.orderedVars := BackendVariable.addVars(newVars, inSyst.orderedVars);
+  outSyst := BackendDAEUtil.clearEqSyst(outSyst);
 end substitutePartitionOpExps;
 
 protected function substitutePartitionOpExp
@@ -1318,28 +1310,25 @@ protected function substitutePartitionOpExp1
   output DAE.Exp outExp;
   output tuple<list<BackendDAE.Equation>,list<BackendDAE.Var>, Integer, BackendDAE.Shared> outTpl;
 protected
+  Absyn.Path path;
+  BackendDAE.Shared shared;
+  DAE.CallAttributes attr;
+  DAE.ClockKind clk;
+  Integer cnt;
   list<BackendDAE.Equation> newEqs;
   list<BackendDAE.Var> newVars;
-  Integer cnt;
-  BackendDAE.Shared shared;
+  list<DAE.Exp> exps;
 algorithm
   (newEqs, newVars, cnt, shared) := inTpl;
   (outExp, outTpl) := match inExp
-    local
-      Absyn.Path path;
-      list<DAE.Exp> exps;
-      DAE.CallAttributes attr;
-      DAE.ClockKind clk;
-    case DAE.CLKCONST(clk)
-      equation
-        (clk, newEqs, newVars, cnt) = substClock(clk, newEqs, newVars, cnt, shared);
-      then
-        (DAE.CLKCONST(clk), (newEqs, newVars, cnt, shared));
-    case DAE.CALL(path = path, expLst = exps, attr = attr)
-      then
-        substituteExpsCall(path, exps, attr, newEqs, newVars, cnt, shared);
-    else
-      (inExp, inTpl);
+    case DAE.CLKCONST(clk) equation
+      (clk, newEqs, newVars, cnt) = substClock(clk, newEqs, newVars, cnt, shared);
+    then (DAE.CLKCONST(clk), (newEqs, newVars, cnt, shared));
+
+    case DAE.CALL(path=path, expLst=exps, attr=attr)
+    then substituteExpsCall(path, exps, attr, newEqs, newVars, cnt, shared);
+
+    else (inExp, inTpl);
   end match;
 end substitutePartitionOpExp1;
 
@@ -1353,32 +1342,28 @@ protected function substClock
   output list<BackendDAE.Equation> outNewEqs;
   output list<BackendDAE.Var> outNewVars;
   output Integer outCnt;
+protected
+  DAE.Exp e;
+  Integer cnt;
+  Integer i;
+  Real f;
+  list<BackendDAE.Equation> eqs;
+  list<BackendDAE.Var> vars;
 algorithm
   (outClk, outNewEqs, outNewVars, outCnt) := match inClk
-    local
-      DAE.Exp e;
-      Integer i;
-      Real f;
-      list<BackendDAE.Equation> eqs;
-      list<BackendDAE.Var> vars;
-      Integer cnt;
-    case DAE.BOOLEAN_CLOCK(e, f)
-      equation
-        ({e}, eqs, vars, cnt) = substExp({e}, inNewEqs, inNewVars, inCnt);
-      then
-        (DAE.BOOLEAN_CLOCK(e, f), eqs, vars, cnt);
-    case DAE.REAL_CLOCK(e)
-      equation
-        (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
-      then
-        (DAE.REAL_CLOCK(e), eqs, vars, cnt);
-    case DAE.INTEGER_CLOCK(e, i)
-      equation
-        (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
-      then
-        (DAE.INTEGER_CLOCK(e, i), eqs, vars, cnt);
-    else
-      (inClk, inNewEqs, inNewVars, inCnt);
+    case DAE.BOOLEAN_CLOCK(e, f) equation
+      ({e}, eqs, vars, cnt) = substExp({e}, inNewEqs, inNewVars, inCnt);
+    then (DAE.BOOLEAN_CLOCK(e, f), eqs, vars, cnt);
+
+    case DAE.REAL_CLOCK(e) equation
+      (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
+    then (DAE.REAL_CLOCK(e), eqs, vars, cnt);
+
+    case DAE.INTEGER_CLOCK(e, i) equation
+      (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
+    then (DAE.INTEGER_CLOCK(e, i), eqs, vars, cnt);
+
+    else (inClk, inNewEqs, inNewVars, inCnt);
   end match;
 end substClock;
 
@@ -1560,23 +1545,6 @@ algorithm
       then {};
   end matchcontinue;
 end getVarIxs;
-
-protected function getVars
-  input DAE.ComponentRef inComp;
-  input BackendDAE.Variables inVariables;
-  output list<BackendDAE.Var> outIntegerLst;
-algorithm
-  outIntegerLst := matchcontinue inComp
-    local
-      list<BackendDAE.Var> vars;
-    case _
-      equation
-        (vars, _) = BackendVariable.getVar(inComp, inVariables);
-      then vars;
-    else
-      then {};
-  end matchcontinue;
-end getVars;
 
 protected function baseClockPartitioning
 "Do base clock partitioning and detect kind of new partitions(clocked or continuous)."
@@ -1762,18 +1730,6 @@ algorithm
                                    else partitionType;
 end detectEqPartition;
 
-protected function reverseBoolOption
-  input Option<Boolean> inp;
-  output Option<Boolean> out;
-algorithm
-  out := match inp
-    local
-      Boolean v;
-    case SOME(v) then SOME(not v);
-    else inp;
-  end match;
-end reverseBoolOption;
-
 protected function printPartitionType
   input Option<Boolean> isClockedPartition;
   output String out;
@@ -1947,7 +1903,7 @@ algorithm
   end for;
 end partitionIndependentBlocks0;
 
-public function partitionIndependentBlocksMasked
+protected function partitionIndependentBlocksMasked
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
   input BackendDAE.IncidenceMatrix rm;

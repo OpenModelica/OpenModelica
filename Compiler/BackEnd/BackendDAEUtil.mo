@@ -6536,7 +6536,10 @@ algorithm
   // generate system for initialization
   (outInitDAE, outUseHomotopy, outRemovedInitialEquationLst, outPrimaryParameters, outAllPrimaryParameters) := Initialization.solveInitialSystem(dae);
 
-  simDAE := BackendDAEOptimize.addInitialStmtsToAlgorithms(dae);
+  // use function tree from initDAE further for simDAE
+  simDAE := BackendDAEUtil.setFunctionTree(dae, BackendDAEUtil.getFunctions(outInitDAE.shared));
+
+  simDAE := BackendDAEOptimize.addInitialStmtsToAlgorithms(simDAE);
   simDAE := Initialization.removeInitializationStuff(simDAE);
 
   // post-optimization phase

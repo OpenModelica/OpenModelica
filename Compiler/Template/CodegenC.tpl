@@ -294,8 +294,10 @@ template functionInitSynchronous(list<ClockedPartition> clockedPartitions, Strin
   /* Initializes the clocks of model. */
   void <%symbolName(modelNamePrefix,"function_initSynchronous")%>(DATA *data, threadData_t *threadData)
   {
+    TRACE_PUSH
     long i=0, j=0;
     <%body%>
+    TRACE_POP
   }
   >>
 end functionInitSynchronous;
@@ -344,6 +346,7 @@ template functionUpdateSynchronous(list<ClockedPartition> clockedPartitions, Str
   /* Update the base clock. */
   void <%symbolName(modelNamePrefix,"function_updateSynchronous")%>(DATA *data, threadData_t *threadData, long i)
   {
+    TRACE_PUSH
     <%varDecls%>
     modelica_boolean ret;
     switch (i) {
@@ -352,6 +355,7 @@ template functionUpdateSynchronous(list<ClockedPartition> clockedPartitions, Str
         throwStreamPrint(NULL, "Internal Error: unknown base partition %ld", i);
         break;
     }
+    TRACE_POP
   }
   >>
 end functionUpdateSynchronous;
@@ -397,8 +401,8 @@ template functionSystemsSynchronous(list<SubPartition> subPartitions, String mod
   /*Clocked systems equations */
   int <%symbolName(modelNamePrefix,"function_equationsSynchronous")%>(DATA *data, threadData_t *threadData, long i)
   {
-    int ret;
     TRACE_PUSH
+    int ret;
 
     switch (i) {
       <%cases%>

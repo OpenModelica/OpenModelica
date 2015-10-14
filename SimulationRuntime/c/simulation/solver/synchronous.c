@@ -113,8 +113,27 @@ void checkForSynchronous(DATA *data, SOLVER_INFO* solverInfo)
   TRACE_POP
 }
 
+/*
+void printSubClock(SUBCLOCK_INFO* subClock)
+{
+  printf("sub-clock\n");
+  printf("shift: %ld / %ld\n", subClock->shift.m, subClock->shift.n);
+  printf("factor: %ld / %ld\n", subClock->factor.m, subClock->factor.n);
+  printf("solverMethod: %s\n", subClock->solverMethod);
+  printf("holdEvents: %s\n\n", subClock->holdEvents ? "true" : "false");
+  fflush(stdout);
+}
+
+void printRATIONAL(RATIONAL* r)
+{
+  printf("RATIONAL: %ld / %ld\n", r->m, r->n);
+  fflush(stdout);
+}
+*/
+
 void fireClock(DATA* data, threadData_t *threadData, long idx, double curTime)
 {
+  TRACE_PUSH
   const CLOCK_INFO* clk = data->modelData.clocksInfo + idx;
   CLOCK_DATA* clkData = data->simulationInfo.clocksData + idx;
   data->callback->function_updateSynchronous(data, threadData, idx);
@@ -139,7 +158,7 @@ void fireClock(DATA* data, threadData_t *threadData, long idx, double curTime)
       insertTimer(data->simulationInfo.intvlTimers, &nextTimer);
     }
   }
-
+  TRACE_POP
 }
 
 static void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curTime)
