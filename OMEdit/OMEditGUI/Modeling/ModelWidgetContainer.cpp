@@ -2351,6 +2351,38 @@ Component* ModelWidget::createInheritedComponent(Component *pComponent, Graphics
 }
 
 /*!
+ * \brief ModelWidget::createInheritedConnection
+ * Creates the inherited connection.
+ * \param pConnectionLineAnnotation
+ * \return
+ */
+LineAnnotation* ModelWidget::createInheritedConnection(LineAnnotation *pConnectionLineAnnotation, LibraryTreeItem *pInheritedLibraryTreeItem)
+{
+  LineAnnotation *pInheritedConnectionLineAnnotation = new LineAnnotation(pConnectionLineAnnotation, mpDiagramGraphicsView);
+  pInheritedConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)<br /><br />%3 %4")
+                                                 .arg(pInheritedConnectionLineAnnotation->getStartComponentName())
+                                                 .arg(pInheritedConnectionLineAnnotation->getEndComponentName())
+                                                 .arg(tr("Connection declared in"))
+                                                 .arg(pInheritedLibraryTreeItem->getNameStructure()));
+  pInheritedConnectionLineAnnotation->drawCornerItems();
+  pInheritedConnectionLineAnnotation->setCornerItemsPassive();
+  // Add the start component connection details.
+  Component *pStartComponent = pInheritedConnectionLineAnnotation->getStartComponent();
+  if (pStartComponent->getRootParentComponent()) {
+    pStartComponent->getRootParentComponent()->addConnectionDetails(pInheritedConnectionLineAnnotation);
+  } else {
+    pStartComponent->addConnectionDetails(pInheritedConnectionLineAnnotation);
+  }
+  // Add the end component connection details.
+  Component *pEndComponent = pInheritedConnectionLineAnnotation->getEndComponent();
+  if (pEndComponent->getParentComponent()) {
+    pEndComponent->getParentComponent()->addConnectionDetails(pInheritedConnectionLineAnnotation);
+  } else {
+    pEndComponent->addConnectionDetails(pInheritedConnectionLineAnnotation);
+  }
+}
+
+/*!
  * \brief ModelWidget::loadWidgetComponents
  * Creates the widgets for the ModelWidget.
  */
@@ -2988,10 +3020,10 @@ void ModelWidget::drawModelInheritedClassComponents(InheritedClass *pInheritedCl
   removeInheritedClassComponents(pInheritedClass);
   LibraryTreeItem *pInheritedLibraryTreeItem = pInheritedClass->mpLibraryTreeItem;
   foreach (Component *pInheritedComponent, pInheritedLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentsList()) {
-    pInheritedClass->mIconComponentsList.append(new Component(pInheritedComponent, mpIconGraphicsView));
+    pInheritedClass->mIconComponentsList.append(createInheritedComponent(pInheritedComponent, mpIconGraphicsView));
   }
   foreach (Component *pInheritedComponent, pInheritedLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
-    pInheritedClass->mDiagramComponentsList.append(new Component(pInheritedComponent, mpDiagramGraphicsView));
+    pInheritedClass->mDiagramComponentsList.append(createInheritedComponent(pInheritedComponent, mpDiagramGraphicsView));
   }
 }
 
@@ -3068,30 +3100,7 @@ void ModelWidget::drawModelInheritedClassConnections(InheritedClass *pInheritedC
   removeInheritedClassConnections(pInheritedClass);
   LibraryTreeItem *pInheritedLibraryTreeItem = pInheritedClass->mpLibraryTreeItem;
   foreach (LineAnnotation *pConnection, pInheritedLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getConnectionsList()) {
-    LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(pConnection, mpDiagramGraphicsView);
-    pConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)<br /><br />%3 %4")
-                                          .arg(pConnectionLineAnnotation->getStartComponentName())
-                                          .arg(pConnectionLineAnnotation->getEndComponentName())
-                                          .arg(tr("Connection declared in"))
-                                          .arg(pInheritedLibraryTreeItem->getNameStructure()));
-    pConnectionLineAnnotation->drawCornerItems();
-    pConnectionLineAnnotation->setCornerItemsPassive();
-    // Add the start component connection details.
-    Component *pStartComponent = pConnectionLineAnnotation->getStartComponent();
-    if (pStartComponent->getRootParentComponent()) {
-      pStartComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
-    } else {
-      pStartComponent->addConnectionDetails(pConnectionLineAnnotation);
-    }
-    // Add the end component connection details.
-    Component *pEndComponent = pConnectionLineAnnotation->getEndComponent();
-    if (pEndComponent->getParentComponent()) {
-      pEndComponent->getParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
-    } else {
-      pEndComponent->addConnectionDetails(pConnectionLineAnnotation);
-    }
-    // add the connection to inherited connections list.
-    pInheritedClass->mConnectionsList.append(pConnectionLineAnnotation);
+    pInheritedClass->mConnectionsList.append(createInheritedConnection(pConnection, pInheritedLibraryTreeItem));
   }
 }
 

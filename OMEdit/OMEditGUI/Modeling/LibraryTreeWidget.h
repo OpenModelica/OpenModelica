@@ -66,6 +66,7 @@ public:
 class ModelWidget;
 class ShapeAnnotation;
 class Component;
+class LineAnnotation;
 class LibraryTreeItem : public QObject
 {
   Q_OBJECT
@@ -148,6 +149,7 @@ public:
   void emitUnLoaded() {emit unLoaded(this);}
   void emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView) {emit shapeAdded(this, pShapeAnnotation, pGraphicsView);}
   void emitComponentAdded(Component *pComponent, GraphicsView *pGraphicsView) {emit componentAdded(this, pComponent, pGraphicsView);}
+  void emitConnectionAdded(LineAnnotation *pConnectionLineAnnotation) {emit connectionAdded(this, pConnectionLineAnnotation);}
 private:
   bool mIsRootItem;
   LibraryTreeItem *mpParentLibraryTreeItem;
@@ -178,12 +180,14 @@ signals:
   void unLoaded(LibraryTreeItem *pLibraryTreeItem);
   void shapeAdded(LibraryTreeItem *pLibraryTreeItem, ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void componentAdded(LibraryTreeItem *pLibraryTreeItem, Component *pComponent, GraphicsView *pGraphicsView);
+  void connectionAdded(LibraryTreeItem *pLibraryTreeItem, LineAnnotation *pConnectionLineAnnotation);
   void iconUpdated();
 public slots:
   void handleLoaded(LibraryTreeItem *pLibraryTreeItem);
   void handleUnloaded(LibraryTreeItem *pLibraryTreeItem);
   void handleShapeAdded(LibraryTreeItem *pLibraryTreeItem, ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void handleComponentAdded(LibraryTreeItem *pLibraryTreeItem, Component *pComponent, GraphicsView *pGraphicsView);
+  void handleConnectionAdded(LibraryTreeItem *pLibraryTreeItem, LineAnnotation *pConnectionLineAnnotation);
   void handleIconUpdated();
 };
 
