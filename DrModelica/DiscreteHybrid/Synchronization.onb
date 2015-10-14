@@ -120,7 +120,11 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">This model contains clocked synchronous constructs that are not yet supported by OpenModelica as of October 2015, but may start working within the near future. Hence Simulation of this model does not work&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>setCommandLineOptions("std=3.3")</Input>
+          <Input>loadModel(Modelica)</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>setCommandLineOptions("+std=3.3")</Input>
           <Output>true</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
@@ -130,8 +134,30 @@ p, li { white-space: pre-wrap; }
     messages = "Failed to build model: SynchCountersClocked"
 end SimulationResult;
 OMC-ERROR:
-"[&lt;interactive>:2:3-2:19:writable] Error: Class Clock not found in scope SynchCountersClocked.
-Error: Error occurred while flattening model SynchCountersClocked
+"Error: Error building simulator. Build log: gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClocked.o SynchCountersClocked.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClocked_functions.o SynchCountersClocked_functions.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClocked_records.o SynchCountersClocked_records.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClocked_01exo.o SynchCountersClocked_01exo.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClocked_02nls.o SynchCountersClocked_02nls.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClocked_03lsy.o SynchCountersClocked_03lsy.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClocked_04set.o SynchCountersClocked_04set.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClocked_05evt.o SynchCountersClocked_05evt.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClocked_06inz.o SynchCountersClocked_06inz.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClocked_07dly.o SynchCountersClocked_07dly.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClocked_08bnd.o SynchCountersClocked_08bnd.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClocked_09alg.o SynchCountersClocked_09alg.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClocked_10asr.o SynchCountersClocked_10asr.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClocked_11mix.o SynchCountersClocked_11mix.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClocked_12jac.o SynchCountersClocked_12jac.c
+SynchCountersClocked_06inz.c: In function 'SynchCountersClocked_eqFunction_1':
+SynchCountersClocked_06inz.c:51: error: '$P$CLKPRE$Pcount' undeclared (first use in this function)
+SynchCountersClocked_06inz.c:51: error: (Each undeclared identifier is reported only once
+SynchCountersClocked_06inz.c:51: error: for each function it appears in.)
+SynchCountersClocked_06inz.c: In function 'SynchCountersClocked_eqFunction_3':
+SynchCountersClocked_06inz.c:75: error: '$P$CLKPRE$PslowCount' undeclared (first use in this function)
+mingw32-make: *** [SynchCountersClocked_06inz.o] Error 1
+mingw32-make: *** Waiting for unfinished jobs....
+RESULT: 2
 "</Output>
         </GraphCell>
         <TextCell style="Text">
@@ -170,10 +196,14 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">This model contains clocked synchronous constructs that are not yet supported by OpenModelica as of October 2015, but may start working within the near future. Hence Simulation of this model does not work&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">This model contains clocked synchronous constructs that are not yet fully supported by OpenModelica as of October 2015, but may start working within the near future. Hence Simulation of this model does not work&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>setCommandLineOptions("std=3.3")</Input>
+          <Input>loadModel(Modelica)</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>setCommandLineOptions("+std=3.3")</Input>
           <Output>true</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
@@ -183,8 +213,30 @@ p, li { white-space: pre-wrap; }
     messages = "Failed to build model: SynchCountersClockedShort"
 end SimulationResult;
 OMC-ERROR:
-"[&lt;interactive>:2:4-2:57:writable] Error: Class Clock not found in scope SynchCountersClockedShort.
-Error: Error occurred while flattening model SynchCountersClockedShort
+"Error: Error building simulator. Build log: gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClockedShort.o SynchCountersClockedShort.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClockedShort_functions.o SynchCountersClockedShort_functions.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClockedShort_records.o SynchCountersClockedShort_records.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClockedShort_01exo.o SynchCountersClockedShort_01exo.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClockedShort_02nls.o SynchCountersClockedShort_02nls.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClockedShort_03lsy.o SynchCountersClockedShort_03lsy.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClockedShort_04set.o SynchCountersClockedShort_04set.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClockedShort_05evt.o SynchCountersClockedShort_05evt.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClockedShort_06inz.o SynchCountersClockedShort_06inz.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClockedShort_07dly.o SynchCountersClockedShort_07dly.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClockedShort_08bnd.o SynchCountersClockedShort_08bnd.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClockedShort_09alg.o SynchCountersClockedShort_09alg.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClockedShort_10asr.o SynchCountersClockedShort_10asr.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClockedShort_11mix.o SynchCountersClockedShort_11mix.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o SynchCountersClockedShort_12jac.o SynchCountersClockedShort_12jac.c
+SynchCountersClockedShort_06inz.c: In function 'SynchCountersClockedShort_eqFunction_3':
+SynchCountersClockedShort_06inz.c:75: error: '$P$CLKPRE$PslowCount' undeclared (first use in this function)
+SynchCountersClockedShort_06inz.c:75: error: (Each undeclared identifier is reported only once
+SynchCountersClockedShort_06inz.c:75: error: for each function it appears in.)
+SynchCountersClockedShort_06inz.c: In function 'SynchCountersClockedShort_eqFunction_5':
+SynchCountersClockedShort_06inz.c:99: error: '$P$CLKPRE$Pcount' undeclared (first use in this function)
+mingw32-make: *** [SynchCountersClockedShort_06inz.o] Error 1
+mingw32-make: *** Waiting for unfinished jobs....
+RESULT: 2
 "</Output>
         </GraphCell>
         <TextCell style="Section">

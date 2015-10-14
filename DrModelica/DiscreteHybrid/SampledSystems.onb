@@ -139,10 +139,14 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">This model contains clocked synchronous constructs that are not yet supported by OpenModelica as of October 2015, but may start working within the near future.Hence the Simulation of this models does not work&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">This model contains clocked synchronous constructs that are not yet fully supported by OpenModelica as of October 2015, but may start working within the near future.Hence the Simulation of this models does not work&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>setCommandLineOptions("std=3.3")</Input>
+          <Input>loadModel(Modelica)</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>setCommandLineOptions("+std=3.3")</Input>
           <Output>true</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
@@ -152,8 +156,30 @@ p, li { white-space: pre-wrap; }
     messages = "Failed to build model: VerySimplePeriodicSamplerClocked"
 end SimulationResult;
 OMC-ERROR:
-"[&lt;interactive>:8:4-11:12:writable] Error: Looking for a function Clock but found a Clock.
-Error: Error occurred while flattening model VerySimplePeriodicSamplerClocked
+"Error: Error building simulator. Build log: gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o VerySimplePeriodicSamplerClocked.o VerySimplePeriodicSamplerClocked.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o VerySimplePeriodicSamplerClocked_functions.o VerySimplePeriodicSamplerClocked_functions.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o VerySimplePeriodicSamplerClocked_records.o VerySimplePeriodicSamplerClocked_records.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o VerySimplePeriodicSamplerClocked_01exo.o VerySimplePeriodicSamplerClocked_01exo.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o VerySimplePeriodicSamplerClocked_02nls.o VerySimplePeriodicSamplerClocked_02nls.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o VerySimplePeriodicSamplerClocked_03lsy.o VerySimplePeriodicSamplerClocked_03lsy.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o VerySimplePeriodicSamplerClocked_04set.o VerySimplePeriodicSamplerClocked_04set.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o VerySimplePeriodicSamplerClocked_05evt.o VerySimplePeriodicSamplerClocked_05evt.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o VerySimplePeriodicSamplerClocked_06inz.o VerySimplePeriodicSamplerClocked_06inz.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o VerySimplePeriodicSamplerClocked_07dly.o VerySimplePeriodicSamplerClocked_07dly.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o VerySimplePeriodicSamplerClocked_08bnd.o VerySimplePeriodicSamplerClocked_08bnd.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o VerySimplePeriodicSamplerClocked_09alg.o VerySimplePeriodicSamplerClocked_09alg.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o VerySimplePeriodicSamplerClocked_10asr.o VerySimplePeriodicSamplerClocked_10asr.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o VerySimplePeriodicSamplerClocked_11mix.o VerySimplePeriodicSamplerClocked_11mix.c
+VerySimplePeriodicSamplerClocked_06inz.c: In function 'VerySimplePeriodicSamplerClocked_eqFunction_2':
+VerySimplePeriodicSamplerClocked_06inz.c:63: error: '$P$CLKPRE$Px' undeclared (first use in this function)
+VerySimplePeriodicSamplerClocked_06inz.c:63: error: (Each undeclared identifier is reported only once
+VerySimplePeriodicSamplerClocked_06inz.c:63: error: for each function it appears in.)
+VerySimplePeriodicSamplerClocked_06inz.c: In function 'VerySimplePeriodicSamplerClocked_eqFunction_3':
+VerySimplePeriodicSamplerClocked_06inz.c:75: error: '$P$CLKPRE$Px' undeclared (first use in this function)
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o VerySimplePeriodicSamplerClocked_12jac.o VerySimplePeriodicSamplerClocked_12jac.c
+mingw32-make: *** [VerySimplePeriodicSamplerClocked_06inz.o] Error 1
+mingw32-make: *** Waiting for unfinished jobs....
+RESULT: 2
 "</Output>
         </GraphCell>
         <TextCell style="Subsection">
@@ -387,14 +413,14 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">This model contains clocked synchronous constructs that are not yet supported by OpenModelica as of October 2015, but may start working within the near future.Hence the Simulation of this models does not work&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">This model contains clocked synchronous constructs that are not yet fully supported by OpenModelica as of October 2015, but may start working within the near future.Hence the Simulation of this models does not work&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>setCommandLineOptions("std=3.3")</Input>
+          <Input>loadModel(Modelica)</Input>
           <Output>true</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
-          <Input>loadModel(Modelica)</Input>
+          <Input>setCommandLineOptions("+std=3.3")</Input>
           <Output>true</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
@@ -404,8 +430,31 @@ p, li { white-space: pre-wrap; }
     messages = "Failed to build model: PeriodicSamplerClocked"
 end SimulationResult;
 OMC-ERROR:
-"[&lt;interactive>:5:4-5:18:writable] Error: Class Clock not found in scope BaseSamplerClocked.
-Error: Error occurred while flattening model PeriodicSamplerClocked
+"Error: Error building simulator. Build log: gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o PeriodicSamplerClocked.o PeriodicSamplerClocked.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o PeriodicSamplerClocked_functions.o PeriodicSamplerClocked_functions.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o PeriodicSamplerClocked_records.o PeriodicSamplerClocked_records.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o PeriodicSamplerClocked_01exo.o PeriodicSamplerClocked_01exo.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o PeriodicSamplerClocked_02nls.o PeriodicSamplerClocked_02nls.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o PeriodicSamplerClocked_03lsy.o PeriodicSamplerClocked_03lsy.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o PeriodicSamplerClocked_04set.o PeriodicSamplerClocked_04set.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o PeriodicSamplerClocked_05evt.o PeriodicSamplerClocked_05evt.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o PeriodicSamplerClocked_06inz.o PeriodicSamplerClocked_06inz.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o PeriodicSamplerClocked_07dly.o PeriodicSamplerClocked_07dly.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o PeriodicSamplerClocked_08bnd.o PeriodicSamplerClocked_08bnd.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o PeriodicSamplerClocked_09alg.o PeriodicSamplerClocked_09alg.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o PeriodicSamplerClocked_10asr.o PeriodicSamplerClocked_10asr.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o PeriodicSamplerClocked_11mix.o PeriodicSamplerClocked_11mix.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o PeriodicSamplerClocked_12jac.o PeriodicSamplerClocked_12jac.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o PeriodicSamplerClocked_13opt.o PeriodicSamplerClocked_13opt.c
+PeriodicSamplerClocked_06inz.c: In function 'PeriodicSamplerClocked_eqFunction_2':
+PeriodicSamplerClocked_06inz.c:63: error: '$P$CLKPRE$Px' undeclared (first use in this function)
+PeriodicSamplerClocked_06inz.c:63: error: (Each undeclared identifier is reported only once
+PeriodicSamplerClocked_06inz.c:63: error: for each function it appears in.)
+PeriodicSamplerClocked_06inz.c: In function 'PeriodicSamplerClocked_eqFunction_3':
+PeriodicSamplerClocked_06inz.c:75: error: '$P$CLKPRE$Px' undeclared (first use in this function)
+mingw32-make: *** [PeriodicSamplerClocked_06inz.o] Error 1
+mingw32-make: *** Waiting for unfinished jobs....
+RESULT: 2
 "</Output>
         </GraphCell>
       </GroupCell>
@@ -497,10 +546,10 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">This model contains clocked synchronous constructs that are not yet supported by OpenModelica as of October 2015, but may start working within the near future.Hence the Simulation of this models does not work&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">This model contains clocked synchronous constructs that are not yet fully supported by OpenModelica as of October 2015, but may start working within the near future.Hence the Simulation of this models does not work&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>setCommandLineOptions("std=3.3")</Input>
+          <Input>setCommandLineOptions("+std=3.3")</Input>
           <Output>true</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
@@ -510,8 +559,35 @@ p, li { white-space: pre-wrap; }
     messages = "Failed to build model: APeriodicSamplerClocked"
 end SimulationResult;
 OMC-ERROR:
-"[&lt;interactive>:5:4-5:18:writable] Error: Class Clock not found in scope BaseSamplerClocked.
-Error: Error occurred while flattening model APeriodicSamplerClocked
+"Error: Error building simulator. Build log: gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o APeriodicSamplerClocked.o APeriodicSamplerClocked.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o APeriodicSamplerClocked_functions.o APeriodicSamplerClocked_functions.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o APeriodicSamplerClocked_records.o APeriodicSamplerClocked_records.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o APeriodicSamplerClocked_01exo.o APeriodicSamplerClocked_01exo.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o APeriodicSamplerClocked_02nls.o APeriodicSamplerClocked_02nls.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o APeriodicSamplerClocked_03lsy.o APeriodicSamplerClocked_03lsy.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o APeriodicSamplerClocked_04set.o APeriodicSamplerClocked_04set.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o APeriodicSamplerClocked_05evt.o APeriodicSamplerClocked_05evt.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o APeriodicSamplerClocked_06inz.o APeriodicSamplerClocked_06inz.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o APeriodicSamplerClocked_07dly.o APeriodicSamplerClocked_07dly.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o APeriodicSamplerClocked_08bnd.o APeriodicSamplerClocked_08bnd.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o APeriodicSamplerClocked_09alg.o APeriodicSamplerClocked_09alg.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o APeriodicSamplerClocked_10asr.o APeriodicSamplerClocked_10asr.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o APeriodicSamplerClocked_11mix.o APeriodicSamplerClocked_11mix.c
+APeriodicSamplerClocked_06inz.c: In function 'APeriodicSamplerClocked_eqFunction_1':
+APeriodicSamplerClocked_06inz.c:52: error: '$P$CLKPRE$PperiodTime' undeclared (first use in this function)
+APeriodicSamplerClocked_06inz.c:52: error: (Each undeclared identifier is reported only once
+APeriodicSamplerClocked_06inz.c:52: error: for each function it appears in.)
+APeriodicSamplerClocked_06inz.c: In function 'APeriodicSamplerClocked_eqFunction_2':
+APeriodicSamplerClocked_06inz.c:72: error: '$P$CLKPRE$PnextSampling' undeclared (first use in this function)
+APeriodicSamplerClocked_06inz.c: In function 'APeriodicSamplerClocked_eqFunction_6':
+APeriodicSamplerClocked_06inz.c:122: error: '$P$CLKPRE$Px' undeclared (first use in this function)
+APeriodicSamplerClocked_06inz.c: In function 'APeriodicSamplerClocked_eqFunction_7':
+APeriodicSamplerClocked_06inz.c:134: error: '$P$CLKPRE$Px' undeclared (first use in this function)
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o APeriodicSamplerClocked_12jac.o APeriodicSamplerClocked_12jac.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o APeriodicSamplerClocked_13opt.o APeriodicSamplerClocked_13opt.c
+mingw32-make: *** [APeriodicSamplerClocked_06inz.o] Error 1
+mingw32-make: *** Waiting for unfinished jobs....
+RESULT: 2
 "</Output>
         </GraphCell>
       </GroupCell>
@@ -660,10 +736,10 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">This model contains clocked synchronous constructs that are not yet supported by OpenModelica as of October 2015, but may start working within the near future.Hence the Simulation of this models does not work&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">This model contains clocked synchronous constructs that are not yet fully supported by OpenModelica as of October 2015, but may start working within the near future.Hence the Simulation of this models does not work&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>setCommandLineOptions("std=3.3")</Input>
+          <Input>setCommandLineOptions("+std=3.3")</Input>
           <Output>true</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
@@ -673,8 +749,31 @@ p, li { white-space: pre-wrap; }
     messages = "Failed to build model: DiscreteScalarStateSpaceClocked"
 end SimulationResult;
 OMC-ERROR:
-"[&lt;interactive>:9:4-12:12:writable] Error: Looking for a function Clock but found a Clock.
-Error: Error occurred while flattening model DiscreteScalarStateSpaceClocked
+"Error: Error building simulator. Build log: gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o DiscreteScalarStateSpaceClocked.o DiscreteScalarStateSpaceClocked.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o DiscreteScalarStateSpaceClocked_functions.o DiscreteScalarStateSpaceClocked_functions.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o DiscreteScalarStateSpaceClocked_records.o DiscreteScalarStateSpaceClocked_records.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o DiscreteScalarStateSpaceClocked_01exo.o DiscreteScalarStateSpaceClocked_01exo.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o DiscreteScalarStateSpaceClocked_02nls.o DiscreteScalarStateSpaceClocked_02nls.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o DiscreteScalarStateSpaceClocked_03lsy.o DiscreteScalarStateSpaceClocked_03lsy.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o DiscreteScalarStateSpaceClocked_04set.o DiscreteScalarStateSpaceClocked_04set.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o DiscreteScalarStateSpaceClocked_05evt.o DiscreteScalarStateSpaceClocked_05evt.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o DiscreteScalarStateSpaceClocked_06inz.o DiscreteScalarStateSpaceClocked_06inz.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o DiscreteScalarStateSpaceClocked_07dly.o DiscreteScalarStateSpaceClocked_07dly.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o DiscreteScalarStateSpaceClocked_08bnd.o DiscreteScalarStateSpaceClocked_08bnd.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o DiscreteScalarStateSpaceClocked_09alg.o DiscreteScalarStateSpaceClocked_09alg.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o DiscreteScalarStateSpaceClocked_10asr.o DiscreteScalarStateSpaceClocked_10asr.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o DiscreteScalarStateSpaceClocked_11mix.o DiscreteScalarStateSpaceClocked_11mix.c
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o DiscreteScalarStateSpaceClocked_12jac.o DiscreteScalarStateSpaceClocked_12jac.c
+DiscreteScalarStateSpaceClocked_06inz.c: In function 'DiscreteScalarStateSpaceClocked_eqFunction_2':
+DiscreteScalarStateSpaceClocked_06inz.c:63: error: '$P$CLKPRE$Px' undeclared (first use in this function)
+DiscreteScalarStateSpaceClocked_06inz.c:63: error: (Each undeclared identifier is reported only once
+DiscreteScalarStateSpaceClocked_06inz.c:63: error: for each function it appears in.)
+DiscreteScalarStateSpaceClocked_06inz.c: In function 'DiscreteScalarStateSpaceClocked_eqFunction_3':
+DiscreteScalarStateSpaceClocked_06inz.c:75: error: '$P$CLKPRE$Px' undeclared (first use in this function)
+gcc    -falign-functions -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME  -c -o DiscreteScalarStateSpaceClocked_13opt.o DiscreteScalarStateSpaceClocked_13opt.c
+mingw32-make: *** [DiscreteScalarStateSpaceClocked_06inz.o] Error 1
+mingw32-make: *** Waiting for unfinished jobs....
+RESULT: 2
 "</Output>
         </GraphCell>
       </GroupCell>
@@ -864,10 +963,10 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">This model contains clocked synchronous constructs that are not yet supported by OpenModelica as of October 2015, but may start working within the near future.Hence the Simulation of this models does not work&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">This model contains clocked synchronous constructs that are not yet fully supported by OpenModelica as of October 2015, but may start working within the near future.Hence the Simulation of this models does not work&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
           <GraphCell style="Graph" closed="false">
-            <Input>setCommandLineOptions("std=3.3")</Input>
+            <Input>setCommandLineOptions("+std=3.3")</Input>
             <Output>true</Output>
           </GraphCell>
           <GraphCell style="Graph" closed="false">
@@ -877,8 +976,8 @@ p, li { white-space: pre-wrap; }
     messages = "Failed to build model: TwoRateSamplerClocked"
 end SimulationResult;
 OMC-ERROR:
-"[&lt;interactive>:2:4-2:20:writable] Error: Class Clock not found in scope TwoRateSamplerClocked.
-Error: Error occurred while flattening model TwoRateSamplerClocked
+"Error: Too few equations, under-determined system. The model has 8 equation(s) and 10 variable(s).
+Error: pre-optimization module clockPartitioning failed.
 "</Output>
           </GraphCell>
         </GroupCell>
