@@ -97,7 +97,7 @@ case SIMCODE(__) then
     >> %>
     <%DefaultExperiment(simulationSettingsOpt)%>
     <%fmiModelVariables(simCode, "2.0")%>
-    <%ModelStructureHelper(modelStructure)%>
+    <%ModelStructure(simCode, modelStructure)%>
   </fmiModelDescription>
   >>
 end fmiModelDescription;

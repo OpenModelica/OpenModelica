@@ -288,18 +288,8 @@ template Implementation()
   >>
 end Implementation;
 
-template ModelStructure(SimCode simCode, list<JacobianMatrix> jacobianMatrixes)
- "Generates Model Structure."
-::=
-  <<
-  <ModelStructure>
-    //ModelStructureHelper(getFMIModelStructure(simCode, jacobianMatrixes))
-  </ModelStructure>
-  >>
-end ModelStructure;
-
-template ModelStructureHelper(Option<FmiModelStructure> fmiModelStructure)
- "Helper function to ModelStructure."
+template ModelStructure(SimCode simCode, Option<FmiModelStructure> fmiModelStructure)
+ "Generates ModelStructure"
 ::=
 match fmiModelStructure
 case SOME(fmistruct as FMIMODELSTRUCTURE(__)) then
@@ -309,6 +299,7 @@ case SOME(fmistruct as FMIMODELSTRUCTURE(__)) then
     <%ModelStructureDerivatives(fmistruct.fmiDerivatives)%>
     <%ModelStructureDiscreteStates(fmistruct.fmiDiscreteStates)%>
     <%ModelStructureInitialUnknowns(fmistruct.fmiInitialUnknowns)%>
+    <%ModelStructureClocks(simCode)%>
   </ModelStructure>
   >>
 else
@@ -316,7 +307,48 @@ else
   <ModelStructure>
   </ModelStructure>
   >>
-end ModelStructureHelper;
+end ModelStructure;
+
+template ModelStructureClocks(SimCode simCode)
+ "Generates ModelStructure Clocks"
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  let clocks = (clockedPartitions |> partition =>
+    match partition
+    case CLOCKED_PARTITION(__) then
+      match baseClock
+      case INFERRED_CLOCK() then
+        <<
+        <Clock><Inferred/></Clock>
+        >>
+      case REAL_CLOCK(interval=i as RCONST(real=val)) then
+        <<
+        <Clock><Periodic>
+          <Real interval="<%val%>" />
+        </Periodic></Clock>
+        >>
+      case INTEGER_CLOCK(intervalCounter=ic as ICONST(integer=val), resolution=res) then
+        <<
+        <Clock><Periodic>
+          <Rational intervalCounter="<%val%>" resolution="<%res%>" />
+        </Periodic></Clock>
+        >>
+      else
+        <<
+        <Clock/>
+        >>
+    ;separator="\n")
+  match clocks
+  case "" then
+    <<>>
+  else
+    <<
+    <Clocks>
+      <%clocks%>
+    </Clocks>
+    >>
+end ModelStructureClocks;
 
 template ModelStructureOutputs(FmiOutputs fmiOutputs)
  "Generates Model Structure Outputs."
