@@ -1189,6 +1189,9 @@ constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(78, "initOptModules",
 constant ConfigFlag MAX_MIXED_DETERMINED_INDEX = CONFIG_FLAG(79, "maxMixedDeterminedIndex",
   NONE(), EXTERNAL(), INT_FLAG(3), NONE(),
   Util.gettext("Sets the maximum mixed-determined index that is handled by the initialization."));
+constant ConfigFlag USE_LOCAL_DIRECTION = CONFIG_FLAG(80, "useLocalDirection",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Keeps the input/output prefix for all variables in the flat model, not only top-level ones."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1273,7 +1276,8 @@ constant list<ConfigFlag> allConfigFlags = {
   MATRIX_FORMAT,
   PARTLINTORN,
   INIT_OPT_MODULES,
-  MAX_MIXED_DETERMINED_INDEX
+  MAX_MIXED_DETERMINED_INDEX,
+  USE_LOCAL_DIRECTION
 };
 
 public function new

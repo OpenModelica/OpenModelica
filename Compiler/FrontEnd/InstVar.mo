@@ -1167,7 +1167,9 @@ algorithm
         // Propagate the final prefix from the modifier.
         //fin = InstUtil.propagateModFinal(mod, fin);
 
-        attr = stripVarAttrDirection(cr, ih, inState, inPrefix, attr);
+        if not Flags.getConfigBool(Flags.USE_LOCAL_DIRECTION) then
+          attr = stripVarAttrDirection(cr, ih, inState, inPrefix, attr);
+        end if;
 
         // Propagate prefixes to any elements inside this components if it's a
         // structured component.
