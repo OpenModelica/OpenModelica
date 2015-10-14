@@ -325,7 +325,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       if (mViewType == StringHandler::Diagram) {
         // if item is a class, model, block, connector or record. then we can drop it to the graphicsview
         if ((type == StringHandler::Class) || (type == StringHandler::Model) || (type == StringHandler::Block) ||
-            (type == StringHandler::Connector) || (type == StringHandler::Record)) {
+            (type == StringHandler::ExpandableConnector) || (type == StringHandler::Connector) || (type == StringHandler::Record)) {
           addComponentToView(name, pLibraryTreeItem, "", position, new ComponentInfo(""));
           return true;
         } else {
@@ -336,7 +336,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
         }
       } else if (mViewType == StringHandler::Icon) { // if dropping an item on the icon layer
         // if item is a connector. then we can drop it to the graphicsview
-        if (type == StringHandler::Connector) {
+        if (type == StringHandler::Connector || type == StringHandler::ExpandableConnector) {
           addComponentToView(name, pLibraryTreeItem, "", position, new ComponentInfo(""));
           return true;
         } else {
@@ -1491,7 +1491,7 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
       Component *pComponent = dynamic_cast<Component*>(pGraphicsItem->parentItem());
       if (pComponent && !pComponent->isSelected()) {
         if (pMainWindow->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
-            pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::Connector &&
+            pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector() &&
             !mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
           if (!isCreatingConnection()) {
             mpClickedComponent = pComponent;
@@ -1528,7 +1528,7 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
       Component *pComponent = dynamic_cast<Component*>(pGraphicsItem->parentItem());
       if (pComponent && !pComponent->isSelected()) {
         if (pMainWindow->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
-            pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::Connector &&
+            pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector() &&
             !mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
           setCrossCursor = true;
           /* If setOverrideCursor() has been called twice, calling restoreOverrideCursor() will activate the first cursor set.

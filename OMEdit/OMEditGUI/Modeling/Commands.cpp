@@ -199,7 +199,7 @@ AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibrary
 
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
-  if (mpLibraryTreeItem && mpLibraryTreeItem->getRestriction() == StringHandler::Connector &&
+  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() &&
       pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     // first create the component for Icon View
     mpIconComponent = new Component(name, pLibraryTreeItem, transformationString, position, pComponentInfo, mpIconGraphicsView);
@@ -232,7 +232,7 @@ void AddComponentCommand::redo()
 {
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
-  if (mpLibraryTreeItem && mpLibraryTreeItem->getRestriction() == StringHandler::Connector &&
+  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() &&
       pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     // first create the component for Icon View only if connector is not protected
     if (!mpComponentInfo->getProtected()) {
@@ -265,7 +265,7 @@ void AddComponentCommand::undo()
 {
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
-  if (mpLibraryTreeItem && mpLibraryTreeItem->getRestriction() == StringHandler::Connector &&
+  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() &&
       pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     // first create the component for Icon View only if connector is not protected
     if (!mpComponentInfo->getProtected()) {
@@ -358,7 +358,7 @@ void DeleteComponentCommand::redo()
 {
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
-  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->getRestriction() == StringHandler::Connector &&
+  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() &&
       pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     // first remove the component from Icon View
     mpIconComponent = mpIconGraphicsView->getComponentObject(mpComponent->getName());
@@ -396,7 +396,7 @@ void DeleteComponentCommand::undo()
 {
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
-  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->getRestriction() == StringHandler::Connector &&
+  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() &&
       pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     // first add the component to Icon View
     if (mpIconComponent) {

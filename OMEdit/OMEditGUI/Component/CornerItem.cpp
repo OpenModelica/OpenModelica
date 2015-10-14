@@ -233,6 +233,7 @@ void ResizerItem::setActive()
   } else {
     mPen = mActivePen;
   }
+  setToolTip(Helper::clickAndDragToResize);
   setVisible(true);
 }
 
@@ -243,6 +244,7 @@ void ResizerItem::setActive()
 void ResizerItem::setPassive()
 {
   mPen = mPassivePen;
+  setToolTip("");
   setVisible(false);
 }
 

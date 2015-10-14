@@ -72,10 +72,10 @@ QString StringHandler::getModelicaClassType(int type)
       return "Model";
     case StringHandler::Class:
       return "Class";
-    case StringHandler::Connector:
-      return "Connector";
     case StringHandler::ExpandableConnector:
       return "Expandable Connector";
+    case StringHandler::Connector:
+      return "Connector";
     case StringHandler::Record:
       return "Record";
     case StringHandler::Block:
