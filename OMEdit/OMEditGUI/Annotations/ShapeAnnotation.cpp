@@ -1106,6 +1106,9 @@ QImage ShapeAnnotation::getImage()
  */
 void ShapeAnnotation::applyRotation(qreal angle)
 {
+  if (angle == 360) {
+    angle = 0;
+  }
   mTransformation.setRotateAngle(angle);
   setTransform(mTransformation.getTransformationMatrix());
   mRotation = angle;

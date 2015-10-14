@@ -1227,20 +1227,21 @@ QString StringHandler::getPlacementAnnotation(QString componentAnnotation)
 }
 
 /*!
-  Reduces Angle to useful values. Finds the angle between 0° and 360°.\n
-  This functin is useful for performing shapes and components flipping.\n\n
-  <B>Find the angle between 0° and 360° that corresponds to 1275°</B>\n\n
-  1275 ÷ 360 = 3.541 the only part we care about is the "3", which tells us that 360° fits into 1275° three times,\n
-  1275° – 3×360° = 1275° – 1080° = 195°\n\n
-  <B>Find an angle between 0° and 360° that corresponds to –3742°</B>\n\n
-  This works somewhat similarly to the previous examples. First we will find how often 360° fits inside 3742°,\n
-  3742 ÷ 360 = 10.394\n
-  But since this angle was negative, so we actually need one extra round to carry us into the positive angle values,
-  so we will use 11 instead of 10,\n
-  –3742 + 11 × 360 = –3742 + 3960 = 218.
-  \param angle - the angle to be normalized.
-  \return the normalized angle.
-  */
+ * \brief StringHandler::getNormalizedAngle
+ * Reduces Angle to useful values. Finds the angle between 0° and 360°.\n
+ * This functin is useful for performing shapes and components flipping.\n\n
+ * <B>Find the angle between 0° and 360° that corresponds to 1275°</B>\n\n
+ * 1275 ÷ 360 = 3.541 the only part we care about is the "3", which tells us that 360° fits into 1275° three times,\n
+ * 1275° – 3×360° = 1275° – 1080° = 195°\n\n
+ * <B>Find an angle between 0° and 360° that corresponds to –3742°</B>\n\n
+ * This works somewhat similarly to the previous examples. First we will find how often 360° fits inside 3742°,\n
+ * 3742 ÷ 360 = 10.394\n
+ * But since this angle was negative, so we actually need one extra round to carry us into the positive angle values,
+ * so we will use 11 instead of 10,\n
+ * –3742 + 11 × 360 = –3742 + 3960 = 218.
+ * \param angle - the angle to be normalized.
+ * \return the normalized angle.
+ */
 qreal StringHandler::getNormalizedAngle(qreal angle)
 {
   qreal multiplier = fabs(angle)/360;

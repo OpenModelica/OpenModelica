@@ -191,6 +191,9 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
   mpLibraryTreeItem = pLibraryTreeItem;
   mpComponentInfo = pComponentInfo;
   mpComponentInfo->setName(name);
+  if (mpLibraryTreeItem) {
+    mpComponentInfo->setClassName(mpLibraryTreeItem->getNameStructure());
+  }
   mpGraphicsView = pGraphicsView;
   mIsInheritedComponent = false;
   mComponentType = Component::Root;
@@ -725,6 +728,9 @@ QString Component::getTransformationExtent()
 void Component::applyRotation(qreal angle)
 {
   setOriginAndExtents();
+  if (angle == 360) {
+    angle = 0;
+  }
   mTransformation.setRotateAngle(angle);
   setTransform(mTransformation.getTransformationMatrix());
   emit rotationChange();
