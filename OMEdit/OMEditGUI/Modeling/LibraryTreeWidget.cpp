@@ -421,6 +421,7 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon()
       case StringHandler::Class:
         return QIcon(":/Resources/icons/class-icon.svg");
       case StringHandler::Connector:
+      case StringHandler::ExpandableConnector:
         return QIcon(":/Resources/icons/connect-mode.svg");
       case StringHandler::Record:
         return QIcon(":/Resources/icons/record-icon.svg");

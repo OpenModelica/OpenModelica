@@ -670,8 +670,8 @@ void ShapeAnnotation::drawCornerItems()
   */
 void ShapeAnnotation::setCornerItemsActive()
 {
-  foreach (CornerItem *pCornerItem, mCornerItemsList)
-  {
+  foreach (CornerItem *pCornerItem, mCornerItemsList) {
+    pCornerItem->setToolTip(Helper::clickAndDragToResize);
     pCornerItem->setVisible(true);
   }
 }
@@ -681,8 +681,8 @@ void ShapeAnnotation::setCornerItemsActive()
   */
 void ShapeAnnotation::setCornerItemsPassive()
 {
-  foreach (CornerItem *pCornerItem, mCornerItemsList)
-  {
+  foreach (CornerItem *pCornerItem, mCornerItemsList) {
+    pCornerItem->setToolTip("");
     pCornerItem->setVisible(false);
   }
 }

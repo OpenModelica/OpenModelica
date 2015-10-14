@@ -55,7 +55,7 @@ public:
   StringHandler();
   ~StringHandler();
   enum ViewType {Icon, Diagram, ModelicaText, NoView};
-  enum ModelicaClasses {Model, Class, Connector, ExpandableConnector, Record, Block, Function, Package, Primitive, Type, Operator,
+  enum ModelicaClasses {Model, Class, ExpandableConnector, Connector, Record, Block, Function, Package, Primitive, Type, Operator,
                         OperatorRecord, OperatorFunction, Optimization, Parameter, Constant, Protected, Enumeration};
   enum OpenModelicaErrors {Notification, Warning, OMError, NoOMError};
   enum OpenModelicaErrorKinds {Syntax, Grammar, Translation, Symbolic, Simulation, Scripting, NoOMErrorKind};

@@ -387,7 +387,7 @@ void Component::createClassInheritedShapes()
 void Component::createClassShapes(LibraryTreeItem *pLibraryTreeItem)
 {
   GraphicsView *pGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
-  if (pLibraryTreeItem->getRestriction() == StringHandler::Connector && mpGraphicsView->getViewType() == StringHandler::Diagram &&
+  if (pLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram &&
       mComponentType == Component::Root && pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->hasAnnotation()) {
     pGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
   }
@@ -677,7 +677,7 @@ QString Component::getPlacementAnnotation()
   if (mTransformation.isValid()) {
     placementAnnotationString.append("visible=").append(mTransformation.getVisible() ? "true" : "false");
   }
-  if (mpLibraryTreeItem && mpLibraryTreeItem->getRestriction() == StringHandler::Connector) {
+  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector()) {
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
       // first get the component from diagram view and get the transformations
       Component *pComponent;
@@ -860,7 +860,7 @@ void Component::shapeDeleted()
 {
   if (mComponentType == Component::Root) {
     GraphicsView *pGraphicsView = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView();
-    if (mpLibraryTreeItem->getRestriction() == StringHandler::Connector && mpGraphicsView->getViewType() == StringHandler::Diagram &&
+    if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram &&
         mComponentType == Component::Root && mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->hasAnnotation()) {
       pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
     }
@@ -1215,7 +1215,7 @@ void Component::duplicate()
   QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
                    mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   if (mpGraphicsView->addComponent(mpLibraryTreeItem->getNameStructure(), scenePos() + gridStep)) {
-    if (mpLibraryTreeItem->getRestriction() == StringHandler::Connector) {
+    if (mpLibraryTreeItem->isConnector()) {
       if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
         duplicateHelper(mpGraphicsView);
         duplicateHelper(mpGraphicsView->getModelWidget()->getIconGraphicsView());
