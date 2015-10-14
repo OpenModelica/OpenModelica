@@ -852,7 +852,6 @@ bool ShapePropertiesDialog::applyShapeProperties()
     mpShapeAnnotation->drawCornerItems();
     mpShapeAnnotation->update();
     mpShapeAnnotation->getGraphicsView()->addClassAnnotation();
-    mpShapeAnnotation->getGraphicsView()->setCanAddClassAnnotation(true);
   }
   return true;
 }

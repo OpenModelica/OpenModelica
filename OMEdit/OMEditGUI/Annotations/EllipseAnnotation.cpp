@@ -216,5 +216,4 @@ void EllipseAnnotation::duplicate()
   pEllipseAnnotation->setCornerItemsPassive();
   pEllipseAnnotation->update();
   mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
 }

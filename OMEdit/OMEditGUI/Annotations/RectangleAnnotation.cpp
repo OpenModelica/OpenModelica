@@ -201,5 +201,4 @@ void RectangleAnnotation::duplicate()
   pRectangleAnnotation->setCornerItemsPassive();
   pRectangleAnnotation->update();
   mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
 }

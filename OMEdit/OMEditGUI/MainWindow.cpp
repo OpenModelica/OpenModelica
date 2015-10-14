@@ -1457,6 +1457,8 @@ void MainWindow::undo()
       ((pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) ||
        (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()))) {
     pModelWidget->getUndoStack()->undo();
+    pModelWidget->updateClassAnnotationIfNeeded();
+    pModelWidget->updateModelicaText();
   }
 }
 
@@ -1471,6 +1473,8 @@ void MainWindow::redo()
       ((pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) ||
        (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()))) {
     pModelWidget->getUndoStack()->redo();
+    pModelWidget->updateClassAnnotationIfNeeded();
+    pModelWidget->updateModelicaText();
   }
 }
 

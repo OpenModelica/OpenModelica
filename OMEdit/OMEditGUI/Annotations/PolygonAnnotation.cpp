@@ -272,5 +272,4 @@ void PolygonAnnotation::duplicate()
   pPolygonAnnotation->setCornerItemsPassive();
   pPolygonAnnotation->update();
   mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
 }

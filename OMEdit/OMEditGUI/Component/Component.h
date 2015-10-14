@@ -232,7 +232,6 @@ signals:
   void added();
   void transformChange();
   void transformHasChanged();
-  void notifyTransformHasChanged(bool updateModelicaText);
   void displayTextChanged();
   void rotationChange();
   void deleted();

@@ -176,8 +176,6 @@ public:
   QString getImageSource();
   void setImage(QImage image);
   QImage getImage();
-  void rotateClockwise();
-  void rotateAntiClockwise();
   void applyRotation(qreal angle);
   void adjustPointsWithOrigin();
   void adjustExtentsWithOrigin();
@@ -206,10 +204,8 @@ public slots:
   void bringForward();
   void sendToBack();
   void sendBackward();
-  void rotateClockwiseKeyPress();
-  void rotateAntiClockwiseKeyPress();
-  void rotateClockwiseMouseRightClick();
-  void rotateAntiClockwiseMouseRightClick();
+  void rotateClockwise();
+  void rotateAntiClockwise();
   void moveUp();
   void moveShiftUp();
   void moveCtrlUp();

@@ -158,7 +158,6 @@ void CornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
       if (!signalsBlocked()) {
         emit cornerItemPositionChanged();
       }
-      mpShapeAnnotation->getGraphicsView()->setCanAddClassAnnotation(true);
     }
   }
 }

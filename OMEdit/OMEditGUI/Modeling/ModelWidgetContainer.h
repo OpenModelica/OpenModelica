@@ -106,7 +106,7 @@ private:
   CoOrdinateSystem *mpCoOrdinateSystem;
   QRectF mExtentRectangle;
   bool mIsCustomScale;
-  bool mCanAddClassAnnotation;
+  bool mAddClassAnnotationNeeded;
   bool mIsCreatingConnection;
   bool mIsCreatingLineShape;
   bool mIsCreatingPolygonShape;
@@ -149,8 +149,8 @@ public:
   QRectF getExtentRectangle() {return mExtentRectangle;}
   void setIsCustomScale(bool enable);
   bool isCustomScale();
-  void setCanAddClassAnnotation(bool enable);
-  bool canAddClassAnnotation();
+  void setAddClassAnnotationNeeded(bool needed) {mAddClassAnnotationNeeded = needed;}
+  bool isAddClassAnnotationNeeded() {return mAddClassAnnotationNeeded;}
   void setIsCreatingConnection(bool enable);
   bool isCreatingConnection();
   void setIsCreatingLineShape(bool enable);
@@ -229,6 +229,8 @@ private:
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
 signals:
   void mouseDelete();
+  void mouseRotateClockwise();
+  void mouseRotateAntiClockwise();
   void keyPressDelete();
   void keyPressRotateClockwise();
   void keyPressRotateAntiClockwise();
@@ -256,7 +258,9 @@ public slots:
   void selectAll();
   void addClassAnnotation(bool updateModelicaText = true);
   void showGraphicsViewProperties();
-  void deleteComponents();
+  void deleteItems();
+  void rotateClockwise();
+  void rotateAntiClockwise();
 protected:
   virtual void dragMoveEvent(QDragMoveEvent *event);
   virtual void dropEvent(QDropEvent *event);
@@ -377,6 +381,7 @@ public:
   void refresh();
   bool validateText();
   bool modelicaEditorTextChanged();
+  void updateClassAnnotationIfNeeded();
   void updateModelicaText();
   void updateUndoRedoActions();
 private:

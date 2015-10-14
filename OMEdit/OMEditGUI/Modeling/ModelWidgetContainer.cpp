@@ -120,7 +120,7 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
   scale(1.0, -1.0);     // invert the drawing area.
   setStyleSheet(QString("QGraphicsView{background-color: lightGray;}"));
   setIsCustomScale(false);
-  setCanAddClassAnnotation(true);
+  setAddClassAnnotationNeeded(false);
   setIsCreatingConnection(false);
   mIsCreatingLineShape = false;
   mIsCreatingPolygonShape = false;
@@ -164,16 +164,6 @@ void GraphicsView::setIsCustomScale(bool enable)
 bool GraphicsView::isCustomScale()
 {
   return mIsCustomScale;
-}
-
-void GraphicsView::setCanAddClassAnnotation(bool enable)
-{
-  mCanAddClassAnnotation = enable;
-}
-
-bool GraphicsView::canAddClassAnnotation()
-{
-  return mCanAddClassAnnotation;
 }
 
 void GraphicsView::setIsCreatingConnection(bool enable)
@@ -489,6 +479,7 @@ void GraphicsView::addComponentToView(QString name, LibraryTreeItem *pLibraryTre
   pAddComponentCommand = new AddComponentCommand(name, pLibraryTreeItem, transformationString, position, pComponentInfo, addObject,
                                                  openingClass, this);
   mpModelWidget->getUndoStack()->push(pAddComponentCommand);
+  mpModelWidget->updateModelicaText();
 }
 
 /*!
@@ -510,7 +501,6 @@ void GraphicsView::addComponentObject(Component *pComponent)
                                                              mpModelWidget->getLibraryTreeItem()->getNameStructure());
     pMainWindow->getOMCProxy()->addComponent(pComponent->getName(), className, mpModelWidget->getLibraryTreeItem()->getNameStructure(),
                                              pComponent->getPlacementAnnotation());
-    mpModelWidget->updateModelicaText();
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpModelWidget->getEditor());
     QFileInfo fileInfo(pComponent->getLibraryTreeItem()->getFileName());
@@ -570,7 +560,6 @@ void GraphicsView::deleteComponentObject(Component *pComponent)
     OMCProxy *pOMCProxy = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
     // delete the component from OMC
     pOMCProxy->deleteComponent(pComponent->getName(), mpModelWidget->getLibraryTreeItem()->getNameStructure());
-    mpModelWidget->updateModelicaText();
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpModelWidget->getEditor());
     pTLMEditor->deleteSubModel(pComponent->getName());
@@ -763,7 +752,6 @@ void GraphicsView::bringToFront(ShapeAnnotation *pShape)
   mShapesList.append(pShape);
   // update class annotation.
   addClassAnnotation();
-  setCanAddClassAnnotation(true);
 }
 
 /*!
@@ -785,7 +773,6 @@ void GraphicsView::bringForward(ShapeAnnotation *pShape)
   }
   // update class annotation.
   addClassAnnotation();
-  setCanAddClassAnnotation(true);
 }
 
 /*!
@@ -805,7 +792,6 @@ void GraphicsView::sendToBack(ShapeAnnotation *pShape)
   }
   // update class annotation.
   addClassAnnotation();
-  setCanAddClassAnnotation(true);
 }
 
 /*!
@@ -827,7 +813,6 @@ void GraphicsView::sendBackward(ShapeAnnotation *pShape)
   }
   // update class annotation.
   addClassAnnotation();
-  setCanAddClassAnnotation(true);
 }
 
 void GraphicsView::removeAllComponents()
@@ -853,7 +838,6 @@ void GraphicsView::createLineShape(QPointF point)
 
   if (!isCreatingLineShape()) {
     mpLineShapeAnnotation = new LineAnnotation("", this);
-    setCanAddClassAnnotation(false);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpLineShapeAnnotation, this));
     reOrderItems();
     setIsCreatingLineShape(true);
@@ -872,7 +856,6 @@ void GraphicsView::createPolygonShape(QPointF point)
 
   if (!isCreatingPolygonShape()) {
     mpPolygonShapeAnnotation = new PolygonAnnotation("", this);
-    setCanAddClassAnnotation(false);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpPolygonShapeAnnotation, this));
     reOrderItems();
     setIsCreatingPolygonShape(true);
@@ -892,7 +875,6 @@ void GraphicsView::createRectangleShape(QPointF point)
 
   if (!isCreatingRectangleShape()) {
     mpRectangleShapeAnnotation = new RectangleAnnotation("", this);
-    setCanAddClassAnnotation(false);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpRectangleShapeAnnotation, this));
     reOrderItems();
     setIsCreatingRectangleShape(true);
@@ -914,7 +896,6 @@ void GraphicsView::createRectangleShape(QPointF point)
     pMainWindow->getConnectModeAction()->setChecked(true);
     mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpRectangleShapeAnnotation, this);
     addClassAnnotation();
-    setCanAddClassAnnotation(true);
   }
 }
 
@@ -926,7 +907,6 @@ void GraphicsView::createEllipseShape(QPointF point)
 
   if (!isCreatingEllipseShape()) {
     mpEllipseShapeAnnotation = new EllipseAnnotation("", this);
-    setCanAddClassAnnotation(false);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpEllipseShapeAnnotation, this));
     reOrderItems();
     setIsCreatingEllipseShape(true);
@@ -948,7 +928,6 @@ void GraphicsView::createEllipseShape(QPointF point)
     pMainWindow->getConnectModeAction()->setChecked(true);
     mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpEllipseShapeAnnotation, this);
     addClassAnnotation();
-    setCanAddClassAnnotation(true);
   }
 }
 
@@ -960,7 +939,6 @@ void GraphicsView::createTextShape(QPointF point)
 
   if (!isCreatingTextShape()) {
     mpTextShapeAnnotation = new TextAnnotation("", this);
-    setCanAddClassAnnotation(false);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpTextShapeAnnotation, this));
     reOrderItems();
     setIsCreatingTextShape(true);
@@ -983,7 +961,6 @@ void GraphicsView::createTextShape(QPointF point)
     pMainWindow->getConnectModeAction()->setChecked(true);
     mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpTextShapeAnnotation, this);
     addClassAnnotation();
-    setCanAddClassAnnotation(true);
     mpTextShapeAnnotation->showShapeProperties();
   }
 }
@@ -996,7 +973,6 @@ void GraphicsView::createBitmapShape(QPointF point)
 
   if (!isCreatingBitmapShape()) {
     mpBitmapShapeAnnotation = new BitmapAnnotation(mpModelWidget->getLibraryTreeItem()->getFileName(), "", this);
-    setCanAddClassAnnotation(false);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpBitmapShapeAnnotation, this));
     reOrderItems();
     setIsCreatingBitmapShape(true);
@@ -1132,7 +1108,7 @@ void GraphicsView::createActions()
   mpDeleteAction->setStatusTip(tr("Deletes the item"));
   mpDeleteAction->setShortcut(QKeySequence::Delete);
   mpDeleteAction->setDisabled(isSystemLibrary);
-  connect(mpDeleteAction, SIGNAL(triggered()), SLOT(deleteComponents()));
+  connect(mpDeleteAction, SIGNAL(triggered()), SLOT(deleteItems()));
   // Duplicate Action
   mpDuplicateAction = new QAction(QIcon(":/Resources/icons/duplicate.svg"), Helper::duplicate, this);
   mpDuplicateAction->setStatusTip(Helper::duplicateTip);
@@ -1159,11 +1135,13 @@ void GraphicsView::createActions()
   mpRotateClockwiseAction->setStatusTip(tr("Rotates the item clockwise"));
   mpRotateClockwiseAction->setShortcut(QKeySequence("Ctrl+r"));
   mpRotateClockwiseAction->setDisabled(isSystemLibrary);
+  connect(mpRotateClockwiseAction, SIGNAL(triggered()), SLOT(rotateClockwise()));
   // Rotate Anti-ClockWise Action
   mpRotateAntiClockwiseAction = new QAction(QIcon(":/Resources/icons/rotateanticlockwise.svg"), tr("Rotate Anticlockwise"), this);
   mpRotateAntiClockwiseAction->setStatusTip(tr("Rotates the item anticlockwise"));
   mpRotateAntiClockwiseAction->setShortcut(QKeySequence("Ctrl+Shift+r"));
   mpRotateAntiClockwiseAction->setDisabled(isSystemLibrary);
+  connect(mpRotateAntiClockwiseAction, SIGNAL(triggered()), SLOT(rotateAntiClockwise()));
   // Flip Horizontal Action
   mpFlipHorizontalAction = new QAction(QIcon(":/Resources/icons/flip-horizontal.svg"), tr("Flip Horizontal"), this);
   mpFlipHorizontalAction->setStatusTip(tr("Flips the item horizontally"));
@@ -1343,16 +1321,6 @@ void GraphicsView::addClassAnnotation(bool updateModelicaText)
 {
   if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary())
     return;
-  /*
-    When several selected shapes are moved via key press events then this function is called for each of them.
-    Just set the canAddClassAnnotation flag to false to make sure this function is only used once.
-    We enable back this function in the key release event.
-    */
-  if (canAddClassAnnotation()) {
-    setCanAddClassAnnotation(false);
-  } else {
-    return;
-  }
   /* Build the annotation string */
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   QString annotationString;
@@ -1421,13 +1389,41 @@ void GraphicsView::showGraphicsViewProperties()
 }
 
 /*!
- * \brief GraphicsView::deleteComponents
- * Emits the
+ * \brief GraphicsView::deleteItems
+ * Deletes the selected items by emitting GraphicsView::mouseDelete() SIGNAL.
  */
-void GraphicsView::deleteComponents()
+void GraphicsView::deleteItems()
 {
-  mpModelWidget->getUndoStack()->beginMacro("Deleting Items by mouse");
+  mpModelWidget->getUndoStack()->beginMacro("Deleting by mouse");
   emit mouseDelete();
+  mpModelWidget->updateClassAnnotationIfNeeded();
+  mpModelWidget->updateModelicaText();
+  mpModelWidget->getUndoStack()->endMacro();
+}
+
+/*!
+ * \brief GraphicsView::rotateClockwise
+ * Rotates the selected items clockwise by emitting GraphicsView::mouseRotateClockwise() SIGNAL.
+ */
+void GraphicsView::rotateClockwise()
+{
+  mpModelWidget->getUndoStack()->beginMacro("Rotate clockwise by mouse");
+  emit mouseRotateClockwise();
+  mpModelWidget->updateClassAnnotationIfNeeded();
+  mpModelWidget->updateModelicaText();
+  mpModelWidget->getUndoStack()->endMacro();
+}
+
+/*!
+ * \brief GraphicsView::rotateAntiClockwise
+ * Rotates the selected items anti clockwise by emitting GraphicsView::mouseRotateAntiClockwise() SIGNAL.
+ */
+void GraphicsView::rotateAntiClockwise()
+{
+  mpModelWidget->getUndoStack()->beginMacro("Rotate anti clockwise by mouse");
+  emit mouseRotateAntiClockwise();
+  mpModelWidget->updateClassAnnotationIfNeeded();
+  mpModelWidget->updateModelicaText();
   mpModelWidget->getUndoStack()->endMacro();
 }
 
@@ -1726,7 +1722,6 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
     }
     if (hasMoved) {
       addClassAnnotation();
-      setCanAddClassAnnotation(true);
       mpModelWidget->setModelModified();
     }
   }
@@ -1752,7 +1747,6 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     pMainWindow->getConnectModeAction()->setChecked(true);
     mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpLineShapeAnnotation, this);
     addClassAnnotation();
-    setCanAddClassAnnotation(true);
     return;
   } else if (isCreatingPolygonShape()) {
     // finish creating the polygon
@@ -1770,7 +1764,6 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     pMainWindow->getConnectModeAction()->setChecked(true);
     mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpPolygonShapeAnnotation, this);
     addClassAnnotation();
-    setCanAddClassAnnotation(true);
     return;
   }
   ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(itemAt(event->pos()));
@@ -1805,8 +1798,10 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
   bool shiftModifier = event->modifiers().testFlag(Qt::ShiftModifier);
   bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
   if (event->key() == Qt::Key_Delete) {
-    mpModelWidget->getUndoStack()->beginMacro("Deleting Components by key press");
+    mpModelWidget->getUndoStack()->beginMacro("Deleting by key press");
     emit keyPressDelete();
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
     mpModelWidget->getUndoStack()->endMacro();
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Up) {
     emit keyPressUp();
@@ -1837,9 +1832,13 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
   } else if (controlModifier && event->key() == Qt::Key_D) {
     emit keyPressDuplicate();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_R) {
+    mpModelWidget->getUndoStack()->beginMacro("Rotate clockwise by key press");
     emit keyPressRotateClockwise();
+    mpModelWidget->getUndoStack()->endMacro();
   } else if (shiftModifier && controlModifier && event->key() == Qt::Key_R) {
+    mpModelWidget->getUndoStack()->beginMacro("Rotate anti clockwise by key press");
     emit keyPressRotateAntiClockwise();
+    mpModelWidget->getUndoStack()->endMacro();
   } else if (event->key() == Qt::Key_Escape && isCreatingConnection()) {
     removeCurrentConnection();
   } else {
@@ -1860,46 +1859,36 @@ void GraphicsView::keyReleaseEvent(QKeyEvent *event)
   /* handle keys */
   if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Up) {
     emit keyRelease();
-    setCanAddClassAnnotation(true);
   } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Up) {
     emit keyRelease();
-    setCanAddClassAnnotation(true);
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Up) {
     emit keyRelease();
-    setCanAddClassAnnotation(true);
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Down) {
     emit keyRelease();
-    setCanAddClassAnnotation(true);
   } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Down) {
     emit keyRelease();
-    setCanAddClassAnnotation(true);
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Down) {
     emit keyRelease();
-    setCanAddClassAnnotation(true);
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Left) {
     emit keyRelease();
-    setCanAddClassAnnotation(true);
   } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Left) {
     emit keyRelease();
-    setCanAddClassAnnotation(true);
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Left) {
     emit keyRelease();
-    setCanAddClassAnnotation(true);
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Right) {
     emit keyRelease();
-    setCanAddClassAnnotation(true);
   } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Right) {
     emit keyRelease();
-    setCanAddClassAnnotation(true);
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Right) {
     emit keyRelease();
-    setCanAddClassAnnotation(true);
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_R) {
     emit keyRelease();
-    setCanAddClassAnnotation(true);
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
   } else if (shiftModifier && controlModifier && event->key() == Qt::Key_R) {
     emit keyRelease();
-    setCanAddClassAnnotation(true);
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
   } else {
     QGraphicsView::keyReleaseEvent(event);
   }
@@ -2259,9 +2248,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpUndoView = new QUndoView(mpUndoStack);
     if (newModel) {
       mpIconGraphicsView->addClassAnnotation(false);
-      mpIconGraphicsView->setCanAddClassAnnotation(true);
       mpDiagramGraphicsView->addClassAnnotation(false);
-      mpDiagramGraphicsView->setCanAddClassAnnotation(true);
       updateModelicaText();
     }
     loadModelWidget();
@@ -2787,6 +2774,20 @@ bool ModelWidget::modelicaEditorTextChanged()
     pLibraryTreeModel->createLibraryTreeItems(mpLibraryTreeItem);
   }
   return true;
+}
+
+/*!
+ * \brief ModelWidget::updateClassAnnotationIfNeeded
+ * Updates the class annotation for both icon and diagram views if needed.
+ */
+void ModelWidget::updateClassAnnotationIfNeeded()
+{
+  if (mpIconGraphicsView && mpIconGraphicsView->isAddClassAnnotationNeeded()) {
+    mpIconGraphicsView->addClassAnnotation(false);
+  }
+  if (mpDiagramGraphicsView && mpDiagramGraphicsView->isAddClassAnnotationNeeded()) {
+    mpDiagramGraphicsView->addClassAnnotation(false);
+  }
 }
 
 /*!

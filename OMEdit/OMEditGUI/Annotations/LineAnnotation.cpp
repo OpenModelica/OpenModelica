@@ -677,7 +677,7 @@ void LineAnnotation::handleComponentRotation()
  * \brief LineAnnotation::updateConnectionAnnotation
  * Updates the connection annotation.
  */
-void LineAnnotation::updateConnectionAnnotation(bool updateModelicaText)
+void LineAnnotation::updateConnectionAnnotation()
 {
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpGraphicsView->getModelWidget()->getEditor());
@@ -690,9 +690,6 @@ void LineAnnotation::updateConnectionAnnotation(bool updateModelicaText)
     OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
     pOMCProxy->updateConnection(getStartComponentName(), getEndComponentName(),
                                 mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), annotationString);
-    if (updateModelicaText) {
-      mpGraphicsView->getModelWidget()->updateModelicaText();
-    }
   }
   // make the model modified
   mpGraphicsView->getModelWidget()->setModelModified();
@@ -721,7 +718,6 @@ void LineAnnotation::duplicate()
   pLineAnnotation->setCornerItemsPassive();
   pLineAnnotation->update();
   mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
 }
 
 ConnectionArray::ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, QWidget *pParent)
