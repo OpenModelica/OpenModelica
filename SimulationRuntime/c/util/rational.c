@@ -51,8 +51,11 @@ static long long gcd(long long a, long long b)
 static void simplifyRat(long long *a, long long *b)
 {
   long long tmp = gcd(*a, *b);
-  *a /= tmp;
-  *b /= tmp;
+  if(tmp != 0)
+  {
+    *a /= tmp;
+    *b /= tmp;
+  }
 }
 
 RATIONAL addInt2Rat(long a, RATIONAL b) {
@@ -86,6 +89,7 @@ RATIONAL multRat2Rat(RATIONAL a, RATIONAL b) {
 RATIONAL divRat2Rat(RATIONAL a, RATIONAL b) {
   long long m = (long long)a.m * b.n;
   long long n = (long long)a.n * b.m;
+  n = n ? n : 1;  /*TODO: FIX ME!*/
   simplifyRat(&m, &n);
   return makeRATIONAL(m, n);
 }
