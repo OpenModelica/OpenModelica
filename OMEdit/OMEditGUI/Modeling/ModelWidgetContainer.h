@@ -142,47 +142,47 @@ private:
 public:
   GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent);
   bool mSkipBackground; /* Do not draw the background rectangle */
-  StringHandler::ViewType getViewType();
-  ModelWidget* getModelWidget();
-  CoOrdinateSystem* getCoOrdinateSystem();
+  StringHandler::ViewType getViewType() {return mViewType;}
+  ModelWidget* getModelWidget() {return mpModelWidget;}
+  CoOrdinateSystem* getCoOrdinateSystem() {return mpCoOrdinateSystem;}
   void setExtentRectangle(qreal x1, qreal y1, qreal x2, qreal y2);
   QRectF getExtentRectangle() {return mExtentRectangle;}
-  void setIsCustomScale(bool enable);
-  bool isCustomScale();
+  void setIsCustomScale(bool enable) {mIsCustomScale = enable;}
+  bool isCustomScale() {return mIsCustomScale;}
   void setAddClassAnnotationNeeded(bool needed) {mAddClassAnnotationNeeded = needed;}
   bool isAddClassAnnotationNeeded() {return mAddClassAnnotationNeeded;}
   void setIsCreatingConnection(bool enable);
-  bool isCreatingConnection();
+  bool isCreatingConnection() {return mIsCreatingConnection;}
   void setIsCreatingLineShape(bool enable);
-  bool isCreatingLineShape();
+  bool isCreatingLineShape() {return mIsCreatingLineShape;}
   void setIsCreatingPolygonShape(bool enable);
-  bool isCreatingPolygonShape();
+  bool isCreatingPolygonShape() {return mIsCreatingPolygonShape;}
   void setIsCreatingRectangleShape(bool enable);
-  bool isCreatingRectangleShape();
+  bool isCreatingRectangleShape() {return mIsCreatingRectangleShape;}
   void setIsCreatingEllipseShape(bool enable);
-  bool isCreatingEllipseShape();
+  bool isCreatingEllipseShape() {return mIsCreatingEllipseShape;}
   void setIsCreatingTextShape(bool enable);
-  bool isCreatingTextShape();
+  bool isCreatingTextShape() {return mIsCreatingTextShape;}
   void setIsCreatingBitmapShape(bool enable);
-  bool isCreatingBitmapShape();
+  bool isCreatingBitmapShape() {return mIsCreatingBitmapShape;}
   void setItemsFlags(bool enable);
   void updateUndoRedoActions(bool enable);
-  void setIsMovingComponentsAndShapes(bool enable);
-  bool isMovingComponentsAndShapes();
+  void setIsMovingComponentsAndShapes(bool enable) {mIsMovingComponentsAndShapes = enable;}
+  bool isMovingComponentsAndShapes() {return mIsMovingComponentsAndShapes;}
   void setRenderingLibraryPixmap(bool renderingLibraryPixmap) {mRenderingLibraryPixmap = renderingLibraryPixmap;}
   bool isRenderingLibraryPixmap() {return mRenderingLibraryPixmap;}
   QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
-  QAction* getDeleteConnectionAction();
-  QAction* getDeleteAction();
-  QAction* getDuplicateAction();
+  QAction* getDeleteConnectionAction() {return mpDeleteConnectionAction;}
+  QAction* getDeleteAction() {return mpDeleteAction;}
+  QAction* getDuplicateAction() {return mpDuplicateAction;}
   QAction* getBringToFrontAction() {return mpBringToFrontAction;}
   QAction* getBringForwardAction() {return mpBringForwardAction;}
   QAction* getSendToBackAction() {return mpSendToBackAction;}
   QAction* getSendBackwardAction() {return mpSendBackwardAction;}
-  QAction* getRotateClockwiseAction();
-  QAction* getRotateAntiClockwiseAction();
-  QAction* getFlipHorizontalAction();
-  QAction* getFlipVerticalAction();
+  QAction* getRotateClockwiseAction() {return mpRotateClockwiseAction;}
+  QAction* getRotateAntiClockwiseAction() {return mpRotateAntiClockwiseAction;}
+  QAction* getFlipHorizontalAction() {return mpFlipHorizontalAction;}
+  QAction* getFlipVerticalAction() {return mpFlipVerticalAction;}
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
                           ComponentInfo *pComponentInfo, bool addObject = true, bool openingClass = false);
