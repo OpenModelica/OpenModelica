@@ -728,7 +728,6 @@ void Component::applyRotation(qreal angle)
   mTransformation.setRotateAngle(angle);
   setTransform(mTransformation.getTransformationMatrix());
   emit rotationChange();
-  emit notifyTransformHasChanged(false);
   emit transformHasChanged();
 }
 
@@ -738,7 +737,7 @@ void Component::addConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
   connect(this, SIGNAL(transformChange()), pConnectorLineAnnotation, SLOT(handleComponentMoved()));
   connect(this, SIGNAL(rotationChange()), pConnectorLineAnnotation, SLOT(handleComponentRotation()));
   if (!pConnectorLineAnnotation->isInheritedShape()) {
-    connect(this, SIGNAL(notifyTransformHasChanged(bool)), pConnectorLineAnnotation, SLOT(updateConnectionAnnotation(bool)));
+    connect(this, SIGNAL(transformHasChanged()), pConnectorLineAnnotation, SLOT(updateConnectionAnnotation()));
   }
 }
 
@@ -747,7 +746,7 @@ void Component::removeConnectionDetails(LineAnnotation *pConnectorLineAnnotation
   disconnect(this, SIGNAL(transformChange()), pConnectorLineAnnotation, SLOT(handleComponentMoved()));
   disconnect(this, SIGNAL(rotationChange()), pConnectorLineAnnotation, SLOT(handleComponentRotation()));
   if (!pConnectorLineAnnotation->isInheritedShape()) {
-    disconnect(this, SIGNAL(notifyTransformHasChanged(bool)), pConnectorLineAnnotation, SLOT(updateConnectionAnnotation(bool)));
+    disconnect(this, SIGNAL(transformHasChanged()), pConnectorLineAnnotation, SLOT(updateConnectionAnnotation()));
   }
 }
 
@@ -976,7 +975,6 @@ void Component::updatePlacementAnnotation()
     OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
     pOMCProxy->updateComponent(mpComponentInfo->getName(), mpComponentInfo->getClassName(),
                                mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), getPlacementAnnotation());
-    mpGraphicsView->getModelWidget()->updateModelicaText();
   }
   // set the model modified
   mpGraphicsView->getModelWidget()->setModelModified();
@@ -1680,10 +1678,8 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedComponent()) {
         connect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteMe()), Qt::UniqueConnection);
         connect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()), Qt::UniqueConnection);
-        connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
-        //connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SIGNAL(transformHasChanged()), Qt::UniqueConnection);
-        connect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
-        connect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SIGNAL(transformHasChanged()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(mouseRotateClockwise()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(mouseRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
         connect(mpGraphicsView->getFlipHorizontalAction(), SIGNAL(triggered()), this, SLOT(flipHorizontal()), Qt::UniqueConnection);
         connect(mpGraphicsView->getFlipVerticalAction(), SIGNAL(triggered()), this, SLOT(flipVertical()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()), Qt::UniqueConnection);
@@ -1702,7 +1698,6 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         connect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyPressShiftRight()), this, SLOT(moveShiftRight()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyPressCtrlRight()), this, SLOT(moveCtrlRight()), Qt::UniqueConnection);
-        //connect(mpGraphicsView, SIGNAL(keyRelease()), this, SIGNAL(transformHasChanged()), Qt::UniqueConnection);
       }
     } else {
       if (!mpBottomLeftResizerItem->isPressed() && !mpTopLeftResizerItem->isPressed() &&
@@ -1718,10 +1713,8 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedComponent()) {
         disconnect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteMe()));
         disconnect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()));
-        disconnect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwise()));
-        disconnect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SIGNAL(transformHasChanged()));
-        disconnect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateAntiClockwise()));
-        disconnect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SIGNAL(transformHasChanged()));
+        disconnect(mpGraphicsView, SIGNAL(mouseRotateClockwise()), this, SLOT(rotateClockwise()));
+        disconnect(mpGraphicsView, SIGNAL(mouseRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
         disconnect(mpGraphicsView->getFlipHorizontalAction(), SIGNAL(triggered()), this, SLOT(flipHorizontal()));
         disconnect(mpGraphicsView->getFlipVerticalAction(), SIGNAL(triggered()), this, SLOT(flipVertical()));
         disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
@@ -1740,7 +1733,6 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         disconnect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()));
         disconnect(mpGraphicsView, SIGNAL(keyPressShiftRight()), this, SLOT(moveShiftRight()));
         disconnect(mpGraphicsView, SIGNAL(keyPressCtrlRight()), this, SLOT(moveCtrlRight()));
-        disconnect(mpGraphicsView, SIGNAL(keyRelease()), this, SIGNAL(transformHasChanged()));
       }
     }
   } else if (change == QGraphicsItem::ItemPositionHasChanged) {

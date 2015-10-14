@@ -1100,7 +1100,6 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
   mpGraphicsView->fitInView(mpGraphicsView->getExtentRectangle(), Qt::KeepAspectRatio);
   mpGraphicsView->setIsCustomScale(false);
   mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
   // if copy properties is true
   if (mpCopyProperties->isChecked())
   {
@@ -1118,7 +1117,6 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
     pGraphicsView->fitInView(pGraphicsView->getExtentRectangle(), Qt::KeepAspectRatio);
     pGraphicsView->setIsCustomScale(false);
     pGraphicsView->addClassAnnotation();
-    pGraphicsView->setCanAddClassAnnotation(true);
   }
   accept();
 }

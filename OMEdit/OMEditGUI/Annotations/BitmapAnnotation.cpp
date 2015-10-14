@@ -183,5 +183,4 @@ void BitmapAnnotation::duplicate()
   pBitmapAnnotation->setCornerItemsPassive();
   pBitmapAnnotation->update();
   mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
 }

@@ -63,7 +63,6 @@ void AddShapeCommand::redo()
   mpGraphicsView->addItem(mpShapeAnnotation);
   mpShapeAnnotation->emitAdded();
   mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
 }
 
 /*!
@@ -77,7 +76,65 @@ void AddShapeCommand::undo()
   mpGraphicsView->removeItem(mpShapeAnnotation);
   mpShapeAnnotation->emitDeleted();
   mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
+}
+
+RotateShapeCommand::RotateShapeCommand(ShapeAnnotation *pShapeAnnotation, bool clockwise, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpShapeAnnotation = pShapeAnnotation;
+  mClockwise = clockwise;
+  if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
+    setText(QString("Rotate %1 Line Shape").arg(mClockwise ? "Clockwise" : "AntiClockwise"));
+  } else if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
+    setText(QString("Rotate %1 Line Shape").arg(mClockwise ? "Clockwise" : "AntiClockwise"));
+  } else if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
+    setText(QString("Rotate %1 Line Shape").arg(mClockwise ? "Clockwise" : "AntiClockwise"));
+  } else if (dynamic_cast<EllipseAnnotation*>(pShapeAnnotation)) {
+    setText(QString("Rotate %1 Line Shape").arg(mClockwise ? "Clockwise" : "AntiClockwise"));
+  } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
+    setText(QString("Rotate %1 Line Shape").arg(mClockwise ? "Clockwise" : "AntiClockwise"));
+  } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
+    setText(QString("Rotate %1 Line Shape").arg(mClockwise ? "Clockwise" : "AntiClockwise"));
+  }
+}
+
+/*!
+ * \brief RotateShapeCommand::redo
+ * Redo the RotateShapeCommand.
+ */
+void RotateShapeCommand::redo()
+{
+  if (mClockwise) {
+    qreal oldRotation = StringHandler::getNormalizedAngle(mpShapeAnnotation->mTransformation.getRotateAngle());
+    qreal rotateIncrement = -90;
+    qreal angle = oldRotation + rotateIncrement;
+    mpShapeAnnotation->applyRotation(angle);
+  } else {
+    qreal oldRotation = StringHandler::getNormalizedAngle(mpShapeAnnotation->mTransformation.getRotateAngle());
+    qreal rotateIncrement = 90;
+    qreal angle = oldRotation + rotateIncrement;
+    mpShapeAnnotation->applyRotation(angle);
+  }
+}
+
+/*!
+ * \brief RotateShapeCommand::undo
+ * Undo the RotateShapeCommand.
+ */
+void RotateShapeCommand::undo()
+{
+  if (mClockwise) {
+    qreal oldRotation = StringHandler::getNormalizedAngle(mpShapeAnnotation->mTransformation.getRotateAngle());
+    qreal rotateIncrement = 90;
+    qreal angle = oldRotation + rotateIncrement;
+    mpShapeAnnotation->applyRotation(angle);
+  } else {
+    qreal oldRotation = StringHandler::getNormalizedAngle(mpShapeAnnotation->mTransformation.getRotateAngle());
+    qreal rotateIncrement = -90;
+    qreal angle = oldRotation + rotateIncrement;
+    mpShapeAnnotation->applyRotation(angle);
+  }
+  mpShapeAnnotation->setSelected(false);
 }
 
 DeleteShapeCommand::DeleteShapeCommand(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QUndoCommand *pParent)
@@ -110,8 +167,7 @@ void DeleteShapeCommand::redo()
   mpShapeAnnotation->setSelected(false);
   mpGraphicsView->removeItem(mpShapeAnnotation);
   mpShapeAnnotation->emitDeleted();
-  mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
+  mpGraphicsView->setAddClassAnnotationNeeded(true);
 }
 
 /*!
@@ -123,8 +179,7 @@ void DeleteShapeCommand::undo()
   mpGraphicsView->addShapeObject(mpShapeAnnotation);
   mpGraphicsView->addItem(mpShapeAnnotation);
   mpShapeAnnotation->emitAdded();
-  mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
+  mpGraphicsView->setAddClassAnnotationNeeded(true);
 }
 
 AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
@@ -241,7 +296,7 @@ RotateComponentCommand::RotateComponentCommand(Component *pComponent, bool clock
 {
   mpComponent = pComponent;
   mClockwise = clockwise;
-  setText(QString("Rotate %1 Component %2").arg(mClockwise ? "Clockwise" : "AntiClockwise").arg(mpComponent->getName()));
+  setText(QString("Rotate %1 Component %2").arg(mClockwise ? "Clockwise" : "Anti Clockwise").arg(mpComponent->getName()));
 }
 
 /*!

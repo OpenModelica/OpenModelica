@@ -39,6 +39,7 @@
 #include "ShapeAnnotation.h"
 #include "ModelWidgetContainer.h"
 #include "ShapePropertiesDialog.h"
+#include "Commands.h"
 
 /*!
  * \brief GraphicItem::setDefaults
@@ -1098,70 +1099,17 @@ QImage ShapeAnnotation::getImage()
 }
 
 /*!
-  Rotates the shape clockwise.
-  \sa rotateAntiClockwise(),
-      applyRotation(),
-      rotateClockwiseKeyPress(),
-      rotateAntiClockwiseKeyPress(),
-      rotateClockwiseMouseRightClick(),
-      rotateAntiClockwiseMouseRightClick()
-  */
-void ShapeAnnotation::rotateClockwise()
-{
-  qreal oldRotation = StringHandler::getNormalizedAngle(mTransformation.getRotateAngle());
-  qreal rotateIncrement = -90;
-  qreal angle = 0;
-  if (oldRotation == -270)
-  {
-    angle = 0;
-  }
-  else
-  {
-    angle = oldRotation + rotateIncrement;
-  }
-  applyRotation(angle);
-}
-
-/*!
-  Rotates the shape anti clockwise.
-  \sa rotateClockwise(),
-      applyRotation(),
-      rotateClockwiseKeyPress(),
-      rotateAntiClockwiseKeyPress(),
-      rotateClockwiseMouseRightClick(),
-      rotateAntiClockwiseMouseRightClick()
-  */
-void ShapeAnnotation::rotateAntiClockwise()
-{
-  qreal oldRotation = StringHandler::getNormalizedAngle(mTransformation.getRotateAngle());
-  qreal rotateIncrement = 90;
-  qreal angle = 0;
-  if (oldRotation == 270)
-  {
-    angle = 0;
-  }
-  else
-  {
-    angle = oldRotation + rotateIncrement;
-  }
-  applyRotation(angle);
-}
-
-/*!
-  Applies the rotation on the shape and sets the shape transformation matrix accordingly.
-  \param angle - the rotation angle to apply.
-  \sa rotateClockwise(),
-      rotateAntiClockwise(),
-      rotateClockwiseKeyPress(),
-      rotateAntiClockwiseKeyPress(),
-      rotateClockwiseMouseRightClick(),
-      rotateAntiClockwiseMouseRightClick()
-  */
+ * \brief ShapeAnnotation::applyRotation
+ * Applies the rotation on the shape and sets the shape transformation matrix accordingly.
+ * \param angle - the rotation angle to apply.
+ * \sa rotateClockwise() and rotateAntiClockwise()
+ */
 void ShapeAnnotation::applyRotation(qreal angle)
 {
   mTransformation.setRotateAngle(angle);
   setTransform(mTransformation.getTransformationMatrix());
   mRotation = angle;
+  mpGraphicsView->setAddClassAnnotationNeeded(true);
 }
 
 /*!
@@ -1504,67 +1452,23 @@ void ShapeAnnotation::sendBackward()
 }
 
 /*!
-  Slot activated when ctrl+r is pressed while selecting the shape.
-  \sa rotateClockwise(),
-      rotateAntiClockwise(),
-      applyRotation(),
-      rotateAntiClockwiseKeyPress(),
-      rotateClockwiseMouseRightClick(),
-      rotateAntiClockwiseMouseRightClick()
-  */
-void ShapeAnnotation::rotateClockwiseKeyPress()
+ * \brief ShapeAnnotation::rotateClockwise
+ * Rotates the shape clockwise.
+ * \sa rotateAntiClockwise() and applyRotation()
+ */
+void ShapeAnnotation::rotateClockwise()
 {
-  rotateClockwise();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new RotateShapeCommand(this, true));
 }
 
 /*!
-  Slot activated when ctrl+shift+r is pressed while selecting the shape.
-  \sa rotateClockwise(),
-      rotateAntiClockwise(),
-      applyRotation(),
-      rotateClockwiseKeyPress(),
-      rotateClockwiseMouseRightClick(),
-      rotateAntiClockwiseMouseRightClick()
-  */
-void ShapeAnnotation::rotateAntiClockwiseKeyPress()
+ * \brief ShapeAnnotation::rotateAntiClockwise
+ * Rotates the shape anti clockwise.
+  \sa rotateClockwise() and applyRotation()
+ */
+void ShapeAnnotation::rotateAntiClockwise()
 {
-  rotateAntiClockwise();
-}
-
-/*!
-  Slot activated when Rotate Clockwise option is choosen from context menu of the shape.\n
-  Emits the GraphicsView::updateClassAnnotation() SIGNAL.\n
-  Since GraphicsView::addClassAnnotation() sets the GraphicsView::mCanAddClassAnnotation flag to false we must set it to true again.
-  \sa rotateClockwise(),
-      rotateAntiClockwise(),
-      applyRotation(),
-      rotateClockwiseKeyPress(),
-      rotateAntiClockwiseKeyPress(),
-      rotateAntiClockwiseMouseRightClick()
-  */
-void ShapeAnnotation::rotateClockwiseMouseRightClick()
-{
-  rotateClockwise();
-  emit updateClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
-}
-
-/*!
-  Slot activated when Rotate Anti Clockwise option is choosen from context menu of the shape.\n
-  Emits the GraphicsView::updateClassAnnotation() SIGNAL.\n
-  Since GraphicsView::addClassAnnotation() sets the GraphicsView::mCanAddClassAnnotation flag to false we must set it to true again.
-  \sa rotateClockwise(),
-      rotateAntiClockwise(),
-      applyRotation(),
-      rotateClockwiseKeyPress(),
-      rotateAntiClockwiseKeyPress(),
-      rotateClockwiseMouseRightClick()
-  */
-void ShapeAnnotation::rotateAntiClockwiseMouseRightClick()
-{
-  rotateAntiClockwise();
-  emit updateClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new RotateShapeCommand(this, false));
 }
 
 /*!
@@ -2026,12 +1930,12 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
           connect(mpGraphicsView->getBringForwardAction(), SIGNAL(triggered()), this, SLOT(bringForward()), Qt::UniqueConnection);
           connect(mpGraphicsView->getSendToBackAction(), SIGNAL(triggered()), this, SLOT(sendToBack()), Qt::UniqueConnection);
           connect(mpGraphicsView->getSendBackwardAction(), SIGNAL(triggered()), this, SLOT(sendBackward()), Qt::UniqueConnection);
-          connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwiseMouseRightClick()), Qt::UniqueConnection);
-          connect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateAntiClockwiseMouseRightClick()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(mouseRotateClockwise()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(mouseRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
           connect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()), Qt::UniqueConnection);
           connect(mpGraphicsView, SIGNAL(keyPressDuplicate()), this, SLOT(duplicate()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwiseKeyPress()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwiseKeyPress()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
           connect(mpGraphicsView, SIGNAL(keyPressUp()), this, SLOT(moveUp()), Qt::UniqueConnection);
           connect(mpGraphicsView, SIGNAL(keyPressShiftUp()), this, SLOT(moveShiftUp()), Qt::UniqueConnection);
           connect(mpGraphicsView, SIGNAL(keyPressCtrlUp()), this, SLOT(moveCtrlUp()), Qt::UniqueConnection);
@@ -2044,7 +1948,6 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
           connect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()), Qt::UniqueConnection);
           connect(mpGraphicsView, SIGNAL(keyPressShiftRight()), this, SLOT(moveShiftRight()), Qt::UniqueConnection);
           connect(mpGraphicsView, SIGNAL(keyPressCtrlRight()), this, SLOT(moveCtrlRight()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyRelease()), this, SIGNAL(updateClassAnnotation()), Qt::UniqueConnection);
         }
       }
     } else if (!mIsCornerItemClicked) {
@@ -2062,12 +1965,12 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
           disconnect(mpGraphicsView->getBringForwardAction(), SIGNAL(triggered()), this, SLOT(bringForward()));
           disconnect(mpGraphicsView->getSendToBackAction(), SIGNAL(triggered()), this, SLOT(sendToBack()));
           disconnect(mpGraphicsView->getSendBackwardAction(), SIGNAL(triggered()), this, SLOT(sendBackward()));
-          disconnect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwiseMouseRightClick()));
-          disconnect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateAntiClockwiseMouseRightClick()));
+          disconnect(mpGraphicsView, SIGNAL(mouseRotateClockwise()), this, SLOT(rotateClockwise()));
+          disconnect(mpGraphicsView, SIGNAL(mouseRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
           disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
           disconnect(mpGraphicsView, SIGNAL(keyPressDuplicate()), this, SLOT(duplicate()));
-          disconnect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwiseKeyPress()));
-          disconnect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwiseKeyPress()));
+          disconnect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()));
+          disconnect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
           disconnect(mpGraphicsView, SIGNAL(keyPressUp()), this, SLOT(moveUp()));
           disconnect(mpGraphicsView, SIGNAL(keyPressShiftUp()), this, SLOT(moveShiftUp()));
           disconnect(mpGraphicsView, SIGNAL(keyPressCtrlUp()), this, SLOT(moveCtrlUp()));

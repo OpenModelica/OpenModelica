@@ -47,6 +47,17 @@ private:
   GraphicsView *mpGraphicsView;
 };
 
+class RotateShapeCommand : public QUndoCommand
+{
+public:
+  RotateShapeCommand(ShapeAnnotation *pShapeAnnotation, bool clockwise, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  ShapeAnnotation *mpShapeAnnotation;
+  bool mClockwise;
+};
+
 class DeleteShapeCommand : public QUndoCommand
 {
 public:

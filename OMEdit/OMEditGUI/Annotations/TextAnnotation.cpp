@@ -457,5 +457,4 @@ void TextAnnotation::duplicate()
   pTextAnnotation->setCornerItemsPassive();
   pTextAnnotation->update();
   mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
 }
