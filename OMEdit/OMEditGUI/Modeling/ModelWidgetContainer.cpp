@@ -118,7 +118,6 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
   setExtentRectangle(left, bottom, right, top);
   centerOn(sceneRect().center());
   scale(1.0, -1.0);     // invert the drawing area.
-  setStyleSheet(QString("QGraphicsView{background-color: lightGray;}"));
   setIsCustomScale(false);
   setAddClassAnnotationNeeded(false);
   setIsCreatingConnection(false);
@@ -134,36 +133,11 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
   createActions();
 }
 
-StringHandler::ViewType GraphicsView::getViewType()
-{
-  return mViewType;
-}
-
-ModelWidget* GraphicsView::getModelWidget()
-{
-  return mpModelWidget;
-}
-
-CoOrdinateSystem* GraphicsView::getCoOrdinateSystem()
-{
-  return mpCoOrdinateSystem;
-}
-
 void GraphicsView::setExtentRectangle(qreal left, qreal bottom, qreal right, qreal top)
 {
   mExtentRectangle = QRectF(left, bottom, fabs(left - right), fabs(bottom - top));
   QRectF sceneRectangle = mExtentRectangle.adjusted(left * 2, bottom * 2, right * 2, top * 2);
   setSceneRect(sceneRectangle);
-}
-
-void GraphicsView::setIsCustomScale(bool enable)
-{
-  mIsCustomScale = enable;
-}
-
-bool GraphicsView::isCustomScale()
-{
-  return mIsCustomScale;
 }
 
 void GraphicsView::setIsCreatingConnection(bool enable)
@@ -175,11 +149,6 @@ void GraphicsView::setIsCreatingConnection(bool enable)
     setDragMode(QGraphicsView::RubberBandDrag);
   }
   setItemsFlags(!enable);
-}
-
-bool GraphicsView::isCreatingConnection()
-{
-  return mIsCreatingConnection;
 }
 
 void GraphicsView::setIsCreatingLineShape(bool enable)
@@ -194,11 +163,6 @@ void GraphicsView::setIsCreatingLineShape(bool enable)
   updateUndoRedoActions(enable);
 }
 
-bool GraphicsView::isCreatingLineShape()
-{
-  return mIsCreatingLineShape;
-}
-
 void GraphicsView::setIsCreatingPolygonShape(bool enable)
 {
   mIsCreatingPolygonShape = enable;
@@ -209,11 +173,6 @@ void GraphicsView::setIsCreatingPolygonShape(bool enable)
   }
   setItemsFlags(!enable);
   updateUndoRedoActions(enable);
-}
-
-bool GraphicsView::isCreatingPolygonShape()
-{
-  return mIsCreatingPolygonShape;
 }
 
 void GraphicsView::setIsCreatingRectangleShape(bool enable)
@@ -228,11 +187,6 @@ void GraphicsView::setIsCreatingRectangleShape(bool enable)
   updateUndoRedoActions(enable);
 }
 
-bool GraphicsView::isCreatingRectangleShape()
-{
-  return mIsCreatingRectangleShape;
-}
-
 void GraphicsView::setIsCreatingEllipseShape(bool enable)
 {
   mIsCreatingEllipseShape = enable;
@@ -243,11 +197,6 @@ void GraphicsView::setIsCreatingEllipseShape(bool enable)
   }
   setItemsFlags(!enable);
   updateUndoRedoActions(enable);
-}
-
-bool GraphicsView::isCreatingEllipseShape()
-{
-  return mIsCreatingEllipseShape;
 }
 
 void GraphicsView::setIsCreatingTextShape(bool enable)
@@ -262,11 +211,6 @@ void GraphicsView::setIsCreatingTextShape(bool enable)
   updateUndoRedoActions(enable);
 }
 
-bool GraphicsView::isCreatingTextShape()
-{
-  return mIsCreatingTextShape;
-}
-
 void GraphicsView::setIsCreatingBitmapShape(bool enable)
 {
   mIsCreatingBitmapShape = enable;
@@ -277,11 +221,6 @@ void GraphicsView::setIsCreatingBitmapShape(bool enable)
   }
   setItemsFlags(!enable);
   updateUndoRedoActions(enable);
-}
-
-bool GraphicsView::isCreatingBitmapShape()
-{
-  return mIsCreatingBitmapShape;
 }
 
 void GraphicsView::setItemsFlags(bool enable)
@@ -311,51 +250,6 @@ void GraphicsView::updateUndoRedoActions(bool enable)
   } else {
     mpModelWidget->updateUndoRedoActions();
   }
-}
-
-void GraphicsView::setIsMovingComponentsAndShapes(bool enable)
-{
-  mIsMovingComponentsAndShapes = enable;
-}
-
-bool GraphicsView::isMovingComponentsAndShapes()
-{
-  return mIsMovingComponentsAndShapes;
-}
-
-QAction* GraphicsView::getDeleteConnectionAction()
-{
-  return mpDeleteConnectionAction;
-}
-
-QAction* GraphicsView::getDeleteAction()
-{
-  return mpDeleteAction;
-}
-
-QAction* GraphicsView::getDuplicateAction()
-{
-  return mpDuplicateAction;
-}
-
-QAction* GraphicsView::getRotateClockwiseAction()
-{
-  return mpRotateClockwiseAction;
-}
-
-QAction* GraphicsView::getRotateAntiClockwiseAction()
-{
-  return mpRotateAntiClockwiseAction;
-}
-
-QAction* GraphicsView::getFlipHorizontalAction()
-{
-  return mpFlipHorizontalAction;
-}
-
-QAction* GraphicsView::getFlipVerticalAction()
-{
-  return mpFlipVerticalAction;
 }
 
 bool GraphicsView::addComponent(QString className, QPointF position)
@@ -1488,14 +1382,20 @@ void GraphicsView::dropEvent(QDropEvent *event)
 
 void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
 {
-  if (mSkipBackground)
+  if (mSkipBackground || mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
     return;
+  }
   // draw scene rectangle white background
   painter->setPen(Qt::NoPen);
+  if (mViewType == StringHandler::Icon) {
+    painter->setBrush(QBrush(QColor(229, 244, 255), Qt::SolidPattern));
+  } else {
+    painter->setBrush(QBrush(QColor(242, 242, 242), Qt::SolidPattern));
+  }
+  painter->drawRect(rect);
   painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
   painter->drawRect(getExtentRectangle());
-  if (mpModelWidget->getModelWidgetContainer()->isShowGridLines())
-  {
+  if (mpModelWidget->getModelWidgetContainer()->isShowGridLines()) {
     painter->setBrush(Qt::NoBrush);
     painter->setPen(QColor(229, 229, 229));
     /* Draw left half vertical lines */
@@ -1503,15 +1403,13 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
     qreal xAxisStep = 0;
     qreal yAxisStep = rect.y();
     xAxisStep -= horizontalGridStep;
-    while (xAxisStep > rect.left())
-    {
+    while (xAxisStep > rect.left()) {
       painter->drawLine(QPointF(xAxisStep, yAxisStep), QPointF(xAxisStep, rect.bottom()));
       xAxisStep -= horizontalGridStep;
     }
     /* Draw right half vertical lines */
     xAxisStep = 0;
-    while (xAxisStep < rect.right())
-    {
+    while (xAxisStep < rect.right()) {
       painter->drawLine(QPointF(xAxisStep, yAxisStep), QPointF(xAxisStep, rect.bottom()));
       xAxisStep += horizontalGridStep;
     }
@@ -1520,15 +1418,13 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
     xAxisStep = rect.x();
     yAxisStep = 0;
     yAxisStep += verticalGridStep;
-    while (yAxisStep < rect.bottom())
-    {
+    while (yAxisStep < rect.bottom()) {
       painter->drawLine(QPointF(xAxisStep, yAxisStep), QPointF(rect.right(), yAxisStep));
       yAxisStep += verticalGridStep;
     }
     /* Draw right half horizontal lines */
     yAxisStep = 0;
-    while (yAxisStep > rect.top())
-    {
+    while (yAxisStep > rect.top()) {
       painter->drawLine(QPointF(xAxisStep, yAxisStep), QPointF(rect.right(), yAxisStep));
       yAxisStep -= verticalGridStep;
     }
@@ -2285,9 +2181,6 @@ void ModelWidget::loadModelWidget()
     mpDiagramGraphicsView->removeAllComponents();
     mpDiagramGraphicsView->removeAllConnections();
     mpDiagramGraphicsView->scene()->clear();
-    if (mpLibraryTreeItem->getNameStructure().compare("Modelica.Electrical.Analog.Basic.Resistor") == 0) {
-      qDebug() << mpLibraryTreeItem->getNameStructure();
-    }
     getModelInheritedClasses(mpLibraryTreeItem);
     drawModelInheritedClasses();
     getModelIconDiagramShapes();
