@@ -70,6 +70,7 @@ class ComponentInfo : public QObject
 public:
   ComponentInfo(QString value, QObject *pParent = 0);
   void parseComponentInfoString(QString value);
+  void setClassName(QString className) {mClassName = className;}
   QString getClassName() {return mClassName;}
   void setName(QString name) {mName = name;}
   QString getName() {return mName;}

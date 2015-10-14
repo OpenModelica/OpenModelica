@@ -479,7 +479,9 @@ void GraphicsView::addComponentToView(QString name, LibraryTreeItem *pLibraryTre
   pAddComponentCommand = new AddComponentCommand(name, pLibraryTreeItem, transformationString, position, pComponentInfo, addObject,
                                                  openingClass, this);
   mpModelWidget->getUndoStack()->push(pAddComponentCommand);
-  mpModelWidget->updateModelicaText();
+  if (!openingClass) {
+    mpModelWidget->updateModelicaText();
+  }
 }
 
 /*!
@@ -2283,6 +2285,9 @@ void ModelWidget::loadModelWidget()
     mpDiagramGraphicsView->removeAllComponents();
     mpDiagramGraphicsView->removeAllConnections();
     mpDiagramGraphicsView->scene()->clear();
+    if (mpLibraryTreeItem->getNameStructure().compare("Modelica.Electrical.Analog.Basic.Resistor") == 0) {
+      qDebug() << mpLibraryTreeItem->getNameStructure();
+    }
     getModelInheritedClasses(mpLibraryTreeItem);
     drawModelInheritedClasses();
     getModelIconDiagramShapes();
