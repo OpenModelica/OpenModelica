@@ -156,6 +156,7 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
  */
 int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
+  TRACE_PUSH
   int retValue = 0;
   int i;
 
@@ -279,6 +280,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
 #endif
   default:
     errorStreamPrint(LOG_SOLVER, 0, "Solver %s disabled on this configuration", SOLVER_METHOD_NAME[solverInfo->solverMethod]);
+    TRACE_POP
     return 1;
   }
 
@@ -290,6 +292,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     rt_tick(SIM_TIMER_TOTAL);
   }
 
+  TRACE_POP
   return retValue;
 }
 
@@ -389,6 +392,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
 int initializeModel(DATA* data, threadData_t *threadData, const char* init_initMethod,
     const char* init_file, double init_time, int lambda_steps)
 {
+  TRACE_PUSH
   int retValue = 0;
 
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
@@ -439,6 +443,7 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
     rt_accumulate( SIM_TIMER_INIT);
   }
 
+  TRACE_POP
   return retValue;
 }
 
