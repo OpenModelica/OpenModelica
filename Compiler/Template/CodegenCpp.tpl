@@ -9858,7 +9858,7 @@ template clockIntervalsInit(SimCode simCode, Text& varDecls, Text& extraFuncs, T
       match partition
         case CLOCKED_PARTITION(__) then
           let &preExp = buffer "" /*BUFD*/
-          let intvl = daeExp(getClockIntvl(baseClock), contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+          let intvl = daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
           <<
           <%preExp%>
           _clockInterval[<%i%>] = <%intvl%>;
@@ -10553,7 +10553,7 @@ template generateTimeEvent(list<BackendDAE.TimeEvent> timeEvents, SimCode simCod
           match partition
             case CLOCKED_PARTITION(__) then
               let &preExp = buffer "" /*BUFD*/
-              let intvl = daeExp(getClockIntvl(baseClock), contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+              let intvl = daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
               <<
               <%preExp%>
               time_events.push_back(std::make_pair(0.0, <%intvl%>));

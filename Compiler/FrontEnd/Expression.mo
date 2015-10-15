@@ -1547,7 +1547,8 @@ algorithm
   end match;
 end expInt;
 
-public function getClockIntvl
+public function getClockInterval
+  "Returns a real interval expression for any clock kind; 0.0 if unknown."
   input DAE.ClockKind inClk;
   output DAE.Exp outIntvl;
 protected
@@ -1555,14 +1556,14 @@ protected
   Integer res;
 algorithm
   outIntvl := match inClk
-    case DAE.INFERRED_CLOCK()
-      then DAE.RCONST(1.0);
     case DAE.REAL_CLOCK(e)
       then e;
     case DAE.INTEGER_CLOCK(e, res)
       then DAE.BINARY(e, DAE.DIV(DAE.T_REAL_DEFAULT), DAE.ICONST(res));
+    else
+      then DAE.RCONST(0.0);
   end match;
-end getClockIntvl;
+end getClockInterval;
 
 public function expArrayIndex
   "Returns the array index that an expression represents as an integer."

@@ -373,7 +373,7 @@ match baseClock
     >>
   else
     let &preExp = buffer ""
-    let intvl = daeExp(getClockIntvl(baseClock), contextOther, &preExp, &varDecls, &auxFunction)
+    let intvl = daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, &auxFunction)
     <<
     <%preExp%>
     data->simulationInfo.clocksData[i].interval = <%intvl%>;
