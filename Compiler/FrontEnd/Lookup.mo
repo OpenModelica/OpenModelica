@@ -3220,5 +3220,39 @@ algorithm
   end match;
 end prefixSplicedExp;
 
+public function isArrayType
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input Absyn.Path inPath;
+  output FCore.Cache outCache;
+  output Boolean outIsArray;
+protected
+  SCode.Element el;
+  Absyn.Path p;
+  FCore.Graph env;
+algorithm
+  try
+    (outCache, el, env) := lookupClass(inCache, inEnv, inPath, false);
+
+    outIsArray := match el
+      case SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(arrayDim = SOME(_))))
+        then true;
+
+      case SCode.CLASS(classDef = SCode.DERIVED(attributes = SCode.ATTR(arrayDims = _ :: _)))
+        then true;
+
+      case SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = p)))
+        algorithm
+          (outCache, outIsArray) := isArrayType(outCache, env, p);
+        then
+          outIsArray;
+
+      else false;
+    end match;
+  else
+    outIsArray := false;
+  end try;
+end isArrayType;
+
 annotation(__OpenModelica_Interface="frontend");
 end Lookup;
