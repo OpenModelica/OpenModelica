@@ -3111,10 +3111,10 @@ package Expression
     output Boolean outB;
   end isMetaArray;
 
-  function getClockIntvl
+  function getClockInterval
     input DAE.ClockKind inClk;
     output DAE.Exp outIntvl;
-  end getClockIntvl;
+  end getClockInterval;
 end Expression;
 
 package ExpressionDump
