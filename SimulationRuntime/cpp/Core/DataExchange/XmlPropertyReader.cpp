@@ -61,6 +61,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
 					bool isParameter = (variabilityInfo.compare("parameter") == 0);
 					//If a start value is given for the alias and the referred variable, skip the alias declaration
 
+
 					bool isAlias = aliasInfo.compare("alias") == 0;
                     bool isNegatedAlias = aliasInfo.compare("negatedAlias") == 0;
 
@@ -69,7 +70,8 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
 
 						if(var.first == "Real")
 						{
-							if(!isAlias)
+							 //If a start value is given for the alias and the referred variable, skip the alias declaration
+							if(!(isAlias || isNegatedAlias))
 							{
 								boost::optional<double> v = var.second.get_optional<double>("<xmlattr>.start");
 								double value = (v? (*v):0.0);
@@ -85,7 +87,8 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
 						}
 						else if(var.first == "Integer")
 						{
-							if(!isAlias)
+							 //If a start value is given for the alias and the referred variable, skip the alias declaration
+							if(!(isAlias || isNegatedAlias))
 							{
 								boost::optional<int> v = var.second.get_optional<int>("<xmlattr>.start");
 								int value = (v? (*v):0);
@@ -101,7 +104,8 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
 						}
 						else if(var.first == "Boolean")
 						{
-							if(!isAlias)
+							 //If a start value is given for the alias and the referred variable, skip the alias declaration
+							if(!(isAlias || isNegatedAlias))
 							{
 								boost::optional<bool> v = var.second.get_optional<bool>("<xmlattr>.start");
 								bool value = (v? (*v):false);
@@ -117,7 +121,8 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
 						}
 						else if(var.first == "String")
 						{
-							if(!isAlias)
+							 //If a start value is given for the alias and the referred variable, skip the alias declaration
+							if(!(isAlias || isNegatedAlias))
 							{
 								boost::optional<string> v = var.second.get_optional<string>("<xmlattr>.start");
 								string value = (v? (*v):"");
