@@ -1,0 +1,35 @@
+// name: TestSolve
+// status: correct
+//
+// Checks that the backend knows how to solve certain expressions
+//
+
+loadString("
+model ModelTestSolve18
+  parameter Real x(fixed=false),y(fixed=false);
+  Real z;
+initial equation
+  time = 5*(exp(sign(2*x + 1))-1);
+  time = y*(exp(if y>0 then time else 2*time))-1;
+equation
+  der(z) = x-y;
+end ModelTestSolve18;
+");getErrorString();
+
+simulate(ModelTestSolve18, tolerance=0.001);
+val(z,1.0)
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.001, method = 'dassl', fileNamePrefix = 'ModelTestSolve18', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: ModelTestSolve18
+// assert            | debug   | Solving non-linear system 5 failed at time=0.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// assert            | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+//
+// endResult

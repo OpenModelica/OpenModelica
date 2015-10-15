@@ -52,6 +52,23 @@ TestLapack.mos \
 TestExpressionSolve.mos \
 TestNormVar.mos \
 TestSolve.mos \
+TestSolve2.mos \
+TestSolve3.mos \
+TestSolve4.mos \
+TestSolve5.mos \
+TestSolve6.mos \
+TestSolve7.mos \
+TestSolve8.mos \
+TestSolve9.mos \
+TestSolve10.mos \
+TestSolve11.mos \
+TestSolve12.mos \
+TestSolve13.mos \
+TestSolve14.mos \
+TestSolve15.mos \
+TestSolve16.mos \
+TestSolve17.mos \
+TestSolve18.mos \
 VariableFilter.mos \
 WhenStatement4.mos 
 
