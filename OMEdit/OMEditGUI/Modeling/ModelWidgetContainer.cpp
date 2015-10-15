@@ -2380,6 +2380,7 @@ LineAnnotation* ModelWidget::createInheritedConnection(LineAnnotation *pConnecti
   } else {
     pEndComponent->addConnectionDetails(pInheritedConnectionLineAnnotation);
   }
+  return pInheritedConnectionLineAnnotation;
 }
 
 /*!
@@ -3790,7 +3791,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   //  getMainWindow()->getSaveAsAction()->setEnabled(enabled);
   //  getMainWindow()->getSaveAllAction()->setEnabled(enabled);
   getMainWindow()->getSaveTotalModelAction()->setEnabled(enabled && modelica);
-  getMainWindow()->getShowGridLinesAction()->setEnabled(enabled);
+  getMainWindow()->getShowGridLinesAction()->setEnabled(enabled && !pModelWidget->getLibraryTreeItem()->isSystemLibrary());
   getMainWindow()->getResetZoomAction()->setEnabled(enabled && modelica);
   getMainWindow()->getZoomInAction()->setEnabled(enabled && modelica);
   getMainWindow()->getZoomOutAction()->setEnabled(enabled && modelica);
