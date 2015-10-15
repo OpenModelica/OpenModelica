@@ -1,6 +1,6 @@
 .PHONY : all
 
-GENERATED_FILES=AbsynDumpTpl.mo CodegenUtil.mo CodegenC.mo CodegenCFunctions.mo CodegenFMUCommon.mo CodegenFMU.mo CodegenFMU1.mo CodegenFMU2.mo CodegenCSharp.mo CodegenQSS.mo CodegenCppCommon.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo CodegenFMUCppHpcom.mo CodegenCppInit.mo CodegenModelica.mo DAEDumpTpl.mo ExpressionDumpTpl.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo CodegenSparseFMI.mo CodegenXML.mo CodegenJava.mo CodegenJS.mo TplCodegen.mo TaskSystemDump.mo GenerateAPIFunctionsTpl.mo VisualXMLTpl.mo
+GENERATED_FILES=AbsynDumpTpl.mo CodegenUtil.mo CodegenC.mo CodegenCFunctions.mo CodegenFMUCommon.mo CodegenFMU.mo CodegenFMU1.mo CodegenFMU2.mo CodegenCSharp.mo CodegenCppCommon.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo CodegenFMUCppHpcom.mo CodegenCppInit.mo CodegenModelica.mo DAEDumpTpl.mo ExpressionDumpTpl.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo CodegenSparseFMI.mo CodegenXML.mo CodegenJava.mo CodegenJS.mo TplCodegen.mo TaskSystemDump.mo GenerateAPIFunctionsTpl.mo VisualXMLTpl.mo
 
 all : $(GENERATED_FILES)
 
@@ -87,11 +87,6 @@ Unparsing.mo : Unparsing.tpl SimCodeTV.mo
 
 SimCodeDump.mo : SimCodeDump.tpl SimCodeTV.mo CodegenUtil.tpl SCodeDumpTpl.tpl
 	@echo " ** SimCodeDump template compilation ** "
-	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
-
-CodegenQSS.mo : CodegenQSS.tpl SimCodeTV.mo SimCodeQSSTV.mo CodegenCFunctions.tpl CodegenUtil.tpl
-	@echo " ** CodegenQSS template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
 
