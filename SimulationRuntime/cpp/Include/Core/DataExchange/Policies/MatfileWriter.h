@@ -22,26 +22,7 @@
 using std::ios;
 */
 
-/**
-* Operator class to return value of output variable
-*/
-template<typename T>
-struct WriteOutputVar
-{
- /**
-  return value of output variable
-  @param val pointer to output variable
-  @param negate if output variable is a negate alias variable
-  */
-  const double operator()(const T* val,const T& negate)
-  {
-    //if output variable negate alias variable, then negate output value
-    if(negate)
-        return -*val;
-     else
-          return *val;
-  }
-};
+
 
 class MatFileWriter : public Writer
 {
