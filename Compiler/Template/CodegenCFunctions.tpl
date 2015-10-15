@@ -6288,6 +6288,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
             case DIM_INTEGER(__) then ', <%integer%>'
             case DIM_BOOLEAN(__) then ", 2"
             case DIM_ENUM(__) then ', <%size%>'
+            case DAE.DIM_EXP(exp=e) then ', <%daeExp(e,context,&rangeExpPre,&tmpVarDecls, &auxFunction)%>'
             else error(sourceInfo(), 'array reduction unable to generate code for element of unknown dimension sizes; type <%unparseType(typeof(r.expr))%>: <%ExpressionDump.printExpStr(r.expr)%>')
             ; separator = ", "
           'alloc_<%arrayTypeResult%>(&<%res%>, <%intAdd(1,listLength(dims))%>, <%length%><%dimSizes%>);'

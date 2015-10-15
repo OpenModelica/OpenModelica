@@ -875,6 +875,9 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
 
     <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""), hpcomData.schedules, modelNamePrefixStr)%>
 
+    #ifdef FMU_EXPERIMENTAL
+    <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then functionODEPartial(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""), hpcomData.schedules, modelNamePrefixStr, modelInfo)%>
+    #endif
     /* forward the main in the simulation runtime */
     extern int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData);
 
@@ -934,6 +937,10 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
        <%symbolName(modelNamePrefixStr,"function_initSynchronous")%>,
        <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>,
        <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>
+       #ifdef FMU_EXPERIMENTAL
+       ,<%symbolName(modelNamePrefixStr,"functionODE_Partial")%>
+       #endif
+
     <%\n%>
     };
 
@@ -5035,8 +5042,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /I - Include Directories
   # /DNOMINMAX - Define NOMINMAX (does what it says)
   # /TP - Use C++ Compiler
-  CFLAGS=/Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" /I"<%makefileParams.omhome%>/include/omc/msvc/" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY /DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME <%if (Flags.isSet(Flags.HPCOM)) then '/openmp'%>
-
+  CFLAGS=/Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" /I"<%makefileParams.omhome%>/include/omc/msvc/" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY /DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME <%if (Flags.isSet(Flags.HPCOM)) then '/openmp'%> <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '/DFMU_EXPERIMENTAL' %>
   # /ZI enable Edit and Continue debug info
   CDFLAGS = /ZI
 
@@ -5094,7 +5100,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   DEBUG_FLAGS=<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then "-O0 -g"%>
-  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) $(DEBUG_FLAGS) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
+  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) $(DEBUG_FLAGS) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%> <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '-DFMU_EXPERIMENTAL' %>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then 'OMC_EMCC_PRE_JS=<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/emcc/pre.js<%\n%>'
   %>CPPFLAGS=<%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME<% if stringEq(Config.simCodeTarget(),"JavaScript") then " -DOMC_EMCC"%>
   LDFLAGS=<%dirExtra%> <%
@@ -5558,6 +5564,104 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
            >>
     else error(sourceInfo(), 'Unknown Constraint List')
 end optimizationComponents1;
+
+template functionXXX_systemPartial(list<SimEqSystem> derivativEquations, String name, Integer n, String modelNamePrefixStr, ModelInfo modelInfo)
+::=
+    let code =  match modelInfo
+    case MODELINFO(vars=SIMVARS(derivativeVars=ders)) then
+    (ders |> SIMVAR(__) hasindex i0 => equationNames_Partial(SimCodeUtil.computeDependencies(derivativEquations,name),modelNamePrefixStr,i0,crefStr(name)) ; separator="\n")
+<<
+static void <%modelNamePrefixStr%>_function<%name%><%n%>(DATA *data, threadData_t *threadData, int i)
+{
+  switch (i) {
+  <%code%>
+  }
+}
+>>
+end functionXXX_systemPartial;
+
+
+template functionXXX_systemsPartial(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls, String modelNamePrefixStr, ModelInfo modelInfo)
+::=
+  let funcs = (eqs |> eq hasindex i0 fromindex 0 => functionXXX_systemPartial(eq,name,i0,modelNamePrefixStr,modelInfo) ; separator="\n")
+  match listLength(eqs)
+  case 0 then //empty case
+    let &loop +=
+        <<
+        /* no <%name%> systems */
+        >>
+    ""
+  case 1 then //1 function
+    let &loop +=
+        <<
+        <%modelNamePrefixStr%>_function<%name%>0(data, threadData,i);
+        >>
+    funcs //just the one function
+  case nFuncs then //2 and more
+    let funcNames = eqs |> e hasindex i0 fromindex 0 => 'function<%name%>_system<%i0%>' ; separator=",\n"
+    let head = if Flags.isSet(Flags.PARMODAUTO) then '#pragma omp parallel for private(id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)'
+    let &varDecls += 'int id;<%\n%>'
+
+    let &loop +=
+      /* Text for the loop body that calls the equations */
+      <<
+      <%head%>
+      for(id=0; id<<%nFuncs%>; id++) {
+        function<%name%>_systems[id](data, threadData);
+      }
+      >>
+    /* Text before the function head */
+    <<
+    <%funcs%>
+    static void (*function<%name%>_systems[<%nFuncs%>])(DATA *, threadData_t *threadData) = {
+      <%funcNames%>
+    };
+    >>
+end functionXXX_systemsPartial;
+
+template functionODEPartial(list<list<SimEqSystem>> derivativEquations, Text method, Option<tuple<Schedule,Schedule,Schedule>> hpcOmSchedules, String modelNamePrefix, ModelInfo modelInfo)
+ "Generates function in simulation file."
+::=
+  let () = System.tmpTickReset(0)
+  let &nrfuncs = buffer ""
+  let &varDecls2 = buffer ""
+  let &varDecls = buffer ""
+  let &fncalls = buffer ""
+  let systems = (functionXXX_systemsPartial(derivativEquations, "ODE_Partial", &fncalls, &varDecls, modelNamePrefix, modelInfo))
+  let &tmp = buffer ""
+  <<
+  <%tmp%>
+  <%systems%>
+
+  void <%symbolName(modelNamePrefix,"functionODE_Partial")%>(DATA *data, threadData_t *threadData, int i)
+  {
+    TRACE_PUSH
+    <% if profileFunctions() then "rt_tick(SIM_TIMER_FUNCTION_ODE);" %>
+
+    <%varDecls%>
+
+    //data->simulationInfo.callStatistics.functionODE++;
+
+    <%fncalls%>
+
+    TRACE_POP
+  }
+  >>
+end functionODEPartial;
+
+template equationNames_Partial(list<SimEqSystem> eqs, String modelNamePrefixStr, Integer i0, String cref_der)
+ "Generates an equation.
+  This template should not be used for a SES_RESIDUAL.
+  Residual equations are handled differently."
+::=
+  let odeEqs = eqs |> eq => equationNames_(eq,contextSimulationNonDiscrete,modelNamePrefixStr); separator="\n"
+  <<
+  case <%i0%>:
+    // Assigning <%cref_der%>
+    <%odeEqs%>
+    break;
+  >>
+end equationNames_Partial;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenC;

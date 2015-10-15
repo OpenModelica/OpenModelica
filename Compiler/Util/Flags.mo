@@ -462,6 +462,13 @@ constant DebugFlag DUMP_FUNCTIONS = DEBUG_FLAG(147, "dumpFunctions", false,
   Util.gettext("Add functions to backend dumps."));
 constant DebugFlag BUILD_STATIC_SOURCE_FMU = DEBUG_FLAG(148, "buildStaticSourceFMU", false,
   Util.gettext("A temporary flag to not link the C run-time system when building an FMU; instead compiling the run-time sources into the FMU. The goal is to make this a truly static shared object, depending on nothing outside the FMU (all sources will be included)."));
+constant DebugFlag DEBUG_DIFFERENTIATION = DEBUG_FLAG(149, "debugDifferentiation", false,
+  Util.gettext("Dumps debug output for the differentiation process."));
+constant DebugFlag DEBUG_DIFFERENTIATION_VERBOSE = DEBUG_FLAG(150, "debugDifferentiationVerbose", false,
+  Util.gettext("Dumps verbose debug output for the differentiation process."));
+constant DebugFlag FMU_EXPERIMENTAL = DEBUG_FLAG(151, "fmuExperimental", false,
+  Util.gettext("Include an extra function in the FMU fmi2GetSpecificDerivatives."));
+
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -616,7 +623,10 @@ constant list<DebugFlag> allDebugFlags = {
   EVAL_OUTPUT_ONLY,
   HARDCODED_START_VALUES,
   DUMP_FUNCTIONS,
-  BUILD_STATIC_SOURCE_FMU
+  BUILD_STATIC_SOURCE_FMU,
+  DEBUG_DIFFERENTIATION,
+  DEBUG_DIFFERENTIATION_VERBOSE,
+  FMU_EXPERIMENTAL
 };
 
 public
@@ -1183,6 +1193,9 @@ constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(78, "initOptModules",
 constant ConfigFlag MAX_MIXED_DETERMINED_INDEX = CONFIG_FLAG(79, "maxMixedDeterminedIndex",
   NONE(), EXTERNAL(), INT_FLAG(3), NONE(),
   Util.gettext("Sets the maximum mixed-determined index that is handled by the initialization."));
+constant ConfigFlag USE_LOCAL_DIRECTION = CONFIG_FLAG(80, "useLocalDirection",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Keeps the input/output prefix for all variables in the flat model, not only top-level ones."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1267,7 +1280,8 @@ constant list<ConfigFlag> allConfigFlags = {
   MATRIX_FORMAT,
   PARTLINTORN,
   INIT_OPT_MODULES,
-  MAX_MIXED_DETERMINED_INDEX
+  MAX_MIXED_DETERMINED_INDEX,
+  USE_LOCAL_DIRECTION
 };
 
 public function new

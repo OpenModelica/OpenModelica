@@ -212,6 +212,10 @@ Types for Functions for FMI2 for Model Exchange
 
 /* Evaluation of the model equations */
    typedef fmi2Status fmi2GetDerivativesTYPE               (fmi2Component, fmi2Real[], size_t);
+#ifdef FMU_EXPERIMENTAL
+   typedef fmi2Status fmi2GetSpecificDerivativesTYPE       (fmi2Component, fmi2Real[], const fmi2ValueReference [], size_t);
+#endif
+
    typedef fmi2Status fmi2GetEventIndicatorsTYPE           (fmi2Component, fmi2Real[], size_t);
    typedef fmi2Status fmi2GetContinuousStatesTYPE          (fmi2Component, fmi2Real[], size_t);
    typedef fmi2Status fmi2GetNominalsOfContinuousStatesTYPE(fmi2Component, fmi2Real[], size_t);

@@ -838,6 +838,12 @@ package SimCodeUtil
     input list<SimCode.ClockedPartition> inPartitions;
     output list<SimCode.SubPartition> outSubPartitions;
   end getSubPartitions;
+
+  function computeDependencies
+    input list<SimCode.SimEqSystem> eqs;
+    input DAE.ComponentRef cref;
+    output list<SimCode.SimEqSystem> deps;
+  end computeDependencies;
 end SimCodeUtil;
 
 package SimCodeFunctionUtil
@@ -3202,6 +3208,7 @@ package Flags
   constant ConfigFlag PROFILING_LEVEL;
   constant ConfigFlag CPP_FLAGS;
   constant ConfigFlag MATRIX_FORMAT;
+  constant DebugFlag FMU_EXPERIMENTAL;
 
   function isSet
     input DebugFlag inFlag;

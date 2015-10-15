@@ -10190,7 +10190,8 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
      then
       equationSimpleAssign(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues, overwriteOldStartValue)
    case e as SES_IFEQUATION(__)
-    then "SES_IFEQUATION"
+     then
+     equationIfEquation(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
    case e as SES_ALGORITHM(__)
       then
       equationAlgorithm(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -11499,6 +11500,44 @@ template whenAssign(ComponentRef left, Type ty, Exp right, Context context, Text
     >>
 end whenAssign;
 
+template equationIfEquation(SimEqSystem eq, Context context,Text &varDecls /*BUFP*/, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates an if equation."
+::=
+match eq
+case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
+  let &preExp = buffer ""
+  let IfEquation = (ifbranches |> (e, eqns) hasindex index0 =>
+    let condition = daeExp(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let ifequations = (eqns |> eqn =>
+      let eqnStr = equation_(eqn, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, &extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      <<
+      <%eqnStr%>
+      >>
+      ; separator="\n")
+    let conditionline = if index0 then 'else if(<%condition%>)' else 'if(<%condition%>)'
+    <<
+    <%conditionline%>
+    {
+      <%ifequations%>
+    }
+    >>
+    ; separator="\n")
+  let elseequations = (elsebranch |> eqn =>
+    let eqnStr = equation_(eqn, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, &extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    <<
+    <%eqnStr%>
+    >>
+    ; separator="\n")
+  <<
+  <%preExp%>
+  <%IfEquation%>
+  else
+  {
+    <%elseequations%>
+  }
+  >>
+end equationIfEquation;
+
 template equationElseWhen(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                           Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates a else when equation."
@@ -12651,7 +12690,7 @@ template clockedPartFunctions(Integer i, list<tuple<SimCodeVar.SimVar, Boolean>>
 ::=
   let className = lastIdentOfPathFromSimCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
   let funcs = equations |> eq =>
-    equation_function_create_single_func(eq, context/*BUFC*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, "evaluate", "", stateDerVectorName, useFlatArrayNotation, enableMeasureTime, false, false, 'const int clockIndex = <%i%>;')
+    equation_function_create_single_func(eq, context/*BUFC*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, "evaluate", "", stateDerVectorName, useFlatArrayNotation, enableMeasureTime, false, false, 'const int clockIndex = <%i%>;<%\n%>')
     ; separator="\n"
   let funcName = 'evaluateClocked<%i%>'
   let funcCalls = (List.partition(equations, 100) |> eqs hasindex i0 =>

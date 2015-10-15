@@ -2244,14 +2244,15 @@ algorithm
     local
       Type tp;
       Operator op;
-      DAE.Exp e1,e2,e3,e;
+      DAE.Exp e1,e2,e3,e,iterExp,operExp;
       list<DAE.Exp> explist,exps;
       Absyn.Path p;
       String msg;
-      DAE.Type ty;
+      DAE.Type ty, iterTp, operTp;
       list<DAE.Type> tys;
       Integer i,i1,i2;
       DAE.Dimension dim;
+      DAE.Dimensions iterdims;
 
     case (DAE.ICONST()) then DAE.T_INTEGER_DEFAULT;
     case (DAE.RCONST()) then DAE.T_REAL_DEFAULT;
@@ -2290,12 +2291,13 @@ algorithm
     case DAE.RSUB() then inExp.ty;
     case (DAE.CODE(ty = tp)) then tp;
       /* array reduction with known size */
-    case (DAE.REDUCTION(iterators={DAE.REDUCTIONITER(exp=e,guardExp=NONE())},reductionInfo=DAE.REDUCTIONINFO(exprType=ty as DAE.T_ARRAY(dims=dim::_),path = Absyn.IDENT("array"))))
+    case (DAE.REDUCTION(iterators={DAE.REDUCTIONITER(exp=iterExp,guardExp=NONE())},expr = operExp, reductionInfo=DAE.REDUCTIONINFO(exprType=ty as DAE.T_ARRAY(dims=dim::_),path = Absyn.IDENT("array"))))
       equation
         false = dimensionKnown(dim);
-        DAE.T_ARRAY(dims={dim}) = typeof(e);
-        true = dimensionKnown(dim);
-        tp = liftArrayR(Types.unliftArray(Types.simplifyType(ty)),dim);
+        iterTp = typeof(iterExp);
+        operTp = typeof(operExp);
+        DAE.T_ARRAY(dims=iterdims) = iterTp;
+        tp = Types.liftTypeWithDims(operTp, iterdims);
       then tp;
     case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(exprType=ty)))
       then Types.simplifyType(ty);
