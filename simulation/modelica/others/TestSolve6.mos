@@ -16,9 +16,9 @@ equation
   cos(z) = time;
   w = acos(time);
 end ModelTestSolve6;
-");getErrorString();
+"); getErrorString();
 
-simulate(ModelTestSolve6, simflags="-lv LOG_NLS_V");
+simulate(ModelTestSolve6, simflags="-lv LOG_NLS_V"); getErrorString();
 val(x,0.5);
 val(y,0.5);
 val(z,0.5);
@@ -37,6 +37,7 @@ val(w,0.5);
 // LOG_NLS           | info    | free non-linear system solvers
 // "
 // end SimulationResult;
+// ""
 // 1.047197551196598
 // 5.235987755982988
 // 11.51917306316257

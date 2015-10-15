@@ -25,9 +25,9 @@ equation
 
   der(Err) = sum(err);
 end ModelTestSolve5;
-");getErrorString();
+"); getErrorString();
 
-simulate(ModelTestSolve5, simflags="-lv LOG_NLS_V");
+simulate(ModelTestSolve5, simflags="-lv LOG_NLS_V"); getErrorString();
 val(x[1],0.5);
 val(y[1],0.5);
 val(z[1],0.5);
@@ -49,6 +49,7 @@ val(Err,1);
 // LOG_NLS           | info    | free non-linear system solvers
 // "
 // end SimulationResult;
+// ""
 // -1.318116071652818
 // 0.2526802551420786
 // 0.2449786631268641

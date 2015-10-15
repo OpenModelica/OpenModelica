@@ -18,9 +18,9 @@ equation
   (log(abs(x+v+w)))^(exp(z)+1) = exp(time);
   abs(w) = exp(acos(time));
 end ModelTestSolve15;
-");getErrorString();
+"); getErrorString();
 
-simulate(ModelTestSolve15, simflags="-lv LOG_NLS_V");
+simulate(ModelTestSolve15, simflags="-lv LOG_NLS_V"); getErrorString();
 val(x,0.5);
 val(y,0.5);
 val(z,0.5);
@@ -40,6 +40,7 @@ val(v,0.5);
 // LOG_NLS           | info    | free non-linear system solvers
 // "
 // end SimulationResult;
+// ""
 // -1.085543757874853
 // 1.151917842006256
 // 1.284025416687741

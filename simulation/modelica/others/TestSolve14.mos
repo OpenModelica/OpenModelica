@@ -18,9 +18,9 @@ equation
   abs(cos(x+v+w)) = time;
   abs(w) = acos(time);
 end ModelTestSolve14;
-");getErrorString();
+"); getErrorString();
 
-simulate(ModelTestSolve14, simflags="-lv LOG_NLS_V");
+simulate(ModelTestSolve14, simflags="-lv LOG_NLS_V"); getErrorString();
 val(x,0.5);
 val(y,0.5);
 val(z,0.5);
@@ -40,6 +40,8 @@ val(v,0.5);
 // LOG_NLS           | info    | free non-linear system solvers
 // "
 // end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "
 // -0.2298488470659301
 // 0.9737008433540479
 // 0.2298488470659301

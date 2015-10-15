@@ -16,9 +16,9 @@ equation
   tan(z) = time;
   w = atan(time);
 end ModelTestSolve11;
-");getErrorString();
+"); getErrorString();
 
-simulate(ModelTestSolve11, simflags="-lv LOG_NLS_V");
+simulate(ModelTestSolve11, simflags="-lv LOG_NLS_V"); getErrorString();
 val(x,0.5);
 val(y,0.5);
 val(z,0.5);
@@ -37,6 +37,7 @@ val(w,0.5);
 // LOG_NLS           | info    | free non-linear system solvers
 // "
 // end SimulationResult;
+// ""
 // 0.4636476090008061
 // 3.605240262590599
 // 9.888425569770185

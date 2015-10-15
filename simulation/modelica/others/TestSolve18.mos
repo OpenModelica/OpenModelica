@@ -14,10 +14,10 @@ initial equation
 equation
   der(z) = x-y;
 end ModelTestSolve18;
-");getErrorString();
+"); getErrorString();
 
-simulate(ModelTestSolve18, tolerance=0.001);
-val(z,1.0)
+simulate(ModelTestSolve18, tolerance=0.001); getErrorString();
+val(z,1.0);
 
 // Result:
 // true
@@ -31,5 +31,8 @@ val(z,1.0)
 // assert            | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "
 //
 // endResult

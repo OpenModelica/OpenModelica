@@ -19,9 +19,9 @@ equation
              + abs((exp(sqrt(1-z)))^(x) -( x^2+time+1)) + abs(log(sqrt(((v-1))+1/y))^20 - y^2*exp(-10*time-100))
              + abs((sin(1/x + 1/v + 1/(sqrt(abs(z)/(z^2))) + 1/z) + sin(1/x) + sqrt(abs(v-1))*sqrt(w-1))^x);
 end ModelTestSolve17;
-");getErrorString();
+"); getErrorString();
 
-simulate(ModelTestSolve17, simflags="-lv LOG_NLS_V -s euler", stopTime=0.1);
+simulate(ModelTestSolve17, simflags="-lv LOG_NLS_V -s euler", stopTime=0.1); getErrorString();
 val(res,0.1);
 val(res,0.0);
 
@@ -38,6 +38,8 @@ val(res,0.0);
 // LOG_NLS           | info    | free non-linear system solvers
 // "
 // end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "
 // 0.07916290493249595
 // 0.0
 // endResult

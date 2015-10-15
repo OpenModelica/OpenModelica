@@ -16,9 +16,9 @@ equation
   sin(z) = time;
   w = asin(time);
 end ModelTestSolve7;
-");getErrorString();
+"); getErrorString();
 
-simulate(ModelTestSolve7, simflags="-lv LOG_NLS_V");
+simulate(ModelTestSolve7, simflags="-lv LOG_NLS_V"); getErrorString();
 val(x,0.5);
 val(y,0.5);
 val(z,0.5);
@@ -37,6 +37,7 @@ val(w,0.5);
 // LOG_NLS           | info    | free non-linear system solvers
 // "
 // end SimulationResult;
+// ""
 // 0.5235987755982989
 // 2.617993877991494
 // 8.901179185171081

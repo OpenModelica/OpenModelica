@@ -18,9 +18,9 @@ equation
   cos(x+cos(v)+w) = time;
   w = acos(time);
 end ModelTestSolve12;
-");getErrorString();
+"); getErrorString();
 
-simulate(ModelTestSolve12, simflags="-lv LOG_NLS_V");
+simulate(ModelTestSolve12, simflags="-lv LOG_NLS_V"); getErrorString();
 val(x,0.5);
 val(y,0.5);
 val(z,0.5);
@@ -40,6 +40,7 @@ val(v,0.5);
 // LOG_NLS           | info    | free non-linear system solvers
 // "
 // end SimulationResult;
+// ""
 // -0.9737008433540479
 // 0.9737008433540479
 // 0.2298488470659301

@@ -22,9 +22,9 @@ equation
   x[11] = sqrt(delay(x[11],0.01) + time);
   exp(x[12]) * y[2] + y[3] * exp(x[12]) + y[4] * exp(x[12]) * y[3] + y[5] * (x[1] * y[4]) + y[7] * y[1] * y[9] * exp(x[12]) + y[1] * exp(x[12]) ^ 1 = 10 ^ time;
 end ModelTestSolve2;
-");getErrorString();
+"); getErrorString();
 
-simulate(ModelTestSolve2,simflags="-lv LOG_NLS_V");
+simulate(ModelTestSolve2,simflags="-lv LOG_NLS_V"); getErrorString();
 val(x[1],0.0);
 val(x[2],0.0);
 val(x[3],0.0);
@@ -63,6 +63,7 @@ val(x[12],1.0);
 // LOG_NLS           | info    | free non-linear system solvers
 // "
 // end SimulationResult;
+// ""
 // 0.008849557522123894
 // 0.0
 // 0.0

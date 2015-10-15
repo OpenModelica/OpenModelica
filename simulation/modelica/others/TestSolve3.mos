@@ -14,9 +14,9 @@ equation
   y*sinh(w) = z*cosh(w);
   cosh(v*(w+1) + time*10) = sinh(v*(w+1)+time*10);
 end ModelTestSolve3;
-");getErrorString();
+"); getErrorString();
 
-simulate(ModelTestSolve3, simflags="-lv LOG_NLS_V");
+simulate(ModelTestSolve3, simflags="-lv LOG_NLS_V"); getErrorString();
 val(x,0.0);
 val(y,0.0);
 val(z,0.0);
@@ -41,6 +41,7 @@ val(v,0.5);
 // LOG_NLS           | info    | free non-linear system solvers
 // "
 // end SimulationResult;
+// ""
 // 1.0
 // 0.5493061443340549
 // -0.0

@@ -21,9 +21,9 @@ equation
   a1 = abs(x+z+w);
   a2 = abs(x+v+w);
 end ModelTestSolve16;
-");getErrorString();
+"); getErrorString();
 
-simulate(ModelTestSolve16, simflags="-lv LOG_NLS_V");
+simulate(ModelTestSolve16, simflags="-lv LOG_NLS_V"); getErrorString();
 val(x,0.5);
 val(y,0.5);
 val(z,0.5);
@@ -43,6 +43,8 @@ val(v,0.5);
 // LOG_NLS           | info    | free non-linear system solvers
 // "
 // end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "
 // -3.805609927078452
 // 1.151917842006256
 // 1.284025416687741
