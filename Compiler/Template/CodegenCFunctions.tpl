@@ -5328,7 +5328,8 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     error(sourceInfo(), 'Code generation does not support der(<%printExpStr(exp)%>)')
   case CALL(path=IDENT(name="pre"), expLst={arg}) then
     daeExpCallPre(arg, context, preExp, varDecls, &auxFunction)
-
+  case CALL(path=IDENT(name="interval")) then
+    'data->simulationInfo.clocksData[clockIndex].interval'
   case CALL(path=IDENT(name="previous"), expLst={arg as CREF(__)}) then
     '<%cref(crefPrefixPrevious(arg.componentRef))%>'
   case CALL(path=IDENT(name="$_clkfire"), expLst={arg as ICONST(__)}) then
