@@ -428,7 +428,7 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp, Text &varDecls, 
       let slice = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp,
         &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,
         stateDerVectorName, useFlatArrayNotation)
-      let &preExp += 'ArraySlice<<%typeStr%>> <%slice%>_as(<%arrName%>, <%slice%>);<%\n%>'
+      let &varDecls += 'ArraySlice<<%typeStr%>> <%slice%>_as(<%arrName%>, <%slice%>);<%\n%>'
       '<%slice%>_as'
       // old code making a copy of the slice using create_array_from_shape
       //let arrayType = expTypeFlag(ty, 6)
@@ -1239,8 +1239,8 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
     <%firstValue%>
     <% if resTail then '<%resTail%> = &<%res%>;' %>
     <%loop%>
-    <% if not ri.defaultValue then 'if (!<%foundFirst%>) MMC_THROW_INTERNAL();' %>
-    <% if resTail then '*<%resTail%> = mmc_mk_nil();' %>
+    <% if not ri.defaultValue then 'if (!<%foundFirst%>) throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Internal error");' %>
+    <% if resTail then '*<%resTail%> = NULL;' %>
     <% resTmp %> = <% res %>;
   }<%\n%>
   >>
@@ -1974,7 +1974,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
 
   case CALL(path=IDENT(name="fill"), expLst=val::dims, attr=attr as CALL_ATTR(__)) then
     let valExp = daeExp(val, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let dimsExp = (dims |> dim =>    daeExp(dim, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="][")
+    let dimsExp = (dims |> dim =>    daeExp(dim, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=",")
 
     let ty_str = '<%expTypeShort(attr.ty)%>'
   //previous multi_array
@@ -2353,10 +2353,18 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
     let tvar = tempDecl(expTypeArrayDims(ty.ty, dims), &varDecls /*BUFD*/)
     let &preExp += 'subtract_array<<%type%>>(<%e1%>, <%e2%>, <%tvar%>);<%\n%>'
     '<%tvar%>'
-  case MUL_ARR(__) then "daeExpBinary:ERR MUL_ARR not supported"
+  case MUL_ARR(ty=T_ARRAY(dims=dims)) then
+    let type = expTypeShort(ty.ty)
+    let tvar = tempDecl(expTypeArrayDims(ty.ty, dims), &varDecls /*BUFD*/)
+    let &preExp += 'multiply_array_elem_wise<<%type%>>(<%e1%>, <%e2%>, <%tvar%>);<%\n%>'
+    '<%tvar%>'
   case DIV_ARR(__) then "daeExpBinary:ERR DIV_ARR not supported"
   case ADD_ARRAY_SCALAR(__) then "daeExpBinary:ERR ADD_ARRAY_SCALAR not supported"
-  case SUB_SCALAR_ARRAY(__) then "daeExpBinary:ERR SUB_SCALAR_ARRAY not supported"
+  case SUB_SCALAR_ARRAY(ty=T_ARRAY(dims=dims)) then
+    let type = expTypeShort(ty.ty)
+    let tvar = tempDecl(expTypeArrayDims(ty.ty, dims), &varDecls /*BUFD*/)
+    let &preExp += 'subtract_array_scalar<<%type%>>(<%e2%>, <%e1%>, <%tvar%>);<%\n%>'
+    '<%tvar%>'
   case MUL_SCALAR_PRODUCT(__) then
     let type = expTypeShort(ty)
     'dot_array<<%type%>>(<%e1%>, <%e2%>)'
