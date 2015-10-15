@@ -33,6 +33,7 @@ Redeclare4.mo \
 Redeclare5.mo \
 Redeclare6.mo \
 Redeclare6.mos \
+RedeclareArrayComponent1.mo \
 RedeclareBaseClass1.mo \
 RedeclareClass1.mo \
 RedeclareClass4.mo \
