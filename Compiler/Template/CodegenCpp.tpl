@@ -6028,9 +6028,9 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
         else
         <<
         #if defined(__vxworks)
-        _reader  = boost::shared_ptr<IPropertyReader>(new XmlPropertyReader("/SYSTEM/bundles/com.boschrexroth.<%modelname%>/OMCpp<%fileNamePrefix%>Init.xml"));
+        _reader  = shared_ptr<IPropertyReader>(new XmlPropertyReader("/SYSTEM/bundles/com.boschrexroth.<%modelname%>/OMCpp<%fileNamePrefix%>Init.xml"));
         #else
-        _reader  =  boost::shared_ptr<IPropertyReader>(new XmlPropertyReader("<%makefileParams.compileDir%>/OMCpp<%fileNamePrefix%>Init.xml"));
+        _reader  =  shared_ptr<IPropertyReader>(new XmlPropertyReader("<%makefileParams.compileDir%>/OMCpp<%fileNamePrefix%>Init.xml"));
         #endif
         _reader->readInitialValues(*this, _sim_vars);
 
@@ -7352,8 +7352,8 @@ match modelInfo
       <%conditionvariables%>
       Functions* _functions;
 
-      boost::shared_ptr<IPropertyReader> _reader;
-      boost::shared_ptr<IAlgLoopSolverFactory> _algLoopSolverFactory;    ///< Factory that provides an appropriate solver
+      shared_ptr<IPropertyReader> _reader;
+      shared_ptr<IAlgLoopSolverFactory> _algLoopSolverFactory;    ///< Factory that provides an appropriate solver
 
       <%algloopsolver%>
       <%jacalgloopsolver%>
