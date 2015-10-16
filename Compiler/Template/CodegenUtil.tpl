@@ -106,6 +106,8 @@ template crefStrNoUnderscore(ComponentRef cr)
   match cr
   case CREF_IDENT(__) then '<%ident%><%subscriptsStr(subscriptLst)%>'
   case CREF_QUAL(ident = "$DER") then 'der(<%crefStrNoUnderscore(componentRef)%>)'
+  case CREF_QUAL(ident = "$PRE") then 'pre(<%crefStrNoUnderscore(componentRef)%>)'
+  case CREF_QUAL(ident = "$CLKPRE") then 'previous(<%crefStrNoUnderscore(componentRef)%>)'
   case CREF_QUAL(__) then '<%ident%><%subscriptsStr(subscriptLst)%>.<%crefStrNoUnderscore(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefStrNoUnderscore;
