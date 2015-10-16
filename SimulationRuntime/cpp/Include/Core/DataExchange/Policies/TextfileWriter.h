@@ -4,30 +4,19 @@
  *  @{
  */
 
+#include <Core/DataExchange/FactoryPolicy.h>
 
-/*includes removed for static linking not needed any more
-#ifdef RUNTIME_STATIC_LINKING
-#include <sstream>
-#include <vector>
-#endif
-
-// Output
-#include <fstream>
-#include <Core/DataExchange/Writer.h>
-using std::ios;
-#define SEPERATOR ","
-#define EXTENSION ","
-*/
 /**
  Policy class to write simulation results in a text file
- */
-  const char SEPERATOR = ',';
-    const char EXTENSION = ',';
-class TextFileWriter : public Writer
+*/
+const char SEPERATOR = ',';
+const char EXTENSION = ',';
+
+class TextFileWriter : public ContainerManager
 {
  public:
     TextFileWriter(unsigned long size, string output_path, string file_name)
-            : Writer(),
+            : ContainerManager(),
               _output_stream(),
               _curser_position(0),
               _output_path(output_path),

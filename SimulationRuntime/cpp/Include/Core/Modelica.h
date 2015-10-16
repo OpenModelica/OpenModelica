@@ -85,7 +85,6 @@ using boost::lexical_cast;
 using boost::numeric_cast;
 using boost::tie;
 using boost::get;
-using boost::make_tuple;
 using std::max;
 using std::min;
 using std::string;
@@ -115,6 +114,7 @@ using std::runtime_error;
   using std::memory_order_relaxed;
   using std::condition_variable;
   using std::unique_lock;
+  using std::make_tuple;
 
   using std::array;
   using std::tuple;
@@ -125,6 +125,7 @@ using std::runtime_error;
   #include <boost/array.hpp>
   #include <boost/shared_ptr.hpp>
   #include <boost/weak_ptr.hpp>
+  using boost::make_tuple;
   #if defined(USE_THREAD)
     #include <boost/thread.hpp>
     #include <boost/atomic.hpp>
@@ -148,7 +149,7 @@ using std::runtime_error;
 #endif //USE_CPP_ELEVEN
 
 #if defined(USE_THREAD)
-  #include <Core/Utils/extension/busywaiting_barrier.hpp>
+  #include <Core/Utils/extension/barriers.hpp>
 #endif //USE_THREAD
 
 //using boost::timer::cpu_timer;

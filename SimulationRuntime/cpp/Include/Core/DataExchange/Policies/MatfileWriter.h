@@ -21,14 +21,14 @@
 #include <fstream>
 using std::ios;
 */
+#include <Core/DataExchange/FactoryPolicy.h>
 
 
-
-class MatFileWriter : public Writer
+class MatFileWriter : public ContainerManager
 {
  public:
     MatFileWriter(unsigned long size, string output_path, string file_name)
-            : Writer(),
+            : ContainerManager(),
               _dataHdrPos(),
               _dataEofPos(),
               _curser_position(0),
