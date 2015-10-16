@@ -446,10 +446,12 @@ match simVar
   let variability = getVariability2(varKind, type_)
   let caus = getCausality2(causality, varKind, isValueChangeable)
   let initial = getInitialType2(variability, caus, initialValue)
+  let clockIndex = getClockIndex(simVar, simCode)
   let previous = match varKind case CLOCKED_STATE(__) then '<%getVariableIndex(cref2simvar(previousName, simCode))%>'
   <<
   name="<%System.stringReplace(crefStrNoUnderscore(name),"$", "_D_")%>"
   valueReference="<%valueReference%>"
+  <%if boolNot(stringEq(clockIndex, "0")) then 'clockIndex="'+clockIndex+'"' %>
   <%if boolNot(stringEq(previous, "")) then 'previous="'+previous+'"' %>
   <%description%>
   variability="<%variability%>"

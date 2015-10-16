@@ -839,6 +839,12 @@ package SimCodeUtil
     output list<SimCode.SubPartition> outSubPartitions;
   end getSubPartitions;
 
+  function getClockIndex
+    input SimCodeVar.SimVar simVar;
+    input SimCode.SimCode simCode;
+    output Integer clockIndex;
+  end getClockIndex;
+
   function computeDependencies
     input list<SimCode.SimEqSystem> eqs;
     input DAE.ComponentRef cref;

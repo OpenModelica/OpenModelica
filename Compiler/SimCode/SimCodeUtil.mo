@@ -186,6 +186,7 @@ protected
   SimCode.HashTableCrefToSimVar crefToSimVarHT;
   SimCode.MakefileParams makefileParams;
   SimCode.ModelInfo modelInfo;
+  HashTable.HashTable crefToClockIndexHT;
   array<Integer> systemIndexMap;
   list<BackendDAE.EqSystem> clockedSysts, contSysts;
   //list<BackendDAE.Equation> paramAsserts, remEqLst;
@@ -384,6 +385,8 @@ algorithm
     //BaseHashTable.dumpHashTable(varToArrayIndexMapping);
     //print("END MAPPING\n\n");
 
+    crefToClockIndexHT := List.fold(inBackendDAE.eqs, collectClockedVars, HashTable.emptyHashTable());
+
     simCode := SimCode.SIMCODE(modelInfo,
                               {}, // Set by the traversal below...
                               recordDecls,
@@ -421,6 +424,7 @@ algorithm
                               varToArrayIndexMapping,
                               varToIndexMapping,
                               crefToSimVarHT,
+                              crefToClockIndexHT,
                               SOME(backendMapping),
                               modelStruct);
 
@@ -615,6 +619,61 @@ algorithm
     clockedPartitions := SimCode.CLOCKED_PARTITION(basePartition.clock, simSubPartitions)::clockedPartitions;
   end for;
 end createClockedSimPartitions;
+
+public function collectClockedVars "author: rfranke
+  This function collects clocked variables along with their clockIndex"
+  input BackendDAE.EqSystem inEqSystem;
+  input HashTable.HashTable inHT;
+  output HashTable.HashTable outHT;
+protected
+  Integer clockIndex;
+algorithm
+  outHT := match inEqSystem
+    case BackendDAE.EQSYSTEM(partitionKind = BackendDAE.CLOCKED_PARTITION(subPartIdx=clockIndex)) equation
+      (outHT, _) = BackendVariable.traverseBackendDAEVars(inEqSystem.orderedVars, collectClockedVars1, (inHT, clockIndex));
+    then outHT;
+    else inHT;
+  end match;
+end collectClockedVars;
+
+protected function collectClockedVars1 "author: rfranke
+  Helper to collectClockedVars"
+  input BackendDAE.Var inVar;
+  input tuple<HashTable.HashTable, Integer> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<HashTable.HashTable, Integer> outTpl;
+protected
+  HashTable.HashTable clkHT;
+  Integer clockIndex;
+  DAE.ComponentRef cref;
+algorithm
+  (clkHT, clockIndex) := inTpl;
+  (outVar, outTpl) := match inVar
+    case BackendDAE.VAR(varName=cref) equation
+      clkHT = BaseHashTable.add((cref, clockIndex), clkHT);
+      clkHT = BaseHashTable.add((ComponentReference.crefPrefixPrevious(cref), clockIndex), clkHT);
+    then (inVar, (clkHT, clockIndex));
+    else (inVar, inTpl);
+  end match;
+end collectClockedVars1;
+
+public function getClockIndex "author: rfranke
+  Returns the index of the clock of a variable or zero non-clocked variables"
+  input SimCodeVar.SimVar simVar;
+  input SimCode.SimCode simCode;
+  output Integer clockIndex;
+protected
+  DAE.ComponentRef cref;
+  HashTable.HashTable clkHT;
+algorithm
+  cref := getSimVarCompRef(simVar);
+  clockIndex := match simCode
+    case SimCode.SIMCODE(crefToClockIndexHT=clkHT) then
+      if BaseHashTable.hasKey(cref, clkHT)
+      then BaseHashTable.get(cref, clkHT)
+      else 0;
+  end match;
+end getClockIndex;
 
 protected function getSimVarCompRef
   input SimCodeVar.SimVar inVar;
