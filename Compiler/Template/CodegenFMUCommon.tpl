@@ -75,52 +75,52 @@ case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
   <ModelVariables>
   <%System.tmpTickReset(0)%>
   <%vars.stateVars |> var =>
-    ScalarVariable(simCode, stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.derivativeVars |> var =>
-    ScalarVariable(simCode, stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.algVars |> var =>
-    ScalarVariable(simCode, stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.discreteAlgVars |> var =>
-    ScalarVariable(simCode, stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.paramVars |> var =>
-    ScalarVariable(simCode, stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.aliasVars |> var =>
-    ScalarVariable(simCode, stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.intAlgVars |> var =>
-    ScalarVariable(simCode, stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.intParamVars |> var =>
-    ScalarVariable(simCode, stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.intAliasVars |> var =>
-    ScalarVariable(simCode, stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.boolAlgVars |> var =>
-    ScalarVariable(simCode, stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.boolParamVars |> var =>
-    ScalarVariable(simCode, stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.boolAliasVars |> var =>
-    ScalarVariable(simCode, stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.stringAlgVars |> var =>
-    ScalarVariable(simCode, stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.stringParamVars |> var =>
-    ScalarVariable(simCode, stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.stringAliasVars |> var =>
-    ScalarVariable(simCode, stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%externalFunctions(modelInfo)%>
@@ -128,7 +128,7 @@ case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
   >>
 end fmiModelVariables;
 
-template ScalarVariable(SimCode simCode, list<SimVar> stateVars, SimVar simVar, String FMUVersion)
+template ScalarVariable(SimVar simVar, SimCode simCode, list<SimVar> stateVars, String FMUVersion)
  "Generates code for ScalarVariable file for FMU target."
 ::=
 match simVar
@@ -141,7 +141,7 @@ case SIMVAR(__) then
   <<
   <!-- Index of variable = "<%getVariableIndex(simVar)%>" -->
   <ScalarVariable
-    <%ScalarVariableAttribute2(simCode, simVar)%>>
+    <%ScalarVariableAttribute2(simVar, simCode)%>>
     <%ScalarVariableType2(simVar, stateVars)%>
   </ScalarVariable>
   >>
@@ -433,14 +433,14 @@ template FmiUnknownDependenciesKind(list<String> dependenciesKind)
   >>
 end FmiUnknownDependenciesKind;
 
-template ScalarVariableAttribute2(SimCode simCode, SimVar simVar)
+template ScalarVariableAttribute2(SimVar simVar, SimCode simCode)
  "Generates code for ScalarVariable Attribute file for FMU 2.0 target."
 ::=
 match simVar
   case SIMVAR(__) then
   let valueReference = '<%System.tmpTick()%>'
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
-  let variability = getVariability2(varKind, type_)
+  let variability = if getClockIndex(simVar, simCode) then "discrete" else getVariability2(varKind, type_)
   let caus = getCausality2(causality, varKind, isValueChangeable)
   let initial = getInitialType2(variability, caus, initialValue)
   let clockIndex = getClockIndex(simVar, simCode)
