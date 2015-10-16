@@ -66,9 +66,9 @@ readFile("modelDescription.tmp.xml");
 //   <ScalarVariable
 //     name=\"previous(xd)\"
 //     valueReference=\"0\"
-//     clockIndex=\"1\"
 //     variability=\"discrete\"
 //     causality=\"local\"
+//     clockIndex=\"1\"
 //     initial=\"exact\">
 //     <Real start=\"0.0\"/>
 //   </ScalarVariable>
@@ -85,10 +85,10 @@ readFile("modelDescription.tmp.xml");
 //   <ScalarVariable
 //     name=\"xd\"
 //     valueReference=\"2\"
-//     clockIndex=\"1\"
-//     previous=\"1\"
 //     variability=\"discrete\"
 //     causality=\"local\"
+//     clockIndex=\"1\"
+//     previous=\"1\"
 //     initial=\"exact\">
 //     <Real start=\"0.0\"/>
 //   </ScalarVariable>
@@ -96,9 +96,9 @@ readFile("modelDescription.tmp.xml");
 //   <ScalarVariable
 //     name=\"y\"
 //     valueReference=\"3\"
-//     clockIndex=\"1\"
 //     variability=\"discrete\"
 //     causality=\"output\"
+//     clockIndex=\"1\"
 //     initial=\"calculated\">
 //     <Real/>
 //   </ScalarVariable>
