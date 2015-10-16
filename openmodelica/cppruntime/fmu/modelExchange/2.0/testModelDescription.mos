@@ -1,4 +1,4 @@
-// name:  testBug3502
+// name:  testModelDescription
 // keywords: FMI 2.0 export clocks
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml *SID* output.log
@@ -16,8 +16,8 @@ model SID
 equation
   when Clock(dt) then
     xd = previous(xd) + p * u * dt;
+    y = previous(xd);
   end when;
-  y = hold(xd);
 end SID;
 ");
 getErrorString();
@@ -67,7 +67,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"previous(xd)\"
 //     valueReference=\"0\"
 //     clockIndex=\"1\"
-//     variability=\"continuous\"
+//     variability=\"discrete\"
 //     causality=\"local\"
 //     initial=\"exact\">
 //     <Real start=\"0.0\"/>
@@ -87,7 +87,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"2\"
 //     clockIndex=\"1\"
 //     previous=\"1\"
-//     variability=\"continuous\"
+//     variability=\"discrete\"
 //     causality=\"local\"
 //     initial=\"exact\">
 //     <Real start=\"0.0\"/>
@@ -96,7 +96,8 @@ readFile("modelDescription.tmp.xml");
 //   <ScalarVariable
 //     name=\"y\"
 //     valueReference=\"3\"
-//     variability=\"continuous\"
+//     clockIndex=\"1\"
+//     variability=\"discrete\"
 //     causality=\"output\"
 //     initial=\"calculated\">
 //     <Real/>
@@ -122,7 +123,7 @@ readFile("modelDescription.tmp.xml");
 //   </ModelVariables>
 //   <ModelStructure>
 //     <Outputs>
-//       <Unknown index=\"4\" dependencies=\"2\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"4\" />
 //     </Outputs>
 //     <Derivatives>
 //     </Derivatives>
