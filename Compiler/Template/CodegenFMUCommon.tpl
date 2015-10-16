@@ -138,7 +138,6 @@ case SIMVAR(__) then
   else if stringEq(crefStr(name),"der($dummy)") then
   <<>>
   else if isFMIVersion20(FMUVersion) then
-  //if intGt(getVariableIndex(simVar), 0) then
   <<
   <!-- Index of variable = "<%getVariableIndex(simVar)%>" -->
   <ScalarVariable
@@ -146,8 +145,6 @@ case SIMVAR(__) then
     <%ScalarVariableType2(simVar, stateVars)%>
   </ScalarVariable>
   >>
-  //else let valueReference = '<%System.tmpTick()%>'
-  //<<>>
   else
   <<
   <ScalarVariable
