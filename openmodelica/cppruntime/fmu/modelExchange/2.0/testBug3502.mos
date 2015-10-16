@@ -64,7 +64,7 @@ readFile("modelDescription.tmp.xml");
 //   <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
 //   <ScalarVariable
-//     name=\"_D_CLKPRE.xd\"
+//     name=\"previous(xd)\"
 //     valueReference=\"0\"
 //     clockIndex=\"1\"
 //     variability=\"continuous\"
