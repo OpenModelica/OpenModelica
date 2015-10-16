@@ -842,7 +842,7 @@ package SimCodeUtil
   function getClockIndex
     input SimCodeVar.SimVar simVar;
     input SimCode.SimCode simCode;
-    output Integer clockIndex;
+    output Option<Integer> clockIndex;
   end getClockIndex;
 
   function computeDependencies

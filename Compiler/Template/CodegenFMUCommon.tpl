@@ -448,7 +448,7 @@ match simVar
   <<
   name="<%System.stringReplace(crefStrNoUnderscore(name),"$", "_D_")%>"
   valueReference="<%valueReference%>"
-  <%if boolNot(stringEq(clockIndex, "0")) then 'clockIndex="'+clockIndex+'"' %>
+  <%if boolNot(stringEq(clockIndex, "")) then 'clockIndex="'+clockIndex+'"' %>
   <%if boolNot(stringEq(previous, "")) then 'previous="'+previous+'"' %>
   <%description%>
   variability="<%variability%>"

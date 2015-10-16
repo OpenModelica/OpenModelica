@@ -661,7 +661,7 @@ public function getClockIndex "author: rfranke
   Returns the index of the clock of a variable or zero non-clocked variables"
   input SimCodeVar.SimVar simVar;
   input SimCode.SimCode simCode;
-  output Integer clockIndex;
+  output Option<Integer> clockIndex;
 protected
   DAE.ComponentRef cref;
   HashTable.HashTable clkHT;
@@ -670,8 +670,8 @@ algorithm
   clockIndex := match simCode
     case SimCode.SIMCODE(crefToClockIndexHT=clkHT) then
       if BaseHashTable.hasKey(cref, clkHT)
-      then BaseHashTable.get(cref, clkHT)
-      else 0;
+      then SOME(BaseHashTable.get(cref, clkHT))
+      else NONE();
   end match;
 end getClockIndex;
 
