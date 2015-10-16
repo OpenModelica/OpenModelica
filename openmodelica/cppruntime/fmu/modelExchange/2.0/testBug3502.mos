@@ -66,6 +66,7 @@ readFile("modelDescription.tmp.xml");
 //   <ScalarVariable
 //     name=\"_D_CLKPRE.xd\"
 //     valueReference=\"0\"
+//     clockIndex=\"1\"
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
@@ -84,6 +85,7 @@ readFile("modelDescription.tmp.xml");
 //   <ScalarVariable
 //     name=\"xd\"
 //     valueReference=\"2\"
+//     clockIndex=\"1\"
 //     previous=\"1\"
 //     variability=\"continuous\"
 //     causality=\"local\"
