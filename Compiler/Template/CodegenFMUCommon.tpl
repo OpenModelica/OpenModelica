@@ -441,18 +441,18 @@ match simVar
   let valueReference = '<%System.tmpTick()%>'
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
   let variability = if getClockIndex(simVar, simCode) then "discrete" else getVariability2(varKind, type_)
-  let caus = getCausality2(causality, varKind, isValueChangeable)
-  let initial = getInitialType2(variability, caus, initialValue)
   let clockIndex = getClockIndex(simVar, simCode)
   let previous = match varKind case CLOCKED_STATE(__) then '<%getVariableIndex(cref2simvar(previousName, simCode))%>'
+  let caus = getCausality2(causality, varKind, isValueChangeable)
+  let initial = getInitialType2(variability, caus, initialValue)
   <<
   name="<%System.stringReplace(crefStrNoUnderscore(name),"$", "_D_")%>"
   valueReference="<%valueReference%>"
-  <%if boolNot(stringEq(clockIndex, "")) then 'clockIndex="'+clockIndex+'"' %>
-  <%if boolNot(stringEq(previous, "")) then 'previous="'+previous+'"' %>
   <%description%>
   variability="<%variability%>"
   causality="<%caus%>"
+  <%if boolNot(stringEq(clockIndex, "")) then 'clockIndex="'+clockIndex+'"' %>
+  <%if boolNot(stringEq(previous, "")) then 'previous="'+previous+'"' %>
   <%if boolNot(stringEq(initial, "")) then 'initial="'+initial+'"' %>
   >>
 end ScalarVariableAttribute2;
