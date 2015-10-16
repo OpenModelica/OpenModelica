@@ -7,12 +7,12 @@
 
 
 
-class BufferReaderWriter : public Writer
+class BufferReaderWriter : public ContainerManager
 {
     //typedef TextFileWriter<dim_1,dim_2> TextwriterType;
 public:
     BufferReaderWriter(unsigned long size, string output_path, string file_name)
-        : Writer(),
+        : ContainerManager(),
             _buffer_pos(0)
     {
         try
