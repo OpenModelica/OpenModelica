@@ -1559,7 +1559,7 @@ algorithm
     case DAE.REAL_CLOCK(e)
       then e;
     case DAE.INTEGER_CLOCK(e, res)
-      then DAE.BINARY(e, DAE.DIV(DAE.T_REAL_DEFAULT), DAE.ICONST(res));
+      then DAE.BINARY(e, DAE.DIV(DAE.T_REAL_DEFAULT), DAE.RCONST(res));
     else
       then DAE.RCONST(0.0);
   end match;
