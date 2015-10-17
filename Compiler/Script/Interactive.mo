@@ -15234,7 +15234,7 @@ algorithm
     case (Absyn.QUALIFIED(name = str,path = prest),(p as Absyn.PROGRAM()))
       equation
         c1def = getClassInProgram(str, p);
-        p.classes = getClassesInClass(Absyn.IDENT(str), p, c1def);
+        p.classes = getClassesInClass(c1def);
         res = getPathedClassInProgramWork(prest, p);
       then
         res;
@@ -15245,36 +15245,33 @@ end getPathedClassInProgramWork;
 protected function getClassesInClass
 "This function takes a Class definition and returns
   a list of local Class definitions of that class."
-  input Absyn.Path inPath;
-  input Absyn.Program inProgram;
   input Absyn.Class inClass;
   output list<Absyn.Class> outAbsynClassLst;
 algorithm
-  outAbsynClassLst := match (inPath,inProgram,inClass)
+  outAbsynClassLst := match inClass
     local
       list<Absyn.Class> res;
       Absyn.Path modelpath,path;
       Absyn.Program p;
       list<Absyn.ClassPart> parts;
 
-    case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
       equation
         res = getClassesInParts(parts);
       then
         res;
 
-    case (_,_,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)))
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
       equation
         res = getClassesInParts(parts);
       then
         res;
 
-    case (_,_,Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(_,_))))
+    case Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(_,_)))
       equation
-        // print("Looking up -> lookupClassdef(" + Absyn.pathString(path) + ", " + Absyn.pathString(modelpath) + ")\n");
         /* adrpo 2009-10-27: do not dive into derived classes!
         (cdef,newpath) = lookupClassdef(path, modelpath, p);
-        res = getClassesInClass(newpath, p, cdef);
+        res = getClassesInClass(cdef);
         */
         res = {};
       then
