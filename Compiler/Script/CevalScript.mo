@@ -342,6 +342,10 @@ algorithm
   end matchcontinue;
 end loadFile;
 
+
+protected type LoadModelFoldArg =
+  tuple<String /*modelicaPath*/, Boolean /*forceLoad*/, Boolean /*notifyLoad*/, Boolean /*checkUses*/, Boolean /*requireExactVersion*/>;
+
 public function loadModel
   input list<tuple<Absyn.Path,list<String>>> imodelsToLoad;
   input String modelicaPath;
@@ -352,43 +356,62 @@ public function loadModel
   input Boolean requireExactVersion;
   output Absyn.Program pnew;
   output Boolean success;
+protected
+  LoadModelFoldArg arg = (modelicaPath, forceLoad, notifyLoad, checkUses, requireExactVersion);
 algorithm
-  (pnew,success) := matchcontinue (imodelsToLoad,modelicaPath,ip,forceLoad,notifyLoad,checkUses)
-    local
-      Absyn.Path path;
-      String pathStr,versions,className,version;
-      list<String> strings;
-      Boolean b,b1,b2;
-      Absyn.Program p;
-      list<tuple<Absyn.Path,list<String>>> modelsToLoad;
-
-    case ({},_,p,_,_,_) then (p,true);
-    case ((path,strings)::modelsToLoad,_,p,_,_,_)
-      equation
-        b = checkModelLoaded((path,strings),p,forceLoad,NONE());
-        pnew = if not b then ClassLoader.loadClass(path, strings, modelicaPath, NONE(), requireExactVersion) else Absyn.PROGRAM({},Absyn.TOP());
-        className = Absyn.pathString(path);
-        version = if not b then getPackageVersion(path, pnew) else "";
-        Error.assertionOrAddSourceMessage(b or not notifyLoad or forceLoad,Error.NOTIFY_NOT_LOADED,{className,version},Absyn.dummyInfo);
-        p = Interactive.updateProgram(pnew, p);
-        (p,b1) = loadModel(if checkUses then Interactive.getUsesAnnotationOrDefault(pnew, requireExactVersion) else {}, modelicaPath, p, false, notifyLoad, checkUses, requireExactVersion);
-        (p,b2) = loadModel(modelsToLoad, modelicaPath, p, forceLoad, notifyLoad, checkUses, requireExactVersion);
-      then (p,b1 and b2);
-    case ((path,strings)::_,_,p,true,_,_)
-      equation
-        pathStr = Absyn.pathString(path);
-        versions = stringDelimitList(strings,",");
-        Error.addMessage(Error.LOAD_MODEL,{pathStr,versions,modelicaPath});
-      then (p,false);
-    case ((path,strings)::modelsToLoad,_,p,false,_,_)
-      equation
-        pathStr = Absyn.pathString(path);
-        versions = stringDelimitList(strings,",");
-        Error.addMessage(Error.NOTIFY_LOAD_MODEL_FAILED,{pathStr,versions,modelicaPath});
-        (p,b) = loadModel(modelsToLoad, modelicaPath, p, forceLoad, notifyLoad, checkUses, requireExactVersion);
-      then (p,b);
-  end matchcontinue;
+  (pnew, success) := List.fold1(imodelsToLoad, loadModel1, arg, (ip, true));
 end loadModel;
+
+protected function loadModel1
+  input tuple<Absyn.Path,list<String>> modelToLoad;
+  input LoadModelFoldArg inArg;
+  input tuple<Absyn.Program, Boolean> inTpl;
+  output tuple<Absyn.Program, Boolean> outTpl;
+protected
+  list<tuple<Absyn.Path,list<String>>> modelsToLoad;
+  Boolean b, b1, success, forceLoad, notifyLoad, checkUses, requireExactVersion;
+  Absyn.Path path;
+  list<String> versionsLst;
+  String pathStr, versions, className, version, modelicaPath;
+  Absyn.Program p, pnew;
+  Error.MessageTokens msgTokens;
+algorithm
+  (path, versionsLst) := modelToLoad;
+  (modelicaPath, forceLoad, notifyLoad, checkUses, requireExactVersion) := inArg;
+  try
+    (p, success) := inTpl;
+    if checkModelLoaded(modelToLoad, p, forceLoad, NONE()) then
+      pnew := Absyn.PROGRAM({}, Absyn.TOP());
+      version := "";
+    else
+      pnew := ClassLoader.loadClass(path, versionsLst, modelicaPath, NONE(), requireExactVersion);
+      version := getPackageVersion(path, pnew);
+      b := not notifyLoad or forceLoad;
+      msgTokens := {Absyn.pathString(path), version};
+      Error.assertionOrAddSourceMessage(b, Error.NOTIFY_NOT_LOADED, msgTokens, Absyn.dummyInfo);
+    end if;
+    p := Interactive.updateProgram(pnew, p);
+
+    b := true;
+    if checkUses then
+      modelsToLoad := Interactive.getUsesAnnotationOrDefault(pnew, requireExactVersion);
+      (p, b) := loadModel(modelsToLoad, modelicaPath, p, false, notifyLoad, checkUses, requireExactVersion);
+    end if;
+    outTpl := (p, success and b);
+  else
+    (p, _) := inTpl;
+    pathStr := Absyn.pathString(path);
+    versions := stringDelimitList(versionsLst, ",");
+    msgTokens := {pathStr, versions, modelicaPath};
+    if forceLoad then
+      Error.addMessage(Error.LOAD_MODEL, msgTokens);
+      outTpl := (p, false);
+    else
+      Error.addMessage(Error.NOTIFY_LOAD_MODEL_FAILED, msgTokens);
+      outTpl := inTpl;
+    end if;
+  end try;
+end loadModel1;
 
 protected function checkModelLoaded
   input tuple<Absyn.Path,list<String>> tpl;
