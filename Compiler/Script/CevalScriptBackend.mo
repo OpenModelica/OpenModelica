@@ -2352,6 +2352,7 @@ algorithm
   if Flags.isSet(Flags.GC_PROF) then
     print(GC.profStatsStr(GC.getProfStats(), head="GC stats after front-end:") + "\n");
   end if;
+
 end runFrontEnd;
 
 protected function runFrontEndLoadProgram
@@ -2375,7 +2376,7 @@ algorithm
       Boolean b;
     case (_, GlobalScript.SYMBOLTABLE(ast=p))
       equation
-        _ = Interactive.getPathedClassInProgram(className, p);
+        _ = Interactive.getPathedClassInProgram(className, p, true);
       then inSt;
     case (_, GlobalScript.SYMBOLTABLE(p,fp,ic,iv,cf,lf))
       equation
@@ -2420,7 +2421,7 @@ algorithm
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         str = Absyn.pathString(className);
-        (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p);
+        (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p, true);
         re = Absyn.restrString(restriction);
         Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
           Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
@@ -2469,7 +2470,7 @@ algorithm
         false = Flags.isSet(Flags.GRAPH_INST);
         false = Flags.isSet(Flags.SCODE_INST);
         str = Absyn.pathString(className);
-        (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p);
+        (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p, true);
         re = Absyn.restrString(restriction);
         Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
           Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
