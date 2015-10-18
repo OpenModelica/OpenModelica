@@ -227,6 +227,7 @@ public:
 private:
   void createActions();
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
+  bool isAnyItemSelectedAndEditable(int key);
 signals:
   void mouseDelete();
   void mouseRotateClockwise();
