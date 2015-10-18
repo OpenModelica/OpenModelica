@@ -1924,7 +1924,7 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
       /* Only allow manipulations on shapes if the class is not a system library class OR shape is not an inherited component. */
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()) {
         if (lineType == LineAnnotation::ConnectionType) {
-          connect(mpGraphicsView->getDeleteConnectionAction(), SIGNAL(triggered()), SLOT(deleteConnection()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(mouseDelete()), SLOT(deleteConnection()), Qt::UniqueConnection);
           connect(mpGraphicsView, SIGNAL(keyPressDelete()), SLOT(deleteConnection()), Qt::UniqueConnection);
         } else {
           connect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteMe()), Qt::UniqueConnection);
@@ -1959,7 +1959,7 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
       /* Only allow manipulations on shapes if the class is not a system library class OR shape is not an inherited component. */
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()) {
         if (lineType == LineAnnotation::ConnectionType) {
-          disconnect(mpGraphicsView->getDeleteConnectionAction(), SIGNAL(triggered()), this, SLOT(deleteConnection()));
+          disconnect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteConnection()));
           disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteConnection()));
         } else {
           disconnect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteMe()));
@@ -1986,7 +1986,7 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
           disconnect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()));
           disconnect(mpGraphicsView, SIGNAL(keyPressShiftRight()), this, SLOT(moveShiftRight()));
           disconnect(mpGraphicsView, SIGNAL(keyPressCtrlRight()), this, SLOT(moveCtrlRight()));
-          disconnect(mpGraphicsView, SIGNAL(keyRelease()), this, SIGNAL(updateClassAnnotation()));
+          //disconnect(mpGraphicsView, SIGNAL(keyRelease()), this, SIGNAL(updateClassAnnotation()));
         }
       }
     }

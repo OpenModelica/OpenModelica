@@ -1069,6 +1069,45 @@ bool GraphicsView::isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem)
   return false;
 }
 
+/*!
+ * \brief GraphicsView::isAnyItemSelectedAndEditable
+ * If the class is system library then returns false.
+ * Checks all the selected items. If the selected item is not inherited then returns true otherwise false.
+ * \param key
+ * \return
+ */
+bool GraphicsView::isAnyItemSelectedAndEditable(int key)
+{
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+    return false;
+  }
+  QList<QGraphicsItem*> selectedItems = scene()->selectedItems();
+  for (int i = 0 ; i < selectedItems.size() ; i++) {
+    // check the selected components.
+    Component *pComponent = dynamic_cast<Component*>(selectedItems.at(i));
+    if (pComponent && !pComponent->isInheritedComponent()) {
+      return true;
+    }
+    // check the selected connections and shapes.
+    ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(selectedItems.at(i));
+    if (pShapeAnnotation && !pShapeAnnotation->isInheritedShape()) {
+      LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(pShapeAnnotation);
+      // if the shape is connection line then we only return true for certain cases.
+      if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+        switch (key) {
+          case Qt::Key_Delete:
+            return true;
+          default:
+            return false;
+        }
+      } else {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 void GraphicsView::addConnection(Component *pComponent)
 {
   // When clicking the start component
@@ -1695,7 +1734,7 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
 {
   bool shiftModifier = event->modifiers().testFlag(Qt::ShiftModifier);
   bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
-  if (event->key() == Qt::Key_Delete) {
+  if (event->key() == Qt::Key_Delete && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->getUndoStack()->beginMacro("Deleting by key press");
     emit keyPressDelete();
     mpModelWidget->updateClassAnnotationIfNeeded();
@@ -1729,11 +1768,11 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
     selectAll();
   } else if (controlModifier && event->key() == Qt::Key_D) {
     emit keyPressDuplicate();
-  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_R) {
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_R && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->getUndoStack()->beginMacro("Rotate clockwise by key press");
     emit keyPressRotateClockwise();
     mpModelWidget->getUndoStack()->endMacro();
-  } else if (shiftModifier && controlModifier && event->key() == Qt::Key_R) {
+  } else if (shiftModifier && controlModifier && event->key() == Qt::Key_R && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->getUndoStack()->beginMacro("Rotate anti clockwise by key press");
     emit keyPressRotateAntiClockwise();
     mpModelWidget->getUndoStack()->endMacro();
@@ -1779,12 +1818,10 @@ void GraphicsView::keyReleaseEvent(QKeyEvent *event)
     emit keyRelease();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Right) {
     emit keyRelease();
-  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_R) {
-    emit keyRelease();
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_R && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
     mpModelWidget->updateModelicaText();
-  } else if (shiftModifier && controlModifier && event->key() == Qt::Key_R) {
-    emit keyRelease();
+  } else if (shiftModifier && controlModifier && event->key() == Qt::Key_R && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
     mpModelWidget->updateModelicaText();
   } else {
