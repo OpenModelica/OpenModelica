@@ -85,6 +85,9 @@ public:
   /// Provide clocks
   virtual void getClock(bool* z);
 
+  /// Provide clock intervals
+  virtual double *clockInterval();
+
   /// Provide the right hand side
   virtual void getRHS(double* f);
 

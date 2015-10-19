@@ -260,11 +260,22 @@ fmi2Status FMU2Wrapper::setString(const fmi2ValueReference vr[], size_t nvr,
 }
 
 fmi2Status FMU2Wrapper::setClock(const fmi2Integer clockIndex[],
-                                 size_t nClockIndex)
+                                 size_t nClockIndex, const fmi2Boolean active[])
 {
   for (int i = 0; i < nClockIndex; i++) {
-    _clock_buffer[clockIndex[i] - 1] = true;
+    _clock_buffer[clockIndex[i] - 1] = active[i];
     _nclock_active ++;
+  }
+  _need_update = true;
+  return fmi2OK;
+}
+
+fmi2Status FMU2Wrapper::setInterval(const fmi2Integer clockIndex[],
+                                    size_t nClockIndex, const fmi2Real interval[])
+{
+  double *clockInterval = _model->clockInterval();
+  for (int i = 0; i < nClockIndex; i++) {
+    clockInterval[clockIndex[i] - 1] = interval[i];
   }
   _need_update = true;
   return fmi2OK;
@@ -333,6 +344,16 @@ fmi2Status FMU2Wrapper::getClock(const fmi2Integer clockIndex[],
   for (int i = 0; i < nClockIndex; i++) {
     active[i] = _clock_buffer[clockIndex[i] - 1];
   }
+}
+
+fmi2Status FMU2Wrapper::getInterval(const fmi2Integer clockIndex[],
+                                    size_t nClockIndex, fmi2Real interval[])
+{
+  double *clockInterval = _model->clockInterval();
+  for (int i = 0; i < nClockIndex; i++) {
+    interval[i] = clockInterval[clockIndex[i] - 1];
+  }
+  return fmi2OK;
 }
 
 fmi2Status FMU2Wrapper::newDiscreteStates(fmi2EventInfo *eventInfo)

@@ -95,6 +95,7 @@ template crefStr(ComponentRef cr)
   case CREF_IDENT(__) then '<%System.unquoteIdentifier(ident)%><%subscriptsStr(subscriptLst)%>'
   // Are these even needed? Function context should only have CREF_IDENT :)
   case CREF_QUAL(ident = "$DER") then 'der(<%crefStr(componentRef)%>)'
+  case CREF_QUAL(ident = "$CLKPRE") then 'previous(<%crefStr(componentRef)%>)'
   case CREF_QUAL(__) then '<%System.unquoteIdentifier(ident)%><%subscriptsStr(subscriptLst)%>._<%crefStr(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefStr;
@@ -106,6 +107,7 @@ template crefStrNoUnderscore(ComponentRef cr)
   match cr
   case CREF_IDENT(__) then '<%ident%><%subscriptsStr(subscriptLst)%>'
   case CREF_QUAL(ident = "$DER") then 'der(<%crefStrNoUnderscore(componentRef)%>)'
+  case CREF_QUAL(ident = "$CLKPRE") then 'previous(<%crefStrNoUnderscore(componentRef)%>)'
   case CREF_QUAL(__) then '<%ident%><%subscriptsStr(subscriptLst)%>.<%crefStrNoUnderscore(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefStrNoUnderscore;
