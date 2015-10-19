@@ -288,6 +288,11 @@ void SystemDefaultImplementation::getClock(bool* z)
   }
 }
 
+double *SystemDefaultImplementation::clockInterval()
+{
+  return _clockInterval;
+}
+
 void SystemDefaultImplementation::getContinuousStates(double* z)
 {
   std::copy(__z ,__z + _dimContinuousStates, z);
