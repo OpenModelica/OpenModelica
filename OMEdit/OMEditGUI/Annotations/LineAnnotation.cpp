@@ -621,39 +621,11 @@ void LineAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
+/*!
+ * \brief LineAnnotation::handleComponentMoved
+ * If the component associated with the connection is moved then update the connection accordingly.
+ */
 void LineAnnotation::handleComponentMoved()
-{
-  if (mPoints.size() < 2) {
-    return;
-  }
-  // if both the components are moved then move the whole connection
-  if (mpStartComponent && mpEndComponent) {
-    if (mpStartComponent->getRootParentComponent()->isSelected() && mpEndComponent->getRootParentComponent()->isSelected()) {
-      moveAllPoints(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()).x() - mPoints[0].x(),
-                    mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()).y() - mPoints[0].y());
-    } else {
-      Component *pComponent = qobject_cast<Component*>(sender());
-      if (pComponent == mpStartComponent->getRootParentComponent()) {
-        updateStartPoint(mpGraphicsView->roundPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center())));
-      } else if (pComponent == mpEndComponent->getRootParentComponent()) {
-        updateEndPoint(mpGraphicsView->roundPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center())));
-      }
-    }
-  } else if (mpStartComponent) {
-    Component *pComponent = qobject_cast<Component*>(sender());
-    if (pComponent == mpStartComponent->getRootParentComponent()) {
-      updateStartPoint(mpGraphicsView->roundPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center())));
-    }
-  } else if (mpEndComponent) {
-    Component *pComponent = qobject_cast<Component*>(sender());
-    if (pComponent == mpEndComponent->getRootParentComponent()) {
-      updateEndPoint(mpGraphicsView->roundPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center())));
-    }
-  }
-  update();
-}
-
-void LineAnnotation::handleComponentRotation()
 {
   if (mPoints.size() < 2) {
     return;

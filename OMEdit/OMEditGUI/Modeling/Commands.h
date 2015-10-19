@@ -91,42 +91,18 @@ private:
   GraphicsView *mpGraphicsView;
 };
 
-class MoveComponentMouseCommand : public QUndoCommand
+class UpdateComponentCommand : public QUndoCommand
 {
 public:
-  MoveComponentMouseCommand(Component *pComponent, QPointF oldScenePos, QPointF newScenePos, GraphicsView *pGraphicsView,
-                            QUndoCommand *pParent = 0);
+  UpdateComponentCommand(Component *pComponent, const Transformation &oldTransformation, const Transformation &newTransformation,
+                         GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
   Component *mpComponent;
-  QPointF mOldScenePosition;
-  QPointF mNewScenePosition;
+  Transformation mOldTransformation;
+  Transformation mNewTransformation;
   GraphicsView *mpGraphicsView;
-};
-
-class MoveComponentKeyCommand : public QUndoCommand
-{
-public:
-  MoveComponentKeyCommand(Component *pComponent, qreal x, qreal y, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
-  void redo();
-  void undo();
-private:
-  Component *mpComponent;
-  qreal mX;
-  qreal mY;
-  GraphicsView *mpGraphicsView;
-};
-
-class RotateComponentCommand : public QUndoCommand
-{
-public:
-  RotateComponentCommand(Component *pComponent, bool clockwise, QUndoCommand *pParent = 0);
-  void redo();
-  void undo();
-private:
-  Component *mpComponent;
-  bool mClockwise;
 };
 
 class DeleteComponentCommand : public QUndoCommand

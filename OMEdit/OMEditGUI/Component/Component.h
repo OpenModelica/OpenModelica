@@ -235,7 +235,6 @@ signals:
   void transformChange();
   void transformHasChanged();
   void displayTextChanged();
-  void rotationChange();
   void deleted();
 public slots:
   void updatePlacementAnnotation();

@@ -102,7 +102,6 @@ private:
   QString mEndComponentName;
 public slots:
   void handleComponentMoved();
-  void handleComponentRotation();
   void updateConnectionAnnotation();
   void duplicate();
 };
