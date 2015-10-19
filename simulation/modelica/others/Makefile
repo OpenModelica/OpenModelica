@@ -52,6 +52,22 @@ TestLapack.mos \
 TestExpressionSolve.mos \
 TestNormVar.mos \
 TestSolve.mos \
+TestSolve2.mos \
+TestSolve3.mos \
+TestSolve4.mos \
+TestSolve5.mos \
+TestSolve6.mos \
+TestSolve7.mos \
+TestSolve8.mos \
+TestSolve9.mos \
+TestSolve10.mos \
+TestSolve11.mos \
+TestSolve12.mos \
+TestSolve13.mos \
+TestSolve14.mos \
+TestSolve15.mos \
+TestSolve16.mos \
+TestSolve17.mos \
 VariableFilter.mos \
 WhenStatement4.mos 
 
@@ -64,6 +80,7 @@ pendulum4.mos \
 SpaceProbe.mos \
 filterTest.mos \
 Bug1048.mos \
+TestSolve18.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

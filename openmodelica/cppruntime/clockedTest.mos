@@ -18,8 +18,8 @@ model DID \"Double Integrator Discrete-time\"
   output Real y1, y2;
 equation
   ud = sample(u, Clock(dt));
-  xd1 = previous(xd1) + p * ud * dt;
-  xd2 = previous(xd2) + previous(xd1) * dt + 0.5 * ud * dt * dt;
+  xd1 = previous(xd1) + p * ud * interval(ud);
+  xd2 = previous(xd2) + previous(xd1) * interval(xd1) + 0.5 * ud * interval()^2;
   y1 = hold(previous(xd1));
   y2 = hold(previous(xd2));
 end DID;

@@ -44,6 +44,7 @@ problem8_newton.mos \
 problem9.mos \
 problem10.mos \
 problem11.mos \
+problem12.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing

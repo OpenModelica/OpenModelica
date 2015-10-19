@@ -1,0 +1,143 @@
+// name:  testModelDescription
+// keywords: FMI 2.0 export clocks
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml *SID* output.log
+//
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+loadString("
+model SID
+  constant Real dt = 0.1;
+  parameter Real p = 1;
+  parameter Real y_start = 0;
+  Real xd(start = y_start);
+  input Real u(start = -2);
+  output Real y;
+equation
+  when Clock(dt) then
+    xd = previous(xd) + p * u * dt;
+    y = previous(xd);
+  end when;
+end SID;
+");
+getErrorString();
+
+translateModelFMU(SID, version="2.0");
+getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq SID.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");
+readFile("modelDescription.tmp.xml");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "SimCode: The model SID has been translated to FMU"
+// ""
+// 0
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <fmiModelDescription
+//   fmiVersion=\"2.0\"
+//   modelName=\"SID\"
+//   description=\"\"
+//   variableNamingConvention=\"structured\"
+//   numberOfEventIndicators=\"0\">
+//   <ModelExchange
+//     modelIdentifier=\"SID\">
+//   </ModelExchange>
+//   <LogCategories>
+//     <Category name=\"logEvents\" />
+//     <Category name=\"logSingularLinearSystems\" />
+//     <Category name=\"logNonlinearSystems\" />
+//     <Category name=\"logDynamicStateSelection\" />
+//     <Category name=\"logStatusWarning\" />
+//     <Category name=\"logStatusDiscard\" />
+//     <Category name=\"logStatusError\" />
+//     <Category name=\"logStatusFatal\" />
+//     <Category name=\"logStatusPending\" />
+//     <Category name=\"logAll\" />
+//     <Category name=\"logFmi2Call\" />
+//   </LogCategories>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\"/>
+//   <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"previous(xd)\"
+//     valueReference=\"0\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"u\"
+//     valueReference=\"1\"
+//     variability=\"continuous\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"-2.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"xd\"
+//     valueReference=\"2\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     previous=\"1\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"y\"
+//     valueReference=\"3\"
+//     variability=\"discrete\"
+//     causality=\"output\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"p\"
+//     valueReference=\"4\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"1.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"6\" -->
+//   <ScalarVariable
+//     name=\"y_start\"
+//     valueReference=\"5\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   </ModelVariables>
+//   <ModelStructure>
+//     <Outputs>
+//       <Unknown index=\"4\" />
+//     </Outputs>
+//     <Derivatives>
+//     </Derivatives>
+//     <DiscreteStates>
+//       <Unknown index=\"3\" />
+//     </DiscreteStates>
+//     <InitialUnknowns>
+//     </InitialUnknowns>
+//     <Clocks>
+//       <Clock><Periodic>
+//         <Real interval=\"0.1\" />
+//       </Periodic></Clock>
+//     </Clocks>
+//   </ModelStructure>
+// </fmiModelDescription>
+// "
+// endResult

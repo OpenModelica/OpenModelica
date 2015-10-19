@@ -1,0 +1,44 @@
+// name: problem12
+// status: correct
+// teardown_command: rm -f nonlinear_system.problem12* output.log
+
+loadFile("nlsTestPackage.mo"); getErrorString();
+
+simulate(nonlinear_system.problem12); getErrorString();
+
+val(x,{0.0, 0.5, 1.0});
+val(y,{0.0, 0.5, 1.0});
+val(z,{0.0, 0.5, 1.0});
+
+setCommandLineOptions("+d=NLSanalyticJacobian");
+simulate(nonlinear_system.problem12); getErrorString();
+
+val(x,{0.0, 0.5, 1.0});
+val(y,{0.0, 0.5, 1.0});
+val(z,{0.0, 0.5, 1.0});
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nonlinear_system.problem12_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'nonlinear_system.problem12', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "
+// {0.1413741945152485,0.2812491225132911,1.0}
+// {1.000399466692872,1.006256979103416,2.0}
+// {1.940439478068367,3.537907544719854,243.0}
+// true
+// record SimulationResult
+//     resultFile = "nonlinear_system.problem12_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'nonlinear_system.problem12', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "
+// {0.1413741945152598,0.2812491225131152,1.0}
+// {1.000399466692872,1.0062569791034,2.0}
+// {1.940439478068463,3.537907544717219,243.0}
+// endResult

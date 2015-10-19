@@ -5,6 +5,7 @@ tearnonlin1.mos \
 WhenStatement1.mos \
 BouncingBall.mos \
 clockedTest.mos \
+clockedTypesTest.mos \
 mathFunctionsTest.mos \
 functionPointerTest.mos \
 recordTupleReturnTest.mos \

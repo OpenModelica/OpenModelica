@@ -1,0 +1,23 @@
+// name: TestSolve
+// status: correct
+//
+// Checks that the backend knows how to solve certain expressions
+//
+
+loadString("
+model ModelTestSolve18
+  parameter Real x(fixed=false),y(fixed=false);
+  Real z;
+initial equation
+  time = 5*(exp(sign(2*x + 1))-1);
+  time = y*(exp(if y>0 then time else 2*time))-1;
+equation
+  der(z) = x-y;
+end ModelTestSolve18;
+"); getErrorString();
+
+simulate(ModelTestSolve18, tolerance=0.001); getErrorString();
+val(z,1.0);
+
+// Result:
+// endResult

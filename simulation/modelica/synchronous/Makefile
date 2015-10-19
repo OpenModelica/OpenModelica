@@ -9,10 +9,14 @@ SynchronousFeatures.SpeedControl.mos \
 SynchronousFeatures.ControlledMass.mos \
 SynchronousFeatures.VaryingClock.mos \
 WhenClocks.mos \
+Modelica_Synchronous.Examples.Elementary.BooleanSignals.TimeBasedStep.mos \
+Modelica_Synchronous.Examples.Elementary.IntegerSignals.TimeBasedStep.mos \
+Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscreteTextbookController.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
+Modelica_Synchronous.Examples.Elementary.BooleanSignals.TimeBasedPulse.mos \
 DID.mos \
 
 # Dependency files that are not .mo .mos or Makefile

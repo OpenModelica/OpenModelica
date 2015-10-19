@@ -149,4 +149,23 @@ package nonlinear_system
 
   end problem11;
 
+  model problem12
+    function f1
+      input Real x;
+      input Real y;
+      input Integer n;
+      output Real z;
+    algorithm
+      z := 1;
+      for i in 1:n loop
+        z := z*(x+y);
+      end for;
+    end f1;
+    Real x,y,z;
+  equation
+    x^4 = y - 1;
+    y -3*x^2 + 1 = z*(1-time);
+    z = f1(x,y,5);
+  end problem12;
+
 end nonlinear_system;
