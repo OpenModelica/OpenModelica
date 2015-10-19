@@ -585,9 +585,6 @@ GET_FILENAME_COMPONENT(libNewtonName ${libNewton} NAME)
 GET_TARGET_PROPERTY(libBroyden ${BroydenName} LOCATION)
 GET_FILENAME_COMPONENT(libBroydenName ${libBroyden} NAME)
 
-GET_TARGET_PROPERTY(libBroyden ${BroydenName} LOCATION)
-GET_FILENAME_COMPONENT(libBroydenName ${libBroyden} NAME)
-
 GET_TARGET_PROPERTY(libUmfPack ${UmfPackName} LOCATION)
 GET_FILENAME_COMPONENT(libUmfPackName ${libUmfPack} NAME)
 
