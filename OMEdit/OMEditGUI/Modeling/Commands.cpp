@@ -260,129 +260,48 @@ void AddComponentCommand::undo()
   mpGraphicsView->deleteComponentFromClass(mpDiagramComponent);
 }
 
-MoveComponentMouseCommand::MoveComponentMouseCommand(Component *pComponent, QPointF oldScenePos, QPointF newScenePos,
-                                                     GraphicsView *pGraphicsView, QUndoCommand *pParent)
+UpdateComponentCommand::UpdateComponentCommand(Component *pComponent, const Transformation &oldTransformation,
+                                               const Transformation &newTransformation, GraphicsView *pGraphicsView, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpComponent = pComponent;
-  mOldScenePosition = oldScenePos;
-  mNewScenePosition = newScenePos;
+  mOldTransformation = oldTransformation;
+  mNewTransformation = newTransformation;
   mpGraphicsView = pGraphicsView;
 }
 
 /*!
- * \brief MoveComponentMouseCommand::redo
- * Redo the MoveComponentMouseCommand.
+ * \brief UpdateComponentCommand::redo
+ * Redo the UpdateComponentCommand.
  */
-void MoveComponentMouseCommand::redo()
+void UpdateComponentCommand::redo()
 {
-  QPointF positionDifference = mNewScenePosition - mOldScenePosition;
   mpComponent->resetTransform();
   bool state = mpComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
   mpComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
   mpComponent->setPos(0, 0);
   mpComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
-  mpComponent->mTransformation.adjustPosition(positionDifference.x(), positionDifference.y());
-  mpComponent->setTransform(mpComponent->mTransformation.getTransformationMatrix());
+  mpComponent->setTransform(mNewTransformation.getTransformationMatrix());
+  mpComponent->mTransformation = mNewTransformation;
   mpComponent->emitTransformChange();
   mpComponent->emitTransformHasChanged();
 }
 
 /*!
- * \brief MoveComponentMouseCommand::undo
- * Undo the MoveComponentMouseCommand.
+ * \brief UpdateComponentCommand::undo
+ * Undo the UpdateComponentCommand.
  */
-void MoveComponentMouseCommand::undo()
+void UpdateComponentCommand::undo()
 {
-  QPointF positionDifference = mNewScenePosition - mOldScenePosition;
   mpComponent->resetTransform();
   bool state = mpComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
   mpComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
   mpComponent->setPos(0, 0);
   mpComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
-  mpComponent->mTransformation.adjustPosition(-positionDifference.x(), -positionDifference.y());
-  mpComponent->setTransform(mpComponent->mTransformation.getTransformationMatrix());
+  mpComponent->setTransform(mOldTransformation.getTransformationMatrix());
+  mpComponent->mTransformation = mOldTransformation;
   mpComponent->emitTransformChange();
   mpComponent->emitTransformHasChanged();
-}
-
-MoveComponentKeyCommand::MoveComponentKeyCommand(Component *pComponent, qreal x, qreal y, GraphicsView *pGraphicsView,
-                                                 QUndoCommand *pParent)
-  : QUndoCommand(pParent)
-{
-  mpComponent = pComponent;
-  mX = x;
-  mY = y;
-  mpGraphicsView = pGraphicsView;
-}
-
-/*!
- * \brief MoveComponentKeyCommand::redo
- * Redo the MoveComponentKeyCommand.
- */
-void MoveComponentKeyCommand::redo()
-{
-  mpComponent->mTransformation.adjustPosition(mX, mY);
-  mpComponent->setTransform(mpComponent->mTransformation.getTransformationMatrix());
-  mpComponent->emitTransformChange();
-  mpComponent->emitTransformHasChanged();
-}
-
-/*!
- * \brief MoveComponentKeyCommand::undo
- * Undo the MoveComponentKeyCommand.
- */
-void MoveComponentKeyCommand::undo()
-{
-  mpComponent->mTransformation.adjustPosition(-mX, -mY);
-  mpComponent->setTransform(mpComponent->mTransformation.getTransformationMatrix());
-  mpComponent->emitTransformChange();
-  mpComponent->emitTransformHasChanged();
-}
-
-RotateComponentCommand::RotateComponentCommand(Component *pComponent, bool clockwise, QUndoCommand *pParent)
-  : QUndoCommand(pParent)
-{
-  mpComponent = pComponent;
-  mClockwise = clockwise;
-}
-
-/*!
- * \brief RotateComponentCommand::redo
- * Redo the RotateComponentCommand.
- */
-void RotateComponentCommand::redo()
-{
-  if (mClockwise) {
-    qreal oldRotation = StringHandler::getNormalizedAngle(mpComponent->mTransformation.getRotateAngle());
-    qreal rotateIncrement = -90;
-    qreal angle = oldRotation + rotateIncrement;
-    mpComponent->applyRotation(angle);
-  } else {
-    qreal oldRotation = StringHandler::getNormalizedAngle(mpComponent->mTransformation.getRotateAngle());
-    qreal rotateIncrement = 90;
-    qreal angle = oldRotation + rotateIncrement;
-    mpComponent->applyRotation(angle);
-  }
-}
-
-/*!
- * \brief RotateComponentCommand::undo
- * Undo the RotateComponentCommand.
- */
-void RotateComponentCommand::undo()
-{
-  if (mClockwise) {
-    qreal oldRotation = StringHandler::getNormalizedAngle(mpComponent->mTransformation.getRotateAngle());
-    qreal rotateIncrement = 90;
-    qreal angle = oldRotation + rotateIncrement;
-    mpComponent->applyRotation(angle);
-  } else {
-    qreal oldRotation = StringHandler::getNormalizedAngle(mpComponent->mTransformation.getRotateAngle());
-    qreal rotateIncrement = -90;
-    qreal angle = oldRotation + rotateIncrement;
-    mpComponent->applyRotation(angle);
-  }
 }
 
 DeleteComponentCommand::DeleteComponentCommand(Component *pComponent, GraphicsView *pGraphicsView, QUndoCommand *pParent)

@@ -1603,9 +1603,10 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
           mpModelWidget->getUndoStack()->beginMacro("Move items by mouse");
           beginMacro = true;
         }
-        MoveComponentMouseCommand *pMoveComponentMouseCommand = new MoveComponentMouseCommand(pComponent, pComponent->getOldScenePosition(),
-                                                                                              pComponent->scenePos(), this);
-        mpModelWidget->getUndoStack()->push(pMoveComponentMouseCommand);
+        Transformation oldTransformation = pComponent->mTransformation;
+        QPointF positionDifference = pComponent->scenePos() - pComponent->getOldScenePosition();
+        pComponent->mTransformation.adjustPosition(positionDifference.x(), positionDifference.y());
+        mpModelWidget->getUndoStack()->push(new UpdateComponentCommand(pComponent, oldTransformation, pComponent->mTransformation, this));
         hasComponentMoved = true;
       }
     }
