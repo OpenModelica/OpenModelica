@@ -45,7 +45,7 @@ public:
             }
             nonlin_solver_key.assign("extension_export_newton");
         }
-        if(nonlin_solver.compare("broyden")==0)
+        else if(nonlin_solver.compare("broyden")==0)
         {
             PATH broyden_path = ObjectFactory<CreationPolicy>::_library_path;
             PATH broyden_name(BROYDEN_LIB);
