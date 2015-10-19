@@ -47,42 +47,18 @@ private:
   GraphicsView *mpGraphicsView;
 };
 
-class MoveShapeMouseCommand : public QUndoCommand
+class UpdateShapeCommand : public QUndoCommand
 {
 public:
-  MoveShapeMouseCommand(ShapeAnnotation *pShapeAnnotation, QPointF oldScenePos, QPointF newScenePos, GraphicsView *pGraphicsView,
-                        QUndoCommand *pParent = 0);
+  UpdateShapeCommand(ShapeAnnotation *pShapeAnnotation, const Transformation &oldTransformation, const Transformation &newTransformation,
+                     GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
   ShapeAnnotation *mpShapeAnnotation;
-  QPointF mOldScenePosition;
-  QPointF mNewScenePosition;
+  Transformation mOldTransformation;
+  Transformation mNewTransformation;
   GraphicsView *mpGraphicsView;
-};
-
-class MoveShapeKeyCommand : public QUndoCommand
-{
-public:
-  MoveShapeKeyCommand(ShapeAnnotation *pShapeAnnotation, qreal x, qreal y, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
-  void redo();
-  void undo();
-private:
-  ShapeAnnotation *mpShapeAnnotation;
-  qreal mX;
-  qreal mY;
-  GraphicsView *mpGraphicsView;
-};
-
-class RotateShapeCommand : public QUndoCommand
-{
-public:
-  RotateShapeCommand(ShapeAnnotation *pShapeAnnotation, bool clockwise, QUndoCommand *pParent = 0);
-  void redo();
-  void undo();
-private:
-  ShapeAnnotation *mpShapeAnnotation;
-  bool mClockwise;
 };
 
 class DeleteShapeCommand : public QUndoCommand

@@ -1081,10 +1081,9 @@ void ShapeAnnotation::applyRotation(qreal angle)
   if (angle == 360) {
     angle = 0;
   }
+  Transformation oldTransformation = mTransformation;
   mTransformation.setRotateAngle(angle);
-  setTransform(mTransformation.getTransformationMatrix());
-  mRotation = angle;
-  mpGraphicsView->setAddClassAnnotationNeeded(true);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
 }
 
 /*!
@@ -1430,7 +1429,10 @@ void ShapeAnnotation::sendBackward()
  */
 void ShapeAnnotation::rotateClockwise()
 {
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new RotateShapeCommand(this, true));
+  qreal oldRotation = StringHandler::getNormalizedAngle(mTransformation.getRotateAngle());
+  qreal rotateIncrement = -90;
+  qreal angle = oldRotation + rotateIncrement;
+  applyRotation(angle);
 }
 
 /*!
@@ -1440,7 +1442,10 @@ void ShapeAnnotation::rotateClockwise()
  */
 void ShapeAnnotation::rotateAntiClockwise()
 {
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new RotateShapeCommand(this, false));
+  qreal oldRotation = StringHandler::getNormalizedAngle(mTransformation.getRotateAngle());
+  qreal rotateIncrement = 90;
+  qreal angle = oldRotation + rotateIncrement;
+  applyRotation(angle);
 }
 
 /*!
@@ -1451,8 +1456,9 @@ void ShapeAnnotation::rotateAntiClockwise()
  */
 void ShapeAnnotation::moveUp()
 {
-  qreal y = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, 0, y, mpGraphicsView));
+  Transformation oldTransformation = mTransformation;
+  mTransformation.adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
 }
 
 /*!
@@ -1463,8 +1469,9 @@ void ShapeAnnotation::moveUp()
  */
 void ShapeAnnotation::moveShiftUp()
 {
-  qreal y = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5;
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, 0, y, mpGraphicsView));
+  Transformation oldTransformation = mTransformation;
+  mTransformation.adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
 }
 
 /*!
@@ -1475,7 +1482,9 @@ void ShapeAnnotation::moveShiftUp()
  */
 void ShapeAnnotation::moveCtrlUp()
 {
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, 0, 1, mpGraphicsView));
+  Transformation oldTransformation = mTransformation;
+  mTransformation.adjustPosition(0, 1);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
 }
 
 /*!
@@ -1486,8 +1495,9 @@ void ShapeAnnotation::moveCtrlUp()
  */
 void ShapeAnnotation::moveDown()
 {
-  qreal y = -mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, 0, y, mpGraphicsView));
+  Transformation oldTransformation = mTransformation;
+  mTransformation.adjustPosition(0, -mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
 }
 
 /*!
@@ -1498,8 +1508,9 @@ void ShapeAnnotation::moveDown()
  */
 void ShapeAnnotation::moveShiftDown()
 {
-  qreal y = -(mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, 0, y, mpGraphicsView));
+  Transformation oldTransformation = mTransformation;
+  mTransformation.adjustPosition(0, -(mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
 }
 
 /*!
@@ -1510,7 +1521,9 @@ void ShapeAnnotation::moveShiftDown()
  */
 void ShapeAnnotation::moveCtrlDown()
 {
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, 0, -1, mpGraphicsView));
+  Transformation oldTransformation = mTransformation;
+  mTransformation.adjustPosition(0, -1);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
 }
 
 /*!
@@ -1521,8 +1534,9 @@ void ShapeAnnotation::moveCtrlDown()
  */
 void ShapeAnnotation::moveLeft()
 {
-  qreal x = -mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, x, 0, mpGraphicsView));
+  Transformation oldTransformation = mTransformation;
+  mTransformation.adjustPosition(-mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
 }
 
 /*!
@@ -1533,8 +1547,9 @@ void ShapeAnnotation::moveLeft()
  */
 void ShapeAnnotation::moveShiftLeft()
 {
-  qreal x = -(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, x, 0, mpGraphicsView));
+  Transformation oldTransformation = mTransformation;
+  mTransformation.adjustPosition(-(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5), 0);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
 }
 
 /*!
@@ -1545,7 +1560,9 @@ void ShapeAnnotation::moveShiftLeft()
  */
 void ShapeAnnotation::moveCtrlLeft()
 {
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, -1, 0, mpGraphicsView));
+  Transformation oldTransformation = mTransformation;
+  mTransformation.adjustPosition(-1, 0);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
 }
 
 /*!
@@ -1556,8 +1573,9 @@ void ShapeAnnotation::moveCtrlLeft()
  */
 void ShapeAnnotation::moveRight()
 {
-  qreal x = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, x, 0, mpGraphicsView));
+  Transformation oldTransformation = mTransformation;
+  mTransformation.adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
 }
 
 /*!
@@ -1568,8 +1586,9 @@ void ShapeAnnotation::moveRight()
  */
 void ShapeAnnotation::moveShiftRight()
 {
-  qreal x = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5;
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, x, 0, mpGraphicsView));
+  Transformation oldTransformation = mTransformation;
+  mTransformation.adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5, 0);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
 }
 
 /*!
@@ -1580,7 +1599,9 @@ void ShapeAnnotation::moveShiftRight()
  */
 void ShapeAnnotation::moveCtrlRight()
 {
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, 1, 0, mpGraphicsView));
+  Transformation oldTransformation = mTransformation;
+  mTransformation.adjustPosition(1, 0);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
 }
 
 /*!
