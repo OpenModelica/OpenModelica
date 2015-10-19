@@ -32,17 +32,6 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_VoltageSource', options = '', outputFormat = 'mat', variableFilter = 'time|inertiaLoad.phi|inertiaLoad.w|smpm.idq_sr.1.|smpm.idq_sr.2.|voltageController.PI_d.x|voltageController.PI_q.x', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_VoltageSource_res.mat
 // Files Equal!
-// [Modelica 3.2.1/Electrical/Machines.mo:12940:7-12945:42:writable] Error: Variable smpm.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
-// [Modelica 3.2.1/Electrical/Machines.mo:12940:7-12945:42:writable] Error: Variable smpm.statorCoreParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100 on component VRef.
-// [Modelica 3.2.1/Electrical/Machines.mo:12940:7-12945:42:writable] Error: Variable smpm.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
-// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100 on component VRef.
-// [Modelica 3.2.1/Electrical/Machines.mo:12946:7-12948:77:writable] Error: Variable smpm.strayLoadParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100 on component IRef.
-// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100 on component IRef.
-// [Modelica 3.2.1/Electrical/Machines.mo:5364:9-5367:44:writable] Error: Variable smpm.permanentMagnetLossParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100 on component IRef.
-// [Modelica 3.2.1/Electrical/Machines.mo:5364:9-5367:44:writable] Error: Variable smpm.permanentMagnetLossParameters: Duplicate modification of element  {start  = (typed)6.283185307179586 * smpm.fsNominal / /*Real*/(smpm.p) DAE.PROP(Real, C_PARAM), value: 157.0796326794897}  and  = (typed)157.0796326794897 DAE.PROP(Real, C_CONST), value: 157.0796326794897 on component wRef.
-// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100 on component IRef.
-// Error: Duplicate modification of element  {start  = (typed)6.283185307179586 * smpm.fsNominal / /*Real*/(smpm.p) DAE.PROP(Real, C_PARAM), value: 157.0796326794897}  and  = (typed)157.0796326794897 DAE.PROP(Real, C_CONST), value: 157.0796326794897 on component wRef.
-//
 // "true
 // "
 // ""

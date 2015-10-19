@@ -45,12 +45,6 @@ end RecordModifications2;
 //   output FrictionParameters res;
 // end FrictionParameters;
 //
-// function FrictionParameters$dcpm2$frictionParameters "Automatically generated record constructor for FrictionParameters$dcpm2$frictionParameters"
-//   input Real PRef = 0.0;
-//   input Real wRef;
-//   output FrictionParameters$dcpm2$frictionParameters res;
-// end FrictionParameters$dcpm2$frictionParameters;
-//
 // function FrictionParameters$frictionParameters "Automatically generated record constructor for FrictionParameters$frictionParameters"
 //   input Real PRef = 0.0;
 //   input Real wRef;
@@ -58,9 +52,9 @@ end RecordModifications2;
 // end FrictionParameters$frictionParameters;
 //
 // class RecordModifications2
-//   parameter Real dcpm2.wNominal = wNominal;
 //   parameter Real dcpm2.frictionParameters.PRef = frictionParameters.PRef;
 //   parameter Real dcpm2.frictionParameters.wRef = frictionParameters.wRef;
+//   parameter Real dcpm2.wNominal = wNominal;
 //   Real dcpm2.friction.tau;
 //   parameter Real dcpm2.friction.frictionParameters.PRef = dcpm2.frictionParameters.PRef;
 //   parameter Real dcpm2.friction.frictionParameters.wRef = dcpm2.frictionParameters.wRef;

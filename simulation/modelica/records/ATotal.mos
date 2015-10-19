@@ -1119,7 +1119,7 @@ simulate(A); getErrorString();
 //   constant Real p.m_phiIsGiven = 0.0 \"Phi IsGivenValue\";
 //   constant Real p.m_gamma(quantity = \"ElectricPotential\", unit = \"V\", start = 0.0) = 0.0 \"GAMMA, Bulk threshold parameter\";
 //   constant Real p.m_gammaIsGiven = 0.0 \"Gamma IsGivenValue\";
-//   constant Real p.m_lambda(quantity = \"InversePotential\", unit = \"1/V\") = 0.0 \"Channel-length modulation\";
+//   constant Real p.m_lambda(quantity = \"InversePotential\", unit = \"1/V\", start = 0.0) = 0.0 \"Channel-length modulation\";
 //   constant Real p.m_substrateDoping(start = 0.0) = 0.0 \"NSUB, Substrate doping\";
 //   constant Real p.m_substrateDopingIsGiven = 0.0 \"Substrate doping IsGivenValue\";
 //   constant Real p.m_gateType(start = 1.0) = 1.0 \"TPG, Gate type\";
@@ -1132,7 +1132,7 @@ simulate(A); getErrorString();
 //   constant Real p.m_drainResistanceIsGiven = 0.0 \"Drain resistance IsGivenValue\";
 //   constant Real p.m_sourceResistance(quantity = \"Resistance\", unit = \"Ohm\", start = 0.0) = 0.0 \"RS, Source ohmic resistance\";
 //   constant Real p.m_sourceResistanceIsGiven = 0.0 \"Source resistance IsGivenValue\";
-//   constant Real p.m_transconductance(quantity = \"Transconductance\", unit = \"A/V2\") = 2e-05 \"input - use tTransconductance\";
+//   constant Real p.m_transconductance(quantity = \"Transconductance\", unit = \"A/V2\", start = 2e-05) = 2e-05 \"input - use tTransconductance\";
 //   constant Real p.m_transconductanceIsGiven = 0.0 \"Transconductance IsGivenValue\";
 //   constant Real p.m_tnom(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 300.15, nominal = 300.0) = 300.15 \"TNOM, Parameter measurement temperature\";
 //   constant Real m.m_dTemp(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 300.15, nominal = 300.0) = 300.15 \"TEMP, Device Temperature\";
@@ -1294,19 +1294,11 @@ simulate(A); getErrorString();
 //   constant Real cc.m_capgd(quantity = \"Capacitance\", unit = \"F\", min = 0.0) = 0.0;
 // end A;
 // "
-// "[simulation/modelica/records/ATotal.mo:1750:3-1750:176:writable] Error: Variable p: Duplicate modification of element  {start  =(untyped) 0.0}  and  = (typed)0.0 DAE.PROP(Real, C_CONST), value: 0.0 on component m_lambda.
-// [simulation/modelica/records/ATotal.mo:1750:3-1750:176:writable] Error: Variable p: Duplicate modification of element  {start  =(untyped) 2e-05}  and  = (typed)2e-05 DAE.PROP(Real, C_CONST), value: 2e-05 on component m_transconductance.
-// Error: Duplicate modification of element  {start  =(untyped) 0.0}  and  = (typed)0.0 DAE.PROP(Real, C_CONST), value: 0.0 on component m_lambda.
-// Error: Duplicate modification of element  {start  =(untyped) 2e-05}  and  = (typed)2e-05 DAE.PROP(Real, C_CONST), value: 2e-05 on component m_transconductance.
-// "
+// ""
 // record SimulationResult
 //     resultFile = "A_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'A', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "[simulation/modelica/records/ATotal.mo:1750:3-1750:176:writable] Error: Variable p: Duplicate modification of element  {start  =(untyped) 0.0}  and  = (typed)0.0 DAE.PROP(Real, C_CONST), value: 0.0 on component m_lambda.
-// [simulation/modelica/records/ATotal.mo:1750:3-1750:176:writable] Error: Variable p: Duplicate modification of element  {start  =(untyped) 2e-05}  and  = (typed)2e-05 DAE.PROP(Real, C_CONST), value: 2e-05 on component m_transconductance.
-// Error: Duplicate modification of element  {start  =(untyped) 0.0}  and  = (typed)0.0 DAE.PROP(Real, C_CONST), value: 0.0 on component m_lambda.
-// Error: Duplicate modification of element  {start  =(untyped) 2e-05}  and  = (typed)2e-05 DAE.PROP(Real, C_CONST), value: 2e-05 on component m_transconductance.
-// "
+// ""
 // endResult

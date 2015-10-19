@@ -33,13 +33,6 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 1500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Inverter', options = '', outputFormat = 'mat', variableFilter = 'time|aimc.i_0_s|aimc.idq_rr.1.|aimc.idq_rr.2.|aimc.lssigma.i_.1.|vfController.x|loadInertia.phi|loadInertia.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Inverter_res.mat
 // Files Equal!
-// [Modelica 3.2.1/Electrical/Machines.mo:12940:7-12945:42:writable] Error: Variable aimc.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
-// [Modelica 3.2.1/Electrical/Machines.mo:12940:7-12945:42:writable] Error: Variable aimc.statorCoreParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100 on component VRef.
-// [Modelica 3.2.1/Electrical/Machines.mo:12940:7-12945:42:writable] Error: Variable aimc.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
-// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100 on component VRef.
-// [Modelica 3.2.1/Electrical/Machines.mo:12946:7-12948:77:writable] Error: Variable aimc.strayLoadParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100 on component IRef.
-// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100 on component IRef.
-//
 // "true
 // "
 // ""
