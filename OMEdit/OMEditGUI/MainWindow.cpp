@@ -1456,6 +1456,7 @@ void MainWindow::undo()
   if (pModelWidget &&
       ((pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) ||
        (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()))) {
+    pModelWidget->clearSelection();
     pModelWidget->getUndoStack()->undo();
     pModelWidget->updateClassAnnotationIfNeeded();
     pModelWidget->updateModelicaText();
@@ -1472,6 +1473,7 @@ void MainWindow::redo()
   if (pModelWidget &&
       ((pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) ||
        (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()))) {
+    pModelWidget->clearSelection();
     pModelWidget->getUndoStack()->redo();
     pModelWidget->updateClassAnnotationIfNeeded();
     pModelWidget->updateModelicaText();
