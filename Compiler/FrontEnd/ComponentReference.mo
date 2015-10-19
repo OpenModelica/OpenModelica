@@ -960,6 +960,14 @@ algorithm
   b := List.isMemberOnTrue(cref,lst,crefEqual);
 end crefInLst;
 
+public function crefNotInLst  "returns true if the cref is not in the list of crefs"
+  input DAE.ComponentRef cref;
+  input list<DAE.ComponentRef> lst;
+  output Boolean b;
+algorithm
+  b := not List.isMemberOnTrue(cref,lst,crefEqual);
+end crefNotInLst;
+
 public function crefEqualVerySlowStringCompareDoNotUse
 "Returns true if two component references are equal,
   comparing strings if no other solution is found"
@@ -1918,6 +1926,14 @@ public function crefPrefixPre "public function crefPrefixPre
 algorithm
   outCref := makeCrefQual(DAE.preNamePrefix, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
 end crefPrefixPre;
+
+public function crefPrefixPrevious "public function crefPrefixPrevious
+  Appends $CLKPRE to a cref, so a => $CLKPRE.a"
+  input DAE.ComponentRef inCref;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := makeCrefQual(DAE.previousNamePrefix, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
+end crefPrefixPrevious;
 
 public function crefPrefixStart "public function crefPrefixStart
   Appends $START to a cref, so a => $START.a"
@@ -2977,7 +2993,7 @@ algorithm
     case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(source=source), {}),true)
       equation
         // Flatten T_ARRAY(T_ARRAY(T_COMPLEX(), dim2,src), dim1,src) types to one level T_ARRAY(simpletype, alldims, src)
-        (basety as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims) = Types.flattenArrayTypeOpt(ty);
+        (basety as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims) = Types.flattenArrayType(ty);
         correctTy = DAE.T_ARRAY(basety,dims,source);
         // Create a list of : subscripts to generate all elements.
         subs = List.fill(DAE.WHOLEDIM(), listLength(dims));
@@ -2989,7 +3005,7 @@ algorithm
     case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(source=source), {}),_)
       equation
         // Flatten T_ARRAY(T_ARRAY(T_..., dim2,src), dim1,src) types to one level T_ARRAY(simpletype, alldims, src)
-        (basety, dims) = Types.flattenArrayTypeOpt(ty);
+        (basety, dims) = Types.flattenArrayType(ty);
         correctTy = DAE.T_ARRAY(basety,dims,source);
         // Create a list of : subscripts to generate all elements.
         subs = List.fill(DAE.WHOLEDIM(), listLength(dims));
@@ -3000,7 +3016,7 @@ algorithm
     case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(source=source), subs),true)
       equation
         // Flatten T_ARRAY(T_ARRAY(T_COMPLEX(), dim2,src), dim1,src) types to one level T_ARRAY(simpletype, alldims, src)
-        (basety as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims) = Types.flattenArrayTypeOpt(ty);
+        (basety as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims) = Types.flattenArrayType(ty);
         correctTy = DAE.T_ARRAY(basety,dims,source);
         // Use the subscripts to generate only the wanted elements.
          crefs = expandCref2(id, correctTy, subs, dims);
@@ -3011,7 +3027,7 @@ algorithm
     case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(source=source), subs),_)
       equation
         // Flatten T_ARRAY(T_ARRAY(T_..., dim2,src), dim1,src) types to one level T_ARRAY(simpletype, alldims, src)
-        (basety, dims) = Types.flattenArrayTypeOpt(ty);
+        (basety, dims) = Types.flattenArrayType(ty);
         correctTy = DAE.T_ARRAY(basety,dims,source);
         // Use the subscripts to generate only the wanted elements.
       then
@@ -3024,7 +3040,7 @@ algorithm
         // Expand the rest of the cref.
         crefs = expandCref_impl(cref,expandRecord);
         // Flatten T_ARRAY(T_ARRAY(T_..., dim2,src), dim1,src) types to one level T_ARRAY(simpletype, alldims, src)
-        (basety, dims) = Types.flattenArrayTypeOpt(ty);
+        (basety, dims) = Types.flattenArrayType(ty);
         correctTy = DAE.T_ARRAY(basety,dims,source);
         // Create a simple identifier for the head of the cref and expand it.
         cref = DAE.CREF_IDENT(id, correctTy, subs);

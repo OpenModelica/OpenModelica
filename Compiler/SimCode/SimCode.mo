@@ -123,6 +123,7 @@ uniontype SimCode
     //*** a protected section *** not exported to SimCodeTV
     HashTableCrILst.HashTable varToIndexMapping;
     HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
+    HashTable.HashTable crefToClockIndexHT "map variables to clock indices";
     Option<BackendMapping> backendMapping;
     //FMI 2.0 data for model structure
     Option<FmiModelStructure> modelStructure;
@@ -629,6 +630,12 @@ public uniontype FmiDerivatives
   end FMIDERIVATIVES;
 end FmiDerivatives;
 
+public uniontype FmiDiscreteStates
+  record FMIDISCRETESTATES
+    list<FmiUnknown> fmiUnknownsList;
+  end FMIDISCRETESTATES;
+end FmiDiscreteStates;
+
 public uniontype FmiInitialUnknowns
   record FMIINITIALUNKNOWNS
     list<FmiUnknown> fmiUnknownsList;
@@ -639,6 +646,7 @@ public uniontype FmiModelStructure
   record FMIMODELSTRUCTURE
     FmiOutputs fmiOutputs;
     FmiDerivatives fmiDerivatives;
+    FmiDiscreteStates fmiDiscreteStates;
     FmiInitialUnknowns fmiInitialUnknowns;
   end FMIMODELSTRUCTURE;
 end FmiModelStructure;

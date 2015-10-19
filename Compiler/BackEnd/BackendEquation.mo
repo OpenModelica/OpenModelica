@@ -2170,7 +2170,7 @@ public function generateEQUATION "author: Frenkel TUD 2010-05"
   input BackendDAE.EquationKind inEqKind;
   output BackendDAE.Equation outEqn;
 algorithm
-  outEqn := BackendDAE.EQUATION(iLhs, iRhs, Source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, BackendDAE.NO_LOOP()));
+  outEqn := BackendDAE.EQUATION(iLhs, iRhs, Source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind));
 end generateEQUATION;
 
 public function getEquationAttributes
@@ -2335,7 +2335,7 @@ algorithm
     DAE.Exp rhs;
 
     case (_, SOME(rhs), _, _)
-    then {BackendDAE.SOLVED_EQUATION(inLhs, rhs, inSource, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, BackendDAE.NO_LOOP()))};
+    then {BackendDAE.SOLVED_EQUATION(inLhs, rhs, inSource, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind))};
 
     else {};
   end match;

@@ -35,16 +35,28 @@
 
 #include <pthread.h>
 #include <setjmp.h>
-#define MMC_INIT_STACK_OVERFLOW()
+
 #define MMC_TRY_STACK() { jmp_buf *oldMMCJumper = threadData->mmc_jumper; { MMC_TRY_INTERNAL(mmc_stack_overflow_jumper) threadData->mmc_stack_overflow_jumper = &new_mmc_jumper;
 #define MMC_ELSE_STACK() } else { threadData->mmc_jumper = oldMMCJumper; threadData->mmc_stack_overflow_jumper = old_jumper;
 #define MMC_CATCH_STACK() MMC_CATCH_INTERNAL(mmc_stack_overflow_jumper) } threadData->mmc_jumper = oldMMCJumper; }
 
+#if defined(OMC_MINIMAL_RUNTIME)
+static inline void printStacktraceMessages()
+{
+}
+#else
 void printStacktraceMessages();
+#endif
 void mmc_setStacktraceMessages(int numSkip, int numFrames);
 void mmc_setStacktraceMessages_threadData(threadData_t *threadData, int numSkip, int numFrames);
 void init_metamodelica_segv_handler();
+#if defined(OMC_MINIMAL_RUNTIME)
+static inline void mmc_init_stackoverflow(threadData_t *threadData)
+{
+}
+#else
 void mmc_init_stackoverflow(threadData_t *threadData);
+#endif
 
 #ifndef __has_builtin
   #define __has_builtin(x) 0  /* Compatibility with non-clang compilers */

@@ -297,8 +297,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   if (comp) {
     comp->instanceName = (fmi2String)functions->allocateMemory(1 + strlen(instanceName), sizeof(char));
     comp->GUID = (fmi2String)functions->allocateMemory(1 + strlen(fmuGUID), sizeof(char));
-    /* Cannot use functions->allocateMemory */
-    DATA* fmudata = (DATA *)GC_malloc_uncollectable(sizeof(DATA));
+    DATA* fmudata = (DATA *)functions->allocateMemory(1, sizeof(DATA));
 
     threadData_t *threadData = (threadData_t *)functions->allocateMemory(1, sizeof(threadData_t));
     memset(threadData, 0, sizeof(threadData_t));
@@ -368,7 +367,7 @@ void fmi2FreeInstance(fmi2Component c) {
 
   /* free fmuData */
   comp->functions->freeMemory(comp->threadData);
-  GC_free(comp->fmuData);
+  comp->functions->freeMemory(comp->fmuData);
   /* free instanceName & GUID */
   if (comp->instanceName) comp->functions->freeMemory((void*)comp->instanceName);
   if (comp->GUID) comp->functions->freeMemory((void*)comp->GUID);
@@ -996,3 +995,41 @@ fmi2Status fmi2SetExternalFunction(fmi2Component c, fmi2ValueReference vr[], siz
   }
   return fmi2OK;
 }
+
+#ifdef FMU_EXPERIMENTAL
+fmi2Status fmi2GetSpecificDerivatives(fmi2Component c, fmi2Real derivatives[], const fmi2ValueReference dr[], size_t nvr) {
+  int i,nx;
+  ModelInstance* comp = (ModelInstance *)c;
+  threadData_t *threadData = comp->threadData;
+  /* TODO
+  if (invalidState(comp, "fmi2GetSpecificDerivatives", modelEventMode|modelContinuousTimeMode|modelTerminated|modelError))
+    return fmi2Error;
+  if (invalidNumber(comp, "fmi2GetSpecificDerivatives", "nx", nx, NUMBER_OF_STATES))
+    return fmi2Error;
+  if (nullPointer(comp, "fmi2GetSpecificDerivatives", "derivatives[]", derivatives))
+    return fmi2Error;
+  */
+
+  /* try */
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+
+
+  #if NUMBER_OF_STATES>0
+  for (i = 0; i < nvr; i++) {
+    // This assumes that OMC layouts first the states then the derivatives
+    nx = dr[i]-NUMBER_OF_STATES;
+    comp->fmuData->callback->functionODEPartial(comp->fmuData, comp->threadData, nx);
+    derivatives[i] = getReal(comp, dr[i]); // to be implemented by the includer of this file
+    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetSpecificDerivatives: #r%d# = %.16g", dr[i], derivatives[i])
+  }
+  #endif
+
+  return fmi2OK;
+
+  /* catch */
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2GetSpecificDerivatives: terminated by an assertion.")
+  return fmi2Error;
+}
+#endif
+

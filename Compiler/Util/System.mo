@@ -681,6 +681,12 @@ public function getRTLibsSim
   external "C" libs=System_getRTLibsSim() annotation(Library = "omcruntime");
 end getRTLibsSim;
 
+public function getRTLibsFMU
+"Returns a string containing the compiler flags used for source-code FMUs"
+  output String libs;
+  external "C" libs=System_getRTLibsFMU() annotation(Library = "omcruntime");
+end getRTLibsFMU;
+
 public function getCorbaLibs
 "Returns a string containing the compiler flags used for Corba libraries.
 Needed for annotation(Library=\"OpenModelicaCorba\"), a library with special

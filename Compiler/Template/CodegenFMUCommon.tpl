@@ -64,61 +64,63 @@ case SIMCODE(__) then
   >>
 end ModelExchange;
 
-template fmiModelVariables(ModelInfo modelInfo, String FMUVersion)
+template fmiModelVariables(SimCode simCode, String FMUVersion)
  "Generates code for ModelVariables file for FMU target."
 ::=
+match simCode
+case SIMCODE(modelInfo=modelInfo) then
 match modelInfo
 case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
   <<
   <ModelVariables>
   <%System.tmpTickReset(0)%>
   <%vars.stateVars |> var =>
-    ScalarVariable(stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.derivativeVars |> var =>
-    ScalarVariable(stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.algVars |> var =>
-    ScalarVariable(stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.discreteAlgVars |> var =>
-    ScalarVariable(stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.paramVars |> var =>
-    ScalarVariable(stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.aliasVars |> var =>
-    ScalarVariable(stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.intAlgVars |> var =>
-    ScalarVariable(stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.intParamVars |> var =>
-    ScalarVariable(stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.intAliasVars |> var =>
-    ScalarVariable(stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.boolAlgVars |> var =>
-    ScalarVariable(stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.boolParamVars |> var =>
-    ScalarVariable(stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.boolAliasVars |> var =>
-    ScalarVariable(stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.stringAlgVars |> var =>
-    ScalarVariable(stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.stringParamVars |> var =>
-    ScalarVariable(stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.stringAliasVars |> var =>
-    ScalarVariable(stateVars, var, FMUVersion)
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%externalFunctions(modelInfo)%>
@@ -126,7 +128,7 @@ case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
   >>
 end fmiModelVariables;
 
-template ScalarVariable(list<SimVar> stateVars, SimVar simVar, String FMUVersion)
+template ScalarVariable(SimVar simVar, SimCode simCode, list<SimVar> stateVars, String FMUVersion)
  "Generates code for ScalarVariable file for FMU target."
 ::=
 match simVar
@@ -139,7 +141,7 @@ case SIMVAR(__) then
   <<
   <!-- Index of variable = "<%getVariableIndex(simVar)%>" -->
   <ScalarVariable
-    <%ScalarVariableAttribute2(simVar)%>>
+    <%ScalarVariableAttribute2(simVar, simCode)%>>
     <%ScalarVariableType2(simVar, stateVars)%>
   </ScalarVariable>
   >>
@@ -283,18 +285,8 @@ template Implementation()
   >>
 end Implementation;
 
-template ModelStructure(SimCode simCode, list<JacobianMatrix> jacobianMatrixes)
- "Generates Model Structure."
-::=
-  <<
-  <ModelStructure>
-    //ModelStructureHelper(getFMIModelStructure(simCode, jacobianMatrixes))
-  </ModelStructure>
-  >>
-end ModelStructure;
-
-template ModelStructureHelper(Option<FmiModelStructure> fmiModelStructure)
- "Helper function to ModelStructure."
+template ModelStructure(SimCode simCode, Option<FmiModelStructure> fmiModelStructure)
+ "Generates ModelStructure"
 ::=
 match fmiModelStructure
 case SOME(fmistruct as FMIMODELSTRUCTURE(__)) then
@@ -302,7 +294,9 @@ case SOME(fmistruct as FMIMODELSTRUCTURE(__)) then
   <ModelStructure>
     <%ModelStructureOutputs(fmistruct.fmiOutputs)%>
     <%ModelStructureDerivatives(fmistruct.fmiDerivatives)%>
+    <%ModelStructureDiscreteStates(fmistruct.fmiDiscreteStates)%>
     <%ModelStructureInitialUnknowns(fmistruct.fmiInitialUnknowns)%>
+    <%ModelStructureClocks(simCode)%>
   </ModelStructure>
   >>
 else
@@ -310,7 +304,48 @@ else
   <ModelStructure>
   </ModelStructure>
   >>
-end ModelStructureHelper;
+end ModelStructure;
+
+template ModelStructureClocks(SimCode simCode)
+ "Generates ModelStructure Clocks"
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  let clocks = (clockedPartitions |> partition =>
+    match partition
+    case CLOCKED_PARTITION(__) then
+      match baseClock
+      case INFERRED_CLOCK() then
+        <<
+        <Clock><Inferred/></Clock>
+        >>
+      case REAL_CLOCK(interval=i as RCONST(real=val)) then
+        <<
+        <Clock><Periodic>
+          <Real interval="<%val%>" />
+        </Periodic></Clock>
+        >>
+      case INTEGER_CLOCK(intervalCounter=ic as ICONST(integer=val), resolution=res) then
+        <<
+        <Clock><Periodic>
+          <Rational intervalCounter="<%val%>" resolution="<%res%>" />
+        </Periodic></Clock>
+        >>
+      else
+        <<
+        <Clock/>
+        >>
+    ;separator="\n")
+  match clocks
+  case "" then
+    <<>>
+  else
+    <<
+    <Clocks>
+      <%clocks%>
+    </Clocks>
+    >>
+end ModelStructureClocks;
 
 template ModelStructureOutputs(FmiOutputs fmiOutputs)
  "Generates Model Structure Outputs."
@@ -335,6 +370,22 @@ case FMIDERIVATIVES(__) then
   </Derivatives>
   >>
 end ModelStructureDerivatives;
+
+template ModelStructureDiscreteStates(FmiDiscreteStates fmiDiscreteStates)
+ "Generates Model Structure DiscreteStates."
+::=
+match fmiDiscreteStates
+case FMIDISCRETESTATES(__) then
+  if intGt(listLength(fmiUnknownsList), 0) then
+  <<
+  <DiscreteStates>
+    <%ModelStructureUnknowns(fmiUnknownsList)%>
+  </DiscreteStates>
+  >>
+  else
+  // don't generate if model has no discrete states for FMI 2.0 compatibility
+  <<>>
+end ModelStructureDiscreteStates;
 
 template ModelStructureInitialUnknowns(FmiInitialUnknowns fmiInitialUnknowns)
  "Generates Model Structure InitialUnknowns."
@@ -382,14 +433,16 @@ template FmiUnknownDependenciesKind(list<String> dependenciesKind)
   >>
 end FmiUnknownDependenciesKind;
 
-template ScalarVariableAttribute2(SimVar simVar)
+template ScalarVariableAttribute2(SimVar simVar, SimCode simCode)
  "Generates code for ScalarVariable Attribute file for FMU 2.0 target."
 ::=
 match simVar
   case SIMVAR(__) then
   let valueReference = '<%System.tmpTick()%>'
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
-  let variability = getVariability2(varKind, type_)
+  let variability = if getClockIndex(simVar, simCode) then "discrete" else getVariability2(varKind, type_)
+  let clockIndex = getClockIndex(simVar, simCode)
+  let previous = match varKind case CLOCKED_STATE(__) then '<%getVariableIndex(cref2simvar(previousName, simCode))%>'
   let caus = getCausality2(causality, varKind, isValueChangeable)
   let initial = getInitialType2(variability, caus, initialValue)
   <<
@@ -398,6 +451,8 @@ match simVar
   <%description%>
   variability="<%variability%>"
   causality="<%caus%>"
+  <%if boolNot(stringEq(clockIndex, "")) then 'clockIndex="'+clockIndex+'"' %>
+  <%if boolNot(stringEq(previous, "")) then 'previous="'+previous+'"' %>
   <%if boolNot(stringEq(initial, "")) then 'initial="'+initial+'"' %>
   >>
 end ScalarVariableAttribute2;

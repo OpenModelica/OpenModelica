@@ -46,7 +46,7 @@ public class TestDefinitionsParser {
   public void test_OMC_Util_mo() throws Exception {
     File jarFile = new File("test_files/OMC_Util.jar");
     DefinitionsCreator.createDefinitions(jarFile, "org.openmodelica.OMC",
-        new File("../../../../Compiler/").getAbsoluteFile(),
+        new File("../../Compiler/").getAbsoluteFile(),
         new String[]{
       "Util/Util.mo" /* Lots of "replaceable type X subtypeof Any;" */
       },
@@ -62,7 +62,7 @@ public class TestDefinitionsParser {
   public void test_OMC_Absyn_mo() throws Exception  {
     File jarFile = new File("test_files/OMC_Absyn.jar");
     DefinitionsCreator.createDefinitions(jarFile, "org.openmodelica.OMC",
-        new File("../../../../Compiler/").getAbsoluteFile(),
+        new File("../../Compiler/").getAbsoluteFile(),
         new String[]{"FrontEnd/Absyn.mo"},
         true);
   }
@@ -73,7 +73,7 @@ public class TestDefinitionsParser {
     DefinitionsCreator.createDefinitions(
         jarFile,
         "org.openmodelica.OMC",
-        new File("../../../../Compiler/FrontEnd").getAbsoluteFile(),
+        new File("../../Compiler/FrontEnd").getAbsoluteFile(),
         new String[]{
           "Absyn.mo", "Values.mo"
           },
@@ -85,7 +85,7 @@ public class TestDefinitionsParser {
   public void test_OMC_ClassInf_mo() throws Exception  {
     File jarFile = new File("test_files/OMC_ClassInf.jar");
     DefinitionsCreator.createDefinitions(jarFile, "org.openmodelica.OMC",
-        new File("../../../../Compiler/").getAbsoluteFile(),
+        new File("../../Compiler/").getAbsoluteFile(),
         new String[]{
       "FrontEnd/Absyn.mo", "FrontEnd/ClassInf.mo", "FrontEnd/SCode.mo"
       },
@@ -103,7 +103,7 @@ public class TestDefinitionsParser {
   @Test
   public void test_OMC_mo_stripped() throws Exception {
     File jarFile = new File("test_files/OMC_full_no_functions.jar");
-    File compilerDir = new File("../../../../Compiler/");
+    File compilerDir = new File("../../Compiler/");
     String[] files = compilerDir.list(new MoFilter());
     DefinitionsCreator.createDefinitions(jarFile, "org.openmodelica.OMC",
         compilerDir.getAbsoluteFile(),
@@ -117,7 +117,7 @@ public class TestDefinitionsParser {
   @Test
   public void test_OMC_mo() throws Exception {
     File jarFile = new File("test_files/OMC_full.jar");
-    File compilerDir = new File("../../../../Compiler/");
+    File compilerDir = new File("../../Compiler/");
     String[] files = compilerDir.list(new MoFilter());
     DefinitionsCreator.createDefinitions(jarFile, "org.openmodelica.OMC",
         compilerDir.getAbsoluteFile(),

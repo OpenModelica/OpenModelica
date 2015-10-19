@@ -41,897 +41,253 @@ public import DAE;
 
 protected import Absyn;
 protected import Algorithm;
-protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
+protected import BackendVarTransform;
 protected import ComponentReference;
-protected import Dump;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import List;
-protected import SimCode;
-protected import SimCodeVar;
 protected import Util;
 
-//--------------------------------
-//--------------------------------
-//--------------------------------
 
-public function buildForLoops
-  input BackendDAE.Variables varsIn;
+//--------------------------------
+// collect for-loops
+//--------------------------------
+public function collectForLoops"takes a list of equations and a list of vars, searches for iterated equations and array variables and constructs for-equations and ranged array vars.
+author: Waurich TUD 2015-03"
+  input list<BackendDAE.Var> varsIn;
   input list<BackendDAE.Equation> eqsIn;
-  output BackendDAE.Variables varsOut;
+  output list<BackendDAE.Var> varsOut;
   output list<BackendDAE.Equation> eqsOut;
 protected
-  Integer idx;
+  Boolean cont, perfectMatching;
+  Integer idx, numEqs, numVars;
+  array<Integer> ass1,ass2;
+  list<Integer> idxs;
+  BackendDAE.EqSystem eqSys;
+  BackendDAE.Shared shared;
+  BackendVarTransform.VariableReplacements repl1;
+  DAE.ComponentRef cref;
+  DAE.Exp exp;
+  list<DAE.ComponentRef> scalarCrefs,scalarCrefs1,scalarCrefs2, allScalarCrefs, stateCrefs;
+  list<DAE.Exp> scalarCrefExps;
   list<BackendDAE.Equation> loopEqs;
   list<BackendDAE.Var> arrVars;
   list<Absyn.Exp> loopIds;
-  list<BackendDAE.LoopInfo> loopInfos;
   list<tuple<DAE.ComponentRef,Integer,list<DAE.ComponentRef>>> arrayCrefs; //headCref, range, tailcrefs
   list<BackendDAE.Var> varLst, arrayVars;
-  list<BackendDAE.Equation> classEqs,mixEqs,nonArrEqs;
+  list<BackendDAE.Equation> forEqs,mixEqs,nonArrEqs;
 algorithm
     //BackendDump.dumpEquationList(eqsIn,"eqsIn");
-    //BackendDump.dumpVariables(varsIn,"varsIn");
-  varLst := BackendVariable.varList(varsIn);
-  (varLst, arrayVars) := List.fold(varLst, getArrayVars,({},{}));
-    //BackendDump.dumpVarList(varLst,"varLst");
+    //BackendDump.dumpVarList(varsIn,"varsIn");
+  //-------------------------------------------
+  //dispatch vars and equals to different lists
+  //-------------------------------------------
+  //split vars in array vars and non array vars
+  (varLst, arrayVars) := List.fold(varsIn, getArrayVars,({},{}));
 
   // get the arrayCrefs
   (arrayCrefs,_) := List.fold(arrayVars,getArrayVarCrefs,({},{}));
-    //BackendDump.dumpVarList(arrayVars,"arrayVars");
-    //print("arrayCrefs: "+stringDelimitList(List.map(List.map(arrayCrefs,Util.tuple31),ComponentReference.printComponentRefStr),"\n|")+"\n\n");
-    //print("ranges: "+stringDelimitList(List.map(List.map(arrayCrefs,Util.tuple32),intString),"\n|")+"\n\n");
-    //print("tails: "+stringDelimitList(List.map(List.map(arrayCrefs,Util.tuple33),ComponentReference.printComponentRefListStr),"\n|")+"\n\n");
 
-  // dispatch the equations in classequations, mixedequations, non-array equations
-  ((classEqs,mixEqs,nonArrEqs)) := List.fold1(eqsIn, dispatchLoopEquations,List.map(arrayCrefs,Util.tuple31),({},{},{}));
+  // dispatch the equations in for-quations, mixedequations, non-array equations
+  ((forEqs,mixEqs,nonArrEqs)) := List.fold1(eqsIn, dispatchLoopEquations,List.map(arrayCrefs,Util.tuple31),({},{},{}));
+      //BackendDump.dumpEquationList(forEqs,"forEqs1");
+      //BackendDump.dumpEquationList(mixEqs,"mixEqs1");
+      //BackendDump.dumpEquationList(nonArrEqs,"nonArrEqs1");
 
-    //BackendDump.dumpEquationList(classEqs,"classEqs");
-    //BackendDump.dumpEquationList(mixEqs,"mixEqs");
-    //BackendDump.dumpEquationList(nonArrEqs,"nonArrEqs");
+  //build for equations for repeated equations
+  forEqs := buildBackendDAEForEquations(forEqs,{});
 
-  if true then
+  //find accumulated equations in mixEqs and insert SUM-Exp
+  mixEqs := listReverse(List.fold(mixEqs,buildAccumExpInEquations,{}));
+      //BackendDump.dumpEquationList(forEqs,"forEqs2");
+      //BackendDump.dumpEquationList(mixEqs,"mixEqs2");
+      //BackendDump.dumpEquationList(nonArrEqs,"nonArrEqs2");
 
-  //add loopinfos
-  (idx,classEqs) := addLoopInfosForClassEqs(classEqs, List.map(arrayCrefs,Util.tuple31), (1,{}));
-  (idx,mixEqs) := addLoopInfosForMixEqs(mixEqs, List.map(arrayCrefs,Util.tuple31), (idx,{}));
-    //BackendDump.dumpEquationList(classEqs,"classEqs2");
-    //BackendDump.dumpEquationList(mixEqs,"mixEqs2");
-    //BackendDump.dumpEquationList(nonArrEqs,"nonArrEqs2");
+  // build non-expanded arrays
+  arrayVars := unexpandArrayVariables(arrayVars,{});
 
-  //reduce accumulated loop equations, build loop equations
-  mixEqs := List.fold1(mixEqs,buildIteratedEquation,arrayCrefs,{});
+  eqsOut := listAppend(forEqs,listAppend(mixEqs, nonArrEqs));
+  varsOut := listAppend(arrayVars,varLst);
+end collectForLoops;
 
-  classEqs := List.fold1(classEqs,buildIteratedEquation,arrayCrefs,{});
-    //BackendDump.dumpEquationList(classEqs,"classEqs3");
-    //BackendDump.dumpEquationList(mixEqs,"mixEqs3");
-  eqsOut := listAppend(listAppend(nonArrEqs,listAppend(classEqs,mixEqs)));
-    //BackendDump.dumpEquationList(eqsOut,"eqsOut");
 
-  //shorten the array variables
-  arrVars := List.fold2(arrayCrefs,shortenArrayVars,BackendVariable.listVar1(arrayVars),2,{});
-  varLst := listAppend(varLst,arrVars);
-    //BackendDump.dumpVarList(varLst,"varsOut");
-  varsOut := BackendVariable.listVar1(varLst);
+protected function unexpandArrayVariables"build non-expanded var arrays"
+  input list<BackendDAE.Var> varsIn;
+  input list<BackendDAE.Var> foldIn;
+  output list<BackendDAE.Var> foldOut;
+algorithm
+  foldOut := matchcontinue(varsIn,foldIn)
+    local
+      BackendDAE.Var var;
+      DAE.ComponentRef cref;
+      list<DAE.BackendDAE.Var> rest, scalars;
+  case({},_)
+    then foldIn;
+  case(var::rest,_)
+    equation
+      cref = BackendVariable.varCref(var);
+      true = ComponentReference.crefHaveSubs(cref);
+      (scalars,rest) = List.split1OnTrue(rest,varIsEqualCrefWithoutSubs,cref);
+      cref = replaceFirstSubsInCref(cref,{DAE.INDEX(DAE.RANGE(BackendVariable.varType(var),DAE.ICONST(1),NONE(),DAE.ICONST(listLength(scalars)+1)))});
+      var = BackendVariable.copyVarNewName(cref,var);
+    then unexpandArrayVariables(rest,var::foldIn);
+  case(var::rest,_)
+    then unexpandArrayVariables(rest,var::foldIn);
+  end matchcontinue;
+end unexpandArrayVariables;
 
-  else
-    classEqs := buildBackendDAEForEquations(classEqs,{});
-    //BackendDump.dumpEquationList(classEqs,"classEqs2");
-    varsOut := varsIn;
-    eqsOut := eqsIn;
-  end if;
-end buildForLoops;
+protected function varIsEqualCrefWithoutSubs"checks if a var is equal to the cref without considering the subscripts"
+  input BackendDAE.Var varIn;
+  input DAE.ComponentRef crefIn;
+  output Boolean b;
+protected
+  DAE.ComponentRef cref;
+algorithm
+  cref := BackendVariable.varCref(varIn);
+  b := ComponentReference.crefEqualWithoutSubs(cref,crefIn);
+end varIsEqualCrefWithoutSubs;
 
-//-----------------------------------------------
-// the implementation for BackendDAE.FOR_EQUATION
-//-----------------------------------------------
-
-protected function buildBackendDAEForEquations"creates BackendDAE.FOR_EQUATION for similar equations"
-  input list<BackendDAE.Equation> classEqs;
+protected function buildAccumExpInEquations"if there is an accumulation of array variables in an equation, check whether we can summarize these to an accumulated expression"
+  input BackendDAE.Equation mixEq;
   input list<BackendDAE.Equation> foldIn;
   output list<BackendDAE.Equation> foldOut;
 algorithm
-  foldOut := matchcontinue(classEqs, foldIn)
+  foldOut := matchcontinue(mixEq,foldIn)
     local
-      Integer min, max, numCrefs;
-      BackendDAE.Equation eq;
-      DAE.Exp lhs,rhs, iterator;
+      DAE.Exp rhs, lhs;
       DAE.ElementSource source;
       BackendDAE.EquationAttributes attr;
-      list<BackendDAE.Equation> similarEqs, rest, foldEqs;
-      list<DAE.ComponentRef> crefs;
-      list<tuple<DAE.ComponentRef,Integer,Integer>> crefMinMax;
-  case({},_)
+      list<DAE.Exp> allTerms;
+      list<tuple<DAE.Exp,Integer,Integer>> minmaxTerms;
+  case(BackendDAE.EQUATION(exp=rhs,scalar=lhs,source=source,attr=attr),_)
     algorithm
-      then foldIn;
-  case(eq::rest,_)
-    algorithm
-      BackendDAE.EQUATION(exp=lhs,scalar=rhs,source=source,attr=attr) := eq;
-      //get similar equations
-      (similarEqs,rest) := List.separate1OnTrue(classEqs,equationEqualNoCrefSubs,eq);
-      crefs := BackendEquation.equationCrefs(eq);
-      numCrefs := listLength(crefs);
-      // all crefs and their minimum as well as their max iterator
-      crefMinMax := List.thread3Map(listReverse(crefs),List.fill(10,numCrefs),List.fill(0,numCrefs),Util.make3Tuple);
-      crefMinMax :=  List.fold(similarEqs,getCrefIdcsForEquation,crefMinMax);
+      //handle left hand side
+      allTerms := Expression.allTerms(lhs);
+      minmaxTerms := List.fold(allTerms,buildAccumExpInEquations1,{});
+      {lhs} := buildAccumExpInEquations2(listReverse(minmaxTerms),{});
 
-      min := List.fold(List.map(crefMinMax,Util.tuple32),intMin,10);
-      max := List.fold(List.map(crefMinMax,Util.tuple33),intMax,0);
-      // update crefs in equation
-      iterator := DAE.CREF(DAE.CREF_IDENT("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
-      (BackendDAE.EQUATION(exp=lhs,scalar=rhs),_) := BackendEquation.traverseExpsOfEquation(eq,setIteratorSubscriptCrefinEquation,(crefMinMax,iterator));
-      eq := BackendDAE.FOR_EQUATION(iterator,DAE.ICONST(min),DAE.ICONST(max),lhs,rhs,source,attr);
-      foldEqs := buildBackendDAEForEquations(rest,(eq::foldIn));
-    then
-      foldEqs;
+      //handle right hand side
+      allTerms := Expression.allTerms(rhs);
+      minmaxTerms := List.fold(allTerms,buildAccumExpInEquations1,{});
+      {rhs} := buildAccumExpInEquations2(listReverse(minmaxTerms),{});
+    then BackendDAE.EQUATION(rhs,lhs,source,attr)::foldIn;
   else
-    then foldIn;
+    then mixEq::foldIn;
   end matchcontinue;
-end buildBackendDAEForEquations;
+end buildAccumExpInEquations;
 
-protected function setIteratorSubscriptCrefinEquation"traverse function that replaces crefs in the exp according to the iterated crefMinMax"
-  input DAE.Exp inExp;
-  input tuple<list<tuple<DAE.ComponentRef,Integer,Integer>>,DAE.Exp> tplIn; //creMinMax,iterator
-  output DAE.Exp outExp;
-  output tuple<list<tuple<DAE.ComponentRef,Integer,Integer>>,DAE.Exp> tplOut;
+protected function buildAccumExpInEquations1"checks if a term occurs multiple times among all terms, if so update min max"
+  input DAE.Exp termIn;
+  input list<tuple<DAE.Exp,Integer,Integer>> minmaxTermsIn;
+  output list<tuple<DAE.Exp,Integer,Integer>> minmaxTermsOut;
+protected
+  Integer pos, idx, min, max;
+  DAE.ComponentRef cref;
+  DAE.Exp term;
+  list<DAE.Exp> terms;
 algorithm
-  (outExp,tplOut) := matchcontinue(inExp,tplIn)
+  try
+    {cref} := Expression.extractCrefsFromExp(termIn);
+    true := ComponentReference.crefHaveSubs(cref);
+    pos := List.position1OnTrue(minmaxTermsIn,minmaxTermEqual,termIn);
+    if intEq(pos,-1) then
+      // not yet collected array cref term
+      {DAE.INDEX(DAE.ICONST(idx))} := ComponentReference.crefSubs(cref);
+      minmaxTermsOut := (termIn,idx,idx)::minmaxTermsIn;
+    else
+    // an already collected array cref term
+    (term,min,max) := listGet(minmaxTermsIn,pos);
+    {DAE.INDEX(DAE.ICONST(idx))} := ComponentReference.crefSubs(cref);
+    minmaxTermsOut := List.replaceAt((term,intMin(idx,min),intMax(idx,max)),pos,minmaxTermsIn);
+    end if;
+  else
+    minmaxTermsOut := (termIn,-1,-1)::minmaxTermsIn;
+  end try;
+end buildAccumExpInEquations1;
+
+
+protected function buildAccumExpInEquations2"sums up the terms and build accumulated expresssions if necessary"
+  input list<tuple<DAE.Exp,Integer,Integer>> minmaxTerm;
+  input list<DAE.Exp> foldIn;
+  output list<DAE.Exp> foldOut;
+algorithm
+  foldOut := matchcontinue(minmaxTerm,foldIn)
     local
       Integer min, max;
-      DAE.ComponentRef cref, refCref;
-      DAE.Exp exp1, exp2,iterator, iterator1;
-      DAE.Operator op;
-      DAE.Type ty;
-      tuple<DAE.ComponentRef,Integer,Integer> refCrefMinMax;
-      list<tuple<DAE.ComponentRef,Integer,Integer>> crefMinMax0, crefMinMax1;
-
-  case(DAE.CREF(componentRef=cref,ty=ty),(crefMinMax0,iterator))
-    algorithm
-      crefMinMax1 := {};
-      for refCrefMinMax in crefMinMax0 loop
-        (refCref,min,max) := refCrefMinMax;
-         // if the cref fits the refCref, update the iterator
-        if ComponentReference.crefEqualWithoutSubs(refCref,cref) then
-          iterator1 := ExpressionSimplify.simplify(DAE.BINARY(iterator,DAE.ADD(DAE.T_INTEGER_DEFAULT),DAE.ICONST(min-1)));
-          cref := replaceFirstSubInCref(cref,DAE.INDEX(iterator1));
-        else
-          // add the non used crefs to the fold list
-          crefMinMax1 := refCrefMinMax::crefMinMax1;
-        end if;
-      end for;
-    then (DAE.CREF(cref,ty),(crefMinMax1,iterator));
-
-  case(DAE.BINARY(exp1=exp1,operator=op,exp2=exp2),(crefMinMax0,iterator))
-    algorithm
-      // continue traversing
-      (exp1,(crefMinMax0,iterator))  := setIteratorSubscriptCrefinEquation(exp1,tplIn);
-      (exp2,(crefMinMax0,iterator))  := setIteratorSubscriptCrefinEquation(exp2,(crefMinMax0,iterator));
-    then (DAE.BINARY(exp1,op,exp2),(crefMinMax0,iterator));
-
-  case(DAE.UNARY(operator=op,exp=exp1),(crefMinMax0,iterator))
-    algorithm
-      // continue traversing
-      (exp1,(crefMinMax0,iterator))  := setIteratorSubscriptCrefinEquation(exp1,tplIn);
-    then (DAE.UNARY(op,exp1),(crefMinMax0,iterator));
-
-  else
-    then (inExp,tplIn);
-  end matchcontinue;
-end setIteratorSubscriptCrefinEquation;
-
-
-protected function getCrefIdcsForEquation"gets all crefs of the equation and dispatches the information about min and max subscript to crefMinMax"
-  input BackendDAE.Equation eq;
-  input list<tuple<DAE.ComponentRef,Integer,Integer>> crefMinMaxIn;
-  output list<tuple<DAE.ComponentRef,Integer,Integer>> crefMinMaxOut;
-algorithm
-  crefMinMaxOut := matchcontinue(eq,crefMinMaxIn)
-    local
-      Integer pos,max,min,sub;
-      DAE.ComponentRef cref, refCref;
-      tuple<DAE.ComponentRef,Integer,Integer> refCrefMinMax;
-      list<tuple<DAE.ComponentRef,Integer,Integer>> crefMinMax;
-      list<DAE.ComponentRef> eqCrefs, crefs;
-  case(BackendDAE.EQUATION(_),crefMinMax)
-    algorithm
-      eqCrefs := BackendEquation.equationCrefs(eq);
-      //traverse all crefs of the equation
-      for cref in eqCrefs loop
-        {DAE.INDEX(DAE.ICONST(sub))} := ComponentReference.crefSubs(cref);
-        pos := 1;
-        for refCrefMinMax in crefMinMax loop
-          (refCref,min,max) := refCrefMinMax;
-          // if the cref fits the refCref, update min max
-          if ComponentReference.crefEqualWithoutSubs(refCref,cref) then
-            max := intMax(max,sub);
-            min := intMin(min,sub);
-            crefMinMax := List.replaceAt((refCref,min,max),pos,crefMinMax);
-          end if;
-          pos := pos+1;
-        end for;
-      end for;
-    then crefMinMax;
-  else
-    then crefMinMaxIn;
-  end matchcontinue;
-end getCrefIdcsForEquation;
-
-//-----------------------------------------------
-//-----------------------------------------------
-
-protected function shortenArrayVars
-  input tuple<DAE.ComponentRef,Integer,list<DAE.ComponentRef>> arrayCref;
-  input BackendDAE.Variables arrayVars;
-  input Integer size;
-  input list<BackendDAE.Var> varLstIn;
-  output list<BackendDAE.Var> varLstOut;
-algorithm
-  varLstOut := matchcontinue(arrayCref,arrayVars,size,varLstIn)
-    local
-      Integer subRange;
-      DAE.ComponentRef headCref;
-      list<BackendDAE.Var> varLst;
-      list<list<BackendDAE.Var>> varLstLst;
-      list<DAE.ComponentRef> tailCrefs, headsWithSubs;
-  case((headCref,subRange,tailCrefs),_,_,_)
+      DAE.Exp exp0, exp1, iter;
+      list<DAE.Exp> resExp;
+      list<tuple<DAE.Exp,Integer,Integer>> rest;
+  case({},{exp1})
     equation
-      headsWithSubs = List.map1r(List.intRange(size),ComponentReference.subscriptCrefWithInt,headCref);
-      headsWithSubs = List.flatten(List.map1(headsWithSubs,joinWithCrefLst,tailCrefs));
-        //print("headsWithSubs2: "+stringDelimitList(List.map(headsWithSubs,ComponentReference.printComponentRefStr),"\n|")+"\n\n");
-      (varLstLst,_) = List.map1_2(headsWithSubs, BackendVariable.getVar,arrayVars);
-      varLst = List.flatten(varLstLst);
-  then listAppend(varLst,varLstIn);
-  else
-    then varLstIn;
-  end matchcontinue;
-end shortenArrayVars;
-
-protected function joinWithCrefLst
-  input DAE.ComponentRef cref;
-  input list<DAE.ComponentRef> crefLstIn;
-  output list<DAE.ComponentRef> crefLstOut;
-algorithm
-  crefLstOut := List.map1r(crefLstIn,ComponentReference.joinCrefs,cref);
-end joinWithCrefLst;
-
-protected function reduceLoopEquations
-  input BackendDAE.Equation eqIn;
-  input list<tuple<DAE.ComponentRef,Integer,list<DAE.ComponentRef>>> arrayCrefs; //headCref, range, tailcrefs
-  input Integer maxSize;
-  output BackendDAE.Equation eqOut;
-algorithm
-  eqOut := matchcontinue(eqIn,arrayCrefs,maxSize)
-    local
-      DAE.Exp lhs,rhs, startIt, endIt;
-      DAE.ElementSource source;
-      BackendDAE.EquationAttributes attr;
-      list<BackendDAE.IterCref> iterCrefs;
-  case(BackendDAE.EQUATION(exp=lhs,scalar=rhs,source=source,attr=attr as BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(crefs={BackendDAE.ACCUM_ITER_CREF()}))),_,_)
+    then {exp1};
+  case((exp1,min,max)::rest,{})
     equation
-      // strip the higher indexes in accumulated iterations
-      (lhs,_) = reduceLoopExpressions(lhs,maxSize);
-      (rhs,_) = reduceLoopExpressions(rhs,maxSize);
-  then BackendDAE.EQUATION(lhs,rhs,source,attr);
-  else
+    // build a sigma operator exp and start with the first term
+    true = intNe(min,max);
+    (_,rest) = List.split1OnTrue(rest,minmaxTermEqual,exp1);  // remove other instances of the term
+    iter = DAE.CREF(DAE.CREF_IDENT("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
+    (exp1,_) = Expression.traverseExpBottomUp(exp1,replaceSubscriptInCrefExp,{DAE.INDEX(iter)});
+    exp1 = DAE.SUM(Expression.typeof(exp1),iter,DAE.ICONST(min),DAE.ICONST(max),exp1);
+    resExp = buildAccumExpInEquations2(rest,{exp1});
+    then resExp;
+  case((exp1,min,max)::rest,{exp0})
     equation
-    then eqIn;
-  end matchcontinue;
-end reduceLoopEquations;
-
-protected function buildIteratedEquation
-  input BackendDAE.Equation eqIn;
-  input list<tuple<DAE.ComponentRef,Integer,list<DAE.ComponentRef>>> arrayCrefs; //headCref, range, tailcrefs
-  input list<BackendDAE.Equation> foldIn;
-  output list<BackendDAE.Equation> foldOut;
-algorithm
-  foldOut := matchcontinue(eqIn,arrayCrefs,foldIn)
-    local
-      Integer startIt,endIt, maxItOffset, endRange;
-      list<Integer> idxOffsets;
-      DAE.Exp lhs,rhs;
-      DAE.ElementSource source;
-      BackendDAE.Equation eq;
-      list<BackendDAE.Equation> eqLst;
-      list<BackendDAE.IterCref> iterCrefs;
-
-  case(BackendDAE.EQUATION(exp=lhs,scalar=rhs,source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(crefs=iterCrefs as BackendDAE.ITER_CREF()::_, startIt=DAE.ICONST(startIt),endIt=DAE.ICONST(endIt)))),_,_)
-    algorithm
-      // handle no accumulated equations here
-       //print("eq: "+BackendDump.equationString(eqIn)+"\n");
-      eqLst := {};
-      idxOffsets := List.fold(iterCrefs,getIterationCrefIterator,{});
-      maxItOffset := List.fold(idxOffsets,intMax,listHead(idxOffsets));
-      endRange := intMin(endIt,2-maxItOffset);
-        //print("maxItOffset "+intString(maxItOffset)+"\n");
-        //print("start "+intString(startIt)+"\n");
-        //print("end "+intString(endIt)+"\n");
-        //print("endRange "+intString(endRange)+"\n");
-      eqLst := buildIteratedEquation1(eqIn,startIt,endRange,{});
-        //print("eqsOut: "+stringDelimitList(List.map(eqLst,BackendDump.equationString),"\n")+"\n");
-      eqLst := listAppend(eqLst,foldIn);
-  then eqLst;
-  case(BackendDAE.EQUATION(exp=lhs,scalar=rhs,source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(crefs=BackendDAE.ACCUM_ITER_CREF()::_, startIt=DAE.ICONST(startIt),endIt=DAE.ICONST(endIt)))),_,_)
-    algorithm
-      // accumulated equations, remove higher subscripts, no duplication
-      eq := reduceLoopEquations(eqIn,arrayCrefs,2);
-    then eq::foldIn;
-  else
-    algorithm
-      // in case there is a higher idx
-      (eq,_) := BackendEquation.traverseExpsOfEquation(eqIn,limitCrefSubscripts,2);
-    then eq::foldIn;
-  end matchcontinue;
-end buildIteratedEquation;
-
-protected function limitCrefSubscripts
-  input DAE.Exp inExp;
-  input Integer maxSubIn;
-  output DAE.Exp outExp;
-  output Integer maxSubOut;
-algorithm
-  (outExp,maxSubOut) := matchcontinue(inExp,maxSubIn)
-    local
-      Integer idx;
-      DAE.ComponentRef cref;
-      DAE.Type ty;
-  case(DAE.CREF(componentRef=cref,ty=ty),_)
+    // build a sigma operator exp and add to folding expression
+    true = intNe(min,max);
+    (_,rest) = List.split1OnTrue(rest,minmaxTermEqual,exp1);  // remove other instances of the term
+    iter = DAE.CREF(DAE.CREF_IDENT("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
+    (exp1,_) = Expression.traverseExpBottomUp(exp1,replaceSubscriptInCrefExp,{DAE.INDEX(iter)});
+    exp1 = DAE.SUM(Expression.typeof(exp1),iter,DAE.ICONST(min),DAE.ICONST(max),exp1);
+    resExp = buildAccumExpInEquations2(rest,{DAE.BINARY(exp0,DAE.ADD(Expression.typeof(exp0)),exp1)});
+    then resExp;
+  case((exp1,_,_)::rest,{})
     equation
-      {DAE.INDEX(DAE.ICONST(idx))} = ComponentReference.crefSubs(cref);
-      true = intGt(idx,maxSubIn);
-      cref = replaceFirstSubInCref(cref,DAE.INDEX(DAE.ICONST(maxSubIn)));
-    then (DAE.CREF(cref,ty),maxSubIn);
-  else
-    then (inExp,maxSubIn);
-  end matchcontinue;
-end limitCrefSubscripts;
-
-protected function buildIteratedEquation1
-  input BackendDAE.Equation eqIn;
-  input Integer idx;
-  input Integer maxIdx; // used to shorten constant interators
-  input list<BackendDAE.Equation> eqLstIn;
-  output list<BackendDAE.Equation> eqLstOut;
-algorithm
-  eqLstOut := matchcontinue(eqIn,idx,maxIdx,eqLstIn)
-    local
-      DAE.Exp lhs,rhs, startIt, endIt;
-      DAE.ElementSource source;
-      BackendDAE.EquationAttributes attr;
-      BackendDAE.Equation eq;
-      list<BackendDAE.IterCref> iterCrefs;
-      list<BackendDAE.Equation> eqLst;
-  case(BackendDAE.EQUATION(exp=lhs,scalar=rhs,source=source,attr=attr as BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(crefs=iterCrefs))),_,_,eqLst)
+      // the first exp is a non-array cref
+    resExp = buildAccumExpInEquations2(rest,{exp1});
+    then resExp;
+  case((exp1,_,_)::rest,{exp0})
     equation
-      // its a loop equation
-      true = intLe(idx,maxIdx);
-      (lhs,(_,_,iterCrefs)) = Expression.traverseExpTopDown(lhs,setIteratedSubscriptInCref,(DAE.ICONST(idx),maxIdx,iterCrefs));
-      (rhs,(_,_,iterCrefs)) = Expression.traverseExpTopDown(rhs,setIteratedSubscriptInCref,(DAE.ICONST(idx),maxIdx,iterCrefs));
-      if Expression.expEqual(lhs,rhs) then
-        eqLst = eqLst;
-      else
-        eqLst = buildIteratedEquation1(eqIn,idx+1,maxIdx,BackendDAE.EQUATION(lhs,rhs,source,attr)::eqLst);
-      end if;
-  then eqLst;
-  else
-    then eqLstIn;
+      //add this non-array cref
+      resExp = buildAccumExpInEquations2(rest,{DAE.BINARY(exp0,DAE.ADD(Expression.typeof(exp0)),exp1)});
+    then resExp;
   end matchcontinue;
-end buildIteratedEquation1;
+end buildAccumExpInEquations2;
 
-public function setIteratedSubscriptInCref "sets the subscript in the cref according the given iteration idx"
+
+public function replaceSubscriptInCrefExp"exp-traverse-function to replace the first occuring subscripts in a cref"
   input DAE.Exp expIn;
-  input tuple<DAE.Exp, Integer, list<BackendDAE.IterCref>> tplIn; //idx, maxIdx, iterCrefs
+  input list<DAE.Subscript> subsIn;
   output DAE.Exp expOut;
-  output Boolean cont;
-  output tuple<DAE.Exp, Integer, list<BackendDAE.IterCref>> tplOut;
+  output list<DAE.Subscript> subsOut;
 algorithm
-  (expOut,cont,tplOut) := matchcontinue(expIn,tplIn)
+  (expOut,subsOut) := matchcontinue(expIn,subsIn)
     local
-     Integer idxOffset,maxIdx,constIdx;
-     String constIdxOffset;
-     DAE.ComponentRef cref;
-     DAE.Exp itExp, idxExp, idxExp0;
-     DAE.Type ty;
-     list<BackendDAE.IterCref> iterCrefs,restIterCrefs;
-  case(_,(_,_,{}))
-    then (expIn,false,tplIn);
-  case(DAE.CREF(componentRef=cref, ty=ty),(idxExp0,maxIdx,iterCrefs))
-    equation
-      // iterated cref in a for-loop
-      (BackendDAE.ITER_CREF(iterator=DAE.ICONST(idxOffset))::restIterCrefs,iterCrefs) = List.split1OnTrue(iterCrefs, isIterCref, cref);
-      idxExp = DAE.BINARY(idxExp0, DAE.ADD(ty=DAE.T_INTEGER_DEFAULT), DAE.ICONST(idxOffset));
-        //print("for "+ComponentReference.printComponentRefStr(cref)+" offset: "+intString(idxOffset)+" idxExp: "+ExpressionDump.printExpStr(idxExp)+"\n");
-      idxExp = ExpressionSimplify.simplify(idxExp);
-      cref = replaceFirstSubInCref(cref,DAE.INDEX(idxExp));
-  then (DAE.CREF(cref, ty),true,(idxExp0,maxIdx,listAppend(restIterCrefs,iterCrefs)));
-
-  case(DAE.CREF(componentRef=cref, ty=ty),(idxExp0,maxIdx,iterCrefs))
-    equation
-      // constant cref in a for-loop
-      (BackendDAE.ITER_CREF(iterator=DAE.SCONST(constIdxOffset))::restIterCrefs,iterCrefs) = List.split1OnTrue(iterCrefs, isIterCref, cref);
-      constIdx = stringInt(constIdxOffset);
-      idxExp = DAE.ICONST(intMin(constIdx,maxIdx));
-        //print("for "+ComponentReference.printComponentRefStr(cref)+" constIdx: "+intString(constIdx)+" idxExp: "+ExpressionDump.printExpStr(idxExp)+"\n");
-      cref = replaceFirstSubInCref(cref,DAE.INDEX(idxExp));
-  then (DAE.CREF(cref, ty),true,(idxExp0,maxIdx,listAppend(restIterCrefs,iterCrefs)));
-
-  case(DAE.CREF(componentRef=cref, ty=ty),(idxExp0,maxIdx,iterCrefs))
-    equation
-      // accumulated expressions
-      (BackendDAE.ACCUM_ITER_CREF()::restIterCrefs,iterCrefs) = List.split1OnTrue(iterCrefs, isIterCref, cref);
-      cref = replaceFirstSubInCref(cref, DAE.INDEX(idxExp0));
-  then (DAE.CREF(cref, ty),true,(idxExp0,maxIdx,listAppend(restIterCrefs,iterCrefs)));
-  else
-     then (expIn,true,tplIn);
-  end matchcontinue;
-end setIteratedSubscriptInCref;
-
-
-protected function replaceFirstSubInCref"replaces the first occuring subscript in the cref"
-  input DAE.ComponentRef crefIn;
-  input DAE.Subscript sub;
-  output DAE.ComponentRef crefOut;
-algorithm
-  crefOut := matchcontinue(crefIn,sub)
-    local
-      DAE.Ident ident;
-      DAE.Type identType;
-      list<DAE.Subscript> subscriptLst;
       DAE.ComponentRef cref;
-  case(DAE.CREF_QUAL(ident=ident, identType=identType, subscriptLst=subscriptLst, componentRef=cref),_)
-    equation
-      if List.hasOneElement(subscriptLst) then  subscriptLst = {sub}; end if;
-      cref = replaceFirstSubInCref(cref,sub);
-    then DAE.CREF_QUAL(ident, identType, subscriptLst, cref);
-  case(DAE.CREF_IDENT(ident=ident, identType=identType, subscriptLst=subscriptLst),_)
-    equation
-      if List.hasOneElement(subscriptLst) then  subscriptLst = {sub}; end if;
-    then DAE.CREF_IDENT(ident, identType, subscriptLst);
-  else
-    then crefIn;
-  end matchcontinue;
-end replaceFirstSubInCref;
-
-public function reduceLoopExpressions "strip the higher indexes in accumulated iterations"
-  input DAE.Exp expIn;
-  input Integer maxSub;
-  output DAE.Exp expOut;
-  output Boolean notRemoved;
-algorithm
-  (expOut,notRemoved) := matchcontinue(expIn,maxSub)
-    local
-      Boolean b, b1, b2;
-      DAE.ComponentRef cref;
-      DAE.Exp exp, exp1, exp2;
       DAE.Type ty;
-      DAE.Operator op;
-  case(DAE.CREF(componentRef=cref),_)
+  case(DAE.CREF(componentRef=cref, ty=ty),_)
     equation
-      b = intLe(getIndexSubScript(listHead(ComponentReference.crefSubs(cref))),maxSub);
-        //print("crerfsub: "+intString(getIndexSubScript(listHead(ComponentReference.crefSubs(cref))))+" <> "+intString(maxSub)+"\n");
-        //print("reduce cref: "+ComponentReference.crefStr(cref)+" is higher sub: "+boolString(b)+"\n");
-  then (expIn,b);
-
-  case(DAE.BINARY(exp1=exp1, operator=op, exp2=exp2),_)
-    equation
-      (exp1,b1) = reduceLoopExpressions(exp1,maxSub);
-      (exp2,b2) = reduceLoopExpressions(exp2,maxSub);
-        //print("exp: "+ExpressionDump.printExpStr(expIn)+" b1: "+boolString(b1)+" b2: "+boolString(b2)+"\n");
-      if b1 and not b2 then
-        exp = exp1;
-      elseif b2 and not b1 then
-        exp = exp2;
-      else
-        exp = DAE.BINARY(exp1,op,exp2);
-      end if;
-        //print("expOut: "+ExpressionDump.printExpStr(exp)+"\n");
-  then (exp,boolOr(b1,b2));
-
-  case(DAE.UNARY(operator=op, exp=exp),_)
-    equation
-      (exp,b) = reduceLoopExpressions(exp,maxSub);
-  then (exp,b);
-   else
-     equation
-         //print("else: "+ExpressionDump.dumpExpStr(expIn,0)+"\n");
-     then (expIn,true);
-  end matchcontinue;
-end reduceLoopExpressions;
-
-protected function addLoopInfosForClassEqs
-  input list<BackendDAE.Equation> classEqs;
-  input list<DAE.ComponentRef> arrayCrefs;
-  input tuple<Integer,list<BackendDAE.Equation>> foldIn;
-  output tuple<Integer,list<BackendDAE.Equation>> foldOut;
-algorithm
-  foldOut := matchcontinue(classEqs, arrayCrefs, foldIn)
-    local
-      BackendDAE.Equation eq;
-      BackendDAE.LoopInfo loopInfo;
-      list<BackendDAE.Equation> similarEqs, rest, foldEqs;
-      list<DAE.ComponentRef> crefs, arrCrefs, nonArrayCrefs;
-      list<DAE.Subscript> subs;
-      list<Integer> idxs;
-      list<BackendDAE.IterCref> iterCrefs;
-      Integer start, range, idx;
-      tuple<Integer,list<BackendDAE.Equation>> tpl;
-  case({},_,_)
-    equation
-      then foldIn;
-  case(eq::rest,_,(idx,foldEqs))
-    equation
-      //get similar equations
-      (similarEqs,rest) = List.separate1OnTrue(classEqs,equationEqualNoCrefSubs,eq);
-        //BackendDump.dumpEquationList(similarEqs,"similarEqs");
-      range = listLength(similarEqs)-1;
-        //print("range: "+intString(range)+"\n");
-      (iterCrefs,start) = getIterCrefsFromEqs(similarEqs,arrayCrefs);
-        //print("iterCrfs "+stringDelimitList(List.map(iterCrefs,BackendDump.printIterCrefStr),"\n")+"\n");
-      loopInfo = BackendDAE.LOOP(idx,DAE.ICONST(start),DAE.ICONST(intAdd(start,range)),listReverse(iterCrefs));
-        //print("loopInfo "+BackendDump.printLoopInfoStr(loopInfo)+"\n");
-      eq = setLoopInfoInEq(loopInfo,eq);
-        //print("eq "+BackendDump.equationString(eq)+"\n");
-      tpl = addLoopInfosForClassEqs(rest, arrayCrefs, (idx+1,eq::foldEqs));
-    then
-      tpl;
+      cref =  replaceFirstSubsInCref(cref,subsIn);
+    then (DAE.CREF(cref,ty),subsIn);
   else
-    then foldIn;
+    then(expIn,subsIn);
   end matchcontinue;
-end addLoopInfosForClassEqs;
+end replaceSubscriptInCrefExp;
 
-protected function addLoopInfosForMixEqs
-  input list<BackendDAE.Equation> mixEqs;
-  input list<DAE.ComponentRef> arrayCrefs;
-  input tuple<Integer,list<BackendDAE.Equation>> foldIn;
-  output tuple<Integer,list<BackendDAE.Equation>> foldOut;
-algorithm
-  foldOut := matchcontinue(mixEqs, arrayCrefs, foldIn)
-    local
-      BackendDAE.Equation eq;
-      BackendDAE.LoopInfo loopInfo;
-      list<BackendDAE.Equation> similarEqs, rest, foldEqs;
-      list<DAE.ComponentRef> crefs, arrCrefs, nonArrayCrefs;
-      list<DAE.Subscript> subs;
-      list<Integer> idxs;
-      list<BackendDAE.IterCref> iterCrefs;
-      Integer startIt, range, endIt, idx;
-      tuple<Integer,list<BackendDAE.Equation>> tpl;
-  case({},_,_)
-    equation
-      then foldIn;
-  case(eq::rest,_,(idx,foldEqs))
-    equation
-      //get similar equations
-      (similarEqs,rest) = List.separate1OnTrue(mixEqs,equationEqualNoCrefSubs,eq);
-        //BackendDump.dumpEquationList(similarEqs,"similarEqs");
-      range = listLength(similarEqs)-1;
-        //print("range: "+intString(range)+"\n");
-      if intNe(range,0) then
-        // there are iteraded equations
-        (iterCrefs,startIt) = getIterCrefsFromEqs(similarEqs,arrayCrefs);
-          //print("iters "+stringDelimitList(List.map(iterCrefs,BackendDump.printIterCrefStr),"\n")+"\n");
-        loopInfo = BackendDAE.LOOP(idx,DAE.ICONST(startIt),DAE.ICONST(intAdd(startIt,range)),iterCrefs);
-      else
-        // there is an iterated operation e.g. x[1]+x[2]+x[3]+...
-        (iterCrefs,startIt,endIt) = getAccumulatedIterCrefsFromEqs(similarEqs,arrayCrefs);
-        if listEmpty(iterCrefs) then loopInfo = BackendDAE.NO_LOOP();
-        else loopInfo = BackendDAE.LOOP(idx,DAE.ICONST(startIt),DAE.ICONST(endIt),iterCrefs);
-        end if;
-      end if;
-      eq = setLoopInfoInEq(loopInfo,eq);
-      tpl = addLoopInfosForMixEqs(rest, arrayCrefs, (idx+1,eq::foldEqs));
-    then
-      tpl;
-  else
-    then foldIn;
-  end matchcontinue;
-end addLoopInfosForMixEqs;
 
-protected function getIterCrefsFromEqs
-  input list<BackendDAE.Equation> eqs;
-  input list<DAE.ComponentRef> arrCrefs;
-  output list<BackendDAE.IterCref> iterCrefs;
-  output Integer start;
-protected
-  list<DAE.ComponentRef> crefs;
-  list<DAE.Subscript> subs;
-  list<Integer> idxs, idxs0 = {};
-  list<list<Integer>> idxLst;
-  list<DAE.Exp> idxExps;
-  Integer min = 1, max = 1;
-algorithm
-  idxLst := {};
-  for eq in eqs loop
-    crefs := BackendEquation.equationCrefs(eq);
-    crefs := List.filter1OnTrue(crefs,crefPartlyEqualToCrefs,arrCrefs);
-    subs := List.flatten(List.map(crefs,ComponentReference.crefSubs));
-    idxs := List.map(subs,getIndexSubScript);
-      //print("idxs "+stringDelimitList(List.map(idxs,intString),", ")+"\n");
-    if listEmpty(idxLst) then idxLst := List.map(idxs,List.create);
-    else idxLst := List.threadMap(idxs,idxLst,List.cons); end if;
-      //print("idxLst "+stringDelimitList(List.map(idxLst,intLstString),"\n")+"\n");
-    min := intMin(List.fold(idxs,intMin,listHead(idxs)),min);
-      //print("min "+intString(min)+"\n");
-  end for;
-    //print("idxLst! "+stringDelimitList(List.map(idxLst,intLstString),"\n")+"\n");
-  idxExps := List.map(idxLst,getIterCrefsFromEqs1);
-  iterCrefs := List.threadMap(crefs,idxExps,makeIterCref);
-  start := min;
-end getIterCrefsFromEqs;
 
-protected function getIterCrefsFromEqs1
-  input list<Integer> iLstIn;
-  output DAE.Exp eOut;
-protected
-  DAE.Exp e;
-  Integer min,max,range;
-algorithm
-  if intEq(listLength(List.unique(iLstIn)),1) then
-    //the iterated var does not change
-    e := DAE.SCONST(intString(listGet(iLstIn,1)));
-  else
-    //get the offset
-    min := List.fold(iLstIn,intMin,listHead(iLstIn));
-    max := List.fold(iLstIn,intMax,listHead(iLstIn));
-    range := listLength(iLstIn);
-    e := DAE.ICONST(min-1);
-  end if;
-  eOut := e;
-end getIterCrefsFromEqs1;
-
-protected function intLstString
-  input list<Integer> i1;
-  output String s;
-algorithm
-  s := stringDelimitList(List.map(i1,intString),",");
-end intLstString;
-
-protected function intDiff
-  input Integer i1;
-  input Integer i2;
-  output Integer i3;
-algorithm
-  i3 := intAbs(intSub(i1,i2));
-end intDiff;
-
-protected function getAccumulatedIterCrefsFromEqs
-  input list<BackendDAE.Equation> eqs;
-  input list<DAE.ComponentRef> arrCrefs;
-  output list<BackendDAE.IterCref> iterCrefs;
-  output Integer startIt;
-  output Integer endIt;
-protected
-  list<DAE.ComponentRef> crefs;
-  list<DAE.Subscript> subs;
-  list<Integer> idxs,idxs0 = {};
-  list<DAE.Exp> idxExps;
-  Integer min = 1, max = 1;
-algorithm
-  for eq in eqs loop
-    crefs := BackendEquation.equationCrefs(eq);
-    crefs := List.filter1OnTrue(crefs,crefPartlyEqualToCrefs,arrCrefs);
-    //print("shared Crefs: "+stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr),"\n|")+"\n\n");
-    subs := List.flatten(List.map(crefs,ComponentReference.crefSubs));
-    idxs := List.map(subs,getIndexSubScript);
-    //print("idxs "+stringDelimitList(List.map(idxs,intString),", ")+"\n");
-    min := List.fold(idxs,intMin,listHead(idxs));
-    max := List.fold(idxs,intMax,listHead(idxs));
-  end for;
-    //print("min "+intString(min)+" max "+intString(max)+"\n");
-  if intNe(min,max) then
-    iterCrefs := {BackendDAE.ACCUM_ITER_CREF(listHead(crefs),DAE.ADD(DAE.T_REAL_DEFAULT))};
-  else
-    iterCrefs := {};
-  end if;
-  startIt := min;
-  endIt := max;
-end getAccumulatedIterCrefsFromEqs;
-
-protected function getIndexSubScript
-  input DAE.Subscript sub;
-  output Integer int;
-algorithm
-  DAE.INDEX(DAE.ICONST(int)) := sub;
-end getIndexSubScript;
-
-protected function dispatchLoopEquations
-  input BackendDAE.Equation eqIn;
-  input list<DAE.ComponentRef> arrayCrefs; //headCrefs
-  input tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>> tplIn; //classEqs,mixEqs,nonArrEqs
-  output tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>> tplOut;//classEqs,mixEqs,nonArrEqs
-algorithm
-  tplOut := matchcontinue(eqIn,arrayCrefs,tplIn)
-    local
-      list<BackendDAE.Equation> classEqs,mixEqs,nonArrEqs;
-      list<DAE.ComponentRef> crefs, arrCrefs, nonArrCrefs;
-      tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>> tpl;
-    case(_,_,(classEqs,mixEqs,nonArrEqs))
-      equation
-        crefs = BackendEquation.equationCrefs(eqIn);
-        (arrCrefs,nonArrCrefs) = List.separate1OnTrue(crefs,crefPartlyEqualToCrefs,arrayCrefs);
-        if listEmpty(nonArrCrefs) then
-          classEqs = eqIn::classEqs;
-        elseif listEmpty(arrCrefs) then
-          nonArrEqs = eqIn::nonArrEqs;
-        else
-          mixEqs = eqIn::mixEqs;
-        end if;
-      then (classEqs,mixEqs,nonArrEqs);
-  end matchcontinue;
-end dispatchLoopEquations;
-
-protected function crefPartlyEqualToCrefs
-  input DAE.ComponentRef cref0;
-  input list<DAE.ComponentRef> crefLst;
+protected function minmaxTermEqual"checks if a term is equal to the minmaxTerm without considering the subscripts"
+  input tuple<DAE.Exp,Integer,Integer> minmaxTerm;
+  input DAE.Exp term;
   output Boolean b;
-algorithm
-  b := List.exist1(crefLst,crefPartlyEqual,cref0);
-end crefPartlyEqualToCrefs;
-
-protected function crefPartlyEqual
-  input DAE.ComponentRef cref0;
-  input DAE.ComponentRef cref1;
-  output Boolean partlyEq;
-algorithm
-  partlyEq := matchcontinue(cref0,cref1)
-    local
-      Boolean b;
-      DAE.ComponentRef cref01, cref11;
-  case(DAE.CREF_IDENT(), DAE.CREF_IDENT())
-      then cref0.ident ==cref1.ident;
-  case(DAE.CREF_QUAL(componentRef=cref01), DAE.CREF_QUAL(componentRef=cref11))
-    equation
-      if cref0.ident ==cref1.ident then b = crefPartlyEqual(cref01,cref11);
-      else  b = false;
-      end if;
-    then b;
-  case(DAE.CREF_QUAL(), DAE.CREF_IDENT())
-      then cref0.ident ==cref1.ident;
-  case(DAE.CREF_IDENT(), DAE.CREF_QUAL())
-      then cref0.ident ==cref1.ident;
-  else
-    then false;
-  end matchcontinue;
-end crefPartlyEqual;
-
-protected function getArrayVarCrefs"gets the array-cref and its dimension from a var."
-  input BackendDAE.Var varIn;
-  input tuple<list<tuple<DAE.ComponentRef,Integer,list<DAE.ComponentRef>>>,list<BackendDAE.Var>> tplIn; //{headCref,range,tailcrefs},arrVarlst
-  output tuple<list<tuple<DAE.ComponentRef,Integer,list<DAE.ComponentRef>>>,list<BackendDAE.Var>> tplOut;
-algorithm
-  tplOut := matchcontinue(varIn,tplIn)
-    local
-      Integer idx;
-      list<Integer> ranges;
-      list<BackendDAE.Var> arrVars;
-      DAE.ComponentRef cref, crefHead, crefTail;
-      Option<DAE.ComponentRef> crefTailOpt;
-      list<DAE.ComponentRef> crefLst;
-      list<tuple<DAE.ComponentRef,Integer,list<DAE.ComponentRef>>> tplLst;
-      tuple<list<tuple<DAE.ComponentRef,Integer,list<DAE.ComponentRef>>>,list<BackendDAE.Var>> tpl;
-  case(BackendDAE.VAR(varName=cref),(tplLst,arrVars))
-    equation
-    true = ComponentReference.isArrayElement(cref);
-    (crefHead,idx,crefTailOpt) = ComponentReference.stripArrayCref(cref);
-    if isSome(crefTailOpt) then
-      crefLst = {Util.getOption(crefTailOpt)};
-    else
-      crefLst = {};
-    end if;
-    (tplLst,arrVars) = addToArrayCrefLst(tplLst,varIn,(crefHead,idx,crefLst),{},arrVars);
-    tpl = (tplLst,arrVars);
-  then tpl;
-  else
-    then tplIn;
-  end matchcontinue;
-end getArrayVarCrefs;
-
-protected function addToArrayCrefLst"checks if the tplRef-cref is already in the list, if not append, if yes update index"
-  input list<tuple<DAE.ComponentRef,Integer,list<DAE.ComponentRef>>> tplLstIn;
-  input BackendDAE.Var varIn;
-  input tuple<DAE.ComponentRef, Integer,list<DAE.ComponentRef>> tplRef;
-  input list<tuple<DAE.ComponentRef, Integer,list<DAE.ComponentRef>>> tplLstFoldIn;
-  input list<BackendDAE.Var> varLstIn;
-  output list<tuple<DAE.ComponentRef, Integer,list<DAE.ComponentRef>>> tplLstFoldOut;
-  output list<BackendDAE.Var> varLstOut;
-algorithm
-  (tplLstFoldOut,varLstOut) := matchcontinue(tplLstIn,varIn,tplRef,tplLstFoldIn,varLstIn)
-    local
-      Integer idx0,idx1;
-      list<BackendDAE.Var> varLst;
-      DAE.ComponentRef cref0,cref1,crefTailRef;
-      list<tuple<DAE.ComponentRef,Integer,list<DAE.ComponentRef>>> rest, tplLst;
-      list<DAE.ComponentRef> tailCrefs0, tailCrefs1;
-  case((cref0,idx0,tailCrefs0)::rest,_,(cref1,idx1,{crefTailRef}),_,_)
-    equation
-    // this cref already exist, update idx, append tailCrefs if necessary
-    true = ComponentReference.crefEqual(cref0,cref1);
-    if List.notMember(crefTailRef,tailCrefs0) then
-      tailCrefs0 = crefTailRef::tailCrefs0;
-      //append var with new tail
-      varLst =varIn::varLstIn;
-    else
-      varLst = varLstIn;
-    end if;
-    tplLst = (cref0,intMax(idx0,idx1),tailCrefs0)::rest;
-    tplLst = listAppend(listReverse(tplLst),tplLstFoldIn);
-  then (tplLst,varLst);
-
-  case((cref0,idx0,tailCrefs0)::rest,_,(cref1,idx1,tailCrefs1),_,_)
-    equation
-      // this cref is not the same, continue
-    false = ComponentReference.crefEqual(cref0,cref1);
-    (tplLst,varLst) = addToArrayCrefLst(rest,varIn,tplRef,(cref0,idx0,tailCrefs0)::tplLstFoldIn,varLstIn);
-  then (tplLst,varLst);
-
-  case({},_,(cref1,idx1,tailCrefs1),_,_)
-    equation
-      // this cref is new, append
-    tplLst = (cref1,idx1,tailCrefs1)::tplLstFoldIn;
-  then (tplLst,varIn::varLstIn);
-
-  end matchcontinue;
-end addToArrayCrefLst;
-
-
-protected function getArrayVars
-  input BackendDAE.Var varIn;
-  input tuple<list<BackendDAE.Var>,list<BackendDAE.Var>> tplIn; //non-array vars,arrayVars
-  output tuple<list<BackendDAE.Var>,list<BackendDAE.Var>> tplOut;
-algorithm
-  tplOut := matchcontinue(varIn,tplIn)
-    local
-      DAE.ComponentRef cref;
-      list<BackendDAE.Var> varLstIn, arrVarLstIn;
-  case(BackendDAE.VAR(varName=cref),(varLstIn, arrVarLstIn))
-    equation
-    true = ComponentReference.isArrayElement(cref);
-  then(varLstIn, varIn::arrVarLstIn);
-  case(_,(varLstIn, arrVarLstIn))
-    equation
-  then(varIn::varLstIn, arrVarLstIn);
-  end matchcontinue;
-end getArrayVars;
-
-protected function setLoopInfoInEquationAttributes
-  input BackendDAE.LoopInfo loopInfo;
-  input BackendDAE.EquationAttributes eqAttIn;
-  output BackendDAE.EquationAttributes eqAttOut;
 protected
-  Boolean differentiated;
-  BackendDAE.EquationKind kind;
-  BackendDAE.EQUATION_ATTRIBUTES attrs;
+  DAE.Exp term0;
 algorithm
-  BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated, kind=kind) := eqAttIn;
-  eqAttOut := BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, loopInfo);
-end setLoopInfoInEquationAttributes;
-
-protected function setLoopInfoInEq
-  input BackendDAE.LoopInfo loopInfo;
-  input BackendDAE.Equation eqIn;
-  output BackendDAE.Equation eqOut;
-algorithm
-  eqOut := match(loopInfo,eqIn)
-    local
-      DAE.Exp e11,e12;
-      DAE.ElementSource source;
-      BackendDAE.EquationAttributes attr;
-    case (_,BackendDAE.EQUATION(exp=e11, scalar=e12, source=source, attr=attr))
-      equation
-        attr = setLoopInfoInEquationAttributes(loopInfo,attr);
-    then BackendDAE.EQUATION(e11, e12, source, attr=attr);
-  end match;
-end setLoopInfoInEq;
-
-protected function makeIterCref "makes a IteratedCref with the given cref and iterator exp."
-  input DAE.ComponentRef cref;
-  input DAE.Exp exp;
-  output BackendDAE.IterCref itcref;
-algorithm
-  itcref := BackendDAE.ITER_CREF(cref,exp);
-end makeIterCref;
+  (term0,_,_) := minmaxTerm;
+  b := expEqualNoCrefSubs(term0, term);
+end minmaxTermEqual;
 
 public function equationEqualNoCrefSubs "
   Returns true if two equations are equal without considering subscripts"
@@ -989,9 +345,6 @@ algorithm
       explst1 = Algorithm.getAllExps(alg1);
       explst2 = Algorithm.getAllExps(alg2);
       res = List.isEqualOnTrue(explst1, explst2, expEqualNoCrefSubs);
-    then res;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=cr1, right=exp1)})), BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=cr2, right=exp2)}))) equation
-      res = boolAnd(ComponentReference.crefEqualWithoutSubs(cr1, cr2), expEqualNoCrefSubs(exp1, exp2));
     then res;
     else false;
   end matchcontinue;
@@ -1256,6 +609,7 @@ algorithm
   end match;
 end expEqualNoCrefSubsOpt;
 
+
 protected function expEqualNoCrefSubsList
   input list<DAE.Exp> inExpl1;
   input list<DAE.Exp> inExpl2;
@@ -1310,64 +664,389 @@ algorithm
   outEqual := true;
 end expEqualNoCrefSubsListList;
 
-protected function getIterationCrefIterator
-  input BackendDAE.IterCref cref;
-  input list<Integer> iLstIn;
-  output list<Integer> iLstOut;
-protected
-  Integer i;
-algorithm
-  try
-    BackendDAE.ITER_CREF(iterator = DAE.ICONST(i)) := cref;
-    iLstOut := i::iLstIn;
-  else
-    iLstOut := iLstIn;
-  end try;
-end getIterationCrefIterator;
 
-protected function isIterCref"the iteration cref is a equal to the cref"
-  input BackendDAE.IterCref iterCref;
-  input DAE.ComponentRef cref;
+protected function buildBackendDAEForEquations"creates BackendDAE.FOR_EQUATION for similar equations"
+  input list<BackendDAE.Equation> classEqs;
+  input list<BackendDAE.Equation> foldIn;
+  output list<BackendDAE.Equation> foldOut;
+algorithm
+  foldOut := matchcontinue(classEqs, foldIn)
+    local
+      Integer min, max, numCrefs;
+      BackendDAE.Equation eq;
+      DAE.ComponentRef cref1,cref2;
+      DAE.Exp lhs,rhs, iterator;
+      DAE.ElementSource source;
+      BackendDAE.EquationAttributes attr;
+      list<BackendDAE.Equation> similarEqs, rest, foldEqs;
+      list<DAE.ComponentRef> crefs, crefs2;
+      list<tuple<DAE.ComponentRef,Integer,Integer>> crefMinMax;
+  case({},_)
+    algorithm
+      then foldIn;
+
+case(eq::rest,_)
+    algorithm
+      //special case for a[i] = a[x]
+      BackendDAE.EQUATION(exp=lhs,scalar=rhs,source=source,attr=attr) := eq;
+      true := ComponentReference.crefEqualWithoutSubs(Expression.expCref(lhs),Expression.expCref(rhs));
+            //print("found constant array-var\n");
+      //get similar equations
+      (similarEqs,rest) := List.separate1OnTrue(classEqs,equationEqualNoCrefSubs,eq);
+        //BackendDump.dumpEquationList(similarEqs,"simEqs");
+      cref1 := Expression.expCref(lhs);
+      cref2 := Expression.expCref(rhs);
+      // update crefs in equation
+      iterator := DAE.CREF(DAE.CREF_IDENT("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
+      //lhs := BackendArrayVarTransform.replaceSubExp(Expression.crefExp(cref1),DAE.INDEX(iterator));
+      //rhs := BackendArrayVarTransform.replaceSubExp(Expression.crefExp(cref1),DAE.INDEX(DAE.ICONST(listLength(similarEqs)+1)));
+      eq := BackendDAE.FOR_EQUATION(iterator,DAE.ICONST(1),DAE.ICONST(listLength(similarEqs)),lhs,rhs,source,attr);
+        //BackendDump.dumpEquationList({eq},"got eq assignment");
+      foldEqs := buildBackendDAEForEquations(rest,(eq::foldIn));
+    then
+      foldEqs;
+
+  case(eq::rest,_)
+    algorithm
+      BackendDAE.EQUATION(exp=lhs,scalar=rhs,source=source,attr=attr) := eq;
+      //get similar equations
+      (similarEqs,rest) := List.separate1OnTrue(classEqs,equationEqualNoCrefSubs,eq);
+        //BackendDump.dumpEquationList(similarEqs,"simEqs");
+      crefs := BackendEquation.equationCrefs(eq);
+      //filter array-vars that appear in every equation
+      crefs2 := BackendEquation.equationCrefs(listGet(similarEqs,1));
+      (crefs2,crefs,_) := List.intersection1OnTrue(crefs,crefs2,ComponentReference.crefEqual);
+        //print("varCrefs: "+stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr),",")+"\n");
+        //print("consCrefs: "+stringDelimitList(List.map(crefs2,ComponentReference.printComponentRefStr),",")+"\n");
+      numCrefs := listLength(crefs);
+      // all crefs and their minimum as well as their max iterator
+      crefMinMax := List.thread3Map(listReverse(crefs),List.fill(999999999,numCrefs),List.fill(0,numCrefs),Util.make3Tuple);
+      crefMinMax :=  List.fold1(similarEqs,getCrefIdcsForEquation,crefs2,crefMinMax);
+      //((min,max)) := List.fold1(crefMinMax,getIterationRangesForCrefs,listLength(similarEqs),(-1,-1));
+      min := 1;
+      max := listLength(similarEqs);
+      //print("min "+intString(min)+" max "+intString(max)+"\n");
+      // update crefs in equation
+      iterator := DAE.CREF(DAE.CREF_IDENT("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
+      (BackendDAE.EQUATION(exp=lhs,scalar=rhs),_) := BackendEquation.traverseExpsOfEquation(eq,setIteratorSubscriptCrefinEquation,(crefMinMax,iterator,crefs2));
+      eq := BackendDAE.FOR_EQUATION(iterator,DAE.ICONST(min),DAE.ICONST(max),lhs,rhs,source,attr);
+        //BackendDump.dumpEquationList({eq},"got eq");
+      foldEqs := buildBackendDAEForEquations(rest,(eq::foldIn));
+    then
+      foldEqs;
+  else
+    then foldIn;
+  end matchcontinue;
+end buildBackendDAEForEquations;
+
+
+protected function getCrefIdcsForEquation"gets all crefs of the equation and dispatches the information about min and max subscript to crefMinMax"
+  input BackendDAE.Equation eq;
+  input list<DAE.ComponentRef> constCrefs;
+  input list<tuple<DAE.ComponentRef,Integer,Integer>> crefMinMaxIn;
+  output list<tuple<DAE.ComponentRef,Integer,Integer>> crefMinMaxOut;
+algorithm
+  crefMinMaxOut := matchcontinue(eq,constCrefs,crefMinMaxIn)
+    local
+      Integer pos,max,min,sub;
+      DAE.ComponentRef cref, refCref;
+      tuple<DAE.ComponentRef,Integer,Integer> refCrefMinMax;
+      list<tuple<DAE.ComponentRef,Integer,Integer>> crefMinMax;
+      list<DAE.ComponentRef> eqCrefs, crefs;
+  case(BackendDAE.EQUATION(_),_,crefMinMax)
+    algorithm
+      eqCrefs := BackendEquation.equationCrefs(eq);
+      //traverse all crefs of the equation
+      eqCrefs := List.filter1OnTrue(eqCrefs,ComponentReference.crefNotInLst,constCrefs);
+      for cref in eqCrefs loop
+        {DAE.INDEX(DAE.ICONST(sub))} := ComponentReference.crefSubs(cref);
+        pos := 1;
+        for refCrefMinMax in crefMinMax loop
+          (refCref,min,max) := refCrefMinMax;
+          // if the cref fits the refCref, update min max
+          if ComponentReference.crefEqualWithoutSubs(refCref,cref) then
+            max := intMax(max,sub);
+            min := intMin(min,sub);
+            crefMinMax := List.replaceAt((refCref,min,max),pos,crefMinMax);
+          end if;
+          pos := pos+1;
+        end for;
+      end for;
+    then crefMinMax;
+  else
+    then crefMinMaxIn;
+  end matchcontinue;
+end getCrefIdcsForEquation;
+
+
+protected function setIteratorSubscriptCrefinEquation"traverse function that replaces crefs in the exp according to the iterated crefMinMax"
+  input DAE.Exp inExp;
+  input tuple<list<tuple<DAE.ComponentRef,Integer,Integer>>,DAE.Exp,list<DAE.ComponentRef>> tplIn; //creMinMax,iterator,constCrefs
+  output DAE.Exp outExp;
+  output tuple<list<tuple<DAE.ComponentRef,Integer,Integer>>,DAE.Exp,list<DAE.ComponentRef>> tplOut;
+algorithm
+  (outExp,tplOut) := matchcontinue(inExp,tplIn)
+    local
+      Integer min, max;
+      Absyn.Path path;
+      DAE.CallAttributes attr;
+      DAE.ComponentRef cref, refCref;
+      DAE.Exp exp1, exp2,iterator, iterator1;
+      DAE.Operator op;
+      DAE.Type ty;
+      list<DAE.Exp> eLst;
+      list<DAE.ComponentRef> constCrefs;
+      tuple<DAE.ComponentRef,Integer,Integer> refCrefMinMax;
+      list<tuple<DAE.ComponentRef,Integer,Integer>> crefMinMax0, crefMinMax1;
+
+  case(DAE.CREF(componentRef=cref,ty=ty),(crefMinMax0,iterator,constCrefs))
+    algorithm
+      true := not List.exist1(constCrefs,ComponentReference.crefEqual,cref);//dont substitute array-vars which are constant in the for-equations
+      crefMinMax1 := {};
+      for refCrefMinMax in crefMinMax0 loop
+        (refCref,min,max) := refCrefMinMax;
+         // if the cref fits the refCref, update the iterator
+        if ComponentReference.crefEqualWithoutSubs(refCref,cref) then
+          iterator1 := ExpressionSimplify.simplify(DAE.BINARY(iterator,DAE.ADD(DAE.T_INTEGER_DEFAULT),DAE.ICONST(min-1)));
+          cref := replaceFirstSubsInCref(cref,{DAE.INDEX(iterator1)});
+        else
+          // add the non used crefs to the fold list
+          crefMinMax1 := refCrefMinMax::crefMinMax1;
+        end if;
+      end for;
+    then (DAE.CREF(cref,ty),(crefMinMax1,iterator,constCrefs));
+
+  case(DAE.BINARY(exp1=exp1,operator=op,exp2=exp2),(crefMinMax0,iterator,constCrefs))
+    algorithm
+      // continue traversing
+      (exp1,(crefMinMax0,iterator,constCrefs))  := setIteratorSubscriptCrefinEquation(exp1,tplIn);
+      (exp2,(crefMinMax0,iterator,constCrefs))  := setIteratorSubscriptCrefinEquation(exp2,(crefMinMax0,iterator,constCrefs));
+    then (DAE.BINARY(exp1,op,exp2),(crefMinMax0,iterator,constCrefs));
+
+  case(DAE.UNARY(operator=op,exp=exp1),(crefMinMax0,iterator,constCrefs))
+    algorithm
+      // continue traversing
+      (exp1,(crefMinMax0,iterator,constCrefs))  := setIteratorSubscriptCrefinEquation(exp1,tplIn);
+    then (DAE.UNARY(op,exp1),(crefMinMax0,iterator,constCrefs));
+
+  case(DAE.CALL(path=path,expLst=eLst,attr=attr),(crefMinMax0,iterator,constCrefs))
+    algorithm
+      // continue traversing
+      (eLst,(crefMinMax0,iterator,constCrefs))  := List.mapFold(eLst,setIteratorSubscriptCrefinEquation,tplIn);
+    then (DAE.CALL(path,eLst,attr),(crefMinMax0,iterator,constCrefs));
+
+  else
+    then (inExp,tplIn);
+  end matchcontinue;
+end setIteratorSubscriptCrefinEquation;
+
+
+protected function getArrayVarCrefs"gets the array-cref and its dimension from a var."
+  input BackendDAE.Var varIn;
+  input tuple<list<tuple<DAE.ComponentRef,Integer,list<DAE.ComponentRef>>>,list<BackendDAE.Var>> tplIn; //{headCref,range,tailcrefs},arrVarlst
+  output tuple<list<tuple<DAE.ComponentRef,Integer,list<DAE.ComponentRef>>>,list<BackendDAE.Var>> tplOut;
+algorithm
+  tplOut := matchcontinue(varIn,tplIn)
+    local
+      Integer idx;
+      list<Integer> ranges;
+      list<BackendDAE.Var> arrVars;
+      DAE.ComponentRef cref, crefHead, crefTail;
+      Option<DAE.ComponentRef> crefTailOpt;
+      list<DAE.ComponentRef> crefLst;
+      list<tuple<DAE.ComponentRef,Integer,list<DAE.ComponentRef>>> tplLst;
+      tuple<list<tuple<DAE.ComponentRef,Integer,list<DAE.ComponentRef>>>,list<BackendDAE.Var>> tpl;
+  case(BackendDAE.VAR(varName=cref),(tplLst,arrVars))
+    equation
+    true = ComponentReference.isArrayElement(cref);
+    (crefHead,idx,crefTailOpt) = ComponentReference.stripArrayCref(cref);
+    if Util.isSome(crefTailOpt) then
+      crefLst = {Util.getOption(crefTailOpt)};
+    else
+      crefLst = {};
+    end if;
+    (tplLst,arrVars) = addToArrayCrefLst(tplLst,varIn,(crefHead,idx,crefLst),{},arrVars);
+    tpl = (tplLst,arrVars);
+  then tpl;
+  else
+    then tplIn;
+  end matchcontinue;
+end getArrayVarCrefs;
+
+
+protected function addToArrayCrefLst"checks if the tplRef-cref is already in the list, if not append, if yes update index"
+  input list<tuple<DAE.ComponentRef,Integer,list<DAE.ComponentRef>>> tplLstIn;
+  input BackendDAE.Var varIn;
+  input tuple<DAE.ComponentRef, Integer,list<DAE.ComponentRef>> tplRef;
+  input list<tuple<DAE.ComponentRef, Integer,list<DAE.ComponentRef>>> tplLstFoldIn;
+  input list<BackendDAE.Var> varLstIn;
+  output list<tuple<DAE.ComponentRef, Integer,list<DAE.ComponentRef>>> tplLstFoldOut;
+  output list<BackendDAE.Var> varLstOut;
+algorithm
+  (tplLstFoldOut,varLstOut) := matchcontinue(tplLstIn,varIn,tplRef,tplLstFoldIn,varLstIn)
+    local
+      Integer idx0,idx1;
+      list<BackendDAE.Var> varLst;
+      DAE.ComponentRef cref0,cref1,crefTailRef;
+      list<tuple<DAE.ComponentRef,Integer,list<DAE.ComponentRef>>> rest, tplLst;
+      list<DAE.ComponentRef> tailCrefs0, tailCrefs1;
+  case((cref0,idx0,tailCrefs0)::rest,_,(cref1,idx1,{crefTailRef}),_,_)
+    equation
+    // this cref already exist, update idx, append tailCrefs if necessary
+    true = ComponentReference.crefEqual(cref0,cref1);
+    if List.notMember(crefTailRef,tailCrefs0) then
+      tailCrefs0 = crefTailRef::tailCrefs0;
+      //append var with new tail
+      varLst =varIn::varLstIn;
+    else
+      varLst = varLstIn;
+    end if;
+    tplLst = (cref0,intMax(idx0,idx1),tailCrefs0)::rest;
+    tplLst = listAppend(listReverse(tplLst),tplLstFoldIn);
+  then (tplLst,varLst);
+
+  case((cref0,idx0,tailCrefs0)::rest,_,(cref1,idx1,tailCrefs1),_,_)
+    equation
+      // this cref is not the same, continue
+    false = ComponentReference.crefEqual(cref0,cref1);
+    (tplLst,varLst) = addToArrayCrefLst(rest,varIn,tplRef,(cref0,idx0,tailCrefs0)::tplLstFoldIn,varLstIn);
+  then (tplLst,varLst);
+
+  case({},_,(cref1,idx1,tailCrefs1),_,_)
+    equation
+      // this cref is new, append
+    tplLst = (cref1,idx1,tailCrefs1)::tplLstFoldIn;
+  then (tplLst,varIn::varLstIn);
+
+  end matchcontinue;
+end addToArrayCrefLst;
+
+
+protected function getArrayVars
+  input BackendDAE.Var varIn;
+  input tuple<list<BackendDAE.Var>,list<BackendDAE.Var>> tplIn; //non-array vars,arrayVars
+  output tuple<list<BackendDAE.Var>,list<BackendDAE.Var>> tplOut;
+algorithm
+  tplOut := matchcontinue(varIn,tplIn)
+    local
+      DAE.ComponentRef cref;
+      list<BackendDAE.Var> varLstIn, arrVarLstIn;
+  case(BackendDAE.VAR(varName=cref),(varLstIn, arrVarLstIn))
+    equation
+    true = ComponentReference.isArrayElement(cref);
+  then(varLstIn, varIn::arrVarLstIn);
+  case(_,(varLstIn, arrVarLstIn))
+    equation
+  then(varIn::varLstIn, arrVarLstIn);
+  end matchcontinue;
+end getArrayVars;
+
+protected function dispatchLoopEquations
+  input BackendDAE.Equation eqIn;
+  input list<DAE.ComponentRef> arrayCrefs; //headCrefs
+  input tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>> tplIn; //classEqs,mixEqs,nonArrEqs
+  output tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>> tplOut;//classEqs,mixEqs,nonArrEqs
+algorithm
+  tplOut := matchcontinue(eqIn,arrayCrefs,tplIn)
+    local
+      list<BackendDAE.Equation> classEqs,mixEqs,nonArrEqs;
+      list<DAE.ComponentRef> crefs, arrCrefs, nonArrCrefs;
+      tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>> tpl;
+    case(_,_,(classEqs,mixEqs,nonArrEqs))
+      equation
+        crefs = BackendEquation.equationCrefs(eqIn);
+        (arrCrefs,nonArrCrefs) = List.separate1OnTrue(crefs,crefPartlyEqualToCrefs,arrayCrefs);
+        if listEmpty(nonArrCrefs) then
+          classEqs = eqIn::classEqs;
+        elseif listEmpty(arrCrefs) then
+          nonArrEqs = eqIn::nonArrEqs;
+        else
+          mixEqs = eqIn::mixEqs;
+        end if;
+      then (classEqs,mixEqs,nonArrEqs);
+  end matchcontinue;
+end dispatchLoopEquations;
+
+
+protected function crefPartlyEqualToCrefs
+  input DAE.ComponentRef cref0;
+  input list<DAE.ComponentRef> crefLst;
   output Boolean b;
 algorithm
-  b := match(iterCref,cref)
+  b := List.exist1(crefLst,crefPartlyEqual,cref0);
+end crefPartlyEqualToCrefs;
+
+protected function crefPartlyEqual
+  input DAE.ComponentRef cref0;
+  input DAE.ComponentRef cref1;
+  output Boolean partlyEq;
+algorithm
+  partlyEq := matchcontinue(cref0,cref1)
     local
-      DAE.ComponentRef cref1;
-  case(BackendDAE.ITER_CREF(cref=cref1),_)
-    then ComponentReference.crefEqualWithoutSubs(cref1,cref);
-  case(BackendDAE.ACCUM_ITER_CREF(cref=cref1),_)
-    then ComponentReference.crefEqualWithoutSubs(cref1,cref);
-  else then false;
-  end match;
-end isIterCref;
-
-public function isLoopEquation
-  input BackendDAE.Equation eqIn;
-  output Boolean isLoopEq;
-algorithm
-  isLoopEq := match(eqIn)
-  case(BackendDAE.EQUATION(attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP())))
-    then true;
-  case(BackendDAE.SOLVED_EQUATION(attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP())))
-    then true;
+      Boolean b;
+      DAE.ComponentRef cref01, cref11;
+  case(DAE.CREF_IDENT(), DAE.CREF_IDENT())
+      then cref0.ident ==cref1.ident;
+  case(DAE.CREF_QUAL(componentRef=cref01), DAE.CREF_QUAL(componentRef=cref11))
+    equation
+      if cref0.ident ==cref1.ident then b = crefPartlyEqual(cref01,cref11);
+      else  b = false;
+      end if;
+    then b;
+  case(DAE.CREF_QUAL(), DAE.CREF_IDENT())
+      then cref0.ident ==cref1.ident;
+  case(DAE.CREF_IDENT(), DAE.CREF_QUAL())
+      then cref0.ident ==cref1.ident;
   else
     then false;
-  end match;
-end isLoopEquation;
+  end matchcontinue;
+end crefPartlyEqual;
 
-public function isAccumLoopEquation
-  input BackendDAE.Equation eqIn;
-  output Boolean isLoopEq;
+public function reduceLoopExpressions "strip the higher indexes in accumulated iterations"
+  input DAE.Exp expIn;
+  input Integer maxSub;
+  output DAE.Exp expOut;
+  output Boolean notRemoved;
 algorithm
-  isLoopEq := match(eqIn)
-  case(BackendDAE.EQUATION(attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(crefs=BackendDAE.ACCUM_ITER_CREF()::_))))
-    then true;
-  case(BackendDAE.SOLVED_EQUATION(attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(crefs=BackendDAE.ACCUM_ITER_CREF()::_))))
-    then true;
-  else
-    then false;
-  end match;
-end isAccumLoopEquation;
+  (expOut,notRemoved) := matchcontinue(expIn,maxSub)
+    local
+      Boolean b, b1, b2;
+      DAE.ComponentRef cref;
+      DAE.Exp exp, exp1, exp2;
+      DAE.Type ty;
+      DAE.Operator op;
+  case(DAE.CREF(componentRef=cref),_)
+    equation
+      b = intLe(getIndexSubScript(listHead(ComponentReference.crefSubs(cref))),maxSub);
+        //print("crerfsub: "+intString(getIndexSubScript(listHead(ComponentReference.crefSubs(cref))))+" <> "+intString(maxSub)+"\n");
+        //print("reduce cref: "+ComponentReference.crefStr(cref)+" is higher sub: "+boolString(b)+"\n");
+  then (expIn,b);
+
+  case(DAE.BINARY(exp1=exp1, operator=op, exp2=exp2),_)
+    equation
+      (exp1,b1) = reduceLoopExpressions(exp1,maxSub);
+      (exp2,b2) = reduceLoopExpressions(exp2,maxSub);
+        //print("exp: "+ExpressionDump.printExpStr(expIn)+" b1: "+boolString(b1)+" b2: "+boolString(b2)+"\n");
+      if b1 and not b2 then
+        exp = exp1;
+      elseif b2 and not b1 then
+        exp = exp2;
+      else
+        exp = DAE.BINARY(exp1,op,exp2);
+      end if;
+        //print("expOut: "+ExpressionDump.printExpStr(exp)+"\n");
+  then (exp,boolOr(b1,b2));
+
+  case(DAE.UNARY(operator=op, exp=exp),_)
+    equation
+      (exp,b) = reduceLoopExpressions(exp,maxSub);
+  then (exp,b);
+   else
+     equation
+         //print("else: "+ExpressionDump.dumpExpStr(expIn,0)+"\n");
+     then (expIn,true);
+  end matchcontinue;
+end reduceLoopExpressions;
 
 public function insertSUMexp "exp traversal function for insertSUMexp"
   input DAE.Exp expIn;
@@ -1398,754 +1077,37 @@ algorithm
    end matchcontinue;
 end insertSUMexp;
 
-public function prepareVectorizedDAE0
-  input BackendDAE.EqSystem sysIn;
-  input BackendDAE.Shared sharedIn;
-  output BackendDAE.EqSystem sysOut;
-  output BackendDAE.Shared sharedOut;
+protected function getIndexSubScript
+  input DAE.Subscript sub;
+  output Integer int;
 algorithm
-  (sysOut, sharedOut) := match (sysIn, sharedIn)
-    local
-      BackendDAE.Shared shared;
-      BackendDAE.EqSystem syst;
-      list<BackendDAE.Var> varLst, addAlias, aliasLst, knownLst;
-      list<BackendDAE.Equation> eqLst;
-    case ( syst as BackendDAE.EQSYSTEM(),
-           shared as BackendDAE.SHARED() )
-      algorithm
-        eqLst := BackendEquation.equationList(syst.orderedEqs);
-        //BackendDump.dumpEquationList(eqLst,"eqsIn");
-        //remove partly unrolled for-equations
-        // occasionally, there is a constantly indexed var in the for-equation
-        (eqLst,_) := updateIterCrefs(eqLst,({},{}));
-        // (eqLst,_) := List.fold(eqLst,markUnrolledForEqs,({},{}));
+  DAE.INDEX(DAE.ICONST(int)) := sub;
+end getIndexSubScript;
 
-        // set subscripts at end of equation crefs
-        eqLst := List.map(listReverse(eqLst),setSubscriptsAtEndForEquation);
-
-        // set subscripts at end of vars
-        varLst := BackendVariable.varList(syst.orderedVars);
-        aliasLst := BackendVariable.varList(shared.aliasVars);
-        knownLst := BackendVariable.varList(shared.knownVars);
-        varLst := List.map(varLst,appendSubscriptsInVar);
-        aliasLst := List.map(aliasLst,appendSubscriptsInVar);
-        knownLst := List.map(knownLst,appendSubscriptsInVar);
-        syst.orderedVars := BackendVariable.listVar1(varLst);
-        shared.aliasVars := BackendVariable.listVar1(aliasLst);
-        shared.knownVars := BackendVariable.listVar1(knownLst);
-        syst.removedEqs := BackendEquation.listEquation({});
-        shared.removedEqs := BackendEquation.listEquation({});
-        syst.orderedEqs := BackendEquation.listEquation(eqLst);
-        //BackendDump.dumpEquationList(eqLst,"eqsOut");
-        //BackendDump.dumpVariables(vars,"VARSOUT");
-      then (syst, shared);
-  end match;
-end prepareVectorizedDAE0;
-
-protected function setSubscriptsAtEndForEquation
-  input BackendDAE.Equation eqIn;
-  output BackendDAE.Equation eqOut;
+public function replaceFirstSubsInCref"replaces the first occuring subscript in the cref"
+  input DAE.ComponentRef crefIn;
+  input list<DAE.Subscript> subs;
+  output DAE.ComponentRef crefOut;
 algorithm
-  eqOut := matchcontinue(eqIn)
+  crefOut := matchcontinue(crefIn,subs)
     local
-      DAE.Exp lhs,rhs;
-      DAE.ElementSource source;
-      BackendDAE.EquationAttributes attr;
-      BackendDAE.LoopInfo loopInfo;
-      BackendDAE.Equation eq;
-      list<BackendDAE.IterCref> iterCrefs;
-      Integer loopId;
-      DAE.Exp startIt;
-      DAE.Exp endIt;
-  case(BackendDAE.EQUATION(exp=lhs, scalar=rhs, source=source, attr = attr as BackendDAE.EQUATION_ATTRIBUTES(loopInfo=
-    BackendDAE.LOOP(loopId=loopId,startIt=startIt,endIt=endIt,crefs=iterCrefs))))
-    algorithm
-      lhs := Expression.traverseExpBottomUp(lhs,appendSubscriptsInExp,"bla");
-      rhs := Expression.traverseExpBottomUp(rhs,appendSubscriptsInExp,"bla");
-      eq := BackendDAE.EQUATION(lhs,rhs,source,attr);
-      iterCrefs := List.map(iterCrefs,setSubscriptAtEndForIterCref);
-      loopInfo := BackendDAE.LOOP(loopId,startIt,endIt,iterCrefs);
-      eq := setLoopInfoInEq(loopInfo,eq);
-    then eq;
-  case(BackendDAE.EQUATION(exp=lhs, scalar=rhs, source=source, attr=attr))
-    algorithm
-      lhs := Expression.traverseExpBottomUp(lhs,appendSubscriptsInExp,"bla");
-      rhs := Expression.traverseExpBottomUp(rhs,appendSubscriptsInExp,"bla");
-      eq := BackendDAE.EQUATION(lhs,rhs,source,attr);
-    then eq;
-  end matchcontinue;
-end setSubscriptsAtEndForEquation;
-
-protected function setSubscriptAtEndForIterCref
-  input BackendDAE.IterCref crefIn;
-  output BackendDAE.IterCref crefOut;
-algorithm
-  crefOut := matchcontinue(crefIn)
-    local
-      DAE.ComponentRef cr;
-      DAE.Exp iterator;
-      DAE.Operator op;
-      DAE.Subscript sub;
-  case(BackendDAE.ITER_CREF(cref=cr, iterator=iterator))
-    algorithm
-      {sub} := ComponentReference.crefSubs(cr);
-      cr := replaceSubscriptAtEnd(sub,cr);
-  then (BackendDAE.ITER_CREF(cr,iterator));
-  case(BackendDAE.ACCUM_ITER_CREF(cref=cr, op=op))
-    algorithm
-      {sub} := ComponentReference.crefSubs(cr);
-      cr := replaceSubscriptAtEnd(sub,cr);
-  then (BackendDAE.ACCUM_ITER_CREF(cr,op));
+      DAE.Ident ident;
+      DAE.Type identType;
+      list<DAE.Subscript> subscriptLst;
+      DAE.ComponentRef cref;
+  case(DAE.CREF_QUAL(ident=ident, identType=identType, subscriptLst=subscriptLst, componentRef=cref),_)
+    equation
+      if List.hasOneElement(subscriptLst) then  subscriptLst = subs; end if;
+      cref = replaceFirstSubsInCref(cref,subs);
+    then DAE.CREF_QUAL(ident, identType, subscriptLst, cref);
+  case(DAE.CREF_IDENT(ident=ident, identType=identType, subscriptLst=subscriptLst),_)
+    equation
+      if List.hasOneElement(subscriptLst) then  subscriptLst = subs; end if;
+    then DAE.CREF_IDENT(ident, identType, subscriptLst);
   else
     then crefIn;
   end matchcontinue;
-end setSubscriptAtEndForIterCref;
-
-protected function updateIterCrefs"checks if the iterated crefs still refer to an iterated index"
-  input list<BackendDAE.Equation> eqLstIn;
-  input tuple<list<BackendDAE.Equation>,list<Integer>> tplIn;  //eqsFoldIn, indxFold
-  output tuple<list<BackendDAE.Equation>,list<Integer>> tplOut;
-algorithm
-  tplOut := matchcontinue(eqLstIn,tplIn)
-    local
-      Integer id,idx;
-      list<Integer> idxsIn, idxs;
-      BackendDAE.Equation eq;
-      DAE.ComponentRef cref;
-      DAE.Exp startIt,endIt;
-      list<BackendDAE.Equation> eqLst,eqFold,eqFoldIn,similarEqs,rest;
-      list<BackendDAE.IterCref> iterCrefs, iterCrefs1;
-      list<DAE.ComponentRef> allCrefs,crefs;
-      list<DAE.Subscript> subs;
-      BackendDAE.IterCref itCref;
-      BackendDAE.LoopInfo loopInfo;
-  case({},_)
-    then (tplIn);
-  case(BackendDAE.EQUATION(attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(loopId=id,startIt=startIt,endIt=endIt,crefs=iterCrefs)))::rest,(eqFoldIn,idxsIn))
-    algorithm
-      if List.exist1(idxsIn,intEq,id) then
-        // the equation will be removed
-        idxs := idxsIn;
-        id := -1;
-        iterCrefs1 := {};
-      else
-        idxs := id::idxsIn;
-
-        (similarEqs,_) := List.separate1OnTrue(eqLstIn,equationEqualNoCrefSubs,listHead(eqLstIn));
-          //BackendDump.dumpEquationList(similarEqs,"simEqs");
-        allCrefs := BackendEquation.equationsCrefs(similarEqs);
-        iterCrefs1 := {};
-        //update iterCrefs
-        for itCref in iterCrefs loop
-          BackendDAE.ITER_CREF(cref=cref) := itCref;
-          crefs := List.filter1OnTrue(allCrefs,crefPartlyEqual,cref);
-          subs := List.unique(List.flatten(List.map(crefs,ComponentReference.crefSubs)));
-          if intGt(listLength(subs),1) then
-            iterCrefs1 := itCref::iterCrefs1;
-          end if;
-        end for;
-      end if;
-
-      loopInfo := BackendDAE.LOOP(id,startIt,endIt,listReverse(iterCrefs1));
-      eq := setLoopInfoInEq(loopInfo,listHead(eqLstIn));
-      (eqFold,idxs) := updateIterCrefs(rest,(eq::eqFoldIn,idxs));
-    then (eqFold,idxs);
-  case(eq::rest,(eqFoldIn,idxsIn))
-    algorithm
-      (eqFold,idxs) := updateIterCrefs(rest,(eq::eqFoldIn,idxsIn));
-  then (eqFold,idxs);
-  end matchcontinue;
-end updateIterCrefs;
-
-public function enlargeIteratedArrayVars
-  input BackendDAE.EqSystem sysIn;
-  input BackendDAE.Shared sharedIn;
-  output BackendDAE.EqSystem sysOut;
-  output BackendDAE.Shared sharedOut;
-protected
-  BackendDAE.Variables vars, aliasVars, knownVars;
-  list<BackendDAE.Var> varLst, aliasLst, knownLst, knownLst2;
-  list<BackendDAE.Equation> eqLst;
-  BackendDAE.EquationArray eqs;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.Matching matching;
-  BackendDAE.StrongComponents compsIn, comps;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
-algorithm
-  (sysOut, sharedOut) := match (sysIn, sharedIn)
-    local
-      BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
-    case (syst as BackendDAE.EQSYSTEM(), shared as BackendDAE.SHARED())
-      algorithm
-        varLst := BackendVariable.varList(syst.orderedVars);
-        aliasLst := BackendVariable.varList(shared.aliasVars);
-        knownLst := BackendVariable.varList(shared.knownVars);
-        (varLst, aliasLst) := enlargeIteratedArrayVars1(varLst, aliasLst, {}, {});
-        (knownLst, knownLst2) := enlargeIteratedArrayVars1(knownLst, {}, {}, {});
-        syst.orderedVars := BackendVariable.listVar1(varLst);
-        shared.aliasVars := BackendVariable.listVar1(aliasLst);
-        shared.knownVars := BackendVariable.listVar1(knownLst);
-        //BackendDump.dumpVarList(varLst,"varLst0");
-        //BackendDump.dumpVarList(aliasLst,"aliasVars0");
-        //BackendDump.dumpVarList(knownLst,"knownLst0");
-        //BackendDump.dumpVarList(aliasLst,"aliasVars0");
-        //BackendDump.dumpVarList(varLst,"varLst1");
-        //BackendDump.dumpVarList(aliasLst,"aliasVars1");
-        //BackendDump.dumpVarList(knownLst,"knownLst1");
-      then (syst, shared);
-  end match;
-end enlargeIteratedArrayVars;
-
-
-protected function enlargeIteratedArrayVars1
-  input list<BackendDAE.Var> varLstIn;
-  input list<BackendDAE.Var> aliasLstIn;
-  input list<BackendDAE.Var> varLstFoldIn;
-  input list<BackendDAE.Var> aliasFoldIn;
-  output list<BackendDAE.Var> varLstFoldOut;
-  output list<BackendDAE.Var> aliasFoldOut;
-algorithm
-  (varLstFoldOut,aliasFoldOut) := matchcontinue(varLstIn,aliasLstIn,varLstFoldIn,aliasFoldIn)
-    local
-      Integer dim;
-      BackendDAE.Var var;
-      DAE.ComponentRef cref, name;
-      DAE.Exp bindExp;
-      DAE.Subscript sub;
-      list<DAE.ComponentRef> crefLst;
-      list<DAE.Subscript> subs;
-      list<BackendDAE.Var> varLst, rest, restAlias, simVars, simAlias, varFold, aliasFold;
-  case({},{},_,_)
-    algorithm
-  then (listReverse(varLstFoldIn),listReverse(aliasFoldIn));
-
-  case(BackendDAE.VAR(varName = name, arryDim=({DAE.DIM_INTEGER(integer=dim)}))::rest,_,_,_)
-    algorithm
-      // expand this simulation var
-        //print("check var: "+BackendDump.varString(listHead(varLstIn))+"\n");
-      (simVars,rest) := List.separate1OnTrue(varLstIn,isSimilarVarNoBind,listHead(varLstIn));
-      (simAlias,restAlias) := List.separate1OnTrue(aliasLstIn,isSimilarVarNoBind,listHead(varLstIn));
-          //BackendDump.dumpVarList(simVars,"similarVars");
-          //BackendDump.dumpVarList(simAlias,"similarAlias");
-
-      if listLength(simVars)+listLength(simAlias) == dim then
-        // everything is correct, set subscripts at end
-        varFold := varLstFoldIn;
-        for var in simVars loop
-          var := appendSubscriptsInVar(var);
-          varFold := var::varFold;
-        end for;
-
-        aliasFold := aliasFoldIn;
-        for var in simAlias loop
-          var := appendSubscriptsInVar(var);
-          aliasFold := var::aliasFold;
-        end for;
-
-          //print("its fine!\n");
-      elseif listLength(simVars) == 1 and intLe(listLength(simAlias),dim-1) then
-        // add new alias vars, if the array is mixed simulation and alias var, put everything in the simvar part
-        cref := BackendVariable.varCref(listHead(simAlias));
-        {sub} := ComponentReference.crefSubs(name);
-        subs := List.map(List.intRange(dim),Expression.intSubscript);
-        subs := List.deleteMember(subs,sub);
-        crefLst := List.map1(subs,replaceSubscriptAtEnd,name);
-        varLst := List.map1Reverse(crefLst,BackendVariable.copyVarNewName,listHead(simAlias));
-        varLst := List.map(varLst,appendSubscriptsInVar);
-        // put subscript at end for the var
-          var := appendSubscriptsInVar(listHead(varLstIn));
-        varFold := var::varLstFoldIn;
-        aliasFold := listAppend(varLst,aliasFoldIn);
-          //print("add new aliase\n");
-      else
-        // expand the simVars
-        subs := List.map(List.intRange(dim),Expression.intSubscript);
-        //crefLst := List.map1r(subs,replaceFirstSubInCref,name);
-        crefLst := List.map1(subs,replaceSubscriptAtEnd,name);
-        varLst := List.map1Reverse(crefLst,BackendVariable.copyVarNewName,listHead(varLstIn));
-        varLst := List.map(varLst,appendSubscriptsInVar);
-        varFold := listAppend(varLst, varLstFoldIn);
-        aliasFold := aliasFoldIn;
-          //print("increase!\n");
-      end if;
-      (varFold,aliasFold) := enlargeIteratedArrayVars1(rest,restAlias,varFold,aliasFold);
-    then (varFold,aliasFold);
-
-  case({},BackendDAE.VAR(varName = name, arryDim=({DAE.DIM_INTEGER(integer=dim)}), bindExp=SOME(bindExp))::rest,_,_)
-    algorithm
-      // handle the remaining alias vars
-        //print("check alias: "+BackendDump.varString(listHead(aliasLstIn))+"\n");
-      (simAlias,restAlias) := List.separate1OnTrue(aliasLstIn,isSimilarVarNoBind,listHead(aliasLstIn));
-          //BackendDump.dumpVarList(simAlias,"similarAlias");
-      if listLength(simAlias) == dim then
-        // everything is correct
-        varFold := varLstFoldIn;
-        simAlias := List.map(simAlias,appendSubscriptsInVar);
-        aliasFold := listAppend(simAlias,aliasFoldIn);
-          //print("its fine alias!\n");
-      else
-        // expand the aliasVars
-        subs := List.map(List.intRange(dim),Expression.intSubscript);
-        //crefLst := List.map1r(subs,replaceFirstSubInCref,name);
-        crefLst := List.map1(subs,replaceSubscriptAtEnd,name);
-        varLst := List.map1Reverse(crefLst,BackendVariable.copyVarNewName,listHead(aliasLstIn));
-        varLst := List.map(varLst,appendSubscriptsInVar);
-        aliasFold := listAppend(varLst, aliasFoldIn);
-        varFold := varLstFoldIn;
-          //print("increase alias!\n");
-      end if;
-      (varFold,aliasFold) := enlargeIteratedArrayVars1({},restAlias,varFold,aliasFold);
-    then (varFold,aliasFold);
-
-  case(_::rest,_,_,_)
-    algorithm
-      // add this non-array var
-      //print("add non arry var: "+BackendDump.varString(listHead(varLstIn))+"\n");
-      var := appendSubscriptsInVar(listHead(varLstIn));
-      (varFold,aliasFold) := enlargeIteratedArrayVars1(rest,aliasLstIn,var::varLstFoldIn,aliasFoldIn);
-    then (varFold,aliasFold);
-
-  case({},_::restAlias,_,_)
-    algorithm
-      // add this non-array alias
-       //print("add non array alias var: "+BackendDump.varString(listHead(aliasLstIn))+"\n");
-       var := appendSubscriptsInVar(listHead(aliasLstIn));
-      (varFold,aliasFold) := enlargeIteratedArrayVars1({},restAlias,varLstFoldIn,var::aliasFoldIn);
-    then (varFold,aliasFold);
-
-  end matchcontinue;
-end enlargeIteratedArrayVars1;
-
-protected function appendSubscriptsInVar
-  input BackendDAE.Var varIn;
-  output BackendDAE.Var varOut;
-algorithm
-  varOut := matchcontinue(varIn)
-    local
-      DAE.Exp bindExp;
-      DAE.ComponentRef name;
-      BackendDAE.Var var;
-      DAE.Subscript sub;
-  case(BackendDAE.VAR(varName=name,bindExp=SOME(bindExp)))
-    equation
-      if ComponentReference.crefHaveSubs(name) then
-        {sub} = ComponentReference.crefSubs(name);
-        name = replaceSubscriptAtEnd(sub,name);
-      end if;
-      bindExp = Expression.traverseExpBottomUp(bindExp,appendSubscriptsInExp,"bla");
-      var = BackendVariable.setBindExp(varIn,SOME(bindExp));
-      var = BackendVariable.copyVarNewName(name,var);
-  then var;
-  case(BackendDAE.VAR(varName=name))
-    equation
-      {sub} = ComponentReference.crefSubs(name);
-      name = replaceSubscriptAtEnd(sub,name);
-      var = BackendVariable.copyVarNewName(name,varIn);
-  then var;
-    else
-    then varIn;
-  end matchcontinue;
-end appendSubscriptsInVar;
-
-protected function appendSubscriptsInExp
-  input DAE.Exp expIn;
-  input String blaIn;
-  output DAE.Exp expOut;
-  output String blaOut;
-algorithm
- (expOut, blaOut) := matchcontinue(expIn,blaIn)
-  local
-    DAE.ComponentRef cref;
-    DAE.Subscript sub;
-    DAE.Type ty;
-  case(DAE.CREF(componentRef=cref,ty=ty),_)
-    equation
-      {sub} = ComponentReference.crefSubs(cref);
-      cref = replaceSubscriptAtEnd(sub,cref);
-     then (DAE.CREF(cref,ty),blaIn);
-    else
-      then(expIn,blaIn);
-  end matchcontinue;
-end appendSubscriptsInExp;
-
-protected function replaceSubscriptAtEnd
-  input DAE.Subscript sub;
-  input DAE.ComponentRef crefIn;
-  output DAE.ComponentRef crefOut;
-protected
-  DAE.ComponentRef cref;
-algorithm
-  cref := ComponentReference.crefStripSubs(crefIn);
-  crefOut := ComponentReference.crefSetLastSubs(cref,{sub});
-end replaceSubscriptAtEnd;
-
-public function updateSimCode"updates some things in the simCode"
-  input SimCode.SimCode simCodeIn;
-  output SimCode.SimCode simCodeOut;
-protected
-  list<SimCode.SimEqSystem> initialEquations;
-  list<SimCodeVar.SimVar> aliasVars;
-algorithm
-  SimCode.SIMCODE(modelInfo=SimCode.MODELINFO(vars=SimCodeVar.SIMVARS(aliasVars=aliasVars)),initialEquations=initialEquations) := simCodeIn;
-  initialEquations := List.map1(initialEquations,updateAliasInSimEqSystem, aliasVars);
-  simCodeOut := setSimCodeInitialEquations(simCodeIn,initialEquations);
-end updateSimCode;
-
-protected function updateAliasInSimEqSystem
-  input SimCode.SimEqSystem eqIn;
-  input list<SimCodeVar.SimVar> aliasVars;
-  output SimCode.SimEqSystem eqOut;
-algorithm
-  eqOut := matchcontinue(eqIn,aliasVars)
-    local
-      Integer idx;
-      DAE.ComponentRef cref;
-      DAE.Exp exp;
-      DAE.ElementSource source;
-  case(SimCode.SES_SIMPLE_ASSIGN(index=idx,cref=cref,exp=exp,source=source),_)
-    equation
-      (exp,_) = Expression.traverseExpBottomUp(exp,updateAliasInSimEqSystem1,aliasVars);
-    then SimCode.SES_SIMPLE_ASSIGN(idx,cref,exp,source);
-  else
-    then eqIn;
-  end matchcontinue;
-end updateAliasInSimEqSystem;
-
-protected function updateAliasInSimEqSystem1"replaces crefs with its alias"
-  input DAE.Exp expIn;
-  input list<SimCodeVar.SimVar> aliasVarsIn;
-  output DAE.Exp expOut;
-  output list<SimCodeVar.SimVar> aliasVarsOut;
-algorithm
-  (expOut,aliasVarsOut) := matchcontinue(expIn,aliasVarsIn)
-    local
-      Boolean isNegated;
-      DAE.ComponentRef cref;
-      DAE.Exp exp;
-      DAE.Type ty;
-  case(DAE.CREF(componentRef=cref,ty=ty),_)
-    equation
-      (cref,isNegated) = getSimCodeVarAlias(aliasVarsIn,cref);
-      if isNegated then
-        exp = DAE.UNARY(DAE.UMINUS(ty),DAE.CREF(cref,ty));
-      else
-        exp = DAE.CREF(cref,ty);
-      end if;
-  then (exp,aliasVarsIn);
-  else
-    then(expIn,aliasVarsIn);
-  end matchcontinue;
-end updateAliasInSimEqSystem1;
-
-protected function getSimCodeVarAlias
-  input list<SimCodeVar.SimVar> simVar;
-  input DAE.ComponentRef crefIn;
-  output DAE.ComponentRef crefOut;
-  output Boolean isNegated;
-algorithm
-  (crefOut,isNegated) := matchcontinue(simVar,crefIn)
-    local
-      DAE.ComponentRef name, varName;
-      list<SimCodeVar.SimVar> rest;
-  case({},_)
-    then (crefIn,false);
-  case(SimCodeVar.SIMVAR(name=name,aliasvar=SimCodeVar.ALIAS(varName=varName))::_,_)
-    equation
-      true = ComponentReference.crefEqual(crefIn,name);
-  then (varName,false);
-  case(SimCodeVar.SIMVAR(name=name,aliasvar=SimCodeVar.NEGATEDALIAS(varName=varName))::_,_)
-    equation
-      true = ComponentReference.crefEqual(crefIn,name);
-  then (varName,true);
-  case(_::rest,_)
-    then getSimCodeVarAlias(rest,crefIn);
-  end matchcontinue;
-end getSimCodeVarAlias;
-
-protected function setSimCodeInitialEquations
-  input SimCode.SimCode simCode;
-  input list<SimCode.SimEqSystem> initEqs;
-  output SimCode.SimCode outSimCode = simCode;
-algorithm
-  outSimCode.initialEquations := initEqs;
-end setSimCodeInitialEquations;
-
-/*
-public function prepareVectorizedDAE1
-  input BackendDAE.EqSystem sysIn;
-  input BackendDAE.Shared sharedIn;
-  output BackendDAE.EqSystem sysOut;
-  output BackendDAE.Shared sharedOut;
-protected
-  BackendDAE.Variables vars, aliasVars;
-  list<BackendDAE.Var> varLst, addAlias, addAliasLst1, aliasVars0;
-  list<BackendDAE.Equation> eqLst;
-  BackendDAE.EquationArray eqs;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.Matching matching;
-  BackendDAE.StateSets stateSets "the statesets of the system";
-  BackendDAE.BaseClockPartitionKind partitionKind;
-algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind) := sysIn;
-  BackendDAE.SHARED(aliasVars=aliasVars) := sharedIn;
-
-  //unroll variables
-  varLst := BackendVariable.varList(vars);
-  aliasVars0 := BackendVariable.varList(aliasVars);
-    BackendDump.dumpVarList(varLst,"varLst1");
-    BackendDump.dumpVarList(aliasVars0,"alias1");
-  (varLst,addAlias) := List.fold1(varLst,rollOutArrays,aliasVars0,({},{}));
-    BackendDump.dumpVarList(varLst,"the unrolled vars");
-    BackendDump.dumpVarList(addAlias,"teh additional alias");
-  aliasVars := BackendVariable.mergeVariables(aliasVars,BackendVariable.listVar1(addAlias));
-    //BackendDump.dumpVariables(aliasVars,"final alias");
-  vars := BackendVariable.listVar(varLst);
-  // add missing aliase
-  //there are still alias vars that need to be expanded
-  addAliasLst1 := expandAliasVars(aliasVars0,vars,{});
-
-  sysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
-  sharedOut := BackendDAEUtil.setSharedAliasVars(sharedIn,aliasVars);
-end prepareVectorizedDAE1;
-
-protected function expandAliasVars
-  input list<BackendDAE.Var> varsIn;
-  input BackendDAE.Variables algVars;
-  input list<BackendDAE.Var> foldIn;
-  output list<BackendDAE.Var> foldOut;
-algorithm
-  foldOut := matchcontinue(varsIn,algVars,foldIn)
-    local
-      Integer dim;
-      list<BackendDAE.Var> rest, similarVars,rest;
-  case({},_,_)
-    equation
-  then foldIn;
-  case(BackendDAE.VAR(arryDim=({DAE.DIM_INTEGER(integer=dim)}))::rest,_,_)
-    equation
-      (similarVars,rest) = List.separate1OnTrue(varsIn,isSimilarVar,listHead(varsIn));
-      //there are less vars than dimensions
-      true = intLt(listLength(similarVars),dim);
-      BackendDump.dumpVarList(similarVars,"simVars");
-  then expandAliasVars(rest,algVars,foldIn);
-  case(_::rest,_,_)
-    then expandAliasVars(rest,algVars,foldIn);
-  end matchcontinue;
-end expandAliasVars;
-
-
-
-protected function markUnrolledForEqs"checks the loop ids for every for-equation. the loop ids have to be unique."
-  input BackendDAE.Equation eqIn;
-  input tuple<list<BackendDAE.Equation>,list<Integer>> tplIn; //foldEqs, loopIds
-  output tuple<list<BackendDAE.Equation>,list<Integer>> tplOut;
-algorithm
-  tplOut := matchcontinue(eqIn,tplIn)
-    local
-      Integer id;
-      list<Integer> ids0, ids;
-      list<BackendDAE.Equation> eqLst0, eqLst;
-    case(BackendDAE.EQUATION(attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(loopId=id))),(eqLst0,ids0))
-      equation
-        if List.exist1(ids0,intEq,id) then
-          ids = ids0;
-          eqLst = setLoopId(eqIn,-1)::eqLst0;
-        else
-          ids = id::ids0;
-          eqLst = eqIn::eqLst0;
-        end if;
-    then (eqLst,ids);
-    case(_,(eqLst0,ids0))
-      then (eqIn::eqLst0,ids0);
-  end matchcontinue;
-end markUnrolledForEqs;
-
-
-protected function setLoopId
-  input BackendDAE.Equation eqIn;
-  input Integer id;
-  output BackendDAE.Equation eqOut;
-protected
-  DAE.Exp exp,scalar,startIt,endIt;
-  list<BackendDAE.IterCref> iterCrefs;
-  DAE.ElementSource source;
-  BackendDAE.EquationAttributes attr;
-  Boolean differentiated;
-  BackendDAE.EquationKind kind;
-  BackendDAE.LoopInfo loopInfo;
-algorithm
-  try
-    BackendDAE.EQUATION(exp=exp,scalar=scalar,source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated,kind=kind,loopInfo=BackendDAE.LOOP(startIt=startIt,endIt=endIt,crefs=iterCrefs))) := eqIn;
-    eqOut := BackendDAE.EQUATION(exp,scalar,source,BackendDAE.EQUATION_ATTRIBUTES(differentiated,kind,BackendDAE.LOOP(id,startIt,endIt,iterCrefs)));
-  else
-    eqOut := eqIn;
-  end try;
-end setLoopId;
-
-protected function rollOutArrays"expands the array vars. dispatch the unrolled vars to the algebraic and to the alias vars."
-  input BackendDAE.Var inVar;
-  input list<BackendDAE.Var> aliasVars;
-  input tuple<list<BackendDAE.Var>,list<BackendDAE.Var>> foldIn;
-  output tuple<list<BackendDAE.Var>,list<BackendDAE.Var>> foldOut;
-algorithm
-  foldOut := matchcontinue(inVar, foldIn)
-    local
-      Integer i,dim;
-      DAE.ComponentRef cref;
-      DAE.Subscript sub;
-      BackendDAE.Var var;
-      list<BackendDAE.Var> varLst0, aliasLst0, varLst, aliasLst, equalCrefLst, otherArrayVarLst, addAliasLst, addAliasLst1;
-      list<DAE.ComponentRef> crefLst;
-      list<DAE.Subscript> subs;
-  case(BackendDAE.VAR(varName=cref, arryDim={DAE.DIM_INTEGER(integer=dim)}),(varLst0,aliasLst0))
-   algorithm
-     // its an array var with one subscript
-       //print("analyse Var "+BackendDump.varString(inVar)+"\n");
-     if List.exist1(varLst0,BackendVariable.varEqual,inVar) then
-       // this var is already in the list, add nothing
-       varLst := {};
-       addAliasLst := {};
-     else
-       // add all rolled out vars, and aliase for the rolled outs
-      {DAE.INDEX(DAE.ICONST(integer = i))} := ComponentReference.crefSubs(cref);
-      (aliasLst, _) := List.separate1OnTrue(aliasVars,isAliasVarOf,inVar);
-        //BackendDump.dumpVarList(aliasLst,"all aliase");
-        //BackendDump.dumpVarList(varLst,"no aliase");
-      (equalCrefLst, otherArrayVarLst) := List.fold1(aliasLst,dispatchAliasVars,inVar,({},{}));
-        //BackendDump.dumpVarList(equalCrefLst,"aliase with equal crefs");
-        //BackendDump.dumpVarList(otherArrayVarLst,"other aliase");
-      addAliasLst := {};
-      if listEmpty(equalCrefLst) then
-        // there are no aliase equations for the iterated crefs, therefore we need algebraic vars for them
-        subs := List.map(List.intRange(dim),Expression.intSubscript);
-        crefLst := List.map1r(subs,replaceFirstSubInCref,cref);
-        varLst := List.map1(crefLst,BackendVariable.copyVarNewName,inVar);
-      else
-        // there are alias variables for the iterated crefs
-        for var in equalCrefLst loop
-          addAliasLst := listAppend(additionalAlias(var),addAliasLst);
-        end for;
-        varLst := {inVar};
-      end if;
-    end if;
-       //BackendDump.dumpVarList(addAliasLst,"addAliasLst");
-       //BackendDump.dumpVarList(varLst,"varLst");
-   then (listAppend(varLst,varLst0),listAppend(addAliasLst,aliasLst0));
-  case(_,(varLst0,aliasLst0))
-    then (inVar::varLst0,aliasLst0);
-  end matchcontinue;
-end rollOutArrays;
-*/
-
-
-protected function isSimilarVar
-  input BackendDAE.Var var1;
-  input BackendDAE.Var var2;
-  output Boolean bOut;
-algorithm
-  bOut := matchcontinue(var1,var2)
-    local
-      Boolean b;
-      DAE.ComponentRef cref1, cref2;
-      DAE.Exp bindExp1, bindExp2;
-  case(BackendDAE.VAR(varName=cref1, bindExp=SOME(bindExp1)),BackendDAE.VAR(varName=cref2, bindExp=SOME(bindExp2)))
-    equation
-      then crefPartlyEqual(cref1,cref2) and expEqualNoCrefSubs(bindExp1,bindExp2);
-  else
-    then false;
-  end matchcontinue;
-end isSimilarVar;
-
-protected function isSimilarVarNoBind
-  input BackendDAE.Var var1;
-  input BackendDAE.Var var2;
-  output Boolean bOut;
-algorithm
-  bOut := matchcontinue(var1,var2)
-    local
-      Boolean b;
-      DAE.ComponentRef cref1, cref2;
-  case(BackendDAE.VAR(varName=cref1),BackendDAE.VAR(varName=cref2))
-    equation
-      then crefPartlyEqual(cref1,cref2);
-  else
-    then false;
-  end matchcontinue;
-end isSimilarVarNoBind;
-
-protected function additionalAlias"adds additional alias vars"
-  input BackendDAE.Var var;
-  output list<BackendDAE.Var> varLstOut;
-algorithm
-  varLstOut := matchcontinue(var)
-    local
-      Integer i, dim;
-      DAE.Exp bindExp;
-      DAE.ComponentRef cref;
-      list<DAE.ComponentRef> crefLst;
-      list<BackendDAE.Var> varLst;
-   case(BackendDAE.VAR(bindExp = SOME(bindExp), arryDim={DAE.DIM_INTEGER(integer=dim)}))
-     algorithm
-       {cref} := Expression.extractCrefsFromExp(bindExp);
-       crefLst := {};
-       for i in List.intRange(dim) loop
-         crefLst := replaceFirstSubInCref(cref,DAE.INDEX(DAE.ICONST(i)))::crefLst;
-       end for;
-       (crefLst,_) := List.deleteMemberOnTrue(cref,crefLst,ComponentReference.crefEqual);
-       varLst := List.map1(crefLst,BackendVariable.copyVarNewName,var);
-   then varLst;
-   else
-     then {};
-  end matchcontinue;
-end additionalAlias;
-
-protected function dispatchAliasVars"dispatches the aliasvars in a list of alias that have the same cref except the subscript and aliasvars that are array vars with other crefs.
-non array vars are dismissed"
-  input BackendDAE.Var aliasVar;
-  input BackendDAE.Var refVar;
-  input tuple<list<BackendDAE.Var>,list<BackendDAE.Var>> tplIn;
-  output tuple<list<BackendDAE.Var>,list<BackendDAE.Var>> tplOut;
-algorithm
-  tplOut := matchcontinue(aliasVar,refVar,tplIn)
-    local
-      Integer dim;
-      list<BackendDAE.Var> equalCrefLst, otherArrayVarLst;
-      DAE.ComponentRef cref1, cref2;
-  case(BackendDAE.VAR(varName = cref1, arryDim={DAE.DIM_INTEGER(integer=dim)}),BackendDAE.VAR(varName = cref2),(equalCrefLst, otherArrayVarLst))
-    equation
-      true = crefPartlyEqual(cref1,cref2);
-      then (aliasVar::equalCrefLst, otherArrayVarLst);
-  case(BackendDAE.VAR(varName = cref1, arryDim={DAE.DIM_INTEGER(integer=dim)}),BackendDAE.VAR(varName = cref2),(equalCrefLst, otherArrayVarLst))
-    equation
-      false = crefPartlyEqual(cref1,cref2);
-      then (equalCrefLst, aliasVar::otherArrayVarLst);
-  else
-  equation
-    then tplIn;
-  end matchcontinue;
-end dispatchAliasVars;
-
-protected function isAliasVarOf"checks if the var is the aliasVar of varWithAlias"
-  input BackendDAE.Var varWithAlias;
-  input BackendDAE.Var var;
-  output Boolean b;
-algorithm
-  b := matchcontinue(varWithAlias,var)
-    local
-      DAE.ComponentRef cref0, cref1;
-      DAE.Exp bindExp;
-  case(BackendDAE.VAR(bindExp=SOME(bindExp)),BackendDAE.VAR(varName=cref0))
-    equation
-      {cref1} = Expression.extractCrefsFromExp(bindExp);
-    then ComponentReference.crefEqual(cref0,cref1);
-  else
-  then false;
-  end matchcontinue;
-end isAliasVarOf;
+end replaceFirstSubsInCref;
 
 annotation(__OpenModelica_Interface="backend");
 end Vectorization;

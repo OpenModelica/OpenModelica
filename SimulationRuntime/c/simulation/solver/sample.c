@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,29 +28,3 @@
  *
  */
 
-/*! \file events.h
- */
-
-#ifndef _EVENTS_H_
-#define _EVENTS_H_
-
-#include "simulation_data.h"
-#include "simulation/solver/solver_main.h"
-#include "util/list.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
-int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
-
-void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
-
-void findRoot(DATA *data, threadData_t *threadData, LIST *eventList, double*);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif

@@ -936,7 +936,7 @@ static int SystemImpl__removeDirectoryItem(const char *path)
         {
           if (S_ISDIR(statbuf.st_mode))
           {
-            r2 = SystemImpl__removeDirectory(buf);
+            r2 = 0==SystemImpl__removeDirectory(buf);
           }
           else
           {

@@ -1,4 +1,4 @@
-#include "meta_modelica.h"
+#include "meta/meta_modelica_data.h"
 static const MMC_DEFSTRINGLIT(OMC_STRINGLIT_0,0,"");
 void* mmc_emptystring = MMC_REFSTRINGLIT(OMC_STRINGLIT_0);
 static MMC_DEFSTRINGLIT(OMC_STRINGLIT_1_01,1,"\x01");

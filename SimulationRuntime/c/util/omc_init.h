@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,29 +28,15 @@
  *
  */
 
-/*! \file events.h
- */
+#ifndef _OMC_INIT_H
+#define _OMC_INIT_H
 
-#ifndef _EVENTS_H_
-#define _EVENTS_H_
+#include "openmodelica.h"
 
-#include "simulation_data.h"
-#include "simulation/solver/solver_main.h"
-#include "util/list.h"
+DLLDirection extern pthread_key_t mmc_thread_data_key;
+DLLDirection extern pthread_once_t mmc_init_once;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
-int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
-
-void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
-
-void findRoot(DATA *data, threadData_t *threadData, LIST *eventList, double*);
-
-#ifdef __cplusplus
-}
-#endif
+DLLDirection extern void mmc_init();
+DLLDirection extern void mmc_init_nogc();
 
 #endif

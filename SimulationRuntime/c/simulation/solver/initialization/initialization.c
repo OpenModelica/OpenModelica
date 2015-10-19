@@ -38,7 +38,9 @@
 #include "openmodelica.h"
 #include "openmodelica_func.h"
 #include "simulation/solver/model_help.h"
+#if !defined(OMC_MINIMAL_RUNTIME)
 #include "util/read_matlab4.h"
+#endif
 #include "simulation/solver/events.h"
 #include "simulation/solver/stateset.h"
 #include "meta/meta_modelica.h"
@@ -47,6 +49,7 @@
 #include "simulation/solver/linearSystem.h"
 #include "simulation/solver/nonlinearSystem.h"
 #include "simulation/solver/delay.h"
+#include "simulation/solver/synchronous.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -176,7 +179,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData, long nu
     modelica_real* realVars = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
     modelica_integer* integerVars = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
     modelica_boolean* booleanVars = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
-    modelica_string* stringVars = (modelica_string*) GC_malloc_uncollectable(data->modelData.nVariablesString * sizeof(modelica_string));
+    modelica_string* stringVars = (modelica_string*) omc_alloc_interface.malloc_uncollectable(data->modelData.nVariablesString * sizeof(modelica_string));
     MODEL_DATA *mData = &(data->modelData);
 
     assertStreamPrint(threadData, 0 != realVars, "out of memory");
@@ -252,7 +255,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData, long nu
     free(realVars);
     free(integerVars);
     free(booleanVars);
-    GC_free(stringVars);
+    omc_alloc_interface.free_uncollectable(stringVars);
   } else {
     data->simulationInfo.lambda = 1.0;
     data->callback->functionInitialEquations(data, threadData);
@@ -329,6 +332,7 @@ static char *mapToDymolaVars(const char *varname)
   return newVarname;
 }
 
+#if !defined(OMC_MINIMAL_RUNTIME)
 /*! \fn int importStartValues(DATA *data, const char *pInitFile, const double initTime)
  *
  *  \param [ref] [data]
@@ -365,73 +369,58 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
   else
   {
     infoStreamPrint(LOG_INIT, 0, "import real variables");
-    for(i=0; i<mData->nVariablesReal; ++i)
-    {
+    for(i=0; i<mData->nVariablesReal; ++i) {
       pVar = omc_matlab4_find_var(&reader, mData->realVarsData[i].info.name);
 
-      if(!pVar)
-      {
+      if(!pVar) {
         newVarname = mapToDymolaVars(mData->realVarsData[i].info.name);
         pVar = omc_matlab4_find_var(&reader, newVarname);
         free(newVarname);
       }
 
-      if(pVar)
-      {
+      if(pVar) {
         omc_matlab4_val(&(mData->realVarsData[i].attribute.start), &reader, pVar, initTime);
         infoStreamPrint(LOG_INIT, 0, "| %s(start=%g)", mData->realVarsData[i].info.name, mData->realVarsData[i].attribute.start);
-      }
-      else if((strlen(mData->realVarsData[i].info.name) > 0) &&
+      } else if((strlen(mData->realVarsData[i].info.name) > 0) &&
               (mData->realVarsData[i].info.name[0] != '$') &&
-              (strncmp(mData->realVarsData[i].info.name, "der($", 5) != 0))
-      {
+              (strncmp(mData->realVarsData[i].info.name, "der($", 5) != 0)) {
         /* skip warnings about self-generated variables */
         warningStreamPrint(LOG_INIT, 0, "unable to import real variable %s from given file", mData->realVarsData[i].info.name);
       }
     }
 
     infoStreamPrint(LOG_INIT, 0, "import real parameters");
-    for(i=0; i<mData->nParametersReal; ++i)
-    {
+    for(i=0; i<mData->nParametersReal; ++i) {
       pVar = omc_matlab4_find_var(&reader, mData->realParameterData[i].info.name);
 
-      if(!pVar)
-      {
+      if(!pVar) {
         newVarname = mapToDymolaVars(mData->realParameterData[i].info.name);
         pVar = omc_matlab4_find_var(&reader, newVarname);
         free(newVarname);
       }
 
-      if(pVar)
-      {
+      if(pVar) {
         omc_matlab4_val(&(mData->realParameterData[i].attribute.start), &reader, pVar, initTime);
         infoStreamPrint(LOG_INIT, 0, "| %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
-      }
-      else
-      {
+      } else {
         warningStreamPrint(LOG_INIT, 0, "unable to import real parameter %s from given file", mData->realParameterData[i].info.name);
       }
     }
 
     infoStreamPrint(LOG_INIT, 0, "import real discrete");
-    for(i=mData->nVariablesReal-mData->nDiscreteReal; i<mData->nDiscreteReal; ++i)
-    {
+    for(i=mData->nVariablesReal-mData->nDiscreteReal; i<mData->nDiscreteReal; ++i) {
       pVar = omc_matlab4_find_var(&reader, mData->realParameterData[i].info.name);
 
-      if(!pVar)
-      {
+      if(!pVar) {
         newVarname = mapToDymolaVars(mData->realParameterData[i].info.name);
         pVar = omc_matlab4_find_var(&reader, newVarname);
         free(newVarname);
       }
 
-      if(pVar)
-      {
+      if(pVar) {
         omc_matlab4_val(&(mData->realParameterData[i].attribute.start), &reader, pVar, initTime);
         infoStreamPrint(LOG_INIT, 0, "| %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
-      }
-      else
-      {
+      } else {
         warningStreamPrint(LOG_INIT, 0, "unable to import real parameter %s from given file", mData->realParameterData[i].info.name);
       }
     }
@@ -441,45 +430,36 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
     {
       pVar = omc_matlab4_find_var(&reader, mData->integerParameterData[i].info.name);
 
-      if(!pVar)
-      {
+      if (!pVar) {
         newVarname = mapToDymolaVars(mData->integerParameterData[i].info.name);
         pVar = omc_matlab4_find_var(&reader, newVarname);
         free(newVarname);
       }
 
-      if(pVar)
-      {
+      if (pVar) {
         omc_matlab4_val(&value, &reader, pVar, initTime);
         mData->integerParameterData[i].attribute.start = (modelica_integer)value;
         infoStreamPrint(LOG_INIT, 0, "| %s(start=%ld)", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
-      }
-      else
-      {
+      } else {
         warningStreamPrint(LOG_INIT, 0, "unable to import integer parameter %s from given file", mData->integerParameterData[i].info.name);
       }
     }
 
     infoStreamPrint(LOG_INIT, 0, "import boolean parameters");
-    for(i=0; i<mData->nParametersBoolean; ++i)
-    {
+    for(i=0; i<mData->nParametersBoolean; ++i) {
       pVar = omc_matlab4_find_var(&reader, mData->booleanParameterData[i].info.name);
 
-      if(!pVar)
-      {
+      if(!pVar) {
         newVarname = mapToDymolaVars(mData->booleanParameterData[i].info.name);
         pVar = omc_matlab4_find_var(&reader, newVarname);
         free(newVarname);
       }
 
-      if(pVar)
-      {
+      if(pVar) {
         omc_matlab4_val(&value, &reader, pVar, initTime);
         mData->booleanParameterData[i].attribute.start = (modelica_boolean)value;
         infoStreamPrint(LOG_INIT, 0, "| %s(start=%s)", mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.start ? "true" : "false");
-      }
-      else
-      {
+      } else {
         warningStreamPrint(LOG_INIT, 0, "unable to import boolean parameter %s from given file", mData->booleanParameterData[i].info.name);
       }
     }
@@ -487,6 +467,43 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
   }
 
   return 0;
+}
+#endif
+
+/*! \fn initSample
+ *
+ *  \param [ref] [data]
+ *  \param [in]  [startTime]
+ *  \param [in]  [stopTime]
+ *
+ *  This function initializes sample-events.
+ */
+void initSample(DATA* data, threadData_t *threadData, double startTime, double stopTime)
+{
+  TRACE_PUSH
+  long i;
+
+  data->callback->function_initSample(data, threadData);              /* set-up sample */
+  data->simulationInfo.nextSampleEvent = stopTime + 1.0;  /* should never be reached */
+  for(i=0; i<data->modelData.nSamples; ++i) {
+    if(startTime < data->modelData.samplesInfo[i].start) {
+      data->simulationInfo.nextSampleTimes[i] = data->modelData.samplesInfo[i].start;
+    } else {
+      data->simulationInfo.nextSampleTimes[i] = data->modelData.samplesInfo[i].start + ceil((startTime-data->modelData.samplesInfo[i].start) / data->modelData.samplesInfo[i].interval) * data->modelData.samplesInfo[i].interval;
+    }
+
+    if((i == 0) || (data->simulationInfo.nextSampleTimes[i] < data->simulationInfo.nextSampleEvent)) {
+      data->simulationInfo.nextSampleEvent = data->simulationInfo.nextSampleTimes[i];
+    }
+  }
+
+  if(stopTime < data->simulationInfo.nextSampleEvent) {
+    debugStreamPrint(LOG_EVENTS, 0, "there are no sample-events");
+  } else {
+    debugStreamPrint(LOG_EVENTS, 0, "first sample-event at t = %g", data->simulationInfo.nextSampleEvent);
+  }
+
+  TRACE_POP
 }
 
 /*! \fn int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod, const char* pInitFile, double initTime)
@@ -509,24 +526,23 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
 
   setAllParamsToStart(data);
 
+#if !defined(OMC_MINIMAL_RUNTIME)
   /* import start values from extern mat-file */
   if(pInitFile && strcmp(pInitFile, ""))
   {
     data->callback->updateBoundParameters(data, threadData);
     data->callback->updateBoundVariableAttributes(data, threadData);
 
-    if(importStartValues(data, threadData, pInitFile, initTime))
-    {
+    if(importStartValues(data, threadData, pInitFile, initTime)) {
       TRACE_POP
       return 1;
     }
   }
-
+#endif
   /* set up all variables with their start-values */
   setAllVarsToStart(data);
 
-  if(!(pInitFile && strcmp(pInitFile, "")))
-  {
+  if(!(pInitFile && strcmp(pInitFile, ""))) {
     data->callback->updateBoundParameters(data, threadData);
     data->callback->updateBoundVariableAttributes(data, threadData);
     setAllVarsToStart(data);
@@ -537,24 +553,19 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   updateStaticDataOfNonlinearSystems(data, threadData);
 
   /* if there are user-specified options, use them! */
-  if(pInitMethod && strcmp(pInitMethod, ""))
-  {
+  if (pInitMethod && strcmp(pInitMethod, "")) {
     initMethod = IIM_UNKNOWN;
 
-    for(i=1; i<IIM_MAX; ++i)
-    {
-      if(!strcmp(pInitMethod, INIT_METHOD_NAME[i]))
-      {
+    for (i=1; i<IIM_MAX; ++i) {
+      if(!strcmp(pInitMethod, INIT_METHOD_NAME[i])) {
         initMethod = i;
       }
     }
 
-    if(initMethod == IIM_UNKNOWN)
-    {
+    if(initMethod == IIM_UNKNOWN) {
       warningStreamPrint(LOG_STDOUT, 0, "unrecognized option -iim %s", pInitMethod);
       warningStreamPrint(LOG_STDOUT, 0, "current options are:");
-      for(i=1; i<IIM_MAX; ++i)
-      {
+      for (i=1; i<IIM_MAX; ++i) {
         warningStreamPrint(LOG_STDOUT, 0, "| %-15s [%s]", INIT_METHOD_NAME[i], INIT_METHOD_DESC[i]);
       }
       throwStreamPrint(threadData, "see last warning");
@@ -569,39 +580,29 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   /* initialize all (nonlinear|linear|mixed) systems
    * This is a workaround and should be removed as soon as possible.
    */
-  for(i=0; i<data->modelData.nNonLinearSystems; ++i)
-  {
+  for(i=0; i<data->modelData.nNonLinearSystems; ++i) {
     data->simulationInfo.nonlinearSystemData[i].solved = 1;
   }
-  for(i=0; i<data->modelData.nLinearSystems; ++i)
-  {
+  for(i=0; i<data->modelData.nLinearSystems; ++i) {
     data->simulationInfo.linearSystemData[i].solved = 1;
   }
-  for(i=0; i<data->modelData.nMixedSystems; ++i)
-  {
+  for(i=0; i<data->modelData.nMixedSystems; ++i) {
     data->simulationInfo.mixedSystemData[i].solved = 1;
   }
   /* end workaround */
 
   /* select the right initialization-method */
-  if(IIM_NONE == initMethod)
-  {
+  if(IIM_NONE == initMethod) {
     retVal = 0;
-  }
-  else if(IIM_SYMBOLIC == initMethod)
-  {
+  } else if(IIM_SYMBOLIC == initMethod) {
     retVal = symbolic_initialization(data, threadData, lambda_steps);
-  }
-  else
-  {
+  } else {
     throwStreamPrint(threadData, "unsupported option -iim");
   }
 
   /* do pivoting for dynamic state selection if selection changed try again */
-  if(stateSelection(data, threadData, 0, 1) == 1)
-  {
-    if(stateSelection(data, threadData, 1, 1) == 1)
-    {
+  if(stateSelection(data, threadData, 0, 1) == 1) {
+    if(stateSelection(data, threadData, 1, 1) == 1) {
       /* report a warning about strange start values */
       warningStreamPrint(LOG_STDOUT, 0, "Cannot initialize the dynamic state selection in an unique way. Use -lv LOG_DSS to see the switching state set.");
     }
@@ -610,16 +611,11 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   /* check for unsolved (nonlinear|linear|mixed) systems
    * This is a workaround and should be removed as soon as possible.
    */
-  if(check_nonlinear_solutions(data, 1))
-  {
+  if(check_nonlinear_solutions(data, 1)) {
     retVal = -2;
-  }
-  else if(check_linear_solutions(data, 1))
-  {
+  } else if(check_linear_solutions(data, 1)) {
     retVal = -3;
-  }
-  else if(check_mixed_solutions(data, 1))
-  {
+  } else if(check_mixed_solutions(data, 1)) {
     retVal = -4;
   }
   /* end workaround */

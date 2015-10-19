@@ -818,9 +818,12 @@ algorithm
       list<BackendDAE.VarKind> kind_lst;
 
     /* Real non discrete variable */
+    case (BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE(_), varType = DAE.T_REAL(_,_)))
+      then true;
+
     case (BackendDAE.VAR(varKind = kind, varType = DAE.T_REAL(_,_))) equation
       kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DUMMY_DER(), BackendDAE.DUMMY_STATE(), BackendDAE.OPT_INPUT_WITH_DER(), BackendDAE.OPT_INPUT_DER()};
-    then listMember(kind, kind_lst) or isOptLoopInput(kind);
+      then listMember(kind, kind_lst) or isOptLoopInput(kind);
 
     else false;
   end match;
@@ -847,7 +850,7 @@ algorithm
 
     /* Real discrete variable */
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), varType = DAE.T_REAL(_,_)))
-    then true;
+      then true;
 
     else false;
   end match;
@@ -865,9 +868,12 @@ algorithm
       list<BackendDAE.VarKind> kind_lst;
 
     /* string variable */
+    case (BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE(_), varType = DAE.T_STRING()))
+      then true;
+
     case (BackendDAE.VAR(varKind = kind, varType = DAE.T_STRING())) equation
       kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(), BackendDAE.DUMMY_STATE()};
-    then listMember(kind, kind_lst);
+      then listMember(kind, kind_lst);
 
     else false;
   end match;
@@ -883,6 +889,9 @@ algorithm
       BackendDAE.Type typeVar;
       list<BackendDAE.VarKind> kind_lst;
     /* int variable */
+    case (BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE(_), varType = DAE.T_INTEGER()))
+      then true;
+
     case (BackendDAE.VAR(varKind = kind,
                      varType = DAE.T_INTEGER()))
       equation
@@ -913,12 +922,16 @@ algorithm
       BackendDAE.Type typeVar;
       list<BackendDAE.VarKind> kind_lst;
     /* int variable */
+    case (BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE(_), varType = DAE.T_BOOL()))
+      then true;
+
     case (BackendDAE.VAR(varKind = kind,
                      varType = DAE.T_BOOL()))
       equation
         kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
                     BackendDAE.DUMMY_STATE()};
       then listMember(kind, kind_lst);
+
     else false;
   end matchcontinue;
 end isVarBoolAlg;
@@ -1692,7 +1705,7 @@ algorithm
       DAE.VarDirection dir;
       DAE.ConnectorType ct;
     case (BackendDAE.VAR(varName = cr,varDirection = dir,connectorType = ct))
-      then topLevelOutput(cr, dir, ct);
+      then DAEUtil.topLevelOutput(cr, dir, ct);
   end match;
 end isVarOnTopLevelAndOutput;
 
@@ -1700,7 +1713,7 @@ public function isVarOnTopLevelAndInput "and has the DAE.VarDirection = INPUT
   The check for top-model is done by splitting the name at '.' and checking if
   the list-length is 1."
   input BackendDAE.Var inVar;
-  output Boolean outBoolean = topLevelInput(inVar.varName, inVar.varDirection, inVar.connectorType);
+  output Boolean outBoolean = DAEUtil.topLevelInput(inVar.varName, inVar.varDirection, inVar.connectorType);
 end isVarOnTopLevelAndInput;
 
 public function isVarOnTopLevelAndInputNoDerInput
@@ -1708,35 +1721,6 @@ public function isVarOnTopLevelAndInputNoDerInput
     output Boolean outBoolean = isVarOnTopLevelAndInput(inVar) and not isRealOptimizeDerInput(inVar);
 end isVarOnTopLevelAndInputNoDerInput;
 
-public function topLevelInput "author: PA
-  Succeeds if variable is input declared at the top level of the model,
-  or if it is an input in a connector instance at top level."
-  input DAE.ComponentRef inComponentRef;
-  input DAE.VarDirection inVarDirection;
-  input DAE.ConnectorType inConnectorType;
-  output Boolean outTopLevelInput;
-algorithm
-  outTopLevelInput := match (inComponentRef,inVarDirection,inConnectorType)
-    case (DAE.CREF_IDENT(), DAE.INPUT(), _) then true;
-    case (DAE.CREF_QUAL(componentRef = DAE.CREF_IDENT()), DAE.INPUT(), DAE.FLOW()) then true;
-    case (DAE.CREF_QUAL(componentRef = DAE.CREF_IDENT()), DAE.INPUT(), DAE.POTENTIAL()) then true;
-    else false;
-  end match;
-end topLevelInput;
-
-protected function topLevelOutput
-  input DAE.ComponentRef inComponentRef;
-  input DAE.VarDirection inVarDirection;
-  input DAE.ConnectorType inConnectorType;
-  output Boolean outTopLevelOutput;
-algorithm
-  outTopLevelOutput := match(inComponentRef, inVarDirection, inConnectorType)
-    case (DAE.CREF_IDENT(), DAE.OUTPUT(), _) then true;
-    case (DAE.CREF_QUAL(componentRef = DAE.CREF_IDENT()), DAE.OUTPUT(), DAE.FLOW()) then true;
-    case (DAE.CREF_QUAL(componentRef = DAE.CREF_IDENT()), DAE.OUTPUT(), DAE.POTENTIAL()) then true;
-    else false;
-  end match;
-end topLevelOutput;
 
 
 public function isFinalVar "Returns true if the variable is final."
@@ -2231,26 +2215,22 @@ public function isTopLevelInputOrOutput "author: LP
               vars: Variables, /* BackendDAE.Variables */
               knownVars: BackendDAE.Variables /* Known BackendDAE.Variables */)
   outputs: bool"
-  input DAE.ComponentRef inComponentRef1;
-  input BackendDAE.Variables inVariables2;
-  input BackendDAE.Variables inVariables3;
+  input DAE.ComponentRef inComponentRef;
+  input BackendDAE.Variables inVars;
+  input BackendDAE.Variables inKnVars;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inComponentRef1,inVariables2,inVariables3)
+  outBoolean := matchcontinue inComponentRef
     local
       DAE.ComponentRef cr;
-      BackendDAE.Variables vars,knvars;
-    case (cr,vars,_)
-      equation
-        ((BackendDAE.VAR(varName = DAE.CREF_IDENT(), varDirection = DAE.OUTPUT()) :: _),_) = getVar(cr, vars);
-      then
-        true;
-    case (cr,_,knvars)
-      equation
-        ((BackendDAE.VAR(varDirection = DAE.INPUT()) :: _),_) = getVar(cr, knvars) "input variables stored in known variables are input on top level";
-      then
-        true;
-    case (_,_,_) then false;
+      BackendDAE.Var v;
+    case _
+      equation (v::_, _) = getVar(inComponentRef, inVars);
+      then isVarOnTopLevelAndOutput(v);
+    case _
+      equation (v::_, _) = getVar(inComponentRef, inKnVars);
+      then isVarOnTopLevelAndInput(v);
+    else false;
   end matchcontinue;
 end isTopLevelInputOrOutput;
 
@@ -2658,6 +2638,19 @@ public function getVarShared
 algorithm
   (outVarLst, outIntegerLst) := getVar(inComponentRef, inShared.knownVars);
 end getVarShared;
+
+public function containsCref
+  input DAE.ComponentRef cr;
+  input BackendDAE.Variables inVariables;
+  output Boolean outB;
+algorithm
+  try
+    getVar(cr, inVariables);
+    outB := true;
+  else
+    outB := false;
+  end try;
+end containsCref;
 
 public function getVar
 "author: PA

@@ -138,7 +138,7 @@ static int simulationStep(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
 
   infoStreamPrint(LOG_SOLVER, 1, "call solver from %g to %g (stepSize: %.15g)", solverInfo->currentTime, solverInfo->currentTime + solverInfo->currentStepSize, solverInfo->currentStepSize);
-  if(0 != strcmp("ia", MMC_STRINGDATA(data->simulationInfo.outputFormat)))
+  if(0 != strcmp("ia", data->simulationInfo.outputFormat))
   {
     communicateStatus("Running", (solverInfo->currentTime - simInfo->startTime)/(simInfo->stopTime - simInfo->startTime));
   }

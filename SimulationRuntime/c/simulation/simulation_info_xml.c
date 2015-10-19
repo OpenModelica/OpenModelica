@@ -164,7 +164,7 @@ static void XMLCALL startElement(void *voidData, const char *name, const char **
       userData->xml->equationInfo[userData->curIndex].parent = 0;
     }
     if(userData->curIndex != ix) {
-      throwStreamPrint(NULL, "%s: Info XML %s got equation with index %ld, expected %ld", __FILE__, userData->xml->fileName, ix, userData->curIndex);
+      throwStreamPrint(NULL, "%s: Info XML %s got equation with index %ld, expected %ld", __FILE__, userData->xml->fileName, (long) ix, (long) userData->curIndex);
     }
     userData->xml->equationInfo[userData->curIndex].id = userData->curIndex;
     userData->xml->equationInfo[userData->curIndex].profileBlockIndex = measure_time_flag & 2 ? userData->curIndex : -1; /* TODO: Set when parsing other tags */
@@ -290,7 +290,7 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
         mmc_uint_t line = XML_GetCurrentLineNumber(parser);
         fclose(file);
         XML_ParserFree(parser);
-        throwStreamPrint(NULL, "%s: Error: failed to read the XML file %s: %s at line %lu", __FILE__, xml->fileName, err, line);
+        throwStreamPrint(NULL, "%s: Error: failed to read the XML file %s: %s at line %lu", __FILE__, xml->fileName, err, (unsigned long) line);
       }
     } while(!done);
     fclose(file);
@@ -299,7 +299,7 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
       const char *err = XML_ErrorString(XML_GetErrorCode(parser));
       mmc_uint_t line = XML_GetCurrentLineNumber(parser);
       XML_ParserFree(parser);
-      throwStreamPrint(NULL, "%s: Error: failed to read the XML data %s: %s at line %lu", __FILE__, xml->infoXMLData, err, line);
+      throwStreamPrint(NULL, "%s: Error: failed to read the XML data %s: %s at line %lu", __FILE__, xml->infoXMLData, err, (unsigned long) line);
     }
   }
   assert(xml->nEquations == userData.curIndex);

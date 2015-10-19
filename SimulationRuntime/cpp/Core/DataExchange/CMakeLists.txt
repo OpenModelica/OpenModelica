@@ -5,7 +5,7 @@ project(${DataExchangeName})
 add_library(${DataExchangeName} SHARED SimData.cpp FactoryExport.cpp XmlPropertyReader.cpp)
 
 IF(NOT BOOST_STATIC_LINKING)
-	target_link_libraries (${DataExchangeName} ${Boost_LIBRARIES})
+	target_link_libraries (${DataExchangeName} ${Boost_LIBRARIES} ${ExtensionUtilitiesName})
 ENDIF(NOT BOOST_STATIC_LINKING)
 
 include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})

@@ -37,8 +37,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-pthread_key_t mmc_thread_data_key = 0;
-
 /*
 void* mmc_mk_rcon(double d)
 {
@@ -912,19 +910,4 @@ modelica_integer valueHashMod(void *p, modelica_integer mod)
 void* boxptr_valueHashMod(threadData_t *threadData,void *p, void *mod)
 {
   return mmc_mk_icon(mmc_prim_hash(p,5381) % (mmc_uint_t) mmc_unbox_integer(mod));
-}
-
-pthread_once_t mmc_init_once = PTHREAD_ONCE_INIT;
-
-void mmc_init_nogc()
-{
-  pthread_key_create(&mmc_thread_data_key,NULL);
-  init_metamodelica_segv_handler();
-  MMC_INIT_STACK_OVERFLOW();
-}
-
-void mmc_init(int withgc)
-{
-  mmc_init_nogc();
-  mmc_GC_init();
 }

@@ -46,6 +46,7 @@ extern "C" {
 
 void read_input_xml(MODEL_DATA* modelData,
                     SIMULATION_INFO* simulationData);
+void parseVariableStr(char* variableStr);
 
 #ifdef __cplusplus
 }

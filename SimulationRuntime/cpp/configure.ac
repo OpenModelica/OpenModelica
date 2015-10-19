@@ -20,6 +20,7 @@ AC_ARG_WITH(cppruntime-args,  [  --with-cppruntime-args=[cpp-args]       (pass c
 BOOST_STATIC_LINKING="no"
 BOOST_REALPATHS="no"
 BOOST_ROOT=""
+BOOST_ROOT_COMMAND=""
 RUNTIME_PROFILING="no"
 SCOREP="no"
 SCOREP_HOME=""
@@ -33,7 +34,7 @@ CMAKE_BUILDTYPE="RelWithDebInfo"
 
 AC_SUBST(BOOST_STATIC_LINKING_COMMAND)
 AC_SUBST(BOOST_REALPATHS_COMMAND)
-AC_SUBST(BOOST_ROOT)
+AC_SUBST(BOOST_ROOT_COMMAND)
 AC_SUBST(RUNTIME_PROFILING_COMMAND)
 AC_SUBST(SCOREP_COMMAND)
 AC_SUBST(SCOREP_HOME)
@@ -72,7 +73,13 @@ IFS=$old_ifs
 
 
 AC_ARG_WITH(boost-root,  [  --with-boost-root=[path]       (set the root directory of boost)],[BOOST_ROOT="$withval"],[])
-AC_MSG_RESULT([Boost root is set to $BOOST_ROOT])
+if test "$BOOST_ROOT" = ""; then
+  BOOST_ROOT_COMMAND=""
+else
+  BOOST_ROOT_COMMAND="-DBOOST_ROOT=$BOOST_ROOT"
+  AC_MSG_RESULT([Boost root is set to $BOOST_ROOT])
+fi
+
 
 AC_ARG_WITH(cppruntimeBoostStaticLinking,  [  --with-boost-static-linking       (use static boost libraries for linking)],[BOOST_STATIC_LINKING="$withval"],[])
 

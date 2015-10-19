@@ -1753,7 +1753,6 @@ algorithm
         true = b1 or b2;
         source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_1);
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_1);
-        eqAttr = replaceEquationAttributes(eqAttr,repl);
         (DAE.EQUALITY_EXPS(e1_2,e2_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1_1,e2_1),source);
       then
         (BackendDAE.EQUATION(e1_2,e2_2,source,eqAttr)::inAcc,true);
@@ -1772,7 +1771,6 @@ algorithm
         (e_1,true) = replaceExp(e, repl,inFuncTypeExpExpToBooleanOption);
         (e_2,_) = ExpressionSimplify.simplify(e_1);
         source = DAEUtil.addSymbolicTransformationSubstitution(true,source,e,e_2);
-        eqAttr = replaceEquationAttributes(eqAttr,repl);
       then
         (BackendDAE.SOLVED_EQUATION(cr,e_2,source,eqAttr)::inAcc,true);
 
@@ -2721,81 +2719,6 @@ algorithm
     then varIn;
   end match;
 end replaceVariableAttributesInVar;
-
-protected function replaceEquationAttributes"replaces iterCrefs in the LoopInfo.
-author:Waurich TUD 05-2015"
-  input BackendDAE.EquationAttributes eqAttrIn;
-  input VariableReplacements repl;
-  output BackendDAE.EquationAttributes eqAttrOut;
-algorithm
-  eqAttrOut := matchcontinue(eqAttrIn,repl)
-    local
-      Boolean differentiated;
-      BackendDAE.EquationKind kind;
-      Integer id;
-      BackendDAE.LoopInfo loopInfo;
-      DAE.Exp startIt, endIt;
-      list<BackendDAE.IterCref> crefs;
-  case(BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated, kind=kind, loopInfo=BackendDAE.LOOP(loopId=id,startIt=startIt,endIt=endIt,crefs=crefs)),_)
-    equation
-      crefs = replaceIterationCrefs(crefs,repl,{});
-      if listEmpty(crefs) then loopInfo = BackendDAE.NO_LOOP();
-      else loopInfo = BackendDAE.LOOP(id,startIt,endIt,crefs);
-      end if;
-    then BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, loopInfo);
-  else
-    then eqAttrIn;
-  end matchcontinue;
-end replaceEquationAttributes;
-
-protected function replaceIterationCrefs"replaces iterated crefs in the equation attributes"
-  input list<BackendDAE.IterCref> iterCrefsIn;
-  input VariableReplacements repl;
-  input list<BackendDAE.IterCref> foldIn;
-  output list<BackendDAE.IterCref> iterCrefsOut;
-algorithm
-  (iterCrefsOut) := matchcontinue(iterCrefsIn,repl,foldIn)
-    local
-      BackendDAE.IterCref itCref;
-      list<BackendDAE.IterCref> rest,itCrefLst;
-      DAE.ComponentRef cref;
-      DAE.Exp iterator, crefExp;
-      DAE.Operator op;
-  case({},_,_)
-    then foldIn;
-  case(BackendDAE.ITER_CREF(cref = cref, iterator=iterator)::rest,_,_)
-    algorithm
-      (crefExp,_) := replaceCref(cref,repl);
-      try
-        {cref} := Expression.extractCrefsFromExp(crefExp);
-        itCref := BackendDAE.ITER_CREF(cref, iterator);
-        itCrefLst := itCref::foldIn;
-      else
-        itCrefLst := foldIn;
-      end try;
-      itCrefLst := replaceIterationCrefs(rest,repl,itCrefLst);
-    then itCrefLst;
-  case(BackendDAE.ACCUM_ITER_CREF(cref = cref, op=op)::rest,_,_)
-    algorithm
-      (crefExp,_) := replaceCref(cref,repl);
-      if Expression.isNegativeUnary(crefExp) then
-        op := negateOperator(op);
-      end if;
-      try
-        {cref} := Expression.extractCrefsFromExp(crefExp);
-        itCref := BackendDAE.ACCUM_ITER_CREF(cref, op);
-        itCrefLst := itCref::foldIn;
-      else
-        itCrefLst := foldIn;
-      end try;
-      itCrefLst := replaceIterationCrefs(rest,repl,itCrefLst);
-    then itCrefLst;
-  case(_::rest,_,_)
-    algorithm
-      itCrefLst := replaceIterationCrefs(rest,repl,foldIn);
-    then itCrefLst;
-  end matchcontinue;
-end replaceIterationCrefs;
 
 protected function negateOperator
   "makes an add out of a sub and a sub out of an add."

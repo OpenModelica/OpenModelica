@@ -305,6 +305,11 @@ void (*function_updateSynchronous)(DATA *data, threadData_t *threadData, long i)
  * Sub-partition's equations
  */
 int (*function_equationsSynchronous)(DATA *data, threadData_t *threadData, long i);
+#ifdef FMU_EXPERIMENTAL
+/* functionODEPartial contains those equations that are needed
+ * to calculate the state derivative i-th */
+void (*functionODEPartial)(DATA *data, threadData_t*, int i);
+#endif
 };
 
 #ifdef __cplusplus

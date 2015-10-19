@@ -129,6 +129,11 @@ extern const char* System_getRTLibsSim()
   return LDFLAGS_RT_SIM;
 }
 
+extern const char* System_getRTLibsFMU()
+{
+  return LDFLAGS_RT_SOURCE_FMU;
+}
+
 extern const char* System_getCCompiler()
 {
   return cc;

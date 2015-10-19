@@ -50,8 +50,11 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *global
   , _dimString      (0)
   , _dimZeroFunc      (0)
   , _dimTimeEvent      (0)
+  , _dimClock        (0)
   , _dimAE        (0)
   , _time_event_counter  (NULL)
+  , _clockTime      (NULL)
+  , _clockInterval  (NULL)
   , _outputStream(NULL)
   , _callType        (IContinuous::UNDEF_UPDATE)
   , _initial        (false)
@@ -79,8 +82,11 @@ SystemDefaultImplementation::SystemDefaultImplementation(SystemDefaultImplementa
   , _dimString      (0)
   , _dimZeroFunc      (0)
   , _dimTimeEvent      (0)
+  , _dimClock        (0)
   , _dimAE        (0)
   , _time_event_counter  (NULL)
+  , _clockTime      (NULL)
+  , _clockInterval  (NULL)
   , _outputStream(NULL)
   , _callType        (IContinuous::UNDEF_UPDATE)
   , _initial        (false)
@@ -119,7 +125,8 @@ SystemDefaultImplementation::~SystemDefaultImplementation()
   if(_time_conditions) delete [] _time_conditions ;
   if(_time_event_counter) delete [] _time_event_counter;
   if(_conditions0) delete [] _conditions0;
-
+  if(_clockTime) delete [] _clockTime;
+  if(_clockInterval) delete [] _clockInterval;
 }
 
 void SystemDefaultImplementation::Assert(bool cond,const string& msg)
@@ -158,6 +165,11 @@ int SystemDefaultImplementation::getDimReal() const
 int SystemDefaultImplementation::getDimString() const
 {
   return _dimString;
+}
+
+int SystemDefaultImplementation::getDimClock() const
+{
+  return _dimClock;
 }
 
 /// Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
@@ -208,6 +220,13 @@ void SystemDefaultImplementation::initialize()
 
     memset(_time_conditions,false,(_dimTimeEvent)*sizeof(bool));
     memset(_time_event_counter,0,(_dimTimeEvent)*sizeof(int));
+  }
+  if (_dimClock > 0)
+  {
+    if (_clockTime) delete [] _clockTime;
+    _clockTime = new double [_dimClock];
+    if (_clockInterval) delete [] _clockInterval;
+    _clockInterval = new double [_dimClock];
   }
   _start_time = 0.0;
   _terminal = false;
@@ -261,6 +280,18 @@ void SystemDefaultImplementation::getString(string* z)
   }
 
 };
+
+void SystemDefaultImplementation::getClock(bool* z)
+{
+  for(int i = _dimTimeEvent - _dimClock; i < _dimTimeEvent; i++) {
+    z[i] = _time_conditions[i];
+  }
+}
+
+double *SystemDefaultImplementation::clockInterval()
+{
+  return _clockInterval;
+}
 
 void SystemDefaultImplementation::getContinuousStates(double* z)
 {
@@ -355,6 +386,13 @@ void SystemDefaultImplementation::setReal(const double* z)
   }
 };
 
+void SystemDefaultImplementation::setClock(const bool* z)
+{
+  for(int i = _dimTimeEvent - _dimClock; i < _dimTimeEvent; i++) {
+    _time_conditions[i] = z[i];
+  }
+}
+
 void SystemDefaultImplementation::setContinuousStates(const double* z)
 {
   std::copy(z ,z + _dimContinuousStates,__z);
@@ -378,7 +416,7 @@ void SystemDefaultImplementation::setRHS(const double* f)
 /// Provide the right hand side (according to the index)
 void SystemDefaultImplementation::getRHS(double* f)
 {
-std:copy(__zDot, __zDot+_dimRHS, f);
+  std::copy(__zDot, __zDot+_dimRHS, f);
   //     for(int i=0; i<_dimRHS; ++i)
   //      f[i] = __zDot[i];
 };

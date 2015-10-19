@@ -33,8 +33,8 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
-#include <gc.h>
 #include "omc_msvc.h"
+#include "memory_pool.h"
 
 /* If min_time is set, subtract this amount from measured times to avoid
  * including the time of measuring in reported statistics */
@@ -544,7 +544,7 @@ double rt_ext_tp_tock(rtclock_t* tick_tp) {
 
 static OMC_INLINE void alloc_and_copy(void **ptr, size_t n, size_t sz)
 {
-  void *newmemory = GC_malloc(n*sz);
+  void *newmemory = omc_alloc_interface.malloc(n*sz);
   assert(newmemory != 0);
   memcpy(newmemory,*ptr,NUM_RT_CLOCKS*sz);
   *ptr = newmemory;

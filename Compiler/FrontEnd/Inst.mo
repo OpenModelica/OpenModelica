@@ -4056,7 +4056,7 @@ algorithm
         m_3 = Mod.merge(m_2, old_m_1, env_1, pre);
         m_3 = Mod.merge(m_3, cmod, env_1, pre);
 
-        redecl = NFSCodeFlattenRedeclare.propagateAttributesVar(comp, redComp);
+        (cache, redecl) = propagateRedeclCompAttr(cache, env_1, comp, redComp);
         redecl = SCode.setComponentMod(redecl, mod);
       then
         (cache,env_1,ih,redecl,m_3);
@@ -4085,7 +4085,7 @@ algorithm
         m_3 = Mod.merge(m_2, old_m_1, env_1, pre);
         m_3 = Mod.merge(cmod, m_3 ,env_1,pre);
 
-        redecl = NFSCodeFlattenRedeclare.propagateAttributesVar(comp, redComp);
+        (cache, redecl) = propagateRedeclCompAttr(cache, env_1, comp, redComp);
         redecl = SCode.setComponentMod(redecl, mod);
       then
         (cache,env_1,ih,redecl,m_3);
@@ -4159,6 +4159,31 @@ algorithm
         fail();
   end matchcontinue;
 end redeclareType;
+
+protected function propagateRedeclCompAttr
+  "Helper function to redeclareType, propagates attributes from the old
+   component to the new according to the rules for redeclare."
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input SCode.Element inOldComponent;
+  input SCode.Element inNewComponent;
+  output FCore.Cache outCache = inCache;
+  output SCode.Element outComponent;
+protected
+  Boolean is_array = false;
+algorithm
+  // If the old component has array dimensions but the new one doesn't, then we
+  // need to check if the new component's type is an array type. If it is we
+  // shouldn't propagate the dimensions from the old component. I.e. we should
+  // treat: type Real3 = Real[3]; comp(redeclare Real3 x);
+  // in the same way as: comp(redeclare Real x[3]).
+  if SCode.isArrayComponent(inOldComponent) and not SCode.isArrayComponent(inNewComponent) then
+    (outCache, is_array) := Lookup.isArrayType(outCache, inEnv,
+      Absyn.typeSpecPath(SCode.getComponentTypeSpec(inNewComponent)));
+  end if;
+
+  outComponent := SCode.propagateAttributesVar(inOldComponent, inNewComponent, is_array);
+end propagateRedeclCompAttr;
 
 protected function updateComponentsInEnv
 "author: PA

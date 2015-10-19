@@ -56,14 +56,14 @@ void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTi
     }
   }
 
-  for(i=0; i<data->modelData.nSubClocks; i++)
-  {
-    assertStreamPrint(NULL, data->modelData.subClocksInfo[i].solverMethod, "Continuous clocked systems aren't supported yet");
+  for(i=0; i<data->modelData.nSubClocks; i++) {
+    assertStreamPrint(NULL, NULL != data->modelData.subClocksInfo[i].solverMethod, "Continuous clocked systems aren't supported yet");
   }
 
   TRACE_POP
 }
 
+#if !defined(OMC_MINIMAL_RUNTIME)
 static void insertTimer(LIST* list, SYNC_TIMER* timer)
 {
   TRACE_PUSH
@@ -113,8 +113,27 @@ void checkForSynchronous(DATA *data, SOLVER_INFO* solverInfo)
   TRACE_POP
 }
 
+/*
+void printSubClock(SUBCLOCK_INFO* subClock)
+{
+  printf("sub-clock\n");
+  printf("shift: %ld / %ld\n", subClock->shift.m, subClock->shift.n);
+  printf("factor: %ld / %ld\n", subClock->factor.m, subClock->factor.n);
+  printf("solverMethod: %s\n", subClock->solverMethod);
+  printf("holdEvents: %s\n\n", subClock->holdEvents ? "true" : "false");
+  fflush(stdout);
+}
+
+void printRATIONAL(RATIONAL* r)
+{
+  printf("RATIONAL: %ld / %ld\n", r->m, r->n);
+  fflush(stdout);
+}
+*/
+
 void fireClock(DATA* data, threadData_t *threadData, long idx, double curTime)
 {
+  TRACE_PUSH
   const CLOCK_INFO* clk = data->modelData.clocksInfo + idx;
   CLOCK_DATA* clkData = data->simulationInfo.clocksData + idx;
   data->callback->function_updateSynchronous(data, threadData, idx);
@@ -139,7 +158,7 @@ void fireClock(DATA* data, threadData_t *threadData, long idx, double curTime)
       insertTimer(data->simulationInfo.intvlTimers, &nextTimer);
     }
   }
-
+  TRACE_POP
 }
 
 static void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curTime)
@@ -202,6 +221,7 @@ int handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   TRACE_POP
   return ret;
 }
+#endif /* !defined(OMC_MINIMAL_RUNTIME) */
 
 #ifdef __cplusplus
 }

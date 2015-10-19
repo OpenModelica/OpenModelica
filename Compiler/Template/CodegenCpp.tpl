@@ -2318,7 +2318,6 @@ extern "C" void <%modelname%>__FB_Init(<%modelname%>_FB_Init_struct* p)
   //double cycletime = p->instance->cycletime;
   double cycletime;
   getMotionCycle(cycletime);
-
   int result = initSimulation(simController, simData, cycletime);
   if (result < 0)
   {
@@ -3905,8 +3904,9 @@ match simCode
       //Number of equations
       <%dimension1(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
       _dimZeroFunc = <%zeroCrossLength(simCode)%>;
+      _dimClock = <%listLength(clockedPartitions)%>;
       // simplified treatment of clocks in model as time events
-      _dimTimeEvent = <%timeEventLength(simCode)%> + <%listLength(clockedPartitions)%>;
+      _dimTimeEvent = <%timeEventLength(simCode)%> + _dimClock;
       //Number of residues
        _event_handling= shared_ptr<EventHandling>(new EventHandling());
        initializeAlgloopSolverVariables(); //if we do not initialize it here, we get a segfault in the destructor if initialization of Solver or OMFactory has failed
@@ -6073,6 +6073,7 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
    let initFunctions = functionInitial(startValueEquations, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
    let initZeroCrossings = functionOnlyZeroCrossing(zeroCrossings,varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace)
    let initEventHandling = eventHandlingInit(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
+   let initClockIntervals = clockIntervalsInit(simCode, &varDecls, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 
    let initAlgloopSolvers = initAlgloopsolvers(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
    let initAlgloopvars = initAlgloopVars(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
@@ -6186,6 +6187,7 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
 
       //init event handling
       <%initEventHandling%>
+      <%initClockIntervals%>
 
       //init equations
       initEquations();
@@ -6325,7 +6327,7 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, Text method
   "Generates function in simulation file."
 ::=
   let equation_func_calls = (initalEquations |> eq =>
-        equation_function_create_single_func(eq, contextOther, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,methodName, "Initialize", stateDerVectorName, useFlatArrayNotation, createMeasureTime, assignToStartValues, overwriteOldStartValues)
+        equation_function_create_single_func(eq, contextOther, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,methodName, "Initialize", stateDerVectorName, useFlatArrayNotation, createMeasureTime, assignToStartValues, overwriteOldStartValues, "")
       ;separator="\n")
 
   <<
@@ -9938,6 +9940,27 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
 end eventHandlingInit;
 
 
+template clockIntervalsInit(SimCode simCode, Text& varDecls, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+::=
+  match simCode
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+  <<
+    <%(clockedPartitions |> partition hasindex i fromindex 0 =>
+      match partition
+        case CLOCKED_PARTITION(__) then
+          let &preExp = buffer "" /*BUFD*/
+          let intvl = daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+          <<
+          <%preExp%>
+          _clockInterval[<%i%>] = <%intvl%>;
+          _clockTime[<%i%>] = _simTime;
+          >>
+        else ''
+      ;separator="\n")%>
+  >>
+end clockIntervalsInit;
+
+
 template dimension1(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
   match simCode
@@ -10244,11 +10267,11 @@ end equation_function_call;
 
 template equation_function_create_single_func(SimEqSystem eq, Context context, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace,
                                               Text method,Text classnameext, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean createMeasureTime,
-                                              Boolean assignToStartValues, Boolean overwriteOldStartValue)
+                                              Boolean assignToStartValues, Boolean overwriteOldStartValue, String defaultVarDeclsLocal)
 ::=
   let ix_str = equationIndex(eq)
   let ix_str_array = intSub(stringInt(ix_str),1) //equation index - 1
-  let &varDeclsLocal = buffer "" /*BUFD*/
+  let &varDeclsLocal = buffer defaultVarDeclsLocal /*BUFD*/
   let &additionalFuncs = buffer "" /*BUFD*/
   let &measureTimeStartVar = buffer "" /*BUFD*/
   let &measureTimeEndVar = buffer "" /*BUFD*/
@@ -10258,7 +10281,8 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
      then
       equationSimpleAssign(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues, overwriteOldStartValue)
    case e as SES_IFEQUATION(__)
-    then "SES_IFEQUATION"
+     then
+     equationIfEquation(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
    case e as SES_ALGORITHM(__)
       then
       equationAlgorithm(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -10275,7 +10299,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
     case e as SES_MIXED(__)
       then
       /*<%equationMixed(e, context, &varDeclsLocal, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>*/
-      let &additionalFuncs += equation_function_create_single_func(e.cont, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, method, classnameext, stateDerVectorName, useFlatArrayNotation, createMeasureTime, assignToStartValues, overwriteOldStartValue)
+      let &additionalFuncs += equation_function_create_single_func(e.cont, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, method, classnameext, stateDerVectorName, useFlatArrayNotation, createMeasureTime, assignToStartValues, overwriteOldStartValue, "")
       "throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,\"Mixed systems are not supported yet\");"
     case e as SES_FOR_LOOP(__)
       then
@@ -10620,7 +10644,7 @@ template generateTimeEvent(list<BackendDAE.TimeEvent> timeEvents, SimCode simCod
           match partition
             case CLOCKED_PARTITION(__) then
               let &preExp = buffer "" /*BUFD*/
-              let intvl = daeExp(getClockIntvl(baseClock), contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+              let intvl = daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
               <<
               <%preExp%>
               time_events.push_back(std::make_pair(0.0, <%intvl%>));
@@ -11566,6 +11590,44 @@ template whenAssign(ComponentRef left, Type ty, Exp right, Context context, Text
     <%lhs%> = <%exp%>;
     >>
 end whenAssign;
+
+template equationIfEquation(SimEqSystem eq, Context context,Text &varDecls /*BUFP*/, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates an if equation."
+::=
+match eq
+case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
+  let &preExp = buffer ""
+  let IfEquation = (ifbranches |> (e, eqns) hasindex index0 =>
+    let condition = daeExp(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let ifequations = (eqns |> eqn =>
+      let eqnStr = equation_(eqn, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, &extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      <<
+      <%eqnStr%>
+      >>
+      ; separator="\n")
+    let conditionline = if index0 then 'else if(<%condition%>)' else 'if(<%condition%>)'
+    <<
+    <%conditionline%>
+    {
+      <%ifequations%>
+    }
+    >>
+    ; separator="\n")
+  let elseequations = (elsebranch |> eqn =>
+    let eqnStr = equation_(eqn, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, &extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    <<
+    <%eqnStr%>
+    >>
+    ; separator="\n")
+  <<
+  <%preExp%>
+  <%IfEquation%>
+  else
+  {
+    <%elseequations%>
+  }
+  >>
+end equationIfEquation;
 
 template equationElseWhen(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                           Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -12675,7 +12737,7 @@ end checkForDiscreteEvents;
 template equationFunctions(list<SimEqSystem> allEquationsPlusWhen, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean enableMeasureTime)
 ::=
   let equation_func_calls = (allEquationsPlusWhen |> eq =>
-                    equation_function_create_single_func(eq, context/*BUFC*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,"evaluate","", stateDerVectorName, useFlatArrayNotation,enableMeasureTime,false,false)
+                    equation_function_create_single_func(eq, context/*BUFC*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,"evaluate","", stateDerVectorName, useFlatArrayNotation,enableMeasureTime,false,false, "")
                     ;separator="\n")
   <<
   <%equation_func_calls%>
@@ -12719,18 +12781,23 @@ template clockedPartFunctions(Integer i, list<tuple<SimCodeVar.SimVar, Boolean>>
 ::=
   let className = lastIdentOfPathFromSimCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
   let funcs = equations |> eq =>
-    equation_function_create_single_func(eq, context/*BUFC*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, "evaluate", "", stateDerVectorName, useFlatArrayNotation, enableMeasureTime, false, false)
+    equation_function_create_single_func(eq, context/*BUFC*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, "evaluate", "", stateDerVectorName, useFlatArrayNotation, enableMeasureTime, false, false, 'const int clockIndex = <%i%>;<%\n%>')
     ; separator="\n"
   let funcName = 'evaluateClocked<%i%>'
   let funcCalls = (List.partition(equations, 100) |> eqs hasindex i0 =>
                    createEvaluateWithSplit(i0, context, eqs, funcName, className, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
                    ; separator="\n")
+  let idx = intAdd(i, -1)
   <<
   <%funcs%>
 
   void <%className%>::<%funcName%>(const UPDATETYPE command)
   {
     <%funcCalls%>
+    if (_simTime != _clockTime[<%idx%>]) {
+      _clockInterval[<%idx%>] = _simTime - _clockTime[<%idx%>];
+      _clockTime[<%idx%>] = _simTime;
+    }
   }
   >>
 end clockedPartFunctions;
@@ -12748,10 +12815,12 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen, SimCode simC
   {
     <%if createMeasureTime then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateAll", "MEASURETIME_MODELFUNCTIONS") else ""%>
 
-    // simplified treatment of clocks in model as time events
+    // treatment of clocks in model as time events
     for (int i = <%timeEventLength(simCode)%>; i < _dimTimeEvent; i++) {
-      if (_time_conditions[i])
+      if (_time_conditions[i]) {
         evaluateClocked(i - <%timeEventLength(simCode)%> + 1);
+        _time_conditions[i] = false; // reset clock after one evaluation
+      }
     }
 
     // Evaluate Equations

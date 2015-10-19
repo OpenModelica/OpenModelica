@@ -226,6 +226,30 @@ extern "C"
     CATCH_EXCEPTION(w);
   }
 
+  fmi2Status fmi2GetClock(fmi2Component c,
+                          const fmi2Integer clockIndex[],
+                          size_t nClockIndex, fmi2Boolean active[])
+  {
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2GetClock(nClockIndex = %d)", nClockIndex);
+    try {
+      return w->getClock(clockIndex, nClockIndex, active);
+    }
+    CATCH_EXCEPTION(w);
+  }
+
+  fmi2Status fmi2GetInterval(fmi2Component c,
+                             const fmi2Integer clockIndex[],
+                             size_t nClockIndex, fmi2Real interval[])
+  {
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2GetInterval(nClockIndex = %d)", nClockIndex);
+    try {
+      return w->getInterval(clockIndex, nClockIndex, interval);
+    }
+    CATCH_EXCEPTION(w);
+  }
+
   fmi2Status fmi2SetReal(fmi2Component c,
                          const fmi2ValueReference vr[], size_t nvr,
                          const fmi2Real value[])
@@ -270,6 +294,30 @@ extern "C"
     LOG_CALL(w, "fmi2SetString(nvr = %d)", nvr);
     try {
       return w->setString(vr, nvr, value);
+    }
+    CATCH_EXCEPTION(w);
+  }
+
+  fmi2Status fmi2SetClock(fmi2Component c,
+                          const fmi2Integer clockIndex[],
+                          size_t nClockIndex, const fmi2Boolean active[])
+  {
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2SetClock(nClockIndex = %d)", nClockIndex);
+    try {
+      return w->setClock(clockIndex, nClockIndex, active);
+    }
+    CATCH_EXCEPTION(w);
+  }
+
+  fmi2Status fmi2SetInterval(fmi2Component c,
+                             const fmi2Integer clockIndex[],
+                             size_t nClockIndex, const fmi2Real interval[])
+  {
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2SetInterval(nClockIndex = %d)", nClockIndex);
+    try {
+      return w->setInterval(clockIndex, nClockIndex, interval);
     }
     CATCH_EXCEPTION(w);
   }

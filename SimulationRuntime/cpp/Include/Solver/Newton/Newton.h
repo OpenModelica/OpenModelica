@@ -89,4 +89,5 @@ private:
         *_y_new,
         * _zeroVec;
   long int *_iHelp;
-};
+
+};/** @} */ // end of solverNewton

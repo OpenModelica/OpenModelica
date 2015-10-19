@@ -93,43 +93,72 @@ interface package GraphvizDumpTV
 
       record EQUATIONSYSTEM
         list<Integer> eqns;
-        list<Integer> vars "be carefule with states, this are solved for der(x)";
-        Option<list<tuple<Integer, Integer, Equation>>> jac;
+        list<Integer> vars "be careful with states, this are solved for der(x)";
+        Jacobian jac;
         JacobianType jacType;
+        Boolean mixedSystem "true for system that discrete dependencies to the iteration variables";
       end EQUATIONSYSTEM;
 
       record SINGLEARRAY
         Integer eqn;
-        list<Integer> vars "be carefule with states, this are solved for der(x)";
+        list<Integer> vars "be careful with states, this are solved for der(x)";
       end SINGLEARRAY;
 
       record SINGLEALGORITHM
         Integer eqn;
-        list<Integer> vars "be carefule with states, this are solved for der(x)";
+        list<Integer> vars "be careful with states, this are solved for der(x)";
       end SINGLEALGORITHM;
 
       record SINGLECOMPLEXEQUATION
         Integer eqn;
-        list<Integer> vars "be carefule with states, this are solved for der(x)";
+        list<Integer> vars "be careful with states, this are solved for der(x)";
       end SINGLECOMPLEXEQUATION;
 
       record SINGLEWHENEQUATION
         Integer eqn;
-        list<Integer> vars "be carefule with states, this are solved for der(x)";
+        list<Integer> vars "be careful with states, this are solved for der(x)";
       end SINGLEWHENEQUATION;
 
       record SINGLEIFEQUATION
         Integer eqn;
-        list<Integer> vars "be carefule with states, this are solved for der(x)";
+        list<Integer> vars "be careful with states, this are solved for der(x)";
       end SINGLEIFEQUATION;
 
       record TORNSYSTEM
-        list<Integer> tearingvars;
-        list<Integer> residualequations;
-        list<tuple<Integer,list<Integer>>> otherEqnVarTpl "list of tuples of indexes for Equation and Variable solved in the equation, in the order they have to be solved";
+        TearingSet strictTearingSet;
+        Option<TearingSet> casualTearingSet;
         Boolean linear;
+        Boolean mixedSystem "true for system that discrete dependencies to the iteration variables";
       end TORNSYSTEM;
     end StrongComponent;
+
+    uniontype Jacobian
+      record FULL_JACOBIAN
+        FullJacobian jacobian;
+      end FULL_JACOBIAN;
+
+      record GENERIC_JACOBIAN
+        SymbolicJacobian jacobian;
+        SparsePattern sparsePattern;
+        SparseColoring coloring;
+      end GENERIC_JACOBIAN;
+
+      record EMPTY_JACOBIAN end EMPTY_JACOBIAN;
+    end Jacobian;
+
+    type SymbolicJacobians = list<tuple<Option<SymbolicJacobian>, SparsePattern, SparseColoring>>;
+    type FullJacobian = Option<list<tuple<Integer, Integer, Equation>>>;
+    type SymbolicJacobian = tuple<BackendDAE,               // symbolic equation system
+                                  String,                   // Matrix name
+                                  list<Var>,                // diff vars
+                                  list<Var>,                // result diffed equation
+                                  list<Var>                 // all diffed equation
+                                  >;
+    type SparsePattern = tuple<list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>>,   // column-wise sparse pattern
+                               list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>>,   // row-wise sparse pattern
+                               tuple<list<DAE.ComponentRef>,                            // diff vars
+                                     list<DAE.ComponentRef>>>;                          // diffed vars
+    type SparseColoring = list<list<DAE.ComponentRef>>;
 
     type IncidenceMatrixElementEntry = Integer;
     type IncidenceMatrixElement = list<IncidenceMatrixElementEntry>;

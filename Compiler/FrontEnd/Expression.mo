@@ -227,7 +227,7 @@ algorithm
 
     case (DAE.ARRAY(array = {}, ty = ty))
       equation
-        (ty,dims) = Types.flattenArrayTypeOpt(ty);
+        (ty, dims) = Types.flattenArrayType(ty);
         ae1 = unleabZeroExpFromType(ty);
         expl_1 = List.map(dims, unelabDimensionToFillExp);
       then
@@ -1547,7 +1547,8 @@ algorithm
   end match;
 end expInt;
 
-public function getClockIntvl
+public function getClockInterval
+  "Returns a real interval expression for any clock kind; 0.0 if unknown."
   input DAE.ClockKind inClk;
   output DAE.Exp outIntvl;
 protected
@@ -1555,14 +1556,14 @@ protected
   Integer res;
 algorithm
   outIntvl := match inClk
-    case DAE.INFERRED_CLOCK()
-      then DAE.RCONST(1.0);
     case DAE.REAL_CLOCK(e)
       then e;
     case DAE.INTEGER_CLOCK(e, res)
-      then DAE.BINARY(e, DAE.DIV(DAE.T_REAL_DEFAULT), DAE.ICONST(res));
+      then DAE.BINARY(e, DAE.DIV(DAE.T_REAL_DEFAULT), DAE.RCONST(res));
+    else
+      then DAE.RCONST(0.0);
   end match;
-end getClockIntvl;
+end getClockInterval;
 
 public function expArrayIndex
   "Returns the array index that an expression represents as an integer."
@@ -2244,14 +2245,15 @@ algorithm
     local
       Type tp;
       Operator op;
-      DAE.Exp e1,e2,e3,e;
+      DAE.Exp e1,e2,e3,e,iterExp,operExp;
       list<DAE.Exp> explist,exps;
       Absyn.Path p;
       String msg;
-      DAE.Type ty;
+      DAE.Type ty, iterTp, operTp;
       list<DAE.Type> tys;
       Integer i,i1,i2;
       DAE.Dimension dim;
+      DAE.Dimensions iterdims;
 
     case (DAE.ICONST()) then DAE.T_INTEGER_DEFAULT;
     case (DAE.RCONST()) then DAE.T_REAL_DEFAULT;
@@ -2290,12 +2292,13 @@ algorithm
     case DAE.RSUB() then inExp.ty;
     case (DAE.CODE(ty = tp)) then tp;
       /* array reduction with known size */
-    case (DAE.REDUCTION(iterators={DAE.REDUCTIONITER(exp=e,guardExp=NONE())},reductionInfo=DAE.REDUCTIONINFO(exprType=ty as DAE.T_ARRAY(dims=dim::_),path = Absyn.IDENT("array"))))
+    case (DAE.REDUCTION(iterators={DAE.REDUCTIONITER(exp=iterExp,guardExp=NONE())},expr = operExp, reductionInfo=DAE.REDUCTIONINFO(exprType=ty as DAE.T_ARRAY(dims=dim::_),path = Absyn.IDENT("array"))))
       equation
         false = dimensionKnown(dim);
-        DAE.T_ARRAY(dims={dim}) = typeof(e);
-        true = dimensionKnown(dim);
-        tp = liftArrayR(Types.unliftArray(Types.simplifyType(ty)),dim);
+        iterTp = typeof(iterExp);
+        operTp = typeof(operExp);
+        DAE.T_ARRAY(dims=iterdims) = iterTp;
+        tp = Types.liftTypeWithDims(operTp, iterdims);
       then tp;
     case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(exprType=ty)))
       then Types.simplifyType(ty);
@@ -7277,6 +7280,19 @@ algorithm
 
   end match;
 end isHalf;
+
+public function isAtomic
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inExp)
+    case DAE.CREF() then true;
+    case DAE.CALL() then true;
+    case DAE.ICONST() then inExp.integer >= 0;
+    case DAE.RCONST() then inExp.real > 0.0;
+    else false;
+  end match;
+end isAtomic;
 
 public function isImpure "author: lochel
   Returns true if an expression contains an impure function call."

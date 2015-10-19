@@ -142,7 +142,7 @@ protected function instBinding
   input Boolean useConstValue "if true use constant value present in TYPED (if present)";
   output Option<DAE.Exp> outExpExpOption;
 algorithm
-  outExpExpOption := matchcontinue (inMod,inVarLst,inType,inIntegerLst,inString,useConstValue)
+  outExpExpOption := matchcontinue (inMod,inVarLst,inType,inIntegerLst,inString)
     local
       DAE.Mod mod2,mod;
       DAE.Exp e,e_1;
@@ -155,7 +155,7 @@ algorithm
       Option<Values.Value> optVal;
       list<DAE.Var> varLst;
 
-    case (mod,_,expected_type,{},bind_name,_) /* No subscript/index */
+    case (mod,_,expected_type,{},bind_name) /* No subscript/index */
       equation
         mod2 = Mod.lookupCompModification(mod, bind_name);
         SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_),_,_)) = Mod.modEquation(mod2);
@@ -164,29 +164,29 @@ algorithm
       then
         SOME(e_1);
 
-    case (mod,_,etype,index_list,bind_name,_) /* Have subscript/index */
+    case (mod,_,etype,index_list,bind_name) /* Have subscript/index */
       equation
         mod2 = Mod.lookupCompModification(mod, bind_name);
         result = instBinding2(mod2, etype, index_list, bind_name, useConstValue);
       then
         result;
 
-    case (mod,_,_,{},bind_name,_) /* No modifier for this name. */
+    case (mod,_,_,{},bind_name) /* No modifier for this name. */
       equation
         failure(_ = Mod.lookupCompModification(mod, bind_name));
       then
         NONE();
 
-    case (_,DAE.TYPES_VAR(name,binding=binding)::_,_,_,bind_name,_)
+    case (_,DAE.TYPES_VAR(name,binding=binding)::_,_,_,bind_name)
       equation
         true = stringEq(name, bind_name);
       then
         DAEUtil.bindingExp(binding);
 
-    case (mod,_::varLst,etype,index_list,bind_name,_)
+    case (mod,_::varLst,etype,index_list,bind_name)
     then instBinding(mod,varLst,etype,index_list,bind_name,useConstValue);
 
-    case (_,{},_,_,_,_)
+    case (_,{},_,_,_)
     then NONE();
   end matchcontinue;
 end instBinding;
@@ -203,7 +203,7 @@ protected function instBinding2
   output Option<DAE.Exp> outExpExpOption;
 algorithm
   outExpExpOption:=
-  match (inMod,inType,inIntegerLst,inString,useConstValue)
+  match (inMod,inType,inIntegerLst,inString)
     local
       DAE.Mod mod2,mod;
       DAE.Exp e,e_1;
@@ -213,7 +213,7 @@ algorithm
       Option<DAE.Exp> result;
       list<Integer> res;
       Option<Values.Value> optVal;
-    case (mod,etype,(index :: {}),_,_) /* Only one element in the index-list */
+    case (mod,etype,(index :: {}),_) /* Only one element in the index-list */
       equation
         mod2 = Mod.lookupIdxModification(mod, DAE.ICONST(index));
         SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_),_,_)) = Mod.modEquation(mod2);
@@ -221,7 +221,7 @@ algorithm
         e_1 = InstUtil.checkUseConstValue(useConstValue,e_1,optVal);
       then
         SOME(e_1);
-    case (mod,etype,(index :: res),bind_name,_) /* Several elements in the index-list */
+    case (mod,etype,(index :: res),bind_name) /* Several elements in the index-list */
       equation
         result = matchcontinue()
           case ()
@@ -249,27 +249,15 @@ public function instStartBindingExp
   input DAE.Type inExpectedType;
   input SCode.Variability inVariability;
   output DAE.StartValue outStartValue;
-protected
-  DAE.Type eltType;
 algorithm
-  outStartValue := match(inMod, inExpectedType, inVariability)
-    local
-      DAE.Type element_ty;
-      DAE.StartValue start_val;
-
-    case (_, _, SCode.CONST()) then NONE();
-
-    else
-      equation
-        element_ty = Types.arrayElementType(inExpectedType);
-        // When instantiating arrays, the array type is passed
-        // But binding is performed on the element type.
-        // Also removed index, since indexing is already performed on the modifier.
-        start_val = instBinding(inMod, {}, element_ty, {}, "start", false);
-      then
-        start_val;
-
-  end match;
+  if SCode.isConstant(inVariability) then
+    outStartValue := NONE();
+  else
+    // When instantiating arrays, the array type is passed.
+    // But binding is performed on the element type.
+    outStartValue := instBinding(inMod, {},
+      Types.arrayElementType(inExpectedType), {}, "start", false);
+  end if;
 end instStartBindingExp;
 
 protected function instStartOrigin
@@ -348,10 +336,10 @@ algorithm
         (fixed_val) = instBinding( mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",true);
         (nominal_val) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "nominal",false);
 
-        (cache,exp_bind_select) = instEnumerationBinding(cache,env, mod, varLst, index_list, "stateSelect",stateSelectType,true);
+        (exp_bind_select) = instEnumerationBinding(mod, varLst, index_list, "stateSelect",stateSelectType,true);
         (stateSelect_value) = InstUtil.getStateSelectFromExpOption(exp_bind_select);
 
-        (cache,exp_bind_uncertainty) = instEnumerationBinding(cache,env, mod, varLst, index_list, "uncertain",uncertaintyType,true);
+        (exp_bind_uncertainty) = instEnumerationBinding(mod, varLst, index_list, "uncertain",uncertaintyType,true);
         (uncertainty_value) = getUncertainFromExpOption(exp_bind_uncertainty);
         distribution_value = instDistributionBinding(mod, varLst, index_list, "distribution", false);
         startOrigin = instStartOrigin(mod, varLst, "start");
@@ -370,7 +358,7 @@ algorithm
         (max_val) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "max",false);
         (start_val) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "start",false);
         (fixed_val) = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",true);
-        (cache,exp_bind_uncertainty) = instEnumerationBinding(cache,env, mod, varLst, index_list, "uncertain",uncertaintyType,true);
+        (exp_bind_uncertainty) = instEnumerationBinding(mod, varLst, index_list, "uncertain",uncertaintyType,true);
         (uncertainty_value) = getUncertainFromExpOption(exp_bind_uncertainty);
         distribution_value = instDistributionBinding(mod, varLst, index_list, "distribution", false);
 
@@ -423,38 +411,19 @@ end instDaeVariableAttributes;
 protected function instEnumerationBinding
 "author: LP
   instantiates a enumeration binding and retrieves the value."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
   input DAE.Mod inMod;
   input list<DAE.Var> varLst;
-  input list<Integer> inIntegerLst;
-  input String inString;
+  input list<Integer> inIndices;
+  input String inName;
   input DAE.Type expected_type;
   input Boolean useConstValue "if true, use constant value in TYPED (if present)";
-  output FCore.Cache outCache;
-  output Option<DAE.Exp> outExpExpOption;
+  output Option<DAE.Exp> outBinding;
 algorithm
-  (outCache,outExpExpOption) := matchcontinue (inCache,inEnv,inMod,varLst,inIntegerLst,inString,expected_type,useConstValue)
-    local
-      Option<DAE.Exp> result;
-      FCore.Graph env;
-      DAE.Mod mod;
-      list<Integer> index_list;
-      String bind_name;
-      FCore.Cache cache;
-
-    case (cache,_,mod,_,index_list,bind_name,_,_)
-      equation
-        result = instBinding(mod, varLst, expected_type, index_list, bind_name,useConstValue);
-      then
-        (cache,result);
-
-    case (_,_,_,_,_,bind_name,_,_)
-      equation
-        Error.addMessage(Error.TYPE_ERROR, {bind_name,"enumeration type"});
-      then
-        fail();
-  end matchcontinue;
+  try
+    outBinding := instBinding(inMod, varLst, expected_type, inIndices, inName, useConstValue);
+  else
+    Error.addMessage(Error.TYPE_ERROR, {inName, "enumeration type"});
+  end try;
 end instEnumerationBinding;
 
 protected function instDistributionBinding
@@ -470,7 +439,7 @@ protected function instDistributionBinding
   input Boolean useConstValue "if true, use constant value in TYPED (if present)";
   output Option<DAE.Distribution> out;
 algorithm
-  out := matchcontinue (inMod,varLst,inIntegerLst,inString,useConstValue)
+  out := matchcontinue (inMod,inIntegerLst,inString)
     local
       DAE.Mod mod;
       DAE.Exp name,params,paramNames;
@@ -482,13 +451,14 @@ algorithm
       Absyn.Path path;
 
     //Record constructor
-    case (mod, _, index_list, bind_name, _)
+    case (mod, index_list, bind_name)
       equation
         SOME(DAE.CALL(path = path, expLst = {name,params, paramNames})) = instBinding(mod, varLst, distributionType, index_list, bind_name, useConstValue);
         true = Absyn.pathEqual(path, Absyn.IDENT("Distribution"));
       then
         SOME(DAE.DISTRIBUTION(name, params, paramNames));
-    case (mod, _, index_list, bind_name, _)
+
+    case (mod, index_list, bind_name)
       equation
         SOME(DAE.RECORD(path = path, exps = {name,params, paramNames})) = instBinding(mod, varLst, distributionType, index_list, bind_name, useConstValue);
         true = Absyn.pathEqual(path, Absyn.IDENT("Distribution"));
@@ -496,7 +466,7 @@ algorithm
         SOME(DAE.DISTRIBUTION(name, params, paramNames));
 
     // Cref
-    case (mod, _, index_list, bind_name, _)
+    case (mod, index_list, bind_name)
       equation
         SOME(DAE.CREF(cr,ty)) = instBinding(mod, varLst, distributionType, index_list, bind_name, useConstValue);
         true = Types.isRecord(ty);
@@ -527,13 +497,12 @@ protected function getUncertainFromExpOption
   input Option<DAE.Exp> expOption;
   output Option<DAE.Uncertainty> out;
 algorithm
-  out := matchcontinue (expOption)
+  out := match (expOption)
     case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("Uncertainty", path = Absyn.IDENT("given"))))) then SOME(DAE.GIVEN());
     case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("Uncertainty", path = Absyn.IDENT("sought"))))) then SOME(DAE.SOUGHT());
     case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("Uncertainty", path = Absyn.IDENT("refine"))))) then SOME(DAE.REFINE());
-    case (NONE()) then NONE();
     else NONE();
-  end matchcontinue;
+  end match;
 end getUncertainFromExpOption;
 
 public function instModEquation
@@ -543,15 +512,13 @@ public function instModEquation
   input DAE.Type inType;
   input DAE.Mod inMod;
   input DAE.ElementSource inSource "the origin of the element";
-  input Boolean inBoolean;
+  input Boolean inImpl;
   output DAE.DAElist outDae;
 algorithm
-  outDae:= matchcontinue (inComponentRef,inType,inMod,inSource,inBoolean)
+  outDae:= matchcontinue (inType,inMod)
     local
       DAE.Type t;
       DAE.DAElist dae;
-      DAE.ComponentRef cr,c;
-      DAE.Type ty1;
       DAE.Mod mod,m;
       DAE.Exp e,lhs;
       DAE.Properties prop2;
@@ -564,44 +531,45 @@ algorithm
 
     // Record constructors are different
     // If it's a constant binding, all fields will already be bound correctly. Don't return a DAE.
-    case (_,DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),(DAE.MOD(eqModOption = SOME(DAE.TYPED(_,SOME(_),DAE.PROP(_,DAE.C_CONST()),_,_)))),_,_)
-    then DAE.emptyDae;
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),
+          DAE.MOD(eqModOption = SOME(DAE.TYPED(_,SOME(_),DAE.PROP(_,DAE.C_CONST()),_,_))))
+      then DAE.emptyDae;
 
     // Special case if the dimensions of the expression is 0.
     // If this is true, and it is instantiated normally, matching properties
     // will result in error messages (Real[0] is not Real), so we handle it here.
-    case (_,_,(DAE.MOD(eqModOption = SOME(DAE.TYPED(_,_,prop2,_,_)))),_,_)
-      equation
-        DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(0)}) = Types.getPropType(prop2);
+    case (_, DAE.MOD(eqModOption = SOME(DAE.TYPED(properties = prop2))))
+      algorithm
+        DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(0)}) := Types.getPropType(prop2);
       then
         DAE.emptyDae;
 
     // Regular cases
-    case (cr,ty1,(DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2,aexp2,info)))),source,impl)
-      equation
-        t = Types.simplifyType(ty1);
-        lhs = Expression.makeCrefExp(cr, t);
-        acr = ComponentReference.unelabCref(cr);
-        aexp1 = Absyn.CREF(acr);
-        scode = SCode.EQ_EQUALS(aexp1,aexp2,SCode.noComment,info);
-        source = DAEUtil.addSymbolicTransformation(source,DAE.FLATTEN(scode,NONE()));
-        dae = InstSection.instEqEquation(lhs, DAE.PROP(ty1,DAE.C_VAR()), e, prop2, source, SCode.NON_INITIAL(), impl);
+    case (_, DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2,aexp2,info))))
+      algorithm
+        t := Types.simplifyType(inType);
+        lhs := Expression.makeCrefExp(inComponentRef, t);
+        acr := ComponentReference.unelabCref(inComponentRef);
+        aexp1 := Absyn.CREF(acr);
+        scode := SCode.EQ_EQUALS(aexp1,aexp2,SCode.noComment,info);
+        source := DAEUtil.addSymbolicTransformation(inSource,DAE.FLATTEN(scode,NONE()));
+        dae := InstSection.instEqEquation(lhs, DAE.PROP(inType,DAE.C_VAR()), e, prop2, source, SCode.NON_INITIAL(), inImpl);
       then
         dae;
 
-    case (_,_,DAE.MOD(eqModOption = NONE()),_,_) then DAE.emptyDae;
-    case (_,_,DAE.NOMOD(),_,_) then DAE.emptyDae;
-    case (_,_,DAE.REDECL(),_,_) then DAE.emptyDae;
+    case (_, DAE.MOD(eqModOption = NONE())) then DAE.emptyDae;
+    case (_, DAE.NOMOD()) then DAE.emptyDae;
+    case (_, DAE.REDECL()) then DAE.emptyDae;
 
-    case (c,ty1,m,_,_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+    else
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstBinding.instModEquation failed\n type: ");
-        Debug.trace(Types.printTypeStr(ty1));
+        Debug.trace(Types.printTypeStr(inType));
         Debug.trace("\n  cref: ");
-        Debug.trace(ComponentReference.printComponentRefStr(c));
+        Debug.trace(ComponentReference.printComponentRefStr(inComponentRef));
         Debug.trace("\n mod:");
-        Debug.traceln(Mod.printModStr(m));
+        Debug.traceln(Mod.printModStr(inMod));
       then
         fail();
   end matchcontinue;
@@ -621,7 +589,7 @@ public function makeBinding
   output FCore.Cache outCache;
   output DAE.Binding outBinding;
 algorithm
-  (outCache,outBinding) := matchcontinue (inCache,inEnv,inAttributes,inMod,inType,inPrefix,componentName,inInfo)
+  (outCache,outBinding) := matchcontinue (inCache,inAttributes,inMod,inType)
     local
       DAE.Type tp,e_tp;
       DAE.Exp e_1,e,e_val_exp;
@@ -639,7 +607,7 @@ algorithm
       Values.Value v;
 
     // A record might have bindings from the class, use those if there is no modifier!
-    case (cache, _, _, DAE.NOMOD(), _, _, _, _)
+    case (cache, _, DAE.NOMOD(), _)
       equation
         (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = tpath),
            varLst = complex_vars)) = Types.arrayElementType(inType);
@@ -648,9 +616,9 @@ algorithm
       then
         (cache, binding);
 
-    case (cache,_,_,DAE.NOMOD(),_,_,_,_) then (cache,DAE.UNBOUND());
+    case (cache,_,DAE.NOMOD(),_) then (cache,DAE.UNBOUND());
 
-    case (cache,_,_,DAE.REDECL(),_,_,_,_) then (cache,DAE.UNBOUND());
+    case (cache,_,DAE.REDECL(),_) then (cache,DAE.UNBOUND());
 
     // adrpo: if the binding is missing for a parameter and
     //        the parameter has a start value modification,
@@ -660,7 +628,7 @@ algorithm
     //             Modelica.Electrical.Machines.Examples.SMEE_Generator
     //             (BUG: #1156 at https://openmodelica.org:8443/cb/issue/1156)
     //             and maybe a lot others.
-    case (cache,_,SCode.ATTR(variability = SCode.PARAM()),DAE.MOD(eqModOption = NONE()),tp,_,_,_)
+    case (cache,SCode.ATTR(variability = SCode.PARAM()),DAE.MOD(eqModOption = NONE()),tp)
       equation
         true = Types.getFixedVarAttributeParameterOrConstant(tp);
         // this always succeeds but return NOMOD if there is no (start = x)
@@ -682,7 +650,7 @@ algorithm
     // A record might have bindings for each component instead of a single
     // binding for the whole record, in which case we need to assemble them into
     // a binding.
-    case (cache, _, _, DAE.MOD(subModLst = sub_mods as _ :: _), _, _, _, _)
+    case (cache, _, DAE.MOD(subModLst = sub_mods as _ :: _), _)
       equation
         (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = tpath),
            varLst = complex_vars)) = Types.arrayElementType(inType);
@@ -690,7 +658,7 @@ algorithm
       then
         (cache, binding);
 
-    case (cache,_,_,DAE.MOD(eqModOption = NONE()),_,_,_,_) then (cache,DAE.UNBOUND());
+    case (cache,_,DAE.MOD(eqModOption = NONE()),_) then (cache,DAE.UNBOUND());
     /* adrpo: CHECK! do we need this here? numerical values
     case (cache,env,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,DAE.PROP(e_tp,_)))),tp,_,_)
       equation
@@ -700,7 +668,7 @@ algorithm
         (cache,DAE.VALBOUND(v, DAE.BINDING_FROM_DEFAULT_VALUE()));
     */
 
-    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,SOME(v),prop,_,_))),e_tp,_,_,_) /* default */
+    case (cache,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,SOME(v),prop,_,_))),e_tp) /* default */
       equation
         c = Types.propAllConst(prop);
         tp = Types.getPropType(prop);
@@ -718,7 +686,7 @@ algorithm
       then
         (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
 
-    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_,_))),e_tp,_,_,_) /* default */
+    case (cache,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_,_))),e_tp) /* default */
       equation
         c = Types.propAllConst(prop);
         tp = Types.getPropType(prop);
@@ -730,7 +698,7 @@ algorithm
       then
         (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
 
-    case (_,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop,_,info))),tp,_,_,_)
+    case (_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop,_,info))),tp)
       equation
         e_tp = Types.getPropType(prop);
         _ = Types.propAllConst(prop);
@@ -777,149 +745,76 @@ public function makeRecordBinding
   input list<DAE.SubMod> inMods;
   input SourceInfo inInfo;
   output DAE.Binding outBinding;
+protected
+  list<DAE.Exp> accum_exps = {};
+  list<Values.Value> accum_vals = {};
+  list<String> accum_names = {};
+  list<DAE.SubMod> mods = inMods;
+  Option<DAE.SubMod> opt_mod;
+  String name = "", scope, ty_str;
+  DAE.Type ty, ety;
+  DAE.Binding binding;
+  list<DAE.Dimension> dims;
+  DAE.Exp exp;
+  Values.Value val;
 algorithm
-  /*
-  print("makeRecordBinding:\nname" + Absyn.pathString(inRecordName) +
-    "\ntype:" + Types.unparseType(inRecordType) +
-    "\nmod:" + Mod.printModStr(DAE.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), inMods, NONE())) +
-    "\nvars:" + stringDelimitList(List.map(inRecordVars, Types.getVarName), ", ") + "\n");
-  */
-  outBinding := makeRecordBinding2(inCache, inEnv, inRecordName, inRecordType, inRecordVars, inMods, inInfo, {}, {}, {});
+  dims := Types.getDimensions(inRecordType);
+
+  try
+    for var in inRecordVars loop
+      DAE.TYPES_VAR(name = name, ty = ty, binding = binding) := var;
+
+      // Try to find a submod with the same name as the variable.
+      (mods, opt_mod) := List.deleteMemberOnTrue(name, mods, InstUtil.isSubModNamed);
+
+      if isSome(opt_mod) then
+        // Found a submod, use its binding.
+        ty := Types.liftArrayListDims(ty, dims);
+        (exp, val) := makeRecordBinding3(opt_mod, ty, inInfo);
+      elseif DAEUtil.isBound(binding) then
+        // Couldn't find a submod, but variable has a binding already.
+        DAE.EQBOUND(exp = exp, evaluatedExp = SOME(val)) := binding;
+      else
+        // Couldn't find a submod, and the variable doesn't have a binding.
+        ety := Types.simplifyType(ty);
+        ty := Types.liftArrayListDims(ty, dims);
+        scope := FGraph.printGraphPathStr(inEnv);
+        ty_str := Types.printTypeStr(ty);
+        exp := DAE.EMPTY(scope, DAE.CREF_IDENT(name, ety, {}), ety, ty_str);
+        val := Values.EMPTY(scope, name, Types.typeToValue(ty), ty_str);
+      end if;
+
+      accum_exps := exp :: accum_exps;
+      accum_vals := val :: accum_vals;
+      accum_names := name :: accum_names;
+    end for;
+
+    // Assemble the binding for the record.
+    ety := Types.simplifyType(Types.arrayElementType(inRecordType));
+    exp := DAE.CALL(inRecordName, listReverse(accum_exps),
+      DAE.CALL_ATTR(ety, false, false, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL()));
+    val := Values.RECORD(inRecordName, listReverse(accum_vals), listReverse(accum_names), -1);
+    (exp, val) := InstUtil.liftRecordBinding(inRecordType, exp, val);
+    outBinding := DAE.EQBOUND(exp, SOME(val), DAE.C_CONST(), DAE.BINDING_FROM_DEFAULT_VALUE());
+  else
+    if Flags.isSet(Flags.FAILTRACE) then
+      Debug.traceln("- Inst.makeRecordBinding2 failed for " +
+        Absyn.pathString(inRecordName) + "." + name + "\n");
+    end if;
+    fail();
+  end try;
 end makeRecordBinding;
-
-protected function makeRecordBinding2
-  "Helper function to makeRecordBinding. Goes through each record component and
-  finds out it's binding, and at the end it assembles a single binding from
-  these components."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input Absyn.Path inRecordName;
-  input DAE.Type inRecordType;
-  input list<DAE.Var> inRecordVars;
-  input list<DAE.SubMod> inMods;
-  input SourceInfo inInfo;
-  input list<DAE.Exp> inAccumExps;
-  input list<Values.Value> inAccumVals;
-  input list<String> inAccumNames;
-  output DAE.Binding outBinding;
-algorithm
-  outBinding := matchcontinue(inCache, inEnv, inRecordName, inRecordType, inRecordVars, inMods,
-      inInfo, inAccumExps, inAccumVals, inAccumNames)
-    local
-      DAE.Type ety;
-      DAE.Exp exp;
-      Values.Value val;
-      list<DAE.Var> rest_vars;
-      list<DAE.SubMod> sub_mods;
-      String name, tyStr, scope;
-      DAE.Binding binding;
-      Option<DAE.SubMod> opt_mod;
-      DAE.Type ty;
-      list<DAE.Exp> accumExps;
-      list<Values.Value> accumVals;
-      list<String> accumNames;
-      DAE.Dimensions dims;
-
-
-    // No more components, assemble the binding.
-    case (_, _, _, _, {}, _, _, _, _, _)
-      equation
-        accumExps = listReverse(inAccumExps);
-        accumVals = listReverse(inAccumVals);
-        accumNames = listReverse(inAccumNames);
-
-        ety = Types.simplifyType(Types.arrayElementType(inRecordType));
-        exp = DAE.CALL(inRecordName, accumExps, DAE.CALL_ATTR(ety, false, false, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL()));
-        val = Values.RECORD(inRecordName, accumVals, accumNames, -1);
-        (exp, val) = InstUtil.liftRecordBinding(inRecordType, exp, val);
-        binding = DAE.EQBOUND(exp, SOME(val), DAE.C_CONST(), DAE.BINDING_FROM_DEFAULT_VALUE());
-      then
-        binding;
-
-    // Take the first component and look for a submod that gives it a binding.
-    case (_, _, _, _, DAE.TYPES_VAR(name = name, ty = ty) :: rest_vars, sub_mods, _, _, _, _)
-      equation
-        (sub_mods, opt_mod) = List.deleteMemberOnTrue(name, sub_mods, InstUtil.isSubModNamed);
-        dims = Types.getDimensions(inRecordType);
-        ty = Types.liftArrayListDims(ty, dims);
-        (exp, val) = makeRecordBinding3(opt_mod, ty, inInfo);
-        binding = makeRecordBinding2(inCache, inEnv, inRecordName, inRecordType, rest_vars, sub_mods, inInfo, exp :: inAccumExps, val :: inAccumVals, name :: inAccumNames);
-      then
-        binding;
-
-    // If the previous case fails, check if the component already has a binding.
-    case (_, _, _, _, DAE.TYPES_VAR(name = name, binding = DAE.EQBOUND(exp = exp, evaluatedExp = SOME(val))) :: rest_vars, sub_mods, _, _, _, _)
-      equation
-        binding = makeRecordBinding2(inCache, inEnv, inRecordName, inRecordType, rest_vars, sub_mods, inInfo, exp :: inAccumExps, val :: inAccumVals, name :: inAccumNames);
-      then
-        binding;
-
-    // If the previous case fails, then there is no binding for this component, ignore it
-    case (_, _, _, _, DAE.TYPES_VAR(name = name, binding = DAE.UNBOUND(), ty = ty) :: rest_vars, sub_mods, _, _, _, _)
-      equation
-        // make sure there is no binding for it
-        // The previous cases can also fail for other reasons. e.g type mismatch.
-        (sub_mods, NONE()) = List.deleteMemberOnTrue(name, sub_mods, InstUtil.isSubModNamed);
-        ety = Types.simplifyType(ty);
-        dims = Types.getDimensions(inRecordType);
-        ty = Types.liftArrayListDims(ty, dims);
-        scope = FGraph.printGraphPathStr(inEnv);
-        tyStr = Types.printTypeStr(ty);
-        exp = DAE.EMPTY(scope, DAE.CREF_IDENT(name, ety, {}), ety, tyStr);
-        val = Types.typeToValue(ty);
-        val = Values.EMPTY(scope, name, val, tyStr);
-        binding = makeRecordBinding2(
-                     inCache, inEnv,
-                     inRecordName,
-                     inRecordType,
-                     rest_vars,
-                     sub_mods,
-                     inInfo,
-                     exp::inAccumExps,
-                     val :: inAccumVals,
-                     name::inAccumNames);
-      then
-        binding;
-
-    /*/ If the previous case fails, then there is no binding for this component, ignore it
-    case (_, _, _, _, DAE.TYPES_VAR(name = name, binding = DAE.UNBOUND(), ty = ty) :: rest_vars, sub_mods, _, _, _, _)
-      equation
-        // make sure there is no binding for it
-        // The previous cases can also fail for other reasons. e.g type mismatch.
-        (sub_mods, NONE()) = List.deleteMemberOnTrue(name, sub_mods, InstUtil.isSubModNamed);
-        binding = makeRecordBinding2(
-                     inCache, inEnv,
-                     inRecordName,
-                     inRecordType,
-                     rest_vars,
-                     sub_mods,
-                     inInfo,
-                     inAccumExps,
-                     inAccumVals,
-                     inAccumNames);
-      then
-        binding; */
-
-    case (_, _, _, _, DAE.TYPES_VAR(name = name) :: _, _, _, _, _, _)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.makeRecordBinding2 failed for " + Absyn.pathString(inRecordName) + "." + name + "\n");
-      then
-        fail();
-
-  end matchcontinue;
-end makeRecordBinding2;
 
 protected function makeRecordBinding3
   "Helper function to makeRecordBinding2. Fetches the binding expression and
-  value from an optional submod."
+   value from an optional submod."
   input Option<DAE.SubMod> inSubMod;
   input DAE.Type inType;
   input SourceInfo inInfo;
   output DAE.Exp outExp;
   output Values.Value outValue;
 algorithm
-  (outExp, outValue) := matchcontinue(inSubMod, inType, inInfo)
+  (outExp, outValue) := matchcontinue(inSubMod)
     local
       DAE.Exp exp;
       Values.Value val;
@@ -927,35 +822,32 @@ algorithm
       DAE.Ident ident;
       String binding_str, expected_type_str, given_type_str;
 
-
     // Array type and each prefix => return the expression and value.
     case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.EACH(), eqModOption =
-        SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = SOME(val)))))),
-       _, _)
+        SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = SOME(val)))))))
       then (exp, val);
-
 
     // Scalar type and no each prefix => return the expression and value.
     case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(), eqModOption =
-        SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = SOME(val), properties = DAE.PROP(type_ = ty)))))), ty2, _)
-        equation
-           (exp, ty) = Types.matchType(exp, ty, ty2, true);
-      then (exp, val);
-
+        SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = SOME(val), properties = DAE.PROP(type_ = ty)))))))
+      algorithm
+        (exp, ty) := Types.matchType(exp, ty, inType, true);
+      then
+        (exp, val);
 
     // Scalar type and no each prefix => bindings given by expressions myRecord(v1 = inV1, v2 = inV2)
     case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(), eqModOption =
-        SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = NONE(), properties = DAE.PROP(type_ = ty)))))), ty2, _)
-        equation
-           (exp, ty) = Types.matchType(exp, ty, ty2, true);
-      then (exp, Values.OPTION(NONE()));
-
+        SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = NONE(), properties = DAE.PROP(type_ = ty)))))))
+      algorithm
+        (exp, ty) := Types.matchType(exp, ty, inType, true);
+      then
+        (exp, Values.OPTION(NONE()));
 
     case (SOME(DAE.NAMEMOD(ident = ident, mod = DAE.MOD(eqModOption =
-        SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = ty)))))), ty2,_)
+        SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = ty)))))))
       equation
         binding_str = ExpressionDump.printExpStr(exp);
-        expected_type_str = Types.unparseTypeNoAttr(ty2);
+        expected_type_str = Types.unparseTypeNoAttr(inType);
         given_type_str = Types.unparseTypeNoAttr(ty);
         Types.typeErrorSanityCheck(given_type_str, expected_type_str, inInfo);
         Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
@@ -966,73 +858,55 @@ algorithm
   end matchcontinue;
 end makeRecordBinding3;
 
-public function makeVariableBinding "Helper relation to instVar2
-For external objects the binding contains the constructor call.  This must be inserted in the DAE.VAR
-as the binding expression so the constructor code can be generated.
--- BZ 2008-11, added:
-If the type is not externa object, the normal binding value is bound,
-Unless it is a complex var that not inherites a basic type. In that case DAE.Equation are generated."
-  input DAE.Type tp;
-  input DAE.Mod mod;
-  input DAE.Const const;
-  input Prefix.Prefix pre;
-  input String name;
-  output Option<DAE.Exp> eOpt;
+public function makeVariableBinding
+  "Returns a variable's bound expression."
+  input DAE.Type inType;
+  input DAE.Mod inMod;
+  input DAE.Const inConst;
+  input Prefix.Prefix inPrefix;
+  input String inName;
+  output Option<DAE.Exp> outBinding;
+protected
+  Option<DAE.EqMod> oeq_mod = Mod.modEquation(inMod);
+  DAE.Exp e, e2;
+  DAE.Properties p;
+  SourceInfo info;
+  DAE.Const c;
+  String e_str, et_str, bt_str;
 algorithm
-  eOpt := matchcontinue(tp,mod,const,pre,name)
-    local
-      DAE.Exp e,e1;
-      DAE.Properties p;
-      DAE.Const c,c1;
-      Ident n;
-      Prefix.Prefix pr;
-      DAE.Type bt;
-      String v_str, b_str, et_str, bt_str;
-      SourceInfo info;
+  // No modifier => no binding.
+  if isNone(oeq_mod) then
+    outBinding := NONE();
+    return;
+  end if;
 
-    case (DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(_)),
-        DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = e))),_,_,_)
-      then
-        SOME(e);
+  SOME(DAE.TYPED(modifierAsExp = e, properties = p, info = info)) := oeq_mod;
 
-    case(_,_,c,pr,n)
-      equation
-        SOME(DAE.TYPED(modifierAsExp=e,properties=p,info=info)) = Mod.modEquation(mod);
-        (e1,DAE.PROP(_,c1)) = Types.matchProp(e,p,DAE.PROP(tp,c),true);
-        InstUtil.checkHigherVariability(c,c1,pr,n,e,info);
-      then
-        SOME(e1);
-
-    // An empty array such as x[:] = {} will cause Types.matchProp to fail, but we
-    // shouldn't print an error.
-    case (_, _, _, _, _)
-      equation
-        SOME(DAE.TYPED(_,_,DAE.PROP(type_ = bt),_,_)) = Mod.modEquation(mod);
-        true = Types.isEmptyArray(bt);
-      then
-        NONE();
-
-    // If Types.matchProp fails, print an error.
-    case (_, _, c, _, n)
-      equation
-        SOME(DAE.TYPED(modifierAsExp=e,properties=p as DAE.PROP(type_ = bt),info=info)) = Mod.modEquation(mod);
-        failure((_,DAE.PROP(_,_)) = Types.matchProp(e, p, DAE.PROP(tp, c), true));
-        v_str = n;
-        b_str = ExpressionDump.printExpStr(e);
-        et_str = Types.unparseTypeNoAttr(tp);
-        bt_str = Types.unparseTypeNoAttr(bt);
-        Types.typeErrorSanityCheck(et_str, bt_str, info);
-        Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
-        {v_str, b_str, et_str, bt_str}, info);
-      then
-        fail();
-
+  if Types.isExternalObject(inType) then
+    // For external objects the binding contains the constructor call. Return it as it is.
+    outBinding := SOME(e);
+  elseif Types.isEmptyArray(Types.getPropType(p)) then
+    // An empty array has unknown type, skip type matching.
+    outBinding := NONE();
+  else
+    // For normal variables, make sure the types match.
+    try
+      (e2, DAE.PROP(constFlag = c)) :=
+        Types.matchProp(e, p, DAE.PROP(inType, inConst), true);
     else
-      equation
-        failure(SOME(DAE.TYPED()) = Mod.modEquation(mod));
-      then
-        NONE();
-  end matchcontinue;
+      // The types of the variable and binding are incompatible, print an error.
+      e_str := ExpressionDump.printExpStr(e);
+      et_str := Types.unparseTypeNoAttr(inType);
+      bt_str := Types.unparseTypeNoAttr(Types.getPropType(p));
+      Types.typeErrorSanityCheck(et_str, bt_str, info);
+      Error.addSourceMessageAndFail(Error.VARIABLE_BINDING_TYPE_MISMATCH,
+        {inName, e_str, et_str, bt_str}, info);
+    end try;
+
+    // Check that the variability is compatible too.
+    InstUtil.checkHigherVariability(inConst, c, inPrefix, inName, e, info);
+    outBinding := SOME(e2);
+  end if;
 end makeVariableBinding;
 
 annotation(__OpenModelica_Interface="frontend");

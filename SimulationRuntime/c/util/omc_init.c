@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,29 +28,32 @@
  *
  */
 
-/*! \file events.h
- */
+#include <stdio.h>
+#include "omc_init.h"
 
-#ifndef _EVENTS_H_
-#define _EVENTS_H_
+pthread_key_t mmc_thread_data_key = 0;
 
-#include "simulation_data.h"
-#include "simulation/solver/solver_main.h"
-#include "util/list.h"
+pthread_once_t mmc_init_once = PTHREAD_ONCE_INIT;
 
-#ifdef __cplusplus
-extern "C" {
+void mmc_init_nogc()
+{
+  pthread_key_create(&mmc_thread_data_key,NULL);
+#if !defined(OMC_MINIMAL_RUNTIME)
+  /* Stack overflow detection is too expensive and fun for small targets
+   * C-code is usually not generated for stack overflow detection anyway... */
+  init_metamodelica_segv_handler();
 #endif
-
-void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
-int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
-
-void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
-
-void findRoot(DATA *data, threadData_t *threadData, LIST *eventList, double*);
-
-#ifdef __cplusplus
 }
-#endif
 
+#if defined(OMC_MINIMAL_RUNTIME)
+void mmc_init(int withgc)
+{
+  fprintf(stderr, "Error: called mmc_init (requesting garbage collection) when OMC was compiled with a minimal runtime system.");
+  exit(1);
+}
+#else
+void mmc_init(int withgc)
+{
+  mmc_init_nogc();
+}
 #endif

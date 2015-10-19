@@ -56,6 +56,9 @@ template <typename T>
 void multiply_array(const BaseArray<T> &leftArray, const BaseArray<T> &rightArray, BaseArray<T> &resultArray);
 
 template <typename T>
+void multiply_array_elem_wise(const BaseArray<T> &leftArray, const BaseArray<T> &rightArray, BaseArray<T> &resultArray);
+
+template <typename T>
 void divide_array(const BaseArray<T>& inputArray, const T &b, BaseArray<T>& outputArray);
 
 template <typename T>
@@ -69,6 +72,9 @@ void pow_array_scalar(const BaseArray<double> &inputArray, T exponent, BaseArray
 
 template <typename T>
 void subtract_array(const BaseArray<T>& leftArray, const BaseArray<T>& rightArray, BaseArray<T>& resultArray);
+
+template <typename T>
+void subtract_array_scalar(const BaseArray<T>& inputArray, T b, BaseArray<T>& outputArray);
 
 template <typename T>
 void add_array(const BaseArray<T>& leftArray, const BaseArray<T>& rightArray, BaseArray<T>& resultArray);

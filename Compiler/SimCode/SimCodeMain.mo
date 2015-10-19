@@ -56,14 +56,12 @@ import SimCode;
 // protected imports
 protected
 import BackendDAECreate;
-import BackendQSS;
 import ClockIndexes;
 import CevalScriptBackend;
 import CodegenC;
 import CodegenFMU;
 import CodegenFMUCpp;
 import CodegenFMUCppHpcom;
-import CodegenQSS;
 import CodegenAdevs;
 import CodegenSparseFMI;
 import CodegenCSharp;
@@ -147,7 +145,7 @@ algorithm
   (libs,libPaths,includes, includeDirs, recordDecls, functions, literals) :=
     SimCodeUtil.createFunctions(p, inBackendDAE);
   simCode := createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters,
-    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, libPaths, simSettingsOpt, recordDecls, literals, Absyn.FUNCTIONARGS({},{}));
+    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, libPaths, simSettingsOpt, recordDecls, literals, Absyn.FUNCTIONARGS({},{}), isFMU=true);
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   SimCodeFunctionUtil.execStat("SimCode");
 
@@ -414,7 +412,7 @@ algorithm
   SimCodeFunctionUtil.execStat("SimCode");
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
-  callTargetTemplates(simCode, inBackendDAE, Config.simCodeTarget());
+  callTargetTemplates(simCode, Config.simCodeTarget());
   timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
   SimCodeFunctionUtil.execStat("Templates");
 end generateModelCode;
@@ -439,6 +437,7 @@ protected function createSimCode "
   input list<SimCode.RecordDeclaration> recordDecls;
   input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
   input Absyn.FunctionArgs args;
+  input Boolean isFMU=false;
   output SimCode.SimCode simCode;
 algorithm
   simCode := matchcontinue(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,simSettingsOpt, recordDecls, literals, args)
@@ -472,50 +471,38 @@ algorithm
     then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,simSettingsOpt, recordDecls, literals, args);
 
     else equation
-      (tmpSimCode, _) = SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args);
+      (tmpSimCode, _) = SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args, isFMU=isFMU);
     then tmpSimCode;
   end matchcontinue;
 end createSimCode;
 
 // TODO: use another switch ... later make it first class option like -target or so
-// Update: inQSSrequiredData passed in order to call BackendQSS and generate the extra structures needed for QSS simulation.
 protected function callTargetTemplates "
   Generate target code by passing the SimCode data structure to templates."
   input SimCode.SimCode simCode;
-  input BackendDAE.BackendDAE inQSSrequiredData;
   input String target;
 algorithm
-  _ := match(simCode, inQSSrequiredData, target)
+  _ := match(simCode, target)
     local
-    BackendDAE.BackendDAE outIndexedBackendDAE;
-    BackendQSS.QSSinfo qssInfo;
-    String str,guid;
-    SimCode.SimCode sc;
+      String str, guid;
 
-    case (_, _, "CSharp") equation
+    case (_, "CSharp") equation
       Tpl.tplNoret(CodegenCSharp.translateModel, simCode);
     then ();
 
-    case (_, _, "Cpp") equation
+    case (_, "Cpp") equation
       callTargetTemplatesCPP(simCode);
     then ();
 
-    case (_, _, "Adevs") equation
+    case (_, "Adevs") equation
       Tpl.tplNoret(CodegenAdevs.translateModel, simCode);
     then ();
 
-    case (_, _, "sfmi") equation
+    case (_, "sfmi") equation
       Tpl.tplNoret3(CodegenSparseFMI.translateModel, simCode, "2.0", "me");
     then ();
 
-    case (_, outIndexedBackendDAE, "QSS") equation
-      /* as BackendDAE.DAE(eqs={ BackendDAE.EQSYSTEM( m=SOME(incidenceMatrix) , mT=SOME(incidenceMatrixT), matching=BackendDAE.MATCHING(equationIndices, variableIndices, strongComponents)*/
-      Debug.trace("Generating code for QSS solver\n");
-      (qssInfo, sc) = BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE, simCode); //, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents, simCode);
-      Tpl.tplNoret2(CodegenQSS.translateModel, sc, qssInfo);
-    then ();
-
-    case (_, _, "C")
+    case (_, "C")
       equation
         guid = System.getUUIDStr();
 
@@ -536,7 +523,7 @@ algorithm
         // print("SimCode -> C-files: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
       then ();
 
-    case (_, _, "JavaScript")
+    case (_, "JavaScript")
       equation
         guid = System.getUUIDStr();
         Tpl.tplNoret2(CodegenC.translateModel, simCode, guid);
@@ -545,18 +532,18 @@ algorithm
         Tpl.tplNoret(CodegenJS.markdownFile, simCode);
       then ();
 
-    case (_, _, "XML") equation
+    case (_, "XML") equation
       Tpl.tplNoret(CodegenXML.translateModel, simCode);
     then ();
 
-    case (_, _, "Java") equation
+    case (_, "Java") equation
       Tpl.tplNoret(CodegenJava.translateModel, simCode);
     then ();
 
-    case (_, _, "None")
+    case (_, "None")
     then ();
 
-    case (_, _, _) equation
+    else equation
       str = "Unknown template target: " + target;
       Error.addMessage(Error.INTERNAL_ERROR, {str});
     then fail();
@@ -591,12 +578,22 @@ algorithm
   _ := match (simCode,target)
     local
       String str;
+      String fmutmp;
 
     case (SimCode.SIMCODE(),"C")
       algorithm
+        fmutmp := simCode.fileNamePrefix + ".fmutmp";
+        if System.directoryExists(fmutmp) then
+          if not System.removeDirectory(fmutmp) then
+            print("Failed to remove directory: " + fmutmp + "\n");
+            fail();
+          end if;
+        end if;
+        Util.createDirectoryTree(fmutmp + "/sources/include/");
         if Flags.isSet(Flags.MODEL_INFO_JSON) then
           SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
-          true := System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_info.json", simCode.fileNamePrefix+"_info.c");
+          str := fmutmp + "/sources/" + simCode.fileNamePrefix;
+          true := System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_info.json", str+"_info.c");
         else
           Tpl.tplNoret2(SimCodeDump.dumpSimCodeToC, simCode, false);
         end if;

@@ -74,7 +74,7 @@ import CodegenCFunctions.*;
     // adpro: write the main .c file last! Make on windows doesn't seem to realize that
     //        the .c file is newer than the .o file if we have succesive simulate commands
     //        for the same model (i.e. see testsuite/linearize/simextfunction.mos).
-    let _ = generateSimulationFiles(simCode,guid,fileNamePrefix)
+    let _ = generateSimulationFiles(simCode,guid,fileNamePrefix,false)
 
     // If ParModelica generate the kernels file too.
     if acceptParModelicaGrammar() then
@@ -153,7 +153,7 @@ end translateInitFile;
   end match
 end simulationHeaderFile;
 
-/* public */ template generateSimulationFiles(SimCode simCode, String guid, String modelNamePrefix)
+/* public */ template generateSimulationFiles(SimCode simCode, String guid, String modelNamePrefix, Boolean isModelExchangeFMU)
  "Generates code in different C files for the simulation target.
   To make the compilation faster we split the simulation files into several
   used in Compiler/Template/CodegenFMU.tpl"
@@ -161,41 +161,41 @@ end simulationHeaderFile;
   match simCode
     case simCode as SIMCODE(__) then
      // external objects
-     let()= textFileConvertLines(simulationFile_exo(simCode,guid), '<%fileNamePrefix%>_01exo.c')
+     let()= textFileConvertLines(simulationFile_exo(simCode,guid), '<%modelNamePrefix%>_01exo.c')
      // non-linear systems
-     let()= textFileConvertLines(simulationFile_nls(simCode,guid), '<%fileNamePrefix%>_02nls.c')
+     let()= textFileConvertLines(simulationFile_nls(simCode,guid), '<%modelNamePrefix%>_02nls.c')
      // linear systems
-     let()= textFileConvertLines(simulationFile_lsy(simCode,guid), '<%fileNamePrefix%>_03lsy.c')
+     let()= textFileConvertLines(simulationFile_lsy(simCode,guid), '<%modelNamePrefix%>_03lsy.c')
      // state set
-     let()= textFileConvertLines(simulationFile_set(simCode,guid), '<%fileNamePrefix%>_04set.c')
+     let()= textFileConvertLines(simulationFile_set(simCode,guid), '<%modelNamePrefix%>_04set.c')
      // events: sample, zero crossings, relations
-     let()= textFileConvertLines(simulationFile_evt(simCode,guid), '<%fileNamePrefix%>_05evt.c')
+     let()= textFileConvertLines(simulationFile_evt(simCode,guid), '<%modelNamePrefix%>_05evt.c')
      // initialization
-     let()= textFileConvertLines(simulationFile_inz(simCode,guid), '<%fileNamePrefix%>_06inz.c')
+     let()= textFileConvertLines(simulationFile_inz(simCode,guid), '<%modelNamePrefix%>_06inz.c')
      // delay
-     let()= textFileConvertLines(simulationFile_dly(simCode,guid), '<%fileNamePrefix%>_07dly.c')
+     let()= textFileConvertLines(simulationFile_dly(simCode,guid), '<%modelNamePrefix%>_07dly.c')
      // update bound start values, update bound parameters
-     let()= textFileConvertLines(simulationFile_bnd(simCode,guid), '<%fileNamePrefix%>_08bnd.c')
+     let()= textFileConvertLines(simulationFile_bnd(simCode,guid), '<%modelNamePrefix%>_08bnd.c')
      // algebraic
-     let()= textFileConvertLines(simulationFile_alg(simCode,guid), '<%fileNamePrefix%>_09alg.c')
+     let()= textFileConvertLines(simulationFile_alg(simCode,guid), '<%modelNamePrefix%>_09alg.c')
      // asserts
-     let()= textFileConvertLines(simulationFile_asr(simCode,guid), '<%fileNamePrefix%>_10asr.c')
+     let()= textFileConvertLines(simulationFile_asr(simCode,guid), '<%modelNamePrefix%>_10asr.c')
      // mixed systems
      let &mixheader = buffer ""
-     let()= textFileConvertLines(simulationFile_mix(simCode,guid,&mixheader), '<%fileNamePrefix%>_11mix.c')
-     let()= textFile(&mixheader, '<%fileNamePrefix%>_11mix.h')
+     let()= textFileConvertLines(simulationFile_mix(simCode,guid,&mixheader), '<%modelNamePrefix%>_11mix.c')
+     let()= textFile(&mixheader, '<%modelNamePrefix%>_11mix.h')
      // jacobians
-     let()= textFileConvertLines(simulationFile_jac(simCode,guid), '<%fileNamePrefix%>_12jac.c')
-     let()= textFile(simulationFile_jac_header(simCode,guid), '<%fileNamePrefix%>_12jac.h')
+     let()= textFileConvertLines(simulationFile_jac(simCode,guid), '<%modelNamePrefix%>_12jac.c')
+     let()= textFile(simulationFile_jac_header(simCode,guid), '<%modelNamePrefix%>_12jac.h')
      // optimization
-     let()= textFileConvertLines(simulationFile_opt(simCode,guid), '<%fileNamePrefix%>_13opt.c')
-     let()= textFile(simulationFile_opt_header(simCode,guid), '<%fileNamePrefix%>_13opt.h')
+     let()= textFileConvertLines(simulationFile_opt(simCode,guid), '<%modelNamePrefix%>_13opt.c')
+     let()= textFile(simulationFile_opt_header(simCode,guid), '<%modelNamePrefix%>_13opt.h')
      // linearization
-     let()= textFileConvertLines(simulationFile_lnz(simCode,guid), '<%fileNamePrefix%>_14lnz.c')
+     let()= textFileConvertLines(simulationFile_lnz(simCode,guid), '<%modelNamePrefix%>_14lnz.c')
      // synchronous
-     let()= textFileConvertLines(simulationFile_syn(simCode,guid), '<%fileNamePrefix%>_15syn.c')
+     let()= textFileConvertLines(simulationFile_syn(simCode,guid), '<%modelNamePrefix%>_15syn.c')
      // main file
-     let()= textFileConvertLines(simulationFile(simCode,guid), '<%fileNamePrefix%>.c')
+     let()= textFileConvertLines(simulationFile(simCode,guid,isModelExchangeFMU), '<%modelNamePrefix%>.c')
      ""
   end match
 end generateSimulationFiles;
@@ -294,8 +294,10 @@ template functionInitSynchronous(list<ClockedPartition> clockedPartitions, Strin
   /* Initializes the clocks of model. */
   void <%symbolName(modelNamePrefix,"function_initSynchronous")%>(DATA *data, threadData_t *threadData)
   {
+    TRACE_PUSH
     long i=0, j=0;
     <%body%>
+    TRACE_POP
   }
   >>
 end functionInitSynchronous;
@@ -344,6 +346,7 @@ template functionUpdateSynchronous(list<ClockedPartition> clockedPartitions, Str
   /* Update the base clock. */
   void <%symbolName(modelNamePrefix,"function_updateSynchronous")%>(DATA *data, threadData_t *threadData, long i)
   {
+    TRACE_PUSH
     <%varDecls%>
     modelica_boolean ret;
     switch (i) {
@@ -352,6 +355,7 @@ template functionUpdateSynchronous(list<ClockedPartition> clockedPartitions, Str
         throwStreamPrint(NULL, "Internal Error: unknown base partition %ld", i);
         break;
     }
+    TRACE_POP
   }
   >>
 end functionUpdateSynchronous;
@@ -369,7 +373,7 @@ match baseClock
     >>
   else
     let &preExp = buffer ""
-    let intvl = daeExp(getClockIntvl(baseClock), contextOther, &preExp, &varDecls, &auxFunction)
+    let intvl = daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, &auxFunction)
     <<
     <%preExp%>
     data->simulationInfo.clocksData[i].interval = <%intvl%>;
@@ -397,8 +401,8 @@ template functionSystemsSynchronous(list<SubPartition> subPartitions, String mod
   /*Clocked systems equations */
   int <%symbolName(modelNamePrefix,"function_equationsSynchronous")%>(DATA *data, threadData_t *threadData, long i)
   {
-    int ret;
     TRACE_PUSH
+    int ret;
 
     switch (i) {
       <%cases%>
@@ -419,7 +423,7 @@ template functionEquationsSynchronous(Integer i, list<tuple<SimCodeVar.SimVar, B
 ::=
   let &varDecls = buffer ""
   let &eqfuncs = buffer ""
-  let fncalls = equations |> eq => equation_(eq, contextOther, &varDecls, &eqfuncs, modelNamePrefix); separator="\n"
+  let fncalls = equations |> eq => equation_(i, eq, contextOther, &varDecls, &eqfuncs, modelNamePrefix); separator="\n"
   <<
   <%&eqfuncs%>
 
@@ -810,13 +814,13 @@ template simulationFile_lnz(SimCode simCode, String guid)
   end match
 end simulationFile_lnz;
 
-template simulationFile(SimCode simCode, String guid)
+template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU)
   "Generates code for main C file for simulation target."
 ::=
   match simCode
     case simCode as SIMCODE(hpcomData=HPCOMDATA(__)) then
     let modelNamePrefixStr = modelNamePrefix(simCode)
-    let mainInit = if boolOr(Flags.isSet(Flags.PARMODAUTO), Flags.isSet(HPCOM)) then
+    let mainInit = if boolOr(isModelExchangeFMU, boolOr(Flags.isSet(Flags.PARMODAUTO), Flags.isSet(HPCOM))) then
                      <<
                      mmc_init_nogc();
                      omc_alloc_interface = omc_alloc_interface_pooled;
@@ -842,12 +846,16 @@ template simulationFile(SimCode simCode, String guid)
     /* Main Simulation File */
     <%simulationFileHeader(simCode)%>
 
+    <% if boolNot(isModelExchangeFMU) then
+    <<
     #define prefixedName_performSimulation <%symbolName(modelNamePrefixStr,"performSimulation")%>
     #define prefixedName_updateContinuousSystem <%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>
     #include <simulation/solver/perform_simulation.c>
 
     #define prefixedName_performQSSSimulation <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>
     #include <simulation/solver/perform_qss_simulation.c>
+    >>
+    %>
 
     /* dummy VARINFO and FILEINFO */
     const FILE_INFO dummyFILE_INFO = omc_dummyFileInfo;
@@ -867,6 +875,9 @@ template simulationFile(SimCode simCode, String guid)
 
     <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""), hpcomData.schedules, modelNamePrefixStr)%>
 
+    #ifdef FMU_EXPERIMENTAL
+    <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then functionODEPartial(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""), hpcomData.schedules, modelNamePrefixStr, modelInfo)%>
+    #endif
     /* forward the main in the simulation runtime */
     extern int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData);
 
@@ -874,9 +885,9 @@ template simulationFile(SimCode simCode, String guid)
     #include "<%simCode.fileNamePrefix%>_13opt.h"
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
-       (int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>,
-       (int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>,
-       <%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>,
+       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>'%>,
+       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>'%>,
+       <% if isModelExchangeFMU then "NULL" else '<%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>'%>,
        <%symbolName(modelNamePrefixStr,"callExternalObjectConstructors")%>,
        <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>,
        <%symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>,
@@ -926,6 +937,10 @@ template simulationFile(SimCode simCode, String guid)
        <%symbolName(modelNamePrefixStr,"function_initSynchronous")%>,
        <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>,
        <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>
+       #ifdef FMU_EXPERIMENTAL
+       ,<%symbolName(modelNamePrefixStr,"functionODE_Partial")%>
+       #endif
+
     <%\n%>
     };
 
@@ -943,6 +958,8 @@ template simulationFile(SimCode simCode, String guid)
       return 1;
     }
 
+    <% if boolNot(isModelExchangeFMU) then
+    <<
     #if defined(threadData)
     #undef threadData
     #endif
@@ -961,6 +978,8 @@ template simulationFile(SimCode simCode, String guid)
       return res;
     }
     <%\n%>
+    >>
+    %>
     >>
     /* adrpo: leave a newline at the end of file to get ridsymbolName(String fileNamePrefix of the warning */
   end match
@@ -2311,7 +2330,7 @@ template functionExtraResidualsPreBody(SimEqSystem eq, Text &varDecls, Text &eqs
   case e as SES_RESIDUAL(__)
   then ""
   else
-  equation_(eq, contextSimulationDiscrete, &varDecls, &eqs, modelNamePrefixStr)
+  equation_(-1, eq, contextSimulationDiscrete, &varDecls, &eqs, modelNamePrefixStr)
   end match
 end functionExtraResidualsPreBody;
 
@@ -2564,16 +2583,16 @@ template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquat
   let &varDecls = buffer ""
   let &tmp = buffer ""
   let startEqPart = (startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(eq, contextOther, &varDecls, &tmp, modelNamePrefix)
+      equation_(-1, eq, contextOther, &varDecls, &tmp, modelNamePrefix)
     ;separator="\n")
   let nominalEqPart = (nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(eq, contextOther, &varDecls, &tmp, modelNamePrefix)
+      equation_(-1, eq, contextOther, &varDecls, &tmp, modelNamePrefix)
     ;separator="\n")
   let minEqPart = (minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(eq, contextOther, &varDecls, &tmp, modelNamePrefix)
+      equation_(-1, eq, contextOther, &varDecls, &tmp, modelNamePrefix)
     ;separator="\n")
   let maxEqPart = (maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(eq, contextOther, &varDecls, &tmp, modelNamePrefix)
+      equation_(-1, eq, contextOther, &varDecls, &tmp, modelNamePrefix)
     ;separator="\n")
 
   <<
@@ -2648,7 +2667,7 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations, Str
   let &varDecls = buffer ""
   let &tmp = buffer ""
   let body = (parameterEquations |> eq  =>
-    '<%equation_(eq, contextSimulationDiscrete, &varDecls, &tmp, modelNamePrefix)%>'
+    '<%equation_(-1, eq, contextSimulationDiscrete, &varDecls, &tmp, modelNamePrefix)%>'
     ;separator="\n")
 
   <<
@@ -2679,7 +2698,7 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, String mode
                     ;separator="\n")
               else
                 (initalEquations |> eq hasindex i0 =>
-                    equation_(eq, contextSimulationDiscrete, &varDecls, &eqfuncs, modelNamePrefix)
+                    equation_(-1, eq, contextSimulationDiscrete, &varDecls, &eqfuncs, modelNamePrefix)
                     ;separator="\n")
 
   let eqArrayDecl = if Flags.isSet(Flags.PARMODAUTO) then
@@ -2735,7 +2754,7 @@ template functionRemovedInitialEquationsBody(SimEqSystem eq, Text &varDecls, Tex
       >>
     end match
   else
-  equation_(eq, contextSimulationDiscrete, &varDecls, &eqs, modelNamePrefix)
+  equation_(-1, eq, contextSimulationDiscrete, &varDecls, &eqs, modelNamePrefix)
   end match
 end functionRemovedInitialEquationsBody;
 
@@ -3605,7 +3624,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
                     ;separator="\n")
               else
                 (allEquationsPlusWhen |> eq hasindex i0 =>
-                    equation_(eq, contextSimulationDiscrete, &varDecls, &eqfuncs, modelNamePrefix)
+                    equation_(-1, eq, contextSimulationDiscrete, &varDecls, &eqfuncs, modelNamePrefix)
                     ;separator="\n")
 
   let eqArrayDecl = if Flags.isSet(Flags.PARMODAUTO) then
@@ -3652,7 +3671,7 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   let &tmp = buffer ""
   let &auxFunction = buffer ""
   let eqs = (equationsForZeroCrossings |> eq =>
-       equation_(eq, contextSimulationNonDiscrete, &varDecls, &tmp, modelNamePrefix)
+       equation_(-1, eq, contextSimulationNonDiscrete, &varDecls, &tmp, modelNamePrefix)
       ;separator="\n")
   let forwardEqs = equationsForZeroCrossings |> eq => equationForward_(eq,contextSimulationNonDiscrete,modelNamePrefix); separator="\n"
 
@@ -3928,7 +3947,7 @@ template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations, Str
   let &varDecls = buffer ""
   let &tmp = buffer ""
   let algAndEqAssertsPart = (algAndEqAssertsEquations |> eq =>
-    equation_(eq, contextSimulationDiscrete, &varDecls, &tmp, modelNamePrefix)
+    equation_(-1, eq, contextSimulationDiscrete, &varDecls, &tmp, modelNamePrefix)
     ;separator="\n")
 
   <<
@@ -4189,7 +4208,7 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
   let &varDecls = buffer ""
   let &tmp = buffer ""
   let eqns_ = (jacEquations |> eq =>
-    equation_(eq, contextSimulationNonDiscrete, &varDecls, &tmp, modelNamePrefix); separator="\n")
+    equation_(-1, eq, contextSimulationNonDiscrete, &varDecls, &tmp, modelNamePrefix); separator="\n")
 
   <<
   <%&tmp%>
@@ -4283,7 +4302,7 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
   )
 end equation_arrayFormat;
 
-template equation_(SimEqSystem eq, Context context, Text &varDecls, Text &eqs, String modelNamePrefix)
+template equation_(Integer clockIndex, SimEqSystem eq, Context context, Text &varDecls, Text &eqs, String modelNamePrefix)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
@@ -4346,6 +4365,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, Text &eqs, S
     ""
 
   let &varD += addRootsTempArray()
+  let clockIndex_ = if intLt(clockIndex, 0) then '' else 'const int clockIndex = <%clockIndex%>;'
 
   match eq
   case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
@@ -4359,6 +4379,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, Text &eqs, S
   int <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
+    <%clockIndex_%>
     const int equationIndexes[2] = {1,<%ix%>};
     <%&varD%>
     <%x%>
@@ -4372,6 +4393,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, Text &eqs, S
   void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix2%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
+    <%clockIndex_%>
     const int equationIndexes[2] = {1,<%ix2%>};
     <%&varD%>
     <%x2%>
@@ -4395,6 +4417,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, Text &eqs, S
   void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
+    <%clockIndex_%>
     const int equationIndexes[2] = {1,<%ix%>};
     <%&varD%>
     <%x%>
@@ -4578,7 +4601,7 @@ template equationMixed(SimEqSystem eq, Context context, Text &varDecls, Text &tm
 ::=
 match eq
 case eqn as SES_MIXED(__) then
-  let contEqs = equation_(cont, context, &varDecls, &tmp, modelNamePrefixStr)
+  let contEqs = equation_(-1, cont, context, &varDecls, &tmp, modelNamePrefixStr)
   let numDiscVarsStr = listLength(discVars)
   <<
   /* Continuous equation part in <%contEqs%> */
@@ -4835,7 +4858,7 @@ case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
   let IfEquation = (ifbranches |> (e, eqns) hasindex index0 =>
     let condition = daeExp(e, context, &preExp, &varDecls, &eqnsDecls)
     let ifequations = ( eqns |> eqn =>
-       let eqnStr = equation_(eqn, context, &varDecls, &eqnsDecls, modelNamePrefixStr)
+       let eqnStr = equation_(-1, eqn, context, &varDecls, &eqnsDecls, modelNamePrefixStr)
        <<
        <%eqnStr%>
        >>
@@ -4850,7 +4873,7 @@ case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
     >>
     ;separator="\n")
   let elseequations = ( elsebranch |> eqn =>
-     let eqnStr = equation_(eqn, context, &varDecls, &eqnsDecls /*EQNBUF*/, modelNamePrefixStr)
+     let eqnStr = equation_(-1, eqn, context, &varDecls, &eqnsDecls /*EQNBUF*/, modelNamePrefixStr)
        <<
        <%eqnStr%>
        >>
@@ -5023,8 +5046,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /I - Include Directories
   # /DNOMINMAX - Define NOMINMAX (does what it says)
   # /TP - Use C++ Compiler
-  CFLAGS=/Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" /I"<%makefileParams.omhome%>/include/omc/msvc/" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY /DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME <%if (Flags.isSet(Flags.HPCOM)) then '/openmp'%>
-
+  CFLAGS=/Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" /I"<%makefileParams.omhome%>/include/omc/msvc/" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY /DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME <%if (Flags.isSet(Flags.HPCOM)) then '/openmp'%> <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '/DFMU_EXPERIMENTAL' %>
   # /ZI enable Edit and Continue debug info
   CDFLAGS = /ZI
 
@@ -5082,7 +5104,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   DEBUG_FLAGS=<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then "-O0 -g"%>
-  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) $(DEBUG_FLAGS) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
+  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) $(DEBUG_FLAGS) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%> <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '-DFMU_EXPERIMENTAL' %>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then 'OMC_EMCC_PRE_JS=<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/emcc/pre.js<%\n%>'
   %>CPPFLAGS=<%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME<% if stringEq(Config.simCodeTarget(),"JavaScript") then " -DOMC_EMCC"%>
   LDFLAGS=<%dirExtra%> <%
@@ -5546,6 +5568,104 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
            >>
     else error(sourceInfo(), 'Unknown Constraint List')
 end optimizationComponents1;
+
+template functionXXX_systemPartial(list<SimEqSystem> derivativEquations, String name, Integer n, String modelNamePrefixStr, ModelInfo modelInfo)
+::=
+    let code =  match modelInfo
+    case MODELINFO(vars=SIMVARS(derivativeVars=ders)) then
+    (ders |> SIMVAR(__) hasindex i0 => equationNames_Partial(SimCodeUtil.computeDependencies(derivativEquations,name),modelNamePrefixStr,i0,crefStr(name)) ; separator="\n")
+<<
+static void <%modelNamePrefixStr%>_function<%name%><%n%>(DATA *data, threadData_t *threadData, int i)
+{
+  switch (i) {
+  <%code%>
+  }
+}
+>>
+end functionXXX_systemPartial;
+
+
+template functionXXX_systemsPartial(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls, String modelNamePrefixStr, ModelInfo modelInfo)
+::=
+  let funcs = (eqs |> eq hasindex i0 fromindex 0 => functionXXX_systemPartial(eq,name,i0,modelNamePrefixStr,modelInfo) ; separator="\n")
+  match listLength(eqs)
+  case 0 then //empty case
+    let &loop +=
+        <<
+        /* no <%name%> systems */
+        >>
+    ""
+  case 1 then //1 function
+    let &loop +=
+        <<
+        <%modelNamePrefixStr%>_function<%name%>0(data, threadData,i);
+        >>
+    funcs //just the one function
+  case nFuncs then //2 and more
+    let funcNames = eqs |> e hasindex i0 fromindex 0 => 'function<%name%>_system<%i0%>' ; separator=",\n"
+    let head = if Flags.isSet(Flags.PARMODAUTO) then '#pragma omp parallel for private(id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)'
+    let &varDecls += 'int id;<%\n%>'
+
+    let &loop +=
+      /* Text for the loop body that calls the equations */
+      <<
+      <%head%>
+      for(id=0; id<<%nFuncs%>; id++) {
+        function<%name%>_systems[id](data, threadData);
+      }
+      >>
+    /* Text before the function head */
+    <<
+    <%funcs%>
+    static void (*function<%name%>_systems[<%nFuncs%>])(DATA *, threadData_t *threadData) = {
+      <%funcNames%>
+    };
+    >>
+end functionXXX_systemsPartial;
+
+template functionODEPartial(list<list<SimEqSystem>> derivativEquations, Text method, Option<tuple<Schedule,Schedule,Schedule>> hpcOmSchedules, String modelNamePrefix, ModelInfo modelInfo)
+ "Generates function in simulation file."
+::=
+  let () = System.tmpTickReset(0)
+  let &nrfuncs = buffer ""
+  let &varDecls2 = buffer ""
+  let &varDecls = buffer ""
+  let &fncalls = buffer ""
+  let systems = (functionXXX_systemsPartial(derivativEquations, "ODE_Partial", &fncalls, &varDecls, modelNamePrefix, modelInfo))
+  let &tmp = buffer ""
+  <<
+  <%tmp%>
+  <%systems%>
+
+  void <%symbolName(modelNamePrefix,"functionODE_Partial")%>(DATA *data, threadData_t *threadData, int i)
+  {
+    TRACE_PUSH
+    <% if profileFunctions() then "rt_tick(SIM_TIMER_FUNCTION_ODE);" %>
+
+    <%varDecls%>
+
+    //data->simulationInfo.callStatistics.functionODE++;
+
+    <%fncalls%>
+
+    TRACE_POP
+  }
+  >>
+end functionODEPartial;
+
+template equationNames_Partial(list<SimEqSystem> eqs, String modelNamePrefixStr, Integer i0, String cref_der)
+ "Generates an equation.
+  This template should not be used for a SES_RESIDUAL.
+  Residual equations are handled differently."
+::=
+  let odeEqs = eqs |> eq => equationNames_(eq,contextSimulationNonDiscrete,modelNamePrefixStr); separator="\n"
+  <<
+  case <%i0%>:
+    // Assigning <%cref_der%>
+    <%odeEqs%>
+    break;
+  >>
+end equationNames_Partial;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenC;

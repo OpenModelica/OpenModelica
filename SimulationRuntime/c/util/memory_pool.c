@@ -43,15 +43,6 @@ static int GC_collect_a_little_or_not(void)
   return 0;
 }
 
-omc_alloc_interface_t omc_alloc_interface = {
-  GC_init,
-  GC_malloc,
-  GC_malloc_atomic,
-  (char*(*)(size_t)) GC_malloc_atomic,
-  GC_strdup,
-  GC_collect_a_little_or_not
-};
-
 typedef struct list_s {
   void *memory;
   size_t used;
@@ -130,13 +121,51 @@ static int pool_free(void)
   return 0;
 }
 
+static void nofree(void* ptr)
+{
+}
+
+static void* malloc_zero(size_t sz) {
+  return calloc(1, sz);
+}
+
 omc_alloc_interface_t omc_alloc_interface_pooled = {
   pool_init,
   pool_malloc,
   pool_malloc,
   (char*(*)(size_t)) malloc,
   strdup,
-  pool_free
+  pool_free,
+  malloc_zero,
+  free,
+  malloc,
+  free
+};
+
+omc_alloc_interface_t omc_alloc_interface = {
+#if !defined(OMC_MINIMAL_RUNTIME)
+  GC_init,
+  GC_malloc,
+  GC_malloc_atomic,
+  (char*(*)(size_t)) GC_malloc_atomic,
+  GC_strdup,
+  GC_collect_a_little_or_not,
+  GC_malloc_uncollectable,
+  GC_free,
+  GC_malloc_atomic,
+  nofree
+#else
+  pool_init,
+  pool_malloc,
+  pool_malloc,
+  (char*(*)(size_t)) malloc,
+  strdup,
+  pool_free,
+  malloc_zero /* calloc, but with malloc interface */,
+  free,
+  malloc,
+  free
+#endif
 };
 
 /* allocates n reals in the real_buffer */
