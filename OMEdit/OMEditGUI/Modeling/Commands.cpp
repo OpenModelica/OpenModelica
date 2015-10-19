@@ -72,7 +72,6 @@ void AddShapeCommand::redo()
 void AddShapeCommand::undo()
 {
   mpGraphicsView->deleteShapeFromList(mpShapeAnnotation);
-  mpShapeAnnotation->setSelected(false);
   mpGraphicsView->removeItem(mpShapeAnnotation);
   mpShapeAnnotation->emitDeleted();
   mpGraphicsView->addClassAnnotation();
@@ -201,7 +200,6 @@ void RotateShapeCommand::undo()
     qreal angle = oldRotation + rotateIncrement;
     mpShapeAnnotation->applyRotation(angle);
   }
-  mpShapeAnnotation->setSelected(false);
 }
 
 DeleteShapeCommand::DeleteShapeCommand(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QUndoCommand *pParent)
@@ -218,7 +216,6 @@ DeleteShapeCommand::DeleteShapeCommand(ShapeAnnotation *pShapeAnnotation, Graphi
 void DeleteShapeCommand::redo()
 {
   mpGraphicsView->deleteShapeFromList(mpShapeAnnotation);
-  mpShapeAnnotation->setSelected(false);
   mpGraphicsView->removeItem(mpShapeAnnotation);
   mpShapeAnnotation->emitDeleted();
   mpGraphicsView->setAddClassAnnotationNeeded(true);
@@ -323,20 +320,17 @@ void AddComponentCommand::undo()
       pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     // first create the component for Icon View only if connector is not protected
     if (!mpComponentInfo->getProtected()) {
-      mpIconComponent->setSelected(false);
       mpIconGraphicsView->removeItem(mpIconComponent);
       mpIconGraphicsView->removeItem(mpIconComponent->getOriginItem());
       mpIconGraphicsView->deleteComponentFromList(mpIconComponent);
       mpIconComponent->emitDeleted();
     }
     // now remove the component from Diagram View
-    mpDiagramComponent->setSelected(false);
     mpDiagramGraphicsView->removeItem(mpDiagramComponent);
     mpDiagramGraphicsView->removeItem(mpDiagramComponent->getOriginItem());
     mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
     mpDiagramComponent->emitDeleted();
   } else {
-    mpDiagramComponent->setSelected(false);
     mpDiagramGraphicsView->removeItem(mpDiagramComponent);
     mpDiagramGraphicsView->removeItem(mpDiagramComponent->getOriginItem());
     mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
@@ -468,7 +462,6 @@ void RotateComponentCommand::undo()
     qreal angle = oldRotation + rotateIncrement;
     mpComponent->applyRotation(angle);
   }
-  mpComponent->setSelected(false);
 }
 
 DeleteComponentCommand::DeleteComponentCommand(Component *pComponent, GraphicsView *pGraphicsView, QUndoCommand *pParent)
@@ -495,7 +488,6 @@ void DeleteComponentCommand::redo()
     // first remove the component from Icon View
     mpIconComponent = mpIconGraphicsView->getComponentObject(mpComponent->getName());
     if (mpIconComponent) {
-      mpIconComponent->setSelected(false);
       mpIconGraphicsView->removeItem(mpIconComponent);
       mpIconGraphicsView->removeItem(mpIconComponent->getOriginItem());
       mpIconGraphicsView->deleteComponentFromList(mpIconComponent);
@@ -504,14 +496,12 @@ void DeleteComponentCommand::redo()
     // now remove the component from Diagram View
     mpDiagramComponent = mpDiagramGraphicsView->getComponentObject(mpComponent->getName());
     if (mpDiagramComponent) {
-      mpDiagramComponent->setSelected(false);
       mpDiagramGraphicsView->removeItem(mpDiagramComponent);
       mpDiagramGraphicsView->removeItem(mpDiagramComponent->getOriginItem());
       mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
       mpDiagramComponent->emitDeleted();
     }
   } else {
-    mpComponent->setSelected(false);
     mpDiagramGraphicsView->removeItem(mpComponent);
     mpDiagramGraphicsView->removeItem(mpComponent->getOriginItem());
     mpDiagramGraphicsView->deleteComponentFromList(mpComponent);

@@ -254,6 +254,7 @@ public slots:
   void zoomIn();
   void zoomOut();
   void selectAll();
+  void clearSelection();
   void addClassAnnotation(bool updateModelicaText = true);
   void showGraphicsViewProperties();
   void deleteItems();
@@ -380,6 +381,7 @@ public:
   void refresh();
   bool validateText();
   bool modelicaEditorTextChanged();
+  void clearSelection();
   void updateClassAnnotationIfNeeded();
   void updateModelicaText();
   void updateUndoRedoActions();

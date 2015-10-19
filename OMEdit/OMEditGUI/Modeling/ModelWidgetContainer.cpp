@@ -1196,11 +1196,25 @@ void GraphicsView::zoomOut()
   }
 }
 
-//! Selects all objects and connectors.
+/*!
+ * \brief GraphicsView::selectAll
+ * Selects all shapes, components and connectors.
+ */
 void GraphicsView::selectAll()
 {
   foreach (QGraphicsItem *pItem, items()) {
     pItem->setSelected(true);
+  }
+}
+
+/*!
+ * \brief GraphicsView::clearSelection
+ * Clears the selection of all shapes, components and connectors.
+ */
+void GraphicsView::clearSelection()
+{
+  foreach (QGraphicsItem *pItem, items()) {
+    pItem->setSelected(false);
   }
 }
 
@@ -2735,6 +2749,20 @@ bool ModelWidget::modelicaEditorTextChanged()
     pLibraryTreeModel->createLibraryTreeItems(mpLibraryTreeItem);
   }
   return true;
+}
+
+/*!
+ * \brief ModelWidget::clearSelection
+ * Clears the selection Icon and Diagram layers.
+ */
+void ModelWidget::clearSelection()
+{
+  if (mpIconGraphicsView) {
+    mpIconGraphicsView->clearSelection();
+  }
+  if (mpDiagramGraphicsView) {
+    mpDiagramGraphicsView->clearSelection();
+  }
 }
 
 /*!
