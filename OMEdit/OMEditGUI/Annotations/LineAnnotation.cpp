@@ -844,7 +844,7 @@ void ConnectionArray::saveArrayIndex()
       }
     }
   }
-  mpGraphicsView->createConnection(mpConnectionLineAnnotation);
+  mpGraphicsView->addConnectionToClass(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)").arg(startComponentName, endComponentName));
   mpConnectionLineAnnotation->drawCornerItems();
   mpConnectionLineAnnotation->setCornerItemsPassive();

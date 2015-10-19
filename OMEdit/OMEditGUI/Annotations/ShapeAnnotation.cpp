@@ -1391,19 +1391,16 @@ void ShapeAnnotation::referenceShapeDeleted()
 void ShapeAnnotation::deleteConnection()
 {
   LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-  if (pLineAnnotation) {
-    mpGraphicsView->deleteConnection(pLineAnnotation, true);
-    mpGraphicsView->deleteConnectionObject(pLineAnnotation);
-    deleteLater();
+  if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+    mpGraphicsView->deleteConnection(pLineAnnotation);
   }
 }
 
 /*!
-  Slot activated when Del key is pressed while selecting the shape.\n
-  Slot activated when Delete option is choosen from context menu of the shape.\n
-  Deletes the shape. Emits the GraphicsView::updateClassAnnotation() SIGNAL.\n
-  Since GraphicsView::addClassAnnotation() sets the GraphicsView::mCanAddClassAnnotation flag to false we must set it true again.
-  */
+ * \brief ShapeAnnotation::deleteMe
+ * Deletes the shape. Slot activated when Del key is pressed while the shape is selected.\n
+ * Slot activated when Delete option is choosen from context menu of the shape.\n
+ */
 void ShapeAnnotation::deleteMe()
 {
   // delete the shape
@@ -1851,11 +1848,12 @@ void ShapeAnnotation::showShapeProperties()
 }
 
 /*!
-  Reimplementation of contextMenuEvent.\n
-  Creates a context menu for the shape.\n
-  No context menu for the shapes that are part of Component.
-  \param pEvent - pointer to QGraphicsSceneContextMenuEvent
-  */
+ * \brief ShapeAnnotation::contextMenuEvent
+ * Reimplementation of contextMenuEvent.\n
+ * Creates a context menu for the shape.\n
+ * No context menu for the shapes that are part of Component.
+ * \param pEvent - pointer to QGraphicsSceneContextMenuEvent
+ */
 void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
 {
   if (!mIsCustomShape) {
@@ -1867,14 +1865,19 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
   }
 
   QMenu menu(mpGraphicsView);
-  if(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM){
-    menu.addAction(mpGraphicsView->getDeleteConnectionAction());
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
+    menu.addAction(mpGraphicsView->getDeleteAction());
   } else {
     menu.addAction(mpShapePropertiesAction);
     menu.addSeparator();
     if (isInheritedShape()) {
+      mpManhattanizeShapeAction->setDisabled(true);
       mpGraphicsView->getDeleteAction()->setDisabled(true);
       mpGraphicsView->getDuplicateAction()->setDisabled(true);
+      mpGraphicsView->getBringToFrontAction()->setDisabled(true);
+      mpGraphicsView->getBringForwardAction()->setDisabled(true);
+      mpGraphicsView->getSendToBackAction()->setDisabled(true);
+      mpGraphicsView->getSendBackwardAction()->setDisabled(true);
       mpGraphicsView->getRotateClockwiseAction()->setDisabled(true);
       mpGraphicsView->getRotateAntiClockwiseAction()->setDisabled(true);
     }
@@ -1884,10 +1887,8 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
       lineType = pLineAnnotation->getLineType();
       menu.addAction(mpManhattanizeShapeAction);
     }
-    if (lineType == LineAnnotation::ConnectionType) {
-      menu.addAction(mpGraphicsView->getDeleteConnectionAction());
-    } else {
-      menu.addAction(mpGraphicsView->getDeleteAction());
+    menu.addAction(mpGraphicsView->getDeleteAction());
+    if (lineType != LineAnnotation::ConnectionType) {
       menu.addAction(mpGraphicsView->getDuplicateAction());
       menu.addSeparator();
       menu.addAction(mpGraphicsView->getBringToFrontAction());

@@ -388,7 +388,7 @@ void GraphicsView::addComponentToList(Component *pComponent)
   mComponentsList.append(pComponent);
 }
 
-void GraphicsView::addComponentObject(Component *pComponent)
+void GraphicsView::addComponentToClass(Component *pComponent)
 {
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::Modelica) {
     MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
@@ -437,7 +437,7 @@ void GraphicsView::deleteComponent(Component *pComponent)
       endComponentName = mConnectionsList[i]->getEndComponent()->getRootParentComponent()->getName();
     }
     if (startComponentName == pComponent->getName() || endComponentName == pComponent->getName()) {
-      removeConnection(mConnectionsList[i], false);
+      deleteConnection(mConnectionsList[i]);
       i = 0;   //Restart iteration if map has changed
     } else {
       ++i;
@@ -450,7 +450,7 @@ void GraphicsView::deleteComponent(Component *pComponent)
  * Deletes the Component.
  * \param pComponent
  */
-void GraphicsView::deleteComponentObject(Component *pComponent)
+void GraphicsView::deleteComponentFromClass(Component *pComponent)
 {
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     OMCProxy *pOMCProxy = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
@@ -529,11 +529,11 @@ bool GraphicsView::checkComponentName(QString componentName)
 }
 
 /*!
- * \brief GraphicsView::createConnection
- * Creates connection between startComponent and endComponent.
- * \param pConnectionLineAnnotation
+ * \brief GraphicsView::addConnectionToOMC
+ * Adds the connection to class.
+ * \param pConnectionLineAnnotation - the connection to add.
  */
-void GraphicsView::createConnection(LineAnnotation *pConnectionLineAnnotation)
+void GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotation)
 {
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
     // show TLM connection attributes dialog
@@ -550,7 +550,6 @@ void GraphicsView::createConnection(LineAnnotation *pConnectionLineAnnotation)
        * Do not check for the ports compatibility via instantiatemodel. Just let the user create the connection.
        */
       //pMainWindow->getOMCProxy()->instantiateModelSucceeds(mpModelWidget->getNameStructure());
-      mpModelWidget->updateModelicaText();
     }
   }
   // make the model modified
@@ -558,12 +557,11 @@ void GraphicsView::createConnection(LineAnnotation *pConnectionLineAnnotation)
 }
 
 /*!
- * \brief GraphicsView::deleteConnection
+ * \brief GraphicsView::deleteConnectionFromOMC
  * Deletes the connection from OMC.
  * \param pConnectonLineAnnotation - the connection to delete.
- * \param updateModelicaText - updates the Modelica text if true.
  */
-void GraphicsView::deleteConnection(LineAnnotation *pConnectonLineAnnotation, bool updateModelicaText)
+void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectonLineAnnotation)
 {
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   if(mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
@@ -573,38 +571,14 @@ void GraphicsView::deleteConnection(LineAnnotation *pConnectonLineAnnotation, bo
     pMainWindow->getOMCProxy()->deleteConnection(pConnectonLineAnnotation->getStartComponentName(),
                                                  pConnectonLineAnnotation->getEndComponentName(),
                                                  mpModelWidget->getLibraryTreeItem()->getNameStructure());
-    if (updateModelicaText) {
-      mpModelWidget->updateModelicaText();
-    }
   }
   // make the model modified
   mpModelWidget->setModelModified();
 }
 
-void GraphicsView::addConnectionObject(LineAnnotation *pConnectionLineAnnotation)
-{
-  mConnectionsList.append(pConnectionLineAnnotation);
-}
-
-void GraphicsView::deleteConnectionObject(LineAnnotation *pConnectionLineAnnotation)
-{
-  mConnectionsList.removeOne(pConnectionLineAnnotation);
-}
-
-void GraphicsView::addShapeObject(ShapeAnnotation *pShape)
-{
-  mShapesList.append(pShape);
-}
-
 void GraphicsView::deleteShape(ShapeAnnotation *pShape)
 {
   mpModelWidget->getUndoStack()->push(new DeleteShapeCommand(pShape, this));
-}
-
-void GraphicsView::deleteShapeObject(ShapeAnnotation *pShape)
-{
-  // remove the shape from local list
-  mShapesList.removeOne(pShape);
 }
 
 void GraphicsView::reOrderItems()
@@ -638,7 +612,7 @@ void GraphicsView::reOrderItems()
  */
 void GraphicsView::bringToFront(ShapeAnnotation *pShape)
 {
-  deleteShapeObject(pShape);
+  deleteShapeFromList(pShape);
   int i = 0;
   // update the shapes z index
   for (; i < mShapesList.size() ; i++) {
@@ -678,7 +652,7 @@ void GraphicsView::bringForward(ShapeAnnotation *pShape)
  */
 void GraphicsView::sendToBack(ShapeAnnotation *pShape)
 {
-  deleteShapeObject(pShape);
+  deleteShapeFromList(pShape);
   int i = 0;
   pShape->setZValue(i + 1);
   mShapesList.prepend(pShape);
@@ -889,7 +863,7 @@ void GraphicsView::createBitmapShape(QPointF point)
     pShapePropertiesDialog = new ShapePropertiesDialog(mpBitmapShapeAnnotation, mpModelWidget->getModelWidgetContainer()->getMainWindow());
     if (!pShapePropertiesDialog->exec()) {
       /* if user cancels the bitmap shape properties then remove the bitmap shape from the scene */
-      deleteShapeObject(mpBitmapShapeAnnotation);
+      deleteShapeFromList(mpBitmapShapeAnnotation);
       mpBitmapShapeAnnotation->deleteLater();
     }
     // make the toolbar button of text unchecked
@@ -993,11 +967,6 @@ void GraphicsView::createActions()
   // Graphics View Properties Action
   mpPropertiesAction = new QAction(Helper::properties, this);
   connect(mpPropertiesAction, SIGNAL(triggered()), SLOT(showGraphicsViewProperties()));
-  // Connection Delete Action
-  mpDeleteConnectionAction = new QAction(QIcon(":/Resources/icons/delete.svg"), tr("Delete Connection"), this);
-  mpDeleteConnectionAction->setStatusTip(tr("Deletes the connection"));
-  mpDeleteConnectionAction->setShortcut(QKeySequence::Delete);
-  mpDeleteConnectionAction->setDisabled(isSystemLibrary);
   // Actions for Components
   // Delete Action
   mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::deleteStr, this);
@@ -1162,6 +1131,7 @@ void GraphicsView::addConnection(Component *pComponent)
         mpConnectionLineAnnotation->setStartComponentName(startComponentName);
         mpConnectionLineAnnotation->setEndComponentName(endComponentName);
         mpModelWidget->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true, this));
+        mpModelWidget->updateModelicaText();
       }
       setIsCreatingConnection(false);
     }
@@ -1182,29 +1152,13 @@ void GraphicsView::removeCurrentConnection()
 }
 
 /*!
- * \brief GraphicsView::removeConnection
- * Removes the connector from the class.
- * \param pConnector - is a pointer to the connector to remove.
- * \param updateModelicaText - updates the Modelica text if true.
+ * \brief GraphicsView::deleteConnection
+ * Deletes the connection from the class.
+ * \param pConnectionLineAnnotation - is a pointer to the connection to delete.
  */
-void GraphicsView::removeConnection(LineAnnotation *pConnection, bool updateModelicaText)
+void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
 {
-  bool doDelete = false;
-  int i;
-  for(i = 0; i != mConnectionsList.size(); ++i) {
-    if(mConnectionsList[i] == pConnection) {
-      doDelete = true;
-      break;
-    }
-  }
-  if (doDelete) {
-    // If GUI delete is successful then delete the connection from omc as well.
-    deleteConnection(pConnection, updateModelicaText);
-    // delete the connector object
-    pConnection->deleteLater();
-    // remove connector object from local connector vector
-    mConnectionsList.removeAt(i);
-  }
+  mpModelWidget->getUndoStack()->push(new DeleteConnectionCommand(pConnectionLineAnnotation, this));
 }
 
 //! Resets zoom factor to 100%.
@@ -2967,7 +2921,7 @@ void ModelWidget::parseModelIconDiagramShapes(QString annotationString, StringHa
       pLineAnnotation->initializeTransformation();
       pLineAnnotation->drawCornerItems();
       pLineAnnotation->setCornerItemsPassive();
-      pGraphicsView->addShapeObject(pLineAnnotation);
+      pGraphicsView->addShapeToList(pLineAnnotation);
       pGraphicsView->addItem(pLineAnnotation);
     } else if (shape.startsWith("Polygon")) {
       shape = shape.mid(QString("Polygon").length());
@@ -2976,7 +2930,7 @@ void ModelWidget::parseModelIconDiagramShapes(QString annotationString, StringHa
       pPolygonAnnotation->initializeTransformation();
       pPolygonAnnotation->drawCornerItems();
       pPolygonAnnotation->setCornerItemsPassive();
-      pGraphicsView->addShapeObject(pPolygonAnnotation);
+      pGraphicsView->addShapeToList(pPolygonAnnotation);
       pGraphicsView->addItem(pPolygonAnnotation);
     } else if (shape.startsWith("Rectangle")) {
       shape = shape.mid(QString("Rectangle").length());
@@ -2985,7 +2939,7 @@ void ModelWidget::parseModelIconDiagramShapes(QString annotationString, StringHa
       pRectangleAnnotation->initializeTransformation();
       pRectangleAnnotation->drawCornerItems();
       pRectangleAnnotation->setCornerItemsPassive();
-      pGraphicsView->addShapeObject(pRectangleAnnotation);
+      pGraphicsView->addShapeToList(pRectangleAnnotation);
       pGraphicsView->addItem(pRectangleAnnotation);
     } else if (shape.startsWith("Ellipse")) {
       shape = shape.mid(QString("Ellipse").length());
@@ -2994,7 +2948,7 @@ void ModelWidget::parseModelIconDiagramShapes(QString annotationString, StringHa
       pEllipseAnnotation->initializeTransformation();
       pEllipseAnnotation->drawCornerItems();
       pEllipseAnnotation->setCornerItemsPassive();
-      pGraphicsView->addShapeObject(pEllipseAnnotation);
+      pGraphicsView->addShapeToList(pEllipseAnnotation);
       pGraphicsView->addItem(pEllipseAnnotation);
     } else if (shape.startsWith("Text")) {
       shape = shape.mid(QString("Text").length());
@@ -3003,7 +2957,7 @@ void ModelWidget::parseModelIconDiagramShapes(QString annotationString, StringHa
       pTextAnnotation->initializeTransformation();
       pTextAnnotation->drawCornerItems();
       pTextAnnotation->setCornerItemsPassive();
-      pGraphicsView->addShapeObject(pTextAnnotation);
+      pGraphicsView->addShapeToList(pTextAnnotation);
       pGraphicsView->addItem(pTextAnnotation);
     } else if (shape.startsWith("Bitmap")) {
       /* create the bitmap shape */
@@ -3013,7 +2967,7 @@ void ModelWidget::parseModelIconDiagramShapes(QString annotationString, StringHa
       pBitmapAnnotation->initializeTransformation();
       pBitmapAnnotation->drawCornerItems();
       pBitmapAnnotation->setCornerItemsPassive();
-      pGraphicsView->addShapeObject(pBitmapAnnotation);
+      pGraphicsView->addShapeToList(pBitmapAnnotation);
       pGraphicsView->addItem(pBitmapAnnotation);
     }
   }
@@ -3310,7 +3264,7 @@ void ModelWidget::getTLMConnections()
              pConnectionLineAnnotation->addPoint(QPointF(0, 0));
              pConnectionLineAnnotation->drawCornerItems();
              pConnectionLineAnnotation->setCornerItemsPassive();
-             mpDiagramGraphicsView->addConnectionObject(pConnectionLineAnnotation);
+             mpDiagramGraphicsView->addConnectionToList(pConnectionLineAnnotation);
           }
         }
       }

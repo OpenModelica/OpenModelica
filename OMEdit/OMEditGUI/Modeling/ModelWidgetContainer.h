@@ -128,7 +128,6 @@ private:
   TextAnnotation *mpTextShapeAnnotation;
   BitmapAnnotation *mpBitmapShapeAnnotation;
   QAction *mpPropertiesAction;
-  QAction *mpDeleteConnectionAction;
   QAction *mpDeleteAction;
   QAction *mpBringToFrontAction;
   QAction *mpBringForwardAction;
@@ -172,7 +171,6 @@ public:
   void setRenderingLibraryPixmap(bool renderingLibraryPixmap) {mRenderingLibraryPixmap = renderingLibraryPixmap;}
   bool isRenderingLibraryPixmap() {return mRenderingLibraryPixmap;}
   QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
-  QAction* getDeleteConnectionAction() {return mpDeleteConnectionAction;}
   QAction* getDeleteAction() {return mpDeleteAction;}
   QAction* getDuplicateAction() {return mpDuplicateAction;}
   QAction* getBringToFrontAction() {return mpBringToFrontAction;}
@@ -187,22 +185,22 @@ public:
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
                           ComponentInfo *pComponentInfo, bool addObject = true, bool openingClass = false);
   void addComponentToList(Component *pComponent);
-  void addComponentObject(Component *pComponent);
+  void addComponentToClass(Component *pComponent);
   void deleteComponent(Component *pComponent);
-  void deleteComponentObject(Component *pComponent);
+  void deleteComponentFromClass(Component *pComponent);
   void deleteComponentFromList(Component *pComponent);
   Component* getComponentObject(QString componentName);
   QString getUniqueComponentName(QString componentName, int number = 1);
   bool checkComponentName(QString componentName);
   QList<Component*> getComponentsList() {return mComponentsList;}
   QList<LineAnnotation*> getConnectionsList() {return mConnectionsList;}
-  void createConnection(LineAnnotation *pConnectionLineAnnotation);
-  void deleteConnection(LineAnnotation *pConnectonLineAnnotation, bool updateModelicaText);
-  void addConnectionObject(LineAnnotation *pConnectionLineAnnotation);
-  void deleteConnectionObject(LineAnnotation *pConnectionLineAnnotation);
-  void addShapeObject(ShapeAnnotation *pShape);
+  void addConnectionToClass(LineAnnotation *pConnectionLineAnnotation);
+  void deleteConnectionFromClass(LineAnnotation *pConnectonLineAnnotation);
+  void addConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.append(pConnectionLineAnnotation);}
+  void deleteConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.removeOne(pConnectionLineAnnotation);}
+  void addShapeToList(ShapeAnnotation *pShape) {mShapesList.append(pShape);}
   void deleteShape(ShapeAnnotation *pShape);
-  void deleteShapeObject(ShapeAnnotation *pShape);
+  void deleteShapeFromList(ShapeAnnotation *pShape) {mShapesList.removeOne(pShape);}
   void reOrderItems();
   void bringToFront(ShapeAnnotation *pShape);
   void bringForward(ShapeAnnotation *pShape);
@@ -252,7 +250,7 @@ signals:
 public slots:
   void addConnection(Component *pComponent);
   void removeCurrentConnection();
-  void removeConnection(LineAnnotation *pConnection, bool updateModelicaText);
+  void deleteConnection(LineAnnotation *pConnectionLineAnnotation);
   void resetZoom();
   void zoomIn();
   void zoomOut();

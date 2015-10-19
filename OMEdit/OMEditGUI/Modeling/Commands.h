@@ -126,4 +126,15 @@ private:
   GraphicsView *mpGraphicsView;
 };
 
+class DeleteConnectionCommand : public QUndoCommand
+{
+public:
+  DeleteConnectionCommand(LineAnnotation *pConnectionLineAnnotation, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  LineAnnotation *mpConnectionLineAnnotation;
+  GraphicsView *mpGraphicsView;
+};
+
 #endif // COMMANDS_H
