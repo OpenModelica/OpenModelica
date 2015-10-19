@@ -144,6 +144,7 @@ using std::runtime_error;
   using boost::tuple;
   using boost::shared_ptr;
   using boost::weak_ptr;
+  using boost::dynamic_pointer_cast;
 #endif //USE_CPP_ELEVEN
 
 #if defined(USE_THREAD)
