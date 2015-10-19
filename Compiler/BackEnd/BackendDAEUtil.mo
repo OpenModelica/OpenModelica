@@ -6521,7 +6521,7 @@ algorithm
   SimCodeFunctionUtil.execStat("remove unused functions");
 
   if Flags.isSet(Flags.GRAPHML) then
-    HpcOmTaskGraph.dumpBipartiteGraph(dae, fileNamePrefix);
+    BackendDump.dumpBipartiteGraphDAE(dae, fileNamePrefix);
   end if;
 
   if Flags.isSet(Flags.BLT_DUMP) then
