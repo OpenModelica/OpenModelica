@@ -45,6 +45,18 @@ public:
             }
             nonlin_solver_key.assign("extension_export_newton");
         }
+        if(nonlin_solver.compare("broyden")==0)
+        {
+            PATH broyden_path = ObjectFactory<CreationPolicy>::_library_path;
+            PATH broyden_name(BROYDEN_LIB);
+            broyden_path/=broyden_name;
+            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(broyden_path.string(),*_non_linsolver_type_map);
+            if (result != LOADER_SUCCESS)
+            {
+                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading Broyden solver library!");
+            }
+            nonlin_solver_key.assign("extension_export_broyden");
+        }
         else if(nonlin_solver.compare("kinsol")==0)
         {
               PATH kinsol_path = ObjectFactory<CreationPolicy>::_library_path;

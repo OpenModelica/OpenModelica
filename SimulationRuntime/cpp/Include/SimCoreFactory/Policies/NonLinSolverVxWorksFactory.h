@@ -26,6 +26,8 @@ public:
         string nonlin_solver;
         if(solver_name.compare("newton")==0)
             nonlin_solver_key.assign("createNewtonSettings");
+        else if(solver_name.compare("broyden")==0)
+            nonlin_solver_key.assign("createBroydenSettings");
         else if(solver_name.compare("kinsol")==0)
             nonlin_solver_key.assign("createKinsolSettings");
         else if(solver_name.compare("Hybrj")==0)
@@ -44,6 +46,8 @@ public:
             string nonlin_solver_key;
             if(solver_name.compare("newton")==0)
                 nonlin_solver_key.assign("createNewton");
+            if(solver_name.compare("broyden")==0)
+                nonlin_solver_key.assign("createBroyden");
             else if(solver_name.compare("kinsol")==0)
                 nonlin_solver_key.assign("createKinsol");
             else if(solver_name.compare("Hybrj")==0)
