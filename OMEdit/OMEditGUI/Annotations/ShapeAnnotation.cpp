@@ -364,7 +364,7 @@ ShapeAnnotation::ShapeAnnotation(QGraphicsItem *pParent)
   //mTransformation = 0;
   mIsCustomShape = false;
   mIsInheritedShape = false;
-  setOldPosition(QPointF(0, 0));
+  setOldScenePosition(QPointF(0, 0));
   mIsCornerItemClicked = false;
 }
 
@@ -379,7 +379,7 @@ ShapeAnnotation::ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsVie
   mTransformation = Transformation(StringHandler::Diagram);
   mIsCustomShape = true;
   mIsInheritedShape = inheritedShape;
-  setOldPosition(QPointF(0, 0));
+  setOldScenePosition(QPointF(0, 0));
   mIsCornerItemClicked = false;
   createActions();
 }
@@ -697,34 +697,6 @@ void ShapeAnnotation::removeCornerItems()
     pCornerItem->deleteLater();
   }
   mCornerItemsList.clear();
-}
-
-/*!
-  Saves the old position of the shape.
-  \param oldPosition - the old position of the shape.
-  */
-void ShapeAnnotation::setOldPosition(QPointF oldPosition)
-{
-  mOldPosition = oldPosition;
-}
-
-/*!
-  Returns the old position of the shape.
-  \return the old position of the shape.
-  */
-QPointF ShapeAnnotation::getOldPosition()
-{
-  return mOldPosition;
-}
-
-void ShapeAnnotation::addPoint(QPointF point)
-{
-  Q_UNUSED(point);
-}
-
-void ShapeAnnotation::clearPoints()
-{
-
 }
 
 /*!
@@ -1464,7 +1436,7 @@ void ShapeAnnotation::rotateClockwise()
 /*!
  * \brief ShapeAnnotation::rotateAntiClockwise
  * Rotates the shape anti clockwise.
-  \sa rotateClockwise() and applyRotation()
+ * \sa rotateClockwise() and applyRotation()
  */
 void ShapeAnnotation::rotateAntiClockwise()
 {
@@ -1472,261 +1444,149 @@ void ShapeAnnotation::rotateAntiClockwise()
 }
 
 /*!
-  Slot that moves shape upwards depending on the grid step size value
-  \sa moveDown(),
-      moveLeft(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief ShapeAnnotation::moveUp
+ * Slot that moves shape upwards depending on the grid step size value
+ * \sa moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
+ * moveCtrlLeft() and moveCtrlRight()
+ */
 void ShapeAnnotation::moveUp()
 {
-  mTransformation.adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
-  setTransform(mTransformation.getTransformationMatrix());
-  mOrigin = mTransformation.getPosition();
+  qreal y = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, 0, y, mpGraphicsView));
 }
 
 /*!
-  Slot that moves shape upwards depending on the grid step size value multiplied by 5
-  \sa moveUp(),
-      moveDown(),
-      moveLeft(),
-      moveRight(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief ShapeAnnotation::moveShiftUp
+ * Slot that moves shape upwards depending on the grid step size value multiplied by 5
+ * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
+ * moveCtrlLeft() and moveCtrlRight()
+ */
 void ShapeAnnotation::moveShiftUp()
 {
-  mTransformation.adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
-  setTransform(mTransformation.getTransformationMatrix());
-  mOrigin = mTransformation.getPosition();
+  qreal y = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5;
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, 0, y, mpGraphicsView));
 }
 
 /*!
-  Slot that moves shape one pixel upwards
-  \sa moveUp(),
-      moveDown(),
-      moveLeft(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlDown(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief ShapeAnnotation::moveCtrlUp
+ * Slot that moves shape one pixel upwards
+ * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlDown(),
+ * moveCtrlLeft() and moveCtrlRight()
+ */
 void ShapeAnnotation::moveCtrlUp()
 {
-  mTransformation.adjustPosition(0, 1);
-  setTransform(mTransformation.getTransformationMatrix());
-  mOrigin = mTransformation.getPosition();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, 0, 1, mpGraphicsView));
 }
 
 /*!
-  Slot that moves shape downwards depending on the grid step size value
-  \sa moveUp(),
-      moveLeft(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief ShapeAnnotation::moveDown
+ * Slot that moves shape downwards depending on the grid step size value
+ * \sa moveUp(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
+ * moveCtrlLeft() and moveCtrlRight()
+ */
 void ShapeAnnotation::moveDown()
 {
-  mTransformation.adjustPosition(0, -mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
-  setTransform(mTransformation.getTransformationMatrix());
-  mOrigin = mTransformation.getPosition();
+  qreal y = -mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, 0, y, mpGraphicsView));
 }
 
-
 /*!
-  Slot that moves shape downwards depending on the grid step size value multiplied by 5
-  \sa moveUp(),
-      moveDown(),
-      moveLeft(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief ShapeAnnotation::moveShiftDown
+ * Slot that moves shape downwards depending on the grid step size value multiplied by 5
+ * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
+ * moveCtrlLeft() and moveCtrlRight()
+ */
 void ShapeAnnotation::moveShiftDown()
 {
-  mTransformation.adjustPosition(0, -(mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5));
-  setTransform(mTransformation.getTransformationMatrix());
-  mOrigin = mTransformation.getPosition();
+  qreal y = -(mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, 0, y, mpGraphicsView));
 }
 
 /*!
-  Slot that moves shape one pixel downwards
-  \sa moveUp(),
-      moveDown(),
-      moveLeft(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief ShapeAnnotation::moveCtrlDown
+ * Slot that moves shape one pixel downwards
+ * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(),
+ * moveCtrlLeft() and moveCtrlRight()
+ */
 void ShapeAnnotation::moveCtrlDown()
 {
-  mTransformation.adjustPosition(0, -1);
-  setTransform(mTransformation.getTransformationMatrix());
-  mOrigin = mTransformation.getPosition();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, 0, -1, mpGraphicsView));
 }
 
 /*!
-  Slot that moves shape leftwards depending on the grid step size
-  \sa moveUp(),
-      moveDown(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief ShapeAnnotation::moveLeft
+ * Slot that moves shape leftwards depending on the grid step size
+ * \sa moveUp(), moveDown(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
+ * moveCtrlLeft() and moveCtrlRight()
+ */
 void ShapeAnnotation::moveLeft()
 {
-  mTransformation.adjustPosition(-mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
-  setTransform(mTransformation.getTransformationMatrix());
-  mOrigin = mTransformation.getPosition();
+  qreal x = -mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, x, 0, mpGraphicsView));
 }
 
 /*!
-  Slot that moves shape leftwards depending on the grid step size value multiplied by 5
-  \sa moveUp(),
-      moveDown(),
-      moveLeft(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief ShapeAnnotation::moveShiftLeft
+ * Slot that moves shape leftwards depending on the grid step size value multiplied by 5
+ * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
+ * moveCtrlLeft() and moveCtrlRight()
+ */
 void ShapeAnnotation::moveShiftLeft()
 {
-  mTransformation.adjustPosition(-(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5), 0);
-  setTransform(mTransformation.getTransformationMatrix());
-  mOrigin = mTransformation.getPosition();
+  qreal x = -(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, x, 0, mpGraphicsView));
 }
 
 /*!
-  Slot that moves shape one pixel leftwards
-  \sa moveUp(),
-      moveDown(),
-      moveLeft(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlRight()
-  */
+ * \brief ShapeAnnotation::moveCtrlLeft
+ * Slot that moves shape one pixel leftwards
+ * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(),
+ * moveCtrlDown() and moveCtrlRight()
+ */
 void ShapeAnnotation::moveCtrlLeft()
 {
-  mTransformation.setOrigin(QPointF(mTransformation.getPosition().x() - 1, mTransformation.getPosition().y()));
-  setTransform(mTransformation.getTransformationMatrix());
-  mOrigin = mTransformation.getPosition();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, -1, 0, mpGraphicsView));
 }
 
 /*!
-  Slot that moves shape rightwards depending on the grid step size
-  \sa moveUp(),
-      moveDown(),
-      moveLeft(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief ShapeAnnotation::moveRight
+ * Slot that moves shape rightwards depending on the grid step size
+ * \sa moveUp(), moveDown(), moveLeft(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
+ * moveCtrlLeft() and moveCtrlRight()
+ */
 void ShapeAnnotation::moveRight()
 {
-  mTransformation.adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
-  setTransform(mTransformation.getTransformationMatrix());
-  mOrigin = mTransformation.getPosition();
+  qreal x = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, x, 0, mpGraphicsView));
 }
 
 /*!
-  Slot that moves shape rightwards depending on the grid step size value multiplied by 5
-  \sa moveUp(),
-      moveDown(),
-      moveLeft(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief ShapeAnnotation::moveShiftRight
+ * Slot that moves shape rightwards depending on the grid step size value multiplied by 5
+ * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveCtrlUp(), moveCtrlDown(),
+ * moveCtrlLeft() and moveCtrlRight()
+ */
 void ShapeAnnotation::moveShiftRight()
 {
-  mTransformation.adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5, 0);
-  setTransform(mTransformation.getTransformationMatrix());
-  mOrigin = mTransformation.getPosition();
+  qreal x = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5;
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, x, 0, mpGraphicsView));
 }
 
 /*!
-  Slot that moves shape one pixel rightwards
-  \sa moveUp(),
-      moveDown(),
-      moveLeft(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlLeft()
-  */
+ * \brief ShapeAnnotation::moveCtrlRight
+ * Slot that moves shape one pixel rightwards
+ * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(),
+ * moveCtrlDown() and moveCtrlLeft()
+ */
 void ShapeAnnotation::moveCtrlRight()
 {
-  mTransformation.setOrigin(QPointF(mTransformation.getPosition().x() + 1, mTransformation.getPosition().y()));
-  setTransform(mTransformation.getTransformationMatrix());
-  mOrigin = mTransformation.getPosition();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveShapeKeyCommand(this, 1, 0, mpGraphicsView));
 }
 
 /*!
-  Slot activated when CornerItem around the shape is pressed. Sets the flag that CornerItem is pressed.
-  */
+ * \brief ShapeAnnotation::cornerItemPressed
+ * Slot activated when CornerItem around the shape is pressed. Sets the flag that CornerItem is pressed.
+ */
 void ShapeAnnotation::cornerItemPressed()
 {
   mIsCornerItemClicked = true;
@@ -1734,8 +1594,9 @@ void ShapeAnnotation::cornerItemPressed()
 }
 
 /*!
-  Slot activated when CornerItem around the shape is release. Unsets the flag that CornerItem is pressed.
-  */
+ * \brief ShapeAnnotation::cornerItemReleased
+ * Slot activated when CornerItem around the shape is release. Unsets the flag that CornerItem is pressed.
+ */
 void ShapeAnnotation::cornerItemReleased()
 {
   mIsCornerItemClicked = false;
@@ -1747,10 +1608,11 @@ void ShapeAnnotation::cornerItemReleased()
 }
 
 /*!
-  Slot activated when CornerItem around the shape is moved. Sends the new position values for the associated shape point.
-  \param index - the index of the CornerItem
-  \param point - the new CornerItem position
-  */
+ * \brief ShapeAnnotation::updateCornerItemPoint
+ * Slot activated when CornerItem around the shape is moved. Sends the new position values for the associated shape point.
+ * \param index - the index of the CornerItem
+ * \param point - the new CornerItem position
+ */
 void ShapeAnnotation::updateCornerItemPoint(int index, QPointF point)
 {
   if (dynamic_cast<LineAnnotation*>(this)) {
@@ -1987,7 +1849,6 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
           disconnect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()));
           disconnect(mpGraphicsView, SIGNAL(keyPressShiftRight()), this, SLOT(moveShiftRight()));
           disconnect(mpGraphicsView, SIGNAL(keyPressCtrlRight()), this, SLOT(moveCtrlRight()));
-          //disconnect(mpGraphicsView, SIGNAL(keyRelease()), this, SIGNAL(updateClassAnnotation()));
         }
       }
     }

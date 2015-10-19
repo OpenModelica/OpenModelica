@@ -109,7 +109,7 @@ class ShapeAnnotation : public QObject, public QGraphicsItem, public GraphicItem
 private:
   bool mIsCustomShape;
   bool mIsInheritedShape;
-  QPointF mOldPosition;
+  QPointF mOldScenePosition;
   bool mIsCornerItemClicked;
   QAction *mpShapePropertiesAction;
   QAction *mpManhattanizeShapeAction;
@@ -133,10 +133,10 @@ public:
   void setCornerItemsActive();
   void setCornerItemsPassive();
   void removeCornerItems();
-  void setOldPosition(QPointF oldPosition);
-  QPointF getOldPosition();
-  virtual void addPoint(QPointF point);
-  virtual void clearPoints();
+  void setOldScenePosition(QPointF oldScenePosition) {mOldScenePosition = oldScenePosition;}
+  QPointF getOldScenePosition() {return mOldScenePosition;}
+  virtual void addPoint(QPointF point) {Q_UNUSED(point);}
+  virtual void clearPoints() {}
   virtual void replaceExtent(int index, QPointF point);
   virtual void updateEndExtent(QPointF point);
   GraphicsView* getGraphicsView() {return mpGraphicsView;}

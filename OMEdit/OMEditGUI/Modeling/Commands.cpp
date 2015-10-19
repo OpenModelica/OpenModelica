@@ -78,24 +78,91 @@ void AddShapeCommand::undo()
   mpGraphicsView->addClassAnnotation();
 }
 
+MoveShapeMouseCommand::MoveShapeMouseCommand(ShapeAnnotation *pShapeAnnotation, QPointF oldScenePos, QPointF newScenePos,
+                                             GraphicsView *pGraphicsView, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpShapeAnnotation = pShapeAnnotation;
+  mOldScenePosition = oldScenePos;
+  mNewScenePosition = newScenePos;
+  mpGraphicsView = pGraphicsView;
+}
+
+/*!
+ * \brief MoveShapeMouseCommand::redo
+ * Redo the MoveShapeMouseCommand.
+ */
+void MoveShapeMouseCommand::redo()
+{
+  mpShapeAnnotation->mTransformation.setOrigin(mNewScenePosition);
+  bool state = mpShapeAnnotation->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
+  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
+  mpShapeAnnotation->setPos(0, 0);
+  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
+  mpShapeAnnotation->setTransform(mpShapeAnnotation->mTransformation.getTransformationMatrix());
+  mpShapeAnnotation->setOrigin(mpShapeAnnotation->mTransformation.getPosition());
+  mpShapeAnnotation->emitChanged();
+  mpGraphicsView->setAddClassAnnotationNeeded(true);
+}
+
+/*!
+ * \brief MoveShapeMouseCommand::undo
+ * Undo the MoveShapeMouseCommand.
+ */
+void MoveShapeMouseCommand::undo()
+{
+  mpShapeAnnotation->mTransformation.setOrigin(mOldScenePosition);
+  bool state = mpShapeAnnotation->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
+  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
+  mpShapeAnnotation->setPos(0, 0);
+  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
+  mpShapeAnnotation->setTransform(mpShapeAnnotation->mTransformation.getTransformationMatrix());
+  mpShapeAnnotation->setOrigin(mpShapeAnnotation->mTransformation.getPosition());
+  mpShapeAnnotation->emitChanged();
+  mpGraphicsView->setAddClassAnnotationNeeded(true);
+}
+
+MoveShapeKeyCommand::MoveShapeKeyCommand(ShapeAnnotation *pShapeAnnotation, qreal x, qreal y, GraphicsView *pGraphicsView,
+                                         QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpShapeAnnotation = pShapeAnnotation;
+  mX = x;
+  mY = y;
+  mpGraphicsView = pGraphicsView;
+}
+
+/*!
+ * \brief MoveShapeKeyCommand::redo
+ * Redo the MoveShapeKeyCommand.
+ */
+void MoveShapeKeyCommand::redo()
+{
+  mpShapeAnnotation->mTransformation.adjustPosition(mX, mY);
+  mpShapeAnnotation->setTransform(mpShapeAnnotation->mTransformation.getTransformationMatrix());
+  mpShapeAnnotation->setOrigin(mpShapeAnnotation->mTransformation.getPosition());
+  mpShapeAnnotation->emitChanged();
+  mpGraphicsView->setAddClassAnnotationNeeded(true);
+}
+
+/*!
+ * \brief MoveShapeKeyCommand::undo
+ * Undo the MoveShapeKeyCommand.
+ */
+void MoveShapeKeyCommand::undo()
+{
+  mpShapeAnnotation->mTransformation.adjustPosition(-mX, -mY);
+  mpShapeAnnotation->setTransform(mpShapeAnnotation->mTransformation.getTransformationMatrix());
+  mpShapeAnnotation->setOrigin(mpShapeAnnotation->mTransformation.getPosition());
+  mpShapeAnnotation->emitChanged();
+  mpGraphicsView->setAddClassAnnotationNeeded(true);
+}
+
 RotateShapeCommand::RotateShapeCommand(ShapeAnnotation *pShapeAnnotation, bool clockwise, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpShapeAnnotation = pShapeAnnotation;
   mClockwise = clockwise;
-  if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
-    setText(QString("Rotate %1 Line Shape").arg(mClockwise ? "Clockwise" : "AntiClockwise"));
-  } else if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
-    setText(QString("Rotate %1 Line Shape").arg(mClockwise ? "Clockwise" : "AntiClockwise"));
-  } else if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
-    setText(QString("Rotate %1 Line Shape").arg(mClockwise ? "Clockwise" : "AntiClockwise"));
-  } else if (dynamic_cast<EllipseAnnotation*>(pShapeAnnotation)) {
-    setText(QString("Rotate %1 Line Shape").arg(mClockwise ? "Clockwise" : "AntiClockwise"));
-  } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
-    setText(QString("Rotate %1 Line Shape").arg(mClockwise ? "Clockwise" : "AntiClockwise"));
-  } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
-    setText(QString("Rotate %1 Line Shape").arg(mClockwise ? "Clockwise" : "AntiClockwise"));
-  }
 }
 
 /*!
@@ -142,19 +209,6 @@ DeleteShapeCommand::DeleteShapeCommand(ShapeAnnotation *pShapeAnnotation, Graphi
 {
   mpShapeAnnotation = pShapeAnnotation;
   mpGraphicsView = pGraphicsView;
-  if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
-    setText("Delete Line Shape");
-  } else if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
-    setText("Delete Polygon Shape");
-  } else if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
-    setText("Delete Rectangle Shape");
-  } else if (dynamic_cast<EllipseAnnotation*>(pShapeAnnotation)) {
-    setText("Delete Ellipse Shape");
-  } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
-    setText("Delete Text Shape");
-  } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
-    setText("Delete Bitmap Shape");
-  }
 }
 
 /*!
@@ -291,12 +345,91 @@ void AddComponentCommand::undo()
   mpGraphicsView->deleteComponentFromClass(mpDiagramComponent);
 }
 
+MoveComponentMouseCommand::MoveComponentMouseCommand(Component *pComponent, QPointF oldScenePos, QPointF newScenePos,
+                                                     GraphicsView *pGraphicsView, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpComponent = pComponent;
+  mOldScenePosition = oldScenePos;
+  mNewScenePosition = newScenePos;
+  mpGraphicsView = pGraphicsView;
+}
+
+/*!
+ * \brief MoveComponentMouseCommand::redo
+ * Redo the MoveComponentMouseCommand.
+ */
+void MoveComponentMouseCommand::redo()
+{
+  QPointF positionDifference = mNewScenePosition - mOldScenePosition;
+  mpComponent->resetTransform();
+  bool state = mpComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
+  mpComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
+  mpComponent->setPos(0, 0);
+  mpComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
+  mpComponent->mTransformation.adjustPosition(positionDifference.x(), positionDifference.y());
+  mpComponent->setTransform(mpComponent->mTransformation.getTransformationMatrix());
+  mpComponent->emitTransformChange();
+  mpComponent->emitTransformHasChanged();
+}
+
+/*!
+ * \brief MoveComponentMouseCommand::undo
+ * Undo the MoveComponentMouseCommand.
+ */
+void MoveComponentMouseCommand::undo()
+{
+  QPointF positionDifference = mNewScenePosition - mOldScenePosition;
+  mpComponent->resetTransform();
+  bool state = mpComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
+  mpComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
+  mpComponent->setPos(0, 0);
+  mpComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
+  mpComponent->mTransformation.adjustPosition(-positionDifference.x(), -positionDifference.y());
+  mpComponent->setTransform(mpComponent->mTransformation.getTransformationMatrix());
+  mpComponent->emitTransformChange();
+  mpComponent->emitTransformHasChanged();
+}
+
+MoveComponentKeyCommand::MoveComponentKeyCommand(Component *pComponent, qreal x, qreal y, GraphicsView *pGraphicsView,
+                                                 QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpComponent = pComponent;
+  mX = x;
+  mY = y;
+  mpGraphicsView = pGraphicsView;
+}
+
+/*!
+ * \brief MoveComponentKeyCommand::redo
+ * Redo the MoveComponentKeyCommand.
+ */
+void MoveComponentKeyCommand::redo()
+{
+  mpComponent->mTransformation.adjustPosition(mX, mY);
+  mpComponent->setTransform(mpComponent->mTransformation.getTransformationMatrix());
+  mpComponent->emitTransformChange();
+  mpComponent->emitTransformHasChanged();
+}
+
+/*!
+ * \brief MoveComponentKeyCommand::undo
+ * Undo the MoveComponentKeyCommand.
+ */
+void MoveComponentKeyCommand::undo()
+{
+  mpComponent->mTransformation.adjustPosition(-mX, -mY);
+  mpComponent->setTransform(mpComponent->mTransformation.getTransformationMatrix());
+  mpComponent->emitTransformChange();
+  mpComponent->emitTransformHasChanged();
+}
+
 RotateComponentCommand::RotateComponentCommand(Component *pComponent, bool clockwise, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpComponent = pComponent;
   mClockwise = clockwise;
-  setText(QString("Rotate %1 Component %2").arg(mClockwise ? "Clockwise" : "Anti Clockwise").arg(mpComponent->getName()));
 }
 
 /*!
@@ -347,7 +480,6 @@ DeleteComponentCommand::DeleteComponentCommand(Component *pComponent, GraphicsVi
   mpIconGraphicsView = pGraphicsView->getModelWidget()->getIconGraphicsView();
   mpDiagramGraphicsView = pGraphicsView->getModelWidget()->getDiagramGraphicsView();
   mpGraphicsView = pGraphicsView;
-  setText(QString("Delete Component %1").arg(mpComponent->getName()));
 }
 
 /*!
@@ -497,8 +629,6 @@ DeleteConnectionCommand::DeleteConnectionCommand(LineAnnotation *pConnectionLine
 {
   mpConnectionLineAnnotation = pConnectionLineAnnotation;
   mpGraphicsView = pGraphicsView;
-  setText(QString("Delete Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName(),
-                                                           mpConnectionLineAnnotation->getEndComponentName()));
 }
 
 /*!

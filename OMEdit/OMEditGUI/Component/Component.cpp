@@ -1290,255 +1290,143 @@ void Component::flipVertical()
 }
 
 /*!
-  Slot that moves component upwards depending on the grid step size value
-  \sa moveDown(),
-      moveLeft(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief Component::moveUp
+ * Slot that moves component upwards depending on the grid step size value
+ * \sa moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
+ * moveCtrlLeft(), moveCtrlRight()
+ */
 void Component::moveUp()
 {
-  mTransformation.adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
-  setTransform(mTransformation.getTransformationMatrix());
-  emit transformChange();
+  qreal y = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveComponentKeyCommand(this, 0, y, mpGraphicsView));
 }
 
 /*!
-  Slot that moves component upwards depending on the grid step size value multiplied by 5
-  \sa moveUp(),
-      moveDown(),
-      moveLeft(),
-      moveRight(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief Component::moveShiftUp
+ * Slot that moves component upwards depending on the grid step size value multiplied by 5
+ * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
+ * moveCtrlLeft() and moveCtrlRight()
+ */
 void Component::moveShiftUp()
 {
-  mTransformation.adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
-  setTransform(mTransformation.getTransformationMatrix());
-  emit transformChange();
+  qreal y = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5;
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveComponentKeyCommand(this, 0, y, mpGraphicsView));
 }
 
 /*!
-  Slot that moves component one pixel upwards
-  \sa moveUp(),
-      moveDown(),
-      moveLeft(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlDown(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief Component::moveCtrlUp
+ * Slot that moves component one pixel upwards
+ * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlDown(),
+ * moveCtrlLeft() and moveCtrlRight()
+ */
 void Component::moveCtrlUp()
 {
-  mTransformation.adjustPosition(0, 1);
-  setTransform(mTransformation.getTransformationMatrix());
-  emit transformChange();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveComponentKeyCommand(this, 0, 1, mpGraphicsView));
 }
 
 /*!
-  Slot that moves component downwards depending on the grid step size value
-  \sa moveUp(),
-      moveLeft(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief Component::moveDown
+ * Slot that moves component downwards depending on the grid step size value
+ * \sa moveUp(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
+ * moveCtrlLeft() and moveCtrlRight()
+ */
 void Component::moveDown()
 {
-  mTransformation.adjustPosition(0, -mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
-  setTransform(mTransformation.getTransformationMatrix());
-  emit transformChange();
+  qreal y = -mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveComponentKeyCommand(this, 0, y, mpGraphicsView));
 }
 
 /*!
-  Slot that moves component downwards depending on the grid step size value multiplied by 5
-  \sa moveUp(),
-      moveDown(),
-      moveLeft(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief Component::moveShiftDown
+ * Slot that moves component downwards depending on the grid step size value multiplied by 5
+ * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
+ * moveCtrlLeft() and moveCtrlRight()
+ */
 void Component::moveShiftDown()
 {
-  mTransformation.adjustPosition(0, -(mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5));
-  setTransform(mTransformation.getTransformationMatrix());
-  emit transformChange();
+  qreal y = -(mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveComponentKeyCommand(this, 0, y, mpGraphicsView));
 }
 
 /*!
-  Slot that moves component one pixel downwards
-  \sa moveUp(),
-      moveDown(),
-      moveLeft(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief Component::moveCtrlDown
+ * Slot that moves component one pixel downwards
+ * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(),
+ * moveCtrlLeft() and moveCtrlRight()
+ */
 void Component::moveCtrlDown()
 {
-  mTransformation.adjustPosition(0, -1);
-  setTransform(mTransformation.getTransformationMatrix());
-  emit transformChange();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveComponentKeyCommand(this, 0, -1, mpGraphicsView));
 }
 
 /*!
-  Slot that moves component leftwards depending on the grid step size value
-  \sa moveUp(),
-      moveDown(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief Component::moveLeft
+ * Slot that moves component leftwards depending on the grid step size value
+ * \sa moveUp(), moveDown(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
+ * moveCtrlLeft() and moveCtrlRight()
+ */
 void Component::moveLeft()
 {
-  mTransformation.adjustPosition(-mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
-  setTransform(mTransformation.getTransformationMatrix());
-  emit transformChange();
+  qreal x = -mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveComponentKeyCommand(this, x, 0, mpGraphicsView));
 }
 
 /*!
-  Slot that moves component leftwards depending on the grid step size value multiplied by 5
-  \sa moveUp(),
-      moveDown(),
-      moveLeft(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief Component::moveShiftLeft
+ * Slot that moves component leftwards depending on the grid step size value multiplied by 5
+ * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
+ * moveCtrlLeft() and moveCtrlRight()
+ */
 void Component::moveShiftLeft()
 {
-  mTransformation.adjustPosition(-(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5), 0);
-  setTransform(mTransformation.getTransformationMatrix());
-  emit transformChange();
+  qreal x = -(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveComponentKeyCommand(this, x, 0, mpGraphicsView));
 }
 
 /*!
-  Slot that moves component one pixel leftwards
-  \sa moveUp(),
-      moveDown(),
-      moveLeft(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlRight()
-  */
+ * \brief Component::moveCtrlLeft
+ * Slot that moves component one pixel leftwards
+ * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(),
+ * moveCtrlDown() and moveCtrlRight()
+ */
 void Component::moveCtrlLeft()
 {
-  mTransformation.adjustPosition(-1, 0);
-  setTransform(mTransformation.getTransformationMatrix());
-  emit transformChange();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveComponentKeyCommand(this, -1, 0, mpGraphicsView));
 }
 
 /*!
-  Slot that moves component rightwards depending on the grid step size value
-  \sa moveUp(),
-      moveDown(),
-      moveLeft(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief Component::moveRight
+ * Slot that moves component rightwards depending on the grid step size value
+ * \sa moveUp(), moveDown(), moveLeft(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(), moveCtrlDown(),
+ * moveCtrlLeft() and moveCtrlRight()
+ */
 void Component::moveRight()
 {
-  mTransformation.adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
-  setTransform(mTransformation.getTransformationMatrix());
-  emit transformChange();
+  qreal x = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveComponentKeyCommand(this, x, 0, mpGraphicsView));
 }
 
 /*!
-  Slot that moves component rightwards depending on the grid step size value multiplied by 5
-  \sa moveUp(),
-      moveDown(),
-      moveLeft(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlLeft(),
-      moveCtrlRight()
-  */
+ * \brief Component::moveShiftRight
+ * Slot that moves component rightwards depending on the grid step size value multiplied by 5
+ * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveCtrlUp(), moveCtrlDown(),
+ * moveCtrlLeft() and moveCtrlRight()
+ */
 void Component::moveShiftRight()
 {
-  mTransformation.adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5, 0);
-  setTransform(mTransformation.getTransformationMatrix());
-  emit transformChange();
+  qreal x = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5;
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveComponentKeyCommand(this, x, 0, mpGraphicsView));
 }
 
 /*!
-  Slot that moves component one pixel rightwards
-  \sa moveUp(),
-      moveDown(),
-      moveLeft(),
-      moveRight(),
-      moveShiftUp(),
-      moveShiftDown(),
-      moveShiftLeft(),
-      moveShiftRight(),
-      moveCtrlUp(),
-      moveCtrlDown(),
-      moveCtrlLeft()
-  */
+ * \brief Component::moveCtrlRight
+ * Slot that moves component one pixel rightwards
+ * \sa moveUp(), moveDown(), moveLeft(), moveRight(), moveShiftUp(), moveShiftDown(), moveShiftLeft(), moveShiftRight(), moveCtrlUp(),
+ * moveCtrlDown() and moveCtrlLeft()
+ */
 void Component::moveCtrlRight()
 {
-  mTransformation.adjustPosition(1, 0);
-  setTransform(mTransformation.getTransformationMatrix());
-  emit transformChange();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new MoveComponentKeyCommand(this, 1, 0, mpGraphicsView));
 }
 
 //! Slot that opens up the component parameters dialog.

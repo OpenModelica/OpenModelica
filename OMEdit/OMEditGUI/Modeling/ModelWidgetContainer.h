@@ -246,7 +246,6 @@ signals:
   void keyPressShiftRight();
   void keyPressCtrlRight();
   void keyPressDuplicate();
-  void keyRelease();
 public slots:
   void addConnection(Component *pComponent);
   void removeCurrentConnection();
