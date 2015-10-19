@@ -101,7 +101,8 @@ class ArraySliceConst: public BaseArray<T> {
     , _baseArray(baseArray)
     , _isets(slice.size())
     , _idxs(slice.size())
-    , _baseIdx(slice.size()) {
+    , _baseIdx(slice.size())
+    , _tmp_data(NULL) {
 
     if (baseArray.getNumDims() != slice.size())
       throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
@@ -134,6 +135,11 @@ class ArraySliceConst: public BaseArray<T> {
         _dims.push_back(dit->size() != 0? dit->size(): _baseArray.getDim(dim));
       dit++;
     }
+  }
+
+  virtual ~ArraySliceConst() {
+    if (_tmp_data != NULL)
+      delete [] _tmp_data;
   }
 
   virtual const T& operator()(const vector<size_t> &idx) const {
@@ -176,11 +182,11 @@ class ArraySliceConst: public BaseArray<T> {
   }
 
   virtual const T* getData() const {
-    if (_tmp_data.num_elements() == 0)
+    if (_tmp_data == NULL)
       // allocate on first use
-      _tmp_data.resize(boost::extents[getNumElems()]);
-    getDataDim(_idxs.size(), _tmp_data.data());
-    return _tmp_data.data();
+      _tmp_data = new T [getNumElems()];
+    getDataDim(_idxs.size(), _tmp_data);
+    return _tmp_data;
   }
 
   virtual size_t getNumElems() const {
@@ -217,7 +223,7 @@ class ArraySliceConst: public BaseArray<T> {
   vector< vector<size_t> > _idxs;  // created index sets per dimension
   vector<size_t> _dims;            // dimensions of array slice
   mutable vector<size_t> _baseIdx; // idx into underlying array
-  mutable boost::multi_array<T, 1> _tmp_data; // storage for const T* getData()
+  mutable T *_tmp_data;            // storage for const T* getData()
 
   /**
    * returns idx vector to access an element
