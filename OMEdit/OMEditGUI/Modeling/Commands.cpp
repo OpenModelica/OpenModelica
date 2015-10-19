@@ -77,129 +77,50 @@ void AddShapeCommand::undo()
   mpGraphicsView->addClassAnnotation();
 }
 
-MoveShapeMouseCommand::MoveShapeMouseCommand(ShapeAnnotation *pShapeAnnotation, QPointF oldScenePos, QPointF newScenePos,
-                                             GraphicsView *pGraphicsView, QUndoCommand *pParent)
+UpdateShapeCommand::UpdateShapeCommand(ShapeAnnotation *pShapeAnnotation, const Transformation &oldTransformation,
+                                       const Transformation &newTransformation, GraphicsView *pGraphicsView, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpShapeAnnotation = pShapeAnnotation;
-  mOldScenePosition = oldScenePos;
-  mNewScenePosition = newScenePos;
+  mOldTransformation = oldTransformation;
+  mNewTransformation = newTransformation;
   mpGraphicsView = pGraphicsView;
 }
 
 /*!
- * \brief MoveShapeMouseCommand::redo
- * Redo the MoveShapeMouseCommand.
+ * \brief UpdateShapeCommand::redo
+ * Redo the UpdateShapeCommand.
  */
-void MoveShapeMouseCommand::redo()
+void UpdateShapeCommand::redo()
 {
-  mpShapeAnnotation->mTransformation.setOrigin(mNewScenePosition);
   bool state = mpShapeAnnotation->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
   mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
   mpShapeAnnotation->setPos(0, 0);
   mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
-  mpShapeAnnotation->setTransform(mpShapeAnnotation->mTransformation.getTransformationMatrix());
-  mpShapeAnnotation->setOrigin(mpShapeAnnotation->mTransformation.getPosition());
+  mpShapeAnnotation->setTransform(mNewTransformation.getTransformationMatrix());
+  mpShapeAnnotation->setOrigin(mNewTransformation.getPosition());
+  mpShapeAnnotation->setRotationAngle(mNewTransformation.getRotateAngle());
+  mpShapeAnnotation->mTransformation = mNewTransformation;
   mpShapeAnnotation->emitChanged();
   mpGraphicsView->setAddClassAnnotationNeeded(true);
 }
 
 /*!
- * \brief MoveShapeMouseCommand::undo
- * Undo the MoveShapeMouseCommand.
+ * \brief UpdateShapeCommand::undo
+ * Undo the UpdateShapeCommand.
  */
-void MoveShapeMouseCommand::undo()
+void UpdateShapeCommand::undo()
 {
-  mpShapeAnnotation->mTransformation.setOrigin(mOldScenePosition);
   bool state = mpShapeAnnotation->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
   mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
   mpShapeAnnotation->setPos(0, 0);
   mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
-  mpShapeAnnotation->setTransform(mpShapeAnnotation->mTransformation.getTransformationMatrix());
-  mpShapeAnnotation->setOrigin(mpShapeAnnotation->mTransformation.getPosition());
+  mpShapeAnnotation->setTransform(mOldTransformation.getTransformationMatrix());
+  mpShapeAnnotation->setOrigin(mOldTransformation.getPosition());
+  mpShapeAnnotation->setRotationAngle(mOldTransformation.getRotateAngle());
+  mpShapeAnnotation->mTransformation = mOldTransformation;
   mpShapeAnnotation->emitChanged();
   mpGraphicsView->setAddClassAnnotationNeeded(true);
-}
-
-MoveShapeKeyCommand::MoveShapeKeyCommand(ShapeAnnotation *pShapeAnnotation, qreal x, qreal y, GraphicsView *pGraphicsView,
-                                         QUndoCommand *pParent)
-  : QUndoCommand(pParent)
-{
-  mpShapeAnnotation = pShapeAnnotation;
-  mX = x;
-  mY = y;
-  mpGraphicsView = pGraphicsView;
-}
-
-/*!
- * \brief MoveShapeKeyCommand::redo
- * Redo the MoveShapeKeyCommand.
- */
-void MoveShapeKeyCommand::redo()
-{
-  mpShapeAnnotation->mTransformation.adjustPosition(mX, mY);
-  mpShapeAnnotation->setTransform(mpShapeAnnotation->mTransformation.getTransformationMatrix());
-  mpShapeAnnotation->setOrigin(mpShapeAnnotation->mTransformation.getPosition());
-  mpShapeAnnotation->emitChanged();
-  mpGraphicsView->setAddClassAnnotationNeeded(true);
-}
-
-/*!
- * \brief MoveShapeKeyCommand::undo
- * Undo the MoveShapeKeyCommand.
- */
-void MoveShapeKeyCommand::undo()
-{
-  mpShapeAnnotation->mTransformation.adjustPosition(-mX, -mY);
-  mpShapeAnnotation->setTransform(mpShapeAnnotation->mTransformation.getTransformationMatrix());
-  mpShapeAnnotation->setOrigin(mpShapeAnnotation->mTransformation.getPosition());
-  mpShapeAnnotation->emitChanged();
-  mpGraphicsView->setAddClassAnnotationNeeded(true);
-}
-
-RotateShapeCommand::RotateShapeCommand(ShapeAnnotation *pShapeAnnotation, bool clockwise, QUndoCommand *pParent)
-  : QUndoCommand(pParent)
-{
-  mpShapeAnnotation = pShapeAnnotation;
-  mClockwise = clockwise;
-}
-
-/*!
- * \brief RotateShapeCommand::redo
- * Redo the RotateShapeCommand.
- */
-void RotateShapeCommand::redo()
-{
-  if (mClockwise) {
-    qreal oldRotation = StringHandler::getNormalizedAngle(mpShapeAnnotation->mTransformation.getRotateAngle());
-    qreal rotateIncrement = -90;
-    qreal angle = oldRotation + rotateIncrement;
-    mpShapeAnnotation->applyRotation(angle);
-  } else {
-    qreal oldRotation = StringHandler::getNormalizedAngle(mpShapeAnnotation->mTransformation.getRotateAngle());
-    qreal rotateIncrement = 90;
-    qreal angle = oldRotation + rotateIncrement;
-    mpShapeAnnotation->applyRotation(angle);
-  }
-}
-
-/*!
- * \brief RotateShapeCommand::undo
- * Undo the RotateShapeCommand.
- */
-void RotateShapeCommand::undo()
-{
-  if (mClockwise) {
-    qreal oldRotation = StringHandler::getNormalizedAngle(mpShapeAnnotation->mTransformation.getRotateAngle());
-    qreal rotateIncrement = 90;
-    qreal angle = oldRotation + rotateIncrement;
-    mpShapeAnnotation->applyRotation(angle);
-  } else {
-    qreal oldRotation = StringHandler::getNormalizedAngle(mpShapeAnnotation->mTransformation.getRotateAngle());
-    qreal rotateIncrement = -90;
-    qreal angle = oldRotation + rotateIncrement;
-    mpShapeAnnotation->applyRotation(angle);
-  }
 }
 
 DeleteShapeCommand::DeleteShapeCommand(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QUndoCommand *pParent)

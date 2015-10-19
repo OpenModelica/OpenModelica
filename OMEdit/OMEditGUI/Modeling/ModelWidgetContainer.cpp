@@ -1616,9 +1616,10 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
           mpModelWidget->getUndoStack()->beginMacro("Move items by mouse");
           beginMacro = true;
         }
-        MoveShapeMouseCommand *pMoveShapeCommand = new MoveShapeMouseCommand(pShapeAnnotation, pShapeAnnotation->getOldScenePosition(),
-                                                                   pShapeAnnotation->scenePos(), this);
-        mpModelWidget->getUndoStack()->push(pMoveShapeCommand);
+        Transformation oldTransformation = pShapeAnnotation->mTransformation;
+        pShapeAnnotation->mTransformation.setOrigin(pShapeAnnotation->scenePos());
+        mpModelWidget->getUndoStack()->push(new UpdateShapeCommand(pShapeAnnotation, oldTransformation, pShapeAnnotation->mTransformation,
+                                                                   this));
         hasShapeMoved = true;
       }
     }
@@ -1755,6 +1756,7 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
   } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Right && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->getUndoStack()->beginMacro("Move shift right by key press");
     emit keyPressShiftRight();
+    mpModelWidget->getUndoStack()->endMacro();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Right && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->getUndoStack()->beginMacro("Move control right by key press");
     emit keyPressCtrlRight();
