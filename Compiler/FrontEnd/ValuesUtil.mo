@@ -2574,5 +2574,46 @@ algorithm
   end for;
 end liftValueList;
 
+public function isEmpty
+  input Values.Value inValue;
+  output Boolean outIsEmpty;
+algorithm
+  outIsEmpty := match inValue
+    case Values.EMPTY() then true;
+    else false;
+  end match;
+end isEmpty;
+
+public function typeConvertRecord
+  "Converts the component values of a record to the correct types."
+  input Values.Value inValue;
+  input DAE.Type inType;
+  output Values.Value outValue = inValue;
+algorithm
+  outValue := match (outValue, inType)
+    local
+      DAE.Type ty;
+
+    case (Values.RECORD(), DAE.T_COMPLEX())
+      algorithm
+        outValue.orderd := list(typeConvertRecord(val, Types.getVarType(var))
+          threaded for val in outValue.orderd, var in inType.varLst);
+      then
+        outValue;
+
+    case (Values.INTEGER(), DAE.T_REAL())
+      then Values.REAL(intReal(outValue.integer));
+
+    case (Values.ARRAY(), DAE.T_ARRAY())
+      algorithm
+        ty := Expression.unliftArray(inType);
+        outValue.valueLst := list(typeConvertRecord(v, ty) for v in outValue.valueLst);
+      then
+        outValue;
+
+    else outValue;
+  end match;
+end typeConvertRecord;
+
 annotation(__OpenModelica_Interface="frontend");
 end ValuesUtil;
