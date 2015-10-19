@@ -177,6 +177,7 @@ public:
   void addConnectionDetails(LineAnnotation *pConnectorLineAnnotation);
   void removeConnectionDetails(LineAnnotation *pConnectorLineAnnotation);
   void emitAdded();
+  void emitTransformChange() {emit transformChange();}
   void emitTransformHasChanged();
   void emitDeleted();
   void componentNameHasChanged();

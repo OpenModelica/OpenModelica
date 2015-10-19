@@ -47,6 +47,33 @@ private:
   GraphicsView *mpGraphicsView;
 };
 
+class MoveShapeMouseCommand : public QUndoCommand
+{
+public:
+  MoveShapeMouseCommand(ShapeAnnotation *pShapeAnnotation, QPointF oldScenePos, QPointF newScenePos, GraphicsView *pGraphicsView,
+                        QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  ShapeAnnotation *mpShapeAnnotation;
+  QPointF mOldScenePosition;
+  QPointF mNewScenePosition;
+  GraphicsView *mpGraphicsView;
+};
+
+class MoveShapeKeyCommand : public QUndoCommand
+{
+public:
+  MoveShapeKeyCommand(ShapeAnnotation *pShapeAnnotation, qreal x, qreal y, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  ShapeAnnotation *mpShapeAnnotation;
+  qreal mX;
+  qreal mY;
+  GraphicsView *mpGraphicsView;
+};
+
 class RotateShapeCommand : public QUndoCommand
 {
 public:
@@ -85,6 +112,33 @@ private:
   Component *mpDiagramComponent;
   GraphicsView *mpIconGraphicsView;
   GraphicsView *mpDiagramGraphicsView;
+  GraphicsView *mpGraphicsView;
+};
+
+class MoveComponentMouseCommand : public QUndoCommand
+{
+public:
+  MoveComponentMouseCommand(Component *pComponent, QPointF oldScenePos, QPointF newScenePos, GraphicsView *pGraphicsView,
+                            QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  Component *mpComponent;
+  QPointF mOldScenePosition;
+  QPointF mNewScenePosition;
+  GraphicsView *mpGraphicsView;
+};
+
+class MoveComponentKeyCommand : public QUndoCommand
+{
+public:
+  MoveComponentKeyCommand(Component *pComponent, qreal x, qreal y, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  Component *mpComponent;
+  qreal mX;
+  qreal mY;
   GraphicsView *mpGraphicsView;
 };
 

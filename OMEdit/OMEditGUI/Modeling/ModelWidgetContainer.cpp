@@ -1470,11 +1470,12 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     setIsMovingComponentsAndShapes(true);
     // save the position of all components
     foreach (Component *pComponent, mComponentsList) {
-      pComponent->setOldScenePosition(pComponent->pos());
+      pComponent->setOldPosition(pComponent->pos());
       pComponent->setOldScenePosition(pComponent->scenePos());
     }
+    // save the position of all shapes
     foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
-      pShapeAnnotation->setOldPosition(pShapeAnnotation->pos());
+      pShapeAnnotation->setOldScenePosition(pShapeAnnotation->scenePos());
     }
   }
   // if some item is clicked
@@ -1578,42 +1579,45 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
   mpClickedComponent = 0;
   if (isMovingComponentsAndShapes()) {
     setIsMovingComponentsAndShapes(false);
-    bool hasMoved = false;
+    bool hasComponentMoved = false;
+    bool hasShapeMoved = false;
+    bool beginMacro = false;
     // if component position is really changed then update component annotation
     foreach (Component *pComponent, mComponentsList) {
       if (pComponent->getOldPosition() != pComponent->pos()) {
-        QPointF positionDifference = pComponent->scenePos() - pComponent->getOldScenePosition();
-        pComponent->resetTransform();
-        bool state = pComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
-        pComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
-        pComponent->setPos(0, 0);
-        pComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
-        pComponent->mTransformation.adjustPosition(positionDifference.x(), positionDifference.y());
-        pComponent->setTransform(pComponent->mTransformation.getTransformationMatrix());
-        // update the component placement annotation and if there are any connections associated to component update their annotations as well.
-        pComponent->emitTransformHasChanged();
-        hasMoved = true;
+        if (!beginMacro) {
+          mpModelWidget->getUndoStack()->beginMacro("Move items by mouse");
+          beginMacro = true;
+        }
+        MoveComponentMouseCommand *pMoveComponentMouseCommand = new MoveComponentMouseCommand(pComponent, pComponent->getOldScenePosition(),
+                                                                                              pComponent->scenePos(), this);
+        mpModelWidget->getUndoStack()->push(pMoveComponentMouseCommand);
+        hasComponentMoved = true;
       }
     }
-    if (hasMoved) mpModelWidget->setModelModified();
-    hasMoved = false;
     // if shape position is changed then update class annotation
     foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
-      if (pShapeAnnotation->getOldPosition() != pShapeAnnotation->pos()) {
-        pShapeAnnotation->mTransformation.setOrigin(pShapeAnnotation->scenePos());
-        bool state = pShapeAnnotation->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
-        pShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
-        pShapeAnnotation->setPos(0, 0);
-        pShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
-        pShapeAnnotation->setTransform(pShapeAnnotation->mTransformation.getTransformationMatrix());
-        pShapeAnnotation->setOrigin(pShapeAnnotation->mTransformation.getPosition());
-        pShapeAnnotation->emitChanged();
-        hasMoved = true;
+      if (pShapeAnnotation->getOldScenePosition() != pShapeAnnotation->scenePos()) {
+        if (!beginMacro) {
+          mpModelWidget->getUndoStack()->beginMacro("Move items by mouse");
+          beginMacro = true;
+        }
+        MoveShapeMouseCommand *pMoveShapeCommand = new MoveShapeMouseCommand(pShapeAnnotation, pShapeAnnotation->getOldScenePosition(),
+                                                                   pShapeAnnotation->scenePos(), this);
+        mpModelWidget->getUndoStack()->push(pMoveShapeCommand);
+        hasShapeMoved = true;
       }
     }
-    if (hasMoved) {
-      addClassAnnotation();
+    if (hasShapeMoved) {
+      addClassAnnotation(!hasComponentMoved);
+    }
+    if (hasComponentMoved || hasShapeMoved) {
+      mpModelWidget->updateModelicaText();
       mpModelWidget->setModelModified();
+    }
+    // if we have started he undo stack macro then we should end it.
+    if (beginMacro) {
+      mpModelWidget->getUndoStack()->endMacro();
     }
   }
   QGraphicsView::mouseReleaseEvent(event);
@@ -1694,30 +1698,53 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
     mpModelWidget->updateClassAnnotationIfNeeded();
     mpModelWidget->updateModelicaText();
     mpModelWidget->getUndoStack()->endMacro();
-  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Up) {
+  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Up && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->getUndoStack()->beginMacro("Move up by key press");
     emit keyPressUp();
-  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Up) {
+    mpModelWidget->getUndoStack()->endMacro();
+  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Up && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->getUndoStack()->beginMacro("Move shift up by key press");
     emit keyPressShiftUp();
-  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Up) {
+    mpModelWidget->getUndoStack()->endMacro();
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Up && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->getUndoStack()->beginMacro("Move control up by key press");
     emit keyPressCtrlUp();
-  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Down) {
+    mpModelWidget->getUndoStack()->endMacro();
+  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Down && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->getUndoStack()->beginMacro("Move down by key press");
     emit keyPressDown();
-  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Down) {
+    mpModelWidget->getUndoStack()->endMacro();
+  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Down && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->getUndoStack()->beginMacro("Move shift down by key press");
     emit keyPressShiftDown();
-  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Down) {
+    mpModelWidget->getUndoStack()->endMacro();
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Down && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->getUndoStack()->beginMacro("Move control down by key press");
     emit keyPressCtrlDown();
-  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Left) {
+    mpModelWidget->getUndoStack()->endMacro();
+  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Left && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->getUndoStack()->beginMacro("Move left by key press");
     emit keyPressLeft();
-  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Left) {
+    mpModelWidget->getUndoStack()->endMacro();
+  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Left && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->getUndoStack()->beginMacro("Move shift left by key press");
     emit keyPressShiftLeft();
-  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Left) {
+    mpModelWidget->getUndoStack()->endMacro();
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Left && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->getUndoStack()->beginMacro("Move control left by key press");
     emit keyPressCtrlLeft();
-  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Right) {
+    mpModelWidget->getUndoStack()->endMacro();
+  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Right && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->getUndoStack()->beginMacro("Move right by key press");
     emit keyPressRight();
-  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Right) {
+    mpModelWidget->getUndoStack()->endMacro();
+  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Right && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->getUndoStack()->beginMacro("Move shift right by key press");
     emit keyPressShiftRight();
-  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Right) {
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Right && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->getUndoStack()->beginMacro("Move control right by key press");
     emit keyPressCtrlRight();
+    mpModelWidget->getUndoStack()->endMacro();
   } else if (controlModifier && event->key() == Qt::Key_A) {
     selectAll();
   } else if (controlModifier && event->key() == Qt::Key_D) {
@@ -1748,30 +1775,42 @@ void GraphicsView::keyReleaseEvent(QKeyEvent *event)
   bool shiftModifier = event->modifiers().testFlag(Qt::ShiftModifier);
   bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
   /* handle keys */
-  if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Up) {
-    emit keyRelease();
-  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Up) {
-    emit keyRelease();
-  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Up) {
-    emit keyRelease();
-  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Down) {
-    emit keyRelease();
-  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Down) {
-    emit keyRelease();
-  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Down) {
-    emit keyRelease();
-  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Left) {
-    emit keyRelease();
-  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Left) {
-    emit keyRelease();
-  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Left) {
-    emit keyRelease();
-  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Right) {
-    emit keyRelease();
-  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Right) {
-    emit keyRelease();
-  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Right) {
-    emit keyRelease();
+  if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Up && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
+  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Up && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Up && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
+  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Down && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
+  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Down && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Down && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
+  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Left && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
+  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Left && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Left && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
+  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Right && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
+  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Right && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Right && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_R && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
     mpModelWidget->updateModelicaText();
@@ -2706,9 +2745,11 @@ void ModelWidget::updateClassAnnotationIfNeeded()
 {
   if (mpIconGraphicsView && mpIconGraphicsView->isAddClassAnnotationNeeded()) {
     mpIconGraphicsView->addClassAnnotation(false);
+    mpIconGraphicsView->setAddClassAnnotationNeeded(false);
   }
   if (mpDiagramGraphicsView && mpDiagramGraphicsView->isAddClassAnnotationNeeded()) {
     mpDiagramGraphicsView->addClassAnnotation(false);
+    mpDiagramGraphicsView->setAddClassAnnotationNeeded(false);
   }
 }
 
