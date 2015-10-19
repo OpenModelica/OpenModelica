@@ -88,7 +88,7 @@ protected import ValuesUtil;
 
 public function pantelidesIndexReduction "author: Frenkel TUD 2012-04
   Index Reduction algorithm to get a index 1 or 0 system."
-  input list<list<Integer>> inEqns;
+  input list<list<Integer>> inEqns; // the MSSS
   input Integer inActualEqn;
   input BackendDAE.EqSystem inSystem;
   input BackendDAE.Shared inShared;
@@ -731,9 +731,9 @@ algorithm
     case (e::es,_,_,_,_)
       equation
         eqn = BackendEquation.equationNth1(eqns, e);
-        // fcall(Flags.BLT_DUMP, print, "differentiate equation " + intString(e) + " " + BackendDump.equationString(eqn) + "\n");
+        //if Flags.isSet(Flags.BLT_DUMP) then print("differentiate equation " + intString(e) + " " + BackendDump.equationString(eqn) + "\n"); end if;
         (eqn_1, shared) = Differentiate.differentiateEquationTime(eqn, vars, inShared);
-        // fcall(Flags.BLT_DUMP, print, "differentiated equation " + intString(e) + " " + BackendDump.equationString(eqn_1) + "\n");
+        //if Flags.isSet(Flags.BLT_DUMP) then print("differentiated equation " + intString(e) + " " + BackendDump.equationString(eqn_1) + "\n"); end if;
         eqn = BackendEquation.markDifferentiated(eqn);
         (eqntpl, shared) = differentiateEqnsLst(es,vars,eqns,shared,(e,SOME(eqn_1),eqn)::inEqnTpl);
       then
