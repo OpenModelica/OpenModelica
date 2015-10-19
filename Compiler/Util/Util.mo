@@ -1716,5 +1716,12 @@ algorithm
                 else stringAppendList({pwd,pd,inFileName});
 end absoluteOrRelative;
 
+public function intLstString
+  input list<Integer> lst;
+  output String s;
+algorithm
+  s := stringDelimitList(List.map(lst,intString),", ");
+end intLstString;
+
 annotation(__OpenModelica_Interface="util");
 end Util;
