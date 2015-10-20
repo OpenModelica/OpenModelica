@@ -43,13 +43,7 @@ template translateModel(SimCode simCode)
         let &extraFuncsInit = buffer "" /*BUFD*/
         let &extraFuncsDeclInit = buffer "" /*BUFD*/
         let &complexStartExpressions = buffer ""
-
-        let _ = match Flags.isSet(Flags.HARDCODED_START_VALUES)
-          case false then
-            let()= textFile(modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars, numStringVars, "", "", "", false, "", complexStartExpressions, stateDerVectorName),'OMCpp<%fileNamePrefix%>Init.xml')
-            ""
-          else
-            ""
+        let()= textFile(modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars, numStringVars, "", "", "", false, "", complexStartExpressions, stateDerVectorName),'OMCpp<%fileNamePrefix%>Init.xml')
         let()= textFile(simulationInitCppFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%className%>Initialize', dummyTypeElemCreation, stateDerVectorName, false, complexStartExpressions),'OMCpp<%fileNamePrefix%>Initialize.cpp')
 
         let _ = match boolOr(Flags.isSet(Flags.HARDCODED_START_VALUES), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))
@@ -2896,11 +2890,8 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     #include <Core/System/FactoryExport.h>
     #include <Core/System/DiscreteEvents.h>
     #include <Core/System/EventHandling.h>
-    <%if(boolNot(Flags.isSet(Flags.HARDCODED_START_VALUES))) then
-    <<
     #include <Core/DataExchange/XmlPropertyReader.h>
-    >>
-    %>
+
 
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
@@ -6022,20 +6013,14 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
       initializeMemory();
-      <%if(Flags.isSet(Flags.HARDCODED_START_VALUES)) then
-        <<
-        >>
-        else
-        <<
+
         #if defined(__vxworks)
         _reader  = shared_ptr<IPropertyReader>(new XmlPropertyReader("/SYSTEM/bundles/com.boschrexroth.<%modelname%>/OMCpp<%fileNamePrefix%>Init.xml"));
         #else
         _reader  =  shared_ptr<IPropertyReader>(new XmlPropertyReader("<%makefileParams.compileDir%>/OMCpp<%fileNamePrefix%>Init.xml"));
         #endif
         _reader->readInitialValues(*this, _sim_vars);
-
-        >>
-        %>      initializeFreeVariables();
+       initializeFreeVariables();
       /*Start complex expressions */
       <%complexStartExpressions%>
       /* End complex expression */
