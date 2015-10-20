@@ -84,12 +84,12 @@ void BitmapAnnotation::parseShapeAnnotation(QString annotation)
   GraphicItem::parseShapeAnnotation(annotation);
   // parse the shape to get the list of attributes of Bitmap.
   QStringList list = StringHandler::getStrings(annotation);
-  if (list.size() < 5)
+  if (list.size() < 5) {
     return;
+  }
   // 4th item is the extent points
   QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(3)));
-  for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++)
-  {
+  for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++) {
     QStringList extentPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(extentsList[i]));
     if (extentPoints.size() >= 2)
       mExtents.replace(i, QPointF(extentPoints.at(0).toFloat(), extentPoints.at(1).toFloat()));
@@ -97,14 +97,12 @@ void BitmapAnnotation::parseShapeAnnotation(QString annotation)
   // 5th item is the fileName
   setFileName(StringHandler::removeFirstLastQuotes(list.at(4)), mpComponent);
   // 6th item is the imageSource
-  if (list.size() >= 6)
+  if (list.size() >= 6) {
     mImageSource = StringHandler::removeFirstLastQuotes(list.at(5));
-  if (!mImageSource.isEmpty())
-  {
-    mImage.loadFromData(QByteArray::fromBase64(mImageSource.toLatin1()));
   }
-  else
-  {
+  if (!mImageSource.isEmpty()) {
+    mImage.loadFromData(QByteArray::fromBase64(mImageSource.toLatin1()));
+  } else {
     mImage.load(mFileName);
   }
 }
@@ -134,13 +132,42 @@ void BitmapAnnotation::drawBitmapAnnotaion(QPainter *painter)
   painter->drawImage(getBoundingRect(), mImage.mirrored());
 }
 
+/*!
+ * \brief BitmapAnnotation::getOMCShapeAnnotation
+ * Returns Bitmap annotation in format as returned by OMC.
+ * \return
+ */
+QString BitmapAnnotation::getOMCShapeAnnotation()
+{
+  QStringList annotationString;
+  annotationString.append(GraphicItem::getOMCShapeAnnotation());
+  // get the extents
+  QString extentString;
+  extentString.append("{");
+  extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
+  extentString.append(QString::number(mExtents.at(0).y())).append("},");
+  extentString.append("{").append(QString::number(mExtents.at(1).x())).append(",");
+  extentString.append(QString::number(mExtents.at(1).y())).append("}");
+  extentString.append("}");
+  annotationString.append(extentString);
+  // get the file name
+  annotationString.append(QString("\"").append(mOriginalFileName).append("\""));
+  // get the image source
+  annotationString.append(QString("\"").append(mImageSource).append("\""));
+  return annotationString.join(",");
+}
+
+/*!
+ * \brief BitmapAnnotation::getShapeAnnotation
+ * Returns Bitmap annotation.
+ * \return
+ */
 QString BitmapAnnotation::getShapeAnnotation()
 {
   QStringList annotationString;
   annotationString.append(GraphicItem::getShapeAnnotation());
   // get the extents
-  if (mExtents.size() > 1)
-  {
+  if (mExtents.size() > 1) {
     QString extentString;
     extentString.append("extent={");
     extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
@@ -151,11 +178,13 @@ QString BitmapAnnotation::getShapeAnnotation()
     annotationString.append(extentString);
   }
   // get the file name
-  if (!mOriginalFileName.isEmpty())
+  if (!mOriginalFileName.isEmpty()) {
     annotationString.append(QString("fileName=\"").append(mOriginalFileName).append("\""));
+  }
   // get the image source
-  if (!mImageSource.isEmpty())
+  if (!mImageSource.isEmpty()) {
     annotationString.append(QString("imageSource=\"").append(mImageSource).append("\""));
+  }
   return QString("Bitmap(").append(annotationString.join(",")).append(")");
 }
 
@@ -180,7 +209,7 @@ void BitmapAnnotation::duplicate()
   pBitmapAnnotation->setImageSource(getImageSource());
   pBitmapAnnotation->setImage(getImage());
   pBitmapAnnotation->drawCornerItems();
-  pBitmapAnnotation->setCornerItemsPassive();
+  pBitmapAnnotation->setCornerItemsActiveOrPassive();
   pBitmapAnnotation->update();
   mpGraphicsView->addClassAnnotation();
 }

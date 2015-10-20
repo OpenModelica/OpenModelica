@@ -65,11 +65,12 @@ public:
   void setDefaults();
   void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void parseShapeAnnotation(QString annotation);
+  QStringList getOMCShapeAnnotation();
   QStringList getShapeAnnotation();
-  void setOrigin(QPointF origin);
-  QPointF getOrigin();
-  void setRotationAngle(qreal rotation);
-  qreal getRotation();
+  void setOrigin(QPointF origin) {mOrigin = origin;}
+  QPointF getOrigin() {return mOrigin;}
+  void setRotationAngle(qreal rotation) {mRotation = rotation;}
+  qreal getRotation() {return mRotation;}
 protected:
   bool mVisible;
   QPointF mOrigin;
@@ -83,17 +84,18 @@ public:
   void setDefaults();
   void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void parseShapeAnnotation(QString annotation);
+  QStringList getOMCShapeAnnotation();
   QStringList getShapeAnnotation();
-  void setLineColor(QColor color);
-  QColor getLineColor();
-  void setFillColor(QColor color);
-  QColor getFillColor();
-  void setLinePattern(StringHandler::LinePattern pattern);
-  StringHandler::LinePattern getLinePattern();
-  void setFillPattern(StringHandler::FillPattern pattern);
-  StringHandler::FillPattern getFillPattern();
-  void setLineThickness(qreal thickness);
-  qreal getLineThickness();
+  void setLineColor(QColor color) {mLineColor = color;}
+  QColor getLineColor() {return mLineColor;}
+  void setFillColor(QColor color) {mFillColor = color;}
+  QColor getFillColor() {return mFillColor;}
+  void setLinePattern(StringHandler::LinePattern pattern) {mLinePattern = pattern;}
+  StringHandler::LinePattern getLinePattern() {return mLinePattern;}
+  void setFillPattern(StringHandler::FillPattern pattern) {mFillPattern = pattern;}
+  StringHandler::FillPattern getFillPattern() {return mFillPattern;}
+  void setLineThickness(qreal thickness) {mLineThickness = thickness;}
+  qreal getLineThickness() {return mLineThickness;}
 protected:
   QColor mLineColor;
   QColor mFillColor;
@@ -127,11 +129,12 @@ public:
   QRectF getBoundingRect() const;
   void applyLinePattern(QPainter *painter);
   void applyFillPattern(QPainter *painter);
+  virtual void parseShapeAnnotation(QString annotation);
+  virtual QString getOMCShapeAnnotation();
   virtual QString getShapeAnnotation();
   void initializeTransformation();
   void drawCornerItems();
-  void setCornerItemsActive();
-  void setCornerItemsPassive();
+  void setCornerItemsActiveOrPassive();
   void removeCornerItems();
   void setOldScenePosition(QPointF oldScenePosition) {mOldScenePosition = oldScenePosition;}
   QPointF getOldScenePosition() {return mOldScenePosition;}

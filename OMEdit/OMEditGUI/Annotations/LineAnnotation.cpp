@@ -187,6 +187,7 @@ void LineAnnotation::parseShapeAnnotation(QString annotation)
   if (list.size() < 10) {
     return;
   }
+  mPoints.clear();
   // 4th item of list contains the points.
   QStringList pointsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(3)));
   foreach (QString point, pointsList) {
@@ -356,6 +357,60 @@ QPolygonF LineAnnotation::drawArrow(QPointF startPos, QPointF endPos, qreal size
   return polygon;
 }
 
+/*!
+ * \brief LineAnnotation::getOMCShapeAnnotation
+ * Returns Line annotation in format as returned by OMC.
+ * \return
+ */
+QString LineAnnotation::getOMCShapeAnnotation()
+{
+  QStringList annotationString;
+  annotationString.append(GraphicItem::getOMCShapeAnnotation());
+  // get points
+  QString pointsString;
+  if (mPoints.size() > 0) {
+    pointsString.append("{");
+  }
+  for (int i = 0 ; i < mPoints.size() ; i++) {
+    pointsString.append("{").append(QString::number(mPoints[i].x())).append(",");
+    pointsString.append(QString::number(mPoints[i].y())).append("}");
+    if (i < mPoints.size() - 1) {
+      pointsString.append(",");
+    }
+  }
+  if (mPoints.size() > 0) {
+    pointsString.append("}");
+    annotationString.append(pointsString);
+  }
+  // get the line color
+  QString colorString;
+  colorString.append("{");
+  colorString.append(QString::number(mLineColor.red())).append(",");
+  colorString.append(QString::number(mLineColor.green())).append(",");
+  colorString.append(QString::number(mLineColor.blue()));
+  colorString.append("}");
+  annotationString.append(colorString);
+  // get the line pattern
+  annotationString.append(StringHandler::getLinePatternString(mLinePattern));
+  // get the thickness
+  annotationString.append(QString::number(mLineThickness));
+  // get the start and end arrow
+  QString arrowString;
+  arrowString.append("{").append(StringHandler::getArrowString(mArrow.at(0))).append(",");
+  arrowString.append(StringHandler::getArrowString(mArrow.at(1))).append("}");
+  annotationString.append(arrowString);
+  // get the arrow size
+  annotationString.append(QString::number(mArrowSize));
+  // get the smooth
+  annotationString.append(StringHandler::getSmoothString(mSmooth));
+  return annotationString.join(",");
+}
+
+/*!
+ * \brief LineAnnotation::getShapeAnnotation
+ * Returns Line annotation.
+ * \return
+ */
 QString LineAnnotation::getShapeAnnotation()
 {
   QStringList annotationString;
@@ -504,7 +559,7 @@ void LineAnnotation::updateStartPoint(QPointF point)
     if ((mGeometries[0] == ShapeAnnotation::HorizontalLine && mPoints[0].y() != point.y()) ||
         (mGeometries[0] == ShapeAnnotation::VerticalLine && mPoints[0].x() != point.x())) {
       insertPointsGeometriesAndCornerItems(1);
-      setCornerItemsPassive();
+      setCornerItemsActiveOrPassive();
     }
   }
   /* update the 1st point */
@@ -550,7 +605,7 @@ void LineAnnotation::updateEndPoint(QPointF point)
       if ((mGeometries[secondLastIndex] == ShapeAnnotation::HorizontalLine && mPoints[lastIndex].y() != point.y()) ||
           (mGeometries[secondLastIndex] == ShapeAnnotation::VerticalLine && mPoints[lastIndex].x() != point.x())) {
         insertPointsGeometriesAndCornerItems(lastIndex);
-        setCornerItemsPassive();
+        setCornerItemsActiveOrPassive();
         lastIndex = mPoints.size() - 1;
         secondLastIndex = mPoints.size() - 2;
       }
@@ -687,7 +742,7 @@ void LineAnnotation::duplicate()
     pLineAnnotation->addPoint(points[i]);
   }
   pLineAnnotation->drawCornerItems();
-  pLineAnnotation->setCornerItemsPassive();
+  pLineAnnotation->setCornerItemsActiveOrPassive();
   pLineAnnotation->update();
   mpGraphicsView->addClassAnnotation();
 }
@@ -819,7 +874,7 @@ void ConnectionArray::saveArrayIndex()
   mpGraphicsView->addConnectionToClass(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)").arg(startComponentName, endComponentName));
   mpConnectionLineAnnotation->drawCornerItems();
-  mpConnectionLineAnnotation->setCornerItemsPassive();
+  mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
   accept();
 }
 

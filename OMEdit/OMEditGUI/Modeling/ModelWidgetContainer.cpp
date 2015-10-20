@@ -1617,10 +1617,16 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
           mpModelWidget->getUndoStack()->beginMacro("Move items by mouse");
           beginMacro = true;
         }
-        Transformation oldTransformation = pShapeAnnotation->mTransformation;
+        QString oldAnnotation = pShapeAnnotation->getOMCShapeAnnotation();
         pShapeAnnotation->mTransformation.setOrigin(pShapeAnnotation->scenePos());
-        mpModelWidget->getUndoStack()->push(new UpdateShapeCommand(pShapeAnnotation, oldTransformation, pShapeAnnotation->mTransformation,
-                                                                   this));
+        bool state = pShapeAnnotation->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
+        pShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
+        pShapeAnnotation->setPos(0, 0);
+        pShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
+        pShapeAnnotation->setTransform(pShapeAnnotation->mTransformation.getTransformationMatrix());
+        pShapeAnnotation->setOrigin(pShapeAnnotation->mTransformation.getPosition());
+        QString newAnnotation = pShapeAnnotation->getOMCShapeAnnotation();
+        mpModelWidget->getUndoStack()->push(new UpdateShapeCommand(pShapeAnnotation, oldAnnotation, newAnnotation, this));
         hasShapeMoved = true;
       }
     }
@@ -2332,7 +2338,7 @@ ShapeAnnotation* ModelWidget::createNonExistingInheritedShape(GraphicsView *pGra
   LineAnnotation *pLineAnnotation = new LineAnnotation(pGraphicsView);
   pLineAnnotation->initializeTransformation();
   pLineAnnotation->drawCornerItems();
-  pLineAnnotation->setCornerItemsPassive();
+  pLineAnnotation->setCornerItemsActiveOrPassive();
   return pLineAnnotation;
 }
 
@@ -2349,37 +2355,37 @@ ShapeAnnotation* ModelWidget::createInheritedShape(ShapeAnnotation *pShapeAnnota
     LineAnnotation *pLineAnnotation = new LineAnnotation(pShapeAnnotation, pGraphicsView);
     pLineAnnotation->initializeTransformation();
     pLineAnnotation->drawCornerItems();
-    pLineAnnotation->setCornerItemsPassive();
+    pLineAnnotation->setCornerItemsActiveOrPassive();
     return pLineAnnotation;
   } else if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
     PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(pShapeAnnotation, pGraphicsView);
     pPolygonAnnotation->initializeTransformation();
     pPolygonAnnotation->drawCornerItems();
-    pPolygonAnnotation->setCornerItemsPassive();
+    pPolygonAnnotation->setCornerItemsActiveOrPassive();
     return pPolygonAnnotation;
   } else if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
     RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(pShapeAnnotation, pGraphicsView);
     pRectangleAnnotation->initializeTransformation();
     pRectangleAnnotation->drawCornerItems();
-    pRectangleAnnotation->setCornerItemsPassive();
+    pRectangleAnnotation->setCornerItemsActiveOrPassive();
     return pRectangleAnnotation;
   } else if (dynamic_cast<EllipseAnnotation*>(pShapeAnnotation)) {
     EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation(pShapeAnnotation, pGraphicsView);
     pEllipseAnnotation->initializeTransformation();
     pEllipseAnnotation->drawCornerItems();
-    pEllipseAnnotation->setCornerItemsPassive();
+    pEllipseAnnotation->setCornerItemsActiveOrPassive();
     return pEllipseAnnotation;
   } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
     TextAnnotation *pTextAnnotation = new TextAnnotation(pShapeAnnotation, pGraphicsView);
     pTextAnnotation->initializeTransformation();
     pTextAnnotation->drawCornerItems();
-    pTextAnnotation->setCornerItemsPassive();
+    pTextAnnotation->setCornerItemsActiveOrPassive();
     return pTextAnnotation;
   } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
     BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(pShapeAnnotation, pGraphicsView);
     pBitmapAnnotation->initializeTransformation();
     pBitmapAnnotation->drawCornerItems();
-    pBitmapAnnotation->setCornerItemsPassive();
+    pBitmapAnnotation->setCornerItemsActiveOrPassive();
     return pBitmapAnnotation;
   }
   return 0;
@@ -2412,7 +2418,7 @@ LineAnnotation* ModelWidget::createInheritedConnection(LineAnnotation *pConnecti
                                                  .arg(tr("Connection declared in"))
                                                  .arg(pInheritedLibraryTreeItem->getNameStructure()));
   pInheritedConnectionLineAnnotation->drawCornerItems();
-  pInheritedConnectionLineAnnotation->setCornerItemsPassive();
+  pInheritedConnectionLineAnnotation->setCornerItemsActiveOrPassive();
   // Add the start component connection details.
   Component *pStartComponent = pInheritedConnectionLineAnnotation->getStartComponent();
   if (pStartComponent->getRootParentComponent()) {
@@ -2992,7 +2998,7 @@ void ModelWidget::parseModelIconDiagramShapes(QString annotationString, StringHa
       LineAnnotation *pLineAnnotation = new LineAnnotation(shape, pGraphicsView);
       pLineAnnotation->initializeTransformation();
       pLineAnnotation->drawCornerItems();
-      pLineAnnotation->setCornerItemsPassive();
+      pLineAnnotation->setCornerItemsActiveOrPassive();
       pGraphicsView->addShapeToList(pLineAnnotation);
       pGraphicsView->addItem(pLineAnnotation);
     } else if (shape.startsWith("Polygon")) {
@@ -3001,7 +3007,7 @@ void ModelWidget::parseModelIconDiagramShapes(QString annotationString, StringHa
       PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(shape, pGraphicsView);
       pPolygonAnnotation->initializeTransformation();
       pPolygonAnnotation->drawCornerItems();
-      pPolygonAnnotation->setCornerItemsPassive();
+      pPolygonAnnotation->setCornerItemsActiveOrPassive();
       pGraphicsView->addShapeToList(pPolygonAnnotation);
       pGraphicsView->addItem(pPolygonAnnotation);
     } else if (shape.startsWith("Rectangle")) {
@@ -3010,7 +3016,7 @@ void ModelWidget::parseModelIconDiagramShapes(QString annotationString, StringHa
       RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(shape, pGraphicsView);
       pRectangleAnnotation->initializeTransformation();
       pRectangleAnnotation->drawCornerItems();
-      pRectangleAnnotation->setCornerItemsPassive();
+      pRectangleAnnotation->setCornerItemsActiveOrPassive();
       pGraphicsView->addShapeToList(pRectangleAnnotation);
       pGraphicsView->addItem(pRectangleAnnotation);
     } else if (shape.startsWith("Ellipse")) {
@@ -3019,7 +3025,7 @@ void ModelWidget::parseModelIconDiagramShapes(QString annotationString, StringHa
       EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation(shape, pGraphicsView);
       pEllipseAnnotation->initializeTransformation();
       pEllipseAnnotation->drawCornerItems();
-      pEllipseAnnotation->setCornerItemsPassive();
+      pEllipseAnnotation->setCornerItemsActiveOrPassive();
       pGraphicsView->addShapeToList(pEllipseAnnotation);
       pGraphicsView->addItem(pEllipseAnnotation);
     } else if (shape.startsWith("Text")) {
@@ -3028,7 +3034,7 @@ void ModelWidget::parseModelIconDiagramShapes(QString annotationString, StringHa
       TextAnnotation *pTextAnnotation = new TextAnnotation(shape, pGraphicsView);
       pTextAnnotation->initializeTransformation();
       pTextAnnotation->drawCornerItems();
-      pTextAnnotation->setCornerItemsPassive();
+      pTextAnnotation->setCornerItemsActiveOrPassive();
       pGraphicsView->addShapeToList(pTextAnnotation);
       pGraphicsView->addItem(pTextAnnotation);
     } else if (shape.startsWith("Bitmap")) {
@@ -3038,7 +3044,7 @@ void ModelWidget::parseModelIconDiagramShapes(QString annotationString, StringHa
       BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(mpLibraryTreeItem->getClassInformation().fileName, shape, pGraphicsView);
       pBitmapAnnotation->initializeTransformation();
       pBitmapAnnotation->drawCornerItems();
-      pBitmapAnnotation->setCornerItemsPassive();
+      pBitmapAnnotation->setCornerItemsActiveOrPassive();
       pGraphicsView->addShapeToList(pBitmapAnnotation);
       pGraphicsView->addItem(pBitmapAnnotation);
     }
@@ -3335,7 +3341,7 @@ void ModelWidget::getTLMConnections()
              pConnectionLineAnnotation->setEndComponentName(StringHandler::getSubStringBeforeDots(connection.attribute("To")));
              pConnectionLineAnnotation->addPoint(QPointF(0, 0));
              pConnectionLineAnnotation->drawCornerItems();
-             pConnectionLineAnnotation->setCornerItemsPassive();
+             pConnectionLineAnnotation->setCornerItemsActiveOrPassive();
              mpDiagramGraphicsView->addConnectionToList(pConnectionLineAnnotation);
           }
         }

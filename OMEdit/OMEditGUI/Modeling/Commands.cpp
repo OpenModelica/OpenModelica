@@ -77,14 +77,27 @@ void AddShapeCommand::undo()
   mpGraphicsView->addClassAnnotation();
 }
 
-UpdateShapeCommand::UpdateShapeCommand(ShapeAnnotation *pShapeAnnotation, const Transformation &oldTransformation,
-                                       const Transformation &newTransformation, GraphicsView *pGraphicsView, QUndoCommand *pParent)
+UpdateShapeCommand::UpdateShapeCommand(ShapeAnnotation *pShapeAnnotation, QString oldAnnotaton, QString newAnnotation,
+                                         GraphicsView *pGraphicsView, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpShapeAnnotation = pShapeAnnotation;
-  mOldTransformation = oldTransformation;
-  mNewTransformation = newTransformation;
+  mOldAnnotation = oldAnnotaton;
+  mNewAnnotation = newAnnotation;
   mpGraphicsView = pGraphicsView;
+  if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
+    setText("Update Line Shape");
+  } else if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
+    setText("Update Polygon Shape");
+  } else if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
+    setText("Update Rectangle Shape");
+  } else if (dynamic_cast<EllipseAnnotation*>(pShapeAnnotation)) {
+    setText("Update Ellipse Shape");
+  } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
+    setText("Update Text Shape");
+  } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
+    setText("Update Bitmap Shape");
+  }
 }
 
 /*!
@@ -93,14 +106,12 @@ UpdateShapeCommand::UpdateShapeCommand(ShapeAnnotation *pShapeAnnotation, const 
  */
 void UpdateShapeCommand::redo()
 {
-  bool state = mpShapeAnnotation->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
-  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
-  mpShapeAnnotation->setPos(0, 0);
-  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
-  mpShapeAnnotation->setTransform(mNewTransformation.getTransformationMatrix());
-  mpShapeAnnotation->setOrigin(mNewTransformation.getPosition());
-  mpShapeAnnotation->setRotationAngle(mNewTransformation.getRotateAngle());
-  mpShapeAnnotation->mTransformation = mNewTransformation;
+  mpShapeAnnotation->parseShapeAnnotation(mNewAnnotation);
+  mpShapeAnnotation->initializeTransformation();
+  mpShapeAnnotation->removeCornerItems();
+  mpShapeAnnotation->drawCornerItems();
+  mpShapeAnnotation->setCornerItemsActiveOrPassive();
+  mpShapeAnnotation->update();
   mpShapeAnnotation->emitChanged();
   mpGraphicsView->setAddClassAnnotationNeeded(true);
 }
@@ -111,14 +122,12 @@ void UpdateShapeCommand::redo()
  */
 void UpdateShapeCommand::undo()
 {
-  bool state = mpShapeAnnotation->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
-  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
-  mpShapeAnnotation->setPos(0, 0);
-  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
-  mpShapeAnnotation->setTransform(mOldTransformation.getTransformationMatrix());
-  mpShapeAnnotation->setOrigin(mOldTransformation.getPosition());
-  mpShapeAnnotation->setRotationAngle(mOldTransformation.getRotateAngle());
-  mpShapeAnnotation->mTransformation = mOldTransformation;
+  mpShapeAnnotation->parseShapeAnnotation(mOldAnnotation);
+  mpShapeAnnotation->initializeTransformation();
+  mpShapeAnnotation->removeCornerItems();
+  mpShapeAnnotation->drawCornerItems();
+  mpShapeAnnotation->setCornerItemsActiveOrPassive();
+  mpShapeAnnotation->update();
   mpShapeAnnotation->emitChanged();
   mpGraphicsView->setAddClassAnnotationNeeded(true);
 }
@@ -396,7 +405,7 @@ AddConnectionCommand::AddConnectionCommand(LineAnnotation *pConnectionLineAnnota
   mpConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName())
                                          .arg(mpConnectionLineAnnotation->getEndComponentName()));
   mpConnectionLineAnnotation->drawCornerItems();
-  mpConnectionLineAnnotation->setCornerItemsPassive();
+  mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
   pGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
 }
 

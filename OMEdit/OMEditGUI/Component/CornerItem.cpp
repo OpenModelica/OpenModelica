@@ -38,6 +38,7 @@
 
 #include "CornerItem.h"
 #include "Component.h"
+#include "Commands.h"
 
 /*!
   \class CornerItem
@@ -50,7 +51,7 @@
   \param pParent - pointer to ShapeAnnotation
   */
 CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotation *pParent)
-  : QGraphicsItem(pParent), mpShapeAnnotation(pParent), mConnectedPointIndex(connectedPointIndex)
+  : QGraphicsItem(pParent), mpShapeAnnotation(pParent), mOldAnnotation(""), mConnectedPointIndex(connectedPointIndex)
 {
   setCursor(Qt::ArrowCursor);
   setToolTip(Helper::clickAndDragToResize);
@@ -130,6 +131,7 @@ void CornerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
       mpShapeAnnotation->manhattanizeShape();
       mpShapeAnnotation->removeRedundantPointsGeometriesAndCornerItems();
     }
+    mOldAnnotation = mpShapeAnnotation->getOMCShapeAnnotation();
     mClickPos = mapToScene(event->pos());
   }
   QGraphicsItem::mousePressEvent(event);
@@ -155,9 +157,9 @@ void CornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
         mpShapeAnnotation->manhattanizeShape();
         mpShapeAnnotation->removeRedundantPointsGeometriesAndCornerItems();
       }
-      if (!signalsBlocked()) {
-        emit cornerItemPositionChanged();
-      }
+      ModelWidget *pModelWidget = mpShapeAnnotation->getGraphicsView()->getModelWidget();
+      pModelWidget->getUndoStack()->push(new UpdateShapeCommand(mpShapeAnnotation, mOldAnnotation, mpShapeAnnotation->getOMCShapeAnnotation(),
+                                                                mpShapeAnnotation->getGraphicsView()));
     }
   }
 }

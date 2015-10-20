@@ -52,6 +52,7 @@ class CornerItem : public QObject, public QGraphicsItem
 private:
   ShapeAnnotation *mpShapeAnnotation;
   QRectF mRectangle;
+  QString mOldAnnotation;
   QPointF mClickPos;
   int mConnectedPointIndex;
 public:
