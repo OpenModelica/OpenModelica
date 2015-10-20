@@ -14,6 +14,7 @@ all: build
 
 Makefile: qwt.pro
 	@rm -f $@
+	@test ! -z "$(QMAKE)" || (echo QMAKE variable was not set; false)
 	$(QMAKE) QMAKE_CXX=@CXX@ qwt.pro
 clean:
 	test ! -f Makefile || $(MAKE) -f Makefile clean
