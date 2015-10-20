@@ -12,6 +12,9 @@ typedef int LOADERRESULT;
 class ISimController;
 struct SimSettings;
 
+/**
+ * Create a dynamically linked simulator and serve for solver factories
+ */
 class OMCFactory
 {
 public:
