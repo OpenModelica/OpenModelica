@@ -765,7 +765,8 @@ void GraphicsView::createRectangleShape(QPointF point)
     pMainWindow->getRectangleShapeAction()->setChecked(false);
     pMainWindow->getConnectModeAction()->setChecked(true);
     mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpRectangleShapeAnnotation, this);
-    addClassAnnotation();
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
   }
 }
 
@@ -797,7 +798,8 @@ void GraphicsView::createEllipseShape(QPointF point)
     pMainWindow->getEllipseShapeAction()->setChecked(false);
     pMainWindow->getConnectModeAction()->setChecked(true);
     mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpEllipseShapeAnnotation, this);
-    addClassAnnotation();
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
   }
 }
 
@@ -830,7 +832,8 @@ void GraphicsView::createTextShape(QPointF point)
     pMainWindow->getTextShapeAction()->setChecked(false);
     pMainWindow->getConnectModeAction()->setChecked(true);
     mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpTextShapeAnnotation, this);
-    addClassAnnotation();
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
     mpTextShapeAnnotation->showShapeProperties();
   }
 }
@@ -1663,7 +1666,8 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     pMainWindow->getLineShapeAction()->setChecked(false);
     pMainWindow->getConnectModeAction()->setChecked(true);
     mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpLineShapeAnnotation, this);
-    addClassAnnotation();
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
     return;
   } else if (isCreatingPolygonShape()) {
     // finish creating the polygon
@@ -1680,7 +1684,8 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     pMainWindow->getPolygonShapeAction()->setChecked(false);
     pMainWindow->getConnectModeAction()->setChecked(true);
     mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpPolygonShapeAnnotation, this);
-    addClassAnnotation();
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
     return;
   }
   ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(itemAt(event->pos()));

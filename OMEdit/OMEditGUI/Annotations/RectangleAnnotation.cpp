@@ -37,6 +37,7 @@
  */
 
 #include "RectangleAnnotation.h"
+#include "Commands.h"
 
 RectangleAnnotation::RectangleAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0)
@@ -219,21 +220,16 @@ void RectangleAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 void RectangleAnnotation::duplicate()
 {
   RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation("", mpGraphicsView);
+  pRectangleAnnotation->updateShape(this);
   QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
                    mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   pRectangleAnnotation->setOrigin(mOrigin + gridStep);
-  pRectangleAnnotation->setRotationAngle(mRotation);
   pRectangleAnnotation->initializeTransformation();
-  pRectangleAnnotation->setLineColor(getLineColor());
-  pRectangleAnnotation->setFillColor(getFillColor());
-  pRectangleAnnotation->setLinePattern(getLinePattern());
-  pRectangleAnnotation->setFillPattern(getFillPattern());
-  pRectangleAnnotation->setLineThickness(getLineThickness());
-  pRectangleAnnotation->setBorderPattern(getBorderPattern());
-  pRectangleAnnotation->setExtents(getExtents());
-  pRectangleAnnotation->setRadius(getRadius());
   pRectangleAnnotation->drawCornerItems();
   pRectangleAnnotation->setCornerItemsActiveOrPassive();
   pRectangleAnnotation->update();
-  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pRectangleAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pRectangleAnnotation, mpGraphicsView);
+  mpGraphicsView->getModelWidget()->updateClassAnnotationIfNeeded();
+  mpGraphicsView->getModelWidget()->updateModelicaText();
 }

@@ -37,6 +37,7 @@
  */
 
 #include "LineAnnotation.h"
+#include "Commands.h"
 
 LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0)
@@ -725,26 +726,18 @@ void LineAnnotation::updateConnectionAnnotation()
 void LineAnnotation::duplicate()
 {
   LineAnnotation *pLineAnnotation = new LineAnnotation("", mpGraphicsView);
+  pLineAnnotation->updateShape(this);
   QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
                    mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   pLineAnnotation->setOrigin(mOrigin + gridStep);
-  pLineAnnotation->setRotationAngle(mRotation);
   pLineAnnotation->initializeTransformation();
-  pLineAnnotation->setLineColor(getLineColor());
-  pLineAnnotation->setLinePattern(getLinePattern());
-  pLineAnnotation->setLineThickness(getLineThickness());
-  pLineAnnotation->setStartArrow(getStartArrow());
-  pLineAnnotation->setEndArrow(getEndArrow());
-  pLineAnnotation->setArrowSize(getArrowSize());
-  pLineAnnotation->setSmooth(getSmooth());
-  QList<QPointF> points = getPoints();
-  for (int i = 0 ; i < points.size() ; i++) {
-    pLineAnnotation->addPoint(points[i]);
-  }
   pLineAnnotation->drawCornerItems();
   pLineAnnotation->setCornerItemsActiveOrPassive();
   pLineAnnotation->update();
-  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pLineAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pLineAnnotation, mpGraphicsView);
+  mpGraphicsView->getModelWidget()->updateClassAnnotationIfNeeded();
+  mpGraphicsView->getModelWidget()->updateModelicaText();
 }
 
 ConnectionArray::ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, QWidget *pParent)

@@ -37,6 +37,7 @@
  */
 
 #include "PolygonAnnotation.h"
+#include "Commands.h"
 
 PolygonAnnotation::PolygonAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0)
@@ -279,20 +280,16 @@ void PolygonAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 void PolygonAnnotation::duplicate()
 {
   PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation("", mpGraphicsView);
+  pPolygonAnnotation->updateShape(this);
   QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
                    mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   pPolygonAnnotation->setOrigin(mOrigin + gridStep);
-  pPolygonAnnotation->setRotationAngle(mRotation);
   pPolygonAnnotation->initializeTransformation();
-  pPolygonAnnotation->setLineColor(getLineColor());
-  pPolygonAnnotation->setFillColor(getFillColor());
-  pPolygonAnnotation->setLinePattern(getLinePattern());
-  pPolygonAnnotation->setFillPattern(getFillPattern());
-  pPolygonAnnotation->setLineThickness(getLineThickness());
-  pPolygonAnnotation->setSmooth(getSmooth());
-  pPolygonAnnotation->setPoints(getPoints());
   pPolygonAnnotation->drawCornerItems();
   pPolygonAnnotation->setCornerItemsActiveOrPassive();
   pPolygonAnnotation->update();
-  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pPolygonAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pPolygonAnnotation, mpGraphicsView);
+  mpGraphicsView->getModelWidget()->updateClassAnnotationIfNeeded();
+  mpGraphicsView->getModelWidget()->updateModelicaText();
 }
