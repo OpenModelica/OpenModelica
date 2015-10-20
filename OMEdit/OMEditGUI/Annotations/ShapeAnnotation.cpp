@@ -88,20 +88,39 @@ void GraphicItem::parseShapeAnnotation(QString annotation)
 }
 
 /*!
-  Returns the annotation values of the GraphicItem.
-  \return the annotation values as a list.
-  */
+ * \brief GraphicItem::getOMCShapeAnnotation
+ * Returns the annotation values of the GraphicItem in format as returned by OMC.
+ * \return the annotation values as a list.
+ */
+QStringList GraphicItem::getOMCShapeAnnotation()
+{
+  QStringList annotationString;
+  /* get visible */
+  annotationString.append(mVisible ? "true" : "false");
+  /* get origin */
+  QString originString;
+  originString.append("{").append(QString::number(mOrigin.x())).append(",");
+  originString.append(QString::number(mOrigin.y())).append("}");
+  annotationString.append(originString);
+  /* get rotation */
+  annotationString.append(QString::number(mRotation));
+  return annotationString;
+}
+
+/*!
+ * \brief GraphicItem::getShapeAnnotation
+ * Returns the annotation values of the GraphicItem.
+ * \return the annotation values as a list.
+ */
 QStringList GraphicItem::getShapeAnnotation()
 {
   QStringList annotationString;
   /* get visible */
-  if (!mVisible)
-  {
+  if (!mVisible) {
     annotationString.append("visible=false");
   }
   /* get origin */
-  if (mOrigin != QPointF(0, 0))
-  {
+  if (mOrigin != QPointF(0, 0)) {
     QString originString;
     originString.append("origin=");
     originString.append("{").append(QString::number(mOrigin.x())).append(",");
@@ -109,47 +128,10 @@ QStringList GraphicItem::getShapeAnnotation()
     annotationString.append(originString);
   }
   /* get rotation */
-  if (mRotation != 0)
-  {
+  if (mRotation != 0) {
     annotationString.append(QString("rotation=").append(QString::number(mRotation)));
   }
   return annotationString;
-}
-
-/*!
-  Sets the origin value.
-  \param origin - the origin value.
-  */
-void GraphicItem::setOrigin(QPointF origin)
-{
-  mOrigin = origin;
-}
-
-/*!
-  Returns the origin value.
-  \return the origin value.
-  */
-QPointF GraphicItem::getOrigin()
-{
-  return mOrigin;
-}
-
-/*!
-  Sets the rotation value.
-  \param rotation - the rotation value.
-  */
-void GraphicItem::setRotationAngle(qreal rotation)
-{
-  mRotation = rotation;
-}
-
-/*!
-  Returns the rotation value.
-  \return the rotation value.
-  */
-qreal GraphicItem::getRotation()
-{
-  return mRotation;
 }
 
 /*!
@@ -218,15 +200,48 @@ void FilledShape::parseShapeAnnotation(QString annotation)
 }
 
 /*!
-  Returns the annotation values of the FilledShape.
-  \return the annotation values as a list.
-  */
+ * \brief FilledShape::getOMCShapeAnnotation
+ * Returns the annotation values of the FilledShape in format as returned by OMC.
+ * \return the annotation values as a list.
+ */
+QStringList FilledShape::getOMCShapeAnnotation()
+{
+  QStringList annotationString;
+  /* get the line color */
+  QString lineColorString;
+  lineColorString.append("{");
+  lineColorString.append(QString::number(mLineColor.red())).append(",");
+  lineColorString.append(QString::number(mLineColor.green())).append(",");
+  lineColorString.append(QString::number(mLineColor.blue()));
+  lineColorString.append("}");
+  annotationString.append(lineColorString);
+  /* get the fill color */
+  QString fillColorString;
+  fillColorString.append("{");
+  fillColorString.append(QString::number(mFillColor.red())).append(",");
+  fillColorString.append(QString::number(mFillColor.green())).append(",");
+  fillColorString.append(QString::number(mFillColor.blue()));
+  fillColorString.append("}");
+  annotationString.append(fillColorString);
+  /* get the line pattern */
+  annotationString.append(StringHandler::getLinePatternString(mLinePattern));
+  /* get the fill pattern */
+  annotationString.append(StringHandler::getFillPatternString(mFillPattern));
+  // get the thickness
+  annotationString.append(QString::number(mLineThickness));
+  return annotationString;
+}
+
+/*!
+ * \brief FilledShape::getShapeAnnotation
+ * Returns the annotation values of the FilledShape.
+ * \return the annotation values as a list.
+ */
 QStringList FilledShape::getShapeAnnotation()
 {
   QStringList annotationString;
   /* get the line color */
-  if (mLineColor != Qt::black)
-  {
+  if (mLineColor != Qt::black) {
     QString lineColorString;
     lineColorString.append("lineColor={");
     lineColorString.append(QString::number(mLineColor.red())).append(",");
@@ -236,8 +251,7 @@ QStringList FilledShape::getShapeAnnotation()
     annotationString.append(lineColorString);
   }
   /* get the fill color */
-  if (mFillColor != Qt::black)
-  {
+  if (mFillColor != Qt::black) {
     QString fillColorString;
     fillColorString.append("fillColor={");
     fillColorString.append(QString::number(mFillColor.red())).append(",");
@@ -247,105 +261,18 @@ QStringList FilledShape::getShapeAnnotation()
     annotationString.append(fillColorString);
   }
   /* get the line pattern */
-  if (mLinePattern != StringHandler::LineSolid)
+  if (mLinePattern != StringHandler::LineSolid) {
     annotationString.append(QString("pattern=").append(StringHandler::getLinePatternString(mLinePattern)));
+  }
   /* get the fill pattern */
-  if (mFillPattern != StringHandler::FillNone)
+  if (mFillPattern != StringHandler::FillNone) {
     annotationString.append(QString("fillPattern=").append(StringHandler::getFillPatternString(mFillPattern)));
+  }
   // get the thickness
-  if (mLineThickness != 0.25)
+  if (mLineThickness != 0.25) {
     annotationString.append(QString("lineThickness=").append(QString::number(mLineThickness)));
+  }
   return annotationString;
-}
-
-/*!
-  Sets the line color value.
-  \param color - the line color.
-  */
-void FilledShape::setLineColor(QColor color)
-{
-  mLineColor = color;
-}
-
-/*!
-  Returns the line color value.
-  \return the line color value.
-  */
-QColor FilledShape::getLineColor()
-{
-  return mLineColor;
-}
-
-/*!
-  Sets the fill color value.
-  \param color - the fill color.
-  */
-void FilledShape::setFillColor(QColor color)
-{
-  mFillColor = color;
-}
-
-/*!
-  Returns the fill color value.
-  \return the fill color value.
-  */
-QColor FilledShape::getFillColor()
-{
-  return mFillColor;
-}
-
-/*!
-  Sets the line pattern value.
-  \param pattern - the line pattern.
-  */
-void FilledShape::setLinePattern(StringHandler::LinePattern pattern)
-{
-  mLinePattern = pattern;
-}
-
-/*!
-  Returns the line pattern value.
-  \return the line pattern value.
-  */
-StringHandler::LinePattern FilledShape::getLinePattern()
-{
-  return mLinePattern;
-}
-
-/*!
-  Sets the fill pattern value.
-  \param pattern - the fill pattern.
-  */
-void FilledShape::setFillPattern(StringHandler::FillPattern pattern)
-{
-  mFillPattern = pattern;
-}
-
-/*!
-  Returns the fill pattern value.
-  \return the fill pattern value.
-  */
-StringHandler::FillPattern FilledShape::getFillPattern()
-{
-  return mFillPattern;
-}
-
-/*!
-  Sets the thickness value.
-  \param thickness - the line thickness.
-  */
-void FilledShape::setLineThickness(qreal thickness)
-{
-  mLineThickness = thickness;
-}
-
-/*!
-  Returns the thickness value.
-  \return the thickness value.
-  */
-qreal FilledShape::getLineThickness()
-{
-  return mLineThickness;
 }
 
 /*!
@@ -613,9 +540,30 @@ void ShapeAnnotation::applyFillPattern(QPainter *painter)
 }
 
 /*!
-  Returns the shape annotation. Reimplemented by each child shape class to return their annotation.
-  \return the shape annotation string.
-  */
+ * \brief ShapeAnnotation::parseShapeAnnotation
+ * Parses the shape annotation. Reimplemented by each child shape class to parse their annotation.
+ * \param annotation
+ */
+void ShapeAnnotation::parseShapeAnnotation(QString annotation)
+{
+  Q_UNUSED(annotation);
+}
+
+/*!
+ * \brief ShapeAnnotation::getOMCShapeAnnotation
+ * Returns the shape annotation in format as returned by OMC. Reimplemented by each child shape class to return their annotation.
+ * \return the shape annotation string.
+ */
+QString ShapeAnnotation::getOMCShapeAnnotation()
+{
+  return "";
+}
+
+/*!
+ * \brief ShapeAnnotation::getShapeAnnotation
+ * Returns the shape annotation. Reimplemented by each child shape class to return their annotation.
+ * \return the shape annotation string.
+ */
 QString ShapeAnnotation::getShapeAnnotation()
 {
   return "";
@@ -666,24 +614,19 @@ void ShapeAnnotation::drawCornerItems()
 }
 
 /*!
-  Makes the corner points of the shape visible.
-  */
-void ShapeAnnotation::setCornerItemsActive()
+ * \brief ShapeAnnotation::setCornerItemsActiveOrPassive
+ * Makes the corner points of the shape active/passive.
+ */
+void ShapeAnnotation::setCornerItemsActiveOrPassive()
 {
   foreach (CornerItem *pCornerItem, mCornerItemsList) {
-    pCornerItem->setToolTip(Helper::clickAndDragToResize);
-    pCornerItem->setVisible(true);
-  }
-}
-
-/*!
-  Makes the corner points of the shape hidden.
-  */
-void ShapeAnnotation::setCornerItemsPassive()
-{
-  foreach (CornerItem *pCornerItem, mCornerItemsList) {
-    pCornerItem->setToolTip("");
-    pCornerItem->setVisible(false);
+    if (isSelected()) {
+      pCornerItem->setToolTip(Helper::clickAndDragToResize);
+      pCornerItem->setVisible(true);
+    } else {
+      pCornerItem->setToolTip("");
+      pCornerItem->setVisible(false);
+    }
   }
 }
 
@@ -1081,9 +1024,10 @@ void ShapeAnnotation::applyRotation(qreal angle)
   if (angle == 360) {
     angle = 0;
   }
-  Transformation oldTransformation = mTransformation;
-  mTransformation.setRotateAngle(angle);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  QString oldAnnotation = getOMCShapeAnnotation();
+  setRotationAngle(angle);
+  QString newAnnotation = getOMCShapeAnnotation();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
 }
 
 /*!
@@ -1254,6 +1198,7 @@ void ShapeAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   */
 void ShapeAnnotation::manhattanizeShape()
 {
+  QString oldAnnotation = getOMCShapeAnnotation();
   int startIndex = -1;
   for (int i = 0 ; i < mPoints.size() ; i++) {
     if (i + 1 < mPoints.size()) {
@@ -1299,8 +1244,8 @@ void ShapeAnnotation::manhattanizeShape()
     for (int i = lastIndex ; i < oldPoints.size() ; i++) {
       addPoint(oldPoints[i]);
     }
-    removeCornerItems();
-    drawCornerItems();
+    ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
+    pModelWidget->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, getOMCShapeAnnotation(), mpGraphicsView));
     cornerItemReleased();
   }
 }
@@ -1331,10 +1276,15 @@ void ShapeAnnotation::referenceShapeChanged()
     if (mpGraphicsView) {
       updateShape(pShapeAnnotation);
       setTransform(pShapeAnnotation->mTransformation.getTransformationMatrix());
+      removeCornerItems();
+      drawCornerItems();
+      setCornerItemsActiveOrPassive();
+      update();
     } else if (mpParentComponent) {
       updateShape(pShapeAnnotation);
       setPos(mOrigin);
       setRotation(mRotation);
+      update();
     }
   }
 }
@@ -1456,9 +1406,12 @@ void ShapeAnnotation::rotateAntiClockwise()
  */
 void ShapeAnnotation::moveUp()
 {
-  Transformation oldTransformation = mTransformation;
+  QString oldAnnotation = getOMCShapeAnnotation();
   mTransformation.adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  setTransform(mTransformation.getTransformationMatrix());
+  setOrigin(mTransformation.getPosition());
+  QString newAnnotation = getOMCShapeAnnotation();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
 }
 
 /*!
@@ -1469,9 +1422,12 @@ void ShapeAnnotation::moveUp()
  */
 void ShapeAnnotation::moveShiftUp()
 {
-  Transformation oldTransformation = mTransformation;
+  QString oldAnnotation = getOMCShapeAnnotation();
   mTransformation.adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  setTransform(mTransformation.getTransformationMatrix());
+  setOrigin(mTransformation.getPosition());
+  QString newAnnotation = getOMCShapeAnnotation();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
 }
 
 /*!
@@ -1482,9 +1438,12 @@ void ShapeAnnotation::moveShiftUp()
  */
 void ShapeAnnotation::moveCtrlUp()
 {
-  Transformation oldTransformation = mTransformation;
+  QString oldAnnotation = getOMCShapeAnnotation();
   mTransformation.adjustPosition(0, 1);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  setTransform(mTransformation.getTransformationMatrix());
+  setOrigin(mTransformation.getPosition());
+  QString newAnnotation = getOMCShapeAnnotation();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
 }
 
 /*!
@@ -1495,9 +1454,12 @@ void ShapeAnnotation::moveCtrlUp()
  */
 void ShapeAnnotation::moveDown()
 {
-  Transformation oldTransformation = mTransformation;
+  QString oldAnnotation = getOMCShapeAnnotation();
   mTransformation.adjustPosition(0, -mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  setTransform(mTransformation.getTransformationMatrix());
+  setOrigin(mTransformation.getPosition());
+  QString newAnnotation = getOMCShapeAnnotation();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
 }
 
 /*!
@@ -1508,9 +1470,12 @@ void ShapeAnnotation::moveDown()
  */
 void ShapeAnnotation::moveShiftDown()
 {
-  Transformation oldTransformation = mTransformation;
+  QString oldAnnotation = getOMCShapeAnnotation();
   mTransformation.adjustPosition(0, -(mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5));
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  setTransform(mTransformation.getTransformationMatrix());
+  setOrigin(mTransformation.getPosition());
+  QString newAnnotation = getOMCShapeAnnotation();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
 }
 
 /*!
@@ -1521,9 +1486,12 @@ void ShapeAnnotation::moveShiftDown()
  */
 void ShapeAnnotation::moveCtrlDown()
 {
-  Transformation oldTransformation = mTransformation;
+  QString oldAnnotation = getOMCShapeAnnotation();
   mTransformation.adjustPosition(0, -1);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  setTransform(mTransformation.getTransformationMatrix());
+  setOrigin(mTransformation.getPosition());
+  QString newAnnotation = getOMCShapeAnnotation();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
 }
 
 /*!
@@ -1534,9 +1502,12 @@ void ShapeAnnotation::moveCtrlDown()
  */
 void ShapeAnnotation::moveLeft()
 {
-  Transformation oldTransformation = mTransformation;
+  QString oldAnnotation = getOMCShapeAnnotation();
   mTransformation.adjustPosition(-mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  setTransform(mTransformation.getTransformationMatrix());
+  setOrigin(mTransformation.getPosition());
+  QString newAnnotation = getOMCShapeAnnotation();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
 }
 
 /*!
@@ -1547,9 +1518,12 @@ void ShapeAnnotation::moveLeft()
  */
 void ShapeAnnotation::moveShiftLeft()
 {
-  Transformation oldTransformation = mTransformation;
+  QString oldAnnotation = getOMCShapeAnnotation();
   mTransformation.adjustPosition(-(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5), 0);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  setTransform(mTransformation.getTransformationMatrix());
+  setOrigin(mTransformation.getPosition());
+  QString newAnnotation = getOMCShapeAnnotation();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
 }
 
 /*!
@@ -1560,9 +1534,12 @@ void ShapeAnnotation::moveShiftLeft()
  */
 void ShapeAnnotation::moveCtrlLeft()
 {
-  Transformation oldTransformation = mTransformation;
+  QString oldAnnotation = getOMCShapeAnnotation();
   mTransformation.adjustPosition(-1, 0);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  setTransform(mTransformation.getTransformationMatrix());
+  setOrigin(mTransformation.getPosition());
+  QString newAnnotation = getOMCShapeAnnotation();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
 }
 
 /*!
@@ -1573,9 +1550,12 @@ void ShapeAnnotation::moveCtrlLeft()
  */
 void ShapeAnnotation::moveRight()
 {
-  Transformation oldTransformation = mTransformation;
+  QString oldAnnotation = getOMCShapeAnnotation();
   mTransformation.adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  setTransform(mTransformation.getTransformationMatrix());
+  setOrigin(mTransformation.getPosition());
+  QString newAnnotation = getOMCShapeAnnotation();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
 }
 
 /*!
@@ -1586,9 +1566,12 @@ void ShapeAnnotation::moveRight()
  */
 void ShapeAnnotation::moveShiftRight()
 {
-  Transformation oldTransformation = mTransformation;
+  QString oldAnnotation = getOMCShapeAnnotation();
   mTransformation.adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5, 0);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  setTransform(mTransformation.getTransformationMatrix());
+  setOrigin(mTransformation.getPosition());
+  QString newAnnotation = getOMCShapeAnnotation();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
 }
 
 /*!
@@ -1599,9 +1582,12 @@ void ShapeAnnotation::moveShiftRight()
  */
 void ShapeAnnotation::moveCtrlRight()
 {
-  Transformation oldTransformation = mTransformation;
+  QString oldAnnotation = getOMCShapeAnnotation();
   mTransformation.adjustPosition(1, 0);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  setTransform(mTransformation.getTransformationMatrix());
+  setOrigin(mTransformation.getPosition());
+  QString newAnnotation = getOMCShapeAnnotation();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
 }
 
 /*!
@@ -1622,7 +1608,7 @@ void ShapeAnnotation::cornerItemReleased()
 {
   mIsCornerItemClicked = false;
   if (isSelected()) {
-    setCornerItemsActive();
+    setCornerItemsActiveOrPassive();
   } else {
     setSelected(true);
   }
@@ -1803,7 +1789,7 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
       lineType = pLineAnnotation->getLineType();
     }
     if (isSelected()) {
-      setCornerItemsActive();
+      setCornerItemsActiveOrPassive();
       setCursor(Qt::SizeAllCursor);
       /* Only allow manipulations on shapes if the class is not a system library class OR shape is not an inherited component. */
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()) {
@@ -1838,7 +1824,7 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
         }
       }
     } else if (!mIsCornerItemClicked) {
-      setCornerItemsPassive();
+      setCornerItemsActiveOrPassive();
       unsetCursor();
       /* Only allow manipulations on shapes if the class is not a system library class OR shape is not an inherited component. */
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()) {

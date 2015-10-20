@@ -59,6 +59,7 @@ public:
   QPainterPath shape() const;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
   void drawEllipseAnnotaion(QPainter *painter);
+  QString getOMCShapeAnnotation();
   QString getShapeAnnotation();
   void updateShape(ShapeAnnotation *pShapeAnnotation);
 public slots:

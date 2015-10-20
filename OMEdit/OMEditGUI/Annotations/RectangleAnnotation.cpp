@@ -101,17 +101,18 @@ void RectangleAnnotation::parseShapeAnnotation(QString annotation)
   FilledShape::parseShapeAnnotation(annotation);
   // parse the shape to get the list of attributes of Rectangle.
   QStringList list = StringHandler::getStrings(annotation);
-  if (list.size() < 11)
+  if (list.size() < 11) {
     return;
+  }
   // 9th item of the list contains the border pattern.
   mBorderPattern = StringHandler::getBorderPatternType(list.at(8));
   // 10th item is the extent points
   QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(9)));
-  for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++)
-  {
+  for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++) {
     QStringList extentPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(extentsList[i]));
-    if (extentPoints.size() >= 2)
+    if (extentPoints.size() >= 2) {
       mExtents.replace(i, QPointF(extentPoints.at(0).toFloat(), extentPoints.at(1).toFloat()));
+    }
   }
   // 11th item of the list contains the corner radius.
   mRadius = list.at(10).toFloat();
@@ -147,17 +148,50 @@ void RectangleAnnotation::drawRectangleAnnotaion(QPainter *painter)
   painter->drawRoundedRect(getBoundingRect(), mRadius, mRadius);
 }
 
+/*!
+ * \brief RectangleAnnotation::getOMCShapeAnnotation
+ * Returns Rectangle annotation in format as returned by OMC.
+ * \return
+ */
+QString RectangleAnnotation::getOMCShapeAnnotation()
+{
+  QStringList annotationString;
+  annotationString.append(GraphicItem::getOMCShapeAnnotation());
+  annotationString.append(FilledShape::getOMCShapeAnnotation());
+  // get the border pattern
+  annotationString.append(StringHandler::getBorderPatternString(mBorderPattern));
+  // get the extents
+  if (mExtents.size() > 1) {
+    QString extentString;
+    extentString.append("{");
+    extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
+    extentString.append(QString::number(mExtents.at(0).y())).append("},");
+    extentString.append("{").append(QString::number(mExtents.at(1).x())).append(",");
+    extentString.append(QString::number(mExtents.at(1).y())).append("}");
+    extentString.append("}");
+    annotationString.append(extentString);
+  }
+  // get the radius
+  annotationString.append(QString::number(mRadius));
+  return annotationString.join(",");
+}
+
+/*!
+ * \brief RectangleAnnotation::getShapeAnnotation
+ * Returns Rectangle annotation.
+ * \return
+ */
 QString RectangleAnnotation::getShapeAnnotation()
 {
   QStringList annotationString;
   annotationString.append(GraphicItem::getShapeAnnotation());
   annotationString.append(FilledShape::getShapeAnnotation());
   // get the border pattern
-  if (mBorderPattern != StringHandler::BorderNone)
+  if (mBorderPattern != StringHandler::BorderNone) {
     annotationString.append(QString("borderPattern=").append(StringHandler::getBorderPatternString(mBorderPattern)));
+  }
   // get the extents
-  if (mExtents.size() > 1)
-  {
+  if (mExtents.size() > 1) {
     QString extentString;
     extentString.append("extent={");
     extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
@@ -168,8 +202,9 @@ QString RectangleAnnotation::getShapeAnnotation()
     annotationString.append(extentString);
   }
   // get the radius
-  if (mRadius != 0)
+  if (mRadius != 0) {
     annotationString.append(QString("radius=").append(QString::number(mRadius)));
+  }
   return QString("Rectangle(").append(annotationString.join(",")).append(")");
 }
 
@@ -198,7 +233,7 @@ void RectangleAnnotation::duplicate()
   pRectangleAnnotation->setExtents(getExtents());
   pRectangleAnnotation->setRadius(getRadius());
   pRectangleAnnotation->drawCornerItems();
-  pRectangleAnnotation->setCornerItemsPassive();
+  pRectangleAnnotation->setCornerItemsActiveOrPassive();
   pRectangleAnnotation->update();
   mpGraphicsView->addClassAnnotation();
 }

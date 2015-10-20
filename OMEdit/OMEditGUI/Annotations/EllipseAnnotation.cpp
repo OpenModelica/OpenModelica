@@ -83,17 +83,14 @@ void EllipseAnnotation::parseShapeAnnotation(QString annotation)
   FilledShape::parseShapeAnnotation(annotation);
   // parse the shape to get the list of attributes of Ellipse.
   QStringList list = StringHandler::getStrings(annotation);
-  if (list.size() < 11)
-  {
+  if (list.size() < 11) {
     return;
   }
   // 9th item is the extent points
   QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)));
-  for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++)
-  {
+  for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++) {
     QStringList extentPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(extentsList[i]));
-    if (extentPoints.size() >= 2)
-    {
+    if (extentPoints.size() >= 2) {
       mExtents.replace(i, QPointF(extentPoints.at(0).toFloat(), extentPoints.at(1).toFloat()));
     }
   }
@@ -158,14 +155,44 @@ void EllipseAnnotation::drawEllipseAnnotaion(QPainter *painter)
   }
 }
 
+/*!
+ * \brief EllipseAnnotation::getOMCShapeAnnotation
+ * Returns Ellipse annotation in format as returned by OMC.
+ * \return
+ */
+QString EllipseAnnotation::getOMCShapeAnnotation()
+{
+  QStringList annotationString;
+  annotationString.append(GraphicItem::getOMCShapeAnnotation());
+  annotationString.append(FilledShape::getOMCShapeAnnotation());
+  // get the extents
+  QString extentString;
+  extentString.append("{");
+  extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
+  extentString.append(QString::number(mExtents.at(0).y())).append("},");
+  extentString.append("{").append(QString::number(mExtents.at(1).x())).append(",");
+  extentString.append(QString::number(mExtents.at(1).y())).append("}");
+  extentString.append("}");
+  annotationString.append(extentString);
+  // get the start angle
+  annotationString.append(QString::number(mStartAngle));
+  // get the end angle
+  annotationString.append(QString::number(mEndAngle));
+  return annotationString.join(",");
+}
+
+/*!
+ * \brief EllipseAnnotation::getShapeAnnotation
+ * Returns Ellipse annotation.
+ * \return
+ */
 QString EllipseAnnotation::getShapeAnnotation()
 {
   QStringList annotationString;
   annotationString.append(GraphicItem::getShapeAnnotation());
   annotationString.append(FilledShape::getShapeAnnotation());
   // get the extents
-  if (mExtents.size() > 1)
-  {
+  if (mExtents.size() > 1) {
     QString extentString;
     extentString.append("extent={");
     extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
@@ -176,13 +203,11 @@ QString EllipseAnnotation::getShapeAnnotation()
     annotationString.append(extentString);
   }
   // get the start angle
-  if (mStartAngle != 0)
-  {
+  if (mStartAngle != 0) {
     annotationString.append(QString("startAngle=").append(QString::number(mStartAngle)));
   }
   // get the end angle
-  if (mEndAngle != 0)
-  {
+  if (mEndAngle != 0) {
     annotationString.append(QString("endAngle=").append(QString::number(mEndAngle)));
   }
   return QString("Ellipse(").append(annotationString.join(",")).append(")");
@@ -213,7 +238,7 @@ void EllipseAnnotation::duplicate()
   pEllipseAnnotation->setStartAngle(getStartAngle());
   pEllipseAnnotation->setEndAngle(getEndAngle());
   pEllipseAnnotation->drawCornerItems();
-  pEllipseAnnotation->setCornerItemsPassive();
+  pEllipseAnnotation->setCornerItemsActiveOrPassive();
   pEllipseAnnotation->update();
   mpGraphicsView->addClassAnnotation();
 }

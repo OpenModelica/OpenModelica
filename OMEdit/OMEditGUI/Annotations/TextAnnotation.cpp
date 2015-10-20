@@ -136,6 +136,7 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   // parse the shape to get the list of attributes of Text Annotation.
   list = StringHandler::getStrings(annotation);
   int index = 19;
+  mTextStyles.clear();
   while(index < list.size()) {
     QString annotationValue = StringHandler::removeFirstLastQuotes(list.at(index));
     // check textStyles enumeration.
@@ -295,6 +296,51 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
 }
 
 /*!
+ * \brief TextAnnotation::getOMCShapeAnnotation
+ * \return the shape annotation in format as returned by OMC.
+ */
+QString TextAnnotation::getOMCShapeAnnotation()
+{
+  QStringList annotationString;
+  annotationString.append(GraphicItem::getOMCShapeAnnotation());
+  annotationString.append(FilledShape::getOMCShapeAnnotation());
+  // get the extents
+  QString extentString;
+  extentString.append("{");
+  extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
+  extentString.append(QString::number(mExtents.at(0).y())).append("},");
+  extentString.append("{").append(QString::number(mExtents.at(1).x())).append(",");
+  extentString.append(QString::number(mExtents.at(1).y())).append("}");
+  extentString.append("}");
+  annotationString.append(extentString);
+  // get the text string
+  annotationString.append(QString("\"").append(mOriginalTextString).append("\""));
+  // get the font size
+  annotationString.append(QString::number(mFontSize));
+  // get the font name
+  if (!mFontName.isEmpty()) {
+    annotationString.append(QString("\"").append(mFontName).append("\""));
+  }
+  // get the font styles
+  QString textStylesString;
+  QStringList stylesList;
+  if (mTextStyles.size() > 0) {
+    textStylesString.append("{");
+  }
+  for (int i = 0 ; i < mTextStyles.size() ; i++) {
+    stylesList.append(StringHandler::getTextStyleString(mTextStyles[i]));
+  }
+  if (mTextStyles.size() > 0) {
+    textStylesString.append(stylesList.join(","));
+    textStylesString.append("}");
+    annotationString.append(textStylesString);
+  }
+  // get the font horizontal alignment
+  annotationString.append(StringHandler::getTextAlignmentString(mHorizontalAlignment));
+  return annotationString.join(",");
+}
+
+/*!
  * \brief TextAnnotation::getShapeAnnotation
  * \return the shape annotation in Modelica syntax.
  */
@@ -304,8 +350,7 @@ QString TextAnnotation::getShapeAnnotation()
   annotationString.append(GraphicItem::getShapeAnnotation());
   annotationString.append(FilledShape::getShapeAnnotation());
   // get the extents
-  if (mExtents.size() > 1)
-  {
+  if (mExtents.size() > 1) {
     QString extentString;
     extentString.append("extent={");
     extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
@@ -318,29 +363,31 @@ QString TextAnnotation::getShapeAnnotation()
   // get the text string
   annotationString.append(QString("textString=\"").append(mOriginalTextString).append("\""));
   // get the font size
-  if (mFontSize != 0)
+  if (mFontSize != 0) {
     annotationString.append(QString("fontSize=").append(QString::number(mFontSize)));
+  }
   // get the font name
-  if (!mFontName.isEmpty())
+  if (!mFontName.isEmpty()) {
     annotationString.append(QString("fontName=\"").append(mFontName).append("\""));
+  }
   // get the font styles
   QString textStylesString;
   QStringList stylesList;
-  if (mTextStyles.size() > 0)
+  if (mTextStyles.size() > 0) {
     textStylesString.append("textStyle={");
-  for (int i = 0 ; i < mTextStyles.size() ; i++)
-  {
+  }
+  for (int i = 0 ; i < mTextStyles.size() ; i++) {
     stylesList.append(StringHandler::getTextStyleString(mTextStyles[i]));
   }
-  if (mTextStyles.size() > 0)
-  {
+  if (mTextStyles.size() > 0) {
     textStylesString.append(stylesList.join(","));
     textStylesString.append("}");
     annotationString.append(textStylesString);
   }
   // get the font horizontal alignment
-  if (mHorizontalAlignment != StringHandler::TextAlignmentCenter)
+  if (mHorizontalAlignment != StringHandler::TextAlignmentCenter) {
     annotationString.append(QString("horizontalAlignment=").append(StringHandler::getTextAlignmentString(mHorizontalAlignment)));
+  }
   return QString("Text(").append(annotationString.join(",")).append(")");
 }
 
@@ -454,7 +501,7 @@ void TextAnnotation::duplicate()
   pTextAnnotation->setTextStyles(getTextStyles());
   pTextAnnotation->setTextHorizontalAlignment(getTextHorizontalAlignment());
   pTextAnnotation->drawCornerItems();
-  pTextAnnotation->setCornerItemsPassive();
+  pTextAnnotation->setCornerItemsActiveOrPassive();
   pTextAnnotation->update();
   mpGraphicsView->addClassAnnotation();
 }

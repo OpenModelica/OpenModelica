@@ -83,29 +83,30 @@ void PolygonAnnotation::parseShapeAnnotation(QString annotation)
   FilledShape::parseShapeAnnotation(annotation);
   // parse the shape to get the list of attributes of Polygon.
   QStringList list = StringHandler::getStrings(annotation);
-  if (list.size() < 10)
+  if (list.size() < 10) {
     return;
+  }
+  mPoints.clear();
   // 9th item of list contains the points.
   QStringList pointsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)));
-  foreach (QString point, pointsList)
-  {
+  foreach (QString point, pointsList) {
     QStringList polygonPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(point));
-    if (polygonPoints.size() >= 2)
+    if (polygonPoints.size() >= 2) {
       mPoints.append(QPointF(polygonPoints.at(0).toFloat(), polygonPoints.at(1).toFloat()));
+    }
   }
   /* The polygon is automatically closed, if the first and the last points are not identical. */
-  if (mPoints.size() == 1)
-  {
+  if (mPoints.size() == 1) {
     mPoints.append(mPoints.first());
     mPoints.append(mPoints.first());
-  }
-  else if (mPoints.size() == 2)
-  {
+  } else if (mPoints.size() == 2) {
     mPoints.append(mPoints.first());
   }
-  if (mPoints.size() > 0)
-    if (mPoints.first() != mPoints.last())
+  if (mPoints.size() > 0) {
+    if (mPoints.first() != mPoints.last()) {
       mPoints.append(mPoints.first());
+    }
+  }
   // 10th item of the list is smooth.
   mSmooth = StringHandler::getSmoothType(list.at(9));
 }
@@ -113,19 +114,13 @@ void PolygonAnnotation::parseShapeAnnotation(QString annotation)
 QPainterPath PolygonAnnotation::getShape() const
 {
   QPainterPath path;
-  if (mPoints.size() > 0)
-  {
-    if (mSmooth)
-    {
+  if (mPoints.size() > 0) {
+    if (mSmooth) {
       path.moveTo(mPoints.at(0));
-      if (mPoints.size() == 2)
-      {
+      if (mPoints.size() == 2) {
         path.lineTo(mPoints.at(1));
-      }
-      else
-      {
-        for (int i = 2 ; i < mPoints.size() ; i++)
-        {
+      } else {
+        for (int i = 2 ; i < mPoints.size() ; i++) {
           QPointF point3 = mPoints.at(i);
           // if points are only two then spline acts as simple line
           // calculate middle points for bezier curves
@@ -136,15 +131,12 @@ QPainterPath PolygonAnnotation::getShape() const
           path.lineTo(point12);
           path.cubicTo(point12, point2, point23);
           // if its the last point
-          if (i == mPoints.size() - 1)
-          {
+          if (i == mPoints.size() - 1) {
             path.lineTo(point3);
           }
         }
       }
-    }
-    else
-    {
+    } else {
       path.addPolygon(QPolygonF(mPoints.toVector()));
     }
   }
@@ -186,6 +178,42 @@ void PolygonAnnotation::drawPolygonAnnotaion(QPainter *painter)
   painter->drawPath(getShape());
 }
 
+/*!
+ * \brief PolygonAnnotation::getOMCShapeAnnotation
+ * Returns Polygon annotation in format as returned by OMC.
+ * \return
+ */
+QString PolygonAnnotation::getOMCShapeAnnotation()
+{
+  QStringList annotationString;
+  annotationString.append(GraphicItem::getOMCShapeAnnotation());
+  annotationString.append(FilledShape::getOMCShapeAnnotation());
+  // get points
+  QString pointsString;
+  if (mPoints.size() > 0) {
+    pointsString.append("{");
+  }
+  for (int i = 0 ; i < mPoints.size() ; i++) {
+    pointsString.append("{").append(QString::number(mPoints[i].x())).append(",");
+    pointsString.append(QString::number(mPoints[i].y())).append("}");
+    if (i < mPoints.size() - 1) {
+      pointsString.append(",");
+    }
+  }
+  if (mPoints.size() > 0) {
+    pointsString.append("}");
+    annotationString.append(pointsString);
+  }
+  // get the smooth
+  annotationString.append(StringHandler::getSmoothString(mSmooth));
+  return annotationString.join(",");
+}
+
+/*!
+ * \brief PolygonAnnotation::getShapeAnnotation
+ * Returns Polygon annotation.
+ * \return
+ */
 QString PolygonAnnotation::getShapeAnnotation()
 {
   QStringList annotationString;
@@ -193,27 +221,22 @@ QString PolygonAnnotation::getShapeAnnotation()
   annotationString.append(FilledShape::getShapeAnnotation());
   // get points
   QString pointsString;
-  if (mPoints.size() > 0)
-  {
+  if (mPoints.size() > 0) {
     pointsString.append("points={");
   }
-  for (int i = 0 ; i < mPoints.size() ; i++)
-  {
+  for (int i = 0 ; i < mPoints.size() ; i++) {
     pointsString.append("{").append(QString::number(mPoints[i].x())).append(",");
     pointsString.append(QString::number(mPoints[i].y())).append("}");
-    if (i < mPoints.size() - 1)
-    {
+    if (i < mPoints.size() - 1) {
       pointsString.append(",");
     }
   }
-  if (mPoints.size() > 0)
-  {
+  if (mPoints.size() > 0) {
     pointsString.append("}");
     annotationString.append(pointsString);
   }
   // get the smooth
-  if (mSmooth != StringHandler::SmoothNone)
-  {
+  if (mSmooth != StringHandler::SmoothNone) {
     annotationString.append(QString("smooth=").append(StringHandler::getSmoothString(mSmooth)));
   }
   return QString("Polygon(").append(annotationString.join(",")).append(")");
@@ -269,7 +292,7 @@ void PolygonAnnotation::duplicate()
   pPolygonAnnotation->setSmooth(getSmooth());
   pPolygonAnnotation->setPoints(getPoints());
   pPolygonAnnotation->drawCornerItems();
-  pPolygonAnnotation->setCornerItemsPassive();
+  pPolygonAnnotation->setCornerItemsActiveOrPassive();
   pPolygonAnnotation->update();
   mpGraphicsView->addClassAnnotation();
 }

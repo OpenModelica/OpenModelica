@@ -50,14 +50,14 @@ private:
 class UpdateShapeCommand : public QUndoCommand
 {
 public:
-  UpdateShapeCommand(ShapeAnnotation *pShapeAnnotation, const Transformation &oldTransformation, const Transformation &newTransformation,
-                     GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  UpdateShapeCommand(ShapeAnnotation *pShapeAnnotation, QString oldAnnotaton, QString newAnnotation, GraphicsView *pGraphicsView,
+                      QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
   ShapeAnnotation *mpShapeAnnotation;
-  Transformation mOldTransformation;
-  Transformation mNewTransformation;
+  QString mOldAnnotation;
+  QString mNewAnnotation;
   GraphicsView *mpGraphicsView;
 };
 

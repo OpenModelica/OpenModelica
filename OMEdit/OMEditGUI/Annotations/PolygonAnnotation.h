@@ -60,6 +60,7 @@ public:
   QPainterPath shape() const;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
   void drawPolygonAnnotaion(QPainter *painter);
+  QString getOMCShapeAnnotation();
   QString getShapeAnnotation();
   void addPoint(QPointF point);
   void removePoint(int index);
