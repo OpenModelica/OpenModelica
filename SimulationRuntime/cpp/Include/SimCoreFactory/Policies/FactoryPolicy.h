@@ -79,12 +79,6 @@
   #include <Core/Solver/FactoryExport.h>
   #include <Core/Solver/SolverSettings.h>
   #include <Core/SimulationSettings/IGlobalSettings.h>
-  /*Base Policy include*/
-  #include <SimCoreFactory/Policies/SolverOMCFactory.h>
-  #include <SimCoreFactory/Policies/SolverSettingsOMCFactory.h>
-  #include <SimCoreFactory/Policies/SystemOMCFactory.h>
-  #include <SimCoreFactory/Policies/NonLinSolverOMCFactory.h>
-  #include <SimCoreFactory/Policies/LinSolverOMCFactory.h>
   /*Policy include*/
   #include <SimCoreFactory/Policies/StaticSolverOMCFactory.h>
   #include <SimCoreFactory/Policies/StaticSolverSettingsOMCFactory.h>
@@ -96,13 +90,6 @@
   class BaseOMCFactory {
   public:
     BaseOMCFactory(PATH library_path, PATH modelicasystem_path) {}
-    void UnloadAllLibs() {}
-    LOADERRESULT LoadLibrary(string libName, type_map& current_map) {
-      return LOADER_SUCCESS;
-    }
-    LOADERRESULT UnloadLibrary(shared_library lib) {
-      return LOADER_SUCCESS;
-    }
   };
   typedef BaseOMCFactory BaseFactory;
   typedef StaticSystemOMCFactory<BaseFactory> SimControllerPolicy;
