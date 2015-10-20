@@ -2,8 +2,27 @@ dnl Check for Qt
 
 AC_SUBST(QMAKE)
 
-AC_CHECK_PROGS(QMAKE,qmake-qt4 qmake-mac qmake,"")
-AC_CHECK_PROGS(LRELEASE,lrelease-qt4 lrelease,"")
+AC_MSG_CHECKING([for qmake in env.vars QMAKE and QTDIR])
+if test ! -z "$QMAKE"; then
+  AC_MSG_RESULT([$QMAKE])
+elif test -f $QTDIR/bin/qmake; then
+  QMAKE=$QTDIR/bin/qmake
+  AC_MSG_RESULT([$QMAKE])
+else
+  AC_MSG_RESULT([no])
+  AC_CHECK_PROGS(QMAKE,qmake-qt4 qmake-mac qmake,"")
+fi
+
+AC_MSG_CHECKING([for lrelease in env.vars LRELEASE and QTDIR])
+if test ! -z "$LRELEASE"; then
+  AC_MSG_RESULT([$LRELEASE])
+elif test -f $QTDIR/bin/lrelease; then
+  LRELEASE=$QTDIR/bin/lrelease
+  AC_MSG_RESULT([$LRELEASE])
+else
+  AC_MSG_RESULT([no])
+  AC_CHECK_PROGS(LRELEASE,lrelease-qt4 lrelease,"")
+fi
 
 if test -n "$QMAKE"; then
   AC_MSG_CHECKING([for qmake arguments])
