@@ -14,9 +14,9 @@
 
 #include <Core/Utils/extension/logger.hpp>
 #if defined(__vxworks)
-#include <klu.h>
+//#include <klu.h>
 #else
-#include <Solver/KLU/klu.h>
+//#include <Solver/KLU/klu.h>
 #endif
 
 /*****************************************************************************/
