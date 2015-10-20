@@ -32,7 +32,6 @@
 #include <boost/preprocessor/repetition.hpp>
 #include <boost/preprocessor/iteration/iterate.hpp>
 #include <boost/algorithm/minmax_element.hpp>
-#include <boost/multi_array.hpp>
 #include <boost/weak_ptr.hpp>
 #include <functional>
 #include <boost/range/irange.hpp>
@@ -48,7 +47,6 @@
 #include <boost/math/special_functions/trunc.hpp>
 #include <boost/assert.hpp>
 #include <boost/algorithm/minmax_element.hpp>
-#include <boost/multi_array.hpp>
 #include <functional>
 #include <boost/unordered_map.hpp>
 #include <boost/assign/list_inserter.hpp>
@@ -75,10 +73,7 @@ using std::map;
 using std::pair;
 using std::make_pair;
 using namespace boost::assign;
-using boost::multi_array;
 using namespace boost::algorithm;
-using boost::const_multi_array_ref;
-using boost::multi_array_ref;
 using boost::unordered_map;
 using boost::lexical_cast;
 using boost::numeric_cast;

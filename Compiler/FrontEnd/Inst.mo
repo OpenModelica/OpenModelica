@@ -4199,60 +4199,22 @@ protected function updateComponentsInEnv
   input list<Absyn.ComponentRef> crefs;
   input ClassInf.State ci_state;
   input Boolean impl;
-  output FCore.Cache outCache;
-  output FCore.Graph outEnv;
-  output InnerOuter.InstHierarchy outIH;
+  output FCore.Cache outCache = cache;
+  output FCore.Graph outEnv = env;
+  output InnerOuter.InstHierarchy outIH = inIH;
 algorithm
-  (outCache,outEnv,outIH) := matchcontinue(cache, env, inIH, pre, mod, crefs, ci_state, impl)
+  ErrorExt.setCheckpoint("updateComponentsInEnv__");
 
-    // case (_, _, _, _, _, _, _, _) then (cache,env,inIH);
+  // do NOT fail and do not display any errors from this function as it tries
+  // to type and evaluate dependent things but not with enough information
+  try
+    (outCache, outEnv, outIH) :=
+      updateComponentsInEnv2(cache, env, inIH, pre, mod, crefs, ci_state, impl);
+  else
+  end try;
 
-    // do NOT fail and do not display any errors from this function as it tries to type and evaluate dependent things but not with enough information
-    case (_, _, _, _, _, _, _, _)
-      equation
-        ErrorExt.setCheckpoint("updateComponentsInEnv__");
-        (outCache,outEnv,outIH) = updateComponentsInEnv_dispatch(cache, env, inIH, pre, mod, crefs, ci_state, impl);
-        ErrorExt.rollBack("updateComponentsInEnv__") "roll back any errors";
-      then
-        (outCache,outEnv,outIH);
-
-    // do NOT fail and do not display any errors from this function as it tries to type and evaluate dependent things but not with enough information
-    else
-      equation
-        ErrorExt.rollBack("updateComponentsInEnv__") "roll back any errors";
-      then
-        (cache,env,inIH);
-   end matchcontinue;
+  ErrorExt.rollBack("updateComponentsInEnv__") "roll back any errors";
 end updateComponentsInEnv;
-
-protected function updateComponentsInEnv_dispatch
-"author: PA
-  This function is the second pass of component instantiation, when a
-  component can be instantiated fully and the type of the component can be
-  determined. The type is added/updated to the environment such that other
-  components can use it when they are instantiated."
-  input FCore.Cache cache;
-  input FCore.Graph env;
-  input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix pre;
-  input DAE.Mod mod;
-  input list<Absyn.ComponentRef> crefs;
-  input ClassInf.State ci_state;
-  input Boolean impl;
-  output FCore.Cache outCache;
-  output FCore.Graph outEnv;
-  output InnerOuter.InstHierarchy outIH;
-protected
-  String myTick, crefsStr;
-algorithm
-  //myTick := intString(tick());
-  //crefsStr := stringDelimitList(List.map(crefs, Dump.printComponentRefStr),",");
-  //fprintln(Flags.DEBUG,"start update comps " + myTick + " # " + crefsStr);
-  (outCache,outEnv,outIH,_):=
-    updateComponentsInEnv2(cache,env,inIH,pre,mod,crefs,ci_state,impl,NONE(),NONE());
-  //fprintln(Flags.DEBUG,"finished update comps" + myTick);
-  //print("outEnv:");print(FGraph.printGraphStr(outEnv));print("\n");
-end updateComponentsInEnv_dispatch;
 
 protected function getUpdatedCompsHashTable
   "Routine to lazily create the hashtable as it usually unused"
@@ -5552,59 +5514,28 @@ protected function updateComponentsInEnv2
   input list<Absyn.ComponentRef> crefs;
   input ClassInf.State ci_state;
   input Boolean impl;
-  input Option<HashTable5.HashTable> inUpdatedComps;
-  input Option<Absyn.ComponentRef> currentCref;
-  output FCore.Cache outCache;
-  output FCore.Graph outEnv;
-  output InnerOuter.InstHierarchy outIH;
-  output Option<HashTable5.HashTable> outUpdatedComps;
+  input Option<HashTable5.HashTable> inUpdatedComps = NONE();
+  input Option<Absyn.ComponentRef> currentCref = NONE();
+  output FCore.Cache outCache = inCache;
+  output FCore.Graph outEnv = inEnv;
+  output InnerOuter.InstHierarchy outIH = inIH;
+  output Option<HashTable5.HashTable> outUpdatedComps = inUpdatedComps;
+protected
+  String name;
+  DAE.Binding binding;
 algorithm
-  (outCache,outEnv,outIH,outUpdatedComps) :=
-  matchcontinue (inCache,inEnv,inIH,pre,mod,crefs,ci_state,impl,inUpdatedComps,currentCref)
-    local
-      FCore.Graph env_1,env_2;
-      DAE.Mod mods;
-      Absyn.ComponentRef cr;
-      list<Absyn.ComponentRef> rest;
-      InstanceHierarchy ih;
-      String n;
-      DAE.Binding binding;
-      Option<HashTable5.HashTable> updatedComps;
-      FCore.Cache cache;
-      FCore.Graph env;
-
-    // This case catches when we want to update an already typed and bound var.
-    case (cache,env,ih,_,mods,(Absyn.CREF_IDENT(name = n, subscripts = {}) :: rest),_,_,updatedComps,_)
-      equation
-        // (_,DAE.TYPES_VAR(binding = binding),_,_,_,_) = Lookup.lookupIdent(cache, env, n);
-        (_,DAE.TYPES_VAR(binding = binding),_,_,_,_) = Lookup.lookupIdentLocal(cache, env, n);
-        true = DAEUtil.isBound(binding);
-        (cache,env_2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih,
-        pre, mods, rest, ci_state, impl, updatedComps, currentCref);
-      then
-        (cache,env_2,ih,updatedComps);
-
-    case (cache,env,ih,_,mods,(cr :: rest),_,_,updatedComps,_) /* Implicit instantiation */
-      equation
-        //ErrorExt.setCheckpoint();
-        // this line below "updateComponentInEnv" can not fail so no need to catch that checkpoint(error).
-        //print(" Updating component: " + Absyn.printComponentRefStr(cr) + " mods: " + Mod.printModStr(mods)+ "\n");
-        (cache,env_1,ih,updatedComps) = updateComponentInEnv(cache, env, ih, pre, mods, cr, ci_state, impl, updatedComps, currentCref);
-        //ErrorExt.rollBack();
-        (cache,env_2,ih,updatedComps) = updateComponentsInEnv2(cache, env_1, ih,
-        pre, mods, rest, ci_state, impl, updatedComps, currentCref);
-      then
-        (cache,env_2,ih,updatedComps);
-
-    case (cache,env,ih,_,_,{},_,_,updatedComps,_)
-      then (cache,env,ih,updatedComps);
-
+  for cr in crefs loop
+    try
+      Absyn.CREF_IDENT(name = name, subscripts = {}) := cr;
+      (_, DAE.TYPES_VAR(binding = binding), _, _, _, _) :=
+        Lookup.lookupIdentLocal(outCache, outEnv, name);
+      true := DAEUtil.isBound(binding);
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("-updateComponentsInEnv failed\n");
-      then fail();
-  end matchcontinue;
+      (outCache, outEnv, outIH, outUpdatedComps) :=
+        updateComponentInEnv(outCache, outEnv, outIH, pre, mod, cr, ci_state,
+          impl, outUpdatedComps, currentCref);
+    end try;
+  end for;
 end updateComponentsInEnv2;
 
 protected function makeFullyQualified2
