@@ -21,6 +21,8 @@ extern "C" IAlgLoopSolver* createKinsol(IAlgLoop* algLoop, INonLinSolverSettings
 extern "C" INonLinSolverSettings* createKinsolSettings();
 extern "C" IAlgLoopSolver* createNewton(IAlgLoop* algLoop, INonLinSolverSettings* settings);
 extern "C" INonLinSolverSettings* createNewtonSettings();
+extern "C" IAlgLoopSolver* createBroyden(IAlgLoop* algLoop, INonLinSolverSettings* settings);
+extern "C" INonLinSolverSettings* createBroydenSettings();
 extern "C" IMixedSystem* createModelicaSystem(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolver, shared_ptr<ISimData> simdata, shared_ptr<ISimVars> sim_vars);
 
 VxWorksFactory::VxWorksFactory(string library_path, string modelicasystem_path)
@@ -112,6 +114,10 @@ shared_ptr<IAlgLoopSolver> VxWorksFactory::LoadAlgLoopSolver(IAlgLoop* algLoop, 
   {
     algloopsolver = createKinsol(algLoop, solver_settings.get());
   }
+  else if (solver_name.compare("createBroyden") == 0)
+  {
+    algloopsolver = createBroyden(algLoop, solver_settings.get());
+  }
   else
   {
   }
@@ -129,6 +135,10 @@ shared_ptr<INonLinSolverSettings> VxWorksFactory::LoadAlgLoopSolverSettings(stri
   else if (solver_name.compare("createKinsolSettings") == 0)
   {
     solver_settings = createKinsolSettings();
+  }
+  else if (solver_name.compare("createBroydenSettings") == 0)
+  {
+    solver_settings = createBroydenSettings();
   }
   else
   {

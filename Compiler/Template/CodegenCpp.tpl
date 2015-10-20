@@ -1854,7 +1854,7 @@ int _tmain(int argc, const _TCHAR* argv[])
   {
     throw std::runtime_error("error initialize");
   }
-    fstream f;
+    std::fstream f;
     f.open("output_rt.csv", ios::out);
 
 
@@ -2251,8 +2251,8 @@ extern "C" void <%modelname%>__FB_Init(<%modelname%>_FB_Init_struct* p)
   ISimData* simData;
 
   //double cycletime = p->instance->cycletime;
+  double cycletime;
   getMotionCycle(cycletime);
-
   int result = initSimulation(simController, simData, cycletime);
   if (result < 0)
   {
@@ -11977,7 +11977,7 @@ VAR_OUTPUT
     <%outputVars%>
 END_VAR
 VAR
-    cycletime : REAL(0.05);
+    cycletime : REAL :=0.05;
     bAlreadyInitialized : BOOL;
     bErrorOccured : BOOL(FALSE);
     controller : DWORD;

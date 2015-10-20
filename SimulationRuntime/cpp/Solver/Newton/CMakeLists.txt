@@ -10,7 +10,7 @@ add_precompiled_header(${NewtonName}_static Include/Core/Modelica.h )
 set_target_properties(${NewtonName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 
 add_library(${NewtonName} SHARED Newton.cpp NewtonSettings.cpp FactoryExport )
-target_link_libraries( ${NewtonName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ) #C:/OpenModelica/OMCompiler/SimulationRuntime/cpp/Solver/KLU/OMCppklu_static.lib
+target_link_libraries( ${NewtonName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
 add_precompiled_header(${NewtonName} Include/Core/Modelica.h )
 
 if (UNIX)
