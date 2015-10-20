@@ -716,7 +716,7 @@ public constant Message DERIVATIVE_NON_REAL = MESSAGE(514, TRANSLATION(), ERROR(
 public constant Message UNUSED_MODIFIER = MESSAGE(515, TRANSLATION(), ERROR(),
   Util.gettext("In modifier %s."));
 public constant Message MULTIPLE_MODIFIER = MESSAGE(516, TRANSLATION(), ERROR(),
-  Util.gettext("Multiple modifiers in same scope for element %s, %s."));
+  Util.gettext("Multiple modifiers in same scope for element %s."));
 public constant Message INCONSISTENT_UNITS = MESSAGE(517, TRANSLATION(), WARNING(),
   Util.gettext("The system of units is inconsistent in term %s with the units %s and %s respectively."));
 public constant Message CONSISTENT_UNITS = MESSAGE(518, TRANSLATION(), NOTIFICATION(),
