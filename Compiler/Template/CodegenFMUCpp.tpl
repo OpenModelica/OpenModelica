@@ -277,7 +277,6 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
   // initialization
   void <%modelShortName%>FMU::initialize() {
-    Logger::write("Initializing memory and variables",LC_MOD,LL_DEBUG);
     <%modelShortName%>WriteOutput::initialize();
     <%modelShortName%>Initialize::initializeMemory();
     <%modelShortName%>Initialize::initializeFreeVariables();
