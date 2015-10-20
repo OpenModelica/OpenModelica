@@ -131,6 +131,7 @@ public:
     {
       //LOGGER_WRITE("Initialize",LC_OTHER,LL_DEBUG);
       // TODO: here is some code duplication to SimulationRuntime/cpp/Core/Solver/Initailization.cpp
+      Logger::write("Initializing memory and variables",LC_MOD,LL_DEBUG);
       _model->initialize();
       _model->initializeBoundVariables();
       _model->setInitial(true);

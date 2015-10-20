@@ -790,9 +790,9 @@ template expTypeFlag(DAE.Type ty, Integer flag)
   match ty case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then
     '<%expTypeShort(ty)%>'
   else match ty case T_COMPLEX(complexClassType=RECORD(path=rname)) then
-    '<%underscorePath(rname)%>Type &'
+    '<%underscorePath(rname)%>Type&'
   else match ty case T_COMPLEX(__) then
-    '<%underscorePath(ClassInf.getStateName(complexClassType))%> &'
+    '<%underscorePath(ClassInf.getStateName(complexClassType))%>&'
    else
     '<%expTypeShort(ty)%>'
 

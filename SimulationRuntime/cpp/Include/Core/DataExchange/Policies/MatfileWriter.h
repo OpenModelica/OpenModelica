@@ -21,12 +21,14 @@
 #include <fstream>
 using std::ios;
 */
-template<size_t dim_1, size_t dim_2, size_t dim_3, size_t dim_4>
-class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
+#include <Core/DataExchange/FactoryPolicy.h>
+
+
+class MatFileWriter : public ContainerManager
 {
  public:
     MatFileWriter(unsigned long size, string output_path, string file_name)
-            : Writer<dim_1, dim_2, dim_3, dim_4>(),
+            : ContainerManager(),
               _dataHdrPos(),
               _dataEofPos(),
               _curser_position(0),
@@ -236,7 +238,7 @@ class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
      * \return
      */
     /*========================================================================================{end}==*/
-    void init(std::string output_path, std::string file_name)
+    void init(std::string output_path, std::string file_name,size_t dim)
     {
         const char Aclass[] = "A1 bt. ir1 na  Tj  re  ac  nt  so   r   y   ";  // special header string
 
@@ -269,7 +271,7 @@ class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
 
         // allocate temp buffer for simulation data:
         // dim_1 (number of variables) + dim_2 (number of der. variables) + 1 (time)
-        _doubleMatrixData2 = new double[dim_1 + dim_2 + 1];
+        _doubleMatrixData2 = new double[dim + 1];
     }
 
     /*=={function}===================================================================================*/
@@ -295,9 +297,9 @@ class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
      * \return
      */
     /*========================================================================================{end}==*/
-    void write(typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_p& v_list, double start_time, double end_time)
+    void write(const all_vars_t& v_list, double start_time, double end_time)
     {
-        unsigned int uiParCount = v_list.getNumElems() + 1;  // all variables + time
+        unsigned int uiParCount = get<0>(v_list).size() +get<1>(v_list).size()+get<2>(v_list).size()+ 1;  // all variables + time
         double *doubleHelpMatrix = NULL;
 
         // get memory and reset to zero
@@ -310,11 +312,25 @@ class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
         *(doubleHelpMatrix + uiParCount) = end_time;
         doubleHelpMatrix++;
 
-        // ...then the other variables
-        for (typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_p::const_iterator it = v_list.begin(); it != v_list.end(); ++it)
+        // ...then the other real variables
+        for (real_vars_t::const_iterator it = get<0>(v_list).begin(); it != get<0>(v_list).end(); ++it)
         {
-            *doubleHelpMatrix = *it;
-            *(doubleHelpMatrix + uiParCount) = *it;
+            *doubleHelpMatrix = *(*it);
+            *(doubleHelpMatrix + uiParCount) = *(*it);
+            doubleHelpMatrix++;
+        }
+        // ...then the other int variables
+        for (int_vars_t::const_iterator it = get<1>(v_list).begin(); it != get<1>(v_list).end(); ++it)
+        {
+            *doubleHelpMatrix = *(*it);
+            *(doubleHelpMatrix + uiParCount) = *(*it);
+            doubleHelpMatrix++;
+        }
+        // ...then the other bool variables
+        for (bool_vars_t::const_iterator it = get<2>(v_list).begin(); it != get<2>(v_list).end(); ++it)
+        {
+            *doubleHelpMatrix = *(*it);
+            *(doubleHelpMatrix + uiParCount) = *(*it);
             doubleHelpMatrix++;
         }
 
@@ -331,7 +347,7 @@ class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
 
     /*=={function}===================================================================================*/
     /*!
-     *  void write(const std::vector<std::string>& s_list,const std::vector<std::string>& s_desc_list,const std::vector<std::string>& s_parameter_list,const std::vector<std::string>& s_desc_parameter_list)
+     *  void write(var_names_t& s_list,var_names_t& s_desc_list,var_names_t& s_parameter_list,var_names_t& s_desc_parameter_list)
      *
      *  brief:
      *  ------
@@ -356,12 +372,12 @@ class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
      * \return
      */
     /*========================================================================================{end}==*/
-    void write(const std::vector<std::string>& s_list, const std::vector<std::string>& s_desc_list, const std::vector<std::string>& s_parameter_list, const std::vector<std::string>& s_desc_parameter_list)
+    void write(const all_names_t& s_list, const all_description_t& s_desc_list,const all_names_t& s_parameter_list, const all_description_t& s_desc_parameter_list)
     {
         unsigned int uilongest = 12;  // help variable for temp buffer size
         unsigned int uilongestName = 5;    // because of "Time"
         unsigned int uilongestDesc = 12;  // because of "Time in [s]"
-        unsigned int uiVarCount = s_list.size() + s_parameter_list.size() + 1;  // all variables, all parameters + time
+        unsigned int uiVarCount = get<0>(s_list).size() +get<1>(s_list).size() +get<2>(s_list).size()  + get<0>(s_parameter_list).size() + get<1>(s_parameter_list).size() + get<2>(s_parameter_list).size()+ 1;  // all variables, all parameters + time
         unsigned int uiIndex = 2;
         int iCols = 0;
         char *stringHelpMatrix = NULL;
@@ -369,28 +385,72 @@ class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
         char *pacHelpString = NULL;
 
         // get longest string of the variable names
-        for (std::vector<std::string>::const_iterator it = s_list.begin(); it != s_list.end(); ++it)
+        for (var_names_t::const_iterator it = get<0>(s_list).begin(); it !=  get<0>(s_list).end(); ++it)
+        {
+            if (it->size() > uilongestName)
+                uilongestName = it->size() + 1;  // +1 because of string end
+        }
+        for (var_names_t::const_iterator it = get<1>(s_list).begin(); it !=  get<1>(s_list).end(); ++it)
+        {
+            if (it->size() > uilongestName)
+                uilongestName = it->size() + 1;  // +1 because of string end
+        }
+        for (var_names_t::const_iterator it = get<2>(s_list).begin(); it !=  get<2>(s_list).end(); ++it)
         {
             if (it->size() > uilongestName)
                 uilongestName = it->size() + 1;  // +1 because of string end
         }
 
         // get longest string of the parameter names
-        for (std::vector<std::string>::const_iterator it = s_parameter_list.begin(); it != s_parameter_list.end(); ++it)
+        for (var_names_t::const_iterator it = get<0>(s_parameter_list).begin(); it != get<0>(s_parameter_list).end(); ++it)
+        {
+            if (it->size() > uilongestName)
+                uilongestName = it->size() + 1;  // +1 because of string end
+        }
+        // get longest string of the parameter names
+        for (var_names_t::const_iterator it = get<1>(s_parameter_list).begin(); it != get<1>(s_parameter_list).end(); ++it)
+        {
+            if (it->size() > uilongestName)
+                uilongestName = it->size() + 1;  // +1 because of string end
+        }
+        // get longest string of the parameter names
+        for (var_names_t::const_iterator it = get<2>(s_parameter_list).begin(); it != get<2>(s_parameter_list).end(); ++it)
         {
             if (it->size() > uilongestName)
                 uilongestName = it->size() + 1;  // +1 because of string end
         }
 
         // get longest string of the variable descriptions
-        for (std::vector<std::string>::const_iterator it = s_desc_list.begin(); it != s_desc_list.end(); ++it)
+        for (var_names_t::const_iterator it = get<0>(s_desc_list).begin(); it != get<0>(s_desc_list).end(); ++it)
+        {
+            if (it->size() > uilongestDesc)
+                uilongestDesc = it->size() + 1;  // +1 because of string end
+        }
+         // get longest string of the variable descriptions
+        for (var_names_t::const_iterator it = get<1>(s_desc_list).begin(); it != get<1>(s_desc_list).end(); ++it)
+        {
+            if (it->size() > uilongestDesc)
+                uilongestDesc = it->size() + 1;  // +1 because of string end
+        }
+         // get longest string of the variable descriptions
+        for (var_names_t::const_iterator it = get<2>(s_desc_list).begin(); it != get<2>(s_desc_list).end(); ++it)
         {
             if (it->size() > uilongestDesc)
                 uilongestDesc = it->size() + 1;  // +1 because of string end
         }
 
         // get longest string of the parameter descriptions
-        for (std::vector<std::string>::const_iterator it = s_desc_parameter_list.begin(); it != s_desc_parameter_list.end(); ++it)
+        for (var_names_t::const_iterator it = get<0>(s_desc_parameter_list).begin(); it != get<0>(s_desc_parameter_list).end(); ++it)
+        {
+            if (it->size() > uilongestDesc)
+                uilongestDesc = it->size() + 1;  // +1 because of string end
+        }
+        for (var_names_t::const_iterator it = get<1>(s_desc_parameter_list).begin(); it != get<1>(s_desc_parameter_list).end(); ++it)
+        {
+            if (it->size() > uilongestDesc)
+                uilongestDesc = it->size() + 1;  // +1 because of string end
+        }
+        for (var_names_t::const_iterator it = get<2>(s_desc_parameter_list).begin(); it != get<2>(s_desc_parameter_list).end(); ++it)
         {
             if (it->size() > uilongestDesc)
                 uilongestDesc = it->size() + 1;  // +1 because of string end
@@ -412,7 +472,21 @@ class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
         stringHelpMatrix += uilongestName;
 
         // ...followed by variable names...
-        for (std::vector<std::string>::const_iterator it = s_list.begin(); it != s_list.end(); ++it)
+        for (var_names_t::const_iterator it = get<0>(s_list).begin(); it != get<0>(s_list).end(); ++it)
+        {
+            strncpy(pacHelpString, it->c_str(), uilongestName);
+            vFixVarName(pacHelpString, it->size());
+            strncpy(stringHelpMatrix, pacHelpString, uilongestName);
+            stringHelpMatrix += uilongestName;
+        }
+        for (var_names_t::const_iterator it = get<1>(s_list).begin(); it != get<1>(s_list).end(); ++it)
+        {
+            strncpy(pacHelpString, it->c_str(), uilongestName);
+            vFixVarName(pacHelpString, it->size());
+            strncpy(stringHelpMatrix, pacHelpString, uilongestName);
+            stringHelpMatrix += uilongestName;
+        }
+        for (var_names_t::const_iterator it = get<2>(s_list).begin(); it != get<2>(s_list).end(); ++it)
         {
             strncpy(pacHelpString, it->c_str(), uilongestName);
             vFixVarName(pacHelpString, it->size());
@@ -421,7 +495,21 @@ class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
         }
 
         // ...followed by parameter names
-        for (std::vector<std::string>::const_iterator it = s_parameter_list.begin(); it != s_parameter_list.end(); ++it)
+        for (var_names_t::const_iterator it = get<0>(s_parameter_list).begin(); it != get<0>(s_parameter_list).end(); ++it)
+        {
+            strncpy(pacHelpString, it->c_str(), uilongestName);
+            vFixVarName(pacHelpString, it->size());
+            strncpy(stringHelpMatrix, pacHelpString, uilongestName);
+            stringHelpMatrix += uilongestName;
+        }
+         for (var_names_t::const_iterator it = get<1>(s_parameter_list).begin(); it != get<1>(s_parameter_list).end(); ++it)
+        {
+            strncpy(pacHelpString, it->c_str(), uilongestName);
+            vFixVarName(pacHelpString, it->size());
+            strncpy(stringHelpMatrix, pacHelpString, uilongestName);
+            stringHelpMatrix += uilongestName;
+        }
+         for (var_names_t::const_iterator it = get<2>(s_parameter_list).begin(); it != get<2>(s_parameter_list).end(); ++it)
         {
             strncpy(pacHelpString, it->c_str(), uilongestName);
             vFixVarName(pacHelpString, it->size());
@@ -443,7 +531,21 @@ class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
         stringHelpMatrix += uilongestDesc;
 
         // ...followed by variable descriptions...
-        for (std::vector<std::string>::const_iterator it = s_desc_list.begin(); it != s_desc_list.end(); ++it)
+        for (var_names_t::const_iterator it = get<0>(s_desc_list).begin(); it != get<0>(s_desc_list).end(); ++it)
+        {
+            strncpy(pacHelpString, it->c_str(), uilongestDesc);
+            vFixVarName(pacHelpString, it->size());
+            strncpy(stringHelpMatrix, pacHelpString, uilongestDesc);
+            stringHelpMatrix += uilongestDesc;
+        }
+        for (var_names_t::const_iterator it = get<1>(s_desc_list).begin(); it != get<1>(s_desc_list).end(); ++it)
+        {
+            strncpy(pacHelpString, it->c_str(), uilongestDesc);
+            vFixVarName(pacHelpString, it->size());
+            strncpy(stringHelpMatrix, pacHelpString, uilongestDesc);
+            stringHelpMatrix += uilongestDesc;
+        }
+        for (var_names_t::const_iterator it = get<2>(s_desc_list).begin(); it != get<2>(s_desc_list).end(); ++it)
         {
             strncpy(pacHelpString, it->c_str(), uilongestDesc);
             vFixVarName(pacHelpString, it->size());
@@ -452,7 +554,21 @@ class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
         }
 
         // ...followed by parameter descriptions...
-        for (std::vector<std::string>::const_iterator it = s_desc_parameter_list.begin(); it != s_desc_parameter_list.end(); ++it)
+        for (var_names_t::const_iterator it = get<0>(s_desc_parameter_list).begin(); it != get<0>(s_desc_parameter_list).end(); ++it)
+        {
+            strncpy(pacHelpString, it->c_str(), uilongestDesc);
+            vFixVarName(pacHelpString, it->size());
+            strncpy(stringHelpMatrix, pacHelpString, uilongestDesc);
+            stringHelpMatrix += uilongestDesc;
+        }
+        for (var_names_t::const_iterator it = get<1>(s_desc_parameter_list).begin(); it != get<1>(s_desc_parameter_list).end(); ++it)
+        {
+            strncpy(pacHelpString, it->c_str(), uilongestDesc);
+            vFixVarName(pacHelpString, it->size());
+            strncpy(stringHelpMatrix, pacHelpString, uilongestDesc);
+            stringHelpMatrix += uilongestDesc;
+        }
+        for (var_names_t::const_iterator it = get<2>(s_desc_parameter_list).begin(); it != get<2>(s_desc_parameter_list).end(); ++it)
         {
             strncpy(pacHelpString, it->c_str(), uilongestDesc);
             vFixVarName(pacHelpString, it->size());
@@ -516,7 +632,21 @@ class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
         *intHelpMatrix++ = -1;
 
         // dataInfo-code for all variables
-        for (std::vector<std::string>::const_iterator it = s_list.begin(); it != s_list.end(); ++it)
+        for (var_names_t::const_iterator it = get<0>(s_list).begin(); it != get<0>(s_list).end(); ++it)
+        {
+            *intHelpMatrix++ = 2;
+            *intHelpMatrix++ = uiIndex++;
+            *intHelpMatrix++ = 0;
+            *intHelpMatrix++ = -1;
+        }
+        for (var_names_t::const_iterator it = get<1>(s_list).begin(); it != get<1>(s_list).end(); ++it)
+        {
+            *intHelpMatrix++ = 2;
+            *intHelpMatrix++ = uiIndex++;
+            *intHelpMatrix++ = 0;
+            *intHelpMatrix++ = -1;
+        }
+        for (var_names_t::const_iterator it = get<2>(s_list).begin(); it != get<2>(s_list).end(); ++it)
         {
             *intHelpMatrix++ = 2;
             *intHelpMatrix++ = uiIndex++;
@@ -527,7 +657,21 @@ class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
         uiIndex = 2;
 
         // dataInfo-code for all parameters
-        for (std::vector<std::string>::const_iterator it = s_parameter_list.begin(); it != s_parameter_list.end(); ++it)
+        for (var_names_t::const_iterator it = get<0>(s_parameter_list).begin(); it != get<0>(s_parameter_list).end(); ++it)
+        {
+            *intHelpMatrix++ = 1;
+            *intHelpMatrix++ = uiIndex++;
+            *intHelpMatrix++ = 0;
+            *intHelpMatrix++ = 0;
+        }
+        for (var_names_t::const_iterator it = get<1>(s_parameter_list).begin(); it != get<1>(s_parameter_list).end(); ++it)
+        {
+            *intHelpMatrix++ = 1;
+            *intHelpMatrix++ = uiIndex++;
+            *intHelpMatrix++ = 0;
+            *intHelpMatrix++ = 0;
+        }
+        for (var_names_t::const_iterator it = get<2>(s_parameter_list).begin(); it != get<2>(s_parameter_list).end(); ++it)
         {
             *intHelpMatrix++ = 1;
             *intHelpMatrix++ = uiIndex++;
@@ -565,9 +709,9 @@ class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
      * \return
      */
     /*========================================================================================{end}==*/
-    void write(typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_v& v_list, typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_dv& v2_list, double time)
+    void write(const all_vars_time_t& v_list,const neg_all_vars_t& neg_v_list)
     {
-        unsigned int uiVarCount = v_list.getNumElems() + v2_list.getNumElems() + 1;  // alle Variablen, alle abgeleiteten Variablen und die Zeit
+        unsigned int uiVarCount = get<0>(v_list).size() + get<1>(v_list).size() + get<2>(v_list).size() + 1;  // alle Variablen, alle abgeleiteten Variablen und die Zeit
         double *doubleHelpMatrix = NULL;
 
         _uiValueCount++;
@@ -577,22 +721,39 @@ class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
         doubleHelpMatrix = _doubleMatrixData2;
 
         // first time ist written to "data_2" matrix...
-        *doubleHelpMatrix = time;
+        *doubleHelpMatrix = get<3>(v_list);
         doubleHelpMatrix++;
 
-        // ...followed by variable values...
-        for (typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_v::const_iterator it = v_list.begin(); it != v_list.end(); ++it)
+        // ...followed by real variable values...
+        /*for (real_vars_t::const_iterator it = get<0>(v_list).begin(); it != get<0>(v_list).end(); ++it)
         {
-            *doubleHelpMatrix = *it;
+            *doubleHelpMatrix = *(*it);
             doubleHelpMatrix++;
-        }
+        }*/
 
-        // ...followed by derivated variable values.
-        for (typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_dv::const_iterator it = v2_list.begin(); it != v2_list.end(); ++it)
+        std::transform(get<0>(v_list).begin(), get<0>(v_list).end(), get<0>(neg_v_list).begin(),
+            doubleHelpMatrix, WriteOutputVar<double>());
+
+
+        // ...followed by int variable values.
+        /*for (int_vars_t::const_iterator it = get<1>(v_list).begin(); it != get<1>(v_list).end(); ++it)
         {
-            *doubleHelpMatrix = *it;
+            *doubleHelpMatrix = *(*it);
+            doubleHelpMatrix++;
+        }*/
+            size_t nReal = get<0>(v_list).size();
+        std::transform(get<1>(v_list).begin(), get<1>(v_list).end(), get<1>(neg_v_list).begin(),
+            doubleHelpMatrix + nReal, WriteOutputVar<int>());
+        // ...followed by bool variable values.
+        /*for (bool_vars_t::const_iterator it = get<2>(v_list).begin(); it != get<2>(v_list).end(); ++it)
+        {
+            *doubleHelpMatrix = *(*it);
             doubleHelpMatrix++;
         }
+        */
+             size_t nInt = get<1>(v_list).size();
+        std::transform(get<2>(v_list).begin(), get<2>(v_list).end(), get<2>(neg_v_list).begin(),
+            doubleHelpMatrix+nReal+nInt, WriteOutputVar<bool>());
 
         // write matrix to file
         writeMatVer4Matrix("data_2", uiVarCount, _uiValueCount, _doubleMatrixData2, sizeof(double));

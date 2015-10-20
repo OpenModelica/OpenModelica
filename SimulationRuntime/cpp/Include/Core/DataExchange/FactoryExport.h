@@ -1,8 +1,8 @@
 #pragma once
-/** @addtogroup solverCvode
- *
- *  @{
- */
+/** @addtogroup dataexchange
+*
+*  @{
+*/
 #if defined(__vxworks)
 
 #define BOOST_EXTENSION_SOLVER_DECL
@@ -19,4 +19,4 @@
 #else
     error "operating system not supported"
 #endif
-/** @} */ // end of solverCvode
+/** @} */

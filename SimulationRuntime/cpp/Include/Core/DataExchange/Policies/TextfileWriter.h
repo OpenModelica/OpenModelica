@@ -4,31 +4,19 @@
  *  @{
  */
 
+#include <Core/DataExchange/FactoryPolicy.h>
 
-/*includes removed for static linking not needed any more
-#ifdef RUNTIME_STATIC_LINKING
-#include <sstream>
-#include <vector>
-#endif
-
-// Output
-#include <fstream>
-#include <Core/DataExchange/Writer.h>
-using std::ios;
-#define SEPERATOR ","
-#define EXTENSION ","
-*/
 /**
  Policy class to write simulation results in a text file
- */
-  const char SEPERATOR = ',';
-    const char EXTENSION = ',';
-template<size_t dim_1, size_t dim_2, size_t dim_3, size_t dim_4>
-class TextFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
+*/
+const char SEPERATOR = ',';
+const char EXTENSION = ',';
+
+class TextFileWriter : public ContainerManager
 {
  public:
     TextFileWriter(unsigned long size, string output_path, string file_name)
-            : Writer<dim_1, dim_2, dim_3, dim_4>(),
+            : ContainerManager(),
               _output_stream(),
               _curser_position(0),
               _output_path(output_path),
@@ -42,7 +30,7 @@ class TextFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
             _output_stream.close();
     }
 
-    void init(std::string output_path, std::string file_name)
+    void init(std::string output_path, std::string file_name,size_t dim)
     {
         _file_name = file_name;
         _output_path = output_path;
@@ -82,7 +70,7 @@ class TextFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
      @start_time
      @end_time
      */
-    void write(const typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_p& v_list, double start_time, double end_time)
+    void write(const all_vars_t& v_list, double start_time, double end_time)
     {
 
         //not supported for file output
@@ -95,14 +83,17 @@ class TextFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
      @s_parameter_list name of parameter
      @s_desc_parameter_list description of parameter
      */
-    void write(const std::vector<std::string>& s_list, const std::vector<std::string>& s_desc_list, const std::vector<std::string>& s_parameter_list, const std::vector<std::string>& s_desc_parameter_list)
+    void write(const all_names_t& s_list,const all_description_t& s_desc_list, const all_names_t& s_parameter_list,const all_description_t& s_desc_parameter_list)
     {
         std::string s;
         _output_stream << "\"time\"" << SEPERATOR;
 
-        for (std::vector<std::string>::const_iterator it = s_list.begin(); it != s_list.end(); ++it)
+        for (var_names_t::const_iterator it = get<0>(s_list).begin(); it != get<0>(s_list).end(); ++it)
             _output_stream << "\"" << (*it) << "\"" << SEPERATOR;
-
+        for (var_names_t::const_iterator it = get<1>(s_list).begin(); it != get<1>(s_list).end(); ++it)
+            _output_stream << "\"" << (*it) << "\"" << SEPERATOR;
+        for (var_names_t::const_iterator it = get<2>(s_list).begin(); it != get<2>(s_list).end(); ++it)
+            _output_stream << "\"" << (*it) << "\"" << SEPERATOR;
         _output_stream << std::endl;
     }
 
@@ -117,16 +108,17 @@ class TextFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
      @v2_list derivatives vars
      @time
      */
-    void write(typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_v& v_list, typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_dv& v2_list, double time)
+    void write(const all_vars_time_t& v_list,const neg_all_vars_t& neg_v_list)
     {
-        _output_stream << time << SEPERATOR;
+        _output_stream << get<3>(v_list) << SEPERATOR;
 
-        for (typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_v::const_iterator it = v_list.begin(); it != v_list.end(); ++it)
+        for (real_vars_t::const_iterator it = get<0>(v_list).begin(); it != get<0>(v_list).end(); ++it)
             _output_stream << (*it) << SEPERATOR;
 
-        for (typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_dv::const_iterator it = v2_list.begin(); it != v2_list.end(); ++it)
+        for (int_vars_t::const_iterator it = get<1>(v_list).begin(); it != get<1>(v_list).end(); ++it)
             _output_stream << (*it) << SEPERATOR;
-
+        for (bool_vars_t::const_iterator it = get<2>(v_list).begin(); it != get<2>(v_list).end(); ++it)
+            _output_stream << (*it) << SEPERATOR;
         _output_stream << std::endl;
     }
 

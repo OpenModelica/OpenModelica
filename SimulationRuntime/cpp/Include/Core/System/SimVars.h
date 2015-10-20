@@ -90,7 +90,9 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     virtual void setIntVarsVector(const int* vars);
     virtual void setBoolVarsVector(const bool* vars);
     virtual void setStringVarsVector(const string* vars);
-
+    virtual const double& getRealVar(size_t i);
+    virtual const int& getIntVar(size_t i);
+    virtual const bool& getBoolVar(size_t i);
     virtual double* initRealArrayVar(size_t size, size_t start_index);
     virtual int* initIntArrayVar(size_t size, size_t start_index);
     virtual bool* initBoolArrayVar(size_t size, size_t start_index);
@@ -141,10 +143,10 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     }
 
   private:
-    double* getRealVar(size_t i);
-    int* getIntVar(size_t i);
-    bool* getBoolVar(size_t i);
-    string* getStringVar(size_t i);
+    double* getRealVarPtr(size_t i);
+    int* getIntVarPtr(size_t i);
+    bool* getBoolVarPtr(size_t i);
+    string* getStringVarPtr(size_t i);
     size_t _dim_real;  //number of all real variables (real algebraic vars,discrete algebraic vars, state vars, der state vars)
     size_t _dim_int;  // number of all integer variables (integer algebraic vars)
     size_t _dim_bool;  // number of all bool variables (boolean algebraic vars)

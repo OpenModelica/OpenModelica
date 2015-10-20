@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 #include "omc_init.h"
+#include "meta/meta_modelica_segv.h"
 
 pthread_key_t mmc_thread_data_key = 0;
 
@@ -46,14 +47,16 @@ void mmc_init_nogc()
 }
 
 #if defined(OMC_MINIMAL_RUNTIME)
-void mmc_init(int withgc)
+void mmc_init()
 {
   fprintf(stderr, "Error: called mmc_init (requesting garbage collection) when OMC was compiled with a minimal runtime system.");
   exit(1);
 }
 #else
-void mmc_init(int withgc)
+#include "meta/gc/mmc_gc.h"
+void mmc_init()
 {
   mmc_init_nogc();
+  mmc_GC_init();
 }
 #endif

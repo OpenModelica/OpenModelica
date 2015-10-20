@@ -21,7 +21,6 @@
 #include <boost/function.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/numeric/conversion/cast.hpp>
-#include <boost/tuple/tuple.hpp>
 #include <boost/circular_buffer.hpp>
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string.hpp>
@@ -53,9 +52,10 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 //#include <boost/timer/timer.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/container/vector.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
-#include <fstream>
+
 
  /*Namespaces*/
 #ifndef _MSC_VER
@@ -79,7 +79,6 @@ using boost::lexical_cast;
 using boost::numeric_cast;
 using boost::tie;
 using boost::get;
-using boost::make_tuple;
 using std::max;
 using std::min;
 using std::string;
@@ -109,6 +108,7 @@ using std::runtime_error;
   using std::memory_order_relaxed;
   using std::condition_variable;
   using std::unique_lock;
+  using std::make_tuple;
 
   using std::array;
   using std::tuple;
@@ -116,9 +116,19 @@ using std::runtime_error;
   using std::weak_ptr;
   using std::dynamic_pointer_cast;
 #else
+  #if defined(_MSC_VER)
+    #include <tuple>
+	using std::tuple;
+	using std::make_tuple;
+  #else
+	#include <boost/tuple/tuple.hpp>
+    using boost::tuple;
+    using boost::make_tuple;
+  #endif
   #include <boost/array.hpp>
   #include <boost/shared_ptr.hpp>
   #include <boost/weak_ptr.hpp>
+
   #if defined(USE_THREAD)
     #include <boost/thread.hpp>
     #include <boost/atomic.hpp>
@@ -136,14 +146,14 @@ using std::runtime_error;
   #endif //USE_THREAD
 
   using boost::array;
-  using boost::tuple;
+
   using boost::shared_ptr;
   using boost::weak_ptr;
   using boost::dynamic_pointer_cast;
 #endif //USE_CPP_ELEVEN
 
 #if defined(USE_THREAD)
-  #include <Core/Utils/extension/busywaiting_barrier.hpp>
+  #include <Core/Utils/extension/barriers.hpp>
 #endif //USE_THREAD
 
 //using boost::timer::cpu_timer;
@@ -152,6 +162,7 @@ using std::runtime_error;
 typedef ublas::shallow_array_adaptor<double> adaptor_t;
 typedef ublas::vector<double, adaptor_t> shared_vector_t;
 typedef ublas::matrix<double,  ublas::column_major,adaptor_t> shared_matrix_t;
+
 //typedef boost::function<bool (unsigned int)> getCondition_type;
 //typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&)> init_prevars_type;
 typedef uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > sparsematrix_t;
@@ -188,8 +199,8 @@ typedef ublas::matrix<double, ublas::column_major> matrix_t;
 #include <Core/Math/ArrayOperations.h>
 #include <Core/Math/ArraySlice.h>
 #include <Core/Math/Utility.h>
-#include <Core/DataExchange/IPropertyReader.h>
 #include <Core/DataExchange/Writer.h>
+#include <Core/DataExchange/IPropertyReader.h>
 #include <Core/DataExchange/Policies/TextfileWriter.h>
 #include <Core/DataExchange/Policies/MatfileWriter.h>
 #include <Core/DataExchange/Policies/BufferReaderWriter.h>

@@ -28,7 +28,7 @@ install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/Utils/extension/measure_time.hp
                 ${CMAKE_SOURCE_DIR}/Include/Core/Utils/extension/measure_time_statistic.hpp
                 ${CMAKE_SOURCE_DIR}/Include/Core/Utils/extension/measure_time_rdtsc.hpp
                 ${CMAKE_SOURCE_DIR}/Include/Core/Utils/extension/measure_time_scorep.hpp
-                ${CMAKE_SOURCE_DIR}/Include/Core/Utils/extension/busywaiting_barrier.hpp
+                ${CMAKE_SOURCE_DIR}/Include/Core/Utils/extension/barriers.hpp
                 ${CMAKE_SOURCE_DIR}/Include/Core/Utils/extension/logger.hpp
          DESTINATION include/omc/cpp/Core/Utils/extension)
 

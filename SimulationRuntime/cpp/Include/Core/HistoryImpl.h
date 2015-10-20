@@ -14,14 +14,15 @@ using std::map;
  *
  *  @{
  */
-template< template <size_t,size_t,size_t,size_t>  class ResultsPolicy,size_t dim_1, size_t dim_2,size_t dim_3,size_t dim_4>
+template< class ResultsPolicy >
 class HistoryImpl : public IHistory,
-  public ResultsPolicy<dim_1,dim_2,dim_3,dim_4>
+  public ResultsPolicy
 {
 public:
-  HistoryImpl(IGlobalSettings& globalSettings)
-    : ResultsPolicy<dim_1,dim_2,dim_3,dim_4>((globalSettings.getEndTime()-globalSettings.getStartTime())/globalSettings.gethOutput(),globalSettings.getOutputPath(),globalSettings.getResultsFileName())
+  HistoryImpl(IGlobalSettings& globalSettings,size_t dim)
+    : ResultsPolicy((globalSettings.getEndTime()-globalSettings.getStartTime())/globalSettings.gethOutput(),globalSettings.getOutputPath(),globalSettings.getResultsFileName())
     , _globalSettings(globalSettings)
+    , _dim(dim)
   {
   }
 
@@ -39,67 +40,67 @@ public:
 
   void init()
   {
-    ResultsPolicy<dim_1,dim_2,dim_3,dim_4>::init(_globalSettings.getOutputPath(), _globalSettings.getResultsFileName());
+    ResultsPolicy::init(_globalSettings.getOutputPath(), _globalSettings.getResultsFileName(),_dim);
   }
 
   virtual void getOutputNames(vector<string>& output_names)
   {
     //boost::copy(_var_outputs | boost::adaptors::map_values, std::back_inserter(output_names));
-    output_names = ResultsPolicy<dim_1,dim_2,dim_3,dim_4>::_var_outputs;
+    output_names = ResultsPolicy::_var_outputs;
   }
 
   void getSimResults(const double time, ublas::vector<double>& v, ublas::vector<double>& dv)
   {
-    ResultsPolicy<dim_1,dim_2,dim_3,dim_4>::read(time,v,dv);
+    ResultsPolicy::read(time,v,dv);
   }
 
   void getSimResults(ublas::matrix<double>& R, ublas::matrix<double>& dR)
   {
-    ResultsPolicy<dim_1,dim_2,dim_3,dim_4>::read(R,dR);
+    ResultsPolicy::read(R,dR);
   }
 
   void getSimResults(ublas::matrix<double>& R, ublas::matrix<double>& dR, ublas::matrix<double>& Re)
   {
-    ResultsPolicy<dim_1,dim_2,dim_3,dim_4>::read(R, dR, Re);
+    ResultsPolicy::read(R, dR, Re);
   }
 
   virtual void getOutputResults(ublas::matrix<double>& Ro)
   {
     //vector<unsigned int> ids;
     //boost::copy(_var_outputs | boost::adaptors::map_keys, std::back_inserter(ids));
-    ResultsPolicy<dim_1,dim_2,dim_3,dim_4>::read(Ro);
+    ResultsPolicy::read(Ro);
   }
 
   unsigned long getSize()
   {
-    return ResultsPolicy<dim_1,dim_2,dim_3,dim_4>::size();
+    return ResultsPolicy::size();
   }
 
   unsigned long getDimRe()
   {
-    return dim_3;
+    throw ModelicaSimulationError(DATASTORAGE,"getDimRe not implemented yet");
   }
 
   unsigned long getDimdR()
   {
-    return dim_2;
+    throw ModelicaSimulationError(DATASTORAGE,"getDimdR not implemented yet");
   }
 
   unsigned long getDimR()
   {
-    return dim_1;
+    throw ModelicaSimulationError(DATASTORAGE,"getDimR not implemented yet");
   }
 
   vector<double> getTimeEntries()
   {
     vector<double> time;
-    ResultsPolicy<dim_1,dim_2,dim_3,dim_4>::getTime(time);
+    ResultsPolicy::getTime(time);
     return time;
   }
 
   void clear()
   {
-    ResultsPolicy<dim_1,dim_2,dim_3,dim_4>::eraseAll();
+    ResultsPolicy::eraseAll();
   };
 
 private:
@@ -107,5 +108,6 @@ private:
   //map<unsigned int,string> _var_outputs;
 
   IGlobalSettings& _globalSettings;
+  size_t _dim;
 };
 /** @} */ // end of core

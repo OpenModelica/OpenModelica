@@ -25,12 +25,12 @@ private:
 
   IMixedSystem* _system;
   IStateSelection* _state_selection;
-  std::vector<boost::shared_array<int> > _rowPivot;
-  std::vector<boost::shared_array<int> > _colPivot;
+  vector<boost::shared_array<int> > _rowPivot;
+  vector<boost::shared_array<int> > _colPivot;
   unsigned int _dimStateSets;
-  std::vector<unsigned int> _dimStates;
-  std::vector<unsigned int> _dimDummyStates;
-  std::vector<unsigned int> _dimStateCanditates;
+  vector<unsigned int> _dimStates;
+  vector<unsigned int> _dimDummyStates;
+  vector<unsigned int> _dimStateCanditates;
   bool _initialized;
 
 };
