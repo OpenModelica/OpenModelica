@@ -37,6 +37,7 @@
  */
 
 #include "EllipseAnnotation.h"
+#include "Commands.h"
 
 EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0)
@@ -224,21 +225,16 @@ void EllipseAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 void EllipseAnnotation::duplicate()
 {
   EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation("", mpGraphicsView);
+  pEllipseAnnotation->updateShape(this);
   QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
                    mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   pEllipseAnnotation->setOrigin(mOrigin + gridStep);
-  pEllipseAnnotation->setRotationAngle(mRotation);
   pEllipseAnnotation->initializeTransformation();
-  pEllipseAnnotation->setLineColor(getLineColor());
-  pEllipseAnnotation->setFillColor(getFillColor());
-  pEllipseAnnotation->setLinePattern(getLinePattern());
-  pEllipseAnnotation->setFillPattern(getFillPattern());
-  pEllipseAnnotation->setLineThickness(getLineThickness());
-  pEllipseAnnotation->setExtents(getExtents());
-  pEllipseAnnotation->setStartAngle(getStartAngle());
-  pEllipseAnnotation->setEndAngle(getEndAngle());
   pEllipseAnnotation->drawCornerItems();
   pEllipseAnnotation->setCornerItemsActiveOrPassive();
   pEllipseAnnotation->update();
-  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pEllipseAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pEllipseAnnotation, mpGraphicsView);
+  mpGraphicsView->getModelWidget()->updateClassAnnotationIfNeeded();
+  mpGraphicsView->getModelWidget()->updateModelicaText();
 }

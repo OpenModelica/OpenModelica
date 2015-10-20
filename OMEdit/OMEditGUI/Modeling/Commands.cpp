@@ -62,7 +62,7 @@ void AddShapeCommand::redo()
   mpGraphicsView->addShapeToList(mpShapeAnnotation);
   mpGraphicsView->addItem(mpShapeAnnotation);
   mpShapeAnnotation->emitAdded();
-  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->setAddClassAnnotationNeeded(true);
 }
 
 /*!
@@ -74,7 +74,7 @@ void AddShapeCommand::undo()
   mpGraphicsView->deleteShapeFromList(mpShapeAnnotation);
   mpGraphicsView->removeItem(mpShapeAnnotation);
   mpShapeAnnotation->emitDeleted();
-  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->setAddClassAnnotationNeeded(true);
 }
 
 UpdateShapeCommand::UpdateShapeCommand(ShapeAnnotation *pShapeAnnotation, QString oldAnnotaton, QString newAnnotation,

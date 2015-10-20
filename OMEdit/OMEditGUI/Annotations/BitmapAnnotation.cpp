@@ -37,6 +37,7 @@
  */
 
 #include "BitmapAnnotation.h"
+#include "Commands.h"
 
 BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0)
@@ -199,17 +200,16 @@ void BitmapAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 void BitmapAnnotation::duplicate()
 {
   BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(mClassFileName, "", mpGraphicsView);
+  pBitmapAnnotation->updateShape(this);
   QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
                    mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   pBitmapAnnotation->setOrigin(mOrigin + gridStep);
-  pBitmapAnnotation->setRotationAngle(mRotation);
   pBitmapAnnotation->initializeTransformation();
-  pBitmapAnnotation->setExtents(getExtents());
-  pBitmapAnnotation->setFileName(getFileName());
-  pBitmapAnnotation->setImageSource(getImageSource());
-  pBitmapAnnotation->setImage(getImage());
   pBitmapAnnotation->drawCornerItems();
   pBitmapAnnotation->setCornerItemsActiveOrPassive();
   pBitmapAnnotation->update();
-  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pBitmapAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pBitmapAnnotation, mpGraphicsView);
+  mpGraphicsView->getModelWidget()->updateClassAnnotationIfNeeded();
+  mpGraphicsView->getModelWidget()->updateModelicaText();
 }
