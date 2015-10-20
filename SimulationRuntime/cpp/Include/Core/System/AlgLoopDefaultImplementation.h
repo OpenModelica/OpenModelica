@@ -24,7 +24,6 @@ Copyright (c) 2008, OSMC
 
 //#include <string>
 //#include <vector>
-#include <boost/tuple/tuple.hpp>
 
 //#include <Core/Utils/numeric/bindings/ublas.hpp>
 //#include <Core/Utils/numeric/utils.h>
