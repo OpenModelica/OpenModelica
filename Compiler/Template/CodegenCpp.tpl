@@ -43,7 +43,13 @@ template translateModel(SimCode simCode)
         let &extraFuncsInit = buffer "" /*BUFD*/
         let &extraFuncsDeclInit = buffer "" /*BUFD*/
         let &complexStartExpressions = buffer ""
-        let()= textFile(modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars, numStringVars, "", "", "", false, "", complexStartExpressions, stateDerVectorName),'OMCpp<%fileNamePrefix%>Init.xml')
+
+        let _ = match Flags.isSet(Flags.HARDCODED_START_VALUES)
+          case false then
+            let()= textFile(modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars, numStringVars, "", "", "", false, "", complexStartExpressions, stateDerVectorName),'OMCpp<%fileNamePrefix%>Init.xml')
+            ""
+          else
+            ""
         let()= textFile(simulationInitCppFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%className%>Initialize', dummyTypeElemCreation, stateDerVectorName, false, complexStartExpressions),'OMCpp<%fileNamePrefix%>Initialize.cpp')
 
         let _ = match boolOr(Flags.isSet(Flags.HARDCODED_START_VALUES), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))
@@ -2890,8 +2896,11 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     #include <Core/System/FactoryExport.h>
     #include <Core/System/DiscreteEvents.h>
     #include <Core/System/EventHandling.h>
+    <%if(boolNot(Flags.isSet(Flags.HARDCODED_START_VALUES))) then
+    <<
     #include <Core/DataExchange/XmlPropertyReader.h>
-
+    >>
+    %>
 
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
@@ -6013,14 +6022,20 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
       initializeMemory();
-
+      <%if(Flags.isSet(Flags.HARDCODED_START_VALUES)) then
+        <<
+        >>
+        else
+        <<
         #if defined(__vxworks)
         _reader  = shared_ptr<IPropertyReader>(new XmlPropertyReader("/SYSTEM/bundles/com.boschrexroth.<%modelname%>/OMCpp<%fileNamePrefix%>Init.xml"));
         #else
         _reader  =  shared_ptr<IPropertyReader>(new XmlPropertyReader("<%makefileParams.compileDir%>/OMCpp<%fileNamePrefix%>Init.xml"));
         #endif
         _reader->readInitialValues(*this, _sim_vars);
-       initializeFreeVariables();
+
+        >>
+        %>      initializeFreeVariables();
       /*Start complex expressions */
       <%complexStartExpressions%>
       /* End complex expression */
@@ -7004,14 +7019,14 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
     if (command & IWriteOutput::HEAD_LINE)
     {
 
-      const all_names_t outputVarNames = boost::make_tuple(outputRealVars.ourputVarNames,outputIntVars.ourputVarNames,outputBoolVars.ourputVarNames);
-      const all_names_t outputVarDescription = boost::make_tuple(outputRealVars.ourputVarDescription,outputIntVars.ourputVarDescription,outputBoolVars.ourputVarDescription);
+      const all_names_t outputVarNames = make_tuple(outputRealVars.ourputVarNames,outputIntVars.ourputVarNames,outputBoolVars.ourputVarNames);
+      const all_names_t outputVarDescription = make_tuple(outputRealVars.ourputVarDescription,outputIntVars.ourputVarDescription,outputBoolVars.ourputVarDescription);
       <%
       match   settings.outputFormat
         case "mat" then
         <<
-         const all_names_t parameterVarNames =  boost::make_tuple(outputRealVars.parameterNames,outputIntVars.parameterNames,outputBoolVars.parameterNames);
-         const all_names_t parameterVarDescription =  boost::make_tuple(outputRealVars.parameterDescription,outputIntVars.parameterDescription,outputBoolVars.parameterDescription);
+         const all_names_t parameterVarNames =  make_tuple(outputRealVars.parameterNames,outputIntVars.parameterNames,outputBoolVars.parameterNames);
+         const all_names_t parameterVarDescription =  make_tuple(outputRealVars.parameterDescription,outputIntVars.parameterDescription,outputBoolVars.parameterDescription);
         >>
        else
        <<
@@ -7025,7 +7040,7 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       match   settings.outputFormat
         case "mat" then
         <<
-        const all_vars_t params = boost::make_tuple(outputRealVars.outputParams,outputIntVars.outputParams,outputBoolVars.outputParams);
+        const all_vars_t params = make_tuple(outputRealVars.outputParams,outputIntVars.outputParams,outputBoolVars.outputParams);
 
         >>
         else
@@ -7055,9 +7070,9 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       <<
       <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[2]",  "writeOutput", "MEASURETIME_MODELFUNCTIONS")%>
         write_data_t& container = _historyImpl->getFreeContainer();
-        all_vars_time_t all_vars = boost::make_tuple(outputRealVars.outputVars,outputIntVars.outputVars,outputBoolVars.outputVars,_simTime);
-        neg_all_vars_t neg_all_vars =      boost::make_tuple(outputRealVars.negateOutputVars,outputIntVars.negateOutputVars,outputBoolVars.negateOutputVars);
-       _historyImpl->addContainerToWriteQueue(boost::make_tuple(all_vars,neg_all_vars));
+        all_vars_time_t all_vars = make_tuple(outputRealVars.outputVars,outputIntVars.outputVars,outputBoolVars.outputVars,_simTime);
+        neg_all_vars_t neg_all_vars =      make_tuple(outputRealVars.negateOutputVars,outputIntVars.negateOutputVars,outputBoolVars.negateOutputVars);
+       _historyImpl->addContainerToWriteQueue(make_tuple(all_vars,neg_all_vars));
       >>
     %>
     }

@@ -21,7 +21,6 @@
 #include <boost/function.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/numeric/conversion/cast.hpp>
-#include <boost/tuple/tuple.hpp>
 #include <boost/circular_buffer.hpp>
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string.hpp>
@@ -122,10 +121,19 @@ using std::runtime_error;
   using std::weak_ptr;
   using std::dynamic_pointer_cast;
 #else
+  #if defined(_MSC_VER)
+    #include <tuple>
+	using std::tuple;
+	using std::make_tuple;
+  #else
+	#include <boost/tuple/tuple.hpp>
+    using boost::tuple;
+    using boost::make_tuple;
+  #endif
   #include <boost/array.hpp>
   #include <boost/shared_ptr.hpp>
   #include <boost/weak_ptr.hpp>
-  using boost::make_tuple;
+
   #if defined(USE_THREAD)
     #include <boost/thread.hpp>
     #include <boost/atomic.hpp>
@@ -143,7 +151,7 @@ using std::runtime_error;
   #endif //USE_THREAD
 
   using boost::array;
-  using boost::tuple;
+
   using boost::shared_ptr;
   using boost::weak_ptr;
 #endif //USE_CPP_ELEVEN
