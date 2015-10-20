@@ -5,6 +5,18 @@
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 #if defined(__vxworks)
+#include <Solver/Broyden/Broyden.h>
+#include <Solver/Broyden/BroydenSettings.h>
+extern "C" IAlgLoopSolver* createBroyden(IAlgLoop* algLoop, INonLinSolverSettings* settings)
+{
+    return new Broyden(algLoop, settings);
+}
+
+extern "C" INonLinSolverSettings* createBroydenSettings()
+{
+    return new BroydenSettings();
+}
+
 
 
 #elif defined(OMC_BUILD) && !defined(RUNTIME_STATIC_LINKING)
