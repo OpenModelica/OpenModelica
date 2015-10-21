@@ -55,6 +55,7 @@ public:
   void setFillPickColorButtonIcon();
 private:
   ShapeAnnotation *mpShapeAnnotation;
+  QString mOldAnnotation;
   LineAnnotation *mpLineAnnotation;
   PolygonAnnotation *mpPolygonAnnotation;
   RectangleAnnotation *mpRectangleAnnotation;
