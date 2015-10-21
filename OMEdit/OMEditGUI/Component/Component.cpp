@@ -1502,12 +1502,19 @@ void Component::showTLMAttributes()
   pTLMComponentAttributes->exec();
 }
 
-/*! Event when mouse is double clicked on a component.
- *  Shows the component properties dialog.
+/*!
+ * \brief Component::mouseDoubleClickEvent
+ * Event when mouse is double clicked on a component.
+ * Shows the component properties dialog.
+ * \param event
  */
 void Component::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
   Q_UNUSED(event);
+  // if user double clicks the built in type like Integer, Real etc.
+  if (!mpLibraryTreeItem) {
+    return;
+  }
   LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   if(pLibraryTreeItem->getLibraryType()== LibraryTreeItem::TLM) {
     emit showTLMAttributes();
@@ -1519,6 +1526,12 @@ void Component::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
   }
 }
 
+/*!
+ * \brief Component::contextMenuEvent
+ * Reimplementation of contextMenuEvent.\n
+ * Creates a context menu for the component.\n
+ * \param event
+ */
 void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
   // if user right clicks the built in type like Integer, Real etc. we don't show the context menu.

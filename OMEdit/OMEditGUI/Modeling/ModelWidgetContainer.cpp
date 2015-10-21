@@ -986,18 +986,22 @@ void GraphicsView::createActions()
   mpBringToFrontAction = new QAction(QIcon(":/Resources/icons/bring-to-front.svg"), tr("Bring to Front"), this);
   mpBringToFrontAction->setStatusTip(tr("Brings the item to front"));
   mpBringToFrontAction->setDisabled(isSystemLibrary);
+  mpBringToFrontAction->setDisabled(true);
   // Bring Forward Action
   mpBringForwardAction = new QAction(QIcon(":/Resources/icons/bring-forward.svg"), tr("Bring Forward"), this);
   mpBringForwardAction->setStatusTip(tr("Brings the item one level forward"));
   mpBringForwardAction->setDisabled(isSystemLibrary);
+  mpBringForwardAction->setDisabled(true);
   // Send To Back Action
   mpSendToBackAction = new QAction(QIcon(":/Resources/icons/send-to-back.svg"), tr("Send to Back"), this);
   mpSendToBackAction->setStatusTip(tr("Sends the item to back"));
   mpSendToBackAction->setDisabled(isSystemLibrary);
+  mpSendToBackAction->setDisabled(true);
   // Send Backward Action
   mpSendBackwardAction = new QAction(QIcon(":/Resources/icons/send-backward.svg"), tr("Send Backward"), this);
   mpSendBackwardAction->setStatusTip(tr("Sends the item one level backward"));
   mpSendBackwardAction->setDisabled(isSystemLibrary);
+  mpSendBackwardAction->setDisabled(true);
   // Rotate ClockWise Action
   mpRotateClockwiseAction = new QAction(QIcon(":/Resources/icons/rotateclockwise.svg"), tr("Rotate Clockwise"), this);
   mpRotateClockwiseAction->setStatusTip(tr("Rotates the item clockwise"));
