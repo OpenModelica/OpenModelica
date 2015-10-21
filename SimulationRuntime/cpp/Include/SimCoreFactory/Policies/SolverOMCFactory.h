@@ -8,6 +8,12 @@
 #include <Core/Solver/ISolver.h>
 #include <Core/SimulationSettings//ISettingsFactory.h>
 
+/* use boost filesystem locally */
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
+
+namespace fs = boost::filesystem;
+
 /*
 Policy class to create solver object
 */
@@ -53,8 +59,8 @@ public:
 
         if(solvername.compare("euler")==0)
         {
-             PATH euler_path = ObjectFactory<CreationPolicy>::_library_path;
-            PATH euler_name(EULER_LIB);
+            fs::path euler_path = ObjectFactory<CreationPolicy>::_library_path;
+            fs::path euler_name(EULER_LIB);
             euler_path/=euler_name;
             LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(euler_path.string(),*_solver_type_map);
             if (result != LOADER_SUCCESS)
@@ -65,8 +71,8 @@ public:
         }
         else if(solvername.compare("peer")==0)
         {
-           PATH peer_path = ObjectFactory<CreationPolicy>::_library_path;
-           PATH peer_name(PEER_LIB);
+           fs::path peer_path = ObjectFactory<CreationPolicy>::_library_path;
+           fs::path peer_name(PEER_LIB);
            peer_path/=peer_name;
            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(peer_path.string(),*_solver_type_map);
            if (result != LOADER_SUCCESS)
@@ -76,8 +82,8 @@ public:
         }
         else if(solvername.compare("rtrk")==0)
         {
-           PATH rtrk_path = ObjectFactory<CreationPolicy>::_library_path;
-           PATH rtrk_name(RTRK_LIB);
+           fs::path rtrk_path = ObjectFactory<CreationPolicy>::_library_path;
+           fs::path rtrk_name(RTRK_LIB);
            rtrk_path/=rtrk_name;
            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(rtrk_path.string(),*_solver_type_map);
            if (result != LOADER_SUCCESS)
@@ -87,8 +93,8 @@ public:
         }
         else if(solvername.compare("RTEuler")==0)
         {
-           PATH RTEuler_path = ObjectFactory<CreationPolicy>::_library_path;
-           PATH RTEuler_name(RTEULER_LIB);
+           fs::path RTEuler_path = ObjectFactory<CreationPolicy>::_library_path;
+           fs::path RTEuler_name(RTEULER_LIB);
            RTEuler_path/= RTEuler_name;
            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(RTEuler_path.string(),*_solver_type_map);
            if (result != LOADER_SUCCESS)
@@ -103,8 +109,8 @@ public:
         else if(solvername.compare("ida")==0)
         {
             solvername = "ida"; //workound for dassl, using cvode instead
-            PATH ida_path = ObjectFactory<CreationPolicy>::_library_path;
-            PATH ida_name(IDA_LIB);
+            fs::path ida_path = ObjectFactory<CreationPolicy>::_library_path;
+            fs::path ida_name(IDA_LIB);
             ida_path/=ida_name;
             LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(ida_path.string(),*_solver_type_map);
             if (result != LOADER_SUCCESS)
@@ -115,8 +121,8 @@ public:
         else if((solvername.compare("cvode")==0)||(solvername.compare("dassl")==0))
         {
             solvername = "cvode"; //workound for dassl, using cvode instead
-            PATH cvode_path = ObjectFactory<CreationPolicy>::_library_path;
-            PATH cvode_name(CVODE_LIB);
+            fs::path cvode_path = ObjectFactory<CreationPolicy>::_library_path;
+            fs::path cvode_name(CVODE_LIB);
             cvode_path/=cvode_name;
             LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(cvode_path.string(),*_solver_type_map);
             if (result != LOADER_SUCCESS)
@@ -126,8 +132,8 @@ public:
         }
 		else if((solvername.compare("arkode")==0))
         {
-            PATH arkode_path = ObjectFactory<CreationPolicy>::_library_path;
-            PATH arkode_name(ARKODE_LIB);
+            fs::path arkode_path = ObjectFactory<CreationPolicy>::_library_path;
+            fs::path arkode_name(ARKODE_LIB);
             arkode_path /= arkode_name;
             LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(arkode_path.string(),*_solver_type_map);
             if (result != LOADER_SUCCESS)
@@ -157,8 +163,8 @@ protected:
 
         LOADERRESULT result;
 
-    PATH math_path = ObjectFactory<CreationPolicy>::_library_path;
-        PATH math_name(MATH_LIB);
+        fs::path math_path = ObjectFactory<CreationPolicy>::_library_path;
+        fs::path math_name(MATH_LIB);
         math_path/=math_name;
 
         result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(math_path.string(),*_settings_type_map);
@@ -171,8 +177,8 @@ protected:
 
 
 
-        PATH settingsfactory_path = ObjectFactory<CreationPolicy>::_library_path;
-        PATH settingsfactory_name(SETTINGSFACTORY_LIB);
+        fs::path settingsfactory_path = ObjectFactory<CreationPolicy>::_library_path;
+        fs::path settingsfactory_name(SETTINGSFACTORY_LIB);
         settingsfactory_path/=settingsfactory_name;
 
         result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(settingsfactory_path.string(),*_settings_type_map);
@@ -183,8 +189,8 @@ protected:
             throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading SimulationSettings library!");
         }
 
-        PATH solver_path = ObjectFactory<CreationPolicy>::_library_path;
-        PATH solver_name(SOLVER_LIB);
+        fs::path solver_path = ObjectFactory<CreationPolicy>::_library_path;
+        fs::path solver_name(SOLVER_LIB);
         solver_path/=solver_name;
 
         result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(solver_path.string(),*_solver_type_map);

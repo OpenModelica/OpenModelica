@@ -15,16 +15,20 @@ Policy class to create solver settings object
 shared_ptr<ISolverSettings> createIdaSettings(shared_ptr<IGlobalSettings> globalSettings);
 shared_ptr<ISolverSettings> createCVodeSettings(shared_ptr<IGlobalSettings> globalSettings);
 template <class CreationPolicy>
-struct StaticSolverSettingsOMCFactory : public  SolverSettingsOMCFactory<CreationPolicy>
+struct StaticSolverSettingsOMCFactory : public ObjectFactory<CreationPolicy>
 {
 
 public:
     StaticSolverSettingsOMCFactory(PATH library_path,PATH modelicasystem_path,PATH config_path)
-        :SolverSettingsOMCFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
+        :ObjectFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
     {
     }
 
     virtual ~StaticSolverSettingsOMCFactory()
+    {
+    }
+
+    void loadGlobalSettings(shared_ptr<IGlobalSettings> global_settings)
     {
     }
 

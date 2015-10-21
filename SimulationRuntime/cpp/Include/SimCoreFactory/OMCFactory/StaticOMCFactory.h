@@ -7,6 +7,8 @@
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 
+#include <SimCoreFactory/OMCFactory/OMCFactory.h>
+
 shared_ptr<ISimController> createSimController(PATH library_path, PATH modelicasystem_path);
 
 /**

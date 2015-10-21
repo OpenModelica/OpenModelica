@@ -10,6 +10,12 @@
 #include <Core/SimController/ISimController.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/container/vector.hpp>
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
+#include <boost/program_options.hpp>
+
+namespace fs = boost::filesystem;
+namespace po = boost::program_options;
 
 
 OMCFactory::OMCFactory(PATH library_path, PATH modelicasystem_path)
@@ -218,8 +224,8 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
 
      SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,timeOut,outputPointType,logSet,nlsContinueOnError,solverThreads};
 
-     _library_path = libraries_path;
-     _modelicasystem_path = modelica_path;
+     _library_path = libraries_path.string();
+     _modelicasystem_path = modelica_path.string();
 
      return settings;
 }
@@ -352,11 +358,11 @@ OMCFactory::createSimulation(int argc, const char* argv[],
 
   SimSettings settings = readSimulationParameter(optv2.size(), &optv2[0]);
   type_map simcontroller_type_map;
-  PATH simcontroller_path = _library_path;
-  PATH simcontroller_name(SIMCONTROLLER_LIB);
+  fs::path simcontroller_path = _library_path;
+  fs::path simcontroller_name(SIMCONTROLLER_LIB);
   simcontroller_path/=simcontroller_name;
 
-  shared_ptr<ISimController> simcontroller = loadSimControllerLib(simcontroller_path, simcontroller_type_map);
+  shared_ptr<ISimController> simcontroller = loadSimControllerLib(simcontroller_path.string(), simcontroller_type_map);
 
   for(int i = 0; i < optv.size(); i++)
     free((char*)optv[i]);
@@ -395,10 +401,10 @@ LOADERRESULT OMCFactory::UnloadLibrary(shared_library lib)
 
 shared_ptr<ISimController> OMCFactory::loadSimControllerLib(PATH simcontroller_path, type_map simcontroller_type_map)
 {
-  LOADERRESULT result = LoadLibrary(simcontroller_path.string(),simcontroller_type_map);
+  LOADERRESULT result = LoadLibrary(simcontroller_path, simcontroller_type_map);
 
   if (result != LOADER_SUCCESS)
-    throw ModelicaSimulationError(MODEL_FACTORY,string("Failed loading SimConroller library!") + simcontroller_path.string());
+    throw ModelicaSimulationError(MODEL_FACTORY,string("Failed loading SimConroller library!") + simcontroller_path);
 
   map<string, factory<ISimController,PATH,PATH> >::iterator iter;
   map<string, factory<ISimController,PATH,PATH> >& factories(simcontroller_type_map.get());
@@ -407,6 +413,6 @@ shared_ptr<ISimController> OMCFactory::loadSimControllerLib(PATH simcontroller_p
   if (iter ==factories.end())
     throw ModelicaSimulationError(MODEL_FACTORY,"No such SimController library");
 
-  return shared_ptr<ISimController>(iter->second.create(_library_path,_modelicasystem_path));
+  return shared_ptr<ISimController>(iter->second.create(_library_path, _modelicasystem_path));
 }
 /** @} */ // end of simcorefactoryOMCFactory

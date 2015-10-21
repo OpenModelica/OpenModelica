@@ -482,65 +482,63 @@ protected function callTargetTemplates "
   input SimCode.SimCode simCode;
   input String target;
 algorithm
-  _ := match(simCode, target)
+  _ := match target
     local
       String str, guid;
 
-    case (_, "CSharp") equation
+    case "CSharp" equation
       Tpl.tplNoret(CodegenCSharp.translateModel, simCode);
     then ();
 
-    case (_, "Cpp") equation
+    case "Cpp" equation
       callTargetTemplatesCPP(simCode);
     then ();
 
-    case (_, "Adevs") equation
+    case "Adevs" equation
       Tpl.tplNoret(CodegenAdevs.translateModel, simCode);
     then ();
 
-    case (_, "sfmi") equation
+    case "sfmi" equation
       Tpl.tplNoret3(CodegenSparseFMI.translateModel, simCode, "2.0", "me");
     then ();
 
-    case (_, "C")
-      equation
-        guid = System.getUUIDStr();
+    case "C" equation
+      guid = System.getUUIDStr();
 
-        System.realtimeTick(ClockIndexes.RT_PROFILER0);
-        Tpl.tplNoret2(CodegenC.translateInitFile, simCode, guid);
-        // print("SimCode -> init.xml: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
-        // System.realtimeTick(ClockIndexes.RT_PROFILER0);
-        if Flags.isSet(Flags.MODEL_INFO_JSON) then
-          SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
-        else
-          Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
-        end if;
-        dumpTaskSystemIfFlag(simCode);
-        // print("SimCode -> info.xml: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
-        // System.realtimeTick(ClockIndexes.RT_PROFILER0);
-        // print("SimCode -> info.json: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
-        Tpl.tplNoret2(CodegenC.translateModel, simCode, guid);
-        // print("SimCode -> C-files: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
-      then ();
+      System.realtimeTick(ClockIndexes.RT_PROFILER0);
+      Tpl.tplNoret2(CodegenC.translateInitFile, simCode, guid);
+      // print("SimCode -> init.xml: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
+      // System.realtimeTick(ClockIndexes.RT_PROFILER0);
+      if Flags.isSet(Flags.MODEL_INFO_JSON) then
+        SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
+      else
+        Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
+      end if;
+      dumpTaskSystemIfFlag(simCode);
+      // print("SimCode -> info.xml: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
+      // System.realtimeTick(ClockIndexes.RT_PROFILER0);
+      // print("SimCode -> info.json: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
+      Tpl.tplNoret2(CodegenC.translateModel, simCode, guid);
+      // print("SimCode -> C-files: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
+    then ();
 
-    case (_, "JavaScript")
-      equation
-        guid = System.getUUIDStr();
-        Tpl.tplNoret2(CodegenC.translateModel, simCode, guid);
-        Tpl.tplNoret2(CodegenC.translateInitFile, simCode, guid);
-        Tpl.tplNoret2(SimCodeDump.dumpSimCodeToC, simCode, false);
-        Tpl.tplNoret(CodegenJS.markdownFile, simCode);
-      then ();
+    case "JavaScript" equation
+      guid = System.getUUIDStr();
+      Tpl.tplNoret2(CodegenC.translateModel, simCode, guid);
+      Tpl.tplNoret2(CodegenC.translateInitFile, simCode, guid);
+      Tpl.tplNoret2(SimCodeDump.dumpSimCodeToC, simCode, false);
+      Tpl.tplNoret(CodegenJS.markdownFile, simCode);
+    then ();
 
-    case (_, "XML") equation
+    case "XML" equation
       Tpl.tplNoret(CodegenXML.translateModel, simCode);
     then ();
 
-    case (_, "Java") equation
+    case "Java" equation
       Tpl.tplNoret(CodegenJava.translateModel, simCode);
     then ();
 
-    case (_, "None")
+    case "None"
     then ();
 
     else equation
