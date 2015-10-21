@@ -56,19 +56,14 @@
   #include <Core/Utils/extension/shared_library.hpp>
   #include <Core/Utils/extension/convenience.hpp>
   #include <Core/Utils/extension/factory_map.hpp>
-  #include <boost/filesystem/operations.hpp>
-  #include <boost/filesystem/path.hpp>
   #include <boost/unordered_map.hpp>
-  #include <boost/program_options.hpp>
   #include <string>
   /*Namespaces*/
   using namespace boost::extensions;
-  namespace fs = boost::filesystem;
   using boost::unordered_map;
-  namespace po = boost::program_options;
   using std::string;
   /*Defines*/
-  #define PATH fs::path
+  #define PATH string
   #include "LibrariesConfig.h"
   #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 
@@ -81,19 +76,14 @@
   #include <Core/Utils/extension/shared_library.hpp>
   #include <Core/Utils/extension/convenience.hpp>
   #include <Core/Utils/extension/factory_map.hpp>
-  #include <boost/filesystem/operations.hpp>
-  #include <boost/filesystem/path.hpp>
   #include <boost/unordered_map.hpp>
-  #include <boost/program_options.hpp>
   #include <string>
   /*Namespaces*/
   using namespace boost::extensions;
-  namespace fs = boost::filesystem;
   using boost::unordered_map;
-  namespace po = boost::program_options;
   using std::string;
   /*Defines*/
-  #define PATH fs::path
+  #define PATH string
   #include "LibrariesConfig.h"
   /*interface includes*/
   #include <Core/System/ISystemProperties.h>
@@ -118,9 +108,12 @@
   #include <Core/SimController/ISimData.h>
   #include <Core/SimulationSettings/ISimControllerSettings.h>
   #include <Core/SimController/ISimController.h>
-  #include <SimCoreFactory/OMCFactory/OMCFactory.h>
-  //#include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
 
+  /** Minimal OMCFactory for statically linked solvers */
+  class BaseOMCFactory {
+  public:
+    BaseOMCFactory(PATH library_path, PATH modelicasystem_path) {}
+  };
 
 #else
   #error "operating system not supported"

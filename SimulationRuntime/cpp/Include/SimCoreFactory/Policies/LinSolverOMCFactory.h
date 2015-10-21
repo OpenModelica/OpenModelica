@@ -30,8 +30,8 @@ public:
 
         if(lin_solver.compare("umfpack") == 0)
         {
-            PATH umfpack_path = ObjectFactory<CreationPolicy>::_library_path;
-            PATH umfpack_name(UMFPACK_LIB);
+            fs::path umfpack_path = ObjectFactory<CreationPolicy>::_library_path;
+            fs::path umfpack_name(UMFPACK_LIB);
             umfpack_path/=umfpack_name;
             LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(umfpack_path.string(),*_linsolver_type_map);
             if (result != LOADER_SUCCESS)

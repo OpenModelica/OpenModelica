@@ -73,12 +73,6 @@
 
 #elif defined(OMC_BUILD) && defined(RUNTIME_STATIC_LINKING)
 
-  /*include needed for object creation in factory classes*/
-  #include <Core/Utils/Modelica/ModelicaSimulationError.h>
-  #include <Core/Math/Array.h>
-  #include <Core/Solver/FactoryExport.h>
-  #include <Core/Solver/SolverSettings.h>
-  #include <Core/SimulationSettings/IGlobalSettings.h>
   /*Policy include*/
   #include <SimCoreFactory/Policies/StaticSolverOMCFactory.h>
   #include <SimCoreFactory/Policies/StaticSolverSettingsOMCFactory.h>
@@ -86,11 +80,6 @@
   #include <SimCoreFactory/Policies/StaticLinSolverOMCFactory.h>
   #include <SimCoreFactory/Policies/StaticNonLinSolverOMCFactory.h>
   /*Policy defines*/
-  /** Minimal OMCFactory for statically linked solvers */
-  class BaseOMCFactory {
-  public:
-    BaseOMCFactory(PATH library_path, PATH modelicasystem_path) {}
-  };
   typedef BaseOMCFactory BaseFactory;
   typedef StaticSystemOMCFactory<BaseFactory> SimControllerPolicy;
   typedef StaticSolverOMCFactory<BaseFactory> ConfigurationPolicy;

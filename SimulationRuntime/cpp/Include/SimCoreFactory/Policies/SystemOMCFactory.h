@@ -79,8 +79,8 @@ public:
 
   virtual shared_ptr<IMixedSystem> createSystem(string modelLib,string modelKey,IGlobalSettings* globalSettings,shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory,shared_ptr<ISimData> simData,shared_ptr<ISimVars> simVars)
   {
-    PATH modelica_path = ObjectFactory<CreationPolicy>::_modelicasystem_path;
-    PATH modelica_name(modelLib);
+    fs::path modelica_path = ObjectFactory<CreationPolicy>::_modelicasystem_path;
+    fs::path modelica_name(modelLib);
     modelica_path/=modelica_name;
     LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(modelica_path.string(),*_system_type_map);
     if (result != LOADER_SUCCESS)
@@ -110,8 +110,8 @@ public:
 protected:
   virtual void initializeLibraries(PATH library_path,PATH modelicasystem_path,PATH config_path)
   {
-    PATH systemfactory_path = ObjectFactory<CreationPolicy>::_library_path;
-    PATH system_name(SYSTEM_LIB);
+    fs::path systemfactory_path = ObjectFactory<CreationPolicy>::_library_path;
+    fs::path system_name(SYSTEM_LIB);
     systemfactory_path/=system_name;
 
     LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(systemfactory_path.string(), *_system_type_map);
@@ -122,8 +122,8 @@ protected:
       throw ModelicaSimulationError(MODEL_FACTORY,tmp.str());
     }
 
-    PATH dataexchange_path = ObjectFactory<CreationPolicy>::_library_path;
-    PATH dataexchange_name(DATAEXCHANGE_LIB);
+    fs::path dataexchange_path = ObjectFactory<CreationPolicy>::_library_path;
+    fs::path dataexchange_name(DATAEXCHANGE_LIB);
     dataexchange_path/=dataexchange_name;
 
     result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(dataexchange_path.string(), *_system_type_map);
