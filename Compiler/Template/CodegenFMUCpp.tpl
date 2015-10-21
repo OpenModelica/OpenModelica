@@ -118,7 +118,6 @@ template fmuCalcHelperMainfile(SimCode simCode)
     #include "OMCpp<%fileNamePrefix%>FMU.h"
 
     #include "OMCpp<%fileNamePrefix%>AlgLoopMain.cpp"
-    #include "OMCpp<%fileNamePrefix%>FactoryExport.cpp"
     #include "OMCpp<%fileNamePrefix%>Extension.cpp"
     #include "OMCpp<%fileNamePrefix%>Functions.cpp"
     <%if(boolOr(Flags.isSet(Flags.HARDCODED_START_VALUES), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then
