@@ -31,7 +31,6 @@
 #include <boost/preprocessor/punctuation/comma_if.hpp>
 #include <boost/preprocessor/repetition.hpp>
 #include <boost/preprocessor/iteration/iterate.hpp>
-#include <boost/weak_ptr.hpp>
 #include <boost/range/irange.hpp>
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #include <boost/numeric/ublas/vector.hpp>
@@ -44,14 +43,11 @@
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/math/special_functions/trunc.hpp>
 #include <boost/assert.hpp>
-#include <boost/unordered_map.hpp>
 #include <boost/assign/list_inserter.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 //#include <boost/timer/timer.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/container/vector.hpp>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
 
 
  /*Namespaces*/
@@ -115,10 +111,10 @@ using std::runtime_error;
 #else
   #if defined(_MSC_VER)
     #include <tuple>
-	using std::tuple;
-	using std::make_tuple;
+    using std::tuple;
+    using std::make_tuple;
   #else
-	#include <boost/tuple/tuple.hpp>
+    #include <boost/tuple/tuple.hpp>
     using boost::tuple;
     using boost::make_tuple;
   #endif

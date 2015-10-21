@@ -5,6 +5,7 @@
  */
 
 #include <Core/DataExchange/FactoryPolicy.h>
+#include <fstream>
 
 /**
  Policy class to write simulation results in a text file
