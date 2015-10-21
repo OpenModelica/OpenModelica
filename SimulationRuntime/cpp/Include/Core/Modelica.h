@@ -11,6 +11,7 @@
 #include <map>
 #include <cmath>
 #include <numeric>
+#include <functional>
 
 #include <boost/assign/std/vector.hpp> // for 'operator+=()'
 #include <boost/assign/list_of.hpp> // for 'list_of()'
@@ -30,9 +31,7 @@
 #include <boost/preprocessor/punctuation/comma_if.hpp>
 #include <boost/preprocessor/repetition.hpp>
 #include <boost/preprocessor/iteration/iterate.hpp>
-#include <boost/algorithm/minmax_element.hpp>
 #include <boost/weak_ptr.hpp>
-#include <functional>
 #include <boost/range/irange.hpp>
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #include <boost/numeric/ublas/vector.hpp>
@@ -45,8 +44,6 @@
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/math/special_functions/trunc.hpp>
 #include <boost/assert.hpp>
-#include <boost/algorithm/minmax_element.hpp>
-#include <functional>
 #include <boost/unordered_map.hpp>
 #include <boost/assign/list_inserter.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -109,8 +106,8 @@ using std::runtime_error;
   using std::condition_variable;
   using std::unique_lock;
   using std::make_tuple;
-
   using std::array;
+  using std::minmax_element;
   using std::tuple;
   using std::shared_ptr;
   using std::weak_ptr;
@@ -126,6 +123,7 @@ using std::runtime_error;
     using boost::make_tuple;
   #endif
   #include <boost/array.hpp>
+  #include <boost/algorithm/minmax_element.hpp>
   #include <boost/shared_ptr.hpp>
   #include <boost/weak_ptr.hpp>
 
@@ -146,7 +144,7 @@ using std::runtime_error;
   #endif //USE_THREAD
 
   using boost::array;
-
+  using boost::minmax_element;
   using boost::shared_ptr;
   using boost::weak_ptr;
   using boost::dynamic_pointer_cast;

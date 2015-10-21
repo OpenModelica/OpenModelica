@@ -405,7 +405,7 @@ std::pair<T,T> min_max(const BaseArray<T>& x)
 {
   const T* data = x.getData();
   std::pair<const T*, const T*>
-    ret = boost::minmax_element(data, data + x.getNumElems());
+    ret = minmax_element(data, data + x.getNumElems());
   return std::make_pair(*(ret.first), *(ret.second));
 }
 
