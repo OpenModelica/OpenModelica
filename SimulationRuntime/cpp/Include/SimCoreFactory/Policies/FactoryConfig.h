@@ -47,8 +47,6 @@
 
 #elif defined(OMC_BUILD) && !defined(RUNTIME_STATIC_LINKING)
 
-
-  #include <boost/unordered_map.hpp>
   /*Factory includes*/
   #include <Core/Utils/extension/extension.hpp>
   #include <Core/Utils/extension/factory.hpp>
@@ -56,11 +54,8 @@
   #include <Core/Utils/extension/shared_library.hpp>
   #include <Core/Utils/extension/convenience.hpp>
   #include <Core/Utils/extension/factory_map.hpp>
-  #include <boost/unordered_map.hpp>
-  #include <string>
   /*Namespaces*/
   using namespace boost::extensions;
-  using boost::unordered_map;
   using std::string;
   /*Defines*/
   #define PATH string
@@ -68,19 +63,15 @@
   #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 
 #elif defined(OMC_BUILD) && defined(RUNTIME_STATIC_LINKING)
-  #include <boost/unordered_map.hpp>
+
   /*Factory includes*/
   #include <Core/Utils/extension/extension.hpp>
   #include <Core/Utils/extension/factory.hpp>
   #include <Core/Utils/extension/type_map.hpp>
   #include <Core/Utils/extension/shared_library.hpp>
   #include <Core/Utils/extension/convenience.hpp>
-  #include <Core/Utils/extension/factory_map.hpp>
-  #include <boost/unordered_map.hpp>
-  #include <string>
   /*Namespaces*/
   using namespace boost::extensions;
-  using boost::unordered_map;
   using std::string;
   /*Defines*/
   #define PATH string
