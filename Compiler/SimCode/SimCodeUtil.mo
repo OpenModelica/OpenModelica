@@ -320,7 +320,7 @@ algorithm
     end if;
 
     // collect symbolic jacobians from state selection
-    (stateSets, SymbolicJacsStateSelect, numberOfJacobians) := indexStateSets(stateSets, {}, numberOfJacobians, {});
+    (stateSets, SymbolicJacsStateSelect, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians) := indexStateSets(stateSets, {}, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, {});
 
     // generate jacobian or linear model matrices
     (LinearMatrices, uniqueEqIndex) := createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
@@ -3382,30 +3382,38 @@ protected function indexStateSets
 " function to collect jacobians for statesets"
   input list<SimCode.StateSet> inSets;
   input list<SimCode.JacobianMatrix> inSymJacs;
+  input Integer iNumLin;
+  input Integer iNumNonLin;
+  input Integer iNumMixed;
   input Integer iNumJac;
   input list<SimCode.StateSet> inSetsAccum;
   output list<SimCode.StateSet> outSets;
   output list<SimCode.JacobianMatrix> outSymJacs;
+  output Integer oNumLin;
+  output Integer oNumNonLin;
+  output Integer oNumMixed;
   output Integer oNumJac;
 algorithm
-  (outSets, outSymJacs, oNumJac) := match(inSets, inSymJacs, iNumJac, inSetsAccum)
+  (outSets, outSymJacs, oNumLin, oNumNonLin, oNumMixed, oNumJac) := match(inSets, inSymJacs, iNumLin, iNumNonLin, iNumMixed, iNumJac, inSetsAccum)
     local
       list<SimCode.StateSet> sets;
       SimCode.StateSet set;
       SimCode.JacobianMatrix symJac;
-      Integer numJac;
+      list<SimCode.JacobianMatrix> symJacs, symJacsInternal;
+      Integer numJac, numLin, numNonLin, numMixed;
       Integer index;
       Integer nCandidates;
       Integer nStates;
       list<DAE.ComponentRef> states;
       list<DAE.ComponentRef> statescandidates;
       DAE.ComponentRef crA;
-    case ({}, _, _, _) then (listReverse(inSetsAccum), listReverse(inSymJacs), iNumJac);
-    case((SimCode.SES_STATESET(index=index, nCandidates=nCandidates, nStates=nStates, states=states, statescandidates=statescandidates, crA=crA, jacobianMatrix=symJac))::sets, _, _, _)
+    case ({}, _, _, _, _, _, _) then (listReverse(inSetsAccum), listReverse(inSymJacs), iNumLin, iNumNonLin, iNumMixed, iNumJac);
+    case((SimCode.SES_STATESET(index=index, nCandidates=nCandidates, nStates=nStates, states=states, statescandidates=statescandidates, crA=crA, jacobianMatrix=symJac))::sets, _, _, _, _, _, _)
     equation
-      (symJac, _, _, _, numJac, _) = countandIndexAlgebraicLoopsSymJac(symJac, 0, 0, 0, iNumJac);
-      (outSets, outSymJacs, oNumJac) = indexStateSets(sets, symJac::inSymJacs, numJac, SimCode.SES_STATESET(index, nCandidates, nStates, states, statescandidates, crA, symJac)::inSetsAccum);
-     then (outSets, outSymJacs, oNumJac);
+      (symJac, numLin, numNonLin, numMixed, numJac, symJacsInternal) = countandIndexAlgebraicLoopsSymJac(symJac, iNumLin, iNumNonLin, iNumMixed, iNumJac);
+      symJacs = listAppend(symJacsInternal, inSymJacs);
+      (outSets, outSymJacs, oNumLin, oNumNonLin, oNumMixed, oNumJac) = indexStateSets(sets, symJac::symJacs, numLin, numNonLin, numMixed, numJac, SimCode.SES_STATESET(index, nCandidates, nStates, states, statescandidates, crA, symJac)::inSetsAccum);
+     then (outSets, outSymJacs, oNumLin, oNumNonLin, oNumMixed, oNumJac);
   end match;
 end indexStateSets;
 
