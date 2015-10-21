@@ -763,6 +763,11 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)
   LIBS= $(OMCPP_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB)
 
+  # need boost system lib prior to C++11
+  ifneq ($(findstring USE_CPP_ELEVEN,$(CFLAGS)),USE_CPP_ELEVEN)
+    $(eval LIBS= $(LIBS) -l$(BOOST_SYSTEM_LIB))
+  endif
+
   CPPFILES=$(CALCHELPERMAINFILE)
   OFILES=$(CPPFILES:.cpp=.o)
 
