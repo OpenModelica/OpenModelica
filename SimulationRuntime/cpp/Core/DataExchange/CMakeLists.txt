@@ -12,6 +12,7 @@ include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvect
 add_precompiled_header(${DataExchangeName} Include/Core/Modelica.h)
 
 add_library(${DataExchangeName}_static STATIC SimData.cpp XmlPropertyReader.cpp)
+set_target_properties(${DataExchangeName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 
 IF(NOT BOOST_STATIC_LINKING)
 	target_link_libraries (${DataExchangeName}_static ${Boost_LIBRARIES})
