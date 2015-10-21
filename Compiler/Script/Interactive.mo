@@ -570,30 +570,26 @@ protected function evaluateForStmtRangeOpt
   input Values.Value startVal;
   input Values.Value stepVal;
   input Values.Value stopVal;
-  input list<Absyn.AlgorithmItem> algItemList;
+  input list<Absyn.AlgorithmItem> algItems;
   input GlobalScript.SymbolTable inSymbolTable;
-  output GlobalScript.SymbolTable outSymbolTable;
+  output GlobalScript.SymbolTable st;
+protected
+  Values.Value val;
+  GlobalScript.SymbolTable st2 "Introduced to avoid leaving the symbol table containing the iterator";
 algorithm
-  outSymbolTable := matchcontinue (iter, startVal, stepVal, stopVal, algItemList, inSymbolTable)
-    local
-      Values.Value startv, stepv, stopv, nextv;
-      list<Absyn.AlgorithmItem> algItems;
-      GlobalScript.SymbolTable st1,st2,st3,st4,st5;
-
-    case (_, startv, stepv, stopv, algItems, st1)
-      equation
-        true = ValuesUtil.safeLessEq(startv, stopv);
-        st2 = GlobalScriptUtil.appendVarToSymboltable(iter, startv, Types.typeOfValue(startv), st1);
-        st3 = evaluateAlgStmtLst(algItems, st2);
-        st4 = GlobalScriptUtil.deleteVarFromSymboltable(iter, st3);
-        nextv = ValuesUtil.safeIntRealOp(startv, stepv, Values.ADDOP());
-        st5 = evaluateForStmtRangeOpt(iter, nextv, stepv, stopv, algItems, st4);
-      then
-        st5;
-
-    else inSymbolTable;
-
-  end matchcontinue;
+  st := inSymbolTable;
+  val := startVal;
+  try
+    while ValuesUtil.safeLessEq(val, stopVal) loop
+      st2 := GlobalScriptUtil.appendVarToSymboltable(iter, val, Types.typeOfValue(val), st);
+      st2 := evaluateAlgStmtLst(algItems, st2);
+      st2 := GlobalScriptUtil.deleteVarFromSymboltable(iter, st2);
+      val := ValuesUtil.safeIntRealOp(val, stepVal, Values.ADDOP());
+      st := st2;
+    end while;
+  else
+    // Just... ignore errors and stop the loop. Really bad, I know...
+  end try;
 end evaluateForStmtRangeOpt;
 
 protected function evaluateWhileStmt
