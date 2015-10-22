@@ -176,7 +176,7 @@ AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibrary
   mpIconGraphicsView = pGraphicsView->getModelWidget()->getIconGraphicsView();
   mpDiagramGraphicsView = pGraphicsView->getModelWidget()->getDiagramGraphicsView();
   mpGraphicsView = pGraphicsView;
-  setText(QString("Added Component %1").arg(name));
+  setText(QString("Add Component %1").arg(name));
 
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
@@ -277,6 +277,7 @@ UpdateComponentCommand::UpdateComponentCommand(Component *pComponent, const Tran
   mOldTransformation = oldTransformation;
   mNewTransformation = newTransformation;
   mpGraphicsView = pGraphicsView;
+  setText(QString("Update Component %1").arg(mpComponent->getName()));
 }
 
 /*!

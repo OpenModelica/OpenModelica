@@ -190,6 +190,7 @@ public:
   void renameInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo, QString interfacePoint);
 
   Transformation mTransformation;
+  Transformation mOldTransformation;
 private:
   Component *mpReferenceComponent;
   Component *mpParentComponent;
@@ -248,6 +249,7 @@ public slots:
   void prepareResizeComponent(ResizerItem *pResizerItem);
   void resizeComponent(QPointF newPosition);
   void finishResizeComponent();
+  void resizedComponent();
   void deleteMe();
   void duplicate();
   void rotateClockwise();

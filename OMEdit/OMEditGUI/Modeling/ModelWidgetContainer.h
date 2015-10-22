@@ -233,6 +233,8 @@ signals:
   void mouseDelete();
   void mouseRotateClockwise();
   void mouseRotateAntiClockwise();
+  void mouseFlipHorizontal();
+  void mouseFlipVertical();
   void keyPressDelete();
   void keyPressRotateClockwise();
   void keyPressRotateAntiClockwise();
@@ -264,6 +266,8 @@ public slots:
   void deleteItems();
   void rotateClockwise();
   void rotateAntiClockwise();
+  void flipHorizontal();
+  void flipVertical();
 protected:
   virtual void dragMoveEvent(QDragMoveEvent *event);
   virtual void dropEvent(QDropEvent *event);
