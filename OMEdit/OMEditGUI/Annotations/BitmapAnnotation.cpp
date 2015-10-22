@@ -101,8 +101,10 @@ void BitmapAnnotation::parseShapeAnnotation(QString annotation)
   }
   if (!mImageSource.isEmpty()) {
     mImage.loadFromData(QByteArray::fromBase64(mImageSource.toLatin1()));
-  } else {
+  } else if (!mFileName.isEmpty()) {
     mImage.load(mFileName);
+  } else {
+    mImage = QImage(":/Resources/icons/bitmap-shape.svg");
   }
 }
 

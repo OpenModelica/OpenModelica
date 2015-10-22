@@ -481,7 +481,6 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
     pMainLayout->addWidget(mpFontAndTextStyleGroupBox, row++, 0, 1, colSpan);
   }
   if (mpBitmapAnnotation) {
-    pMainLayout->addWidget(mpLineStyleGroupBox, row++, 0, 1, colSpan);
     pMainLayout->addWidget(mpImageGroupBox, row++, 0, 1, colSpan);
   } else {
     pMainLayout->addWidget(mpLineStyleGroupBox, row, 0);
@@ -877,7 +876,7 @@ void ShapePropertiesDialog::storeImageInModelToggled(bool checked)
    */
   if (!checked) {
     MainWindow *pMainWindow = mpBitmapAnnotation->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-    if (mpBitmapAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getFileName().isEmpty()) {
+    if (!mpBitmapAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isFilePathValid()) {
       if (pMainWindow->getOptionsDialog()->getNotificationsPage()->getSaveModelForBitmapInsertionCheckBox()->isChecked()) {
         NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::SaveModelForBitmapInsertion,
                                                                             NotificationsDialog::InformationIcon,

@@ -144,34 +144,34 @@ public:
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
   void setPoints(QList<QPointF> points) {mPoints = points;}
   QList<QPointF> getPoints() {return mPoints;}
-  void setStartArrow(StringHandler::Arrow startArrow);
-  StringHandler::Arrow getStartArrow();
-  void setEndArrow(StringHandler::Arrow endArrow);
-  StringHandler::Arrow getEndArrow();
-  void setArrowSize(qreal arrowSize);
-  qreal getArrowSize();
-  void setSmooth(StringHandler::Smooth smooth);
-  StringHandler::Smooth getSmooth();
-  void setExtents(QList<QPointF> extents);
-  QList<QPointF> getExtents();
-  void setBorderPattern(StringHandler::BorderPattern pattern);
-  StringHandler::BorderPattern getBorderPattern();
-  void setRadius(qreal radius);
-  qreal getRadius();
-  void setStartAngle(qreal startAngle);
-  qreal getStartAngle();
-  void setEndAngle(qreal endAngle);
-  qreal getEndAngle();
+  void setStartArrow(StringHandler::Arrow startArrow) {mArrow.replace(0, startArrow);}
+  StringHandler::Arrow getStartArrow() {return mArrow.at(0);}
+  void setEndArrow(StringHandler::Arrow endArrow) {mArrow.replace(1, endArrow);}
+  StringHandler::Arrow getEndArrow() {return mArrow.at(1);}
+  void setArrowSize(qreal arrowSize) {mArrowSize = arrowSize;}
+  qreal getArrowSize() {return mArrowSize;}
+  void setSmooth(StringHandler::Smooth smooth) {mSmooth = smooth;}
+  StringHandler::Smooth getSmooth() {return mSmooth;}
+  void setExtents(QList<QPointF> extents) {mExtents = extents;}
+  QList<QPointF> getExtents() {return mExtents;}
+  void setBorderPattern(StringHandler::BorderPattern pattern) {mBorderPattern = pattern;}
+  StringHandler::BorderPattern getBorderPattern() {return mBorderPattern;}
+  void setRadius(qreal radius) {mRadius = radius;}
+  qreal getRadius() {return mRadius;}
+  void setStartAngle(qreal startAngle) {mStartAngle = startAngle;}
+  qreal getStartAngle() {return mStartAngle;}
+  void setEndAngle(qreal endAngle) {mEndAngle = endAngle;}
+  qreal getEndAngle() {return mEndAngle;}
   void setTextString(QString textString);
-  QString getTextString();
-  void setFontName(QString fontName);
-  QString getFontName();
-  void setFontSize(qreal fontSize);
-  qreal getFontSize();
-  void setTextStyles(QList<StringHandler::TextStyle> textStyles);
-  QList<StringHandler::TextStyle> getTextStyles();
-  void setTextHorizontalAlignment(StringHandler::TextAlignment textAlignment);
-  StringHandler::TextAlignment getTextHorizontalAlignment();
+  QString getTextString() {return mOriginalTextString;}
+  void setFontName(QString fontName) {mFontName = fontName;}
+  QString getFontName() {return mFontName;}
+  void setFontSize(qreal fontSize) {mFontSize = fontSize;}
+  qreal getFontSize() {return mFontSize;}
+  void setTextStyles(QList<StringHandler::TextStyle> textStyles) {mTextStyles = textStyles;}
+  QList<StringHandler::TextStyle> getTextStyles() {return mTextStyles;}
+  void setTextHorizontalAlignment(StringHandler::TextAlignment textAlignment) {mHorizontalAlignment = textAlignment;}
+  StringHandler::TextAlignment getTextHorizontalAlignment() {return mHorizontalAlignment;}
   void setFileName(QString fileName, Component *pComponent = 0);
   QString getFileName();
   void setImageSource(QString imageSource);
