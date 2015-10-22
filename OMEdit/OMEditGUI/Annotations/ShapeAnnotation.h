@@ -114,7 +114,6 @@ private:
   QPointF mOldScenePosition;
   bool mIsCornerItemClicked;
   QAction *mpShapePropertiesAction;
-  QAction *mpManhattanizeShapeAction;
 public:
   enum LineGeometryType {VerticalLine, HorizontalLine};
   Transformation mTransformation;
@@ -194,7 +193,6 @@ public:
   void emitChanged() {emit changed();}
   void emitDeleted() {emit deleted();}
 signals:
-  void updateClassAnnotation();
   void updateReferenceShapes();
   void added();
   void changed();

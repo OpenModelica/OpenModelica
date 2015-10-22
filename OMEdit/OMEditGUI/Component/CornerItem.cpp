@@ -74,8 +74,6 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
     if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
       connect(this, SIGNAL(cornerItemPositionChanged()), pLineAnnotation, SLOT(updateConnectionAnnotation()));
-    } else {
-      connect(this, SIGNAL(cornerItemPositionChanged()), mpShapeAnnotation, SIGNAL(updateClassAnnotation()));
     }
   }
 }
@@ -160,6 +158,8 @@ void CornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
       ModelWidget *pModelWidget = mpShapeAnnotation->getGraphicsView()->getModelWidget();
       pModelWidget->getUndoStack()->push(new UpdateShapeCommand(mpShapeAnnotation, mOldAnnotation, mpShapeAnnotation->getOMCShapeAnnotation(),
                                                                 mpShapeAnnotation->getGraphicsView()));
+      pModelWidget->updateClassAnnotationIfNeeded();
+      pModelWidget->updateModelicaText();
     }
   }
 }

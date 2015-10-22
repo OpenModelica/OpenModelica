@@ -61,8 +61,6 @@ TextAnnotation::TextAnnotation(QString annotation, GraphicsView *pGraphicsView)
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
   setShapeFlags(true);
-  connect(this, SIGNAL(updateClassAnnotation()), this, SIGNAL(updateReferenceShapes()));
-  connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
 }
 
 TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
