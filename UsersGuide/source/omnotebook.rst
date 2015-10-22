@@ -460,7 +460,18 @@ the relation between the cells.
        inputcell. By double-clicking on the cell marker in the tree
        view, the inputcell can be collapsed causing the result to be
        hidden.
-
+       
+-  *Latexcell* – This cell type has support for evaluation of latex scripts.
+       It is intended to be mainly used for writing mathematical equations and 
+       formulas for advanced documentation in OMNotebook. Each Latexcell supports 
+       a maximum of one page document output.To evaluate this cell, latex must be 
+       installed in your system.The users can copy and paste the latex scripts and 
+       start the evaluation.Evaluation is done by pressing the key
+       combination Shift+Return or Shift+Enter or the green color eval button 
+       present in the toolbar. The script in the cell is sent to latex compiler, where it
+       is evaluated and the output is displayed hiding the latex source. By double-clicking 
+       on the cell marker in the tree view,the latex source is displayed for further modification.
+       
 -  *Groupcell* – This cell type is used to group together other cell. A
        groupcell can be opened or closed. When a groupcell is opened all
        the cells inside the groupcell are visible, but when the
@@ -627,6 +638,9 @@ Cell Menu
 -  *Add inputcell* – A new inputcell is added with the menu item
        Cell->Add Inputcell or the key combination Ctrl+Shift+I.
 
+-  *Add latexcell* – A new latexcell is added with the menu item
+       Cell->Add Latexcell or the key combination Ctrl+Shift+E.
+       
 -  *Add groupcell* – A new groupcell is inserted with the menu item
        Cell->Groupcell or the key combination Ctrl+Shift+G. The selected
        cell will then become the first cell inside the groupcell.
@@ -751,14 +765,33 @@ Additional Features
        document is saved, OMNotebook checks if the document is saved in
        the same folder as last time. If the folder has changed, the
        links are updated.
-
+       
+-  \ *Evaluate whole Notebook* – All the cells present in the Notebook can 
+       be evaluated in one step by pressing the red color evalall button
+       in the toolbar. The cells are evaluated in the same order as they 
+       are in the Notebook.However the latexcells cannot be evaluated by 
+       this feature.        
+       
 -  \ *Evaluate several cells* – Several inputcells can be evaluated at
        the same time by selecting them in the treeview and then pressing
        the key combination Shift+Enter or Shift+Return. The cells are
        evaluated in the same order as they have been selected. If a
        groupcell is selected all inputcells in that groupcell are
        evaluated, in the order they are located in the groupcell.
-
+       
+-  \ *Moving and Reordering cells in a Notebook* – It is possible to shift cells
+       to a new position and change the hierarchical order of the document.This can 
+       be done by clicking the cell and press the Up and Down arrow button in 
+       the tool bar to move either Up or Down. The cells are moved one cell
+       above or below.It is also possible to move a cell directly to a new
+       position with one single click by pressing the red color bidirectional 
+       UpDown arrow button in the toolbar. To do this the user has to place
+       the cell cursor to a position where the selected cells must be moved. 
+       After selecting the cell cursor position, select the cells you want to 
+       shift and press the bidirectional UpDown arrow button. The cells are 
+       shifted in the same order as they are selected.This is especially very
+       useful when shifting a group cell.              
+       
 -  *Command completion* – Inputcells have command completion support,
        which checks if the user is typing a command (or any keyword
        defined in the file commands.xml) and finish the command. If the
