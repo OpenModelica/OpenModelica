@@ -240,7 +240,7 @@ public:
   void loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeItem);
   void loadDependentLibraries(QStringList libraries);
   LibraryTreeItem* getLibraryTreeItemFromFile(QString fileName, int lineNumber);
-  void showModelWidget(LibraryTreeItem *pLibraryTreeItem, QString text = QString(""), bool show = true, bool newModel = false);
+  void showModelWidget(LibraryTreeItem *pLibraryTreeItem, QString text = QString(""), bool show = true);
   void showHideProtectedClasses();
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);

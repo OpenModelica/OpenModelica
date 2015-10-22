@@ -326,7 +326,7 @@ class ModelWidget : public QWidget
 {
   Q_OBJECT
 public:
-  ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text, bool newModel);
+  ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text);
 
   class InheritedClass : public QObject
   {

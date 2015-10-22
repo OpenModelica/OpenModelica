@@ -353,7 +353,6 @@ void ModelicaClassDialog::createModelicaClass()
   bool wasNonExisting = false;
   pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pParentLibraryTreeItem, wasNonExisting, false, false, true);
   pLibraryTreeItem->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeItem::SaveInOneFile : LibraryTreeItem::SaveFolderStructure);
-  pLibraryTreeModel->updateLibraryTreeItemClassText(pLibraryTreeItem);
   if (wasNonExisting) {
     // load the LibraryTreeItem pixmap
     pLibraryTreeModel->loadLibraryTreeItemPixmap(pLibraryTreeItem);
@@ -361,7 +360,12 @@ void ModelicaClassDialog::createModelicaClass()
   }
   pLibraryTreeItem->setExpanded(true);
   // show the ModelWidget
-  pLibraryTreeModel->showModelWidget(pLibraryTreeItem, "", true, true);
+  pLibraryTreeModel->showModelWidget(pLibraryTreeItem, "", true);
+  if (pLibraryTreeItem->getModelWidget()) {
+    pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->addClassAnnotation(false);
+    pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->addClassAnnotation(false);
+    pLibraryTreeItem->getModelWidget()->updateModelicaText();
+  }
   accept();
 }
 
