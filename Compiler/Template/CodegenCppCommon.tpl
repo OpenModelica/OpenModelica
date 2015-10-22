@@ -430,7 +430,7 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp, Text &varDecls, 
       let slice = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp,
         &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,
         stateDerVectorName, useFlatArrayNotation)
-      let &varDecls += 'ArraySlice<<%typeStr%>> <%slice%>_as(<%arrName%>, <%slice%>);<%\n%>'
+      let &preExp += 'ArraySlice<<%typeStr%>> <%slice%>_as(<%arrName%>, <%slice%>);<%\n%>'
       '<%slice%>_as'
       // old code making a copy of the slice using create_array_from_shape
       //let arrayType = expTypeFlag(ty, 6)
@@ -2732,7 +2732,7 @@ case STMT_TUPLE_ASSIGN(exp=CALL(__)) then
 
   let lhsCrefs = (expExpLst |> cr hasindex i1 fromindex 0 =>
                     let rhsStr = 'get<<%i1%>>(<%retStruct%>.data)'
-                    writeLhsCref(cr, rhsStr, context, &afterExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+                    writeLhsCref(cr, rhsStr, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
                   ;separator="\n";empty)
   <<
   // algStmtTupleAssign: preExp printout <%marker%>

@@ -213,6 +213,7 @@ void multiply_array(const BaseArray<T> &leftArray, const BaseArray<T> &rightArra
   size_t leftNumDims = leftArray.getNumDims();
   size_t rightNumDims = rightArray.getNumDims();
   size_t matchDim = rightArray.getDim(1);
+  resultArray.setDims(leftArray.getDims());
   if (leftArray.getDim(leftNumDims) != matchDim)
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                   "Wrong sizes in multiply_array");
@@ -311,7 +312,7 @@ void subtract_array(const BaseArray<T>& leftArray, const BaseArray<T>& rightArra
 
   if(dimLeft != dimRight)
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
-                                      "Right and left array must have the same size for element wise multiplication");
+                                      "Right and left array must have the same size for element wise substraction");
 
   resultArray.setDims(leftArray.getDims());
   const T* data1 = leftArray.getData();
@@ -343,7 +344,7 @@ void add_array(const BaseArray<T>& leftArray, const BaseArray<T>& rightArray, Ba
 
   if(dimLeft != dimRight)
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
-                                      "Right and left array must have the same size for element wise multiplication");
+                                      "Right and left array must have the same size for element wise addition");
 
   resultArray.setDims(leftArray.getDims());
   const T* data1 = leftArray.getData();
