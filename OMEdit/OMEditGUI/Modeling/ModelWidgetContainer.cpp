@@ -1020,10 +1020,12 @@ void GraphicsView::createActions()
   mpFlipHorizontalAction = new QAction(QIcon(":/Resources/icons/flip-horizontal.svg"), tr("Flip Horizontal"), this);
   mpFlipHorizontalAction->setStatusTip(tr("Flips the item horizontally"));
   mpFlipHorizontalAction->setDisabled(isSystemLibrary);
+  connect(mpFlipHorizontalAction, SIGNAL(triggered()), SLOT(flipHorizontal()));
   // Flip Vertical Action
   mpFlipVerticalAction = new QAction(QIcon(":/Resources/icons/flip-vertical.svg"), tr("Flip Vertical"), this);
   mpFlipVerticalAction->setStatusTip(tr("Flips the item vertically"));
   mpFlipVerticalAction->setDisabled(isSystemLibrary);
+  connect(mpFlipVerticalAction, SIGNAL(triggered()), SLOT(flipVertical()));
 }
 
 /*!
@@ -1347,6 +1349,32 @@ void GraphicsView::rotateAntiClockwise()
 {
   mpModelWidget->getUndoStack()->beginMacro("Rotate anti clockwise by mouse");
   emit mouseRotateAntiClockwise();
+  mpModelWidget->updateClassAnnotationIfNeeded();
+  mpModelWidget->updateModelicaText();
+  mpModelWidget->getUndoStack()->endMacro();
+}
+
+/*!
+ * \brief GraphicsView::flipHorizontal
+ * Flips the selected items horizontally emitting GraphicsView::mouseFlipHorizontal() SIGNAL.
+ */
+void GraphicsView::flipHorizontal()
+{
+  mpModelWidget->getUndoStack()->beginMacro("Flip horizontal by mouse");
+  emit mouseFlipHorizontal();
+  mpModelWidget->updateClassAnnotationIfNeeded();
+  mpModelWidget->updateModelicaText();
+  mpModelWidget->getUndoStack()->endMacro();
+}
+
+/*!
+ * \brief GraphicsView::flipVertical
+ * Flips the selected items vertically emitting GraphicsView::mouseFlipVertical() SIGNAL.
+ */
+void GraphicsView::flipVertical()
+{
+  mpModelWidget->getUndoStack()->beginMacro("Flip vertical by mouse");
+  emit mouseFlipVertical();
   mpModelWidget->updateClassAnnotationIfNeeded();
   mpModelWidget->updateModelicaText();
   mpModelWidget->getUndoStack()->endMacro();

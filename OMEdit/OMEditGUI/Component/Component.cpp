@@ -487,7 +487,7 @@ void Component::createResizerItems()
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeComponent(ResizerItem*)));
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
-  connect(mpBottomLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(transformHasChanged()));
+  connect(mpBottomLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedComponent()));
   mpBottomLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
   //Top left resizer
   mpTopLeftResizerItem = new ResizerItem(this);
@@ -496,7 +496,7 @@ void Component::createResizerItems()
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeComponent(ResizerItem*)));
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
-  connect(mpTopLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(transformHasChanged()));
+  connect(mpTopLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedComponent()));
   mpTopLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
   //Top Right resizer
   mpTopRightResizerItem = new ResizerItem(this);
@@ -505,7 +505,7 @@ void Component::createResizerItems()
   connect(mpTopRightResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeComponent(ResizerItem*)));
   connect(mpTopRightResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpTopRightResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
-  connect(mpTopRightResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(transformHasChanged()));
+  connect(mpTopRightResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedComponent()));
   mpTopRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
   //Bottom Right resizer
   mpBottomRightResizerItem = new ResizerItem(this);
@@ -514,7 +514,7 @@ void Component::createResizerItems()
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeComponent(ResizerItem*)));
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
-  connect(mpBottomRightResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(transformHasChanged()));
+  connect(mpBottomRightResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedComponent()));
   mpBottomRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
 }
 
@@ -1105,8 +1105,14 @@ void Component::referenceComponentDeleted()
   }
 }
 
+/*!
+ * \brief Component::prepareResizeComponent
+ * Slot is activated when ResizerItem::resizerItemPressed() SIGNAL is raised.
+ * \param pResizerItem
+ */
 void Component::prepareResizeComponent(ResizerItem *pResizerItem)
 {
+  mOldTransformation = mTransformation;
   mpSelectedResizerItem = pResizerItem;
   mTransform = transform();
   mSceneBoundingRect = sceneBoundingRect();
@@ -1135,6 +1141,11 @@ void Component::prepareResizeComponent(ResizerItem *pResizerItem)
   mpResizerRectangle->setPos(pos());
 }
 
+/*!
+ * \brief Component::resizeComponent
+ * Slot is activated when ResizerItem::resizerItemMoved() SIGNAL is raised.
+ * \param newPosition
+ */
 void Component::resizeComponent(QPointF newPosition)
 {
   float xDistance; //X distance between the current position of the mouse and the starting position mouse
@@ -1188,6 +1199,10 @@ void Component::resizeComponent(QPointF newPosition)
   emit transformChange();
 }
 
+/*!
+ * \brief Component::finishResizeComponent
+ * Slot is activated when ResizerItem resizerItemReleased SIGNAL is raised.
+ */
 void Component::finishResizeComponent()
 {
   if (isSelected()) {
@@ -1195,6 +1210,17 @@ void Component::finishResizeComponent()
   } else {
     setSelected(true);
   }
+}
+
+/*!
+ * \brief Component::resizedComponent
+ * Slot is activated when ResizerItem resizerItemPositionChanged SIGNAL is raised.
+ */
+void Component::resizedComponent()
+{
+  UpdateComponentCommand *pUpdateComponentCommand = new UpdateComponentCommand(this, mOldTransformation, mTransformation, mpGraphicsView);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateComponentCommand);
+  mpGraphicsView->getModelWidget()->updateModelicaText();
 }
 
 /*!
@@ -1226,6 +1252,10 @@ void Component::duplicate()
   }
 }
 
+/*!
+ * \brief Component::rotateClockwise
+ * Rotates the component clockwise.
+ */
 void Component::rotateClockwise()
 {
   qreal oldRotation = StringHandler::getNormalizedAngle(mTransformation.getRotateAngle());
@@ -1235,6 +1265,10 @@ void Component::rotateClockwise()
   showResizerItems();
 }
 
+/*!
+ * \brief Component::rotateAntiClockwise
+ * Rotates the Component anti clockwise.
+ */
 void Component::rotateAntiClockwise()
 {
   qreal oldRotation = StringHandler::getNormalizedAngle(mTransformation.getRotateAngle());
@@ -1250,6 +1284,7 @@ void Component::rotateAntiClockwise()
  */
 void Component::flipHorizontal()
 {
+  Transformation oldTransformation = mTransformation;
   setOriginAndExtents();
   QPointF extent1 = mTransformation.getExtent1();
   QPointF extent2 = mTransformation.getExtent2();
@@ -1262,8 +1297,7 @@ void Component::flipHorizontal()
     mTransformation.setExtent1(QPointF(extent1.x(), extent2.y()));
     mTransformation.setExtent2(QPointF(extent2.x(), extent1.y()));
   }
-  setTransform(mTransformation.getTransformationMatrix());
-  emit transformHasChanged();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentCommand(this, oldTransformation, mTransformation, mpGraphicsView));
   showResizerItems();
 }
 
@@ -1273,6 +1307,7 @@ void Component::flipHorizontal()
  */
 void Component::flipVertical()
 {
+  Transformation oldTransformation = mTransformation;
   setOriginAndExtents();
   QPointF extent1 = mTransformation.getExtent1();
   QPointF extent2 = mTransformation.getExtent2();
@@ -1285,8 +1320,7 @@ void Component::flipVertical()
     mTransformation.setExtent1(QPointF(extent2.x(), extent1.y()));
     mTransformation.setExtent2(QPointF(extent1.x(), extent2.y()));
   }
-  setTransform(mTransformation.getTransformationMatrix());
-  emit transformHasChanged();
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentCommand(this, oldTransformation, mTransformation, mpGraphicsView));
   showResizerItems();
 }
 
@@ -1604,8 +1638,8 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         connect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(mouseRotateClockwise()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(mouseRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
-        connect(mpGraphicsView->getFlipHorizontalAction(), SIGNAL(triggered()), this, SLOT(flipHorizontal()), Qt::UniqueConnection);
-        connect(mpGraphicsView->getFlipVerticalAction(), SIGNAL(triggered()), this, SLOT(flipVertical()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(mouseFlipHorizontal()), this, SLOT(flipHorizontal()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(mouseFlipVertical()), this, SLOT(flipVertical()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyPressDuplicate()), this, SLOT(duplicate()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
@@ -1639,8 +1673,8 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         disconnect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()));
         disconnect(mpGraphicsView, SIGNAL(mouseRotateClockwise()), this, SLOT(rotateClockwise()));
         disconnect(mpGraphicsView, SIGNAL(mouseRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
-        disconnect(mpGraphicsView->getFlipHorizontalAction(), SIGNAL(triggered()), this, SLOT(flipHorizontal()));
-        disconnect(mpGraphicsView->getFlipVerticalAction(), SIGNAL(triggered()), this, SLOT(flipVertical()));
+        disconnect(mpGraphicsView, SIGNAL(mouseFlipHorizontal()), this, SLOT(flipHorizontal()));
+        disconnect(mpGraphicsView, SIGNAL(mouseFlipVertical()), this, SLOT(flipVertical()));
         disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
         disconnect(mpGraphicsView, SIGNAL(keyPressDuplicate()), this, SLOT(duplicate()));
         disconnect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()));
