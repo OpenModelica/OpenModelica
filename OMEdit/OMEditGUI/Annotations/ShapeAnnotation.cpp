@@ -423,10 +423,6 @@ void ShapeAnnotation::createActions()
   mpShapePropertiesAction = new QAction(Helper::properties, mpGraphicsView);
   mpShapePropertiesAction->setStatusTip(tr("Shows the shape properties"));
   connect(mpShapePropertiesAction, SIGNAL(triggered()), SLOT(showShapeProperties()));
-  // manhattanize properties
-  mpManhattanizeShapeAction = new QAction(tr("Manhattanize"), mpGraphicsView);
-  mpManhattanizeShapeAction->setStatusTip(tr("Manhattanize the lines"));
-  connect(mpManhattanizeShapeAction, SIGNAL(triggered()), SLOT(manhattanizeShape()));
 }
 
 /*!
@@ -1740,7 +1736,7 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
     menu.addAction(mpShapePropertiesAction);
     menu.addSeparator();
     if (isInheritedShape()) {
-      mpManhattanizeShapeAction->setDisabled(true);
+      mpGraphicsView->getManhattanizeAction()->setDisabled(true);
       mpGraphicsView->getDeleteAction()->setDisabled(true);
       mpGraphicsView->getDuplicateAction()->setDisabled(true);
       mpGraphicsView->getBringToFrontAction()->setDisabled(true);
@@ -1754,7 +1750,7 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
     LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
     if (pLineAnnotation) {
       lineType = pLineAnnotation->getLineType();
-      menu.addAction(mpManhattanizeShapeAction);
+      menu.addAction(mpGraphicsView->getManhattanizeAction());
     }
     menu.addAction(mpGraphicsView->getDeleteAction());
     if (lineType != LineAnnotation::ConnectionType) {
@@ -1797,6 +1793,9 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
           connect(mpGraphicsView, SIGNAL(mouseDelete()), SLOT(deleteConnection()), Qt::UniqueConnection);
           connect(mpGraphicsView, SIGNAL(keyPressDelete()), SLOT(deleteConnection()), Qt::UniqueConnection);
         } else {
+          if (pLineAnnotation) {
+            connect(mpGraphicsView, SIGNAL(mouseManhattanize()), this, SLOT(manhattanizeShape()), Qt::UniqueConnection);
+          }
           connect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteMe()), Qt::UniqueConnection);
           connect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()), Qt::UniqueConnection);
           connect(mpGraphicsView->getBringToFrontAction(), SIGNAL(triggered()), this, SLOT(bringToFront()), Qt::UniqueConnection);
@@ -1832,6 +1831,9 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
           disconnect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteConnection()));
           disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteConnection()));
         } else {
+          if (pLineAnnotation) {
+            disconnect(mpGraphicsView, SIGNAL(mouseManhattanize()), this, SLOT(manhattanizeShape()));
+          }
           disconnect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteMe()));
           disconnect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()));
           disconnect(mpGraphicsView->getBringToFrontAction(), SIGNAL(triggered()), this, SLOT(bringToFront()));

@@ -128,6 +128,7 @@ private:
   TextAnnotation *mpTextShapeAnnotation;
   BitmapAnnotation *mpBitmapShapeAnnotation;
   QAction *mpPropertiesAction;
+  QAction *mpManhattanizeAction;
   QAction *mpDeleteAction;
   QAction *mpBringToFrontAction;
   QAction *mpBringForwardAction;
@@ -171,6 +172,7 @@ public:
   void setRenderingLibraryPixmap(bool renderingLibraryPixmap) {mRenderingLibraryPixmap = renderingLibraryPixmap;}
   bool isRenderingLibraryPixmap() {return mRenderingLibraryPixmap;}
   QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
+  QAction* getManhattanizeAction() {return mpManhattanizeAction;}
   QAction* getDeleteAction() {return mpDeleteAction;}
   QAction* getDuplicateAction() {return mpDuplicateAction;}
   QAction* getBringToFrontAction() {return mpBringToFrontAction;}
@@ -227,6 +229,7 @@ private:
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
   bool isAnyItemSelectedAndEditable(int key);
 signals:
+  void mouseManhattanize();
   void mouseDelete();
   void mouseRotateClockwise();
   void mouseRotateAntiClockwise();
@@ -257,6 +260,7 @@ public slots:
   void clearSelection();
   void addClassAnnotation(bool updateModelicaText = true);
   void showGraphicsViewProperties();
+  void manhattanizeItems();
   void deleteItems();
   void rotateClockwise();
   void rotateAntiClockwise();

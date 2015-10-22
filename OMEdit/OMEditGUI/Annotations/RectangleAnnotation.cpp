@@ -50,8 +50,6 @@ RectangleAnnotation::RectangleAnnotation(QString annotation, GraphicsView *pGrap
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
   setShapeFlags(true);
-  connect(this, SIGNAL(updateClassAnnotation()), this, SIGNAL(updateReferenceShapes()));
-  connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
 }
 
 RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)

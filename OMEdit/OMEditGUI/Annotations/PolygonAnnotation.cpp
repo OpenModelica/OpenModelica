@@ -50,8 +50,6 @@ PolygonAnnotation::PolygonAnnotation(QString annotation, GraphicsView *pGraphics
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
   setShapeFlags(true);
-  connect(this, SIGNAL(updateClassAnnotation()), this, SIGNAL(updateReferenceShapes()));
-  connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
 }
 
 PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)

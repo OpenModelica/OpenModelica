@@ -970,7 +970,12 @@ void GraphicsView::createActions()
   // Graphics View Properties Action
   mpPropertiesAction = new QAction(Helper::properties, this);
   connect(mpPropertiesAction, SIGNAL(triggered()), SLOT(showGraphicsViewProperties()));
-  // Actions for Components
+  // Actions for shapes and Components
+  // Manhattanize Action
+  mpManhattanizeAction = new QAction(tr("Manhattanize"), this);
+  mpManhattanizeAction->setStatusTip(tr("Manhattanize the lines"));
+  mpManhattanizeAction->setDisabled(isSystemLibrary);
+  connect(mpManhattanizeAction, SIGNAL(triggered()), SLOT(manhattanizeItems()));
   // Delete Action
   mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::deleteStr, this);
   mpDeleteAction->setStatusTip(tr("Deletes the item"));
@@ -1296,6 +1301,19 @@ void GraphicsView::showGraphicsViewProperties()
 {
   GraphicsViewProperties *pGraphicsViewProperties = new GraphicsViewProperties(this);
   pGraphicsViewProperties->show();
+}
+
+/*!
+ * \brief GraphicsView::manhattanizeItems
+ * Manhattanize the selected items by emitting GraphicsView::mouseManhattanize() SIGNAL.
+ */
+void GraphicsView::manhattanizeItems()
+{
+  mpModelWidget->getUndoStack()->beginMacro("Manhattanize by mouse");
+  emit mouseManhattanize();
+  mpModelWidget->updateClassAnnotationIfNeeded();
+  mpModelWidget->updateModelicaText();
+  mpModelWidget->getUndoStack()->endMacro();
 }
 
 /*!
