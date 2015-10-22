@@ -566,8 +566,9 @@ QString ShapeAnnotation::getShapeAnnotation()
 }
 
 /*!
-  Initializes the transformation matrix with the default transformation values of the shape.
-  */
+ * \brief ShapeAnnotation::initializeTransformation
+ * Initializes the transformation matrix with the default transformation values of the shape.
+ */
 void ShapeAnnotation::initializeTransformation()
 {
   mTransformation.setOrigin(mOrigin);
@@ -578,11 +579,12 @@ void ShapeAnnotation::initializeTransformation()
 }
 
 /*!
-  Draws the CornerItem around the shape.\n
-  If the shape is LineAnnotation or PolygonAnnotation then their points are used to draw CornerItem's.\n
-  If the shape is RectangleAnnotation, EllipseAnnotation, TextAnnotation or BitmapAnnotation
-  then their extents are used to draw CornerItem's.
-  */
+ * \brief ShapeAnnotation::drawCornerItems
+ * Draws the CornerItem around the shape.\n
+ * If the shape is LineAnnotation or PolygonAnnotation then their points are used to draw CornerItem's.\n
+ * If the shape is RectangleAnnotation, EllipseAnnotation, TextAnnotation or BitmapAnnotation
+ * then their extents are used to draw CornerItem's.
+ */
 void ShapeAnnotation::drawCornerItems()
 {
   if (dynamic_cast<LineAnnotation*>(this) || dynamic_cast<PolygonAnnotation*>(this)) {
@@ -627,203 +629,40 @@ void ShapeAnnotation::setCornerItemsActiveOrPassive()
 }
 
 /*!
-  Removes the CornerItem's around the shape.
-  */
+ * \brief ShapeAnnotation::removeCornerItems
+ * Removes the CornerItem's around the shape.
+ */
 void ShapeAnnotation::removeCornerItems()
 {
-  foreach (CornerItem *pCornerItem, mCornerItemsList)
-  {
+  foreach (CornerItem *pCornerItem, mCornerItemsList) {
     pCornerItem->deleteLater();
   }
   mCornerItemsList.clear();
 }
 
 /*!
-  Adds the extent point value.
-  \param index - the index of extent point.
-  \param point - the point value to add.
-  */
+ * \brief ShapeAnnotation::replaceExtent
+ * Adds the extent point value.
+ * \param index - the index of extent point.
+ * \param point - the point value to add.
+ */
 void ShapeAnnotation::replaceExtent(int index, QPointF point)
 {
-  if (index >= 0 && index <= 1)
-  {
+  if (index >= 0 && index <= 1) {
     mExtents.replace(index, point);
   }
 }
 
 /*!
-  Returns the GraphicsView object.
-  \return the pointer to GraphicsView.
-  */
+ * \brief ShapeAnnotation::updateEndExtent
+ * Updates the end extent point.
+ * \param point
+ */
 void ShapeAnnotation::updateEndExtent(QPointF point)
 {
-  if (mExtents.size() > 1)
-  {
+  if (mExtents.size() > 1) {
     mExtents.replace(1, point);
   }
-}
-
-/*!
-  Sets the start arrow value.
-  \return startArrow - the start arrow value.
-  */
-void ShapeAnnotation::setStartArrow(StringHandler::Arrow startArrow)
-{
-  mArrow.replace(0, startArrow);
-}
-
-/*!
-  Returns the start arrow value.
-  \return the start arrow value.
-  */
-StringHandler::Arrow ShapeAnnotation::getStartArrow()
-{
-  return mArrow.at(0);
-}
-
-/*!
-  Sets the end arrow value.
-  \return endArrow - the end arrow value.
-  */
-void ShapeAnnotation::setEndArrow(StringHandler::Arrow endArrow)
-{
-  mArrow.replace(1, endArrow);
-}
-
-/*!
-  Returns the end arrow value.
-  \return the end arrow value.
-  */
-StringHandler::Arrow ShapeAnnotation::getEndArrow()
-{
-  return mArrow.at(1);
-}
-
-/*!
-  Sets the arrow size.
-  \return arrowSize - the arrow size.
-  */
-void ShapeAnnotation::setArrowSize(qreal arrowSize)
-{
-  mArrowSize = arrowSize;
-}
-
-/*!
-  Returns the arrow size value.
-  \return the arrow size value.
-  */
-qreal ShapeAnnotation::getArrowSize()
-{
-  return mArrowSize;
-}
-
-/*!
-  Sets the smooth value.
-  \return smooth - the smooth value.
-  */
-void ShapeAnnotation::setSmooth(StringHandler::Smooth smooth)
-{
-  mSmooth = smooth;
-}
-
-
-/*!
-  Returns the smooth value.
-  \return the smooth value.
-  */
-StringHandler::Smooth ShapeAnnotation::getSmooth()
-{
-  return mSmooth;
-}
-
-/*!
-  Sets the extents list.
-  \param extents - the extents list.
-  */
-void ShapeAnnotation::setExtents(QList<QPointF> extents)
-{
-  mExtents = extents;
-}
-
-/*!
-  Returns the points list.
-  \return the points list.
-  */
-QList<QPointF> ShapeAnnotation::getExtents()
-{
-  return mExtents;
-}
-
-/*!
-  Sets the border pattern value.
-  \param pattern - the border pattern.
-  */
-void ShapeAnnotation::setBorderPattern(StringHandler::BorderPattern pattern)
-{
-  mBorderPattern = pattern;
-}
-
-/*!
-  Returns the border pattern value.
-  \return the border pattern value.
-  */
-StringHandler::BorderPattern ShapeAnnotation::getBorderPattern()
-{
-  return mBorderPattern;
-}
-
-/*!
-  Sets the corner radius size.
-  \return radius - the corner radius.
-  */
-void ShapeAnnotation::setRadius(qreal radius)
-{
-  mRadius = radius;
-}
-
-/*!
-  Returns the corner radius value.
-  \return the corner radius.
-  */
-qreal ShapeAnnotation::getRadius()
-{
-  return mRadius;
-}
-
-/*!
-  Sets the start angle.
-  \return startAngle - the start angle.
-  */
-void ShapeAnnotation::setStartAngle(qreal startAngle)
-{
-  mStartAngle = startAngle;
-}
-
-/*!
-  Returns the start angle.
-  \return the start angle.
-  */
-qreal ShapeAnnotation::getStartAngle()
-{
-  return mStartAngle;
-}
-
-/*!
-  Sets the end angle.
-  \return endAngle - the end angle.
-  */
-void ShapeAnnotation::setEndAngle(qreal endAngle)
-{
-  mEndAngle = endAngle;
-}
-
-/*!
-  Returns the end angle.
-  \return the end angle.
-  */
-qreal ShapeAnnotation::getEndAngle()
-{
-  return mEndAngle;
 }
 
 /*!
@@ -837,107 +676,24 @@ void ShapeAnnotation::setTextString(QString textString)
 }
 
 /*!
-  Returns the text string.
-  \return the text string.
-  */
-QString ShapeAnnotation::getTextString()
-{
-  return mOriginalTextString;
-}
-
-/*!
-  Sets the font name.
-  \return fontName - the font name.
-  */
-void ShapeAnnotation::setFontName(QString fontName)
-{
-  mFontName = fontName;
-}
-
-/*!
-  Returns the font name.
-  \return the font name.
-  */
-QString ShapeAnnotation::getFontName()
-{
-  return mFontName;
-}
-
-/*!
-  Sets the font size.
-  \return fontSize - the font size.
-  */
-void ShapeAnnotation::setFontSize(qreal fontSize)
-{
-  mFontSize = fontSize;
-}
-
-/*!
-  Returns the font size.
-  \return the font size.
-  */
-qreal ShapeAnnotation::getFontSize()
-{
-  return mFontSize;
-}
-
-/*!
-  Sets the text styles.
-  \return textStyles - the text styles.
-  */
-void ShapeAnnotation::setTextStyles(QList<StringHandler::TextStyle> textStyles)
-{
-  mTextStyles = textStyles;
-}
-
-/*!
-  Returns the text styles.
-  \return the text styles.
-  */
-QList<StringHandler::TextStyle> ShapeAnnotation::getTextStyles()
-{
-  return mTextStyles;
-}
-
-/*!
-  Sets the text horizontal alignment.
-  \return textStyles - the text horizontal alignment.
-  */
-void ShapeAnnotation::setTextHorizontalAlignment(StringHandler::TextAlignment textAlignment)
-{
-  mHorizontalAlignment = textAlignment;
-}
-
-/*!
-  Returns the text horizontal alignment.
-  \return the text horizontal alignment.
-  */
-StringHandler::TextAlignment ShapeAnnotation::getTextHorizontalAlignment()
-{
-  return mHorizontalAlignment;
-}
-
-/*!
-  Sets the file name.
-  \return fileName - the file name to set.
-  */
+ * \brief ShapeAnnotation::setFileName
+ * Sets the file name.
+ * \param fileName
+ * \param pComponent
+ */
 void ShapeAnnotation::setFileName(QString fileName, Component *pComponent)
 {
-  if (fileName.isEmpty())
-  {
+  if (fileName.isEmpty()) {
     mOriginalFileName = fileName;
     mFileName = fileName;
     return;
   }
 
   OMCProxy *pOMCProxy = 0;
-  if (pComponent)
-  {
+  if (pComponent) {
     pOMCProxy = pComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
-  }
-  else
-  {
-     pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  } else {
+    pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   }
 
   mOriginalFileName = fileName;
@@ -946,20 +702,13 @@ void ShapeAnnotation::setFileName(QString fileName, Component *pComponent)
   QFileInfo classFileInfo(mClassFileName);
 
   /* if its a modelica:// link then make it absolute path */
-  if (fileUrl.scheme().toLower().compare("modelica") == 0)
-  {
+  if (fileUrl.scheme().toLower().compare("modelica") == 0) {
     mFileName = pOMCProxy->uriToFilename(mOriginalFileName);
-  }
-  else if (fileInfo.isRelative())
-  {
+  } else if (fileInfo.isRelative()) {
     mFileName = QString(classFileInfo.absoluteDir().absolutePath()).append("/").append(mOriginalFileName);
-  }
-  else if (fileInfo.isAbsolute())
-  {
+  } else if (fileInfo.isAbsolute()) {
     mFileName = mOriginalFileName;
-  }
-  else
-  {
+  } else {
     mFileName = "";
   }
 }
@@ -1701,12 +1450,14 @@ bool ShapeAnnotation::isLineStraight(QPointF point1, QPointF point2)
 }
 
 /*!
-  Slot activated when Properties option is choosen from context menu of the shape.
-  */
+ * \brief ShapeAnnotation::showShapeProperties
+ * Slot activated when Properties option is choosen from context menu of the shape.
+ */
 void ShapeAnnotation::showShapeProperties()
 {
-  if (!mpGraphicsView || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM)
+  if (!mpGraphicsView || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
     return;
+  }
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
   ShapePropertiesDialog *pShapePropertiesDialog = new ShapePropertiesDialog(this, pMainWindow);
   pShapePropertiesDialog->exec();

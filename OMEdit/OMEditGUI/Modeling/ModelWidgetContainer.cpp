@@ -827,7 +827,6 @@ void GraphicsView::createTextShape(QPointF point)
     mpTextShapeAnnotation->initializeTransformation();
     // draw corner items for the text shape
     mpTextShapeAnnotation->drawCornerItems();
-    mpTextShapeAnnotation->setSelected(true);
     // make the toolbar button of text unchecked
     pMainWindow->getTextShapeAction()->setChecked(false);
     pMainWindow->getConnectModeAction()->setChecked(true);
@@ -835,6 +834,7 @@ void GraphicsView::createTextShape(QPointF point)
     mpModelWidget->updateClassAnnotationIfNeeded();
     mpModelWidget->updateModelicaText();
     mpTextShapeAnnotation->showShapeProperties();
+    mpTextShapeAnnotation->setSelected(true);
   }
 }
 
@@ -861,17 +861,14 @@ void GraphicsView::createBitmapShape(QPointF point)
     mpBitmapShapeAnnotation->initializeTransformation();
     // draw corner items for the bitmap shape
     mpBitmapShapeAnnotation->drawCornerItems();
-    mpBitmapShapeAnnotation->setSelected(true);
-    ShapePropertiesDialog *pShapePropertiesDialog;
-    pShapePropertiesDialog = new ShapePropertiesDialog(mpBitmapShapeAnnotation, mpModelWidget->getModelWidgetContainer()->getMainWindow());
-    if (!pShapePropertiesDialog->exec()) {
-      /* if user cancels the bitmap shape properties then remove the bitmap shape from the scene */
-      deleteShapeFromList(mpBitmapShapeAnnotation);
-      mpBitmapShapeAnnotation->deleteLater();
-    }
     // make the toolbar button of text unchecked
     pMainWindow->getBitmapShapeAction()->setChecked(false);
     pMainWindow->getConnectModeAction()->setChecked(true);
+    mpModelWidget->getLibraryTreeItem()->emitShapeAdded(mpBitmapShapeAnnotation, this);
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
+    mpBitmapShapeAnnotation->showShapeProperties();
+    mpBitmapShapeAnnotation->setSelected(true);
   }
 }
 
@@ -1499,9 +1496,11 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
   } else if (pMainWindow->getTextShapeAction()->isChecked()) {
     /* if text shape tool button is checked then create a text */
     createTextShape(snappedPoint);
+    eventConsumed = true;
   } else if (pMainWindow->getBitmapShapeAction()->isChecked()) {
     /* if bitmap shape tool button is checked then create a bitmap */
     createBitmapShape(snappedPoint);
+    eventConsumed = true;
   } else if (dynamic_cast<ResizerItem*>(itemAt(event->pos()))) {
     // do nothing if resizer item is clicked. It will be handled in its class mousePressEvent();
   } else {
