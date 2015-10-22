@@ -12234,8 +12234,8 @@ template getCondition(list<ZeroCrossing> zeroCrossings, SimCode simCode ,Text& e
             <%zeroCrossingsCode%>
             default:
             {
-              string error =string("Wrong condition index ") + boost::lexical_cast<string>(index);
-             throw ModelicaSimulationError(EVENT_HANDLING,error);
+              string error = string("Wrong condition index ") + to_string(index);
+              throw ModelicaSimulationError(EVENT_HANDLING, error);
             }
           };
         }
@@ -12301,11 +12301,11 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings, SimCode simCode ,T
         saveAll();
     }
 
-    if(iter>100 && restart ){
-     string error = string("Number of event iteration steps exceeded at time: ") + boost::lexical_cast<string>(_simTime);
-    throw ModelicaSimulationError(EVENT_HANDLING,error);
-     }
-     _callType = IContinuous::CONTINUOUS;
+    if (iter > 100 && restart) {
+      string error = string("Number of event iteration steps exceeded at time: ") + to_string(_simTime);
+      throw ModelicaSimulationError(EVENT_HANDLING, error);
+    }
+    _callType = IContinuous::CONTINUOUS;
 
     return state_vars_reinitialized;
   }
