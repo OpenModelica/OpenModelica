@@ -2203,7 +2203,7 @@ void WelcomePageWidget::openLatestNewsItem(QListWidgetItem *pItem)
   QDesktopServices::openUrl(url);
 }
 
-ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text, bool newModel)
+ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text)
   : QWidget(pModelWidgetContainer), mpModelWidgetContainer(pModelWidgetContainer), mpLibraryTreeItem(pLibraryTreeItem),
     mloadWidgetComponents(false), mReloadNeeded(false)
 {
@@ -2224,11 +2224,6 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     connect(mpUndoStack, SIGNAL(canUndoChanged(bool)), SLOT(handleCanUndoChanged(bool)));
     connect(mpUndoStack, SIGNAL(canRedoChanged(bool)), SLOT(handleCanRedoChanged(bool)));
     mpUndoView = new QUndoView(mpUndoStack);
-    if (newModel) {
-      mpIconGraphicsView->addClassAnnotation(false);
-      mpDiagramGraphicsView->addClassAnnotation(false);
-      updateModelicaText();
-    }
     loadModelWidget();
     mpEditor = 0;
   } else {

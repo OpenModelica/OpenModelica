@@ -1482,7 +1482,7 @@ LibraryTreeItem* LibraryTreeModel::getLibraryTreeItemFromFile(QString fileName, 
  * \param text
  * \param show
  */
-void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, QString text, bool show, bool newModel)
+void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, QString text, bool show)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   if (show) {
@@ -1501,7 +1501,7 @@ void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, QStrin
       pLibraryTreeItem->getModelWidget()->hide();
     }
   } else {
-    ModelWidget *pModelWidget = new ModelWidget(pLibraryTreeItem, mpLibraryWidget->getMainWindow()->getModelWidgetContainer(), text, newModel);
+    ModelWidget *pModelWidget = new ModelWidget(pLibraryTreeItem, mpLibraryWidget->getMainWindow()->getModelWidgetContainer(), text);
     pLibraryTreeItem->setModelWidget(pModelWidget);
     pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getNameStructure() + (pLibraryTreeItem->isSaved() ? "" : "*"));
     if (show) {
