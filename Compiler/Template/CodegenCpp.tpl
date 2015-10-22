@@ -5,7 +5,16 @@ import CodegenCppCommon.*;
 import CodegenUtil.*;
 import CodegenCppInit.*;
 
-
+//
+//  Generates Modelica system class with the fowling inheritance structure
+//
+//  Base class      : ModelicaSystem -> implements IContinuous, IEvent, IStepEvent, ITime, ISystemProperties
+//  Derived class 1 : ModelicaSystemJacobian -> holds all Jacobian information
+//  Derived class 2 : ModelicaSystemMixed -> implements IMixedSystems
+//  Derived class 3 : ModelicaSystemStateSelection -> implements IStateSelection
+//  Derived class 4 : ModelicaSystemStateWriteOutput -> implements IWriteOutput
+//  Derived class 5 : ModelicaSystemStateInitialize  -> implements ISystemInitialization
+//
 
 
 template translateModel(SimCode simCode)
@@ -62,8 +71,8 @@ template translateModel(SimCode simCode)
         let()= textFile(simulationJacobianCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
         let()= textFile(simulationStateSelectionCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
         let()= textFile(simulationStateSelectionHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>StateSelection.h')
-        let()= textFile(simulationExtensionHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.h')
-        let()= textFile(simulationExtensionCppFile(simCode  , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Extension.cpp')
+        let()= textFile(simulationMixedSystemHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Mixed.h')
+        let()= textFile(simulationMixedSystemCppFile(simCode  , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Mixed.cpp')
         let()= textFile(simulationWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
         let()= textFile(simulationWriteOutputCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
         let()= textFile(simulationFactoryFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
@@ -130,9 +139,9 @@ let initparameqs = generateEquationMemberFuncDecls(parameterEquations,"initParam
     *
     *****************************************************************************/
 
-    class <%lastIdentOfPath(modelInfo.name)%>Initialize : virtual public <%lastIdentOfPath(modelInfo.name)%>
+    class <%lastIdentOfPath(modelInfo.name)%>Initialize : public ISystemInitialization, public <%lastIdentOfPath(modelInfo.name)%>WriteOutput
     {
-    public:
+     public:
       <%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars);
       <%lastIdentOfPath(modelInfo.name)%>Initialize(<%lastIdentOfPath(modelInfo.name)%>Initialize& instance);
       virtual ~<%lastIdentOfPath(modelInfo.name)%>Initialize();
@@ -144,6 +153,7 @@ let initparameqs = generateEquationMemberFuncDecls(parameterEquations,"initParam
       virtual void initializeBoundVariables();
       virtual void initParameterEquations();
       virtual void initEquations();
+      virtual IMixedSystem* clone();
       <%if(boolAnd(boolNot(Flags.isSet(Flags.HARDCODED_START_VALUES)), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then
         <<
         virtual void checkVariables();
@@ -222,7 +232,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   *
   *****************************************************************************/
 
-  class <%lastIdentOfPath(modelInfo.name)%>Jacobian : virtual public <%lastIdentOfPath(modelInfo.name)%>
+  class <%lastIdentOfPath(modelInfo.name)%>Jacobian : public <%lastIdentOfPath(modelInfo.name)%>
   {
   <% (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex index0 =>
        (mat |> (eqs,_,_) =>  generatefriendAlgloops(eqs,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace) ;separator="\n")
@@ -294,7 +304,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   * Simulation code to initialize the Modelica system
   *
   *****************************************************************************/
-  class <%lastIdentOfPath(modelInfo.name)%>StateSelection: virtual public  <%lastIdentOfPath(modelInfo.name)%>
+  class <%lastIdentOfPath(modelInfo.name)%>StateSelection: public IStateSelection, public <%lastIdentOfPath(modelInfo.name)%>Mixed
   {
   public:
     <%lastIdentOfPath(modelInfo.name)%>StateSelection(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars);
@@ -337,7 +347,7 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
   *
   *****************************************************************************/
 
-  class <%lastIdentOfPath(modelInfo.name)%>WriteOutput : virtual public <%lastIdentOfPath(modelInfo.name)%>
+  class <%lastIdentOfPath(modelInfo.name)%>WriteOutput : public IWriteOutput,public <%lastIdentOfPath(modelInfo.name)%>StateSelection
   {
   public:
     <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars);
@@ -373,7 +383,7 @@ end getPreVarsCount;
 
 
 
-template simulationExtensionHeaderFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+template simulationMixedSystemHeaderFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
  "Generates code for header file for simulation target."
 ::=
 match simCode
@@ -385,25 +395,15 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
   * Simulation code
   *
   *****************************************************************************/
-  class <%lastIdentOfPath(modelInfo.name)%>Extension: public ISystemInitialization, public IMixedSystem,public IWriteOutput, public IStateSelection, public <%lastIdentOfPath(modelInfo.name)%>WriteOutput, public <%lastIdentOfPath(modelInfo.name)%>Initialize, public <%lastIdentOfPath(modelInfo.name)%>Jacobian,public <%lastIdentOfPath(modelInfo.name)%>StateSelection
+  class <%lastIdentOfPath(modelInfo.name)%>Mixed:  public IMixedSystem, public <%lastIdentOfPath(modelInfo.name)%>Jacobian
   {
   public:
-    <%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars);
-    <%lastIdentOfPath(modelInfo.name)%>Extension(<%lastIdentOfPath(modelInfo.name)%>Extension &instance);
-    virtual ~<%lastIdentOfPath(modelInfo.name)%>Extension();
+     <%lastIdentOfPath(modelInfo.name)%>Mixed(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars);
+     <%lastIdentOfPath(modelInfo.name)%>Mixed(<%lastIdentOfPath(modelInfo.name)%>Mixed &instance);
+    virtual ~ <%lastIdentOfPath(modelInfo.name)%>Mixed();
 
-    virtual IMixedSystem* clone();
 
-    ///Intialization methods from ISystemInitialization
-    virtual bool initial();
-    virtual void setInitial(bool);
-    virtual void initialize();
-    virtual void initEquations();
 
-    ///Write simulation results methods from IWriteOutput
-    /// Output routine (to be called by the solver after every successful integration step)
-    virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT);
-    virtual IHistory* getHistory();
     /// Provide Jacobian
     virtual const matrix_t& getJacobian() ;
     virtual const matrix_t& getJacobian(unsigned int index) ;
@@ -418,28 +418,6 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
     //Saves all variables before an event is handled, is needed for the pre, edge and change operator
     virtual void saveAll();
 
-    //StateSelction methods
-    virtual int getDimStateSets() const;
-    virtual int getDimStates(unsigned int index) const;
-    virtual int getDimCanditates(unsigned int index) const ;
-    virtual int getDimDummyStates(unsigned int index) const ;
-    virtual void getStates(unsigned int index,double* z);
-    virtual void setStates(unsigned int index,const double* z);
-    virtual void getStateCanditates(unsigned int index,double* z);
-    virtual bool getAMatrix(unsigned int index,DynArrayDim2<int>& A);
-    virtual void setAMatrix(unsigned int index, DynArrayDim2<int>& A);
-    virtual bool getAMatrix(unsigned int index,DynArrayDim1<int>& A);
-    virtual void setAMatrix(unsigned int index,DynArrayDim1<int>& A);
-
-    virtual double& getRealStartValue(double& var);
-    virtual bool& getBoolStartValue(bool& var);
-    virtual int& getIntStartValue(int& var);
-    virtual string& getStringStartValue(string& var);
-    virtual void setRealStartValue(double& var,double val);
-    virtual void setBoolStartValue(bool& var,bool val);
-    virtual void setIntStartValue(int& var,int val);
-    virtual void setStringStartValue(string& var,string val);
-
     /*colored jacobians*/
     virtual void getAColorOfColumn(int* aSparsePatternColorCols, int size);
     virtual int  getAMaxColors();
@@ -447,7 +425,7 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
     virtual string getModelName();
   };
   >>
-end simulationExtensionHeaderFile;
+end simulationMixedSystemHeaderFile;
 
 
 
@@ -463,7 +441,7 @@ case SIMCODE(modelInfo=MODELINFO()) then
   #include <Core/System/SimVars.h>
   extern "C" IMixedSystem* createModelicaSystem(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> algLoopSolverFactory, shared_ptr<ISimData> simData, shared_ptr<ISimVars> simVars)
   {
-      return new <%lastIdentOfPath(modelInfo.name)%>Extension(globalSettings, algLoopSolverFactory, simData, simVars);
+      return new <%lastIdentOfPath(modelInfo.name)%>Initialize(globalSettings, algLoopSolverFactory, simData, simVars);
   }
 
   extern "C" ISimVars* createSimVars(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_string, size_t dim_pre_vars, size_t dim_z, size_t z_i)
@@ -494,7 +472,7 @@ case SIMCODE(modelInfo=MODELINFO()) then
 
     shared_ptr<IMixedSystem> createSystemFunction(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> algLoopSolverFactory, shared_ptr<ISimData> simData,shared_ptr<ISimVars> simVars)
     {
-        shared_ptr<IMixedSystem> system( new <%lastIdentOfPath(modelInfo.name)%>Extension(globalSettings, algLoopSolverFactory, simData,simVars) );
+        shared_ptr<IMixedSystem> system( new <%lastIdentOfPath(modelInfo.name)%>Initialize(globalSettings, algLoopSolverFactory, simData,simVars) );
         return system;
     }
 
@@ -504,7 +482,7 @@ case SIMCODE(modelInfo=MODELINFO()) then
   {
     typedef boost::extensions::factory<IMixedSystem,IGlobalSettings*, shared_ptr<IAlgLoopSolverFactory>, shared_ptr<ISimData>, shared_ptr<ISimVars> > system_factory;
     types.get<std::map<std::string, system_factory> >()["<%lastIdentOfPath(modelInfo.name)%>"]
-      .system_factory::set<<%lastIdentOfPath(modelInfo.name)%>Extension>();
+      .system_factory::set<<%lastIdentOfPath(modelInfo.name)%>Initialize>();
   }
   #endif
   >>
@@ -521,13 +499,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%algloopfilesInclude(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
 
    <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars)
-   : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
+   : <%lastIdentOfPath(modelInfo.name)%>WriteOutput(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
    {
      InitializeDummyTypeElems();
    }
 
    <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(<%lastIdentOfPath(modelInfo.name)%>Initialize& instance)
-   : <%lastIdentOfPath(modelInfo.name)%>(instance)
+   : <%lastIdentOfPath(modelInfo.name)%>WriteOutput(instance)
    {
      InitializeDummyTypeElems();
    }
@@ -541,7 +519,10 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      //This is necessary to prevent linker errors that occur with GCC 4.4 if a complex type is not used in the code and contains arrays
      <%dummyTypeElemCreation%>
    }
-
+   IMixedSystem* <%lastIdentOfPath(modelInfo.name)%>Initialize::clone()
+   {
+     return new <%lastIdentOfPath(modelInfo.name)%>Initialize(*this);
+   }
    <%getIntialStatus(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
    <%setIntialStatus(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
 
@@ -731,7 +712,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
 
    <%lastIdentOfPath(modelInfo.name)%>StateSelection::<%lastIdentOfPath(modelInfo.name)%>StateSelection(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars)
-       : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
+       : <%lastIdentOfPath(modelInfo.name)%>Mixed(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
    {
    }
 
@@ -754,13 +735,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars)
-       : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
+       : <%lastIdentOfPath(modelInfo.name)%>StateSelection(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
    {
      _historyImpl = new HistoryImplType(*globalSettings,<%numAlgvars(modelInfo)%> + <%numAliasvars(modelInfo)%> + 2*<%numStatevars(modelInfo)%>);
    }
 
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(<%lastIdentOfPath(modelInfo.name)%>WriteOutput& instance)
-       : <%lastIdentOfPath(modelInfo.name)%>(instance.getGlobalSettings(), instance.getAlgLoopSolverFactory(), instance.getSimData(), instance.getSimVars())
+       : <%lastIdentOfPath(modelInfo.name)%>StateSelection(instance.getGlobalSettings(), instance.getAlgLoopSolverFactory(), instance.getSimData(), instance.getSimVars())
    {
      _historyImpl = new HistoryImplType(*instance.getGlobalSettings(),<%numAlgvars(modelInfo)%>+ <%numAliasvars(modelInfo)%> + 2*<%numStatevars(modelInfo)%>);
    }
@@ -785,6 +766,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         _historyImpl->clear();
       }
    }
+
+
    <%writeoutput(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
    >>
 end simulationWriteOutputCppFile;
@@ -996,7 +979,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
    >>
 end simulationWriteOutputAliasVarsCppFile;
 
-template simulationExtensionCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template simulationMixedSystemCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for main cpp file for simulation target."
 ::=
 match simCode
@@ -1092,75 +1075,44 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        ;separator="\n")
 
    <<
-   <%classname%>Extension::<%classname%>Extension(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars)
-       : <%classname%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
-       , <%classname%>WriteOutput(globalSettings,nonlinsolverfactory, sim_data,sim_vars)
-       , <%classname%>Initialize(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
-       , <%classname%>Jacobian(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
-       , <%classname%>StateSelection(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
+   <%classname%>Mixed::<%classname%>Mixed(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars)
+       : <%classname%>Jacobian(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
+
 
    {
    }
 
-   <%classname%>Extension::<%classname%>Extension(<%classname%>Extension& instance)
-       : <%classname%>(instance)
-       , <%classname%>WriteOutput(instance)
-       , <%classname%>Initialize(instance)
-       , <%classname%>Jacobian(instance)
-       , <%classname%>StateSelection(instance)
-
+   <%classname%>Mixed::<%classname%>Mixed(<%classname%>Mixed& instance)
+   : <%classname%>Jacobian(instance)
    {
    }
 
-   <%classname%>Extension::~<%classname%>Extension()
+   <%classname%>Mixed::~<%classname%>Mixed()
    {
    }
 
-   IMixedSystem* <%classname%>Extension::clone()
-   {
-     return new <%classname%>Extension(*this);
-   }
 
-   bool <%classname%>Extension::initial()
-   {
-      return <%classname%>Initialize::initial();
-   }
-   void <%classname%>Extension::setInitial(bool value)
-   {
-      <%classname%>Initialize::setInitial(value);
-   }
 
-   void <%classname%>Extension::initialize()
-   {
-     <%classname%>WriteOutput::initialize();
-     <%classname%>Initialize::initialize();
-     <%classname%>Jacobian::initialize();
-
-     <%classname%>Jacobian::initializeColoredJacobianA();
-   }
-
-   const matrix_t& <%classname%>Extension::getJacobian( )
+   const matrix_t& <%classname%>Mixed::getJacobian( )
    {
         <%getDenseAMatrix%>
    }
 
-   const matrix_t& <%classname%>Extension::getJacobian(unsigned int index)
+   const matrix_t& <%classname%>Mixed::getJacobian(unsigned int index)
    {
       <%getDenseMatrix%>
    }
-   const sparsematrix_t& <%classname%>Extension::getSparseJacobian( )
+   const sparsematrix_t& <%classname%>Mixed::getSparseJacobian( )
    {
       <%getSparseAMatrix%>
    }
 
-   const sparsematrix_t& <%classname%>Extension::getSparseJacobian(unsigned int index)
+   const sparsematrix_t& <%classname%>Mixed::getSparseJacobian(unsigned int index)
    {
      <%getSparseMatrix%>
    }
 
-
-
-   const matrix_t& <%classname%>Extension::getStateSetJacobian(unsigned int index)
+   const matrix_t& <%classname%>Mixed::getStateSetJacobian(unsigned int index)
    {
      switch (index)
      {
@@ -1169,7 +1121,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
           throw ModelicaSimulationError(MATH_FUNCTION,"Not supported statset index");
       }
    }
-   const sparsematrix_t& <%classname%>Extension::getStateSetSparseJacobian(unsigned int index)
+   const sparsematrix_t& <%classname%>Mixed::getStateSetSparseJacobian(unsigned int index)
    {
      switch (index)
      {
@@ -1178,146 +1130,32 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
           throw ModelicaSimulationError(MATH_FUNCTION,"Not supported statset index");
       }
    }
-   bool <%classname%>Extension::handleSystemEvents(bool* events)
-   {
-     return <%classname%>::handleSystemEvents(events);
-   }
+    <%handleSystemEvents(zeroCrossings,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
 
-   void <%classname%>Extension::saveAll()
+   void <%classname%>Mixed::saveAll()
    {
      return <%classname%>::saveAll();
    }
 
-   void <%classname%>Extension::initEquations()
-   {
-     <%classname%>Initialize::initEquations();
-   }
-
-   void <%classname%>Extension::writeOutput(const IWriteOutput::OUTPUT command)
-   {
-     <%classname%>WriteOutput::writeOutput(command);
-   }
-
-   IHistory* <%classname%>Extension::getHistory()
-   {
-     return <%classname%>WriteOutput::getHistory();
-   }
-
-   int <%classname%>Extension::getDimStateSets() const
-   {
-     return <%classname%>StateSelection::getDimStateSets();
-   }
-
-   int <%classname%>Extension::getDimStates(unsigned int index) const
-   {
-     return <%classname%>StateSelection::getDimStates(index);
-   }
-
-   int <%classname%>Extension::getDimCanditates(unsigned int index) const
-   {
-     return <%classname%>StateSelection::getDimCanditates(index);
-   }
-
-   int <%classname%>Extension::getDimDummyStates(unsigned int index) const
-   {
-     return <%classname%>StateSelection::getDimDummyStates(index);
-   }
-
-   void <%classname%>Extension::getStates(unsigned int index,double* z)
-   {
-     <%classname%>StateSelection::getStates(index,z);
-   }
-
-   void <%classname%>Extension::setStates(unsigned int index,const double* z)
-   {
-     <%classname%>StateSelection::setStates(index,z);
-   }
-
-   void <%classname%>Extension::getStateCanditates(unsigned int index,double* z)
-   {
-     <%classname%>StateSelection::getStateCanditates(index,z);
-   }
-
-   bool <%classname%>Extension::getAMatrix(unsigned int index,DynArrayDim2<int> & A)
-   {
-     return <%classname%>StateSelection::getAMatrix(index,A);
-   }
-
-   void <%classname%>Extension::setAMatrix(unsigned int index,DynArrayDim2<int> & A)
-   {
-     <%classname%>StateSelection::setAMatrix(index,A);
-   }
-
-   bool <%classname%>Extension::getAMatrix(unsigned int index,DynArrayDim1<int> & A)
-   {
-     return <%classname%>StateSelection::getAMatrix(index,A);
-   }
-
-   void <%classname%>Extension::setAMatrix(unsigned int index,DynArrayDim1<int> & A)
-   {
-     <%classname%>StateSelection::setAMatrix(index,A);
-   }
 
    /*needed for colored jacobians*/
 
-   void <%classname%>Extension::getAColorOfColumn(int* aSparsePatternColorCols, int size)
+   void <%classname%>Mixed::getAColorOfColumn(int* aSparsePatternColorCols, int size)
    {
     memcpy(aSparsePatternColorCols, _AColorOfColumn, size * sizeof(int));
    }
 
-   int <%classname%>Extension::getAMaxColors()
+   int <%classname%>Mixed::getAMaxColors()
    {
     return _AMaxColors;
    }
 
-   double& <%classname%>Extension::getRealStartValue(double& var)
-   {
-     return SystemDefaultImplementation::getRealStartValue(var);
-   }
-
-   bool& <%classname%>Extension::getBoolStartValue(bool& var)
-   {
-     return SystemDefaultImplementation::getBoolStartValue(var);
-   }
-
-   int& <%classname%>Extension::getIntStartValue(int& var)
-   {
-     return SystemDefaultImplementation::getIntStartValue(var);
-   }
-
-   string& <%classname%>Extension::getStringStartValue(string& var)
-   {
-     return SystemDefaultImplementation::getStringStartValue(var);
-   }
-
-   void <%classname%>Extension::setRealStartValue(double& var,double val)
-   {
-     SystemDefaultImplementation::setRealStartValue(var, val);
-   }
-
-   void <%classname%>Extension::setBoolStartValue(bool& var,bool val)
-   {
-     SystemDefaultImplementation::setBoolStartValue(var, val);
-   }
-
-   void <%classname%>Extension::setIntStartValue(int& var,int val)
-   {
-     SystemDefaultImplementation::setIntStartValue(var, val);
-   }
-
-   void <%classname%>Extension::setStringStartValue(string& var,string val)
-   {
-     SystemDefaultImplementation::setStringStartValue(var, val);
-   }
-
-   /*********************************************************************************************/
-
-   string <%classname%>Extension::getModelName()
+   string <%classname%>Mixed::getModelName()
    {
     return "<%fileNamePrefix%>";
    }
    >>
-end simulationExtensionCppFile;
+end simulationMixedSystemCppFile;
 
 
 template generateJacobianForIndex(SimCode simCode, list<JacobianColumn> jacobianColumn, list<list<Integer>> colorList,Integer indexJacobian, String matrixName,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,                                Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -2896,15 +2734,18 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
     #include "OMCpp<%fileNamePrefix%>.h"
+
+
     #include "OMCpp<%fileNamePrefix%>Jacobian.h"
+    #include "OMCpp<%fileNamePrefix%>Mixed.h"
     #include "OMCpp<%fileNamePrefix%>StateSelection.h"
     #include "OMCpp<%fileNamePrefix%>WriteOutput.h"
     #include "OMCpp<%fileNamePrefix%>Initialize.h"
-    #include "OMCpp<%fileNamePrefix%>Extension.h"
+
 
     #include "OMCpp<%fileNamePrefix%>AlgLoopMain.cpp"
     #include "OMCpp<%fileNamePrefix%>FactoryExport.cpp"
-    #include "OMCpp<%fileNamePrefix%>Extension.cpp"
+    #include "OMCpp<%fileNamePrefix%>Mixed.cpp"
     #include "OMCpp<%fileNamePrefix%>Functions.cpp"
     <%if(boolOr(Flags.isSet(Flags.HARDCODED_START_VALUES), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then
     <<
@@ -3774,6 +3615,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%updateFunctionsCode%>
 
     <%DefaultImplementationCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+
+
     <%checkForDiscreteEvents(discreteModelVars,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
     <%giveZeroFunc1(zeroCrossings,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
@@ -3795,7 +3638,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%dimZeroFunc(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
 
     <%getCondition(zeroCrossings,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-    <%handleSystemEvents(zeroCrossings,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+
     <%saveAll(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
 
 
@@ -6031,6 +5874,10 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
       initializeBoundVariables();
       <%if(boolAnd(boolNot(Flags.isSet(Flags.HARDCODED_START_VALUES)), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then 'checkVariables();' else '//checkVariables();'%>
       saveAll();
+
+      <%lastIdentOfPath(modelInfo.name)%>WriteOutput::initialize();
+      <%lastIdentOfPath(modelInfo.name)%>Jacobian::initialize();
+      <%lastIdentOfPath(modelInfo.name)%>Jacobian::initializeColoredJacobianA();
       //delete reader;
    }
 
@@ -7301,8 +7148,7 @@ match modelInfo
       >>
       %>
       bool isConsistent();
-      //Called to handle all events occured at same time
-      bool handleSystemEvents(bool* events);
+
       //Saves all variables before an event is handled, is needed for the pre, edge and change operator
       void saveAll();
 
@@ -7607,6 +7453,50 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
         SystemDefaultImplementation::setContinuousStates(z);
       }
 
+      double& <%lastIdentOfPath(modelInfo.name)%>::getRealStartValue(double& var)
+      {
+         return SystemDefaultImplementation::getRealStartValue(var);
+       }
+
+       bool& <%lastIdentOfPath(modelInfo.name)%>::getBoolStartValue(bool& var)
+       {
+         return SystemDefaultImplementation::getBoolStartValue(var);
+       }
+
+       int& <%lastIdentOfPath(modelInfo.name)%>::getIntStartValue(int& var)
+       {
+         return SystemDefaultImplementation::getIntStartValue(var);
+       }
+
+       string& <%lastIdentOfPath(modelInfo.name)%>::getStringStartValue(string& var)
+       {
+         return SystemDefaultImplementation::getStringStartValue(var);
+       }
+
+       void <%lastIdentOfPath(modelInfo.name)%>::setRealStartValue(double& var,double val)
+       {
+         SystemDefaultImplementation::setRealStartValue(var, val);
+       }
+
+       void <%lastIdentOfPath(modelInfo.name)%>::setBoolStartValue(bool& var,bool val)
+       {
+         SystemDefaultImplementation::setBoolStartValue(var, val);
+       }
+
+       void <%lastIdentOfPath(modelInfo.name)%>::setIntStartValue(int& var,int val)
+       {
+         SystemDefaultImplementation::setIntStartValue(var, val);
+       }
+
+       void <%lastIdentOfPath(modelInfo.name)%>::setStringStartValue(string& var,string val)
+       {
+         SystemDefaultImplementation::setStringStartValue(var, val);
+       }
+
+
+
+
+
       // Provide the right hand side (according to the index)
       void <%lastIdentOfPath(modelInfo.name)%>::getRHS(double* f)
       {
@@ -7810,6 +7700,14 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
     virtual int getDimString() const ;
     /// Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
     virtual int getDimRHS()const;
+    virtual double& getRealStartValue(double& var);
+    virtual bool& getBoolStartValue(bool& var);
+    virtual int& getIntStartValue(int& var);
+    virtual string& getStringStartValue(string& var);
+    virtual void setRealStartValue(double& var,double val);
+    virtual void setBoolStartValue(bool& var,bool val);
+    virtual void setIntStartValue(int& var,int val);
+    virtual void setStringStartValue(string& var,string val);
 
     //Resets all time events
 
@@ -12385,7 +12283,7 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings, SimCode simCode ,T
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-  bool <%lastIdentOfPath(modelInfo.name)%>::handleSystemEvents(bool* events)
+  bool <%lastIdentOfPath(modelInfo.name)%>Mixed::handleSystemEvents(bool* events)
   {
     _callType = IContinuous::DISCRETE;
 

@@ -111,14 +111,15 @@ template fmuCalcHelperMainfile(SimCode simCode)
     #include "OMCpp<%fileNamePrefix%>.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
     #include "OMCpp<%fileNamePrefix%>Jacobian.h"
+    #include "OMCpp<%fileNamePrefix%>Mixed.h"
     #include "OMCpp<%fileNamePrefix%>StateSelection.h"
     #include "OMCpp<%fileNamePrefix%>WriteOutput.h"
     #include "OMCpp<%fileNamePrefix%>Initialize.h"
-    #include "OMCpp<%fileNamePrefix%>Extension.h"
     #include "OMCpp<%fileNamePrefix%>FMU.h"
 
     #include "OMCpp<%fileNamePrefix%>AlgLoopMain.cpp"
-    #include "OMCpp<%fileNamePrefix%>Extension.cpp"
+    #include "OMCpp<%fileNamePrefix%>FactoryExport.cpp"
+    #include "OMCpp<%fileNamePrefix%>Mixed.cpp"
     #include "OMCpp<%fileNamePrefix%>Functions.cpp"
     <%if(boolOr(Flags.isSet(Flags.HARDCODED_START_VALUES), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then
     <<
@@ -145,9 +146,10 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
   #pragma once
 
   // Dummy code for FMU that writes no output file
-  class <%lastIdentOfPath(modelInfo.name)%>WriteOutput {
+  class <%lastIdentOfPath(modelInfo.name)%>WriteOutput  : public IWriteOutput,public <%lastIdentOfPath(modelInfo.name)%>StateSelection
+  {
    public:
-    <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory, shared_ptr<ISimData> simData, shared_ptr<ISimVars> simVars) {}
+    <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory, shared_ptr<ISimData> simData, shared_ptr<ISimVars> simVars): <%lastIdentOfPath(modelInfo.name)%>StateSelection(globalSettings, nonLinSolverFactory, simData,simVars) {}
     virtual ~<%lastIdentOfPath(modelInfo.name)%>WriteOutput() {}
 
     virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT) {}
@@ -200,7 +202,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
   // declaration for Cpp FMU target
 
-  class <%modelShortName%>FMU: public <%modelShortName%>Extension {
+  class <%modelShortName%>FMU: public <%modelShortName%>Initialize {
    public:
     // create simulation variables
     static ISimVars *createSimVars();
@@ -270,8 +272,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
       shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory,
       shared_ptr<ISimData> simData,
       shared_ptr<ISimVars> simVars):
-    <%modelShortName%>(globalSettings, nonLinSolverFactory, simData, simVars),
-    <%modelShortName%>Extension(globalSettings, nonLinSolverFactory, simData, simVars) {
+      <%modelShortName%>Initialize(globalSettings, nonLinSolverFactory, simData, simVars) {
   }
 
   // initialization
@@ -698,7 +699,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   FUNCTIONFILE=OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp
   INITFILE=OMCpp<%fileNamePrefix%>Initialize.cpp
   FACTORYFILE=OMCpp<%fileNamePrefix%>FactoryExport.cpp
-  EXTENSIONFILE=OMCpp<%fileNamePrefix%>Extension.cpp
+  MIXEDFILE=OMCpp<%fileNamePrefix%>Mixed.cpp
   JACOBIANFILE=OMCpp<%fileNamePrefix%>Jacobian.cpp
   WRITEOUTPUTFILE=OMCpp<%fileNamePrefix%>WriteOutput.cpp
   MAINFILE=OMCpp<%lastIdentOfPath(modelInfo.name)%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
