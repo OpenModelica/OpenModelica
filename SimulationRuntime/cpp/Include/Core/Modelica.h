@@ -115,11 +115,12 @@ using std::runtime_error;
     using std::make_tuple;
   #else
     #include <boost/tuple/tuple.hpp>
+    #include <boost/algorithm/minmax_element.hpp>
     using boost::tuple;
     using boost::make_tuple;
+	using boost::minmax_element;
   #endif
   #include <boost/array.hpp>
-  #include <boost/algorithm/minmax_element.hpp>
   #include <boost/shared_ptr.hpp>
   #include <boost/weak_ptr.hpp>
 
@@ -140,7 +141,6 @@ using std::runtime_error;
   #endif //USE_THREAD
 
   using boost::array;
-  using boost::minmax_element;
   using boost::shared_ptr;
   using boost::weak_ptr;
   using boost::dynamic_pointer_cast;
