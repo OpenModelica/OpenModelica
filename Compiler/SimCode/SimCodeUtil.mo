@@ -2776,7 +2776,7 @@ algorithm
       (beqs, sources) = BackendDAEUtil.getEqnSysRhs(inEquationArray, inVars, SOME(inFuncs));
       beqs = listReverse(beqs);
       simJac = List.map1(jac, jacToSimjac, inVars);
-     // simJac = simJacCSRToCSC(simJac);
+      //simJac = List.sort(simJac,simJacCSRToCSC);
 
     then ({SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(iuniqueEqIndex, mixedEvent, simVars, beqs, simJac, {}, NONE(), sources, 0), NONE())}, iuniqueEqIndex+1, itempvars);
 
@@ -4358,39 +4358,21 @@ algorithm
   end match;
 end jacToSimjac;
 
-protected function simJacCSRToCSC"transforms the simjac from compact spars row matrix format to compact sparse column matrix"
-  input list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJacIn;
-  output list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJacOut;
-protected
-  Integer row,col,i;
-  SimCode.SimEqSystem simEqSys;
-  tuple<Integer,Integer,SimCode.SimEqSystem> entry;
-  list<tuple<Integer,Integer,SimCode.SimEqSystem>> simJac={};
-algorithm
-  // swap row and col indexes
-  for entry in simJacIn loop
-    (row,col,simEqSys) := entry;
-    simJac := (col,row,simEqSys)::simJac;
-  end for;
-  // order column indexes
-  simJacOut := List.sort(simJac,simJacCSRToCSC1);
-end simJacCSRToCSC;
-
-protected function simJacCSRToCSC1
-  input tuple<Integer,Integer,SimCode.SimEqSystem> e1;
+protected function simJacCSRToCSC"outputs true if a simjac entry of type <row,col> is before another in the sense of a compressed sparse column format"
+  input tuple<Integer,Integer,SimCode.SimEqSystem> e1; //<row,col>
   input tuple<Integer,Integer,SimCode.SimEqSystem> e2;
   output Boolean isGt;
 protected
-  Integer i11,i12,i21,i22;
+  Integer r1,r2,c1,c2;
 algorithm
-  (i11,i12,_) := e1;
-  (i21,i22,_) := e2;
-  if intNe(i11,i21) then
-    isGt := intGt(i11,i21);
+  (r1,c1,_) := e1;
+  (r2,c2,_) := e2;
+  if intNe(c1,c2) then
+    isGt := intGt(c1,c2);
   else
-    isGt := intGt(i12,i22);
+    isGt := intGt(r1,r2);
   end if;
-end simJacCSRToCSC1;
+end simJacCSRToCSC;
 
 protected function createSingleWhenEqnCode
   input BackendDAE.Equation inEquation;
@@ -6332,10 +6314,11 @@ algorithm
 end derVarFromStateVar;
 
 
-public function dumpVar
+public function simVarString
   input SimCodeVar.SimVar inVar;
+  output String s;
 algorithm
-  _ := match(inVar)
+  s := match(inVar)
   local
     Integer i;
     DAE.ComponentRef name, name2;
@@ -6349,24 +6332,24 @@ algorithm
     equation
         s1 = ComponentReference.printComponentRefStr(name);
         if Util.isSome(arrCref) then s3 = " \tarrCref:"+ComponentReference.printComponentRefStr(Util.getOption(arrCref)); else s3="\tno arrCref"; end if;
-        print(" No Alias for var : " + s1 + " index: "+intString(i)+" initial: "+ExpressionDump.printOptExpStr(init) + s3 + " index:("+printVarIndx(variable_index)+")" +" [" + stringDelimitList(numArrayElement,",")+"] " + "\n");
-     then ();
+        s = "index: "+intString(i)+": "+s1+" (no alias) "+" initial: "+ExpressionDump.printOptExpStr(init) + s3 + " index:("+printVarIndx(variable_index)+")" +" [" + stringDelimitList(numArrayElement,",")+"] ";
+     then s;
     case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.ALIAS(varName = name2), arrayCref=arrCref,variable_index=variable_index, numArrayElement=numArrayElement))
     equation
         s1 = ComponentReference.printComponentRefStr(name);
         s2 = ComponentReference.printComponentRefStr(name2);
         if Util.isSome(arrCref) then s3 = " arrCref:"+ComponentReference.printComponentRefStr(Util.getOption(arrCref)); else s3=""; end if;
-        print(" Alias for var " + s1 + " is " + s2 + s3 + " index:("+printVarIndx(variable_index)+")" +" [" + stringDelimitList(numArrayElement,",")+"] " + "\n");
-    then ();
+        s = "index: "+printVarIndx(variable_index) +": "+s1+" (alias: "+s2+s3+") "+" [" + stringDelimitList(numArrayElement,",")+"] ";
+    then s;
     case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.NEGATEDALIAS(varName = name2), arrayCref=arrCref,variable_index=variable_index, numArrayElement=numArrayElement))
     equation
         s1 = ComponentReference.printComponentRefStr(name);
         s2 = ComponentReference.printComponentRefStr(name2);
         if Util.isSome(arrCref) then s3 = " arrCref:"+ComponentReference.printComponentRefStr(Util.getOption(arrCref)); else s3=""; end if;
-        print(" Minus Alias for var " + s1 + " is " + s2 + s3 + " index:("+printVarIndx(variable_index)+")" +  " [" + stringDelimitList(numArrayElement,",")+"] " + "\n");
-     then ();
+        s = "index:("+printVarIndx(variable_index)+")"+s1+" (negated alias: "+s2+s3+") "+" [" + stringDelimitList(numArrayElement,",")+"] ";
+     then s;
    end match;
-end dumpVar;
+end simVarString;
 
 protected function printVarIndx
   input Option<Integer> i;
@@ -6381,10 +6364,8 @@ author:Waurich TUD 2014-05"
   input String header;
 algorithm
   if not listEmpty(varLst) then
-    print(header+":\n");
-    print("----------------------\n");
-    List.map_0(varLst,dumpVar);
-    print("\n");
+    print(header+":\n----------------------\n");
+    print(stringDelimitList(List.map(varLst,simVarString),"\n")+"\n");
   end if;
 end dumpVarLst;
 
@@ -6586,26 +6567,22 @@ algorithm
     then s;
 
     // no dynamic tearing
-    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx,indexLinearSystem=idxLS, residual=residual, jacobianMatrix=jac, simJac=simJac), NONE()))
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx, indexLinearSystem=idxLS, vars=vars, beqs=beqs, residual=residual, jacobianMatrix=jac, simJac=simJac), NONE()))
       equation
         s = intString(idx) +": "+ " (LINEAR) index:"+intString(idxLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
+        s = s+"\tvariables:\n"+stringDelimitList(List.map(vars,simVarString),"\n");
+        s = s+"\tb-vector:\n"+stringDelimitList(List.map(beqs,ExpressionDump.printExpStr),"\n");
         s = s+"\t"+stringDelimitList(List.map(residual,dumpSimEqSystem),"\n\t")+"\n";
         s = s+dumpJacobianMatrix(jac)+"\n";
         s = s+"\tsimJac:\n"+dumpSimJac(simJac)+"\n";
     then s;
 
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,eqs=eqs, crefs=crefs), NONE()))
-      equation
-        s = intString(idx) +": "+ " (NONLINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
-        s = s +"\t\tcrefs: "+stringDelimitList(List.map(crefs,ComponentReference.debugPrintComponentRefTypeStr)," , ")+"\n";
-        s = s + "\t"+stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n\t") + "\n";
-        s = s+dumpJacobianMatrix(jac)+"\n";
-    then s;
-
     // dynamic tearing
-    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx,indexLinearSystem=idxLS, residual=residual, jacobianMatrix=jac, simJac=simJac), SOME(SimCode.LINEARSYSTEM(index=idx2,indexLinearSystem=idxLS2, residual=residual2, jacobianMatrix=jac2, simJac=simJac2))))
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx, indexLinearSystem=idxLS, vars=vars, beqs=beqs, residual=residual, jacobianMatrix=jac, simJac=simJac), SOME(SimCode.LINEARSYSTEM(index=idx2,indexLinearSystem=idxLS2, residual=residual2, jacobianMatrix=jac2, simJac=simJac2))))
       equation
         s1 = "strict set:\n" + intString(idx) +": "+ " (LINEAR) index:"+intString(idxLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
+        s1 = s1+"\tvariables:\n"+stringDelimitList(List.map(vars,simVarString),"\n");
+        s1 = s1+"\tb-vector:\n"+stringDelimitList(List.map(beqs,ExpressionDump.printExpStr),"\n");
         s1 = s1+"\t"+stringDelimitList(List.map(residual,dumpSimEqSystem),"\n\t")+"\n";
         s1 = s1+"\tsimJac:\n"+dumpSimJac(simJac)+"\n";
         s1 = s1+dumpJacobianMatrix(jac)+"\n";
@@ -6614,6 +6591,14 @@ algorithm
         s2 = s2+"\tsimJac:\n"+dumpSimJac(simJac2)+"\n";
         s2 = s2+dumpJacobianMatrix(jac2)+"\n";
         s = s1 + s2;
+    then s;
+
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,eqs=eqs, crefs=crefs), NONE()))
+      equation
+        s = intString(idx) +": "+ " (NONLINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
+        s = s +"\t\tcrefs: "+stringDelimitList(List.map(crefs,ComponentReference.debugPrintComponentRefTypeStr)," , ")+"\n";
+        s = s + "\t"+stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n\t") + "\n";
+        s = s+dumpJacobianMatrix(jac)+"\n";
     then s;
 
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,eqs=eqs, crefs=crefs), SOME(SimCode.NONLINEARSYSTEM(index=idx2,indexNonLinearSystem=idxNLS2,jacobianMatrix=jac2,eqs=eqs2, crefs=crefs2))))
