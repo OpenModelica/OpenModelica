@@ -2747,7 +2747,7 @@ protected
   String mlen_str;
   list<BackendDAE.AdjacencyMatrixElementEnhanced> m_1;
 algorithm
-  print("Incidence Matrix (row == equation)\n");
+  print("Adjacency Matrix Enhanced (row == equation)\n");
   print("====================================\n");
   mlen := arrayLength(m);
   mlen_str := intString(mlen);
@@ -2767,7 +2767,7 @@ protected
   String mlen_str;
   list<BackendDAE.AdjacencyMatrixElementEnhanced> m_1;
 algorithm
-  print("Transpose Incidence Matrix (row == var)\n");
+  print("Transpose Adjacency Matrix Enhanced (row == var)\n");
   print("=====================================\n");
   mlen := arrayLength(m);
   mlen_str := intString(mlen);
