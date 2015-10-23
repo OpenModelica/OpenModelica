@@ -74,7 +74,7 @@
 #include "simulation/results/simulation_result_wall.h"
 #include "simulation/results/simulation_result_ia.h"
 #include "simulation/solver/solver_main.h"
-#include "simulation_info_xml.h"
+#include "simulation_info_json.h"
 #include "modelinfo.h"
 #include "simulation/solver/model_help.h"
 #include "simulation/solver/mixedSystem.h"

@@ -35,7 +35,7 @@
 #include "simulation/solver/linearSystem.h"
 #include "simulation/solver/mixedSystem.h"
 #include "simulation/solver/delay.h"
-#include "simulation/simulation_info_xml.h"
+#include "simulation/simulation_info_json.h"
 #include "simulation/simulation_input_xml.h"
 
 /*
@@ -179,7 +179,7 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
   setDefaultStartValues(comp);
   setAllVarsToStart(comp->fmuData);
   setAllParamsToStart(comp->fmuData);
-  read_input_xml(&(comp->fmuData->modelData), &(comp->fmuData->simulationInfo));
+  comp->fmuData->callback->read_input_fmu(&(comp->fmuData->modelData), &(comp->fmuData->simulationInfo));
   modelInfoInit(&(comp->fmuData->modelData.modelDataXml));
 
   strcpy((char*)comp->instanceName, (const char*)instanceName);

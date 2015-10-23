@@ -39,9 +39,6 @@ extern "C" {
 
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-#include <windows.h>
-#include <TlHelp32.h>
-#include <time.h>
 
 int asprintf(char **strp, const char *fmt, ...) {
   int len;
@@ -63,6 +60,12 @@ int vasprintf(char **strp, const char *fmt, va_list ap) {
   len = vsnprintf(*strp, len+1, fmt, ap);
   return len;
 }
+
+#if !defined(OMC_MINIMAL_RUNTIME)
+
+#include <windows.h>
+#include <TlHelp32.h>
+#include <time.h>
 
 #ifndef SIGALRM
 #define SIGALRM         SIGTERM
@@ -156,6 +159,8 @@ unsigned int alarm (unsigned int seconds)
 
   return (unsigned int)(unslept);
 }
+
+#endif /* !defined(OMC_MINIMAL_RUNTIME) */
 
 #endif
 

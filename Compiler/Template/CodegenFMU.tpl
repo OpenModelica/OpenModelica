@@ -74,8 +74,9 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
 
   let _ = generateSimulationFiles(simCode,guid,fileNamePrefixTmpDir,true)
 
-  let()= textFile(simulationInitFile(simCode,guid), '<%fileNamePrefixTmpDir%>_init.xml')
-  let x = covertTextFileToCLiteral('<%fileNamePrefixTmpDir%>_init.xml','<%fileNamePrefixTmpDir%>_init.c')
+  // let()= textFile(simulationInitFile(simCode,guid), '<%fileNamePrefixTmpDir%>_init.xml')
+  // let x = covertTextFileToCLiteral('<%fileNamePrefixTmpDir%>_init.xml','<%fileNamePrefixTmpDir%>_init.c')
+  let()= textFile(simulationInitFunction(simCode,guid), '<%fileNamePrefixTmpDir%>_init_fmu.c')
   let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion), '<%fileNamePrefixTmpDir%>_FMU.c')
   let()= textFile(fmuModelDescriptionFile(simCode,guid,FMUVersion,FMUType), '<%fileNamePrefix%>.fmutmp/modelDescription.xml')
   let()= textFile(fmudeffile(simCode,FMUVersion), '<%fileNamePrefix%>.fmutmp/sources/<%fileNamePrefix%>.def')
@@ -1023,9 +1024,9 @@ let common =
   CFILES=<%fileNamePrefix%>.c <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
   <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
   <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c \
-  <%fileNamePrefix%>_15syn.c
+  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_init_fmu.c
   OFILES=$(CFILES:.c=.o)
-  GENERATEDFILES=$(MAINFILE) <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_literals.h <%fileNamePrefix%>_model.h <%fileNamePrefix%>_includes.h <%fileNamePrefix%>_functions.h  <%fileNamePrefix%>_11mix.h <%fileNamePrefix%>_12jac.h <%fileNamePrefix%>_13opt.h <%fileNamePrefix%>_init.c <%fileNamePrefix%>_info.c $(CFILES) <%fileNamePrefix%>_FMU.libs
+  GENERATEDFILES=$(MAINFILE) <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_literals.h <%fileNamePrefix%>_model.h <%fileNamePrefix%>_includes.h <%fileNamePrefix%>_functions.h  <%fileNamePrefix%>_11mix.h <%fileNamePrefix%>_12jac.h <%fileNamePrefix%>_13opt.h <%fileNamePrefix%>_init_fmu.c <%fileNamePrefix%>_info.c $(CFILES) <%fileNamePrefix%>_FMU.libs
 
   # FIXME: before you push into master...
   RUNTIMEDIR=include
@@ -1097,7 +1098,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       copy <%fileNamePrefix%>_model.h <%fmudirname%>\sources\<%fileNamePrefix%>_model.h
       copy <%fileNamePrefix%>_FMU.c <%fmudirname%>\sources\<%fileNamePrefix%>_FMU.c
       copy <%fileNamePrefix%>_info.c <%fmudirname%>\sources\<%fileNamePrefix%>_info.c
-      copy <%fileNamePrefix%>_init.c <%fmudirname%>\sources\<%fileNamePrefix%>_init.c
+      copy <%fileNamePrefix%>_init_fmu.c <%fmudirname%>\sources\<%fileNamePrefix%>_init_fmu.c
       copy <%fileNamePrefix%>_functions.c <%fmudirname%>\sources\<%fileNamePrefix%>_functions.c
       copy <%fileNamePrefix%>_functions.h <%fmudirname%>\sources\<%fileNamePrefix%>_functions.h
       copy <%fileNamePrefix%>_records.c <%fmudirname%>\sources\<%fileNamePrefix%>_records.c
@@ -2760,6 +2761,163 @@ case ENUMERATIONVARIABLE(variability = "",causality="output") then
   {<%name%>} = map_<%getEnumerationTypeFromTypes(fmiTypeDefinitionsList, baseType)%>_from_integers(<%fmiGetFunction%>(<%fmiType%>, {<%valueReference%>}, flowStatesInputs));<%\n%>
   >>
 end dumpOutputGetEnumerationVariable;
+
+/* public */ template simulationInitFunction(SimCode simCode, String guid)
+ "Generates the contents of the makefile for the simulation case.
+  used in Compiler/Template/CodegenFMU.tpl"
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINFO(__), vars = vars as SIMVARS(__)),
+             simulationSettingsOpt = SOME(s as SIMULATION_SETTINGS(__)), makefileParams = makefileParams as MAKEFILE_PARAMS(__))
+  then
+  <<
+  #include <simulation_data.h>
+
+  void <%symbolName(modelNamePrefix(simCode),"read_input_fmu")%>(MODEL_DATA* modelData, SIMULATION_INFO* simulationInfo)
+  {
+    simulationInfo->startTime = <%s.startTime%>;
+    simulationInfo->stopTime = <%s.stopTime%>;
+    simulationInfo->stepSize = <%s.stepSize%>;
+    simulationInfo->tolerance = <%s.tolerance%>;
+    simulationInfo->solverMethod = "<%s.method%>";
+    simulationInfo->outputFormat = "<%s.outputFormat%>";
+    simulationInfo->variableFilter = "<%s.variableFilter%>";
+    simulationInfo->OPENMODELICAHOME = "<%makefileParams.omhome%>";
+    <%System.tmpTickReset(1000)%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.stateVars       |> var => ScalarVariableFMU(var,"realVarsData") ;separator="\n";empty%>
+    <%vars.derivativeVars  |> var => ScalarVariableFMU(var,"realVarsData") ;separator="\n";empty%>
+    <%vars.algVars         |> var => ScalarVariableFMU(var,"realVarsData") ;separator="\n";empty%>
+    <%vars.discreteAlgVars |> var => ScalarVariableFMU(var,"realVarsData") ;separator="\n";empty%>
+    <%vars.realOptimizeConstraintsVars
+                           |> var => ScalarVariableFMU(var,"realVarsData") ;separator="\n";empty%>
+    <%vars.realOptimizeFinalConstraintsVars
+                           |> var => ScalarVariableFMU(var,"realVarsData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.paramVars       |> var => ScalarVariableFMU(var,"realParameterData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.intAlgVars      |> var => ScalarVariableFMU(var,"integerVarsData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.intParamVars    |> var => ScalarVariableFMU(var,"integerParameterData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.boolAlgVars     |> var => ScalarVariableFMU(var,"booleanVarsData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.boolParamVars   |> var => ScalarVariableFMU(var,"booleanParameterData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.stringAlgVars   |> var => ScalarVariableFMU(var,"stringVarsData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.stringParamVars |> var => ScalarVariableFMU(var,"stringParameterData") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%
+    /* Skip these; shouldn't be needed to look at in the FMU
+    <%vars.aliasVars       |> var => ScalarVariableFMU(var,"realAlias") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.intAliasVars    |> var => ScalarVariableFMU(var,"integerAlias") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.boolAliasVars   |> var => ScalarVariableFMU(var,"booleanAlias") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    <%vars.stringAliasVars |> var => ScalarVariableFMU(var,"stringAlias") ;separator="\n";empty%>
+    <%System.tmpTickResetIndex(0,2)%>
+    */
+    %>
+  }
+  >>
+end simulationInitFunction;
+
+template getInfoArgsFMU(String str, builtin.SourceInfo info)
+::=
+  match info
+    case SOURCEINFO(__) then
+      <<
+      <%str%>.filename = "<%Util.escapeModelicaStringToCString(fileName)%>";
+      <%str%>.lineStart = <%lineNumberStart%>;
+      <%str%>.colStart = <%columnNumberStart%>;
+      <%str%>.lineEnd = <%lineNumberEnd%>;
+      <%str%>.colEnd = <%columnNumberEnd%>;
+      <%str%>.readonly = <%if isReadOnly then 1 else 0%>;
+      >>
+end getInfoArgsFMU;
+
+template ScalarVariableFMU(SimVar simVar, String classType)
+ "Generates code for ScalarVariable file for FMU target."
+::=
+  match simVar
+    case SIMVAR(source = SOURCE(info = info)) then
+      let valueReference = System.tmpTick()
+      let ci = System.tmpTickIndex(2)
+      let description = if comment then Util.escapeModelicaStringToCString(comment)
+      let infostr = 'modelData-><%classType%>[<%ci%>].info'
+      let attrstr = 'modelData-><%classType%>[<%ci%>].attribute'
+      <<
+      <%infostr%>.id = <%valueReference%>;
+      <%infostr%>.name = "<%Util.escapeModelicaStringToCString(crefStrNoUnderscore(name))%>";
+      <%infostr%>.comment = "<%description%>";
+      <%getInfoArgsFMU(infostr+".info", info)%>
+      <%ScalarVariableTypeFMU(attrstr, unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_)%>
+      >>
+end ScalarVariableFMU;
+
+template optInitValFMU(Option<Exp> exp, String default)
+::=
+  match exp
+  case SOME(e) then
+  (
+  match e
+  case ICONST(__) then integer
+  case RCONST(__) then real
+  case SCONST(__) then '"<%Util.escapeModelicaStringToCString(string)%>"'
+  case BCONST(__) then if bool then 1 else 0
+  case ENUM_LITERAL(__) then '<%index%>'
+  else default // error(sourceInfo(), 'initial value of unknown type: <%printExpStr(e)%>')
+  )
+  else default
+end optInitValFMU;
+
+template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, Option<DAE.Exp> minValue, Option<DAE.Exp> maxValue, Option<DAE.Exp> startValue, Option<DAE.Exp> nominalValue, Boolean isFixed, DAE.Type type_)
+ "Generates code for ScalarVariable Type file for FMU target."
+::=
+  match type_
+    case T_INTEGER(__) then
+      <<
+      <%attrstr%>.min = <%optInitValFMU(minValue,"-DBL_MAX")%>;
+      <%attrstr%>.max = <%optInitValFMU(maxValue,"DBL_MAX")%>;
+      <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
+      <%attrstr%>.useStart = <%if startValue then 1 else 0%>;
+      <%attrstr%>.start = <%optInitValFMU(startValue,"0")%>;
+      >>
+    case T_REAL(__) then
+      <<
+      <%attrstr%>.unit = "<%Util.escapeModelicaStringToCString(unit)%>";
+      <%attrstr%>.displayUnit = "<%Util.escapeModelicaStringToCString(displayUnit)%>";
+      <%attrstr%>.min = <%optInitValFMU(minValue,"-DBL_MAX")%>;
+      <%attrstr%>.max = <%optInitValFMU(maxValue,"DBL_MAX")%>;
+      <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
+      <%attrstr%>.useNominal = <%if nominalValue then 1 else 0%>;
+      <%attrstr%>.nominal = <%optInitValFMU(nominalValue,"0.0")%>;
+      <%attrstr%>.useStart = <%if startValue then 1 else 0%>;
+      <%attrstr%>.start = <%optInitValFMU(startValue,"0.0")%>;
+      >>
+    case T_BOOL(__) then
+      <<
+      <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
+      <%attrstr%>.useStart = <%if startValue then 1 else 0%>;
+      <%attrstr%>.start = <%optInitValFMU(startValue,"0")%>;
+      >>
+    case T_STRING(__) then
+      <<
+      <%attrstr%>.useStart = <%if startValue then 1 else 0%>;
+      <%attrstr%>.start = <%optInitValFMU(startValue,"\"\"")%>;
+      >>
+    case T_ENUMERATION(__) then
+      <<
+      <%attrstr%>.min = <%optInitValFMU(minValue,"1")%>;
+      <%attrstr%>.max = <%optInitValFMU(maxValue,listLength(names))%>;
+      <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
+      <%attrstr%>.useStart = <%if startValue then 1 else 0%>;
+      <%attrstr%>.start = <%optInitValFMU(startValue,"0")%>;
+      >>
+    else error(sourceInfo(), 'ScalarVariableTypeFMU: <%unparseType(type_)%>')
+end ScalarVariableTypeFMU;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenFMU;

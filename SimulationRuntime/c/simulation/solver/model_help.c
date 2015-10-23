@@ -39,7 +39,7 @@
 #include "util/omc_error.h"
 #include "util/varinfo.h"
 #include "model_help.h"
-#include "simulation/simulation_info_xml.h"
+#include "simulation/simulation_info_json.h"
 #include "util/omc_msvc.h" /* for freaking round! */
 #include "nonlinearSystem.h"
 #include "linearSystem.h"
@@ -1024,6 +1024,7 @@ void deInitializeDataStruc(DATA *data)
 {
   TRACE_PUSH
   size_t i = 0;
+  int needToFree = !data->callback->read_input_fmu;
 
   /* prepare RingBuffer */
   for(i=0; i<SIZERINGBUFFER; i++)
@@ -1039,52 +1040,25 @@ void deInitializeDataStruc(DATA *data)
   freeRingBuffer(data->simulationData);
 
   /* free modelData var arrays */
-  for(i=0; i < data->modelData.nVariablesReal;i++)
-    freeVarInfo(&((data->modelData.realVarsData[i]).info));
-  omc_alloc_interface.free_uncollectable(data->modelData.realVarsData);
+  #define FREE_VARS(n,vars) { if (needToFree) { \
+    for(i=0; i < data->modelData.n; i++) { \
+      freeVarInfo(&((data->modelData.vars[i]).info)); \
+    } \
+  } \
+  omc_alloc_interface.free_uncollectable(data->modelData.vars); }
 
-  for(i=0; i < data->modelData.nVariablesInteger;i++)
-    freeVarInfo(&((data->modelData.integerVarsData[i]).info));
-  omc_alloc_interface.free_uncollectable(data->modelData.integerVarsData);
-
-  for(i=0; i < data->modelData.nVariablesBoolean;i++)
-    freeVarInfo(&((data->modelData.booleanVarsData[i]).info));
-  omc_alloc_interface.free_uncollectable(data->modelData.booleanVarsData);
-
-  for(i=0; i < data->modelData.nVariablesString;i++)
-    freeVarInfo(&((data->modelData.stringVarsData[i]).info));
-  omc_alloc_interface.free_uncollectable(data->modelData.stringVarsData);
-
-  /* free Modelica parameter static data */
-  for(i=0; i < data->modelData.nParametersReal;i++)
-    freeVarInfo(&((data->modelData.realParameterData[i]).info));
-  omc_alloc_interface.free_uncollectable(data->modelData.realParameterData);
-
-  for(i=0; i < data->modelData.nParametersInteger;i++)
-    freeVarInfo(&((data->modelData.integerParameterData[i]).info));
-  omc_alloc_interface.free_uncollectable(data->modelData.integerParameterData);
-
-  for(i=0; i < data->modelData.nParametersBoolean;i++)
-    freeVarInfo(&((data->modelData.booleanParameterData[i]).info));
-  omc_alloc_interface.free_uncollectable(data->modelData.booleanParameterData);
-
-  for(i=0; i < data->modelData.nParametersString;i++)
-    freeVarInfo(&((data->modelData.stringParameterData[i]).info));
-  omc_alloc_interface.free_uncollectable(data->modelData.stringParameterData);
-
-  /* free alias static data */
-  for(i=0; i < data->modelData.nAliasReal;i++)
-    freeVarInfo(&((data->modelData.realAlias[i]).info));
-  omc_alloc_interface.free_uncollectable(data->modelData.realAlias);
-  for(i=0; i < data->modelData.nAliasInteger;i++)
-    freeVarInfo(&((data->modelData.integerAlias[i]).info));
-  omc_alloc_interface.free_uncollectable(data->modelData.integerAlias);
-  for(i=0; i < data->modelData.nAliasBoolean;i++)
-    freeVarInfo(&((data->modelData.booleanAlias[i]).info));
-  omc_alloc_interface.free_uncollectable(data->modelData.booleanAlias);
-  for(i=0; i < data->modelData.nAliasString;i++)
-    freeVarInfo(&((data->modelData.stringAlias[i]).info));
-  omc_alloc_interface.free_uncollectable(data->modelData.stringAlias);
+  FREE_VARS(nVariablesReal,realVarsData)
+  FREE_VARS(nVariablesInteger,integerVarsData)
+  FREE_VARS(nVariablesBoolean,booleanVarsData)
+  FREE_VARS(nVariablesString,stringVarsData)
+  FREE_VARS(nParametersReal,realParameterData)
+  FREE_VARS(nParametersInteger,integerParameterData)
+  FREE_VARS(nParametersBoolean,booleanParameterData)
+  FREE_VARS(nParametersString,stringParameterData)
+  FREE_VARS(nAliasReal,realAlias)
+  FREE_VARS(nAliasInteger,integerAlias)
+  FREE_VARS(nAliasBoolean,booleanAlias)
+  FREE_VARS(nAliasString,stringAlias)
 
   omc_alloc_interface.free_uncollectable(data->modelData.samplesInfo);
   free(data->simulationInfo.nextSampleTimes);
@@ -1145,9 +1119,6 @@ void deInitializeDataStruc(DATA *data)
   /* free chattering info */
   free(data->simulationInfo.chatteringInfo.lastSteps);
   free(data->simulationInfo.chatteringInfo.lastTimes);
-
-  /* TODO: Make a free xml function */
-  freeModelInfo(&data->modelData.modelDataXml);
 
   /* free delay structure */
   for(i=0; i<data->modelData.nDelayExpressions; i++)

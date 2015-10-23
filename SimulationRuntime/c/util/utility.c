@@ -33,7 +33,6 @@
 #include "modelica_string.h"
 #include "simulation_data.h"
 #include "simulation/options.h"
-#include <regex.h>
 #include <string.h>
 
 modelica_real real_int_pow(threadData_t *threadData, modelica_real base, modelica_integer n)
@@ -62,6 +61,7 @@ modelica_real real_int_pow(threadData_t *threadData, modelica_real base, modelic
 
 #if !defined(OMC_MINIMAL_RUNTIME)
 
+#include <regex.h>
 #include "meta/meta_modelica.h"
 
 extern int OpenModelica_regexImpl(const char* str, const char* re, const int maxn, int extended, int ignoreCase, void*(*mystrdup)(const char*), void **outMatches)

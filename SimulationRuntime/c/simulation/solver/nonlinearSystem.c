@@ -43,7 +43,7 @@
 #include "newtonIteration.h"
 #endif
 #include "nonlinearSolverHomotopy.h"
-#include "simulation/simulation_info_xml.h"
+#include "simulation/simulation_info_json.h"
 #include "simulation/simulation_runtime.h"
 
 /* for try and catch simulationJumpBuffer */

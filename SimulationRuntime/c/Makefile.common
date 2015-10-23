@@ -40,7 +40,6 @@ RUNTIMEOPTIMZ_HEADERS = ./optimization/OptimizerData.h ./optimization/OptimizerL
 
 RUNTIMESIMULATION_HEADERS = ./simulation/modelinfo.h \
 ./simulation/options.h \
-./simulation/simulation_info_xml.h \
 ./simulation/simulation_info_json.h \
 ./simulation/simulation_input_xml.h \
 ./simulation/simulation_runtime.h

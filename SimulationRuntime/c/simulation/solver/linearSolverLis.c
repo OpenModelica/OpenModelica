@@ -36,7 +36,7 @@
 #include <string.h>
 
 #include "simulation_data.h"
-#include "simulation/simulation_info_xml.h"
+#include "simulation/simulation_info_json.h"
 #include "util/omc_error.h"
 #include "util/varinfo.h"
 #include "model_help.h"

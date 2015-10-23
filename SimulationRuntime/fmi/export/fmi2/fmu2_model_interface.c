@@ -35,7 +35,7 @@
 #include "simulation/solver/linearSystem.h"
 #include "simulation/solver/mixedSystem.h"
 #include "simulation/solver/delay.h"
-#include "simulation/simulation_info_xml.h"
+#include "simulation/simulation_info_json.h"
 #include "simulation/simulation_input_xml.h"
 /*
 DLLExport pthread_key_t fmu2_thread_data_key;
@@ -338,7 +338,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   setDefaultStartValues(comp);
   setAllVarsToStart(comp->fmuData);
   setAllParamsToStart(comp->fmuData);
-  read_input_xml(&(comp->fmuData->modelData), &(comp->fmuData->simulationInfo));
+  comp->fmuData->callback->read_input_fmu(&(comp->fmuData->modelData), &(comp->fmuData->simulationInfo));
   modelInfoInit(&(comp->fmuData->modelData.modelDataXml));
 
   /* read input vars */
