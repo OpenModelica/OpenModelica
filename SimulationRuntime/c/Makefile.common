@@ -55,6 +55,7 @@ RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/delay.h \
 ./simulation/solver/model_help.h \
 ./simulation/solver/mixedSearchSolver.h \
 ./simulation/solver/nonlinearSystem.h \
+./simulation/solver/nonlinearValuesList.h \
 ./simulation/solver/nonlinearSolverHomotopy.h \
 ./simulation/solver/nonlinearSolverHybrd.h \
 ./simulation/solver/stateset.h \

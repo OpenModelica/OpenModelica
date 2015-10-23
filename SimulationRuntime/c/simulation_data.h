@@ -300,6 +300,8 @@ typedef struct NONLINEAR_SYSTEM_DATA
   modelica_real *nlsxOld;              /* previous x */
   modelica_real *nlsxExtrapolation;    /* extrapolated values for x from old and old2 - used as initial guess */
 
+  void *oldValueList;                  /* old values organized in a sorted list for extrapolation and interpolate, respectively */
+
   modelica_integer method;             /* used for linear tearing system if 1: Newton step is done otherwise 0 */
   modelica_real residualError;         /* not used */
   modelica_boolean solved;             /* 1: solved in current step - else not */
