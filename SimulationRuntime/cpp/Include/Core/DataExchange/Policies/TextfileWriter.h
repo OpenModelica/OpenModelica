@@ -113,13 +113,18 @@ class TextFileWriter : public ContainerManager
     {
         _output_stream << get<3>(v_list) << SEPERATOR;
 
-        for (real_vars_t::const_iterator it = get<0>(v_list).begin(); it != get<0>(v_list).end(); ++it)
-            _output_stream << (*it) << SEPERATOR;
 
-        for (int_vars_t::const_iterator it = get<1>(v_list).begin(); it != get<1>(v_list).end(); ++it)
-            _output_stream << (*it) << SEPERATOR;
-        for (bool_vars_t::const_iterator it = get<2>(v_list).begin(); it != get<2>(v_list).end(); ++it)
-            _output_stream << (*it) << SEPERATOR;
+        std::transform(get<0>(v_list).begin(), get<0>(v_list).end(), get<0>(neg_v_list).begin(),
+            std::ostream_iterator<double>(_output_stream,","), WriteOutputVar<double>());
+
+
+        std::transform(get<1>(v_list).begin(), get<1>(v_list).end(), get<1>(neg_v_list).begin(),
+            std::ostream_iterator<int>(_output_stream,","), WriteOutputVar<int>());
+
+
+        std::transform(get<2>(v_list).begin(), get<2>(v_list).end(), get<2>(neg_v_list).begin(),
+           std::ostream_iterator<bool>(_output_stream,","), WriteOutputVar<bool>());
+
         _output_stream << std::endl;
     }
 

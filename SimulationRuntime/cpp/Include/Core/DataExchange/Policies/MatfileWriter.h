@@ -753,7 +753,7 @@ class MatFileWriter : public ContainerManager
         */
              size_t nInt = get<1>(v_list).size();
         std::transform(get<2>(v_list).begin(), get<2>(v_list).end(), get<2>(neg_v_list).begin(),
-            doubleHelpMatrix+nReal+nInt, WriteOutputVarBool());
+            doubleHelpMatrix+nReal+nInt, WriteOutputVar<bool>());
 
         // write matrix to file
         writeMatVer4Matrix("data_2", uiVarCount, _uiValueCount, _doubleMatrixData2, sizeof(double));
