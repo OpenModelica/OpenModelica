@@ -3,6 +3,7 @@ TEST = ../../../rtest -v
 TESTFILES = \
 SingularPlanarLoop.mos \
 PantelidesSingular.mos \
+MoveWithInputs.mos
 
 
 # test that currently fail. Move up when fixed. 
