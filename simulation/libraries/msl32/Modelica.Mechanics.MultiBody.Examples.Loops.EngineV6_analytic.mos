@@ -42,8 +42,8 @@ runScript(modelTesting);getErrorString();
 //  * Number of discrete variables: 369 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (3755):
-//  * Single equations (assignments): 3748
+// Notification: Strong component statistics for initialization (3728):
+//  * Single equations (assignments): 3721
 //  * Array equations: 6
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -61,8 +61,8 @@ runScript(modelTesting);getErrorString();
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (1440):
-//  * Single equations (assignments): 1439
+// Notification: Strong component statistics for simulation (1413):
+//  * Single equations (assignments): 1412
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -74,7 +74,7 @@ runScript(modelTesting);getErrorString();
 // Notification: Torn system details:
 //  * Linear torn systems: 1 {1 331}
 //  * Non-linear torn systems: 0
-//
+// 
 // "true
 // "
 // ""
