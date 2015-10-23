@@ -204,9 +204,6 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
   class <%modelShortName%>FMU: public <%modelShortName%>Initialize {
    public:
-    // create simulation variables
-    static ISimVars *createSimVars();
-
     // constructor
     <%modelShortName%>FMU(IGlobalSettings* globalSettings,
         shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory,
@@ -228,6 +225,9 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     virtual void setBoolean(const unsigned int vr[], int nvr, const int value[]);
     virtual void setString(const unsigned int vr[], int nvr, const string value[]);
   };
+
+  /// create instance of <%modelShortName%>FMU
+  static <%modelShortName%>FMU *createSystemFMU(IGlobalSettings *globalSettings);
   >>
 end fmuModelHeaderFile;
 
@@ -239,11 +239,14 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   let modelName = dotPath(modelInfo.name)
   let modelShortName = lastIdentOfPath(modelInfo.name)
   let modelLongName = System.stringReplace(modelName, ".", "_")
+  let algloopfiles = (listAppend(allEquations,initialEquations) |> eqs => algloopMainfile2(eqs, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, modelShortName) ;separator="\n")
+  let solverFactory = match algloopfiles case "" then 'NULL' else
+    'new AlgLoopSolverFactory(globalSettings, PATH(""), PATH(""))'
   <<
   // define model identifier and unique id
   #define MODEL_IDENTIFIER <%modelLongName%>
   #define MODEL_IDENTIFIER_SHORT <%modelShortName%>
-  #define MODEL_SIMVARS_FACTORY <%modelShortName%>FMU::createSimVars
+  #define MODEL_CLASS <%modelShortName%>FMU
   #define MODEL_GUID "{<%guid%>}"
 
   <%ModelDefineData(modelInfo)%>
@@ -258,21 +261,20 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   else
     '#include <FMU/FMULibInterface.h>'%>
 
-  // create simulation variables
-  #include <Core/System/FactoryExport.h>
-  #include <Core/System/SimVars.h>
-  #include <sstream>
-
-  ISimVars *<%modelShortName%>FMU::createSimVars() {
-    return new SimVars(<%numRealvars(modelInfo)%>, <%numIntvars(modelInfo)%>, <%numBoolvars(modelInfo)%>, <%numStringvars(modelInfo)%>, <%getPreVarsCount(modelInfo)%>, <%numStatevars(modelInfo)%>, <%numStateVarIndex(modelInfo)%>);
+  // create instance of <%modelShortName%>FMU
+  <%modelShortName%>FMU *createSystemFMU(IGlobalSettings *globalSettings) {
+    return new <%modelShortName%>FMU(globalSettings,
+      shared_ptr<IAlgLoopSolverFactory>(<%solverFactory%>),
+      shared_ptr<ISimData>(new SimData()),
+      shared_ptr<ISimVars>(new SimVars(<%numRealvars(modelInfo)%>, <%numIntvars(modelInfo)%>, <%numBoolvars(modelInfo)%>, <%numStringvars(modelInfo)%>, <%getPreVarsCount(modelInfo)%>, <%numStatevars(modelInfo)%>, <%numStateVarIndex(modelInfo)%>)));
   }
 
   // constructor
   <%modelShortName%>FMU::<%modelShortName%>FMU(IGlobalSettings* globalSettings,
-      shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory,
-      shared_ptr<ISimData> simData,
-      shared_ptr<ISimVars> simVars):
-      <%modelShortName%>Initialize(globalSettings, nonLinSolverFactory, simData, simVars) {
+    shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory,
+    shared_ptr<ISimData> simData,
+    shared_ptr<ISimVars> simVars)
+    : <%modelShortName%>Initialize(globalSettings, nonLinSolverFactory, simData, simVars) {
   }
 
   // initialization

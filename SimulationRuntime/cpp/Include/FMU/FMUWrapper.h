@@ -7,16 +7,11 @@
 #include <FMU/FMULogger.h>
 #include <Core/System/AlgLoopSolverFactory.h>
 
-// build MODEL_CLASS from MODEL_IDENTIFIER
-#define FMU_PASTER(a, b) a ## b
-#define FMU_CONCAT(a, b) FMU_PASTER(a, b)
-#define MODEL_CLASS FMU_CONCAT(MODEL_IDENTIFIER_SHORT, FMU)
-
 class FMUWrapper : public IFMUInterface
 {
 private:
     FMUGlobalSettings _global_settings;
-    shared_ptr<MODEL_CLASS> _model;
+    MODEL_CLASS *_model;
     double _need_update;
 
     void updateModel()
@@ -34,13 +29,13 @@ public:
     FMUWrapper(fmiString instanceName, fmiString GUID, fmiCallbackFunctions functions, fmiBoolean loggingOn) : IFMUInterface(instanceName, GUID, functions, loggingOn), _need_update(true)
     {
       //FMULogger::initialize(functions.logger, this, instanceName);
-      shared_ptr<IAlgLoopSolverFactory>solver_factory(new AlgLoopSolverFactory(&_global_settings,PATH(""),PATH("")));
-      _model = shared_ptr<MODEL_CLASS>(new MODEL_CLASS(&_global_settings, solver_factory, shared_ptr<ISimData>(new SimData()), shared_ptr<ISimVars>(MODEL_SIMVARS_FACTORY())));
+      _model = createSystemFMU(&_global_settings);
       _model->setInitial(true);
     }
 
     virtual ~FMUWrapper()
     {
+      delete _model;
     }
 
     virtual fmiStatus setDebugLogging(fmiBoolean loggingOn)

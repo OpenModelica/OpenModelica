@@ -99,7 +99,7 @@ struct WriteOutputVar
   @param val pointer to output variable
   @param negate if output variable is a negate alias variable
   */
-  const double operator()(const T* val, const bool negate)
+  const double operator()(const T* val, bool negate)
   {
     //if output variable is a negate alias variable, then negate output value
     if(negate)
@@ -120,7 +120,7 @@ struct WriteOutputVar<bool>
   @param val pointer to output variable
   @param negate if output variable is a negate alias variable
   */
-  const double operator()(const bool* val, const bool negate)
+  const double operator()(const bool* val, bool negate)
   {
     //if output variable is a negate alias variable, then negate output value
     if (negate)

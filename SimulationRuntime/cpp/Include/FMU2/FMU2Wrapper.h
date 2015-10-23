@@ -43,11 +43,6 @@
 #include "fmi2Functions.h"
 #include "FMU2GlobalSettings.h"
 
-// build MODEL_CLASS from MODEL_IDENTIFIER
-#define FMU2_PASTER(a, b) a ## b
-#define FMU2_CONCAT(a, b) FMU2_PASTER(a, b)
-#define MODEL_CLASS FMU2_CONCAT(MODEL_IDENTIFIER_SHORT, FMU)
-
 // define logger as macro that passes through variadic args
 #define FMU2_LOG(w, status, category, ...) \
   if ((w)->logCategories & (1 << (category))) \
@@ -141,7 +136,7 @@ class FMU2Wrapper
 
  private:
   FMU2GlobalSettings _global_settings;
-  shared_ptr<MODEL_CLASS> _model;
+  MODEL_CLASS *_model;
   std::vector<string> _string_buffer;
   bool *_clock_buffer;
   int _nclock_active;
