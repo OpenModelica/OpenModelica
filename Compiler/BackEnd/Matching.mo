@@ -5579,7 +5579,7 @@ algorithm
         // remove some edges which do not have to be traversed when finding the MSSS
         m1 = arrayCopy(m);
         m1t = arrayCopy(mt);
-        //(m1,m1t) = removeEdgesForNoDerivativeFunctionInputs(m1,m1t,isyst,ishared);
+        (m1,m1t) = removeEdgesForNoDerivativeFunctionInputs(m1,m1t,isyst,ishared);
         meqns1 = getEqnsforIndexReduction(unmatched1,ne,m1,m1t,ass1,ass2,inArg);
         if Flags.isSet(Flags.BLT_DUMP) then print("MSS subsets: "+stringDelimitList(List.map(meqns1,Util.intLstString),"\n ")+"\n"); end if;
 
