@@ -8371,5 +8371,68 @@ algorithm
   end for;
 end getStrongComponentEquations;
 
+public function isFuncCallWithNoDerAnnotation"checks if the equation is a function call which has a noDerivative annotation.
+Outputs the noDerivative binding crefs as well.
+author: waurich TUD 10-2015"
+  input BackendDAE.Equation eq;
+  input DAE.FunctionTree functionTree;
+  output Boolean isFuncCallWithNoDerAnno;
+  output list<DAE.ComponentRef> noDerivativeInputs;
+algorithm
+  (_,(_,noDerivativeInputs)) := BackendEquation.traverseExpsOfEquation(eq,function Expression.traverseExpTopDown(func=isFuncCallWithNoDerAnnotation1),(functionTree,{}));
+  //(_,(_,noDerivativeInputs)) := BackendEquation.traverseExpsOfEquation(eq,isFuncCallWithNoDerAnnotation1,(functionTree,{}));
+  isFuncCallWithNoDerAnno := not listEmpty(noDerivativeInputs);
+end isFuncCallWithNoDerAnnotation;
+
+public function isFuncCallWithNoDerAnnotation1 "checks if the exp is a function call which has a noDerivative annotation.
+Collects all crefs which dont need a derivative.
+author: waurich TUD 10-2015"
+  input DAE.Exp expIn;
+  input tuple<DAE.FunctionTree, list<DAE.ComponentRef>> tplIn; // <functionTree, foldList to collect noDer-input-vars>
+  output DAE.Exp expOut;
+  output Boolean cont;
+  output tuple<DAE.FunctionTree, list<DAE.ComponentRef>> tplOut;
+algorithm
+  (expOut, cont, tplOut) := matchcontinue(expIn, tplIn)
+    local
+      list<Integer> inputPos;
+      Absyn.Path path;
+      DAE.derivativeCond cond;
+      DAE.FunctionDefinition mapper;
+      DAE.FunctionTree functionTree;
+      list<DAE.ComponentRef> crefsIn, noDerivativeInputs;
+      list<DAE.Exp> expLst;
+      list<tuple<Integer,DAE.derivativeCond>> conditionRefs;
+  case(DAE.CALL(path=path,expLst=expLst),(functionTree,crefsIn))
+    algorithm
+      (mapper, _) := Differentiate.getFunctionMapper(path, functionTree);
+      DAE.FUNCTION_DER_MAPPER(conditionRefs=conditionRefs) := mapper;
+      inputPos := getNoDerivativeInputPosition(conditionRefs,{});
+      expLst := List.map1(inputPos,List.getIndexFirst,expLst);
+      noDerivativeInputs := List.flatten(List.map(expLst,Expression.getAllCrefs));
+        //print("crefs: "+stringDelimitList(List.map(noDerivativeInputs,ComponentReference.crefStr),", ")+"\n");
+    then (expIn,true,(functionTree,listAppend(noDerivativeInputs,crefsIn)));
+  else
+    then (expIn,true,tplIn);
+  end matchcontinue;
+end isFuncCallWithNoDerAnnotation1;
+
+protected function getNoDerivativeInputPosition"ge the position idx for the input-var which does not need a derivation from the NoDerivative annotations"
+  input list<tuple<Integer,DAE.derivativeCond>> conds;
+  input list<Integer> IdxsIn;
+  output list<Integer> IdxsOut;
+algorithm
+  IdxsOut := match(conds, IdxsIn)
+    local
+      Integer idx;
+      list<tuple<Integer,DAE.derivativeCond>> rest;
+    case({},_)
+      then IdxsIn;
+    case((idx,DAE.NO_DERIVATIVE(_))::rest,_)
+      equation
+      then getNoDerivativeInputPosition(rest, idx::IdxsIn);
+  end match;
+end getNoDerivativeInputPosition;
+
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;

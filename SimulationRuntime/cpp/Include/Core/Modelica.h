@@ -108,6 +108,7 @@ using std::runtime_error;
   using std::shared_ptr;
   using std::weak_ptr;
   using std::dynamic_pointer_cast;
+  using std::to_string;
 #else
   #if defined(_MSC_VER)
     #include <tuple>
@@ -145,6 +146,10 @@ using std::runtime_error;
   using boost::shared_ptr;
   using boost::weak_ptr;
   using boost::dynamic_pointer_cast;
+  template <typename T>
+  std::string to_string(T val) {
+    return boost::lexical_cast<std::string>(val);
+  }
 #endif //USE_CPP_ELEVEN
 
 #if defined(USE_THREAD)

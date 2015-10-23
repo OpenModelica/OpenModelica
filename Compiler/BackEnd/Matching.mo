@@ -5556,10 +5556,10 @@ algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
   match (meqns,internalCall,algIndx,cheapMatching,clearMatching,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
-      BackendDAE.IncidenceMatrix m,mt;
+      BackendDAE.IncidenceMatrix m,mt, m1,m1t;
       Integer nv_1,ne_1,memsize;
-      list<Integer> unmatched1;
-      list<list<Integer>> meqns1;
+      list<Integer> unmatched1, meqs_short;
+      list<list<Integer>> meqns1, meqns1_0;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
@@ -5573,7 +5573,21 @@ algorithm
         BackendDAEEXT.matching(nv,ne,algIndx,cheapMatching,1.0,clearMatching);
         BackendDAEEXT.getAssignment(ass1,ass2);
         unmatched1 = getUnassigned(ne, ass1, {});
-        meqns1 = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
+          //BackendDump.dumpEqSystem(isyst, "EQSYS");
+        if Flags.isSet(Flags.BLT_DUMP) then print("unmatched equations: "+stringDelimitList(List.map(unmatched1,intString),", ")+"\n\n"); end if;
+
+        // remove some edges which do not have to be traversed when finding the MSSS
+        m1 = arrayCopy(m);
+        m1t = arrayCopy(mt);
+        //(m1,m1t) = removeEdgesForNoDerivativeFunctionInputs(m1,m1t,isyst,ishared);
+        meqns1 = getEqnsforIndexReduction(unmatched1,ne,m1,m1t,ass1,ass2,inArg);
+        if Flags.isSet(Flags.BLT_DUMP) then print("MSS subsets: "+stringDelimitList(List.map(meqns1,Util.intLstString),"\n ")+"\n"); end if;
+
+        //Debug information
+          //meqns1_0 = listReverse(getEqnsforIndexReduction0(unmatched1,ne,me,meT,ass1,ass2,inArg));
+          //if listLength(List.flatten(meqns1)) >= 5 then meqs_short = List.firstN(List.flatten(meqns1),5); else meqs_short = List.flatten(meqns1); end if;
+          //BackendDump.dumpBipartiteGraphEqSystem(isyst,ishared,"MSSS_"+stringDelimitList(List.map(meqs_short,intString),"_"));
+
         (ass1_1,ass2_1,syst,shared,arg) = matchingExternal(meqns1,true,algIndx,-1,0,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
       then
         (ass1_1,ass2_1,syst,shared,arg);
@@ -5598,6 +5612,50 @@ algorithm
 
   end match;
 end matchingExternal;
+
+protected function removeEdgesForNoDerivativeFunctionInputs"when gathering the minimal structurally singular subsets from the unmatches equations,
+some edges dont have to be considered e.g. edges between a function call and an input variable if the input variable will not be derived when deriving the function
+author: Waurich TUD 10-2015"
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.EqSystem sys;
+  input BackendDAE.Shared shared;
+  output BackendDAE.IncidenceMatrix mOut;
+  output BackendDAE.IncidenceMatrixT mtOut;
+protected
+  Boolean hasNoDerAnno;
+  Integer idx, varIdx;
+  list<Integer> varIdxs, row;
+  BackendDAE.EquationArray eqs;
+  BackendDAE.Variables vars;
+  DAE.FunctionTree functionTree;
+  list<DAE.ComponentRef> noDerInputs;
+algorithm
+  vars := sys.orderedVars;
+  eqs := sys.orderedEqs;
+  functionTree := shared.functionTree;
+  idx := 1;
+  for eq in BackendEquation.equationList(eqs) loop
+    (hasNoDerAnno,noDerInputs) := BackendDAEUtil.isFuncCallWithNoDerAnnotation(eq,functionTree);
+    if hasNoDerAnno then
+      (_,varIdxs) := BackendVariable.getVarLst(noDerInputs,vars,{},{});
+        //print("remove edges between eq: "+intString(idx)+" and vars "+stringDelimitList(List.map(varIdxs,intString),", ")+"\n");
+      //update m
+      row := m[idx];
+      (_,row,_) := List.intersection1OnTrue(row,varIdxs,intEq);
+      arrayUpdate(m,idx,row);
+      //update mt
+      for varIdx in varIdxs loop
+        row := arrayGet(m,varIdx);
+        row := List.deleteMember(row,idx);
+        arrayUpdate(mt,varIdx,row);
+      end for;
+    end if;
+    idx := idx+1;
+  end for;
+  mOut := m;
+  mtOut := mt;
+end removeEdgesForNoDerivativeFunctionInputs;
 
 protected function countincidenceMatrixElementEntries
   input Integer i;

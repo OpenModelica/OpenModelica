@@ -2773,7 +2773,7 @@ algorithm
   end match;
 end getlowerOrderDerivative;
 
-protected function getFunctionMapper "Author: Frenkel TUD"
+public function getFunctionMapper "Author: Frenkel TUD"
   input Absyn.Path fname;
   input DAE.FunctionTree functions;
   output DAE.FunctionDefinition mapper;

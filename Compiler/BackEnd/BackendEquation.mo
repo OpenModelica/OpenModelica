@@ -3130,7 +3130,7 @@ algorithm
   b := not isAlgorithm(inEqn);
 end isNotAlgorithm;
 
-public function markDifferentiated
+public function markDifferentiated"sets differentiated=true in EquationAttributes"
   input BackendDAE.Equation inEqn;
   output BackendDAE.Equation outEqn;
 algorithm
