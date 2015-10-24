@@ -36,8 +36,6 @@
 
 #include "FMU2Wrapper.h"
 
-#include <Core/System/AlgLoopSolverFactory.h>
-
 static fmi2String const _LogCategoryFMUNames[] = {
   "logEvents",
   "logSingularLinearSystems",

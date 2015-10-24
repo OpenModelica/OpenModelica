@@ -5,7 +5,6 @@
 #include <FMU/IFMUInterface.h>
 #include <FMU/FMUGlobalSettings.h>
 #include <FMU/FMULogger.h>
-#include <Core/System/AlgLoopSolverFactory.h>
 
 class FMUWrapper : public IFMUInterface
 {

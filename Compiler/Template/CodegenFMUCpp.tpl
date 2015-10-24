@@ -240,6 +240,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   let modelShortName = lastIdentOfPath(modelInfo.name)
   let modelLongName = System.stringReplace(modelName, ".", "_")
   let algloopfiles = (listAppend(allEquations,initialEquations) |> eqs => algloopMainfile2(eqs, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, modelShortName) ;separator="\n")
+  let solverFactoryInclude = match algloopfiles case "" then '' else
+    '#include <Core/System/AlgLoopSolverFactory.h>'
   let solverFactory = match algloopfiles case "" then 'NULL' else
     'new AlgLoopSolverFactory(globalSettings, PATH(""), PATH(""))'
   <<
@@ -260,6 +262,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     '#include "FMU2/FMU2Interface.cpp"'
   else
     '#include <FMU/FMULibInterface.h>'%>
+
+  <%solverFactoryInclude%>
 
   // create instance of <%modelShortName%>FMU
   <%modelShortName%>FMU *createSystemFMU(IGlobalSettings *globalSettings) {
