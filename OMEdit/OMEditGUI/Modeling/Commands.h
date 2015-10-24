@@ -76,7 +76,8 @@ class AddComponentCommand : public QUndoCommand
 {
 public:
   AddComponentCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
-                      ComponentInfo *pComponentInfo, bool addObject, bool openingClass, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+                      ComponentInfo *pComponentInfo, bool addObject, bool openingClass, GraphicsView *pGraphicsView,
+                      QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
@@ -91,18 +92,30 @@ private:
   GraphicsView *mpGraphicsView;
 };
 
-class UpdateComponentCommand : public QUndoCommand
+class UpdateComponentTransformationsCommand : public QUndoCommand
 {
 public:
-  UpdateComponentCommand(Component *pComponent, const Transformation &oldTransformation, const Transformation &newTransformation,
-                         GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  UpdateComponentTransformationsCommand(Component *pComponent, const Transformation &oldTransformation,
+                                        const Transformation &newTransformation, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
   Component *mpComponent;
   Transformation mOldTransformation;
   Transformation mNewTransformation;
-  GraphicsView *mpGraphicsView;
+};
+
+class UpdateComponentAttributesCommand : public QUndoCommand
+{
+public:
+  UpdateComponentAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo, const ComponentInfo &newComponentInfo,
+                                   QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  Component *mpComponent;
+  ComponentInfo mOldComponentInfo;
+  ComponentInfo mNewComponentInfo;
 };
 
 class DeleteComponentCommand : public QUndoCommand

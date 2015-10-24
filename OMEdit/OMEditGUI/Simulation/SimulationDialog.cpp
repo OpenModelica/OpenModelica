@@ -1024,7 +1024,6 @@ void SimulationDialog::saveSimulationOptions()
   // make the model modified
   if (mpLibraryTreeItem->getModelWidget()) {
     mpLibraryTreeItem->getModelWidget()->updateModelicaText();
-    mpLibraryTreeItem->getModelWidget()->setModelModified();
   } else {
     LibraryTreeModel *pLibraryTreeModel = mpMainWindow->getLibraryWidget()->getLibraryTreeModel();
     pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);

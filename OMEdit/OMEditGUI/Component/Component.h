@@ -68,33 +68,37 @@ class ComponentInfo : public QObject
 {
   Q_OBJECT
 public:
-  ComponentInfo(QString value, QObject *pParent = 0);
+  ComponentInfo(QObject *pParent = 0);
+  ComponentInfo(ComponentInfo *pComponentInfo, QObject *pParent = 0);
+  void updateComponentInfo(const ComponentInfo *pComponentInfo);
   void parseComponentInfoString(QString value);
   void setClassName(QString className) {mClassName = className;}
-  QString getClassName() {return mClassName;}
+  QString getClassName() const {return mClassName;}
   void setName(QString name) {mName = name;}
-  QString getName() {return mName;}
+  QString getName() const {return mName;}
   void setComment(QString comment) {mComment = comment;}
-  QString getComment() {return StringHandler::removeFirstLastQuotes(mComment);}
+  QString getComment() const {return StringHandler::removeFirstLastQuotes(mComment);}
   void setProtected(bool protect) {mIsProtected = protect;}
-  bool getProtected() {return mIsProtected;}
+  bool getProtected() const {return mIsProtected;}
   void setFinal(bool final) {mIsFinal = final;}
-  bool getFinal() {return mIsFinal;}
-  bool getFlow() {return mIsFlow;}
-  bool getStream() {return mIsStream;}
+  bool getFinal() const {return mIsFinal;}
+  void setFlow(bool flow) {mIsFlow = flow;}
+  bool getFlow() const {return mIsFlow;}
+  void setStream(bool stream) {mIsStream = stream;}
+  bool getStream() const {return mIsStream;}
   void setReplaceable(bool replaceable) {mIsReplaceable = replaceable;}
-  bool getReplaceable() {return mIsReplaceable;}
+  bool getReplaceable() const {return mIsReplaceable;}
   void setVariablity(QString variability) {mVariability = variability;}
-  QString getVariablity() {return mVariability;}
+  QString getVariablity() const {return mVariability;}
   void setInner(bool inner) {mIsInner = inner;}
-  bool getInner() {return mIsInner;}
+  bool getInner() const {return mIsInner;}
   void setOuter(bool outer) {mIsOuter = outer;}
-  bool getOuter() {return mIsOuter;}
+  bool getOuter() const {return mIsOuter;}
   void setCausality(QString causality) {mCasuality = causality;}
-  QString getCausality() {return mCasuality;}
+  QString getCausality() const {return mCasuality;}
   void setArrayIndex(QString arrayIndex);
-  QString getArrayIndex() {return mArrayIndex;}
-  bool isArray() {return mIsArray;}
+  QString getArrayIndex() const {return mArrayIndex;}
+  bool isArray() const {return mIsArray;}
 private:
   QString mClassName;
   QString mName;

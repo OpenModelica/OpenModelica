@@ -276,7 +276,7 @@ void ModelicaTextEditor::contentsHasChanged(int position, int charsRemoved, int 
     } else {
       /* if user is changing the normal class. */
       if (!mForceSetPlainText) {
-        mpModelWidget->setModelModified();
+        //mpModelWidget->setModelModified();
         mTextChanged = true;
       }
       /* Keep the line numbers and the block information for the line breakpoints updated */
