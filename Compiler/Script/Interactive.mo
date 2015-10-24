@@ -10526,7 +10526,7 @@ algorithm
       Absyn.ComponentItem c;
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = ad,modification = mod),condition = cond,comment = compcmt) :: cs),cr,cmt)
       equation
-        true = Absyn.crefEqual(Absyn.CREF_IDENT(id,ad), cr);
+        true = Absyn.crefEqual(Absyn.CREF_IDENT(id,{}), cr);
         compcmt_1 = setClassCommentInCommentOpt(compcmt, cmt);
       then
         (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,ad,mod),cond,compcmt_1) :: cs);
