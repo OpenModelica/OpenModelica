@@ -783,7 +783,7 @@ algorithm
       list<DAE.Exp> args;
       list<DAE.ComponentRef> crefs;
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
-      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> lst_cr;
       DAE.ElementSource source;
       DAE.Exp newExp,newExp1, e1, cond, msg, level, newAssrtCond, newAssrtMsg, newAssrtLevel;
       DAE.InlineType inlineType;
@@ -825,13 +825,13 @@ algorithm
           (newExp1,(_,_,assrtLst)) = Expression.Expression.traverseExpBottomUp(newExp,inlineCall,(fns,true,assrtLstIn));
         else // normal Modelica
           // get inputs, body and output
-          (crefs,{cr},stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
+          (crefs,lst_cr,stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
           // merge statements to one line
           (repl,assrtStmts) = mergeFunctionBody(stmts,repl,{});
           // depend on detection of assert or not
           if (listEmpty(assrtStmts))
           then // no assert detected
-            newExp = getReplacementCheckComplex(repl,cr,ty);
+            newExp = Expression.makeTuple(list( getReplacementCheckComplex(repl,cr,ty) for cr in lst_cr));
             argmap = List.threadTuple(crefs,args);
             (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
             // compare types
@@ -847,7 +847,8 @@ algorithm
             true = listLength(assrtStmts) == 1;
             assrt = listHead(assrtStmts);
             DAE.STMT_ASSERT() = assrt;
-            newExp = getReplacementCheckComplex(repl,cr,ty); // the function that replaces the output variable
+            //newExp = getReplacementCheckComplex(repl,cr,ty); // the function that replaces the output variable
+            newExp = Expression.makeTuple(list( getReplacementCheckComplex(repl,cr,ty) for cr in lst_cr));
             argmap = List.threadTuple(crefs,args);
             (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
             // compare types
@@ -930,7 +931,7 @@ algorithm
       list<DAE.Element> fn;
       Absyn.Path p;
       list<DAE.Exp> args;
-      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> lst_cr;
       list<DAE.ComponentRef> crefs;
       list<DAE.Statement> assrtStmts;
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
@@ -949,10 +950,11 @@ algorithm
         true = checkInlineType(inlineType,fns);
         (fn,comment) = getFunctionBody(p,fns);
         // get inputs, body and output
-        (crefs,{cr},stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
+        (crefs,lst_cr,stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
         // merge statements to one line
         (repl,_) = mergeFunctionBody(stmts,repl,{});
-        newExp = VarTransform.getReplacement(repl,cr);
+        //newExp = VarTransform.getReplacement(repl,cr);
+        newExp = Expression.makeTuple(list( VarTransform.getReplacement(repl,cr) for cr in lst_cr));
         argmap = List.threadTuple(crefs,args);
         (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
         // compare types

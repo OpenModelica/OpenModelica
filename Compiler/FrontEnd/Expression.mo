@@ -3323,6 +3323,14 @@ algorithm
   outExp := makeASUB(exp,{sub});
 end makeASUBSingleSub;
 
+public function makeTuple
+  input list<DAE.Exp> inExps;
+  output DAE.Exp outExp;
+algorithm
+  outExp := if listLength(inExps) > 1 then DAE.TUPLE(inExps) else List.first(inExps);
+end makeTuple;
+
+
 public function generateCrefsExpFromExpVar "
 Author: Frenkel TUD 2010-05"
   input DAE.Var inVar;
