@@ -46,10 +46,9 @@
  */
 /*!
  * \brief ComponentInfo::ComponentInfo
- * \param value
  * \param pParent
  */
-ComponentInfo::ComponentInfo(QString value, QObject *pParent)
+ComponentInfo::ComponentInfo(QObject *pParent)
   : QObject(pParent)
 {
   mClassName = "";
@@ -63,17 +62,52 @@ ComponentInfo::ComponentInfo(QString value, QObject *pParent)
   mVariabilityMap.insert("constant", "constant");
   mVariabilityMap.insert("discrete", "discrete");
   mVariabilityMap.insert("parameter", "parameter");
-  mVariabilityMap.insert("unspecified", "default");
+  mVariabilityMap.insert("unspecified", "");
   mVariability = "";
   mIsInner = false;
   mIsOuter = false;
   mCasualityMap.insert("input", "input");
   mCasualityMap.insert("output", "output");
-  mCasualityMap.insert("unspecified", "none");
+  mCasualityMap.insert("unspecified", "");
   mCasuality = "";
   mArrayIndex = "";
   mIsArray = false;
-  parseComponentInfoString(value);
+}
+
+/*!
+ * \brief ComponentInfo::ComponentInfo
+ * \param pComponentInfo
+ * \param pParent
+ */
+ComponentInfo::ComponentInfo(ComponentInfo *pComponentInfo, QObject *pParent)
+  : QObject(pParent)
+{
+  updateComponentInfo(pComponentInfo);
+}
+
+void ComponentInfo::updateComponentInfo(const ComponentInfo *pComponentInfo)
+{
+  mClassName = pComponentInfo->getClassName();
+  mName = pComponentInfo->getName();
+  mComment = pComponentInfo->getComment();
+  mIsProtected = pComponentInfo->getProtected();
+  mIsFinal = pComponentInfo->getFinal();
+  mIsFlow = pComponentInfo->getFlow();
+  mIsStream = pComponentInfo->getStream();
+  mIsReplaceable = pComponentInfo->getReplaceable();
+  mVariabilityMap.insert("constant", "constant");
+  mVariabilityMap.insert("discrete", "discrete");
+  mVariabilityMap.insert("parameter", "parameter");
+  mVariabilityMap.insert("unspecified", "");
+  mVariability = pComponentInfo->getVariablity();
+  mIsInner = pComponentInfo->getInner();
+  mIsOuter = pComponentInfo->getOuter();
+  mCasualityMap.insert("input", "input");
+  mCasualityMap.insert("output", "output");
+  mCasualityMap.insert("unspecified", "");
+  mCasuality = pComponentInfo->getCausality();
+  mArrayIndex = pComponentInfo->getArrayIndex();
+  mIsArray = pComponentInfo->isArray();
 }
 
 /*!
@@ -733,7 +767,7 @@ void Component::applyRotation(qreal angle)
     angle = 0;
   }
   mTransformation.setRotateAngle(angle);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
 void Component::addConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
@@ -979,8 +1013,6 @@ void Component::updatePlacementAnnotation()
     pOMCProxy->updateComponent(mpComponentInfo->getName(), mpComponentInfo->getClassName(),
                                mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), getPlacementAnnotation());
   }
-  // set the model modified
-  mpGraphicsView->getModelWidget()->setModelModified();
   /* When something is changed in the icon layer then update the LibraryTreeItem in the Library Browser */
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
@@ -1218,7 +1250,8 @@ void Component::finishResizeComponent()
  */
 void Component::resizedComponent()
 {
-  UpdateComponentCommand *pUpdateComponentCommand = new UpdateComponentCommand(this, mOldTransformation, mTransformation, mpGraphicsView);
+  UpdateComponentTransformationsCommand *pUpdateComponentCommand = new UpdateComponentTransformationsCommand(this, mOldTransformation,
+                                                                                                             mTransformation);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateComponentCommand);
   mpGraphicsView->getModelWidget()->updateModelicaText();
 }
@@ -1297,7 +1330,7 @@ void Component::flipHorizontal()
     mTransformation.setExtent1(QPointF(extent1.x(), extent2.y()));
     mTransformation.setExtent2(QPointF(extent2.x(), extent1.y()));
   }
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
   showResizerItems();
 }
 
@@ -1320,7 +1353,7 @@ void Component::flipVertical()
     mTransformation.setExtent1(QPointF(extent2.x(), extent1.y()));
     mTransformation.setExtent2(QPointF(extent1.x(), extent2.y()));
   }
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
   showResizerItems();
 }
 
@@ -1334,7 +1367,7 @@ void Component::moveUp()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
 /*!
@@ -1347,7 +1380,7 @@ void Component::moveShiftUp()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
 /*!
@@ -1360,7 +1393,7 @@ void Component::moveCtrlUp()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(0, 1);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
 /*!
@@ -1373,7 +1406,7 @@ void Component::moveDown()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(0, -mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
 /*!
@@ -1386,7 +1419,7 @@ void Component::moveShiftDown()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(0, -(mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5));
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
 /*!
@@ -1399,7 +1432,7 @@ void Component::moveCtrlDown()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(0, -1);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
 /*!
@@ -1412,7 +1445,7 @@ void Component::moveLeft()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(-mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
 /*!
@@ -1425,7 +1458,7 @@ void Component::moveShiftLeft()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(-(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5), 0);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
 /*!
@@ -1438,7 +1471,7 @@ void Component::moveCtrlLeft()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(-1, 0);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
 /*!
@@ -1451,7 +1484,7 @@ void Component::moveRight()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
 /*!
@@ -1464,7 +1497,7 @@ void Component::moveShiftRight()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5, 0);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
 /*!
@@ -1477,7 +1510,7 @@ void Component::moveCtrlRight()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(1, 0);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentCommand(this, oldTransformation, mTransformation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
 //! Slot that opens up the component parameters dialog.

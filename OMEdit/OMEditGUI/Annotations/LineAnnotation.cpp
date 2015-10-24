@@ -717,8 +717,6 @@ void LineAnnotation::updateConnectionAnnotation()
     pOMCProxy->updateConnection(getStartComponentName(), getEndComponentName(),
                                 mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), annotationString);
   }
-  // make the model modified
-  mpGraphicsView->getModelWidget()->setModelModified();
 }
 
 void LineAnnotation::duplicate()

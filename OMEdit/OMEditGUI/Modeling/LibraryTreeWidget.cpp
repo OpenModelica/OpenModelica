@@ -1319,6 +1319,10 @@ QString LibraryTreeModel::readLibraryTreeItemClassTextFromFile(LibraryTreeItem *
  */
 void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem)
 {
+  // set the library node not saved.
+  pLibraryTreeItem->setIsSaved(false);
+  updateLibraryTreeItem(pLibraryTreeItem);
+  // update the containing parent LibraryTreeItem class text.
   LibraryTreeItem *pParentLibraryTreeItem = getContainingParentLibraryTreeItem(pLibraryTreeItem);
   OMCProxy *pOMCProxy = mpLibraryWidget->getMainWindow()->getOMCProxy();
   QString before = pParentLibraryTreeItem->getClassText();

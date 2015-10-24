@@ -272,7 +272,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
         return false;
       }
       QString name = getUniqueComponentName(StringHandler::toCamelCase(pLibraryTreeItem->getName()));
-      addComponentToView(name, pLibraryTreeItem, "", position, new ComponentInfo(""), true, false);
+      addComponentToView(name, pLibraryTreeItem, "", position, new ComponentInfo(), true, false);
       return true;
     }
   } else {
@@ -326,7 +326,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
         // if item is a class, model, block, connector or record. then we can drop it to the graphicsview
         if ((type == StringHandler::Class) || (type == StringHandler::Model) || (type == StringHandler::Block) ||
             (type == StringHandler::ExpandableConnector) || (type == StringHandler::Connector) || (type == StringHandler::Record)) {
-          addComponentToView(name, pLibraryTreeItem, "", position, new ComponentInfo(""));
+          addComponentToView(name, pLibraryTreeItem, "", position, new ComponentInfo());
           return true;
         } else {
           QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
@@ -337,7 +337,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       } else if (mViewType == StringHandler::Icon) { // if dropping an item on the icon layer
         // if item is a connector. then we can drop it to the graphicsview
         if (type == StringHandler::Connector || type == StringHandler::ExpandableConnector) {
-          addComponentToView(name, pLibraryTreeItem, "", position, new ComponentInfo(""));
+          addComponentToView(name, pLibraryTreeItem, "", position, new ComponentInfo());
           return true;
         } else {
           QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
@@ -414,8 +414,6 @@ void GraphicsView::addComponentToClass(Component *pComponent)
     pTLMEditor->addSubModel(pComponent->getName(), "false", fileInfo.fileName(), startCommand, visible, pComponent->getTransformationOrigin(),
                             pComponent->getTransformationExtent(), QString::number(pComponent->mTransformation.getRotateAngle()));
   }
-  // make the model modified
-  mpModelWidget->setModelModified();
 }
 
 /*!
@@ -460,8 +458,6 @@ void GraphicsView::deleteComponentFromClass(Component *pComponent)
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpModelWidget->getEditor());
     pTLMEditor->deleteSubModel(pComponent->getName());
   }
-  // make the model modified
-  mpModelWidget->setModelModified();
 }
 
 /*!
@@ -552,8 +548,6 @@ void GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
       //pMainWindow->getOMCProxy()->instantiateModelSucceeds(mpModelWidget->getNameStructure());
     }
   }
-  // make the model modified
-  mpModelWidget->setModelModified();
 }
 
 /*!
@@ -572,8 +566,6 @@ void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectonLineAnnot
                                                  pConnectonLineAnnotation->getEndComponentName(),
                                                  mpModelWidget->getLibraryTreeItem()->getNameStructure());
   }
-  // make the model modified
-  mpModelWidget->setModelModified();
 }
 
 void GraphicsView::deleteShape(ShapeAnnotation *pShape)
@@ -1280,7 +1272,6 @@ void GraphicsView::addClassAnnotation(bool updateModelicaText)
     if (updateModelicaText) {
       mpModelWidget->updateModelicaText();
     }
-    mpModelWidget->setModelModified();
     /* When something is added/changed in the icon layer then update the LibraryTreeItem in the Library Browser */
     if (mViewType == StringHandler::Icon) {
       mpModelWidget->getLibraryTreeItem()->handleIconUpdated();
@@ -1658,7 +1649,8 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
         Transformation oldTransformation = pComponent->mTransformation;
         QPointF positionDifference = pComponent->scenePos() - pComponent->getOldScenePosition();
         pComponent->mTransformation.adjustPosition(positionDifference.x(), positionDifference.y());
-        mpModelWidget->getUndoStack()->push(new UpdateComponentCommand(pComponent, oldTransformation, pComponent->mTransformation, this));
+        mpModelWidget->getUndoStack()->push(new UpdateComponentTransformationsCommand(pComponent, oldTransformation,
+                                                                                      pComponent->mTransformation));
         hasComponentMoved = true;
       }
     }
@@ -1687,7 +1679,6 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
     }
     if (hasComponentMoved || hasShapeMoved) {
       mpModelWidget->updateModelicaText();
-      mpModelWidget->setModelModified();
     }
     // if we have started he undo stack macro then we should end it.
     if (beginMacro) {
@@ -2330,20 +2321,6 @@ ModelWidget::InheritedClass* ModelWidget::findInheritedClass(LibraryTreeItem *pL
 }
 
 /*!
- * \brief ModelWidget::setModelModified
- * Sets the model state to modified. Adds a trailing * to model name and also mark it as not saved.
- */
-void ModelWidget::setModelModified()
-{
-  // Add a * in the model window title.
-  setWindowTitle(QString(mpLibraryTreeItem->getNameStructure()).append("*"));
-  // set the library node not saved.
-  mpLibraryTreeItem->setIsSaved(false);
-  LibraryTreeModel *pLibraryTreeModel = mpModelWidgetContainer->getMainWindow()->getLibraryWidget()->getLibraryTreeModel();
-  pLibraryTreeModel->updateLibraryTreeItem(mpLibraryTreeItem);
-}
-
-/*!
  * \brief ModelWidget::modelInheritedClassLoaded
  * Adds the inherited class shapes when it is loaded.
  * \param pInheritedClass
@@ -2782,7 +2759,7 @@ bool ModelWidget::modelicaEditorTextChanged()
     refresh();
     /* if class has children then create them. */
     pLibraryTreeModel->createLibraryTreeItems(mpLibraryTreeItem);
-    setModelModified();
+    //setModelModified();
   }
   /*
     if user has changed the class name then delete this class.
@@ -2793,14 +2770,14 @@ bool ModelWidget::modelicaEditorTextChanged()
     /* if class has children then delete them. */
     pLibraryTreeModel->unloadClass(mpLibraryTreeItem, false);
     /* call setModelModified before deleting the class so we can get rid of cache commands of this object. */
-    setModelModified();
+    //setModelModified();
     pOMCProxy->deleteClass(mpLibraryTreeItem->getNameStructure());
     QString className = classNames.first();
     classNames.removeFirst();
     /* set the LibraryTreeItem name & text */
     mpLibraryTreeItem->setName(StringHandler::getLastWordAfterDot(className));
     mpLibraryTreeItem->setNameStructure(className);
-    setModelModified();
+    //setModelModified();
     /* get the model components, shapes & connectors */
     refresh();
     /* if class has children then create them. */
@@ -2848,6 +2825,7 @@ void ModelWidget::updateClassAnnotationIfNeeded()
  */
 void ModelWidget::updateModelicaText()
 {
+  setWindowTitle(QString(mpLibraryTreeItem->getNameStructure()).append("*"));
   LibraryTreeModel *pLibraryTreeModel = mpModelWidgetContainer->getMainWindow()->getLibraryWidget()->getLibraryTreeModel();
   pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
 }
@@ -3337,13 +3315,12 @@ void ModelWidget::getTLMComponents()
     if (!annotationFound) {
       transformation = "Placement(true, 0.0, 0.0, -10.0, -10.0, 10.0, 10.0, 0.0, -, -, -, -, -, -,";
       pTLMEditor->createAnnotationElement(subModel, "true", "{0,0}", "{-10,-10,10,10}", "0");
-      setModelModified();
     }
     QFileInfo fileInfo(mpLibraryTreeItem->getFileName());
     QString fileName = fileInfo.absolutePath() + "/" + subModel.attribute("Name") + "/" + subModel.attribute("ModelFile");
     // add the component to the the diagram view.
 //    mpDiagramGraphicsView->addComponentToView(subModel.attribute("Name"), subModel.attribute("Name"), transformation, QPointF(0.0, 0.0),
-//                                              new ComponentInfo(""), StringHandler::Connector, false, false, false, "", fileName);
+//                                              new ComponentInfo(), StringHandler::Connector, false, false, false, "", fileName);
   }
 }
 

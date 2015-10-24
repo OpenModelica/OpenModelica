@@ -377,7 +377,6 @@ public:
   QList<InheritedClass*> getInheritedClassesList() {return mInheritedClassesList;}
   void clearInheritedClasses() {mInheritedClassesList.clear();}
   InheritedClass* findInheritedClass(LibraryTreeItem *pLibraryTreeItem);
-  void setModelModified();
   void modelInheritedClassLoaded(InheritedClass *pInheritedClass);
   void modelInheritedClassUnLoaded(InheritedClass *pInheritedClass);
   ShapeAnnotation* createNonExistingInheritedShape(GraphicsView *pGraphicsView);

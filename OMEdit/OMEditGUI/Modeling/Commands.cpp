@@ -269,22 +269,21 @@ void AddComponentCommand::undo()
   mpGraphicsView->deleteComponentFromClass(mpDiagramComponent);
 }
 
-UpdateComponentCommand::UpdateComponentCommand(Component *pComponent, const Transformation &oldTransformation,
-                                               const Transformation &newTransformation, GraphicsView *pGraphicsView, QUndoCommand *pParent)
+UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Component *pComponent, const Transformation &oldTransformation,
+                                                                             const Transformation &newTransformation, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpComponent = pComponent;
   mOldTransformation = oldTransformation;
   mNewTransformation = newTransformation;
-  mpGraphicsView = pGraphicsView;
-  setText(QString("Update Component %1").arg(mpComponent->getName()));
+  setText(QString("Update Component %1 Transformations").arg(mpComponent->getName()));
 }
 
 /*!
- * \brief UpdateComponentCommand::redo
- * Redo the UpdateComponentCommand.
+ * \brief UpdateComponentTransformationsCommand::redo
+ * Redo the UpdateComponentTransformationsCommand.
  */
-void UpdateComponentCommand::redo()
+void UpdateComponentTransformationsCommand::redo()
 {
   mpComponent->resetTransform();
   bool state = mpComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
@@ -298,10 +297,10 @@ void UpdateComponentCommand::redo()
 }
 
 /*!
- * \brief UpdateComponentCommand::undo
- * Undo the UpdateComponentCommand.
+ * \brief UpdateComponentTransformationsCommand::undo
+ * Undo the UpdateComponentTransformationsCommand.
  */
-void UpdateComponentCommand::undo()
+void UpdateComponentTransformationsCommand::undo()
 {
   mpComponent->resetTransform();
   bool state = mpComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
@@ -312,6 +311,152 @@ void UpdateComponentCommand::undo()
   mpComponent->mTransformation = mOldTransformation;
   mpComponent->emitTransformChange();
   mpComponent->emitTransformHasChanged();
+}
+
+UpdateComponentAttributesCommand::UpdateComponentAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo,
+                                                                   const ComponentInfo &newComponentInfo, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpComponent = pComponent;
+  mOldComponentInfo.updateComponentInfo(&oldComponentInfo);
+  mNewComponentInfo.updateComponentInfo(&newComponentInfo);
+  setText(QString("Update Component %1 Attributes").arg(mpComponent->getName()));
+}
+
+/*!
+ * \brief UpdateComponentAttributesCommand::redo
+ * Redo the UpdateComponentAttributesCommand.
+ */
+void UpdateComponentAttributesCommand::redo()
+{
+  ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
+  QString modelName = pModelWidget->getLibraryTreeItem()->getNameStructure();
+  QString isFinal = mNewComponentInfo.getFinal() ? "true" : "false";
+  QString flow = mNewComponentInfo.getFlow() ? "true" : "false";
+  QString isProtected = mNewComponentInfo.getProtected() ? "true" : "false";
+  QString isReplaceAble = mNewComponentInfo.getReplaceable() ? "true" : "false";
+  QString variability = mNewComponentInfo.getVariablity();
+  QString isInner = mNewComponentInfo.getInner() ? "true" : "false";
+  QString isOuter = mNewComponentInfo.getOuter() ? "true" : "false";
+  QString causality = mNewComponentInfo.getCausality();
+
+  OMCProxy *pOMCProxy = pModelWidget->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  // update component attributes
+  if (pOMCProxy->setComponentProperties(modelName, mpComponent->getComponentInfo()->getName(), isFinal, flow, isProtected, isReplaceAble,
+                                        variability, isInner, isOuter, causality)) {
+    mpComponent->getComponentInfo()->setFinal(mNewComponentInfo.getFinal());
+    mpComponent->getComponentInfo()->setProtected(mNewComponentInfo.getProtected());
+    mpComponent->getComponentInfo()->setReplaceable(mNewComponentInfo.getReplaceable());
+    mpComponent->getComponentInfo()->setVariablity(variability);
+    mpComponent->getComponentInfo()->setInner(mNewComponentInfo.getInner());
+    mpComponent->getComponentInfo()->setOuter(mNewComponentInfo.getOuter());
+    mpComponent->getComponentInfo()->setCausality(causality);
+  } else {
+    QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
+                          QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
+    pOMCProxy->printMessagesStringInternal();
+  }
+  // update the component comment only if its changed.
+  if (mpComponent->getComponentInfo()->getComment().compare(mNewComponentInfo.getComment()) != 0) {
+    QString comment = StringHandler::escapeString(mNewComponentInfo.getComment());
+    if (pOMCProxy->setComponentComment(modelName, mpComponent->getComponentInfo()->getName(), comment)) {
+      mpComponent->getComponentInfo()->setComment(comment);
+    } else {
+      QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
+                            QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
+      pOMCProxy->printMessagesStringInternal();
+    }
+  }
+  // update the component name only if its changed.
+  if (mpComponent->getComponentInfo()->getName().compare(mNewComponentInfo.getName()) != 0) {
+    // if renameComponentInClass command is successful update the component with new name
+    if (pOMCProxy->renameComponentInClass(modelName, mpComponent->getComponentInfo()->getName(), mNewComponentInfo.getName())) {
+      mpComponent->getComponentInfo()->setName(mNewComponentInfo.getName());
+      mpComponent->componentNameHasChanged();
+    } else {
+      QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
+                            QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
+      pOMCProxy->printMessagesStringInternal();
+    }
+  }
+  // update the component dimensions
+  if (mpComponent->getComponentInfo()->getArrayIndex().compare(mNewComponentInfo.getArrayIndex()) != 0) {
+    if (pOMCProxy->setComponentDimensions(modelName, mpComponent->getComponentInfo()->getName(), mNewComponentInfo.getArrayIndex())) {
+      mpComponent->getComponentInfo()->setArrayIndex(mNewComponentInfo.getArrayIndex());
+    } else {
+      QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
+                            QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
+      pOMCProxy->printMessagesStringInternal();
+    }
+  }
+}
+
+/*!
+ * \brief UpdateComponentAttributesCommand::undo
+ * Undo the UpdateComponentAttributesCommand.
+ */
+void UpdateComponentAttributesCommand::undo()
+{
+  ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
+  QString modelName = pModelWidget->getLibraryTreeItem()->getNameStructure();
+  QString isFinal = mOldComponentInfo.getFinal() ? "true" : "false";
+  QString flow = mNewComponentInfo.getFlow() ? "true" : "false";
+  QString isProtected = mOldComponentInfo.getProtected() ? "true" : "false";
+  QString isReplaceAble = mOldComponentInfo.getReplaceable() ? "true" : "false";
+  QString variability = mOldComponentInfo.getVariablity();
+  QString isInner = mOldComponentInfo.getInner() ? "true" : "false";
+  QString isOuter = mOldComponentInfo.getOuter() ? "true" : "false";
+  QString causality = mOldComponentInfo.getCausality();
+
+  OMCProxy *pOMCProxy = pModelWidget->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  // update component attributes
+  if (pOMCProxy->setComponentProperties(modelName, mpComponent->getComponentInfo()->getName(), isFinal, flow, isProtected, isReplaceAble,
+                                        variability, isInner, isOuter, causality)) {
+    mpComponent->getComponentInfo()->setFinal(mOldComponentInfo.getFinal());
+    mpComponent->getComponentInfo()->setProtected(mOldComponentInfo.getProtected());
+    mpComponent->getComponentInfo()->setReplaceable(mOldComponentInfo.getReplaceable());
+    mpComponent->getComponentInfo()->setVariablity(variability);
+    mpComponent->getComponentInfo()->setInner(mOldComponentInfo.getInner());
+    mpComponent->getComponentInfo()->setOuter(mOldComponentInfo.getOuter());
+    mpComponent->getComponentInfo()->setCausality(causality);
+  } else {
+    QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
+                          QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
+    pOMCProxy->printMessagesStringInternal();
+  }
+  // update the component comment only if its changed.
+  if (mpComponent->getComponentInfo()->getComment().compare(mOldComponentInfo.getComment()) != 0) {
+    QString comment = StringHandler::escapeString(mOldComponentInfo.getComment());
+    if (pOMCProxy->setComponentComment(modelName, mpComponent->getComponentInfo()->getName(), comment)) {
+      mpComponent->getComponentInfo()->setComment(comment);
+    } else {
+      QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
+                            QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
+      pOMCProxy->printMessagesStringInternal();
+    }
+  }
+  // update the component name only if its changed.
+  if (mpComponent->getComponentInfo()->getName().compare(mOldComponentInfo.getName()) != 0) {
+    // if renameComponentInClass command is successful update the component with new name
+    if (pOMCProxy->renameComponentInClass(modelName, mpComponent->getComponentInfo()->getName(), mOldComponentInfo.getName())) {
+      mpComponent->getComponentInfo()->setName(mOldComponentInfo.getName());
+      mpComponent->componentNameHasChanged();
+    } else {
+      QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
+                            QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
+      pOMCProxy->printMessagesStringInternal();
+    }
+  }
+  // update the component dimensions
+  if (mpComponent->getComponentInfo()->getArrayIndex().compare(mOldComponentInfo.getArrayIndex()) != 0) {
+    if (pOMCProxy->setComponentDimensions(modelName, mpComponent->getComponentInfo()->getName(), mOldComponentInfo.getArrayIndex())) {
+      mpComponent->getComponentInfo()->setArrayIndex(mOldComponentInfo.getArrayIndex());
+    } else {
+      QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
+                            QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
+      pOMCProxy->printMessagesStringInternal();
+    }
+  }
 }
 
 DeleteComponentCommand::DeleteComponentCommand(Component *pComponent, GraphicsView *pGraphicsView, QUndoCommand *pParent)

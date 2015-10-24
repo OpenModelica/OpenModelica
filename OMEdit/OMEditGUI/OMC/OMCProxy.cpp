@@ -1190,11 +1190,13 @@ QList<ComponentInfo*> OMCProxy::getComponents(QString className)
   QList<ComponentInfo*> componentInfoList;
   QStringList list = StringHandler::unparseArrays(result);
 
-  for (int i = 0 ; i < list.size() ; i++)
-  {
-    if (list.at(i) == "Error")
+  for (int i = 0 ; i < list.size() ; i++) {
+    if (list.at(i) == "Error") {
       continue;
-    componentInfoList.append(new ComponentInfo(list.at(i)));
+    }
+    ComponentInfo *pComponentInfo = new ComponentInfo();
+    pComponentInfo->parseComponentInfoString(list.at(i));
+    componentInfoList.append(pComponentInfo);
   }
 
   return componentInfoList;
@@ -1728,13 +1730,13 @@ bool OMCProxy::updateConnection(QString from, QString to, QString className, QSt
 bool OMCProxy::setComponentProperties(QString className, QString componentName, QString isFinal, QString isFlow, QString isProtected,
                                       QString isReplaceAble, QString variability, QString isInner, QString isOuter, QString causality)
 {
-  sendCommand("setComponentProperties(" + className + "," + componentName + ",{" + isFinal + "," + isFlow + "," + isProtected + "," + isReplaceAble + "}, {\"" + variability + "\"}, {" + isInner +
-              "," + isOuter + "}, {\"" + causality + "\"})");
+  sendCommand("setComponentProperties(" + className + "," + componentName + ",{" + isFinal + "," + isFlow + "," + isProtected +
+              "," + isReplaceAble + "}, {\"" + variability + "\"}, {" + isInner + "," + isOuter + "}, {\"" + causality + "\"})");
 
-  if (getResult().toLower().contains("error"))
+  if (getResult().toLower().contains("error")) {
     return false;
-  else
-    return true;
+  }
+  return true;
 }
 
 /*!
