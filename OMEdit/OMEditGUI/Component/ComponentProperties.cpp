@@ -1135,7 +1135,7 @@ void ComponentAttributes::updateComponentAttributes()
   newComponentInfo.setArrayIndex(mpDimensionsTextBox->text());
 
   UpdateComponentAttributesCommand *pUpdateComponentAttributesCommand = new UpdateComponentAttributesCommand(mpComponent, oldComponentInfo,
-                                                                                                             newComponentInfo);
+                                                                                                             newComponentInfo, false);
   pModelWidget->getUndoStack()->push(pUpdateComponentAttributesCommand);
   pModelWidget->updateModelicaText();
   accept();

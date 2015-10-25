@@ -355,16 +355,12 @@ bool GraphicsView::addComponent(QString className, QPointF position)
  * \brief GraphicsView::addComponentToView
  * Adds the Component to the Graphical Views.
  * \param name
- * \param className
+ * \param pLibraryTreeItem
  * \param transformationString
- * \param point
+ * \param position
  * \param pComponentInfo
- * \param type
  * \param addObject
  * \param openingClass
- * \param inheritedClass
- * \param inheritedClassName
- * \param fileName
  */
 void GraphicsView::addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
                                       ComponentInfo *pComponentInfo, bool addObject, bool openingClass)
@@ -976,6 +972,7 @@ void GraphicsView::createActions()
   mpDuplicateAction->setStatusTip(Helper::duplicateTip);
   mpDuplicateAction->setShortcut(QKeySequence("Ctrl+d"));
   mpDuplicateAction->setDisabled(isSystemLibrary);
+  connect(mpDuplicateAction, SIGNAL(triggered()), SLOT(duplicateItems()));
   // Bring To Front Action
   mpBringToFrontAction = new QAction(QIcon(":/Resources/icons/bring-to-front.svg"), tr("Bring to Front"), this);
   mpBringToFrontAction->setStatusTip(tr("Brings the item to front"));
@@ -1053,6 +1050,7 @@ bool GraphicsView::isAnyItemSelectedAndEditable(int key)
   if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
     return false;
   }
+  bool selectedAndEditable = false;
   QList<QGraphicsItem*> selectedItems = scene()->selectedItems();
   for (int i = 0 ; i < selectedItems.size() ; i++) {
     // check the selected components.
@@ -1068,16 +1066,18 @@ bool GraphicsView::isAnyItemSelectedAndEditable(int key)
       if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
         switch (key) {
           case Qt::Key_Delete:
-            return true;
+            selectedAndEditable = true;
+            break;
           default:
-            return false;
+            selectedAndEditable = false;
+            break;
         }
       } else {
         return true;
       }
     }
   }
-  return false;
+  return selectedAndEditable;
 }
 
 void GraphicsView::addConnection(Component *pComponent)
@@ -1314,6 +1314,19 @@ void GraphicsView::deleteItems()
 {
   mpModelWidget->getUndoStack()->beginMacro("Deleting by mouse");
   emit mouseDelete();
+  mpModelWidget->updateClassAnnotationIfNeeded();
+  mpModelWidget->updateModelicaText();
+  mpModelWidget->getUndoStack()->endMacro();
+}
+
+/*!
+ * \brief GraphicsView::duplicateItems
+ * Duplicates the selected items by emitting GraphicsView::mouseDuplicate() SIGNAL.
+ */
+void GraphicsView::duplicateItems()
+{
+  mpModelWidget->getUndoStack()->beginMacro("Duplicate by mouse");
+  emit mouseDuplicate();
   mpModelWidget->updateClassAnnotationIfNeeded();
   mpModelWidget->updateModelicaText();
   mpModelWidget->getUndoStack()->endMacro();
@@ -1815,8 +1828,10 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
     mpModelWidget->getUndoStack()->endMacro();
   } else if (controlModifier && event->key() == Qt::Key_A) {
     selectAll();
-  } else if (controlModifier && event->key() == Qt::Key_D) {
+  } else if (controlModifier && event->key() == Qt::Key_D && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->getUndoStack()->beginMacro("Duplicate by key press");
     emit keyPressDuplicate();
+    mpModelWidget->getUndoStack()->endMacro();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_R && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->getUndoStack()->beginMacro("Rotate clockwise by key press");
     emit keyPressRotateClockwise();
@@ -1877,6 +1892,9 @@ void GraphicsView::keyReleaseEvent(QKeyEvent *event)
     mpModelWidget->updateClassAnnotationIfNeeded();
     mpModelWidget->updateModelicaText();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Right && isAnyItemSelectedAndEditable(event->key())) {
+    mpModelWidget->updateClassAnnotationIfNeeded();
+    mpModelWidget->updateModelicaText();
+  } else if (controlModifier && event->key() == Qt::Key_D && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->updateClassAnnotationIfNeeded();
     mpModelWidget->updateModelicaText();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_R && isAnyItemSelectedAndEditable(event->key())) {

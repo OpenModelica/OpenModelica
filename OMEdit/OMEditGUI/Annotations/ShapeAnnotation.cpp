@@ -1074,8 +1074,9 @@ void ShapeAnnotation::deleteMe()
 }
 
 /*!
-  Reimplemented by each child shape class to duplicate the shape.
-  */
+ * \brief ShapeAnnotation::duplicate
+ * Reimplemented by each child shape class to duplicate the shape.
+ */
 void ShapeAnnotation::duplicate()
 {
   /* duplicate code is implemented in each child shape class. */
@@ -1548,7 +1549,7 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
             connect(mpGraphicsView, SIGNAL(mouseManhattanize()), this, SLOT(manhattanizeShape()), Qt::UniqueConnection);
           }
           connect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteMe()), Qt::UniqueConnection);
-          connect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(mouseDuplicate()), this, SLOT(duplicate()), Qt::UniqueConnection);
           connect(mpGraphicsView->getBringToFrontAction(), SIGNAL(triggered()), this, SLOT(bringToFront()), Qt::UniqueConnection);
           connect(mpGraphicsView->getBringForwardAction(), SIGNAL(triggered()), this, SLOT(bringForward()), Qt::UniqueConnection);
           connect(mpGraphicsView->getSendToBackAction(), SIGNAL(triggered()), this, SLOT(sendToBack()), Qt::UniqueConnection);
@@ -1586,7 +1587,7 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
             disconnect(mpGraphicsView, SIGNAL(mouseManhattanize()), this, SLOT(manhattanizeShape()));
           }
           disconnect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteMe()));
-          disconnect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()));
+          disconnect(mpGraphicsView, SIGNAL(mouseDuplicate()), this, SLOT(duplicate()));
           disconnect(mpGraphicsView->getBringToFrontAction(), SIGNAL(triggered()), this, SLOT(bringToFront()));
           disconnect(mpGraphicsView->getBringForwardAction(), SIGNAL(triggered()), this, SLOT(bringForward()));
           disconnect(mpGraphicsView->getSendToBackAction(), SIGNAL(triggered()), this, SLOT(sendToBack()));

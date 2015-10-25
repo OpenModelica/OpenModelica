@@ -175,6 +175,8 @@ public:
   void setComponentFlags(bool enable);
   QString getTransformationAnnotation();
   QString getPlacementAnnotation();
+  QString getOMCTransformationAnnotation(QPointF position);
+  QString getOMCPlacementAnnotation(QPointF position);
   QString getTransformationOrigin();
   QString getTransformationExtent();
   void applyRotation(qreal angle);
@@ -232,7 +234,6 @@ private:
   QPointF mOldScenePosition;
   QList<TLMInterfacePointInfo*> mInterfacePointsList;
   QPointF mOldPosition;
-  void duplicateHelper(GraphicsView *pGraphicsView);
   void removeShapes();
   void removeComponents();
 signals:
