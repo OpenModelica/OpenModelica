@@ -13,25 +13,15 @@
 #include <numeric>
 #include <functional>
 
-#include <boost/assign/std/vector.hpp> // for 'operator+=()'
 #include <boost/assign/list_of.hpp> // for 'list_of()'
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 #include <boost/ref.hpp>
 #include <boost/bind.hpp>
-#include <boost/function.hpp>
+//#include <boost/function.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/numeric/conversion/cast.hpp>
 #include <boost/circular_buffer.hpp>
 #include <boost/foreach.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/any.hpp>
-#include <boost/preprocessor/arithmetic/inc.hpp>
-#include <boost/preprocessor/if.hpp>
-#include <boost/preprocessor/punctuation/comma_if.hpp>
-#include <boost/preprocessor/repetition.hpp>
-#include <boost/preprocessor/iteration/iterate.hpp>
-#include <boost/range/irange.hpp>
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/io.hpp>
@@ -39,14 +29,8 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
 #include <boost/numeric/ublas/storage.hpp>
-#include <boost/range/adaptor/map.hpp>
-#include <boost/range/algorithm/copy.hpp>
 #include <boost/math/special_functions/trunc.hpp>
-#include <boost/assert.hpp>
-#include <boost/assign/list_inserter.hpp>
-#include <boost/ptr_container/ptr_vector.hpp>
 //#include <boost/timer/timer.hpp>
-#include <boost/noncopyable.hpp>
 #include <boost/container/vector.hpp>
 
 
@@ -60,17 +44,11 @@ using std::cout;
 using std::cerr;
 using std::ostream_iterator;
 using boost::unordered_map;
-namespace uBlas = boost::numeric::ublas;
 using namespace boost::numeric;
 using std::map;
 using std::pair;
 using std::make_pair;
 using namespace boost::assign;
-using namespace boost::algorithm;
-using boost::unordered_map;
-using boost::lexical_cast;
-using boost::numeric_cast;
-using boost::tie;
 using boost::get;
 using std::max;
 using std::min;
@@ -165,7 +143,7 @@ typedef ublas::matrix<double,  ublas::column_major,adaptor_t> shared_matrix_t;
 
 //typedef boost::function<bool (unsigned int)> getCondition_type;
 //typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&)> init_prevars_type;
-typedef uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > sparsematrix_t;
+typedef ublas::compressed_matrix<double, ublas::column_major, 0, ublas::unbounded_array<int>, ublas::unbounded_array<double> > sparsematrix_t;
 typedef ublas::matrix<double, ublas::column_major> matrix_t;
 #include <Core/SimulationSettings/IGlobalSettings.h>
 #include <Core/Solver/ISolverSettings.h>

@@ -2075,7 +2075,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let formatExp = daeExp(format, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let typeStr = expTypeFromExpModelica(s)
-    let &preExp += 'string <%tvar%> = lexical_cast<std::string>(<%sExp%>);<%\n%>'
+    let &preExp += 'string <%tvar%> = boost::lexical_cast<std::string>(<%sExp%>);<%\n%>'
     '<%tvar%>'
 
    case CALL(path=IDENT(name="String"),
@@ -2086,7 +2086,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let minlenExp = daeExp(minlen, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let leftjustExp = daeExp(leftjust, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let typeStr = expTypeFromExpModelica(s)
-    let &preExp += 'string <%tvar%> = lexical_cast<string>(<%sExp%>);<%\n%>'
+    let &preExp += 'string <%tvar%> = boost::lexical_cast<std::string>(<%sExp%>);<%\n%>'
     '<%tvar%>'
 
 
@@ -2099,7 +2099,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let minlenExp = daeExp(minlen, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let leftjustExp = daeExp(leftjust, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let signdigExp = daeExp(signdig, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let &preExp +=  'string <%tvar%> = lexical_cast<string>(<%sExp%>);<%\n%>'
+    let &preExp +=  'string <%tvar%> = boost::lexical_cast<std::string>(<%sExp%>);<%\n%>'
     '<%tvar%>'
 
   case CALL(path=IDENT(name="delay"),
