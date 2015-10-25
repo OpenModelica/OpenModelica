@@ -34,10 +34,8 @@
 #include <boost/container/vector.hpp>
 
 
- /*Namespaces*/
-#ifndef _MSC_VER
-using namespace std;
-#endif //_MSC_VER
+/*Namespaces*/
+using std::abs;
 using std::ios;
 using std::endl;
 using std::cout;
