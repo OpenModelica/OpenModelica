@@ -382,6 +382,21 @@ void UpdateComponentAttributesCommand::redo()
     if (pOMCProxy->renameComponentInClass(modelName, mpComponent->getComponentInfo()->getName(), mNewComponentInfo.getName())) {
       mpComponent->getComponentInfo()->setName(mNewComponentInfo.getName());
       mpComponent->componentNameHasChanged();
+      if (mpComponent->getLibraryTreeItem()->isConnector()) {
+        if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
+          Component *pComponent = 0;
+          pComponent = mpComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getComponentObject(mpComponent->getName());
+          if (pComponent) {
+            pComponent->componentNameHasChanged();
+          }
+        } else {
+          Component *pComponent = 0;
+          pComponent = mpComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(mpComponent->getName());
+          if (pComponent) {
+            pComponent->componentNameHasChanged();
+          }
+        }
+      }
     } else {
       QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
                             QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
@@ -465,6 +480,21 @@ void UpdateComponentAttributesCommand::undo()
     if (pOMCProxy->renameComponentInClass(modelName, mpComponent->getComponentInfo()->getName(), mOldComponentInfo.getName())) {
       mpComponent->getComponentInfo()->setName(mOldComponentInfo.getName());
       mpComponent->componentNameHasChanged();
+      if (mpComponent->getLibraryTreeItem()->isConnector()) {
+        if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
+          Component *pComponent = 0;
+          pComponent = mpComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getComponentObject(mpComponent->getName());
+          if (pComponent) {
+            pComponent->componentNameHasChanged();
+          }
+        } else {
+          Component *pComponent = 0;
+          pComponent = mpComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(mpComponent->getName());
+          if (pComponent) {
+            pComponent->componentNameHasChanged();
+          }
+        }
+      }
     } else {
       QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
                             QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
