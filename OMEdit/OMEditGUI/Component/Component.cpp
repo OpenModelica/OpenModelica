@@ -1005,9 +1005,11 @@ void Component::removeShapes()
     delete pShapeAnnotation;
   }
   mShapesList.clear();
-  mpNonExistingComponentLine->setVisible(false);
-  mpDefaultComponentRectangle->setVisible(false);
-  mpDefaultComponentText->setVisible(false);
+  if (mComponentType == Component::Root) {
+    mpNonExistingComponentLine->setVisible(false);
+    mpDefaultComponentRectangle->setVisible(false);
+    mpDefaultComponentText->setVisible(false);
+  }
 }
 
 void Component::removeComponents()
