@@ -403,7 +403,7 @@ void TextAnnotation::initUpdateTextString()
   if (mpComponent) {
     if (mOriginalTextString.contains("%")) {
       updateTextString();
-      connect(mpComponent->getRootParentComponent(), SIGNAL(displayTextChanged()), SLOT(updateTextString()), Qt::UniqueConnection);
+      connect(mpComponent, SIGNAL(displayTextChanged()), SLOT(updateTextString()), Qt::UniqueConnection);
     }
   }
 }
@@ -458,10 +458,10 @@ void TextAnnotation::updateTextString()
     return;
   }
   if (mOriginalTextString.toLower().contains("%name")) {
-    mTextString.replace(QRegExp("%name"), mpComponent->getRootParentComponent()->getName());
+    mTextString.replace(QRegExp("%name"), mpComponent->getName());
   }
   if (mOriginalTextString.toLower().contains("%class")) {
-    mTextString.replace(QRegExp("%class"), mpComponent->getRootParentComponent()->getLibraryTreeItem()->getNameStructure());
+    mTextString.replace(QRegExp("%class"), mpComponent->getLibraryTreeItem()->getNameStructure());
   }
   if (!mTextString.contains("%")) {
     return;
