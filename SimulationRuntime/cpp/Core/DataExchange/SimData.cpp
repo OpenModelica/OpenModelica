@@ -52,7 +52,7 @@ void  SimData::addOutputResults(string name,uBlas::vector<double> v)
 
 void SimData::getTimeEntries(vector<double>& time_entries)
 {
-    time_entries = boost::ref(_time_entries);
+    time_entries = omcpp::ref(_time_entries);
 }
 
 void SimData::addTimeEntries(vector<double> time_entries)
@@ -84,7 +84,7 @@ void  SimData::getOutputResults(string name,uBlas::vector<double>& v)
     if(iter!=_result_vars.end())
     {
 
-        v = boost::ref(iter->second);
+        v = omcpp::ref(iter->second);
     }
     else
         throw ModelicaSimulationError(DATASTORAGE,"There is no such output variable " + name);

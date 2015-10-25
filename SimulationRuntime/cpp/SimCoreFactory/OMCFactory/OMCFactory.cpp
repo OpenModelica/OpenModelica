@@ -9,6 +9,7 @@
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Core/SimController/ISimController.h>
 #include <boost/algorithm/string.hpp>
+#include <boost/bind.hpp>
 #include <boost/container/vector.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>

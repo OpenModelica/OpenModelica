@@ -5,6 +5,8 @@
 *  @{
 */
 
+#include <boost/container/vector.hpp>
+
 /** typedef for variable, parameter names*/
 typedef boost::container::vector<string> var_names_t;
  /** typedef for the output values kind list, this is a boolean container which indicates if the output variable is a negate alias variable*/

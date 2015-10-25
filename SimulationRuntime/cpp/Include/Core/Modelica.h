@@ -17,8 +17,6 @@
 #include <boost/assign/list_of.hpp> // for 'list_of()'
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
-#include <boost/ref.hpp>
-#include <boost/bind.hpp>
 //#include <boost/function.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/circular_buffer.hpp>
@@ -30,9 +28,7 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
 #include <boost/numeric/ublas/storage.hpp>
-#include <boost/math/special_functions/trunc.hpp>
 //#include <boost/timer/timer.hpp>
-#include <boost/container/vector.hpp>
 
 
 /*Namespaces*/
@@ -68,6 +64,12 @@ using std::runtime_error;
   #include <condition_variable>
   #include <tuple>
   #include <memory>
+  /** namespace for generated code to avoid name clashes */
+  namespace omcpp {
+    using std::ref;
+    using std::trunc;
+    using std::to_string;
+  }
   using std::bind;
   using std::function;
   using std::thread;
@@ -102,6 +104,8 @@ using std::runtime_error;
     using boost::minmax_element;
   #endif
   #include <boost/array.hpp>
+  #include <boost/math/special_functions/trunc.hpp>
+  #include <boost/ref.hpp>
   #include <boost/shared_ptr.hpp>
   #include <boost/weak_ptr.hpp>
 
@@ -109,6 +113,7 @@ using std::runtime_error;
     #include <boost/thread.hpp>
     #include <boost/atomic.hpp>
     #include <boost/thread/mutex.hpp>
+    #include <boost/bind.hpp>
     using boost::bind;
     using boost::function;
     using boost::thread;
@@ -120,15 +125,20 @@ using std::runtime_error;
     using boost::unique_lock;
     using boost::dynamic_pointer_cast;
   #endif //USE_THREAD
-
+  /** namespace for generated code to avoid name clashes */
+  namespace omcpp {
+    using boost::ref;
+    using boost::math::trunc;
+    template <typename T>
+    std::string to_string(T val) {
+      return boost::lexical_cast<std::string>(val);
+    }
+  }
   using boost::array;
   using boost::shared_ptr;
   using boost::weak_ptr;
   using boost::dynamic_pointer_cast;
-  template <typename T>
-  std::string to_string(T val) {
-    return boost::lexical_cast<std::string>(val);
-  }
+  using omcpp::to_string;
 #endif //USE_CPP_ELEVEN
 
 #if defined(USE_THREAD)
