@@ -215,13 +215,13 @@ void AddComponentCommand::redo()
   // if component is of connector type && containing class is Modelica type.
   if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() &&
       pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    // first create the component for Icon View only if connector is not protected
-    if (!mpComponentInfo->getProtected()) {
-      mpIconGraphicsView->addItem(mpIconComponent);
-      mpIconGraphicsView->addItem(mpIconComponent->getOriginItem());
-      mpIconGraphicsView->addComponentToList(mpIconComponent);
-      mpIconComponent->emitAdded();
-    }
+    // first create the component for Icon View
+    mpIconGraphicsView->addItem(mpIconComponent);
+    mpIconGraphicsView->addItem(mpIconComponent->getOriginItem());
+    mpIconGraphicsView->addComponentToList(mpIconComponent);
+    mpIconComponent->emitAdded();
+    // hide the component if it is connector and is protected
+    mpIconComponent->setVisible(!mpComponentInfo->getProtected());
     // now add the component to Diagram View
     mpDiagramGraphicsView->addItem(mpDiagramComponent);
     mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
@@ -248,13 +248,11 @@ void AddComponentCommand::undo()
   // if component is of connector type && containing class is Modelica type.
   if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() &&
       pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    // first create the component for Icon View only if connector is not protected
-    if (!mpComponentInfo->getProtected()) {
-      mpIconGraphicsView->removeItem(mpIconComponent);
-      mpIconGraphicsView->removeItem(mpIconComponent->getOriginItem());
-      mpIconGraphicsView->deleteComponentFromList(mpIconComponent);
-      mpIconComponent->emitDeleted();
-    }
+    // first create the component for Icon View
+    mpIconGraphicsView->removeItem(mpIconComponent);
+    mpIconGraphicsView->removeItem(mpIconComponent->getOriginItem());
+    mpIconGraphicsView->deleteComponentFromList(mpIconComponent);
+    mpIconComponent->emitDeleted();
     // now remove the component from Diagram View
     mpDiagramGraphicsView->removeItem(mpDiagramComponent);
     mpDiagramGraphicsView->removeItem(mpDiagramComponent->getOriginItem());
@@ -353,6 +351,15 @@ void UpdateComponentAttributesCommand::redo()
     mpComponent->getComponentInfo()->setInner(mNewComponentInfo.getInner());
     mpComponent->getComponentInfo()->setOuter(mNewComponentInfo.getOuter());
     mpComponent->getComponentInfo()->setCausality(causality);
+    if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
+      mpComponent->setVisible(!mpComponent->getComponentInfo()->getProtected());
+    } else {
+      Component *pComponent = 0;
+      pComponent = mpComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(mpComponent->getName());
+      if (pComponent) {
+        pComponent->setVisible(!pComponent->getComponentInfo()->getProtected());
+      }
+    }
   } else {
     QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
                           QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
@@ -427,6 +434,15 @@ void UpdateComponentAttributesCommand::undo()
     mpComponent->getComponentInfo()->setInner(mOldComponentInfo.getInner());
     mpComponent->getComponentInfo()->setOuter(mOldComponentInfo.getOuter());
     mpComponent->getComponentInfo()->setCausality(causality);
+    if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
+      mpComponent->setVisible(!mpComponent->getComponentInfo()->getProtected());
+    } else {
+      Component *pComponent = 0;
+      pComponent = mpComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(mpComponent->getName());
+      if (pComponent) {
+        pComponent->setVisible(!pComponent->getComponentInfo()->getProtected());
+      }
+    }
   } else {
     QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
                           QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);

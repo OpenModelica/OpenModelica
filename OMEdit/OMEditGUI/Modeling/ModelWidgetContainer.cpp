@@ -915,7 +915,7 @@ bool GraphicsView::hasAnnotation()
         return true;
       } else {
         foreach (Component *pInheritedComponent, pInheritedClass->mIconComponentsList) {
-          if (pInheritedComponent->hasShapeAnnotation(pInheritedComponent)) {
+          if (pInheritedComponent->hasShapeAnnotation(pInheritedComponent) && pInheritedComponent->isVisible()) {
             return true;
           }
         }
@@ -928,7 +928,7 @@ bool GraphicsView::hasAnnotation()
     return true;
   }
   foreach (Component *pComponent, mComponentsList) {
-    if (pComponent->hasShapeAnnotation(pComponent)) {
+    if (pComponent->hasShapeAnnotation(pComponent) && pComponent->isVisible()) {
       return true;
     }
   }
