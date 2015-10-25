@@ -314,12 +314,14 @@ void UpdateComponentTransformationsCommand::undo()
 }
 
 UpdateComponentAttributesCommand::UpdateComponentAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo,
-                                                                   const ComponentInfo &newComponentInfo, QUndoCommand *pParent)
+                                                                   const ComponentInfo &newComponentInfo, bool duplicate,
+                                                                   QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpComponent = pComponent;
   mOldComponentInfo.updateComponentInfo(&oldComponentInfo);
   mNewComponentInfo.updateComponentInfo(&newComponentInfo);
+  mDuplicate = duplicate;
   setText(QString("Update Component %1 Attributes").arg(mpComponent->getName()));
 }
 
@@ -397,6 +399,12 @@ void UpdateComponentAttributesCommand::redo()
  */
 void UpdateComponentAttributesCommand::undo()
 {
+  /* We don't do anything if command is done for duplicate component action. Because when we undo duplicate component it will call
+   * AddComponentCommand::undo() which will eventually delete the component. So there is no point to undo attributes.
+   */
+  if (mDuplicate) {
+    return;
+  }
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   QString modelName = pModelWidget->getLibraryTreeItem()->getNameStructure();
   QString isFinal = mOldComponentInfo.getFinal() ? "true" : "false";

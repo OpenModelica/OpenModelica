@@ -231,6 +231,7 @@ private:
 signals:
   void mouseManhattanize();
   void mouseDelete();
+  void mouseDuplicate();
   void mouseRotateClockwise();
   void mouseRotateAntiClockwise();
   void mouseFlipHorizontal();
@@ -264,6 +265,7 @@ public slots:
   void showGraphicsViewProperties();
   void manhattanizeItems();
   void deleteItems();
+  void duplicateItems();
   void rotateClockwise();
   void rotateAntiClockwise();
   void flipHorizontal();

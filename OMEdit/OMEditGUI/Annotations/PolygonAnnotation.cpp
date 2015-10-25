@@ -275,12 +275,16 @@ void PolygonAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
+/*!
+ * \brief PolygonAnnotation::duplicate
+ * Duplicates the shape.
+ */
 void PolygonAnnotation::duplicate()
 {
   PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation("", mpGraphicsView);
   pPolygonAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
-                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5,
+                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
   pPolygonAnnotation->setOrigin(mOrigin + gridStep);
   pPolygonAnnotation->initializeTransformation();
   pPolygonAnnotation->drawCornerItems();
@@ -288,6 +292,6 @@ void PolygonAnnotation::duplicate()
   pPolygonAnnotation->update();
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pPolygonAnnotation, mpGraphicsView));
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pPolygonAnnotation, mpGraphicsView);
-  mpGraphicsView->getModelWidget()->updateClassAnnotationIfNeeded();
-  mpGraphicsView->getModelWidget()->updateModelicaText();
+  setSelected(false);
+  pPolygonAnnotation->setSelected(true);
 }

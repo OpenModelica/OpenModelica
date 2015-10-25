@@ -215,12 +215,16 @@ void RectangleAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
+/*!
+ * \brief RectangleAnnotation::duplicate
+ * Duplicates the shape.
+ */
 void RectangleAnnotation::duplicate()
 {
   RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation("", mpGraphicsView);
   pRectangleAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
-                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5,
+                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
   pRectangleAnnotation->setOrigin(mOrigin + gridStep);
   pRectangleAnnotation->initializeTransformation();
   pRectangleAnnotation->drawCornerItems();
@@ -228,6 +232,6 @@ void RectangleAnnotation::duplicate()
   pRectangleAnnotation->update();
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pRectangleAnnotation, mpGraphicsView));
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pRectangleAnnotation, mpGraphicsView);
-  mpGraphicsView->getModelWidget()->updateClassAnnotationIfNeeded();
-  mpGraphicsView->getModelWidget()->updateModelicaText();
+  setSelected(false);
+  pRectangleAnnotation->setSelected(true);
 }

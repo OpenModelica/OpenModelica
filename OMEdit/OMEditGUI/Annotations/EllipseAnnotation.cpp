@@ -220,12 +220,16 @@ void EllipseAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
+/*!
+ * \brief EllipseAnnotation::duplicate
+ * Duplicates the shape.
+ */
 void EllipseAnnotation::duplicate()
 {
   EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation("", mpGraphicsView);
   pEllipseAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
-                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5,
+                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
   pEllipseAnnotation->setOrigin(mOrigin + gridStep);
   pEllipseAnnotation->initializeTransformation();
   pEllipseAnnotation->drawCornerItems();
@@ -233,6 +237,6 @@ void EllipseAnnotation::duplicate()
   pEllipseAnnotation->update();
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pEllipseAnnotation, mpGraphicsView));
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pEllipseAnnotation, mpGraphicsView);
-  mpGraphicsView->getModelWidget()->updateClassAnnotationIfNeeded();
-  mpGraphicsView->getModelWidget()->updateModelicaText();
+  setSelected(false);
+  pEllipseAnnotation->setSelected(true);
 }

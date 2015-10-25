@@ -738,6 +738,83 @@ QString Component::getPlacementAnnotation()
   return placementAnnotationString;
 }
 
+/*!
+ * \brief Component::getOMCTransformationAnnotation
+ * Returns the Component placement transformation annotation in OMC format.
+ * \param position
+ * \return
+ */
+QString Component::getOMCTransformationAnnotation(QPointF position)
+{
+  QString annotationString;
+  // add the origin
+  Transformation oldTransformation = mTransformation;
+  mTransformation.adjustPosition(position.x(), position.y());
+  if (mTransformation.hasOrigin()) {
+    annotationString.append(QString::number(mTransformation.getOrigin().x())).append(",");
+    annotationString.append(QString::number(mTransformation.getOrigin().y())).append(",");
+  } else {
+    annotationString.append("-,");
+    annotationString.append("-,");
+  }
+  // add extent points
+  QPointF extent1 = mTransformation.getExtent1();
+  QPointF extent2 = mTransformation.getExtent2();
+  annotationString.append(QString::number(extent1.x())).append(",");
+  annotationString.append(QString::number(extent1.y())).append(",");
+  annotationString.append(QString::number(extent2.x())).append(",");
+  annotationString.append(QString::number(extent2.y())).append(",");
+  // add rotation
+  annotationString.append(QString::number(mTransformation.getRotateAngle()));
+  mTransformation = oldTransformation;
+  return annotationString;
+}
+
+/*!
+ * \brief Component::getOMCPlacementAnnotation
+ * Returns the Component placement annotation in OMC format.
+ * \param position
+ * \return
+ */
+QString Component::getOMCPlacementAnnotation(QPointF position)
+{
+  // create the placement annotation string
+  QString placementAnnotationString = "Placement(";
+  if (mTransformation.isValid()) {
+    placementAnnotationString.append(mTransformation.getVisible() ? "true" : "false");
+  }
+  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector()) {
+    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+      // first get the component from diagram view and get the transformations
+      Component *pComponent;
+      pComponent = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getComponentObject(getName());
+      if (pComponent) {
+        placementAnnotationString.append(",").append(pComponent->getOMCTransformationAnnotation(position));
+      } else {
+        placementAnnotationString.append(",-,-,-,-,-,-,-");
+      }
+      // then get the icon transformations
+      placementAnnotationString.append(",").append(getOMCTransformationAnnotation(position));
+    } else if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
+      // first get the component from diagram view and get the transformations
+      placementAnnotationString.append(",").append(getOMCTransformationAnnotation(position));
+      // then get the icon transformations
+      Component *pComponent;
+      pComponent = mpGraphicsView->getModelWidget()->getIconGraphicsView()->getComponentObject(getName());
+      if (pComponent) {
+        placementAnnotationString.append(",").append(pComponent->getOMCTransformationAnnotation(position));
+      } else {
+        placementAnnotationString.append(",-,-,-,-,-,-,");
+      }
+    }
+  } else {
+    placementAnnotationString.append(",").append(getOMCTransformationAnnotation(position));
+    placementAnnotationString.append(",-,-,-,-,-,-,");
+  }
+  placementAnnotationString.append(")");
+  return placementAnnotationString;
+}
+
 QString Component::getTransformationOrigin()
 {
   // add the icon origin
@@ -918,66 +995,6 @@ void Component::renameInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointIn
 {
   // Set the new Interfacepoint.
   pTLMInterfacePointInfo->setInterfaceName(interfacePoint);
-}
-
-void Component::duplicateHelper(GraphicsView *pGraphicsView)
-{
-  Component *pComponent = pGraphicsView->getComponentsList().last();
-  OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
-  if (pComponent) {
-    /* set the original component transformation to the duplicated one. */
-    pComponent->mTransformation.setExtent1(mTransformation.getExtent1());
-    pComponent->mTransformation.setExtent2(mTransformation.getExtent2());
-    pComponent->mTransformation.setRotateAngle(mTransformation.getRotateAngle());
-    pComponent->setTransform(pComponent->mTransformation.getTransformationMatrix());
-    /* get the original component attributes */
-    QString className = pGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-    QList<ComponentInfo*> componentInfoList = pOMCProxy->getComponents(className);
-    foreach (ComponentInfo *pComponentInfo, componentInfoList) {
-      if (pComponentInfo->getName() == mpComponentInfo->getName()) {
-        QString isFinal = pComponentInfo->getFinal() ? "true" : "false";
-        QString isFlow = pComponentInfo->getFlow() ? "true" : "false";
-        QString isProtected = pComponentInfo->getProtected() ? "true" : "false";
-        QString isReplaceAble = pComponentInfo->getReplaceable() ? "true" : "false";
-        QString variability = pComponentInfo->getVariablity();
-        QString isInner = pComponentInfo->getInner() ? "true" : "false";
-        QString isOuter = pComponentInfo->getOuter() ? "true" : "false";
-        QString causality = pComponentInfo->getCausality();
-        // update duplicated component attributes
-        if (!pOMCProxy->setComponentProperties(className, pComponent->getName(), isFinal, isFlow, isProtected, isReplaceAble,
-                                                variability, isInner, isOuter, causality)) {
-          QMessageBox::critical(pGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow(),
-                                QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(),
-                                Helper::ok);
-          pOMCProxy->printMessagesStringInternal();
-        }
-        if (pOMCProxy->setComponentDimensions(className, pComponent->getName(), pComponentInfo->getArrayIndex())) {
-          pComponent->getComponentInfo()->setArrayIndex(pComponentInfo->getArrayIndex());
-        } else {
-          QMessageBox::critical(pGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow(),
-                                QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(),
-                                Helper::ok);
-          pOMCProxy->printMessagesStringInternal();
-        }
-        break;
-      }
-    }
-    /* get original component modifiers and apply them to duplicated one. */
-    QStringList componentModifiersList = pOMCProxy->getComponentModifierNames(className, mpComponentInfo->getName());
-    bool modifierValueChanged = false;
-    foreach (QString componentModifier, componentModifiersList) {
-      QString originalModifierName = QString(mpComponentInfo->getName()).append(".").append(componentModifier);
-      QString duplicatedModifierName = QString(pComponent->getName()).append(".").append(componentModifier);
-      if (pOMCProxy->setComponentModifierValue(className, duplicatedModifierName,
-                                                pOMCProxy->getComponentModifierValue(className, originalModifierName).prepend("=")))
-        modifierValueChanged = true;
-
-    }
-    if (modifierValueChanged) {
-      pComponent->componentParameterHasChanged();
-      pComponent->update();
-    }
-  }
 }
 
 void Component::removeShapes()
@@ -1266,21 +1283,61 @@ void Component::deleteMe()
   mpGraphicsView->deleteComponent(this);
 }
 
+/*!
+ * \brief Component::duplicate
+ * Duplicates the Component.
+ */
 void Component::duplicate()
 {
-  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
-                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
-  if (mpGraphicsView->addComponent(mpLibraryTreeItem->getNameStructure(), scenePos() + gridStep)) {
-    if (mpLibraryTreeItem->isConnector()) {
-      if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
-        duplicateHelper(mpGraphicsView);
-        duplicateHelper(mpGraphicsView->getModelWidget()->getIconGraphicsView());
-      } else {
-        duplicateHelper(mpGraphicsView);
-        duplicateHelper(mpGraphicsView->getModelWidget()->getDiagramGraphicsView());
-      }
+  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+  // get the model defaultComponentName
+  QString defaultName = pMainWindow->getOMCProxy()->getDefaultComponentName(mpLibraryTreeItem->getNameStructure());
+  QString name;
+  if (defaultName.isEmpty()) {
+    name = mpGraphicsView->getUniqueComponentName(StringHandler::toCamelCase(mpLibraryTreeItem->getName()));
+  } else {
+    if (mpGraphicsView->checkComponentName(defaultName)) {
+      name = defaultName;
     } else {
-      duplicateHelper(mpGraphicsView);
+      name = mpGraphicsView->getUniqueComponentName(defaultName);
+    }
+  }
+  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5,
+                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
+  QString transformationString = getOMCPlacementAnnotation(gridStep);
+
+  // add component
+  mpGraphicsView->addComponentToView(name, mpLibraryTreeItem, transformationString, QPointF(0, 0), new ComponentInfo(), true, true);
+  // set component attributes for Diagram Layer component.
+  Component *pDiagramComponent = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getComponentsList().last();
+  // save the old ComponentInfo
+  ComponentInfo oldDiagramComponentInfo(pDiagramComponent->getComponentInfo());
+  // Create a new ComponentInfo
+  ComponentInfo newDiagramComponentInfo(mpComponentInfo);
+  newDiagramComponentInfo.setName(oldDiagramComponentInfo.getName());
+  UpdateComponentAttributesCommand *pUpdateDiagramComponentAttributesCommand;
+  pUpdateDiagramComponentAttributesCommand = new UpdateComponentAttributesCommand(pDiagramComponent, oldDiagramComponentInfo,
+                                                                                  newDiagramComponentInfo, true);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateDiagramComponentAttributesCommand);
+  setSelected(false);
+  if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
+    pDiagramComponent->setSelected(true);
+  }
+  // if component is connector then set component attributes for Icon Layer component.
+  if (mpLibraryTreeItem->isConnector()) {
+    Component *pIconComponent = mpGraphicsView->getModelWidget()->getIconGraphicsView()->getComponentsList().last();
+    // save the old ComponentInfo
+    ComponentInfo oldIconComponentInfo(pIconComponent->getComponentInfo());
+    // Create a new ComponentInfo
+    ComponentInfo newIconComponentInfo(mpComponentInfo);
+    newIconComponentInfo.setName(oldIconComponentInfo.getName());
+    UpdateComponentAttributesCommand *pUpdateIconComponentAttributesCommand;
+    pUpdateIconComponentAttributesCommand = new UpdateComponentAttributesCommand(pIconComponent, oldIconComponentInfo,
+                                                                                 newIconComponentInfo, true);
+
+    mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateIconComponentAttributesCommand);
+    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+      pIconComponent->setSelected(true);
     }
   }
 }
@@ -1668,7 +1725,7 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
       // Only allow manipulations on component if the class is not a system library class OR component is not an inherited component.
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedComponent()) {
         connect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteMe()), Qt::UniqueConnection);
-        connect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(mouseDuplicate()), this, SLOT(duplicate()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(mouseRotateClockwise()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(mouseRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(mouseFlipHorizontal()), this, SLOT(flipHorizontal()), Qt::UniqueConnection);
@@ -1703,7 +1760,7 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
       /* Only allow manipulations on component if the class is not a system library class OR component is not an inherited component. */
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedComponent()) {
         disconnect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteMe()));
-        disconnect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()));
+        disconnect(mpGraphicsView, SIGNAL(mouseDuplicate()), this, SLOT(duplicate()));
         disconnect(mpGraphicsView, SIGNAL(mouseRotateClockwise()), this, SLOT(rotateClockwise()));
         disconnect(mpGraphicsView, SIGNAL(mouseRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
         disconnect(mpGraphicsView, SIGNAL(mouseFlipHorizontal()), this, SLOT(flipHorizontal()));

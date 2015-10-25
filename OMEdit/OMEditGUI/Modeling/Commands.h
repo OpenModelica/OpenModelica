@@ -109,13 +109,14 @@ class UpdateComponentAttributesCommand : public QUndoCommand
 {
 public:
   UpdateComponentAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo, const ComponentInfo &newComponentInfo,
-                                   QUndoCommand *pParent = 0);
+                                   bool duplicate, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
   Component *mpComponent;
   ComponentInfo mOldComponentInfo;
   ComponentInfo mNewComponentInfo;
+  bool mDuplicate;
 };
 
 class DeleteComponentCommand : public QUndoCommand

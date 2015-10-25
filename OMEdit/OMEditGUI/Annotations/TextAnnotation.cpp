@@ -478,14 +478,14 @@ void TextAnnotation::updateTextString()
 
 /*!
  * \brief TextAnnotation::duplicate
- * Creates a duplicate of this object.
+ * Duplicates the shape.
  */
 void TextAnnotation::duplicate()
 {
   TextAnnotation *pTextAnnotation = new TextAnnotation("", mpGraphicsView);
   pTextAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
-                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5,
+                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
   pTextAnnotation->setOrigin(mOrigin + gridStep);
   pTextAnnotation->initializeTransformation();
   pTextAnnotation->drawCornerItems();
@@ -493,6 +493,6 @@ void TextAnnotation::duplicate()
   pTextAnnotation->update();
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pTextAnnotation, mpGraphicsView));
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pTextAnnotation, mpGraphicsView);
-  mpGraphicsView->getModelWidget()->updateClassAnnotationIfNeeded();
-  mpGraphicsView->getModelWidget()->updateModelicaText();
+  setSelected(false);
+  pTextAnnotation->setSelected(true);
 }
