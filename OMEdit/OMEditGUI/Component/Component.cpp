@@ -898,11 +898,13 @@ void Component::componentNameHasChanged()
     setToolTip(tr("<b>%1</b> %2").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName()));
   }
   emit displayTextChanged();
+  update();
 }
 
 void Component::componentParameterHasChanged()
 {
   emit displayTextChanged();
+  update();
 }
 
 /*!
