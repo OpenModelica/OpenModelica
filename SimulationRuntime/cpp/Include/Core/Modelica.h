@@ -13,6 +13,7 @@
 #include <numeric>
 #include <functional>
 
+#include <boost/assign/std/vector.hpp> // for 'operator+=()'
 #include <boost/assign/list_of.hpp> // for 'list_of()'
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
