@@ -47,7 +47,6 @@ using std::map;
 using std::pair;
 using std::make_pair;
 using namespace boost::assign;
-using boost::get;
 using std::max;
 using std::min;
 using std::string;
@@ -80,6 +79,7 @@ using std::runtime_error;
   using std::make_tuple;
   using std::array;
   using std::minmax_element;
+  using std::get;
   using std::tuple;
   using std::shared_ptr;
   using std::weak_ptr;
@@ -88,12 +88,14 @@ using std::runtime_error;
 #else
   #if defined(_MSC_VER)
     #include <tuple>
+    using std::get;
     using std::tuple;
     using std::make_tuple;
     using std::minmax_element;
   #else
     #include <boost/tuple/tuple.hpp>
     #include <boost/algorithm/minmax_element.hpp>
+    using boost::get;
     using boost::tuple;
     using boost::make_tuple;
     using boost::minmax_element;
