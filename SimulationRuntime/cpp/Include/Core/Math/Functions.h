@@ -144,6 +144,10 @@ inline static int round (const double &n)
     return (fabs(n)-floor(fabs(n)) < 0.5) ? (int)(sgn(n)*floor(fabs(n))) : (int)(sgn(n)*ceil(fabs(n)));
 }
 
+#if defined(_MSC_VER)
+#define trunc(x) (((x) < 0) ? ceil((x)) : floor((x)))
+#endif
+
 /// Modelica integer function
 inline static int integer (const double &n)
 {
