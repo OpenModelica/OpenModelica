@@ -1294,24 +1294,30 @@ void Component::deleteMe()
 void Component::duplicate()
 {
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-  // get the model defaultComponentName
-  QString defaultName = pMainWindow->getOMCProxy()->getDefaultComponentName(mpLibraryTreeItem->getNameStructure());
   QString name;
-  if (defaultName.isEmpty()) {
-    name = mpGraphicsView->getUniqueComponentName(StringHandler::toCamelCase(mpLibraryTreeItem->getName()));
-  } else {
-    if (mpGraphicsView->checkComponentName(defaultName)) {
-      name = defaultName;
+  if (mpLibraryTreeItem) {
+    // get the model defaultComponentName
+    QString defaultName = pMainWindow->getOMCProxy()->getDefaultComponentName(mpLibraryTreeItem->getNameStructure());
+    if (defaultName.isEmpty()) {
+      name = mpGraphicsView->getUniqueComponentName(StringHandler::toCamelCase(mpLibraryTreeItem->getName()));
     } else {
-      name = mpGraphicsView->getUniqueComponentName(defaultName);
+      if (mpGraphicsView->checkComponentName(defaultName)) {
+        name = defaultName;
+      } else {
+        name = mpGraphicsView->getUniqueComponentName(defaultName);
+      }
     }
+  } else {
+    name = mpGraphicsView->getUniqueComponentName(StringHandler::toCamelCase(getName()));
   }
   QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5,
                    mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
   QString transformationString = getOMCPlacementAnnotation(gridStep);
 
   // add component
-  mpGraphicsView->addComponentToView(name, mpLibraryTreeItem, transformationString, QPointF(0, 0), new ComponentInfo(), true, true);
+  ComponentInfo *pComponentInfo = new ComponentInfo(mpComponentInfo);
+  pComponentInfo->setName(name);
+  mpGraphicsView->addComponentToView(name, mpLibraryTreeItem, transformationString, QPointF(0, 0), pComponentInfo, true, true);
   // set component attributes for Diagram Layer component.
   Component *pDiagramComponent = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getComponentsList().last();
   // save the old ComponentInfo
@@ -1328,7 +1334,7 @@ void Component::duplicate()
     pDiagramComponent->setSelected(true);
   }
   // if component is connector then set component attributes for Icon Layer component.
-  if (mpLibraryTreeItem->isConnector()) {
+  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector()) {
     Component *pIconComponent = mpGraphicsView->getModelWidget()->getIconGraphicsView()->getComponentsList().last();
     // save the old ComponentInfo
     ComponentInfo oldIconComponentInfo(pIconComponent->getComponentInfo());

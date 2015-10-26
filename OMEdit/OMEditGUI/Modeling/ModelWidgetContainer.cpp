@@ -389,8 +389,13 @@ void GraphicsView::addComponentToClass(Component *pComponent)
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::Modelica) {
     MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
     // Add the component to model in OMC Global Scope.
-    QString className = StringHandler::makeClassNameRelative(pComponent->getLibraryTreeItem()->getNameStructure(),
-                                                             mpModelWidget->getLibraryTreeItem()->getNameStructure());
+    QString className;
+    if (pComponent->getLibraryTreeItem()) {
+      className = StringHandler::makeClassNameRelative(pComponent->getLibraryTreeItem()->getNameStructure(),
+                                                       mpModelWidget->getLibraryTreeItem()->getNameStructure());
+    } else {
+      className = pComponent->getComponentInfo()->getClassName();
+    }
     pMainWindow->getOMCProxy()->addComponent(pComponent->getName(), className, mpModelWidget->getLibraryTreeItem()->getNameStructure(),
                                              pComponent->getPlacementAnnotation());
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
