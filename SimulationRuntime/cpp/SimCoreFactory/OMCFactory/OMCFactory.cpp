@@ -348,7 +348,7 @@ vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const 
 
 void OMCFactory::fillArgumentsToIgnore()
 {
-  _argumentsToIgnore = boost::unordered_set<string>();
+  _argumentsToIgnore = unordered_set<string>();
   _argumentsToIgnore.insert("-emit_protected");
 }
 

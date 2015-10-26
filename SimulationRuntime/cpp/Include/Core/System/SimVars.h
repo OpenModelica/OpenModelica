@@ -159,9 +159,9 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     bool* _bool_vars;  //array for all model bool variables of size dim_bool
     string* _string_vars;  //array for all model string variables of size dim_string
     //Stores all variables indices (maps a model variable address to an index in the simvars memory)
-    boost::unordered_map<const double*, unsigned int> _pre_real_vars_idx;
-    boost::unordered_map<const int*, unsigned int> _pre_int_vars_idx;
-    boost::unordered_map<const bool*, unsigned int> _pre_bool_vars_idx;
+    unordered_map<const double*, unsigned int> _pre_real_vars_idx;
+    unordered_map<const int*, unsigned int> _pre_int_vars_idx;
+    unordered_map<const bool*, unsigned int> _pre_bool_vars_idx;
     //Stores all variables occurred before an event
     double* _pre_vars;
 };

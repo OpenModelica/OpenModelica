@@ -26,7 +26,7 @@ Copyright (c) 2008, OSMC
 
 #define MODELICA_TERMINATE(msg) Terminate(msg)
 
-//typedef boost::unordered_map<std::string, boost::any> SValuesMap;
+//typedef unordered_map<std::string, boost::any> SValuesMap;
 
 template <class T>
 class InitVars
@@ -36,7 +36,7 @@ public:
   T& getGetStartValue(T& variable);
 
 private:
-  boost::unordered_map<T*, T> _start_values;
+  unordered_map<T*, T> _start_values;
 };
 
 class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation

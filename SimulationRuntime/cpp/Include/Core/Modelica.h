@@ -4,7 +4,6 @@
  *  @{
  */
 
-
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -13,9 +12,6 @@
 #include <numeric>
 #include <functional>
 
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
-//#include <boost/function.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/circular_buffer.hpp>
 #include <boost/foreach.hpp>
@@ -27,7 +23,6 @@
 #include <boost/numeric/ublas/matrix_sparse.hpp>
 #include <boost/numeric/ublas/storage.hpp>
 //#include <boost/timer/timer.hpp>
-
 
 /*Namespaces*/
 using std::abs;
@@ -50,7 +45,8 @@ using std::deque;
 using std::copy;
 using std::exception;
 using std::runtime_error;
-using boost::unordered_map;
+
+// uBLAS library
 using namespace boost::numeric;
 
 #if defined(USE_CPP_ELEVEN)
@@ -61,7 +57,10 @@ using namespace boost::numeric;
   #include <condition_variable>
   #include <tuple>
   #include <memory>
+  #include <unordered_map>
+  #include <unordered_set>
 
+  // builtin list initializers
   #define LIST_OF {
   #define LIST_SEP ,
   #define LIST_END }
@@ -92,6 +91,8 @@ using namespace boost::numeric;
   using std::minmax_element;
   using std::get;
   using std::tuple;
+  using std::unordered_map;
+  using std::unordered_set;
   using std::shared_ptr;
   using std::weak_ptr;
   using std::dynamic_pointer_cast;
@@ -114,6 +115,8 @@ using namespace boost::numeric;
   #include <boost/assign/list_of.hpp>
   #include <boost/array.hpp>
   #include <boost/math/special_functions/trunc.hpp>
+  #include <boost/unordered_map.hpp>
+  #include <boost/unordered_set.hpp>
   #include <boost/ref.hpp>
   #include <boost/shared_ptr.hpp>
   #include <boost/weak_ptr.hpp>
@@ -135,6 +138,7 @@ using namespace boost::numeric;
     using boost::dynamic_pointer_cast;
   #endif //USE_THREAD
 
+  // boost list initializers
   #define LIST_OF boost::assign::list_of(
   #define LIST_SEP )(
   #define LIST_END )
@@ -155,6 +159,8 @@ using namespace boost::numeric;
     }
   }
   using boost::array;
+  using boost::unordered_map;
+  using boost::unordered_set;
   using boost::shared_ptr;
   using boost::weak_ptr;
   using boost::dynamic_pointer_cast;
