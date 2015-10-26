@@ -206,6 +206,8 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     if (mOriginalTextString.contains("%")) {
       return;
     }
+  } else if (mpComponent && mpComponent->getGraphicsView()->isRenderingLibraryPixmap()) {
+    return;
   }
   if (mVisible) {
     drawTextAnnotaion(painter);
