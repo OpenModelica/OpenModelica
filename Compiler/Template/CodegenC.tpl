@@ -878,6 +878,32 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
 
     #ifdef FMU_EXPERIMENTAL
     <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then functionODEPartial(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""), hpcomData.schedules, modelNamePrefixStr, modelInfo)%>
+    <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then
+    <<
+    void <%symbolName(modelNamePrefixStr,"functionFMIJacobian")%>(DATA *data, threadData_t *threadData, const unsigned *unknown, int nUnk, const unsigned *ders, int nKnown, double *dvKnown, double *out) {
+        int i;
+        // TODO: Use the literal names instead of the data-> structure
+        // Beware! This code assumes that the FMI variables are sorted putting
+        // states first (0 to nStates-1) and state derivatives (nStates to 2*nStates-1) second.
+        for (int i=0;i<data->modelData.nStates; i++) {
+            // Clear out the seeds
+            data->simulationInfo.analyticJacobians[0].seedVars[i]=0;
+        }
+        for (int i=0;i<nUnk; i++) {
+            // Put the supplied value in the seeds
+            data->simulationInfo.analyticJacobians[0].seedVars[unknown[i]]=dvKnown[i];
+        }
+        // Call the Jacobian evaluation function. This function evaluates the whole column of the Jacobian.
+        // More efficient code could only evaluate the equations needed for the
+        // known variables only
+        <%symbolName(modelNamePrefixStr,"functionJacA_column")%>(data,threadData);
+
+        // Write the results back to the array
+        for (int i=0;i<nKnown; i++) {
+            out[ders[i]-data->modelData.nStates] = data->simulationInfo.analyticJacobians[0].resultVars[ders[i]-data->modelData.nStates];
+        }
+    }
+    >> %>
     #endif
     /* forward the main in the simulation runtime */
     extern int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData);
@@ -941,6 +967,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
        <% if isModelExchangeFMU then symbolName(modelNamePrefixStr,"read_input_fmu") else "NULL" %>
        #ifdef FMU_EXPERIMENTAL
        ,<%symbolName(modelNamePrefixStr,"functionODE_Partial")%>
+       ,<%symbolName(modelNamePrefixStr,"functionFMIJacobian")%>
        #endif
 
     <%\n%>
