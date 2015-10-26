@@ -1494,7 +1494,7 @@ void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, QStrin
   }
   if (pLibraryTreeItem->getModelWidget()) {
     pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getNameStructure() + (pLibraryTreeItem->isSaved() ? "" : "*"));
-    if (pLibraryTreeItem->getModelWidget()->isReloadNeeded() && show) {
+    if (pLibraryTreeItem->getModelWidget()->isReloadNeeded()) {
       pLibraryTreeItem->getModelWidget()->setReloadNeeded(false);
       pLibraryTreeItem->getModelWidget()->loadModelWidget();
       pLibraryTreeItem->handleIconUpdated();

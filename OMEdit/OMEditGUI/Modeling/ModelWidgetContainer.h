@@ -333,6 +333,7 @@ class ModelWidget : public QWidget
   Q_OBJECT
 public:
   ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text);
+  void loadModelWidget();
 
   class InheritedClass : public QObject
   {
@@ -373,7 +374,6 @@ public:
   bool isLoadedWidgetComponents() {return mloadWidgetComponents;}
   void setReloadNeeded(bool reloadNeeded) {mReloadNeeded = reloadNeeded;}
   bool isReloadNeeded() {return mReloadNeeded;}
-  void loadModelWidget();
   void addInheritedClass(LibraryTreeItem *pLibraryTreeItem);
   void removeInheritedClass(InheritedClass *pInheritedClass) {mInheritedClassesList.removeOne(pInheritedClass);}
   QList<InheritedClass*> getInheritedClassesList() {return mInheritedClassesList;}

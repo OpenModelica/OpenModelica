@@ -2285,26 +2285,32 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
   }
 }
 
+/*!
+ * \brief ModelWidget::loadModelWidget
+ * Loads the ModelWidget.
+ */
 void ModelWidget::loadModelWidget()
 {
   if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
-    mpLibraryTreeItem->removeAllInheritedClasses();
-    mpIconGraphicsView->removeAllShapes();
-    mpIconGraphicsView->removeAllComponents();
-    mpIconGraphicsView->removeAllConnections();
-    mpIconGraphicsView->scene()->clear();
-    mpDiagramGraphicsView->removeAllShapes();
-    mpDiagramGraphicsView->removeAllComponents();
-    mpDiagramGraphicsView->removeAllConnections();
-    mpDiagramGraphicsView->scene()->clear();
-    getModelInheritedClasses(mpLibraryTreeItem);
-    drawModelInheritedClasses();
-    getModelIconDiagramShapes();
-    drawModelInheritedComponents();
-    getModelComponents();
-    drawModelInheritedConnections();
-    getModelConnections();
-    mpUndoStack->clear();
+    if (!mpLibraryTreeItem->isNonExisting()) {
+      mpLibraryTreeItem->removeAllInheritedClasses();
+      mpIconGraphicsView->removeAllShapes();
+      mpIconGraphicsView->removeAllComponents();
+      mpIconGraphicsView->removeAllConnections();
+      mpIconGraphicsView->scene()->clear();
+      mpDiagramGraphicsView->removeAllShapes();
+      mpDiagramGraphicsView->removeAllComponents();
+      mpDiagramGraphicsView->removeAllConnections();
+      mpDiagramGraphicsView->scene()->clear();
+      getModelInheritedClasses(mpLibraryTreeItem);
+      drawModelInheritedClasses();
+      getModelIconDiagramShapes();
+      drawModelInheritedComponents();
+      getModelComponents();
+      drawModelInheritedConnections();
+      getModelConnections();
+      mpUndoStack->clear();
+    }
     if (mloadWidgetComponents) {
       // set Project Status Bar lables
       mpReadOnlyLabel->setText(mpLibraryTreeItem->isReadOnly() ? Helper::readOnly : tr("Writable"));
@@ -2879,6 +2885,7 @@ void ModelWidget::updateUndoRedoActions()
 void ModelWidget::getModelInheritedClasses(LibraryTreeItem *pLibraryTreeItem)
 {
   MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
+  LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
   // get the inherited classes of the class
   if (pLibraryTreeItem == mpLibraryTreeItem) {
     QList<QString> inheritedClasses = pMainWindow->getOMCProxy()->getInheritedClasses(pLibraryTreeItem->getNameStructure());
@@ -2888,27 +2895,31 @@ void ModelWidget::getModelInheritedClasses(LibraryTreeItem *pLibraryTreeItem)
        * Also check for cyclic loops.
        */
       if (!(pMainWindow->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(pLibraryTreeItem->getNameStructure()) == 0)) {
-        LibraryTreeItem *pInheritedClass = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(inheritedClass);
-        if (!pInheritedClass) {
-          pInheritedClass = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->createNonExistingLibraryTreeItem(inheritedClass);
+        LibraryTreeItem *pInheritedLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(inheritedClass);
+        if (!pInheritedLibraryTreeItem) {
+          pInheritedLibraryTreeItem = pLibraryTreeModel->createNonExistingLibraryTreeItem(inheritedClass);
         }
-        if (!pInheritedClass->getModelWidget() || pInheritedClass->getModelWidget()->isReloadNeeded()) {
-          pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pInheritedClass, "", false);
+        if (!pInheritedLibraryTreeItem->getModelWidget() || pInheritedLibraryTreeItem->getModelWidget()->isReloadNeeded()) {
+          pLibraryTreeModel->showModelWidget(pInheritedLibraryTreeItem, "", false);
+          // we call ModelWidget::setReloadNeeded(true); so that when non-exisitng inherited class is opened we load it.
+          if (pInheritedLibraryTreeItem->isNonExisting()) {
+            pInheritedLibraryTreeItem->getModelWidget()->setReloadNeeded(true);
+          }
         }
-        mpLibraryTreeItem->addInheritedClass(pInheritedClass);
-        getModelInheritedClasses(pInheritedClass);
-        addInheritedClass(pInheritedClass);
+        mpLibraryTreeItem->addInheritedClass(pInheritedLibraryTreeItem);
+        getModelInheritedClasses(pInheritedLibraryTreeItem);
+        addInheritedClass(pInheritedLibraryTreeItem);
       }
     }
   } else {
     QList<LibraryTreeItem*> inheritedClasses = pLibraryTreeItem->getInheritedClasses();
-    foreach (LibraryTreeItem *pInheritedClass, inheritedClasses) {
-      if ((!pInheritedClass->getModelWidget() || pInheritedClass->getModelWidget()->isReloadNeeded()) && !pInheritedClass->isNonExisting()) {
-        pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pInheritedClass, "", false);
+    foreach (LibraryTreeItem *pInheritedLibraryTreeItem, inheritedClasses) {
+      if ((!pInheritedLibraryTreeItem->getModelWidget() || pInheritedLibraryTreeItem->getModelWidget()->isReloadNeeded()) && !pInheritedLibraryTreeItem->isNonExisting()) {
+        pLibraryTreeModel->showModelWidget(pInheritedLibraryTreeItem, "", false);
       }
-      mpLibraryTreeItem->addInheritedClass(pInheritedClass);
-      getModelInheritedClasses(pInheritedClass);
-      addInheritedClass(pInheritedClass);
+      mpLibraryTreeItem->addInheritedClass(pInheritedLibraryTreeItem);
+      getModelInheritedClasses(pInheritedLibraryTreeItem);
+      addInheritedClass(pInheritedLibraryTreeItem);
     }
   }
 }
