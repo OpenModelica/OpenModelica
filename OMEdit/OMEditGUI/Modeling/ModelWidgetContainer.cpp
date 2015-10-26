@@ -571,7 +571,7 @@ void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectonLineAnnot
 
 void GraphicsView::deleteShape(ShapeAnnotation *pShape)
 {
-  mpModelWidget->getUndoStack()->push(new DeleteShapeCommand(pShape, this));
+  mpModelWidget->getUndoStack()->push(new DeleteShapeCommand(pShape));
 }
 
 void GraphicsView::reOrderItems()
@@ -701,7 +701,7 @@ void GraphicsView::createLineShape(QPointF point)
 
   if (!isCreatingLineShape()) {
     mpLineShapeAnnotation = new LineAnnotation("", this);
-    mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpLineShapeAnnotation, this));
+    mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpLineShapeAnnotation));
     reOrderItems();
     setIsCreatingLineShape(true);
     mpLineShapeAnnotation->addPoint(point);
@@ -719,7 +719,7 @@ void GraphicsView::createPolygonShape(QPointF point)
 
   if (!isCreatingPolygonShape()) {
     mpPolygonShapeAnnotation = new PolygonAnnotation("", this);
-    mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpPolygonShapeAnnotation, this));
+    mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpPolygonShapeAnnotation));
     reOrderItems();
     setIsCreatingPolygonShape(true);
     mpPolygonShapeAnnotation->addPoint(point);
@@ -738,7 +738,7 @@ void GraphicsView::createRectangleShape(QPointF point)
 
   if (!isCreatingRectangleShape()) {
     mpRectangleShapeAnnotation = new RectangleAnnotation("", this);
-    mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpRectangleShapeAnnotation, this));
+    mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpRectangleShapeAnnotation));
     reOrderItems();
     setIsCreatingRectangleShape(true);
     mpRectangleShapeAnnotation->replaceExtent(0, point);
@@ -771,7 +771,7 @@ void GraphicsView::createEllipseShape(QPointF point)
 
   if (!isCreatingEllipseShape()) {
     mpEllipseShapeAnnotation = new EllipseAnnotation("", this);
-    mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpEllipseShapeAnnotation, this));
+    mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpEllipseShapeAnnotation));
     reOrderItems();
     setIsCreatingEllipseShape(true);
     mpEllipseShapeAnnotation->replaceExtent(0, point);
@@ -804,7 +804,7 @@ void GraphicsView::createTextShape(QPointF point)
 
   if (!isCreatingTextShape()) {
     mpTextShapeAnnotation = new TextAnnotation("", this);
-    mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpTextShapeAnnotation, this));
+    mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpTextShapeAnnotation));
     reOrderItems();
     setIsCreatingTextShape(true);
     mpTextShapeAnnotation->setTextString("text");
@@ -839,7 +839,7 @@ void GraphicsView::createBitmapShape(QPointF point)
 
   if (!isCreatingBitmapShape()) {
     mpBitmapShapeAnnotation = new BitmapAnnotation(mpModelWidget->getLibraryTreeItem()->getFileName(), "", this);
-    mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpBitmapShapeAnnotation, this));
+    mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpBitmapShapeAnnotation));
     reOrderItems();
     setIsCreatingBitmapShape(true);
     mpBitmapShapeAnnotation->replaceExtent(0, point);
@@ -1138,7 +1138,7 @@ void GraphicsView::addConnection(Component *pComponent)
         }
         mpConnectionLineAnnotation->setStartComponentName(startComponentName);
         mpConnectionLineAnnotation->setEndComponentName(endComponentName);
-        mpModelWidget->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true, this));
+        mpModelWidget->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
         mpModelWidget->updateModelicaText();
       }
       setIsCreatingConnection(false);
@@ -1166,7 +1166,7 @@ void GraphicsView::removeCurrentConnection()
  */
 void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
 {
-  mpModelWidget->getUndoStack()->push(new DeleteConnectionCommand(pConnectionLineAnnotation, this));
+  mpModelWidget->getUndoStack()->push(new DeleteConnectionCommand(pConnectionLineAnnotation));
 }
 
 //! Resets zoom factor to 100%.
@@ -1688,7 +1688,7 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
         pShapeAnnotation->setTransform(pShapeAnnotation->mTransformation.getTransformationMatrix());
         pShapeAnnotation->setOrigin(pShapeAnnotation->mTransformation.getPosition());
         QString newAnnotation = pShapeAnnotation->getOMCShapeAnnotation();
-        mpModelWidget->getUndoStack()->push(new UpdateShapeCommand(pShapeAnnotation, oldAnnotation, newAnnotation, this));
+        mpModelWidget->getUndoStack()->push(new UpdateShapeCommand(pShapeAnnotation, oldAnnotation, newAnnotation));
         hasShapeMoved = true;
       }
     }
@@ -3315,7 +3315,7 @@ void ModelWidget::getModelConnections()
         pConnectionLineAnnotation = new LineAnnotation(shape, pStartConnectorComponent, pEndConnectorComponent, mpDiagramGraphicsView);
         pConnectionLineAnnotation->setStartComponentName(connectionList.at(0));
         pConnectionLineAnnotation->setEndComponentName(connectionList.at(1));
-        mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false, mpDiagramGraphicsView));
+        mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
       }
     }
   }

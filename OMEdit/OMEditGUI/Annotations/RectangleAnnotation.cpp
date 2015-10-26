@@ -230,7 +230,7 @@ void RectangleAnnotation::duplicate()
   pRectangleAnnotation->drawCornerItems();
   pRectangleAnnotation->setCornerItemsActiveOrPassive();
   pRectangleAnnotation->update();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pRectangleAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pRectangleAnnotation));
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pRectangleAnnotation, mpGraphicsView);
   setSelected(false);
   pRectangleAnnotation->setSelected(true);

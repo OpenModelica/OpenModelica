@@ -493,7 +493,7 @@ void TextAnnotation::duplicate()
   pTextAnnotation->drawCornerItems();
   pTextAnnotation->setCornerItemsActiveOrPassive();
   pTextAnnotation->update();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pTextAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pTextAnnotation));
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pTextAnnotation, mpGraphicsView);
   setSelected(false);
   pTextAnnotation->setSelected(true);
