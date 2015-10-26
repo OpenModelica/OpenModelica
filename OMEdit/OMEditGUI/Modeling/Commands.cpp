@@ -352,12 +352,24 @@ void UpdateComponentAttributesCommand::redo()
     mpComponent->getComponentInfo()->setOuter(mNewComponentInfo.getOuter());
     mpComponent->getComponentInfo()->setCausality(causality);
     if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
-      mpComponent->setVisible(!mpComponent->getComponentInfo()->getProtected());
+      if (mpComponent->getComponentInfo()->getProtected()) {
+        mpComponent->setVisible(false);
+        mpComponent->emitDeleted();
+      } else {
+        mpComponent->setVisible(true);
+        mpComponent->emitAdded();
+      }
     } else {
       Component *pComponent = 0;
       pComponent = mpComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(mpComponent->getName());
       if (pComponent) {
-        pComponent->setVisible(!pComponent->getComponentInfo()->getProtected());
+        if (pComponent->getComponentInfo()->getProtected()) {
+          pComponent->setVisible(false);
+          pComponent->emitDeleted();
+        } else {
+          pComponent->setVisible(true);
+          pComponent->emitAdded();
+        }
       }
     }
   } else {
@@ -450,12 +462,24 @@ void UpdateComponentAttributesCommand::undo()
     mpComponent->getComponentInfo()->setOuter(mOldComponentInfo.getOuter());
     mpComponent->getComponentInfo()->setCausality(causality);
     if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
-      mpComponent->setVisible(!mpComponent->getComponentInfo()->getProtected());
+      if (mpComponent->getComponentInfo()->getProtected()) {
+        mpComponent->setVisible(false);
+        mpComponent->emitDeleted();
+      } else {
+        mpComponent->setVisible(true);
+        mpComponent->emitAdded();
+      }
     } else {
       Component *pComponent = 0;
       pComponent = mpComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(mpComponent->getName());
       if (pComponent) {
-        pComponent->setVisible(!pComponent->getComponentInfo()->getProtected());
+        if (pComponent->getComponentInfo()->getProtected()) {
+          pComponent->setVisible(false);
+          pComponent->emitDeleted();
+        } else {
+          pComponent->setVisible(true);
+          pComponent->emitAdded();
+        }
       }
     }
   } else {
