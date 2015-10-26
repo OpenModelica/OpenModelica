@@ -8,13 +8,21 @@
  #include  <Core/Utils/Modelica/ModelicaSimulationError.h>
  string error_id_string(SIMULATION_ERROR id)
  {
-      std::map<SIMULATION_ERROR,std::string> error_id_info= map_list_of(SOLVER,"solver")(ALGLOOP_SOLVER,"algloop solver")(MODEL_EQ_SYSTEM,"model equation system")(ALGLOOP_EQ_SYSTEM,"algloop equation system")
-                                                                    ( SOLVER,"csv")(MODEL_FACTORY,"model factory")(SIMMANAGER,"simulation manager")(EVENT_HANDLING,"event handling")
-                                                                    (TIME_EVENTS,"time event")( DATASTORAGE,"data storage")(UTILITY,"utility")(MODEL_ARRAY_FUNCTION,"array function")
-                                                                    (MATH_FUNCTION,"math function");
+     std::map<SIMULATION_ERROR, std::string> error_id_info = MAP_LIST_OF
+       SOLVER, "solver" MAP_LIST_SEP
+       ALGLOOP_SOLVER, "algloop solver" MAP_LIST_SEP
+       MODEL_EQ_SYSTEM, "model equation system" MAP_LIST_SEP
+       ALGLOOP_EQ_SYSTEM, "algloop equation system" MAP_LIST_SEP
+       MODEL_FACTORY, "model factory" MAP_LIST_SEP
+       SIMMANAGER, "simulation manager" MAP_LIST_SEP
+       EVENT_HANDLING, "event handling" MAP_LIST_SEP
+       TIME_EVENTS, "time event" MAP_LIST_SEP
+       DATASTORAGE, "data storage" MAP_LIST_SEP
+       UTILITY, "utility" MAP_LIST_SEP
+       MODEL_ARRAY_FUNCTION, "array function" MAP_LIST_SEP
+       MATH_FUNCTION, "math function" MAP_LIST_END;
 
-
-       return error_id_info[id];
+     return error_id_info[id];
  }
 
 

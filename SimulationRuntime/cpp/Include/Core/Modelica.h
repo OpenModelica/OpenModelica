@@ -13,8 +13,6 @@
 #include <numeric>
 #include <functional>
 
-#include <boost/assign/std/vector.hpp> // for 'operator+=()'
-#include <boost/assign/list_of.hpp> // for 'list_of()'
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 //#include <boost/function.hpp>
@@ -38,12 +36,9 @@ using std::endl;
 using std::cout;
 using std::cerr;
 using std::ostream_iterator;
-using boost::unordered_map;
-using namespace boost::numeric;
 using std::map;
 using std::pair;
 using std::make_pair;
-using namespace boost::assign;
 using std::max;
 using std::min;
 using std::string;
@@ -55,6 +50,8 @@ using std::deque;
 using std::copy;
 using std::exception;
 using std::runtime_error;
+using boost::unordered_map;
+using namespace boost::numeric;
 
 #if defined(USE_CPP_ELEVEN)
   #include <array>
@@ -64,6 +61,17 @@ using std::runtime_error;
   #include <condition_variable>
   #include <tuple>
   #include <memory>
+
+  #define LIST_OF {
+  #define LIST_SEP ,
+  #define LIST_END }
+  #define MAP_LIST_OF {{
+  #define MAP_LIST_SEP },{
+  #define MAP_LIST_END }}
+  #define TUPLE_LIST_OF {std::make_tuple(
+  #define TUPLE_LIST_SEP ),std::make_tuple(
+  #define TUPLE_LIST_END )}
+
   /** namespace for generated code to avoid name clashes */
   namespace omcpp {
     using std::ref;
@@ -103,6 +111,7 @@ using std::runtime_error;
     using boost::make_tuple;
     using boost::minmax_element;
   #endif
+  #include <boost/assign/list_of.hpp>
   #include <boost/array.hpp>
   #include <boost/math/special_functions/trunc.hpp>
   #include <boost/ref.hpp>
@@ -125,6 +134,17 @@ using std::runtime_error;
     using boost::unique_lock;
     using boost::dynamic_pointer_cast;
   #endif //USE_THREAD
+
+  #define LIST_OF boost::assign::list_of(
+  #define LIST_SEP )(
+  #define LIST_END )
+  #define MAP_LIST_OF boost::assign::map_list_of(
+  #define MAP_LIST_SEP )(
+  #define MAP_LIST_END )
+  #define TUPLE_LIST_OF boost::assign::tuple_list_of(
+  #define TUPLE_LIST_SEP )(
+  #define TUPLE_LIST_END )
+
   /** namespace for generated code to avoid name clashes */
   namespace omcpp {
     using boost::ref;

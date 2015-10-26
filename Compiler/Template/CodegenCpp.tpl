@@ -8144,10 +8144,10 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
               <%arrayName%> = StatArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>, true>(&_pointerTo<%type%>Vars[<%arrayHeadIdx%>]);
               >>
             else
-              let arrayIndices = SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences) |> idx => '(<%idx%>)'; separator=""
+              let arrayIndices = SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences) |> idx => '<%idx%>'; separator=" LIST_SEP "
               <<
               <%typeString%>* <%arrayName%>_ref_data[<%size%>];
-              _sim_vars->init<%type%>AliasArray(boost::assign::list_of<%arrayIndices%>,<%arrayName%>_ref_data);
+              _sim_vars->init<%type%>AliasArray(LIST_OF <%arrayIndices%> LIST_END, <%arrayName%>_ref_data);
               <%arrayName%> = RefArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>>(<%arrayName%>_ref_data);
               >>
    /*special case for variables that marked as array but are not arrays */
@@ -9493,8 +9493,8 @@ template outputIndices(ModelInfo modelInfo)
 case MODELINFO(varInfo=VARINFO(__),vars=SIMVARS(__)) then
     if varInfo.numOutVars then
     <<
-    var_ouputs_idx =  boost::assign::map_list_of <%
-    {(vars.outputVars |> SIMVAR(__) =>  '(<%index%>,"<%crefStr(name)%>")';separator=",") };separator=","%>;
+    var_ouputs_idx = MAP_LIST_OF <%
+    {(vars.outputVars |> SIMVAR(__) =>  '<%index%>,"<%crefStr(name)%>"';separator=",") };separator=" MAP_LIST_SEP "%> MAP_LIST_END;
     >>
 end outputIndices;
 
@@ -12743,8 +12743,8 @@ then
 <<
 label_list_type <%lastIdentOfPath(modelInfo.name)%>::getLabels()
 {
-   label_list_type labels = tuple_list_of
-   <%(labels |> label hasindex index0 => '(<%index0%>,&_<%label%>_1,&_<%label%>_2)') ;separator=" "%>;
+   label_list_type labels = TUPLE_LIST_OF
+   <%(labels |> label hasindex index0 => '<%index0%>,&_<%label%>_1,&_<%label%>_2') ;separator=" TUPLE_LIST_SEP "%> TUPLE_LIST_END;
    return labels;
 }
 >>
@@ -13726,22 +13726,19 @@ template functionInitDelay(DelayedExpression delayed,SimCode simCode ,Text& extr
   let &varDecls = buffer "" /*BUFD*/
    let &preExp = buffer "" /*BUFD*/
   let delay_id = (match delayed case DELAYED_EXPRESSIONS(__) then (delayedExps |> (id, (e, d, delayMax)) =>
-     '<%id%>';separator=","))
+     '<%id%>';separator=" LIST_SEP "))
   let delay_max = (match delayed case DELAYED_EXPRESSIONS(__) then (delayedExps |> (id, (e, d, delayMax)) =>
       let delayExpMax = daeExp(delayMax, contextSimulationNonDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-     '<%delayExpMax%>';separator=","))
+     '<%delayExpMax%>';separator=" LIST_SEP "))
   if delay_id then
-   <<
+    <<
     //init delay expressions
-     <%varDecls%>
+    <%varDecls%>
     <%preExp%>
-    vector<double> delay_max;
-    vector<unsigned int > delay_ids;
-    delay_ids+= <%delay_id%>;
-    delay_max+=<%delay_max%>;
-    intDelay(delay_ids,delay_max);
-
-  >>
+    vector<double> delay_max = LIST_OF <%delay_max%> LIST_END;
+    vector<unsigned int> delay_ids = LIST_OF <%delay_id%> LIST_END;
+    intDelay(delay_ids, delay_max);
+    >>
   else " "
 end functionInitDelay;
 

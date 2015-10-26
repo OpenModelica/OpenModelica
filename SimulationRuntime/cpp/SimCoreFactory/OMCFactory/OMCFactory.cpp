@@ -72,9 +72,17 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
 {
      int opt;
      int portnum;
-     map<string,LogCategory> logCatMap = map_list_of("init", LC_INIT)("nls", LC_NLS)("ls",LC_LS)("solv", LC_SOLV)("output", LC_OUT)("event",LC_EVT)("model",LC_MOD)("other",LC_OTHER);
-     map<string,LogLevel> logLvlMap = map_list_of("error", LL_ERROR)("warning", LL_WARNING)("info", LL_INFO)("debug", LL_DEBUG);
-     map<string,OutputPointType> outputPointTypeMap = map_list_of("all", OPT_ALL)("step", OPT_STEP)("none", OPT_NONE);
+     map<string, LogCategory> logCatMap = MAP_LIST_OF
+       "init", LC_INIT MAP_LIST_SEP "nls", LC_NLS MAP_LIST_SEP
+       "ls", LC_LS MAP_LIST_SEP "solv", LC_SOLV MAP_LIST_SEP
+       "output", LC_OUT MAP_LIST_SEP "event", LC_EVT MAP_LIST_SEP
+       "model", LC_MOD MAP_LIST_SEP "other", LC_OTHER MAP_LIST_END;
+     map<string, LogLevel> logLvlMap = MAP_LIST_OF
+       "error", LL_ERROR MAP_LIST_SEP "warning", LL_WARNING MAP_LIST_SEP
+       "info", LL_INFO MAP_LIST_SEP "debug", LL_DEBUG MAP_LIST_END;
+     map<string, OutputPointType> outputPointTypeMap = MAP_LIST_OF
+       "all", OPT_ALL MAP_LIST_SEP "step", OPT_STEP MAP_LIST_SEP
+       "none", OPT_NONE MAP_LIST_END;
      po::options_description desc("Allowed options");
 
      //program options that can be overwritten by OMEdit must be declared as vector
@@ -303,10 +311,11 @@ vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const 
       else if ((oit = opts.find(arg)) != opts.end() && i < argc - 1)
           opts[oit->first] = argv[++i]; // regular override
       else if (strncmp(argv[i], "-override=", 10) == 0) {
-          map<string, string> supported = map_list_of
-              ("startTime", "-S")("stopTime", "-E")("stepSize", "-H")
-              ("numberOfIntervals", "-G")("solver", "-I")("tolerance", "-T")
-              ("outputFormat", "-O");
+          map<string, string> supported = MAP_LIST_OF
+            "startTime", "-S" MAP_LIST_SEP "stopTime", "-E" MAP_LIST_SEP
+            "stepSize", "-H" MAP_LIST_SEP "numberOfIntervals", "-G" MAP_LIST_SEP
+            "solver", "-I" MAP_LIST_SEP "tolerance", "-T" MAP_LIST_SEP
+            "outputFormat", "-O" MAP_LIST_END;
           vector<string> strs;
           boost::split(strs, argv[i], boost::is_any_of(",="));
           for (int j = 1; j < strs.size(); j++) {
