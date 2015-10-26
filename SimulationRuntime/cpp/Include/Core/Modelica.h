@@ -14,7 +14,6 @@
 
 #include <boost/lexical_cast.hpp>
 #include <boost/circular_buffer.hpp>
-#include <boost/foreach.hpp>
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/io.hpp>
@@ -59,6 +58,9 @@ using namespace boost::numeric;
   #include <memory>
   #include <unordered_map>
   #include <unordered_set>
+
+  // builtin range based for loop
+  #define FOREACH(element, range) for(element : range)
 
   // builtin list initializers
   #define LIST_OF {
@@ -112,6 +114,7 @@ using namespace boost::numeric;
     using boost::make_tuple;
     using boost::minmax_element;
   #endif
+  #include <boost/foreach.hpp>
   #include <boost/assign/list_of.hpp>
   #include <boost/array.hpp>
   #include <boost/math/special_functions/trunc.hpp>
@@ -137,6 +140,9 @@ using namespace boost::numeric;
     using boost::unique_lock;
     using boost::dynamic_pointer_cast;
   #endif //USE_THREAD
+
+  // boost range based for loop
+  #define FOREACH BOOST_FOREACH
 
   // boost list initializers
   #define LIST_OF boost::assign::list_of(

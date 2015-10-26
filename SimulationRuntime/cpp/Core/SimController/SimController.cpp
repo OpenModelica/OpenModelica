@@ -286,10 +286,9 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         history->getOutputResults(Ro);
         vector<string> output_names;
         history->getOutputNames(output_names);
-        string name;
         int j=0;
 
-        BOOST_FOREACH(name,output_names)
+        FOREACH(string& name, output_names)
         {
             ublas::vector<double> o_j;
             o_j = ublas::row(Ro,j);

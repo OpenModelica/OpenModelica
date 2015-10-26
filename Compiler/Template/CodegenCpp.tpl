@@ -13599,10 +13599,9 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
   //    '<%iterName%> = *(<%arrayType%>_element_addr1(&<%evar%>, 1, <%tvar%>));'
   <<
   <%preExp%>
-    <%type%> <%iterName%>;
-    BOOST_FOREACH(<%iterName%>, <%evar%>) {
-      <%body%>
-    }
+  FOREACH(<%type%> <%iterName%>, <%evar%>) {
+    <%body%>
+  }
   >>
 
 end algStmtForGeneric_impl;

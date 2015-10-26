@@ -102,7 +102,7 @@ public:
         }
          try
         {
-            /*BOOST_FOREACH(i,indices)*/
+            /*FOREACH(i,indices)*/
             for(i=0;i<n;i++)
             {
                 for(j=0;j<m;++j)
@@ -221,11 +221,10 @@ public:
     {
         try
         {
-            std::pair<double,unsigned long> i;
-            BOOST_FOREACH(i, _time_entries)
+            typedef std::pair<double, unsigned long> pair_double_ulong;
+            FOREACH(pair_double_ulong i, _time_entries)
             {
                 time.push_back(i.first);
-
             }
         }
         catch(std::exception& ex)

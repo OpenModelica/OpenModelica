@@ -424,8 +424,7 @@ void SystemDefaultImplementation::getRHS(double* f)
 void  SystemDefaultImplementation::intDelay(vector<unsigned int> expr, vector<double> delay_max)
 {
   _time_buffer.set_capacity(1024);
-  unsigned int expr_id;
-  BOOST_FOREACH(expr_id,expr)
+  FOREACH(unsigned int expr_id, expr)
   {
     buffer_type delay_buffer(1024);
     _delay_buffer[expr_id]=delay_buffer;

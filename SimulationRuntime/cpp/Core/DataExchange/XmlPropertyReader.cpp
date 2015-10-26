@@ -40,7 +40,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
 
 			ptree modelDescription = tree.get_child("ModelDescription");
 
-			BOOST_FOREACH(ptree::value_type const& vars, modelDescription.get_child("ModelVariables"))
+			FOREACH(ptree::value_type const& vars, modelDescription.get_child("ModelVariables"))
 			{
 				if(vars.first == "ScalarVariable")
 				{
@@ -67,7 +67,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
 					bool isAlias = aliasInfo.compare("alias") == 0;
                     bool isNegatedAlias = aliasInfo.compare("negatedAlias") == 0;
 
-					BOOST_FOREACH(ptree::value_type const& var, vars.second.get_child(""))
+					FOREACH(ptree::value_type const& var, vars.second.get_child(""))
 					{
 
 						if(var.first == "Real")
