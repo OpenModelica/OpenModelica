@@ -2280,7 +2280,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpEditor = 0;
   }
   // store the text of LibraryTreeItem::Text
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text && mpLibraryTreeItem->getFileName().isEmpty()) {
+  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text && !mpLibraryTreeItem->isFilePathValid()) {
     mpLibraryTreeItem->setClassText(text);
   }
 }

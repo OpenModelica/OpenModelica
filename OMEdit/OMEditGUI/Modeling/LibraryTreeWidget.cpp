@@ -593,6 +593,12 @@ bool LibraryTreeItem::isSimulationAllowed()
 void LibraryTreeItem::handleLoaded(LibraryTreeItem *pLibraryTreeItem)
 {
   if (mpModelWidget) {
+    // if the base class need to be loaded then load it first.
+    if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->isReloadNeeded()) {
+      pLibraryTreeItem->getModelWidget()->setReloadNeeded(false);
+      pLibraryTreeItem->getModelWidget()->loadModelWidget();
+      pLibraryTreeItem->handleIconUpdated();
+    }
     ModelWidget::InheritedClass *pInheritedClass = mpModelWidget->findInheritedClass(pLibraryTreeItem);
     if (pInheritedClass) {
       mpModelWidget->modelInheritedClassLoaded(pInheritedClass);
@@ -1494,7 +1500,11 @@ void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, QStrin
   }
   if (pLibraryTreeItem->getModelWidget()) {
     pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getNameStructure() + (pLibraryTreeItem->isSaved() ? "" : "*"));
-    if (pLibraryTreeItem->getModelWidget()->isReloadNeeded()) {
+    /* we only load here if user explicitly want to see the Model.
+     * If we remove show from the following condition then the we have problem when we open a model and unload it
+     * and then change its contents externally in some other tool and reopen the model. Now the model doesn't pick the new contents.
+     */
+    if (pLibraryTreeItem->getModelWidget()->isReloadNeeded() && show) {
       pLibraryTreeItem->getModelWidget()->setReloadNeeded(false);
       pLibraryTreeItem->getModelWidget()->loadModelWidget();
       pLibraryTreeItem->handleIconUpdated();
