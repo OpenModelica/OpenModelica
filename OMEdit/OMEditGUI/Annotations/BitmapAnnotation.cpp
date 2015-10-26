@@ -212,7 +212,7 @@ void BitmapAnnotation::duplicate()
   pBitmapAnnotation->drawCornerItems();
   pBitmapAnnotation->setCornerItemsActiveOrPassive();
   pBitmapAnnotation->update();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pBitmapAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pBitmapAnnotation));
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pBitmapAnnotation, mpGraphicsView);
   setSelected(false);
   pBitmapAnnotation->setSelected(true);

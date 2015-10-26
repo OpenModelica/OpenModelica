@@ -33,11 +33,10 @@
 
 #include "Commands.h"
 
-AddShapeCommand::AddShapeCommand(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QUndoCommand *pParent)
+AddShapeCommand::AddShapeCommand(ShapeAnnotation *pShapeAnnotation, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpShapeAnnotation = pShapeAnnotation;
-  mpGraphicsView = pGraphicsView;
   if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
     setText("Add Line Shape");
   } else if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
@@ -59,10 +58,10 @@ AddShapeCommand::AddShapeCommand(ShapeAnnotation *pShapeAnnotation, GraphicsView
  */
 void AddShapeCommand::redo()
 {
-  mpGraphicsView->addShapeToList(mpShapeAnnotation);
-  mpGraphicsView->addItem(mpShapeAnnotation);
+  mpShapeAnnotation->getGraphicsView()->addShapeToList(mpShapeAnnotation);
+  mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation);
   mpShapeAnnotation->emitAdded();
-  mpGraphicsView->setAddClassAnnotationNeeded(true);
+  mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
 }
 
 /*!
@@ -71,20 +70,18 @@ void AddShapeCommand::redo()
  */
 void AddShapeCommand::undo()
 {
-  mpGraphicsView->deleteShapeFromList(mpShapeAnnotation);
-  mpGraphicsView->removeItem(mpShapeAnnotation);
+  mpShapeAnnotation->getGraphicsView()->deleteShapeFromList(mpShapeAnnotation);
+  mpShapeAnnotation->getGraphicsView()->removeItem(mpShapeAnnotation);
   mpShapeAnnotation->emitDeleted();
-  mpGraphicsView->setAddClassAnnotationNeeded(true);
+  mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
 }
 
-UpdateShapeCommand::UpdateShapeCommand(ShapeAnnotation *pShapeAnnotation, QString oldAnnotaton, QString newAnnotation,
-                                         GraphicsView *pGraphicsView, QUndoCommand *pParent)
+UpdateShapeCommand::UpdateShapeCommand(ShapeAnnotation *pShapeAnnotation, QString oldAnnotaton, QString newAnnotation, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpShapeAnnotation = pShapeAnnotation;
   mOldAnnotation = oldAnnotaton;
   mNewAnnotation = newAnnotation;
-  mpGraphicsView = pGraphicsView;
   if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
     setText("Update Line Shape");
   } else if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
@@ -113,7 +110,7 @@ void UpdateShapeCommand::redo()
   mpShapeAnnotation->setCornerItemsActiveOrPassive();
   mpShapeAnnotation->update();
   mpShapeAnnotation->emitChanged();
-  mpGraphicsView->setAddClassAnnotationNeeded(true);
+  mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
 }
 
 /*!
@@ -129,14 +126,13 @@ void UpdateShapeCommand::undo()
   mpShapeAnnotation->setCornerItemsActiveOrPassive();
   mpShapeAnnotation->update();
   mpShapeAnnotation->emitChanged();
-  mpGraphicsView->setAddClassAnnotationNeeded(true);
+  mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
 }
 
-DeleteShapeCommand::DeleteShapeCommand(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QUndoCommand *pParent)
+DeleteShapeCommand::DeleteShapeCommand(ShapeAnnotation *pShapeAnnotation, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpShapeAnnotation = pShapeAnnotation;
-  mpGraphicsView = pGraphicsView;
 }
 
 /*!
@@ -145,10 +141,10 @@ DeleteShapeCommand::DeleteShapeCommand(ShapeAnnotation *pShapeAnnotation, Graphi
  */
 void DeleteShapeCommand::redo()
 {
-  mpGraphicsView->deleteShapeFromList(mpShapeAnnotation);
-  mpGraphicsView->removeItem(mpShapeAnnotation);
+  mpShapeAnnotation->getGraphicsView()->deleteShapeFromList(mpShapeAnnotation);
+  mpShapeAnnotation->getGraphicsView()->removeItem(mpShapeAnnotation);
   mpShapeAnnotation->emitDeleted();
-  mpGraphicsView->setAddClassAnnotationNeeded(true);
+  mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
 }
 
 /*!
@@ -157,10 +153,10 @@ void DeleteShapeCommand::redo()
  */
 void DeleteShapeCommand::undo()
 {
-  mpGraphicsView->addShapeToList(mpShapeAnnotation);
-  mpGraphicsView->addItem(mpShapeAnnotation);
+  mpShapeAnnotation->getGraphicsView()->addShapeToList(mpShapeAnnotation);
+  mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation);
   mpShapeAnnotation->emitAdded();
-  mpGraphicsView->setAddClassAnnotationNeeded(true);
+  mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
 }
 
 AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
@@ -616,13 +612,11 @@ void DeleteComponentCommand::undo()
   mpGraphicsView->addComponentToClass(mpComponent);
 }
 
-AddConnectionCommand::AddConnectionCommand(LineAnnotation *pConnectionLineAnnotation, bool addConnection, GraphicsView *pGraphicsView,
-                                           QUndoCommand *pParent)
+AddConnectionCommand::AddConnectionCommand(LineAnnotation *pConnectionLineAnnotation, bool addConnection, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpConnectionLineAnnotation = pConnectionLineAnnotation;
   mAddConnection = addConnection;
-  mpGraphicsView = pGraphicsView;
   setText(QString("Add Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName(),
                                                         mpConnectionLineAnnotation->getEndComponentName()));
 
@@ -630,7 +624,7 @@ AddConnectionCommand::AddConnectionCommand(LineAnnotation *pConnectionLineAnnota
                                          .arg(mpConnectionLineAnnotation->getEndComponentName()));
   mpConnectionLineAnnotation->drawCornerItems();
   mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
-  pGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
+  mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
 }
 
 /*!
@@ -653,11 +647,11 @@ void AddConnectionCommand::redo()
   } else {
     pEndComponent->addConnectionDetails(mpConnectionLineAnnotation);
   }
-  mpGraphicsView->addConnectionToList(mpConnectionLineAnnotation);
-  mpGraphicsView->addItem(mpConnectionLineAnnotation);
+  mpConnectionLineAnnotation->getGraphicsView()->addConnectionToList(mpConnectionLineAnnotation);
+  mpConnectionLineAnnotation->getGraphicsView()->addItem(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->emitAdded();
   if (mAddConnection) {
-    mpGraphicsView->addConnectionToClass(mpConnectionLineAnnotation);
+    mpConnectionLineAnnotation->getGraphicsView()->addConnectionToClass(mpConnectionLineAnnotation);
   }
 }
 
@@ -681,17 +675,61 @@ void AddConnectionCommand::undo()
   } else {
     pEndComponent->removeConnectionDetails(mpConnectionLineAnnotation);
   }
-  mpGraphicsView->deleteConnectionFromList(mpConnectionLineAnnotation);
-  mpGraphicsView->removeItem(mpConnectionLineAnnotation);
+  mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromList(mpConnectionLineAnnotation);
+  mpConnectionLineAnnotation->getGraphicsView()->removeItem(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->emitDeleted();
-  mpGraphicsView->deleteConnectionFromClass(mpConnectionLineAnnotation);
+  mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromClass(mpConnectionLineAnnotation);
 }
 
-DeleteConnectionCommand::DeleteConnectionCommand(LineAnnotation *pConnectionLineAnnotation, GraphicsView *pGraphicsView, QUndoCommand *pParent)
+UpdateConnectionCommand::UpdateConnectionCommand(LineAnnotation *pConnectionLineAnnotation, QString oldAnnotaton, QString newAnnotation,
+                                                 QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpConnectionLineAnnotation = pConnectionLineAnnotation;
-  mpGraphicsView = pGraphicsView;
+  mOldAnnotation = oldAnnotaton;
+  mNewAnnotation = newAnnotation;
+  setText(QString("Update Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName(),
+                                                           mpConnectionLineAnnotation->getEndComponentName()));
+}
+
+/*!
+ * \brief UpdateConnectionCommand::redo
+ * Redo the UpdateConnectionCommand.
+ */
+void UpdateConnectionCommand::redo()
+{
+  mpConnectionLineAnnotation->parseShapeAnnotation(mNewAnnotation);
+  mpConnectionLineAnnotation->initializeTransformation();
+  mpConnectionLineAnnotation->removeCornerItems();
+  mpConnectionLineAnnotation->drawCornerItems();
+  mpConnectionLineAnnotation->adjustGeometries();
+  mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
+  mpConnectionLineAnnotation->update();
+  mpConnectionLineAnnotation->emitChanged();
+  mpConnectionLineAnnotation->updateConnectionAnnotation();
+}
+
+/*!
+ * \brief UpdateConnectionCommand::undo
+ * Undo the UpdateConnectionCommand.
+ */
+void UpdateConnectionCommand::undo()
+{
+  mpConnectionLineAnnotation->parseShapeAnnotation(mOldAnnotation);
+  mpConnectionLineAnnotation->initializeTransformation();
+  mpConnectionLineAnnotation->removeCornerItems();
+  mpConnectionLineAnnotation->drawCornerItems();
+  mpConnectionLineAnnotation->adjustGeometries();
+  mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
+  mpConnectionLineAnnotation->update();
+  mpConnectionLineAnnotation->emitChanged();
+  mpConnectionLineAnnotation->updateConnectionAnnotation();
+}
+
+DeleteConnectionCommand::DeleteConnectionCommand(LineAnnotation *pConnectionLineAnnotation, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpConnectionLineAnnotation = pConnectionLineAnnotation;
 }
 
 /*!
@@ -714,10 +752,10 @@ void DeleteConnectionCommand::redo()
   } else {
     pEndComponent->removeConnectionDetails(mpConnectionLineAnnotation);
   }
-  mpGraphicsView->deleteConnectionFromList(mpConnectionLineAnnotation);
-  mpGraphicsView->removeItem(mpConnectionLineAnnotation);
+  mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromList(mpConnectionLineAnnotation);
+  mpConnectionLineAnnotation->getGraphicsView()->removeItem(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->emitDeleted();
-  mpGraphicsView->deleteConnectionFromClass(mpConnectionLineAnnotation);
+  mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromClass(mpConnectionLineAnnotation);
 }
 
 /*!
@@ -740,8 +778,8 @@ void DeleteConnectionCommand::undo()
   } else {
     pEndComponent->addConnectionDetails(mpConnectionLineAnnotation);
   }
-  mpGraphicsView->addConnectionToList(mpConnectionLineAnnotation);
-  mpGraphicsView->addItem(mpConnectionLineAnnotation);
+  mpConnectionLineAnnotation->getGraphicsView()->addConnectionToList(mpConnectionLineAnnotation);
+  mpConnectionLineAnnotation->getGraphicsView()->addItem(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->emitAdded();
-  mpGraphicsView->addConnectionToClass(mpConnectionLineAnnotation);
+  mpConnectionLineAnnotation->getGraphicsView()->addConnectionToClass(mpConnectionLineAnnotation);
 }

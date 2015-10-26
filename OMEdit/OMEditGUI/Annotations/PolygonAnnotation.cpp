@@ -290,7 +290,7 @@ void PolygonAnnotation::duplicate()
   pPolygonAnnotation->drawCornerItems();
   pPolygonAnnotation->setCornerItemsActiveOrPassive();
   pPolygonAnnotation->update();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pPolygonAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pPolygonAnnotation));
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pPolygonAnnotation, mpGraphicsView);
   setSelected(false);
   pPolygonAnnotation->setSelected(true);

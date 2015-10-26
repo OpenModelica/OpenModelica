@@ -772,7 +772,7 @@ void ShapeAnnotation::applyRotation(qreal angle)
   QString oldAnnotation = getOMCShapeAnnotation();
   setRotationAngle(angle);
   QString newAnnotation = getOMCShapeAnnotation();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation));
 }
 
 /*!
@@ -938,10 +938,12 @@ void ShapeAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 }
 
 /*!
-  Slot activated when mpManhattanizeShapeAction triggered signal is raised.\n
-  Finds the curved lines in the Line shape and makes in manhattanize/right-angle line.
-  */
-void ShapeAnnotation::manhattanizeShape()
+ * \brief ShapeAnnotation::manhattanizeShape
+ * Slot activated when mpManhattanizeShapeAction triggered signal is raised.\n
+ * Finds the curved lines in the Line shape and makes in manhattanize/right-angle line.
+ * \param addToStack
+ */
+void ShapeAnnotation::manhattanizeShape(bool addToStack)
 {
   QString oldAnnotation = getOMCShapeAnnotation();
   int startIndex = -1;
@@ -989,8 +991,10 @@ void ShapeAnnotation::manhattanizeShape()
     for (int i = lastIndex ; i < oldPoints.size() ; i++) {
       addPoint(oldPoints[i]);
     }
-    ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
-    pModelWidget->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, getOMCShapeAnnotation(), mpGraphicsView));
+    if (addToStack) {
+      ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
+      pModelWidget->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, getOMCShapeAnnotation()));
+    }
     cornerItemReleased();
   }
 }
@@ -1157,7 +1161,7 @@ void ShapeAnnotation::moveUp()
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation));
 }
 
 /*!
@@ -1173,7 +1177,7 @@ void ShapeAnnotation::moveShiftUp()
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation));
 }
 
 /*!
@@ -1189,7 +1193,7 @@ void ShapeAnnotation::moveCtrlUp()
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation));
 }
 
 /*!
@@ -1205,7 +1209,7 @@ void ShapeAnnotation::moveDown()
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation));
 }
 
 /*!
@@ -1221,7 +1225,7 @@ void ShapeAnnotation::moveShiftDown()
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation));
 }
 
 /*!
@@ -1237,7 +1241,7 @@ void ShapeAnnotation::moveCtrlDown()
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation));
 }
 
 /*!
@@ -1253,7 +1257,7 @@ void ShapeAnnotation::moveLeft()
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation));
 }
 
 /*!
@@ -1269,7 +1273,7 @@ void ShapeAnnotation::moveShiftLeft()
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation));
 }
 
 /*!
@@ -1285,7 +1289,7 @@ void ShapeAnnotation::moveCtrlLeft()
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation));
 }
 
 /*!
@@ -1301,7 +1305,7 @@ void ShapeAnnotation::moveRight()
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation));
 }
 
 /*!
@@ -1317,7 +1321,7 @@ void ShapeAnnotation::moveShiftRight()
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation));
 }
 
 /*!
@@ -1333,7 +1337,7 @@ void ShapeAnnotation::moveCtrlRight()
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, newAnnotation));
 }
 
 /*!
@@ -1502,7 +1506,9 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
     LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
     if (pLineAnnotation) {
       lineType = pLineAnnotation->getLineType();
-      menu.addAction(mpGraphicsView->getManhattanizeAction());
+      if (lineType != LineAnnotation::ConnectionType) {
+        menu.addAction(mpGraphicsView->getManhattanizeAction());
+      }
     }
     menu.addAction(mpGraphicsView->getDeleteAction());
     if (lineType != LineAnnotation::ConnectionType) {

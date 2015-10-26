@@ -63,7 +63,8 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
     setFlag(QGraphicsItem::ItemIsMovable, false);
   }
   /* Only shapes manipulation via CornerItem's if the class is not a system library class OR not an inherited shape. */
-  if (!mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpShapeAnnotation->isInheritedShape()) {
+  if (!mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() &&
+      !mpShapeAnnotation->isInheritedShape()) {
     connect(this, SIGNAL(cornerItemMoved(int,QPointF)), mpShapeAnnotation, SLOT(updateCornerItemPoint(int,QPointF)));
     connect(this, SIGNAL(cornerItemPress()), mpShapeAnnotation, SLOT(cornerItemPressed()));
     connect(this, SIGNAL(cornerItemRelease()), mpShapeAnnotation, SLOT(cornerItemReleased()));
@@ -124,11 +125,6 @@ void CornerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
     if (!signalsBlocked()) {
       emit cornerItemPress();
     }
-    LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
-    if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
-      mpShapeAnnotation->manhattanizeShape();
-      mpShapeAnnotation->removeRedundantPointsGeometriesAndCornerItems();
-    }
     mOldAnnotation = mpShapeAnnotation->getOMCShapeAnnotation();
     mClickPos = mapToScene(event->pos());
   }
@@ -150,16 +146,20 @@ void CornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
       emit cornerItemRelease();
     }
     if (mClickPos != mapToScene(event->pos())) {
+      ModelWidget *pModelWidget = mpShapeAnnotation->getGraphicsView()->getModelWidget();
       LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
       if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
-        mpShapeAnnotation->manhattanizeShape();
+        mpShapeAnnotation->manhattanizeShape(false);
         mpShapeAnnotation->removeRedundantPointsGeometriesAndCornerItems();
+        QString newAnnotation = mpShapeAnnotation->getOMCShapeAnnotation();
+        pModelWidget->getUndoStack()->push(new UpdateConnectionCommand(pLineAnnotation, mOldAnnotation, newAnnotation));
+        pModelWidget->updateModelicaText();
+      } else {
+        QString newAnnotation = mpShapeAnnotation->getOMCShapeAnnotation();
+        pModelWidget->getUndoStack()->push(new UpdateShapeCommand(mpShapeAnnotation, mOldAnnotation, newAnnotation));
+        pModelWidget->updateClassAnnotationIfNeeded();
+        pModelWidget->updateModelicaText();
       }
-      ModelWidget *pModelWidget = mpShapeAnnotation->getGraphicsView()->getModelWidget();
-      pModelWidget->getUndoStack()->push(new UpdateShapeCommand(mpShapeAnnotation, mOldAnnotation, mpShapeAnnotation->getOMCShapeAnnotation(),
-                                                                mpShapeAnnotation->getGraphicsView()));
-      pModelWidget->updateClassAnnotationIfNeeded();
-      pModelWidget->updateModelicaText();
     }
   }
 }

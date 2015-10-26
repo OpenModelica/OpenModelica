@@ -225,7 +225,7 @@ public slots:
   LineGeometryType findLineGeometryType(QPointF point1, QPointF point2);
   bool isLineStraight(QPointF point1, QPointF point2);
   void showShapeProperties();
-  void manhattanizeShape();
+  void manhattanizeShape(bool addToStack = true);
   void referenceShapeAdded();
   void referenceShapeChanged();
   void referenceShapeDeleted();

@@ -39,37 +39,33 @@
 class AddShapeCommand : public QUndoCommand
 {
 public:
-  AddShapeCommand(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  AddShapeCommand(ShapeAnnotation *pShapeAnnotation, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
   ShapeAnnotation *mpShapeAnnotation;
-  GraphicsView *mpGraphicsView;
 };
 
 class UpdateShapeCommand : public QUndoCommand
 {
 public:
-  UpdateShapeCommand(ShapeAnnotation *pShapeAnnotation, QString oldAnnotaton, QString newAnnotation, GraphicsView *pGraphicsView,
-                      QUndoCommand *pParent = 0);
+  UpdateShapeCommand(ShapeAnnotation *pShapeAnnotation, QString oldAnnotaton, QString newAnnotation, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
   ShapeAnnotation *mpShapeAnnotation;
   QString mOldAnnotation;
   QString mNewAnnotation;
-  GraphicsView *mpGraphicsView;
 };
 
 class DeleteShapeCommand : public QUndoCommand
 {
 public:
-  DeleteShapeCommand(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  DeleteShapeCommand(ShapeAnnotation *pShapeAnnotation, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
   ShapeAnnotation *mpShapeAnnotation;
-  GraphicsView *mpGraphicsView;
 };
 
 class AddComponentCommand : public QUndoCommand
@@ -137,19 +133,30 @@ private:
 class AddConnectionCommand : public QUndoCommand
 {
 public:
-  AddConnectionCommand(LineAnnotation *pConnectionLineAnnotation, bool addConnection, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  AddConnectionCommand(LineAnnotation *pConnectionLineAnnotation, bool addConnection, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
   LineAnnotation *mpConnectionLineAnnotation;
   bool mAddConnection;
-  GraphicsView *mpGraphicsView;
+};
+
+class UpdateConnectionCommand : public QUndoCommand
+{
+public:
+  UpdateConnectionCommand(LineAnnotation *pConnectionLineAnnotation, QString oldAnnotaton, QString newAnnotation, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  LineAnnotation *mpConnectionLineAnnotation;
+  QString mOldAnnotation;
+  QString mNewAnnotation;
 };
 
 class DeleteConnectionCommand : public QUndoCommand
 {
 public:
-  DeleteConnectionCommand(LineAnnotation *pConnectionLineAnnotation, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  DeleteConnectionCommand(LineAnnotation *pConnectionLineAnnotation, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:

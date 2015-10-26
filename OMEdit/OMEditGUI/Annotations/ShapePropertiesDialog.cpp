@@ -829,26 +829,19 @@ bool ShapePropertiesDialog::applyShapeProperties()
   if (mpLineAnnotation) {
     lineType = mpLineAnnotation->getLineType();
   }
-//  if (mpLineAnnotation && lineType == LineAnnotation::ConnectionType) {
-//    mpShapeAnnotation->removeCornerItems();
-//    mpShapeAnnotation->drawCornerItems();
-//    mpShapeAnnotation->adjustGeometries();
-//    mpLineAnnotation->updateConnectionAnnotation();
-//    mpLineAnnotation->update();
-//  } else {
-//    mpShapeAnnotation->initializeTransformation();
-//    mpShapeAnnotation->removeCornerItems();
-//    mpShapeAnnotation->drawCornerItems();
-//    mpShapeAnnotation->update();
-//    mpShapeAnnotation->getGraphicsView()->addClassAnnotation();
-//  }
   // if nothing has changed then just simply return true.
   if (mOldAnnotation.compare(mpShapeAnnotation->getOMCShapeAnnotation()) == 0) {
     return true;
-  } else {  // create a UpdateShapeCommand object and push it to the undo stack.
+  } else if (mpLineAnnotation && lineType == LineAnnotation::ConnectionType) {
+    // create a UpdateConnectionCommand object and push it to the undo stack.
+    UpdateConnectionCommand *pUpdateConnectionCommand;
+    pUpdateConnectionCommand = new UpdateConnectionCommand(mpLineAnnotation, mOldAnnotation, mpShapeAnnotation->getOMCShapeAnnotation());
+    mpShapeAnnotation->getGraphicsView()->getModelWidget()->getUndoStack()->push(pUpdateConnectionCommand);
+    mpShapeAnnotation->getGraphicsView()->getModelWidget()->updateModelicaText();
+  } else {
+    // create a UpdateShapeCommand object and push it to the undo stack.
     UpdateShapeCommand *pUpdateShapeCommand;
-    pUpdateShapeCommand = new UpdateShapeCommand(mpShapeAnnotation, mOldAnnotation, mpShapeAnnotation->getOMCShapeAnnotation(),
-                                                 mpShapeAnnotation->getGraphicsView());
+    pUpdateShapeCommand = new UpdateShapeCommand(mpShapeAnnotation, mOldAnnotation, mpShapeAnnotation->getOMCShapeAnnotation());
     mpShapeAnnotation->getGraphicsView()->getModelWidget()->getUndoStack()->push(pUpdateShapeCommand);
     mpShapeAnnotation->getGraphicsView()->getModelWidget()->updateClassAnnotationIfNeeded();
     mpShapeAnnotation->getGraphicsView()->getModelWidget()->updateModelicaText();
