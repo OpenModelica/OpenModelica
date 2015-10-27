@@ -12,7 +12,6 @@
 #include <numeric>
 #include <functional>
 
-#include <boost/lexical_cast.hpp>
 #include <boost/circular_buffer.hpp>
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #include <boost/numeric/ublas/vector.hpp>
@@ -115,6 +114,7 @@ using namespace boost::numeric;
     using boost::minmax_element;
   #endif
   #include <boost/foreach.hpp>
+  #include <boost/lexical_cast.hpp>
   #include <boost/assign/list_of.hpp>
   #include <boost/array.hpp>
   #include <boost/math/special_functions/trunc.hpp>

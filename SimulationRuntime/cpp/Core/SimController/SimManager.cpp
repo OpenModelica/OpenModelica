@@ -264,22 +264,22 @@ void SimManager::runSimulation()
     #endif
     try
     {
-        LOGGER_WRITE("SimManager: Start simulation at t = " + boost::lexical_cast<std::string>(_tStart),LC_SOLV,LL_INFO);
+        LOGGER_WRITE("SimManager: Start simulation at t = " + to_string(_tStart), LC_SOLV, LL_INFO);
         runSingleProcess();
         // Measure time; Output SimInfos
         ISolver::SOLVERSTATUS status = _solver->getSolverStatus();
         if ((status & ISolver::DONE) || (status & ISolver::USER_STOP))
         {
-            //LOGGER_WRITE("SimManager: Simulation done at t = " + boost::lexical_cast<std::string>(_tEnd),LC_SOLV,LL_INFO);
+            //LOGGER_WRITE("SimManager: Simulation done at t = " + to_string(_tEnd), LC_SOLV, LL_INFO);
             writeProperties();
         }
     }
     catch (std::exception & ex)
     {
-        LOGGER_WRITE("SimManager: Simulation finish with errors at t = " + boost::lexical_cast<std::string>(_tEnd),LC_SOLV,LL_ERROR);
+        LOGGER_WRITE("SimManager: Simulation finish with errors at t = " + to_string(_tEnd), LC_SOLV, LL_ERROR);
         writeProperties();
 
-        LOGGER_WRITE("SimManager: Error = " + boost::lexical_cast<std::string>(ex.what()),LC_SOLV,LL_ERROR);
+        LOGGER_WRITE("SimManager: Error = " + string(ex.what()), LC_SOLV, LL_ERROR);
         //ex << error_id(SIMMANAGER);
         throw;
     }
@@ -302,11 +302,11 @@ void SimManager::writeProperties()
 	// declaration for Logging
 	std::pair<LogCategory, LogLevel> logM = Logger::getLogMode(LC_SOLV, LL_INFO);
 
-	LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("SimManager: Computation time"),logM);
-	LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("SimManager: Simulation end time:          ") + boost::lexical_cast<std::string>(_tEnd),logM);
-    //LOGGER_WRITE(boost::lexical_cast<std::string>("Rechenzeit in Sekunden:                 ") + boost::lexical_cast<std::string>(_tClockEnd-_tClockStart),logM);
+	LOGGER_WRITE_TUPLE("SimManager: Computation time", logM);
+	LOGGER_WRITE_TUPLE("SimManager: Simulation end time:          " + to_string(_tEnd), logM);
+    //LOGGER_WRITE("Rechenzeit in Sekunden:                 " + to_string>(_tClockEnd-_tClockStart), logM);
 
-	LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Simulation info from solver:"),logM);
+	LOGGER_WRITE_TUPLE("Simulation info from solver:", logM);
   _solver->writeSimulationInfo();
 /*
      // Zeit

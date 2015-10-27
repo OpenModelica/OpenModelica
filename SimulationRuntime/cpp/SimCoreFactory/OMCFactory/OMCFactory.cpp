@@ -221,7 +221,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
     				     logSet.modes[logCatMap[tmpvec[0]]] = logLvlMap[tmpvec[1]];
     	   }
     		 else
-    			   throw ModelicaSimulationError(MODEL_FACTORY,"log-settings flags not supported: " + boost::lexical_cast<string>(log_vec[i]) + "\n");
+    			   throw ModelicaSimulationError(MODEL_FACTORY,"log-settings flags not supported: " + log_vec[i] + "\n");
     	 }
      }
 

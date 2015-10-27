@@ -5,6 +5,7 @@
 #include <Core/DataExchange/XmlPropertyReader.h>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
+#include <boost/lexical_cast.hpp>
 #include <fstream>
 #include <iostream>
 
