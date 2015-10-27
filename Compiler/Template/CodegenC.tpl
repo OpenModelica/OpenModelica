@@ -1007,7 +1007,6 @@ template simulationFileHeader(SimCode simCode)
     #include "simulation/solver/nonlinearSystem.h"
     #include "simulation/solver/mixedSystem.h"
 
-    #include <assert.h>
     #include <string.h>
 
     #include "<%fileNamePrefix%>_functions.h"

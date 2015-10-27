@@ -121,11 +121,18 @@ FMIOBJSPATH = $(FMI_OBJS:%=$(FMIPATH)%)
 
 ALL_OBJS = $(METAOBJSPATH) $(UTILOBJSPATH) $(MATHOBJSPATH) $(SOLVEROBJSPATH) $(INITIALIZATIONOBJSPATH) $(OPTIMIZATIONOBJSPATH) $(RESULTSOBJSPATH) $(SIMOBJSPATH) $(SIMOBJSPATHC) meta/meta_modelica_catch$(OBJ_EXT)
 
+# External solvers needed by FMI for ME
 CMINPACK_OBJS = enorm_ hybrj_ dpmpar_ qrfac_ qform_ dogleg_ r1updt_ r1mpyq_
+LAPACK_OBJS = dgesv dgetrf dlamch dtrtrs ilaenv ilazlr xerbla zlarfb zlarft zungbr zunglq dgetf2 dgetrs dlaswp ieeeck ilazlc iparmq zlacgv zlarf zung2r zungl2 zungqr
+BLAS_OBJS = dgemm dger dscal dswap dtrsm idamax lsame zcopy zgemm zgemv zgerc zscal ztrmm ztrmv
+LIBF2C_OBJS = d_cnjg i_len i_nint pow_di s_cmp s_copy
 # Only objects needed for FMI for Modelica Exchange
 FMI_ME_OBJS = $(UTILOBJSPATH) $(MATHOBJSPATH) $(SIMOBJSPATHC) $(SOLVEROBJSPATH) $(INITIALIZATIONOBJSPATH) \
   ./meta/meta_modelica_catch$(OBJ_EXT) \
-  $(CMINPACK_OBJS:%=./external_solvers/%$(OBJ_EXT))
+  $(CMINPACK_OBJS:%=./external_solvers/%$(OBJ_EXT)) \
+  $(LAPACK_OBJS:%=./external_solvers/%$(OBJ_EXT)) \
+  $(BLAS_OBJS:%=./external_solvers/%$(OBJ_EXT)) \
+  $(LIBF2C_OBJS:%=./external_solvers/%$(OBJ_EXT)) \
 
 ALL_HEADERS = $(METAHFILESPATH) $(UTILHFILESPATH) $(MATHHFILESPATH) $(SOLVERHFILESPATH) $(INITIALIZATIONHFILESPATH) $(OPTIMIZATIONHFILESPATH) $(RESULTSHFILESPATH) $(SIMHFILESPATH)
 ALL_PATHS = $(METAPATH) $(FMIPATH) $(UTILPATH) $(MATHPATH) $(SOLVERPATH) $(INITIALIZATIONPATH) $(OPTIMIZATIONPATH) $(RESULTSPATH) $(SIMPATH) linearization/

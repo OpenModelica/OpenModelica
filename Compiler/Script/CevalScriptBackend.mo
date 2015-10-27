@@ -2644,7 +2644,7 @@ algorithm
               "CC="+System.getCCompiler(),
               "CFLAGS="+quote+System.getCFlags()+quote,
               "CPPFLAGS=",
-              "LDFLAGS="+quote+System.getLDFlags()+" "+(if staticSourceCodeFMU then System.getRTLibsFMU() /*TODO: Should not be needed, once we remove the need for lapack/expat*/ else System.getRTLibsSim()) + quote,
+              "LDFLAGS="+quote+System.getLDFlags()+" "+(if staticSourceCodeFMU then "" else System.getRTLibsSim()) + quote,
               "FMIPLATFORM="+System.modelicaPlatform(),
               "DLLEXT="+System.getDllExt(),
               "LD="+quote+System.getLinker()+quote,

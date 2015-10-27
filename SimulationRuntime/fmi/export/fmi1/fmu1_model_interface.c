@@ -355,9 +355,9 @@ fmiStatus fmiSetContinuousStates(fmiComponent c, const fmiReal x[], size_t nx)
     fmiValueReference vr = vrStates[i];
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
         "fmiSetContinuousStates: #r%d#=%.16g", vr, x[i]);
-    assert(vr>=0 && vr<NUMBER_OF_REALS);
-    if (setReal(comp, vr, x[i]) != fmiOK) // to be implemented by the includer of this file
+    if (vr<0 || vr>=NUMBER_OF_REALS || setReal(comp, vr, x[i]) != fmiOK) { // to be implemented by the includer of this file
       return fmiError;
+    }
   }
 #endif
   return fmiOK;
