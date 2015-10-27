@@ -45,6 +45,6 @@ val(prismatic_v, 1);
 // [openmodelica/cppruntime/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:784:3-784:90:writable] Warning: Parameter world_label1 has no value, and is fixed during initialization (fixed=true), using available start value (start="x") as default value.
 // [openmodelica/cppruntime/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:785:3-785:88:writable] Warning: Parameter world_label2 has no value, and is fixed during initialization (fixed=true), using available start value (start="y") as default value.
 // "
-// 0.9493545676148138
-// 0.3948240567413552
+// 0.9493545676148136
+// 0.3948240567413477
 // endResult
