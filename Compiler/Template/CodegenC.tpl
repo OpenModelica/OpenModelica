@@ -1046,7 +1046,9 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     <% if isModelExchangeFMU then
     <<
     data->modelData.initXMLData = NULL;
-    data->modelData.modelDataXml.infoXMLData = NULL;
+    data->modelData.modelDataXml.infoXMLData =
+    #include "<%fileNamePrefix%>_info.c"
+    ;
     >>
     else
     <<
