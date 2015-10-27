@@ -53,25 +53,25 @@ readSimulationResultSize("testModel_res.mat");
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid'",
 //     messages = ""
 // end SimulationResult;
-// 223
+// 211
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -noEventEmit'",
 //     messages = ""
 // end SimulationResult;
-// 198
+// 186
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -maxStepSize=0.001'",
 //     messages = ""
 // end SimulationResult;
-// 2146
+// 2134
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -maxIntegrationOrder=1'",
 //     messages = ""
 // end SimulationResult;
-// 6703
+// 6691
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.4, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid'",
@@ -83,18 +83,18 @@ readSimulationResultSize("testModel_res.mat");
 //     simulationOptions = "startTime = 0.0, stopTime = 0.4, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -noEquidistantOutputFrequency=5'",
 //     messages = ""
 // end SimulationResult;
-// 7
+// 8
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.4, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -noEquidistantOutputTime=0.1'",
 //     messages = ""
 // end SimulationResult;
-// 6
+// 7
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.4, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -noEquidistantOutputTime=0.1 -noEquidistantOutputFrequency=2'",
 //     messages = "stdout            | warning | The flags are  \"noEquidistantOutputFrequency\" and \"noEquidistantOutputTime\" are in opposition to each other. The flag \"noEquidistantOutputFrequency\" superiors.
 // "
 // end SimulationResult;
-// 14
+// 15
 // endResult

@@ -40,18 +40,18 @@ readSimulationResultSize("testModel_res.mat");
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -maxIntegrationOrder=1 -noEquidistantOutputFrequency=2'",
 //     messages = ""
 // end SimulationResult;
-// 218
+// 219
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -maxIntegrationOrder=1 -noEquidistantOutputTime=0.1'",
 //     messages = ""
 // end SimulationResult;
-// 52
+// 53
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -maxIntegrationOrder=1 -noEquidistantOutputTime=0.1 -noEquidistantOutputFrequency=10'",
 //     messages = "stdout            | warning | The flags are  \"noEquidistantOutputFrequency\" and \"noEquidistantOutputTime\" are in opposition to each other. The flag \"noEquidistantOutputFrequency\" superiors.
 // "
 // end SimulationResult;
-// 46
+// 47
 // endResult
