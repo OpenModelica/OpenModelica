@@ -85,7 +85,7 @@ public:
       {
         double *realVars = _model->getSimVars()->getRealVarsVector();
         for(size_t i = 0; i < nvr; i++)
-          _model->setRealStartValue(realVars[vr[i]],true);
+          _model->setRealStartValue(realVars[vr[i]], value[i]);
       }
       else
         _model->setReal(vr, nvr, value);
@@ -104,7 +104,7 @@ public:
       {
         int *intVars = _model->getSimVars()->getIntVarsVector();
         for(size_t i = 0; i < nvr; i++)
-          _model->setIntStartValue(intVars[vr[i]],true);
+          _model->setIntStartValue(intVars[vr[i]], value[i]);
       }
       else
         _model->setInteger(vr, nvr, value);
@@ -121,7 +121,7 @@ public:
       {
         bool *boolVars = _model->getSimVars()->getBoolVarsVector();
         for(size_t i = 0; i < nvr; i++)
-          _model->setBoolStartValue(boolVars[vr[i]],true);
+          _model->setBoolStartValue(boolVars[vr[i]], value[i]);
       }
       else
       {
