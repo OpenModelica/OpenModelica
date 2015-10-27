@@ -2,6 +2,7 @@ TEST = ../../../rtest -v
 
 
 TESTFILES = \
+testDASSLnoEquidistant.mos \
 testOutputIntervalDASSL.mos \
 testOutputIntervalDASSLsteps.mos \
 testOutputIntervalDASSLstepsnoEquidistant.mos \
