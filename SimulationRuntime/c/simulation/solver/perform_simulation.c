@@ -344,9 +344,20 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
       }
       else
       {
-        __currStepNo++;
+        if (solverInfo->solverNoEquidistantGrid)
+        {
+          if (solverInfo->currentTime >= solverInfo->lastdesiredStep)
+          {
+            __currStepNo++;
+          }
+        }
+        else
+        {
+          __currStepNo++;
+        }
       }
       solverInfo->currentStepSize = (double)(__currStepNo*(simInfo->stopTime-simInfo->startTime))/(simInfo->numSteps) + simInfo->startTime - solverInfo->currentTime;
+      solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
 
       /* if retry reduce stepsize */
       if(0 != retry)

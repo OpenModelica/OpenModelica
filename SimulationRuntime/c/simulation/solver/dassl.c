@@ -306,6 +306,7 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
   if (omc_flag[FLAG_NOEQUIDISTANT_GRID])
   {
     dasslData->dasslSteps = 1; /* TRUE */
+    solverInfo->solverNoEquidistantGrid = 1;
   }
   else
   {
@@ -567,7 +568,14 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   /* If dasslsteps is selected, the dassl run to stopTime */
   if (dasslData->dasslSteps)
   {
-    tout = data->simulationInfo.stopTime;
+    if (data->simulationInfo.nextSampleEvent < data->simulationInfo.stopTime)
+    {
+      tout = data->simulationInfo.nextSampleEvent;
+    }
+    else
+    {
+      tout = data->simulationInfo.stopTime;
+    }
   }
   else
   {
@@ -586,9 +594,9 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     {
       sData->realVars[i] = sDataOld->realVars[i] + stateDer[i] * solverInfo->currentStepSize;
     }
-    sData->timeValue = tout;
+    sData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
     data->callback->functionODE(data, threadData);
-    solverInfo->currentTime = tout;
+    solverInfo->currentTime = sData->timeValue;
 
     TRACE_POP
     return 0;
@@ -662,23 +670,22 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
        * continuous system with algebraic variables.
        */
       RHSFinalFlag = 1;
-      data->callback->updateContinuousSystem(data, threadData);
 
       if (omc_flag[FLAG_NOEQUIDISTANT_OUT_FREQ]){
         /* output every n-th time step */
         if (dasslStepsOutputCounter >= dasslData->dasslStepsFreq){
-          sim_result.emit(&sim_result, data, threadData);
           dasslStepsOutputCounter = 0; /* next line set it to one */
+          break;
         }
         dasslStepsOutputCounter++;
       } else if (omc_flag[FLAG_NOEQUIDISTANT_OUT_TIME]){
         /* output when time>=k*timeValue */
         if (solverInfo->currentTime > dasslStepsOutputCounter * dasslData->dasslStepsTime){
-          sim_result.emit(&sim_result, data, threadData);
           dasslStepsOutputCounter++;
+          break;
         }
       } else {
-        sim_result.emit(&sim_result, data, threadData);
+        break;
       }
       RHSFinalFlag = 0;
 
@@ -709,6 +716,11 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     data->localData = localDataBackup;
     /* set ringbuffer time to current time */
     data->localData[0]->timeValue = solverInfo->currentTime;
+  }
+  else
+  {
+    if (data->simulationInfo.sampleActivated && solverInfo->currentTime < data->simulationInfo.nextSampleEvent)
+      data->simulationInfo.sampleActivated = 0;
   }
 
 
