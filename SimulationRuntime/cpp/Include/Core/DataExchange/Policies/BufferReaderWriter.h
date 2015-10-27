@@ -5,7 +5,7 @@
  */
 #include "TextfileWriter.h"
 
-
+#include <boost/circular_buffer.hpp>
 
 class BufferReaderWriter : public ContainerManager
 {

@@ -423,10 +423,9 @@ void SystemDefaultImplementation::getRHS(double* f)
 
 void  SystemDefaultImplementation::intDelay(vector<unsigned int> expr, vector<double> delay_max)
 {
-  _time_buffer.set_capacity(1024);
   FOREACH(unsigned int expr_id, expr)
   {
-    buffer_type delay_buffer(1024);
+    buffer_type delay_buffer;
     _delay_buffer[expr_id]=delay_buffer;
   }
   vector<double>::iterator iter = std::max_element(delay_max.begin(),delay_max.end());
@@ -436,18 +435,8 @@ void  SystemDefaultImplementation::intDelay(vector<unsigned int> expr, vector<do
 void SystemDefaultImplementation::storeDelay(unsigned int expr_id, double expr_value, double time)
 {
   map<unsigned int,buffer_type>::iterator iter;
-  if((iter = _delay_buffer.find(expr_id))!=_delay_buffer.end())
-  {
-
+  if ((iter = _delay_buffer.find(expr_id)) != _delay_buffer.end()) {
     iter->second.push_back(expr_value);
-    //buffer_type::iterator pos = find_if(_time_buffer.begin(),_time_buffer.end(),bind2nd(std::greater<double>(),time-(_delay_max+UROUND)));
-    //if(pos!=_time_buffer.end())
-    //{
-    //   buffer_type::iterator first = _time_buffer.begin(); // first time entry
-    //   unsigned int n = std::distance(first,pos);
-    //   iter->second.erase_begin(n-1);
-    //}
-
   }
   else
     throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"invalid delay expression id");
@@ -455,15 +444,22 @@ void SystemDefaultImplementation::storeDelay(unsigned int expr_id, double expr_v
 
 void SystemDefaultImplementation::storeTime(double time)
 {
-
+  // delete up to last value <= time - _delay_max
+  buffer_type::iterator first = _time_buffer.begin();
+  buffer_type::iterator pos = find_if(first, _time_buffer.end(),
+                                      bind2nd(std::greater<double>(),
+                                              time - _delay_max));
+  if (pos != first && --pos != first) {
+    difference_type n = std::distance(first, pos);
+    _time_buffer.erase(first, first + n);
+    map<unsigned int, buffer_type>::iterator iter;
+    for (iter = _delay_buffer.begin(); iter != _delay_buffer.end(); iter++) {
+      first = iter->second.begin();
+      iter->second.erase(first, first + n);
+    }
+  }
+  // store new value
   _time_buffer.push_back(time);
-  // buffer_type::iterator pos = find_if(_time_buffer.begin(),_time_buffer.end(),bind2nd(std::greater<double>(),time-(_delay_max+UROUND)));
-  //if(pos!=_time_buffer.end())
-  //{
-  //  buffer_type::iterator first = _time_buffer.begin(); // first time entry
-  //  unsigned int n = std::distance(first,pos);
-  //   _time_buffer.erase_begin(n-1);
-  //}
 }
 
 double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value,double delayTime, double delayMax)
@@ -513,7 +509,7 @@ double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value
         if(pos!=_time_buffer.end())
         {
           buffer_type::iterator first = _time_buffer.begin(); // first time entry
-          std::iterator_traits<buffer_type::iterator>::difference_type index = std::distance(first,pos); //index of found time
+          difference_type index = std::distance(first, pos); //index of found time
           t1 = *pos;
           res1 = iter->second[index];
           if(index == 0)

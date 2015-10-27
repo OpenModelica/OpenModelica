@@ -188,7 +188,8 @@ protected:
         *__z,                 ///< "Extended state vector", containing all states and algebraic variables of all types
         *__zDot;              ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
 
-    typedef boost::circular_buffer<double> buffer_type;
+    typedef std::deque<double> buffer_type;
+    typedef std::iterator_traits<buffer_type::iterator>::difference_type difference_type;
     map<unsigned int, buffer_type> _delay_buffer;
     buffer_type _time_buffer;
     double _delay_max;

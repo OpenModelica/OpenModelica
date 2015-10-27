@@ -7,12 +7,12 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <deque>
 #include <map>
 #include <cmath>
 #include <numeric>
 #include <functional>
 
-#include <boost/circular_buffer.hpp>
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/io.hpp>
@@ -20,7 +20,6 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
 #include <boost/numeric/ublas/storage.hpp>
-//#include <boost/timer/timer.hpp>
 
 /*Namespaces*/
 using std::abs;
@@ -177,6 +176,7 @@ using namespace boost::numeric;
   #include <Core/Utils/extension/barriers.hpp>
 #endif //USE_THREAD
 
+//#include <boost/timer/timer.hpp>
 //using boost::timer::cpu_timer;
 //using boost::timer::cpu_times;
 //using boost::timer::nanosecond_type;
