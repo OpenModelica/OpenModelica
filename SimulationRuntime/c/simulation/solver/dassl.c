@@ -524,7 +524,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   unsigned int ui = 0;
   int retVal = 0;
   int saveJumpState;
-  unsigned int dasslStepsOutputCounter = 1;
+  static unsigned int dasslStepsOutputCounter = 1;
 
   DASSL_DATA *dasslData = (DASSL_DATA*) solverInfo->solverData;
 
@@ -568,6 +568,9 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   /* If dasslsteps is selected, the dassl run to stopTime */
   if (dasslData->dasslSteps)
   {
+    /* rhs final flag is FALSE during dassl evaulation */
+    RHSFinalFlag = 0;
+
     if (data->simulationInfo.nextSampleEvent < data->simulationInfo.stopTime)
     {
       tout = data->simulationInfo.nextSampleEvent;
@@ -665,16 +668,13 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     /* emit step, if dasslsteps is selected */
     if (dasslData->dasslSteps)
     {
-      /*
-       * to emit consistent value we need to update the whole
-       * continuous system with algebraic variables.
-       */
+      /* rhs final flag is TRUE during output evaulation */
       RHSFinalFlag = 1;
 
       if (omc_flag[FLAG_NOEQUIDISTANT_OUT_FREQ]){
         /* output every n-th time step */
         if (dasslStepsOutputCounter >= dasslData->dasslStepsFreq){
-          dasslStepsOutputCounter = 0; /* next line set it to one */
+          dasslStepsOutputCounter = 1; /* next line set it to one */
           break;
         }
         dasslStepsOutputCounter++;

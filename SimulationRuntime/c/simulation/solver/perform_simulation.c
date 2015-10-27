@@ -348,7 +348,12 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         {
           if (solverInfo->currentTime >= solverInfo->lastdesiredStep)
           {
-            __currStepNo++;
+            double tmpTime = solverInfo->currentTime;
+            do
+            {
+              __currStepNo++;
+              solverInfo->currentStepSize = (double)(__currStepNo*(simInfo->stopTime-simInfo->startTime))/(simInfo->numSteps) + simInfo->startTime - solverInfo->currentTime;
+            }while(solverInfo->currentStepSize <= 0);
           }
         }
         else
