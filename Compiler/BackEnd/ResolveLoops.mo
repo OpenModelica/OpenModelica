@@ -1310,12 +1310,16 @@ protected
   array<Integer> markEqs, markVars;
   list<list<Integer>> partitions;
 algorithm
-  numEqs := arrayLength(m);
-  numVars := arrayLength(mT);
-  markEqs := arrayCreate(numEqs,-1);
-  markVars := arrayCreate(numVars,-1);
-  (_,partitions) := colorNodePartitions(m,mT,{1},markEqs,markVars,1,{});
-  partitionsOut := listArray(partitions);
+    numEqs := arrayLength(m);
+	  numVars := arrayLength(mT);
+  if intEq(numEqs,0) or intEq(numVars,0) then
+    partitionsOut := arrayCreate(1,{});
+  else
+	  markEqs := arrayCreate(numEqs,-1);
+	  markVars := arrayCreate(numVars,-1);
+	  (_,partitions) := colorNodePartitions(m,mT,{1},markEqs,markVars,1,{});
+	  partitionsOut := listArray(partitions);
+  end if;
 end partitionBipartiteGraph;
 
 protected function colorNodePartitions "author:Waurich TUD 2013-12
