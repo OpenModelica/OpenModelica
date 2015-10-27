@@ -8450,6 +8450,9 @@ algorithm
     case((idx,DAE.NO_DERIVATIVE(_))::rest,_)
       equation
       then getNoDerivativeInputPosition(rest, idx::IdxsIn);
+    else
+      equation
+      then getNoDerivativeInputPosition(List.rest(conds), IdxsIn);
   end match;
 end getNoDerivativeInputPosition;
 
