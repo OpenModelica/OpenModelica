@@ -721,7 +721,7 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c, const fmi2ValueReferenc
         return fmi2Error;
   }
   for (i = 0; i < nKnown; i++) {
-    if (vKnown_ref[i]>2*NUMBER_OF_STATES) {
+    if (vKnown_ref[i]>=2*NUMBER_OF_STATES) {
         // We are only computing the A part of the Jacobian for now
         // so knowns can only be states derivatives
         return fmi2Error;
