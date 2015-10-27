@@ -1133,11 +1133,14 @@ void ComponentAttributes::updateComponentAttributes()
   newComponentInfo.setOuter(mpOuterCheckBox->isChecked());
   newComponentInfo.setCausality(causality);
   newComponentInfo.setArrayIndex(mpDimensionsTextBox->text());
-
-  UpdateComponentAttributesCommand *pUpdateComponentAttributesCommand = new UpdateComponentAttributesCommand(mpComponent, oldComponentInfo,
-                                                                                                             newComponentInfo, false);
-  pModelWidget->getUndoStack()->push(pUpdateComponentAttributesCommand);
-  pModelWidget->updateModelicaText();
+  /* If user has really changed the Component's attributes then push that change on the stack.
+   */
+  if (oldComponentInfo != newComponentInfo) {
+    UpdateComponentAttributesCommand *pUpdateComponentAttributesCommand = new UpdateComponentAttributesCommand(mpComponent, oldComponentInfo,
+                                                                                                               newComponentInfo, false);
+    pModelWidget->getUndoStack()->push(pUpdateComponentAttributesCommand);
+    pModelWidget->updateModelicaText();
+  }
   accept();
 }
 

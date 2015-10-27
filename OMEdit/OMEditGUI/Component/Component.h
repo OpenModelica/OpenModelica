@@ -99,6 +99,8 @@ public:
   void setArrayIndex(QString arrayIndex);
   QString getArrayIndex() const {return mArrayIndex;}
   bool isArray() const {return mIsArray;}
+  bool operator==(const ComponentInfo &componentInfo) const;
+  bool operator!=(const ComponentInfo &componentInfo) const;
 private:
   QString mClassName;
   QString mName;

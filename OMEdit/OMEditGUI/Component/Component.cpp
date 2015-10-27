@@ -217,6 +217,48 @@ void ComponentInfo::setArrayIndex(QString arrayIndex)
   }
 }
 
+/*!
+ * \brief ComponentInfo::operator ==
+ * \param componentInfo
+ * Compares the ComponentInfo and returns true if its equal.
+ * \return
+ */
+bool ComponentInfo::operator==(const ComponentInfo &componentInfo) const
+{
+  qDebug() << (componentInfo.getClassName() == this->getClassName());
+  qDebug() << (componentInfo.getName() == this->getName());
+  qDebug() << (componentInfo.getComment() == this->getComment());
+  qDebug() << (componentInfo.getProtected() == this->getProtected());
+  qDebug() << (componentInfo.getFinal() == this->getFinal());
+  qDebug() << (componentInfo.getFlow() == this->getFlow());
+  qDebug() << (componentInfo.getStream() == this->getStream());
+  qDebug() << (componentInfo.getReplaceable() == this->getReplaceable());
+  qDebug() << (componentInfo.getVariablity() == this->getVariablity());
+  qDebug() << (componentInfo.getInner() == this->getInner());
+  qDebug() << (componentInfo.getOuter() == this->getOuter());
+  qDebug() << (componentInfo.getCausality() == this->getCausality());
+  qDebug() << (componentInfo.getArrayIndex() == this->getArrayIndex());
+
+  return (componentInfo.getClassName() == this->getClassName()) && (componentInfo.getName() == this->getName()) &&
+      (componentInfo.getComment() == this->getComment()) && (componentInfo.getProtected() == this->getProtected()) &&
+      (componentInfo.getFinal() == this->getFinal()) && (componentInfo.getFlow() == this->getFlow()) &&
+      (componentInfo.getStream() == this->getStream()) && (componentInfo.getReplaceable() == this->getReplaceable()) &&
+      (componentInfo.getVariablity() == this->getVariablity()) && (componentInfo.getInner() == this->getInner()) &&
+      (componentInfo.getOuter() == this->getOuter()) && (componentInfo.getCausality() == this->getCausality()) &&
+      (componentInfo.getArrayIndex() == this->getArrayIndex());
+}
+
+/*!
+ * \brief ComponentInfo::operator !=
+ * \param componentInfo
+ * Compares the ComponentInfo and returns true if its not equal.
+ * \return
+ */
+bool ComponentInfo::operator!=(const ComponentInfo &componentInfo) const
+{
+  return !operator==(componentInfo);
+}
+
 Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformation, QPointF position, ComponentInfo *pComponentInfo,
                      GraphicsView *pGraphicsView)
   : QGraphicsItem(0), mpReferenceComponent(0), mpParentComponent(0)
