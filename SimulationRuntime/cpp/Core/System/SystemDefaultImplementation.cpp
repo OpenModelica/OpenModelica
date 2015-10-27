@@ -444,10 +444,10 @@ void SystemDefaultImplementation::storeDelay(unsigned int expr_id, double expr_v
 
 void SystemDefaultImplementation::storeTime(double time)
 {
-  // delete up to last value <= time - _delay_max
+  // delete up to last value < time - _delay_max
   buffer_type::iterator first = _time_buffer.begin();
   buffer_type::iterator pos = find_if(first, _time_buffer.end(),
-                                      bind2nd(std::greater<double>(),
+                                      bind2nd(std::greater_equal<double>(),
                                               time - _delay_max));
   if (pos != first && --pos != first) {
     difference_type n = std::distance(first, pos);
