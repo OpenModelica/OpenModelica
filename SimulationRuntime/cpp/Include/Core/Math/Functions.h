@@ -147,7 +147,7 @@ inline static int round (const double &n)
 /// Modelica integer function
 inline static int integer (const double &n)
 {
-    return omcpp::trunc(n);
+    return floor(n);
 }
 
 /// Horner-Schema (William George Horner)
