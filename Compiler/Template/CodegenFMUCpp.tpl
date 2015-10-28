@@ -765,7 +765,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   CPPFLAGS = $(CFLAGS)
 
-  OMCPP_LIBS=-Wl,--start-group -lOMCppSystem_FMU_static -Wl,--end-group -lOMCppDataExchange_static $(OMCPP_SOLVER_LIBS) -lOMCppSolver_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppExtensionUtilities_static -lOMCppFMU_static
+  OMCPP_LIBS=-lOMCppSystem_FMU_static $(OMCPP_SOLVER_LIBS) -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppExtensionUtilities_static -lOMCppFMU_static
   MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)
   LIBS= $(OMCPP_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB)
 
