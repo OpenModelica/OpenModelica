@@ -1067,7 +1067,7 @@ constant ConfigFlag RESHUFFLE = CONFIG_FLAG(59, "reshuffle",
 
 constant ConfigFlag NEW_UNIT_CHECKING = CONFIG_FLAG(60,
   "newUnitChecking", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.notrans(""));
+  Util.notrans("advanced unit checking: 1. calculation of unspecified unit information for variables; 2. unit consistency check for equations"));
 
 constant ConfigFlag GENERATE_DYN_OPTIMIZATION_PROBLEM = CONFIG_FLAG(61, "gDynOpt",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
