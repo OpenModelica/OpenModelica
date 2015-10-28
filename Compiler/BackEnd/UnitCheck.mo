@@ -1006,7 +1006,7 @@ algorithm
     then (Unit.MASTER({}), (HtCr2U, HtS2U, HtU2S), {});
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/UnitCheck.mo: function insertUnitinEquation failed", sourceInfo());
+      Error.addInternalError("./Compiler/BackEnd/UnitCheck.mo: function insertUnitinEquation failed for " + ExpressionDump.printExpStr(inEq), sourceInfo());
     then fail();
   end matchcontinue;
 end insertUnitinEquation;
