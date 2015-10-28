@@ -437,7 +437,7 @@ algorithm
       if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
         ExpressionDump.dumpExp(temp);
       end if;
-      (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitinEquation(temp, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
     then (HtCr2U, HtS2U, HtU2S, expList);
 
     case (BackendDAE.ARRAY_EQUATION(left=lhs, right=rhs), HtCr2U, HtS2U, HtU2S) equation
@@ -445,7 +445,7 @@ algorithm
       if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
         ExpressionDump.dumpExp(temp);
       end if;
-      (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitinEquation(temp, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
     then (HtCr2U, HtS2U, HtU2S, expList);
 
     case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=rhs), HtCr2U, HtS2U, HtU2S) equation
@@ -454,7 +454,7 @@ algorithm
       if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
         ExpressionDump.dumpExp(temp);
       end if;
-      (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitinEquation(temp, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
     then (HtCr2U, HtS2U, HtU2S, expList);
 
     case (BackendDAE.RESIDUAL_EQUATION(exp=rhs), HtCr2U, HtS2U, HtU2S) equation
@@ -463,7 +463,7 @@ algorithm
       if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
         ExpressionDump.dumpExp(temp);
       end if;
-      (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitinEquation(temp, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
     then (HtCr2U, HtS2U, HtU2S, expList);
 
     case (BackendDAE.ALGORITHM(), _, _, _) equation
@@ -479,7 +479,7 @@ algorithm
       if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
         ExpressionDump.dumpExp(temp);
       end if;
-      (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitinEquation(temp, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
     then (HtCr2U, HtS2U, HtU2S, expList);
 
     case (BackendDAE.IF_EQUATION(), _, _, _) equation
@@ -638,7 +638,7 @@ end notification2;
 
 //
 //
-protected function insertUnitinEquation "inserts the units in Equation and check if the equation is consistent or not"
+protected function insertUnitInEquation "inserts the units in Equation and check if the equation is consistent or not"
   input DAE.Exp inEq;
   input tuple<HashTableCrToUnit.HashTable /* inHtCr2U */, HashTableStringToUnit.HashTable /* inHtS2U */, HashTableUnitToString.HashTable /* inHtU2S */> inTpl;
   input Unit.Unit inUt;
@@ -665,24 +665,24 @@ algorithm
 
     //SUB equal summands
     case (DAE.BINARY(exp1, DAE.SUB(), exp2), (HtCr2U, HtS2U, HtU2S), _) equation
-      (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), inUt);
-      (ut2, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), ut);
+      (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), inUt);
+      (ut2, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), ut);
       (true, ut, HtCr2U) = UnitTypesEqual(ut, ut2, HtCr2U);
       expListList=listAppend(expListList, expListList2);
     then (ut, (HtCr2U, HtS2U, HtU2S), expListList);
 
     //SUB equal summands
     case (DAE.BINARY(exp1, DAE.SUB(), exp2), (HtCr2U, HtS2U, HtU2S), _) equation
-      (ut2, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), inUt);
-      (ut, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), ut2);
+      (ut2, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), inUt);
+      (ut, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), ut2);
       (true, ut, HtCr2U) = UnitTypesEqual(ut, ut2, HtCr2U);
       expListList=listAppend(expListList, expListList2);
     then (ut, (HtCr2U, HtS2U, HtU2S), expListList);
 
     //SUB unequal summands
     case (DAE.BINARY(exp1, DAE.SUB(), exp2), (HtCr2U, HtS2U, HtU2S), _) equation
-      (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), inUt);
-      (ut2, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), ut);
+      (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), inUt);
+      (ut2, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), ut);
       (false, _, _) = UnitTypesEqual(ut, ut2, HtCr2U);
       expListList = listAppend(expListList, expListList2);
       expListList = {(exp1, ut), (exp2, ut2)}::expListList;
@@ -690,8 +690,8 @@ algorithm
 
     //SUB unequal summands
     case (DAE.BINARY(exp1, DAE.SUB(), exp2), (HtCr2U, HtS2U, HtU2S), _) equation
-      (ut2, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), inUt);
-      (ut, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), ut2);
+      (ut2, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), inUt);
+      (ut, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), ut2);
       (false, _, _) = UnitTypesEqual(ut, ut2, HtCr2U);
       expListList = listAppend(expListList, expListList2);
       expListList = {(exp1, ut), (exp2, ut2)}::expListList;
@@ -699,24 +699,24 @@ algorithm
 
     //ADD equal summands
     case (DAE.BINARY(exp1, DAE.ADD(), exp2), (HtCr2U, HtS2U, HtU2S), _) equation
-      (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), inUt);
-      (ut2, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), ut);
+      (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), inUt);
+      (ut2, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), ut);
       (true, ut, HtCr2U) = UnitTypesEqual(ut, ut2, HtCr2U);
       expListList = listAppend(expListList, expListList2);
     then (ut, (HtCr2U, HtS2U, HtU2S), expListList);
 
     //ADD equal summands
     case (DAE.BINARY(exp1, DAE.ADD(), exp2), (HtCr2U, HtS2U, HtU2S), _) equation
-      (ut2, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), inUt);
-      (ut, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), ut2);
+      (ut2, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), inUt);
+      (ut, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), ut2);
       (true, ut, HtCr2U) = UnitTypesEqual(ut, ut2, HtCr2U);
       expListList = listAppend(expListList, expListList2);
     then (ut, (HtCr2U, HtS2U, HtU2S), expListList);
 
     //ADD unequal summands
     case (DAE.BINARY(exp1, DAE.ADD(), exp2), (HtCr2U, HtS2U, HtU2S), _) equation
-      (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), inUt);
-      (ut2, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), ut);
+      (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), inUt);
+      (ut2, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), ut);
       (false, _, _) = UnitTypesEqual(ut, ut2, HtCr2U);
       expListList = listAppend(expListList, expListList2);
       expListList = {(exp1, ut), (exp2, ut2)}::expListList;
@@ -724,8 +724,8 @@ algorithm
 
     //ADD unequal
     case (DAE.BINARY(exp1, DAE.ADD(), exp2), (HtCr2U, HtS2U, HtU2S), _) equation
-      (ut2, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), inUt);
-      (ut, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), ut2);
+      (ut2, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), inUt);
+      (ut, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), ut2);
       (false, _, _) = UnitTypesEqual(ut, ut2, HtCr2U);
       expListList = listAppend(expListList, expListList2);
       expListList = {(exp1, ut), (exp2, ut2)}::expListList;
@@ -733,8 +733,8 @@ algorithm
 
     //MUL
     case (DAE.BINARY(exp1, DAE.MUL(), exp2), (HtCr2U, HtS2U, HtU2S), _) equation
-      (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      (ut2 as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (ut2 as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       //s1="(" + unit2String(ut, HtU2S) + ").(" + unit2String(ut2, HtU2S) + ")";
       ut = unitMul(ut, ut2);
       s1 = unit2String(ut, HtU2S);
@@ -744,14 +744,14 @@ algorithm
     then (ut, (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.BINARY(exp1, DAE.MUL(), exp2), (HtCr2U, HtS2U, HtU2S), Unit.MASTER()) equation
-      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      (Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       expListList = listAppend(expListList, expListList2);
     then (Unit.MASTER({}), (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.BINARY(exp1, DAE.MUL(), exp2), (HtCr2U, HtS2U, HtU2S), Unit.UNIT()) equation
-      (Unit.MASTER(varList=lcr), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      (ut2 as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.MASTER(varList=lcr), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (ut2 as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       //s1="(" + unit2String(inUt, HtU2S) + ")/(" + unit2String(ut2, HtU2S) + ")";
       ut = unitDiv(inUt, ut2);
       s1 = unit2String(ut, HtU2S);
@@ -762,14 +762,14 @@ algorithm
     then (inUt, (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.BINARY(exp1, DAE.MUL(), exp2), (HtCr2U, HtS2U, HtU2S), Unit.MASTER()) equation
-      (Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       expListList = listAppend(expListList, expListList2);
     then (Unit.MASTER({}), (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.BINARY(exp1, DAE.MUL(), exp2), (HtCr2U, HtS2U, HtU2S), Unit.UNIT()) equation
-      (ut2 as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      (Unit.MASTER(varList=lcr), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (ut2 as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.MASTER(varList=lcr), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       //s1="(" + unit2String(inUt, HtU2S) + ")/(" + unit2String(ut2, HtU2S) + ")";
       ut = unitDiv(inUt, ut2);
       s1 = unit2String(ut, HtU2S);
@@ -780,14 +780,14 @@ algorithm
     then (inUt, (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.BINARY(exp1, DAE.MUL(), exp2), (HtCr2U, HtS2U, HtU2S), _) equation
-      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), _) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), _) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
     then (Unit.MASTER({}), (HtCr2U, HtS2U, HtU2S), expListList);
 
     //DIV
     case (DAE.BINARY(exp1, DAE.DIV(), exp2), (HtCr2U, HtS2U, HtU2S), _) equation
-      (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      (ut2 as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (ut2 as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       //s1="(" + unit2String(ut, HtU2S) + ")/(" + unit2String(ut2, HtU2S) + ")";
       ut = unitDiv(ut, ut2);
       s1 = unit2String(ut, HtU2S);
@@ -797,14 +797,14 @@ algorithm
     then (ut, (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.BINARY(exp1, DAE.DIV(), exp2), (HtCr2U, HtS2U, HtU2S), Unit.MASTER()) equation
-      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      (Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       expListList = listAppend(expListList, expListList2);
     then (Unit.MASTER({}), (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.BINARY(exp1, DAE.DIV(), exp2), (HtCr2U, HtS2U, HtU2S), Unit.UNIT()) equation
-      (Unit.MASTER(varList=lcr), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      (ut2 as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.MASTER(varList=lcr), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (ut2 as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       //s1="(" + unit2String(inUt, HtU2S) + ").(" + unit2String(ut2, HtU2S) + ")";
       ut = unitMul(inUt, ut2);
       s1 = unit2String(ut, HtU2S);
@@ -815,14 +815,14 @@ algorithm
     then (inUt, (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.BINARY(exp1, DAE.DIV(), exp2), (HtCr2U, HtS2U, HtU2S), Unit.MASTER()) equation
-      (Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       expListList = listAppend(expListList, expListList2);
     then (Unit.MASTER({}), (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.BINARY(exp1, DAE.DIV(), exp2), (HtCr2U, HtS2U, HtU2S), Unit.UNIT()) equation
-      (ut2 as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      (Unit.MASTER(varList=lcr), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (ut2 as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.MASTER(varList=lcr), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       //s1="(" + unit2String(ut2, HtU2S) + ")/(" + unit2String(inUt, HtU2S) + ")";
       ut = unitDiv(ut2, inUt);
       s1 = unit2String(ut, HtU2S);
@@ -833,14 +833,14 @@ algorithm
     then (inUt, (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.BINARY(exp1, DAE.DIV(), exp2), (HtCr2U, HtS2U, HtU2S), _) equation
-      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       expListList = listAppend(expListList, expListList2);
     then (Unit.MASTER({}), (HtCr2U, HtS2U, HtU2S), expListList);
 
     //POW
     case (DAE.BINARY(exp1, DAE.POW(), DAE.RCONST(r)), (HtCr2U, HtS2U, HtU2S), _) equation
-      (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       i = realInt(r);
       true = realEq(r, intReal(i));
       ut = unitPow(ut, i);
@@ -850,7 +850,7 @@ algorithm
     then (ut, (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.BINARY(exp1, DAE.POW(), DAE.RCONST(r)), (HtCr2U, HtS2U, HtU2S), ut as Unit.UNIT()) equation
-      (Unit.MASTER(lcr), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.MASTER(lcr), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7) = unitRoot(ut, r);
       HtCr2U = List.fold1(lcr, updateHtCr2U, Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), HtCr2U);
       s1 = unit2String(Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), HtU2S);
@@ -859,12 +859,12 @@ algorithm
     then (inUt, (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.BINARY(exp1, DAE.POW(), DAE.RCONST(_)), (HtCr2U, HtS2U, HtU2S), _) equation
-      (_, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (_, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
     then (Unit.MASTER({}), (HtCr2U, HtS2U, HtU2S), expListList);
 
     //DER
     case (DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {exp1}), (HtCr2U, HtS2U, HtU2S), Unit.UNIT()) equation
-      (Unit.MASTER(lcr), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.MASTER(lcr), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       ut = unitMul(inUt, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
       HtCr2U = List.fold1(lcr, updateHtCr2U, ut, HtCr2U);
       s1 = unit2String(inUt, HtU2S);
@@ -873,7 +873,7 @@ algorithm
     then (inUt, (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {exp1}), (HtCr2U, HtS2U, HtU2S), _) equation
-      (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList)=insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList)=insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       ut=unitDiv(ut, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
       s1=unit2String(ut, HtU2S);
       HtS2U=addUnit2HtS2U((s1, ut), HtS2U);
@@ -881,12 +881,12 @@ algorithm
     then (ut, (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {exp1}), (HtCr2U, HtS2U, HtU2S), Unit.MASTER()) equation
-      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.MASTER(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
     then (Unit.MASTER({}), (HtCr2U, HtS2U, HtU2S), expListList);
 
     //SQRT
     case (DAE.CALL(path = Absyn.IDENT(name = "sqrt"), expLst = {exp1}), (HtCr2U, HtS2U, HtU2S), _) equation
-      (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (ut as Unit.UNIT(), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7) = unitRoot(ut, 2.0);
       s1 = unit2String(Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), HtU2S);
       HtS2U = addUnit2HtS2U((s1, Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7)), HtS2U);
@@ -894,7 +894,7 @@ algorithm
     then (Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.CALL(path = Absyn.IDENT(name = "sqrt"), expLst = {exp1}), (HtCr2U, HtS2U, HtU2S), Unit.UNIT()) equation
-      (Unit.MASTER(lcr), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (Unit.MASTER(lcr), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       ut = unitPow(inUt, 2);
       s1 = unit2String(ut, HtU2S);
       HtCr2U = List.fold1(lcr, updateHtCr2U, ut, HtCr2U);
@@ -903,23 +903,23 @@ algorithm
     then (inUt, (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.CALL(path = Absyn.IDENT(name = "sqrt"), expLst = {exp1}), (HtCr2U, HtS2U, HtU2S), _) equation
-      (_, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (_, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
     then (Unit.MASTER({}), (HtCr2U, HtS2U, HtU2S), expListList);
 
     //IFEXP
     case (DAE.IFEXP(exp1, exp2, exp3), (HtCr2U, HtS2U, HtU2S), _) equation
-      (_, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      (ut, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), inUt);
-      (ut2, (HtCr2U, HtS2U, HtU2S), expListList3) = insertUnitinEquation(exp3, (HtCr2U, HtS2U, HtU2S), ut);
+      (_, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (ut, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), inUt);
+      (ut2, (HtCr2U, HtS2U, HtU2S), expListList3) = insertUnitInEquation(exp3, (HtCr2U, HtS2U, HtU2S), ut);
       (true, ut, HtCr2U) = UnitTypesEqual(ut, ut2, HtCr2U);
       expListList = listAppend(expListList, expListList2);
       expListList = listAppend(expListList, expListList3);
     then (ut, (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.IFEXP(exp1, exp2, exp3), (HtCr2U, HtS2U, HtU2S), _) equation
-      (_, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      (ut, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), inUt);
-      (ut2, (HtCr2U, HtS2U, HtU2S), expListList3) = insertUnitinEquation(exp3, (HtCr2U, HtS2U, HtU2S), ut);
+      (_, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
+      (ut, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), inUt);
+      (ut2, (HtCr2U, HtS2U, HtU2S), expListList3) = insertUnitInEquation(exp3, (HtCr2U, HtS2U, HtU2S), ut);
       (false, _, _) = UnitTypesEqual(ut, ut2, HtCr2U);
       expListList = listAppend(expListList, expListList2);
       expListList = listAppend(expListList, expListList3);
@@ -928,15 +928,15 @@ algorithm
 
     //RELATIONS
     case (DAE.RELATION(exp1=exp1), (HtCr2U, HtS2U, HtU2S), _) equation
-      (ut, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), inUt);
-      (ut2, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), inUt);
+      (ut, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), inUt);
+      (ut2, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), inUt);
       (true, ut, HtCr2U) = UnitTypesEqual(ut, ut2, HtCr2U);
       expListList = listAppend(expListList, expListList2);
     then (ut, (HtCr2U, HtS2U, HtU2S), expListList);
 
     case (DAE.RELATION(exp1=exp1, exp2=exp2), (HtCr2U, HtS2U, HtU2S), _) equation
-      (ut, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), inUt);
-      (ut2, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), inUt);
+      (ut, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), inUt);
+      (ut2, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), inUt);
       (false, _, _) = UnitTypesEqual(ut, ut2, HtCr2U);
       expListList = listAppend(expListList, expListList2);
       expListList = {(exp1, ut), (exp2, ut2)}::expListList;
@@ -969,7 +969,7 @@ algorithm
 
     //UMINUS
     case (DAE.UNARY(DAE.UMINUS(), exp1), (HtCr2U, HtS2U, HtU2S), _) equation
-      (ut, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), inUt);
+      (ut, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), inUt);
     then (ut, (HtCr2U, HtS2U, HtU2S), expListList);
 
     //ICONST
@@ -997,25 +997,25 @@ algorithm
     then (ut, (HtCr2U, HtS2U, HtU2S), {});
 
     //CREF
-    case (DAE.CREF(componentRef=cr, ty=DAE.T_REAL()), (HtCr2U, HtS2U, HtU2S), _) equation
+    case (DAE.CREF(componentRef=cr, ty=DAE.T_REAL()), (HtCr2U, _, _), _) equation
       ut = BaseHashTable.get(cr, HtCr2U);
-    then (ut, (HtCr2U, HtS2U, HtU2S), {});
+    then (ut, inTpl, {});
 
     //NO UNIT IN EQUATION
-    case (DAE.CREF(), (HtCr2U, HtS2U, HtU2S), _)
-    then (Unit.MASTER({}), (HtCr2U, HtS2U, HtU2S), {});
+    case (DAE.CREF(), _, _)
+    then (Unit.MASTER({}), inTpl, {});
 
     // all unhandled expressions, e.g. DAE.CAST, DAE.TUPLE, ...
     else
-      //Error.addInternalError("./Compiler/BackEnd/UnitCheck.mo: function insertUnitinEquation failed for " + ExpressionDump.printExpStr(inEq), sourceInfo());
+      //Error.addInternalError("./Compiler/BackEnd/UnitCheck.mo: function insertUnitInEquation failed for " + ExpressionDump.printExpStr(inEq), sourceInfo());
     //then fail();
     then (Unit.MASTER({}), inTpl, {});
   end matchcontinue;
-end insertUnitinEquation;
+end insertUnitInEquation;
 
 //
 //
-protected function foldCallArg "help-function for CALL case in function insertUnitinEquation"
+protected function foldCallArg "help-function for CALL case in function insertUnitInEquation"
   input list<DAE.Exp> inExpList;
   input HashTableCrToUnit.HashTable inHtCr2U;
   input HashTableStringToUnit.HashTable inHtS2U;
@@ -1038,7 +1038,7 @@ algorithm
     then (inHtCr2U, inHtS2U, inHtU2S, {});
 
     case (exp1::rest, _, _, _) equation
-      (_, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (inHtCr2U, inHtS2U, inHtU2S), Unit.MASTER({}));
+      (_, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (inHtCr2U, inHtS2U, inHtU2S), Unit.MASTER({}));
       (HtCr2U, HtS2U, HtU2S, expListList2) = foldCallArg(rest, HtCr2U, HtS2U, HtU2S);
       expListList = listAppend(expListList, expListList2);
     then (HtCr2U, HtS2U, HtU2S, expListList);
