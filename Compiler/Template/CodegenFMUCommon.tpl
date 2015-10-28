@@ -59,7 +59,7 @@ case SIMCODE(__) then
   let modelIdentifier = modelNamePrefix(simCode)
   <<
   <ModelExchange
-    modelIdentifier="<%modelIdentifier%>" <% if Flags.isSet(FMU_EXPERIMENTAL) then 'providesDirectionalDerivative="true"'%>>
+    modelIdentifier="<%modelIdentifier%>"<% if Flags.isSet(FMU_EXPERIMENTAL) then ' providesDirectionalDerivative="true"'%>>
   </ModelExchange>
   >>
 end ModelExchange;
