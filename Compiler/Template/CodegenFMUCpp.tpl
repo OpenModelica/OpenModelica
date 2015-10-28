@@ -118,7 +118,6 @@ template fmuCalcHelperMainfile(SimCode simCode)
     #include "OMCpp<%fileNamePrefix%>FMU.h"
 
     #include "OMCpp<%fileNamePrefix%>AlgLoopMain.cpp"
-    #include "OMCpp<%fileNamePrefix%>FactoryExport.cpp"
     #include "OMCpp<%fileNamePrefix%>Mixed.cpp"
     #include "OMCpp<%fileNamePrefix%>Functions.cpp"
     <%if(boolOr(Flags.isSet(Flags.HARDCODED_START_VALUES), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then
@@ -269,7 +268,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   <%modelShortName%>FMU *createSystemFMU(IGlobalSettings *globalSettings) {
     return new <%modelShortName%>FMU(globalSettings,
       shared_ptr<IAlgLoopSolverFactory>(<%solverFactory%>),
-      shared_ptr<ISimData>(new SimData()),
+      shared_ptr<ISimData>(NULL),
       shared_ptr<ISimVars>(new SimVars(<%numRealvars(modelInfo)%>, <%numIntvars(modelInfo)%>, <%numBoolvars(modelInfo)%>, <%numStringvars(modelInfo)%>, <%getPreVarsCount(modelInfo)%>, <%numStatevars(modelInfo)%>, <%numStateVarIndex(modelInfo)%>)));
   }
 
