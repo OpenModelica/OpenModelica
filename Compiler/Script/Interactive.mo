@@ -15184,93 +15184,163 @@ end classInProgram;
 
 public function getPathedClassInProgram
 "This function takes a Path and a Program and retrieves the
-  class definition referenced by the Path from the Program."
+  class definition referenced by the Path from the Program.
+  If enclOnErr is true and such class doesn't exist return enclosing class."
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
+  input Boolean enclOnErr = false;
   output Absyn.Class outClass;
+protected
+  Absyn.Program p;
 algorithm
-  outClass := matchcontinue (inPath,inProgram)
-    local
-      Absyn.Program p;
-      Absyn.Path path;
-
-    case (path,p) then getPathedClassInProgramWork(path, p);
-    case (path,_) equation (p,_) = Builtin.getInitialFunctions(); then getPathedClassInProgramWork(path, p);
-
-  end matchcontinue;
+  try
+    outClass := getPathedClassInProgramWork(inPath, inProgram, enclOnErr);
+  else
+    (p, _) := Builtin.getInitialFunctions();
+    outClass := getPathedClassInProgramWork(inPath, inProgram, enclOnErr);
+  end try;
 end getPathedClassInProgram;
 
-public function getPathedClassInProgramWork
+protected function getPathedClassInProgramWork
 "This function takes a Path and a Program and retrieves the
-  class definition referenced by the Path from the Program."
+  class definition referenced by the Path from the Program.
+  If enclOnErr is true and such class doesn't exist return enclosing class."
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
+  input Boolean enclOnErr;
   output Absyn.Class outClass;
 algorithm
-  outClass := match (inPath,inProgram)
+  outClass := match inPath
     local
-      Absyn.Class c1,c1def,res;
+      Absyn.Class c;
       String str;
-      Absyn.Program p;
-      Absyn.Path path,prest;
-      Absyn.Within w;
+      Absyn.Path path;
 
-    case (Absyn.IDENT(name = str),p)
-      equation
-        c1 = getClassInProgram(str, p);
+    case Absyn.IDENT(name = str)
       then
-        c1;
+        getClassInProgram(str, inProgram);
 
-    case (Absyn.FULLYQUALIFIED(path),(p))
-      equation
-        res = getPathedClassInProgram(path,p);
+    case Absyn.FULLYQUALIFIED(path)
       then
-        res;
+        getPathedClassInProgram(path, inProgram, enclOnErr);
 
-    case (Absyn.QUALIFIED(name = str,path = prest),(p as Absyn.PROGRAM()))
+    case Absyn.QUALIFIED(name = str, path = path)
       equation
-        c1def = getClassInProgram(str, p);
-        p.classes = getClassesInClass(Absyn.IDENT(str), p, c1def);
-        res = getPathedClassInProgramWork(prest, p);
+        c = getClassInProgram(str, inProgram);
       then
-        res;
+        if enclOnErr then getPathedClassInProgramWorkNoThrow(path, c)
+                     else getPathedClassInProgramWorkThrow(path, c);
 
   end match;
 end getPathedClassInProgramWork;
 
+protected function getPathedClassInProgramWorkThrow
+"This function takes a Path and a Program and retrieves the
+  class definition referenced by the Path from the Program."
+  input Absyn.Path inPath;
+  input Absyn.Class inClass;
+  output Absyn.Class outClass;
+algorithm
+  outClass := match inPath
+    local
+      Absyn.Class c;
+      String str;
+      Absyn.Path path;
+
+    case Absyn.IDENT(name = str)
+      then
+        getClassInClass(str, inClass);
+
+
+    case Absyn.FULLYQUALIFIED(path)
+      then
+        getPathedClassInProgramWorkThrow(path, inClass);
+
+    case Absyn.QUALIFIED(name = str, path = path)
+      equation
+        c = getClassInClass(str, inClass);
+      then
+        getPathedClassInProgramWorkThrow(path, c);
+
+  end match;
+end getPathedClassInProgramWorkThrow;
+
+protected function getPathedClassInProgramWorkNoThrow
+"Retrieves the class definition referenced by the Path from the Class A.
+ If such class doesn't exist return Class A."
+  input Absyn.Path inPath;
+  input Absyn.Class inClass;
+  output Absyn.Class outClass;
+algorithm
+  try
+    outClass := match inPath
+      local
+        Absyn.Class c;
+        String str;
+        Absyn.Path path;
+
+      case Absyn.IDENT(name = str)
+        then
+          getClassInClass(str, inClass);
+
+      case Absyn.FULLYQUALIFIED(path)
+        then
+          getPathedClassInProgramWorkNoThrow(path, inClass);
+
+      case Absyn.QUALIFIED(name = str, path = path)
+        equation
+          c = getClassInClass(str, inClass);
+        then
+          getPathedClassInProgramWorkNoThrow(path, c);
+
+    end match;
+  else
+    outClass := inClass;
+  end try;
+end getPathedClassInProgramWorkNoThrow;
+
+
+protected function getClassInClass
+" This function takes a Path and a Class
+   and returns the class with the name Path.
+   If that class does not exist, the function fails"
+  input String inString;
+  input Absyn.Class inClass;
+  output Absyn.Class outClass;
+algorithm
+  outClass := List.find1(getClassesInClass(inClass), compareClassName, inString);
+end getClassInClass;
+
 protected function getClassesInClass
 "This function takes a Class definition and returns
   a list of local Class definitions of that class."
-  input Absyn.Path inPath;
-  input Absyn.Program inProgram;
   input Absyn.Class inClass;
   output list<Absyn.Class> outAbsynClassLst;
 algorithm
-  outAbsynClassLst := match (inPath,inProgram,inClass)
+  outAbsynClassLst := match inClass
     local
       list<Absyn.Class> res;
       Absyn.Path modelpath,path;
       Absyn.Program p;
       list<Absyn.ClassPart> parts;
 
-    case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
       equation
         res = getClassesInParts(parts);
       then
         res;
 
-    case (_,_,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)))
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
       equation
         res = getClassesInParts(parts);
       then
         res;
 
-    case (_,_,Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(_,_))))
+    case Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(_,_)))
       equation
-        // print("Looking up -> lookupClassdef(" + Absyn.pathString(path) + ", " + Absyn.pathString(modelpath) + ")\n");
         /* adrpo 2009-10-27: do not dive into derived classes!
         (cdef,newpath) = lookupClassdef(path, modelpath, p);
-        res = getClassesInClass(newpath, p, cdef);
+        res = getClassesInClass(cdef);
         */
         res = {};
       then
@@ -15358,10 +15428,10 @@ protected
   list<Absyn.Class> classes;
 algorithm
   Absyn.PROGRAM(classes=classes) := inProgram;
-  cl := List.find1(classes,getClassInProgramWork,inString);
+  cl := List.find1(classes, compareClassName, inString);
 end getClassInProgram;
 
-protected function getClassInProgramWork
+protected function compareClassName
   input Absyn.Class cl;
   input String str;
   output Boolean b;
@@ -15374,7 +15444,7 @@ algorithm
     case (Absyn.CLASS(name = c1name),_)
       then stringEq(str, c1name);
   end match;
-end getClassInProgramWork;
+end compareClassName;
 
 protected function modificationToAbsyn
 " This function takes a list of NamedArg and returns an Absyn.Modification option.
