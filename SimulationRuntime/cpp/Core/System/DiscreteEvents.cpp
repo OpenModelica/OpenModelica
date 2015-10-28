@@ -39,57 +39,51 @@ void DiscreteEvents::savePreVars(double vars[], unsigned int n)
 */
 
 /**
-Saves a variable in _preVars->_pre_vars vector
+Saves a variable in _sim_vars->_pre_real_vars vector
 */
-
 void DiscreteEvents::save(double& var)
 {
-  _sim_vars->setPreVar(var);
+  _sim_vars->getPreVar(var) = var;
 }
 
 /**
-Saves a variable in _preVars->_pre_vars vector
+Saves a variable in _sim_vars->_pre_int_vars vector
 */
-
 void DiscreteEvents::save(int& var)
 {
-  _sim_vars->setPreVar(var);
+  _sim_vars->getPreVar(var) = var;
 }
 
 /**
-Saves a variable in _preVars->_pre_vars vector
+Saves a variable in _sim_vars->_pre_bool_vars vector
 */
-
 void DiscreteEvents::save(bool& var)
 {
-  _sim_vars->setPreVar(var);
+  _sim_vars->getPreVar(var) = var;
 }
 
 /**
 Implementation of the Modelica pre  operator
 */
-double DiscreteEvents::pre(const double& var)
+double& DiscreteEvents::pre(const double& var)
 {
-  double& pre_var = _sim_vars->getPreVar(var);
-  return pre_var;
+  return _sim_vars->getPreVar(var);
 }
 
 /**
 Implementation of the Modelica pre  operator
 */
-int DiscreteEvents::pre(const int& var)
+int& DiscreteEvents::pre(const int& var)
 {
-  double& pre_var = _sim_vars->getPreVar(var);
-  return (int)pre_var;
+  return _sim_vars->getPreVar(var);
 }
 
 /**
 Implementation of the Modelica pre  operator
 */
-bool DiscreteEvents::pre(const bool& var)
+bool& DiscreteEvents::pre(const bool& var)
 {
-  double& pre_var = _sim_vars->getPreVar(var);
-  return (bool)pre_var;
+  return _sim_vars->getPreVar(var);
 }
 
 /**
@@ -146,25 +140,22 @@ bool DiscreteEvents::change(bool& var)
   return var != pre(var);
 }
 
-
 bool DiscreteEvents::changeDiscreteVar(double& var)
-{
-   double& pre_var = _sim_vars->getPreVar(var);
-   return var != pre_var;
-
-}
-bool DiscreteEvents::changeDiscreteVar(int& var)
 {
   double& pre_var = _sim_vars->getPreVar(var);
   return var != pre_var;
+}
 
+bool DiscreteEvents::changeDiscreteVar(int& var)
+{
+  int& pre_var = _sim_vars->getPreVar(var);
+  return var != pre_var;
 }
 
 bool DiscreteEvents::changeDiscreteVar(bool& var)
 {
-  double& pre_var = _sim_vars->getPreVar(var);
+  bool& pre_var = _sim_vars->getPreVar(var);
   return var != pre_var;
-
 }
 
 /** @} */ // end of coreSystem

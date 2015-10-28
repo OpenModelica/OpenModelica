@@ -108,11 +108,8 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     virtual void savePreVariables();
     virtual void initPreVariables();
     virtual double& getPreVar(const double& var);
-    virtual double& getPreVar(const int& var);
-    virtual double& getPreVar(const bool& var);
-    virtual void setPreVar(double& var);
-    virtual void setPreVar(int& var);
-    virtual void setPreVar(bool& var);
+    virtual int& getPreVar(const int& var);
+    virtual bool& getPreVar(const bool& var);
 
   protected:
     void create(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_string, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index);
@@ -125,22 +122,8 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     virtual size_t getDimStateVars() const;
     virtual size_t getStateVectorIndex() const;
 
-    //see: http://stackoverflow.com/questions/12504776/aligned-malloc-in-c
-    void *alignedMalloc(size_t required_bytes, size_t alignment) {
-        void *p1;
-        void **p2;
-
-        int offset = alignment - 1 + sizeof(void*);
-        p1 = malloc(required_bytes + offset);
-        p2=(void**)(((size_t)(p1)+offset)&~(alignment-1));
-        p2[-1]=p1;
-        return p2;
-    }
-
-    void alignedFree( void* p ) {
-        void* p1 = ((void**)p)[-1];         // get the pointer to the buffer we allocated
-        free( p1 );
-    }
+    void *alignedMalloc(size_t required_bytes, size_t alignment);
+    void alignedFree(void* p);
 
   private:
     double* getRealVarPtr(size_t i);
@@ -158,12 +141,10 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     int* _int_vars;    //array for all model int variables of size dim_int
     bool* _bool_vars;  //array for all model bool variables of size dim_bool
     string* _string_vars;  //array for all model string variables of size dim_string
-    //Stores all variables indices (maps a model variable address to an index in the simvars memory)
-    unordered_map<const double*, unsigned int> _pre_real_vars_idx;
-    unordered_map<const int*, unsigned int> _pre_int_vars_idx;
-    unordered_map<const bool*, unsigned int> _pre_bool_vars_idx;
     //Stores all variables occurred before an event
-    double* _pre_vars;
+    double* _pre_real_vars;
+    int* _pre_int_vars;
+    bool* _pre_bool_vars;
 };
 
 /** @} */ // end of coreSystem
