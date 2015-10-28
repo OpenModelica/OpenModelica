@@ -467,11 +467,11 @@ algorithm
     then (HtCr2U, HtS2U, HtU2S, expList);
 
     case (BackendDAE.ALGORITHM(), _, _, _) equation
-      Error.addCompilerWarning("ALGORITHM, these types of equations are not yet supported\n");
+      //Error.addCompilerWarning("ALGORITHM, these types of equations are not yet supported\n");
     then (inHtCr2U, inHtS2U, inHtU2S, {});
 
     case (BackendDAE.WHEN_EQUATION(), _, _, _) equation
-      Error.addCompilerWarning("WHEN_EQUATION, these types of equations are not yet supported\n");
+      //Error.addCompilerWarning("WHEN_EQUATION, these types of equations are not yet supported\n");
     then (inHtCr2U, inHtS2U, inHtU2S, {});
 
     case (BackendDAE.COMPLEX_EQUATION(left=lhs, right=rhs), HtCr2U, HtS2U, HtU2S) equation
@@ -483,7 +483,7 @@ algorithm
     then (HtCr2U, HtS2U, HtU2S, expList);
 
     case (BackendDAE.IF_EQUATION(), _, _, _) equation
-       Error.addCompilerWarning("IF_EQUATION, these types of equations are not yet supported\n");
+       //Error.addCompilerWarning("IF_EQUATION, these types of equations are not yet supported\n");
     then (inHtCr2U, inHtS2U, inHtU2S, {});
 
     else equation
@@ -1005,9 +1005,11 @@ algorithm
     case (DAE.CREF(), (HtCr2U, HtS2U, HtU2S), _)
     then (Unit.MASTER({}), (HtCr2U, HtS2U, HtU2S), {});
 
-    else equation
-      Error.addInternalError("./Compiler/BackEnd/UnitCheck.mo: function insertUnitinEquation failed for " + ExpressionDump.printExpStr(inEq), sourceInfo());
-    then fail();
+    // all unhandled expressions, e.g. DAE.CAST, DAE.TUPLE, ...
+    else
+      //Error.addInternalError("./Compiler/BackEnd/UnitCheck.mo: function insertUnitinEquation failed for " + ExpressionDump.printExpStr(inEq), sourceInfo());
+    //then fail();
+    then (Unit.MASTER({}), inTpl, {});
   end matchcontinue;
 end insertUnitinEquation;
 
