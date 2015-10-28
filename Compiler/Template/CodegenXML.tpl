@@ -218,7 +218,7 @@ template getAliasVarXml(AliasVariable aliasvar)
  "Returns the alias Attribute of ScalarVariable."
 ::=
 match aliasvar
-  case NOALIAS(__) then ""
+  case NOALIAS(__) then "noAlias"
   case ALIAS(__) then '<%crefStrXml(varName)%>'
   case NEGATEDALIAS(__) then '-<%crefStrXml(varName)%>'
   else ""
@@ -668,10 +668,10 @@ end initialEquationsXml;
       let &preExp = buffer "" /*BUFD*/
          <<
          <equ:Equation>
-           <equ:Sub>
+           <exp:Sub>
              <%identName%>
              <%daeExpXml(exp, contextOther, &preExp, &varDecls)%>
-           </equ:Sub>
+           </exp:Sub>
          </equ:Equation><%\n%>
          >>
 end initialEquationXml;
