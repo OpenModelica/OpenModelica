@@ -1,0 +1,85 @@
+// name: cse2_comSubExp
+// keywords: cse
+// status: correct
+
+loadString("
+model Tearing3 \"Example from Book Continous System Simulation by F. Cellier page 277\"
+  Real u0;
+  Real u1;
+  Real u2;
+  Real uL;
+  Real uC;
+  Real i0;
+  Real i1;
+  Real i2(start=0,fixed=true);
+  Real iL;
+  Real iC;
+  parameter Real R1=1;
+  parameter Real R2=2;
+  parameter Real L=0.5;
+  parameter Real C=3;
+equation
+  u0 = sin(time);
+  u1 = R1*i1;
+  u2 = R2*i2;
+  uL = L*der(iL);
+  iC = C*der(uC);
+  u0 = u1 + uL;
+  uC = u1 + u2;
+  uL = u2;
+  i0 = i1 + iC;
+  i1 = i2 + iL;
+end Tearing3;
+"); getErrorString();
+
+//test the CSE of binary terms without introducing cse variables
+
+setDebugFlags("dumpCSE"); getErrorString();
+setTearingMethod("cellier"); getErrorString();
+setCommandLineOptions("+tearingHeuristic=MC1 +cseCall +cseBinary"); getErrorString();
+simulate(Tearing3); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// 
+// ########### Updated Variable List ########### (10)
+// ========================================
+// 1: iC:VARIABLE() .Tearing3, .Real type: Real
+// 2: iL:STATE(1)() .Tearing3, .Real type: Real
+// 3: i2:VARIABLE(start = 0.0 fixed = true ) .Tearing3, .Real type: Real
+// 4: i1:VARIABLE() .Tearing3, .Real type: Real
+// 5: i0:VARIABLE() .Tearing3, .Real type: Real
+// 6: uC:DUMMY_STATE() .Tearing3, .Real type: Real
+// 7: uL:VARIABLE() .Tearing3, .Real type: Real
+// 8: u1:VARIABLE() .Tearing3, .Real type: Real
+// 9: u0:VARIABLE() .Tearing3, .Real type: Real
+// 10: $DER.uC:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real
+// 
+// 
+// ########### Updated Equation List ########### (10, 10)
+// ========================================
+// 1/1 (1): i1 = i2 + iL   [dynamic]
+// 2/2 (1): i0 = i1 + iC   [dynamic]
+// 3/3 (1): uC = u0   [dynamic]
+// 4/4 (1): uC = u1 + uL   [dynamic]
+// 5/5 (1): iC = C * $DER.uC   [dynamic]
+// 6/6 (1): uL = L * der(iL)   [dynamic]
+// 7/7 (1): uL = R2 * i2   [dynamic]
+// 8/8 (1): u1 = R1 * i1   [dynamic]
+// 9/9 (1): $DER.uC = cos(time)   [dynamic]
+// 10/10 (1): uC = sin(time)   [dynamic]
+// 
+// record SimulationResult
+//     resultFile = "Tearing3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Tearing3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// endResult
