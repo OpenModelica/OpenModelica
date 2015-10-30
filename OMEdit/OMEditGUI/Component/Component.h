@@ -130,26 +130,13 @@ public:
     Extend,  /* Inherited Component. */
     Port  /* Port Component. */
   };
-  Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformation, QPointF position, ComponentInfo *pComponentInfo,
-            GraphicsView *pGraphicsView);
+  Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformation, QPointF position, QStringList dialogAnnotation,
+            ComponentInfo *pComponentInfo, GraphicsView *pGraphicsView);
   Component(Component *pComponent, GraphicsView *pGraphicsView, Component *pParent);
   Component(Component *pComponent, GraphicsView *pGraphicsView);
   bool isInheritedComponent() {return mIsInheritedComponent;}
   QString getInheritedClassName();
-  void createNonExistingComponent();
-  void createDefaultComponent();
-  void createClassInheritedShapes();
-  void createClassShapes(LibraryTreeItem *pLibraryTreeItem);
-  void createClassInheritedComponents();
-  void createClassComponents(LibraryTreeItem *pLibraryTreeItem);
   bool hasShapeAnnotation(Component *pComponent);
-  void createActions();
-  void createResizerItems();
-  void getResizerItemsPositions(qreal *x1, qreal *y1, qreal *x2, qreal *y2);
-  void showResizerItems();
-  void hideResizerItems();
-  void getScale(qreal *sx, qreal *sy);
-  void setOriginAndExtents();
   QRectF boundingRect() const;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
@@ -159,6 +146,8 @@ public:
   Component* getRootParentComponent();
   ComponentType getComponentType() {return mComponentType;}
   QString getTransformationString() {return mTransformationString;}
+  void setDialogAnnotation(QStringList dialogAnnotation) {mDialogAnnotation = dialogAnnotation;}
+  QStringList getDialogAnnotation() {return mDialogAnnotation;}
   OriginItem* getOriginItem() {return mpOriginItem;}
   QAction* getParametersAction() {return mpParametersAction;}
   QAction* getAttributesAction() {return mpAttributesAction;}
@@ -166,8 +155,8 @@ public:
   QAction* getViewDocumentationAction() {return mpViewDocumentationAction;}
   QAction* getTLMAttributesAction() {return mpTLMAttributesAction;}
   ComponentInfo* getComponentInfo() {return mpComponentInfo;}
-  QList<Component*> getInheritanceList() {return mInheritanceList;}
   QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
+  QList<Component*> getInheritedComponentsList() {return mInheritedComponentsList;}
   QList<Component*> getComponentsList() {return mComponentsList;}
   QList<TLMInterfacePointInfo*> getInterfacepointsList() {return mInterfacePointsList;}
   void setOldScenePosition(QPointF oldScenePosition) {mOldScenePosition = oldScenePosition;}
@@ -208,6 +197,7 @@ private:
   bool mIsInheritedComponent;
   ComponentType mComponentType;
   QString mTransformationString;
+  QStringList mDialogAnnotation;
   QGraphicsRectItem *mpResizerRectangle;
   LineAnnotation *mpNonExistingComponentLine;
   RectangleAnnotation *mpDefaultComponentRectangle;
@@ -230,14 +220,28 @@ private:
   QPointF mPivotPoint;
   qreal mXFactor;
   qreal mYFactor;
-  QList<Component*> mInheritanceList;
+  QList<Component*> mInheritedComponentsList;
   QList<ShapeAnnotation*> mShapesList;
   QList<Component*> mComponentsList;
   QPointF mOldScenePosition;
   QList<TLMInterfacePointInfo*> mInterfacePointsList;
   QPointF mOldPosition;
+  void createNonExistingComponent();
+  void createDefaultComponent();
+  void createClassInheritedShapes();
+  void createClassShapes(LibraryTreeItem *pLibraryTreeItem);
+  void createClassInheritedComponents();
+  void createClassComponents(LibraryTreeItem *pLibraryTreeItem, bool inherited);
   void removeShapes();
+  void removeInheritedComponents();
   void removeComponents();
+  void createActions();
+  void createResizerItems();
+  void getResizerItemsPositions(qreal *x1, qreal *y1, qreal *x2, qreal *y2);
+  void showResizerItems();
+  void hideResizerItems();
+  void getScale(qreal *sx, qreal *sy);
+  void setOriginAndExtents();
 signals:
   void added();
   void transformChange();

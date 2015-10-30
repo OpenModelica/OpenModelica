@@ -259,6 +259,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
   if (!pLibraryTreeItem) {
     return false;
   }
+  QStringList dialogAnnotation;
   // if we are dropping something on meta-model editor then we can skip Modelica stuff.
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
     if (pLibraryTreeItem->getFileName().isEmpty()) {
@@ -272,7 +273,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
         return false;
       }
       QString name = getUniqueComponentName(StringHandler::toCamelCase(pLibraryTreeItem->getName()));
-      addComponentToView(name, pLibraryTreeItem, "", position, new ComponentInfo(), true, false);
+      addComponentToView(name, pLibraryTreeItem, "", position, dialogAnnotation, new ComponentInfo(), true, false);
       return true;
     }
   } else {
@@ -326,7 +327,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
         // if item is a class, model, block, connector or record. then we can drop it to the graphicsview
         if ((type == StringHandler::Class) || (type == StringHandler::Model) || (type == StringHandler::Block) ||
             (type == StringHandler::ExpandableConnector) || (type == StringHandler::Connector) || (type == StringHandler::Record)) {
-          addComponentToView(name, pLibraryTreeItem, "", position, new ComponentInfo());
+          addComponentToView(name, pLibraryTreeItem, "", position, dialogAnnotation, new ComponentInfo());
           return true;
         } else {
           QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
@@ -337,7 +338,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       } else if (mViewType == StringHandler::Icon) { // if dropping an item on the icon layer
         // if item is a connector. then we can drop it to the graphicsview
         if (type == StringHandler::Connector || type == StringHandler::ExpandableConnector) {
-          addComponentToView(name, pLibraryTreeItem, "", position, new ComponentInfo());
+          addComponentToView(name, pLibraryTreeItem, "", position, dialogAnnotation, new ComponentInfo());
           return true;
         } else {
           QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
@@ -358,16 +359,17 @@ bool GraphicsView::addComponent(QString className, QPointF position)
  * \param pLibraryTreeItem
  * \param transformationString
  * \param position
+ * \param dialogAnnotation
  * \param pComponentInfo
  * \param addObject
  * \param openingClass
  */
 void GraphicsView::addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
-                                      ComponentInfo *pComponentInfo, bool addObject, bool openingClass)
+                                      QStringList dialogAnnotation, ComponentInfo *pComponentInfo, bool addObject, bool openingClass)
 {
   AddComponentCommand *pAddComponentCommand;
-  pAddComponentCommand = new AddComponentCommand(name, pLibraryTreeItem, transformationString, position, pComponentInfo, addObject,
-                                                 openingClass, this);
+  pAddComponentCommand = new AddComponentCommand(name, pLibraryTreeItem, transformationString, position, dialogAnnotation, pComponentInfo,
+                                                 addObject, openingClass, this);
   mpModelWidget->getUndoStack()->push(pAddComponentCommand);
   if (!openingClass) {
     mpModelWidget->updateModelicaText();
@@ -2696,7 +2698,7 @@ Component* ModelWidget::getConnectorComponent(Component *pConnectorComponent, QS
     }
   }
   /* if port is not found in components list then look into the inherited components list. */
-  foreach (Component *pInheritedComponent, pConnectorComponent->getInheritanceList()) {
+  foreach (Component *pInheritedComponent, pConnectorComponent->getInheritedComponentsList()) {
     pConnectorComponentFound = getConnectorComponent(pInheritedComponent, connectorName);
     if (pConnectorComponentFound) {
       return pConnectorComponentFound;
@@ -3184,14 +3186,16 @@ void ModelWidget::getModelComponents()
       }
     }
     QString transformation = "";
+    QStringList dialogAnnotation;
     if (componentsAnnotationsList.size() >= i) {
       transformation = StringHandler::getPlacementAnnotation(componentsAnnotationsList.at(i));
+      dialogAnnotation = StringHandler::getDialogAnnotation(componentsAnnotationsList.at(i));
       if (transformation.isEmpty()) {
         transformation = "Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)";
       }
     }
-    mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pLibraryTreeItem, transformation, QPointF(0, 0), pComponentInfo,
-                                              false, true);
+    mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pLibraryTreeItem, transformation, QPointF(0, 0), dialogAnnotation,
+                                              pComponentInfo, false, true);
     i++;
   }
 }

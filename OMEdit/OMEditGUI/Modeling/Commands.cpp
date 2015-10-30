@@ -160,8 +160,8 @@ void DeleteShapeCommand::undo()
 }
 
 AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
-                                         ComponentInfo *pComponentInfo, bool addObject, bool openingClass, GraphicsView *pGraphicsView,
-                                         QUndoCommand *pParent)
+                                         QStringList dialogAnnotation, ComponentInfo *pComponentInfo, bool addObject, bool openingClass,
+                                         GraphicsView *pGraphicsView, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpLibraryTreeItem = pLibraryTreeItem;
@@ -179,12 +179,15 @@ AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibrary
   if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() &&
       pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     // first create the component for Icon View
-    mpIconComponent = new Component(name, pLibraryTreeItem, transformationString, position, pComponentInfo, mpIconGraphicsView);
+    mpIconComponent = new Component(name, pLibraryTreeItem, transformationString, position, dialogAnnotation, pComponentInfo,
+                                    mpIconGraphicsView);
     pModelWidget->getLibraryTreeItem()->emitComponentAdded(mpIconComponent, mpIconGraphicsView);
-    mpDiagramComponent = new Component(name, pLibraryTreeItem, transformationString, position, pComponentInfo, mpDiagramGraphicsView);
+    mpDiagramComponent = new Component(name, pLibraryTreeItem, transformationString, position, dialogAnnotation, pComponentInfo,
+                                       mpDiagramGraphicsView);
     pModelWidget->getLibraryTreeItem()->emitComponentAdded(mpDiagramComponent, mpDiagramGraphicsView);
   } else {
-    mpDiagramComponent = new Component(name, pLibraryTreeItem, transformationString, position, pComponentInfo, mpDiagramGraphicsView);
+    mpDiagramComponent = new Component(name, pLibraryTreeItem, transformationString, position, dialogAnnotation, pComponentInfo,
+                                       mpDiagramGraphicsView);
     pModelWidget->getLibraryTreeItem()->emitComponentAdded(mpDiagramComponent, mpDiagramGraphicsView);
   }
   // only select the component of the active Icon/Diagram View

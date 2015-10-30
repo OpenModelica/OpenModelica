@@ -157,22 +157,20 @@ public slots:
 };
 
 /*!
-  \class FixedCheckBox
-  \brief Creates a custom QCheckBox to represent the fixed modifier of components.
-  */
+ * \class FixedCheckBox
+ * \brief Creates a custom QCheckBox to represent the fixed modifier of components.
+ */
 class FixedCheckBox : public QCheckBox
 {
   Q_OBJECT
 private:
   bool mDefaultValue;
-  bool mDefaultTickState;
   bool mTickState;
 public:
   FixedCheckBox(QWidget *parent = 0);
-  void setDefaultTickState(bool defaultValue, bool defaultTickState, bool tickState);
-  void setTickState(bool defaultValue, bool tickState);
-  QString tickState();
-  bool getDefaultTickState() {return mDefaultTickState;}
+  void setTickState(bool defaultValue, bool tickStateString);
+  bool tickState() {return mTickState;}
+  QString tickStateString();
 protected:
   virtual void paintEvent(QPaintEvent *event);
 };

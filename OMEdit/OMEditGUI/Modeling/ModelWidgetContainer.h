@@ -185,7 +185,7 @@ public:
   QAction* getFlipVerticalAction() {return mpFlipVerticalAction;}
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
-                          ComponentInfo *pComponentInfo, bool addObject = true, bool openingClass = false);
+                          QStringList dialogAnnotation, ComponentInfo *pComponentInfo, bool addObject = true, bool openingClass = false);
   void addComponentToList(Component *pComponent);
   void addComponentToClass(Component *pComponent);
   void deleteComponent(Component *pComponent);
