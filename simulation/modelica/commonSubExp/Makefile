@@ -5,6 +5,7 @@ cse1.mos \
 cse2.mos \
 cse3.mos \
 cseFunctionCall.mos \
+comSubExp1.mos \
 ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump1.mos
 
 # test that currently fail. Move up when fixed. 
