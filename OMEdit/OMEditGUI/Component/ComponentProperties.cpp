@@ -1063,7 +1063,7 @@ void ComponentAttributes::updateComponentAttributes()
    */
   if (oldComponentInfo != newComponentInfo) {
     UpdateComponentAttributesCommand *pUpdateComponentAttributesCommand = new UpdateComponentAttributesCommand(mpComponent, oldComponentInfo,
-                                                                                                               newComponentInfo, false);
+                                                                                                               newComponentInfo);
     pModelWidget->getUndoStack()->push(pUpdateComponentAttributesCommand);
     pModelWidget->updateModelicaText();
   }

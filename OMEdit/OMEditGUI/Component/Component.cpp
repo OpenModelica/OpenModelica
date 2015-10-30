@@ -225,20 +225,6 @@ void ComponentInfo::setArrayIndex(QString arrayIndex)
  */
 bool ComponentInfo::operator==(const ComponentInfo &componentInfo) const
 {
-  qDebug() << (componentInfo.getClassName() == this->getClassName());
-  qDebug() << (componentInfo.getName() == this->getName());
-  qDebug() << (componentInfo.getComment() == this->getComment());
-  qDebug() << (componentInfo.getProtected() == this->getProtected());
-  qDebug() << (componentInfo.getFinal() == this->getFinal());
-  qDebug() << (componentInfo.getFlow() == this->getFlow());
-  qDebug() << (componentInfo.getStream() == this->getStream());
-  qDebug() << (componentInfo.getReplaceable() == this->getReplaceable());
-  qDebug() << (componentInfo.getVariablity() == this->getVariablity());
-  qDebug() << (componentInfo.getInner() == this->getInner());
-  qDebug() << (componentInfo.getOuter() == this->getOuter());
-  qDebug() << (componentInfo.getCausality() == this->getCausality());
-  qDebug() << (componentInfo.getArrayIndex() == this->getArrayIndex());
-
   return (componentInfo.getClassName() == this->getClassName()) && (componentInfo.getName() == this->getName()) &&
       (componentInfo.getComment() == this->getComment()) && (componentInfo.getProtected() == this->getProtected()) &&
       (componentInfo.getFinal() == this->getFinal()) && (componentInfo.getFlow() == this->getFlow()) &&
@@ -1432,8 +1418,17 @@ void Component::duplicate()
   ComponentInfo *pComponentInfo = new ComponentInfo(mpComponentInfo);
   pComponentInfo->setName(name);
   mpGraphicsView->addComponentToView(name, mpLibraryTreeItem, transformationString, QPointF(0, 0), dialogAnnotation, pComponentInfo, true, true);
-  // set component attributes for Diagram Layer component.
+  // set component modifiers and attributes for Diagram Layer component.
   Component *pDiagramComponent = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getComponentsList().last();
+  // save the Component modifiers
+  QString className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+  QMap<QString, QString> componentModifiersMap;
+  QStringList componentModifiersList = pMainWindow->getOMCProxy()->getComponentModifierNames(className, mpComponentInfo->getName());
+  foreach (QString componentModifier, componentModifiersList) {
+    QString originalModifierName = QString(mpComponentInfo->getName()).append(".").append(componentModifier);
+    QString componentModifierValue = pMainWindow->getOMCProxy()->getComponentModifierValue(className, originalModifierName);
+    componentModifiersMap.insert(componentModifier, componentModifierValue);
+  }
   // save the old ComponentInfo
   ComponentInfo oldDiagramComponentInfo(pDiagramComponent->getComponentInfo());
   // Create a new ComponentInfo
@@ -1441,28 +1436,14 @@ void Component::duplicate()
   newDiagramComponentInfo.setName(oldDiagramComponentInfo.getName());
   UpdateComponentAttributesCommand *pUpdateDiagramComponentAttributesCommand;
   pUpdateDiagramComponentAttributesCommand = new UpdateComponentAttributesCommand(pDiagramComponent, oldDiagramComponentInfo,
-                                                                                  newDiagramComponentInfo, true);
+                                                                                  newDiagramComponentInfo, true, componentModifiersMap);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateDiagramComponentAttributesCommand);
   setSelected(false);
   if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
     pDiagramComponent->setSelected(true);
-  }
-  // if component is connector then set component attributes for Icon Layer component.
-  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector()) {
+  } else {
     Component *pIconComponent = mpGraphicsView->getModelWidget()->getIconGraphicsView()->getComponentsList().last();
-    // save the old ComponentInfo
-    ComponentInfo oldIconComponentInfo(pIconComponent->getComponentInfo());
-    // Create a new ComponentInfo
-    ComponentInfo newIconComponentInfo(mpComponentInfo);
-    newIconComponentInfo.setName(oldIconComponentInfo.getName());
-    UpdateComponentAttributesCommand *pUpdateIconComponentAttributesCommand;
-    pUpdateIconComponentAttributesCommand = new UpdateComponentAttributesCommand(pIconComponent, oldIconComponentInfo,
-                                                                                 newIconComponentInfo, true);
-
-    mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateIconComponentAttributesCommand);
-    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-      pIconComponent->setSelected(true);
-    }
+    pIconComponent->setSelected(true);
   }
 }
 
