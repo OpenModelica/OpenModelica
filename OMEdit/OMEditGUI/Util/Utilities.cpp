@@ -233,28 +233,16 @@ FixedCheckBox::FixedCheckBox(QWidget *parent)
 {
   setCheckable(false);
   mDefaultValue = false;
-  mDefaultTickState = false;
   mTickState = false;
-}
-
-void FixedCheckBox::setDefaultTickState(bool defaultValue, bool defaultTickState, bool tickState)
-{
-  mDefaultValue = defaultValue;
-  mDefaultTickState = defaultTickState;
-  mTickState = tickState;
 }
 
 void FixedCheckBox::setTickState(bool defaultValue, bool tickState)
 {
   mDefaultValue = defaultValue;
-  if (mDefaultValue) {
-    mTickState = mDefaultTickState;
-  } else {
-    mTickState = tickState;
-  }
+  mTickState = tickState;
 }
 
-QString FixedCheckBox::tickState()
+QString FixedCheckBox::tickStateString()
 {
   if (mDefaultValue) {
     return "";
