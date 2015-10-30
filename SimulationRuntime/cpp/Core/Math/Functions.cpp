@@ -10,6 +10,8 @@
 #include <Core/Utils/numeric/bindings/ublas.hpp>
 #include <Core/Utils/numeric/utils.h>
 
+namespace bindings = boost::numeric::bindings;
+
 /* Matrixes using column major order (as in Fortran) */
 #ifndef set_matrix_elt
 #define set_matrix_elt(A,r,c,n_rows,value) A[r + n_rows * c] = value

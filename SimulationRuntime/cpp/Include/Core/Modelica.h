@@ -44,7 +44,7 @@ using std::exception;
 using std::runtime_error;
 
 // uBLAS library
-using namespace boost::numeric;
+namespace ublas = boost::numeric::ublas;
 
 #if defined(USE_CPP_ELEVEN)
   #include <array>
