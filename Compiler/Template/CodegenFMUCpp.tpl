@@ -79,7 +79,8 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(fmuWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
   let()= textFile(fmuModelHeaderFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.h')
   let()= textFile(fmuModelCppFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.cpp')
-  let()= textFile((if isFMIVersion20(FMUVersion) then fmuModelDescriptionFileCpp(simCode, extraFuncs, extraFuncsDecl, "", guid, FMUVersion, FMUType) else CodegenCppInit.modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars, numStringVars, FMUVersion, FMUType, guid, true, "cpp-runtime", complexStartExpressions, stateDerVectorName)), 'modelDescription.xml')
+  let()= textFile((if isFMIVersion10(FMUVersion) then CodegenCppInit.modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars, numStringVars, FMUVersion, FMUType, guid, true, "cpp-runtime", complexStartExpressions, stateDerVectorName) else
+                   CodegenFMU.fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType)), 'modelDescription.xml')
   let()= textFile(fmudeffile(simCode, FMUVersion), '<%fileNamePrefix%>.def')
   let()= textFile(fmuMakefile(target,simCode, extraFuncs, extraFuncsDecl, "", FMUVersion, "", "", "", ""), '<%fileNamePrefix%>_FMU.makefile')
   let()= textFile(fmuCalcHelperMainfile(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
@@ -160,37 +161,6 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
   >>
 end fmuWriteOutputHeaderFile;
 
-template fmuModelDescriptionFileCpp(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,String guid, String FMUVersion, String FMUType)
- "Generates code for ModelDescription file for FMU target."
-::=
-match simCode
-case SIMCODE(__) then
-  <<
-  <?xml version="1.0" encoding="UTF-8"?>
-  <%
-    if isFMIVersion20(FMUVersion) then CodegenFMU2.fmiModelDescription(simCode, guid)
-    else fmiModelDescriptionCpp(simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace,guid)
-  %>
-  >>
-end fmuModelDescriptionFileCpp;
-
-template fmiModelDescriptionCpp(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String guid)
- "Generates code for ModelDescription file for FMU target."
-::=
-//  <%UnitDefinitions(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace)%>
-//  <%TypeDefinitions(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace)%>
-//  <%VendorAnnotations(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace)%>
-match simCode
-case SIMCODE(__) then
-  <<
-  <fmiModelDescription
-    <%CodegenCppInit.fmiModelDescriptionAttributes(simCode, guid)%>>
-    <%CodegenFMUCommon.DefaultExperiment(simulationSettingsOpt)%>
-    <%CodegenFMUCommon.fmiModelVariables(simCode, "1.0")%>
-  </fmiModelDescription>
-  >>
-end fmiModelDescriptionCpp;
-
 template fmuModelHeaderFile(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String guid, String FMUVersion)
  "Generates declaration for FMU target."
 ::=
@@ -253,14 +223,14 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   <%ModelDefineData(modelInfo)%>
   #define NUMBER_OF_EVENT_INDICATORS <%CodegenFMUCommon.getNumberOfEventIndicators(simCode)%>
 
-  <%if isFMIVersion20(FMUVersion) then
-    '#include "FMU2/FMU2Wrapper.cpp"'
+  <%if isFMIVersion10(FMUVersion) then
+    '#include <FMU/FMUWrapper.h>'
   else
-    '#include <FMU/FMUWrapper.h>'%>
-  <%if isFMIVersion20(FMUVersion) then
-    '#include "FMU2/FMU2Interface.cpp"'
+    '#include "FMU2/FMU2Wrapper.cpp"'%>
+  <%if isFMIVersion10(FMUVersion) then
+    '#include <FMU/FMULibInterface.h>'
   else
-    '#include <FMU/FMULibInterface.h>'%>
+    '#include "FMU2/FMU2Interface.cpp"'%>
 
   <%solverFactoryInclude%>
 
@@ -290,9 +260,9 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   }
 
   // getters
-  <%if isFMIVersion20(FMUVersion) then accessFunctionsFMU2(simCode, "get", modelShortName, modelInfo) else accessFunctionsFMU1(simCode, "get", modelShortName, modelInfo)%>
+  <%if isFMIVersion10(FMUVersion) then accessFunctionsFMU1(simCode, "get", modelShortName, modelInfo) else accessFunctionsFMU2(simCode, "get", modelShortName, modelInfo)%>
   // setters
-  <%if isFMIVersion20(FMUVersion) then accessFunctionsFMU2(simCode, "set", modelShortName, modelInfo) else accessFunctionsFMU1(simCode, "set", modelShortName, modelInfo)%>
+  <%if isFMIVersion10(FMUVersion) then accessFunctionsFMU1(simCode, "set", modelShortName, modelInfo) else accessFunctionsFMU2(simCode, "set", modelShortName, modelInfo)%>
   >>
   // TODO:
   // <%setDefaultStartValues(modelInfo)%>
@@ -727,7 +697,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let libsExtra = (makefileParams.libs |> lib => lib ;separator=" ")
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then ""
   // Note: FMI 1.0 did not distinguish modelIdentifier from fileNamePrefix
-  let modelName = if isFMIVersion20(FMUVersion) then dotPath(modelInfo.name) else fileNamePrefix
+  let modelName = if isFMIVersion10(FMUVersion) then fileNamePrefix else dotPath(modelInfo.name)
   let platformstr = match makefileParams.platform case "i386-pc-linux" then 'linux32' case "x86_64-linux" then 'linux64' else '<%makefileParams.platform%>'
   let mkdir = match makefileParams.platform case "win32" then '"mkdir.exe"' else 'mkdir'
   <<

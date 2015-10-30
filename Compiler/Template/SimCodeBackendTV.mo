@@ -264,6 +264,11 @@ package FMI
     output String fmiType;
   end getFMIType;
 
+  function isFMIVersion10 "Checks if the FMI version is 1.0."
+    input String inFMUVersion;
+    output Boolean success;
+  end isFMIVersion10;
+
   function isFMIVersion20 "Checks if the FMI version is 2.0."
     input String inFMUVersion;
     output Boolean success;
