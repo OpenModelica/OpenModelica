@@ -312,13 +312,14 @@ void UpdateComponentTransformationsCommand::undo()
 
 UpdateComponentAttributesCommand::UpdateComponentAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo,
                                                                    const ComponentInfo &newComponentInfo, bool duplicate,
-                                                                   QUndoCommand *pParent)
+                                                                   QMap<QString, QString> componentModifiersMap, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpComponent = pComponent;
   mOldComponentInfo.updateComponentInfo(&oldComponentInfo);
   mNewComponentInfo.updateComponentInfo(&newComponentInfo);
   mDuplicate = duplicate;
+  mComponentModifiersMap = componentModifiersMap;
   setText(QString("Update Component %1 Attributes").arg(mpComponent->getName()));
 }
 
@@ -422,6 +423,21 @@ void UpdateComponentAttributesCommand::redo()
       QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
                             QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
       pOMCProxy->printMessagesStringInternal();
+    }
+  }
+  // apply Component modifiers if duplicate case
+  if (mDuplicate) {
+    bool modifierValueChanged = false;
+    QMap<QString, QString>::iterator componentModifier;
+    for (componentModifier = mComponentModifiersMap.begin(); componentModifier != mComponentModifiersMap.end(); ++componentModifier) {
+      QString modifierName = QString(mpComponent->getName()).append(".").append(componentModifier.key());
+      QString modifierValue = componentModifier.value();
+      if (pOMCProxy->setComponentModifierValue(modelName, modifierName, modifierValue.prepend("="))) {
+        modifierValueChanged = true;
+      }
+    }
+    if (modifierValueChanged) {
+      mpComponent->componentParameterHasChanged();
     }
   }
 }

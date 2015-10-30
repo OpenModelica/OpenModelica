@@ -105,7 +105,8 @@ class UpdateComponentAttributesCommand : public QUndoCommand
 {
 public:
   UpdateComponentAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo, const ComponentInfo &newComponentInfo,
-                                   bool duplicate, QUndoCommand *pParent = 0);
+                                   bool duplicate = false, QMap<QString, QString> componentModifiersMap = QMap<QString, QString>(),
+                                   QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
@@ -113,6 +114,7 @@ private:
   ComponentInfo mOldComponentInfo;
   ComponentInfo mNewComponentInfo;
   bool mDuplicate;
+  QMap<QString, QString> mComponentModifiersMap;
 };
 
 class DeleteComponentCommand : public QUndoCommand
