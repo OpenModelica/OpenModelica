@@ -950,7 +950,7 @@ void Cvode::writeSimulationInfo()
 {
   long int nst, nfe, nsetups, nni, ncfn, netf;
   long int nfQe, netfQ;
-  long int nfSe, nfeS, nsetupsS, nniS, ncfnS, netfS;
+  long int nfSe, nfeS, nsetupsS, nniS, ncfnS;
   long int nfQSe, netfQS;
 
   int qlast, qcur;
@@ -964,7 +964,6 @@ void Cvode::writeSimulationInfo()
 
   LOGGER_WRITE("Cvode: number steps = " + to_string(nst), LC_SOLV, LL_INFO);
   LOGGER_WRITE("Cvode: function evaluations 'f' = " + to_string(nfe), LC_SOLV, LL_INFO);
-  LOGGER_WRITE("Cvode: error test failures 'netf' = " + to_string(netfS), LC_SOLV, LL_INFO);
   LOGGER_WRITE("Cvode: linear solver setups 'nsetups' = " + to_string(nsetups), LC_SOLV, LL_INFO);
   LOGGER_WRITE("Cvode: nonlinear iterations 'nni' = " + to_string(nni), LC_SOLV, LL_INFO);
   LOGGER_WRITE("Cvode: convergence failures 'ncfn' = " + to_string(ncfn), LC_SOLV, LL_INFO);
