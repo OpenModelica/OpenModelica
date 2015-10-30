@@ -1210,8 +1210,7 @@ algorithm
     // modify incidence matrix for under-determined systems
     nAddEqs := intMax(nVars-nEqns + index, index);
     //print("nAddEqs: " + intString(nAddEqs) + "\n");
-    m_ := fixUnderDeterminedSystem(m_, stateIndices, nEqns, nAddEqs);
-    m := arrayCopy(m_) "deep copy";
+    m := fixUnderDeterminedSystem(m_, stateIndices, nEqns, nAddEqs);
 
     // modify incidence matrix for over-determined systems
     nAddVars := intMax(nEqns-nVars + index, index);
@@ -1293,12 +1292,13 @@ algorithm
     fail();
   end if;
 
-  outM := arrayCreate(inNEqns+inNAddEqns, {});
-  outM := Array.copy(inM, outM);
-
   if inNAddEqns > 0 then
+    outM := arrayCreate(inNEqns+inNAddEqns, {});
+    outM := Array.copy(inM, outM);
     newEqIndices := List.intRange2(inNEqns+1, inNEqns+inNAddEqns);
     outM := List.fold1(newEqIndices, squareIncidenceMatrix1, inInitVarIndices, outM);
+  else
+    outM := arrayCopy(inM) "deep copy";
   end if;
 end fixUnderDeterminedSystem;
 
