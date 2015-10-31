@@ -439,7 +439,7 @@ template ScalarVariableAttribute2(SimVar simVar, SimCode simCode)
 match simVar
   case SIMVAR(__) then
   let defaultValueReference = '<%System.tmpTick()%>'
-  let valueReference = match Config.simCodeTarget() case "Cpp" then getValueReference(simVar, simCode, false) else defaultValueReference
+  let valueReference = getValueReference(simVar, simCode, false)
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
   let variability = if getClockIndex(simVar, simCode) then "discrete" else getVariability2(varKind, type_)
   let clockIndex = getClockIndex(simVar, simCode)
@@ -454,7 +454,7 @@ match simVar
   causality="<%caus%>"
   <%if boolNot(stringEq(clockIndex, "")) then 'clockIndex="'+clockIndex+'"' %>
   <%if boolNot(stringEq(previous, "")) then 'previous="'+previous+'"' %>
-  <%if boolNot(stringEq(initial, "")) then 'initial="'+initial+'"' %>
+  <%if boolNot(stringEq(initial, "")) then match aliasvar case SimCodeVar.ALIAS(__) then "" else 'initial="'+initial+'"' %>
   >>
 end ScalarVariableAttribute2;
 
@@ -561,6 +561,8 @@ end ScalarVariableTypeCommonAttribute2;
 template StartString2(SimVar simvar)
 ::=
 match simvar
+case SIMVAR(aliasvar = SimCodeVar.ALIAS(__)) then
+  ''
 case SIMVAR(initialValue = initialValue, varKind = varKind, causality = causality, type_ = type_, isValueChangeable = isValueChangeable) then
   match initialValue
     case SOME(e as ICONST(__)) then ' start="<%initValXml(e)%>"'
