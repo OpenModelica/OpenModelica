@@ -11547,6 +11547,64 @@ algorithm
   end match;
 end getVariableIndex;
 
+public function getValueReference
+  "returns the value reference of a variable for direct memory access
+   considering aliases and array storage order
+   author: rfranke"
+  input SimCodeVar.SimVar inSimVar;
+  input SimCode.SimCode inSimCode;
+  input Boolean inElimNegAliases;
+  output String outValueReference;
+protected
+  String valueReference;
+algorithm
+  outValueReference := match (inSimVar, inElimNegAliases, Config.simCodeTarget())
+    local
+      DAE.ComponentRef cref;
+    case (SimCodeVar.SIMVAR(aliasvar = SimCodeVar.NEGATEDALIAS(_)), false, _) then
+      getDefaultValueReference(inSimVar, inSimCode.modelInfo.varInfo);
+    case (_, _, "Cpp") equation
+      valueReference = getVarIndexByMapping(inSimCode.varToArrayIndexMapping, inSimVar.name, "-1");
+      if stringEqual(valueReference, "-1") then
+        Error.addInternalError("invalid return value from getVarIndexByMapping", sourceInfo());
+      end if;
+      then valueReference;
+    case (SimCodeVar.SIMVAR(aliasvar = SimCodeVar.ALIAS(varName = cref)), _, _) then
+      getDefaultValueReference(SimCodeFunctionUtil.cref2simvar(cref, inSimCode), inSimCode.modelInfo.varInfo);
+    else
+      getDefaultValueReference(inSimVar, inSimCode.modelInfo.varInfo);
+  end match;
+end getValueReference;
+
+protected function getDefaultValueReference
+  "returns the value reference without consideration of aliases,
+   starting from zero for each base type
+   author: rfranke"
+  input SimCodeVar.SimVar inSimVar;
+  input SimCode.VarInfo inVarInfo;
+  output String outDefaultValueReference;
+protected
+  Integer reference;
+  Integer numReal = 2*inVarInfo.numStateVars + inVarInfo.numAlgVars + inVarInfo.numDiscreteReal + inVarInfo.numParams + inVarInfo.numAlgAliasVars;
+  Integer numInteger = inVarInfo.numIntAlgVars + inVarInfo.numIntParams + inVarInfo.numIntAliasVars;
+  Integer numBoolean = inVarInfo.numBoolAlgVars + inVarInfo.numBoolParams + inVarInfo.numBoolAliasVars;
+algorithm
+  reference := getVariableIndex(inSimVar);
+  if reference > numReal + numInteger + numBoolean then
+    // String variable
+    reference := reference - numReal - numInteger - numBoolean;
+  elseif reference > numReal + numInteger then
+    // Boolean variable
+    reference := reference - numReal - numInteger;
+  elseif reference > numReal then
+    // Integer variable
+    reference := reference - numReal;
+  elseif reference < 1 then
+    Error.addInternalError("invalid return value from getVariableIndex", sourceInfo());
+  end if;
+  outDefaultValueReference := String(reference - 1);
+end getDefaultValueReference;
+
 protected function getHighestDerivation"computes the highest derivative among all states. this includes derivatives of derivatives as well
 author: waurich TUD 2015-05"
   input BackendDAE.BackendDAE inDAE;

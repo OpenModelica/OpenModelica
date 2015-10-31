@@ -438,7 +438,8 @@ template ScalarVariableAttribute2(SimVar simVar, SimCode simCode)
 ::=
 match simVar
   case SIMVAR(__) then
-  let valueReference = '<%System.tmpTick()%>'
+  let defaultValueReference = '<%System.tmpTick()%>'
+  let valueReference = getValueReference(simVar, simCode, false)
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
   let variability = if getClockIndex(simVar, simCode) then "discrete" else getVariability2(varKind, type_)
   let clockIndex = getClockIndex(simVar, simCode)

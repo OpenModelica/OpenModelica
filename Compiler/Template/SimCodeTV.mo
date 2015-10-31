@@ -814,6 +814,13 @@ package SimCodeUtil
     output list<SimCode.SimEqSystem> oEqs;
   end getDaeEqsNotPartOfOdeSystem;
 
+  function getValueReference
+    input SimCodeVar.SimVar inSimVar;
+    input SimCode.SimCode inSimCode;
+    input Boolean inElimNegAliases;
+    output String outValueReference;
+  end getValueReference;
+
   function getVarIndexListByMapping
     input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
     input DAE.ComponentRef iVarName;
