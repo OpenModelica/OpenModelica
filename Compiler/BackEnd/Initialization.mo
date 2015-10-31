@@ -1139,6 +1139,7 @@ algorithm
   end for;
   dae := BackendDAE.DAE(eqs, inInitDAE.shared);
 
+  //SimCodeFunctionUtil.execStat("reset analyzeInitialSystem (initialization)");
   (outDAE, (_, outDumpVars, outRemovedEqns)) := BackendDAEUtil.mapEqSystemAndFold(dae, fixInitialSystem, (inInitVars, {}, outRemovedEqns));
 end analyzeInitialSystem;
 
@@ -1218,13 +1219,13 @@ algorithm
     m := fixOverDeterminedSystem(m, initEqsIndices, nVars, nAddVars);
 
     // match the system (nVars+nAddVars == nEqns+nAddEqs)
-    ass1 := arrayCreate(nVars+nAddVars, -1);
-    ass2 := arrayCreate(nEqns+nAddEqs, -1);
-    Matching.matchingExternalsetIncidenceMatrix(nVars+nAddVars, nEqns+nAddEqs, m);
-    BackendDAEEXT.matching(nVars+nAddVars, nEqns+nAddEqs, 5, 0, 0.0, 1);
-    BackendDAEEXT.getAssignment(ass2, ass1);
-    perfectMatching := listEmpty(Matching.getUnassigned(nVars+nAddVars, ass1, {}));
-    // (ass1, ass2, perfectMatching) := Matching.RegularMatching(m, nVars+nAddVars, nEqns+nAddEqs);
+    //ass1 := arrayCreate(nVars+nAddVars, -1);
+    //ass2 := arrayCreate(nEqns+nAddEqs, -1);
+    //Matching.matchingExternalsetIncidenceMatrix(nVars+nAddVars, nEqns+nAddEqs, m);
+    //BackendDAEEXT.matching(nVars+nAddVars, nEqns+nAddEqs, 5, 0, 0.0, 1);
+    //BackendDAEEXT.getAssignment(ass2, ass1);
+    //perfectMatching := listEmpty(Matching.getUnassigned(nVars+nAddVars, ass1, {}));
+    (ass1, ass2, perfectMatching) := Matching.RegularMatching(m, nVars+nAddVars, nEqns+nAddEqs);
     //BackendDump.dumpMatchingVars(ass1);
     //BackendDump.dumpMatchingEqns(ass2);
 
@@ -1270,6 +1271,7 @@ algorithm
       outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, eqns2);
       //print("index-" + intString(index) + " ende\n");
       outTpl := ((initVars, dumpVars, removedEqns));
+      //SimCodeFunctionUtil.execStat("fixInitialSystem (initialization) [nEqns: " + intString(nEqns) + ", nAddEqs: " + intString(nAddEqs) + ", nAddVars: " + intString(nAddVars) + "]");
       return;
     end if;
     //print("index-" + intString(index) + " ende\n");
