@@ -6,15 +6,15 @@ model Ball
   annotation(Diagram(coordinateSystem(extent={{-148.5,-105.0},{148.5,105.0}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10})), Icon(coordinateSystem(extent={{-100.0,-100.0},{100.0,100.0}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10}), graphics={Rectangle(visible=true, origin={0.0,65.0}, fillColor={255,255,255}, fillPattern=FillPattern.Solid, lineThickness=1, extent={{-100.0,-35.0},{100.0,35.0}}),Rectangle(visible=true, origin={0.0,-35.0}, fillColor={255,255,255}, fillPattern=FillPattern.Solid, lineThickness=1, extent={{-100.0,-65.0},{100.0,65.0}}),Text(visible=true, origin={0.0,52.0578}, fillPattern=FillPattern.Solid, extent={{-96.311,-15.0969},{96.311,15.0969}}, textString="Ball", fontName="Arial"),Text(visible=true, origin={0.0,83.1521}, fillPattern=FillPattern.Solid, extent={{-90.0,-11.3192},{90.0,11.3192}}, textString="«model»", fontName="Arial"),Text(visible=true, origin={0.3349,-37.1756}, fillPattern=FillPattern.Solid, extent={{-97.7954,-59.2801},{97.7954,59.2801}}, textString="M", fontName="Arial")}));
   parameter Real g=9.81;
   parameter Real c= 0.90;
-  Real height(start=0);
-  Real v(start=10);
+  Real height(start=0, fixed=true);
+  Real v(start=10, fixed=true);
   record Ball_StateMachine_StateMachine_0
   annotation(Diagram(coordinateSystem(extent={{-148.5,-105.0},{148.5,105.0}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10})), Icon(coordinateSystem(extent={{-100.0,-100.0},{100.0,100.0}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10}), graphics={Rectangle(visible=true, origin={-6.722,3.6841}, lineColor={0,85,127}, fillColor={85,170,255}, fillPattern=FillPattern.Solid, lineThickness=10, extent={{-75.0,-50.0},{75.0,50.0}}, radius=40),Rectangle(visible=true, origin={70.0,2.6556}, lineColor={85,170,255}, fillColor={0,85,127}, fillPattern=FillPattern.Solid, lineThickness=4, extent={{-26.8908,-25.0},{26.8908,25.0}})}));
     // lib properties STATE MACHINE
-      Boolean active; // indicates if the state is active.
-      Real timeAtActivation; // time when the state is entered.
+      Boolean active(fixed=true); // indicates if the state is active.
+      Real timeAtActivation(fixed=true); // time when the state is entered.
       Real stime; // stime means "state time". It is is a local timer. It starts when the state is entered and is equal to zero if the state is not active.
-      Boolean selfTransitionActivated;
+      Boolean selfTransitionActivated(fixed=true);
     Boolean startBehaviour;
     // REGIONS instantiation
     StateMachine_0_Region_0 Region_0;
@@ -37,10 +37,10 @@ model Ball
     record SimpleState
       annotation(Diagram(coordinateSystem(extent={{-148.5,-105.0},{148.5,105.0}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10})), Icon(coordinateSystem(extent={{-100.0,-100.0},{100.0,100.0}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10}), graphics={Rectangle(visible=true, origin={-0.0,-0.1675}, lineColor={0,85,127}, fillColor={104,182,221}, fillPattern=FillPattern.HorizontalCylinder, lineThickness=10, extent={{-64.6031,-34.6638},{64.6031,34.6638}}, radius=40)}));
       // lib properties SIMPLE STATE
-        Boolean active; // indicates if the state is active.
-        Real timeAtActivation; // time when the state is entered.
+        Boolean active(fixed=true); // indicates if the state is active.
+        Real timeAtActivation(fixed=true); // time when the state is entered.
         Real stime; // stime means "state time". It is is a local timer. It starts when the state is entered and is equal to zero if the state is not active.
-        Boolean selfTransitionActivated;
+        Boolean selfTransitionActivated(fixed=true);
     end SimpleState;
 
       // library: INITIAL STATE
@@ -48,17 +48,17 @@ model Ball
       annotation(Diagram(coordinateSystem(extent={{-148.5,-105.0},{148.5,105.0}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10})), Icon(coordinateSystem(extent={{-100.0,-100.0},{100.0,100.0}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10}), graphics={Rectangle(visible=true, origin={-0.0,0.0}, lineColor={0,85,127}, fillColor={104,182,221}, fillPattern=FillPattern.HorizontalCylinder, lineThickness=10, extent={{-34.8134,-34.6638},{34.8134,34.6638}}, radius=40)}));
       // lib properties INITIAL STATE
         Boolean active; // indicates if the state is active.
-        Real timeAtActivation; // time when the state is entered.
+        Real timeAtActivation(fixed=true); // time when the state is entered.
         Real stime; // stime means "state time". It is is a local timer. It starts when the state is entered and is equal to zero if the state is not active.
-        Boolean selfTransitionActivated;
+        Boolean selfTransitionActivated(fixed=true);
     end InitialState;
 
         // library: FINAL STATE
     record FinalState
       annotation(Diagram(coordinateSystem(extent={{-148.5,-105.0},{148.5,105.0}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10})), Icon(coordinateSystem(extent={{-100.0,-100.0},{100.0,100.0}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10}), graphics={Rectangle(visible=true, origin={0.0,0.0}, lineColor={0,85,127}, fillColor={255,255,255}, fillPattern=FillPattern.HorizontalCylinder, lineThickness=10, extent={{-34.8134,-34.6638},{34.8134,34.6638}}, radius=40),Rectangle(visible=true, origin={0.0,0.0}, fillPattern=FillPattern.HorizontalCylinder, lineThickness=10, extent={{-17.2767,-17.2024},{17.2767,17.2024}}, radius=40)}));
       // lib properties FINAL STATE
-        Boolean active; // indicates if the state is active.
-        Real timeAtActivation; // time when the state is entered.
+        Boolean active(fixed=true); // indicates if the state is active.
+        Real timeAtActivation(fixed=true); // time when the state is entered.
         Real stime; // stime means "state time". It is is a local timer. It starts when the state is entered and is equal to zero if the state is not active.
         Boolean selfTransitionActivated;
     end FinalState;

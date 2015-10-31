@@ -5,8 +5,8 @@
 // 
 // ModelicaML: 1.3.6 Examples from 29.Nov 2010
 
-loadFile("./BouncingBallExample/package.mo");
-simulate(BouncingBallExample.Ball,stopTime=20,numberOfIntervals=2000);
+loadFile("./BouncingBallExample/package.mo"); getErrorString();
+simulate(BouncingBallExample.Ball,stopTime=20,numberOfIntervals=2000); getErrorString();
 
 val(height,0);
 val(height,1.02);
@@ -19,11 +19,13 @@ val(StateMachine_0.Region_0.Falling.active,20);
 
 // Result:
 // true
+// ""
 // record SimulationResult
 //     resultFile = "BouncingBallExample.Ball_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 2000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'BouncingBallExample.Ball', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
+// ""
 // 0.00273783877491951
 // 5.108748949347676
 // 2.6034730761167073
