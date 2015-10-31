@@ -16,7 +16,8 @@ simulate(UnevaluateableFixedAttribute); getErrorString();
 // end SimulationResult;
 // "[simulation/modelica/start_value_selection/UnevaluateableFixedAttribute.mo:7:3-7:46:writable] Warning: z has unevaluateable fixed attribute value "preferredStatesUnfixedStart" use values from start attribute(s) "true"
 // [simulation/modelica/start_value_selection/UnevaluateableFixedAttribute.mo:6:3-6:41:writable] Warning: y has unevaluateable fixed attribute value "preferredStatesUnfixed" use values from start attribute(s) "false"
-// Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: x = 0.0 (-$_start(z) ^ 2.0 = 0.0)
+// Notification: It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
 // Warning: The initial conditions are over specified. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 // "
 // endResult

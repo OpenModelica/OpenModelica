@@ -16,7 +16,7 @@ simulate(OverdeterminedInitialization.Fluid.TwoVolumesFullInitialInconsistent); 
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'OverdeterminedInitialization.Fluid.TwoVolumesFullInitialInconsistent', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: OverdeterminedInitialization.Fluid.TwoVolumesFullInitialInconsistent
-// LOG_INIT          | error   | The initialization problem is inconsistent due to the following equation: 0 != -100000 = V1.p_start - V1.medium.p
+// LOG_INIT          | error   | The initialization problem is inconsistent due to the following equation: 0 != 100000 = V2.p_start - V2.medium.p
 // stdout            | warning | Error in initialization. Storing results and exiting.
 // |                 | |       | Use -lv=LOG_INIT -w for more information.
 // "
@@ -96,7 +96,7 @@ simulate(OverdeterminedInitialization.Fluid.TwoVolumesFullInitialInconsistent); 
 //  * candidate: V1.ports[2].p(start = 1000000.0)
 //  * candidate: V1.ports[1].p(start = 1000000.0)
 // => select value from V2.medium.p(start = V2.p_start) for variable: V2.medium.p
-// Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: V1.medium.p = V1.p_start (V2.p_start = V1.p_start)
+// Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: V2.medium.p = V2.p_start (V1.p_start = V2.p_start)
 // Warning: The initial conditions are over specified. Use +d=initialization for more information.
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 // Warning: Alias set with several free start values

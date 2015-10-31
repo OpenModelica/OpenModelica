@@ -409,8 +409,8 @@ buildModel(OverdeterminedInitialization.Fluid.DynamicPipesSeriesSteadyStateIniti
 //  * candidate: pipe1.flowModel.states[1].h(start = 100000.0)
 //  * candidate: pipe1.heatTransfer.states[1].h(start = 100000.0)
 // => select value from pipe1.mediums[1].h(start = 2500000.0) for variable: pipe1.mediums[1].h
-// Notification: The following equation is consistent and got removed from the initialization problem: $DER.pipe1.mediums[5].p = 0.0
 // Notification: The following equation is consistent and got removed from the initialization problem: $DER.pipe1.mediums[1].p = 0.0
+// Notification: The following equation is consistent and got removed from the initialization problem: $DER.pipe1.mediums[5].p = 0.0
 // Warning: The initial conditions are over specified. Use +d=initialization for more information.
 // "
 // endResult

@@ -28,6 +28,7 @@ res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTestin
 //     messages = ""
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 // "
 // {"Files Equal!"}
 // endResult

@@ -160,9 +160,9 @@ buildModel(OverdeterminedInitialization.Fluid.DynamicPipeLumpedPressureInitializ
 //  * candidate: pipe.mediums[2].state.h(start = 100000.0)
 //  * candidate: pipe.heatTransfer.states[2].h(start = 100000.0)
 // => select value from pipe.mediums[2].h(start = 2500000.0) for variable: pipe.mediums[2].h
-// Notification: The following equation is consistent and got removed from the initialization problem: $DER.pipe.mediums[3].p = 0.0
 // Notification: The following equation is consistent and got removed from the initialization problem: $DER.pipe.mediums[5].p = 0.0
 // Notification: The following equation is consistent and got removed from the initialization problem: $DER.pipe.mediums[2].p = 0.0
+// Notification: The following equation is consistent and got removed from the initialization problem: $DER.pipe.mediums[3].p = 0.0
 // Notification: The following equation is consistent and got removed from the initialization problem: $DER.pipe.mediums[4].p = 0.0
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // Warning: The initial conditions are over specified. Use +d=initialization for more information.
