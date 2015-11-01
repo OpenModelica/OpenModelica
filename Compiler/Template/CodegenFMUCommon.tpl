@@ -311,7 +311,23 @@ template ModelStructureClocks(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
-  let clocks = (clockedPartitions |> partition =>
+  let subClocks = (clockedPartitions |> partition hasindex baseClockIndex fromindex intAdd(listLength(getSubPartitions(clockedPartitions)), 1) =>
+    match partition
+    case CLOCKED_PARTITION(__) then
+      (subPartitions |> subPartition =>
+        match subPartition
+        case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fnom, denom=fres), shift=RATIONAL(nom=snom, denom=sres))) then
+          <<
+          <Clock><SubSampled baseClockIndex="<%baseClockIndex%>"
+                             <%if intGt(fnom, 1) then 'subSampleFactor="'+fnom+'"'%>
+                             <%if intGt(fres, 1) then 'subSampleResolution="'+fres+'"'%>
+                             <%if intGt(snom, 0) then 'shiftCounter="'+snom+'"'%>
+                             <%if intGt(sres, 1) then 'shiftResolution="'+sres+'"'%>
+                  /></Clock>
+          >>
+        ; separator="\n")
+    ;separator="\n")
+  let baseClocks = (clockedPartitions |> partition =>
     match partition
     case CLOCKED_PARTITION(__) then
       match baseClock
@@ -336,13 +352,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         <Clock/>
         >>
     ;separator="\n")
-  match clocks
+  match baseClocks
   case "" then
     <<>>
   else
     <<
     <Clocks>
-      <%clocks%>
+      <%subClocks%>
+      <%baseClocks%>
     </Clocks>
     >>
 end ModelStructureClocks;

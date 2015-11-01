@@ -385,7 +385,7 @@ algorithm
     //BaseHashTable.dumpHashTable(varToArrayIndexMapping);
     //print("END MAPPING\n\n");
 
-    crefToClockIndexHT := List.fold(inBackendDAE.eqs, collectClockedVars, HashTable.emptyHashTable());
+    (crefToClockIndexHT, _) := List.fold(inBackendDAE.eqs, collectClockedVars, (HashTable.emptyHashTable(), 1));
 
     simCode := SimCode.SIMCODE(modelInfo,
                               {}, // Set by the traversal below...
@@ -620,19 +620,21 @@ algorithm
   end for;
 end createClockedSimPartitions;
 
-public function collectClockedVars "author: rfranke
+protected function collectClockedVars "author: rfranke
   This function collects clocked variables along with their clockIndex"
   input BackendDAE.EqSystem inEqSystem;
-  input HashTable.HashTable inHT;
-  output HashTable.HashTable outHT;
+  input tuple<HashTable.HashTable, Integer> inTpl;
+  output tuple<HashTable.HashTable, Integer> outTpl;
 protected
+  HashTable.HashTable inHT, outHT;
   Integer clockIndex;
 algorithm
-  outHT := match inEqSystem
-    case BackendDAE.EQSYSTEM(partitionKind = BackendDAE.CLOCKED_PARTITION(subPartIdx=clockIndex)) equation
+  (inHT, clockIndex) := inTpl;
+  outTpl := match inEqSystem
+    case BackendDAE.EQSYSTEM(partitionKind = BackendDAE.CLOCKED_PARTITION(_)) equation
       (outHT, _) = BackendVariable.traverseBackendDAEVars(inEqSystem.orderedVars, collectClockedVars1, (inHT, clockIndex));
-    then outHT;
-    else inHT;
+    then (outHT, clockIndex + 1);
+    else (inHT, clockIndex);
   end match;
 end collectClockedVars;
 
