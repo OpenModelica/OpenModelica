@@ -3678,7 +3678,7 @@ match simCode
       //Number of equations
       <%dimension1(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
       _dimZeroFunc = <%zeroCrossLength(simCode)%>;
-      _dimClock = <%listLength(clockedPartitions)%>;
+      _dimClock = <%listLength(getSubPartitions(clockedPartitions))%>;
       // simplified treatment of clocks in model as time events
       _dimTimeEvent = <%timeEventLength(simCode)%> + _dimClock;
       //Number of residues
@@ -9738,21 +9738,31 @@ end eventHandlingInit;
 
 template clockIntervalsInit(SimCode simCode, Text& varDecls, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
-  match simCode
-  case SIMCODE(modelInfo = MODELINFO(__)) then
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  let i = tempDecl('int', &varDecls)
   <<
-    <%(clockedPartitions |> partition hasindex i fromindex 0 =>
-      match partition
-        case CLOCKED_PARTITION(__) then
-          let &preExp = buffer "" /*BUFD*/
-          let intvl = daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  <%i%> = 0;
+  <%(clockedPartitions |> partition =>
+    match partition
+    case CLOCKED_PARTITION(__) then
+      let &preExp = buffer "" /*BUFD*/
+      let intvl = daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      let subClocks = (subPartitions |> subPartition =>
+        match subPartition
+        case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fnom, denom=fres), shift=RATIONAL(nom=snom, denom=sres))) then
           <<
           <%preExp%>
-          _clockInterval[<%i%>] = <%intvl%>;
-          _clockTime[<%i%>] = _simTime;
+          _clockInterval[<%i%>] = <%intvl%> * <%fres%>.0 / <%fnom%>.0;
+          _clockShift[<%i%>] = <%snom%>.0 / <%sres%>.0;
+          _clockTime[<%i%>] = _simTime + _clockShift[<%i%>] * _clockInterval[<%i%>];
+          <%i%> ++;
           >>
-        else ''
-      ;separator="\n")%>
+      ; separator="\n")
+      <<
+      <%subClocks%>
+      >>
+    ; separator="\n")%>
   >>
 end clockIntervalsInit;
 
@@ -10436,22 +10446,11 @@ template generateTimeEvent(list<BackendDAE.TimeEvent> timeEvents, SimCode simCod
             else ''
           ;separator="\n\n")%>
         // simplified treatment of clocks in model as time events
-        <%(clockedPartitions |> partition =>
-          match partition
-            case CLOCKED_PARTITION(__) then
-              let &preExp = buffer "" /*BUFD*/
-              let intvl = daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-              <<
-              <%preExp%>
-              time_events.push_back(std::make_pair(0.0, <%intvl%>));
-              >>
-            else ''
-          ;separator="\n\n")%>
+        for (int i = 0; i < _dimClock; i++)
+          time_events.push_back(std::make_pair(_clockShift[i] * _clockInterval[i], _clockInterval[i]));
       }
       >>
 end generateTimeEvent;
-
-
 
 
 template generateStepCompleted2(list<SimEqSystem> allEquations,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
@@ -12590,7 +12589,7 @@ template clockedPartFunctions(Integer i, list<tuple<SimCodeVar.SimVar, Boolean>>
   void <%className%>::<%funcName%>(const UPDATETYPE command)
   {
     <%funcCalls%>
-    if (_simTime != _clockTime[<%idx%>]) {
+    if (_simTime > _clockTime[<%idx%>]) {
       _clockInterval[<%idx%>] = _simTime - _clockTime[<%idx%>];
       _clockTime[<%idx%>] = _simTime;
     }

@@ -88,6 +88,9 @@ public:
   /// Provide clock intervals
   virtual double *clockInterval();
 
+  /// Provide clock shifts
+  virtual double *clockShift();
+
   /// Provide the right hand side
   virtual void getRHS(double* f);
 
@@ -169,8 +172,9 @@ protected:
 
     int
     * _time_event_counter;
-    double *_clockTime;       ///< time of clock ticks
     double *_clockInterval;   ///< time interval between clock ticks
+    double *_clockShift;      ///< time before first activation
+    double *_clockTime;       ///< time of clock ticks
     std::ostream *_outputStream;        ///< Output stream for results
 
     IContinuous::UPDATETYPE _callType;

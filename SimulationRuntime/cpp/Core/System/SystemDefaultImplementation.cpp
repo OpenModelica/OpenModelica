@@ -53,8 +53,9 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *global
   , _dimClock        (0)
   , _dimAE        (0)
   , _time_event_counter  (NULL)
-  , _clockTime      (NULL)
   , _clockInterval  (NULL)
+  , _clockShift     (NULL)
+  , _clockTime      (NULL)
   , _outputStream(NULL)
   , _callType        (IContinuous::UNDEF_UPDATE)
   , _initial        (false)
@@ -85,8 +86,9 @@ SystemDefaultImplementation::SystemDefaultImplementation(SystemDefaultImplementa
   , _dimClock        (0)
   , _dimAE        (0)
   , _time_event_counter  (NULL)
-  , _clockTime      (NULL)
   , _clockInterval  (NULL)
+  , _clockShift     (NULL)
+  , _clockTime      (NULL)
   , _outputStream(NULL)
   , _callType        (IContinuous::UNDEF_UPDATE)
   , _initial        (false)
@@ -125,8 +127,9 @@ SystemDefaultImplementation::~SystemDefaultImplementation()
   if(_time_conditions) delete [] _time_conditions ;
   if(_time_event_counter) delete [] _time_event_counter;
   if(_conditions0) delete [] _conditions0;
-  if(_clockTime) delete [] _clockTime;
   if(_clockInterval) delete [] _clockInterval;
+  if(_clockShift) delete [] _clockShift;
+  if(_clockTime) delete [] _clockTime;
 }
 
 void SystemDefaultImplementation::Assert(bool cond,const string& msg)
@@ -223,10 +226,12 @@ void SystemDefaultImplementation::initialize()
   }
   if (_dimClock > 0)
   {
-    if (_clockTime) delete [] _clockTime;
-    _clockTime = new double [_dimClock];
     if (_clockInterval) delete [] _clockInterval;
     _clockInterval = new double [_dimClock];
+    if (_clockShift) delete [] _clockShift;
+    _clockShift = new double [_dimClock];
+    if (_clockTime) delete [] _clockTime;
+    _clockTime = new double [_dimClock];
   }
   _start_time = 0.0;
   _terminal = false;
@@ -291,6 +296,11 @@ void SystemDefaultImplementation::getClock(bool* z)
 double *SystemDefaultImplementation::clockInterval()
 {
   return _clockInterval;
+}
+
+double *SystemDefaultImplementation::clockShift()
+{
+  return _clockShift;
 }
 
 void SystemDefaultImplementation::getContinuousStates(double* z)
