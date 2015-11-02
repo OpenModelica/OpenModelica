@@ -117,6 +117,23 @@ private:
   QMap<QString, QString> mComponentModifiersMap;
 };
 
+class Parameter;
+class UpdateComponentParametersCommand : public QUndoCommand
+{
+public:
+  UpdateComponentParametersCommand(Component *pComponent, QMap<QString, QString> oldComponentModifiersMap,
+                                   QMap<QString, QString> oldComponentExtendsModifiersMap, QMap<QString, QString> newComponentModifiersMap,
+                                   QMap<QString, QString> newComponentExtendsModifiersMap, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  Component *mpComponent;
+  QMap<QString, QString> mOldComponentModifiersMap;
+  QMap<QString, QString> mOldComponentExtendsModifiersMap;
+  QMap<QString, QString> mNewComponentModifiersMap;
+  QMap<QString, QString> mNewComponentExtendsModifiersMap;
+};
+
 class DeleteComponentCommand : public QUndoCommand
 {
 public:

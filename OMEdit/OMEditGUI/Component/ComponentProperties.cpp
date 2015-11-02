@@ -59,6 +59,7 @@ Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab
   mpNameLabel = new Label;
   mpFixedCheckBox = new FixedCheckBox;
   connect(mpFixedCheckBox, SIGNAL(clicked()), SLOT(showFixedMenu()));
+  mOriginalFixedValue = "";
   // set the value type based on component type.
   OMCProxy *pOMCProxy = mpComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   if (mpComponent->getComponentInfo()->getClassName().compare("Boolean") == 0) {
@@ -166,6 +167,7 @@ QString Parameter::getValue()
 
 void Parameter::setFixedState(QString fixed, bool defaultValue)
 {
+  mOriginalFixedValue = fixed;
   if (fixed.compare("true") == 0) {
     mpFixedCheckBox->setTickState(defaultValue, true);
   } else {
@@ -758,48 +760,41 @@ Parameter* ComponentParameters::findParameter(const QString &parameter, Qt::Case
 }
 
 /*!
-  Slot activated when mpOkButton clicked signal is raised.\n
-  Checks the list of parameters i.e mParametersList and if the value is changed then sets the new value.
-  */
+ * \brief ComponentParameters::updateComponentParameters
+ * Slot activated when mpOkButton clicked signal is raised.\n
+ * Checks the list of parameters i.e mParametersList and if the value is changed then sets the new value.
+ */
 void ComponentParameters::updateComponentParameters()
 {
   bool valueChanged = false;
-  bool modifierValueChanged = false;
-  OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
+  QMap<QString, QString> newComponentModifiersMap;
+  QMap<QString, QString> newComponentExtendsModifiersMap;
+  // any parameter changed
   foreach (Parameter *pParameter, mParametersList) {
-    QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-    QString componentModifier = QString(mpComponent->getName()).append(".").append(pParameter->getNameLabel()->text());
+    QString componentModifierKey = QString(mpComponent->getName()).append(".").append(pParameter->getNameLabel()->text());
+    QString componentModifierValue = pParameter->getValue();
     if (pParameter->isValueModified()) {
       valueChanged = true;
-      QString componentModifierValue = pParameter->getValue();
       /* If the component is inherited then add the modifier value into the extends. */
       if (mpComponent->isInheritedComponent()) {
-        if (pOMCProxy->setExtendsModifierValue(className, mpComponent->getInheritedClassName(), componentModifier,
-                                                                componentModifierValue.prepend("=")))
-          modifierValueChanged = true;
+        newComponentExtendsModifiersMap.insert(componentModifierKey, componentModifierValue);
       } else {
-        if (pOMCProxy->setComponentModifierValue(className, componentModifier, componentModifierValue.prepend("="))) {
-          modifierValueChanged = true;
-        }
+        newComponentModifiersMap.insert(componentModifierKey, componentModifierValue);
       }
     }
-    if (pParameter->isShowStartAttribute()) {
+    if (pParameter->isShowStartAttribute() && (pParameter->getFixedState().compare(pParameter->getOriginalFixedValue()) != 0)) {
       valueChanged = true;
-      componentModifier = componentModifier.replace(".start", ".fixed");
-      QString componentModifierValue = pParameter->getFixedState();
+      componentModifierKey = componentModifierKey.replace(".start", ".fixed");
+      componentModifierValue = pParameter->getFixedState();
       /* If the component is inherited then add the modifier value into the extends. */
       if (mpComponent->isInheritedComponent()) {
-        if (pOMCProxy->setExtendsModifierValue(className, mpComponent->getInheritedClassName(), componentModifier,
-                                                                componentModifierValue.prepend("=")))
-          modifierValueChanged = true;
+        newComponentExtendsModifiersMap.insert(componentModifierKey, componentModifierValue);
       } else {
-        if (pOMCProxy->setComponentModifierValue(className, componentModifier, componentModifierValue.prepend("="))) {
-          modifierValueChanged = true;
-        }
+        newComponentModifiersMap.insert(componentModifierKey, componentModifierValue);
       }
     }
   }
-  // add modifiers
+  // any new modifier is added
   if (!mpModifiersTextBox->text().isEmpty()) {
     QString regexp ("\\s*([A-Za-z0-9]+\\s*)\\(\\s*([A-Za-z0-9]+)\\s*=\\s*([A-Za-z0-9]+)\\s*\\)$");
     QRegExp modifierRegExp (regexp);
@@ -807,11 +802,10 @@ void ComponentParameters::updateComponentParameters()
     foreach (QString modifier, modifiers) {
       modifier = modifier.trimmed();
       if (modifierRegExp.exactMatch(modifier)) {
-        QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-        QString componentModifier = QString(mpComponent->getName()).append(".").append(modifier.mid(0, modifier.indexOf("(")));
-        QString componentModifierValue = modifier.mid(modifier.indexOf("("));
-        pOMCProxy->setComponentModifierValue(className, componentModifier, componentModifierValue);
         valueChanged = true;
+        QString componentModifierKey = QString(mpComponent->getName()).append(".").append(modifier.mid(0, modifier.indexOf("(")));
+        QString componentModifierValue = modifier.mid(modifier.indexOf("("));
+        newComponentModifiersMap.insert(componentModifierKey, componentModifierValue);
       } else {
         mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                                      GUIMessages::getMessage(GUIMessages::WRONG_MODIFIER).arg(modifier),
@@ -819,12 +813,34 @@ void ComponentParameters::updateComponentParameters()
       }
     }
   }
-  // if valueChanged is true then set the model modified.
+  // if valueChanged is true then put the change in the undo stack.
   if (valueChanged) {
-    mpComponent->getGraphicsView()->getModelWidget()->updateModelicaText();
-    if (modifierValueChanged) {
-      mpComponent->componentParameterHasChanged();
+    // save the Component modifiers
+    QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+    QMap<QString, QString> oldComponentModifiersMap;
+    QStringList componentModifiersList = mpMainWindow->getOMCProxy()->getComponentModifierNames(className, mpComponent->getName());
+    foreach (QString componentModifier, componentModifiersList) {
+      QString originalModifierName = QString(mpComponent->getName()).append(".").append(componentModifier);
+      QString componentModifierValue = mpMainWindow->getOMCProxy()->getComponentModifierValue(className, originalModifierName);
+      oldComponentModifiersMap.insert(componentModifier, componentModifierValue);
     }
+    // save the Component extends modifiers
+    QMap<QString, QString> oldComponentExtendsModifiersMap;
+    if (mpComponent->getReferenceComponent()) {
+      QString inheritedClassName = mpComponent->getReferenceComponent()->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+      QStringList extendsModifiersList = mpMainWindow->getOMCProxy()->getExtendsModifierNames(className, inheritedClassName);
+      foreach (QString extendsModifier, extendsModifiersList) {
+        QString componentModifierValue = mpMainWindow->getOMCProxy()->getExtendsModifierValue(className, inheritedClassName, extendsModifier);
+        oldComponentExtendsModifiersMap.insert(extendsModifier, componentModifierValue);
+      }
+    }
+    // create UpdateComponentParametersCommand
+    UpdateComponentParametersCommand *pUpdateComponentParametersCommand;
+    pUpdateComponentParametersCommand = new UpdateComponentParametersCommand(mpComponent, oldComponentModifiersMap,
+                                                                             oldComponentExtendsModifiersMap, newComponentModifiersMap,
+                                                                             newComponentExtendsModifiersMap);
+    mpComponent->getGraphicsView()->getModelWidget()->getUndoStack()->push(pUpdateComponentParametersCommand);
+    mpComponent->getGraphicsView()->getModelWidget()->updateModelicaText();
   }
   accept();
 }

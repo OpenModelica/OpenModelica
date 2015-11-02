@@ -1003,6 +1003,18 @@ bool OMCProxy::setComponentModifierValue(QString className, QString modifierName
   }
 }
 
+/*!
+ * \brief OMCProxy::removeComponentModifiers
+ * Removes all the modifiers of a component.
+ * \param className
+ * \param name
+ * \return
+ */
+bool OMCProxy::removeComponentModifiers(QString className, QString name)
+{
+  return mpOMCInterface->removeComponentModifiers(className, name);
+}
+
 QStringList OMCProxy::getExtendsModifierNames(QString className, QString extendsClassName)
 {
   sendCommand("getExtendsModifierNames(" + className + "," + extendsClassName + ", useQuotes = true)");
@@ -1048,6 +1060,18 @@ bool OMCProxy::isExtendsModifierFinal(QString className, QString extendsClassNam
 {
   sendCommand("isExtendsModifierFinal(" + className + "," + extendsClassName + "," + modifierName + ")");
   return StringHandler::unparseBool(getResult());
+}
+
+/*!
+ * \brief OMCProxy::removeExtendsModifiers
+ * Removes the extends modifier of a class.
+ * \param className
+ * \param extendsClassName
+ * \return
+ */
+bool OMCProxy::removeExtendsModifiers(QString className, QString extendsClassName)
+{
+  return mpOMCInterface->removeExtendsModifiers(className, extendsClassName);
 }
 
 /*!
