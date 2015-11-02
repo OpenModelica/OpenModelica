@@ -6,6 +6,16 @@
 #include <Core/Modelica.h>
 #if defined(__vxworks)
 
+extern "C" IAlgLoopSolver* createNewton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
+{
+    return new Newton(algLoop, settings);
+}
+
+extern "C" INonLinSolverSettings* createNewtonSettings()
+{
+    return new NewtonSettings();
+}
+
 
 #elif defined(OMC_BUILD) && !defined(RUNTIME_STATIC_LINKING)
 
