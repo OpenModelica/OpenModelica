@@ -15197,7 +15197,7 @@ algorithm
     outClass := getPathedClassInProgramWork(inPath, inProgram, enclOnErr);
   else
     (p, _) := Builtin.getInitialFunctions();
-    outClass := getPathedClassInProgramWork(inPath, inProgram, enclOnErr);
+    outClass := getPathedClassInProgramWork(inPath, p, enclOnErr);
   end try;
 end getPathedClassInProgram;
 
