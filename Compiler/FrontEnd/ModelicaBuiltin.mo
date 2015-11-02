@@ -2807,6 +2807,30 @@ annotation(
   preferredView="text");
 end getComponentModifierNames;
 
+function removeComponentModifiers
+  input TypeName class_;
+  input String componentName;
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Removes the component modifiers.
+</html>"),
+  preferredView="text");
+end removeComponentModifiers;
+
+function removeExtendsModifiers
+  input TypeName className;
+  input TypeName baseClassName;
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Removes the extends modifiers of a class.
+</html>"),
+  preferredView="text");
+end removeExtendsModifiers;
+
 function getAlgorithmCount "Counts the number of Algorithm sections in a class."
   input TypeName class_;
   output Integer count;

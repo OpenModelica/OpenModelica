@@ -1974,6 +1974,22 @@ algorithm
       then
         (cache,v,st);
 
+    case (cache,_,"removeComponentModifiers",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str1)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+      equation
+        (p,b) = Interactive.removeComponentModifiers(path, str1, p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
+      then
+        (cache,Values.BOOL(b),st);
+
+    case (cache,_,"removeExtendsModifiers",
+          {Values.CODE(Absyn.C_TYPENAME(classpath)),
+           Values.CODE(Absyn.C_TYPENAME(baseClassPath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        (p,b) = Interactive.removeExtendsModifiers(classpath, baseClassPath, p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
+      then
+        (cache,Values.BOOL(b),st);
+
     case (cache,_,"getAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
