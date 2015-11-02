@@ -61,6 +61,7 @@ public:
   void updateNameLabel();
   Label* getNameLabel() {return mpNameLabel;}
   FixedCheckBox* getFixedCheckBox() {return mpFixedCheckBox;}
+  QString getOriginalFixedValue() {return mOriginalFixedValue;}
   void setValueType(ValueType valueType) {mValueType = valueType;}
   void setValueWidget(QString value, bool defaultValue);
   ValueType getValueType() {return mValueType;}
@@ -80,6 +81,7 @@ private:
   bool mShowStartAttribute;
   Label *mpNameLabel;
   FixedCheckBox *mpFixedCheckBox;
+  QString mOriginalFixedValue;
   ValueType mValueType;
   QComboBox *mpValueComboBox;
   QLineEdit *mpValueTextBox;

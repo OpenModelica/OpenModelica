@@ -131,10 +131,12 @@ public:
   QStringList getComponentModifierNames(QString className, QString name);
   QString getComponentModifierValue(QString className, QString name);
   bool setComponentModifierValue(QString className, QString name, QString modifierValue);
+  bool removeComponentModifiers(QString className, QString name);
   QStringList getExtendsModifierNames(QString className, QString extendsClassName);
   QString getExtendsModifierValue(QString className, QString extendsClassName, QString modifierName);
   bool setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue);
   bool isExtendsModifierFinal(QString className, QString extendsClassName, QString modifierName);
+  bool removeExtendsModifiers(QString className, QString extendsClassName);
   QString getIconAnnotation(QString className);
   QString getDiagramAnnotation(QString className);
   int getConnectionCount(QString className);

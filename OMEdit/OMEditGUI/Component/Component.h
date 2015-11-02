@@ -142,6 +142,7 @@ public:
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
   QString getName() {return mpComponentInfo->getName();}
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
+  Component *getReferenceComponent() {return mpReferenceComponent;}
   Component* getParentComponent() {return mpParentComponent;}
   Component* getRootParentComponent();
   ComponentType getComponentType() {return mComponentType;}
