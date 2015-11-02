@@ -55,6 +55,8 @@ simplify.mos \
 stringSplit.mos \
 strings.mos  \
 variables.mos \
+getDefinitions.mos \
+
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
