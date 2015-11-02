@@ -73,6 +73,12 @@ getExtendsModifierValue(K3,Resistor,R);
 getExtendsModifierNames(K4,Resistor);
 setExtendsModifierValue(K4,Resistor,x,$Code(()));
 getExtendsModifierValue(K4,Resistor,x);
+// returns modifier applied on Resistor
+getExtendsModifierNames(K4,Resistor);
+// removes the modifiers applied on Resistor
+removeExtendsModifiers(K4,Resistor);
+// returns modifier applied on Resistor, should be empty now
+getExtendsModifierNames(K4,Resistor);
 setExtendsModifierValue(K5,Resistor,x,$Code(()));
 getExtendsModifierNames(K5,Resistor);
 getExtendsModifierValue(K5,Resistor,x.fixed);
@@ -212,6 +218,12 @@ isExtendsModifierFinal(K6,Resistor,x);
 // Ok
 // Evaluating: getExtendsModifierValue(K4, Resistor, x)
 // (start = 2, fixed = true)
+// Evaluating: getExtendsModifierNames(K4, Resistor)
+// {x.start, x.fixed}
+// Evaluating: removeExtendsModifiers(K4, Resistor)
+// true
+// Evaluating: getExtendsModifierNames(K4, Resistor)
+// {}
 // Evaluating: setExtendsModifierValue(K5, Resistor, x, $Code())
 // Ok
 // Evaluating: getExtendsModifierNames(K5, Resistor)

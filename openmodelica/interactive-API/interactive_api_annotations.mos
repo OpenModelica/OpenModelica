@@ -73,10 +73,14 @@ getComponentAnnotations(Modelica.Electrical.Analog.Basic.Ground); getErrorString
 getParameterNames(Modelica.Electrical.Analog.Basic.Resistor);                   getErrorString();
 // R one doesn't have a default value!
 getParameterValue(Modelica.Electrical.Analog.Basic.Resistor, "R");                getErrorString();
-// the the modification names
+// the modification names
 getComponentModifierNames(Modelica.Electrical.Analog.Basic.Resistor, "R");        getErrorString();
 // retrieve the start value
 getComponentModifierValue(Modelica.Electrical.Analog.Basic.Resistor, R.start);  getErrorString();
+// remove the component modifiers
+removeComponentModifiers(Modelica.Electrical.Analog.Basic.Resistor, "R");         getErrorString();
+// the modification names again, should be empty now
+getComponentModifierNames(Modelica.Electrical.Analog.Basic.Resistor, "R");        getErrorString();
 getParameterValue(Modelica.Electrical.Analog.Basic.Resistor, "T_ref");            getErrorString();
 getComponentModifierNames(Modelica.Electrical.Analog.Basic.Resistor, "T_ref");    getErrorString();
 getParameterValue(Modelica.Electrical.Analog.Basic.Resistor, "alpha");            getErrorString();
@@ -8184,6 +8188,14 @@ getDocumentationAnnotation(Modelica.UsersGuide.Contact); getErrorString();
 // ""
 // Evaluating: getComponentModifierValue(Modelica.Electrical.Analog.Basic.Resistor, R.start)
 //  = 1
+// Evaluating: getErrorString()
+// ""
+// Evaluating: removeComponentModifiers(Modelica.Electrical.Analog.Basic.Resistor, "R")
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierNames(Modelica.Electrical.Analog.Basic.Resistor, "R")
+// {}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getParameterValue(Modelica.Electrical.Analog.Basic.Resistor, "T_ref")
