@@ -5,6 +5,8 @@
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 #if defined(__vxworks)
+#include <Solver/Newton/Newton.h>
+#include <Solver/Newton/NewtonSettings.h>
 
 extern "C" IAlgLoopSolver* createNewton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 {
