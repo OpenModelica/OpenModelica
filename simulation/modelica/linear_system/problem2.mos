@@ -2,7 +2,7 @@
 // keywords: linear system of equations
 // status: correct
 // teardown_command: rm -rf linear_system.problem2* output.log
-// 
+//
 // Solving of a linear system of equations
 
 loadFile("linearTestPackage.mo"); getErrorString();
@@ -43,9 +43,11 @@ val(i2, 0.0);
 val(i2, 1.0);
 
 
-setCommandLineOptions("+d=dumpRecursiveTearing +recursiveTearing=1");
+setCommandLineOptions("-d=dumpRecursiveTearing --recursiveTearing=1");
 
-simulate(linear_system.problem2, simflags="-ls lis -lv LOG_LS");
+// Earlier, this used -lv LOG_LS. But LOG_LS output depends on execution time (timer).
+// This is not going to work, and the other output is only marginally useful (size of the linear system).
+simulate(linear_system.problem2, simflags="-ls lis");
 getErrorString();
 
 val(u3, 0.0);
@@ -150,11 +152,8 @@ val(i2, 1.0);
 // ****************
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls lis -lv LOG_LS'",
-//     messages = "LOG_LS            | info    | Start solving Linear System 11 (size 2) at time 0 with Lis Solver
-// LOG_LS            | info    | ###  0.000023  time to set Matrix A and vector b.
-// LOG_LS            | info    | Solve System: 0.000035
-// "
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls lis'",
+//     messages = ""
 // end SimulationResult;
 // ""
 // 0.0
