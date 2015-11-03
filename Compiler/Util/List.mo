@@ -1756,6 +1756,21 @@ algorithm
   outUnion := listReverseInPlace(outUnion);
 end unionOnTrue;
 
+public function unionAppendListOnTrue<T>
+  input list<T> inList;
+  input list<T> inUnion;
+  input CompFunc inCompFunc;
+  output list<T> outUnion;
+
+  partial function CompFunc
+    input T inElement1;
+    input T inElement2;
+    output Boolean outIsEqual;
+  end CompFunc;
+algorithm
+  outUnion := fold(inList, function unionEltOnTrue(inCompFunc = inCompFunc), inUnion);
+end unionAppendListOnTrue;
+
 public function unionList<T>
   "Takes a list of lists and returns the union of the sublists.
      Example: unionList({1}, {1, 2}, {3, 4}, {5}}) => {1, 2, 3, 4, 5}"
