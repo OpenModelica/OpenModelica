@@ -36,7 +36,7 @@
 #include "util/omc_error.h"
 #include "mixedSystem.h"
 #include "mixedSearchSolver.h"
-#include "simulation/simulation_info_xml.h"
+#include "simulation/simulation_info_json.h"
 
 /*! \fn int initializeMixedSystems(DATA *data)
  *

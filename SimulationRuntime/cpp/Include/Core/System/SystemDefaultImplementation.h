@@ -26,7 +26,7 @@ Copyright (c) 2008, OSMC
 
 #define MODELICA_TERMINATE(msg) Terminate(msg)
 
-//typedef boost::unordered_map<std::string, boost::any> SValuesMap;
+//typedef unordered_map<std::string, boost::any> SValuesMap;
 
 template <class T>
 class InitVars
@@ -36,13 +36,13 @@ public:
   T& getGetStartValue(T& variable);
 
 private:
-  boost::unordered_map<T*, T> _start_values;
+  unordered_map<T*, T> _start_values;
 };
 
 class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation
 {
 public:
-  SystemDefaultImplementation(IGlobalSettings* globalSettings,shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars);
+  SystemDefaultImplementation(IGlobalSettings* globalSettings,shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars,shared_ptr<ISimObjects> sim_objects);
   SystemDefaultImplementation(SystemDefaultImplementation &instance);
   virtual ~SystemDefaultImplementation();
 
@@ -87,6 +87,9 @@ public:
 
   /// Provide clock intervals
   virtual double *clockInterval();
+
+  /// Provide clock shifts
+  virtual double *clockShift();
 
   /// Provide the right hand side
   virtual void getRHS(double* f);
@@ -169,8 +172,9 @@ protected:
 
     int
     * _time_event_counter;
-    double *_clockTime;       ///< time of clock ticks
     double *_clockInterval;   ///< time interval between clock ticks
+    double *_clockShift;      ///< time before first activation
+    double *_clockTime;       ///< time of clock ticks
     std::ostream *_outputStream;        ///< Output stream for results
 
     IContinuous::UPDATETYPE _callType;
@@ -188,13 +192,16 @@ protected:
         *__z,                 ///< "Extended state vector", containing all states and algebraic variables of all types
         *__zDot;              ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
 
-    typedef boost::circular_buffer<double> buffer_type;
+    typedef std::deque<double> buffer_type;
+    typedef std::iterator_traits<buffer_type::iterator>::difference_type difference_type;
     map<unsigned int, buffer_type> _delay_buffer;
     buffer_type _time_buffer;
     double _delay_max;
     double _start_time;
+    /*ToDo: remove sim_data and sim_vars*/
     shared_ptr<ISimData> _sim_data;
     shared_ptr<ISimVars> _sim_vars;
+    shared_ptr<ISimObjects> _sim_objects;
     IGlobalSettings* _global_settings; //this should be a reference, but this is not working if the libraries are linked statically
     IEvent* _event_system; ///this pointer to event system
 };

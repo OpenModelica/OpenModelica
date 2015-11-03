@@ -783,7 +783,7 @@ algorithm
       list<DAE.Exp> args;
       list<DAE.ComponentRef> crefs;
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
-      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> lst_cr;
       DAE.ElementSource source;
       DAE.Exp newExp,newExp1, e1, cond, msg, level, newAssrtCond, newAssrtMsg, newAssrtLevel;
       DAE.InlineType inlineType;
@@ -825,13 +825,16 @@ algorithm
           (newExp1,(_,_,assrtLst)) = Expression.Expression.traverseExpBottomUp(newExp,inlineCall,(fns,true,assrtLstIn));
         else // normal Modelica
           // get inputs, body and output
-          (crefs,{cr},stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
+		  //print(ExpressionDump.printExpStr(e1) + "--In\n");
+          (crefs,lst_cr,stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
+
           // merge statements to one line
           (repl,assrtStmts) = mergeFunctionBody(stmts,repl,{});
           // depend on detection of assert or not
           if (listEmpty(assrtStmts))
           then // no assert detected
-            newExp = getReplacementCheckComplex(repl,cr,ty);
+            newExp = Expression.makeTuple(list( getReplacementCheckComplex(repl,cr,ty) for cr in lst_cr));
+			//print(ExpressionDump.printExpStr(newExp) + "--newExp\n");
             argmap = List.threadTuple(crefs,args);
             (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
             // compare types
@@ -847,7 +850,8 @@ algorithm
             true = listLength(assrtStmts) == 1;
             assrt = listHead(assrtStmts);
             DAE.STMT_ASSERT() = assrt;
-            newExp = getReplacementCheckComplex(repl,cr,ty); // the function that replaces the output variable
+            //newExp = getReplacementCheckComplex(repl,cr,ty); // the function that replaces the output variable
+            newExp = Expression.makeTuple(list( getReplacementCheckComplex(repl,cr,ty) for cr in lst_cr));
             argmap = List.threadTuple(crefs,args);
             (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
             // compare types
@@ -930,7 +934,7 @@ algorithm
       list<DAE.Element> fn;
       Absyn.Path p;
       list<DAE.Exp> args;
-      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> lst_cr;
       list<DAE.ComponentRef> crefs;
       list<DAE.Statement> assrtStmts;
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
@@ -949,10 +953,11 @@ algorithm
         true = checkInlineType(inlineType,fns);
         (fn,comment) = getFunctionBody(p,fns);
         // get inputs, body and output
-        (crefs,{cr},stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
+        (crefs,lst_cr,stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
         // merge statements to one line
         (repl,_) = mergeFunctionBody(stmts,repl,{});
-        newExp = VarTransform.getReplacement(repl,cr);
+        //newExp = VarTransform.getReplacement(repl,cr);
+        newExp = Expression.makeTuple(list( VarTransform.getReplacement(repl,cr) for cr in lst_cr));
         argmap = List.threadTuple(crefs,args);
         (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
         // compare types
@@ -1076,9 +1081,8 @@ algorithm
       then
         (oInputs,oOutput,oBody,repl);
     case (DAE.VAR(componentRef=cr,protection=DAE.PROTECTED(),ty=tp,binding=binding)::rest,_,_,_,_)
+	guard not  Expression.isRecordType(tp)
       equation
-        false = Expression.isArrayType(tp);
-        false = Expression.isRecordType(tp);
         repl = addOptBindingReplacements(cr,binding,iRepl);
         (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,iOutput,iBody,repl);
       then
@@ -1115,11 +1119,26 @@ algorithm
   oRepl := match(iCr,iExp,iRepl)
     local
       DAE.Type tp;
+	  VarTransform.VariableReplacements repl;
+	  list<DAE.ComponentRef> crefs;
+	  list<DAE.Exp> arrExp;
+	  DAE.Exp e;
+
     case (DAE.CREF_IDENT(identType=tp),_,_)
+	guard not Expression.isRecordType(tp) and not Expression.isArrayType(tp)
       equation
-        false = Expression.isArrayType(tp);
-        false = Expression.isRecordType(tp);
       then VarTransform.addReplacement(iRepl, iCr, iExp);
+	case (DAE.CREF_IDENT(identType=tp),_,_)
+	guard not Expression.isRecordType(tp)
+      algorithm
+	  crefs := ComponentReference.expandCref(iCr, false);
+	  repl := iRepl;
+	  arrExp := Expression.getArrayOrRangeContents(iExp);
+	  for c in crefs loop
+	    e :: arrExp := arrExp;
+		repl := VarTransform.addReplacement(repl, c, e);
+	  end for;
+      then repl;
   end match;
 end addReplacement;
 

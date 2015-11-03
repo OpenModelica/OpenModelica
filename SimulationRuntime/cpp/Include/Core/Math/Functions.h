@@ -147,11 +147,7 @@ inline static int round (const double &n)
 /// Modelica integer function
 inline static int integer (const double &n)
 {
-    int castValue = boost::numeric_cast<int>(n);
-    if(n < castValue)
-      return castValue - 1;
-    else
-      return castValue;
+    return floor(n);
 }
 
 /// Horner-Schema (William George Horner)

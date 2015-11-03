@@ -5,6 +5,18 @@
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 #if defined(__vxworks)
+#include <Solver/Newton/Newton.h>
+#include <Solver/Newton/NewtonSettings.h>
+
+extern "C" IAlgLoopSolver* createNewton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
+{
+    return new Newton(algLoop, settings);
+}
+
+extern "C" INonLinSolverSettings* createNewtonSettings()
+{
+    return new NewtonSettings();
+}
 
 
 #elif defined(OMC_BUILD) && !defined(RUNTIME_STATIC_LINKING)

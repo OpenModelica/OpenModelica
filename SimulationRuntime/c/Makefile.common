@@ -24,6 +24,7 @@ builddir = ../../build
 
 CDASKRDIR=$(top_builddir)/3rdParty/Cdaskr/solver/
 CMINPACKDIR=$(top_builddir)/3rdParty/CMinpack/
+LAPACKDIR=$(top_builddir)/3rdParty/dgesv/
 
 RUNTIME_HEADERS = \
 ./omc_inline.h \
@@ -40,7 +41,6 @@ RUNTIMEOPTIMZ_HEADERS = ./optimization/OptimizerData.h ./optimization/OptimizerL
 
 RUNTIMESIMULATION_HEADERS = ./simulation/modelinfo.h \
 ./simulation/options.h \
-./simulation/simulation_info_xml.h \
 ./simulation/simulation_info_json.h \
 ./simulation/simulation_input_xml.h \
 ./simulation/simulation_runtime.h
@@ -56,6 +56,7 @@ RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/delay.h \
 ./simulation/solver/model_help.h \
 ./simulation/solver/mixedSearchSolver.h \
 ./simulation/solver/nonlinearSystem.h \
+./simulation/solver/nonlinearValuesList.h \
 ./simulation/solver/nonlinearSolverHomotopy.h \
 ./simulation/solver/nonlinearSolverHybrd.h \
 ./simulation/solver/stateset.h \
@@ -252,8 +253,18 @@ sourcedist:
 
 sourcedist_internal:
 	mkdir -p $(builddir_inc)/c/external_solvers external_solvers
-	cp $(CMINPACK_OBJS:%=$(CMINPACKDIR)/%.c) "external_solvers/"
-	cp "$(CMINPACKDIR)/minpack.h" "$(CMINPACKDIR)/cminpack.h" "$(builddir_inc)/c/external_solvers"
+	cp \
+	 $(CMINPACK_OBJS:%=$(CMINPACKDIR)/%.c) \
+	 $(LAPACK_OBJS:%=$(LAPACKDIR)/lapack/%.c) \
+	 $(BLAS_OBJS:%=$(LAPACKDIR)/blas/%.c) \
+	 $(LIBF2C_OBJS:%=$(LAPACKDIR)/libf2c/%.c) \
+	 "./external_solvers/"
+	cp \
+	 "$(CMINPACKDIR)/minpack.h" "$(CMINPACKDIR)/cminpack.h" \
+	 "$(LAPACKDIR)/include/blaswrap.h" \
+	 "$(LAPACKDIR)/include/clapack.h" \
+	 "$(LAPACKDIR)/include/f2c.h" \
+	 "$(builddir_inc)/c/external_solvers"
 	cd $(builddir_inc)/c/ && mkdir -p $(ALL_PATHS)
 	(D=`pwd` && cd $(builddir_inc)/c/ $(FMI_ME_OBJS:%.o= && (OMCFILE=% && cp $$D/$$OMCFILE.c $$OMCFILE.c)))
 	cp Makefile.objs $(builddir_inc)/c/

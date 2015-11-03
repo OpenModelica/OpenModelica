@@ -53,8 +53,9 @@ public:
     virtual unsigned int getAlarmTime() {return 0;}
     virtual void setNonLinearSolverContinueOnError(bool){};
     virtual bool getNonLinearSolverContinueOnError(){ return false; };
-
     virtual void setSolverThreads(int){};
     virtual int getSolverThreads() { return 1; };
+    virtual OutputFormat getOutputFormat() {return EMPTY;};
+    virtual void setOutputFormat(OutputFormat) {};
 private:
 };

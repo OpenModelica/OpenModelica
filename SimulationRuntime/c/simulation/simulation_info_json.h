@@ -37,11 +37,10 @@
 extern "C" {
 #endif
 
-FUNCTION_INFO modelInfoJsonGetFunction(MODEL_DATA_XML*,size_t);
-void modelInfoJsonInit(MODEL_DATA_XML*);
-EQUATION_INFO modelInfoJsonGetEquation(MODEL_DATA_XML*,size_t);
-EQUATION_INFO modelInfoJsonGetEquationIndexByProfileBlock(MODEL_DATA_XML*,size_t);
-void freeModelInfoJson(MODEL_DATA_XML*);
+extern FUNCTION_INFO modelInfoGetFunction(MODEL_DATA_XML*,size_t);
+extern void modelInfoInit(MODEL_DATA_XML*);
+extern EQUATION_INFO modelInfoGetEquation(MODEL_DATA_XML*,size_t);
+extern EQUATION_INFO modelInfoGetEquationIndexByProfileBlock(MODEL_DATA_XML*,size_t);
 
 #ifdef __cplusplus
 }

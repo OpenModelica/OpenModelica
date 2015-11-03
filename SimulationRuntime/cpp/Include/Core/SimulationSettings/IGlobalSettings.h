@@ -28,7 +28,7 @@ using std::string;
 enum LogCategory {LC_INIT = 0, LC_NLS = 1, LC_LS = 2, LC_SOLV = 3, LC_OUT = 4, LC_EVT = 5, LC_OTHER = 6, LC_MOD = 7};
 enum LogLevel {LL_ERROR = 0, LL_WARNING = 1, LL_INFO = 2, LL_DEBUG = 3};
 enum OutputPointType {OPT_ALL, OPT_STEP, OPT_NONE};
-
+enum OutputFormat{CSV, MAT,BUFFER,EMPTY};
 struct LogSettings
 {
 	std::vector<LogLevel> modes;
@@ -67,7 +67,8 @@ public:
   virtual void setLogSettings(LogSettings) = 0;
   virtual void setAlarmTime(unsigned int) = 0;
   virtual unsigned int getAlarmTime() = 0;
-
+  virtual OutputFormat getOutputFormat() = 0;
+  virtual void setOutputFormat(OutputFormat) = 0;
   virtual bool useEndlessSim() = 0;
   virtual void useEndlessSim(bool) = 0;
   ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)

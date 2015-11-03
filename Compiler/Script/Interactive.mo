@@ -4901,6 +4901,176 @@ algorithm
   end matchcontinue;
 end setSourceFile;
 
+public function removeExtendsModifiers
+"Removes the extends modifiers of a class."
+  input Absyn.Path inClassPath;
+  input Absyn.Path inBaseClassPath;
+  input Absyn.Program inProgram;
+  output Absyn.Program outProgram;
+  output Boolean outResult;
+algorithm
+  (outProgram,outResult) := matchcontinue (inClassPath,inBaseClassPath,inProgram)
+    local
+      Absyn.Path p_class,inherit_class;
+      Absyn.Within within_;
+      Absyn.Class cdef,cdef_1;
+      FCore.Graph env;
+      Absyn.Program newp,p;
+
+    case (p_class,inherit_class,p as Absyn.PROGRAM())
+      equation
+        within_ = buildWithin(p_class);
+        cdef = getPathedClassInProgram(p_class, p);
+        env = getClassEnv(p, p_class);
+        cdef_1 = removeExtendsModifiersInClass(cdef, inherit_class, env);
+        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
+      then
+        (newp, true);
+    else (inProgram, false);
+  end matchcontinue;
+end removeExtendsModifiers;
+
+protected function removeExtendsModifiersInClass
+  input Absyn.Class inClass;
+  input Absyn.Path inPath;
+  input FCore.Graph inEnv;
+  output Absyn.Class outClass;
+algorithm
+  outClass:=
+  match (inClass,inPath,inEnv)
+    local
+      list<Absyn.ClassPart> parts_1,parts;
+      String id,bcname;
+      Boolean p,f,e;
+      Absyn.Restriction r;
+      Option<String> cmt;
+      SourceInfo file_info;
+      Absyn.Path inherit_name;
+      FCore.Graph env;
+      list<Absyn.ElementArg> modif;
+      list<String> typeVars;
+      list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
+    /* a class with parts */
+    case (Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt),info = file_info),
+          inherit_name,env)
+      equation
+        parts_1 = removeExtendsModifiersInClassparts(parts, inherit_name, env);
+      then
+        Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts_1,ann,cmt),file_info);
+    /* adrpo: handle also model extends M end M; */
+    case (Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,parts = parts,modifications=modif,ann=ann,comment = cmt),info = file_info),
+          inherit_name,env)
+      equation
+        parts_1 = removeExtendsModifiersInClassparts(parts, inherit_name, env);
+      then
+        Absyn.CLASS(id,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts_1,ann),file_info);
+  end match;
+end removeExtendsModifiersInClass;
+
+protected function removeExtendsModifiersInClassparts
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  input Absyn.Path inPath;
+  input FCore.Graph inEnv;
+  output list<Absyn.ClassPart> outAbsynClassPartLst;
+algorithm
+  outAbsynClassPartLst:=
+  matchcontinue (inAbsynClassPartLst,inPath,inEnv)
+    local
+      list<Absyn.ClassPart> res,rest;
+      list<Absyn.ElementItem> elts_1,elts;
+      Absyn.Path inherit;
+      FCore.Graph env;
+      Absyn.ClassPart elt;
+
+    case ({},_,_) then {};
+
+    case ((Absyn.PUBLIC(contents = elts) :: rest),inherit,env)
+      equation
+        res = removeExtendsModifiersInClassparts(rest, inherit, env);
+        elts_1 = removeExtendsModifiersInElementitems(elts, inherit, env);
+      then
+        (Absyn.PUBLIC(elts_1) :: res);
+
+    case ((Absyn.PROTECTED(contents = elts) :: rest),inherit,env)
+      equation
+        res = removeExtendsModifiersInClassparts(rest, inherit, env);
+        elts_1 = removeExtendsModifiersInElementitems(elts, inherit, env);
+      then
+        (Absyn.PROTECTED(elts_1) :: res);
+
+    case ((elt :: rest),inherit,env)
+      equation
+        res = removeExtendsModifiersInClassparts(rest, inherit, env);
+      then
+        (elt :: res);
+
+  end matchcontinue;
+end removeExtendsModifiersInClassparts;
+
+protected function removeExtendsModifiersInElementitems
+  input list<Absyn.ElementItem> inAbsynElementItemLst;
+  input Absyn.Path inPath;
+  input FCore.Graph inEnv;
+  output list<Absyn.ElementItem> outAbsynElementItemLst;
+algorithm
+  outAbsynElementItemLst:=
+  matchcontinue (inAbsynElementItemLst,inPath,inEnv)
+    local
+      list<Absyn.ElementItem> res,rest;
+      Absyn.Element elt_1,elt;
+      Absyn.Path inherit;
+      FCore.Graph env;
+      Absyn.ElementItem elitem;
+    case ({},_,_) then {};
+    case ((Absyn.ELEMENTITEM(element = elt) :: rest),inherit,env)
+      equation
+        res = removeExtendsModifiersInElementitems(rest, inherit, env);
+        elt_1 = removeExtendsModifiersInElement(elt, inherit, env);
+      then
+        (Absyn.ELEMENTITEM(elt_1) :: res);
+    case ((elitem :: rest),inherit,env)
+      equation
+        res = removeExtendsModifiersInElementitems(rest, inherit, env);
+      then
+        (elitem :: res);
+  end matchcontinue;
+end removeExtendsModifiersInElementitems;
+
+protected function removeExtendsModifiersInElement
+  input Absyn.Element inElement;
+  input Absyn.Path inPath;
+  input FCore.Graph inEnv;
+  output Absyn.Element outElement;
+algorithm
+  outElement:=
+  matchcontinue (inElement,inPath,inEnv)
+    local
+      Boolean f;
+      Option<Absyn.RedeclareKeywords> r;
+      Absyn.InnerOuter i;
+      Absyn.Path path,inherit,path_1;
+      list<Absyn.ElementArg> eargs,eargs_1;
+      SourceInfo info;
+      Option<Absyn.ConstrainClass> constr;
+      FCore.Graph env;
+      Absyn.Element elt;
+      Option<Absyn.Annotation> annOpt;
+
+    case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = i,
+      specification = Absyn.EXTENDS(path = path,elementArg = eargs,annotationOpt=annOpt),info = info,constrainClass = constr),
+      inherit,env)
+      equation
+        (_,path_1) = Inst.makeFullyQualified(FCore.emptyCache(),env, path);
+        true = Absyn.pathEqual(inherit, path_1);
+      then
+        Absyn.ELEMENT(f,r,i,Absyn.EXTENDS(path,{},annOpt),info,constr);
+    else inElement;
+  end matchcontinue;
+end removeExtendsModifiersInElement;
+
 protected function setExtendsModifierValue
 " This function sets the submodifier value of an
    extends clause in a Class. For instance,
@@ -5483,6 +5653,84 @@ algorithm
     case (Absyn.ELEMENT(specification = (ext as Absyn.EXTENDS()))) then ext;
   end match;
 end getExtendsElementspecInElement;
+
+public function removeComponentModifiers
+  "Removes all the modifiers of a component."
+  input Absyn.Path path;
+  input String inComponentName;
+  input Absyn.Program inProgram;
+  output Absyn.Program outProgram;
+  output Boolean outResult;
+protected
+  Absyn.Within within_;
+  Absyn.Class cls;
+algorithm
+  try
+    within_ := buildWithin(path);
+    cls := getPathedClassInProgram(path, inProgram);
+    cls := clearComponentModifiersInClass(cls, inComponentName);
+    outProgram := updateProgram(Absyn.PROGRAM({cls}, within_), inProgram);
+    outResult := true;
+  else
+    outProgram := inProgram;
+    outResult := false;
+  end try;
+end removeComponentModifiers;
+
+protected function clearComponentModifiersInClass
+  input Absyn.Class inClass;
+  input String inComponentName;
+  output Absyn.Class outClass = inClass;
+algorithm
+  (outClass, true) := Absyn.traverseClassComponents(inClass,
+    function clearComponentModifiersInCompitems(inComponentName =
+      inComponentName), false);
+end clearComponentModifiersInClass;
+
+protected function clearComponentModifiersInCompitems
+  "Helper function to clearComponentModifiersInClass. Clears the modifiers in a ComponentItem."
+  input list<Absyn.ComponentItem> inComponents;
+  input Boolean inFound;
+  input String inComponentName;
+  output list<Absyn.ComponentItem> outComponents = {};
+  output Boolean outFound;
+  output Boolean outContinue;
+protected
+  Absyn.ComponentItem item;
+  list<Absyn.ComponentItem> rest_items = inComponents;
+  Absyn.Component comp;
+  list<Absyn.ElementArg> args_old, args_new;
+  Absyn.EqMod eqmod_old, eqmod_new;
+algorithm
+  // Try to find the component we're looking for.
+  while not listEmpty(rest_items) loop
+    item :: rest_items := rest_items;
+
+    if Absyn.componentName(item) == inComponentName then
+      // Found component, propagate the modifier to it.
+      _ := match item
+        case Absyn.COMPONENTITEM(component = comp as Absyn.COMPONENT())
+          algorithm
+            comp.modification := NONE();
+            item.component := comp;
+          then
+            ();
+      end match;
+
+      // Reassemble the item list and return.
+      outComponents := listAppend(listReverse(outComponents), item :: rest_items);
+      outFound := true;
+      outContinue := false;
+      return;
+    end if;
+    outComponents := item :: outComponents;
+  end while;
+
+  // Component not found, continue looking.
+  outComponents := inComponents;
+  outFound := false;
+  outContinue := true;
+end clearComponentModifiersInCompitems;
 
 protected function setComponentModifier
   "Sets a submodifier of a component."
@@ -10526,7 +10774,7 @@ algorithm
       Absyn.ComponentItem c;
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = ad,modification = mod),condition = cond,comment = compcmt) :: cs),cr,cmt)
       equation
-        true = Absyn.crefEqual(Absyn.CREF_IDENT(id,ad), cr);
+        true = Absyn.crefEqual(Absyn.CREF_IDENT(id,{}), cr);
         compcmt_1 = setClassCommentInCommentOpt(compcmt, cmt);
       then
         (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,ad,mod),cond,compcmt_1) :: cs);
@@ -15184,93 +15432,163 @@ end classInProgram;
 
 public function getPathedClassInProgram
 "This function takes a Path and a Program and retrieves the
-  class definition referenced by the Path from the Program."
+  class definition referenced by the Path from the Program.
+  If enclOnErr is true and such class doesn't exist return enclosing class."
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
+  input Boolean enclOnErr = false;
   output Absyn.Class outClass;
+protected
+  Absyn.Program p;
 algorithm
-  outClass := matchcontinue (inPath,inProgram)
-    local
-      Absyn.Program p;
-      Absyn.Path path;
-
-    case (path,p) then getPathedClassInProgramWork(path, p);
-    case (path,_) equation (p,_) = Builtin.getInitialFunctions(); then getPathedClassInProgramWork(path, p);
-
-  end matchcontinue;
+  try
+    outClass := getPathedClassInProgramWork(inPath, inProgram, enclOnErr);
+  else
+    (p, _) := Builtin.getInitialFunctions();
+    outClass := getPathedClassInProgramWork(inPath, p, enclOnErr);
+  end try;
 end getPathedClassInProgram;
 
-public function getPathedClassInProgramWork
+protected function getPathedClassInProgramWork
 "This function takes a Path and a Program and retrieves the
-  class definition referenced by the Path from the Program."
+  class definition referenced by the Path from the Program.
+  If enclOnErr is true and such class doesn't exist return enclosing class."
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
+  input Boolean enclOnErr;
   output Absyn.Class outClass;
 algorithm
-  outClass := match (inPath,inProgram)
+  outClass := match inPath
     local
-      Absyn.Class c1,c1def,res;
+      Absyn.Class c;
       String str;
-      Absyn.Program p;
-      Absyn.Path path,prest;
-      Absyn.Within w;
+      Absyn.Path path;
 
-    case (Absyn.IDENT(name = str),p)
-      equation
-        c1 = getClassInProgram(str, p);
+    case Absyn.IDENT(name = str)
       then
-        c1;
+        getClassInProgram(str, inProgram);
 
-    case (Absyn.FULLYQUALIFIED(path),(p))
-      equation
-        res = getPathedClassInProgram(path,p);
+    case Absyn.FULLYQUALIFIED(path)
       then
-        res;
+        getPathedClassInProgram(path, inProgram, enclOnErr);
 
-    case (Absyn.QUALIFIED(name = str,path = prest),(p as Absyn.PROGRAM()))
+    case Absyn.QUALIFIED(name = str, path = path)
       equation
-        c1def = getClassInProgram(str, p);
-        p.classes = getClassesInClass(Absyn.IDENT(str), p, c1def);
-        res = getPathedClassInProgramWork(prest, p);
+        c = getClassInProgram(str, inProgram);
       then
-        res;
+        if enclOnErr then getPathedClassInProgramWorkNoThrow(path, c)
+                     else getPathedClassInProgramWorkThrow(path, c);
 
   end match;
 end getPathedClassInProgramWork;
 
+protected function getPathedClassInProgramWorkThrow
+"This function takes a Path and a Program and retrieves the
+  class definition referenced by the Path from the Program."
+  input Absyn.Path inPath;
+  input Absyn.Class inClass;
+  output Absyn.Class outClass;
+algorithm
+  outClass := match inPath
+    local
+      Absyn.Class c;
+      String str;
+      Absyn.Path path;
+
+    case Absyn.IDENT(name = str)
+      then
+        getClassInClass(str, inClass);
+
+
+    case Absyn.FULLYQUALIFIED(path)
+      then
+        getPathedClassInProgramWorkThrow(path, inClass);
+
+    case Absyn.QUALIFIED(name = str, path = path)
+      equation
+        c = getClassInClass(str, inClass);
+      then
+        getPathedClassInProgramWorkThrow(path, c);
+
+  end match;
+end getPathedClassInProgramWorkThrow;
+
+protected function getPathedClassInProgramWorkNoThrow
+"Retrieves the class definition referenced by the Path from the Class A.
+ If such class doesn't exist return Class A."
+  input Absyn.Path inPath;
+  input Absyn.Class inClass;
+  output Absyn.Class outClass;
+algorithm
+  try
+    outClass := match inPath
+      local
+        Absyn.Class c;
+        String str;
+        Absyn.Path path;
+
+      case Absyn.IDENT(name = str)
+        then
+          getClassInClass(str, inClass);
+
+      case Absyn.FULLYQUALIFIED(path)
+        then
+          getPathedClassInProgramWorkNoThrow(path, inClass);
+
+      case Absyn.QUALIFIED(name = str, path = path)
+        equation
+          c = getClassInClass(str, inClass);
+        then
+          getPathedClassInProgramWorkNoThrow(path, c);
+
+    end match;
+  else
+    outClass := inClass;
+  end try;
+end getPathedClassInProgramWorkNoThrow;
+
+
+protected function getClassInClass
+" This function takes a Path and a Class
+   and returns the class with the name Path.
+   If that class does not exist, the function fails"
+  input String inString;
+  input Absyn.Class inClass;
+  output Absyn.Class outClass;
+algorithm
+  outClass := List.find1(getClassesInClass(inClass), compareClassName, inString);
+end getClassInClass;
+
 protected function getClassesInClass
 "This function takes a Class definition and returns
   a list of local Class definitions of that class."
-  input Absyn.Path inPath;
-  input Absyn.Program inProgram;
   input Absyn.Class inClass;
   output list<Absyn.Class> outAbsynClassLst;
 algorithm
-  outAbsynClassLst := match (inPath,inProgram,inClass)
+  outAbsynClassLst := match inClass
     local
       list<Absyn.Class> res;
       Absyn.Path modelpath,path;
       Absyn.Program p;
       list<Absyn.ClassPart> parts;
 
-    case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
       equation
         res = getClassesInParts(parts);
       then
         res;
 
-    case (_,_,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)))
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
       equation
         res = getClassesInParts(parts);
       then
         res;
 
-    case (_,_,Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(_,_))))
+    case Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(_,_)))
       equation
-        // print("Looking up -> lookupClassdef(" + Absyn.pathString(path) + ", " + Absyn.pathString(modelpath) + ")\n");
         /* adrpo 2009-10-27: do not dive into derived classes!
         (cdef,newpath) = lookupClassdef(path, modelpath, p);
-        res = getClassesInClass(newpath, p, cdef);
+        res = getClassesInClass(cdef);
         */
         res = {};
       then
@@ -15358,10 +15676,10 @@ protected
   list<Absyn.Class> classes;
 algorithm
   Absyn.PROGRAM(classes=classes) := inProgram;
-  cl := List.find1(classes,getClassInProgramWork,inString);
+  cl := List.find1(classes, compareClassName, inString);
 end getClassInProgram;
 
-protected function getClassInProgramWork
+protected function compareClassName
   input Absyn.Class cl;
   input String str;
   output Boolean b;
@@ -15374,7 +15692,7 @@ algorithm
     case (Absyn.CLASS(name = c1name),_)
       then stringEq(str, c1name);
   end match;
-end getClassInProgramWork;
+end compareClassName;
 
 protected function modificationToAbsyn
 " This function takes a list of NamedArg and returns an Absyn.Modification option.

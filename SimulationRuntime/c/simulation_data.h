@@ -47,7 +47,7 @@
 #define omc_dummyVarInfo {-1,"","",omc_dummyFileInfo}
 #define omc_dummyEquationInfo {-1,0,"",-1,NULL}
 #define omc_dummyFunctionInfo {-1,"",omc_dummyFileInfo}
-#define omc_dummyRealAttribute {NULL,NULL,NULL,DBL_MAX,DBL_MIN,0,0,1.0,0,0.0}
+#define omc_dummyRealAttribute {NULL,NULL,DBL_MAX,-DBL_MAX,0,0,1.0,0,0.0}
 
 #if defined(_MSC_VER)
 #define set_struct(TYPE, x, info) { const TYPE tmp = info; x = tmp; }
@@ -208,7 +208,6 @@ typedef struct DATA_STRING_ALIAS
 /* collect all attributes from one variable in one struct */
 typedef struct REAL_ATTRIBUTE
 {
-  modelica_string quantity;            /* = "" */
   modelica_string unit;                /* = "" */
   modelica_string displayUnit;         /* = "" */
   modelica_real min;                   /* = -Inf */
@@ -222,7 +221,6 @@ typedef struct REAL_ATTRIBUTE
 
 typedef struct INTEGER_ATTRIBUTE
 {
-  modelica_string quantity;            /* = "" */
   modelica_integer min;                /* = -Inf */
   modelica_integer max;                /* = +Inf */
   modelica_boolean fixed;              /* depends on the type */
@@ -232,7 +230,6 @@ typedef struct INTEGER_ATTRIBUTE
 
 typedef struct BOOLEAN_ATTRIBUTE
 {
-  modelica_string quantity;            /* = "" */
   modelica_boolean fixed;              /* depends on the type */
   modelica_boolean useStart;           /* = false */
   modelica_boolean start;              /* = false */
@@ -240,7 +237,6 @@ typedef struct BOOLEAN_ATTRIBUTE
 
 typedef struct STRING_ATTRIBUTE
 {
-  modelica_string quantity;            /* = "" */
   modelica_boolean useStart;           /* = false */
   modelica_string start;               /* = "" */
 }STRING_ATTRIBUTE;
@@ -303,6 +299,8 @@ typedef struct NONLINEAR_SYSTEM_DATA
   modelica_real *nlsx;                 /* x */
   modelica_real *nlsxOld;              /* previous x */
   modelica_real *nlsxExtrapolation;    /* extrapolated values for x from old and old2 - used as initial guess */
+
+  void *oldValueList;                  /* old values organized in a sorted list for extrapolation and interpolate, respectively */
 
   modelica_integer method;             /* used for linear tearing system if 1: Newton step is done otherwise 0 */
   modelica_real residualError;         /* not used */

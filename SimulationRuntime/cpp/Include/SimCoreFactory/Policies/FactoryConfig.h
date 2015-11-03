@@ -97,6 +97,7 @@
   #include <Core/System/ISimVars.h>
   #include <Core/DataExchange/ISimVar.h>
   #include <Core/SimController/ISimData.h>
+  #include <Core/SimController/ISimObjects.h>
   #include <Core/SimulationSettings/ISimControllerSettings.h>
   #include <Core/SimController/ISimController.h>
 

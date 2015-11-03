@@ -174,6 +174,8 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   solverInfo->currentStepSize = simInfo->stepSize;
   solverInfo->laststep = 0;
   solverInfo->solverRootFinding = 0;
+  solverInfo->solverNoEquidistantGrid = 0;
+  solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
   solverInfo->eventLst = allocList(sizeof(long));
   solverInfo->didEventStep = 0;
   solverInfo->stateEvents = 0;

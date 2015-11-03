@@ -59,7 +59,7 @@ case SIMCODE(__) then
   let modelIdentifier = modelNamePrefix(simCode)
   <<
   <ModelExchange
-    modelIdentifier="<%modelIdentifier%>">
+    modelIdentifier="<%modelIdentifier%>"<% if Flags.isSet(FMU_EXPERIMENTAL) then ' providesDirectionalDerivative="true"'%>>
   </ModelExchange>
   >>
 end ModelExchange;
@@ -311,7 +311,23 @@ template ModelStructureClocks(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
-  let clocks = (clockedPartitions |> partition =>
+  let subClocks = (clockedPartitions |> partition hasindex baseClockIndex fromindex intAdd(listLength(getSubPartitions(clockedPartitions)), 1) =>
+    match partition
+    case CLOCKED_PARTITION(__) then
+      (subPartitions |> subPartition =>
+        match subPartition
+        case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fnom, denom=fres), shift=RATIONAL(nom=snom, denom=sres))) then
+          <<
+          <Clock><SubSampled baseClockIndex="<%baseClockIndex%>"
+                             <%if intGt(fnom, 1) then 'subSampleFactor="'+fnom+'"'%>
+                             <%if intGt(fres, 1) then 'subSampleResolution="'+fres+'"'%>
+                             <%if intGt(snom, 0) then 'shiftCounter="'+snom+'"'%>
+                             <%if intGt(sres, 1) then 'shiftResolution="'+sres+'"'%>
+                  /></Clock>
+          >>
+        ; separator="\n")
+    ;separator="\n")
+  let baseClocks = (clockedPartitions |> partition =>
     match partition
     case CLOCKED_PARTITION(__) then
       match baseClock
@@ -336,13 +352,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         <Clock/>
         >>
     ;separator="\n")
-  match clocks
+  match baseClocks
   case "" then
     <<>>
   else
     <<
     <Clocks>
-      <%clocks%>
+      <%subClocks%>
+      <%baseClocks%>
     </Clocks>
     >>
 end ModelStructureClocks;
@@ -438,7 +455,8 @@ template ScalarVariableAttribute2(SimVar simVar, SimCode simCode)
 ::=
 match simVar
   case SIMVAR(__) then
-  let valueReference = '<%System.tmpTick()%>'
+  let defaultValueReference = '<%System.tmpTick()%>'
+  let valueReference = getValueReference(simVar, simCode, false)
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
   let variability = if getClockIndex(simVar, simCode) then "discrete" else getVariability2(varKind, type_)
   let clockIndex = getClockIndex(simVar, simCode)
@@ -453,7 +471,7 @@ match simVar
   causality="<%caus%>"
   <%if boolNot(stringEq(clockIndex, "")) then 'clockIndex="'+clockIndex+'"' %>
   <%if boolNot(stringEq(previous, "")) then 'previous="'+previous+'"' %>
-  <%if boolNot(stringEq(initial, "")) then 'initial="'+initial+'"' %>
+  <%if boolNot(stringEq(initial, "")) then match aliasvar case SimCodeVar.ALIAS(__) then "" else 'initial="'+initial+'"' %>
   >>
 end ScalarVariableAttribute2;
 
@@ -560,6 +578,8 @@ end ScalarVariableTypeCommonAttribute2;
 template StartString2(SimVar simvar)
 ::=
 match simvar
+case SIMVAR(aliasvar = SimCodeVar.ALIAS(__)) then
+  ''
 case SIMVAR(initialValue = initialValue, varKind = varKind, causality = causality, type_ = type_, isValueChangeable = isValueChangeable) then
   match initialValue
     case SOME(e as ICONST(__)) then ' start="<%initValXml(e)%>"'

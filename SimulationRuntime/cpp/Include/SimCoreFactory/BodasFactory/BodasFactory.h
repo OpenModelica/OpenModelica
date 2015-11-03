@@ -17,7 +17,7 @@ public:
     shared_ptr<ISettingsFactory> LoadSettingsFactory();
     shared_ptr<IAlgLoopSolverFactory> LoadAlgLoopSolverFactory(IGlobalSettings*);
     shared_ptr<ISolver> LoadSolver(IMixedSystem* system, string solver_name, shared_ptr<ISolverSettings> solver_settings);
-    shared_ptr<IMixedSystem> LoadSystem(IGlobalSettings*, shared_ptr<IAlgLoopSolverFactory>, shared_ptr<ISimData>);
+    shared_ptr<IMixedSystem> LoadSystem(IGlobalSettings*,  shared_ptr<ISimObjects> simObjects);
     shared_ptr<ISimData> LoadSimData();
     shared_ptr<ISolverSettings> LoadSolverSettings(string solver_name, shared_ptr<IGlobalSettings>);
     shared_ptr<IAlgLoopSolver> LoadAlgLoopSolver(IAlgLoop* algLoop, string solver_name, shared_ptr<INonLinSolverSettings> solver_settings);

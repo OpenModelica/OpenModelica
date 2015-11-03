@@ -258,7 +258,9 @@ algorithm
         fmi20 = FMI.isFMIVersion20(FMUVersion);
         symbolicJacActivated = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, fmi20);
-        flagValue = Flags.enableDebug(Flags.DIS_SYMJAC_FMI20);
+        if not Flags.isSet(Flags.FMU_EXPERIMENTAL) then
+            flagValue = Flags.enableDebug(Flags.DIS_SYMJAC_FMI20);
+        end if;
 
         _ = FCore.getFunctionTree(cache);
         dae = DAEUtil.transformationsBeforeBackend(cache,graph,dae);
@@ -272,7 +274,9 @@ algorithm
 
         //reset config flag
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, symbolicJacActivated);
-        Flags.set(Flags.DIS_SYMJAC_FMI20, flagValue);
+        if not Flags.isSet(Flags.FMU_EXPERIMENTAL) then
+            Flags.set(Flags.DIS_SYMJAC_FMI20, flagValue);
+        end if;
 
         resultValues =
         {("timeTemplates",Values.REAL(timeTemplates)),

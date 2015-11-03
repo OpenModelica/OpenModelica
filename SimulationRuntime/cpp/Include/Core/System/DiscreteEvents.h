@@ -25,9 +25,9 @@ public:
 
 
   //Implementation of the Modelica pre  operator
-  double pre(const double& var);
-  int pre(const int& var);
-  bool pre(const bool& var);
+  double& pre(const double& var);
+  int& pre(const int& var);
+  bool& pre(const bool& var);
   //Implementation of the Modelica edge  operator
   bool edge(double& var);
   bool edge(int& var);

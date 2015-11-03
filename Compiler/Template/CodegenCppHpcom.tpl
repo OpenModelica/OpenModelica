@@ -175,8 +175,7 @@ template additionalHpcomProtectedMemberDeclaration(SimCode simCode, Text& extraF
             <<
             #if defined(USE_THREAD)
               #if defined(USE_CPP_ELEVEN)
-                boost::hash<std::string> string_hash;
-                return (long unsigned int)string_hash(boost::lexical_cast<std::string>(std::this_thread::get_id()));
+                return std::hash<std::thread::id>()(std::this_thread::get_id());
               #else
                 boost::hash<std::string> string_hash;
                 return (long unsigned int)string_hash(boost::lexical_cast<std::string>(boost::this_thread::get_id()));

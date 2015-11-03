@@ -50,7 +50,6 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
      shared_ptr<IAlgLoopSolverFactory> algloopSolverFactory = shared_ptr<IAlgLoopSolverFactory>(new AlgLoopSolverFactory(globalSettings,library_path,modelicasystem_path));
      return algloopSolverFactory;
  }
-
 #else
 error "operating system not supported"
 #endif

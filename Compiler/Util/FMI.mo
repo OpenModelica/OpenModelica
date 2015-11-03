@@ -231,6 +231,17 @@ algorithm
   end match;
 end checkFMIVersion;
 
+public function isFMIVersion10 "Checks if the FMI version is 1.0."
+  input String inFMUVersion;
+  output Boolean success;
+algorithm
+  success := match (inFMUVersion)
+    case ("1") then true;
+    case ("1.0") then true;
+    else false;
+  end match;
+end isFMIVersion10;
+
 public function isFMIVersion20 "Checks if the FMI version is 2.0."
   input String inFMUVersion;
   output Boolean success;

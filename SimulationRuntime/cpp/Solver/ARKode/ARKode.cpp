@@ -445,7 +445,7 @@ void Arkode::ArkodeCore()
         _event_n = 0;
       }
       else
-        throw ModelicaSimulationError(EVENT_HANDLING,"Number of events exceeded  in time interval " + boost::lexical_cast<string>(_abs) + " at time " + boost::lexical_cast<string>(_tCurrent));
+        throw ModelicaSimulationError(EVENT_HANDLING,"Number of events exceeded  in time interval " + to_string(_abs) + " at time " + to_string(_tCurrent));
 
       // CVode has interpolated the states at time 'tCurrent'
       _time_system->setTime(_tCurrent);

@@ -85,7 +85,7 @@ protected:
   string _defaultNonLinSolver;
   PATH _library_path;
   PATH _modelicasystem_path;
-  boost::unordered_set<string> _argumentsToIgnore; //a set of arguments that should be ignored
+  unordered_set<string> _argumentsToIgnore; //a set of arguments that should be ignored
   std::map<string, string> _argumentsToReplace; //a mapping to replace arguments (e.g. -r=... -> -F=...)
   std::string _overrideOMEdit; // unrecognized options if called from OMEdit
 };

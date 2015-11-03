@@ -2013,7 +2013,7 @@ algorithm
         (exp1,b) = replaceExp(exp,repl,inFuncTypeExpExpToBooleanOption);
         (exp1,_) = ExpressionSimplify.condsimplify(b,exp1);
         source = DAEUtil.addSymbolicTransformationSubstitution(b,source,exp,exp1);
-        wop1 = if b then BackendDAE.NORETCALL(exp,source) else wop;
+        wop1 = if b then BackendDAE.NORETCALL(exp1,source) else wop;
         (res1,b) =  replaceWhenOperator(res,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed or b,wop1::iAcc);
       then
         (res1,b);

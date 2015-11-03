@@ -34,7 +34,7 @@
 #include "omc_config.h"
 #include "nonlinearSystem.h"
 #include "kinsolSolver.h"
-#include "simulation/simulation_info_xml.h"
+#include "simulation/simulation_info_json.h"
 #include "util/omc_error.h"
 
 #ifdef WITH_SUNDIALS

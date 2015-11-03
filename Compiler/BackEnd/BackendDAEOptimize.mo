@@ -4196,7 +4196,7 @@ protected
   BackendDAE.EquationAttributes attr;
   Boolean update, sc;
   Absyn.Path path;
-  list<DAE.Exp> expLst, arrayLst, arrayLst2;
+  list<DAE.Exp> arrayLst, arrayLst2, expLst;
   DAE.CallAttributes cattr;
   DAE.ComponentRef cr;
   BackendDAE.Var tmpvar;
@@ -4218,21 +4218,30 @@ algorithm
       if BackendEquation.isComplexEquation(eqn) then
         BackendDAE.COMPLEX_EQUATION(left=left, right=right, size=size, attr= attr, source=source) := eqn;
         if Expression.isTuple(left) and Expression.isTuple(right) then // tuple() = tuple()
+          //print(BackendDump.equationString(eqn) + "--In--\n");
           DAE.TUPLE(PR = left_lst) := left;
-          (_, expLst) := List.splitOnTrue(left_lst, Expression.isScalar);
-          if listLength(expLst) > 0 then
-            continue;
-          end if;
           DAE.TUPLE(PR = right_lst) := right;
           update := true;
           indRemove := i :: indRemove;
           for e1 in left_lst loop
             e2 :: right_lst := right_lst;
-            if Expression.isScalar(e2) then
-              eqn1 := BackendDAE.EQUATION(e1, e2, source, attr);
-              //print(BackendDump.equationString(eqn1) + "--new--\n");
-              eqns := BackendEquation.addEquation(eqn1, eqns);
-            end if;
+            //print("=>" +  ExpressionDump.printExpStr(e2) + " = " +  ExpressionDump.printExpStr(e1) + "\n");
+            if not Expression.isWild(e1) then
+              if Expression.isScalar(e2) then
+                eqn1 := BackendEquation.generateEquation(e1, e2, source, attr);
+                eqns := BackendEquation.addEquation(eqn1, eqns);
+                //print(BackendDump.equationString(eqn1) + "--new--\n");
+              else
+                expLst := simplifyComplexFunction2(e1);
+                arrayLst := simplifyComplexFunction2(e2);
+                for e_asub in arrayLst loop
+                  e3 :: expLst := expLst;
+                  eqn1 := BackendEquation.generateEquation(e_asub, e3, source, attr);
+                  eqns := BackendEquation.addEquation(eqn1, eqns);
+                  //print(BackendDump.equationString(eqn1) + "--new--\n");
+                end for;
+              end if; //isScalar
+            end if; // isWild
           end for;
          elseif Expression.isTuple(left) and Expression.isCall(right) then //tuple() = call()
           DAE.TUPLE(PR = left_lst) := left;
@@ -4318,6 +4327,33 @@ algorithm
 
   outDAE.eqs := systlst;
 end simplifyComplexFunction1;
+
+function simplifyComplexFunction2
+  input DAE.Exp e1;
+  output list<DAE.Exp> out_lst_e1 = {};
+protected
+  list<DAE.Exp> lst_e = {};
+algorithm
+  try
+    if Expression.isArray(e1) or Expression.isArrayType(Expression.typeof(e1)) then
+      lst_e := Expression.getArrayOrRangeContents(e1);
+      for e in lst_e loop
+        out_lst_e1 := List.appendNoCopy(simplifyComplexFunction2(e),out_lst_e1);
+      end for;
+    elseif Expression.isRecord(e1) then
+      lst_e := Expression.splitRecord(e1, Expression.typeof(e1));
+      for e in lst_e loop
+        out_lst_e1 := List.appendNoCopy(simplifyComplexFunction2(e),out_lst_e1);
+      end for;
+      out_lst_e1 := {e1};
+    else
+     out_lst_e1 := {e1};
+   end if;
+  else
+     out_lst_e1 := {e1};
+  end try;
+
+end simplifyComplexFunction2;
 
 // =============================================================================
 // section for simplifyLoops

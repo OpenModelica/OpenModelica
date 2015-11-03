@@ -18,9 +18,9 @@ public:
   virtual void savePreVariables() = 0;
   virtual void initPreVariables()= 0;
   //Stores all variables indices
-  unordered_map<double* const, unsigned int> _pre_real_vars_idx;
-  unordered_map<int* const, unsigned int> _pre_int_vars_idx;
-  unordered_map<bool* const, unsigned int> _pre_bool_vars_idx;
+  unordered_map<const double*, unsigned int> _pre_real_vars_idx;
+  unordered_map<const int*, unsigned int> _pre_int_vars_idx;
+  unordered_map<const bool*, unsigned int> _pre_bool_vars_idx;
   //Stores all variables occurred before an event
   double* _pre_vars;
 protected:

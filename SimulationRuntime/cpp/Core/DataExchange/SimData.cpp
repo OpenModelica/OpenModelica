@@ -44,15 +44,15 @@ ISimVar* SimData::Get(string key)
         throw ModelicaSimulationError(DATASTORAGE,"There is no such sim variable " + key);
 }
 
-void  SimData::addOutputResults(string name,uBlas::vector<double> v)
+void  SimData::addOutputResults(string name,ublas::vector<double> v)
 {
-    std::pair<string,uBlas::vector<double> > elem(name,v);
+    std::pair<string,ublas::vector<double> > elem(name,v);
     std::pair<OutputResults_type::iterator,bool> p = _result_vars.insert(elem);
 }
 
 void SimData::getTimeEntries(vector<double>& time_entries)
 {
-    time_entries = boost::ref(_time_entries);
+    time_entries = omcpp::ref(_time_entries);
 }
 
 void SimData::addTimeEntries(vector<double> time_entries)
@@ -76,7 +76,7 @@ void SimData::clearVars()
     _sim_vars.clear();
 }
 
-void  SimData::getOutputResults(string name,uBlas::vector<double>& v)
+void  SimData::getOutputResults(string name,ublas::vector<double>& v)
 {
     OutputResults_type::const_iterator iter =_result_vars.find(name);
 
@@ -84,7 +84,7 @@ void  SimData::getOutputResults(string name,uBlas::vector<double>& v)
     if(iter!=_result_vars.end())
     {
 
-        v = boost::ref(iter->second);
+        v = omcpp::ref(iter->second);
     }
     else
         throw ModelicaSimulationError(DATASTORAGE,"There is no such output variable " + name);

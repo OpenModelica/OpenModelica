@@ -43,7 +43,7 @@
 #include "linearSolverUmfpack.h"
 #endif
 #include "linearSolverTotalPivot.h"
-#include "simulation/simulation_info_xml.h"
+#include "simulation/simulation_info_json.h"
 
 static void setAElement(int row, int col, double value, int nth, void *data, threadData_t *);
 static void setAElementLis(int row, int col, double value, int nth, void *data, threadData_t *);

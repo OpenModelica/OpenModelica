@@ -652,12 +652,11 @@ algorithm
           //BackendDump.dumpIncidenceMatrix(m);
           //BackendDump.dumpIncidenceMatrixT(mT);
       cseLst = commonSubExpressionFind(m, mT, vars, eqs);
-      //if not listEmpty(cseLst) then print("update "+stringDelimitList(List.map(cseLst, printCSE), "")+"\n");end if;
-      (syst, shared) = commonSubExpressionUpdate(cseLst, m, mT, sysIn, sharedIn, {}, {});
+          //if not listEmpty(cseLst) then print("update "+stringDelimitList(List.map(cseLst, printCSE), "\n")+"\n");end if;
+      syst = commonSubExpressionUpdate(cseLst, m, mT, sysIn);
           //print("done this eqSystem\n");
           //BackendDump.dumpEqSystem(syst, "eqSystem");
-          //BackendDump.printShared(shared);
-      then (syst, shared);
+      then (syst, sharedIn);
     else (sysIn, sharedIn);
   end matchcontinue;
 end commonSubExpression;
@@ -676,6 +675,8 @@ protected
   BackendDAE.EquationArray eqs;
   BackendDAE.EqSystem eqSys;
   BackendDAE.IncidenceMatrix m, mT;
+  list<BackendDAE.Equation> eqLst;
+  list<BackendDAE.Var> varLst;
   list<CommonSubExp> cseLst2, cseLst3;
   list<tuple<Boolean, String>> varAtts, eqAtts;
 algorithm
@@ -687,9 +688,12 @@ algorithm
     // check for CSE of length 1
     //print("CHECK FOR CSE 2\n");
     (_, eqIdcs) := List.filter1OnTrueSync(lengthLst, intEq, 2, range);
+    (eqLst, eqIdcs) := List.filterOnTrueSync(BackendEquation.getEqns(eqIdcs, eqsIn),BackendEquation.isNotAlgorithm,eqIdcs); // no algorithms
+    eqs := BackendEquation.listEquation(eqLst);
     varIdcs := List.unique(List.flatten(List.map1(eqIdcs, Array.getIndexFirst, mIn)));
-    vars := BackendVariable.listVar1(List.map1(varIdcs, BackendVariable.getVarAtIndexFirst, varsIn));
-    eqs := BackendEquation.listEquation(BackendEquation.getEqns(eqIdcs, eqsIn));
+    varLst := List.map1(varIdcs, BackendVariable.getVarAtIndexFirst, varsIn);
+    //(varLst,varIdcs) := List.filterOnTrueSync(varLst,BackendVariable.isVarNonDiscrete,varIdcs);// no discrete vars
+    vars := BackendVariable.listVar1(varLst);
     eqSys := BackendDAEUtil.createEqSystem(vars, eqs);
     (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(eqSys, BackendDAE.ABSOLUTE(), NONE());
         //BackendDump.dumpEqSystem(eqSys, "reduced system for CSE 2");
@@ -697,7 +701,7 @@ algorithm
         //BackendDump.dumpIncidenceMatrix(mT);
         //varAtts := List.threadMap(List.fill(false, listLength(varIdcs)), List.fill("", listLength(varIdcs)), Util.makeTuple);
         //eqAtts := List.threadMap(List.fill(false, listLength(eqIdcs)), List.fill("", listLength(eqIdcs)), Util.makeTuple);
-        //HpcOmEqSystems.dumpEquationSystemBipartiteGraph2(vars, eqs, m, varAtts, eqAtts, "CSE2");
+        //BackendDump.dumpBipartiteGraphStrongComponent2(vars, eqs, m, varAtts, eqAtts, "CSE2");
     partitions := arrayList(ResolveLoops.partitionBipartiteGraph(m, mT));
         //print("the partitions for system  : \n"+stringDelimitList(List.map(partitions, HpcOmTaskGraph.intLstString), "\n")+"\n");
     cseLst2 := List.fold(partitions, function getCSE2(m=m, mT=mT, vars=vars, eqs=eqs, eqMap=eqIdcs, varMap=varIdcs), {});
@@ -705,9 +709,12 @@ algorithm
     // check for CSE of length 2
     //print("CHECK FOR CSE 3\n");
     (_, eqIdcs) := List.filter1OnTrueSync(lengthLst, intEq, 3, range);
+    (eqLst, eqIdcs) := List.filterOnTrueSync(BackendEquation.getEqns(eqIdcs, eqsIn),BackendEquation.isNotAlgorithm,eqIdcs); // no algorithms
+    eqs := BackendEquation.listEquation(eqLst);
     varIdcs := List.unique(List.flatten(List.map1(eqIdcs, Array.getIndexFirst, mIn)));
-    vars := BackendVariable.listVar1(List.map1(varIdcs, BackendVariable.getVarAtIndexFirst, varsIn));
-    eqs := BackendEquation.listEquation(BackendEquation.getEqns(eqIdcs, eqsIn));
+    varLst := List.map1(varIdcs, BackendVariable.getVarAtIndexFirst, varsIn);
+    //(varLst,varIdcs) := List.filterOnTrueSync(varLst,BackendVariable.isVarNonDiscrete,varIdcs);// no discrete vars
+    vars := BackendVariable.listVar1(varLst);
     eqSys := BackendDAEUtil.createEqSystem(vars, eqs);
     (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(eqSys, BackendDAE.ABSOLUTE(), NONE());
         //BackendDump.dumpEqSystem(eqSys, "reduced system for CSE 3");
@@ -715,12 +722,12 @@ algorithm
         //BackendDump.dumpIncidenceMatrix(mT);
         //varAtts := List.threadMap(List.fill(false, listLength(varIdcs)), List.fill("", listLength(varIdcs)), Util.makeTuple);
         //eqAtts := List.threadMap(List.fill(false, listLength(eqIdcs)), List.fill("", listLength(eqIdcs)), Util.makeTuple);
-        //HpcOmEqSystems.dumpEquationSystemBipartiteGraph2(vars, eqs, m, varAtts, eqAtts, "CSE3");
+        //BackendDump.dumpBipartiteGraphStrongComponent2(vars, eqs, m, varAtts, eqAtts, "CSE3");
     partitions := arrayList(ResolveLoops.partitionBipartiteGraph(m, mT));
         //print("the partitions for system  : \n"+stringDelimitList(List.map(partitions, HpcOmTaskGraph.intLstString), "\n")+"\n");
     cseLst3 := List.fold(partitions, function getCSE3(m=m, mT=mT, vars=vars, eqs=eqs, eqMap=eqIdcs, varMap=varIdcs), {});
     cseOut := listAppend(cseLst2, cseLst3);
-    //print("the cses : \n"+stringDelimitList(List.map(cseOut, printCSE), "\n")+"\n");
+        //print("the cses : \n"+stringDelimitList(List.map(cseOut, printCSE), "\n")+"\n");
   else
     cseOut := {};
   end try;
@@ -843,45 +850,37 @@ algorithm
 end getCSE3;
 
 
-protected function commonSubExpressionUpdate"updates the eqSystem and shared according to the cse.
+protected function commonSubExpressionUpdate"updates the eqSystem.
+remark: the vars are not explicitly declared as alias and an equation is not removed since there are cases where alias-replacements are invalid like :
+x[1]=x[2];
+for i in 1:2 loop x[i] =i*time; end for;
+Thats why one original equation is replaced by an alias equation.
 author:Waurich TUD 2014-11"
   input list<CommonSubExp> tplsIn;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrix mT;
   input BackendDAE.EqSystem sysIn;
-  input BackendDAE.Shared sharedIn;
-  input list<Integer> deleteEqLstIn;
-  input list<DAE.ComponentRef> deleteCrefsIn;
   output BackendDAE.EqSystem sysOut;
-  output BackendDAE.Shared sharedOut;
 algorithm
-  (sysOut, sharedOut) := matchcontinue (tplsIn, m, mT, sysIn, sharedIn, deleteEqLstIn, deleteCrefsIn)
+  sysOut := matchcontinue (tplsIn, m, mT, sysIn)
     local
-      Integer sharedVar, eqIdx1, eqIdx2, varIdx1, varIdx2, varIdxRepl, varIdxAlias, eqIdxDel, eqIdxLeft;
+      Integer sharedVar, eqIdx1, eqIdx2, varIdx1, varIdx2, varIdx_remain, varIdxAlias, eqIdxDel, eqIdxLeft;
       list<Integer> eqIdcs, eqs1, eqs2, vars1, vars2, aliasVars;
       list<CommonSubExp> rest;
-      BackendDAE.Var var1, var2;
+      BackendDAE.Var var1, var2, var_remain, var_alias;
       BackendVarTransform.VariableReplacements repl;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqs;
       BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
-      DAE.Exp varExp;
+      DAE.Exp varExp_remain, varExp_alias;
       DAE.ComponentRef cref;
       list<BackendDAE.Equation> eqLst;
-  case({}, _, _, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs), _, _, _)
+  case({}, _, _, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs))
     equation
-      // remove superfluous equations
-    eqLst = BackendEquation.equationList(eqs);
-    eqLst = List.deletePositions(eqLst, List.map1(deleteEqLstIn, intSub, 1));
-    syst.orderedEqs = BackendEquation.listEquation(eqLst);
+    then (BackendDAEUtil.clearEqSyst(syst));
 
-    // remove alias from vars
-    syst.orderedVars = BackendVariable.deleteCrefs(deleteCrefsIn, vars);
-    then (BackendDAEUtil.clearEqSyst(syst), sharedIn);
   case ( ASSIGNMENT_CSE(eqIdcs={eqIdx1, eqIdx2}, aliasVars={varIdx1, varIdx2})::rest, _, _,
-         syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs),
-         _, _, _ )
+         syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs))
     equation
      // update the equations
      repl = BackendVarTransform.emptyReplacements();
@@ -889,63 +888,40 @@ algorithm
      eqs2 = arrayGet(mT, varIdx2);
            //print("eqs1 "+stringDelimitList(List.map(eqs1, intString), ", ")+"\n");
            //print("eqs2 "+stringDelimitList(List.map(eqs2, intString), ", ")+"\n");
-     //true = intEq(listLength(eqs1), 1) or intEq(listLength(eqs2), 1);  // choose the variable to be removed, that does not influence the causalization
-     if intLe(listLength(eqs2), listLength(eqs1)) then varIdxAlias = varIdx2; varIdxRepl = varIdx1; else varIdxAlias = varIdx1; varIdxRepl = varIdx2; end if;
+
+     var1 = BackendVariable.getVarAt(vars, varIdx1);
+     var2 = BackendVariable.getVarAt(vars, varIdx2);
+
+     //choose alias variable
+     if BackendVariable.isStateVar(var1) then varIdxAlias = varIdx2; varIdx_remain = varIdx1;
+     elseif BackendVariable.isStateVar(var2) then varIdx_remain = varIdx2; varIdxAlias = varIdx1;
+     else
+       if intLe(listLength(eqs2), listLength(eqs1)) then varIdxAlias = varIdx2; varIdx_remain = varIdx1; else varIdxAlias = varIdx1; varIdx_remain = varIdx2; end if;
+     end if;
+
      if intLe(listLength(eqs2), listLength(eqs1)) then eqIdxDel = eqIdx2; _ = eqIdx1; else eqIdxDel = eqIdx1; _ = eqIdx2; end if;
 
-     var1 = BackendVariable.getVarAt(vars, varIdxAlias);
-     var2 = BackendVariable.getVarAt(vars, varIdxRepl);
-     false = BackendVariable.isStateVar(var1) or BackendVariable.isVarDiscrete(var1);
-
-     cref = BackendVariable.varCref(var2);
-     varExp = BackendVariable.varExp(var1);
-     repl = BackendVarTransform.addReplacement(repl, cref, varExp, NONE());
+     var_remain = BackendVariable.getVarAt(vars, varIdx_remain);
+     var_alias = BackendVariable.getVarAt(vars, varIdxAlias);
+     cref = BackendVariable.varCref(var_alias);
+     varExp_remain = BackendVariable.varExp(var_remain);
+     varExp_alias = BackendVariable.varExp(var_alias);
+     repl = BackendVarTransform.addReplacement(repl, cref, varExp_remain, NONE());
          //BackendVarTransform.dumpReplacements(repl);
-     eqIdcs = arrayGet(mT, varIdxRepl);
+
+     //replace in equations
+     eqIdcs = arrayGet(mT, varIdxAlias);
      eqLst = BackendEquation.getEqns(eqIdcs, eqs);
-     (eqLst, _) = BackendVarTransform.replaceEquations(eqLst, repl, NONE());
-     syst.orderedEqs = List.threadFold(eqIdcs, eqLst, BackendEquation.setAtIndexFirst, eqs);
+     //(eqLst, _) = BackendVarTransform.replaceEquations(eqLst, repl, NONE());
+     eqs = List.threadFold(eqIdcs, eqLst, BackendEquation.setAtIndexFirst, eqs);
 
-     // transfer initial value
-     if BackendVariable.varHasStartValue(var2) and not BackendVariable.varHasStartValue(var1) then var1 = BackendVariable.setVarStartValue(var1, BackendVariable.varStartValue(var2));
-        var1 = BackendVariable.setVarFixed(var1, BackendVariable.varFixed(var2)) ; end if;
-     syst.orderedVars = BackendVariable.setVarAt(vars, varIdxAlias, var1);
-
-     // add alias to shared
-     var2 = BackendVariable.setBindExp(var2, SOME(varExp));
-     shared = updateAllAliasVars(sharedIn, repl);
-     shared = BackendVariable.addAliasVarDAE(var2, shared);
-     syst = BackendDAEUtil.clearEqSyst(syst);
-    then commonSubExpressionUpdate(rest, m, mT, syst, shared, eqIdxDel::deleteEqLstIn, cref::deleteCrefsIn);
- case (_::rest, _, _, _, _, _, _)
-  then commonSubExpressionUpdate(rest, m, mT, sysIn, sharedIn, deleteEqLstIn, deleteCrefsIn);
+     //replace original equation
+     BackendEquation.setAtIndex(eqs,eqIdxDel,BackendDAE.EQUATION(varExp_remain,varExp_alias,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC));
+    then commonSubExpressionUpdate(rest, m, mT, syst);
+ case (_::rest, _, _, _)
+  then commonSubExpressionUpdate(rest, m, mT, sysIn);
   end matchcontinue;
 end commonSubExpressionUpdate;
-
-
-protected function updateAllAliasVars"replaces all bindingExps in the aliasVars.
-author:Waurich TUD 2014-11"
-  input BackendDAE.Shared sharedIn;
-  input BackendVarTransform.VariableReplacements repl;
-  output BackendDAE.Shared sharedOut;
-protected
-  BackendDAE.Variables aliasVars;
-algorithm
-  BackendDAE.SHARED(aliasVars=aliasVars) := sharedIn;
-  (aliasVars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars, replaceBindings, repl);
-  sharedOut := BackendDAEUtil.setSharedAliasVars(sharedIn, aliasVars);
-end updateAllAliasVars;
-
-protected function replaceBindings"traversal function to replace bidning exps.
-author:Waurich TUD 2014-11"
-  input BackendDAE.Var inVar;
-  input BackendVarTransform.VariableReplacements replIn;
-  output BackendDAE.Var outVar;
-  output BackendVarTransform.VariableReplacements replOut;
-algorithm
-  outVar := BackendVarTransform.replaceBindingExp(inVar, replIn);
-  replOut := replIn;
-end replaceBindings;
 
 protected function printCSE"prints a CSE tuple string.
 author:Waurich TUD 2014-11"

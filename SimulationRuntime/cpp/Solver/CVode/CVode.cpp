@@ -548,7 +548,7 @@ void Cvode::CVodeCore()
         _event_n = 0;
       }
       else
-        throw ModelicaSimulationError(EVENT_HANDLING,"Number of events exceeded  in time interval " + boost::lexical_cast<string>(_abs) + " at time " + boost::lexical_cast<string>(_tCurrent));
+        throw ModelicaSimulationError(EVENT_HANDLING,"Number of events exceeded  in time interval " + to_string(_abs) + " at time " + to_string(_tCurrent));
 
       // CVode has interpolated the states at time 'tCurrent'
       _time_system->setTime(_tCurrent);
@@ -950,7 +950,7 @@ void Cvode::writeSimulationInfo()
 {
   long int nst, nfe, nsetups, nni, ncfn, netf;
   long int nfQe, netfQ;
-  long int nfSe, nfeS, nsetupsS, nniS, ncfnS, netfS;
+  long int nfSe, nfeS, nsetupsS, nniS, ncfnS;
   long int nfQSe, netfQS;
 
   int qlast, qcur;
@@ -962,13 +962,12 @@ void Cvode::writeSimulationInfo()
 
   flag = CVodeGetNonlinSolvStats(_cvodeMem, &nni, &ncfn);
 
-  LOGGER_WRITE("Cvode: number steps = " + boost::lexical_cast<std::string>(nst),LC_SOLV,LL_INFO);
-  LOGGER_WRITE("Cvode: function evaluations 'f' = " + boost::lexical_cast<std::string>(nfe),LC_SOLV,LL_INFO);
-  LOGGER_WRITE("Cvode: error test failures 'netf' = " + boost::lexical_cast<std::string>(netfS),LC_SOLV,LL_INFO);
-  LOGGER_WRITE("Cvode: linear solver setups 'nsetups' = " + boost::lexical_cast<std::string>(nsetups),LC_SOLV,LL_INFO);
-  LOGGER_WRITE("Cvode: nonlinear iterations 'nni' = " + boost::lexical_cast<std::string>(nni),LC_SOLV,LL_INFO);
-  LOGGER_WRITE("Cvode: convergence failures 'ncfn' = " + boost::lexical_cast<std::string>(ncfn),LC_SOLV,LL_INFO);
-  LOGGER_WRITE("Cvode: number of evaluateODE calls 'eODE' = " + boost::lexical_cast<std::string>(_numberOfOdeEvaluations),LC_SOLV,LL_INFO);
+  LOGGER_WRITE("Cvode: number steps = " + to_string(nst), LC_SOLV, LL_INFO);
+  LOGGER_WRITE("Cvode: function evaluations 'f' = " + to_string(nfe), LC_SOLV, LL_INFO);
+  LOGGER_WRITE("Cvode: linear solver setups 'nsetups' = " + to_string(nsetups), LC_SOLV, LL_INFO);
+  LOGGER_WRITE("Cvode: nonlinear iterations 'nni' = " + to_string(nni), LC_SOLV, LL_INFO);
+  LOGGER_WRITE("Cvode: convergence failures 'ncfn' = " + to_string(ncfn), LC_SOLV, LL_INFO);
+  LOGGER_WRITE("Cvode: number of evaluateODE calls 'eODE' = " + to_string(_numberOfOdeEvaluations), LC_SOLV, LL_INFO);
 
   //// Solver
   //outputStream  << "\nSolver: " << getName()

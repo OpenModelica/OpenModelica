@@ -22,6 +22,7 @@ GlobalSettings::GlobalSettings()
   , _nonLinSolverContinueOnError(false)
   , _outputPointType(OPT_ALL)
   , _alarm_time(0)
+  ,_outputFormat(MAT)
 {
 }
 
@@ -210,4 +211,13 @@ int GlobalSettings::getSolverThreads()
 {
   return _solverThreads;
 }
+
+ OutputFormat GlobalSettings::getOutputFormat()
+ {
+     return _outputFormat;
+ }
+  void GlobalSettings::setOutputFormat(OutputFormat outputFormat)
+  {
+      _outputFormat = outputFormat;
+  }
 /** @} */ // end of coreSimulationSettings

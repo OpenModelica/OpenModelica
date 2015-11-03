@@ -21,9 +21,9 @@ Configuration::~Configuration(void)
 {
 }
 
-IGlobalSettings* Configuration::getGlobalSettings()
+shared_ptr<IGlobalSettings> Configuration::getGlobalSettings()
 {
-  return _global_settings.get();
+  return _global_settings;
 }
 
 ISimControllerSettings* Configuration::getSimControllerSettings()

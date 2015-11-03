@@ -517,7 +517,7 @@ void Ida::IDACore()
         _event_n = 0;
       }
       else
-        throw std::runtime_error("Number of events exceeded  in time interval " + boost::lexical_cast<string>(_abs) + " at time " + boost::lexical_cast<string>(_tCurrent));
+        throw std::runtime_error("Number of events exceeded  in time interval " + to_string(_abs) + " at time " + to_string(_tCurrent));
 
       // IDA has interpolated the states at time 'tCurrent'
       _time_system->setTime(_tCurrent);
@@ -936,12 +936,12 @@ void Ida::writeSimulationInfo()
 
   flag = IDAGetNonlinSolvStats(_idaMem, &nni, &ncfn);
 
-  LOGGER_WRITE("Cvode: number steps = " + boost::lexical_cast<std::string>(nst),LC_SOLV,LL_INFO);
-  LOGGER_WRITE("Cvode: function evaluations 'f' = " + boost::lexical_cast<std::string>(nfe),LC_SOLV,LL_INFO);
-  LOGGER_WRITE("Cvode: error test failures 'netf' = " + boost::lexical_cast<std::string>(netfS),LC_SOLV,LL_INFO);
-  LOGGER_WRITE("Cvode: linear solver setups 'nsetups' = " + boost::lexical_cast<std::string>(nsetups),LC_SOLV,LL_INFO);
-  LOGGER_WRITE("Cvode: nonlinear iterations 'nni' = " + boost::lexical_cast<std::string>(nni),LC_SOLV,LL_INFO);
-  LOGGER_WRITE("Cvode: convergence failures 'ncfn' = " + boost::lexical_cast<std::string>(ncfn),LC_SOLV,LL_INFO);
+  LOGGER_WRITE("Cvode: number steps = " + to_string(nst), LC_SOLV, LL_INFO);
+  LOGGER_WRITE("Cvode: function evaluations 'f' = " + to_string(nfe), LC_SOLV, LL_INFO);
+  LOGGER_WRITE("Cvode: error test failures 'netf' = " + to_string(netfS), LC_SOLV, LL_INFO);
+  LOGGER_WRITE("Cvode: linear solver setups 'nsetups' = " + to_string(nsetups), LC_SOLV, LL_INFO);
+  LOGGER_WRITE("Cvode: nonlinear iterations 'nni' = " + to_string(nni), LC_SOLV, LL_INFO);
+  LOGGER_WRITE("Cvode: convergence failures 'ncfn' = " + to_string(ncfn), LC_SOLV, LL_INFO);
 }
 
 int Ida::check_flag(void *flagvalue, const char *funcname, int opt)

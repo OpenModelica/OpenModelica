@@ -52,6 +52,9 @@ typedef struct SOLVER_INFO
 
   /* set by solver if an internal root finding method is activated  */
   modelica_boolean solverRootFinding;
+  /* set by solver if output points are set by step size control */
+  modelica_boolean solverNoEquidistantGrid;
+  double lastdesiredStep;
 
   /* events */
   LIST* eventLst;

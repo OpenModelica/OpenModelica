@@ -63,11 +63,14 @@ extern "C" {
   void listPopFront(LIST *list);
 
   void listClear(LIST *list);
+  void freeNode(LIST_NODE *node);
 
   LIST_NODE *listFirstNode(LIST *list);
   LIST_NODE *listNextNode(LIST_NODE *node);
 
   void *listNodeData(LIST_NODE *node);
+  void updateNodeData(LIST *list, LIST_NODE *node, const void *data);
+  LIST_NODE* updateNodeNext(LIST *list, LIST_NODE *node, LIST_NODE *newNext);
 
 #ifdef __cplusplus
 }

@@ -8380,7 +8380,6 @@ author: waurich TUD 10-2015"
   output list<DAE.ComponentRef> noDerivativeInputs;
 algorithm
   (_,(_,noDerivativeInputs)) := BackendEquation.traverseExpsOfEquation(eq,function Expression.traverseExpTopDown(func=isFuncCallWithNoDerAnnotation1),(functionTree,{}));
-  //(_,(_,noDerivativeInputs)) := BackendEquation.traverseExpsOfEquation(eq,isFuncCallWithNoDerAnnotation1,(functionTree,{}));
   isFuncCallWithNoDerAnno := not listEmpty(noDerivativeInputs);
 end isFuncCallWithNoDerAnnotation;
 
@@ -8409,6 +8408,7 @@ algorithm
       DAE.FUNCTION_DER_MAPPER(conditionRefs=conditionRefs) := mapper;
       inputPos := getNoDerivativeInputPosition(conditionRefs,{});
       expLst := List.map1(inputPos,List.getIndexFirst,expLst);
+      expLst := List.filter1OnTrue(expLst,isNotFunctionCall,functionTree);
       noDerivativeInputs := List.flatten(List.map(expLst,Expression.getAllCrefs));
         //print("crefs: "+stringDelimitList(List.map(noDerivativeInputs,ComponentReference.crefStr),", ")+"\n");
     then (expIn,true,(functionTree,listAppend(noDerivativeInputs,crefsIn)));
@@ -8416,6 +8416,25 @@ algorithm
     then (expIn,true,tplIn);
   end matchcontinue;
 end isFuncCallWithNoDerAnnotation1;
+
+public function isNotFunctionCall
+"Returns true if the given expression is something different than a function call.
+author: waurich TUD 10-2015"
+  input DAE.Exp inExp;
+  input DAE.FunctionTree funcsIn;
+  output Boolean outIsNoCall;
+algorithm
+  outIsNoCall := matchcontinue(inExp,funcsIn)
+    local
+      Absyn.Path path;
+      DAE.Function func;
+    case (DAE.CALL(path=path),_)
+      equation
+        SOME(func) = DAEUtil.avlTreeGet(funcsIn,path);
+         then listEmpty(DAEUtil.getFunctionElements(func));
+    else true;
+  end matchcontinue;
+end isNotFunctionCall;
 
 protected function getNoDerivativeInputPosition"ge the position idx for the input-var which does not need a derivation from the NoDerivative annotations"
   input list<tuple<Integer,DAE.derivativeCond>> conds;
@@ -8431,6 +8450,9 @@ algorithm
     case((idx,DAE.NO_DERIVATIVE(_))::rest,_)
       equation
       then getNoDerivativeInputPosition(rest, idx::IdxsIn);
+    else
+      equation
+      then getNoDerivativeInputPosition(List.rest(conds), IdxsIn);
   end match;
 end getNoDerivativeInputPosition;
 

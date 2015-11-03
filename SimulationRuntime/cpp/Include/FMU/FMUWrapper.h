@@ -5,18 +5,12 @@
 #include <FMU/IFMUInterface.h>
 #include <FMU/FMUGlobalSettings.h>
 #include <FMU/FMULogger.h>
-#include <Core/System/AlgLoopSolverFactory.h>
-
-// build MODEL_CLASS from MODEL_IDENTIFIER
-#define FMU_PASTER(a, b) a ## b
-#define FMU_CONCAT(a, b) FMU_PASTER(a, b)
-#define MODEL_CLASS FMU_CONCAT(MODEL_IDENTIFIER_SHORT, FMU)
 
 class FMUWrapper : public IFMUInterface
 {
 private:
     FMUGlobalSettings _global_settings;
-    shared_ptr<MODEL_CLASS> _model;
+    MODEL_CLASS *_model;
     double _need_update;
 
     void updateModel()
@@ -34,13 +28,13 @@ public:
     FMUWrapper(fmiString instanceName, fmiString GUID, fmiCallbackFunctions functions, fmiBoolean loggingOn) : IFMUInterface(instanceName, GUID, functions, loggingOn), _need_update(true)
     {
       //FMULogger::initialize(functions.logger, this, instanceName);
-      shared_ptr<IAlgLoopSolverFactory>solver_factory(new AlgLoopSolverFactory(&_global_settings,PATH(""),PATH("")));
-      _model = shared_ptr<MODEL_CLASS>(new MODEL_CLASS(&_global_settings, solver_factory, shared_ptr<ISimData>(new SimData()), shared_ptr<ISimVars>(MODEL_SIMVARS_FACTORY())));
+      _model = createSystemFMU(&_global_settings);
       _model->setInitial(true);
     }
 
     virtual ~FMUWrapper()
     {
+      delete _model;
     }
 
     virtual fmiStatus setDebugLogging(fmiBoolean loggingOn)
@@ -87,7 +81,15 @@ public:
       //LOGGER_WRITE("Set real values",LC_OTHER,LL_DEBUG);
       //for(size_t i = 0; i < nvr; i++)
       //  LOGGER_WRITE("  Set real value " + boost::lexical_cast<std::string>(vr[i]) + " to " + boost::lexical_cast<std::string>(value[i]),LC_OTHER,LL_DEBUG);
-      _model->setReal(vr, nvr, value);
+      if(_model->initial())
+      {
+        double *realVars = _model->getSimVars()->getRealVarsVector();
+        for(size_t i = 0; i < nvr; i++)
+          _model->setRealStartValue(realVars[vr[i]], value[i]);
+      }
+      else
+        _model->setReal(vr, nvr, value);
+
       _need_update = true;
       //LOGGER_WRITE("Set real values finished",LC_OTHER,LL_DEBUG);
       return fmiOK;
@@ -98,7 +100,15 @@ public:
       //LOGGER_WRITE("Set int values",LC_OTHER,LL_DEBUG);
       //for(size_t i = 0; i < nvr; i++)
       //  LOGGER_WRITE("  Set int value " + boost::lexical_cast<std::string>(vr[i]) + " to " + boost::lexical_cast<std::string>(value[i]),LC_OTHER,LL_DEBUG);
-      _model->setInteger(vr, nvr, value);
+      if(_model->initial())
+      {
+        int *intVars = _model->getSimVars()->getIntVarsVector();
+        for(size_t i = 0; i < nvr; i++)
+          _model->setIntStartValue(intVars[vr[i]], value[i]);
+      }
+      else
+        _model->setInteger(vr, nvr, value);
+
       _need_update = true;
       //LOGGER_WRITE("Set int values finished",LC_OTHER,LL_DEBUG);
       return fmiOK;
@@ -107,12 +117,22 @@ public:
     virtual fmiStatus setBoolean(const fmiValueReference vr[], size_t nvr, const fmiBoolean value[])
     {
       //LOGGER_WRITE("Set bool values",LC_OTHER,LL_DEBUG);
-      int val;
-      for (size_t i = 0; i < nvr; i++) {
-        val = value[i];
-        //LOGGER_WRITE("  Set bool value " + boost::lexical_cast<std::string>(vr[i]) + " to " + boost::lexical_cast<std::string>(val),LC_OTHER,LL_DEBUG);
-        _model->setBoolean(vr + i, 1, &val);
+      if(_model->initial())
+      {
+        bool *boolVars = _model->getSimVars()->getBoolVarsVector();
+        for(size_t i = 0; i < nvr; i++)
+          _model->setBoolStartValue(boolVars[vr[i]], value[i]);
       }
+      else
+      {
+        int val;
+        for(size_t i = 0; i < nvr; i++)
+        {
+          val = value[i];
+          _model->setBoolean(vr + i, 1, &val);
+        }
+      }
+
       _need_update = true;
       //LOGGER_WRITE("Set bool values finished",LC_OTHER,LL_DEBUG);
       return fmiOK;

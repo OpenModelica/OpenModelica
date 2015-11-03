@@ -36,7 +36,7 @@ UTIL_HFILES=base_array.h boolean_array.h division.h generic_array.h omc_error.h 
 MATH_OBJS=pivot$(OBJ_EXT)
 MATH_HFILES = blaswrap.h
 
-SOLVER_OBJS_FMU=delay$(OBJ_EXT) linearSystem$(OBJ_EXT) linearSolverLapack$(OBJ_EXT) linearSolverTotalPivot$(OBJ_EXT) mixedSystem$(OBJ_EXT) mixedSearchSolver$(OBJ_EXT) nonlinearSystem$(OBJ_EXT) nonlinearSolverHybrd$(OBJ_EXT) nonlinearSolverHomotopy$(OBJ_EXT) omc_math$(OBJ_EXT) model_help$(OBJ_EXT) stateset$(OBJ_EXT) synchronous$(OBJ_EXT)
+SOLVER_OBJS_FMU=delay$(OBJ_EXT) linearSystem$(OBJ_EXT) linearSolverLapack$(OBJ_EXT) linearSolverTotalPivot$(OBJ_EXT) mixedSystem$(OBJ_EXT) mixedSearchSolver$(OBJ_EXT) nonlinearSystem$(OBJ_EXT) nonlinearValuesList$(OBJ_EXT) nonlinearSolverHybrd$(OBJ_EXT) nonlinearSolverHomotopy$(OBJ_EXT) omc_math$(OBJ_EXT) model_help$(OBJ_EXT) stateset$(OBJ_EXT) synchronous$(OBJ_EXT)
 ifeq ($(OMC_FMI_RUNTIME),)
 SOLVER_OBJS_MINIMAL=$(SOLVER_OBJS_FMU) events$(OBJ_EXT) external_input$(OBJ_EXT) solver_main$(OBJ_EXT)
 else
@@ -47,7 +47,7 @@ SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL) kinsolSolver$(OBJ_EXT) linearSolverLis$(OBJ_E
 else
 SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL)
 endif
-SOLVER_HFILES = dassl.h delay.h epsilon.h events.h external_input.h linearSystem.h mixedSystem.h model_help.h nonlinearSystem.h radau.h sym_imp_euler.h solver_main.h stateset.h
+SOLVER_HFILES = dassl.h delay.h epsilon.h events.h external_input.h linearSystem.h mixedSystem.h model_help.h nonlinearSystem.h nonlinearValuesList.h radau.h sym_imp_euler.h solver_main.h stateset.h
 
 INITIALIZATION_OBJS = initialization$(OBJ_EXT)
 INITIALIZATION_HFILES = initialization.h
@@ -71,12 +71,12 @@ RESULTS_FILES = simulation_result_ia.cpp simulation_result_csv.cpp simulation_re
 
 SIM_OBJS = simulation_runtime$(OBJ_EXT) ../linearization/linearize$(OBJ_EXT) socket$(OBJ_EXT)
 ifeq ($(OMC_FMI_RUNTIME),)
-SIM_OBJS_C_FMI=modelinfo$(OBJ_EXT)
+SIM_OBJS_C_FMI=modelinfo$(OBJ_EXT) simulation_input_xml$(OBJ_EXT)
 else
 SIM_OBJS_C_FMI=
 endif
-SIM_OBJS_C = $(SIM_OBJS_C_FMI) simulation_input_xml$(OBJ_EXT) simulation_info_xml$(OBJ_EXT) simulation_info_json$(OBJ_EXT) options$(OBJ_EXT) simulation_omc_assert$(OBJ_EXT)
-SIM_HFILES = options.h simulation_input_xml.h simulation_info_xml.h simulation_info_json.h modelinfo.h simulation_runtime.h ../linearization/linearize.h socket.h
+SIM_OBJS_C = $(SIM_OBJS_C_FMI) simulation_info_json$(OBJ_EXT) options$(OBJ_EXT) simulation_omc_assert$(OBJ_EXT)
+SIM_HFILES = options.h simulation_input_xml.h simulation_info_json.h modelinfo.h simulation_runtime.h ../linearization/linearize.h socket.h
 
 FMIPATH = ./fmi/
 FMI_OBJS = FMICommon$(OBJ_EXT) FMI1Common$(OBJ_EXT) FMI1ModelExchange$(OBJ_EXT) FMI1CoSimulation$(OBJ_EXT) FMI2Common$(OBJ_EXT) FMI2ModelExchange$(OBJ_EXT)
@@ -121,11 +121,18 @@ FMIOBJSPATH = $(FMI_OBJS:%=$(FMIPATH)%)
 
 ALL_OBJS = $(METAOBJSPATH) $(UTILOBJSPATH) $(MATHOBJSPATH) $(SOLVEROBJSPATH) $(INITIALIZATIONOBJSPATH) $(OPTIMIZATIONOBJSPATH) $(RESULTSOBJSPATH) $(SIMOBJSPATH) $(SIMOBJSPATHC) meta/meta_modelica_catch$(OBJ_EXT)
 
+# External solvers needed by FMI for ME
 CMINPACK_OBJS = enorm_ hybrj_ dpmpar_ qrfac_ qform_ dogleg_ r1updt_ r1mpyq_
+LAPACK_OBJS = dgesv dgetrf dlamch dtrtrs ilaenv ilazlr xerbla zlarfb zlarft zungbr zunglq dgetf2 dgetrs dlaswp ieeeck ilazlc iparmq zlacgv zlarf zung2r zungl2 zungqr
+BLAS_OBJS = dgemm dger dscal dswap dtrsm idamax lsame zcopy zgemm zgemv zgerc zscal ztrmm ztrmv
+LIBF2C_OBJS = d_cnjg i_len i_nint pow_di s_cmp s_copy
 # Only objects needed for FMI for Modelica Exchange
 FMI_ME_OBJS = $(UTILOBJSPATH) $(MATHOBJSPATH) $(SIMOBJSPATHC) $(SOLVEROBJSPATH) $(INITIALIZATIONOBJSPATH) \
   ./meta/meta_modelica_catch$(OBJ_EXT) \
-  $(CMINPACK_OBJS:%=./external_solvers/%$(OBJ_EXT))
+  $(CMINPACK_OBJS:%=./external_solvers/%$(OBJ_EXT)) \
+  $(LAPACK_OBJS:%=./external_solvers/%$(OBJ_EXT)) \
+  $(BLAS_OBJS:%=./external_solvers/%$(OBJ_EXT)) \
+  $(LIBF2C_OBJS:%=./external_solvers/%$(OBJ_EXT)) \
 
 ALL_HEADERS = $(METAHFILESPATH) $(UTILHFILESPATH) $(MATHHFILESPATH) $(SOLVERHFILESPATH) $(INITIALIZATIONHFILESPATH) $(OPTIMIZATIONHFILESPATH) $(RESULTSHFILESPATH) $(SIMHFILESPATH)
 ALL_PATHS = $(METAPATH) $(FMIPATH) $(UTILPATH) $(MATHPATH) $(SOLVERPATH) $(INITIALIZATIONPATH) $(OPTIMIZATIONPATH) $(RESULTSPATH) $(SIMPATH) linearization/

@@ -1860,156 +1860,63 @@ algorithm
   end match;
 end doMerge;
 
-protected function mergeSubs "This function merges to list of DAE.SubMods."
-  input list<DAE.SubMod> inTypesSubModLst1;
-  input list<DAE.SubMod> inTypesSubModLst2;
-  input FCore.Graph inEnv3;
-  input Prefix.Prefix inPrefix4;
-  output list<DAE.SubMod> outTypesSubModLst;
+protected function mergeSubs
+  input list<DAE.SubMod> inSubMods1;
+  input list<DAE.SubMod> inSubMods2;
+  input FCore.Graph inEnv;
+  input Prefix.Prefix inPrefix;
+  output list<DAE.SubMod> outSubMods = {};
+protected
+  list<DAE.SubMod> submods2;
+  String name;
+  DAE.Mod m1, m2;
+  Option<DAE.SubMod> osm2;
+  DAE.SubMod sm2;
 algorithm
-  outTypesSubModLst := matchcontinue (inTypesSubModLst1,inTypesSubModLst2,inEnv3,inPrefix4)
-    local
-      list<DAE.SubMod> s1,s2,s2_new,s_rec;
-      DAE.SubMod s,s_first;
-      FCore.Graph env;
-      Prefix.Prefix pre;
+  if listEmpty(inSubMods1) then
+    outSubMods := inSubMods2;
+  elseif listEmpty(inSubMods2) then
+    outSubMods := inSubMods1;
+  else
+    submods2 := inSubMods2;
+    for sm1 in inSubMods1 loop
+      (submods2, osm2) :=
+        List.deleteMemberOnTrue(subModName(sm1), submods2, subModIsNamed);
 
-    case ({},s1,_,_) then s1;
-    case (s1,{},_,_) then s1;
-    case((s::s1),s2,env,pre) // outer, inner, env, pre
-      equation
-        (s_first,s2_new) = mergeSubs2_2(s,s2,env,pre);
-        s_rec = mergeSubs(s1,s2_new,env,pre);
-      then
-        (s_first::s_rec);
-  end matchcontinue;
+      if isSome(osm2) then
+        try
+          SOME(sm2) := osm2;
+          DAE.NAMEMOD(mod = m1) := sm1;
+          DAE.NAMEMOD(mod = m2) := sm2;
+          m1 := merge(m1, m2, inEnv, inPrefix);
+          sm1 := DAE.NAMEMOD(subModName(sm1), m1);
+        else
+        end try;
+      end if;
+
+      outSubMods := sm1 :: outSubMods;
+    end for;
+
+    outSubMods := listAppend(listReverse(outSubMods), submods2);
+  end if;
 end mergeSubs;
 
-protected function mergeSubs2_2 "
-Author: BZ, 2009-07
-Helper function for mergeSubs, used to detect failures in Mod.merge"
-  input DAE.SubMod inSubMod;
-  input list<DAE.SubMod> inTypesSubModLst;
-  input FCore.Graph inEnv;
-  input Prefix.Prefix inPrefix;
-  output DAE.SubMod outSubMod;
-  output list<DAE.SubMod> outTypesSubModLst;
-algorithm
-  (outSubMod,outTypesSubModLst) := matchcontinue (inSubMod,inTypesSubModLst,inEnv,inPrefix)
-    local
-      DAE.SubMod sm,s,s1,s2;
-      DAE.Mod m,m1,m2;
-      String n1,n2;
-      list<DAE.SubMod> ss,ss_1;
-      FCore.Graph env;
-      Prefix.Prefix pre;
-      list<Integer> i1,i2;
-
-    // empty list
-    case (sm,{},_,_) then (sm,{});
-
-    // named mods, modifications in the list take precedence
-    case (DAE.NAMEMOD(ident = n1,mod = m1),(DAE.NAMEMOD(ident = n2,mod = m2) :: ss),env,pre)
-      equation
-        true = stringEq(n1, n2);
-        m = merge(m1, m2, env, pre);
-      then
-        (DAE.NAMEMOD(n1,m),ss);
-
-    // handle next
-    case (s1,(s2::ss),env,pre)
-      equation
-        true = verifySubMerge(s1,s2);
-        (s,ss_1) = mergeSubs2_2(s1, ss, env, pre);
-      then
-        (s,s2::ss_1);
-  end matchcontinue;
-end mergeSubs2_2;
-
-protected function mergeSubs2 "This function helps in the merging of two lists of DAE.SubMods.
-  It compares one DAE.SubMod against a list of other DAE.SubMods,
-  and if there is one with the same name, it is kept and the one
-  DAE.SubMod given in the second argument is discarded."
-  input list<DAE.SubMod> inTypesSubModLst;
-  input DAE.SubMod inSubMod;
-  input FCore.Graph inEnv;
-  input Prefix.Prefix inPrefix;
-  output list<DAE.SubMod> outTypesSubModLst;
-  output DAE.SubMod outSubMod;
-algorithm
-  (outTypesSubModLst,outSubMod) := matchcontinue (inTypesSubModLst,inSubMod,inEnv,inPrefix)
-    local
-      DAE.SubMod sm,s,s1,s2;
-      DAE.Mod m,m1,m2;
-      String n1,n2;
-      list<DAE.SubMod> ss,ss_1;
-      FCore.Graph env;
-      Prefix.Prefix pre;
-      list<Integer> i1,i2;
-
-    // empty list
-    case ({},sm,_,_) then ({},sm);
-
-    // named mods, modifications in the list take precedence
-    case ((DAE.NAMEMOD(ident = n1,mod = m1) :: ss),DAE.NAMEMOD(ident = n2,mod = m2),env,pre)
-      equation
-        true = stringEq(n1, n2);
-        m = merge(m1, m2, env, pre);
-      then
-        (ss,DAE.NAMEMOD(n1,m));
-
-    // handle rest
-    case ((s1 :: ss),s2,env,pre)
-      equation
-        true = verifySubMerge(s1,s2);
-        (ss_1,s) = mergeSubs2(ss, s2, env, pre);
-      then
-        ((s1 :: ss_1),s);
-  end matchcontinue;
-end mergeSubs2;
-
-protected function verifySubMerge "
-function to verify that we did not fail the cases where
-we should merge subs (helper function for mergeSubs2)"
-  input DAE.SubMod sub1;
-  input DAE.SubMod sub2;
-  output Boolean b;
-algorithm
-  b := matchcontinue(sub1,sub2)
-    local list<Integer> i1,i2; String n1,n2;
-
-    case (DAE.NAMEMOD(ident = n1),DAE.NAMEMOD(ident = n2))
-      equation
-        true = stringEq(n1, n2);
-      then false;
-
-    else true;
-  end matchcontinue;
-end verifySubMerge;
-
-protected function mergeEq "The outer modification, given in the first argument,
-  takes precedence over the inner modifications."
-  input Option<DAE.EqMod> inTypesEqModOption1;
-  input Option<DAE.EqMod> inTypesEqModOption2;
-  output Option<DAE.EqMod> outTypesEqModOption;
-algorithm
-  outTypesEqModOption := match (inTypesEqModOption1,inTypesEqModOption2)
-    local Option<DAE.EqMod> e;
-    // Outer assignments take precedence
-    case ((e as SOME(_)),_) then e;
-    case (NONE(),e) then e;
-  end match;
+protected function mergeEq
+  "The outer modification, given in the first argument, takes precedence over
+   the inner modifications."
+  input Option<DAE.EqMod> inOuterEq;
+  input Option<DAE.EqMod> inInnerEq;
+  output Option<DAE.EqMod> outEqMod = if isSome(inOuterEq) then inOuterEq else inInnerEq;
 end mergeEq;
 
 public function modEquation "This function simply extracts the equation part of a modification."
   input DAE.Mod inMod;
-  output Option<DAE.EqMod> outTypesEqModOption;
+  output Option<DAE.EqMod> outEqMod;
 algorithm
-  outTypesEqModOption := match (inMod)
-    local Option<DAE.EqMod> e;
+  outEqMod := match (inMod)
     case DAE.NOMOD() then NONE();
     case DAE.REDECL() then NONE();
-    case DAE.MOD(eqModOption = e) then e;
+    case DAE.MOD() then inMod.eqModOption;
   end match;
 end modEquation;
 
@@ -3376,6 +3283,14 @@ protected function subModName
 algorithm
   DAE.NAMEMOD(ident = outName) := inSubMod;
 end subModName;
+
+protected function subModIsNamed
+  input String inName;
+  input DAE.SubMod inSubMod;
+  output Boolean outNameEq;
+algorithm
+  outNameEq := inName == subModName(inSubMod);
+end subModIsNamed;
 
 protected function subModInfo
   input DAE.SubMod inSubMod;

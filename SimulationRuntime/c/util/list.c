@@ -76,6 +76,12 @@ void freeList(LIST *list)
   }
 }
 
+void freeNode(LIST_NODE *node)
+{
+  free(node->data);
+  free(node);
+}
+
 void listPushFront(LIST *list, const void *data)
 {
   LIST_NODE *tmpNode = NULL;
@@ -196,6 +202,18 @@ void listClear(LIST *list)
   list->last = NULL;
 }
 
+void removeNodes(LIST* list, LIST_NODE *node)
+{
+  while(node)
+  {
+    LIST_NODE *tmpNode = node->next;
+    free(node->data);
+    free(node);
+    node = tmpNode;
+    --(list->length);
+  }
+}
+
 LIST_NODE *listFirstNode(LIST *list)
 {
   assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
@@ -216,4 +234,23 @@ void *listNodeData(LIST_NODE *node)
   assertStreamPrint(NULL, 0 != node, "invalid list-node");
   assertStreamPrint(NULL, 0 != node->data, "invalid data node");
   return node->data;
+}
+
+void updateNodeData(LIST *list, LIST_NODE *node, const void *data)
+{
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  assertStreamPrint(NULL, 0 != node, "invalid list-node");
+  assertStreamPrint(NULL, 0 != node->data, "invalid data node");
+  memcpy(node->data, data, list->itemSize);
+  return;
+}
+
+LIST_NODE* updateNodeNext(LIST *list, LIST_NODE *node, LIST_NODE *newNext)
+{
+  LIST_NODE *next;
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  assertStreamPrint(NULL, 0 != node, "invalid list-node");
+  next = node->next;
+  node->next = newNext;
+  return next;
 }

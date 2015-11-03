@@ -36,8 +36,6 @@
 
 #include "FMU2Wrapper.h"
 
-#include <Core/System/AlgLoopSolverFactory.h>
-
 static fmi2String const _LogCategoryFMUNames[] = {
   "logEvents",
   "logSingularLinearSystems",
@@ -65,13 +63,7 @@ FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
   _instanceName = instanceName;
   _GUID = GUID;
   _logCategories = loggingOn? 0xFFFF: 0x0000;
-  shared_ptr<IAlgLoopSolverFactory>
-    solver_factory(new AlgLoopSolverFactory(&_global_settings,
-                                            PATH(""), PATH("")));
-  _model = shared_ptr<MODEL_CLASS>
-    (new MODEL_CLASS(&_global_settings, solver_factory,
-                     shared_ptr<ISimData>(new SimData()),
-                     shared_ptr<ISimVars>(MODEL_CLASS::createSimVars())));
+  _model = createSystemFMU(&_global_settings);
   _model->initialize();
   _string_buffer.resize(_model->getDimString());
   _clock_buffer = new bool[_model->getDimClock()];
@@ -82,6 +74,7 @@ FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
 FMU2Wrapper::~FMU2Wrapper()
 {
   delete [] _clock_buffer;
+  delete _model;
 }
 
 fmi2Status FMU2Wrapper::setDebugLogging(fmi2Boolean loggingOn,

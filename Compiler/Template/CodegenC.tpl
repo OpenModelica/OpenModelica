@@ -147,6 +147,7 @@ end translateInitFile;
     extern void <%symbolName(modelNamePrefixStr,"function_initSynchronous")%>(DATA * data, threadData_t *threadData);
     extern void <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>(DATA * data, threadData_t *threadData, long i);
     extern int <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>(DATA * data, threadData_t *threadData, long i);
+    extern void <%symbolName(modelNamePrefixStr,"read_input_fmu")%>(MODEL_DATA* modelData, SIMULATION_INFO* simulationData);
     extern void <%symbolName(modelNamePrefixStr,"function_savePreSynchronous")%>(DATA *data, threadData_t *threadData);
     <%\n%>
     >>
@@ -877,6 +878,32 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
 
     #ifdef FMU_EXPERIMENTAL
     <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then functionODEPartial(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""), hpcomData.schedules, modelNamePrefixStr, modelInfo)%>
+    <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then
+    <<
+    void <%symbolName(modelNamePrefixStr,"functionFMIJacobian")%>(DATA *data, threadData_t *threadData, const unsigned *unknown, int nUnk, const unsigned *ders, int nKnown, double *dvKnown, double *out) {
+        int i;
+        /* TODO: Use the literal names instead of the data-> structure
+         * Beware! This code assumes that the FMI variables are sorted putting
+         * states first (0 to nStates-1) and state derivatives (nStates to 2*nStates-1) second. */
+        for (i=0;i<data->modelData.nStates; i++) {
+          // Clear out the seeds
+          data->simulationInfo.analyticJacobians[0].seedVars[i]=0;
+        }
+        for (int i=0;i<nUnk; i++) {
+          /* Put the supplied value in the seeds */
+          data->simulationInfo.analyticJacobians[0].seedVars[unknown[i]]=dvKnown[i];
+        }
+        /* Call the Jacobian evaluation function. This function evaluates the whole column of the Jacobian.
+         * More efficient code could only evaluate the equations needed for the
+         * known variables only */
+        <%symbolName(modelNamePrefixStr,"functionJacA_column")%>(data,threadData);
+
+        // Write the results back to the array
+        for (int i=0;i<nKnown; i++) {
+          out[ders[i]-data->modelData.nStates] = data->simulationInfo.analyticJacobians[0].resultVars[ders[i]-data->modelData.nStates];
+        }
+    }
+    >> %>
     #endif
     /* forward the main in the simulation runtime */
     extern int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData);
@@ -936,15 +963,17 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
        <%symbolName(modelNamePrefixStr,"symEulerUpdate")%>,
        <%symbolName(modelNamePrefixStr,"function_initSynchronous")%>,
        <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>,
-       <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>
+       <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>,
+       <% if isModelExchangeFMU then symbolName(modelNamePrefixStr,"read_input_fmu") else "NULL" %>
        #ifdef FMU_EXPERIMENTAL
        ,<%symbolName(modelNamePrefixStr,"functionODE_Partial")%>
+       ,<%symbolName(modelNamePrefixStr,"functionFMIJacobian")%>
        #endif
 
     <%\n%>
     };
 
-    <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, allEquations, jacobianMatrixes, delayedExps, modelNamePrefixStr)%>
+    <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, allEquations, jacobianMatrixes, delayedExps, modelNamePrefixStr, isModelExchangeFMU)%>
 
     #ifdef __cplusplus
     }
@@ -996,7 +1025,7 @@ template simulationFileHeader(SimCode simCode)
     #include "openmodelica.h"
     #include "openmodelica_func.h"
     #include "simulation_data.h"
-    #include "simulation/simulation_info_xml.h"
+    #include "simulation/simulation_info_json.h"
     #include "simulation/simulation_runtime.h"
     #include "util/omc_error.h"
     #include "simulation/solver/model_help.h"
@@ -1005,7 +1034,6 @@ template simulationFileHeader(SimCode simCode)
     #include "simulation/solver/nonlinearSystem.h"
     #include "simulation/solver/mixedSystem.h"
 
-    #include <assert.h>
     #include <string.h>
 
     #include "<%fileNamePrefix%>_functions.h"
@@ -1031,7 +1059,7 @@ template simulationFileHeader(SimCode simCode)
   end match
 end simulationFileHeader;
 
-template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, list<SimCode.JacobianMatrix> symJacs, DelayedExpression delayed)
+template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, list<SimCode.JacobianMatrix> symJacs, DelayedExpression delayed, Boolean isModelExchangeFMU)
   "Generates information for data.modelInfo struct."
 ::=
   match modelInfo
@@ -1042,7 +1070,16 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData.resultFileName = NULL;
     data->modelData.modelDir = "<%directory%>";
     data->modelData.modelGUID = "{<%guid%>}";
-    #ifdef OPENMODELICA_XML_FROM_FILE_AT_RUNTIME
+    <% if isModelExchangeFMU then
+    <<
+    data->modelData.initXMLData = NULL;
+    data->modelData.modelDataXml.infoXMLData =
+    #include "<%fileNamePrefix%>_info.c"
+    ;
+    >>
+    else
+    <<
+    #if defined(OPENMODELICA_XML_FROM_FILE_AT_RUNTIME)
     data->modelData.initXMLData = NULL;
     data->modelData.modelDataXml.infoXMLData = NULL;
     #else
@@ -1053,6 +1090,8 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     #include "<%fileNamePrefix%>_info.c"
     ;
     #endif
+    >>
+    %>
 
     data->modelData.nStates = <%varInfo.numStateVars%>;
     data->modelData.nVariablesReal = 2*<%varInfo.numStateVars%>+<%varInfo.numAlgVars%>+<%varInfo.numDiscreteReal%>+<%varInfo.numOptimizeConstraints%> + <%varInfo.numOptimizeFinalConstraints%>;
@@ -1077,7 +1116,6 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData.nRelations = <%varInfo.numRelations%>;
     data->modelData.nMathEvents = <%varInfo.numMathEventFunctions%>;
     data->modelData.nExtObjs = <%varInfo.numExternalObjects%>;
-    setupModelInfoFunctions(<%if Flags.isSet(Flags.MODEL_INFO_JSON) then 1 else 0%>);
     data->modelData.modelDataXml.fileName = "<%fileNamePrefix%>_info.<%if Flags.isSet(Flags.MODEL_INFO_JSON) then "json" else "xml"%>";
     data->modelData.modelDataXml.modelInfoXmlLength = 0;
     data->modelData.modelDataXml.nFunctions = <%listLength(functions)%>;
@@ -1100,7 +1138,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
   end match
 end populateModelInfo;
 
-template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, list<SimCode.JacobianMatrix> symJacs, DelayedExpression delayed, String modelNamePrefix)
+template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, list<SimCode.JacobianMatrix> symJacs, DelayedExpression delayed, String modelNamePrefix, Boolean isModelExchangeFMU)
   "Generates function in simulation file."
 ::=
   <<
@@ -1108,7 +1146,7 @@ template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix,
   {
     assertStreamPrint(threadData,0!=data, "Error while initialize Data");
     data->callback = &<%symbolName(modelNamePrefix,"callback")%>;
-    <%populateModelInfo(modelInfo, fileNamePrefix, guid, allEquations, symJacs, delayed)%>
+    <%populateModelInfo(modelInfo, fileNamePrefix, guid, allEquations, symJacs, delayed, isModelExchangeFMU)%>
   }
   >>
 end functionInitializeDataStruc;

@@ -36,6 +36,7 @@
 
 #include "util/omc_error.h"
 #include "nonlinearSystem.h"
+#include "nonlinearValuesList.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "kinsolSolver.h"
 #include "nonlinearSolverHybrd.h"
@@ -43,7 +44,7 @@
 #include "newtonIteration.h"
 #endif
 #include "nonlinearSolverHomotopy.h"
-#include "simulation/simulation_info_xml.h"
+#include "simulation/simulation_info_json.h"
 #include "simulation/simulation_runtime.h"
 
 /* for try and catch simulationJumpBuffer */
@@ -366,6 +367,9 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     nonlinsys[i].nlsxExtrapolation = (double*) malloc(size*sizeof(double));
     nonlinsys[i].nlsxOld = (double*) malloc(size*sizeof(double));
 
+    /* allocate value list*/
+    nonlinsys[i].oldValueList = (void*) allocValueList(sizeof(VALUE));
+
     nonlinsys[i].nominal = (double*) malloc(size*sizeof(double));
     nonlinsys[i].min = (double*) malloc(size*sizeof(double));
     nonlinsys[i].max = (double*) malloc(size*sizeof(double));
@@ -476,6 +480,7 @@ int freeNonlinearSystems(DATA *data, threadData_t *threadData)
     free(nonlinsys[i].nominal);
     free(nonlinsys[i].min);
     free(nonlinsys[i].max);
+    freeValueList(nonlinsys[i].oldValueList);
 
 #if !defined(OMC_MINIMAL_RUNTIME)
     if (data->simulationInfo.nlsCsvInfomation)
@@ -563,6 +568,18 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 
   rt_ext_tp_tick(&nonlinsys->totalTimeClock);
 
+  /* value extrapolation */
+  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "############ Start new iteration for system %d at time at %g ############", sysNumber, data->localData[0]->timeValue);
+  printValuesListTimes((VALUES_LIST*)nonlinsys->oldValueList);
+  /* if list is empty put current element in */
+  if (listLen(((VALUES_LIST*)nonlinsys->oldValueList)->valueList)==0)
+  {
+    addListElement((VALUES_LIST*)nonlinsys->oldValueList,
+        createValueElement(nonlinsys->size, data->localData[0]->timeValue, nonlinsys->nlsx));
+  }
+  /* get extrapolated values */
+  getValues((VALUES_LIST*)nonlinsys->oldValueList, data->localData[0]->timeValue, nonlinsys->nlsxExtrapolation);
+
   if(data->simulationInfo.discreteCall)
   {
     double *fvec = malloc(sizeof(double)*nonlinsys->size);
@@ -647,10 +664,15 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   default:
     throwStreamPrint(threadData, "unrecognized nonlinear solver");
   }
-
-
   nonlinsys->solved = success;
 
+  /* write solution to oldValue list for extrapolation */
+  if (nonlinsys->solved){
+    addListElement((VALUES_LIST*)nonlinsys->oldValueList,
+          createValueElement(nonlinsys->size, data->localData[0]->timeValue, nonlinsys->nlsx));
+  }
+  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "########################", data->localData[0]->timeValue);
+  messageClose(LOG_NLS_EXTRAPOLATE);
 
 #ifndef OMC_EMCC
     /*catch */

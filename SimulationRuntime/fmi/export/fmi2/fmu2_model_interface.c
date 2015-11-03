@@ -35,7 +35,7 @@
 #include "simulation/solver/linearSystem.h"
 #include "simulation/solver/mixedSystem.h"
 #include "simulation/solver/delay.h"
-#include "simulation/simulation_info_xml.h"
+#include "simulation/simulation_info_json.h"
 #include "simulation/simulation_input_xml.h"
 /*
 DLLExport pthread_key_t fmu2_thread_data_key;
@@ -338,7 +338,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   setDefaultStartValues(comp);
   setAllVarsToStart(comp->fmuData);
   setAllParamsToStart(comp->fmuData);
-  read_input_xml(&(comp->fmuData->modelData), &(comp->fmuData->simulationInfo));
+  comp->fmuData->callback->read_input_fmu(&(comp->fmuData->modelData), &(comp->fmuData->simulationInfo));
   modelInfoInit(&(comp->fmuData->modelData.modelDataXml));
 
   /* read input vars */
@@ -353,6 +353,11 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   initializeMixedSystems(comp->fmuData, comp->threadData);
   /* allocate memory for state selection */
   initializeStateSetJacobians(comp->fmuData, comp->threadData);
+
+#ifdef FMU_EXPERIMENTAL
+  /* allocate memory for Jacobian */
+  comp->_has_jacobian = !comp->fmuData->callback->initialAnalyticJacobianA(comp->fmuData, comp->threadData);
+#endif
 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Instantiate: GUID=%s", fmuGUID)
   return comp;
@@ -693,7 +698,40 @@ fmi2Status fmi2DeSerializeFMUstate(fmi2Component c, const fmi2Byte serializedSta
 
 fmi2Status fmi2GetDirectionalDerivative(fmi2Component c, const fmi2ValueReference vUnknown_ref[], size_t nUnknown, const fmi2ValueReference vKnown_ref[] , size_t nKnown,
     const fmi2Real dvKnown[], fmi2Real dvUnknown[]) {
+#ifndef FMU_EXPERIMENTAL
   return unsupportedFunction(c, "fmi2GetDirectionalDerivative", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
+#else
+  int i,j;
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmi2GetDirectionalDerivative", modelInstantiated|modelEventMode|modelContinuousTimeMode))
+    return fmi2Error;
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetDirectionalDerivative")
+  if (!comp->_has_jacobian)
+    return unsupportedFunction(c, "fmi2GetDirectionalDerivative", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
+  /***************************************/
+#if NUMBER_OF_STATES>0
+  // This code assumes that the FMU variables are always sorted,
+  // states first and then derivatives.
+  // This is true for the actual OMC FMUs.
+  // Anyway we'll check that the references are in the valid range
+  for (i = 0; i < nUnknown; i++) {
+    if (vUnknown_ref[i]>=NUMBER_OF_STATES)
+        // We are only computing the A part of the Jacobian for now
+        // so unknowns can only be states
+        return fmi2Error;
+  }
+  for (i = 0; i < nKnown; i++) {
+    if (vKnown_ref[i]>=2*NUMBER_OF_STATES) {
+        // We are only computing the A part of the Jacobian for now
+        // so knowns can only be states derivatives
+        return fmi2Error;
+    }
+  }
+  comp->fmuData->callback->functionFMIJacobian(comp->fmuData, comp->threadData, vUnknown_ref, nUnknown, vKnown_ref, nKnown, (double*)dvKnown, dvUnknown);
+#endif
+  /***************************************/
+  return fmi2OK;
+#endif
 }
 
 /***************************************************
@@ -805,9 +843,9 @@ fmi2Status fmi2SetContinuousStates(fmi2Component c, const fmi2Real x[], size_t n
   for (i = 0; i < nx; i++) {
     fmi2ValueReference vr = vrStates[i];
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetContinuousStates: #r%d# = %.16g", vr, x[i])
-    assert(vr >= 0 && vr < NUMBER_OF_REALS);
-    if (setReal(comp, vr, x[i]) != fmi2OK) // to be implemented by the includer of this file
+    if (vr < 0 || vr >= NUMBER_OF_REALS|| setReal(comp, vr, x[i]) != fmi2OK) { // to be implemented by the includer of this file
       return fmi2Error;
+    }
   }
 #endif
   comp->_need_update = 1;

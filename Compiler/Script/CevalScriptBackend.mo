@@ -1974,6 +1974,22 @@ algorithm
       then
         (cache,v,st);
 
+    case (cache,_,"removeComponentModifiers",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str1)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+      equation
+        (p,b) = Interactive.removeComponentModifiers(path, str1, p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
+      then
+        (cache,Values.BOOL(b),st);
+
+    case (cache,_,"removeExtendsModifiers",
+          {Values.CODE(Absyn.C_TYPENAME(classpath)),
+           Values.CODE(Absyn.C_TYPENAME(baseClassPath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        (p,b) = Interactive.removeExtendsModifiers(classpath, baseClassPath, p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
+      then
+        (cache,Values.BOOL(b),st);
+
     case (cache,_,"getAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
@@ -2352,6 +2368,7 @@ algorithm
   if Flags.isSet(Flags.GC_PROF) then
     print(GC.profStatsStr(GC.getProfStats(), head="GC stats after front-end:") + "\n");
   end if;
+
 end runFrontEnd;
 
 protected function runFrontEndLoadProgram
@@ -2375,7 +2392,7 @@ algorithm
       Boolean b;
     case (_, GlobalScript.SYMBOLTABLE(ast=p))
       equation
-        _ = Interactive.getPathedClassInProgram(className, p);
+        _ = Interactive.getPathedClassInProgram(className, p, true);
       then inSt;
     case (_, GlobalScript.SYMBOLTABLE(p,fp,ic,iv,cf,lf))
       equation
@@ -2420,7 +2437,7 @@ algorithm
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         str = Absyn.pathString(className);
-        (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p);
+        (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p, true);
         re = Absyn.restrString(restriction);
         Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
           Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
@@ -2469,7 +2486,7 @@ algorithm
         false = Flags.isSet(Flags.GRAPH_INST);
         false = Flags.isSet(Flags.SCODE_INST);
         str = Absyn.pathString(className);
-        (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p);
+        (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p, true);
         re = Absyn.restrString(restriction);
         Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
           Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
@@ -2644,7 +2661,7 @@ algorithm
               "CC="+System.getCCompiler(),
               "CFLAGS="+quote+System.getCFlags()+quote,
               "CPPFLAGS=",
-              "LDFLAGS="+quote+System.getLDFlags()+" "+(if staticSourceCodeFMU then System.getRTLibsFMU() /*TODO: Should not be needed, once we remove the need for lapack/expat*/ else System.getRTLibsSim()) + quote,
+              "LDFLAGS="+quote+System.getLDFlags()+" "+(if staticSourceCodeFMU then "" else System.getRTLibsSim()) + quote,
               "FMIPLATFORM="+System.modelicaPlatform(),
               "DLLEXT="+System.getDllExt(),
               "LD="+quote+System.getLinker()+quote,

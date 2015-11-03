@@ -32,7 +32,7 @@
 #include "simulation_data.h"
 #include "util/rtclock.h"
 #include "modelinfo.h"
-#include "simulation_info_xml.h"
+#include "simulation_info_json.h"
 #include "simulation_runtime.h"
 #include "util/omc_mmap.h"
 

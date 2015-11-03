@@ -40,7 +40,7 @@ void* mmc_getStacktraceMessages_threadData(threadData_t *threadData)
   return threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW];
 }
 
-void* mmc_clearStacktraceMessages(threadData_t *threadData)
+void mmc_clearStacktraceMessages(threadData_t *threadData)
 {
   threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW] = 0;
 }
@@ -152,6 +152,10 @@ static void handler(int signo, siginfo_t *si, void *ptr)
   sigaction(SIGSEGV, &default_segv_action, 0);
 }
 
+#if defined(__APPLE_CC__)
+#include <sys/sysctl.h>
+#endif
+
 static void* getStackBase() {
   /* Warning: These functions are highly non-portable and are recommended to not be used.
    * We only tested them on Linux and OSX.
@@ -171,7 +175,16 @@ static void* getStackBase() {
 #else
   void* addr = pthread_get_stackaddr_np(self);
   size_t size = pthread_get_stacksize_np(self);
-  stackBottom = ((long)addr) - size;
+  stackBottom = (void*) (((long)addr) - size);
+  if (pthread_main_np()) {
+    char str[256];
+    size_t size = sizeof(str);
+    int ret = sysctlbyname("kern.osrelease", str, &size, NULL, 0);
+    if (0==ret && str[0]=='1' && str[1]=='3' && str[2]=='.') {
+      /* OSX Mavericks returns a wrong stack size... Assume default 8MB */
+      stackBottom = (void*) (((long)addr) - 8 * 1024 * 1024);
+    }
+  }
 #endif
   assert(size > 128*1024);
   return stackBottom + 64*1024;
