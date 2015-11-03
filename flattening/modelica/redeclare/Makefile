@@ -42,6 +42,7 @@ RedeclareFunction.mo \
 RedeclareFunction1.mo \
 RedeclareFunctionSameType.mo \
 RedeclareInClassModification.mo \
+RedeclareLocalClass.mo \
 RedeclareModifierInvalid1.mo \
 RedeclareModifierInvalid2.mo \
 RedeclareRecordComponent1.mo \
