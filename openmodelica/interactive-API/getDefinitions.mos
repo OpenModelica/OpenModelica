@@ -1,0 +1,13 @@
+// status: correct
+// Test export to the Java classes
+
+setCommandLineOptions("-g=MetaModelica");
+getDefinitions(true);
+
+// Result:
+// true
+// "(
+// (uniontype SourceInfo )
+//
+// )"
+// endResult

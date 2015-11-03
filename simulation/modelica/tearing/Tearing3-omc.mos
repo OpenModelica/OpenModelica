@@ -6,7 +6,7 @@
 
 loadFile("Tearing3.mo"); getErrorString();
 
-setDebugFlags("backenddaeinfo"); getErrorString();
+setDebugFlags("backenddaeinfo,disableComSubExp"); getErrorString();
 setTearingMethod("omcTearing"); getErrorString();
 simulate(Tearing3); getErrorString();
 

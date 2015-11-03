@@ -33,8 +33,6 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 25.0, numberOfIntervals = 25000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling', options = '', outputFormat = 'mat', variableFilter = 'time|dcpm.la.i|loadInertia.phi|loadInertia.w|cooling.T|armature.T|core.T|volumeFlow.T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling_res.mat
 // Files Equal!
-// [Modelica 3.2.1/Electrical/Machines.mo:13494:7-13498:42:writable] Error: Variable dcpm.coreParameters: Duplicate modification of element final  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 and  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 on component m.
-//
 // "true
 // "
 // ""

@@ -14,8 +14,8 @@ model SID
   input Real u(start = -2);
   output Real y;
 equation
-  when Clock(dt) then
-    xd = previous(xd) + p * u * dt;
+  when shiftSample(subSample(Clock(dt), 2), 3) then
+    xd = previous(xd) + p * u * interval(u);
     y = previous(xd);
   end when;
 end SID;
@@ -133,6 +133,10 @@ readFile("modelDescription.tmp.xml");
 //     <InitialUnknowns>
 //     </InitialUnknowns>
 //     <Clocks>
+//       <Clock><SubSampled baseClockIndex=\"2\"
+//                          subSampleFactor=\"2\"
+//                          shiftCounter=\"3\"
+//               /></Clock>
 //       <Clock><Periodic>
 //         <Real interval=\"0.1\" />
 //       </Periodic></Clock>

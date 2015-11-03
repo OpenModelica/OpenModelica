@@ -16,7 +16,7 @@ getErrorString();
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Blocks.Examples.BooleanNetwork1_res.mat",
   getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Blocks.Examples.BooleanNetwork1.mat",
   "Modelica.Blocks.Examples.BooleanNetwork1_diff.csv",0.01,0.0001,
-  {"showValue4.showActive","showValue5.showActive","showValue6.showActive"});
+  {"showValue4.showActive","showValue5.showActive","showValue6.showActive","or2.y"});
 
 // Result:
 // true

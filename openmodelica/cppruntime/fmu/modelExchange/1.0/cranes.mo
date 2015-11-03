@@ -1,7 +1,8 @@
 within ;
 package cranes
   model crane
-    inner Modelica.Mechanics.MultiBody.World world
+
+    inner Modelica.Mechanics.MultiBody.World world(enableAnimation=false)
       annotation (Placement(transformation(extent={{-80,40},{-60,60}})));
     Modelica.Mechanics.MultiBody.Parts.BodyShape bodyShape(m=1, r={0,0,0},
       r_CM={0,0,0})

@@ -1,0 +1,19 @@
+// name:     Bug3520
+// keywords: instantiate API
+// status:   correct
+//
+// Checks inherited class instantiation
+//
+
+loadFile("Bug3520.mo"); getErrorString();
+instantiateModel(Derived.Foo); getErrorString();
+
+// Result:
+// true
+// ""
+// "class Derived.Foo
+//   parameter Integer foo = 0;
+// end Derived.Foo;
+// "
+// ""
+// endResult

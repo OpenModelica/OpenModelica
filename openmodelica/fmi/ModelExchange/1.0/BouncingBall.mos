@@ -6,7 +6,11 @@
 //
 setCFlags(getCFlags() + " -g"); getErrorString();
 loadFile("BouncingBall.mo"); getErrorString();
-translateModelFMU(BouncingBall); getErrorString();
+if ""==translateModelFMU(BouncingBall) then
+  print(getErrorString());
+  exit(1);
+end if;
+getErrorString();
 importFMU("BouncingBall.fmu"); getErrorString();
 loadFile("BouncingBall_me_FMU.mo"); getErrorString();
 simulate(BouncingBall_me_FMU, stopTime=3.0); getErrorString();
@@ -19,7 +23,7 @@ val(h,3);
 // ""
 // true
 // ""
-// "SimCode: The model BouncingBall has been translated to FMU"
+//
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
 // "BouncingBall_me_FMU.mo"
@@ -33,6 +37,6 @@ val(h,3);
 // end SimulationResult;
 // ""
 // 1.0
-// 0.2250205572103477
-// -0.9555203906613871
+// 0.2250205572103156
+// -0.9555203906614377
 // endResult

@@ -15,7 +15,7 @@ ModelicaTest.MultiBody.Forces.ForcesAndTorques.mos \
 ModelicaTest.MultiBody.Forces.ForceWithTwoMasses.mos \
 ModelicaTest.MultiBody.Forces.FrameForces.mos \
 ModelicaTest.MultiBody.Forces.FrameForcesAndTorques.mos \
-ModelicaTest.MultiBody.Forces.FrameForcesAndTorques2.mos \ 
+ModelicaTest.MultiBody.Forces.FrameForcesAndTorques2.mos \
 ModelicaTest.MultiBody.Forces.FrameTorques.mos \
 ModelicaTest.MultiBody.Forces.LineForceWithMass.mos \
 ModelicaTest.MultiBody.Forces.LineForceWithTwoMasses.mos \
@@ -87,7 +87,7 @@ ModelicaTest.MultiBody.FourbarVariants.JointUSR_init.mos \
 #ModelicaTest.MultiBody.Joints.SphericalSpherical2.mos - infinite loop
 #ModelicaTest.MultiBody.Joints.UniversalSpherical.mos - infinite loop
 
-FAILINGTESTFILES=  \
+FAILINGTESTFILES=\
 ModelicaTest.MultiBody.SphericalDoublePendulum.mos \
 ModelicaTest.MultiBody.InitializationConversion.Joints.mos \
 ModelicaTest.MultiBody.Forces.SpringDamperParallel.mos\
@@ -103,7 +103,7 @@ ModelicaTest.MultiBody.Joints.JointUSP2.mos \
 #JointUSR - different result from Dymola, wrong initialisation of state derivative (j2.a)
 #JointSSR - different result from Dymola, wrong initialisation of state derivative (j2.a)
 #ModelicaTest.MultiBody.Forces.Damper2.mos
-$(WRONGRESULTTEST)  
+$(WRONGRESULTTEST)=\
 ModelicaTest.MultiBody.FourbarVariants.JointUSR.mos \
 ModelicaTest.MultiBody.FourbarVariants.JointSSR.mos \
 ModelicaTest.MultiBody.Forces.Damper2.mos\
