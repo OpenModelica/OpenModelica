@@ -889,7 +889,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
           // Clear out the seeds
           data->simulationInfo.analyticJacobians[0].seedVars[i]=0;
         }
-        for (int i=0;i<nUnk; i++) {
+        for (i=0;i<nUnk; i++) {
           /* Put the supplied value in the seeds */
           data->simulationInfo.analyticJacobians[0].seedVars[unknown[i]]=dvKnown[i];
         }
@@ -899,7 +899,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
         <%symbolName(modelNamePrefixStr,"functionJacA_column")%>(data,threadData);
 
         // Write the results back to the array
-        for (int i=0;i<nKnown; i++) {
+        for (i=0;i<nKnown; i++) {
           out[ders[i]-data->modelData.nStates] = data->simulationInfo.analyticJacobians[0].resultVars[ders[i]-data->modelData.nStates];
         }
     }
