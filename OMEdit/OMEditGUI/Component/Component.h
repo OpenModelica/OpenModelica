@@ -135,8 +135,8 @@ public:
   Component(Component *pComponent, GraphicsView *pGraphicsView, Component *pParent);
   Component(Component *pComponent, GraphicsView *pGraphicsView);
   bool isInheritedComponent() {return mIsInheritedComponent;}
-  QString getInheritedClassName();
   bool hasShapeAnnotation(Component *pComponent);
+  bool hasNonExistingClass();
   QRectF boundingRect() const;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
@@ -252,8 +252,7 @@ signals:
 public slots:
   void updatePlacementAnnotation();
   void updateOriginItem();
-  void handleLoaded();
-  void handleUnloaded();
+  void reloadComponent();
   void handleShapeAdded();
   void referenceComponentAdded();
   void referenceComponentChanged();
