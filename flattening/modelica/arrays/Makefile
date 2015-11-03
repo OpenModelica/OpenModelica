@@ -121,6 +121,7 @@ InOutArray.mo \
 Matrix.mo \
 Matrix1.mo \
 Matrix2.mo \
+Matrix3.mo \
 MatrixAddition.mo \
 MatrixBrackets.mo \
 MatrixEquation.mo \
