@@ -44,6 +44,7 @@
 #include "SimulationDialog.h"
 #include "SimulationOutputWidget.h"
 #include "VariablesWidget.h"
+#include "Commands.h"
 
 /*!
   \class SimulationDialog
@@ -1005,26 +1006,42 @@ void SimulationDialog::saveSimulationOptions()
   if (mIsReSimulate || !mpSaveSimulationCheckbox->isChecked())
     return;
 
-  QString annotationString;
+  QString oldExperimentAnnotation = "annotate=experiment(";
+  // if the class has experiment annotation then read it.
+  if (mpMainWindow->getOMCProxy()->isExperiment(mpLibraryTreeItem->getNameStructure())) {
+    // get the simulation options....
+    QStringList result = mpMainWindow->getOMCProxy()->getSimulationOptions(mpLibraryTreeItem->getNameStructure());
+    // since we always get simulationOptions so just get the values from array
+    oldExperimentAnnotation.append("StartTime=").append(QString::number(result.at(0).toFloat())).append(",");
+    oldExperimentAnnotation.append("StopTime=").append(QString::number(result.at(1).toFloat())).append(",");
+    oldExperimentAnnotation.append("Tolerance=").append(QString::number(result.at(2).toFloat())).append(",");
+    oldExperimentAnnotation.append("Interval=").append(QString::number(result.at(3).toFloat()));
+  }
+  oldExperimentAnnotation.append(")");
+  QString newExperimentAnnotation;
   // create simulations options annotation
-  annotationString.append("annotate=experiment(");
-  annotationString.append("StartTime=").append(mpStartTimeTextBox->text()).append(",");
-  annotationString.append("StopTime=").append(mpStopTimeTextBox->text()).append(",");
-  annotationString.append("Tolerance=").append(mpToleranceTextBox->text()).append(",");
+  newExperimentAnnotation.append("annotate=experiment(");
+  newExperimentAnnotation.append("StartTime=").append(mpStartTimeTextBox->text()).append(",");
+  newExperimentAnnotation.append("StopTime=").append(mpStopTimeTextBox->text()).append(",");
+  newExperimentAnnotation.append("Tolerance=").append(mpToleranceTextBox->text()).append(",");
   double interval, stopTime, startTime;
   int numberOfIntervals;
   stopTime = mpStopTimeTextBox->text().toDouble();
   startTime = mpStartTimeTextBox->text().toDouble();
   numberOfIntervals = mpNumberofIntervalsSpinBox->value();
   interval = (numberOfIntervals == 0) ? 0 : (stopTime - startTime) / numberOfIntervals;
-  annotationString.append("Interval=").append(QString::number(interval));
-  annotationString.append(")");
-  // send the simulations options annotation to OMC
-  mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), annotationString);
-  // make the model modified
-  if (mpLibraryTreeItem->getModelWidget()) {
+  newExperimentAnnotation.append("Interval=").append(QString::number(interval));
+  newExperimentAnnotation.append(")");
+  // if we have ModelWidget for class then put the change on undo stack.
+  if (mpLibraryTreeItem->getModelWidget() && !mpLibraryTreeItem->getModelWidget()->isReloadNeeded()) {
+    UpdateClassExperimentAnnotationCommand *pUpdateClassExperimentAnnotationCommand;
+    pUpdateClassExperimentAnnotationCommand = new UpdateClassExperimentAnnotationCommand(mpMainWindow, mpLibraryTreeItem,
+                                                                                         oldExperimentAnnotation, newExperimentAnnotation);
+    mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pUpdateClassExperimentAnnotationCommand);
     mpLibraryTreeItem->getModelWidget()->updateModelicaText();
   } else {
+    // send the simulations options annotation to OMC
+    mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), newExperimentAnnotation);
     LibraryTreeModel *pLibraryTreeModel = mpMainWindow->getLibraryWidget()->getLibraryTreeModel();
     pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
   }
@@ -1076,7 +1093,6 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     if (list.size() > 0) {
       mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
       pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getResultFileName(), workingDirectory, list, simulationOptions);
-      mpMainWindow->getVariablesDockWidget()->show();
     }
   }
 }

@@ -874,3 +874,33 @@ void DeleteConnectionCommand::undo()
   mpConnectionLineAnnotation->emitAdded();
   mpConnectionLineAnnotation->getGraphicsView()->addConnectionToClass(mpConnectionLineAnnotation);
 }
+
+UpdateClassExperimentAnnotationCommand::UpdateClassExperimentAnnotationCommand(MainWindow *pMainWindow, LibraryTreeItem *pLibraryTreeItem,
+                                                                               QString oldExperimentAnnotation, QString newExperimentAnnotaiton,
+                                                                               QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpMainWindow = pMainWindow;
+  mpLibraryTreeItem = pLibraryTreeItem;
+  mOldExperimentAnnotation = oldExperimentAnnotation;
+  mNewExperimentAnnotation = newExperimentAnnotaiton;
+  setText(QString("Update %1 experiment annotation").arg(mpLibraryTreeItem->getNameStructure()));
+}
+
+/*!
+ * \brief UpdateClassExperimentAnnotationCommand::redo
+ * Redo the UpdateClassExperimentAnnotationCommand.
+ */
+void UpdateClassExperimentAnnotationCommand::redo()
+{
+  mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mNewExperimentAnnotation);
+}
+
+/*!
+ * \brief UpdateClassExperimentAnnotationCommand::undo
+ * Undo the UpdateClassExperimentAnnotationCommand.
+ */
+void UpdateClassExperimentAnnotationCommand::undo()
+{
+  mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mOldExperimentAnnotation);
+}

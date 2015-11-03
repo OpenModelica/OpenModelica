@@ -3564,7 +3564,9 @@ bool ModelWidget::TLMEditorTextChanged()
  */
 void ModelWidget::handleCanUndoChanged(bool canUndo)
 {
-  mpModelWidgetContainer->getMainWindow()->getUndoAction()->setEnabled(canUndo);
+  if (isVisible()) {
+    mpModelWidgetContainer->getMainWindow()->getUndoAction()->setEnabled(canUndo);
+  }
 }
 
 /*!
@@ -3574,7 +3576,9 @@ void ModelWidget::handleCanUndoChanged(bool canUndo)
  */
 void ModelWidget::handleCanRedoChanged(bool canRedo)
 {
-  mpModelWidgetContainer->getMainWindow()->getRedoAction()->setEnabled(canRedo);
+  if (isVisible()) {
+    mpModelWidgetContainer->getMainWindow()->getRedoAction()->setEnabled(canRedo);
+  }
 }
 
 void ModelWidget::closeEvent(QCloseEvent *event)

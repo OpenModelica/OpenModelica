@@ -2872,6 +2872,8 @@ void MainWindow::switchToWelcomePerspective()
   mpPlotWindowContainer->tileSubWindows();
   mpCentralStackedWidget->setCurrentWidget(mpWelcomePageWidget);
   mpModelWidgetContainer->currentModelWidgetChanged(0);
+  mpUndoAction->setEnabled(false);
+  mpRedoAction->setEnabled(false);
   mpModelSwitcherToolButton->setEnabled(false);
   mpVariablesDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
@@ -2907,6 +2909,8 @@ void MainWindow::switchToPlottingPerspective()
   mPlotWindowsStatesList.clear();
   mPlotWindowsGeometriesList.clear();
   mpModelWidgetContainer->currentModelWidgetChanged(0);
+  mpUndoAction->setEnabled(false);
+  mpRedoAction->setEnabled(false);
   mpModelSwitcherToolButton->setEnabled(false);
   // if not plotwindow is opened then open one for user
   if (mpPlotWindowContainer->subWindowList().size() == 0) {
