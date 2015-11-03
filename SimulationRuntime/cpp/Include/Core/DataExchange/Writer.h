@@ -5,10 +5,6 @@
 *  @{
 */
 
-
-
-
-
 /**
 * Operator class to return value of output variable
 */

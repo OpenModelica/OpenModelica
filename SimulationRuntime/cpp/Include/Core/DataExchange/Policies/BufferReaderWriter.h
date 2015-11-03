@@ -227,8 +227,8 @@ public:
     {
         try
         {
-            std::pair<double,unsigned long> i;
-            BOOST_FOREACH(i, _time_entries)
+            typedef std::pair<double, unsigned long> pair_double_ulong;
+            FOREACH(pair_double_ulong i, _time_entries)
             {
                 time.push_back(i.first);
             }

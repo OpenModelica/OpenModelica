@@ -209,6 +209,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   let modelLongName = System.stringReplace(modelName, ".", "_")
   let algloopfiles = (listAppend(allEquations,initialEquations) |> eqs => algloopMainfile2(eqs, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, modelShortName) ;separator="\n")
   let solverFactoryInclude = match algloopfiles case "" then '' else
+
     '#include <Core/System/IAlgLoopSolverFactory.h>'
   let solverFactory = match algloopfiles case "" then 'NULL' else
     'createStaticAlgLoopSolverFactory(globalSettings, PATH(""), PATH(""))'
@@ -233,6 +234,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
   <%solverFactoryInclude%>
 
+
   shared_ptr<ISimObjects> createSimObjects(PATH library_path, PATH modelicasystem_path,shared_ptr<IGlobalSettings> settings);
   // create instance of <%modelShortName%>FMU
   <%modelShortName%>FMU *createSystemFMU(IGlobalSettings *globalSettings) {
@@ -246,9 +248,11 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
   // constructor
   <%modelShortName%>FMU::<%modelShortName%>FMU(IGlobalSettings* globalSettings,
+
     shared_ptr<ISimObjects> simObjects
    )
     : <%modelShortName%>Initialize(globalSettings, simObjects) {
+
   }
 
   // initialization
@@ -716,7 +720,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   CPPFLAGS = $(CFLAGS)
 
+
   OMCPP_LIBS=-lOMCppSystem_FMU_static  -lOMCppMath_static -lOMCppExtensionUtilities_static -lOMCppSimController_static  -lOMCppModelicaUtilities_static -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppFMU_static -lOMCppSimulationSettings_static $(OMCPP_SOLVER_LIBS)
+
   MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)
   LIBS= $(OMCPP_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB)
 
