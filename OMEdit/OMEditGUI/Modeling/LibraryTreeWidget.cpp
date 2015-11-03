@@ -1713,13 +1713,6 @@ LibraryTreeItem* LibraryTreeModel::getLibraryTreeItemFromFileHelper(LibraryTreeI
 void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem)
 {
   MainWindow *pMainWindow = mpLibraryWidget->getMainWindow();
-  // make the class non existing
-  pLibraryTreeItem->setNonExisting(true);
-  // notify the inherits classes
-  pLibraryTreeItem->emitUnLoaded();
-  // make the class non expanded
-  pLibraryTreeItem->setExpanded(false);
-  addNonExistingLibraryTreeItem(pLibraryTreeItem);
   /* close the ModelWidget of LibraryTreeItem. */
   if (pLibraryTreeItem->getModelWidget()) {
     QMdiSubWindow *pMdiSubWindow = pMainWindow->getModelWidgetContainer()->getMdiSubWindow(pLibraryTreeItem->getModelWidget());
@@ -1728,7 +1721,22 @@ void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, Libr
     }
     pLibraryTreeItem->getModelWidget()->getUndoStack()->clear();
     pLibraryTreeItem->getModelWidget()->setReloadNeeded(true);
+    pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->removeAllShapes();
+    pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->removeAllComponents();
+    pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->removeAllConnections();
+    pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->scene()->clear();
+    pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->removeAllShapes();
+    pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->removeAllComponents();
+    pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->removeAllConnections();
+    pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->scene()->clear();
   }
+  // make the class non existing
+  pLibraryTreeItem->setNonExisting(true);
+  // notify the inherits classes
+  pLibraryTreeItem->emitUnLoaded();
+  // make the class non expanded
+  pLibraryTreeItem->setExpanded(false);
+  addNonExistingLibraryTreeItem(pLibraryTreeItem);
   // remove the LibraryTreeItem from Libraries Browser
   int row = pLibraryTreeItem->row();
   beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem), row, row);

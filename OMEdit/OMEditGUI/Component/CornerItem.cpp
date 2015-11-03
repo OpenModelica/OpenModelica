@@ -195,6 +195,7 @@ QVariant CornerItem::itemChange(GraphicsItemChange change, const QVariant &value
 ResizerItem::ResizerItem(Component *pComponent)
   : QGraphicsItem(pComponent), mIsPressed(false)
 {
+  setZValue(2999);
   setFlags(QGraphicsItem::ItemIgnoresTransformations | QGraphicsItem::ItemIsSelectable);
   setCursor(Qt::ArrowCursor);
   setToolTip(Helper::clickAndDragToResize);
