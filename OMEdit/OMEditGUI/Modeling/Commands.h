@@ -183,4 +183,18 @@ private:
   GraphicsView *mpGraphicsView;
 };
 
+class UpdateClassExperimentAnnotationCommand : public QUndoCommand
+{
+public:
+  UpdateClassExperimentAnnotationCommand(MainWindow *pMainWindow, LibraryTreeItem *pLibraryTreeItem, QString oldExperimentAnnotation,
+                                         QString newExperimentAnnotaiton, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  MainWindow *mpMainWindow;
+  LibraryTreeItem *mpLibraryTreeItem;
+  QString mOldExperimentAnnotation;
+  QString mNewExperimentAnnotation;
+};
+
 #endif // COMMANDS_H
