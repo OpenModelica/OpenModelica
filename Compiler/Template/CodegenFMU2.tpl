@@ -52,7 +52,7 @@ import CodegenC.*; //unqualified import, no need the CodegenC is optional when c
 import CodegenFMUCommon.*;
 
 // Code for generating modelDescription.xml file for FMI 2.0 ModelExchange.
-template fmiModelDescription(SimCode simCode, String guid)
+template fmiModelDescription(SimCode simCode, String guid, String FMUType)
  "Generates code for ModelDescription file for FMU target."
 ::=
 //  <%UnitDefinitions(simCode)%>
@@ -62,7 +62,8 @@ case SIMCODE(__) then
   <<
   <fmiModelDescription
     <%fmiModelDescriptionAttributes(simCode,guid)%>>
-    <%ModelExchange(simCode)%>
+    <%if isFMIMEType(FMUType) then ModelExchange(simCode)%>
+    <%if isFMICSType(FMUType) then CoSimulation(simCode)%>
     <%fmiTypeDefinitions(modelInfo, "2.0")%>
     <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then
     <<
@@ -125,6 +126,29 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   numberOfEventIndicators="<%numberOfEventIndicators%>"
   >>
 end fmiModelDescriptionAttributes;
+
+template CoSimulation(SimCode simCode)
+ "Generates CoSimulation code for ModelDescription file for FMU target."
+::=
+match simCode
+case SIMCODE(__) then
+  let modelIdentifier = modelNamePrefix(simCode)
+  <<
+  <CoSimulation
+    modelIdentifier="<%modelIdentifier%>"
+    needsExecutionTool="false"
+    canHandleVariableCommunicationStepSize="true"
+    canInterpolateInputs="false"
+    maxOutputDerivativeOrder="1"
+    canRunAsynchronuously = "false"
+    canBeInstantiatedOnlyOncePerProcess="true"
+    canNotUseMemoryManagementFunctions="false"
+    canGetAndSetFMUstate="false"
+    canSerializeFMUstate="false"
+    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'providesDirectionalDerivative="true"'%> />
+  >>
+end CoSimulation;
+
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenFMU2;

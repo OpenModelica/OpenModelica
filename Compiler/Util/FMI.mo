@@ -260,9 +260,21 @@ algorithm
   success := match (inFMIType)
     case ("me") then true;
     case ("cs") then true;
+    case ("me_cs") then true;
     else false;
   end match;
 end checkFMIType;
+
+public function isFMIMEType "Checks if FMU type is model exchange"
+  input String inFMIType;
+  output Boolean success;
+algorithm
+  success := match (inFMIType)
+    case ("me") then true;
+    case ("me_cs") then true;
+    else false;
+  end match;
+end isFMIMEType;
 
 public function isFMICSType "Checks if FMU type is co-simulation"
   input String inFMIType;
@@ -270,6 +282,7 @@ public function isFMICSType "Checks if FMU type is co-simulation"
 algorithm
   success := match (inFMIType)
     case ("cs") then true;
+    case ("me_cs") then true;
     else false;
   end match;
 end isFMICSType;

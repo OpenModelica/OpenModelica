@@ -279,6 +279,11 @@ package FMI
     output Boolean success;
   end isFMICSType;
 
+  function isFMIMEType "Checks if FMU type is model exchange"
+    input String inFMIType;
+    output Boolean success;
+  end isFMIMEType;
+
   function getEnumerationTypeFromTypes
     input list<TypeDefinitions> inTypeDefinitionsList;
     input String inBaseType;

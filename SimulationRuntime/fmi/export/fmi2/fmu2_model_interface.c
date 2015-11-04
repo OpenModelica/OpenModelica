@@ -235,6 +235,20 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
   return fmi2Error;
 }
 
+
+fmi2Status fmi2EventIteration(fmi2Component c, fmi2EventInfo *eventInfo)
+{
+  fmi2Status status = fmi2OK;
+  eventInfo->newDiscreteStatesNeeded = fmi2True;
+  eventInfo->terminateSimulation     = fmi2False;
+  while (eventInfo->newDiscreteStatesNeeded && !eventInfo->terminateSimulation) {
+    status = fmi2NewDiscreteStates(c, eventInfo);
+  }
+  return status;
+}
+
+
+
 /***************************************************
 Common Functions
 ****************************************************/
@@ -974,7 +988,165 @@ fmi2Status fmi2GetRealOutputDerivatives (fmi2Component c, const fmi2ValueReferen
 }
 
 fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2Real communicationStepSize, fmi2Boolean noSetFMUStatePriorToCurrentPoint) {
-  // TODO Write code here
+  ModelInstance *comp = (ModelInstance *)c;
+  fmi2CallbackFunctions* functions = (fmi2CallbackFunctions*)comp->functions;
+  int i, zc_event = 0, time_event = 0;
+  fmi2Status status = fmi2OK;
+  fmi2Real* states = (fmi2Real*)functions->allocateMemory(NUMBER_OF_STATES, sizeof(fmi2Real));
+  fmi2Real* states_der = (fmi2Real*)functions->allocateMemory(NUMBER_OF_STATES, sizeof(fmi2Real));
+  fmi2Real* event_indicators = (fmi2Real*)functions->allocateMemory(NUMBER_OF_EVENT_INDICATORS, sizeof(fmi2Real));
+  fmi2Real* event_indicators_prev = (fmi2Real*)functions->allocateMemory(NUMBER_OF_EVENT_INDICATORS, sizeof(fmi2Real));
+  fmi2Real t = comp->fmuData->localData[0]->timeValue;
+  fmi2Real tNext, tEnd;
+  fmi2Boolean enterEventMode = fmi2False, terminateSimulation = fmi2False;
+  fmi2EventInfo eventInfo;
+  eventInfo.newDiscreteStatesNeeded           = fmi2False;
+  eventInfo.terminateSimulation               = fmi2False;
+  eventInfo.nominalsOfContinuousStatesChanged = fmi2False;
+  eventInfo.valuesOfContinuousStatesChanged   = fmi2True;
+  eventInfo.nextEventTimeDefined              = fmi2False;
+  eventInfo.nextEventTime                     = -0.0;
+
+  /* fprintf(stderr, "DoStep %g + %g State: %d\n", currentCommunicationPoint, communicationStepSize, comp->state); */
+
+  fmi2EnterEventMode(c);
+  fmi2EventIteration(c, &eventInfo);
+  fmi2EnterContinuousTimeMode(c);
+
+  if (NUMBER_OF_STATES > 0)
+  {
+    status = fmi2GetDerivatives(c, states_der, NUMBER_OF_STATES);
+    if (status != fmi2OK)
+    {
+      functions->freeMemory(states);
+      functions->freeMemory(states_der);
+      functions->freeMemory(event_indicators);
+      functions->freeMemory(event_indicators_prev);
+      return fmi2Error;
+    }
+
+    status = fmi2GetContinuousStates(c, states, NUMBER_OF_STATES);
+    if (status != fmi2OK)
+    {
+      functions->freeMemory(states);
+      functions->freeMemory(states_der);
+      functions->freeMemory(event_indicators);
+      functions->freeMemory(event_indicators_prev);
+      return fmi2Error;
+    }
+  }
+
+  if (NUMBER_OF_EVENT_INDICATORS > 0)
+  {
+    status = fmi2GetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
+    if (status != fmi2OK)
+    {
+      functions->freeMemory(states);
+      functions->freeMemory(states_der);
+      functions->freeMemory(event_indicators);
+      functions->freeMemory(event_indicators_prev);
+      return fmi2Error;
+    }
+  }
+
+  tNext = currentCommunicationPoint + communicationStepSize;
+
+  /* adjust tNext step to get tEnd exactly */
+  if (comp->stopTimeDefined)
+  {
+    tEnd = comp->stopTime;
+  }
+  else
+  {
+    tEnd = currentCommunicationPoint + 2*communicationStepSize + 1;
+  }
+  if(tNext > tEnd - communicationStepSize/1e16) {
+    tNext = tEnd;
+  }
+
+  /* adjust for time events */
+  if (eventInfo.nextEventTimeDefined && (tNext >= eventInfo.nextEventTime)) {
+    tNext = eventInfo.nextEventTime;
+    time_event = 1;
+  }
+
+  fmi2SetTime(c, tNext);
+
+  /* integrate */
+  for (i = 0; i < NUMBER_OF_STATES; i++) {
+    states[i] = states[i] + communicationStepSize * states_der[i];
+  }
+
+  /* set the continuous states */
+  if (NUMBER_OF_STATES > 0)
+  {
+    status = fmi2SetContinuousStates(c, states, NUMBER_OF_STATES);
+    if (status != fmi2OK)
+    {
+      functions->freeMemory(states);
+      functions->freeMemory(states_der);
+      functions->freeMemory(event_indicators);
+      functions->freeMemory(event_indicators_prev);
+      return fmi2Error;
+    }
+  }
+
+  /* signal completed integrator step */
+  status = fmi2CompletedIntegratorStep(c, fmi2True, &enterEventMode, &terminateSimulation);
+  if (status != fmi2OK)
+  {
+    functions->freeMemory(states);
+    functions->freeMemory(states_der);
+    functions->freeMemory(event_indicators);
+    functions->freeMemory(event_indicators_prev);
+    return fmi2Error;
+  }
+
+  /* check for events */
+  if (NUMBER_OF_EVENT_INDICATORS > 0)
+  {
+    status = fmi2GetEventIndicators(c, event_indicators, NUMBER_OF_EVENT_INDICATORS);
+    if (status != fmi2OK)
+    {
+      functions->freeMemory(states);
+      functions->freeMemory(states_der);
+      functions->freeMemory(event_indicators);
+      functions->freeMemory(event_indicators_prev);
+      return fmi2Error;
+    }
+
+    for (i = 0; i < NUMBER_OF_EVENT_INDICATORS; i++)
+    {
+      if (event_indicators[i]*event_indicators_prev[i] < 0) {
+        zc_event = 1;
+        break;
+      }
+    }
+
+    /* fprintf(stderr, "enterEventMode = %d, zc_event = %d, time_event = %d\n", enterEventMode, zc_event, time_event); */
+
+    if (enterEventMode || zc_event || time_event) {
+      fmi2EnterEventMode(c);
+
+      fmi2EventIteration(c, &eventInfo);
+
+      if(eventInfo.valuesOfContinuousStatesChanged)
+         fmi2GetContinuousStates(c, states, NUMBER_OF_STATES);
+
+      if( eventInfo.nominalsOfContinuousStatesChanged)
+        fmi2GetNominalsOfContinuousStates(c, states, NUMBER_OF_STATES);
+
+      fmi2GetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
+
+      fmi2EnterContinuousTimeMode(c);
+    }
+  }
+
+  functions->freeMemory(states);
+  functions->freeMemory(states_der);
+  functions->freeMemory(event_indicators);
+  functions->freeMemory(event_indicators_prev);
+
   return fmi2OK;
 }
 
