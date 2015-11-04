@@ -1577,7 +1577,25 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
     If deleteClass is successfull remove the class from Library Browser and delete the corresponding ModelWidget.
     */
   if (mpLibraryWidget->getMainWindow()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
+    /* QSortFilterProxy::filterAcceptRows changes the expand/collapse behavior of indexes or I am using it in some stupid way.
+     * If index is expanded and we delete it then the next sibling index automatically becomes expanded.
+     * The following code overcomes this issue. It stores the next index expand state and then apply it after deletion.
+     */
+    int row = pLibraryTreeItem->row();
+    LibraryTreeItem *pNextLibraryTreeItem = 0;
+    bool expandState;
+    if (pLibraryTreeItem->parent()->getChildren().size() > row + 1) {
+      pNextLibraryTreeItem = pLibraryTreeItem->parent()->child(row + 1);
+      QModelIndex modelIndex = libraryTreeItemIndex(pNextLibraryTreeItem);
+      QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+      expandState = mpLibraryWidget->getLibraryTreeView()->isExpanded(proxyIndex);
+    }
     unloadClassChildren(pLibraryTreeItem);
+    if (pNextLibraryTreeItem) {
+      QModelIndex modelIndex = libraryTreeItemIndex(pNextLibraryTreeItem);
+      QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+      mpLibraryWidget->getLibraryTreeView()->setExpanded(proxyIndex, expandState);
+    }
     /* Update the model switcher toolbar button. */
     mpLibraryWidget->getMainWindow()->updateModelSwitcherMenu(0);
     return true;
