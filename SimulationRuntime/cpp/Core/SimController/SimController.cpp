@@ -18,7 +18,7 @@ SimController::SimController(PATH library_path, PATH modelicasystem_path)
     , _initialized(false)
 {
     _config = shared_ptr<Configuration>(new Configuration(_library_path, _config_path, modelicasystem_path));
-    _sim_objects = shared_ptr<ISimObjects>(new SimObjects(_library_path,modelicasystem_path,_config->getGlobalSettings()));
+    _sim_objects = shared_ptr<ISimObjects>(new SimObjects(_library_path,modelicasystem_path,_config->getGlobalSettings().get()));
 
     #ifdef RUNTIME_PROFILING
     measuredFunctionStartValues = NULL;

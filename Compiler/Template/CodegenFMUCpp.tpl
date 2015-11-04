@@ -195,7 +195,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   };
 
   /// create instance of <%modelShortName%>FMU
-  static <%modelShortName%>FMU *createSystemFMU(IGlobalSettings *globalSettings);
+  static <%modelShortName%>FMU *createSystemFMU(IGlobalSettings *globalSettings,shared_ptr<ISimObjects> simObjects);
   >>
 end fmuModelHeaderFile;
 
@@ -235,10 +235,9 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   <%solverFactoryInclude%>
 
 
-  shared_ptr<ISimObjects> createSimObjects(PATH library_path, PATH modelicasystem_path,shared_ptr<IGlobalSettings> settings);
+
   // create instance of <%modelShortName%>FMU
-  <%modelShortName%>FMU *createSystemFMU(IGlobalSettings *globalSettings) {
-    shared_ptr<ISimObjects> simObjects = createSimObjects("","",shared_ptr<IGlobalSettings>(globalSettings));
+  <%modelShortName%>FMU *createSystemFMU(IGlobalSettings *globalSettings,shared_ptr<ISimObjects> simObjects) {
     simObjects->LoadSimVars("<%modelShortName%>",<%numRealvars(modelInfo)%>, <%numIntvars(modelInfo)%>, <%numBoolvars(modelInfo)%>, <%numStringvars(modelInfo)%>, <%getPreVarsCount(modelInfo)%>, <%numStatevars(modelInfo)%>, <%numStateVarIndex(modelInfo)%>);
     simObjects->LoadSimData("<%modelShortName%>");
     globalSettings->setOutputFormat(EMPTY);

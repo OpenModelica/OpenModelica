@@ -35,7 +35,7 @@
  */
 
 #include "FMU2Wrapper.h"
-
+shared_ptr<ISimObjects> createSimObjects(PATH library_path, PATH modelicasystem_path,IGlobalSettings* settings);
 static fmi2String const _LogCategoryFMUNames[] = {
   "logEvents",
   "logSingularLinearSystems",
@@ -63,7 +63,8 @@ FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
   _instanceName = instanceName;
   _GUID = GUID;
   _logCategories = loggingOn? 0xFFFF: 0x0000;
-  _model = createSystemFMU(&_global_settings);
+  _simObjects = createSimObjects(PATH(""),PATH(""),&_global_settings);
+  _model = createSystemFMU(&_global_settings,_simObjects);
   _model->initialize();
   _string_buffer.resize(_model->getDimString());
   _clock_buffer = new bool[_model->getDimClock()];

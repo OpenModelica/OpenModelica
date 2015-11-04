@@ -9,7 +9,7 @@
 class SimObjects : public ISimObjects, public SimObjectPolicy
 {
 public:
-    SimObjects(PATH library_path, PATH modelicasystem_path,shared_ptr<IGlobalSettings> globalSettings);
+    SimObjects(PATH library_path, PATH modelicasystem_path,IGlobalSettings* globalSettings);
     virtual ~SimObjects();
     virtual weak_ptr<ISimData> LoadSimData(string modelKey);
     virtual weak_ptr<ISimVars> LoadSimVars(string modelKey, size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_string, size_t dim_pre_vars, size_t dim_z, size_t z_i);
@@ -23,7 +23,7 @@ private:
     std::map<string, shared_ptr<ISimData> > _sim_data;
     std::map<string, shared_ptr<ISimVars> > _sim_vars;
 	shared_ptr<IAlgLoopSolverFactory> _algloopsolverfactory;
-    shared_ptr<IGlobalSettings> _globalSettings;
+    IGlobalSettings* _globalSettings;
 	shared_ptr<IHistory> _write_output;
 };
 /** @} */ // end of coreSimcontroller

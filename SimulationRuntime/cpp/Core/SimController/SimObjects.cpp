@@ -7,11 +7,11 @@
 #include <Core/SimController/SimObjects.h>
 
 
-SimObjects::SimObjects(PATH library_path, PATH modelicasystem_path,shared_ptr<IGlobalSettings> globalSettings)
+SimObjects::SimObjects(PATH library_path, PATH modelicasystem_path,IGlobalSettings* globalSettings)
 : SimObjectPolicy(library_path, modelicasystem_path, library_path)
 ,_globalSettings(globalSettings)
 {
-    _algloopsolverfactory = createAlgLoopSolverFactory(globalSettings.get());
+    _algloopsolverfactory = createAlgLoopSolverFactory(globalSettings);
 }
 
 SimObjects::~SimObjects()
@@ -110,19 +110,19 @@ shared_ptr<IAlgLoopSolverFactory> SimObjects::getAlgLoopSolverFactory()
 
     if( _globalSettings->getOutputFormat() == MAT)
     {
-        _write_output = createMatFileWriter(_globalSettings.get(),dim);
+        _write_output = createMatFileWriter(_globalSettings,dim);
     }
     else if( _globalSettings->getOutputFormat()  == CSV)
     {
-        _write_output = createTextFileWriter(_globalSettings.get(),dim);
+        _write_output = createTextFileWriter(_globalSettings,dim);
     }
     else if( _globalSettings->getOutputFormat()  == BUFFER)
     {
-        _write_output = createBufferReaderWriter(_globalSettings.get(),dim);
+        _write_output = createBufferReaderWriter(_globalSettings,dim);
     }
     else if( _globalSettings->getOutputFormat()  == EMPTY)
     {
-        _write_output = createDefaultWriter(_globalSettings.get(),dim);
+        _write_output = createDefaultWriter(_globalSettings,dim);
     }
     else
     {
