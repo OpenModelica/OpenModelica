@@ -94,7 +94,7 @@ case SIMCODE(__) then
   <<
   <?xml version="1.0" encoding="UTF-8"?>
   <%
-  if isFMIVersion20(FMUVersion) then CodegenFMU2.fmiModelDescription(simCode,guid)
+  if isFMIVersion20(FMUVersion) then CodegenFMU2.fmiModelDescription(simCode,guid,FMUType)
   else CodegenFMU1.fmiModelDescription(simCode,guid,FMUType)
   %>
   >>

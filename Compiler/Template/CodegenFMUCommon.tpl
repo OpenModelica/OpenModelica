@@ -311,55 +311,51 @@ template ModelStructureClocks(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
-  let subClocks = (clockedPartitions |> partition hasindex baseClockIndex fromindex intAdd(listLength(getSubPartitions(clockedPartitions)), 1) =>
+  let clocks = (clockedPartitions |> partition =>
     match partition
-    case CLOCKED_PARTITION(__) then
-      (subPartitions |> subPartition =>
-        match subPartition
-        case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fnom, denom=fres), shift=RATIONAL(nom=snom, denom=sres))) then
+    case CLOCKED_PARTITION(baseClock=baseClock, subPartitions=subPartitions) then
+      match baseClock
+      case REAL_CLOCK(interval=baseInterval as RCONST(real=bi)) then
+        (subPartitions |> subPartition =>
+          match subPartition
+          case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fnom, denom=fres), shift=RATIONAL(nom=snom, denom=sres))) then
           <<
-          <Clock><SubSampled baseClockIndex="<%baseClockIndex%>"
-                             <%if intGt(fnom, 1) then 'subSampleFactor="'+fnom+'"'%>
-                             <%if intGt(fres, 1) then 'subSampleResolution="'+fres+'"'%>
-                             <%if intGt(snom, 0) then 'shiftCounter="'+snom+'"'%>
-                             <%if intGt(sres, 1) then 'shiftResolution="'+sres+'"'%>
+          <Clock><Periodic
+                  baseInterval="<%bi%>"
+                  <%if intGt(fnom, 1) then 'subSampleFactor="'+fnom+'"'%>
+                  <%if intGt(snom, 0) then 'shiftCounter="'+snom+'"'%>
                   /></Clock>
           >>
         ; separator="\n")
-    ;separator="\n")
-  let baseClocks = (clockedPartitions |> partition =>
-    match partition
-    case CLOCKED_PARTITION(__) then
-      match baseClock
-      case INFERRED_CLOCK() then
+      case INTEGER_CLOCK(intervalCounter=ic as ICONST(integer=bic), resolution=res) then
+        (subPartitions |> subPartition =>
+          match subPartition
+          case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fnom, denom=fres), shift=RATIONAL(nom=snom, denom=sres))) then
+          <<
+          <Clock><Periodic
+                  intervalCounter="<%bic%>"
+                  resolution="<%res%>"
+                  <%if intGt(fnom, 1) then 'subSampleFactor="'+fnom+'"'%>
+                  <%if intGt(snom, 0) then 'shiftCounter="'+snom+'"'%>
+                  /></Clock>
+          >>
+        ; separator="\n")
+      case INFERRED_CLOCK(__) then
         <<
         <Clock><Inferred/></Clock>
         >>
-      case REAL_CLOCK(interval=i as RCONST(real=val)) then
-        <<
-        <Clock><Periodic>
-          <Real interval="<%val%>" />
-        </Periodic></Clock>
-        >>
-      case INTEGER_CLOCK(intervalCounter=ic as ICONST(integer=val), resolution=res) then
-        <<
-        <Clock><Periodic>
-          <Rational intervalCounter="<%val%>" resolution="<%res%>" />
-        </Periodic></Clock>
-        >>
       else
         <<
-        <Clock/>
+        <Clock><Triggered/></Clock>
         >>
     ;separator="\n")
-  match baseClocks
+  match clocks
   case "" then
     <<>>
   else
     <<
     <Clocks>
-      <%subClocks%>
-      <%baseClocks%>
+      <%clocks%>
     </Clocks>
     >>
 end ModelStructureClocks;

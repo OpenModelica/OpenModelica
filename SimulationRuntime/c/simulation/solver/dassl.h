@@ -83,7 +83,7 @@ typedef struct DASSL_DATA{
   int ng;
   int *jroot;
 
-  /* varibales used in jacobian calculation */
+  /* variables used in jacobian calculation */
   double sqrteps;
   double *ysave;
   double *delta_hh;

@@ -934,6 +934,23 @@ algorithm
   end match;
 end renameElement;
 
+public function elementNameEqual
+  input Element inElement1;
+  input Element inElement2;
+  output Boolean outEqual;
+algorithm
+  outEqual := match (inElement1, inElement2)
+    case (CLASS(), CLASS()) then inElement1.name == inElement2.name;
+    case (COMPONENT(), COMPONENT()) then inElement1.name == inElement2.name;
+    case (DEFINEUNIT(), DEFINEUNIT()) then inElement1.name == inElement2.name;
+    case (EXTENDS(), EXTENDS())
+      then Absyn.pathEqual(inElement1.baseClassPath, inElement2.baseClassPath);
+    case (IMPORT(), IMPORT())
+      then Absyn.importEqual(inElement1.imp, inElement2.imp);
+    else false;
+  end match;
+end elementNameEqual;
+
 public function enumName ""
 input Enum e;
 output String s;

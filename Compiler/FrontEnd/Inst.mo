@@ -3232,42 +3232,99 @@ public function instElementList
 protected
   list<tuple<SCode.Element, DAE.Mod>> el;
   FCore.Cache cache;
-  Integer i1,i2;
   list<DAE.Var> vars;
-  list<list<DAE.Var>> varsl = {};
   list<DAE.Element> dae;
+  list<list<DAE.Var>> varsl = {};
   list<list<DAE.Element>> dael = {};
+  list<Integer> element_order;
+  array<tuple<SCode.Element, DAE.Mod>> el_arr;
+  array<list<DAE.Var>> var_arr;
+  array<list<DAE.Element>> dae_arr;
 algorithm
-  // print("push " + PrefixUtil.printPrefixStr(inPrefix) + "\n");
   cache := InstUtil.pushStructuralParameters(inCache);
-  // i1 := numStructuralParameterScopes(cache);
-  //fprintln(Flags.IDEP, "Before:\n" + stringDelimitList(List.map(List.map(inElements, Util.tuple21), SCodeDump.unparseElementStr), "\n"));
-  //System.startTimer();
+
+  // Sort elements based on their dependencies.
   el := InstUtil.sortElementList(inElements, inEnv, FGraph.inFunctionScope(inEnv));
   // adrpo: MAKE SURE inner objects ARE FIRST in the list for instantiation!
   el := InstUtil.sortInnerFirstTplLstElementMod(el);
-  //System.stopTimer();
-  //fprintln(Flags.IDEP, "After: " + stringDelimitList(List.map(List.map(el, Util.tuple21), SCode.elementName), ", "));
 
-  for e in el loop
-    (cache, outEnv, outIH, outStore, dae, outSets, outState, vars, outGraph) :=
-      instElement2(cache, outEnv, outIH, outStore, inMod, inPrefix, outState, e,
-        inInstDims, inImplInst, inCallingScope, outGraph, outSets, inStopOnError);
-    varsl := vars :: varsl;
-    dael := dae :: dael;
-  end for;
+  // For non-functions, don't reorder the elements.
+  if not ClassInf.isFunction(inState) then
+    // Figure out the ordering of the sorted elements, see getSortedElementOrdering.
+    element_order := getSortedElementOrdering(inElements, el);
 
-  outVars := List.flattenReverse(varsl);
-  outDae := DAE.DAE(List.flattenReverse(dael));
+    // Create arrays so that we can instantiate the elements in the sorted order,
+    // while keeping the result in the same order as the elements are declared in.
+    el_arr := listArray(inElements);
+    var_arr := arrayCreate(listLength(el), {});
+    dae_arr := arrayCreate(listLength(el), {});
 
-  // sort in program order!
-  outDae := DAEUtil.sortDAEInModelicaCodeOrder(InstUtil.isTopCall(inCallingScope), inElements, outDae);
-  // i2 := numStructuralParameterScopes(cache);
-  // assert(i1 == i2) ;)
-  // print("pop " + PrefixUtil.printPrefixStr(inPrefix) + "\n");
-  // print("numStructuralParameterScopes " + PrefixUtil.printPrefixStr(inPrefix) + " before/after " + intString(i1) + "/" + intString(i2) + "\n");
+    // Instantiate the elements.
+    for idx in element_order loop
+      (cache, outEnv, outIH, outStore, dae, outSets, outState, vars, outGraph) :=
+        instElement2(cache, outEnv, outIH, outStore, inMod, inPrefix, outState, el_arr[idx],
+          inInstDims, inImplInst, inCallingScope, outGraph, outSets, inStopOnError);
+      arrayUpdate(var_arr, idx, vars);
+      arrayUpdate(dae_arr, idx, dae);
+    end for;
+
+    outVars := List.flatten(arrayList(var_arr));
+    outDae := DAE.DAE(List.flatten(arrayList(dae_arr)));
+  else
+    // For functions, use the sorted elements instead, otherwise things break.
+    for e in el loop
+      (cache, outEnv, outIH, outStore, dae, outSets, outState, vars, outGraph) :=
+        instElement2(cache, outEnv, outIH, outStore, inMod, inPrefix, outState, e,
+          inInstDims, inImplInst, inCallingScope, outGraph, outSets, inStopOnError);
+      varsl := vars :: varsl;
+      dael := dae :: dael;
+    end for;
+
+    outVars := List.flattenReverse(varsl);
+    outDae := DAE.DAE(List.flattenReverse(dael));
+  end if;
+
   outCache := InstUtil.popStructuralParameters(cache,inPrefix);
 end instElementList;
+
+protected function getSortedElementOrdering
+  "Takes a list of unsorted elements and a list of sorted elements, and returns
+   a list of the sorted elements indices in the unsorted list. E.g.:
+    getSortedElementOrdering({a, b, c}, {b, c, a}) => {2, 3, 1}"
+  input list<tuple<SCode.Element, DAE.Mod>> inElements;
+  input list<tuple<SCode.Element, DAE.Mod>> inSortedElements;
+  output list<Integer> outIndices = {};
+protected
+  list<tuple<SCode.Element, Integer>> index_map = {};
+  list<SCode.Element> sorted_el;
+  Integer i = 1;
+algorithm
+  // Pair each unsorted element with its index in the list.
+  for e in inElements loop
+    index_map := (Util.tuple21(e), i) :: index_map;
+    i := i + 1;
+  end for;
+  index_map := listReverse(index_map);
+
+  // Loop through the sorted elements.
+  sorted_el := list(Util.tuple21(e) for e in inSortedElements);
+  for e in sorted_el loop
+    // Remove the element from the index map, and add its index to the list of
+    // indices. Elements are usually not reordered much, so most of the time the
+    // sought after element should be first in the list.
+    (index_map, SOME((_, i))) :=
+      List.deleteMemberOnTrue(e, index_map, getSortedElementOrdering_comp);
+    outIndices := i :: outIndices;
+  end for;
+
+  outIndices := listReverse(outIndices);
+end getSortedElementOrdering;
+
+protected function getSortedElementOrdering_comp
+  input SCode.Element inElement1;
+  input tuple<SCode.Element, Integer> inElement2;
+  output Boolean outEqual = SCode.elementNameEqual(inElement1, Util.tuple21(inElement2));
+end getSortedElementOrdering_comp;
 
 public function instElement2
   input FCore.Cache inCache;

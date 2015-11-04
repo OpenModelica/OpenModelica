@@ -2333,23 +2333,26 @@ protected function createTempVars
 algorithm
   otempvars := match(varLst)
     local
-      list<DAE.Var> rest, varlst;
-      list<SimCodeVar.SimVar> tempvars;
+      list<DAE.Var> rest;
       DAE.Ident name;
       DAE.Type ty;
       DAE.ComponentRef cr;
       SimCodeVar.SimVar var;
 
-    case({})
+    case {}
     then itempvars;
 
-    case(DAE.TYPES_VAR(name=name, ty=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))::rest) equation
+    case DAE.TYPES_VAR(name=name, ty=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))::rest equation
       cr = ComponentReference.crefPrependIdent(inCrefPrefix, name, {}, ty);
-      tempvars = createTempVars(rest, cr, itempvars);
-    then createTempVars(rest, cr, tempvars);
+    then createTempVars(rest, cr, itempvars);
 
-    case(DAE.TYPES_VAR(name=name, ty=ty)::rest) equation
+    case DAE.TYPES_VAR(name=name, ty=ty)::rest equation
       cr = ComponentReference.crefPrependIdent(inCrefPrefix, name, {}, ty);
+      if Expression.isArrayType(ComponentReference.crefLastType(cr)) then
+        ty = DAEUtil.expTypeElementType(ComponentReference.crefLastType(cr));
+      else
+        ty = ComponentReference.crefLastType(cr);
+      end if;
       var = SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, true);
     then createTempVars(rest, inCrefPrefix, var::itempvars);
   end match;
