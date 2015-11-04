@@ -137,7 +137,6 @@ class FMU2Wrapper
  private:
   FMU2GlobalSettings _global_settings;
   MODEL_CLASS *_model;
-  shared_ptr<ISimObjects> _simObjects;
   std::vector<string> _string_buffer;
   bool *_clock_buffer;
   int _nclock_active;

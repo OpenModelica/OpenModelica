@@ -6,13 +6,12 @@
 #include <FMU/FMUGlobalSettings.h>
 #include <FMU/FMULogger.h>
 #include <Core/SimController/ISimObjects.h>
-shared_ptr<ISimObjects> createSimObjects(PATH library_path, PATH modelicasystem_path,IGlobalSettings* settings);
+
 class FMUWrapper : public IFMUInterface
 {
 private:
     FMUGlobalSettings _global_settings;
     MODEL_CLASS *_model;
-    shared_ptr<ISimObjects> _simObjects;
     double _need_update;
 
     void updateModel()
@@ -30,9 +29,7 @@ public:
     FMUWrapper(fmiString instanceName, fmiString GUID, fmiCallbackFunctions functions, fmiBoolean loggingOn) : IFMUInterface(instanceName, GUID, functions, loggingOn), _need_update(true)
     {
       //FMULogger::initialize(functions.logger, this, instanceName);
-
-      _simObjects = createSimObjects(PATH(""),PATH(""),&_global_settings);
-       _model = createSystemFMU(&_global_settings,_simObjects);
+      _model = createSystemFMU(&_global_settings);
       _model->setInitial(true);
     }
 

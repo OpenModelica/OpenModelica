@@ -121,7 +121,6 @@ template fmuCalcHelperMainfile(SimCode simCode)
     #include "OMCpp<%fileNamePrefix%>AlgLoopMain.cpp"
     #include "OMCpp<%fileNamePrefix%>Mixed.cpp"
     #include "OMCpp<%fileNamePrefix%>Functions.cpp"
-    #include "OMCpp<%fileNamePrefix%>FactoryExport.cpp"
     <%if(boolOr(Flags.isSet(Flags.HARDCODED_START_VALUES), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then
     <<
     #include "OMCpp<%fileNamePrefix%>InitializeParameter.cpp"
@@ -150,7 +149,7 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
   class <%lastIdentOfPath(modelInfo.name)%>WriteOutput  : public IWriteOutput,public <%lastIdentOfPath(modelInfo.name)%>StateSelection
   {
    public:
-    <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, shared_ptr<ISimObjects> simObjects): <%lastIdentOfPath(modelInfo.name)%>StateSelection(globalSettings,simObjects) {}
+    <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, shared_ptr<ISimObjects> simObjects): <%lastIdentOfPath(modelInfo.name)%>StateSelection(globalSettings, simObjects) {}
     virtual ~<%lastIdentOfPath(modelInfo.name)%>WriteOutput() {}
 
     virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT) {}
@@ -175,8 +174,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   class <%modelShortName%>FMU: public <%modelShortName%>Initialize {
    public:
     // constructor
-    <%modelShortName%>FMU(IGlobalSettings* globalSettings,
-        shared_ptr<ISimObjects> simObjects);
+    <%modelShortName%>FMU(IGlobalSettings* globalSettings, shared_ptr<ISimObjects> simObjects);
 
     // initialization
     virtual void initialize();
@@ -195,7 +193,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   };
 
   /// create instance of <%modelShortName%>FMU
-  static <%modelShortName%>FMU *createSystemFMU(IGlobalSettings *globalSettings,shared_ptr<ISimObjects> simObjects);
+  static <%modelShortName%>FMU *createSystemFMU(IGlobalSettings *globalSettings);
   >>
 end fmuModelHeaderFile;
 
@@ -208,9 +206,6 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   let modelShortName = lastIdentOfPath(modelInfo.name)
   let modelLongName = System.stringReplace(modelName, ".", "_")
   let algloopfiles = (listAppend(allEquations,initialEquations) |> eqs => algloopMainfile2(eqs, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, modelShortName) ;separator="\n")
-  let solverFactoryInclude = match algloopfiles case "" then '' else
-
-    '#include <Core/System/IAlgLoopSolverFactory.h>'
   let solverFactory = match algloopfiles case "" then 'NULL' else
     'createStaticAlgLoopSolverFactory(globalSettings, PATH(""), PATH(""))'
   <<
@@ -232,26 +227,52 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   else
     '#include "FMU2/FMU2Interface.cpp"'%>
 
-  <%solverFactoryInclude%>
+  // SimObjects for <%modelShortName%>FMU
+  shared_ptr<IAlgLoopSolverFactory> createStaticAlgLoopSolverFactory(IGlobalSettings*, PATH, PATH);
 
-
+  class <%modelShortName%>SimObjects : public ISimObjects {
+   public:
+    <%modelShortName%>SimObjects(IGlobalSettings *globalSettings) {
+      _algLoopSolverFactory = shared_ptr<IAlgLoopSolverFactory>(<%solverFactory%>);
+    }
+    weak_ptr<ISimData> LoadSimData(string modelKey) {
+      return shared_ptr<ISimData>(NULL);
+    }
+    weak_ptr<ISimVars> LoadSimVars(string modelKey, size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_string, size_t dim_pre_vars, size_t dim_z, size_t z_i) {
+      _simVars = shared_ptr<ISimVars>(new SimVars(dim_real, dim_int, dim_bool, dim_string, dim_pre_vars, dim_z, z_i));
+      return _simVars;
+    }
+    weak_ptr<IHistory> LoadWriter(size_t) {
+      return shared_ptr<IHistory>(NULL);
+    }
+    shared_ptr<ISimData> getSimData(string modelKey) {
+      return shared_ptr<ISimData>(NULL);
+    }
+    shared_ptr<ISimVars> getSimVars(string modelKey) {
+      return _simVars;
+    }
+    void eraseSimData(string modelKey) {}
+    void eraseSimVars(string modelKey) {}
+    shared_ptr<IAlgLoopSolverFactory> getAlgLoopSolverFactory() {
+      return _algLoopSolverFactory;
+    }
+   protected:
+    shared_ptr<ISimVars> _simVars;
+    shared_ptr<IAlgLoopSolverFactory> _algLoopSolverFactory;
+  };
 
   // create instance of <%modelShortName%>FMU
-  <%modelShortName%>FMU *createSystemFMU(IGlobalSettings *globalSettings,shared_ptr<ISimObjects> simObjects) {
-    simObjects->LoadSimVars("<%modelShortName%>",<%numRealvars(modelInfo)%>, <%numIntvars(modelInfo)%>, <%numBoolvars(modelInfo)%>, <%numStringvars(modelInfo)%>, <%getPreVarsCount(modelInfo)%>, <%numStatevars(modelInfo)%>, <%numStateVarIndex(modelInfo)%>);
+  <%modelShortName%>FMU *createSystemFMU(IGlobalSettings *globalSettings) {
+    shared_ptr<ISimObjects> simObjects(new <%modelShortName%>SimObjects(globalSettings));
+    simObjects->LoadSimVars("<%modelShortName%>", <%numRealvars(modelInfo)%>, <%numIntvars(modelInfo)%>, <%numBoolvars(modelInfo)%>, <%numStringvars(modelInfo)%>, <%getPreVarsCount(modelInfo)%>, <%numStatevars(modelInfo)%>, <%numStateVarIndex(modelInfo)%>);
     simObjects->LoadSimData("<%modelShortName%>");
     globalSettings->setOutputFormat(EMPTY);
-    return new <%modelShortName%>FMU(globalSettings,simObjects);
-
+    return new <%modelShortName%>FMU(globalSettings, simObjects);
   }
 
   // constructor
-  <%modelShortName%>FMU::<%modelShortName%>FMU(IGlobalSettings* globalSettings,
-
-    shared_ptr<ISimObjects> simObjects
-   )
+  <%modelShortName%>FMU::<%modelShortName%>FMU(IGlobalSettings* globalSettings, shared_ptr<ISimObjects> simObjects)
     : <%modelShortName%>Initialize(globalSettings, simObjects) {
-
   }
 
   // initialization
@@ -705,7 +726,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   $(eval CFLAGS=$(CFLAGS) -DUSE_LOGGER)
   endif
 
-  LDFLAGS=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" -L"$(BOOST_LIBS)" <%additionalLinkerFlags_GCC%>
+  LDFLAGS=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" -L"$(BOOST_LIBS)" <%additionalLinkerFlags_GCC%> -Wl,--no-undefined
   PLATFORM="<%platformstr%>"
 
   CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
@@ -719,8 +740,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   CPPFLAGS = $(CFLAGS)
 
-
-  OMCPP_LIBS=-lOMCppSystem_FMU_static  -lOMCppMath_static -lOMCppExtensionUtilities_static -lOMCppSimController_static  -lOMCppModelicaUtilities_static -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppFMU_static -lOMCppSimulationSettings_static $(OMCPP_SOLVER_LIBS)
+  OMCPP_LIBS=-lOMCppSystem_FMU_static -lOMCppMath_static -lOMCppExtensionUtilities_static -lOMCppModelicaUtilities_static -lOMCppFMU_static $(OMCPP_SOLVER_LIBS)
 
   MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)
   LIBS= $(OMCPP_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB)
