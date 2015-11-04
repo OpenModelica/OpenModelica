@@ -29,8 +29,8 @@ end InnerOuterSystem;
 
 // Result:
 // class InnerOuterSystem
-//   Boolean subSystem.isEnabled = isEnabled and subSystem.enableMe;
 //   Boolean subSystem.enableMe = time <= 1.0;
+//   Boolean subSystem.isEnabled = isEnabled and subSystem.enableMe;
 //   Real subSystem.conditionalIntegrator.x(start = 1.0);
 //   Real subSystem.conditionalIntegrator2.x(start = 1.0);
 //   Boolean isEnabled = time >= 0.5;

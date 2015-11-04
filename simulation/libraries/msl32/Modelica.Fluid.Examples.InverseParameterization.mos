@@ -87,12 +87,12 @@ runScript(modelTesting);getErrorString();
 // Warning: Alias set with several free start values
 //  * candidate: pump.heatTransfer.states[1].T(start = 500.0)
 //  * candidate: pump.medium.state.T(start = 500.0)
-//  * candidate: pump.medium.T(start = pump.T_start)
 //  * candidate: pump.monitoring.state.T(start = 500.0)
+//  * candidate: pump.medium.T(start = pump.T_start)
 // => select value from pump.medium.T(start = pump.T_start) for variable: pump.heatTransfer.Ts[1]
 // Warning: Alias set with different nominal values
-//  * candidate: pump.monitoring.state.T(nominal = 500.0)
 //  * candidate: pump.medium.T(nominal = 500.0)
+//  * candidate: pump.monitoring.state.T(nominal = 500.0)
 //  * candidate: pump.medium.state.T(nominal = 500.0)
 //  * candidate: pump.heatTransfer.states[1].T(nominal = 500.0)
 //  * candidate: pump.heatTransfer.heatPorts[1].T(nominal = 300.0)

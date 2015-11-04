@@ -1030,10 +1030,6 @@ end BM16;
 // end BM16;
 // Result:
 // class BM16
-//   parameter Real matrixGain1.K[1,1] = 1.0 "Gain matrix which is multiplied with the input";
-//   parameter Real matrixGain1.K[1,2] = 0.0 "Gain matrix which is multiplied with the input";
-//   parameter Real matrixGain1.K[2,1] = 0.0 "Gain matrix which is multiplied with the input";
-//   parameter Real matrixGain1.K[2,2] = 1.0 "Gain matrix which is multiplied with the input";
 //   parameter Integer matrixGain1.nin = 2 "Number of inputs";
 //   parameter Integer matrixGain1.nout = 2 "Number of outputs";
 //   parameter Integer matrixGain1.inPort.n = matrixGain1.nin "Dimension of signal vector";
@@ -1046,14 +1042,18 @@ end BM16;
 //   Real matrixGain1.y[2] "Output signals";
 //   protected Real matrixGain1.u[1] "Input signals";
 //   protected Real matrixGain1.u[2] "Input signals";
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
-//   parameter Real constant1.k[2] = 1.0 "Constant output values";
+//   parameter Real matrixGain1.K[1,1] = 1.0 "Gain matrix which is multiplied with the input";
+//   parameter Real matrixGain1.K[1,2] = 0.0 "Gain matrix which is multiplied with the input";
+//   parameter Real matrixGain1.K[2,1] = 0.0 "Gain matrix which is multiplied with the input";
+//   parameter Real matrixGain1.K[2,2] = 1.0 "Gain matrix which is multiplied with the input";
 //   parameter Integer constant1.nout(min = 1) = 2 "Number of outputs";
 //   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.outPort.signal[2] "Real output signals";
 //   Real constant1.y[1];
 //   Real constant1.y[2];
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
+//   parameter Real constant1.k[2] = 1.0 "Constant output values";
 // equation
 //   matrixGain1.u = {matrixGain1.inPort.signal[1], matrixGain1.inPort.signal[2]};
 //   matrixGain1.y[1] = matrixGain1.K[1,1] * matrixGain1.u[1] + matrixGain1.K[1,2] * matrixGain1.u[2];

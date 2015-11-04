@@ -999,11 +999,11 @@ end BM13;
 //   Real gain1.inPort.signal[1] "Real input signals";
 //   parameter Integer gain1.outPort.n = 1 "Dimension of signal vector";
 //   Real gain1.outPort.signal[1] "Real output signals";
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 //   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
 //   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 // equation
 //   gain1.u[1] = gain1.inPort.signal[1];
 //   gain1.y[1] = gain1.outPort.signal[1];

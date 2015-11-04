@@ -1006,23 +1006,23 @@ end BC7;
 // end BC7;
 // Result:
 // class BC7
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 //   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
 //   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
-//   parameter Real PI1.k[1] = 1.0 "Gain";
-//   parameter Real PI1.T[1](quantity = "Time", unit = "s") = 1.0 "Time Constant (T>0 required)";
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 //   parameter Integer PI1.n = 1 "Number of inputs (= number of outputs)";
 //   parameter Integer PI1.inPort.n = PI1.n "Dimension of signal vector";
 //   Real PI1.inPort.signal[1] "Real input signals";
 //   parameter Integer PI1.outPort.n = PI1.n "Dimension of signal vector";
 //   Real PI1.outPort.signal[1] "Real output signals";
 //   Real PI1.y[1] "Output signals";
+//   protected Real PI1.u[1] "Input signals";
+//   parameter Real PI1.k[1] = 1.0 "Gain";
+//   parameter Real PI1.T[1](quantity = "Time", unit = "s") = 1.0 "Time Constant (T>0 required)";
 //   Real PI1.x[1] "State of block";
 //   protected parameter Real PI1.p_k[1] = PI1.k[1];
 //   protected parameter Real PI1.p_T[1] = PI1.T[1];
-//   protected Real PI1.u[1] "Input signals";
 // equation
 //   constant1.outPort.signal[1] = constant1.k[1];
 //   constant1.y[1] = constant1.outPort.signal[1];

@@ -968,20 +968,20 @@ end BN1;
 // end BN1;
 // Result:
 // class BN1
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 //   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
 //   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
-//   parameter Real deadZone1.uMax[1] = 1.0 "Upper limits of dead zones";
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 //   parameter Integer deadZone1.n = 1 "Number of inputs (= number of outputs)";
-//   parameter Real deadZone1.uMin[1](max = deadZone1.uMax[1]) = -deadZone1.uMax[1] "Lower limits of dead zones";
 //   parameter Integer deadZone1.inPort.n = deadZone1.n "Dimension of signal vector";
 //   Real deadZone1.inPort.signal[1] "Real input signals";
 //   parameter Integer deadZone1.outPort.n = deadZone1.n "Dimension of signal vector";
 //   Real deadZone1.outPort.signal[1] "Real output signals";
 //   Real deadZone1.y[1] "Output signals";
 //   protected Real deadZone1.u[1] "Input signals";
+//   parameter Real deadZone1.uMax[1] = 1.0 "Upper limits of dead zones";
+//   parameter Real deadZone1.uMin[1](max = deadZone1.uMax[1]) = -deadZone1.uMax[1] "Lower limits of dead zones";
 // equation
 //   constant1.outPort.signal[1] = constant1.k[1];
 //   constant1.y[1] = constant1.outPort.signal[1];

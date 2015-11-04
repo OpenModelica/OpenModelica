@@ -90,9 +90,9 @@ end TemperatureDependentResistorCircuit;
 //   parameter Real R3.R(unit = "Ohm") = 300.0 "Resistance";
 //   Real Temp;
 // equation
+//   R1.v = R1.i * R1.R;
 //   R2.v = R2.i * R2.R;
 //   R3.v = R3.i * R3.R;
-//   R1.v = R1.i * R1.R;
 //   R2.p.i + R3.p.i + R1.p.i = 0.0;
 //   R2.n.i = 0.0;
 //   R3.n.i = 0.0;

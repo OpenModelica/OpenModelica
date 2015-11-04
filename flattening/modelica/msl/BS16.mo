@@ -1248,15 +1248,15 @@ end BS16;
 // end BS16;
 // Result:
 // class BS16
-//   parameter Real booleanPulse1.width[1](min = 1e-60, max = 100.0) = 50.0 "Widths of pulses in % of period";
-//   parameter Real booleanPulse1.period[1](quantity = "Time", unit = "s", min = 1e-60) = 1.0 "Times for one period";
-//   parameter Real booleanPulse1.startTime[1](quantity = "Time", unit = "s") = 0.0 "Iime instants of first pulse";
 //   parameter Integer booleanPulse1.nout(min = 1) = 1 "Number of Boolean outputs";
 //   parameter Integer booleanPulse1.outPort.n = booleanPulse1.nout "Dimension of signal vector";
 //   Boolean booleanPulse1.outPort.signal[1] "Boolean output signals";
+//   parameter Real booleanPulse1.width[1](min = 1e-60, max = 100.0) = 50.0 "Widths of pulses in % of period";
+//   parameter Real booleanPulse1.period[1](quantity = "Time", unit = "s", min = 1e-60) = 1.0 "Times for one period";
+//   parameter Real booleanPulse1.startTime[1](quantity = "Time", unit = "s") = 0.0 "Iime instants of first pulse";
 //   protected parameter Real booleanPulse1.p_period[1](quantity = "Time", unit = "s") = booleanPulse1.period[1];
-//   protected parameter Real booleanPulse1.p_startTime[1](quantity = "Time", unit = "s") = booleanPulse1.startTime[1];
 //   protected parameter Real booleanPulse1.Twidth[1](quantity = "Time", unit = "s") = 0.01 * booleanPulse1.p_period[1] * booleanPulse1.width[1] "width of one pulse";
+//   protected parameter Real booleanPulse1.p_startTime[1](quantity = "Time", unit = "s") = booleanPulse1.startTime[1];
 //   protected Real booleanPulse1.T0[1](quantity = "Time", unit = "s", start = booleanPulse1.p_startTime[1]) "Start time of current period";
 //   parameter Integer booleanChange1.n = 1 "Number of inputs (= number of outputs)";
 //   parameter Integer booleanChange1.inPort.n = booleanChange1.n "Dimension of signal vector";

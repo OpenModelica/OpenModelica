@@ -1115,11 +1115,11 @@ end BM5;
 //   Real asin1.outPort.signal[1] "Real output signals";
 //   Real asin1.y[1] "Output signals";
 //   protected Real asin1.u[1] "Input signals";
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 //   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
 //   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 // equation
 //   asin1.u = {asin1.inPort.signal[1]};
 //   asin1.y[1] = asin(asin1.u[1]);

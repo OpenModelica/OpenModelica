@@ -1005,11 +1005,11 @@ end BS17;
 //   Boolean booleanChange1.outPort.signal[1] "Boolean output signals";
 //   Boolean booleanChange1.y[1] "Output signals";
 //   protected Boolean booleanChange1.u[1] "Input signals";
-//   parameter Real booleanStep1.startTime[1](quantity = "Time", unit = "s") = 0.0 "Time instants of steps";
 //   parameter Integer booleanStep1.nout(min = 1) = 1 "Number of Boolean outputs";
-//   parameter Boolean booleanStep1.startValue[1] = false "Output before startTime";
 //   parameter Integer booleanStep1.outPort.n = booleanStep1.nout "Dimension of signal vector";
 //   Boolean booleanStep1.outPort.signal[1] "Boolean output signals";
+//   parameter Real booleanStep1.startTime[1](quantity = "Time", unit = "s") = 0.0 "Time instants of steps";
+//   parameter Boolean booleanStep1.startValue[1] = false "Output before startTime";
 // equation
 //   booleanChange1.u = {booleanChange1.inPort.signal[1]};
 //   booleanChange1.y[1] = change(booleanChange1.u[1]);

@@ -1343,16 +1343,16 @@ end BS9;
 // end Modelica.Math.sin;
 //
 // class BS9
+//   parameter Integer sine1.nout(min = 1) = 1 "Number of outputs";
+//   parameter Integer sine1.outPort.n = sine1.nout "Dimension of signal vector";
+//   Real sine1.outPort.signal[1] "Real output signals";
+//   Real sine1.y[1];
 //   parameter Real sine1.amplitude[1] = 1.0 "Amplitudes of sine waves";
 //   parameter Real sine1.freqHz[1](quantity = "Frequency", unit = "Hz") = 1.0 "Frequencies of sine waves";
 //   parameter Real sine1.phase[1](quantity = "Angle", unit = "rad", displayUnit = "deg") = 0.0 "Phases of sine waves";
 //   parameter Real sine1.offset[1] = 0.0 "Offsets of output signals";
 //   parameter Real sine1.startTime[1](quantity = "Time", unit = "s") = 0.0 "Output = offset for time < startTime";
 //   protected constant Real sine1.pi = 3.141592653589793;
-//   parameter Integer sine1.nout(min = 1) = 1 "Number of outputs";
-//   parameter Integer sine1.outPort.n = sine1.nout "Dimension of signal vector";
-//   Real sine1.outPort.signal[1] "Real output signals";
-//   Real sine1.y[1];
 //   protected parameter Real sine1.p_amplitude[1] = sine1.amplitude[1];
 //   protected parameter Real sine1.p_freqHz[1] = sine1.freqHz[1];
 //   protected parameter Real sine1.p_phase[1] = sine1.phase[1];

@@ -394,96 +394,6 @@ runScript(modelTesting);getErrorString();
 //  * candidate: V23.m_flow(start = V23.m_flow_start)
 // => select value from P1.port_a.m_flow(start = P1.m_flow_start) for variable: P1.m_flow
 // Warning: Alias set with several free start values
-//  * candidate: pipePump2B2.statesFM[2].T(start = 500.0)
-//  * candidate: pipePump2B2.mediums[2].state.T(start = 500.0)
-//  * candidate: pipePump2B2.mediums[2].T(start = 293.15)
-//  * candidate: pipePump2B2.heatTransfer.states[2].T(start = 500.0)
-//  * candidate: pipePump2B2.flowModel.states[2].T(start = 500.0)
-// => select value from pipePump2B2.statesFM[2].T(start = 500.0) for variable: pipePump2B2.statesFM[2].T
-// Warning: Alias set with different nominal values
-//  * candidate: pipePump2B2.flowModel.states[2].T(nominal = 500.0)
-//  * candidate: pipePump2B2.heatTransfer.heatPorts[2].T(nominal = 300.0)
-//  * candidate: pipePump2B2.heatTransfer.Ts[2](nominal = 300.0)
-//  * candidate: pipePump2B2.heatTransfer.states[2].T(nominal = 500.0)
-//  * candidate: pipePump2B2.mediums[2].T(nominal = 500.0)
-//  * candidate: pipePump2B2.mediums[2].state.T(nominal = 500.0)
-//  * candidate: pipePump2B2.statesFM[2].T(nominal = 500.0)
-// => select value from pipePump2B2.statesFM[2].T(nominal = 500.0) for variable: pipePump2B2.statesFM[2].T
-// Warning: Alias set with several free start values
-//  * candidate: pipePump2B2.statesFM[1].T(start = 500.0)
-//  * candidate: pipePump2B2.mediums[1].state.T(start = 500.0)
-//  * candidate: pipePump2B2.mediums[1].T(start = 293.15)
-//  * candidate: pipePump2B2.heatTransfer.states[1].T(start = 500.0)
-//  * candidate: pipePump2B2.flowModel.states[1].T(start = 500.0)
-// => select value from pipePump2B2.statesFM[1].T(start = 500.0) for variable: pipePump2B2.statesFM[1].T
-// Warning: Alias set with different nominal values
-//  * candidate: pipePump2B2.flowModel.states[1].T(nominal = 500.0)
-//  * candidate: pipePump2B2.heatTransfer.heatPorts[1].T(nominal = 300.0)
-//  * candidate: pipePump2B2.heatTransfer.Ts[1](nominal = 300.0)
-//  * candidate: pipePump2B2.heatTransfer.states[1].T(nominal = 500.0)
-//  * candidate: pipePump2B2.mediums[1].T(nominal = 500.0)
-//  * candidate: pipePump2B2.mediums[1].state.T(nominal = 500.0)
-//  * candidate: pipePump2B2.statesFM[1].T(nominal = 500.0)
-// => select value from pipePump2B2.statesFM[1].T(nominal = 500.0) for variable: pipePump2B2.statesFM[1].T
-// Warning: Alias set with several free start values
-//  * candidate: P2.medium.h(start = P2.h_start)
-//  * candidate: P2.port_b.h_outflow(start = 100000.0)
-//  * candidate: V25.state_a.h(start = 100000.0)
-//  * candidate: V25.port_b.h_outflow(start = 100000.0)
-//  * candidate: pipePump2B2.state_a.h(start = 100000.0)
-//  * candidate: P2.port_a.h_outflow(start = 100000.0)
-//  * candidate: V24.state_b.h(start = 100000.0)
-//  * candidate: V24.port_a.h_outflow(start = 100000.0)
-//  * candidate: P2.medium.state.h(start = 100000.0)
-//  * candidate: P2.monitoring.state.h(start = 100000.0)
-//  * candidate: P2.heatTransfer.states[1].h(start = 100000.0)
-// => select value from P2.medium.h(start = P2.h_start) for variable: P2.medium.h
-// Warning: Alias set with several free start values
-//  * candidate: pipePump1B1.statesFM[2].T(start = 500.0)
-//  * candidate: pipePump1B1.mediums[2].state.T(start = 500.0)
-//  * candidate: pipePump1B1.mediums[2].T(start = 293.15)
-//  * candidate: pipePump1B1.heatTransfer.states[2].T(start = 500.0)
-//  * candidate: pipePump1B1.flowModel.states[2].T(start = 500.0)
-// => select value from pipePump1B1.statesFM[2].T(start = 500.0) for variable: pipePump1B1.statesFM[2].T
-// Warning: Alias set with different nominal values
-//  * candidate: pipePump1B1.flowModel.states[2].T(nominal = 500.0)
-//  * candidate: pipePump1B1.heatTransfer.heatPorts[2].T(nominal = 300.0)
-//  * candidate: pipePump1B1.heatTransfer.Ts[2](nominal = 300.0)
-//  * candidate: pipePump1B1.heatTransfer.states[2].T(nominal = 500.0)
-//  * candidate: pipePump1B1.mediums[2].T(nominal = 500.0)
-//  * candidate: pipePump1B1.mediums[2].state.T(nominal = 500.0)
-//  * candidate: pipePump1B1.statesFM[2].T(nominal = 500.0)
-// => select value from pipePump1B1.statesFM[2].T(nominal = 500.0) for variable: pipePump1B1.statesFM[2].T
-// Warning: Alias set with several free start values
-//  * candidate: pipePump1B1.statesFM[1].T(start = 500.0)
-//  * candidate: pipePump1B1.mediums[1].state.T(start = 500.0)
-//  * candidate: pipePump1B1.mediums[1].T(start = 293.15)
-//  * candidate: pipePump1B1.heatTransfer.states[1].T(start = 500.0)
-//  * candidate: pipePump1B1.flowModel.states[1].T(start = 500.0)
-// => select value from pipePump1B1.statesFM[1].T(start = 500.0) for variable: pipePump1B1.statesFM[1].T
-// Warning: Alias set with different nominal values
-//  * candidate: pipePump1B1.flowModel.states[1].T(nominal = 500.0)
-//  * candidate: pipePump1B1.heatTransfer.heatPorts[1].T(nominal = 300.0)
-//  * candidate: pipePump1B1.heatTransfer.Ts[1](nominal = 300.0)
-//  * candidate: pipePump1B1.heatTransfer.states[1].T(nominal = 500.0)
-//  * candidate: pipePump1B1.mediums[1].T(nominal = 500.0)
-//  * candidate: pipePump1B1.mediums[1].state.T(nominal = 500.0)
-//  * candidate: pipePump1B1.statesFM[1].T(nominal = 500.0)
-// => select value from pipePump1B1.statesFM[1].T(nominal = 500.0) for variable: pipePump1B1.statesFM[1].T
-// Warning: Alias set with several free start values
-//  * candidate: P1.medium.h(start = P1.h_start)
-//  * candidate: P1.port_b.h_outflow(start = 100000.0)
-//  * candidate: V22.state_a.h(start = 100000.0)
-//  * candidate: V22.port_b.h_outflow(start = 100000.0)
-//  * candidate: pipePump1B1.state_a.h(start = 100000.0)
-//  * candidate: P1.port_a.h_outflow(start = 100000.0)
-//  * candidate: V23.state_b.h(start = 100000.0)
-//  * candidate: V23.port_a.h_outflow(start = 100000.0)
-//  * candidate: P1.medium.state.h(start = 100000.0)
-//  * candidate: P1.monitoring.state.h(start = 100000.0)
-//  * candidate: P1.heatTransfer.states[1].h(start = 100000.0)
-// => select value from P1.medium.h(start = P1.h_start) for variable: P1.medium.h
-// Warning: Alias set with several free start values
 //  * candidate: volume4.medium.h(start = volume4.h_start)
 //  * candidate: volume4.port_3.h_outflow(start = 100000.0)
 //  * candidate: multiPort.ports_b[3].h_outflow(start = 100000.0)
@@ -507,12 +417,9 @@ runScript(modelTesting);getErrorString();
 //  * candidate: volume4.medium.state.h(start = 100000.0)
 // => select value from volume4.medium.h(start = volume4.h_start) for variable: volume4.medium.h
 // Warning: Alias set with several free start values
-//  * candidate: B7.medium.h(start = B7.h_start)
-//  * candidate: B7.ports[1].h_outflow(start = 100000.0)
-//  * candidate: pipeB7Pump.flowModel.states[1].h(start = 100000.0)
-//  * candidate: B7.medium.state.h(start = 100000.0)
-//  * candidate: B7.heatTransfer.states[1].h(start = 100000.0)
-// => select value from B7.medium.h(start = B7.h_start) for variable: B7.medium.h
+//  * candidate: volume4.medium.T(start = volume4.T_start)
+//  * candidate: volume4.medium.state.T(start = 500.0)
+// => select value from volume4.medium.T(start = volume4.T_start) for variable: volume4.medium.T
 // Warning: Alias set with several free start values
 //  * candidate: B6.medium.h(start = B6.h_start)
 //  * candidate: B6.ports[1].h_outflow(start = 100000.0)
@@ -520,6 +427,103 @@ runScript(modelTesting);getErrorString();
 //  * candidate: B6.medium.state.h(start = 100000.0)
 //  * candidate: B6.heatTransfer.states[1].h(start = 100000.0)
 // => select value from B6.medium.h(start = B6.h_start) for variable: B6.medium.h
+// Warning: Alias set with several free start values
+//  * candidate: pipePump2B2.statesFM[2].T(start = 500.0)
+//  * candidate: pipePump2B2.mediums[2].state.T(start = 500.0)
+//  * candidate: pipePump2B2.heatTransfer.states[2].T(start = 500.0)
+//  * candidate: pipePump2B2.mediums[2].T(start = 293.15)
+//  * candidate: pipePump2B2.flowModel.states[2].T(start = 500.0)
+// => select value from pipePump2B2.statesFM[2].T(start = 500.0) for variable: pipePump2B2.statesFM[2].T
+// Warning: Alias set with different nominal values
+//  * candidate: pipePump2B2.flowModel.states[2].T(nominal = 500.0)
+//  * candidate: pipePump2B2.mediums[2].T(nominal = 500.0)
+//  * candidate: pipePump2B2.heatTransfer.heatPorts[2].T(nominal = 300.0)
+//  * candidate: pipePump2B2.heatTransfer.Ts[2](nominal = 300.0)
+//  * candidate: pipePump2B2.heatTransfer.states[2].T(nominal = 500.0)
+//  * candidate: pipePump2B2.mediums[2].state.T(nominal = 500.0)
+//  * candidate: pipePump2B2.statesFM[2].T(nominal = 500.0)
+// => select value from pipePump2B2.statesFM[2].T(nominal = 500.0) for variable: pipePump2B2.statesFM[2].T
+// Warning: Alias set with several free start values
+//  * candidate: pipePump2B2.statesFM[1].T(start = 500.0)
+//  * candidate: pipePump2B2.mediums[1].state.T(start = 500.0)
+//  * candidate: pipePump2B2.heatTransfer.states[1].T(start = 500.0)
+//  * candidate: pipePump2B2.mediums[1].T(start = 293.15)
+//  * candidate: pipePump2B2.flowModel.states[1].T(start = 500.0)
+// => select value from pipePump2B2.statesFM[1].T(start = 500.0) for variable: pipePump2B2.statesFM[1].T
+// Warning: Alias set with different nominal values
+//  * candidate: pipePump2B2.flowModel.states[1].T(nominal = 500.0)
+//  * candidate: pipePump2B2.mediums[1].T(nominal = 500.0)
+//  * candidate: pipePump2B2.heatTransfer.heatPorts[1].T(nominal = 300.0)
+//  * candidate: pipePump2B2.heatTransfer.Ts[1](nominal = 300.0)
+//  * candidate: pipePump2B2.heatTransfer.states[1].T(nominal = 500.0)
+//  * candidate: pipePump2B2.mediums[1].state.T(nominal = 500.0)
+//  * candidate: pipePump2B2.statesFM[1].T(nominal = 500.0)
+// => select value from pipePump2B2.statesFM[1].T(nominal = 500.0) for variable: pipePump2B2.statesFM[1].T
+// Warning: Alias set with several free start values
+//  * candidate: P2.medium.h(start = P2.h_start)
+//  * candidate: P2.port_b.h_outflow(start = 100000.0)
+//  * candidate: V25.state_a.h(start = 100000.0)
+//  * candidate: V25.port_b.h_outflow(start = 100000.0)
+//  * candidate: pipePump2B2.state_a.h(start = 100000.0)
+//  * candidate: P2.port_a.h_outflow(start = 100000.0)
+//  * candidate: V24.state_b.h(start = 100000.0)
+//  * candidate: V24.port_a.h_outflow(start = 100000.0)
+//  * candidate: P2.medium.state.h(start = 100000.0)
+//  * candidate: P2.monitoring.state.h(start = 100000.0)
+//  * candidate: P2.heatTransfer.states[1].h(start = 100000.0)
+// => select value from P2.medium.h(start = P2.h_start) for variable: P2.medium.h
+// Warning: Alias set with several free start values
+//  * candidate: pipePump1B1.statesFM[2].T(start = 500.0)
+//  * candidate: pipePump1B1.mediums[2].state.T(start = 500.0)
+//  * candidate: pipePump1B1.heatTransfer.states[2].T(start = 500.0)
+//  * candidate: pipePump1B1.mediums[2].T(start = 293.15)
+//  * candidate: pipePump1B1.flowModel.states[2].T(start = 500.0)
+// => select value from pipePump1B1.statesFM[2].T(start = 500.0) for variable: pipePump1B1.statesFM[2].T
+// Warning: Alias set with different nominal values
+//  * candidate: pipePump1B1.flowModel.states[2].T(nominal = 500.0)
+//  * candidate: pipePump1B1.mediums[2].T(nominal = 500.0)
+//  * candidate: pipePump1B1.heatTransfer.heatPorts[2].T(nominal = 300.0)
+//  * candidate: pipePump1B1.heatTransfer.Ts[2](nominal = 300.0)
+//  * candidate: pipePump1B1.heatTransfer.states[2].T(nominal = 500.0)
+//  * candidate: pipePump1B1.mediums[2].state.T(nominal = 500.0)
+//  * candidate: pipePump1B1.statesFM[2].T(nominal = 500.0)
+// => select value from pipePump1B1.statesFM[2].T(nominal = 500.0) for variable: pipePump1B1.statesFM[2].T
+// Warning: Alias set with several free start values
+//  * candidate: pipePump1B1.statesFM[1].T(start = 500.0)
+//  * candidate: pipePump1B1.mediums[1].state.T(start = 500.0)
+//  * candidate: pipePump1B1.heatTransfer.states[1].T(start = 500.0)
+//  * candidate: pipePump1B1.mediums[1].T(start = 293.15)
+//  * candidate: pipePump1B1.flowModel.states[1].T(start = 500.0)
+// => select value from pipePump1B1.statesFM[1].T(start = 500.0) for variable: pipePump1B1.statesFM[1].T
+// Warning: Alias set with different nominal values
+//  * candidate: pipePump1B1.flowModel.states[1].T(nominal = 500.0)
+//  * candidate: pipePump1B1.mediums[1].T(nominal = 500.0)
+//  * candidate: pipePump1B1.heatTransfer.heatPorts[1].T(nominal = 300.0)
+//  * candidate: pipePump1B1.heatTransfer.Ts[1](nominal = 300.0)
+//  * candidate: pipePump1B1.heatTransfer.states[1].T(nominal = 500.0)
+//  * candidate: pipePump1B1.mediums[1].state.T(nominal = 500.0)
+//  * candidate: pipePump1B1.statesFM[1].T(nominal = 500.0)
+// => select value from pipePump1B1.statesFM[1].T(nominal = 500.0) for variable: pipePump1B1.statesFM[1].T
+// Warning: Alias set with several free start values
+//  * candidate: P1.medium.h(start = P1.h_start)
+//  * candidate: P1.port_b.h_outflow(start = 100000.0)
+//  * candidate: V22.state_a.h(start = 100000.0)
+//  * candidate: V22.port_b.h_outflow(start = 100000.0)
+//  * candidate: pipePump1B1.state_a.h(start = 100000.0)
+//  * candidate: P1.port_a.h_outflow(start = 100000.0)
+//  * candidate: V23.state_b.h(start = 100000.0)
+//  * candidate: V23.port_a.h_outflow(start = 100000.0)
+//  * candidate: P1.medium.state.h(start = 100000.0)
+//  * candidate: P1.monitoring.state.h(start = 100000.0)
+//  * candidate: P1.heatTransfer.states[1].h(start = 100000.0)
+// => select value from P1.medium.h(start = P1.h_start) for variable: P1.medium.h
+// Warning: Alias set with several free start values
+//  * candidate: B7.medium.h(start = B7.h_start)
+//  * candidate: B7.ports[1].h_outflow(start = 100000.0)
+//  * candidate: pipeB7Pump.flowModel.states[1].h(start = 100000.0)
+//  * candidate: B7.medium.state.h(start = 100000.0)
+//  * candidate: B7.heatTransfer.states[1].h(start = 100000.0)
+// => select value from B7.medium.h(start = B7.h_start) for variable: B7.medium.h
 // Warning: Alias set with several free start values
 //  * candidate: B3.medium.h(start = B3.h_start)
 //  * candidate: B3.ports[2].h_outflow(start = 100000.0)
@@ -553,39 +557,35 @@ runScript(modelTesting);getErrorString();
 // Warning: Alias set with several free start values
 //  * candidate: pipeB1B2.statesFM[2].T(start = 500.0)
 //  * candidate: pipeB1B2.mediums[2].state.T(start = 500.0)
-//  * candidate: pipeB1B2.mediums[2].T(start = 293.15)
 //  * candidate: pipeB1B2.heatTransfer.states[2].T(start = 500.0)
+//  * candidate: pipeB1B2.mediums[2].T(start = 293.15)
 //  * candidate: pipeB1B2.flowModel.states[2].T(start = 500.0)
 // => select value from pipeB1B2.statesFM[2].T(start = 500.0) for variable: pipeB1B2.statesFM[2].T
 // Warning: Alias set with different nominal values
 //  * candidate: pipeB1B2.flowModel.states[2].T(nominal = 500.0)
+//  * candidate: pipeB1B2.mediums[2].T(nominal = 500.0)
 //  * candidate: pipeB1B2.heatTransfer.heatPorts[2].T(nominal = 300.0)
 //  * candidate: pipeB1B2.heatTransfer.Ts[2](nominal = 300.0)
 //  * candidate: pipeB1B2.heatTransfer.states[2].T(nominal = 500.0)
-//  * candidate: pipeB1B2.mediums[2].T(nominal = 500.0)
 //  * candidate: pipeB1B2.mediums[2].state.T(nominal = 500.0)
 //  * candidate: pipeB1B2.statesFM[2].T(nominal = 500.0)
 // => select value from pipeB1B2.statesFM[2].T(nominal = 500.0) for variable: pipeB1B2.statesFM[2].T
 // Warning: Alias set with several free start values
 //  * candidate: pipeB1B2.statesFM[1].T(start = 500.0)
 //  * candidate: pipeB1B2.mediums[1].state.T(start = 500.0)
-//  * candidate: pipeB1B2.mediums[1].T(start = 293.15)
 //  * candidate: pipeB1B2.heatTransfer.states[1].T(start = 500.0)
+//  * candidate: pipeB1B2.mediums[1].T(start = 293.15)
 //  * candidate: pipeB1B2.flowModel.states[1].T(start = 500.0)
 // => select value from pipeB1B2.statesFM[1].T(start = 500.0) for variable: pipeB1B2.statesFM[1].T
 // Warning: Alias set with different nominal values
 //  * candidate: pipeB1B2.flowModel.states[1].T(nominal = 500.0)
+//  * candidate: pipeB1B2.mediums[1].T(nominal = 500.0)
 //  * candidate: pipeB1B2.heatTransfer.heatPorts[1].T(nominal = 300.0)
 //  * candidate: pipeB1B2.heatTransfer.Ts[1](nominal = 300.0)
 //  * candidate: pipeB1B2.heatTransfer.states[1].T(nominal = 500.0)
-//  * candidate: pipeB1B2.mediums[1].T(nominal = 500.0)
 //  * candidate: pipeB1B2.mediums[1].state.T(nominal = 500.0)
 //  * candidate: pipeB1B2.statesFM[1].T(nominal = 500.0)
 // => select value from pipeB1B2.statesFM[1].T(nominal = 500.0) for variable: pipeB1B2.statesFM[1].T
-// Warning: Alias set with several free start values
-//  * candidate: volume4.medium.T(start = volume4.T_start)
-//  * candidate: volume4.medium.state.T(start = 500.0)
-// => select value from volume4.medium.T(start = volume4.T_start) for variable: volume4.medium.T
 // Warning: Alias set with several free start values
 //  * candidate: B4.medium.h(start = B4.h_start)
 //  * candidate: B4.ports[1].h_outflow(start = 100000.0)
@@ -643,6 +643,20 @@ runScript(modelTesting);getErrorString();
 //  * candidate: B1.heatTransfer.Ts[1](nominal = 300.0)
 // => select value from B1.heatTransfer.Ts[1](nominal = 300.0) for variable: B1.heatTransfer.Ts[1]
 // Warning: Alias set with several free start values
+//  * candidate: P2.heatTransfer.states[1].T(start = 500.0)
+//  * candidate: P2.medium.state.T(start = 500.0)
+//  * candidate: P2.monitoring.state.T(start = 500.0)
+//  * candidate: P2.medium.T(start = P2.T_start)
+// => select value from P2.medium.T(start = P2.T_start) for variable: P2.heatTransfer.Ts[1]
+// Warning: Alias set with different nominal values
+//  * candidate: P2.medium.T(nominal = 500.0)
+//  * candidate: P2.monitoring.state.T(nominal = 500.0)
+//  * candidate: P2.medium.state.T(nominal = 500.0)
+//  * candidate: P2.heatTransfer.states[1].T(nominal = 500.0)
+//  * candidate: P2.heatTransfer.heatPorts[1].T(nominal = 300.0)
+//  * candidate: P2.heatTransfer.Ts[1](nominal = 300.0)
+// => select value from P2.heatTransfer.Ts[1](nominal = 300.0) for variable: P2.heatTransfer.Ts[1]
+// Warning: Alias set with several free start values
 //  * candidate: volume5.medium.h(start = volume5.h_start)
 //  * candidate: volume5.port_3.h_outflow(start = 100000.0)
 //  * candidate: V20.state_b.h(start = 100000.0)
@@ -657,28 +671,14 @@ runScript(modelTesting);getErrorString();
 //  * candidate: volume5.medium.state.h(start = 100000.0)
 // => select value from volume5.medium.h(start = volume5.h_start) for variable: volume5.medium.h
 // Warning: Alias set with several free start values
-//  * candidate: P2.heatTransfer.states[1].T(start = 500.0)
-//  * candidate: P2.medium.state.T(start = 500.0)
-//  * candidate: P2.medium.T(start = P2.T_start)
-//  * candidate: P2.monitoring.state.T(start = 500.0)
-// => select value from P2.medium.T(start = P2.T_start) for variable: P2.heatTransfer.Ts[1]
-// Warning: Alias set with different nominal values
-//  * candidate: P2.monitoring.state.T(nominal = 500.0)
-//  * candidate: P2.medium.T(nominal = 500.0)
-//  * candidate: P2.medium.state.T(nominal = 500.0)
-//  * candidate: P2.heatTransfer.states[1].T(nominal = 500.0)
-//  * candidate: P2.heatTransfer.heatPorts[1].T(nominal = 300.0)
-//  * candidate: P2.heatTransfer.Ts[1](nominal = 300.0)
-// => select value from P2.heatTransfer.Ts[1](nominal = 300.0) for variable: P2.heatTransfer.Ts[1]
-// Warning: Alias set with several free start values
 //  * candidate: P1.heatTransfer.states[1].T(start = 500.0)
 //  * candidate: P1.medium.state.T(start = 500.0)
-//  * candidate: P1.medium.T(start = P1.T_start)
 //  * candidate: P1.monitoring.state.T(start = 500.0)
+//  * candidate: P1.medium.T(start = P1.T_start)
 // => select value from P1.medium.T(start = P1.T_start) for variable: P1.heatTransfer.Ts[1]
 // Warning: Alias set with different nominal values
-//  * candidate: P1.monitoring.state.T(nominal = 500.0)
 //  * candidate: P1.medium.T(nominal = 500.0)
+//  * candidate: P1.monitoring.state.T(nominal = 500.0)
 //  * candidate: P1.medium.state.T(nominal = 500.0)
 //  * candidate: P1.heatTransfer.states[1].T(nominal = 500.0)
 //  * candidate: P1.heatTransfer.heatPorts[1].T(nominal = 300.0)

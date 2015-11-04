@@ -1012,16 +1012,16 @@ end BM12;
 //   Real feedback1.inPort2.signal[1] "Real input signals";
 //   parameter Integer feedback1.outPort.n = feedback1.n "Dimension of signal vector";
 //   Real feedback1.outPort.signal[1] "Real output signals";
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 //   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
 //   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
-//   parameter Real constant2.k[1] = 1.0 "Constant output values";
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 //   parameter Integer constant2.nout(min = 1) = 1 "Number of outputs";
 //   parameter Integer constant2.outPort.n = constant2.nout "Dimension of signal vector";
 //   Real constant2.outPort.signal[1] "Real output signals";
 //   Real constant2.y[1];
+//   parameter Real constant2.k[1] = 1.0 "Constant output values";
 // equation
 //   feedback1.outPort.signal[1] = feedback1.inPort1.signal[1] - feedback1.inPort2.signal[1];
 //   constant1.outPort.signal[1] = constant1.k[1];

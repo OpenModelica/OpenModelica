@@ -490,7 +490,6 @@ end Philosopher_DiningTable;
 //   protected Boolean phil[5].timeToGetHungry;
 //   protected Boolean phil[5].doneEating;
 //   parameter Integer mutex.n = n "The number of connected ports";
-//   protected Boolean mutex.occupied "Mutex is locked if occupied is true";
 //   Boolean mutex.port[1].request "Set by application to request access";
 //   Boolean mutex.port[1].release "Set by application to release access";
 //   Boolean mutex.port[1].ok "Signal that ownership was granted";
@@ -526,6 +525,7 @@ end Philosopher_DiningTable;
 //   protected Boolean mutex.waiting[3];
 //   protected Boolean mutex.waiting[4];
 //   protected Boolean mutex.waiting[5];
+//   protected Boolean mutex.occupied "Mutex is locked if occupied is true";
 //   Boolean fork[1].left.pickedUp(start = false);
 //   Boolean fork[1].left.busy;
 //   Boolean fork[1].right.pickedUp(start = false);
@@ -547,31 +547,6 @@ end Philosopher_DiningTable;
 //   Boolean fork[5].right.pickedUp(start = false);
 //   Boolean fork[5].right.busy;
 // equation
-//   mutex.port[1].ok = mutex.ok[1];
-//   mutex.request[1] = mutex.port[1].request;
-//   mutex.release[1] = mutex.port[1].release;
-//   mutex.port[2].ok = mutex.ok[2];
-//   mutex.request[2] = mutex.port[2].request;
-//   mutex.release[2] = mutex.port[2].release;
-//   mutex.port[3].ok = mutex.ok[3];
-//   mutex.request[3] = mutex.port[3].request;
-//   mutex.release[3] = mutex.port[3].release;
-//   mutex.port[4].ok = mutex.ok[4];
-//   mutex.request[4] = mutex.port[4].request;
-//   mutex.release[4] = mutex.port[4].release;
-//   mutex.port[5].ok = mutex.ok[5];
-//   mutex.request[5] = mutex.port[5].request;
-//   mutex.release[5] = mutex.port[5].release;
-//   fork[1].right.busy = fork[1].left.pickedUp;
-//   fork[1].left.busy = fork[1].right.pickedUp;
-//   fork[2].right.busy = fork[2].left.pickedUp;
-//   fork[2].left.busy = fork[2].right.pickedUp;
-//   fork[3].right.busy = fork[3].left.pickedUp;
-//   fork[3].left.busy = fork[3].right.pickedUp;
-//   fork[4].right.busy = fork[4].left.pickedUp;
-//   fork[4].left.busy = fork[4].right.pickedUp;
-//   fork[5].right.busy = fork[5].left.pickedUp;
-//   fork[5].left.busy = fork[5].right.pickedUp;
 //   phil[1].startSeed = {1.0, 2.0, 3.0};
 //   phil[1].timeToChangeState = phil[1].timeOfNextChange <= time;
 //   phil[1].canEat = phil[1].state == 1 and not (phil[1].left.busy or phil[1].right.busy);
@@ -597,6 +572,31 @@ end Philosopher_DiningTable;
 //   phil[5].canEat = phil[5].state == 1 and not (phil[5].left.busy or phil[5].right.busy);
 //   phil[5].timeToGetHungry = phil[5].state == 0 and phil[5].timeToChangeState;
 //   phil[5].doneEating = phil[5].state == 2 and phil[5].timeToChangeState;
+//   mutex.port[1].ok = mutex.ok[1];
+//   mutex.request[1] = mutex.port[1].request;
+//   mutex.release[1] = mutex.port[1].release;
+//   mutex.port[2].ok = mutex.ok[2];
+//   mutex.request[2] = mutex.port[2].request;
+//   mutex.release[2] = mutex.port[2].release;
+//   mutex.port[3].ok = mutex.ok[3];
+//   mutex.request[3] = mutex.port[3].request;
+//   mutex.release[3] = mutex.port[3].release;
+//   mutex.port[4].ok = mutex.ok[4];
+//   mutex.request[4] = mutex.port[4].request;
+//   mutex.release[4] = mutex.port[4].release;
+//   mutex.port[5].ok = mutex.ok[5];
+//   mutex.request[5] = mutex.port[5].request;
+//   mutex.release[5] = mutex.port[5].release;
+//   fork[1].right.busy = fork[1].left.pickedUp;
+//   fork[1].left.busy = fork[1].right.pickedUp;
+//   fork[2].right.busy = fork[2].left.pickedUp;
+//   fork[2].left.busy = fork[2].right.pickedUp;
+//   fork[3].right.busy = fork[3].left.pickedUp;
+//   fork[3].left.busy = fork[3].right.pickedUp;
+//   fork[4].right.busy = fork[4].left.pickedUp;
+//   fork[4].left.busy = fork[4].right.pickedUp;
+//   fork[5].right.busy = fork[5].left.pickedUp;
+//   fork[5].left.busy = fork[5].right.pickedUp;
 //   mutex.port[1].ok = phil[1].mutexPort.ok;
 //   mutex.port[1].release = phil[1].mutexPort.release;
 //   mutex.port[1].request = phil[1].mutexPort.request;
@@ -632,102 +632,6 @@ end Philosopher_DiningTable;
 //   fork[5].left.pickedUp = phil[5].right.pickedUp;
 //   fork[5].right.busy = phil[1].left.busy;
 //   fork[5].right.pickedUp = phil[1].left.pickedUp;
-// algorithm
-//   when mutex.request[1] then
-//     if not mutex.occupied then
-//       mutex.ok[1] := true;
-//       mutex.waiting[1] := false;
-//     else
-//       mutex.ok[1] := false;
-//       mutex.waiting[1] := true;
-//     end if;
-//     mutex.occupied := true;
-//   end when;
-//   when pre(mutex.waiting[1]) and not mutex.occupied then
-//     mutex.occupied := true;
-//     mutex.ok[1] := true;
-//     mutex.waiting[1] := false;
-//   end when;
-//   when pre(mutex.release[1]) then
-//     mutex.ok[1] := false;
-//     mutex.occupied := false;
-//   end when;
-//   when mutex.request[2] then
-//     if not mutex.occupied then
-//       mutex.ok[2] := true;
-//       mutex.waiting[2] := false;
-//     else
-//       mutex.ok[2] := false;
-//       mutex.waiting[2] := true;
-//     end if;
-//     mutex.occupied := true;
-//   end when;
-//   when pre(mutex.waiting[2]) and not mutex.occupied then
-//     mutex.occupied := true;
-//     mutex.ok[2] := true;
-//     mutex.waiting[2] := false;
-//   end when;
-//   when pre(mutex.release[2]) then
-//     mutex.ok[2] := false;
-//     mutex.occupied := false;
-//   end when;
-//   when mutex.request[3] then
-//     if not mutex.occupied then
-//       mutex.ok[3] := true;
-//       mutex.waiting[3] := false;
-//     else
-//       mutex.ok[3] := false;
-//       mutex.waiting[3] := true;
-//     end if;
-//     mutex.occupied := true;
-//   end when;
-//   when pre(mutex.waiting[3]) and not mutex.occupied then
-//     mutex.occupied := true;
-//     mutex.ok[3] := true;
-//     mutex.waiting[3] := false;
-//   end when;
-//   when pre(mutex.release[3]) then
-//     mutex.ok[3] := false;
-//     mutex.occupied := false;
-//   end when;
-//   when mutex.request[4] then
-//     if not mutex.occupied then
-//       mutex.ok[4] := true;
-//       mutex.waiting[4] := false;
-//     else
-//       mutex.ok[4] := false;
-//       mutex.waiting[4] := true;
-//     end if;
-//     mutex.occupied := true;
-//   end when;
-//   when pre(mutex.waiting[4]) and not mutex.occupied then
-//     mutex.occupied := true;
-//     mutex.ok[4] := true;
-//     mutex.waiting[4] := false;
-//   end when;
-//   when pre(mutex.release[4]) then
-//     mutex.ok[4] := false;
-//     mutex.occupied := false;
-//   end when;
-//   when mutex.request[5] then
-//     if not mutex.occupied then
-//       mutex.ok[5] := true;
-//       mutex.waiting[5] := false;
-//     else
-//       mutex.ok[5] := false;
-//       mutex.waiting[5] := true;
-//     end if;
-//     mutex.occupied := true;
-//   end when;
-//   when pre(mutex.waiting[5]) and not mutex.occupied then
-//     mutex.occupied := true;
-//     mutex.ok[5] := true;
-//     mutex.waiting[5] := false;
-//   end when;
-//   when pre(mutex.release[5]) then
-//     mutex.ok[5] := false;
-//     mutex.occupied := false;
-//   end when;
 // algorithm
 //   when initial() then
 //     phil[1].state := 0;
@@ -887,6 +791,102 @@ end Philosopher_DiningTable;
 //     phil[5].right.pickedUp := false;
 //     (phil[5].T, phil[5].randomSeed) := Philosopher.Random.normalvariate(phil[5].mu, phil[5].sigma, {pre(phil[5].randomSeed[1]), pre(phil[5].randomSeed[2]), pre(phil[5].randomSeed[3])});
 //     phil[5].timeOfNextChange := time + abs(phil[5].T);
+//   end when;
+// algorithm
+//   when mutex.request[1] then
+//     if not mutex.occupied then
+//       mutex.ok[1] := true;
+//       mutex.waiting[1] := false;
+//     else
+//       mutex.ok[1] := false;
+//       mutex.waiting[1] := true;
+//     end if;
+//     mutex.occupied := true;
+//   end when;
+//   when pre(mutex.waiting[1]) and not mutex.occupied then
+//     mutex.occupied := true;
+//     mutex.ok[1] := true;
+//     mutex.waiting[1] := false;
+//   end when;
+//   when pre(mutex.release[1]) then
+//     mutex.ok[1] := false;
+//     mutex.occupied := false;
+//   end when;
+//   when mutex.request[2] then
+//     if not mutex.occupied then
+//       mutex.ok[2] := true;
+//       mutex.waiting[2] := false;
+//     else
+//       mutex.ok[2] := false;
+//       mutex.waiting[2] := true;
+//     end if;
+//     mutex.occupied := true;
+//   end when;
+//   when pre(mutex.waiting[2]) and not mutex.occupied then
+//     mutex.occupied := true;
+//     mutex.ok[2] := true;
+//     mutex.waiting[2] := false;
+//   end when;
+//   when pre(mutex.release[2]) then
+//     mutex.ok[2] := false;
+//     mutex.occupied := false;
+//   end when;
+//   when mutex.request[3] then
+//     if not mutex.occupied then
+//       mutex.ok[3] := true;
+//       mutex.waiting[3] := false;
+//     else
+//       mutex.ok[3] := false;
+//       mutex.waiting[3] := true;
+//     end if;
+//     mutex.occupied := true;
+//   end when;
+//   when pre(mutex.waiting[3]) and not mutex.occupied then
+//     mutex.occupied := true;
+//     mutex.ok[3] := true;
+//     mutex.waiting[3] := false;
+//   end when;
+//   when pre(mutex.release[3]) then
+//     mutex.ok[3] := false;
+//     mutex.occupied := false;
+//   end when;
+//   when mutex.request[4] then
+//     if not mutex.occupied then
+//       mutex.ok[4] := true;
+//       mutex.waiting[4] := false;
+//     else
+//       mutex.ok[4] := false;
+//       mutex.waiting[4] := true;
+//     end if;
+//     mutex.occupied := true;
+//   end when;
+//   when pre(mutex.waiting[4]) and not mutex.occupied then
+//     mutex.occupied := true;
+//     mutex.ok[4] := true;
+//     mutex.waiting[4] := false;
+//   end when;
+//   when pre(mutex.release[4]) then
+//     mutex.ok[4] := false;
+//     mutex.occupied := false;
+//   end when;
+//   when mutex.request[5] then
+//     if not mutex.occupied then
+//       mutex.ok[5] := true;
+//       mutex.waiting[5] := false;
+//     else
+//       mutex.ok[5] := false;
+//       mutex.waiting[5] := true;
+//     end if;
+//     mutex.occupied := true;
+//   end when;
+//   when pre(mutex.waiting[5]) and not mutex.occupied then
+//     mutex.occupied := true;
+//     mutex.ok[5] := true;
+//     mutex.waiting[5] := false;
+//   end when;
+//   when pre(mutex.release[5]) then
+//     mutex.ok[5] := false;
+//     mutex.occupied := false;
 //   end when;
 // end Philosopher_DiningTable;
 // endResult

@@ -983,25 +983,25 @@ end BC5;
 // end BC5;
 // Result:
 // class BC5
-//   parameter Real limIntegrator1.k[1] = 1.0 "Integrator gains";
-//   parameter Real limIntegrator1.outMax[1] = 1.0 "Upper limits of outputs";
-//   parameter Real limIntegrator1.y0[1] = 0.0 "Start values of integrators";
-//   parameter Real limIntegrator1.outMin[1] = -limIntegrator1.outMax[1] "Lower limits of outputs";
 //   parameter Integer limIntegrator1.n = 1 "Number of inputs (= number of outputs)";
 //   parameter Integer limIntegrator1.inPort.n = limIntegrator1.n "Dimension of signal vector";
 //   Real limIntegrator1.inPort.signal[1] "Real input signals";
 //   parameter Integer limIntegrator1.outPort.n = limIntegrator1.n "Dimension of signal vector";
 //   Real limIntegrator1.outPort.signal[1] "Real output signals";
 //   Real limIntegrator1.y[1](start = limIntegrator1.y0[1]) "Output signals";
+//   protected Real limIntegrator1.u[1] "Input signals";
+//   parameter Real limIntegrator1.k[1] = 1.0 "Integrator gains";
+//   parameter Real limIntegrator1.outMax[1] = 1.0 "Upper limits of outputs";
+//   parameter Real limIntegrator1.outMin[1] = -limIntegrator1.outMax[1] "Lower limits of outputs";
+//   parameter Real limIntegrator1.y0[1] = 0.0 "Start values of integrators";
 //   protected parameter Real limIntegrator1.p_k[1] = limIntegrator1.k[1];
 //   protected parameter Real limIntegrator1.p_outMax[1] = limIntegrator1.outMax[1];
 //   protected parameter Real limIntegrator1.p_outMin[1] = limIntegrator1.outMin[1];
-//   protected Real limIntegrator1.u[1] "Input signals";
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 //   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
 //   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 // equation
 //   limIntegrator1.u = {limIntegrator1.inPort.signal[1]};
 //   der(limIntegrator1.y[1]) = if limIntegrator1.y[1] < limIntegrator1.p_outMin[1] and limIntegrator1.u[1] < 0.0 or limIntegrator1.y[1] > limIntegrator1.p_outMax[1] and limIntegrator1.u[1] > 0.0 then 0.0 else limIntegrator1.p_k[1] * limIntegrator1.u[1];

@@ -1220,20 +1220,20 @@ end BS6;
 // end BS6;
 // Result:
 // class BS6
+//   parameter Integer pulse1.nout(min = 1) = 1 "Number of outputs";
+//   parameter Integer pulse1.outPort.n = pulse1.nout "Dimension of signal vector";
+//   Real pulse1.outPort.signal[1] "Real output signals";
+//   Real pulse1.y[1];
 //   parameter Real pulse1.amplitude[1] = 1.0 "Amplitudes of pulses";
 //   parameter Real pulse1.width[1](min = 1e-60, max = 100.0) = 50.0 "Widths of pulses in % of periods";
 //   parameter Real pulse1.period[1](quantity = "Time", unit = "s", min = 1e-60) = 1.0 "Times for one period";
 //   parameter Real pulse1.offset[1] = 0.0 "Offsets of output signals";
 //   parameter Real pulse1.startTime[1](quantity = "Time", unit = "s") = 0.0 "Output = offset for time < startTime";
-//   parameter Integer pulse1.nout(min = 1) = 1 "Number of outputs";
-//   parameter Integer pulse1.outPort.n = pulse1.nout "Dimension of signal vector";
-//   Real pulse1.outPort.signal[1] "Real output signals";
-//   Real pulse1.y[1];
 //   protected parameter Real pulse1.p_amplitude[1] = pulse1.amplitude[1];
 //   protected parameter Real pulse1.p_period[1](quantity = "Time", unit = "s") = pulse1.period[1];
+//   protected parameter Real pulse1.p_width[1](quantity = "Time", unit = "s") = 0.01 * pulse1.p_period[1] * pulse1.width[1] "Width of one pulse";
 //   protected parameter Real pulse1.p_offset[1] = pulse1.offset[1];
 //   protected parameter Real pulse1.p_startTime[1](quantity = "Time", unit = "s") = pulse1.startTime[1];
-//   protected parameter Real pulse1.p_width[1](quantity = "Time", unit = "s") = 0.01 * pulse1.p_period[1] * pulse1.width[1] "Width of one pulse";
 //   protected Real pulse1.T0[1](quantity = "Time", unit = "s", start = pulse1.p_startTime[1]) "Start time of current period";
 //   parameter Integer der1.n = 1 "Number of inputs (= number of outputs)";
 //   parameter Integer der1.inPort.n = der1.n "Dimension of signal vector";

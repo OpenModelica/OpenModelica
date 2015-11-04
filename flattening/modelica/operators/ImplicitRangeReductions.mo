@@ -104,8 +104,8 @@ end ImplicitRangeReductions;
 //   Real k[true];
 // equation
 //   a = {1.0, 2.0, 3.0};
-//   j = {1.0, 2.0};
 //   h = {1.0, 2.0, 3.0};
+//   j = {1.0, 2.0};
 //   b[1] = a[1];
 //   b[2] = a[2];
 //   b[3] = a[3];

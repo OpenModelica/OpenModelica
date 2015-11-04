@@ -986,11 +986,11 @@ end BS13;
 //   Real integerToReal1.outPort.signal[1] "Real output signals";
 //   parameter Integer integerToReal1.inPort.n = integerToReal1.n "Dimension of signal vector";
 //   Integer integerToReal1.inPort.signal[1] "Integer input signals";
-//   parameter Integer integerConstant1.k[1] = 1 "Constant output values";
 //   parameter Integer integerConstant1.nout(min = 1) = 1 "Number of outputs";
 //   parameter Integer integerConstant1.outPort.n = integerConstant1.nout "Dimension of signal vector";
 //   Integer integerConstant1.outPort.signal[1] "Integer output signals";
 //   Integer integerConstant1.y[1];
+//   parameter Integer integerConstant1.k[1] = 1 "Constant output values";
 // equation
 //   integerToReal1.outPort.signal[1] = /*Real*/(integerToReal1.inPort.signal[1]);
 //   integerConstant1.outPort.signal[1] = integerConstant1.k[1];

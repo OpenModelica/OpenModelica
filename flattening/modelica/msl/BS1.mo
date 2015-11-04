@@ -967,12 +967,12 @@ end BS1;
 // end BS1;
 // Result:
 // class BS1
-//   parameter Real clock1.offset[1] = 0.0 "Offsets of output signals";
-//   parameter Real clock1.startTime[1](quantity = "Time", unit = "s") = 0.0 "Output = offset for time < startTime";
 //   parameter Integer clock1.nout(min = 1) = 1 "Number of outputs";
 //   parameter Integer clock1.outPort.n = clock1.nout "Dimension of signal vector";
 //   Real clock1.outPort.signal[1] "Real output signals";
 //   Real clock1.y[1];
+//   parameter Real clock1.offset[1] = 0.0 "Offsets of output signals";
+//   parameter Real clock1.startTime[1](quantity = "Time", unit = "s") = 0.0 "Output = offset for time < startTime";
 //   protected parameter Real clock1.p_offset[1] = clock1.offset[1];
 //   protected parameter Real clock1.p_startTime[1](quantity = "Time", unit = "s") = clock1.startTime[1];
 //   parameter Integer der1.n = 1 "Number of inputs (= number of outputs)";

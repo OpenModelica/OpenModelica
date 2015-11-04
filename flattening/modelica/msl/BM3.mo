@@ -1032,8 +1032,6 @@ end BM3;
 // Result:
 // class BM3
 //   parameter Integer add1.n = 1 "Dimension of input and output vectors.";
-//   parameter Real add1.k1 = 1.0 "Gain of upper input";
-//   parameter Real add1.k2 = 1.0 "Gain of lower input";
 //   parameter Integer add1.inPort1.n = add1.n "Dimension of signal vector";
 //   Real add1.inPort1.signal[1] "Real input signals";
 //   parameter Integer add1.inPort2.n = add1.n "Dimension of signal vector";
@@ -1043,16 +1041,18 @@ end BM3;
 //   Real add1.y[1] "Output signals";
 //   protected Real add1.u1[1] "Input signals 1";
 //   protected Real add1.u2[1] "Input signals 2";
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
+//   parameter Real add1.k1 = 1.0 "Gain of upper input";
+//   parameter Real add1.k2 = 1.0 "Gain of lower input";
 //   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
 //   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
-//   parameter Real constant2.k[1] = 1.0 "Constant output values";
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 //   parameter Integer constant2.nout(min = 1) = 1 "Number of outputs";
 //   parameter Integer constant2.outPort.n = constant2.nout "Dimension of signal vector";
 //   Real constant2.outPort.signal[1] "Real output signals";
 //   Real constant2.y[1];
+//   parameter Real constant2.k[1] = 1.0 "Constant output values";
 // equation
 //   add1.u1 = {add1.inPort1.signal[1]};
 //   add1.u2 = {add1.inPort2.signal[1]};

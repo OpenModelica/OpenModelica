@@ -510,6 +510,42 @@ translateModel(ThermoPower.Examples.RankineCycle.Simulators.ClosedLoop); getErro
 //  * candidate: plant.economizer.waterOut.h_outflow(start = 100000.0)
 //  * candidate: plant.stateWaterEvaporator_in.outlet.h_outflow(start = 100000.0)
 // => select value from plant.economizer.fluidFlow.htilde[5](start = plant.economizer.fluidFlow.hstart[6]) for variable: plant.economizer.fluidFlow.htilde[5]
+// Warning: Alias set with different nominal values
+//  * candidate: plant.stateWaterEconomizer_in.fluidState.T(nominal = 500.0)
+//  * candidate: plant.stateWaterEconomizer_in.T(nominal = 300.0)
+// => select value from plant.stateWaterEconomizer_in.T(nominal = 300.0) for variable: plant.stateWaterEconomizer_in.T
+// Warning: Alias set with different nominal values
+//  * candidate: plant.stateWaterEvaporator_in.fluidState.T(nominal = 500.0)
+//  * candidate: plant.stateWaterEvaporator_in.T(nominal = 300.0)
+// => select value from plant.stateWaterEvaporator_in.T(nominal = 300.0) for variable: plant.stateWaterEvaporator_in.T
+// Warning: Alias set with different nominal values
+//  * candidate: plant.stateWaterSuperheater_out.fluidState.T(nominal = 500.0)
+//  * candidate: plant.stateWaterSuperheater_out.T(nominal = 300.0)
+// => select value from plant.stateWaterSuperheater_out.T(nominal = 300.0) for variable: plant.stateWaterSuperheater_out.T
+// Warning: Alias set with different nominal values
+//  * candidate: plant.stateWaterSuperheater_in.fluidState.T(nominal = 500.0)
+//  * candidate: plant.stateWaterSuperheater_in.T(nominal = 300.0)
+// => select value from plant.stateWaterSuperheater_in.T(nominal = 300.0) for variable: plant.stateWaterSuperheater_in.T
+// Warning: Alias set with different nominal values
+//  * candidate: plant.stateGasOutlet.gas.state.T(nominal = 500.0)
+//  * candidate: plant.stateGasOutlet.gas.T(nominal = 500.0)
+//  * candidate: plant.stateGasOutlet.T(nominal = 300.0)
+// => select value from plant.stateGasOutlet.T(nominal = 300.0) for variable: plant.stateGasOutlet.T
+// Warning: Alias set with different nominal values
+//  * candidate: plant.stateGasInletEconomizer.gas.state.T(nominal = 500.0)
+//  * candidate: plant.stateGasInletEconomizer.gas.T(nominal = 500.0)
+//  * candidate: plant.stateGasInletEconomizer.T(nominal = 300.0)
+// => select value from plant.stateGasInletEconomizer.T(nominal = 300.0) for variable: plant.stateGasInletEconomizer.T
+// Warning: Alias set with different nominal values
+//  * candidate: plant.stateGasInletEvaporator.gas.state.T(nominal = 500.0)
+//  * candidate: plant.stateGasInletEvaporator.gas.T(nominal = 500.0)
+//  * candidate: plant.stateGasInletEvaporator.T(nominal = 300.0)
+// => select value from plant.stateGasInletEvaporator.T(nominal = 300.0) for variable: plant.stateGasInletEvaporator.T
+// Warning: Alias set with different nominal values
+//  * candidate: plant.stateGasInlet.gas.state.T(nominal = 500.0)
+//  * candidate: plant.stateGasInlet.gas.T(nominal = 500.0)
+//  * candidate: plant.stateGasInlet.T(nominal = 300.0)
+// => select value from plant.stateGasInlet.T(nominal = 300.0) for variable: plant.stateGasInlet.T
 // Warning: Alias set with several free start values
 //  * candidate: plant.superheater.gasFlow.gas[1].T(start = 500.0)
 //  * candidate: plant.superheater.gasFlow.Tin(start = plant.superheater.gasFlow.Tstartin)
@@ -660,42 +696,6 @@ translateModel(ThermoPower.Examples.RankineCycle.Simulators.ClosedLoop); getErro
 //  * candidate: plant.prescribedSpeedPump.feedWaterPump.inletFluidState.d(nominal = 500.0)
 //  * candidate: plant.prescribedSpeedPump.feedWaterPump.rho(nominal = 1000.0)
 // => select value from plant.prescribedSpeedPump.feedWaterPump.rho(nominal = 1000.0) for variable: plant.prescribedSpeedPump.feedWaterPump.rho
-// Warning: Alias set with different nominal values
-//  * candidate: plant.stateWaterEconomizer_in.fluidState.T(nominal = 500.0)
-//  * candidate: plant.stateWaterEconomizer_in.T(nominal = 300.0)
-// => select value from plant.stateWaterEconomizer_in.T(nominal = 300.0) for variable: plant.stateWaterEconomizer_in.T
-// Warning: Alias set with different nominal values
-//  * candidate: plant.stateWaterEvaporator_in.fluidState.T(nominal = 500.0)
-//  * candidate: plant.stateWaterEvaporator_in.T(nominal = 300.0)
-// => select value from plant.stateWaterEvaporator_in.T(nominal = 300.0) for variable: plant.stateWaterEvaporator_in.T
-// Warning: Alias set with different nominal values
-//  * candidate: plant.stateWaterSuperheater_out.fluidState.T(nominal = 500.0)
-//  * candidate: plant.stateWaterSuperheater_out.T(nominal = 300.0)
-// => select value from plant.stateWaterSuperheater_out.T(nominal = 300.0) for variable: plant.stateWaterSuperheater_out.T
-// Warning: Alias set with different nominal values
-//  * candidate: plant.stateWaterSuperheater_in.fluidState.T(nominal = 500.0)
-//  * candidate: plant.stateWaterSuperheater_in.T(nominal = 300.0)
-// => select value from plant.stateWaterSuperheater_in.T(nominal = 300.0) for variable: plant.stateWaterSuperheater_in.T
-// Warning: Alias set with different nominal values
-//  * candidate: plant.stateGasOutlet.gas.state.T(nominal = 500.0)
-//  * candidate: plant.stateGasOutlet.gas.T(nominal = 500.0)
-//  * candidate: plant.stateGasOutlet.T(nominal = 300.0)
-// => select value from plant.stateGasOutlet.T(nominal = 300.0) for variable: plant.stateGasOutlet.T
-// Warning: Alias set with different nominal values
-//  * candidate: plant.stateGasInletEconomizer.gas.state.T(nominal = 500.0)
-//  * candidate: plant.stateGasInletEconomizer.gas.T(nominal = 500.0)
-//  * candidate: plant.stateGasInletEconomizer.T(nominal = 300.0)
-// => select value from plant.stateGasInletEconomizer.T(nominal = 300.0) for variable: plant.stateGasInletEconomizer.T
-// Warning: Alias set with different nominal values
-//  * candidate: plant.stateGasInletEvaporator.gas.state.T(nominal = 500.0)
-//  * candidate: plant.stateGasInletEvaporator.gas.T(nominal = 500.0)
-//  * candidate: plant.stateGasInletEvaporator.T(nominal = 300.0)
-// => select value from plant.stateGasInletEvaporator.T(nominal = 300.0) for variable: plant.stateGasInletEvaporator.T
-// Warning: Alias set with different nominal values
-//  * candidate: plant.stateGasInlet.gas.state.T(nominal = 500.0)
-//  * candidate: plant.stateGasInlet.gas.T(nominal = 500.0)
-//  * candidate: plant.stateGasInlet.T(nominal = 300.0)
-// => select value from plant.stateGasInlet.T(nominal = 300.0) for variable: plant.stateGasInlet.T
 // Notification: The given system is mixed-determined.   [index = 1]
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // Warning: The initial conditions are over specified. Use +d=initialization for more information.

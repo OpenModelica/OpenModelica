@@ -54,10 +54,10 @@ end RecordModifications2;
 // class RecordModifications2
 //   parameter Real dcpm2.frictionParameters.PRef = frictionParameters.PRef;
 //   parameter Real dcpm2.frictionParameters.wRef = frictionParameters.wRef;
-//   parameter Real dcpm2.wNominal = wNominal;
 //   Real dcpm2.friction.tau;
 //   parameter Real dcpm2.friction.frictionParameters.PRef = dcpm2.frictionParameters.PRef;
 //   parameter Real dcpm2.friction.frictionParameters.wRef = dcpm2.frictionParameters.wRef;
+//   parameter Real dcpm2.wNominal = wNominal;
 //   parameter Real wNominal = 2850.0;
 //   parameter Real frictionParameters.PRef = 100.0;
 //   parameter Real frictionParameters.wRef;

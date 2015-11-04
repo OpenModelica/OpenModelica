@@ -988,10 +988,10 @@ end BS15;
 // end BS15;
 // Result:
 // class BS15
-//   parameter Boolean booleanConstant1.k[1] = true "Constant output values";
 //   parameter Integer booleanConstant1.nout(min = 1) = 1 "Number of Boolean outputs";
 //   parameter Integer booleanConstant1.outPort.n = booleanConstant1.nout "Dimension of signal vector";
 //   Boolean booleanConstant1.outPort.signal[1] "Boolean output signals";
+//   parameter Boolean booleanConstant1.k[1] = true "Constant output values";
 //   parameter Integer booleanChange1.n = 1 "Number of inputs (= number of outputs)";
 //   parameter Integer booleanChange1.inPort.n = booleanChange1.n "Dimension of signal vector";
 //   Boolean booleanChange1.inPort.signal[1] "Boolean input signals";

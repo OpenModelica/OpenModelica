@@ -31,7 +31,7 @@ getErrorString();
 // 126: 0.0 = -0.0;
 // 127: 0.0 = 0.0;
 //  for variables 
-//  revolute3.a(56), bodyshape1.body.w_a[1](74), revolute2.w(57), bodyshape1.frame_b.t[2](84), bodyshape3.frameTranslation.frame_a.t[2](22), bodyshape1.frame_a.R.T[2,2](98), bodyshape3.body.frame_a.r_0[1](17), bodyshape1.frame_a.R.T[2,1](99), revolute1.R_rel.T[2,2](111), revolute1.a(112), bodyshape1.frameTranslation.frame_a.t[2](81), revolute1.frame_a.R.T[2,2](126), revolute1.frame_a.R.T[2,1](127)
+//  revolute3.phi(56), bodyshape1.frame_b.t[1](85), revolute2.R_rel.T[3,3](57), bodyshape1.frame_b.f[3](86), bodyshape3.a_0[2](22), bodyshape1.frame_a.R.T[2,2](98), bodyshape3.body.frame_a.r_0[1](17), bodyshape1.frame_a.R.T[2,1](99), revolute1.w(111), revolute1.phi(112), bodyshape1.frameTranslation.frame_a.t[2](81), revolute1.frame_a.R.T[2,2](126), revolute1.frame_a.R.T[2,1](127)
 // Error: Internal error Transformation Module PFPlusExt index Reduction Method Pantelides failed!
 // "
 // endResult

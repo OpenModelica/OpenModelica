@@ -22,7 +22,7 @@ end C;
 
 // Result:
 // class C
-//   parameter Real h.R_0 = 0.7;
 //   parameter Real h.R0 = h.R_0;
+//   parameter Real h.R_0 = 0.7;
 // end C;
 // endResult

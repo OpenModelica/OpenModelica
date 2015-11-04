@@ -86,13 +86,13 @@ end RangeSlicing;
 //   Real es2[2];
 // equation
 //   ra = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0};
-//   ba = {1.0, 2.0};
 //   rs1 = {ra[1], ra[2], ra[3], ra[4], ra[5], ra[6], ra[7], ra[8], ra[9], ra[10]};
 //   rs2 = {ra[1], ra[3], ra[5], ra[7], ra[9]};
 //   rs3 = {ra[3], ra[2], ra[1]};
 //   rs5 = {ra[2]};
 //   rs6 = {ra[4], ra[5], ra[6], ra[7], ra[8], ra[9], ra[10]};
 //   rs7 = {ra[10], ra[6], ra[2]};
+//   ba = {1.0, 2.0};
 //   bs2 = {ba[false], ba[true]};
 //   bs3 = {ba[true]};
 //   bs4 = {ba[false]};
