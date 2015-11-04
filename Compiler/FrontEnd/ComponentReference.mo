@@ -1652,8 +1652,81 @@ algorithm
   DAE.CREF_QUAL(componentRef = outCref) := inCref;
 end crefRest;
 
+public function crefTypeFull2
+  "Helper function to crefTypeFull."
+  input DAE.ComponentRef inCref;
+  output DAE.Type outType;
+  output list<DAE.Dimension> outDims;
+algorithm
+  (outType, outDims) := match(inCref)
+    local
+      DAE.ComponentRef cr;
+      DAE.Type ty, basety;
+      list<DAE.Dimension> dims, restdims;
+      list<DAE.Subscript> subs;
+
+    case DAE.CREF_IDENT(identType = ty, subscriptLst = subs)
+      equation
+        (ty,dims) = Types.flattenArrayType(ty);
+        dims = List.stripN(dims,listLength(subs));
+      then (ty,dims);
+
+    case DAE.CREF_QUAL(identType = ty, subscriptLst = subs, componentRef = cr)
+      equation
+        (ty,dims) = Types.flattenArrayType(ty);
+        dims = List.stripN(dims,listLength(subs));
+
+        (basety, restdims) = crefTypeFull2(cr);
+        dims = listAppend(dims, restdims);
+      then (basety, dims);
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("ComponentReference.crefTypeFull2 failed on cref: ");
+        Debug.traceln(printComponentRefStr(inCref));
+      then
+        fail();
+  end match;
+end crefTypeFull2;
+
+public function crefTypeFull
+  "mahge:
+   This function gives the type of a cref.
+   This is done by considering how many dimensions and subscripts
+   the cref has. It also takes in to consideration where the subscripts
+   are loacated in a qualifed cref. e.g. consider :
+    record R
+      Real [4]
+    end R;
+
+    R a[3][2];
+
+    if we have a cref a[1][1].b[1] --> Real
+                      a[1].b --> Real[2][4]
+                      a.b[1] --> Real[3][2]
+                      a[1][1].b --> Real[4]
+                      a[1].b[1] --> Real[2]
+
+   "
+  input DAE.ComponentRef inCref;
+  output DAE.Type outType;
+protected
+  DAE.Type ty;
+  list<DAE.Dimension> dims;
+algorithm
+  (ty,dims) := crefTypeFull2(inCref);
+  if listEmpty(dims) then
+    outType := ty;
+  else
+    outType := DAE.T_ARRAY(ty, dims, Types.getTypeSource(ty));
+  end if;
+end crefTypeFull;
+
 public function crefType
-  "Function for extracting the type of the first identifier of a cref."
+  " ***deprecated. Use crefTypeFull unless you really specifically want the type of the first cref.
+  Function for extracting the type of the first identifier of a cref.
+  "
   input DAE.ComponentRef inCref;
   output DAE.Type outType;
 algorithm
@@ -1675,7 +1748,12 @@ algorithm
   end match;
 end crefType;
 
-public function crefLastType "returns the 'last' type of a cref.
+public function crefLastType
+" ***deprecated.
+  mahge: Use crefTypeFull unless you really specifically want the type of the last cref.
+  Remember the type of a cref is not the same as the type of the last cref!!.
+
+returns the 'last' type of a cref.
 For instance, for the cref 'a.b' it returns the type in identifier 'b'
 adrpo:
   NOTE THAT THIS WILL BE AN ARRAY TYPE IF THE LAST CREF IS AN ARRAY TYPE
@@ -1787,7 +1865,12 @@ algorithm
   end match;
 end crefFirstCref;
 
-public function crefTypeConsiderSubs "Function: crefTypeConsiderSubs
+public function crefTypeConsiderSubs
+" ***deprecated.
+  mahge: use crefTypeFull(). This is not what you want. We need to consider not just the last subs but all subs.
+  We can have slices.
+
+Function: crefTypeConsiderSubs
 Author: PA
 Function for extracting the type out of a componentReference and consider the influence of the last subscript list.
 For exampel. If the last cref type is Real[3,3] and the last subscript list is {Expression.INDEX(1)}, the type becomes Real[3], i.e
