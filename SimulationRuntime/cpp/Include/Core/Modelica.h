@@ -214,7 +214,6 @@ typedef ublas::matrix<double, ublas::column_major> matrix_t;
 #include <Core/Solver/IAlgLoopSolver.h>
 #include <Core/System/IAlgLoopSolverFactory.h>
 #include <Core/System/ISimVars.h>
-#include <Core/System/PreVariables.h>
 #include <Core/DataExchange/ISimVar.h>
 #include <Core/SimController/ISimData.h>
 #include <Core/SimController/ISimObjects.h>

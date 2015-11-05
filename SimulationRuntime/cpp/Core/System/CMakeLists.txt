@@ -44,7 +44,6 @@ install (FILES
         ${CMAKE_SOURCE_DIR}/Include/Core/System/SystemDefaultImplementation.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/AlgLoopDefaultImplementation.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/EventHandling.h
-        ${CMAKE_SOURCE_DIR}/Include/Core/System/PreVariables.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/DiscreteEvents.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/ContinuousEvents.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/SimVars.h
