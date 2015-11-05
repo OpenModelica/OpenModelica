@@ -94,7 +94,7 @@ protected
   HashSet.HashSet clkHS "contains all clocked variables";
   list<BackendDAE.Equation> removedEqns;
   list<BackendDAE.Var> dumpVars, dumpVars2;
-  list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean>> initOptModules;
+  list<tuple<BackendDAEFunc.optimizationModule, String, Boolean>> initOptModules;
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
 algorithm

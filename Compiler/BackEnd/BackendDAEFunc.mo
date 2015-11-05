@@ -44,17 +44,11 @@ public import BackendDAE;
 /*************************************/
 
 public
-partial function preOptimizationDAEModule "
-  This is the interface for pre-optimization modules."
+partial function optimizationModule
+ "This is the interface for pre/post-optimization modules."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
-end preOptimizationDAEModule;
-
-partial function postOptimizationDAEModule "
-  This is the interface for post-optimization modules."
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-end postOptimizationDAEModule;
+end optimizationModule;
 
 partial function stateDeselectionFunc
   input BackendDAE.BackendDAE inDAE;

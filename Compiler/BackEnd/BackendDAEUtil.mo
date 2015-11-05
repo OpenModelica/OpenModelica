@@ -6493,8 +6493,8 @@ public function getSolvedSystem "Run the equation system pipeline."
   output list<BackendDAE.Var> outAllPrimaryParameters "already sorted";
 protected
   BackendDAE.BackendDAE dae, simDAE;
-  list<tuple<BackendDAEFunc.preOptimizationDAEModule, String, Boolean>> preOptModules;
-  list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean>> postOptModules;
+  list<tuple<BackendDAEFunc.optimizationModule, String, Boolean>> preOptModules;
+  list<tuple<BackendDAEFunc.optimizationModule, String, Boolean>> postOptModules;
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
 algorithm
@@ -6576,7 +6576,7 @@ public function preOptimizeBackendDAE "
   input Option<list<String>> strPreOptModules;
   output BackendDAE.BackendDAE outDAE;
 protected
-  list<tuple<BackendDAEFunc.preOptimizationDAEModule,String,Boolean>> preOptModules;
+  list<tuple<BackendDAEFunc.optimizationModule,String,Boolean>> preOptModules;
 algorithm
   preOptModules := getPreOptModules(strPreOptModules);
   outDAE := preOptimizeDAE(inDAE, preOptModules);
@@ -6585,10 +6585,10 @@ end preOptimizeBackendDAE;
 protected function preOptimizeDAE "
   This function runs the pre-optimization modules."
   input BackendDAE.BackendDAE inDAE;
-  input list<tuple<BackendDAEFunc.preOptimizationDAEModule, String, Boolean>> inPreOptModules;
+  input list<tuple<BackendDAEFunc.optimizationModule, String, Boolean>> inPreOptModules;
   output BackendDAE.BackendDAE outDAE = inDAE;
 protected
-  BackendDAEFunc.preOptimizationDAEModule optModule;
+  BackendDAEFunc.optimizationModule optModule;
   String moduleStr;
   Boolean stopOnFailure;
   BackendDAE.EqSystems systs;
@@ -6861,12 +6861,12 @@ end dumpStrongComponents;
 public function postOptimizeDAE
   "Run the post-optimization modules."
   input BackendDAE.BackendDAE inDAE;
-  input list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean>> inPostOptModules;
+  input list<tuple<BackendDAEFunc.optimizationModule, String, Boolean>> inPostOptModules;
   input tuple<BackendDAEFunc.matchingAlgorithmFunc, String> inMatchingAlgorithm;
   input tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> inDAEHandler;
   output BackendDAE.BackendDAE outDAE = inDAE;
 protected
-  BackendDAEFunc.postOptimizationDAEModule optModule;
+  BackendDAEFunc.optimizationModule optModule;
   String moduleStr;
   Boolean stopOnFailure;
   BackendDAE.EqSystems systs;
@@ -6988,8 +6988,8 @@ public function getSolvedSystemforJacobians "Run the equation system pipeline."
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendDAE.BackendDAE dae;
-  list<tuple<BackendDAEFunc.preOptimizationDAEModule,String,Boolean>> preOptModules;
-  list<tuple<BackendDAEFunc.postOptimizationDAEModule,String,Boolean>> postOptModules;
+  list<tuple<BackendDAEFunc.optimizationModule,String,Boolean>> preOptModules;
+  list<tuple<BackendDAEFunc.optimizationModule,String,Boolean>> postOptModules;
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc,String,BackendDAEFunc.stateDeselectionFunc,String> daeHandler;
   tuple<BackendDAEFunc.matchingAlgorithmFunc,String> matchingAlgorithm;
 algorithm
@@ -7163,44 +7163,44 @@ end getPreOptModulesString;
 protected function getPreOptModules
 " function: getPreOptModules"
   input Option<list<String>> ostrPreOptModules;
-  output list<tuple<BackendDAEFunc.preOptimizationDAEModule,String,Boolean>> preOptModules;
+  output list<tuple<BackendDAEFunc.optimizationModule,String,Boolean>> preOptModules;
 protected
-  list<tuple<BackendDAEFunc.preOptimizationDAEModule,String,Boolean>> allPreOptModules;
+  list<tuple<BackendDAEFunc.optimizationModule,String,Boolean>> allPreOptModules;
   list<String> strPreOptModules;
 algorithm
-  allPreOptModules := {(BackendDAEOptimize.expandDerOperator, "expandDerOperator", false),
-                       (BackendDAEOptimize.introduceDerAlias, "introduceDerAlias", false),
-                       (BackendDAEOptimize.removeEqualFunctionCalls, "removeEqualFunctionCalls", false),
-                       (BackendDAEOptimize.removeProtectedParameters, "removeProtectedParameters", false),
-                       (BackendDAEOptimize.removeUnusedParameter, "removeUnusedParameter", false),
-                       (BackendDAEOptimize.removeUnusedVariables, "removeUnusedVariables", false),
-                       (BackendDAEOptimize.replaceEdgeChange, "replaceEdgeChange", false),
-                       (BackendDAEOptimize.residualForm, "residualForm", false),
-                       (BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions", false),
-                       (BackendDAEOptimize.simplifyIfEquations, "simplifyIfEquations", false),
-                       (BackendDAEOptimize.sortEqnsVars, "sortEqnsVars", false),
-                       (BackendDump.dumpDAE, "dumpDAE", false),
-                       (CommonSubExpression.CSE_EachCall, "CSE_EachCall", false),
-                       (CommonSubExpression.commonSubExpressionReplacement, "comSubExp", false),
-                       (DynamicOptimization.inputDerivativesForDynOpt, "inputDerivativesForDynOpt", false),
-                       (EvaluateFunctions.evalFunctions, "evalFunc", false),
-                       (EvaluateParameter.evaluateAllParameters, "evaluateAllParameters", false),
-                       (EvaluateParameter.evaluateEvaluateParameters, "evaluateEvaluateParameters", false),
-                       (EvaluateParameter.evaluateFinalEvaluateParameters, "evaluateFinalEvaluateParameters", false),
-                       (EvaluateParameter.evaluateFinalParameters, "evaluateFinalParameters", false),
-                       (EvaluateParameter.evaluateReplaceEvaluateParameters, "evaluateReplaceEvaluateParameters", false),
-                       (EvaluateParameter.evaluateReplaceFinalEvaluateParameters, "evaluateReplaceFinalEvaluateParameters", false),
-                       (EvaluateParameter.evaluateReplaceFinalParameters, "evaluateReplaceFinalParameters", false),
-                       (EvaluateParameter.evaluateReplaceProtectedFinalEvaluateParameters, "evaluateReplaceProtectedFinalEvaluateParameters", false),
+  allPreOptModules := {(BackendDAEOptimize.expandDerOperator, "expandDerOperator", true),
+                       (BackendDAEOptimize.introduceDerAlias, "introduceDerAlias", true),
+                       (BackendDAEOptimize.removeEqualFunctionCalls, "removeEqualFunctionCalls", true),
+                       (BackendDAEOptimize.removeProtectedParameters, "removeProtectedParameters", true),
+                       (BackendDAEOptimize.removeUnusedParameter, "removeUnusedParameter", true),
+                       (BackendDAEOptimize.removeUnusedVariables, "removeUnusedVariables", true),
+                       (BackendDAEOptimize.replaceEdgeChange, "replaceEdgeChange", true),
+                       (BackendDAEOptimize.residualForm, "residualForm", true),
+                       (BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions", true),
+                       (BackendDAEOptimize.simplifyIfEquations, "simplifyIfEquations", true),
+                       (BackendDAEOptimize.sortEqnsVars, "sortEqnsVars", true),
+                       (BackendDump.dumpDAE, "dumpDAE", true),
+                       (CommonSubExpression.CSE_EachCall, "CSE_EachCall", true),
+                       (CommonSubExpression.commonSubExpressionReplacement, "comSubExp", true),
+                       (DynamicOptimization.inputDerivativesForDynOpt, "inputDerivativesForDynOpt", true),
+                       (EvaluateFunctions.evalFunctions, "evalFunc", true),
+                       (EvaluateParameter.evaluateAllParameters, "evaluateAllParameters", true),
+                       (EvaluateParameter.evaluateEvaluateParameters, "evaluateEvaluateParameters", true),
+                       (EvaluateParameter.evaluateFinalEvaluateParameters, "evaluateFinalEvaluateParameters", true),
+                       (EvaluateParameter.evaluateFinalParameters, "evaluateFinalParameters", true),
+                       (EvaluateParameter.evaluateReplaceEvaluateParameters, "evaluateReplaceEvaluateParameters", true),
+                       (EvaluateParameter.evaluateReplaceFinalEvaluateParameters, "evaluateReplaceFinalEvaluateParameters", true),
+                       (EvaluateParameter.evaluateReplaceFinalParameters, "evaluateReplaceFinalParameters", true),
+                       (EvaluateParameter.evaluateReplaceProtectedFinalEvaluateParameters, "evaluateReplaceProtectedFinalEvaluateParameters", true),
                        (FindZeroCrossings.encapsulateWhenConditions, "encapsulateWhenConditions", true),
-                       (IndexReduction.findStateOrder, "findStateOrder", false),
-                       (InlineArrayEquations.inlineArrayEqn, "inlineArrayEqn", false),
-                       (RemoveSimpleEquations.removeSimpleEquations, "removeSimpleEquations", false),
-                       (ResolveLoops.resolveLoops, "resolveLoops", false),
+                       (IndexReduction.findStateOrder, "findStateOrder", true),
+                       (InlineArrayEquations.inlineArrayEqn, "inlineArrayEqn", true),
+                       (RemoveSimpleEquations.removeSimpleEquations, "removeSimpleEquations", true),
+                       (ResolveLoops.resolveLoops, "resolveLoops", true),
                        (StateMachineFeatures.stateMachineElab, "stateMachineElab", true),
                        (SynchronousFeatures.clockPartitioning, "clockPartitioning", true),
                        (UnitCheck.unitChecking, "unitChecking", true),
-                       (XMLDump.dumpDAEXML, "dumpDAEXML", false)
+                       (XMLDump.dumpDAEXML, "dumpDAEXML", true)
                        };
   strPreOptModules := getPreOptModulesString();
   strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);
@@ -7216,55 +7216,55 @@ end getPostOptModulesString;
 
 public function getPostOptModules
   input Option<list<String>> ostrpostOptModules;
-  output list<tuple<BackendDAEFunc.postOptimizationDAEModule,String,Boolean>> postOptModules;
+  output list<tuple<BackendDAEFunc.optimizationModule,String,Boolean>> postOptModules;
 protected
-  list<tuple<BackendDAEFunc.postOptimizationDAEModule,String,Boolean/*stopOnFailure*/>> allpostOptModules;
+  list<tuple<BackendDAEFunc.optimizationModule,String,Boolean/*stopOnFailure*/>> allpostOptModules;
   list<String> strpostOptModules;
 algorithm
-  allpostOptModules := {(BackendDAEOptimize.addTimeAsState, "addTimeAsState", false),
-                        (BackendDAEOptimize.addedScaledVars, "addScaledVars", false),
-                        (BackendDAEOptimize.countOperations, "countOperations", false),
-                        (BackendDAEOptimize.removeConstants, "removeConstants", false),
-                        (BackendDAEOptimize.removeEqualFunctionCalls, "removeEqualFunctionCalls", false),
-                        (BackendDAEOptimize.removeUnusedParameter, "removeUnusedParameter", false),
-                        (BackendDAEOptimize.removeUnusedVariables, "removeUnusedVariables", false),
-                        (BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions", false),
-                        (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction", false),
-                        (BackendDAEOptimize.simplifyLoops, "simplifyLoops", false),
-                        (BackendDAEOptimize.simplifyTimeIndepFuncCalls, "simplifyTimeIndepFuncCalls", false),
-                        (BackendDAEOptimize.simplifysemiLinear, "simplifysemiLinear", false),
-                        (BackendDAEOptimize.symEuler, "symEuler", false),
-                        (BackendDump.dumpComponentsGraphStr, "dumpComponentsGraphStr", false),
-                        (BackendDump.dumpDAE, "dumpDAE", false),
-                        (BackendInline.lateInlineFunction, "lateInlineFunction", false),
-                        (CommonSubExpression.CSE, "CSE", false),
-                        (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization", false),
-                        (DynamicOptimization.removeLoops, "extendDynamicOptimization", false),
-                        (DynamicOptimization.simplifyConstraints, "simplifyConstraints", false),
-                        (EvaluateParameter.evaluateEvaluateParameters, "evaluateEvaluateParameters", false),
-                        (EvaluateParameter.evaluateFinalEvaluateParameters, "evaluateFinalEvaluateParameters", false),
-                        (EvaluateParameter.evaluateFinalParameters, "evaluateFinalParameters", false),
-                        (EvaluateParameter.evaluateReplaceEvaluateParameters, "evaluateReplaceEvaluateParameters", false),
-                        (EvaluateParameter.evaluateReplaceFinalEvaluateParameters, "evaluateReplaceFinalEvaluateParameters", false),
-                        (EvaluateParameter.evaluateReplaceFinalParameters, "evaluateReplaceFinalParameters", false),
-                        (EvaluateParameter.evaluateReplaceProtectedFinalEvaluateParameters, "evaluateReplaceProtectedFinalEvaluateParameters", false),
-                        (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations", false),
-                        (HpcOmEqSystems.partitionLinearTornSystem, "partlintornsystem", false),
-                        (InlineArrayEquations.inlineArrayEqn, "inlineArrayEqn", false),
-                        (OnRelaxation.relaxSystem, "relaxSystem", false),
-                        (RemoveSimpleEquations.removeSimpleEquations, "removeSimpleEquations", false),
-                        (ResolveLoops.reshuffling_post, "reshufflePost", false),
-                        (ResolveLoops.solveLinearSystem, "solveLinearSystem", false),
-                        (SymbolicJacobian.calculateStateSetsJacobians, "calculateStateSetsJacobians", false),
-                        (SymbolicJacobian.calculateStrongComponentJacobians, "calculateStrongComponentJacobians", false),
-                        (SymbolicJacobian.constantLinearSystem, "constantLinearSystem", false),
-                        (SymbolicJacobian.detectSparsePatternODE, "detectJacobianSparsePattern", false),
-                        (SymbolicJacobian.generateSymbolicJacobianPast, "generateSymbolicJacobian", false),
-                        (SymbolicJacobian.generateSymbolicLinearizationPast, "generateSymbolicLinearization", false),
-                        (SymbolicJacobian.inputDerivativesUsed, "inputDerivativesUsed", false),
-                        (Tearing.recursiveTearing, "recursiveTearing", false),
-                        (Tearing.tearingSystem, "tearingSystem", false),
-                        (XMLDump.dumpDAEXML, "dumpDAEXML", false)
+  allpostOptModules := {(BackendDAEOptimize.addTimeAsState, "addTimeAsState", true),
+                        (BackendDAEOptimize.addedScaledVars, "addScaledVars", true),
+                        (BackendDAEOptimize.countOperations, "countOperations", true),
+                        (BackendDAEOptimize.removeConstants, "removeConstants", true),
+                        (BackendDAEOptimize.removeEqualFunctionCalls, "removeEqualFunctionCalls", true),
+                        (BackendDAEOptimize.removeUnusedParameter, "removeUnusedParameter", true),
+                        (BackendDAEOptimize.removeUnusedVariables, "removeUnusedVariables", true),
+                        (BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions", true),
+                        (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction", true),
+                        (BackendDAEOptimize.simplifyLoops, "simplifyLoops", true),
+                        (BackendDAEOptimize.simplifyTimeIndepFuncCalls, "simplifyTimeIndepFuncCalls", true),
+                        (BackendDAEOptimize.simplifysemiLinear, "simplifysemiLinear", true),
+                        (BackendDAEOptimize.symEuler, "symEuler", true),
+                        (BackendDump.dumpComponentsGraphStr, "dumpComponentsGraphStr", true),
+                        (BackendDump.dumpDAE, "dumpDAE", true),
+                        (BackendInline.lateInlineFunction, "lateInlineFunction", true),
+                        (CommonSubExpression.CSE, "CSE", true),
+                        (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization", true),
+                        (DynamicOptimization.removeLoops, "extendDynamicOptimization", true),
+                        (DynamicOptimization.simplifyConstraints, "simplifyConstraints", true),
+                        (EvaluateParameter.evaluateEvaluateParameters, "evaluateEvaluateParameters", true),
+                        (EvaluateParameter.evaluateFinalEvaluateParameters, "evaluateFinalEvaluateParameters", true),
+                        (EvaluateParameter.evaluateFinalParameters, "evaluateFinalParameters", true),
+                        (EvaluateParameter.evaluateReplaceEvaluateParameters, "evaluateReplaceEvaluateParameters", true),
+                        (EvaluateParameter.evaluateReplaceFinalEvaluateParameters, "evaluateReplaceFinalEvaluateParameters", true),
+                        (EvaluateParameter.evaluateReplaceFinalParameters, "evaluateReplaceFinalParameters", true),
+                        (EvaluateParameter.evaluateReplaceProtectedFinalEvaluateParameters, "evaluateReplaceProtectedFinalEvaluateParameters", true),
+                        (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations", true),
+                        (HpcOmEqSystems.partitionLinearTornSystem, "partlintornsystem", true),
+                        (InlineArrayEquations.inlineArrayEqn, "inlineArrayEqn", true),
+                        (OnRelaxation.relaxSystem, "relaxSystem", true),
+                        (RemoveSimpleEquations.removeSimpleEquations, "removeSimpleEquations", true),
+                        (ResolveLoops.reshuffling_post, "reshufflePost", true),
+                        (ResolveLoops.solveLinearSystem, "solveLinearSystem", true),
+                        (SymbolicJacobian.calculateStateSetsJacobians, "calculateStateSetsJacobians", true),
+                        (SymbolicJacobian.calculateStrongComponentJacobians, "calculateStrongComponentJacobians", true),
+                        (SymbolicJacobian.constantLinearSystem, "constantLinearSystem", true),
+                        (SymbolicJacobian.detectSparsePatternODE, "detectJacobianSparsePattern", true),
+                        (SymbolicJacobian.generateSymbolicJacobianPast, "generateSymbolicJacobian", true),
+                        (SymbolicJacobian.generateSymbolicLinearizationPast, "generateSymbolicLinearization", true),
+                        (SymbolicJacobian.inputDerivativesUsed, "inputDerivativesUsed", true),
+                        (Tearing.recursiveTearing, "recursiveTearing", true),
+                        (Tearing.tearingSystem, "tearingSystem", true),
+                        (XMLDump.dumpDAEXML, "dumpDAEXML", true)
                         };
 
   strpostOptModules := getPostOptModulesString();
@@ -7275,23 +7275,23 @@ end getPostOptModules;
 
 public function getInitOptModules
   input Option<list<String>> inInitOptModules;
-  output list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean>> outInitOptModules;
+  output list<tuple<BackendDAEFunc.optimizationModule, String, Boolean>> outInitOptModules;
 protected
-  list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean/*stopOnFailure*/>> allInitOptModules;
+  list<tuple<BackendDAEFunc.optimizationModule, String, Boolean/*stopOnFailure*/>> allInitOptModules;
   list<String> initOptModules;
 algorithm
-  allInitOptModules := {(BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions", false),
-                        (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction", false),
-                        (BackendDAEOptimize.simplifyLoops, "simplifyLoops", false),
-                        (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization", false),
-                        (DynamicOptimization.removeLoops, "extendDynamicOptimization", false),
-                        (DynamicOptimization.simplifyConstraints, "simplifyConstraints", false),
-                        (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations", false),
-                        (SymbolicJacobian.calculateStrongComponentJacobians, "calculateStrongComponentJacobians", false),
-                        (SymbolicJacobian.constantLinearSystem, "constantLinearSystem", false),
-                        (SymbolicJacobian.inputDerivativesUsed, "inputDerivativesUsed", false),
-                        (Tearing.recursiveTearing, "recursiveTearing", false),
-                        (Tearing.tearingSystem, "tearingSystem", false)
+  allInitOptModules := {(BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions", true),
+                        (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction", true),
+                        (BackendDAEOptimize.simplifyLoops, "simplifyLoops", true),
+                        (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization", true),
+                        (DynamicOptimization.removeLoops, "extendDynamicOptimization", true),
+                        (DynamicOptimization.simplifyConstraints, "simplifyConstraints", true),
+                        (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations", true),
+                        (SymbolicJacobian.calculateStrongComponentJacobians, "calculateStrongComponentJacobians", true),
+                        (SymbolicJacobian.constantLinearSystem, "constantLinearSystem", true),
+                        (SymbolicJacobian.inputDerivativesUsed, "inputDerivativesUsed", true),
+                        (Tearing.recursiveTearing, "recursiveTearing", true),
+                        (Tearing.tearingSystem, "tearingSystem", true)
                         };
 
   initOptModules := Config.getInitOptModules();
