@@ -2638,7 +2638,7 @@ algorithm
       GlobalScript.SymbolTable st;
       list<String> libs;
       Values.Value outValMsg;
-      String file_dir, FMUVersion, FMUType, fileNamePrefix, str, fmutmp, quote;
+      String file_dir, FMUVersion, FMUType, fileNamePrefix, str, fmutmp, quote, cmd;
       Boolean isWindows = System.os() == "Windows_NT";
     case (cache,env,_,st,FMUVersion,FMUType,fileNamePrefix,_,_) /* mo file directory */
       equation
@@ -2657,15 +2657,29 @@ algorithm
           unzip(...);
           */
           // CevalScript.compileModel(fileNamePrefix , libs, workingDir=fmutmp+"/sources", makeVars={"CC=arm-linux-gnueabi-gcc","FMIPLATFORM=arm-linux-gnueabi","DLLEXT=.so"});
+          cmd = "cd \"" +  fmutmp+"/sources\" && ./configure "+
+            " --host="+System.getTriple()+
+            " --build="+System.getTriple()+
+            " --with-dynamic-om-runtime"+
+            " CC="+quote+System.getCCompiler()+quote+
+            " CFLAGS="+quote+System.stringReplace(System.getCFlags(),"${MODELICAUSERCFLAGS}","")+quote+
+            " LDFLAGS="+quote+("-L'"+Settings.getInstallationDirectoryPath()+"/lib/"+System.getTriple()+"/omc' "+
+                               "-Wl,-rpath,'"+Settings.getInstallationDirectoryPath()+"/lib/"+System.getTriple()+"/omc' "+
+                               System.getLDFlags()+" "+(if staticSourceCodeFMU then "" else System.getRTLibsSim()))+quote+
+            (if staticSourceCodeFMU then " --with-dynamic-om-runtime" else "");
+          // print(cmd + "\n");
+          0=System.systemCall(cmd, outFile=fileNamePrefix+".log");
           CevalScript.compileModel(fileNamePrefix , libs, workingDir=fmutmp+"/sources", makeVars={
+              /*
               "CC="+System.getCCompiler(),
               "CFLAGS="+quote+System.getCFlags()+quote,
               "CPPFLAGS=",
-              "LDFLAGS="+quote+System.getLDFlags()+" "+(if staticSourceCodeFMU then "" else System.getRTLibsSim()) + quote,
+              "LDFLAGS="+quote+ + quote,
               "FMIPLATFORM="+System.modelicaPlatform(),
               "DLLEXT="+System.getDllExt(),
               "LD="+quote+System.getLinker()+quote,
               if staticSourceCodeFMU then "OPENMODELICA_DYNAMIC=" else "OPENMODELICA_DYNAMIC=1"
+              */
           });
           // CevalScript.compileModel(fileNamePrefix , libs, workingDir=fmutmp+"/sources", makeVars={});
           System.removeDirectory(fmutmp);

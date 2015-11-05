@@ -864,7 +864,6 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
     #if defined(__cplusplus)
     extern "C" {
     #endif
-    int measure_time_flag = <% if profileHtml() then "5" else if profileSome() then "1" else if profileAll() then "2" else "0" %>;
 
     <%functionInput(modelInfo, modelNamePrefixStr)%>
 
@@ -997,6 +996,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
     {
       int res;
       DATA simulation_data;
+      measure_time_flag = <% if profileHtml() then "5" else if profileSome() then "1" else if profileAll() then "2" else "0" /* Would be good if this was not a global variable...*/ %>;
       <%mainInit%>
       <%mainTop(mainBody,"https://trac.openmodelica.org/OpenModelica/newticket")%>
 

@@ -60,8 +60,6 @@ extern int initializeResultData(DATA* simData, threadData_t *threadData, int cpu
 
 #endif /* cplusplus */
 
-extern int measure_time_flag;
-
 extern int modelTermination;     /* Becomes non-zero when simulation terminates. */
 extern int terminationTerminate; /* Becomes non-zero when user terminates simulation. */
 extern int terminationAssert;    /* Becomes non-zero when model call assert simulation. */

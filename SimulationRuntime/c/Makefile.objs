@@ -123,9 +123,12 @@ ALL_OBJS = $(METAOBJSPATH) $(UTILOBJSPATH) $(MATHOBJSPATH) $(SOLVEROBJSPATH) $(I
 
 # External solvers needed by FMI for ME
 CMINPACK_OBJS = enorm_ hybrj_ dpmpar_ qrfac_ qform_ dogleg_ r1updt_ r1mpyq_
+ifneq ($(NEED_DGESV),)
 LAPACK_OBJS = dgesv dgetrf dlamch dtrtrs ilaenv ilazlr xerbla zlarfb zlarft zungbr zunglq dgetf2 dgetrs dlaswp ieeeck ilazlc iparmq zlacgv zlarf zung2r zungl2 zungqr
 BLAS_OBJS = dgemm dger dscal dswap dtrsm idamax lsame zcopy zgemm zgemv zgerc zscal ztrmm ztrmv
 LIBF2C_OBJS = d_cnjg i_len i_nint pow_di s_cmp s_copy
+endif
+
 # Only objects needed for FMI for Modelica Exchange
 FMI_ME_OBJS = $(UTILOBJSPATH) $(MATHOBJSPATH) $(SIMOBJSPATHC) $(SOLVEROBJSPATH) $(INITIALIZATIONOBJSPATH) \
   ./meta/meta_modelica_catch$(OBJ_EXT) \

@@ -4,6 +4,8 @@
 # If you need to add files, etc, you modify Makefile.common - a common file
 # for both UNIX/Linux and Windows platforms.
 
+# Forces the generation of the dgesv sources
+NEED_DGESV=1
 include Makefile.objs
 
 OMC_MINIMAL_RUNTIME=
@@ -248,8 +250,11 @@ clean:
 	(! test -f $(EXTERNALCBUILDDIR)/Makefile) || make -C $(EXTERNALCBUILDDIR) clean
 	(! test -f $(EXTERNALCBUILDDIR)/Makefile) || make -C $(EXTERNALCBUILDDIR) distclean
 
-sourcedist:
+sourcedist: sourcedist1 sourcedist2
+sourcedist1:
 	$(MAKE) -f $(LIBMAKEFILE) OMC_MINIMAL_RUNTIME=1 OMC_FMI_RUNTIME=1 sourcedist_internal
+sourcedist2:
+	$(MAKE) -C ../fmi/export/buildproject
 
 sourcedist_internal:
 	mkdir -p $(builddir_inc)/c/external_solvers external_solvers
