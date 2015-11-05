@@ -206,7 +206,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   let modelShortName = lastIdentOfPath(modelInfo.name)
   let modelLongName = System.stringReplace(modelName, ".", "_")
   let algloopfiles = (listAppend(allEquations,initialEquations) |> eqs => algloopMainfile2(eqs, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, modelShortName) ;separator="\n")
-  let solverFactory = match algloopfiles case "" then 'NULL' else
+  let solverFactory = match algloopfiles case "" then '' else
     'createStaticAlgLoopSolverFactory(globalSettings, PATH(""), PATH(""))'
   <<
   // define model identifier and unique id
@@ -236,17 +236,17 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
       _algLoopSolverFactory = shared_ptr<IAlgLoopSolverFactory>(<%solverFactory%>);
     }
     weak_ptr<ISimData> LoadSimData(string modelKey) {
-      return shared_ptr<ISimData>(NULL);
+      return shared_ptr<ISimData>();
     }
     weak_ptr<ISimVars> LoadSimVars(string modelKey, size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_string, size_t dim_pre_vars, size_t dim_z, size_t z_i) {
       _simVars = shared_ptr<ISimVars>(new SimVars(dim_real, dim_int, dim_bool, dim_string, dim_pre_vars, dim_z, z_i));
       return _simVars;
     }
     weak_ptr<IHistory> LoadWriter(size_t) {
-      return shared_ptr<IHistory>(NULL);
+      return shared_ptr<IHistory>();
     }
     shared_ptr<ISimData> getSimData(string modelKey) {
-      return shared_ptr<ISimData>(NULL);
+      return shared_ptr<ISimData>();
     }
     shared_ptr<ISimVars> getSimVars(string modelKey) {
       return _simVars;
