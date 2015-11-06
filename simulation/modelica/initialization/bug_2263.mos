@@ -50,7 +50,7 @@ simulate(initializationTests.bug_2263, startTime=0.0, stopTime=0.0, simflags="-i
 // |                 | |       | Use -lv=LOG_INIT -w for more information.
 // "
 // end SimulationResult;
-// "Error: The initialization problem is inconsistent due to the following equation: x = $PRE.x  (0.0 = -1.0 )
+// "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: x = $PRE.x ($_start(x) = -1.0)
 // Warning: The initial conditions are over specified. Use +d=initialization for more information.
 // "
 // endResult
