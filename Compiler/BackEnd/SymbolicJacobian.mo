@@ -139,22 +139,29 @@ protected
   BackendDAE.Var dummyVar;
   BackendDAE.Variables v;
 algorithm
-  BackendDAE.DAE(eqs = eqs) := inBackendDAE;
+  // lochel: This module fails for some models (e.g. #3543)
+  try
+    BackendDAE.DAE(eqs = eqs) := inBackendDAE;
 
-  // prepare a DAE
-  DAE := BackendDAEUtil.copyBackendDAE(inBackendDAE);
-  DAE := BackendDAEOptimize.collapseIndependentBlocks(DAE);
-  DAE := BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
+    // prepare a DAE
+    DAE := BackendDAEUtil.copyBackendDAE(inBackendDAE);
+    DAE := BackendDAEOptimize.collapseIndependentBlocks(DAE);
+    DAE := BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
 
-  // get states for DAE
-  BackendDAE.DAE(eqs = {BackendDAE.EQSYSTEM(orderedVars = v)}, shared=shared) := DAE;
-  states := BackendVariable.getAllStateVarFromVariables(v);
+    // get states for DAE
+    BackendDAE.DAE(eqs = {BackendDAE.EQSYSTEM(orderedVars = v)}, shared=shared) := DAE;
+    states := BackendVariable.getAllStateVarFromVariables(v);
 
-  // generate sparse pattern
-  (sparsePattern, coloredCols) := generateSparsePattern(DAE, states, states);
-  shared := addBackendDAESharedJacobianSparsePattern(sparsePattern, coloredCols, BackendDAE.SymbolicJacobianAIndex, shared);
+    // generate sparse pattern
+    (sparsePattern, coloredCols) := generateSparsePattern(DAE, states, states);
+    shared := addBackendDAESharedJacobianSparsePattern(sparsePattern, coloredCols, BackendDAE.SymbolicJacobianAIndex, shared);
 
-  outBackendDAE := BackendDAE.DAE(eqs, shared);
+    outBackendDAE := BackendDAE.DAE(eqs, shared);
+  else
+    // skip this optimization module
+    Error.addCompilerWarning("The optimization module detectJacobianSparsePattern failed. This module will be skipped and the transformation process continued.");
+    outBackendDAE := inBackendDAE;
+  end try;
 end detectSparsePatternODE;
 
 // =============================================================================
