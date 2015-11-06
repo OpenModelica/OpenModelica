@@ -5874,6 +5874,7 @@ algorithm
     case BackendDAE.CONST() then false;
     case BackendDAE.DISCRETE() then false;
     case BackendDAE.STATE() then false;
+    case BackendDAE.ALG_STATE() then false;
     case BackendDAE.DUMMY_STATE() then false;
     else true;
   end match;
@@ -7985,6 +7986,12 @@ algorithm
     then SOME(e);
 
     case (BackendDAE.VAR(varKind = BackendDAE.STATE(), values = dae_var_attr)) equation
+      e = DAEUtil.getStartAttrFail(dae_var_attr);
+      // lochel: #2597
+      // true = Expression.isConstValue(e);
+    then SOME(e);
+
+    case (BackendDAE.VAR(varKind = BackendDAE.ALG_STATE(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
       // lochel: #2597
       // true = Expression.isConstValue(e);
