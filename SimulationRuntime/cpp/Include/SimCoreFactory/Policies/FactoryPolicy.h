@@ -62,10 +62,11 @@
     #include <SimCoreFactory/Policies/SystemOMCFactory.h>
     #include <SimCoreFactory/Policies/NonLinSolverOMCFactory.h>
     #include <SimCoreFactory/Policies/LinSolverOMCFactory.h>
-
+    #include <SimCoreFactory/Policies/SimObjectOMCFactory.h>
     /*Policy defines*/
     typedef OMCFactory BaseFactory;
     typedef SystemOMCFactory<BaseFactory> SimControllerPolicy;
+    typedef SimObjectOMCFactory<BaseFactory> SimObjectPolicy;
     typedef SolverOMCFactory<BaseFactory> ConfigurationPolicy;
     typedef LinSolverOMCFactory<BaseFactory> LinSolverPolicy;
     typedef NonLinSolverOMCFactory<BaseFactory> NonLinSolverPolicy;
@@ -79,9 +80,11 @@
   #include <SimCoreFactory/Policies/StaticSystemOMCFactory.h>
   #include <SimCoreFactory/Policies/StaticLinSolverOMCFactory.h>
   #include <SimCoreFactory/Policies/StaticNonLinSolverOMCFactory.h>
+  #include <SimCoreFactory/Policies/StaticSimObjectOMCFactory.h>
   /*Policy defines*/
   typedef BaseOMCFactory BaseFactory;
   typedef StaticSystemOMCFactory<BaseFactory> SimControllerPolicy;
+  typedef StaticSimObjectOMCFactory<BaseFactory> SimObjectPolicy;
   typedef StaticSolverOMCFactory<BaseFactory> ConfigurationPolicy;
   typedef StaticLinSolverOMCFactory<BaseFactory> LinSolverPolicy;
   typedef StaticNonLinSolverOMCFactory<BaseFactory> NonLinSolverPolicy;

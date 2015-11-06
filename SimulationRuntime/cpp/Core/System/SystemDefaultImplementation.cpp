@@ -34,10 +34,11 @@ bool greaterTime( pair<unsigned int,double> t1, double t2)
   return t1.second > t2;
 }
 
-SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *globalSettings,shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars)
+SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *globalSettings,shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars,shared_ptr<ISimObjects> sim_objects)
   : _simTime        (0.0)
   ,_sim_data(sim_data)
   , _sim_vars(sim_vars)
+  ,_sim_objects(sim_objects)
   , __z          (sim_vars->getStateVector())
   , __zDot        (sim_vars->getDerStateVector())
   , _conditions      (NULL)

@@ -2334,7 +2334,7 @@ The only required argument is the className, while all others have some default 
   translateModelFMU(className, version=\"2.0\");"
   input TypeName className "the class that should translated";
   input String version = "1.0" "FMU version, 1.0 or 2.0.";
-  input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation).";
+  input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
   output String generatedFileName "Returns the full path of the generated FMU.";
 external "builtin";
@@ -2806,6 +2806,30 @@ annotation(
 </html>"),
   preferredView="text");
 end getComponentModifierNames;
+
+function removeComponentModifiers
+  input TypeName class_;
+  input String componentName;
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Removes the component modifiers.
+</html>"),
+  preferredView="text");
+end removeComponentModifiers;
+
+function removeExtendsModifiers
+  input TypeName className;
+  input TypeName baseClassName;
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Removes the extends modifiers of a class.
+</html>"),
+  preferredView="text");
+end removeExtendsModifiers;
 
 function getAlgorithmCount "Counts the number of Algorithm sections in a class."
   input TypeName class_;

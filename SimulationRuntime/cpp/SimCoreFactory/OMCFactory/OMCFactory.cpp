@@ -224,14 +224,14 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
     			   throw ModelicaSimulationError(MODEL_FACTORY,"log-settings flags not supported: " + log_vec[i] + "\n");
     	 }
      }
-
+     OutputFormat outputFormat = MAT;
      fs::path libraries_path = fs::path( runtime_lib_path) ;
      fs::path modelica_path = fs::path( modelica_lib_path) ;
 
      libraries_path.make_preferred();
      modelica_path.make_preferred();
 
-     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,timeOut,outputPointType,logSet,nlsContinueOnError,solverThreads};
+     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,timeOut,outputPointType,logSet,nlsContinueOnError,solverThreads,outputFormat};
 
      _library_path = libraries_path.string();
      _modelicasystem_path = modelica_path.string();

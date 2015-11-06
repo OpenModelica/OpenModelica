@@ -4901,6 +4901,176 @@ algorithm
   end matchcontinue;
 end setSourceFile;
 
+public function removeExtendsModifiers
+"Removes the extends modifiers of a class."
+  input Absyn.Path inClassPath;
+  input Absyn.Path inBaseClassPath;
+  input Absyn.Program inProgram;
+  output Absyn.Program outProgram;
+  output Boolean outResult;
+algorithm
+  (outProgram,outResult) := matchcontinue (inClassPath,inBaseClassPath,inProgram)
+    local
+      Absyn.Path p_class,inherit_class;
+      Absyn.Within within_;
+      Absyn.Class cdef,cdef_1;
+      FCore.Graph env;
+      Absyn.Program newp,p;
+
+    case (p_class,inherit_class,p as Absyn.PROGRAM())
+      equation
+        within_ = buildWithin(p_class);
+        cdef = getPathedClassInProgram(p_class, p);
+        env = getClassEnv(p, p_class);
+        cdef_1 = removeExtendsModifiersInClass(cdef, inherit_class, env);
+        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
+      then
+        (newp, true);
+    else (inProgram, false);
+  end matchcontinue;
+end removeExtendsModifiers;
+
+protected function removeExtendsModifiersInClass
+  input Absyn.Class inClass;
+  input Absyn.Path inPath;
+  input FCore.Graph inEnv;
+  output Absyn.Class outClass;
+algorithm
+  outClass:=
+  match (inClass,inPath,inEnv)
+    local
+      list<Absyn.ClassPart> parts_1,parts;
+      String id,bcname;
+      Boolean p,f,e;
+      Absyn.Restriction r;
+      Option<String> cmt;
+      SourceInfo file_info;
+      Absyn.Path inherit_name;
+      FCore.Graph env;
+      list<Absyn.ElementArg> modif;
+      list<String> typeVars;
+      list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
+    /* a class with parts */
+    case (Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt),info = file_info),
+          inherit_name,env)
+      equation
+        parts_1 = removeExtendsModifiersInClassparts(parts, inherit_name, env);
+      then
+        Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts_1,ann,cmt),file_info);
+    /* adrpo: handle also model extends M end M; */
+    case (Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,parts = parts,modifications=modif,ann=ann,comment = cmt),info = file_info),
+          inherit_name,env)
+      equation
+        parts_1 = removeExtendsModifiersInClassparts(parts, inherit_name, env);
+      then
+        Absyn.CLASS(id,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts_1,ann),file_info);
+  end match;
+end removeExtendsModifiersInClass;
+
+protected function removeExtendsModifiersInClassparts
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  input Absyn.Path inPath;
+  input FCore.Graph inEnv;
+  output list<Absyn.ClassPart> outAbsynClassPartLst;
+algorithm
+  outAbsynClassPartLst:=
+  matchcontinue (inAbsynClassPartLst,inPath,inEnv)
+    local
+      list<Absyn.ClassPart> res,rest;
+      list<Absyn.ElementItem> elts_1,elts;
+      Absyn.Path inherit;
+      FCore.Graph env;
+      Absyn.ClassPart elt;
+
+    case ({},_,_) then {};
+
+    case ((Absyn.PUBLIC(contents = elts) :: rest),inherit,env)
+      equation
+        res = removeExtendsModifiersInClassparts(rest, inherit, env);
+        elts_1 = removeExtendsModifiersInElementitems(elts, inherit, env);
+      then
+        (Absyn.PUBLIC(elts_1) :: res);
+
+    case ((Absyn.PROTECTED(contents = elts) :: rest),inherit,env)
+      equation
+        res = removeExtendsModifiersInClassparts(rest, inherit, env);
+        elts_1 = removeExtendsModifiersInElementitems(elts, inherit, env);
+      then
+        (Absyn.PROTECTED(elts_1) :: res);
+
+    case ((elt :: rest),inherit,env)
+      equation
+        res = removeExtendsModifiersInClassparts(rest, inherit, env);
+      then
+        (elt :: res);
+
+  end matchcontinue;
+end removeExtendsModifiersInClassparts;
+
+protected function removeExtendsModifiersInElementitems
+  input list<Absyn.ElementItem> inAbsynElementItemLst;
+  input Absyn.Path inPath;
+  input FCore.Graph inEnv;
+  output list<Absyn.ElementItem> outAbsynElementItemLst;
+algorithm
+  outAbsynElementItemLst:=
+  matchcontinue (inAbsynElementItemLst,inPath,inEnv)
+    local
+      list<Absyn.ElementItem> res,rest;
+      Absyn.Element elt_1,elt;
+      Absyn.Path inherit;
+      FCore.Graph env;
+      Absyn.ElementItem elitem;
+    case ({},_,_) then {};
+    case ((Absyn.ELEMENTITEM(element = elt) :: rest),inherit,env)
+      equation
+        res = removeExtendsModifiersInElementitems(rest, inherit, env);
+        elt_1 = removeExtendsModifiersInElement(elt, inherit, env);
+      then
+        (Absyn.ELEMENTITEM(elt_1) :: res);
+    case ((elitem :: rest),inherit,env)
+      equation
+        res = removeExtendsModifiersInElementitems(rest, inherit, env);
+      then
+        (elitem :: res);
+  end matchcontinue;
+end removeExtendsModifiersInElementitems;
+
+protected function removeExtendsModifiersInElement
+  input Absyn.Element inElement;
+  input Absyn.Path inPath;
+  input FCore.Graph inEnv;
+  output Absyn.Element outElement;
+algorithm
+  outElement:=
+  matchcontinue (inElement,inPath,inEnv)
+    local
+      Boolean f;
+      Option<Absyn.RedeclareKeywords> r;
+      Absyn.InnerOuter i;
+      Absyn.Path path,inherit,path_1;
+      list<Absyn.ElementArg> eargs,eargs_1;
+      SourceInfo info;
+      Option<Absyn.ConstrainClass> constr;
+      FCore.Graph env;
+      Absyn.Element elt;
+      Option<Absyn.Annotation> annOpt;
+
+    case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = i,
+      specification = Absyn.EXTENDS(path = path,elementArg = eargs,annotationOpt=annOpt),info = info,constrainClass = constr),
+      inherit,env)
+      equation
+        (_,path_1) = Inst.makeFullyQualified(FCore.emptyCache(),env, path);
+        true = Absyn.pathEqual(inherit, path_1);
+      then
+        Absyn.ELEMENT(f,r,i,Absyn.EXTENDS(path,{},annOpt),info,constr);
+    else inElement;
+  end matchcontinue;
+end removeExtendsModifiersInElement;
+
 protected function setExtendsModifierValue
 " This function sets the submodifier value of an
    extends clause in a Class. For instance,
@@ -5483,6 +5653,84 @@ algorithm
     case (Absyn.ELEMENT(specification = (ext as Absyn.EXTENDS()))) then ext;
   end match;
 end getExtendsElementspecInElement;
+
+public function removeComponentModifiers
+  "Removes all the modifiers of a component."
+  input Absyn.Path path;
+  input String inComponentName;
+  input Absyn.Program inProgram;
+  output Absyn.Program outProgram;
+  output Boolean outResult;
+protected
+  Absyn.Within within_;
+  Absyn.Class cls;
+algorithm
+  try
+    within_ := buildWithin(path);
+    cls := getPathedClassInProgram(path, inProgram);
+    cls := clearComponentModifiersInClass(cls, inComponentName);
+    outProgram := updateProgram(Absyn.PROGRAM({cls}, within_), inProgram);
+    outResult := true;
+  else
+    outProgram := inProgram;
+    outResult := false;
+  end try;
+end removeComponentModifiers;
+
+protected function clearComponentModifiersInClass
+  input Absyn.Class inClass;
+  input String inComponentName;
+  output Absyn.Class outClass = inClass;
+algorithm
+  (outClass, true) := Absyn.traverseClassComponents(inClass,
+    function clearComponentModifiersInCompitems(inComponentName =
+      inComponentName), false);
+end clearComponentModifiersInClass;
+
+protected function clearComponentModifiersInCompitems
+  "Helper function to clearComponentModifiersInClass. Clears the modifiers in a ComponentItem."
+  input list<Absyn.ComponentItem> inComponents;
+  input Boolean inFound;
+  input String inComponentName;
+  output list<Absyn.ComponentItem> outComponents = {};
+  output Boolean outFound;
+  output Boolean outContinue;
+protected
+  Absyn.ComponentItem item;
+  list<Absyn.ComponentItem> rest_items = inComponents;
+  Absyn.Component comp;
+  list<Absyn.ElementArg> args_old, args_new;
+  Absyn.EqMod eqmod_old, eqmod_new;
+algorithm
+  // Try to find the component we're looking for.
+  while not listEmpty(rest_items) loop
+    item :: rest_items := rest_items;
+
+    if Absyn.componentName(item) == inComponentName then
+      // Found component, propagate the modifier to it.
+      _ := match item
+        case Absyn.COMPONENTITEM(component = comp as Absyn.COMPONENT())
+          algorithm
+            comp.modification := NONE();
+            item.component := comp;
+          then
+            ();
+      end match;
+
+      // Reassemble the item list and return.
+      outComponents := listAppend(listReverse(outComponents), item :: rest_items);
+      outFound := true;
+      outContinue := false;
+      return;
+    end if;
+    outComponents := item :: outComponents;
+  end while;
+
+  // Component not found, continue looking.
+  outComponents := inComponents;
+  outFound := false;
+  outContinue := true;
+end clearComponentModifiersInCompitems;
 
 protected function setComponentModifier
   "Sets a submodifier of a component."

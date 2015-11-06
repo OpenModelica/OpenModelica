@@ -297,7 +297,7 @@ class MatFileWriter : public ContainerManager
      * \return
      */
     /*========================================================================================{end}==*/
-    void write(const all_vars_t& v_list, double start_time, double end_time)
+    virtual void write(const all_vars_t& v_list, double start_time, double end_time)
     {
         unsigned int uiParCount = get<0>(v_list).size() +get<1>(v_list).size()+get<2>(v_list).size()+ 1;  // all variables + time
         double *doubleHelpMatrix = NULL;
@@ -372,7 +372,7 @@ class MatFileWriter : public ContainerManager
      * \return
      */
     /*========================================================================================{end}==*/
-    void write(const all_names_t& s_list, const all_description_t& s_desc_list,const all_names_t& s_parameter_list, const all_description_t& s_desc_parameter_list)
+    virtual void write(const all_names_t& s_list, const all_description_t& s_desc_list,const all_names_t& s_parameter_list, const all_description_t& s_desc_parameter_list)
     {
         unsigned int uilongest = 12;  // help variable for temp buffer size
         unsigned int uilongestName = 5;    // because of "Time"
@@ -709,7 +709,7 @@ class MatFileWriter : public ContainerManager
      * \return
      */
     /*========================================================================================{end}==*/
-    void write(const all_vars_time_t& v_list,const neg_all_vars_t& neg_v_list)
+    virtual void write(const all_vars_time_t& v_list,const neg_all_vars_t& neg_v_list)
     {
         unsigned int uiVarCount = get<0>(v_list).size() + get<1>(v_list).size() + get<2>(v_list).size() + 1;  // alle Variablen, alle abgeleiteten Variablen und die Zeit
         double *doubleHelpMatrix = NULL;

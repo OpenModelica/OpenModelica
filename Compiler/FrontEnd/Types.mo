@@ -5125,7 +5125,7 @@ algorithm
       equation
         false = isArray(t1);
         false = isArray(t2);
-        equality(t1 = t2);
+        true = equivtypes(t1,t2);
         c = constAnd(c1, c2);
       then
         DAE.PROP(t1,c);

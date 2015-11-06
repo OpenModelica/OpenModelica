@@ -38,7 +38,7 @@ public:
   }
   */
 
-  void init()
+  virtual void init()
   {
     ResultsPolicy::init(_globalSettings.getOutputPath(), _globalSettings.getResultsFileName(),_dim);
   }
@@ -98,10 +98,34 @@ public:
     return time;
   }
 
-  void clear()
+ virtual  void clear()
   {
     ResultsPolicy::eraseAll();
   };
+  virtual void write(const all_vars_t& v_list, double start_time, double end_time)
+  {
+      ResultsPolicy::write(v_list,start_time,end_time);
+  };
+  virtual void write(const all_names_t& s_list,const all_description_t& s_desc_list, const all_names_t& s_parameter_list,const all_description_t&
+  s_desc_parameter_list)
+  {
+      ResultsPolicy::write(s_list,s_desc_list,s_parameter_list,s_desc_parameter_list);
+  };
+  virtual void write(const all_vars_time_t& v_list,const neg_all_vars_t& neg_v_list)
+  {
+      ResultsPolicy:: write(v_list,neg_v_list);
+  };
+ virtual write_data_t& getFreeContainer()
+ {
+      return ResultsPolicy::getFreeContainer();
+ }
+
+ virtual void addContainerToWriteQueue(const write_data_t& container)
+ {
+     ResultsPolicy::addContainerToWriteQueue(container);
+ }
+
+
 
 private:
   //map of indices of all output variables

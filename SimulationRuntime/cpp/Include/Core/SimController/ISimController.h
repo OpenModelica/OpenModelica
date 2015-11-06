@@ -21,6 +21,7 @@ struct SimSettings
   LogSettings logSettings;
   bool nonLinearSolverContinueOnError;
   int solverThreads;
+  OutputFormat outputFomrat;
 };
 
 /**
@@ -34,29 +35,11 @@ public:
   virtual ~ISimController() {};
   virtual weak_ptr<IMixedSystem> LoadSystem(string modelLib,string modelKey) = 0;
   virtual weak_ptr<IMixedSystem> LoadModelicaSystem(PATH modelica_path,string modelKey) = 0;
-  virtual weak_ptr<ISimData> LoadSimData(string modelKey) = 0;
-  /**
-  Creates  SimVars object, stores all model variable in continuous block of memory
-     @param  model name
-     @param dim_real  number of all real variables (real algebraic vars,discrete algebraic vars, state vars, der state vars)
-     @param dim_int   number of all integer variables integer algebraic vars
-     @param dim_bool  number of all bool variables (boolean algebraic vars)
-     @param dim_pre_vars number of all pre variables (real algebraic vars,discrete algebraic vars, boolean algebraic vars, integer algebraic vars, state vars, der state vars)
-     @param dim_z number of all state variables
-     @param z_i start index of state vector in real_vars list
-     */
-  virtual weak_ptr<ISimVars> LoadSimVars(string modelKey,size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_string,size_t dim_pre_vars,size_t dim_z,size_t z_i) = 0;
-  /**
-  Starts the simulation
-  @param modelKey Modelica model name
-  @param modelica_path: path to Modelica system dll
-  */
   virtual void Start(SimSettings simsettings, string modelKey)=0;
 
   virtual void StartVxWorks(SimSettings simsettings,string modelKey) = 0;
-  virtual weak_ptr<ISimData> getSimData(string modelname) = 0;
-  virtual weak_ptr<ISimVars> getSimVars(string modelname) = 0;
-  virtual weak_ptr<IMixedSystem> getSystem(string modelname) = 0;
+  virtual shared_ptr<IMixedSystem> getSystem(string modelname) = 0;
+  virtual  shared_ptr<ISimObjects> getSimObjects() = 0;
   virtual void calcOneStep() = 0;
 
   /**

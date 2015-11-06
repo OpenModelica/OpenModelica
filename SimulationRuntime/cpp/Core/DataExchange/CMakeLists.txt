@@ -11,7 +11,7 @@ ENDIF(NOT BOOST_STATIC_LINKING)
 include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
 add_precompiled_header(${DataExchangeName} Include/Core/Modelica.h)
 
-add_library(${DataExchangeName}_static STATIC SimData.cpp XmlPropertyReader.cpp)
+add_library(${DataExchangeName}_static STATIC SimData.cpp XmlPropertyReader.cpp FactoryExport.cpp)
 set_target_properties(${DataExchangeName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 
 IF(NOT BOOST_STATIC_LINKING)

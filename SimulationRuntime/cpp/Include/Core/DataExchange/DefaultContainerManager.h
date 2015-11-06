@@ -39,7 +39,7 @@ class DefaultContainerManager : public Writer
      * Get the internal container. It is always the same.
      * @return A reference to the internal container that can be filled with values.
      */
-    write_data_t& getFreeContainer()
+    virtual write_data_t& getFreeContainer()
     {
       return _container;
     };
@@ -47,7 +47,7 @@ class DefaultContainerManager : public Writer
      * Write the given container to the result file.
      * @param container The container that should be written.
      */
-    void addContainerToWriteQueue(const write_data_t& container)
+    virtual void addContainerToWriteQueue(const write_data_t& container)
     {
       writeContainer(container);
     };

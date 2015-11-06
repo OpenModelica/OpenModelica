@@ -42,7 +42,7 @@ private:
 class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation
 {
 public:
-  SystemDefaultImplementation(IGlobalSettings* globalSettings,shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars);
+  SystemDefaultImplementation(IGlobalSettings* globalSettings,shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars,shared_ptr<ISimObjects> sim_objects);
   SystemDefaultImplementation(SystemDefaultImplementation &instance);
   virtual ~SystemDefaultImplementation();
 
@@ -198,8 +198,10 @@ protected:
     buffer_type _time_buffer;
     double _delay_max;
     double _start_time;
+    /*ToDo: remove sim_data and sim_vars*/
     shared_ptr<ISimData> _sim_data;
     shared_ptr<ISimVars> _sim_vars;
+    shared_ptr<ISimObjects> _sim_objects;
     IGlobalSettings* _global_settings; //this should be a reference, but this is not working if the libraries are linked statically
     IEvent* _event_system; ///this pointer to event system
 };

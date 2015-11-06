@@ -81,7 +81,7 @@ class ParallelContainerManager : public Writer
       _writerThread.join();
     }
 
-    write_data_t& getFreeContainer()
+    virtual write_data_t& getFreeContainer()
     {
       _nempty.wait();
       _freeContainerMutex.wait();
@@ -93,7 +93,7 @@ class ParallelContainerManager : public Writer
       return container;
   };
 
-  void addContainerToWriteQueue(const write_data_t& container)
+  virtual void addContainerToWriteQueue(const write_data_t& container)
   {
     _writeContainers.push_back(container);
   };

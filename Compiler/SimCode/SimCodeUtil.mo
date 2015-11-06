@@ -2187,15 +2187,22 @@ algorithm
       // tmp = f()
       ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
       cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
-      e1_1 = Expression.crefExp(cr);
+      e1_1 = Expression.crefToExp(cr);
       stms = DAE.STMT_ASSIGN(tp, e1_1, e2_1, source);
       simeqn = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
       uniqueEqIndex = iuniqueEqIndex + 1;
+
       // Record()-tmp = 0
-      e1lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr);
+      /* Expand the tmp record and any arrays */
+      e1lst = Expression.expandExpression(e1_1);
+      /* Expand the varLst. Each var might be an array or record. */
+      e2lst = List.mapFlat(e2lst, Expression.expandExpression);
+      /* pair each of the expanded expressions to coressponding one*/
       exptl = List.threadTuple(e1lst, e2lst);
+      /* Create residual equations for each pair*/
       (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_RESIDUAL1, source, uniqueEqIndex);
       eqSystlst = simeqn::eqSystlst;
+
       tempvars = createTempVars(varLst, cr, itempvars);
     then (eqSystlst, uniqueEqIndex, tempvars);
 
@@ -2333,25 +2340,49 @@ protected function createTempVars
 algorithm
   otempvars := match(varLst)
     local
-      list<DAE.Var> rest, varlst;
-      list<SimCodeVar.SimVar> tempvars;
+      list<DAE.Var> rest;
+      list<SimCodeVar.SimVar> ttmpvars;
       DAE.Ident name;
       DAE.Type ty;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr, arraycref;
+      list<DAE.ComponentRef> crlst;
       SimCodeVar.SimVar var;
 
-    case({})
+    case {}
     then itempvars;
 
-    case(DAE.TYPES_VAR(name=name, ty=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))::rest) equation
+    case DAE.TYPES_VAR(name=name, ty=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))::rest equation
       cr = ComponentReference.crefPrependIdent(inCrefPrefix, name, {}, ty);
-      tempvars = createTempVars(rest, cr, itempvars);
-    then createTempVars(rest, cr, tempvars);
+    then createTempVars(rest, cr, itempvars);
 
-    case(DAE.TYPES_VAR(name=name, ty=ty)::rest) equation
-      cr = ComponentReference.crefPrependIdent(inCrefPrefix, name, {}, ty);
-      var = SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, true);
-    then createTempVars(rest, inCrefPrefix, var::itempvars);
+    case DAE.TYPES_VAR(name=name, ty=ty)::rest
+      algorithm
+        /* Prepend the tmp ident.*/
+        cr := ComponentReference.crefPrependIdent(inCrefPrefix, name, {}, ty);
+        /* Expand the resulting cref.*/
+        cr::crlst := ComponentReference.expandCref(cr, true /*the way it is now we won't get records here. but if we do somehow expand them*/);
+
+        /* Create SimVars from the list of expanded crefs.*/
+
+        /* Mark the first element as an arrayCref i.e. we have 'SOME(arraycref)' since this is how the C template
+          detects first elements of arrays to generate VARNAME_indexed(..) macros for accessing the array
+          with variable indexes.*/
+        arraycref := ComponentReference.crefStripSubs(cr);
+        ty := ComponentReference.crefTypeFull(cr);
+        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false,
+              ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, true);
+
+        /* The rest don't need to be marked i.e. we have 'NONE()'. Just create simvars. */
+        ttmpvars := {var};
+        for cr in crlst loop
+          ty := ComponentReference.crefTypeFull(cr);
+          var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, true);
+          ttmpvars := var::ttmpvars;
+        end for;
+        ttmpvars := listReverse(ttmpvars);
+        ttmpvars := listAppend(itempvars,ttmpvars);
+      then createTempVars(rest, inCrefPrefix, ttmpvars);
+
   end match;
 end createTempVars;
 
@@ -5843,6 +5874,7 @@ algorithm
     case BackendDAE.CONST() then false;
     case BackendDAE.DISCRETE() then false;
     case BackendDAE.STATE() then false;
+    case BackendDAE.ALG_STATE() then false;
     case BackendDAE.DUMMY_STATE() then false;
     else true;
   end match;
@@ -7954,6 +7986,12 @@ algorithm
     then SOME(e);
 
     case (BackendDAE.VAR(varKind = BackendDAE.STATE(), values = dae_var_attr)) equation
+      e = DAEUtil.getStartAttrFail(dae_var_attr);
+      // lochel: #2597
+      // true = Expression.isConstValue(e);
+    then SOME(e);
+
+    case (BackendDAE.VAR(varKind = BackendDAE.ALG_STATE(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
       // lochel: #2597
       // true = Expression.isConstValue(e);

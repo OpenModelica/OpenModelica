@@ -401,6 +401,7 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
 
       if(pVar) {
         omc_matlab4_val(&(mData->realParameterData[i].attribute.start), &reader, pVar, initTime);
+        data->simulationInfo.realParameter[i] = mData->realParameterData[i].attribute.start;
         infoStreamPrint(LOG_INIT, 0, "| %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
       } else {
         warningStreamPrint(LOG_INIT, 0, "unable to import real parameter %s from given file", mData->realParameterData[i].info.name);
@@ -439,6 +440,7 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
       if (pVar) {
         omc_matlab4_val(&value, &reader, pVar, initTime);
         mData->integerParameterData[i].attribute.start = (modelica_integer)value;
+        data->simulationInfo.integerParameter[i] = (modelica_integer)value;
         infoStreamPrint(LOG_INIT, 0, "| %s(start=%ld)", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
       } else {
         warningStreamPrint(LOG_INIT, 0, "unable to import integer parameter %s from given file", mData->integerParameterData[i].info.name);
@@ -458,6 +460,7 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
       if(pVar) {
         omc_matlab4_val(&value, &reader, pVar, initTime);
         mData->booleanParameterData[i].attribute.start = (modelica_boolean)value;
+        data->simulationInfo.booleanParameter[i] = (modelica_boolean)value;
         infoStreamPrint(LOG_INIT, 0, "| %s(start=%s)", mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.start ? "true" : "false");
       } else {
         warningStreamPrint(LOG_INIT, 0, "unable to import boolean parameter %s from given file", mData->booleanParameterData[i].info.name);

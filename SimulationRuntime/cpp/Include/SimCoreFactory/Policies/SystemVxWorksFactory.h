@@ -26,10 +26,10 @@ public:
         return algloopsolverfactory;
     }
 
-                        //            createSystem(std::string&,      std::string&, IGlobalSettings*,                shared_ptr<IAlgLoopSolverFactory>&,                     shared_ptr<ISimData>&, shared_ptr<ISimVars>&)
-    shared_ptr<IMixedSystem> createSystem(string modelLib,string modelKey, IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory, shared_ptr<ISimData> simData, shared_ptr<ISimVars> simVars)
+
+    shared_ptr<IMixedSystem> createSystem(string modelLib,string modelKey, IGlobalSettings* globalSettings, shared_ptr<ISimObjects> simObjects)
     {
-        shared_ptr<IMixedSystem> system = ObjectFactory<CreationPolicy>::_factory->LoadSystem(globalSettings, algloopsolverfactory, simData, simVars);
+        shared_ptr<IMixedSystem> system = ObjectFactory<CreationPolicy>::_factory->LoadSystem(globalSettings,simObjects);
         return system;
     }
 
@@ -39,9 +39,9 @@ public:
         return simData;
     }
 
-    shared_ptr<IMixedSystem> createModelicaSystem(PATH modelica_path, string modelKey, IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory, shared_ptr<ISimData> simData, shared_ptr<ISimVars> simVars)
+    shared_ptr<IMixedSystem> createModelicaSystem(PATH modelica_path, string modelKey, IGlobalSettings* globalSettings, shared_ptr<ISimObjects> simObjects)
     {
-        shared_ptr<IMixedSystem> system = ObjectFactory<CreationPolicy>::_factory->LoadSystem(globalSettings, algloopsolverfactory, simData, simVars);
+        shared_ptr<IMixedSystem> system = ObjectFactory<CreationPolicy>::_factory->LoadSystem(globalSettings, simObjects);
         return system;
     }
 

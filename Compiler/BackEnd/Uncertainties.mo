@@ -140,7 +140,7 @@ algorithm
         //print("- Flatten ok\n");
         dlow = BackendDAECreate.lower(dae,cache,graph,BackendDAE.EXTRA_INFO(description,outputFile));
         //(dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(dlow, funcs,SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),NONE());
-        (dlow_1) = BackendDAEUtil.getSolvedSystem(dlow,"", SOME({"removeSimpleEquations","removeUnusedVariables","removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),SOME({""}));
+        (dlow_1) = BackendDAEUtil.getSolvedSystem(dlow,"", SOME({"removeSimpleEquations","removeUnusedVariables","removeEqualFunctionCalls","expandDerOperator"}), NONE(), NONE(), SOME({}));
         //print("* Lowered Ok \n");
 
         dlow_1 = removeSimpleEquationsUC(dlow_1);

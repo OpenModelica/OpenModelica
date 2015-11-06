@@ -36,7 +36,8 @@ public:
   virtual void setOutputPointType(OutputPointType);
   virtual LogSettings getLogSettings();
   virtual void setLogSettings(LogSettings);
-
+  virtual OutputFormat getOutputFormat();
+  virtual void setOutputFormat(OutputFormat);
   //solver used for simulation
   virtual string getSelectedSolver();
   virtual void setSelectedSolver(string);
@@ -80,5 +81,6 @@ private:
   LogSettings _log_settings;
   unsigned int _alarm_time;
   int _solverThreads;
+  OutputFormat _outputFormat;
 };
 /** @} */ // end of coreSimulationSettings

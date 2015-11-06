@@ -23,7 +23,7 @@ extern "C" IAlgLoopSolver* createNewton(IAlgLoop* algLoop, INonLinSolverSettings
 extern "C" INonLinSolverSettings* createNewtonSettings();
 extern "C" IAlgLoopSolver* createBroyden(IAlgLoop* algLoop, INonLinSolverSettings* settings);
 extern "C" INonLinSolverSettings* createBroydenSettings();
-extern "C" IMixedSystem* createModelicaSystem(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolver, shared_ptr<ISimData> simdata, shared_ptr<ISimVars> sim_vars);
+extern "C" IMixedSystem* createModelicaSystem(IGlobalSettings* globalSettings, shared_ptr<ISimObjects> simObjects);
 
 VxWorksFactory::VxWorksFactory(string library_path, string modelicasystem_path)
     : _library_path(library_path)
@@ -55,9 +55,9 @@ shared_ptr<IAlgLoopSolverFactory>  VxWorksFactory::LoadAlgLoopSolverFactory(IGlo
 
 }
 
-shared_ptr<IMixedSystem> VxWorksFactory::LoadSystem(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolver, shared_ptr<ISimData> simData, shared_ptr<ISimVars> simVars)
+shared_ptr<IMixedSystem> VxWorksFactory::LoadSystem(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolver, shared_ptr<ISimObjects> simObjects)
 {
-    IMixedSystem* system = createModelicaSystem(globalSettings, nonlinsolver, simData, simVars);
+    IMixedSystem* system = createModelicaSystem(globalSettings, simObjects);
     return shared_ptr<IMixedSystem>(system);
 }
 

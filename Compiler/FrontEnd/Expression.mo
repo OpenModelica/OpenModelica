@@ -3242,7 +3242,25 @@ algorithm
   end match;
 end makeCrefExp;
 
-public function crefExp "
+
+public function crefToExp
+" mahge:
+  creates a DAE.Exp from a cref by exrtacting the type from the types of the cref (if qualified) and
+  considering the dimensions and subscripts that exist in the cref.
+"
+  input DAE.ComponentRef cr;
+  output DAE.Exp cref;
+algorithm
+  cref := DAE.CREF(cr,ComponentReference.crefTypeFull(cr));
+end crefToExp;
+
+
+
+
+public function crefExp
+" ***deprecated.
+  mahge: use crefToExp(). This is not correct. We need to consider more than just the last subs.
+
 Author: BZ, 2008-08
 generate an DAE.CREF(ComponentRef, Type) from a ComponenRef, make array type correct from subs"
   input DAE.ComponentRef cr;
@@ -11831,6 +11849,47 @@ public function makeVectorCall
 algorithm
   outExp := makePureBuiltinCall("vector",{exp},tp);
 end makeVectorCall;
+
+
+public function expandExpression
+ " mahge:
+   Expands a given expression to a list of expression. this means flattening any records in the
+   expression and  vectorizing arrays.
+
+   Currently can only handle crefs and array expressions. Maybe we need to handle binary operations at least.
+
+   Right now this is used in generating simple residual equations from complex ones in SimCode.
+ "
+
+  input DAE.Exp inExp;
+  output list<DAE.Exp> outExps;
+algorithm
+  (outExps) := match (inExp)
+    local
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> crlst;
+      list<DAE.Exp> expl;
+      String msg;
+
+    case (DAE.CREF(cr,_))
+      algorithm
+        crlst := ComponentReference.expandCref(cr,true);
+        outExps := List.map(crlst, crefToExp);
+      then outExps;
+
+    case DAE.ARRAY(_,_,expl)
+      algorithm
+        expl := List.mapFlat(expl,expandExpression);
+      then expl;
+
+    else
+     algorithm
+        msg := "- Expression.expandExpression failed for " + ExpressionDump.printExpStr(inExp);
+        Error.addMessage(Error.INTERNAL_ERROR, {msg});
+      then
+        fail();
+  end match;
+end expandExpression;
 
 public function extendArrExp "author: Frenkel TUD 2010-07
   alternative name: vectorizeExp"

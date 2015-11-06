@@ -13,7 +13,7 @@ public:
   Configuration(PATH libraries_path,PATH config_path,PATH modelicasystem_path);
   ~Configuration(void);
   shared_ptr<ISolver> createSelectedSolver(IMixedSystem* system);
-  IGlobalSettings* getGlobalSettings();
+  shared_ptr<IGlobalSettings> getGlobalSettings();
   ISolverSettings* getSolverSettings();
   ISimControllerSettings* getSimControllerSettings();
 

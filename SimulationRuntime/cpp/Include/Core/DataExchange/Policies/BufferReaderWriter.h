@@ -18,7 +18,7 @@ public:
         try
         {
             _real_variables_buffer.set_capacity(size+size/10);
-            _real_variables_buffer.set_capacity(size+size/10);
+            _bool_variables_buffer.set_capacity(size+size/10);
             _int_variables_buffer.set_capacity(size+size/10);
             /*ToDo: use correct size for corresponding type*/
         }
@@ -27,7 +27,8 @@ public:
            throw ModelicaSimulationError(DATASTORAGE,string("allocating   buffers failed")+ex.what());
         }
     }
-    void  init(string output_path,string file_name)
+
+    void init(/*string output_path,string file_name*/std::string output_path, std::string file_name, size_t dim)
     {
     }
     /**
@@ -86,7 +87,7 @@ public:
     {
 
         ublas::matrix<double>::size_type m = size();
-        ublas::matrix<double>::size_type n = get<0>(_var_outputs).size()+get<1>(_var_outputs).size()+get<2>(_var_outputs).size();
+        ublas::matrix<double>::size_type n = _var_outputs.size();/*get<0>(_var_outputs).size() + get<1>(_var_outputs).size() + get<2>(_var_outputs).size()*/;
         ublas::matrix<double>::size_type i,i2=0,j;
         try
         {
@@ -160,7 +161,7 @@ public:
      @start_time
      @end_time
      */
-    void write(const all_vars_t& v_list, double start_time, double end_time)
+    virtual void write(const all_vars_t& v_list, double start_time, double end_time)
     {
       //not supported for buffer
     }
@@ -171,9 +172,14 @@ public:
      @s_parameter_list name ofreal,int,bool parameter
      @s_desc_parameter_list description of real,int,bool parameter
      */
-    void write(const all_names_t& s_list,const all_description_t& s_desc_list,const all_names_t& s_parameter_list,const all_description_t& s_desc_parameter_list)
+    virtual void write(const all_names_t& s_list,const all_description_t& s_desc_list,const all_names_t& s_parameter_list,const all_description_t& s_desc_parameter_list)
     {
-       _var_outputs =s_list;
+        //_var_outputs = s_list;
+		_var_outputs.clear();
+        for (var_names_t::const_iterator it = get<0>(s_list).begin(); it != get<0>(s_list).end(); ++it)
+        {
+            _var_outputs.push_back(*it);
+        }
     }
 
      /*
@@ -182,7 +188,7 @@ public:
      @v2_list derivatives vars
      @time
      */
-    void write(const all_vars_time_t& v_list,const neg_all_vars_t& neg_v_list)
+    virtual void write(const all_vars_time_t& v_list,const neg_all_vars_t& neg_v_list)
     {
 
 
@@ -271,8 +277,7 @@ protected:
     bool_buffer_type _bool_variables_buffer;
     //buffer_type_r _residues_buffer;
     _time_entries_type _time_entries;
-    unsigned long  _buffer_pos;
-    all_names_t _var_outputs;
-
+    unsigned long _buffer_pos;
+    vector<string> _var_outputs;
 };
 /** @} */ // end of dataexchangePolicies

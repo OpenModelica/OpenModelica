@@ -3232,42 +3232,99 @@ public function instElementList
 protected
   list<tuple<SCode.Element, DAE.Mod>> el;
   FCore.Cache cache;
-  Integer i1,i2;
   list<DAE.Var> vars;
-  list<list<DAE.Var>> varsl = {};
   list<DAE.Element> dae;
+  list<list<DAE.Var>> varsl = {};
   list<list<DAE.Element>> dael = {};
+  list<Integer> element_order;
+  array<tuple<SCode.Element, DAE.Mod>> el_arr;
+  array<list<DAE.Var>> var_arr;
+  array<list<DAE.Element>> dae_arr;
 algorithm
-  // print("push " + PrefixUtil.printPrefixStr(inPrefix) + "\n");
   cache := InstUtil.pushStructuralParameters(inCache);
-  // i1 := numStructuralParameterScopes(cache);
-  //fprintln(Flags.IDEP, "Before:\n" + stringDelimitList(List.map(List.map(inElements, Util.tuple21), SCodeDump.unparseElementStr), "\n"));
-  //System.startTimer();
+
+  // Sort elements based on their dependencies.
   el := InstUtil.sortElementList(inElements, inEnv, FGraph.inFunctionScope(inEnv));
   // adrpo: MAKE SURE inner objects ARE FIRST in the list for instantiation!
   el := InstUtil.sortInnerFirstTplLstElementMod(el);
-  //System.stopTimer();
-  //fprintln(Flags.IDEP, "After: " + stringDelimitList(List.map(List.map(el, Util.tuple21), SCode.elementName), ", "));
 
-  for e in el loop
-    (cache, outEnv, outIH, outStore, dae, outSets, outState, vars, outGraph) :=
-      instElement2(cache, outEnv, outIH, outStore, inMod, inPrefix, outState, e,
-        inInstDims, inImplInst, inCallingScope, outGraph, outSets, inStopOnError);
-    varsl := vars :: varsl;
-    dael := dae :: dael;
-  end for;
+  // For non-functions, don't reorder the elements.
+  if not ClassInf.isFunction(inState) then
+    // Figure out the ordering of the sorted elements, see getSortedElementOrdering.
+    element_order := getSortedElementOrdering(inElements, el);
 
-  outVars := List.flattenReverse(varsl);
-  outDae := DAE.DAE(List.flattenReverse(dael));
+    // Create arrays so that we can instantiate the elements in the sorted order,
+    // while keeping the result in the same order as the elements are declared in.
+    el_arr := listArray(inElements);
+    var_arr := arrayCreate(listLength(el), {});
+    dae_arr := arrayCreate(listLength(el), {});
 
-  // sort in program order!
-  outDae := DAEUtil.sortDAEInModelicaCodeOrder(InstUtil.isTopCall(inCallingScope), inElements, outDae);
-  // i2 := numStructuralParameterScopes(cache);
-  // assert(i1 == i2) ;)
-  // print("pop " + PrefixUtil.printPrefixStr(inPrefix) + "\n");
-  // print("numStructuralParameterScopes " + PrefixUtil.printPrefixStr(inPrefix) + " before/after " + intString(i1) + "/" + intString(i2) + "\n");
+    // Instantiate the elements.
+    for idx in element_order loop
+      (cache, outEnv, outIH, outStore, dae, outSets, outState, vars, outGraph) :=
+        instElement2(cache, outEnv, outIH, outStore, inMod, inPrefix, outState, el_arr[idx],
+          inInstDims, inImplInst, inCallingScope, outGraph, outSets, inStopOnError);
+      arrayUpdate(var_arr, idx, vars);
+      arrayUpdate(dae_arr, idx, dae);
+    end for;
+
+    outVars := List.flatten(arrayList(var_arr));
+    outDae := DAE.DAE(List.flatten(arrayList(dae_arr)));
+  else
+    // For functions, use the sorted elements instead, otherwise things break.
+    for e in el loop
+      (cache, outEnv, outIH, outStore, dae, outSets, outState, vars, outGraph) :=
+        instElement2(cache, outEnv, outIH, outStore, inMod, inPrefix, outState, e,
+          inInstDims, inImplInst, inCallingScope, outGraph, outSets, inStopOnError);
+      varsl := vars :: varsl;
+      dael := dae :: dael;
+    end for;
+
+    outVars := List.flattenReverse(varsl);
+    outDae := DAE.DAE(List.flattenReverse(dael));
+  end if;
+
   outCache := InstUtil.popStructuralParameters(cache,inPrefix);
 end instElementList;
+
+protected function getSortedElementOrdering
+  "Takes a list of unsorted elements and a list of sorted elements, and returns
+   a list of the sorted elements indices in the unsorted list. E.g.:
+    getSortedElementOrdering({a, b, c}, {b, c, a}) => {2, 3, 1}"
+  input list<tuple<SCode.Element, DAE.Mod>> inElements;
+  input list<tuple<SCode.Element, DAE.Mod>> inSortedElements;
+  output list<Integer> outIndices = {};
+protected
+  list<tuple<SCode.Element, Integer>> index_map = {};
+  list<SCode.Element> sorted_el;
+  Integer i = 1;
+algorithm
+  // Pair each unsorted element with its index in the list.
+  for e in inElements loop
+    index_map := (Util.tuple21(e), i) :: index_map;
+    i := i + 1;
+  end for;
+  index_map := listReverse(index_map);
+
+  // Loop through the sorted elements.
+  sorted_el := list(Util.tuple21(e) for e in inSortedElements);
+  for e in sorted_el loop
+    // Remove the element from the index map, and add its index to the list of
+    // indices. Elements are usually not reordered much, so most of the time the
+    // sought after element should be first in the list.
+    (index_map, SOME((_, i))) :=
+      List.deleteMemberOnTrue(e, index_map, getSortedElementOrdering_comp);
+    outIndices := i :: outIndices;
+  end for;
+
+  outIndices := listReverse(outIndices);
+end getSortedElementOrdering;
+
+protected function getSortedElementOrdering_comp
+  input SCode.Element inElement1;
+  input tuple<SCode.Element, Integer> inElement2;
+  output Boolean outEqual = SCode.elementNameEqual(inElement1, Util.tuple21(inElement2));
+end getSortedElementOrdering_comp;
 
 public function instElement2
   input FCore.Cache inCache;
@@ -4470,188 +4527,92 @@ protected function updateComponentInEnv2
   output InnerOuter.InstHierarchy outIH;
   output HashTable5.HashTable outUpdatedComps;
 algorithm
-  (outCache,outEnv,outIH,outUpdatedComps) :=
-  matchcontinue (inCache,inEnv,cenv,inIH,pre,path,name,ad,cl,attr,inPrefixes,dattr,info,m,
-                 cmod,mod,cref,ci_state,impl,inUpdatedComps)
-    local
-      InstanceHierarchy ih;
-      FCore.Graph env;
-      FCore.Cache cache;
-      HashTable5.HashTable updatedComps;
-
-    case (cache,env,_,ih,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,updatedComps)
-      equation
-        ErrorExt.setCheckpoint("Inst.updateComponentInEnv2");
-        (cache,env,ih,updatedComps) = updateComponentInEnv2_dispatch(cache,env,cenv,ih,pre,path,name,ad,cl,attr,inPrefixes,dattr,info,m,cmod,mod,cref,ci_state,impl,updatedComps);
-        ErrorExt.delCheckpoint("Inst.updateComponentInEnv2");
-      then
-        (cache,env,ih,updatedComps);
-
-    else
-      equation
-        ErrorExt.rollBack("Inst.updateComponentInEnv2");
-      then
-        fail();
-  end matchcontinue;
+  try
+    ErrorExt.setCheckpoint("Inst.updateComponentInEnv2");
+    (outCache, outEnv, outIH, outUpdatedComps) :=
+      updateComponentInEnv2_dispatch(inCache, inEnv, cenv, inIH, pre, path,
+        name, ad, cl, attr, inPrefixes, dattr, info, m, cmod, mod, cref,
+        ci_state, impl, inUpdatedComps);
+    ErrorExt.delCheckpoint("Inst.updateComponentInEnv2");
+  else
+    ErrorExt.rollBack("Inst.updateComponentInEnv2");
+    fail();
+  end try;
 end updateComponentInEnv2;
 
 protected function updateComponentInEnv2_dispatch
-" Helper function, checks if the component was already instantiated.
-  If it was, don't do it again."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input FCore.Graph inCenv;
+  input FCore.Graph inClsEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix pre;
-  input Absyn.Path path;
-  input String name;
-  input list<Absyn.Subscript> ad;
-  input SCode.Element cl;
-  input SCode.Attributes attr;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Path inPath;
+  input String inName;
+  input list<Absyn.Subscript> inSubscripts;
+  input SCode.Element inClass;
+  input SCode.Attributes inAttr;
   input SCode.Prefixes inPrefixes;
-  input DAE.Attributes dattr;
-  input SourceInfo info;
-  input SCode.Mod m;
-  input DAE.Mod cmod;
+  input DAE.Attributes inDAttr;
+  input SourceInfo inInfo;
+  input SCode.Mod inSMod;
+  input DAE.Mod inClsMod;
   input DAE.Mod inMod;
-  input Absyn.ComponentRef cref;
-  input ClassInf.State ci_state;
-  input Boolean impl;
+  input Absyn.ComponentRef inCref;
+  input ClassInf.State inState;
+  input Boolean inImpl;
   input HashTable5.HashTable inUpdatedComps;
-  output FCore.Cache outCache;
-  output FCore.Graph outEnv;
-  output InnerOuter.InstHierarchy outIH;
-  output HashTable5.HashTable outUpdatedComps;
+  output FCore.Cache outCache = inCache;
+  output FCore.Graph outEnv = inEnv;
+  output InnerOuter.InstHierarchy outIH = inIH;
+  output HashTable5.HashTable outUpdatedComps = inUpdatedComps;
+protected
+  SCode.Mod smod;
+  DAE.Mod mod, mod1, mod2, class_mod, comp_mod;
+  Option<DAE.EqMod> eq;
+  Absyn.ComponentRef own_cref;
+  list<DAE.Dimension> dims;
+  FCore.Graph cls_env, comp_env;
+  SCode.Element cls;
+  DAE.Type ty;
+  DAE.Binding binding;
+  DAE.Var var;
 algorithm
-  (outCache,outEnv,outIH,outUpdatedComps) :=
-  matchcontinue (inCache,inEnv,inCenv,inIH,pre,path,name,ad,cl,attr,inPrefixes,dattr,info,m,
-                 cmod,inMod,cref,ci_state,impl,inUpdatedComps)
-    local
-      DAE.Type ty;
-      DAE.Mod m_1,classmod,mm,mod_1,mod_2,mod_3,mod;
-      FCore.Graph compenv;
-      Option<DAE.EqMod> eq;
-      DAE.Dimensions dims;
-      DAE.Binding binding;
-      Absyn.ComponentRef owncref;
-      InstanceHierarchy ih;
-      FCore.Cache cache;
-      FCore.Graph env, cenv;
-      HashTable5.HashTable updatedComps;
-      SCode.Element cls;
+  try
+    1 := BaseHashTable.get(inCref, inUpdatedComps);
+  else
+    smod := SCode.mergeModifiers(inSMod, SCodeUtil.getConstrainedByModifiers(inPrefixes));
+    (outCache, mod1) :=
+      updateComponentInEnv3(outCache, outEnv, outIH, smod, inImpl, Mod.COMPONENT(inName), inInfo);
+    class_mod := Mod.lookupModificationP(inMod, inPath);
+    comp_mod := Mod.lookupCompModification(inMod, inName);
+    mod2 := Mod.merge(class_mod, comp_mod, outEnv, Prefix.NOPRE());
+    mod2 := Mod.merge(mod2, mod1, outEnv, Prefix.NOPRE());
+    mod2 := Mod.merge(inClsMod, mod2, outEnv, Prefix.NOPRE());
+    (outCache, mod2) :=
+      Mod.updateMod(outCache, outEnv, outIH, Prefix.NOPRE(), mod2, inImpl, inInfo);
 
-    case (cache,env,_,ih,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,updatedComps)
-      equation
-        1 = BaseHashTable.get(cref, updatedComps);
-      then (cache,env,ih,updatedComps);
+    mod := if InstUtil.redeclareBasicType(comp_mod) then mod1 else mod2;
+    eq := Mod.modEquation(mod);
 
-    // if we don't have a redeclare, take the binding from mod_3
-    case (cache,env,cenv,ih,_,_,_,_,_,_,_,_,_,_,_,mod,_,_,_,updatedComps)
-      equation
-        (cache, m_1) = updateComponentInEnv3(cache, env, ih, SCode.mergeModifiers(m, SCodeUtil.getConstrainedByModifiers(inPrefixes)), impl, Mod.COMPONENT(name), info);
-        classmod = Mod.lookupModificationP(mod, path);
-        mm = Mod.lookupCompModification(mod, name);
-        // make sure is not a redeclare
-        false = InstUtil.redeclareBasicType(mm);
-        mod = Mod.merge(classmod, mm, env, Prefix.NOPRE());
-        mod_1 = Mod.merge(mod, m_1, env, Prefix.NOPRE());
-        mod_2 = Mod.merge(cmod, mod_1, env, Prefix.NOPRE());
-        (cache,mod_3) = Mod.updateMod(cache, env, ih, Prefix.NOPRE(),mod_2,impl,info);
-        eq = Mod.modEquation(mod_3);
+    own_cref := Absyn.CREF_IDENT(inName, {});
+    (outCache, dims) := InstUtil.elabArraydim(outCache, outEnv, own_cref, inPath,
+      inSubscripts, eq, inImpl, NONE(), true, false, inPrefix, inInfo, {});
 
-        owncref = Absyn.CREF_IDENT(name,{});
-        (cache,dims) = InstUtil.elabArraydim(cache,env,owncref,path,ad,eq,impl,NONE(),true, false,pre,info,{})
-        "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;
+    // Instantiate the component.
+    (cls_env, cls, outIH) :=
+      FGraph.createVersionScope(outEnv, inName, inPrefix, mod, inClsEnv, inClass, outIH);
+    (outCache, comp_env, outIH, _, _, _, ty) :=
+      InstVar.instVar(outCache, cls_env, outIH, UnitAbsyn.noStore, inState, mod,
+        inPrefix, inName, cls, inAttr, inPrefixes, dims, {}, {}, inImpl,
+        SCode.noComment, inInfo, ConnectionGraph.EMPTY, Connect.emptySet, outEnv);
 
-        // make it a partial class and do just partial inst on it.
-        // cls = SCode.setClassPartialPrefix(SCode.PARTIAL(), cl);
-        cls = cl;
-
-        /*
-        print("Inst.updateComponentInEnv2: Before instVar: [NO REDECL]" + name + "\n" +
-           "mod_3: " + Mod.printModStr(mod_3) + "\n" +
-           "m_1: " + Mod.printModStr(m_1) + "\n" +
-           "classmod: " + Mod.printModStr(classmod) + "\n" +
-           "mm: " + Mod.printModStr(mm) + "\n" +
-           "mod: " + Mod.printModStr(mod) + "\n" +
-           "mod_1: " + Mod.printModStr(mod_1) + "\n" +
-           "mod_2: " + Mod.printModStr(mod_2) + "\n" +
-           "\n");*/
-
-        // Instantiate the component */
-        (cenv, cls, ih) = FGraph.createVersionScope(env, name, pre, mod_3, cenv, cls, ih);
-        (cache,compenv,ih,_,_,_,ty,_) =
-          InstVar.instVar(cache, cenv, ih, UnitAbsyn.noStore, ci_state, mod_3, pre,
-          name, cls, attr, inPrefixes, dims, {}, {}, impl, SCode.noComment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
-
-        // print("updateComponentInEnv -> 1 component: " + n + " ty: " + Types.printTypeStr(ty) + "\n");
-
-        /* The environment is extended with the new variable binding. */
-        (cache,binding) = InstBinding.makeBinding(cache, env, attr, mod_3, ty, pre, name, info);
-        /* type info present */
-        //fprintln(Flags.DEBUG,"VAR " + name + " has new type " + Types.unparseType(ty) + ", " + Types.printBindingStr(binding) + "m:" + SCodeDump.printModStr(m));
-        env = FGraph.updateComp(env, DAE.TYPES_VAR(name,dattr,ty,binding,NONE()), FCore.VAR_TYPED(), compenv);
-        //updatedComps = BaseHashTable.delete(cref,updatedComps);
-
-        updatedComps = BaseHashTable.add((cref,1),updatedComps);
-      then
-        (cache,env,ih,updatedComps);
-
-    // mod is a redeclare, take binding from m!
-    case (cache,env,cenv,ih,_,_,_,_,_,_,_,_,_,_,_,mod,_,_,_,updatedComps)
-      equation
-        (cache, m_1) = updateComponentInEnv3(cache, env, ih, SCode.mergeModifiers(m, SCodeUtil.getConstrainedByModifiers(inPrefixes)), impl, Mod.COMPONENT(name), info);
-        classmod = Mod.lookupModificationP(mod, path);
-        mm = Mod.lookupCompModification(mod, name);
-        mod = Mod.merge(classmod, mm, env, Prefix.NOPRE());
-        mod_1 = Mod.merge(mod, m_1, env, Prefix.NOPRE());
-        mod_2 = Mod.merge(cmod, mod_1, env, Prefix.NOPRE());
-        (cache,_) = Mod.updateMod(cache, env, ih, Prefix.NOPRE(),mod_2,impl,info);
-        eq = Mod.modEquation(m_1);
-
-        owncref = Absyn.CREF_IDENT(name,{});
-        (cache,dims) = InstUtil.elabArraydim(cache,env,owncref,path,ad,eq,impl,NONE(),true,false,pre,info,{})
-        "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;
-
-        // make it a partial class and do just partial inst on it.
-        // cls = SCode.setClassPartialPrefix(SCode.PARTIAL(), cl);
-        cls = cl;
-
-        /*
-        print("Inst.updateComponentInEnv2: Before instVar: [REDECL]" + name + "\n" +
-           "mod_3: " + Mod.printModStr(mod_3) + "\n" +
-           "m_1: " + Mod.printModStr(m_1) + "\n" +
-           "classmod: " + Mod.printModStr(classmod) + "\n" +
-           "mm: " + Mod.printModStr(mm) + "\n" +
-           "mod: " + Mod.printModStr(mod) + "\n" +
-           "mod_1: " + Mod.printModStr(mod_1) + "\n" +
-           "mod_2: " + Mod.printModStr(mod_2) + "\n" +
-           "\n");*/
-
-        // Instantiate the component */
-        (cenv, cls, ih) = FGraph.createVersionScope(env, name, pre, m_1, cenv, cls, ih);
-        (cache,compenv,ih,_,_,_,ty,_) =
-          InstVar.instVar(cache, cenv, ih, UnitAbsyn.noStore, ci_state, m_1 /* classmod */, pre,
-          name, cls, attr, inPrefixes, dims, {}, {}, impl, SCode.noComment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
-
-        // print("updateComponentInEnv -> 1 component: " + n + " ty: " + Types.printTypeStr(ty) + "\n");
-
-        /* The environment is extended with the new variable binding. */
-        (cache,binding) = InstBinding.makeBinding(cache, env, attr, m_1, ty, pre, name, info);
-        /* type info present */
-        //fprintln(Flags.DEBUG,"VAR " + name + " has new type " + Types.unparseType(ty) + ", " + Types.printBindingStr(binding) + "m:" + SCodeDump.printModStr(m));
-        env = FGraph.updateComp(env, DAE.TYPES_VAR(name,dattr,ty,binding,NONE()), FCore.VAR_TYPED(), compenv);
-        //updatedComps = BaseHashTable.delete(cref,updatedComps);
-
-        updatedComps = BaseHashTable.add((cref,1),updatedComps);
-      then
-        (cache,env,ih,updatedComps);
-
-    else
-      equation
-        //Debug.traceln("- Inst.updateComponentInEnv2 failed");
-      then fail();
-  end matchcontinue;
+    // The environment is extended with the new variable binding.
+    (outCache, binding) :=
+      InstBinding.makeBinding(outCache, outEnv, inAttr, mod, ty, inPrefix, inName, inInfo);
+    var := DAE.TYPES_VAR(inName, inDAttr, ty, binding, NONE());
+    outEnv := FGraph.updateComp(outEnv, var, FCore.VAR_TYPED(), comp_env);
+    outUpdatedComps := BaseHashTable.add((inCref, 1), outUpdatedComps);
+  end try;
 end updateComponentInEnv2_dispatch;
 
 protected function updateComponentInEnv3
