@@ -18,6 +18,8 @@ host_short=$host_cpu-$host_os
 echo "build_short: $build_short"
 echo "host_short: $host_short"
 
+ORIGCC="$CC"
+
 dnl Checks for programs.
 AC_LANG([C])
 AC_PROG_CC
@@ -30,20 +32,29 @@ if test "$host_short" = "$build_short"; then
   AC_MSG_RESULT([not cross-compiling])
 elif echo "$CC" | grep -q "$host_short" || echo "$CC" | grep -q "$host"; then
   AC_MSG_RESULT([not needed; $CC contains the prefix])
-elif test "$host_short" = "x86_64"; then
+elif test "$host_os" = "$build_os" && test "$host_short" = "x86_64"; then
   CFLAGS_BEFORE="$CFLAGS"
   CFLAGS="$CFLAGS -m64"
   AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([-m64])], [AC_MSG_ERROR([-m64 not working])])
-elif echo "$host_short" | grep -q "i.86"; then
+elif test "$host_os" = "$build_os" && echo "$host_short" | grep -q "i.86"; then
   CFLAGS_BEFORE="$CFLAGS"
   CFLAGS="$CFLAGS -m32"
   LDFLAGS="$LDFLAGS -m32"
   AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([-m32])], [AC_MSG_ERROR([-m32 not working])])
+elif test ! -z "$ORIGCC"; then
+  AC_MSG_RESULT([user sent an explicit CC=$ORIGCC. Trusting the user.])
 else
-  AC_MSG_ERROR([unknown platform])
+  CC="$host-cc"
+  if which $host-cc > /dev/null 2>&1; then
+    CC="$host-cc"
+  else
+    CC=clang
+    CFLAGS="$CFLAGS -target $host"
+  fi
+  AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([$CC $CFLAGS])], [AC_MSG_ERROR([unknown platform and $CC $CFLAGS not working])])
 fi
 
-if flase; then
+if false; then
 CC_BEFORE="$CC"
 CC="clang -target $host_short"
 AC_MSG_CHECKING([looking for $CC to replace $CC_BEFORE])
@@ -130,7 +141,7 @@ if test "$OPENMODELICADYNAMIC" = "no"; then
   NEED_RUNTIME=1
 fi
 
-if test "$host_os" = darwin; then
+if echo "$host_os" | grep -q darwin; then
   DLLEXT=".dylib"
   if echo "$host_cpu" | grep -q i@<:@3456@:>@86; then
     FMIPLATFORM=darwin32

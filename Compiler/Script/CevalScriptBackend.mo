@@ -928,35 +928,14 @@ algorithm
         (cache,ret_val,st_1);*/
 
     case (cache,env,"translateModelFMU", {Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(str1),Values.STRING(str2),Values.STRING(filenameprefix)},st,_)
-      equation
-        true = FMI.checkFMIVersion(str1);
-        true = FMI.checkFMIType(str2);
-        str = Absyn.pathString(className);
-        filenameprefix = if filenameprefix == "<default>" then str else filenameprefix;
-        filenameprefix = Util.stringReplaceChar(filenameprefix,".","_");
-        defaulSimOpt = buildSimulationOptionsFromModelExperimentAnnotation(st, className, filenameprefix, SOME(defaultSimulationOptions));
-        simSettings = convertSimulationOptionsToSimCode(defaulSimOpt);
-        (cache,ret_val,st_1) = translateModelFMU(cache, env, className, st, str1, str2, filenameprefix, true, SOME(simSettings));
-      then
-        (cache,ret_val,st_1);
+      algorithm
+        (cache,ret_val,st_1) := buildModelFMU(cache, env, className, st, str1, str2, filenameprefix, true);
+      then (cache,ret_val,st_1);
 
-    case (cache,_,"translateModelFMU", {Values.CODE(Absyn.C_TYPENAME(_)),Values.STRING(str1),Values.STRING(_),Values.STRING(_)},st,_)
-      equation
-        false = FMI.checkFMIVersion(str1);
-        Error.addMessage(Error.UNKNOWN_FMU_VERSION, {str1});
-      then
-        (cache,Values.STRING(""),st);
-
-    case (cache,_,"translateModelFMU", {Values.CODE(Absyn.C_TYPENAME(_)),Values.STRING(_),Values.STRING(str1),Values.STRING(_)},st,_)
-      equation
-        false = FMI.checkFMIType(str1);
-        Error.addMessage(Error.UNKNOWN_FMU_TYPE, {str1});
-      then
-        (cache,Values.STRING(""),st);
-
-    case (cache,_,"translateModelFMU", {Values.CODE(Absyn.C_TYPENAME(_)),Values.STRING(_),Values.STRING(_)},st,_)
-      then
-        (cache,Values.STRING(""),st);
+    case (cache,env,"buildModelFMU", {Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(str1),Values.STRING(str2),Values.STRING(filenameprefix),Values.ARRAY(valueLst=cvars)},st,_)
+      algorithm
+        (cache,ret_val,st_1) := buildModelFMU(cache, env, className, st, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars));
+      then (cache,ret_val,st_1);
 
     case (cache,env,"translateModelXML",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,_)
       equation
@@ -2611,87 +2590,91 @@ algorithm
   end match;
 end translateModelCPP;*/
 
-protected function translateModelFMU " author: Frenkel TUD
+protected function buildModelFMU " author: Frenkel TUD
  translates a model into cpp code and writes also a makefile"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
-  input String inFMUVersion;
-  input String inFMUType;
+  input String FMUVersion;
+  input String FMUType;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
-  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
-  output FCore.Cache outCache;
+  input list<String> platforms = {"dynamic"};
+  output FCore.Cache cache;
   output Values.Value outValue;
-  output GlobalScript.SymbolTable outInteractiveSymbolTable;
+  output GlobalScript.SymbolTable st;
 protected
   Boolean staticSourceCodeFMU;
+  String filenameprefix, quote, fmutmp, thisplatform, cmd, logfile;
+  GlobalScript.SimulationOptions defaulSimOpt;
+  SimCode.SimulationSettings simSettings;
+  list<String> libs;
+  Boolean isWindows;
 algorithm
-  staticSourceCodeFMU := Flags.isSet(Flags.BUILD_STATIC_SOURCE_FMU);
-  (outCache,outValue,outInteractiveSymbolTable):=
-  match (inCache,inEnv,className,inInteractiveSymbolTable,inFMUVersion,inFMUType,inFileNamePrefix,addDummy,inSimSettingsOpt)
-    local
-      FCore.Cache cache;
-      FCore.Graph env;
-      BackendDAE.BackendDAE indexed_dlow;
-      GlobalScript.SymbolTable st;
-      list<String> libs;
-      Values.Value outValMsg;
-      String file_dir, FMUVersion, FMUType, fileNamePrefix, str, fmutmp, quote, cmd;
-      Boolean isWindows = System.os() == "Windows_NT";
-    case (cache,env,_,st,FMUVersion,FMUType,fileNamePrefix,_,_) /* mo file directory */
-      equation
-        (cache, outValMsg, st,_, libs,_, _) =
-          SimCodeMain.translateModelFMU(cache,env,className,st,FMUVersion,FMUType,fileNamePrefix,addDummy,inSimSettingsOpt);
+  st := inInteractiveSymbolTable;
+  cache := inCache;
+  if not FMI.checkFMIVersion(FMUVersion) then
+    outValue := Values.STRING("");
+    Error.addMessage(Error.UNKNOWN_FMU_VERSION, {FMUVersion});
+    return;
+  elseif not FMI.checkFMIType(FMUType) then
+    outValue := Values.STRING("");
+    Error.addMessage(Error.UNKNOWN_FMU_TYPE, {FMUType});
+    return;
+  end if;
+  filenameprefix := Util.stringReplaceChar(if inFileNamePrefix == "<default>" then Absyn.pathString(className) else inFileNamePrefix,".","_");
+  defaulSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(st, className, filenameprefix, SOME(defaultSimulationOptions));
+  simSettings := convertSimulationOptionsToSimCode(defaulSimOpt);
+  try
+    (cache, outValue, st,_, libs,_, _) := SimCodeMain.translateModelFMU(cache, inEnv, className, st, FMUVersion, FMUType, filenameprefix, addDummy, simSettings);
+  else
+    outValue := Values.STRING("");
+    return;
+  end try;
+  isWindows := System.os() == "Windows_NT";
+  // compile
+  quote := if isWindows then "" else "'";
+  CevalScript.compileModel(filenameprefix+"_FMU" , libs);
+  if Config.simCodeTarget() == "Cpp" then
+    // Cpp FMUs are not source-code FMUs
+    return;
+  end if;
 
-        // compile
-        quote = if isWindows then "" else "'";
-        CevalScript.compileModel(fileNamePrefix+"_FMU" , libs);
-        if Config.simCodeTarget() <> "Cpp" then
-          fmutmp = fileNamePrefix + ".fmutmp";
-          /* Let's just assume we have a pristine source directory in fmutmp
-          if System.directoryExists(fmutmp) then
-            System.removeDirectory(fmutmp);
-          end if;
-          unzip(...);
-          */
-          // CevalScript.compileModel(fileNamePrefix , libs, workingDir=fmutmp+"/sources", makeVars={"CC=arm-linux-gnueabi-gcc","FMIPLATFORM=arm-linux-gnueabi","DLLEXT=.so"});
-          cmd = "cd \"" +  fmutmp+"/sources\" && ./configure "+
-            " --host="+System.getTriple()+
-            " --build="+System.getTriple()+
-            " --with-dynamic-om-runtime"+
-            " CC="+quote+System.getCCompiler()+quote+
-            " CFLAGS="+quote+System.stringReplace(System.getCFlags(),"${MODELICAUSERCFLAGS}","")+quote+
-            " LDFLAGS="+quote+("-L'"+Settings.getInstallationDirectoryPath()+"/lib/"+System.getTriple()+"/omc' "+
-                               "-Wl,-rpath,'"+Settings.getInstallationDirectoryPath()+"/lib/"+System.getTriple()+"/omc' "+
-                               System.getLDFlags()+" "+(if staticSourceCodeFMU then "" else System.getRTLibsSim()))+quote+
-            (if staticSourceCodeFMU then " --with-dynamic-om-runtime" else "");
-          // print(cmd + "\n");
-          0=System.systemCall(cmd, outFile=fileNamePrefix+".log");
-          CevalScript.compileModel(fileNamePrefix , libs, workingDir=fmutmp+"/sources", makeVars={
-              /*
-              "CC="+System.getCCompiler(),
-              "CFLAGS="+quote+System.getCFlags()+quote,
-              "CPPFLAGS=",
-              "LDFLAGS="+quote+ + quote,
-              "FMIPLATFORM="+System.modelicaPlatform(),
-              "DLLEXT="+System.getDllExt(),
-              "LD="+quote+System.getLinker()+quote,
-              if staticSourceCodeFMU then "OPENMODELICA_DYNAMIC=" else "OPENMODELICA_DYNAMIC=1"
-              */
-          });
-          // CevalScript.compileModel(fileNamePrefix , libs, workingDir=fmutmp+"/sources", makeVars={});
-          System.removeDirectory(fmutmp);
-        end if;
-      then (cache,outValMsg,st);
-    else /* mo file directory */
-      equation
-         str = Error.printMessagesStr(false);
-      then
-        (inCache,ValuesUtil.makeArray({Values.STRING("translateModelFMU error."),Values.STRING(str)}),inInteractiveSymbolTable);
-  end match;
-end translateModelFMU;
+  fmutmp := filenameprefix + ".fmutmp";
+  logfile := filenameprefix+".log";
+
+  thisplatform := " CC="+quote+System.getCCompiler()+quote+
+      " CFLAGS="+quote+System.stringReplace(System.getCFlags(),"${MODELICAUSERCFLAGS}","")+quote+
+      " LDFLAGS="+quote+("-L'"+Settings.getInstallationDirectoryPath()+"/lib/"+System.getTriple()+"/omc' "+
+                         "-Wl,-rpath,'"+Settings.getInstallationDirectoryPath()+"/lib/"+System.getTriple()+"/omc' "+
+                         System.getLDFlags()+" ");
+
+  for platform in platforms loop
+    cmd := "cd \"" +  fmutmp+"/sources\" && ./configure "+
+      (if platform == "dynamic" then
+        " --with-dynamic-om-runtime"+thisplatform+System.getRTLibsSim()+quote
+      elseif platform == "static" then
+        thisplatform+quote
+      else
+        (
+        " --host="+quote+platform+quote+
+        " CFLAGS="+quote+"-Os -flto"+quote+" LDFLAGS=-flto"
+        )
+      ) + " && make clean";
+    if System.regularFileExists(logfile) then
+      System.removeFile(logfile);
+    end if;
+    if 0 <> System.systemCall(cmd, outFile=logfile) then
+      outValue := Values.STRING("");
+      Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
+      return;
+    end if;
+    CevalScript.compileModel(filenameprefix , libs, workingDir=fmutmp+"/sources", makeVars={});
+  end for;
+
+  System.removeDirectory(fmutmp);
+end buildModelFMU;
 
 
 protected function translateModelXML " author: Alachew

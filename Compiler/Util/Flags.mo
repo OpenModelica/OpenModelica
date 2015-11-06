@@ -460,13 +460,11 @@ constant DebugFlag HARDCODED_START_VALUES = DEBUG_FLAG(146, "hardcodedStartValue
   Util.gettext("Embed the start values of variables and parameters into the c++ code and do not read it from xml file."));
 constant DebugFlag DUMP_FUNCTIONS = DEBUG_FLAG(147, "dumpFunctions", false,
   Util.gettext("Add functions to backend dumps."));
-constant DebugFlag BUILD_STATIC_SOURCE_FMU = DEBUG_FLAG(148, "buildStaticSourceFMU", false,
-  Util.gettext("A temporary flag to not link the C run-time system when building an FMU; instead compiling the run-time sources into the FMU. The goal is to make this a truly static shared object, depending on nothing outside the FMU (all sources will be included)."));
-constant DebugFlag DEBUG_DIFFERENTIATION = DEBUG_FLAG(149, "debugDifferentiation", false,
+constant DebugFlag DEBUG_DIFFERENTIATION = DEBUG_FLAG(148, "debugDifferentiation", false,
   Util.gettext("Dumps debug output for the differentiation process."));
-constant DebugFlag DEBUG_DIFFERENTIATION_VERBOSE = DEBUG_FLAG(150, "debugDifferentiationVerbose", false,
+constant DebugFlag DEBUG_DIFFERENTIATION_VERBOSE = DEBUG_FLAG(149, "debugDifferentiationVerbose", false,
   Util.gettext("Dumps verbose debug output for the differentiation process."));
-constant DebugFlag FMU_EXPERIMENTAL = DEBUG_FLAG(151, "fmuExperimental", false,
+constant DebugFlag FMU_EXPERIMENTAL = DEBUG_FLAG(150, "fmuExperimental", false,
   Util.gettext("Include an extra function in the FMU fmi2GetSpecificDerivatives."));
 
 
@@ -623,7 +621,6 @@ constant list<DebugFlag> allDebugFlags = {
   EVAL_OUTPUT_ONLY,
   HARDCODED_START_VALUES,
   DUMP_FUNCTIONS,
-  BUILD_STATIC_SOURCE_FMU,
   DEBUG_DIFFERENTIATION,
   DEBUG_DIFFERENTIATION_VERBOSE,
   FMU_EXPERIMENTAL
