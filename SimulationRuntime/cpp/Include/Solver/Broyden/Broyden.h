@@ -13,10 +13,9 @@
 #include <Solver/Broyden/BroydenSettings.h>
 
 #include <Core/Utils/extension/logger.hpp>
+
 #if defined(__vxworks)
-//#include <klu.h>
-#else
-//#include <Solver/KLU/klu.h>
+#include <klu.h>
 #endif
 
 /*****************************************************************************/
@@ -128,7 +127,7 @@ private:
 
 
   int _dim;
-/*
+#if defined(__vxworks)
   klu_symbolic* _kluSymbolic ;
   klu_numeric* _kluNumeric ;
   klu_common* _kluCommon ;
@@ -136,7 +135,7 @@ private:
   int* _Ap;
   double* _Ax;
   int _nonzeros;
-*/
+#endif
   long int* _ihelpArray;
   double * 	_zeroVec;
   double *	 _f ;
