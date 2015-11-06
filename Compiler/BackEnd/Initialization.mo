@@ -1751,6 +1751,7 @@ algorithm
       BackendDAE.EqSystem system;
       DAE.FunctionTree funcs;
       list<BackendDAE.Equation> list_inEqns;
+      Boolean anyStartValue;
 
     case _ equation
       nVars = BackendVariable.varsSize(vars);
@@ -1761,7 +1762,7 @@ algorithm
       exp = DAE.BINARY(lhs, DAE.SUB(DAE.T_REAL_DEFAULT), rhs);
       (exp, _) = ExpressionSimplify.simplify(exp);
       true = Expression.isZero(exp);
-      //((_, listParameter))=parameterCheck((exp, {}));
+      //listParameter = parameterCheck(exp);
       //true = listEmpty(listParameter);
       eqn = BackendEquation.equationNth1(inEqnsOrig, inUnassignedEqn);
       Error.addCompilerNotification("The following equation is consistent and got removed from the initialization problem: " + BackendDump.equationString(eqn));
@@ -1786,7 +1787,7 @@ algorithm
       (exp, _) = ExpressionSimplify.simplify(exp);
       false = Expression.isZero(exp);
 
-      ((_, listParameter)) = parameterCheck((exp, {}));
+      (listParameter, false) = parameterCheck(exp);
       true = listEmpty(listParameter);
 
       eqn2 = BackendEquation.equationNth1(inEqnsOrig, inUnassignedEqn);
@@ -1803,7 +1804,7 @@ algorithm
       (exp, _) = ExpressionSimplify.simplify(exp);
       false = Expression.isZero(exp);
 
-      ((_, listParameter))=parameterCheck((exp, {}));
+      listParameter = parameterCheck(exp);
       false = listEmpty(listParameter);
 
       list_inEqns = BackendEquation.equationList(inEqns);
@@ -1830,50 +1831,44 @@ algorithm
       (exp, _) = ExpressionSimplify.simplify(exp);
       false = Expression.isZero(exp);
 
-      ((_, listParameter)) = parameterCheck((exp, {}));
-      false = listEmpty(listParameter);
+      (listParameter, anyStartValue) = parameterCheck(exp);
+      true = not listEmpty(listParameter) or anyStartValue;
 
       eqn2 = BackendEquation.equationNth1(inEqnsOrig, inUnassignedEqn);
-      Error.addCompilerWarning("It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters during compile time: " + BackendDump.equationString(eqn2) + " (" + BackendDump.equationString(eqn) + ")");
+      Error.addCompilerWarning("It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: " + BackendDump.equationString(eqn2) + " (" + BackendDump.equationString(eqn) + ")");
     then ({}, true, {inUnassignedEqn});
   end matchcontinue;
 end getConsistentEquation;
 
 protected function parameterCheck "author: mwenzler"
-   input tuple<DAE.Exp, list<String>> inExp;
-  output tuple<DAE.Exp, list<String>> outExp;
-protected
-  DAE.Exp e;
-  list<String> listParameter;
+  input DAE.Exp inExp;
+  output list<String> outParameters;
+  output Boolean outAnyStartValue;
 algorithm
-  (e, listParameter) := inExp;
-  (e, listParameter) := Expression.traverseExpBottomUp(e, parameterCheck2, listParameter); // TODO: Was {}; why?
-  outExp := (e, listParameter);
+  (_, (outParameters, outAnyStartValue)) := Expression.traverseExpTopDown(inExp, parameterCheck2, ({}, false));
 end parameterCheck;
 
 protected function parameterCheck2
-  input DAE.Exp exp;
-  input list<String> inParams;
-  output DAE.Exp outExp;
-  output list<String> listParameter;
+  input DAE.Exp inExp;
+  input tuple<list<String> /*parameters*/, Boolean /*anyStartValue*/> inParams;
+  output DAE.Exp outExp = inExp;
+  output Boolean outContinue;
+  output tuple<list<String> /*parameters*/, Boolean /*anyStartValue*/> outParams;
+protected
+  DAE.ComponentRef componentRef;
+  list<String> parameters;
+  Boolean anyStartValue;
 algorithm
-  (outExp, listParameter) := match (exp, inParams)
-    local
-      String Para;
+  (parameters, anyStartValue) := inParams;
+  (outParams, outContinue) := match inExp
+    case DAE.CREF(componentRef=componentRef) equation
+      parameters = ComponentReference.crefStr(componentRef)::parameters;
+    then ((parameters, anyStartValue), true);
 
-    case (DAE.CREF(componentRef=DAE.CREF_QUAL(ident=Para)), listParameter) equation
-      listParameter=listAppend({Para}, listParameter);
-    then (exp, listParameter);
+    case DAE.CALL(path=Absyn.IDENT(name="$_start"))
+    then ((parameters, true), false);
 
-    case (DAE.CREF(componentRef=DAE.CREF_IDENT(ident=Para)), listParameter) equation
-      listParameter=listAppend({Para}, listParameter);
-    then (exp, listParameter);
-
-    case (DAE.CREF(componentRef=DAE.CREF_ITER(ident=Para)), listParameter) equation
-      listParameter=listAppend({Para}, listParameter);
-    then (exp, listParameter);
-
-    else (exp, inParams);
+    else ((parameters, anyStartValue), true);
   end match;
 end parameterCheck2;
 
