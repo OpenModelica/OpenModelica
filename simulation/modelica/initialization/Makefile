@@ -70,6 +70,7 @@ OverdeterminedInitialization.Fluid.TwoVolumesFullSteadyStatePressureAndTemperatu
 # Run make failingtest
 FAILINGTESTFILES = \
 bug_2830.mos \
+bug_3536.mos \
 discreteTest07.mos \
 homotopy1.mos \
 
