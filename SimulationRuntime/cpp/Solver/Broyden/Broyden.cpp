@@ -10,11 +10,12 @@
 #include <Core/Math/IBlas.h>        // use BLAS routines
 #include <Core/Math/Constants.h>        // definitializeion of constants like uround
 
+
 #if defined(__vxworks)
-//#include <klu.h>
-#else
-//#include <Solver/KLU/klu.h>
+#include <klu.h>
 #endif
+
+
 
 #include <Core/Utils/numeric/bindings/ublas.hpp>
 #include <Core/Utils/numeric/utils.h>
@@ -42,14 +43,15 @@ Broyden::Broyden(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _identity           (NULL)
 
 
-/*
+#if defined(__vxworks)
     , _kluSymbolic 			(NULL)
     , _kluNumeric			(NULL)
     , _kluCommon			(NULL)
     , _Ai					(NULL)
     , _Ap					(NULL)
     , _Ax					(NULL)
-*/
+#endif
+
 	, _dimSys            (0)
 	, _firstCall        (true)
 	, _iterationStatus    (CONTINUE)
@@ -87,7 +89,7 @@ Broyden::~Broyden()
 	if(_f) delete [] _f;
 	if(_ihelpArray) delete [] _ihelpArray;
 
-/*
+#if defined(__vxworks)
 	if(_sparse == true)
 	{
 		if(_kluCommon)
@@ -105,7 +107,7 @@ Broyden::~Broyden()
 		if(_Ax)
 			delete [] _Ax;
 	}
-*/
+#endif
 
 }
 
@@ -196,7 +198,8 @@ void Broyden::initialize()
 			{
 				_identity[i + i * _dimSys] = 1.0;
 			}
-/*
+
+			#if defined(__vxworks)
 			if (_algLoop->isLinear() || _algLoop->isLinearTearing())
 				{
 
@@ -213,10 +216,10 @@ void Broyden::initialize()
 						_Ai = new int[_nonzeros];//todo + 1 ?
 						_Ax = new double[_nonzeros];//todo + 1 ?
 
-						int const* Ti = bindings::begin_compressed_index_major (A);
-						int const* Tj = bindings::begin_index_minor (A);
+						int const* Ti = boost::numeric::bindings::begin_compressed_index_major (A);
+						int const* Tj = boost::numeric::bindings::begin_index_minor (A);
 
-						double const* Ax = bindings::begin_value (A);
+						double const* Ax = boost::numeric::bindings::begin_value (A);
 
 						memcpy(_Ax,Ax,sizeof(double)* _nonzeros );
 						memcpy(_Ap,Ti,sizeof(int)* (_dim + 1) );
@@ -226,7 +229,7 @@ void Broyden::initialize()
 						_kluNumeric = klu_factor (_Ap, _Ai, _Ax, _kluSymbolic, _kluCommon) ;
 					}
 				}
-*/
+			#endif
 
 
 
@@ -285,6 +288,7 @@ void Broyden::solve()
 		long int irtrn  = 0;          // Retrun-flag of Fortran code        _algLoop->getReal(_y);
 		_algLoop->evaluate();
 		_algLoop->getRHS(_f);
+
 		if(_sparse == false)
 		{
 
@@ -303,9 +307,10 @@ void Broyden::solve()
 		//sparse
 		else
 		{
-			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system with klu not implemented");
-/*
 
+
+
+			#if defined(__vxworks)
 			//const sparsematrix_t& As = _algLoop->getSystemSparseMatrix();
 
 			//double const* Ax = bindings::begin_value (As);
@@ -320,8 +325,11 @@ void Broyden::solve()
 				throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system with klu");
 			}
 			klu_solve (_kluSymbolic, _kluNumeric, _dim, 1, _f, _kluCommon) ;
+			#else
 
-*/
+			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system with klu not implemented");
+
+			#endif
 		}
 
 		memcpy(_y,_f,_dimSys*sizeof(double));
@@ -397,21 +405,22 @@ void Broyden::solve()
 		//lapack::gesv (A, ipiv,b);   // solving the system, b contains x
 		else
 		{
-			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system with klu");
-/*
+
+			#if defined(__vxworks)
 			//Sparse Solve
 
 			const sparsematrix_t& As = _algLoop->getSystemSparseMatrix();
 
-			double const* Ax = bindings::begin_value (As);
+			double const* Ax = boost::numeric::bindings::begin_value (As);
 
 			memcpy(_Ax,Ax,sizeof(double)* _nonzeros );
 
 			int ok = klu_refactor (_Ap, _Ai, _Ax, _kluSymbolic, _kluNumeric, _kluCommon) ;
 
 			klu_solve (_kluSymbolic, _kluNumeric, _dim, 1, _f, _kluCommon) ;
-
-*/
+			#else
+			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system with klu");
+			#endif
 	    }
 
 
