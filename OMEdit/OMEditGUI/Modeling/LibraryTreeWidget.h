@@ -267,6 +267,9 @@ private:
   QAction *mpViewClassAction;
   QAction *mpViewDocumentationAction;
   QAction *mpNewModelicaClassAction;
+  QAction *mpMoveUpAction;
+  QAction *mpMoveDownAction;
+  QMenu *mpOrderMenu;
   QAction *mpInstantiateModelAction;
   QAction *mpCheckModelAction;
   QAction *mpCheckAllModelsAction;
@@ -292,6 +295,8 @@ public slots:
   void viewClass();
   void viewDocumentation();
   void createNewModelicaClass();
+  void moveClassUp();
+  void moveClassDown();
   void instantiateModel();
   void checkModel();
   void checkAllModels();
