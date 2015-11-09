@@ -15,5 +15,6 @@ buildModel(OverdeterminedInitialization.Electrical.Test3PhaseSystemsFullInitial)
 // {"OverdeterminedInitialization.Electrical.Test3PhaseSystemsFullInitial","OverdeterminedInitialization.Electrical.Test3PhaseSystemsFullInitial_init.xml"}
 // "Notification: It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
 // Warning: The initial conditions are over specified. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 // "
 // endResult
