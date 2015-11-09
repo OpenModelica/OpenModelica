@@ -20,8 +20,8 @@ check-files:
 	@file FmuExportCrossCompile.fmutmp/binaries/win64/FmuExportCrossCompile.dll | grep "PE32+ executable (DLL) (console) x86-64, for MS Windows" || (file FmuExportCrossCompile.fmutmp/binaries/win64/FmuExportCrossCompile.dll ; false)
 	@file FmuExportCrossCompile.fmutmp/binaries/darwin32/FmuExportCrossCompile.dylib | grep "Mach-O i386 dynamically linked shared library" || (file FmuExportCrossCompile.fmutmp/binaries/darwin32/FmuExportCrossCompile.dylib ; false)
 	@file FmuExportCrossCompile.fmutmp/binaries/darwin64/FmuExportCrossCompile.dylib | grep "Mach-O 64-bit x86_64 dynamically linked shared library" || (file FmuExportCrossCompile.fmutmp/binaries/darwin64/FmuExportCrossCompile.dylib ; false)
-	@file FmuExportCrossCompile.fmutmp/binaries/linux32/FmuExportCrossCompile.so | grep "ELF 32-bit LSB shared object, Intel 80386, version 1 (SYSV), dynamically linked" || (file FmuExportCrossCompile.fmutmp/binaries/linux32/FmuExportCrossCompile.so ; false)
-	@file FmuExportCrossCompile.fmutmp/binaries/linux64/FmuExportCrossCompile.so | grep "ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked" || (file FmuExportCrossCompile.fmutmp/binaries/linux64/FmuExportCrossCompile.so ; false)
+	@file FmuExportCrossCompile.fmutmp/binaries/linux32/FmuExportCrossCompile.so | grep "ELF *32-bit *LSB *shared *object, Intel 80386, version 1 (SYSV), dynamically linked" || (file FmuExportCrossCompile.fmutmp/binaries/linux32/FmuExportCrossCompile.so ; false)
+	@file FmuExportCrossCompile.fmutmp/binaries/linux64/FmuExportCrossCompile.so | grep "ELF *64-bit *LSB *shared *object, x86-64, version 1 (SYSV), dynamically linked" || (file FmuExportCrossCompile.fmutmp/binaries/linux64/FmuExportCrossCompile.so ; false)
 	@file FmuExportCrossCompile.fmutmp/binaries/arm-linux-gnueabihf/FmuExportCrossCompile.so | grep "ELF 32-bit LSB shared object, ARM, EABI5 version 1 (SYSV), dynamically linked" || (file FmuExportCrossCompile.fmutmp/binaries/arm-linux-gnueabihf/FmuExportCrossCompile.so ; false)
 fmu-check:
 	@test ! -z "$(WINE32)" || (echo Did not find fmuCheck.win32.exe on the PATH; false)
