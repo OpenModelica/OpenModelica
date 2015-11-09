@@ -64,8 +64,7 @@ fi
 LDFLAGS_BEFORE="$LDFLAGS"
 LDFLAGS="$LDFLAGS -Wl,--no-undefined"
 AC_MSG_CHECKING([looking for --no-undefined])
-AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([yes]);LD_NOUNDEFINED=" -Wl,--no-undefined"], [AC_MSG_RESULT([no])])
-LDFLAGS="$LDFLAGS_BEFORE"
+AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([yes]);LD_NOUNDEFINED=" -Wl,--no-undefined"], [LDFLAGS="$LDFLAGS_BEFORE";AC_MSG_RESULT([no])])
 
 CFLAGS_BEFORE="$CFLAGS"
 CFLAGS="$CFLAGS -Werror"
@@ -84,7 +83,13 @@ for flag in $TRY_FLAGS; do
   CFLAGS="$RUNTIMECFLAGS $flag -Werror"
   AC_TRY_LINK([], [return 0;], [CFLAGS="$OLD_CFLAGS $flag"],[CFLAGS="$OLD_CFLAGS"])
 done
-OLD_CFLAGS="$CFLAGS"
+
+TRY_FLAGS="-static-libgcc"
+for flag in $TRY_FLAGS; do
+  OLD_LDFLAGS="$LDFLAGS"
+  LDFLAGS="$LDFLAGS $flag"
+  AC_TRY_LINK([], [return 0;], [LDFLAGS="$OLD_LDFLAGS $flag"],[LDFLAGS="$OLD_LDFLAGS"])
+done
 
 if test "`getconf LONG_BIT`" = "32"; then
 dnl Simulations spin forever unless -msse2 -mfpmath=sse is set
