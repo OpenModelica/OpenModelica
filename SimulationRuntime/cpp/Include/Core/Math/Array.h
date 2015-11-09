@@ -169,6 +169,14 @@ class CStrArray
     for(size_t i = 0; i < _c_str_array.size(); i++)
       _c_str_array[i] = data[i].c_str();
   }
+  ///Special case for Modelica external C string arrays. Modelica strings are mapped to const char*
+  CStrArray(const BaseArray<const char*>& stringArray)
+    :_c_str_array(stringArray.getNumElems())
+  {
+
+    for(size_t i = 0; i < _c_str_array.size(); i++)
+      _c_str_array[i] = stringArray(i);
+  }
 
   /**
    * Convert to c_str array
