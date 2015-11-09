@@ -5,7 +5,7 @@
 #if defined(__vxworks)
 
   /*Defines*/
-  #define PATH string
+  #define PATH std::string
 
   #include <Core/System/ISystemProperties.h>
   #include <Core/System/ISystemInitialization.h>
@@ -28,6 +28,7 @@
   #include <Core/System/ISimVars.h>
   #include <Core/DataExchange/ISimVar.h>
   #include <Core/SimController/ISimData.h>
+  #include <Core/SimController/ISimObjects.h>
   #include <Core/SimulationSettings/ISimControllerSettings.h>
   #include <Core/SimController/ISimController.h>
 

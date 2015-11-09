@@ -9,8 +9,12 @@
 
 #include <SimCoreFactory/VxWorksFactory/VxWorksFactory.h>
 #include <Core/System/AlgLoopSolverFactory.h>
-extern "C" IAlgLoopSolverFactory* createAlgLoopSolverFactory(IGlobalSettings* globalSettings,PATH library_path,PATH modelicasystem_path)
+
+extern "C" IAlgLoopSolverFactory* createAlgLoopSolverFactoryFunction(IGlobalSettings* globalSettings,PATH library_path,PATH modelicasystem_path)
+//shared_ptr<IAlgLoopSolverFactory>   createAlgLoopSolverFactoryFunction(IGlobalSettings* globalSettings,PATH library_path,PATH modelicasystem_path)
 {
+    //shared_ptr<IAlgLoopSolverFactory> algloopSolverFactory = shared_ptr<IAlgLoopSolverFactory>(new AlgLoopSolverFactory(globalSettings,library_path,modelicasystem_path));
+    //return algloopSolverFactory;
   return new AlgLoopSolverFactory(globalSettings,library_path,modelicasystem_path);
 }
 

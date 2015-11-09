@@ -8,11 +8,18 @@
 
 
 
+#include <Core/SimController/ISimController.h>
 #include <Core/SimController/SimController.h>
+#include <Core/SimController/SimObjects.h>
 
 extern "C" ISimController* createSimController(PATH library_path, PATH modelicasystem_path)
 {
   return new SimController(library_path, modelicasystem_path);
+}
+
+shared_ptr<ISimObjects> createSimObjects(PATH library_path, PATH modelicasystem_path,IGlobalSettings* settings)
+{
+  return shared_ptr<ISimObjects>(new SimObjects(library_path, modelicasystem_path,settings));
 }
 
 #elif defined(SIMSTER_BUILD)
