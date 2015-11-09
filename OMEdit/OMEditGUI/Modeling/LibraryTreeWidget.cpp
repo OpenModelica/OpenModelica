@@ -1835,6 +1835,20 @@ void LibraryTreeView::createActions()
   mpNewModelicaClassAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newModelicaClass, this);
   mpNewModelicaClassAction->setStatusTip(Helper::createNewModelicaClass);
   connect(mpNewModelicaClassAction, SIGNAL(triggered()), SLOT(createNewModelicaClass()));
+  // Move class up action
+  mpMoveUpAction = new QAction(QIcon(":/Resources/icons/up.svg"), tr("Move Up"), this);
+  mpMoveUpAction->setStatusTip(tr("Moves the class one level up"));
+  connect(mpMoveUpAction, SIGNAL(triggered()), SLOT(moveClassUp()));
+  // Move class down action
+  mpMoveDownAction = new QAction(QIcon(":/Resources/icons/down.svg"), tr("Move Down"), this);
+  mpMoveDownAction->setStatusTip(tr("Moves the class one level down"));
+  connect(mpMoveDownAction, SIGNAL(triggered()), SLOT(moveClassDown()));
+  // Order Menu
+  mpOrderMenu = new QMenu(tr("Order"), this);
+  mpOrderMenu->setIcon(QIcon(":/Resources/icons/order.svg"));
+  // add the move action to order menu
+  mpOrderMenu->addAction(mpMoveUpAction);
+  mpOrderMenu->addAction(mpMoveDownAction);
   // instantiate Model Action
   mpInstantiateModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.svg"), Helper::instantiateModel, this);
   mpInstantiateModelAction->setStatusTip(Helper::instantiateModelTip);
@@ -1987,6 +2001,9 @@ void LibraryTreeView::showContextMenu(QPoint point)
         if (!pLibraryTreeItem->isSystemLibrary()) {
           menu.addSeparator();
           menu.addAction(mpNewModelicaClassAction);
+          if (!pLibraryTreeItem->isTopLevel()) {
+            menu.addMenu(mpOrderMenu);
+          }
         }
         menu.addSeparator();
         menu.addAction(mpInstantiateModelAction);
@@ -2072,6 +2089,24 @@ void LibraryTreeView::createNewModelicaClass()
     pModelicaClassDialog->getParentClassTextBox()->setText(pLibraryTreeItem->getNameStructure());
     pModelicaClassDialog->exec();
   }
+}
+
+/*!
+ * \brief LibraryTreeView::moveClassUp
+ * Moves the class one level up.
+ */
+void LibraryTreeView::moveClassUp()
+{
+
+}
+
+/*!
+ * \brief LibraryTreeView::moveClassDown
+ * Moves the class one level down.
+ */
+void LibraryTreeView::moveClassDown()
+{
+
 }
 
 /*!
