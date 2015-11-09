@@ -190,7 +190,6 @@ ModelicaClassDialog::ModelicaClassDialog(MainWindow *pParent)
   // Create the parent package label, text box, browse button
   mpParentClassLabel = new Label(tr("Insert in class (optional):"));
   mpParentClassTextBox = new QLineEdit;
-  connect(mpParentClassTextBox, SIGNAL(textChanged(QString)), SLOT(showHideSaveContentsInOneFileCheckBox(QString)));
   mpParentClassBrowseButton = new QPushButton(Helper::browse);
   mpParentClassBrowseButton->setAutoDefault(false);
   connect(mpParentClassBrowseButton, SIGNAL(clicked()), SLOT(browseParentClass()));
@@ -243,23 +242,18 @@ QLineEdit* ModelicaClassDialog::getParentClassTextBox()
   return mpParentClassTextBox;
 }
 
+/*!
+ * \brief ModelicaClassDialog::showHideSaveContentsInOneFileCheckBox
+ * Show/Hide save contents in one file checkbox.
+ * \param text
+ */
 void ModelicaClassDialog::showHideSaveContentsInOneFileCheckBox(QString text)
 {
-  QComboBox *pComboBox = qobject_cast<QComboBox*>(sender());
-  QLineEdit *pLineEdit = qobject_cast<QLineEdit*>(sender());
-  if (pComboBox && pComboBox == mpSpecializationComboBox)
-  {
-    if ((text.toLower().compare("package") == 0) && mpParentClassTextBox->text().isEmpty())
-      mpSaveContentsInOneFileCheckBox->setVisible(true);
-    else
-      mpSaveContentsInOneFileCheckBox->setVisible(false);
-  }
-  else if (pLineEdit && pLineEdit == mpParentClassTextBox)
-  {
-    if (text.isEmpty() && (mpSpecializationComboBox->currentText().toLower().compare("package") == 0))
-      mpSaveContentsInOneFileCheckBox->setVisible(true);
-    else
-      mpSaveContentsInOneFileCheckBox->setVisible(false);
+  if (text.toLower().compare("package") == 0) {
+    mpSaveContentsInOneFileCheckBox->setVisible(true);
+  } else {
+    mpSaveContentsInOneFileCheckBox->setVisible(false);
+    mpSaveContentsInOneFileCheckBox->setChecked(true);
   }
 }
 
@@ -354,8 +348,6 @@ void ModelicaClassDialog::createModelicaClass()
   pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pParentLibraryTreeItem, wasNonExisting, false, false, true);
   pLibraryTreeItem->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeItem::SaveInOneFile : LibraryTreeItem::SaveFolderStructure);
   if (wasNonExisting) {
-    // load the LibraryTreeItem pixmap
-    pLibraryTreeModel->loadLibraryTreeItemPixmap(pLibraryTreeItem);
     pLibraryTreeModel->loadNonExistingLibraryTreeItem(pLibraryTreeItem);
   }
   pLibraryTreeItem->setExpanded(true);
@@ -714,8 +706,6 @@ void SaveAsClassDialog::saveAsModelicaClass()
   }
   pLibraryTreeItem->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeItem::SaveInOneFile : LibraryTreeItem::SaveFolderStructure);
   if (wasNonExisting) {
-    // load the LibraryTreeItem pixmap
-    pLibraryTreeModel->loadLibraryTreeItemPixmap(pLibraryTreeItem);
     pLibraryTreeModel->loadNonExistingLibraryTreeItem(pLibraryTreeItem);
   }
   // show the ModelWidget
@@ -823,8 +813,6 @@ void DuplicateClassDialog::duplicateClass()
     }
     pLibraryTreeItem->setSaveContentsType(mpLibraryTreeItem->getSaveContentsType());
     if (wasNonExisting) {
-      // load the LibraryTreeItem pixmap
-      pLibraryTreeModel->loadLibraryTreeItemPixmap(pLibraryTreeItem);
       pLibraryTreeModel->loadNonExistingLibraryTreeItem(pLibraryTreeItem);
     }
   }

@@ -333,7 +333,6 @@ class ModelWidget : public QWidget
   Q_OBJECT
 public:
   ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text);
-  void loadModelWidget();
 
   class InheritedClass : public QObject
   {
@@ -371,9 +370,7 @@ public:
   BaseEditor* getEditor() {return mpEditor;}
   void setModelFilePathLabel(QString path) {mpModelFilePathLabel->setText(path);}
   Label* getCursorPositionLabel() {return mpCursorPositionLabel;}
-  bool isLoadedWidgetComponents() {return mloadWidgetComponents;}
-  void setReloadNeeded(bool reloadNeeded) {mReloadNeeded = reloadNeeded;}
-  bool isReloadNeeded() {return mReloadNeeded;}
+  bool isLoadedWidgetComponents() {return mCreateModelWidgetComponents;}
   void addInheritedClass(LibraryTreeItem *pLibraryTreeItem);
   void removeInheritedClass(InheritedClass *pInheritedClass) {mInheritedClassesList.removeOne(pInheritedClass);}
   QList<InheritedClass*> getInheritedClassesList() {return mInheritedClassesList;}
@@ -385,7 +382,7 @@ public:
   ShapeAnnotation* createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   Component* createInheritedComponent(Component *pComponent, GraphicsView *pGraphicsView);
   LineAnnotation* createInheritedConnection(LineAnnotation *pConnectionLineAnnotation, LibraryTreeItem *pInheritedLibraryTreeItem);
-  void createWidgetComponents();
+  void createModelWidgetComponents();
   Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
   void refresh();
   bool validateText();
@@ -418,8 +415,7 @@ private:
   ModelicaTextHighlighter *mpModelicaTextHighlighter;
   TLMHighlighter *mpTLMHighlighter;
   QStatusBar *mpModelStatusBar;
-  bool mloadWidgetComponents;
-  bool mReloadNeeded;
+  bool mCreateModelWidgetComponents;
   QList<InheritedClass*> mInheritedClassesList;
   void getModelInheritedClasses(LibraryTreeItem *pLibraryTreeItem);
   void drawModelInheritedClasses();

@@ -129,7 +129,9 @@ public:
   // Returns false on failure
   static bool unparseBool(QString value);
   static QString getSaveFileName(QWidget* parent = 0, const QString &caption = "", QString * dir = 0, const QString & filter = "",
-                                 QString * selectedFilter = 0, const QString &defaultSuffix = "", const QString *purposedName = 0);
+                                 QString * selectedFilter = 0, const QString &defaultSuffix = "", const QString *proposedName = 0);
+  static QString getSaveFolderName(QWidget* parent = 0, const QString &caption = "", QString * dir = 0, const QString & filter = "",
+                                   QString * selectedFilter = 0, const QString *proposedName = 0);
   static QString getOpenFileName(QWidget* parent = 0, const QString &caption = "", QString * dir = 0, const QString & filter = "",
                                  QString * selectedFilter = 0);
   static QStringList getOpenFileNames(QWidget* parent = 0, const QString &caption = "", QString * dir = 0, const QString & filter = "",

@@ -1033,7 +1033,7 @@ void SimulationDialog::saveSimulationOptions()
   newExperimentAnnotation.append("Interval=").append(QString::number(interval));
   newExperimentAnnotation.append(")");
   // if we have ModelWidget for class then put the change on undo stack.
-  if (mpLibraryTreeItem->getModelWidget() && !mpLibraryTreeItem->getModelWidget()->isReloadNeeded()) {
+  if (mpLibraryTreeItem->getModelWidget()) {
     UpdateClassExperimentAnnotationCommand *pUpdateClassExperimentAnnotationCommand;
     pUpdateClassExperimentAnnotationCommand = new UpdateClassExperimentAnnotationCommand(mpMainWindow, mpLibraryTreeItem,
                                                                                          oldExperimentAnnotation, newExperimentAnnotation);

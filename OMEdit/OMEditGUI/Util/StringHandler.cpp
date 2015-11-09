@@ -1049,7 +1049,7 @@ bool StringHandler::unparseBool(QString value)
 }
 
 QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, QString * dir, const QString &filter, QString * selectedFilter,
-                                       const QString &defaultSuffix, const QString *purposedName)
+                                       const QString &defaultSuffix, const QString *proposedName)
 {
   QString dir_str;
   QString fileName;
@@ -1066,12 +1066,12 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
   /* Add the extension with purposedName because if the directory with the same name exists then
    * QFileDialog::getSaveFileName takes the user to that directory and does not show the purposedName.
    */
-  QString purposedFileName = *purposedName;
-  if (!purposedFileName.isEmpty() && !defaultSuffix.isEmpty())
-    purposedFileName = QString(purposedFileName).append(".").append(defaultSuffix);
+  QString proposedFileName = *proposedName;
+  if (!proposedFileName.isEmpty() && !defaultSuffix.isEmpty())
+    proposedFileName = QString(proposedFileName).append(".").append(defaultSuffix);
 
-  if (!purposedFileName.isEmpty()) {
-    fileName = QFileDialog::getSaveFileName(parent, caption, QString(dir_str).append("/").append(purposedFileName), filter, selectedFilter);
+  if (!proposedFileName.isEmpty()) {
+    fileName = QFileDialog::getSaveFileName(parent, caption, QString(dir_str).append("/").append(proposedFileName), filter, selectedFilter);
   } else {
     fileName = QFileDialog::getSaveFileName(parent, caption, dir_str, filter, selectedFilter);
   }
@@ -1092,6 +1092,27 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
     return fileName;
   }
   return "";
+}
+
+QString StringHandler::getSaveFolderName(QWidget* parent, const QString &caption, QString * dir, const QString &filter,
+                                         QString * selectedFilter, const QString *proposedName)
+{
+  QString dir_str;
+  QString folderName;
+
+  if (dir) {
+    dir_str = *dir;
+  } else {
+    dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
+  }
+
+  QString proposedFileName = *proposedName;
+  if (!proposedFileName.isEmpty()) {
+    folderName = QFileDialog::getSaveFileName(parent, caption, QString(dir_str).append("/").append(proposedFileName), filter, selectedFilter);
+  } else {
+    folderName = QFileDialog::getSaveFileName(parent, caption, dir_str, filter, selectedFilter);
+  }
+  return folderName;
 }
 
 QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, QString * dir, const QString &filter, QString * selectedFilter)
