@@ -9,6 +9,7 @@ bug_2504.mos \
 bug_2566.mos \
 bug_2583.mos \
 bug_2673.mos \
+bug_2673b.mos \
 bug_2830.mos \
 bug_2990.mos \
 bug_2994.mos \
