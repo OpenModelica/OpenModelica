@@ -1,0 +1,15 @@
+for os in {"linux32","linux64","win32","win64"} loop // "darwin32","darwin64","arm-linux-gnueabi"
+for t in {"me","cs"} loop
+
+target := os+"-"+t;
+(success,vars) := diffSimulationResults(target + ".csv", "FmuExportCrossCompile_res.mat", target+"-diff", vars={"h"});
+writeFile(target+"-diff.html", diffSimulationResultsHtml("h", target + ".csv", "FmuExportCrossCompile_res.mat"));
+if not success then
+  print("Failed for "+target+": "+sum(v + ", " for v in vars)+"\n");
+  exit(1);
+else
+  print(target+" OK\n");
+end if;
+
+end for;
+end for;
