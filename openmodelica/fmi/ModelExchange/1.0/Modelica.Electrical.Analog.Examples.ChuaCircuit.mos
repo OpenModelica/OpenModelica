@@ -2,12 +2,12 @@
 // keywords: simulation MSL Examples
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml Modelica_Electrical_Analog_Examples_ChuaCircuit.fmu Modelica_Electrical_Analog_Examples_ChuaCircuit_* Modelica_Electrical_Analog_Examples_ChuaCircuit_me_FMU.mo Modelica_Electrical_Analog_Examples_ChuaCircuit.libs Modelica_Electrical_Analog_Examples_ChuaCircuit.lib Modelica_Electrical_Analog_Examples_ChuaCircuit.so Modelica_Electrical_Analog_Examples_ChuaCircuit.dll Modelica_Electrical_Analog_Examples_ChuaCircuit.c Modelica_Electrical_Analog_Examples_ChuaCircuit.makefile
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica,{"3.1"});
-translateModelFMU(Modelica.Electrical.Analog.Examples.ChuaCircuit);
+translateModelFMU(Modelica.Electrical.Analog.Examples.ChuaCircuit, version="1.0");
 getErrorString();
 
 importFMU("Modelica_Electrical_Analog_Examples_ChuaCircuit.fmu"); getErrorString();

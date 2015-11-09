@@ -11,12 +11,12 @@ model SampleEvent
   Integer i;
 equation
   der(x) = 1*x;
-  when sample(0,0.1) then 
+  when sample(0,0.1) then
     i = pre(i)+1;
   end when;
 end SampleEvent;
 ");
-translateModelFMU(SampleEvent);
+translateModelFMU(SampleEvent, version="1.0");
 getErrorString();
 importFMU("SampleEvent.fmu");
 loadFile("SampleEvent_me_FMU.mo");

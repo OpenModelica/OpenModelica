@@ -2,12 +2,12 @@
 // keywords: simulation MSL Examples
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.fmu Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_* Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU.mo Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.libs Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.lib BouncingBall.so Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.dll Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.c Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.makefile Modelica_from_nxy_*
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica);
-translateModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum);
+translateModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum, version="1.0");
 getErrorString();
 importFMU("Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.fmu", loglevel=0);
 getErrorString();

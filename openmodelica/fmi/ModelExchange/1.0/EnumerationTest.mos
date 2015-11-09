@@ -5,11 +5,11 @@
 //
 // String(Enum.e1)
 //
-// 
+//
 
 loadFile("EnumerationTest.mo");
 //instantiateModel(EnumerationTest);
-translateModelFMU(EnumerationTest);
+translateModelFMU(EnumerationTest, version="1.0");
 getErrorString();
 
 importFMU("EnumerationTest.fmu"); getErrorString();

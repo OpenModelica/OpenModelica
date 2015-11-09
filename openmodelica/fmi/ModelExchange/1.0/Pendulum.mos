@@ -3,12 +3,12 @@
 // status: correct
 // teardown_command: rm -rf Pendulum.c Pendulum Pendulum.exe Pendulum.libs Pendulum.lib Pendulum.fmu Pendulum.log Pendulum.makefile Pendulum_*.*
 //
-// 
+//
 // Tests handling of Dynamic State Selection in FMU
 //
 
 loadFile("Pendulum.mo");
-translateModelFMU(Pendulum);
+translateModelFMU(Pendulum, version="1.0");
 getErrorString();
 importFMU("Pendulum.fmu");
 getErrorString();

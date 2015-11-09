@@ -2,12 +2,12 @@
 // keywords: FMU Export Import
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml InOutTest.fmu InOutTest_* testInOut_* InOutTest_me_FMU.mo InOutTest.libs testInOut.libs InOutTest.lib testInOut.lib InOutTest.so testInOut.so InOutTest.dll testInOut.dll InOutTest.c testInOut.c testInOut.makefile
-// Simulation Results 
+// Simulation Results
 //
 
 loadModel(Modelica);getErrorString();
 loadFile("InOutTest.mo");getErrorString();
-translateModelFMU(InOutTest);getErrorString();
+translateModelFMU(InOutTest, version="1.0");getErrorString();
 importFMU("InOutTest.fmu");getErrorString();
 loadFile("InOutTest_me_FMU.mo");getErrorString();
 loadFile("testInOut.mo");getErrorString();

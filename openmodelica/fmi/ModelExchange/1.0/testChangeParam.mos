@@ -17,7 +17,7 @@ model test_ChangeParam
 equation
   der(x) = x*a+u;
   y = if b then der(x)-x-i else der(x)+x+i;
-  when time>1 then 
+  when time>1 then
       terminate(\"Simulation done by \" + s);
   end when;
   annotation(experiment(StopTime=2));
@@ -27,7 +27,7 @@ getErrorString();
 loadModel(Modelica);
 
 
-translateModelFMU(test_ChangeParam, version="2.0");
+translateModelFMU(test_ChangeParam, version="1.0");
 getErrorString();
 importFMU("test_ChangeParam.fmu");
 

@@ -2,12 +2,12 @@
 // keywords: simulation MSL Examples
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmu Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_* Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.libs Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.lib Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.so Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.dll Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.c Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.makefile Modelica_from_nxy_*
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica); getErrorString();
-translateModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum); getErrorString();
+translateModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version="1.0"); getErrorString();
 importFMU("Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmu", loglevel=0); getErrorString();
 loadFile("Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo"); getErrorString();
 simulate(Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU,stopTime=3.0); getErrorString();
