@@ -4736,7 +4736,7 @@ algorithm
       DAE.Type tp;
       DAE.CallAttributes attr;
       Absyn.Path path, rpath;
-      list<DAE.Exp> expLst, crexplst;
+      list<DAE.Exp> expLst, crexplst ,e1lst, e2lst;
       DAE.Ident ident;
       list<tuple<DAE.Exp, DAE.Exp>> exptl;
       SimCode.SimEqSystem simeqn;
@@ -4786,26 +4786,30 @@ algorithm
         ({SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms})}, iuniqueEqIndex+1, itempvars);
 
     /* Record() = f()  */
-    case (_, DAE.CALL(path=path, expLst=expLst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=rpath), varLst=varLst))), e2, _, _, _)
+    case (_, e1 as DAE.CALL(path=path, expLst=e1lst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=rpath), varLst=varLst))), e2, _, _, _)
       equation
+
         true = Absyn.pathEqual(path, rpath);
-        ht = HashSet.emptyHashSet();
-        ht = List.fold(crefs, BaseHashSet.add, ht);
-        List.foldAllValue(expLst, createSingleComplexEqnCode3, true, ht);
         (e2_1, _) = Expression.extendArrExp(e2, false);
-        // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-        // tmp = f()
+
+        // tmp = somexp
         ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
         cr1 = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
-        e1_1 = Expression.crefExp(cr1);
+        e1_1 = Expression.crefToExp(cr1);
         stms = DAE.STMT_ASSIGN(tp, e1_1, e2_1, source);
         simeqn = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
         uniqueEqIndex = iuniqueEqIndex + 1;
-        // Record()=tmp
-        crexplst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr1);
-        exptl = List.threadTuple(expLst, crexplst);
+
+        /* Expand the varLst. Each var might be an array or record. */
+        e1lst = List.mapFlat(e1lst, Expression.expandExpression);
+        /* Expand the tmp record and any arrays */
+        e2lst = Expression.expandExpression(e1_1);
+        /* pair each of the expanded expressions to coressponding one*/
+        exptl = List.threadTuple(e1lst, e2lst);
+        /* Create residual equations for each pair*/
         (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, uniqueEqIndex);
         eqSystlst = simeqn::eqSystlst;
+
         tempvars = createTempVars(varLst, cr1, itempvars);
       then
         (eqSystlst, uniqueEqIndex, tempvars);
