@@ -1311,14 +1311,14 @@ protected
   list<list<Integer>> partitions;
 algorithm
     numEqs := arrayLength(m);
-	  numVars := arrayLength(mT);
+    numVars := arrayLength(mT);
   if intEq(numEqs,0) or intEq(numVars,0) then
     partitionsOut := arrayCreate(1,{});
   else
-	  markEqs := arrayCreate(numEqs,-1);
-	  markVars := arrayCreate(numVars,-1);
-	  (_,partitions) := colorNodePartitions(m,mT,{1},markEqs,markVars,1,{});
-	  partitionsOut := listArray(partitions);
+    markEqs := arrayCreate(numEqs,-1);
+    markVars := arrayCreate(numVars,-1);
+    (_,partitions) := colorNodePartitions(m,mT,{1},markEqs,markVars,1,{});
+    partitionsOut := listArray(partitions);
   end if;
 end partitionBipartiteGraph;
 
@@ -1341,7 +1341,7 @@ protected
   list<Integer> rest, vars, addEqs, eqs, part;
   list<list<Integer>> restPart, partitions;
 algorithm
-  (currNumberOut,partitionsOut) := matchcontinue(m,mT,checkNextIn,markEqs,markVars,currNumberIn,partitionsIn)
+  (currNumberOut,partitionsOut) := match (m,mT,checkNextIn,markEqs,markVars,currNumberIn,partitionsIn)
     local
     case(_,_,{0},_,_,_,_)
       equation
@@ -1393,7 +1393,7 @@ algorithm
         (currNumber,partitions) = colorNodePartitions(m,mT,{eq},markEqs,markVars,currNumberIn+1,{}::partitionsIn);
         then
           (currNumber,partitions);
-  end matchcontinue;
+  end match;
 end colorNodePartitions;
 
 protected function arrayGetIsNotPositive" outputs true if the indexed entry is not zero."
