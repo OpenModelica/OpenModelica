@@ -53,6 +53,6 @@ getErrorString();
 // [Modelica 3.2.1/Blocks/Sources.mo:239:5-239:54:writable] Warning: Parameter Constant2.k has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 // "
-// (false,{"PI1.initType"})
+// (true,{})
 // ""
 // endResult
