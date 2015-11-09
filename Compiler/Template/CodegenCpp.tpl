@@ -454,6 +454,18 @@ case SIMCODE(modelInfo=MODELINFO()) then
       return new SimData();
   }
 
+  shared_ptr<ISimData> createSimDataFunction()
+  {
+    shared_ptr<ISimData> data( new SimData() );
+    return data;
+  }
+
+  shared_ptr<ISimVars> createSimVarsFunction(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_string, size_t dim_pre_vars, size_t dim_z, size_t z_i)
+  {
+    shared_ptr<ISimVars> var( new SimVars(dim_real, dim_int, dim_bool, dim_string, dim_pre_vars, dim_z, z_i) );
+    return var;
+  }
+
   #elif defined (RUNTIME_STATIC_LINKING)
   #include <Core/System/FactoryExport.h>
   #include <Core/DataExchange/SimData.h>
@@ -1900,7 +1912,7 @@ extern "C"  int initSimulation(ISimController* &controller, ISimData* &data, dou
   PATH modelicaSystem_path = "";
   shared_ptr<VxWorksFactory> factory = shared_ptr<VxWorksFactory>(new VxWorksFactory(libraries_path, modelicaSystem_path));
   ISimController* sim_controller = createSimController(libraries_path, modelicaSystem_path);
-  shared_ptr<ISimObjects> simObjects= simulation.first->getSimObjects();
+  shared_ptr<ISimObjects> simObjects= sim_controller->getSimObjects();
   weak_ptr<ISimData> simData = simObjects->LoadSimData("<%lastIdentOfPath(modelInfo.name)%>");
   weak_ptr<ISimVars> simVars = simObjects->LoadSimVars("<%lastIdentOfPath(modelInfo.name)%>",<%numRealVars%>,<%numIntVars%>,<%numBoolVars%>,<%numStringVars%>,<%numPreVars%>,<%numStatevars(modelInfo)%>,<%numStateVarIndex(modelInfo)%>);
   weak_ptr<IMixedSystem> system = sim_controller->LoadSystem("<%lastIdentOfPath(modelInfo.name)%>","<%lastIdentOfPath(modelInfo.name)%>");

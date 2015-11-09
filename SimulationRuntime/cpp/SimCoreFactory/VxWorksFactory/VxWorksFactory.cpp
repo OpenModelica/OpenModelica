@@ -10,7 +10,13 @@
 
 extern "C" ISimController* createSimController(PATH library_path, PATH modelicasystem_path);
 extern "C" ISettingsFactory* createSettingsFactory(PATH library_path,PATH modelicasystem_path);
-extern "C" IAlgLoopSolverFactory* createAlgLoopSolverFactory(IGlobalSettings* globalSettings,PATH library_path,PATH modelicasystem_path);
+
+extern "C" IAlgLoopSolverFactory* createAlgLoopSolverFactoryFunction(IGlobalSettings* globalSettings,PATH library_path,PATH modelicasystem_path);
+
+  //shared_ptr<IAlgLoopSolverFactory> createAlgLoopSolverFactory(IGlobalSettings* globalSettings);
+
+
+
 extern "C" ISimData* createSimData();
 extern "C" ISimVars* createSimVars(size_t dim_real,size_t dim_int,size_t dim_bool, size_t dim_string,size_t dim_pre_vars,size_t dim_z,size_t z_i);
 extern "C" ISolver* createRTEuler(IMixedSystem* system, ISolverSettings* settings);
@@ -50,12 +56,19 @@ shared_ptr<ISettingsFactory>  VxWorksFactory::LoadSettingsFactory()
 
 shared_ptr<IAlgLoopSolverFactory>  VxWorksFactory::LoadAlgLoopSolverFactory(IGlobalSettings* globalSettings)
 {
-    IAlgLoopSolverFactory* algloopsolverFactory = createAlgLoopSolverFactory(globalSettings, _library_path, _modelicasystem_path);
+    IAlgLoopSolverFactory* algloopsolverFactory = createAlgLoopSolverFactoryFunction(globalSettings, _library_path, _modelicasystem_path);
     return shared_ptr<IAlgLoopSolverFactory>(algloopsolverFactory);
 
 }
 
-shared_ptr<IMixedSystem> VxWorksFactory::LoadSystem(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolver, shared_ptr<ISimObjects> simObjects)
+/*
+shared_ptr<IAlgLoopSolverFactory>  VxWorksFactory::LoadAlgLoopSolverFactory(IGlobalSettings* globalSettings)
+{
+	return createAlgLoopSolverFactory(globalSettings);
+}
+*/
+
+shared_ptr<IMixedSystem> VxWorksFactory::LoadSystem(IGlobalSettings* globalSettings,shared_ptr<ISimObjects> simObjects)
 {
     IMixedSystem* system = createModelicaSystem(globalSettings, simObjects);
     return shared_ptr<IMixedSystem>(system);

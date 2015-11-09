@@ -11,6 +11,7 @@
     #include <SimCoreFactory/Policies/SolverSettingsVxWorksFactory.h>
     #include <SimCoreFactory/Policies/SystemVxWorksFactory.h>
     #include <SimCoreFactory/Policies/NonLinSolverVxWorksFactory.h>
+    #include <SimCoreFactory/Policies/SimObjectVxWorksFactory.h>
     #include <SimCoreFactory/Policies/LinSolverVxWorksFactory.h>
     /*Policy defines*/
 
@@ -18,6 +19,9 @@
     typedef SystemVxWorksFactory<BaseFactory> SimControllerPolicy;
     typedef SolverVxWorksFactory<BaseFactory> ConfigurationPolicy;
     //typedef LinSolverVxWorksFactory<BaseFactory> NonLinSolverPolicy;
+
+    typedef SimObjectVxWorksFactory<BaseFactory> SimObjectPolicy;
+
     typedef NonLinSolverVxWorksFactory<BaseFactory> NonLinSolverPolicy;
     typedef SolverSettingsVxWorksFactory<BaseFactory> SolverSettingsPolicy;
     typedef LinSolverVxWorksFactory<BaseFactory> LinSolverPolicy;
