@@ -72,15 +72,13 @@ class LibraryTreeItem : public QObject
   Q_OBJECT
 public:
   enum LibraryType {
-    InvalidType, /* Used to catch errors */
     Modelica,   /* Used to represent Modelica models. */
     Text,       /* Used to represent text based files. */
     TLM         /* Used to represent TLM files. */
   };
   enum SaveContentsType {
     SaveInOneFile,
-    SaveFolderStructure,
-    SaveUnspecified
+    SaveFolderStructure
   };
   LibraryTreeItem();
   LibraryTreeItem(LibraryType type, QString text, QString nameStructure, OMCInterface::getClassInformation_res classInformation,
@@ -99,7 +97,6 @@ public:
   void setNameStructure(QString nameStructure) {mNameStructure = nameStructure;}
   const QString& getNameStructure() {return mNameStructure;}
   void setClassInformation(OMCInterface::getClassInformation_res classInformation);
-  OMCInterface::getClassInformation_res getClassInformation() {return mClassInformation;}
   void setFileName(QString fileName) {mFileName = fileName;}
   const QString& getFileName() {return mFileName;}
   bool isFilePathValid();
@@ -135,8 +132,7 @@ public:
   void insertChild(int position, LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* child(int row);
   void addInheritedClass(LibraryTreeItem *pLibraryTreeItem);
-  void removeInheritedClass(LibraryTreeItem *pLibraryTreeItem) {mInheritedClasses.removeOne(pLibraryTreeItem);}
-  void removeAllInheritedClasses() {mInheritedClasses.clear();}
+  void removeInheritedClasses();
   QList<LibraryTreeItem*> getInheritedClasses() const {return mInheritedClasses;}
   void removeChild(LibraryTreeItem *pLibraryTreeItem);
   QVariant data(int column, int role = Qt::DisplayRole) const;
@@ -150,6 +146,8 @@ public:
   void emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView) {emit shapeAdded(this, pShapeAnnotation, pGraphicsView);}
   void emitComponentAdded(Component *pComponent, GraphicsView *pGraphicsView) {emit componentAdded(this, pComponent, pGraphicsView);}
   void emitConnectionAdded(LineAnnotation *pConnectionLineAnnotation) {emit connectionAdded(this, pConnectionLineAnnotation);}
+
+  OMCInterface::getClassInformation_res mClassInformation;
 private:
   bool mIsRootItem;
   LibraryTreeItem *mpParentLibraryTreeItem;
@@ -161,7 +159,6 @@ private:
   QString mName;
   QString mParentName;
   QString mNameStructure;
-  OMCInterface::getClassInformation_res mClassInformation;
   QString mFileName;
   bool mReadOnly;
   bool mIsSaved;
@@ -236,7 +233,7 @@ public:
   QString readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem);
   void updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
-  LibraryTreeItem* getContainingParentLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  LibraryTreeItem* getContainingFileParentLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeItem);
   void loadDependentLibraries(QStringList libraries);
   LibraryTreeItem* getLibraryTreeItemFromFile(QString fileName, int lineNumber);
@@ -337,10 +334,14 @@ private:
   LibraryTreeModel *mpLibraryTreeModel;
   LibraryTreeProxyModel *mpLibraryTreeProxyModel;
   LibraryTreeView *mpLibraryTreeView;
+  bool saveFile(QString fileName, QString contents);
   bool saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  bool saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
   bool saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveTLMLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
-  bool saveLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
+  bool saveLibraryTreeItemOneFile(LibraryTreeItem *pLibraryTreeItem);
+  void saveChildLibraryTreeItemsOneFile(LibraryTreeItem *pLibraryTreeItem);
+  bool saveLibraryTreeItemFolder(LibraryTreeItem *pLibraryTreeItem);
   void setChildLibraryTreeItemsSaved(LibraryTreeItem *pLibraryTreeItem);
 
   bool saveLibraryTreeItemOneFileHelper(LibraryTreeItem *pLibraryTreeItem);

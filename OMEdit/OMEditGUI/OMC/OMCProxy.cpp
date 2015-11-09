@@ -1403,8 +1403,7 @@ bool OMCProxy::createClass(QString type, QString className, LibraryTreeItem *pEx
   if (!pExtendsLibraryTreeItem) {
     expression = QString("%1 %2 end %3;").arg(type).arg(className).arg(className);
   } else {
-    expression = QString("%1 %2 extends %3; end %4;").arg(type).arg(className).arg(pExtendsLibraryTreeItem->getNameStructure())
-        .arg(className);
+    expression = QString("%1 %2 extends %3; end %4;").arg(type).arg(className).arg(pExtendsLibraryTreeItem->getNameStructure()).arg(className);
   }
   return loadString(expression, className, Helper::utf8, false);
 }
@@ -1428,7 +1427,13 @@ bool OMCProxy::createSubClass(QString type, QString className, LibraryTreeItem *
     expression = QString("within %1; %2 %3 extends %4; end %5;").arg(pParentLibraryTreeItem->getNameStructure()).arg(type).arg(className)
         .arg(pExtendsLibraryTreeItem->getNameStructure()).arg(className);
   }
-  return loadString(expression, pParentLibraryTreeItem->getClassInformation().fileName, Helper::utf8, false);
+  QString fileName;
+  if (pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
+    fileName = pParentLibraryTreeItem->mClassInformation.fileName;
+  } else {
+    fileName = pParentLibraryTreeItem->getNameStructure() + "." + className;
+  }
+  return loadString(expression, fileName, Helper::utf8, false);
 }
 
 /*!
@@ -1501,10 +1506,12 @@ bool OMCProxy::setSourceFile(QString className, QString path)
 }
 
 /*!
-  Saves a model.
-  \param className - the name of the class.
-  \return true on success.
-  */
+ * \brief OMCProxy::save
+ * Saves a model.
+ * \param className - the name of the class.
+ * \deprecated OMEdit saves the files by itself and doesn't use OMC save API anymore.
+ * \return true on success.
+ */
 bool OMCProxy::save(QString className)
 {
   sendCommand("save(" + className + ")");

@@ -243,6 +243,7 @@ private:
   void hideResizerItems();
   void getScale(qreal *sx, qreal *sy);
   void setOriginAndExtents();
+  void reloadComponent(bool loaded);
 signals:
   void added();
   void transformChange();
@@ -252,7 +253,8 @@ signals:
 public slots:
   void updatePlacementAnnotation();
   void updateOriginItem();
-  void reloadComponent();
+  void handleLoaded();
+  void handleUnloaded();
   void handleShapeAdded();
   void referenceComponentAdded();
   void referenceComponentChanged();

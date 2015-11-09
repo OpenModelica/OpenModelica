@@ -238,7 +238,7 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
       QString number;
       if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isInPackageOneFile() &&
           mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-        number = QString::number(blockNumber + mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getClassInformation().lineNumberStart);
+        number = QString::number(blockNumber + mpBaseEditor->getModelWidget()->getLibraryTreeItem()->mClassInformation.lineNumberStart);
       } else {
         number = QString::number(blockNumber + 1);
       }
@@ -322,7 +322,7 @@ void BaseEditor::PlainTextEdit::goToLineNumber(int lineNumber)
 {
   if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isInPackageOneFile() &&
       mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    int lineNumberStart = mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getClassInformation().lineNumberStart;
+    int lineNumberStart = mpBaseEditor->getModelWidget()->getLibraryTreeItem()->mClassInformation.lineNumberStart;
     int lineNumberDifferenceFromStart = lineNumberStart - 1;
     lineNumber -= lineNumberDifferenceFromStart;
   }
@@ -1125,7 +1125,7 @@ int GotoLineDialog::exec()
 {
   if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isInPackageOneFile() &&
       mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    int lineNumberStart = mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getClassInformation().lineNumberStart;
+    int lineNumberStart = mpBaseEditor->getModelWidget()->getLibraryTreeItem()->mClassInformation.lineNumberStart;
     mpLineNumberLabel->setText(tr("Enter line number (%1 to %2):").arg(QString::number(lineNumberStart))
                                .arg(QString::number(mpBaseEditor->getPlainTextEdit()->blockCount() + lineNumberStart - 1)));
   } else {
