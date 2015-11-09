@@ -8943,6 +8943,7 @@ algorithm
 	      equation
 	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr,info);
 	      then list(newEQFun(i, lhs_exp, rhs_exp, domainCr, comment, info, fieldLst) for i in 2:N-1);
+	    //same as previous but with ".interior"
 	    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp,
 	                domainOpt = SOME(domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="interior"))),
 	                comment = comment, info = info))
@@ -8950,6 +8951,25 @@ algorithm
 	        domainCr1 = Absyn.CREF_IDENT(name, subscripts);
 	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
 	      then list(newEQFun(i, lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst) for i in 2:N-1);
+	    //left boundary condition
+	    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp,
+	                domainOpt = SOME(domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="left"))),
+	                comment = comment, info = info))
+	      equation
+	        domainCr1 = Absyn.CREF_IDENT(name, subscripts);
+	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
+	      then
+	        {newEQFun(1, lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst)};
+      //right boundary condition
+	    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp,
+	                domainOpt = SOME(domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="right"))),
+	                comment = comment, info = info))
+	      equation
+	        domainCr1 = Absyn.CREF_IDENT(name, subscripts);
+	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
+	      then
+	        {newEQFun(N, lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst)};
+
 	  end matchcontinue;
 
   outDiscretizedEQs := listAppend(inDiscretizedEQs, newDiscretizedEQs);
@@ -9037,9 +9057,11 @@ end newEQFun;
    protected SCode.SourceInfo info;
    protected Boolean skip, failVar;
    protected Absyn.ComponentRef domainCr;
+   protected Absyn.Ident domName;
  algorithm
    failVar := false;
    (i, fieldLst, domainCr, info, skip) := inTup;
+   Absyn.CREF_IDENT(name = domName) := domainCr;
    if skip then
      outExp := inExp;
      outTup := inTup;
@@ -9050,14 +9072,14 @@ end newEQFun;
        Absyn.Ident name, fieldDomainName;
        list<Absyn.Subscript> subscripts;
        Absyn.ComponentRef fieldCr;
-
+     case  Absyn.CREF(Absyn.CREF_QUAL(name = domName, subscripts = {}, componentRef=Absyn.CREF_IDENT(name="x",subscripts={})))
+       //coordinate x
+       then
+         Absyn.CREF(Absyn.CREF_QUAL(name = domName, subscripts = {}, componentRef=Absyn.CREF_IDENT(name="x",subscripts = {Absyn.SUBSCRIPT(Absyn.INTEGER(i))})));
      case Absyn.CREF(fieldCr as Absyn.CREF_IDENT(name, subscripts))
        //field
        equation
-       if not List.isMemberOnTrue(fieldCr,fieldLst,Absyn.crefEqual) then
-         failVar = true;
-         Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Field variable ",  name, " has different domain than the equation."}, info);
-       end if;
+       true = List.isMemberOnTrue(fieldCr,fieldLst,Absyn.crefEqual);
        then
           Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i))::subscripts));
      case Absyn.CALL(Absyn.CREF_IDENT("pder",subscripts),Absyn.FUNCTIONARGS({Absyn.CREF(fieldCr as Absyn.CREF_IDENT(name, subscripts)),Absyn.CREF(Absyn.CREF_IDENT(name="x"))},_))
@@ -9065,7 +9087,7 @@ end newEQFun;
        equation
          if not List.isMemberOnTrue(fieldCr,fieldLst,Absyn.crefEqual) then
            failVar = true;
-           Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Field variable ",  name, " has different domain than the equation or is not a field." }, info);
+           Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Field variable '" +  name + "' has different domain than the equation or is not a field." }, info);
          end if;
          skip = true;
        then
@@ -9079,7 +9101,7 @@ end newEQFun;
            Absyn.BINARY(
                    Absyn.INTEGER(2),
                    Absyn.MUL(),
-                   Absyn.CREF(Absyn.CREF_QUAL("omega"/*fieldDomainName*/,{},Absyn.CREF_IDENT("dx",{})))
+                   Absyn.CREF(Absyn.CREF_QUAL(domName,{},Absyn.CREF_IDENT("dx",{})))
            )
          );
      case Absyn.CALL(Absyn.CREF_IDENT("pder",subscripts),Absyn.FUNCTIONARGS({Absyn.CREF(_),_},_))
