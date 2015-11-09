@@ -8415,6 +8415,24 @@ algorithm
   end match;
 end isCall;
 
+public function isPureCall
+  "Returns true if the given expression is a pure function call,
+   otherwise false."
+  input DAE.Exp inExp;
+  output Boolean outIsPureCall;
+algorithm
+  outIsPureCall := isCall(inExp) and not isImpure(inExp);
+end isPureCall;
+
+public function isImpureCall
+  "Returns true if the given expression is a pure function call,
+   otherwise false."
+  input DAE.Exp inExp;
+  output Boolean outIsPureCall;
+algorithm
+  outIsPureCall := isCall(inExp) and isImpure(inExp);
+end isImpureCall;
+
 public function isRecordCall
   "Returns true if the given expression is a record call,i.e. a function call without elements
    otherwise false."

@@ -1514,7 +1514,7 @@ algorithm
 end createVar;
 
 public function createCSEVar "Creates a cse variable with the name of inCref.
-  TODO: discrete real varaibales are not treated correctly"
+  TODO: discrete real variables are not treated correctly"
   input DAE.ComponentRef inCref;
   input DAE.Type inType;
   output BackendDAE.Var outVar;
@@ -1530,15 +1530,43 @@ algorithm
       DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path), source=typeLst) = inType;
       source = DAE.SOURCE(Absyn.dummyInfo, {}, NONE(), {}, path::typeLst, {}, {});
       varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, source, NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, source, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
     then outVar;
 
-    case (_) equation
+    else equation
       varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
     then outVar;
   end match;
 end createCSEVar;
+
+public function createCSEArrayVar "Creates a cse array variable with the name of inCref.
+  TODO: discrete real variables are not treated correctly"
+  input DAE.ComponentRef inCref;
+  input DAE.Type inType;
+  input DAE.InstDims inArryDim;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := match (inCref)
+    local
+      DAE.ElementSource source;
+      list<Absyn.Path> typeLst;
+      Absyn.Path path;
+      BackendDAE.VarKind varKind;
+
+    case (_) guard(ComponentReference.traverseCref(inCref, ComponentReference.crefIsRec, false)) equation
+      DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path), source=typeLst) = inType;
+      source = DAE.SOURCE(Absyn.dummyInfo, {}, NONE(), {}, path::typeLst, {}, {});
+      varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), inArryDim, source, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+    then outVar;
+
+    else equation
+      varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), inArryDim, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+    then outVar;
+  end match;
+end createCSEArrayVar;
 
 public function copyVarNewName "author: Frenkel TUD 2012-5
   Create variable with new name as cref from other var."

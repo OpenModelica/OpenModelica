@@ -694,7 +694,6 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
   SOME(STRING_DESC_OPTION({
     ("clockPartitioning", Util.gettext("Does the clock partitioning.")),
     ("comSubExp", Util.gettext("replaces common sub expressions")),
-    ("CSE_EachCall", Util.gettext("Common Function Call Elimination")),
     ("dumpDAE", Util.gettext("dumps the DAE representation of the current transformation state")),
     ("dumpDAEXML", Util.gettext("dumps the DAE as xml representation of the current transformation state")),
     ("encapsulateWhenConditions", Util.gettext("This module replaces each when condition with a boolean variable.")),
@@ -724,7 +723,8 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("simplifyIfEquations", Util.gettext("Tries to simplify if equations by use of information from evaluated parameters.")),
     ("sortEqnsVars", Util.notrans("Heuristic sorting for equations and variables. This module requires +d=sortEqnsAndVars.")),
     ("stateMachineElab", Util.gettext("Does the elaboration of state machines.")),
-    ("unitChecking", Util.gettext("advanced unit checking: 1. calculation of unspecified unit information for variables; 2. unit consistency check for equations"))
+    ("unitChecking", Util.gettext("advanced unit checking: 1. calculation of unspecified unit information for variables; 2. unit consistency check for equations")),
+    ("wrapFunctionCalls", Util.gettext("This module wraps function calls to gain speed up."))
     })),
   Util.gettext("Sets the pre optimization modules to use in the back end. See --help=optmodules for more info."));
 
@@ -830,7 +830,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("solveLinearSystem", Util.notrans("solve linear system with newton step")),
     ("solveSimpleEquations", Util.notrans("Solves simple equations")),
     ("symEuler", Util.notrans("Rewrites the ode system for implicit Euler method. This module requires +symEuler.")),
-    ("tearingSystem", Util.notrans("For method selection use flag tearingMethod."))
+    ("tearingSystem", Util.notrans("For method selection use flag tearingMethod.")),
+    ("wrapFunctionCalls", Util.gettext("This module wraps function calls to gain speed up."))
     })),
   Util.gettext("Sets the post optimization modules to use in the back end. See --help=optmodules for more info."));
 
@@ -1043,7 +1044,7 @@ constant ConfigFlag GENERATE_DYN_OPTIMIZATION_PROBLEM = CONFIG_FLAG(60, "gDynOpt
 
 constant ConfigFlag CSE_CALL = CONFIG_FLAG(61,
   "cseCall", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Experimental feature: cse of duplicate call expressions (this deactivates module removeEqualFunctionCalls)"));
+  Util.gettext("Deprecated flag: Use --postOptModules+=wrapFunctionCalls instead."));
 
 constant ConfigFlag CSE_BINARY = CONFIG_FLAG(62,
   "cseBinary", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
@@ -1051,7 +1052,7 @@ constant ConfigFlag CSE_BINARY = CONFIG_FLAG(62,
 
 constant ConfigFlag CSE_EACHCALL = CONFIG_FLAG(63,
   "cseEachCall", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Experimental feature: cse of each call expression (this deactivates module removeEqualFunctionCalls)"));
+  Util.gettext("Deprecated flag: Use --postOptModules+=wrapFunctionCalls instead."));
 
 constant ConfigFlag MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM = CONFIG_FLAG(64, "maxSizeSolveLinearSystem",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
@@ -1182,7 +1183,6 @@ constant ConfigFlag INIT_OPT_MODULES_SUB = CONFIG_FLAG(86, "initOptModules-",
 constant ConfigFlag PERMISSIVE = CONFIG_FLAG(87, "permissive",
   NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Disables some error checks to allow erroneous models to compile."));
-
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's

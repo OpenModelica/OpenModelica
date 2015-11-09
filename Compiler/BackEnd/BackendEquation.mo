@@ -1286,6 +1286,25 @@ algorithm
   end match;
 end traverseOptEquation_WithStop;
 
+public function calculateOptArrEqnSizeProperly "author: lochel"
+  input array<Option<BackendDAE.Equation>> inEquOptArr;
+  output Integer outSize = 0;
+algorithm
+  for optEq in inEquOptArr loop
+    outSize := match optEq
+      local
+        Integer size;
+        BackendDAE.Equation eq;
+
+      case SOME(eq) equation
+        size = BackendEquation.equationSize(eq);
+      then outSize+size;
+
+      else outSize;
+    end match;
+  end for;
+end calculateOptArrEqnSizeProperly;
+
 public function traverseEquationArray_WithUpdate<T> "author: Frenkel TUD
   Traverses all equations of a BackendDAE.EquationArray."
   input BackendDAE.EquationArray inEquationArray;
@@ -1304,6 +1323,7 @@ protected
   array<Option<BackendDAE.Equation>> equOptArr;
 algorithm
   (equOptArr, outTypeA) := BackendDAEUtil.traverseArrayNoCopyWithUpdate(inEquationArray.equOptArr, inFuncWithUpdate, traverseOptEquation_WithUpdate, inTypeA);
+  outEquationArray.size := calculateOptArrEqnSizeProperly(equOptArr);
   outEquationArray.equOptArr := equOptArr;
 end traverseEquationArray_WithUpdate;
 

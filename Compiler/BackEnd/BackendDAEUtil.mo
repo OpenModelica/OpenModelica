@@ -7067,7 +7067,7 @@ protected function allPreOptimizationModules
     (BackendDAEOptimize.expandDerOperator, "expandDerOperator"),
     (BackendDAEOptimize.removeEqualFunctionCalls, "removeEqualFunctionCalls"),
     (SynchronousFeatures.clockPartitioning, "clockPartitioning"),
-    (CommonSubExpression.CSE_EachCall, "CSE_EachCall"),
+    (CommonSubExpression.wrapFunctionCalls, "wrapFunctionCalls"),
     (IndexReduction.findStateOrder, "findStateOrder"),
     (BackendDAEOptimize.introduceDerAlias, "introduceDerAlias"),
     (DynamicOptimization.inputDerivativesForDynOpt, "inputDerivativesForDynOpt"), // only for dyn. opt.
@@ -7101,6 +7101,7 @@ protected function allPostOptimizationModules
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPostOptimizationModules = {
     (BackendInline.lateInlineFunction, "lateInlineFunction"),
     (DynamicOptimization.simplifyConstraints, "simplifyConstraints"),
+    (CommonSubExpression.wrapFunctionCalls, "wrapFunctionCalls"),
     (CommonSubExpression.CSE, "CSE"),
     (OnRelaxation.relaxSystem, "relaxSystem"),
     (InlineArrayEquations.inlineArrayEqn, "inlineArrayEqn"),
@@ -7256,10 +7257,13 @@ algorithm
       enabledModules := "extendDynamicOptimization"::enabledModules;
     end if;
 
-    if Flags.getConfigBool(Flags.CSE_CALL) or
-       Flags.getConfigBool(Flags.CSE_EACHCALL) or
-       Flags.getConfigBool(Flags.CSE_BINARY) then
+    if Flags.getConfigBool(Flags.CSE_BINARY) then
       enabledModules := "CSE"::enabledModules;
+    end if;
+
+    if Flags.getConfigBool(Flags.CSE_CALL) or
+       Flags.getConfigBool(Flags.CSE_EACHCALL) then
+      enabledModules := "wrapFunctionCalls"::enabledModules;
     end if;
 
     if Flags.isSet(Flags.ON_RELAXATION) then
