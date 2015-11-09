@@ -4,10 +4,9 @@
 // Event handling in FMU Import
 //
 
-setCommandLineOptions("-d=buildStaticSourceFMU"); getErrorString();
 setCFlags(getCFlags() + " -g"); getErrorString();
 loadFile("BouncingBall.mo"); getErrorString();
-translateModelFMU(BouncingBall); getErrorString();
+OpenModelica.Scripting.buildModelFMU(BouncingBall, version="1.0", platforms={"static"}); getErrorString();
 importFMU("BouncingBall.fmu"); getErrorString();
 loadFile("BouncingBall_me_FMU.mo"); getErrorString();
 simulate(BouncingBall_me_FMU, stopTime=3.0); getErrorString();
@@ -16,8 +15,6 @@ val(h,1);
 val(h,3);
 
 // Result:
-// true
-// ""
 // true
 // ""
 // true
