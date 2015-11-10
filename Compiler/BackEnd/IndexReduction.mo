@@ -1251,7 +1251,10 @@ protected
   list<BackendDAE.EqSystem> systs;
   BackendDAE.Shared shared;
   HashTableCrIntToExp.HashTable ht;
+  Boolean optionInlineArray = Flags.isSet(Flags.INLINE_FUNCTIONS_WITH_ARR);
 algorithm
+  // skipp constraint for inlining of functions with protected array variables
+  Flags.set(Flags.INLINE_FUNCTIONS_WITH_ARR, true);
   BackendDAE.DAE(systs, shared) := inDAE;
   // do state selection
   ht := HashTableCrIntToExp.emptyHashTable();
@@ -1260,6 +1263,7 @@ algorithm
     (systs, shared) :=  List.map1Fold(systs, replaceDummyDerivatives, ht, shared);
   end if;
   outDAE := BackendDAE.DAE(systs, shared);
+  Flags.set(Flags.INLINE_FUNCTIONS_WITH_ARR, optionInlineArray);
 end dynamicStateSelection;
 
 protected function mapdynamicStateSelection

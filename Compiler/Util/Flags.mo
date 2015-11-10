@@ -466,6 +466,8 @@ constant DebugFlag DEBUG_DIFFERENTIATION_VERBOSE = DEBUG_FLAG(149, "debugDiffere
   Util.gettext("Dumps verbose debug output for the differentiation process."));
 constant DebugFlag FMU_EXPERIMENTAL = DEBUG_FLAG(150, "fmuExperimental", false,
   Util.gettext("Include an extra function in the FMU fmi2GetSpecificDerivatives."));
+  constant DebugFlag INLINE_FUNCTIONS_WITH_ARR = DEBUG_FLAG(151, "inlineFunctionsWithArrays", false,
+  Util.gettext("Controls if function (with protected array variable) inlining should be performed."));
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -623,7 +625,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_FUNCTIONS,
   DEBUG_DIFFERENTIATION,
   DEBUG_DIFFERENTIATION_VERBOSE,
-  FMU_EXPERIMENTAL
+  FMU_EXPERIMENTAL,
+  INLINE_FUNCTIONS_WITH_ARR
 };
 
 public
