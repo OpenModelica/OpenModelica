@@ -26,7 +26,11 @@ if s1<>diffModelicaFileListings(contents, s2, OpenModelica.Scripting.DiffFormat.
   print("\nStart model:\n\n" + contents + "\n");
   print("\ndeleteComponent+listFile:\n\n" + s2 + "\n");
   print("\nDiff:\n\n" + diffModelicaFileListings(contents, s2) + "\n");
+  print("\nDiff from expected:\n\n" + diffModelicaFileListings(s1, s2) + "\n");
   print(getErrorString());
+  writeFile("a",s1);
+  writeFile("b",s2);
+  system("diff -u a b");
 end if;
 print("OK\n");
 

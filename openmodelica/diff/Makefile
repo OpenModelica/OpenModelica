@@ -8,6 +8,7 @@ AddComponent2.mos \
 AddDeleteComponent.mos \
 ChangeSourceFile.mos \
 ListFile.mos \
+removeComponentModifiers.mos \
 TestDiffListAPI.mos
 
 # test that currently fail. Move up when fixed.
