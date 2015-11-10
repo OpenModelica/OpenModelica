@@ -131,7 +131,7 @@ public:
   bool isInPackageOneFile();
   void insertChild(int position, LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* child(int row);
-  void swapChildren(int i, int j);
+  void moveChild(int from, int to);
   void addInheritedClass(LibraryTreeItem *pLibraryTreeItem);
   void removeInheritedClasses();
   QList<LibraryTreeItem*> getInheritedClasses() const {return mInheritedClasses;}
@@ -242,7 +242,8 @@ public:
   void showHideProtectedClasses();
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
-  void moveClass(LibraryTreeItem *pLibraryTreeItem, bool up);
+  void moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool up);
+  void moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, bool top);
   QString getUniqueTopLevelItemName(QString name, int number = 1);
   void emitDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight) {emit dataChanged(topLeft, bottomRight);}
 private:
@@ -271,6 +272,8 @@ private:
   QAction *mpNewModelicaClassAction;
   QAction *mpMoveUpAction;
   QAction *mpMoveDownAction;
+  QAction *mpMoveTopAction;
+  QAction *mpMoveBottomAction;
   QMenu *mpOrderMenu;
   QAction *mpInstantiateModelAction;
   QAction *mpCheckModelAction;
@@ -299,6 +302,8 @@ public slots:
   void createNewModelicaClass();
   void moveClassUp();
   void moveClassDown();
+  void moveClassTop();
+  void moveClassBottom();
   void instantiateModel();
   void checkModel();
   void checkAllModels();

@@ -488,9 +488,15 @@ LibraryTreeItem* LibraryTreeItem::child(int row)
   return mChildren.value(row);
 }
 
-void LibraryTreeItem::swapChildren(int i, int j)
+/*!
+ * \brief LibraryTreeItem::moveChild
+ * Moves the item from to to index in the list.
+ * \param from
+ * \param to
+ */
+void LibraryTreeItem::moveChild(int from, int to)
 {
-  mChildren.swap(i, j);
+  mChildren.move(from, to);
 }
 
 /*!
@@ -1676,7 +1682,13 @@ bool LibraryTreeModel::unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bo
   return true;
 }
 
-void LibraryTreeModel::moveClass(LibraryTreeItem *pLibraryTreeItem, bool up)
+/*!
+ * \brief LibraryTreeModel::moveClassUpDown
+ * Moves the class one level up/down.
+ * \param pLibraryTreeItem
+ * \param up
+ */
+void LibraryTreeModel::moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool up)
 {
   LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeItem->parent();
   QModelIndex parentIndex = libraryTreeItemIndex(pParentLibraryTreeItem);
@@ -1684,13 +1696,58 @@ void LibraryTreeModel::moveClass(LibraryTreeItem *pLibraryTreeItem, bool up)
   bool update = false;
   if (up && row > 0) {
     if (beginMoveRows(parentIndex, row, row, parentIndex, row - 1)) {
-      pParentLibraryTreeItem->swapChildren(row, row - 1);
+      pParentLibraryTreeItem->moveChild(row, row - 1);
       endMoveRows();
       update = true;
     }
   } else if (!up && row < pParentLibraryTreeItem->getChildren().size() - 1) {
     if (beginMoveRows(parentIndex, row, row, parentIndex, row + 2)) {
-      pParentLibraryTreeItem->swapChildren(row, row + 1);
+      pParentLibraryTreeItem->moveChild(row, row + 1);
+      endMoveRows();
+      update = true;
+    }
+  }
+  if (update) {
+    LibraryTreeItem *pContainingFileParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
+    // if we order in a package saved in one file strucutre then we should update its containing file item text.
+    if (pContainingFileParentLibraryTreeItem != pLibraryTreeItem) {
+      if (pLibraryTreeItem->getModelWidget()) {
+        pLibraryTreeItem->getModelWidget()->updateModelicaText();
+      } else {
+        updateLibraryTreeItemClassText(pLibraryTreeItem);
+      }
+    } else {
+      // if we order in a package saved in folder strucutre then we should mark its parent unsaved so new package.order can be saved.
+      pParentLibraryTreeItem->setIsSaved(false);
+      updateLibraryTreeItem(pParentLibraryTreeItem);
+      if (pParentLibraryTreeItem->getModelWidget()) {
+        pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getNameStructure()).append("*"));
+      }
+    }
+  }
+}
+
+/*!
+ * \brief LibraryTreeModel::moveClassTopBottom
+ * Moves the class to top or to bottom.
+ * \param pLibraryTreeItem
+ * \param top
+ */
+void LibraryTreeModel::moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, bool top)
+{
+  LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeItem->parent();
+  QModelIndex parentIndex = libraryTreeItemIndex(pParentLibraryTreeItem);
+  int row = pLibraryTreeItem->row();
+  bool update = false;
+  if (top && row > 0) {
+    if (beginMoveRows(parentIndex, row, row, parentIndex, 0)) {
+      pParentLibraryTreeItem->moveChild(row, 0);
+      endMoveRows();
+      update = true;
+    }
+  } else if (!top && row < pParentLibraryTreeItem->getChildren().size() - 1) {
+    if (beginMoveRows(parentIndex, row, row, parentIndex, pParentLibraryTreeItem->getChildren().size())) {
+      pParentLibraryTreeItem->moveChild(row, pParentLibraryTreeItem->getChildren().size() - 1);
       endMoveRows();
       update = true;
     }
@@ -1887,12 +1944,23 @@ void LibraryTreeView::createActions()
   mpMoveDownAction = new QAction(QIcon(":/Resources/icons/down.svg"), tr("Move Down"), this);
   mpMoveDownAction->setStatusTip(tr("Moves the class one level down"));
   connect(mpMoveDownAction, SIGNAL(triggered()), SLOT(moveClassDown()));
+  // Move class top action
+  mpMoveTopAction = new QAction(QIcon(":/Resources/icons/top.svg"), tr("Move to Top"), this);
+  mpMoveTopAction->setStatusTip(tr("Moves the class to top"));
+  connect(mpMoveTopAction, SIGNAL(triggered()), SLOT(moveClassTop()));
+  // Move class bottom action
+  mpMoveBottomAction = new QAction(QIcon(":/Resources/icons/bottom.svg"), tr("Move to Bottom"), this);
+  mpMoveBottomAction->setStatusTip(tr("Moves the class to bottom"));
+  connect(mpMoveBottomAction, SIGNAL(triggered()), SLOT(moveClassBottom()));
   // Order Menu
   mpOrderMenu = new QMenu(tr("Order"), this);
   mpOrderMenu->setIcon(QIcon(":/Resources/icons/order.svg"));
   // add the move action to order menu
   mpOrderMenu->addAction(mpMoveUpAction);
   mpOrderMenu->addAction(mpMoveDownAction);
+  mpOrderMenu->addSeparator();
+  mpOrderMenu->addAction(mpMoveTopAction);
+  mpOrderMenu->addAction(mpMoveBottomAction);
   // instantiate Model Action
   mpInstantiateModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.svg"), Helper::instantiateModel, this);
   mpInstantiateModelAction->setStatusTip(Helper::instantiateModelTip);
@@ -2143,7 +2211,7 @@ void LibraryTreeView::moveClassUp()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getLibraryTreeModel()->moveClass(pLibraryTreeItem, true);
+    mpLibraryWidget->getLibraryTreeModel()->moveClassUpDown(pLibraryTreeItem, true);
   }
 }
 
@@ -2155,7 +2223,31 @@ void LibraryTreeView::moveClassDown()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getLibraryTreeModel()->moveClass(pLibraryTreeItem, false);
+    mpLibraryWidget->getLibraryTreeModel()->moveClassUpDown(pLibraryTreeItem, false);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::moveClassTop
+ * Moves the class to top.
+ */
+void LibraryTreeView::moveClassTop()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->getLibraryTreeModel()->moveClassTopBottom(pLibraryTreeItem, true);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::moveClassBottom
+ * Moves the class to bottom.
+ */
+void LibraryTreeView::moveClassBottom()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->getLibraryTreeModel()->moveClassTopBottom(pLibraryTreeItem, false);
   }
 }
 
