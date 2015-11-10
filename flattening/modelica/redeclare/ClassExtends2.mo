@@ -25,7 +25,7 @@ end ClassExtends2;
 
 // Result:
 // class ClassExtends2
-//   parameter Integer component.y = 5;
 //   Integer component.x = component.y;
+//   parameter Integer component.y = 5;
 // end ClassExtends2;
 // endResult

@@ -24,8 +24,8 @@ end ClassExtends1;
 
 // Result:
 // class ClassExtends1
-//   discrete Integer component.y;
 //   Integer component.x = component.y;
+//   discrete Integer component.y;
 // initial equation
 //   component.y = 5;
 // end ClassExtends1;

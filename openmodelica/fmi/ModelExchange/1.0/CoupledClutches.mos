@@ -6,7 +6,7 @@
 
 loadModel(Modelica); getErrorString();
 loadFile("CoupledClutches.mo"); getErrorString();
-translateModelFMU(CoupledClutches); getErrorString();
+translateModelFMU(CoupledClutches, version="1.0"); getErrorString();
 
 importFMU("CoupledClutches.fmu"); getErrorString();
 loadFile("CoupledClutches_me_FMU.mo"); getErrorString();

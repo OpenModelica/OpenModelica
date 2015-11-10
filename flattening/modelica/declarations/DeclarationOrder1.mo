@@ -24,8 +24,8 @@ end DeclarationOrder1;
 
 // Result:
 // class DeclarationOrder1
-//   parameter Real b.x = 3.14;
 //   Real b.y(start = b.x);
+//   parameter Real b.x = 3.14;
 // equation
 //   der(b.y) = b.x;
 // end DeclarationOrder1;

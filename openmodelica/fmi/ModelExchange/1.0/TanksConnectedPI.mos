@@ -2,14 +2,14 @@
 // keywords: fmu export import
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml TanksConnectedPI.fmu _TanksConnectedPI* TanksConnectedPI_* TanksConnectedPI.libs TanksConnectedPI.lib TanksConnectedPI TanksConnectedPI.exe TanksConnectedPI.so TanksConnectedPI.dll TanksConnectedPI.c TanksConnectedPI.makefile output.log TanksConnectedPI/*
-// 
+//
 
 loadFile("TanksConnectedPI.mo");
-translateModelFMU(TanksConnectedPI);
+translateModelFMU(TanksConnectedPI, version="1.0");
 importFMU("TanksConnectedPI.fmu");
 loadFile("TanksConnectedPI_me_FMU.mo");
 simulate(TanksConnectedPI_me_FMU,stopTime=210,numberOfIntervals=250, tolerance=1e-5);
-echo(false); // turns of output 
+echo(false); // turns of output
 
 x:=val(tank1_h,25.0);
 y:=val(tank1_h,100.0);

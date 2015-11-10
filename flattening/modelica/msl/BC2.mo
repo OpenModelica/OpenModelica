@@ -1229,23 +1229,23 @@ end BC2;
 // end BC2;
 // Result:
 // class BC2
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 //   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
 //   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
-//   parameter Real derivative1.k[1] = 1.0 "Gains";
-//   parameter Real derivative1.T[1](quantity = "Time", unit = "s", min = 1e-60) = 0.01 "Time constants (T>0 required; T=0 is ideal derivative block)";
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 //   parameter Integer derivative1.n = 1 "Number of inputs (= number of outputs)";
 //   parameter Integer derivative1.inPort.n = derivative1.n "Dimension of signal vector";
 //   Real derivative1.inPort.signal[1] "Real input signals";
 //   parameter Integer derivative1.outPort.n = derivative1.n "Dimension of signal vector";
 //   Real derivative1.outPort.signal[1] "Real output signals";
 //   Real derivative1.y[1] "Output signals";
+//   protected Real derivative1.u[1] "Input signals";
+//   parameter Real derivative1.k[1] = 1.0 "Gains";
+//   parameter Real derivative1.T[1](quantity = "Time", unit = "s", min = 1e-60) = 0.01 "Time constants (T>0 required; T=0 is ideal derivative block)";
 //   Real derivative1.x[1] "State of block";
 //   protected parameter Real derivative1.p_k[1] = derivative1.k[1];
 //   protected parameter Real derivative1.p_T[1] = derivative1.T[1];
-//   protected Real derivative1.u[1] "Input signals";
 // equation
 //   constant1.outPort.signal[1] = constant1.k[1];
 //   constant1.y[1] = constant1.outPort.signal[1];

@@ -20,13 +20,13 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // "class SimpleTriggeredTrapezoid \"C2M2L_OM Range Pack Internals includes a triggered trapezoid.  This requires when equations and initial equations\"
 //   parameter Real tt.amplitude = 1.0 \"Amplitude of trapezoid\";
 //   parameter Real tt.rising(quantity = \"Time\", unit = \"s\", min = 0.0) = 0.5 \"Rising duration of trapezoid\";
+//   parameter Real tt.falling(quantity = \"Time\", unit = \"s\", min = 0.0) = 0.5 \"Falling duration of trapezoid\";
 //   parameter Real tt.offset = 1.0 \"Offset of output signal\";
 //   Boolean tt.u \"Connector of Boolean input signal\";
 //   Real tt.y \"Connector of Real output signal\";
 //   protected discrete Real tt.endValue \"Value of y at time of recent edge\";
 //   protected discrete Real tt.rate \"Current rising/falling rate\";
 //   protected discrete Real tt.T(quantity = \"Time\", unit = \"s\") \"Predicted time of output reaching endValue\";
-//   parameter Real tt.falling(quantity = \"Time\", unit = \"s\", min = 0.0) = 0.5 \"Falling duration of trapezoid\";
 //   Boolean b;
 // equation
 //   tt.y = if time < tt.T then tt.endValue + (time - tt.T) * tt.rate else tt.endValue;
@@ -232,30 +232,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </minValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"3\" name=\"tt.offset\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Offset of output signal\">
-// <bindValueExpression>
-// <bindExpression string=\"1.0\">
-// <MathML>
-// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"real\"> 1.0 
-// </cn>
-// </math>
-// </MathML>
-// </bindExpression>
-// </bindValueExpression>
-// <classesNames>
-// <element>
-// SimpleTriggeredTrapezoid
-// </element>
-// <element>
-// Modelica.Blocks.Logical.TriggeredTrapezoid$tt
-// </element>
-// <element>
-// Real
-// </element>
-// </classesNames>
-// </variable>
-// <variable id=\"4\" name=\"tt.falling\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Falling duration of trapezoid\">
+// <variable id=\"3\" name=\"tt.falling\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Falling duration of trapezoid\">
 // <bindValueExpression>
 // <bindExpression string=\"0.5\">
 // <MathML>
@@ -303,6 +280,29 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </MathML>
 // </minValue>
 // </attributesValues>
+// </variable>
+// <variable id=\"4\" name=\"tt.offset\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Offset of output signal\">
+// <bindValueExpression>
+// <bindExpression string=\"1.0\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"real\"> 1.0 
+// </cn>
+// </math>
+// </MathML>
+// </bindExpression>
+// </bindValueExpression>
+// <classesNames>
+// <element>
+// SimpleTriggeredTrapezoid
+// </element>
+// <element>
+// Modelica.Blocks.Logical.TriggeredTrapezoid$tt
+// </element>
+// <element>
+// Real
+// </element>
+// </classesNames>
 // </variable>
 // </variablesList>
 // </knownVariables>

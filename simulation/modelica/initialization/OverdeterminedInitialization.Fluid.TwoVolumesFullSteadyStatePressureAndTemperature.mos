@@ -88,7 +88,7 @@ buildModel(OverdeterminedInitialization.Fluid.TwoVolumesFullSteadyStatePressureA
 //  * candidate: V1.ports[2].p(start = 1000000.0)
 //  * candidate: V1.ports[1].p(start = 1000000.0)
 // => select value from V2.medium.p(start = V2.p_start) for variable: V2.medium.p
-// Notification: The following equation is consistent and got removed from the initialization problem: $DER.V1.medium.p = 0.0
+// Notification: The following equation is consistent and got removed from the initialization problem: $DER.V2.medium.p = 0.0
 // Warning: The initial conditions are over specified. Use +d=initialization for more information.
 // "
 // endResult

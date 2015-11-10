@@ -1018,16 +1018,16 @@ end BM18;
 //   Real min1.y[1] "Output signals";
 //   protected Real min1.u1[1] "Input signals 1";
 //   protected Real min1.u2[1] "Input signals 2";
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 //   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
 //   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
-//   parameter Real constant2.k[1] = 1.0 "Constant output values";
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 //   parameter Integer constant2.nout(min = 1) = 1 "Number of outputs";
 //   parameter Integer constant2.outPort.n = constant2.nout "Dimension of signal vector";
 //   Real constant2.outPort.signal[1] "Real output signals";
 //   Real constant2.y[1];
+//   parameter Real constant2.k[1] = 1.0 "Constant output values";
 // equation
 //   min1.u1 = {min1.inPort1.signal[1]};
 //   min1.u2 = {min1.inPort2.signal[1]};

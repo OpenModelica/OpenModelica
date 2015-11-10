@@ -25,6 +25,7 @@ val(syncFilter.y, 6.2*10e-6);
 // end Modelica.Math.asin;
 //
 // class SyncFilterTest
+//   parameter Real syncFilter.samplePeriod(quantity = \"Time\", unit = \"s\", min = 1e-13, start = 0.1) = 1.0 / (syncFilter.UpdateRate * /*Real*/(syncFilter.n)) \"Sample period of component\";
 //   parameter Real syncFilter.startTime(quantity = \"Time\", unit = \"s\") = 0.0 \"First sample time instant\";
 //   protected Boolean syncFilter.sampleTrigger \"True, if sample time instant\";
 //   protected Boolean syncFilter.firstTrigger \"Rising edge signals first sample instant\";
@@ -32,8 +33,6 @@ val(syncFilter.y, 6.2*10e-6);
 //   Real syncFilter.y \"Continuous output signal\";
 //   parameter Real syncFilter.UpdateRate = 25000.0;
 //   parameter Integer syncFilter.n = 5;
-//   Real syncFilter.x1;
-//   parameter Real syncFilter.samplePeriod(quantity = \"Time\", unit = \"s\", min = 1e-13, start = 0.1) = 1.0 / (syncFilter.UpdateRate * /*Real*/(syncFilter.n)) \"Sample period of component\";
 //   Real syncFilter.x[1] \"State of transfer function from controller canonical form\";
 //   Real syncFilter.x[2] \"State of transfer function from controller canonical form\";
 //   Real syncFilter.x[3] \"State of transfer function from controller canonical form\";
@@ -48,6 +47,7 @@ val(syncFilter.y, 6.2*10e-6);
 //   Real syncFilter.xext[3];
 //   Real syncFilter.xext[4];
 //   Real syncFilter.xext[5];
+//   Real syncFilter.x1;
 //   Real clock.y \"Connector of Real output signal\";
 //   parameter Real clock.offset(quantity = \"Time\", unit = \"s\") = 0.0 \"Offset of output signal\";
 //   parameter Real clock.startTime(quantity = \"Time\", unit = \"s\") = 0.0 \"Output = offset for time < startTime\";

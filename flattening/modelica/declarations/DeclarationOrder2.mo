@@ -29,9 +29,9 @@ end DeclarationOrder2;
 
 // Result:
 // class DeclarationOrder2
-//   parameter Integer d.n = 1;
-//   parameter Real d.c2[1].x = 3.14;
 //   Real d.c2[1].y(start = d.c2[1].x);
+//   parameter Real d.c2[1].x = 3.14;
+//   parameter Integer d.n = 1;
 // equation
 //   der(d.c2[1].y) = d.c2[1].x;
 // end DeclarationOrder2;

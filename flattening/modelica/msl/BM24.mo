@@ -1014,18 +1014,18 @@ end BM24;
 // Result:
 // class BM24
 //   parameter Integer sum1.nin = 1 "Number of inputs";
+//   parameter Integer sum1.inPort.n = sum1.nin "Dimension of signal vector";
+//   Real sum1.inPort.signal[1] "Real input signals";
 //   parameter Integer sum1.outPort.n = 1 "Dimension of signal vector";
 //   Real sum1.outPort.signal[1] "Real output signals";
 //   Real sum1.y "Output signal";
-//   parameter Integer sum1.inPort.n = sum1.nin "Dimension of signal vector";
-//   Real sum1.inPort.signal[1] "Real input signals";
-//   parameter Real sum1.k[1] = 1.0 "Optional: sum coefficients";
 //   protected Real sum1.u[1] "Input signals";
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
+//   parameter Real sum1.k[1] = 1.0 "Optional: sum coefficients";
 //   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
 //   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 // equation
 //   sum1.u = {sum1.inPort.signal[1]};
 //   sum1.y = sum1.k[1] * sum1.u[1];

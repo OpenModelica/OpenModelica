@@ -33,7 +33,7 @@ end QualifiedEnd;
 //   Real x2[1];
 //   Real x2[2];
 // equation
-//   x2 = {1.0, 2.0};
 //   x1 = {a[2].x[1], a[2].x[2], a[2].x[3]};
+//   x2 = {1.0, 2.0};
 // end QualifiedEnd;
 // endResult

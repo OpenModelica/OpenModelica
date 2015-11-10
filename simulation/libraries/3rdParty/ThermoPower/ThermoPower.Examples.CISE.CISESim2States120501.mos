@@ -195,7 +195,7 @@ simulate(ThermoPower.Examples.CISE.CISESim2States120501); getErrorString();
 //  * candidate: Plant.SH.heatTransfer.h[1](start = 100000.0)
 //  * candidate: Plant.Pipe2SH.infl.h_outflow(start = Plant.Pipe2SH.hstartin)
 // => select value from Plant.Pipe2SH.htilde[1](start = Plant.Pipe2SH.hstart[2]) for variable: Plant.Pipe2SH.htilde[1]
-// Notification: The following equation is consistent and got removed from the initialization problem: $DER.Plant.SH.p = 0.0
+// Notification: The following equation is consistent and got removed from the initialization problem: $DER.Plant.Pipe2Valve.p = 0.0
 // Warning: The initial conditions are over specified. Use +d=initialization for more information.
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 // Warning: Alias set with several free start values

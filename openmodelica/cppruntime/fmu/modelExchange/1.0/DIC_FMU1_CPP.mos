@@ -20,7 +20,7 @@ equation
   der(y2) = y1;
 end DIC;
 ");
-translateModelFMU(DIC); getErrorString();
+translateModelFMU(DIC, version="1.0"); getErrorString();
 
 loadModel(Modelica); getErrorString();
 setCommandLineOptions("+simCodeTarget=C"); getErrorString();

@@ -62,7 +62,72 @@ readFile("stateSpace-MSD.xml");
 // </unit>
 // </attributesValues>
 // </variable>
-// <variable id=\"3\" name=\"damper1.s_rel\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" derivativeName=\"damper1.v_rel\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Relative distance (= flange_b.s - flange_a.s)\">
+// <variable id=\"3\" name=\"damper1.lossPower\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Loss power leaving component via heatPort (&gt; 0, if heat is flowing out of component)\">
+// <classesNames>
+// <element>
+// MSD
+// </element>
+// <element>
+// Modelica.Mechanics.Translational.Components.Damper$damper1
+// </element>
+// <element>
+// Modelica.SIunits.Power
+// </element>
+// </classesNames>
+// <attributesValues>
+// <quantity string=\"&quot;Power&quot;\">
+// </quantity>
+// <unit string=\"&quot;W&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"4\" name=\"damper1.flange_a.s\" variability=\"continuousDummyState\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
+// <classesNames>
+// <element>
+// MSD
+// </element>
+// <element>
+// Modelica.Mechanics.Translational.Components.Damper$damper1
+// </element>
+// <element>
+// Modelica.Mechanics.Translational.Interfaces.Flange_a
+// </element>
+// <element>
+// Modelica.SIunits.Position
+// </element>
+// </classesNames>
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"5\" name=\"damper1.v_rel\" variability=\"continuousDummyState\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Relative velocity (= der(s_rel))\">
+// <classesNames>
+// <element>
+// MSD
+// </element>
+// <element>
+// Modelica.Mechanics.Translational.Components.Damper$damper1
+// </element>
+// <element>
+// Modelica.SIunits.Velocity$damper1$v_rel
+// </element>
+// </classesNames>
+// <attributesValues>
+// <quantity string=\"&quot;Velocity&quot;\">
+// </quantity>
+// <unit string=\"&quot;m/s&quot;\">
+// </unit>
+// <stateSelect>
+// Prefer
+// </stateSelect>
+// <initialValue string=\"0.0\">
+// </initialValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"6\" name=\"damper1.s_rel\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" derivativeName=\"damper1.v_rel\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Relative distance (= flange_b.s - flange_a.s)\">
 // <classesNames>
 // <element>
 // MSD
@@ -88,72 +153,28 @@ readFile("stateSpace-MSD.xml");
 // </initialValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"4\" name=\"damper1.v_rel\" variability=\"continuousDummyState\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Relative velocity (= der(s_rel))\">
+// <variable id=\"7\" name=\"mass1.a\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute acceleration of component\">
 // <classesNames>
 // <element>
 // MSD
 // </element>
 // <element>
-// Modelica.Mechanics.Translational.Components.Damper$damper1
+// Modelica.Mechanics.Translational.Components.Mass$mass1
 // </element>
 // <element>
-// Modelica.SIunits.Velocity$damper1$v_rel
+// Modelica.SIunits.Acceleration$mass1$a
 // </element>
 // </classesNames>
 // <attributesValues>
-// <quantity string=\"&quot;Velocity&quot;\">
+// <quantity string=\"&quot;Acceleration&quot;\">
 // </quantity>
-// <unit string=\"&quot;m/s&quot;\">
+// <unit string=\"&quot;m/s2&quot;\">
 // </unit>
-// <stateSelect>
-// Prefer
-// </stateSelect>
 // <initialValue string=\"0.0\">
 // </initialValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"5\" name=\"damper1.lossPower\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Loss power leaving component via heatPort (&gt; 0, if heat is flowing out of component)\">
-// <classesNames>
-// <element>
-// MSD
-// </element>
-// <element>
-// Modelica.Mechanics.Translational.Components.Damper$damper1
-// </element>
-// <element>
-// Modelica.SIunits.Power
-// </element>
-// </classesNames>
-// <attributesValues>
-// <quantity string=\"&quot;Power&quot;\">
-// </quantity>
-// <unit string=\"&quot;W&quot;\">
-// </unit>
-// </attributesValues>
-// </variable>
-// <variable id=\"6\" name=\"damper1.flange_a.s\" variability=\"continuousDummyState\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
-// <classesNames>
-// <element>
-// MSD
-// </element>
-// <element>
-// Modelica.Mechanics.Translational.Components.Damper$damper1
-// </element>
-// <element>
-// Modelica.Mechanics.Translational.Interfaces.Flange_a
-// </element>
-// <element>
-// Modelica.SIunits.Position
-// </element>
-// </classesNames>
-// <attributesValues>
-// <quantity string=\"&quot;Length&quot;\">
-// </quantity>
-// <unit string=\"&quot;m&quot;\">
-// </unit>
-// </attributesValues>
-// </variable>
-// <variable id=\"7\" name=\"mass1.v\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" derivativeName=\"mass1.a\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute velocity of component\">
+// <variable id=\"8\" name=\"mass1.v\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" derivativeName=\"mass1.a\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute velocity of component\">
 // <classesNames>
 // <element>
 // MSD
@@ -177,7 +198,29 @@ readFile("stateSpace-MSD.xml");
 // </initialValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"8\" name=\"mass1.s\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" derivativeName=\"mass1.v\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute position of center of component (s = flange_a.s + L/2 = flange_b.s - L/2)\">
+// <variable id=\"9\" name=\"mass1.flange_b.s\" variability=\"continuousDummyState\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
+// <classesNames>
+// <element>
+// MSD
+// </element>
+// <element>
+// Modelica.Mechanics.Translational.Components.Mass$mass1
+// </element>
+// <element>
+// Modelica.Mechanics.Translational.Interfaces.Flange_b
+// </element>
+// <element>
+// Modelica.SIunits.Position
+// </element>
+// </classesNames>
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"10\" name=\"mass1.s\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" derivativeName=\"mass1.v\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute position of center of component (s = flange_a.s + L/2 = flange_b.s - L/2)\">
 // <classesNames>
 // <element>
 // MSD
@@ -199,49 +242,6 @@ readFile("stateSpace-MSD.xml");
 // </stateSelect>
 // <initialValue string=\"0.0\">
 // </initialValue>
-// </attributesValues>
-// </variable>
-// <variable id=\"9\" name=\"mass1.a\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute acceleration of component\">
-// <classesNames>
-// <element>
-// MSD
-// </element>
-// <element>
-// Modelica.Mechanics.Translational.Components.Mass$mass1
-// </element>
-// <element>
-// Modelica.SIunits.Acceleration$mass1$a
-// </element>
-// </classesNames>
-// <attributesValues>
-// <quantity string=\"&quot;Acceleration&quot;\">
-// </quantity>
-// <unit string=\"&quot;m/s2&quot;\">
-// </unit>
-// <initialValue string=\"0.0\">
-// </initialValue>
-// </attributesValues>
-// </variable>
-// <variable id=\"10\" name=\"mass1.flange_b.s\" variability=\"continuousDummyState\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
-// <classesNames>
-// <element>
-// MSD
-// </element>
-// <element>
-// Modelica.Mechanics.Translational.Components.Mass$mass1
-// </element>
-// <element>
-// Modelica.Mechanics.Translational.Interfaces.Flange_b
-// </element>
-// <element>
-// Modelica.SIunits.Position
-// </element>
-// </classesNames>
-// <attributesValues>
-// <quantity string=\"&quot;Length&quot;\">
-// </quantity>
-// <unit string=\"&quot;m&quot;\">
-// </unit>
 // </attributesValues>
 // </variable>
 // <variable id=\"11\" name=\"spring1.f\" variability=\"continuousDummyState\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Force between flanges (positive in direction of flange axis R)\">
@@ -1120,14 +1120,14 @@ readFile("stateSpace-MSD.xml");
 // <matchingAlgorithm>
 // <solvedIn variableId=\"1\" equationId=\"6\" />
 // <solvedIn variableId=\"2\" equationId=\"9\" />
-// <solvedIn variableId=\"3\" equationId=\"7\" />
-// <solvedIn variableId=\"4\" equationId=\"5\" />
-// <solvedIn variableId=\"5\" equationId=\"8\" />
-// <solvedIn variableId=\"6\" equationId=\"2\" />
-// <solvedIn variableId=\"7\" equationId=\"11\" />
-// <solvedIn variableId=\"8\" equationId=\"12\" />
-// <solvedIn variableId=\"9\" equationId=\"10\" />
-// <solvedIn variableId=\"10\" equationId=\"1\" />
+// <solvedIn variableId=\"3\" equationId=\"8\" />
+// <solvedIn variableId=\"4\" equationId=\"2\" />
+// <solvedIn variableId=\"5\" equationId=\"5\" />
+// <solvedIn variableId=\"6\" equationId=\"7\" />
+// <solvedIn variableId=\"7\" equationId=\"10\" />
+// <solvedIn variableId=\"8\" equationId=\"11\" />
+// <solvedIn variableId=\"9\" equationId=\"1\" />
+// <solvedIn variableId=\"10\" equationId=\"12\" />
 // <solvedIn variableId=\"11\" equationId=\"4\" />
 // <solvedIn variableId=\"12\" equationId=\"3\" />
 // <solvedIn variableId=\"13\" equationId=\"14\" />

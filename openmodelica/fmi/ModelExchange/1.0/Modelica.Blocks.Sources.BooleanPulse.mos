@@ -2,12 +2,12 @@
 // keywords: simulation MSL Examples
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml Modelica_Blocks_Sources_BooleanPulse.fmu Modelica_Blocks_Sources_BooleanPulse_* Modelica.Blocks.Sources.BooleanPulse_* Modelica_Blocks_Sources_BooleanPulse_me_FMU.mo Modelica_Blocks_Sources_BooleanPulse.libs Modelica_Blocks_Sources_BooleanPulse.lib Modelica_Blocks_Sources_BooleanPulse.so Modelica_Blocks_Sources_BooleanPulse.dll Modelica_Blocks_Sources_BooleanPulse.c Modelica_Blocks_Sources_BooleanPulse.makefile
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica);
-translateModelFMU(Modelica.Blocks.Sources.BooleanPulse);
+translateModelFMU(Modelica.Blocks.Sources.BooleanPulse, version="1.0");
 getErrorString();
 
 importFMU("Modelica_Blocks_Sources_BooleanPulse.fmu"); getErrorString();

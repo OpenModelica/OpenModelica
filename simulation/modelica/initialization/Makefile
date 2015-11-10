@@ -9,10 +9,13 @@ bug_2504.mos \
 bug_2566.mos \
 bug_2583.mos \
 bug_2673.mos \
+bug_2673b.mos \
+bug_2830.mos \
 bug_2990.mos \
 bug_2994.mos \
 bug_3014.mos \
 bug_3052.mos \
+bug_3536.mos \
 discreteTest01.mos \
 discreteTest02.mos \
 discreteTest03.mos \
@@ -69,7 +72,6 @@ OverdeterminedInitialization.Fluid.TwoVolumesFullSteadyStatePressureAndTemperatu
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
-bug_2830.mos \
 discreteTest07.mos \
 homotopy1.mos \
 

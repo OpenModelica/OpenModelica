@@ -1207,14 +1207,14 @@ end BS7;
 // end BS7;
 // Result:
 // class BS7
-//   parameter Real ramp1.height[1] = 1.0 "Heights of ramps";
-//   parameter Real ramp1.duration[1](min = 1e-60) = 2.0 "Durations of ramps";
-//   parameter Real ramp1.offset[1] = 0.0 "Offsets of output signals";
-//   parameter Real ramp1.startTime[1](quantity = "Time", unit = "s") = 0.0 "Output = offset for time < startTime";
 //   parameter Integer ramp1.nout(min = 1) = 1 "Number of outputs";
 //   parameter Integer ramp1.outPort.n = ramp1.nout "Dimension of signal vector";
 //   Real ramp1.outPort.signal[1] "Real output signals";
 //   Real ramp1.y[1];
+//   parameter Real ramp1.height[1] = 1.0 "Heights of ramps";
+//   parameter Real ramp1.duration[1](min = 1e-60) = 2.0 "Durations of ramps";
+//   parameter Real ramp1.offset[1] = 0.0 "Offsets of output signals";
+//   parameter Real ramp1.startTime[1](quantity = "Time", unit = "s") = 0.0 "Output = offset for time < startTime";
 //   protected parameter Real ramp1.p_height[1] = ramp1.height[1];
 //   protected parameter Real ramp1.p_duration[1] = ramp1.duration[1];
 //   protected parameter Real ramp1.p_offset[1] = ramp1.offset[1];

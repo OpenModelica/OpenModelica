@@ -1,0 +1,33 @@
+// status: correct
+// Note: Requires PATH to include cross-compilers for darwin, mingw, armhf
+
+loadModel(Modelica);
+loadString("model FmuExportCrossCompile
+  parameter Real e=0.7;
+  parameter Real g=9.81;
+  Real h(start=1, fixed=true);
+  Real v(start=0, fixed=true);
+  Real v_new(start=0, fixed=true);
+equation
+  der(v) = -g;
+  der(h) = v;
+
+  when h <= 0.0 then
+    v_new = -e*pre(v);
+    reinit(v, v_new);
+  end when;
+  annotation(experiment(StopTime=0.45, Interval=0.001)); // Why StopTime=0.5 before fun things happen? fmuChecker can't deal with bouncingball events as it always does the event one time step after
+end FmuExportCrossCompile;");
+
+simulate(FmuExportCrossCompile, method="euler");
+getErrorString();
+buildModelFMU(FmuExportCrossCompile, version="2.0", fmuType="me_cs", platforms={
+  "i386-apple-darwin15",
+  "x86_64-apple-darwin15",
+  "arm-linux-gnueabihf",
+  "x86_64-linux-gnu",
+  "i686-linux-gnu",
+  "x86_64-w64-mingw32",
+  "i686-w64-mingw32"
+});
+getErrorString();

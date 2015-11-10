@@ -1,7 +1,7 @@
 // name:     For-statement 1
 // keywords: for
 // status:   correct
-// 
+//
 //  Test the interactive for-statement
 //
 k := 0;
@@ -12,6 +12,6 @@ k
 
 // Result:
 // 0
-// 
+//
 // 500500
 // endResult

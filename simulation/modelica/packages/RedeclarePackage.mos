@@ -34,9 +34,9 @@ val(mod.value, 0.5);
 //
 // class Test
 //   parameter Real mod.value = 1.0;
-//   Real mod.x;
 //   parameter Real mod.result1(fixed = false) = TestModel$mod.Function.func(mod.value);
 //   parameter Real mod.result2 = 1.0;
+//   Real mod.x;
 // equation
 //   mod.x = TestModel$mod.Function.func(1.0 + time);
 // end Test;

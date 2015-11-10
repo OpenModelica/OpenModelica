@@ -1099,11 +1099,11 @@ end BM26;
 // end Modelica.Math.tanh;
 //
 // class BM26
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 //   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
 //   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 //   parameter Integer tanh1.n = 1 "Number of inputs (= number of outputs)";
 //   parameter Integer tanh1.inPort.n = tanh1.n "Dimension of signal vector";
 //   Real tanh1.inPort.signal[1] "Real input signals";

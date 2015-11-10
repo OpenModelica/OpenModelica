@@ -352,11 +352,11 @@ simulate(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_ev
 //   protected Real m_flow[2](quantity = \"MassFlowRate\", unit = \"kg/s\");
 //   protected Real m_flow[3](quantity = \"MassFlowRate\", unit = \"kg/s\");
 // equation
-//   Pr = {eta[1] * cp[1] / lambda[1], eta[2] * cp[2] / lambda[2], eta[3] * cp[3] / lambda[3]};
-//   m_flow = {0.5 * h * lambda[1] * length / (dimlesslength ^ 2.0 * d_hyd * cp[1]), 0.5 * h * lambda[2] * length / (dimlesslength ^ 2.0 * d_hyd * cp[2]), 0.5 * h * lambda[3] * length / (dimlesslength ^ 2.0 * d_hyd * cp[3])};
-//   velocity = {m_flow[1] / (s * h * rho[1]), m_flow[2] / (s * h * rho[2]), m_flow[3] / (s * h * rho[3])};
-//   Re = {rho[1] * velocity[1] * d_hyd / eta[1], rho[2] * velocity[2] * d_hyd / eta[2], rho[3] * velocity[3] * d_hyd / eta[3]};
 //   abscissa = {(length / (d_hyd * max(Re[1], 0.001) * Pr[1])) ^ 0.5, (length / (d_hyd * max(Re[2], 0.001) * Pr[2])) ^ 0.5, (length / (d_hyd * max(Re[3], 0.001) * Pr[3])) ^ 0.5};
+//   Pr = {eta[1] * cp[1] / lambda[1], eta[2] * cp[2] / lambda[2], eta[3] * cp[3] / lambda[3]};
+//   Re = {rho[1] * velocity[1] * d_hyd / eta[1], rho[2] * velocity[2] * d_hyd / eta[2], rho[3] * velocity[3] * d_hyd / eta[3]};
+//   velocity = {m_flow[1] / (s * h * rho[1]), m_flow[2] / (s * h * rho[2]), m_flow[3] / (s * h * rho[3])};
+//   m_flow = {0.5 * h * lambda[1] * length / (dimlesslength ^ 2.0 * d_hyd * cp[1]), 0.5 * h * lambda[2] * length / (dimlesslength ^ 2.0 * d_hyd * cp[2]), 0.5 * h * lambda[3] * length / (dimlesslength ^ 2.0 * d_hyd * cp[3])};
 //   der(dimlesslength) = 0.99;
 //   (_, _, _, Nu_1[1], _) = Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar(/*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con*/(m_flow_IN_con_1[1]), /*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var*/(m_flow_IN_var_1[1]));
 //   (_, _, _, Nu_1[2], _) = Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar(/*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con*/(m_flow_IN_con_1[2]), /*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var*/(m_flow_IN_var_1[2]));

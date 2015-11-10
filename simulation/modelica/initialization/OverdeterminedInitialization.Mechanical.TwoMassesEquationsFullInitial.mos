@@ -13,8 +13,8 @@ buildModel(OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitial
 // true
 // ""
 // {"OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitial","OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitial_init.xml"}
-// "Notification: The following equation is consistent and got removed from the initialization problem: x2 = 0.0
-// Notification: The following equation is consistent and got removed from the initialization problem: v2 = 0.0
+// "Notification: The following equation is consistent and got removed from the initialization problem: x1 = 0.0
+// Notification: The following equation is consistent and got removed from the initialization problem: v1 = 0.0
 // Warning: The initial conditions are over specified. Use +d=initialization for more information.
 // "
 // endResult

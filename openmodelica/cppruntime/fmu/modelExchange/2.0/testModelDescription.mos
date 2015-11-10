@@ -133,13 +133,11 @@ readFile("modelDescription.tmp.xml");
 //     <InitialUnknowns>
 //     </InitialUnknowns>
 //     <Clocks>
-//       <Clock><SubSampled baseClockIndex=\"2\"
-//                          subSampleFactor=\"2\"
-//                          shiftCounter=\"3\"
+//       <Clock><Periodic
+//               baseInterval=\"0.1\"
+//               subSampleFactor=\"2\"
+//               shiftCounter=\"3\"
 //               /></Clock>
-//       <Clock><Periodic>
-//         <Real interval=\"0.1\" />
-//       </Periodic></Clock>
 //     </Clocks>
 //   </ModelStructure>
 // </fmiModelDescription>

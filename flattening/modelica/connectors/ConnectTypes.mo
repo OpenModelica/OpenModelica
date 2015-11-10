@@ -31,16 +31,16 @@ end ConnectTypes;
 // Result
 // Result:
 // class ConnectTypes
+//   Real a.c.e[1];
 //   Integer a.c.d;
 //   parameter Integer a.c.p = 4;
 //   parameter Integer a.c.n = 1;
 //   constant Real a.c.c = 2.0;
-//   Real a.c.e[1];
+//   Real c.e[1];
 //   Integer c.d;
 //   parameter Integer c.p = 4;
 //   parameter Integer c.n = 1;
 //   constant Real c.c = 2.0;
-//   Real c.e[1];
 // equation
 //   assert(c.n == a.c.n, "automatically generated from connect");
 //   assert(c.p == a.c.p, "automatically generated from connect");

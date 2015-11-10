@@ -976,13 +976,13 @@ end BS10;
 // end BS10;
 // Result:
 // class BS10
-//   parameter Real step1.offset[1] = 0.0 "offset of output signal";
-//   parameter Real step1.startTime[1](quantity = "Time", unit = "s") = 0.0 "output = offset for time < startTime";
-//   parameter Real step1.height[1] = 1.0 "Heights of steps";
 //   parameter Integer step1.nout(min = 1) = 1 "Number of outputs";
 //   parameter Integer step1.outPort.n = step1.nout "Dimension of signal vector";
 //   Real step1.outPort.signal[1] "Real output signals";
 //   Real step1.y[1];
+//   parameter Real step1.offset[1] = 0.0 "offset of output signal";
+//   parameter Real step1.startTime[1](quantity = "Time", unit = "s") = 0.0 "output = offset for time < startTime";
+//   parameter Real step1.height[1] = 1.0 "Heights of steps";
 //   protected parameter Real step1.p_height[1] = step1.height[1];
 //   protected parameter Real step1.p_offset[1] = step1.offset[1];
 //   protected parameter Real step1.p_startTime[1](quantity = "Time", unit = "s") = step1.startTime[1];

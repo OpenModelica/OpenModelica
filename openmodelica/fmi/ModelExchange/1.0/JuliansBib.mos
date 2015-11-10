@@ -20,7 +20,7 @@ val(s, 0);
 val(s, 1);
 
 
-translateModelFMU(JuliansBib.Connector_Hebelarm_einfach);
+translateModelFMU(JuliansBib.Connector_Hebelarm_einfach, version="1.0");
 getErrorString();
 importFMU("JuliansBib_Connector_Hebelarm_einfach.fmu");
 getErrorString();
