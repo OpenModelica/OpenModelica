@@ -113,9 +113,11 @@
         <file>Resources/icons/refresh.svg</file>
         <file>Resources/icons/add-icon.svg</file>
         <file>Resources/icons/edit-icon.svg</file>
-        <file>Resources/icons/order.svg</file>
-        <file>Resources/icons/down.svg</file>
         <file>Resources/icons/up.svg</file>
+        <file>Resources/icons/down.svg</file>
+        <file>Resources/icons/top.svg</file>
+        <file>Resources/icons/bottom.svg</file>
+        <file>Resources/icons/order.svg</file>
         <file>Resources/icons/print.svg</file>
         <file>Resources/icons/duplicate.svg</file>
         <file>Resources/icons/mat.svg</file>
