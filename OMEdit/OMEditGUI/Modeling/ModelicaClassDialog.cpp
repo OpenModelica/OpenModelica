@@ -346,7 +346,13 @@ void ModelicaClassDialog::createModelicaClass()
   LibraryTreeItem *pLibraryTreeItem;
   bool wasNonExisting = false;
   pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pParentLibraryTreeItem, wasNonExisting, false, false, true);
-  pLibraryTreeItem->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeItem::SaveInOneFile : LibraryTreeItem::SaveFolderStructure);
+  if (pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
+    pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveInOneFile);
+  } else if (mpSaveContentsInOneFileCheckBox->isChecked()) {
+    pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveInOneFile);
+  } else {
+    pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
+  }
   if (wasNonExisting) {
     pLibraryTreeModel->loadNonExistingLibraryTreeItem(pLibraryTreeItem);
   }
