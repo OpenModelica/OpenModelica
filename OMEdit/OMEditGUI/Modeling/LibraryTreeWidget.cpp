@@ -488,6 +488,11 @@ LibraryTreeItem* LibraryTreeItem::child(int row)
   return mChildren.value(row);
 }
 
+void LibraryTreeItem::swapChildren(int i, int j)
+{
+  mChildren.swap(i, j);
+}
+
 /*!
  * \brief LibraryTreeItem::addInheritedClass
  * Adds the inherited class and connects to its signals for notifications.
@@ -1671,6 +1676,45 @@ bool LibraryTreeModel::unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bo
   return true;
 }
 
+void LibraryTreeModel::moveClass(LibraryTreeItem *pLibraryTreeItem, bool up)
+{
+  LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeItem->parent();
+  QModelIndex parentIndex = libraryTreeItemIndex(pParentLibraryTreeItem);
+  int row = pLibraryTreeItem->row();
+  bool update = false;
+  if (up && row > 0) {
+    if (beginMoveRows(parentIndex, row, row, parentIndex, row - 1)) {
+      pParentLibraryTreeItem->swapChildren(row, row - 1);
+      endMoveRows();
+      update = true;
+    }
+  } else if (!up && row < pParentLibraryTreeItem->getChildren().size() - 1) {
+    if (beginMoveRows(parentIndex, row, row, parentIndex, row + 2)) {
+      pParentLibraryTreeItem->swapChildren(row, row + 1);
+      endMoveRows();
+      update = true;
+    }
+  }
+  if (update) {
+    LibraryTreeItem *pContainingFileParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
+    // if we order in a package saved in one file strucutre then we should update its containing file item text.
+    if (pContainingFileParentLibraryTreeItem != pLibraryTreeItem) {
+      if (pLibraryTreeItem->getModelWidget()) {
+        pLibraryTreeItem->getModelWidget()->updateModelicaText();
+      } else {
+        updateLibraryTreeItemClassText(pLibraryTreeItem);
+      }
+    } else {
+      // if we order in a package saved in folder strucutre then we should mark its parent unsaved so new package.order can be saved.
+      pParentLibraryTreeItem->setIsSaved(false);
+      updateLibraryTreeItem(pParentLibraryTreeItem);
+      if (pParentLibraryTreeItem->getModelWidget()) {
+        pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getNameStructure()).append("*"));
+      }
+    }
+  }
+}
+
 /*!
  * \brief LibraryTreeModel::getUniqueTopLevelItemName
  * Finds the unique name for a new top level LibraryTreeItem based on the suggested name.
@@ -2097,7 +2141,10 @@ void LibraryTreeView::createNewModelicaClass()
  */
 void LibraryTreeView::moveClassUp()
 {
-
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->getLibraryTreeModel()->moveClass(pLibraryTreeItem, true);
+  }
 }
 
 /*!
@@ -2106,7 +2153,10 @@ void LibraryTreeView::moveClassUp()
  */
 void LibraryTreeView::moveClassDown()
 {
-
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->getLibraryTreeModel()->moveClass(pLibraryTreeItem, false);
+  }
 }
 
 /*!

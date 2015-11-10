@@ -131,6 +131,7 @@ public:
   bool isInPackageOneFile();
   void insertChild(int position, LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* child(int row);
+  void swapChildren(int i, int j);
   void addInheritedClass(LibraryTreeItem *pLibraryTreeItem);
   void removeInheritedClasses();
   QList<LibraryTreeItem*> getInheritedClasses() const {return mInheritedClasses;}
@@ -241,6 +242,7 @@ public:
   void showHideProtectedClasses();
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
+  void moveClass(LibraryTreeItem *pLibraryTreeItem, bool up);
   QString getUniqueTopLevelItemName(QString name, int number = 1);
   void emitDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight) {emit dataChanged(topLeft, bottomRight);}
 private:
