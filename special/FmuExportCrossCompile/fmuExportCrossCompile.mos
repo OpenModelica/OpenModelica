@@ -21,7 +21,7 @@ end FmuExportCrossCompile;");
 
 simulate(FmuExportCrossCompile, method="euler");
 getErrorString();
-buildModelFMU(FmuExportCrossCompile, platforms={
+buildModelFMU(FmuExportCrossCompile, version="2.0", fmuType="me_cs", platforms={
   "i386-apple-darwin15",
   "x86_64-apple-darwin15",
   "arm-linux-gnueabihf",
