@@ -7,7 +7,7 @@
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 loadString("
 model SID
-  constant Real dt = 0.1;
+  parameter Real dt = 0.1 annotation(Evaluate = true);
   parameter Real p = 1;
   parameter Real y_start = 0;
   Real xd(start = y_start);
@@ -104,17 +104,26 @@ readFile("modelDescription.tmp.xml");
 //   </ScalarVariable>
 //   <!-- Index of variable = \"5\" -->
 //   <ScalarVariable
-//     name=\"p\"
+//     name=\"dt\"
 //     valueReference=\"4\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"6\" -->
+//   <ScalarVariable
+//     name=\"p\"
+//     valueReference=\"5\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
 //     <Real start=\"1.0\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"6\" -->
+//   <!-- Index of variable = \"7\" -->
 //   <ScalarVariable
 //     name=\"y_start\"
-//     valueReference=\"5\"
+//     valueReference=\"6\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
