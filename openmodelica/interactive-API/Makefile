@@ -50,6 +50,7 @@ saveShort.mos \
 saveTotalModel.mos \
 setComponentComment.mos \
 setComponentModifierValue.mos \
+setSourceFileListFile.mos \
 showDoc.mos \
 simplify.mos \
 stringSplit.mos \
