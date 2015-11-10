@@ -2811,7 +2811,6 @@ bool LibraryWidget::saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeIte
   } else {
     QString topLevelClassName = StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure());
     LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(topLevelClassName);
-    qDebug() << pTopLevelLibraryTreeItem->getNameStructure();
     result = saveModelicaLibraryTreeItemHelper(pTopLevelLibraryTreeItem);
   }
 //  result = saveLibraryTreeItemHelper(pParentLibraryTreeItem);
