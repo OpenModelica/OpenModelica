@@ -280,6 +280,11 @@ algorithm
       // Do not delete whitespace in-between two tokens
       case (e1 as (Diff.Equal,_))::(Diff.Delete,t1 as TOKEN(id=TokenId.NEWLINE))::(Diff.Delete,t2 as TOKEN(id=TokenId.WHITESPACE))::(e2 as (Diff.Equal,_))::rest then (false,e1::(Diff.Equal,t1)::(Diff.Equal,t2)::e2::rest,tmp);
       case (e1 as (Diff.Equal,_))::(Diff.Delete,t as TOKEN(id=TokenId.WHITESPACE))::(e2 as (Diff.Equal,_))::rest then (false,e1::(Diff.Equal,t)::e2::rest,tmp);
+      case (e1 as (Diff.Equal,TOKEN(id=t3)))::rest
+        guard t3<>TokenId.WHITESPACE and t3<>TokenId.NEWLINE and deleteWhitespaceFollowedByEqualNonWhitespace(rest)
+        algorithm
+          (_,rest) := deleteWhitespaceFollowedByEqualNonWhitespace(rest);
+        then (false,e1::rest,tmp);
 
       // Do not delete+add the same token just because there is whitespace added
       case (d1,t1)::(Diff.Add,TOKEN(id=t3))::(Diff.Add,TOKEN(id=t4))::(Diff.Add,TOKEN(id=t5))::(d2,t2)::rest
@@ -406,5 +411,59 @@ algorithm
   // Canonical representation trims whitespace from each line
   lines := list(System.trim(s) for s in System.strtok(tokenContent(t),"\n"));
 end blockCommentCanonical;
+
+function deleteWhitespaceFollowedByEqualNonWhitespace
+  import LexerModelicaDiff.{Token,TokenId,TOKEN,tokenContent};
+  import DiffAlgorithm.Diff;
+  input list<tuple<Diff, Token>> inRest;
+  output Boolean b;
+  output list<tuple<Diff, Token>> result;
+protected
+  tuple<Diff, Token> head;
+  Diff diff;
+  Token t;
+  TokenId id;
+  list<tuple<Diff, Token>> rest;
+  Boolean foundWS=false, foundNL=false;
+algorithm
+  rest := inRest;
+  result := {};
+  while not listEmpty(rest) loop
+    (head as (diff,t as TOKEN(id=id))) := listHead(rest);
+    if diff <> Diff.Delete then
+      break;
+    end if;
+    rest := listRest(rest);
+    if id==TokenId.WHITESPACE and not foundWS then
+      foundWS := true;
+      result := (Diff.Equal,t)::result;
+    elseif id==TokenId.NEWLINE then
+      foundNL := true;
+      break;
+    else
+      result := head :: result;
+    end if;
+  end while;
+  if (not foundWS) or foundNL then
+    // If we find a newline, we probably went too far.
+    b := false;
+    result := {};
+    return;
+  end if;
+  _ := match rest
+    case (Diff.Equal,t)::_ then ();
+    else
+      algorithm
+        b := false;
+        result := {};
+        return;
+      then fail();
+  end match;
+  b := true;
+  for i in result loop
+    rest := i::rest;
+  end for;
+  result := rest;
+end deleteWhitespaceFollowedByEqualNonWhitespace;
 
 annotation(__OpenModelica_Interface="backend");
