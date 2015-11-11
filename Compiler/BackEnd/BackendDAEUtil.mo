@@ -6906,7 +6906,18 @@ protected
   list<tuple<BackendDAEFunc.optimizationModule, String>> postOptModules;
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
+
+  list<String> preOptModulesAdd = Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD);
+  list<String> preOptModulesSub = Flags.getConfigStringList(Flags.PRE_OPT_MODULES_SUB);
+  list<String> postOptModulesAdd = Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD);
+  list<String> postOptModulesSub = Flags.getConfigStringList(Flags.POST_OPT_MODULES_SUB);
 algorithm
+  // don't use --preOptModules+/-, --postOptModules+/- flags for Jacobains
+  Flags.setConfigStringList(Flags.PRE_OPT_MODULES_ADD, {});
+  Flags.setConfigStringList(Flags.PRE_OPT_MODULES_SUB, {});
+  Flags.setConfigStringList(Flags.POST_OPT_MODULES_ADD, {});
+  Flags.setConfigStringList(Flags.POST_OPT_MODULES_SUB, {});
+
   preOptModules := getPreOptModules(strPreOptModules);
   postOptModules := getPostOptModules(strPostOptModules);
   matchingAlgorithm := getMatchingAlgorithm(strMatchingAlgorithm);
@@ -6926,6 +6937,12 @@ algorithm
   //fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outDAE, "dumpindxdae");
   //bcall(Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) or Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO), BackendDump.dumpCompShort, outDAE);
   //fcall2(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outDAE, "system for jacobians");
+
+  // restore flags
+  Flags.setConfigStringList(Flags.PRE_OPT_MODULES_ADD, preOptModulesAdd);
+  Flags.setConfigStringList(Flags.PRE_OPT_MODULES_SUB, preOptModulesSub);
+  Flags.setConfigStringList(Flags.POST_OPT_MODULES_ADD, postOptModulesAdd);
+  Flags.setConfigStringList(Flags.POST_OPT_MODULES_SUB, postOptModulesSub);
 end getSolvedSystemforJacobians;
 
 /*************************************************
@@ -7181,7 +7198,20 @@ protected
 algorithm
   preOptModules := getPreOptModulesString();
   preOptModules := Util.getOptionOrDefault(inPreOptModules, preOptModules);
-  outPreOptModules := selectOptModules(preOptModules, allPreOptimizationModules());
+
+  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD)) then
+    Error.addCompilerError("It's not possible to combine following flags: --preOptModules+=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
+    fail();
+  else
+    preOptModules := listAppend(preOptModules, Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD));
+  end if;
+
+  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.POST_OPT_MODULES_SUB)) then
+    Error.addCompilerError("It's not possible to combine following flags: --postOptModules-=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
+    fail();
+  end if;
+
+  outPreOptModules := selectOptModules(preOptModules, Flags.getConfigStringList(Flags.PRE_OPT_MODULES_SUB), allPreOptimizationModules());
 end getPreOptModules;
 
 public function getPostOptModulesString
@@ -7198,7 +7228,20 @@ protected
 algorithm
   postOptModules := getPostOptModulesString();
   postOptModules := Util.getOptionOrDefault(inPostOptModules, postOptModules);
-  outPostOptModules := selectOptModules(postOptModules, allPostOptimizationModules());
+
+  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD)) then
+    Error.addCompilerError("It's not possible to combine following flags: --postOptModules+=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
+    fail();
+  else
+    postOptModules := listAppend(postOptModules, Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD));
+  end if;
+
+  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.POST_OPT_MODULES_SUB)) then
+    Error.addCompilerError("It's not possible to combine following flags: --postOptModules-=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
+    fail();
+  end if;
+
+  outPostOptModules := selectOptModules(postOptModules, Flags.getConfigStringList(Flags.POST_OPT_MODULES_SUB), allPostOptimizationModules());
 end getPostOptModules;
 
 public function getInitOptModules
@@ -7209,11 +7252,25 @@ protected
 algorithm
   initOptModules := Config.getInitOptModules();
   initOptModules := Util.getOptionOrDefault(inInitOptModules, initOptModules);
-  outInitOptModules := selectOptModules(initOptModules, allInitOptimizationModules());
+
+  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.INIT_OPT_MODULES_ADD)) then
+    Error.addCompilerError("It's not possible to combine following flags: --initOptModules+=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
+    fail();
+  else
+    initOptModules := listAppend(initOptModules, Flags.getConfigStringList(Flags.INIT_OPT_MODULES_ADD));
+  end if;
+
+  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.INIT_OPT_MODULES_SUB)) then
+    Error.addCompilerError("It's not possible to combine following flags: --initOptModules-=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
+    fail();
+  end if;
+
+  outInitOptModules := selectOptModules(initOptModules, Flags.getConfigStringList(Flags.INIT_OPT_MODULES_SUB), allInitOptimizationModules());
 end getInitOptModules;
 
 protected function selectOptModules
   input list<String> inStrOptModules;
+  input list<String> inDisabledModules;
   input list<tuple<BackendDAEFunc.optimizationModule, String>> inOptModules;
   output list<tuple<BackendDAEFunc.optimizationModule, String>> outOptModules = {};
 protected
@@ -7237,6 +7294,17 @@ algorithm
 
       if index <> -1 then
         activeModules[index] := true;
+      else
+        Error.addCompilerError("'" + name + "' is not a valid optimization module. Please check the flags carefully.");
+        fail();
+      end if;
+    end for;
+
+    for name in inDisabledModules loop
+      index := getModuleIndex(name, inOptModules);
+
+      if index <> -1 then
+        activeModules[index] := false;
       else
         Error.addCompilerError("'" + name + "' is not a valid optimization module. Please check the flags carefully.");
         fail();

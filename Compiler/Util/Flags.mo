@@ -1191,6 +1191,24 @@ constant ConfigFlag USE_LOCAL_DIRECTION = CONFIG_FLAG(80, "useLocalDirection",
 constant ConfigFlag FORCE_RECOMMENDED_ORDERING = CONFIG_FLAG(81, "forceRecommendedOrdering",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Util.gettext("If this is activated, then the specified pre-/post-/init-optimization modules will be rearranged to the recommended ordering."));
+constant ConfigFlag PRE_OPT_MODULES_ADD = CONFIG_FLAG(82, "preOptModules+",
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
+  Util.gettext("Sets additional pre-optimization modules to use in the back end. See --help=optmodules for more info."));
+constant ConfigFlag PRE_OPT_MODULES_SUB = CONFIG_FLAG(83, "preOptModules-",
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
+  Util.gettext("Disables a list of pre-optimization modules. See --help=optmodules for more info."));
+constant ConfigFlag POST_OPT_MODULES_ADD = CONFIG_FLAG(84, "postOptModules+",
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
+  Util.gettext("Sets additional post-optimization modules to use in the back end. See --help=optmodules for more info."));
+constant ConfigFlag POST_OPT_MODULES_SUB = CONFIG_FLAG(85, "postOptModules-",
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
+  Util.gettext("Disables a list of post-optimization modules. See --help=optmodules for more info."));
+constant ConfigFlag INIT_OPT_MODULES_ADD = CONFIG_FLAG(86, "initOptModules+",
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
+  Util.gettext("Sets additional init-optimization modules to use in the back end. See --help=optmodules for more info."));
+constant ConfigFlag INIT_OPT_MODULES_SUB = CONFIG_FLAG(87, "initOptModules-",
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
+  Util.gettext("Disables a list of init-optimization modules. See --help=optmodules for more info."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1277,7 +1295,13 @@ constant list<ConfigFlag> allConfigFlags = {
   INIT_OPT_MODULES,
   MAX_MIXED_DETERMINED_INDEX,
   USE_LOCAL_DIRECTION,
-  FORCE_RECOMMENDED_ORDERING
+  FORCE_RECOMMENDED_ORDERING,
+  PRE_OPT_MODULES_ADD,
+  PRE_OPT_MODULES_SUB,
+  POST_OPT_MODULES_ADD,
+  POST_OPT_MODULES_SUB,
+  INIT_OPT_MODULES_ADD,
+  INIT_OPT_MODULES_SUB
 };
 
 public function new
