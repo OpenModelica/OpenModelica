@@ -50,7 +50,7 @@ buildModel(testOptdaedump); getErrorString();
 // true
 // ""
 //
-// pre-optimization module unitChecking:
+// pre-optimization module unitChecking (simulation):
 //
 //
 // unknown partition
@@ -75,19 +75,19 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (13, 13)
 // ========================================
-// 1/1 (1): u0 = cos(time)    [dynamic]
-// 2/2 (1): u0 = v1 - v0    [dynamic]
-// 3/3 (1): u1 = R1 * i1    [dynamic]
-// 4/4 (1): u1 = v1 - v2    [dynamic]
-// 5/5 (1): u2 = R2 * i2    [dynamic]
-// 6/6 (1): u2 = v2 - v0    [dynamic]
-// 7/7 (1): uL = L * der(iL)    [dynamic]
-// 8/8 (1): uL = v2 - v0    [dynamic]
-// 9/9 (1): iC = C * der(uC)    [dynamic]
-// 10/10 (1): uC = v1 - v0    [dynamic]
-// 11/11 (1): v0 = 0.0    [dynamic]
-// 12/12 (1): i0 = i1 + iC    [dynamic]
-// 13/13 (1): i1 = i2 + iL    [dynamic]
+// 1/1 (1): u0 = cos(time)   [dynamic]
+// 2/2 (1): u0 = v1 - v0   [dynamic]
+// 3/3 (1): u1 = R1 * i1   [dynamic]
+// 4/4 (1): u1 = v1 - v2   [dynamic]
+// 5/5 (1): u2 = R2 * i2   [dynamic]
+// 6/6 (1): u2 = v2 - v0   [dynamic]
+// 7/7 (1): uL = L * der(iL)   [dynamic]
+// 8/8 (1): uL = v2 - v0   [dynamic]
+// 9/9 (1): iC = C * der(uC)   [dynamic]
+// 10/10 (1): uC = v1 - v0   [dynamic]
+// 11/11 (1): v0 = 0.0   [dynamic]
+// 12/12 (1): i0 = i1 + iC   [dynamic]
+// 13/13 (1): i1 = i2 + iL   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -157,7 +157,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module evaluateAllParameters:
+// pre-optimization module evaluateAllParameters (simulation):
 //
 //
 // unknown partition
@@ -182,19 +182,19 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (13, 13)
 // ========================================
-// 1/1 (1): u0 = cos(time)    [dynamic]
-// 2/2 (1): u0 = v1 - v0    [dynamic]
-// 3/3 (1): u1 = R1 * i1    [dynamic]
-// 4/4 (1): u1 = v1 - v2    [dynamic]
-// 5/5 (1): u2 = R2 * i2    [dynamic]
-// 6/6 (1): u2 = v2 - v0    [dynamic]
-// 7/7 (1): uL = L * der(iL)    [dynamic]
-// 8/8 (1): uL = v2 - v0    [dynamic]
-// 9/9 (1): iC = C * der(uC)    [dynamic]
-// 10/10 (1): uC = v1 - v0    [dynamic]
-// 11/11 (1): v0 = 0.0    [dynamic]
-// 12/12 (1): i0 = i1 + iC    [dynamic]
-// 13/13 (1): i1 = i2 + iL    [dynamic]
+// 1/1 (1): u0 = cos(time)   [dynamic]
+// 2/2 (1): u0 = v1 - v0   [dynamic]
+// 3/3 (1): u1 = R1 * i1   [dynamic]
+// 4/4 (1): u1 = v1 - v2   [dynamic]
+// 5/5 (1): u2 = R2 * i2   [dynamic]
+// 6/6 (1): u2 = v2 - v0   [dynamic]
+// 7/7 (1): uL = L * der(iL)   [dynamic]
+// 8/8 (1): uL = v2 - v0   [dynamic]
+// 9/9 (1): iC = C * der(uC)   [dynamic]
+// 10/10 (1): uC = v1 - v0   [dynamic]
+// 11/11 (1): v0 = 0.0   [dynamic]
+// 12/12 (1): i0 = i1 + iC   [dynamic]
+// 13/13 (1): i1 = i2 + iL   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -264,7 +264,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module evaluateReplaceProtectedFinalEvaluateParameters:
+// pre-optimization module evaluateReplaceProtectedFinalEvaluateParameters (simulation):
 //
 //
 // unknown partition
@@ -289,19 +289,19 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (13, 13)
 // ========================================
-// 1/1 (1): u0 = cos(time)    [dynamic]
-// 2/2 (1): u0 = v1 - v0    [dynamic]
-// 3/3 (1): u1 = R1 * i1    [dynamic]
-// 4/4 (1): u1 = v1 - v2    [dynamic]
-// 5/5 (1): u2 = R2 * i2    [dynamic]
-// 6/6 (1): u2 = v2 - v0    [dynamic]
-// 7/7 (1): uL = L * der(iL)    [dynamic]
-// 8/8 (1): uL = v2 - v0    [dynamic]
-// 9/9 (1): iC = C * der(uC)    [dynamic]
-// 10/10 (1): uC = v1 - v0    [dynamic]
-// 11/11 (1): v0 = 0.0    [dynamic]
-// 12/12 (1): i0 = i1 + iC    [dynamic]
-// 13/13 (1): i1 = i2 + iL    [dynamic]
+// 1/1 (1): u0 = cos(time)   [dynamic]
+// 2/2 (1): u0 = v1 - v0   [dynamic]
+// 3/3 (1): u1 = R1 * i1   [dynamic]
+// 4/4 (1): u1 = v1 - v2   [dynamic]
+// 5/5 (1): u2 = R2 * i2   [dynamic]
+// 6/6 (1): u2 = v2 - v0   [dynamic]
+// 7/7 (1): uL = L * der(iL)   [dynamic]
+// 8/8 (1): uL = v2 - v0   [dynamic]
+// 9/9 (1): iC = C * der(uC)   [dynamic]
+// 10/10 (1): uC = v1 - v0   [dynamic]
+// 11/11 (1): v0 = 0.0   [dynamic]
+// 12/12 (1): i0 = i1 + iC   [dynamic]
+// 13/13 (1): i1 = i2 + iL   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -371,7 +371,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module stateMachineElab:
+// pre-optimization module stateMachineElab (simulation):
 //
 //
 // unknown partition
@@ -396,19 +396,19 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (13, 13)
 // ========================================
-// 1/1 (1): u0 = cos(time)    [dynamic]
-// 2/2 (1): u0 = v1 - v0    [dynamic]
-// 3/3 (1): u1 = R1 * i1    [dynamic]
-// 4/4 (1): u1 = v1 - v2    [dynamic]
-// 5/5 (1): u2 = R2 * i2    [dynamic]
-// 6/6 (1): u2 = v2 - v0    [dynamic]
-// 7/7 (1): uL = L * der(iL)    [dynamic]
-// 8/8 (1): uL = v2 - v0    [dynamic]
-// 9/9 (1): iC = C * der(uC)    [dynamic]
-// 10/10 (1): uC = v1 - v0    [dynamic]
-// 11/11 (1): v0 = 0.0    [dynamic]
-// 12/12 (1): i0 = i1 + iC    [dynamic]
-// 13/13 (1): i1 = i2 + iL    [dynamic]
+// 1/1 (1): u0 = cos(time)   [dynamic]
+// 2/2 (1): u0 = v1 - v0   [dynamic]
+// 3/3 (1): u1 = R1 * i1   [dynamic]
+// 4/4 (1): u1 = v1 - v2   [dynamic]
+// 5/5 (1): u2 = R2 * i2   [dynamic]
+// 6/6 (1): u2 = v2 - v0   [dynamic]
+// 7/7 (1): uL = L * der(iL)   [dynamic]
+// 8/8 (1): uL = v2 - v0   [dynamic]
+// 9/9 (1): iC = C * der(uC)   [dynamic]
+// 10/10 (1): uC = v1 - v0   [dynamic]
+// 11/11 (1): v0 = 0.0   [dynamic]
+// 12/12 (1): i0 = i1 + iC   [dynamic]
+// 13/13 (1): i1 = i2 + iL   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -478,7 +478,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module simplifyIfEquations:
+// pre-optimization module simplifyIfEquations (simulation):
 //
 //
 // unknown partition
@@ -503,19 +503,19 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (13, 13)
 // ========================================
-// 1/1 (1): u0 = cos(time)    [dynamic]
-// 2/2 (1): u0 = v1 - v0    [dynamic]
-// 3/3 (1): u1 = R1 * i1    [dynamic]
-// 4/4 (1): u1 = v1 - v2    [dynamic]
-// 5/5 (1): u2 = R2 * i2    [dynamic]
-// 6/6 (1): u2 = v2 - v0    [dynamic]
-// 7/7 (1): uL = L * der(iL)    [dynamic]
-// 8/8 (1): uL = v2 - v0    [dynamic]
-// 9/9 (1): iC = C * der(uC)    [dynamic]
-// 10/10 (1): uC = v1 - v0    [dynamic]
-// 11/11 (1): v0 = 0.0    [dynamic]
-// 12/12 (1): i0 = i1 + iC    [dynamic]
-// 13/13 (1): i1 = i2 + iL    [dynamic]
+// 1/1 (1): u0 = cos(time)   [dynamic]
+// 2/2 (1): u0 = v1 - v0   [dynamic]
+// 3/3 (1): u1 = R1 * i1   [dynamic]
+// 4/4 (1): u1 = v1 - v2   [dynamic]
+// 5/5 (1): u2 = R2 * i2   [dynamic]
+// 6/6 (1): u2 = v2 - v0   [dynamic]
+// 7/7 (1): uL = L * der(iL)   [dynamic]
+// 8/8 (1): uL = v2 - v0   [dynamic]
+// 9/9 (1): iC = C * der(uC)   [dynamic]
+// 10/10 (1): uC = v1 - v0   [dynamic]
+// 11/11 (1): v0 = 0.0   [dynamic]
+// 12/12 (1): i0 = i1 + iC   [dynamic]
+// 13/13 (1): i1 = i2 + iL   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -585,7 +585,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module expandDerOperator:
+// pre-optimization module expandDerOperator (simulation):
 //
 //
 // unknown partition
@@ -610,19 +610,19 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (13, 13)
 // ========================================
-// 1/1 (1): u0 = cos(time)    [dynamic]
-// 2/2 (1): u0 = v1 - v0    [dynamic]
-// 3/3 (1): u1 = R1 * i1    [dynamic]
-// 4/4 (1): u1 = v1 - v2    [dynamic]
-// 5/5 (1): u2 = R2 * i2    [dynamic]
-// 6/6 (1): u2 = v2 - v0    [dynamic]
-// 7/7 (1): uL = L * der(iL)    [dynamic]
-// 8/8 (1): uL = v2 - v0    [dynamic]
-// 9/9 (1): iC = C * der(uC)    [dynamic]
-// 10/10 (1): uC = v1 - v0    [dynamic]
-// 11/11 (1): v0 = 0.0    [dynamic]
-// 12/12 (1): i0 = i1 + iC    [dynamic]
-// 13/13 (1): i1 = i2 + iL    [dynamic]
+// 1/1 (1): u0 = cos(time)   [dynamic]
+// 2/2 (1): u0 = v1 - v0   [dynamic]
+// 3/3 (1): u1 = R1 * i1   [dynamic]
+// 4/4 (1): u1 = v1 - v2   [dynamic]
+// 5/5 (1): u2 = R2 * i2   [dynamic]
+// 6/6 (1): u2 = v2 - v0   [dynamic]
+// 7/7 (1): uL = L * der(iL)   [dynamic]
+// 8/8 (1): uL = v2 - v0   [dynamic]
+// 9/9 (1): iC = C * der(uC)   [dynamic]
+// 10/10 (1): uC = v1 - v0   [dynamic]
+// 11/11 (1): v0 = 0.0   [dynamic]
+// 12/12 (1): i0 = i1 + iC   [dynamic]
+// 13/13 (1): i1 = i2 + iL   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -692,7 +692,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module removeEqualFunctionCalls:
+// pre-optimization module removeEqualFunctionCalls (simulation):
 //
 //
 // unknown partition
@@ -717,19 +717,19 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (13, 13)
 // ========================================
-// 1/1 (1): u0 = cos(time)    [dynamic]
-// 2/2 (1): u0 = v1 - v0    [dynamic]
-// 3/3 (1): u1 = R1 * i1    [dynamic]
-// 4/4 (1): u1 = v1 - v2    [dynamic]
-// 5/5 (1): u2 = R2 * i2    [dynamic]
-// 6/6 (1): u2 = v2 - v0    [dynamic]
-// 7/7 (1): uL = L * der(iL)    [dynamic]
-// 8/8 (1): uL = u2    [dynamic]
-// 9/9 (1): iC = C * der(uC)    [dynamic]
-// 10/10 (1): uC = u0    [dynamic]
-// 11/11 (1): v0 = 0.0    [dynamic]
-// 12/12 (1): i0 = i1 + iC    [dynamic]
-// 13/13 (1): i1 = i2 + iL    [dynamic]
+// 1/1 (1): u0 = cos(time)   [dynamic]
+// 2/2 (1): u0 = v1 - v0   [dynamic]
+// 3/3 (1): u1 = R1 * i1   [dynamic]
+// 4/4 (1): u1 = v1 - v2   [dynamic]
+// 5/5 (1): u2 = R2 * i2   [dynamic]
+// 6/6 (1): u2 = v2 - v0   [dynamic]
+// 7/7 (1): uL = L * der(iL)   [dynamic]
+// 8/8 (1): uL = u2   [dynamic]
+// 9/9 (1): iC = C * der(uC)   [dynamic]
+// 10/10 (1): uC = u0   [dynamic]
+// 11/11 (1): v0 = 0.0   [dynamic]
+// 12/12 (1): i0 = i1 + iC   [dynamic]
+// 13/13 (1): i1 = i2 + iL   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -833,7 +833,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module clockPartitioning:
+// pre-optimization module clockPartitioning (simulation):
 //
 //
 // unspecified partition
@@ -858,19 +858,19 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (13, 13)
 // ========================================
-// 1/1 (1): u0 = cos(time)    [dynamic]
-// 2/2 (1): u0 = v1 - v0    [dynamic]
-// 3/3 (1): u1 = R1 * i1    [dynamic]
-// 4/4 (1): u1 = v1 - v2    [dynamic]
-// 5/5 (1): u2 = R2 * i2    [dynamic]
-// 6/6 (1): u2 = v2 - v0    [dynamic]
-// 7/7 (1): uL = L * der(iL)    [dynamic]
-// 8/8 (1): uL = u2    [dynamic]
-// 9/9 (1): iC = C * der(uC)    [dynamic]
-// 10/10 (1): uC = u0    [dynamic]
-// 11/11 (1): v0 = 0.0    [dynamic]
-// 12/12 (1): i0 = i1 + iC    [dynamic]
-// 13/13 (1): i1 = i2 + iL    [dynamic]
+// 1/1 (1): u0 = cos(time)   [dynamic]
+// 2/2 (1): u0 = v1 - v0   [dynamic]
+// 3/3 (1): u1 = R1 * i1   [dynamic]
+// 4/4 (1): u1 = v1 - v2   [dynamic]
+// 5/5 (1): u2 = R2 * i2   [dynamic]
+// 6/6 (1): u2 = v2 - v0   [dynamic]
+// 7/7 (1): uL = L * der(iL)   [dynamic]
+// 8/8 (1): uL = u2   [dynamic]
+// 9/9 (1): iC = C * der(uC)   [dynamic]
+// 10/10 (1): uC = u0   [dynamic]
+// 11/11 (1): v0 = 0.0   [dynamic]
+// 12/12 (1): i0 = i1 + iC   [dynamic]
+// 13/13 (1): i1 = i2 + iL   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -940,7 +940,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module findStateOrder:
+// pre-optimization module findStateOrder (simulation):
 //
 //
 // unspecified partition
@@ -965,19 +965,19 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (13, 13)
 // ========================================
-// 1/1 (1): u0 = cos(time)    [dynamic]
-// 2/2 (1): u0 = v1 - v0    [dynamic]
-// 3/3 (1): u1 = R1 * i1    [dynamic]
-// 4/4 (1): u1 = v1 - v2    [dynamic]
-// 5/5 (1): u2 = R2 * i2    [dynamic]
-// 6/6 (1): u2 = v2 - v0    [dynamic]
-// 7/7 (1): uL = L * der(iL)    [dynamic]
-// 8/8 (1): uL = u2    [dynamic]
-// 9/9 (1): iC = C * der(uC)    [dynamic]
-// 10/10 (1): uC = u0    [dynamic]
-// 11/11 (1): v0 = 0.0    [dynamic]
-// 12/12 (1): i0 = i1 + iC    [dynamic]
-// 13/13 (1): i1 = i2 + iL    [dynamic]
+// 1/1 (1): u0 = cos(time)   [dynamic]
+// 2/2 (1): u0 = v1 - v0   [dynamic]
+// 3/3 (1): u1 = R1 * i1   [dynamic]
+// 4/4 (1): u1 = v1 - v2   [dynamic]
+// 5/5 (1): u2 = R2 * i2   [dynamic]
+// 6/6 (1): u2 = v2 - v0   [dynamic]
+// 7/7 (1): uL = L * der(iL)   [dynamic]
+// 8/8 (1): uL = u2   [dynamic]
+// 9/9 (1): iC = C * der(uC)   [dynamic]
+// 10/10 (1): uC = u0   [dynamic]
+// 11/11 (1): v0 = 0.0   [dynamic]
+// 12/12 (1): i0 = i1 + iC   [dynamic]
+// 13/13 (1): i1 = i2 + iL   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -1047,7 +1047,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module introduceDerAlias:
+// pre-optimization module introduceDerAlias (simulation):
 //
 //
 // unspecified partition
@@ -1072,19 +1072,19 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (13, 13)
 // ========================================
-// 1/1 (1): u0 = cos(time)    [dynamic]
-// 2/2 (1): u0 = v1 - v0    [dynamic]
-// 3/3 (1): u1 = R1 * i1    [dynamic]
-// 4/4 (1): u1 = v1 - v2    [dynamic]
-// 5/5 (1): u2 = R2 * i2    [dynamic]
-// 6/6 (1): u2 = v2 - v0    [dynamic]
-// 7/7 (1): uL = L * der(iL)    [dynamic]
-// 8/8 (1): uL = u2    [dynamic]
-// 9/9 (1): iC = C * der(uC)    [dynamic]
-// 10/10 (1): uC = u0    [dynamic]
-// 11/11 (1): v0 = 0.0    [dynamic]
-// 12/12 (1): i0 = i1 + iC    [dynamic]
-// 13/13 (1): i1 = i2 + iL    [dynamic]
+// 1/1 (1): u0 = cos(time)   [dynamic]
+// 2/2 (1): u0 = v1 - v0   [dynamic]
+// 3/3 (1): u1 = R1 * i1   [dynamic]
+// 4/4 (1): u1 = v1 - v2   [dynamic]
+// 5/5 (1): u2 = R2 * i2   [dynamic]
+// 6/6 (1): u2 = v2 - v0   [dynamic]
+// 7/7 (1): uL = L * der(iL)   [dynamic]
+// 8/8 (1): uL = u2   [dynamic]
+// 9/9 (1): iC = C * der(uC)   [dynamic]
+// 10/10 (1): uC = u0   [dynamic]
+// 11/11 (1): v0 = 0.0   [dynamic]
+// 12/12 (1): i0 = i1 + iC   [dynamic]
+// 13/13 (1): i1 = i2 + iL   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -1154,7 +1154,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module inputDerivativesForDynOpt:
+// pre-optimization module inputDerivativesForDynOpt (simulation):
 //
 //
 // unspecified partition
@@ -1179,19 +1179,19 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (13, 13)
 // ========================================
-// 1/1 (1): u0 = cos(time)    [dynamic]
-// 2/2 (1): u0 = v1 - v0    [dynamic]
-// 3/3 (1): u1 = R1 * i1    [dynamic]
-// 4/4 (1): u1 = v1 - v2    [dynamic]
-// 5/5 (1): u2 = R2 * i2    [dynamic]
-// 6/6 (1): u2 = v2 - v0    [dynamic]
-// 7/7 (1): uL = L * der(iL)    [dynamic]
-// 8/8 (1): uL = u2    [dynamic]
-// 9/9 (1): iC = C * der(uC)    [dynamic]
-// 10/10 (1): uC = u0    [dynamic]
-// 11/11 (1): v0 = 0.0    [dynamic]
-// 12/12 (1): i0 = i1 + iC    [dynamic]
-// 13/13 (1): i1 = i2 + iL    [dynamic]
+// 1/1 (1): u0 = cos(time)   [dynamic]
+// 2/2 (1): u0 = v1 - v0   [dynamic]
+// 3/3 (1): u1 = R1 * i1   [dynamic]
+// 4/4 (1): u1 = v1 - v2   [dynamic]
+// 5/5 (1): u2 = R2 * i2   [dynamic]
+// 6/6 (1): u2 = v2 - v0   [dynamic]
+// 7/7 (1): uL = L * der(iL)   [dynamic]
+// 8/8 (1): uL = u2   [dynamic]
+// 9/9 (1): iC = C * der(uC)   [dynamic]
+// 10/10 (1): uC = u0   [dynamic]
+// 11/11 (1): v0 = 0.0   [dynamic]
+// 12/12 (1): i0 = i1 + iC   [dynamic]
+// 13/13 (1): i1 = i2 + iL   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -1261,7 +1261,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module replaceEdgeChange:
+// pre-optimization module replaceEdgeChange (simulation):
 //
 //
 // unspecified partition
@@ -1286,19 +1286,19 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (13, 13)
 // ========================================
-// 1/1 (1): u0 = cos(time)    [dynamic]
-// 2/2 (1): u0 = v1 - v0    [dynamic]
-// 3/3 (1): u1 = R1 * i1    [dynamic]
-// 4/4 (1): u1 = v1 - v2    [dynamic]
-// 5/5 (1): u2 = R2 * i2    [dynamic]
-// 6/6 (1): u2 = v2 - v0    [dynamic]
-// 7/7 (1): uL = L * der(iL)    [dynamic]
-// 8/8 (1): uL = u2    [dynamic]
-// 9/9 (1): iC = C * der(uC)    [dynamic]
-// 10/10 (1): uC = u0    [dynamic]
-// 11/11 (1): v0 = 0.0    [dynamic]
-// 12/12 (1): i0 = i1 + iC    [dynamic]
-// 13/13 (1): i1 = i2 + iL    [dynamic]
+// 1/1 (1): u0 = cos(time)   [dynamic]
+// 2/2 (1): u0 = v1 - v0   [dynamic]
+// 3/3 (1): u1 = R1 * i1   [dynamic]
+// 4/4 (1): u1 = v1 - v2   [dynamic]
+// 5/5 (1): u2 = R2 * i2   [dynamic]
+// 6/6 (1): u2 = v2 - v0   [dynamic]
+// 7/7 (1): uL = L * der(iL)   [dynamic]
+// 8/8 (1): uL = u2   [dynamic]
+// 9/9 (1): iC = C * der(uC)   [dynamic]
+// 10/10 (1): uC = u0   [dynamic]
+// 11/11 (1): v0 = 0.0   [dynamic]
+// 12/12 (1): i0 = i1 + iC   [dynamic]
+// 13/13 (1): i1 = i2 + iL   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -1368,7 +1368,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module inlineArrayEqn:
+// pre-optimization module inlineArrayEqn (simulation):
 //
 //
 // unspecified partition
@@ -1393,19 +1393,19 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (13, 13)
 // ========================================
-// 1/1 (1): u0 = cos(time)    [dynamic]
-// 2/2 (1): u0 = v1 - v0    [dynamic]
-// 3/3 (1): u1 = R1 * i1    [dynamic]
-// 4/4 (1): u1 = v1 - v2    [dynamic]
-// 5/5 (1): u2 = R2 * i2    [dynamic]
-// 6/6 (1): u2 = v2 - v0    [dynamic]
-// 7/7 (1): uL = L * der(iL)    [dynamic]
-// 8/8 (1): uL = u2    [dynamic]
-// 9/9 (1): iC = C * der(uC)    [dynamic]
-// 10/10 (1): uC = u0    [dynamic]
-// 11/11 (1): v0 = 0.0    [dynamic]
-// 12/12 (1): i0 = i1 + iC    [dynamic]
-// 13/13 (1): i1 = i2 + iL    [dynamic]
+// 1/1 (1): u0 = cos(time)   [dynamic]
+// 2/2 (1): u0 = v1 - v0   [dynamic]
+// 3/3 (1): u1 = R1 * i1   [dynamic]
+// 4/4 (1): u1 = v1 - v2   [dynamic]
+// 5/5 (1): u2 = R2 * i2   [dynamic]
+// 6/6 (1): u2 = v2 - v0   [dynamic]
+// 7/7 (1): uL = L * der(iL)   [dynamic]
+// 8/8 (1): uL = u2   [dynamic]
+// 9/9 (1): iC = C * der(uC)   [dynamic]
+// 10/10 (1): uC = u0   [dynamic]
+// 11/11 (1): v0 = 0.0   [dynamic]
+// 12/12 (1): i0 = i1 + iC   [dynamic]
+// 13/13 (1): i1 = i2 + iL   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -1475,7 +1475,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module removeSimpleEquations:
+// pre-optimization module removeSimpleEquations (simulation):
 //
 //
 // unspecified partition
@@ -1495,14 +1495,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (8, 8)
 // ========================================
-// 1/1 (1): uC = cos(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * der(uC)    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
+// 1/1 (1): uC = cos(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * der(uC)   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -1577,7 +1577,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module comSubExp:
+// pre-optimization module comSubExp (simulation):
 //
 //
 // unspecified partition
@@ -1597,14 +1597,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (8, 8)
 // ========================================
-// 1/1 (1): uC = cos(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * der(uC)    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
+// 1/1 (1): uC = cos(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * der(uC)   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -1679,7 +1679,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module resolveLoops:
+// pre-optimization module resolveLoops (simulation):
 //
 //
 // unspecified partition
@@ -1699,14 +1699,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (8, 8)
 // ========================================
-// 1/1 (1): uC = cos(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * der(uC)    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
+// 1/1 (1): uC = cos(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * der(uC)   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -1781,7 +1781,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module evalFunc:
+// pre-optimization module evalFunc (simulation):
 //
 //
 // unspecified partition
@@ -1801,14 +1801,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (8, 8)
 // ========================================
-// 1/1 (1): uC = cos(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * der(uC)    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
+// 1/1 (1): uC = cos(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * der(uC)   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -1883,7 +1883,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module sortEqnsVars:
+// pre-optimization module sortEqnsVars (simulation):
 //
 //
 // unspecified partition
@@ -1903,14 +1903,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (8, 8)
 // ========================================
-// 1/1 (1): uC = cos(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * der(uC)    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
+// 1/1 (1): uC = cos(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * der(uC)   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -1985,7 +1985,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module encapsulateWhenConditions:
+// pre-optimization module encapsulateWhenConditions (simulation):
 //
 //
 // unspecified partition
@@ -2005,14 +2005,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (8, 8)
 // ========================================
-// 1/1 (1): uC = cos(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * der(uC)    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
+// 1/1 (1): uC = cos(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * der(uC)   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -2115,16 +2115,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)    [dynamic]
-// 2/2 (1): i1 = i2 + iL    [dynamic]
-// 3/3 (1): i0 = i1 + iC    [dynamic]
-// 4/4 (1): iC = C * $DER.uC    [dynamic]
-// 5/5 (1): uL = L * $DER.iL    [dynamic]
-// 6/6 (1): uL = R2 * i2    [dynamic]
-// 7/7 (1): u1 = uC - uL    [dynamic]
-// 8/8 (1): u1 = R1 * i1    [dynamic]
-// 9/9 (1): $DER.uC = -sin(time)    [dynamic]
-// 10/10 (1): v0 = 0.0    [initial]
+// 1/1 (1): uC = cos(time)   [dynamic]
+// 2/2 (1): i1 = i2 + iL   [dynamic]
+// 3/3 (1): i0 = i1 + iC   [dynamic]
+// 4/4 (1): iC = C * $DER.uC   [dynamic]
+// 5/5 (1): uL = L * $DER.iL   [dynamic]
+// 6/6 (1): uL = R2 * i2   [dynamic]
+// 7/7 (1): u1 = uC - uL   [dynamic]
+// 8/8 (1): u1 = R1 * i1   [dynamic]
+// 9/9 (1): $DER.uC = -sin(time)   [dynamic]
+// 10/10 (1): v0 = 0.0   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -2203,7 +2203,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): v0 = 0.0    [initial]
+// 1/1 (1): v0 = 0.0   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -2236,15 +2236,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): uC = cos(time)    [dynamic]
-// 2/2 (1): i1 = i2 + iL    [dynamic]
-// 3/3 (1): i0 = i1 + iC    [dynamic]
-// 4/4 (1): iC = C * $DER.uC    [dynamic]
-// 5/5 (1): uL = L * $DER.iL    [dynamic]
-// 6/6 (1): uL = R2 * i2    [dynamic]
-// 7/7 (1): u1 = uC - uL    [dynamic]
-// 8/8 (1): u1 = R1 * i1    [dynamic]
-// 9/9 (1): $DER.uC = -sin(time)    [dynamic]
+// 1/1 (1): uC = cos(time)   [dynamic]
+// 2/2 (1): i1 = i2 + iL   [dynamic]
+// 3/3 (1): i0 = i1 + iC   [dynamic]
+// 4/4 (1): iC = C * $DER.uC   [dynamic]
+// 5/5 (1): uL = L * $DER.iL   [dynamic]
+// 6/6 (1): uL = R2 * i2   [dynamic]
+// 7/7 (1): u1 = uC - uL   [dynamic]
+// 8/8 (1): u1 = R1 * i1   [dynamic]
+// 9/9 (1): $DER.uC = -sin(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -2323,7 +2323,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): v0 = 0.0    [initial]
+// 1/1 (1): v0 = 0.0   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -2364,16 +2364,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)    [dynamic]
-// 2/2 (1): i1 = i2 + iL    [dynamic]
-// 3/3 (1): i0 = i1 + iC    [dynamic]
-// 4/4 (1): iC = C * $DER.uC    [dynamic]
-// 5/5 (1): uL = L * $DER.iL    [dynamic]
-// 6/6 (1): uL = R2 * i2    [dynamic]
-// 7/7 (1): u1 = uC - uL    [dynamic]
-// 8/8 (1): u1 = R1 * i1    [dynamic]
-// 9/9 (1): $DER.uC = -sin(time)    [dynamic]
-// 10/10 (1): iL = $_start(iL)    [initial]
+// 1/1 (1): uC = cos(time)   [dynamic]
+// 2/2 (1): i1 = i2 + iL   [dynamic]
+// 3/3 (1): i0 = i1 + iC   [dynamic]
+// 4/4 (1): iC = C * $DER.uC   [dynamic]
+// 5/5 (1): uL = L * $DER.iL   [dynamic]
+// 6/6 (1): uL = R2 * i2   [dynamic]
+// 7/7 (1): u1 = uC - uL   [dynamic]
+// 8/8 (1): u1 = R1 * i1   [dynamic]
+// 9/9 (1): $DER.uC = -sin(time)   [dynamic]
+// 10/10 (1): iL = $_start(iL)   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -2475,7 +2475,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): v0 = 0.0    [initial]
+// 1/1 (1): v0 = 0.0   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -2516,16 +2516,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)    [dynamic]
-// 2/2 (1): i1 = i2 + iL    [dynamic]
-// 3/3 (1): i0 = i1 + iC    [dynamic]
-// 4/4 (1): iC = C * $DER.uC    [dynamic]
-// 5/5 (1): uL = L * $DER.iL    [dynamic]
-// 6/6 (1): uL = R2 * i2    [dynamic]
-// 7/7 (1): u1 = uC - uL    [dynamic]
-// 8/8 (1): u1 = R1 * i1    [dynamic]
-// 9/9 (1): $DER.uC = -sin(time)    [dynamic]
-// 10/10 (1): iL = $_start(iL)    [initial]
+// 1/1 (1): uC = cos(time)   [dynamic]
+// 2/2 (1): i1 = i2 + iL   [dynamic]
+// 3/3 (1): i0 = i1 + iC   [dynamic]
+// 4/4 (1): iC = C * $DER.uC   [dynamic]
+// 5/5 (1): uL = L * $DER.iL   [dynamic]
+// 6/6 (1): uL = R2 * i2   [dynamic]
+// 7/7 (1): u1 = uC - uL   [dynamic]
+// 8/8 (1): u1 = R1 * i1   [dynamic]
+// 9/9 (1): $DER.uC = -sin(time)   [dynamic]
+// 10/10 (1): iL = $_start(iL)   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -2628,7 +2628,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): v0 = 0.0    [initial]
+// 1/1 (1): v0 = 0.0   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -2669,16 +2669,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)    [dynamic]
-// 2/2 (1): i1 = i2 + iL    [dynamic]
-// 3/3 (1): i0 = i1 + iC    [dynamic]
-// 4/4 (1): iC = C * $DER.uC    [dynamic]
-// 5/5 (1): uL = L * $DER.iL    [dynamic]
-// 6/6 (1): uL = R2 * i2    [dynamic]
-// 7/7 (1): u1 = uC - uL    [dynamic]
-// 8/8 (1): u1 = R1 * i1    [dynamic]
-// 9/9 (1): $DER.uC = -sin(time)    [dynamic]
-// 10/10 (1): iL = $_start(iL)    [initial]
+// 1/1 (1): uC = cos(time)   [dynamic]
+// 2/2 (1): i1 = i2 + iL   [dynamic]
+// 3/3 (1): i0 = i1 + iC   [dynamic]
+// 4/4 (1): iC = C * $DER.uC   [dynamic]
+// 5/5 (1): uL = L * $DER.iL   [dynamic]
+// 6/6 (1): uL = R2 * i2   [dynamic]
+// 7/7 (1): u1 = uC - uL   [dynamic]
+// 8/8 (1): u1 = R1 * i1   [dynamic]
+// 9/9 (1): $DER.uC = -sin(time)   [dynamic]
+// 10/10 (1): iL = $_start(iL)   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -2781,7 +2781,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): v0 = 0.0    [initial]
+// 1/1 (1): v0 = 0.0   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -2822,16 +2822,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)    [dynamic]
-// 2/2 (1): i1 = i2 + iL    [dynamic]
-// 3/3 (1): i0 = i1 + iC    [dynamic]
-// 4/4 (1): iC = C * $DER.uC    [dynamic]
-// 5/5 (1): uL = L * $DER.iL    [dynamic]
-// 6/6 (1): uL = R2 * i2    [dynamic]
-// 7/7 (1): u1 = uC - uL    [dynamic]
-// 8/8 (1): u1 = R1 * i1    [dynamic]
-// 9/9 (1): $DER.uC = -sin(time)    [dynamic]
-// 10/10 (1): iL = $_start(iL)    [initial]
+// 1/1 (1): uC = cos(time)   [dynamic]
+// 2/2 (1): i1 = i2 + iL   [dynamic]
+// 3/3 (1): i0 = i1 + iC   [dynamic]
+// 4/4 (1): iC = C * $DER.uC   [dynamic]
+// 5/5 (1): uL = L * $DER.iL   [dynamic]
+// 6/6 (1): uL = R2 * i2   [dynamic]
+// 7/7 (1): u1 = uC - uL   [dynamic]
+// 8/8 (1): u1 = R1 * i1   [dynamic]
+// 9/9 (1): $DER.uC = -sin(time)   [dynamic]
+// 10/10 (1): iL = $_start(iL)   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -2921,7 +2921,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module simplifyAllExpressions:
+// pre-optimization module simplifyAllExpressions (jacobian):
 //
 //
 // unknown partition
@@ -2937,10 +2937,10 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (4, 4)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i2.$pDERNLSJac0.dummyVarNLSJac0 - uL.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
-// 2/2 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = -uL.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
-// 3/3 (1): i1SeedNLSJac0 = i2.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
-// 4/4 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0    [dynamic]
+// 1/1 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i2.$pDERNLSJac0.dummyVarNLSJac0 - uL.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
+// 2/2 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = -uL.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
+// 3/3 (1): i1SeedNLSJac0 = i2.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
+// 4/4 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -3013,7 +3013,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module evalFunc:
+// pre-optimization module evalFunc (jacobian):
 //
 //
 // unknown partition
@@ -3029,10 +3029,10 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (4, 4)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i2.$pDERNLSJac0.dummyVarNLSJac0 - uL.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
-// 2/2 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = -uL.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
-// 3/3 (1): i1SeedNLSJac0 = i2.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
-// 4/4 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0    [dynamic]
+// 1/1 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i2.$pDERNLSJac0.dummyVarNLSJac0 - uL.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
+// 2/2 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = -uL.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
+// 3/3 (1): i1SeedNLSJac0 = i2.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
+// 4/4 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -3105,7 +3105,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module removeEqualFunctionCalls:
+// pre-optimization module removeEqualFunctionCalls (jacobian):
 //
 //
 // unknown partition
@@ -3121,10 +3121,10 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (4, 4)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i2.$pDERNLSJac0.dummyVarNLSJac0 - uL.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
-// 2/2 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = -uL.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
-// 3/3 (1): i1SeedNLSJac0 = i2.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
-// 4/4 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0    [dynamic]
+// 1/1 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i2.$pDERNLSJac0.dummyVarNLSJac0 - uL.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
+// 2/2 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = -uL.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
+// 3/3 (1): i1SeedNLSJac0 = i2.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
+// 4/4 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -3213,7 +3213,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module removeSimpleEquations:
+// pre-optimization module removeSimpleEquations (jacobian):
 //
 //
 // unknown partition
@@ -3227,8 +3227,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -3318,8 +3318,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -3418,8 +3418,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -3518,8 +3518,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -3618,8 +3618,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -3718,8 +3718,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -3818,8 +3818,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -3918,8 +3918,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -4018,8 +4018,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -4118,8 +4118,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -4218,7 +4218,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): v0 = 0.0    [initial]
+// 1/1 (1): v0 = 0.0   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -4259,16 +4259,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)    [dynamic]
-// 2/2 (1): i1 = i2 + iL    [dynamic]
-// 3/3 (1): i0 = i1 + iC    [dynamic]
-// 4/4 (1): iC = C * $DER.uC    [dynamic]
-// 5/5 (1): uL = L * $DER.iL    [dynamic]
-// 6/6 (1): uL = R2 * i2    [dynamic]
-// 7/7 (1): u1 = uC - uL    [dynamic]
-// 8/8 (1): u1 = R1 * i1    [dynamic]
-// 9/9 (1): $DER.uC = -sin(time)    [dynamic]
-// 10/10 (1): iL = $_start(iL)    [initial]
+// 1/1 (1): uC = cos(time)   [dynamic]
+// 2/2 (1): i1 = i2 + iL   [dynamic]
+// 3/3 (1): i0 = i1 + iC   [dynamic]
+// 4/4 (1): iC = C * $DER.uC   [dynamic]
+// 5/5 (1): uL = L * $DER.iL   [dynamic]
+// 6/6 (1): uL = R2 * i2   [dynamic]
+// 7/7 (1): u1 = uC - uL   [dynamic]
+// 8/8 (1): u1 = R1 * i1   [dynamic]
+// 9/9 (1): $DER.uC = -sin(time)   [dynamic]
+// 10/10 (1): iL = $_start(iL)   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -4371,7 +4371,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): v0 = 0.0    [initial]
+// 1/1 (1): v0 = 0.0   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -4412,16 +4412,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)    [dynamic]
-// 2/2 (1): i1 = i2 + iL    [dynamic]
-// 3/3 (1): i0 = i1 + iC    [dynamic]
-// 4/4 (1): iC = C * $DER.uC    [dynamic]
-// 5/5 (1): $DER.iL = uL / L    [dynamic]
-// 6/6 (1): uL = R2 * i2    [dynamic]
-// 7/7 (1): u1 = uC - uL    [dynamic]
-// 8/8 (1): u1 = R1 * i1    [dynamic]
-// 9/9 (1): $DER.uC = -sin(time)    [dynamic]
-// 10/10 (1): iL = $_start(iL)    [initial]
+// 1/1 (1): uC = cos(time)   [dynamic]
+// 2/2 (1): i1 = i2 + iL   [dynamic]
+// 3/3 (1): i0 = i1 + iC   [dynamic]
+// 4/4 (1): iC = C * $DER.uC   [dynamic]
+// 5/5 (1): $DER.iL = uL / L   [dynamic]
+// 6/6 (1): uL = R2 * i2   [dynamic]
+// 7/7 (1): u1 = uC - uL   [dynamic]
+// 8/8 (1): u1 = R1 * i1   [dynamic]
+// 9/9 (1): $DER.uC = -sin(time)   [dynamic]
+// 10/10 (1): iL = $_start(iL)   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -4524,7 +4524,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): v0 = 0.0    [initial]
+// 1/1 (1): v0 = 0.0   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -4565,16 +4565,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)    [dynamic]
-// 2/2 (1): i1 = i2 + iL    [dynamic]
-// 3/3 (1): i0 = i1 + iC    [dynamic]
-// 4/4 (1): iC = C * $DER.uC    [dynamic]
-// 5/5 (1): $DER.iL = uL / L    [dynamic]
-// 6/6 (1): uL = R2 * i2    [dynamic]
-// 7/7 (1): u1 = uC - uL    [dynamic]
-// 8/8 (1): u1 = R1 * i1    [dynamic]
-// 9/9 (1): $DER.uC = -sin(time)    [dynamic]
-// 10/10 (1): iL = $_start(iL)    [initial]
+// 1/1 (1): uC = cos(time)   [dynamic]
+// 2/2 (1): i1 = i2 + iL   [dynamic]
+// 3/3 (1): i0 = i1 + iC   [dynamic]
+// 4/4 (1): iC = C * $DER.uC   [dynamic]
+// 5/5 (1): $DER.iL = uL / L   [dynamic]
+// 6/6 (1): uL = R2 * i2   [dynamic]
+// 7/7 (1): u1 = uC - uL   [dynamic]
+// 8/8 (1): u1 = R1 * i1   [dynamic]
+// 9/9 (1): $DER.uC = -sin(time)   [dynamic]
+// 10/10 (1): iL = $_start(iL)   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -4686,15 +4686,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -4811,15 +4811,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -4936,15 +4936,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -5061,15 +5061,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -5186,15 +5186,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -5311,15 +5311,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -5436,15 +5436,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -5561,15 +5561,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -5686,15 +5686,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -5811,15 +5811,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -5936,15 +5936,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -6061,15 +6061,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -6186,15 +6186,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -6311,15 +6311,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -6436,15 +6436,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -6562,15 +6562,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -6688,15 +6688,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -6814,15 +6814,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -6940,15 +6940,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -7066,15 +7066,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -7192,15 +7192,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -7318,15 +7318,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -7423,7 +7423,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module simplifyAllExpressions:
+// pre-optimization module simplifyAllExpressions (jacobian):
 //
 //
 // unknown partition
@@ -7439,10 +7439,10 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (4, 4)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i2.$pDERNLSJac1.dummyVarNLSJac1 - uL.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
-// 2/2 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = -uL.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
-// 3/3 (1): i1SeedNLSJac1 = i2.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
-// 4/4 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1    [dynamic]
+// 1/1 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i2.$pDERNLSJac1.dummyVarNLSJac1 - uL.$pDERNLSJac1.dummyVarNLSJac1   [dynamic]
+// 2/2 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = -uL.$pDERNLSJac1.dummyVarNLSJac1   [dynamic]
+// 3/3 (1): i1SeedNLSJac1 = i2.$pDERNLSJac1.dummyVarNLSJac1   [dynamic]
+// 4/4 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -7517,7 +7517,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module evalFunc:
+// pre-optimization module evalFunc (jacobian):
 //
 //
 // unknown partition
@@ -7533,10 +7533,10 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (4, 4)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i2.$pDERNLSJac1.dummyVarNLSJac1 - uL.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
-// 2/2 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = -uL.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
-// 3/3 (1): i1SeedNLSJac1 = i2.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
-// 4/4 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1    [dynamic]
+// 1/1 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i2.$pDERNLSJac1.dummyVarNLSJac1 - uL.$pDERNLSJac1.dummyVarNLSJac1   [dynamic]
+// 2/2 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = -uL.$pDERNLSJac1.dummyVarNLSJac1   [dynamic]
+// 3/3 (1): i1SeedNLSJac1 = i2.$pDERNLSJac1.dummyVarNLSJac1   [dynamic]
+// 4/4 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -7611,7 +7611,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module removeEqualFunctionCalls:
+// pre-optimization module removeEqualFunctionCalls (jacobian):
 //
 //
 // unknown partition
@@ -7627,10 +7627,10 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (4, 4)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i2.$pDERNLSJac1.dummyVarNLSJac1 - uL.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
-// 2/2 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = -uL.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
-// 3/3 (1): i1SeedNLSJac1 = i2.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
-// 4/4 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1    [dynamic]
+// 1/1 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i2.$pDERNLSJac1.dummyVarNLSJac1 - uL.$pDERNLSJac1.dummyVarNLSJac1   [dynamic]
+// 2/2 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = -uL.$pDERNLSJac1.dummyVarNLSJac1   [dynamic]
+// 3/3 (1): i1SeedNLSJac1 = i2.$pDERNLSJac1.dummyVarNLSJac1   [dynamic]
+// 4/4 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -7721,7 +7721,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module removeSimpleEquations:
+// pre-optimization module removeSimpleEquations (jacobian):
 //
 //
 // unknown partition
@@ -7735,8 +7735,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -7828,8 +7828,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -7930,8 +7930,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -8032,8 +8032,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -8134,8 +8134,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -8236,8 +8236,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -8338,8 +8338,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -8440,8 +8440,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -8542,8 +8542,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -8644,8 +8644,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1    [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
+// 1/1 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -8754,15 +8754,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -8880,15 +8880,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -9006,15 +9006,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -9132,15 +9132,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -9258,15 +9258,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -9384,15 +9384,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -9510,15 +9510,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -9636,15 +9636,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (9, 9)
 // ========================================
-// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
-// 2/2 (1): u1 = R1 * i1    [dynamic]
-// 3/3 (1): u1 = uC - uL    [dynamic]
-// 4/4 (1): uL = R2 * i2    [dynamic]
-// 5/5 (1): uL = L * der(iL)    [dynamic]
-// 6/6 (1): iC = C * $DER.uC    [dynamic]
-// 7/7 (1): i0 = i1 + iC    [dynamic]
-// 8/8 (1): i1 = i2 + iL    [dynamic]
-// 9/9 (1): uC = cos(time)    [dynamic]
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
 //
 //
 // Simple Equations (0, 0)

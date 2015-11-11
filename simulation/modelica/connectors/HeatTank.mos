@@ -18,6 +18,6 @@ getErrorString(); // simulation failed, check error string.
 //     messages = "Failed to build model: HeatTank"
 // end SimulationResult;
 // "Error: Too many equations, over-determined system. The model has 10 equation(s) and 8 variable(s).
-// Error: pre-optimization module clockPartitioning failed.
+// Error: pre-optimization module clockPartitioning (simulation) failed.
 // "
 // endResult
