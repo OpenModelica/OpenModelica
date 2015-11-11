@@ -7157,12 +7157,12 @@ protected function allPostOptimizationModules
     (SymbolicJacobian.generateSymbolicJacobianPast, "generateSymbolicJacobian"),
     (SymbolicJacobian.generateSymbolicLinearizationPast, "generateSymbolicLinearization"),
     (BackendDAEOptimize.removeConstants, "removeConstants"),
+    (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations"),
     (BackendDAEOptimize.simplifyTimeIndepFuncCalls, "simplifyTimeIndepFuncCalls"),
     (BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions"),
     // TODO: move the following modules to the correct position
     (BackendDump.dumpComponentsGraphStr, "dumpComponentsGraphStr"),
     (BackendDump.dumpDAE, "dumpDAE"),
-    (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations"),
     (XMLDump.dumpDAEXML, "dumpDAEXML")
   };
 end allPostOptimizationModules;

@@ -1830,20 +1830,20 @@ algorithm
           end if;
 
           backendDAE2 = BackendDAEUtil.getSolvedSystemforJacobians(backendDAE,
-                                                                   SOME({"simplifyAllExpressions",
+                                                                   SOME({"removeEqualFunctionCalls",
+                                                                         "removeSimpleEquations",
                                                                          "evalFunc",
-                                                                         "removeEqualFunctionCalls",
-                                                                         "removeSimpleEquations"}),
+                                                                         "simplifyAllExpressions"}),
                                                                    NONE(),
                                                                    NONE(),
                                                                    SOME({"inlineArrayEqn",
                                                                          "constantLinearSystem",
                                                                          "removeSimpleEquations",
-                                                                         "removeConstants",
                                                                          "tearingSystem",
+                                                                         "calculateStrongComponentJacobians",
+                                                                         "removeConstants",
                                                                          "solveSimpleEquations",
                                                                          "simplifyTimeIndepFuncCalls",
-                                                                         "calculateStrongComponentJacobians",
                                                                          "simplifyAllExpressions"}));
           _ = Flags.set(Flags.EXEC_STAT, b);
           if Flags.isSet(Flags.JAC_DUMP) then
