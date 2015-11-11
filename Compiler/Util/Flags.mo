@@ -687,10 +687,9 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "expandDerOperator",
     "removeEqualFunctionCalls",
     "clockPartitioning",
-    //"CSE_EachCall",
     "findStateOrder",
     "introduceDerAlias",
-    "inputDerivativesForDynOpt", // only for dyn. opt.
+    "inputDerivativesForDynOpt",
     "replaceEdgeChange",
     "inlineArrayEqn",
     "removeSimpleEquations",
@@ -793,8 +792,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "simplifyComplexFunction",
     "symEuler",
     "reshufflePost",
-    "reduceDynamicOptimization", // before tearing
-    "tearingSystem", // must be the last one, otherwise the torn systems are lost when throw away the matching information
+    "reduceDynamicOptimization",
+    "tearingSystem",
     "simplifyLoops",
     "recursiveTearing",
     "partlintornsystem",
@@ -1159,17 +1158,13 @@ constant ConfigFlag PARTLINTORN = CONFIG_FLAG(77, "partlintorn",
 
 constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(78, "initOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
-    //"constantLinearSystem",
     "simplifyComplexFunction",
-      //"reduceDynamicOptimization", // before tearing
     "tearingSystem",
     "simplifyLoops",
     "recursiveTearing",
     "calculateStrongComponentJacobians",
     "solveSimpleEquations",
     "simplifyAllExpressions"
-      //"inputDerivativesUsed",
-      //"extendDynamicOptimization"
     }),
   SOME(STRING_DESC_OPTION({
     ("calculateStrongComponentJacobians", Util.gettext("Generates analytical Jacobian for non-linear strong components.")),
@@ -1193,6 +1188,9 @@ constant ConfigFlag MAX_MIXED_DETERMINED_INDEX = CONFIG_FLAG(79, "maxMixedDeterm
 constant ConfigFlag USE_LOCAL_DIRECTION = CONFIG_FLAG(80, "useLocalDirection",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Keeps the input/output prefix for all variables in the flat model, not only top-level ones."));
+constant ConfigFlag FORCE_RECOMMENDED_ORDERING = CONFIG_FLAG(81, "forceRecommendedOrdering",
+  NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
+  Util.gettext("If this is activated, then the specified pre-/post-/init-optimization modules will be rearranged to the recommended ordering."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1278,7 +1276,8 @@ constant list<ConfigFlag> allConfigFlags = {
   PARTLINTORN,
   INIT_OPT_MODULES,
   MAX_MIXED_DETERMINED_INDEX,
-  USE_LOCAL_DIRECTION
+  USE_LOCAL_DIRECTION,
+  FORCE_RECOMMENDED_ORDERING
 };
 
 public function new
