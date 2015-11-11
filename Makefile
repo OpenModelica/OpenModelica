@@ -16,7 +16,7 @@ BUILDDIR=openmodelica-doc_$(BUILDDIR_VER)
 cppruntime-doc:
 	mkdir -p SimulationRuntime/cpp/Images
 	cp images/logo.svg SimulationRuntime/cpp/Images/OMLogo.svg
-	cd SimulationRuntime/cpp && cmake -DSOURCE_ROOT=../../../OMCompiler/SimulationRuntime/cpp && make Docs
+	cd SimulationRuntime/cpp && cmake -G "Unix Makefiles" -DSOURCE_ROOT=../../../OMCompiler/SimulationRuntime/cpp && make Docs
 
 cppruntime-doc-clean:
 	rm SimulationRuntime/cpp/Makefile -f
