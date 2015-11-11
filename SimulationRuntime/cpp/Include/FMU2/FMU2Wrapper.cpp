@@ -268,7 +268,7 @@ fmi2Status FMU2Wrapper::getEventIndicators(fmi2Real eventIndicators[], size_t ni
 {
   if (_need_update)
     updateModel();
-  bool conditions[NUMBER_OF_EVENT_INDICATORS];
+  bool conditions[NUMBER_OF_EVENT_INDICATORS + 1];
   _model->getConditions(conditions);
   _model->getZeroFunc(eventIndicators);
   for (int i = 0; i < ni; i++)
@@ -327,6 +327,7 @@ fmi2Status FMU2Wrapper::getClock(const fmi2Integer clockIndex[],
   for (int i = 0; i < nClockIndex; i++) {
     active[i] = _clock_buffer[clockIndex[i] - 1];
   }
+  return fmi2OK;
 }
 
 fmi2Status FMU2Wrapper::getInterval(const fmi2Integer clockIndex[],
@@ -352,8 +353,8 @@ fmi2Status FMU2Wrapper::newDiscreteStates(fmi2EventInfo *eventInfo)
     }
   }
   // Check if an Zero Crossings happend
-  double f[NUMBER_OF_EVENT_INDICATORS];
-  bool events[NUMBER_OF_EVENT_INDICATORS];
+  double f[NUMBER_OF_EVENT_INDICATORS + 1];
+  bool events[NUMBER_OF_EVENT_INDICATORS + 1];
   _model->getZeroFunc(f);
   for (int i = 0; i < NUMBER_OF_EVENT_INDICATORS; i++)
     events[i] = f[i] >= 0;
