@@ -6596,6 +6596,7 @@ algorithm
   SimCodeFunctionUtil.execStat("prepare preOptimizeDAE");
   for preOptModule in inPreOptModules loop
     (optModule, moduleStr) := preOptModule;
+    moduleStr := moduleStr + " (" + BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType) + ")";
     try
       BackendDAE.DAE(systs, shared) := optModule(outDAE);
       (systs, shared) := filterEmptySystems(systs, shared);
