@@ -7219,20 +7219,35 @@ protected function selectOptModules
 protected
   Boolean forceOrdering = Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING);
   String name;
+  Integer numModules = listLength(inOptModules);
+  array<Boolean> activeModules = arrayCreate(numModules, false);
+  Integer index;
+  Integer maxIndex = -1;
 algorithm
   if forceOrdering then
-    for module in inOptModules loop
-      (_, name) := module;
-      if listMember(name, inStrOptModules) then
-        outOptModules := module::outOptModules;
+    for name in inStrOptModules loop
+      index := getModuleIndex(name, inOptModules);
+
+      if index < maxIndex then
+        Error.addCompilerWarning("Specified ordering will be ignored. Use --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false to override module ordering.");
+        maxIndex := numModules;
+      else
+        maxIndex := intMax(maxIndex, index);
+      end if;
+
+      if index <> -1 then
+        activeModules[index] := true;
+      else
+        Error.addCompilerError("'" + name + "' is not a valid optimization module. Please check the flags carefully.");
+        fail();
       end if;
     end for;
 
-    // TODO: improve warning
-    if listLength(outOptModules) <> listLength(inStrOptModules) then
-      Error.addCompilerError("Specified modules are invalid.");
-      fail();
-    end if;
+    for i in 1:numModules loop
+      if activeModules[i] then
+        outOptModules := listGet(inOptModules, i)::outOptModules;
+      end if;
+    end for;
   else
     for name in inStrOptModules loop
       outOptModules := selectOptModules1(name, inOptModules)::outOptModules;
@@ -7240,6 +7255,23 @@ algorithm
   end if;
   outOptModules := listReverse(outOptModules);
 end selectOptModules;
+
+protected function getModuleIndex
+  input String inModuleName;
+  input list<tuple<BackendDAEFunc.optimizationModule, String>> inModuleList;
+  output Integer outIndex = 1;
+protected
+  String name;
+algorithm
+  for module in inModuleList loop
+    (_, name) := module;
+    if stringEqual(inModuleName, name) then
+      return;
+    end if;
+    outIndex := outIndex+1;
+  end for;
+  outIndex := -1;
+end getModuleIndex;
 
 protected function selectOptModules1
   input String strOptModule;

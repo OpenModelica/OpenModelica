@@ -2637,6 +2637,14 @@ algorithm
   DEBUG_FLAG(name = name) := inFlag;
 end debugFlagName;
 
+public function configFlagName
+  "Prints out name of a debug flag."
+  input ConfigFlag inFlag;
+  output String name;
+algorithm
+  CONFIG_FLAG(name = name) := inFlag;
+end configFlagName;
+
 protected function getValidStringOptions
   input ValidOptions inOptions;
   output list<String> validOptions;
