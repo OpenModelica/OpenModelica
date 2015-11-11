@@ -1,4 +1,4 @@
-for os in {"linux32","linux64","win32","win64"} loop // "darwin32","darwin64","arm-linux-gnueabi"
+for os in {"linux32","linux64","win32","win64","darwin32","darwin64"} loop // "arm-linux-gnueabi"
 for t in {"me","cs"} loop
 
 target := os+"-"+t;
