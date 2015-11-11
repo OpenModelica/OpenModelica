@@ -31,6 +31,7 @@
 #define __SYSTEMIMPL_H
 
 #include "openmodelica.h"
+#include "omc_config.h"
 
 char* _replace(const char* source_str,
                const char* search_str,
@@ -38,7 +39,7 @@ char* _replace(const char* source_str,
 
 typedef int (*function_t)(threadData_t*, type_description*, type_description*);
 
-#if defined(_MSC_VER) /* no gettext for VS! */
+#if defined(_MSC_VER) || defined(NO_GETTEXT) /* no gettext for VS! */
 #define gettext(str) str
 #else
 #include <locale.h>
