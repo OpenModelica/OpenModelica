@@ -1827,6 +1827,7 @@ QModelIndex LibraryTreeModel::libraryTreeItemIndexHelper(const LibraryTreeItem *
  */
 LibraryTreeItem* LibraryTreeModel::getLibraryTreeItemFromFileHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName, int lineNumber)
 {
+  LibraryTreeItem *pFoundLibraryTreeItem = 0;
   for (int i = 0; i < pLibraryTreeItem->getChildren().size(); i++) {
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
     if ((pChildLibraryTreeItem->getFileName().compare(fileName) == 0) && pLibraryTreeItem->inRange(lineNumber)) {
@@ -1834,7 +1835,10 @@ LibraryTreeItem* LibraryTreeModel::getLibraryTreeItemFromFileHelper(LibraryTreeI
     }
   }
   for (int i = 0; i < pLibraryTreeItem->getChildren().size(); i++) {
-    return getLibraryTreeItemFromFileHelper(pLibraryTreeItem->child(i), fileName, lineNumber);
+    pFoundLibraryTreeItem = getLibraryTreeItemFromFileHelper(pLibraryTreeItem->child(i), fileName, lineNumber);
+    if (pFoundLibraryTreeItem) {
+      return pFoundLibraryTreeItem;
+    }
   }
   return 0;
 }
