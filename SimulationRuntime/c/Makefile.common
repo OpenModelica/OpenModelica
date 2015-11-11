@@ -254,7 +254,7 @@ sourcedist: sourcedist1 sourcedist2
 sourcedist1:
 	$(MAKE) -f $(LIBMAKEFILE) OMC_MINIMAL_RUNTIME=1 OMC_FMI_RUNTIME=1 sourcedist_internal
 sourcedist2:
-	$(MAKE) -C ../fmi/export/buildproject
+	$(MAKE) -C ../fmi/export/buildproject -f $(defaultMakefileTarget)
 
 sourcedist_internal:
 	mkdir -p $(builddir_inc)/c/external_solvers external_solvers

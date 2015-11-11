@@ -30,6 +30,8 @@ LDFLAGS=-L$(OMBUILDDIR)/lib/@host_short@/omc @RT_LDFLAGS@
 LDFLAGS_SIM=-L$(OMBUILDDIR)/lib/@host_short@/omc @RT_LDFLAGS_SIM@
 endif
 
+defaultMakefileTarget = Makefile
+
 LIBMAKEFILE = Makefile
 QMAKE=@QMAKE@
 CONFIG_H=$(top_builddir)/Compiler/runtime/config.h $(top_builddir)/Compiler/runtime/config.unix.h
