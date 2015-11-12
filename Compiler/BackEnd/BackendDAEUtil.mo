@@ -7202,8 +7202,6 @@ algorithm
   if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD)) then
     Error.addCompilerError("It's not possible to combine following flags: --preOptModules+=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
     fail();
-  else
-    preOptModules := listAppend(preOptModules, Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD));
   end if;
 
   if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.POST_OPT_MODULES_SUB)) then
@@ -7211,7 +7209,7 @@ algorithm
     fail();
   end if;
 
-  outPreOptModules := selectOptModules(preOptModules, Flags.getConfigStringList(Flags.PRE_OPT_MODULES_SUB), allPreOptimizationModules());
+  outPreOptModules := selectOptModules(preOptModules, Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD), Flags.getConfigStringList(Flags.PRE_OPT_MODULES_SUB), allPreOptimizationModules());
 end getPreOptModules;
 
 public function getPostOptModulesString
@@ -7232,8 +7230,6 @@ algorithm
   if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD)) then
     Error.addCompilerError("It's not possible to combine following flags: --postOptModules+=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
     fail();
-  else
-    postOptModules := listAppend(postOptModules, Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD));
   end if;
 
   if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.POST_OPT_MODULES_SUB)) then
@@ -7241,7 +7237,7 @@ algorithm
     fail();
   end if;
 
-  outPostOptModules := selectOptModules(postOptModules, Flags.getConfigStringList(Flags.POST_OPT_MODULES_SUB), allPostOptimizationModules());
+  outPostOptModules := selectOptModules(postOptModules, Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD), Flags.getConfigStringList(Flags.POST_OPT_MODULES_SUB), allPostOptimizationModules());
 end getPostOptModules;
 
 public function getInitOptModules
@@ -7256,8 +7252,6 @@ algorithm
   if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.INIT_OPT_MODULES_ADD)) then
     Error.addCompilerError("It's not possible to combine following flags: --initOptModules+=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
     fail();
-  else
-    initOptModules := listAppend(initOptModules, Flags.getConfigStringList(Flags.INIT_OPT_MODULES_ADD));
   end if;
 
   if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.INIT_OPT_MODULES_SUB)) then
@@ -7265,12 +7259,13 @@ algorithm
     fail();
   end if;
 
-  outInitOptModules := selectOptModules(initOptModules, Flags.getConfigStringList(Flags.INIT_OPT_MODULES_SUB), allInitOptimizationModules());
+  outInitOptModules := selectOptModules(initOptModules, Flags.getConfigStringList(Flags.INIT_OPT_MODULES_ADD), Flags.getConfigStringList(Flags.INIT_OPT_MODULES_SUB), allInitOptimizationModules());
 end getInitOptModules;
 
 protected function selectOptModules
   input list<String> inStrOptModules;
-  input list<String> inDisabledModules;
+  input list<String> inEnabledModules = {};
+  input list<String> inDisabledModules = {};
   input list<tuple<BackendDAEFunc.optimizationModule, String>> inOptModules;
   output list<tuple<BackendDAEFunc.optimizationModule, String>> outOptModules = {};
 protected
@@ -7291,6 +7286,17 @@ algorithm
       else
         maxIndex := intMax(maxIndex, index);
       end if;
+
+      if index <> -1 then
+        activeModules[index] := true;
+      else
+        Error.addCompilerError("'" + name + "' is not a valid optimization module. Please check the flags carefully.");
+        fail();
+      end if;
+    end for;
+
+    for name in inEnabledModules loop
+      index := getModuleIndex(name, inOptModules);
 
       if index <> -1 then
         activeModules[index] := true;
