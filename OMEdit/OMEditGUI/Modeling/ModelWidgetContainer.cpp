@@ -1189,8 +1189,8 @@ void GraphicsView::zoomIn()
 {
   // zoom in limitation max: 1000%
   if (matrix().m11() < 34 && matrix().m22() > -34) {
-    scale(1.12, 1.12);
     setIsCustomScale(true);
+    scale(1.12, 1.12);
   }
 }
 
@@ -1201,8 +1201,8 @@ void GraphicsView::zoomOut()
 {
   // zoom out limitation min: 10%
   if (matrix().m11() > 0.2 && matrix().m22() < -0.2) {
-    scale(1/1.12, 1/1.12);
     setIsCustomScale(true);
+    scale(1/1.12, 1/1.12);
   }
 }
 
@@ -1232,48 +1232,56 @@ void GraphicsView::clearSelection()
 //! If some custom models are cross referenced then update them accordingly.
 void GraphicsView::addClassAnnotation(bool updateModelicaText)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary())
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
     return;
-  /* Build the annotation string */
-  MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-  QString annotationString;
-  annotationString.append("annotate=");
-  if (mViewType == StringHandler::Icon) {
-    annotationString.append("Icon(");
-  } else if (mViewType == StringHandler::Diagram) {
-    annotationString.append("Diagram(");
   }
-  // add the coordinate system first
+  MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
+  // coordinate system
+  QStringList coOrdinateSystemList;
   QList<QPointF> extent = mpCoOrdinateSystem->getExtent();
-  annotationString.append("coordinateSystem=CoordinateSystem(extent={");
-  annotationString.append("{").append(QString::number(extent.at(0).x())).append(", ").append(QString::number(extent.at(0).y())).append("}, ");
-  annotationString.append("{").append(QString::number(extent.at(1).x())).append(", ").append(QString::number(extent.at(1).y())).append("}");
-  annotationString.append("}");
+  qreal x1 = extent.at(0).x();
+  qreal y1 = extent.at(0).y();
+  qreal x2 = extent.at(1).x();
+  qreal y2 = extent.at(1).y();
+  if (x1 != -100 && y1 != -100 && x1 != 100 && y2 != 100) {
+    coOrdinateSystemList.append(QString("extent={{%1, %2}, {%3, %4}}").arg(x1).arg(y1).arg(x2).arg(y2));
+  }
   // add the preserveAspectRatio
-  annotationString.append(", preserveAspectRatio=").append(mpCoOrdinateSystem->getPreserveAspectRatio() ? "true" : "false");
+  if (!mpCoOrdinateSystem->getPreserveAspectRatio()) {
+    coOrdinateSystemList.append(QString("preserveAspectRatio=%1").arg(mpCoOrdinateSystem->getPreserveAspectRatio() ? "true" : "false"));
+  }
   // add the initial scale
-  annotationString.append(", initialScale=").append(QString::number(mpCoOrdinateSystem->getInitialScale()));
+  if (mpCoOrdinateSystem->getInitialScale() != 0.1) {
+    coOrdinateSystemList.append(QString("initialScale=%1").arg(mpCoOrdinateSystem->getInitialScale()));
+  }
   // add the grid
   QPointF grid = mpCoOrdinateSystem->getGrid();
-  annotationString.append(", grid=").append("{").append(QString::number(grid.x())).append(", ").append(QString::number(grid.y())).append("})");
-  // add the graphics annotations
-  int counter = 0;
+  if (grid.x() != 2 && grid.y() != 2) {
+    coOrdinateSystemList.append(QString("grid={%1, %2}").arg(grid.x()).arg(grid.y()));
+  }
+  // graphics annotations
+  QStringList graphicsList;
   if (mShapesList.size() > 0) {
-    annotationString.append(", graphics={");
     foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
       /* Don't add the inherited shape to the addClassAnnotation. */
-      if (pShapeAnnotation->isInheritedShape()) {
-        counter++;
-        continue;
+      if (!pShapeAnnotation->isInheritedShape()) {
+        graphicsList.append(pShapeAnnotation->getShapeAnnotation());
       }
-      annotationString.append(pShapeAnnotation->getShapeAnnotation());
-      if (counter < mShapesList.size() - 1)
-        annotationString.append(",");
-      counter++;
     }
-    annotationString.append("}");
   }
-  annotationString.append(")");
+  // build the annotation string
+  QString annotationString;
+  QString viewType = (mViewType == StringHandler::Icon) ? "Icon" : "Diagram";
+  if (coOrdinateSystemList.size() > 0 && graphicsList.size() > 0) {
+    annotationString = QString("annotate=%1(coordinateSystem=CoordinateSystem(%2), graphics={%3})").arg(viewType)
+        .arg(coOrdinateSystemList.join(",")).arg(graphicsList.join(","));
+  } else if (coOrdinateSystemList.size() > 0) {
+    annotationString = QString("annotate=%1(coordinateSystem=CoordinateSystem(%2))").arg(viewType).arg(coOrdinateSystemList.join(","));
+  } else if (graphicsList.size() > 0) {
+    annotationString = QString("annotate=%1(graphics={%2})").arg(viewType).arg(graphicsList.join(","));
+  } else {
+    annotationString = QString("annotate=%1()").arg(viewType);
+  }
   // add the class annotation to model through OMC
   if (pMainWindow->getOMCProxy()->addClassAnnotation(mpModelWidget->getLibraryTreeItem()->getNameStructure(), annotationString)) {
     if (updateModelicaText) {
@@ -3010,8 +3018,7 @@ void ModelWidget::parseModelIconDiagramShapes(QString annotationString, StringHa
   qreal vertical = list.at(7).toFloat();
   pGraphicsView->getCoOrdinateSystem()->setGrid(QPointF(horizontal, vertical));
   pGraphicsView->setExtentRectangle(left, bottom, right, top);
-  pGraphicsView->fitInView(pGraphicsView->getExtentRectangle(), Qt::KeepAspectRatio);
-  pGraphicsView->setIsCustomScale(false);
+  pGraphicsView->resize(pGraphicsView->size());
   // read the shapes
   if (list.size() < 9)
     return;

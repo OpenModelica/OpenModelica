@@ -1095,8 +1095,7 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
   qreal vertical = mpVerticalSpinBox->value();
   mpGraphicsView->getCoOrdinateSystem()->setGrid(QPointF(horizontal, vertical));
   mpGraphicsView->setExtentRectangle(left, bottom, right, top);
-  mpGraphicsView->fitInView(mpGraphicsView->getExtentRectangle(), Qt::KeepAspectRatio);
-  mpGraphicsView->setIsCustomScale(false);
+  mpGraphicsView->resize(mpGraphicsView->size());
   mpGraphicsView->addClassAnnotation();
   // if copy properties is true
   if (mpCopyProperties->isChecked())
@@ -1112,8 +1111,7 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
     pGraphicsView->getCoOrdinateSystem()->setInitialScale(mpScaleFactorSpinBox->value());
     pGraphicsView->getCoOrdinateSystem()->setGrid(QPointF(horizontal, vertical));
     pGraphicsView->setExtentRectangle(left, bottom, right, top);
-    pGraphicsView->fitInView(pGraphicsView->getExtentRectangle(), Qt::KeepAspectRatio);
-    pGraphicsView->setIsCustomScale(false);
+    pGraphicsView->resize(pGraphicsView->size());
     pGraphicsView->addClassAnnotation();
   }
   accept();
