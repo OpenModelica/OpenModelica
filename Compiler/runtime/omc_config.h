@@ -31,7 +31,7 @@
 #ifndef OPENMODELICA_CONFIG_H
 #define OPENMODELICA_CONFIG_H
 
-#if defined(NO_AUTOCONF) /* Windows */
+#if defined(NO_AUTOCONF) || (defined(__MINGW32__) || defined(_MSC_VER)) /* Windows */
 
 #define DEFAULT_CC "gcc"
 #define DEFAULT_CXX "g++"
