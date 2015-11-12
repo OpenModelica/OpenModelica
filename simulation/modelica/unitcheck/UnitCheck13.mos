@@ -5,22 +5,18 @@
 loadString("
 package unitCheckTests
   model UnitCheck13
-  Real V;
-  Real A;
-  Real S(unit = \"m2\");
-
-
-
-equation
-  A=5.0;
-  S=V^2+sqrt(A);
-  V=A;
-
+    Real V;
+    Real A;
+    Real S(unit = \"m2\");
+  equation
+    A=5.0;
+    S=V^2+sqrt(A);
+    V=A;
   end UnitCheck13;
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("+newUnitChecking +d=dumpUnits"); getErrorString();
+setCommandLineOptions("--preOptModules+=unitChecking +d=dumpUnits"); getErrorString();
 translateModel(unitCheckTests.UnitCheck13); getErrorString();
 
 

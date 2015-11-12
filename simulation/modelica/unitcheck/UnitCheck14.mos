@@ -5,21 +5,17 @@
 loadString("
 package unitCheckTests
   model UnitCheck14
-  Real A;
-  Real V=1;
-  Real S;
-
-
-
-equation
-  S=time;
-  A=der(S);
-
+    Real A;
+    Real V=1;
+    Real S;
+  equation
+    S=time;
+    A=der(S);
   end UnitCheck14;
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("+newUnitChecking +d=dumpUnits"); getErrorString();
+setCommandLineOptions("--preOptModules+=unitChecking +d=dumpUnits"); getErrorString();
 translateModel(unitCheckTests.UnitCheck14); getErrorString();
 
 

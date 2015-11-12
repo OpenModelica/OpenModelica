@@ -5,23 +5,20 @@
 loadString("
 package unitCheckTests
   model UnitCheck9
-  Real V(unit = \"m2/s2\");
-  Real A;
-  Real S(unit = \"m/s\");
-  Real C=1;
-  Real E=1;
-
-
-equation
-  A=5.0;
-  V=8.0;
-  V=E*C+S*(-A);
-
+    Real V(unit = \"m2/s2\");
+    Real A;
+    Real S(unit = \"m/s\");
+    Real C=1;
+    Real E=1;
+  equation
+    A=5.0;
+    V=8.0;
+    V=E*C+S*(-A);
   end UnitCheck9;
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("+newUnitChecking +d=dumpUnits"); getErrorString();
+setCommandLineOptions("--preOptModules+=unitChecking +d=dumpUnits"); getErrorString();
 translateModel(unitCheckTests.UnitCheck9); getErrorString();
 
 
