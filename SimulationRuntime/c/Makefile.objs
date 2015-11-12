@@ -43,7 +43,7 @@ else
 SOLVER_OBJS_MINIMAL=$(SOLVER_OBJS_FMU)
 endif
 ifeq ($(OMC_MINIMAL_RUNTIME),)
-SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL) kinsolSolver$(OBJ_EXT) linearSolverLis$(OBJ_EXT) linearSolverUmfpack$(OBJ_EXT) dassl$(OBJ_EXT) radau$(OBJ_EXT) sym_imp_euler$(OBJ_EXT) nonlinearSolverNewton$(OBJ_EXT) newtonIteration$(OBJ_EXT)
+SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL) kinsolSolver$(OBJ_EXT) linearSolverKlu$(OBJ_EXT) linearSolverLis$(OBJ_EXT) linearSolverUmfpack$(OBJ_EXT) dassl$(OBJ_EXT) radau$(OBJ_EXT) sym_imp_euler$(OBJ_EXT) nonlinearSolverNewton$(OBJ_EXT) newtonIteration$(OBJ_EXT)
 else
 SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL)
 endif

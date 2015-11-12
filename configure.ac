@@ -596,7 +596,7 @@ AS_IF([test "x$with_UMFPACK" = xyes],
   FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use UMFPACK: Yes"
   UMFPACK_TARGET="umfpack";
   WITH_UMFPACK="#define WITH_UMFPACK"
-  UMFPACK_LDFLAGS="-lumfpack -lamd"
+  UMFPACK_LDFLAGS="-lumfpack -lklu -lbtf -lcolamd -lamd"
 ],[
   FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use UMFPACK: No"
   UMFPACK_TARGET="";
