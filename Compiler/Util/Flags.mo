@@ -679,7 +679,6 @@ constant Util.TranslatableContent removeSimpleEquationDesc = Util.gettext("Perfo
 public
 constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
-    "unitChecking",
     "evaluateAllParameters",
     "evaluateReplaceProtectedFinalEvaluateParameters",
     "stateMachineElab",
@@ -1061,35 +1060,31 @@ constant ConfigFlag RESHUFFLE = CONFIG_FLAG(59, "reshuffle",
   NONE(), EXTERNAL(), INT_FLAG(1), NONE(),
   Util.gettext("sets tolerance of reshuffling algorithm: 1: conservative, 2: more tolerant, 3 resolve all"));
 
-constant ConfigFlag NEW_UNIT_CHECKING = CONFIG_FLAG(60,
-  "newUnitChecking", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.notrans("advanced unit checking: 1. calculation of unspecified unit information for variables; 2. unit consistency check for equations"));
-
-constant ConfigFlag GENERATE_DYN_OPTIMIZATION_PROBLEM = CONFIG_FLAG(61, "gDynOpt",
+constant ConfigFlag GENERATE_DYN_OPTIMIZATION_PROBLEM = CONFIG_FLAG(60, "gDynOpt",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Generate dynamic optimization problem based on annotation approach."));
 
-constant ConfigFlag CSE_CALL = CONFIG_FLAG(62,
+constant ConfigFlag CSE_CALL = CONFIG_FLAG(61,
   "cseCall", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Experimental feature: cse of duplicate call expressions (this deactivates module removeEqualFunctionCalls)"));
 
-constant ConfigFlag CSE_BINARY = CONFIG_FLAG(63,
+constant ConfigFlag CSE_BINARY = CONFIG_FLAG(62,
   "cseBinary", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Experimental feature: cse of duplicate binary expressions"));
 
-constant ConfigFlag CSE_EACHCALL = CONFIG_FLAG(64,
+constant ConfigFlag CSE_EACHCALL = CONFIG_FLAG(63,
   "cseEachCall", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Experimental feature: cse of each call expression (this deactivates module removeEqualFunctionCalls)"));
 
-constant ConfigFlag MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM = CONFIG_FLAG(65, "maxSizeSolveLinearSystem",
+constant ConfigFlag MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM = CONFIG_FLAG(64, "maxSizeSolveLinearSystem",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Max size for solveLinearSystem."));
 
-constant ConfigFlag CPP_FLAGS = CONFIG_FLAG(66, "cppFlags",
+constant ConfigFlag CPP_FLAGS = CONFIG_FLAG(65, "cppFlags",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({""}), NONE(),
   Util.gettext("Sets extra flags for compilation with the C++ compiler (e.g. +cppFlags=-O3,-Wall)"));
 
-constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(67, "removeSimpleEquations",
+constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(66, "removeSimpleEquations",
   NONE(), EXTERNAL(), STRING_FLAG("default"),
   SOME(STRING_DESC_OPTION({
     ("none", Util.gettext("Disables module")),
@@ -1101,19 +1096,19 @@ constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(67, "removeSimpleEquat
     })),
     Util.gettext("Specifies method that removes simple equations."));
 
-constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(68, "dynamicTearing",
+constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(67, "dynamicTearing",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Activates dynamic tearing (TearingSet can be changed automatically during runtime, strict set vs. casual set.)"));
 
-constant ConfigFlag SYM_EULER = CONFIG_FLAG(69, "symEuler",
+constant ConfigFlag SYM_EULER = CONFIG_FLAG(68, "symEuler",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Rewrite the ode system for implicit euler."));
 
-constant ConfigFlag ADD_TIME_AS_STATE = CONFIG_FLAG(70,
+constant ConfigFlag ADD_TIME_AS_STATE = CONFIG_FLAG(69,
   "addTimeAsState", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Experimental feature: this replaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0"));
 
-constant ConfigFlag LOOP2CON = CONFIG_FLAG(71, "loop2con",
+constant ConfigFlag LOOP2CON = CONFIG_FLAG(70, "loop2con",
   NONE(), EXTERNAL(), STRING_FLAG("none"),
   SOME(STRING_DESC_OPTION({
     ("none", Util.gettext("Disables module")),
@@ -1122,11 +1117,11 @@ constant ConfigFlag LOOP2CON = CONFIG_FLAG(71, "loop2con",
     ("all", Util.gettext("loops --> constraints"))})),
     Util.gettext("Specifies method that transform loops in constraints. hint: using initial guess from file!"));
 
-constant ConfigFlag FORCE_TEARING = CONFIG_FLAG(72, "forceTearing",
+constant ConfigFlag FORCE_TEARING = CONFIG_FLAG(71, "forceTearing",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Use tearing set even if it is not smaller than the original component."));
 
-constant ConfigFlag SIMPLIFY_LOOPS = CONFIG_FLAG(73, "simplifyLoops",
+constant ConfigFlag SIMPLIFY_LOOPS = CONFIG_FLAG(72, "simplifyLoops",
   NONE(), EXTERNAL(), INT_FLAG(0),
   SOME(STRING_DESC_OPTION({
     ("0", Util.gettext("do nothing")),
@@ -1135,7 +1130,7 @@ constant ConfigFlag SIMPLIFY_LOOPS = CONFIG_FLAG(73, "simplifyLoops",
     })),
     Util.gettext("Simplify algebraic loops."));
 
-constant ConfigFlag RTEARING = CONFIG_FLAG(74, "recursiveTearing",
+constant ConfigFlag RTEARING = CONFIG_FLAG(73, "recursiveTearing",
   NONE(), EXTERNAL(), INT_FLAG(0),
   SOME(STRING_DESC_OPTION({
     ("0", Util.gettext("do nothing")),
@@ -1144,19 +1139,19 @@ constant ConfigFlag RTEARING = CONFIG_FLAG(74, "recursiveTearing",
     })),
     Util.gettext("Inline and repeat tearing."));
 
-constant ConfigFlag FLOW_THRESHOLD = CONFIG_FLAG(75, "flowThreshold",
+constant ConfigFlag FLOW_THRESHOLD = CONFIG_FLAG(74, "flowThreshold",
   NONE(), EXTERNAL(), REAL_FLAG(1e-7), NONE(),
   Util.gettext("Sets the minium threshold for stream flow rates"));
 
-constant ConfigFlag MATRIX_FORMAT = CONFIG_FLAG(76, "matrixFormat",
+constant ConfigFlag MATRIX_FORMAT = CONFIG_FLAG(75, "matrixFormat",
   NONE(), EXTERNAL(), STRING_FLAG("dense"), NONE(),
   Util.gettext("Sets the matrix format type in cpp runtime which should be used (dense | sparse ). Default: dense."));
 
-constant ConfigFlag PARTLINTORN = CONFIG_FLAG(77, "partlintorn",
+constant ConfigFlag PARTLINTORN = CONFIG_FLAG(76, "partlintorn",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Sets the limit for partitionin of linear torn systems."));
 
-constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(78, "initOptModules",
+constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(77, "initOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "simplifyComplexFunction",
     "tearingSystem",
@@ -1182,31 +1177,31 @@ constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(78, "initOptModules",
     })),
   Util.gettext("Sets the initialization optimization modules to use in the back end. See --help=optmodules for more info."));
 
-constant ConfigFlag MAX_MIXED_DETERMINED_INDEX = CONFIG_FLAG(79, "maxMixedDeterminedIndex",
+constant ConfigFlag MAX_MIXED_DETERMINED_INDEX = CONFIG_FLAG(78, "maxMixedDeterminedIndex",
   NONE(), EXTERNAL(), INT_FLAG(3), NONE(),
   Util.gettext("Sets the maximum mixed-determined index that is handled by the initialization."));
-constant ConfigFlag USE_LOCAL_DIRECTION = CONFIG_FLAG(80, "useLocalDirection",
+constant ConfigFlag USE_LOCAL_DIRECTION = CONFIG_FLAG(79, "useLocalDirection",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Keeps the input/output prefix for all variables in the flat model, not only top-level ones."));
-constant ConfigFlag FORCE_RECOMMENDED_ORDERING = CONFIG_FLAG(81, "forceRecommendedOrdering",
+constant ConfigFlag FORCE_RECOMMENDED_ORDERING = CONFIG_FLAG(80, "forceRecommendedOrdering",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Util.gettext("If this is activated, then the specified pre-/post-/init-optimization modules will be rearranged to the recommended ordering."));
-constant ConfigFlag PRE_OPT_MODULES_ADD = CONFIG_FLAG(82, "preOptModules+",
+constant ConfigFlag PRE_OPT_MODULES_ADD = CONFIG_FLAG(81, "preOptModules+",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
   Util.gettext("Sets additional pre-optimization modules to use in the back end. See --help=optmodules for more info."));
-constant ConfigFlag PRE_OPT_MODULES_SUB = CONFIG_FLAG(83, "preOptModules-",
+constant ConfigFlag PRE_OPT_MODULES_SUB = CONFIG_FLAG(82, "preOptModules-",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
   Util.gettext("Disables a list of pre-optimization modules. See --help=optmodules for more info."));
-constant ConfigFlag POST_OPT_MODULES_ADD = CONFIG_FLAG(84, "postOptModules+",
+constant ConfigFlag POST_OPT_MODULES_ADD = CONFIG_FLAG(83, "postOptModules+",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
   Util.gettext("Sets additional post-optimization modules to use in the back end. See --help=optmodules for more info."));
-constant ConfigFlag POST_OPT_MODULES_SUB = CONFIG_FLAG(85, "postOptModules-",
+constant ConfigFlag POST_OPT_MODULES_SUB = CONFIG_FLAG(84, "postOptModules-",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
   Util.gettext("Disables a list of post-optimization modules. See --help=optmodules for more info."));
-constant ConfigFlag INIT_OPT_MODULES_ADD = CONFIG_FLAG(86, "initOptModules+",
+constant ConfigFlag INIT_OPT_MODULES_ADD = CONFIG_FLAG(85, "initOptModules+",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
   Util.gettext("Sets additional init-optimization modules to use in the back end. See --help=optmodules for more info."));
-constant ConfigFlag INIT_OPT_MODULES_SUB = CONFIG_FLAG(87, "initOptModules-",
+constant ConfigFlag INIT_OPT_MODULES_SUB = CONFIG_FLAG(86, "initOptModules-",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
   Util.gettext("Disables a list of init-optimization modules. See --help=optmodules for more info."));
 
@@ -1274,7 +1269,6 @@ constant list<ConfigFlag> allConfigFlags = {
   INT_ENUM_CONVERSION,
   PROFILING_LEVEL,
   RESHUFFLE,
-  NEW_UNIT_CHECKING,
   GENERATE_DYN_OPTIMIZATION_PROBLEM,
   CSE_CALL,
   CSE_BINARY,
