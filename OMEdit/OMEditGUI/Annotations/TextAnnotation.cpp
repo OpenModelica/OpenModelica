@@ -486,8 +486,8 @@ void TextAnnotation::duplicate()
 {
   TextAnnotation *pTextAnnotation = new TextAnnotation("", mpGraphicsView);
   pTextAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5,
-                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
   pTextAnnotation->setOrigin(mOrigin + gridStep);
   pTextAnnotation->initializeTransformation();
   pTextAnnotation->drawCornerItems();

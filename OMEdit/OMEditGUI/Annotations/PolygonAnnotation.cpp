@@ -283,8 +283,8 @@ void PolygonAnnotation::duplicate()
 {
   PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation("", mpGraphicsView);
   pPolygonAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5,
-                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
   pPolygonAnnotation->setOrigin(mOrigin + gridStep);
   pPolygonAnnotation->initializeTransformation();
   pPolygonAnnotation->drawCornerItems();

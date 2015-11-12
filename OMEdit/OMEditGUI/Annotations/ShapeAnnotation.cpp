@@ -1157,7 +1157,7 @@ void ShapeAnnotation::rotateAntiClockwise()
 void ShapeAnnotation::moveUp()
 {
   QString oldAnnotation = getOMCShapeAnnotation();
-  mTransformation.adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  mTransformation.adjustPosition(0, mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep());
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();
@@ -1173,7 +1173,7 @@ void ShapeAnnotation::moveUp()
 void ShapeAnnotation::moveShiftUp()
 {
   QString oldAnnotation = getOMCShapeAnnotation();
-  mTransformation.adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
+  mTransformation.adjustPosition(0, mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();
@@ -1205,7 +1205,7 @@ void ShapeAnnotation::moveCtrlUp()
 void ShapeAnnotation::moveDown()
 {
   QString oldAnnotation = getOMCShapeAnnotation();
-  mTransformation.adjustPosition(0, -mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  mTransformation.adjustPosition(0, -mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep());
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();
@@ -1221,7 +1221,7 @@ void ShapeAnnotation::moveDown()
 void ShapeAnnotation::moveShiftDown()
 {
   QString oldAnnotation = getOMCShapeAnnotation();
-  mTransformation.adjustPosition(0, -(mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5));
+  mTransformation.adjustPosition(0, -(mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5));
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();
@@ -1253,7 +1253,7 @@ void ShapeAnnotation::moveCtrlDown()
 void ShapeAnnotation::moveLeft()
 {
   QString oldAnnotation = getOMCShapeAnnotation();
-  mTransformation.adjustPosition(-mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
+  mTransformation.adjustPosition(-mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep(), 0);
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();
@@ -1269,7 +1269,7 @@ void ShapeAnnotation::moveLeft()
 void ShapeAnnotation::moveShiftLeft()
 {
   QString oldAnnotation = getOMCShapeAnnotation();
-  mTransformation.adjustPosition(-(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5), 0);
+  mTransformation.adjustPosition(-(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5), 0);
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();
@@ -1301,7 +1301,7 @@ void ShapeAnnotation::moveCtrlLeft()
 void ShapeAnnotation::moveRight()
 {
   QString oldAnnotation = getOMCShapeAnnotation();
-  mTransformation.adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
+  mTransformation.adjustPosition(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep(), 0);
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();
@@ -1317,7 +1317,7 @@ void ShapeAnnotation::moveRight()
 void ShapeAnnotation::moveShiftRight()
 {
   QString oldAnnotation = getOMCShapeAnnotation();
-  mTransformation.adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5, 0);
+  mTransformation.adjustPosition(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5, 0);
   setTransform(mTransformation.getTransformationMatrix());
   setOrigin(mTransformation.getPosition());
   QString newAnnotation = getOMCShapeAnnotation();

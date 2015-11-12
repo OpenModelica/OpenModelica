@@ -727,8 +727,8 @@ void LineAnnotation::duplicate()
 {
   LineAnnotation *pLineAnnotation = new LineAnnotation("", mpGraphicsView);
   pLineAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5,
-                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
   pLineAnnotation->setOrigin(mOrigin + gridStep);
   pLineAnnotation->initializeTransformation();
   pLineAnnotation->drawCornerItems();

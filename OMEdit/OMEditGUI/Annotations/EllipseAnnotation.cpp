@@ -228,8 +228,8 @@ void EllipseAnnotation::duplicate()
 {
   EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation("", mpGraphicsView);
   pEllipseAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5,
-                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
   pEllipseAnnotation->setOrigin(mOrigin + gridStep);
   pEllipseAnnotation->initializeTransformation();
   pEllipseAnnotation->drawCornerItems();
