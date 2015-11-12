@@ -279,10 +279,10 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
     if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
       mpDefaultComponentRectangle->setVisible(true);
       mpDefaultComponentText->setVisible(true);
-      mpCoOrdinateSystem = new CoOrdinateSystem;
+      mCoOrdinateSystem = CoOrdinateSystem();
     } else  if (mpLibraryTreeItem->isNonExisting()) { // if class is non existing
       mpNonExistingComponentLine->setVisible(true);
-      mpCoOrdinateSystem = new CoOrdinateSystem;
+      mCoOrdinateSystem = CoOrdinateSystem();
     } else {
       createClassInheritedShapes();
       createClassShapes(mpLibraryTreeItem);
@@ -297,9 +297,9 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
         }
       }
       if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-        mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getCoOrdinateSystem();
+        mCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->mCoOrdinateSystem;
       } else {
-        mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getCoOrdinateSystem();
+        mCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->mCoOrdinateSystem;
       }
     }
   }
@@ -310,7 +310,7 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
     // snap to grid while creating component
     position = mpGraphicsView->snapPointToGrid(position);
     mTransformation.setOrigin(position);
-    qreal initialScale = mpCoOrdinateSystem->getInitialScale();
+    qreal initialScale = mCoOrdinateSystem.getInitialScale();
     mTransformation.setExtent1(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
     mTransformation.setExtent2(QPointF(initialScale * boundingRect().right(), initialScale * boundingRect().bottom()));
     mTransformation.setRotateAngle(0.0);
@@ -340,13 +340,13 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView, Compone
   mTransformationString = mpReferenceComponent->getTransformationString();
   mDialogAnnotation = mpReferenceComponent->getDialogAnnotation();
   if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
-    mpCoOrdinateSystem = new CoOrdinateSystem;
+    mCoOrdinateSystem = CoOrdinateSystem();
   } else {
     createClassShapes(mpLibraryTreeItem);
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-      mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getCoOrdinateSystem();
+      mCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->mCoOrdinateSystem;
     } else {
-      mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getCoOrdinateSystem();
+      mCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->mCoOrdinateSystem;
     }
   }
   mTransformation = Transformation(mpReferenceComponent->mTransformation);
@@ -390,10 +390,10 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
     if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
       mpDefaultComponentRectangle->setVisible(true);
       mpDefaultComponentText->setVisible(true);
-      mpCoOrdinateSystem = new CoOrdinateSystem;
+      mCoOrdinateSystem = CoOrdinateSystem();
     } else  if (mpLibraryTreeItem->isNonExisting()) { // if class is non existing
       mpNonExistingComponentLine->setVisible(true);
-      mpCoOrdinateSystem = new CoOrdinateSystem;
+      mCoOrdinateSystem = CoOrdinateSystem();
     } else {
       createClassInheritedShapes();
       createClassShapes(mpLibraryTreeItem);
@@ -404,9 +404,9 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
         mpDefaultComponentText->setVisible(true);
       }
       if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-        mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getCoOrdinateSystem();
+        mCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->mCoOrdinateSystem;
       } else {
-        mpCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getCoOrdinateSystem();
+        mCoOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->mCoOrdinateSystem;
       }
     }
   }
@@ -477,10 +477,10 @@ bool Component::hasNonExistingClass()
 
 QRectF Component::boundingRect() const
 {
-  qreal left = mpCoOrdinateSystem->getExtent().at(0).x();
-  qreal bottom = mpCoOrdinateSystem->getExtent().at(0).y();
-  qreal right = mpCoOrdinateSystem->getExtent().at(1).x();
-  qreal top = mpCoOrdinateSystem->getExtent().at(1).y();
+  qreal left = mCoOrdinateSystem.getExtent().at(0).x();
+  qreal bottom = mCoOrdinateSystem.getExtent().at(0).y();
+  qreal right = mCoOrdinateSystem.getExtent().at(1).x();
+  qreal top = mCoOrdinateSystem.getExtent().at(1).y();
   return QRectF(left, bottom, fabs(left - right), fabs(bottom - top));
 }
 
@@ -1340,7 +1340,7 @@ void Component::resizeComponent(QPointF newPosition)
   mXFactor = 1 + mXFactor;
   mYFactor = 1 + mYFactor;
   // if preserveAspectRatio is true then resize equally
-  if (mpCoOrdinateSystem->getPreserveAspectRatio()) {
+  if (mCoOrdinateSystem.getPreserveAspectRatio()) {
     qreal factor = qMax(fabs(mXFactor), fabs(mYFactor));
     mXFactor = mXFactor < 0 ? mXFactor = factor * -1 : mXFactor = factor;
     mYFactor = mYFactor < 0 ? mYFactor = factor * -1 : mYFactor = factor;
@@ -1427,8 +1427,8 @@ void Component::duplicate()
   } else {
     name = mpGraphicsView->getUniqueComponentName(StringHandler::toCamelCase(getName()));
   }
-  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5,
-                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
   QString transformationString = getOMCPlacementAnnotation(gridStep);
 
   // add component
@@ -1546,7 +1546,7 @@ void Component::flipVertical()
 void Component::moveUp()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  mTransformation.adjustPosition(0, mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep());
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
@@ -1559,7 +1559,7 @@ void Component::moveUp()
 void Component::moveShiftUp()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
+  mTransformation.adjustPosition(0, mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
@@ -1585,7 +1585,7 @@ void Component::moveCtrlUp()
 void Component::moveDown()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(0, -mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  mTransformation.adjustPosition(0, -mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep());
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
@@ -1598,7 +1598,7 @@ void Component::moveDown()
 void Component::moveShiftDown()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(0, -(mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5));
+  mTransformation.adjustPosition(0, -(mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5));
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
@@ -1624,7 +1624,7 @@ void Component::moveCtrlDown()
 void Component::moveLeft()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(-mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
+  mTransformation.adjustPosition(-mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep(), 0);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
@@ -1637,7 +1637,7 @@ void Component::moveLeft()
 void Component::moveShiftLeft()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(-(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5), 0);
+  mTransformation.adjustPosition(-(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5), 0);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
@@ -1663,7 +1663,7 @@ void Component::moveCtrlLeft()
 void Component::moveRight()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
+  mTransformation.adjustPosition(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep(), 0);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 
@@ -1676,7 +1676,7 @@ void Component::moveRight()
 void Component::moveShiftRight()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5, 0);
+  mTransformation.adjustPosition(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5, 0);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
 }
 

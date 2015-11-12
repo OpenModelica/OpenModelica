@@ -45,30 +45,6 @@
 #include "ComponentProperties.h"
 #include "Commands.h"
 
-CoOrdinateSystem::CoOrdinateSystem()
-{
-  QList<QPointF> extents;
-  extents << QPointF(-100, -100) << QPointF(100, 100);
-  setExtent(extents);
-  setPreserveAspectRatio(true);
-  setInitialScale(0.1);
-  setGrid(QPointF(2, 2));
-}
-
-qreal CoOrdinateSystem::getHorizontalGridStep()
-{
-  if (mGrid.x() < 1)
-    return 2;
-  return mGrid.x();
-}
-
-qreal CoOrdinateSystem::getVerticalGridStep()
-{
-  if (mGrid.y() < 1)
-    return 2;
-  return mGrid.y();
-}
-
 //! @class GraphicsScene
 //! @brief The GraphicsScene class is a container for graphicsl components in a simulationmodel.
 
@@ -100,7 +76,7 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
   setMouseTracking(true);
   mpModelWidget = parent;
   // set the coOrdinate System
-  mpCoOrdinateSystem = new CoOrdinateSystem;
+  mCoOrdinateSystem = CoOrdinateSystem();
   GraphicalViewsPage *pGraphicalViewsPage;
   pGraphicalViewsPage = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOptionsDialog()->getGraphicalViewsPage();
   QList<QPointF> extent;
@@ -109,12 +85,12 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
   qreal right = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentRight() : pGraphicalViewsPage->getDiagramViewExtentRight();
   qreal top = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentTop() : pGraphicalViewsPage->getDiagramViewExtentTop();
   extent << QPointF(left, bottom) << QPointF(right, top);
-  mpCoOrdinateSystem->setExtent(extent);
-  mpCoOrdinateSystem->setPreserveAspectRatio((mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewPreserveAspectRation() : pGraphicalViewsPage->getDiagramViewPreserveAspectRation());
-  mpCoOrdinateSystem->setInitialScale((mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewScaleFactor() : pGraphicalViewsPage->getDiagramViewScaleFactor());
+  mCoOrdinateSystem.setExtent(extent);
+  mCoOrdinateSystem.setPreserveAspectRatio((mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewPreserveAspectRation() : pGraphicalViewsPage->getDiagramViewPreserveAspectRation());
+  mCoOrdinateSystem.setInitialScale((mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewScaleFactor() : pGraphicalViewsPage->getDiagramViewScaleFactor());
   qreal horizontal = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewGridHorizontal() : pGraphicalViewsPage->getDiagramViewGridHorizontal();
   qreal vertical = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewGridVertical() : pGraphicalViewsPage->getDiagramViewGridVertical();
-  mpCoOrdinateSystem->setGrid(QPointF(horizontal, vertical));
+  mCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
   setExtentRectangle(left, bottom, right, top);
   centerOn(sceneRect().center());
   scale(1.0, -1.0);     // invert the drawing area.
@@ -885,8 +861,8 @@ QRectF GraphicsView::itemsBoundingRect()
 
 QPointF GraphicsView::snapPointToGrid(QPointF point)
 {
-  qreal stepX = mpCoOrdinateSystem->getHorizontalGridStep();
-  qreal stepY = mpCoOrdinateSystem->getVerticalGridStep();
+  qreal stepX = mCoOrdinateSystem.getHorizontalGridStep();
+  qreal stepY = mCoOrdinateSystem.getVerticalGridStep();
   point.setX(stepX * qFloor((point.x() / stepX) + 0.5));
   point.setY(stepY * qFloor((point.y() / stepY) + 0.5));
   return point;
@@ -894,8 +870,8 @@ QPointF GraphicsView::snapPointToGrid(QPointF point)
 
 QPointF GraphicsView::movePointByGrid(QPointF point)
 {
-  qreal stepX = mpCoOrdinateSystem->getHorizontalGridStep();
-  qreal stepY = mpCoOrdinateSystem->getVerticalGridStep();
+  qreal stepX = mCoOrdinateSystem.getHorizontalGridStep();
+  qreal stepY = mCoOrdinateSystem.getVerticalGridStep();
   point.setX(qRound(point.x() / stepX) * stepX);
   point.setY(qRound(point.y() / stepY) * stepY);
   return point;
@@ -1238,7 +1214,7 @@ void GraphicsView::addClassAnnotation(bool updateModelicaText)
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   // coordinate system
   QStringList coOrdinateSystemList;
-  QList<QPointF> extent = mpCoOrdinateSystem->getExtent();
+  QList<QPointF> extent = mCoOrdinateSystem.getExtent();
   qreal x1 = extent.at(0).x();
   qreal y1 = extent.at(0).y();
   qreal x2 = extent.at(1).x();
@@ -1247,15 +1223,15 @@ void GraphicsView::addClassAnnotation(bool updateModelicaText)
     coOrdinateSystemList.append(QString("extent={{%1, %2}, {%3, %4}}").arg(x1).arg(y1).arg(x2).arg(y2));
   }
   // add the preserveAspectRatio
-  if (!mpCoOrdinateSystem->getPreserveAspectRatio()) {
-    coOrdinateSystemList.append(QString("preserveAspectRatio=%1").arg(mpCoOrdinateSystem->getPreserveAspectRatio() ? "true" : "false"));
+  if (!mCoOrdinateSystem.getPreserveAspectRatio()) {
+    coOrdinateSystemList.append(QString("preserveAspectRatio=%1").arg(mCoOrdinateSystem.getPreserveAspectRatio() ? "true" : "false"));
   }
   // add the initial scale
-  if (mpCoOrdinateSystem->getInitialScale() != 0.1) {
-    coOrdinateSystemList.append(QString("initialScale=%1").arg(mpCoOrdinateSystem->getInitialScale()));
+  if (mCoOrdinateSystem.getInitialScale() != 0.1) {
+    coOrdinateSystemList.append(QString("initialScale=%1").arg(mCoOrdinateSystem.getInitialScale()));
   }
   // add the grid
-  QPointF grid = mpCoOrdinateSystem->getGrid();
+  QPointF grid = mCoOrdinateSystem.getGrid();
   if (grid.x() != 2 && grid.y() != 2) {
     coOrdinateSystemList.append(QString("grid={%1, %2}").arg(grid.x()).arg(grid.y()));
   }
@@ -1475,7 +1451,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
     painter->setBrush(Qt::NoBrush);
     painter->setPen(QColor(229, 229, 229));
     /* Draw left half vertical lines */
-    int horizontalGridStep = mpCoOrdinateSystem->getHorizontalGridStep() * 10;
+    int horizontalGridStep = mCoOrdinateSystem.getHorizontalGridStep() * 10;
     qreal xAxisStep = 0;
     qreal yAxisStep = rect.y();
     xAxisStep -= horizontalGridStep;
@@ -1490,7 +1466,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
       xAxisStep += horizontalGridStep;
     }
     /* Draw left half horizontal lines */
-    int verticalGridStep = mpCoOrdinateSystem->getVerticalGridStep() * 10;
+    int verticalGridStep = mCoOrdinateSystem.getVerticalGridStep() * 10;
     xAxisStep = rect.x();
     yAxisStep = 0;
     yAxisStep += verticalGridStep;
@@ -3011,12 +2987,12 @@ void ModelWidget::parseModelIconDiagramShapes(QString annotationString, StringHa
   qreal top = qMax(list.at(1).toFloat(), list.at(3).toFloat());
   QList<QPointF> extent;
   extent << QPointF(left, bottom) << QPointF(right, top);
-  pGraphicsView->getCoOrdinateSystem()->setExtent(extent);
-  pGraphicsView->getCoOrdinateSystem()->setPreserveAspectRatio((list.at(4).compare("true") == 0) ? true : false);
-  pGraphicsView->getCoOrdinateSystem()->setInitialScale(list.at(5).toFloat());
+  pGraphicsView->mCoOrdinateSystem.setExtent(extent);
+  pGraphicsView->mCoOrdinateSystem.setPreserveAspectRatio((list.at(4).compare("true") == 0) ? true : false);
+  pGraphicsView->mCoOrdinateSystem.setInitialScale(list.at(5).toFloat());
   qreal horizontal = list.at(6).toFloat();
   qreal vertical = list.at(7).toFloat();
-  pGraphicsView->getCoOrdinateSystem()->setGrid(QPointF(horizontal, vertical));
+  pGraphicsView->mCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
   pGraphicsView->setExtentRectangle(left, bottom, right, top);
   pGraphicsView->resize(pGraphicsView->size());
   // read the shapes

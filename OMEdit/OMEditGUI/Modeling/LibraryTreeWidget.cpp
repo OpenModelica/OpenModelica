@@ -1450,10 +1450,10 @@ void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeIt
   }
   if (pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->hasAnnotation()) {
     GraphicsView *pGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
-    qreal left = pGraphicsView->getCoOrdinateSystem()->getExtent().at(0).x();
-    qreal bottom = pGraphicsView->getCoOrdinateSystem()->getExtent().at(0).y();
-    qreal right = pGraphicsView->getCoOrdinateSystem()->getExtent().at(1).x();
-    qreal top = pGraphicsView->getCoOrdinateSystem()->getExtent().at(1).y();
+    qreal left = pGraphicsView->mCoOrdinateSystem.getExtent().at(0).x();
+    qreal bottom = pGraphicsView->mCoOrdinateSystem.getExtent().at(0).y();
+    qreal right = pGraphicsView->mCoOrdinateSystem.getExtent().at(1).x();
+    qreal top = pGraphicsView->mCoOrdinateSystem.getExtent().at(1).y();
     QRectF rectangle = QRectF(left, bottom, fabs(left - right), fabs(bottom - top));
     if (rectangle.width() < 1) {
       rectangle = QRectF(-100.0, -100.0, 200.0, 200.0);

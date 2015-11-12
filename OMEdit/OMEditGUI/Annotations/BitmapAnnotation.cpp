@@ -205,8 +205,8 @@ void BitmapAnnotation::duplicate()
 {
   BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(mClassFileName, "", mpGraphicsView);
   pBitmapAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5,
-                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
   pBitmapAnnotation->setOrigin(mOrigin + gridStep);
   pBitmapAnnotation->initializeTransformation();
   pBitmapAnnotation->drawCornerItems();

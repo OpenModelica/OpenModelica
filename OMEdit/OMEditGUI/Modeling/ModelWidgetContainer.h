@@ -48,6 +48,7 @@
 #include <QtWebKit>
 #include <QtXmlPatterns>
 
+#include "CoOrdinateSystem.h"
 #include "Component.h"
 #include "StringHandler.h"
 #include "Helper.h"
@@ -65,28 +66,6 @@ class EllipseAnnotation;
 class TextAnnotation;
 class BitmapAnnotation;
 
-
-class CoOrdinateSystem
-{
-public:
-  CoOrdinateSystem();
-  void setExtent(QList<QPointF> extent) {mExtent = extent;}
-  QList<QPointF> getExtent() {return mExtent;}
-  void setPreserveAspectRatio(bool PreserveAspectRatio) {mPreserveAspectRatio = PreserveAspectRatio;}
-  bool getPreserveAspectRatio() {return mPreserveAspectRatio;}
-  void setInitialScale(qreal initialScale) {mInitialScale = initialScale;}
-  qreal getInitialScale() {return mInitialScale;}
-  void setGrid(QPointF grid) {mGrid = grid;}
-  QPointF getGrid() {return mGrid;}
-  qreal getHorizontalGridStep();
-  qreal getVerticalGridStep();
-private:
-  QList<QPointF> mExtent;
-  bool mPreserveAspectRatio;
-  qreal mInitialScale;
-  QPointF mGrid;      // horizontal and vertical spacing for grid
-};
-
 class GraphicsScene : public QGraphicsScene
 {
   Q_OBJECT
@@ -103,7 +82,6 @@ class GraphicsView : public QGraphicsView
 private:
   StringHandler::ViewType mViewType;
   ModelWidget *mpModelWidget;
-  CoOrdinateSystem *mpCoOrdinateSystem;
   QRectF mExtentRectangle;
   bool mIsCustomScale;
   bool mAddClassAnnotationNeeded;
@@ -141,10 +119,10 @@ private:
   QAction *mpFlipVerticalAction;
 public:
   GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent);
+  CoOrdinateSystem mCoOrdinateSystem;
   bool mSkipBackground; /* Do not draw the background rectangle */
   StringHandler::ViewType getViewType() {return mViewType;}
   ModelWidget* getModelWidget() {return mpModelWidget;}
-  CoOrdinateSystem* getCoOrdinateSystem() {return mpCoOrdinateSystem;}
   void setExtentRectangle(qreal x1, qreal y1, qreal x2, qreal y2);
   QRectF getExtentRectangle() {return mExtentRectangle;}
   void setIsCustomScale(bool enable) {mIsCustomScale = enable;}

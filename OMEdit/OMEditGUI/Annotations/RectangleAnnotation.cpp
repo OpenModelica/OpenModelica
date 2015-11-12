@@ -223,8 +223,8 @@ void RectangleAnnotation::duplicate()
 {
   RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation("", mpGraphicsView);
   pRectangleAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5,
-                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
   pRectangleAnnotation->setOrigin(mOrigin + gridStep);
   pRectangleAnnotation->initializeTransformation();
   pRectangleAnnotation->drawCornerItems();

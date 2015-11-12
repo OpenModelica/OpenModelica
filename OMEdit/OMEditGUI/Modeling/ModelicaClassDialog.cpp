@@ -981,22 +981,22 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   mpLeftLabel = new Label(QString(Helper::left).append(":"));
   mpLeftSpinBox = new DoubleSpinBox;
   mpLeftSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
-  mpLeftSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getExtent().at(0).x());
+  mpLeftSpinBox->setValue(mpGraphicsView->mCoOrdinateSystem.getExtent().at(0).x());
   mpLeftSpinBox->setSingleStep(10);
   mpBottomLabel = new Label(Helper::bottom);
   mpBottomSpinBox = new DoubleSpinBox;
   mpBottomSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
-  mpBottomSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getExtent().at(0).y());
+  mpBottomSpinBox->setValue(mpGraphicsView->mCoOrdinateSystem.getExtent().at(0).y());
   mpBottomSpinBox->setSingleStep(10);
   mpRightLabel = new Label(QString(Helper::right).append(":"));
   mpRightSpinBox = new DoubleSpinBox;
   mpRightSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
-  mpRightSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getExtent().at(1).x());
+  mpRightSpinBox->setValue(mpGraphicsView->mCoOrdinateSystem.getExtent().at(1).x());
   mpRightSpinBox->setSingleStep(10);
   mpTopLabel = new Label(Helper::top);
   mpTopSpinBox = new DoubleSpinBox;
   mpTopSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
-  mpTopSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getExtent().at(1).y());
+  mpTopSpinBox->setValue(mpGraphicsView->mCoOrdinateSystem.getExtent().at(1).y());
   mpTopSpinBox->setSingleStep(10);
   // set the extent group box layout
   QGridLayout *pExtentLayout = new QGridLayout;
@@ -1016,12 +1016,12 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   mpHorizontalLabel = new Label(QString(Helper::horizontal).append(":"));
   mpHorizontalSpinBox = new DoubleSpinBox;
   mpHorizontalSpinBox->setRange(0, std::numeric_limits<double>::max());
-  mpHorizontalSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getGrid().x());
+  mpHorizontalSpinBox->setValue(mpGraphicsView->mCoOrdinateSystem.getGrid().x());
   mpHorizontalSpinBox->setSingleStep(1);
   mpVerticalLabel = new Label(QString(Helper::vertical).append(":"));
   mpVerticalSpinBox = new DoubleSpinBox;
   mpVerticalSpinBox->setRange(0, std::numeric_limits<double>::max());
-  mpVerticalSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getGrid().y());
+  mpVerticalSpinBox->setValue(mpGraphicsView->mCoOrdinateSystem.getGrid().y());
   mpVerticalSpinBox->setSingleStep(1);
   // set the grid group box layout
   QGridLayout *pGridLayout = new QGridLayout;
@@ -1036,10 +1036,10 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   mpScaleFactorLabel = new Label(Helper::scaleFactor);
   mpScaleFactorSpinBox = new DoubleSpinBox;
   mpScaleFactorSpinBox->setRange(0, std::numeric_limits<double>::max());
-  mpScaleFactorSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getInitialScale());
+  mpScaleFactorSpinBox->setValue(mpGraphicsView->mCoOrdinateSystem.getInitialScale());
   mpScaleFactorSpinBox->setSingleStep(0.1);
   mpPreserveAspectRatioCheckBox = new QCheckBox(Helper::preserveAspectRatio);
-  mpPreserveAspectRatioCheckBox->setChecked(mpGraphicsView->getCoOrdinateSystem()->getPreserveAspectRatio());
+  mpPreserveAspectRatioCheckBox->setChecked(mpGraphicsView->mCoOrdinateSystem.getPreserveAspectRatio());
   // set the grid group box layout
   QGridLayout *pComponentLayout = new QGridLayout;
   pComponentLayout->setColumnStretch(1, 1);
@@ -1088,28 +1088,27 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
   qreal top = qMax(mpBottomSpinBox->value(), mpTopSpinBox->value());
   QList<QPointF> extent;
   extent << QPointF(left, bottom) << QPointF(right, top);
-  mpGraphicsView->getCoOrdinateSystem()->setExtent(extent);
-  mpGraphicsView->getCoOrdinateSystem()->setPreserveAspectRatio(mpPreserveAspectRatioCheckBox->isChecked());
-  mpGraphicsView->getCoOrdinateSystem()->setInitialScale(mpScaleFactorSpinBox->value());
+  mpGraphicsView->mCoOrdinateSystem.setExtent(extent);
+  mpGraphicsView->mCoOrdinateSystem.setPreserveAspectRatio(mpPreserveAspectRatioCheckBox->isChecked());
+  mpGraphicsView->mCoOrdinateSystem.setInitialScale(mpScaleFactorSpinBox->value());
   qreal horizontal = mpHorizontalSpinBox->value();
   qreal vertical = mpVerticalSpinBox->value();
-  mpGraphicsView->getCoOrdinateSystem()->setGrid(QPointF(horizontal, vertical));
+  mpGraphicsView->mCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
   mpGraphicsView->setExtentRectangle(left, bottom, right, top);
   mpGraphicsView->resize(mpGraphicsView->size());
   mpGraphicsView->addClassAnnotation();
   // if copy properties is true
-  if (mpCopyProperties->isChecked())
-  {
+  if (mpCopyProperties->isChecked()) {
     GraphicsView *pGraphicsView;
-    if (mpGraphicsView->getViewType() == StringHandler::Icon)
+    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
       pGraphicsView = mpGraphicsView->getModelWidget()->getDiagramGraphicsView();
-    else
+    } else {
       pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
-
-    pGraphicsView->getCoOrdinateSystem()->setExtent(extent);
-    pGraphicsView->getCoOrdinateSystem()->setPreserveAspectRatio(mpPreserveAspectRatioCheckBox->isChecked());
-    pGraphicsView->getCoOrdinateSystem()->setInitialScale(mpScaleFactorSpinBox->value());
-    pGraphicsView->getCoOrdinateSystem()->setGrid(QPointF(horizontal, vertical));
+    }
+    pGraphicsView->mCoOrdinateSystem.setExtent(extent);
+    pGraphicsView->mCoOrdinateSystem.setPreserveAspectRatio(mpPreserveAspectRatioCheckBox->isChecked());
+    pGraphicsView->mCoOrdinateSystem.setInitialScale(mpScaleFactorSpinBox->value());
+    pGraphicsView->mCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
     pGraphicsView->setExtentRectangle(left, bottom, right, top);
     pGraphicsView->resize(pGraphicsView->size());
     pGraphicsView->addClassAnnotation();

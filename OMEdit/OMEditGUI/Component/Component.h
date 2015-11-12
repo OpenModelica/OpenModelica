@@ -41,6 +41,7 @@
 
 #include "ShapeAnnotation.h"
 #include "CornerItem.h"
+#include "CoOrdinateSystem.h"
 #include "ModelWidgetContainer.h"
 #include "OMCProxy.h"
 #include "LineAnnotation.h"
@@ -51,11 +52,8 @@
 #include "BitmapAnnotation.h"
 
 class OMCProxy;
-class CoOrdinateSystem;
 class GraphicsScene;
 class GraphicsView;
-class ComponentInfo;
-class Connector;
 class LineAnnotation;
 class PolygonAnnotation;
 class RectangleAnnotation;
@@ -203,7 +201,7 @@ private:
   LineAnnotation *mpNonExistingComponentLine;
   RectangleAnnotation *mpDefaultComponentRectangle;
   TextAnnotation *mpDefaultComponentText;
-  CoOrdinateSystem *mpCoOrdinateSystem;
+  CoOrdinateSystem mCoOrdinateSystem;
   QAction *mpParametersAction;
   QAction *mpAttributesAction;
   QAction *mpViewClassAction;
