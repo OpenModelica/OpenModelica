@@ -1081,7 +1081,7 @@ algorithm
       then
         (oInputs,oOutput,oBody,repl);
     case (DAE.VAR(componentRef=cr,protection=DAE.PROTECTED(),ty=tp,binding=binding)::rest,_,_,_,_)
-	guard not  Expression.isRecordType(tp) and (not Expression.isArrayType(tp) or Flags.isSet(Flags.INLINE_FUNCTIONS_WITH_ARR))
+	guard not  Expression.isRecordType(tp)
       equation
         repl = addOptBindingReplacements(cr,binding,iRepl);
         (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,iOutput,iBody,repl);
