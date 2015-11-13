@@ -1132,8 +1132,6 @@ constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(77, "initOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "simplifyComplexFunction",
     "tearingSystem",
-    "simplifyLoops",
-    "recursiveTearing",
     "calculateStrongComponentJacobians",
     "solveSimpleEquations",
     "simplifyAllExpressions"

@@ -7357,21 +7357,43 @@ public function getInitOptModules
   output list<tuple<BackendDAEFunc.optimizationModule, String>> outInitOptModules;
 protected
   list<String> initOptModules;
+  list<String> enabledModules = Flags.getConfigStringList(Flags.INIT_OPT_MODULES_ADD);
+  list<String> disabledModules = Flags.getConfigStringList(Flags.INIT_OPT_MODULES_SUB);
 algorithm
   initOptModules := Config.getInitOptModules();
   initOptModules := Util.getOptionOrDefault(inInitOptModules, initOptModules);
 
-  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.INIT_OPT_MODULES_ADD)) then
+  if Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) then
+    // handle special flags, which enable modules
+    if Flags.getConfigInt(Flags.SIMPLIFY_LOOPS) > 0 then
+      enabledModules := "simplifyLoops"::enabledModules;
+    end if;
+
+    if Flags.getConfigInt(Flags.RTEARING) > 0 then
+      enabledModules := "recursiveTearing"::enabledModules;
+    end if;
+
+    // handle special flags, which disable modules
+    if Flags.isSet(Flags.DIS_SIMP_FUN) then
+      disabledModules := "simplifyComplexFunction"::disabledModules;
+    end if;
+
+    if Config.getTearingMethod() == "noTearing" then
+      disabledModules := "tearingSystem"::disabledModules;
+    end if;
+  end if;
+
+  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(enabledModules) then
     Error.addCompilerError("It's not possible to combine following flags: --initOptModules+=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
     fail();
   end if;
 
-  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.INIT_OPT_MODULES_SUB)) then
+  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(disabledModules) then
     Error.addCompilerError("It's not possible to combine following flags: --initOptModules-=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
     fail();
   end if;
 
-  outInitOptModules := selectOptModules(initOptModules, Flags.getConfigStringList(Flags.INIT_OPT_MODULES_ADD), Flags.getConfigStringList(Flags.INIT_OPT_MODULES_SUB), allInitOptimizationModules());
+  outInitOptModules := selectOptModules(initOptModules, enabledModules, disabledModules, allInitOptimizationModules());
 end getInitOptModules;
 
 protected function selectOptModules
