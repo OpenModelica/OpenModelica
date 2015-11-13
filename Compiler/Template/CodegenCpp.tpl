@@ -88,7 +88,7 @@ template translateModel(SimCode simCode)
 
         match target
           case "vxworks69" then
-            let()= textFile(functionBlock(simCode), '<%fileNamePrefix%>_spsblock.txt')
+            let()= textFile(functionBlock(simCode), '<%fileNamePrefix%>_PLCOPEN.xml')
             let()= textFile(ftp_script(simCode), '<%fileNamePrefix%>_ftp.bat')
             ""
           else ""
@@ -2551,7 +2551,11 @@ then
 
           let inputnames = vars.inputVars |>  SIMVAR(__) hasindex i0 =>
       <<
-      <%crefST(name, false)%> : <%crefTypeST(name)%> ;
+      <variable name= "<%crefST(name, false)%>">
+      <type>
+          <<%crefTypeST(name)%>/>
+          </type>
+      </variable>
       >>
       ;separator="\n"
 
@@ -2585,7 +2589,11 @@ then
 
           let outputnames = vars.outputVars |>  SIMVAR(__) hasindex i0 =>
       <<
-      <%crefTypeMLPI(name)%> <%crefST(name, false)%>;
+      <variable name= "<%crefST(name, false)%>">
+      <type>
+          <<%crefTypeST(name)%>/>
+          </type>
+      </variable>
       >>
       ;separator="\n"
 
@@ -11878,20 +11886,81 @@ let outputVars = spsOutputVars(simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
 let modelname = identOfPath(modelInfo.name)
-'FUNCTION_BLOCK <%modelname%>
-VAR_INPUT
-    <%inputVars%>
-END_VAR
-VAR_OUTPUT
-    <%outputVars%>
-END_VAR
-VAR
-    cycletime : REAL :=0.05;
-    bAlreadyInitialized : BOOL;
-    bErrorOccured : BOOL(FALSE);
-    controller : DWORD;
-    simdata : DWORD;
-END_VAR
+'<?xml version="1.0" encoding="utf-8"?>
+<project>
+   <fileHeader companyName="Bosch Rexroth AG" companyURL="" contentDescription="" creationDateTime="2015-11-06T13:36:37" productName="" productRelease="" productVersion=""/>
+   <contentHeader name="<%modelname%>">
+      <coordinateInfo>
+         <fbd>
+            <scaling x="0" y="0"/>
+         </fbd>
+         <ld>
+            <scaling x="0" y="0"/>
+         </ld>
+         <sfc>
+            <scaling x="0" y="0"/>
+         </sfc>
+      </coordinateInfo>
+   </contentHeader>
+   <types>
+      <dataTypes/>
+      <pous>
+         <pou name="<%modelname%>" pouType="functionBlock">
+            <interface>
+               <inputVars>
+                  <%inputVars%>
+               </inputVars>
+               <outputVars>
+                  <variable name="y">
+                     <type>
+                        <LREAL/>
+                     </type>
+                  </variable>
+               </outputVars>
+                   <localVars>
+                   <variable name="cycletime">
+                     <type>
+                        <LREAL/>
+                     </type>
+                     <initialValue>
+                        <simpleValue value="0.004"/>
+                     </initialValue>
+                  </variable>
+                      <variable name="bAlreadyInitialized">
+                     <type>
+                        <BOOL/>
+                     </type>
+                  </variable>
+                    <variable name="bErrorOccured">
+                     <type>
+                        <BOOL/>
+                     </type>
+                  </variable>
+                   <variable name="controller">
+                     <type>
+                        <DWORD/>
+                     </type>
+                  </variable>
+                  <variable name="simdata">
+                     <type>
+                        <DWORD/>
+                     </type>
+                  </variable>
+                  </localVars>
+            </interface>
+            <body>
+               <ST>
+                  <xhtml xmlns="http://www.w3.org/1999/xhtml">
+</xhtml>
+               </ST>
+            </body>
+         </pou>
+      </pous>
+   </types>
+   <instances>
+      <configurations/>
+   </instances>
+</project>
 '
 end functionBlock;
 
@@ -11908,7 +11977,7 @@ typedef struct <%modelname%>_struct
   void* __VFTABLEPOINTER;
   <%inputVars%>
   <%outputVars%>
-  MLPI_IEC_REAL cycletime;
+  MLPI_IEC_LREAL cycletime;
   MLPI_IEC_BOOL bAlreadyInitialized;
   MLPI_IEC_BOOL bErrorOccured;
   ISimController* controller;
