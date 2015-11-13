@@ -41,6 +41,7 @@
 #include "ModelicaClassDialog.h"
 #include "StringHandler.h"
 #include "ModelWidgetContainer.h"
+#include "Commands.h"
 
 LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, LibraryWidget *pLibraryWidget)
   : QDialog(0, Qt::WindowTitleHint)
@@ -360,8 +361,8 @@ void ModelicaClassDialog::createModelicaClass()
   // show the ModelWidget
   pLibraryTreeModel->showModelWidget(pLibraryTreeItem, "", true);
   if (pLibraryTreeItem->getModelWidget()) {
-    pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->addClassAnnotation(false);
-    pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->addClassAnnotation(false);
+    pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->addClassAnnotation();
+    pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->addClassAnnotation();
     pLibraryTreeItem->getModelWidget()->updateModelicaText();
   }
   accept();
@@ -961,13 +962,13 @@ void InformationDialog::closeEvent(QCloseEvent *event)
 }
 
 /*!
-  \class GraphicsViewProperties
-  \brief Creates a dialog that shows the icon/diagram GraphicsView properties.
-  */
-
+ * \class GraphicsViewProperties
+ * \brief Creates a dialog that shows the icon/diagram GraphicsView properties.
+ */
 /*!
-  \param pGraphicsView - pointer to GraphicsView
-  */
+ * \brief GraphicsViewProperties::GraphicsViewProperties
+ * \param pGraphicsView - pointer to GraphicsView
+ */
 GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   : QDialog(pGraphicsView, Qt::WindowTitleHint)
 {
@@ -1049,17 +1050,19 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   mpComponentGroupBox->setLayout(pComponentLayout);
   // copy properties check box
   mpCopyProperties = new QCheckBox;
-  if (mpGraphicsView->getViewType() == StringHandler::Icon)
+  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
     mpCopyProperties->setText(tr("Copy properties to Diagram layer"));
-  else
+  } else {
     mpCopyProperties->setText(tr("Copy properties to Icon layer"));
+  }
   mpCopyProperties->setChecked(true);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
   connect(mpOkButton, SIGNAL(clicked()), SLOT(saveGraphicsViewProperties()));
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary())
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary()) {
     mpOkButton->setDisabled(true);
+  }
   mpCancelButton = new QPushButton(Helper::cancel);
   connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
   // create buttons box
@@ -1082,37 +1085,28 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   */
 void GraphicsViewProperties::saveGraphicsViewProperties()
 {
+  // save the old CoOrdinateSystem
+  CoOrdinateSystem oldCoOrdinateSystem = mpGraphicsView->mCoOrdinateSystem;
+  // construct a new CoOrdinateSystem
+  CoOrdinateSystem newCoOrdinateSystem;
   qreal left = qMin(mpLeftSpinBox->value(), mpRightSpinBox->value());
   qreal bottom = qMin(mpBottomSpinBox->value(), mpTopSpinBox->value());
   qreal right = qMax(mpLeftSpinBox->value(), mpRightSpinBox->value());
   qreal top = qMax(mpBottomSpinBox->value(), mpTopSpinBox->value());
   QList<QPointF> extent;
   extent << QPointF(left, bottom) << QPointF(right, top);
-  mpGraphicsView->mCoOrdinateSystem.setExtent(extent);
-  mpGraphicsView->mCoOrdinateSystem.setPreserveAspectRatio(mpPreserveAspectRatioCheckBox->isChecked());
-  mpGraphicsView->mCoOrdinateSystem.setInitialScale(mpScaleFactorSpinBox->value());
+  newCoOrdinateSystem.setExtent(extent);
+  newCoOrdinateSystem.setPreserveAspectRatio(mpPreserveAspectRatioCheckBox->isChecked());
+  newCoOrdinateSystem.setInitialScale(mpScaleFactorSpinBox->value());
   qreal horizontal = mpHorizontalSpinBox->value();
   qreal vertical = mpVerticalSpinBox->value();
-  mpGraphicsView->mCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
-  mpGraphicsView->setExtentRectangle(left, bottom, right, top);
-  mpGraphicsView->resize(mpGraphicsView->size());
-  mpGraphicsView->addClassAnnotation();
-  // if copy properties is true
-  if (mpCopyProperties->isChecked()) {
-    GraphicsView *pGraphicsView;
-    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-      pGraphicsView = mpGraphicsView->getModelWidget()->getDiagramGraphicsView();
-    } else {
-      pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
-    }
-    pGraphicsView->mCoOrdinateSystem.setExtent(extent);
-    pGraphicsView->mCoOrdinateSystem.setPreserveAspectRatio(mpPreserveAspectRatioCheckBox->isChecked());
-    pGraphicsView->mCoOrdinateSystem.setInitialScale(mpScaleFactorSpinBox->value());
-    pGraphicsView->mCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
-    pGraphicsView->setExtentRectangle(left, bottom, right, top);
-    pGraphicsView->resize(pGraphicsView->size());
-    pGraphicsView->addClassAnnotation();
-  }
+  newCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
+  // push the CoOrdinateSystem change to undo stack
+  UpdateCoOrdinateSystemCommand *pUpdateCoOrdinateSystemCommand = new UpdateCoOrdinateSystemCommand(mpGraphicsView, oldCoOrdinateSystem,
+                                                                                                    newCoOrdinateSystem,
+                                                                                                    mpCopyProperties->isChecked());
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateCoOrdinateSystemCommand);
+  mpGraphicsView->getModelWidget()->updateModelicaText();
   accept();
 }
 

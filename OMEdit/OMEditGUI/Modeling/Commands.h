@@ -183,6 +183,20 @@ private:
   GraphicsView *mpGraphicsView;
 };
 
+class UpdateCoOrdinateSystemCommand : public QUndoCommand
+{
+public:
+  UpdateCoOrdinateSystemCommand(GraphicsView *pGraphicsView, CoOrdinateSystem oldCoOrdinateSystem, CoOrdinateSystem newCoOrdinateSystem,
+                                bool copyProperties, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  GraphicsView *mpGraphicsView;
+  CoOrdinateSystem mOldCoOrdinateSystem;
+  CoOrdinateSystem mNewCoOrdinateSystem;
+  bool mCopyProperties;
+};
+
 class UpdateClassExperimentAnnotationCommand : public QUndoCommand
 {
 public:

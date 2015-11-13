@@ -239,7 +239,7 @@ public slots:
   void zoomOut();
   void selectAll();
   void clearSelection();
-  void addClassAnnotation(bool updateModelicaText = true);
+  void addClassAnnotation();
   void showGraphicsViewProperties();
   void manhattanizeItems();
   void deleteItems();
