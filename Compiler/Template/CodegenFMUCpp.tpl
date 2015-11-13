@@ -661,38 +661,28 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /I - Include Directories
   # /DNOMINMAX - Define NOMINMAX (does what it says)
   # /TP - Use C++ Compiler
-  CFLAGS=/Od /EHa /MP /fp:except /I"<%makefileParams.omhome%>/include/omc/cpp/" /I"$(BOOST_INCLUDE)" /I"$(SUITESPARSE_INCLUDE)" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY <%additionalCFlags_MSVC%>
-
-  # /ZI enable Edit and Continue debug info
-  CDFLAGS = /ZI
+  CFLAGS=$(SYSTEM_CFLAGS) /w /I"<%makefileParams.omhome%>/include/omc/cpp/" /I"$(BOOST_INCLUDE)" /I"$(SUITESPARSE_INCLUDE)" /I. /TP /DNOMINMAX /DNO_INTERACTIVE_DEPENDENCY /DFMU_BUILD /DRUNTIME_STATIC_LINKING
 
   # /MD - link with MSVCRT.LIB
   # /link - [linker options and libraries]
   # /LIBPATH: - Directories where libs can be found
-  LDFLAGS=/MD   /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/" /LIBPATH:"<%makefileParams.omhome%>/bin" OMCppSystem.lib OMCppBase.lib OMCppMath.lib OMCppModelicaExternalC.lib <%additionalLinkerFlags_MSVC%>
+  LDFLAGS=/link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" OMCppSystem_FMU_static.lib OMCppMath_static.lib OMCppModelicaUtilities_static.lib OMCppExtensionUtilities_static.lib OMCppFMU_static.lib ModelicaExternalC.lib ModelicaStandardTables.lib $(BOOST_SYSTEM_LIB).lib
+  PLATFORM="win32"
 
-  # /MDd link with MSVCRTD.LIB debug lib
-  # lib names should not be appended with a d just switch to lib/omc/cpp
+  MODELICA_SYSTEM_LIB=<%fileNamePrefix%>
+  CALCHELPERMAINFILE=OMCpp$(MODELICA_SYSTEM_LIB)CalcHelperMain.cpp
 
-
-  FILEPREFIX=<%fileNamePrefix%>
-  FUNCTIONFILE=OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp
-  INITFILE=OMCpp<%fileNamePrefix%>Initialize.cpp
-  FACTORYFILE=OMCpp<%fileNamePrefix%>FactoryExport.cpp
-  MIXEDFILE=OMCpp<%fileNamePrefix%>Mixed.cpp
-  JACOBIANFILE=OMCpp<%fileNamePrefix%>Jacobian.cpp
-  WRITEOUTPUTFILE=OMCpp<%fileNamePrefix%>WriteOutput.cpp
-  MAINFILE=OMCpp<%lastIdentOfPath(modelInfo.name)%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
-  MAINFILEFMU=OMCpp<%lastIdentOfPath(modelInfo.name)%>FMU.cpp
-  STATESELECTIONFILE=OMCpp<%fileNamePrefix%>StateSelection.cpp
-  MAINOBJ=$(MODELICA_SYSTEM_LIB)
-
-  CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
-  ALGLOOPMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
-  GENERATEDFILES=$(MAINFILEFMU) $(MAINFILE) $(FUNCTIONFILE) $(ALGLOOPMAINFILE)
+  $(MODELICA_SYSTEM_LIB).fmu: $(MODELICA_SYSTEM_LIB)$(DLLEXT)
+  <%\t%>rm -rf binaries
+  <%\t%>mkdir -p "binaries/$(PLATFORM)"
+  <%\t%>mv $(MODELICA_SYSTEM_LIB)$(DLLEXT) "binaries/$(PLATFORM)/"
+  <%\t%>cp $(BOOST_LIBS)/$(BOOST_SYSTEM_LIB)$(DLLEXT) "binaries/$(PLATFORM)/"
+  <%\t%>rm -f $(MODELICA_SYSTEM_LIB).fmu
+  <%\t%>zip -r "$(MODELICA_SYSTEM_LIB).fmu" modelDescription.xml binaries
+  <%\t%>rm -rf binaries
 
   $(MODELICA_SYSTEM_LIB)$(DLLEXT):
-  <%\t%>$(CXX) /Fe$(MODELICA_SYSTEM_LIB) $(MAINFILEFMU) $(MAINFILE) $(CALCHELPERMAINFILE) $(GENERATEDFILES) $(CFLAGS) $(LDFLAGS)
+  <%\t%>$(CXX) /Fe$(MODELICA_SYSTEM_LIB)$(DLLEXT) $(CALCHELPERMAINFILE) $(CFLAGS) $(LDFLAGS)
   >>
 end match
 case "gcc" then
