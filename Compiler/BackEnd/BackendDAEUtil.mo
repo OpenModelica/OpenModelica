@@ -6895,10 +6895,10 @@ end postOptimizeDAE;
 
 public function getSolvedSystemforJacobians "Run the equation system pipeline."
   input BackendDAE.BackendDAE inDAE;
-  input Option<list<String>> strPreOptModules;
+  input list<String> strPreOptModules;
   input Option<String> strMatchingAlgorithm;
   input Option<String> strDAEHandler;
-  input Option<list<String>> strPostOptModules;
+  input list<String> strPostOptModules;
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendDAE.BackendDAE dae;
@@ -6906,20 +6906,9 @@ protected
   list<tuple<BackendDAEFunc.optimizationModule, String>> postOptModules;
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
-
-  list<String> preOptModulesAdd = Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD);
-  list<String> preOptModulesSub = Flags.getConfigStringList(Flags.PRE_OPT_MODULES_SUB);
-  list<String> postOptModulesAdd = Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD);
-  list<String> postOptModulesSub = Flags.getConfigStringList(Flags.POST_OPT_MODULES_SUB);
 algorithm
-  // don't use --preOptModules+/-, --postOptModules+/- flags for Jacobains
-  Flags.setConfigStringList(Flags.PRE_OPT_MODULES_ADD, {});
-  Flags.setConfigStringList(Flags.PRE_OPT_MODULES_SUB, {});
-  Flags.setConfigStringList(Flags.POST_OPT_MODULES_ADD, {});
-  Flags.setConfigStringList(Flags.POST_OPT_MODULES_SUB, {});
-
-  preOptModules := getPreOptModules(strPreOptModules);
-  postOptModules := getPostOptModules(strPostOptModules);
+  preOptModules := selectOptModules(strPreOptModules, {}, {}, allPreOptimizationModules());
+  postOptModules := selectOptModules(strPostOptModules, {}, {}, allPostOptimizationModules());
   matchingAlgorithm := getMatchingAlgorithm(strMatchingAlgorithm);
   daeHandler := getIndexReductionMethod(strDAEHandler);
 
@@ -6937,12 +6926,6 @@ algorithm
   //fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outDAE, "dumpindxdae");
   //bcall(Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) or Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO), BackendDump.dumpCompShort, outDAE);
   //fcall2(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outDAE, "system for jacobians");
-
-  // restore flags
-  Flags.setConfigStringList(Flags.PRE_OPT_MODULES_ADD, preOptModulesAdd);
-  Flags.setConfigStringList(Flags.PRE_OPT_MODULES_SUB, preOptModulesSub);
-  Flags.setConfigStringList(Flags.POST_OPT_MODULES_ADD, postOptModulesAdd);
-  Flags.setConfigStringList(Flags.POST_OPT_MODULES_SUB, postOptModulesSub);
 end getSolvedSystemforJacobians;
 
 /*************************************************
