@@ -85,4 +85,3 @@ qreal CoOrdinateSystem::getVerticalGridStep()
   }
   return mGrid.y();
 }
-

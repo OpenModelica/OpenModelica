@@ -904,3 +904,72 @@ void UpdateClassExperimentAnnotationCommand::undo()
 {
   mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mOldExperimentAnnotation);
 }
+
+UpdateCoOrdinateSystemCommand::UpdateCoOrdinateSystemCommand(GraphicsView *pGraphicsView, CoOrdinateSystem oldCoOrdinateSystem,
+                                                             CoOrdinateSystem newCoOrdinateSystem, bool copyProperties, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpGraphicsView = pGraphicsView;
+  mOldCoOrdinateSystem = oldCoOrdinateSystem;
+  mNewCoOrdinateSystem = newCoOrdinateSystem;
+  mCopyProperties = copyProperties;
+  setText(QString("Update %1 CoOrdinate System").arg(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+}
+
+/*!
+ * \brief UpdateClassCoOrdinateSystemCommand::redo
+ * Redo the UpdateClassCoOrdinateSystemCommand.
+ */
+void UpdateCoOrdinateSystemCommand::redo()
+{
+  mpGraphicsView->mCoOrdinateSystem = mNewCoOrdinateSystem;
+  qreal left = mNewCoOrdinateSystem.getExtent().at(0).x();
+  qreal bottom = mNewCoOrdinateSystem.getExtent().at(0).y();
+  qreal right = mNewCoOrdinateSystem.getExtent().at(1).x();
+  qreal top = mNewCoOrdinateSystem.getExtent().at(1).y();
+  mpGraphicsView->setExtentRectangle(left, bottom, right, top);
+  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->scene()->update();
+  // if copy properties is true
+  if (mCopyProperties) {
+    GraphicsView *pGraphicsView;
+    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+      pGraphicsView = mpGraphicsView->getModelWidget()->getDiagramGraphicsView();
+    } else {
+      pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
+    }
+    pGraphicsView->mCoOrdinateSystem = mNewCoOrdinateSystem;
+    pGraphicsView->setExtentRectangle(left, bottom, right, top);
+    pGraphicsView->addClassAnnotation();
+    pGraphicsView->scene()->update();
+  }
+}
+
+/*!
+ * \brief UpdateClassCoOrdinateSystemCommand::undo
+ * Undo the UpdateClassCoOrdinateSystemCommand.
+ */
+void UpdateCoOrdinateSystemCommand::undo()
+{
+  mpGraphicsView->mCoOrdinateSystem = mOldCoOrdinateSystem;
+  qreal left = mOldCoOrdinateSystem.getExtent().at(0).x();
+  qreal bottom = mOldCoOrdinateSystem.getExtent().at(0).y();
+  qreal right = mOldCoOrdinateSystem.getExtent().at(1).x();
+  qreal top = mOldCoOrdinateSystem.getExtent().at(1).y();
+  mpGraphicsView->setExtentRectangle(left, bottom, right, top);
+  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->scene()->update();
+  // if copy properties is true
+  if (mCopyProperties) {
+    GraphicsView *pGraphicsView;
+    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+      pGraphicsView = mpGraphicsView->getModelWidget()->getDiagramGraphicsView();
+    } else {
+      pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
+    }
+    pGraphicsView->mCoOrdinateSystem = mOldCoOrdinateSystem;
+    pGraphicsView->setExtentRectangle(left, bottom, right, top);
+    pGraphicsView->addClassAnnotation();
+    pGraphicsView->scene()->update();
+  }
+}

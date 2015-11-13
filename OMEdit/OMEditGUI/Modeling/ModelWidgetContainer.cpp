@@ -1204,9 +1204,12 @@ void GraphicsView::clearSelection()
   }
 }
 
-//! Adds the annotation string of Icon and Diagram layer to the model. Also creates the model icon in the tree.
-//! If some custom models are cross referenced then update them accordingly.
-void GraphicsView::addClassAnnotation(bool updateModelicaText)
+/*!
+ * \brief GraphicsView::addClassAnnotation
+ * Adds the annotation string of Icon and Diagram layer to the model. Also creates the model icon in the tree.
+ * If some custom models are cross referenced then update them accordingly.
+ */
+void GraphicsView::addClassAnnotation()
 {
   if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
     return;
@@ -1260,9 +1263,6 @@ void GraphicsView::addClassAnnotation(bool updateModelicaText)
   }
   // add the class annotation to model through OMC
   if (pMainWindow->getOMCProxy()->addClassAnnotation(mpModelWidget->getLibraryTreeItem()->getNameStructure(), annotationString)) {
-    if (updateModelicaText) {
-      mpModelWidget->updateModelicaText();
-    }
     /* When something is added/changed in the icon layer then update the LibraryTreeItem in the Library Browser */
     if (mViewType == StringHandler::Icon) {
       mpModelWidget->getLibraryTreeItem()->handleIconUpdated();
@@ -1679,7 +1679,7 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
       }
     }
     if (hasShapeMoved) {
-      addClassAnnotation(!hasComponentMoved);
+      addClassAnnotation();
     }
     if (hasComponentMoved || hasShapeMoved) {
       mpModelWidget->updateModelicaText();
@@ -2787,11 +2787,11 @@ void ModelWidget::clearSelection()
 void ModelWidget::updateClassAnnotationIfNeeded()
 {
   if (mpIconGraphicsView && mpIconGraphicsView->isAddClassAnnotationNeeded()) {
-    mpIconGraphicsView->addClassAnnotation(false);
+    mpIconGraphicsView->addClassAnnotation();
     mpIconGraphicsView->setAddClassAnnotationNeeded(false);
   }
   if (mpDiagramGraphicsView && mpDiagramGraphicsView->isAddClassAnnotationNeeded()) {
-    mpDiagramGraphicsView->addClassAnnotation(false);
+    mpDiagramGraphicsView->addClassAnnotation();
     mpDiagramGraphicsView->setAddClassAnnotationNeeded(false);
   }
 }
