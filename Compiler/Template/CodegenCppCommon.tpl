@@ -840,12 +840,12 @@ template expTypeShortSPS(DAE.Type type)
 ::=
   match type
   case T_INTEGER(__)         then "INT"
-  case T_REAL(__)        then "REAL"
+  case T_REAL(__)        then "LREAL"
   case T_STRING(__)      then if acceptMetaModelicaGrammar() then "metatype" else "string"
   case T_BOOL(__)        then "BOOL"
   case T_ENUMERATION(__) then "INT"
   /* assumming real for uknown type! */
-  case T_UNKNOWN(__)     then "REAL"
+  case T_UNKNOWN(__)     then "LREAL"
   case T_ANYTYPE(__)     then "type not supported"
   case T_ARRAY(__)       then expTypeShortSPS(ty)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
@@ -860,12 +860,12 @@ template expTypeShortMLPI(DAE.Type type)
 ::=
   match type
   case T_INTEGER(__)     then "MLPI_IEC_INT"
-  case T_REAL(__)        then "MLPI_IEC_REAL"
+  case T_REAL(__)        then "MLPI_IEC_LREAL"
   case T_STRING(__)      then if acceptMetaModelicaGrammar() then "metatype" else "string"
   case T_BOOL(__)        then "MLPI_IEC_BOOL"
   case T_ENUMERATION(__) then "MLPI_IEC_INT"
   /* assumming real for uknown type! */
-  case T_UNKNOWN(__)     then "MLPI_IEC_REAL"
+  case T_UNKNOWN(__)     then "MLPI_IEC_LREAL"
   case T_ANYTYPE(__)     then "type not supported"
   case T_ARRAY(__)       then expTypeShortSPS(ty)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
