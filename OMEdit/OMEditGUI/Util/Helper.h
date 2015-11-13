@@ -138,6 +138,7 @@ public:
   static QString add;
   static QString edit;
   static QString save;
+  static QString saveTip;
   static QString apply;
   static QString chooseDirectory;
   static QString general;

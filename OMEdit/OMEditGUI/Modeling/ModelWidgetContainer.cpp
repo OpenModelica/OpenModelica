@@ -3825,25 +3825,6 @@ void ModelWidgetContainer::loadPreviousViewType(ModelWidget *pModelWidget)
   }
 }
 
-void ModelWidgetContainer::saveModelicaModelWidget(ModelWidget *pModelWidget)
-{
-  /* if Modelica text is changed manually by user then validate it before saving. */
-  if (!pModelWidget->validateText()) {
-    return;
-  }
-  mpMainWindow->getLibraryWidget()->saveLibraryTreeItem(pModelWidget->getLibraryTreeItem());
-}
-
-void ModelWidgetContainer::saveTextModelWidget(ModelWidget *pModelWidget)
-{
-  mpMainWindow->getLibraryWidget()->saveLibraryTreeItem(pModelWidget->getLibraryTreeItem());
-}
-
-void ModelWidgetContainer::saveTLMModelWidget(ModelWidget *pModelWidget)
-{
-  mpMainWindow->getLibraryWidget()->saveLibraryTreeItem(pModelWidget->getLibraryTreeItem());
-}
-
 void ModelWidgetContainer::openRecentModelWidget(QListWidgetItem *pItem)
 {
   LibraryTreeItem *pLibraryTreeItem = mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pItem->data(Qt::UserRole).toString());
@@ -3929,6 +3910,10 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   }
 }
 
+/*!
+ * \brief ModelWidgetContainer::saveModelWidget
+ * Saves a model.
+ */
 void ModelWidgetContainer::saveModelWidget()
 {
   ModelWidget *pModelWidget = getCurrentModelWidget();
@@ -3939,13 +3924,7 @@ void ModelWidgetContainer::saveModelWidget()
     return;
   }
   LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
-  if (pLibraryTreeItem && pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
-    saveModelicaModelWidget(pModelWidget);
-  } else if (pLibraryTreeItem && pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
-    saveTextModelWidget(pModelWidget);
-  } else if (pLibraryTreeItem && pLibraryTreeItem->getLibraryType() == LibraryTreeItem::TLM) {
-    saveTLMModelWidget(pModelWidget);
-  }
+  mpMainWindow->getLibraryWidget()->saveLibraryTreeItem(pLibraryTreeItem);
 }
 
 void ModelWidgetContainer::saveAsModelWidget()

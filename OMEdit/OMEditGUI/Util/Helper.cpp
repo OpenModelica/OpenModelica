@@ -131,6 +131,7 @@ QString Helper::properties;
 QString Helper::add;
 QString Helper::edit;
 QString Helper::save;
+QString Helper::saveTip;
 QString Helper::apply;
 QString Helper::chooseDirectory;
 QString Helper::general;
@@ -315,6 +316,7 @@ void Helper::initHelperVariables()
   Helper::add = tr("Add");
   Helper::edit = tr("Edit");
   Helper::save = tr("Save");
+  Helper::saveTip = tr("Save a file");
   Helper::apply = tr("Apply");
   Helper::importFMU = tr("Import FMU");
   Helper::chooseDirectory = tr("Choose Directory");

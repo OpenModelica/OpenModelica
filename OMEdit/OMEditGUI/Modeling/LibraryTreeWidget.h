@@ -270,6 +270,7 @@ private:
   QAction *mpViewClassAction;
   QAction *mpViewDocumentationAction;
   QAction *mpNewModelicaClassAction;
+  QAction *mpSaveClassAction;
   QAction *mpMoveUpAction;
   QAction *mpMoveDownAction;
   QAction *mpMoveTopAction;
@@ -300,6 +301,7 @@ public slots:
   void viewClass();
   void viewDocumentation();
   void createNewModelicaClass();
+  void saveClass();
   void moveClassUp();
   void moveClassDown();
   void moveClassTop();
