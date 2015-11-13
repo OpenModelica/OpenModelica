@@ -7,8 +7,9 @@ SHREXT=@SHREXT@
 ifeq (x86_64,@target_cpu@)
 ANTLR64=--enable-64bit
 endif
+ANTLRDEBUG=--disable-antlrdebug
 ifeq (arm,@target_cpu@)
-ANTLRDEBUG=--disable-antlrdebug --disable-abiflags
+ANTLRDEBUG+=--disable-abiflags
 endif
 host=--host=@host@
 host_short=@host_short@

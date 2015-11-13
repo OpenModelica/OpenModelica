@@ -143,13 +143,13 @@ $(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT): $(ALL_OBJECTS) $(OMHOME)/
 	$(CC) -shared $(RPATH) $(INSTALL_NAME) -o $@ $^ $(LDFLAGS)
 	test ! "$(SHREXT)" = ".dylib" || install_name_tool -id @rpath/libOpenModelicaCompiler.dylib $@
 
-ifeq ($(STATIC),)
+ifeq (${STATIC},)
 #shared
 $(GEN_DIR)omc$(EXE_EXT): $(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT) $(GEN_DIR)_main_omc.o $(GEN_DIR)_main.o
 	$(CC) $(GEN_DIR)_main.o $(RPATH) $(CFLAGS) $(CPPFLAGS) -o $@ $(LDFLAGS) -lOpenModelicaCompiler
 install: $(GEN_DIR)omc$(EXE_EXT) install-interface
 	cp -a $< $(OMHOME)/bin/
-	cp -a $(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT) $(OMHOME)/bin/
+	test ! "$(SHREXT)" = ".dll" || cp -a $(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT) $(OMHOME)/bin/
 
 else
 #static

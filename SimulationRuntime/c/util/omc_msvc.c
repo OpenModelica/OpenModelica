@@ -64,7 +64,7 @@ int vasprintf(char **strp, const char *fmt, va_list ap) {
 #if !defined(OMC_MINIMAL_RUNTIME)
 
 #include <windows.h>
-#include <TlHelp32.h>
+#include <tlhelp32.h>
 #include <time.h>
 
 #ifndef SIGALRM

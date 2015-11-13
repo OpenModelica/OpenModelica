@@ -31,7 +31,13 @@
 #ifndef OPENMODELICA_CONFIG_H
 #define OPENMODELICA_CONFIG_H
 
-#if defined(NO_AUTOCONF) || (defined(__MINGW32__) || defined(_MSC_VER)) /* Windows */
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#define CONFIG_USER_IS_ROOT 0
+#else
+#define CONFIG_USER_IS_ROOT (geteuid() == 0 ? 1 : 0)
+#endif
+
+#if !defined(MSYS2_AUTOCONF) && (defined(__MINGW32__) || defined(_MSC_VER)) /* Windows */
 
 #define DEFAULT_CC "gcc"
 #define DEFAULT_CXX "g++"
@@ -44,7 +50,7 @@
 #define CONFIG_PLATFORM "WIN32"
 #define CONFIG_MODELICA_SPEC_PLATFORM "win32"
 #define CONFIG_OPENMODELICA_SPEC_PLATFORM "mingw32"
-#define CONFIG_USER_IS_ROOT 0
+
 #define CONFIG_WITH_OPENMP 1
 
 #define CONFIG_DEFAULT_OPENMODELICAHOME NULL

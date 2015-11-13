@@ -303,10 +303,7 @@ fi
 
 dnl Misc. headers
 
-AC_CHECK_HEADER(expat.h,,
-  CPPFLAGS="$CPPFLAGS -I \"$ac_top_srcdir/3rdParty/FMIL/Expat/lib\""
-  AC_MSG_RESULT([using local expat.h])
-)
+AC_CHECK_HEADER(expat.h,,AC_MSG_ERROR([no]))
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -413,9 +410,6 @@ LIBS=""
 CC="$CC_OLD"
 CFLAGS="$CFLAGS_OLD"
 
-if echo "$host" | grep -q "mingw"; then
-  true
-else
 dnl check for lpsolve55
 
 AC_ARG_WITH(lpsolve,  [  --with-lpsolve        (default searching for lpsolve; disable if only using omc to cross-compile)],[if test "$withval" = "no"; then NO_LPLIB="#define NO_LPLIB"; fi],[])
@@ -432,7 +426,7 @@ if test "$WANT_STATIC_LPSOLVE" = "no"; then
   LIBDL="$LIBS"
   AC_SEARCH_LIBS(sqrt,m)
   AC_SEARCH_LIBS(colamd,colamd)
-  AC_SEARCH_LIBS(make_lp,[lpsolve55_pic lpsolve55],[],[AC_MSG_ERROR([lpsolve linking failed using $LIBS])])
+  AC_SEARCH_LIBS(make_lp,[lpsolve55_pic lpsolve55],[],[MINGW_EXTRA_LIBS="$MINGW_EXTRA_LIBS lpsolve"; AC_MSG_RESULT([lpsolve linking failed using $LIBS])])
   LIBLPSOLVE55=$LIBS
   LIBS=""
 else
@@ -446,15 +440,19 @@ else
   AC_SEARCH_LIBS(sqrt,m)
   LIBS="$LPLIB/liblpsolve55_pic.a $LPLIB/libcolamd.a $LIBS"
   AC_MSG_CHECKING([for static lpsolve55])
-  AC_LINK_IFELSE([AC_LANG_CALL([], [make_lp])], [LIBLPSOLVE55=$LIBS], [AC_MSG_ERROR([failed])])
+  AC_LINK_IFELSE([AC_LANG_CALL([], [make_lp])], [LIBLPSOLVE55=$LIBS], [MINGW_EXTRA_LIBS="$MINGW_EXTRA_LIBS lpsolve"; AC_MSG_RESULT([failed])])
   AC_MSG_RESULT([$LIBLPSOLVE55])
   LIBS=""
 fi
 AC_CHECK_HEADER([lp_lib.h],[LPSOLVEINC=lp_lib.h],[
-  AC_CHECK_HEADER([lpsolve/lp_lib.h],[LPSOLVEINC=lpsolve/lp_lib.h],[AC_MSG_ERROR([failed to find lpsolve55 headers])])
+  AC_CHECK_HEADER([lpsolve/lp_lib.h],[LPSOLVEINC=lpsolve/lp_lib.h],[
+    if ! ( echo $MINGW_EXTRA_LIBS | grep -q lpsolve ); then
+      MINGW_EXTRA_LIBS="$MINGW_EXTRA_LIBS lpsolve";
+    fi
+    AC_MSG_RESULT([failed to find lpsolve55 headers])
+  ])
 ])
 
-fi
 fi # NO_LPLIB
 
 if ! (echo "$host" | grep -q "mingw"); then
@@ -613,6 +611,7 @@ AC_CHECK_HEADER([CL/cl.h],[OPENCL="Yes"],[
 FINAL_MESSAGES="$FINAL_MESSAGES\nParModelica: $OPENCL"
 
 AC_SUBST(CMAKE_LDFLAGS)
+AC_SUBST(CMAKE_EXTRA_DEFINES)
 if test "$DARWIN" = "1"; then
   APP=".app"
   EXE=".app"
@@ -643,11 +642,11 @@ if test "$DARWIN" = "1"; then
   OMC_LIBS="$(OMC_LIBS) -Wl,-undefined -Wl,dynamic_lookup"
   BOOTSTRAP_STATIC=""
   CMAKE_LDFLAGS="-Wl,-undefined -Wl,dynamic_lookup"
-elif test "$host" = "i586-pc-mingw32msvc"; then
+elif echo "$host" | grep -iq "mingw"; then
   APP=".exe"
   EXE=".exe"
   # Yes, we build static libs on Windows, so the "shared" extension is .a
-  SHREXT=".a"
+  SHREXT=".dll"
   LIBGC="$OMBUILDDIR/lib/$host_short/omc/libomcgc.a"
   LIBSIMULATION=libSimulationRuntimeC.a
   LIBRUNTIME=libOpenModelicaRuntimeC.a
@@ -664,12 +663,17 @@ elif test "$host" = "i586-pc-mingw32msvc"; then
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lcdaskr $RT_LDFLAGS_SIM"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm$LD_NOUNDEFINED"
   LINK="cp -frl"
-  RPATH="-Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/$host_short/omc' -Wl,-rpath,'\$\$ORIGIN'"
-  RPATH_QMAKE="-Wl,-z,origin -Wl,-rpath,\\'\\\$\$ORIGIN/../lib/$host_short/omc\\' -Wl,-rpath,\\'\\\$\$ORIGIN\\'"
+  # No RPATH in Windows :(
+  RPATH=""
+  RPATH_QMAKE=""
   OS_TARGET="windows"
   AR_SH="$AR -ru"
   LDFLAGS_SOCKET=" -lwsock32"
-  BOOTSTRAP_STATIC="static"
+  BOOTSTRAP_STATIC=""
+  AC_CHECK_TOOL(WINDRES, windres, [AC_MSG_ERROR([no])])
+  CMAKE_EXTRA_DEFINES="-DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RC_COMPILER=$WINDRES"
+  CPPFLAGS="$CPPFLAGS -DMSYS2_AUTOCONF=1"
+  OMC_LIBS="$OMC_LIBS -lstdc++ -lwsock32 -ltre -liconv -lintl -lshlwapi"
 else
   APP=""
   EXE=""

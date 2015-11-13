@@ -17,7 +17,7 @@ install: $(ANTLR_LIB) libomparse.a
 	cp $(ANTLR_LIB) libomparse.a $(OMBUILDDIR)/$(LIB_OMC)/
 
 $(ANTLR)/antlr3config.h: $(ANTLR)/antlr3config.h.in $(ANTLR)/configure
-	(cd $(ANTLR) && ./configure $(ANTLR64) $(ANTLRDEBUG) $(host) CC="$(CC)" LDFLAGS="" CFLAGS="" CPPFLAGS="")
+	(cd $(ANTLR) && ./configure $(ANTLR64) $(ANTLRDEBUG) $(host) CC="$(CC)" LDFLAGS="" CFLAGS="$(CFLAGS)" CPPFLAGS="")
 libomantlr3.a: $(ANTLR)/src/*.c $(ANTLR)/include/*.h $(ANTLR)/antlr3config.h
 	# build the library
 	$(CC) ${CFLAGS} ${CPPFLAGS} -c $(ANTLR)/src/*.c -I$(ANTLR)/include -I$(ANTLR)
@@ -27,7 +27,7 @@ libomantlr3.a: $(ANTLR)/src/*.c $(ANTLR)/include/*.h $(ANTLR)/antlr3config.h
 	rm -f antlr3*.o
 libomantlr3$(SHREXT): $(ANTLR)/src/*.c $(ANTLR)/include/*.h $(ANTLR)/antlr3config.h
 	# build the library
-	$(CC) -shared -o $@ ${LDFLAGS} ${CFLAGS} ${CPPFLAGS} $(ANTLR)/src/*.c -I$(ANTLR)/include -I$(ANTLR)
+	$(CC) -shared -o $@ ${LDFLAGS} ${CFLAGS} ${CPPFLAGS} -DANTLR3_NODEBUGGER $(ANTLR)/src/*.c -I$(ANTLR)/include -I$(ANTLR)
 	test ! `uname` = Darwin || install_name_tool -id "@rpath/$@" $@
 
 HFILES = \
