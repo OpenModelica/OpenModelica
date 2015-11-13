@@ -88,7 +88,7 @@ template translateModel(SimCode simCode)
 
         match target
           case "vxworks69" then
-            let()= textFile(functionBlock(simCode), '<%fileNamePrefix%>_PLCOPEN.xml')
+            let()= textFile(functionBlock(simCode), '<%fileNamePrefix%>_spsblock.txt')
             let()= textFile(ftp_script(simCode), '<%fileNamePrefix%>_ftp.bat')
             ""
           else ""
@@ -2522,11 +2522,7 @@ then
 
           let outputnames = vars.outputVars |>  SIMVAR(__) hasindex i0 =>
       <<
-      <variable name= "<%crefST(name, false)%>">
-      <type>
-          <<%crefTypeST(name)%>/>
-          </type>
-      </variable>
+      <%crefST(name, false)%> : <%crefTypeST(name)%>;
       >>
       ;separator="\n"
 
@@ -2555,11 +2551,7 @@ then
 
           let inputnames = vars.inputVars |>  SIMVAR(__) hasindex i0 =>
       <<
-      <variable name= "<%crefST(name, false)%>">
-      <type>
-          <<%crefTypeST(name)%>/>
-          </type>
-      </variable>
+      <%crefST(name, false)%> : <%crefTypeST(name)%> ;
       >>
       ;separator="\n"
 
@@ -2593,7 +2585,11 @@ then
 
           let outputnames = vars.outputVars |>  SIMVAR(__) hasindex i0 =>
       <<
-      <%crefTypeMLPI(name)%> <%crefST(name, false)%>;
+      <variable name= "<%crefST(name, false)%>">
+      <type>
+          <<%crefTypeST(name)%>/>
+          </type>
+      </variable>
       >>
       ;separator="\n"
 
@@ -3279,13 +3275,12 @@ case "vxworks69" then
 
       MODEL_NAME = <%fileNamePrefix%>
 
-      OPENMODELICAHOME := $(subst \,/,$(OPENMODELICAHOME))
-      WIND_HOME := $(subst \,/,$(WIND_HOME))
-      WIND_BASE := $(WIND_HOME)/customBosch/vxworks-6.9
-      export WIND_BASE
-      MLPI_SDK_01 := $(subst \,/,$(MLPI_SDK_01))
-      OMDEV := $(subst \,/,$(OMDEV))
 
+      WIND_HOME := $(subst \,/,$(WIND_HOME))
+      WIND_BASE := $(subst \,/,$(WIND_BASE))
+      MLPI := $(subst \,/,$(MLPI))
+      OMDEV := $(subst \,/,$(OMDEV))
+      CPP_RUNTIME := $(subst \,/,$(CPP_RUNTIME))
 
       all : clean pre_build main_all post_build
 
@@ -3333,9 +3328,9 @@ case "vxworks69" then
       LIBPATH =
       LIBS =
 
-      IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI_SDK_01)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(OPENMODELICAHOME)/include/omc/cpp/Core -I$(OPENMODELICAHOME)/include/omc/cpp
+      IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(CPP_RUNTIME)/Include/Core -I$(CPP_RUNTIME)/Include
 
-      IDE_LIBRARIES = $(OPENMODELICAHOME)/lib/omc/cpp/vxworks/SimCore.a
+      IDE_LIBRARIES = $(CPP_RUNTIME)/Build/VxWorks/SimCore.a
 
       IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"
 
@@ -3382,8 +3377,8 @@ case "vxworks69" then
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Librarian =
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Assembler =  -O2
       endif
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI_SDK_01)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(OPENMODELICAHOME)/include/omc/cpp/Core -I$(OPENMODELICAHOME)/include/omc/cpp
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_LIBRARIES = $(OPENMODELICAHOME)/lib/omc/cpp/vxworks/SimCore.a
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(CPP_RUNTIME)/Include/Core -I$(CPP_RUNTIME)/Include
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_LIBRARIES = $(CPP_RUNTIME)/Build/VxWorks/SimCore.a
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : PROJECT_TYPE = DKM
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEFINES =
@@ -3404,7 +3399,7 @@ case "vxworks69" then
 
       ifeq ($(TARGET_JOBS),1)
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME).out : $(OBJECTS_com.boschrexroth.$(MODEL_NAME))
-      <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@";rm -f "$@";nmpentium $(OBJECTS_com.boschrexroth.$(MODEL_NAME)) | $(WIND_HOME)/workbench-3.3/foundation/x86-win32/bin/tclsh $(WIND_BASE)/host/resource/hutils/tcl/munch.tcl -c pentium -tags $(VSB_DIR)/tags/pentium/ATOM/common/dkm.tags > $(OBJ_DIR)/ctdt.c; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_Linker) $(CC_ARCH_SPEC) -fdollars-in-identifiers -Wall -Wsystem-headers  $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES)  $(IDE_DEFINES) $(DEFINES) -o $(OBJ_DIR)/ctdt.o -c $(OBJ_DIR)/ctdt.c; $(TOOL_PATH)ccpentium -r -nostdlib -Wl,-X -T $(WIND_BASE)/target/h/tool/gnu/ldscripts/link.OUT -o "$@" $(OBJ_DIR)/ctdt.o $(OBJECTS_com.boschrexroth.$(MODEL_NAME)) $(IDE_LIBRARIES) $(LIBPATH) $(LIBS) $(ADDED_LIBPATH) $(ADDED_LIBS) && if [ "$(EXPAND_DBG)" = "1" ]; then plink "$@";fi
+      <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@";rm -f "$@";nmpentium $(OBJECTS_com.boschrexroth.$(MODEL_NAME)) | tclsh $(WIND_BASE)/host/resource/hutils/tcl/munch.tcl -c pentium -tags $(VSB_DIR)/tags/pentium/ATOM/common/dkm.tags > $(OBJ_DIR)/ctdt.c; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_Linker) $(CC_ARCH_SPEC) -fdollars-in-identifiers -Wall -Wsystem-headers  $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES)  $(IDE_DEFINES) $(DEFINES) -o $(OBJ_DIR)/ctdt.o -c $(OBJ_DIR)/ctdt.c; $(TOOL_PATH)ccpentium -r -nostdlib -Wl,-X -T $(WIND_BASE)/target/h/tool/gnu/ldscripts/link.OUT -o "$@" $(OBJ_DIR)/ctdt.o $(OBJECTS_com.boschrexroth.$(MODEL_NAME)) $(IDE_LIBRARIES) $(LIBPATH) $(LIBS) $(ADDED_LIBPATH) $(ADDED_LIBS) && if [ "$(EXPAND_DBG)" = "1" ]; then plink "$@";fi
 
       else
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME).out : com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME).out_jobs
@@ -3434,8 +3429,8 @@ case "vxworks69" then
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Librarian =
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Assembler =  -O2
       endif
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI_SDK_01)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(OPENMODELICAHOME)/include/omc/cpp/Core -I$(OPENMODELICAHOME)/include/omc/cpp
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_LIBRARIES = $(OPENMODELICAHOME)/lib/omc/cpp/vxworks/SimCore.a
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(CPP_RUNTIME)/Include/Core -I$(CPP_RUNTIME)/Include
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_LIBRARIES = $(CPP_RUNTIME)/Build/VxWorks/SimCore.a
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : PROJECT_TYPE = DKM
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEFINES =
@@ -11888,194 +11883,79 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
 let modelname = identOfPath(modelInfo.name)
 '<?xml version="1.0" encoding="utf-8"?>
-<project xmlns="http://www.plcopen.org/xml/tc6_0200">
-  <fileHeader companyName="" productName="IndraLogic" productVersion="indralogic" creationDateTime="2015-11-19T11:21:48.0837805" />
-  <contentHeader name="<%modelname%>">
-    <coordinateInfo>
-      <fbd>
-        <scaling x="1" y="1" />
-      </fbd>
-      <ld>
-        <scaling x="1" y="1" />
-      </ld>
-      <sfc>
-        <scaling x="1" y="1" />
-      </sfc>
-    </coordinateInfo>
-    <addData>
-      <data name="http://www.3s-software.com/plcopenxml/projectinformation" handleUnknown="implementation">
-        <ProjectInformation />
-      </data>
-    </addData>
-  </contentHeader>
-  <types>
-    <dataTypes />
-    <pous>
-      <pou name="<%modelname%>" pouType="functionBlock">
-        <interface>
-          <inputVars>
-            <%inputVars%>
-          </inputVars>
-          <outputVars>
-            <%outputVars%>
-          </outputVars>
-          <localVars>
-            <variable name="cycletime">
-              <type>
-                <LREAL />
-              </type>
-              <initialValue>
-                <simpleValue value="0.004" />
-              </initialValue>
-            </variable>
-            <variable name="bAlreadyInitialized">
-              <type>
-                <BOOL />
-              </type>
-            </variable>
-            <variable name="bErrorOccured">
-              <type>
-                <BOOL />
-              </type>
-            </variable>
-            <variable name="controller">
-              <type>
-                <DWORD />
-              </type>
-            </variable>
-            <variable name="simdata">
-              <type>
-                <DWORD />
-              </type>
-            </variable>
-          </localVars>
-        </interface>
-        <body>
-          <ST>
-            <xhtml xmlns="http://www.w3.org/1999/xhtml" />
-          </ST>
-        </body>
-        <addData>
-          <data name="http://www.3s-software.com/plcopenxml/method" handleUnknown="implementation">
-            <Method name="FB_Init" ObjectId="102788a9-c3a0-4650-9ee8-e340b376c772">
-              <interface>
-                <returnType>
-                  <BOOL />
-                </returnType>
-                <inputVars>
-                  <variable name="bInitRetains">
-                    <type>
-                      <BOOL />
-                    </type>
+<project>
+   <fileHeader companyName="Bosch Rexroth AG" companyURL="" contentDescription="" creationDateTime="2015-11-06T13:36:37" productName="" productRelease="" productVersion=""/>
+   <contentHeader name="<%modelname%>">
+      <coordinateInfo>
+         <fbd>
+            <scaling x="0" y="0"/>
+         </fbd>
+         <ld>
+            <scaling x="0" y="0"/>
+         </ld>
+         <sfc>
+            <scaling x="0" y="0"/>
+         </sfc>
+      </coordinateInfo>
+   </contentHeader>
+   <types>
+      <dataTypes/>
+      <pous>
+         <pou name="<%modelname%>" pouType="functionBlock">
+            <interface>
+               <inputVars>
+                  <%inputVars%>
+               </inputVars>
+               <outputVars>
+                  <variable name="y">
+                     <type>
+                        <LREAL/>
+                     </type>
                   </variable>
-                  <variable name="bInCopyCode">
-                    <type>
-                      <BOOL />
-                    </type>
+               </outputVars>
+                   <localVars>
+                   <variable name="cycletime">
+                     <type>
+                        <LREAL/>
+                     </type>
+                     <initialValue>
+                        <simpleValue value="0.004"/>
+                     </initialValue>
                   </variable>
-                </inputVars>
-                <addData>
-                  <data name="http://www.3s-software.com/plcopenxml/attributes" handleUnknown="implementation">
-                    <Attributes>
-                      <Attribute Name="object_name" Value="FB_Init" />
-                    </Attributes>
-                  </data>
-                </addData>
-              </interface>
-              <body>
-                <ST>
-                  <xhtml xmlns="http://www.w3.org/1999/xhtml" />
-                </ST>
-              </body>
-              <BuildProperties>
-                <ExternalImplementation>true</ExternalImplementation>
-              </BuildProperties>
-              <addData />
-            </Method>
-          </data>
-          <data name="http://www.3s-software.com/plcopenxml/method" handleUnknown="implementation">
-            <Method name="FB_Reinit" ObjectId="a9db0581-3a33-4426-9a31-453930d13eb7">
-              <interface>
-                <returnType>
-                  <BOOL />
-                </returnType>
-                <addData>
-                  <data name="http://www.3s-software.com/plcopenxml/attributes" handleUnknown="implementation">
-                    <Attributes>
-                      <Attribute Name="object_name" Value="FB_Reinit" />
-                    </Attributes>
-                  </data>
-                </addData>
-              </interface>
-              <body>
-                <ST>
-                  <xhtml xmlns="http://www.w3.org/1999/xhtml" />
-                </ST>
-              </body>
-              <BuildProperties>
-                <ExternalImplementation>true</ExternalImplementation>
-              </BuildProperties>
-              <addData />
-            </Method>
-          </data>
-          <data name="http://www.3s-software.com/plcopenxml/method" handleUnknown="implementation">
-            <Method name="FB_Exit" ObjectId="c3ba1a8d-f305-4c9b-a3bf-e0c31a544d79">
-              <interface>
-                <returnType>
-                  <BOOL />
-                </returnType>
-                <inputVars>
-                  <variable name="bInCopyCode">
-                    <type>
-                      <BOOL />
-                    </type>
+                      <variable name="bAlreadyInitialized">
+                     <type>
+                        <BOOL/>
+                     </type>
                   </variable>
-                </inputVars>
-                <addData>
-                  <data name="http://www.3s-software.com/plcopenxml/attributes" handleUnknown="implementation">
-                    <Attributes>
-                      <Attribute Name="object_name" Value="FB_Exit" />
-                    </Attributes>
-                  </data>
-                </addData>
-              </interface>
-              <body>
-                <ST>
-                  <xhtml xmlns="http://www.w3.org/1999/xhtml" />
-                </ST>
-              </body>
-              <BuildProperties>
-                <ExternalImplementation>true</ExternalImplementation>
-              </BuildProperties>
-              <addData />
-            </Method>
-          </data>
-          <data name="http://www.3s-software.com/plcopenxml/buildproperties" handleUnknown="implementation">
-            <BuildProperties>
-              <ExternalImplementation>true</ExternalImplementation>
-            </BuildProperties>
-          </data>
-          <data name="http://www.3s-software.com/plcopenxml/objectid" handleUnknown="discard">
-            <ObjectId>33609c54-38cc-4f33-9fa0-93f0a8b3a3b3</ObjectId>
-          </data>
-        </addData>
-      </pou>
-    </pous>
-  </types>
-  <instances>
-    <configurations />
-  </instances>
-  <addData>
-    <data name="http://www.3s-software.com/plcopenxml/projectstructure" handleUnknown="discard">
-      <ProjectStructure>
-        <Object Name="PController" ObjectId="33609c54-38cc-4f33-9fa0-93f0a8b3a3b3">
-          <Object Name="FB_Init" ObjectId="102788a9-c3a0-4650-9ee8-e340b376c772" />
-          <Object Name="FB_Reinit" ObjectId="a9db0581-3a33-4426-9a31-453930d13eb7" />
-          <Object Name="FB_Exit" s="c3ba1a8d-f305-4c9b-a3bf-e0c31a544d79" />
-        </Object>
-      </ProjectStructure>
-    </data>
-  </addData>
+                    <variable name="bErrorOccured">
+                     <type>
+                        <BOOL/>
+                     </type>
+                  </variable>
+                   <variable name="controller">
+                     <type>
+                        <DWORD/>
+                     </type>
+                  </variable>
+                  <variable name="simdata">
+                     <type>
+                        <DWORD/>
+                     </type>
+                  </variable>
+                  </localVars>
+            </interface>
+            <body>
+               <ST>
+                  <xhtml xmlns="http://www.w3.org/1999/xhtml">
+</xhtml>
+               </ST>
+            </body>
+         </pou>
+      </pous>
+   </types>
+   <instances>
+      <configurations/>
+   </instances>
 </project>
 '
 end functionBlock;
@@ -12093,7 +11973,7 @@ typedef struct <%modelname%>_struct
   void* __VFTABLEPOINTER;
   <%inputVars%>
   <%outputVars%>
-  MLPI_IEC_LREAL cycletime;
+  MLPI_IEC_REAL cycletime;
   MLPI_IEC_BOOL bAlreadyInitialized;
   MLPI_IEC_BOOL bErrorOccured;
   ISimController* controller;
