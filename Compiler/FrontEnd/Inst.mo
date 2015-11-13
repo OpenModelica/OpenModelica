@@ -3133,11 +3133,12 @@ algorithm
 
     // Instantiate the elements.
     for idx in element_order loop
-      (cache, outEnv, outIH, outStore, dae, outSets, outState, vars, outGraph) :=
+      (cache, outEnv, outIH, outStore, dae, outSets, outState, vars, outGraph, fieldDomOpt) :=
         instElement2(cache, outEnv, outIH, outStore, inMod, inPrefix, outState, el_arr[idx],
           inInstDims, inImplInst, inCallingScope, outGraph, outSets, inStopOnError);
       arrayUpdate(var_arr, idx, vars);
       arrayUpdate(dae_arr, idx, dae);
+      domainFieldsList := InstUtil.optAppendField(domainFieldsList,fieldDomOpt);
     end for;
 
     outVars := List.flatten(arrayList(var_arr));
@@ -3150,7 +3151,6 @@ algorithm
           inInstDims, inImplInst, inCallingScope, outGraph, outSets, inStopOnError);
       varsl := vars :: varsl;
       dael := dae :: dael;
-    domainFieldsList := InstUtil.optAppendField(domainFieldsList,fieldDomOpt);
     end for;
 
     outVars := List.flattenReverse(varsl);
