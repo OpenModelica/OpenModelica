@@ -7195,21 +7195,64 @@ protected function getPreOptModules
   output list<tuple<BackendDAEFunc.optimizationModule, String>> outPreOptModules;
 protected
   list<String> preOptModules;
+  list<String> enabledModules = Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD);
+  list<String> disabledModules = Flags.getConfigStringList(Flags.PRE_OPT_MODULES_SUB);
 algorithm
   preOptModules := getPreOptModulesString();
   preOptModules := Util.getOptionOrDefault(inPreOptModules, preOptModules);
 
-  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD)) then
+  if Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) then
+    // handle special flags, which enable modules
+    if Flags.isSet(Flags.SORT_EQNS_AND_VARS) then
+      enabledModules := "sortEqnsVars"::enabledModules;
+    end if;
+
+    if Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM) then
+      enabledModules := "inputDerivativesForDynOpt"::enabledModules;
+    end if;
+
+    if Flags.isSet(Flags.RESOLVE_LOOPS) then
+      enabledModules := "resolveLoops"::enabledModules;
+    end if;
+
+    if Flags.isSet(Flags.EVALUATE_CONST_FUNCTIONS) then
+      enabledModules := "evalFunc"::enabledModules;
+    end if;
+
+    if Flags.isSet(Flags.EVAL_ALL_PARAMS) then
+      enabledModules := "evaluateAllParameters"::enabledModules;
+    end if;
+
+    if Flags.isSet(Flags.ADD_DER_ALIASES) then
+      enabledModules := "introduceDerAlias"::enabledModules;
+    end if;
+
+    // handle special flags, which disable modules
+    if Flags.isSet(Flags.NO_PARTITIONING) then
+      disabledModules := "clockPartitioning"::disabledModules;
+    end if;
+
+    if Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "causal" or
+       Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "none" then
+      disabledModules := "removeSimpleEquations"::disabledModules;
+    end if;
+
+    if Flags.isSet(Flags.DISABLE_COMSUBEXP) then
+      disabledModules := "comSubExp"::disabledModules;
+    end if;
+  end if;
+
+  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(enabledModules) then
     Error.addCompilerError("It's not possible to combine following flags: --preOptModules+=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
     fail();
   end if;
 
-  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.POST_OPT_MODULES_SUB)) then
+  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(disabledModules) then
     Error.addCompilerError("It's not possible to combine following flags: --postOptModules-=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
     fail();
   end if;
 
-  outPreOptModules := selectOptModules(preOptModules, Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD), Flags.getConfigStringList(Flags.PRE_OPT_MODULES_SUB), allPreOptimizationModules());
+  outPreOptModules := selectOptModules(preOptModules, enabledModules, disabledModules, allPreOptimizationModules());
 end getPreOptModules;
 
 public function getPostOptModulesString

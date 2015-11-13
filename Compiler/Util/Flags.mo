@@ -679,23 +679,16 @@ constant Util.TranslatableContent removeSimpleEquationDesc = Util.gettext("Perfo
 public
 constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
-    "evaluateAllParameters",
     "evaluateReplaceProtectedFinalEvaluateParameters",
-    "stateMachineElab",
     "simplifyIfEquations",
     "expandDerOperator",
     "removeEqualFunctionCalls",
     "clockPartitioning",
     "findStateOrder",
-    "introduceDerAlias",
-    "inputDerivativesForDynOpt",
     "replaceEdgeChange",
     "inlineArrayEqn",
     "removeSimpleEquations",
     "comSubExp",
-    "resolveLoops",
-    "evalFunc",
-    "sortEqnsVars",
     "encapsulateWhenConditions"
     }),
   SOME(STRING_DESC_OPTION({
