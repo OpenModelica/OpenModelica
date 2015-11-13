@@ -123,7 +123,7 @@ protected function generateModelCodeFMU "
   input String FMUVersion;
   input String FMUType;
   input String filenamePrefix;
-  input Option<SimCode.SimulationSettings> simSettingsOpt;
+  input SimCode.SimulationSettings simSettings;
   output list<String> libs;
   output String fileDir;
   output Real timeSimCode;
@@ -145,7 +145,7 @@ algorithm
   (libs,libPaths,includes, includeDirs, recordDecls, functions, literals) :=
     SimCodeUtil.createFunctions(p, inBackendDAE);
   simCode := createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters,
-    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, libPaths, simSettingsOpt, recordDecls, literals, Absyn.FUNCTIONARGS({},{}), isFMU=true);
+    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, libPaths, SOME(simSettings), recordDecls, literals, Absyn.FUNCTIONARGS({},{}), isFMU=true);
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   SimCodeFunctionUtil.execStat("SimCode");
 
@@ -211,7 +211,7 @@ public function translateModelFMU
   input String inFMUType;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
-  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
+  input SimCode.SimulationSettings inSimSettings;
   output FCore.Cache outCache;
   output Values.Value outValue;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
@@ -221,7 +221,7 @@ public function translateModelFMU
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
-  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFMUVersion,inFMUType,inFileNamePrefix,addDummy,inSimSettingsOpt)
+  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFMUVersion,inFMUType,inFileNamePrefix)
     local
       String FMUVersion,FMUType,filenameprefix,file_dir,resstr;
       DAE.DAElist dae;
@@ -244,7 +244,7 @@ algorithm
       list<BackendDAE.Var> primaryParameters "already sorted";
       list<BackendDAE.Var> allPrimaryParameters "already sorted";
 
-    case (cache,graph,_,st as GlobalScript.SYMBOLTABLE(ast=p),FMUVersion,FMUType,filenameprefix,_, _)
+    case (cache,graph,_,st as GlobalScript.SYMBOLTABLE(ast=p),FMUVersion,FMUType,filenameprefix)
       equation
         /* calculate stuff that we need to create SimCode data structure */
         System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
@@ -270,7 +270,7 @@ algorithm
         timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
         (libs,file_dir,timeSimCode,timeTemplates) =
-          generateModelCodeFMU(dlow_1, initDAE, useHomotopy, removedInitialEquationLst, primaryParameters, allPrimaryParameters, p, className, FMUVersion, FMUType, filenameprefix, inSimSettingsOpt);
+          generateModelCodeFMU(dlow_1, initDAE, useHomotopy, removedInitialEquationLst, primaryParameters, allPrimaryParameters, p, className, FMUVersion, FMUType, filenameprefix, inSimSettings);
 
         //reset config flag
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, symbolicJacActivated);
@@ -288,7 +288,7 @@ algorithm
         resstr = stringAppendList({"SimCode: The model ",resstr," has been translated to FMU"});
       then
         (cache,Values.STRING(resstr),st,dlow_1,libs,file_dir, resultValues);
-    case (_,_,_,_,_,_,_,_,_)
+    else
       equation
         resstr = Absyn.pathStringNoQual(className);
         resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated to FMU"});

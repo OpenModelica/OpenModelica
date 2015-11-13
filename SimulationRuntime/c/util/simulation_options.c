@@ -389,6 +389,7 @@ const char *LS_NAME[LS_MAX+1] = {
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* LS_LIS */          "lis",
 #endif
+  /* LS_KLU */          "klu",
   /* LS_UMFPACK */      "umfpack",
   /* LS_TOTALPIVOT */   "totalpivot",
   /* LS_DEFAULT */      "default",
@@ -403,6 +404,7 @@ const char *LS_DESC[LS_MAX+1] = {
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* LS_LIS */          "method using iterativ solver Lis",
 #endif
+  /* LS_KLU */          "method using klu sparse linear solver",
   /* LS_UMFPACK */      "method using umfpack sparse linear solver",
   /* LS_TOTALPIVOT */   "method using a total pivoting LU factorization for underdetermination systems",
   /* LS_DEFAULT */      "default method - lapack with total pivoting as fallback",

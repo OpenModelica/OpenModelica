@@ -35,6 +35,7 @@
 #include "simulation_info_json.h"
 #include "simulation_runtime.h"
 #include "util/omc_mmap.h"
+#include "solver/model_help.h"
 
 
 #include <errno.h>

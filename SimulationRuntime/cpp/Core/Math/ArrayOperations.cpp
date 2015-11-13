@@ -466,6 +466,23 @@ static void convertArrayDim(size_t dim,
 }
 
 /**
+Special case to convert std string array to c-string array
+*/
+static void convertArrayDim(size_t dim,
+                            const BaseArray<string> &s, vector<size_t> &sidx,
+                            BaseArray<const char*> &d, vector<size_t> &didx) {
+  size_t ndims = s.getNumDims();
+  size_t size = s.getDim(dim);
+  for (size_t i = 1; i <= size; i++) {
+    didx[ndims - dim] = sidx[dim - 1] = i;
+    if (dim < sidx.size())
+      convertArrayDim(dim + 1, s, sidx, d, didx);
+    else
+      d(didx) = s(sidx).c_str();
+  }
+}
+
+/**
  * permutes dims between row and column major storage layout,
  * including optional type conversion if supported in assignment from S to T
  */
@@ -624,6 +641,9 @@ template void BOOST_EXTENSION_EXPORT_DECL
 convertArrayLayout(const BaseArray<int> &s, BaseArray<bool> &d);
 template void BOOST_EXTENSION_EXPORT_DECL
 convertArrayLayout(const BaseArray<string> &s, BaseArray<string> &d);
+///Special case for Modelica external C string arrays. Modelica strings are mapped to const char*
+template void BOOST_EXTENSION_EXPORT_DECL
+convertArrayLayout(const BaseArray<string> &s, BaseArray<const char*> &d);
 
 template void BOOST_EXTENSION_EXPORT_DECL
 assignRowMajorData(const double *data, BaseArray<double> &d);

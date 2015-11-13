@@ -8095,7 +8095,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //AliasStringVars
       <%List.partition(vars.stringAliasVars, 100) |> varPartition hasindex i0 =>
         memberVariableInitializeWithSplit(varPartition, i0, "defineAliasStringVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesString, useFlatArrayNotation, createDebugCode, "String",
-                                          additionalAliasBoolVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          additionalAliasStringVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::defineAliasStringVars()
       {
         <%additionalAliasStringVarFunctionCalls%>

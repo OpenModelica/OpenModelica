@@ -151,6 +151,8 @@ modelica_boolean LessEqZC(double a, double b, modelica_boolean);
 modelica_boolean GreaterZC(double a, double b, modelica_boolean);
 modelica_boolean GreaterEqZC(double a, double b, modelica_boolean);
 
+extern int measure_time_flag;
+
 #ifdef __cplusplus
 }
 #endif

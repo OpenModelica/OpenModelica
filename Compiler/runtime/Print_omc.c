@@ -38,6 +38,7 @@
 #include "printimpl.h"
 #include "meta_modelica.h"
 
+#include "omc_config.h"
 #include "printimpl.c"
 #include "ModelicaUtilities.h"
 

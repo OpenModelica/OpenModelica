@@ -39,6 +39,7 @@
 #include "linearSystem.h"
 #include "linearSolverLapack.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
+#include "linearSolverKlu.h"
 #include "linearSolverLis.h"
 #include "linearSolverUmfpack.h"
 #endif
@@ -48,6 +49,7 @@
 static void setAElement(int row, int col, double value, int nth, void *data, threadData_t *);
 static void setAElementLis(int row, int col, double value, int nth, void *data, threadData_t *);
 static void setAElementUmfpack(int row, int col, double value, int nth, void *data, threadData_t *);
+static void setAElementKlu(int row, int col, double value, int nth, void *data, threadData_t *);
 static void setBElement(int row, double value, void *data, threadData_t*);
 static void setBElementLis(int row, double value, void *data, threadData_t*);
 
@@ -135,6 +137,11 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
       linsys[i].setAElement = setAElementUmfpack;
       linsys[i].setBElement = setBElement;
       allocateUmfPackData(size, size, nnz, &linsys[i].solverData);
+      break;
+    case LS_KLU:
+      linsys[i].setAElement = setAElementKlu;
+      linsys[i].setBElement = setBElement;
+      allocateKluData(size, size, nnz, &linsys[i].solverData);
       break;
 #else
     case LS_UMFPACK:
@@ -256,6 +263,9 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
     case LS_UMFPACK:
       freeUmfPackData(&linsys[i].solverData);
       break;
+    case LS_KLU:
+      freeKluData(&linsys[i].solverData);
+      break;
 #else
     case LS_UMFPACK:
       throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
@@ -315,6 +325,9 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber)
     break;
 #endif
 #ifdef WITH_UMFPACK
+  case LS_KLU:
+    success = solveKlu(data, threadData, sysNumber);
+    break;
   case LS_UMFPACK:
     success = solveUmfPack(data, threadData, sysNumber);
     break;
@@ -501,6 +514,20 @@ static void setAElementUmfpack(int row, int col, double value, int nth, void *da
   DATA_UMFPACK* sData = (DATA_UMFPACK*) linSys->solverData;
 
   infoStreamPrint(LOG_LS_V, 0, " set %d. -> (%d,%d) = %f", nth, row, col, value);
+  if (row > 0){
+    if (sData->Ap[row] == 0){
+      sData->Ap[row] = nth;
+    }
+  }
+
+  sData->Ai[nth] = col;
+  sData->Ax[nth] = value;
+}
+static void setAElementKlu(int row, int col, double value, int nth, void *data, threadData_t *threadData)
+{
+  LINEAR_SYSTEM_DATA* linSys = (LINEAR_SYSTEM_DATA*) data;
+  DATA_KLU* sData = (DATA_KLU*) linSys->solverData;
+
   if (row > 0){
     if (sData->Ap[row] == 0){
       sData->Ap[row] = nth;

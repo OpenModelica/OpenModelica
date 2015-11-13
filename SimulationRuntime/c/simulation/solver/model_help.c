@@ -1319,3 +1319,5 @@ modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integ
   return trunc(value1/value2);
 #endif
 }
+
+int measure_time_flag=0;

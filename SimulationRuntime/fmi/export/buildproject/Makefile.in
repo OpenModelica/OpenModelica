@@ -1,0 +1,15 @@
+# Manually created Makefile
+
+top_builddir = @top_builddir@
+PROJECTDIR = @OMBUILDDIR@/share/omc/runtime/c/fmi/buildproject/
+
+default: install
+
+all: configure
+
+configure: configure.ac
+	autoconf
+
+install: all
+	mkdir -p $(PROJECTDIR)
+	cp -a configure $(top_builddir)/config.guess $(top_builddir)/config.sub $(top_builddir)/install-sh $(PROJECTDIR)/

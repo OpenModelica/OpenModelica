@@ -13,6 +13,7 @@ AC_SUBST(with_paradiseo_lib)
 AC_SUBST(with_qwt)
 AC_SUBST(with_qwt_suffix)
 AC_SUBST(EXTRA_CFLAGS_GENERATED_CODE)
+AC_SUBST(HAVE_GETTEXT)
 AC_SUBST(LIBSOCKET)
 AC_SUBST(LIBNSL)
 AC_SUBST(LIBLPSOLVE55)
@@ -258,7 +259,7 @@ fi
 
 dnl Checks for libraries.
 
-if test ! "$DARWIN" = "1"; then
+if test ! "$DARWIN" = "1" && (! echo $host | grep -q mingw ); then
   LIBS=""
   AC_SEARCH_LIBS(clock_gettime,rt,[],[AC_MSG_ERROR([clock_gettime missing])])
   LIBRT="$LIBS"
@@ -302,7 +303,10 @@ fi
 
 dnl Misc. headers
 
-AC_CHECK_HEADER(expat.h,,AC_MSG_ERROR([expat missing]))
+AC_CHECK_HEADER(expat.h,,
+  CPPFLAGS="$CPPFLAGS -I \"$ac_top_srcdir/3rdParty/FMIL/Expat/lib\""
+  AC_MSG_RESULT([using local expat.h])
+)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -409,6 +413,9 @@ LIBS=""
 CC="$CC_OLD"
 CFLAGS="$CFLAGS_OLD"
 
+if echo "$host" | grep -q "mingw"; then
+  true
+else
 dnl check for lpsolve55
 
 AC_ARG_WITH(lpsolve,  [  --with-lpsolve        (default searching for lpsolve; disable if only using omc to cross-compile)],[if test "$withval" = "no"; then NO_LPLIB="#define NO_LPLIB"; fi],[])
@@ -447,9 +454,10 @@ AC_CHECK_HEADER([lp_lib.h],[LPSOLVEINC=lp_lib.h],[
   AC_CHECK_HEADER([lpsolve/lp_lib.h],[LPSOLVEINC=lpsolve/lp_lib.h],[AC_MSG_ERROR([failed to find lpsolve55 headers])])
 ])
 
+fi
 fi # NO_LPLIB
 
-if test "$host" != "i586-pc-mingw32msvc"; then
+if ! (echo "$host" | grep -q "mingw"); then
   AC_CHECK_FUNC(socket,[LIBSOCKET=""],
    [AC_MSG_CHECKING([for libsocket]);
     AC_CHECK_LIB(socket, socket,[AC_MSG_RESULT([yes]); LIBSOCKET="-lsocket"],[AC_MSG_ERROR([neither socket nor libsocket.a found])])
@@ -530,8 +538,7 @@ fi
 
 LIBS=""
 
-AC_CHECK_HEADERS(locale.h libintl.h,[],[AC_MSG_ERROR([gettext headers not found])])
-
+AC_CHECK_HEADERS(locale.h libintl.h,[
 AC_MSG_CHECKING([gettext linking])
 AC_TRY_LINK([
 #include <libintl.h>
@@ -545,7 +552,14 @@ AC_TRY_LINK([
   ], [
       gettext("");
   ], [AC_MSG_RESULT([in intl]);RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL $LIBS"],
-      [AC_MSG_ERROR([no])])
+      [
+        HAVE_GETTEXT="#define NO_GETTEXT 1"
+        AC_MSG_RESULT([no])
+      ])
+])
+],[
+  HAVE_GETTEXT="#define NO_GETTEXT 1"
+  AC_MSG_RESULT([gettext headers not found])
 ])
 
 LIBS=""
@@ -582,7 +596,7 @@ AS_IF([test "x$with_UMFPACK" = xyes],
   FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use UMFPACK: Yes"
   UMFPACK_TARGET="umfpack";
   WITH_UMFPACK="#define WITH_UMFPACK"
-  UMFPACK_LDFLAGS="-lumfpack -lamd"
+  UMFPACK_LDFLAGS="-lumfpack -lklu -lbtf -lcolamd -lamd"
 ],[
   FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use UMFPACK: No"
   UMFPACK_TARGET="";
@@ -779,6 +793,7 @@ Compiler/runtime/config.unix.h \
 Parser/Makefile \
 SimulationRuntime/cpp/Makefile.env \
 SimulationRuntime/c/Makefile \
+SimulationRuntime/fmi/export/buildproject/Makefile \
 SimulationRuntime/java_interface/Makefile \
 SimulationRuntime/ParModelica/Makefile \
 SimulationRuntime/ParModelica/auto/Makefile \

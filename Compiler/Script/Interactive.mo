@@ -8441,7 +8441,7 @@ protected function updateProgram2
   input Absyn.Program inProgram2;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := matchcontinue (classes,w,inProgram2)
+  outProgram := match (classes,w,inProgram2)
     local
       Absyn.Program prg,newp,p2,newp_1;
       Absyn.Class c1;
@@ -8453,18 +8453,12 @@ algorithm
 
     case ((c1 as Absyn.CLASS(name = name)) :: c2,Absyn.TOP(), (p2 as Absyn.PROGRAM(classes = c3,within_ = w2)))
       equation
-        false = classInProgram(name, p2);
-        newp = updateProgram2(c2,w,Absyn.PROGRAM((c1 :: c3),w2));
-      then
-        newp;
-
-    case ((c1 as Absyn.CLASS(name = name)) :: c2,Absyn.TOP(),p2)
-      equation
-        true = classInProgram(name, p2);
-        newp = updateProgram2(c2,w,p2);
-        newp_1 = replaceClassInProgram(c1, newp);
-      then
-        newp_1;
+        if classInProgram(name, p2) then
+          newp = replaceClassInProgram(c1, p2);
+        else
+          newp = Absyn.PROGRAM((c1 :: c3),w2);
+        end if;
+      then updateProgram2(c2,w,newp);
 
     case ((c1 :: c2),Absyn.WITHIN(),p2)
       equation
@@ -8472,7 +8466,7 @@ algorithm
         newp_1 = updateProgram2(c2,w,newp);
       then newp_1;
 
-  end matchcontinue;
+  end match;
 end updateProgram2;
 
 public function addScope
@@ -14689,34 +14683,23 @@ protected function insertClassInClass "
   input Absyn.Class inClass3;
   output Absyn.Class outClass;
 algorithm
-  outClass:=
-  matchcontinue (inClass1,inWithin2,inClass3)
+  outClass := match (inClass1,inWithin2,inClass3)
     local
       Absyn.Class cnew,c1,c2,cinner,cnew_1;
       String name,name2;
       Absyn.Path path;
 
     case (c1,Absyn.WITHIN(path = Absyn.IDENT()),c2)
-      equation
-        cnew = replaceInnerClass(c1, c2);
-      then
-        cnew;
+      then replaceInnerClass(c1, c2);
 
     case (c1,Absyn.WITHIN(path = Absyn.QUALIFIED(path = path)),c2)
       equation
         name2 = getFirstIdentFromPath(path);
         cinner = getInnerClass(c2, name2);
         cnew = insertClassInClass(c1, Absyn.WITHIN(path), cinner);
-        cnew_1 = replaceInnerClass(cnew, c2);
-      then
-        cnew_1;
+      then replaceInnerClass(cnew, c2);
 
-    else
-      equation
-        Print.printBuf("insert_class_in_class failed\n");
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end insertClassInClass;
 
 protected function getFirstIdentFromPath "
@@ -14939,7 +14922,7 @@ protected function replaceClassInElementitemlist
   output list<Absyn.ElementItem> outAbsynElementItemLst;
   output Boolean replaced "true signals a replacement, false nothing changed!";
 algorithm
-  (outAbsynElementItemLst, replaced) := matchcontinue (inAbsynElementItemLst,inClass)
+  (outAbsynElementItemLst, replaced) := match (inAbsynElementItemLst,inClass)
     local
       list<Absyn.ElementItem> res,xs;
       Absyn.ElementItem a1,e1;
@@ -14951,11 +14934,9 @@ algorithm
       Option<Absyn.ConstrainClass> h;
       Absyn.InnerOuter io;
 
-    case (((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = a,redeclareKeywords = b,innerOuter = io,specification = Absyn.CLASSDEF(replaceable_ = e,class_ = Absyn.CLASS(name = name1)),info = info,constrainClass = h))) :: xs),(c as Absyn.CLASS(name = name)))
-      equation
-        true = stringEq(name1, name);
-      then
-        (Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,io,Absyn.CLASSDEF(e,c),info,h)) :: xs, true);
+    case (((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = a,redeclareKeywords = b,innerOuter = io,specification = Absyn.CLASSDEF(replaceable_ = e,class_ = Absyn.CLASS(name = name1)),constrainClass = h))) :: xs),(c as Absyn.CLASS(name = name)))
+      guard stringEq(name1, name)
+      then (Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,io,Absyn.CLASSDEF(e,c),c.info /* The new CLASS might have update info */,h)) :: xs, true);
 
     case ((e1 :: xs),c)
       equation
@@ -14965,7 +14946,7 @@ algorithm
 
     else ({}, false);
 
-  end matchcontinue;
+  end match;
 end replaceClassInElementitemlist;
 
 protected function addClassInElementitemlist
