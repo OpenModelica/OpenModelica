@@ -13083,15 +13083,13 @@ case {} then
   <<
   void <%classname%>Jacobian::calc<%matrixName%>JacobianColumn()
   {
-      throw ModelicaSimulationError(MATH_FUNCTION,"Symbolic jacobians not is activated");
+    throw ModelicaSimulationError(MATH_FUNCTION, "Symbolic jacobians not is activated");
 
   }
 
-  // const matrix_t&  <%classname%>Jacobian::get<%matrixName%>Jacobian()
   const <%matrixreturntype%>&  <%classname%>Jacobian::get<%matrixName%>Jacobian()
   {
-     throw ModelicaSimulationError(MATH_FUNCTION,"Symbolic jacobians not is activated");
-
+    throw ModelicaSimulationError(MATH_FUNCTION, "Symbolic jacobians not is activated");
   }
   >>
 case _ then
@@ -13100,34 +13098,41 @@ case _ then
   <<
   void <%classname%>Jacobian::calc<%matrixName%>JacobianColumn()
   {
-     throw ModelicaSimulationError(MATH_FUNCTION,"Symbolic jacobians not is activated");
+    throw ModelicaSimulationError(MATH_FUNCTION, "Symbolic jacobians not is activated");
   }
-  //const matrix_t&  <%classname%>Jacobian::get<%matrixName%>Jacobian()
+
   const <%matrixreturntype%>&  <%classname%>Jacobian::get<%matrixName%>Jacobian()
   {
-     throw ModelicaSimulationError(MATH_FUNCTION,"Symbolic jacobians not is activated");
+    throw ModelicaSimulationError(MATH_FUNCTION, "Symbolic jacobians not is activated");
   }
   >>
-  case _ then
+case _ then
   let jacMats = (jacobianColumn |> (eqs,vars,indxColumn) =>
     functionJac(eqs, vars, indxColumn, matrixName, indexJacobian,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     ;separator="\n")
   let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) =>
     indxColumn
     ;separator="\n")
-    let jacvals = ( sparsepattern |> (index,indexes) hasindex index0 =>
-    let jaccol = ( indexes |> i_index hasindex index1 =>
+  let eqsCount = (jacobianColumn |> (eqs,vars,indxColumn) =>
+    listLength(eqs)
+    ;separator="+")
+  let jacvals = if stringEq(eqsCount, "0") then '' else
+    (sparsepattern |> (index,indexes) hasindex index0 =>
+      let jaccol = ( indexes |> i_index hasindex index1 =>
         (match indexColumn case "1" then '_<%matrixName%>jacobian(0,<%index%>) = _<%matrixName%>jac_y(0);/*test1<%index0%>,<%index1%>*/'
            else '_<%matrixName%>jacobian(<%i_index%>,<%index%>) = _<%matrixName%>jac_y(<%i_index%>);/*test2<%index0%>,<%index1%>*/'
            )
-          ;separator="\n" )
-    '_<%matrixName%>jac_x(<%index0%>) = 1;
-calc<%matrixName%>JacobianColumn();
-_<%matrixName%>jac_x.clear();
-<%jaccol%>'
-      ;separator="\n")
+        ;separator="\n")
+    <<
+    _<%matrixName%>jac_x(<%index0%>) = 1;
+    calc<%matrixName%>JacobianColumn();
+    _<%matrixName%>jac_x.clear();
+    <%jaccol%>
+    >>
+    ;separator="\n")
   <<
   <%jacMats%>
+
   const <%matrixreturntype%>&  <%classname%>Jacobian::get<%matrixName%>Jacobian()
   {
     /*Index <%indexJacobian%>*/
