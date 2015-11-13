@@ -1599,10 +1599,9 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
         return false;
     }
   }
-  /*
-    Delete the class in OMC.
-    If deleteClass is successfull remove the class from Library Browser and delete the corresponding ModelWidget.
-    */
+  /* Delete the class in OMC.
+   * If deleteClass is successfull remove the class from Library Browser and delete the corresponding ModelWidget.
+   */
   if (mpLibraryWidget->getMainWindow()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
     /* QSortFilterProxy::filterAcceptRows changes the expand/collapse behavior of indexes or I am using it in some stupid way.
      * If index is expanded and we delete it then the next sibling index automatically becomes expanded.
@@ -1625,6 +1624,17 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
     }
     /* Update the model switcher toolbar button. */
     mpLibraryWidget->getMainWindow()->updateModelSwitcherMenu(0);
+    if (!pLibraryTreeItem->isTopLevel()) {
+      LibraryTreeItem *pContainingFileParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
+      // if we unload in a package saved in one file strucutre then we should update its containing file item text.
+      if (pContainingFileParentLibraryTreeItem != pLibraryTreeItem) {
+        updateLibraryTreeItemClassText(pContainingFileParentLibraryTreeItem);
+      } else {
+        // if we unload in a package saved in folder strucutre then we should mark its parent unsaved.
+        pLibraryTreeItem->parent()->setIsSaved(false);
+        updateLibraryTreeItem(pLibraryTreeItem->parent());
+      }
+    }
     return true;
   } else {
     QMessageBox::critical(mpLibraryWidget->getMainWindow(), QString(Helper::applicationName).append(" - ").append(Helper::error),
@@ -1940,6 +1950,10 @@ void LibraryTreeView::createActions()
   mpNewModelicaClassAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newModelicaClass, this);
   mpNewModelicaClassAction->setStatusTip(Helper::createNewModelicaClass);
   connect(mpNewModelicaClassAction, SIGNAL(triggered()), SLOT(createNewModelicaClass()));
+  // save Class Action
+  mpSaveClassAction = new QAction(QIcon(":/Resources/icons/save.svg"), Helper::save, this);
+  mpSaveClassAction->setStatusTip(Helper::saveTip);
+  connect(mpSaveClassAction, SIGNAL(triggered()), SLOT(saveClass()));
   // Move class up action
   mpMoveUpAction = new QAction(QIcon(":/Resources/icons/up.svg"), tr("Move Up"), this);
   mpMoveUpAction->setStatusTip(tr("Moves the class one level up"));
@@ -2120,6 +2134,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
           if (!pLibraryTreeItem->isTopLevel()) {
             menu.addMenu(mpOrderMenu);
           }
+          menu.addSeparator();
+          menu.addAction(mpSaveClassAction);
         }
         menu.addSeparator();
         menu.addAction(mpInstantiateModelAction);
@@ -2204,6 +2220,18 @@ void LibraryTreeView::createNewModelicaClass()
     ModelicaClassDialog *pModelicaClassDialog = new ModelicaClassDialog(mpLibraryWidget->getMainWindow());
     pModelicaClassDialog->getParentClassTextBox()->setText(pLibraryTreeItem->getNameStructure());
     pModelicaClassDialog->exec();
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::saveClass
+ * Saves the class.
+ */
+void LibraryTreeView::saveClass()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->saveLibraryTreeItem(pLibraryTreeItem);
   }
 }
 
@@ -3179,13 +3207,38 @@ bool LibraryWidget::saveLibraryTreeItemFolder(LibraryTreeItem *pLibraryTreeItem)
       return false;
     }
   }
+  // read the package.order file if it already exists and rename any removed classes as class.bak-mo
+  QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+  QFile file(QString("%1/package.order").arg(fileInfo.absoluteDir().absolutePath()));
+  if (file.open(QIODevice::ReadOnly)) {
+    QTextStream textStream(&file);
+    while (!textStream.atEnd()) {
+      QString currentLine = textStream.readLine();
+      bool classExists = false;
+      for (int i = 0; i < pLibraryTreeItem->getChildren().size(); i++) {
+        if (pLibraryTreeItem->child(i)->getName().compare(currentLine) == 0) {
+          classExists = true;
+          break;
+        }
+      }
+      if (!classExists) {
+        if (QDir().exists(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine))) {
+          QFile::rename(QString("%1/%2/package.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine),
+                        QString("%1/%2/package.bak-mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+        } else {
+          QFile::rename(QString("%1/%2.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine),
+                        QString("%1/%2.bak-mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+        }
+      }
+    }
+    file.close();
+  }
   // create a package.order file
   QString contents = "";
   for (int i = 0; i < pLibraryTreeItem->getChildren().size(); i++) {
     contents.append(pLibraryTreeItem->child(i)->getName()).append("\n");
   }
-  QFileInfo fileInfo(pLibraryTreeItem->getFileName());
-  QFile file(QString("%1/package.order").arg(fileInfo.absoluteDir().absolutePath()));
+  // create a new package.order file
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QTextStream textStream(&file);
     textStream.setCodec(Helper::utf8.toStdString().data());

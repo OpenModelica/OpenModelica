@@ -2357,9 +2357,9 @@ void MainWindow::createActions()
   mpLoadExternModelAction->setStatusTip(tr("Loads the External Model(s) for the TLM meta-modeling"));
   connect(mpLoadExternModelAction, SIGNAL(triggered()), SLOT(loadExternalModels()));
   // save file action
-  mpSaveAction = new QAction(QIcon(":/Resources/icons/save.svg"), tr("Save"), this);
+  mpSaveAction = new QAction(QIcon(":/Resources/icons/save.svg"), Helper::save, this);
   mpSaveAction->setShortcut(QKeySequence("Ctrl+s"));
-  mpSaveAction->setStatusTip(tr("Save a file"));
+  mpSaveAction->setStatusTip(Helper::saveTip);
   mpSaveAction->setEnabled(false);
   // save as file action
   mpSaveAsAction = new QAction(QIcon(":/Resources/icons/saveas.svg"), tr("Save As"), this);
