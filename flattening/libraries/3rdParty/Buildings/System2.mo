@@ -8154,54 +8154,128 @@ end System2;
 //   h := 4184.0 * (-273.15 + T);
 // end Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$rad$vol$ports.Medium.specificEnthalpy_pTX;
 //
+// function Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$dynBal$ports.Medium.FluidConstants "Automatically generated record constructor for Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$dynBal$ports.Medium.FluidConstants"
+//   input String iupacName;
+//   input String casRegistryNumber;
+//   input String chemicalFormula;
+//   input String structureFormula;
+//   input Real molarMass(min = 0.001, max = 0.25, nominal = 0.032, quantity = "MolarMass", unit = "kg/mol");
+//   input Real criticalTemperature(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC");
+//   input Real criticalPressure(min = 0.0, max = 100000000.0, nominal = 100000.0, start = 100000.0, quantity = "Pressure", unit = "Pa", displayUnit = "bar");
+//   input Real criticalMolarVolume(min = 1e-06, max = 1000000.0, nominal = 1.0, quantity = "MolarVolume", unit = "m3/mol");
+//   input Real acentricFactor;
+//   input Real meltingPoint(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC");
+//   input Real normalBoilingPoint(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC");
+//   input Real dipoleMoment(min = 0.0, max = 2.0, unit = "debye", quantity = "ElectricDipoleMoment");
+//   input Boolean hasIdealGasHeatCapacity = false;
+//   input Boolean hasCriticalData = false;
+//   input Boolean hasDipoleMoment = false;
+//   input Boolean hasFundamentalEquation = false;
+//   input Boolean hasLiquidHeatCapacity = false;
+//   input Boolean hasSolidHeatCapacity = false;
+//   input Boolean hasAccurateViscosityData = false;
+//   input Boolean hasAccurateConductivityData = false;
+//   input Boolean hasVapourPressureCurve = false;
+//   input Boolean hasAcentricFactor = false;
+//   input Real HCRIT0(min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0, quantity = "SpecificEnergy", unit = "J/kg") = 0.0;
+//   input Real SCRIT0(min = -10000000.0, max = 10000000.0, nominal = 1000.0, quantity = "SpecificEntropy", unit = "J/(kg.K)") = 0.0;
+//   input Real deltah(min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0, quantity = "SpecificEnergy", unit = "J/kg") = 0.0;
+//   input Real deltas(min = -10000000.0, max = 10000000.0, nominal = 1000.0, quantity = "SpecificEntropy", unit = "J/(kg.K)") = 0.0;
+//   output FluidConstants res;
+// end Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$dynBal$ports.Medium.FluidConstants;
+//
 // function Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$dynBal$ports.Medium.ThermodynamicState "Automatically generated record constructor for Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$dynBal$ports.Medium.ThermodynamicState"
+//   input Real p(min = 0.0, max = 100000000.0, nominal = 100000.0, start = 100000.0, quantity = "Pressure", unit = "Pa", displayUnit = "bar");
+//   input Real T(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC");
+//   input Real[2] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1);
 //   output ThermodynamicState res;
 // end Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$dynBal$ports.Medium.ThermodynamicState;
 //
 // function Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$dynBal$ports.Medium.setState_pTX
 //   input Real p(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0);
-//   input Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
-//   input Real[:] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1) = {1.0};
-//   output Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$dynBal$ports.Medium.ThermodynamicState state;
+//   input Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 190.0, max = 647.0, start = 300.0, nominal = 300.0);
+//   input Real[:] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1) = {0.01, 0.99};
+//   output Modelica.Media.Air.MoistAir.ThermodynamicState state;
+// algorithm
+//   state := if size(X, 1) == 2 then Modelica.Media.Air.MoistAir.ThermodynamicState(p, T, X) else Modelica.Media.Air.MoistAir.ThermodynamicState(p, T, cat(1, X, {1.0 - sum(X)}));
 // end Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$dynBal$ports.Medium.setState_pTX;
 //
 // function Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$dynBal$ports.Medium.specificEnthalpy
 //   input Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$dynBal$ports.Medium.ThermodynamicState state;
 //   output Real h(quantity = "SpecificEnergy", unit = "J/kg", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0);
+// algorithm
+//   h := Buildings.Media.GasesPTDecoupled.MoistAirUnsaturated.h_pTX(state.p, state.T, {state.X[1], state.X[2]});
 // end Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$dynBal$ports.Medium.specificEnthalpy;
 //
 // function Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$dynBal$ports.Medium.specificEnthalpy_pTX
 //   input Real p(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0);
 //   input Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
-//   input Real[:] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1) = {1.0};
+//   input Real[:] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1) = {0.01, 0.99};
 //   output Real h(quantity = "SpecificEnergy", unit = "J/kg", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0);
 // algorithm
-//   h := Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$dynBal$ports.Medium.specificEnthalpy(Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$dynBal$ports.Medium.setState_pTX(p, T, X));
+//   h := Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$dynBal$ports.Medium.specificEnthalpy(/*.Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$dynBal$ports.Medium.ThermodynamicState*/(Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$dynBal$ports.Medium.setState_pTX(p, T, X)));
 // end Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$dynBal$ports.Medium.specificEnthalpy_pTX;
 //
+// function Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$ports.Medium.FluidConstants "Automatically generated record constructor for Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$ports.Medium.FluidConstants"
+//   input String iupacName;
+//   input String casRegistryNumber;
+//   input String chemicalFormula;
+//   input String structureFormula;
+//   input Real molarMass(min = 0.001, max = 0.25, nominal = 0.032, quantity = "MolarMass", unit = "kg/mol");
+//   input Real criticalTemperature(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC");
+//   input Real criticalPressure(min = 0.0, max = 100000000.0, nominal = 100000.0, start = 100000.0, quantity = "Pressure", unit = "Pa", displayUnit = "bar");
+//   input Real criticalMolarVolume(min = 1e-06, max = 1000000.0, nominal = 1.0, quantity = "MolarVolume", unit = "m3/mol");
+//   input Real acentricFactor;
+//   input Real meltingPoint(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC");
+//   input Real normalBoilingPoint(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC");
+//   input Real dipoleMoment(min = 0.0, max = 2.0, unit = "debye", quantity = "ElectricDipoleMoment");
+//   input Boolean hasIdealGasHeatCapacity = false;
+//   input Boolean hasCriticalData = false;
+//   input Boolean hasDipoleMoment = false;
+//   input Boolean hasFundamentalEquation = false;
+//   input Boolean hasLiquidHeatCapacity = false;
+//   input Boolean hasSolidHeatCapacity = false;
+//   input Boolean hasAccurateViscosityData = false;
+//   input Boolean hasAccurateConductivityData = false;
+//   input Boolean hasVapourPressureCurve = false;
+//   input Boolean hasAcentricFactor = false;
+//   input Real HCRIT0(min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0, quantity = "SpecificEnergy", unit = "J/kg") = 0.0;
+//   input Real SCRIT0(min = -10000000.0, max = 10000000.0, nominal = 1000.0, quantity = "SpecificEntropy", unit = "J/(kg.K)") = 0.0;
+//   input Real deltah(min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0, quantity = "SpecificEnergy", unit = "J/kg") = 0.0;
+//   input Real deltas(min = -10000000.0, max = 10000000.0, nominal = 1000.0, quantity = "SpecificEntropy", unit = "J/(kg.K)") = 0.0;
+//   output FluidConstants res;
+// end Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$ports.Medium.FluidConstants;
+//
 // function Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$ports.Medium.ThermodynamicState "Automatically generated record constructor for Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$ports.Medium.ThermodynamicState"
+//   input Real p(min = 0.0, max = 100000000.0, nominal = 100000.0, start = 100000.0, quantity = "Pressure", unit = "Pa", displayUnit = "bar");
+//   input Real T(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC");
+//   input Real[2] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1);
 //   output ThermodynamicState res;
 // end Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$ports.Medium.ThermodynamicState;
 //
 // function Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$ports.Medium.setState_pTX
 //   input Real p(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0);
-//   input Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
-//   input Real[:] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1) = {1.0};
-//   output Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$ports.Medium.ThermodynamicState state;
+//   input Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 190.0, max = 647.0, start = 300.0, nominal = 300.0);
+//   input Real[:] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1) = {0.01, 0.99};
+//   output Modelica.Media.Air.MoistAir.ThermodynamicState state;
+// algorithm
+//   state := if size(X, 1) == 2 then Modelica.Media.Air.MoistAir.ThermodynamicState(p, T, X) else Modelica.Media.Air.MoistAir.ThermodynamicState(p, T, cat(1, X, {1.0 - sum(X)}));
 // end Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$ports.Medium.setState_pTX;
 //
 // function Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$ports.Medium.specificEnthalpy
 //   input Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$ports.Medium.ThermodynamicState state;
 //   output Real h(quantity = "SpecificEnergy", unit = "J/kg", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0);
+// algorithm
+//   h := Buildings.Media.GasesPTDecoupled.MoistAirUnsaturated.h_pTX(state.p, state.T, {state.X[1], state.X[2]});
 // end Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$ports.Medium.specificEnthalpy;
 //
 // function Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$ports.Medium.specificEnthalpy_pTX
 //   input Real p(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0);
 //   input Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
-//   input Real[:] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1) = {1.0};
+//   input Real[:] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1) = {0.01, 0.99};
 //   output Real h(quantity = "SpecificEnergy", unit = "J/kg", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0);
 // algorithm
-//   h := Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$ports.Medium.specificEnthalpy(Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$ports.Medium.setState_pTX(p, T, X));
+//   h := Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$ports.Medium.specificEnthalpy(/*.Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$ports.Medium.ThermodynamicState*/(Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$ports.Medium.setState_pTX(p, T, X)));
 // end Modelica.Fluid.Vessels.BaseClasses.VesselFluidPorts_b$vol$ports.Medium.specificEnthalpy_pTX;
 //
 // function Modelica.Media.Air.MoistAir.FluidConstants "Automatically generated record constructor for Modelica.Media.Air.MoistAir.FluidConstants"
