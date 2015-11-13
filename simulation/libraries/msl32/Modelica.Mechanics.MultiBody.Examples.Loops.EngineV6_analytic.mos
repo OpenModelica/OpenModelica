@@ -53,7 +53,7 @@ runScript(modelTesting);getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details:
-//  * Linear torn systems: 1 {1 392}
+//  * Linear torn systems: 1 {(1,100.0%) 392}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 303
@@ -72,9 +72,9 @@ runScript(modelTesting);getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details:
-//  * Linear torn systems: 1 {1 331}
+//  * Linear torn systems: 1 {(1,100.0%) 331}
 //  * Non-linear torn systems: 0
-// 
+//
 // "true
 // "
 // ""

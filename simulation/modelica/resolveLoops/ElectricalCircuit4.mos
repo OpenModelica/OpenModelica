@@ -57,7 +57,7 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit4_res.m
 //  * Torn equation systems: 6
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details:
-//  * Linear torn systems: 6 {1 2,1 2,1 2,1 2,1 2,1 2}
+//  * Linear torn systems: 6 {(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
@@ -76,7 +76,7 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit4_res.m
 //  * Torn equation systems: 6
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details:
-//  * Linear torn systems: 6 {1 2,1 2,1 2,1 2,1 2,1 2}
+//  * Linear torn systems: 6 {(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2}
 //  * Non-linear torn systems: 0
 // "
 // {"Files Equal!"}
