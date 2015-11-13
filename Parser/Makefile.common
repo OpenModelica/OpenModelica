@@ -25,10 +25,13 @@ libomantlr3.a: $(ANTLR)/src/*.c $(ANTLR)/include/*.h $(ANTLR)/antlr3config.h
 	ar -ru $@ antlr3*.o
 	ranlib $@
 	rm -f antlr3*.o
+
+ifneq ($(SHREXT),.a)
 libomantlr3$(SHREXT): $(ANTLR)/src/*.c $(ANTLR)/include/*.h $(ANTLR)/antlr3config.h
 	# build the library
 	$(CC) -shared -o $@ ${LDFLAGS} ${CFLAGS} ${CPPFLAGS} -DANTLR3_NODEBUGGER $(ANTLR)/src/*.c -I$(ANTLR)/include -I$(ANTLR)
 	test ! `uname` = Darwin || install_name_tool -id "@rpath/$@" $@
+endif
 
 HFILES = \
   ModelicaParser.h \

@@ -612,10 +612,13 @@ FINAL_MESSAGES="$FINAL_MESSAGES\nParModelica: $OPENCL"
 
 AC_SUBST(CMAKE_LDFLAGS)
 AC_SUBST(CMAKE_EXTRA_DEFINES)
+AC_SUBST(DLLEXT)
+AC_SUBST(UMFPACK_SHARED)
 if test "$DARWIN" = "1"; then
   APP=".app"
   EXE=".app"
   SHREXT=".dylib"
+  DLLEXT=".dylib"
   LIBGC="$OMBUILDDIR/lib/$host_short/omc/libomcgc.a"
   LIBSIMULATION=libSimulationRuntimeC.dylib
   LIBRUNTIME=libOpenModelicaRuntimeC.dylib
@@ -642,11 +645,13 @@ if test "$DARWIN" = "1"; then
   OMC_LIBS="$(OMC_LIBS) -Wl,-undefined -Wl,dynamic_lookup"
   BOOTSTRAP_STATIC=""
   CMAKE_LDFLAGS="-Wl,-undefined -Wl,dynamic_lookup"
+  UMFPACK_SHARED=ON
 elif echo "$host" | grep -iq "mingw"; then
   APP=".exe"
   EXE=".exe"
   # Yes, we build static libs on Windows, so the "shared" extension is .a
-  SHREXT=".dll"
+  SHREXT=".a"
+  DLLEXT=".dll"
   LIBGC="$OMBUILDDIR/lib/$host_short/omc/libomcgc.a"
   LIBSIMULATION=libSimulationRuntimeC.a
   LIBRUNTIME=libOpenModelicaRuntimeC.a
@@ -657,7 +662,7 @@ elif echo "$host" | grep -iq "mingw"; then
   CMINPACKLIB_SHARED=OFF
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lstdc++ -lomcgc -lexpat -lm"
   RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcminpack"
-  RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lexpat -lpthread -lm"
+  RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lexpat -Wl,-Bstatic -lpthread -Wl,-Bdynamic -static-libgcc -lm"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lcdaskr $RT_LDFLAGS_SIM"
@@ -673,11 +678,13 @@ elif echo "$host" | grep -iq "mingw"; then
   AC_CHECK_TOOL(WINDRES, windres, [AC_MSG_ERROR([no])])
   CMAKE_EXTRA_DEFINES="-DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RC_COMPILER=$WINDRES"
   CPPFLAGS="$CPPFLAGS -DMSYS2_AUTOCONF=1"
-  OMC_LIBS="$OMC_LIBS -lstdc++ -lwsock32 -ltre -liconv -lintl -lshlwapi"
+  OMC_LIBS="$OMC_LIBS -lwsock32 -Wl,-Bstatic -lstdc++ -ltre  -lintl -Wl,-Bdynamic -liconv -lshlwapi"
+  UMFPACK_SHARED=OFF
 else
   APP=""
   EXE=""
   SHREXT=".so"
+  DLLEXT=".so"
   LIBGC="$OMBUILDDIR/lib/$host_short/omc/libomcgc.so"
   LIBSIMULATION=libSimulationRuntimeC.so
   LIBRUNTIME=libOpenModelicaRuntimeC.so
@@ -702,6 +709,7 @@ else
   OS_TARGET="linux"
   AR_SH="$AR -ru"
   BOOTSTRAP_STATIC=""
+  UMFPACK_SHARED=ON
 fi
 
 AC_ARG_WITH(FMIL, [  --with-FMIL                 Link omc to FMIL (only disable when cross-compiling)],
