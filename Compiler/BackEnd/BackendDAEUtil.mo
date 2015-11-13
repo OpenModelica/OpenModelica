@@ -7266,21 +7266,107 @@ public function getPostOptModules
   output list<tuple<BackendDAEFunc.optimizationModule, String>> outPostOptModules;
 protected
   list<String> postOptModules;
+  list<String> enabledModules = Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD);
+  list<String> disabledModules = Flags.getConfigStringList(Flags.POST_OPT_MODULES_SUB);
 algorithm
   postOptModules := getPostOptModulesString();
   postOptModules := Util.getOptionOrDefault(inPostOptModules, postOptModules);
 
-  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD)) then
+  if Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) then
+    // handle special flags, which enable modules
+    if Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM) then
+      enabledModules := "simplifyConstraints"::enabledModules;
+    end if;
+
+    if Flags.isSet(Flags.REDUCE_DYN_OPT) then
+      enabledModules := "reduceDynamicOptimization"::enabledModules;
+    end if;
+
+    if not Flags.getConfigString(Flags.LOOP2CON) == "none" then
+      enabledModules := "extendDynamicOptimization"::enabledModules;
+    end if;
+
+    if Flags.getConfigBool(Flags.CSE_CALL) or
+       Flags.getConfigBool(Flags.CSE_EACHCALL) or
+       Flags.getConfigBool(Flags.CSE_BINARY) then
+      enabledModules := "CSE"::enabledModules;
+    end if;
+
+    if Flags.isSet(Flags.ON_RELAXATION) then
+      enabledModules := "relaxSystem"::enabledModules;
+    end if;
+
+    if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
+      enabledModules := "generateSymbolicJacobian"::enabledModules;
+    end if;
+
+    if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION) then
+      enabledModules := "generateSymbolicLinearization"::enabledModules;
+    end if;
+
+    if Flags.isSet(Flags.ADD_SCALED_VARS) or Flags.isSet(Flags.ADD_SCALED_VARS_INPUT) then
+      enabledModules := "addScaledVars"::enabledModules;
+    end if;
+
+    if Flags.getConfigBool(Flags.SYM_EULER) then
+      enabledModules := "symEuler"::enabledModules;
+    end if;
+
+    if Flags.getConfigInt(Flags.SIMPLIFY_LOOPS) > 0 then
+      enabledModules := "simplifyLoops"::enabledModules;
+    end if;
+
+    if Flags.isSet(Flags.COUNT_OPERATIONS) then
+      enabledModules := "countOperations"::enabledModules;
+    end if;
+
+    if Flags.getConfigBool(Flags.ADD_TIME_AS_STATE) then
+      enabledModules := "addTimeAsState"::enabledModules;
+    end if;
+
+    if 1 < Flags.getConfigInt(Flags.MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM) then
+      enabledModules := "solveLinearSystem"::enabledModules;
+    end if;
+
+    if Flags.isSet(Flags.RESHUFFLE_POST) then
+      enabledModules := "reshufflePost"::enabledModules;
+    end if;
+
+    if Flags.getConfigInt(Flags.RTEARING) > 0 then
+      enabledModules := "recursiveTearing"::enabledModules;
+    end if;
+
+    if Flags.getConfigInt(Flags.PARTLINTORN) > 0 then
+      enabledModules := "partlintornsystem"::enabledModules;
+    end if;
+
+    // handle special flags, which disable modules
+    if Flags.isSet(Flags.DIS_SIMP_FUN) then
+      disabledModules := "simplifyComplexFunction"::disabledModules;
+    end if;
+
+    if Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "none" or
+       Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "fastAcausal" or
+       Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "allAcausal" then
+      disabledModules := "removeSimpleEquations"::disabledModules;
+    end if;
+
+    if Config.getTearingMethod() == "noTearing" then
+      disabledModules := "tearingSystem"::disabledModules;
+    end if;
+  end if;
+
+  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(enabledModules) then
     Error.addCompilerError("It's not possible to combine following flags: --postOptModules+=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
     fail();
   end if;
 
-  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.POST_OPT_MODULES_SUB)) then
+  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(disabledModules) then
     Error.addCompilerError("It's not possible to combine following flags: --postOptModules-=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
     fail();
   end if;
 
-  outPostOptModules := selectOptModules(postOptModules, Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD), Flags.getConfigStringList(Flags.POST_OPT_MODULES_SUB), allPostOptimizationModules());
+  outPostOptModules := selectOptModules(postOptModules, enabledModules, disabledModules, allPostOptimizationModules());
 end getPostOptModules;
 
 public function getInitOptModules
