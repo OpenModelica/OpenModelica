@@ -1779,6 +1779,21 @@ algorithm
   end matchcontinue;
 end setClassName;
 
+public function makeClassPartial
+  input Element inClass;
+  output Element outClass = inClass;
+algorithm
+  outClass := match outClass
+    case CLASS(partialPrefix = NOT_PARTIAL())
+      algorithm
+        outClass.partialPrefix := PARTIAL();
+      then
+        outClass;
+
+    else outClass;
+  end match;
+end makeClassPartial;
+
 public function setClassPartialPrefix "Sets the partial prefix of a SCode Class"
   input Partial partialPrefix;
   input Element cl;

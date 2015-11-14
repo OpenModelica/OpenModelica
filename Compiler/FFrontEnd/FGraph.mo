@@ -122,6 +122,22 @@ algorithm
   outRef := listHead(currentScope(inGraph));
 end lastScopeRef;
 
+public function setLastScopeRef
+  input Ref inRef;
+  input Graph inGraph;
+  output Graph outGraph = inGraph;
+algorithm
+  outGraph := match outGraph
+    case FCore.G()
+      algorithm
+        outGraph.scope := inRef :: listRest(outGraph.scope);
+      then
+        outGraph;
+
+    else outGraph;
+  end match;
+end setLastScopeRef;
+
 public function stripLastScopeRef
 "remove the last ref from the current scope the graph"
   input Graph inGraph;
@@ -1728,7 +1744,7 @@ algorithm
 
     case (_, _, _, _, _, _)
       equation
-        crefPrefix = PrefixUtil.prefixAdd(inSourceName,{},{},inPrefix,SCode.CONST(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
+        crefPrefix = PrefixUtil.prefixAdd(inSourceName,{},{},inPrefix,SCode.CONST(),ClassInf.UNKNOWN(Absyn.IDENT("")), Absyn.dummyInfo); // variability doesn't matter
 
         // name = inTargetClassName + "$" + ComponentReference.printComponentRefStr(PrefixUtil.prefixToCref(crefPrefix));
         name = inTargetClassName + "$" + Absyn.pathString2NoLeadingDot(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix)))), "$")
@@ -1959,6 +1975,46 @@ algorithm
 
   end match;
 end selectScope;
+
+public function makeScopePartial
+  input Graph inEnv;
+  output Graph outEnv = inEnv;
+protected
+  Node node;
+  Data data;
+  SCode.Element el;
+algorithm
+  try
+    node := FNode.fromRef(lastScopeRef(inEnv));
+    node := match node
+      case FCore.N(data = data as FCore.CL(e = el))
+        algorithm
+          el := SCode.makeClassPartial(el);
+          data.e := el;
+          node.data := data;
+        then
+          node;
+
+      else node;
+    end match;
+    outEnv := setLastScopeRef(FNode.toRef(node), outEnv);
+  else
+  end try;
+end makeScopePartial;
+
+public function isPartialScope
+  input Graph inEnv;
+  output Boolean outIsPartial;
+protected
+  SCode.Element el;
+algorithm
+  try
+    FCore.N(data = FCore.CL(e = el)) := FNode.fromRef(lastScopeRef(inEnv));
+    outIsPartial := SCode.isPartial(el);
+  else
+    outIsPartial := false;
+  end try;
+end isPartialScope;
 
 annotation(__OpenModelica_Interface="frontend");
 end FGraph;

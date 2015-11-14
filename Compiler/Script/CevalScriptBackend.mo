@@ -1563,7 +1563,7 @@ algorithm
         absynClass = Interactive.getPathedClassInProgram(classpath, p);
         (sp, st) = GlobalScriptUtil.symbolTableToSCode(st);
         (cache, env) = Inst.makeEnvFromProgram(FCore.emptyCache(), sp, Absyn.IDENT(""));
-        (cache,(cl as SCode.CLASS(name=name,encapsulatedPrefix=encflag,restriction=restr)),env) = Lookup.lookupClass(cache, env, classpath, false);
+        (cache,(cl as SCode.CLASS(name=name,encapsulatedPrefix=encflag,restriction=restr)),env) = Lookup.lookupClass(cache, env, classpath, NONE());
         env = FGraph.openScope(env, encflag, SOME(name), FGraph.restrictionToScopeType(restr));
         (_, env) = Inst.partialInstClassIn(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
           ClassInf.start(restr, FGraph.getGraphName(env)), cl, SCode.PUBLIC(), {}, 0);
@@ -5239,7 +5239,7 @@ algorithm
         typename := matchcontinue ()
           case ()
             equation
-              (_,_,env) = Lookup.lookupClass(FCore.emptyCache(), inEnv, p, false);
+              (_,_,env) = Lookup.lookupClass(FCore.emptyCache(), inEnv, p, NONE());
               SOME(envpath) = FGraph.getScopePath(env);
               tpname = Absyn.pathLastIdent(p);
               p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));

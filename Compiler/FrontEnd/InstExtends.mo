@@ -294,7 +294,7 @@ algorithm
     case (_, _)
       equation
         path = Absyn.removePartialPrefix(Absyn.IDENT(inClassName), inPath);
-        (cache, elem, env) = Lookup.lookupClass(inCache, inEnv, path, false);
+        (cache, elem, env) = Lookup.lookupClass(inCache, inEnv, path);
       then
         (cache, SOME(elem), env);
 
@@ -655,7 +655,7 @@ algorithm
     case (cache,env,ih,mod,pre,SCode.CLASS( info = info, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(tp, _),modifications = dmod)),impl, _, false, _)
       equation
         // fprintln(Flags.INST_TRACE, "DERIVED: " + FGraph.printGraphPathStr(env) + " el: " + SCodeDump.unparseElementStr(inClass) + " mods: " + Mod.printModStr(mod));
-        (cache, c, cenv) = Lookup.lookupClass(cache, env, tp, true);
+        (cache, c, cenv) = Lookup.lookupClass(cache, env, tp, SOME(info));
         dmod = InstUtil.chainRedeclares(mod, dmod);
         // false = Absyn.pathEqual(FGraph.getGraphName(env),FGraph.getGraphName(cenv)) and SCode.elementEqual(c,inClass);
         // modifiers should be evaluated in the current scope for derived!
@@ -1613,7 +1613,7 @@ algorithm
     case (_, _, _)
       equation
         // see where the first ident from the path leads, if is outside the current env DO NOT strip!
-        (_, _, env) = Lookup.lookupClass(inCache, inEnv, Absyn.makeIdentPathFromString(Absyn.pathFirstIdent(inPath)), false);
+        (_, _, env) = Lookup.lookupClass(inCache, inEnv, Absyn.makeIdentPathFromString(Absyn.pathFirstIdent(inPath)));
         // if envClass is prefix of env then is outside scope
         yes = FGraph.graphPrefixOf(env, inEnv);
       then
@@ -1700,7 +1700,7 @@ algorithm
       equation
         id = Absyn.crefFirstIdent(cref);
         //print("Try lookupC " + id + "\n");
-        (_,c,denv) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),false);
+        (_,c,denv) = Lookup.lookupClass(cache,env,Absyn.IDENT(id));
         // isOutside = FGraph.graphPrefixOf(denv, env);
         // id might come from named import, make sure you use the actual class name!
         id = SCode.getElementName(c);

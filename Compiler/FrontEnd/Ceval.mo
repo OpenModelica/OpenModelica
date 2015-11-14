@@ -1215,7 +1215,7 @@ protected
   list<Absyn.Exp> args;
   SCode.FunctionRestriction funcRest;
 algorithm
-  (outCache,cdef,env_1) := Lookup.lookupClass(inCache,env, funcpath, false);
+  (outCache,cdef,env_1) := Lookup.lookupClass(inCache,env, funcpath);
   SCode.CLASS(name=fid,restriction = SCode.R_FUNCTION(funcRest), classDef=SCode.PARTS(externalDecl=extdecl)) := cdef;
   SCode.FR_EXTERNAL_FUNCTION(_) := funcRest;
   SOME(SCode.EXTERNALDECL(oid,_,_,_,_)) := extdecl;
