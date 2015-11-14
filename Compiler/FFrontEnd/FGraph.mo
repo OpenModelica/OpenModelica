@@ -816,9 +816,14 @@ public function getGraphName
 protected
   Absyn.Path p;
   Scope s;
+  Ref r;
 algorithm
-  _::s := listReverse(currentScope(inGraph));
-  outPath := Absyn.stringListPath(List.map(s, FNode.refName));
+  r::s := currentScope(inGraph);
+  p := Absyn.makeIdentPathFromString(FNode.refName(r));
+  for r in s loop
+    p := Absyn.QUALIFIED(FNode.refName(r), p);
+  end for;
+  Absyn.QUALIFIED(_, outPath) := p;
 end getGraphName;
 
 public function getGraphNameNoImplicitScopes
