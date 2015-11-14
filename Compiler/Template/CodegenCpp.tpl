@@ -67,8 +67,9 @@ template translateModel(SimCode simCode)
         let()= textFile(simulationInitExtVarsCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeExtVars.cpp')
         let()= textFile(simulationInitHeaderFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%className%>Initialize'), 'OMCpp<%fileNamePrefix%>Initialize.h')
 
-        let()= textFile(simulationJacobianHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Jacobian.h')
-        let()= textFile(simulationJacobianCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
+        let &jacobianVarsInit = buffer "" /*BUFD*/
+        let()= textFile(simulationJacobianHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "", &jacobianVarsInit, Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)), 'OMCpp<%fileNamePrefix%>Jacobian.h')
+        let()= textFile(simulationJacobianCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", &jacobianVarsInit, stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
         let()= textFile(simulationStateSelectionCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
         let()= textFile(simulationStateSelectionHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>StateSelection.h')
         let()= textFile(simulationMixedSystemHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Mixed.h')
@@ -209,7 +210,7 @@ let initparameqs = generateEquationMemberFuncDecls(parameterEquations,"initParam
   end match
 end simulationInitHeaderFile;
 
-template simulationJacobianHeaderFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+template simulationJacobianHeaderFile(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text& jacobianVarsInit, Boolean createDebugCode)
  "Generates code for header file for simulation target."
 ::=
 match simCode
@@ -274,7 +275,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     >>
     %>
 
-    <%variableDefinitionsJacobians(jacobianMatrixes,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+    <%variableDefinitionsJacobians(jacobianMatrixes, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)%>
 
     /*testmaessig aus der Cruntime*/
     void initializeColoredJacobianA();
@@ -657,7 +658,7 @@ template simulationInitExtVarsCppFile(SimCode simCode, Text& extraFuncs, Text& e
 end simulationInitExtVarsCppFile;
 
 
-template simulationJacobianCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template simulationJacobianCppFile(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text &jacobianVarsInit, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for main cpp file for simulation target."
 ::=
 match simCode
@@ -676,6 +677,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        , _AColorOfColumn(NULL)
        , _AMaxColors(0)
        <%initialjacMats%>
+       <%jacobianVarsInit%>
    {
    }
 
@@ -684,6 +686,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        , _AColorOfColumn(NULL)
        , _AMaxColors(0)
        <%initialjacMats%>
+       <%jacobianVarsInit%>
    {
    }
 
@@ -13141,12 +13144,12 @@ end generateJacobianMatrix;
 
 
 
-template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text &jacobianVarsInit, Boolean createDebugCode)
  "Generates defines for jacobian vars."
 ::=
 
   let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, (_,_), _, _, jacIndex) =>
-    let varsDef = variableDefinitionsJacobians2(jacIndex, jacColumn, seedVars, name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
+    let varsDef = variableDefinitionsJacobians2(jacIndex, jacColumn, seedVars, name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)
     <<
     <%varsDef%>
     >>
@@ -13158,14 +13161,14 @@ template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes,SimC
     >>
 end variableDefinitionsJacobians;
 
-template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String name,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String name, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text& jacobianVarsInit, Boolean createDebugCode)
  "Generates Matrixes for Linear Model."
 ::=
   let seedVarsResult = (seedVars |> var hasindex index0 =>
-    jacobianVarDefine(var, "jacobianVarsSeed", indexJacobian, index0, name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
+    jacobianVarDefine(var, "jacobianVarsSeed", indexJacobian, index0, name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)
     ;separator="\n";empty)
   let columnVarsResult = (jacobianColumn |> (_,vars,_) =>
-      (vars |> var hasindex index0 => jacobianVarDefine(var, "jacobianVars", indexJacobian, index0,name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
+      (vars |> var hasindex index0 => jacobianVarDefine(var, "jacobianVars", indexJacobian, index0, name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)
       ;separator="\n";empty)
     ;separator="\n\n")
 
@@ -13176,7 +13179,7 @@ template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColum
 end variableDefinitionsJacobians2;
 
 
-template jacobianVarDefine(SimVar simVar, String array, Integer indexJac, Integer index0,String matrixName,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+template jacobianVarDefine(SimVar simVar, String array, Integer indexJac, Integer index0, String matrixName, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text& jacobianVarsInit, Boolean createDebugCode)
 ""
 ::=
 match array
@@ -13185,22 +13188,27 @@ case "jacobianVars" then
   case SIMVAR(aliasvar=NOALIAS(),name=name) then
     match index
     case -1 then
-      <<
-      #define _<%crefToCStr(name,false)%> _<%matrixName%>jac_tmp(<%index0%>)
-      >>
+      let jacobianVar = '_<%crefToCStr(name, false)%>'
+      let &jacobianVarsInit += if createDebugCode then ', <%jacobianVar%>(_<%matrixName%>jac_tmp(<%index0%>))<%\n%>'
+      if createDebugCode then
+        'double& <%jacobianVar%>;' else
+        '#define <%jacobianVar%> _<%matrixName%>jac_tmp(<%index0%>)'
     case _ then
-      <<
-      #define _<%crefToCStr(name,false)%> _<%matrixName%>jac_y(<%index%>)
-      >>
+      let jacobianVar = '_<%crefToCStr(name, false)%>'
+      let &jacobianVarsInit += if createDebugCode then ', <%jacobianVar%>(_<%matrixName%>jac_y(<%index%>))<%\n%>'
+      if createDebugCode then
+        'double& <%jacobianVar%>;' else
+        '#define <%jacobianVar%> _<%matrixName%>jac_y(<%index%>)'
     end match
   end match
 case "jacobianVarsSeed" then
   match simVar
   case SIMVAR(aliasvar=NOALIAS()) then
-  let tmp = System.tmpTick()
-    <<
-    #define _<%crefToCStr(name,false)%> _<%matrixName%>jac_x(<%index0%>)
-    >>
+    let jacobianVar = '_<%crefToCStr(name, false)%>'
+    let &jacobianVarsInit += if createDebugCode then ', <%jacobianVar%>(_<%matrixName%>jac_x(<%index0%>))<%\n%>'
+    if createDebugCode then
+      'double& <%jacobianVar%>;' else
+      '#define <%jacobianVar%> _<%matrixName%>jac_x(<%index0%>)'
   end match
 end jacobianVarDefine;
 
