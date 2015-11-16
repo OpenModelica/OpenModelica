@@ -656,6 +656,7 @@ AC_SUBST(CMAKE_LDFLAGS)
 AC_SUBST(CMAKE_EXTRA_DEFINES)
 AC_SUBST(DLLEXT)
 AC_SUBST(UMFPACK_SHARED)
+AC_SUBST(CONFIG_OS)
 if test "$DARWIN" = "1"; then
   APP=".app"
   EXE=".app"
@@ -688,6 +689,7 @@ if test "$DARWIN" = "1"; then
   BOOTSTRAP_STATIC=""
   CMAKE_LDFLAGS="-Wl,-undefined -Wl,dynamic_lookup"
   UMFPACK_SHARED=ON
+  CONFIG_OS=OSX
 elif echo "$host" | grep -iq "mingw"; then
   APP=".exe"
   EXE=".exe"
@@ -722,6 +724,7 @@ elif echo "$host" | grep -iq "mingw"; then
   CPPFLAGS="$CPPFLAGS -DMSYS2_AUTOCONF=1"
   OMC_LIBS="$OMC_LIBS -lwsock32 -Wl,-Bstatic -lstdc++ -ltre  -lintl -liconv -Wl,-Bdynamic -lshlwapi"
   UMFPACK_SHARED=OFF
+  CONFIG_OS=Windows_NT
 else
   APP=""
   EXE=""
@@ -752,6 +755,7 @@ else
   AR_SH="$AR -ru"
   BOOTSTRAP_STATIC=""
   UMFPACK_SHARED=ON
+  CONFIG_OS=`echo $host_os | sed s/-gnu//`
 fi
 
 AC_ARG_WITH(FMIL, [  --with-FMIL                 Link omc to FMIL (only disable when cross-compiling)],

@@ -27,11 +27,7 @@
 #endif
 
 #define DEFAULT_CFLAGS "@RUNTIMECFLAGS@ ${MODELICAUSERCFLAGS}"
-#ifdef __APPLE_CC__
-  #define CONFIG_OS "OSX"
-#else
-  #define CONFIG_OS "linux"
-#endif
+#define CONFIG_OS "@CONFIG_OS@"
 
 #define CONFIG_LPSOLVEINC "@LPSOLVEINC@"
 @NO_LPLIB@

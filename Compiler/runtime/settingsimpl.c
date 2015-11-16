@@ -160,32 +160,35 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
   const char *path = getenv("OPENMODELICAHOME");
   int i = 0;
   if (path == NULL) {
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(__MINGW32__) || defined(__MINGW64__) || defined(_MSC_VER)
     char filename[MAX_PATH];
     if (0 != GetModuleFileName(NULL, filename, MAX_PATH)) {
       path = filename;
+      *strrchr(path, '\\') = '\0';
+      *strrchr(path, '\\') = '\0';
     } else
 #endif
     {
       return CONFIG_DEFAULT_OPENMODELICAHOME; // On Windows, this is NULL; on Unix it is the configured --prefix
     }
   }
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(__MINGW64__) || defined(__MINGW32__) || defined(_MSC_VER)
   /* adrpo: translate this to forward slashes! */
   /* already set, set it only once! */
-  if (winPath != NULL)
+  if (winPath != NULL) {
     return (const char*)winPath;
+  }
 
   /* duplicate the path */
   winPath = strdup(path);
 
   /* ?? not enough memory for duplication */
-  if (!winPath)
+  if (!winPath) {
     return path;
+  }
 
   /* convert \\ to / */
-  while(winPath[i] != '\0')
-  {
+  while(winPath[i] != '\0') {
     if (winPath[i] == '\\') winPath[i] = '/';
     i++;
   }

@@ -735,7 +735,7 @@ algorithm
     // check if we have OMDEV set
     case (omHome)
       equation
-        _ = System.setEnv("OPENMODELICAHOME",omHome,true);
+        System.setEnv("OPENMODELICAHOME",omHome,true);
         omdevPath = Util.makeValueOrDefault(System.readEnv,"OMDEV","");
         // we have something!
         false = stringEq(omdevPath, "");
@@ -749,13 +749,12 @@ algorithm
                                     omdevPath,"\\tools\\mingw\\bin;",
                                     omdevPath,"\\tools\\mingw\\libexec\\gcc\\mingw32\\4.4.0\\;",
                                     oldPath});
-        _ = System.setEnv("PATH",newPath,true);
-      then
-        ();
+        System.setEnv("PATH",newPath,true);
+      then ();
 
     case (omHome)
       equation
-        _ = System.setEnv("OPENMODELICAHOME",omHome,true);
+        System.setEnv("OPENMODELICAHOME",omHome,true);
         oldPath = System.readEnv("PATH");
         // do we have bin?
         true = System.directoryExists(omHome + "\\mingw\\bin");
@@ -766,24 +765,21 @@ algorithm
                                     omHome,"\\mingw\\bin;",
                                     omHome,"\\mingw\\libexec\\gcc\\mingw32\\4.4.0\\;",
                                     oldPath});
-        _ = System.setEnv("PATH",newPath,true);
-      then
-        ();
+        System.setEnv("PATH",newPath,true);
+      then ();
 
     // do not display anything if +d=disableWindowsPathCheckWarning
     case (_)
       equation
         true = Flags.isSet(Flags.DISABLE_WINDOWS_PATH_CHECK_WARNING);
-      then
-        ();
+      then ();
 
     else
       equation
         print("We could not find any of:\n");
-        print("\t$OPENMODELICAHOME/MinGW/bin and $OPENMODELICAHOME/MinGW/libexec/gcc/mingw32/4.4.0\n");
+        print("\t"+inOMHome+"/MinGW/bin and "+inOMHome+"/MinGW/libexec/gcc/mingw32/4.4.0\n");
         print("\t$OMDEV/tools/MinGW/bin and $OMDEV/tools/MinGW/libexec/gcc/mingw32/4.4.0\n");
-      then
-        ();
+      then ();
 
   end matchcontinue;
 end setWindowsPaths;
