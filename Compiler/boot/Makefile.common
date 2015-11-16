@@ -135,8 +135,21 @@ $(GEN_DIR)_main.o: $(GEN_DIR)_main.c
 $(GEN_DIR)_main_omc.c: $(GEN_DIR)_main.c
 	cp -a $^ $@
 
+$(GEN_DIR)_main_static_omc.c: $(GEN_DIR)_main.c
+	sed -e s/DLLImport// -e s/DLLExport// $^ > $@.tmp
+	mv $@.tmp $@
+
+$(GEN_DIR)_main_static.c: $(GEN_DIR)_main_static_omc.c
+	cp -a $^ $@
+
 $(GEN_DIR)_main_omc.o: $(GEN_DIR)_main_omc.c
 	$(CC) -c $(GEN_DIR)_main_omc.c -o  $(GEN_DIR)_main_omc.o $(CFLAGS) $(CPPFLAGS)
+
+$(GEN_DIR)_main_static_omc.o: $(GEN_DIR)_main_static_omc.c
+	$(CC) -c $(GEN_DIR)_main_static_omc.c -o  $(GEN_DIR)_main_static_omc.o $(CFLAGS) $(CPPFLAGS)
+
+$(GEN_DIR)_main_static.o: $(GEN_DIR)_main_static.c
+	$(CC) -DOMC_ENTRYPOINT_STATIC -c $(GEN_DIR)_main_static.c -o  $(GEN_DIR)_main_static.o $(CFLAGS) $(CPPFLAGS)
 
 $(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT): $(ALL_OBJECTS) $(OMHOME)/$(LIB_OMC)/libomcruntime.a $(OMHOME)/$(LIB_OMC)/libomparse.a $(GEN_DIR)_main_omc.o
 	@test ! -z "`echo $(ALL_OBJECTS)`" || (echo Empty dependencies for $@ ; false)
@@ -145,20 +158,19 @@ $(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT): $(ALL_OBJECTS) $(OMHOME)/
 
 ifeq (${STATIC},)
 #shared
-$(GEN_DIR)omc$(EXE_EXT): $(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT) $(GEN_DIR)_main_omc.o $(GEN_DIR)_main.o
+$(GEN_DIR)omc$(EXE_SUFFIX)$(EXE_EXT): $(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT) $(GEN_DIR)_main_omc.o $(GEN_DIR)_main.o
 	$(CC) $(GEN_DIR)_main.o $(RPATH) $(CFLAGS) $(CPPFLAGS) -o $@ $(LDFLAGS) -lOpenModelicaCompiler
-install: $(GEN_DIR)omc$(EXE_EXT) install-interface
+install: $(GEN_DIR)omc$(EXE_SUFFIX)$(EXE_EXT) install-interface
 	cp -a $< $(OMHOME)/bin/
 	test ! "$(SHREXT)" = ".dll" || cp -a $(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT) $(OMHOME)/bin/
 
 else
 #static
-$(GEN_DIR)omc$(EXE_EXT): $(ALL_OBJECTS) $(GEN_DIR)_main.o $(GEN_DIR)_main_omc.o $(OMHOME)/$(LIB_OMC)/libomcruntime.a $(OMHOME)/$(LIB_OMC)/libomparse.a
+$(GEN_DIR)omc$(EXE_SUFFIX)$(EXE_EXT): $(ALL_OBJECTS) $(GEN_DIR)_main_static.o $(GEN_DIR)_main_static_omc.o $(OMHOME)/$(LIB_OMC)/libomcruntime.a $(OMHOME)/$(LIB_OMC)/libomparse.a
 	@test ! -z "`echo $(ALL_OBJECTS)`" || (echo Empty dependencies for $@ ; false)
-	$(CC) $(GEN_DIR)_main.o $(RPATH) $(CFLAGS) $(CPPFLAGS) -o $@ $(GEN_DIR)_main_omc.o $(ALL_OBJECTS) $(LDFLAGS)
-install: $(GEN_DIR)omc$(EXE_EXT) install-interface
-	cp -a $(GEN_DIR)omc$(EXE_EXT) $(OMHOME)/bin/
-
+	$(CC) $(GEN_DIR)_main_static.o $(RPATH) $(CFLAGS) $(CPPFLAGS) -o $@ $(GEN_DIR)_main_static_omc.o $(ALL_OBJECTS) $(LDFLAGS)
+install: $(GEN_DIR)omc$(EXE_SUFFIX)$(EXE_EXT) install-interface
+	cp -a $< $(OMHOME)/bin/
 endif
 
 install-interface:

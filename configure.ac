@@ -107,6 +107,19 @@ host_short=$host_cpu-$host_os
 echo "build_short: $build_short"
 echo "host_short: $host_short"
 
+AS_IF([test "x$with_UMFPACK" = xyes],
+[
+  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use UMFPACK: Yes"
+  UMFPACK_TARGET="umfpack";
+  WITH_UMFPACK="#define WITH_UMFPACK"
+  UMFPACK_LDFLAGS="-lumfpack -lklu -lbtf -lcolamd -lamd"
+],[
+  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use UMFPACK: No"
+  UMFPACK_TARGET="";
+  WITH_UMFPACK="/* Without UMFPACK */"
+  UMFPACK_LDFLAGS=""
+])
+
 if echo $host | grep -i darwin; then
   DARWIN=1
 else
@@ -130,6 +143,22 @@ AC_PROG_CXX
 AC_PROG_CPP
 AC_PROG_MAKE_SET
 AC_PROG_FC
+
+
+AC_ARG_WITH(msys, [  --with-msys[=no]              Point to an msys installation, to setup CPPFLAGS, etc automatically.],
+  [
+    if echo $host_cpu | grep -q x86_64; then
+      MINGWNUM=mingw64
+    else
+      MINGWNUM=mingw32
+    fi
+    CPPFLAGS="$CPPFLAGS -I$withval/$MINGWNUM/include -I$withval/$MINGWNUM/include/tre"
+    LDFLAGS="$LDFLAGS -L$withval/$MINGWNUM/lib"
+    echo "Got: $CPPFLAGS"
+  ],
+  [
+  ]
+)
 
 CFLAGS_BEFORE="$CFLAGS"
 CFLAGS="$CFLAGS -Werror"
@@ -488,7 +517,14 @@ fi
 fi
 
 # Cannot use AX_LAPACK since it assumes a Fortran compiler is used
-AC_ARG_WITH(lapack,  [  --with-lapack=[-llapack -lblas]    (use -llapack -lblas to use system-provided version instead of OpenBLAS. Use openblas for automatically detected OpenBLAS. Use --with-lapack=openblas-NEHALEM or other OpenBLAS target to compile against a certain architecture. Note that you need to include BLAS in this.)],[LD_LAPACK="$withval"],[LD_LAPACK="-llapack -lblas"])
+AC_ARG_WITH(lapack,  [  --with-lapack=[-llapack -lblas]    (use -llapack -lblas to use system-provided version instead of OpenBLAS. Use openblas for automatically detected OpenBLAS. Use --with-lapack=openblas-NEHALEM or other OpenBLAS target to compile against a certain architecture. Note that you need to include BLAS in this.)],[LD_LAPACK="$withval"],
+  [
+    if test ! -z "$MINGWNUM"; then
+      LD_LAPACK="-Wl,-Bstatic -lopenblas -lgfortran -lquadmath -Wl,-Bdynamic"
+    else
+      LD_LAPACK="-llapack -lblas"
+    fi
+  ])
 
 if test "$LD_LAPACK" = "no"; then
   FINAL_MESSAGES="$FINAL_MESSAGES\nLAPACK IS NOT AVAILABLE! ONLY USED FOR CROSS-COMPILING/BOOTSTRAPPING"
@@ -574,6 +610,12 @@ AC_CHECK_LIB(pthread,pthread_self,[RT_LDFLAGS="$RT_LDFLAGS $LIBS"],[AC_MSG_ERROR
 
 LIBS=""
 
+AC_ARG_WITH(ipopt, [  --without-ipopt              Disable compilation ipopt], [
+  if test "$withval" = "no"; then
+    NO_IPOPT=yes
+  fi
+]
+],[])
 if ! test "$NO_IPOPT" = "yes"; then
   FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use IPOPT: Yes"
   WITH_IPOPT="#define WITH_IPOPT"
@@ -678,7 +720,7 @@ elif echo "$host" | grep -iq "mingw"; then
   AC_CHECK_TOOL(WINDRES, windres, [AC_MSG_ERROR([no])])
   CMAKE_EXTRA_DEFINES="-DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RC_COMPILER=$WINDRES"
   CPPFLAGS="$CPPFLAGS -DMSYS2_AUTOCONF=1"
-  OMC_LIBS="$OMC_LIBS -lwsock32 -Wl,-Bstatic -lstdc++ -ltre  -lintl -Wl,-Bdynamic -liconv -lshlwapi"
+  OMC_LIBS="$OMC_LIBS -lwsock32 -Wl,-Bstatic -lstdc++ -ltre  -lintl -liconv -Wl,-Bdynamic -lshlwapi"
   UMFPACK_SHARED=OFF
 else
   APP=""

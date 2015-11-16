@@ -139,6 +139,7 @@ umfpack: $(OMBUILDDIR)/$(LIB_OMC)/libumfpack$(SHREXT)
 
 umfpack-clean:
 	if test -d 3rdParty/SuiteSparse/build ; then cd 3rdParty/SuiteSparse/build && make clean ; fi
+	rm -rf 3rdParty/SuiteSparse/build
 	rm -rf $(OMBUILDDIR)/include/omc/c/suitesparse
 	rm -f $(OMBUILDDIR)/$(LIB_OMC)/libumfpack.a
 	rm -f $(OMBUILDDIR)/$(LIB_OMC)/libamd.a
