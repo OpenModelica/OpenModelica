@@ -1112,7 +1112,7 @@ algorithm
 
     case (cache,env,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed),htParent)
       equation
-        ht = BaseHashTable.copy(htParent);
+        ht = if listEmpty(elts) then htParent else BaseHashTable.copy(htParent);
         ht = getLocalIdentList(elts,ht,getLocalIdentElement);
         (cache,elts) = fixList(cache,env,elts,ht,fixElement);
         (cache,ne) = fixList(cache,env,ne,ht,fixEquation);
@@ -1124,7 +1124,7 @@ algorithm
 
     case (cache,env,SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed)),htParent)
       equation
-        ht = BaseHashTable.copy(htParent);
+        ht = if listEmpty(elts) then htParent else BaseHashTable.copy(htParent);
         (cache,mod) = fixModifications(cache,env,mod,ht);
         (cache,elts) = fixList(cache,env,elts,ht,fixElement);
         (cache,ne) = fixList(cache,env,ne,ht,fixEquation);

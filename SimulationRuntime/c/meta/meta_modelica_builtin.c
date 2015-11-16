@@ -605,10 +605,7 @@ modelica_metatype arrayCopy(modelica_metatype arr)
   void* res = (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG);
   void **arrp = MMC_STRUCTDATA(arr);
   void **resp = MMC_STRUCTDATA(res);
-  int i = 0;
-  for(i=0; i<nelts; i++) {
-    resp[i] = arrp[i];
-  }
+  memcpy(resp, arrp, sizeof(modelica_metatype)*nelts);
   return res;
 }
 
