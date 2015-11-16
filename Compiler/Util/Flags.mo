@@ -1629,27 +1629,60 @@ algorithm
   end try;
 end lookupConfigFlag;
 
+protected function configFlagEq
+  input ConfigFlag inFlag1;
+  input ConfigFlag inFlag2;
+  output Boolean eq;
+algorithm
+  eq := match(inFlag1, inFlag2)
+    local
+      Integer index1, index2;
+    case(CONFIG_FLAG(index=index1), CONFIG_FLAG(index=index2))
+    then index1 == index2;
+  end match;
+end configFlagEq;
+
+protected function setAdditionalOptModules
+  input ConfigFlag inFlag;
+  input ConfigFlag inOppositeFlag;
+  input list<String> inValues;
+protected
+  list<String> values;
+algorithm
+  for value in inValues loop
+    // remove value from inOppositeFlag
+    values := getConfigStringList(inOppositeFlag);
+    values := List.removeOnTrue(value, stringEq, values);
+    setConfigStringList(inOppositeFlag, values);
+
+    // add value to inFlag
+    values := getConfigStringList(inFlag);
+    values := List.removeOnTrue(value, stringEq, values);
+    setConfigStringList(inFlag, value::values);
+  end for;
+end setAdditionalOptModules;
+
 protected function evaluateConfigFlag
   "Evaluates a given flag and it's arguments."
   input ConfigFlag inFlag;
   input list<String> inValues;
   input Flags inFlags;
 algorithm
-  _ := match(inFlag, inValues, inFlags)
+  _ := match(inFlag, inFlags)
     local
       array<Boolean> debug_flags;
       array<FlagData> config_flags;
       list<String> values;
 
     // Special case for +d, +debug, set the given debug flags.
-    case (CONFIG_FLAG(index = 1), _, FLAGS(debugFlags = debug_flags))
+    case (CONFIG_FLAG(index = 1), FLAGS(debugFlags = debug_flags))
       equation
         List.map1_0(inValues, setDebugFlag, debug_flags);
       then
         ();
 
     // Special case for +h, +help, show help text.
-    case (CONFIG_FLAG(index = 2), _, _)
+    case (CONFIG_FLAG(index = 2), _)
       equation
         values = List.map(inValues, System.tolower);
         System.gettextInit(if getConfigString(RUNNING_TESTSUITE) == "" then getConfigString(LOCALE_FLAG) else "C");
@@ -1658,8 +1691,50 @@ algorithm
       then
         ();
 
+    // Special case for --preOptModules+=<value>
+    case (_, FLAGS(configFlags = config_flags)) guard(configFlagEq(inFlag, PRE_OPT_MODULES_ADD))
+      equation
+        setAdditionalOptModules(PRE_OPT_MODULES_ADD, PRE_OPT_MODULES_SUB, inValues);
+      then
+        ();
+
+    // Special case for --preOptModules-=<value>
+    case (_, FLAGS(configFlags = config_flags)) guard(configFlagEq(inFlag, PRE_OPT_MODULES_SUB))
+      equation
+        setAdditionalOptModules(PRE_OPT_MODULES_SUB, PRE_OPT_MODULES_ADD, inValues);
+      then
+        ();
+
+    // Special case for --postOptModules+=<value>
+    case (_, FLAGS(configFlags = config_flags)) guard(configFlagEq(inFlag, POST_OPT_MODULES_ADD))
+      equation
+        setAdditionalOptModules(POST_OPT_MODULES_ADD, POST_OPT_MODULES_SUB, inValues);
+      then
+        ();
+
+    // Special case for --postOptModules-=<value>
+    case (_, FLAGS(configFlags = config_flags)) guard(configFlagEq(inFlag, POST_OPT_MODULES_SUB))
+      equation
+        setAdditionalOptModules(POST_OPT_MODULES_SUB, POST_OPT_MODULES_ADD, inValues);
+      then
+        ();
+
+    // Special case for --initOptModules+=<value>
+    case (_, FLAGS(configFlags = config_flags)) guard(configFlagEq(inFlag, INIT_OPT_MODULES_ADD))
+      equation
+        setAdditionalOptModules(INIT_OPT_MODULES_ADD, INIT_OPT_MODULES_SUB, inValues);
+      then
+        ();
+
+    // Special case for --initOptModules-=<value>
+    case (_, FLAGS(configFlags = config_flags)) guard(configFlagEq(inFlag, INIT_OPT_MODULES_SUB))
+      equation
+        setAdditionalOptModules(INIT_OPT_MODULES_SUB, INIT_OPT_MODULES_ADD, inValues);
+      then
+        ();
+
     // All other configuration flags, set the flag to the given values.
-    case (_, _, FLAGS(configFlags = config_flags))
+    case (_, FLAGS(configFlags = config_flags))
       equation
         setConfigFlag(inFlag, config_flags, inValues);
       then
