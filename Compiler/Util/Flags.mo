@@ -1158,7 +1158,7 @@ constant ConfigFlag MAX_MIXED_DETERMINED_INDEX = CONFIG_FLAG(78, "maxMixedDeterm
 constant ConfigFlag USE_LOCAL_DIRECTION = CONFIG_FLAG(79, "useLocalDirection",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Keeps the input/output prefix for all variables in the flat model, not only top-level ones."));
-constant ConfigFlag FORCE_RECOMMENDED_ORDERING = CONFIG_FLAG(80, "forceRecommendedOrdering",
+constant ConfigFlag DEFAULT_OPT_MODULES_ORDERING = CONFIG_FLAG(80, "defaultOptModulesOrdering",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Util.gettext("If this is activated, then the specified pre-/post-/init-optimization modules will be rearranged to the recommended ordering."));
 constant ConfigFlag PRE_OPT_MODULES_ADD = CONFIG_FLAG(81, "preOptModules+",
@@ -1264,7 +1264,7 @@ constant list<ConfigFlag> allConfigFlags = {
   INIT_OPT_MODULES,
   MAX_MIXED_DETERMINED_INDEX,
   USE_LOCAL_DIRECTION,
-  FORCE_RECOMMENDED_ORDERING,
+  DEFAULT_OPT_MODULES_ORDERING,
   PRE_OPT_MODULES_ADD,
   PRE_OPT_MODULES_SUB,
   POST_OPT_MODULES_ADD,

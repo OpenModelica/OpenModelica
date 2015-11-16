@@ -7184,7 +7184,7 @@ algorithm
   preOptModules := getPreOptModulesString();
   preOptModules := Util.getOptionOrDefault(inPreOptModules, preOptModules);
 
-  if Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) then
+  if Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) then
     // handle special flags, which enable modules
     if Flags.isSet(Flags.SORT_EQNS_AND_VARS) then
       enabledModules := "sortEqnsVars"::enabledModules;
@@ -7225,13 +7225,13 @@ algorithm
     end if;
   end if;
 
-  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(enabledModules) then
-    Error.addCompilerError("It's not possible to combine following flags: --preOptModules+=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
+  if not Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) and not listEmpty(enabledModules) then
+    Error.addCompilerError("It's not possible to combine following flags: --preOptModules+=... and --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
     fail();
   end if;
 
-  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(disabledModules) then
-    Error.addCompilerError("It's not possible to combine following flags: --postOptModules-=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
+  if not Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) and not listEmpty(disabledModules) then
+    Error.addCompilerError("It's not possible to combine following flags: --postOptModules-=... and --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
     fail();
   end if;
 
@@ -7255,7 +7255,7 @@ algorithm
   postOptModules := getPostOptModulesString();
   postOptModules := Util.getOptionOrDefault(inPostOptModules, postOptModules);
 
-  if Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) then
+  if Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) then
     // handle special flags, which enable modules
     if Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM) then
       enabledModules := "simplifyConstraints"::enabledModules;
@@ -7339,13 +7339,13 @@ algorithm
     end if;
   end if;
 
-  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(enabledModules) then
-    Error.addCompilerError("It's not possible to combine following flags: --postOptModules+=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
+  if not Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) and not listEmpty(enabledModules) then
+    Error.addCompilerError("It's not possible to combine following flags: --postOptModules+=... and --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
     fail();
   end if;
 
-  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(disabledModules) then
-    Error.addCompilerError("It's not possible to combine following flags: --postOptModules-=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
+  if not Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) and not listEmpty(disabledModules) then
+    Error.addCompilerError("It's not possible to combine following flags: --postOptModules-=... and --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
     fail();
   end if;
 
@@ -7363,7 +7363,7 @@ algorithm
   initOptModules := Config.getInitOptModules();
   initOptModules := Util.getOptionOrDefault(inInitOptModules, initOptModules);
 
-  if Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) then
+  if Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) then
     // handle special flags, which enable modules
     if Flags.getConfigInt(Flags.SIMPLIFY_LOOPS) > 0 then
       enabledModules := "simplifyLoops"::enabledModules;
@@ -7383,13 +7383,13 @@ algorithm
     end if;
   end if;
 
-  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(enabledModules) then
-    Error.addCompilerError("It's not possible to combine following flags: --initOptModules+=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
+  if not Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) and not listEmpty(enabledModules) then
+    Error.addCompilerError("It's not possible to combine following flags: --initOptModules+=... and --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
     fail();
   end if;
 
-  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(disabledModules) then
-    Error.addCompilerError("It's not possible to combine following flags: --initOptModules-=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
+  if not Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) and not listEmpty(disabledModules) then
+    Error.addCompilerError("It's not possible to combine following flags: --initOptModules-=... and --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
     fail();
   end if;
 
@@ -7403,7 +7403,7 @@ protected function selectOptModules
   input list<tuple<BackendDAEFunc.optimizationModule, String>> inOptModules;
   output list<tuple<BackendDAEFunc.optimizationModule, String>> outOptModules = {};
 protected
-  Boolean forceOrdering = Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING);
+  Boolean forceOrdering = Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING);
   String name;
   Integer numModules = listLength(inOptModules);
   array<Boolean> activeModules = arrayCreate(numModules, false);
@@ -7415,7 +7415,7 @@ algorithm
       index := getModuleIndex(name, inOptModules);
 
       if index < maxIndex then
-        Error.addCompilerWarning("Specified ordering will be ignored. Use --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false to override module ordering.");
+        Error.addCompilerWarning("Specified ordering will be ignored. Use --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false to override module ordering.");
         maxIndex := numModules;
       else
         maxIndex := intMax(maxIndex, index);
