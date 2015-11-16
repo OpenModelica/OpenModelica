@@ -88,8 +88,6 @@ protected import FindZeroCrossings;
 protected import Flags;
 protected import Global;
 protected import HpcOmEqSystems;
-protected import HpcOmTaskGraph;
-protected import HpcOmSimCodeMain;
 protected import IndexReduction;
 protected import Initialization;
 protected import Inline;
