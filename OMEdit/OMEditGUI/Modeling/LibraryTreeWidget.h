@@ -351,19 +351,11 @@ private:
   bool saveFile(QString fileName, QString contents);
   bool saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
+  bool saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibraryTreeItem);
+  void saveChildLibraryTreeItemsOneFile(LibraryTreeItem *pLibraryTreeItem);
+  bool saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryTreeItem);
   bool saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveTLMLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
-  bool saveLibraryTreeItemOneFile(LibraryTreeItem *pLibraryTreeItem);
-  void saveChildLibraryTreeItemsOneFile(LibraryTreeItem *pLibraryTreeItem);
-  bool saveLibraryTreeItemFolder(LibraryTreeItem *pLibraryTreeItem);
-  void setChildLibraryTreeItemsSaved(LibraryTreeItem *pLibraryTreeItem);
-
-  bool saveLibraryTreeItemOneFileHelper(LibraryTreeItem *pLibraryTreeItem);
-  bool setSubModelsFileNameOneFileHelper(LibraryTreeItem *pLibraryTreeItem, QString filePath);
-  void setSubModelsSavedOneFileHelper(LibraryTreeItem *pLibraryTreeItem);
-  bool saveLibraryTreeItemFolderHelper(LibraryTreeItem *pLibraryTreeItem);
-  bool saveSubModelsFolderHelper(LibraryTreeItem *pLibraryTreeItem, QString directoryName);
-  bool saveLibraryTreeItemOneFileOrFolderHelper(LibraryTreeItem *pLibraryTreeItem);
 public slots:
   void searchClasses();
 };
