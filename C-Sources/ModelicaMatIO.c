@@ -74,7 +74,11 @@
 #define EXTENDED_SPARSE 1
 
 /* Have asprintf */
+#if defined(__CYGWIN__)
+#define HAVE_ASPRINTF 1
+#else
 #undef HAVE_ASPRINTF
+#endif
 
 /* Have long long / long double */
 #if defined (_WIN32)
@@ -109,7 +113,11 @@
 #define HAVE_STRING_H 1
 
 /* Have vasprintf */
+#if defined(__CYGWIN__)
+#define HAVE_VASPRINTF 1
+#else
 #undef HAVE_VASPRINTF
+#endif
 
 /* Have va_copy */
 #if defined(__GNUC__) && __STDC_VERSION__ >= 199901L
@@ -241,12 +249,12 @@ EXTERN int mat_vasprintf(char **ptr,const char *format,va_list ap);
 /*   endian.c     */
 EXTERN double        Mat_doubleSwap(double  *a);
 EXTERN float         Mat_floatSwap(float   *a);
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
 EXTERN mat_int64_t   Mat_int64Swap(mat_int64_t  *a);
-#endif /* HAVE_MAT_INT64_T */
-#ifdef HAVE_MAT_UINT64_T
+#endif /* HAVE_MATIO_INT64_T */
+#ifdef HAVE_MATIO_UINT64_T
 EXTERN mat_uint64_t  Mat_uint64Swap(mat_uint64_t *a);
-#endif /* HAVE_MAT_UINT64_T */
+#endif /* HAVE_MATIO_UINT64_T */
 EXTERN mat_int32_t   Mat_int32Swap(mat_int32_t  *a);
 EXTERN mat_uint32_t  Mat_uint32Swap(mat_uint32_t *a);
 EXTERN mat_int16_t   Mat_int16Swap(mat_int16_t  *a);
@@ -257,14 +265,14 @@ EXTERN int ReadDoubleData(mat_t *mat,double  *data,enum matio_types data_type,
                int len);
 EXTERN int ReadSingleData(mat_t *mat,float   *data,enum matio_types data_type,
                int len);
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
 EXTERN int ReadInt64Data (mat_t *mat,mat_int64_t *data,
                enum matio_types data_type,int len);
-#endif /* HAVE_MAT_INT64_T */
-#ifdef HAVE_MAT_UINT64_T
+#endif /* HAVE_MATIO_INT64_T */
+#ifdef HAVE_MATIO_UINT64_T
 EXTERN int ReadUInt64Data(mat_t *mat,mat_uint64_t *data,
                enum matio_types data_type,int len);
-#endif /* HAVE_MAT_UINT64_T */
+#endif /* HAVE_MATIO_UINT64_T */
 EXTERN int ReadInt32Data (mat_t *mat,mat_int32_t *data,
                enum matio_types data_type,int len);
 EXTERN int ReadUInt32Data(mat_t *mat,mat_uint32_t *data,
@@ -292,14 +300,14 @@ EXTERN int ReadCompressedDoubleData(mat_t *mat,z_stream *z,double  *data,
                enum matio_types data_type,int len);
 EXTERN int ReadCompressedSingleData(mat_t *mat,z_stream *z,float   *data,
                enum matio_types data_type,int len);
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
 EXTERN int ReadCompressedInt64Data(mat_t *mat,z_stream *z,mat_int64_t *data,
                enum matio_types data_type,int len);
-#endif /* HAVE_MAT_INT64_T */
-#ifdef HAVE_MAT_UINT64_T
+#endif /* HAVE_MATIO_INT64_T */
+#ifdef HAVE_MATIO_UINT64_T
 EXTERN int ReadCompressedUInt64Data(mat_t *mat,z_stream *z,mat_uint64_t *data,
                enum matio_types data_type,int len);
-#endif /* HAVE_MAT_UINT64_T */
+#endif /* HAVE_MATIO_UINT64_T */
 EXTERN int ReadCompressedInt32Data(mat_t *mat,z_stream *z,mat_int32_t *data,
                enum matio_types data_type,int len);
 EXTERN int ReadCompressedUInt32Data(mat_t *mat,z_stream *z,mat_uint32_t *data,
@@ -349,7 +357,7 @@ EXTERN int InflateFieldNames(mat_t *mat,matvar_t *matvar,void *buf,int nfields,
  */
 #define swap(a,b)   a^=b;b^=a;a^=b
 
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
 /** @brief swap the bytes of a 64-bit signed integer
  * @ingroup mat_internal
  * @param a pointer to integer to swap
@@ -376,9 +384,9 @@ Mat_int64Swap( mat_int64_t *a )
     return *a;
 
 }
-#endif /* HAVE_MAT_INT64_T */
+#endif /* HAVE_MATIO_INT64_T */
 
-#ifdef HAVE_MAT_UINT64_T
+#ifdef HAVE_MATIO_UINT64_T
 /** @brief swap the bytes of a 64-bit unsigned integer
  * @ingroup mat_internal
  * @param a pointer to integer to swap
@@ -405,7 +413,7 @@ Mat_uint64Swap( mat_uint64_t *a )
     return *a;
 
 }
-#endif /* HAVE_MAT_UINT64_T */
+#endif /* HAVE_MATIO_UINT64_T */
 
 /** @brief swap the bytes of a 32-bit signed integer
  * @ingroup mat_internal
@@ -737,16 +745,16 @@ InflateSkipData(mat_t *mat,z_stream *z,enum matio_types data_type,int len)
         case MAT_T_SINGLE:
             data_size = sizeof(float);
             break;
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
         case MAT_T_INT64:
             data_size = sizeof(mat_int64_t);
             break;
-#endif /* HAVE_MAT_INT64_T */
-#ifdef HAVE_MAT_UINT64_T
+#endif /* HAVE_MATIO_INT64_T */
+#ifdef HAVE_MATIO_UINT64_T
         case MAT_T_UINT64:
             data_size = sizeof(mat_uint64_t);
             break;
-#endif /* HAVE_MAT_UINT64_T */
+#endif /* HAVE_MATIO_UINT64_T */
         case MAT_T_INT32:
             data_size = sizeof(mat_int32_t);
             break;
@@ -1422,19 +1430,11 @@ InflateFieldNames(mat_t *mat,matvar_t *matvar,void *buf,int nfields,
 #endif
 #if !defined(HAVE_VSNPRINTF) && !defined(vsnprintf)
 #    define vsnprintf mat_vsnprintf
-#    ifdef  __cplusplus
-         extern "C" int vsnprintf(char *,size_t,const char *,va_list);
-#    else
-         extern int vsnprintf(char *,size_t,const char *,va_list);
-#    endif
+     EXTERN int vsnprintf(char *,size_t,const char *,va_list);
 #endif
 #if !defined(HAVE_SNPRINTF) && !defined(snprintf)
 #    define snprintf mat_snprintf
-#    ifdef  __cplusplus
-         extern "C" int snprintf(char *str,size_t size,const char *format,...);
-#    else
-         extern int snprintf(char *str,size_t size,const char *format,...);
-#    endif
+     EXTERN int snprintf(char *str,size_t size,const char *format,...);
 #endif
 #if !defined(HAVE_VASPRINTF) && !defined(vasprintf)
 #    define vasprintf mat_vasprintf
@@ -1531,11 +1531,11 @@ Mat_SizeOf(enum matio_types data_type)
             return sizeof(double);
         case MAT_T_SINGLE:
             return sizeof(float);
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
         case MAT_T_INT64:
             return sizeof(mat_int64_t);
 #endif
-#ifdef HAVE_MAT_UINT64_T
+#ifdef HAVE_MATIO_UINT64_T
         case MAT_T_UINT64:
             return sizeof(mat_uint64_t);
 #endif
@@ -2350,7 +2350,7 @@ ReadCompressedSingleData(mat_t *mat,z_stream *z,float *data,
 }
 #endif
 
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
 /** @brief Reads data of type @c data_type into a signed 64-bit integer type
  *
  * Reads from the MAT file @c len elements of data type @c data_type storing
@@ -2427,7 +2427,7 @@ ReadInt64Data(mat_t *mat,mat_int64_t *data,enum matio_types data_type,int len)
             }
             break;
         }
-#ifdef HAVE_MAT_UINT64_T
+#ifdef HAVE_MATIO_UINT64_T
         case MAT_T_UINT64:
         {
             mat_uint64_t ui64;
@@ -2446,7 +2446,7 @@ ReadInt64Data(mat_t *mat,mat_int64_t *data,enum matio_types data_type,int len)
             }
             break;
         }
-#endif /* HAVE_MAT_UINT64_T */
+#endif /* HAVE_MATIO_UINT64_T */
         case MAT_T_INT32:
         {
             mat_int32_t i32;
@@ -2760,9 +2760,9 @@ ReadCompressedInt64Data(mat_t *mat,z_stream *z,mat_int64_t *data,
     return nBytes;
 }
 #endif
-#endif /* HAVE_MAT_INT64_T */
+#endif /* HAVE_MATIO_INT64_T */
 
-#ifdef HAVE_MAT_UINT64_T
+#ifdef HAVE_MATIO_UINT64_T
 /** @brief Reads data of type @c data_type into an unsigned 64-bit integer type
  *
  * Reads from the MAT file @c len elements of data type @c data_type storing
@@ -2821,7 +2821,7 @@ ReadUInt64Data(mat_t *mat,mat_uint64_t *data,enum matio_types data_type,int len)
             }
             break;
         }
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
         case MAT_T_INT64:
         {
             mat_int64_t i64;
@@ -2840,7 +2840,7 @@ ReadUInt64Data(mat_t *mat,mat_uint64_t *data,enum matio_types data_type,int len)
             }
             break;
         }
-#endif /* HAVE_MAT_INT64_T */
+#endif /* HAVE_MATIO_INT64_T */
         case MAT_T_UINT64:
         {
             mat_uint64_t ui64;
@@ -3172,7 +3172,7 @@ ReadCompressedUInt64Data(mat_t *mat,z_stream *z,mat_uint64_t *data,
     return nBytes;
 }
 #endif /* HAVE_ZLIB */
-#endif /* HAVE_MAT_UINT64_T */
+#endif /* HAVE_MATIO_UINT64_T */
 
 /** @brief Reads data of type @c data_type into a signed 32-bit integer type
  *
@@ -5509,7 +5509,7 @@ ReadDataSlabN(mat_t *mat,void *data,enum matio_classes class_type,
             }
             break;
         }
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
         case MAT_C_INT64:
         {
             mat_int64_t *ptr = data;
@@ -5597,8 +5597,8 @@ ReadDataSlabN(mat_t *mat,void *data,enum matio_classes class_type,
             }
             break;
         }
-#endif /* HAVE_MAT_INT64_T */
-#ifdef HAVE_MAT_UINT64_T
+#endif /* HAVE_MATIO_INT64_T */
+#ifdef HAVE_MATIO_UINT64_T
         case MAT_C_UINT64:
         {
             mat_uint64_t *ptr = data;
@@ -5686,7 +5686,7 @@ ReadDataSlabN(mat_t *mat,void *data,enum matio_classes class_type,
             }
             break;
         }
-#endif /* HAVE_MAT_UINT64_T */
+#endif /* HAVE_MATIO_UINT64_T */
         case MAT_C_INT32:
         {
             mat_int32_t *ptr = data;
@@ -6436,7 +6436,7 @@ ReadCompressedDataSlabN(mat_t *mat,z_stream *z,void *data,
             }
             break;
         }
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
         case MAT_C_INT64:
         {
             mat_int64_t *ptr;
@@ -6528,8 +6528,8 @@ ReadCompressedDataSlabN(mat_t *mat,z_stream *z,void *data,
             }
             break;
         }
-#endif /* HAVE_MAT_INT64_T */
-#ifdef HAVE_MAT_UINT64_T
+#endif /* HAVE_MATIO_INT64_T */
+#ifdef HAVE_MATIO_UINT64_T
         case MAT_C_UINT64:
         {
             mat_uint64_t *ptr;
@@ -6621,7 +6621,7 @@ ReadCompressedDataSlabN(mat_t *mat,z_stream *z,void *data,
             }
             break;
         }
-#endif /* HAVE_MAT_UINT64_T */
+#endif /* HAVE_MATIO_UINT64_T */
         case MAT_C_INT32:
         {
             mat_int32_t *ptr;
@@ -7222,7 +7222,7 @@ ReadDataSlab1(mat_t *mat,void *data,enum matio_classes class_type,
                 }
             }
             break;
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
         case MAT_C_INT64:
             if ( !stride ) {
                 bytesread+=ReadInt64Data(mat,data,data_type,edge);
@@ -7233,8 +7233,8 @@ ReadDataSlab1(mat_t *mat,void *data,enum matio_classes class_type,
                 }
             }
             break;
-#endif /* HAVE_MAT_INT64_T */
-#ifdef HAVE_MAT_UINT64_T
+#endif /* HAVE_MATIO_INT64_T */
+#ifdef HAVE_MATIO_UINT64_T
         case MAT_C_UINT64:
             if ( !stride ) {
                 bytesread+=ReadUInt64Data(mat,data,data_type,edge);
@@ -7245,7 +7245,7 @@ ReadDataSlab1(mat_t *mat,void *data,enum matio_classes class_type,
                 }
             }
             break;
-#endif /* HAVE_MAT_UINT64_T */
+#endif /* HAVE_MATIO_UINT64_T */
         case MAT_C_INT32:
             if ( !stride ) {
                 bytesread+=ReadInt32Data(mat,data,data_type,edge);
@@ -7392,7 +7392,7 @@ ReadDataSlab2(mat_t *mat,void *data,enum matio_classes class_type,
             }
             break;
         }
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
         case MAT_C_INT64:
         {
             mat_int64_t *ptr;
@@ -7414,8 +7414,8 @@ ReadDataSlab2(mat_t *mat,void *data,enum matio_classes class_type,
             }
             break;
         }
-#endif /* HAVE_MAT_INT64_T */
-#ifdef HAVE_MAT_UINT64_T
+#endif /* HAVE_MATIO_INT64_T */
+#ifdef HAVE_MATIO_UINT64_T
         case MAT_C_UINT64:
         {
             mat_uint64_t *ptr;
@@ -7437,7 +7437,7 @@ ReadDataSlab2(mat_t *mat,void *data,enum matio_classes class_type,
             }
             break;
         }
-#endif /* HAVE_MAT_UINT64_T */
+#endif /* HAVE_MATIO_UINT64_T */
         case MAT_C_INT32:
         {
             mat_int32_t *ptr;
@@ -7627,7 +7627,7 @@ ReadCompressedDataSlab1(mat_t *mat,z_stream *z,void *data,
             }
             break;
         }
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
         case MAT_C_INT64:
         {
             mat_int64_t *ptr = data;
@@ -7641,8 +7641,8 @@ ReadCompressedDataSlab1(mat_t *mat,z_stream *z,void *data,
             }
             break;
         }
-#endif /* HAVE_MAT_INT64_T */
-#ifdef HAVE_MAT_UINT64_T
+#endif /* HAVE_MATIO_INT64_T */
+#ifdef HAVE_MATIO_UINT64_T
         case MAT_C_UINT64:
         {
             mat_uint64_t *ptr = data;
@@ -7656,7 +7656,7 @@ ReadCompressedDataSlab1(mat_t *mat,z_stream *z,void *data,
             }
             break;
         }
-#endif /* HAVE_MAT_UINT64_T */
+#endif /* HAVE_MATIO_UINT64_T */
         case MAT_C_INT32:
         {
             mat_int32_t *ptr = data;
@@ -7834,7 +7834,7 @@ ReadCompressedDataSlab2(mat_t *mat,z_stream *z,void *data,
             }
             break;
         }
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
         case MAT_C_INT64:
         {
             mat_int64_t *ptr;
@@ -7856,8 +7856,8 @@ ReadCompressedDataSlab2(mat_t *mat,z_stream *z,void *data,
             }
             break;
         }
-#endif /* HAVE_MAT_INT64_T */
-#ifdef HAVE_MAT_UINT64_T
+#endif /* HAVE_MATIO_INT64_T */
+#ifdef HAVE_MATIO_UINT64_T
         case MAT_C_UINT64:
         {
             mat_uint64_t *ptr;
@@ -7879,7 +7879,7 @@ ReadCompressedDataSlab2(mat_t *mat,z_stream *z,void *data,
             }
             break;
         }
-#endif /* HAVE_MAT_UINT64_T */
+#endif /* HAVE_MATIO_UINT64_T */
         case MAT_C_INT32:
         {
             mat_int32_t *ptr;
@@ -8970,6 +8970,8 @@ void      WriteInfo5(mat_t *mat, matvar_t *matvar);
 #ifndef MAT4_H
 #define MAT4_H
 
+EXTERN mat_t *Mat_Create4(const char* matname);
+int  Mat_VarWrite4(mat_t *mat,matvar_t *matvar);
 void Read4(mat_t *mat, matvar_t *matvar);
 int  ReadData4(mat_t *mat,matvar_t *matvar,void *data,
          int *start,int *stride,int *edge);
@@ -9034,7 +9036,7 @@ Mat_PrintNumber(enum matio_types type, void *data)
         case MAT_T_SINGLE:
             printf("%g",*(float*)data);
             break;
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
         case MAT_T_INT64:
 #ifdef HAVE_LONG_LONG
             printf("%lld",(long long)(*(mat_int64_t*)data));
@@ -9043,7 +9045,7 @@ Mat_PrintNumber(enum matio_types type, void *data)
 #endif
             break;
 #endif
-#ifdef HAVE_MAT_UINT64_T
+#ifdef HAVE_MATIO_UINT64_T
         case MAT_T_UINT64:
 #ifdef HAVE_LONG_LONG
             printf("%llu",(unsigned long long)(*(mat_uint64_t*)data));
@@ -9121,6 +9123,7 @@ Mat_CreateVer(const char *matname,const char *hdr_str,enum mat_ft mat_file_ver)
 
     switch ( mat_file_ver ) {
         case MAT_FT_MAT4:
+            mat = Mat_Create4(matname);
             break;
         case MAT_FT_MAT5:
             mat = Mat_Create5(matname,hdr_str);
@@ -9228,11 +9231,12 @@ Mat_Open(const char *matname,int mode)
 
         Mat_Rewind(mat);
         var = Mat_VarReadNextInfo4(mat);
-        if ( NULL == var ) {
+        if ( NULL == var &&
+             bytesread != 0 ) { /* Accept 0 bytes files as a valid V4 file */
             /* Does not seem to be a valid V4 file */
             Mat_Close(mat);
             mat = NULL;
-            Mat_Critical("%s does not seem to be a valid MAT file",matname);
+            Mat_Critical("\"%s\" does not seem to be a valid MAT file",matname);
         } else {
             Mat_VarFree(var);
             Mat_Rewind(mat);
@@ -9380,11 +9384,11 @@ Mat_SizeOfClass(int class_type)
             return sizeof(double);
         case MAT_C_SINGLE:
             return sizeof(float);
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
         case MAT_C_INT64:
             return sizeof(mat_int64_t);
 #endif
-#ifdef HAVE_MAT_UINT64_T
+#ifdef HAVE_MATIO_UINT64_T
         case MAT_C_UINT64:
             return sizeof(mat_uint64_t);
 #endif
@@ -9743,9 +9747,14 @@ Mat_VarDelete(mat_t *mat, const char *name)
 {
     int   err = 1;
     enum mat_ft mat_file_ver = MAT_FT_DEFAULT;
-    char *tmp_name, *new_name, *temp;
+    char *tmp_name, *new_name;
     mat_t *tmp;
     matvar_t *matvar;
+#if defined(_WIN32)
+    char template[10] = "matXXXXXX";
+#else
+    char *temp;
+#endif
 
     if ( NULL == mat || NULL == name )
         return err;
@@ -9762,14 +9771,18 @@ Mat_VarDelete(mat_t *mat, const char *name)
             break;
     }
 
+#if defined(_WIN32)
+    tmp_name = _mktemp(template);
+#else
     temp     = NULL;
     tmp_name = tmpnam(temp);
-    if (tmp_name) {
+#endif
+    if (tmp_name != NULL) {
         tmp = Mat_CreateVer(tmp_name,mat->header,mat_file_ver);
         if ( tmp != NULL ) {
             while ( NULL != (matvar = Mat_VarReadNext(mat)) ) {
                 if ( strcmp(matvar->name,name) )
-                    Mat_VarWrite(tmp,matvar,0);
+                    Mat_VarWrite(tmp,matvar,MAT_COMPRESSION_NONE);
                 else
                     err = 0;
                 Mat_VarFree(matvar);
@@ -10328,10 +10341,10 @@ Mat_VarPrint( matvar_t *matvar, int printdata )
         switch( matvar->class_type ) {
             case MAT_C_DOUBLE:
             case MAT_C_SINGLE:
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
             case MAT_C_INT64:
 #endif
-#ifdef HAVE_MAT_UINT64_T
+#ifdef HAVE_MATIO_UINT64_T
             case MAT_C_UINT64:
 #endif
             case MAT_C_INT32:
@@ -10615,8 +10628,6 @@ Mat_VarReadNextInfo( mat_t *mat )
 matvar_t *
 Mat_VarReadInfo( mat_t *mat, const char *name )
 {
-
-    long  fpos;
     matvar_t *matvar = NULL;
 
     if ( (mat == NULL) || (name == NULL) )
@@ -10639,7 +10650,7 @@ Mat_VarReadInfo( mat_t *mat, const char *name )
             }
         } while ( NULL == matvar && mat->next_index < mat->num_datasets);
     } else {
-        fpos = ftell(mat->fp);
+        long fpos = ftell(mat->fp);
         fseek(mat->fp,mat->bof,SEEK_SET);
         do {
             matvar = Mat_VarReadNextInfo(mat);
@@ -10651,7 +10662,7 @@ Mat_VarReadInfo( mat_t *mat, const char *name )
                     Mat_VarFree(matvar);
                     matvar = NULL;
                 }
-            } else {
+            } else if (!feof((FILE *)mat->fp)) {
                 Mat_Critical("An error occurred in reading the MAT file");
                 break;
             }
@@ -10831,14 +10842,16 @@ Mat_VarWrite(mat_t *mat,matvar_t *matvar,enum matio_compression compress)
 {
     if ( mat == NULL || matvar == NULL )
         return -1;
+    else if ( mat->version == MAT_FT_MAT4 )
+        return Mat_VarWrite4(mat,matvar);
     else if ( mat->version == MAT_FT_MAT5 )
-        Mat_VarWrite5(mat,matvar,compress);
+        return Mat_VarWrite5(mat,matvar,compress);
 #if defined(HAVE_HDF5)
     else if ( mat->version == MAT_FT_MAT73 )
-        Mat_VarWrite73(mat,matvar,compress);
+        return Mat_VarWrite73(mat,matvar,compress);
 #endif
 
-    return 0;
+    return 1;
 }
 /* -------------------------------
  * ---------- mat4.c
@@ -10852,6 +10865,132 @@ Mat_VarWrite(mat_t *mat,matvar_t *matvar,enum matio_compression compress)
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+
+/** @if mat_devman
+ * @brief Creates a new Matlab MAT version 4 file
+ *
+ * Tries to create a new Matlab MAT file with the given name.
+ * @ingroup MAT
+ * @param matname Name of MAT file to create
+ * @return A pointer to the MAT file or NULL if it failed.  This is not a
+ * simple FILE * and should not be used as one.
+ * @endif
+ */
+mat_t *
+Mat_Create4(const char* matname)
+{
+    FILE *fp = NULL;
+    mat_t *mat = NULL;
+
+    fp = fopen(matname,"wb");
+    if ( !fp )
+        return NULL;
+
+    mat = malloc(sizeof(*mat));
+    if ( NULL == mat ) {
+        fclose(fp);
+        Mat_Critical("Couldn't allocate memory for the MAT file");
+        return NULL;
+    }
+
+    mat->header        = NULL;
+    mat->subsys_offset = NULL;
+    mat->fp            = fp;
+    mat->version       = MAT_FT_MAT4;
+    mat->byteswap      = 0;
+    mat->bof           = 0;
+    mat->next_index    = 0;
+    mat->refs_id       = -1;
+    mat->filename      = strdup_printf("%s",matname);
+    mat->mode          = 0;
+
+    Mat_Rewind(mat);
+
+    return mat;
+}
+
+/** @if mat_devman
+ * @brief Writes a matlab variable to a version 4 matlab file
+ *
+ * @ingroup mat_internal
+ * @param mat MAT file pointer
+ * @param matvar pointer to the mat variable
+ * @retval 0 on success
+ * @endif
+ */
+int
+Mat_VarWrite4(mat_t *mat,matvar_t *matvar)
+{
+    typedef struct {
+        mat_int32_t type;
+        mat_int32_t mrows;
+        mat_int32_t ncols;
+        mat_int32_t imagf;
+        mat_int32_t namelen;
+    } Fmatrix;
+
+    mat_int32_t nmemb = 1, i;
+    mat_complex_split_t *complex_data = NULL;
+    Fmatrix x;
+
+    if ( NULL == mat || NULL == matvar || NULL == matvar->name || matvar->rank != 2 )
+        return -1;
+
+    if (matvar->isComplex) {
+        mat_complex_split_t *complex_data = matvar->data;
+        if ( NULL == complex_data )
+            return 1;
+    }
+
+    switch ( matvar->data_type ) {
+        case MAT_T_DOUBLE:
+            x.type = 0;
+            break;
+        case MAT_T_SINGLE:
+            x.type = 10;
+            break;
+        case MAT_T_INT32:
+            x.type = 20;
+            break;
+        case MAT_T_INT16:
+            x.type = 30;
+            break;
+        case MAT_T_UINT16:
+            x.type = 40;
+            break;
+        case MAT_T_UINT8:
+            x.type = 50;
+            break;
+        default:
+            return 2;
+    }
+
+    for ( i = 0; i < matvar->rank; i++ ) {
+        mat_int32_t dim;
+        dim = (mat_int32_t)matvar->dims[i];
+        nmemb *= dim;
+    }
+
+    /* FIXME: SEEK_END is not Guaranteed by the C standard */
+    fseek(mat->fp,0,SEEK_END);         /* Always write at end of file */
+
+    if (mat->byteswap)
+        x.type += 1000;
+    x.mrows = (mat_int32_t)matvar->dims[0];
+    x.ncols = (mat_int32_t)matvar->dims[1];
+    x.imagf = matvar->isComplex ? 1 : 0;
+    x.namelen = (mat_int32_t)strlen(matvar->name) + 1;
+    fwrite(&x, sizeof(Fmatrix), 1, mat->fp);
+    fwrite(matvar->name, sizeof(char), x.namelen, mat->fp);
+    if (matvar->isComplex) {
+        fwrite(complex_data->Re, matvar->data_size, nmemb, mat->fp);
+        fwrite(complex_data->Im, matvar->data_size, nmemb, mat->fp);
+    }
+    else {
+        fwrite(matvar->data, matvar->data_size, nmemb, mat->fp);
+    }
+    return 0;
+}
 
 /** @if mat_devman
  * @brief Reads the data of a version 4 MAT file variable
@@ -12150,7 +12289,7 @@ WriteEmptyData(mat_t *mat,int N,enum matio_types data_type)
                 fwrite(&ui32,data_size,1,mat->fp);
             break;
         }
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
         case MAT_T_INT64:
         {
             mat_int64_t i64 = 0;
@@ -12164,7 +12303,7 @@ WriteEmptyData(mat_t *mat,int N,enum matio_types data_type)
             break;
         }
 #endif
-#ifdef HAVE_MAT_UINT64_T
+#ifdef HAVE_MATIO_UINT64_T
         case MAT_T_UINT64:
         {
             mat_uint64_t ui64 = 0;
@@ -12305,7 +12444,7 @@ WriteCompressedEmptyData(mat_t *mat,z_stream *z,int N,
                 fwrite(&ui32,data_size,1,mat->fp);
             break;
         }
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
         case MAT_T_INT64:
         {
             mat_int64_t i64 = 0;
@@ -12319,7 +12458,7 @@ WriteCompressedEmptyData(mat_t *mat,z_stream *z,int N,
             break;
         }
 #endif
-#ifdef HAVE_MAT_UINT64_T
+#ifdef HAVE_MATIO_UINT64_T
         case MAT_T_UINT64:
         {
             mat_uint64_t ui64 = 0;
@@ -12412,7 +12551,7 @@ WriteDataSlab2(mat_t *mat,void *data,enum matio_types data_type,size_t *dims,
             }
             break;
         }
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
         case MAT_T_INT64:
         {
             mat_int64_t *ptr;
@@ -12436,7 +12575,7 @@ WriteDataSlab2(mat_t *mat,void *data,enum matio_types data_type,size_t *dims,
             break;
         }
 #endif
-#ifdef HAVE_MAT_UINT64_T
+#ifdef HAVE_MATIO_UINT64_T
         case MAT_T_UINT64:
         {
             mat_uint64_t *ptr;
@@ -13876,7 +14015,7 @@ WriteCompressedCellArrayField(mat_t *mat,matvar_t *matvar,z_stream *z)
         case MAT_C_INT8:
         case MAT_C_UINT8:
         {
-            /* WriteCompressedData makes sure uncomressed data is aligned
+            /* WriteCompressedData makes sure uncompressed data is aligned
              * on an 8-byte boundary */
             if ( matvar->isComplex ) {
                 mat_complex_split_t *complex_data = matvar->data;
@@ -14327,7 +14466,7 @@ WriteCompressedStructField(mat_t *mat,matvar_t *matvar,z_stream *z)
         case MAT_C_INT8:
         case MAT_C_UINT8:
         {
-            /* WriteCompressedData makes sure uncomressed data is aligned
+            /* WriteCompressedData makes sure uncompressed data is aligned
              * on an 8-byte boundary */
             if ( matvar->isComplex ) {
                 mat_complex_split_t *complex_data = matvar->data;
@@ -14714,12 +14853,12 @@ Mat_VarReadNumeric5(mat_t *mat,matvar_t *matvar,void *data,size_t N)
                 nBytes = ReadSingleData(mat,data,packed_type,N);
                 break;
             case MAT_C_INT64:
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
                 nBytes = ReadInt64Data(mat,data,packed_type,N);
 #endif
                 break;
             case MAT_C_UINT64:
-#ifdef HAVE_MAT_UINT64_T
+#ifdef HAVE_MATIO_UINT64_T
                 nBytes = ReadUInt64Data(mat,data,packed_type,N);
 #endif
                 break;
@@ -14764,13 +14903,13 @@ Mat_VarReadNumeric5(mat_t *mat,matvar_t *matvar,void *data,size_t N)
                                                   packed_type,N);
                 break;
             case MAT_C_INT64:
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
                 nBytes = ReadCompressedInt64Data(mat,matvar->internal->z,data,
                                                  packed_type,N);
 #endif
                 break;
             case MAT_C_UINT64:
-#ifdef HAVE_MAT_UINT64_T
+#ifdef HAVE_MATIO_UINT64_T
                 nBytes = ReadCompressedUInt64Data(mat,matvar->internal->z,data,
                                                   packed_type,N);
 #endif
@@ -14927,7 +15066,7 @@ Read5(mat_t *mat, matvar_t *matvar)
             }
             break;
         case MAT_C_INT64:
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
             fseek(mat->fp,matvar->internal->datapos,SEEK_SET);
             matvar->data_size = sizeof(mat_int64_t);
             matvar->data_type = MAT_T_INT64;
@@ -14966,7 +15105,7 @@ Read5(mat_t *mat, matvar_t *matvar)
 #endif
             break;
         case MAT_C_UINT64:
-#ifdef HAVE_MAT_UINT64_T
+#ifdef HAVE_MATIO_UINT64_T
             fseek(mat->fp,matvar->internal->datapos,SEEK_SET);
             matvar->data_size = sizeof(mat_uint64_t);
             matvar->data_type = MAT_T_UINT64;
@@ -15554,13 +15693,13 @@ Read5(mat_t *mat, matvar_t *matvar)
                                 packed_type,data->ndata);
                             break;
                         case MAT_T_INT64:
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
                             nBytes = ReadInt64Data(mat,complex_data->Re,
                                 packed_type,data->ndata);
 #endif
                             break;
                         case MAT_T_UINT64:
-#ifdef HAVE_MAT_UINT64_T
+#ifdef HAVE_MATIO_UINT64_T
                             nBytes = ReadUInt64Data(mat,complex_data->Re,
                                 packed_type,data->ndata);
 #endif
@@ -15627,13 +15766,13 @@ Read5(mat_t *mat, matvar_t *matvar)
                                 packed_type,data->ndata);
                             break;
                         case MAT_T_INT64:
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
                             nBytes = ReadInt64Data(mat,complex_data->Im,
                                 packed_type,data->ndata);
 #endif
                             break;
                         case MAT_T_UINT64:
-#ifdef HAVE_MAT_UINT64_T
+#ifdef HAVE_MATIO_UINT64_T
                             nBytes = ReadUInt64Data(mat,complex_data->Im,
                                 packed_type,data->ndata);
 #endif
@@ -15686,14 +15825,14 @@ Read5(mat_t *mat, matvar_t *matvar)
                                  complex_data->Re,packed_type,data->ndata);
                             break;
                         case MAT_T_INT64:
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
                             nBytes = ReadCompressedInt64Data(mat,
                                 matvar->internal->z,complex_data->Re,
                                 packed_type,data->ndata);
 #endif
                             break;
                         case MAT_T_UINT64:
-#ifdef HAVE_MAT_UINT64_T
+#ifdef HAVE_MATIO_UINT64_T
                             nBytes = ReadCompressedUInt64Data(mat,
                                 matvar->internal->z,complex_data->Re,
                                 packed_type,data->ndata);
@@ -15762,14 +15901,14 @@ Read5(mat_t *mat, matvar_t *matvar)
                                  complex_data->Im,packed_type,data->ndata);
                             break;
                         case MAT_T_INT64:
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
                             nBytes = ReadCompressedInt64Data(mat,
                                 matvar->internal->z,complex_data->Im,
                                 packed_type,data->ndata);
 #endif
                             break;
                         case MAT_T_UINT64:
-#ifdef HAVE_MAT_UINT64_T
+#ifdef HAVE_MATIO_UINT64_T
                             nBytes = ReadCompressedUInt64Data(mat,
                                 matvar->internal->z,complex_data->Im,
                                 packed_type,data->ndata);
@@ -15832,13 +15971,13 @@ Read5(mat_t *mat, matvar_t *matvar)
                                 packed_type,data->ndata);
                             break;
                         case MAT_T_INT64:
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
                             nBytes = ReadInt64Data(mat,data->data,
                                 packed_type,data->ndata);
 #endif
                             break;
                         case MAT_T_UINT64:
-#ifdef HAVE_MAT_UINT64_T
+#ifdef HAVE_MATIO_UINT64_T
                             nBytes = ReadUInt64Data(mat,data->data,
                                 packed_type,data->ndata);
 #endif
@@ -15891,14 +16030,14 @@ Read5(mat_t *mat, matvar_t *matvar)
                                  data->data,packed_type,data->ndata);
                             break;
                         case MAT_T_INT64:
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
                             nBytes = ReadCompressedInt64Data(mat,
                                 matvar->internal->z,data->data,packed_type,
                                 data->ndata);
 #endif
                             break;
                         case MAT_T_UINT64:
-#ifdef HAVE_MAT_UINT64_T
+#ifdef HAVE_MATIO_UINT64_T
                             nBytes = ReadCompressedUInt64Data(mat,
                                 matvar->internal->z,data->data,packed_type,
                                 data->ndata);
@@ -16168,18 +16307,18 @@ ReadData5(mat_t *mat,matvar_t *matvar,void *data,
             matvar->data_type = MAT_T_SINGLE;
             matvar->data_size = sizeof(float);
             break;
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
         case MAT_C_INT64:
             matvar->data_type = MAT_T_INT64;
             matvar->data_size = sizeof(mat_int64_t);
             break;
-#endif /* HAVE_MAT_INT64_T */
-#ifdef HAVE_MAT_UINT64_T
+#endif /* HAVE_MATIO_INT64_T */
+#ifdef HAVE_MATIO_UINT64_T
         case MAT_C_UINT64:
             matvar->data_type = MAT_T_UINT64;
             matvar->data_size = sizeof(mat_uint64_t);
             break;
-#endif /* HAVE_MAT_UINT64_T */
+#endif /* HAVE_MATIO_UINT64_T */
         case MAT_C_INT32:
             matvar->data_type = MAT_T_INT32;
             matvar->data_size = sizeof(mat_int32_t);
@@ -16346,18 +16485,18 @@ Mat_VarReadDataLinear5(mat_t *mat,matvar_t *matvar,void *data,int start,
             matvar->data_type = MAT_T_SINGLE;
             matvar->data_size = sizeof(float);
             break;
-#ifdef HAVE_MAT_INT64_T
+#ifdef HAVE_MATIO_INT64_T
         case MAT_C_INT64:
             matvar->data_type = MAT_T_INT64;
             matvar->data_size = sizeof(mat_int64_t);
             break;
-#endif /* HAVE_MAT_INT64_T */
-#ifdef HAVE_MAT_UINT64_T
+#endif /* HAVE_MATIO_INT64_T */
+#ifdef HAVE_MATIO_UINT64_T
         case MAT_C_UINT64:
             matvar->data_type = MAT_T_UINT64;
             matvar->data_size = sizeof(mat_uint64_t);
             break;
-#endif /* HAVE_MAT_UINT64_T */
+#endif /* HAVE_MATIO_UINT64_T */
         case MAT_C_INT32:
             matvar->data_type = MAT_T_INT32;
             matvar->data_size = sizeof(mat_int32_t);
@@ -16743,7 +16882,7 @@ Mat_VarWrite5(mat_t *mat,matvar_t *matvar,int compress)
             case MAT_C_INT8:
             case MAT_C_UINT8:
             {
-                /* WriteCompressedData makes sure uncomressed data is aligned
+                /* WriteCompressedData makes sure uncompressed data is aligned
                  * on an 8-byte boundary */
                 if ( matvar->isComplex ) {
                     mat_complex_split_t *complex_data = matvar->data;
@@ -20427,10 +20566,10 @@ Mat_VarGetCell(matvar_t *matvar,int index)
  * @ingroup MAT
  * @param matvar Cell Array matlab variable
  * @param start vector of length rank with 0-relative starting coordinates for
- *              each diemnsion.
- * @param stride vector of length rank with strides for each diemnsion.
+ *              each dimension.
+ * @param stride vector of length rank with strides for each dimension.
  * @param edge vector of length rank with the number of elements to read in
- *              each diemnsion.
+ *              each dimension.
  * @returns an array of pointers to the cells
  */
 matvar_t **
@@ -20843,10 +20982,10 @@ Mat_VarGetStructField(matvar_t *matvar,void *name_or_index,int opt,int index)
  * @ingroup MAT
  * @param matvar Structure matlab variable
  * @param start vector of length rank with 0-relative starting coordinates for
- *              each diemnsion.
- * @param stride vector of length rank with strides for each diemnsion.
+ *              each dimension.
+ * @param stride vector of length rank with strides for each dimension.
  * @param edge vector of length rank with the number of elements to read in
- *              each diemnsion.
+ *              each dimension.
  * @param copy_fields 1 to copy the fields, 0 to just set pointers to them.
  * @returns A new structure array with fields indexed from @c matvar.
  */

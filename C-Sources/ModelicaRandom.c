@@ -13,8 +13,11 @@
                        functions shall be visible outside of the DLL
 
    Release Notes:
-      Feb. 17, 2015: by Andreas Kloeckner and Martin Otter, DLR-SR.
-                     Implemented a first version.
+      Oct. 27, 2015: by Thomas Beutlich, ITI GmbH
+                     Added nonnull attribute/annotations (ticket #1436)
+
+      Feb. 17, 2015: by Andreas Kloeckner and Martin Otter, DLR-SR
+                     Implemented a first version
 
    This file is licensed under the BSD 2-Clause License:
 
@@ -45,53 +48,49 @@
 #   define MODELICA_EXPORT
 #endif
 
-/* Have ModelicaRandom int64 / uint64 */
+/* Have RANDOM int64 / uint64 */
 #if defined (_WIN32)
-#if defined(_MSC_VER) || defined(__MINGW32__)
-#define HAVE_ModelicaRandom_INT64_T 1
-#define HAVE_ModelicaRandom_UINT64_T 1
-#elif defined(__WATCOMC__)
-#define HAVE_ModelicaRandom_INT64_T 1
-#define HAVE_ModelicaRandom_UINT64_T 1
-#elif defined(__BORLANDC__)
-#undef HAVE_ModelicaRandom_INT64_T
-#undef HAVE_ModelicaRandom_UINT64_T
+#if defined(_MSC_VER) || defined(__WATCOMC__) || defined(__MINGW32__) || defined(__CYGWIN__)
+#define HAVE_RANDOM_INT64_T 1
+#define HAVE_RANDOM_UINT64_T 1
 #else
-#undef HAVE_ModelicaRandom_INT64_T
-#undef HAVE_ModelicaRandom_UINT64_T
+#undef HAVE_RANDOM_INT64_T
+#undef HAVE_RANDOM_UINT64_T
 #endif
 #else
-#define HAVE_ModelicaRandom_INT64_T 1
-#define HAVE_ModelicaRandom_UINT64_T 1
+#define HAVE_RANDOM_INT64_T 1
+#define HAVE_RANDOM_UINT64_T 1
 #endif
 
-/* Define to 1 if <stdint.h> header file is available */
+/* Define to 1 if you have the <stdint.h> header file. */
 #if defined(_WIN32)
-#   if (defined(_MSC_VER) && _MSC_VER >= 1600) || defined(__MINGW32__)
-#       define ModelicaRandom_HAVE_STDINT_H 1
-#   elif defined(__WATCOMC__)
-#       define ModelicaRandom_HAVE_STDINT_H 1
-#   else
-#       undef ModelicaRandom_HAVE_STDINT_H
-#   endif
+#if defined(_MSC_VER) && _MSC_VER >= 1600
+#define HAVE_RANDOM_STDINT_H 1
+#elif defined(__WATCOMC__) || defined(__MINGW32__) || defined(__CYGWIN__)
+#define HAVE_RANDOM_STDINT_H 1
 #else
-#   define ModelicaRandom_HAVE_STDINT_H 1
+#undef HAVE_RANDOM_STDINT_H
+#endif
+#elif defined(__GNUC__) && !defined(__VXWORKS__)
+#define HAVE_RANDOM_STDINT_H 1
+#else
+#undef HAVE_RANDOM_STDINT_H
 #endif
 
 /* Include integer type header */
-#if defined(ModelicaRandom_HAVE_STDINT_H)
-#   include <stdint.h>
+#if defined(HAVE_RANDOM_STDINT_H)
+#include <stdint.h>
 #else
-#   define int32_t  int
-#   define uint32_t unsigned int
-#if defined(HAVE_ModelicaRandom_INT64_T)
+#define int32_t  int
+#define uint32_t unsigned int
+#if defined(HAVE_RANDOM_INT64_T)
 #if defined(_MSC_VER) && _MSC_VER < 1300
 #define int64_t __int64
 #else
 #define int64_t long long
 #endif
 #endif
-#if defined(HAVE_ModelicaRandom_UINT64_T)
+#if defined(HAVE_RANDOM_UINT64_T)
 #if defined(_MSC_VER) && _MSC_VER < 1300
 #define uint64_t unsigned __int64
 #else
@@ -154,6 +153,32 @@ static void deleteCS(void) {
 #define MUTEX_UNLOCK()
 #endif
 
+/*
+ * Non-null pointers need to be passed to external functions.
+ *
+ * The following macros handle nonnull attributes for GNU C and Microsoft SAL.
+ */
+#if defined(__GNUC__)
+#define MODELICA_NONNULLATTR __attribute__((nonnull))
+#else
+#define MODELICA_NONNULLATTR
+#endif
+#if !defined(__ATTR_SAL)
+#define _In_
+#define _Out_
+#endif
+
+MODELICA_EXPORT void ModelicaRandom_xorshift64star(_In_ int state_in[],
+    _Out_ int state_out[], _Out_ double* y) MODELICA_NONNULLATTR;
+MODELICA_EXPORT void ModelicaRandom_xorshift128plus(_In_ int state_in[],
+    _Out_ int state_out[], _Out_ double* y) MODELICA_NONNULLATTR;
+MODELICA_EXPORT void ModelicaRandom_xorshift1024star(_In_ int state_in[],
+    _Out_ int state_out[], _Out_ double* y) MODELICA_NONNULLATTR;
+MODELICA_EXPORT void ModelicaRandom_setInternalState_xorshift1024star(
+    _In_ int* state, size_t nState, int id) MODELICA_NONNULLATTR;
+MODELICA_EXPORT void ModelicaRandom_convertRealToIntegers(double d,
+    _Out_ int i[]) MODELICA_NONNULLATTR;
+
 /* XORSHIFT ALGORITHMS */
 
 /* For details see http://xorshift.di.unimi.it/
@@ -204,7 +229,7 @@ MODELICA_EXPORT void ModelicaRandom_xorshift64star(int state_in[], int state_out
         int32_t  s32[2];
         uint64_t s64;
     } s;
-    int i;
+    size_t i;
     uint64_t x;
     for (i=0; i<sizeof(s)/sizeof(uint32_t); i++) {
         s.s32[i] = state_in[i];
@@ -259,7 +284,7 @@ MODELICA_EXPORT void ModelicaRandom_xorshift128plus(int state_in[], int state_ou
         int32_t  s32[4];
         uint64_t s64[2];
     } s;
-    int i;
+    size_t i;
     uint64_t s1;
     uint64_t s0;
     for (i=0; i<sizeof(s)/sizeof(uint32_t); i++) {
@@ -351,7 +376,7 @@ MODELICA_EXPORT void ModelicaRandom_xorshift1024star(int state_in[], int state_o
         int32_t  s32[32];
         uint64_t s64[16];
     } s;
-    int i;
+    size_t i;
     int p;
     for (i=0; i<sizeof(s)/sizeof(uint32_t); i++) {
         s.s32[i] = state_in[i];
@@ -389,7 +414,7 @@ static int ModelicaRandom_p;
 static int ModelicaRandom_id = 0;
 
 MODELICA_EXPORT void ModelicaRandom_setInternalState_xorshift1024star(int* state, size_t nState, int id) {
-    /* receives the external states from Modelica */
+    /* Receive the external states from Modelica */
     union s_tag {
         int32_t  s32[2];
         uint64_t s64;
@@ -400,13 +425,13 @@ MODELICA_EXPORT void ModelicaRandom_setInternalState_xorshift1024star(int* state
         ModelicaFormatError("External state vector is too large. Should be %lu.\n", (unsigned long)ModelicaRandom_size);
     }
     MUTEX_LOCK();
-        for (i=0; i<16; i++) {
-            s.s32[0] = state[2*i];
-            s.s32[1] = state[2*i+1];
-            ModelicaRandom_s[i] = s.s64;
-        }
-        ModelicaRandom_p = state[32];
-        ModelicaRandom_id = id;
+    for (i=0; i<16; i++) {
+        s.s32[0] = state[2*i];
+        s.s32[1] = state[2*i+1];
+        ModelicaRandom_s[i] = s.s64;
+    }
+    ModelicaRandom_p = state[32];
+    ModelicaRandom_id = id;
     MUTEX_UNLOCK();
 }
 
@@ -436,13 +461,13 @@ MODELICA_EXPORT double ModelicaRandom_impureRandom_xorshift1024star(int id) {
     double y;
 
     MUTEX_LOCK();
-        /* Check that ModelicaRandom_initializeImpureRandome_xorshift1024star was called before */
-        if ( id != ModelicaRandom_id ) {
-            ModelicaError("Function impureRandom not initialized with function initializeImpureRandom\n");
-        }
+    /* Check that ModelicaRandom_initializeImpureRandome_xorshift1024star was called before */
+    if ( id != ModelicaRandom_id ) {
+        ModelicaError("Function impureRandom not initialized with function initializeImpureRandom\n");
+    }
 
-        /* Compute random number */
-        ModelicaRandom_xorshift1024star_internal(ModelicaRandom_s, &ModelicaRandom_p, &y);
+    /* Compute random number */
+    ModelicaRandom_xorshift1024star_internal(ModelicaRandom_s, &ModelicaRandom_p, &y);
     MUTEX_UNLOCK();
     return y;
 }
@@ -450,7 +475,7 @@ MODELICA_EXPORT double ModelicaRandom_impureRandom_xorshift1024star(int id) {
 /* original algorithms */
 
 MODELICA_EXPORT void ModelicaRandom_convertRealToIntegers(double d, int i[]) {
-    /* casts a double to two integers */
+    /* Cast a double to two integers */
     union d2i {
         double d;
         int    i[2];

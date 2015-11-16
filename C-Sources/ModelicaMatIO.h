@@ -63,40 +63,35 @@
 
 /* Have MAT int64 / uint64 */
 #if defined(_WIN32)
-#if defined(_MSC_VER) || defined(__MINGW32__)
-#define HAVE_MAT_INT64_T 1
-#define HAVE_MAT_UINT64_T 1
-#elif defined(__WATCOMC__)
-#define HAVE_MAT_INT64_T 1
-#define HAVE_MAT_UINT64_T 1
-#elif defined(__BORLANDC__)
-#undef HAVE_MAT_INT64_T
-#undef HAVE_MAT_UINT64_T
+#if defined(_MSC_VER) || defined(__WATCOMC__) || defined(__MINGW32__) || defined(__CYGWIN__)
+#define HAVE_MATIO_INT64_T 1
+#define HAVE_MATIO_UINT64_T 1
 #else
-#undef HAVE_MAT_INT64_T
-#undef HAVE_MAT_UINT64_T
+#undef HAVE_MATIO_INT64_T
+#undef HAVE_MATIO_UINT64_T
 #endif
 #else
-#define HAVE_MAT_INT64_T 1
-#define HAVE_MAT_UINT64_T 1
+#define HAVE_MATIO_INT64_T 1
+#define HAVE_MATIO_UINT64_T 1
 #endif
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #if defined(_WIN32)
 #if defined(_MSC_VER) && _MSC_VER >= 1600
-#define MATIO_HAVE_STDINT_H 1
-#elif defined(__WATCOMC__)
-#define MATIO_HAVE_STDINT_H 1
+#define HAVE_MATIO_STDINT_H 1
+#elif defined(__WATCOMC__) || defined(__MINGW32__) || defined(__CYGWIN__)
+#define HAVE_MATIO_STDINT_H 1
 #else
-#undef MATIO_HAVE_STDINT_H
+#undef HAVE_MATIO_STDINT_H
 #endif
-#elif !defined(__VXWORKS__)
-#define MATIO_HAVE_STDINT_H 1
+#elif defined(__GNUC__) && !defined(__VXWORKS__)
+#define HAVE_MATIO_STDINT_H 1
 #else
-#undef MATIO_HAVE_STDINT_H
+#undef HAVE_MATIO_STDINT_H
 #endif
 
-#if defined(MATIO_HAVE_STDINT_H)
+/* Include integer type header */
+#if defined(HAVE_MATIO_STDINT_H)
 #include <stdint.h>
 typedef int16_t mat_int16_t;
 typedef int32_t mat_int32_t;
@@ -109,7 +104,7 @@ typedef uint8_t mat_uint8_t;
 #else
 #define mat_int16_t short
 #define mat_int32_t int
-#if defined(HAVE_MAT_INT64_T)
+#if defined(HAVE_MATIO_INT64_T)
 #if defined(_MSC_VER) && _MSC_VER < 1300
 #define mat_int64_t __int64
 #else
@@ -119,7 +114,7 @@ typedef uint8_t mat_uint8_t;
 #define mat_int8_t signed char
 #define mat_uint16_t unsigned short
 #define mat_uint32_t unsigned
-#if defined(HAVE_MAT_UINT64_T)
+#if defined(HAVE_MATIO_UINT64_T)
 #if defined(_MSC_VER) && _MSC_VER < 1300
 #define mat_uint64_t unsigned __int64
 #else
@@ -136,7 +131,7 @@ typedef uint8_t mat_uint8_t;
 #if defined(__cplusplus)
 #define EXTERN extern "C"
 #else
-#define EXTERN extern
+#define EXTERN
 #endif
 
 /** @defgroup MAT Matlab MAT File I/O Library */
