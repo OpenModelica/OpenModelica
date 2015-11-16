@@ -126,18 +126,15 @@ int VariablesTreeItem::columnCount() const
 
 bool VariablesTreeItem::setData(int column, const QVariant &value, int role)
 {
-  if (column == 0 && role == Qt::CheckStateRole)
-  {
-    if (value.toInt() == Qt::Checked)
+  if (column == 0 && role == Qt::CheckStateRole) {
+    if (value.toInt() == Qt::Checked) {
       setChecked(true);
-    else if (value.toInt() == Qt::Unchecked)
+    } else if (value.toInt() == Qt::Unchecked) {
       setChecked(false);
+    }
     return true;
-  }
-  else if (column == 1 && role == Qt::EditRole)
-  {
-    if (mValue.compare(value.toString()) != 0)
-    {
+  } else if (column == 1 && role == Qt::EditRole) {
+    if (mValue.compare(value.toString()) != 0) {
       mValueChanged = true;
       mValue = value.toString();
     }
@@ -148,11 +145,9 @@ bool VariablesTreeItem::setData(int column, const QVariant &value, int role)
 
 QVariant VariablesTreeItem::data(int column, int role) const
 {
-  switch (column)
-  {
+  switch (column) {
     case 0:
-      switch (role)
-      {
+      switch (role) {
         case Qt::DisplayRole:
           return mDisplayVariableName;
         case Qt::DecorationRole:
@@ -168,26 +163,24 @@ QVariant VariablesTreeItem::data(int column, int role) const
           return QVariant();
       }
     case 1:
-      switch (role)
-      {
+      switch (role) {
         case Qt::DisplayRole:
-          return mValue;
+        case Qt::ToolTipRole:
         case Qt::EditRole:
           return mValue;
         default:
           return QVariant();
       }
     case 2:
-      switch (role)
-      {
+      switch (role) {
         case Qt::DisplayRole:
+        case Qt::ToolTipRole:
           return mUnit;
         default:
           return QVariant();
       }
     case 3:
-      switch (role)
-      {
+      switch (role) {
         case Qt::DisplayRole:
         case Qt::ToolTipRole:
           return mDescription;
