@@ -189,6 +189,7 @@ QVariant VariablesTreeItem::data(int column, int role) const
       switch (role)
       {
         case Qt::DisplayRole:
+        case Qt::ToolTipRole:
           return mDescription;
         default:
           return QVariant();
