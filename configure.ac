@@ -49,7 +49,6 @@ AC_SUBST(MAKE)
 AC_SUBST(LD_LAPACK)
 AC_SUBST(NO_LAPACK)
 AC_SUBST(WITH_SUNDIALS)
-AC_SUBST(WITH_IPOPT)
 AC_SUBST(WITH_UMFPACK)
 AC_SUBST(UMFPACK_TARGET)
 AC_SUBST(UMFPACK_LDFLAGS)
@@ -610,22 +609,7 @@ AC_CHECK_LIB(pthread,pthread_self,[RT_LDFLAGS="$RT_LDFLAGS $LIBS"],[AC_MSG_ERROR
 
 LIBS=""
 
-AC_ARG_WITH(ipopt, [  --without-ipopt              Disable compilation ipopt], [
-  if test "$withval" = "no"; then
-    NO_IPOPT=yes
-  fi
-]
-],[])
-if ! test "$NO_IPOPT" = "yes"; then
-  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use IPOPT: Yes"
-  WITH_IPOPT="#define WITH_IPOPT"
-  IPOPT_LDFLAGS="-lipopt -lcoinmumps"
-else
-  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use IPOPT: No"
-  WITH_IPOPT="/* Without IPOPT */"
-  IPOPT_CFLAGS=""
-  IPOPT_LDFLAGS=""
-fi
+IPOPT_LDFLAGS="-lipopt -lcoinmumps"
 
 # check for umfpack
 AC_ARG_WITH(UMFPACK, [  --without-UMFPACK              Disable compilation with UMFPACK, a sparse linear systems solver],

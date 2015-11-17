@@ -45,7 +45,7 @@
 /* Skip compiling against some stuff for the JavaScript runtime */
 #if !defined(OMC_EMCC) && !defined(OMC_MINIMAL_RUNTIME)
 @WITH_SUNDIALS@
-@WITH_IPOPT@
+#define WITH_IPOPT
 @WITH_UMFPACK@
 @WITH_HWLOC@
 #endif
