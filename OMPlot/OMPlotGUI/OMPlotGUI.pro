@@ -20,7 +20,6 @@ HEADERS += Plot.h \
     Legend.h \
     PlotPanner.h \
     PlotGrid.h \
-    ScaleDraw.h \
     PlotCurve.h \
     PlotWindow.h \
     PlotApplication.h \

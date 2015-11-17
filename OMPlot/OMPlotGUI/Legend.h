@@ -54,7 +54,6 @@ private:
   Plot *mpPlot;
   PlotCurve *mpPlotCurve;
   QAction *mpSetupAction;
-
 };
 }
 

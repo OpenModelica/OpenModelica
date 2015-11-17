@@ -32,8 +32,8 @@
  */
 
 #include "PlotWindow.h"
-#include "ScaleDraw.h"
 #include "qwt_plot_canvas.h"
+#include "qwt_plot_layout.h"
 #include "qwt_scale_widget.h"
 #if QWT_VERSION < 0x060000
 #include "qwt_legend_item.h"
@@ -67,20 +67,14 @@ Plot::Plot(PlotWindow *pParent)
   setCanvasBackground(Qt::white);
   setContentsMargins(10, 10, 10, 10);
 #if QWT_VERSION >= 0x060000
-  /*
-    Ticket #2679 point 2.
-    Move the canvas little bit from bottom and left to align the axis at starting point.
-    There is a slight margin in the axis drawn so we have to subclass QwtScaleDraw to draw the backbone line and ticks at the proper location.
-    */
-//  canvas()->setContentsMargins(-5, 0, 0, -5);
-//  setAxisScaleDraw(QwtPlot::yLeft, new ScaleDraw);
-//  setAxisScaleDraw(QwtPlot::xBottom, new ScaleDraw);
-  /*
-    The above code doesn't work as expected. The values drawn at 0 are not shown if we align the axis.
-    We need to reimplement the scale engine.
-    */
-    axisWidget(QwtPlot::yLeft)->setMargin(0);
-    axisWidget(QwtPlot::xBottom)->setMargin(0);
+  /* Ticket #2679 point 2. */
+  for (int i = 0; i < QwtPlot::axisCnt; i++) {
+    QwtScaleWidget *pScaleWidget = axisWidget(i);
+    if (pScaleWidget) {
+      pScaleWidget->setMargin(0);
+    }
+  }
+  plotLayout()->setAlignCanvasToScales(true);
 #endif
   // set the bottom axis title font size small.
   QwtText bottomTitle = axisTitle(QwtPlot::xBottom);

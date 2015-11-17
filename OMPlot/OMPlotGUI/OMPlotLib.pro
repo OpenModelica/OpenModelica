@@ -23,7 +23,6 @@ SOURCES += Plot.cpp \
     Legend.cpp \
     PlotPanner.cpp \
     PlotGrid.cpp \
-    ScaleDraw.cpp \
     PlotCurve.cpp \
     PlotWindow.cpp \
     PlotApplication.cpp \
@@ -35,7 +34,6 @@ HEADERS  += Plot.h \
     Legend.h \
     PlotPanner.h \
     PlotGrid.h \
-    ScaleDraw.h \
     PlotCurve.h \
     PlotWindow.h \
     PlotApplication.h \
