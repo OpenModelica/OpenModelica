@@ -123,28 +123,28 @@ OMCProxy::OMCProxy(MainWindow *pMainWindow)
   pVerticalalLayout->addLayout(pHorizontalLayout);
   pVerticalalLayout->addWidget(mpOMCLoggerEnableHintLabel);
   mpOMCLoggerWidget->setLayout(pVerticalalLayout);
-#ifdef QT_DEBUG
-  // OMC Diff widget
-  mpOMCDiffWidget = new QWidget;
-  mpOMCDiffWidget->resize(640, 480);
-  mpOMCDiffWidget->setWindowIcon(QIcon(":/Resources/icons/console.svg"));
-  mpOMCDiffWidget->setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("OMC Diff")));
-  mpOMCDiffBeforeLabel = new Label(tr("Before"));
-  mpOMCDiffBeforeTextBox = new QPlainTextEdit;
-  mpOMCDiffAfterLabel = new Label(tr("After"));
-  mpOMCDiffAfterTextBox = new QPlainTextEdit;
-  mpOMCDiffMergedLabel = new Label(tr("Merged"));
-  mpOMCDiffMergedTextBox = new QPlainTextEdit;
-  // Set the OMC Diff widget Layout
-  QGridLayout *pOMCDiffWidgetLayout = new QGridLayout;
-  pOMCDiffWidgetLayout->addWidget(mpOMCDiffBeforeLabel, 0, 0);
-  pOMCDiffWidgetLayout->addWidget(mpOMCDiffAfterLabel, 0, 1);
-  pOMCDiffWidgetLayout->addWidget(mpOMCDiffBeforeTextBox, 1, 0);
-  pOMCDiffWidgetLayout->addWidget(mpOMCDiffAfterTextBox, 1, 1);
-  pOMCDiffWidgetLayout->addWidget(mpOMCDiffMergedLabel, 2, 0, 1, 2);
-  pOMCDiffWidgetLayout->addWidget(mpOMCDiffMergedTextBox, 3, 0, 1, 2);
-  mpOMCDiffWidget->setLayout(pOMCDiffWidgetLayout);
-#endif
+  if (mpMainWindow->isDebug()) {
+    // OMC Diff widget
+    mpOMCDiffWidget = new QWidget;
+    mpOMCDiffWidget->resize(640, 480);
+    mpOMCDiffWidget->setWindowIcon(QIcon(":/Resources/icons/console.svg"));
+    mpOMCDiffWidget->setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("OMC Diff")));
+    mpOMCDiffBeforeLabel = new Label(tr("Before"));
+    mpOMCDiffBeforeTextBox = new QPlainTextEdit;
+    mpOMCDiffAfterLabel = new Label(tr("After"));
+    mpOMCDiffAfterTextBox = new QPlainTextEdit;
+    mpOMCDiffMergedLabel = new Label(tr("Merged"));
+    mpOMCDiffMergedTextBox = new QPlainTextEdit;
+    // Set the OMC Diff widget Layout
+    QGridLayout *pOMCDiffWidgetLayout = new QGridLayout;
+    pOMCDiffWidgetLayout->addWidget(mpOMCDiffBeforeLabel, 0, 0);
+    pOMCDiffWidgetLayout->addWidget(mpOMCDiffAfterLabel, 0, 1);
+    pOMCDiffWidgetLayout->addWidget(mpOMCDiffBeforeTextBox, 1, 0);
+    pOMCDiffWidgetLayout->addWidget(mpOMCDiffAfterTextBox, 1, 1);
+    pOMCDiffWidgetLayout->addWidget(mpOMCDiffMergedLabel, 2, 0, 1, 2);
+    pOMCDiffWidgetLayout->addWidget(mpOMCDiffMergedTextBox, 3, 0, 1, 2);
+    mpOMCDiffWidget->setLayout(pOMCDiffWidgetLayout);
+  }
   //start the server
   if(!initializeOMC())      // if we are unable to start OMC. Exit the application.
   {
@@ -156,9 +156,9 @@ OMCProxy::OMCProxy(MainWindow *pMainWindow)
 OMCProxy::~OMCProxy()
 {
   delete mpOMCLoggerWidget;
-#ifdef QT_DEBUG
-  delete mpOMCDiffWidget;
-#endif
+  if (mpMainWindow->isDebug()) {
+    delete mpOMCDiffWidget;
+  }
 }
 
 /*!
@@ -457,20 +457,20 @@ void OMCProxy::sendCustomExpression()
   mpExpressionTextBox->setText("");
 }
 
-#ifdef QT_DEBUG
 /*!
  * \brief OMCProxy::openOMCDiffWidget
  * Opens the OMC Diff widget.
  */
 void OMCProxy::openOMCDiffWidget()
 {
-  mpOMCDiffBeforeTextBox->setFocus(Qt::ActiveWindowFocusReason);
-  mpOMCDiffWidget->show();
-  mpOMCDiffWidget->raise();
-  mpOMCDiffWidget->activateWindow();
-  mpOMCDiffWidget->setWindowState(mpOMCDiffWidget->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
+  if (mpMainWindow->isDebug()) {
+    mpOMCDiffBeforeTextBox->setFocus(Qt::ActiveWindowFocusReason);
+    mpOMCDiffWidget->show();
+    mpOMCDiffWidget->raise();
+    mpOMCDiffWidget->activateWindow();
+    mpOMCDiffWidget->setWindowState(mpOMCDiffWidget->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
+  }
 }
-#endif
 
 /*!
   Removes the CORBA IOR file. We only call this method when we are unable to connect to OMC.\n
@@ -1588,11 +1588,11 @@ QString OMCProxy::diffModelicaFileListings(QString before, QString after)
   QString escapedAfter = StringHandler::escapeString(after);
   sendCommand("diffModelicaFileListings(\"" + escapedBefore + "\", \"" + escapedAfter + "\", OpenModelica.Scripting.DiffFormat.plain)");
   QString result = StringHandler::unparse(getResult());
-#ifdef QT_DEBUG
-  mpOMCDiffBeforeTextBox->setPlainText(before);
-  mpOMCDiffAfterTextBox->setPlainText(after);
-  mpOMCDiffMergedTextBox->setPlainText(result);
-#endif
+  if (mpMainWindow->isDebug()) {
+    mpOMCDiffBeforeTextBox->setPlainText(before);
+    mpOMCDiffAfterTextBox->setPlainText(after);
+    mpOMCDiffMergedTextBox->setPlainText(result);
+  }
   return result;
 }
 

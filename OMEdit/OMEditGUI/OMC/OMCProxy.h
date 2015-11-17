@@ -231,9 +231,7 @@ public slots:
   void showException(QString exception);
   void openOMCLoggerWidget();
   void sendCustomExpression();
-#ifdef QT_DEBUG
   void openOMCDiffWidget();
-#endif
 };
 
 class CustomExpressionBox : public QLineEdit
