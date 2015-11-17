@@ -1044,8 +1044,8 @@ algorithm
       list<list<DAE.ComponentRef>> translated;
       list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsetuple, sparsetupleT;
 
-    case (_,{},_) then (({},{},({},{})),{});
-    case (_,_,{}) then (({},{},({},{})),{});
+    case (_,{},_) then (({},{},({},{}), -1),{});
+    case (_,_,{}) then (({},{},({},{}), -1),{});
     case(BackendDAE.DAE(eqs = (syst as BackendDAE.EQSYSTEM(matching=bdaeMatching as BackendDAE.MATCHING(comps=comps, ass1=ass1)))::{}),indiffVars,indiffedVars)
       equation
         if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
@@ -1173,7 +1173,7 @@ algorithm
         if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
           print("analytical Jacobians[SPARSE] -> ready! " + realString(clock()) + "\n");
         end if;
-      then ((sparsetupleT, sparsetuple, (diffCompRefs, diffedCompRefs)), coloring);
+      then ((sparsetupleT, sparsetuple, (diffCompRefs, diffedCompRefs), nonZeroElements), coloring);
         else
       equation
         Error.addInternalError("function generateSparsePattern failed", sourceInfo());
@@ -1830,21 +1830,21 @@ algorithm
           end if;
 
           backendDAE2 = BackendDAEUtil.getSolvedSystemforJacobians(backendDAE,
-                                                                   SOME({"removeEqualFunctionCalls",
-                                                                         "removeSimpleEquations",
-                                                                         "evalFunc",
-                                                                         "simplifyAllExpressions"}),
+                                                                   {"removeEqualFunctionCalls",
+                                                                    "removeSimpleEquations",
+                                                                    "evalFunc",
+                                                                    "simplifyAllExpressions"},
                                                                    NONE(),
                                                                    NONE(),
-                                                                   SOME({"inlineArrayEqn",
-                                                                         "constantLinearSystem",
-                                                                         "removeSimpleEquations",
-                                                                         "tearingSystem",
-                                                                         "calculateStrongComponentJacobians",
-                                                                         "removeConstants",
-                                                                         "solveSimpleEquations",
-                                                                         "simplifyTimeIndepFuncCalls",
-                                                                         "simplifyAllExpressions"}));
+                                                                   {"inlineArrayEqn",
+                                                                    "constantLinearSystem",
+                                                                    "removeSimpleEquations",
+                                                                    "tearingSystem",
+                                                                    "calculateStrongComponentJacobians",
+                                                                    "removeConstants",
+                                                                    "solveSimpleEquations",
+                                                                    "simplifyTimeIndepFuncCalls",
+                                                                    "simplifyAllExpressions"});
           _ = Flags.set(Flags.EXEC_STAT, b);
           if Flags.isSet(Flags.JAC_DUMP) then
             BackendDump.bltdump("Symbolic Jacobian",backendDAE2);
@@ -3139,8 +3139,8 @@ protected
   BackendDAE.SymbolicJacobians symjacs;
   BackendDAE.ExtraInfo ei;
 algorithm
-  symjacs := { (SOME(inSymJac), inSparsePattern, inSparseColoring), (NONE(), ({}, {}, ({}, {})), {}),
-               (NONE(), ({}, {}, ({}, {})), {}), (NONE(), ({}, {}, ({}, {})), {}) };
+  symjacs := { (SOME(inSymJac), inSparsePattern, inSparseColoring), (NONE(), ({}, {}, ({}, {}), -1), {}),
+               (NONE(), ({}, {}, ({}, {}), -1), {}), (NONE(), ({}, {}, ({}, {}), -1), {}) };
   outShared := BackendDAEUtil.setSharedSymJacs(inShared, symjacs);
 end addBackendDAESharedJacobian;
 

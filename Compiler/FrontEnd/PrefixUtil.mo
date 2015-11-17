@@ -81,21 +81,21 @@ algorithm
 
     case Prefix.NOPRE() then "<Prefix.NOPRE()>";
     case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "<Prefix.PREFIX(Prefix.NOCOMPPRE())>";
-    case Prefix.PREFIX(Prefix.PRE(str,_,{},Prefix.NOCOMPPRE(),_),_) then str;
-    case Prefix.PREFIX(Prefix.PRE(str,_,ss,Prefix.NOCOMPPRE(),_),_)
+    case Prefix.PREFIX(Prefix.PRE(str,_,{},Prefix.NOCOMPPRE(),_,_),_) then str;
+    case Prefix.PREFIX(Prefix.PRE(str,_,ss,Prefix.NOCOMPPRE(),_,_),_)
       equation
         s = stringAppend(str, "[" + stringDelimitList(
           List.map(ss, ExpressionDump.subscriptString), ", ") + "]");
       then
         s;
-    case Prefix.PREFIX(Prefix.PRE(str,_,{},rest,_),cp)
+    case Prefix.PREFIX(Prefix.PRE(str,_,{},rest,_,_),cp)
       equation
         rest_1 = printPrefixStr(Prefix.PREFIX(rest,cp));
         s = stringAppend(rest_1, ".");
         s_1 = stringAppend(s, str);
       then
         s_1;
-    case Prefix.PREFIX(Prefix.PRE(str,_,ss,rest,_),cp)
+    case Prefix.PREFIX(Prefix.PRE(str,_,ss,rest,_,_),cp)
       equation
         rest_1 = printPrefixStr(Prefix.PREFIX(rest,cp));
         s = stringAppend(rest_1, ".");
@@ -166,6 +166,7 @@ public function prefixAdd "This function is used to extend a prefix with another
   input Prefix.Prefix inPrefix;
   input SCode.Variability vt;
   input ClassInf.State ci_state;
+  input SourceInfo inInfo;
   output Prefix.Prefix outPrefix;
 algorithm
   outPrefix := match (inIdent,inType,inIntegerLst,inPrefix,vt,ci_state)
@@ -175,10 +176,10 @@ algorithm
       Prefix.ComponentPrefix p;
 
     case (i,_,s,Prefix.PREFIX(p,_),_,_)
-      then Prefix.PREFIX(Prefix.PRE(i,inType,s,p,ci_state),Prefix.CLASSPRE(vt));
+      then Prefix.PREFIX(Prefix.PRE(i,inType,s,p,ci_state,inInfo),Prefix.CLASSPRE(vt));
 
     case(i,_,s,Prefix.NOPRE(),_,_)
-      then Prefix.PREFIX(Prefix.PRE(i,inType,s,Prefix.NOCOMPPRE(),ci_state),Prefix.CLASSPRE(vt));
+      then Prefix.PREFIX(Prefix.PRE(i,inType,s,Prefix.NOCOMPPRE(),ci_state,inInfo),Prefix.CLASSPRE(vt));
   end match;
 end prefixAdd;
 
@@ -194,8 +195,10 @@ algorithm
       Prefix.ComponentPrefix c;
       ClassInf.State ci_state;
       list<DAE.Dimension> pdims;
-    case (Prefix.PREFIX(Prefix.PRE(prefix = a, dimensions = pdims, subscripts = b,ci_state=ci_state),cp))
-      then Prefix.PREFIX(Prefix.PRE(a,pdims,b,Prefix.NOCOMPPRE(),ci_state),cp);
+      SourceInfo info;
+
+    case (Prefix.PREFIX(Prefix.PRE(prefix = a, dimensions = pdims, subscripts = b,ci_state=ci_state, info = info),cp))
+      then Prefix.PREFIX(Prefix.PRE(a,pdims,b,Prefix.NOCOMPPRE(),ci_state,info),cp);
   end match;
 end prefixFirst;
 
@@ -1417,6 +1420,16 @@ algorithm
 
   end match;
 end prefixClockKind;
+
+public function getPrefixInfo
+  input Prefix.Prefix inPrefix;
+  output SourceInfo outInfo;
+algorithm
+  outInfo := match inPrefix
+    case Prefix.PREFIX(compPre = Prefix.PRE(info = outInfo)) then outInfo;
+    else Absyn.dummyInfo;
+  end match;
+end getPrefixInfo;
 
 annotation(__OpenModelica_Interface="frontend");
 end PrefixUtil;

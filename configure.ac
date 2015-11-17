@@ -49,7 +49,6 @@ AC_SUBST(MAKE)
 AC_SUBST(LD_LAPACK)
 AC_SUBST(NO_LAPACK)
 AC_SUBST(WITH_SUNDIALS)
-AC_SUBST(WITH_IPOPT)
 AC_SUBST(WITH_UMFPACK)
 AC_SUBST(UMFPACK_TARGET)
 AC_SUBST(UMFPACK_LDFLAGS)
@@ -107,6 +106,19 @@ host_short=$host_cpu-$host_os
 echo "build_short: $build_short"
 echo "host_short: $host_short"
 
+AS_IF([test "x$with_UMFPACK" = xyes],
+[
+  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use UMFPACK: Yes"
+  UMFPACK_TARGET="umfpack";
+  WITH_UMFPACK="#define WITH_UMFPACK"
+  UMFPACK_LDFLAGS="-lumfpack -lklu -lbtf -lcolamd -lamd"
+],[
+  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use UMFPACK: No"
+  UMFPACK_TARGET="";
+  WITH_UMFPACK="/* Without UMFPACK */"
+  UMFPACK_LDFLAGS=""
+])
+
 if echo $host | grep -i darwin; then
   DARWIN=1
 else
@@ -130,6 +142,22 @@ AC_PROG_CXX
 AC_PROG_CPP
 AC_PROG_MAKE_SET
 AC_PROG_FC
+
+
+AC_ARG_WITH(msys, [  --with-msys[=no]              Point to an msys installation, to setup CPPFLAGS, etc automatically.],
+  [
+    if echo $host_cpu | grep -q x86_64; then
+      MINGWNUM=mingw64
+    else
+      MINGWNUM=mingw32
+    fi
+    CPPFLAGS="$CPPFLAGS -I$withval/$MINGWNUM/include -I$withval/$MINGWNUM/include/tre"
+    LDFLAGS="$LDFLAGS -L$withval/$MINGWNUM/lib"
+    echo "Got: $CPPFLAGS"
+  ],
+  [
+  ]
+)
 
 CFLAGS_BEFORE="$CFLAGS"
 CFLAGS="$CFLAGS -Werror"
@@ -303,10 +331,7 @@ fi
 
 dnl Misc. headers
 
-AC_CHECK_HEADER(expat.h,,
-  CPPFLAGS="$CPPFLAGS -I \"$ac_top_srcdir/3rdParty/FMIL/Expat/lib\""
-  AC_MSG_RESULT([using local expat.h])
-)
+AC_CHECK_HEADER(expat.h,,AC_MSG_ERROR([no]))
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -413,9 +438,6 @@ LIBS=""
 CC="$CC_OLD"
 CFLAGS="$CFLAGS_OLD"
 
-if echo "$host" | grep -q "mingw"; then
-  true
-else
 dnl check for lpsolve55
 
 AC_ARG_WITH(lpsolve,  [  --with-lpsolve        (default searching for lpsolve; disable if only using omc to cross-compile)],[if test "$withval" = "no"; then NO_LPLIB="#define NO_LPLIB"; fi],[])
@@ -432,7 +454,7 @@ if test "$WANT_STATIC_LPSOLVE" = "no"; then
   LIBDL="$LIBS"
   AC_SEARCH_LIBS(sqrt,m)
   AC_SEARCH_LIBS(colamd,colamd)
-  AC_SEARCH_LIBS(make_lp,[lpsolve55_pic lpsolve55],[],[AC_MSG_ERROR([lpsolve linking failed using $LIBS])])
+  AC_SEARCH_LIBS(make_lp,[lpsolve55_pic lpsolve55],[],[MINGW_EXTRA_LIBS="$MINGW_EXTRA_LIBS lpsolve"; AC_MSG_RESULT([lpsolve linking failed using $LIBS])])
   LIBLPSOLVE55=$LIBS
   LIBS=""
 else
@@ -446,15 +468,19 @@ else
   AC_SEARCH_LIBS(sqrt,m)
   LIBS="$LPLIB/liblpsolve55_pic.a $LPLIB/libcolamd.a $LIBS"
   AC_MSG_CHECKING([for static lpsolve55])
-  AC_LINK_IFELSE([AC_LANG_CALL([], [make_lp])], [LIBLPSOLVE55=$LIBS], [AC_MSG_ERROR([failed])])
+  AC_LINK_IFELSE([AC_LANG_CALL([], [make_lp])], [LIBLPSOLVE55=$LIBS], [MINGW_EXTRA_LIBS="$MINGW_EXTRA_LIBS lpsolve"; AC_MSG_RESULT([failed])])
   AC_MSG_RESULT([$LIBLPSOLVE55])
   LIBS=""
 fi
 AC_CHECK_HEADER([lp_lib.h],[LPSOLVEINC=lp_lib.h],[
-  AC_CHECK_HEADER([lpsolve/lp_lib.h],[LPSOLVEINC=lpsolve/lp_lib.h],[AC_MSG_ERROR([failed to find lpsolve55 headers])])
+  AC_CHECK_HEADER([lpsolve/lp_lib.h],[LPSOLVEINC=lpsolve/lp_lib.h],[
+    if ! ( echo $MINGW_EXTRA_LIBS | grep -q lpsolve ); then
+      MINGW_EXTRA_LIBS="$MINGW_EXTRA_LIBS lpsolve";
+    fi
+    AC_MSG_RESULT([failed to find lpsolve55 headers])
+  ])
 ])
 
-fi
 fi # NO_LPLIB
 
 if ! (echo "$host" | grep -q "mingw"); then
@@ -490,7 +516,14 @@ fi
 fi
 
 # Cannot use AX_LAPACK since it assumes a Fortran compiler is used
-AC_ARG_WITH(lapack,  [  --with-lapack=[-llapack -lblas]    (use -llapack -lblas to use system-provided version instead of OpenBLAS. Use openblas for automatically detected OpenBLAS. Use --with-lapack=openblas-NEHALEM or other OpenBLAS target to compile against a certain architecture. Note that you need to include BLAS in this.)],[LD_LAPACK="$withval"],[LD_LAPACK="-llapack -lblas"])
+AC_ARG_WITH(lapack,  [  --with-lapack=[-llapack -lblas]    (use -llapack -lblas to use system-provided version instead of OpenBLAS. Use openblas for automatically detected OpenBLAS. Use --with-lapack=openblas-NEHALEM or other OpenBLAS target to compile against a certain architecture. Note that you need to include BLAS in this.)],[LD_LAPACK="$withval"],
+  [
+    if test ! -z "$MINGWNUM"; then
+      LD_LAPACK="-Wl,-Bstatic -lopenblas -lgfortran -lquadmath -Wl,-Bdynamic"
+    else
+      LD_LAPACK="-llapack -lblas"
+    fi
+  ])
 
 if test "$LD_LAPACK" = "no"; then
   FINAL_MESSAGES="$FINAL_MESSAGES\nLAPACK IS NOT AVAILABLE! ONLY USED FOR CROSS-COMPILING/BOOTSTRAPPING"
@@ -576,16 +609,7 @@ AC_CHECK_LIB(pthread,pthread_self,[RT_LDFLAGS="$RT_LDFLAGS $LIBS"],[AC_MSG_ERROR
 
 LIBS=""
 
-if ! test "$NO_IPOPT" = "yes"; then
-  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use IPOPT: Yes"
-  WITH_IPOPT="#define WITH_IPOPT"
-  IPOPT_LDFLAGS="-lipopt -lcoinmumps"
-else
-  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use IPOPT: No"
-  WITH_IPOPT="/* Without IPOPT */"
-  IPOPT_CFLAGS=""
-  IPOPT_LDFLAGS=""
-fi
+IPOPT_LDFLAGS="-lipopt -lcoinmumps"
 
 # check for umfpack
 AC_ARG_WITH(UMFPACK, [  --without-UMFPACK              Disable compilation with UMFPACK, a sparse linear systems solver],
@@ -613,10 +637,15 @@ AC_CHECK_HEADER([CL/cl.h],[OPENCL="Yes"],[
 FINAL_MESSAGES="$FINAL_MESSAGES\nParModelica: $OPENCL"
 
 AC_SUBST(CMAKE_LDFLAGS)
+AC_SUBST(CMAKE_EXTRA_DEFINES)
+AC_SUBST(DLLEXT)
+AC_SUBST(UMFPACK_SHARED)
+AC_SUBST(CONFIG_OS)
 if test "$DARWIN" = "1"; then
   APP=".app"
   EXE=".app"
   SHREXT=".dylib"
+  DLLEXT=".dylib"
   LIBGC="$OMBUILDDIR/lib/$host_short/omc/libomcgc.a"
   LIBSIMULATION=libSimulationRuntimeC.dylib
   LIBRUNTIME=libOpenModelicaRuntimeC.dylib
@@ -643,11 +672,14 @@ if test "$DARWIN" = "1"; then
   OMC_LIBS="$(OMC_LIBS) -Wl,-undefined -Wl,dynamic_lookup"
   BOOTSTRAP_STATIC=""
   CMAKE_LDFLAGS="-Wl,-undefined -Wl,dynamic_lookup"
-elif test "$host" = "i586-pc-mingw32msvc"; then
+  UMFPACK_SHARED=ON
+  CONFIG_OS=OSX
+elif echo "$host" | grep -iq "mingw"; then
   APP=".exe"
   EXE=".exe"
   # Yes, we build static libs on Windows, so the "shared" extension is .a
   SHREXT=".a"
+  DLLEXT=".dll"
   LIBGC="$OMBUILDDIR/lib/$host_short/omc/libomcgc.a"
   LIBSIMULATION=libSimulationRuntimeC.a
   LIBRUNTIME=libOpenModelicaRuntimeC.a
@@ -658,22 +690,30 @@ elif test "$host" = "i586-pc-mingw32msvc"; then
   CMINPACKLIB_SHARED=OFF
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lstdc++ -lomcgc -lexpat -lm"
   RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcminpack"
-  RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lexpat -lpthread -lm"
+  RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lexpat -Wl,-Bstatic -lpthread -Wl,-Bdynamic -static-libgcc -lm"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lcdaskr $RT_LDFLAGS_SIM"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm$LD_NOUNDEFINED"
   LINK="cp -frl"
-  RPATH="-Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/$host_short/omc' -Wl,-rpath,'\$\$ORIGIN'"
-  RPATH_QMAKE="-Wl,-z,origin -Wl,-rpath,\\'\\\$\$ORIGIN/../lib/$host_short/omc\\' -Wl,-rpath,\\'\\\$\$ORIGIN\\'"
+  # No RPATH in Windows :(
+  RPATH=""
+  RPATH_QMAKE=""
   OS_TARGET="windows"
   AR_SH="$AR -ru"
   LDFLAGS_SOCKET=" -lwsock32"
-  BOOTSTRAP_STATIC="static"
+  BOOTSTRAP_STATIC=""
+  AC_CHECK_TOOL(WINDRES, windres, [AC_MSG_ERROR([no])])
+  CMAKE_EXTRA_DEFINES="-DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RC_COMPILER=$WINDRES"
+  CPPFLAGS="$CPPFLAGS -DMSYS2_AUTOCONF=1"
+  OMC_LIBS="$OMC_LIBS -lwsock32 -Wl,-Bstatic -lstdc++ -ltre  -lintl -liconv -Wl,-Bdynamic -lshlwapi"
+  UMFPACK_SHARED=OFF
+  CONFIG_OS=Windows_NT
 else
   APP=""
   EXE=""
   SHREXT=".so"
+  DLLEXT=".so"
   LIBGC="$OMBUILDDIR/lib/$host_short/omc/libomcgc.so"
   LIBSIMULATION=libSimulationRuntimeC.so
   LIBRUNTIME=libOpenModelicaRuntimeC.so
@@ -698,6 +738,8 @@ else
   OS_TARGET="linux"
   AR_SH="$AR -ru"
   BOOTSTRAP_STATIC=""
+  UMFPACK_SHARED=ON
+  CONFIG_OS=`echo $host_os | sed s/-gnu//`
 fi
 
 AC_ARG_WITH(FMIL, [  --with-FMIL                 Link omc to FMIL (only disable when cross-compiling)],

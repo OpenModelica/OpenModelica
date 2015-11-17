@@ -192,7 +192,7 @@ algorithm
    // external functions are complete :)
    case (cache, env, fpath)
      equation
-       (_, SCode.CLASS(classDef = SCode.PARTS(externalDecl = SOME(_))), _) = Lookup.lookupClass(cache, env, fpath, false);
+       (_, SCode.CLASS(classDef = SCode.PARTS(externalDecl = SOME(_))), _) = Lookup.lookupClass(cache, env, fpath);
      then
        true;
 
@@ -206,7 +206,7 @@ algorithm
    // partial functions are not complete!
    case (cache, env, fpath)
      equation
-       (_, SCode.CLASS(partialPrefix = SCode.PARTIAL()), _) = Lookup.lookupClass(cache, env, fpath, false);
+       (_, SCode.CLASS(partialPrefix = SCode.PARTIAL()), _) = Lookup.lookupClass(cache, env, fpath);
      then
        false;
 
@@ -2311,7 +2311,7 @@ algorithm
         // bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: try constant evaluation: " + Absyn.pathString(funcpath) + "\n");
         (cache,
          sc as SCode.CLASS(partialPrefix = SCode.NOT_PARTIAL()),
-         env) = Lookup.lookupClass(cache, env, funcpath, false);
+         env) = Lookup.lookupClass(cache, env, funcpath);
         isCevaluableFunction(sc);
         (cache, env, _) = InstFunction.implicitFunctionInstantiation(
           cache,

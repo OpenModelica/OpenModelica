@@ -715,7 +715,8 @@ public
 type SparsePattern = tuple<list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>>, // column-wise sparse pattern
                            list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>>, // row-wise sparse pattern
                            tuple<list< .DAE.ComponentRef>,                            // diff vars
-                                 list< .DAE.ComponentRef>>>;                          // diffed vars
+                                 list< .DAE.ComponentRef>>,                           // diffed vars
+                           Integer>;                                                  // nonZeroElements
 
 public
 type SparseColoring = list<list< .DAE.ComponentRef>>;   // colouring

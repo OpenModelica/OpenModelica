@@ -3607,7 +3607,7 @@ algorithm
 
     case (pa,Absyn.COMPONENTS(typeSpec = Absyn.TPATH(path_1,_),components = comp_items),comps,env) /* the QUALIFIED path for the class */
       equation
-        (cache,SCode.CLASS(name=id),cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1, false);
+        (cache,SCode.CLASS(name=id),cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1);
         path_1 = Absyn.IDENT(id);
         (cache,path) = Inst.makeFullyQualified(cache, cenv, path_1);
         comps_1 = extractComponentsFromComponentitems(pa, path, comp_items, comps, env);
@@ -3615,7 +3615,7 @@ algorithm
         comps_1;
     case (pa,Absyn.EXTENDS(path = path_1,elementArg = elementargs),comps,env)
       equation
-        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1, false)
+        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1)
         "print \"extract_components_from_elementspec Absyn.EXTENDS(path,_) not implemented yet\"" ;
         (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
         comp = GlobalScript.EXTENDSITEM(pa,path);
@@ -3989,14 +3989,14 @@ algorithm
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
         (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr,classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(_,_)))),env_1) =
-        Lookup.lookupClass(cache,env, p_class, false);
+        Lookup.lookupClass(cache,env, p_class);
       then env_1;
 
     case (_,_)
       equation
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
-        (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, p_class, false);
+        (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, p_class);
         env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         (_,env_2,_,_,_) =
@@ -6842,7 +6842,7 @@ algorithm
                       body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path_1,subscripts),attributes = attrs,arguments = elementarg,comment = co),
                       info = file_info),old_comp,new_comp,env)
       equation
-        (cache,SCode.CLASS(name=name),cenv) = Lookup.lookupClass(FCore.emptyCache(), env, path_1, false);
+        (cache,SCode.CLASS(name=name),cenv) = Lookup.lookupClass(FCore.emptyCache(), env, path_1);
         path_1 = Absyn.IDENT(name);
         (_,path) = Inst.makeFullyQualified(cache, cenv, path_1);
         true = Absyn.pathEqual(path, old_comp);
@@ -6975,7 +6975,7 @@ algorithm
 
     case (Absyn.COMPONENTS(attributes = a,typeSpec = Absyn.TPATH(path_1,x),components = comp_items),old_comp,new_comp,env) /* the old name for the component signal if something in class have been changed rule */
       equation
-        (cache,SCode.CLASS(name=id),cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1, false);
+        (cache,SCode.CLASS(name=id),cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1);
         path_1 = Absyn.IDENT(id);
         (_,path) = Inst.makeFullyQualified(cache, cenv, path_1);
         true = Absyn.pathEqual(path, old_comp);
@@ -6984,7 +6984,7 @@ algorithm
         (Absyn.COMPONENTS(a,Absyn.TPATH(new_path,x),comp_items),true);
     case (Absyn.EXTENDS(path = path_1,elementArg = elargs, annotationOpt=annOpt),old_comp,new_comp,env)
       equation
-        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1, false) "print \"rename_class_in_element_spec Absyn.EXTENDS(path,_) not implemented yet\"" ;
+        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1) "print \"rename_class_in_element_spec Absyn.EXTENDS(path,_) not implemented yet\"" ;
         (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
         true = Absyn.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
@@ -7020,7 +7020,7 @@ algorithm
 
     case (Absyn.NAMED_IMPORT(name = id,path = path_1),old_comp,new_comp,env) /* the old name for the component signal if something in class have been changed */
       equation
-        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1, false);
+        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1);
         (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
         true = Absyn.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
@@ -7028,7 +7028,7 @@ algorithm
         (Absyn.NAMED_IMPORT(id,new_path),true);
     case (Absyn.QUAL_IMPORT(path = path_1),old_comp,new_comp,env)
       equation
-        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1, false);
+        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1);
         (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
         true = Absyn.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
@@ -7036,7 +7036,7 @@ algorithm
         (Absyn.QUAL_IMPORT(new_path),true);
     case (Absyn.NAMED_IMPORT(path = path_1),old_comp,new_comp,env)
       equation
-        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1, false);
+        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1);
         (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
         true = Absyn.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
@@ -9279,7 +9279,7 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p);
         (p_1,st) = GlobalScriptUtil.symbolTableToSCode(st);
         (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
-        (_,(c as SCode.CLASS()),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
+        (_,(c as SCode.CLASS()),env_1) = Lookup.lookupClass(cache,env, modelpath);
         lst = getInheritedClassesHelper(c, cdef, env_1);
         failure({} = lst);
         paths = List.map(lst, Absyn.crefToPath);
@@ -9354,7 +9354,7 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p);
         (p_1,st) = GlobalScriptUtil.symbolTableToSCode(st);
         (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
-        (_,(c as SCode.CLASS()),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
+        (_,(c as SCode.CLASS()),env_1) = Lookup.lookupClass(cache,env, modelpath);
         str = getNthInheritedClass2(c, cdef, n, env_1);
       then
         (str,st);
@@ -9397,7 +9397,7 @@ algorithm
         cdef = inClass;
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
-        (_,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(cache, env, modelpath, false);
+        (_,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(cache, env, modelpath);
         str = getNthInheritedClass2(c, cdef, n, env_1);
       then
         (str, annOpt);
@@ -9780,7 +9780,7 @@ algorithm
         modelpath = Absyn.crefToPath(model_);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
-        (_,(c as SCode.CLASS()),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
+        (_,(c as SCode.CLASS()),env_1) = Lookup.lookupClass(cache,env, modelpath);
         cdef = getPathedClassInProgram(modelpath, p);
         str = getNthComponent2(c, cdef, n, env_1);
       then
@@ -9912,7 +9912,7 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p);
         (p_1,st) = GlobalScriptUtil.symbolTableToSCode(st);
         (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
-        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
+        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, modelpath);
         env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         (_,env_2,_,_,_) =
@@ -11610,7 +11610,7 @@ algorithm
     // adrpo: handle the case for model extends baseClassName end baseClassName;
     case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName, _, _, parts = parts)),env)
       equation
-        (_,_,cenv) = Lookup.lookupClass(FCore.emptyCache(), env, Absyn.IDENT(baseClassName), true);
+        (_,_,cenv) = Lookup.lookupClass(FCore.emptyCache(), env, Absyn.IDENT(baseClassName), SOME(inClass.info));
         SOME(envpath) = FGraph.getScopePath(cenv);
         p1 = Absyn.joinPaths(envpath, Absyn.IDENT(baseClassName));
         cref = Absyn.pathToCref(p1);
@@ -11619,7 +11619,7 @@ algorithm
 
     case (Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(tp,_))),env)
       equation
-        (_,_,cenv) = Lookup.lookupClass(FCore.emptyCache(), env, tp, true);
+        (_,_,cenv) = Lookup.lookupClass(FCore.emptyCache(), env, tp, SOME(inClass.info));
         SOME(envpath) = FGraph.getScopePath(cenv);
         tpname = Absyn.pathLastIdent(tp);
         p1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
@@ -11629,7 +11629,7 @@ algorithm
 
     case (Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(tp,_))),env)
       equation
-        (_,_,cenv) = Lookup.lookupClass(FCore.emptyCache(), env, tp, true);
+        (_,_,cenv) = Lookup.lookupClass(FCore.emptyCache(), env, tp, SOME(inClass.info));
         NONE() = FGraph.getScopePath(cenv);
         cref = Absyn.pathToCref(tp);
         then {cref};
@@ -11694,13 +11694,14 @@ algorithm
       String tpname;
       Absyn.ComponentRef cref;
       list<Absyn.ElementItem> rest;
+      Absyn.Element e;
 
     case ({},_) then {};
 
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = path))) :: rest),env)
+    case ((Absyn.ELEMENTITEM(element = e as Absyn.ELEMENT(specification = Absyn.EXTENDS(path = path))) :: rest),env)
       equation
         cl = getBaseClassesFromElts(rest, env) "Inherited class is defined inside package" ;
-        (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, path, true);
+        (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, path, SOME(e.info));
         SOME(envpath) = FGraph.getScopePath(env_1);
         tpname = Absyn.pathLastIdent(path);
         p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
@@ -11708,10 +11709,10 @@ algorithm
       then
         (cref :: cl);
 
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = path))) :: rest),env)
+    case ((Absyn.ELEMENTITEM(element = e as Absyn.ELEMENT(specification = Absyn.EXTENDS(path = path))) :: rest),env)
       equation
         cl = getBaseClassesFromElts(rest, env) "Inherited class defined on top level scope" ;
-        (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, path, true);
+        (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, path, SOME(e.info));
         NONE() = FGraph.getScopePath(env_1);
         cref = Absyn.pathToCref(path);
       then
@@ -12925,7 +12926,7 @@ algorithm
       equation
         (cache, env_2, _) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, annName);
 
-        (cache,c,env_1) = Lookup.lookupClass(cache, env, Absyn.IDENT(annName), false);
+        (cache,c,env_1) = Lookup.lookupClass(cache, env, Absyn.IDENT(annName));
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
         (cache,mod_2) = Mod.elabMod(cache, env_2, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Mod.COMPONENT(annName), Absyn.dummyInfo);
         c_1 = SCode.classSetPartial(c, SCode.NOT_PARTIAL());
@@ -12954,7 +12955,7 @@ algorithm
       equation
         (cache,_, _) = buildEnvForGraphicProgram(inFullProgram, inModelPath, {}, annName);
 
-        (cache,c,env_1) = Lookup.lookupClass(cache, env, Absyn.IDENT(annName), false);
+        (cache,c,env_1) = Lookup.lookupClass(cache, env, Absyn.IDENT(annName));
         mod_2 = DAE.NOMOD();
         c_1 = SCode.classSetPartial(c, SCode.NOT_PARTIAL());
         (_,_,_,_,dae,_,_,_,_,_) =
@@ -13933,7 +13934,7 @@ algorithm
         typename = matchcontinue ()
           case ()
             equation
-              (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, p, false);
+              (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, p);
               SOME(envpath) = FGraph.getScopePath(env_1);
               tpname = Absyn.pathLastIdent(p);
               p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
@@ -14092,7 +14093,7 @@ algorithm
                         specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(p, _),components = lst)),
           env)
       equation
-        (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, p, true);
+        (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, p, SOME(inElement.info));
         SOME(envpath) = FGraph.getScopePath(env_1);
         tpname = Absyn.pathLastIdent(p);
         p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
@@ -18024,7 +18025,7 @@ protected
   FCore.Cache cache;
 algorithm
   (cache, (cl as SCode.CLASS(name = id, encapsulatedPrefix = encflag, restriction = restr)), env) :=
-    Lookup.lookupClass(FCore.emptyCache(), inEnv, inClassPath, false);
+    Lookup.lookupClass(FCore.emptyCache(), inEnv, inClassPath);
   env := FGraph.openScope(env, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
   ci_state := ClassInf.start(restr, FGraph.getGraphName(env));
 

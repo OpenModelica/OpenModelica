@@ -360,7 +360,7 @@ algorithm
         env_1 = env; // Env.extendFrameC(env,c);
         (cache,fpath) = Inst.makeFullyQualified(cache, env_1, Absyn.IDENT(n));
         //print("2 Prefix: " + PrefixUtil.printPrefixStr(pre) + " path: " + Absyn.pathString(fpath) + "\n");
-        cmt = InstUtil.extractClassDefComment(cache, env, cd, cmt);
+        cmt = InstUtil.extractClassDefComment(cache, env, cd, cmt, info);
         derFuncs = InstUtil.getDeriveAnnotation(cd, cmt,fpath,cache,cenv,ih,pre,info);
 
         (cache) = instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath,info);
@@ -395,7 +395,7 @@ algorithm
         // Only created to be able to get FQ path.
         (cache,fpath) = Inst.makeFullyQualified(cache,env,Absyn.IDENT(n));
 
-        cmt = InstUtil.extractClassDefComment(cache, env, cd, cmt);
+        cmt = InstUtil.extractClassDefComment(cache, env, cd, cmt, c.info);
         derFuncs = InstUtil.getDeriveAnnotation(cd,cmt,fpath,cache,env,ih,pre,info);
 
         (cache) = instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath,info);
@@ -423,7 +423,7 @@ algorithm
     case (cache,env,ih,_,pre,(SCode.CLASS(name = n, prefixes=SCode.PREFIXES(visibility=visibility), restriction = (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure))),
           classDef = SCode.OVERLOAD(pathLst = funcnames),cmt=cmt)),_,_)
       equation
-        (cache,env,ih,resfns) = instOverloadedFunctions(cache,env,ih,pre,funcnames) "Overloaded functions" ;
+        (cache,env,ih,resfns) = instOverloadedFunctions(cache,env,ih,pre,funcnames,inClass.info) "Overloaded functions" ;
         (cache,fpath) = Inst.makeFullyQualified(cache,env,Absyn.IDENT(n));
         resfns = DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF({})},DAE.T_UNKNOWN_DEFAULT,visibility,true,isImpure,DAE.NO_INLINE(),DAE.emptyElementSource,SOME(cmt))::resfns;
       then
@@ -478,7 +478,7 @@ algorithm
 
     case(cache,env,ih,p::paths,_,_)
       equation
-        (cache,cdef,cenv) = Lookup.lookupClass(cache,env,p,true);
+        (cache,cdef,cenv) = Lookup.lookupClass(cache,env,p,SOME(info));
         (cache,p) = Inst.makeFullyQualified(cache,cenv,p);
         _ = matchcontinue()
           case () // Skipped recursive calls (by looking in cache)
@@ -585,7 +585,7 @@ algorithm
                                    classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = cn),
                                                             modifications = mod1),info = info))
       equation
-        (cache,(c as SCode.CLASS()),cenv) = Lookup.lookupClass(cache, env, cn, false); // Makes MultiBody gravityacceleration hacks shit itself
+        (cache,(c as SCode.CLASS()),cenv) = Lookup.lookupClass(cache, env, cn); // Makes MultiBody gravityacceleration hacks shit itself
         (cache,mod2) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod1, false, Mod.DERIVED(cn), info);
 
         (cache,_,ih,_,_,_,ty,_,_,_) =
@@ -624,6 +624,7 @@ protected function instOverloadedFunctions
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix pre;
   input list<Absyn.Path> inAbsynPathLst;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -640,7 +641,6 @@ algorithm
       FCore.Cache cache;
       InstanceHierarchy ih;
       SCode.Partial partialPrefix;
-      SourceInfo info;
       list<DAE.Function> resfns1,resfns2;
       SCode.Restriction rest;
 
@@ -651,11 +651,11 @@ algorithm
       equation
         // print("instOvl: " + Absyn.pathString(fn) + "\n");
         (cache,(c as SCode.CLASS(restriction=rest)),cenv) =
-           Lookup.lookupClass(cache, env, fn, true);
+           Lookup.lookupClass(cache, env, fn, SOME(inInfo));
         true = SCode.isFunctionRestriction(rest);
 
         (cache,env,ih,resfns1) = implicitFunctionInstantiation2(inCache, cenv, inIH, DAE.NOMOD(), pre, c, {}, false);
-        (cache,env,ih,resfns2) = instOverloadedFunctions(cache,env,ih,pre,fns);
+        (cache,env,ih,resfns2) = instOverloadedFunctions(cache,env,ih,pre,fns, inInfo);
       then (cache,env,ih,listAppend(resfns1,resfns2));
 
     // failure
@@ -770,7 +770,7 @@ algorithm
 
       case(_, _, _)
         equation
-          (_,recordCl,recordEnv) = Lookup.lookupClass(inCache, inEnv, inPath, false);
+          (_,recordCl,recordEnv) = Lookup.lookupClass(inCache, inEnv, inPath);
           true = SCode.isRecord(recordCl);
 
           name = SCode.getElementName(recordCl);

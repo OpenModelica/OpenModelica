@@ -8249,13 +8249,13 @@ public function makeCallAttr
   output DAE.CallAttributes callAttr;
 protected
   Boolean isImpure,isT,isB;
-  DAE.FunctionBuiltin builtin;
-  DAE.InlineType inline;
+  DAE.FunctionBuiltin isbuiltin;
+  DAE.InlineType isinline;
 algorithm
-  DAE.FUNCTION_ATTRIBUTES(isBuiltin=builtin,isImpure=isImpure,inline=inline) := attr;
+  DAE.FUNCTION_ATTRIBUTES(isBuiltin=isbuiltin,isImpure=isImpure,inline=isinline) := attr;
   isT := isTuple(ty);
-  isB := isBuiltin(builtin);
-  callAttr := DAE.CALL_ATTR(ty,isT,isB,isImpure,false,inline,DAE.NO_TAIL());
+  isB := isBuiltin(isbuiltin);
+  callAttr := DAE.CALL_ATTR(ty,isT,isB,isImpure,false,isinline,DAE.NO_TAIL());
 end makeCallAttr;
 
 public function getFuncArg

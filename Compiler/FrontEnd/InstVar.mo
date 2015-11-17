@@ -1123,7 +1123,7 @@ algorithm
         idxs = listReverse(idxs);
         ci_state = ClassInf.start(res, Absyn.IDENT(cls_name));
         predims = List.lastListOrEmpty(inInstDims);
-        pre = PrefixUtil.prefixAdd(inName, predims, idxs, inPrefix, vt, ci_state);
+        pre = PrefixUtil.prefixAdd(inName, predims, idxs, inPrefix, vt, ci_state, inInfo);
         (cache, env_1, ih, store, dae1, csets, ty,_, opt_attr, graph) =
           Inst.instClass(cache, env, ih, store, inMod, pre, inClass, inInstDims,
             inImpl, InstTypes.INNER_CALL(), inGraph, inSets);
@@ -1589,9 +1589,16 @@ algorithm
     case (cache,env,ih,store,ci_state,_,pre,n,(cl,attr),pf,_,DAE.DIM_INTEGER(0),dims,idxs,inst_dims,impl,comment,_,graph, csets)
       equation
         ErrorExt.setCheckpoint("instArray Real[0]");
-        s = DAE.INDEX(DAE.ICONST(0));
+        e = DAE.ICONST(0);
+        s = DAE.INDEX(e);
+        // Normal modifiers doesn't really matter since the empty array will be
+        // removed anyway, and causes issues since you can't look up an element
+        // in an empty array. But redeclares are still needed to get the correct
+        // types, so we filter out only the redeclares.
+        mod = Mod.filterRedeclares(inMod);
+        mod = Mod.lookupIdxModification(mod, e);
         (cache,compenv,ih,store,_,csets,ty,graph) =
-           instVar2(cache,env,ih,store, ci_state, DAE.NOMOD(), pre, n, cl, attr,pf, dims, (s :: idxs), inst_dims, impl, comment,info,graph, csets);
+           instVar2(cache,env,ih,store, ci_state, mod, pre, n, cl, attr,pf, dims, (s :: idxs), inst_dims, impl, comment,info,graph, csets);
         ErrorExt.rollBack("instArray Real[0]");
       then
         (cache,compenv,ih,store,DAE.emptyDae,csets,ty,graph);
@@ -1632,7 +1639,7 @@ algorithm
     case (_,_,_,_,ci_state,mod,pre,n,(_,_),_,i,_,_,idxs,_,_,_,_,_,_)
       equation
         failure(_ = Mod.lookupIdxModification(mod, DAE.ICONST(i)));
-        str1 = PrefixUtil.printPrefixStrIgnoreNoPre(PrefixUtil.prefixAdd(n, {}, {}, pre, SCode.VAR(), ci_state));
+        str1 = PrefixUtil.printPrefixStrIgnoreNoPre(PrefixUtil.prefixAdd(n, {}, {}, pre, SCode.VAR(), ci_state, info));
         str2 = "[" + stringDelimitList(List.map(idxs, ExpressionDump.printSubscriptStr), ", ") + "]";
         str3 = Mod.prettyPrintMod(mod, 1);
         str4 = PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "(" + n + str2 + "=" + str3 + ")";
@@ -1736,7 +1743,7 @@ algorithm
           pf,i,dims,idxs,_,impl,comment,_,graph, _, _)
       equation
         true = i > 0;
-        (_,clBase,_) = Lookup.lookupClass(cache, env, path, true);
+        (_,clBase,_) = Lookup.lookupClass(cache, env, path, SOME(cl.info));
         /* adrpo: TODO: merge also the attributes, i.e.:
            type A = input discrete flow Integer[3];
            A x; <-- input discrete flow IS NOT propagated even if it should. FIXME!

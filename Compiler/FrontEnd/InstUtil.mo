@@ -881,20 +881,20 @@ algorithm
     // we haven't found the class, do nothing
     case (_, _, _, _, {SCode.EXTENDS(baseClassPath=p)})
       equation
-        failure((_, _, _) = Lookup.lookupClass(inCache, inEnv, p, false));
+        failure((_, _, _) = Lookup.lookupClass(inCache, inEnv, p));
       then ();
 
     // we found te class, check the restriction
     case (_, _, _, r1, {SCode.EXTENDS(baseClassPath=p)})
       equation
-        (_,SCode.CLASS(restriction=r2),_) = Lookup.lookupClass(inCache,inEnv,p,false);
+        (_,SCode.CLASS(restriction=r2),_) = Lookup.lookupClass(inCache,inEnv,p);
         checkExtendsRestrictionMatch(r1, r2);
       then ();
 
     // make some waves that this is not correct
     case (_, _, _, r1, {SCode.EXTENDS(baseClassPath=p)})
       equation
-        (_,SCode.CLASS(restriction=r2),_) = Lookup.lookupClass(inCache, inEnv, p, false);
+        (_,SCode.CLASS(restriction=r2),_) = Lookup.lookupClass(inCache, inEnv, p);
         print("Error!: " + SCodeDump.restrString(r1) + " " + FGraph.printGraphPathStr(inEnv) +
               " cannot be extended by " + SCodeDump.restrString(r2) + " " + Absyn.pathString(p) + " due to derived/base class restrictions.\n");
       then fail();
@@ -3064,8 +3064,8 @@ algorithm
         equality(ad1 = ad2);
         equality(cond1 = cond2);
         // if we lookup tpath1 and tpath2 and reach the same class, we're fine!
-        (_, c1, env1) = Lookup.lookupClass(cache, env, tpath1, false);
-        (_, c2, env2) = Lookup.lookupClass(cache, env, tpath2, false);
+        (_, c1, env1) = Lookup.lookupClass(cache, env, tpath1);
+        (_, c2, env2) = Lookup.lookupClass(cache, env, tpath2);
         // the class has the same environment
         true = stringEq(FGraph.printGraphPathStr(env1), FGraph.printGraphPathStr(env2));
         // the classes are the same!
@@ -3093,8 +3093,8 @@ algorithm
         equality(ad1 = ad2);
         equality(cond1 = cond2);
         // if we lookup tpath1 and tpath2 and reach the same class, we're fine!
-        (_, c1, env1) = Lookup.lookupClass(cache, env, tpath1, false);
-        (_, c2, env2) = Lookup.lookupClass(cache, env, tpath2, false);
+        (_, c1, env1) = Lookup.lookupClass(cache, env, tpath1);
+        (_, c2, env2) = Lookup.lookupClass(cache, env, tpath2);
         // the class has the same environment
         true = stringEq(FGraph.printGraphPathStr(env1), FGraph.printGraphPathStr(env2));
         // the classes are the same!
@@ -3301,7 +3301,7 @@ algorithm
     case(NONE(),_,_) then {};
     case(SOME(SCode.CONSTRAINCLASS(constrainingClass = path)),_,_)
       equation
-        (_,SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst=selems)), _) = Lookup.lookupClass(FCore.emptyCache(),env,path,false);
+        (_,SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst=selems)), _) = Lookup.lookupClass(FCore.emptyCache(),env,path);
         (classes,classextendselts,extendselts,compelts) = splitElts(selems);
         (_,_,_,_,extcomps,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(FCore.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),  pre, extendselts, classextendselts, selems, ClassInf.UNKNOWN(Absyn.IDENT("")), name, true, false);
         extcompelts = List.map(extcomps,Util.tuple21);
@@ -3310,7 +3310,7 @@ algorithm
         compelts;
     case (SOME(SCode.CONSTRAINCLASS(path, mod, cmt)), _, _)
       equation
-        (_,SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = path))),_) = Lookup.lookupClass(FCore.emptyCache(),env,path,false);
+        (_,SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = path))),_) = Lookup.lookupClass(FCore.emptyCache(),env,path);
         compelts = extractConstrainingComps(SOME(SCode.CONSTRAINCLASS(path, mod, cmt)),env,pre);
       then
         compelts;
@@ -3693,7 +3693,7 @@ algorithm
                             classDef = SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod)),
           dims, impl)
       equation
-        (cache,cl,cenv) = Lookup.lookupClass(cache, env, cn, true);
+        (cache,cl,cenv) = Lookup.lookupClass(cache, env, cn, SOME(info));
         owncref = Absyn.CREF_IDENT(id,{});
         ad_1 = getOptionArraydim(ad);
         env = addEnumerationLiteralsToEnv(env, cl);
@@ -3722,7 +3722,7 @@ algorithm
       equation
         (_,_,{SCode.EXTENDS(path, _, mod,_, info)},{}) = splitElts(els); // ONLY ONE extends!
         (cache,mod_1) = Mod.elabModForBasicType(cache, env, ih, pre, mod, impl, Mod.EXTENDS(path), info);
-        (cache,cl,_) = Lookup.lookupClass(cache, env, path, false);
+        (cache,cl,_) = Lookup.lookupClass(cache, env, path);
         (cache,res,cl,type_mods) = getUsertypeDimensions(cache,env,ih,pre,cl,{},impl);
         // type_mods = Mod.addEachIfNeeded(type_mods, res);
         type_mods = Mod.merge(mod_1, type_mods, env, pre);
@@ -3827,7 +3827,7 @@ algorithm
         false = FGraph.isTopScope(inNewEnv);
         id = FNode.refName(FGraph.lastScopeRef(inNewEnv));
         (rest, _) = FGraph.stripLastScopeRef(inNewEnv);
-        (_, cls, _) = Lookup.lookupClass(inCache, rest, Absyn.IDENT(id), false);
+        (_, cls, _) = Lookup.lookupClass(inCache, rest, Absyn.IDENT(id));
         ci_state = ClassInf.start(SCode.getClassRestriction(cls), FGraph.getGraphName(inNewEnv));
       then
         ci_state;
@@ -7654,18 +7654,19 @@ public function extractClassDefComment
   input FCore.Graph env;
   input SCode.ClassDef classDef;
   input SCode.Comment inComment;
+  input SourceInfo inInfo;
   output SCode.Comment comment;
 algorithm
-  comment := matchcontinue(cache, env, classDef, inComment)
+  comment := matchcontinue classDef
     local
       list<SCode.Annotation> al;
       Absyn.Path p;
       SCode.ClassDef cd;
       SCode.Comment cmt;
 
-    case (_, _, SCode.DERIVED(typeSpec = Absyn.TPATH(path = p)), _)
+    case SCode.DERIVED(typeSpec = Absyn.TPATH(path = p))
       equation
-        (_, SCode.CLASS(cmt=cmt), _) = Lookup.lookupClass(cache, env, p, true);
+        (_, SCode.CLASS(cmt=cmt), _) = Lookup.lookupClass(cache, env, p, SOME(inInfo));
         cmt = mergeClassComments(inComment, cmt);
       then cmt;
 

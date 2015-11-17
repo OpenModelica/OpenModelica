@@ -93,7 +93,7 @@ algorithm
        FCore.Ref r;
 
      case(_,_) equation
-       (_,_,env) = Lookup.lookupClass(Util.tuple21(tpl),Util.tuple22(tpl),p,false);
+       (_,_,env) = Lookup.lookupClass(Util.tuple21(tpl),Util.tuple22(tpl),p,NONE());
        r = FGraph.lastScopeRef(env);
        // get the defined units node
        r = FNode.child(r, FNode.duNodeName);

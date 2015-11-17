@@ -217,12 +217,12 @@ algorithm
 
          path = getRecordPath(type1);
          path = Absyn.makeFullyQualified(path);
-         (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path, false);
+         (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path);
 
          str1 = "'" + Dump.opSymbolCompact(aboper) + "'";
          path = Absyn.joinPaths(path, Absyn.IDENT(str1));
 
-         (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path, false);
+         (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path);
          true = SCode.isOperator(operatorCl);
 
          operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
@@ -277,12 +277,12 @@ algorithm
 
         path = getRecordPath(type1);
         path = Absyn.makeFullyQualified(path);
-        (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path, false);
+        (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path);
 
         str1 = "'String'";
         path = Absyn.joinPaths(path, Absyn.IDENT(str1));
 
-        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path, false);
+        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path);
         true = SCode.isOperator(operatorCl);
 
         operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
@@ -1407,12 +1407,12 @@ algorithm
         scalarType = Types.arrayElementType(ty);
         path = getRecordPath(scalarType);
         path = Absyn.makeFullyQualified(path);
-        (cache,operatorCl,recordEnv) = Lookup.lookupClass(cache,env,path,false);
+        (cache,operatorCl,recordEnv) = Lookup.lookupClass(cache,env,path);
         (cache,path,recordEnv) = lookupOperatorBaseClass(cache,recordEnv,operatorCl);
         opNamePath = Absyn.IDENT(opName);
         path = Absyn.joinPaths(path, opNamePath);
         // check if the operator is defined. i.e overloaded
-        (cache,operatorCl,operEnv) = Lookup.lookupClass(cache,recordEnv,path,false);
+        (cache,operatorCl,operEnv) = Lookup.lookupClass(cache,recordEnv,path);
         true = SCode.isOperator(operatorCl);
         // get the list of functions in the operator. !! there can be multiple options
         paths = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
@@ -1451,7 +1451,7 @@ algorithm
       String name;
     case (cache,env,SCode.CLASS(classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path,NONE()))))
       equation
-        (cache,cl,env) = Lookup.lookupClass(cache,env,path,false);
+        (cache,cl,env) = Lookup.lookupClass(cache,env,path);
         (cache,path,env) = lookupOperatorBaseClass(cache,env,cl);
       then (cache,path,env);
 

@@ -130,7 +130,7 @@ algorithm
       String outStringA,outStringB,outString,description;
       list<Option<DAE.Distribution>> distributions;
 
-      Boolean forceOrdering = Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING);
+      Boolean forceOrdering = Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING);
 
     case (cache,graph,_,(st as GlobalScript.SYMBOLTABLE(ast = p)),outputFile,_)
       equation
@@ -142,9 +142,9 @@ algorithm
         //print("- Flatten ok\n");
         dlow = BackendDAECreate.lower(dae,cache,graph,BackendDAE.EXTRA_INFO(description,outputFile));
         //(dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(dlow, funcs,SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),NONE());
-        Flags.setConfigBool(Flags.FORCE_RECOMMENDED_ORDERING, false);
+        Flags.setConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING, false);
         (dlow_1) = BackendDAEUtil.getSolvedSystem(dlow, "", SOME({"removeSimpleEquations","removeUnusedVariables","removeEqualFunctionCalls","expandDerOperator"}), NONE(), NONE(), SOME({}));
-        Flags.setConfigBool(Flags.FORCE_RECOMMENDED_ORDERING, forceOrdering);
+        Flags.setConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING, forceOrdering);
         //print("* Lowered Ok \n");
 
         dlow_1 = removeSimpleEquationsUC(dlow_1);

@@ -227,7 +227,7 @@ algorithm
 
         //System.startTimer();
         //print("\nLookupClass");
-        (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache, env_1, path, true);
+        (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache, env_1, path, SOME(Absyn.dummyInfo));
 
         //System.stopTimer();
         //print("\nLookupClass: " + realString(System.getTimerIntervalTime()));
@@ -373,7 +373,7 @@ algorithm
       equation
         (cache,env) = Builtin.initialGraph(cache);
         env_1 = FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
-        (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
+        (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache,env_1, path, SOME(Absyn.dummyInfo));
 
         cdef = SCode.classSetPartial(cdef, SCode.NOT_PARTIAL());
 
@@ -1716,84 +1716,36 @@ protected function partialInstClassIn_dispatch
   input list<list<DAE.Dimension>> inInstDims;
   input Boolean partialInst;
   input Integer numIter;
-  output FCore.Cache outCache;
-  output FCore.Graph outEnv;
-  output InnerOuter.InstHierarchy outIH;
-  output ClassInf.State outState;
-  output list<DAE.Var> outVars;
+  output FCore.Cache outCache = inCache;
+  output FCore.Graph outEnv = inEnv;
+  output InnerOuter.InstHierarchy outIH = inIH;
+  output ClassInf.State outState = inState;
+  output list<DAE.Var> outVars = {};
+protected
+  Boolean success;
 algorithm
-  (outCache,outEnv,outIH,outState,outVars) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,partialInst,numIter)
-    local
-      FCore.Graph env,env_1;
-      DAE.Mod mods;
-      Prefix.Prefix pre;
-      ClassInf.State ci_state,ci_state_1;
-      SCode.Element c;
-      String n, str;
-      SCode.Restriction r;
-      SCode.ClassDef d;
-      SCode.Visibility vis;
-      SCode.Partial partialPrefix;
-      InstDims inst_dims;
-      FCore.Cache cache;
-      InstanceHierarchy ih;
-      SourceInfo info;
-      list<DAE.Var> vars;
-
-    case (cache,env,ih,_,_,ci_state,(SCode.CLASS(name = "Real")),_,_,_,_)
-      equation
-        System.setPartialInstantiation(partialInst);
-      then (cache,env,ih,ci_state,{});
-
-    case (cache,env,ih,_,_,ci_state,(SCode.CLASS(name = "Integer")),_,_,_,_)
-      equation
-        System.setPartialInstantiation(partialInst);
-      then (cache,env,ih,ci_state,{});
-
-    case (cache,env,ih,_,_,ci_state,(SCode.CLASS(name = "String")),_,_,_,_)
-      equation
-        System.setPartialInstantiation(partialInst);
-      then (cache,env,ih,ci_state,{});
-
-    case (cache,env,ih,_,_,ci_state,(SCode.CLASS(name = "Boolean")),_,_,_,_)
-      equation
-        System.setPartialInstantiation(partialInst);
-      then (cache,env,ih,ci_state,{});
-
+  success := matchcontinue inClass
+    case SCode.CLASS(name = "Real")    then true;
+    case SCode.CLASS(name = "Integer") then true;
+    case SCode.CLASS(name = "String")  then true;
+    case SCode.CLASS(name = "Boolean") then true;
     // BTH
-    case (cache,env,ih,_,_,ci_state,(SCode.CLASS(name = "Clock")),_,_,_,_)
+    case SCode.CLASS(name = "Clock")
+      guard(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD) == 33) then true;
+
+    case SCode.CLASS()
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
-        System.setPartialInstantiation(partialInst);
-      then (cache,env,ih,ci_state,{});
-
-    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(classDef = d)),vis,inst_dims,_,_)
-      equation
-        // t1 = clock();
-
-        // str = if_(valueEq(r, SCode.R_PACKAGE()), "", "Instantiating non package: " + FGraph.getGraphNameStr(env) + "/" + n + "\n");
-        // print(str);
-
-        (cache,env_1,ih,ci_state_1,vars) =
-          partialInstClassdef(cache,env,ih, mods, pre, ci_state, c, d, vis, inst_dims, numIter);
-
-        System.setPartialInstantiation(partialInst);
-
-        // t2 = clock();
-        // time = t2 -. t1;
-        //b=realGt(time,0.05);
-        // s = realString(time);
-        // s2 = FGraph.printGraphPathStr(env);
-        // fprintln(Flags.INSTTR, "ICLASSPARTIAL " + n + " inst time: " + s + " in env " + s2 + " mods: " + Mod.printModStr(mods));
+        (outCache, outEnv, outIH, outState, outVars) =
+          partialInstClassdef(inCache, inEnv, inIH, inMod, inPrefix, inState,
+              inClass, inClass.classDef, inVisibility, inInstDims, numIter);
       then
-        (cache,env_1,ih,ci_state_1,vars);
+        true;
 
-    else
-      equation
-        System.setPartialInstantiation(partialInst);
-      then
-        fail();
+    else false;
   end matchcontinue;
+
+  System.setPartialInstantiation(partialInst);
+  if not success then fail(); end if;
 end partialInstClassIn_dispatch;
 
 public function instClassdef "
@@ -2342,7 +2294,7 @@ algorithm
         false = Util.getStatefulBoolean(stopInst);
 
         (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r as SCode.R_ENUMERATION())), cenv) =
-          Lookup.lookupClass(cache, env, cn, true);
+          Lookup.lookupClass(cache, env, cn, SOME(info));
 
         // keep the old behaviour
         env3 = FGraph.openScope(cenv, enc2, SOME(cn2), SOME(FCore.CLASS_SCOPE()));
@@ -2378,7 +2330,7 @@ algorithm
       equation
         false = Util.getStatefulBoolean(stopInst);
 
-        (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
+        (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, SOME(info));
 
         // if is a basic type or derived from it, follow the normal path
         true = InstUtil.checkDerivedRestriction(re, r, cn2);
@@ -2432,7 +2384,7 @@ algorithm
         false = SCode.isConnector(re);
         // check empty array dimensions
         true = boolOr(valueEq(ad, NONE()), valueEq(ad, SOME({})));
-        (cache,SCode.CLASS(name=cn2,restriction=r),_) = Lookup.lookupClass(cache, env, cn, true);
+        (cache,SCode.CLASS(name=cn2,restriction=r),_) = Lookup.lookupClass(cache, env, cn, SOME(info));
 
         false = InstUtil.checkDerivedRestriction(re, r, cn2);
 
@@ -2467,7 +2419,7 @@ algorithm
           re,vis,_,_,inst_dims,impl,callscope,graph,_,_,_,_,_)
       equation
         false = Util.getStatefulBoolean(stopInst);
-        (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
+        (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, SOME(info));
 
         // not a basic type, change class name!
         false = InstUtil.checkDerivedRestriction(re, r, cn2);
@@ -2537,7 +2489,7 @@ algorithm
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,_,ih,tys,csets,oDA) =
-        instClassDefHelper(cache,env,ih,{tSpec},pre,inst_dims,impl,{}, inSets);
+        instClassDefHelper(cache,env,ih,{tSpec},pre,inst_dims,impl,{}, inSets,info);
         ty = listHead(tys);
         ty = Types.boxIfUnboxedType(ty);
         bc = SOME(DAE.T_METALIST(ty,DAE.emptyTypeSource));
@@ -2552,7 +2504,7 @@ algorithm
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,_,ih,{ty},csets,oDA) =
-        instClassDefHelper(cache,env,ih,{tSpec},pre,inst_dims,impl,{}, inSets);
+        instClassDefHelper(cache,env,ih,{tSpec},pre,inst_dims,impl,{}, inSets,info);
         ty = Types.boxIfUnboxedType(ty);
         bc = SOME(DAE.T_METAOPTION(ty,DAE.emptyTypeSource));
         oDA = SCode.mergeAttributes(DA,oDA);
@@ -2565,7 +2517,7 @@ algorithm
         true = Config.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
-        (cache,_,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{}, inSets);
+        (cache,_,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{}, inSets,info);
         tys = List.map(tys, Types.boxIfUnboxedType);
         bc = SOME(DAE.T_METATUPLE(tys,DAE.emptyTypeSource));
         oDA = SCode.mergeAttributes(DA,oDA);
@@ -2578,7 +2530,7 @@ algorithm
         true = Config.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
-        (cache,_,ih,{ty},csets,oDA) = instClassDefHelper(cache,env,ih,{tSpec},pre,inst_dims,impl,{}, inSets);
+        (cache,_,ih,{ty},csets,oDA) = instClassDefHelper(cache,env,ih,{tSpec},pre,inst_dims,impl,{}, inSets,info);
         ty = Types.boxIfUnboxedType(ty);
         bc = SOME(DAE.T_METAARRAY(ty,DAE.emptyTypeSource));
         oDA = SCode.mergeAttributes(DA,oDA);
@@ -2591,7 +2543,7 @@ algorithm
         true = Config.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
-        (cache,_,ih,_,csets,oDA) = instClassDefHelper(cache,env,ih,{},pre,inst_dims,impl,{}, inSets);
+        (cache,_,ih,_,csets,oDA) = instClassDefHelper(cache,env,ih,{},pre,inst_dims,impl,{}, inSets,info);
         bc = SOME(DAE.T_METAPOLYMORPHIC(className,DAE.emptyTypeSource));
         oDA = SCode.mergeAttributes(DA,oDA);
       then (cache,env,ih,store,DAE.emptyDae,csets,ClassInf.META_POLYMORPHIC(Absyn.IDENT(className)),{},bc,oDA,NONE(),graph);
@@ -2641,7 +2593,7 @@ algorithm
           _,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         false = Util.getStatefulBoolean(stopInst);
-        failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
+        failure((_,_,_) = Lookup.lookupClass(cache,env, cn));
         cns = Absyn.pathString(cn);
         scope_str = FGraph.printGraphPathStr(env);
         Error.addSourceMessage(Error.LOOKUP_ERROR, {cns,scope_str}, info);
@@ -2653,7 +2605,7 @@ algorithm
           _,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
+        failure((_,_,_) = Lookup.lookupClass(cache,env, cn));
         Debug.trace("- Inst.instClassdef DERIVED( ");
         Debug.trace(Absyn.pathString(cn));
         Debug.trace(") lookup failed\n ENV:");
@@ -2711,6 +2663,7 @@ protected function instClassDefHelper
   input Boolean inImpl;
   input list<DAE.Type> accTypes;
   input Connect.Sets inSets;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -2743,12 +2696,12 @@ algorithm
 
     case (cache,env,ih, Absyn.TPATH(cn,_) :: restTypeSpecs,pre,dims,impl,localAccTypes,_)
       equation
-        (cache,(c as SCode.CLASS()),cenv) = Lookup.lookupClass(cache,env, cn, true);
+        (cache,(c as SCode.CLASS()),cenv) = Lookup.lookupClass(cache,env, cn, SOME(inInfo));
         false = SCode.isFunction(c);
         (cache,cenv,ih,_,_,csets,ty,_,oDA,_)=instClass(cache,cenv,ih,UnitAbsyn.noStore,DAE.NOMOD(),pre,c,dims,impl,InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, inSets);
         localAccTypes = ty::localAccTypes;
         (cache,env,ih,localAccTypes,csets,_) =
-        instClassDefHelper(cache,env,ih,restTypeSpecs,pre,dims,impl,localAccTypes, csets);
+        instClassDefHelper(cache,env,ih,restTypeSpecs,pre,dims,impl,localAccTypes, csets,inInfo);
       then (cache,env,ih,localAccTypes,csets,oDA);
 
     case (cache,env,ih, Absyn.TPATH(cn,_) :: restTypeSpecs,pre,dims,impl,localAccTypes,_)
@@ -2756,7 +2709,7 @@ algorithm
         (cache,ty,_) = Lookup.lookupType(cache,env,cn,NONE()) "For functions, etc";
         localAccTypes = ty::localAccTypes;
         (cache,env,ih,localAccTypes,csets,_) =
-        instClassDefHelper(cache,env,ih,restTypeSpecs,pre,dims,impl,localAccTypes, inSets);
+        instClassDefHelper(cache,env,ih,restTypeSpecs,pre,dims,impl,localAccTypes, inSets,inInfo);
       then (cache,env,ih,localAccTypes,csets,NONE());
 
     case (cache,env,ih, (tSpec as Absyn.TCOMPLEX(p,_,_)) :: restTypeSpecs,pre,dims,impl,localAccTypes,_)
@@ -2774,7 +2727,7 @@ algorithm
         (cache,_,ih,_,_,csets,ty,_,oDA,_)=instClass(cache,env,ih,UnitAbsyn.noStore,DAE.NOMOD(),pre,c,dims,impl,InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, inSets);
         localAccTypes = ty::localAccTypes;
         (cache,env,ih,localAccTypes,csets,_) =
-        instClassDefHelper(cache,env,ih,restTypeSpecs,pre,dims,impl,localAccTypes, csets);
+        instClassDefHelper(cache,env,ih,restTypeSpecs,pre,dims,impl,localAccTypes, csets,inInfo);
       then (cache,env,ih,localAccTypes,csets,oDA);
   end matchcontinue;
 end instClassDefHelper;
@@ -2830,7 +2783,7 @@ algorithm
         ErrorExt.setCheckpoint("instBasictypeBaseclass");
         (cache,m_1) = Mod.elabModForBasicType(cache, env, ih, Prefix.NOPRE(), mod, true, Mod.DERIVED(path), info);
         m_2 = Mod.merge(mods, m_1, env, Prefix.NOPRE());
-        (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, true);
+        (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, SOME(info));
         //Debug.traceln("Try instbasic 2 " + Absyn.pathString(path) + " " + Mod.printModStr(m_2));
         (cache,_,ih,store,dae,_,ty,tys,_) =
         instClassBasictype(cache,cenv,ih, store,m_2, Prefix.NOPRE(), cdef, inst_dims, false, InstTypes.INNER_CALL(), Connect.emptySet);
@@ -2892,10 +2845,10 @@ Handles the fail case rollbacks/deleteCheckpoint of errors."
   input DAE.Mod inMod4;
   input list<list<DAE.Dimension>> inInstDims5;
   input String className;
-  input SourceInfo info;
+  input SourceInfo inInfo;
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
 algorithm
-  _ := matchcontinue(inCache,inEnv1,inIH,store,inSCodeElementLst2,inSCodeElementLst3,inMod4,inInstDims5,className,info,stopInst)
+  _ := matchcontinue(inCache,inEnv1,inIH,store,inSCodeElementLst2,inSCodeElementLst3,inMod4,inInstDims5,className,stopInst)
   local
       DAE.Mod m_1,mods;
       SCode.Element cdef,cdef_1;
@@ -2910,11 +2863,12 @@ algorithm
       String classname;
       FCore.Cache cache;
       InstanceHierarchy ih;
+      SourceInfo info;
 
-    case (cache,env,ih,_,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},(_ :: _),_,inst_dims,_,_,_) /* Inherits baseclass -and- has components */
+    case (cache,env,ih,_,{SCode.EXTENDS(baseClassPath = path,modifications = mod, info = info)},(_ :: _),_,inst_dims,_,_) /* Inherits baseclass -and- has components */
       equation
-        (cache,m_1) = Mod.elabModForBasicType(cache, env, ih, Prefix.NOPRE(), mod, true, Mod.DERIVED(path), info);
-        (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, true);
+        (cache,m_1) = Mod.elabModForBasicType(cache, env, ih, Prefix.NOPRE(), mod, true, Mod.DERIVED(path), inInfo);
+        (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, SOME(info));
         cdef_1 = SCode.classSetPartial(cdef, SCode.NOT_PARTIAL());
 
         (cache,_,ih,_,_,_,ty,_,_,_) = instClass(cache,cenv,ih,store, m_1,
@@ -2925,7 +2879,7 @@ algorithm
         true = boolOr(b1, b2);
         classname = FGraph.printGraphPathStr(env);
         ErrorExt.rollBack("instBasictypeBaseclass2");
-        Error.addSourceMessage(Error.INHERIT_BASIC_WITH_COMPS, {classname}, info);
+        Error.addSourceMessage(Error.INHERIT_BASIC_WITH_COMPS, {classname}, inInfo);
         Util.setStatefulBoolean(stopInst,true);
       then
         ();
@@ -2939,15 +2893,15 @@ algorithm
 end instBasictypeBaseclass2;
 
 protected function partialInstClassdef
-"This function is used by partialInstClassIn for instantiating local
-  class definitons and inherited class definitions only."
+  "This function is used by partialInstClassIn for instantiating local class
+   definitions and inherited class definitions only."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
-  input SCode.Element inClass "the class this definition comes from";
+  input SCode.Element inClass "The class this definition comes from.";
   input SCode.ClassDef inClassDef;
   input SCode.Visibility inVisibility;
   input list<list<DAE.Dimension>> inInstDims;
@@ -2958,250 +2912,139 @@ protected function partialInstClassdef
   output ClassInf.State outState;
   output list<DAE.Var> outVars;
 algorithm
-  (outCache,outEnv,outIH,outState,outVars):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,inClassDef,inVisibility,inInstDims,numIter)
+  (outCache, outEnv, outIH, outState, outVars) := match inClassDef
     local
-      ClassInf.State ci_state1,ci_state,new_ci_state,new_ci_state_1,ci_state2;
-      list<SCode.Element> cdefelts,extendselts,els,cdefelts2,classextendselts;
-      FCore.Graph env1,env2,env,cenv,cenv_2,env_2,env3,parentEnv;
-      DAE.Mod emods,mods,mod_1,mods_1;
-      list<tuple<SCode.Element, DAE.Mod>> extcomps,lst_constantEls;
-      list<SCode.Equation> eqs,initeqs;
-      list<SCode.AlgorithmSection> alg,initalg;
-      Prefix.Prefix pre;
-      SCode.Restriction re,r;
-      SCode.Visibility vis;
-      SCode.Encapsulated enc2;
-      SCode.Partial partialPrefix;
-      InstDims inst_dims,inst_dims_1;
-      SCode.Element c, parentClass;
-      String cn2,cns,scope_str,className;
-      Absyn.Path cn;
-      Option<list<Absyn.Subscript>> ad;
-      SCode.Mod mod;
-      FCore.Cache cache;
-      InstanceHierarchy ih;
-      Option<SCode.Comment> cmt;
-      list<DAE.Dimension> inst_dims2;
-      DAE.Dimensions dims;
-      Option<DAE.EqMod> eq;
-      Boolean isPartialInst;
-      Absyn.ArrayDim adno;
-      list<DAE.Var> vars;
+      SCode.Partial partial_prefix;
+      String class_name, scope_str;
+      list<SCode.Element> cdef_els, class_ext_els, extends_els;
+      DAE.Mod emods, mod;
+      SCode.Mod class_mod, smod;
+      list<tuple<SCode.Element, DAE.Mod>> ext_comps, const_els;
+      Absyn.Path class_path;
+      Option<list<Absyn.Subscript>> class_dims;
+      SCode.Element cls;
+      SCode.ClassDef cdef;
+      FCore.Graph cenv, parent_env;
+      SCode.Restriction der_re, parent_re;
+      SCode.Encapsulated enc;
       SourceInfo info;
-      FCore.Ref lastRef;
+      Option<DAE.EqMod> eq;
+      list<DAE.Dimension> dims = {};
+      Boolean has_dims, is_basic_type;
+      InstDims inst_dims;
+      Option<FCore.ScopeType> scope_ty;
 
-      // long class definition, the normal case, a class with parts
-      case (cache,env,ih,mods,pre,ci_state,parentClass,SCode.PARTS(elementLst = els),_,inst_dims,_)
-      equation
-        isPartialInst = true;
+    case SCode.PARTS()
+      algorithm
+        partial_prefix := SCode.getClassPartialPrefix(inClass);
+        partial_prefix := InstUtil.isPartial(partial_prefix, inMod);
+        class_name := SCode.elementName(inClass);
+        outState := ClassInf.trans(inState, ClassInf.NEWDEF());
 
-        partialPrefix = SCode.getClassPartialPrefix(parentClass);
-        className = SCode.getElementName(parentClass);
+        (cdef_els, class_ext_els, extends_els) := InstUtil.splitElts(inClassDef.elementLst);
+        extends_els := SCodeUtil.addRedeclareAsElementsToExtends(extends_els,
+          List.select(inClassDef.elementLst, SCodeUtil.isRedeclareElement));
 
-        // Debug.traceln(" Partialinstclassdef for: " + PrefixUtil.printPrefixStr(pre) + "." +  className + " mods: " + Mod.printModStr(mods));
-        // fprintln(Flags.INST_TRACE, "PARTIALICD: " + FGraph.printGraphPathStr(env) + " cn:" + className + " mods: " + Mod.printModStr(mods));
-        partialPrefix = InstUtil.isPartial(partialPrefix, mods);
-        ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
-        (cdefelts,classextendselts,extendselts,_) = InstUtil.splitElts(els);
-        extendselts = SCodeUtil.addRedeclareAsElementsToExtends(extendselts, List.select(els, SCodeUtil.isRedeclareElement));
-        (cache,env1,ih) = InstUtil.addClassdefsToEnv(cache,env, ih, pre, cdefelts, true, SOME(mods)) " CLASS & IMPORT nodes are added to env" ;
-        (cache,env2,ih,emods,extcomps,_,_,_,_) =
-        InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, pre, extendselts, classextendselts, els, ci_state, className, true, isPartialInst)
-        "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
+        // Classes and imports are added to env.
+        (outCache, outEnv, outIH) := InstUtil.addClassdefsToEnv(inCache, inEnv,
+          inIH, inPrefix, cdef_els, true, SOME(inMod));
+        // Inherited elements are added to env.
+        (outCache, outEnv, outIH, emods, ext_comps) := InstExtends.instExtendsAndClassExtendsList(
+          outCache, outEnv, outIH, inMod, inPrefix, extends_els, class_ext_els,
+          inClassDef.elementLst, inState, class_name, true, true);
 
-        // this does not work, see Modelica.Media SingleGasNasa!
-        // els = if_(SCode.partialBool(partialPrefix), {}, els);
+        // If we partially instantiate a partial package, we filter out
+        // constants (maybe we should also filter out functions) /sjoelund
+        const_els := listAppend(ext_comps,
+          InstUtil.addNomod(InstUtil.constantEls(inClassDef.elementLst)));
 
-        // If we partially instantiate a partial package, we filter out constants (maybe we should also filter out functions) /sjoelund
-        lst_constantEls = listAppend(extcomps,InstUtil.addNomod(InstUtil.constantEls(els))) " Retrieve all constants";
+        // Since partial instantiation is done in lookup, we need to add
+        // inherited classes here.  Otherwise when looking up e.g. A.B where A
+        // inherits the definition of B, and without having a base class context
+        // (since we do not have any element to find it in), the class must be
+        // added to the environment here.
 
-        // if we are not in a package, just remove
+        mod := Mod.merge(inMod, emods, outEnv, inPrefix);
 
-        /*
-         Since partial instantiation is done in lookup, we need to add inherited classes here.
-         Otherwise when looking up e.g. A.B where A inherits the definition of B, and without having a
-         base class context (since we do not have any element to find it in), the class must be added
-         to the environment here.
-        */
+        (cdef_els, ext_comps) := InstUtil.classdefElts2(ext_comps, partial_prefix);
+        (outCache, outEnv, outIH) := InstUtil.addClassdefsToEnv(outCache,
+          outEnv, outIH, inPrefix, cdef_els, true, SOME(mod));
 
-        mods = Mod.merge(mods, emods, env2, pre);
+        // Add inherited classes to env.
+        (outCache, outEnv, outIH) := InstUtil.addComponentsToEnv(outCache,
+          outEnv, outIH, mod, inPrefix, inState, const_els, const_els, {},
+          inInstDims, false);
 
-        (cdefelts2,extcomps) = InstUtil.classdefElts2(extcomps, partialPrefix);
-        (cache,env2,ih) = InstUtil.addClassdefsToEnv(cache, env2, ih, pre, cdefelts2, true, SOME(mods)); // Add inherited classes to env
-
-        (cache,env3,ih) = InstUtil.addComponentsToEnv(cache, env2, ih, mods, pre, ci_state,
-                                             lst_constantEls, lst_constantEls, {},
-                                             inst_dims, false); // adrpo: here SHOULD BE IMPL=TRUE! not FALSE!
-
-        (cache,env3,ih,_,_,_,ci_state2,vars,_) =
-           instElementList(cache, env3, ih, UnitAbsyn.noStore, mods, pre, ci_state1, lst_constantEls,
-              inst_dims, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, false) "instantiate constants";
-
-        //ci_state2 = ci_state1;
-        //vars = {};
-
-        // Debug.traceln("partialInstClassdef OK " + className);
+        // Instantiate constants.
+        (outCache, outEnv, outIH, _, _, _, outState, outVars) := instElementList(
+          outCache, outEnv, outIH, UnitAbsyn.noStore, mod, inPrefix, outState,
+          const_els, inInstDims, true, InstTypes.INNER_CALL(),
+          ConnectionGraph.EMPTY, Connect.emptySet, false);
       then
-        (cache,env3,ih,ci_state2,vars);
+        (outCache, outEnv, outIH, outState, outVars);
 
-    // Short class definition, derived from basic types!
-    case (cache,env,ih,mods,pre,_,parentClass,
-          SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod),
-          vis,inst_dims,_)
-      equation
-        (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
+    case SCode.DERIVED(typeSpec = Absyn.TPATH(path = class_path, arrayDim = class_dims),
+                       modifications = class_mod)
+      algorithm
+        info := SCode.elementInfo(inClass);
+        has_dims := not (isNone(class_dims) or valueEq(class_dims, SOME({})));
 
-        re = SCode.getClassRestriction(parentClass);
-        _ = SCode.getClassPartialPrefix(parentClass);
-        _ = SCode.getElementName(parentClass);
-        info = SCode.elementInfo(parentClass);
+        try
+          (outCache, cls as SCode.CLASS(), cenv) :=
+            Lookup.lookupClass(inCache, inEnv, class_path, SOME(info));
+        else
+          class_name := Absyn.pathString(class_path);
+          scope_str := FGraph.printGraphPathStr(inEnv);
+          Error.addSourceMessageAndFail(Error.LOOKUP_ERROR, {class_name, scope_str}, info);
+        end try;
 
-        // if is a basic type, or enum follow the normal path
-        true = InstUtil.checkDerivedRestriction(re, r, cn2);
+        SCode.CLASS(name = class_name, encapsulatedPrefix = enc, restriction = der_re) := cls;
+        parent_re := SCode.getClassRestriction(inClass);
+        is_basic_type := InstUtil.checkDerivedRestriction(parent_re, der_re, class_name);
 
-        cenv_2 = FGraph.openScope(cenv, enc2, SOME(cn2), FGraph.restrictionToScopeType(r));
-        new_ci_state = ClassInf.start(r, FGraph.getGraphName(cenv_2));
+        smod := InstUtil.chainRedeclares(inMod, class_mod);
 
-        // chain the redeclares
-        mod = InstUtil.chainRedeclares(mods, mod);
+        // The mod is elaborated in the parent of this class.
+        parent_env := FGraph.stripLastScopeRef(inEnv);
+        (outCache, mod) := Mod.elabMod(outCache, parent_env, inIH, inPrefix,
+          smod, false, Mod.DERIVED(class_path), info);
+        mod := Mod.merge(inMod, mod, parent_env, inPrefix);
 
-        // the mod is elabed in the parent of this class
-        (parentEnv, _) = FGraph.stripLastScopeRef(env);
-        (cache,mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
-        mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
+        if has_dims and not is_basic_type then
+          cls := SCode.setClassName(class_name, cls);
+          eq := Mod.modEquation(mod);
+          (outCache, dims) := InstUtil.elabArraydimOpt(outCache, parent_env,
+            Absyn.CREF_IDENT("", {}), class_path, class_dims, eq, false, NONE(),
+            true, inPrefix, info, inInstDims);
+          inst_dims := List.appendLastList(inInstDims, dims);
+        else
+          inst_dims := inInstDims;
+        end if;
 
-        eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
-        (cache,dims) = InstUtil.elabArraydimOpt(cache, parentEnv, Absyn.CREF_IDENT("",{}), cn, ad, eq, false, NONE(), true, pre, info, inst_dims) "owncref not valid here" ;
-        // inst_dims2 = InstUtil.instDimExpLst(dims, false);
-        _ = List.appendLastList(inst_dims, dims);
+        if is_basic_type or has_dims then
+          scope_ty := if is_basic_type then FGraph.restrictionToScopeType(der_re) else
+                                            FGraph.classInfToScopeType(inState);
 
-        _ = Absyn.getArrayDimOptAsList(ad);
-        (cache,env_2,ih,new_ci_state_1,vars) = partialInstClassIn(cache, cenv_2, ih, mods_1, pre, new_ci_state, c, vis, inst_dims, numIter);
+          cenv := FGraph.openScope(cenv, enc, SOME(class_name), scope_ty);
+          outState := ClassInf.start(der_re, FGraph.getGraphName(cenv));
+          (outCache, outEnv, outIH, outState, outVars) :=
+            partialInstClassIn(outCache, cenv, inIH, mod, inPrefix, outState, cls,
+              inVisibility, inst_dims, numIter);
+        else
+          cdef := SCode.PARTS({SCode.EXTENDS(class_path, inVisibility,
+            SCode.NOMOD(), NONE(), info)}, {}, {}, {}, {}, {}, {}, NONE());
+          (outCache, outEnv, outIH, outState, outVars) :=
+            partialInstClassdef(outCache, inEnv, inIH, mod, inPrefix, inState,
+              inClass, cdef, inVisibility, inInstDims, numIter);
+        end if;
+
+        if SCode.isPartial(cls) then
+          outEnv := FGraph.makeScopePartial(inEnv);
+        end if;
       then
-        (cache,env_2,ih,new_ci_state_1,vars);
+        (outCache, outEnv, outIH, outState, outVars);
 
-    // Short class definition, not derived from basic types!, empty array dims
-    case (cache,env,ih,mods,pre,ci_state,parentClass,
-          SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod),
-          vis,inst_dims,_)
-      equation
-        // don't enter here
-        // false = true;
-        // no meta-modelica
-        // false = Config.acceptMetaModelicaGrammar();
-        // no types, enums or connectors please!
-        re = SCode.getClassRestriction(parentClass);
-        _ = SCode.getClassPartialPrefix(parentClass);
-        _ = SCode.getElementName(parentClass);
-        info = SCode.elementInfo(parentClass);
-
-        false = valueEq(re, SCode.R_TYPE());
-        // false = valueEq(re, SCode.R_FUNCTION());
-        false = valueEq(re, SCode.R_ENUMERATION());
-        false = valueEq(re, SCode.R_PREDEFINED_ENUMERATION());
-        // false = SCode.isConnector(re);
-        // check empty array dimensions
-        true = boolOr(valueEq(ad, NONE()), valueEq(ad, SOME({})));
-        (cache,SCode.CLASS(name=cn2,restriction=r),_) = Lookup.lookupClass(cache, env, cn, true);
-
-        false = InstUtil.checkDerivedRestriction(re, r, cn2);
-
-
-        // chain the redeclares
-        mod = InstUtil.chainRedeclares(mods, mod);
-
-        // elab the modifiers in the parent environment!!
-        (parentEnv,_) = FGraph.stripLastScopeRef(env);
-        // adrpo: as we do this IN THE SAME ENVIRONMENT (no open scope), clone it before doing changes
-        // env = FGraph.pushScopeRef(parentEnv, FNode.copyRefNoUpdate(lastRef));
-        (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
-        // print("mods: " + Absyn.pathString(cn) + " " + Mod.printModStr(mods_1) + "\n");
-        mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
-
-        // use instExtends for derived with no array dimensions and no modification (given via the mods_1)
-        //print("DEP:>>>" + FGraph.printGraphPathStr(env) + " = " + Absyn.pathString(cn) + " mods: " + Mod.printModStr(mods_1) + "\n");
-        //System.startTimer();
-        (cache, env, ih, ci_state,vars) =
-        partialInstClassdef(cache, env, ih, mods_1, pre, ci_state, parentClass,
-           SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},{},{},NONE()),
-           vis, inst_dims, numIter);
-        //System.stopTimer();
-        //print("DEP:<<<" + FGraph.printGraphPathStr(env) + " took: " + realString(System.getTimerIntervalTime()) + "\n");
-      then
-        (cache, env, ih, ci_state, vars);
-
-    // Short class definition, not derived from basic types!, non-empty array dims
-    case (cache,env,ih,mods,pre,ci_state,parentClass,
-          SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod),
-          vis,inst_dims,_)
-      equation
-        (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
-
-        re = SCode.getClassRestriction(parentClass);
-        _ = SCode.getClassPartialPrefix(parentClass);
-        className = SCode.getElementName(parentClass);
-        info = SCode.elementInfo(parentClass);
-
-        // if is not a basic type
-        false = InstUtil.checkDerivedRestriction(re, r, cn2);
-
-        // change the class name to className!!
-        // package A2=A
-        // package A3=A(mods)
-        // will get you different function implementations for the different packages!
-        /*
-        fullEnvPath = Absyn.selectPathsOpt(FGraph.getScopePath(env), Absyn.IDENT(""));
-        fullClassName = "DE_" + Absyn.pathStringReplaceDot(fullEnvPath, "_") + "_D_" +
-                        Absyn.pathStringReplaceDot(Absyn.selectPathsOpt(FGraph.getScopePath(cenv), Absyn.IDENT("")), "_" ) + "." + cn2 + "_ED";
-
-        // open a scope with a unique name in the base class environment so there is no collision
-        cenv_2 = FGraph.openScope(cenv, enc2, SOME(fullClassName), FGraph.classInfToScopeType(ci_state));
-        new_ci_state = ClassInf.start(r, FGraph.getGraphName(cenv_2));
-        */
-
-        // open a scope with the correct name
-        // className = className + "|" + PrefixUtil.printPrefixStr(pre) + "|" + cn2;
-
-        cenv_2 = FGraph.openScope(cenv, enc2, SOME(className), FGraph.classInfToScopeType(ci_state));
-        new_ci_state = ClassInf.start(r, FGraph.getGraphName(cenv_2));
-
-        c = SCode.setClassName(className, c);
-
-        //print("Partial Derived Env: " + FGraph.printGraphPathStr(cenv_2) + "\n");
-
-        // chain the redeclares
-        mod = InstUtil.chainRedeclares(mods, mod);
-
-        // elab the modifiers in the parent environment!
-        (parentEnv, _) = FGraph.stripLastScopeRef(env);
-        (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
-        mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
-
-        eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
-        (cache,dims) = InstUtil.elabArraydimOpt(cache, parentEnv, Absyn.CREF_IDENT("",{}), cn, ad, eq, false, NONE(), true, pre, info, inst_dims) "owncref not valid here" ;
-        // inst_dims2 = InstUtil.instDimExpLst(dims, false);
-        inst_dims_1 = List.appendLastList(inst_dims, dims);
-
-        _ = Absyn.getArrayDimOptAsList(ad);
-        (cache,env_2,ih,new_ci_state_1,vars) = partialInstClassIn(cache, cenv_2, ih, mods_1, pre, new_ci_state, c, vis, inst_dims_1, numIter);
-      then
-        (cache,env_2,ih,new_ci_state_1,vars);
-
-    /* If the class is derived from a class that can not be found in the environment,
-     * this rule prints an error message.
-     */
-    case (cache,env,_,_,_,_,parentClass,
-          SCode.DERIVED(Absyn.TPATH(path = cn)),
-          _,_,_)
-      equation
-        failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
-        cns = Absyn.pathString(cn);
-        scope_str = FGraph.printGraphPathStr(env);
-        Error.addSourceMessage(Error.LOOKUP_ERROR, {cns,scope_str},SCode.elementInfo(parentClass));
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end partialInstClassdef;
 
 public function instElementList
@@ -3650,7 +3493,8 @@ algorithm
           Absyn.TPATH(t, _), _, comment, _, _), mod_1)
           = redeclareType(cache, env2, ih, mod, comp, pre, ci_state, impl, DAE.NOMOD());
 
-        (cache, cls, cenv) = Lookup.lookupClass(cache, env2 /* env */, t, true);
+        (cache, cls, cenv) = Lookup.lookupClass(cache, env2 /* env */, t, SOME(info));
+
         cls_mod = Mod.getClassModifier(cenv, SCode.className(cls));
         if not Mod.isEmptyMod(cls_mod)
         then
@@ -3837,12 +3681,12 @@ algorithm
           typeSpec = Absyn.TPATH(t,_),
           info = info), _), _, _, _, _, _)
       equation
-        failure((_, _, _) = Lookup.lookupClass(cache, env, t, false));
+        failure((_, _, _) = Lookup.lookupClass(cache, env, t));
         // good for GDB debugging to re-run the instElement again
         // (cache, env, ih, store, dae, csets, ci_state, vars, graph) = instElement(inCache, inEnv, inIH, inUnitStore, inMod, inPrefix, inState, inElement, inInstDims, inImplicit, inCallingScope, inGraph, inSets);
         s = Absyn.pathString(t);
         scope_str = FGraph.printGraphPathStr(env);
-        pre = PrefixUtil.prefixAdd(name, {}, {}, pre, vt, ci_state);
+        pre = PrefixUtil.prefixAdd(name, {}, {}, pre, vt, ci_state, info);
         ns = PrefixUtil.printPrefixStrIgnoreNoPre(pre);
         Error.addSourceMessage(Error.LOOKUP_ERROR_COMPNAME, {s, scope_str, ns}, info);
         true = Flags.isSet(Flags.FAILTRACE);
@@ -4401,7 +4245,7 @@ algorithm
         ci_state = InstUtil.updateClassInfState(cache, idENV, env, inCIState);
 
         //Debug.traceln("update comp " + n + " with mods:" + Mod.printModStr(mods) + " m:" + SCodeDump.printModStr(m) + " cm:" + Mod.printModStr(cmod));
-        (cache,cl,cenv) = Lookup.lookupClass(cache, env, t, false);
+        (cache,cl,cenv) = Lookup.lookupClass(cache, env, t);
         //Debug.traceln("got class " + SCodeDump.printClassStr(cl));
         updatedComps = getUpdatedCompsHashTable(inUpdatedComps);
         (mods,cmod,m) = InstUtil.noModForUpdatedComponents(var1,updatedComps,cref,mods,cmod,m);
@@ -4456,7 +4300,7 @@ algorithm
         ci_state = InstUtil.updateClassInfState(cache, idENV, env, inCIState);
 
         //Debug.traceln("update comp " + n + " with mods:" + Mod.printModStr(mods) + " m:" + SCodeDump.printModStr(m) + " cm:" + Mod.printModStr(cmod));
-        (cache,cl,cenv) = Lookup.lookupClass(cache, env, t, false);
+        (cache,cl,cenv) = Lookup.lookupClass(cache, env, t);
         //Debug.traceln("got class " + SCodeDump.printClassStr(cl));
         updatedComps = getUpdatedCompsHashTable(inUpdatedComps);
         (mods,cmod,m) = InstUtil.noModForUpdatedComponents(var1,updatedComps,cref,mods,cmod,m);
@@ -4480,7 +4324,7 @@ algorithm
     case (cache,env,ih,_,_,_,_,_,_,_)
       equation
         _ = Absyn.crefFirstIdent(cref);
-        // (cache,_,_) = Lookup.lookupClass(cache,env, Absyn.IDENT(id), false);
+        // (cache,_,_) = Lookup.lookupClass(cache,env, Absyn.IDENT(id));
       then
         (cache,env,ih,inUpdatedComps);
     // report an error!
@@ -4728,7 +4572,7 @@ algorithm
     // The FQ path consist of the simple class name appended to the environment path of the looked up class.
     case (cache,env,path)
       equation
-        (cache,SCode.CLASS(name = name),env_1) = Lookup.lookupClass(cache, env, path, false);
+        (cache,SCode.CLASS(name = name),env_1) = Lookup.lookupClass(cache, env, path);
         path_2 = makeFullyQualified2(env_1,Absyn.IDENT(name));
       then
         (cache,Absyn.makeFullyQualified(path_2));
@@ -5068,7 +4912,7 @@ algorithm
       equation
         (cache,env) = Builtin.initialGraph(cache);
         env_1 = FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
-        (cache,(cdef as SCode.CLASS()),env_2) = Lookup.lookupClass(cache,env_1, path, true);
+        (cache,(cdef as SCode.CLASS()),env_2) = Lookup.lookupClass(cache,env_1, path, SOME(Absyn.dummyInfo));
 
         (cache,env_2,ih,_,dae,_,_,_,_,_) =
           instClass(cache,env_2,ih,UnitAbsyn.noStore, DAE.NOMOD(), Prefix.NOPRE(),
@@ -5271,7 +5115,7 @@ algorithm
       equation
         ErrorExt.setCheckpoint("Inst.removeSelfReferenceAndUpdate");
         cl2 = InstUtil.removeCrefFromCrefs(cl1, c1);
-        (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, true);
+        (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, SOME(info));
         (cache,dims) = InstUtil.elabArraydim(cache,cenv, c1, sty, ad, NONE(), impl, NONE(), true, false, pre, info, inst_dims);
 
         // we really need to keep at least the redeclare modifications here!!
@@ -5309,7 +5153,7 @@ algorithm
       equation
         ErrorExt.setCheckpoint("Inst.removeSelfReferenceAndUpdate");
         cl2 = InstUtil.removeCrefFromCrefs(cl1, c1);
-        (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, true);
+        (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, SOME(info));
         (cache,dims) = InstUtil.elabArraydim(cache, cenv, c1, sty, ad, NONE(), impl, NONE(), true, false, pre, info, inst_dims);
 
         // we really need to keep at least the redeclare modifications here!!
@@ -5347,7 +5191,7 @@ algorithm
       equation
         ErrorExt.setCheckpoint("Inst.removeSelfReferenceAndUpdate");
         cl2 = InstUtil.removeCrefFromCrefs(cl1, c1);
-        (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, true);
+        (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, SOME(info));
         (cache,dims) = InstUtil.elabArraydim(cache,cenv, c1, sty, ad, NONE(), impl, NONE(), true, false, pre, info, inst_dims);
 
         // we really need to keep at least the redeclare modifications here!!
@@ -5385,7 +5229,7 @@ algorithm
       equation
         ErrorExt.setCheckpoint("Inst.removeSelfReferenceAndUpdate");
         cl2 = InstUtil.removeCrefFromCrefs(cl1, c1);
-        (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, true);
+        (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, SOME(info));
         (cache,dims) = InstUtil.elabArraydim(cache,cenv, c1, sty, ad, NONE(), impl, NONE(), true, false, pre, info, inst_dims);
 
         // we really need to keep at least the redeclare modifications here!!
@@ -5425,7 +5269,7 @@ algorithm
       equation
         ErrorExt.setCheckpoint("Inst.removeSelfReferenceAndUpdate");
         cl2 = InstUtil.removeCrefFromCrefs(cl1, c1);
-        (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, true);
+        (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, SOME(info));
         (cache,dims) = InstUtil.elabArraydim(cache,cenv, c1, sty, ad, NONE(), impl, NONE(), true, false, pre, info, inst_dims);
 
         sM = NFSCodeMod.removeCrefPrefixFromModExp(scodeMod, inRef);

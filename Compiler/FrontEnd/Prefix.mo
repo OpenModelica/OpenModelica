@@ -74,6 +74,7 @@ uniontype ComponentPrefix
     list<DAE.Subscript> subscripts "subscripts" ;
     ComponentPrefix next "next prefix" ;
     ClassInf.State ci_state "to be able to at least partially fill in type information properly for DAE.VAR";
+    SourceInfo info;
   end PRE;
 
   record NOCOMPPRE end NOCOMPPRE;

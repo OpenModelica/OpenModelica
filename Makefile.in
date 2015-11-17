@@ -11,8 +11,8 @@ includedir = @includedir@
 datadir = @datadir@
 datarootdir = @datarootdir@
 docdir = @docdir@
-CMAKE = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@CMAKE_LDFLAGS@" cmake
-CMAKE_RPATH = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@RPATH_QMAKE@ @CMAKE_LDFLAGS@" cmake
+CMAKE = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@CMAKE_LDFLAGS@" cmake @CMAKE_EXTRA_DEFINES@
+CMAKE_RPATH = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@RPATH_QMAKE@ @CMAKE_LDFLAGS@" cmake @CMAKE_EXTRA_DEFINES@
 CMAKE_TARGET = "Unix Makefiles"
 OPENCL = @OPENCL@
 AR = @AR@
@@ -45,7 +45,7 @@ LAPACK_TARGET=@LAPACK_TARGET@
 OPENBLAS_EXTRA_ARGS=@OPENBLAS_EXTRA_ARGS@
 IPOPT_TARGET=ipopt
 UMFPACK_TARGET=@UMFPACK_TARGET@
-UMFPACK_SHARED=ON
+UMFPACK_SHARED=@UMFPACK_SHARED@
 # We don't want the shared version, but symbols are not exported if we use the static version
 # This compiles the shared and static versions, but we only copy the static version...
 FMILIB_SHARED = @FMILIB_SHARED@

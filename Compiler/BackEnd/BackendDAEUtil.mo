@@ -88,8 +88,6 @@ protected import FindZeroCrossings;
 protected import Flags;
 protected import Global;
 protected import HpcOmEqSystems;
-protected import HpcOmTaskGraph;
-protected import HpcOmSimCodeMain;
 protected import IndexReduction;
 protected import Initialization;
 protected import Inline;
@@ -112,16 +110,6 @@ protected import Types;
 protected import UnitCheck;
 protected import Values;
 protected import XMLDump;
-
-protected
-type Var = BackendDAE.Var;
-type VarKind = BackendDAE.VarKind;
-type VariableArray = BackendDAE.VariableArray;
-type ExternalObjectClasses = BackendDAE.ExternalObjectClasses;
-type BackendDAEType = BackendDAE.BackendDAEType;
-type SymbolicJacobians = BackendDAE.SymbolicJacobians;
-type EqSystems = BackendDAE.EqSystems;
-type ZeroCrossing = BackendDAE.ZeroCrossing;
 
 public function isInitializationDAE
   input BackendDAE.Shared inShared;
@@ -647,7 +635,7 @@ algorithm
       BackendDAE.Variables knvars;
       FCore.Cache cache;
       FCore.Graph graph;
-      EqSystems eqs;
+      BackendDAE.EqSystems eqs;
       BackendDAE.Shared shared;
 
     case BackendDAE.DAE(eqs, shared as BackendDAE.SHARED(knownVars=knvars, cache=cache, graph=graph))
@@ -684,9 +672,9 @@ protected function calculateValue
 algorithm
   outVar := matchcontinue(inVar)
     local
-      Var var;
+      BackendDAE.Var var;
       DAE.ComponentRef cr;
-      VarKind vk;
+      BackendDAE.VarKind vk;
       DAE.VarDirection vd;
       DAE.VarParallelism prl;
       BackendDAE.Type ty;
@@ -774,12 +762,12 @@ algorithm
     local
       BackendDAE.Variables vars, knvars;
       DAE.ComponentRef cr;
-      VarKind kind;
+      BackendDAE.VarKind kind;
       DAE.Exp e, e1, e2;
       Option<Boolean> blst;
       Boolean b, b1, b2;
       Boolean res;
-      Var backendVar;
+      BackendDAE.Var backendVar;
       Absyn.Ident name;
 
     case (e as DAE.CREF(componentRef=cr), (vars, knvars, blst)) equation
@@ -1613,7 +1601,7 @@ algorithm
     BackendDAE.StrongComponent comp;
     BackendDAE.StrongComponents rest;
     BackendDAE.Equation eqn;
-    Var var;
+    BackendDAE.Var var;
     list<BackendDAE.Equation> eqn_lst;
     list<BackendDAE.Var> var_lst;
     BackendDAE.EquationArray eqnsNew;
@@ -1786,7 +1774,7 @@ algorithm
       DAE.Else algElse;
       DAE.Statement stmt,ew;
       DAE.ComponentRef cref;
-      Var v;
+      BackendDAE.Var v;
       BackendDAE.Variables vars;
       DAE.Exp e;
       DAE.ElementSource source;
@@ -5621,10 +5609,10 @@ algorithm
 end makeZeroReplacements;
 
 protected function makeZeroReplacement "helper function to makeZeroReplacements.
-Creates replacement Var-> 0"
-  input Var inVar;
+Creates replacement BackendDAE.Var -> 0"
+  input BackendDAE.Var inVar;
   input BackendVarTransform.VariableReplacements inRepl;
-  output Var var;
+  output BackendDAE.Var var;
   output BackendVarTransform.VariableReplacements repl;
 algorithm
   (var,repl) := matchcontinue (inVar,inRepl)
@@ -5905,7 +5893,7 @@ algorithm
   outTypeA:=
   matchcontinue (inVariables)
     local
-      array<Option<Var>> varOptArr;
+      array<Option<BackendDAE.Var>> varOptArr;
       Type_a ext_arg_1;
       String name;
     case BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr))
@@ -5938,7 +5926,7 @@ algorithm
   outTypeA:=
   matchcontinue (inVariables)
     local
-      array<Option<Var>> varOptArr;
+      array<Option<BackendDAE.Var>> varOptArr;
       Type_a ext_arg_1;
       String name;
     case BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr))
@@ -6058,11 +6046,11 @@ algorithm
 end traverseArrayNoCopyWithUpdate;
 
 protected function traverseBackendDAEExpsVar "author: Frenkel TUD
-  Helper traverseBackendDAEExpsVar. Get all exps from a  Var.
+  Helper traverseBackendDAEExpsVar. Get all exps from a BackendDAE.Var.
   DAE.T_UNKNOWN_DEFAULT is used as type for componentref. Not important here.
   We only use the exp list for finding function calls"
   replaceable type Type_a subtypeof Any;
-  input Option<Var> inVar;
+  input Option<BackendDAE.Var> inVar;
   input FuncExpType func;
   input Type_a inTypeA;
   output Type_a outTypeA;
@@ -6077,14 +6065,14 @@ algorithm
 end traverseBackendDAEExpsVar;
 
 protected function traverseBackendDAEExpsVarWithUpdate "author: Frenkel TUD
-  Helper traverseBackendDAEExpsVar. Get all exps from a  Var.
+  Helper traverseBackendDAEExpsVar. Get all exps from a BackendDAE.Var.
   DAE.T_UNKNOWN_DEFAULT is used as type for componentref. Not important here.
   We only use the exp list for finding function calls"
   replaceable type Type_a subtypeof Any;
-  input Option<Var> inVar;
+  input Option<BackendDAE.Var> inVar;
   input FuncExpType func;
   input Type_a inTypeA;
-  output Option<Var> ovar;
+  output Option<BackendDAE.Var> ovar;
   output Type_a outTypeA;
   partial function FuncExpType
     input DAE.Exp inExp;
@@ -6101,7 +6089,7 @@ algorithm
       Option<DAE.VariableAttributes> attr;
       Option<BackendDAE.TearingSelect> ts;
       Type_a ext_arg_1, ext_arg_2;
-      VarKind varKind;
+      BackendDAE.VarKind varKind;
       DAE.VarDirection varDirection;
       DAE.VarParallelism varParallelism;
       BackendDAE.Type varType;
@@ -6895,10 +6883,10 @@ end postOptimizeDAE;
 
 public function getSolvedSystemforJacobians "Run the equation system pipeline."
   input BackendDAE.BackendDAE inDAE;
-  input Option<list<String>> strPreOptModules;
+  input list<String> strPreOptModules;
   input Option<String> strMatchingAlgorithm;
   input Option<String> strDAEHandler;
-  input Option<list<String>> strPostOptModules;
+  input list<String> strPostOptModules;
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendDAE.BackendDAE dae;
@@ -6906,20 +6894,9 @@ protected
   list<tuple<BackendDAEFunc.optimizationModule, String>> postOptModules;
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
-
-  list<String> preOptModulesAdd = Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD);
-  list<String> preOptModulesSub = Flags.getConfigStringList(Flags.PRE_OPT_MODULES_SUB);
-  list<String> postOptModulesAdd = Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD);
-  list<String> postOptModulesSub = Flags.getConfigStringList(Flags.POST_OPT_MODULES_SUB);
 algorithm
-  // don't use --preOptModules+/-, --postOptModules+/- flags for Jacobains
-  Flags.setConfigStringList(Flags.PRE_OPT_MODULES_ADD, {});
-  Flags.setConfigStringList(Flags.PRE_OPT_MODULES_SUB, {});
-  Flags.setConfigStringList(Flags.POST_OPT_MODULES_ADD, {});
-  Flags.setConfigStringList(Flags.POST_OPT_MODULES_SUB, {});
-
-  preOptModules := getPreOptModules(strPreOptModules);
-  postOptModules := getPostOptModules(strPostOptModules);
+  preOptModules := selectOptModules(strPreOptModules, {}, {}, allPreOptimizationModules());
+  postOptModules := selectOptModules(strPostOptModules, {}, {}, allPostOptimizationModules());
   matchingAlgorithm := getMatchingAlgorithm(strMatchingAlgorithm);
   daeHandler := getIndexReductionMethod(strDAEHandler);
 
@@ -6937,12 +6914,6 @@ algorithm
   //fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outDAE, "dumpindxdae");
   //bcall(Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) or Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO), BackendDump.dumpCompShort, outDAE);
   //fcall2(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outDAE, "system for jacobians");
-
-  // restore flags
-  Flags.setConfigStringList(Flags.PRE_OPT_MODULES_ADD, preOptModulesAdd);
-  Flags.setConfigStringList(Flags.PRE_OPT_MODULES_SUB, preOptModulesSub);
-  Flags.setConfigStringList(Flags.POST_OPT_MODULES_ADD, postOptModulesAdd);
-  Flags.setConfigStringList(Flags.POST_OPT_MODULES_SUB, postOptModulesSub);
 end getSolvedSystemforJacobians;
 
 /*************************************************
@@ -7195,21 +7166,64 @@ protected function getPreOptModules
   output list<tuple<BackendDAEFunc.optimizationModule, String>> outPreOptModules;
 protected
   list<String> preOptModules;
+  list<String> enabledModules = Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD);
+  list<String> disabledModules = Flags.getConfigStringList(Flags.PRE_OPT_MODULES_SUB);
 algorithm
   preOptModules := getPreOptModulesString();
   preOptModules := Util.getOptionOrDefault(inPreOptModules, preOptModules);
 
-  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD)) then
-    Error.addCompilerError("It's not possible to combine following flags: --preOptModules+=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
+  if Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) then
+    // handle special flags, which enable modules
+    if Flags.isSet(Flags.SORT_EQNS_AND_VARS) then
+      enabledModules := "sortEqnsVars"::enabledModules;
+    end if;
+
+    if Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM) then
+      enabledModules := "inputDerivativesForDynOpt"::enabledModules;
+    end if;
+
+    if Flags.isSet(Flags.RESOLVE_LOOPS) then
+      enabledModules := "resolveLoops"::enabledModules;
+    end if;
+
+    if Flags.isSet(Flags.EVALUATE_CONST_FUNCTIONS) then
+      enabledModules := "evalFunc"::enabledModules;
+    end if;
+
+    if Flags.isSet(Flags.EVAL_ALL_PARAMS) then
+      enabledModules := "evaluateAllParameters"::enabledModules;
+    end if;
+
+    if Flags.isSet(Flags.ADD_DER_ALIASES) then
+      enabledModules := "introduceDerAlias"::enabledModules;
+    end if;
+
+    // handle special flags, which disable modules
+    if Flags.isSet(Flags.NO_PARTITIONING) then
+      disabledModules := "clockPartitioning"::disabledModules;
+    end if;
+
+    if Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "causal" or
+       Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "none" then
+      disabledModules := "removeSimpleEquations"::disabledModules;
+    end if;
+
+    if Flags.isSet(Flags.DISABLE_COMSUBEXP) then
+      disabledModules := "comSubExp"::disabledModules;
+    end if;
+  end if;
+
+  if not Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) and not listEmpty(enabledModules) then
+    Error.addCompilerError("It's not possible to combine following flags: --preOptModules+=... and --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
     fail();
   end if;
 
-  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.POST_OPT_MODULES_SUB)) then
-    Error.addCompilerError("It's not possible to combine following flags: --postOptModules-=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
+  if not Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) and not listEmpty(disabledModules) then
+    Error.addCompilerError("It's not possible to combine following flags: --postOptModules-=... and --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
     fail();
   end if;
 
-  outPreOptModules := selectOptModules(preOptModules, Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD), Flags.getConfigStringList(Flags.PRE_OPT_MODULES_SUB), allPreOptimizationModules());
+  outPreOptModules := selectOptModules(preOptModules, enabledModules, disabledModules, allPreOptimizationModules());
 end getPreOptModules;
 
 public function getPostOptModulesString
@@ -7223,21 +7237,107 @@ public function getPostOptModules
   output list<tuple<BackendDAEFunc.optimizationModule, String>> outPostOptModules;
 protected
   list<String> postOptModules;
+  list<String> enabledModules = Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD);
+  list<String> disabledModules = Flags.getConfigStringList(Flags.POST_OPT_MODULES_SUB);
 algorithm
   postOptModules := getPostOptModulesString();
   postOptModules := Util.getOptionOrDefault(inPostOptModules, postOptModules);
 
-  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD)) then
-    Error.addCompilerError("It's not possible to combine following flags: --postOptModules+=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
+  if Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) then
+    // handle special flags, which enable modules
+    if Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM) then
+      enabledModules := "simplifyConstraints"::enabledModules;
+    end if;
+
+    if Flags.isSet(Flags.REDUCE_DYN_OPT) then
+      enabledModules := "reduceDynamicOptimization"::enabledModules;
+    end if;
+
+    if not Flags.getConfigString(Flags.LOOP2CON) == "none" then
+      enabledModules := "extendDynamicOptimization"::enabledModules;
+    end if;
+
+    if Flags.getConfigBool(Flags.CSE_CALL) or
+       Flags.getConfigBool(Flags.CSE_EACHCALL) or
+       Flags.getConfigBool(Flags.CSE_BINARY) then
+      enabledModules := "CSE"::enabledModules;
+    end if;
+
+    if Flags.isSet(Flags.ON_RELAXATION) then
+      enabledModules := "relaxSystem"::enabledModules;
+    end if;
+
+    if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
+      enabledModules := "generateSymbolicJacobian"::enabledModules;
+    end if;
+
+    if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION) then
+      enabledModules := "generateSymbolicLinearization"::enabledModules;
+    end if;
+
+    if Flags.isSet(Flags.ADD_SCALED_VARS) or Flags.isSet(Flags.ADD_SCALED_VARS_INPUT) then
+      enabledModules := "addScaledVars"::enabledModules;
+    end if;
+
+    if Flags.getConfigBool(Flags.SYM_EULER) then
+      enabledModules := "symEuler"::enabledModules;
+    end if;
+
+    if Flags.getConfigInt(Flags.SIMPLIFY_LOOPS) > 0 then
+      enabledModules := "simplifyLoops"::enabledModules;
+    end if;
+
+    if Flags.isSet(Flags.COUNT_OPERATIONS) then
+      enabledModules := "countOperations"::enabledModules;
+    end if;
+
+    if Flags.getConfigBool(Flags.ADD_TIME_AS_STATE) then
+      enabledModules := "addTimeAsState"::enabledModules;
+    end if;
+
+    if 1 < Flags.getConfigInt(Flags.MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM) then
+      enabledModules := "solveLinearSystem"::enabledModules;
+    end if;
+
+    if Flags.isSet(Flags.RESHUFFLE_POST) then
+      enabledModules := "reshufflePost"::enabledModules;
+    end if;
+
+    if Flags.getConfigInt(Flags.RTEARING) > 0 then
+      enabledModules := "recursiveTearing"::enabledModules;
+    end if;
+
+    if Flags.getConfigInt(Flags.PARTLINTORN) > 0 then
+      enabledModules := "partlintornsystem"::enabledModules;
+    end if;
+
+    // handle special flags, which disable modules
+    if Flags.isSet(Flags.DIS_SIMP_FUN) then
+      disabledModules := "simplifyComplexFunction"::disabledModules;
+    end if;
+
+    if Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "none" or
+       Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "fastAcausal" or
+       Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "allAcausal" then
+      disabledModules := "removeSimpleEquations"::disabledModules;
+    end if;
+
+    if Config.getTearingMethod() == "noTearing" then
+      disabledModules := "tearingSystem"::disabledModules;
+    end if;
+  end if;
+
+  if not Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) and not listEmpty(enabledModules) then
+    Error.addCompilerError("It's not possible to combine following flags: --postOptModules+=... and --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
     fail();
   end if;
 
-  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.POST_OPT_MODULES_SUB)) then
-    Error.addCompilerError("It's not possible to combine following flags: --postOptModules-=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
+  if not Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) and not listEmpty(disabledModules) then
+    Error.addCompilerError("It's not possible to combine following flags: --postOptModules-=... and --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
     fail();
   end if;
 
-  outPostOptModules := selectOptModules(postOptModules, Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD), Flags.getConfigStringList(Flags.POST_OPT_MODULES_SUB), allPostOptimizationModules());
+  outPostOptModules := selectOptModules(postOptModules, enabledModules, disabledModules, allPostOptimizationModules());
 end getPostOptModules;
 
 public function getInitOptModules
@@ -7245,21 +7345,43 @@ public function getInitOptModules
   output list<tuple<BackendDAEFunc.optimizationModule, String>> outInitOptModules;
 protected
   list<String> initOptModules;
+  list<String> enabledModules = Flags.getConfigStringList(Flags.INIT_OPT_MODULES_ADD);
+  list<String> disabledModules = Flags.getConfigStringList(Flags.INIT_OPT_MODULES_SUB);
 algorithm
   initOptModules := Config.getInitOptModules();
   initOptModules := Util.getOptionOrDefault(inInitOptModules, initOptModules);
 
-  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.INIT_OPT_MODULES_ADD)) then
-    Error.addCompilerError("It's not possible to combine following flags: --initOptModules+=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
+  if Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) then
+    // handle special flags, which enable modules
+    if Flags.getConfigInt(Flags.SIMPLIFY_LOOPS) > 0 then
+      enabledModules := "simplifyLoops"::enabledModules;
+    end if;
+
+    if Flags.getConfigInt(Flags.RTEARING) > 0 then
+      enabledModules := "recursiveTearing"::enabledModules;
+    end if;
+
+    // handle special flags, which disable modules
+    if Flags.isSet(Flags.DIS_SIMP_FUN) then
+      disabledModules := "simplifyComplexFunction"::disabledModules;
+    end if;
+
+    if Config.getTearingMethod() == "noTearing" then
+      disabledModules := "tearingSystem"::disabledModules;
+    end if;
+  end if;
+
+  if not Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) and not listEmpty(enabledModules) then
+    Error.addCompilerError("It's not possible to combine following flags: --initOptModules+=... and --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
     fail();
   end if;
 
-  if not Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING) and not listEmpty(Flags.getConfigStringList(Flags.INIT_OPT_MODULES_SUB)) then
-    Error.addCompilerError("It's not possible to combine following flags: --initOptModules-=... and --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false");
+  if not Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) and not listEmpty(disabledModules) then
+    Error.addCompilerError("It's not possible to combine following flags: --initOptModules-=... and --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
     fail();
   end if;
 
-  outInitOptModules := selectOptModules(initOptModules, Flags.getConfigStringList(Flags.INIT_OPT_MODULES_ADD), Flags.getConfigStringList(Flags.INIT_OPT_MODULES_SUB), allInitOptimizationModules());
+  outInitOptModules := selectOptModules(initOptModules, enabledModules, disabledModules, allInitOptimizationModules());
 end getInitOptModules;
 
 protected function selectOptModules
@@ -7269,7 +7391,7 @@ protected function selectOptModules
   input list<tuple<BackendDAEFunc.optimizationModule, String>> inOptModules;
   output list<tuple<BackendDAEFunc.optimizationModule, String>> outOptModules = {};
 protected
-  Boolean forceOrdering = Flags.getConfigBool(Flags.FORCE_RECOMMENDED_ORDERING);
+  Boolean forceOrdering = Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING);
   String name;
   Integer numModules = listLength(inOptModules);
   array<Boolean> activeModules = arrayCreate(numModules, false);
@@ -7281,7 +7403,7 @@ algorithm
       index := getModuleIndex(name, inOptModules);
 
       if index < maxIndex then
-        Error.addCompilerWarning("Specified ordering will be ignored. Use --" + Flags.configFlagName(Flags.FORCE_RECOMMENDED_ORDERING) + "=false to override module ordering.");
+        Error.addCompilerWarning("Specified ordering will be ignored. Use --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false to override module ordering.");
         maxIndex := numModules;
       else
         maxIndex := intMax(maxIndex, index);
@@ -7598,7 +7720,7 @@ public function getAllVarLst "retrieve all variables of the dae by collecting th
   input BackendDAE.BackendDAE dae;
   output list<BackendDAE.Var> varLst;
 protected
-  EqSystems eqs;
+  BackendDAE.EqSystems eqs;
   BackendDAE.Variables knvars;
 algorithm
   BackendDAE.DAE(eqs=eqs,shared = BackendDAE.SHARED(knownVars=knvars)) := dae;

@@ -4291,7 +4291,7 @@ algorithm
 
         // deal with equalityConstraint function!
         // instantiate and add the equalityConstraint function to the dae function tree!
-        (cache,equalityConstraintFunction,env) = Lookup.lookupClass(cache,env,fpath1,false);
+        (cache,equalityConstraintFunction,env) = Lookup.lookupClass(cache,env,fpath1);
         (cache,fpath1) = Inst.makeFullyQualified(cache,env,fpath1);
         cache = FCore.addCachedInstFuncGuard(cache,fpath1);
         (cache,env,ih) =
@@ -4337,7 +4337,7 @@ algorithm
 
         // deal with equalityConstraint function!
         // instantiate and add the equalityConstraint function to the dae function tree!
-        (cache,equalityConstraintFunction,env) = Lookup.lookupClass(cache,env,fpath1,false);
+        (cache,equalityConstraintFunction,env) = Lookup.lookupClass(cache,env,fpath1);
         (cache,fpath1) = Inst.makeFullyQualified(cache,env,fpath1);
         cache = FCore.addCachedInstFuncGuard(cache,fpath1);
         (cache,env,ih) =

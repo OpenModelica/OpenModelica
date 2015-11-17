@@ -3505,7 +3505,7 @@ algorithm
     case (BackendDAE.GENERIC_JACOBIAN((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},
                                     shared=shared), name,
                                     independentVarsLst, residualVarsLst, dependentVarsLst),
-                                      (sparsepatternComRefs, sparsepatternComRefsT, (_, _)),
+                                      (sparsepatternComRefs, sparsepatternComRefsT, (_, _), _),
                                       sparseColoring), _, _)
       equation
         if Flags.isSet(Flags.JAC_DUMP2) then
@@ -3662,7 +3662,7 @@ algorithm
 
     case ({}, _, _, _) then ({}, iuniqueEqIndex);
     // if nothing is generated
-    case (((NONE(), ({}, {}, ({}, {})), {}))::rest, _, _, name::restnames)
+    case (((NONE(), ({}, {}, ({}, {}), _), {}))::rest, _, _, name::restnames)
       equation
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames);
         linearModelMatrices = (({}, {}, name, ({}, {}), {}, 0, -1))::linearModelMatrices;
@@ -3670,7 +3670,7 @@ algorithm
         (linearModelMatrices, uniqueEqIndex);
 
     // if only sparsity pattern is generated
-    case (((optionBDAE, (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs)), colsColors))::rest, _, _, name::restnames)
+    case (((optionBDAE, (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs), _), colsColors))::rest, _, _, name::restnames)
       guard  checkForEmptyBDAE(optionBDAE)
       equation
         if Flags.isSet(Flags.JAC_DUMP2) then
@@ -3727,7 +3727,7 @@ algorithm
 
     case (((SOME((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},
                                     shared=shared), name,
-                                    _, diffedVars, alldiffedVars)), (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs)), colsColors))::rest,
+                                    _, diffedVars, alldiffedVars)), (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs), _), colsColors))::rest,
                                     _, _, _::restnames)
       equation
         if Flags.isSet(Flags.JAC_DUMP2) then
@@ -11413,8 +11413,8 @@ algorithm
     (crefSimVarHT,_) := createCrefToSimVarHT(inModelInfo);
     // combine the transposed sparse pattern of matrix A and B
     // to obtain dependencies for the derivatives
-    SOME((_, (_, spTA, (diffCrefsA, diffedCrefsA)), _)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "A");
-    SOME((_, (_, spTB, (diffCrefsB, diffedCrefsB)), _)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "B");
+    SOME((_, (_, spTA, (diffCrefsA, diffedCrefsA),_), _)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "A");
+    SOME((_, (_, spTB, (diffCrefsB, diffedCrefsB),_), _)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "B");
 
     //print("-- Got matrixes\n");
     spTA  := mergeSparsePatter(spTA, spTB, {});
@@ -11440,8 +11440,8 @@ algorithm
     //print("-- created derivatives \n");
     // combine the transposed sparse pattern of matrix C and D
     // to obtain dependencies for the outputs
-    SOME((_, (_, spTA, (diffCrefsA, diffedCrefsA)), _)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "C");
-    SOME((_, (_, spTB, (diffCrefsB, diffedCrefsB)), _)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "D");
+    SOME((_, (_, spTA, (diffCrefsA, diffedCrefsA),_), _)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "C");
+    SOME((_, (_, spTB, (diffCrefsB, diffedCrefsB),_), _)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "D");
     //print("-- Got matrixes CD\n");
     spTA  := mergeSparsePatter(spTA, spTB, {});
     //print("-- merged matrixes CD\n");

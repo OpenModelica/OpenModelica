@@ -27,11 +27,7 @@
 #endif
 
 #define DEFAULT_CFLAGS "@RUNTIMECFLAGS@ ${MODELICAUSERCFLAGS}"
-#ifdef __APPLE_CC__
-  #define CONFIG_OS "OSX"
-#else
-  #define CONFIG_OS "linux"
-#endif
+#define CONFIG_OS "@CONFIG_OS@"
 
 #define CONFIG_LPSOLVEINC "@LPSOLVEINC@"
 @NO_LPLIB@
@@ -41,7 +37,6 @@
 #define CONFIG_DEFAULT_OPENMODELICAHOME "@prefix@"
 #define CONFIG_PATH_DELIMITER "/"
 #define CONFIG_GROUP_DELIMITER ":"
-#define CONFIG_USER_IS_ROOT (geteuid() == 0 ? 1 : 0)
 #define CONFIG_CORBALIBS "@CORBALIBS@"
 #define CONFIG_LPSOLVE55 "@LIBLPSOLVE55@"
 #define CONFIG_REVISION "@SOURCE_REVISION@"
@@ -50,7 +45,7 @@
 /* Skip compiling against some stuff for the JavaScript runtime */
 #if !defined(OMC_EMCC) && !defined(OMC_MINIMAL_RUNTIME)
 @WITH_SUNDIALS@
-@WITH_IPOPT@
+#define WITH_IPOPT
 @WITH_UMFPACK@
 @WITH_HWLOC@
 #endif

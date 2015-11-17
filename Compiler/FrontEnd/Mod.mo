@@ -3337,5 +3337,41 @@ algorithm
   outSubMods := listReverse(outSubMods);
 end stripSubModBindings;
 
+public function filterRedeclares
+  input DAE.Mod inMod;
+  output DAE.Mod outMod = inMod;
+algorithm
+  outMod := match outMod
+    case DAE.MOD()
+      algorithm
+        outMod.subModLst := filterRedeclaresSubMods(outMod.subModLst);
+        outMod.eqModOption := NONE();
+      then
+        if listEmpty(outMod.subModLst) then DAE.NOMOD() else outMod;
+
+    else outMod;
+  end match;
+end filterRedeclares;
+
+protected function filterRedeclaresSubMods
+  input list<DAE.SubMod> inSubMods;
+  output list<DAE.SubMod> outSubMods = {};
+protected
+  DAE.Ident id;
+  DAE.Mod mod;
+algorithm
+  for submod in inSubMods loop
+    DAE.NAMEMOD(id, mod) := submod;
+    mod := filterRedeclares(mod);
+
+    if isRedeclareMod(mod) then
+      outSubMods := DAE.NAMEMOD(id, mod) :: outSubMods;
+    end if;
+  end for;
+
+  outSubMods := listReverse(outSubMods);
+end filterRedeclaresSubMods;
+
+
 annotation(__OpenModelica_Interface="frontend");
 end Mod;

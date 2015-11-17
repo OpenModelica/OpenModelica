@@ -75,6 +75,7 @@ protected import InnerOuter;
 protected import List;
 protected import Mod;
 protected import Prefix;
+protected import PrefixUtil;
 protected import Static;
 protected import UnitAbsyn;
 protected import SCodeDump;
@@ -151,7 +152,7 @@ algorithm
     // Special classes (function, record, metarecord, external object)
     case (cache,env,path,_)
       equation
-        (cache,c,env_1) = lookupClass(cache,env,path,false);
+        (cache,c,env_1) = lookupClass(cache,env,path);
         (cache,t,env_2) = lookupType2(cache,env_1,path,c);
       then
         (cache,t,env_2);
@@ -379,12 +380,12 @@ public function lookupClass "Tries to find a specified class in an environment"
   input FCore.Cache inCache;
   input FCore.Graph inEnv "Where to look";
   input Absyn.Path inPath "Path of the class to look for";
-  input Boolean msg "Controls error messages";
+  input Option<SourceInfo> inInfo = NONE();
   output FCore.Cache outCache;
   output SCode.Element outClass;
   output FCore.Graph outEnv;
 algorithm
-  (outCache,outClass,outEnv) := matchcontinue(inCache, inEnv, inPath, msg)
+  (outCache,outClass,outEnv) := matchcontinue(inCache, inEnv, inPath)
     local
       Absyn.Path p, id;
       String name, className;
@@ -399,25 +400,25 @@ algorithm
 
     // see if the first path ident is a component
     // we might have a component reference, i.e. world.gravityAcceleration
-    case (_,_,Absyn.QUALIFIED(name, id),_)
+    case (_,_,Absyn.QUALIFIED(name, id))
       equation
         ErrorExt.setCheckpoint("functionViaComponentRef2");
         (outCache,_,_,_,_,_,_,cenv,_) = lookupVar(inCache, inEnv, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
-        (outCache, outClass, outEnv) = lookupClass(outCache, cenv, id, false);
+        (outCache, outClass, outEnv) = lookupClass(outCache, cenv, id);
         ErrorExt.rollBack("functionViaComponentRef2");
       then
         (outCache,outClass,outEnv);
 
-   case (_,_,Absyn.QUALIFIED(_, _),_)
+   case (_,_,Absyn.QUALIFIED(_, _))
      equation
        ErrorExt.rollBack("functionViaComponentRef2");
      then
        fail();
 
     // normal case
-    case (_, _, _, _)
+    case (_, _, _)
       equation
-         (outCache,outClass,outEnv,_) = lookupClass1(inCache, inEnv, inPath, {}, Util.makeStatefulBoolean(false), msg);
+         (outCache,outClass,outEnv,_) = lookupClass1(inCache, inEnv, inPath, {}, Util.makeStatefulBoolean(false), inInfo);
          // print("CLRET: " + SCode.elementName(outClass) + " outenv: " + FGraph.printGraphPathStr(outEnv) + "\n");
       then
         (outCache,outClass,outEnv);
@@ -431,35 +432,26 @@ protected function lookupClass1 "help function to lookupClass, does all the work
   input Absyn.Path inPath "The path of the class to lookup";
   input FCore.Scope inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
   input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
-  input Boolean msg "Print error messages";
+  input Option<SourceInfo> inInfo;
   output FCore.Cache outCache;
   output SCode.Element outClass;
   output FCore.Graph outEnv "The environment in which the class was found (not the environment inside the class)";
   output FCore.Scope outPrevFrames;
+protected
+  Integer errors = Error.getNumErrorMessages();
+  SourceInfo info;
 algorithm
-  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnv,inPath,inPrevFrames,inState,msg)
-    local
-      String id,scope;
-    case (_,_,_,_,_,_)
-      equation
-        (outCache,outClass,outEnv,outPrevFrames) = lookupClass2(inCache,inEnv,inPath,inPrevFrames,inState,false);
-      then (outCache,outClass,outEnv,outPrevFrames);
-    case (_,_,_,_,_,true)
-      equation
-        id = Absyn.pathString(inPath);
-        scope = FGraph.printGraphPathStr(inEnv);
-        Error.addMessage(Error.LOOKUP_ERROR, {id,scope});
-      then fail();
-    /*case (_,_,_,_,_,_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        id = Absyn.pathString(inPath);
-        scope = FGraph.printGraphPathStr(inEnv);
-        fprintln(Flags.FAILTRACE,  "- Lookup.lookupClass failed:\n" +
-          id + " in:\n" +
-          scope);
-      then fail();*/
-  end matchcontinue;
+  try
+    (outCache, outClass, outEnv, outPrevFrames) := lookupClass2(inCache, inEnv,
+      inPath, inPrevFrames, inState, inInfo);
+  else
+    if isSome(inInfo) and errors == Error.getNumErrorMessages() then
+      Error.addSourceMessage(Error.LOOKUP_ERROR,
+        {Absyn.pathString(inPath), FGraph.printGraphPathStr(inEnv)},
+        Util.getOption(inInfo));
+    end if;
+    fail();
+  end try;
 end lookupClass1;
 
 protected function lookupClass2 "help function to lookupClass, does all the work."
@@ -468,13 +460,13 @@ protected function lookupClass2 "help function to lookupClass, does all the work
   input Absyn.Path inPath "The path of the class to lookup";
   input FCore.Scope inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
   input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
-  input Boolean msg "Print error messages";
+  input Option<SourceInfo> inInfo;
   output FCore.Cache outCache;
   output SCode.Element outClass;
   output FCore.Graph outEnv "The environment in which the class was found (not the environment inside the class)";
   output FCore.Scope outPrevFrames;
 algorithm
-  (outCache,outClass,outEnv,outPrevFrames) := match (inCache,inEnv,inPath,inPrevFrames,inState,msg)
+  (outCache,outClass,outEnv,outPrevFrames) := match (inCache,inEnv,inPath,inPrevFrames)
     local
       FCore.Node f;
       FCore.Ref r;
@@ -487,27 +479,27 @@ algorithm
       Option<FCore.Ref> optFrame;
 
     // Fully qualified names are looked up in top scope. With previous frames remembered.
-    case (cache,env,Absyn.FULLYQUALIFIED(path),{},_,_)
+    case (cache,env,Absyn.FULLYQUALIFIED(path),{})
       equation
         r::prevFrames = listReverse(FGraph.currentScope(env));
         Util.setStatefulBoolean(inState,true);
         env = FGraph.setScope(env, {r});
-        (cache,c,env_1,prevFrames) = lookupClass2(cache,env,path,prevFrames,inState,msg);
+        (cache,c,env_1,prevFrames) = lookupClass2(cache,env,path,prevFrames,inState,inInfo);
       then
         (cache,c,env_1,prevFrames);
 
     // Qualified names are handled in a special function in order to avoid infinite recursion.
-    case (cache,env,(Absyn.QUALIFIED(name = pack,path = path)),prevFrames,_,_)
+    case (cache,env,(Absyn.QUALIFIED(name = pack,path = path)),prevFrames)
       equation
         (optFrame,prevFrames) = lookupPrevFrames(pack,prevFrames);
-        (cache,c,env_2,prevFrames) = lookupClassQualified(cache,env,pack,path,optFrame,prevFrames,inState,msg);
+        (cache,c,env_2,prevFrames) = lookupClassQualified(cache,env,pack,path,optFrame,prevFrames,inState,inInfo);
       then
         (cache,c,env_2,prevFrames);
 
     // Simple names
-    case (cache,env,Absyn.IDENT(name = id),prevFrames,_,_)
+    case (cache,env,Absyn.IDENT(name = id),prevFrames)
       equation
-        (cache,c,env_1,prevFrames) = lookupClassInEnv(cache, env, id, prevFrames, inState, msg);
+        (cache,c,env_1,prevFrames) = lookupClassInEnv(cache, env, id, prevFrames, inState, inInfo);
       then
         (cache,c,env_1,prevFrames);
 
@@ -528,13 +520,13 @@ protected function lookupClassQualified
   input Option<FCore.Ref> inOptFrame;
   input FCore.Scope inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
   input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
-  input Boolean msg "Print error messages";
+  input Option<SourceInfo> inInfo;
   output FCore.Cache outCache;
   output SCode.Element outClass;
   output FCore.Graph outEnv "The environment in which the class was found (not the environment inside the class)";
   output FCore.Scope outPrevFrames;
 algorithm
-  (outCache,outClass,outEnv,outPrevFrames) := match (inCache,inEnv,id,path,inOptFrame,inPrevFrames,inState,msg)
+  (outCache,outClass,outEnv,outPrevFrames) := match (inCache,inEnv,id,path,inOptFrame,inPrevFrames)
     local
       SCode.Element c;
       Absyn.Path scope;
@@ -545,20 +537,20 @@ algorithm
       Option<FCore.Ref> optFrame;
 
     // Qualified names first identifier cached in previous frames
-    case (cache,env,_,_,SOME(frame),prevFrames,_,_)
+    case (cache,env,_,_,SOME(frame),prevFrames)
       equation
         Util.setStatefulBoolean(inState,true);
         env = FGraph.pushScopeRef(env, frame);
-        (cache,c,env,prevFrames) = lookupClass2(cache,env,path,prevFrames,inState,msg);
+        (cache,c,env,prevFrames) = lookupClass2(cache,env,path,prevFrames,inState,inInfo);
       then
         (cache,c,env,prevFrames);
 
     // Qualified names in package and non-package
-    case (cache,env,_,_,NONE(),_,_,_)
+    case (cache,env,_,_,NONE(),_)
       equation
-        (cache,c,env,prevFrames) = lookupClass2(cache,env,Absyn.IDENT(id),{},inState,msg);
+        (cache,c,env,prevFrames) = lookupClass2(cache,env,Absyn.IDENT(id),{},inState,inInfo);
         (optFrame,prevFrames) = lookupPrevFrames(id,prevFrames);
-        (cache,c,env,prevFrames) = lookupClassQualified2(cache,env,path,c,optFrame,prevFrames,inState,msg);
+        (cache,c,env,prevFrames) = lookupClassQualified2(cache,env,path,c,optFrame,prevFrames,inState,inInfo);
       then
         (cache,c,env,prevFrames);
 
@@ -573,13 +565,13 @@ protected function lookupClassQualified2
   input Option<FCore.Ref> optFrame;
   input FCore.Scope inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
   input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
-  input Boolean msg "Print error messages";
+  input Option<SourceInfo> inInfo;
   output FCore.Cache outCache;
   output SCode.Element outClass;
   output FCore.Graph outEnv "The environment in which the class was found (not the environment inside the class)";
   output FCore.Scope outPrevFrames;
 algorithm
-  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnv,path,inC,optFrame,inPrevFrames,inState,msg)
+  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnv,path,inC,optFrame,inPrevFrames)
     local
       FCore.Cache cache;
       FCore.Graph env;
@@ -593,24 +585,24 @@ algorithm
       FCore.Ref r;
       DAE.Mod mod;
 
-    case (cache,env,_,_,SOME(frame),prevFrames,_,_)
+    case (cache,env,_,_,SOME(frame),prevFrames)
       equation
         env = FGraph.pushScopeRef(env, frame);
-        (cache,c,env,prevFrames) = lookupClass2(cache,env,path,prevFrames,inState,msg);
+        (cache,c,env,prevFrames) = lookupClass2(cache,env,path,prevFrames,inState,inInfo);
         // fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED FRAME: " + FGraph.printGraphPathStr(env) + " path: " + Absyn.pathString(path) + " class: " + SCodeDump.shortElementStr(c));
       then (cache,c,env,prevFrames);
 
     // class is an instance of a component
-    case (cache,env,_,SCode.CLASS(name=id),NONE(),_,_,_)
+    case (cache,env,_,SCode.CLASS(name=id),NONE(),_)
       equation
         r = FNode.child(FGraph.lastScopeRef(env), id);
         FCore.CL(status = FCore.CLS_INSTANCE(_)) = FNode.refData(r);
         // fetch the env
         (cache, env) = Inst.getCachedInstance(cache, env, id, r);
-        (cache,c,env,prevFrames) = lookupClass2(cache,env,path,{},inState,msg);
+        (cache,c,env,prevFrames) = lookupClass2(cache,env,path,{},inState,inInfo);
       then (cache,c,env,prevFrames);
 
-    case (cache,env,_,SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr),NONE(),_,_,_)
+    case (cache,env,_,SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr),NONE(),_)
       equation
         env = FGraph.openScope(env, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env));
@@ -621,14 +613,75 @@ algorithm
           cache,env,InnerOuter.emptyInstHierarchy,
           mod, Prefix.NOPRE(),
           ci_state, inC, SCode.PUBLIC(), {}, 0);
-        // Was 2 cases for package/non-package - all they did was fail or succeed on this
-        // If we comment it out, we get faster code, and less of it to maintain
-        // ClassInf.valid(cistate1, SCode.R_PACKAGE());
-        (cache,c,env,prevFrames) = lookupClass2(cache,env,path,{},inState,msg);
+
+        checkPartialScope(env, inEnv, cache, inInfo);
+        (cache,c,env,prevFrames) = lookupClass2(cache,env,path,{},inState,inInfo);
       then (cache,c,env,prevFrames);
 
   end matchcontinue;
 end lookupClassQualified2;
+
+protected function checkPartialScope
+  input FCore.Graph inEnv;
+  input FCore.Graph inParentEnv;
+  input FCore.Cache inCache;
+  input Option<SourceInfo> inInfo;
+protected
+  SCode.Element el;
+  Prefix.Prefix pre;
+  String name, pre_str, cc_str;
+  SourceInfo cls_info, pre_info, info;
+algorithm
+  if isSome(inInfo) and FGraph.isPartialScope(inEnv) and
+     Config.languageStandardAtLeast(Config.LanguageStandard.'3.2') then
+    FCore.N(data = FCore.CL(e = el, pre = pre)) :=
+      FNode.fromRef(FGraph.lastScopeRef(inEnv));
+    name := SCode.elementName(el);
+
+    if FGraph.graphPrefixOf(inParentEnv, inEnv) and not
+       PrefixUtil.isNoPrefix(pre) then
+      pre_str := PrefixUtil.printPrefixStr(pre);
+      cls_info := SCode.elementInfo(el);
+      pre_info := PrefixUtil.getPrefixInfo(pre);
+      cc_str := getConstrainingClass(el, FGraph.stripLastScopeRef(inEnv), inCache);
+      Error.addMultiSourceMessage(Error.USE_OF_PARTIAL_CLASS,
+        {pre_str, name, cc_str}, {cls_info, pre_info});
+      fail();
+    else
+      SOME(info) := inInfo;
+      Error.addSourceMessage(Error.LOOKUP_IN_PARTIAL_CLASS, {name}, info);
+      // We should fail here, but the MSL 3.2.1 contains such errors. So just
+      // print an error and continue anyway for now.
+    end if;
+  end if;
+end checkPartialScope;
+
+protected function getConstrainingClass
+  input SCode.Element inClass;
+  input FCore.Graph inEnv;
+  input FCore.Cache inCache;
+  output String outPath;
+algorithm
+  outPath := matchcontinue inClass
+    local
+      Absyn.Path cc_path;
+      Absyn.TypeSpec ts;
+      SCode.Element el;
+      FCore.Graph env;
+
+    case SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix =
+        SCode.REPLACEABLE(cc = SOME(SCode.CONSTRAINCLASS(constrainingClass = cc_path)))))
+      then Absyn.pathString(cc_path);
+
+    case SCode.CLASS(classDef = SCode.DERIVED(typeSpec = ts))
+      algorithm
+        (_, el, env) := lookupClass(inCache, inEnv, Absyn.typeSpecPath(ts));
+      then
+        getConstrainingClass(el, env, inCache);
+
+    else FGraph.printGraphPathStr(inEnv) + "." + SCode.elementName(inClass);
+  end matchcontinue;
+end getConstrainingClass;
 
 protected function lookupPrevFrames
   input String id;
@@ -794,6 +847,7 @@ protected function lookupQualifiedImportedClassInFrame
   input FCore.Graph inEnv;
   input SCode.Ident inIdent;
   input Util.StatefulBoolean inState;
+  input Option<SourceInfo> inInfo;
   output FCore.Cache outCache;
   output SCode.Element outClass;
   output FCore.Graph outEnv;
@@ -817,7 +871,7 @@ algorithm
         Util.setStatefulBoolean(inState,true);
         r::prevFrames = listReverse(FGraph.currentScope(env));
         env = FGraph.setScope(env, {r});
-        (cache,c,env_1,prevFrames) = lookupClass2(cache,env,Absyn.IDENT(id),prevFrames,Util.makeStatefulBoolean(false),true);
+        (cache,c,env_1,prevFrames) = lookupClass2(cache,env,Absyn.IDENT(id),prevFrames,Util.makeStatefulBoolean(false),inInfo);
       then
         (cache,c,env_1,prevFrames);
 
@@ -831,7 +885,7 @@ algorithm
         env = FGraph.setScope(env, {r});
         // strippath = Absyn.stripLast(path);
         // (cache,c2,env_1,_) = lookupClass2(cache,{fr},strippath,prevFrames,Util.makeStatefulBoolean(false),true);
-        (cache,c,env_1,prevFrames) = lookupClass2(cache,env,path,prevFrames,Util.makeStatefulBoolean(false),true);
+        (cache,c,env_1,prevFrames) = lookupClass2(cache,env,path,prevFrames,Util.makeStatefulBoolean(false),inInfo);
       then
         (cache,c,env_1,prevFrames);
 
@@ -845,13 +899,13 @@ algorithm
         // strippath = Absyn.stripLast(path);
         // Debug.traceln("named import " + id + " is " + Absyn.pathString(path));
         // (cache,c2,env_1,prevFrames) = lookupClass2(cache,{fr},strippath,prevFrames,Util.makeStatefulBoolean(false),true);
-        (cache,c,env_1,prevFrames) = lookupClass2(cache,env,path,prevFrames,Util.makeStatefulBoolean(false),true);
+        (cache,c,env_1,prevFrames) = lookupClass2(cache,env,path,prevFrames,Util.makeStatefulBoolean(false),inInfo);
       then
         (cache,c,env_1,prevFrames);
 
     case (cache,_ :: rest,env,ident,_)
       equation
-        (cache,c,env_1,prevFrames) = lookupQualifiedImportedClassInFrame(cache,rest,env,ident,inState);
+        (cache,c,env_1,prevFrames) = lookupQualifiedImportedClassInFrame(cache,rest,env,ident,inState,inInfo);
       then
         (cache,c,env_1,prevFrames);
 
@@ -888,7 +942,7 @@ algorithm
     case (cache,Absyn.UNQUAL_IMPORT(path = path) :: _,env,ident)
       equation
         env = FGraph.topScope(env);
-        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache, env, path, false);
+        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache, env, path);
         env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         // fprintln(Flags.INST_TRACE, "LOOKUP MORE UNQUALIFIED IMPORTED ICD: " + FGraph.printGraphPathStr(env) + "." + ident);
@@ -896,7 +950,7 @@ algorithm
         (cache, env, _,_,_) = Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, mod, Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         r = FGraph.lastScopeRef(env);
         env = FGraph.setScope(env, {r});
-        (cache,_,_) = lookupClass(cache, env, Absyn.IDENT(ident), false);
+        (cache,_,_) = lookupClass(cache, env, Absyn.IDENT(ident));
       then
         (cache, true);
 
@@ -918,6 +972,7 @@ protected function lookupUnqualifiedImportedClassInFrame
   input list<Absyn.Import> inImports;
   input FCore.Graph inEnv;
   input SCode.Ident inIdent;
+  input Option<SourceInfo> inInfo;
   output FCore.Cache outCache;
   output SCode.Element outClass;
   output FCore.Graph outEnv;
@@ -947,7 +1002,9 @@ algorithm
       equation
         r::prevFrames = listReverse(FGraph.currentScope(env));
         env3 = FGraph.setScope(env, {r});
-        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1,prevFrames) = lookupClass2(cache,env3,path,prevFrames,Util.makeStatefulBoolean(false),false);
+        (cache,(c as
+                SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1,prevFrames)
+        = lookupClass2(cache,env3,path,prevFrames,Util.makeStatefulBoolean(false),inInfo);
         env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         // fprintln(Flags.INST_TRACE, "LOOKUP UNQUALIFIED IMPORTED ICD: " + FGraph.printGraphPathStr(env) + "." + ident);
@@ -956,7 +1013,7 @@ algorithm
         Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
           mod, Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         // Restrict import to the imported scope only, not its parents, thus {f} below
-        (cache,c_1,env2,prevFrames) = lookupClass2(cache,env2,Absyn.IDENT(ident),prevFrames,Util.makeStatefulBoolean(true),false) "Restrict import to the imported scope only, not its parents..." ;
+        (cache,c_1,env2,prevFrames) = lookupClass2(cache,env2,Absyn.IDENT(ident),prevFrames,Util.makeStatefulBoolean(true),inInfo) "Restrict import to the imported scope only, not its parents..." ;
         (cache,more) = moreLookupUnqualifiedImportedClassInFrame(cache, rest, env, ident);
         unique = boolNot(more);
       then
@@ -965,7 +1022,7 @@ algorithm
     // Look in the parent scope
     case (cache,_ :: rest,env,ident)
       equation
-        (cache,c,env_1,prevFrames,unique) = lookupUnqualifiedImportedClassInFrame(cache, rest, env, ident);
+        (cache,c,env_1,prevFrames,unique) = lookupUnqualifiedImportedClassInFrame(cache, rest, env, ident,inInfo);
       then
         (cache,c,env_1,prevFrames,unique);
 
@@ -991,7 +1048,7 @@ algorithm
 
     case (cache,env,path)
       equation
-        (cache,c,env_1) = lookupClass(cache,env, path, false);
+        (cache,c,env_1) = lookupClass(cache,env, path);
         SCode.CLASS( restriction=SCode.R_RECORD(_)) = c;
         (cache,_,c) = buildRecordConstructorClass(cache,env_1,c);
       then
@@ -1312,7 +1369,7 @@ algorithm
                              Absyn.IDENT(id),
                              prevFrames,
                              Util.makeStatefulBoolean(true), // In order to use the prevFrames, we need to make sure we can't instantiate one of the classes too soon!
-                             false);
+                             NONE());
               Util.setStatefulBoolean(inState,true);
               // see if we have an instance of a component!
               rr = FNode.child(FGraph.lastScopeRef(env2), id);
@@ -1642,7 +1699,7 @@ algorithm
 
     case (cache,env,id,_)
       equation
-        (cache,SCode.CLASS(classDef=SCode.OVERLOAD(pathLst=names),info=info),env_1) = lookupClass(cache,env,id,false);
+        (cache,SCode.CLASS(classDef=SCode.OVERLOAD(pathLst=names),info=info),env_1) = lookupClass(cache,env,id);
         (cache,res) = lookupFunctionsListInEnv(cache,env_1,names,info,{});
         // print(stringDelimitList(List.map(res,Types.unparseType),"\n###\n"));
       then (cache,res);
@@ -1737,7 +1794,7 @@ algorithm
         //        just search in {f} not f::fs as otherwise we might get us in an infinite loop
         // Bjozac: Readded the f::fs search frame, otherwise we might get caught in a inifinite loop!
         //           Did not investigate this further then that it can crasch the kernel.
-        (cache,(c as SCode.CLASS(name=str,restriction=restr)),env_1) = lookupClass(cache, inEnv, id, false);
+        (cache,(c as SCode.CLASS(name=str,restriction=restr)),env_1) = lookupClass(cache, inEnv, id);
         true = SCode.isFunctionRestriction(restr);
         // get function dae from instantiation
         // fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV ID ICD: " + FGraph.printGraphPathStr(env_1) + "." + str);
@@ -1752,7 +1809,7 @@ algorithm
     // For qualified function names, e.g. Modelica.Math.sin
     case (cache, FCore.G(scope = r::_),Absyn.QUALIFIED(name = pack,path = path),_,_)
       equation
-        (cache,(c as SCode.CLASS(name=str,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache, inEnv, Absyn.IDENT(pack), false);
+        (cache,(c as SCode.CLASS(name=str,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache, inEnv, Absyn.IDENT(pack));
 
         r = FNode.child(FGraph.lastScopeRef(env_1), str);
         if FNode.isRefInstance(r) // we have an instance of a component
@@ -2386,13 +2443,13 @@ protected function lookupClassInEnv
   input String id;
   input FCore.Scope inPrevFrames;
   input Util.StatefulBoolean inState;
-  input Boolean inMsg;
+  input Option<SourceInfo> inInfo;
   output FCore.Cache outCache;
   output SCode.Element outClass;
   output FCore.Graph outEnv;
   output FCore.Scope outPrevFrames;
 algorithm
-  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnv,id,inPrevFrames,inState,inMsg)
+  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnv,id,inPrevFrames,inState,inInfo)
     local
       SCode.Element c;
       FCore.Graph env_1,env,fs,i_env;
@@ -2401,13 +2458,13 @@ algorithm
       FCore.Ref r;
       FCore.Scope rs;
       String sid,scope;
-      Boolean msg,msgflag;
       FCore.Cache cache;
+      SourceInfo info;
 
-    case (cache,env as FCore.G(scope = r::_),_,prevFrames,_,msg)
+    case (cache,env as FCore.G(scope = r::_),_,prevFrames,_,_)
       equation
         frame = FNode.fromRef(r);
-        (cache,c,env_1,prevFrames) = lookupClassInFrame(cache, frame, env, id, prevFrames, inState, msg);
+        (cache,c,env_1,prevFrames) = lookupClassInFrame(cache, frame, env, id, prevFrames, inState, inInfo);
         Util.setStatefulBoolean(inState,true);
       then
         (cache,c,env_1,prevFrames);
@@ -2420,45 +2477,45 @@ algorithm
         true = FNode.isEncapsulated(frame);
         true = stringEq(id, sid) "Special case if looking up the class that -is- encapsulated. That must be allowed." ;
         (env, _) = FGraph.stripLastScopeRef(env);
-        (cache,c,env,prevFrames) = lookupClassInEnv(cache, env, id, r::prevFrames, inState, true);
+        (cache,c,env,prevFrames) = lookupClassInEnv(cache, env, id, r::prevFrames, inState, inInfo);
         Util.setStatefulBoolean(inState,true);
       then
         (cache,c,env,prevFrames);
 
     // lookup stops at encapsulated classes except for builtin
     // scope, if not found in builtin scope, error
-    case (cache,env as FCore.G(scope = r :: _),_,_,_,true)
+    case (cache,env as FCore.G(scope = r :: _),_,_,_,SOME(info))
       equation
         false = FNode.isRefTop(r);
         frame = FNode.fromRef(r);
         true = FNode.isEncapsulated(frame);
         i_env = FGraph.topScope(env);
-        failure((_,_,_,_) = lookupClassInEnv(cache, i_env, id, {}, inState, false));
+        failure((_,_,_,_) = lookupClassInEnv(cache, i_env, id, {}, inState, NONE()));
         scope = FGraph.printGraphPathStr(env);
-        Error.addMessage(Error.LOOKUP_ERROR, {id,scope});
+        Error.addSourceMessage(Error.LOOKUP_ERROR, {id,scope}, info);
       then
         fail();
 
     // lookup stops at encapsulated classes, except for builtin scope
-    case (cache, env as FCore.G(scope = r::_),_,prevFrames,_,msgflag)
+    case (cache, env as FCore.G(scope = r::_),_,prevFrames,_,_)
       equation
         frame = FNode.fromRef(r);
         true = FNode.isEncapsulated(frame);
         i_env = FGraph.topScope(env);
-        (cache,c,env_1,prevFrames) = lookupClassInEnv(cache, i_env, id, {}, inState, msgflag);
+        (cache,c,env_1,prevFrames) = lookupClassInEnv(cache, i_env, id, {}, inState, inInfo);
         Util.setStatefulBoolean(inState,true);
       then
         (cache,c,env_1,prevFrames);
 
     // if not found and not encapsulated, and no ident has been previously found, look in next enclosing scope
-    case (cache,env as FCore.G(scope = r::_),_,prevFrames,_,msgflag)
+    case (cache,env as FCore.G(scope = r::_),_,prevFrames,_,_)
       equation
         false = FNode.isRefTop(r);
         frame = FNode.fromRef(r);
         false = FNode.isEncapsulated(frame);
         false = Util.getStatefulBoolean(inState);
         (env, _) = FGraph.stripLastScopeRef(env);
-        (cache,c,env_1,prevFrames) = lookupClassInEnv(cache, env, id, r::prevFrames, inState, msgflag);
+        (cache,c,env_1,prevFrames) = lookupClassInEnv(cache, env, id, r::prevFrames, inState, inInfo);
         Util.setStatefulBoolean(inState, true);
       then
         (cache,c,env_1,prevFrames);
@@ -2473,13 +2530,13 @@ protected function lookupClassInFrame "Search for a class within one frame."
   input SCode.Ident inIdent;
   input FCore.Scope inPrevFrames;
   input Util.StatefulBoolean inState;
-  input Boolean inBoolean;
+  input Option<SourceInfo> inInfo;
   output FCore.Cache outCache;
   output SCode.Element outClass;
   output FCore.Graph outEnv;
   output FCore.Scope outPrevFrames;
 algorithm
-  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inFrame,inEnv,inIdent,inPrevFrames,inState,inBoolean)
+  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inFrame,inEnv,inIdent,inPrevFrames,inState)
     local
       SCode.Element c;
       FCore.Graph totenv,env_1;
@@ -2493,7 +2550,7 @@ algorithm
       Boolean unique;
 
     // Check this scope for class
-    case (cache,FCore.N(children = ht),totenv,name,prevFrames,_,_)
+    case (cache,FCore.N(children = ht),totenv,name,prevFrames,_)
       equation
         r = FNode.avlTreeGet(ht, name);
         FCore.N(data = FCore.CL(e = c)) = FNode.fromRef(r);
@@ -2501,19 +2558,19 @@ algorithm
         (cache,c,totenv,prevFrames);
 
     // Search in imports
-    case (cache,_,totenv,name,_,_,_)
+    case (cache,_,totenv,name,_,_)
       equation
         (qimports, uqimports) = FNode.imports(inFrame);
         _ = matchcontinue (qimports, uqimports)
           // Search among the qualified imports, e.g. import A.B; or import D=A.B;
           case (_::_, _)
             equation
-              (cache,c,env_1,prevFrames) = lookupQualifiedImportedClassInFrame(cache,qimports,totenv,name,inState);
+              (cache,c,env_1,prevFrames) = lookupQualifiedImportedClassInFrame(cache,qimports,totenv,name,inState,inInfo);
             then ();
           // Search among the unqualified imports, e.g. import A.B.*;
           case (_, _::_)
             equation
-              (cache,c,env_1,prevFrames,unique) = lookupUnqualifiedImportedClassInFrame(cache,uqimports,totenv,name);
+              (cache,c,env_1,prevFrames,unique) = lookupUnqualifiedImportedClassInFrame(cache,uqimports,totenv,name,inInfo);
               Util.setStatefulBoolean(inState,true);
               reportSeveralNamesError(unique,name);
             then ();
@@ -3232,7 +3289,7 @@ protected
   FCore.Graph env;
 algorithm
   try
-    (outCache, el, env) := lookupClass(inCache, inEnv, inPath, false);
+    (outCache, el, env) := lookupClass(inCache, inEnv, inPath);
 
     outIsArray := match el
       case SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(arrayDim = SOME(_))))
