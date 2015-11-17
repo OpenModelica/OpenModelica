@@ -78,6 +78,7 @@ extern "C" {
 #if !defined(__ATTR_SAL)
 #define _In_
 #define _In_z_
+#define _Inout_
 #endif
 
 void* ModelicaStandardTables_CombiTimeTable_init(_In_z_ const char* tableName,

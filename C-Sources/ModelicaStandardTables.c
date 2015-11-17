@@ -19,8 +19,8 @@
                             utilized memory (tickets #1110 and #1550).
 
    Release Notes:
-      Nov. 05, 2015: by Thomas Beutlich, ITI GmbH
-                     Added support of 1D tables with single row and spline
+      Nov. 16, 2015: by Thomas Beutlich, ITI GmbH
+                     Fixed support of 2x3 and 3x2 2D tables with spline
                      interpolation (ticket #1820)
 
       Nov. 03, 2015: by Thomas Beutlich, ITI GmbH.
@@ -357,11 +357,11 @@ static size_t findRowIndex(const double* table, size_t nRow, size_t nCol,
       * table[(i + 1)*nCol] > x for i + 2 < nRow
   */
 
-static size_t findColIndex(const double* table, size_t nCol, size_t last,
-                           double x);
+static size_t findColIndex(_In_ const double* table, size_t nCol, size_t last,
+                           double x) MODELICA_NONNULLATTR;
   /* Same as findRowIndex but works on rows */
 
-static int isValidName(const char* name);
+static int isValidName(_In_z_ const char* name) MODELICA_NONNULLATTR;
   /* Check, whether a file or table name is valid */
 
 static int isValidCombiTimeTable(const CombiTimeTable* tableID);
@@ -373,54 +373,55 @@ static int isValidCombiTable1D(const CombiTable1D* tableID);
 static int isValidCombiTable2D(const CombiTable2D* tableID);
   /* Check, whether a CombiTable2D is well parameterized */
 
-static enum TableSource getTableSource(const char *tableName,
-                                       const char *fileName);
+static enum TableSource getTableSource(_In_z_ const char *tableName,
+                                       _In_z_ const char *fileName) MODELICA_NONNULLATTR;
   /* Determine table source (file, model or "usertab" function) from table
      and file names
   */
 
-static void transpose(double* table, size_t nRow, size_t nCol);
+static void transpose(_Inout_ double* table, size_t nRow, size_t nCol) MODELICA_NONNULLATTR;
   /* Cycle-based in-place array transposition */
 
 #if !defined(NO_FILE_SYSTEM)
-static double* readTable(const char* tableName, const char* fileName,
-                         size_t* nRow, size_t* nCol, int verbose, int force);
+static double* readTable(_In_z_ const char* tableName, _In_z_ const char* fileName,
+                         _Inout_ size_t* nRow, _Inout_ size_t* nCol, int verbose,
+                         int force) MODELICA_NONNULLATTR;
   /* Read a table from an ASCII text or MATLAB MAT-file
 
      <- RETURN: Pointer to array (row-wise storage) of table values
   */
 
-static double* readMatTable(const char* tableName, const char* fileName,
-                            size_t* nRow, size_t* nCol);
+static double* readMatTable(_In_z_ const char* tableName, _In_z_ const char* fileName,
+                            _Inout_ size_t* nRow, _Inout_ size_t* nCol) MODELICA_NONNULLATTR;
   /* Read a table from a MATLAB MAT-file using MatIO functions
 
      <- RETURN: Pointer to array (row-wise storage) of table values
   */
 
-static double* readTxtTable(const char* tableName, const char* fileName,
-                            size_t* nRow, size_t* nCol);
+static double* readTxtTable(_In_z_ const char* tableName, _In_z_ const char* fileName,
+                            _Inout_ size_t* nRow, _Inout_ size_t* nCol) MODELICA_NONNULLATTR;
   /* Read a table from an ASCII text file
 
      <- RETURN: Pointer to array (row-wise storage) of table values
   */
 
-static int readLine(char** buf, int* bufLen, FILE* fp);
+static int readLine(_In_ char** buf, _In_ int* bufLen, _In_ FILE* fp) MODELICA_NONNULLATTR;
   /* Read line (of unknown and arbitrary length) from an ASCII text file */
 #endif /* #if !defined(NO_FILE_SYSTEM) */
 
-static CubicHermite1D* fritschButlandSpline1DInit(const double* table,
+static CubicHermite1D* fritschButlandSpline1DInit(_In_ const double* table,
                                                   size_t nRow, size_t nCol,
-                                                  const int* cols,
-                                                  size_t nCols);
+                                                  _In_ const int* cols,
+                                                  size_t nCols) MODELICA_NONNULLATTR;
   /* Calculate the coefficients for univariate cubic Hermite spline
      interpolation with the Fritsch-Butland slope approximation
 
      <- RETURN: Pointer to array of coefficients
   */
 
-static CubicHermite1D* akimaSpline1DInit(const double* table, size_t nRow,
-                                         size_t nCol, const int* cols,
-                                         size_t nCols);
+static CubicHermite1D* akimaSpline1DInit(_In_ const double* table, size_t nRow,
+                                         size_t nCol, _In_ const int* cols,
+                                         size_t nCols) MODELICA_NONNULLATTR;
   /* Calculate the coefficients for univariate cubic Hermite spline
      interpolation with the Akima slope approximation
 
@@ -430,8 +431,8 @@ static CubicHermite1D* akimaSpline1DInit(const double* table, size_t nRow,
 static void spline1DClose(CubicHermite1D** spline);
   /* Free allocated memory of the 1D cubic Hermite spline coefficients */
 
-static CubicHermite2D* spline2DInit(const double* table, size_t nRow,
-                                    size_t nCol);
+static CubicHermite2D* spline2DInit(_In_ const double* table, size_t nRow,
+                                    size_t nCol) MODELICA_NONNULLATTR;
   /* Calculate the coefficients for bivariate cubic Hermite spline
      interpolation with the Akima algorithm
 
@@ -502,16 +503,13 @@ void* ModelicaStandardTables_CombiTimeTable_init(const char* tableName,
                 tableID->nRow = nRow;
                 tableID->nCol = nColumn;
                 tableID->table = table;
-                if (tableID->smoothness == CONTINUOUS_DERIVATIVE ||
-                    tableID->smoothness == MONOTONE_CONTINUOUS_DERIVATIVE) {
-                    if (tableID->nRow == 1) {
-                        tableID->smoothness = CONSTANT_SEGMENTS;
-                    }
-                    else if (tableID->nRow == 2) {
-                        tableID->smoothness = LINEAR_SEGMENTS;
-                    }
-                }
                 if (isValidCombiTimeTable((const CombiTimeTable*)tableID)) {
+                    if (tableID->nRow <= 2) {
+                        if (tableID->smoothness == CONTINUOUS_DERIVATIVE ||
+                            tableID->smoothness == MONOTONE_CONTINUOUS_DERIVATIVE) {
+                            tableID->smoothness = LINEAR_SEGMENTS;
+                        }
+                    }
                     if (tableID->smoothness == CONTINUOUS_DERIVATIVE) {
                         /* Initialization of the cubic Hermite spline coefficients */
                         tableID->spline = akimaSpline1DInit(table,
@@ -592,16 +590,13 @@ void* ModelicaStandardTables_CombiTimeTable_init(const char* tableName,
                             return NULL;
                         }
                     }
-                    if (tableID->smoothness == CONTINUOUS_DERIVATIVE ||
-                        tableID->smoothness == MONOTONE_CONTINUOUS_DERIVATIVE) {
-                        if (tableID->nRow == 1) {
-                            tableID->smoothness = CONSTANT_SEGMENTS;
-                        }
-                        else if (tableID->nRow == 2) {
-                            tableID->smoothness = LINEAR_SEGMENTS;
-                        }
-                    }
                     if (isValidCombiTimeTable((const CombiTimeTable*)tableID)) {
+                        if (tableID->nRow <= 2) {
+                            if (tableID->smoothness == CONTINUOUS_DERIVATIVE ||
+                                tableID->smoothness == MONOTONE_CONTINUOUS_DERIVATIVE) {
+                                tableID->smoothness = LINEAR_SEGMENTS;
+                            }
+                        }
                         if (tableID->smoothness == CONTINUOUS_DERIVATIVE) {
                             /* Initialization of the cubic Hermite spline coefficients */
                             tableID->spline = akimaSpline1DInit(table,
@@ -1521,17 +1516,14 @@ double ModelicaStandardTables_CombiTimeTable_read(void* _tableID, int force,
             if (tableID->table == NULL) {
                 return 0.; /* Error */
             }
-            if (tableID->smoothness == CONTINUOUS_DERIVATIVE ||
-                tableID->smoothness == MONOTONE_CONTINUOUS_DERIVATIVE) {
-                if (tableID->nRow == 1) {
-                    tableID->smoothness = CONSTANT_SEGMENTS;
-                }
-                else if (tableID->nRow == 2) {
-                    tableID->smoothness = LINEAR_SEGMENTS;
-                }
-            }
             if (!isValidCombiTimeTable((const CombiTimeTable*)tableID)) {
                 return 0.; /* Error */
+            }
+            if (tableID->nRow <= 2) {
+                if (tableID->smoothness == CONTINUOUS_DERIVATIVE ||
+                    tableID->smoothness == MONOTONE_CONTINUOUS_DERIVATIVE) {
+                    tableID->smoothness = LINEAR_SEGMENTS;
+                }
             }
             if (tableID->smoothness == CONTINUOUS_DERIVATIVE) {
                 /* Reinitialization of the cubic Hermite spline coefficients */
@@ -1618,16 +1610,13 @@ void* ModelicaStandardTables_CombiTable1D_init(const char* tableName,
                 tableID->nRow = nRow;
                 tableID->nCol = nColumn;
                 tableID->table = table;
-                if (tableID->smoothness == CONTINUOUS_DERIVATIVE ||
-                    tableID->smoothness == MONOTONE_CONTINUOUS_DERIVATIVE) {
-                    if (tableID->nRow == 1) {
-                        tableID->smoothness = CONSTANT_SEGMENTS;
-                    }
-                    else if (tableID->nRow == 2) {
-                        tableID->smoothness = LINEAR_SEGMENTS;
-                    }
-                }
                 if (isValidCombiTable1D((const CombiTable1D*)tableID)) {
+                    if (tableID->nRow <= 2) {
+                        if (tableID->smoothness == CONTINUOUS_DERIVATIVE ||
+                            tableID->smoothness == MONOTONE_CONTINUOUS_DERIVATIVE) {
+                            tableID->smoothness = LINEAR_SEGMENTS;
+                        }
+                    }
                     if (tableID->smoothness == CONTINUOUS_DERIVATIVE) {
                         /* Initialization of the cubic Hermite spline coefficients */
                         tableID->spline = akimaSpline1DInit(table,
@@ -1708,16 +1697,13 @@ void* ModelicaStandardTables_CombiTable1D_init(const char* tableName,
                             return NULL;
                         }
                     }
-                    if (tableID->smoothness == CONTINUOUS_DERIVATIVE ||
-                        tableID->smoothness == MONOTONE_CONTINUOUS_DERIVATIVE) {
-                        if (tableID->nRow == 1) {
-                            tableID->smoothness = CONSTANT_SEGMENTS;
-                        }
-                        else if (tableID->nRow == 2) {
-                            tableID->smoothness = LINEAR_SEGMENTS;
-                        }
-                    }
                     if (isValidCombiTable1D((const CombiTable1D*)tableID)) {
+                        if (tableID->nRow <= 2) {
+                            if (tableID->smoothness == CONTINUOUS_DERIVATIVE ||
+                                tableID->smoothness == MONOTONE_CONTINUOUS_DERIVATIVE) {
+                                tableID->smoothness = LINEAR_SEGMENTS;
+                            }
+                        }
                         if (tableID->smoothness == CONTINUOUS_DERIVATIVE) {
                             /* Initialization of the cubic Hermite spline coefficients */
                             tableID->spline = akimaSpline1DInit(table,
@@ -2006,17 +1992,14 @@ double ModelicaStandardTables_CombiTable1D_read(void* _tableID, int force,
             if (tableID->table == NULL) {
                 return 0.; /* Error */
             }
-            if (tableID->smoothness == CONTINUOUS_DERIVATIVE ||
-                tableID->smoothness == MONOTONE_CONTINUOUS_DERIVATIVE) {
-                if (tableID->nRow == 1) {
-                    tableID->smoothness = CONSTANT_SEGMENTS;
-                }
-                else if (tableID->nRow == 2) {
-                    tableID->smoothness = LINEAR_SEGMENTS;
-                }
-            }
             if (!isValidCombiTable1D((const CombiTable1D*)tableID)) {
                 return 0.; /* Error */
+            }
+            if (tableID->nRow <= 2) {
+                if (tableID->smoothness == CONTINUOUS_DERIVATIVE ||
+                    tableID->smoothness == MONOTONE_CONTINUOUS_DERIVATIVE) {
+                    tableID->smoothness = LINEAR_SEGMENTS;
+                }
             }
             if (tableID->smoothness == CONTINUOUS_DERIVATIVE) {
                 /* Reinitialization of the cubic Hermite spline coefficients */
@@ -2083,11 +2066,11 @@ void* ModelicaStandardTables_CombiTable2D_init(const char* tableName,
                 tableID->nRow = nRow;
                 tableID->nCol = nColumn;
                 tableID->table = table;
-                if (tableID->smoothness == CONTINUOUS_DERIVATIVE &&
-                    tableID->nRow == 3 && tableID->nCol == 3) {
-                    tableID->smoothness = LINEAR_SEGMENTS;
-                }
                 if (isValidCombiTable2D((const CombiTable2D*)tableID)) {
+                    if (tableID->smoothness == CONTINUOUS_DERIVATIVE &&
+                        tableID->nRow <= 3 && tableID->nCol <= 3) {
+                        tableID->smoothness = LINEAR_SEGMENTS;
+                    }
                     if (tableID->smoothness == CONTINUOUS_DERIVATIVE) {
                         /* Initialization of the Akima-spline coefficients */
                         tableID->spline = spline2DInit(table, tableID->nRow,
@@ -2144,11 +2127,11 @@ void* ModelicaStandardTables_CombiTable2D_init(const char* tableName,
                             return NULL;
                         }
                     }
-                    if (tableID->smoothness == CONTINUOUS_DERIVATIVE &&
-                        tableID->nRow == 3 && tableID->nCol == 3) {
-                        tableID->smoothness = LINEAR_SEGMENTS;
-                    }
                     if (isValidCombiTable2D((const CombiTable2D*)tableID)) {
+                        if (tableID->smoothness == CONTINUOUS_DERIVATIVE &&
+                            tableID->nRow <= 3 && tableID->nCol <= 3) {
+                            tableID->smoothness = LINEAR_SEGMENTS;
+                        }
                         if (tableID->smoothness == CONTINUOUS_DERIVATIVE) {
                             /* Initialization of the Akima-spline coefficients */
                             tableID->spline = spline2DInit(tableID->table,
@@ -2258,12 +2241,12 @@ double ModelicaStandardTables_CombiTable2D_read(void* _tableID, int force,
             if (tableID->table == NULL) {
                 return 0.; /* Error */
             }
-            if (tableID->smoothness == CONTINUOUS_DERIVATIVE &&
-                tableID->nRow == 3 && tableID->nCol == 3) {
-                tableID->smoothness = LINEAR_SEGMENTS;
-            }
             if (!isValidCombiTable2D((const CombiTable2D*)tableID)) {
                 return 0.; /* Error */
+            }
+            if (tableID->smoothness == CONTINUOUS_DERIVATIVE &&
+                tableID->nRow <= 3 && tableID->nCol <= 3) {
+                tableID->smoothness = LINEAR_SEGMENTS;
             }
             if (tableID->smoothness == CONTINUOUS_DERIVATIVE) {
                 /* Reinitialization of the Akima-spline coefficients */
@@ -3321,73 +3304,70 @@ static CubicHermite1D* akimaSpline1DInit(const double* table, size_t nRow,
   */
 
     CubicHermite1D* spline = NULL;
+    double* d; /* Divided differences */
+    size_t col;
 
-    if (table != NULL && cols != NULL && nRow > 2) {
-        double* d; /* Divided differences */
-        size_t col;
+    /* Actually there is no need for consecutive memory */
+    spline = (CubicHermite1D*)malloc((nRow - 1)*nCols*sizeof(CubicHermite1D));
+    if (spline == NULL) {
+        return NULL;
+    }
 
-        /* Actually there is no need for consecutive memory */
-        spline = (CubicHermite1D*)malloc((nRow - 1)*nCols*sizeof(CubicHermite1D));
-        if (spline == NULL) {
-            return NULL;
+    d = (double*)malloc((nRow + 3)*sizeof(double));
+    if (d == NULL) {
+        free(spline);
+        return NULL;
+    }
+
+    for (col = 0; col < nCols; col++) {
+        size_t i;
+        double c2;
+
+        /* Calculation of the divided differences */
+        for (i = 0; i < nRow - 1; i++) {
+            d[i + 2] =
+                (TABLE(i + 1, cols[col] - 1) - TABLE(i, cols[col] - 1))/
+                (TABLE_COL0(i + 1) - TABLE_COL0(i));
         }
 
-        d = (double*)malloc((nRow + 3)*sizeof(double));
-        if (d == NULL) {
-            free(spline);
-            return NULL;
+        /* Extrapolation using non-periodic boundary conditions */
+        d[0] = 3*d[2] - 2*d[3];
+        d[1] = 2*d[2] - d[3];
+        d[nRow + 1] = 2*d[nRow] - d[nRow - 1];
+        d[nRow + 2] = 3*d[nRow] - 2*d[nRow - 1];
+
+        /* Initialization of the left boundary slope */
+        c2 = fabs(d[3] - d[2]) + fabs(d[1] - d[0]);
+        if (c2 > 0) {
+            const double a = fabs(d[1] - d[0])/c2;
+            c2 = (1 - a)*d[1] + a*d[2];
+        }
+        else {
+            c2 = 0.5*d[1] + 0.5*d[2];
         }
 
-        for (col = 0; col < nCols; col++) {
-            size_t i;
-            double c2;
+        /* Calculation of the 3(4) coefficients per interval */
+        for (i = 0; i < nRow - 1; i++) {
+            const double dx = TABLE_COL0(i + 1) - TABLE_COL0(i);
+            double* c = spline[IDX(i, col, nCols)];
 
-            /* Calculation of the divided differences */
-            for (i = 0; i < nRow - 1; i++) {
-                d[i + 2] =
-                    (TABLE(i + 1, cols[col] - 1) - TABLE(i, cols[col] - 1))/
-                    (TABLE_COL0(i + 1) - TABLE_COL0(i));
-            }
-
-            /* Extrapolation using non-periodic boundary conditions */
-            d[0] = 3*d[2] - 2*d[3];
-            d[1] = 2*d[2] - d[3];
-            d[nRow + 1] = 2*d[nRow] - d[nRow - 1];
-            d[nRow + 2] = 3*d[nRow] - 2*d[nRow - 1];
-
-            /* Initialization of the left boundary slope */
-            c2 = fabs(d[3] - d[2]) + fabs(d[1] - d[0]);
+            c[2] = c2;
+            c2 = fabs(d[i + 4] - d[i + 3]) + fabs(d[i + 2] - d[i + 1]);
             if (c2 > 0) {
-                const double a = fabs(d[1] - d[0])/c2;
-                c2 = (1 - a)*d[1] + a*d[2];
+                const double a = fabs(d[i + 2] - d[i + 1])/c2;
+                c2 = (1 - a)*d[i + 2] + a*d[i + 3];
             }
             else {
-                c2 = 0.5*d[1] + 0.5*d[2];
+                c2 = 0.5*d[i + 2] + 0.5*d[i + 3];
             }
-
-            /* Calculation of the 3(4) coefficients per interval */
-            for (i = 0; i < nRow - 1; i++) {
-                const double dx = TABLE_COL0(i + 1) - TABLE_COL0(i);
-                double* c = spline[IDX(i, col, nCols)];
-
-                c[2] = c2;
-                c2 = fabs(d[i + 4] - d[i + 3]) + fabs(d[i + 2] - d[i + 1]);
-                if (c2 > 0) {
-                    const double a = fabs(d[i + 2] - d[i + 1])/c2;
-                    c2 = (1 - a)*d[i + 2] + a*d[i + 3];
-                }
-                else {
-                    c2 = 0.5*d[i + 2] + 0.5*d[i + 3];
-                }
-                c[1] = (3*d[i + 2] - 2*c[2] - c2)/dx;
-                c[0] = (c[2] + c2 - 2*d[i + 2])/(dx*dx);
-                /* No need to store the absolute term y0 */
-                /* c[3] = TABLE(i, cols[col] - 1); */
-            }
+            c[1] = (3*d[i + 2] - 2*c[2] - c2)/dx;
+            c[0] = (c[2] + c2 - 2*d[i + 2])/(dx*dx);
+            /* No need to store the absolute term y0 */
+            /* c[3] = TABLE(i, cols[col] - 1); */
         }
-
-        free(d);
     }
+
+    free(d);
     return spline;
 }
 
@@ -3404,62 +3384,59 @@ static CubicHermite1D* fritschButlandSpline1DInit(const double* table,
   */
 
     CubicHermite1D* spline = NULL;
+    double* d; /* Divided differences */
+    size_t col;
 
-    if (table != NULL && cols != NULL && nRow > 2) {
-        double* d; /* Divided differences */
-        size_t col;
-
-        /* Actually there is no need for consecutive memory */
-        spline = (CubicHermite1D*)malloc((nRow - 1)*nCols*sizeof(CubicHermite1D));
-        if (spline == NULL) {
-            return NULL;
-        }
-
-        d = (double*)malloc((nRow - 1)*sizeof(double));
-        if (d == NULL) {
-            free(spline);
-            return NULL;
-        }
-
-        for (col = 0; col < nCols; col++) {
-            size_t i;
-            double c2;
-
-            /* Calculation of the divided differences */
-            for (i = 0; i < nRow - 1; i++) {
-                d[i] =
-                    (TABLE(i + 1, cols[col] - 1) - TABLE(i, cols[col] - 1))/
-                    (TABLE_COL0(i + 1) - TABLE_COL0(i));
-            }
-
-            /* Initialization of the left boundary slope */
-            c2 = d[0];
-
-            /* Calculation of the 3(4) coefficients per interval */
-            for (i = 0; i < nRow - 1; i++) {
-                const double dx = TABLE_COL0(i + 1) - TABLE_COL0(i);
-                double* c = spline[IDX(i, col, nCols)];
-
-                c[2] = c2;
-                if (i == nRow - 2) {
-                    c2 = d[nRow - 2];
-                }
-                else if (d[i]*d[i + 1] <= 0) {
-                    c2 = 0;
-                }
-                else {
-                    const double dx_ = TABLE_COL0(i + 2) - TABLE_COL0(i + 1);
-                    c2 = 3*(dx + dx_)/((dx + 2*dx_)/d[i] + (dx_ + 2*dx)/d[i + 1]);
-                }
-                c[1] = (3*d[i] - 2*c[2] - c2)/dx;
-                c[0] = (c[2] + c2 - 2*d[i])/(dx*dx);
-                /* No need to store the absolute term y0 */
-                /* c[3] = TABLE(i, cols[col] - 1); */
-            }
-        }
-
-        free(d);
+    /* Actually there is no need for consecutive memory */
+    spline = (CubicHermite1D*)malloc((nRow - 1)*nCols*sizeof(CubicHermite1D));
+    if (spline == NULL) {
+        return NULL;
     }
+
+    d = (double*)malloc((nRow - 1)*sizeof(double));
+    if (d == NULL) {
+        free(spline);
+        return NULL;
+    }
+
+    for (col = 0; col < nCols; col++) {
+        size_t i;
+        double c2;
+
+        /* Calculation of the divided differences */
+        for (i = 0; i < nRow - 1; i++) {
+            d[i] =
+                (TABLE(i + 1, cols[col] - 1) - TABLE(i, cols[col] - 1))/
+                (TABLE_COL0(i + 1) - TABLE_COL0(i));
+        }
+
+        /* Initialization of the left boundary slope */
+        c2 = d[0];
+
+        /* Calculation of the 3(4) coefficients per interval */
+        for (i = 0; i < nRow - 1; i++) {
+            const double dx = TABLE_COL0(i + 1) - TABLE_COL0(i);
+            double* c = spline[IDX(i, col, nCols)];
+
+            c[2] = c2;
+            if (i == nRow - 2) {
+                c2 = d[nRow - 2];
+            }
+            else if (d[i]*d[i + 1] <= 0) {
+                c2 = 0;
+            }
+            else {
+                const double dx_ = TABLE_COL0(i + 2) - TABLE_COL0(i + 1);
+                c2 = 3*(dx + dx_)/((dx + 2*dx_)/d[i] + (dx_ + 2*dx)/d[i + 1]);
+            }
+            c[1] = (3*d[i] - 2*c[2] - c2)/dx;
+            c[0] = (c[2] + c2 - 2*d[i])/(dx*dx);
+            /* No need to store the absolute term y0 */
+            /* c[3] = TABLE(i, cols[col] - 1); */
+        }
+    }
+
+    free(d);
     return spline;
 }
 
@@ -3523,7 +3500,7 @@ static CubicHermite2D* spline2DInit(const double* table, size_t nRow, size_t nCo
   */
 
     CubicHermite2D* spline = NULL;
-    if (table != NULL && nRow == 2 && nCol > 2) {
+    if (nRow == 2 /* && nCol > 3 */) {
         CubicHermite1D* spline1D;
         size_t j;
         int cols = 2;
@@ -3561,7 +3538,7 @@ static CubicHermite2D* spline2DInit(const double* table, size_t nRow, size_t nCo
         }
         spline1DClose(&spline1D);
     }
-    else if (table != NULL && nRow > 2 && nCol == 2) {
+    else if (/*nRow > 3 && */ nCol == 2) {
         CubicHermite1D* spline1D;
         size_t i;
         int cols = 2;
@@ -3586,7 +3563,7 @@ static CubicHermite2D* spline2DInit(const double* table, size_t nRow, size_t nCo
         }
         spline1DClose(&spline1D);
     }
-    else if (table != NULL && nRow > 2 && nCol > 2) {
+    else /* if (nRow > 2 && nCol > 2) */ {
         size_t i, j;
         double* dz_dx;
         double* dz_dy;
