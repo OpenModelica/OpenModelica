@@ -28,8 +28,14 @@ AC_PROG_CXX
 host_short=$host_cpu-$host_os
 
 m4_include([common/m4/qmake.m4])
-m4_include([common/m4/omhome.m4])
 
+if test -z "$QMAKE"; then
+  AC_MSG_ERROR([Could not find qmake (QT4)])
+elif test -z "$LRELEASE"; then
+  AC_MSG_ERROR([Could not find lrelease (QT4)])
+fi
+
+m4_include([common/m4/omhome.m4])
 FIND_OPENMODELICAHOME()
 
 AC_OUTPUT(Makefile qwt/Makefile.unix OMPlot/OMPlotGUI/Makefile.unix OMPlot/OMPlotGUI/OMPlotGUI.config qwt/qwt.config)
