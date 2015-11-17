@@ -46,6 +46,9 @@ sp (shape,indices) of source array
 template < typename T >
 void create_array_from_shape(const spec_type& sp,BaseArray<T>& s,BaseArray<T>& d);
 
+template < typename T >
+void fill_array_from_shape(const spec_type& sp,BaseArray<T>& s,BaseArray<T>& d);
+
 template <typename T>
 void promote_array(size_t n, const BaseArray<T>& s, BaseArray<T>& d);
 
