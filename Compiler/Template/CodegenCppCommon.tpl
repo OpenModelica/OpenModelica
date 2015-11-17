@@ -1121,7 +1121,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
           <%tmp_shape%>.push_back(0);<%\n%>
           <%tmp_idx%>.push_back(<%arrIndex%>++);<%\n%>
           <%tmp_indeces%>.push_back(<%tmp_idx%>);<%\n%>
-          create_array_from_shape(make_pair(<%tmp_shape%>,<%tmp_indeces%>),<%reductionBodyExpr%>,<%res%>);
+          fill_array_from_shape(make_pair(<%tmp_shape%>,<%tmp_indeces%>),<%reductionBodyExpr%>,<%res%>);
           >>
         else
           '<%res%>(<%arrIndex%>++) = <%reductionBodyExpr%>;'
@@ -1187,7 +1187,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
          "")
        <<
        <%arrIndex%> = 1;
-       /* Note: skip dimensioning of <%res%> because create_array_from_shape does it
+       /* Note: skip dimensioning of <%res%> because create_array_from_shape does it*/
        <% match typeof(r.expr)
         case T_COMPLEX(complexClassType = record_state) then
           let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
@@ -1200,12 +1200,13 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
             case DIM_ENUM(__) then '<%dim_vec%>.push_back(<%size%>);'
             else error(sourceInfo(), 'array reduction unable to generate code for element of unknown dimension sizes; type <%unparseType(typeof(r.expr))%>: <%ExpressionDump.printExpStr(r.expr)%>')
             ; separator = ", "
-          '<%dimSizes%>
+          '<%dim_vec%>.push_back(<%length%>);
+           <%dimSizes%>
            <%res%>.setDims(<%dim_vec%>);'
 
         else
           '<%res%>.setDims(<%length%>);'%>
-       */
+
        >>
      else if ri.defaultValue then
      <<
@@ -1440,7 +1441,7 @@ case ARRAY(array=_::_, ty = arraytype) then
                      let params =    daeExpArray2(array,arrayVar,ArrayType,arrayTypeStr,context,preExp,varDecls,simCode, &extraFuncs,&extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
                           ""
                       else
-                       let &varDecls += '<%ArrayType%> <%arrayVar%>;'
+                       let &varDecls += '<%ArrayType%> <%arrayVar%>;<%\n%>'
                        daeExpArray3(array, arrayVar, ArrayType, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   arrayVar
 case ARRAY(__) then
@@ -1464,7 +1465,7 @@ template daeExpArray3(list<Exp> array,  String arrayVar, String ArrayType, Conte
 let arraycreate = (array |> e hasindex i0 fromindex 1 =>
        let subArraycall = daeExp(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
        <<
-       <%arrayVar%>.append(<%i0%>, <%subArraycall%>);
+       <%arrayVar%>.append(<%i0%>, <%subArraycall%>,<%listLength(array)%>);
        >> ;separator="\n")
        let &preExp +=
        <<
