@@ -45,8 +45,8 @@
 #include "FetchInterfaceDataDialog.h"
 #include "TLMCoSimulationOutputWidget.h"
 
-MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
-  : QMainWindow(parent), mExitApplicationStatus(false)
+MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent)
+  : QMainWindow(parent), mDebug(debug), mExitApplicationStatus(false)
 {
   // This is a very convoluted way of asking for the default system font in Qt
   QFont systmFont("Monospace");
@@ -2531,12 +2531,12 @@ void MainWindow::createActions()
   mpShowOMCLoggerWidgetAction = new QAction(QIcon(":/Resources/icons/console.svg"), Helper::OpenModelicaCompilerCLI, this);
   mpShowOMCLoggerWidgetAction->setStatusTip(tr("Shows OpenModelica Compiler CLI"));
   connect(mpShowOMCLoggerWidgetAction, SIGNAL(triggered()), mpOMCProxy, SLOT(openOMCLoggerWidget()));
-#ifdef QT_DEBUG
-  // show OMC Diff widget action
-  mpShowOMCDiffWidgetAction = new QAction(QIcon(":/Resources/icons/console.svg"), tr("OpenModelica Compiler Diff"), this);
-  mpShowOMCDiffWidgetAction->setStatusTip(tr("Shows OpenModelica Compiler Diff"));
-  connect(mpShowOMCDiffWidgetAction, SIGNAL(triggered()), mpOMCProxy, SLOT(openOMCDiffWidget()));
-#endif
+  if (isDebug()) {
+    // show OMC Diff widget action
+    mpShowOMCDiffWidgetAction = new QAction(QIcon(":/Resources/icons/console.svg"), tr("OpenModelica Compiler Diff"), this);
+    mpShowOMCDiffWidgetAction->setStatusTip(tr("Shows OpenModelica Compiler Diff"));
+    connect(mpShowOMCDiffWidgetAction, SIGNAL(triggered()), mpOMCProxy, SLOT(openOMCDiffWidget()));
+  }
   // export to OMNotebook action
   mpExportToOMNotebookAction = new QAction(QIcon(":/Resources/icons/export-omnotebook.svg"), Helper::exportToOMNotebook, this);
   mpExportToOMNotebookAction->setStatusTip(Helper::exportToOMNotebookTip);
@@ -2817,9 +2817,9 @@ void MainWindow::createMenus()
   pToolsMenu->setTitle(tr("&Tools"));
   // add actions to Tools menu
   pToolsMenu->addAction(mpShowOMCLoggerWidgetAction);
-#ifdef QT_DEBUG
-  pToolsMenu->addAction(mpShowOMCDiffWidgetAction);
-#endif
+  if (isDebug()) {
+    pToolsMenu->addAction(mpShowOMCDiffWidgetAction);
+  }
   pToolsMenu->addSeparator();
   pToolsMenu->addAction(mpExportToOMNotebookAction);
   pToolsMenu->addAction(mpImportFromOMNotebookAction);

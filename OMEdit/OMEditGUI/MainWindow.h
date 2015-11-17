@@ -97,7 +97,8 @@ class MainWindow : public QMainWindow
   Q_OBJECT
 public:
   enum { MaxRecentFiles = 8 };
-  MainWindow(QSplashScreen *pSplashScreen, QWidget *parent = 0);
+  MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent = 0);
+  bool isDebug() {return mDebug;}
   OMCProxy* getOMCProxy();
   void setExitApplicationStatus(bool status);
   bool getExitApplicationStatus();
@@ -185,6 +186,7 @@ public:
                                    const char* curveStyle, const char* legendPosition, const char* footer, const char* autoScale,
                                    const char* variables);
 private:
+  bool mDebug;
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
   OptionsDialog *mpOptionsDialog;
@@ -271,9 +273,7 @@ private:
   QAction *mpExportFigaroAction;
   // Tools Menu
   QAction *mpShowOMCLoggerWidgetAction;
-#ifdef QT_DEBUG
   QAction *mpShowOMCDiffWidgetAction;
-#endif
   QAction *mpExportToOMNotebookAction;
   QAction *mpImportFromOMNotebookAction;
   QAction *mpImportNgspiceNetlistAction;

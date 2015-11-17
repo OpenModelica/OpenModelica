@@ -2250,7 +2250,9 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpUndoStack = new QUndoStack;
     connect(mpUndoStack, SIGNAL(canUndoChanged(bool)), SLOT(handleCanUndoChanged(bool)));
     connect(mpUndoStack, SIGNAL(canRedoChanged(bool)), SLOT(handleCanRedoChanged(bool)));
-    mpUndoView = new QUndoView(mpUndoStack);
+    if (mpModelWidgetContainer->getMainWindow()->isDebug()) {
+      mpUndoView = new QUndoView(mpUndoStack);
+    }
     getModelInheritedClasses(mpLibraryTreeItem);
     drawModelInheritedClasses();
     getModelIconDiagramShapes();
@@ -2268,7 +2270,9 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpDiagramGraphicsView = 0;
     // undo stack for model
     mpUndoStack = 0;
-    mpUndoView = 0;
+    if (mpModelWidgetContainer->getMainWindow()->isDebug()) {
+      mpUndoView = 0;
+    }
     mpEditor = 0;
   }
   // store the text of LibraryTreeItem::Text
@@ -2546,7 +2550,9 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
       // set layout
-      pMainLayout->addWidget(mpUndoView);
+      if (mpModelWidgetContainer->getMainWindow()->isDebug()) {
+        pMainLayout->addWidget(mpUndoView);
+      }
       pMainLayout->addWidget(mpDiagramGraphicsView, 1);
       pMainLayout->addWidget(mpIconGraphicsView, 1);
       mpUndoStack->clear();
@@ -2580,7 +2586,9 @@ void ModelWidget::createModelWidgetComponents()
       mpUndoStack = new QUndoStack;
       connect(mpUndoStack, SIGNAL(canUndoChanged(bool)), SLOT(handleCanUndoChanged(bool)));
       connect(mpUndoStack, SIGNAL(canRedoChanged(bool)), SLOT(handleCanRedoChanged(bool)));
-      mpUndoView = new QUndoView(mpUndoStack);
+      if (mpModelWidgetContainer->getMainWindow()->isDebug()) {
+        mpUndoView = new QUndoView(mpUndoStack);
+      }
       // create an xml editor for TLM
       mpEditor = new TLMEditor(this);
       TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpEditor);
@@ -2621,7 +2629,9 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
       // set layout
       pMainLayout->addWidget(mpModelStatusBar);
-      pMainLayout->addWidget(mpUndoView);
+      if (mpModelWidgetContainer->getMainWindow()->isDebug()) {
+        pMainLayout->addWidget(mpUndoView);
+      }
       pMainLayout->addWidget(mpDiagramGraphicsView, 1);
       mpUndoStack->clear();
     }
@@ -3394,6 +3404,7 @@ void ModelWidget::showIconView(bool checked)
   mpDiagramGraphicsView->hide();
   mpEditor->hide();
   mpIconGraphicsView->show();
+  mpIconGraphicsView->setFocus();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Icon);
   updateUndoRedoActions();
 }
@@ -3424,6 +3435,7 @@ void ModelWidget::showDiagramView(bool checked)
   mpIconGraphicsView->hide();
   mpEditor->hide();
   mpDiagramGraphicsView->show();
+  mpDiagramGraphicsView->setFocus();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Diagram);
   updateUndoRedoActions();
 }
