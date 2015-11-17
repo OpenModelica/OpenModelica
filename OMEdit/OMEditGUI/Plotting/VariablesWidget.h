@@ -173,11 +173,7 @@ public:
   void updateInitXmlFile(SimulationOptions simulationOptions);
 private:
   MainWindow *mpMainWindow;
-  QLineEdit *mpFindVariablesTextBox;
-  QComboBox *mpFindSyntaxComboBox;
-  QCheckBox *mpFindCaseSensitiveCheckBox;
-  QPushButton *mpExpandAllButton;
-  QPushButton *mpCollapseAllButton;
+  TreeSearchFilters *mpTreeSearchFilters;
   VariableTreeProxyModel *mpVariableTreeProxyModel;
   VariablesTreeModel *mpVariablesTreeModel;
   VariablesTreeView *mpVariablesTreeView;
