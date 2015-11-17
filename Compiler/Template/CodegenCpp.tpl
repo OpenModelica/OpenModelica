@@ -3278,6 +3278,7 @@ case "vxworks69" then
 
       WIND_HOME := $(subst \,/,$(WIND_HOME))
       WIND_BASE := $(WIND_HOME)/customBosch/vxworks-6.9
+      export WIND_BASE
       MLPI_SDK_01 := $(subst \,/,$(MLPI_SDK_01))
       OMDEV := $(subst \,/,$(OMDEV))
       CPP_RUNTIME := $(subst \,/,$(CPP_RUNTIME))
