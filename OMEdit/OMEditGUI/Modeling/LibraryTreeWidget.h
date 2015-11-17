@@ -270,7 +270,9 @@ private:
   QAction *mpViewClassAction;
   QAction *mpViewDocumentationAction;
   QAction *mpNewModelicaClassAction;
-  QAction *mpSaveClassAction;
+  QAction *mpSaveAction;
+  QAction *mpSaveAsAction;
+  QAction *mpSaveTotalAction;
   QAction *mpMoveUpAction;
   QAction *mpMoveDownAction;
   QAction *mpMoveTopAction;
@@ -302,6 +304,8 @@ public slots:
   void viewDocumentation();
   void createNewModelicaClass();
   void saveClass();
+  void saveAsClass();
+  void saveTotalClass();
   void moveClassUp();
   void moveClassDown();
   void moveClassTop();
@@ -341,6 +345,8 @@ public:
   void openTLMOrTextFile(QFileInfo fileInfo, bool showProgress = true);
   void parseAndLoadModelicaText(QString modelText);
   bool saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  void saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  bool saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void openLibraryTreeItem(QString nameStructure);
 private:
   MainWindow *mpMainWindow;
@@ -356,6 +362,7 @@ private:
   bool saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryTreeItem);
   bool saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveTLMLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  bool saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
 public slots:
   void searchClasses();
 };

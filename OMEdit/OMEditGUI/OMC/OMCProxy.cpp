@@ -1532,24 +1532,19 @@ bool OMCProxy::saveModifiedModel(QString modelText)
 }
 
 /*!
-  Dumps the total model to a file.
-  \param fileName - the file to save in.
-  \param className - the name of the class.
-  \return true on success.
-  */
-bool OMCProxy::saveTotalSCode(QString fileName, QString className)
+ * \brief OMCProxy::saveTotalModel
+ * Save class with all used classes to a file.
+ * \param fileName - the file to save in.
+ * \param className - the name of the class.
+ * \return true on success.
+ */
+bool OMCProxy::saveTotalModel(QString fileName, QString className)
 {
-  sendCommand("saveTotalSCode(\"" + fileName + "\", " + className + ")");
-  bool result = StringHandler::unparseBool(getResult());
-  if (result)
-  {
-    return true;
-  }
-  else
-  {
+  bool result = mpOMCInterface->saveTotalModel(fileName, className);
+  if (!result) {
     printMessagesStringInternal();
-    return false;
   }
+  return result;
 }
 
 /*!

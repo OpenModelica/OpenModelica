@@ -122,7 +122,7 @@ public:
   QTabBar* getPerspectiveTabBar();
   QAction* getSaveAction();
   QAction* getSaveAsAction();
-  QAction* getSaveTotalModelAction() {return mpSaveTotalModelAction;}
+  QAction* getSaveTotalAction() {return mpSaveTotalAction;}
   QAction* getPrintModelAction();
   QAction* getSaveAllAction();
   QAction* getUndoAction() {return mpUndoAction;}
@@ -232,7 +232,7 @@ private:
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
   QAction *mpSaveAllAction;
-  QAction *mpSaveTotalModelAction;
+  QAction *mpSaveTotalAction;
   QAction *mpRecentFileActions[MaxRecentFiles];
   QAction *mpClearRecentFilesAction;
   QAction *mpPrintModelAction;
