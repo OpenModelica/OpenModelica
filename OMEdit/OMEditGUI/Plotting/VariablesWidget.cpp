@@ -760,27 +760,13 @@ VariablesWidget::VariablesWidget(MainWindow *pMainWindow)
 {
   setMinimumWidth(175);
   mpMainWindow = pMainWindow;
-  // create the find text box
-  mpFindVariablesTextBox = new QLineEdit;
-  mpFindVariablesTextBox->setPlaceholderText(Helper::findVariables);
-  connect(mpFindVariablesTextBox, SIGNAL(returnPressed()), SLOT(findVariables()));
-  connect(mpFindVariablesTextBox, SIGNAL(textEdited(QString)), SLOT(findVariables()));
-  // create the case sensitivity checkbox
-  mpFindCaseSensitiveCheckBox = new QCheckBox(tr("Case Sensitive"));
-  connect(mpFindCaseSensitiveCheckBox, SIGNAL(toggled(bool)), SLOT(findVariables()));
-  // create the find syntax combobox
-  mpFindSyntaxComboBox = new QComboBox;
-  mpFindSyntaxComboBox->addItem(tr("Regular Expression"), QRegExp::RegExp);
-  mpFindSyntaxComboBox->setItemData(0, tr("A rich Perl-like pattern matching syntax."), Qt::ToolTipRole);
-  mpFindSyntaxComboBox->addItem(tr("Wildcard"), QRegExp::Wildcard);
-  mpFindSyntaxComboBox->setItemData(1, tr("A simple pattern matching syntax similar to that used by shells (command interpreters) for \"file globbing\"."), Qt::ToolTipRole);
-  mpFindSyntaxComboBox->addItem(tr("Fixed String"), QRegExp::FixedString);
-  mpFindSyntaxComboBox->setItemData(2, tr("Fixed string matching."), Qt::ToolTipRole);
-  connect(mpFindSyntaxComboBox, SIGNAL(currentIndexChanged(int)), SLOT(findVariables()));
-  // expand all button
-  mpExpandAllButton = new QPushButton(Helper::expandAll);
-  // collapse all button
-  mpCollapseAllButton = new QPushButton(Helper::collapseAll);
+  // tree search filters
+  mpTreeSearchFilters = new TreeSearchFilters(this);
+  mpTreeSearchFilters->getSearchTextBox()->setPlaceholderText(Helper::findVariables);
+  connect(mpTreeSearchFilters->getSearchTextBox(), SIGNAL(returnPressed()), SLOT(findVariables()));
+  connect(mpTreeSearchFilters->getSearchTextBox(), SIGNAL(textEdited(QString)), SLOT(findVariables()));
+  connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), SIGNAL(toggled(bool)), SLOT(findVariables()));
+  connect(mpTreeSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(findVariables()));
   // create variables tree widget
   mpVariablesTreeView = new VariablesTreeView(this);
   mpVariablesTreeModel = new VariablesTreeModel(mpVariablesTreeView);
@@ -794,15 +780,12 @@ VariablesWidget::VariablesWidget(MainWindow *pMainWindow)
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->addWidget(mpFindVariablesTextBox, 0, 0, 1, 2);
-  pMainLayout->addWidget(mpFindCaseSensitiveCheckBox, 1, 0);
-  pMainLayout->addWidget(mpFindSyntaxComboBox, 1, 1);
-  pMainLayout->addWidget(mpExpandAllButton, 2, 0);
-  pMainLayout->addWidget(mpCollapseAllButton, 2, 1);
-  pMainLayout->addWidget(mpVariablesTreeView, 3, 0, 1, 2);
+  pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pMainLayout->addWidget(mpTreeSearchFilters, 0, 0);
+  pMainLayout->addWidget(mpVariablesTreeView, 1, 0);
   setLayout(pMainLayout);
-  connect(mpExpandAllButton, SIGNAL(clicked()), mpVariablesTreeView, SLOT(expandAll()));
-  connect(mpCollapseAllButton, SIGNAL(clicked()), mpVariablesTreeView, SLOT(collapseAll()));
+  connect(mpTreeSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpVariablesTreeView, SLOT(expandAll()));
+  connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpVariablesTreeView, SLOT(collapseAll()));
   connect(mpVariablesTreeModel, SIGNAL(rowsInserted(QModelIndex,int,int)), mpVariableTreeProxyModel, SLOT(invalidate()));
   connect(mpVariablesTreeModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), mpVariableTreeProxyModel, SLOT(invalidate()));
   connect(mpVariablesTreeModel, SIGNAL(itemChecked(QModelIndex,qreal,int)), SLOT(plotVariables(QModelIndex,qreal,int)));
@@ -1324,20 +1307,21 @@ void VariablesWidget::showContextMenu(QPoint point)
   }
 }
 
+/*!
+ * \brief VariablesWidget::findVariables
+ * Finds the variables in the Variables Browser.
+ */
 void VariablesWidget::findVariables()
 {
-  QString findText = mpFindVariablesTextBox->text();
-  if (mpFindVariablesTextBox->text().isEmpty())
-  {
-    findText = "";
-  }
-  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpFindSyntaxComboBox->itemData(mpFindSyntaxComboBox->currentIndex()).toInt());
-  Qt::CaseSensitivity caseSensitivity = mpFindCaseSensitiveCheckBox->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
+  QString findText = mpTreeSearchFilters->getSearchTextBox()->text();
+  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
+  Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
   QRegExp regExp(findText, caseSensitivity, syntax);
   mpVariableTreeProxyModel->setFilterRegExp(regExp);
   /* expand all so that the filtered items can be seen. */
-  if (!findText.isEmpty())
+  if (!findText.isEmpty()) {
     mpVariablesTreeView->expandAll();
+  }
 }
 
 void VariablesWidget::directReSimulate()

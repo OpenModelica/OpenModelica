@@ -2523,6 +2523,7 @@ LibraryWidget::LibraryWidget(MainWindow *pMainWindow)
   : QWidget(pMainWindow), mpMainWindow(pMainWindow)
 {
   setMinimumWidth(175);
+  // tree search filters
   mpTreeSearchFilters = new TreeSearchFilters(this);
   mpTreeSearchFilters->getSearchTextBox()->setPlaceholderText(Helper::searchClasses);
   connect(mpTreeSearchFilters->getSearchTextBox(), SIGNAL(returnPressed()), SLOT(searchClasses()));
