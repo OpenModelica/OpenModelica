@@ -1950,10 +1950,19 @@ void LibraryTreeView::createActions()
   mpNewModelicaClassAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newModelicaClass, this);
   mpNewModelicaClassAction->setStatusTip(Helper::createNewModelicaClass);
   connect(mpNewModelicaClassAction, SIGNAL(triggered()), SLOT(createNewModelicaClass()));
-  // save Class Action
-  mpSaveClassAction = new QAction(QIcon(":/Resources/icons/save.svg"), Helper::save, this);
-  mpSaveClassAction->setStatusTip(Helper::saveTip);
-  connect(mpSaveClassAction, SIGNAL(triggered()), SLOT(saveClass()));
+  // save Action
+  mpSaveAction = new QAction(QIcon(":/Resources/icons/save.svg"), Helper::save, this);
+  mpSaveAction->setStatusTip(Helper::saveTip);
+  connect(mpSaveAction, SIGNAL(triggered()), SLOT(saveClass()));
+  // save as file action
+  mpSaveAsAction = new QAction(QIcon(":/Resources/icons/saveas.svg"), Helper::saveAs, this);
+  mpSaveAsAction->setStatusTip(Helper::saveAsTip);
+  connect(mpSaveAsAction, SIGNAL(triggered()), SLOT(saveAsClass()));
+  mpSaveAsAction->setEnabled(false);
+  // Save Total action
+  mpSaveTotalAction = new QAction(Helper::saveTotal, this);
+  mpSaveTotalAction->setStatusTip(Helper::saveTotalTip);
+  connect(mpSaveTotalAction, SIGNAL(triggered()), SLOT(saveTotalClass()));
   // Move class up action
   mpMoveUpAction = new QAction(QIcon(":/Resources/icons/up.svg"), tr("Move Up"), this);
   mpMoveUpAction->setStatusTip(tr("Moves the class one level up"));
@@ -2135,7 +2144,12 @@ void LibraryTreeView::showContextMenu(QPoint point)
             menu.addMenu(mpOrderMenu);
           }
           menu.addSeparator();
-          menu.addAction(mpSaveClassAction);
+          menu.addAction(mpSaveAction);
+          menu.addAction(mpSaveAsAction);
+          menu.addAction(mpSaveTotalAction);
+        } else {
+          menu.addSeparator();
+          menu.addAction(mpSaveTotalAction);
         }
         menu.addSeparator();
         menu.addAction(mpInstantiateModelAction);
@@ -2232,6 +2246,30 @@ void LibraryTreeView::saveClass()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     mpLibraryWidget->saveLibraryTreeItem(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::saveAsClass
+ * Save a copy of the class in a new file.
+ */
+void LibraryTreeView::saveAsClass()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->saveAsLibraryTreeItem(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::saveTotalClass
+ * Save class with all used classes.
+ */
+void LibraryTreeView::saveTotalClass()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->saveTotalLibraryTreeItem(pLibraryTreeItem);
   }
 }
 
@@ -2789,6 +2827,39 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 }
 
 /*!
+ * \brief LibraryWidget::saveAsLibraryTreeItem
+ * Save a copy of the class in a new file.
+ * \param pLibraryTreeItem
+ * \return
+ */
+void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
+  if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText()) {
+    return;
+  }
+  DuplicateClassDialog *pDuplicateClassDialog = new DuplicateClassDialog(pLibraryTreeItem, mpMainWindow);
+  pDuplicateClassDialog->exec();
+  saveLibraryTreeItem(pLibraryTreeItem);
+}
+
+/*!
+ * \brief LibraryWidget::saveTotalLibraryTreeItem
+ * Save class with all used classes.
+ * \param pLibraryTreeItem
+ * \return
+ */
+bool LibraryWidget::saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+{
+  mpMainWindow->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
+  mpMainWindow->showProgressBar();
+  bool result = saveTotalLibraryTreeItemHelper(pLibraryTreeItem);
+  mpMainWindow->getStatusBar()->clearMessage();
+  mpMainWindow->hideProgressBar();
+  return result;
+}
+
+/*!
  * \brief LibraryWidget::openLibraryTreeItem
  * Opens a ModelWidget associated with the LibraryTreeItem.
  * \param nameStructure
@@ -2905,11 +2976,8 @@ bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibrary
     fileName = QString("%1/%2.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(pLibraryTreeItem->getName());
   }
   /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
-  if (pLibraryTreeItem->getModelWidget()) {
-    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
-    if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
-      return false;
-    }
+  if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText()) {
+    return false;
   }
   // save the class
   QString contents;
@@ -2989,11 +3057,8 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
       fileName = QString("%1/package.mo").arg(directoryName);
     }
     /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
-    if (pLibraryTreeItem->getModelWidget()) {
-      ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
-      if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
-        return false;
-      }
+    if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText()) {
+      return false;
     }
     // create the folder
     if (!QDir().exists(directoryName)) {
@@ -3176,6 +3241,32 @@ bool LibraryWidget::saveTLMLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   }
   getMainWindow()->addRecentFile(pLibraryTreeItem->getFileName(), Helper::utf8);
   return true;
+}
+
+/*!
+ * \brief LibraryWidget::saveTotalLibraryTreeItemHelper
+ * Helper function for LibraryWidget::saveTotalLibraryTreeItem()
+ * \param pLibraryTreeItem
+ * \return
+ */
+bool LibraryWidget::saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem)
+{
+  bool result = false;
+  /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
+  if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText()) {
+    return false;
+  }
+  QString fileName;
+  QString name = QString("%1Total").arg(pLibraryTreeItem->getName());
+  fileName = StringHandler::getSaveFileName(this, tr("%1 - Save %2 %3 as Total File").arg(Helper::applicationName)
+                                            .arg(pLibraryTreeItem->mClassInformation.restriction).arg(pLibraryTreeItem->getName()), NULL,
+                                            Helper::omFileTypes, NULL, "mo", &name);
+  if (fileName.isEmpty()) { // if user press ESC
+    return false;
+  }
+  // save the model through OMC
+  result = mpMainWindow->getOMCProxy()->saveTotalModel(fileName, pLibraryTreeItem->getNameStructure());
+  return result;
 }
 
 /*!

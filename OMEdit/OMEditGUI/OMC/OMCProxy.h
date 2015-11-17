@@ -165,7 +165,7 @@ public:
   bool setSourceFile(QString className, QString path);
   bool save(QString className);
   bool saveModifiedModel(QString modelText);
-  bool saveTotalSCode(QString fileName, QString className);
+  bool saveTotalModel(QString fileName, QString className);
   QString list(QString className);
   QString listFile(QString className);
   QString diffModelicaFileListings(QString before, QString after);

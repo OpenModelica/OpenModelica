@@ -2362,20 +2362,19 @@ void MainWindow::createActions()
   mpSaveAction->setStatusTip(Helper::saveTip);
   mpSaveAction->setEnabled(false);
   // save as file action
-  mpSaveAsAction = new QAction(QIcon(":/Resources/icons/saveas.svg"), tr("Save As"), this);
-  mpSaveAsAction->setStatusTip(tr("Save As a File"));
+  mpSaveAsAction = new QAction(QIcon(":/Resources/icons/saveas.svg"), Helper::saveAs, this);
+  mpSaveAsAction->setStatusTip(Helper::saveAsTip);
   mpSaveAsAction->setEnabled(false);
   // save all file action
   mpSaveAllAction = new QAction(QIcon(":/Resources/icons/saveall.svg"), tr("Save All"), this);
   mpSaveAllAction->setStatusTip(tr("Save All Files"));
   mpSaveAllAction->setEnabled(false);
-  // Dump Total Model action
-  mpSaveTotalModelAction = new QAction(tr("Save Total Model"), this);
-  mpSaveTotalModelAction->setStatusTip(tr("Dumps the total model to a file"));
-  mpSaveTotalModelAction->setEnabled(false);
+  // Save Total action
+  mpSaveTotalAction = new QAction(Helper::saveTotal, this);
+  mpSaveTotalAction->setStatusTip(Helper::saveTotalTip);
+  mpSaveTotalAction->setEnabled(false);
   // recent files action
-  for (int i = 0; i < MaxRecentFiles; ++i)
-  {
+  for (int i = 0; i < MaxRecentFiles; ++i) {
     mpRecentFileActions[i] = new QAction(this);
     mpRecentFileActions[i]->setVisible(false);
     connect(mpRecentFileActions[i], SIGNAL(triggered()), this, SLOT(openRecentFile()));
@@ -2701,7 +2700,7 @@ void MainWindow::createMenus()
   pFileMenu->addAction(mpSaveAction);
   pFileMenu->addAction(mpSaveAsAction);
   //menuFile->addAction(saveAllAction);
-  pFileMenu->addAction(mpSaveTotalModelAction);
+  pFileMenu->addAction(mpSaveTotalAction);
   pFileMenu->addSeparator();
   mpLibrariesMenu = new QMenu(menuBar());
   mpLibrariesMenu->setObjectName("LibrariesMenu");
