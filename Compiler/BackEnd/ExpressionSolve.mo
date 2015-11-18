@@ -300,7 +300,6 @@ algorithm
   end matchcontinue;
 
   outExp := symEuler_helper(outExp, inExp3);
-  (outExp,_) := ExpressionSimplify.simplify1(outExp);
 end solve2;
 
 
@@ -536,8 +535,8 @@ preprocessing for solve1,
   input Option<DAE.FunctionTree> functions;
   input Option<Integer> uniqueEqIndex "offset for tmp vars";
   input Integer idepth;
-  output DAE.Exp h;
-  output DAE.Exp k;
+  output DAE.Exp x;
+  output DAE.Exp y;
   output list<BackendDAE.Equation> eqnForNewVars = {} "eqn for tmp vars";
   output list<DAE.ComponentRef> newVarsCrefs = {};
   output Integer depth = idepth;
@@ -546,7 +545,7 @@ preprocessing for solve1,
   DAE.Exp res;
   list<DAE.Exp> lhs, rhs, resTerms;
   list<DAE.Exp> lhsWithX, rhsWithX, lhsWithoutX, rhsWithoutX, eWithX, factorWithX, factorWithoutX;
-  DAE.Exp lhsX, rhsX, lhsY, rhsY, x, y, N;
+  DAE.Exp lhsX, rhsX, lhsY, rhsY, N;
   DAE.ComponentRef cr;
   DAE.Boolean con, new_x, collect = true, inlineFun = true;
   Integer iter;
@@ -563,18 +562,22 @@ preprocessing for solve1,
    x := Expression.expSub(lhsX, rhsX);
    y := Expression.expSub(rhsY, lhsY);
 
-   con := true;
+   con := not Expression.isCref(x);
    iter := 0;
-
-   x := unifyFunCalls(x, inExp3);
-   while con and iter < 1000 loop
-
+   if con then
+     x := unifyFunCalls(x, inExp3);
+   end if;
+   while con and iter < 1000 and (not Expression.isCref(x)) loop
      (x, y, con) := preprocessingSolve2(x,y, inExp3);
      (x, y, new_x) := preprocessingSolve3(x,y, inExp3);
      con := con or new_x;
      while new_x loop
        (x, y, new_x) := preprocessingSolve3(x,y, inExp3);
      end while;
+
+     if Expression.isCref(x) then
+       break;
+     end if;
      (x, y, new_x) := removeSimpleCalls(x,y, inExp3);
      con := con or new_x;
      (x, y, new_x) := preprocessingSolve4(x,y, inExp3);
@@ -627,10 +630,7 @@ preprocessing for solve1,
      //print("\nx ");print(ExpressionDump.printExpStr(x));print("\ny ");print(ExpressionDump.printExpStr(y));
    end while;
 
-   (k,_) := ExpressionSimplify.simplify1(y);
-
-   // h(x) = k(y)
-   (h,_) := ExpressionSimplify.simplify(x);
+   (y,_) := ExpressionSimplify.simplify1(y);
 
 /*
    if not Expression.expEqual(inExp1,h) then
