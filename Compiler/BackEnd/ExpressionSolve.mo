@@ -366,75 +366,52 @@ algorithm
 
     // special case for inital system when already solved, cr1 = $_start(...)
     case (DAE.CREF(componentRef = cr1),DAE.CALL(path = Absyn.IDENT(name = "$_start")),DAE.CREF(componentRef = cr))
-      equation
-        true = ComponentReference.crefEqual(cr, cr1);
+      guard ComponentReference.crefEqual(cr, cr1)
       then
         (inExp2,{});
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)}),DAE.CALL(path = Absyn.IDENT(name = "$_start")),DAE.CREF(componentRef = cr))
-      equation
-        true = ComponentReference.crefEqual(cr, cr1);
+      guard ComponentReference.crefEqual(cr, cr1)
       then
         (inExp2,{});
 
     // special case when already solved, cr1 = rhs, otherwise division by zero when dividing with derivative
     case (DAE.CREF(componentRef = cr1),_,DAE.CREF(componentRef = cr))
-      equation
-        true = ComponentReference.crefEqual(cr, cr1);
-        false = Expression.expHasCrefNoPreOrStart(inExp2, cr);
+      guard ComponentReference.crefEqual(cr, cr1) and (not Expression.expHasCrefNoPreOrStart(inExp2, cr))
       then
         (inExp2,{});
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)}),_,DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))
-      equation
-        true = ComponentReference.crefEqual(cr, cr1);
-        false = Expression.expHasDerCref(inExp2, cr);
+      guard  ComponentReference.crefEqual(cr, cr1) and (not Expression.expHasDerCref(inExp2, cr))
       then
         (inExp2,{});
 
     // -cr = exp
     case (DAE.UNARY(operator = DAE.UMINUS(), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
-      equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasCrefNoPreOrStart(inExp2,cr);
+      guard ComponentReference.crefEqual(cr1,cr) and (not Expression.expHasCrefNoPreOrStart(inExp2,cr))
       then
         (Expression.negate(inExp2),{});
     case (DAE.UNARY(operator = DAE.UMINUS_ARR(), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
-      equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasCrefNoPreOrStart(inExp2,cr);
+      guard ComponentReference.crefEqual(cr1,cr) and (not Expression.expHasCrefNoPreOrStart(inExp2,cr)) // cr not in e2
       then
         (Expression.negate(inExp2),{});
     case (DAE.UNARY(operator = DAE.UMINUS(), exp = DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)})),_,DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))
-      equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasDerCref(inExp2,cr);
+      guard ComponentReference.crefEqual(cr1,cr) and (not  Expression.expHasDerCref(inExp2,cr)) // cr not in e2
       then
         (Expression.negate(inExp2),{});
     case (DAE.UNARY(operator = DAE.UMINUS_ARR(), exp = DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)})),_,DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))
-      equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasDerCref(inExp2,cr);
+      guard ComponentReference.crefEqual(cr1,cr) and (not Expression.expHasDerCref(inExp2,cr))
       then
         (Expression.negate(inExp2),{});
 
     // !cr = exp
     case (DAE.LUNARY(operator = DAE.NOT(), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
-      equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasCrefNoPreOrStart(inExp2,cr);
+      guard ComponentReference.crefEqual(cr1,cr) and (not Expression.expHasCrefNoPreOrStart(inExp2,cr))
       then
         (Expression.negate(inExp2),{});
 
     // Integer(enumcr) = ...
     case (DAE.CALL(path = Absyn.IDENT(name = "Integer"),expLst={DAE.CREF(componentRef = cr1)}),_,DAE.CREF(componentRef = cr,ty=tp))
+      guard ComponentReference.crefEqual(cr, cr1) and (not  Expression.expHasCrefNoPreorDer(inExp2,cr))
       equation
-        true = ComponentReference.crefEqual(cr, cr1);
-        // cr not in e2
-        false = Expression.expHasCrefNoPreorDer(inExp2,cr);
         asserts = generateAssertType(tp,cr,inExp3,{});
       then (DAE.CAST(tp,inExp2),asserts);
       else fail();
