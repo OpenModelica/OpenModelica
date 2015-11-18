@@ -4191,7 +4191,7 @@ protected
   BackendDAE.Equation eqn, eqn1;
   DAE.Exp left, right, e1, e2, e, e3, e4;
   list<DAE.Exp> left_lst, right_lst;
-  list<Integer> indRemove = {};
+  list<Integer> indRemove;
   DAE.ElementSource source "origin of equation";
   BackendDAE.EquationAttributes attr;
   Boolean update, sc;
@@ -4213,6 +4213,7 @@ algorithm
     BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) := syst;
     BackendDAE.EQUATION_ARRAY(numberOfElement = n) := eqns;
     update := false;
+	indRemove := {};
     for i in 1:n loop
       eqn := BackendEquation.equationNth1(eqns, i);
       if BackendEquation.isComplexEquation(eqn) then
