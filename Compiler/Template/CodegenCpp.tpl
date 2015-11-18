@@ -3275,13 +3275,13 @@ case "vxworks69" then
 
       MODEL_NAME = <%fileNamePrefix%>
 
-
+      OPENMODELICAHOME := $(subst \,/,$(OPENMODELICAHOME))
       WIND_HOME := $(subst \,/,$(WIND_HOME))
       WIND_BASE := $(WIND_HOME)/customBosch/vxworks-6.9
       export WIND_BASE
       MLPI_SDK_01 := $(subst \,/,$(MLPI_SDK_01))
       OMDEV := $(subst \,/,$(OMDEV))
-      CPP_RUNTIME := $(subst \,/,$(CPP_RUNTIME))
+
 
       all : clean pre_build main_all post_build
 
@@ -3329,9 +3329,9 @@ case "vxworks69" then
       LIBPATH =
       LIBS =
 
-      IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI_SDK_01)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(CPP_RUNTIME)/Include/Core -I$(CPP_RUNTIME)/Include
+      IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI_SDK_01)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(OPENMODELICAHOME)/include/omc/cpp/Core -I$(OPENMODELICAHOME)/include/omc/cpp
 
-      IDE_LIBRARIES = $(CPP_RUNTIME)/Build/VxWorks/SimCore.a
+      IDE_LIBRARIES = $(OPENMODELICAHOME)/lib/omc/cpp/vxworks/SimCore.a
 
       IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"
 
@@ -3378,8 +3378,8 @@ case "vxworks69" then
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Librarian =
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Assembler =  -O2
       endif
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI_SDK_01)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(CPP_RUNTIME)/Include/Core -I$(CPP_RUNTIME)/Include
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_LIBRARIES = $(CPP_RUNTIME)/Build/VxWorks/SimCore.a
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI_SDK_01)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(OPENMODELICAHOME)/include/omc/cpp/Core -I$(OPENMODELICAHOME)/include/omc/cpp
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_LIBRARIES = $(OPENMODELICAHOME)/lib/omc/cpp/vxworks/SimCore.a
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : PROJECT_TYPE = DKM
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEFINES =
@@ -3430,8 +3430,8 @@ case "vxworks69" then
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Librarian =
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Assembler =  -O2
       endif
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI_SDK_01)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(CPP_RUNTIME)/Include/Core -I$(CPP_RUNTIME)/Include
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_LIBRARIES = $(CPP_RUNTIME)/Build/VxWorks/SimCore.a
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI_SDK_01)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(OPENMODELICAHOME)/include/omc/cpp/Core -I$(OPENMODELICAHOME)/include/omc/cpp
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_LIBRARIES = $(OPENMODELICAHOME)/lib/omc/cpp/vxworks/SimCore.a
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : PROJECT_TYPE = DKM
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEFINES =
