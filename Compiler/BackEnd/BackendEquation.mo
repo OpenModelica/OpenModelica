@@ -3123,6 +3123,16 @@ algorithm
   end match;
 end isComplexEquation;
 
+public function isEquation
+  input BackendDAE.Equation inEqn;
+  output Boolean b;
+algorithm
+  b := match (inEqn)
+    case BackendDAE.EQUATION() then true;
+    else false;
+  end match;
+end isEquation;
+
 public function isNotAlgorithm
   input BackendDAE.Equation inEqn;
   output Boolean b;
