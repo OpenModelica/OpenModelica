@@ -551,9 +551,8 @@ preprocessing for solve1,
   Integer iter;
 
  algorithm
-   (x, _) := ExpressionSimplify.simplify(inExp1);
-   (y, _) := ExpressionSimplify.simplify(inExp2);
-   res := Expression.expSub(x, y);
+   (x, _) := ExpressionSimplify.simplify1(inExp1);
+   res := Expression.expSub(x, inExp2);
    resTerms :=  Expression.terms(res);
 
    // split and sort
@@ -589,7 +588,7 @@ preprocessing for solve1,
      end if;
 
      if not con then
-       (x, con) := ExpressionSimplify.simplify(x);
+       (x, con) := ExpressionSimplify.simplify1(x);
        // Z/N = rhs -> Z = rhs*N
        (x,N) := Expression.makeFraction(x);
        if not Expression.isOne(N) then
@@ -1038,7 +1037,7 @@ algorithm
 
   f2 := Expression.expandFactors(inExp2);
   (factorWithX2, factorWithoutX2) := List.split1OnTrue(f2, expHasCref, inExp3);
-  (pWithX2,_) := ExpressionSimplify.simplify1(makeProductLstSort(factorWithX2));
+  pWithX2 := makeProductLstSort(factorWithX2);
   pWithoutX2 := makeProductLstSort(factorWithoutX2);
   //print("\nf1 =");print(ExpressionDump.printExpListStr(f1));
   //print("\nf2 =");print(ExpressionDump.printExpListStr(f2));
@@ -1120,7 +1119,6 @@ algorithm
 
      //rhs
      outRhs := Expression.makeSum(rhs);
-     (outRhs,_) := ExpressionSimplify.simplify1(outRhs);
 
      if expand then
        resTerms := Expression.terms(Expression.expand(outLhs));
@@ -1133,7 +1131,6 @@ algorithm
        end for;
        //rhs
        outRhs := Expression.expAdd(outRhs,Expression.makeSum(rhs));
-       (outRhs,_) := ExpressionSimplify.simplify1(outRhs);
 
        resTerms := Expression.allTerms(outLhs);
        (lhs, rhs) := List.split1OnTrue(resTerms, expHasCref, inExp3);
@@ -1145,7 +1142,6 @@ algorithm
        end for;
        //rhs
        outRhs := Expression.expAdd(outRhs,Expression.makeSum(rhs));
-       (outRhs,_) := ExpressionSimplify.simplify1(outRhs);
 
      end if;
 
@@ -1788,7 +1784,6 @@ algorithm
     // a = 0
     e7 :=  Expression.makeDiv(inExp2,b);
     invExp := Expression.inverseFactors(n);
-    (invExp, _) :=  ExpressionSimplify.simplify1(invExp);
     e7 := Expression.expPow(e7, invExp);
 
     // if a==0
@@ -2020,8 +2015,7 @@ protected function makeProductLstSort2
 protected
   list<DAE.Exp> rest;
 algorithm
-  rest := ExpressionSimplify.simplifyList(inExpLst, {});
-  for elem in rest loop
+  for elem in inExpLst loop
     if not Expression.isOne(elem) then
     outExp := match(elem)
               local DAE.Exp e1,e2,e3;
