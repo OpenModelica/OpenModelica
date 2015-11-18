@@ -11950,7 +11950,7 @@ algorithm
         cr = ComponentReference.crefStripLastSubs(cr);
         crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = List.map1(crlst,makeCrefExp,ty);
-        mat = makeMatrix(expl,j,j,{});
+        mat = makeMatrix(expl,j);
         e_new = DAE.MATRIX(t,i,mat);
         (e, b) = traverseExpBottomUp(e_new, traversingextendArrExp, true);
       then
@@ -11967,7 +11967,7 @@ algorithm
         subslst1 = rangesToSubscripts(subslst);
         crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = List.map1(crlst,makeCrefExp,ty);
-        mat = makeMatrix(expl,j,j,{});
+        mat = makeMatrix(expl,j);
         e_new = DAE.MATRIX(t,i,mat);
         (e, b) = traverseExpBottomUp(e_new, traversingextendArrExp, true);
       then
@@ -12057,34 +12057,26 @@ end insertSubScripts;
 
 protected function makeMatrix
   input list<DAE.Exp> expl;
-  input Integer r;
   input Integer n;
-  input list<DAE.Exp> incol;
-  output list<list<DAE.Exp>> scalar;
+  output list<list<DAE.Exp>> res;
+protected
+  list<DAE.Exp> col;
+  Integer r;
 algorithm
-  scalar := matchcontinue (expl, r, n, incol)
-    local
-      DAE.Exp e;
-      list<DAE.Exp> rest;
-      list<list<DAE.Exp>> res;
-      list<DAE.Exp> col;
-  case({},_,_,_)
-    equation
-      col = listReverse(incol);
-    then {col};
-  case(e::rest,_,_,_)
-    equation
-      true = intEq(r,0);
-      col = listReverse(incol);
-      res = makeMatrix(e::rest,n,n,{});
-    then
-      (col::res);
-  case(e::rest,_,_,_)
-    equation
-      res = makeMatrix(rest,r-1,n,e::incol);
-    then
-      res;
-  end matchcontinue;
+  res := {};
+  col := {};
+  r := n;
+  for e in expl loop
+    r := r-1;
+    col := e::col;
+    if r==0 then
+      res := listReverse(col)::res;
+      col := {};
+      r := n;
+    end if;
+  end for;
+  Error.assertionOrAddSourceMessage(listEmpty(col), Error.INTERNAL_ERROR, {"Expression.makeMatrix failed"}, sourceInfo());
+  res := listReverse(res);
 end makeMatrix;
 
 public function rangesToSubscripts
