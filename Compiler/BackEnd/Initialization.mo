@@ -310,51 +310,50 @@ protected function inlineWhenForInitializationSystem "author: lochel"
   output BackendDAE.EqSystem outEqSystem;
 protected
   list<BackendDAE.Equation> eqnlst;
+  HashSet.HashSet leftCrs = HashSet.emptyHashSetSized(50) "hack for #3209";
+  list<DAE.ComponentRef> crefLst;
 algorithm
-  eqnlst := BackendEquation.traverseEquationArray(inEqSystem.orderedEqs, inlineWhenForInitializationEquation, {});
-  //print("Before: " + intString(listLength(eqnlst)) + "\n");
-  eqnlst := List.uniqueOnTrue(eqnlst, BackendEquation.equationEqual) "hack for #3209";
-  //print("After: " + intString(listLength(eqnlst)) + "\n");
+  (eqnlst, leftCrs) := BackendEquation.traverseEquationArray(inEqSystem.orderedEqs, inlineWhenForInitializationEquation, ({}, leftCrs));
+  crefLst := BaseHashSet.hashSetList(leftCrs);
+  eqnlst := generateInactiveWhenEquationForInitialization(crefLst, DAE.emptyElementSource, eqnlst);
   outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, BackendEquation.listEquation(eqnlst));
   outEqSystem := BackendDAEUtil.clearEqSyst(outEqSystem);
 end inlineWhenForInitializationSystem;
 
 protected function inlineWhenForInitializationEquation "author: lochel"
   input BackendDAE.Equation inEq;
-  input list<BackendDAE.Equation> inAccEq;
+  input tuple<list<BackendDAE.Equation>, HashSet.HashSet> inTpl;
   output BackendDAE.Equation outEq = inEq;
-  output list<BackendDAE.Equation> outAccEq;
+  output tuple<list<BackendDAE.Equation>, HashSet.HashSet> outTpl;
+protected
+  BackendDAE.EquationAttributes eqAttr;
+  BackendDAE.WhenEquation weqn;
+  DAE.Algorithm alg;
+  DAE.ElementSource source;
+  DAE.Expand crefExpand;
+  HashSet.HashSet leftCrs;
+  Integer size;
+  list<BackendDAE.Equation> eqns;
+  list<BackendDAE.Equation> accEq;
+  list<DAE.Statement> stmts;
 algorithm
-  outAccEq := match (inEq)
-    local
-      DAE.ElementSource source;
-      DAE.Algorithm alg;
-      Integer size;
-      list< DAE.Statement> stmts;
-      list< BackendDAE.Equation> eqns;
-      BackendDAE.WhenEquation weqn;
-      list< DAE.ComponentRef> crefLst;
-      HashSet.HashSet leftCrs;
-      DAE.Expand crefExpand;
-      BackendDAE.EquationAttributes eqAttr;
-
+  (accEq, leftCrs) := inTpl;
+  outTpl := match (inEq)
     // when equation
     case BackendDAE.WHEN_EQUATION(whenEquation=weqn, source=source, attr=eqAttr) equation
-      eqns = inlineWhenForInitializationWhenEquation(weqn, source, eqAttr, inAccEq);
-    then eqns;
+      (leftCrs, eqns) = inlineWhenForInitializationWhenEquation(weqn, source, eqAttr, accEq, leftCrs);
+    then (eqns, leftCrs);
 
     // algorithm
     case BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand) equation
       DAE.ALGORITHM_STMTS(statementLst=stmts) = alg;
-      (stmts, leftCrs) = inlineWhenForInitializationWhenAlgorithm(stmts, {}, HashSet.emptyHashSetSized(50));
+      (stmts, leftCrs) = inlineWhenForInitializationWhenAlgorithm(stmts, {}, leftCrs);
       alg = DAE.ALGORITHM_STMTS(stmts);
       size = listLength(CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand));
-      crefLst = BaseHashSet.hashSetList(leftCrs);
-      eqns = generateInactiveWhenEquationForInitialization(crefLst, source, inAccEq);
-      eqns = List.consOnTrue(not listEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source, crefExpand, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), eqns);
-    then eqns;
+      eqns = List.consOnTrue(not listEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source, crefExpand, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), accEq);
+    then (eqns, leftCrs);
 
-    else inEq::inAccEq;
+    else (inEq::accEq, leftCrs);
   end match;
 end inlineWhenForInitializationEquation;
 
@@ -363,30 +362,34 @@ protected function inlineWhenForInitializationWhenEquation "author: lochel"
   input DAE.ElementSource inSource;
   input BackendDAE.EquationAttributes inEqAttr;
   input list<BackendDAE.Equation> inEqns;
-  output list<BackendDAE.Equation> outEqns;
+  input HashSet.HashSet inLeftCrs;
+  output HashSet.HashSet outLeftCrs = inLeftCrs;
+  output list<BackendDAE.Equation> outEqns = inEqns;
 protected
   DAE.Exp crexp, condition, e;
   BackendDAE.Equation eqn;
   list<BackendDAE.WhenOperator> whenStmtLst;
   DAE.ComponentRef cr;
+  Boolean active;
 algorithm
   outEqns := match(inWEqn)
     case BackendDAE.WHEN_STMTS(condition=condition,whenStmtLst=whenStmtLst) algorithm
+      active := Expression.containsInitialCall(condition, false);
       for stmt in whenStmtLst loop
         _ := match stmt
           case BackendDAE.ASSIGN(left = cr, right = e) equation
-            if Expression.containsInitialCall(condition, false) then
+            if active then
               crexp = Expression.crefExp(cr);
               eqn = BackendEquation.generateEquation(crexp, e, inSource, inEqAttr);
-              outEqns = eqn::inEqns;
+              outEqns = eqn::outEqns;
             else
-              outEqns = generateInactiveWhenEquationForInitialization(ComponentReference.expandCref(cr, true), inSource, inEqns);
+              outLeftCrs = List.fold(ComponentReference.expandCref(cr, true), BaseHashSet.add, outLeftCrs);
             end if;
           then ();
         end match;
       end for;
     then outEqns;
-    else inEqns;
+    else outEqns;
   end match;
 end inlineWhenForInitializationWhenEquation;
 
