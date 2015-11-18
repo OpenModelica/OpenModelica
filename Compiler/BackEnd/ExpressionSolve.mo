@@ -283,8 +283,8 @@ protected
  list<BackendDAE.Equation> eqnForNewVars1;
  list<DAE.ComponentRef> newVarsCrefs1;
 algorithm
- (e1, e2, eqnForNewVars, newVarsCrefs, depth) := matchcontinue(inExp1, inExp2, inExp3, functions, uniqueEqIndex)
-               case(_,_,_,_,_) then preprocessingSolve(inExp1, inExp2, inExp3, functions, uniqueEqIndex, idepth);
+ (e1, e2, eqnForNewVars, newVarsCrefs, depth) := matchcontinue inExp1
+               case _ then preprocessingSolve(inExp1, inExp2, inExp3, functions, uniqueEqIndex, idepth);
                else
                 equation
                   if Flags.isSet(Flags.FAILTRACE) then
@@ -295,10 +295,10 @@ algorithm
                 then (inExp1,inExp2,{},{}, idepth);
               end matchcontinue;
 
- (outExp, outAsserts, eqnForNewVars1, newVarsCrefs1, depth) := matchcontinue(e1, e2, inExp3)
-                          case(DAE.IFEXP(),_,_) then  solveIfExp(e1, e2, inExp3, functions, uniqueEqIndex, depth);
-                          case(_,_,_) then  solveSimple(e1, e2, inExp3, depth);
-                          case(_,_,_) then  solveLinearSystem(e1, e2, inExp3, functions, depth);
+ (outExp, outAsserts, eqnForNewVars1, newVarsCrefs1, depth) := matchcontinue e1
+                          case _ then  solveIfExp(e1, e2, inExp3, functions, uniqueEqIndex, depth);
+                          case _ then  solveSimple(e1, e2, inExp3, depth);
+                          case _ then  solveLinearSystem(e1, e2, inExp3, functions, depth);
                           else fail();
                          end matchcontinue;
 
@@ -717,64 +717,56 @@ protected function preprocessingSolve3
   output Boolean con "continue";
 
 algorithm
-  (olhs, orhs, con) := matchcontinue(inExp1, inExp2, inExp3)
+  (olhs, orhs, con) := match(inExp1, inExp2)
       local
        Real r, r1, r2;
        DAE.Exp e1, e2, res;
 
       // (r1)^f(a) = r2 => f(a)  = ln(r2)/ln(r1)
-      case (DAE.BINARY(e1 as DAE.RCONST(r1),DAE.POW(_),e2), DAE.RCONST(r2), _)
+      case (DAE.BINARY(e1 as DAE.RCONST(r1),DAE.POW(_),e2), DAE.RCONST(r2))
+        guard r2 > 0.0 and r1 > 0.0 and (not Expression.isConstOne(e1)) and expHasCref(e2, inExp3)
        equation
-         true = r2 > 0.0;
-         true = r1 > 0.0;
-         false = Expression.isConstOne(e1);
-         true = expHasCref(e2, inExp3);
          r = log(r2) / log(r1);
          res = DAE.RCONST(r);
        then
          (e2, res, true);
 
       // f(a)^b = 0 => f(a) = 0
-      case (DAE.BINARY(e1,DAE.POW(_),e2), DAE.RCONST(real = 0.0), _)
-        equation
-         false = expHasCref(e2, inExp3);
-         true = expHasCref(e1, inExp3);
+      case (DAE.BINARY(e1,DAE.POW(_),e2), DAE.RCONST(real = 0.0))
+        guard expHasCref(e1, inExp3) and (not expHasCref(e2, inExp3))
        then
          (e1, inExp2, true);
 
       // f(a)^n = c => f(a) = c^(1/n)
       // where n is odd
-      case (DAE.BINARY(e1,DAE.POW(_),e2 as DAE.RCONST(r)), _, _)
+      case (DAE.BINARY(e1,DAE.POW(_),e2 as DAE.RCONST(r)), _)
+        guard (not expHasCref(inExp2, inExp3)) and expHasCref(e1, inExp3) and (1.0 == realMod(r,2.0))
         equation
-          false = expHasCref(inExp2, inExp3);
-          true = expHasCref(e1, inExp3);
-          1.0 = realMod(r,2.0);
           res = Expression.makeDiv(DAE.RCONST(1.0),e2);
           res = Expression.expPow(inExp2,res);
        then
          (e1, res, true);
 
       // sqrt(f(a)) = f(a)^n = c => f(a) = c^(1/n)
-      case (DAE.BINARY(e1,DAE.POW(_),DAE.RCONST(0.5)), _, _)
+      case (DAE.BINARY(e1,DAE.POW(_),DAE.RCONST(0.5)), _)
+        guard not expHasCref(inExp2, inExp3) and expHasCref(e1, inExp3)
         equation
-          false = expHasCref(inExp2, inExp3);
-          true = expHasCref(e1, inExp3);
           res = Expression.expPow(inExp2,DAE.RCONST(2.0));
        then
          (e1, res, true);
 
       // abs(x) = 0
-      case (DAE.CALL(path = Absyn.IDENT(name = "abs"),expLst = {e1}), DAE.RCONST(0.0),_)
+      case (DAE.CALL(path = Absyn.IDENT(name = "abs"),expLst = {e1}), DAE.RCONST(0.0))
         then (e1,inExp2,true);
 
       // sign(x) = 0
-      case (DAE.CALL(path = Absyn.IDENT(name = "sign"),expLst = {e1}), DAE.RCONST(0.0),_)
+      case (DAE.CALL(path = Absyn.IDENT(name = "sign"),expLst = {e1}), DAE.RCONST(0.0))
         then (e1,inExp2,true);
 
 
       else (inExp1, inExp2, false);
 
-  end matchcontinue;
+  end match;
 
 
 end preprocessingSolve3;
