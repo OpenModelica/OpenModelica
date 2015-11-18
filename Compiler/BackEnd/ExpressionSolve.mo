@@ -684,88 +684,73 @@ protected function preprocessingSolve2
 
 algorithm
 
-(olhs, orhs, con) := matchcontinue (inExp1,inExp2,inExp3)
+(olhs, orhs, con) := match (inExp1)
     local
-     DAE.Exp e,a, b, fb, fa, ga, lhs, rhs;
+     DAE.Exp e,a, b, fb, fa, ga, lhs;
      DAE.Type tp;
      DAE.Operator op;
      list<DAE.Exp> eWithX, factorWithX, factorWithoutX;
      DAE.Exp pWithX, pWithoutX;
 
     // -f(a) = b => f(a) = -b
-    case(DAE.UNARY(op as DAE.UMINUS(), fa),_,_)
+    case DAE.UNARY(op as DAE.UMINUS(), fa)
+      guard expHasCref(fa, inExp3) and not expHasCref(inExp2, inExp3)
+    then(fa, DAE.UNARY(op, inExp2), true);
+
+    case DAE.UNARY(op as DAE.UMINUS_ARR(), fa)
+      guard expHasCref(fa, inExp3) and not expHasCref(inExp2, inExp3)
       equation
-        true = expHasCref(fa, inExp3);
-        false = expHasCref(inExp2, inExp3);
-        b = DAE.UNARY(op, inExp2);
-    then(fa, b, true);
-    case(DAE.UNARY(op as DAE.UMINUS_ARR(), fa),_,_)
-      equation
-        true = expHasCref(fa, inExp3);
-        false = expHasCref(inExp2, inExp3);
         b = DAE.UNARY(op, inExp2);
     then(fa, b, true);
 
     // b/f(a) = rhs  => f(a) = b/rhs solve for a
-    case(DAE.BINARY(b,DAE.DIV(_),fa), rhs, _)
+    case DAE.BINARY(b,DAE.DIV(_),fa)
+      guard expHasCref(fa, inExp3) and (not expHasCref(b, inExp3)) and (not expHasCref(inExp2, inExp3))
       equation
-        true = expHasCref(fa, inExp3);
-        false = expHasCref(b, inExp3);
-        false = expHasCref(rhs, inExp3);
-        e = Expression.makeDiv(b, rhs);
+        e = Expression.makeDiv(b, inExp2);
       then(fa, e, true);
 
     // b*f(a) = rhs  => f(a) = rhs/b solve for a
-    case(DAE.BINARY(b, DAE.MUL(_), fa), rhs, _)
+    case DAE.BINARY(b, DAE.MUL(_), fa)
+      guard expHasCref(fa, inExp3) and (not expHasCref(b, inExp3)) and (not expHasCref(inExp2, inExp3))
       equation
-        false = expHasCref(b, inExp3);
-        true = expHasCref(fa, inExp3);
-        false = expHasCref(rhs, inExp3);
 
         eWithX = Expression.expandFactors(inExp1);
         (factorWithX, factorWithoutX) = List.split1OnTrue(eWithX, expHasCref, inExp3);
         pWithX = makeProductLstSort(factorWithX);
         pWithoutX = makeProductLstSort(factorWithoutX);
 
-        e = Expression.makeDiv(rhs, pWithoutX);
+        e = Expression.makeDiv(inExp2, pWithoutX);
 
        then(pWithX, e, true);
 
     // b*a = rhs  => a = rhs/b solve for a
-    case(DAE.BINARY(b, DAE.MUL(_), fa), rhs, _)
+    case DAE.BINARY(b, DAE.MUL(_), fa)
+      guard expHasCref(fa, inExp3) and (not expHasCref(b, inExp3)) and (not expHasCref(inExp2, inExp3))
       equation
-        false = expHasCref(b, inExp3);
-        true = expHasCref(fa, inExp3);
-        false = expHasCref(rhs, inExp3);
-        e = Expression.makeDiv(rhs, b);
+        e = Expression.makeDiv(inExp2, b);
        then(fa, e, true);
 
     // a*b = rhs  => a = rhs/b solve for a
-    case(DAE.BINARY(fa, DAE.MUL(_), b), rhs, _)
+    case DAE.BINARY(fa, DAE.MUL(_), b)
+      guard expHasCref(fa, inExp3) and (not expHasCref(b, inExp3)) and (not expHasCref(inExp2, inExp3))
       equation
-        false = expHasCref(b, inExp3);
-        true = expHasCref(fa, inExp3);
-        false = expHasCref(rhs, inExp3);
-        e = Expression.makeDiv(rhs, b);
+        e = Expression.makeDiv(inExp2, b);
        then(fa, e, true);
 
     // f(a)/b = rhs  => f(a) = rhs*b solve for a
-    case(DAE.BINARY(fa, DAE.DIV(_), b), rhs, _)
+    case DAE.BINARY(fa, DAE.DIV(_), b)
+      guard expHasCref(fa, inExp3) and (not expHasCref(b, inExp3)) and (not expHasCref(inExp2, inExp3))
       equation
-        true = expHasCref(fa, inExp3);
-        false = expHasCref(b, inExp3);
-        false = expHasCref(rhs, inExp3);
-        e = Expression.expMul(rhs, b);
+        e = Expression.expMul(inExp2, b);
        then (fa, e, true);
 
     // g(a)/f(a) = rhs  => rhs*f(a) - g(a) = 0  solve for a
-    case(DAE.BINARY(ga, DAE.DIV(tp), fa), rhs, _)
+    case DAE.BINARY(ga, DAE.DIV(tp), fa)
+      guard expHasCref(fa, inExp3) and expHasCref(ga, inExp3) and (not expHasCref(inExp2, inExp3))
       equation
-        true = expHasCref(fa, inExp3);
-        true = expHasCref(ga, inExp3);
-        false = expHasCref(rhs, inExp3);
 
-        e = Expression.expMul(rhs, fa);
+        e = Expression.expMul(inExp2, fa);
         lhs = Expression.expSub(e, ga);
         e = Expression.makeConstZero(tp);
 
@@ -773,7 +758,7 @@ algorithm
 
    else (inExp1, inExp2, false);
 
-   end matchcontinue;
+   end match;
 
 end preprocessingSolve2;
 
