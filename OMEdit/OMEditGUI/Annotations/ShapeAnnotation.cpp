@@ -1009,8 +1009,8 @@ void ShapeAnnotation::referenceShapeAdded()
     if (mpGraphicsView) {
       mpGraphicsView->addItem(this);
     } else if (mpParentComponent) {
-      mpParentComponent->shapeAdded();
       setVisible(true);
+      mpParentComponent->shapeAdded();
     }
   }
 }
