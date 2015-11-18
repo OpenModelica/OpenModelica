@@ -66,134 +66,93 @@ protected import BackendDAEUtil;
 
 public function solveSimpleEquations
   input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
+  output BackendDAE.BackendDAE outDAE = inDAE;
+protected
+  BackendDAE.Equation eqn;
+  BackendDAE.Var var;
+  Integer iComp;
+  Integer eindex,vindx;
+  BackendDAE.StrongComponents comps;
+  array<Integer> ass1 "eqn := ass1[var]";
+  array<Integer> ass2 "var := ass2[eqn]";
+  Boolean solved;
+
+  list<BackendDAE.EqSystem> systlst = {};
 algorithm
- (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, findSimpleEquation0, false);
+
+ for syst in inDAE.eqs loop
+   BackendDAE.MATCHING(comps=comps,ass1=ass1, ass2=ass2) := syst.matching;
+   iComp := 1;
+   for comp in comps loop
+     if BackendDAEUtil.isSingleEquationComp(comp) then
+       BackendDAE.SINGLEEQUATION(eqn=eindex,var=vindx) := comp;
+       eqn := BackendEquation.equationNth1(syst.orderedEqs, eindex);
+       var := BackendVariable.getVarAt(syst.orderedVars, vindx);
+
+       if BackendEquation.isEquation(eqn) then
+         (eqn,solved) := solveSimpleEquationsWork(eqn, var, outDAE.shared);
+         syst.orderedEqs := BackendEquation.setAtIndex(syst.orderedEqs, eindex, eqn);
+
+         if not solved then
+           comp := BackendDAE.EQUATIONSYSTEM({eindex}, {vindx}, BackendDAE.EMPTY_JACOBIAN() ,BackendDAE.JAC_NONLINEAR(), false);
+           comps := List.replaceAt(comp, iComp, comps);
+         end if;
+
+       end if; // isEquation
+     end if; // isSingleEquationComp
+     iComp := iComp + 1;
+   end for; //comp
+  syst.matching := BackendDAE.MATCHING(ass1, ass2, comps);
+	systlst := syst :: systlst;
+ end for; // syst
+
+ outDAE.eqs := listReverse(systlst); // listReverse needed?
 end solveSimpleEquations;
 
-protected function findSimpleEquation0
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared inShared;
-  input Boolean inChanged;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared outShared;
-  output Boolean outChanged;
+protected function solveSimpleEquationsWork
+  input BackendDAE.Equation inEqn;
+  input BackendDAE.Var var "solve eq with respect to var";
+  input BackendDAE.Shared shared;
+  output BackendDAE.Equation outEqn;
+  output Boolean solved;
+
 protected
-  BackendDAE.StrongComponents comps;
+  DAE.ComponentRef cr;
+  DAE.Exp e1,e2,varexp,e;
+
+  BackendDAE.EquationAttributes attr;
+  DAE.ElementSource source;
+  list<DAE.Statement> asserts = {};
 algorithm
-  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)) := isyst;
-  (osyst, outShared, outChanged) := findSimpleEquation1(isyst, inShared, comps, inChanged);
-end findSimpleEquation0;
+  BackendDAE.EQUATION(exp=e1, scalar=e2, source=source,attr=attr) := inEqn;
+  BackendDAE.VAR(varName = cr) := var;
+  varexp := Expression.crefExp(cr);
+  if BackendVariable.isStateVar(var) then
+    varexp := Expression.expDer(varexp);
+    cr := ComponentReference.crefPrefixDer(cr);
+	end if;
 
-protected function findSimpleEquation1
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  input BackendDAE.StrongComponents inComps;
-  input Boolean inchanged;
-  output BackendDAE.EqSystem osyst = isyst;
-  output BackendDAE.Shared oshared = ishared;
-  output Boolean changed = inchanged "not used";
-protected
-  Boolean b;
-  BackendDAE.StrongComponent c;
-  Integer i = 1;
-  list<BackendDAE.Var> newVars = {};
-algorithm
-  for comp in inComps loop
-    (osyst,oshared, newVars) := findSimpleEquationWork(osyst,oshared,comp, i, newVars);
-    i := i + 1;
-  end for;
-  if  not listEmpty(newVars) then
-    osyst.orderedVars := BackendVariable.addVars(newVars, osyst.orderedVars);
-    osyst := BackendDAEUtil.setEqSystMatrices(osyst);
-    //BackendDump.printEqSystem(osyst);
-  end if;
+	try
+	  (e1, e2) := preprocessingSolve(e1, e2, varexp, SOME(shared.functionTree), NONE(), 0);
+	else
+	  // no number
+	end try;
 
-end findSimpleEquation1;
+	try
+    (e, asserts) := solve2(e1, e2, varexp, SOME(shared.functionTree), NONE());
+    source := DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, e, asserts);
+    outEqn := BackendEquation.generateEquation(varexp, e, source, attr);
+    solved := true;
+  else
+    //eqn is change by possible simplification inside preprocessingSolve for solve the eqn with respect to varexp
+    //source := DAEUtil.addSymbolicTransformationSimplify(true, source, DAE.PARTIAL_EQUATION(e1), DAE.PARTIAL_EQUATION(e2));
+    outEqn := BackendEquation.generateEquation(e1, e2, source, attr);
+    solved := false;
+  end try;
 
-protected function findSimpleEquationWork
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  input BackendDAE.StrongComponent icomp;
-  input Integer iter;
-  input list<BackendDAE.Var> iNewVars;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
-  output list<BackendDAE.Var> oNewVars;
-algorithm
-  (osyst,oshared,oNewVars):=
-  matchcontinue (isyst,ishared,icomp)
-    local
-      DAE.ComponentRef cr;
-      list<DAE.ComponentRef> solveCr;
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns, eqns_;
-      BackendDAE.Equation eqn_;
-      BackendDAE.Var var_;
-      list<BackendDAE.Var> tmpvars;
-      Integer eindex,vindx;
-      BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
-      DAE.ElementSource source;
-      BackendDAE.Matching matching;
-      DAE.FunctionTree funcs;
-      list<BackendDAE.Equation> solveEqns;
-      DAE.Exp e1,e2,varexp,e;
-      list<DAE.Statement> asserts;
-      BackendDAE.EquationAttributes attr;
-      BackendDAE.StrongComponent comp;
-      BackendDAE.StrongComponents comps;
-      array<Integer> ass1, ass2;
+end solveSimpleEquationsWork;
 
-
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching),shared,BackendDAE.SINGLEEQUATION(eqn=eindex,var=vindx))
-      algorithm
-        (eqn_ as BackendDAE.EQUATION(exp=e1, scalar=e2, source=source,attr=attr)) := BackendEquation.equationNth1(eqns, eindex);
-        (var_ as BackendDAE.VAR(varName = cr)) := BackendVariable.getVarAt(vars, vindx);
-
-        varexp := Expression.crefExp(cr);
-        varexp := if BackendVariable.isStateVar(var_) then Expression.expDer(varexp) else varexp;
-        BackendDAE.SHARED(functionTree = funcs) := shared;
-        tmpvars := iNewVars;
-        try
-          //TODO:
-          //(e, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), SOME(eindex));
-          (e, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE());
-          source := DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, e, asserts);
-           if listEmpty(solveEqns) then
-             eqn_ := BackendDAE.EQUATION(varexp, e, source, attr);
-           else
-             solveCr := listReverse(solveCr);
-             tmpvars := List.appendNoCopy(tmpvars, List.map(solveCr, BackendVariable.makeVar));
-             eqn_ := BackendDAE.EQUATION(varexp, e, source, attr);
-             solveEqns := eqn_::solveEqns;
-             eqn_ := eqnLst2Alg(solveEqns,source,attr);
-           end if;
-        else
-         try
-           // ExpressionSolve fail!
-           // try simplify equation
-           (varexp, e, solveEqns, solveCr, _) := preprocessingSolve(e1, e2, varexp, NONE(), NONE(), 0);
-           true := listEmpty(solveEqns);
-           eqn_ := BackendDAE.EQUATION(varexp, e, source, attr);
-         else
-           eqn_ := eqn_;
-         end try;
-          // ExressionSolve can't solve eqn -> make equastion system
-          comp := BackendDAE.EQUATIONSYSTEM({eindex}, {vindx},  BackendDAE.EMPTY_JACOBIAN() ,BackendDAE.JAC_NONLINEAR(), false);
-          BackendDAE.MATCHING(comps = comps, ass1 = ass1, ass2 = ass2) := matching;
-          comps := List.replaceAt(comp, iter, comps);
-          matching := BackendDAE.MATCHING(ass1, ass2, comps);
-        end try;
-        eqns_ := BackendEquation.setAtIndex(eqns, eindex, eqn_);
-        syst := BackendDAEUtil.setEqSystEqs(isyst, eqns_);
-        syst := BackendDAEUtil.setEqSystMatching(syst, matching);
-        then(syst, shared, tmpvars);
-
-    else (isyst, ishared, iNewVars);
-  end matchcontinue;
-end findSimpleEquationWork;
-
+/*
 public function eqnLst2Alg
   input list<BackendDAE.Equation> eqns;
   input DAE.ElementSource source;
@@ -229,6 +188,7 @@ algorithm
                               source, expand, attr);
 
 end eqnLst2Alg;
+*/
 
 public function solve
 "Solves an equation consisting of a right hand side (rhs) and a
