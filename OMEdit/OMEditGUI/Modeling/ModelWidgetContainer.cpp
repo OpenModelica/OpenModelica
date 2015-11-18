@@ -402,6 +402,7 @@ void GraphicsView::addComponentToClass(Component *pComponent)
  */
 void GraphicsView::deleteComponent(Component *pComponent)
 {
+  pComponent->setSelected(false);
   mpModelWidget->getUndoStack()->push(new DeleteComponentCommand(pComponent, this));
   // First Remove the Connector associated to this component
   int i = 0;
@@ -547,9 +548,15 @@ void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectonLineAnnot
   }
 }
 
-void GraphicsView::deleteShape(ShapeAnnotation *pShape)
+/*!
+ * \brief GraphicsView::deleteShape
+ * Deletes the shape from the icon/diagram layer.
+ * \param pShapeAnnotation
+ */
+void GraphicsView::deleteShape(ShapeAnnotation *pShapeAnnotation)
 {
-  mpModelWidget->getUndoStack()->push(new DeleteShapeCommand(pShape));
+  pShapeAnnotation->setSelected(false);
+  mpModelWidget->getUndoStack()->push(new DeleteShapeCommand(pShapeAnnotation));
 }
 
 void GraphicsView::reOrderItems()
@@ -1144,6 +1151,7 @@ void GraphicsView::removeCurrentConnection()
  */
 void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
 {
+  pConnectionLineAnnotation->setSelected(false);
   mpModelWidget->getUndoStack()->push(new DeleteConnectionCommand(pConnectionLineAnnotation));
 }
 

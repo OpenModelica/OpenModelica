@@ -130,7 +130,8 @@ public:
   };
   Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformation, QPointF position, QStringList dialogAnnotation,
             ComponentInfo *pComponentInfo, GraphicsView *pGraphicsView);
-  Component(Component *pComponent, GraphicsView *pGraphicsView, Component *pParent);
+  Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentComponent);
+  Component(Component *pComponent, Component *pParentComponent);
   Component(Component *pComponent, GraphicsView *pGraphicsView);
   bool isInheritedComponent() {return mIsInheritedComponent;}
   bool hasShapeAnnotation(Component *pComponent);
@@ -147,6 +148,7 @@ public:
   QString getTransformationString() {return mTransformationString;}
   void setDialogAnnotation(QStringList dialogAnnotation) {mDialogAnnotation = dialogAnnotation;}
   QStringList getDialogAnnotation() {return mDialogAnnotation;}
+  CoOrdinateSystem getCoOrdinateSystem() const;
   OriginItem* getOriginItem() {return mpOriginItem;}
   QAction* getParametersAction() {return mpParametersAction;}
   QAction* getAttributesAction() {return mpAttributesAction;}
@@ -201,7 +203,6 @@ private:
   LineAnnotation *mpNonExistingComponentLine;
   RectangleAnnotation *mpDefaultComponentRectangle;
   TextAnnotation *mpDefaultComponentText;
-  CoOrdinateSystem mCoOrdinateSystem;
   QAction *mpParametersAction;
   QAction *mpAttributesAction;
   QAction *mpViewClassAction;
@@ -227,11 +228,11 @@ private:
   QPointF mOldPosition;
   void createNonExistingComponent();
   void createDefaultComponent();
-  void createClassInheritedShapes();
-  void createClassShapes(LibraryTreeItem *pLibraryTreeItem);
+  void showHideNonExistingOrDefaultComponent();
   void createClassInheritedComponents();
-  void createClassComponents(LibraryTreeItem *pLibraryTreeItem, bool inherited);
-  void removeShapes();
+  void createClassShapes();
+  void createClassComponents();
+  void removeClassShapes();
   void removeInheritedComponents();
   void removeComponents();
   void createActions();

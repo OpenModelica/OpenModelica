@@ -179,7 +179,7 @@ public:
   void addConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.append(pConnectionLineAnnotation);}
   void deleteConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.removeOne(pConnectionLineAnnotation);}
   void addShapeToList(ShapeAnnotation *pShape) {mShapesList.append(pShape);}
-  void deleteShape(ShapeAnnotation *pShape);
+  void deleteShape(ShapeAnnotation *pShapeAnnotation);
   void deleteShapeFromList(ShapeAnnotation *pShape) {mShapesList.removeOne(pShape);}
   void reOrderItems();
   void bringToFront(ShapeAnnotation *pShape);
@@ -315,18 +315,21 @@ public:
   class InheritedClass : public QObject
   {
   public:
-    InheritedClass()
-    {
+    InheritedClass() {
       mpLibraryTreeItem = 0;
       mIconShapesList.clear();
       mDiagramShapesList.clear();
-
+      mIconComponentsList.clear();
+      mDiagramComponentsList.clear();
+      mConnectionsList.clear();
     }
-    InheritedClass(LibraryTreeItem *pLibraryTreeItem)
-    {
+    InheritedClass(LibraryTreeItem *pLibraryTreeItem) {
       mpLibraryTreeItem = pLibraryTreeItem;
       mIconShapesList.clear();
       mDiagramShapesList.clear();
+      mIconComponentsList.clear();
+      mDiagramComponentsList.clear();
+      mConnectionsList.clear();
     }
     LibraryTreeItem *mpLibraryTreeItem;
     QList<ShapeAnnotation*> mIconShapesList;
