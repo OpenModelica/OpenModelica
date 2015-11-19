@@ -3695,6 +3695,7 @@ public function dumpBipartiteGraphStrongComponent"dumps a bipartite graph of an 
 waurich: TUD 2014-09"
   input BackendDAE.StrongComponent inComp;
   input BackendDAE.EqSystem eqSys;
+  input Option<DAE.FunctionTree> funcs;
   input String name;
 protected
   BackendDAE.EquationArray eqs;
@@ -3705,16 +3706,17 @@ algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs) := eqSys;
   varLst := BackendVariable.varList(vars);
   eqLst := BackendEquation.equationList(eqs);
-  dumpBipartiteGraphStrongComponent1(inComp,eqLst,varLst,name);
+  dumpBipartiteGraphStrongComponent1(inComp,eqLst,varLst,funcs,name);
 end dumpBipartiteGraphStrongComponent;
 
 public function dumpBipartiteGraphStrongComponent1"helper function for dumpBipartiteGraphStrongComponent which handles either an equationsystem or a torn system"
   input BackendDAE.StrongComponent inComp;
   input list<BackendDAE.Equation> eqsIn;
   input list<BackendDAE.Var> varsIn;
+  input Option<DAE.FunctionTree> funcs;
   input String graphName;
 algorithm
-  () := matchcontinue(inComp,eqsIn,varsIn,graphName)
+  () := matchcontinue(inComp,eqsIn,varsIn,funcs,graphName)
     local
       Integer numEqs, numVars, compIdx;
       list<Boolean> tornInfo;
@@ -3728,7 +3730,7 @@ algorithm
       BackendDAE.IncidenceMatrix m,mT;
       list<BackendDAE.Equation> compEqLst;
       list<BackendDAE.Var> compVarLst;
-  case((BackendDAE.EQUATIONSYSTEM(eqns=eqIdcs,vars=varIdcs)),_,_,_)
+  case((BackendDAE.EQUATIONSYSTEM(eqns=eqIdcs,vars=varIdcs)),_,_,_,_)
     equation
       compEqLst = List.map1(eqIdcs,List.getIndexFirst,eqsIn);
       compVarLst = List.map1(varIdcs,List.getIndexFirst,varsIn);
@@ -3737,13 +3739,13 @@ algorithm
 
       numEqs = listLength(compEqLst);
       numVars = listLength(compVarLst);
-      (m,_) = BackendDAEUtil.incidenceMatrixDispatch(compVars,compEqs, BackendDAE.NORMAL());
+      (_,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(compVars,compEqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION(),BackendEquation.emptyEqns()), BackendDAE.SOLVABLE(), funcs);
 
       varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
       eqAtts = List.threadMap(List.fill(false,numEqs),List.fill("",numEqs),Util.makeTuple);
       dumpBipartiteGraphStrongComponent2(compVars,compEqs,m,varAtts,eqAtts,"rL_eqSys_"+graphName);
     then ();
-  case((BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=rEqIdcs,tearingvars=tVarIdcs,otherEqnVarTpl=otherEqnVarTplIdcs))),_,_,_)
+  case((BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=rEqIdcs,tearingvars=tVarIdcs,otherEqnVarTpl=otherEqnVarTplIdcs))),_,_,_,_)
     equation
       //gather equations ans variables
       eqIdcs = List.map(otherEqnVarTplIdcs,Util.tuple21);
@@ -3758,7 +3760,7 @@ algorithm
       // get incidence matrix
       numEqs = listLength(compEqLst);
       numVars = listLength(compVarLst);
-      m = BackendDAEUtil.incidenceMatrixDispatch(compVars,compEqs, BackendDAE.NORMAL());
+      (_,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(compVars,compEqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION(),BackendEquation.emptyEqns()), BackendDAE.SOLVABLE(), funcs);
 
       // add tearing info to graph object and dump graph
       addInfo = List.map(varIdcs,intString);// the DAE idcs for the vars
