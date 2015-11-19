@@ -4473,7 +4473,7 @@ template extType2(Type type, Boolean isInput, Boolean isArray)
   let s = match type
   case T_INTEGER(__)         then "int"
   case T_REAL(__)        then "double"
-  case T_STRING(__)      then "const char*"
+  case T_STRING(__)      then "string"/*use string instead of char* for external types*/
   case T_BOOL(__)        then "int"
   case T_ENUMERATION(__) then "int"
   case T_ARRAY(__)       then extType2(ty,isInput,true)
@@ -14063,3 +14063,4 @@ end generateMeasureTimeEndCode;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenCpp;
+
