@@ -1465,7 +1465,7 @@ algorithm
       equation
         name2 = Absyn.printComponentRefStr(dep);
         true = stringEq(name2,name1);
-        cmod = DAE.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{DAE.NAMEMOD(name2,cmod)},NONE());
+        cmod = DAE.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{DAE.NAMEMOD(name2,cmod)},NONE(), Absyn.dummyInfo);
       then
         cmod;
     case(dep,_::elems)
@@ -2685,7 +2685,7 @@ algorithm
       equation
         // compmod = Mod.getModifs(mods, n, m);
         compmod = Mod.lookupCompModification(mods, n);
-        cmod_1 = Mod.merge(compmod, cmod, env, pre);
+        cmod_1 = Mod.merge(compmod, cmod);
 
         /*
         print("InstUtil.addCompToEnv: " +
@@ -2810,7 +2810,7 @@ algorithm
     case (_,SCode.REDECL(f, e, SCode.CLASS(name = nInner, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = Absyn.IDENT(nDerivedInner))))))
       equation
         // lookup the class mod in the outer
-        (DAE.REDECL(tplSCodeElementModLst = (cls,_)::_)) = Mod.lookupModificationP(inModOuter, Absyn.IDENT(nDerivedInner));
+        (DAE.REDECL(elements = (cls,_)::_)) = Mod.lookupModificationP(inModOuter, Absyn.IDENT(nDerivedInner));
         cls = SCode.setClassName(nInner, cls);
       then
         SCode.REDECL(f, e, cls);
@@ -2819,7 +2819,7 @@ algorithm
     case (_,SCode.REDECL(f, e, SCode.CLASS(name = nInner, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = Absyn.IDENT(_))))))
       equation
         // lookup the class mod in the outer
-        (DAE.REDECL(tplSCodeElementModLst = (cls,_)::_)) = Mod.lookupModificationP(inModOuter, Absyn.IDENT(nInner));
+        (DAE.REDECL(elements = (cls,_)::_)) = Mod.lookupModificationP(inModOuter, Absyn.IDENT(nInner));
       then
         SCode.REDECL(f, e, cls);
 
@@ -3236,16 +3236,17 @@ algorithm
       Option<DAE.EqMod> oe;
       list<DAE.SubMod> subs;
       list<String> compNames;
+      SourceInfo info;
 
     case (_,{}) then inMod;
     case(DAE.NOMOD(),_ ) then DAE.NOMOD();
     case(DAE.REDECL(_,_,_),_) then inMod;
-    case(DAE.MOD(f,e,subs,oe),_)
+    case(DAE.MOD(f,e,subs,oe,info),_)
       equation
         compNames = List.map(elems,SCode.elementName);
         subs = keepConstrainingTypeModifersOnly2(subs,compNames);
       then
-        DAE.MOD(f,e,subs,oe);
+        DAE.MOD(f,e,subs,oe,info);
   end matchcontinue;
 end keepConstrainingTypeModifersOnly;
 
@@ -3705,7 +3706,7 @@ algorithm
         type_mods = Mod.addEachIfNeeded(type_mods, dim2);
         // do not add each to mod_1, it should have it already!
         // mod_1 = Mod.addEachIfNeeded(mod_1, dim2);
-        type_mods = Mod.merge(mod_1, type_mods, env, pre);
+        type_mods = Mod.merge(mod_1, type_mods);
         res = listAppend(dim2, dim1);
       then
         (cache,res,cl,type_mods);
@@ -3725,7 +3726,7 @@ algorithm
         (cache,cl,_) = Lookup.lookupClass(cache, env, path);
         (cache,res,cl,type_mods) = getUsertypeDimensions(cache,env,ih,pre,cl,{},impl);
         // type_mods = Mod.addEachIfNeeded(type_mods, res);
-        type_mods = Mod.merge(mod_1, type_mods, env, pre);
+        type_mods = Mod.merge(mod_1, type_mods);
       then
         (cache,res,cl,type_mods);
 
@@ -3890,7 +3891,7 @@ algorithm
       DAE.Exp exp;
       String exp_str;
 
-    case (DAE.DIM_UNKNOWN(), DAE.MOD(eqModOption =
+    case (DAE.DIM_UNKNOWN(), DAE.MOD(binding =
             SOME(DAE.TYPED(modifierAsExp = exp))), _, _)
       equation
         (d :: _) = Expression.expDimensions(exp);
@@ -3899,7 +3900,7 @@ algorithm
     // TODO: We should print an error if we fail to deduce the dimensions from
     // the modifier, but we do not yet handle some cases (such as
     // Modelica.Blocks.Sources.KinematicPTP), so just print a warning for now.
-    case (DAE.DIM_UNKNOWN(), DAE.MOD(eqModOption =
+    case (DAE.DIM_UNKNOWN(), DAE.MOD(binding =
             SOME(DAE.TYPED(modifierAsExp = exp))), _, _)
       equation
         exp_str = ExpressionDump.printExpStr(exp);
@@ -4272,7 +4273,7 @@ algorithm
         cmod_1 = Mod.stripSubmod(cmod);
         m_1 = SCode.stripSubmod(m);
         (cache,m_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), m_1, false, Mod.COMPONENT(id), info);
-        mod_2 = Mod.merge(cmod_1, m_2, env, Prefix.NOPRE());
+        mod_2 = Mod.merge(cmod_1, m_2);
         SOME(eq) = Mod.modEquation(mod_2);
         (cache,dims) = elabComponentArraydimFromEnv2(cache,eq, env);
       then
@@ -4437,7 +4438,7 @@ algorithm
       then
         (cache,dim);
 
-    case (cache,env,cref,_,ad,SOME(DAE.TYPED(e,_,prop,_,info)),impl,st,doVect,_ ,pre,_,inst_dims) /* Untyped expressions must be elaborated. */
+    case (cache,env,cref,_,ad,SOME(DAE.TYPED(e,_,prop,_)),impl,st,doVect,_ ,pre,info,inst_dims) /* Untyped expressions must be elaborated. */
       equation
         t = Types.getPropType(prop);
         (cache,dim1) = Static.elabArrayDims(cache,env, cref, ad, impl, st,doVect,pre,info);
@@ -4447,7 +4448,7 @@ algorithm
       then
         (cache,dim3);
 
-    case (cache,env,cref,_,ad,SOME(DAE.UNTYPED(aexp,info)),impl,st,doVect, _,pre,_,inst_dims)
+    case (cache,env,cref,_,ad,SOME(DAE.UNTYPED(aexp)),impl,st,doVect, _,pre,info,inst_dims)
       equation
         (cache,e_1,prop,_) = Static.elabExp(cache,env, aexp, impl, st,doVect,pre,info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
@@ -4459,7 +4460,7 @@ algorithm
       then
         (cache,dim3);
 
-    case (cache,env,cref,_,ad,SOME(DAE.TYPED(e,_,DAE.PROP(t,_),_,info)),impl,st,doVect, _,pre,_,inst_dims)
+    case (cache,env,cref,_,ad,SOME(DAE.TYPED(e,_,DAE.PROP(t,_),_)),impl,st,doVect, _,pre,info,inst_dims)
       equation
         // adrpo: do not display error when running checkModel
         //        TODO! FIXME! check if this doesn't actually get rid of useful error messages
@@ -4912,13 +4913,13 @@ algorithm
   local
     DAE.EqMod eq;
     DAE.Exp e;
-  case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp=e)))))
+  case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(binding = SOME(DAE.TYPED(modifierAsExp=e)))))
     equation
       then (inputVar,DAE.NO_DERIVATIVE(e));
-  case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(eqModOption = NONE())))
+  case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(binding = NONE())))
     equation
     then (inputVar,DAE.NO_DERIVATIVE(DAE.ICONST(1)));
-  case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(eqModOption = NONE()))) // zeroderivative
+  case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(binding = NONE()))) // zeroderivative
   then (inputVar,DAE.ZERO_DERIVATIVE());
 
   else ("",DAE.ZERO_DERIVATIVE());
@@ -6818,7 +6819,7 @@ algorithm
 
     case(_,_,_,_,NONE(),_) then fail();
 
-    case(cache, _, ih, pre, SOME(DAE.MOD(_,_, lsm ,_)), SCode.CLASS(name=str))
+    case(cache, _, ih, pre, SOME(DAE.MOD(subModLst = lsm)), SCode.CLASS(name=str))
       equation
         // fprintln(Flags.INST_TRACE, "Mods in addClassdefsToEnv3: " + Mod.printModStr(mo) + " class name: " + str);
         (mo2,_) = extractCorrectClassMod2(lsm,str,{});

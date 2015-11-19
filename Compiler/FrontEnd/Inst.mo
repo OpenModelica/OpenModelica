@@ -1381,15 +1381,15 @@ protected function instBasicTypeAttributes
   input Prefix.Prefix inPrefix;
   output list<DAE.Var> outVars;
 algorithm
-  outVars := match(inCache, inEnv, inMod, inBaseType, inTypeFunc, inPrefix)
+  outVars := match inMod
     local
       list<DAE.SubMod> submods;
 
-    case (_, _, DAE.MOD(subModLst = submods), _, _, _)
+    case DAE.MOD(subModLst = submods)
       then List.map4(submods, instBasicTypeAttributes2, inCache, inEnv, inBaseType, inTypeFunc);
 
-    case (_, _, DAE.NOMOD(), _, _, _) then {};
-    case (_, _, DAE.REDECL(), _, _, _) then {};
+    case DAE.NOMOD() then {};
+    case DAE.REDECL() then {};
   end match;
 end instBasicTypeAttributes;
 
@@ -1401,7 +1401,7 @@ protected function instBasicTypeAttributes2
   input BasicTypeAttrTyper inTypeFunc;
   output DAE.Var outVar;
 algorithm
-  outVar := match(inSubMod, inCache, inEnv, inBaseType, inTypeFunc)
+  outVar := match(inSubMod)
     local
       DAE.Ident name;
       DAE.Type ty;
@@ -1410,14 +1410,14 @@ algorithm
       DAE.Properties p;
       SourceInfo info;
 
-    case (DAE.NAMEMOD(ident = name, mod = DAE.MOD(eqModOption = SOME(DAE.TYPED(
-        modifierAsExp = exp, modifierAsValue = val, properties = p, info = info)))), _, _, _, _)
+    case (DAE.NAMEMOD(ident = name, mod = DAE.MOD(binding = SOME(DAE.TYPED(
+        modifierAsExp = exp, modifierAsValue = val, properties = p)), info = info)))
       equation
         ty = getRealAttributeType(name, inBaseType, info);
       then
         instBuiltinAttribute(inCache, inEnv, name, val, exp, ty, p);
 
-    case (DAE.NAMEMOD(ident = name), _, _, _, _)
+    case (DAE.NAMEMOD(ident = name))
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.instBasicTypeAttributes2 failed on " + name);
@@ -2169,7 +2169,7 @@ algorithm
 
         //Add variables to env, wihtout type and binding, which will be added
         //later in instElementList (where update_variable is called)"
-        checkMods = Mod.merge(mods,emods,env2,pre);
+        checkMods = Mod.merge(mods,emods, className);
         mods = checkMods;
         (cache,env3,ih) = InstUtil.addComponentsToEnv(cache, env2, ih, mods, pre, ci_state, compelts_1, compelts_1, eqs_1, inst_dims, impl);
         //Update the modifiers of elements to typed ones, needed for modifiers
@@ -2310,7 +2310,7 @@ algorithm
 
         (cache,mod_1) = Mod.elabMod(cache, cenv_2, ih, pre, mod, impl, Mod.DERIVED(cn), info);
 
-        mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
+        mods_1 = Mod.merge(mods, mod_1, className);
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
         (cache,dims) = InstUtil.elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl,NONE(),true,pre,info,inst_dims) "owncref not valid here" ;
         // inst_dims2 = InstUtil.instDimExpLst(dims, impl);
@@ -2349,7 +2349,7 @@ algorithm
         // elab the modifiers in the parent environment!
         (parentEnv, _) = FGraph.stripLastScopeRef(env);
         (cache,mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, impl, Mod.DERIVED(cn), info);
-        mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
+        mods_1 = Mod.merge(mods, mod_1, className);
 
         eq = Mod.modEquation(mods_1) "instantiate array dimensions";
         (cache,dims) = InstUtil.elabArraydimOpt(cache, parentEnv, Absyn.CREF_IDENT("",{}), cn, ad, eq, impl, NONE(), true, pre, info, inst_dims) "owncref not valid here" ;
@@ -2397,7 +2397,7 @@ algorithm
         // env = FGraph.pushScopeRef(parentEnv, FNode.copyRefNoUpdate(lastRef));
         (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
         // print("mods: " + Absyn.pathString(cn) + " " + Mod.printModStr(mods_1) + "\n");
-        mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
+        mods_1 = Mod.merge(mods, mod_1, className);
 
         //print("DEF:--->" + FGraph.printGraphPathStr(env) + " = " + Absyn.pathString(cn) + " mods: " + Mod.printModStr(mods_1) + "\n");
         //System.startTimer();
@@ -2455,7 +2455,7 @@ algorithm
         // elab the modifiers in the parent environment!
         (parentEnv, _) = FGraph.stripLastScopeRef(env);
         (cache,mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, impl, Mod.DERIVED(cn), info);
-        mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
+        mods_1 = Mod.merge(mods, mod_1, className);
 
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
         (cache,dims) = InstUtil.elabArraydimOpt(cache, parentEnv, Absyn.CREF_IDENT("",{}), cn, ad, eq, impl, NONE(), true, pre, info, inst_dims) "owncref not valid here" ;
@@ -2782,7 +2782,7 @@ algorithm
         //Debug.traceln("Try instbasic 1 " + Absyn.pathString(path));
         ErrorExt.setCheckpoint("instBasictypeBaseclass");
         (cache,m_1) = Mod.elabModForBasicType(cache, env, ih, Prefix.NOPRE(), mod, true, Mod.DERIVED(path), info);
-        m_2 = Mod.merge(mods, m_1, env, Prefix.NOPRE());
+        m_2 = Mod.merge(mods, m_1, className);
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, SOME(info));
         //Debug.traceln("Try instbasic 2 " + Absyn.pathString(path) + " " + Mod.printModStr(m_2));
         (cache,_,ih,store,dae,_,ty,tys,_) =
@@ -2964,7 +2964,7 @@ algorithm
         // (since we do not have any element to find it in), the class must be
         // added to the environment here.
 
-        mod := Mod.merge(inMod, emods, outEnv, inPrefix);
+        mod := Mod.merge(inMod, emods, class_name);
 
         (cdef_els, ext_comps) := InstUtil.classdefElts2(ext_comps, partial_prefix);
         (outCache, outEnv, outIH) := InstUtil.addClassdefsToEnv(outCache,
@@ -3008,7 +3008,7 @@ algorithm
         parent_env := FGraph.stripLastScopeRef(inEnv);
         (outCache, mod) := Mod.elabMod(outCache, parent_env, inIH, inPrefix,
           smod, false, Mod.DERIVED(class_path), info);
-        mod := Mod.merge(inMod, mod, parent_env, inPrefix);
+        mod := Mod.merge(inMod, mod, class_name);
 
         if has_dims and not is_basic_type then
           cls := SCode.setClassName(class_name, cls);
@@ -3024,7 +3024,6 @@ algorithm
         if is_basic_type or has_dims then
           scope_ty := if is_basic_type then FGraph.restrictionToScopeType(der_re) else
                                             FGraph.classInfToScopeType(inState);
-
           cenv := FGraph.openScope(cenv, enc, SOME(class_name), scope_ty);
           outState := ClassInf.start(der_re, FGraph.getGraphName(cenv));
           (outCache, outEnv, outIH, outState, outVars) :=
@@ -3474,15 +3473,15 @@ algorithm
 
         // print("Inst.instElement: after elabMod " + PrefixUtil.printPrefixStr(pre) + "." + name + " component mod: " + Mod.printModStr(m_1) + " in env: " + FGraph.printGraphPathStr(env2) + "\n");
 
-        mod = Mod.merge(mm, class_mod, env2, pre);
-        mod = Mod.merge(mod, m_1, env2, pre);
-        mod = Mod.merge(cmod, mod, env2, pre);
+        mod = Mod.merge(mm, class_mod, name);
+        mod = Mod.merge(mod, m_1, name, not ClassInf.isRecord(ci_state));
+        mod = Mod.merge(cmod, mod, name);
 
         /* (BZ part:2/2) here we merge the redeclared class modifier.
          * Redeclaration has lowest priority and if we have any local modifiers,
          * they will be used before "global" modifers.
          */
-        mod = Mod.merge(mod, var_class_mod, env2, pre);
+        mod = Mod.merge(mod, var_class_mod, name);
 
         // fprintln(Flags.INST_TRACE, "INST ELEMENT: name: " + name + " mod: " + Mod.printModStr(mod));
 
@@ -3502,7 +3501,7 @@ algorithm
           then
             cls_mod = Mod.addEachIfNeeded(cls_mod, {DAE.DIM_INTEGER(1)});
           end if;
-          mod_1 = Mod.merge(mod_1, cls_mod, env2, pre);
+          mod_1 = Mod.merge(mod_1, cls_mod, name);
         end if;
         attr = SCode.mergeAttributesFromClass(attr, cls);
 
@@ -3810,14 +3809,14 @@ algorithm
         name = SCode.elementName(comp);
         cref = Absyn.CREF_IDENT(name,{});
         ltmod = List.map1(crefs,InstUtil.getModsForDep,xs);
-        cmod2 = List.fold2r(cmod::ltmod,Mod.merge,env,pre,DAE.NOMOD());
+        cmod2 = List.fold2r(cmod::ltmod,Mod.merge,name,true,DAE.NOMOD());
         SCode.PREFIXES(finalPrefix = fprefix) = SCode.elementPrefixes(comp);
 
         //print("("+intString(listLength(ltmod))+")UpdateCompeltsMods_(" + stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",") + ") subs: " + stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",")+ "\n");
         //print("REDECL     acquired mods: " + Mod.printModStr(cmod2) + "\n");
         (cache,env2,ih) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, impl);
         (cache,env2,ih) = updateComponentsInEnv(cache, env2, ih, pre,
-          DAE.MOD(fprefix,SCode.NOT_EACH(),{DAE.NAMEMOD(name, cmod)},NONE()),
+          DAE.MOD(fprefix,SCode.NOT_EACH(),{DAE.NAMEMOD(name, cmod)},NONE(),info),
           {cref}, ci_state, impl);
         (cache,cmod_1) = Mod.updateMod(cache, env2, ih, pre, cmod, impl, info);
         (cache,env3,ih,res) = updateCompeltsMods_dispatch(cache, env2, ih, pre, xs, ci_state, impl);
@@ -3833,7 +3832,7 @@ algorithm
         SCode.PREFIXES(finalPrefix = fprefix) = SCode.elementPrefixes(comp);
 
         (cache,env2,ih) = updateComponentsInEnv(cache, env, ih, pre,
-          DAE.MOD(fprefix,SCode.NOT_EACH(),{DAE.NAMEMOD(name, cmod)},NONE()),
+          DAE.MOD(fprefix,SCode.NOT_EACH(),{DAE.NAMEMOD(name, cmod)},NONE(),cmod.info),
           {cref}, ci_state, impl);
         (cache,env3,ih,res) = updateCompeltsMods_dispatch(cache, env2, ih, pre, xs, ci_state, impl);
       then
@@ -3850,7 +3849,7 @@ algorithm
         cref = Absyn.CREF_IDENT(name,{});
 
         ltmod = List.map1(crefs,InstUtil.getModsForDep,xs);
-        cmod2 = List.fold2r(ltmod,Mod.merge,env,pre,DAE.NOMOD());
+        cmod2 = List.fold2r(ltmod,Mod.merge,name,true,DAE.NOMOD());
         SCode.PREFIXES(finalPrefix = fprefix) = SCode.elementPrefixes(comp);
 
         //print("("+intString(listLength(ltmod))+")UpdateCompeltsMods_(" + stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",") + ") subs: " + stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",")+ "\n");
@@ -3858,7 +3857,7 @@ algorithm
 
         (cache,env2,ih) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, impl);
         (cache,env2,ih) = updateComponentsInEnv(cache, env2, ih, pre,
-          DAE.MOD(fprefix,SCode.NOT_EACH(),{DAE.NAMEMOD(name, cmod)},NONE()),
+          DAE.MOD(fprefix,SCode.NOT_EACH(),{DAE.NAMEMOD(name, cmod)},NONE(), cmod.info),
           {cref}, ci_state, impl);
 
         (cache,cmod_1) = Mod.updateMod(cache, env2, ih, pre, cmod, impl, info);
@@ -3870,9 +3869,9 @@ algorithm
 end updateCompeltsMods_dispatch;
 
 public function redeclareType
-"This function takes a DAE.Mod and an SCode.Element and if the modification
-  contains a redeclare of that element, the type is changed and an updated
-  element is returned."
+  "This function takes a DAE.Mod and an SCode.Element and if the modification
+   contains a redeclare of that element, the type is changed and an updated
+   element is returned."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
@@ -3880,185 +3879,111 @@ public function redeclareType
   input SCode.Element inElement;
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
-  input Boolean inImplicit;
+  input Boolean inImpl;
   input DAE.Mod inCmod;
-  output FCore.Cache outCache;
-  output FCore.Graph outEnv;
-  output InnerOuter.InstHierarchy outIH;
-  output SCode.Element outElement;
-  output DAE.Mod outMod;
+  output FCore.Cache outCache = inCache;
+  output FCore.Graph outEnv = inEnv;
+  output InnerOuter.InstHierarchy outIH = inIH;
+  output SCode.Element outElement = inElement;
+  output DAE.Mod outMod = DAE.NOMOD();
+protected
+  list<tuple<SCode.Element, DAE.Mod>> redecls;
+  SCode.Element redecl_el;
+  SCode.Mod mod;
+  DAE.Mod redecl_mod, m, old_m;
+  String redecl_name, name;
+  Boolean found;
+  Option<SCode.ConstrainClass> cc;
+  list<SCode.Element> cc_comps;
+  list<Absyn.ComponentRef> crefs;
 algorithm
-  (outCache,outEnv,outIH,outElement,outMod) := matchcontinue (inCache,inEnv,inIH,inMod,inElement,inPrefix,inState,inImplicit,inCmod)
-    local
-      list<Absyn.ComponentRef> crefs;
-      FCore.Graph env_1,env;
-      DAE.Mod m_1,old_m_1,m_2,m_3,m,rmod,innerCompMod,compMod;
-      SCode.Element redecl,newcomp,comp,redComp, cl;
-      String n1,n2;
-      SCode.Final finalPrefix,redfin;
-      SCode.Each each_;
-      SCode.Replaceable repl,repl2;
-      SCode.Visibility vis, vis2;
-      SCode.Redeclare redeclp;
-      Boolean impl;
-      Absyn.TypeSpec t,t2;
-      SCode.Mod mod,old_mod;
-      SCode.Comment comment;
-      list<tuple<SCode.Element, DAE.Mod>> rest;
-      Prefix.Prefix pre;
-      ClassInf.State ci_state;
-      FCore.Cache cache;
-      InstanceHierarchy ih;
-      DAE.Mod cmod;
+  if Mod.isRedeclareMod(inMod) then
+    DAE.REDECL(elements = redecls) := inMod;
+  else
+    outMod := Mod.merge(inMod, inCmod);
+    return;
+  end if;
 
-      Option<SCode.ConstrainClass> cc;
-      list<SCode.Element> compsOnConstrain;
-      Absyn.InnerOuter io;
-      SCode.Attributes at, at2;
-      Option<Absyn.Exp> cond;
-      SourceInfo info;
-      Absyn.TypeSpec apt;
-      Absyn.Path path;
+  for redecl in redecls loop
+    (redecl_el, redecl_mod) := redecl;
+    redecl_name := SCode.elementName(redecl_el);
 
-    // uncomment for debugging!
-    case (_,_,_,DAE.REDECL(),_,
-          _,_,_,_)
-      equation
-        // fprintln(Flags.INST_TRACE, "redeclareType\nmodifier: " + Mod.printModStr(inMod) + "\nelement\n:" + SCodeDump.unparseElementStr(inElement));
-      then
-        fail();
+    (outElement, outMod, found) := matchcontinue (redecl_el, inElement)
+      // Redeclaration of component.
+      case (SCode.COMPONENT(),
+            SCode.COMPONENT(prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(cc = cc))))
+        algorithm
+          true := redecl_name == inElement.name;
 
+          mod := InstUtil.chainRedeclares(inMod, redecl_el.modifications);
+          crefs := InstUtil.getCrefFromMod(mod);
+          (outCache, outEnv, outIH) := updateComponentsInEnv(inCache, inEnv,
+            inIH, inPrefix, DAE.NOMOD(), crefs, inState, inImpl);
+          (outCache, m) := Mod.elabMod(outCache, outEnv, outIH, inPrefix, mod,
+            inImpl, Mod.COMPONENT(redecl_name), redecl_el.info);
+          (outCache, old_m) := Mod.elabMod(outCache, outEnv, outIH, inPrefix,
+            inElement.modifications, inImpl, Mod.COMPONENT(inElement.name), inElement.info);
 
-    // constraining type on the component
-    case (cache,env,ih,(DAE.REDECL(tplSCodeElementModLst = ((( redComp as SCode.COMPONENT(name = n1,
-                            modifications = mod,
-                            info = info
-                            )),rmod) :: _))),
-          // adrpo: always take the inner outer from the component, not the redeclaration!!!!
-          comp as SCode.COMPONENT(name = n2,
-                          prefixes = SCode.PREFIXES(
-                            finalPrefix = SCode.NOT_FINAL(),
-                            replaceablePrefix = SCode.REPLACEABLE((cc as SOME(_)))),
-                          modifications = old_mod),
-          pre,ci_state,impl,cmod)
-      equation
-        true = stringEq(n1, n2);
-        mod = InstUtil.chainRedeclares(inMod, mod);
-        compsOnConstrain = InstUtil.extractConstrainingComps(cc,env,pre) "extract components belonging to constraining class";
-        crefs = InstUtil.getCrefFromMod(mod);
-        (cache,env_1,ih) = updateComponentsInEnv(cache, env, ih, pre, DAE.NOMOD(), crefs, ci_state, impl);
-        (cache,m_1) = Mod.elabMod(cache,env_1, ih, pre, mod, impl, Mod.COMPONENT(n1), info);
-        (cache,old_m_1) = Mod.elabMod(cache,env_1, ih, pre, old_mod, impl, Mod.COMPONENT(n2), info);
+          if isSome(cc) then
+            // Constraining type on the component:
+            // Extract components belonging to constraining class.
+            cc_comps := InstUtil.extractConstrainingComps(cc, inEnv, inPrefix);
+            // Keep previous constraining class mods.
+            redecl_mod := InstUtil.keepConstrainingTypeModifersOnly(redecl_mod, cc_comps);
+            old_m := InstUtil.keepConstrainingTypeModifersOnly(old_m, cc_comps);
 
-        rmod = InstUtil.keepConstrainingTypeModifersOnly(rmod, compsOnConstrain) "keep previous constrainingclass mods";
-        old_m_1 = InstUtil.keepConstrainingTypeModifersOnly(old_m_1, compsOnConstrain) "keep previous constrainingclass mods";
+            m := Mod.merge(m, redecl_mod, redecl_name);
+            m := Mod.merge(m, old_m, redecl_name);
+            m := Mod.merge(m, inCmod, redecl_name);
+          else
+            // No constraining type on comp, throw away modifiers prior to redeclaration:
+            m := Mod.merge(redecl_mod, m, redecl_name);
+            m := Mod.merge(m, old_m, redecl_name);
+            m := Mod.merge(inCmod, m, redecl_name);
+          end if;
 
-        m_2 = Mod.merge(m_1, rmod, env_1, pre);
-        m_3 = Mod.merge(m_2, old_m_1, env_1, pre);
-        m_3 = Mod.merge(m_3, cmod, env_1, pre);
+          (outCache, outElement) :=
+            propagateRedeclCompAttr(outCache, outEnv, inElement, redecl_el);
+          outElement := SCode.setComponentMod(outElement, mod);
+        then
+          (outElement, m, true);
 
-        (cache, redecl) = propagateRedeclCompAttr(cache, env_1, comp, redComp);
-        redecl = SCode.setComponentMod(redecl, mod);
-      then
-        (cache,env_1,ih,redecl,m_3);
+      // Redeclaration of class.
+      case (SCode.CLASS(), SCode.CLASS())
+        algorithm
+          true := redecl_name == inElement.name;
+          (outCache, outEnv, outIH) := updateComponentsInEnv(inCache, inEnv, inIH,
+            inPrefix, inMod, {Absyn.CREF_IDENT(inElement.name, {})}, inState, inImpl);
+        then
+          (inElement, redecl_mod, true);
 
-    // no constraining type on comp, throw away modifiers prior to redeclaration
-    case (cache,env,ih,(DAE.REDECL(tplSCodeElementModLst = (((redComp as
-          SCode.COMPONENT(name = n1,
-                          modifications = mod,
-                          info = info
-                          )),rmod) :: _))),
-          // adrpo: always take the inner outer from the component, not the redeclaration!!!!
-          comp as SCode.COMPONENT(name = n2,
-                          prefixes = SCode.PREFIXES(
-                            finalPrefix = SCode.NOT_FINAL(),
-                            replaceablePrefix = SCode.REPLACEABLE(NONE())),
-                          modifications = old_mod),
-          pre,ci_state,impl,cmod)
-      equation
-        true = stringEq(n1, n2);
-        mod = InstUtil.chainRedeclares(inMod, mod);
-        crefs = InstUtil.getCrefFromMod(mod);
-        (cache,env_1,ih) = updateComponentsInEnv(cache,env,ih, pre, DAE.NOMOD(), crefs, ci_state, impl) "m" ;
-        (cache,m_1) = Mod.elabMod(cache, env_1, ih, pre, mod, impl, Mod.COMPONENT(n1), info);
-        (cache,old_m_1) = Mod.elabMod(cache, env_1, ih, pre, old_mod, impl, Mod.COMPONENT(n2), info);
-        m_2 = Mod.merge(rmod, m_1, env_1, pre);
-        m_3 = Mod.merge(m_2, old_m_1, env_1, pre);
-        m_3 = Mod.merge(cmod, m_3 ,env_1,pre);
+      // Local redeclaration of class type path is an id.
+      case (SCode.CLASS(), SCode.COMPONENT())
+        algorithm
+          name := Absyn.typeSpecPathString(inElement.typeSpec);
+          true := redecl_name == name;
+          (outCache, outEnv, outIH) := updateComponentsInEnv(inCache, inEnv, inIH,
+            inPrefix, inMod, {Absyn.CREF_IDENT(name, {})}, inState, inImpl);
+        then
+          (inElement, redecl_mod, true);
 
-        (cache, redecl) = propagateRedeclCompAttr(cache, env_1, comp, redComp);
-        redecl = SCode.setComponentMod(redecl, mod);
-      then
-        (cache,env_1,ih,redecl,m_3);
+      // Local redeclaration of class, type is qualified.
+      case (SCode.CLASS(), SCode.COMPONENT())
+        algorithm
+          name := Absyn.pathFirstIdent(Absyn.typeSpecPath(inElement.typeSpec));
+          true := redecl_name == name;
+          (outCache, outEnv, outIH) := updateComponentsInEnv(inCache, inEnv, inIH,
+            inPrefix, inMod, {Absyn.CREF_IDENT(name, {})}, inState, inImpl);
+        then
+          (inElement, redecl_mod, true);
 
-    // redeclaration of classes:
-    case (cache,env,ih,
-          (m as DAE.REDECL(tplSCodeElementModLst = (((redecl as SCode.CLASS(name = n1) ),rmod) :: _))),
-          SCode.CLASS(name = n2),pre,ci_state,impl,_)
-      equation
-        true = stringEq(n1, n2);
-        //crefs = InstUtil.getCrefFromMod(mod);
-        (cache,env_1,ih) = updateComponentsInEnv(cache,env,ih, pre, m, {Absyn.CREF_IDENT(n2,{})}, ci_state, impl) "m" ;
-        //(cache,m_1) = Mod.elabMod(cache, env_1, ih, pre, mod, impl);
-        //(cache,old_m_1) = Mod.elabMod(cache, env_1, ih, pre, old_mod, impl);
-        // m_2 = Mod.merge(rmod, m_1, env_1, pre);
-        // m_3 = Mod.merge(m_2, old_m_1, env_1, pre);
-      then
-        (cache,env_1,ih,redecl,rmod);
+      else (inElement, DAE.NOMOD(), false);
+    end matchcontinue;
 
-    // local redeclaration of class type path is an id
-    case (cache,env,ih,(m as DAE.REDECL(tplSCodeElementModLst = (((SCode.CLASS(name = n1) ),rmod) :: _))),
-        redecl as SCode.COMPONENT(typeSpec = apt),pre,ci_state,impl,_)
-      equation
-        n2 = Absyn.typeSpecPathString(apt);
-        true = stringEq(n1, n2);
-        (cache,env_1,ih) = updateComponentsInEnv(cache,env,ih, pre, m, {Absyn.CREF_IDENT(n2,{})}, ci_state, impl) "m" ;
-      then
-        (cache,env_1,ih,redecl,rmod);
-
-    // local redeclaration of class, type is qualified
-    case (cache,env,ih,(m as DAE.REDECL(tplSCodeElementModLst = (((SCode.CLASS(name = n1) ),rmod) :: _))),
-        redecl as SCode.COMPONENT(typeSpec = Absyn.TPATH(path, _)),pre,ci_state,impl,_)
-      equation
-        n2 = Absyn.pathFirstIdent(path);
-        true = stringEq(n1, n2);
-        (cache,env_1,ih) = updateComponentsInEnv(cache, env, ih, pre, m, {Absyn.CREF_IDENT(n2,{})}, ci_state, impl) "m" ;
-      then
-        (cache,env_1,ih,redecl,rmod);
-
-    case (cache,env,ih,(DAE.REDECL(finalPrefix = redfin, eachPrefix = each_, tplSCodeElementModLst = (((          SCode.COMPONENT(name = n1)),_) :: rest))),
-          (comp as SCode.COMPONENT(name = n2,prefixes = SCode.PREFIXES(finalPrefix = SCode.NOT_FINAL()))),
-          pre,ci_state,impl,cmod)
-      equation
-        false = stringEq(n1, n2);
-        (cache,env_1,ih,newcomp,m) =
-          redeclareType(cache, env, ih, DAE.REDECL(redfin,each_,rest), comp, pre, ci_state, impl, cmod);
-      then
-        (cache,env_1,ih,newcomp,m);
-
-    case (cache,env,ih,DAE.REDECL(finalPrefix = redfin,eachPrefix = each_,tplSCodeElementModLst = (_ :: rest)),comp,pre,ci_state,impl,cmod)
-      equation
-        (cache,env_1,ih,newcomp,m) =
-          redeclareType(cache, env, ih, DAE.REDECL(redfin,each_,rest), comp, pre, ci_state, impl,cmod);
-      then
-        (cache,env_1,ih,newcomp,m);
-
-    case (cache,env,ih,DAE.REDECL(tplSCodeElementModLst = {}),comp,_,_,_,_)
-      then (cache,env,ih,comp,DAE.NOMOD());
-
-    case (cache,env,ih,m,comp,pre,_,_,cmod)
-      equation
-        m = Mod.merge(m, cmod, env, pre);
-      then
-        (cache,env,ih,comp,m);
-
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Inst.redeclareType failed\n");
-      then
-        fail();
-  end matchcontinue;
+    if found then
+      return;
+    end if;
+  end for;
 end redeclareType;
 
 protected function propagateRedeclCompAttr
@@ -4192,7 +4117,7 @@ algorithm
 
     // if we have a redeclare for a component
     /*case (cache,env,ih,_,
-        DAE.MOD(eqModOption = NONE(),
+        DAE.MOD(binding = NONE(),
                 subModLst = {
                   DAE.NAMEMOD(ident=n,
                   mod = rmod as DAE.REDECL(_, _, {(SCode.COMPONENT(name = name),_)}))}),_,_,_,_,_)
@@ -4428,14 +4353,14 @@ algorithm
     (outCache, mod1) :=
       updateComponentInEnv3(outCache, outEnv, outIH, smod, inImpl, Mod.COMPONENT(inName), inInfo);
     class_mod := Mod.lookupModificationP(inMod, inPath);
-    comp_mod := Mod.lookupCompModification(inMod, inName);
-    mod2 := Mod.merge(class_mod, comp_mod, outEnv, Prefix.NOPRE());
-    mod2 := Mod.merge(mod2, mod1, outEnv, Prefix.NOPRE());
-    mod2 := Mod.merge(inClsMod, mod2, outEnv, Prefix.NOPRE());
+    //comp_mod := Mod.lookupCompModification(inMod, inName);
+    //mod2 := Mod.merge(class_mod, comp_mod, inName);
+    mod2 := Mod.merge(class_mod, mod1, inName);
+    mod2 := Mod.merge(inClsMod, mod2, inName);
     (outCache, mod2) :=
       Mod.updateMod(outCache, outEnv, outIH, Prefix.NOPRE(), mod2, inImpl, inInfo);
 
-    mod := if InstUtil.redeclareBasicType(comp_mod) then mod1 else mod2;
+    mod := if InstUtil.redeclareBasicType(inClsMod) then mod1 else mod2;
     eq := Mod.modEquation(mod);
 
     own_cref := Absyn.CREF_IDENT(inName, {});

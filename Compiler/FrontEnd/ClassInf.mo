@@ -759,6 +759,16 @@ algorithm
   end match;
 end isTypeOrRecord;
 
+public function isRecord
+  input State inState;
+  output Boolean outIsRecord;
+algorithm
+  outIsRecord := match inState
+    case RECORD() then true;
+    else false;
+  end match;
+end isRecord;
+
 public function stateToSCodeRestriction
 "@author: adrpo
  ClassInf.State -> SCode.Restriction"

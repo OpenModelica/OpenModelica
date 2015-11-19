@@ -158,7 +158,7 @@ algorithm
     case (mod,_,expected_type,{},bind_name) /* No subscript/index */
       equation
         mod2 = Mod.lookupCompModification(mod, bind_name);
-        SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_),_,_)) = Mod.modEquation(mod2);
+        SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_),_)) = Mod.modEquation(mod2);
         (e_1,_) = Types.matchType(e, ty2, expected_type, true);
         e_1 = InstUtil.checkUseConstValue(useConstValue,e_1,optVal);
       then
@@ -216,7 +216,7 @@ algorithm
     case (mod,etype,(index :: {}),_) /* Only one element in the index-list */
       equation
         mod2 = Mod.lookupIdxModification(mod, DAE.ICONST(index));
-        SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_),_,_)) = Mod.modEquation(mod2);
+        SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_),_)) = Mod.modEquation(mod2);
         (e_1,_) = Types.matchType(e, ty2, etype, true);
         e_1 = InstUtil.checkUseConstValue(useConstValue,e_1,optVal);
       then
@@ -532,20 +532,20 @@ algorithm
     // Record constructors are different
     // If it's a constant binding, all fields will already be bound correctly. Don't return a DAE.
     case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),
-          DAE.MOD(eqModOption = SOME(DAE.TYPED(_,SOME(_),DAE.PROP(_,DAE.C_CONST()),_,_))))
+          DAE.MOD(binding = SOME(DAE.TYPED(_,SOME(_),DAE.PROP(_,DAE.C_CONST()),_))))
       then DAE.emptyDae;
 
     // Special case if the dimensions of the expression is 0.
     // If this is true, and it is instantiated normally, matching properties
     // will result in error messages (Real[0] is not Real), so we handle it here.
-    case (_, DAE.MOD(eqModOption = SOME(DAE.TYPED(properties = prop2))))
+    case (_, DAE.MOD(binding = SOME(DAE.TYPED(properties = prop2))))
       algorithm
         DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(0)}) := Types.getPropType(prop2);
       then
         DAE.emptyDae;
 
     // Regular cases
-    case (_, DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2,aexp2,info))))
+    case (_, DAE.MOD(binding = SOME(DAE.TYPED(e,_,prop2,aexp2)), info = info))
       algorithm
         t := Types.simplifyType(inType);
         lhs := Expression.makeCrefExp(inComponentRef, t);
@@ -557,7 +557,7 @@ algorithm
       then
         dae;
 
-    case (_, DAE.MOD(eqModOption = NONE())) then DAE.emptyDae;
+    case (_, DAE.MOD(binding = NONE())) then DAE.emptyDae;
     case (_, DAE.NOMOD()) then DAE.emptyDae;
     case (_, DAE.REDECL()) then DAE.emptyDae;
 
@@ -628,7 +628,7 @@ algorithm
     //             Modelica.Electrical.Machines.Examples.SMEE_Generator
     //             (BUG: #1156 at https://openmodelica.org:8443/cb/issue/1156)
     //             and maybe a lot others.
-    case (cache,SCode.ATTR(variability = SCode.PARAM()),DAE.MOD(eqModOption = NONE()),tp)
+    case (cache,SCode.ATTR(variability = SCode.PARAM()),DAE.MOD(binding = NONE()),tp)
       equation
         true = Types.getFixedVarAttributeParameterOrConstant(tp);
         // this always succeeds but return NOMOD if there is no (start = x)
@@ -658,9 +658,9 @@ algorithm
       then
         (cache, binding);
 
-    case (cache,_,DAE.MOD(eqModOption = NONE()),_) then (cache,DAE.UNBOUND());
+    case (cache,_,DAE.MOD(binding = NONE()),_) then (cache,DAE.UNBOUND());
     /* adrpo: CHECK! do we need this here? numerical values
-    case (cache,env,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,DAE.PROP(e_tp,_)))),tp,_,_)
+    case (cache,env,_,DAE.MOD(binding = SOME(DAE.TYPED(e,_,DAE.PROP(e_tp,_)))),tp,_,_)
       equation
         (e_1,_) = Types.matchType(e, e_tp, tp);
         (cache,v,_) = Ceval.ceval(cache,env, e_1, false,NONE(), NONE(), Absyn.NO_MSG(),0);
@@ -668,7 +668,7 @@ algorithm
         (cache,DAE.VALBOUND(v, DAE.BINDING_FROM_DEFAULT_VALUE()));
     */
 
-    case (cache,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,SOME(v),prop,_,_))),e_tp) /* default */
+    case (cache,_,DAE.MOD(binding = SOME(DAE.TYPED(e,SOME(v),prop,_))),e_tp) /* default */
       equation
         c = Types.propAllConst(prop);
         tp = Types.getPropType(prop);
@@ -686,7 +686,7 @@ algorithm
       then
         (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
 
-    case (cache,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_,_))),e_tp) /* default */
+    case (cache,_,DAE.MOD(binding = SOME(DAE.TYPED(e,e_val,prop,_))),e_tp) /* default */
       equation
         c = Types.propAllConst(prop);
         tp = Types.getPropType(prop);
@@ -698,7 +698,7 @@ algorithm
       then
         (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
 
-    case (_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop,_,info))),tp)
+    case (_,_,DAE.MOD(binding = SOME(DAE.TYPED(e,_,prop,_)), info = info),tp)
       equation
         e_tp = Types.getPropType(prop);
         _ = Types.propAllConst(prop);
@@ -823,12 +823,12 @@ algorithm
       String binding_str, expected_type_str, given_type_str;
 
     // Array type and each prefix => return the expression and value.
-    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.EACH(), eqModOption =
+    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.EACH(), binding =
         SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = SOME(val)))))))
       then (exp, val);
 
     // Scalar type and no each prefix => return the expression and value.
-    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(), eqModOption =
+    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(), binding =
         SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = SOME(val), properties = DAE.PROP(type_ = ty)))))))
       algorithm
         (exp, ty) := Types.matchType(exp, ty, inType, true);
@@ -836,14 +836,14 @@ algorithm
         (exp, val);
 
     // Scalar type and no each prefix => bindings given by expressions myRecord(v1 = inV1, v2 = inV2)
-    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(), eqModOption =
+    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(), binding =
         SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = NONE(), properties = DAE.PROP(type_ = ty)))))))
       algorithm
         (exp, ty) := Types.matchType(exp, ty, inType, true);
       then
         (exp, Values.OPTION(NONE()));
 
-    case (SOME(DAE.NAMEMOD(ident = ident, mod = DAE.MOD(eqModOption =
+    case (SOME(DAE.NAMEMOD(ident = ident, mod = DAE.MOD(binding =
         SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = ty)))))))
       equation
         binding_str = ExpressionDump.printExpStr(exp);
@@ -880,7 +880,7 @@ algorithm
     return;
   end if;
 
-  SOME(DAE.TYPED(modifierAsExp = e, properties = p, info = info)) := oeq_mod;
+  SOME(DAE.TYPED(modifierAsExp = e, properties = p)) := oeq_mod;
 
   if Types.isExternalObject(inType) then
     // For external objects the binding contains the constructor call. Return it as it is.
@@ -889,6 +889,8 @@ algorithm
     // An empty array has unknown type, skip type matching.
     outBinding := NONE();
   else
+    info := Mod.getModInfo(inMod);
+
     // For normal variables, make sure the types match.
     try
       (e2, DAE.PROP(constFlag = c)) :=
