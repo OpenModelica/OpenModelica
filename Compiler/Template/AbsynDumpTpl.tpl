@@ -687,6 +687,9 @@ match path
   case FULLYQUALIFIED(__) then
     '.<%dumpPath(path)%>'
   case QUALIFIED(__) then
+    if (Flags.getConfigBool(Flags.MODELICA_OUTPUT)) then
+    '<%name%>__<%dumpPath(path)%>'
+    else
     '<%name%>.<%dumpPath(path)%>'
   case IDENT(__) then
     '<%name%>'

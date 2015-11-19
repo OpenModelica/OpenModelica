@@ -846,4 +846,13 @@ package Types
   end unparseType;
 end Types;
 
+package Flags
+  uniontype ConfigFlag end ConfigFlag;
+  constant ConfigFlag MODELICA_OUTPUT;
+  function getConfigBool
+    input ConfigFlag inFlag;
+    output Boolean outValue;
+  end getConfigBool;
+end Flags;
+
 end ExpressionDumpTV;

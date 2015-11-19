@@ -27,11 +27,12 @@ template dumpComp(DAEDump.compWithSplitElements fixedDae)
   match fixedDae case COMP_WITH_SPLIT(__) then
     let cmt_str = dumpCommentOpt(comment)
     let ann_str = dumpClassAnnotation(comment)
+    let name_rep = if (Flags.getConfigBool(Flags.MODELICA_OUTPUT)) then System.stringReplace(name, ".","__") else name
     <<
-    class <%name%><%cmt_str%>
+    class <%name_rep%><%cmt_str%>
     <%dumpCompStream(spltElems)%>
     <%if ann_str then "  "%><%ann_str%>
-    end <%name%>;<%\n%>
+    end <%name_rep%>;<%\n%>
     >>
 end dumpComp;
 
@@ -526,6 +527,11 @@ template dumpCref(ComponentRef c)
 ::=
 match c
   case CREF_QUAL(__) then
+    if (Flags.getConfigBool(Flags.MODELICA_OUTPUT)) then
+    <<
+    <%ident%><%dumpSubscripts(subscriptLst)%>__<%dumpCref(componentRef)%>
+    >>
+    else
     <<
     <%ident%><%dumpSubscripts(subscriptLst)%>.<%dumpCref(componentRef)%>
     >>
@@ -550,6 +556,10 @@ end dumpTypeDimensions;
 template dumpSubscripts(list<Subscript> subscriptLst)
 ::=
   if subscriptLst then
+    if (Flags.getConfigBool(Flags.MODELICA_OUTPUT)) then
+    let sub_str = (subscriptLst |> s => dumpSubscript(s) ;separator="_")
+    '_<%sub_str%>'
+    else
     let sub_str = (subscriptLst |> s => dumpSubscript(s) ;separator=",")
     '[<%sub_str%>]'
 end dumpSubscripts;

@@ -507,7 +507,9 @@ public function crefStr
   input DAE.ComponentRef inComponentRef;
   output String outString;
 algorithm
-  outString:= crefToStr("",inComponentRef,".");
+  outString := if Flags.getConfigBool(Flags.MODELICA_OUTPUT)
+                    then crefToStr("",inComponentRef,"__")
+                    else crefToStr("",inComponentRef,".");
 end crefStr;
 
 public function crefModelicaStr

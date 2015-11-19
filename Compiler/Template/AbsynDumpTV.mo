@@ -901,4 +901,14 @@ package Tpl
   end addTemplateError;
 end Tpl;
 
+package Flags
+  uniontype ConfigFlag end ConfigFlag;
+  constant ConfigFlag MODELICA_OUTPUT;
+  function getConfigBool
+    input ConfigFlag inFlag;
+    output Boolean outValue;
+  end getConfigBool;
+end Flags;
+
+
 end AbsynDumpTV;

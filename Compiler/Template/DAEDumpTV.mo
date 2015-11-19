@@ -1398,6 +1398,24 @@ package System
     input Boolean unescapeNewline;
     output String escapedString;
   end escapedString;
+
+  function stringReplace
+    input String str;
+    input String source;
+    input String target;
+    output String res;
+  end stringReplace;
+
 end System;
+
+package Flags
+  uniontype ConfigFlag end ConfigFlag;
+  constant ConfigFlag MODELICA_OUTPUT;
+  function getConfigBool
+    input ConfigFlag inFlag;
+    output Boolean outValue;
+  end getConfigBool;
+end Flags;
+
 
 end DAEDumpTV;

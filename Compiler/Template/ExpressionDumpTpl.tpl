@@ -213,6 +213,9 @@ match cref
   case CREF_QUAL(__) then
     let sub_str = dumpSubscripts(subscriptLst)
     let cref_str = dumpCref(componentRef)
+    if (Flags.getConfigBool(Flags.MODELICA_OUTPUT)) then
+    '<%ident%><%sub_str%>__<%cref_str%>'
+    else
     '<%ident%><%sub_str%>.<%cref_str%>'
   case WILD() then '_'
   case OPTIMICA_ATTR_INST_CREF(__) then
@@ -223,6 +226,10 @@ end dumpCref;
 template dumpSubscripts(list<DAE.Subscript> subscripts)
 ::=
 if subscripts then
+  if (Flags.getConfigBool(Flags.MODELICA_OUTPUT)) then
+  let sub_str = (subscripts |> sub => dumpSubscript(sub) ;separator="_")
+  '_<%sub_str%>'
+  else
   let sub_str = (subscripts |> sub => dumpSubscript(sub) ;separator=",")
   '[<%sub_str%>]'
 end dumpSubscripts;
