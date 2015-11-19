@@ -97,6 +97,10 @@ ELSE(USE_BOOST_REALPATHS)
   MESSAGE(STATUS "Boost real paths disabled")
 ENDIF(USE_BOOST_REALPATHS)
 
+# Precompiled Header
+IF(MSVC)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zm113")
+ENDIF(MSVC)
 INCLUDE(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
 
 # Check C++11

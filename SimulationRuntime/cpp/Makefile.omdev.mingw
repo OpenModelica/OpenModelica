@@ -9,7 +9,6 @@ builddir_lib=$(OMBUILDDIR)/lib/omc
 builddir_inc=$(OMBUILDDIR)/include/omc
 
 #use this call to use precompiled headers
-#BUILDTYPE = Release
 #use this call if you want to debug the cpp runtime
 ifeq ($(BUILDTYPE),)
 BUILDTYPE=Debug
