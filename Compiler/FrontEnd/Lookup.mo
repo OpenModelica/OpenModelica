@@ -2303,7 +2303,7 @@ algorithm
         SCode.ATTR(d,ct,prl,var,_),tp,mod,comment,cond,info)),cmod) :: rest), _)
       equation
         (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, true, Mod.COMPONENT(id), info);
-        mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
+        mod_1 = Mod.merge(mods,mod_1);
         // adrpo: this was wrong, you won't find any id modification there!!!
         // bjozac: This was right, you will find id modification unless modifers does not belong to component!
         // adrpo 2009-11-23 -> solved by selecting the full modifier if the component modifier is empty!
@@ -2311,7 +2311,7 @@ algorithm
         fullMod = mod_1;
         selectedMod = selectModifier(compMod, fullMod); // if the first one is empty use the other one.
         (cache,cmod) = Mod.updateMod(cache,env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cmod,true,info);
-        selectedMod = Mod.merge(cmod,selectedMod,env,Prefix.NOPRE());
+        selectedMod = Mod.merge(cmod,selectedMod);
         umod = Mod.unelabMod(selectedMod);
         (cache, env, res) = buildRecordConstructorElts(cache, env, rest, mods);
         // - Prefixes (constant, parameter, final, discrete, input, output, ...) of the remaining record components are removed.
@@ -2331,7 +2331,7 @@ algorithm
         SCode.ATTR(d,ct,prl,SCode.CONST(),_),tp,mod as SCode.NOMOD(),comment,cond,info)), cmod) :: rest),_)
       equation
         (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, true, Mod.COMPONENT(id), info);
-        mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
+        mod_1 = Mod.merge(mods,mod_1);
         // adrpo: this was wrong, you won't find any id modification there!!!
         // bjozac: This was right, you will find id modification unless modifers does not belong to component!
         // adrpo 2009-11-23 -> solved by selecting the full modifier if the component modifier is empty!
@@ -2339,7 +2339,7 @@ algorithm
         fullMod = mod_1;
         selectedMod = selectModifier(compMod, fullMod); // if the first one is empty use the other one.
         (cache,cmod) = Mod.updateMod(cache,env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cmod,true,info);
-        selectedMod = Mod.merge(cmod,selectedMod,env,Prefix.NOPRE());
+        selectedMod = Mod.merge(cmod,selectedMod);
         umod = Mod.unelabMod(selectedMod);
         (cache, env, res) = buildRecordConstructorElts(cache, env, rest, mods);
         // - Prefixes (constant, parameter, final, discrete, input, output, ...) of the remaining record components are removed.
@@ -2358,7 +2358,7 @@ algorithm
         SCode.ATTR(d,ct,prl,var as SCode.CONST(),_),tp,mod,comment,cond,info)),cmod) :: rest), _)
       equation
         (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, true, Mod.COMPONENT(id), info);
-        mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
+        mod_1 = Mod.merge(mods,mod_1);
         // adrpo: this was wrong, you won't find any id modification there!!!
         // bjozac: This was right, you will find id modification unless modifers does not belong to component!
         // adrpo 2009-11-23 -> solved by selecting the full modifier if the component modifier is empty!
@@ -2366,7 +2366,7 @@ algorithm
         fullMod = mod_1;
         selectedMod = selectModifier(compMod, fullMod); // if the first one is empty use the other one.
         (cache,cmod) = Mod.updateMod(cache,env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cmod,true,info);
-        selectedMod = Mod.merge(cmod,selectedMod,env,Prefix.NOPRE());
+        selectedMod = Mod.merge(cmod,selectedMod);
         umod = Mod.unelabMod(selectedMod);
         (cache, env, res) = buildRecordConstructorElts(cache, env, rest, mods);
         // - Prefixes (constant, parameter, final, discrete, input, output, ...) of the remaining record components are removed.
@@ -2385,7 +2385,7 @@ algorithm
         SCode.ATTR(d,ct,prl,_,_),tp,mod,comment,cond,info)),cmod) :: rest), _)
       equation
         (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, true, Mod.COMPONENT(id), info);
-        mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
+        mod_1 = Mod.merge(mods,mod_1);
         // adrpo: this was wrong, you won't find any id modification there!!!
         // bjozac: This was right, you will find id modification unless modifers does not belong to component!
         // adrpo 2009-11-23 -> solved by selecting the full modifier if the component modifier is empty!
@@ -2393,7 +2393,7 @@ algorithm
         fullMod = mod_1;
         selectedMod = selectModifier(compMod, fullMod); // if the first one is empty use the other one.
         (cache,cmod) = Mod.updateMod(cache,env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cmod,true,info);
-        selectedMod = Mod.merge(cmod,selectedMod,env,Prefix.NOPRE());
+        selectedMod = Mod.merge(cmod,selectedMod);
         umod = Mod.unelabMod(selectedMod);
         (cache, env, res) = buildRecordConstructorElts(cache, env, rest, mods);
         // - Prefixes (constant, parameter, final, discrete, input, output, ...) of the remaining record components are removed.

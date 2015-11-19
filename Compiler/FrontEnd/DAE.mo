@@ -1197,12 +1197,10 @@ uniontype EqMod "To generate the correct set of equations, the translator has to
     Option<Values.Value> modifierAsValue "modifier as Value option" ;
     Properties properties "properties" ;
     Absyn.Exp modifierAsAbsynExp "keep the untyped modifier as an absyn expression for modification comparison";
-    SourceInfo info;
   end TYPED;
 
   record UNTYPED
     Absyn.Exp exp;
-    SourceInfo info;
   end UNTYPED;
 
 end EqMod;
@@ -1221,19 +1219,18 @@ uniontype Mod "Modification"
     SCode.Final   finalPrefix "final prefix";
     SCode.Each    eachPrefix "each prefix";
     list<SubMod>  subModLst;
-    Option<EqMod> eqModOption;
+    Option<EqMod> binding;
+    SourceInfo    info;
   end MOD;
 
   record REDECL
     SCode.Final finalPrefix "final prefix";
     SCode.Each  eachPrefix "each prefix";
-    list<tuple<SCode.Element, Mod>> tplSCodeElementModLst;
+    list<tuple<SCode.Element, Mod>> elements;
   end REDECL;
 
   record NOMOD end NOMOD;
-
 end Mod;
-
 
 public
 uniontype ClockKind

@@ -2323,7 +2323,7 @@ algorithm
         //print("otherSimEqSysIdcs "+stringDelimitList(List.map(otherSimEqSysIdcs,intString),",")+"\n");
 
       // dump graphs
-      BackendDump.dumpBipartiteGraphStrongComponent1(comp,eqsIn,varsIn,"tornSys_bipartite_"+intString(compIdxIn));
+      BackendDump.dumpBipartiteGraphStrongComponent1(comp,eqsIn,varsIn,NONE(),"tornSys_bipartite_"+intString(compIdxIn));
       BackendDump.dumpDAGStrongComponent(graph,meta,"tornSys_matched_"+intString(compIdxIn));
 
       //GRS
