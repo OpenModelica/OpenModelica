@@ -62,10 +62,6 @@ typedef struct DASSL_DATA{
   unsigned int* dasslStatistics;
   unsigned int* dasslStatisticsTmp;
 
-  /* current context evaulation */
-  int currentContext;
-  int currentContextOld;
-
   int* info;
 
   int idid;

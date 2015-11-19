@@ -502,6 +502,18 @@ typedef struct CLOCK_DATA {
   long cnt;
 } CLOCK_DATA;
 
+enum EVAL_CONTEXT
+{
+  CONTEXT_UNKNOWN = 0,
+
+  CONTEXT_ODE,
+  CONTEXT_ALGEBRAIC,
+  CONTEXT_EVENTS,
+  CONTEXT_JACOBIAN,
+
+  CONTEXT_MAX
+};
+
 typedef struct SIMULATION_INFO
 {
   modelica_real startTime;
@@ -517,6 +529,13 @@ typedef struct SIMULATION_INFO
   int nlsMethod;                       /* nonlinear solver */
   int newtonStrategy;                  /* newton damping strategy solver */
   int nlsCsvInfomation;                /* = 1 csv files with detailed nonlinear solver process are generated */
+
+  /* current context evaluation, set by dassl and used for extrapolation
+   * of next non-linear guess */
+  int currentContext;
+  int currentContextOld;
+  int jacobianEvals;                   /* number of different columns to evaluate functionODE */
+  int currentJacobianEval;             /* current column to evaluate functionODE for Jacobian*/
 
   double lambda;                       /* homotopy parameter E [0, 1.0] */
 

@@ -368,7 +368,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     nonlinsys[i].nlsxOld = (double*) malloc(size*sizeof(double));
 
     /* allocate value list*/
-    nonlinsys[i].oldValueList = (void*) allocValueList(sizeof(VALUE));
+    nonlinsys[i].oldValueList = (void*) allocValueList(1);
 
     nonlinsys[i].nominal = (double*) malloc(size*sizeof(double));
     nonlinsys[i].min = (double*) malloc(size*sizeof(double));
@@ -480,7 +480,7 @@ int freeNonlinearSystems(DATA *data, threadData_t *threadData)
     free(nonlinsys[i].nominal);
     free(nonlinsys[i].min);
     free(nonlinsys[i].max);
-    freeValueList(nonlinsys[i].oldValueList);
+    freeValueList(nonlinsys[i].oldValueList, 1);
 
 #if !defined(OMC_MINIMAL_RUNTIME)
     if (data->simulationInfo.nlsCsvInfomation)
@@ -571,14 +571,18 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   /* value extrapolation */
   infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "############ Start new iteration for system %d at time at %g ############", sysNumber, data->localData[0]->timeValue);
   printValuesListTimes((VALUES_LIST*)nonlinsys->oldValueList);
-  /* if list is empty put current element in */
+  /* if list is empty use current start values */
   if (listLen(((VALUES_LIST*)nonlinsys->oldValueList)->valueList)==0)
   {
-    addListElement((VALUES_LIST*)nonlinsys->oldValueList,
-        createValueElement(nonlinsys->size, data->localData[0]->timeValue, nonlinsys->nlsx));
+	memcpy(nonlinsys->nlsxOld, nonlinsys->nlsx, nonlinsys->size*(sizeof(double)));
+	memcpy(nonlinsys->nlsxExtrapolation, nonlinsys->nlsx, nonlinsys->size*(sizeof(double)));
   }
-  /* get extrapolated values */
-  getValues((VALUES_LIST*)nonlinsys->oldValueList, data->localData[0]->timeValue, nonlinsys->nlsxExtrapolation);
+  else
+  {
+    /* get extrapolated values */
+    getValues((VALUES_LIST*)nonlinsys->oldValueList, data->localData[0]->timeValue, nonlinsys->nlsxExtrapolation, nonlinsys->nlsxOld);
+    memcpy(nonlinsys->nlsx, nonlinsys->nlsxOld, nonlinsys->size*(sizeof(double)));
+  }
 
   if(data->simulationInfo.discreteCall)
   {
@@ -595,6 +599,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     ((DATA*)data)->simulationInfo.solveContinuous = 1;
 
     success = 1;
+    memcpy(nonlinsys->nlsxExtrapolation, nonlinsys->nlsx, nonlinsys->size*(sizeof(double)));
 #ifndef OMC_EMCC
     /*catch */
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -603,6 +608,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     {
       warningStreamPrint(LOG_STDOUT, 0, "Non-Linear Solver try to handle a problem with a called assert.");
     }
+
 
     free(fvec);
   }
@@ -667,11 +673,15 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   nonlinsys->solved = success;
 
   /* write solution to oldValue list for extrapolation */
-  if (nonlinsys->solved){
-    addListElement((VALUES_LIST*)nonlinsys->oldValueList,
-          createValueElement(nonlinsys->size, data->localData[0]->timeValue, nonlinsys->nlsx));
+  if (nonlinsys->solved)
+  {
+    /* do not use solution of jacobian for next extrapolation */
+    if (data->simulationInfo.currentContext < 4)
+    {
+      addListElement((VALUES_LIST*)nonlinsys->oldValueList,
+              createValueElement(nonlinsys->size, data->localData[0]->timeValue, nonlinsys->nlsx));
+    }
   }
-  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "########################", data->localData[0]->timeValue);
   messageClose(LOG_NLS_EXTRAPOLATE);
 
 #ifndef OMC_EMCC
@@ -783,6 +793,25 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
 
 
   return 0;
+}
+
+/*! \fn cleanUpOldValueListAfterEvent
+ *
+ *   This function clean old value list up to parameter time.
+ *
+ *  \param [in]  [data]
+ *  \param [in]  [time]
+ *
+ *  \author wbraun
+ */
+void cleanUpOldValueListAfterEvent(DATA *data, double time)
+{
+  long i;
+  NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
+
+  for(i=0; i<data->modelData.nNonLinearSystems; ++i) {
+    cleanValueListbyTime(nonlinsys[i].oldValueList, time);
+  }
 }
 
 /*! \fn extraPolate

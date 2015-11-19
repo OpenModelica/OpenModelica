@@ -782,7 +782,6 @@ static int getNumericalJacobianHomotopy(DATA_HOMOTOPY* solverData, double *x, do
   const double delta_h = sqrt(DBL_EPSILON*2e1);
   double delta_hh;
   double xsave;
-
   int i,j,l;
 
   /* solverData->f1 must be set outside this function based on x */
@@ -1253,6 +1252,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     vecDivScaling(solverData->n, solverData->f1, solverData->resScaling, solverData->fvecScaled);
     debugVectorDouble(LOG_NLS_V,"function values:",solverData->f1, n);
     debugVectorDouble(LOG_NLS_V,"scaled function values:",solverData->fvecScaled, n);
+
     vecDivScaling(solverData->n, solverData->dy0, solverData->xScaling, solverData->dxScaled);
     delta_x        = vecNorm2(solverData->n, solverData->dy0);
     delta_x_scaled = vecNorm2(solverData->n, solverData->dxScaled);
@@ -1338,7 +1338,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
         debugString(LOG_NLS_V, "NEWTON SOLVER DID CONVERGE TO A SOLUTION WITH LESS ACCURACY!!!");
         printUnknowns(LOG_NLS_V, solverData);
         debugString(LOG_NLS_V, "******************************************************");
-        solverData->error_f = error_f;
+        solverData->error_f = 0;
 
       } else
       {
@@ -1352,12 +1352,11 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       solverData->numberOfIterations += numberOfIterations;
       break;
     }
-
     assert = 1;
 #ifndef OMC_EMCC
     MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-    /* calculate jacobian and function values (both stored in fJac, last column is fvec)*/
+    /* calculate jacobian and function values (both stored in fJac, last column is fvec) */
     solverData->fJac_f(solverData, x, solverData->fJac);
     assert = 0;
 #ifndef OMC_EMCC
@@ -1763,30 +1762,37 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
  #ifndef OMC_EMCC
     MMC_TRY_INTERNAL(simulationJumpBuffer)
  #endif
+    if (mixedSystem)
+      memcpy(relationsPreBackup, data->simulationInfo.relations, sizeof(modelica_boolean)*data->modelData.nRelations);
+
     solverData->f(solverData, solverData->x0, solverData->f1);
     /* Try to get out of here!!! */
     error_f        = vecNorm2(solverData->n, solverData->f1);
     if ((error_f - solverData->error_f)<=0)
     {
-      success = 1;
-      /* debug information */
-      debugString(LOG_NLS_V, "NO ITERATION NECESSARY!!!");
-      debugString(LOG_NLS_V, "******************************************************");
-      debugString(LOG_NLS_V,"SYSTEM SOLVED");
-      debugInt(LOG_NLS_V,   "number of function calls: ",solverData->numberOfFunctionEvaluations-numberOfFunctionEvaluationsOld);
-      debugString(LOG_NLS_V, "------------------------------------------------------");
-        /* take the solution */
-      vecCopy(solverData->n, solverData->x0, systemData->nlsx);
-      debugVectorDouble(LOG_NLS_V,"Solution", solverData->x0, solverData->n);
-      /* reset continous flag */
-      ((DATA*)data)->simulationInfo.solveContinuous = 0;
+      //infoStreamPrint(LOG_STDOUT, 0, "No Iteration at time %g needed new f = %g  and old f1 = %g", solverData->timeValue, error_f, solverData->error_f);
+      if (mixedSystem && data->simulationInfo.discreteCall && isNotEqualVectorInt(((DATA*)data)->modelData.nRelations, ((DATA*)data)->simulationInfo.relations, relationsPreBackup)){}
+      else
+      {
+        success = 1;
 
-      free(relationsPreBackup);
+        debugString(LOG_NLS_V, "NO ITERATION NECESSARY!!!");
+        debugString(LOG_NLS_V, "******************************************************");
+        debugString(LOG_NLS_V,"SYSTEM SOLVED");
+        debugInt(LOG_NLS_V,   "number of function calls: ",solverData->numberOfFunctionEvaluations-numberOfFunctionEvaluationsOld);
+        debugString(LOG_NLS_V, "------------------------------------------------------");
 
-      /* write statistics */
-      systemData->numberOfFEval = solverData->numberOfFunctionEvaluations;
+        vecCopy(solverData->n, solverData->x0, systemData->nlsx);
+        debugVectorDouble(LOG_NLS_V,"Solution", solverData->x0, solverData->n);
 
-      return success;
+        ((DATA*)data)->simulationInfo.solveContinuous = 0;
+
+        free(relationsPreBackup);
+
+        systemData->numberOfFEval = solverData->numberOfFunctionEvaluations;
+
+        return success;
+      }
     }
     solverData->fJac_f(solverData, solverData->x0, solverData->fJac);
     vecCopy(solverData->n, solverData->f1, solverData->fJac + solverData->n*solverData->n);
