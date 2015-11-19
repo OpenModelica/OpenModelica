@@ -2522,7 +2522,11 @@ then
 
           let outputnames = vars.outputVars |>  SIMVAR(__) hasindex i0 =>
       <<
-      <%crefST(name, false)%> : <%crefTypeST(name)%>;
+      <variable name= "<%crefST(name, false)%>">
+      <type>
+          <<%crefTypeST(name)%>/>
+          </type>
+      </variable>
       >>
       ;separator="\n"
 
@@ -2585,11 +2589,7 @@ then
 
           let outputnames = vars.outputVars |>  SIMVAR(__) hasindex i0 =>
       <<
-      <variable name= "<%crefST(name, false)%>">
-      <type>
-          <<%crefTypeST(name)%>/>
-          </type>
-      </variable>
+      <%crefTypeMLPI(name)%> <%crefST(name, false)%>;
       >>
       ;separator="\n"
 
@@ -3275,12 +3275,13 @@ case "vxworks69" then
 
       MODEL_NAME = <%fileNamePrefix%>
 
-
+      OPENMODELICAHOME := $(subst \,/,$(OPENMODELICAHOME))
       WIND_HOME := $(subst \,/,$(WIND_HOME))
-      WIND_BASE := $(subst \,/,$(WIND_BASE))
-      MLPI := $(subst \,/,$(MLPI))
+      WIND_BASE := $(WIND_HOME)/customBosch/vxworks-6.9
+      export WIND_BASE
+      MLPI_SDK_01 := $(subst \,/,$(MLPI_SDK_01))
       OMDEV := $(subst \,/,$(OMDEV))
-      CPP_RUNTIME := $(subst \,/,$(CPP_RUNTIME))
+
 
       all : clean pre_build main_all post_build
 
@@ -3328,9 +3329,9 @@ case "vxworks69" then
       LIBPATH =
       LIBS =
 
-      IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(CPP_RUNTIME)/Include/Core -I$(CPP_RUNTIME)/Include
+      IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI_SDK_01)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(OPENMODELICAHOME)/include/omc/cpp/Core -I$(OPENMODELICAHOME)/include/omc/cpp
 
-      IDE_LIBRARIES = $(CPP_RUNTIME)/Build/VxWorks/SimCore.a
+      IDE_LIBRARIES = $(OPENMODELICAHOME)/lib/omc/cpp/vxworks/SimCore.a
 
       IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"
 
@@ -3377,8 +3378,8 @@ case "vxworks69" then
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Librarian =
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Assembler =  -O2
       endif
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(CPP_RUNTIME)/Include/Core -I$(CPP_RUNTIME)/Include
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_LIBRARIES = $(CPP_RUNTIME)/Build/VxWorks/SimCore.a
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI_SDK_01)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(OPENMODELICAHOME)/include/omc/cpp/Core -I$(OPENMODELICAHOME)/include/omc/cpp
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_LIBRARIES = $(OPENMODELICAHOME)/lib/omc/cpp/vxworks/SimCore.a
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : PROJECT_TYPE = DKM
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEFINES =
@@ -3399,7 +3400,7 @@ case "vxworks69" then
 
       ifeq ($(TARGET_JOBS),1)
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME).out : $(OBJECTS_com.boschrexroth.$(MODEL_NAME))
-      <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@";rm -f "$@";nmpentium $(OBJECTS_com.boschrexroth.$(MODEL_NAME)) | tclsh $(WIND_BASE)/host/resource/hutils/tcl/munch.tcl -c pentium -tags $(VSB_DIR)/tags/pentium/ATOM/common/dkm.tags > $(OBJ_DIR)/ctdt.c; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_Linker) $(CC_ARCH_SPEC) -fdollars-in-identifiers -Wall -Wsystem-headers  $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES)  $(IDE_DEFINES) $(DEFINES) -o $(OBJ_DIR)/ctdt.o -c $(OBJ_DIR)/ctdt.c; $(TOOL_PATH)ccpentium -r -nostdlib -Wl,-X -T $(WIND_BASE)/target/h/tool/gnu/ldscripts/link.OUT -o "$@" $(OBJ_DIR)/ctdt.o $(OBJECTS_com.boschrexroth.$(MODEL_NAME)) $(IDE_LIBRARIES) $(LIBPATH) $(LIBS) $(ADDED_LIBPATH) $(ADDED_LIBS) && if [ "$(EXPAND_DBG)" = "1" ]; then plink "$@";fi
+      <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@";rm -f "$@";nmpentium $(OBJECTS_com.boschrexroth.$(MODEL_NAME)) | $(WIND_HOME)/workbench-3.3/foundation/x86-win32/bin/tclsh $(WIND_BASE)/host/resource/hutils/tcl/munch.tcl -c pentium -tags $(VSB_DIR)/tags/pentium/ATOM/common/dkm.tags > $(OBJ_DIR)/ctdt.c; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_Linker) $(CC_ARCH_SPEC) -fdollars-in-identifiers -Wall -Wsystem-headers  $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES)  $(IDE_DEFINES) $(DEFINES) -o $(OBJ_DIR)/ctdt.o -c $(OBJ_DIR)/ctdt.c; $(TOOL_PATH)ccpentium -r -nostdlib -Wl,-X -T $(WIND_BASE)/target/h/tool/gnu/ldscripts/link.OUT -o "$@" $(OBJ_DIR)/ctdt.o $(OBJECTS_com.boschrexroth.$(MODEL_NAME)) $(IDE_LIBRARIES) $(LIBPATH) $(LIBS) $(ADDED_LIBPATH) $(ADDED_LIBS) && if [ "$(EXPAND_DBG)" = "1" ]; then plink "$@";fi
 
       else
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME).out : com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME).out_jobs
@@ -3429,8 +3430,8 @@ case "vxworks69" then
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Librarian =
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Assembler =  -O2
       endif
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(CPP_RUNTIME)/Include/Core -I$(CPP_RUNTIME)/Include
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_LIBRARIES = $(CPP_RUNTIME)/Build/VxWorks/SimCore.a
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI_SDK_01)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(OPENMODELICAHOME)/include/omc/cpp/Core -I$(OPENMODELICAHOME)/include/omc/cpp
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_LIBRARIES = $(OPENMODELICAHOME)/lib/omc/cpp/vxworks/SimCore.a
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : PROJECT_TYPE = DKM
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEFINES =
@@ -4472,7 +4473,7 @@ template extType2(Type type, Boolean isInput, Boolean isArray)
   let s = match type
   case T_INTEGER(__)         then "int"
   case T_REAL(__)        then "double"
-  case T_STRING(__)      then "const char*"
+  case T_STRING(__)      then "string"/*use string instead of char* for external types*/
   case T_BOOL(__)        then "int"
   case T_ENUMERATION(__) then "int"
   case T_ARRAY(__)       then extType2(ty,isInput,true)
@@ -11487,7 +11488,7 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
         MODELICA_TERMINATE(<%msgVar%>);
         >>
       case ASSERT(source=SOURCE(info=info)) then
-        assertCommon(condition, message,level, contextSimulationDiscrete, &varDecls, info,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+        assertCommon(condition, message, contextSimulationDiscrete, &varDecls, info,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       case NORETCALL(__) then
       let &preExp = buffer ""
       let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -11818,7 +11819,7 @@ end daeExpRange;
 
 
 
-template assertCommon(Exp condition, Exp message,Exp level, Context context, Text &varDecls, builtin.SourceInfo info, SimCode simCode,
+template assertCommon(Exp condition, Exp message, Context context, Text &varDecls, builtin.SourceInfo info, SimCode simCode,
                       Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
   let &preExpCond = buffer ""
@@ -11842,11 +11843,7 @@ template assertCommon(Exp condition, Exp message,Exp level, Context context, Tex
        if(!<%condVar%>)
        {
          <%preExpMsg%>
-          <%match level case ENUM_LITERAL(index=2)
-          then 'cerr <<"Warning: " << <%msgVar%>;'
-          else
-          'throw ModelicaSimulationError(MODEL_EQ_SYSTEM,<%msgVar%>);'
-          %>
+        throw ModelicaSimulationError(MODEL_EQ_SYSTEM,<%msgVar%>);
 
        }
       >>
@@ -11854,13 +11851,9 @@ template assertCommon(Exp condition, Exp message,Exp level, Context context, Tex
       <<
       if(!<%condVar%>)
       {
-
         <%preExpCond%>
         <%preExpMsg%>
-        <%match level case ENUM_LITERAL(index=2)
-         then 'cerr <<"Warning: >Assert in model equation";'
-         else  'throw ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM);'
-        %>
+       throw ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM);
       }
       >>
    %>
@@ -11915,56 +11908,14 @@ let modelname = identOfPath(modelInfo.name)
                   <%inputVars%>
                </inputVars>
                <outputVars>
-                  <variable name="y">
-                     <type>
-                        <LREAL/>
-                     </type>
-                  </variable>
-               </outputVars>
-                   <localVars>
-                   <variable name="cycletime">
-                     <type>
-                        <LREAL/>
-                     </type>
-                     <initialValue>
-                        <simpleValue value="0.004"/>
-                     </initialValue>
-                  </variable>
-                      <variable name="bAlreadyInitialized">
-                     <type>
-                        <BOOL/>
-                     </type>
-                  </variable>
-                    <variable name="bErrorOccured">
-                     <type>
-                        <BOOL/>
-                     </type>
-                  </variable>
-                   <variable name="controller">
-                     <type>
-                        <DWORD/>
-                     </type>
-                  </variable>
-                  <variable name="simdata">
-                     <type>
-                        <DWORD/>
-                     </type>
-                  </variable>
-                  </localVars>
-            </interface>
-            <body>
-               <ST>
-                  <xhtml xmlns="http://www.w3.org/1999/xhtml">
-</xhtml>
-               </ST>
-            </body>
-         </pou>
-      </pous>
-   </types>
-   <instances>
-      <configurations/>
-   </instances>
-</project>
+                  <%outputVars%>
+VAR
+    cycletime : REAL :=0.05;
+    bAlreadyInitialized : BOOL;
+    bErrorOccured : BOOL(FALSE);
+    controller : DWORD;
+    simdata : DWORD;
+END_VAR
 '
 end functionBlock;
 
@@ -13517,7 +13468,7 @@ template algStmtAssert(DAE.Statement stmt, Context context, Text &varDecls,SimCo
 ::=
 match stmt
 case STMT_ASSERT(source=SOURCE(info=info)) then
-  assertCommon(cond, msg, level, context, &varDecls, info,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  assertCommon(cond, msg, context, &varDecls, info,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 end algStmtAssert;
 
 
@@ -14066,4 +14017,3 @@ end generateMeasureTimeEndCode;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenCpp;
-
