@@ -1723,5 +1723,35 @@ algorithm
   s := stringDelimitList(List.map(lst,intString),", ");
 end intLstString;
 
+public function sourceInfoIsEmpty
+  "Returns whether the given SourceInfo is empty or not."
+  input SourceInfo inInfo;
+  output Boolean outIsEmpty;
+algorithm
+  outIsEmpty := match inInfo
+    case SOURCEINFO(fileName = "") then true;
+    else false;
+  end match;
+end sourceInfoIsEmpty;
+
+public function sourceInfoIsEqual
+  "Returns whether two SourceInfo are equal or not."
+  input SourceInfo inInfo1;
+  input SourceInfo inInfo2;
+  output Boolean outIsEqual;
+algorithm
+  outIsEqual := match (inInfo1, inInfo2)
+    case (SOURCEINFO(), SOURCEINFO())
+      then inInfo1.fileName == inInfo2.fileName and
+           inInfo1.isReadOnly == inInfo2.isReadOnly and
+           inInfo1.lineNumberStart == inInfo2.lineNumberStart and
+           inInfo1.columnNumberStart == inInfo2.columnNumberStart and
+           inInfo1.lineNumberEnd == inInfo2.lineNumberEnd and
+           inInfo1.columnNumberEnd == inInfo2.columnNumberEnd;
+
+    else false;
+  end match;
+end sourceInfoIsEqual;
+
 annotation(__OpenModelica_Interface="util");
 end Util;

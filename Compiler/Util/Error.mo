@@ -569,7 +569,7 @@ public constant Message INVALID_CLASS_RESTRICTION = MESSAGE(220, TRANSLATION(), 
 public constant Message CONNECT_IN_INITIAL_EQUATION = MESSAGE(221, TRANSLATION(), ERROR(),
   Util.gettext("Connect equations are not allowed in initial equation sections."));
 public constant Message FINAL_COMPONENT_OVERRIDE = MESSAGE(222, TRANSLATION(), ERROR(),
-  Util.gettext("Trying to override final component %s with modifier %s."));
+  Util.gettext("Trying to override final element %s with modifier '%s'."));
 public constant Message NOTIFY_NOT_LOADED = MESSAGE(223, SCRIPTING(), NOTIFICATION(),
   Util.gettext("Automatically loaded package %s %s due to uses annotation."));
 public constant Message REINIT_MUST_BE_REAL = MESSAGE(224, TRANSLATION(), ERROR(),
@@ -707,8 +707,6 @@ public constant Message SETTING_FIXED_ATTRIBUTE = MESSAGE(503, TRANSLATION(), WA
   Util.gettext("Using over-determined solver for initialization. Setting fixed=false to the following variables: %s."));
 public constant Message FAILED_TO_EVALUATE_FUNCTION = MESSAGE(506, TRANSLATION(), ERROR(),
   Util.gettext("Failed to evaluate function: %s."));
-public constant Message FINAL_OVERRIDE = MESSAGE(508, TRANSLATION(), ERROR(),
-  Util.gettext("Trying to override final variable in component %s and scope %s by using modifiers: %s and %s that do not agree."));
 public constant Message WARNING_RELATION_ON_REAL = MESSAGE(509, TRANSLATION(), WARNING(),
   Util.gettext("In component %s, in relation %s, %s on Real numbers is only allowed inside functions."));
 public constant Message OUTER_MODIFICATION = MESSAGE(512, TRANSLATION(), WARNING(),

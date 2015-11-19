@@ -178,8 +178,8 @@ algorithm
           rest_els := SCodeUtil.addRedeclareAsElementsToExtends(rest_els,
             list(e for e guard(SCodeUtil.isRedeclareElement(e)) in rest_els));
 
-          outMod := Mod.elabUntypedMod(emod, inEnv, Prefix.NOPRE(), Mod.EXTENDS(el.baseClassPath));
-          outMod := Mod.merge(mod, outMod, inEnv, Prefix.NOPRE());
+          outMod := Mod.elabUntypedMod(emod, Mod.EXTENDS(el.baseClassPath));
+          outMod := Mod.merge(mod, outMod, "", false);
 
           (outCache, _, outIH, _, els2, eq2, ieq2, alg2, ialg2) :=
             instExtendsAndClassExtendsList2(outCache, cenv, outIH, outMod, inPrefix,
@@ -659,9 +659,9 @@ algorithm
         dmod = InstUtil.chainRedeclares(mod, dmod);
         // false = Absyn.pathEqual(FGraph.getGraphName(env),FGraph.getGraphName(cenv)) and SCode.elementEqual(c,inClass);
         // modifiers should be evaluated in the current scope for derived!
-        //daeDMOD = Mod.elabUntypedMod(dmod, env, Prefix.NOPRE(), Mod.DERIVED(tp));
+        //daeDMOD = Mod.elabUntypedMod(dmod, Mod.DERIVED(tp));
         (cache,daeDMOD) = Mod.elabMod(cache, env, ih, pre, dmod, impl, Mod.DERIVED(tp), info);
-        mod = Mod.merge(mod, daeDMOD, env, pre);
+        mod = Mod.merge(mod, daeDMOD);
         // print("DER: " + SCodeDump.unparseElementStr(inClass, SCodeDump.defaultOptions) + "\n");
         (cache,env,ih,elt,eq,ieq,alg,ialg,mod) = instDerivedClassesWork(cache, cenv, ih, mod, pre, c, impl, info, numIter >= Global.recursionDepthLimit, numIter+1)
         "Mod.lookup_modification_p(mod, c) => innermod & We have to merge and apply modifications as well!" ;
@@ -757,7 +757,7 @@ algorithm
         // cmod2 = Mod.getModifs(inMod, id, m);
         cmod2 = Mod.lookupCompModificationFromEqu(inMod, id);
         // Debug.traceln("\tSpecific mods on comp: " +  Mod.printModStr(cmod2));
-        cmod = Mod.merge(cmod2, cmod, inEnv, Prefix.NOPRE());
+        cmod = Mod.merge(cmod2, cmod, id, false);
         mod_rest = inMod; //mod_rest = Mod.removeMod(inMod, id);
       then
         ((comp, cmod, b), mod_rest);
@@ -772,7 +772,7 @@ algorithm
       equation
         DAE.REDECL(_, _, (comp2, cmod2)::_) = Mod.lookupCompModification(inMod, id);
         mod_rest = inMod; //mod_rest = Mod.removeMod(inMod, id);
-        cmod2 = Mod.merge(cmod2, cmod1, inEnv, Prefix.NOPRE());
+        cmod2 = Mod.merge(cmod2, cmod1, id, false);
         comp2 = SCode.mergeWithOriginal(comp2, comp1);
         // comp2 = SCode.renameElement(comp2, id);
       then
