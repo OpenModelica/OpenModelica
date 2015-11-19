@@ -2810,7 +2810,7 @@ algorithm
     case (_,SCode.REDECL(f, e, SCode.CLASS(name = nInner, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = Absyn.IDENT(nDerivedInner))))))
       equation
         // lookup the class mod in the outer
-        (DAE.REDECL(elements = (cls,_)::_)) = Mod.lookupModificationP(inModOuter, Absyn.IDENT(nDerivedInner));
+        DAE.REDECL(element = cls) = Mod.lookupModificationP(inModOuter, Absyn.IDENT(nDerivedInner));
         cls = SCode.setClassName(nInner, cls);
       then
         SCode.REDECL(f, e, cls);
@@ -2819,7 +2819,7 @@ algorithm
     case (_,SCode.REDECL(f, e, SCode.CLASS(name = nInner, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = Absyn.IDENT(_))))))
       equation
         // lookup the class mod in the outer
-        (DAE.REDECL(elements = (cls,_)::_)) = Mod.lookupModificationP(inModOuter, Absyn.IDENT(nInner));
+        DAE.REDECL(element = cls) = Mod.lookupModificationP(inModOuter, Absyn.IDENT(nInner));
       then
         SCode.REDECL(f, e, cls);
 
@@ -7906,7 +7906,7 @@ algorithm
       Absyn.Path path;
     // you cannot redeclare a basic type, only the properties and the binding, i.e.
     // redeclare constant Boolean standardOrderComponents = true
-    case (DAE.REDECL(_, _, {(SCode.COMPONENT(typeSpec=Absyn.TPATH(path=path)), _)})) equation
+    case DAE.REDECL(element = SCode.COMPONENT(typeSpec=Absyn.TPATH(path=path))) equation
       true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
 
         name = Absyn.pathFirstIdent(path);
@@ -7914,7 +7914,7 @@ algorithm
       true = listMember(name, {"Real", "Integer", "Boolean", "String", "Clock"});
     then true;
 
-    case (DAE.REDECL(_, _, {(SCode.COMPONENT(typeSpec=Absyn.TPATH(path=path)), _)})) equation
+    case DAE.REDECL(element = SCode.COMPONENT(typeSpec=Absyn.TPATH(path=path))) equation
       false = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
 
       name = Absyn.pathFirstIdent(path);

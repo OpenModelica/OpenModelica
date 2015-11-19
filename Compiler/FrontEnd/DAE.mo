@@ -1226,7 +1226,8 @@ uniontype Mod "Modification"
   record REDECL
     SCode.Final finalPrefix "final prefix";
     SCode.Each  eachPrefix "each prefix";
-    list<tuple<SCode.Element, Mod>> elements;
+    SCode.Element element;
+    Mod mod;
   end REDECL;
 
   record NOMOD end NOMOD;

@@ -5492,12 +5492,11 @@ algorithm
     BackendDAE.EQSYSTEM(orderedVars = vars) := syst;
     varLst := BackendVariable.varList(vars);
     varLst := List.filterOnTrue(varLst,BackendVariable.isOutputVar);
-    if listEmpty(varLst) then
-      //print("No output variables in this system\n");
 
-    //THIS SYSTEM CONTAINS OUTPUT VARIABLES
-    //-------------------------------------
-    else
+    if not listEmpty(varLst) then
+
+      //THIS SYSTEM CONTAINS OUTPUT VARIABLES
+      //-------------------------------------
       outputVarIndxs := BackendVariable.getVarIndexFromVars(varLst,vars);
       outputTasks := List.map(List.map1(outputVarIndxs,Array.getIndexFirst,varCompMapping),Util.tuple31);
         //print("outputTasks "+stringDelimitList(List.map(outputTasks,intString),", ")+"\n");
@@ -5523,7 +5522,7 @@ algorithm
         (states,stateIndxs) := BackendVariable.getVarLst(crefs,vars,{},{});
         (stateIndxs,states) := List.filter1OnTrueSync(stateIndxs,stateVarIsNotVisited,varVisited,states);//not yet visited
         if not listEmpty(stateIndxs) then
-            //print("states "+stringDelimitList(List.map(states,BackendDump.varString),"\n ")+"\n");
+            print("states "+stringDelimitList(List.map(states,BackendDump.varString),"\n ")+"\n");
           List.map2_0(stateIndxs,Array.updateIndexFirst,1,varVisited);
           //add the new tasks which are necessary for the states
           stateTasks1 := List.map(List.map1(stateIndxs,Array.getIndexFirst,varCompMapping),Util.tuple31);
@@ -5574,8 +5573,11 @@ algorithm
 	    (syst, _, _, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.NORMAL(), SOME(funcTree));
 	    syst := BackendDAETransform.strongComponentsScalar(syst,shared,mapEqnIncRow,mapIncRowEqn);
 
-      systsNew := syst::systsNew;
+    else
+      print("No output variables in this system\n");
     end if;
+
+    systsNew := syst::systsNew;
   end for;
 
    //alias vars are not necessary anymore
