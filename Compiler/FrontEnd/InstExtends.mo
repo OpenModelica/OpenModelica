@@ -770,7 +770,7 @@ algorithm
 
     case ((comp1 as SCode.CLASS(name = id, prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), cmod1, b), _, _)
       equation
-        DAE.REDECL(_, _, (comp2, cmod2)::_) = Mod.lookupCompModification(inMod, id);
+        DAE.REDECL(element = comp2, mod = cmod2) = Mod.lookupCompModification(inMod, id);
         mod_rest = inMod; //mod_rest = Mod.removeMod(inMod, id);
         cmod2 = Mod.merge(cmod2, cmod1, id, false);
         comp2 = SCode.mergeWithOriginal(comp2, comp1);
