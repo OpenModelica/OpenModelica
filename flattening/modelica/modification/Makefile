@@ -14,6 +14,7 @@ DuplicateMod4.mo \
 DuplicateMod5.mo \
 DuplicateMod6.mo \
 DuplicateMod7.mo \
+FinalMod1.mo \
 FinalParameterModification.mo \
 FixedFalse.mo \
 MissingModifiers.mo \
