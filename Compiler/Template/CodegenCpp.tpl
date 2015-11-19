@@ -11488,7 +11488,7 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
         MODELICA_TERMINATE(<%msgVar%>);
         >>
       case ASSERT(source=SOURCE(info=info)) then
-        assertCommon(condition, message, contextSimulationDiscrete, &varDecls, info,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+        assertCommon(condition, message,level, contextSimulationDiscrete, &varDecls, info,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       case NORETCALL(__) then
       let &preExp = buffer ""
       let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -11819,7 +11819,7 @@ end daeExpRange;
 
 
 
-template assertCommon(Exp condition, Exp message, Context context, Text &varDecls, builtin.SourceInfo info, SimCode simCode,
+template assertCommon(Exp condition, Exp message,Exp level, Context context, Text &varDecls, builtin.SourceInfo info, SimCode simCode,
                       Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
   let &preExpCond = buffer ""
@@ -11843,7 +11843,11 @@ template assertCommon(Exp condition, Exp message, Context context, Text &varDecl
        if(!<%condVar%>)
        {
          <%preExpMsg%>
-        throw ModelicaSimulationError(MODEL_EQ_SYSTEM,<%msgVar%>);
+          <%match level case ENUM_LITERAL(index=2)
+          then 'cerr <<"Warning: " << <%msgVar%>;'
+          else
+          'throw ModelicaSimulationError(MODEL_EQ_SYSTEM,<%msgVar%>);'
+          %>
 
        }
       >>
@@ -11851,9 +11855,13 @@ template assertCommon(Exp condition, Exp message, Context context, Text &varDecl
       <<
       if(!<%condVar%>)
       {
+
         <%preExpCond%>
         <%preExpMsg%>
-       throw ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM);
+        <%match level case ENUM_LITERAL(index=2)
+         then 'cerr <<"Warning: >Assert in model equation";'
+         else  'throw ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM);'
+        %>
       }
       >>
    %>
@@ -13506,7 +13514,7 @@ template algStmtAssert(DAE.Statement stmt, Context context, Text &varDecls,SimCo
 ::=
 match stmt
 case STMT_ASSERT(source=SOURCE(info=info)) then
-  assertCommon(cond, msg, context, &varDecls, info,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  assertCommon(cond, msg, level, context, &varDecls, info,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 end algStmtAssert;
 
 
