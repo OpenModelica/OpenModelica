@@ -11888,75 +11888,194 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
 let modelname = identOfPath(modelInfo.name)
 '<?xml version="1.0" encoding="utf-8"?>
-<project>
-   <fileHeader companyName="Bosch Rexroth AG" companyURL="" contentDescription="" creationDateTime="2015-11-06T13:36:37" productName="" productRelease="" productVersion=""/>
-   <contentHeader name="<%modelname%>">
-      <coordinateInfo>
-         <fbd>
-            <scaling x="0" y="0"/>
-         </fbd>
-         <ld>
-            <scaling x="0" y="0"/>
-         </ld>
-         <sfc>
-            <scaling x="0" y="0"/>
-         </sfc>
-      </coordinateInfo>
-   </contentHeader>
-   <types>
-      <dataTypes/>
-      <pous>
-         <pou name="<%modelname%>" pouType="functionBlock">
-            <interface>
-               <inputVars>
-                  <%inputVars%>
-               </inputVars>
-               <outputVars>
-                  <%outputVars%>
-               </outputVars>
-                   <localVars>
-                   <variable name="cycletime">
-                     <type>
-                        <LREAL/>
-                     </type>
-                     <initialValue>
-                        <simpleValue value="0.004"/>
-                     </initialValue>
+<project xmlns="http://www.plcopen.org/xml/tc6_0200">
+  <fileHeader companyName="" productName="IndraLogic" productVersion="indralogic" creationDateTime="2015-11-19T11:21:48.0837805" />
+  <contentHeader name="<%modelname%>">
+    <coordinateInfo>
+      <fbd>
+        <scaling x="1" y="1" />
+      </fbd>
+      <ld>
+        <scaling x="1" y="1" />
+      </ld>
+      <sfc>
+        <scaling x="1" y="1" />
+      </sfc>
+    </coordinateInfo>
+    <addData>
+      <data name="http://www.3s-software.com/plcopenxml/projectinformation" handleUnknown="implementation">
+        <ProjectInformation />
+      </data>
+    </addData>
+  </contentHeader>
+  <types>
+    <dataTypes />
+    <pous>
+      <pou name="<%modelname%>" pouType="functionBlock">
+        <interface>
+          <inputVars>
+            <%inputVars%>
+          </inputVars>
+          <outputVars>
+            <%outputVars%>
+          </outputVars>
+          <localVars>
+            <variable name="cycletime">
+              <type>
+                <LREAL />
+              </type>
+              <initialValue>
+                <simpleValue value="0.004" />
+              </initialValue>
+            </variable>
+            <variable name="bAlreadyInitialized">
+              <type>
+                <BOOL />
+              </type>
+            </variable>
+            <variable name="bErrorOccured">
+              <type>
+                <BOOL />
+              </type>
+            </variable>
+            <variable name="controller">
+              <type>
+                <DWORD />
+              </type>
+            </variable>
+            <variable name="simdata">
+              <type>
+                <DWORD />
+              </type>
+            </variable>
+          </localVars>
+        </interface>
+        <body>
+          <ST>
+            <xhtml xmlns="http://www.w3.org/1999/xhtml" />
+          </ST>
+        </body>
+        <addData>
+          <data name="http://www.3s-software.com/plcopenxml/method" handleUnknown="implementation">
+            <Method name="FB_Init" ObjectId="102788a9-c3a0-4650-9ee8-e340b376c772">
+              <interface>
+                <returnType>
+                  <BOOL />
+                </returnType>
+                <inputVars>
+                  <variable name="bInitRetains">
+                    <type>
+                      <BOOL />
+                    </type>
                   </variable>
-                      <variable name="bAlreadyInitialized">
-                     <type>
-                        <BOOL/>
-                     </type>
+                  <variable name="bInCopyCode">
+                    <type>
+                      <BOOL />
+                    </type>
                   </variable>
-                    <variable name="bErrorOccured">
-                     <type>
-                        <BOOL/>
-                     </type>
+                </inputVars>
+                <addData>
+                  <data name="http://www.3s-software.com/plcopenxml/attributes" handleUnknown="implementation">
+                    <Attributes>
+                      <Attribute Name="object_name" Value="FB_Init" />
+                    </Attributes>
+                  </data>
+                </addData>
+              </interface>
+              <body>
+                <ST>
+                  <xhtml xmlns="http://www.w3.org/1999/xhtml" />
+                </ST>
+              </body>
+              <BuildProperties>
+                <ExternalImplementation>true</ExternalImplementation>
+              </BuildProperties>
+              <addData />
+            </Method>
+          </data>
+          <data name="http://www.3s-software.com/plcopenxml/method" handleUnknown="implementation">
+            <Method name="FB_Reinit" ObjectId="a9db0581-3a33-4426-9a31-453930d13eb7">
+              <interface>
+                <returnType>
+                  <BOOL />
+                </returnType>
+                <addData>
+                  <data name="http://www.3s-software.com/plcopenxml/attributes" handleUnknown="implementation">
+                    <Attributes>
+                      <Attribute Name="object_name" Value="FB_Reinit" />
+                    </Attributes>
+                  </data>
+                </addData>
+              </interface>
+              <body>
+                <ST>
+                  <xhtml xmlns="http://www.w3.org/1999/xhtml" />
+                </ST>
+              </body>
+              <BuildProperties>
+                <ExternalImplementation>true</ExternalImplementation>
+              </BuildProperties>
+              <addData />
+            </Method>
+          </data>
+          <data name="http://www.3s-software.com/plcopenxml/method" handleUnknown="implementation">
+            <Method name="FB_Exit" ObjectId="c3ba1a8d-f305-4c9b-a3bf-e0c31a544d79">
+              <interface>
+                <returnType>
+                  <BOOL />
+                </returnType>
+                <inputVars>
+                  <variable name="bInCopyCode">
+                    <type>
+                      <BOOL />
+                    </type>
                   </variable>
-                   <variable name="controller">
-                     <type>
-                        <DWORD/>
-                     </type>
-                  </variable>
-                  <variable name="simdata">
-                     <type>
-                        <DWORD/>
-                     </type>
-                  </variable>
-                  </localVars>
-            </interface>
-            <body>
-               <ST>
-                  <xhtml xmlns="http://www.w3.org/1999/xhtml">
-</xhtml>
-               </ST>
-            </body>
-         </pou>
-      </pous>
-   </types>
-   <instances>
-      <configurations/>
-   </instances>
+                </inputVars>
+                <addData>
+                  <data name="http://www.3s-software.com/plcopenxml/attributes" handleUnknown="implementation">
+                    <Attributes>
+                      <Attribute Name="object_name" Value="FB_Exit" />
+                    </Attributes>
+                  </data>
+                </addData>
+              </interface>
+              <body>
+                <ST>
+                  <xhtml xmlns="http://www.w3.org/1999/xhtml" />
+                </ST>
+              </body>
+              <BuildProperties>
+                <ExternalImplementation>true</ExternalImplementation>
+              </BuildProperties>
+              <addData />
+            </Method>
+          </data>
+          <data name="http://www.3s-software.com/plcopenxml/buildproperties" handleUnknown="implementation">
+            <BuildProperties>
+              <ExternalImplementation>true</ExternalImplementation>
+            </BuildProperties>
+          </data>
+          <data name="http://www.3s-software.com/plcopenxml/objectid" handleUnknown="discard">
+            <ObjectId>33609c54-38cc-4f33-9fa0-93f0a8b3a3b3</ObjectId>
+          </data>
+        </addData>
+      </pou>
+    </pous>
+  </types>
+  <instances>
+    <configurations />
+  </instances>
+  <addData>
+    <data name="http://www.3s-software.com/plcopenxml/projectstructure" handleUnknown="discard">
+      <ProjectStructure>
+        <Object Name="PController" ObjectId="33609c54-38cc-4f33-9fa0-93f0a8b3a3b3">
+          <Object Name="FB_Init" ObjectId="102788a9-c3a0-4650-9ee8-e340b376c772" />
+          <Object Name="FB_Reinit" ObjectId="a9db0581-3a33-4426-9a31-453930d13eb7" />
+          <Object Name="FB_Exit" s="c3ba1a8d-f305-4c9b-a3bf-e0c31a544d79" />
+        </Object>
+      </ProjectStructure>
+    </data>
+  </addData>
 </project>
 '
 end functionBlock;
