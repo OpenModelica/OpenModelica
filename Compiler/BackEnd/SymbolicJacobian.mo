@@ -150,7 +150,7 @@ algorithm
 
     // get states for DAE
     BackendDAE.DAE(eqs = {BackendDAE.EQSYSTEM(orderedVars = v)}, shared=shared) := DAE;
-    states := BackendVariable.getAllStateVarFromVariables(v);
+    states := listReverse(BackendVariable.getAllStateVarFromVariables(v));
 
     // generate sparse pattern
     (sparsePattern, coloredCols) := generateSparsePattern(DAE, states, states);
