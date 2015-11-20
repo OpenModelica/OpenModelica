@@ -48,7 +48,7 @@ using std::runtime_error;
 // uBLAS library
 namespace ublas = boost::numeric::ublas;
 
-#if defined(USE_CPP_ELEVEN)
+#if !defined(USE_CPP_03)
   #include <array>
   #include <thread>
   #include <atomic>
@@ -172,7 +172,7 @@ namespace ublas = boost::numeric::ublas;
   using boost::weak_ptr;
   using boost::dynamic_pointer_cast;
   using omcpp::to_string;
-#endif //USE_CPP_ELEVEN
+#endif //!USE_CPP_03
 
 #if defined(USE_THREAD)
   #include <Core/Utils/extension/barriers.hpp>

@@ -741,7 +741,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   BINARIES=<%fileNamePrefix%>$(DLLEXT) <%platformbins%>
 
   # need boost system lib prior to C++11
-  ifneq ($(findstring USE_CPP_ELEVEN,$(CFLAGS)),USE_CPP_ELEVEN)
+  ifeq ($(findstring USE_CPP_03,$(CFLAGS)),USE_CPP_03)
     $(eval LIBS=$(LIBS) -l$(BOOST_SYSTEM_LIB))
     $(eval BINARIES=$(BINARIES) $(BOOST_LIBS)/lib$(BOOST_SYSTEM_LIB)$(DLLEXT))
   endif

@@ -174,7 +174,7 @@ template additionalHpcomProtectedMemberDeclaration(SimCode simCode, Text& extraF
           else
             <<
             #if defined(USE_THREAD)
-              #if defined(USE_CPP_ELEVEN)
+              #if !defined(USE_CPP_03)
                 return std::hash<std::thread::id>()(std::this_thread::get_id());
               #else
                 boost::hash<std::string> string_hash;
