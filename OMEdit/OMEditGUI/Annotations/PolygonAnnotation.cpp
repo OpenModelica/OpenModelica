@@ -150,12 +150,9 @@ QRectF PolygonAnnotation::boundingRect() const
 QPainterPath PolygonAnnotation::shape() const
 {
   QPainterPath path = getShape();
-  if (mFillPattern == StringHandler::FillNone)
-  {
+  if (mFillPattern == StringHandler::FillNone) {
     return addPathStroker(path);
-  }
-  else
-  {
+  } else {
     return path;
   }
 }
@@ -164,8 +161,7 @@ void PolygonAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
-  if (mVisible)
-  {
+  if (mVisible) {
     drawPolygonAnnotaion(painter);
   }
 }

@@ -684,6 +684,7 @@ void LineAnnotation::handleComponentMoved()
   if (mPoints.size() < 2) {
     return;
   }
+  prepareGeometryChange();
   if (mpStartComponent) {
     Component *pComponent = qobject_cast<Component*>(sender());
     if (pComponent == mpStartComponent->getRootParentComponent()) {
@@ -696,7 +697,6 @@ void LineAnnotation::handleComponentMoved()
       updateEndPoint(mpGraphicsView->roundPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center())));
     }
   }
-  update();
 }
 
 /*!

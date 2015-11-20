@@ -1023,6 +1023,7 @@ void ShapeAnnotation::referenceShapeChanged()
   ShapeAnnotation *pShapeAnnotation = qobject_cast<ShapeAnnotation*>(sender());
   if (pShapeAnnotation) {
     if (mpGraphicsView) {
+      prepareGeometryChange();
       updateShape(pShapeAnnotation);
       setTransform(pShapeAnnotation->mTransformation.getTransformationMatrix());
       removeCornerItems();
@@ -1030,10 +1031,12 @@ void ShapeAnnotation::referenceShapeChanged()
       setCornerItemsActiveOrPassive();
       update();
     } else if (mpParentComponent) {
+      prepareGeometryChange();
       updateShape(pShapeAnnotation);
       setPos(mOrigin);
       setRotation(mRotation);
       update();
+      mpParentComponent->shapeUpdated();
     }
   }
 }
@@ -1372,6 +1375,7 @@ void ShapeAnnotation::cornerItemReleased()
  */
 void ShapeAnnotation::updateCornerItemPoint(int index, QPointF point)
 {
+  prepareGeometryChange();
   if (dynamic_cast<LineAnnotation*>(this)) {
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
     if (pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {

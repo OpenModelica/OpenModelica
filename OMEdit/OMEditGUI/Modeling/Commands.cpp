@@ -109,7 +109,6 @@ void UpdateShapeCommand::redo()
   mpShapeAnnotation->removeCornerItems();
   mpShapeAnnotation->drawCornerItems();
   mpShapeAnnotation->setCornerItemsActiveOrPassive();
-  mpShapeAnnotation->update();
   mpShapeAnnotation->emitChanged();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
 }
@@ -125,7 +124,6 @@ void UpdateShapeCommand::undo()
   mpShapeAnnotation->removeCornerItems();
   mpShapeAnnotation->drawCornerItems();
   mpShapeAnnotation->setCornerItemsActiveOrPassive();
-  mpShapeAnnotation->update();
   mpShapeAnnotation->emitChanged();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
 }
