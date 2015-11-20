@@ -2657,18 +2657,27 @@ void ModelWidget::createModelWidgetComponents()
  */
 Component* ModelWidget::getConnectorComponent(Component *pConnectorComponent, QString connectorName)
 {
+  Component *pConnectorComponentFound = 0;
   foreach (Component *pComponent, pConnectorComponent->getComponentsList()) {
     if (pComponent->getName().compare(connectorName) == 0) {
-      return pComponent;
+      pConnectorComponentFound = pComponent;
+      return pConnectorComponentFound;
+    }
+    foreach (Component *pInheritedComponent, pComponent->getInheritedComponentsList()) {
+      pConnectorComponentFound = getConnectorComponent(pInheritedComponent, connectorName);
+      if (pConnectorComponentFound) {
+        return pConnectorComponentFound;
+      }
     }
   }
   /* if port is not found in components list then look into the inherited components list. */
   foreach (Component *pInheritedComponent, pConnectorComponent->getInheritedComponentsList()) {
-    if (pInheritedComponent->getName().compare(connectorName) == 0) {
-      return pInheritedComponent;
+    pConnectorComponentFound = getConnectorComponent(pInheritedComponent, connectorName);
+    if (pConnectorComponentFound) {
+      return pConnectorComponentFound;
     }
   }
-  return 0;
+  return pConnectorComponentFound;
 }
 
 void ModelWidget::refresh()
