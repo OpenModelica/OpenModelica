@@ -57,16 +57,16 @@ static const char *dasslJacobianMethodStr[DASSL_JAC_MAX] = {"unknown",
                                                 "coloredNumerical",
                                                 "coloredSymbolical",
                                                 "internalNumerical",
-                                                "symbolical",
-                                                "numerical"
+                                                "numerical",
+                                                "symbolical"
                                                 };
 
 static const char *dasslJacobianMethodDescStr[DASSL_JAC_MAX] = {"unknown",
                                                        "colored numerical jacobian - default.",
                                                        "colored symbolic jacobian - needs omc compiler flags +generateSymbolicJacobian or +generateSymbolicLinearization.",
-                                                       "internal numerical jacobian."
-                                                       "symbolic jacobian - needs omc compiler flags +generateSymbolicJacobian or +generateSymbolicLinearization.",
-                                                       "numerical jacobian."
+                                                       "internal numerical jacobian.",
+                                                       "numerical jacobian.",
+                                                       "symbolic jacobian - needs omc compiler flags +generateSymbolicJacobian or +generateSymbolicLinearization."
                                                       };
 
 /* experimental flag for SKF TLM Master Solver Interface
@@ -346,7 +346,6 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
   /* selects the calculation method of the jacobian */
   if(dasslData->dasslJacobian == DASSL_COLOREDNUMJAC ||
      dasslData->dasslJacobian == DASSL_COLOREDSYMJAC ||
-     dasslData->dasslJacobian == DASSL_NUMJAC ||
      dasslData->dasslJacobian == DASSL_SYMJAC)
   {
     if (data->callback->initialAnalyticJacobianA(data, threadData))
@@ -354,11 +353,10 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
       dasslData->dasslJacobian = DASSL_INTERNALNUMJAC;
     }
-    else
-    {
-      dasslData->info[4] = 1; /* use sub-routine JAC */
-    }
   }
+  /* default use a user sub-routine for JAC */
+  dasslData->info[4] = 1;
+
   /* set up the appropriate function pointer */
   switch (dasslData->dasslJacobian){
     case DASSL_COLOREDNUMJAC:
@@ -377,6 +375,8 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
       break;
     case DASSL_INTERNALNUMJAC:
       dasslData->jacobianFunction =  dummy_Jacobian;
+      /* no user sub-routine for JAC */
+      dasslData->info[4] = 0;
       break;
     default:
       throwStreamPrint(threadData,"unrecognized jacobian calculation method %s", (const char*)omc_flagValue[FLAG_DASSL_JACOBIAN]);
@@ -912,15 +912,6 @@ int functionJacAColored(DATA* data, threadData_t *threadData, double* jac)
       if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
         data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1;
 
-    /*
-    // debug output
-    if(ACTIVE_STREAM((LOG_JAC | LOG_ENDJAC))){
-      printf("Caluculate one col:\n");
-      for(l=0;  l < data->simulationInfo.analyticJacobians[index].sizeCols;l++)
-        infoStreamPrint((LOG_JAC | LOG_ENDJAC),"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",l,data->simulationInfo.analyticJacobians[index].seedVars[l]);
-    }
-    */
-
     data->callback->functionJacA_column(data, threadData);
 
     for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeCols; j++)
@@ -936,7 +927,6 @@ int functionJacAColored(DATA* data, threadData_t *threadData, double* jac)
           l  = data->simulationInfo.analyticJacobians[index].sparsePattern.index[ii];
           k  = j*data->simulationInfo.analyticJacobians[index].sizeRows + l;
           jac[k] = data->simulationInfo.analyticJacobians[index].resultVars[l];
-          /*infoStreamPrint((LOG_JAC | LOG_ENDJAC),"write %d. in jac[%d]-[%d,%d]=%f from col[%d]=%f",ii,k,l,j,jac[k],l,data->simulationInfo.analyticJacobians[index].resultVars[l]);*/
           ii++;
         };
       }
@@ -944,18 +934,6 @@ int functionJacAColored(DATA* data, threadData_t *threadData, double* jac)
     for(ii=0; ii < data->simulationInfo.analyticJacobians[index].sizeCols; ii++)
       if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i) data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0;
 
-    /*
-   // debug output
-    if(ACTIVE_STREAM((LOG_JAC | LOG_ENDJAC))){
-      infoStreamPrint("Print jac:");
-      for(l=0;  l < data->simulationInfo.analyticJacobians[index].sizeCols;l++)
-      {
-        for(k=0;  k < data->simulationInfo.analyticJacobians[index].sizeRows;k++)
-          printf("% .5e ",jac[l+k*data->simulationInfo.analyticJacobians[index].sizeRows]);
-        printf("\n");
-      }
-    }
-    */
   }
 
   TRACE_POP
@@ -974,37 +952,15 @@ int functionJacASym(DATA* data, threadData_t *threadData, double* jac)
   {
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
 
-    /*
-    // debug output
-    if(ACTIVE_STREAM((LOG_JAC | LOG_ENDJAC)))
-    {
-      printf("Caluculate one col:\n");
-      for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
-        infoStreamPrint((LOG_JAC | LOG_ENDJAC),"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
-    }
-    */
-
     data->callback->functionJacA_column(data, threadData);
 
     for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeRows; j++)
     {
       jac[k++] = data->simulationInfo.analyticJacobians[index].resultVars[j];
-      /*infoStreamPrint((LOG_JAC | LOG_ENDJAC),"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k,i,j,jac[k-1],j,data->simulationInfo.analyticJacobians[index].resultVars[j]);*/
     }
 
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
-  // debug output; would be optimized away if the code compiled
-  /* if(DEBUG_STREAM(LOG_DEBUG))
-  {
-    infoStreamPrint("Print jac:");
-    for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
-    {
-      for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
-        printf("% .5e ",jac[i+j*data->simulationInfo.analyticJacobians[index].sizeCols]);
-      printf("\n");
-    }
-  } */
 
   TRACE_POP
   return 0;
@@ -1142,20 +1098,6 @@ int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, do
     y[i] = ysave;
   }
 
-  /*
-   * Debug output
-  if(ACTIVE_STREAM(LOG_JAC))
-  {
-    infoStreamPrint(LOG_SOLVER, "Print jac:");
-    for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
-    {
-      for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
-        printf("%.20e ",matrixA[i+j*data->simulationInfo.analyticJacobians[index].sizeCols]);
-      printf("\n");
-    }
-  }
-  */
-
   TRACE_POP
   return 0;
 }
@@ -1246,27 +1188,12 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
           l  =  data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
           k  = l + ii*data->simulationInfo.analyticJacobians[index].sizeRows;
           matrixA[k] = (dasslData->newdelta[l] - delta[l]) * delta_hh[ii];
-          /*infoStreamPrint(ACTIVE_STREAM(LOG_JAC),"write %d. in jac[%d]-[%d,%d]=%e",ii,k,j,l,matrixA[k]);*/
           j++;
         };
         y[ii] = ysave[ii];
       }
     }
   }
-
-  /*
-   * Debug output
-  if(ACTIVE_STREAM(LOG_JAC))
-  {
-    infoStreamPrint(LOG_SOLVER, "Print jac:");
-    for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
-    {
-      for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
-        printf("%.20e ",matrixA[i+j*data->simulationInfo.analyticJacobians[index].sizeCols]);
-      printf("\n");
-    }
-  }
-  */
 
   TRACE_POP
   return 0;
