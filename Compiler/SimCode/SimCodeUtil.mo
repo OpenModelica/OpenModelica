@@ -6415,7 +6415,7 @@ protected
   SimCodeVar.SimVar var;
 algorithm
   if not listEmpty(varLst) then
-    print(header+":\n----------------------\n");
+    print(header+"\n----------------------\n");
   for var in varLst loop
     print(simVarString(var)+"\n");
   end for;
@@ -6587,25 +6587,25 @@ algorithm
     case(SimCode.SES_RESIDUAL(index=idx,exp=exp))
       equation
         s = intString(idx) +": "+ ExpressionDump.printExpStr(exp)+" (RESIDUAL)";
-        print(s+"\n");
+        print(s);
     then ();
 
     case(SimCode.SES_SIMPLE_ASSIGN(index=idx,cref=cref,exp=exp))
       equation
         s = intString(idx) +": "+ ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]";
-        print(s+"\n");
+        print(s);
       then ();
 
     case(SimCode.SES_ARRAY_CALL_ASSIGN(index=idx,lhs=lhs,exp=exp))
       equation
         s = intString(idx) +": "+ ExpressionDump.printExpStr(lhs) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]";
-        print(s+"\n");
+        print(s);
     then ();
 
       case(SimCode.SES_IFEQUATION(index=idx))
       equation
         s = intString(idx) +": "+ " (IF)";
-        print(s+"\n");
+        print(s);
     then ();
 
     case(SimCode.SES_ALGORITHM(index=idx,statements=stmts))
@@ -6613,14 +6613,14 @@ algorithm
         sLst = List.map(stmts,DAEDump.ppStatementStr);
         sLst = List.map1(sLst, stringAppend, "\t");
         s = intString(idx) +": "+ List.fold(sLst,stringAppend,"");
-        print(s+"\n");
+        print(s);
     then ();
 
     case(SimCode.SES_INVERSE_ALGORITHM(index=idx,statements=stmts)) equation
       sLst = List.map(stmts, DAEDump.ppStatementStr);
       sLst = List.map1(sLst, stringAppend, "\t");
       s = intString(idx) +": "+ List.fold(sLst, stringAppend, "");
-      print(s+"\n");
+      print(s);
     then ();
 
     // no dynamic tearing
@@ -6689,7 +6689,6 @@ algorithm
         dumpSimEqSystem(cont);
         print("\t");
         dumpSimEqSystemLst(eqs,"\n\t");
-        print("\n");
     then ();
 
     case(SimCode.SES_WHEN(index=idx, conditions=crefs, whenStmtLst = whenStmtLst, elseWhen=elseWhen))
@@ -6809,11 +6808,14 @@ public function dumpSimCodeDebug"prints the simcode debug output to std out."
 protected
   list<Option<SimCode.JacobianMatrix>> jacObs;
 algorithm
-  print("algebraicEquations: \n-----------------------\n");
+  print("allEquations: \n-----------------------\n");
   dumpSimEqSystemLst(simCode.allEquations,"\n");
   print("\n--------------\n");
   print("odeEquations ("+intString(listLength(simCode.odeEquations))+" systems): \n-----------------------\n");
   List.map1_0(simCode.odeEquations,dumpSimEqSystemLst,"\n");
+  print("\n--------------\n");
+  print("algebraicEquations ("+intString(listLength(simCode.algebraicEquations))+" systems): \n-----------------------\n");
+  List.map1_0(simCode.algebraicEquations,dumpSimEqSystemLst,"\n");
   print("\n--------------\n");
   print("initialEquations: ("+intString(listLength(simCode.initialEquations))+")\n-----------------------\n");
   dumpSimEqSystemLst(simCode.initialEquations,"\n");

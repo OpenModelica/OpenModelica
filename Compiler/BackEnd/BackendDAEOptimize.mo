@@ -5439,8 +5439,6 @@ end addTimeAsState4;
 //-------------------------------------
 //Evaluate Output Variables Only.
 //-------------------------------------
-
-
 public function evaluateOutputsOnly"Computes only the scc which are necessary in order to calculate the output vars.
 author: Waurich TUD 09/2015"
   input BackendDAE.BackendDAE daeIn;
@@ -5522,7 +5520,7 @@ algorithm
         (states,stateIndxs) := BackendVariable.getVarLst(crefs,vars,{},{});
         (stateIndxs,states) := List.filter1OnTrueSync(stateIndxs,stateVarIsNotVisited,varVisited,states);//not yet visited
         if not listEmpty(stateIndxs) then
-            print("states "+stringDelimitList(List.map(states,BackendDump.varString),"\n ")+"\n");
+            //print("states "+stringDelimitList(List.map(states,BackendDump.varString),"\n ")+"\n");
           List.map2_0(stateIndxs,Array.updateIndexFirst,1,varVisited);
           //add the new tasks which are necessary for the states
           stateTasks1 := List.map(List.map1(stateIndxs,Array.getIndexFirst,varCompMapping),Util.tuple31);
@@ -5572,7 +5570,7 @@ algorithm
 
 	    (syst, _, _, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.NORMAL(), SOME(funcTree));
 	    syst := BackendDAETransform.strongComponentsScalar(syst,shared,mapEqnIncRow,mapIncRowEqn);
-
+      syst.removedEqs := BackendEquation.emptyEqns();
     else
       print("No output variables in this system\n");
     end if;
