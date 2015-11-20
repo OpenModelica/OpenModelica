@@ -2174,7 +2174,12 @@ void LibraryTreeView::showContextMenu(QPoint point)
             mpUnloadClassAction->setText(Helper::deleteStr);
             mpUnloadClassAction->setStatusTip(tr("Deletes the Modelica class"));
           }
-          menu.addAction(mpUnloadClassAction);
+          // only add unload/delete option for top level system libraries
+          if (!pLibraryTreeItem->isSystemLibrary()) {
+            menu.addAction(mpUnloadClassAction);
+          } else if (pLibraryTreeItem->isSystemLibrary() && pLibraryTreeItem->isTopLevel()) {
+            menu.addAction(mpUnloadClassAction);
+          }
           /* Only used for development testing. */
           /*menu.addAction(mpRefreshAction);*/
         }
