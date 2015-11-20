@@ -113,51 +113,54 @@ protected partial function BasicTypeAttrTyper
 end BasicTypeAttrTyper;
 
 // protected imports
-protected import BaseHashTable;
-protected import Builtin;
-protected import Ceval;
-protected import ConnectUtil;
-protected import ComponentReference;
-protected import Config;
-protected import DAEUtil;
-protected import Debug;
-protected import Dump;
-protected import Error;
-protected import ErrorExt;
-protected import Expression;
-protected import ExpressionDump;
-protected import Flags;
-protected import FGraph;
-protected import FGraphBuildEnv;
-protected import FNode;
-protected import Global;
-protected import HashTable;
-protected import HashTable5;
-protected import InstSection;
-protected import InstBinding;
-protected import InstVar;
-protected import InstFunction;
-protected import InstUtil;
-protected import InstExtends;
-protected import List;
-protected import Lookup;
-protected import MetaUtil;
-protected import PrefixUtil;
-protected import SCodeUtil;
-protected import Static;
-protected import Types;
-protected import UnitParserExt;
-protected import Util;
-protected import Values;
-protected import ValuesUtil;
-protected import System;
-protected import SCodeDump;
-protected import UnitAbsynBuilder;
-protected import NFSCodeFlattenRedeclare;
-protected import InstStateMachineUtil;
-protected import HashTableSM1;
+protected
 
-protected import DAEDump; // BTH
+import BaseHashTable;
+import Builtin;
+import Ceval;
+import ConnectUtil;
+import ComponentReference;
+import Config;
+import DAEUtil;
+import Debug;
+import Dump;
+import Error;
+import ErrorExt;
+import Expression;
+import ExpressionDump;
+import Flags;
+import FGraph;
+import FGraphBuildEnv;
+import FNode;
+import GC;
+import Global;
+import HashTable;
+import HashTable5;
+import InstSection;
+import InstBinding;
+import InstVar;
+import InstFunction;
+import InstUtil;
+import InstExtends;
+import List;
+import Lookup;
+import MetaUtil;
+import PrefixUtil;
+import SCodeUtil;
+import Static;
+import Types;
+import UnitParserExt;
+import Util;
+import Values;
+import ValuesUtil;
+import System;
+import SCodeDump;
+import UnitAbsynBuilder;
+import NFSCodeFlattenRedeclare;
+import InstStateMachineUtil;
+import HashTableSM1;
+
+import DAEDump; // BTH
 
 protected function instantiateClass_dispatch
 " instantiate a class.
@@ -196,6 +199,11 @@ algorithm
 
         // set the source of this element
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
+
+        if Flags.isSet(Flags.GC_PROF) then
+          print(GC.profStatsStr(GC.getProfStats(), head="GC stats after pre-frontend work (building graphs):") + "\n");
+        end if;
+
         (cache,env_2,ih,dae2) = instClassInProgram(cache, env_1, ih, cdecls, path, source);
         // check the models for balancing
         //Debug.fcall2(Flags.CHECK_MODEL_BALANCE, checkModelBalancing, SOME(path), dae1);
@@ -234,6 +242,10 @@ algorithm
 
         //System.startTimer();
         //print("\nInstClass");
+        if Flags.isSet(Flags.GC_PROF) then
+          print(GC.profStatsStr(GC.getProfStats(), head="GC stats after pre-frontend work (building graphs):") + "\n");
+        end if;
+
         (cache,env_2,ih,_,dae,_,_,_,_,_) = instClass(cache,env_2,ih,
           UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), makeTopComponentPrefix(env_2, n), cdef,
           {}, false, InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) "impl";
@@ -5423,7 +5435,7 @@ protected function emptyInstHashTableSized
   input Integer size;
   output InstHashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(Absyn.pathHashMod,Absyn.pathEqual,Absyn.pathString,opaqVal));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(Absyn.pathHashMod,Absyn.pathEqual,Absyn.pathStringDefault,opaqVal));
 end emptyInstHashTableSized;
 
 /* end HashTable */
@@ -5542,7 +5554,7 @@ algorithm
 
     case (_)
       equation
-        str = Absyn.pathString2NoLeadingDot(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(inPrefix)))), "$");
+        str = Absyn.pathString(PrefixUtil.prefixToPath(inPrefix), "$", usefq=false, reverse=true);
       then
         str;
 

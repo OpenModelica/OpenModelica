@@ -12062,6 +12062,7 @@ protected function makeMatrix
 protected
   list<DAE.Exp> col;
   Integer r;
+  import listReverse = MetaModelica.Dangerous.listReverseInPlace;
 algorithm
   res := {};
   col := {};

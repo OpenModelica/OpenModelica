@@ -2638,7 +2638,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, Absyn.pathString), "\n  ");
+        msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, Absyn.pathStringDefault), "\n  ");
         msg = "DAEUtil.getNamedFunction failed: " + Absyn.pathString(path) + "\nThe following functions were part of the cache:\n  " + msg;
         // Error.addMessage(Error.INTERNAL_ERROR,{msg});
         Debug.traceln(msg);
@@ -2660,7 +2660,7 @@ algorithm
     case (_,_,_) then Util.getOption(avlTreeGet(functions, path));
     else
       equation
-        msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, Absyn.pathString), "\n  ");
+        msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, Absyn.pathStringDefault), "\n  ");
         msg = "DAEUtil.getNamedFunction failed: " + Absyn.pathString(path) + "\nThe following functions were part of the cache:\n  " + msg;
         Error.addSourceMessage(Error.INTERNAL_ERROR,{msg},info);
       then fail();
@@ -3734,7 +3734,7 @@ algorithm
       equation
         lst = avlTreeToList(ft);
         lstInvalid = List.select(lst, isInvalidFunctionEntry);
-        str = stringDelimitList(List.map(List.map(lstInvalid, Util.tuple21), Absyn.pathString), "\n ");
+        str = stringDelimitList(list(Absyn.pathString(p) for p in List.map(lstInvalid, Util.tuple21)), "\n ");
         str = "\n " + str + "\n";
         Error.addMessage(Error.NON_INSTANTIATED_FUNCTION, {str});
         fns = List.mapMap(List.select(lst, isValidFunctionEntry), Util.tuple22, Util.getOption);
@@ -3747,7 +3747,7 @@ public function getFunctionNames
   input DAE.FunctionTree ft;
   output list<String> strs;
 algorithm
-  strs := List.mapMap(getFunctionList(ft), functionName, Absyn.pathString);
+  strs := List.mapMap(getFunctionList(ft), functionName, Absyn.pathStringDefault);
 end getFunctionNames;
 
 protected function isInvalidFunctionEntry

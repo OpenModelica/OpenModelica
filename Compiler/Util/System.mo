@@ -1186,5 +1186,49 @@ annotation(Documentation(info="<html>
 </html>"));
 end dladdr;
 
+class StringAllocator
+  extends ExternalObject;
+  function constructor
+    input Integer sz;
+    output StringAllocator str;
+  external "C" str=StringAllocator_constructor(sz) annotation(Include="
+void* StringAllocator_constructor(int sz)
+{
+  return mmc_alloc_scon(sz);
+}
+");
+  end constructor;
+  function destructor
+    input StringAllocator str;
+  algorithm
+    /* Nothing */
+  end destructor;
+end StringAllocator;
+
+function stringAllocatorStringCopy
+  input StringAllocator dest;
+  input String source;
+  input Integer destOffset=0;
+external "C" om_stringAllocatorStringCopy(dest,source,destOffset) annotation(Include="
+void om_stringAllocatorStringCopy(void *dest, char *source, int destOffset) {
+  strcpy(MMC_STRINGDATA(dest)+destOffset, source);
+}
+", Documentation(info="<html>
+<p>Does a strcpy into the (input) destination. This is dangerous and not valid Modelica.</p>
+<p>Make sure the String has been allocated properly and is not shared. The input lengths are not validated, so this function can write out of bounds if called incorrectly.</p>
+</html>"));
+end stringAllocatorStringCopy;
+
+function stringAllocatorResult<T>
+  input StringAllocator sa;
+  input T dummy annotation(__OpenModelica_UnusedVariable=true);
+  output T res;
+external "C" res=om_stringAllocatorResult(sa) annotation(Include="
+const char* om_stringAllocatorResult(void *sa) {
+  return sa;
+}
+");
+end stringAllocatorResult;
+
 annotation(__OpenModelica_Interface="util");
 end System;
