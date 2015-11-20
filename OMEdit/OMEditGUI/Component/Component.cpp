@@ -818,6 +818,10 @@ QString Component::getParameterDisplayString(QString parameterName)
   return displayString;
 }
 
+/*!
+ * \brief Component::shapeAdded
+ * Called when a reference shape is added in its actual class.
+ */
 void Component::shapeAdded()
 {
   mpNonExistingComponentLine->setVisible(false);
@@ -828,6 +832,21 @@ void Component::shapeAdded()
   }
 }
 
+/*!
+ * \brief Component::shapeUpdated
+ * Called when a reference shape is updated in its actual class.
+ */
+void Component::shapeUpdated()
+{
+  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
+  }
+}
+
+/*!
+ * \brief Component::shapeDeleted
+ * Called when a reference shape is deleted in its actual class.
+ */
 void Component::shapeDeleted()
 {
   mpNonExistingComponentLine->setVisible(false);
@@ -1291,6 +1310,7 @@ void Component::referenceComponentDeleted()
  */
 void Component::prepareResizeComponent(ResizerItem *pResizerItem)
 {
+  prepareGeometryChange();
   mOldTransformation = mTransformation;
   mpSelectedResizerItem = pResizerItem;
   mTransform = transform();

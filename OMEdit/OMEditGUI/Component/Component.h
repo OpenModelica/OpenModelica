@@ -182,6 +182,7 @@ public:
   void componentParameterHasChanged();
   QString getParameterDisplayString(QString parameterName);
   void shapeAdded();
+  void shapeUpdated();
   void shapeDeleted();
   void addInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo);
   void removeInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo);

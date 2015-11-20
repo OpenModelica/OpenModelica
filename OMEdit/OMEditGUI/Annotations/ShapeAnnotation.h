@@ -192,6 +192,7 @@ public:
   void emitAdded() {emit added();}
   void emitChanged() {emit changed();}
   void emitDeleted() {emit deleted();}
+  void emitPrepareGeometryChange() {prepareGeometryChange();}
 signals:
   void updateReferenceShapes();
   void added();
