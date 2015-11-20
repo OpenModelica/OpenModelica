@@ -57,8 +57,8 @@ evaluateParameter() {
     FMU_SUNDIALS) FMU_SUNDIALS="yes" ;;
     PARALLEL_OUTPUT) PARALLEL_OUTPUT="yes" ;;
     DISABLE_LOGGER) LOGGER="no" ;;
-    BUILD_TYPE=?*) CMAKE_BUILDTYPE=`echo $1| cut -d'=' -f 2` ;;
-    BUILD_TYPE=) ;;
+    BUILDTYPE=?*) CMAKE_BUILDTYPE=`echo $1| cut -d'=' -f 2` ;;
+    BUILDTYPE=) ;;
     CPP_03) CPP_03="yes" ;;
     *) echo "Unknown Parameter given $1" ;;
   esac

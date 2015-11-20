@@ -11,17 +11,20 @@
 #     if ScoreP should be used for performance analysis                            -DUSE_SCOREP
 #     if the Intel TBB library was found                                           -DUSE_INTEL_TBB
 #     if the Pugi XML library was found                                            -DUSE_PUGI_XML
-#     if profiling for the simulation runtime should be enabled                    -DRUNTIME_PROFILING
+#     if profiling for the simulation runtime is enabled                           -DRUNTIME_PROFILING
 #     if the equation systems of a FMU should be solved with sundials solvers      -DFMU_SUNDIALS
-#     if the logger should be used                                                 -DUSE_LOGGER
+#     if the logger is used                                                        -DUSE_LOGGER
 #
 # Some of these options can be controlled by passing arguments to CMAKE
 #     if write output should be handled in parallel                                -DUSE_PARALLEL_OUTPUT=ON [default: OFF]
 #     if ScoreP should be used for performance analysis                            -DUSE_SCOREP=ON [default: OFF]
+#     the path to the scorep-installation                                          -DSCOREP_HOME="..." [default: ""]
 #     if the boost libraries should be linked statically                           -DBOOST_STATIC_LINKING=ON [default: OFF]
 #     if boost libraries should be linked against absolute path libraries          -DUSE_BOOST_REALPATHS=ON [default: OFF]
 #     disable c++11, even if the compiler is able to use it                        -DUSE_CPP_03=ON [default: OFF]
+#     if profiling of the simulation runtime should be enabled                     -DRUNTIME_PROFILING=ON [default: OFF]
 #     if the equation systems of a FMU should be solved with sundials solvers      -DFMU_SUNDIALS=ON [default: OFF]
+#     if the logger should be completely disabled or used                          -DUSE_LOGGER=OFF [default: ON]
 #
 #     Example: "cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo" to create statically linked libraries
 #
