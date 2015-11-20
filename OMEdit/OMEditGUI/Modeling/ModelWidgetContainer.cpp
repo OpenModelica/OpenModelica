@@ -348,6 +348,7 @@ void GraphicsView::addComponentToView(QString name, LibraryTreeItem *pLibraryTre
                                                  addObject, openingClass, this);
   mpModelWidget->getUndoStack()->push(pAddComponentCommand);
   if (!openingClass) {
+    mpModelWidget->getLibraryTreeItem()->emitComponentAdded(pAddComponentCommand->getComponent());
     mpModelWidget->updateModelicaText();
   }
 }
@@ -1124,6 +1125,7 @@ void GraphicsView::addConnection(Component *pComponent)
         mpConnectionLineAnnotation->setStartComponentName(startComponentName);
         mpConnectionLineAnnotation->setEndComponentName(endComponentName);
         mpModelWidget->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
+        mpModelWidget->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
         mpModelWidget->updateModelicaText();
       }
       setIsCreatingConnection(false);
@@ -1552,15 +1554,18 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     QGraphicsItem *pGraphicsItem = itemAt(event->pos());
     if (pGraphicsItem && pGraphicsItem->parentItem()) {
       Component *pComponent = dynamic_cast<Component*>(pGraphicsItem->parentItem());
-      if (pComponent && !pComponent->isSelected()) {
-        if (pMainWindow->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
-            pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector() &&
-            !mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
-          if (!isCreatingConnection()) {
-            mpClickedComponent = pComponent;
-          } else if (isCreatingConnection()) {
-            addConnection(pComponent);  // end the connection
-            eventConsumed = true; // consume the event so that connection line or end component will not become selected
+      if (pComponent) {
+        Component *pRootComponent = pComponent->getRootParentComponent();
+        if (pRootComponent && !pRootComponent->isSelected()) {
+          if (pMainWindow->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
+              pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector() &&
+              !mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+            if (!isCreatingConnection()) {
+              mpClickedComponent = pComponent;
+            } else if (isCreatingConnection()) {
+              addConnection(pComponent);  // end the connection
+              eventConsumed = true; // consume the event so that connection line or end component will not become selected
+            }
           }
         }
       }
@@ -1589,17 +1594,20 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
     QGraphicsItem *pGraphicsItem = itemAt(event->pos());
     if (pGraphicsItem && pGraphicsItem->parentItem()) {
       Component *pComponent = dynamic_cast<Component*>(pGraphicsItem->parentItem());
-      if (pComponent && !pComponent->isSelected()) {
-        if (pMainWindow->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
-            pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector() &&
-            !mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
-          setCrossCursor = true;
-          /* If setOverrideCursor() has been called twice, calling restoreOverrideCursor() will activate the first cursor set.
+      if (pComponent) {
+        Component *pRootComponent = pComponent->getRootParentComponent();
+        if (pRootComponent && !pRootComponent->isSelected()) {
+          if (pMainWindow->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
+              pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector() &&
+              !mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+            setCrossCursor = true;
+            /* If setOverrideCursor() has been called twice, calling restoreOverrideCursor() will activate the first cursor set.
            * Calling this function a second time restores the original widgets' cursors.
            * So we only set the cursor if it is not already Qt::CrossCursor.
            */
-          if (!QApplication::overrideCursor() || QApplication::overrideCursor()->shape() != Qt::CrossCursor) {
-            QApplication::setOverrideCursor(Qt::CrossCursor);
+            if (!QApplication::overrideCursor() || QApplication::overrideCursor()->shape() != Qt::CrossCursor) {
+              QApplication::setOverrideCursor(Qt::CrossCursor);
+            }
           }
         }
       }

@@ -511,8 +511,8 @@ void LibraryTreeItem::addInheritedClass(LibraryTreeItem *pLibraryTreeItem)
   connect(pLibraryTreeItem, SIGNAL(unLoaded(LibraryTreeItem*)), this, SLOT(handleUnloaded(LibraryTreeItem*)), Qt::UniqueConnection);
   connect(pLibraryTreeItem, SIGNAL(shapeAdded(LibraryTreeItem*,ShapeAnnotation*,GraphicsView*)),
           this, SLOT(handleShapeAdded(LibraryTreeItem*,ShapeAnnotation*,GraphicsView*)), Qt::UniqueConnection);
-  connect(pLibraryTreeItem, SIGNAL(componentAdded(LibraryTreeItem*,Component*,GraphicsView*)),
-          this, SLOT(handleComponentAdded(LibraryTreeItem*,Component*,GraphicsView*)), Qt::UniqueConnection);
+  connect(pLibraryTreeItem, SIGNAL(componentAdded(LibraryTreeItem*,Component*)),
+          this, SLOT(handleComponentAdded(LibraryTreeItem*,Component*)), Qt::UniqueConnection);
   connect(pLibraryTreeItem, SIGNAL(connectionAdded(LibraryTreeItem*,LineAnnotation*)),
           this, SLOT(handleConnectionAdded(LibraryTreeItem*,LineAnnotation*)), Qt::UniqueConnection);
   connect(pLibraryTreeItem, SIGNAL(iconUpdated()), this, SLOT(handleIconUpdated()), Qt::UniqueConnection);
@@ -529,8 +529,8 @@ void LibraryTreeItem::removeInheritedClasses()
     disconnect(pLibraryTreeItem, SIGNAL(unLoaded(LibraryTreeItem*)), this, SLOT(handleUnloaded(LibraryTreeItem*)));
     disconnect(pLibraryTreeItem, SIGNAL(shapeAdded(LibraryTreeItem*,ShapeAnnotation*,GraphicsView*)),
             this, SLOT(handleShapeAdded(LibraryTreeItem*,ShapeAnnotation*,GraphicsView*)));
-    disconnect(pLibraryTreeItem, SIGNAL(componentAdded(LibraryTreeItem*,Component*,GraphicsView*)),
-            this, SLOT(handleComponentAdded(LibraryTreeItem*,Component*,GraphicsView*)));
+    disconnect(pLibraryTreeItem, SIGNAL(componentAdded(LibraryTreeItem*,Component*)),
+            this, SLOT(handleComponentAdded(LibraryTreeItem*,Component*)));
     disconnect(pLibraryTreeItem, SIGNAL(connectionAdded(LibraryTreeItem*,LineAnnotation*)),
             this, SLOT(handleConnectionAdded(LibraryTreeItem*,LineAnnotation*)));
     disconnect(pLibraryTreeItem, SIGNAL(iconUpdated()), this, SLOT(handleIconUpdated()));
@@ -692,16 +692,15 @@ void LibraryTreeItem::handleShapeAdded(LibraryTreeItem *pLibraryTreeItem, ShapeA
   }
 }
 
-void LibraryTreeItem::handleComponentAdded(LibraryTreeItem *pLibraryTreeItem, Component *pComponent, GraphicsView *pGraphicsView)
+void LibraryTreeItem::handleComponentAdded(LibraryTreeItem *pLibraryTreeItem, Component *pComponent)
 {
   if (mpModelWidget) {
     ModelWidget::InheritedClass *pInheritedClass = mpModelWidget->findInheritedClass(pLibraryTreeItem);
     if (pInheritedClass) {
-      if (pGraphicsView->getViewType() == StringHandler::Icon) {
+      if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) {
         pInheritedClass->mIconComponentsList.append(mpModelWidget->createInheritedComponent(pComponent, mpModelWidget->getIconGraphicsView()));
-      } else {
-        pInheritedClass->mDiagramComponentsList.append(mpModelWidget->createInheritedComponent(pComponent, mpModelWidget->getDiagramGraphicsView()));
       }
+      pInheritedClass->mDiagramComponentsList.append(mpModelWidget->createInheritedComponent(pComponent, mpModelWidget->getDiagramGraphicsView()));
     }
   }
 }

@@ -180,14 +180,11 @@ AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibrary
     // first create the component for Icon View
     mpIconComponent = new Component(name, pLibraryTreeItem, transformationString, position, dialogAnnotation, pComponentInfo,
                                     mpIconGraphicsView);
-    pModelWidget->getLibraryTreeItem()->emitComponentAdded(mpIconComponent, mpIconGraphicsView);
     mpDiagramComponent = new Component(name, pLibraryTreeItem, transformationString, position, dialogAnnotation, pComponentInfo,
                                        mpDiagramGraphicsView);
-    pModelWidget->getLibraryTreeItem()->emitComponentAdded(mpDiagramComponent, mpDiagramGraphicsView);
   } else {
     mpDiagramComponent = new Component(name, pLibraryTreeItem, transformationString, position, dialogAnnotation, pComponentInfo,
                                        mpDiagramGraphicsView);
-    pModelWidget->getLibraryTreeItem()->emitComponentAdded(mpDiagramComponent, mpDiagramGraphicsView);
   }
   // only select the component of the active Icon/Diagram View
   if (!openingClass) {
@@ -713,7 +710,6 @@ AddConnectionCommand::AddConnectionCommand(LineAnnotation *pConnectionLineAnnota
                                          .arg(mpConnectionLineAnnotation->getEndComponentName()));
   mpConnectionLineAnnotation->drawCornerItems();
   mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
-  mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
 }
 
 /*!
