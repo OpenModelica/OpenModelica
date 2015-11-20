@@ -145,7 +145,7 @@ public:
   void emitLoaded() {emit loaded(this);}
   void emitUnLoaded() {emit unLoaded(this);}
   void emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView) {emit shapeAdded(this, pShapeAnnotation, pGraphicsView);}
-  void emitComponentAdded(Component *pComponent, GraphicsView *pGraphicsView) {emit componentAdded(this, pComponent, pGraphicsView);}
+  void emitComponentAdded(Component *pComponent) {emit componentAdded(this, pComponent);}
   void emitConnectionAdded(LineAnnotation *pConnectionLineAnnotation) {emit connectionAdded(this, pConnectionLineAnnotation);}
 
   OMCInterface::getClassInformation_res mClassInformation;
@@ -177,14 +177,14 @@ signals:
   void loaded(LibraryTreeItem *pLibraryTreeItem);
   void unLoaded(LibraryTreeItem *pLibraryTreeItem);
   void shapeAdded(LibraryTreeItem *pLibraryTreeItem, ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
-  void componentAdded(LibraryTreeItem *pLibraryTreeItem, Component *pComponent, GraphicsView *pGraphicsView);
+  void componentAdded(LibraryTreeItem *pLibraryTreeItem, Component *pComponent);
   void connectionAdded(LibraryTreeItem *pLibraryTreeItem, LineAnnotation *pConnectionLineAnnotation);
   void iconUpdated();
 public slots:
   void handleLoaded(LibraryTreeItem *pLibraryTreeItem);
   void handleUnloaded(LibraryTreeItem *pLibraryTreeItem);
   void handleShapeAdded(LibraryTreeItem *pLibraryTreeItem, ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
-  void handleComponentAdded(LibraryTreeItem *pLibraryTreeItem, Component *pComponent, GraphicsView *pGraphicsView);
+  void handleComponentAdded(LibraryTreeItem *pLibraryTreeItem, Component *pComponent);
   void handleConnectionAdded(LibraryTreeItem *pLibraryTreeItem, LineAnnotation *pConnectionLineAnnotation);
   void handleIconUpdated();
 };

@@ -229,13 +229,15 @@ private:
   QPointF mOldPosition;
   void createNonExistingComponent();
   void createDefaultComponent();
-  void showHideNonExistingOrDefaultComponent();
+  void drawComponent();
+  void showNonExistingOrDefaultComponentIfNeeded();
   void createClassInheritedComponents();
   void createClassShapes();
   void createClassComponents();
   void removeClassShapes();
-  void removeInheritedComponents();
-  void removeComponents();
+  void removeClassInheritedComponents();
+  void removeClassComponents();
+  void removeChildren();
   void createActions();
   void createResizerItems();
   void getResizerItemsPositions(qreal *x1, qreal *y1, qreal *x2, qreal *y2);
@@ -256,6 +258,7 @@ public slots:
   void handleLoaded();
   void handleUnloaded();
   void handleShapeAdded();
+  void handleComponentAdded();
   void referenceComponentAdded();
   void referenceComponentChanged();
   void referenceComponentDeleted();
