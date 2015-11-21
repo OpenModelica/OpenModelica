@@ -633,7 +633,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <depends name=\"b\" />
 //       <depends name=\"s\" />
 //       <depends name=\"a\" />
-//       <rhs>(-a) * DIVISION(s, b)</rhs>
+//       <rhs>DIVISION((-a) * s, b)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"15\" lineEnd=\"15\" colStart=\"3\" colEnd=\"12\"/>
@@ -1073,7 +1073,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <depends name=\"a\" />
 //       <depends name=\"vSeedNLSJac1\" />
 //       <depends name=\"b\" />
-//       <rhs>b * DIVISION(vSeedNLSJac1, a)</rhs>
+//       <rhs>DIVISION(b * vSeedNLSJac1, a)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"18\" lineEnd=\"18\" colStart=\"3\" colEnd=\"12\"/>
