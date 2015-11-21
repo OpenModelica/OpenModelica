@@ -3268,7 +3268,7 @@ void ModelWidget::getModelConnections()
       // check the startcomponentlist
       if (startComponentList.size() < 2 || pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) {
         pStartConnectorComponent = pStartComponent;
-      } else if (!pMainWindow->getOMCProxy()->existClass(pStartComponent->getLibraryTreeItem()->getNameStructure())) {
+      } else if (!pMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pStartComponent->getLibraryTreeItem()->getNameStructure())) {
         /* if class doesn't exist then connect with the red cross box */
         pStartConnectorComponent = pStartComponent;
       } else {
@@ -3285,7 +3285,7 @@ void ModelWidget::getModelConnections()
       // check the endcomponentlist
       if (endComponentList.size() < 2 || pEndComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) {
         pEndConnectorComponent = pEndComponent;
-      } else if (!pMainWindow->getOMCProxy()->existClass(pEndComponent->getLibraryTreeItem()->getNameStructure())) {
+      } else if (!pMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pEndComponent->getLibraryTreeItem()->getNameStructure())) {
         /* if class doesn't exist then connect with the red cross box */
         pEndConnectorComponent = pEndComponent;
       } else {

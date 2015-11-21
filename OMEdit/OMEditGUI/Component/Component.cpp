@@ -317,7 +317,8 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
   mComponentType = Component::Extend;
   mTransformationString = "";
   createNonExistingComponent();
-  createDefaultComponent();
+  mpDefaultComponentRectangle = 0;
+  mpDefaultComponentText = 0;
   drawComponent();
   setDialogAnnotation(QStringList());
   mpOriginItem = 0;
@@ -338,7 +339,8 @@ Component::Component(Component *pComponent, Component *pParentComponent)
   mTransformationString = mpReferenceComponent->getTransformationString();
   mDialogAnnotation = mpReferenceComponent->getDialogAnnotation();
   createNonExistingComponent();
-  createDefaultComponent();
+  mpDefaultComponentRectangle = 0;
+  mpDefaultComponentText = 0;
   drawComponent();
   mTransformation = Transformation(mpReferenceComponent->mTransformation);
   setTransform(mTransformation.getTransformationMatrix());
@@ -735,19 +737,20 @@ void Component::componentParameterHasChanged()
 }
 
 /*!
-  Creates an object of ComponentParameters and uses it to read the parameters of the component.\n
-  Returns the parameter string which can be either R=%R or %R.
-  \param parameterString - the parameter string to look for.
-  \return the parameter string with value.
-  */
+ * \brief Component::getParameterDisplayString
+ * Reads the parameters of the component.\n
+ * Returns the parameter string which can be either R=%R or %R.
+ * \param parameterString - the parameter string to look for.
+ * \return the parameter string with value.
+ */
 QString Component::getParameterDisplayString(QString parameterName)
 {
-  /*How to get the display value,
-    1.  Check if the value is available in component modifier.
-    2.  Check if the value is available in the component's class as a parameter or variable.
-    3.  Find the value in extends classes and check if the value is present in extends modifier.
-    3.3 If there is no extends modifier then finally check if value is present in extends classes.
-    */
+  /* How to get the display value,
+   * 1.  Check if the value is available in component modifier.
+   * 2.  Check if the value is available in the component's class as a parameter or variable.
+   * 3.  Find the value in extends classes and check if the value is present in extends modifier.
+   * 3.3 If there is no extends modifier then finally check if value is present in extends classes.
+   */
   OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   QString displayString = "";
   QString modelName = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
@@ -792,8 +795,10 @@ QString Component::getParameterDisplayString(QString parameterName)
 void Component::shapeAdded()
 {
   mpNonExistingComponentLine->setVisible(false);
-  mpDefaultComponentRectangle->setVisible(false);
-  mpDefaultComponentText->setVisible(false);
+  if (mComponentType == Component::Root) {
+    mpDefaultComponentRectangle->setVisible(false);
+    mpDefaultComponentText->setVisible(false);
+  }
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   }
@@ -977,8 +982,10 @@ void Component::removeClassShapes()
   }
   mShapesList.clear();
   mpNonExistingComponentLine->setVisible(false);
-  mpDefaultComponentRectangle->setVisible(false);
-  mpDefaultComponentText->setVisible(false);
+  if (mComponentType == Component::Root) {
+    mpDefaultComponentRectangle->setVisible(false);
+    mpDefaultComponentText->setVisible(false);
+  }
 }
 
 /*!
@@ -1195,8 +1202,10 @@ void Component::reloadComponent(bool loaded)
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, "", false);
   }
   if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
-    mpDefaultComponentRectangle->setVisible(true);
-    mpDefaultComponentText->setVisible(true);
+    if (mComponentType == Component::Root) {
+      mpDefaultComponentRectangle->setVisible(true);
+      mpDefaultComponentText->setVisible(true);
+    }
   } else if (mpLibraryTreeItem->isNonExisting()) { // if class is non existing
     mpNonExistingComponentLine->setVisible(true);
   } else {
@@ -1207,8 +1216,10 @@ void Component::reloadComponent(bool loaded)
       if (hasNonExistingClass()) {
         mpNonExistingComponentLine->setVisible(true);
       } else {
-        mpDefaultComponentRectangle->setVisible(true);
-        mpDefaultComponentText->setVisible(true);
+        if (mComponentType == Component::Root) {
+          mpDefaultComponentRectangle->setVisible(true);
+          mpDefaultComponentText->setVisible(true);
+        }
       }
     }
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
