@@ -348,7 +348,7 @@ Component::Component(Component *pComponent, Component *pParentComponent)
   setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName())
              .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
   connect(mpReferenceComponent, SIGNAL(added()), SLOT(referenceComponentAdded()));
-  connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceComponentChanged()));
+  connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceComponentTransformHasChanged()));
   connect(mpReferenceComponent, SIGNAL(displayTextChanged()), SIGNAL(displayTextChanged()));
   connect(mpReferenceComponent, SIGNAL(deleted()), SLOT(referenceComponentDeleted()));
 }
@@ -392,10 +392,11 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
     connect(mpLibraryTreeItem, SIGNAL(unLoaded(LibraryTreeItem*)), SLOT(handleUnloaded()));
   }
   connect(mpReferenceComponent, SIGNAL(added()), SLOT(referenceComponentAdded()));
-  connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceComponentChanged()));
+  connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceComponentTransformHasChanged()));
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SIGNAL(transformChange()));
   connect(mpReferenceComponent, SIGNAL(displayTextChanged()), SIGNAL(displayTextChanged()));
+  connect(mpReferenceComponent, SIGNAL(changed()), SLOT(referenceComponentChanged()));
   connect(mpReferenceComponent, SIGNAL(deleted()), SLOT(referenceComponentDeleted()));
 }
 
@@ -709,6 +710,14 @@ void Component::emitTransformHasChanged()
   emit transformHasChanged();
 }
 
+void Component::emitChanged()
+{
+  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
+  }
+  emit changed();
+}
+
 void Component::emitDeleted()
 {
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
@@ -870,6 +879,10 @@ void Component::createDefaultComponent()
   mpDefaultComponentText->setVisible(false);
 }
 
+/*!
+ * \brief Component::drawComponent
+ * Draws the Component.
+ */
 void Component::drawComponent()
 {
   if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
@@ -1278,9 +1291,7 @@ void Component::handleShapeAdded()
   Component *pComponent = getRootParentComponent();
   pComponent->removeChildren();
   pComponent->drawComponent();
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
-  }
+  pComponent->emitChanged();
 }
 
 void Component::handleComponentAdded()
@@ -1288,9 +1299,7 @@ void Component::handleComponentAdded()
   Component *pComponent = getRootParentComponent();
   pComponent->removeChildren();
   pComponent->drawComponent();
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
-  }
+  pComponent->emitChanged();
 }
 
 /*!
@@ -1311,10 +1320,10 @@ void Component::referenceComponentAdded()
 }
 
 /*!
- * \brief Component::referenceComponentChanged
- * Updates the referenced components when reference component is changed.
+ * \brief Component::referenceComponentTransformHasChanged
+ * Updates the referenced components when reference component transform has changed.
  */
-void Component::referenceComponentChanged()
+void Component::referenceComponentTransformHasChanged()
 {
   Component *pComponent = qobject_cast<Component*>(sender());
   if (pComponent) {
@@ -1324,6 +1333,17 @@ void Component::referenceComponentChanged()
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   }
+}
+
+/*!
+ * \brief Component::referenceComponentChanged
+ * Updates the referenced components when reference component is changed.
+ */
+void Component::referenceComponentChanged()
+{
+  removeChildren();
+  drawComponent();
+  emitChanged();
 }
 
 /*!
