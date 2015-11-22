@@ -177,6 +177,7 @@ public:
   void emitAdded();
   void emitTransformChange() {emit transformChange();}
   void emitTransformHasChanged();
+  void emitChanged();
   void emitDeleted();
   void componentNameHasChanged();
   void componentParameterHasChanged();
@@ -251,6 +252,7 @@ signals:
   void transformChange();
   void transformHasChanged();
   void displayTextChanged();
+  void changed();
   void deleted();
 public slots:
   void updatePlacementAnnotation();
@@ -260,6 +262,7 @@ public slots:
   void handleShapeAdded();
   void handleComponentAdded();
   void referenceComponentAdded();
+  void referenceComponentTransformHasChanged();
   void referenceComponentChanged();
   void referenceComponentDeleted();
   void prepareResizeComponent(ResizerItem *pResizerItem);
