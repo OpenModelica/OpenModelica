@@ -14,7 +14,7 @@
 
 #include <Core/Utils/extension/logger.hpp>
 
-#if defined(__vxworks)
+#if defined(klu)
 #include <klu.h>
 #endif
 
@@ -127,7 +127,7 @@ private:
 
 
   int _dim;
-#if defined(__vxworks)
+#if defined(klu)
   klu_symbolic* _kluSymbolic ;
   klu_numeric* _kluNumeric ;
   klu_common* _kluCommon ;

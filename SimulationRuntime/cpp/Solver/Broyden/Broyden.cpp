@@ -11,7 +11,7 @@
 #include <Core/Math/Constants.h>        // definitializeion of constants like uround
 
 
-#if defined(__vxworks)
+#if defined(klu)
 #include <klu.h>
 #endif
 
@@ -43,7 +43,7 @@ Broyden::Broyden(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _identity           (NULL)
 
 
-#if defined(__vxworks)
+#if defined(klu)
     , _kluSymbolic 			(NULL)
     , _kluNumeric			(NULL)
     , _kluCommon			(NULL)
@@ -89,7 +89,7 @@ Broyden::~Broyden()
 	if(_f) delete [] _f;
 	if(_ihelpArray) delete [] _ihelpArray;
 
-#if defined(__vxworks)
+#if defined(klu)
 	if(_sparse == true)
 	{
 		if(_kluCommon)
@@ -199,7 +199,7 @@ void Broyden::initialize()
 				_identity[i + i * _dimSys] = 1.0;
 			}
 
-			#if defined(__vxworks)
+			#if defined(klu)
 			if (_algLoop->isLinear() || _algLoop->isLinearTearing())
 				{
 
@@ -310,7 +310,7 @@ void Broyden::solve()
 
 
 
-			#if defined(__vxworks)
+			#if defined(klu)
 			//const sparsematrix_t& As = _algLoop->getSystemSparseMatrix();
 
 			//double const* Ax = bindings::begin_value (As);
@@ -406,7 +406,7 @@ void Broyden::solve()
 		else
 		{
 
-			#if defined(__vxworks)
+			#if defined(klu)
 			//Sparse Solve
 
 			const sparsematrix_t& As = _algLoop->getSystemSparseMatrix();
