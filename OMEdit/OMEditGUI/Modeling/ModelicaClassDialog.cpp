@@ -1111,13 +1111,13 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
 }
 
 /*!
-  \class SaveChangesDialog
-  \brief Creates a dialog that shows the list of unsaved Modelica classes.
-  */
-
+ * \class SaveChangesDialog
+ * \brief Creates a dialog that shows the list of unsaved Modelica classes.
+ */
 /*!
-  \param pMainWindow - pointer to MainWindow
-  */
+ * \brief SaveChangesDialog::SaveChangesDialog
+ * \param pMainWindow - pointer to MainWindow
+ */
 SaveChangesDialog::SaveChangesDialog(MainWindow *pMainWindow)
   : QDialog(pMainWindow, Qt::WindowTitleHint)
 {
@@ -1158,38 +1158,40 @@ SaveChangesDialog::SaveChangesDialog(MainWindow *pMainWindow)
 }
 
 /*!
-  \return false if no unsaved Modelica classes are present otherwise true.
-  */
-bool SaveChangesDialog::getUnsavedClasses()
+ * \brief SaveChangesDialog::listUnSavedClasses
+ * Lists the unsaved Modelica classes.
+ */
+void SaveChangesDialog::listUnSavedClasses()
 {
-  bool hasUnsavedClasses = false;
-//  foreach (LibraryTreeNode* pLibraryTreeNode, mpMainWindow->getLibraryWidget()->getLibraryTreeNodesList()) {
-//    if (!pLibraryTreeNode->isSaved()) {
-//      if (pLibraryTreeNode->getParentName().isEmpty()) {
-//        hasUnsavedClasses = true;
-//        QListWidgetItem *pListItem = new QListWidgetItem(mpUnsavedClassesListWidget);
-//        pListItem->setText(pLibraryTreeNode->getNameStructure());
-//      } else {
-//        LibraryTreeNode *pParentLibraryTreeNode = mpMainWindow->getLibraryWidget()->getLibraryTreeNode(StringHandler::getFirstWordBeforeDot(pLibraryTreeNode->getNameStructure()));
-//        if (pParentLibraryTreeNode) {
-//          QFileInfo fileInfo(pParentLibraryTreeNode->getFileName());
-//          if ((pParentLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveFolderStructure) || (fileInfo.fileName().compare("package.mo") == 0)) {
-//            hasUnsavedClasses = true;
-//            QListWidgetItem *pListItem = new QListWidgetItem(mpUnsavedClassesListWidget);
-//            pListItem->setText(pParentLibraryTreeNode->getNameStructure());
-//          }
-//        }
-//      }
-//    }
-//  }
+  listUnSavedClasses(mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem());
   mpUnsavedClassesListWidget->selectAll();
-  return hasUnsavedClasses;
 }
 
 /*!
-  Saves the unsaved classes. \n
-  Slot activated when mpYesButton clicked signal is raised.
-  */
+ * \brief SaveChangesDialog::listUnSavedClasses
+ * \param LibraryTreeItem
+ * Helper function for SaveChangesDialog::listUnSavedClasses()
+ */
+void SaveChangesDialog::listUnSavedClasses(LibraryTreeItem *pLibraryTreeItem)
+{
+  for (int i = 0; i < pLibraryTreeItem->getChildren().size(); i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
+    if (!pChildLibraryTreeItem->isSystemLibrary()) {
+      if (!pChildLibraryTreeItem->isSaved()) {
+        QListWidgetItem *pListItem = new QListWidgetItem(mpUnsavedClassesListWidget);
+        pListItem->setText(pChildLibraryTreeItem->getNameStructure());
+      } else {
+        listUnSavedClasses(pChildLibraryTreeItem);
+      }
+    }
+  }
+}
+
+/*!
+ * \brief SaveChangesDialog::saveChanges
+ * Saves the unsaved classes. \n
+ * Slot activated when mpYesButton clicked signal is raised.
+ */
 void SaveChangesDialog::saveChanges()
 {
   bool saveResult = true;
@@ -1208,12 +1210,16 @@ void SaveChangesDialog::saveChanges()
 }
 
 /*!
-  Reimplementation of exec.
-  */
+ * \brief SaveChangesDialog::exec
+ * Reimplementation of exec.
+ * \return
+ */
 int SaveChangesDialog::exec()
 {
-  if (!getUnsavedClasses())
+  listUnSavedClasses();
+  if (mpUnsavedClassesListWidget->count() == 0) {
     return 1;
+  }
   return QDialog::exec();
 }
 
