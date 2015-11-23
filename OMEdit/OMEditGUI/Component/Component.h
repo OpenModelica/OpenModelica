@@ -179,7 +179,6 @@ public:
   void emitTransformHasChanged();
   void emitChanged();
   void emitDeleted();
-  void componentNameHasChanged();
   void componentParameterHasChanged();
   QString getParameterDisplayString(QString parameterName);
   void shapeAdded();
@@ -235,9 +234,6 @@ private:
   void createClassInheritedComponents();
   void createClassShapes();
   void createClassComponents();
-  void removeClassShapes();
-  void removeClassInheritedComponents();
-  void removeClassComponents();
   void removeChildren();
   void createActions();
   void createResizerItems();
@@ -247,6 +243,7 @@ private:
   void getScale(qreal *sx, qreal *sy);
   void setOriginAndExtents();
   void reloadComponent(bool loaded);
+  void updateConnections();
 signals:
   void added();
   void transformChange();
@@ -269,6 +266,7 @@ public slots:
   void resizeComponent(QPointF newPosition);
   void finishResizeComponent();
   void resizedComponent();
+  void componentNameHasChanged();
   void deleteMe();
   void duplicate();
   void rotateClockwise();

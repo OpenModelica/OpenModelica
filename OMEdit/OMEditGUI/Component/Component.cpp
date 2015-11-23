@@ -349,7 +349,7 @@ Component::Component(Component *pComponent, Component *pParentComponent)
              .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
   connect(mpReferenceComponent, SIGNAL(added()), SLOT(referenceComponentAdded()));
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceComponentTransformHasChanged()));
-  connect(mpReferenceComponent, SIGNAL(displayTextChanged()), SIGNAL(displayTextChanged()));
+  connect(mpReferenceComponent, SIGNAL(displayTextChanged()), SLOT(componentNameHasChanged()));
   connect(mpReferenceComponent, SIGNAL(deleted()), SLOT(referenceComponentDeleted()));
 }
 
@@ -726,19 +726,6 @@ void Component::emitDeleted()
   emit deleted();
 }
 
-void Component::componentNameHasChanged()
-{
-  if (mIsInheritedComponent || mComponentType == Component::Port) {
-    setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpComponentInfo->getClassName())
-               .arg(mpComponentInfo->getName())
-               .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
-  } else {
-    setToolTip(tr("<b>%1</b> %2").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName()));
-  }
-  emit displayTextChanged();
-  update();
-}
-
 void Component::componentParameterHasChanged()
 {
   emit displayTextChanged();
@@ -924,7 +911,6 @@ void Component::showNonExistingOrDefaultComponentIfNeeded()
  */
 void Component::createClassInheritedComponents()
 {
-  removeClassInheritedComponents();
   foreach (ModelWidget::InheritedClass *pInheritedClass, mpLibraryTreeItem->getModelWidget()->getInheritedClassesList()) {
     mInheritedComponentsList.append(new Component(pInheritedClass->mpLibraryTreeItem, this));
   }
@@ -936,7 +922,6 @@ void Component::createClassInheritedComponents()
  */
 void Component::createClassShapes()
 {
-  removeClassShapes();
   if (!mpLibraryTreeItem->isNonExisting()) {
     GraphicsView *pGraphicsView = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView();
     if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram &&
@@ -967,7 +952,6 @@ void Component::createClassShapes()
  */
 void Component::createClassComponents()
 {
-  removeClassComponents();
   if (!mpLibraryTreeItem->isNonExisting()) {
     foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentsList()) {
       mComponentsList.append(new Component(pComponent, this));
@@ -985,47 +969,6 @@ void Component::createClassComponents()
 }
 
 /*!
- * \brief Component::removeShapes
- * Removes the class shapes.
- */
-void Component::removeClassShapes()
-{
-  foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
-    delete pShapeAnnotation;
-  }
-  mShapesList.clear();
-  mpNonExistingComponentLine->setVisible(false);
-  if (mComponentType == Component::Root) {
-    mpDefaultComponentRectangle->setVisible(false);
-    mpDefaultComponentText->setVisible(false);
-  }
-}
-
-/*!
- * \brief Component::removeClassInheritedComponents
- * Removes the class inherited components.
- */
-void Component::removeClassInheritedComponents()
-{
-  foreach (Component *pComponent, mInheritedComponentsList) {
-    delete pComponent;
-  }
-  mInheritedComponentsList.clear();
-}
-
-/*!
- * \brief Component::removeClassComponents
- * Removes the class components.
- */
-void Component::removeClassComponents()
-{
-  foreach (Component *pComponent, mComponentsList) {
-    delete pComponent;
-  }
-  mComponentsList.clear();
-}
-
-/*!
  * \brief Component::removeChildren
  * Removes the complete hirerchy of the Component.
  */
@@ -1033,15 +976,18 @@ void Component::removeChildren()
 {
   foreach (Component *pInheritedComponent, mInheritedComponentsList) {
     pInheritedComponent->removeChildren();
+    pInheritedComponent = 0;
     delete pInheritedComponent;
   }
   mInheritedComponentsList.clear();
   foreach (Component *pComponent, mComponentsList) {
     pComponent->removeChildren();
+    pComponent = 0;
     delete pComponent;
   }
   mComponentsList.clear();
   foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
+    pShapeAnnotation = 0;
     delete pShapeAnnotation;
   }
   mShapesList.clear();
@@ -1207,9 +1153,9 @@ void Component::setOriginAndExtents()
 void Component::reloadComponent(bool loaded)
 {
   // clear all shapes & components
-  removeClassShapes();
-  removeClassInheritedComponents();
-  removeClassComponents();
+//  removeClassShapes();
+//  removeClassInheritedComponents();
+//  removeClassComponents();
   if (loaded && mpLibraryTreeItem && !mpLibraryTreeItem->getModelWidget()) {
     MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, "", false);
@@ -1237,6 +1183,38 @@ void Component::reloadComponent(bool loaded)
     }
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
       mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
+    }
+  }
+}
+
+/*!
+ * \brief Component::updateConnections
+ * Updates the Component's connections.
+ */
+void Component::updateConnections()
+{
+  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    return;
+  }
+  foreach (LineAnnotation *pConnectionLineAnnotation, mpGraphicsView->getConnectionsList()) {
+    // get start and end components
+    QStringList startComponentList = pConnectionLineAnnotation->getStartComponentName().split(".");
+    QStringList endComponentList = pConnectionLineAnnotation->getEndComponentName().split(".");
+    // set the start component
+    if ((startComponentList.size() > 1 && getName().compare(startComponentList.at(0)) == 0)) {
+      QString startComponentName = startComponentList.at(1);
+      if (startComponentName.contains("[")) {
+        startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
+      }
+      pConnectionLineAnnotation->setStartComponent(mpGraphicsView->getModelWidget()->getConnectorComponent(this, startComponentName));
+    }
+    // set the end component
+    if ((endComponentList.size() > 1 && getName().compare(endComponentList.at(0)) == 0)) {
+      QString endComponentName = endComponentList.at(1);
+      if (endComponentName.contains("[")) {
+        endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
+      }
+      pConnectionLineAnnotation->setEndComponent(mpGraphicsView->getModelWidget()->getConnectorComponent(this, endComponentName));
     }
   }
 }
@@ -1292,6 +1270,7 @@ void Component::handleShapeAdded()
   pComponent->removeChildren();
   pComponent->drawComponent();
   pComponent->emitChanged();
+  pComponent->updateConnections();
 }
 
 void Component::handleComponentAdded()
@@ -1300,6 +1279,7 @@ void Component::handleComponentAdded()
   pComponent->removeChildren();
   pComponent->drawComponent();
   pComponent->emitChanged();
+  pComponent->updateConnections();
 }
 
 /*!
@@ -1344,6 +1324,7 @@ void Component::referenceComponentChanged()
   removeChildren();
   drawComponent();
   emitChanged();
+  updateConnections();
 }
 
 /*!
@@ -1482,6 +1463,23 @@ void Component::resizedComponent()
                                                                                                              mTransformation);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateComponentCommand);
   mpGraphicsView->getModelWidget()->updateModelicaText();
+}
+
+/*!
+ * \brief Component::componentNameHasChanged
+ * Updates the Component's tooltip when the component name has changed. Emits displayTextChanged signal.
+ */
+void Component::componentNameHasChanged()
+{
+  if (mIsInheritedComponent || mComponentType == Component::Port) {
+    setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpComponentInfo->getClassName())
+               .arg(mpComponentInfo->getName())
+               .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+  } else {
+    setToolTip(tr("<b>%1</b> %2").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName()));
+  }
+  emit displayTextChanged();
+  update();
 }
 
 /*!
