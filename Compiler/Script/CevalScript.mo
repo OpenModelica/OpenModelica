@@ -2403,7 +2403,7 @@ algorithm
 
         if Flags.isSet(Flags.DYN_LOAD) then
           print("[dynload]: [SOME SYMTAB] not in in CF list: removed deps:" +
-          stringDelimitList(List.map(functionDependencies, Absyn.pathString) ,", ") + "\n");
+          stringDelimitList(list(Absyn.pathString(fdep) for fdep in functionDependencies) ,", ") + "\n");
         end if;
         //print("\nfunctions in SYMTAB: " + Interactive.dumpCompiledFunctions(syt)
 

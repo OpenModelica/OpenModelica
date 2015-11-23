@@ -437,7 +437,7 @@ algorithm
       print("\n  extends ExternalObject;");
       print("\n origin: ");
       paths = DAEUtil.getElementSourceTypes(source);
-      paths_lst = List.map(paths, Absyn.pathString);
+      paths_lst = list(Absyn.pathString(p) for p in paths);
       path_str = stringDelimitList(paths_lst, ", ");
       print(path_str + "\n");
       print("end ");print(Absyn.pathString(path));
@@ -2280,7 +2280,7 @@ protected
   String dimensions;
 algorithm
   paths := DAEUtil.getElementSourceTypes(inVar.source);
-  paths_lst := List.map(paths, Absyn.pathString);
+  paths_lst := list(Absyn.pathString(p) for p in paths);
   unreplaceableStr := if inVar.unreplaceable then " unreplaceable" else "";
   dimensions := ExpressionDump.dimensionsString(inVar.arryDim);
   dimensions := if dimensions <> "" then " [" + dimensions + "]" else "";

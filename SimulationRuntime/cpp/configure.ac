@@ -27,7 +27,7 @@ SCOREP_HOME=""
 FMU_KINSOL="no"
 PARALLEL_OUTPUT="no"
 LOGGER="yes"
-CPP_ELEVEN="yes"
+CPP_03="no"
 #CMAKE_COMMANDS="CC=\"${CC}\" CXX=\"${CXX}\" CFLAGS=\"${CFLAGS}\" CXXFLAGS=\"${CXXFLAGS}\""
 CMAKE_COMMANDS="CC=\"${CC}\" CXX=\"${CXX}\""
 CMAKE_BUILDTYPE="RelWithDebInfo"
@@ -43,7 +43,7 @@ AC_SUBST(PARALLEL_OUTPUT_COMMAND)
 AC_SUBST(LOGGER_COMMAND)
 AC_SUBST(CMAKE_COMMANDS)
 AC_SUBST(CMAKE_BUILDTYPE)
-AC_SUBST(CPP_ELEVEN_COMMAND)
+AC_SUBST(CPP_03_COMMAND)
 
 evaluateParameter() {
   case $1 in
@@ -57,9 +57,9 @@ evaluateParameter() {
     FMU_SUNDIALS) FMU_SUNDIALS="yes" ;;
     PARALLEL_OUTPUT) PARALLEL_OUTPUT="yes" ;;
     DISABLE_LOGGER) LOGGER="no" ;;
-    BUILD_TYPE=?*) CMAKE_BUILDTYPE=`echo $1| cut -d'=' -f 2` ;;
-    BUILD_TYPE=) ;;
-    DISABLE_CPP_ELEVEN) CPP_ELEVEN="no" ;;
+    BUILDTYPE=?*) CMAKE_BUILDTYPE=`echo $1| cut -d'=' -f 2` ;;
+    BUILDTYPE=) ;;
+    CPP_03) CPP_03="yes" ;;
     *) echo "Unknown Parameter given $1" ;;
   esac
 }
@@ -103,14 +103,14 @@ else
   AC_MSG_RESULT([no])
 fi
 
-AC_ARG_WITH(c++11,  [  --with-c++11       (enable c++11 support)],[CPP_ELEVEN="$withval"],[])
+AC_ARG_WITH(c++03,  [  --with-c++03       (use c++03 standard)],[CPP_03="$withval"],[])
 
-AC_MSG_CHECKING([if c++11 support is requested])
-if test "$CPP_ELEVEN" = "yes"; then
-  CPP_ELEVEN_COMMAND="-DUSE_CPP_ELEVEN=ON"
+AC_MSG_CHECKING([if c++03 support is requested])
+if test "$CPP_03" = "yes"; then
+  CPP_03_COMMAND="-DUSE_CPP_03=ON"
   AC_MSG_RESULT([yes])
 else
-  CPP_ELEVEN_COMMAND="-DUSE_CPP_ELEVEN=OFF"
+  CPP_03_COMMAND="-DUSE_CPP_03=OFF"
   AC_MSG_RESULT([no])
 fi
 

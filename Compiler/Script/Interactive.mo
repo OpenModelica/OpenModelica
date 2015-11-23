@@ -14664,7 +14664,7 @@ algorithm
         s1 = Dump.unparseWithin(w);
         /* adeas31 2012-01-25: false indicates that the classnamesrecursive doesn't look into protected sections */
         (_, paths) = getClassNamesRecursive(NONE(), p, false, {});
-        s2 = stringAppendList(List.map1r(List.map(paths,Absyn.pathString),stringAppend,"\n  "));
+        s2 = stringAppendList(List.map1r(list(Absyn.pathString(p) for p in paths),stringAppend,"\n  "));
         Error.addMessage(Error.INSERT_CLASS, {name,s1,s2});
       then
         fail();

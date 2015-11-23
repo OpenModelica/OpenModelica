@@ -11,17 +11,20 @@
 #     if ScoreP should be used for performance analysis                            -DUSE_SCOREP
 #     if the Intel TBB library was found                                           -DUSE_INTEL_TBB
 #     if the Pugi XML library was found                                            -DUSE_PUGI_XML
-#     if profiling for the simulation runtime should be enabled                    -DRUNTIME_PROFILING
+#     if profiling for the simulation runtime is enabled                           -DRUNTIME_PROFILING
 #     if the equation systems of a FMU should be solved with sundials solvers      -DFMU_SUNDIALS
-#     if the logger should be used                                                 -DUSE_LOGGER
+#     if the logger is used                                                        -DUSE_LOGGER
 #
 # Some of these options can be controlled by passing arguments to CMAKE
 #     if write output should be handled in parallel                                -DUSE_PARALLEL_OUTPUT=ON [default: OFF]
 #     if ScoreP should be used for performance analysis                            -DUSE_SCOREP=ON [default: OFF]
+#     the path to the scorep-installation                                          -DSCOREP_HOME="..." [default: ""]
 #     if the boost libraries should be linked statically                           -DBOOST_STATIC_LINKING=ON [default: OFF]
 #     if boost libraries should be linked against absolute path libraries          -DUSE_BOOST_REALPATHS=ON [default: OFF]
-#     disable c++11, even if the compiler is able to use it                        -DUSE_CPP_ELEVEN=OFF [default: ON]
+#     disable c++11, even if the compiler is able to use it                        -DUSE_CPP_03=ON [default: OFF]
+#     if profiling of the simulation runtime should be enabled                     -DRUNTIME_PROFILING=ON [default: OFF]
 #     if the equation systems of a FMU should be solved with sundials solvers      -DFMU_SUNDIALS=ON [default: OFF]
+#     if the logger should be completely disabled or used                          -DUSE_LOGGER=OFF [default: ON]
 #
 #     Example: "cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo" to create statically linked libraries
 #
@@ -42,7 +45,7 @@ OPTION(USE_BOOST_REALPATHS "USE_BOOST_REALPATHS" OFF)
 OPTION(RUNTIME_PROFILING "RUNTIME_PROFILING" OFF)
 OPTION(FMU_SUNDIALS "FMU_SUNDIALS" OFF)
 OPTION(SUNDIALS_ROOT "SUNDIALS ROOT" "")
-OPTION(USE_CPP_ELEVEN "USE_CPP_ELEVEN" ON)
+OPTION(USE_CPP_03 "USE_CPP_03" OFF)
 
 #Set Variables
 SET(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../../3rdParty/ModelicaExternalC/C-Sources")
@@ -97,10 +100,14 @@ ELSE(USE_BOOST_REALPATHS)
   MESSAGE(STATUS "Boost real paths disabled")
 ENDIF(USE_BOOST_REALPATHS)
 
+# Precompiled Header
+IF(MSVC)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zm113")
+ENDIF(MSVC)
 INCLUDE(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
 
 # Check C++11
-IF(USE_CPP_ELEVEN)
+IF(NOT(USE_CPP_03))
   IF(MSVC)
     IF(MSVC_VERSION GREATER 1700)
       SET(COMPILER_SUPPORTS_CXX11 True)
@@ -130,15 +137,25 @@ IF(USE_CPP_ELEVEN)
       SET(COMPILER_SUPPORTS_CXX11 False)
     ENDIF(COMPILER_SUPPORTS_CXX11)
   ENDIF(MSVC)
-ELSE(USE_CPP_ELEVEN)
+ELSE()
   SET(COMPILER_SUPPORTS_CXX11 False)
-ENDIF(USE_CPP_ELEVEN)
+  IF(APPLE)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++03 -stdlib=libc++")
+    SET(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE} "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}} -std=c++03 -stdlib=libc++")
+    SET(CMAKE_EXE_LINKER_FLAGS "-stdlib=libc++")
+    SET(CXX11_FLAGS " -std=c++03 -stdlib=libc++") #used for precompiled header
+  ELSE(APPLE)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++03")
+    SET(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE} "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}} -std=c++03")
+    SET(CXX11_FLAGS " -std=c++03") #used for precompiled header
+  ENDIF(APPLE)
+ENDIF(NOT(USE_CPP_03))
 
 IF(COMPILER_SUPPORTS_CXX11)
   MESSAGE(STATUS "C++11 support enabled")
-  ADD_DEFINITIONS(-DUSE_CPP_ELEVEN)
 ELSE(COMPILER_SUPPORTS_CXX11)
   MESSAGE(STATUS "C++11 support disabled")
+  ADD_DEFINITIONS(-DUSE_CPP_03)
 ENDIF(COMPILER_SUPPORTS_CXX11)
 
 #Handle static boost linking

@@ -170,8 +170,7 @@ void listPopFront(LIST *list)
     if(list->first)
     {
       LIST_NODE *tmpNode = list->first->next;
-      free(list->first->data);
-      free(list->first);
+      freeNode(list->first);
 
       list->first = tmpNode;
       --(list->length);
@@ -192,8 +191,7 @@ void listClear(LIST *list)
   while(delNode)
   {
     LIST_NODE *tmpNode = delNode->next;
-    free(delNode->data);
-    free(delNode);
+    freeNode(delNode);
     delNode = tmpNode;
   }
 
@@ -207,8 +205,7 @@ void removeNodes(LIST* list, LIST_NODE *node)
   while(node)
   {
     LIST_NODE *tmpNode = node->next;
-    free(node->data);
-    free(node);
+    freeNode(node);
     node = tmpNode;
     --(list->length);
   }
@@ -253,4 +250,17 @@ LIST_NODE* updateNodeNext(LIST *list, LIST_NODE *node, LIST_NODE *newNext)
   next = node->next;
   node->next = newNext;
   return next;
+}
+
+void updatelistFirst(LIST* list, LIST_NODE *node)
+{
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  assertStreamPrint(NULL, 0 != node, "invalid list-node");
+  list->first = node;
+}
+
+void updatelistLength(LIST* list, unsigned int newLength)
+{
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  list->length = newLength;
 }

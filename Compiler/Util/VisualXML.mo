@@ -445,7 +445,7 @@ algorithm
     case(BackendDAE.VAR(varName=varName, varType = varType, source=source), (varLst,crefs))
       algorithm
        paths := DAEUtil.getElementSourceTypes(source);
-       paths_lst := List.map(paths, Absyn.pathString);
+       paths_lst := list(Absyn.pathString(p) for p in paths);
          //print("paths_lst "+stringDelimitList(paths_lst, "; ")+"\n");
        (obj,idx) := hasVisPath(paths,1);
        true := Util.stringNotEqual(obj,"");

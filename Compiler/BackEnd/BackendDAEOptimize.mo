@@ -5439,8 +5439,6 @@ end addTimeAsState4;
 //-------------------------------------
 //Evaluate Output Variables Only.
 //-------------------------------------
-
-
 public function evaluateOutputsOnly"Computes only the scc which are necessary in order to calculate the output vars.
 author: Waurich TUD 09/2015"
   input BackendDAE.BackendDAE daeIn;
@@ -5492,12 +5490,11 @@ algorithm
     BackendDAE.EQSYSTEM(orderedVars = vars) := syst;
     varLst := BackendVariable.varList(vars);
     varLst := List.filterOnTrue(varLst,BackendVariable.isOutputVar);
-    if listEmpty(varLst) then
-      //print("No output variables in this system\n");
 
-    //THIS SYSTEM CONTAINS OUTPUT VARIABLES
-    //-------------------------------------
-    else
+    if not listEmpty(varLst) then
+
+      //THIS SYSTEM CONTAINS OUTPUT VARIABLES
+      //-------------------------------------
       outputVarIndxs := BackendVariable.getVarIndexFromVars(varLst,vars);
       outputTasks := List.map(List.map1(outputVarIndxs,Array.getIndexFirst,varCompMapping),Util.tuple31);
         //print("outputTasks "+stringDelimitList(List.map(outputTasks,intString),", ")+"\n");
@@ -5573,9 +5570,12 @@ algorithm
 
 	    (syst, _, _, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.NORMAL(), SOME(funcTree));
 	    syst := BackendDAETransform.strongComponentsScalar(syst,shared,mapEqnIncRow,mapIncRowEqn);
-
-      systsNew := syst::systsNew;
+      syst.removedEqs := BackendEquation.emptyEqns();
+    else
+      print("No output variables in this system\n");
     end if;
+
+    systsNew := syst::systsNew;
   end for;
 
    //alias vars are not necessary anymore

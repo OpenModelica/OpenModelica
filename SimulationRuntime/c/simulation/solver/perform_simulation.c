@@ -97,6 +97,7 @@ static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* s
       if (!(omc_flag[FLAG_NOEVENTEMIT])) /* output left limit */
         sim_result.emit(&sim_result, data, threadData);
       handleEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
+      cleanUpOldValueListAfterEvent(data, solverInfo->currentTime);
       messageClose(LOG_EVENTS);
       threadData->currentErrorStage = ERROR_SIMULATION;
 

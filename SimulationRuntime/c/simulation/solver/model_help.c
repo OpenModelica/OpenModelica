@@ -912,6 +912,8 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo.mixedMethod = MIXED_SEARCH;
   data->simulationInfo.newtonStrategy = NEWTON_PURE;
   data->simulationInfo.nlsCsvInfomation = 0;
+  data->simulationInfo.currentContext = CONTEXT_ALGEBRAIC;
+  data->simulationInfo.jacobianEvals = data->modelData.nStates;
 
   data->simulationInfo.zeroCrossings = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
   data->simulationInfo.zeroCrossingsPre = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
@@ -1321,3 +1323,52 @@ modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integ
 }
 
 int measure_time_flag=0;
+
+const char *context_string[CONTEXT_MAX] = {
+ "context UNKNOWN",
+ "context ODE evaluation",
+ "context algebraic evaluation",
+ "context event search",
+ "context jacobian evaluation",
+};
+
+/*! \fn setContext
+ *
+ *  \param [ref] [data]
+ *  \param [in]  [currentTime]
+ *  \param [in]  [currentContext]
+ *
+ * Set current context in simulation info object
+ */
+void setContext(DATA* data, double* currentTime, int currentContext){
+  data->simulationInfo.currentContextOld =  data->simulationInfo.currentContext;
+  data->simulationInfo.currentContext =  currentContext;
+  infoStreamPrint(LOG_SOLVER, 0, "+++ Set context %s +++ at time %f", context_string[data->simulationInfo.currentContext], *currentTime);
+  if (currentContext == CONTEXT_JACOBIAN){
+    data->simulationInfo.currentJacobianEval = 0;
+  }
+}
+
+/*! \fn increaseJacContext
+ *
+ *  \param [ref] [data]
+ *
+ * Increase Jacobian column context in simulation info object
+ */
+void increaseJacContext(DATA* data){
+  if (data->simulationInfo.currentContext == CONTEXT_JACOBIAN){
+    data->simulationInfo.currentJacobianEval++;
+    infoStreamPrint(LOG_SOLVER, 0, "+++ Increase Jacobian column context %s +++ to %d", context_string[data->simulationInfo.currentContext], data->simulationInfo.currentJacobianEval);
+  }
+}
+
+/*! \fn unsetContext
+ *
+ *  \param [ref] [data]
+ *
+ * Restores previous context in simulation info object
+ */
+void unsetContext(DATA* data){
+  infoStreamPrint(LOG_SOLVER, 0, "--- Unset context %s ---", context_string[data->simulationInfo.currentContext]);
+  data->simulationInfo.currentContext =  data->simulationInfo.currentContextOld;
+}

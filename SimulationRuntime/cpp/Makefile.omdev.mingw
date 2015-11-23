@@ -9,18 +9,69 @@ builddir_lib=$(OMBUILDDIR)/lib/omc
 builddir_inc=$(OMBUILDDIR)/include/omc
 
 #use this call to use precompiled headers
-#BUILDTYPE = Release
 #use this call if you want to debug the cpp runtime
+CMAKE = $(OMDEV)/bin/cmake/bin/cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON
+
 ifeq ($(BUILDTYPE),)
-BUILDTYPE=Debug
+	BUILDTYPE=Debug
 endif
 
-CMAKE = $(OMDEV)/bin/cmake/bin/cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON
+BOOST_STATIC_LINKING="false"
+ifeq ("$(BOOST_STATIC_LINKING)","true")
+	BOOST_STATIC_LINKING_COMMAND=-DBOOST_STATIC_LINKING=ON
+else
+	BOOST_STATIC_LINKING_COMMAND=-DBOOST_STATIC_LINKING=OFF
+endif
+
+BOOST_REALPATHS="false"
+ifeq ("$(BOOST_REALPATHS)","true")
+	BOOST_REALPATHS_COMMAND=-DUSE_BOOST_REALPATHS=ON
+else
+	BOOST_REALPATHS_COMMAND=-DUSE_BOOST_REALPATHS=OFF
+endif
+
+RUNTIME_PROFILING="false"
+ifeq ("$(RUNTIME_PROFILING)","true")
+	RUNTIME_PROFILING_COMMAND=-DRUNTIME_PROFILING=ON
+else
+	RUNTIME_PROFILING_COMMAND=-DRUNTIME_PROFILING=OFF
+endif
+
+SCOREP="false"
+ifeq ("$(SCOREP)","true")
+	USE_SCOREP_COMMAND=-DUSE_SCOREP=ON
+else
+	USE_SCOREP_COMMAND=-DUSE_SCOREP=OFF
+endif
+
+SCOREP_HOME=""
+SCOREP_HOME_COMMAND=-DSCORE_HOME=$(SCOREP_HOME)
+
+FMU_SUNDIALS="false"
+ifeq ("$(FMU_SUNDIALS)","true")
+	FMU_SUNDIALS_COMMAND=-DFMU_SUNDIALS=ON
+else
+	FMU_SUNDIALS_COMMAND=-DFMU_SUNDIALS=OFF
+endif
+
+PARALLEL_OUTPUT="false"
+ifeq ("$(PARALLEL_OUTPUT)","true")
+	PARALLEL_OUTPUT_COMMAND=-DUSE_PARALLEL_OUTPUT=ON
+else
+	PARALLEL_OUTPUT_COMMAND=-DUSE_PARALLEL_OUTPUT=OFF
+endif
+
+USE_LOGGER="false"
+ifeq ("$(USE_LOGGER)","true")
+	USE_LOGGER_COMMAND=-DUSE_LOGGER=ON
+else
+	USE_LOGGER_COMMAND=-DUSE_LOGGER=OFF
+endif
 
 runtimeCpp:
 	mkdir -p Build
 	cd ./Build; echo "change to Build";	\
-	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=$(BUILDTYPE) -D CMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" -D USE_LOGGER=ON MAKE_CXX_COMPILER=g++ ../; \
+	$(CMAKE) -G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=$(BUILDTYPE) -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" $(BOOST_STATIC_LINKING_COMMAND) $(BOOST_REALPATHS_COMMAND) $(RUNTIME_PROFILING_COMMAND) $(USE_SCOREP_COMMAND) $(SCOREP_HOME_COMMAND) $(FMU_SUNDIALS_COMMAND) $(PARALLEL_OUTPUT_COMMAND) $(USE_LOGGER_COMMAND) MAKE_CXX_COMPILER=g++ ../; \
 	make;
 
 runtimeCPPmsvc:
@@ -29,13 +80,10 @@ runtimeCPPmsvc:
 	#rm -rf Build_MSVC
 	mkdir -p Build_MSVC
 	echo call '"%VS100COMNTOOLS%\\..\\..\\VC\\vcvarsall.bat"' > Build_MSVC/build.bat
-	#echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=$(BUILDTYPE) -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "Visual Studio 10"' >> Build_MSVC/build.bat
-ifeq ($(BUILDTYPE),Debug)
+
 	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=$(BUILDTYPE) -DUSE_LOGGER=ON -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC/build.bat
-else
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=$(BUILDTYPE) -DUSE_LOGGER=ON -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC/build.bat
-endif
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=$(BUILDTYPE) $(BOOST_STATIC_LINKING_COMMAND) $(BOOST_REALPATHS_COMMAND) $(RUNTIME_PROFILING_COMMAND) $(USE_SCOREP_COMMAND) $(SCOREP_HOME_COMMAND) $(FMU_SUNDIALS_COMMAND) $(PARALLEL_OUTPUT_COMMAND) $(USE_LOGGER_COMMAND) -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC/build.bat
+
 	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
 	echo set MAKEFLAGS="" >> Build_MSVC/build.bat
 	echo echo Running NMake JOM >> Build_MSVC/build.bat

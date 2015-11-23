@@ -1,4 +1,4 @@
-Author: Marcus Walther 02.07.2015
+Author: Marcus Walther 20.11.2015
 
 ============================
 BUILD THE SIMULATION RUNTIME
@@ -29,12 +29,17 @@ to configure. The following arguments are available at the moment:
 
   BOOST_STATIC_LINKING
   BOOST_REALPATHS
+  BOOST_ROOT
   RUNTIME_PROFILING
   SCOREP
   SCOREP_HOME=[path]
   FMU_SUNDIALS
   PARALLEL_OUTPUT
-  SUNDIALS_LAPACK
+  USE_LOGGER
+  BUILDTYPE
+  CPP_03
+
+e.g.: configure --with-cppruntime --with-cppruntime-args=BUILDTYPE=Debug,RUNTIME_PROFILING,CPP_03
 
 For further details, see the description below.
 
@@ -44,15 +49,20 @@ CONFIGURING THE SIMULATION RUNTIME (Windows)
 ============================================
 If you want to change the behaviour of cpp runtime, you can pass
 arguments directly to the makefile. Multiple arguments are separated through
-spaces as usual.
+spaces as usual. The available arguments differ slightly from the linux ones,
+because not all libraries are available on both systems.
 
   BOOST_STATIC_LINKING="true"
   BOOST_REALPATHS="true"
   RUNTIME_PROFILING="true"
-  SCOREP_SUPPORT="true" SCOREP_HOME=”...”
-  BUILD_DOCUMENTATION="true"
+  SCOREP="true"
+  SCOREP_HOME=”...”
+  FMU_SUNDIALS="true"
   PARALLEL_OUTPUT="true"
-  SUNDIALS_LAPACK="true"
+  USE_LOGGER="false"
+  BUILDTYPE=[Release,Debug]
+
+e.g.: make -f Makefile.omdev.mingw runtimeCPPmsvcinstall BOOST_STATIC_LINKING="true" USE_LOGGER="false"
 
 For further details, see the description below.
 
@@ -63,7 +73,8 @@ CONFIGURATION ARGUMENT DESCRIPTION
 The following section explains the arguments that can be passed in more detail.
 
   The boost static libraries can be used for the build, by passing the
-  BOOST_STATIC_LINKING argument to make.
+  BOOST_STATIC_LINKING argument to make. Take care that all boost- libraries are
+  linked statically.
 
   Sometimes it's necessary to link boost against it's real path libraries.
   This means for example, that instead of linking against “-lboost_system”, the
@@ -87,5 +98,14 @@ The following section explains the arguments that can be passed in more detail.
   threads and a consumer producer algorithm (experimental). This feature is
   available after passing PARALLEL_OUTPUT to configure.
 
-  The sundials solver suite has additional lapack support. It can be used by
-  setting the SUNDIALS_LAPACK argument (experimental).
+  For performance reasons it can be necessary to disable the logger-code completely.
+  This can be done by passing the USE_LOGGER argument.
+
+  The build-type of cmake can be directly controlled by passing the BUILDTYPE
+  argument. If debug librariers should be created, set this value to "debug".
+  If release libraries are required, pass "release" instead.
+
+  The Windows build does not support c++11 at the moment. Therfore a lot of c++11
+  features are replaced with boost equivalents. Sometimes it is necessary to check
+  this build on Linux-systems as well. Therefore the argument "CPP_03" can be passed,
+  to prevent the usage of c++11 features.

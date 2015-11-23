@@ -83,8 +83,9 @@ void ModelicaFormatError(const char* string, ...) {
 
 char* ModelicaAllocateString(size_t len) {
   char *res = ModelicaAllocateStringWithErrorReturn(len);
-  if(!res)
+  if (!res) {
     ModelicaFormatError("%s:%d: ModelicaAllocateString failed", __FILE__, __LINE__);
+  }
   return res;
 }
 

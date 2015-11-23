@@ -2225,7 +2225,7 @@ algorithm
 
     case (DAE.T_FUNCTION(funcArg = params, funcResultType = restype, source = ts))
       equation
-        funcstr = stringDelimitList(List.map(ts, Absyn.pathString), ", ");
+        funcstr = stringDelimitList(list(Absyn.pathString(pt) for pt in ts), ", ");
         paramstrs = List.map(params, unparseParam);
         paramstr = stringDelimitList(paramstrs, ", ");
         restypestr = unparseType(restype);
@@ -6489,7 +6489,7 @@ algorithm
 
     else
       equation
-        pathStr = stringDelimitList(List.map(pathLst, Absyn.pathString), ", ");
+        pathStr = stringDelimitList(list(Absyn.pathString(p) for p in pathLst), ", ");
         bindingsStr = polymorphicBindingsStr(bindings);
         solvedBindingsStr = polymorphicBindingsStr(solvedBindings);
         unsolvedBindingsStr = polymorphicBindingsStr(unsolvedBindings);
@@ -7839,7 +7839,7 @@ algorithm
     // yeha, we have some
     case (ts)
       equation
-        s = " origin: " + stringDelimitList(List.map(ts, Absyn.pathString), ", ");
+        s = " origin: " + stringDelimitList(list(Absyn.pathString(t) for t in ts), ", ");
       then
         s;
   end matchcontinue;

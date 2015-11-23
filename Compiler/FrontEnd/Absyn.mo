@@ -2612,19 +2612,75 @@ end typeSpecDimensions;
 
 public function pathString "This function simply converts a Path to a string."
   input Path path;
+  input String delimiter=".";
+  input Boolean usefq=true;
+  input Boolean reverse=false;
   output String s;
+protected
+  Path p1,p2;
+  Integer count=0, len=0, dlen=stringLength(delimiter);
+  Boolean b;
 algorithm
-  s := pathString2(path, ".");
+  // First, calculate the length of the string to be generated
+  p1 :=  if usefq then path else makeNotFullyQualified(path);
+  p2 := p1;
+  b := true;
+  while b loop
+    (p2,len,count,b) := match p2
+      case IDENT() then (p2,len+1,count+stringLength(p2.name),false);
+      case QUALIFIED() then (p2.path,len+1,count+stringLength(p2.name),true);
+      case FULLYQUALIFIED() then (p2.path,len+1,count,true);
+    end match;
+  end while;
+  s := pathStringWork(p1, (len-1)*dlen+count, delimiter, dlen, reverse);
 end pathString;
 
-public function pathStringNoQual
-  "Converts a Path to a String, but does not add a dot in front of fully
-  qualified paths."
+protected
+
+function pathStringWork
   input Path inPath;
-  output String outString;
+  input Integer len;
+  input String delimiter;
+  input Integer dlen;
+  input Boolean reverse;
+  output String s="";
+protected
+  Path p=inPath;
+  Boolean b=true;
+  Integer count=0;
+  // Allocate a string of the exact required length
+  System.StringAllocator sb=System.StringAllocator(len);
 algorithm
-  outString := pathString2(makeNotFullyQualified(inPath), ".");
-end pathStringNoQual;
+  // Fill the string
+  while b loop
+    (p,count,b) := match p
+      case IDENT()
+        algorithm
+          System.stringAllocatorStringCopy(sb, p.name, if reverse then len-count-stringLength(p.name) else count);
+        then (p,count+stringLength(p.name),false);
+      case QUALIFIED()
+        algorithm
+          System.stringAllocatorStringCopy(sb, p.name, if reverse then len-count-dlen-stringLength(p.name) else count);
+          System.stringAllocatorStringCopy(sb, delimiter, if reverse then len-count-dlen else count+stringLength(p.name));
+        then (p.path,count+stringLength(p.name)+dlen,true);
+      case FULLYQUALIFIED()
+        algorithm
+          System.stringAllocatorStringCopy(sb, delimiter, if reverse then len-count-dlen else count);
+        then (p.path,count+dlen,true);
+    end match;
+  end while;
+  // Return the string
+  s := System.stringAllocatorResult(sb,s);
+end pathStringWork;
+
+public
+
+function pathStringNoQual = pathString(usefq=false);
+
+function pathStringDefault
+  input Path path;
+  output String s = pathString(path);
+end pathStringDefault;
 
 public function pathCompare
   input Path ip1;
@@ -2717,27 +2773,6 @@ algorithm
         str;
   end match;
 end optPathString;
-
-public function pathString2 "Tail-recursive version, with string builder (stringDelimitList is optimised)"
-  input Path path;
-  input String delimiter;
-  output String outString;
-algorithm
-  outString := match (path,delimiter)
-    case (FULLYQUALIFIED(),_)
-      then "." + stringDelimitList(pathToStringList(path),delimiter);
-    else
-      then stringDelimitList(pathToStringList(path),delimiter);
-  end match;
-end pathString2;
-
-public function pathString2NoLeadingDot "Tail-recursive version, with string builder (stringDelimitList is optimised)"
-  input Path path;
-  input String delimiter;
-  output String outString;
-algorithm
-  outString := stringDelimitList(pathToStringList(path),delimiter);
-end pathString2NoLeadingDot;
 
 public function pathStringUnquoteReplaceDot
 " Changes a path to string. Uses the input string as separator.

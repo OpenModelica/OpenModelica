@@ -198,13 +198,11 @@ protected
   BackendVarTransform.VariableReplacements repl;
 algorithm
   if Flags.isSet(Flags.EVAL_ALL_PARAMS) then
-    BackendDump.dumpBackendDAE(inDAE,"INDAE");
 	  (outDAE,repl) := evaluateParameters(inDAE,BackendVariable.isParam);
 	  if not BackendVarTransform.isReplacementEmpty(repl) then
-	    BackendVarTransform.dumpReplacements(repl);
+	    //BackendVarTransform.dumpReplacements(repl);
 	    outDAE := replaceEvaluatedParametersEqns(outDAE, repl);
 	  end if;
-	  BackendDump.dumpBackendDAE(outDAE,"OUTDAE");
 	else
 	  outDAE := inDAE;
 	end if;

@@ -71,6 +71,8 @@ extern "C" {
   void *listNodeData(LIST_NODE *node);
   void updateNodeData(LIST *list, LIST_NODE *node, const void *data);
   LIST_NODE* updateNodeNext(LIST *list, LIST_NODE *node, LIST_NODE *newNext);
+  void updatelistFirst(LIST* list, LIST_NODE *node);
+  void updatelistLength(LIST* list, unsigned int newLength);
 
 #ifdef __cplusplus
 }

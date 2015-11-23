@@ -49,27 +49,34 @@
 /* Forward extrapolate function definition */
 double extrapolateValues(const double, const double, const double, const double, const double);
 
-VALUES_LIST* allocValueList(unsigned itemSize)
+VALUES_LIST* allocValueList(unsigned int numberOfList)
 {
-  VALUES_LIST* valueList = (VALUES_LIST*) malloc(sizeof(VALUES_LIST));
+  unsigned int i = 0;
+  VALUES_LIST* valueList = (VALUES_LIST*) malloc(numberOfList*sizeof(VALUES_LIST));
 
-  valueList->valueList = allocList(itemSize);
+  for(i=0; i<numberOfList; ++i){
+    (valueList+i)->valueList = allocList(sizeof(VALUE));
+  }
 
   return valueList;
 }
 
-void freeValueList(VALUES_LIST *valueList)
+void freeValueList(VALUES_LIST *valueList, unsigned int numberOfList)
 {
   VALUE* elem;
+  VALUES_LIST *tmpList;
 
-  int i;
-  for(i = 0; i < listLen(valueList->valueList); ++i)
+  int i,j;
+  for(j = 0; j < numberOfList; ++j)
   {
-    elem = (VALUE*) listFirstData(valueList->valueList);
-    //freeValue(elem);
-    listPopFront(valueList->valueList);
+    tmpList = valueList+j;
+    for(i = 0; i < listLen(tmpList->valueList); ++i)
+    {
+      elem = (VALUE*) listFirstData(tmpList->valueList);
+      listPopFront(tmpList->valueList);
+    }
+    freeList(tmpList->valueList);
   }
-  freeList(valueList->valueList);
   free(valueList);
 }
 
@@ -81,9 +88,50 @@ void cleanValueList(VALUES_LIST *valueList, LIST_NODE *startNode)
   int i, j;
   next = listNextNode(startNode);
   /* clean list from next node */
+  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "cleanValueList length: %d", listLen(valueList->valueList));
   updateNodeNext(valueList->valueList, startNode, NULL);
 
   removeNodes(valueList->valueList, next);
+}
+
+void cleanValueListbyTime(VALUES_LIST *valueList, double time)
+{
+  LIST_NODE *next, *node;
+  VALUE* elem;
+
+  /*  if it's empty anyway */
+  if (listLen(valueList->valueList) == 0)
+  {
+    return;
+  }
+  printValuesListTimes(valueList);
+  node = listFirstNode(valueList->valueList);
+  do
+  {
+    elem = ((VALUE*)listNodeData(node));
+    next = listNextNode(node);
+    /*  if next node is empty */
+    if (!next)
+    {
+      return;
+    }
+    if (elem->time <= time)
+    {
+      break;
+    }
+    /* debug output */
+    infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "cleanValueListbyTime %g check element: ", time);
+    printValueElement(elem);
+
+    freeNode(node);
+    updatelistFirst(valueList->valueList, next);
+    updatelistLength(valueList->valueList, listLen(valueList->valueList)-1);
+    node = next;
+  }while(1);
+  cleanValueList(valueList, node);
+  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "New list length %d: ", listLen(valueList->valueList));
+  printValuesListTimes(valueList);
+  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "Done!");
 }
 
 VALUE* createValueElement(unsigned int size, double time, double* values)
@@ -97,7 +145,6 @@ VALUE* createValueElement(unsigned int size, double time, double* values)
 
   /* debug output */
   infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "Create Element");
-  printValueElement(elem);
   messageClose(LOG_NLS_EXTRAPOLATE);
 
   return elem;
@@ -113,7 +160,7 @@ void addListElement(VALUES_LIST* valuesList, VALUE* newElem)
 {
   LIST_NODE *node, *next;
   VALUE* elem;
-  int replace = 0, i=0;
+  int replace = 0, i = 0;
 
   /* debug output */
   infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "Adding element in a list of size %d", listLen(valuesList->valueList));
@@ -130,7 +177,7 @@ void addListElement(VALUES_LIST* valuesList, VALUE* newElem)
   }
 
   /*  if the element at begin is earlier than current
-   *  push the elemnt just in front and if the end element
+   *  push the element just in front and if the end element
    *  is later than current push it just back.*/
   node = listFirstNode(valuesList->valueList);
   if (((VALUE*)listNodeData(node))->time < newElem->time)
@@ -166,15 +213,12 @@ void addListElement(VALUES_LIST* valuesList, VALUE* newElem)
     {
       break;
     }
-    if (elem->time == newElem->time)
+    else if (elem->time == newElem->time)
     {
       replace = 1;
       break;
     }
-    else if (elem->time > newElem->time)
-    {
-      node = next;
-    }
+    node = next;
     next = listNextNode(node);
     i++; /* count insert or replace place */
   }while(1);
@@ -187,10 +231,10 @@ void addListElement(VALUES_LIST* valuesList, VALUE* newElem)
   else
   {
     infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "replace element.");
-    updateNodeData(valuesList->valueList, node, (void*) newElem);
+    updateNodeData(valuesList->valueList, next, (void*) newElem);
   }
-  /*  clean lsit if too full */
-  if (i < 3 && listLen(valuesList->valueList)>20)
+  /*  clean list if too full */
+  if (i < 3 && listLen(valuesList->valueList)>10)
   {
     while(i < 4)
     {
@@ -204,7 +248,7 @@ void addListElement(VALUES_LIST* valuesList, VALUE* newElem)
   return;
 }
 
-void getValues(VALUES_LIST* valuesList, double time, double* newValues)
+void getValues(VALUES_LIST* valuesList, double time, double* extrapolatedValues, double* oldOutput)
 {
   LIST_NODE *begin, *next, *old, *old2;
   VALUE *oldValues, *old2Values, *elem;
@@ -254,7 +298,8 @@ void getValues(VALUES_LIST* valuesList, double time, double* newValues)
   if (old2 == NULL)
   {
     oldValues = (VALUE*) listNodeData(old);
-    memcpy(newValues, oldValues->values, oldValues->size*sizeof(double));
+    memcpy(extrapolatedValues, oldValues->values, oldValues->size*sizeof(double));
+    memcpy(oldOutput, oldValues->values, oldValues->size*sizeof(double));
     infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "take just old values.");
   }
   else
@@ -267,8 +312,9 @@ void getValues(VALUES_LIST* valuesList, double time, double* newValues)
     printValueElement(old2Values);
     for(i = 0; i < oldValues->size; ++i)
     {
-      newValues[i] = extrapolateValues(time, oldValues->values[i], oldValues->time, old2Values->values[i], old2Values->time);
+      extrapolatedValues[i] = extrapolateValues(time, oldValues->values[i], oldValues->time, old2Values->values[i], old2Values->time);
     }
+    memcpy(oldOutput, oldValues->values, oldValues->size*sizeof(double));
   }
   messageClose(LOG_NLS_EXTRAPOLATE);
   return;

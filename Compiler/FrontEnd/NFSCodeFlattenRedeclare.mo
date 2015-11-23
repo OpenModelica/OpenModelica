@@ -553,7 +553,7 @@ algorithm
     // shouldn't happen.
     case (_, _, _, {})
       equation
-        bc_strl = List.map(inBaseClasses, Absyn.pathString);
+        bc_strl = list(Absyn.pathString(p) for p in inBaseClasses);
         bcl_str = stringDelimitList(bc_strl, ", ");
         err_msg = "NFSCodeFlattenRedeclare.pushRedeclareIntoExtends2 couldn't find the base classes {"
           + bcl_str + "} for " + inName;
@@ -871,7 +871,7 @@ algorithm
     case (_, _, _, _, _, _)
       equation
         print("pushing: " + inName + " redeclare: " + NFSCodeEnv.itemStr(inRedeclare) + "\n\t");
-        print("into baseclases: " + stringDelimitList(List.map(inBaseClasses, Absyn.pathString), ", ") + "\n\t");
+        print("into baseclases: " + stringDelimitList(list(Absyn.pathString(p) for p in inBaseClasses), ", ") + "\n\t");
         print("called from env: " + NFSCodeEnv.getEnvName(inEnv) + "\n");
         print("-----------------\n");
       then ();

@@ -11492,7 +11492,7 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
         MODELICA_TERMINATE(<%msgVar%>);
         >>
       case ASSERT(source=SOURCE(info=info)) then
-        assertCommon(condition, message, contextSimulationDiscrete, &varDecls, info,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+        assertCommon(condition, message,level, contextSimulationDiscrete, &varDecls, info,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       case NORETCALL(__) then
       let &preExp = buffer ""
       let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -11823,7 +11823,7 @@ end daeExpRange;
 
 
 
-template assertCommon(Exp condition, Exp message, Context context, Text &varDecls, builtin.SourceInfo info, SimCode simCode,
+template assertCommon(Exp condition, Exp message,Exp level, Context context, Text &varDecls, builtin.SourceInfo info, SimCode simCode,
                       Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
   let &preExpCond = buffer ""
@@ -11847,7 +11847,11 @@ template assertCommon(Exp condition, Exp message, Context context, Text &varDecl
        if(!<%condVar%>)
        {
          <%preExpMsg%>
-        throw ModelicaSimulationError(MODEL_EQ_SYSTEM,<%msgVar%>);
+          <%match level case ENUM_LITERAL(index=2)
+          then 'cerr <<"Warning: " << <%msgVar%>;'
+          else
+          'throw ModelicaSimulationError(MODEL_EQ_SYSTEM,<%msgVar%>);'
+          %>
 
        }
       >>
@@ -11857,7 +11861,10 @@ template assertCommon(Exp condition, Exp message, Context context, Text &varDecl
       {
         <%preExpCond%>
         <%preExpMsg%>
-       throw ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM);
+        <%match level case ENUM_LITERAL(index=2)
+         then 'cerr <<"Warning: >Assert in model equation";'
+         else  'throw ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM);'
+        %>
       }
       >>
    %>
@@ -11888,6 +11895,76 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
 let modelname = identOfPath(modelInfo.name)
 '<?xml version="1.0" encoding="utf-8"?>
+<project>
+   <fileHeader companyName="Bosch Rexroth AG" companyURL="" contentDescription="" creationDateTime="2015-11-06T13:36:37" productName="" productRelease="" productVersion=""/>
+   <contentHeader name="<%modelname%>">
+      <coordinateInfo>
+         <fbd>
+            <scaling x="0" y="0"/>
+         </fbd>
+         <ld>
+            <scaling x="0" y="0"/>
+         </ld>
+         <sfc>
+            <scaling x="0" y="0"/>
+         </sfc>
+      </coordinateInfo>
+   </contentHeader>
+   <types>
+      <dataTypes/>
+      <pous>
+         <pou name="<%modelname%>" pouType="functionBlock">
+            <interface>
+               <inputVars>
+                  <%inputVars%>
+               </inputVars>
+               <outputVars>
+                  <%outputVars%>
+               </outputVars>
+                   <localVars>
+                   <variable name="cycletime">
+                     <type>
+                        <LREAL/>
+                     </type>
+                     <initialValue>
+                        <simpleValue value="0.004"/>
+                     </initialValue>
+                  </variable>
+                      <variable name="bAlreadyInitialized">
+                     <type>
+                        <BOOL/>
+                     </type>
+                  </variable>
+                    <variable name="bErrorOccured">
+                     <type>
+                        <BOOL/>
+                     </type>
+                  </variable>
+                   <variable name="controller">
+                     <type>
+                        <DWORD/>
+                     </type>
+                  </variable>
+                  <variable name="simdata">
+                     <type>
+                        <DWORD/>
+                     </type>
+                  </variable>
+                  </localVars>
+            </interface>
+            <body>
+               <ST>
+                  <xhtml xmlns="http://www.w3.org/1999/xhtml">
+</xhtml>
+               </ST>
+            </body>
+         </pou>
+      </pous>
+   </types>
+   <instances>
+      <configurations/>
+   </instances>
+</project>
 <project xmlns="http://www.plcopen.org/xml/tc6_0200">
   <fileHeader companyName="" productName="IndraLogic" productVersion="indralogic" creationDateTime="2015-11-19T11:21:48.0837805" />
   <contentHeader name="<%modelname%>">
@@ -13629,7 +13706,7 @@ template algStmtAssert(DAE.Statement stmt, Context context, Text &varDecls,SimCo
 ::=
 match stmt
 case STMT_ASSERT(source=SOURCE(info=info)) then
-  assertCommon(cond, msg, context, &varDecls, info,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  assertCommon(cond, msg, level, context, &varDecls, info,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 end algStmtAssert;
 
 

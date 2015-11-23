@@ -98,7 +98,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(System.stringHashDjb2Mod,stringEq,Util.id,Absyn.pathString));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(System.stringHashDjb2Mod,stringEq,Util.id,Absyn.pathStringDefault));
 end emptyHashTableSized;
 
 annotation(__OpenModelica_Interface="frontend");

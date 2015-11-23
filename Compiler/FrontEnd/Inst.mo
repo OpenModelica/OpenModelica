@@ -113,51 +113,54 @@ protected partial function BasicTypeAttrTyper
 end BasicTypeAttrTyper;
 
 // protected imports
-protected import BaseHashTable;
-protected import Builtin;
-protected import Ceval;
-protected import ConnectUtil;
-protected import ComponentReference;
-protected import Config;
-protected import DAEUtil;
-protected import Debug;
-protected import Dump;
-protected import Error;
-protected import ErrorExt;
-protected import Expression;
-protected import ExpressionDump;
-protected import Flags;
-protected import FGraph;
-protected import FGraphBuildEnv;
-protected import FNode;
-protected import Global;
-protected import HashTable;
-protected import HashTable5;
-protected import InstSection;
-protected import InstBinding;
-protected import InstVar;
-protected import InstFunction;
-protected import InstUtil;
-protected import InstExtends;
-protected import List;
-protected import Lookup;
-protected import MetaUtil;
-protected import PrefixUtil;
-protected import SCodeUtil;
-protected import Static;
-protected import Types;
-protected import UnitParserExt;
-protected import Util;
-protected import Values;
-protected import ValuesUtil;
-protected import System;
-protected import SCodeDump;
-protected import UnitAbsynBuilder;
-protected import NFSCodeFlattenRedeclare;
-protected import InstStateMachineUtil;
-protected import HashTableSM1;
+protected
 
-protected import DAEDump; // BTH
+import BaseHashTable;
+import Builtin;
+import Ceval;
+import ConnectUtil;
+import ComponentReference;
+import Config;
+import DAEUtil;
+import Debug;
+import Dump;
+import Error;
+import ErrorExt;
+import Expression;
+import ExpressionDump;
+import Flags;
+import FGraph;
+import FGraphBuildEnv;
+import FNode;
+import GC;
+import Global;
+import HashTable;
+import HashTable5;
+import InstSection;
+import InstBinding;
+import InstVar;
+import InstFunction;
+import InstUtil;
+import InstExtends;
+import List;
+import Lookup;
+import MetaUtil;
+import PrefixUtil;
+import SCodeUtil;
+import Static;
+import Types;
+import UnitParserExt;
+import Util;
+import Values;
+import ValuesUtil;
+import System;
+import SCodeDump;
+import UnitAbsynBuilder;
+import NFSCodeFlattenRedeclare;
+import InstStateMachineUtil;
+import HashTableSM1;
+
+import DAEDump; // BTH
 
 protected function instantiateClass_dispatch
 " instantiate a class.
@@ -196,6 +199,11 @@ algorithm
 
         // set the source of this element
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
+
+        if Flags.isSet(Flags.GC_PROF) then
+          print(GC.profStatsStr(GC.getProfStats(), head="GC stats after pre-frontend work (building graphs):") + "\n");
+        end if;
+
         (cache,env_2,ih,dae2) = instClassInProgram(cache, env_1, ih, cdecls, path, source);
         // check the models for balancing
         //Debug.fcall2(Flags.CHECK_MODEL_BALANCE, checkModelBalancing, SOME(path), dae1);
@@ -234,6 +242,10 @@ algorithm
 
         //System.startTimer();
         //print("\nInstClass");
+        if Flags.isSet(Flags.GC_PROF) then
+          print(GC.profStatsStr(GC.getProfStats(), head="GC stats after pre-frontend work (building graphs):") + "\n");
+        end if;
+
         (cache,env_2,ih,_,dae,_,_,_,_,_) = instClass(cache,env_2,ih,
           UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), makeTopComponentPrefix(env_2, n), cdef,
           {}, false, InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) "impl";
@@ -3799,7 +3811,7 @@ algorithm
         (cache,env,ih,elMod::res);
 
     // Special case for components being redeclared, we might instantiate partial classes when instantiating var(-> instVar2->instClass) to update component in env.
-    case (cache,env,ih,pre,((comp,(cmod as DAE.REDECL(_,_,{(redComp,_)}))) :: xs),ci_state,impl)
+    case (cache,env,ih,pre,((comp,(cmod as DAE.REDECL(element = redComp))) :: xs),ci_state,impl)
       equation
         info = SCode.elementInfo(redComp);
         umod = Mod.unelabMod(cmod);
@@ -3887,7 +3899,6 @@ public function redeclareType
   output SCode.Element outElement = inElement;
   output DAE.Mod outMod = DAE.NOMOD();
 protected
-  list<tuple<SCode.Element, DAE.Mod>> redecls;
   SCode.Element redecl_el;
   SCode.Mod mod;
   DAE.Mod redecl_mod, m, old_m;
@@ -3897,93 +3908,85 @@ protected
   list<SCode.Element> cc_comps;
   list<Absyn.ComponentRef> crefs;
 algorithm
-  if Mod.isRedeclareMod(inMod) then
-    DAE.REDECL(elements = redecls) := inMod;
-  else
+  if not Mod.isRedeclareMod(inMod) then
     outMod := Mod.merge(inMod, inCmod);
     return;
   end if;
 
-  for redecl in redecls loop
-    (redecl_el, redecl_mod) := redecl;
-    redecl_name := SCode.elementName(redecl_el);
+  DAE.REDECL(element = redecl_el, mod = redecl_mod) := inMod;
+  redecl_name := SCode.elementName(redecl_el);
 
-    (outElement, outMod, found) := matchcontinue (redecl_el, inElement)
-      // Redeclaration of component.
-      case (SCode.COMPONENT(),
-            SCode.COMPONENT(prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(cc = cc))))
-        algorithm
-          true := redecl_name == inElement.name;
+  (outElement, outMod) := matchcontinue (redecl_el, inElement)
+    // Redeclaration of component.
+    case (SCode.COMPONENT(),
+          SCode.COMPONENT(prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(cc = cc))))
+      algorithm
+        true := redecl_name == inElement.name;
 
-          mod := InstUtil.chainRedeclares(inMod, redecl_el.modifications);
-          crefs := InstUtil.getCrefFromMod(mod);
-          (outCache, outEnv, outIH) := updateComponentsInEnv(inCache, inEnv,
-            inIH, inPrefix, DAE.NOMOD(), crefs, inState, inImpl);
-          (outCache, m) := Mod.elabMod(outCache, outEnv, outIH, inPrefix, mod,
-            inImpl, Mod.COMPONENT(redecl_name), redecl_el.info);
-          (outCache, old_m) := Mod.elabMod(outCache, outEnv, outIH, inPrefix,
-            inElement.modifications, inImpl, Mod.COMPONENT(inElement.name), inElement.info);
+        mod := InstUtil.chainRedeclares(inMod, redecl_el.modifications);
+        crefs := InstUtil.getCrefFromMod(mod);
+        (outCache, outEnv, outIH) := updateComponentsInEnv(inCache, inEnv,
+          inIH, inPrefix, DAE.NOMOD(), crefs, inState, inImpl);
+        (outCache, m) := Mod.elabMod(outCache, outEnv, outIH, inPrefix, mod,
+          inImpl, Mod.COMPONENT(redecl_name), redecl_el.info);
+        (outCache, old_m) := Mod.elabMod(outCache, outEnv, outIH, inPrefix,
+          inElement.modifications, inImpl, Mod.COMPONENT(inElement.name), inElement.info);
 
-          if isSome(cc) then
-            // Constraining type on the component:
-            // Extract components belonging to constraining class.
-            cc_comps := InstUtil.extractConstrainingComps(cc, inEnv, inPrefix);
-            // Keep previous constraining class mods.
-            redecl_mod := InstUtil.keepConstrainingTypeModifersOnly(redecl_mod, cc_comps);
-            old_m := InstUtil.keepConstrainingTypeModifersOnly(old_m, cc_comps);
+        if isSome(cc) then
+          // Constraining type on the component:
+          // Extract components belonging to constraining class.
+          cc_comps := InstUtil.extractConstrainingComps(cc, inEnv, inPrefix);
+          // Keep previous constraining class mods.
+          redecl_mod := InstUtil.keepConstrainingTypeModifersOnly(redecl_mod, cc_comps);
+          old_m := InstUtil.keepConstrainingTypeModifersOnly(old_m, cc_comps);
 
-            m := Mod.merge(m, redecl_mod, redecl_name);
-            m := Mod.merge(m, old_m, redecl_name);
-            m := Mod.merge(m, inCmod, redecl_name);
-          else
-            // No constraining type on comp, throw away modifiers prior to redeclaration:
-            m := Mod.merge(redecl_mod, m, redecl_name);
-            m := Mod.merge(m, old_m, redecl_name);
-            m := Mod.merge(inCmod, m, redecl_name);
-          end if;
+          m := Mod.merge(m, redecl_mod, redecl_name);
+          m := Mod.merge(m, old_m, redecl_name);
+          m := Mod.merge(m, inCmod, redecl_name);
+        else
+          // No constraining type on comp, throw away modifiers prior to redeclaration:
+          m := Mod.merge(redecl_mod, m, redecl_name);
+          m := Mod.merge(m, old_m, redecl_name);
+          m := Mod.merge(inCmod, m, redecl_name);
+        end if;
 
-          (outCache, outElement) :=
-            propagateRedeclCompAttr(outCache, outEnv, inElement, redecl_el);
-          outElement := SCode.setComponentMod(outElement, mod);
-        then
-          (outElement, m, true);
+        (outCache, outElement) :=
+          propagateRedeclCompAttr(outCache, outEnv, inElement, redecl_el);
+        outElement := SCode.setComponentMod(outElement, mod);
+      then
+        (outElement, m);
 
-      // Redeclaration of class.
-      case (SCode.CLASS(), SCode.CLASS())
-        algorithm
-          true := redecl_name == inElement.name;
-          (outCache, outEnv, outIH) := updateComponentsInEnv(inCache, inEnv, inIH,
-            inPrefix, inMod, {Absyn.CREF_IDENT(inElement.name, {})}, inState, inImpl);
-        then
-          (inElement, redecl_mod, true);
+    // Redeclaration of class.
+    case (SCode.CLASS(), SCode.CLASS())
+      algorithm
+        true := redecl_name == inElement.name;
+        (outCache, outEnv, outIH) := updateComponentsInEnv(inCache, inEnv, inIH,
+          inPrefix, inMod, {Absyn.CREF_IDENT(inElement.name, {})}, inState, inImpl);
+      then
+        (inElement, redecl_mod);
 
-      // Local redeclaration of class type path is an id.
-      case (SCode.CLASS(), SCode.COMPONENT())
-        algorithm
-          name := Absyn.typeSpecPathString(inElement.typeSpec);
-          true := redecl_name == name;
-          (outCache, outEnv, outIH) := updateComponentsInEnv(inCache, inEnv, inIH,
-            inPrefix, inMod, {Absyn.CREF_IDENT(name, {})}, inState, inImpl);
-        then
-          (inElement, redecl_mod, true);
+    // Local redeclaration of class type path is an id.
+    case (SCode.CLASS(), SCode.COMPONENT())
+      algorithm
+        name := Absyn.typeSpecPathString(inElement.typeSpec);
+        true := redecl_name == name;
+        (outCache, outEnv, outIH) := updateComponentsInEnv(inCache, inEnv, inIH,
+          inPrefix, inMod, {Absyn.CREF_IDENT(name, {})}, inState, inImpl);
+      then
+        (inElement, redecl_mod);
 
-      // Local redeclaration of class, type is qualified.
-      case (SCode.CLASS(), SCode.COMPONENT())
-        algorithm
-          name := Absyn.pathFirstIdent(Absyn.typeSpecPath(inElement.typeSpec));
-          true := redecl_name == name;
-          (outCache, outEnv, outIH) := updateComponentsInEnv(inCache, inEnv, inIH,
-            inPrefix, inMod, {Absyn.CREF_IDENT(name, {})}, inState, inImpl);
-        then
-          (inElement, redecl_mod, true);
+    // Local redeclaration of class, type is qualified.
+    case (SCode.CLASS(), SCode.COMPONENT())
+      algorithm
+        name := Absyn.pathFirstIdent(Absyn.typeSpecPath(inElement.typeSpec));
+        true := redecl_name == name;
+        (outCache, outEnv, outIH) := updateComponentsInEnv(inCache, inEnv, inIH,
+          inPrefix, inMod, {Absyn.CREF_IDENT(name, {})}, inState, inImpl);
+      then
+        (inElement, redecl_mod);
 
-      else (inElement, DAE.NOMOD(), false);
-    end matchcontinue;
-
-    if found then
-      return;
-    end if;
-  end for;
+    else (inElement, DAE.NOMOD());
+  end matchcontinue;
 end redeclareType;
 
 protected function propagateRedeclCompAttr
@@ -4131,13 +4134,13 @@ algorithm
 
     // if we have a redeclare for a component
     case (cache,env,ih,_,
-        DAE.REDECL(_, _, {
-         (SCode.COMPONENT(
+        DAE.REDECL(element =
+         SCode.COMPONENT(
              name = name,
              prefixes = prefixes as SCode.PREFIXES(visibility = visibility),
              attributes = attributes,
              modifications = smod,
-             info = info),_)}),_,_,_,_,_)
+             info = info)),_,_,_,_,_)
       equation
         id = Absyn.crefFirstIdent(cref);
         true = stringEq(id, name);
@@ -4189,13 +4192,13 @@ algorithm
         (cache,env_1,ih,SOME(updatedComps));
 
     // redeclare class!
-    case (cache,env,ih,_,DAE.REDECL(_, _, {(compNew as SCode.CLASS(name = name),_)}),_,_,_,_,_)
+    case (cache,env,ih,_,DAE.REDECL(element = SCode.CLASS(name = name)),_,_,_,_,_)
       equation
         id = Absyn.crefFirstIdent(cref);
         true = stringEq(name, id);
         // fetch the original class!
         (cl, _) = Lookup.lookupClassLocal(env, name);
-        env = FGraph.updateClass(env, SCode.mergeWithOriginal(compNew, cl), pre, mod, FCore.CLS_UNTYPED(), env);
+        env = FGraph.updateClass(env, SCode.mergeWithOriginal(mod.element, cl), pre, mod, FCore.CLS_UNTYPED(), env);
         updatedComps = getUpdatedCompsHashTable(inUpdatedComps);
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
       then
@@ -4914,56 +4917,18 @@ protected function modifyInstantiateClass
   output DAE.Mod omod1;
   output DAE.Mod omod2;
 algorithm
-  (omod1,omod2) := matchcontinue(inMod,path)
+  (omod1, omod2) := match inMod
     local
-      SCode.Final f;
-      SCode.Each e;
-      list<tuple<SCode.Element, DAE.Mod>> redecls,p1,p2;
-      Integer i1;
+      String id;
 
-    case(DAE.REDECL(f,e,redecls), _)
-      equation
-        (p1,p2) = modifyInstantiateClass2(redecls,path);
-        i1 = listLength(p1);
-        omod1 = if i1==0 then DAE.NOMOD() else DAE.REDECL(f,e,p1);
-        i1 = listLength(p2);
-        omod2 = if i1==0 then DAE.NOMOD() else DAE.REDECL(f,e,p2);
-      then
-        (omod1,omod2);
+    case DAE.REDECL(element = SCode.CLASS(name = id))
+      then if id == Absyn.pathString(path) then
+        (inMod, DAE.NOMOD()) else (DAE.NOMOD(), inMod);
 
     else (DAE.NOMOD(), inMod);
 
-  end matchcontinue;
+  end match;
 end modifyInstantiateClass;
-
-protected function modifyInstantiateClass2
-"Helper function for modifyInstantiateClass"
-  input list<tuple<SCode.Element, DAE.Mod>> redecls;
-  input Absyn.Path path;
-  output list<tuple<SCode.Element, DAE.Mod>> omod1;
-  output list<tuple<SCode.Element, DAE.Mod>> omod2;
-algorithm
-  (omod1,omod2) := matchcontinue(redecls,path)
-    local
-      list<tuple<SCode.Element, DAE.Mod>> rest,rec2,rec1;
-      tuple<SCode.Element, DAE.Mod> head;
-      DAE.Mod m;
-      String id1,id2;
-    case({},_) then ({},{});
-    case( (head as  (SCode.CLASS(name = id1),_))::rest, _)
-      equation
-        id2 = Absyn.pathString(path);
-        true = stringEq(id1,id2);
-        (rec1,rec2) = modifyInstantiateClass2(rest,path);
-      then
-        (head::rec1,rec2);
-    case(head::rest,_)
-      equation
-        (rec1,rec2) = modifyInstantiateClass2(rest,path);
-      then
-        (rec1,head::rec2);
-  end matchcontinue;
-end modifyInstantiateClass2;
 
 protected function removeSelfReferenceAndUpdate
 " BZ 2007-07-03
@@ -5470,7 +5435,7 @@ protected function emptyInstHashTableSized
   input Integer size;
   output InstHashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(Absyn.pathHashMod,Absyn.pathEqual,Absyn.pathString,opaqVal));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(Absyn.pathHashMod,Absyn.pathEqual,Absyn.pathStringDefault,opaqVal));
 end emptyInstHashTableSized;
 
 /* end HashTable */
@@ -5589,7 +5554,7 @@ algorithm
 
     case (_)
       equation
-        str = Absyn.pathString2NoLeadingDot(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(inPrefix)))), "$");
+        str = Absyn.pathString(PrefixUtil.prefixToPath(inPrefix), "$", usefq=false, reverse=true);
       then
         str;
 

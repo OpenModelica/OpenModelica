@@ -153,6 +153,10 @@ modelica_boolean GreaterEqZC(double a, double b, modelica_boolean);
 
 extern int measure_time_flag;
 
+void setContext(DATA* data, double* currentTime, int currentContext);
+void increaseJacContext(DATA* data);
+void unsetContext(DATA* data);
+
 #ifdef __cplusplus
 }
 #endif

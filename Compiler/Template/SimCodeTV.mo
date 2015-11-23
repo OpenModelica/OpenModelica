@@ -1293,11 +1293,12 @@ package Absyn
     end THREAD;
   end ReductionIterType;
 
-  function pathString2NoLeadingDot "Tail-recursive version, with string builder (stringDelimitList is optimised)"
+  function pathString
     input Path path;
     input String delimiter;
+    input Boolean usefq;
     output String outString;
-  end pathString2NoLeadingDot;
+  end pathString;
 
   function pathLastIdent
     input Path inPath;

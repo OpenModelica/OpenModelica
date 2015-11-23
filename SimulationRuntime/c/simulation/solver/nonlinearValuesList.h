@@ -52,16 +52,17 @@ typedef struct VALUE
 } VALUE;
 
 
-VALUES_LIST *allocValueList(const unsigned int itemSize);
-void freeValueList(VALUES_LIST *valueList);
+VALUES_LIST *allocValueList(const unsigned int numberOfLists);
+void freeValueList(VALUES_LIST *valueList, unsigned int numberOfLists);
 
 VALUE* createValueElement(unsigned int size, double time, double* values);
 void freeValue(VALUE* elem);
 void cleanValueList(VALUES_LIST *valueListm, LIST_NODE* next);
+void cleanValueListbyTime(VALUES_LIST *valueList, double time);
 void removeNodes(LIST* list, LIST_NODE *node);
 
 void addListElement(VALUES_LIST* valueList, VALUE* elem);
-void getValues(VALUES_LIST* valueList, double time, double* values);
+void getValues(VALUES_LIST* valueList, double time, double* values, double* oldOutput);
 
 void printValueElement(VALUE* elem);
 void printValuesListTimes(VALUES_LIST* list);
