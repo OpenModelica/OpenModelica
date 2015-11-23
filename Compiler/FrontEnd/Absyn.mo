@@ -4371,17 +4371,30 @@ public function setClassName "author: BZ
   Sets the name of the class"
   input Class inClass;
   input String newName;
-  output Class outClass;
-protected
-  Ident n;
-  Boolean p,f,e;
-  Restriction r;
-  ClassDef body;
-  Info info;
+  output Class outClass = inClass;
 algorithm
-  CLASS(_, p, f, e, r, body, info) := inClass;
-  outClass := CLASS(newName, p, f, e, r, body, info);
+  outClass := match outClass
+    case CLASS()
+      algorithm
+        outClass.name := newName;
+      then
+        outClass;
+  end match;
 end setClassName;
+
+public function setClassBody
+  input Class inClass;
+  input ClassDef inBody;
+  output Class outClass = inClass;
+algorithm
+  outClass := match outClass
+    case CLASS()
+      algorithm
+        outClass.body := inBody;
+      then
+        outClass;
+  end match;
+end setClassBody;
 
 public function crefEqual " Checks if the name of a ComponentRef is
  equal to the name of another ComponentRef, including subscripts.
@@ -5650,6 +5663,32 @@ algorithm
   end for;
   res := listReverse(res);
 end mergeAnnotations2;
+
+public function mergeCommentAnnotation
+  "Merges an annotation into a Comment option."
+  input Annotation inAnnotation;
+  input Option<Comment> inComment;
+  output Option<Comment> outComment;
+algorithm
+  outComment := match inComment
+    local
+      Annotation ann;
+      Option<String> cmt;
+
+    // No comment, create a new one.
+    case NONE()
+      then SOME(COMMENT(SOME(inAnnotation), NONE()));
+
+    // A comment without annotation, insert the annotation.
+    case SOME(COMMENT(annotation_ = NONE(), comment = cmt))
+      then SOME(COMMENT(SOME(inAnnotation), cmt));
+
+    // A comment with annotation, merge the annotations.
+    case SOME(COMMENT(annotation_ = SOME(ann), comment = cmt))
+      then SOME(COMMENT(SOME(mergeAnnotations(ann, inAnnotation)), cmt));
+
+  end match;
+end mergeCommentAnnotation;
 
 function isModificationOfPath
 "returns true or false if the given path is in the list of modifications"

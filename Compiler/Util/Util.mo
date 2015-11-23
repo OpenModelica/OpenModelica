@@ -810,6 +810,25 @@ algorithm
   end match;
 end applyOptionOrDefault2;
 
+public function applyOption_2<T>
+  input Option<T> inValue1;
+  input Option<T> inValue2;
+  input FuncType inFunc;
+  output Option<T> outValue;
+
+  partial function FuncType
+    input T inValue1;
+    input T inValue2;
+    output T outValue;
+  end FuncType;
+algorithm
+  outValue := match (inValue1, inValue2)
+    case (NONE(), _) then inValue2;
+    case (_, NONE()) then inValue1;
+    else SOME(inFunc(getOption(inValue1), getOption(inValue2)));
+  end match;
+end applyOption_2;
+
 public function makeOption<T>
   "Makes a value into value option, using SOME(value)"
   input T inValue;

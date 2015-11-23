@@ -9134,85 +9134,73 @@ algorithm
 end updateComponent;
 
 public function addClassAnnotation
-"function:addClassAnnotation
-   This function takes a `ComponentRef\' and an `Exp\' expression and a
-   `Program\' and adds the expression as a annotation to the specified
-   model in the program, returning the updated program."
-  input Absyn.ComponentRef inComponentRef;
-  input list<Absyn.NamedArg> inAbsynNamedArgLst;
+  "Adds an annotation to the referenced class."
+  input Absyn.ComponentRef inClass;
+  input list<Absyn.NamedArg> inAnnotation;
   input Absyn.Program inProgram;
   output Absyn.Program outProgram;
+protected
+  Absyn.Path class_path;
+  Absyn.Class cls;
+  Absyn.Within class_within;
 algorithm
-  (outProgram) := match (inComponentRef,inAbsynNamedArgLst,inProgram)
-    local
-      Absyn.Path modelpath,modelwithin;
-      Absyn.Class cdef,cdef_1;
-      Absyn.Program newp,p;
-      Absyn.ComponentRef model_;
-      list<Absyn.NamedArg> nargs;
-      Absyn.Exp exp;
-    case ((model_ as Absyn.CREF_QUAL()),nargs, p as Absyn.PROGRAM())
-      equation
-        modelpath = Absyn.crefToPath(model_) "Class inside other class" ;
-        modelwithin = Absyn.stripLast(modelpath);
-        cdef = getPathedClassInProgram(modelpath, p);
-        cdef_1 = addClassAnnotationToClass(cdef, nargs);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},Absyn.WITHIN(modelwithin)), p);
-      then
-        newp;
-    case ((model_ as Absyn.CREF_IDENT()),nargs,p as Absyn.PROGRAM())
-      equation
-        modelpath = Absyn.crefToPath(model_) "Class on top level" ;
-        cdef = getPathedClassInProgram(modelpath, p);
-        cdef_1 = addClassAnnotationToClass(cdef, nargs);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},Absyn.TOP()), p);
-      then
-        newp;
-  end match;
+  class_path := Absyn.crefToPath(inClass);
+  cls := getPathedClassInProgram(class_path, inProgram);
+  cls := addClassAnnotationToClass(cls, annotationListToAbsyn(inAnnotation));
+  class_within := if Absyn.pathIsIdent(class_path) then
+    Absyn.TOP() else Absyn.WITHIN(Absyn.stripLast(class_path));
+  outProgram := updateProgram(Absyn.PROGRAM({cls}, class_within), inProgram);
 end addClassAnnotation;
 
 protected function addClassAnnotationToClass
-" This function adds an annotation on element level to a `Class´."
+  "Adds an annotation to a given class."
   input Absyn.Class inClass;
-  input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  output Absyn.Class outClass;
+  input Absyn.Annotation inAnnotation;
+  output Absyn.Class outClass = inClass;
+protected
+  Absyn.ClassDef body;
 algorithm
-  outClass := match (inClass,inAbsynNamedArgLst)
-    local
-      list<Absyn.ElementItem> publst,publst2,protlst,protlst2;
-      list<Absyn.EquationItem> equationlst,equationlst2;
-      list<Absyn.AlgorithmItem> algorithmlst,algorithmlst2;
-      Absyn.Annotation annotation_,newann,newann_1;
-      Absyn.Class cdef_1,cdef;
-      list<Absyn.ClassPart> parts,parts2;
-      list<Absyn.NamedArg> nargs;
-      String i,bcname;
-      Boolean p,f,e;
-      Absyn.Restriction r;
-      Option<String> cmt;
-      SourceInfo file_info;
-      list<Absyn.ElementArg> modif;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.Annotation> ann;
-    /* a class with parts */
-    case ((Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                               body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt),
-                               info = file_info)),nargs)
-      equation
-        newann = annotationListToAbsyn(nargs);
-        newann_1 = List.fold(ann,Absyn.mergeAnnotations,newann);
-      then Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts,{newann_1},cmt),file_info);
-    /* an extended class with parts: model extends M end M; */
-    case ((Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                               body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,ann = ann,comment = cmt),
-                               info = file_info)),nargs)
-      equation
-        newann = annotationListToAbsyn(nargs);
-        newann_1 = List.fold(ann,Absyn.mergeAnnotations,newann);
+  Absyn.CLASS(body = body) := inClass;
+
+  body := match body
+    case Absyn.PARTS()
+      algorithm
+        body.ann := {List.fold(body.ann, Absyn.mergeAnnotations, inAnnotation)};
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts,{newann_1}),file_info);
+        body;
+
+    case Absyn.DERIVED()
+      algorithm
+        body.comment := Absyn.mergeCommentAnnotation(inAnnotation, body.comment);
+      then
+        body;
+
+    case Absyn.ENUMERATION()
+      algorithm
+        body.comment := Absyn.mergeCommentAnnotation(inAnnotation, body.comment);
+      then
+        body;
+
+    case Absyn.OVERLOAD()
+      algorithm
+        body.comment := Absyn.mergeCommentAnnotation(inAnnotation, body.comment);
+      then
+        body;
+
+    case Absyn.CLASS_EXTENDS()
+      algorithm
+        body.ann := {List.fold(body.ann, Absyn.mergeAnnotations, inAnnotation)};
+      then
+        body;
+
+    case Absyn.PDER()
+      algorithm
+        body.comment := Absyn.mergeCommentAnnotation(inAnnotation, body.comment);
+      then
+        body;
   end match;
+
+  outClass := Absyn.setClassBody(outClass, body);
 end addClassAnnotationToClass;
 
 protected function getInheritedClassesHelper
@@ -11828,42 +11816,34 @@ protected function getAnnotationInClass
   input Absyn.Program inProgram;
   input Absyn.Path inModelPath;
   output String annotationStr;
+protected
+  Absyn.ClassDef body;
+  list<Absyn.ElementArg> ann;
 algorithm
-  annotationStr := match(inClass, annotationType, inProgram, inModelPath)
-    local
-      list<Absyn.Annotation> ann;
-      list<Absyn.ElementArg> annlst;
-      String s1,  str;
-      list<Absyn.ClassPart> parts;
-      Absyn.Program p;
-      Absyn.Path path;
+  Absyn.CLASS(body = body) := inClass;
 
-    // normal class definitions made of parts
-    case (Absyn.CLASS(body = Absyn.PARTS(ann = ann)), _, p, path)
-      equation
-        annlst = List.flatten(List.map(ann,Absyn.annotationToElementArgs));
-        s1 = getAnnotationStr(annlst, annotationType, inClass, p, path);
-        str = stringAppendList({"{", s1, "}"});
-      then
-        str;
+  ann := match body
+    case Absyn.PARTS()
+      then List.flatten(list(Absyn.annotationToElementArgs(a) for a in body.ann));
 
-    // adrpo: add the case for model extends name annotation ... end name;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(ann = ann)), _, p, path)
-      equation
-        annlst = List.flatten(List.map(ann,Absyn.annotationToElementArgs));
-        s1 = getAnnotationStr(annlst, annotationType, inClass, p, path);
-        str = stringAppendList({"{", s1, "}"});
-      then
-        str;
+    case Absyn.CLASS_EXTENDS()
+      then List.flatten(list(Absyn.annotationToElementArgs(a) for a in body.ann));
 
-    // short class definition
-    case (Absyn.CLASS(body = Absyn.DERIVED(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_)))), _, p, path)
-      equation
-        s1 = getAnnotationStr(annlst, annotationType, inClass, p, path);
-        str = stringAppendList({"{", s1, "}"});
-      then
-        str;
+    case Absyn.DERIVED(comment = SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(ann)))))
+      then ann;
+
+    case Absyn.ENUMERATION(comment = SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(ann)))))
+      then ann;
+
+    case Absyn.OVERLOAD(comment = SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(ann)))))
+      then ann;
+
+    case Absyn.PDER(comment = SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(ann)))))
+      then ann;
   end match;
+
+  annotationStr := getAnnotationStr(ann, annotationType, inClass, inProgram, inModelPath);
+  annotationStr := "{" + annotationStr + "}";
 end getAnnotationInClass;
 
 protected function isAnnotationType
@@ -13271,185 +13251,81 @@ algorithm
 end buildEnvForGraphicProgram;
 
 protected function getAnnotationString
-"of values representing the flat record of the specific annotation.
-  The function as two special rules for handling of Icon and Diagram
-  annotations since these two contain graphic primitives, which must be
-  handled specially because Modelica does not have the possibility to store
-  polymorphic values (e.g. different record classes with the same baseclass)
-  in for instance an array."
+  "Renders an annotation as a string."
   input Absyn.Annotation inAnnotation;
   input Absyn.Class inClass;
   input Absyn.Program inFullProgram;
   input Absyn.Path inModelPath;
   output String outString;
+protected
 algorithm
-  outString := matchcontinue (inAnnotation,inClass,inFullProgram,inModelPath)
+  outString := matchcontinue inAnnotation
     local
-      list<Absyn.ElementArg> stripmod,mod,gxmods;
-      Absyn.Exp graphicexp;
-      SCode.Mod mod_1;
-      FCore.Graph env;
-      Absyn.Class placementc;
-      SCode.Element placementclass;
-      DAE.Mod mod_2;
-      DAE.DAElist dae;
-      Connect.Sets cs;
-      DAE.Type t;
-      ClassInf.State state;
-      String str,gexpstr,totstr,anncname;
-      DAE.Exp graphicexp2;
-      DAE.Properties prop;
-      Absyn.Program graphicProgram;
-      FCore.Cache cache;
+      String ann_name;
+      list<Absyn.ElementArg> mod, stripped_mod, graphic_mod;
       SourceInfo info;
+      Boolean is_icon, is_diagram;
+      FCore.Cache cache;
+      FCore.Graph env;
+      Absyn.Program graphic_prog;
+      SCode.Element placement_cls;
+      SCode.Mod smod;
+      DAE.Mod dmod;
+      Absyn.Exp graphic_exp;
+      DAE.Exp graphic_dexp;
+      DAE.Properties prop;
+      DAE.DAElist dae;
 
-    case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(path = Absyn.IDENT(name = "Icon"),modification = SOME(Absyn.CLASSMOD(mod,_)), info = info)}),
-          _,
-          _,
-          _)
-      equation
-        // print(Dump.unparseStr(graphicProgram, false));
-        (stripmod,{Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=graphicexp))))}) = stripGraphicsAndInteractionModification(mod);
+    case Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(
+        path = Absyn.IDENT(name = ann_name),
+        modification = SOME(Absyn.CLASSMOD(elementArgLst = mod)),
+        info = info)})
+      algorithm
+        is_icon := ann_name == "Icon";
+        is_diagram := ann_name == "Diagram";
+        (stripped_mod, graphic_mod) := stripGraphicsAndInteractionModification(mod);
 
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
+        (cache, env, graphic_prog) :=
+          buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, ann_name);
 
-        (cache, env, graphicProgram) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, "Icon");
+        smod := SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())),
+          SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
+        (cache, dmod) := Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy,
+          Prefix.NOPRE(), smod, false, Mod.COMPONENT(ann_name), info);
 
-        placementc = getClassInProgram("Icon", graphicProgram);
-        placementclass = SCodeUtil.translateClass(placementc);
-
-        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Mod.COMPONENT("Icon"), Absyn.dummyInfo); // TODO: FIXME: Someone forgot to add SourceInfo to this function's input
-        (cache,_,_,_,dae,_,_,_,_,_) =
-          Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore, mod_2, Prefix.NOPRE(),
-            placementclass, {}, false, InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
-
-        str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
-
-        // print("Env: " + FGraph.printGraphStr(env) + "\n");
-
-        (_,graphicexp2,prop) = StaticScript.elabGraphicsExp(cache, env, graphicexp, false, Prefix.NOPRE(), Absyn.dummyInfo); // TODO: FIXME: Someone forgot to add SourceInfo to this function's input
-        (cache, graphicexp2, prop) = Ceval.cevalIfConstant(cache, env, graphicexp2, prop, false, Absyn.dummyInfo);
-        (graphicexp2,_) = ExpressionSimplify.simplify1(graphicexp2);
-        Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations.";
-        gexpstr = ExpressionDump.printExpStr(graphicexp2);
-        totstr = stringAppendList({str, ",", gexpstr});
-      then
-        totstr;
-
-    // First line in the first rule above fails if return value from stripGraphicsAndInteractionModification doesn't match the lhs
-    case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(path = Absyn.IDENT(name = "Icon"),modification = SOME(Absyn.CLASSMOD(mod,_)), info = info)}),
-          _,
-          _,
-          _)
-      equation
-        // print(Dump.unparseStr(p, false));
-        (stripmod,_) = stripGraphicsAndInteractionModification(mod);
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-
-        (cache, env, graphicProgram) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, "Icon");
-
-        placementc = getClassInProgram("Icon", graphicProgram);
-        placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, true, Mod.COMPONENT("Icon"), Absyn.dummyInfo);
-        (cache,_,_,_,dae,_,_,_,_,_) =
+        placement_cls := SCodeUtil.translateClass(getClassInProgram(ann_name, graphic_prog));
+        (cache, _, _, _, dae) :=
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-            mod_2, Prefix.NOPRE(), placementclass, {}, false, InstTypes.TOP_CALL(),
+            dmod, Prefix.NOPRE(), placement_cls, {}, false, InstTypes.TOP_CALL(),
             ConnectionGraph.EMPTY, Connect.emptySet);
-        str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
-        Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
+        outString := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
+
+        // Icon and Diagram contain graphic primitives which must be handled
+        // specially.
+        if is_icon or is_diagram then
+          try
+            {Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(eqMod =
+              Absyn.EQMOD(exp = graphic_exp))))} := graphic_mod;
+            (_, graphic_dexp, prop) := StaticScript.elabGraphicsExp(cache, env,
+              graphic_exp, false, Prefix.NOPRE(), info);
+
+            if is_icon then
+              (cache, graphic_dexp) :=
+                Ceval.cevalIfConstant(cache, env, graphic_dexp, prop, false, info);
+              graphic_dexp := ExpressionSimplify.simplify1(graphic_dexp);
+            end if;
+
+            outString := outString + "," + ExpressionDump.printExpStr(graphic_dexp);
+          else
+          end try;
+        end if;
+
+        Print.clearErrorBuf() "This is to clear the error-msg generated by the annotations.";
       then
-        str;
+        outString;
 
-    case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(path = Absyn.IDENT(name = "Diagram"),modification = SOME(Absyn.CLASSMOD(mod,_)),info = info)}),
-          _,
-          _,
-          _)
-      equation
-        // print(Dump.unparseStr(p, false));
-        (stripmod,{Absyn.MODIFICATION(modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=graphicexp))))}) = stripGraphicsAndInteractionModification(mod);
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-
-        (cache, env, graphicProgram) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, "Diagram");
-
-        placementc = getClassInProgram("Diagram", graphicProgram);
-        placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Mod.COMPONENT("Diagram"), Absyn.dummyInfo);
-        (cache,_,_,_,dae,_,_,_,_,_) =
-          Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy,
-            UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), placementclass, {}, false,
-            InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
-        str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
-
-        // print("Env: " + FGraph.printGraphStr(env) + "\n");
-
-        (_,graphicexp2,_) = StaticScript.elabGraphicsExp(cache, env, graphicexp, false,Prefix.NOPRE(), Absyn.dummyInfo); // TODO: FIXME: Someone forgot to add SourceInfo to this function's input
-        Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
-        gexpstr = ExpressionDump.printExpStr(graphicexp2);
-        totstr = stringAppendList({str, ",", gexpstr});
-      then
-        totstr;
-
-    // First line in the first rule above fails if return value from stripGraphicsAndInteractionModification doesn't match the lhs
-    case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(path = Absyn.IDENT(name = "Diagram"),modification = SOME(Absyn.CLASSMOD(mod,_)), info = info)}),
-          _,
-          _,
-          _)
-      equation
-        // print(Dump.unparseStr(p, false));
-        (stripmod,_) = stripGraphicsAndInteractionModification(mod);
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())),
-        SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-
-        (cache, env, graphicProgram) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, "Diagram");
-
-        placementc = getClassInProgram("Icon", graphicProgram);
-        placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, true, Mod.COMPONENT("Diagram"), Absyn.dummyInfo);
-        (cache,_,_,_,dae,_,_,_,_,_) =
-          Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-            mod_2, Prefix.NOPRE(), placementclass, {}, false, InstTypes.TOP_CALL(),
-            ConnectionGraph.EMPTY, Connect.emptySet);
-        str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
-        Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
-      then
-        str;
-
-    case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(path = Absyn.IDENT(name = anncname),modification = SOME(Absyn.CLASSMOD(mod,_)), info = info)}),
-          _,
-          _,
-          _)
-      equation
-        // print(Dump.unparseStr(p, false));
-        (stripmod,_) = stripGraphicsAndInteractionModification(mod);
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-
-        (cache, env, graphicProgram) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, anncname);
-
-        placementc = getClassInProgram(anncname, graphicProgram);
-        placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Mod.COMPONENT(anncname), Absyn.dummyInfo);
-        (cache,_,_,_,dae,_,_,_,_,_) =
-          Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-            mod_2, Prefix.NOPRE(), placementclass, {},
-            false, InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
-        str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
-        Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
-      then
-        str;
-
-    // if we fail, just return the annotation as it is
-    case (_, _, _, _)
-      equation
-        str = Dump.unparseAnnotation(inAnnotation) + " ";
-      then
-        str;
-
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Interactive.getAnnotationString failed on annotation: " + Dump.unparseAnnotation(inAnnotation));
-      then
-        fail();
+    // If we fail, just return the annotation as it is.
+    else Dump.unparseAnnotation(inAnnotation) + " ";
   end matchcontinue;
 end getAnnotationString;
 
