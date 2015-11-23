@@ -2525,7 +2525,7 @@ then
       <variable name= "<%crefST(name, false)%>">
       <type>
           <<%crefTypeST(name)%>/>
-          </type>
+      </type>
       </variable>
       >>
       ;separator="\n"
@@ -2556,9 +2556,9 @@ then
           let inputnames = vars.inputVars |>  SIMVAR(__) hasindex i0 =>
       <<
       <variable name= "<%crefST(name, false)%>">
-      <type>
+        <type>
           <<%crefTypeST(name)%>/>
-          </type>
+        </type>
       </variable>
       >>
       ;separator="\n"
@@ -2572,10 +2572,6 @@ then
   >>
 
 end spsInputVars;
-
-
-
-
 
 
 template mlpiOutputVars(SimCode simCode )
@@ -11895,76 +11891,6 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
 let modelname = identOfPath(modelInfo.name)
 '<?xml version="1.0" encoding="utf-8"?>
-<project>
-   <fileHeader companyName="Bosch Rexroth AG" companyURL="" contentDescription="" creationDateTime="2015-11-06T13:36:37" productName="" productRelease="" productVersion=""/>
-   <contentHeader name="<%modelname%>">
-      <coordinateInfo>
-         <fbd>
-            <scaling x="0" y="0"/>
-         </fbd>
-         <ld>
-            <scaling x="0" y="0"/>
-         </ld>
-         <sfc>
-            <scaling x="0" y="0"/>
-         </sfc>
-      </coordinateInfo>
-   </contentHeader>
-   <types>
-      <dataTypes/>
-      <pous>
-         <pou name="<%modelname%>" pouType="functionBlock">
-            <interface>
-               <inputVars>
-                  <%inputVars%>
-               </inputVars>
-               <outputVars>
-                  <%outputVars%>
-               </outputVars>
-                   <localVars>
-                   <variable name="cycletime">
-                     <type>
-                        <LREAL/>
-                     </type>
-                     <initialValue>
-                        <simpleValue value="0.004"/>
-                     </initialValue>
-                  </variable>
-                      <variable name="bAlreadyInitialized">
-                     <type>
-                        <BOOL/>
-                     </type>
-                  </variable>
-                    <variable name="bErrorOccured">
-                     <type>
-                        <BOOL/>
-                     </type>
-                  </variable>
-                   <variable name="controller">
-                     <type>
-                        <DWORD/>
-                     </type>
-                  </variable>
-                  <variable name="simdata">
-                     <type>
-                        <DWORD/>
-                     </type>
-                  </variable>
-                  </localVars>
-            </interface>
-            <body>
-               <ST>
-                  <xhtml xmlns="http://www.w3.org/1999/xhtml">
-</xhtml>
-               </ST>
-            </body>
-         </pou>
-      </pous>
-   </types>
-   <instances>
-      <configurations/>
-   </instances>
-</project>
 <project xmlns="http://www.plcopen.org/xml/tc6_0200">
   <fileHeader companyName="" productName="IndraLogic" productVersion="indralogic" creationDateTime="2015-11-19T11:21:48.0837805" />
   <contentHeader name="<%modelname%>">
@@ -12170,7 +12096,7 @@ typedef struct <%modelname%>_struct
   void* __VFTABLEPOINTER;
   <%inputVars%>
   <%outputVars%>
-  MLPI_IEC_LREAL cycletime;
+  MLPI_IEC_REAL cycletime;
   MLPI_IEC_BOOL bAlreadyInitialized;
   MLPI_IEC_BOOL bErrorOccured;
   ISimController* controller;
