@@ -235,7 +235,7 @@ class SaveChangesDialog : public QDialog
   Q_OBJECT
 public:
   SaveChangesDialog(MainWindow *pMainWindow);
-  bool getUnsavedClasses();
+  void listUnSavedClasses();
 private:
   MainWindow *mpMainWindow;
   Label *mpSaveChangesLabel;
@@ -244,6 +244,8 @@ private:
   QPushButton *mpNoButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+
+  void listUnSavedClasses(LibraryTreeItem *pLibraryTreeItem);
 private slots:
   void saveChanges();
 public slots:
