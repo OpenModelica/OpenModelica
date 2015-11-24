@@ -1,6 +1,7 @@
 TEST = ../../rtest -v
 
 TESTFILES = \
+AddClassAnnotation.mos \
 ArraySlicing.mos \
 Bug2871.mos \
 Bug2943.mos \
