@@ -145,11 +145,15 @@ algorithm
             SOME(cls) := ocls;
             SCode.CLASS(name = cn, encapsulatedPrefix = encf, restriction = r) := cls;
           else
-            // Base class could not be found, print an error.
-            bc_str := Absyn.pathString(el.baseClassPath);
-            scope_str := FGraph.printGraphPathStr(inEnv);
-            Error.addSourceMessageAndFail(Error.LOOKUP_BASECLASS_ERROR,
-              {bc_str, scope_str}, el.info);
+            // Base class could not be found, print an error unless --permissive
+            // is used.
+            if Flags.getConfigBool(Flags.PERMISSIVE) then
+              bc_str := Absyn.pathString(el.baseClassPath);
+              scope_str := FGraph.printGraphPathStr(inEnv);
+              Error.addSourceMessage(Error.LOOKUP_BASECLASS_ERROR,
+                {bc_str, scope_str}, el.info);
+            end if;
+            fail();
           end if;
 
           (outCache, cenv, outIH, els1, eq1, ieq1, alg1, ialg1, mod) :=
@@ -213,6 +217,10 @@ algorithm
 
         then
           ();
+
+      // Skip any extends we couldn't handle if --permissive is given.
+      case SCode.EXTENDS() guard(Flags.getConfigBool(Flags.PERMISSIVE))
+        then ();
 
       case SCode.COMPONENT()
         algorithm

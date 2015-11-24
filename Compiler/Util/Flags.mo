@@ -1179,6 +1179,10 @@ constant ConfigFlag INIT_OPT_MODULES_ADD = CONFIG_FLAG(85, "initOptModules+",
 constant ConfigFlag INIT_OPT_MODULES_SUB = CONFIG_FLAG(86, "initOptModules-",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
   Util.gettext("Disables a list of init-optimization modules. See --help=optmodules for more info."));
+constant ConfigFlag PERMISSIVE = CONFIG_FLAG(87, "permissive",
+  NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Disables some error checks to allow erroneous models to compile."));
+
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1270,7 +1274,8 @@ constant list<ConfigFlag> allConfigFlags = {
   POST_OPT_MODULES_ADD,
   POST_OPT_MODULES_SUB,
   INIT_OPT_MODULES_ADD,
-  INIT_OPT_MODULES_SUB
+  INIT_OPT_MODULES_SUB,
+  PERMISSIVE
 };
 
 public function new

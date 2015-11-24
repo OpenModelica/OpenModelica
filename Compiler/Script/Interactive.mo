@@ -9891,7 +9891,7 @@ algorithm
       Absyn.ComponentRef model_;
       Absyn.Program p;
       FCore.Cache cache;
-      Boolean b;
+      Boolean b, permissive;
       GlobalScript.SymbolTable st;
 
     case (model_,b,st as GlobalScript.SYMBOLTABLE(ast=p))
@@ -9903,9 +9903,12 @@ algorithm
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, modelpath);
         env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
+        permissive = Flags.getConfigBool(Flags.PERMISSIVE);
+        Flags.setConfigBool(Flags.PERMISSIVE, true);
         (_,env_2,_,_,_) =
           Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),
             Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
+        Flags.setConfigBool(Flags.PERMISSIVE, permissive);
         comps1 = getPublicComponentsInClass(cdef);
         s1 = getComponentsInfo(comps1, b, "\"public\"", env_2);
         comps2 = getProtectedComponentsInClass(cdef);
