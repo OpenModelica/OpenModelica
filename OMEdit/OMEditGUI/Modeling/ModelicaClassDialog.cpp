@@ -345,18 +345,15 @@ void ModelicaClassDialog::createModelicaClass()
   }
   // open the new tab in central widget and add the model to library tree.
   LibraryTreeItem *pLibraryTreeItem;
-  bool wasNonExisting = false;
-  pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pParentLibraryTreeItem, wasNonExisting, false, false, true);
-  if (pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
+  pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pParentLibraryTreeItem, false, false, true);
+  if (pParentLibraryTreeItem != pLibraryTreeModel->getRootLibraryTreeItem() && pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
     pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveInOneFile);
   } else if (mpSaveContentsInOneFileCheckBox->isChecked()) {
     pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveInOneFile);
   } else {
     pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
   }
-  if (wasNonExisting) {
-    pLibraryTreeModel->loadNonExistingLibraryTreeItem(pLibraryTreeItem);
-  }
+  pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
   pLibraryTreeItem->setExpanded(true);
   // show the ModelWidget
   pLibraryTreeModel->showModelWidget(pLibraryTreeItem, "", true);
@@ -705,16 +702,13 @@ void SaveAsClassDialog::saveAsModelicaClass()
   }
   //open the new tab in central widget and add the model to library tree.
   LibraryTreeItem *pLibraryTreeItem;
-  bool wasNonExisting = false;
   if (pParentLibraryTreeItem) {
-    pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), pParentLibraryTreeItem, wasNonExisting, false, false, true);
+    pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), pParentLibraryTreeItem, false, false, true);
   } else {
-    pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), pLibraryTreeModel->getRootLibraryTreeItem(), wasNonExisting, false, false, true);
+    pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), pLibraryTreeModel->getRootLibraryTreeItem(), false, false, true);
   }
   pLibraryTreeItem->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeItem::SaveInOneFile : LibraryTreeItem::SaveFolderStructure);
-  if (wasNonExisting) {
-    pLibraryTreeModel->loadNonExistingLibraryTreeItem(pLibraryTreeItem);
-  }
+  pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
   // show the ModelWidget
   pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
   accept();
@@ -812,16 +806,13 @@ void DuplicateClassDialog::duplicateClass()
     LibraryTreeItem *pLibraryTreeItem;
     QString className = mpNameTextBox->text().trimmed();
     LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mpPathTextBox->text().trimmed());
-    bool wasNonExisting = false;
     if (pParentLibraryTreeItem) {
-      pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(className, pParentLibraryTreeItem, wasNonExisting, false, false, true);
+      pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(className, pParentLibraryTreeItem, false, false, true);
     } else {
-      pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(className, pLibraryTreeModel->getRootLibraryTreeItem(), wasNonExisting, false, false, true);
+      pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(className, pLibraryTreeModel->getRootLibraryTreeItem(), false, false, true);
     }
     pLibraryTreeItem->setSaveContentsType(mpLibraryTreeItem->getSaveContentsType());
-    if (wasNonExisting) {
-      pLibraryTreeModel->loadNonExistingLibraryTreeItem(pLibraryTreeItem);
-    }
+    pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
   }
   accept();
 }
