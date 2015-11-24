@@ -2441,7 +2441,7 @@ then
 
     <<
     <%inputnames%>
-        >>
+    >>
 
   <<
   <%inputs%>
@@ -12096,7 +12096,7 @@ typedef struct <%modelname%>_struct
   void* __VFTABLEPOINTER;
   <%inputVars%>
   <%outputVars%>
-  MLPI_IEC_REAL cycletime;
+  MLPI_IEC_LREAL cycletime;
   MLPI_IEC_BOOL bAlreadyInitialized;
   MLPI_IEC_BOOL bErrorOccured;
   ISimController* controller;
