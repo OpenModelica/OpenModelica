@@ -37,6 +37,8 @@ LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMake")
 
 MESSAGE(STATUS "CMake version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}")
 
+STRING(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
+
 #Set Options
 OPTION(USE_PARALLEL_OUTPUT "USE_PARALLEL_OUTPUT" OFF)
 OPTION(USE_SCOREP "USE_SCOREP" OFF)
@@ -338,16 +340,14 @@ ENDIF(PAPI_FOUND)
 #  - Additionaly the Boost_LIBRARIES variable is overwritten each time find_package(Boost ...) is called, thus it must be rescued
 FIND_PACKAGE(Boost COMPONENTS log log_setup)
 
-#SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
-#IF(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
-#  ADD_DEFINITIONS(-DUSE_BOOST_LOG)
-#  MESSAGE(STATUS "Using boost log")
-#ELSE(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
-#  MESSAGE(STATUS "Boost log disabled")
-#  UNSET(Boost_LOG_LIBRARY)
-#ENDIF(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
-
-FIND_PACKAGE(Boost COMPONENTS thread atomic)
+# Deactivate threading stuff in MSVC release mode, because this produces linker errors to boost::exception_ptr
+IF(MSVC AND (CMAKE_BUILD_TYPE_UPPER STREQUAL "RELEASE"))
+	SET(Boost_THREAD_LIBRARY_RELEASE "NOT_FOUND")
+	SET(Boost_THREAD_LIBRARY_DEBUG "NOT_FOUND")
+	MESSAGE(STATUS "Boost threading disabled because othwerwise the MSVC build produces linker errors in release mode.")
+ELSE(MSVC AND (CMAKE_BUILD_TYPE_UPPER STREQUAL "RELEASE"))
+	FIND_PACKAGE(Boost COMPONENTS thread atomic)
+ENDIF(MSVC AND (CMAKE_BUILD_TYPE_UPPER STREQUAL "RELEASE"))
 
 IF(NOT(COMPILER_SUPPORTS_CXX11))
   SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
