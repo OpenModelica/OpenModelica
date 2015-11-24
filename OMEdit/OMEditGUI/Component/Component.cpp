@@ -347,6 +347,10 @@ Component::Component(Component *pComponent, Component *pParentComponent)
   mpOriginItem = 0;
   setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName())
              .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+  if (mpLibraryTreeItem) {
+    connect(mpLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), SLOT(handleLoaded()));
+    connect(mpLibraryTreeItem, SIGNAL(unLoaded(LibraryTreeItem*)), SLOT(handleUnloaded()));
+  }
   connect(mpReferenceComponent, SIGNAL(added()), SLOT(referenceComponentAdded()));
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceComponentTransformHasChanged()));
   connect(mpReferenceComponent, SIGNAL(displayTextChanged()), SLOT(componentNameHasChanged()));
@@ -995,8 +999,10 @@ void Component::removeChildren()
 {
   foreach (Component *pInheritedComponent, mInheritedComponentsList) {
     pInheritedComponent->removeChildren();
-    disconnect(pInheritedComponent->getLibraryTreeItem(), SIGNAL(loaded(LibraryTreeItem*)), pInheritedComponent, SLOT(handleLoaded()));
-    disconnect(pInheritedComponent->getLibraryTreeItem(), SIGNAL(unLoaded(LibraryTreeItem*)), pInheritedComponent, SLOT(handleUnloaded()));
+    if (pInheritedComponent->getLibraryTreeItem()) {
+      disconnect(pInheritedComponent->getLibraryTreeItem(), SIGNAL(loaded(LibraryTreeItem*)), pInheritedComponent, SLOT(handleLoaded()));
+      disconnect(pInheritedComponent->getLibraryTreeItem(), SIGNAL(unLoaded(LibraryTreeItem*)), pInheritedComponent, SLOT(handleUnloaded()));
+    }
     pInheritedComponent->setParentItem(0);
     mpGraphicsView->removeItem(pInheritedComponent);
     pInheritedComponent = 0;
@@ -1005,6 +1011,10 @@ void Component::removeChildren()
   mInheritedComponentsList.clear();
   foreach (Component *pComponent, mComponentsList) {
     pComponent->removeChildren();
+    if (pComponent->getLibraryTreeItem()) {
+      disconnect(pComponent->getLibraryTreeItem(), SIGNAL(loaded(LibraryTreeItem*)), pComponent, SLOT(handleLoaded()));
+      disconnect(pComponent->getLibraryTreeItem(), SIGNAL(unLoaded(LibraryTreeItem*)), pComponent, SLOT(handleUnloaded()));
+    }
     pComponent->setParentItem(0);
     mpGraphicsView->removeItem(pComponent);
     pComponent = 0;
@@ -1277,20 +1287,32 @@ void Component::updateOriginItem()
   }
 }
 
+/*!
+ * \brief Component::handleLoaded
+ * Slot activated when LibraryTreeItem::loaded() SIGNAL is raised.
+ * Redraws the Component and updates its connections accordingly.
+ */
 void Component::handleLoaded()
 {
-  removeChildren();
-  drawComponent();
-  emitChanged();
-  updateConnections();
+  Component *pComponent = getRootParentComponent();
+  pComponent->removeChildren();
+  pComponent->drawComponent();
+  pComponent->emitChanged();
+  pComponent->updateConnections();
 }
 
+/*!
+ * \brief Component::handleUnloaded
+ * Slot activated when LibraryTreeItem::unLoaded() SIGNAL is raised.
+ * Removes the Component and updates its connections accordingly.
+ */
 void Component::handleUnloaded()
 {
   removeChildren();
   showNonExistingOrDefaultComponentIfNeeded();
   emitChanged();
-  updateConnections();
+  Component *pComponent = getRootParentComponent();
+  pComponent->updateConnections();
 }
 
 /*!
@@ -1821,7 +1843,7 @@ void Component::showParameters()
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
   if (!mpLibraryTreeItem || mpLibraryTreeItem->isNonExisting()) {
     QMessageBox::critical(pMainWindow, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
-                          tr("Cannot show parameters window for component <b>%1</b>. Did not find type <b>%2</b>").arg(getName())
+                          tr("Cannot show parameters window for component <b>%1</b>. Did not find type <b>%2</b>.").arg(getName())
                           .arg(mpComponentInfo->getClassName()), Helper::ok);
     return;
   }
