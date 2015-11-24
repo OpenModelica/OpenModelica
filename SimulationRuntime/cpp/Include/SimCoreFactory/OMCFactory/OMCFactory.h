@@ -8,6 +8,12 @@
 #define LOADER_ERROR_UNDEFINED_REFERENCES   ( -2 )
 #define LOADER_ERROR_FILE_NOT_FOUND         ( -3 )
 #define LOADER_ERROR_FUNC_NOT_FOUND         ( -4 )
+
+    /** Minimal OMCFactory for statically linked solvers */
+  class BaseOMCFactory {
+  public:
+    BaseOMCFactory(PATH library_path, PATH modelicasystem_path) {}
+  };
 typedef int LOADERRESULT;
 class ISimController;
 struct SimSettings;
