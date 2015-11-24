@@ -9,11 +9,14 @@
 #define LOADER_ERROR_FILE_NOT_FOUND         ( -3 )
 #define LOADER_ERROR_FUNC_NOT_FOUND         ( -4 )
 
-    /** Minimal OMCFactory for statically linked solvers */
-  class BaseOMCFactory {
+/** Minimal OMCFactory for statically linked solvers */
+class BaseOMCFactory {
   public:
+    BaseOMCFactory() {}
     BaseOMCFactory(PATH library_path, PATH modelicasystem_path) {}
-  };
+    ~BaseOMCFactory() {}
+};
+
 typedef int LOADERRESULT;
 class ISimController;
 struct SimSettings;
