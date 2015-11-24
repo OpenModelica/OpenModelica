@@ -24,6 +24,7 @@ ForStatement6.mos \
 ForStatement7.mos \
 ForStatement8.mos \
 getClassNames.mos \
+GetComponents.mos \
 getDialogAnnotation.mos \
 IfStatementIllegal.mos \
 IfStatement.mos\

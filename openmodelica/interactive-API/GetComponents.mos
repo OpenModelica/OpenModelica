@@ -1,0 +1,36 @@
+// name: GetComponents
+// keywords: 
+// status: correct
+//
+// Tests the getComponents API functions.
+//
+
+loadString("
+  model A
+    Real x;
+    Real y;
+  end A;
+
+  model B
+    extends Foo;
+    Real a;
+    Real b;
+  end B;
+
+  model C
+    A a;
+    B b;
+  end C;
+"); getErrorString();
+
+getComponents(A);
+getComponents(B);
+getComponents(C);
+
+// Result:
+// true
+// ""
+// {{Real,x,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{Real,y,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// {{Real,a,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{Real,b,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// {{A,a,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{B,b,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// endResult
