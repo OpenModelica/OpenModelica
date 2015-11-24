@@ -3167,7 +3167,7 @@ void ModelWidget::getModelComponents()
       if (!pLibraryTreeItem) {
         pLibraryTreeItem = pLibraryTreeModel->createNonExistingLibraryTreeItem(pComponentInfo->getClassName());
       }
-      if (!pLibraryTreeItem->getModelWidget()) {
+      if (!pLibraryTreeItem->isNonExisting() && !pLibraryTreeItem->getModelWidget()) {
         pLibraryTreeModel->showModelWidget(pLibraryTreeItem, "", false);
       }
     }

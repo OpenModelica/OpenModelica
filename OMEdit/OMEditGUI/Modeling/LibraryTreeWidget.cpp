@@ -1037,11 +1037,8 @@ void LibraryTreeModel::addModelicaLibraries(QSplashScreen *pSplashScreen)
 //  systemLibs.prepend("OpenModelica");
   foreach (QString lib, systemLibs) {
     pSplashScreen->showMessage(QString(Helper::loading).append(" ").append(lib), Qt::AlignRight, Qt::white);
-    bool wasNonExisting = false;
-    LibraryTreeItem *pLibraryTreeItem = createLibraryTreeItem(lib, mpRootLibraryTreeItem, wasNonExisting, true, true, true);
-    if (wasNonExisting) {
-      loadNonExistingLibraryTreeItem(pLibraryTreeItem);
-    }
+    createLibraryTreeItem(lib, mpRootLibraryTreeItem, true, true, true);
+    checkIfAnyNonExistingClassLoaded();
   }
   // load Modelica User Libraries.
   pOMCProxy->loadUserLibraries();
@@ -1051,11 +1048,8 @@ void LibraryTreeModel::addModelicaLibraries(QSplashScreen *pSplashScreen)
       continue;
     }
     pSplashScreen->showMessage(QString(Helper::loading).append(" ").append(lib), Qt::AlignRight, Qt::white);
-    bool wasNonExisting = false;
-    LibraryTreeItem *pLibraryTreeItem = createLibraryTreeItem(lib, mpRootLibraryTreeItem, wasNonExisting, true, false, true);
-    if (wasNonExisting) {
-      loadNonExistingLibraryTreeItem(pLibraryTreeItem);
-    }
+    createLibraryTreeItem(lib, mpRootLibraryTreeItem, true, false, true);
+    checkIfAnyNonExistingClassLoaded();
   }
 }
 
@@ -1080,8 +1074,7 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
     QString parentName = StringHandler::removeLastWordAfterDot(lib);
     LibraryTreeItem *pParentLibraryTreeItem = findLibraryTreeItem(parentName, pLibraryTreeItem);
     if (pParentLibraryTreeItem) {
-      bool wasNonExisting = false;
-      createLibraryTreeItem(name, pParentLibraryTreeItem, wasNonExisting, true, false, false);
+      createLibraryTreeItem(name, pParentLibraryTreeItem, true, false, false);
     }
   }
 }
@@ -1095,8 +1088,8 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
  * \param isSystemLibrary
  * \param load
  */
-LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool &wasNonExisting,
-                                                         bool isSaved, bool isSystemLibrary, bool load)
+LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved,
+                                                         bool isSystemLibrary, bool load)
 {
   QString nameStructure = pParentLibraryTreeItem->getNameStructure().isEmpty() ? name : pParentLibraryTreeItem->getNameStructure() + "." + name;
   if (mpLibraryWidget->getMainWindow()->getStatusBar()) {
@@ -1105,7 +1098,6 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, LibraryTr
   // check if is in non-existing classes.
   LibraryTreeItem *pLibraryTreeItem = findNonExistingLibraryTreeItem(nameStructure);
   if (pLibraryTreeItem && pLibraryTreeItem->isNonExisting()) {
-    wasNonExisting = true;
     pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? isSystemLibrary : pParentLibraryTreeItem->isSystemLibrary());
     createNonExistingLibraryTreeItem(pLibraryTreeItem, pParentLibraryTreeItem, isSaved);
     if (load) {
@@ -1243,7 +1235,6 @@ void LibraryTreeModel::createNonExistingLibraryTreeItem(LibraryTreeItem *pLibrar
   pParentLibraryTreeItem->insertChild(row, pLibraryTreeItem);
   endInsertRows();
   pLibraryTreeItem->setNonExisting(false);
-  removeNonExistingLibraryTreeItem(pLibraryTreeItem);
 }
 
 /*!
@@ -1255,6 +1246,25 @@ void LibraryTreeModel::loadNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryT
   pLibraryTreeItem->emitLoaded();
   for (int i = 0; i < pLibraryTreeItem->getChildren().size(); i++) {
     loadNonExistingLibraryTreeItem(pLibraryTreeItem->child(i));
+  }
+}
+
+/*!
+ * \brief LibraryTreeModel::checkIfAnyNonExistingClassLoaded
+ * Checks which non-existing classes are loaded and then call loaded for them.
+ */
+void LibraryTreeModel::checkIfAnyNonExistingClassLoaded()
+{
+  int i = 0;
+  while(i < mNonExistingLibraryTreeItemsList.size()) {
+    LibraryTreeItem *pLibraryTreeItem = mNonExistingLibraryTreeItemsList.at(i);
+    if (!pLibraryTreeItem->isNonExisting()) {
+      removeNonExistingLibraryTreeItem(pLibraryTreeItem);
+      loadNonExistingLibraryTreeItem(pLibraryTreeItem);
+      i = 0;  //Restart iteration
+    } else {
+      i++;
+    }
   }
 }
 
@@ -1504,12 +1514,8 @@ void LibraryTreeModel::loadDependentLibraries(QStringList libraries)
   foreach (QString library, libraries) {
     LibraryTreeItem* pLoadedLibraryTreeItem = findLibraryTreeItem(library);
     if (!pLoadedLibraryTreeItem) {
-      bool wasNonExisting = false;
-      LibraryTreeItem *pLibraryTreeItem = createLibraryTreeItem(library, mpRootLibraryTreeItem, wasNonExisting, true, true, true);
-      if (wasNonExisting) {
-        loadNonExistingLibraryTreeItem(pLibraryTreeItem);
-      }
-
+      createLibraryTreeItem(library, mpRootLibraryTreeItem, true, true, true);
+      checkIfAnyNonExistingClassLoaded();
     }
   }
 }
@@ -2691,12 +2697,8 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
           mpMainWindow->showProgressBar();
         }
         foreach (QString model, classesList) {
-          bool wasNonExisting = false;
-          LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(),
-                                                                                        wasNonExisting, true, false, true);
-          if (wasNonExisting) {
-            mpLibraryTreeModel->loadNonExistingLibraryTreeItem(pLibraryTreeItem);
-          }
+          mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, false, true);
+          mpLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
           if (showProgress) mpMainWindow->getProgressBar()->setValue(++progressvalue);
         }
         mpMainWindow->addRecentFile(fileName, encoding);
@@ -2794,11 +2796,8 @@ void LibraryWidget::parseAndLoadModelicaText(QString modelText)
       } else {
         pParentLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(parentName);
       }
-      bool wasNonExisting = false;
-      LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(modelName, pParentLibraryTreeItem, wasNonExisting, false, false, true);
-      if (wasNonExisting) {
-        mpLibraryTreeModel->loadNonExistingLibraryTreeItem(pLibraryTreeItem);
-      }
+      mpLibraryTreeModel->createLibraryTreeItem(modelName, pParentLibraryTreeItem, false, false, true);
+      mpLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
     }
   }
 }

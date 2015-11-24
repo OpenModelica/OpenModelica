@@ -473,10 +473,10 @@ void Component::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 
 Component* Component::getRootParentComponent()
 {
-  Component *pComponent;
-  pComponent = this;
-  while (pComponent->mpParentComponent)
-    pComponent = pComponent->mpParentComponent;
+  Component *pComponent = this;
+  while (pComponent->getParentComponent()) {
+    pComponent = pComponent->getParentComponent();
+  }
   return pComponent;
 }
 
@@ -893,6 +893,11 @@ void Component::drawComponent()
  */
 void Component::showNonExistingOrDefaultComponentIfNeeded()
 {
+  mpNonExistingComponentLine->setVisible(false);
+  if (mComponentType == Component::Root) {
+    mpDefaultComponentRectangle->setVisible(false);
+    mpDefaultComponentText->setVisible(false);
+  }
   if (!hasShapeAnnotation(this)) {
     if (hasNonExistingClass()) {
       mpNonExistingComponentLine->setVisible(true);
@@ -911,8 +916,14 @@ void Component::showNonExistingOrDefaultComponentIfNeeded()
  */
 void Component::createClassInheritedComponents()
 {
-  foreach (ModelWidget::InheritedClass *pInheritedClass, mpLibraryTreeItem->getModelWidget()->getInheritedClassesList()) {
-    mInheritedComponentsList.append(new Component(pInheritedClass->mpLibraryTreeItem, this));
+  if (!mpLibraryTreeItem->isNonExisting()) {
+    if (!mpLibraryTreeItem->getModelWidget()) {
+      MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, "", false);
+    }
+    foreach (ModelWidget::InheritedClass *pInheritedClass, mpLibraryTreeItem->getModelWidget()->getInheritedClassesList()) {
+      mInheritedComponentsList.append(new Component(pInheritedClass->mpLibraryTreeItem, this));
+    }
   }
 }
 
@@ -923,6 +934,10 @@ void Component::createClassInheritedComponents()
 void Component::createClassShapes()
 {
   if (!mpLibraryTreeItem->isNonExisting()) {
+    if (!mpLibraryTreeItem->getModelWidget()) {
+      MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, "", false);
+    }
     GraphicsView *pGraphicsView = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView();
     if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram &&
         mComponentType == Component::Root && mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->hasAnnotation()) {
@@ -953,6 +968,10 @@ void Component::createClassShapes()
 void Component::createClassComponents()
 {
   if (!mpLibraryTreeItem->isNonExisting()) {
+    if (!mpLibraryTreeItem->getModelWidget()) {
+      MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, "", false);
+    }
     foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentsList()) {
       mComponentsList.append(new Component(pComponent, this));
     }
@@ -976,17 +995,25 @@ void Component::removeChildren()
 {
   foreach (Component *pInheritedComponent, mInheritedComponentsList) {
     pInheritedComponent->removeChildren();
+    disconnect(pInheritedComponent->getLibraryTreeItem(), SIGNAL(loaded(LibraryTreeItem*)), pInheritedComponent, SLOT(handleLoaded()));
+    disconnect(pInheritedComponent->getLibraryTreeItem(), SIGNAL(unLoaded(LibraryTreeItem*)), pInheritedComponent, SLOT(handleUnloaded()));
+    pInheritedComponent->setParentItem(0);
+    mpGraphicsView->removeItem(pInheritedComponent);
     pInheritedComponent = 0;
     delete pInheritedComponent;
   }
   mInheritedComponentsList.clear();
   foreach (Component *pComponent, mComponentsList) {
     pComponent->removeChildren();
+    pComponent->setParentItem(0);
+    mpGraphicsView->removeItem(pComponent);
     pComponent = 0;
     delete pComponent;
   }
   mComponentsList.clear();
   foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
+    pShapeAnnotation->setParentItem(0);
+    mpGraphicsView->removeItem(pShapeAnnotation);
     pShapeAnnotation = 0;
     delete pShapeAnnotation;
   }
@@ -1252,12 +1279,18 @@ void Component::updateOriginItem()
 
 void Component::handleLoaded()
 {
-  reloadComponent(true);
+  removeChildren();
+  drawComponent();
+  emitChanged();
+  updateConnections();
 }
 
 void Component::handleUnloaded()
 {
-  reloadComponent(false);
+  removeChildren();
+  showNonExistingOrDefaultComponentIfNeeded();
+  emitChanged();
+  updateConnections();
 }
 
 /*!
@@ -1786,8 +1819,13 @@ void Component::moveCtrlRight()
 void Component::showParameters()
 {
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-  pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 parameters window").arg(mpLibraryTreeItem->getNameStructure())
-                                           .arg(mpComponentInfo->getName()));
+  if (!mpLibraryTreeItem || mpLibraryTreeItem->isNonExisting()) {
+    QMessageBox::critical(pMainWindow, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
+                          tr("Cannot show parameters window for component <b>%1</b>. Did not find type <b>%2</b>").arg(getName())
+                          .arg(mpComponentInfo->getClassName()), Helper::ok);
+    return;
+  }
+  pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 parameters window").arg(mpLibraryTreeItem->getNameStructure()).arg(getName()));
   pMainWindow->getProgressBar()->setRange(0, 0);
   pMainWindow->showProgressBar();
   ComponentParameters *pComponentParameters = new ComponentParameters(this, pMainWindow);
@@ -1846,10 +1884,6 @@ void Component::showTLMAttributes()
 void Component::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
   Q_UNUSED(event);
-  // if user double clicks the built in type like Integer, Real etc.
-  if (!mpLibraryTreeItem) {
-    return;
-  }
   LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   if(pLibraryTreeItem->getLibraryType()== LibraryTreeItem::TLM) {
     emit showTLMAttributes();
@@ -1869,10 +1903,6 @@ void Component::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
  */
 void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
-  // if user right clicks the built in type like Integer, Real etc. we don't show the context menu.
-  if (!mpLibraryTreeItem) {
-    return;
-  }
   Component *pComponent = getRootParentComponent();
   if (pComponent->isSelected()) {
     pComponent->showResizerItems();

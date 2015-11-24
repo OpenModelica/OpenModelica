@@ -220,12 +220,13 @@ public:
   QModelIndex libraryTreeItemIndex(const LibraryTreeItem *pLibraryTreeItem) const;
   void addModelicaLibraries(QSplashScreen *pSplashScreen);
   void createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
-  LibraryTreeItem* createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool &wasNonExisting, bool isSaved = true,
+  LibraryTreeItem* createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
                                          bool isSystemLibrary = false, bool load = false);
   LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, bool isSaved);
   LibraryTreeItem* createNonExistingLibraryTreeItem(QString nameStructure);
   void createNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true);
   void loadNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  void checkIfAnyNonExistingClassLoaded();
   void addNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.append(pLibraryTreeItem);}
   void removeNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.removeOne(pLibraryTreeItem);}
   void updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
