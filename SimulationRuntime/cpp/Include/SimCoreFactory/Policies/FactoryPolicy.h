@@ -80,6 +80,7 @@
 #elif defined(OMC_BUILD) && defined(RUNTIME_STATIC_LINKING)
  
   /*Policy include*/
+  #include <SimCoreFactory/OMCFactory/OMCFactory.h>
   #include <SimCoreFactory/Policies/StaticSolverOMCFactory.h>
   #include <SimCoreFactory/Policies/StaticSolverSettingsOMCFactory.h>
   #include <SimCoreFactory/Policies/StaticSystemOMCFactory.h>
