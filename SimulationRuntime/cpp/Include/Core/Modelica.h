@@ -48,7 +48,7 @@ using std::runtime_error;
 // uBLAS library
 namespace ublas = boost::numeric::ublas;
 
-#if !defined(USE_CPP_03)
+#if !defined(USE_CPP_03) && !defined(__vxworks)
   #include <array>
   #include <thread>
   #include <atomic>
