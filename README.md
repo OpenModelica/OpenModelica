@@ -17,7 +17,7 @@ To get everything running, you will need a few extras:
 - libexpat (it's actually included in the FMIL sources which are included... but we do not compile those and it's better to use the OS-provided dynamically linked version)
 - ncurses, readline (optional, used by OMShell-terminal)
 - omniORB (optional; CORBA is used by OMOptim and OMShell)
-- OpenSceneGraph (optional, part of Modelica3D which should be compiled but is actually not yet compiled)
+- OpenSceneGraph
 - Qt4, Webkit
 - [Sundials](http://www.llnl.gov/CASC/sundials/) (optional; adds more numerical solvers to the simulation runtime)
 
