@@ -80,7 +80,6 @@ AC_SUBST(OPENBLAS_EXTRA_ARGS)
 AC_SUBST(AR)
 AC_SUBST(AR_SH)
 AC_SUBST(LDFLAGS_SOCKET)
-AC_SUBST(APP)
 AC_SUBST(OMC)
 AC_SUBST(OMCTARGET)
 AC_SUBST(BOOTSTRAP_STATIC)
@@ -642,8 +641,7 @@ AC_SUBST(DLLEXT)
 AC_SUBST(UMFPACK_SHARED)
 AC_SUBST(CONFIG_OS)
 if test "$DARWIN" = "1"; then
-  APP=".app"
-  EXE=".app"
+  EXE=""
   SHREXT=".dylib"
   DLLEXT=".dylib"
   LIBGC="$OMBUILDDIR/lib/$host_short/omc/libomcgc.a"
@@ -675,7 +673,6 @@ if test "$DARWIN" = "1"; then
   UMFPACK_SHARED=ON
   CONFIG_OS=OSX
 elif echo "$host" | grep -iq "mingw"; then
-  APP=".exe"
   EXE=".exe"
   # Yes, we build static libs on Windows, so the "shared" extension is .a
   SHREXT=".a"
@@ -710,7 +707,6 @@ elif echo "$host" | grep -iq "mingw"; then
   UMFPACK_SHARED=OFF
   CONFIG_OS=Windows_NT
 else
-  APP=""
   EXE=""
   SHREXT=".so"
   DLLEXT=".so"
