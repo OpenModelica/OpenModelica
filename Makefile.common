@@ -130,6 +130,9 @@ $(OMBUILDDIR)/$(LIB_OMC)/libumfpack$(SHREXT): 3rdParty/SuiteSparse/CMakeLists.tx
 	$(MAKE) -C 3rdParty/SuiteSparse/build install
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libumfpack.dylib "$@"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libamd.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libamd$(SHREXT)"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libklu.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libklu$(SHREXT)"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libbtf.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libbtf$(SHREXT)"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libcolamd.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libcolamd$(SHREXT)"
 	#cp -au 3rdParty/SuiteSparse/build/*.$(STATIC_EXT) build/$(LIB_OMC)
 	#mkdir --parent build/include/omc/c/suitesparse
 	#cp -a 3rdParty/SuiteSparse/UMFPACK/Include/*.h build/include/omc/c/suitesparse
