@@ -508,13 +508,13 @@ void LibraryTreeItem::addInheritedClass(LibraryTreeItem *pLibraryTreeItem)
 {
   mInheritedClasses.append(pLibraryTreeItem);
   connect(pLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), this, SLOT(handleLoaded(LibraryTreeItem*)), Qt::UniqueConnection);
-  connect(pLibraryTreeItem, SIGNAL(unLoaded(LibraryTreeItem*)), this, SLOT(handleUnloaded(LibraryTreeItem*)), Qt::UniqueConnection);
-  connect(pLibraryTreeItem, SIGNAL(shapeAdded(LibraryTreeItem*,ShapeAnnotation*,GraphicsView*)),
-          this, SLOT(handleShapeAdded(LibraryTreeItem*,ShapeAnnotation*,GraphicsView*)), Qt::UniqueConnection);
-  connect(pLibraryTreeItem, SIGNAL(componentAdded(LibraryTreeItem*,Component*)),
-          this, SLOT(handleComponentAdded(LibraryTreeItem*,Component*)), Qt::UniqueConnection);
-  connect(pLibraryTreeItem, SIGNAL(connectionAdded(LibraryTreeItem*,LineAnnotation*)),
-          this, SLOT(handleConnectionAdded(LibraryTreeItem*,LineAnnotation*)), Qt::UniqueConnection);
+  connect(pLibraryTreeItem, SIGNAL(unLoaded()), this, SLOT(handleUnloaded()), Qt::UniqueConnection);
+  connect(pLibraryTreeItem, SIGNAL(shapeAdded(ShapeAnnotation*,GraphicsView*)),
+          this, SLOT(handleShapeAdded(ShapeAnnotation*,GraphicsView*)), Qt::UniqueConnection);
+  connect(pLibraryTreeItem, SIGNAL(componentAdded(Component*)),
+          this, SLOT(handleComponentAdded(Component*)), Qt::UniqueConnection);
+  connect(pLibraryTreeItem, SIGNAL(connectionAdded(LineAnnotation*)),
+          this, SLOT(handleConnectionAdded(LineAnnotation*)), Qt::UniqueConnection);
   connect(pLibraryTreeItem, SIGNAL(iconUpdated()), this, SLOT(handleIconUpdated()), Qt::UniqueConnection);
 }
 
@@ -526,12 +526,12 @@ void LibraryTreeItem::removeInheritedClasses()
 {
   foreach (LibraryTreeItem *pLibraryTreeItem, mInheritedClasses) {
     disconnect(pLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), this, SLOT(handleLoaded(LibraryTreeItem*)));
-    disconnect(pLibraryTreeItem, SIGNAL(unLoaded(LibraryTreeItem*)), this, SLOT(handleUnloaded(LibraryTreeItem*)));
-    disconnect(pLibraryTreeItem, SIGNAL(shapeAdded(LibraryTreeItem*,ShapeAnnotation*,GraphicsView*)),
-            this, SLOT(handleShapeAdded(LibraryTreeItem*,ShapeAnnotation*,GraphicsView*)));
-    disconnect(pLibraryTreeItem, SIGNAL(componentAdded(LibraryTreeItem*,Component*)),
-            this, SLOT(handleComponentAdded(LibraryTreeItem*,Component*)));
-    disconnect(pLibraryTreeItem, SIGNAL(connectionAdded(LibraryTreeItem*,LineAnnotation*)),
+    disconnect(pLibraryTreeItem, SIGNAL(unLoaded()), this, SLOT(handleUnloaded()));
+    disconnect(pLibraryTreeItem, SIGNAL(shapeAdded(ShapeAnnotation*,GraphicsView*)),
+            this, SLOT(handleShapeAdded(ShapeAnnotation*,GraphicsView*)));
+    disconnect(pLibraryTreeItem, SIGNAL(componentAdded(Component*)),
+            this, SLOT(handleComponentAdded(Component*)));
+    disconnect(pLibraryTreeItem, SIGNAL(connectionAdded(LineAnnotation*)),
             this, SLOT(handleConnectionAdded(LibraryTreeItem*,LineAnnotation*)));
     disconnect(pLibraryTreeItem, SIGNAL(iconUpdated()), this, SLOT(handleIconUpdated()));
   }
@@ -638,81 +638,80 @@ void LibraryTreeItem::handleLoaded(LibraryTreeItem *pLibraryTreeItem)
     if (!pLibraryTreeItem->getModelWidget()) {
       pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, "", false);
     }
-    ModelWidget::InheritedClass *pInheritedClass = mpModelWidget->findInheritedClass(pLibraryTreeItem);
-    if (pInheritedClass) {
-      mpModelWidget->modelInheritedClassLoaded(pInheritedClass);
-      // load new icon for the class.
-      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
-      // update the icon in the libraries browser view.
-      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(this);
-    }
+    mpModelWidget->reDrawModelWidget();
+    // load new icon for the class.
+    pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
+    // update the icon in the libraries browser view.
+    pMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(this);
   }
+  emit loaded(this);
 }
 
 /*!
  * \brief LibraryTreeItem::handleUnLoaded
  * Handles the case when a inherited class is unloaded.
- * \param pLibraryTreeItem
  */
-void LibraryTreeItem::handleUnloaded(LibraryTreeItem *pLibraryTreeItem)
+void LibraryTreeItem::handleUnloaded()
 {
   if (mpModelWidget) {
-    ModelWidget::InheritedClass *pInheritedClass = mpModelWidget->findInheritedClass(pLibraryTreeItem);
-    if (pInheritedClass) {
-      mpModelWidget->modelInheritedClassUnLoaded(pInheritedClass);
-      MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-      // load new icon for the class.
-      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
-      // update the icon in the libraries browser view.
-      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(this);
-    }
+    mpModelWidget->reDrawModelWidget();
+    MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
+    // load new icon for the class.
+    pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
+    // update the icon in the libraries browser view.
+    pMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(this);
   }
+  emit unLoaded();
 }
 
 /*!
  * \brief LibraryTreeItem::handleShapeAdded
  * Handles a case when inherited class has created a new shape.
- * \param pLibraryTreeItem
  * \param pShapeAnnotation
  * \param pGraphicsView
  */
-void LibraryTreeItem::handleShapeAdded(LibraryTreeItem *pLibraryTreeItem, ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
+void LibraryTreeItem::handleShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
 {
   if (mpModelWidget) {
-    ModelWidget::InheritedClass *pInheritedClass = mpModelWidget->findInheritedClass(pLibraryTreeItem);
-    if (pInheritedClass) {
-      if (pGraphicsView->getViewType() == StringHandler::Icon) {
-        pInheritedClass->mIconShapesList.append(mpModelWidget->createInheritedShape(pShapeAnnotation, mpModelWidget->getIconGraphicsView()));
-        mpModelWidget->getIconGraphicsView()->reOrderItems();
-      } else {
-        pInheritedClass->mDiagramShapesList.append(mpModelWidget->createInheritedShape(pShapeAnnotation, mpModelWidget->getDiagramGraphicsView()));
-        mpModelWidget->getDiagramGraphicsView()->reOrderItems();
-      }
+    GraphicsView *pCurrentGraphicsView = 0;
+    if (pGraphicsView->getViewType() == StringHandler::Icon) {
+      pCurrentGraphicsView = mpModelWidget->getIconGraphicsView();
+    } else {
+      pCurrentGraphicsView = mpModelWidget->getDiagramGraphicsView();
     }
+    pCurrentGraphicsView->addInheritedShapeToList(mpModelWidget->createInheritedShape(pShapeAnnotation, pCurrentGraphicsView));
+    pCurrentGraphicsView->reOrderShapes();
   }
+  emit shapeAdded(pShapeAnnotation, pGraphicsView);
 }
 
-void LibraryTreeItem::handleComponentAdded(LibraryTreeItem *pLibraryTreeItem, Component *pComponent)
+/*!
+ * \brief LibraryTreeItem::handleComponentAdded
+ * Handles a case when inherited class has created a new component.
+ * \param pComponent
+ */
+void LibraryTreeItem::handleComponentAdded(Component *pComponent)
 {
   if (mpModelWidget) {
-    ModelWidget::InheritedClass *pInheritedClass = mpModelWidget->findInheritedClass(pLibraryTreeItem);
-    if (pInheritedClass) {
-      if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) {
-        pInheritedClass->mIconComponentsList.append(mpModelWidget->createInheritedComponent(pComponent, mpModelWidget->getIconGraphicsView()));
-      }
-      pInheritedClass->mDiagramComponentsList.append(mpModelWidget->createInheritedComponent(pComponent, mpModelWidget->getDiagramGraphicsView()));
+    if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) {
+      mpModelWidget->getIconGraphicsView()->addInheritedComponentToList(mpModelWidget->createInheritedComponent(pComponent, mpModelWidget->getIconGraphicsView()));
     }
+    mpModelWidget->getDiagramGraphicsView()->addInheritedComponentToList(mpModelWidget->createInheritedComponent(pComponent, mpModelWidget->getDiagramGraphicsView()));
   }
+  emit componentAdded(pComponent);
 }
 
-void LibraryTreeItem::handleConnectionAdded(LibraryTreeItem *pLibraryTreeItem, LineAnnotation *pConnectionLineAnnotation)
+/*!
+ * \brief LibraryTreeItem::handleConnectionAdded
+ * Handles a case when inherited class has created a new connection.
+ * \param pConnectionLineAnnotation
+ */
+void LibraryTreeItem::handleConnectionAdded(LineAnnotation *pConnectionLineAnnotation)
 {
   if (mpModelWidget) {
-    ModelWidget::InheritedClass *pInheritedClass = mpModelWidget->findInheritedClass(pLibraryTreeItem);
-    if (pInheritedClass) {
-      pInheritedClass->mConnectionsList.append(mpModelWidget->createInheritedConnection(pConnectionLineAnnotation, pInheritedClass->mpLibraryTreeItem));
-    }
+    mpModelWidget->getDiagramGraphicsView()->addInheritedConnectionToList(mpModelWidget->createInheritedConnection(pConnectionLineAnnotation));
   }
+  emit connectionAdded(pConnectionLineAnnotation);
 }
 
 /*!
@@ -2113,6 +2112,9 @@ void LibraryTreeView::libraryTreeItemExpanded(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryTreeView::libraryTreeItemExpanded(QModelIndex index)
 {
+  QTime commandTime;
+  commandTime.start();
+  qDebug() << commandTime.currentTime().toString("hh:mm:ss:zzz");
   // since expanded SIGNAL is triggered when tree has expanded the index so we must collapse it first and then load data and expand it back.
   collapse(index);
   QModelIndex sourceIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapToSource(index);
@@ -2121,6 +2123,8 @@ void LibraryTreeView::libraryTreeItemExpanded(QModelIndex index)
   bool state = blockSignals(true);
   expand(index);
   blockSignals(state);
+  qDebug() << commandTime.currentTime().toString("hh:mm:ss:zzz");
+  qDebug() << QString::number((double)commandTime.elapsed() / 1000).append(" secs");
 }
 
 /*!

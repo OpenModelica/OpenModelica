@@ -98,6 +98,9 @@ private:
   QList<Component*> mComponentsList;
   QList<LineAnnotation*> mConnectionsList;
   QList<ShapeAnnotation*> mShapesList;
+  QList<Component*> mInheritedComponentsList;
+  QList<LineAnnotation*> mInheritedConnectionsList;
+  QList<ShapeAnnotation*> mInheritedShapesList;
   LineAnnotation *mpConnectionLineAnnotation;
   LineAnnotation *mpLineShapeAnnotation;
   PolygonAnnotation *mpPolygonShapeAnnotation;
@@ -150,6 +153,7 @@ public:
   void setRenderingLibraryPixmap(bool renderingLibraryPixmap) {mRenderingLibraryPixmap = renderingLibraryPixmap;}
   bool isRenderingLibraryPixmap() {return mRenderingLibraryPixmap;}
   QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
+  QList<ShapeAnnotation*> getInheritedShapesList() {return mInheritedShapesList;}
   QAction* getManhattanizeAction() {return mpManhattanizeAction;}
   QAction* getDeleteAction() {return mpDeleteAction;}
   QAction* getDuplicateAction() {return mpDuplicateAction;}
@@ -164,24 +168,32 @@ public:
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
                           QStringList dialogAnnotation, ComponentInfo *pComponentInfo, bool addObject = true, bool openingClass = false);
-  void addComponentToList(Component *pComponent);
+  void addComponentToList(Component *pComponent) {mComponentsList.append(pComponent);}
+  void addInheritedComponentToList(Component *pComponent) {mInheritedComponentsList.append(pComponent);}
   void addComponentToClass(Component *pComponent);
   void deleteComponent(Component *pComponent);
   void deleteComponentFromClass(Component *pComponent);
-  void deleteComponentFromList(Component *pComponent);
+  void deleteComponentFromList(Component *pComponent) {mComponentsList.removeOne(pComponent);}
+  void deleteInheritedComponentFromList(Component *pComponent) {mInheritedComponentsList.removeOne(pComponent);}
   Component* getComponentObject(QString componentName);
   QString getUniqueComponentName(QString componentName, int number = 1);
   bool checkComponentName(QString componentName);
   QList<Component*> getComponentsList() {return mComponentsList;}
+  QList<Component*> getInheritedComponentsList() {return mInheritedComponentsList;}
   QList<LineAnnotation*> getConnectionsList() {return mConnectionsList;}
+  QList<LineAnnotation*> getInheritedConnectionsList() {return mInheritedConnectionsList;}
   void addConnectionToClass(LineAnnotation *pConnectionLineAnnotation);
   void deleteConnectionFromClass(LineAnnotation *pConnectonLineAnnotation);
   void addConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.append(pConnectionLineAnnotation);}
+  void addInheritedConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.append(pConnectionLineAnnotation);}
   void deleteConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.removeOne(pConnectionLineAnnotation);}
+  void deleteInheritedConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.removeOne(pConnectionLineAnnotation);}
   void addShapeToList(ShapeAnnotation *pShape) {mShapesList.append(pShape);}
+  void addInheritedShapeToList(ShapeAnnotation *pShape) {mInheritedShapesList.append(pShape);}
   void deleteShape(ShapeAnnotation *pShapeAnnotation);
   void deleteShapeFromList(ShapeAnnotation *pShape) {mShapesList.removeOne(pShape);}
-  void reOrderItems();
+  void deleteInheritedShapeFromList(ShapeAnnotation *pShape) {mInheritedShapesList.removeOne(pShape);}
+  void reOrderShapes();
   void bringToFront(ShapeAnnotation *pShape);
   void bringForward(ShapeAnnotation *pShape);
   void sendToBack(ShapeAnnotation *pShape);
@@ -311,34 +323,6 @@ class ModelWidget : public QWidget
   Q_OBJECT
 public:
   ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text);
-
-  class InheritedClass : public QObject
-  {
-  public:
-    InheritedClass() {
-      mpLibraryTreeItem = 0;
-      mIconShapesList.clear();
-      mDiagramShapesList.clear();
-      mIconComponentsList.clear();
-      mDiagramComponentsList.clear();
-      mConnectionsList.clear();
-    }
-    InheritedClass(LibraryTreeItem *pLibraryTreeItem) {
-      mpLibraryTreeItem = pLibraryTreeItem;
-      mIconShapesList.clear();
-      mDiagramShapesList.clear();
-      mIconComponentsList.clear();
-      mDiagramComponentsList.clear();
-      mConnectionsList.clear();
-    }
-    LibraryTreeItem *mpLibraryTreeItem;
-    QList<ShapeAnnotation*> mIconShapesList;
-    QList<ShapeAnnotation*> mDiagramShapesList;
-    QList<Component*> mIconComponentsList;
-    QList<Component*> mDiagramComponentsList;
-    QList<LineAnnotation*> mConnectionsList;
-  };
-
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
   QToolButton* getIconViewToolButton() {return mpIconViewToolButton;}
@@ -352,17 +336,18 @@ public:
   void setModelFilePathLabel(QString path) {mpModelFilePathLabel->setText(path);}
   Label* getCursorPositionLabel() {return mpCursorPositionLabel;}
   bool isLoadedWidgetComponents() {return mCreateModelWidgetComponents;}
-  void addInheritedClass(LibraryTreeItem *pLibraryTreeItem);
-  void removeInheritedClass(InheritedClass *pInheritedClass) {mInheritedClassesList.removeOne(pInheritedClass);}
-  QList<InheritedClass*> getInheritedClassesList() {return mInheritedClassesList;}
+  void addInheritedClass(LibraryTreeItem *pLibraryTreeItem) {mInheritedClassesList.append(pLibraryTreeItem);}
+  void removeInheritedClass(LibraryTreeItem *pLibraryTreeItem) {mInheritedClassesList.removeOne(pLibraryTreeItem);}
   void clearInheritedClasses() {mInheritedClassesList.clear();}
-  InheritedClass* findInheritedClass(LibraryTreeItem *pLibraryTreeItem);
-  void modelInheritedClassLoaded(InheritedClass *pInheritedClass);
-  void modelInheritedClassUnLoaded(InheritedClass *pInheritedClass);
+  QList<LibraryTreeItem*> getInheritedClassesList() {return mInheritedClassesList;}
+  QMap<QString, QMap<QString, QString> > getExtendsModifiersMap() {return mExtendsModifiersMap;}
+  QMap<QString, QString> getExtendsModifiersMap(QString extendsClass);
+  void updateExtendsModifiersMap(QString extendsClass);
+  void reDrawModelWidget();
   ShapeAnnotation* createNonExistingInheritedShape(GraphicsView *pGraphicsView);
   ShapeAnnotation* createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   Component* createInheritedComponent(Component *pComponent, GraphicsView *pGraphicsView);
-  LineAnnotation* createInheritedConnection(LineAnnotation *pConnectionLineAnnotation, LibraryTreeItem *pInheritedLibraryTreeItem);
+  LineAnnotation* createInheritedConnection(LineAnnotation *pConnectionLineAnnotation);
   void createModelWidgetComponents();
   Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
   void refresh();
@@ -397,20 +382,23 @@ private:
   TLMHighlighter *mpTLMHighlighter;
   QStatusBar *mpModelStatusBar;
   bool mCreateModelWidgetComponents;
-  QList<InheritedClass*> mInheritedClassesList;
-  void getModelInheritedClasses(LibraryTreeItem *pLibraryTreeItem);
-  void drawModelInheritedClasses();
-  void removeInheritedClassShapes(InheritedClass *pInheritedClass, StringHandler::ViewType viewType);
-  void drawModelInheritedClassShapes(InheritedClass *pInheritedClass, StringHandler::ViewType viewType);
+  QMap<QString, QMap<QString, QString> > mExtendsModifiersMap;
+  QList<LibraryTreeItem*> mInheritedClassesList;
+
+  void getModelInheritedClasses();
+  void getModelExtendsModifiers(QString extendsClass);
+  void drawModelInheritedClasses(ModelWidget *pModelWidget);
+  void drawModelInheritedClassShapes(LibraryTreeItem *pLibraryTreeItem, StringHandler::ViewType viewType);
+  void removeInheritedClassShapes(StringHandler::ViewType viewType);
   void getModelIconDiagramShapes();
   void parseModelIconDiagramShapes(QString annotationString, StringHandler::ViewType viewType);
-  void drawModelInheritedComponents();
-  void removeInheritedClassComponents(InheritedClass *pInheritedClass);
-  void drawModelInheritedClassComponents(InheritedClass *pInheritedClass);
+  void drawModelInheritedComponents(ModelWidget *pModelWidget);
+  void drawModelInheritedClassComponents(LibraryTreeItem *pLibraryTreeItem);
+  void removeInheritedClassComponents();
   void getModelComponents();
-  void drawModelInheritedConnections();
-  void removeInheritedClassConnections(InheritedClass *pInheritedClass);
-  void drawModelInheritedClassConnections(InheritedClass *pInheritedClass);
+  void drawModelInheritedConnections(ModelWidget *pModelWidget);
+  void drawModelInheritedClassConnections(LibraryTreeItem *pLibraryTreeItem);
+  void removeInheritedClassConnections();
   void getModelConnections();
   void getTLMComponents();
   void getTLMConnections();

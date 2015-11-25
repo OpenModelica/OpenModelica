@@ -579,13 +579,16 @@ void UpdateComponentParametersCommand::redo()
   }
   // apply the new Component extends modifiers if any
   if (mpComponent->getReferenceComponent()) {
-    QString inheritedClassName = mpComponent->getReferenceComponent()->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+    QString inheritedClassName;
+    inheritedClassName = mpComponent->getReferenceComponent()->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
     QMap<QString, QString>::iterator componentExtendsModifier;
     for (componentExtendsModifier = mNewComponentExtendsModifiersMap.begin(); componentExtendsModifier != mNewComponentExtendsModifiersMap.end(); ++componentExtendsModifier) {
       QString modifierValue = componentExtendsModifier.value();
       pOMCProxy->setExtendsModifierValue(className, inheritedClassName, componentExtendsModifier.key(), modifierValue.prepend("="));
     }
+    mpComponent->getGraphicsView()->getModelWidget()->updateExtendsModifiersMap(inheritedClassName);
   }
+  mpComponent->getComponentModifiers();
   mpComponent->componentParameterHasChanged();
 }
 
@@ -615,7 +618,9 @@ void UpdateComponentParametersCommand::undo()
       QString modifierValue = componentExtendsModifier.value();
       pOMCProxy->setExtendsModifierValue(className, inheritedClassName, componentExtendsModifier.key(), modifierValue.prepend("="));
     }
+    mpComponent->getGraphicsView()->getModelWidget()->updateExtendsModifiersMap(inheritedClassName);
   }
+  mpComponent->getComponentModifiers();
   mpComponent->componentParameterHasChanged();
 }
 

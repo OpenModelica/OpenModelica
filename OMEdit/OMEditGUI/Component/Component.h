@@ -148,6 +148,8 @@ public:
   QString getTransformationString() {return mTransformationString;}
   void setDialogAnnotation(QStringList dialogAnnotation) {mDialogAnnotation = dialogAnnotation;}
   QStringList getDialogAnnotation() {return mDialogAnnotation;}
+  QMap<QString, QString> getModifiersMap() {return mModifiersMap;}
+  QString getParameterValue() {return mParameterValue;}
   CoOrdinateSystem getCoOrdinateSystem() const;
   OriginItem* getOriginItem() {return mpOriginItem;}
   QAction* getParametersAction() {return mpParametersAction;}
@@ -180,6 +182,7 @@ public:
   void emitChanged();
   void emitDeleted();
   void componentParameterHasChanged();
+  void getComponentModifiers();
   QString getParameterDisplayString(QString parameterName);
   void shapeAdded();
   void shapeUpdated();
@@ -200,6 +203,8 @@ private:
   ComponentType mComponentType;
   QString mTransformationString;
   QStringList mDialogAnnotation;
+  QMap<QString, QString> mModifiersMap;
+  QString mParameterValue;
   QGraphicsRectItem *mpResizerRectangle;
   LineAnnotation *mpNonExistingComponentLine;
   RectangleAnnotation *mpDefaultComponentRectangle;
@@ -244,6 +249,8 @@ private:
   void setOriginAndExtents();
   void reloadComponent(bool loaded);
   void updateConnections();
+  QString getParameterDisplayStringFromExtendsModifiers(QString parameterName);
+  QString getParameterDisplayStringFromExtendsParameters(QString parameterName);
 signals:
   void added();
   void transformChange();

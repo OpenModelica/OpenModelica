@@ -143,10 +143,10 @@ public:
   bool isTopLevel();
   bool isSimulationAllowed();
   void emitLoaded() {emit loaded(this);}
-  void emitUnLoaded() {emit unLoaded(this);}
-  void emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView) {emit shapeAdded(this, pShapeAnnotation, pGraphicsView);}
-  void emitComponentAdded(Component *pComponent) {emit componentAdded(this, pComponent);}
-  void emitConnectionAdded(LineAnnotation *pConnectionLineAnnotation) {emit connectionAdded(this, pConnectionLineAnnotation);}
+  void emitUnLoaded() {emit unLoaded();}
+  void emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView) {emit shapeAdded(pShapeAnnotation, pGraphicsView);}
+  void emitComponentAdded(Component *pComponent) {emit componentAdded(pComponent);}
+  void emitConnectionAdded(LineAnnotation *pConnectionLineAnnotation) {emit connectionAdded(pConnectionLineAnnotation);}
 
   OMCInterface::getClassInformation_res mClassInformation;
 private:
@@ -175,17 +175,17 @@ private:
   bool mNonExisting;
 signals:
   void loaded(LibraryTreeItem *pLibraryTreeItem);
-  void unLoaded(LibraryTreeItem *pLibraryTreeItem);
-  void shapeAdded(LibraryTreeItem *pLibraryTreeItem, ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
-  void componentAdded(LibraryTreeItem *pLibraryTreeItem, Component *pComponent);
-  void connectionAdded(LibraryTreeItem *pLibraryTreeItem, LineAnnotation *pConnectionLineAnnotation);
+  void unLoaded();
+  void shapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  void componentAdded(Component *pComponent);
+  void connectionAdded(LineAnnotation *pConnectionLineAnnotation);
   void iconUpdated();
 public slots:
   void handleLoaded(LibraryTreeItem *pLibraryTreeItem);
-  void handleUnloaded(LibraryTreeItem *pLibraryTreeItem);
-  void handleShapeAdded(LibraryTreeItem *pLibraryTreeItem, ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
-  void handleComponentAdded(LibraryTreeItem *pLibraryTreeItem, Component *pComponent);
-  void handleConnectionAdded(LibraryTreeItem *pLibraryTreeItem, LineAnnotation *pConnectionLineAnnotation);
+  void handleUnloaded();
+  void handleShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  void handleComponentAdded(Component *pComponent);
+  void handleConnectionAdded(LineAnnotation *pConnectionLineAnnotation);
   void handleIconUpdated();
 };
 

@@ -443,18 +443,16 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
  */
 void TextAnnotation::updateTextString()
 {
-  /*
-    From Modelica Spec 32revision2,
-    There are a number of common macros that can be used in the text, and they should be replaced when displaying
-    the text as follows:
-    - %par replaced by the value of the parameter par. The intent is that the text is easily readable, thus if par is
-    of an enumeration type, replace %par by the item name, not by the full name.
-    [Example: if par="Modelica.Blocks.Types.Enumeration.Periodic", then %par should be displayed as
-    "Periodic"]
-    - %% replaced by %
-    - %name replaced by the name of the component (i.e. the identifier for it in in the enclosing class).
-    - %class replaced by the name of the class.
-  */
+  /* From Modelica Spec 32revision2,
+   * There are a number of common macros that can be used in the text, and they should be replaced when displaying
+   * the text as follows:
+   * - %par replaced by the value of the parameter par. The intent is that the text is easily readable, thus if par is
+   * of an enumeration type, replace %par by the item name, not by the full name.
+   * [Example: if par="Modelica.Blocks.Types.Enumeration.Periodic", then %par should be displayed as "Periodic"]
+   * - %% replaced by %
+   * - %name replaced by the name of the component (i.e. the identifier for it in in the enclosing class).
+   * - %class replaced by the name of the class.
+   */
   mTextString = mOriginalTextString;
   if (!mTextString.contains("%")) {
     return;

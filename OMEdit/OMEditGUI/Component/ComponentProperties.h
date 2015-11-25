@@ -155,6 +155,7 @@ private:
   void createTabsGroupBoxesAndParameters(LibraryTreeItem *pLibraryTreeItem);
   void createTabsGroupBoxesAndParametersHelper(LibraryTreeItem *pLibraryTreeItem, bool useInsert = false);
   void fetchComponentModifiers();
+  void fetchExtendsModifiers();
   Parameter* findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter,
                            Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
