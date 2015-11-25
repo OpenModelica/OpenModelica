@@ -89,10 +89,6 @@ typedef struct DASSL_DATA{
   /* function pointer of provied functions */
   void* jacobianFunction;
   void* zeroCrossingFunction;
-
-  /* internal dassl ring buffer */
-  RINGBUFFER* simulationData;          /* RINGBUFFER of SIMULATION_DATA */
-  SIMULATION_DATA **localData;
 } DASSL_DATA;
 
 /* main dassl function to make a step */

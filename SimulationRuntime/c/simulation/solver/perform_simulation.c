@@ -79,7 +79,6 @@ static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* s
   if (solverInfo->solverMethod == S_SYM_IMP_EULER) data->callback->symEulerUpdate(data, solverInfo->solverStepSize);
 
   saveZeroCrossings(data, threadData);
-  messageClose(LOG_SOLVER);
 
   /***** Event handling *****/
   if (measure_time_flag) rt_tick(SIM_TIMER_EVENT);
@@ -138,7 +137,6 @@ static int simulationStep(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 {
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
 
-  infoStreamPrint(LOG_SOLVER, 1, "call solver from %g to %g (stepSize: %.15g)", solverInfo->currentTime, solverInfo->currentTime + solverInfo->currentStepSize, solverInfo->currentStepSize);
   if(0 != strcmp("ia", data->simulationInfo.outputFormat))
   {
     communicateStatus("Running", (solverInfo->currentTime - simInfo->startTime)/(simInfo->stopTime - simInfo->startTime));
@@ -387,7 +385,10 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
      * integration step determine all states by a integration method
      * update continuous system
      */
+      infoStreamPrint(LOG_SOLVER, 1, "call solver from %g to %g (stepSize: %.15g)", solverInfo->currentTime, solverInfo->currentTime + solverInfo->currentStepSize, solverInfo->currentStepSize);
       retValIntegrator = simulationStep(data, threadData, solverInfo);
+      infoStreamPrint(LOG_SOLVER, 0, "finished solver step %g", solverInfo->currentTime);
+      messageClose(LOG_SOLVER);
 
       if (S_OPTIMIZATION == solverInfo->solverMethod) break;
       syncStep = simulationUpdate(data, threadData, solverInfo);
