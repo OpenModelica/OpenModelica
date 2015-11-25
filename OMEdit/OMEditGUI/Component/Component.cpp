@@ -293,15 +293,21 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
   }
   setTransform(mTransformation.getTransformationMatrix());
   setDialogAnnotation(dialogAnnotation);
+  // get the component modifier if any
+  getComponentModifiers();
+  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+  QString className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+  mParameterValue = pMainWindow->getOMCProxy()->getParameterValue(className, getName());
+  // create actions
   createActions();
   mpOriginItem = new OriginItem(this);
   createResizerItems();
   setToolTip(tr("<b>%1</b> %2").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName()));
   if (mpLibraryTreeItem) {
     connect(mpLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), SLOT(handleLoaded()));
-    connect(mpLibraryTreeItem, SIGNAL(unLoaded(LibraryTreeItem*)), SLOT(handleUnloaded()));
-    connect(mpLibraryTreeItem, SIGNAL(shapeAdded(LibraryTreeItem*,ShapeAnnotation*,GraphicsView*)), SLOT(handleShapeAdded()));
-    connect(mpLibraryTreeItem, SIGNAL(componentAdded(LibraryTreeItem*,Component*)), SLOT(handleComponentAdded()));
+    connect(mpLibraryTreeItem, SIGNAL(unLoaded()), SLOT(handleUnloaded()));
+    connect(mpLibraryTreeItem, SIGNAL(shapeAdded(ShapeAnnotation*,GraphicsView*)), SLOT(handleShapeAdded()));
+    connect(mpLibraryTreeItem, SIGNAL(componentAdded(Component*)), SLOT(handleComponentAdded()));
   }
   connect(this, SIGNAL(transformHasChanged()), SLOT(updatePlacementAnnotation()));
   connect(this, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
@@ -321,10 +327,12 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
   mpDefaultComponentText = 0;
   drawComponent();
   setDialogAnnotation(QStringList());
+  mModifiersMap.clear();
+  mParameterValue = "";
   mpOriginItem = 0;
   if (mpLibraryTreeItem) {
     connect(mpLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), SLOT(handleLoaded()));
-    connect(mpLibraryTreeItem, SIGNAL(unLoaded(LibraryTreeItem*)), SLOT(handleUnloaded()));
+    connect(mpLibraryTreeItem, SIGNAL(unLoaded()), SLOT(handleUnloaded()));
   }
 }
 
@@ -342,6 +350,8 @@ Component::Component(Component *pComponent, Component *pParentComponent)
   mpDefaultComponentRectangle = 0;
   mpDefaultComponentText = 0;
   drawComponent();
+  mModifiersMap.clear();
+  mParameterValue = "";
   mTransformation = Transformation(mpReferenceComponent->mTransformation);
   setTransform(mTransformation.getTransformationMatrix());
   mpOriginItem = 0;
@@ -349,7 +359,7 @@ Component::Component(Component *pComponent, Component *pParentComponent)
              .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
   if (mpLibraryTreeItem) {
     connect(mpLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), SLOT(handleLoaded()));
-    connect(mpLibraryTreeItem, SIGNAL(unLoaded(LibraryTreeItem*)), SLOT(handleUnloaded()));
+    connect(mpLibraryTreeItem, SIGNAL(unLoaded()), SLOT(handleUnloaded()));
   }
   connect(mpReferenceComponent, SIGNAL(added()), SLOT(referenceComponentAdded()));
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceComponentTransformHasChanged()));
@@ -382,6 +392,8 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   createNonExistingComponent();
   createDefaultComponent();
   drawComponent();
+  mModifiersMap.clear();
+  mParameterValue = "";
   mTransformation = Transformation(mpReferenceComponent->mTransformation);
   setTransform(mTransformation.getTransformationMatrix());
   createActions();
@@ -393,7 +405,7 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
              .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
   if (mpLibraryTreeItem) {
     connect(mpLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), SLOT(handleLoaded()));
-    connect(mpLibraryTreeItem, SIGNAL(unLoaded(LibraryTreeItem*)), SLOT(handleUnloaded()));
+    connect(mpLibraryTreeItem, SIGNAL(unLoaded()), SLOT(handleUnloaded()));
   }
   connect(mpReferenceComponent, SIGNAL(added()), SLOT(referenceComponentAdded()));
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceComponentTransformHasChanged()));
@@ -447,12 +459,26 @@ bool Component::hasNonExistingClass()
   if (mpLibraryTreeItem && mpLibraryTreeItem->isNonExisting()) {
     return true;
   }
-  foreach (ModelWidget::InheritedClass *pInheritedClass, mpLibraryTreeItem->getModelWidget()->getInheritedClassesList()) {
-    if (pInheritedClass->mpLibraryTreeItem->isNonExisting()) {
-      return true;
+  bool nonExistingClassFound = false;
+  foreach (Component *pInheritedComponent, mInheritedComponentsList) {
+    nonExistingClassFound = pInheritedComponent->hasNonExistingClass();
+    if (nonExistingClassFound) {
+      return nonExistingClassFound;
     }
   }
-  return false;
+  foreach (Component *pChildComponent, mComponentsList) {
+    nonExistingClassFound = pChildComponent->hasNonExistingClass();
+    if (nonExistingClassFound) {
+      return nonExistingClassFound;
+    }
+    foreach (Component *pInheritedComponent, pChildComponent->getInheritedComponentsList()) {
+      nonExistingClassFound = pInheritedComponent->hasNonExistingClass();
+      if (nonExistingClassFound) {
+        return nonExistingClassFound;
+      }
+    }
+  }
+  return nonExistingClassFound;
 }
 
 QRectF Component::boundingRect() const
@@ -736,6 +762,19 @@ void Component::componentParameterHasChanged()
   update();
 }
 
+void Component::getComponentModifiers()
+{
+  mModifiersMap.clear();
+  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+  QString className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+  QStringList componentModifiersList = pMainWindow->getOMCProxy()->getComponentModifierNames(className, getName());
+  foreach (QString componentModifier, componentModifiersList) {
+    QString originalModifierName = QString(getName()).append(".").append(componentModifier);
+    QString componentModifierValue = pMainWindow->getOMCProxy()->getComponentModifierValue(className, originalModifierName);
+    mModifiersMap.insert(componentModifier, componentModifierValue);
+  }
+}
+
 /*!
  * \brief Component::getParameterDisplayString
  * Reads the parameters of the component.\n
@@ -746,22 +785,20 @@ void Component::componentParameterHasChanged()
 QString Component::getParameterDisplayString(QString parameterName)
 {
   /* How to get the display value,
-   * 1.  Check if the value is available in component modifier.
-   * 2.  Check if the value is available in the component's class as a parameter or variable.
-   * 3.  Find the value in extends classes and check if the value is present in extends modifier.
-   * 3.3 If there is no extends modifier then finally check if value is present in extends classes.
+   * 1. Check if the value is available in component modifier.
+   * 2. Check if the value is available in the component's class as a parameter or variable.
+   * 3. Find the value in extends classes and check if the value is present in extends modifier.
+   * 4. If there is no extends modifier then finally check if value is present in extends classes.
    */
-  OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   QString displayString = "";
-  QString modelName = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   /* case 1 */
-  displayString = pOMCProxy->getComponentModifierValue(modelName, mpComponentInfo->getName() + "." + parameterName);
+  displayString = mModifiersMap.value(parameterName, "");
   /* case 2 */
   if (displayString.isEmpty()) {
     if (mpLibraryTreeItem) {
       foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
         if (pComponent->getComponentInfo()->getName().compare(parameterName) == 0) {
-          displayString = pOMCProxy->getParameterValue(mpLibraryTreeItem->getNameStructure(), parameterName);
+          displayString = pComponent->getParameterValue();
           break;
         }
       }
@@ -769,21 +806,11 @@ QString Component::getParameterDisplayString(QString parameterName)
   }
   /* case 3 */
   if (displayString.isEmpty()) {
-    if (mpLibraryTreeItem) {
-      foreach (ModelWidget::InheritedClass *pInheritedClass, mpLibraryTreeItem->getModelWidget()->getInheritedClassesList()) {
-        foreach (Component *pComponent, pInheritedClass->mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
-          if (pComponent->getComponentInfo()->getName().compare(parameterName) == 0) {
-            displayString = pOMCProxy->getExtendsModifierValue(mpLibraryTreeItem->getNameStructure(),
-                                                               pInheritedClass->mpLibraryTreeItem->getNameStructure(), parameterName);
-            /* case 3.3 */
-            if (displayString.isEmpty()) {
-              displayString = pOMCProxy->getParameterValue(pInheritedClass->mpLibraryTreeItem->getNameStructure(), parameterName);
-            }
-            break;
-          }
-        }
-      }
-    }
+    displayString = getParameterDisplayStringFromExtendsModifiers(parameterName);
+  }
+  /* case 4 */
+  if (displayString.isEmpty()) {
+    displayString = getParameterDisplayStringFromExtendsModifiers(parameterName);
   }
   return displayString;
 }
@@ -925,8 +952,8 @@ void Component::createClassInheritedComponents()
       MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
       pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, "", false);
     }
-    foreach (ModelWidget::InheritedClass *pInheritedClass, mpLibraryTreeItem->getModelWidget()->getInheritedClassesList()) {
-      mInheritedComponentsList.append(new Component(pInheritedClass->mpLibraryTreeItem, this));
+    foreach (LibraryTreeItem *pLibraryTreeItem, mpLibraryTreeItem->getModelWidget()->getInheritedClassesList()) {
+      mInheritedComponentsList.append(new Component(pLibraryTreeItem, this));
     }
   }
 }
@@ -1001,7 +1028,7 @@ void Component::removeChildren()
     pInheritedComponent->removeChildren();
     if (pInheritedComponent->getLibraryTreeItem()) {
       disconnect(pInheritedComponent->getLibraryTreeItem(), SIGNAL(loaded(LibraryTreeItem*)), pInheritedComponent, SLOT(handleLoaded()));
-      disconnect(pInheritedComponent->getLibraryTreeItem(), SIGNAL(unLoaded(LibraryTreeItem*)), pInheritedComponent, SLOT(handleUnloaded()));
+      disconnect(pInheritedComponent->getLibraryTreeItem(), SIGNAL(unLoaded()), pInheritedComponent, SLOT(handleUnloaded()));
     }
     pInheritedComponent->setParentItem(0);
     mpGraphicsView->removeItem(pInheritedComponent);
@@ -1013,7 +1040,7 @@ void Component::removeChildren()
     pComponent->removeChildren();
     if (pComponent->getLibraryTreeItem()) {
       disconnect(pComponent->getLibraryTreeItem(), SIGNAL(loaded(LibraryTreeItem*)), pComponent, SLOT(handleLoaded()));
-      disconnect(pComponent->getLibraryTreeItem(), SIGNAL(unLoaded(LibraryTreeItem*)), pComponent, SLOT(handleUnloaded()));
+      disconnect(pComponent->getLibraryTreeItem(), SIGNAL(unLoaded()), pComponent, SLOT(handleUnloaded()));
     }
     pComponent->setParentItem(0);
     mpGraphicsView->removeItem(pComponent);
@@ -1254,6 +1281,59 @@ void Component::updateConnections()
       pConnectionLineAnnotation->setEndComponent(mpGraphicsView->getModelWidget()->getConnectorComponent(this, endComponentName));
     }
   }
+}
+
+/*!
+ * \brief Component::getParameterDisplayStringFromExtendsModifiers
+ * Gets the display string for Component from extends modifiers
+ * \param parameterName
+ * \return
+ */
+QString Component::getParameterDisplayStringFromExtendsModifiers(QString parameterName)
+{
+  QString displayString = "";
+  foreach (Component *pComponent, mInheritedComponentsList) {
+    if (pComponent->getLibraryTreeItem()) {
+      QMap<QString, QString> extendsModifiersMap = pComponent->getLibraryTreeItem()->getModelWidget()->getExtendsModifiersMap(pComponent->getLibraryTreeItem()->getNameStructure());
+      displayString = extendsModifiersMap.value(parameterName, "");
+      if (!displayString.isEmpty()) {
+        return displayString;
+      }
+    }
+    displayString = pComponent->getParameterDisplayStringFromExtendsModifiers(parameterName);
+    if (!displayString.isEmpty()) {
+      return displayString;
+    }
+  }
+  return displayString;
+}
+
+/*!
+ * \brief Component::getParameterDisplayStringFromExtendsParameters
+ * Gets the display string for components from extends parameters.
+ * \param parameterName
+ * \return
+ */
+QString Component::getParameterDisplayStringFromExtendsParameters(QString parameterName)
+{
+  QString displayString = "";
+  foreach (Component *pInheritedComponent, mInheritedComponentsList) {
+    if (pInheritedComponent->getLibraryTreeItem()) {
+      foreach (Component *pComponent, pInheritedComponent->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
+        if (pComponent->getComponentInfo()->getName().compare(parameterName) == 0) {
+          displayString = pComponent->getParameterValue();
+          if (!displayString.isEmpty()) {
+            return displayString;
+          }
+        }
+      }
+    }
+    displayString = pInheritedComponent->getParameterDisplayStringFromExtendsParameters(parameterName);
+    if (!displayString.isEmpty()) {
+      return displayString;
+    }
+  }
+  return displayString;
 }
 
 void Component::updatePlacementAnnotation()
@@ -1570,10 +1650,8 @@ void Component::duplicate()
   } else {
     name = mpGraphicsView->getUniqueComponentName(StringHandler::toCamelCase(getName()));
   }
-  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5, mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
   QString transformationString = getOMCPlacementAnnotation(gridStep);
-
   // add component
   QStringList dialogAnnotation;
   ComponentInfo *pComponentInfo = new ComponentInfo(mpComponentInfo);
@@ -1581,15 +1659,6 @@ void Component::duplicate()
   mpGraphicsView->addComponentToView(name, mpLibraryTreeItem, transformationString, QPointF(0, 0), dialogAnnotation, pComponentInfo, true, true);
   // set component modifiers and attributes for Diagram Layer component.
   Component *pDiagramComponent = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getComponentsList().last();
-  // save the Component modifiers
-  QString className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-  QMap<QString, QString> componentModifiersMap;
-  QStringList componentModifiersList = pMainWindow->getOMCProxy()->getComponentModifierNames(className, mpComponentInfo->getName());
-  foreach (QString componentModifier, componentModifiersList) {
-    QString originalModifierName = QString(mpComponentInfo->getName()).append(".").append(componentModifier);
-    QString componentModifierValue = pMainWindow->getOMCProxy()->getComponentModifierValue(className, originalModifierName);
-    componentModifiersMap.insert(componentModifier, componentModifierValue);
-  }
   // save the old ComponentInfo
   ComponentInfo oldDiagramComponentInfo(pDiagramComponent->getComponentInfo());
   // Create a new ComponentInfo
@@ -1597,7 +1666,7 @@ void Component::duplicate()
   newDiagramComponentInfo.setName(oldDiagramComponentInfo.getName());
   UpdateComponentAttributesCommand *pUpdateDiagramComponentAttributesCommand;
   pUpdateDiagramComponentAttributesCommand = new UpdateComponentAttributesCommand(pDiagramComponent, oldDiagramComponentInfo,
-                                                                                  newDiagramComponentInfo, true, componentModifiersMap);
+                                                                                  newDiagramComponentInfo, true, mModifiersMap);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateDiagramComponentAttributesCommand);
   setSelected(false);
   if (mpGraphicsView->getViewType() == StringHandler::Diagram) {

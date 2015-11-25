@@ -79,8 +79,7 @@ Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab
    * If no unit is found then check it in the derived class modifier value.
    * A derived class can be inherited, so look recursively.
    */
-  QString unit = pOMCProxy->getComponentModifierValue(mpComponent->getComponentInfo()->getClassName(),
-                                                      QString(mpComponent->getName()).append(".unit"));
+  QString unit = mpComponent->getModifiersMap().value("unit");
   if (unit.isEmpty()) {
     if (!pOMCProxy->isBuiltinType(mpComponent->getComponentInfo()->getClassName())) {
       unit = getUnitFromDerivedClass(mpComponent);
@@ -485,7 +484,13 @@ void ComponentParameters::setUpDialog()
   mTabsMap.insert("General", mpParametersTabWidget->addTab(pParametersScrollArea, "General"));
   // create parameters tabs and groupboxes
   createTabsGroupBoxesAndParameters(mpComponent->getLibraryTreeItem());
+  /* We append the actual Components parameters first so that they appear first on the list.
+   * For that we use QList insert instead of append in ComponentParameters::createTabsGroupBoxesAndParametersHelper() function.
+   * Modelica.Electrical.Analog.Basic.Resistor order is wrong if we don't use insert.
+   */
+  createTabsGroupBoxesAndParametersHelper(mpComponent->getLibraryTreeItem(), true);
   fetchComponentModifiers();
+  fetchExtendsModifiers();
   foreach (Parameter *pParameter, mParametersList) {
     ParametersScrollArea *pParametersScrollArea;
     pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
@@ -551,14 +556,10 @@ void ComponentParameters::setUpDialog()
  */
 void ComponentParameters::createTabsGroupBoxesAndParameters(LibraryTreeItem *pLibraryTreeItem)
 {
-  foreach (ModelWidget::InheritedClass *pInheritedClass, pLibraryTreeItem->getModelWidget()->getInheritedClassesList()) {
-    createTabsGroupBoxesAndParametersHelper(pInheritedClass->mpLibraryTreeItem);
+  foreach (LibraryTreeItem *pInheritedLibraryTreeItem, pLibraryTreeItem->getModelWidget()->getInheritedClassesList()) {
+    createTabsGroupBoxesAndParameters(pInheritedLibraryTreeItem);
+    createTabsGroupBoxesAndParametersHelper(pInheritedLibraryTreeItem);
   }
-  /* We append the actual Components parameters first so that they appear first on the list.
-   * For that we use QList insert instead of append in ComponentParameters::createTabsGroupBoxesAndParametersHelper() function.
-   * Modelica.Electrical.Analog.Basic.Resistor order is wrong if we don't use insert.
-   */
-  createTabsGroupBoxesAndParametersHelper(pLibraryTreeItem, true);
 }
 
 /*!
@@ -573,10 +574,10 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
 {
   OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
   foreach (LibraryTreeItem *pInheritedLibraryTreeItem, pLibraryTreeItem->getInheritedClasses()) {
-    QStringList extendsModifiers = pOMCProxy->getExtendsModifierNames(pLibraryTreeItem->getNameStructure(),
-                                                                      pInheritedLibraryTreeItem->getNameStructure());
-    foreach (QString extendsModifier, extendsModifiers) {
-      QString parameterName = StringHandler::getFirstWordBeforeDot(extendsModifier);
+    QMap<QString, QString> extendsModifiers = pLibraryTreeItem->getModelWidget()->getExtendsModifiersMap(pInheritedLibraryTreeItem->getNameStructure());
+    QMap<QString, QString>::iterator extendsModifiersIterator;
+    for (extendsModifiersIterator = extendsModifiers.begin(); extendsModifiersIterator != extendsModifiers.end(); ++extendsModifiersIterator) {
+      QString parameterName = StringHandler::getFirstWordBeforeDot(extendsModifiersIterator.key());
       /* Ticket #2531
        * Check if parameter is marked final in the extends modifier.
        */
@@ -589,19 +590,23 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
       } else {
         Parameter *pParameter = findParameter(parameterName);
         if (pParameter) {
-          QString start = pOMCProxy->getExtendsModifierValue(pLibraryTreeItem->getNameStructure(),
-                                                             pInheritedLibraryTreeItem->getNameStructure(), parameterName + ".start");
-          QString fixed = pOMCProxy->getExtendsModifierValue(pLibraryTreeItem->getNameStructure(),
-                                                             pInheritedLibraryTreeItem->getNameStructure(), parameterName + ".fixed");
-          if (!start.isEmpty() || !fixed.isEmpty()) {
-            pParameter->setGroupBox("Initialization");
-            pParameter->setShowStartAttribute(true);
-            pParameter->setValueWidget(start, true);
-            pParameter->setFixedState(fixed, true);
+          if (extendsModifiersIterator.key().compare(parameterName + ".start") == 0) {
+            QString start = extendsModifiersIterator.value();
+            if (!start.isEmpty()) {
+              pParameter->setGroupBox("Initialization");
+              pParameter->setShowStartAttribute(true);
+              pParameter->setValueWidget(start, false);
+            }
+          }
+          else if (extendsModifiersIterator.key().compare(parameterName + ".fixed") == 0) {
+            QString fixed = extendsModifiersIterator.value();
+            if (!fixed.isEmpty()) {
+              pParameter->setGroupBox("Initialization");
+              pParameter->setShowStartAttribute(true);
+              pParameter->setFixedState(fixed, false);
+            }
           } else {
-            QString value = pOMCProxy->getExtendsModifierValue(pLibraryTreeItem->getNameStructure(),
-                                                               pInheritedLibraryTreeItem->getNameStructure(), extendsModifier);
-            pParameter->setValueWidget(value, true);
+            pParameter->setValueWidget(extendsModifiersIterator.value(), true);
           }
         }
       }
@@ -628,8 +633,16 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
     bool isParameter = (pComponent->getComponentInfo()->getVariablity().compare("parameter") == 0);
     // If not a parameter then check for start and fixed bindings. See Modelica.Electrical.Analog.Basic.Resistor parameter R.
     if (!isParameter) {
-      start = pOMCProxy->getComponentModifierValue(pLibraryTreeItem->getNameStructure(), pComponent->getName() + ".start");
-      fixed = pOMCProxy->getComponentModifierValue(pLibraryTreeItem->getNameStructure(), pComponent->getName() + ".fixed");
+      QMap<QString, QString> modifiers = pComponent->getModifiersMap();
+      QMap<QString, QString>::iterator modifiersIterator;
+      for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
+        if (modifiersIterator.key().compare("start") == 0) {
+          start = modifiersIterator.value();
+        }
+        else if (modifiersIterator.key().compare("fixed") == 0) {
+          fixed = modifiersIterator.value();
+        }
+      }
       showStartAttribute = (!start.isEmpty() || !fixed.isEmpty()) ? true : false;
     }
     /* get the dialog annotation */
@@ -700,23 +713,69 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
  */
 void ComponentParameters::fetchComponentModifiers()
 {
-  OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
-  QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-  QStringList modifiers = pOMCProxy->getComponentModifierNames(className, mpComponent->getName());
-  foreach (QString modifier, modifiers) {
-    QString parameterName = StringHandler::getFirstWordBeforeDot(modifier);
+  Component *pComponent = mpComponent;
+  if (mpComponent->getReferenceComponent()) {
+    pComponent = mpComponent->getReferenceComponent();
+  }
+  QMap<QString, QString> modifiers = pComponent->getModifiersMap();
+  QMap<QString, QString>::iterator modifiersIterator;
+  for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
+    QString parameterName = StringHandler::getFirstWordBeforeDot(modifiersIterator.key());
     Parameter *pParameter = findParameter(parameterName);
     if (pParameter) {
-      QString start = pOMCProxy->getComponentModifierValue(className, mpComponent->getName() + "." + parameterName + ".start");
-      QString fixed = pOMCProxy->getComponentModifierValue(className, mpComponent->getName() + "." + parameterName + ".fixed");
-      if (!start.isEmpty() || !fixed.isEmpty()) {
-        pParameter->setGroupBox("Initialization");
-        pParameter->setShowStartAttribute(true);
-        pParameter->setValueWidget(start, false);
-        pParameter->setFixedState(fixed, false);
+      if (modifiersIterator.key().compare(parameterName + ".start") == 0) {
+        QString start = modifiersIterator.value();
+        if (!start.isEmpty()) {
+          pParameter->setGroupBox("Initialization");
+          pParameter->setShowStartAttribute(true);
+          pParameter->setValueWidget(start, mpComponent->getReferenceComponent() ? true : false);
+        }
+      }
+      else if (modifiersIterator.key().compare(parameterName + ".fixed") == 0) {
+        QString fixed = modifiersIterator.value();
+        if (!fixed.isEmpty()) {
+          pParameter->setGroupBox("Initialization");
+          pParameter->setShowStartAttribute(true);
+          pParameter->setFixedState(fixed, mpComponent->getReferenceComponent() ? true : false);
+        }
       } else {
-        QString value = pOMCProxy->getComponentModifierValue(className, mpComponent->getName() + "." + modifier);
-        pParameter->setValueWidget(value, false);
+        pParameter->setValueWidget(modifiersIterator.value(), mpComponent->getReferenceComponent() ? true : false);
+      }
+    }
+  }
+}
+
+void ComponentParameters::fetchExtendsModifiers()
+{
+  if (mpComponent->getReferenceComponent()) {
+    QString inheritedClassName;
+    inheritedClassName = mpComponent->getReferenceComponent()->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+    QMap<QString, QString> extendsModifiersMap = mpComponent->getGraphicsView()->getModelWidget()->getExtendsModifiersMap(inheritedClassName);
+    QMap<QString, QString>::iterator extendsModifiersIterator;
+    for (extendsModifiersIterator = extendsModifiersMap.begin(); extendsModifiersIterator != extendsModifiersMap.end(); ++extendsModifiersIterator) {
+      // since first word is component name so we remove it.
+      QString parameterName = StringHandler::removeFirstWordAfterDot(extendsModifiersIterator.key());
+      parameterName = StringHandler::getFirstWordBeforeDot(parameterName);
+      Parameter *pParameter = findParameter(parameterName);
+      if (pParameter) {
+        if (extendsModifiersIterator.key().compare(parameterName + ".start") == 0) {
+          QString start = extendsModifiersIterator.value();
+          if (!start.isEmpty()) {
+            pParameter->setGroupBox("Initialization");
+            pParameter->setShowStartAttribute(true);
+            pParameter->setValueWidget(start, false);
+          }
+        }
+        else if (extendsModifiersIterator.key().compare(parameterName + ".fixed") == 0) {
+          QString fixed = extendsModifiersIterator.value();
+          if (!fixed.isEmpty()) {
+            pParameter->setGroupBox("Initialization");
+            pParameter->setShowStartAttribute(true);
+            pParameter->setFixedState(fixed, false);
+          }
+        } else {
+          pParameter->setValueWidget(extendsModifiersIterator.value(), false);
+        }
       }
     }
   }
@@ -816,23 +875,13 @@ void ComponentParameters::updateComponentParameters()
   // if valueChanged is true then put the change in the undo stack.
   if (valueChanged) {
     // save the Component modifiers
-    QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-    QMap<QString, QString> oldComponentModifiersMap;
-    QStringList componentModifiersList = mpMainWindow->getOMCProxy()->getComponentModifierNames(className, mpComponent->getName());
-    foreach (QString componentModifier, componentModifiersList) {
-      QString originalModifierName = QString(mpComponent->getName()).append(".").append(componentModifier);
-      QString componentModifierValue = mpMainWindow->getOMCProxy()->getComponentModifierValue(className, originalModifierName);
-      oldComponentModifiersMap.insert(componentModifier, componentModifierValue);
-    }
+    QMap<QString, QString> oldComponentModifiersMap = mpComponent->getModifiersMap();
     // save the Component extends modifiers
     QMap<QString, QString> oldComponentExtendsModifiersMap;
     if (mpComponent->getReferenceComponent()) {
-      QString inheritedClassName = mpComponent->getReferenceComponent()->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-      QStringList extendsModifiersList = mpMainWindow->getOMCProxy()->getExtendsModifierNames(className, inheritedClassName);
-      foreach (QString extendsModifier, extendsModifiersList) {
-        QString componentModifierValue = mpMainWindow->getOMCProxy()->getExtendsModifierValue(className, inheritedClassName, extendsModifier);
-        oldComponentExtendsModifiersMap.insert(extendsModifier, componentModifierValue);
-      }
+      QString inheritedClassName;
+      inheritedClassName = mpComponent->getReferenceComponent()->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+      oldComponentExtendsModifiersMap = mpComponent->getGraphicsView()->getModelWidget()->getExtendsModifiersMap(inheritedClassName);
     }
     // create UpdateComponentParametersCommand
     UpdateComponentParametersCommand *pUpdateComponentParametersCommand;
