@@ -49,7 +49,7 @@
 #include <stdexcept>
 #include "util/read_matlab4.h"
 #include "util/read_csv.h"
-#include "Plot.h"
+#include "OMPlot.h"
 
 namespace OMPlot
 {

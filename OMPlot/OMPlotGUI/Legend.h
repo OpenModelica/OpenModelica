@@ -34,7 +34,7 @@
 #ifndef LEGEND_H
 #define LEGEND_H
 
-#include "Plot.h"
+#include "OMPlot.h"
 
 namespace OMPlot
 {

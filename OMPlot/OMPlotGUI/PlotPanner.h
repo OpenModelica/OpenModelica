@@ -34,7 +34,7 @@
 #ifndef PLOTPANNER_H
 #define PLOTPANNER_H
 
-#include "Plot.h"
+#include "OMPlot.h"
 
 namespace OMPlot
 {

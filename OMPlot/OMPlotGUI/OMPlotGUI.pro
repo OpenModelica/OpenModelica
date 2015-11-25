@@ -15,7 +15,7 @@ CONFIG += console
 
 SOURCES += main.cpp
 
-HEADERS += Plot.h \
+HEADERS += OMPlot.h \
     PlotZoomer.h \
     Legend.h \
     PlotPanner.h \

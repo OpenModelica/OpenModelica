@@ -34,7 +34,7 @@
 #ifndef PLOTZOOMER_H
 #define PLOTZOOMER_H
 
-#include "Plot.h"
+#include "OMPlot.h"
 
 namespace OMPlot
 {

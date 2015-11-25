@@ -34,7 +34,7 @@
 #ifndef PLOTCURVE_H
 #define PLOTCURVE_H
 
-#include "Plot.h"
+#include "OMPlot.h"
 
 namespace OMPlot
 {

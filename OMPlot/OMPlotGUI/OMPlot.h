@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef PLOT_H
-#define PLOT_H
+#ifndef OMPLOT_H
+#define OMPLOT_H
 
 #include "PlotWindow.h"
 #include "Legend.h"
@@ -84,4 +84,4 @@ public slots:
 };
 }
 
-#endif // PLOT_H
+#endif // OMPLOT_H

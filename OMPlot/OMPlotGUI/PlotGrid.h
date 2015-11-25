@@ -34,7 +34,7 @@
 #ifndef PLOTGRID_H
 #define PLOTGRID_H
 
-#include "Plot.h"
+#include "OMPlot.h"
 
 namespace OMPlot
 {
