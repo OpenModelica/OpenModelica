@@ -12805,13 +12805,7 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen, SimCode simC
   {
     <%if createMeasureTime then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateAll", "MEASURETIME_MODELFUNCTIONS") else ""%>
 
-    // treatment of clocks in model as time events
-    for (int i = <%timeEventLength(simCode)%>; i < _dimTimeEvent; i++) {
-      if (_time_conditions[i]) {
-        evaluateClocked(i - <%timeEventLength(simCode)%> + 1);
-        _time_conditions[i] = false; // reset clock after one evaluation
-      }
-    }
+    <%createTimeConditionTreatments(timeEventLength(simCode))%>
 
     // Evaluate Equations
     <%equation_all_func_calls%>
@@ -12822,6 +12816,19 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen, SimCode simC
   }
   >>
 end createEvaluateAll;
+
+template createTimeConditionTreatments(String numberOfTimeEvents)
+::=
+  <<
+  // treatment of clocks in model as time events
+  for (int i = <%numberOfTimeEvents%>; i < _dimTimeEvent; i++) {
+    if (_time_conditions[i]) {
+      evaluateClocked(i - <%numberOfTimeEvents%> + 1);
+      _time_conditions[i] = false; // reset clock after one evaluation
+    }
+  }
+  >>
+end createTimeConditionTreatments;
 
 template createEvaluateConditions( list<SimEqSystem> allEquationsPlusWhen, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=

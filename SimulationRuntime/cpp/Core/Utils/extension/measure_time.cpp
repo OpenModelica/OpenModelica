@@ -1,6 +1,8 @@
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 #include <Core/Utils/extension/measure_time.hpp>
+#include <Core/Utils/extension/FactoryExport.h>
+#include <Core/Utils/extension/logger.hpp>
 
 MeasureTime * MeasureTime::_instance = NULL;
 MeasureTime::file_map MeasureTime::_valuesToWrite;
@@ -223,8 +225,13 @@ void MeasureTime::writeToJson()
       os << "\"" << block->first << "\":[\n";
 
       //write data
-      for (unsigned i = 0; i < data->size()-1; ++i)
+      for (unsigned i = 0; i < (data->size() == 0 ? 1 : data->size()) - 1; ++i)
       {
+          if((*data)[i] == NULL)
+          {
+              LOGGER_WRITE("Skipped a measured block in '" + block->first + "' because it is null.", LC_OUT, LL_ERROR);
+              continue;
+          }
     	  tmpS = (*data)[i]->serializeToJson();
     	  if(tmpS != "")
     		  os << "{\"id\":\"" << (*data)[i]->_id << "\"," << tmpS << "},\n";
