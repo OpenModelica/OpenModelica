@@ -102,7 +102,7 @@
   #include <Core/SimulationSettings/ISimControllerSettings.h>
   #include <Core/SimController/ISimController.h>
 
- 
+
 
 #else
   #error "operating system not supported"
