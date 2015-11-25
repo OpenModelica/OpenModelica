@@ -16,6 +16,32 @@ ifeq ($(BUILDTYPE),)
 	BUILDTYPE=Debug
 endif
 
+ifeq ($(BUILDTYPE),)
+BUILDTYPE=Debug
+endif
+
+ifeq ($(VSVERSION),)
+	VSCOMNTOOLS=${VS100COMNTOOLS}
+else
+ifeq ($(VSVERSION),2010)
+	VSCOMNTOOLS=${VS100COMNTOOLS}
+else
+ifeq ($(VSVERSION),2012)
+	VSCOMNTOOLS=${VS110COMNTOOLS}
+else
+ifeq ($(VSVERSION),2013)
+	VSCOMNTOOLS=${VS120COMNTOOLS}
+else
+ifeq ($(VSVERSION),2015)
+	VSCOMNTOOLS=${VS140COMNTOOLS}
+endif
+endif
+endif
+endif
+endif
+
+
+
 BOOST_STATIC_LINKING="false"
 ifeq ("$(BOOST_STATIC_LINKING)","true")
 	BOOST_STATIC_LINKING_COMMAND=-DBOOST_STATIC_LINKING=ON
@@ -75,11 +101,11 @@ runtimeCpp:
 	make;
 
 runtimeCPPmsvc:
-	test -f """${VS100COMNTOOLS}/../../VC/vcvarsall.bat"""
+	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
 	echo 'Build the cppRuntime with MSVC'
 	#rm -rf Build_MSVC
 	mkdir -p Build_MSVC
-	echo call '"%VS100COMNTOOLS%\\..\\..\\VC\\vcvarsall.bat"' > Build_MSVC/build.bat
+	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat"' > Build_MSVC/build.bat
 
 	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC/build.bat
 	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=$(BUILDTYPE) $(BOOST_STATIC_LINKING_COMMAND) $(BOOST_REALPATHS_COMMAND) $(RUNTIME_PROFILING_COMMAND) $(USE_SCOREP_COMMAND) $(SCOREP_HOME_COMMAND) $(FMU_SUNDIALS_COMMAND) $(PARALLEL_OUTPUT_COMMAND) $(USE_LOGGER_COMMAND) -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC/build.bat
