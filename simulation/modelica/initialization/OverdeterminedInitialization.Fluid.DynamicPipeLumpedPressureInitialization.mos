@@ -18,7 +18,7 @@ buildModel(OverdeterminedInitialization.Fluid.DynamicPipeLumpedPressureInitializ
 //  * candidate: pipe.port_b.p(start = 5000000.0)
 //  * candidate: valve.port_a.p(start = 5000000.0)
 //  * candidate: valve.state_a.p(start = 5000000.0)
-//  * candidate: pipe.state_b.p(start = pipe.p_b_start)
+//  * candidate: pipe.state_b.p(start = 5000000.0)
 //  * candidate: pipe.mediums[4].state.p(start = 5000000.0)
 //  * candidate: pipe.heatTransfer.states[4].p(start = 5000000.0)
 //  * candidate: pipe.mediums[4].sat.psat(start = 5000000.0)
