@@ -61,9 +61,16 @@ match exp
     let func_str = AbsynDumpTpl.dumpPathNoQual(path)
     let argl = dumpExpList(expList, stringDelimiter, ", ")
     'function <%func_str%>(<%argl%>)'
+  case ARRAY(array={}) then
+    if (Flags.getConfigBool(Flags.MODELICA_OUTPUT)) then
+    'fill(0,0)'
+    else
+    let expl = dumpExpList(array, stringDelimiter, ", ")
+    '<%if typeinfo() then (if scalar then '/* scalar <%unparseType(ty)%>*/' else '/* non-scalar <%unparseType(ty)%> */ ')%>{<%expl%>}'
   case ARRAY(__) then
     let expl = dumpExpList(array, stringDelimiter, ", ")
     '<%if typeinfo() then (if scalar then '/* scalar <%unparseType(ty)%>*/' else '/* non-scalar <%unparseType(ty)%> */ ')%>{<%expl%>}'
+
   case MATRIX(__) then
     let mat_str = (matrix |> row => dumpExpList(row, stringDelimiter, ", ") ;separator="}, {")
     '<%if typeinfo() then '/* matrix <%unparseType(ty) %> */ '%>{{<%mat_str%>}}'
