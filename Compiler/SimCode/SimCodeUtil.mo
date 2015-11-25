@@ -9811,8 +9811,8 @@ algorithm
             arrayDimensions = List.map(List.lastN(numArrayElement,listLength(arraySubscripts)), stringInt);
             varIndices = arrayCreate(List.fold(arrayDimensions, intMul, 1), 0);
           end if;
-          //print("Num of array elements {" + stringDelimitList(List.map(arrayDimensions, intString), ",") + "} : " + intString(listLength(arraySubscripts)) + "arraySubs "+ExpressionDump.printSubscriptLstStr(arraySubscripts) + "arrayDimensions[ "+stringDelimitList(List.map(arrayDimensions,intString),",")+"]\n");
-          ((arrayIndex,_,_)) = List.fold(arraySubscripts, getUnrolledArrayIndex, (0, 1, arrayDimensions));
+          //print("Num of array elements {" + stringDelimitList(List.map(arrayDimensions, intString), ",") + "} : " + intString(listLength(arraySubscripts)) + "  arraySubs "+ExpressionDump.printSubscriptLstStr(arraySubscripts) + "  arrayDimensions[ "+stringDelimitList(List.map(arrayDimensions,intString),",")+"]\n");
+          arrayIndex = getUnrolledArrayIndex(arraySubscripts,arrayDimensions);
           arrayIndex = arrayIndex + 1;
           //print("VarIndices: " + intString(arrayLength(varIndices)) + " arrayIndex: " + intString(arrayIndex) + " varIndex: " + intString(varIdx) + "\n");
           varIndices = arrayUpdate(varIndices, arrayIndex, varIdx);
@@ -9949,8 +9949,7 @@ algorithm
   if(BaseHashTable.hasKey(varName, iVarToArrayIndexMapping)) then
     ((arrayDimensions,varIndices)) := BaseHashTable.get(varName, iVarToArrayIndexMapping);
     arraySize := arrayLength(varIndices);
-
-    ((concreteVarIndex,_,_)) := List.fold(arraySubscripts, getUnrolledArrayIndex, (0, 1, arrayDimensions));
+    concreteVarIndex := getUnrolledArrayIndex(arraySubscripts,arrayDimensions);
     //print("SimCodeUtil.getVarIndexInfosByMapping: Found variable index for '" + ComponentReference.printComponentRefStr(iVarName) + "'. The value is " + intString(concreteVarIndex) + "\n");
     for arrayIdx in 0:(arraySize-1) loop
       idx := arrayGet(varIndices, arraySize-arrayIdx);
@@ -10022,8 +10021,16 @@ algorithm
   oIsConsecutive := consecutive;
 end isVarIndexListConsecutive;
 
+protected function getUnrolledArrayIndex"author: waurich
+wrapper for getUnrolledArrayIndex1 to reverse the list order to be conform to the cpp runtime array adressing"
+  input list<DAE.Subscript> arraySubs;
+  input list<Integer> arrayTypeDimensions;
+  output Integer arrayIndex;
+algorithm
+  ((arrayIndex,_,_)) := List.fold(listReverse(arraySubs), getUnrolledArrayIndex1, (0, 1, listReverse(arrayTypeDimensions)));
+end getUnrolledArrayIndex;
 
-protected function getUnrolledArrayIndex "author: marcusw
+protected function getUnrolledArrayIndex1 "author: marcusw
   Calculate a flat array index, by the given subscripts. E.g. [2,1] for array of size 3x3 will lead to: 2."
   input DAE.Subscript iCurrentSubscript;
   input tuple<Integer,Integer,list<Integer>> iCurrentRowIdxRes; //<result, currentOffset, remainingRows>
@@ -10050,7 +10057,7 @@ algorithm
         end if;
       then (index, currentOffset, tail);
   end match;
-end getUnrolledArrayIndex;
+end getUnrolledArrayIndex1;
 
 public function createIdxSCVarMapping "author: marcusw
   Create a mapping from the SCVar-Index (array-Index) to the SCVariable, as it is used in the c-runtime."
