@@ -91,7 +91,7 @@ protected
   list<BackendDAE.Equation> removedEqsList = {};
   BackendDAE.Shared shared;
 algorithm
-  _ := BackendDAEUtil.traverseBackendDAEExpsNoCopyWithUpdate(outDAE, ExpressionSimplify.simplifyTraverseHelper, 0);
+  _ := BackendDAEUtil.traverseBackendDAEExpsNoCopyWithUpdate(outDAE, ExpressionSimplify.simplify1TraverseHelper, 0);
 
   // filter empty algorithms
   shared := outDAE.shared;

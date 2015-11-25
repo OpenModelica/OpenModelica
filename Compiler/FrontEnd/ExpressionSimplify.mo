@@ -144,6 +144,17 @@ algorithm
   (exp,_) := simplify(inExp);
 end simplifyTraverseHelper;
 
+public function simplify1TraverseHelper
+  input DAE.Exp inExp;
+  input A inA;
+  output DAE.Exp outExp;
+  output A a;
+  replaceable type A subtypeof Any;
+algorithm
+  a := inA;
+  outExp := simplify1(inExp);
+end simplify1TraverseHelper;
+
 public function simplify1time "simplify1 with timing"
   input DAE.Exp e;
   output DAE.Exp outE;
