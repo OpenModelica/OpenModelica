@@ -105,7 +105,6 @@ uniontype Program
    indicates the hieractical position of the program."
   record PROGRAM  "PROGRAM, the top level construct"
     list<Class>  classes "List of classes" ;
- //   list<Optimization>  optimizations "List of classes" ;
     Within       within_ "Within clause" ;
   end PROGRAM;
 end Program;
@@ -6634,6 +6633,32 @@ algorithm
   range_exp := Util.applyOption1(range_exp, inFunc, inArg);
   outIterator := ITERATOR(name, guard_exp, range_exp);
 end traverseExpShallowIterator;
+
+public function isElementItemClass
+  input ElementItem inElement;
+  output Boolean outIsClass;
+algorithm
+  outIsClass := match inElement
+    case ELEMENTITEM(element = ELEMENT(specification = CLASSDEF())) then true;
+    else false;
+  end match;
+end isElementItemClass;
+
+public function isEmptyClassPart
+  input ClassPart inClassPart;
+  output Boolean outIsEmpty;
+algorithm
+  outIsEmpty := match inClassPart
+    case PUBLIC(contents = {}) then true;
+    case PROTECTED(contents = {}) then true;
+    case CONSTRAINTS(contents = {}) then true;
+    case EQUATIONS(contents = {}) then true;
+    case INITIALEQUATIONS(contents = {}) then true;
+    case ALGORITHMS(contents = {}) then true;
+    case INITIALALGORITHMS(contents = {}) then true;
+    else false;
+  end match;
+end isEmptyClassPart;
 
 annotation(__OpenModelica_Interface="frontend");
 end Absyn;

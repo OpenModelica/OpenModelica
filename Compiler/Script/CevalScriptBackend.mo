@@ -670,7 +670,7 @@ algorithm
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
              gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str, curveWidthStr, curveStyleStr, legendPosition, footer, autoScaleStr,scriptFile,logFile, simflags2, outputFile,
-             systemPath, gccVersion, gd, strlinearizeTime, direction, suffix;
+             systemPath, gccVersion, gd, strlinearizeTime, suffix;
       list<DAE.Exp> simOptions;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className,baseClassPath;
@@ -701,7 +701,7 @@ algorithm
       Absyn.ComponentRef cr,cr_1;
       Integer size,resI,i,i1,i2,i3,n,curveStyle,numberOfIntervals, status;
       Option<Integer> fmiContext, fmiInstance, fmiModelVariablesInstance; /* void* implementation: DO NOT UNBOX THE POINTER AS THAT MIGHT CHANGE IT. Just treat this as an opaque type. */
-      Integer fmiLogLevel;
+      Integer fmiLogLevel, direction;
       list<Integer> is;
       list<FMI.TypeDefinitions> fmiTypeDefinitionsList;
       list<FMI.ModelVariables> fmiModelVariablesList;
@@ -1115,42 +1115,16 @@ algorithm
       then
         (cache,simValue,st);
 
-    // adrpo: see if the model exists before moving!
-    case (cache,_,"moveClass",{Values.CODE(Absyn.C_TYPENAME(className)),
-                                         Values.STRING(_)},
-          st as GlobalScript.SYMBOLTABLE(ast = p),_)
-      equation
-        crefCName = Absyn.pathToCref(className);
-        false = Interactive.existClass(crefCName, p);
-        simValue = Values.BOOL(false);
+    case (_, _, "moveClass", {Values.CODE(Absyn.C_TYPENAME(className)),
+                                  Values.INTEGER(direction)},
+        st as GlobalScript.SYMBOLTABLE(), _)
+      algorithm
+        (p, b) := moveClass(className, direction, st.ast);
+        st.ast := p;
       then
-        (cache,simValue,st);
+        (inCache, Values.BOOL(b), st);
 
-    // everything should work fine here
-    case (cache,_,"moveClass",{Values.CODE(Absyn.C_TYPENAME(className)),
-                                        Values.STRING(direction)},
-          st as GlobalScript.SYMBOLTABLE(ast = p),_)
-      equation
-        crefCName = Absyn.pathToCref(className);
-        true = Interactive.existClass(crefCName, p);
-        p = moveClass(className, direction, p);
-        st = GlobalScriptUtil.setSymbolTableAST(st, p);
-        simValue = Values.BOOL(true);
-      then
-        (cache,simValue,st);
-
-    // adrpo: some error happened!
-    case (cache,_,"moveClass",{Values.CODE(Absyn.C_TYPENAME(className)),
-                                        Values.STRING(_)},
-          st as GlobalScript.SYMBOLTABLE(ast = p),_)
-      equation
-        crefCName = Absyn.pathToCref(className);
-        true = Interactive.existClass(crefCName, p);
-        errMsg = "moveClass Error: Could not move the model " + Absyn.pathString(className) + ". Unknown error.";
-        Error.addMessage(Error.INTERNAL_ERROR, {errMsg});
-        simValue = Values.BOOL(false);
-      then
-        (cache,simValue,st);
+    case (_, _, "moveClass", _, _, _) then (inCache, Values.BOOL(false), inSt);
 
     case (cache,_,"copyClass",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(name), Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("TopLevel")))},
           st as GlobalScript.SYMBOLTABLE(ast = p),_)
@@ -2866,49 +2840,490 @@ algorithm
 end getListNthShowError;
 
 protected function moveClass
+  "Moves the referenced class by a certain offset in the given program, relative
+   to other classes."
   input Absyn.Path inClassName;
-  input String inDirection;
-  input Absyn.Program inProg;
-  output Absyn.Program outProg;
+  input Integer inOffset;
+  input Absyn.Program inProgram;
+  output Absyn.Program outProgram;
+  output Boolean outSuccess;
+protected
+  Absyn.Path parent_cls;
+  String cls_name;
 algorithm
-  outProg := match(inClassName, inDirection, inProg)
-    local
-      Absyn.Path c, parent;
-      Absyn.Program p;
-      list<Absyn.Class>  cls;
-      Absyn.Within       w;
-      String name;
-      Absyn.Class parentparentClass;
+  // No offset, nothing to do.
+  if inOffset == 0 then
+    outProgram := inProgram;
+    outSuccess := true;
+    return;
+  end if;
 
-    case (Absyn.FULLYQUALIFIED(c), _, _)
-      equation
-        p = moveClass(c, inDirection, inProg);
-      then
-        p;
+  try
+    if Absyn.pathIsIdent(inClassName) then
+      // Simple identifier, move a top-level class in the program.
+      outProgram := moveClassInProgram(Absyn.pathFirstIdent(inClassName), inOffset, inProgram);
+    else
+      // Qualified identifier, move the class inside its parent.
+      (parent_cls, Absyn.IDENT(cls_name)) := Absyn.splitQualAndIdentPath(inClassName);
+      outProgram := Interactive.transformPathedClassInProgram(parent_cls, inProgram,
+         function moveClassInClass(inName = cls_name, inOffset = inOffset));
+    end if;
 
-    case (Absyn.IDENT(name), _, p as Absyn.PROGRAM())
-      equation
-        p.classes = moveClassInList(name, p.classes, inDirection);
-      then p;
-
-    case (Absyn.QUALIFIED(_, _), _, p)
-      equation
-        parent = Absyn.stripLast(inClassName);
-        _ = Interactive.getPathedClassInProgram(parent, p);
-      then
-        p;
-
-  end match;
+    outSuccess := true;
+  else
+    outProgram := inProgram;
+    outSuccess := false;
+  end try;
 end moveClass;
 
-protected function moveClassInList
-  input String inClassName;
-  input list<Absyn.Class> inCls;
-  input String inDirection;
-  output list<Absyn.Class> outCls;
+protected function moveClassInProgram
+  "Moves a named class a certain offset within a program."
+  input String inName;
+  input Integer inOffset;
+  input Absyn.Program inProgram;
+  output Absyn.Program outProgram = inProgram;
 algorithm
-  outCls := inCls;
-end moveClassInList;
+  outProgram := match outProgram
+    case Absyn.PROGRAM()
+      algorithm
+        outProgram.classes := moveClassInClassList(inName, inOffset, outProgram.classes);
+      then
+        outProgram;
+  end match;
+end moveClassInProgram;
+
+protected function moveClassInClassList
+  "Moves a named class a certain offset within a list of classes. Fails if no
+   class with the given name could be found."
+  input String inName;
+  input Integer inOffset;
+  input list<Absyn.Class> inClasses;
+  output list<Absyn.Class> outClasses;
+protected
+  Absyn.Class cls;
+  list<Absyn.Class> acc = {}, rest = inClasses;
+  String name;
+  Integer offset;
+algorithm
+  // Move classes from rest to acc until we find the class.
+  // This will intentionally fail if the class isn't found.
+  while true loop
+    (cls as Absyn.CLASS(name = name)) :: rest := rest;
+
+    if name == inName then
+      break;
+    else
+      acc := cls :: acc;
+    end if;
+  end while;
+
+  if inOffset > 0 then
+    // Clamp offset so we don't move outside the list.
+    offset := min(inOffset, listLength(rest));
+
+    // Move 'offset' number of classes from rest to acc.
+    for i in 1:offset loop
+      acc := listHead(rest) :: acc;
+      rest := listRest(rest);
+    end for;
+  else
+    // Clamp offset so we don't move outside the list.
+    offset := max(inOffset, -listLength(acc));
+
+    // Move 'offset' number of classes from acc to rest.
+    for i in offset:-1 loop
+      rest := listHead(acc) :: rest;
+      acc := listRest(acc);
+    end for;
+  end if;
+
+  // Assemble the class list again with the class in the correct position.
+  outClasses := listAppend(listReverse(acc), cls :: rest);
+end moveClassInClassList;
+
+protected function moveClassInClass
+  "Moves a named class a certain offset within another class. Only handles long
+  class and class extends definitions, since there's no meaningful way of moving
+  a class inside e.g. a short class definition. Fails if the class can't be
+  found. An out of bounds offset is clamped."
+  input String inName;
+  input Integer inOffset;
+  input Absyn.Class inClass;
+  output Absyn.Class outClass;
+protected
+  Absyn.ClassDef body;
+algorithm
+  Absyn.CLASS(body = body) := inClass;
+
+  body := match body
+    case Absyn.PARTS()
+      algorithm
+        body.classParts := moveClassInClassParts(inName, inOffset, body.classParts);
+      then
+        body;
+
+    case Absyn.CLASS_EXTENDS()
+      algorithm
+        body.parts := moveClassInClassParts(inName, inOffset, body.parts);
+      then
+        body;
+
+  end match;
+
+  outClass := Absyn.setClassBody(inClass, body);
+end moveClassInClass;
+
+protected function moveClassInClassParts
+  input String inName;
+  input Integer inOffset;
+  input list<Absyn.ClassPart> inClassParts;
+  output list<Absyn.ClassPart> outClassParts = inClassParts;
+protected
+  Absyn.ClassPart part;
+  list<Absyn.ClassPart> acc = {}, rest = inClassParts, parts;
+  Option<Absyn.ElementItem> cls = NONE();
+  Integer offset;
+  Boolean is_public, is_empty;
+algorithm
+  // Go through the parts until we find the one containing the named class.
+  while true loop
+    part :: rest := rest;
+    (part, cls, offset, is_public) := moveClassInClassPart(inName, inOffset, part);
+
+    if isSome(cls) then
+      break;
+    else
+      acc := part :: acc;
+    end if;
+  end while;
+
+  is_empty := Absyn.isEmptyClassPart(part);
+  // Operate on either rest or acc depending on offset direction.
+  parts := if offset > 0 then rest else acc;
+
+  if listEmpty(parts) and offset <> 0 then
+    // No parts left but offset isn't 0, insert the class at the end.
+    parts := moveClassInClassParts3(Util.getOption(cls), offset < 0, is_public, part, parts);
+  else
+    // Otherwise, keeps moving the class until it's in the correct part.
+    parts := moveClassInClassParts2(Util.getOption(cls), offset, is_public, parts);
+
+    if not is_empty then
+      // Only add the part we moved the class from if it contains something.
+      parts := part :: parts;
+    end if;
+  end if;
+
+  if offset > 0 then
+    rest := parts;
+  else
+    acc := parts;
+  end if;
+
+  // If the part we moved the class from is empty, try to merge the surrounding
+  // parts so that repeated moving don't fragment the class.
+  if is_empty and not listEmpty(rest) then
+    part :: rest := rest;
+    acc := mergeClassPartWithList(part, acc);
+  end if;
+
+  outClassParts := listAppend(listReverse(acc), rest);
+end moveClassInClassParts;
+
+protected function mergeClassPartWithList
+  "Tries to merge the given class part with the first part in the list. If they
+   are not the same type it just adds the part to the head of the list instead."
+  input Absyn.ClassPart inClassPart;
+  input list<Absyn.ClassPart> inClassParts;
+  output list<Absyn.ClassPart> outClassParts;
+protected
+  Absyn.ClassPart part;
+  list<Absyn.ClassPart> rest;
+algorithm
+  outClassParts := match (inClassPart, inClassParts)
+    case (Absyn.PUBLIC(), (part as Absyn.PUBLIC()) :: rest)
+      then Absyn.PUBLIC(listAppend(part.contents, inClassPart.contents)) :: rest;
+    case (Absyn.PROTECTED(), (part as Absyn.PROTECTED()) :: rest)
+      then Absyn.PROTECTED(listAppend(part.contents, inClassPart.contents)) :: rest;
+    else inClassPart :: inClassParts;
+  end match;
+end mergeClassPartWithList;
+
+protected function moveClassInClassParts2
+  "Helper function to moveClassInClassParts. Inserts the class into the correct
+   class part."
+  input Absyn.ElementItem inClass;
+  input Integer inOffset;
+  input Boolean inIsPublic;
+  input list<Absyn.ClassPart> inClassParts;
+  output list<Absyn.ClassPart> outClassParts;
+protected
+  Absyn.ClassPart part;
+  list<Absyn.ClassPart> rest = inClassParts, parts, acc = {};
+  Integer offset = inOffset;
+  Boolean moved;
+algorithm
+  // Loop while we still have some offset to move the class.
+  while offset <> 0 loop
+    part :: rest := rest;
+    // Move the class through the next part.
+    (parts, offset, moved) := moveClassInClassPart3(inClass, offset, inIsPublic, part);
+
+    if listEmpty(rest) and not moved then
+      // We ran out of class parts, add the class at the end.
+      acc := moveClassInClassParts3(inClass, inOffset > 0, inIsPublic, part, acc);
+      break;
+    elseif offset == 0 and not moved then
+      // The offset is zero, but the class still hasn't been inserted anywhere.
+      // This happens when the class was just moved outside the current part,
+      // and should be inserted into the next one.
+      // Add the parts we've just processed.
+      acc := listAppend(parts, acc);
+      // Add the class to the next part if it has the same protection, otherwise
+      // create a new part for it.
+      part :: rest := rest;
+      acc := moveClassInClassParts3(inClass, inOffset > 0, inIsPublic, part, acc);
+      break;
+    end if;
+
+    acc := listAppend(if inOffset > 0 then parts else listReverse(parts), acc);
+  end while;
+
+  outClassParts := listAppend(listReverse(acc), rest);
+end moveClassInClassParts2;
+
+protected function moveClassInClassParts3
+  "Helper function to moveClassInClassParts2. Inserts a class into a given class
+   part if they have the same protection, or create a new part for the class
+   otherwise. Then the part(s) are added to the given list of parts."
+  input Absyn.ElementItem inClass;
+  input Boolean inPositiveOffset;
+  input Boolean inIsPublic;
+  input Absyn.ClassPart inClassPart;
+  input list<Absyn.ClassPart> inClassParts;
+  output list<Absyn.ClassPart> outClassParts;
+algorithm
+  outClassParts := match (inPositiveOffset, inIsPublic, inClassPart)
+    case (true,  true,  Absyn.PUBLIC())
+      then Absyn.PUBLIC(inClass :: inClassPart.contents) :: inClassParts;
+    case (true,  false, Absyn.PROTECTED())
+      then Absyn.PROTECTED(inClass :: inClassPart.contents) :: inClassParts;
+    case (false, true,  Absyn.PUBLIC())
+      then Absyn.PUBLIC(listAppend(inClassPart.contents, {inClass})) :: inClassParts;
+    case (false, false, Absyn.PROTECTED())
+      then Absyn.PROTECTED(listAppend(inClassPart.contents, {inClass})) :: inClassParts;
+    case (_,  true,  _)
+      then Absyn.PUBLIC({inClass}) :: inClassPart :: inClassParts;
+    case (_,  false, _)
+      then Absyn.PROTECTED({inClass}) :: inClassPart :: inClassParts;
+  end match;
+end moveClassInClassParts3;
+
+protected function moveClassInClassPart
+  "Moves a named class a certain offset within a single class part."
+  input String inName;
+  input Integer inOffset;
+  input Absyn.ClassPart inClassPart;
+  output Absyn.ClassPart outClassPart = inClassPart;
+  output Option<Absyn.ElementItem> outClass;
+  output Integer outRemainingOffset;
+  output Boolean outIsPublic;
+protected
+  list<Absyn.ElementItem> elements;
+algorithm
+  (outClassPart, outClass, outRemainingOffset, outIsPublic) := match outClassPart
+    case Absyn.PUBLIC()
+      algorithm
+        (elements, outClass, outRemainingOffset) :=
+          moveClassInClassPart2(inName, inOffset, outClassPart.contents);
+        outClassPart.contents := elements;
+      then
+        (outClassPart, outClass, outRemainingOffset, true);
+
+    case Absyn.PROTECTED()
+      algorithm
+        (elements, outClass, outRemainingOffset) :=
+          moveClassInClassPart2(inName, inOffset, outClassPart.contents);
+        outClassPart.contents := elements;
+      then
+        (outClassPart, outClass, outRemainingOffset, false);
+
+    else (outClassPart, NONE(), inOffset, false);
+  end match;
+end moveClassInClassPart;
+
+protected function moveClassInClassPart2
+  "Helper function to moveClassInClassPart. Moves a named class a certain offset
+   within a list of element items."
+  input String inName;
+  input Integer inOffset;
+  input list<Absyn.ElementItem> inElements;
+  output list<Absyn.ElementItem> outElements;
+  output Option<Absyn.ElementItem> outClass = NONE();
+  output Integer outRemainingOffset;
+protected
+  Absyn.ElementItem e;
+  list<Absyn.ElementItem> elements = inElements, acc = {};
+  String name;
+algorithm
+  // Try to find an element item containing the class we're looking for.
+  while not listEmpty(elements) loop
+    e :: elements := elements;
+
+    outClass := match e
+      case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification =
+          Absyn.CLASSDEF(class_ = Absyn.CLASS(name = name)))) guard(name == inName)
+        then SOME(e);
+      else NONE();
+    end match;
+
+    if isSome(outClass) then
+      // Found the class, exit the loop.
+      break;
+    else
+      acc := e :: acc;
+    end if;
+  end while;
+
+  // No class found.
+  if isNone(outClass) then
+    outElements := inElements;
+    outRemainingOffset := inOffset;
+    return;
+  end if;
+
+  // Try to move the class within the elements we have.
+  (acc, elements, outRemainingOffset) :=
+    moveClassInSplitClassPart(inOffset, acc, elements);
+
+  // Insert the class again if it was moved within this class part. Otherwise it needs
+  // to be moved into another class part, which is handled by moveClassInClassParts.
+  if outRemainingOffset == 0 then
+    elements := e :: elements;
+  end if;
+
+  outElements := listAppend(listReverse(acc), elements);
+end moveClassInClassPart2;
+
+protected function makeClassPart
+  input list<Absyn.ElementItem> inElements;
+  input Boolean inPublic;
+  output Absyn.ClassPart outPart =
+    if inPublic then Absyn.PUBLIC(inElements) else Absyn.PROTECTED(inElements);
+end makeClassPart;
+
+protected function moveClassInClassPart3
+  "Helper function to moveClassInClassParts2. Moves a class a certain offset in
+   a given class part."
+  input Absyn.ElementItem inClass;
+  input Integer inOffset;
+  input Boolean inIsPublic;
+  input Absyn.ClassPart inClassPart;
+  output list<Absyn.ClassPart> outClassParts;
+  output Integer outRemainingOffset;
+  output Boolean outMoved = false;
+protected
+  Boolean same_part_type, reached_end;
+  list<Absyn.ElementItem> elems_before, elems_after, elems;
+algorithm
+  // Fetch the elements of the part, and remember if it has the same protection
+  // as the class to be moved.
+  (elems, same_part_type) := match inClassPart
+    case Absyn.PUBLIC() then (inClassPart.contents, inIsPublic);
+    case Absyn.PROTECTED() then (inClassPart.contents, not inIsPublic);
+  end match;
+
+  // Use moveClassInSplitClassPart to shuffle elements.
+  if inOffset > 0 then
+    elems_before := {};
+    elems_after := elems;
+  else
+    elems_before := elems;
+    elems_after := {};
+  end if;
+
+  (elems_before, elems_after, outRemainingOffset, reached_end) :=
+    moveClassInSplitClassPart(inOffset, listReverse(elems_before), elems_after);
+
+  // No remaining offset, the class has been moved to where it should be.
+  if outRemainingOffset == 0 then
+    if same_part_type then
+      // The class and the class part has the same protection, insert the class
+      // into the part.
+      elems := listAppend(listReverse(elems_before), inClass :: elems_after);
+      outClassParts := {makeClassPart(elems, inIsPublic)};
+      outMoved := true;
+    elseif not reached_end then
+      // If we did not reach the end, and the protection isn't the same, split
+      // the class part into three potential parts, with the class in its own
+      // part in the middle.
+      outClassParts := if listEmpty(elems_before) then {} else
+        {makeClassPart(listReverse(elems_before), not inIsPublic)};
+      outClassParts := makeClassPart({inClass}, inIsPublic) :: outClassParts;
+      if not listEmpty(elems_after) then
+        outClassParts := makeClassPart(elems_after, not inIsPublic) :: outClassParts;
+      end if;
+      outMoved := true;
+    else
+      // Different protection, and we did reach the end. In that case the class
+      // should be moved into the next part, if that part has the same
+      // protection. We don't know that here, so we return the class part as it
+      // is and let moveClassInClassParts2 sort it out.
+      outClassParts := {inClassPart};
+    end if;
+  else
+    outClassParts := {inClassPart};
+  end if;
+end moveClassInClassPart3;
+
+protected function moveClassInSplitClassPart
+  "Takes two lists of element items and an offset. Moves elements from one list
+   to the other until offset number of classes has been moved or the end in
+   either direction has been reached."
+  input Integer inOffset;
+  input list<Absyn.ElementItem> inElementsBefore;
+  input list<Absyn.ElementItem> inElementsAfter;
+  output list<Absyn.ElementItem> outElementsBefore = inElementsBefore;
+  output list<Absyn.ElementItem> outElementsAfter = inElementsAfter;
+  output Integer outRemainingOffset = inOffset;
+  output Boolean outReachedEnd;
+protected
+  Absyn.ElementItem e;
+algorithm
+  if inOffset > 0 then
+    // Positive offset, move elements from after to before.
+    while outRemainingOffset > 0 loop
+      if listEmpty(outElementsAfter) then // No more elements, we're done.
+        break;
+      else
+        e :: outElementsAfter := outElementsAfter;
+        outElementsBefore := e :: outElementsBefore;
+
+        // Decrease the offset for each class we move.
+        if Absyn.isElementItemClass(e) then
+          outRemainingOffset := outRemainingOffset - 1;
+        end if;
+      end if;
+    end while;
+    outReachedEnd := listEmpty(outElementsAfter);
+  else
+    // Negative offset, move elements from before to after.
+    while outRemainingOffset < 0 loop
+      if listEmpty(outElementsBefore) then // No more elements, we're done.
+        break;
+      else
+        e :: outElementsBefore := outElementsBefore;
+        outElementsAfter := e :: outElementsAfter;
+
+        // Increase the offset for each class we move.
+        if Absyn.isElementItemClass(e) then
+          outRemainingOffset := outRemainingOffset + 1;
+        end if;
+      end if;
+    end while;
+    outReachedEnd := listEmpty(outElementsBefore);
+  end if;
+end moveClassInSplitClassPart;
 
 protected function copyClass
   input Absyn.Class inClass;
