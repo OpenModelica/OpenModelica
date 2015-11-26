@@ -7,6 +7,8 @@ builddir_build=$(OMBUILDDIR)
 builddir_bin=$(OMBUILDDIR)/bin
 builddir_lib=$(OMBUILDDIR)/lib/omc
 builddir_inc=$(OMBUILDDIR)/include/omc
+VSVERSION = ""
+VSCOMNTOOLS = $(VS140COMNTOOLS)
 
 #use this call to use precompiled headers
 #use this call if you want to debug the cpp runtime
@@ -18,26 +20,6 @@ endif
 
 ifeq ($(BUILDTYPE),)
 BUILDTYPE=Debug
-endif
-
-ifeq ($(VSVERSION),)
-	VSCOMNTOOLS=${VS100COMNTOOLS}
-else
-ifeq ($(VSVERSION),2010)
-	VSCOMNTOOLS=${VS100COMNTOOLS}
-else
-ifeq ($(VSVERSION),2012)
-	VSCOMNTOOLS=${VS110COMNTOOLS}
-else
-ifeq ($(VSVERSION),2013)
-	VSCOMNTOOLS=${VS120COMNTOOLS}
-else
-ifeq ($(VSVERSION),2015)
-	VSCOMNTOOLS=${VS140COMNTOOLS}
-endif
-endif
-endif
-endif
 endif
 
 
@@ -94,13 +76,49 @@ else
 	USE_LOGGER_COMMAND=-DUSE_LOGGER=OFF
 endif
 
+getMSVCversion:
+ifeq ("$(VSVERSION)","")
+	ifeq ("$(VS140COMNTOOLS)", "") #check VS 2015
+		ifeq ("$(VS120COMNTOOLS)", "") #check VS 2013
+			ifeq ("$(VS110COMNTOOLS)", "") #check VS 2012
+				ifeq ("$(VS100COMNTOOLS)", "") #check VS 2010
+					echo "Could not identify Visual Studio version"
+				else
+					$(eval VSCOMNTOOLS=$(VS100COMNTOOLS))
+				endif
+			else
+				$(eval VSCOMNTOOLS=$(VS110COMNTOOLS))
+			endif
+		else
+			$(eval VSCOMNTOOLS=$(VS120COMNTOOLS))
+		endif
+	endif
+else
+ifeq ($(VSVERSION),2010)
+	$(eval VSCOMNTOOLS=$(VS100COMNTOOLS))
+else
+ifeq ($(VSVERSION),2012)
+	$(eval VSCOMNTOOLS=$(VS110COMNTOOLS))
+else
+ifeq ($(VSVERSION),2013)
+	$(eval VSCOMNTOOLS=$(VS120COMNTOOLS))
+else
+ifeq ($(VSVERSION),2015)
+	$(eval VSCOMNTOOLS=$(VS140COMNTOOLS))
+endif
+endif
+endif
+endif
+endif
+
+
 runtimeCpp:
 	mkdir -p Build
 	cd ./Build; echo "change to Build";	\
 	$(CMAKE) -G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=$(BUILDTYPE) -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" $(BOOST_STATIC_LINKING_COMMAND) $(BOOST_REALPATHS_COMMAND) $(RUNTIME_PROFILING_COMMAND) $(USE_SCOREP_COMMAND) $(SCOREP_HOME_COMMAND) $(FMU_SUNDIALS_COMMAND) $(PARALLEL_OUTPUT_COMMAND) $(USE_LOGGER_COMMAND) MAKE_CXX_COMPILER=g++ ../; \
 	make;
 
-runtimeCPPmsvc:
+runtimeCPPmsvc: getMSVCversion
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
 	echo 'Build the cppRuntime with MSVC'
 	#rm -rf Build_MSVC
