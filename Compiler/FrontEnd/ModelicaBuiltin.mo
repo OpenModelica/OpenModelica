@@ -3620,6 +3620,8 @@ function getClassInformation
   output Boolean fileReadOnly;
   output Integer lineNumberStart, columnNumberStart, lineNumberEnd, columnNumberEnd;
   output String dimensions[:];
+  output Boolean isProtectedClass;
+  output Boolean isDocumentationClass;
 external "builtin";
 annotation(
   Documentation(info="<html>

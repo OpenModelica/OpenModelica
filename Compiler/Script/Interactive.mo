@@ -11919,6 +11919,44 @@ algorithm
   end matchcontinue;
 end getAnnotationStr;
 
+public function getDocumentationClassAnnotation
+"Returns the documentation class annotation of a class.
+  This is annotated with the annotation:
+  annotation (DocumentationClass=true); in the class definition"
+  input Absyn.Path className;
+  input Absyn.Program p;
+  output Boolean isDocClass;
+algorithm
+  isDocClass := match(className,p)
+    local
+      String docStr;
+    case(_,_)
+      equation
+        docStr = getNamedAnnotation(className,p,Absyn.IDENT("DocumentationClass"),SOME("false"),getDocumentationClassAnnotationModStr);
+      then
+        stringEq(docStr, "true");
+  end match;
+end getDocumentationClassAnnotation;
+
+protected function getDocumentationClassAnnotationModStr
+"Extractor function for DocumentationClass"
+  input Option<Absyn.Modification> mod;
+  output String docStr;
+algorithm
+  docStr := matchcontinue(mod)
+    local Absyn.Exp e;
+
+    case(SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=e))))
+      equation
+        docStr = Dump.printExpStr(e);
+      then
+        docStr;
+
+    else "false";
+
+  end matchcontinue;
+end getDocumentationClassAnnotationModStr;
+
 protected function getDefaultComponentName
 "Returns the default component name of a class.
   This is annotated with the annotation:

@@ -823,7 +823,8 @@ algorithm
 
     case (cache,_,"getClassInformation",_,st,_)
       then (cache,Values.TUPLE({Values.STRING(""),Values.STRING(""),Values.BOOL(false),Values.BOOL(false),Values.BOOL(false),Values.STRING(""),
-                                Values.BOOL(false),Values.INTEGER(0),Values.INTEGER(0),Values.INTEGER(0),Values.INTEGER(0),Values.ARRAY({},{0})}),st);
+                                Values.BOOL(false),Values.INTEGER(0),Values.INTEGER(0),Values.INTEGER(0),Values.INTEGER(0),Values.ARRAY({},{0}),
+                                Values.BOOL(false),Values.BOOL(false)}),st);
 
     case (cache,_,"diffModelicaFileListings",{Values.STRING(s1),Values.STRING(s2),Values.ENUM_LITERAL(name=path)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       algorithm
@@ -5147,17 +5148,25 @@ protected function getClassInformation
   output Values.Value res_1;
 protected
   String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol;
-  String dim_str;
-  Boolean partialPrefix,finalPrefix,encapsulatedPrefix,isReadOnly;
+  String dim_str,lastIdent;
+  Boolean partialPrefix,finalPrefix,encapsulatedPrefix,isReadOnly,isProtectedClass,isDocClass;
   Absyn.Restriction restr;
   Absyn.ClassDef cdef;
-  Absyn.Class c;
   Integer sl,sc,el,ec;
+  Absyn.Path classPath;
 algorithm
   Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := Interactive.getPathedClassInProgram(path, p);
   res := Dump.unparseRestrictionStr(restr);
   cmt := getClassComment(cdef);
   file := Util.testsuiteFriendly(file);
+  if Absyn.pathIsIdent(Absyn.makeNotFullyQualified(path)) then
+    isProtectedClass := false;
+  else
+    lastIdent := Absyn.pathLastIdent(Absyn.makeNotFullyQualified(path));
+    classPath := Absyn.stripLast(path);
+    isProtectedClass := Interactive.isProtectedClass(classPath, lastIdent, p);
+  end if;
+  isDocClass := Interactive.getDocumentationClassAnnotation(path, p);
   res_1 := Values.TUPLE({
     Values.STRING(res),
     Values.STRING(cmt),
@@ -5170,7 +5179,9 @@ algorithm
     Values.INTEGER(sc),
     Values.INTEGER(el),
     Values.INTEGER(ec),
-    getClassDimensions(cdef)
+    getClassDimensions(cdef),
+    Values.BOOL(isProtectedClass),
+    Values.BOOL(isDocClass)
   });
 end getClassInformation;
 
