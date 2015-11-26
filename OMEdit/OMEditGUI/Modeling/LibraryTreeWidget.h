@@ -231,8 +231,6 @@ public:
   void removeNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.removeOne(pLibraryTreeItem);}
   void updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
-  QString readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents);
-  QString readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem);
   void updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
   LibraryTreeItem* getContainingFileParentLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
@@ -254,6 +252,8 @@ private:
   QModelIndex libraryTreeItemIndexHelper(const LibraryTreeItem *pLibraryTreeItem, const LibraryTreeItem *pParentLibraryTreeItem,
                                          const QModelIndex &parentIndex) const;
   LibraryTreeItem* getLibraryTreeItemFromFileHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName, int lineNumber);
+  QString readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents);
+  QString readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem);
   void unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
   void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem);
 protected:

@@ -970,9 +970,11 @@ void Component::createClassShapes()
       pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, "", false);
     }
     GraphicsView *pGraphicsView = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView();
-    if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram &&
-        mComponentType == Component::Root && mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->hasAnnotation()) {
-      pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
+    if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && mComponentType == Component::Root) {
+      mpLibraryTreeItem->getModelWidget()->loadDiagramView();
+      if (mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->hasAnnotation()) {
+        pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
+      }
     }
     foreach (ShapeAnnotation *pShapeAnnotation, pGraphicsView->getShapesList()) {
       if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {

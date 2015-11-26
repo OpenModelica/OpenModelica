@@ -2210,7 +2210,7 @@ void WelcomePageWidget::openLatestNewsItem(QListWidgetItem *pItem)
 
 ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text)
   : QWidget(pModelWidgetContainer), mpModelWidgetContainer(pModelWidgetContainer), mpLibraryTreeItem(pLibraryTreeItem),
-    mCreateModelWidgetComponents(false)
+    mDiagramViewLoaded(false), mConnectionsLoaded(false), mCreateModelWidgetComponents(false)
 {
   mExtendsModifiersMap.clear();
   // create widgets based on library type
@@ -2233,12 +2233,11 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
       mpUndoView = new QUndoView(mpUndoStack);
     }
     getModelInheritedClasses();
-    drawModelInheritedClasses(this);
-    getModelIconDiagramShapes();
-    drawModelInheritedComponents(this);
+    drawModelInheritedClassShapes(this, StringHandler::Icon);
+    getModelIconDiagramShapes(StringHandler::Icon);
+    drawModelInheritedClassComponents(this, StringHandler::Icon);
     getModelComponents();
-    drawModelInheritedConnections(this);
-    getModelConnections();
+    drawModelIconComponents();
     mpEditor = 0;
   } else {
     // icon graphics framework
@@ -2290,14 +2289,21 @@ void ModelWidget::updateExtendsModifiersMap(QString extendsClass)
 void ModelWidget::reDrawModelWidget()
 {
   removeInheritedClassShapes(StringHandler::Icon);
-  removeInheritedClassShapes(StringHandler::Diagram);
-  drawModelInheritedClasses(this);
+  drawModelInheritedClassShapes(this, StringHandler::Icon);
   mpIconGraphicsView->reOrderShapes();
-  mpDiagramGraphicsView->reOrderShapes();
-  removeInheritedClassComponents();
-  drawModelInheritedComponents(this);
-  removeInheritedClassConnections();
-  drawModelInheritedConnections(this);
+  removeInheritedClassComponents(StringHandler::Icon);
+  drawModelInheritedClassComponents(this, StringHandler::Icon);
+  if (mDiagramViewLoaded) {
+    removeInheritedClassShapes(StringHandler::Diagram);
+    drawModelInheritedClassShapes(this, StringHandler::Diagram);
+    mpDiagramGraphicsView->reOrderShapes();
+    removeInheritedClassComponents(StringHandler::Diagram);
+    drawModelInheritedClassComponents(this, StringHandler::Diagram);
+  }
+  if (mConnectionsLoaded) {
+    removeInheritedClassConnections();
+    drawModelInheritedClassConnections(this);
+  }
 }
 
 /*!
@@ -2410,6 +2416,34 @@ LineAnnotation* ModelWidget::createInheritedConnection(LineAnnotation *pConnecti
 }
 
 /*!
+ * \brief ModelWidget::loadDiagramView
+ * Loads the diagram view components if they are not loaded before.
+ */
+void ModelWidget::loadDiagramView()
+{
+  if (!mDiagramViewLoaded) {
+    drawModelInheritedClassShapes(this, StringHandler::Diagram);
+    getModelIconDiagramShapes(StringHandler::Diagram);
+    drawModelInheritedClassComponents(this, StringHandler::Diagram);
+    drawModelDiagramComponents();
+    mDiagramViewLoaded = true;
+  }
+}
+
+/*!
+ * \brief ModelWidget::loadConnections
+ * Loads the model connections if they are not loaded before.
+ */
+void ModelWidget::loadConnections()
+{
+  if (!mConnectionsLoaded) {
+    drawModelInheritedClassConnections(this);
+    getModelConnections();
+    mConnectionsLoaded = true;
+  }
+}
+
+/*!
  * \brief ModelWidget::loadWidgetComponents
  * Creates the widgets for the ModelWidget.
  */
@@ -2505,6 +2539,9 @@ void ModelWidget::createModelWidgetComponents()
       mpModelicaTextHighlighter = new ModelicaTextHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextEditorPage(),
                                                               mpEditor->getPlainTextEdit());
       ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpEditor);
+      if (mpLibraryTreeItem->getClassText().isEmpty()) {
+        pMainWindow->getLibraryWidget()->getLibraryTreeModel()->readLibraryTreeItemClassText(mpLibraryTreeItem);
+      }
       pModelicaTextEditor->setPlainText(mpLibraryTreeItem->getClassText());
       mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
       connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), mpModelicaTextHighlighter, SLOT(settingsChanged()));
@@ -2857,30 +2894,17 @@ void ModelWidget::getModelExtendsModifiers(QString extendsClass)
 }
 
 /*!
- * \brief ModelWidget::drawModelInheritedClasses
- * Draws the inherited classes.
+ * \brief ModelWidget::parseModelInheritedClass
+ * Parses the inherited class shape and draws its items on the appropriate view.
  * \param pModelWidget
+ * \param viewType
  */
-void ModelWidget::drawModelInheritedClasses(ModelWidget *pModelWidget)
+void ModelWidget::drawModelInheritedClassShapes(ModelWidget *pModelWidget, StringHandler::ViewType viewType)
 {
   foreach (LibraryTreeItem *pLibraryTreeItem, pModelWidget->getInheritedClassesList()) {
     if (!pLibraryTreeItem->isNonExisting()) {
-      drawModelInheritedClasses(pLibraryTreeItem->getModelWidget());
+      drawModelInheritedClassShapes(pLibraryTreeItem->getModelWidget(), viewType);
     }
-    drawModelInheritedClassShapes(pLibraryTreeItem, StringHandler::Icon);
-    drawModelInheritedClassShapes(pLibraryTreeItem, StringHandler::Diagram);
-  }
-}
-
-/*!
- * \brief ModelWidget::parseModelInheritedClass
- * Parses the inherited class shape and draws its items on the appropriate view.
- * \param pLibraryTreeItem
- * \param viewType
- */
-void ModelWidget::drawModelInheritedClassShapes(LibraryTreeItem *pLibraryTreeItem, StringHandler::ViewType viewType)
-{
-  if (pLibraryTreeItem) {
     GraphicsView *pInheritedGraphicsView, *pGraphicsView;
     if (pLibraryTreeItem->isNonExisting()) {
       if (viewType == StringHandler::Icon) {
@@ -2929,26 +2953,23 @@ void ModelWidget::removeInheritedClassShapes(StringHandler::ViewType viewType)
 }
 
 /*!
- * \brief ModelWidget::getModelIconShapes
+ * \brief ModelWidget::getModelIconDiagramShapes
  * Gets the Modelica model icon & diagram shapes.
- */
-void ModelWidget::getModelIconDiagramShapes()
-{
-  OMCProxy *pOMCProxy = mpModelWidgetContainer->getMainWindow()->getOMCProxy();
-  QString iconAnnotationString = pOMCProxy->getIconAnnotation(mpLibraryTreeItem->getNameStructure());
-  parseModelIconDiagramShapes(iconAnnotationString, StringHandler::Icon);
-  QString diagramAnnotationString = pOMCProxy->getDiagramAnnotation(mpLibraryTreeItem->getNameStructure());
-  parseModelIconDiagramShapes(diagramAnnotationString, StringHandler::Diagram);
-}
-
-/*!
- * \brief ModelWidget::parseModelIconDiagramShapes
  * Parses the Modelica icon/diagram annotation and creates shapes for it on appropriate GraphicsView.
- * \param annotationString
  * \param viewType
  */
-void ModelWidget::parseModelIconDiagramShapes(QString annotationString, StringHandler::ViewType viewType)
+void ModelWidget::getModelIconDiagramShapes(StringHandler::ViewType viewType)
 {
+  OMCProxy *pOMCProxy = mpModelWidgetContainer->getMainWindow()->getOMCProxy();
+  GraphicsView *pGraphicsView = 0;
+  QString annotationString;
+  if (viewType == StringHandler::Icon) {
+    pGraphicsView = mpIconGraphicsView;
+    annotationString = pOMCProxy->getIconAnnotation(mpLibraryTreeItem->getNameStructure());
+  } else {
+    pGraphicsView = mpDiagramGraphicsView;
+    annotationString = pOMCProxy->getDiagramAnnotation(mpLibraryTreeItem->getNameStructure());
+  }
   annotationString = StringHandler::removeFirstLastCurlBrackets(annotationString);
   if (annotationString.isEmpty()) {
     return;
@@ -2958,12 +2979,7 @@ void ModelWidget::parseModelIconDiagramShapes(QString annotationString, StringHa
   if (list.size() < 8) {
     return;
   }
-  GraphicsView *pGraphicsView;
-  if (viewType == StringHandler::Icon) {
-    pGraphicsView = mpIconGraphicsView;
-  } else {
-    pGraphicsView = mpDiagramGraphicsView;
-  }
+
   qreal left = qMin(list.at(0).toFloat(), list.at(2).toFloat());
   qreal bottom = qMin(list.at(1).toFloat(), list.at(3).toFloat());
   qreal right = qMax(list.at(0).toFloat(), list.at(2).toFloat());
@@ -3044,34 +3060,25 @@ void ModelWidget::parseModelIconDiagramShapes(QString annotationString, StringHa
 }
 
 /*!
- * \brief ModelWidget::drawModelInheritedComponents
+ * \brief ModelWidget::drawModelInheritedClassComponents
  * Loops through the class inhertited classes and draws the components for all.
- * \sa ModelWidget::drawModelInheritedClassComponents()
  * \param pModelWidget
+ * \param viewType
  */
-void ModelWidget::drawModelInheritedComponents(ModelWidget *pModelWidget)
+void ModelWidget::drawModelInheritedClassComponents(ModelWidget *pModelWidget, StringHandler::ViewType viewType)
 {
   foreach (LibraryTreeItem *pLibraryTreeItem, pModelWidget->getInheritedClassesList()) {
     if (!pLibraryTreeItem->isNonExisting()) {
-      drawModelInheritedComponents(pLibraryTreeItem->getModelWidget());
-      drawModelInheritedClassComponents(pLibraryTreeItem);
-    }
-  }
-}
-
-/*!
- * \brief ModelWidget::drawModelInheritedClassComponents
- * Draws the class inherited components.
- * \param pLibraryTreeItem
- */
-void ModelWidget::drawModelInheritedClassComponents(LibraryTreeItem *pLibraryTreeItem)
-{
-  if (!pLibraryTreeItem->isNonExisting()) {
-    foreach (Component *pInheritedComponent, pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentsList()) {
-      mpIconGraphicsView->addInheritedComponentToList(createInheritedComponent(pInheritedComponent, mpIconGraphicsView));
-    }
-    foreach (Component *pInheritedComponent, pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
-      mpDiagramGraphicsView->addInheritedComponentToList(createInheritedComponent(pInheritedComponent, mpDiagramGraphicsView));
+      drawModelInheritedClassComponents(pLibraryTreeItem->getModelWidget(), viewType);
+      GraphicsView *pGraphicsView = 0;
+      if (viewType == StringHandler::Icon) {
+        pGraphicsView = mpIconGraphicsView;
+      } else {
+        pGraphicsView = mpDiagramGraphicsView;
+      }
+      foreach (Component *pInheritedComponent, pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
+        pGraphicsView->addInheritedComponentToList(createInheritedComponent(pInheritedComponent, pGraphicsView));
+      }
     }
   }
 }
@@ -3079,20 +3086,20 @@ void ModelWidget::drawModelInheritedClassComponents(LibraryTreeItem *pLibraryTre
 /*!
  * \brief ModelWidget::removeInheritedClassComponents
  * Removes all the class inherited class components.
+ * \param viewType
  */
-void ModelWidget::removeInheritedClassComponents()
+void ModelWidget::removeInheritedClassComponents(StringHandler::ViewType viewType)
 {
-  foreach (Component *pComponent, mpIconGraphicsView->getInheritedComponentsList()) {
-    mpIconGraphicsView->deleteInheritedComponentFromList(pComponent);
-    mpIconGraphicsView->removeItem(pComponent->getOriginItem());
-    mpIconGraphicsView->removeItem(pComponent);
-    delete pComponent->getOriginItem();
-    delete pComponent;
+  GraphicsView *pGraphicsView = 0;
+  if (viewType == StringHandler::Icon) {
+    pGraphicsView = mpIconGraphicsView;
+  } else {
+    pGraphicsView = mpDiagramGraphicsView;
   }
-  foreach (Component *pComponent, mpDiagramGraphicsView->getInheritedComponentsList()) {
-    mpDiagramGraphicsView->deleteInheritedComponentFromList(pComponent);
-    mpDiagramGraphicsView->removeItem(pComponent->getOriginItem());
-    mpDiagramGraphicsView->removeItem(pComponent);
+  foreach (Component *pComponent, pGraphicsView->getInheritedComponentsList()) {
+    pGraphicsView->deleteInheritedComponentFromList(pComponent);
+    pGraphicsView->removeItem(pComponent->getOriginItem());
+    pGraphicsView->removeItem(pComponent);
     delete pComponent->getOriginItem();
     delete pComponent;
   }
@@ -3100,24 +3107,79 @@ void ModelWidget::removeInheritedClassComponents()
 
 /*!
  * \brief ModelWidget::getModelComponents
- * Gets the components of the model and place them in the diagram and icon GraphicsView.
+ * Gets the components of the model and their annotations.
  */
 void ModelWidget::getModelComponents()
 {
   MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
   // get the components
-  QList<ComponentInfo*> componentsList = pMainWindow->getOMCProxy()->getComponents(mpLibraryTreeItem->getNameStructure());
+  mComponentsList = pMainWindow->getOMCProxy()->getComponents(mpLibraryTreeItem->getNameStructure());
   // get the components annotations
-  QStringList componentsAnnotationsList = pMainWindow->getOMCProxy()->getComponentAnnotations(mpLibraryTreeItem->getNameStructure());
+  mComponentsAnnotationsList = pMainWindow->getOMCProxy()->getComponentAnnotations(mpLibraryTreeItem->getNameStructure());
+}
+
+/*!
+ * \brief ModelWidget::drawModelIconComponents
+ * Draw the components for icon view and place them in the icon GraphicsView.
+ */
+void ModelWidget::drawModelIconComponents()
+{
+  MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
   int i = 0;
-  foreach (ComponentInfo *pComponentInfo, componentsList) {
-    /* if the component type is one of the builtin type then don't show it */
+  foreach (ComponentInfo *pComponentInfo, mComponentsList) {
+    // if the component type is one of the builtin type then don't try to load it here. we load it when loading diagram view.
+    if (pMainWindow->getOMCProxy()->isBuiltinType(pComponentInfo->getClassName())) {
+      i++;
+      continue;
+    }
     LibraryTreeItem *pLibraryTreeItem = 0;
+    LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
+    pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(pComponentInfo->getClassName());
+    if (!pLibraryTreeItem) {
+      pLibraryTreeItem = pLibraryTreeModel->createNonExistingLibraryTreeItem(pComponentInfo->getClassName());
+    }
+    // we only load and draw connectors here. Other components are drawn when loading diagram view.
+    if (pLibraryTreeItem->isConnector()) {
+      if (!pLibraryTreeItem->isNonExisting() && !pLibraryTreeItem->getModelWidget()) {
+        pLibraryTreeModel->showModelWidget(pLibraryTreeItem, "", false);
+      }
+      QString transformation = "";
+      QStringList dialogAnnotation;
+      if (mComponentsAnnotationsList.size() >= i) {
+        transformation = StringHandler::getPlacementAnnotation(mComponentsAnnotationsList.at(i));
+        dialogAnnotation = StringHandler::getDialogAnnotation(mComponentsAnnotationsList.at(i));
+        if (transformation.isEmpty()) {
+          transformation = "Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)";
+        }
+      }
+      mpIconGraphicsView->addComponentToView(pComponentInfo->getName(), pLibraryTreeItem, transformation, QPointF(0, 0), dialogAnnotation,
+                                             pComponentInfo, false, true);
+    }
+    i++;
+  }
+}
+
+/*!
+ * \brief ModelWidget::drawModelDiagramComponents
+ * Draw the components for diagram view and place them in the diagram GraphicsView.
+ */
+void ModelWidget::drawModelDiagramComponents()
+{
+  MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
+  int i = 0;
+  foreach (ComponentInfo *pComponentInfo, mComponentsList) {
+    LibraryTreeItem *pLibraryTreeItem = 0;
+    // if the component type is one of the builtin type then don't try to load it.
     if (!pMainWindow->getOMCProxy()->isBuiltinType(pComponentInfo->getClassName())) {
       LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
       pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(pComponentInfo->getClassName());
       if (!pLibraryTreeItem) {
         pLibraryTreeItem = pLibraryTreeModel->createNonExistingLibraryTreeItem(pComponentInfo->getClassName());
+      }
+      // we only load and draw non-connectors here. Connector components are drawn in drawModelIconComponents().
+      if (pLibraryTreeItem->isConnector()) {
+        i++;
+        continue;
       }
       if (!pLibraryTreeItem->isNonExisting() && !pLibraryTreeItem->getModelWidget()) {
         pLibraryTreeModel->showModelWidget(pLibraryTreeItem, "", false);
@@ -3125,9 +3187,9 @@ void ModelWidget::getModelComponents()
     }
     QString transformation = "";
     QStringList dialogAnnotation;
-    if (componentsAnnotationsList.size() >= i) {
-      transformation = StringHandler::getPlacementAnnotation(componentsAnnotationsList.at(i));
-      dialogAnnotation = StringHandler::getDialogAnnotation(componentsAnnotationsList.at(i));
+    if (mComponentsAnnotationsList.size() >= i) {
+      transformation = StringHandler::getPlacementAnnotation(mComponentsAnnotationsList.at(i));
+      dialogAnnotation = StringHandler::getDialogAnnotation(mComponentsAnnotationsList.at(i));
       if (transformation.isEmpty()) {
         transformation = "Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)";
       }
@@ -3139,31 +3201,18 @@ void ModelWidget::getModelComponents()
 }
 
 /*!
- * \brief ModelWidget::drawModelInheritedConnections
+ * \brief ModelWidget::drawModelInheritedClassConnections
  * Loops through the class inhertited classes and draws the connections for all.
- * \sa ModelWidget::drawModelInheritedClassConnections()
  * \param pModelWidget
  */
-void ModelWidget::drawModelInheritedConnections(ModelWidget *pModelWidget)
+void ModelWidget::drawModelInheritedClassConnections(ModelWidget *pModelWidget)
 {
   foreach (LibraryTreeItem *pLibraryTreeItem, pModelWidget->getInheritedClassesList()) {
     if (!pLibraryTreeItem->isNonExisting()) {
-      drawModelInheritedConnections(pLibraryTreeItem->getModelWidget());
-      drawModelInheritedClassConnections(pLibraryTreeItem);
-    }
-  }
-}
-
-/*!
- * \brief ModelWidget::drawModelInheritedClassConnections
- * Draws the class inherited connections.
- * \param pLibraryTreeItem
- */
-void ModelWidget::drawModelInheritedClassConnections(LibraryTreeItem *pLibraryTreeItem)
-{
-  if (!pLibraryTreeItem->isNonExisting()) {
-    foreach (LineAnnotation *pConnectionLineAnnotation, pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getConnectionsList()) {
-      mpDiagramGraphicsView->addInheritedConnectionToList(createInheritedConnection(pConnectionLineAnnotation));
+      drawModelInheritedClassConnections(pLibraryTreeItem->getModelWidget());
+      foreach (LineAnnotation *pConnectionLineAnnotation, pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getConnectionsList()) {
+        mpDiagramGraphicsView->addInheritedConnectionToList(createInheritedConnection(pConnectionLineAnnotation));
+      }
     }
   }
 }
@@ -3569,6 +3618,8 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
       ModelWidget *pSubModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
       if (pSubModelWidget == pModelWidget) {
+        pModelWidget->loadDiagramView();
+        pModelWidget->loadConnections();
         pModelWidget->createModelWidgetComponents();
         pModelWidget->show();
         setActiveSubWindow(subWindowsList.at(i));
@@ -3578,6 +3629,8 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     int subWindowsSize = subWindowList(QMdiArea::ActivationHistoryOrder).size();
     QMdiSubWindow *pSubWindow = addSubWindow(pModelWidget);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
+    pModelWidget->loadDiagramView();
+    pModelWidget->loadConnections();
     pModelWidget->createModelWidgetComponents();
     pModelWidget->show();
     if (subWindowsSize == 0) {
