@@ -298,8 +298,6 @@ LibraryTreeItem::LibraryTreeItem()
   setFileName("");
   setReadOnly(false);
   setIsSaved(false);
-  setIsProtected(false);
-  setIsDocumentationClass(false);
   setSaveContentsType(LibraryTreeItem::SaveInOneFile);
   setToolTip("");
   setIcon(QIcon());
@@ -337,8 +335,6 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
     setReadOnly(!StringHandler::isFileWritAble(fileName));
   }
   setIsSaved(isSaved);
-  setIsProtected(false);
-  setIsDocumentationClass(false);
   if (isFilePathValid()) {
     QFileInfo fileInfo(getFileName());
     // if item has file name as package.mo and is top level then its save folder structure
@@ -396,6 +392,21 @@ void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res 
 bool LibraryTreeItem::isFilePathValid() {
   // Since now we set the fileName via loadString() & parseString() so might get filename as className/<interactive>.
   return QFile::exists(mFileName);
+}
+
+/*!
+ * \brief LibraryTreeItem::isDocumentationClass
+ * Returns true if class OR if any of its parent contains DocumentationClass annotation.
+ * \return
+ */
+bool LibraryTreeItem::isDocumentationClass()
+{
+  if (mClassInformation.isDocumentationClass) {
+    return true;
+  } else if (isTopLevel()) {
+    return false;
+  }
+  return mpParentLibraryTreeItem->isDocumentationClass();
 }
 
 /*!
@@ -1121,13 +1132,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, LibraryTr
     OMCInterface::getClassInformation_res classInformation = pOMCProxy->getClassInformation(nameStructure);
     pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::Modelica, name, nameStructure, classInformation, "", isSaved, pParentLibraryTreeItem);
     pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? isSystemLibrary : pParentLibraryTreeItem->isSystemLibrary());
-    pLibraryTreeItem->setIsProtected(pOMCProxy->isProtectedClass(pParentLibraryTreeItem->getNameStructure(), name));
-    if (pParentLibraryTreeItem->isDocumentationClass()) {
-      pLibraryTreeItem->setIsDocumentationClass(true);
-    } else {
-      bool isDocumentationClass = pOMCProxy->getDocumentationClassAnnotation(nameStructure);
-      pLibraryTreeItem->setIsDocumentationClass(isDocumentationClass);
-    }
+
     int row = pParentLibraryTreeItem->getChildren().size();
     QModelIndex index = libraryTreeItemIndex(pParentLibraryTreeItem);
     beginInsertRows(index, row, row);
@@ -1169,7 +1174,6 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(LibraryTreeItem::Librar
   pMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(name));
   OMCInterface::getClassInformation_res classInformation;
   pLibraryTreeItem = new LibraryTreeItem(type, name, name, classInformation, "", isSaved, mpRootLibraryTreeItem);
-  pLibraryTreeItem->setIsDocumentationClass(false);
   int row = mpRootLibraryTreeItem->getChildren().size();
   QModelIndex index = libraryTreeItemIndex(mpRootLibraryTreeItem);
   beginInsertRows(index, row, row);
@@ -1204,12 +1208,6 @@ LibraryTreeItem* LibraryTreeModel::createNonExistingLibraryTreeItem(QString name
   OMCInterface::getClassInformation_res classInformation;
   pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::Modelica, name, nameStructure, classInformation, "", false, pParentLibraryTreeItem);
   pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem->isSystemLibrary());
-  pLibraryTreeItem->setIsProtected(false);
-  if (pParentLibraryTreeItem->isDocumentationClass()) {
-    pLibraryTreeItem->setIsDocumentationClass(true);
-  } else {
-    pLibraryTreeItem->setIsDocumentationClass(false);
-  }
   pLibraryTreeItem->setNonExisting(true);
   addNonExistingLibraryTreeItem(pLibraryTreeItem);
   return pLibraryTreeItem;
@@ -1228,13 +1226,6 @@ void LibraryTreeModel::createNonExistingLibraryTreeItem(LibraryTreeItem *pLibrar
   pLibraryTreeItem->setFileName("");
   pLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pLibraryTreeItem->getNameStructure()));
   pLibraryTreeItem->setIsSaved(isSaved);
-  pLibraryTreeItem->setIsProtected(pOMCProxy->isProtectedClass(pParentLibraryTreeItem->getNameStructure(), pLibraryTreeItem->getName()));
-  if (pParentLibraryTreeItem->isDocumentationClass()) {
-    pLibraryTreeItem->setIsDocumentationClass(true);
-  } else {
-    bool isDocumentationClass = pOMCProxy->getDocumentationClassAnnotation(pLibraryTreeItem->getNameStructure());
-    pLibraryTreeItem->setIsDocumentationClass(isDocumentationClass);
-  }
   pLibraryTreeItem->updateAttributes();
   int row = pParentLibraryTreeItem->getChildren().size();
   QModelIndex index = libraryTreeItemIndex(pParentLibraryTreeItem);
