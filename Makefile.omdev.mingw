@@ -10,7 +10,9 @@ endif
 ifeq ($(BUILDTYPE),)
 BUILDTYPE=Debug
 endif
-VSVERSION = ""
+ifeq ($(VSVERSION),)
+VSVERSION = 2010
+endif
 VSCOMNTOOLS = $(VS140COMNTOOLS)
 
 prefix = ./build
