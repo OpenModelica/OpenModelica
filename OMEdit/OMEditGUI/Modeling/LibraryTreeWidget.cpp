@@ -1312,6 +1312,9 @@ void LibraryTreeModel::readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTre
       if (pLibraryTreeItem->isInPackageOneFile()) {
         LibraryTreeItem *pParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
         if (pParentLibraryTreeItem) {
+          if (pParentLibraryTreeItem->getClassText().isEmpty()) {
+            readLibraryTreeItemClassText(pParentLibraryTreeItem);
+          }
           pLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromText(pLibraryTreeItem, pParentLibraryTreeItem->getClassText()));
         }
       } else {
@@ -1319,55 +1322,6 @@ void LibraryTreeModel::readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTre
       }
     }
   }
-}
-
-/*!
- * \brief LibraryTreeModel::readLibraryTreeItemClassTextFromText
- * Reads the contents of the Modelica class nested in another class.
- * Removes the trailing spaces to make it look nice.
- * \param contents
- * \return
- */
-QString LibraryTreeModel::readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents)
-{
-  QString text;
-  int trailingSpaces = 0;
-  QTextStream textStream(&contents);
-  int lineNumber = 1;
-  while (!textStream.atEnd()) {
-    QString currentLine = textStream.readLine();
-    if (pLibraryTreeItem->inRange(lineNumber)) {
-      // if reading the first line then determine the trailing spaces size.
-      if (pLibraryTreeItem->mClassInformation.lineNumberStart == lineNumber) {
-        trailingSpaces = StringHandler::getTrailingSpacesSize(currentLine);
-      } else {
-        trailingSpaces = qMin(trailingSpaces, StringHandler::getTrailingSpacesSize(currentLine));
-      }
-      text += currentLine.mid(trailingSpaces) + "\n";
-    }
-    lineNumber++;
-  }
-  return text;
-}
-
-/*!
- * \brief LibraryTreeModel::readLibraryTreeItemClassTextFromFile
- * Reads the contents of the Modelica file.
- * \return
- */
-QString LibraryTreeModel::readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem)
-{
-  QString contents = "";
-  QFile file(pLibraryTreeItem->getFileName());
-  if (!file.open(QIODevice::ReadOnly)) {
-    QMessageBox::critical(mpLibraryWidget->getMainWindow(), QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(pLibraryTreeItem->getFileName())
-                          .arg(file.errorString()), Helper::ok);
-  } else {
-    contents = QString(file.readAll());
-    file.close();
-  }
-  return contents;
 }
 
 /*!
@@ -1863,6 +1817,55 @@ LibraryTreeItem* LibraryTreeModel::getLibraryTreeItemFromFileHelper(LibraryTreeI
     }
   }
   return 0;
+}
+
+/*!
+ * \brief LibraryTreeModel::readLibraryTreeItemClassTextFromText
+ * Reads the contents of the Modelica class nested in another class.
+ * Removes the trailing spaces to make it look nice.
+ * \param contents
+ * \return
+ */
+QString LibraryTreeModel::readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents)
+{
+  QString text;
+  int trailingSpaces = 0;
+  QTextStream textStream(&contents);
+  int lineNumber = 1;
+  while (!textStream.atEnd()) {
+    QString currentLine = textStream.readLine();
+    if (pLibraryTreeItem->inRange(lineNumber)) {
+      // if reading the first line then determine the trailing spaces size.
+      if (pLibraryTreeItem->mClassInformation.lineNumberStart == lineNumber) {
+        trailingSpaces = StringHandler::getTrailingSpacesSize(currentLine);
+      } else {
+        trailingSpaces = qMin(trailingSpaces, StringHandler::getTrailingSpacesSize(currentLine));
+      }
+      text += currentLine.mid(trailingSpaces) + "\n";
+    }
+    lineNumber++;
+  }
+  return text;
+}
+
+/*!
+ * \brief LibraryTreeModel::readLibraryTreeItemClassTextFromFile
+ * Reads the contents of the Modelica file.
+ * \return
+ */
+QString LibraryTreeModel::readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem)
+{
+  QString contents = "";
+  QFile file(pLibraryTreeItem->getFileName());
+  if (!file.open(QIODevice::ReadOnly)) {
+    QMessageBox::critical(mpLibraryWidget->getMainWindow(), QString(Helper::applicationName).append(" - ").append(Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(pLibraryTreeItem->getFileName())
+                          .arg(file.errorString()), Helper::ok);
+  } else {
+    contents = QString(file.readAll());
+    file.close();
+  }
+  return contents;
 }
 
 /*!
