@@ -104,10 +104,8 @@ public:
   bool isReadOnly() {return mReadOnly;}
   void setIsSaved(bool isSaved) {mIsSaved = isSaved;}
   bool isSaved() {return mIsSaved;}
-  void setIsProtected(bool isProtected) {mIsProtected = isProtected;}
-  bool isProtected() {return mIsProtected;}
-  void setIsDocumentationClass(bool documentationClass) {mDocumentationClass = documentationClass;}
-  bool isDocumentationClass() {return mDocumentationClass;}
+  bool isProtected() {return mClassInformation.isProtectedClass;}
+  bool isDocumentationClass();
   StringHandler::ModelicaClasses getRestriction() {return StringHandler::getModelicaClassType(mClassInformation.restriction);}
   bool isConnector() {return (getRestriction() == StringHandler::ExpandableConnector || getRestriction() == StringHandler::Connector);}
   bool isPartial() {return mClassInformation.partialPrefix;}
@@ -163,8 +161,6 @@ private:
   QString mFileName;
   bool mReadOnly;
   bool mIsSaved;
-  bool mIsProtected;
-  bool mDocumentationClass;
   SaveContentsType mSaveContentsType;
   QString mToolTip;
   QIcon mIcon;

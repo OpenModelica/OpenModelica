@@ -2681,8 +2681,6 @@ void ModelWidget::refresh()
   OMCProxy *pOMCProxy = mpModelWidgetContainer->getMainWindow()->getOMCProxy();
   pOMCProxy->setSourceFile(mpLibraryTreeItem->getNameStructure(), mpLibraryTreeItem->getFileName());
   mpLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(mpLibraryTreeItem->getNameStructure()));
-  bool isDocumentationClass = mpModelWidgetContainer->getMainWindow()->getOMCProxy()->getDocumentationClassAnnotation(mpLibraryTreeItem->getNameStructure());
-  mpLibraryTreeItem->setIsDocumentationClass(isDocumentationClass);
   mpLibraryTreeItem->updateAttributes();
 //  mpModelWidgetContainer->getMainWindow()->getLibraryWidget()->loadLibraryComponent(mpLibraryTreeItem);
   /* remove everything from the icon view */
