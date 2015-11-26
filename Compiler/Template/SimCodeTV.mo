@@ -824,6 +824,7 @@ package SimCodeUtil
   function getVarIndexListByMapping
     input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
     input DAE.ComponentRef iVarName;
+    input Boolean iColumnMajor;
     input String iIndexForUndefinedReferences;
     output list<String> oVarIndexList;
   end getVarIndexListByMapping;
@@ -831,6 +832,7 @@ package SimCodeUtil
   function getVarIndexByMapping
     input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
     input DAE.ComponentRef iVarName;
+    input Boolean iColumnMajor;
     input String iIndexForUndefinedReferences;
     output String oVarIndex;
   end getVarIndexByMapping;
