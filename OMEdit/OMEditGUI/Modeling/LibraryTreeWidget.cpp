@@ -2114,9 +2114,6 @@ void LibraryTreeView::libraryTreeItemExpanded(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryTreeView::libraryTreeItemExpanded(QModelIndex index)
 {
-  QTime commandTime;
-  commandTime.start();
-  qDebug() << commandTime.currentTime().toString("hh:mm:ss:zzz");
   // since expanded SIGNAL is triggered when tree has expanded the index so we must collapse it first and then load data and expand it back.
   collapse(index);
   QModelIndex sourceIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapToSource(index);
@@ -2125,8 +2122,6 @@ void LibraryTreeView::libraryTreeItemExpanded(QModelIndex index)
   bool state = blockSignals(true);
   expand(index);
   blockSignals(state);
-  qDebug() << commandTime.currentTime().toString("hh:mm:ss:zzz");
-  qDebug() << QString::number((double)commandTime.elapsed() / 1000).append(" secs");
 }
 
 /*!
