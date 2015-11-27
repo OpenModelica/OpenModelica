@@ -11657,7 +11657,7 @@ algorithm
     case (SimCodeVar.SIMVAR(aliasvar = SimCodeVar.NEGATEDALIAS(_)), false, _) then
       getDefaultValueReference(inSimVar, inSimCode.modelInfo.varInfo);
     case (_, _, "Cpp") equation
-      valueReference = getVarIndexByMapping(inSimCode.varToArrayIndexMapping, inSimVar.name, true, "-1");
+      valueReference = getVarIndexByMapping(inSimCode.varToArrayIndexMapping, inSimVar.name, false, "-1");
       if stringEqual(valueReference, "-1") then
         Error.addInternalError("invalid return value from getVarIndexByMapping for "+simVarString(inSimVar), sourceInfo());
       end if;
