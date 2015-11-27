@@ -63,6 +63,18 @@ template replaceDotAndUnderscore(String str)
     System.unquoteIdentifier(str_underscores)
 end replaceDotAndUnderscore;
 
+template getGeneralTarget(String str)
+ "Replace _ with __ and dot in identifiers with _"
+::=
+  match str
+  case "msvc10"
+  case "msvc12"
+  case "msvc13"
+  case "msvc15"
+  then "msvc"
+  else str
+end getGeneralTarget;
+
 template underscorePath(Path path)
  "Generate paths with components separated by underscores.
   Replaces also the . in identifiers with _.

@@ -631,7 +631,7 @@ template fmuMakefile(String target, SimCode simCode, Text& extraFuncs, Text& ext
                             String additionalLinkerFlags_MSVC, String additionalCFlags_GCC, String additionalCFlags_MSVC)
  "Generates the contents of the makefile for the simulation case. Copy libexpat & correct linux fmu"
 ::=
-match target
+match getGeneralTarget(target)
 case "msvc" then
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then

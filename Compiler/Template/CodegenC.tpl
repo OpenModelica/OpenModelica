@@ -5055,7 +5055,7 @@ end simulationFunctionsHeaderFile;
 template simulationMakefile(String target, SimCode simCode)
  "Generates the contents of the makefile for the simulation case."
 ::=
-match target
+match getGeneralTarget(target)
 case "msvc" then
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then

@@ -1559,7 +1559,7 @@ end simulationMainRunScript;
 template simulationLibDir(String target, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
  "Generates code for header file for simulation target."
 ::=
-  match target
+  match getGeneralTarget(target)
     case "debugrt"
     case "msvc" then
       match simCode
@@ -3084,7 +3084,7 @@ template simulationMakefile(String target, SimCode simCode ,Text& extraFuncs,Tex
  "Generates the contents of the makefile for the simulation case."
 ::=
 let &timeMeasureLink = buffer "" /*BUFD*/
-match target
+match getGeneralTarget(target)
 case "debugrt"
 case "msvc" then
 match simCode

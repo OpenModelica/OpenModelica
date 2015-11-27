@@ -1800,7 +1800,7 @@ algorithm
         includes := generateExtFunctionIncludesIncludestr(mod);
         (libs, dirs, resources) := generateExtFunctionLibraryDirectoryFlags(program, path, mod, libs);
         for name in if Flags.isSet(Flags.CHECK_EXT_LIBS) then libNames else {} loop
-          if target=="msvc" or System.os()=="Windows_NT" then
+          if getGerneralTarget(target)=="msvc" or System.os()=="Windows_NT" then
             fullLibNames := {name + System.getDllExt(), "lib" + name + ".a", "lib" + name + ".lib"};
           else
             fullLibNames := {"lib" + name + ".a", "lib" + name + System.getDllExt()};
@@ -1958,8 +1958,22 @@ protected function generateExtFunctionLibraryDirectoryFlags2
   output list<String> libs;
 algorithm
   libs := if isLinux then "-Wl,-rpath=\"" + dir + "\""::inLibs else inLibs;
-  libs := (if target=="msvc" then "/LIBPATH:\"" + dir + "\"" else "\"-L" + dir + "\"")::libs;
+  libs := (if getGerneralTarget(target)=="msvc" then "/LIBPATH:\"" + dir + "\"" else "\"-L" + dir + "\"")::libs;
 end generateExtFunctionLibraryDirectoryFlags2;
+
+protected function getGerneralTarget
+   input String target;
+  output String generalTarget;
+  algorithm
+  generalTarget := matchcontinue (target)
+  case("msvc10")then "msvc";
+  case("msvc12")then "msvc";
+  case("msvc13")then "msvc";
+  case("msvc14")then "msvc";
+  else target;
+ end matchcontinue;
+end getGerneralTarget;
+
 
 protected function userCompiledBinariesDirectory
   input Absyn.Path path;
@@ -2147,7 +2161,7 @@ protected function generateExtFunctionIncludesLibstr
   output list<String> outStringLst;
   output list<String> names;
 algorithm
-  (outStringLst, names) := matchcontinue (target,inMod)
+  (outStringLst, names) := matchcontinue (getGerneralTarget(target),inMod)
     local
       list<Absyn.Exp> arr;
       list<String> libs;
