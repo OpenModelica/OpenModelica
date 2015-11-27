@@ -2521,6 +2521,7 @@ void ModelWidget::createModelWidgetComponents()
     pMainLayout->setSpacing(4);
     pMainLayout->addWidget(mpModelStatusBar);
     setLayout(pMainLayout);
+    MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
     // show hide widgets based on library type
     if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
       connect(mpIconViewToolButton, SIGNAL(toggled(bool)), SLOT(showIconView(bool)));
@@ -2535,14 +2536,10 @@ void ModelWidget::createModelWidgetComponents()
       mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Diagram));
       // modelica text editor
       mpEditor = new ModelicaTextEditor(this);
-      MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
       mpModelicaTextHighlighter = new ModelicaTextHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextEditorPage(),
                                                               mpEditor->getPlainTextEdit());
       ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpEditor);
-      if (mpLibraryTreeItem->getClassText().isEmpty()) {
-        pMainWindow->getLibraryWidget()->getLibraryTreeModel()->readLibraryTreeItemClassText(mpLibraryTreeItem);
-      }
-      pModelicaTextEditor->setPlainText(mpLibraryTreeItem->getClassText());
+      pModelicaTextEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
       mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
       connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), mpModelicaTextHighlighter, SLOT(settingsChanged()));
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
@@ -2562,7 +2559,7 @@ void ModelWidget::createModelWidgetComponents()
       pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
       mpEditor = new TextEditor(this);
       TextEditor *pTextEditor = dynamic_cast<TextEditor*>(mpEditor);
-      pTextEditor->setPlainText(mpLibraryTreeItem->getClassText());
+      pTextEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
       mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
@@ -2610,9 +2607,8 @@ void ModelWidget::createModelWidgetComponents()
         pTLMEditor->setPlainText(defaultMetaModelText);
         mpLibraryTreeItem->setClassText(defaultMetaModelText);
       } else {
-        pTLMEditor->setPlainText(mpLibraryTreeItem->getClassText());
+        pTLMEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
       }
-      MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
       mpTLMHighlighter = new TLMHighlighter(pMainWindow->getOptionsDialog()->getTLMEditorPage(), mpEditor->getPlainTextEdit());
       mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
       connect(pMainWindow->getOptionsDialog(), SIGNAL(TLMEditorSettingsChanged()), mpTLMHighlighter, SLOT(settingsChanged()));

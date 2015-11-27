@@ -67,6 +67,7 @@ class ModelWidget;
 class ShapeAnnotation;
 class Component;
 class LineAnnotation;
+class LibraryTreeModel;
 class LibraryTreeItem : public QObject
 {
   Q_OBJECT
@@ -118,7 +119,7 @@ public:
   void setDragPixmap(QPixmap dragPixmap) {mDragPixmap = dragPixmap;}
   QPixmap getDragPixmap() {return mDragPixmap;}
   void setClassText(QString classText) {mClassText = classText;}
-  QString getClassText() {return mClassText;}
+  QString getClassText(LibraryTreeModel *pLibraryTreeModel);
   void setExpanded(bool expanded) {mExpanded = expanded;}
   bool isExpanded() const {return mExpanded;}
   void setNonExisting(bool nonExisting) {mNonExisting = nonExisting;}
