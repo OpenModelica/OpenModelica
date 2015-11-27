@@ -7,7 +7,9 @@ builddir_build=$(OMBUILDDIR)
 builddir_bin=$(OMBUILDDIR)/bin
 builddir_lib=$(OMBUILDDIR)/lib/omc
 builddir_inc=$(OMBUILDDIR)/include/omc
-VSVERSION = ""
+ifeq ($(VSVERSION),)
+VSVERSION = 2010
+endif
 VSCOMNTOOLS = $(VS140COMNTOOLS)
 
 #use this call to use precompiled headers
