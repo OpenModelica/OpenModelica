@@ -2404,11 +2404,14 @@ annotation(preferredView="text");
 end buildModel;
 
 function moveClass
-"moves a class up or down depending on the given direction,
- it returns true if the move was performed or false if we
- could not move the class"
+ "Moves a class up or down depending on the given offset, where a positive
+  offset moves the class down and a negative offset up. The offset is truncated
+  if the resulting index is outside the class list. It retains the visibility of
+  the class by adding public/protected sections when needed, and merges sections
+  of the same type if the class is moved from a section it was alone in. Returns
+  true if the move was successful, otherwise false."
  input TypeName className "the class that should be moved";
- input String direction "up or down";
+ input Integer offset "Offset in the class list.";
  output Boolean result;
 external "builtin";
 annotation(preferredView="text");

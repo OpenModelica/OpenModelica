@@ -9156,7 +9156,7 @@ protected function addClassAnnotationToClass
   "Adds an annotation to a given class."
   input Absyn.Class inClass;
   input Absyn.Annotation inAnnotation;
-  output Absyn.Class outClass = inClass;
+  output Absyn.Class outClass;
 protected
   Absyn.ClassDef body;
 algorithm
@@ -9200,7 +9200,7 @@ algorithm
         body;
   end match;
 
-  outClass := Absyn.setClassBody(outClass, body);
+  outClass := Absyn.setClassBody(inClass, body);
 end addClassAnnotationToClass;
 
 protected function getInheritedClassesHelper
@@ -15592,6 +15592,80 @@ algorithm
       then stringEq(str, c1name);
   end match;
 end compareClassName;
+
+public function transformPathedClassInProgram
+  "Transforms a referenced class in a program by applying the given function to it."
+  input Absyn.Path inPath;
+  input Absyn.Program inProgram;
+  input FuncType inFunc;
+  output Absyn.Program outProgram;
+
+  partial function FuncType
+    input Absyn.Class inClass;
+    output Absyn.Class outClass;
+  end FuncType;
+algorithm
+  outProgram := match inPath
+    case Absyn.IDENT()
+      then transformClassInProgram(inPath.name, inProgram, inFunc);
+
+    case Absyn.FULLYQUALIFIED()
+      then transformPathedClassInProgram(inPath.path, inProgram, inFunc);
+
+    case Absyn.QUALIFIED()
+      then transformClassInProgram(inPath.name, inProgram,
+          function transformPathedClassInClass(inPath = inPath.path, inFunc = inFunc));
+
+  end match;
+end transformPathedClassInProgram;
+
+public function transformClassInProgram
+  "Transforms a referenced class in a program by applying the given function to
+   it, replacing the old class with the new in the list of classes. Fails if the
+   class can't be found."
+  input String inName;
+  input Absyn.Program inProgram;
+  input FuncType inFunc;
+  output Absyn.Program outProgram = inProgram;
+
+  partial function FuncType
+    input Absyn.Class inClass;
+    output Absyn.Class outClass;
+  end FuncType;
+protected
+  list<Absyn.Class> classes, acc = {};
+  Absyn.Within wi;
+  Absyn.Class cls;
+  String name;
+algorithm
+  Absyn.PROGRAM(classes, wi) := inProgram;
+
+  while true loop
+    cls :: classes := classes;
+    Absyn.CLASS(name = name) := cls;
+
+    if name == inName then
+      cls := inFunc(cls);
+      classes := listAppend(listReverse(acc), cls :: classes);
+      outProgram := Absyn.PROGRAM(classes, wi);
+      break;
+    end if;
+  end while;
+end transformClassInProgram;
+
+protected function transformPathedClassInClass
+  input Absyn.Path inPath;
+  input Absyn.Class inClass;
+  input FuncType inFunc;
+  output Absyn.Class outClass;
+
+  partial function FuncType
+    input Absyn.Class inClass;
+    output Absyn.Class outClass;
+  end FuncType;
+algorithm
+  outClass := inClass;
+end transformPathedClassInClass;
 
 protected function modificationToAbsyn
 " This function takes a list of NamedArg and returns an Absyn.Modification option.
