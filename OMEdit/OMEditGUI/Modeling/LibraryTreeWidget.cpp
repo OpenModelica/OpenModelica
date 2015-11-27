@@ -410,6 +410,21 @@ bool LibraryTreeItem::isDocumentationClass()
 }
 
 /*!
+ * \brief LibraryTreeItem::getClassText
+ * Returns the class text. If the class text is empty then first read it.
+ * \param pLibraryTreeModel
+ * \return
+ */
+QString LibraryTreeItem::getClassText(LibraryTreeModel *pLibraryTreeModel)
+{
+  qDebug() << "getClassText() called";
+  if (mClassText.isEmpty()) {
+    pLibraryTreeModel->readLibraryTreeItemClassText(this);
+  }
+  return mClassText;
+}
+
+/*!
  * \brief LibraryTreeItem::updateAttributes
  * Updates the LibraryTreeItem icon, text and tooltip.
  */
@@ -1119,8 +1134,6 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, LibraryTr
     pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? isSystemLibrary : pParentLibraryTreeItem->isSystemLibrary());
     createNonExistingLibraryTreeItem(pLibraryTreeItem, pParentLibraryTreeItem, isSaved);
     if (load) {
-      // read the LibraryTreeItem text
-      readLibraryTreeItemClassText(pLibraryTreeItem);
       // create library tree items
       createLibraryTreeItems(pLibraryTreeItem);
       // load the LibraryTreeItem pixmap
@@ -1139,8 +1152,6 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, LibraryTr
     pParentLibraryTreeItem->insertChild(row, pLibraryTreeItem);
     endInsertRows();
     if (load) {
-      // read the LibraryTreeItem text
-      readLibraryTreeItemClassText(pLibraryTreeItem);
       // create library tree items
       createLibraryTreeItems(pLibraryTreeItem);
       // load the LibraryTreeItem pixmap
@@ -1303,10 +1314,7 @@ void LibraryTreeModel::readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTre
       if (pLibraryTreeItem->isInPackageOneFile()) {
         LibraryTreeItem *pParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
         if (pParentLibraryTreeItem) {
-          if (pParentLibraryTreeItem->getClassText().isEmpty()) {
-            readLibraryTreeItemClassText(pParentLibraryTreeItem);
-          }
-          pLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromText(pLibraryTreeItem, pParentLibraryTreeItem->getClassText()));
+          pLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromText(pLibraryTreeItem, pParentLibraryTreeItem->getClassText(this)));
         }
       } else {
         pLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromFile(pLibraryTreeItem));
@@ -1335,7 +1343,7 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
   pParentLibraryTreeItem->setIsSaved(false);
   updateLibraryTreeItem(pParentLibraryTreeItem);
   OMCProxy *pOMCProxy = mpLibraryWidget->getMainWindow()->getOMCProxy();
-  QString before = pParentLibraryTreeItem->getClassText();
+  QString before = pParentLibraryTreeItem->getClassText(this);
   QString after = pOMCProxy->listFile(pParentLibraryTreeItem->getNameStructure());
   QString contents = pOMCProxy->diffModelicaFileListings(before, after);
   pParentLibraryTreeItem->setClassText(contents);
@@ -1348,7 +1356,7 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
   }
   // if we first updated the parent class then the child classes needs to be updated as well.
   if (pParentLibraryTreeItem != pLibraryTreeItem) {
-    pOMCProxy->loadString(pParentLibraryTreeItem->getClassText(), pParentLibraryTreeItem->getFileName(), Helper::utf8, false);
+    pOMCProxy->loadString(pParentLibraryTreeItem->getClassText(this), pParentLibraryTreeItem->getFileName(), Helper::utf8, false);
     updateChildLibraryTreeItemClassText(pParentLibraryTreeItem, contents, pParentLibraryTreeItem->getFileName());
     pParentLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pParentLibraryTreeItem->getNameStructure()));
   }
@@ -1371,7 +1379,7 @@ void LibraryTreeModel::updateChildLibraryTreeItemClassText(LibraryTreeItem *pLib
       if (pChildLibraryTreeItem->getModelWidget()) {
         ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pChildLibraryTreeItem->getModelWidget()->getEditor());
         if (pModelicaTextEditor) {
-          pModelicaTextEditor->setPlainText(pChildLibraryTreeItem->getClassText());
+          pModelicaTextEditor->setPlainText(pChildLibraryTreeItem->getClassText(this));
         }
       }
       if (pChildLibraryTreeItem->getChildren().size() > 0) {
@@ -2098,7 +2106,6 @@ void LibraryTreeView::libraryTreeItemExpanded(LibraryTreeItem *pLibraryTreeItem)
     for (int i = 0; i < pLibraryTreeItem->getChildren().size(); i++) {
       LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
       mpLibraryWidget->getMainWindow()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(pChildLibraryTreeItem->getNameStructure()));
-      mpLibraryWidget->getLibraryTreeModel()->readLibraryTreeItemClassText(pChildLibraryTreeItem);
       mpLibraryWidget->getLibraryTreeModel()->loadLibraryTreeItemPixmap(pChildLibraryTreeItem);
       mpLibraryWidget->getMainWindow()->getStatusBar()->clearMessage();
       mpLibraryWidget->getMainWindow()->getProgressBar()->setValue(++progressValue);
@@ -2114,6 +2121,8 @@ void LibraryTreeView::libraryTreeItemExpanded(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryTreeView::libraryTreeItemExpanded(QModelIndex index)
 {
+//  QTime commandTime;
+//  commandTime.start();
   // since expanded SIGNAL is triggered when tree has expanded the index so we must collapse it first and then load data and expand it back.
   collapse(index);
   QModelIndex sourceIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapToSource(index);
@@ -2122,6 +2131,7 @@ void LibraryTreeView::libraryTreeItemExpanded(QModelIndex index)
   bool state = blockSignals(true);
   expand(index);
   blockSignals(state);
+//  qDebug() << "Time taken to expand " << pLibraryTreeItem->getNameStructure() << " is " << QString::number((double)commandTime.elapsed() / 1000).append(" secs");
 }
 
 /*!
@@ -2988,7 +2998,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibrary
   if (pLibraryTreeItem->getModelWidget()->getEditor()) {
     contents = pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText();
   } else {
-    contents = pLibraryTreeItem->getClassText();
+    contents = pLibraryTreeItem->getClassText(mpLibraryTreeModel);
   }
   if (saveFile(fileName, contents)) {
     /* mark the file as saved and update the labels. */
@@ -3073,7 +3083,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
     if (pLibraryTreeItem->getModelWidget()->getEditor()) {
       contents = pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText();
     } else {
-      contents = pLibraryTreeItem->getClassText();
+      contents = pLibraryTreeItem->getClassText(mpLibraryTreeModel);
     }
     if (saveFile(fileName, contents)) {
       /* mark the file as saved and update the labels. */
