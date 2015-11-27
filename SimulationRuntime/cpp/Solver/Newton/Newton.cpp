@@ -4,6 +4,10 @@
 */
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
+
+#include <Solver/Newton/FactoryExport.h>
+#include <Core/Utils/extension/logger.hpp>
+
 #include <Solver/Newton/Newton.h>
 
 #include <Core/Math/ILapack.h>        // needed for solution of linear system with Lapack
