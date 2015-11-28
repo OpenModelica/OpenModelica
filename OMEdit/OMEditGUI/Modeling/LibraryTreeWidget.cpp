@@ -1066,7 +1066,7 @@ void LibraryTreeModel::addModelicaLibraries(QSplashScreen *pSplashScreen)
   OMCProxy *pOMCProxy = mpLibraryWidget->getMainWindow()->getOMCProxy();
   pOMCProxy->loadSystemLibraries();
   QStringList systemLibs = pOMCProxy->getClassNames();
-//  systemLibs.prepend("OpenModelica");
+  systemLibs.prepend("OpenModelica");
   foreach (QString lib, systemLibs) {
     pSplashScreen->showMessage(QString(Helper::loading).append(" ").append(lib), Qt::AlignRight, Qt::white);
     createLibraryTreeItem(lib, mpRootLibraryTreeItem, true, true, true);
@@ -2120,8 +2120,6 @@ void LibraryTreeView::libraryTreeItemExpanded(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryTreeView::libraryTreeItemExpanded(QModelIndex index)
 {
-//  QTime commandTime;
-//  commandTime.start();
   // since expanded SIGNAL is triggered when tree has expanded the index so we must collapse it first and then load data and expand it back.
   collapse(index);
   QModelIndex sourceIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapToSource(index);
@@ -2130,7 +2128,6 @@ void LibraryTreeView::libraryTreeItemExpanded(QModelIndex index)
   bool state = blockSignals(true);
   expand(index);
   blockSignals(state);
-//  qDebug() << "Time taken to expand " << pLibraryTreeItem->getNameStructure() << " is " << QString::number((double)commandTime.elapsed() / 1000).append(" secs");
 }
 
 /*!
