@@ -1025,16 +1025,12 @@ QStringList StringHandler::unparseArrays(QString value)
     }
 
     /* skip the whole quotes section */
-    if (value.at(i) == '"')
-    {
+    if (value.at(i) == '"') {
       i++;
-      while (value.at(i) != '"')
-      {
+      while (value.at(i) != '"') {
         i++;
-        if (value.at(i) == '"' && value.at(i+1) != ',') {
-          if (value.at(i+1) != '}') {
-            i+=2;
-          }
+        if (value.at(i-1) == '\\' && value.at(i) == '"') {
+            i+=1;
         }
       }
     }
