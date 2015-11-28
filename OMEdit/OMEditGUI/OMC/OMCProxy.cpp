@@ -990,15 +990,21 @@ QString OMCProxy::getComponentModifierValue(QString className, QString name)
   */
 bool OMCProxy::setComponentModifierValue(QString className, QString modifierName, QString modifierValue)
 {
-  if (modifierValue.compare("=") == 0)
-    sendCommand("setComponentModifierValue(" + className + "," + modifierName + ", $Code(()))");
-  else
-    sendCommand("setComponentModifierValue(" + className + "," + modifierName + ", $Code(" + modifierValue + "))");
-  if (getResult().toLower().contains("ok"))
+  QString expression;
+  if (modifierValue.isEmpty()) {
+    expression = QString("setComponentModifierValue(%1, %2, $Code(()))").arg(className).arg(modifierName);
+  } else if (modifierValue.startsWith("(")) {
+    expression = QString("setComponentModifierValue(%1, %2, $Code(%3))").arg(className).arg(modifierName).arg(modifierValue);
+  } else {
+    expression = QString("setComponentModifierValue(%1, %2, $Code(=%3))").arg(className).arg(modifierName).arg(modifierValue);
+  }
+  sendCommand(expression);
+  if (getResult().toLower().contains("ok")) {
     return true;
-  else
-  {
-    printMessagesStringInternal();
+  } else {
+    QString msg = tr("Unable to set the component modifier value using command <b>%1</b>").arg(expression);
+    MessageItem messageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::errorLevel);
+    mpMainWindow->getMessagesWidget()->addGUIMessage(messageItem);
     return false;
   }
 }

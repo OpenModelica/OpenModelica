@@ -70,6 +70,8 @@ public:
   ComponentInfo(ComponentInfo *pComponentInfo, QObject *pParent = 0);
   void updateComponentInfo(const ComponentInfo *pComponentInfo);
   void parseComponentInfoString(QString value);
+  void fetchModifiers(OMCProxy *pOMCProxy, QString className);
+  void fetchParameterValue(OMCProxy *pOMCProxy, QString className);
   void setClassName(QString className) {mClassName = className;}
   QString getClassName() const {return mClassName;}
   void setName(QString name) {mName = name;}
@@ -97,6 +99,10 @@ public:
   void setArrayIndex(QString arrayIndex);
   QString getArrayIndex() const {return mArrayIndex;}
   bool isArray() const {return mIsArray;}
+  void setModifiersMap(QMap<QString, QString> modifiersMap) {mModifiersMap = modifiersMap;}
+  QMap<QString, QString> getModifiersMap() const {return mModifiersMap;}
+  void setParameterValue(QString parameterValue) {mParameterValue = parameterValue;}
+  QString getParameterValue() const {return mParameterValue;}
   bool operator==(const ComponentInfo &componentInfo) const;
   bool operator!=(const ComponentInfo &componentInfo) const;
 private:
@@ -116,6 +122,8 @@ private:
   QString mCasuality;
   QString mArrayIndex;
   bool mIsArray;
+  QMap<QString, QString> mModifiersMap;
+  QString mParameterValue;
 };
 
 class Component : public QObject, public QGraphicsItem
@@ -148,8 +156,6 @@ public:
   QString getTransformationString() {return mTransformationString;}
   void setDialogAnnotation(QStringList dialogAnnotation) {mDialogAnnotation = dialogAnnotation;}
   QStringList getDialogAnnotation() {return mDialogAnnotation;}
-  QMap<QString, QString> getModifiersMap() {return mModifiersMap;}
-  QString getParameterValue() {return mParameterValue;}
   CoOrdinateSystem getCoOrdinateSystem() const;
   OriginItem* getOriginItem() {return mpOriginItem;}
   QAction* getParametersAction() {return mpParametersAction;}
@@ -182,7 +188,6 @@ public:
   void emitChanged();
   void emitDeleted();
   void componentParameterHasChanged();
-  void getComponentModifiers();
   QString getParameterDisplayString(QString parameterName);
   void shapeAdded();
   void shapeUpdated();
@@ -203,7 +208,6 @@ private:
   ComponentType mComponentType;
   QString mTransformationString;
   QStringList mDialogAnnotation;
-  QMap<QString, QString> mModifiersMap;
   QString mParameterValue;
   QGraphicsRectItem *mpResizerRectangle;
   LineAnnotation *mpNonExistingComponentLine;

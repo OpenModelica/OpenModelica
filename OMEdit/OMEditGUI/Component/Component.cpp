@@ -72,6 +72,7 @@ ComponentInfo::ComponentInfo(QObject *pParent)
   mCasuality = "";
   mArrayIndex = "";
   mIsArray = false;
+  mModifiersMap.clear();
 }
 
 /*!
@@ -108,6 +109,8 @@ void ComponentInfo::updateComponentInfo(const ComponentInfo *pComponentInfo)
   mCasuality = pComponentInfo->getCausality();
   mArrayIndex = pComponentInfo->getArrayIndex();
   mIsArray = pComponentInfo->isArray();
+  mModifiersMap.clear();
+  mModifiersMap = pComponentInfo->getModifiersMap();
 }
 
 /*!
@@ -203,6 +206,34 @@ void ComponentInfo::parseComponentInfoString(QString value)
 }
 
 /*!
+ * \brief ComponentInfo::fetchModifiers
+ * Fetches the Component modifiers if any.
+ * \param pOMCProxy
+ * \param className
+ */
+void ComponentInfo::fetchModifiers(OMCProxy *pOMCProxy, QString className)
+{
+  mModifiersMap.clear();
+  QStringList componentModifiersList = pOMCProxy->getComponentModifierNames(className, mName);
+  foreach (QString componentModifier, componentModifiersList) {
+    QString originalModifierName = QString(mName).append(".").append(componentModifier);
+    QString componentModifierValue = pOMCProxy->getComponentModifierValue(className, originalModifierName);
+    mModifiersMap.insert(componentModifier, componentModifierValue);
+  }
+}
+
+/*!
+ * \brief ComponentInfo::fetchParameterValue
+ * Fetches the Component parameter value if any.
+ * \param pOMCProxy
+ * \param className
+ */
+void ComponentInfo::fetchParameterValue(OMCProxy *pOMCProxy, QString className)
+{
+  mParameterValue = pOMCProxy->getParameterValue(className, mName);
+}
+
+/*!
  * \brief ComponentInfo::setArrayIndex
  * Sets the array index
  * \param arrayIndex
@@ -231,7 +262,8 @@ bool ComponentInfo::operator==(const ComponentInfo &componentInfo) const
       (componentInfo.getStream() == this->getStream()) && (componentInfo.getReplaceable() == this->getReplaceable()) &&
       (componentInfo.getVariablity() == this->getVariablity()) && (componentInfo.getInner() == this->getInner()) &&
       (componentInfo.getOuter() == this->getOuter()) && (componentInfo.getCausality() == this->getCausality()) &&
-      (componentInfo.getArrayIndex() == this->getArrayIndex());
+      (componentInfo.getArrayIndex() == this->getArrayIndex()) && (componentInfo.getModifiersMap() == this->getModifiersMap()) &&
+      (componentInfo.getParameterValue() == this->getParameterValue());
 }
 
 /*!
@@ -293,11 +325,6 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
   }
   setTransform(mTransformation.getTransformationMatrix());
   setDialogAnnotation(dialogAnnotation);
-  // get the component modifier if any
-  getComponentModifiers();
-  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-  QString className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-  mParameterValue = pMainWindow->getOMCProxy()->getParameterValue(className, getName());
   // create actions
   createActions();
   mpOriginItem = new OriginItem(this);
@@ -327,8 +354,6 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
   mpDefaultComponentText = 0;
   drawComponent();
   setDialogAnnotation(QStringList());
-  mModifiersMap.clear();
-  mParameterValue = "";
   mpOriginItem = 0;
   if (mpLibraryTreeItem) {
     connect(mpLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), SLOT(handleLoaded()));
@@ -350,8 +375,6 @@ Component::Component(Component *pComponent, Component *pParentComponent)
   mpDefaultComponentRectangle = 0;
   mpDefaultComponentText = 0;
   drawComponent();
-  mModifiersMap.clear();
-  mParameterValue = "";
   mTransformation = Transformation(mpReferenceComponent->mTransformation);
   setTransform(mTransformation.getTransformationMatrix());
   mpOriginItem = 0;
@@ -392,8 +415,6 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   createNonExistingComponent();
   createDefaultComponent();
   drawComponent();
-  mModifiersMap.clear();
-  mParameterValue = "";
   mTransformation = Transformation(mpReferenceComponent->mTransformation);
   setTransform(mTransformation.getTransformationMatrix());
   createActions();
@@ -762,19 +783,6 @@ void Component::componentParameterHasChanged()
   update();
 }
 
-void Component::getComponentModifiers()
-{
-  mModifiersMap.clear();
-  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-  QString className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-  QStringList componentModifiersList = pMainWindow->getOMCProxy()->getComponentModifierNames(className, getName());
-  foreach (QString componentModifier, componentModifiersList) {
-    QString originalModifierName = QString(getName()).append(".").append(componentModifier);
-    QString componentModifierValue = pMainWindow->getOMCProxy()->getComponentModifierValue(className, originalModifierName);
-    mModifiersMap.insert(componentModifier, componentModifierValue);
-  }
-}
-
 /*!
  * \brief Component::getParameterDisplayString
  * Reads the parameters of the component.\n
@@ -792,13 +800,13 @@ QString Component::getParameterDisplayString(QString parameterName)
    */
   QString displayString = "";
   /* case 1 */
-  displayString = mModifiersMap.value(parameterName, "");
+  displayString = mpComponentInfo->getModifiersMap().value(parameterName, "");
   /* case 2 */
   if (displayString.isEmpty()) {
     if (mpLibraryTreeItem) {
       foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
         if (pComponent->getComponentInfo()->getName().compare(parameterName) == 0) {
-          displayString = pComponent->getParameterValue();
+          displayString = pComponent->getComponentInfo()->getParameterValue();
           break;
         }
       }
@@ -1323,7 +1331,7 @@ QString Component::getParameterDisplayStringFromExtendsParameters(QString parame
     if (pInheritedComponent->getLibraryTreeItem()) {
       foreach (Component *pComponent, pInheritedComponent->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
         if (pComponent->getComponentInfo()->getName().compare(parameterName) == 0) {
-          displayString = pComponent->getParameterValue();
+          displayString = pComponent->getComponentInfo()->getParameterValue();
           if (!displayString.isEmpty()) {
             return displayString;
           }
@@ -1668,7 +1676,7 @@ void Component::duplicate()
   newDiagramComponentInfo.setName(oldDiagramComponentInfo.getName());
   UpdateComponentAttributesCommand *pUpdateDiagramComponentAttributesCommand;
   pUpdateDiagramComponentAttributesCommand = new UpdateComponentAttributesCommand(pDiagramComponent, oldDiagramComponentInfo,
-                                                                                  newDiagramComponentInfo, true, mModifiersMap);
+                                                                                  newDiagramComponentInfo, true);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateDiagramComponentAttributesCommand);
   setSelected(false);
   if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
@@ -1912,6 +1920,9 @@ void Component::moveCtrlRight()
 void Component::showParameters()
 {
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+  if (pMainWindow->getOMCProxy()->isBuiltinType(mpComponentInfo->getClassName())) {
+    return;
+  }
   if (!mpLibraryTreeItem || mpLibraryTreeItem->isNonExisting()) {
     QMessageBox::critical(pMainWindow, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
                           tr("Cannot show parameters window for component <b>%1</b>. Did not find type <b>%2</b>.").arg(getName())
