@@ -187,7 +187,11 @@ QString Parameter::getFixedState()
  */
 QString Parameter::getUnitFromDerivedClass(Component *pComponent)
 {
-  OMCProxy *pOMCProxy = pComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  MainWindow *pMainWindow = pComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+  OMCProxy *pOMCProxy = pMainWindow->getOMCProxy();
+  if (!pComponent->getLibraryTreeItem()->getModelWidget()) {
+    pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pComponent->getLibraryTreeItem(), "", false);
+  }
   if (pComponent->getLibraryTreeItem()->getModelWidget()->getInheritedClassesList().size() == 0) {
     return pOMCProxy->getDerivedClassModifierValue(pComponent->getComponentInfo()->getClassName(), "unit");
   }
