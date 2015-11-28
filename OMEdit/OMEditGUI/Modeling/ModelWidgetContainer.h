@@ -342,7 +342,7 @@ public:
   QList<LibraryTreeItem*> getInheritedClassesList() {return mInheritedClassesList;}
   QMap<QString, QMap<QString, QString> > getExtendsModifiersMap() {return mExtendsModifiersMap;}
   QMap<QString, QString> getExtendsModifiersMap(QString extendsClass);
-  void updateExtendsModifiersMap(QString extendsClass);
+  void fetchExtendsModifiers(QString extendsClass);
   void reDrawModelWidget();
   ShapeAnnotation* createNonExistingInheritedShape(GraphicsView *pGraphicsView);
   ShapeAnnotation* createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
@@ -386,13 +386,13 @@ private:
   bool mDiagramViewLoaded;
   bool mConnectionsLoaded;
   bool mCreateModelWidgetComponents;
+  bool mExtendsModifiersLoaded;
   QMap<QString, QMap<QString, QString> > mExtendsModifiersMap;
   QList<LibraryTreeItem*> mInheritedClassesList;
   QList<ComponentInfo*> mComponentsList;
   QStringList mComponentsAnnotationsList;
 
   void getModelInheritedClasses();
-  void getModelExtendsModifiers(QString extendsClass);
   void drawModelInheritedClassShapes(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
   void removeInheritedClassShapes(StringHandler::ViewType viewType);
   void getModelIconDiagramShapes(StringHandler::ViewType viewType);

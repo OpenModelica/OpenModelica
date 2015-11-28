@@ -1042,15 +1042,21 @@ QString OMCProxy::getExtendsModifierValue(QString className, QString extendsClas
 
 bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue)
 {
-  if (modifierValue.compare("=") == 0)
-    sendCommand("setExtendsModifierValue(" + className + "," + extendsClassName + "," + modifierName + ", $Code(()))");
-  else
-    sendCommand("setExtendsModifierValue(" + className + "," + extendsClassName + "," + modifierName + ", $Code(" + modifierValue + "))");
-  if (getResult().toLower().contains("ok"))
+  QString expression;
+  if (modifierValue.isEmpty()) {
+    expression = QString("setExtendsModifierValue(%1, %2, %3, $Code(()))").arg(className).arg(extendsClassName).arg(modifierName);
+  } else if (modifierValue.startsWith("(")) {
+    expression = QString("setExtendsModifierValue(%1, %2, %3, $Code(%4))").arg(className).arg(extendsClassName).arg(modifierName).arg(modifierValue);
+  } else {
+    expression = QString("setExtendsModifierValue(%1, %2, %3, $Code(=%4))").arg(className).arg(extendsClassName).arg(modifierName).arg(modifierValue);
+  }
+  sendCommand(expression);
+  if (getResult().toLower().contains("ok")) {
     return true;
-  else
-  {
-    printMessagesStringInternal();
+  } else {
+    QString msg = tr("Unable to set the extends modifier value using command <b>%1</b>").arg(expression);
+    MessageItem messageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::errorLevel);
+    mpMainWindow->getMessagesWidget()->addGUIMessage(messageItem);
     return false;
   }
 }
@@ -1207,11 +1213,12 @@ QList<QString> OMCProxy::getInheritedClasses(QString className)
 }
 
 /*!
-  Returns the components of a model with their attributes.\n
-  Creates an object of ComponentInfo for each component.
-  \param className - is the name of the model.
-  \return the list of components
-  */
+ * \brief OMCProxy::getComponents
+ * Returns the components of a model with their attributes.\n
+ * Creates an object of ComponentInfo for each component.
+ * \param className - is the name of the model.
+ * \return the list of components
+ */
 QList<ComponentInfo*> OMCProxy::getComponents(QString className)
 {
   QString expression = "getComponents(" + className + ", useQuotes = true)";
