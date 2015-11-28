@@ -99,10 +99,14 @@ public:
   void setArrayIndex(QString arrayIndex);
   QString getArrayIndex() const {return mArrayIndex;}
   bool isArray() const {return mIsArray;}
+  bool isModifiersLoaded() const {return mModifiersLoaded;}
   void setModifiersMap(QMap<QString, QString> modifiersMap) {mModifiersMap = modifiersMap;}
-  QMap<QString, QString> getModifiersMap() const {return mModifiersMap;}
+  QMap<QString, QString> getModifiersMapWithoutFetching() const {return mModifiersMap;}
+  QMap<QString, QString> getModifiersMap(OMCProxy *pOMCProxy, QString className);
+  bool isParameterValueLoaded() const {return mParameterValueLoaded;}
   void setParameterValue(QString parameterValue) {mParameterValue = parameterValue;}
-  QString getParameterValue() const {return mParameterValue;}
+  QString getParameterValueWithoutFetching() const {return mParameterValue;}
+  QString getParameterValue(OMCProxy *pOMCProxy, QString className);
   bool operator==(const ComponentInfo &componentInfo) const;
   bool operator!=(const ComponentInfo &componentInfo) const;
 private:
@@ -122,7 +126,9 @@ private:
   QString mCasuality;
   QString mArrayIndex;
   bool mIsArray;
+  bool mModifiersLoaded;
   QMap<QString, QString> mModifiersMap;
+  bool mParameterValueLoaded;
   QString mParameterValue;
 };
 
