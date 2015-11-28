@@ -73,6 +73,7 @@ ComponentInfo::ComponentInfo(QObject *pParent)
   mArrayIndex = "";
   mIsArray = false;
   mModifiersMap.clear();
+  mParameterValue = "";
 }
 
 /*!
@@ -111,6 +112,7 @@ void ComponentInfo::updateComponentInfo(const ComponentInfo *pComponentInfo)
   mIsArray = pComponentInfo->isArray();
   mModifiersMap.clear();
   mModifiersMap = pComponentInfo->getModifiersMap();
+  mParameterValue = pComponentInfo->getParameterValue();
 }
 
 /*!

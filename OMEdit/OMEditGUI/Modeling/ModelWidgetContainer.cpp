@@ -2210,7 +2210,7 @@ void WelcomePageWidget::openLatestNewsItem(QListWidgetItem *pItem)
 
 ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text)
   : QWidget(pModelWidgetContainer), mpModelWidgetContainer(pModelWidgetContainer), mpLibraryTreeItem(pLibraryTreeItem),
-    mDiagramViewLoaded(false), mConnectionsLoaded(false), mCreateModelWidgetComponents(false)
+    mDiagramViewLoaded(false), mConnectionsLoaded(false), mCreateModelWidgetComponents(false), mExtendsModifiersLoaded(false)
 {
   mExtendsModifiersMap.clear();
   // create widgets based on library type
@@ -2267,23 +2267,30 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
  */
 QMap<QString, QString> ModelWidget::getExtendsModifiersMap(QString extendsClass)
 {
-  QMap<QString, QMap<QString, QString> >::iterator extendsmodifiersIterator;
-  for (extendsmodifiersIterator = mExtendsModifiersMap.begin(); extendsmodifiersIterator != mExtendsModifiersMap.end(); ++extendsmodifiersIterator) {
-    if (extendsmodifiersIterator.key().compare(extendsClass) == 0) {
-      return extendsmodifiersIterator.value();
+  if (!mExtendsModifiersLoaded) {
+    foreach (LibraryTreeItem *pLibraryTreeItem, mInheritedClassesList) {
+      fetchExtendsModifiers(pLibraryTreeItem->getNameStructure());
     }
+    mExtendsModifiersLoaded = true;
   }
-  return QMap<QString, QString>();
+  return mExtendsModifiersMap.value(extendsClass);
 }
 
 /*!
- * \brief ModelWidget::updateExtendsModifiersMap
- * Updates the extends modifier map for extends class.
+ * \brief ModelWidget::fetchExtendsModifiers
+ * Gets the extends modifiers and their values.
  * \param extendsClass
  */
-void ModelWidget::updateExtendsModifiersMap(QString extendsClass)
+void ModelWidget::fetchExtendsModifiers(QString extendsClass)
 {
-  getModelExtendsModifiers(extendsClass);
+  OMCProxy *pOMCProxy = mpModelWidgetContainer->getMainWindow()->getOMCProxy();
+  QStringList extendsModifiersList = pOMCProxy->getExtendsModifierNames(mpLibraryTreeItem->getNameStructure(), extendsClass);
+  QMap<QString, QString> extendsModifiersMap;
+  foreach (QString extendsModifier, extendsModifiersList) {
+    QString extendsModifierValue = pOMCProxy->getExtendsModifierValue(mpLibraryTreeItem->getNameStructure(), extendsClass, extendsModifier);
+    extendsModifiersMap.insert(extendsModifier, extendsModifierValue);
+  }
+  mExtendsModifiersMap.insert(extendsClass, extendsModifiersMap);
 }
 
 void ModelWidget::reDrawModelWidget()
@@ -2856,7 +2863,6 @@ void ModelWidget::getModelInheritedClasses()
        * Also check for cyclic loops.
        */
     if (!(pMainWindow->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(mpLibraryTreeItem->getNameStructure()) == 0)) {
-      getModelExtendsModifiers(inheritedClass);
       LibraryTreeItem *pInheritedLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(inheritedClass);
       if (!pInheritedLibraryTreeItem) {
         pInheritedLibraryTreeItem = pLibraryTreeModel->createNonExistingLibraryTreeItem(inheritedClass);
@@ -2868,23 +2874,6 @@ void ModelWidget::getModelInheritedClasses()
       addInheritedClass(pInheritedLibraryTreeItem);
     }
   }
-}
-
-/*!
- * \brief ModelWidget::getModelExtendsModifiers
- * Gets the extends modifiers and their values.
- * \param extendsClass
- */
-void ModelWidget::getModelExtendsModifiers(QString extendsClass)
-{
-  OMCProxy *pOMCProxy = mpModelWidgetContainer->getMainWindow()->getOMCProxy();
-  QStringList extendsModifiersList = pOMCProxy->getExtendsModifierNames(mpLibraryTreeItem->getNameStructure(), extendsClass);
-  QMap<QString, QString> extendsModifiersMap;
-  foreach (QString extendsModifier, extendsModifiersList) {
-    QString extendsModifierValue = pOMCProxy->getExtendsModifierValue(mpLibraryTreeItem->getNameStructure(), extendsClass, extendsModifier);
-    extendsModifiersMap.insert(extendsModifier, extendsModifierValue);
-  }
-  mExtendsModifiersMap.insert(extendsClass, extendsModifiersMap);
 }
 
 /*!
@@ -2911,6 +2900,7 @@ void ModelWidget::drawModelInheritedClassShapes(ModelWidget *pModelWidget, Strin
         pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
         pGraphicsView = mpIconGraphicsView;
       } else {
+        pLibraryTreeItem->getModelWidget()->loadDiagramView();
         pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
         pGraphicsView = mpDiagramGraphicsView;
       }
@@ -3068,6 +3058,7 @@ void ModelWidget::drawModelInheritedClassComponents(ModelWidget *pModelWidget, S
       if (viewType == StringHandler::Icon) {
         pGraphicsView = mpIconGraphicsView;
       } else {
+        pLibraryTreeItem->getModelWidget()->loadDiagramView();
         pGraphicsView = mpDiagramGraphicsView;
       }
       foreach (Component *pInheritedComponent, pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
@@ -3211,6 +3202,7 @@ void ModelWidget::drawModelInheritedClassConnections(ModelWidget *pModelWidget)
   foreach (LibraryTreeItem *pLibraryTreeItem, pModelWidget->getInheritedClassesList()) {
     if (!pLibraryTreeItem->isNonExisting()) {
       drawModelInheritedClassConnections(pLibraryTreeItem->getModelWidget());
+      pLibraryTreeItem->getModelWidget()->loadConnections();
       foreach (LineAnnotation *pConnectionLineAnnotation, pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getConnectionsList()) {
         mpDiagramGraphicsView->addInheritedConnectionToList(createInheritedConnection(pConnectionLineAnnotation));
       }

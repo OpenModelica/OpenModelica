@@ -570,27 +570,28 @@ void UpdateComponentParametersCommand::redo()
 {
   OMCProxy *pOMCProxy = mpComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-  // remove all the modifiers of a component.
-  pOMCProxy->removeComponentModifiers(className, mpComponent->getName());
-  // apply the new Component modifiers if any
-  QMap<QString, QString>::iterator componentModifier;
-  for (componentModifier = mNewComponentModifiersMap.begin(); componentModifier != mNewComponentModifiersMap.end(); ++componentModifier) {
-    QString modifierValue = componentModifier.value();
-    QString modifierKey = QString(mpComponent->getName()).append(".").append(componentModifier.key());
-    pOMCProxy->setComponentModifierValue(className, modifierKey, modifierValue);
-  }
-  // apply the new Component extends modifiers if any
-  if (mpComponent->getReferenceComponent()) {
+  if (!mpComponent->getReferenceComponent()) {
+    // remove all the modifiers of a component.
+    pOMCProxy->removeComponentModifiers(className, mpComponent->getName());
+    // apply the new Component modifiers if any
+    QMap<QString, QString>::iterator componentModifier;
+    for (componentModifier = mNewComponentModifiersMap.begin(); componentModifier != mNewComponentModifiersMap.end(); ++componentModifier) {
+      QString modifierValue = componentModifier.value();
+      QString modifierKey = QString(mpComponent->getName()).append(".").append(componentModifier.key());
+      pOMCProxy->setComponentModifierValue(className, modifierKey, modifierValue);
+    }
+    mpComponent->getComponentInfo()->fetchModifiers(pOMCProxy, className);
+  } else {
     QString inheritedClassName;
     inheritedClassName = mpComponent->getReferenceComponent()->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+    // apply the new Component extends modifiers if any
     QMap<QString, QString>::iterator componentExtendsModifier;
     for (componentExtendsModifier = mNewComponentExtendsModifiersMap.begin(); componentExtendsModifier != mNewComponentExtendsModifiersMap.end(); ++componentExtendsModifier) {
       QString modifierValue = componentExtendsModifier.value();
       pOMCProxy->setExtendsModifierValue(className, inheritedClassName, componentExtendsModifier.key(), modifierValue);
     }
-    mpComponent->getGraphicsView()->getModelWidget()->updateExtendsModifiersMap(inheritedClassName);
+    mpComponent->getGraphicsView()->getModelWidget()->fetchExtendsModifiers(inheritedClassName);
   }
-  mpComponent->getComponentInfo()->fetchModifiers(pOMCProxy, className);
   mpComponent->componentParameterHasChanged();
 }
 
@@ -602,17 +603,20 @@ void UpdateComponentParametersCommand::undo()
 {
   OMCProxy *pOMCProxy = mpComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-  // remove all the modifiers of a component.
-  pOMCProxy->removeComponentModifiers(className, mpComponent->getName());
-  // apply the old Component modifiers if any
-  QMap<QString, QString>::iterator componentModifier;
-  for (componentModifier = mOldComponentModifiersMap.begin(); componentModifier != mOldComponentModifiersMap.end(); ++componentModifier) {
-    QString modifierValue = componentModifier.value();
-    QString modifierKey = QString(mpComponent->getName()).append(".").append(componentModifier.key());
-    pOMCProxy->setComponentModifierValue(className, modifierKey, modifierValue);
-  }
-  if (mpComponent->getReferenceComponent()) {
-    QString inheritedClassName = mpComponent->getReferenceComponent()->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+  if (!mpComponent->getReferenceComponent()) {
+    // remove all the modifiers of a component.
+    pOMCProxy->removeComponentModifiers(className, mpComponent->getName());
+    // apply the old Component modifiers if any
+    QMap<QString, QString>::iterator componentModifier;
+    for (componentModifier = mOldComponentModifiersMap.begin(); componentModifier != mOldComponentModifiersMap.end(); ++componentModifier) {
+      QString modifierValue = componentModifier.value();
+      QString modifierKey = QString(mpComponent->getName()).append(".").append(componentModifier.key());
+      pOMCProxy->setComponentModifierValue(className, modifierKey, modifierValue);
+    }
+    mpComponent->getComponentInfo()->fetchModifiers(pOMCProxy, className);
+  } else {
+    QString inheritedClassName;
+    inheritedClassName = mpComponent->getReferenceComponent()->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
     // remove all the extends modifiers.
     pOMCProxy->removeExtendsModifiers(className, inheritedClassName);
     // apply the new Component extends modifiers if any
@@ -621,9 +625,8 @@ void UpdateComponentParametersCommand::undo()
       QString modifierValue = componentExtendsModifier.value();
       pOMCProxy->setExtendsModifierValue(className, inheritedClassName, componentExtendsModifier.key(), modifierValue);
     }
-    mpComponent->getGraphicsView()->getModelWidget()->updateExtendsModifiersMap(inheritedClassName);
+    mpComponent->getGraphicsView()->getModelWidget()->fetchExtendsModifiers(inheritedClassName);
   }
-  mpComponent->getComponentInfo()->fetchModifiers(pOMCProxy, className);
   mpComponent->componentParameterHasChanged();
 }
 
