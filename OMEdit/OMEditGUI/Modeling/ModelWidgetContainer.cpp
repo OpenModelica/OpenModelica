@@ -3099,11 +3099,6 @@ void ModelWidget::getModelComponents()
   MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
   // get the components
   mComponentsList = pMainWindow->getOMCProxy()->getComponents(mpLibraryTreeItem->getNameStructure());
-  // get the component modifiers
-  foreach (ComponentInfo *pComponentInfo, mComponentsList) {
-    pComponentInfo->fetchModifiers(pMainWindow->getOMCProxy(), mpLibraryTreeItem->getNameStructure());
-    pComponentInfo->fetchParameterValue(pMainWindow->getOMCProxy(), mpLibraryTreeItem->getNameStructure());
-  }
   // get the components annotations
   if (!mComponentsList.isEmpty()) {
     mComponentsAnnotationsList = pMainWindow->getOMCProxy()->getComponentAnnotations(mpLibraryTreeItem->getNameStructure());

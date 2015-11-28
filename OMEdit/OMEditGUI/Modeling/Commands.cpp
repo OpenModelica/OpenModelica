@@ -422,7 +422,7 @@ void UpdateComponentAttributesCommand::redo()
   // apply Component modifiers if duplicate case
   if (mDuplicate) {
     bool modifierValueChanged = false;
-    QMap<QString, QString> modifiers = mNewComponentInfo.getModifiersMap();
+    QMap<QString, QString> modifiers = mNewComponentInfo.getModifiersMapWithoutFetching();
     QMap<QString, QString>::iterator modifiersIterator;
     for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
       QString modifierName = QString(mpComponent->getName()).append(".").append(modifiersIterator.key());

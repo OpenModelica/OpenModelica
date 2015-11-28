@@ -72,7 +72,9 @@ ComponentInfo::ComponentInfo(QObject *pParent)
   mCasuality = "";
   mArrayIndex = "";
   mIsArray = false;
+  mModifiersLoaded = false;
   mModifiersMap.clear();
+  mParameterValueLoaded = false;
   mParameterValue = "";
 }
 
@@ -111,8 +113,10 @@ void ComponentInfo::updateComponentInfo(const ComponentInfo *pComponentInfo)
   mArrayIndex = pComponentInfo->getArrayIndex();
   mIsArray = pComponentInfo->isArray();
   mModifiersMap.clear();
-  mModifiersMap = pComponentInfo->getModifiersMap();
-  mParameterValue = pComponentInfo->getParameterValue();
+  mModifiersLoaded = pComponentInfo->isModifiersLoaded();
+  mModifiersMap = pComponentInfo->getModifiersMapWithoutFetching();
+  mParameterValueLoaded = pComponentInfo->isParameterValueLoaded();
+  mParameterValue = pComponentInfo->getParameterValueWithoutFetching();
 }
 
 /*!
@@ -251,6 +255,38 @@ void ComponentInfo::setArrayIndex(QString arrayIndex)
 }
 
 /*!
+ * \brief ComponentInfo::getModifiersMap
+ * Fetches the Component modifiers if needed and return them.
+ * \param pOMCProxy
+ * \param className
+ * \return
+ */
+QMap<QString, QString> ComponentInfo::getModifiersMap(OMCProxy *pOMCProxy, QString className)
+{
+  if (!mModifiersLoaded) {
+    fetchModifiers(pOMCProxy, className);
+    mModifiersLoaded = true;
+  }
+  return mModifiersMap;
+}
+
+/*!
+ * \brief ComponentInfo::getParameterValue
+ * Fetches the parameters value if needed and return it.
+ * \param pOMCProxy
+ * \param className
+ * \return
+ */
+QString ComponentInfo::getParameterValue(OMCProxy *pOMCProxy, QString className)
+{
+  if (!mParameterValueLoaded) {
+    fetchParameterValue(pOMCProxy, className);
+    mParameterValueLoaded = true;
+  }
+  return mParameterValue;
+}
+
+/*!
  * \brief ComponentInfo::operator ==
  * \param componentInfo
  * Compares the ComponentInfo and returns true if its equal.
@@ -264,8 +300,9 @@ bool ComponentInfo::operator==(const ComponentInfo &componentInfo) const
       (componentInfo.getStream() == this->getStream()) && (componentInfo.getReplaceable() == this->getReplaceable()) &&
       (componentInfo.getVariablity() == this->getVariablity()) && (componentInfo.getInner() == this->getInner()) &&
       (componentInfo.getOuter() == this->getOuter()) && (componentInfo.getCausality() == this->getCausality()) &&
-      (componentInfo.getArrayIndex() == this->getArrayIndex()) && (componentInfo.getModifiersMap() == this->getModifiersMap()) &&
-      (componentInfo.getParameterValue() == this->getParameterValue());
+      (componentInfo.getArrayIndex() == this->getArrayIndex()) &&
+      (componentInfo.getModifiersMapWithoutFetching() == this->getModifiersMapWithoutFetching()) &&
+      (componentInfo.getParameterValueWithoutFetching() == this->getParameterValueWithoutFetching());
 }
 
 /*!
@@ -800,15 +837,17 @@ QString Component::getParameterDisplayString(QString parameterName)
    * 3. Find the value in extends classes and check if the value is present in extends modifier.
    * 4. If there is no extends modifier then finally check if value is present in extends classes.
    */
+  OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  QString className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   QString displayString = "";
   /* case 1 */
-  displayString = mpComponentInfo->getModifiersMap().value(parameterName, "");
+  displayString = mpComponentInfo->getModifiersMap(pOMCProxy, className).value(parameterName, "");
   /* case 2 */
   if (displayString.isEmpty()) {
     if (mpLibraryTreeItem) {
       foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
         if (pComponent->getComponentInfo()->getName().compare(parameterName) == 0) {
-          displayString = pComponent->getComponentInfo()->getParameterValue();
+          displayString = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, className);
           break;
         }
       }
@@ -820,7 +859,7 @@ QString Component::getParameterDisplayString(QString parameterName)
   }
   /* case 4 */
   if (displayString.isEmpty()) {
-    displayString = getParameterDisplayStringFromExtendsModifiers(parameterName);
+    displayString = getParameterDisplayStringFromExtendsParameters(parameterName);
   }
   return displayString;
 }
@@ -1333,7 +1372,9 @@ QString Component::getParameterDisplayStringFromExtendsParameters(QString parame
     if (pInheritedComponent->getLibraryTreeItem()) {
       foreach (Component *pComponent, pInheritedComponent->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
         if (pComponent->getComponentInfo()->getName().compare(parameterName) == 0) {
-          displayString = pComponent->getComponentInfo()->getParameterValue();
+          OMCProxy *pOMCProxy = pComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+          QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+          displayString = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, className);
           if (!displayString.isEmpty()) {
             return displayString;
           }

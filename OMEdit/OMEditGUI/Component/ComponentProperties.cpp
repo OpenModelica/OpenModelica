@@ -79,7 +79,8 @@ Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab
    * If no unit is found then check it in the derived class modifier value.
    * A derived class can be inherited, so look recursively.
    */
-  QString unit = mpComponent->getComponentInfo()->getModifiersMap().value("unit");
+  QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+  QString unit = mpComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className).value("unit");
   if (unit.isEmpty()) {
     if (!pOMCProxy->isBuiltinType(mpComponent->getComponentInfo()->getClassName())) {
       unit = getUnitFromDerivedClass(mpComponent);
@@ -638,7 +639,9 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
     bool isParameter = (pComponent->getComponentInfo()->getVariablity().compare("parameter") == 0);
     // If not a parameter then check for start and fixed bindings. See Modelica.Electrical.Analog.Basic.Resistor parameter R.
     if (!isParameter) {
-      QMap<QString, QString> modifiers = pComponent->getComponentInfo()->getModifiersMap();
+      OMCProxy *pOMCProxy = pComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+      QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+      QMap<QString, QString> modifiers = pComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className);
       QMap<QString, QString>::iterator modifiersIterator;
       for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
         if (modifiersIterator.key().compare("start") == 0) {
@@ -722,7 +725,9 @@ void ComponentParameters::fetchComponentModifiers()
   if (mpComponent->getReferenceComponent()) {
     pComponent = mpComponent->getReferenceComponent();
   }
-  QMap<QString, QString> modifiers = pComponent->getComponentInfo()->getModifiersMap();
+  OMCProxy *pOMCProxy = pComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+  QMap<QString, QString> modifiers = pComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className);
   QMap<QString, QString>::iterator modifiersIterator;
   for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
     QString parameterName = StringHandler::getFirstWordBeforeDot(modifiersIterator.key());
@@ -830,11 +835,13 @@ Parameter* ComponentParameters::findParameter(const QString &parameter, Qt::Case
  */
 void ComponentParameters::updateComponentParameters()
 {
+  OMCProxy *pOMCProxy = mpComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   bool valueChanged = false;
   // save the Component modifiers
-  QMap<QString, QString> oldComponentModifiersMap = mpComponent->getComponentInfo()->getModifiersMap();
+  QMap<QString, QString> oldComponentModifiersMap = mpComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className);
   // new Component modifiers
-  QMap<QString, QString> newComponentModifiersMap = mpComponent->getComponentInfo()->getModifiersMap();
+  QMap<QString, QString> newComponentModifiersMap = mpComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className);
   QMap<QString, QString> newComponentExtendsModifiersMap;
   // any parameter changed
   foreach (Parameter *pParameter, mParametersList) {
