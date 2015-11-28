@@ -417,7 +417,6 @@ bool LibraryTreeItem::isDocumentationClass()
  */
 QString LibraryTreeItem::getClassText(LibraryTreeModel *pLibraryTreeModel)
 {
-  qDebug() << "getClassText() called";
   if (mClassText.isEmpty()) {
     pLibraryTreeModel->readLibraryTreeItemClassText(this);
   }

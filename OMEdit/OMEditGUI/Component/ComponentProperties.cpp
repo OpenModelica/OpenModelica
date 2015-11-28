@@ -79,7 +79,7 @@ Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab
    * If no unit is found then check it in the derived class modifier value.
    * A derived class can be inherited, so look recursively.
    */
-  QString unit = mpComponent->getModifiersMap().value("unit");
+  QString unit = mpComponent->getComponentInfo()->getModifiersMap().value("unit");
   if (unit.isEmpty()) {
     if (!pOMCProxy->isBuiltinType(mpComponent->getComponentInfo()->getClassName())) {
       unit = getUnitFromDerivedClass(mpComponent);
@@ -613,6 +613,7 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
     }
   }
   int insertIndex = 0;
+  pLibraryTreeItem->getModelWidget()->loadDiagramView();
   foreach (Component *pComponent, pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
     /* Ticket #2531
      * Do not show the protected & final parameters.
@@ -633,7 +634,7 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
     bool isParameter = (pComponent->getComponentInfo()->getVariablity().compare("parameter") == 0);
     // If not a parameter then check for start and fixed bindings. See Modelica.Electrical.Analog.Basic.Resistor parameter R.
     if (!isParameter) {
-      QMap<QString, QString> modifiers = pComponent->getModifiersMap();
+      QMap<QString, QString> modifiers = pComponent->getComponentInfo()->getModifiersMap();
       QMap<QString, QString>::iterator modifiersIterator;
       for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
         if (modifiersIterator.key().compare("start") == 0) {
@@ -717,7 +718,7 @@ void ComponentParameters::fetchComponentModifiers()
   if (mpComponent->getReferenceComponent()) {
     pComponent = mpComponent->getReferenceComponent();
   }
-  QMap<QString, QString> modifiers = pComponent->getModifiersMap();
+  QMap<QString, QString> modifiers = pComponent->getComponentInfo()->getModifiersMap();
   QMap<QString, QString>::iterator modifiersIterator;
   for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
     QString parameterName = StringHandler::getFirstWordBeforeDot(modifiersIterator.key());
@@ -826,11 +827,14 @@ Parameter* ComponentParameters::findParameter(const QString &parameter, Qt::Case
 void ComponentParameters::updateComponentParameters()
 {
   bool valueChanged = false;
-  QMap<QString, QString> newComponentModifiersMap;
+  // save the Component modifiers
+  QMap<QString, QString> oldComponentModifiersMap = mpComponent->getComponentInfo()->getModifiersMap();
+  // new Component modifiers
+  QMap<QString, QString> newComponentModifiersMap = mpComponent->getComponentInfo()->getModifiersMap();
   QMap<QString, QString> newComponentExtendsModifiersMap;
   // any parameter changed
   foreach (Parameter *pParameter, mParametersList) {
-    QString componentModifierKey = QString(mpComponent->getName()).append(".").append(pParameter->getNameLabel()->text());
+    QString componentModifierKey = pParameter->getNameLabel()->text();
     QString componentModifierValue = pParameter->getValue();
     if (pParameter->isValueModified()) {
       valueChanged = true;
@@ -862,7 +866,7 @@ void ComponentParameters::updateComponentParameters()
       modifier = modifier.trimmed();
       if (modifierRegExp.exactMatch(modifier)) {
         valueChanged = true;
-        QString componentModifierKey = QString(mpComponent->getName()).append(".").append(modifier.mid(0, modifier.indexOf("(")));
+        QString componentModifierKey = modifier.mid(0, modifier.indexOf("("));
         QString componentModifierValue = modifier.mid(modifier.indexOf("("));
         newComponentModifiersMap.insert(componentModifierKey, componentModifierValue);
       } else {
@@ -874,8 +878,6 @@ void ComponentParameters::updateComponentParameters()
   }
   // if valueChanged is true then put the change in the undo stack.
   if (valueChanged) {
-    // save the Component modifiers
-    QMap<QString, QString> oldComponentModifiersMap = mpComponent->getModifiersMap();
     // save the Component extends modifiers
     QMap<QString, QString> oldComponentExtendsModifiersMap;
     if (mpComponent->getReferenceComponent()) {
