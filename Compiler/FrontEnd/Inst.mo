@@ -169,6 +169,7 @@ protected function instantiateClass_dispatch
   input InnerOuter.InstHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
+  input Boolean doSCodeDep "Do SCode dependency (if the debug flag is also enabled)";
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -193,7 +194,9 @@ algorithm
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT()))
       equation
         cache = FCore.setCacheClassName(cache,path);
-        cdecls = InstUtil.scodeFlatten(cdecls, inPath);
+        if doSCodeDep then
+          cdecls = InstUtil.scodeFlatten(cdecls, inPath);
+        end if;
         (cache,env) = Builtin.initialGraph(cache);
         env_1 = FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
 
@@ -218,7 +221,9 @@ algorithm
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED()))
       equation
         cache = FCore.setCacheClassName(cache,path);
-        cdecls = InstUtil.scodeFlatten(cdecls, inPath);
+        if doSCodeDep then
+          cdecls = InstUtil.scodeFlatten(cdecls, inPath);
+        end if;
         pathstr = Absyn.pathString(path);
 
         //System.startTimer();
@@ -292,6 +297,7 @@ public function instantiateClass
   input InnerOuter.InstHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
+  input Boolean doSCodeDep=true "Do SCode dependency (if the debug flag is also enabled)";
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -315,7 +321,7 @@ algorithm
     // instantiate a class
     case (cache,ih,cdecls as _::_,path)
       equation
-        (outCache,outEnv,outIH,outDAElist) = instantiateClass_dispatch(cache,ih,cdecls,path);
+        (outCache,outEnv,outIH,outDAElist) = instantiateClass_dispatch(cache,ih,cdecls,path,doSCodeDep);
       then
         (outCache,outEnv,outIH,outDAElist);
 
@@ -2123,7 +2129,6 @@ algorithm
 
         (cache, env1,ih) = InstUtil.addClassdefsToEnv(cache, env, ih, pre, cdefelts, impl, SOME(mods));
 
-
         //// fprintln(Flags.INST_TRACE, "after InstUtil.addClassdefsToEnv ENV: " + if_(stringEq(className, "PortVolume"), FGraph.printGraphStr(env1), " no env print "));
 
         // adrpo: TODO! DO SOME CHECKS HERE!
@@ -2135,6 +2140,7 @@ algorithm
         (cache,env2,ih,emods,extcomps,eqs2,initeqs2,alg2,initalg2) =
         InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, pre, extendselts, extendsclasselts, els, ci_state, className, impl, false)
         "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations.";
+
 
         // print("Extended Elements inst:\n" + InstUtil.printElementAndModList(extcomps));
 

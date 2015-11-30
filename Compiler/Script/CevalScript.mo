@@ -79,12 +79,15 @@ import Expression;
 import ExpressionDump;
 import Flags;
 import FGraph;
+import FLookup;
+import FNode;
 import GC;
 import GenerateAPIFunctionsTpl;
 import Global;
 import GlobalScriptUtil;
 import Graph;
 import HashSetString;
+import Inst;
 import InstFunction;
 import List;
 import Lookup;
@@ -1301,7 +1304,7 @@ algorithm
         name = getTypeNameIdent(v);
         setGlobalRoot(Global.instOnlyForcedFunctions,SOME(true));
         cl = List.getMemberOnTrue(name, sp, SCode.isClassNamed);
-        (cache,env) = generateFunctions(cache,env,p,{cl},b);
+        (cache,env) = generateFunctions(cache,env,p,sp,{cl},b);
         setGlobalRoot(Global.instOnlyForcedFunctions,NONE());
       then (cache,Values.BOOL(true),st);
 
@@ -1971,10 +1974,11 @@ algorithm
   end match;
 end instantiateDaeFunctions;
 
-protected function generateFunctions
+function generateFunctions
   input FCore.Cache icache;
   input FCore.Graph ienv;
   input Absyn.Program p;
+  input SCode.Program fullScodeProgram;
   input list<SCode.Element> isp;
   input Boolean cleanCache;
   output FCore.Cache cache;
@@ -1996,10 +2000,10 @@ algorithm
       SCode.Element cl;
 
     case (cache,env,_,{},_) then (cache,env);
-    case (cache,env,_,(cl as SCode.CLASS(name=name,encapsulatedPrefix=SCode.ENCAPSULATED(),restriction=SCode.R_PACKAGE(),classDef=SCode.PARTS(elementLst=elementLst),info=info))::sp,_)
+    case (cache,env,_,(cl as SCode.CLASS(name=name,encapsulatedPrefix=SCode.ENCAPSULATED(),restriction=SCode.R_PACKAGE(),info=info))::sp,_)
       equation
-        (cache,env) = generateFunctions2(cache,env,p,cl,name,elementLst,info,cleanCache);
-        (cache,env) = generateFunctions(cache,env,p,sp,cleanCache);
+        (cache,env) = generateFunctions2(cache,env,p,fullScodeProgram,cl,name,info,cleanCache);
+        (cache,env) = generateFunctions(cache,env,p,fullScodeProgram,sp,cleanCache);
       then (cache,env);
     case (cache,env,_,SCode.CLASS(encapsulatedPrefix=SCode.NOT_ENCAPSULATED(),name=name,info=info as SOURCEINFO(fileName=file))::_,_)
       equation
@@ -2009,54 +2013,76 @@ algorithm
   end match;
 end generateFunctions;
 
-protected function generateFunctions2
+function generateFunctions2
   input FCore.Cache icache;
   input FCore.Graph ienv;
   input Absyn.Program p;
+  input SCode.Program sp;
   input SCode.Element cl;
   input String name;
-  input list<SCode.Element> elementLst;
   input SourceInfo info;
   input Boolean cleanCache;
   output FCore.Cache cache;
   output FCore.Graph env;
 algorithm
-  (cache,env) := matchcontinue (icache,ienv,p,cl,name,elementLst,info,cleanCache)
+  (cache,env) := matchcontinue (icache,ienv,p,cl,name,info,cleanCache)
     local
       list<String> names,dependencies,strs;
-      list<Absyn.Path> paths;
+      list<Absyn.Path> paths, pathsMetarecord;
       DAE.FunctionTree funcs;
       list<DAE.Function> d;
       list<tuple<String,list<String>>> acc;
-      list<SCode.Element> sp;
       String file,nameHeader,str;
       Integer n;
+      FCore.Graph env2;
+      FCore.Ref ref;
+      FCore.Cache lookupCache;
+      FCore.Children children;
+      Absyn.Path path;
+      list<SCode.Element> elements;
+      list<DAE.Type> metarecords;
+      DAE.Type t;
 
-    case (cache,env,_,_,_,_,SOURCEINFO(fileName=file),_)
+    case (cache,env,_,_,_,SOURCEINFO(fileName=file),_)
       equation
         (1,_) = System.regex(file, "ModelicaBuiltin.mo$", 1, false, false);
       then (cache,env);
 
-    case (cache,env,_,_,_,_,_,_)
-      equation
-        cache = if cleanCache then FCore.emptyCache() else cache;
-        paths = List.fold1(elementLst, findFunctionsToCompile, Absyn.FULLYQUALIFIED(Absyn.IDENT(name)), {});
-        cache = instantiateDaeFunctions(cache, env, paths);
-        funcs = FCore.getFunctionTree(cache);
-        d = List.map2(paths, DAEUtil.getNamedFunctionWithError, funcs, info);
-        (_,(_,dependencies)) = DAEUtil.traverseDAEFunctions(d,Expression.traverseSubexpressionsHelper,(matchQualifiedCalls,{}),{});
+    case (cache,env,_,_,_,_,_)
+      algorithm
+        cache := if cleanCache then FCore.emptyCache() else cache;
+
+        if SCode.isPartial(cl) then
+          paths := {};
+          pathsMetarecord := {};
+        else
+          path := Absyn.FULLYQUALIFIED(Absyn.IDENT(name));
+          elements := getNonPartialElementsForInstantiatedClass(sp, cl, path);
+          (paths, pathsMetarecord) := List.fold22(elements, findFunctionsToCompile, path, sp, {}, {});
+        end if;
+
+        metarecords := {};
+        for mr in pathsMetarecord loop
+          (cache,t) := Lookup.lookupType(cache, env, mr, SOME(info));
+          metarecords := t::metarecords;
+        end for;
+
+        cache := instantiateDaeFunctions(cache, env, paths);
+        funcs := FCore.getFunctionTree(cache);
+        d := List.map2(paths, DAEUtil.getNamedFunctionWithError, funcs, info);
+        (_,(_,dependencies)) := DAEUtil.traverseDAEFunctions(d,Expression.traverseSubexpressionsHelper,(matchQualifiedCalls,{}),{});
         // print(name + " has dependencies: " + stringDelimitList(dependencies,",") + "\n");
-        dependencies = List.sort(dependencies,Util.strcmpBool);
-        dependencies = List.map1(dependencies,stringAppend,".h");
-        nameHeader = name + ".h";
-        strs = List.map1r(nameHeader::dependencies, stringAppend, "$(GEN_DIR)");
+        dependencies := List.sort(dependencies,Util.strcmpBool);
+        dependencies := List.map1(dependencies,stringAppend,".h");
+        nameHeader := name + ".h";
+        strs := List.map1r(nameHeader::dependencies, stringAppend, "$(GEN_DIR)");
         System.writeFile(name + ".deps", "$(GEN_DIR)" + name + ".o: $(GEN_DIR)" + name + ".c" + " " + stringDelimitList(strs," "));
-        dependencies = List.map1(dependencies,stringAppend,"\"");
-        dependencies = List.map1r(dependencies,stringAppend,"#include \"");
+        dependencies := List.map1(dependencies,stringAppend,"\"");
+        dependencies := List.map1r(dependencies,stringAppend,"#include \"");
         SimCodeFunction.translateFunctions(p, name, NONE(), d, {}, dependencies);
-        str = Tpl.tplString(Unparsing.programExternalHeader, {cl});
+        str := Tpl.tplString(Unparsing.programExternalHeaderFromTypes, metarecords);
         System.writeFile(name + "_records.c","#include <meta/meta_modelica.h>\n" + str);
-        cache = if cleanCache then icache else cache;
+        cache := if cleanCache then icache else cache;
       then (cache,env);
     else
       equation
@@ -2065,34 +2091,69 @@ algorithm
   end matchcontinue;
 end generateFunctions2;
 
-protected function findFunctionsToCompile
+function findFunctionsToCompile
   input SCode.Element elt;
   input Absyn.Path pathPrefix;
+  input SCode.Program sp;
   input list<Absyn.Path> acc;
+  input list<Absyn.Path> accMetarecord;
   output list<Absyn.Path> paths;
+  output list<Absyn.Path> pathsMetarecord;
+protected
+  String name;
+  Absyn.Path path;
+  list<SCode.Element> elements;
 algorithm
-  paths := match (elt,pathPrefix,acc)
-    local
-      Absyn.Path p;
-      String name;
-      list<SCode.Element> elts;
-    case (SCode.CLASS(name=name, partialPrefix=SCode.NOT_PARTIAL(), restriction=SCode.R_FUNCTION(_), classDef=SCode.PARTS(elementLst=elts)),_,_)
-      equation
-         p = Absyn.joinPaths(pathPrefix,Absyn.IDENT(name));
-         paths = List.fold1(elts,findFunctionsToCompile,Absyn.joinPaths(pathPrefix,Absyn.IDENT(name)),acc);
-      then p::paths;
-    case (SCode.CLASS(name=name, partialPrefix=SCode.NOT_PARTIAL(), classDef=SCode.PARTS(elementLst=elts)),_,_)
-      equation
-         paths = List.fold1(elts,findFunctionsToCompile,Absyn.joinPaths(pathPrefix,Absyn.IDENT(name)),acc);
-      then paths;
-      // Derived classes, class extends
-    case (SCode.CLASS(name=name, partialPrefix=SCode.NOT_PARTIAL(), restriction=SCode.R_FUNCTION(_)),_,_)
-      equation
-         p = Absyn.joinPaths(pathPrefix,Absyn.IDENT(name));
-      then p::acc;
-    else acc;
+  SCode.CLASS(name=name) := elt;
+  path := Absyn.joinPaths(pathPrefix, Absyn.IDENT(name));
+  paths := if SCode.isFunction(elt) then path::acc else acc;
+  pathsMetarecord := match elt
+    case SCode.CLASS(restriction=SCode.R_METARECORD(moved = true)) then path::accMetarecord;
+    else accMetarecord;
   end match;
+  elements := getNonPartialElementsForInstantiatedClass(sp, elt, path);
+  (paths,pathsMetarecord) := List.fold22(elements, findFunctionsToCompile, path, sp, paths, pathsMetarecord);
 end findFunctionsToCompile;
+
+function getNonPartialElementsForInstantiatedClass "Gets the non-partial elements returned by instantiating the given path"
+  input SCode.Program sp;
+  input SCode.Element cl;
+  input Absyn.Path p;
+  output list<SCode.Element> elts={};
+protected
+  FCore.Graph env;
+  SCode.Element elt;
+  Boolean skip;
+  list<SCode.Element> eltsTmp;
+algorithm
+  skip := match cl
+    case SCode.CLASS(classDef=SCode.CLASS_EXTENDS()) then false;
+    case SCode.CLASS(classDef=SCode.PARTS(elementLst=eltsTmp)) then not List.exist(eltsTmp, SCode.isElementExtendsOrClassExtends);
+    else true;
+  end match;
+  if not skip then
+  try
+    ErrorExt.setCheckpoint("getNonPartialElementsForInstantiatedClass");
+    (, env) := Inst.instantiateClass(FCore.emptyCache(), InnerOuter.emptyInstHierarchy, sp, Absyn.makeNotFullyQualified(p), doSCodeDep=false);
+    for v in FNode.getAvlValues(FNode.children(arrayGet(FGraph.lastScopeRef(env),1))) loop
+      elts := match v[1]
+        case FCore.N(data=FCore.CL(e=elt as SCode.CLASS(partialPrefix=SCode.NOT_PARTIAL()))) then elt::elts;
+        else elts;
+      end match;
+    end for;
+    ErrorExt.rollBack("getNonPartialElementsForInstantiatedClass");
+    return;
+  else
+  end try;
+  ErrorExt.rollBack("getNonPartialElementsForInstantiatedClass");
+  end if;
+  // Failed to instantiate the class; perhaps due to being a function
+  // that cannot be instantiated using model restrictions.
+  elts := match cl
+    case SCode.CLASS(classDef=SCode.PARTS(elementLst=elts)) then list(e for e guard (not SCode.isPartial(e)) and SCode.isClass(e) in elts);
+    else {};
+  end match;
+end getNonPartialElementsForInstantiatedClass;
 
 public function cevalCallFunction "This function evaluates CALL expressions, i.e. function calls.
   They are currently evaluated by generating code for the function and

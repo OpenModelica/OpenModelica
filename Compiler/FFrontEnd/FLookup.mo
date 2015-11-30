@@ -429,7 +429,7 @@ algorithm
     case (g, _, _, Absyn.NAMED_IMPORT(name = name, path = path) :: _, _, _)
       equation
         true = stringEqual(inName, name);
-        (g, r) = fq(g, inRef, path, inOptions, inMsg);
+        (g, r) = fq(g, path, inOptions, inMsg);
       then
         (g, r);
 
@@ -469,7 +469,7 @@ algorithm
     case (g, _, _, Absyn.UNQUAL_IMPORT(path = path) :: _, _, _)
       equation
         // Look up the import path.
-        (g, r) = fq(g, inRef, path, inOptions, inMsg);
+        (g, r) = fq(g, path, inOptions, inMsg);
         // Look up the name among the public member of the found package.
         (g, r) = id(g, r, inName, ignoreParents, inMsg);
       then
@@ -487,7 +487,6 @@ end imp_unqual;
 public function fq
 "Looks up a fully qualified path in ref"
   input Graph inGraph;
-  input Ref inRef;
   input Absyn.Path inName;
   input Options inOptions;
   input Msg inMsg "Message flag, SOME() outputs lookup error messages";

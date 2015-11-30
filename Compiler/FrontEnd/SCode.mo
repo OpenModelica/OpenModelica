@@ -739,6 +739,17 @@ algorithm
   end match;
 end isElementExtends;
 
+public function isElementExtendsOrClassExtends
+  "Check if an element extends another class."
+  input Element ele;
+  output Boolean isExtend;
+algorithm
+  isExtend := match(ele)
+    case EXTENDS() then true;
+    else false;
+  end match;
+end isElementExtendsOrClassExtends;
+
 public function isNotElementClassExtends "
 check if an element is not of type CLASS_EXTENDS."
   input Element ele;

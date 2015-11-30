@@ -18,6 +18,49 @@ template programExternalHeader(SCode.Program program)
   /* adrpo: leave a newline at the end of file to get rid of the C warnings */
 end programExternalHeader;
 
+template programExternalHeaderFromTypes(list<DAE.Type> tys)
+::=
+  <<
+  /* Automatically generated header for bootstrapping MetaModelica */
+  #ifdef __cplusplus
+  extern "C" {
+  #endif
+  <%tys |> ty as T_METARECORD(source=path::_) =>
+      let fieldsStr=(ty.fields |> var as TYPES_VAR(__) => '"<%var.name%>"'; separator=",")
+      let omcname='<%stringReplace(stringReplace(Absyn.pathString(path,"$",false),"_","__"), "$", "_")%>'
+      let nElts = listLength(ty.fields)
+      /* adrpo 2011-03-14 make MSVC happy, no arrays of 0 size! */
+      let fieldsDescription =
+           match nElts
+           case "0" then
+             'ADD_METARECORD_DEFINITIONS const char* <%omcname%>__desc__fields[1] = {"no fields"};'
+           case _ then
+             'ADD_METARECORD_DEFINITIONS const char* <%omcname%>__desc__fields[<%nElts%>] = {<%fieldsStr%>};'
+      <<
+      #ifdef ADD_METARECORD_DEFINITIONS
+      #ifndef <%omcname%>__desc_added
+      #define <%omcname%>__desc_added
+      <%fieldsDescription%>
+      ADD_METARECORD_DEFINITIONS struct record_description <%omcname%>__desc = {
+        "<%omcname%>",
+        "<%Absyn.pathString(path,".",false)%>",
+        <%omcname%>__desc__fields
+      };
+      #endif
+      #else /* Only use the file as a header */
+      extern struct record_description <%omcname%>__desc;
+      #endif
+      >>
+      ; separator = "\n"
+  %>
+  #ifdef __cplusplus
+  }
+  #endif
+
+  >>
+  /* adrpo: leave a newline at the end of file to get rid of the C warnings */
+end programExternalHeaderFromTypes;
+
 template classExternalHeader(SCode.Element cl, String pack)
 ::=
 match cl case c as SCode.CLASS(classDef=p as SCode.PARTS(__)) then (p.elementLst |> elt => elementExternalHeader(elt,c.name))

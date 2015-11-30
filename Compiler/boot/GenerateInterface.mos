@@ -3,7 +3,11 @@ if not loadFile(inFile) then
   print("Failed to load file: " + inFile + "\n" + getErrorString());
   exit(1);
 end if;
-if OpenModelica.Scripting.writeFile(outFile, OpenModelica.Scripting.list(exportKind=OpenModelica.Scripting.ExportKind.MetaModelicaInterface)) and OpenModelica.Scripting.compareFilesAndMove(outFile,stringReplace(outFile,".stamp.mo.tmp",".interface.mo")) then
+if classAnnotationExists(className, __OpenModelica_isBaseClass) then
+  if OpenModelica.Scripting.writeFile(outFile, OpenModelica.Scripting.readFile(inFile)) and OpenModelica.Scripting.compareFilesAndMove(outFile,stringReplace(outFile,".stamp.mo.tmp",".interface.mo")) then
+    exit(0);
+  end if;
+elseif OpenModelica.Scripting.writeFile(outFile, OpenModelica.Scripting.list(exportKind=OpenModelica.Scripting.ExportKind.MetaModelicaInterface)) and OpenModelica.Scripting.compareFilesAndMove(outFile,stringReplace(outFile,".stamp.mo.tmp",".interface.mo")) then
   exit(0);
 end if;
 print(getErrorString());

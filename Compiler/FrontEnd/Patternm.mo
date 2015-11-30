@@ -39,44 +39,46 @@ encapsulated package Patternm
   This module contains the patternmatch algorithm for the MetaModelica
   matchcontinue expression."
 
-public import Absyn;
-public import AvlTreeString;
-public import Ceval;
-public import ClassInf;
-public import ConnectionGraph;
-public import DAE;
-public import FCore;
-public import HashTableStringToPath;
-public import SCode;
-public import Dump;
-public import InnerOuter;
-public import GlobalScript;
-public import Prefix;
-public import Types;
-public import UnitAbsyn;
+import Absyn;
+import Ceval;
+import ClassInf;
+import ConnectionGraph;
+import DAE;
+import FCore;
+import HashTableStringToPath;
+import SCode;
+import Dump;
+import InnerOuter;
+import GlobalScript;
+import Prefix;
+import Types;
+import UnitAbsyn;
 
-protected import Algorithm;
-protected import BaseHashTable;
-protected import ComponentReference;
-protected import Connect;
-protected import DAEUtil;
-protected import Expression;
-protected import ExpressionDump;
-protected import Error;
-protected import Flags;
-protected import FGraph;
-protected import Inst;
-protected import InstSection;
-protected import InstTypes;
-protected import InstUtil;
-protected import List;
-protected import Lookup;
-protected import MetaUtil;
-protected import SCodeUtil;
-protected import Static;
-protected import System;
-protected import Util;
-protected import SCodeDump;
+protected
+
+import Algorithm;
+import AvlTreeString;
+import BaseHashTable;
+import ComponentReference;
+import Connect;
+import DAEUtil;
+import Expression;
+import ExpressionDump;
+import Error;
+import Flags;
+import FGraph;
+import Inst;
+import InstSection;
+import InstTypes;
+import InstUtil;
+import List;
+import Lookup;
+import MetaUtil;
+import SCodeUtil;
+import Static;
+import System;
+import Util;
+import SCodeDump;
 
 protected function generatePositionalArgs "author: KS
   This function is used in the following cases:

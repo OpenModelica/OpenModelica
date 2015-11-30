@@ -101,7 +101,7 @@ interfaces: $(ALL_INTERFACES) $(ALL_SOURCES)
 
 %.stamp.mo:
 	@mkdir -p build
-	@echo 'echo(false);inFile := "$<";outFile := "$@.tmp"; runScript("GenerateInterface.mos"); print(getErrorString()); print("Something went horribly wrong for $@\\n"); exit(1);' > "$@.mos"
+	@echo 'echo(false);inFile := "$<";outFile := "$@.tmp"; className := $$TypeName($(@:$(GEN_DIR)%.stamp.mo=%)); runScript("GenerateInterface.mos"); print(getErrorString()); print("Something went horribly wrong for $@\\n"); exit(1);' > "$@.mos"
 	$(OMC) -n=1 $@.mos
 	@touch $@
 %.interface.mo: %.stamp.mo

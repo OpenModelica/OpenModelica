@@ -3040,7 +3040,6 @@ algorithm
   outAvlValues := List.map(avlTreeValues, getAvlValue);
 end getAvlValues;
 
-
 // ************************ END AVL Tree implementation ***************************
 // ************************ END AVL Tree implementation ***************************
 // ************************ END AVL Tree implementation ***************************
