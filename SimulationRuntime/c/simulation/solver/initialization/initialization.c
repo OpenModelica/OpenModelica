@@ -219,7 +219,10 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData, long nu
         data->simulationInfo.lambda = 1.0;
       }
 
-      data->callback->functionInitialEquations(data, threadData);
+      if(0 == step)
+        data->callback->functionInitialEquations_lambda0(data, threadData);
+      else
+        data->callback->functionInitialEquations(data, threadData);
 
       infoStreamPrint(LOG_INIT, 0, "lambda = %g done", data->simulationInfo.lambda);
 
@@ -256,7 +259,9 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData, long nu
     free(integerVars);
     free(booleanVars);
     omc_alloc_interface.free_uncollectable(stringVars);
-  } else {
+  }
+  else
+  {
     data->simulationInfo.lambda = 1.0;
     data->callback->functionInitialEquations(data, threadData);
   }

@@ -89,6 +89,7 @@ public function generateOpenTURNSInterface "generates the dll and the python scr
   BackendDAE.BackendDAE dae,strippedDae;
   SimCode.SimulationSettings simSettings;
   BackendDAE.BackendDAE initDAE;
+  Option<BackendDAE.BackendDAE> initDAE_lambda0;
   Boolean useHomotopy "true if homotopy(...) is used during initialization";
   list<BackendDAE.Equation> removedInitialEquationLst;
   list<BackendDAE.Var> primaryParameters "already sorted";
@@ -113,13 +114,13 @@ algorithm
  // Strip correlation vector from dae to be able to compile (bug in OpenModelica with vectors of records )
   strippedDae := stripCorrelationFromDae(inDaelow);
 
-  (strippedDae, initDAE, useHomotopy, removedInitialEquationLst, primaryParameters, allPrimaryParameters) := BackendDAEUtil.getSolvedSystem(strippedDae,"");
+  (strippedDae, initDAE, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters) := BackendDAEUtil.getSolvedSystem(strippedDae,"");
 
   //print("strippedDae :");
   //BackendDump.dump(strippedDae);
   _ := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND); // Is this necessary?
 
-  (libs, fileDir, _, _) := SimCodeMain.generateModelCode(strippedDae, initDAE, useHomotopy, removedInitialEquationLst, primaryParameters, allPrimaryParameters,inProgram, inPath, cname_str, SOME(simSettings), Absyn.FUNCTIONARGS({}, {}));
+  (libs, fileDir, _, _) := SimCodeMain.generateModelCode(strippedDae, initDAE, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters,inProgram, inPath, cname_str, SOME(simSettings), Absyn.FUNCTIONARGS({}, {}));
 
   //print("..compiling, fileNamePrefix = "+fileNamePrefix+"\n");
   CevalScript.compileModel(fileNamePrefix , libs);

@@ -77,12 +77,14 @@ public function solveInitialSystem "author: lochel
   input BackendDAE.BackendDAE inDAE "simulation system";
   output BackendDAE.BackendDAE outInitDAE "initialization system";
   output Boolean outUseHomotopy;
+  output Option<BackendDAE.BackendDAE> outInitDAE_lambda0 "initialization system for lambda=0";
   output list<BackendDAE.Equation> outRemovedInitialEquations;
   output list<BackendDAE.Var> outPrimaryParameters "already sorted";
   output list<BackendDAE.Var> outAllPrimaryParameters "already sorted";
 protected
   BackendDAE.BackendDAE dae;
   BackendDAE.BackendDAE initdae;
+  BackendDAE.BackendDAE initdae0;
   BackendDAE.EqSystem initsyst;
   BackendDAE.EqSystems systs;
   BackendDAE.EquationArray eqns, reeqns;
@@ -188,22 +190,31 @@ algorithm
     initdae := BackendDAEUtil.mapEqSystem(initdae, solveInitialSystemEqSystem);
     SimCodeFunctionUtil.execStat("solveInitialSystemEqSystem (initialization)");
 
-    // transform and optimize DAE
-    initOptModules := BackendDAEUtil.getInitOptModules(NONE());
-
-    matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(NONE());
-    daeHandler := BackendDAEUtil.getIndexReductionMethod(NONE());
-
     // solve system
     initdae := BackendDAEUtil.transformBackendDAE(initdae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
+    if useHomotopy then
+      initdae0 := BackendDAEUtil.copyBackendDAE(initdae);
+    end if;
 
     // simplify system
+    initOptModules := BackendDAEUtil.getInitOptModules(NONE());
+    matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(NONE());
+    daeHandler := BackendDAEUtil.getIndexReductionMethod(NONE());
     initdae := BackendDAEUtil.postOptimizeDAE(initdae, initOptModules, matchingAlgorithm, daeHandler);
+
     if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
       BackendDump.dumpBackendDAE(initdae, "solved initial system");
       if Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP) then
         BackendDump.graphvizBackendDAE(initdae, "dumpinitialsystem");
       end if;
+    end if;
+
+    // compute system for lambda=0
+    if useHomotopy then
+      initdae0 := BackendDAEUtil.postOptimizeDAE(initdae0, (replaceHomotopyWithSimplified, "replaceHomotopyWithSimplified")::initOptModules, matchingAlgorithm, daeHandler);
+      outInitDAE_lambda0 := SOME(initdae0);
+    else
+      outInitDAE_lambda0 := NONE();
     end if;
 
     // warn about selected default initial conditions
@@ -980,41 +991,35 @@ end selectInitializationVariables2;
 protected function simplifyInitialFunctions
   input DAE.Exp inExp;
   input Boolean inUseHomotopy;
-  output DAE.Exp exp;
-  output Boolean useHomotopy;
+  output DAE.Exp outExp;
+  output Boolean outUseHomotopy;
 algorithm
-  (exp, useHomotopy) := Expression.traverseExpBottomUp(inExp, simplifyInitialFunctionsExp, inUseHomotopy);
+  (outExp, outUseHomotopy) := Expression.traverseExpBottomUp(inExp, simplifyInitialFunctionsExp, inUseHomotopy);
 end simplifyInitialFunctions;
 
 protected function simplifyInitialFunctionsExp
   input DAE.Exp inExp;
-  input Boolean useHomotopy;
+  input Boolean inUseHomotopy;
   output DAE.Exp outExp;
   output Boolean outUseHomotopy;
 algorithm
-  (outExp, outUseHomotopy) := match (inExp, useHomotopy)
+  (outExp, outUseHomotopy) := match inExp
     local
-      DAE.Exp e1, e2, e3, actual, simplified;
+      DAE.Exp expr;
 
-    case (DAE.CALL(path = Absyn.IDENT(name="initial")), _)
-    then (DAE.BCONST(true), useHomotopy);
+    case DAE.CALL(path=Absyn.IDENT(name="initial"))
+    then (DAE.BCONST(true), inUseHomotopy);
 
-    case (DAE.CALL(path = Absyn.IDENT(name="sample")), _)
-    then (DAE.BCONST(false), useHomotopy);
+    case DAE.CALL(path=Absyn.IDENT(name="sample"))
+    then (DAE.BCONST(false), inUseHomotopy);
 
-    case (DAE.CALL(path = Absyn.IDENT(name="delay"), expLst = _::e1::_ ), _)
-    then (e1, useHomotopy);
+    case DAE.CALL(path=Absyn.IDENT(name="delay"), expLst=_::expr::_)
+    then (expr, inUseHomotopy);
 
-    case (DAE.CALL(path = Absyn.IDENT(name="homotopy"), expLst = actual::simplified::_ ), _) //equation
-    //  e1 = Expression.makePureBuiltinCall("homotopyParameter", {}, DAE.T_REAL_DEFAULT);
-    //  e2 = DAE.BINARY(e1, DAE.MUL(DAE.T_REAL_DEFAULT), actual);
-    //  e3 = DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.T_REAL_DEFAULT), e1);
-    //  e1 = DAE.BINARY(e3, DAE.MUL(DAE.T_REAL_DEFAULT), simplified);
-    //  e3 = DAE.BINARY(e2, DAE.ADD(DAE.T_REAL_DEFAULT), e1);
-    //then (e3, true);
+    case DAE.CALL(path=Absyn.IDENT(name="homotopy"))
     then (inExp, true);
 
-    else (inExp, useHomotopy);
+    else (inExp, inUseHomotopy);
   end match;
 end simplifyInitialFunctionsExp;
 
@@ -2478,6 +2483,52 @@ algorithm
     else (inExp, inUseHomotopy);
   end match;
 end removeInitializationStuff2;
+
+
+// =============================================================================
+// section for post-optimization module "replaceHomotopyWithSimplified"
+//
+// =============================================================================
+
+protected function replaceHomotopyWithSimplified
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE = inDAE;
+protected
+  list<BackendDAE.Equation> removedEqsList = {};
+  BackendDAE.Shared shared = inDAE.shared;
+algorithm
+  for eqs in outDAE.eqs loop
+    _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs.orderedEqs, replaceHomotopyWithSimplified1, false);
+    _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs.removedEqs, replaceHomotopyWithSimplified1, false);
+  end for;
+end replaceHomotopyWithSimplified;
+
+protected function replaceHomotopyWithSimplified1
+  input DAE.Exp inExp;
+  input Boolean inUseHomotopy;
+  output DAE.Exp outExp;
+  output Boolean outUseHomotopy;
+algorithm
+  (outExp, outUseHomotopy) := Expression.traverseExpBottomUp(inExp, replaceHomotopyWithSimplified2, inUseHomotopy);
+end replaceHomotopyWithSimplified1;
+
+protected function replaceHomotopyWithSimplified2
+  input DAE.Exp inExp;
+  input Boolean inUseHomotopy;
+  output DAE.Exp outExp;
+  output Boolean outUseHomotopy;
+algorithm
+  (outExp, outUseHomotopy) := match inExp
+    local
+      DAE.Exp simplified;
+
+    // replace homotopy(actual, simplified) with simplified
+    case DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst=_::simplified::_)
+    then (simplified, true);
+
+    else (inExp, inUseHomotopy);
+  end match;
+end replaceHomotopyWithSimplified2;
 
 annotation(__OpenModelica_Interface="backend");
 end Initialization;

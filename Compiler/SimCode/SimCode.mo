@@ -92,6 +92,7 @@ uniontype SimCode
     list<ClockedPartition> clockedPartitions;
     Boolean useHomotopy "true if homotopy(...) is used during initialization";
     list<SimEqSystem> initialEquations;
+    list<SimEqSystem> initialEquations_lambda0;
     list<SimEqSystem> removedInitialEquations;
     list<SimEqSystem> startValueEquations;
     list<SimEqSystem> nominalValueEquations;

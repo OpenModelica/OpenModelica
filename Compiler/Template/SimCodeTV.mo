@@ -275,6 +275,7 @@ package SimCode
       Boolean useSymbolicInitialization;         // true if a system to solve the initial problem symbolically is generated, otherwise false
       Boolean useHomotopy;                       // true if homotopy(...) is used during initialization
       list<SimEqSystem> initialEquations;
+      list<SimEqSystem> initialEquations_lambda0;
       list<SimEqSystem> removedInitialEquations;
       list<SimEqSystem> startValueEquations;
       list<SimEqSystem> nominalValueEquations;

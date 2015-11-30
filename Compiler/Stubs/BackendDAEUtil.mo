@@ -12,6 +12,7 @@ function getSolvedSystem<A>
   output A outSODE;
   output A outInitDAE;
   output Boolean outUseHomotopy;
+  output Option<A> outInitDAE_lambda0;
   output list<BackendDAE.Equation> outRemovedInitialEquationLst;
   output list<BackendDAE.Var> outPrimaryParameters;
   output list<BackendDAE.Var> outAllPrimaryParameters;
