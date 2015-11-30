@@ -1379,6 +1379,9 @@ void LibraryTreeModel::updateChildLibraryTreeItemClassText(LibraryTreeItem *pLib
         ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pChildLibraryTreeItem->getModelWidget()->getEditor());
         if (pModelicaTextEditor) {
           pModelicaTextEditor->setPlainText(pChildLibraryTreeItem->getClassText(this));
+          if (pModelicaTextEditor->isVisible()) {
+            pModelicaTextEditor->getPlainTextEdit()->getLineNumberArea()->update();
+          }
         }
       }
       if (pChildLibraryTreeItem->getChildren().size() > 0) {
@@ -1669,16 +1672,20 @@ void LibraryTreeModel::moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool u
   int row = pLibraryTreeItem->row();
   bool update = false;
   if (up && row > 0) {
-    if (beginMoveRows(parentIndex, row, row, parentIndex, row - 1)) {
-      pParentLibraryTreeItem->moveChild(row, row - 1);
-      endMoveRows();
-      update = true;
+    if (mpLibraryWidget->getMainWindow()->getOMCProxy()->moveClass(pLibraryTreeItem->getNameStructure(), -1)) {
+      if (beginMoveRows(parentIndex, row, row, parentIndex, row - 1)) {
+        pParentLibraryTreeItem->moveChild(row, row - 1);
+        endMoveRows();
+        update = true;
+      }
     }
   } else if (!up && row < pParentLibraryTreeItem->getChildren().size() - 1) {
-    if (beginMoveRows(parentIndex, row, row, parentIndex, row + 2)) {
-      pParentLibraryTreeItem->moveChild(row, row + 1);
-      endMoveRows();
-      update = true;
+    if (mpLibraryWidget->getMainWindow()->getOMCProxy()->moveClass(pLibraryTreeItem->getNameStructure(), 1)) {
+      if (beginMoveRows(parentIndex, row, row, parentIndex, row + 2)) {
+        pParentLibraryTreeItem->moveChild(row, row + 1);
+        endMoveRows();
+        update = true;
+      }
     }
   }
   if (update) {
@@ -1691,7 +1698,7 @@ void LibraryTreeModel::moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool u
         updateLibraryTreeItemClassText(pLibraryTreeItem);
       }
     } else {
-      // if we order in a package saved in folder strucutre then we should mark its parent unsaved so new package.order can be saved.
+      // if we order in a package saved in folder structure then we should mark its parent unsaved so new package.order can be saved.
       pParentLibraryTreeItem->setIsSaved(false);
       updateLibraryTreeItem(pParentLibraryTreeItem);
       if (pParentLibraryTreeItem->getModelWidget()) {
