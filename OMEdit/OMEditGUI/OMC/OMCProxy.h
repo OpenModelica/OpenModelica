@@ -223,6 +223,7 @@ public:
   void getInitializationMethods(QStringList *methods, QStringList *descriptions);
   void getLinearSolvers(QStringList *methods, QStringList *descriptions);
   void getNonLinearSolvers(QStringList *methods, QStringList *descriptions);
+  bool moveClass(QString className, int offset);
 signals:
   void commandFinished();
 public slots:

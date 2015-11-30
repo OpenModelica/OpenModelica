@@ -2433,6 +2433,18 @@ void OMCProxy::getNonLinearSolvers(QStringList *methods, QStringList *descriptio
 }
 
 /*!
+ * \brief OMCProxy::moveClass
+ * Moves the class.
+ * \param className
+ * \param offset
+ * \return
+ */
+bool OMCProxy::moveClass(QString className, int offset)
+{
+  return mpOMCInterface->moveClass(className, offset);
+}
+
+/*!
   \class CustomExpressionBox
   \brief A text box for executing OMC commands.
   */
