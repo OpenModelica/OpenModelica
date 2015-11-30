@@ -671,7 +671,7 @@ void LibraryTreeItem::handleLoaded(LibraryTreeItem *pLibraryTreeItem)
     if (!pLibraryTreeItem->getModelWidget()) {
       pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, "", false);
     }
-    mpModelWidget->reDrawModelWidget();
+    mpModelWidget->reDrawModelWidgetInheritedClasses();
     // load new icon for the class.
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
     // update the icon in the libraries browser view.
@@ -687,7 +687,7 @@ void LibraryTreeItem::handleLoaded(LibraryTreeItem *pLibraryTreeItem)
 void LibraryTreeItem::handleUnloaded()
 {
   if (mpModelWidget) {
-    mpModelWidget->reDrawModelWidget();
+    mpModelWidget->reDrawModelWidgetInheritedClasses();
     MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
     // load new icon for the class.
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
@@ -1114,14 +1114,15 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
 /*!
  * \brief LibraryTreeModel::createLibraryTreeItem
  * Creates a LibraryTreeItem
- * \param library
+ * \param name
  * \param pParentLibraryTreeItem
  * \param isSaved
  * \param isSystemLibrary
  * \param load
+ * \param row
  */
 LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved,
-                                                         bool isSystemLibrary, bool load)
+                                                         bool isSystemLibrary, bool load, int row)
 {
   QString nameStructure = pParentLibraryTreeItem->getNameStructure().isEmpty() ? name : pParentLibraryTreeItem->getNameStructure() + "." + name;
   if (mpLibraryWidget->getMainWindow()->getStatusBar()) {
@@ -1131,7 +1132,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, LibraryTr
   LibraryTreeItem *pLibraryTreeItem = findNonExistingLibraryTreeItem(nameStructure);
   if (pLibraryTreeItem && pLibraryTreeItem->isNonExisting()) {
     pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? isSystemLibrary : pParentLibraryTreeItem->isSystemLibrary());
-    createNonExistingLibraryTreeItem(pLibraryTreeItem, pParentLibraryTreeItem, isSaved);
+    createNonExistingLibraryTreeItem(pLibraryTreeItem, pParentLibraryTreeItem, isSaved, row);
     if (load) {
       // create library tree items
       createLibraryTreeItems(pLibraryTreeItem);
@@ -1144,8 +1145,9 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, LibraryTr
     OMCInterface::getClassInformation_res classInformation = pOMCProxy->getClassInformation(nameStructure);
     pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::Modelica, name, nameStructure, classInformation, "", isSaved, pParentLibraryTreeItem);
     pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? isSystemLibrary : pParentLibraryTreeItem->isSystemLibrary());
-
-    int row = pParentLibraryTreeItem->getChildren().size();
+    if (row == -1) {
+      row = pParentLibraryTreeItem->getChildren().size();
+    }
     QModelIndex index = libraryTreeItemIndex(pParentLibraryTreeItem);
     beginInsertRows(index, row, row);
     pParentLibraryTreeItem->insertChild(row, pLibraryTreeItem);
@@ -1228,8 +1230,10 @@ LibraryTreeItem* LibraryTreeModel::createNonExistingLibraryTreeItem(QString name
  * \param pLibraryTreeItem
  * \param pParentLibraryTreeItem
  * \param isSaved
+ * \param row
  */
-void LibraryTreeModel::createNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved)
+void LibraryTreeModel::createNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem,
+                                                        bool isSaved, int row)
 {
   pLibraryTreeItem->setParent(pParentLibraryTreeItem);
   OMCProxy *pOMCProxy = mpLibraryWidget->getMainWindow()->getOMCProxy();
@@ -1237,7 +1241,9 @@ void LibraryTreeModel::createNonExistingLibraryTreeItem(LibraryTreeItem *pLibrar
   pLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pLibraryTreeItem->getNameStructure()));
   pLibraryTreeItem->setIsSaved(isSaved);
   pLibraryTreeItem->updateAttributes();
-  int row = pParentLibraryTreeItem->getChildren().size();
+  if (row == -1) {
+    row = pParentLibraryTreeItem->getChildren().size();
+  }
   QModelIndex index = libraryTreeItemIndex(pParentLibraryTreeItem);
   beginInsertRows(index, row, row);
   pParentLibraryTreeItem->insertChild(row, pLibraryTreeItem);
@@ -1660,6 +1666,73 @@ bool LibraryTreeModel::unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bo
 }
 
 /*!
+ * \brief LibraryTreeModel::unloadLibraryTreeItem
+ * Removes the LibraryTreeItem and deletes the Modelica class.
+ * \param pLibraryTreeItem
+ * \return
+ */
+bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* Delete the class in OMC.
+   * If deleteClass is successfull remove the class from Library Browser.
+   */
+  if (mpLibraryWidget->getMainWindow()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
+    /* QSortFilterProxy::filterAcceptRows changes the expand/collapse behavior of indexes or I am using it in some stupid way.
+     * If index is expanded and we delete it then the next sibling index automatically becomes expanded.
+     * The following code overcomes this issue. It stores the next index expand state and then apply it after deletion.
+     */
+    int row = pLibraryTreeItem->row();
+    LibraryTreeItem *pNextLibraryTreeItem = 0;
+    bool expandState;
+    if (pLibraryTreeItem->parent()->getChildren().size() > row + 1) {
+      pNextLibraryTreeItem = pLibraryTreeItem->parent()->child(row + 1);
+      QModelIndex modelIndex = libraryTreeItemIndex(pNextLibraryTreeItem);
+      QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+      expandState = mpLibraryWidget->getLibraryTreeView()->isExpanded(proxyIndex);
+    }
+    // make the class non existing
+    pLibraryTreeItem->setNonExisting(true);
+    pLibraryTreeItem->setClassText("");
+    // make the class non expanded
+    pLibraryTreeItem->setExpanded(false);
+    pLibraryTreeItem->removeInheritedClasses();
+    // notify the inherits classes
+    pLibraryTreeItem->emitUnLoaded();
+    addNonExistingLibraryTreeItem(pLibraryTreeItem);
+    // remove the LibraryTreeItem from Libraries Browser
+    row = pLibraryTreeItem->row();
+    beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem), row, row);
+    pLibraryTreeItem->parent()->removeChild(pLibraryTreeItem);
+    endRemoveRows();
+
+    if (pNextLibraryTreeItem) {
+      QModelIndex modelIndex = libraryTreeItemIndex(pNextLibraryTreeItem);
+      QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+      mpLibraryWidget->getLibraryTreeView()->setExpanded(proxyIndex, expandState);
+    }
+    /* Update the model switcher toolbar button. */
+    mpLibraryWidget->getMainWindow()->updateModelSwitcherMenu(0);
+//    if (!pLibraryTreeItem->isTopLevel()) {
+//      LibraryTreeItem *pContainingFileParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
+//      // if we unload in a package saved in one file strucutre then we should update its containing file item text.
+//      if (pContainingFileParentLibraryTreeItem != pLibraryTreeItem) {
+//        updateLibraryTreeItemClassText(pContainingFileParentLibraryTreeItem);
+//      } else {
+//        // if we unload in a package saved in folder strucutre then we should mark its parent unsaved.
+//        pLibraryTreeItem->parent()->setIsSaved(false);
+//        updateLibraryTreeItem(pLibraryTreeItem->parent());
+//      }
+//    }
+    return true;
+  } else {
+    QMessageBox::critical(mpLibraryWidget->getMainWindow(), QString(Helper::applicationName).append(" - ").append(Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(mpLibraryWidget->getMainWindow()->getOMCProxy()->getResult())
+                          .append(tr("while deleting ") + pLibraryTreeItem->getNameStructure()), Helper::ok);
+    return false;
+  }
+}
+
+/*!
  * \brief LibraryTreeModel::moveClassUpDown
  * Moves the class one level up/down.
  * \param pLibraryTreeItem
@@ -1894,6 +1967,7 @@ void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, Libr
   }
   // make the class non existing
   pLibraryTreeItem->setNonExisting(true);
+  pLibraryTreeItem->setClassText("");
   // make the class non expanded
   pLibraryTreeItem->setExpanded(false);
   pLibraryTreeItem->removeInheritedClasses();
@@ -2052,12 +2126,6 @@ void LibraryTreeView::createActions()
   mpUnloadTLMFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
   mpUnloadTLMFileAction->setStatusTip(Helper::unloadTLMOrTextTip);
   connect(mpUnloadTLMFileAction, SIGNAL(triggered()), SLOT(unloadTLMOrTextFile()));
-  /*
-  // refresh Action
-  mpRefreshAction = new QAction(QIcon(":/Resources/icons/refresh.svg"), Helper::refresh, this);
-  mpRefreshAction->setStatusTip(tr("Refresh the Modelica class"));
-  connect(mpRefreshAction, SIGNAL(triggered()), SLOT(refresh()));
-  */
   // Export FMU Action
   mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::exportFMU, this);
   mpExportFMUAction->setStatusTip(Helper::exportFMUTip);
@@ -2200,8 +2268,6 @@ void LibraryTreeView::showContextMenu(QPoint point)
           } else if (pLibraryTreeItem->isSystemLibrary() && pLibraryTreeItem->isTopLevel()) {
             menu.addAction(mpUnloadClassAction);
           }
-          /* Only used for development testing. */
-          /*menu.addAction(mpRefreshAction);*/
         }
         menu.addSeparator();
         menu.addAction(mpExportFMUAction);

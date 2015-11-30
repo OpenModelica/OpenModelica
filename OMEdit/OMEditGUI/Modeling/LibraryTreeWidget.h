@@ -218,10 +218,11 @@ public:
   void addModelicaLibraries(QSplashScreen *pSplashScreen);
   void createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
-                                         bool isSystemLibrary = false, bool load = false);
+                                         bool isSystemLibrary = false, bool load = false, int row = -1);
   LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, bool isSaved);
   LibraryTreeItem* createNonExistingLibraryTreeItem(QString nameStructure);
-  void createNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true);
+  void createNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
+                                        int row = -1);
   void loadNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void checkIfAnyNonExistingClassLoaded();
   void addNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.append(pLibraryTreeItem);}
@@ -238,6 +239,7 @@ public:
   void showHideProtectedClasses();
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
+  bool unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool up);
   void moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, bool top);
   QString getUniqueTopLevelItemName(QString name, int number = 1);
@@ -286,7 +288,6 @@ private:
   QAction *mpDuplicateClassAction;
   QAction *mpUnloadClassAction;
   QAction *mpUnloadTLMFileAction;
-  QAction *mpRefreshAction;
   QAction *mpExportFMUAction;
   QAction *mpExportXMLAction;
   QAction *mpExportFigaroAction;

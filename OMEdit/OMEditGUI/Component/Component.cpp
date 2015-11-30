@@ -1064,6 +1064,7 @@ void Component::createClassComponents()
       Component *pNewComponent = new Component(pComponent, this);
       // Set the Parent Item to 0 beacause we don't want to render Diagram components. We just want to store them for Parameters Dialog.
       pNewComponent->setParentItem(0);
+      mpGraphicsView->removeItem(pNewComponent);
       mComponentsList.append(pNewComponent);
     }
   }
