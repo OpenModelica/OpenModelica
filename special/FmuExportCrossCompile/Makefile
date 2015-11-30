@@ -16,6 +16,7 @@ test: clean
 	unzip -q FmuExportCrossCompile.fmu -d FmuExportCrossCompile.fmutmp
 	$(MAKE) check-files
 	$(MAKE) fmu-check
+	cp FmuExportCrossCompile.fmu FmuExportCrossCompile-archive.fmu
 	$(MAKE) clean
 check-files:
 	@file FmuExportCrossCompile.fmutmp/binaries/win32/FmuExportCrossCompile.dll | grep "PE32 executable (DLL) (console) Intel 80386, for MS Windows" || (file FmuExportCrossCompile.fmutmp/binaries/win32/FmuExportCrossCompile.dll ; false)
