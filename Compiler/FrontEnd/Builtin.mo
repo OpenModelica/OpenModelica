@@ -550,7 +550,7 @@ public function getInitialFunctions
 algorithm
   (initialProgram,initialSCodeProgram) := matchcontinue ()
     local
-      String fileModelica,fileMetaModelica,fileParModelica;
+      String fileModelica,fileMetaModelica,fileParModelica,filePDEModelica;
       list<tuple<Integer,tuple<Absyn.Program,SCode.Program>>> assocLst;
       list<Absyn.Class> classes,classes1,classes2;
       Absyn.Program p;
@@ -606,6 +606,22 @@ algorithm
         assocLst = getGlobalRoot(Global.builtinIndex);
         setGlobalRoot(Global.builtinIndex, (Flags.MODELICA,(p,sp))::assocLst);
       then (p,sp);
+    case ()
+      equation
+        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA);
+        fileModelica = Settings.getInstallationDirectoryPath() + "/lib/omc/ModelicaBuiltin.mo";
+        filePDEModelica = Settings.getInstallationDirectoryPath() + "/lib/omc/PDEModelicaBuiltin.mo";
+        Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
+        Error.assertionOrAddSourceMessage(System.regularFileExists(filePDEModelica),Error.FILE_NOT_FOUND_ERROR,{filePDEModelica},Absyn.dummyInfo);
+        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltin(fileModelica,"UTF-8");
+        Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltin(filePDEModelica,"UTF-8");
+        classes = listAppend(classes1,classes2);
+        p = Absyn.PROGRAM(classes,Absyn.TOP());
+        sp = List.map(classes, SCodeUtil.translateClass);
+        assocLst = getGlobalRoot(Global.builtinIndex);
+        setGlobalRoot(Global.builtinIndex, (Flags.PDEMODELICA,(p,sp))::assocLst);
+      then (p,sp);
+
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Builtin.getInitialFunctions failed."});

@@ -664,28 +664,6 @@ function inStream
 end inStream;
 
 
-/*PDE extension built-ins*/
-/*function pder "Partial space derivative of the input expression in the first argument with respect to second argument"
-  input Real u(unit="'p");
-  input Real x(unit="'q");
-  output Real du(unit="'p/'q");
-external "builtin";
-annotation(Documentation(info="<html>
-  See <a href=\"???\">der()</a>
-</html>"));
-end pder;
-*/
-
-record DomainLineSegment1D
-  record Region
-  end Region;
-  parameter Real L=1;
-  constant Integer N=10;
-  parameter Real dx = L / (N-1);
-  parameter Real[N] x = array(i*dx for i in 0:N-1);
-  Region left, right, interior;
-end DomainLineSegment1D;
-
 /* Extension for uncertainty computations */
 record Distribution
   String name "the name of the distibution, e.g \"normal\" ";
