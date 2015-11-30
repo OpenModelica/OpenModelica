@@ -1062,7 +1062,7 @@ algorithm
        outRhs := Expression.expAdd(outRhs,Expression.makeSum(rhs));
        (outRhs,_) := ExpressionSimplify.simplify1(outRhs);
 
-       resTerms := Expression.allTerms(outLhs);
+       resTerms := Expression.allTermsForCref(outLhs, Expression.expOrDerCref(inExp3));
        (lhs, rhs) := List.split1OnTrue(resTerms, expHasCref, inExp3);
        // sort
        // a*f(x)*b -> c*f(x)
