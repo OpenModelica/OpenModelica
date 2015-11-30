@@ -198,9 +198,9 @@ public:
   void bringForward(ShapeAnnotation *pShape);
   void sendToBack(ShapeAnnotation *pShape);
   void sendBackward(ShapeAnnotation *pShape);
-  void removeAllComponents();
-  void removeAllShapes();
-  void removeAllConnections();
+  void removeAllComponents() {mComponentsList.clear();}
+  void removeAllShapes() {mShapesList.clear();}
+  void removeAllConnections() {mConnectionsList.clear();}
   void createLineShape(QPointF point);
   void createPolygonShape(QPointF point);
   void createRectangleShape(QPointF point);
@@ -324,6 +324,7 @@ class ModelWidget : public QWidget
 public:
   ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text);
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
+  void setLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;}
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
   QToolButton* getIconViewToolButton() {return mpIconViewToolButton;}
   QToolButton* getDiagramViewToolButton() {return mpDiagramViewToolButton;}
@@ -343,7 +344,7 @@ public:
   QMap<QString, QMap<QString, QString> > getExtendsModifiersMap() {return mExtendsModifiersMap;}
   QMap<QString, QString> getExtendsModifiersMap(QString extendsClass);
   void fetchExtendsModifiers(QString extendsClass);
-  void reDrawModelWidget();
+  void reDrawModelWidgetInheritedClasses();
   ShapeAnnotation* createNonExistingInheritedShape(GraphicsView *pGraphicsView);
   ShapeAnnotation* createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   Component* createInheritedComponent(Component *pComponent, GraphicsView *pGraphicsView);
@@ -352,7 +353,7 @@ public:
   void loadConnections();
   void createModelWidgetComponents();
   Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
-  void refresh();
+  void reDrawModelWidget();
   bool validateText();
   bool modelicaEditorTextChanged();
   void clearSelection();

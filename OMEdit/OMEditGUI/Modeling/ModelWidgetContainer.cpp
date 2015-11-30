@@ -631,21 +631,6 @@ void GraphicsView::sendBackward(ShapeAnnotation *pShape)
   addClassAnnotation();
 }
 
-void GraphicsView::removeAllComponents()
-{
-  mComponentsList.clear();
-}
-
-void GraphicsView::removeAllShapes()
-{
-  mShapesList.clear();
-}
-
-void GraphicsView::removeAllConnections()
-{
-  mConnectionsList.clear();
-}
-
 void GraphicsView::createLineShape(QPointF point)
 {
   if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
@@ -2293,7 +2278,11 @@ void ModelWidget::fetchExtendsModifiers(QString extendsClass)
   mExtendsModifiersMap.insert(extendsClass, extendsModifiersMap);
 }
 
-void ModelWidget::reDrawModelWidget()
+/*!
+ * \brief ModelWidget::reDrawModelWidgetInheritedClasses
+ * Redraws the class inherited classes shapes, components and connections.
+ */
+void ModelWidget::reDrawModelWidgetInheritedClasses()
 {
   removeInheritedClassShapes(StringHandler::Icon);
   drawModelInheritedClassShapes(this, StringHandler::Icon);
@@ -2677,7 +2666,11 @@ Component* ModelWidget::getConnectorComponent(Component *pConnectorComponent, QS
   return pConnectorComponentFound;
 }
 
-void ModelWidget::refresh()
+/*!
+ * \brief ModelWidget::reDrawModelWidget
+ * Redraws the ModelWidget.
+ */
+void ModelWidget::reDrawModelWidget()
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   /* set the LibraryTreeItem filename, type & tooltip */
@@ -2685,7 +2678,6 @@ void ModelWidget::refresh()
   pOMCProxy->setSourceFile(mpLibraryTreeItem->getNameStructure(), mpLibraryTreeItem->getFileName());
   mpLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(mpLibraryTreeItem->getNameStructure()));
   mpLibraryTreeItem->updateAttributes();
-//  mpModelWidgetContainer->getMainWindow()->getLibraryWidget()->loadLibraryComponent(mpLibraryTreeItem);
   /* remove everything from the icon view */
   mpIconGraphicsView->removeAllComponents();
   mpIconGraphicsView->removeAllShapes();
@@ -2697,18 +2689,52 @@ void ModelWidget::refresh()
   mpDiagramGraphicsView->removeAllConnections();
   mpDiagramGraphicsView->scene()->clear();
   /* get model components, connection and shapes. */
-  if (getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM)
-  {
+  if (getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::TLM) {
     getTLMComponents();
     getTLMConnections();
-  }
-  else
-  {
+  } else {
+    // reset flags
+    mDiagramViewLoaded = false;
+    mConnectionsLoaded = false;
+    mExtendsModifiersLoaded = false;
+    // remove saved inherited classes
+    clearInheritedClasses();
+    // get inherited classes
     getModelInheritedClasses();
-    //getModelIconDiagramShapes(getLibraryTreeItem()->getNameStructure());
+    // Draw Icon shapes and inherited shapes
+    removeInheritedClassShapes(StringHandler::Icon);
+    drawModelInheritedClassShapes(this, StringHandler::Icon);
+    getModelIconDiagramShapes(StringHandler::Icon);
+    // Draw Diagram shapes and inherited shapes
+    removeInheritedClassShapes(StringHandler::Diagram);
+    drawModelInheritedClassShapes(this, StringHandler::Diagram);
+    getModelIconDiagramShapes(StringHandler::Diagram);
+    // clear the components and their annotations
+    mComponentsList.clear();
+    mComponentsAnnotationsList.clear();
+    // get the model components
     getModelComponents();
+    // Draw Icon components and inherited components
+    removeInheritedClassComponents(StringHandler::Icon);
+    drawModelInheritedClassComponents(this, StringHandler::Icon);
+    drawModelIconComponents();
+    // Draw Diagram components and inherited components
+    removeInheritedClassComponents(StringHandler::Diagram);
+    drawModelInheritedClassComponents(this, StringHandler::Diagram);
+    drawModelDiagramComponents();
+    // Draw Diagram connections and inherited connections
+    removeInheritedClassConnections();
+    drawModelInheritedClassConnections(this);
+    getModelConnections();
+    mDiagramViewLoaded = true;
+    mConnectionsLoaded = true;
+    // update the icon
+    mpLibraryTreeItem->handleIconUpdated();
+    // clear the undo stack
+    mpUndoStack->clear();
+    // announce the change.
+    mpLibraryTreeItem->emitLoaded();
   }
-
   QApplication::restoreOverrideCursor();
 }
 
@@ -2730,6 +2756,13 @@ bool ModelWidget::validateText()
   return true;
 }
 
+/*!
+ * \brief ModelWidget::modelicaEditorTextChanged
+ * Called when Modelica text has been changed by user manually.\n
+ * Updates the LibraryTreeItem and ModelWidget with new changes.
+ * \return
+ * \sa ModelicaTextEditor::getClassNames()
+ */
 bool ModelWidget::modelicaEditorTextChanged()
 {
   QString errorString;
@@ -2745,43 +2778,56 @@ bool ModelWidget::modelicaEditorTextChanged()
     return false;
   }
   /* if no errors are found with the Modelica Text then load it in OMC */
+  QString className = classNames.at(0);
   QString modelicaText = pModelicaTextEditor->getPlainTextEdit()->toPlainText();
-  if (!pOMCProxy->loadString("within " + mpLibraryTreeItem->parent()->getNameStructure() + ";" + modelicaText, classNames.at(0))) {
+  if (!pOMCProxy->loadString("within " + mpLibraryTreeItem->parent()->getNameStructure() + ";" + modelicaText, className)) {
     return false;
   }
-  /* first handle the current class */
-  /* if user has changed the class then refresh it. */
-  if (classNames.contains(mpLibraryTreeItem->getNameStructure())) {
-    /* if class has children then delete them. */
-    pLibraryTreeModel->unloadClass(mpLibraryTreeItem, false);
-    classNames.removeOne(mpLibraryTreeItem->getNameStructure());
-    refresh();
-    /* if class has children then create them. */
-    pLibraryTreeModel->createLibraryTreeItems(mpLibraryTreeItem);
-    //setModelModified();
+  /* if user has changed the class contents then refresh it. */
+  if (className.compare(mpLibraryTreeItem->getNameStructure()) == 0) {
+    reDrawModelWidget();
+    mpLibraryTreeItem->setClassText(modelicaText);
+    updateModelicaText();
+  } else {
+    /* if user has changed the class name then delete this class.
+     * Update the LibraryTreeItem with new class name and then refresh it.
+     */
+    int row = mpLibraryTreeItem->row();
+    pLibraryTreeModel->unloadLibraryTreeItem(mpLibraryTreeItem);
+    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(className, pLibraryTreeModel->getRootLibraryTreeItem(), true,
+                                                                                 false, false, row);
+    // make the new created LibraryTreeItem selected
+    QModelIndex modelIndex = pLibraryTreeModel->libraryTreeItemIndex(pLibraryTreeItem);
+    LibraryTreeView *pLibraryTreeView = mpModelWidgetContainer->getMainWindow()->getLibraryWidget()->getLibraryTreeView();
+    pLibraryTreeView->selectionModel()->clearSelection();
+    pLibraryTreeView->selectionModel()->select(modelIndex, QItemSelectionModel::Select);
+    // update class text
+    pLibraryTreeItem->setClassText(modelicaText);
+    pLibraryTreeItem->setModelWidget(this);
+    setLibraryTreeItem(pLibraryTreeItem);
+    setModelFilePathLabel(pLibraryTreeItem->getFileName());
+    reDrawModelWidget();
+    updateModelicaText();
   }
-  /*
-    if user has changed the class name then delete this class.
-    Update the LibraryTreeItem with new class name and then refresh it.
-    */
-  else
-  {
-    /* if class has children then delete them. */
-    pLibraryTreeModel->unloadClass(mpLibraryTreeItem, false);
-    /* call setModelModified before deleting the class so we can get rid of cache commands of this object. */
-    //setModelModified();
-    pOMCProxy->deleteClass(mpLibraryTreeItem->getNameStructure());
-    QString className = classNames.first();
-    classNames.removeFirst();
-    /* set the LibraryTreeItem name & text */
-    mpLibraryTreeItem->setName(StringHandler::getLastWordAfterDot(className));
-    mpLibraryTreeItem->setNameStructure(className);
-    //setModelModified();
-    /* get the model components, shapes & connectors */
-    refresh();
-    /* if class has children then create them. */
-    pLibraryTreeModel->createLibraryTreeItems(mpLibraryTreeItem);
-  }
+
+//  else
+//  {
+//    /* if class has children then delete them. */
+//    pLibraryTreeModel->unloadClass(mpLibraryTreeItem, false);
+//    /* call setModelModified before deleting the class so we can get rid of cache commands of this object. */
+//    //setModelModified();
+//    pOMCProxy->deleteClass(mpLibraryTreeItem->getNameStructure());
+//    QString className = classNames.first();
+//    classNames.removeFirst();
+//    /* set the LibraryTreeItem name & text */
+//    mpLibraryTreeItem->setName(StringHandler::getLastWordAfterDot(className));
+//    mpLibraryTreeItem->setNameStructure(className);
+//    //setModelModified();
+//    /* get the model components, shapes & connectors */
+//    reDrawModelWidget();
+//    /* if class has children then create them. */
+//    pLibraryTreeModel->createLibraryTreeItems(mpLibraryTreeItem);
+//  }
   return true;
 }
 
@@ -3497,8 +3543,7 @@ void ModelWidget::makeFileWritAble()
 void ModelWidget::showDocumentationView()
 {
   // validate the modelica text before switching to documentation view
-  ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpEditor);
-  if (pModelicaTextEditor && !pModelicaTextEditor->validateText()) {
+  if (!validateText()) {
     mpTextViewToolButton->setChecked(true);
     return;
   }
@@ -3534,7 +3579,7 @@ bool ModelWidget::TLMEditorTextChanged()
     return false;
   }
   /* get the model components and connectors */
-  refresh();
+  reDrawModelWidget();
   return true;
 }
 

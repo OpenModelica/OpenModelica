@@ -135,8 +135,13 @@ ModelicaTextEditor::ModelicaTextEditor(ModelWidget *pParent)
   setModelicaTextDocument(mpPlainTextEdit->document());
 }
 
-//! Uses the OMC parseString API to check the class names inside the Modelica Text
-//! @return QStringList a list of class names
+/*!
+ * \brief ModelicaTextEditor::getClassNames
+ * Uses the OMC parseString API to check the class names inside the Modelica Text
+ * \param errorString
+ * \return QStringList a list of class names
+ * \sa ModelWidget::modelicaEditorTextChanged()
+ */
 QStringList ModelicaTextEditor::getClassNames(QString *errorString)
 {
   OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
@@ -146,11 +151,8 @@ QStringList ModelicaTextEditor::getClassNames(QString *errorString)
     *errorString = tr("Start and End modifiers are different");
     return QStringList();
   } else {
-    if (pLibraryTreeItem->isTopLevel()) {
-      classNames = pOMCProxy->parseString(mpPlainTextEdit->toPlainText(), pLibraryTreeItem->getNameStructure());
-    } else {
-      classNames = pOMCProxy->parseString("within " + pLibraryTreeItem->parent()->getNameStructure() + ";" + mpPlainTextEdit->toPlainText(), pLibraryTreeItem->getNameStructure());
-    }
+    classNames = pOMCProxy->parseString("within " + pLibraryTreeItem->parent()->getNameStructure() + ";" + mpPlainTextEdit->toPlainText(),
+                                        pLibraryTreeItem->getNameStructure());
   }
   // if user is defining multiple top level classes.
   if (classNames.size() > 1) {
@@ -161,20 +163,16 @@ QStringList ModelicaTextEditor::getClassNames(QString *errorString)
   bool existModel = false;
   QStringList existingmodelsList;
   // check if the class already exists
-  foreach(QString className, classNames)
-  {
-    if (pLibraryTreeItem->getNameStructure().compare(className) != 0)
-    {
-      if (pOMCProxy->existClass(className))
-      {
+  foreach(QString className, classNames) {
+    if (pLibraryTreeItem->getNameStructure().compare(className) != 0) {
+      if (mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className)) {
         existingmodelsList.append(className);
         existModel = true;
       }
     }
   }
   // check if existModel is true
-  if (existModel)
-  {
+  if (existModel) {
     *errorString = QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES)).arg(existingmodelsList.join(",")).append("\n")
         .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(""));
     return QStringList();
@@ -276,7 +274,6 @@ void ModelicaTextEditor::contentsHasChanged(int position, int charsRemoved, int 
     } else {
       /* if user is changing the normal class. */
       if (!mForceSetPlainText) {
-        //mpModelWidget->setModelModified();
         mTextChanged = true;
       }
       /* Keep the line numbers and the block information for the line breakpoints updated */
