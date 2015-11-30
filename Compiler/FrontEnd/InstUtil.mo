@@ -8744,7 +8744,7 @@ public function elabField
   input SCode.Attributes attr;
   input DAE.Dimensions inDims;
   input DAE.Mod inMod;
-  input SourceInfo info;
+  input SourceInfo inInfo;
   output DAE.Dimensions outDims;
   output DAE.Mod outMod;
   output Option<Tuple<Absyn.ComponentRef,DAE.ComponentRef>> outFieldDomOpt;
@@ -8756,24 +8756,25 @@ algorithm
       SCode.Final finalPrefix;
       SCode.Each  eachPrefix;
       list<DAE.SubMod> subModLst;
-      Option<DAE.EqMod> eqModOption;
+      Option<DAE.EqMod> binding;
+      DAE.SourceInfo info;
       Integer N;
       DAE.ComponentRef dcr;
     case(SCode.ATTR(isField=Absyn.NONFIELD()),_)
       //TODO: check that the domain attribute (modifier) is not present.
       then
         (inDims,inMod,NONE());
-    case(SCode.ATTR(isField=Absyn.FIELD()),DAE.MOD(finalPrefix = finalPrefix, eachPrefix = eachPrefix, subModLst = subModLst, eqModOption = eqModOption))
+    case(SCode.ATTR(isField=Absyn.FIELD()),DAE.MOD(finalPrefix = finalPrefix, eachPrefix = eachPrefix, subModLst = subModLst, binding = binding, info = info))
       equation
 //        DAE.MOD(finalPrefix = finalPrefix, eachPrefix = eachPrefix, subModLst = subModLst, eqModOption = eqModOption) = inMod;
         //get N from the domain and remove domain from the subModLst:
         (N, subModLst, SOME(dcr)) = List.fold30(subModLst,domainSearchFun,-1,{},NONE());
         if (N == -1) then Error.addSourceMessageAndFail(Error.PDEModelica_ERROR,
-            {"Domain of the field variable '", name, "' not found."}, info);
+            {"Domain of the field variable '", name, "' not found."}, inInfo);
         end if;
         subModLst = listReverse(subModLst);
         subModLst = List.map(subModLst,addEach);
-        outMod = DAE.MOD(finalPrefix, eachPrefix, subModLst, eqModOption);
+        outMod = DAE.MOD(finalPrefix, eachPrefix, subModLst, binding, info);
         dim_f = DAE.DIM_INTEGER(N);
       then
         (dim_f::inDims, outMod, SOME((Absyn.CREF_IDENT(name, {}),dcr)));
@@ -8802,7 +8803,7 @@ protected function domainSearchFun
       list<DAE.Var> varLst;
       Integer N;
       DAE.ComponentRef cr;
-    case DAE.NAMEMOD(ident="domain", mod=DAE.MOD(eqModOption=SOME(
+    case DAE.NAMEMOD(ident="domain", mod=DAE.MOD(binding=SOME(
           DAE.TYPED(
             modifierAsExp=DAE.CREF(
               componentRef = cr,
@@ -8851,15 +8852,16 @@ protected function addEach
   protected SCode.Final finalPrefix;
   protected SCode.Each eachPrefix;
   protected list<DAE.SubMod> subModLst;
-  protected Option<DAE.EqMod> eqModOption;
+  protected Option<DAE.EqMod> binding;
+  protected DAE.SourceInfo info;
 
 /*  equation
     DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, _, subModLst, eqModOption)) = inSubMod;
     outSubMod = DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, SCode.EACH(), subModLst, eqModOption));*/
   algorithm
     outSubMod := match inSubMod
-      case DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, _, subModLst, eqModOption))
-      then DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, SCode.EACH(), subModLst, eqModOption));
+      case DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, _, subModLst, binding, info))
+      then DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, SCode.EACH(), subModLst, binding, info));
     end match;
 end addEach;
 
