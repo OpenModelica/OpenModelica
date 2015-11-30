@@ -1029,12 +1029,9 @@ public function daeSize
 "author: Frenkel TUD
   Returns the size of the dae system, which correspondents to the number of variables."
   input BackendDAE.BackendDAE inDAE;
-  output Integer outSize;
-protected
-  list<Integer> sizes;
+  output Integer sz;
 algorithm
-  sizes := List.map(inDAE.eqs, systemSize);
-  outSize := List.fold(sizes, intAdd, 0);
+  sz := sum(systemSize(s) for s in inDAE.eqs);
 end daeSize;
 
 public function systemSize
@@ -6502,9 +6499,10 @@ algorithm
   // pre-optimization phase
   dae := preOptimizeDAE(inDAE, preOptModules);
 
+  SimCodeFunctionUtil.execStat("pre-optimization done (n="+String(daeSize(dae))+")");
   // transformation phase (matching and sorting using index reduction method)
   dae := causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, true);
-  SimCodeFunctionUtil.execStat("matching and sorting");
+  SimCodeFunctionUtil.execStat("matching and sorting (n="+String(daeSize(dae))+")");
 
   dae := BackendDAEOptimize.removeUnusedFunctions(dae);
   SimCodeFunctionUtil.execStat("remove unused functions");
@@ -8408,15 +8406,15 @@ protected
 algorithm
   bindExps := List.map(varLstIn,BackendVariable.varBindExp);
   eqs := List.threadMap2(List.map(varLstIn,BackendVariable.varExp), bindExps, BackendEquation.generateEquation, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-	(m, mT) := BackendDAEUtil.incidenceMatrixDispatch(BackendVariable.listVar1(varLstIn), BackendEquation.listEquation(eqs), BackendDAE.ABSOLUTE(), NONE());
-	nVars := listLength(varLstIn);
-	nEqs := listLength(eqs);
-	ass1 := arrayCreate(nVars, -1);
-	ass2 := arrayCreate(nEqs, -1);
-	Matching.matchingExternalsetIncidenceMatrix(nVars, nEqs, m);
-	BackendDAEEXT.matching(nVars, nEqs, 5, -1, 0.0, 1);
-	BackendDAEEXT.getAssignment(ass2, ass1);
-	comps := Sorting.TarjanTransposed(mT, ass2);
+  (m, mT) := BackendDAEUtil.incidenceMatrixDispatch(BackendVariable.listVar1(varLstIn), BackendEquation.listEquation(eqs), BackendDAE.ABSOLUTE(), NONE());
+  nVars := listLength(varLstIn);
+  nEqs := listLength(eqs);
+  ass1 := arrayCreate(nVars, -1);
+  ass2 := arrayCreate(nEqs, -1);
+  Matching.matchingExternalsetIncidenceMatrix(nVars, nEqs, m);
+  BackendDAEEXT.matching(nVars, nEqs, 5, -1, 0.0, 1);
+  BackendDAEEXT.getAssignment(ass2, ass1);
+  comps := Sorting.TarjanTransposed(mT, ass2);
 end causalizeVarBindSystem;
 
 public function getStrongComponentVarsAndEquations"gets the variables and and the equations from the sccs.
