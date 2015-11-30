@@ -2694,177 +2694,120 @@ algorithm
   end matchcontinue;
 end allTerms;
 
-
 public function allTermsForCref
 "simliar to terms, but also perform expansion of
  multiplications to reveal more terms, like for instance:
  allTerms((a(x)+b(x))*(c+d)) => {a(x)*(c+d),b(x)*(c+d)}"
   input DAE.Exp inExp;
   input DAE.ComponentRef cr "x";
-  output list<DAE.Exp> outExpLst;
+  output list<DAE.Exp> outExpLstWithX;
+  output list<DAE.Exp> outExpLstWithoutX;
 algorithm
-  outExpLst := matchcontinue (inExp)
+  (outExpLstWithX,outExpLstWithoutX) := matchcontinue (inExp)
     local
-      list<DAE.Exp> f1,f2,res,f2_1;
+      list<DAE.Exp> f1,f2,fx1,fx2,res,resx;
       DAE.Exp e1,e2,e;
       Type tp;
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(),exp2 = e2))
       equation
-        f1 = if expHasCrefNoPreOrStart(e1,cr) then allTerms(e1) else {e1};
-        f2 = if expHasCrefNoPreOrStart(e2,cr) then allTerms(e2) else {e2};
+        (fx1,f1) = allTermsForCref(e1, cr);
+        (fx2,f2) = allTermsForCref(e2, cr);
         res = listAppend(f1, f2);
+        resx = listAppend(fx1, fx2);
       then
-        res;
+        (resx, res);
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.SUB(),exp2 = e2))
       equation
-        f1 = if expHasCrefNoPreOrStart(e1,cr) then allTerms(e1) else {e1};
-        f2 = if expHasCrefNoPreOrStart(e2,cr) then allTerms(e2) else {e2};
-        f2_1 = List.map(f2, negate);
-        res = listAppend(f1, f2_1);
-      then
-        res;
-
-    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARR(),exp2 = e2))
-      equation
-        f1 = if expHasCrefNoPreOrStart(e1,cr) then allTerms(e1) else {e1};
-        f2 = if expHasCrefNoPreOrStart(e2,cr) then allTerms(e2) else {e2};
+        (fx1,f1) = allTermsForCref(e1, cr);
+        (fx2,f2) = allTermsForCref(e2, cr);
+        f2 = List.map(f2, negate);
+        fx2 = List.map(fx2, negate);
         res = listAppend(f1, f2);
+        resx = listAppend(fx1, fx2);
       then
-        res;
-
-    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(),exp2 = e2))
-      equation
-        f1 = if expHasCrefNoPreOrStart(e1,cr) then allTerms(e1) else {e1};
-        f2 = if expHasCrefNoPreOrStart(e2,cr) then allTerms(e2) else {e2};
-        f2_1 = List.map(f2, negate);
-        res = listAppend(f1, f2_1);
-      then
-        res;
+        (resx,res);
 
     // terms( a*(b+c)) => {a*b, c*b}
     case (DAE.BINARY(e1,DAE.MUL(_),e2))
       guard expHasCrefNoPreOrStart(e2,cr)
       equation
-        (f1 as _::_::_) = allTerms(e2);
-        f1 = List.map1(f1,makeProduct,e1);
-        f1 = List.flatten(List.map(f1,allTerms));
+        (fx1 as _::_::_, f1) = allTermsForCref(e2, cr);
+        (fx1,f2) = List.split1OnTrue(fx1, expHasCrefNoPreOrStart, cr);
+        res = listAppend(f1, f2);
+        e = makeSum1(res);
+        e = expMul(e, e1);
+        fx1 = List.map1(fx1,expMul,e1);
+        if expHasCrefNoPreOrStart(e1,cr) then
+          fx1 = e :: fx1;
+          f1 = {};
+        else
+          f1 = {e};
+        end if;
+        //f1 = List.flatten(List.map1(fx1,allTermsForCref, cr));
       then
-        f1;
-
-    case (DAE.BINARY(e1,DAE.MUL_ARR(_),e2))
-      guard expHasCrefNoPreOrStart(e2,cr)
-      equation
-        (f1 as _::_::_) = allTerms(e2);
-        f1 = List.map1(f1,makeProduct,e1);
-        f1 = List.flatten(List.map(f1,allTerms));
-      then
-        f1;
-
-    case (DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(_),e2))
-      guard expHasCrefNoPreOrStart(e2,cr)
-      equation
-        (f1 as _::_::_) = allTerms(e2);
-        f1 = List.map1(f1,makeProduct,e1);
-        f1 = List.flatten(List.map(f1,allTerms));
-      then
-        f1;
+        (fx1, f1);
 
     // terms( (b+c)*a) => {b*a, c*a}
     case (DAE.BINARY(e1,DAE.MUL(_),e2))
       guard expHasCrefNoPreOrStart(e1,cr)
       equation
-        (f1 as _::_::_) = allTerms(e1);
-        f1 = List.map1(f1,makeProduct,e2);
-        f1 = List.flatten(List.map(f1,allTerms));
+        (fx1 as _::_::_, f1) = allTermsForCref(e1, cr);
+        (fx1,f2) = List.split1OnTrue(fx1, expHasCrefNoPreOrStart, cr);
+        res = listAppend(f1, f2);
+        e = makeSum1(res);
+        e = expMul(e, e2);
+        fx1 = List.map1(fx1,expMul,e2);
+        if expHasCrefNoPreOrStart(e2,cr) then
+          fx1 = e :: fx1;
+          f1 = {};
+        else
+          f1 = {e};
+        end if;
+        //fx1 = List.flatten(List.map1(fx1,allTermsForCref, cr));
       then
-        f1;
-
-    case (DAE.BINARY(e1,DAE.MUL_ARR(_),e2))
-      guard expHasCrefNoPreOrStart(e1,cr)
-      equation
-        (f1 as _::_::_) = allTerms(e1);
-        f1 = List.map1(f1,makeProduct,e2);
-        f1 = List.flatten(List.map(f1,allTerms));
-      then
-        f1;
-
-    case (DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(_),e2))
-      guard expHasCrefNoPreOrStart(e1,cr)
-      equation
-        (f1 as _::_::_) = allTerms(e1);
-        f1 = List.map1(f1,makeProduct,e2);
-        f1 = List.flatten(List.map(f1,allTerms));
-      then
-        f1;
+        (fx1, f1);
 
     // terms( (b+c)/a) => {b/a, c/a}
     case (DAE.BINARY(e1,DAE.DIV(_),e2))
       guard expHasCrefNoPreOrStart(e1,cr)
       equation
-        (f1 as _::_::_) = allTerms(e1);
-        f1 = List.map1(f1,expDiv,e2);
-        f1 = List.flatten(List.map(f1,allTerms));
+        (fx1 as _::_::_, f1) = allTermsForCref(e1, cr);
+        (fx1,f2) = List.split1OnTrue(fx1, expHasCrefNoPreOrStart, cr);
+        res = listAppend(f1, f2);
+        e = makeSum1(res);
+        e = makeDiv(e, e2);
+        fx1 = List.map1(fx1,makeDiv,e2);
+        if expHasCrefNoPreOrStart(e2,cr) then
+          fx1 = e :: fx1;
+          f1 = {};
+        else
+          f1 = {e};
+        end if;
+        //fx1 = List.flatten(List.map1(fx1,allTermsForCref, cr));
       then
-        f1;
+        (fx1, f1);
 
-    case (DAE.BINARY(e1,DAE.DIV_ARR(_),e2))
-      guard expHasCrefNoPreOrStart(e1,cr)
-      equation
-        (f1 as _::_::_) = allTerms(e1);
-        f1 = List.map1(f1,expDiv,e2);
-        f1 = List.flatten(List.map(f1,allTerms));
-      then
-        f1;
-
-    case (DAE.BINARY(e1,DAE.DIV_ARRAY_SCALAR(_),e2))
-      guard expHasCrefNoPreOrStart(e1,cr)
-      equation
-        (f1 as _::_::_) = allTerms(e1);
-        f1 = List.map1(f1,expDiv,e2);
-        f1 = List.flatten(List.map(f1,allTerms));
-      then
-        f1;
-
-    case (DAE.BINARY(e1,DAE.DIV_SCALAR_ARRAY(_),e2))
-      guard expHasCrefNoPreOrStart(e1,cr)
-      equation
-        (f1 as _::_::_) = allTerms(e1);
-        f1 = List.map1(f1,expDiv,e2);
-        f1 = List.flatten(List.map(f1,allTerms));
-      then
-        f1;
-
+    // -()
     case (DAE.UNARY(operator = DAE.UMINUS(),exp=e1))
       equation
-        f1 = if expHasCrefNoPreOrStart(e1,cr) then allTerms(e1) else {e1};
+        (fx1,f1) = allTermsForCref(e1, cr);
         f1 = List.map(f1,negate);
+        fx1 = List.map(fx1,negate);
       then
-        f1;
+        (fx1, f1);
 
-    case (DAE.UNARY(operator = DAE.UMINUS_ARR(),exp=e1))
+    else
       equation
-        f1 = if expHasCrefNoPreOrStart(e1,cr) then allTerms(e1) else {e1};
-        f1 = List.map(f1,negate);
-      then
-        f1;
-
-    case (DAE.LUNARY(operator = DAE.NOT(), exp = e1))
-      equation
-        f1 = if expHasCrefNoPreOrStart(e1,cr) then allTerms(e1) else {e1};
-        f1 = List.map(f1,negate);
-      then
-        f1;
-
-    case (DAE.ASUB(exp = e1,sub=f2))
-      equation
-        f1 = if expHasCrefNoPreOrStart(e1,cr) then allTerms(e1) else {e1};
-        f1 = List.map1(f1,makeASUB,f2);
-      then
-        f1;
-
-    else {inExp};
+        if expHasCrefNoPreOrStart(inExp,cr) then
+          res = {};
+          resx = {inExp};
+        else
+          res = {};
+          resx = {inExp};
+        end if;
+        then (resx, res);
   end matchcontinue;
 end allTermsForCref;
 
