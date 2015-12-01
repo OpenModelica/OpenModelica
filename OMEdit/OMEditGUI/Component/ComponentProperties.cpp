@@ -764,27 +764,30 @@ void ComponentParameters::fetchExtendsModifiers()
     QMap<QString, QString>::iterator extendsModifiersIterator;
     for (extendsModifiersIterator = extendsModifiersMap.begin(); extendsModifiersIterator != extendsModifiersMap.end(); ++extendsModifiersIterator) {
       // since first word is component name so we remove it.
-      QString parameterName = StringHandler::removeFirstWordAfterDot(extendsModifiersIterator.key());
-      parameterName = StringHandler::getFirstWordBeforeDot(parameterName);
-      Parameter *pParameter = findParameter(parameterName);
-      if (pParameter) {
-        if (extendsModifiersIterator.key().compare(parameterName + ".start") == 0) {
-          QString start = extendsModifiersIterator.value();
-          if (!start.isEmpty()) {
-            pParameter->setGroupBox("Initialization");
-            pParameter->setShowStartAttribute(true);
-            pParameter->setValueWidget(start, false);
+      QString componentName = StringHandler::getFirstWordBeforeDot(extendsModifiersIterator.key());
+      if (mpComponent->getName().compare(componentName) == 0) {
+        QString parameterName = StringHandler::removeFirstWordAfterDot(extendsModifiersIterator.key());
+        parameterName = StringHandler::getFirstWordBeforeDot(parameterName);
+        Parameter *pParameter = findParameter(parameterName);
+        if (pParameter) {
+          if (extendsModifiersIterator.key().compare(parameterName + ".start") == 0) {
+            QString start = extendsModifiersIterator.value();
+            if (!start.isEmpty()) {
+              pParameter->setGroupBox("Initialization");
+              pParameter->setShowStartAttribute(true);
+              pParameter->setValueWidget(start, false);
+            }
           }
-        }
-        else if (extendsModifiersIterator.key().compare(parameterName + ".fixed") == 0) {
-          QString fixed = extendsModifiersIterator.value();
-          if (!fixed.isEmpty()) {
-            pParameter->setGroupBox("Initialization");
-            pParameter->setShowStartAttribute(true);
-            pParameter->setFixedState(fixed, false);
+          else if (extendsModifiersIterator.key().compare(parameterName + ".fixed") == 0) {
+            QString fixed = extendsModifiersIterator.value();
+            if (!fixed.isEmpty()) {
+              pParameter->setGroupBox("Initialization");
+              pParameter->setShowStartAttribute(true);
+              pParameter->setFixedState(fixed, false);
+            }
+          } else {
+            pParameter->setValueWidget(extendsModifiersIterator.value(), false);
           }
-        } else {
-          pParameter->setValueWidget(extendsModifiersIterator.value(), false);
         }
       }
     }
@@ -851,7 +854,7 @@ void ComponentParameters::updateComponentParameters()
       valueChanged = true;
       /* If the component is inherited then add the modifier value into the extends. */
       if (mpComponent->isInheritedComponent()) {
-        newComponentExtendsModifiersMap.insert(componentModifierKey, componentModifierValue);
+        newComponentExtendsModifiersMap.insert(mpComponent->getName() + "." + componentModifierKey, componentModifierValue);
       } else {
         newComponentModifiersMap.insert(componentModifierKey, componentModifierValue);
       }
@@ -862,7 +865,7 @@ void ComponentParameters::updateComponentParameters()
       componentModifierValue = pParameter->getFixedState();
       /* If the component is inherited then add the modifier value into the extends. */
       if (mpComponent->isInheritedComponent()) {
-        newComponentExtendsModifiersMap.insert(componentModifierKey, componentModifierValue);
+        newComponentExtendsModifiersMap.insert(mpComponent->getName() + "." + componentModifierKey, componentModifierValue);
       } else {
         newComponentModifiersMap.insert(componentModifierKey, componentModifierValue);
       }

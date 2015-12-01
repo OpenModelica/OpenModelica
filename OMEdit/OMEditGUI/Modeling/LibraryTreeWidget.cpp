@@ -561,11 +561,9 @@ void LibraryTreeItem::removeInheritedClasses()
     disconnect(pLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), this, SLOT(handleLoaded(LibraryTreeItem*)));
     disconnect(pLibraryTreeItem, SIGNAL(unLoaded()), this, SLOT(handleUnloaded()));
     disconnect(pLibraryTreeItem, SIGNAL(shapeAdded(ShapeAnnotation*,GraphicsView*)),
-            this, SLOT(handleShapeAdded(ShapeAnnotation*,GraphicsView*)));
-    disconnect(pLibraryTreeItem, SIGNAL(componentAdded(Component*)),
-            this, SLOT(handleComponentAdded(Component*)));
-    disconnect(pLibraryTreeItem, SIGNAL(connectionAdded(LineAnnotation*)),
-            this, SLOT(handleConnectionAdded(LibraryTreeItem*,LineAnnotation*)));
+               this, SLOT(handleShapeAdded(ShapeAnnotation*,GraphicsView*)));
+    disconnect(pLibraryTreeItem, SIGNAL(componentAdded(Component*)), this, SLOT(handleComponentAdded(Component*)));
+    disconnect(pLibraryTreeItem, SIGNAL(connectionAdded(LineAnnotation*)), this, SLOT(handleConnectionAdded(LineAnnotation*)));
     disconnect(pLibraryTreeItem, SIGNAL(iconUpdated()), this, SLOT(handleIconUpdated()));
   }
   mInheritedClasses.clear();
