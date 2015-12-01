@@ -2417,6 +2417,24 @@ external "builtin";
 annotation(preferredView="text");
 end moveClass;
 
+function moveClassToTop
+  "Moves a class to the top of its enclosing class. Returns true if the move
+   was successful, otherwise false."
+  input TypeName className;
+  output Boolean result;
+external "builtin";
+annotation(preferredView="text");
+end moveClassToTop;
+
+function moveClassToBottom
+  "Moves a class to the bottom of its enclosing class. Returns true if the move
+   was successful, otherwise false."
+  input TypeName className;
+  output Boolean result;
+external "builtin";
+annotation(preferredView="text");
+end moveClassToBottom;
+
 function copyClass
 "Copies a class within the same level"
  input TypeName className "the class that should be copied";

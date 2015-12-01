@@ -1126,6 +1126,26 @@ algorithm
 
     case (_, _, "moveClass", _, _, _) then (inCache, Values.BOOL(false), inSt);
 
+    case (_, _, "moveClassToTop", {Values.CODE(Absyn.C_TYPENAME(className))},
+        st as GlobalScript.SYMBOLTABLE(), _)
+      algorithm
+        (p, b) := moveClassToTop(className, st.ast);
+        st.ast := p;
+      then
+        (inCache, Values.BOOL(b), st);
+
+    case (_, _, "moveClassToTop", _, _, _) then (inCache, Values.BOOL(false), inSt);
+
+    case (_, _, "moveClassToBottom", {Values.CODE(Absyn.C_TYPENAME(className))},
+        st as GlobalScript.SYMBOLTABLE(), _)
+      algorithm
+        (p, b) := moveClassToBottom(className, st.ast);
+        st.ast := p;
+      then
+        (inCache, Values.BOOL(b), st);
+
+    case (_, _, "moveClassToBottom", _, _, _) then (inCache, Values.BOOL(false), inSt);
+
     case (cache,_,"copyClass",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(name), Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("TopLevel")))},
           st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
@@ -2876,6 +2896,82 @@ algorithm
   end try;
 end moveClass;
 
+protected function moveClassToTop
+  "Moves a named class to the top of its enclosing class."
+  input Absyn.Path inClassName;
+  input Absyn.Program inProgram;
+  output Absyn.Program outProgram = inProgram;
+  output Boolean outSuccess;
+protected
+  Absyn.Path parent_cls;
+  String cls_name;
+algorithm
+  try
+    if Absyn.pathIsIdent(inClassName) then
+      outProgram := match outProgram
+        local
+          list<Absyn.Class> classes;
+          Absyn.Class cls;
+
+        case Absyn.PROGRAM()
+          algorithm
+            (classes, SOME(cls)) :=
+              List.deleteMemberOnTrue(Absyn.pathFirstIdent(inClassName),
+                outProgram.classes, Absyn.isClassNamed);
+            outProgram.classes := cls :: classes;
+          then
+            outProgram;
+      end match;
+    else
+      (parent_cls, Absyn.IDENT(cls_name)) := Absyn.splitQualAndIdentPath(inClassName);
+      outProgram := Interactive.transformPathedClassInProgram(parent_cls, inProgram,
+        function moveClassToTopInClass(inName = cls_name));
+    end if;
+
+    outSuccess := true;
+  else
+    outSuccess := false;
+  end try;
+end moveClassToTop;
+
+protected function moveClassToBottom
+  "Moves a named class to the bottom of its enclosing class."
+  input Absyn.Path inClassName;
+  input Absyn.Program inProgram;
+  output Absyn.Program outProgram = inProgram;
+  output Boolean outSuccess;
+protected
+  Absyn.Path parent_cls;
+  String cls_name;
+algorithm
+  try
+    if Absyn.pathIsIdent(inClassName) then
+      outProgram := match outProgram
+        local
+          list<Absyn.Class> classes;
+          Absyn.Class cls;
+
+        case Absyn.PROGRAM()
+          algorithm
+            (classes, SOME(cls)) :=
+              List.deleteMemberOnTrue(Absyn.pathFirstIdent(inClassName),
+                outProgram.classes, Absyn.isClassNamed);
+            outProgram.classes := listAppend(classes, {cls});
+          then
+            outProgram;
+      end match;
+    else
+      (parent_cls, Absyn.IDENT(cls_name)) := Absyn.splitQualAndIdentPath(inClassName);
+      outProgram := Interactive.transformPathedClassInProgram(parent_cls, inProgram,
+        function moveClassToBottomInClass(inName = cls_name));
+    end if;
+
+    outSuccess := true;
+  else
+    outSuccess := false;
+  end try;
+end moveClassToBottom;
+
 protected function moveClassInProgram
   "Moves a named class a certain offset within a program."
   input String inName;
@@ -3164,21 +3260,14 @@ protected function moveClassInClassPart2
 protected
   Absyn.ElementItem e;
   list<Absyn.ElementItem> elements = inElements, acc = {};
-  String name;
 algorithm
   // Try to find an element item containing the class we're looking for.
   while not listEmpty(elements) loop
     e :: elements := elements;
 
-    outClass := match e
-      case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification =
-          Absyn.CLASSDEF(class_ = Absyn.CLASS(name = name)))) guard(name == inName)
-        then SOME(e);
-      else NONE();
-    end match;
-
-    if isSome(outClass) then
+    if Absyn.isElementItemClassNamed(inName, e) then
       // Found the class, exit the loop.
+      outClass := SOME(e);
       break;
     else
       acc := e :: acc;
@@ -3324,6 +3413,184 @@ algorithm
     outReachedEnd := listEmpty(outElementsBefore);
   end if;
 end moveClassInSplitClassPart;
+
+protected function deleteClassInClassPart
+  input String inName;
+  input Absyn.ClassPart inClassPart;
+  output Absyn.ClassPart outClassPart = inClassPart;
+  output Option<Absyn.ElementItem> outClass;
+protected
+  list<Absyn.ElementItem> elements;
+algorithm
+  (outClassPart, outClass) := match outClassPart
+    case Absyn.PUBLIC()
+      algorithm
+        (elements, outClass) := List.deleteMemberOnTrue(inName,
+          outClassPart.contents, Absyn.isElementItemClassNamed);
+        outClassPart.contents := elements;
+      then
+        (outClassPart, outClass);
+
+    case Absyn.PROTECTED()
+      algorithm
+        (elements, outClass) := List.deleteMemberOnTrue(inName,
+          outClassPart.contents, Absyn.isElementItemClassNamed);
+        outClassPart.contents := elements;
+      then
+        (outClassPart, outClass);
+
+    else (outClassPart, NONE());
+  end match;
+end deleteClassInClassPart;
+
+protected function moveClassToTopInClass
+  input String inName;
+  input Absyn.Class inClass;
+  output Absyn.Class outClass;
+protected
+  Absyn.ClassDef body;
+algorithm
+  Absyn.CLASS(body = body) := inClass;
+
+  body := match body
+    case Absyn.PARTS()
+      algorithm
+        body.classParts := moveClassToTopInClassParts(inName, body.classParts);
+      then
+        body;
+
+    case Absyn.CLASS_EXTENDS()
+      algorithm
+        body.parts := moveClassToTopInClassParts(inName, body.parts);
+      then
+        body;
+
+  end match;
+
+  outClass := Absyn.setClassBody(inClass, body);
+end moveClassToTopInClass;
+
+protected function moveClassToTopInClassParts
+  input String inName;
+  input list<Absyn.ClassPart> inClassParts;
+  output list<Absyn.ClassPart> outClassParts;
+protected
+  Absyn.ClassPart part, first;
+  list<Absyn.ClassPart> acc = {}, rest = inClassParts;
+  Option<Absyn.ElementItem> ocls;
+  Absyn.ElementItem cls;
+  Boolean is_public;
+algorithm
+  while true loop
+    part :: rest := rest;
+    (part, ocls) := deleteClassInClassPart(inName, part);
+
+    if isSome(ocls) then
+      // Remove the part if it's now empty and not the only part.
+      if not Absyn.isEmptyClassPart(part) or listEmpty(acc) or listEmpty(rest) then
+        rest := part :: rest;
+      end if;
+      outClassParts := listAppend(listReverse(acc), rest);
+      break;
+    else
+      acc := part :: acc;
+    end if;
+  end while;
+
+  SOME(cls) := ocls;
+  first :: rest := outClassParts;
+
+  outClassParts := match (first, part)
+    case (Absyn.PUBLIC(), Absyn.PUBLIC())
+      algorithm
+        first.contents := cls :: first.contents;
+      then
+        first :: rest;
+    case (Absyn.PROTECTED(), Absyn.PROTECTED())
+      algorithm
+        first.contents := cls :: first.contents;
+      then
+        first :: rest;
+    case (_, Absyn.PUBLIC()) then Absyn.PUBLIC({cls}) :: first :: rest;
+    case (_, Absyn.PROTECTED()) then Absyn.PROTECTED({cls}) :: first :: rest;
+  end match;
+end moveClassToTopInClassParts;
+
+protected function moveClassToBottomInClass
+  input String inName;
+  input Absyn.Class inClass;
+  output Absyn.Class outClass;
+protected
+  Absyn.ClassDef body;
+algorithm
+  Absyn.CLASS(body = body) := inClass;
+
+  body := match body
+    case Absyn.PARTS()
+      algorithm
+        body.classParts := moveClassToBottomInClassParts(inName, body.classParts);
+      then
+        body;
+
+    case Absyn.CLASS_EXTENDS()
+      algorithm
+        body.parts := moveClassToBottomInClassParts(inName, body.parts);
+      then
+        body;
+
+  end match;
+
+  outClass := Absyn.setClassBody(inClass, body);
+end moveClassToBottomInClass;
+
+protected function moveClassToBottomInClassParts
+  input String inName;
+  input list<Absyn.ClassPart> inClassParts;
+  output list<Absyn.ClassPart> outClassParts;
+protected
+  Absyn.ClassPart part, last;
+  list<Absyn.ClassPart> acc = {}, rest = inClassParts;
+  Option<Absyn.ElementItem> ocls;
+  Absyn.ElementItem cls;
+  Boolean is_public;
+algorithm
+  while true loop
+    part :: rest := rest;
+    (part, ocls) := deleteClassInClassPart(inName, part);
+
+    if isSome(ocls) then
+      break;
+    else
+      acc := part :: acc;
+    end if;
+  end while;
+
+  SOME(cls) := ocls;
+
+  // Remove the part if it's empty and not the only remaining part.
+  if not Absyn.isEmptyClassPart(part) or listEmpty(rest) then
+    rest := part :: rest;
+  end if;
+
+  last :: rest := listReverse(rest);
+
+  rest := match (last, part)
+    case (Absyn.PUBLIC(), Absyn.PUBLIC())
+      algorithm
+        last.contents := listAppend(last.contents, {cls});
+      then
+        last :: rest;
+    case (Absyn.PROTECTED(), Absyn.PROTECTED())
+      algorithm
+        last.contents := listAppend(last.contents, {cls});
+      then
+        last :: rest;
+    case (_, Absyn.PUBLIC()) then Absyn.PUBLIC({cls}) :: last :: rest;
+    case (_, Absyn.PROTECTED()) then Absyn.PROTECTED({cls}) :: last :: rest;
+  end match;
+
+  outClassParts := listAppend(listReverse(acc), listReverse(rest));
+end moveClassToBottomInClassParts;
 
 protected function copyClass
   input Absyn.Class inClass;

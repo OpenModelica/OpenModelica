@@ -2395,6 +2395,17 @@ algorithm
   name := IDENT(id);
 end className;
 
+public function isClassNamed
+  input String inName;
+  input Class inClass;
+  output Boolean outIsNamed;
+algorithm
+  outIsNamed := match inClass
+    case CLASS() then inName == inClass.name;
+    else false;
+  end match;
+end isClassNamed;
+
 public function elementSpecName
   "The ElementSpec type contains the name of the element, and this function
    extracts this name."
@@ -6643,6 +6654,21 @@ algorithm
     else false;
   end match;
 end isElementItemClass;
+
+public function isElementItemClassNamed
+  input String inName;
+  input ElementItem inElement;
+  output Boolean outIsNamed;
+algorithm
+  outIsNamed := match inElement
+    local
+      String name;
+
+    case ELEMENTITEM(element = ELEMENT(specification = CLASSDEF(
+      class_ = CLASS(name = name)))) then name == inName;
+    else false;
+  end match;
+end isElementItemClassNamed;
 
 public function isEmptyClassPart
   input ClassPart inClassPart;
