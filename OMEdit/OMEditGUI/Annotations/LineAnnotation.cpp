@@ -864,10 +864,11 @@ void ConnectionArray::saveArrayIndex()
       }
     }
   }
-  mpGraphicsView->addConnectionToClass(mpConnectionLineAnnotation);
-  mpConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)").arg(startComponentName, endComponentName));
-  mpConnectionLineAnnotation->drawCornerItems();
-  mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
+  mpConnectionLineAnnotation->setStartComponentName(startComponentName);
+  mpConnectionLineAnnotation->setEndComponentName(endComponentName);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
+  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
+  mpGraphicsView->getModelWidget()->updateModelicaText();
   accept();
 }
 
