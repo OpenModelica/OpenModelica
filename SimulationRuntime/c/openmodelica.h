@@ -164,11 +164,11 @@ struct type_desc_s {
 #endif
 
 /* initial and terminal function calls */
-#define initial() data->simulationInfo.initial
-#define terminal() data->simulationInfo.terminal
+#define initial() data->simulationInfo->initial
+#define terminal() data->simulationInfo->terminal
 
-#define homotopy(actual, simplified) ((simplified) * (1.0-data->simulationInfo.lambda) + (actual) * data->simulationInfo.lambda)
-#define homotopyParameter() data->simulationInfo.lambda
+#define homotopy(actual, simplified) ((simplified) * (1.0-data->simulationInfo->lambda) + (actual) * data->simulationInfo->lambda)
+#define homotopyParameter() data->simulationInfo->lambda
 
 typedef struct {
   void (*init)(void);

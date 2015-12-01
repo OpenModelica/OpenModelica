@@ -128,31 +128,31 @@ freeUmfPackData(void **voiddata)
 int getAnalyticalJacobianUmfPack(DATA* data, threadData_t *threadData, int sysNumber)
 {
   int i,ii,j,k,l;
-  LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.linearSystemData[sysNumber]);
+  LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->linearSystemData[sysNumber]);
 
   const int index = systemData->jacobianIndex;
   int nth = 0;
-  int nnz = data->simulationInfo.analyticJacobians[index].sparsePattern.numberOfNoneZeros;
+  int nnz = data->simulationInfo->analyticJacobians[index].sparsePattern.numberOfNoneZeros;
 
-  for(i=0; i < data->simulationInfo.analyticJacobians[index].sizeRows; i++)
+  for(i=0; i < data->simulationInfo->analyticJacobians[index].sizeRows; i++)
   {
-    data->simulationInfo.analyticJacobians[index].seedVars[i] = 1;
+    data->simulationInfo->analyticJacobians[index].seedVars[i] = 1;
 
     ((systemData->analyticalJacobianColumn))(data, threadData);
 
-    for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeCols; j++)
+    for(j = 0; j < data->simulationInfo->analyticJacobians[index].sizeCols; j++)
     {
-      if(data->simulationInfo.analyticJacobians[index].seedVars[j] == 1)
+      if(data->simulationInfo->analyticJacobians[index].seedVars[j] == 1)
       {
         if(j==0)
           ii = 0;
         else
-          ii = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j-1];
-        while(ii < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j])
+          ii = data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j-1];
+        while(ii < data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j])
         {
-          l  = data->simulationInfo.analyticJacobians[index].sparsePattern.index[ii];
-          /* infoStreamPrint(LOG_LS_V, 0, "set on Matrix A (%d, %d)(%d) = %f", i, l, nth, -data->simulationInfo.analyticJacobians[index].resultVars[l]); */
-          systemData->setAElement(i, l, -data->simulationInfo.analyticJacobians[index].resultVars[l], nth, (void*) systemData, threadData);
+          l  = data->simulationInfo->analyticJacobians[index].sparsePattern.index[ii];
+          /* infoStreamPrint(LOG_LS_V, 0, "set on Matrix A (%d, %d)(%d) = %f", i, l, nth, -data->simulationInfo->analyticJacobians[index].resultVars[l]); */
+          systemData->setAElement(i, l, -data->simulationInfo->analyticJacobians[index].resultVars[l], nth, (void*) systemData, threadData);
           nth++;
           ii++;
         };
@@ -160,7 +160,7 @@ int getAnalyticalJacobianUmfPack(DATA* data, threadData_t *threadData, int sysNu
     };
 
     /* de-activate seed variable for the corresponding color */
-    data->simulationInfo.analyticJacobians[index].seedVars[i] = 0;
+    data->simulationInfo->analyticJacobians[index].seedVars[i] = 0;
   }
 
   return 0;
@@ -173,7 +173,7 @@ static int wrapper_fvec_umfpack(double* x, double* f, void** data, int sysNumber
 {
   int iflag = 0;
 
-  (*((DATA*)data[0])->simulationInfo.linearSystemData[sysNumber].residualFunc)(data, x, f, &iflag);
+  (*((DATA*)data[0])->simulationInfo->linearSystemData[sysNumber].residualFunc)(data, x, f, &iflag);
   return 0;
 }
 
@@ -189,7 +189,7 @@ int
 solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber)
 {
   void *dataAndThreadData[2] = {data, threadData};
-  LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.linearSystemData[sysNumber]);
+  LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
   DATA_UMFPACK* solverData = (DATA_UMFPACK*)systemData->solverData;
 
   int i, j, status = UMFPACK_OK, success = 0, ni=0, n = systemData->size, eqSystemNumber = systemData->equationIndex, indexes[2] = {1,eqSystemNumber};
@@ -240,7 +240,7 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber)
     {
       infoStreamPrint(LOG_LS_V, 1, "Old solution x:");
       for(i = 0; i < solverData->n_row; ++i)
-        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i], systemData->x[i]);
+        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], systemData->x[i]);
 
       messageClose(LOG_LS_V);
     }
@@ -307,10 +307,10 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber)
     if (ACTIVE_STREAM(LOG_LS_V))
     {
       infoStreamPrint(LOG_LS_V, 1, "Solution x:");
-      infoStreamPrint(LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber).numVar);
+      infoStreamPrint(LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
 
       for(i = 0; i < systemData->size; ++i)
-        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i], systemData->x[i]);
+        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], systemData->x[i]);
 
       messageClose(LOG_LS_V);
     }

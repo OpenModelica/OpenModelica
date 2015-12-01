@@ -48,11 +48,11 @@ int initializeMixedSystems(DATA *data, threadData_t *threadData)
 {
   int i;
   int size;
-  MIXED_SYSTEM_DATA *system = data->simulationInfo.mixedSystemData;
+  MIXED_SYSTEM_DATA *system = data->simulationInfo->mixedSystemData;
 
   infoStreamPrint(LOG_NLS, 1, "initialize mixed system solvers");
 
-  for(i=0; i<data->modelData.nMixedSystems; ++i)
+  for(i=0; i<data->modelData->nMixedSystems; ++i)
   {
     size = system[i].size;
 
@@ -60,7 +60,7 @@ int initializeMixedSystems(DATA *data, threadData_t *threadData)
     system[i].iterationPreVarsPtr = (modelica_boolean**) malloc(size*sizeof(modelica_boolean*));
 
     /* allocate solver data */
-    switch(data->simulationInfo.mixedMethod)
+    switch(data->simulationInfo->mixedMethod)
     {
     case MIXED_SEARCH:
       allocateMixedSearchData(size, &system[i].solverData);
@@ -83,18 +83,18 @@ int initializeMixedSystems(DATA *data, threadData_t *threadData)
 int freeMixedSystems(DATA *data, threadData_t *threadData)
 {
   int i;
-  MIXED_SYSTEM_DATA* system = data->simulationInfo.mixedSystemData;
+  MIXED_SYSTEM_DATA* system = data->simulationInfo->mixedSystemData;
 
   infoStreamPrint(LOG_NLS, 1, "free mixed system solvers");
 
-  for(i=0;i<data->modelData.nMixedSystems;++i)
+  for(i=0;i<data->modelData->nMixedSystems;++i)
   {
 
     free(system[i].iterationVarsPtr);
     free(system[i].iterationPreVarsPtr);
 
     /* allocate solver data */
-    switch(data->simulationInfo.mixedMethod)
+    switch(data->simulationInfo->mixedMethod)
     {
     case MIXED_SEARCH:
       freeMixedSearchData(&system[i].solverData);
@@ -120,10 +120,10 @@ int freeMixedSystems(DATA *data, threadData_t *threadData)
 int solve_mixed_system(DATA *data, threadData_t *threadData, int sysNumber)
 {
   int success;
-  MIXED_SYSTEM_DATA* system = data->simulationInfo.mixedSystemData;
+  MIXED_SYSTEM_DATA* system = data->simulationInfo->mixedSystemData;
 
   /* for now just use lapack solver as before */
-  switch(data->simulationInfo.mixedMethod)
+  switch(data->simulationInfo->mixedMethod)
   {
   case MIXED_SEARCH:
     success = solveMixedSearch(data, sysNumber);
@@ -147,16 +147,16 @@ int solve_mixed_system(DATA *data, threadData_t *threadData, int sysNumber)
  */
 int check_mixed_solutions(DATA *data, int printFailingSystems)
 {
-  MIXED_SYSTEM_DATA* system = data->simulationInfo.mixedSystemData;
+  MIXED_SYSTEM_DATA* system = data->simulationInfo->mixedSystemData;
   int i, j, retVal=0;
 
-  for(i=0; i<data->modelData.nMixedSystems; ++i)
+  for(i=0; i<data->modelData->nMixedSystems; ++i)
     if(system[i].solved == 0)
     {
       retVal = 1;
       if(printFailingSystems && ACTIVE_WARNING_STREAM(LOG_NLS))
       {
-        warningStreamPrint(LOG_NLS, 1, "mixed system fails: %d at t=%g", modelInfoGetEquation(&data->modelData.modelDataXml, system->equationIndex).id, data->localData[0]->timeValue);
+        warningStreamPrint(LOG_NLS, 1, "mixed system fails: %d at t=%g", modelInfoGetEquation(&data->modelData->modelDataXml, system->equationIndex).id, data->localData[0]->timeValue);
         messageClose(LOG_NLS);
       }
     }

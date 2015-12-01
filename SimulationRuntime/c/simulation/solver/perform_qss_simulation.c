@@ -72,8 +72,8 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, threadData_t *thr
 {
   TRACE_PUSH
 
-  SIMULATION_INFO *simInfo = &(data->simulationInfo);
-  MODEL_DATA *mData = &(data->modelData);
+  SIMULATION_INFO *simInfo = data->simulationInfo;
+  MODEL_DATA *mData = data->modelData;
   uinteger currStepNo = 0;
   modelica_integer retValIntegrator = 0;
   modelica_integer retValue = 0;
@@ -95,10 +95,10 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, threadData_t *thr
   uinteger i = 0; /* loop var */
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* state = sData->realVars;
-  modelica_real* stateDer = sData->realVars + data->modelData.nStates;
-  const SPARSE_PATTERN* pattern = &(data->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern);
-  const uinteger ROWS = data->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_A].sizeRows;
-  const uinteger STATES = data->modelData.nStates;
+  modelica_real* stateDer = sData->realVars + data->modelData->nStates;
+  const SPARSE_PATTERN* pattern = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern);
+  const uinteger ROWS = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeRows;
+  const uinteger STATES = data->modelData->nStates;
   uinteger numDer = 0;  /* number of derivatives influenced by state k */
 
   modelica_boolean fail = 0;
@@ -139,7 +139,7 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, threadData_t *thr
   modelica_real diffQ = 0.0, dTnextQ = 0.0, nextQ = 0.0;
   for (i = 0; i < STATES; i++)
   {
-    dQ[i] = 0.0001 * data->modelData.realVarsData[i].attribute.nominal;
+    dQ[i] = 0.0001 * data->modelData->realVarsData[i].attribute.nominal;
     tx[i] = tq[i] = simInfo->startTime;
     qik[i] = state[i];
     xik[i] = state[i];
@@ -266,7 +266,7 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, threadData_t *thr
     tqp[ind] = tq[ind] + dTnextQ;
     nQh[ind] = nextQ;
 
-    if (0 != strcmp("ia", data->simulationInfo.outputFormat))
+    if (0 != strcmp("ia", data->simulationInfo->outputFormat))
     {
       communicateStatus("Running", (solverInfo->currentTime-simInfo->startTime)/(simInfo->stopTime-simInfo->startTime));
     }
@@ -448,7 +448,7 @@ static modelica_integer deltaQ( DATA* data, const modelica_real dQ, const modeli
 
   /* localData[0] because old values in the ringbuffer are not stored in QSS1 and so the ringbuffer will not be rotated. */
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[0];
-  modelica_real* stateDer = sDataOld->realVars + data->modelData.nStates;
+  modelica_real* stateDer = sDataOld->realVars + data->modelData->nStates;
 
 
   if (stateDer[index] >= 0 )    /* quantity of the state will increase */

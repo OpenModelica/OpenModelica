@@ -71,10 +71,10 @@ int initializeNLScsvData(DATA* data, NONLINEAR_SYSTEM_DATA* systemData)
 {
   struct csvStats* stats = (struct csvStats*) malloc(sizeof(struct csvStats));
   char buffer[100];
-  sprintf(buffer, "%s_NLS%dStatsCall.csv", data->modelData.modelFilePrefix, (int)systemData->equationIndex);
+  sprintf(buffer, "%s_NLS%dStatsCall.csv", data->modelData->modelFilePrefix, (int)systemData->equationIndex);
   stats->callStats = omc_write_csv_init(buffer, ',', '"');
 
-  sprintf(buffer, "%s_NLS%dStatsIter.csv", data->modelData.modelFilePrefix, (int)systemData->equationIndex);
+  sprintf(buffer, "%s_NLS%dStatsIter.csv", data->modelData->modelFilePrefix, (int)systemData->equationIndex);
   stats->iterStats = omc_write_csv_init(buffer, ',', '"');
 
   systemData->csvData = stats;
@@ -200,7 +200,7 @@ int print_csvLineIterStatsHeader(DATA* data, NONLINEAR_SYSTEM_DATA* systemData, 
 {
   char buffer[1024];
   int j;
-  int size = modelInfoGetEquation(&data->modelData.modelDataXml, systemData->equationIndex).numVar;
+  int size = modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).numVar;
 
   /* number of call */
   sprintf(buffer,"numberOfCall");
@@ -214,7 +214,7 @@ int print_csvLineIterStatsHeader(DATA* data, NONLINEAR_SYSTEM_DATA* systemData, 
 
   /* variables x */
   for(j=0; j<size; ++j) {
-    sprintf(buffer, "%s", modelInfoGetEquation(&data->modelData.modelDataXml, systemData->equationIndex).vars[j]);
+    sprintf(buffer, "%s", modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[j]);
     omc_write_csv(csvData, buffer);
     fputc(csvData->seperator,csvData->handle);
   }
@@ -338,12 +338,12 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
   TRACE_PUSH
   int i;
   int size;
-  NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo.nonlinearSystemData;
+  NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo->nonlinearSystemData;
   struct dataNewtonAndHybrid *mixedSolverData;
 
   infoStreamPrint(LOG_NLS, 1, "initialize non-linear system solvers");
 
-  for(i=0; i<data->modelData.nNonLinearSystems; ++i)
+  for(i=0; i<data->modelData->nNonLinearSystems; ++i)
   {
     size = nonlinsys[i].size;
     nonlinsys[i].numberOfFEval = 0;
@@ -378,7 +378,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 
 #if !defined(OMC_MINIMAL_RUNTIME)
     /* csv data call stats*/
-    if (data->simulationInfo.nlsCsvInfomation)
+    if (data->simulationInfo->nlsCsvInfomation)
     {
       if (initializeNLScsvData(data, &nonlinsys[i]))
       {
@@ -392,7 +392,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     }
 #endif
     /* allocate solver data */
-    switch(data->simulationInfo.nlsMethod)
+    switch(data->simulationInfo->nlsMethod)
     {
 #if !defined(OMC_MINIMAL_RUNTIME)
     case NLS_HYBRID:
@@ -441,12 +441,12 @@ int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData)
   TRACE_PUSH
   int i;
   int size;
-  NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo.nonlinearSystemData;
+  NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo->nonlinearSystemData;
   struct dataNewtonAndHybrid *mixedSolverData;
 
   infoStreamPrint(LOG_NLS, 1, "update static data of non-linear system solvers");
 
-  for(i=0; i<data->modelData.nNonLinearSystems; ++i)
+  for(i=0; i<data->modelData->nNonLinearSystems; ++i)
   {
     nonlinsys[i].initializeStaticNLSData(data, threadData, &nonlinsys[i]);
   }
@@ -467,12 +467,12 @@ int freeNonlinearSystems(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
   int i;
-  NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
+  NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo->nonlinearSystemData;
   struct csvStats* stats;
 
   infoStreamPrint(LOG_NLS, 1, "free non-linear system solvers");
 
-  for(i=0; i<data->modelData.nNonLinearSystems; ++i)
+  for(i=0; i<data->modelData->nNonLinearSystems; ++i)
   {
     free(nonlinsys[i].nlsx);
     free(nonlinsys[i].nlsxExtrapolation);
@@ -483,7 +483,7 @@ int freeNonlinearSystems(DATA *data, threadData_t *threadData)
     freeValueList(nonlinsys[i].oldValueList, 1);
 
 #if !defined(OMC_MINIMAL_RUNTIME)
-    if (data->simulationInfo.nlsCsvInfomation)
+    if (data->simulationInfo->nlsCsvInfomation)
     {
       stats = nonlinsys[i].csvData;
       omc_write_csv_free(stats->callStats);
@@ -491,7 +491,7 @@ int freeNonlinearSystems(DATA *data, threadData_t *threadData)
     }
 #endif
     /* free solver data */
-    switch(data->simulationInfo.nlsMethod)
+    switch(data->simulationInfo->nlsMethod)
     {
 #if !defined(OMC_MINIMAL_RUNTIME)
     case NLS_HYBRID:
@@ -534,7 +534,7 @@ int freeNonlinearSystems(DATA *data, threadData_t *threadData)
  */
 void printNonLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel)
 {
-  NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
+  NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo->nonlinearSystemData;
   infoStreamPrint(logLevel, 1, "Non-linear system %d of size %d solver statistics:", (int)nonlinsys[sysNumber].equationIndex, (int)nonlinsys[sysNumber].size);
   infoStreamPrint(logLevel, 0, " number of calls                : %ld", nonlinsys[sysNumber].numberOfCall);
   infoStreamPrint(logLevel, 0, " number of iterations           : %ld", nonlinsys[sysNumber].numberOfIterations);
@@ -556,14 +556,14 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 {
   void *dataAndThreadData[2] = {data, threadData};
   int success = 0, saveJumpState;
-  NONLINEAR_SYSTEM_DATA* nonlinsys = &(data->simulationInfo.nonlinearSystemData[sysNumber]);
+  NONLINEAR_SYSTEM_DATA* nonlinsys = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   struct dataNewtonAndHybrid *mixedSolverData;
 
-  data->simulationInfo.currentNonlinearSystemIndex = sysNumber;
+  data->simulationInfo->currentNonlinearSystemIndex = sysNumber;
 
   /* enable to avoid division by zero */
-  data->simulationInfo.noThrowDivZero = 1;
-  ((DATA*)data)->simulationInfo.solveContinuous = 1;
+  data->simulationInfo->noThrowDivZero = 1;
+  ((DATA*)data)->simulationInfo->solveContinuous = 1;
 
 
   rt_ext_tp_tick(&nonlinsys->totalTimeClock);
@@ -584,7 +584,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     memcpy(nonlinsys->nlsx, nonlinsys->nlsxOld, nonlinsys->size*(sizeof(double)));
   }
 
-  if(data->simulationInfo.discreteCall)
+  if(data->simulationInfo->discreteCall)
   {
     double *fvec = malloc(sizeof(double)*nonlinsys->size);
     int success = 0;
@@ -594,9 +594,9 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
 
-    ((DATA*)data)->simulationInfo.solveContinuous = 0;
+    ((DATA*)data)->simulationInfo->solveContinuous = 0;
     nonlinsys->residualFunc((void*) dataAndThreadData, nonlinsys->nlsx, fvec, (int*)&nonlinsys->size);
-    ((DATA*)data)->simulationInfo.solveContinuous = 1;
+    ((DATA*)data)->simulationInfo->solveContinuous = 1;
 
     success = 1;
     memcpy(nonlinsys->nlsxExtrapolation, nonlinsys->nlsx, nonlinsys->size*(sizeof(double)));
@@ -623,7 +623,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
 
-  switch(data->simulationInfo.nlsMethod)
+  switch(data->simulationInfo->nlsMethod)
   {
 #if !defined(OMC_MINIMAL_RUNTIME)
   case NLS_HYBRID:
@@ -676,7 +676,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   if (nonlinsys->solved)
   {
     /* do not use solution of jacobian for next extrapolation */
-    if (data->simulationInfo.currentContext < 4)
+    if (data->simulationInfo->currentContext < 4)
     {
       addListElement((VALUES_LIST*)nonlinsys->oldValueList,
               createValueElement(nonlinsys->size, data->localData[0]->timeValue, nonlinsys->nlsx));
@@ -690,14 +690,14 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 #endif
 
   /* enable to avoid division by zero */
-  data->simulationInfo.noThrowDivZero = 0;
-  ((DATA*)data)->simulationInfo.solveContinuous = 0;
+  data->simulationInfo->noThrowDivZero = 0;
+  ((DATA*)data)->simulationInfo->solveContinuous = 0;
 
   nonlinsys->totalTime += rt_ext_tp_tock(&(nonlinsys->totalTimeClock));
   nonlinsys->numberOfCall++;
 
 #if !defined(OMC_MINIMAL_RUNTIME)
-  if (data->simulationInfo.nlsCsvInfomation)
+  if (data->simulationInfo->nlsCsvInfomation)
   {
     print_csvLineCallStats(((struct csvStats*) nonlinsys->csvData)->callStats,
                            nonlinsys->numberOfCall,
@@ -727,7 +727,7 @@ int check_nonlinear_solutions(DATA *data, int printFailingSystems)
 {
   long i;
 
-  for(i=0; i<data->modelData.nNonLinearSystems; ++i) {
+  for(i=0; i<data->modelData->nNonLinearSystems; ++i) {
      if(check_nonlinear_solution(data, printFailingSystems, i))
        return 1;
   }
@@ -749,7 +749,7 @@ int check_nonlinear_solutions(DATA *data, int printFailingSystems)
  */
 int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
 {
-  NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
+  NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo->nonlinearSystemData;
   long j;
   int i = sysNumber;
 
@@ -758,17 +758,17 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
     int index = nonlinsys[i].equationIndex, indexes[2] = {1,index};
     if (!printFailingSystems) return 1;
     warningStreamPrintWithEquationIndexes(LOG_NLS, 1, indexes, "nonlinear system %d fails: at t=%g", index, data->localData[0]->timeValue);
-    if(data->simulationInfo.initial)
+    if(data->simulationInfo->initial)
     {
       warningStreamPrint(LOG_NLS, 0, "proper start-values for some of the following iteration variables might help");
     }
-    for(j=0; j<modelInfoGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).numVar; ++j) {
+    for(j=0; j<modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).numVar; ++j) {
       int done=0;
       long k;
-      const MODEL_DATA *mData = &(data->modelData);
+      const MODEL_DATA *mData = data->modelData;
       for(k=0; k<mData->nVariablesReal && !done; ++k)
       {
-        if (!strcmp(mData->realVarsData[k].info.name, modelInfoGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).vars[j]))
+        if (!strcmp(mData->realVarsData[k].info.name, modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).vars[j]))
         {
         done = 1;
         warningStreamPrint(LOG_NLS, 0, "[%ld] Real %s(start=%g, nominal=%g)", j+1,
@@ -779,7 +779,7 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
       }
       if (!done)
       {
-        warningStreamPrint(LOG_NLS, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).vars[j]);
+        warningStreamPrint(LOG_NLS, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).vars[j]);
       }
     }
     messageCloseWarning(LOG_NLS);
@@ -807,9 +807,9 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
 void cleanUpOldValueListAfterEvent(DATA *data, double time)
 {
   long i;
-  NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
+  NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo->nonlinearSystemData;
 
-  for(i=0; i<data->modelData.nNonLinearSystems; ++i) {
+  for(i=0; i<data->modelData->nNonLinearSystems; ++i) {
     cleanValueListbyTime(nonlinsys[i].oldValueList, time);
   }
 }

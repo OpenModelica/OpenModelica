@@ -101,16 +101,16 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
 
   DATA* data = optData->data;
   threadData_t *threadData = optData->threadData;
-  SIMULATION_INFO *sInfo = &(data->simulationInfo);
+  SIMULATION_INFO *sInfo = data->simulationInfo;
 
-  if(!data->simulationInfo.external_input.active){
+  if(!data->simulationInfo->external_input.active){
      externalInputallocate(data);
   }
 
    /* Initial DASSL solver */
    DASSL_DATA* dasslData = (DASSL_DATA*) malloc(sizeof(DASSL_DATA));
-   tol = data->simulationInfo.tolerance;
-   data->simulationInfo.tolerance = fmin(fmax(tol,1e-8),1e-3);
+   tol = data->simulationInfo->tolerance;
+   data->simulationInfo->tolerance = fmin(fmax(tol,1e-8),1e-3);
 
    infoStreamPrint(LOG_SOLVER, 0, "Initial Guess: Initializing DASSL");
    sInfo->solverMethod = "dassl";
@@ -122,28 +122,28 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
    u0 = optData->bounds.u0;
    v = optData->v;
 
-   if(!data->simulationInfo.external_input.active)
+   if(!data->simulationInfo->external_input.active)
      for(i = 0; i< nu;++i)
-       data->simulationInfo.inputVars[i] = u0[i]/*optData->bounds.scalF[i + nx]*/;
+       data->simulationInfo->inputVars[i] = u0[i]/*optData->bounds.scalF[i + nx]*/;
 
    printGuess = (short)(ACTIVE_STREAM(LOG_INIT) && !ACTIVE_STREAM(LOG_SOLVER));
 
-   if((double)data->simulationInfo.startTime < optData->time.t0){
-     double t = data->simulationInfo.startTime;
-     const int nBoolean = data->modelData.nVariablesBoolean;
-     const int nInteger = data->modelData.nVariablesInteger;
-     const int nRelations =  data->modelData.nRelations;
+   if((double)data->simulationInfo->startTime < optData->time.t0){
+     double t = data->simulationInfo->startTime;
+     const int nBoolean = data->modelData->nVariablesBoolean;
+     const int nInteger = data->modelData->nVariablesInteger;
+     const int nRelations =  data->modelData->nRelations;
 
      FILE * pFile = optData->pFile;
      fprintf(pFile, "%lf ",(double)t);
      for(i = 0; i < nu; ++i){
-       fprintf(pFile, "%lf ", (float)data->simulationInfo.inputVars[i]);
+       fprintf(pFile, "%lf ", (float)data->simulationInfo->inputVars[i]);
      }
      fprintf(pFile, "%s", "\n");
      if(1){
        printf("\nPreSim");
        printf("\n========================================================\n");
-       printf("\ndone: time[%i] = %g",0,(double)data->simulationInfo.startTime);
+       printf("\ndone: time[%i] = %g",0,(double)data->simulationInfo->startTime);
      }
      while(t < optData->time.t0){
        externalInputUpdate(data);
@@ -152,19 +152,19 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
        sim_result.emit(&sim_result,data,threadData);
        fprintf(pFile, "%lf ",(double)data->localData[0]->timeValue);
        for(i = 0; i < nu; ++i){
-         fprintf(pFile, "%lf ", (float)data->simulationInfo.inputVars[i]);
+         fprintf(pFile, "%lf ", (float)data->simulationInfo->inputVars[i]);
        }
        fprintf(pFile, "%s", "\n");
      }
      memcpy(optData->v0, data->localData[0]->realVars, nReal*sizeof(modelica_real));
      memcpy(optData->i0, data->localData[0]->integerVars, nInteger*sizeof(modelica_integer));
      memcpy(optData->b0, data->localData[0]->booleanVars, nBoolean*sizeof(modelica_boolean));
-     memcpy(optData->i0Pre, data->simulationInfo.integerVarsPre, nInteger*sizeof(modelica_integer));
-     memcpy(optData->b0Pre, data->simulationInfo.booleanVarsPre, nBoolean*sizeof(modelica_boolean));
-     memcpy(optData->v0Pre, data->simulationInfo.realVarsPre, nReal*sizeof(modelica_real));
-     memcpy(optData->rePre, data->simulationInfo.relationsPre, nRelations*sizeof(modelica_boolean));
-     memcpy(optData->re, data->simulationInfo.relations, nRelations*sizeof(modelica_boolean));
-     memcpy(optData->storeR, data->simulationInfo.storedRelations, nRelations*sizeof(modelica_boolean));
+     memcpy(optData->i0Pre, data->simulationInfo->integerVarsPre, nInteger*sizeof(modelica_integer));
+     memcpy(optData->b0Pre, data->simulationInfo->booleanVarsPre, nBoolean*sizeof(modelica_boolean));
+     memcpy(optData->v0Pre, data->simulationInfo->realVarsPre, nReal*sizeof(modelica_real));
+     memcpy(optData->rePre, data->simulationInfo->relationsPre, nRelations*sizeof(modelica_boolean));
+     memcpy(optData->re, data->simulationInfo->relations, nRelations*sizeof(modelica_boolean));
+     memcpy(optData->storeR, data->simulationInfo->storedRelations, nRelations*sizeof(modelica_boolean));
 
      if(1){
        printf("\n--------------------------------------------------------");
@@ -191,7 +191,7 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
          rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
          importStartValues(data, threadData, cflags, (double)optData->time.t[i][j]);
          for(l=0; l<nReal; ++l){
-            data->localData[0]->realVars[l] = data->modelData.realVarsData[l].attribute.start;
+            data->localData[0]->realVars[l] = data->modelData->realVarsData[l].attribute.start;
          }
        }
 
@@ -207,7 +207,7 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
            warningStreamPrint(LOG_STDOUT, 0, "Initial guess failure at time %g",(double)optData->time.t[i][j]);
            warningStreamPrint(LOG_STDOUT, 0, "%g<= (%s=%g) <=%g",
                (double)optData->bounds.vmin[l]*optData->bounds.vnom[l],
-               data->modelData.realVarsData[l].info.name,
+               data->modelData->realVarsData[l].info.name,
                (double)v[i][j][l],
                (double)optData->bounds.vmax[l]*optData->bounds.vnom[l]);
            printf("\n********************************************");
@@ -225,7 +225,7 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
   dassl_deinitial(solverInfo->solverData);
   solverInfo->solverData = (void*)optData;
   sInfo->solverMethod = "optimization";
-  data->simulationInfo.tolerance = tol;
+  data->simulationInfo->tolerance = tol;
 
   externalInputFree(data);
   return op;
@@ -247,7 +247,7 @@ static int initial_guess_ipopt_cflag(OptData *optData, char* cflags)
     const int nReal = optData->dim.nReal;
 
     for(i = 0; i< nu; ++i )
-    optData->data->simulationInfo.inputVars[i] = optData->bounds.u0[i];
+    optData->data->simulationInfo->inputVars[i] = optData->bounds.u0[i];
     for(i = 0; i < nsi; ++i){
       for(j = 0; j < np; ++j){
         memcpy(optData->v[i][j], optData->v0, nReal*sizeof(modelica_real));
@@ -308,7 +308,7 @@ static inline void init_ipopt_data(OptData *optData, const short op){
         ipop->vopt[l + shift] = optData->v[i][j][l]*optData->bounds.scalF[l];
       }
       for(;l<nv;++l){
-        ipop->vopt[l + shift] = data->simulationInfo.inputVars[l-nx] * optData->bounds.scalF[l];
+        ipop->vopt[l + shift] = data->simulationInfo->inputVars[l-nx] * optData->bounds.scalF[l];
       }
     }
   }
@@ -317,15 +317,15 @@ static inline void init_ipopt_data(OptData *optData, const short op){
   l = NRes-ncf;
   for(j = 0; j< nc; ++j){
     for(i = nx; i < l; i += nJ){
-      ipop->gmin[i+j] = data->modelData.realVarsData[j + index_con].attribute.min;
-      ipop->gmax[i+j] = data->modelData.realVarsData[j + index_con].attribute.max;
+      ipop->gmin[i+j] = data->modelData->realVarsData[j + index_con].attribute.min;
+      ipop->gmax[i+j] = data->modelData->realVarsData[j + index_con].attribute.max;
     }
   }
 
   /*terminal constraint(s)*/
   for(j = 0; j < ncf; ++j, ++i){
-    ipop->gmin[l+j] = data->modelData.realVarsData[j + index_conf].attribute.min;
-    ipop->gmax[l+j] = data->modelData.realVarsData[j + index_conf].attribute.max;
+    ipop->gmin[l+j] = data->modelData->realVarsData[j + index_conf].attribute.min;
+    ipop->gmax[l+j] = data->modelData->realVarsData[j + index_conf].attribute.max;
   }
 
 
@@ -343,7 +343,7 @@ static inline void smallIntSolverStep(DATA* data, threadData_t *threadData, SOLV
 
     rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
     do{
-      if(data->modelData.nStates < 1){
+      if(data->modelData->nStates < 1){
         solverInfo->currentTime = tstop;
         data->localData[0]->timeValue = tstop;
         break;

@@ -95,8 +95,8 @@ int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   kinOde->solverInfo = solverInfo;
   kinOde->kData->mset = 50;
 
-  kinOde->kData->fnormtol = kinOde->data->simulationInfo.tolerance;
-  kinOde->kData->scsteptol = kinOde->data->simulationInfo.tolerance;
+  kinOde->kData->fnormtol = kinOde->data->simulationInfo->tolerance;
+  kinOde->kData->scsteptol = kinOde->data->simulationInfo->tolerance;
 
   KINSetFuncNormTol(kinOde->kData->kmem, kinOde->kData->fnormtol);
   KINSetScaledStepTol(kinOde->kData->kmem, kinOde->kData->scsteptol);
@@ -147,7 +147,7 @@ int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
 static int allocateNlpOde(KINODE *kinOde)
 {
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
-  nlp->nStates = kinOde->data->modelData.nStates;
+  nlp->nStates = kinOde->data->modelData->nStates;
 
   switch(kinOde->flag)
   {
@@ -202,9 +202,9 @@ static int boundsVars(KINODE *kinOde)
 
   for(i =0;i<nlp->nStates;i++)
   {
-    nlp->min[i] = data->modelData.realVarsData[i].attribute.min;
-    nlp->max[i] = data->modelData.realVarsData[i].attribute.max;
-    tmp = fabs(data->modelData.realVarsData[i].attribute.nominal);
+    nlp->min[i] = data->modelData->realVarsData[i].attribute.min;
+    nlp->max[i] = data->modelData->realVarsData[i].attribute.max;
+    tmp = fabs(data->modelData->realVarsData[i].attribute.nominal);
     tmp = tmp >= 0.0 ? tmp : 1.0;
     nlp->s[i] = 1.0/tmp;
   }
@@ -332,7 +332,7 @@ static int allocateKINSOLODE(KINODE *kinOde)
 {
   int m;
   DATA *data = kinOde->data;
-  int n = data->modelData.nStates;
+  int n = data->modelData->nStates;
   int i, j, k;
   double* c;
   KDATAODE * kData = (kinOde)->kData;
@@ -436,7 +436,7 @@ static int refreshModell(DATA* data, threadData_t *threadData, double* x, double
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
 
-  memcpy(sData->realVars, x, sizeof(double)*data->modelData.nStates);
+  memcpy(sData->realVars, x, sizeof(double)*data->modelData->nStates);
   sData->timeValue = time;
   /* read input vars */
   externalInputUpdate(data);

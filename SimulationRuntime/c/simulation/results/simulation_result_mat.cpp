@@ -81,7 +81,7 @@ static const struct VAR_INFO cpuTimeValName = {0,"$cpuTime","cpu time [s]",{"",-
 static int calcDataSize(simulation_result *self,DATA *data)
 {
   mat_data *matData = (mat_data*) self->storage;
-  const MODEL_DATA *modelData = &(data->modelData);
+  const MODEL_DATA *modelData = data->modelData;
 
   int sz = 1; /* start with one for the timeValue */
 
@@ -125,7 +125,7 @@ static int calcDataSize(simulation_result *self,DATA *data)
 static const VAR_INFO** calcDataNames(simulation_result *self,DATA *data,int dataSize)
 {
   mat_data *matData = (mat_data*) self->storage;
-  const MODEL_DATA *modelData = &(data->modelData);
+  const MODEL_DATA *modelData = data->modelData;
 
   const VAR_INFO** names = (const VAR_INFO**) malloc((dataSize)*sizeof(struct VAR_INFO*));
   int curVar = 0;
@@ -196,7 +196,7 @@ void mat4_init(simulation_result *self,DATA *data, threadData_t *threadData)
 {
   mat_data *matData = new mat_data();
   self->storage = matData;
-  const MODEL_DATA *mData = &(data->modelData);
+  const MODEL_DATA *mData = data->modelData;
 
   const char Aclass[] = "A1 bt. ir1 na  Tj  re  ac  nt  so   r   y   ";
 
@@ -214,8 +214,8 @@ void mat4_init(simulation_result *self,DATA *data, threadData_t *threadData)
   matData->data1HdrPos = -1;
   matData->data2HdrPos = -1;
   matData->ntimepoints = 0;
-  matData->startTime = data->simulationInfo.startTime;
-  matData->stopTime = data->simulationInfo.stopTime;
+  matData->startTime = data->simulationInfo->startTime;
+  matData->stopTime = data->simulationInfo->stopTime;
 
   try {
     /* open file */
@@ -320,23 +320,23 @@ void mat4_emit(simulation_result *self,DATA *data, threadData_t *threadData)
   matData->fp.write((char*)&(data->localData[0]->timeValue), sizeof(double));
   if(self->cpuTime)
     matData->fp.write((char*)&cpuTimeValue, sizeof(double));
-  for(int i = 0; i < data->modelData.nVariablesReal; i++) if(!data->modelData.realVarsData[i].filterOutput)
+  for(int i = 0; i < data->modelData->nVariablesReal; i++) if(!data->modelData->realVarsData[i].filterOutput)
     matData->fp.write((char*)&(data->localData[0]->realVars[i]),sizeof(double));
-  for(int i = 0; i < data->modelData.nVariablesInteger; i++) if(!data->modelData.integerVarsData[i].filterOutput)
+  for(int i = 0; i < data->modelData->nVariablesInteger; i++) if(!data->modelData->integerVarsData[i].filterOutput)
     {
       datPoint = (double) data->localData[0]->integerVars[i];
       matData->fp.write((char*)&datPoint,sizeof(double));
     }
-  for(int i = 0; i < data->modelData.nVariablesBoolean; i++) if(!data->modelData.booleanVarsData[i].filterOutput)
+  for(int i = 0; i < data->modelData->nVariablesBoolean; i++) if(!data->modelData->booleanVarsData[i].filterOutput)
     {
       datPoint = (double) data->localData[0]->booleanVars[i];
       matData->fp.write((char*)&datPoint,sizeof(double));
     }
-  for(int i = 0; i < data->modelData.nAliasBoolean; i++) if(!data->modelData.booleanAlias[i].filterOutput)
+  for(int i = 0; i < data->modelData->nAliasBoolean; i++) if(!data->modelData->booleanAlias[i].filterOutput)
     {
-      if(data->modelData.booleanAlias[i].negate)
+      if(data->modelData->booleanAlias[i].negate)
       {
-        datPoint = (double) (data->localData[0]->booleanVars[data->modelData.booleanAlias[i].nameID]==1?0:1);
+        datPoint = (double) (data->localData[0]->booleanVars[data->modelData->booleanAlias[i].nameID]==1?0:1);
         matData->fp.write((char*)&datPoint,sizeof(double));
       }
     }
@@ -451,7 +451,7 @@ void mat_writeMatVer4Matrix(simulation_result *self, DATA *data, threadData_t *t
 void generateDataInfo(simulation_result *self, DATA *data, threadData_t *threadData, int32_t* &dataInfo, int& rows, int& cols, int nVars, int nParams)
 {
   mat_data *matData = (mat_data*) self->storage;
-  const MODEL_DATA *mdl_data = &(data->modelData);
+  const MODEL_DATA *mdl_data = data->modelData;
 
   /* size_t nVars = mdl_data->nStates*2+mdl_data->nAlgebraic;
     rows = 1+nVars+mdl_data->nParameters+mdl_data->nVarsAliases; */
@@ -613,8 +613,8 @@ void generateDataInfo(simulation_result *self, DATA *data, threadData_t *threadD
 
 void generateData_1(DATA *data, threadData_t *threadData, double* &data_1, int& rows, int& cols, double tstart, double tstop)
 {
-  const SIMULATION_INFO *sInfo = &(data->simulationInfo);
-  const MODEL_DATA      *mData = &(data->modelData);
+  const SIMULATION_INFO *sInfo = data->simulationInfo;
+  const MODEL_DATA      *mData = data->modelData;
 
   int offset = 1;
   long i = 0;

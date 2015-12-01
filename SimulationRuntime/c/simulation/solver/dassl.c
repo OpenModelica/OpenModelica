@@ -143,20 +143,20 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
 
   RHSFinalFlag = 0;
 
-  dasslData->liw = 40 + data->modelData.nStates;
-  dasslData->lrw = 60 + ((maxOrder + 4) * data->modelData.nStates) + (data->modelData.nStates * data->modelData.nStates)  + (3*data->modelData.nZeroCrossings);
+  dasslData->liw = 40 + data->modelData->nStates;
+  dasslData->lrw = 60 + ((maxOrder + 4) * data->modelData->nStates) + (data->modelData->nStates * data->modelData->nStates)  + (3*data->modelData->nZeroCrossings);
   dasslData->rwork = (double*) calloc(dasslData->lrw, sizeof(double));
   assertStreamPrint(threadData, 0 != dasslData->rwork,"out of memory");
   dasslData->iwork = (int*)  calloc(dasslData->liw, sizeof(int));
   assertStreamPrint(threadData, 0 != dasslData->iwork,"out of memory");
-  dasslData->ng = (int) data->modelData.nZeroCrossings;
-  dasslData->jroot = (int*)  calloc(data->modelData.nZeroCrossings, sizeof(int));
+  dasslData->ng = (int) data->modelData->nZeroCrossings;
+  dasslData->jroot = (int*)  calloc(data->modelData->nZeroCrossings, sizeof(int));
   dasslData->rpar = (double**) malloc(3*sizeof(double*));
   dasslData->ipar = (int*) malloc(sizeof(int));
   dasslData->ipar[0] = ACTIVE_STREAM(LOG_JAC);
   assertStreamPrint(threadData, 0 != dasslData->ipar,"out of memory");
-  dasslData->atol = (double*) malloc(data->modelData.nStates*sizeof(double));
-  dasslData->rtol = (double*) malloc(data->modelData.nStates*sizeof(double));
+  dasslData->atol = (double*) malloc(data->modelData->nStates*sizeof(double));
+  dasslData->rtol = (double*) malloc(data->modelData->nStates*sizeof(double));
   dasslData->info = (int*) calloc(infoLength, sizeof(int));
   assertStreamPrint(threadData, 0 != dasslData->info,"out of memory");
   dasslData->dasslStatistics = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
@@ -167,12 +167,12 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
   dasslData->idid = 0;
 
   dasslData->sqrteps = sqrt(DBL_EPSILON);
-  dasslData->ysave = (double*) malloc(data->modelData.nStates*sizeof(double));
-  dasslData->delta_hh = (double*) malloc(data->modelData.nStates*sizeof(double));
-  dasslData->newdelta = (double*) malloc(data->modelData.nStates*sizeof(double));
-  dasslData->stateDer = (double*) malloc(data->modelData.nStates*sizeof(double));
+  dasslData->ysave = (double*) malloc(data->modelData->nStates*sizeof(double));
+  dasslData->delta_hh = (double*) malloc(data->modelData->nStates*sizeof(double));
+  dasslData->newdelta = (double*) malloc(data->modelData->nStates*sizeof(double));
+  dasslData->stateDer = (double*) malloc(data->modelData->nStates*sizeof(double));
 
-  data->simulationInfo.currentContext = CONTEXT_ALGEBRAIC;
+  data->simulationInfo->currentContext = CONTEXT_ALGEBRAIC;
 
   /* ### start configuration of dassl ### */
   infoStreamPrint(LOG_SOLVER, 1, "Configuration of the dassl code:");
@@ -181,12 +181,12 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
 
   /* set nominal values of the states for absolute tolerances */
   dasslData->info[1] = 1;
-  infoStreamPrint(LOG_SOLVER, 1, "The relative tolerance is %g. Following absolute tolerances are used for the states: ", data->simulationInfo.tolerance);
-  for(i=0; i<data->modelData.nStates; ++i)
+  infoStreamPrint(LOG_SOLVER, 1, "The relative tolerance is %g. Following absolute tolerances are used for the states: ", data->simulationInfo->tolerance);
+  for(i=0; i<data->modelData->nStates; ++i)
   {
-    dasslData->rtol[i] = data->simulationInfo.tolerance;
-    dasslData->atol[i] = data->simulationInfo.tolerance * fmax(fabs(data->modelData.realVarsData[i].attribute.nominal), 1e-32);
-    infoStreamPrint(LOG_SOLVER, 0, "%d. %s -> %g", i+1, data->modelData.realVarsData[i].info.name, dasslData->atol[i]);
+    dasslData->rtol[i] = data->simulationInfo->tolerance;
+    dasslData->atol[i] = data->simulationInfo->tolerance * fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
+    infoStreamPrint(LOG_SOLVER, 0, "%d. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, dasslData->atol[i]);
   }
   messageClose(LOG_SOLVER);
 
@@ -328,11 +328,11 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
   /* set up the appropriate function pointer */
   switch (dasslData->dasslJacobian){
     case DASSL_COLOREDNUMJAC:
-      data->simulationInfo.jacobianEvals = data->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern.maxColors;
+      data->simulationInfo->jacobianEvals = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern.maxColors;
       dasslData->jacobianFunction =  JacobianOwnNumColored;
       break;
     case DASSL_COLOREDSYMJAC:
-      data->simulationInfo.jacobianEvals = data->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern.maxColors;
+      data->simulationInfo->jacobianEvals = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern.maxColors;
       dasslData->jacobianFunction =  JacobianSymbolicColored;
       break;
     case DASSL_SYMJAC:
@@ -430,9 +430,9 @@ int printCurrentStatesVector(int logLevel, double* states, DATA* data, double ti
 {
   int i;
   infoStreamPrint(logLevel, 1, "states at time=%g", time);
-  for(i=0;i<data->modelData.nStates;++i)
+  for(i=0;i<data->modelData->nStates;++i)
   {
-    infoStreamPrint(logLevel, 0, "%d. %s = %g", i+1, data->modelData.realVarsData[i].info.name, states[i]);
+    infoStreamPrint(logLevel, 0, "%d. %s = %g", i+1, data->modelData->realVarsData[i].info.name, states[i]);
   }
   messageClose(logLevel);
 
@@ -462,7 +462,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   SIMULATION_DATA *sData = data->localData[0];
   SIMULATION_DATA *sDataOld = data->localData[1];
 
-  MODEL_DATA *mData = (MODEL_DATA*) &data->modelData;
+  MODEL_DATA *mData = (MODEL_DATA*) data->modelData;
 
   modelica_real* stateDer = dasslData->stateDer;
 
@@ -488,20 +488,20 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     dasslData->info[0] = 0;
     dasslData->idid = 0;
 
-    memcpy(stateDer, data->localData[1]->realVars + data->modelData.nStates, sizeof(double)*data->modelData.nStates);
+    memcpy(stateDer, data->localData[1]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
   }
 
   /* Calculate steps until TOUT is reached */
   if (dasslData->dasslSteps)
   {
     /* If dasslsteps is selected, the dassl run to stopTime or next sample event */
-    if (data->simulationInfo.nextSampleEvent < data->simulationInfo.stopTime)
+    if (data->simulationInfo->nextSampleEvent < data->simulationInfo->stopTime)
     {
-      tout = data->simulationInfo.nextSampleEvent;
+      tout = data->simulationInfo->nextSampleEvent;
     }
     else
     {
-      tout = data->simulationInfo.stopTime;
+      tout = data->simulationInfo->stopTime;
     }
   }
   else
@@ -517,7 +517,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     infoStreamPrint(LOG_DASSL, 0, "Interpolate linear");
 
     /*euler step*/
-    for(i = 0; i < data->modelData.nStates; i++)
+    for(i = 0; i < data->modelData->nStates; i++)
     {
       sData->realVars[i] = sDataOld->realVars[i] + stateDer[i] * solverInfo->currentStepSize;
     }
@@ -563,14 +563,14 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
       warningStreamPrint(LOG_DASSL, 0, "A large amount of work has been expended.(About 500 steps). Trying to continue ...");
       infoStreamPrint(LOG_DASSL, 0, "DASSL will try again...");
       dasslData->info[0] = 1; /* try again */
-      if (solverInfo->currentTime <= data->simulationInfo.stopTime)
+      if (solverInfo->currentTime <= data->simulationInfo->stopTime)
         continue;
     }
     else if(dasslData->idid < 0)
     {
       fflush(stderr);
       fflush(stdout);
-      retVal = continue_DASSL(&dasslData->idid, &data->simulationInfo.tolerance);
+      retVal = continue_DASSL(&dasslData->idid, &data->simulationInfo->tolerance);
       warningStreamPrint(LOG_STDOUT, 0, "can't continue. time = %f", sData->timeValue);
       TRACE_POP
       break;
@@ -609,9 +609,9 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   threadData->currentErrorStage = saveJumpState;
 
   /* if a state event occurs than no sample event does need to be activated  */
-  if (data->simulationInfo.sampleActivated && solverInfo->currentTime < data->simulationInfo.nextSampleEvent)
+  if (data->simulationInfo->sampleActivated && solverInfo->currentTime < data->simulationInfo->nextSampleEvent)
   {
-    data->simulationInfo.sampleActivated = 0;
+    data->simulationInfo->sampleActivated = 0;
   }
 
 
@@ -724,7 +724,7 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
   int saveJumpState;
   int success = 0;
 
-  if (data->simulationInfo.currentContext == CONTEXT_ALGEBRAIC)
+  if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
     setContext(data, t, CONTEXT_ODE);
   }
@@ -750,9 +750,9 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
 
   /* get the difference between the temp_xd(=localData->statesDerivatives)
      and xd(=statesDerivativesBackup) */
-  for(i=0; i < data->modelData.nStates; i++)
+  for(i=0; i < data->modelData->nStates; i++)
   {
-    delta[i] = data->localData[0]->realVars[data->modelData.nStates + i] - yd[i];
+    delta[i] = data->localData[0]->realVars[data->modelData->nStates + i] - yd[i];
   }
   success = 1;
 #if !defined(OMC_EMCC)
@@ -767,7 +767,7 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
 
   data->localData[0]->timeValue = timeBackup;
 
-  if (data->simulationInfo.currentContext == CONTEXT_ODE){
+  if (data->simulationInfo->currentContext == CONTEXT_ODE){
     unsetContext(data);
   }
 
@@ -786,7 +786,7 @@ int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
   double timeBackup;
   int saveJumpState;
 
-  if (data->simulationInfo.currentContext == CONTEXT_ALGEBRAIC)
+  if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
     setContext(data, t, CONTEXT_EVENTS);
   }
@@ -808,7 +808,7 @@ int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
   threadData->currentErrorStage = saveJumpState;
   data->localData[0]->timeValue = timeBackup;
 
-  if (data->simulationInfo.currentContext == CONTEXT_EVENTS){
+  if (data->simulationInfo->currentContext == CONTEXT_EVENTS){
     unsetContext(data);
   }
 
@@ -823,33 +823,33 @@ int functionJacAColored(DATA* data, threadData_t *threadData, double* jac)
   const int index = data->callback->INDEX_JAC_A;
   unsigned int i,j,l,k,ii;
 
-  for(i=0; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors; i++)
+  for(i=0; i < data->simulationInfo->analyticJacobians[index].sparsePattern.maxColors; i++)
   {
-    for(ii=0; ii < data->simulationInfo.analyticJacobians[index].sizeCols; ii++)
-      if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
-        data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1;
+    for(ii=0; ii < data->simulationInfo->analyticJacobians[index].sizeCols; ii++)
+      if(data->simulationInfo->analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
+        data->simulationInfo->analyticJacobians[index].seedVars[ii] = 1;
 
     data->callback->functionJacA_column(data, threadData);
 
-    for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeCols; j++)
+    for(j = 0; j < data->simulationInfo->analyticJacobians[index].sizeCols; j++)
     {
-      if(data->simulationInfo.analyticJacobians[index].seedVars[j] == 1)
+      if(data->simulationInfo->analyticJacobians[index].seedVars[j] == 1)
       {
         if(j==0)
           ii = 0;
         else
-          ii = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j-1];
-        while(ii < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j])
+          ii = data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j-1];
+        while(ii < data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j])
         {
-          l  = data->simulationInfo.analyticJacobians[index].sparsePattern.index[ii];
-          k  = j*data->simulationInfo.analyticJacobians[index].sizeRows + l;
-          jac[k] = data->simulationInfo.analyticJacobians[index].resultVars[l];
+          l  = data->simulationInfo->analyticJacobians[index].sparsePattern.index[ii];
+          k  = j*data->simulationInfo->analyticJacobians[index].sizeRows + l;
+          jac[k] = data->simulationInfo->analyticJacobians[index].resultVars[l];
           ii++;
         };
       }
     }
-    for(ii=0; ii < data->simulationInfo.analyticJacobians[index].sizeCols; ii++)
-      if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i) data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0;
+    for(ii=0; ii < data->simulationInfo->analyticJacobians[index].sizeCols; ii++)
+      if(data->simulationInfo->analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i) data->simulationInfo->analyticJacobians[index].seedVars[ii] = 0;
 
   }
 
@@ -865,18 +865,18 @@ int functionJacASym(DATA* data, threadData_t *threadData, double* jac)
   unsigned int i,j,k;
 
   k = 0;
-  for(i=0; i < data->simulationInfo.analyticJacobians[index].sizeCols; i++)
+  for(i=0; i < data->simulationInfo->analyticJacobians[index].sizeCols; i++)
   {
-    data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
+    data->simulationInfo->analyticJacobians[index].seedVars[i] = 1.0;
 
     data->callback->functionJacA_column(data, threadData);
 
-    for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeRows; j++)
+    for(j = 0; j < data->simulationInfo->analyticJacobians[index].sizeRows; j++)
     {
-      jac[k++] = data->simulationInfo.analyticJacobians[index].resultVars[j];
+      jac[k++] = data->simulationInfo->analyticJacobians[index].resultVars[j];
     }
 
-    data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
+    data->simulationInfo->analyticJacobians[index].seedVars[i] = 0.0;
   }
 
   TRACE_POP
@@ -915,10 +915,10 @@ static int JacobianSymbolicColored(double *t, double *y, double *yprime, double 
 
   /* add cj to the diagonal elements of the matrix */
   j = 0;
-  for(i = 0; i < data->modelData.nStates; i++)
+  for(i = 0; i < data->modelData->nStates; i++)
   {
     pd[j] -= (double) *cj;
-    j += data->modelData.nStates + 1;
+    j += data->modelData->nStates + 1;
   }
   data->localData[0]->realVars = backupStates;
   data->localData[0]->timeValue = timeBackup;
@@ -960,10 +960,10 @@ static int JacobianSymbolic(double *t, double *y, double *yprime, double *deltaD
 
   /* add cj to the diagonal elements of the matrix */
   j = 0;
-  for(i = 0; i < data->modelData.nStates; i++)
+  for(i = 0; i < data->modelData->nStates; i++)
   {
     pd[j] -= (double) *cj;
-    j += data->modelData.nStates + 1;
+    j += data->modelData->nStates + 1;
   }
   data->localData[0]->realVars = backupStates;
   data->localData[0]->timeValue = timeBackup;
@@ -990,7 +990,7 @@ int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, do
   int i,j;
 
 
-  for(i=data->modelData.nStates-1; i >= 0; i--)
+  for(i=data->modelData->nStates-1; i >= 0; i--)
   {
     delta_hhh = *h * yprime[i];
     delta_hh = delta_h * fmax(fmax(fabs(y[i]),fabs(delta_hhh)),fabs(1. / wt[i]));
@@ -1008,9 +1008,9 @@ int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, do
 
     functionODE_residual(t, y, yprime, cj, dasslData->newdelta, &ires, rpar, ipar);
 
-    for(j = data->modelData.nStates-1; j >= 0 ; j--)
+    for(j = data->modelData->nStates-1; j >= 0 ; j--)
     {
-      matrixA[i*data->modelData.nStates+j] = (dasslData->newdelta[j] - delta[j]) * deltaInv;
+      matrixA[i*data->modelData->nStates+j] = (dasslData->newdelta[j] - delta[j]) * deltaInv;
     }
     y[i] = ysave;
   }
@@ -1041,10 +1041,10 @@ static int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, 
   }
   j = 0;
   /* add cj to diagonal elements and store in pd */
-  for(i = 0; i < data->modelData.nStates; i++)
+  for(i = 0; i < data->modelData->nStates; i++)
   {
     pd[j] -= (double) *cj;
-    j += data->modelData.nStates + 1;
+    j += data->modelData->nStates + 1;
   }
   unsetContext(data);
 
@@ -1070,11 +1070,11 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
 
   unsigned int i,j,l,k,ii;
 
-  for(i = 0; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors; i++)
+  for(i = 0; i < data->simulationInfo->analyticJacobians[index].sparsePattern.maxColors; i++)
   {
-    for(ii=0; ii < data->simulationInfo.analyticJacobians[index].sizeCols; ii++)
+    for(ii=0; ii < data->simulationInfo->analyticJacobians[index].sizeCols; ii++)
     {
-      if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
+      if(data->simulationInfo->analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
       {
         delta_hhh = *h * yprime[ii];
         delta_hh[ii] = delta_h * fmax(fmax(fabs(y[ii]),fabs(delta_hhh)),fabs(1./wt[ii]));
@@ -1092,18 +1092,18 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
 
     increaseJacContext(data);
 
-    for(ii = 0; ii < data->simulationInfo.analyticJacobians[index].sizeCols; ii++)
+    for(ii = 0; ii < data->simulationInfo->analyticJacobians[index].sizeCols; ii++)
     {
-      if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
+      if(data->simulationInfo->analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
       {
         if(ii==0)
           j = 0;
         else
-          j = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[ii-1];
-        while(j < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[ii])
+          j = data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[ii-1];
+        while(j < data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[ii])
         {
-          l  =  data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
-          k  = l + ii*data->simulationInfo.analyticJacobians[index].sizeRows;
+          l  =  data->simulationInfo->analyticJacobians[index].sparsePattern.index[j];
+          k  = l + ii*data->simulationInfo->analyticJacobians[index].sizeRows;
           matrixA[k] = (dasslData->newdelta[l] - delta[l]) * delta_hh[ii];
           j++;
         };
@@ -1139,10 +1139,10 @@ static int JacobianOwnNumColored(double *t, double *y, double *yprime, double *d
 
   /* add cj to diagonal elements and store in pd */
   j = 0;
-  for(i = 0; i < data->modelData.nStates; i++)
+  for(i = 0; i < data->modelData->nStates; i++)
   {
     pd[j] -= (double) *cj;
-    j += data->modelData.nStates + 1;
+    j += data->modelData->nStates + 1;
   }
   unsetContext(data);
 

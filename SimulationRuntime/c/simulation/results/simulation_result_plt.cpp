@@ -120,62 +120,62 @@ static void add_result(simulation_result *self,DATA *data,double *data_, long *a
       data_[pltData->currentPos++] = cpuTimeValue;
 
     /* .. reals .. */
-    for(i = 0; i < simData->modelData.nVariablesReal; i++) {
-      if(!simData->modelData.realVarsData[i].filterOutput) {
+    for(i = 0; i < simData->modelData->nVariablesReal; i++) {
+      if(!simData->modelData->realVarsData[i].filterOutput) {
         data_[pltData->currentPos++] = simData->localData[0]->realVars[i];
       }
     }
     /* .. integers .. */
-    for(i = 0; i < simData->modelData.nVariablesInteger; i++) {
-      if(!simData->modelData.integerVarsData[i].filterOutput) {
+    for(i = 0; i < simData->modelData->nVariablesInteger; i++) {
+      if(!simData->modelData->integerVarsData[i].filterOutput) {
         data_[pltData->currentPos++] = simData->localData[0]->integerVars[i];
       }
     }
     /* .. booleans .. */
-    for(i = 0; i < simData->modelData.nVariablesBoolean; i++) {
-      if(!simData->modelData.booleanVarsData[i].filterOutput) {
+    for(i = 0; i < simData->modelData->nVariablesBoolean; i++) {
+      if(!simData->modelData->booleanVarsData[i].filterOutput) {
         data_[pltData->currentPos++] = simData->localData[0]->booleanVars[i];
       }
     }
     /* .. alias reals .. */
-    for(i = 0; i < simData->modelData.nAliasReal; i++) {
-      if(!simData->modelData.realAlias[i].filterOutput) {
+    for(i = 0; i < simData->modelData->nAliasReal; i++) {
+      if(!simData->modelData->realAlias[i].filterOutput) {
         double value;
-        if(simData->modelData.realAlias[i].aliasType == 2)
+        if(simData->modelData->realAlias[i].aliasType == 2)
           value = (simData->localData[0])->timeValue;
-        else if(simData->modelData.realAlias[i].aliasType == 1)
-          value = simData->simulationInfo.realParameter[simData->modelData.realAlias[i].nameID];
+        else if(simData->modelData->realAlias[i].aliasType == 1)
+          value = simData->simulationInfo->realParameter[simData->modelData->realAlias[i].nameID];
         else
-          value = (simData->localData[0])->realVars[simData->modelData.realAlias[i].nameID];
-        if(simData->modelData.realAlias[i].negate)
+          value = (simData->localData[0])->realVars[simData->modelData->realAlias[i].nameID];
+        if(simData->modelData->realAlias[i].negate)
           data_[pltData->currentPos++] = -value;
         else
           data_[pltData->currentPos++] = value;
       }
     }
     /* .. alias integers .. */
-    for(i = 0; i < simData->modelData.nAliasInteger; i++) {
-      if(!simData->modelData.integerAlias[i].filterOutput) {
+    for(i = 0; i < simData->modelData->nAliasInteger; i++) {
+      if(!simData->modelData->integerAlias[i].filterOutput) {
         modelica_integer value;
-        if(simData->modelData.integerAlias[i].aliasType == 1)
-          value = simData->simulationInfo.integerParameter[simData->modelData.realAlias[i].nameID];
+        if(simData->modelData->integerAlias[i].aliasType == 1)
+          value = simData->simulationInfo->integerParameter[simData->modelData->realAlias[i].nameID];
         else
-          value = (simData->localData[0])->integerVars[simData->modelData.realAlias[i].nameID];
-        if(simData->modelData.integerAlias[i].negate)
+          value = (simData->localData[0])->integerVars[simData->modelData->realAlias[i].nameID];
+        if(simData->modelData->integerAlias[i].negate)
           data_[pltData->currentPos++] = -value;
         else
           data_[pltData->currentPos++] = value;
       }
     }
     /* .. alias booleans .. */
-    for(i = 0; i < simData->modelData.nAliasBoolean; i++) {
-      if(!simData->modelData.booleanAlias[i].filterOutput) {
+    for(i = 0; i < simData->modelData->nAliasBoolean; i++) {
+      if(!simData->modelData->booleanAlias[i].filterOutput) {
         modelica_boolean value;
-        if(simData->modelData.integerAlias[i].aliasType == 1)
-          value = simData->simulationInfo.booleanParameter[simData->modelData.realAlias[i].nameID];
+        if(simData->modelData->integerAlias[i].aliasType == 1)
+          value = simData->simulationInfo->booleanParameter[simData->modelData->realAlias[i].nameID];
         else
-          value = (simData->localData[0])->booleanVars[simData->modelData.realAlias[i].nameID];
-        if(simData->modelData.booleanAlias[i].negate)
+          value = (simData->localData[0])->booleanVars[simData->modelData->realAlias[i].nameID];
+        if(simData->modelData->booleanAlias[i].negate)
           data_[pltData->currentPos++] = value==1?0:1;
         else
           data_[pltData->currentPos++] = value;
@@ -202,8 +202,8 @@ void plt_init(simulation_result *self,DATA *data, threadData_t *threadData)
 
   assertStreamPrint(threadData, self->numpoints >= 0, "Automatic output steps not supported in OpenModelica yet. Set numpoints >= 0.");
 
-  pltData->num_vars = calcDataSize(self,&(data->modelData));
-  pltData->dataSize = calcDataSize(self,&(data->modelData));
+  pltData->num_vars = calcDataSize(self,data->modelData);
+  pltData->dataSize = calcDataSize(self,data->modelData);
   pltData->simulationResultData = (double*)malloc(self->numpoints * pltData->dataSize * sizeof(double));
   if(!pltData->simulationResultData) {
     throwStreamPrint(threadData, "Error allocating simulation result data of size %ld failed",self->numpoints * pltData->dataSize);
@@ -240,7 +240,7 @@ static void printPltLine(FILE* f, double time, double val)
 void plt_free(simulation_result *self,DATA *data, threadData_t *threadData)
 {
   plt_data *pltData = (plt_data*) self->storage;
-  const MODEL_DATA *modelData = &(data->modelData);
+  const MODEL_DATA *modelData = data->modelData;
   int varn = 0, i, var;
   FILE* f = NULL;
 

@@ -115,7 +115,7 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
 
 #ifdef WITH_IPOPT
   case S_OPTIMIZATION:
-    if((int)(data->modelData.nStates + data->modelData.nInputVars) > 0){
+    if((int)(data->modelData->nStates + data->modelData->nInputVars) > 0){
       retVal = ipopt_step(data, threadData, solverInfo);
     }else{
       solverInfo->solverMethod = S_EULER;
@@ -160,7 +160,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   int retValue = 0;
   int i;
 
-  SIMULATION_INFO *simInfo = &(data->simulationInfo);
+  SIMULATION_INFO *simInfo = data->simulationInfo;
 
   /* if the given step size is too small redefine it */
   if ((simInfo->stepSize < MINIMAL_STEP_SIZE) && (simInfo->stopTime > 0)){
@@ -196,7 +196,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   case S_EULER: break;
   case S_SYM_IMP_EULER:
   {
-    allocateSymEulerImp(solverInfo, data->modelData.nStates);
+    allocateSymEulerImp(solverInfo, data->modelData->nStates);
     break;
   }
   case S_RUNGEKUTTA:
@@ -207,7 +207,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     rungeData->work_states_ndims = rungekutta_s;
     rungeData->work_states = (double**) malloc((rungeData->work_states_ndims + 1) * sizeof(double*));
     for(i = 0; i < rungeData->work_states_ndims + 1; i++)
-      rungeData->work_states[i] = (double*) calloc(data->modelData.nStates, sizeof(double));
+      rungeData->work_states[i] = (double*) calloc(data->modelData->nStates, sizeof(double));
     solverInfo->solverData = rungeData;
     break;
   }
@@ -397,7 +397,7 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
   TRACE_PUSH
   int retValue = 0;
 
-  SIMULATION_INFO *simInfo = &(data->simulationInfo);
+  SIMULATION_INFO *simInfo = data->simulationInfo;
 
   copyStartValuestoInitValues(data);
 
@@ -465,22 +465,22 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   int retValue = 0;
   int ui;
 
-  SIMULATION_INFO *simInfo = &(data->simulationInfo);
+  SIMULATION_INFO *simInfo = data->simulationInfo;
 
   /* Last step with terminal()=true */
   if(solverInfo->currentTime >= simInfo->stopTime && solverInfo->solverMethod != S_OPTIMIZATION) {
     infoStreamPrint(LOG_EVENTS_V, 0, "terminal event at stop time %g", solverInfo->currentTime);
-    data->simulationInfo.terminal = 1;
+    data->simulationInfo->terminal = 1;
     updateDiscreteSystem(data, threadData);
 
     /* prevent emit if noeventemit flag is used */
     if (!(omc_flag[FLAG_NOEVENTEMIT]))
       sim_result.emit(&sim_result, data, threadData);
 
-    data->simulationInfo.terminal = 0;
+    data->simulationInfo->terminal = 0;
   }
 
-  if (0 != strcmp("ia", data->simulationInfo.outputFormat)) {
+  if (0 != strcmp("ia", data->simulationInfo->outputFormat)) {
     communicateStatus("Finished", 1);
   }
 
@@ -548,19 +548,19 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     }
 
     infoStreamPrint(LOG_STATS_V, 1, "function calls");
-    infoStreamPrint(LOG_STATS_V, 0, "%5ld calls of functionODE", data->simulationInfo.callStatistics.functionODE);
-    infoStreamPrint(LOG_STATS_V, 0, "%5ld calls of updateDiscreteSystem", data->simulationInfo.callStatistics.updateDiscreteSystem);
-    infoStreamPrint(LOG_STATS_V, 0, "%5ld calls of functionZeroCrossingsEquations", data->simulationInfo.callStatistics.functionZeroCrossingsEquations);
-    infoStreamPrint(LOG_STATS_V, 0, "%5ld calls of functionZeroCrossings", data->simulationInfo.callStatistics.functionZeroCrossings);
+    infoStreamPrint(LOG_STATS_V, 0, "%5ld calls of functionODE", data->simulationInfo->callStatistics.functionODE);
+    infoStreamPrint(LOG_STATS_V, 0, "%5ld calls of updateDiscreteSystem", data->simulationInfo->callStatistics.updateDiscreteSystem);
+    infoStreamPrint(LOG_STATS_V, 0, "%5ld calls of functionZeroCrossingsEquations", data->simulationInfo->callStatistics.functionZeroCrossingsEquations);
+    infoStreamPrint(LOG_STATS_V, 0, "%5ld calls of functionZeroCrossings", data->simulationInfo->callStatistics.functionZeroCrossings);
     messageClose(LOG_STATS_V);
 
     infoStreamPrint(LOG_STATS_V, 1, "linear systems");
-    for(ui=0; ui<data->modelData.nLinearSystems; ui++)
+    for(ui=0; ui<data->modelData->nLinearSystems; ui++)
       printLinearSystemSolvingStatistics(data, ui, LOG_STATS_V);
     messageClose(LOG_STATS_V);
 
     infoStreamPrint(LOG_STATS_V, 1, "non-linear systems");
-    for(ui=0; ui<data->modelData.nNonLinearSystems; ui++)
+    for(ui=0; ui<data->modelData->nNonLinearSystems; ui++)
       printNonLinearSystemSolvingStatistics(data, ui, LOG_STATS_V);
     messageClose(LOG_STATS_V);
 
@@ -593,7 +593,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   int i, retVal = 0;
   unsigned int ui;
   SOLVER_INFO solverInfo;
-  SIMULATION_INFO *simInfo = &(data->simulationInfo);
+  SIMULATION_INFO *simInfo = data->simulationInfo;
 
   solverInfo.solverMethod = solverID;
 
@@ -635,10 +635,10 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   if(0 == retVal)
   {
     /* if the model has no time changing variables skip the main loop*/
-    if(data->modelData.nVariablesReal == 0    &&
-       data->modelData.nVariablesInteger == 0 &&
-       data->modelData.nVariablesBoolean == 0 &&
-       data->modelData.nVariablesString == 0 )
+    if(data->modelData->nVariablesReal == 0    &&
+       data->modelData->nVariablesInteger == 0 &&
+       data->modelData->nVariablesBoolean == 0 &&
+       data->modelData->nVariablesString == 0 )
     {
       /* prevent emit if noeventemit flag is used */
       if (!(omc_flag[FLAG_NOEVENTEMIT]))
@@ -701,11 +701,11 @@ static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
   int i;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
-  modelica_real* stateDer = sDataOld->realVars + data->modelData.nStates;
+  modelica_real* stateDer = sDataOld->realVars + data->modelData->nStates;
 
   solverInfo->currentTime = sDataOld->timeValue + solverInfo->currentStepSize;
 
-  for(i = 0; i < data->modelData.nStates; i++)
+  for(i = 0; i < data->modelData->nStates; i++)
   {
     sData->realVars[i] = sDataOld->realVars[i] + stateDer[i] * solverInfo->currentStepSize;
   }
@@ -732,7 +732,7 @@ static int sym_euler_im_step(DATA* data, threadData_t *threadData, SOLVER_INFO* 
   /* eval alg equations, note ode is empty */
   data->callback->functionODE(data, threadData);
   /* update der(x)*/
-  for(i=0, j=data->modelData.nStates; i<data->modelData.nStates; ++i, ++j)
+  for(i=0, j=data->modelData->nStates; i<data->modelData->nStates; ++i, ++j)
     data->localData[0]->realVars[j] = (data->localData[0]->realVars[i]-data->localData[1]->realVars[i])/solverInfo->currentStepSize;
   return retVal;
 }
@@ -745,21 +745,21 @@ static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
   int i,j;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
-  modelica_real* stateDer = sData->realVars + data->modelData.nStates;
-  modelica_real* stateDerOld = sDataOld->realVars + data->modelData.nStates;
+  modelica_real* stateDer = sData->realVars + data->modelData->nStates;
+  modelica_real* stateDerOld = sDataOld->realVars + data->modelData->nStates;
 
   solverInfo->currentTime = sDataOld->timeValue + solverInfo->currentStepSize;
 
   /* We calculate k[0] before returning from this function.
    * We only want to calculate f() 4 times per call */
-  for(i = 0; i < data->modelData.nStates; i++)
+  for(i = 0; i < data->modelData->nStates; i++)
   {
     k[0][i] = stateDerOld[i];
   }
 
   for(j = 1; j < rungekutta_s; j++)
   {
-    for(i = 0; i < data->modelData.nStates; i++)
+    for(i = 0; i < data->modelData->nStates; i++)
     {
       sData->realVars[i] = sDataOld->realVars[i] + solverInfo->currentStepSize * rungekutta_c[j] * k[j - 1][i];
     }
@@ -769,13 +769,13 @@ static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
     data->callback->input_function(data, threadData);
     /* eval ode equations */
     data->callback->functionODE(data, threadData);
-    for(i = 0; i < data->modelData.nStates; i++)
+    for(i = 0; i < data->modelData->nStates; i++)
     {
       k[j][i] = stateDer[i];
     }
   }
 
-  for(i = 0; i < data->modelData.nStates; i++)
+  for(i = 0; i < data->modelData->nStates; i++)
   {
     sum = 0;
     for(j = 0; j < rungekutta_s; j++)
@@ -828,63 +828,63 @@ static void writeOutputVars(char* names, DATA* data)
 
   while(p)
   {
-    for(i = 0; i < data->modelData.nVariablesReal; i++)
-      if(!strcmp(p, data->modelData.realVarsData[i].info.name))
+    for(i = 0; i < data->modelData->nVariablesReal; i++)
+      if(!strcmp(p, data->modelData->realVarsData[i].info.name))
         fprintf(stdout, ",%s=%.20g", p, (data->localData[0])->realVars[i]);
-    for(i = 0; i < data->modelData.nVariablesInteger; i++)
-      if(!strcmp(p, data->modelData.integerVarsData[i].info.name))
+    for(i = 0; i < data->modelData->nVariablesInteger; i++)
+      if(!strcmp(p, data->modelData->integerVarsData[i].info.name))
         fprintf(stdout, ",%s=%li", p, (data->localData[0])->integerVars[i]);
-    for(i = 0; i < data->modelData.nVariablesBoolean; i++)
-      if(!strcmp(p, data->modelData.booleanVarsData[i].info.name))
+    for(i = 0; i < data->modelData->nVariablesBoolean; i++)
+      if(!strcmp(p, data->modelData->booleanVarsData[i].info.name))
         fprintf(stdout, ",%s=%i", p, (data->localData[0])->booleanVars[i]);
-    for(i = 0; i < data->modelData.nVariablesString; i++)
-      if(!strcmp(p, data->modelData.stringVarsData[i].info.name))
+    for(i = 0; i < data->modelData->nVariablesString; i++)
+      if(!strcmp(p, data->modelData->stringVarsData[i].info.name))
         fprintf(stdout, ",%s=\"%s\"", p, MMC_STRINGDATA((data->localData[0])->stringVars[i]));
 
-    for(i = 0; i < data->modelData.nAliasReal; i++)
-      if(!strcmp(p, data->modelData.realAlias[i].info.name))
+    for(i = 0; i < data->modelData->nAliasReal; i++)
+      if(!strcmp(p, data->modelData->realAlias[i].info.name))
       {
-       if(data->modelData.realAlias[i].negate)
-         fprintf(stdout, ",%s=%.20g", p, -(data->localData[0])->realVars[data->modelData.realAlias[i].nameID]);
+       if(data->modelData->realAlias[i].negate)
+         fprintf(stdout, ",%s=%.20g", p, -(data->localData[0])->realVars[data->modelData->realAlias[i].nameID]);
        else
-         fprintf(stdout, ",%s=%.20g", p, (data->localData[0])->realVars[data->modelData.realAlias[i].nameID]);
+         fprintf(stdout, ",%s=%.20g", p, (data->localData[0])->realVars[data->modelData->realAlias[i].nameID]);
       }
-    for(i = 0; i < data->modelData.nAliasInteger; i++)
-      if(!strcmp(p, data->modelData.integerAlias[i].info.name))
+    for(i = 0; i < data->modelData->nAliasInteger; i++)
+      if(!strcmp(p, data->modelData->integerAlias[i].info.name))
       {
-        if(data->modelData.integerAlias[i].negate)
-          fprintf(stdout, ",%s=%li", p, -(data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
+        if(data->modelData->integerAlias[i].negate)
+          fprintf(stdout, ",%s=%li", p, -(data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
         else
-          fprintf(stdout, ",%s=%li", p, (data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
+          fprintf(stdout, ",%s=%li", p, (data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
       }
-    for(i = 0; i < data->modelData.nAliasBoolean; i++)
-      if(!strcmp(p, data->modelData.booleanAlias[i].info.name))
+    for(i = 0; i < data->modelData->nAliasBoolean; i++)
+      if(!strcmp(p, data->modelData->booleanAlias[i].info.name))
       {
-        if(data->modelData.booleanAlias[i].negate)
-          fprintf(stdout, ",%s=%i", p, -(data->localData[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
+        if(data->modelData->booleanAlias[i].negate)
+          fprintf(stdout, ",%s=%i", p, -(data->localData[0])->booleanVars[data->modelData->booleanAlias[i].nameID]);
         else
-          fprintf(stdout, ",%s=%i", p, (data->localData[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
+          fprintf(stdout, ",%s=%i", p, (data->localData[0])->booleanVars[data->modelData->booleanAlias[i].nameID]);
       }
-    for(i = 0; i < data->modelData.nAliasString; i++)
-      if(!strcmp(p, data->modelData.stringAlias[i].info.name))
-        fprintf(stdout, ",%s=\"%s\"", p, MMC_STRINGDATA((data->localData[0])->stringVars[data->modelData.stringAlias[i].nameID]));
+    for(i = 0; i < data->modelData->nAliasString; i++)
+      if(!strcmp(p, data->modelData->stringAlias[i].info.name))
+        fprintf(stdout, ",%s=\"%s\"", p, MMC_STRINGDATA((data->localData[0])->stringVars[data->modelData->stringAlias[i].nameID]));
 
     /* parameters */
-    for(i = 0; i < data->modelData.nParametersReal; i++)
-      if(!strcmp(p, data->modelData.realParameterData[i].info.name))
-        fprintf(stdout, ",%s=%.20g", p, data->simulationInfo.realParameter[i]);
+    for(i = 0; i < data->modelData->nParametersReal; i++)
+      if(!strcmp(p, data->modelData->realParameterData[i].info.name))
+        fprintf(stdout, ",%s=%.20g", p, data->simulationInfo->realParameter[i]);
 
-    for(i = 0; i < data->modelData.nParametersInteger; i++)
-      if(!strcmp(p, data->modelData.integerParameterData[i].info.name))
-        fprintf(stdout, ",%s=%li", p, data->simulationInfo.integerParameter[i]);
+    for(i = 0; i < data->modelData->nParametersInteger; i++)
+      if(!strcmp(p, data->modelData->integerParameterData[i].info.name))
+        fprintf(stdout, ",%s=%li", p, data->simulationInfo->integerParameter[i]);
 
-    for(i = 0; i < data->modelData.nParametersBoolean; i++)
-      if(!strcmp(p, data->modelData.booleanParameterData[i].info.name))
-        fprintf(stdout, ",%s=%i", p, data->simulationInfo.booleanParameter[i]);
+    for(i = 0; i < data->modelData->nParametersBoolean; i++)
+      if(!strcmp(p, data->modelData->booleanParameterData[i].info.name))
+        fprintf(stdout, ",%s=%i", p, data->simulationInfo->booleanParameter[i]);
 
-    for(i = 0; i < data->modelData.nParametersString; i++)
-      if(!strcmp(p, data->modelData.stringParameterData[i].info.name))
-        fprintf(stdout, ",%s=\"%s\"", p, MMC_STRINGDATA(data->simulationInfo.stringParameter[i]));
+    for(i = 0; i < data->modelData->nParametersString; i++)
+      if(!strcmp(p, data->modelData->stringParameterData[i].info.name))
+        fprintf(stdout, ",%s=\"%s\"", p, MMC_STRINGDATA(data->simulationInfo->stringParameter[i]));
 
     /* move to next */
     p = strtok(NULL, "!");

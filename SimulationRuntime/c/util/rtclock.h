@@ -59,14 +59,14 @@ extern "C" {
 #define SIM_PROF_ACC_FN(ix) rt_accumulate(ix+SIM_TIMER_FIRST_FUNCTION)
 
 //These functions are used for profileBlocks, not for equations
-#define SIM_PROF_TICK_EQ(ix) rt_tick(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData.modelDataXml.nFunctions)
-#define SIM_PROF_ACC_EQ(ix) rt_accumulate(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData.modelDataXml.nFunctions)
-#define SIM_PROF_ADD_NCALL_EQ(ix,num) rt_add_ncall(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData.modelDataXml.nFunctions,num)
+#define SIM_PROF_TICK_EQ(ix) rt_tick(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData->modelDataXml.nFunctions)
+#define SIM_PROF_ACC_EQ(ix) rt_accumulate(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData->modelDataXml.nFunctions)
+#define SIM_PROF_ADD_NCALL_EQ(ix,num) rt_add_ncall(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData->modelDataXml.nFunctions,num)
 
-#define SIM_PROF_TICK_EQEXT(ix) rt_tick(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData.modelDataXml.nFunctions+data->modelData.modelDataXml.nProfileBlocks)
-#define SIM_PROF_ACC_EQEXT(ix) rt_accumulate(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData.modelDataXml.nFunctions+data->modelData.modelDataXml.nProfileBlocks)
-#define SIM_PROF_ACCED_EQEXT(ix) rt_accumulated(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData.modelDataXml.nFunctions+data->modelData.modelDataXml.nProfileBlocks)
-#define SIM_PROF_NCALL_EQEXT(ix) rt_ncall(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData.modelDataXml.nFunctions+data->modelData.modelDataXml.nProfileBlocks)
+#define SIM_PROF_TICK_EQEXT(ix) rt_tick(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData->modelDataXml.nFunctions+data->modelData->modelDataXml.nProfileBlocks)
+#define SIM_PROF_ACC_EQEXT(ix) rt_accumulate(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData->modelDataXml.nFunctions+data->modelData->modelDataXml.nProfileBlocks)
+#define SIM_PROF_ACCED_EQEXT(ix) rt_accumulated(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData->modelDataXml.nFunctions+data->modelData->modelDataXml.nProfileBlocks)
+#define SIM_PROF_NCALL_EQEXT(ix) rt_ncall(ix+SIM_TIMER_FIRST_FUNCTION+data->modelData->modelDataXml.nFunctions+data->modelData->modelDataXml.nProfileBlocks)
 
 enum omc_rt_clock_t {
   OMC_CLOCK_REALTIME, /* CLOCK_MONOTONIC_RAW if available; else CLOCK_MONOTONIC */

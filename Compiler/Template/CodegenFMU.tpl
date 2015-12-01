@@ -386,7 +386,7 @@ template initVals(SimVar var, String arrayName, Integer offset) ::=
     else if stringEq(crefStr(name),"der($dummy)") then
     <<>>
     else
-    let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%intAdd(index,offset)%>].attribute.start'
+    let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%intAdd(index,offset)%>].attribute.start'
     <<
       <%str%> =  comp->fmuData->localData[0]-><%arrayName%>[<%intAdd(index,offset)%>];
     >>
@@ -395,14 +395,14 @@ end initVals;
 template initParams(SimVar var, String arrayName) ::=
   match var
     case SIMVAR(__) then
-    let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%index%>].attribute.start'
-      '<%str%> = comp->fmuData->simulationInfo.<%arrayName%>[<%index%>];'
+    let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start'
+      '<%str%> = comp->fmuData->simulationInfo-><%arrayName%>[<%index%>];'
 end initParams;
 
 template initValsDefault(SimVar var, String arrayName, Integer offset) ::=
   match var
     case SIMVAR(index=index, type_=type_) then
-    let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%intAdd(index,offset)%>].attribute.start'
+    let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%intAdd(index,offset)%>].attribute.start'
     match initialValue
       case SOME(v as ICONST(__))
       case SOME(v as RCONST(__))
@@ -423,7 +423,7 @@ end initValsDefault;
 template initParamsDefault(SimVar var, String arrayName) ::=
   match var
     case SIMVAR(__) then
-    let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%index%>].attribute.start'
+    let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start'
     match initialValue
       case SOME(v) then
       '<%str%> = <%initVal(v)%>;'
@@ -872,11 +872,11 @@ match simVar
   if stringEq(arrayName,  "stringParameter")
   then
   <<
-  case <%cref(name)%>_ : return MMC_STRINGDATA(comp->fmuData->simulationInfo.<%arrayName%>[<%index%>]); break;
+  case <%cref(name)%>_ : return MMC_STRINGDATA(comp->fmuData->simulationInfo-><%arrayName%>[<%index%>]); break;
   >>
   else
   <<
-  case <%cref(name)%>_ : return comp->fmuData->simulationInfo.<%arrayName%>[<%index%>]; break;
+  case <%cref(name)%>_ : return comp->fmuData->simulationInfo-><%arrayName%>[<%index%>]; break;
   >>
 end SwitchParameters;
 
@@ -942,11 +942,11 @@ match simVar
   if stringEq(arrayName, "stringParameter")
   then
   <<
-  case <%cref(name)%>_ : comp->fmuData->simulationInfo.<%arrayName%>[<%index%>] = mmc_mk_scon(value); break;
+  case <%cref(name)%>_ : comp->fmuData->simulationInfo-><%arrayName%>[<%index%>] = mmc_mk_scon(value); break;
   >>
   else
   <<
-  case <%cref(name)%>_ : comp->fmuData->simulationInfo.<%arrayName%>[<%index%>] = value; break;
+  case <%cref(name)%>_ : comp->fmuData->simulationInfo-><%arrayName%>[<%index%>] = value; break;
   >>
 end SwitchParametersSet;
 

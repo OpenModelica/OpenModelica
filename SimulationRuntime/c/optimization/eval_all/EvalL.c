@@ -127,10 +127,10 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
     const int nJ = optData->dim.nJ;
     modelica_boolean upC;
     modelica_boolean upC2;
-    const int nBoolean = optData->data->modelData.nVariablesBoolean;
-    const int nInteger = optData->data->modelData.nVariablesInteger;
+    const int nBoolean = optData->data->modelData->nVariablesBoolean;
+    const int nInteger = optData->data->modelData->nVariablesInteger;
     const int nReal = optData->dim.nReal;
-    const int nRelations =  optData->data->modelData.nRelations;
+    const int nRelations =  optData->data->modelData->nRelations;
     DATA * data = optData->data;
 
     upC = obj_factor != 0;
@@ -145,11 +145,11 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
 
     memcpy(data->localData[0]->integerVars, optData->i0, nInteger*sizeof(modelica_integer));
     memcpy(data->localData[0]->booleanVars, optData->b0, nBoolean*sizeof(modelica_boolean));
-    memcpy(data->simulationInfo.integerVarsPre, optData->i0Pre, nInteger*sizeof(modelica_integer));
-    memcpy(data->simulationInfo.booleanVarsPre, optData->b0Pre, nBoolean*sizeof(modelica_boolean));
-    memcpy(data->simulationInfo.realVarsPre, optData->v0Pre, nReal*sizeof(modelica_real));
-    memcpy(data->simulationInfo.relationsPre, optData->rePre, nRelations*sizeof(modelica_boolean));
-    memcpy(data->simulationInfo.relations, optData->re, nRelations*sizeof(modelica_boolean));
+    memcpy(data->simulationInfo->integerVarsPre, optData->i0Pre, nInteger*sizeof(modelica_integer));
+    memcpy(data->simulationInfo->booleanVarsPre, optData->b0Pre, nBoolean*sizeof(modelica_boolean));
+    memcpy(data->simulationInfo->realVarsPre, optData->v0Pre, nReal*sizeof(modelica_real));
+    memcpy(data->simulationInfo->relationsPre, optData->rePre, nRelations*sizeof(modelica_boolean));
+    memcpy(data->simulationInfo->relations, optData->re, nRelations*sizeof(modelica_boolean));
 
     for(ii = 0, k = 0, v = vopt, la = lambda; ii + 1 < nsi; ++ii){
       for(p = 1; p < np1; ++p, v += nv, la += nJ){
@@ -235,7 +235,7 @@ static inline void num_hessian0(double * v, const double * const lambda,
     for(l = 0; l < nx; ++l)
       data->localData[0]->realVars[l] = v[l]*vnom[l];
     for(; l <nv; ++l)
-      data->simulationInfo.inputVars[l-nx] = (modelica_real) v[l]*vnom[l];
+      data->simulationInfo->inputVars[l-nx] = (modelica_real) v[l]*vnom[l];
     data->callback->input_function(data, threadData);
     /*data->callback->functionDAE(data);*/
     updateDiscreteSystem(data, threadData);
@@ -324,7 +324,7 @@ static inline void num_hessian1(double * v, const double * const lambda,
     for(l = 0; l < nx; ++l)
       data->localData[0]->realVars[l] = v[l]*vnom[l];
     for(; l <nv; ++l)
-      data->simulationInfo.inputVars[l-nx] = (modelica_real) v[l]*vnom[l];
+      data->simulationInfo->inputVars[l-nx] = (modelica_real) v[l]*vnom[l];
 
     data->callback->input_function(data, threadData);
     /*data->callback->functionDAE(data);*/

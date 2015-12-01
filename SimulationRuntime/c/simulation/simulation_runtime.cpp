@@ -399,8 +399,8 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
   }
 
   /* calc numStep */
-  data->simulationInfo.numSteps = static_cast<modelica_integer>(round((data->simulationInfo.stopTime - data->simulationInfo.startTime)/data->simulationInfo.stepSize));
-  infoStreamPrint(LOG_SOLVER, 0, "numberOfIntervals = %ld", (long) data->simulationInfo.numSteps);
+  data->simulationInfo->numSteps = static_cast<modelica_integer>(round((data->simulationInfo->stopTime - data->simulationInfo->startTime)/data->simulationInfo->stepSize));
+  infoStreamPrint(LOG_SOLVER, 0, "numberOfIntervals = %ld", (long) data->simulationInfo->numSteps);
 
   { /* Setup the clock */
     enum omc_rt_clock_t clock = OMC_CLOCK_REALTIME;
@@ -423,10 +423,10 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
 
   if(measure_time_flag) {
     rt_tick(SIM_TIMER_INFO_XML);
-    modelInfoInit(&data->modelData.modelDataXml);
+    modelInfoInit(&data->modelData->modelDataXml);
     rt_accumulate(SIM_TIMER_INFO_XML);
-    //std::cerr << "ModelData with " << data->modelData.modelDataXml.nFunctions << " functions and " << data->modelData.modelDataXml.nEquations << " equations and " << data->modelData.modelDataXml.nProfileBlocks << " profileBlocks\n" << std::endl;
-    rt_init(SIM_TIMER_FIRST_FUNCTION + data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nEquations + data->modelData.modelDataXml.nProfileBlocks + 4 /* sentinel */);
+    //std::cerr << "ModelData with " << data->modelData->modelDataXml.nFunctions << " functions and " << data->modelData->modelDataXml.nEquations << " equations and " << data->modelData->modelDataXml.nProfileBlocks << " profileBlocks\n" << std::endl;
+    rt_init(SIM_TIMER_FIRST_FUNCTION + data->modelData->modelDataXml.nFunctions + data->modelData->modelDataXml.nEquations + data->modelData->modelDataXml.nProfileBlocks + 4 /* sentinel */);
     rt_measure_overhead(SIM_TIMER_TOTAL);
     rt_clear(SIM_TIMER_TOTAL);
     rt_tick(SIM_TIMER_TOTAL);
@@ -439,17 +439,17 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
   if(create_linearmodel)
   {
     if(lintime == NULL) {
-      data->simulationInfo.stopTime = data->simulationInfo.startTime;
+      data->simulationInfo->stopTime = data->simulationInfo->startTime;
     } else {
-      data->simulationInfo.stopTime = atof(lintime);
+      data->simulationInfo->stopTime = atof(lintime);
     }
-    infoStreamPrint(LOG_STDOUT, 0, "Linearization will performed at point of time: %f", data->simulationInfo.stopTime);
+    infoStreamPrint(LOG_STDOUT, 0, "Linearization will performed at point of time: %f", data->simulationInfo->stopTime);
   }
 
   if(omc_flag[FLAG_S]) {
     if (omc_flagValue[FLAG_S]) {
-      data->simulationInfo.solverMethod = GC_strdup(omc_flagValue[FLAG_S]);
-      infoStreamPrint(LOG_SOLVER, 0, "overwrite solver method: %s [from command line]", data->simulationInfo.solverMethod);
+      data->simulationInfo->solverMethod = GC_strdup(omc_flagValue[FLAG_S]);
+      infoStreamPrint(LOG_SOLVER, 0, "overwrite solver method: %s [from command line]", data->simulationInfo->solverMethod);
     }
   }
 
@@ -457,10 +457,10 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
   const char *result_file = omc_flagValue[FLAG_R];
   string result_file_cstr;
   if(!result_file) {
-    result_file_cstr = string(data->modelData.modelFilePrefix) + string("_res.") + data->simulationInfo.outputFormat;
-    data->modelData.resultFileName = GC_strdup(result_file_cstr.c_str());
+    result_file_cstr = string(data->modelData->modelFilePrefix) + string("_res.") + data->simulationInfo->outputFormat;
+    data->modelData->resultFileName = GC_strdup(result_file_cstr.c_str());
   } else {
-    data->modelData.resultFileName = GC_strdup(result_file);
+    data->modelData->resultFileName = GC_strdup(result_file);
   }
 
   string init_initMethod = "";
@@ -510,14 +510,14 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
   measure_time_flag = measure_time_flag_previous;
 
   if(0 == retVal && measure_time_flag) {
-    const string jsonInfo = string(data->modelData.modelFilePrefix) + "_prof.json";
-    const string modelInfo = string(data->modelData.modelFilePrefix) + "_prof.xml";
-    const string plotFile = string(data->modelData.modelFilePrefix) + "_prof.plt";
+    const string jsonInfo = string(data->modelData->modelFilePrefix) + "_prof.json";
+    const string modelInfo = string(data->modelData->modelFilePrefix) + "_prof.xml";
+    const string plotFile = string(data->modelData->modelFilePrefix) + "_prof.plt";
     rt_accumulate(SIM_TIMER_TOTAL);
     const char* plotFormat = omc_flagValue[FLAG_MEASURETIMEPLOTFORMAT];
     retVal = printModelInfo(data, threadData, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat : "svg",
-        data->simulationInfo.solverMethod, data->simulationInfo.outputFormat, data->modelData.resultFileName) && retVal;
-    retVal = printModelInfoJSON(data, threadData, jsonInfo.c_str(), data->modelData.resultFileName) && retVal;
+        data->simulationInfo->solverMethod, data->simulationInfo->outputFormat, data->modelData->resultFileName) && retVal;
+    retVal = printModelInfoJSON(data, threadData, jsonInfo.c_str(), data->modelData->resultFileName) && retVal;
   }
 
   TRACE_POP
@@ -535,50 +535,50 @@ int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime)
 {
   int resultFormatHasCheapAliasesAndParameters = 0;
   int retVal = 0;
-  mmc_sint_t maxSteps = 4 * simData->simulationInfo.numSteps;
-  sim_result.filename = strdup(simData->modelData.resultFileName);
+  mmc_sint_t maxSteps = 4 * simData->simulationInfo->numSteps;
+  sim_result.filename = strdup(simData->modelData->resultFileName);
   sim_result.numpoints = maxSteps;
   sim_result.cpuTime = cpuTime;
-  if (sim_noemit || 0 == strcmp("empty", simData->simulationInfo.outputFormat)) {
+  if (sim_noemit || 0 == strcmp("empty", simData->simulationInfo->outputFormat)) {
     /* Default is set to noemit */
-  } else if(0 == strcmp("csv", simData->simulationInfo.outputFormat)) {
+  } else if(0 == strcmp("csv", simData->simulationInfo->outputFormat)) {
     sim_result.init = omc_csv_init;
     sim_result.emit = omc_csv_emit;
     /* sim_result.writeParameterData = omc_csv_writeParameterData; */
     sim_result.free = omc_csv_free;
-  } else if(0 == strcmp("mat", simData->simulationInfo.outputFormat)) {
+  } else if(0 == strcmp("mat", simData->simulationInfo->outputFormat)) {
     sim_result.init = mat4_init;
     sim_result.emit = mat4_emit;
     sim_result.writeParameterData = mat4_writeParameterData;
     sim_result.free = mat4_free;
     resultFormatHasCheapAliasesAndParameters = 1;
 #if !defined(OMC_MINIMAL_RUNTIME)
-  } else if(0 == strcmp("wall", simData->simulationInfo.outputFormat)) {
+  } else if(0 == strcmp("wall", simData->simulationInfo->outputFormat)) {
     sim_result.init = recon_wall_init;
     sim_result.emit = recon_wall_emit;
     sim_result.writeParameterData = recon_wall_writeParameterData;
     sim_result.free = recon_wall_free;
     resultFormatHasCheapAliasesAndParameters = 1;
-  } else if(0 == strcmp("plt", simData->simulationInfo.outputFormat)) {
+  } else if(0 == strcmp("plt", simData->simulationInfo->outputFormat)) {
     sim_result.init = plt_init;
     sim_result.emit = plt_emit;
     /* sim_result.writeParameterData = plt_writeParameterData; */
     sim_result.free = plt_free;
   }
   //NEW interactive
-  else if(0 == strcmp("ia", simData->simulationInfo.outputFormat)) {
+  else if(0 == strcmp("ia", simData->simulationInfo->outputFormat)) {
     sim_result.init = ia_init;
     sim_result.emit = ia_emit;
     //sim_result.writeParameterData = ia_writeParameterData;
     sim_result.free = ia_free;
 #endif
   } else {
-    cerr << "Unknown output format: " << simData->simulationInfo.outputFormat << endl;
+    cerr << "Unknown output format: " << simData->simulationInfo->outputFormat << endl;
     return 1;
   }
-  initializeOutputFilter(&(simData->modelData), simData->simulationInfo.variableFilter, resultFormatHasCheapAliasesAndParameters);
+  initializeOutputFilter(simData->modelData, simData->simulationInfo->variableFilter, resultFormatHasCheapAliasesAndParameters);
   sim_result.init(&sim_result, simData, threadData);
-  infoStreamPrint(LOG_SOLVER, 0, "Allocated simulation result data storage for method '%s' and file='%s'", (char*) simData->simulationInfo.outputFormat, sim_result.filename);
+  infoStreamPrint(LOG_SOLVER, 0, "Allocated simulation result data storage for method '%s' and file='%s'", (char*) simData->simulationInfo->outputFormat, sim_result.filename);
   return 0;
 }
 
@@ -606,7 +606,7 @@ int callSolver(DATA* simData, threadData_t *threadData, string init_initMethod, 
     return -1;
   }
 
-  if(std::string("") == simData->simulationInfo.solverMethod) {
+  if(std::string("") == simData->simulationInfo->solverMethod) {
 #if defined(WITH_DASSL)
     solverID = S_DASSL;
 #else
@@ -614,7 +614,7 @@ int callSolver(DATA* simData, threadData_t *threadData, string init_initMethod, 
 #endif
   } else {
     for(i=1; i<S_MAX; ++i) {
-      if(std::string(SOLVER_METHOD_NAME[i]) == simData->simulationInfo.solverMethod) {
+      if(std::string(SOLVER_METHOD_NAME[i]) == simData->simulationInfo->solverMethod) {
         solverID = i;
       }
     }
@@ -622,12 +622,12 @@ int callSolver(DATA* simData, threadData_t *threadData, string init_initMethod, 
   /* if no states are present, then we can
    * use euler method, since it does nothing.
    */
-  if (simData->modelData.nStates < 1 && solverID != S_OPTIMIZATION && solverID != S_SYM_EULER) {
+  if (simData->modelData->nStates < 1 && solverID != S_OPTIMIZATION && solverID != S_SYM_EULER) {
     solverID = S_EULER;
   }
 
   if(S_UNKNOWN == solverID) {
-    warningStreamPrint(LOG_STDOUT, 0, "unrecognized option -s %s", (char*) simData->simulationInfo.solverMethod);
+    warningStreamPrint(LOG_STDOUT, 0, "unrecognized option -s %s", (char*) simData->simulationInfo->solverMethod);
     warningStreamPrint(LOG_STDOUT, 0, "current options are:");
     for(i=1; i<S_MAX; ++i) {
       warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", SOLVER_METHOD_NAME[i], SOLVER_METHOD_DESC[i]);
@@ -639,9 +639,9 @@ int callSolver(DATA* simData, threadData_t *threadData, string init_initMethod, 
     /* special solvers */
 #ifdef _OMC_QSS_LIB
     if(S_QSS == solverID) {
-      retVal = qss_main(argc, argv, simData->simulationInfo.startTime,
-                        simData->simulationInfo.stopTime, simData->simulationInfo.stepSize,
-                        simData->simulationInfo.numSteps, simData->simulationInfo.tolerance, 3);
+      retVal = qss_main(argc, argv, simData->simulationInfo->startTime,
+                        simData->simulationInfo->stopTime, simData->simulationInfo->stepSize,
+                        simData->simulationInfo->numSteps, simData->simulationInfo->tolerance, 3);
     } else /* standard solver interface */
 #endif
       retVal = solver_main(simData, threadData, init_initMethod.c_str(), init_file.c_str(), init_time, lambda_steps, solverID, outVars);
@@ -737,13 +737,13 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     std::cerr << "Error: Could not initialize the global data structure file" << std::endl;
   }
 
-  data->simulationInfo.nlsMethod = getNonlinearSolverMethod(argc, argv);
-  data->simulationInfo.lsMethod = getlinearSolverMethod(argc, argv);
-  data->simulationInfo.newtonStrategy = getNewtonStrategy(argc, argv);
-  data->simulationInfo.nlsCsvInfomation = omc_flag[FLAG_NLS_INFO];
+  data->simulationInfo->nlsMethod = getNonlinearSolverMethod(argc, argv);
+  data->simulationInfo->lsMethod = getlinearSolverMethod(argc, argv);
+  data->simulationInfo->newtonStrategy = getNewtonStrategy(argc, argv);
+  data->simulationInfo->nlsCsvInfomation = omc_flag[FLAG_NLS_INFO];
 
   rt_tick(SIM_TIMER_INIT_XML);
-  read_input_xml(&(data->modelData), &(data->simulationInfo));
+  read_input_xml(data->modelData, data->simulationInfo);
   rt_accumulate(SIM_TIMER_INIT_XML);
 
   /* initialize static data of mixed/linear/non-linear system solvers */
@@ -765,7 +765,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     sim_communication_port_open &= sim_communication_port.create();
     sim_communication_port_open &= sim_communication_port.connect("127.0.0.1", port);
 
-    if(0 != strcmp("ia", data->simulationInfo.outputFormat))
+    if(0 != strcmp("ia", data->simulationInfo->outputFormat))
     {
       communicateStatus("Starting", 0.0);
     }
@@ -780,9 +780,9 @@ void SimulationRuntime_printStatus(int sig)
 {
   DATA *data = SimulationRuntime_printStatus_data;
   printf("<status>\n");
-  printf("<model>%s</model>\n", data->modelData.modelFilePrefix);
+  printf("<model>%s</model>\n", data->modelData->modelFilePrefix);
   printf("<phase>UNKNOWN</phase>\n");
-  printf("<currentStepSize>%g</currentStepSize>\n", data->simulationInfo.stepSize);
+  printf("<currentStepSize>%g</currentStepSize>\n", data->simulationInfo->stepSize);
   printf("<oldTime>%.12g</oldTime>\n", data->localData[1]->timeValue);
   printf("<oldTime2>%.12g</oldTime2>\n", data->localData[2]->timeValue);
   printf("<diffOldTime>%g</diffOldTime>\n", data->localData[1]->timeValue-data->localData[2]->timeValue);

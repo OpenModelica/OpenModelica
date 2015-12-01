@@ -135,9 +135,9 @@ static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* s
 
 static int simulationStep(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
-  SIMULATION_INFO *simInfo = &(data->simulationInfo);
+  SIMULATION_INFO *simInfo = data->simulationInfo;
 
-  if(0 != strcmp("ia", data->simulationInfo.outputFormat))
+  if(0 != strcmp("ia", data->simulationInfo->outputFormat))
   {
     communicateStatus("Running", (solverInfo->currentTime - simInfo->startTime)/(simInfo->stopTime - simInfo->startTime));
   }
@@ -156,9 +156,9 @@ static void fmtInit(DATA* data, MEASURE_TIME* mt)
   mt->fmtInt = NULL;
   if(measure_time_flag)
   {
-    size_t len = strlen(data->modelData.modelFilePrefix);
+    size_t len = strlen(data->modelData->modelFilePrefix);
     char* filename = (char*) malloc((len+15) * sizeof(char));
-    strncpy(filename,data->modelData.modelFilePrefix,len);
+    strncpy(filename,data->modelData->modelFilePrefix,len);
     strncpy(&filename[len],"_prof.realdata",15);
     mt->fmtReal = fopen(filename, "wb");
     if(!mt->fmtReal)
@@ -184,7 +184,7 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
     int i, flag=1;
     double tmpdbl;
     unsigned int tmpint;
-    int total = data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks;
+    int total = data->modelData->modelDataXml.nFunctions + data->modelData->modelDataXml.nProfileBlocks;
     rt_tick(SIM_TIMER_OVERHEAD);
     rt_accumulate(SIM_TIMER_STEP);
 
@@ -195,7 +195,7 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
     tmpdbl = rt_accumulated(SIM_TIMER_STEP);
     flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, mt->fmtReal);
     flag = flag && total == fwrite(rt_ncall_arr(SIM_TIMER_FIRST_FUNCTION), sizeof(uint32_t), total, mt->fmtInt);
-    for(i=0; i<data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++) {
+    for(i=0; i<data->modelData->modelDataXml.nFunctions + data->modelData->modelDataXml.nProfileBlocks; i++) {
       tmpdbl = rt_accumulated(i + SIM_TIMER_FIRST_FUNCTION);
       flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, mt->fmtReal);
     }
@@ -241,7 +241,7 @@ static void checkSimulationTerminated(DATA* data, SOLVER_INFO* solverInfo)
     printInfo(stdout, TermInfo);
     fputc('\n', stdout);
     infoStreamPrint(LOG_STDOUT, 0, "Simulation call terminate() at time %f\nMessage : %s", data->localData[0]->timeValue, TermMsg);
-    data->simulationInfo.stopTime = solverInfo->currentTime;
+    data->simulationInfo->stopTime = solverInfo->currentTime;
   }
 }
 
@@ -250,7 +250,7 @@ static void clear_rt_step(DATA* data)
   int i;
   if(measure_time_flag)
   {
-    for(i=0; i<data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++)
+    for(i=0; i<data->modelData->modelDataXml.nFunctions + data->modelData->modelDataXml.nProfileBlocks; i++)
     {
       rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     }
@@ -302,7 +302,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
 
   unsigned int __currStepNo = 0;
 
-  SIMULATION_INFO *simInfo = &(data->simulationInfo);
+  SIMULATION_INFO *simInfo = data->simulationInfo;
   solverInfo->currentTime = simInfo->startTime;
 
   MEASURE_TIME fmt;

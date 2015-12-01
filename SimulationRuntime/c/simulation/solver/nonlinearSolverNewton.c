@@ -79,40 +79,40 @@ extern int dgesv_(int *n, int *nrhs, doublereal *a, int *lda, int *ipiv, doubler
 int getAnalyticalJacobianNewton(DATA* data, threadData_t *threadData, double* jac, int sysNumber)
 {
   int i,j,k,l,ii,currentSys = sysNumber;
-  NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]);
+  NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->nonlinearSystemData[currentSys]);
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
   const int index = systemData->jacobianIndex;
 
   memset(jac, 0, (solverData->n)*(solverData->n)*sizeof(double));
 
-  for(i=0; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors; i++)
+  for(i=0; i < data->simulationInfo->analyticJacobians[index].sparsePattern.maxColors; i++)
   {
     /* activate seed variable for the corresponding color */
-    for(ii=0; ii < data->simulationInfo.analyticJacobians[index].sizeCols; ii++)
-      if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
-        data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1;
+    for(ii=0; ii < data->simulationInfo->analyticJacobians[index].sizeCols; ii++)
+      if(data->simulationInfo->analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
+        data->simulationInfo->analyticJacobians[index].seedVars[ii] = 1;
 
     systemData->analyticalJacobianColumn(data, threadData);
 
-    for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeCols; j++)
+    for(j = 0; j < data->simulationInfo->analyticJacobians[index].sizeCols; j++)
     {
-      if(data->simulationInfo.analyticJacobians[index].seedVars[j] == 1)
+      if(data->simulationInfo->analyticJacobians[index].seedVars[j] == 1)
       {
         if(j==0)
           ii = 0;
         else
-          ii = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j-1];
-        while(ii < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j])
+          ii = data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j-1];
+        while(ii < data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j])
         {
-          l  = data->simulationInfo.analyticJacobians[index].sparsePattern.index[ii];
-          k  = j*data->simulationInfo.analyticJacobians[index].sizeRows + l;
-          jac[k] = data->simulationInfo.analyticJacobians[index].resultVars[l];
+          l  = data->simulationInfo->analyticJacobians[index].sparsePattern.index[ii];
+          k  = j*data->simulationInfo->analyticJacobians[index].sizeRows + l;
+          jac[k] = data->simulationInfo->analyticJacobians[index].resultVars[l];
           ii++;
         };
       }
       /* de-activate seed variable for the corresponding color */
-      if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[j]-1 == i)
-        data->simulationInfo.analyticJacobians[index].seedVars[j] = 0;
+      if(data->simulationInfo->analyticJacobians[index].sparsePattern.colorCols[j]-1 == i)
+        data->simulationInfo->analyticJacobians[index].seedVars[j] = 0;
     }
 
   }
@@ -134,13 +134,13 @@ int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
   DATA* data = (DATA*)(uData->data);
   void *dataAndThreadData[2] = {data, uData->threadData};
   int currentSys = ((DATA_USER*)userdata)->sysNumber;
-  NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.nonlinearSystemData[currentSys]);
+  NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[currentSys]);
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
   int flag = 1;
   int *iflag=&flag;
 
   if (fj) {
-    (data->simulationInfo.nonlinearSystemData[currentSys].residualFunc)(dataAndThreadData, x, fvec, iflag);
+    (data->simulationInfo->nonlinearSystemData[currentSys].residualFunc)(dataAndThreadData, x, fvec, iflag);
   } else {
     if(systemData->jacobianIndex != -1) {
       getAnalyticalJacobianNewton(data, uData->threadData, solverData->fjac, currentSys);
@@ -188,7 +188,7 @@ int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
  */
 int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
 {
-  NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.nonlinearSystemData[sysNumber]);
+  NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
   int eqSystemNumber = 0;
   int i;
@@ -203,7 +203,7 @@ int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
   int retries2 = 0;
   int nonContinuousCase = 0;
   modelica_boolean *relationsPreBackup = NULL;
-  int casualTearingSet = data->simulationInfo.nonlinearSystemData[sysNumber].strictTearingFunctionCall != NULL;
+  int casualTearingSet = data->simulationInfo->nonlinearSystemData[sysNumber].strictTearingFunctionCall != NULL;
 
   DATA_USER* userdata = (DATA_USER*)malloc(sizeof(DATA_USER));
   assert(userdata != NULL);
@@ -220,7 +220,7 @@ int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
 
   local_tol = solverData->ftol;
 
-  relationsPreBackup = (modelica_boolean*) malloc(data->modelData.nRelations*sizeof(modelica_boolean));
+  relationsPreBackup = (modelica_boolean*) malloc(data->modelData->nRelations*sizeof(modelica_boolean));
 
   solverData->nfev = 0;
 
@@ -235,7 +235,7 @@ int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
         eqSystemNumber, data->localData[0]->timeValue);
 
     for(i = 0; i < solverData->n; i++) {
-      infoStreamPrint(LOG_NLS_V, 1, "x[%d] = %.15e", i, data->simulationInfo.discreteCall ? systemData->nlsx[i] : systemData->nlsxExtrapolation[i]);
+      infoStreamPrint(LOG_NLS_V, 1, "x[%d] = %.15e", i, data->simulationInfo->discreteCall ? systemData->nlsx[i] : systemData->nlsxExtrapolation[i]);
       infoStreamPrint(LOG_NLS_V, 0, "nominal = %g +++ nlsx = %g +++ old = %g +++ extrapolated = %g",
           systemData->nominal[i], systemData->nlsx[i], systemData->nlsxOld[i], systemData->nlsxExtrapolation[i]);
       messageClose(LOG_NLS_V);
@@ -244,7 +244,7 @@ int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
   }
 
   /* set x vector */
-  if(data->simulationInfo.discreteCall) {
+  if(data->simulationInfo->discreteCall) {
     memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
   } else {
     memcpy(solverData->x, systemData->nlsxExtrapolation, solverData->n*(sizeof(double)));
@@ -255,17 +255,17 @@ int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
   {
 
     giveUp = 1;
-    solverData->newtonStrategy = data->simulationInfo.newtonStrategy;
+    solverData->newtonStrategy = data->simulationInfo->newtonStrategy;
     _omc_newton(wrapper_fvec_newton, solverData, (void*)userdata);
 
     /* check for proper inputs */
     if(solverData->info == 0)
-      printErrorEqSyst(IMPROPER_INPUT, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber), data->localData[0]->timeValue);
+      printErrorEqSyst(IMPROPER_INPUT, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber), data->localData[0]->timeValue);
 
     /* reset non-contunuousCase */
     if(nonContinuousCase && xerror > local_tol && xerror_scaled > local_tol)
     {
-      memcpy(data->simulationInfo.relationsPre, relationsPreBackup, sizeof(modelica_boolean)*data->modelData.nRelations);
+      memcpy(data->simulationInfo->relationsPre, relationsPreBackup, sizeof(modelica_boolean)*data->modelData->nRelations);
       nonContinuousCase = 0;
     }
 
@@ -328,7 +328,7 @@ int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
       nfunc_evals += solverData->nfev;
       infoStreamPrint(LOG_NLS, 0, " - iteration making no progress:\t try nominal values as initial solution.");
     }
-    else if(retries < 4  && data->simulationInfo.discreteCall)
+    else if(retries < 4  && data->simulationInfo->discreteCall)
     {
       /* try to solve non-continuous
        * work-a-round: since other wise some model does
@@ -342,7 +342,7 @@ int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
       continuous = 0;
 
       nonContinuousCase = 1;
-      memcpy(relationsPreBackup, data->simulationInfo.relationsPre, sizeof(modelica_boolean)*data->modelData.nRelations);
+      memcpy(relationsPreBackup, data->simulationInfo->relationsPre, sizeof(modelica_boolean)*data->modelData->nRelations);
 
       giveUp = 0;
       nfunc_evals += solverData->nfev;
@@ -362,7 +362,7 @@ int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
     }
     else
     {
-      printErrorEqSyst(ERROR_AT_TIME, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber), data->localData[0]->timeValue);
+      printErrorEqSyst(ERROR_AT_TIME, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber), data->localData[0]->timeValue);
       if(ACTIVE_STREAM(LOG_NLS))
       {
         infoStreamPrint(LOG_NLS, 0, "### No Solution! ###\n after %d restarts", retries);

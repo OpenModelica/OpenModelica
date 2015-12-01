@@ -316,7 +316,7 @@ void recon_wall_init(simulation_result *self,DATA *data, threadData_t *threadDat
     /* Fill in empty length info (to be filled in later, after header is written) */
     storage->fp.write(blank_length, 4);
     /* Write header */
-    write_header(storage->fp, &data->modelData);
+    write_header(storage->fp, data->modelData);
     storage->data_start = storage->fp.tellp();
     uint32_t sz = storage->data_start-(storage->header_length+4);
     storage->fp.seekp(storage->header_length);
@@ -361,8 +361,8 @@ void recon_wall_writeParameterData(simulation_result *self,DATA *data, threadDat
 {
   wall_storage *storage = (wall_storage *)self->storage;
   std::ofstream &fp = storage->fp;
-  MODEL_DATA *modelData = &data->modelData;
-  const SIMULATION_INFO *sInfo = &(data->simulationInfo);
+  MODEL_DATA *modelData = data->modelData;
+  const SIMULATION_INFO *sInfo = data->simulationInfo;
   write_parameter_data(fp, sInfo->startTime, modelData, sInfo);
   write_parameter_data(fp, sInfo->stopTime, modelData, sInfo);
 }
@@ -371,8 +371,8 @@ void recon_wall_emit(simulation_result *self,DATA *data, threadData_t *threadDat
 {
   wall_storage *storage = (wall_storage *)self->storage;
   std::ofstream &fp = storage->fp;
-  MODEL_DATA *modelData = &data->modelData;
-  const SIMULATION_INFO *sInfo = &(data->simulationInfo);
+  MODEL_DATA *modelData = data->modelData;
+  const SIMULATION_INFO *sInfo = data->simulationInfo;
 
   long i;
   long length_pos = fp.tellp();

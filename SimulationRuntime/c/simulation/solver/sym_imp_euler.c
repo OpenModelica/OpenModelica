@@ -105,7 +105,7 @@ int sym_euler_im_with_step_size_control_step(DATA* data, threadData_t *threadDat
   DATA_SYM_IMP_EULER* userdata = (DATA_SYM_IMP_EULER*)solverInfo->solverData;
 
   double sc, err, a, b, diff;
-  double Atol = data->simulationInfo.tolerance, Rtol = data->simulationInfo.tolerance;
+  double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
   int i,j;
   double fac = 0.9;
   double facmax = 3.5;
@@ -137,7 +137,7 @@ int sym_euler_im_with_step_size_control_step(DATA* data, threadData_t *threadDat
       /* update step size */
       data->callback->symEulerUpdate(data, userdata->radauStepSize);
 
-      memcpy(sDataOld->realVars, userdata->radauVars, data->modelData.nStates*sizeof(double));
+      memcpy(sDataOld->realVars, userdata->radauVars, data->modelData->nStates*sizeof(double));
 
       infoStreamPrint(LOG_SOLVER,0, "first system time = %e", sData->timeValue);
 
@@ -147,16 +147,16 @@ int sym_euler_im_with_step_size_control_step(DATA* data, threadData_t *threadDat
       data->callback->functionODE(data,threadData);
 
       /* save values in y05 */
-      memcpy(userdata->y05, sData->realVars, data->modelData.nStates*sizeof(double));
+      memcpy(userdata->y05, sData->realVars, data->modelData->nStates*sizeof(double));
 
       /* extrapolate values in y1 */
-      for (i=0; i<data->modelData.nStates; i++)
+      for (i=0; i<data->modelData->nStates; i++)
       {
         userdata->y1[i] = 2.0 * userdata->y05[i] - userdata->radauVars[i];
       }
 
       /*** do another step with original step size ***/
-      memcpy(sDataOld->realVars, userdata->y05, data->modelData.nStates*sizeof(double));
+      memcpy(sDataOld->realVars, userdata->y05, data->modelData->nStates*sizeof(double));
 
       /* update time */
       sDataOld->timeValue = userdata->radauTime + userdata->radauStepSize;
@@ -174,17 +174,17 @@ int sym_euler_im_with_step_size_control_step(DATA* data, threadData_t *threadDat
       data->callback->functionODE(data, threadData);
 
       /* save values in y2 */
-      memcpy(userdata->y2, sData->realVars, data->modelData.nStates*sizeof(double));
+      memcpy(userdata->y2, sData->realVars, data->modelData->nStates*sizeof(double));
 
       /*** calculate error ***/
-      for (i=0, err=0.0; i<data->modelData.nStates; i++)
+      for (i=0, err=0.0; i<data->modelData->nStates; i++)
       {
         sc = Atol + fmax(fabs(userdata->y2[i]),fabs(userdata->y1[i]))*Rtol;
         diff = userdata->y2[i]-userdata->y1[i];
         err += (diff*diff)/(sc*sc);
       }
 
-      err /= data->modelData.nStates;
+      err /= data->modelData->nStates;
       err = sqrt(err);
 
       userdata->stepsDone += 1;
@@ -207,8 +207,8 @@ int sym_euler_im_with_step_size_control_step(DATA* data, threadData_t *threadDat
 
     userdata->radauTime += userdata->radauStepSizeOld;
 
-    memcpy(userdata->radauVarsOld, userdata->radauVars, data->modelData.nStates*sizeof(double));
-    memcpy(userdata->radauVars, userdata->y2, data->modelData.nStates*sizeof(double));
+    memcpy(userdata->radauVarsOld, userdata->radauVars, data->modelData->nStates*sizeof(double));
+    memcpy(userdata->radauVars, userdata->y2, data->modelData->nStates*sizeof(double));
   }
 
   sDataOld->timeValue = saveTime;
@@ -217,7 +217,7 @@ int sym_euler_im_with_step_size_control_step(DATA* data, threadData_t *threadDat
 
 
   /* linear interpolation */
-  for (i=0; i<data->modelData.nStates; i++)
+  for (i=0; i<data->modelData->nStates; i++)
   {
     sData->realVars[i] = (userdata->radauVars[i] * (sData->timeValue - userdata->radauTimeOld) + userdata->radauVarsOld[i] * (userdata->radauTime - sData->timeValue))/(userdata->radauTime - userdata->radauTimeOld);
 
@@ -225,7 +225,7 @@ int sym_euler_im_with_step_size_control_step(DATA* data, threadData_t *threadDat
 
   /* update first derivative  */
   infoStreamPrint(LOG_SOLVER,0, "Time  %e", sData->timeValue);
-  for(i=0, j=data->modelData.nStates; i<data->modelData.nStates; ++i, ++j)
+  for(i=0, j=data->modelData->nStates; i<data->modelData->nStates; ++i, ++j)
   {
     a = 4.0 * (userdata->y2[i] - 2.0 * userdata->y05[i] + userdata->radauVarsOld[i]) / (userdata->radauStepSizeOld * userdata->radauStepSizeOld);
     b = 2.0 * (userdata->y2[i] - userdata->y05[i])/userdata->radauStepSizeOld - userdata->radauTime * a;
@@ -255,7 +255,7 @@ void first_step(DATA* data, SOLVER_INFO* solverInfo)
   int i,j;
 
   /* initialize radau values */
-  for (i=0; i<data->modelData.nStates; i++)
+  for (i=0; i<data->modelData->nStates; i++)
   {
     userdata->radauVars[i] = sData->realVars[i];
     userdata->radauVarsOld[i] = sDataOld->realVars[i];

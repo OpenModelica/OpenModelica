@@ -160,32 +160,32 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
     storePreValues(comp->fmuData);
 
     /* activate sample event */
-    for(i=0; i<comp->fmuData->modelData.nSamples; ++i)
+    for(i=0; i<comp->fmuData->modelData->nSamples; ++i)
     {
-      if(comp->fmuData->simulationInfo.nextSampleTimes[i] <= comp->fmuData->localData[0]->timeValue)
+      if(comp->fmuData->simulationInfo->nextSampleTimes[i] <= comp->fmuData->localData[0]->timeValue)
       {
-        comp->fmuData->simulationInfo.samples[i] = 1;
-        infoStreamPrint(LOG_EVENTS, 0, "[%ld] sample(%g, %g)", comp->fmuData->modelData.samplesInfo[i].index, comp->fmuData->modelData.samplesInfo[i].start, comp->fmuData->modelData.samplesInfo[i].interval);
+        comp->fmuData->simulationInfo->samples[i] = 1;
+        infoStreamPrint(LOG_EVENTS, 0, "[%ld] sample(%g, %g)", comp->fmuData->modelData->samplesInfo[i].index, comp->fmuData->modelData->samplesInfo[i].start, comp->fmuData->modelData->samplesInfo[i].interval);
       }
     }
 
     comp->fmuData->callback->functionDAE(comp->fmuData, comp->threadData);
 
     /* deactivate sample events */
-    for(i=0; i<comp->fmuData->modelData.nSamples; ++i)
+    for(i=0; i<comp->fmuData->modelData->nSamples; ++i)
     {
-      if(comp->fmuData->simulationInfo.samples[i])
+      if(comp->fmuData->simulationInfo->samples[i])
       {
-        comp->fmuData->simulationInfo.samples[i] = 0;
-        comp->fmuData->simulationInfo.nextSampleTimes[i] += comp->fmuData->modelData.samplesInfo[i].interval;
+        comp->fmuData->simulationInfo->samples[i] = 0;
+        comp->fmuData->simulationInfo->nextSampleTimes[i] += comp->fmuData->modelData->samplesInfo[i].interval;
       }
     }
 
-    for(i=0; i<comp->fmuData->modelData.nSamples; ++i)
-      if((i == 0) || (comp->fmuData->simulationInfo.nextSampleTimes[i] < comp->fmuData->simulationInfo.nextSampleEvent))
-        comp->fmuData->simulationInfo.nextSampleEvent = comp->fmuData->simulationInfo.nextSampleTimes[i];
+    for(i=0; i<comp->fmuData->modelData->nSamples; ++i)
+      if((i == 0) || (comp->fmuData->simulationInfo->nextSampleTimes[i] < comp->fmuData->simulationInfo->nextSampleEvent))
+        comp->fmuData->simulationInfo->nextSampleEvent = comp->fmuData->simulationInfo->nextSampleTimes[i];
 
-    if(comp->fmuData->callback->checkForDiscreteChanges(comp->fmuData, comp->threadData) || comp->fmuData->simulationInfo.needToIterate || checkRelations(comp->fmuData) || eventInfo->valuesOfContinuousStatesChanged)
+    if(comp->fmuData->callback->checkForDiscreteChanges(comp->fmuData, comp->threadData) || comp->fmuData->simulationInfo->needToIterate || checkRelations(comp->fmuData) || eventInfo->valuesOfContinuousStatesChanged)
     {
       FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: Need to iterate(discrete changes)!")
       eventInfo->newDiscreteStatesNeeded  = fmi2True;
@@ -312,6 +312,12 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
     comp->instanceName = (fmi2String)functions->allocateMemory(1 + strlen(instanceName), sizeof(char));
     comp->GUID = (fmi2String)functions->allocateMemory(1 + strlen(fmuGUID), sizeof(char));
     DATA* fmudata = (DATA *)functions->allocateMemory(1, sizeof(DATA));
+    MODEL_DATA* modelData = (MODEL_DATA *)functions->allocateMemory(1, sizeof(MODEL_DATA));
+    SIMULATION_INFO* simInfo = (SIMULATION_INFO *)functions->allocateMemory(1, sizeof(SIMULATION_INFO));
+    fmudata->modelData = modelData;
+    fmudata->simulationInfo = simInfo;
+
+
 
     threadData_t *threadData = (threadData_t *)functions->allocateMemory(1, sizeof(threadData_t));
     memset(threadData, 0, sizeof(threadData_t));
@@ -352,8 +358,8 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   setDefaultStartValues(comp);
   setAllVarsToStart(comp->fmuData);
   setAllParamsToStart(comp->fmuData);
-  comp->fmuData->callback->read_input_fmu(&(comp->fmuData->modelData), &(comp->fmuData->simulationInfo));
-  modelInfoInit(&(comp->fmuData->modelData.modelDataXml));
+  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData, comp->fmuData->simulationInfo);
+  modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
 
   /* read input vars */
   //input_function(comp->fmuData);
@@ -383,6 +389,10 @@ void fmi2FreeInstance(fmi2Component c) {
   if (invalidState(comp, "fmi2FreeInstance", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError))
     return;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2FreeInstance")
+
+  /* free simuation data */
+  comp->functions->freeMemory(comp->fmuData->modelData);
+  comp->functions->freeMemory(comp->fmuData->simulationInfo);
 
   /* free fmuData */
   comp->functions->freeMemory(comp->threadData);
@@ -924,9 +934,9 @@ fmi2Status fmi2GetEventIndicators(fmi2Component c, fmi2Real eventIndicators[], s
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
       comp->_need_update = 0;
     }
-    comp->fmuData->callback->function_ZeroCrossings(comp->fmuData, comp->threadData, comp->fmuData->simulationInfo.zeroCrossings);
+    comp->fmuData->callback->function_ZeroCrossings(comp->fmuData, comp->threadData, comp->fmuData->simulationInfo->zeroCrossings);
     for (i = 0; i < nx; i++) {
-      eventIndicators[i] = comp->fmuData->simulationInfo.zeroCrossings[i];
+      eventIndicators[i] = comp->fmuData->simulationInfo->zeroCrossings[i];
       FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetEventIndicators: z%d = %.16g", i, eventIndicators[i])
     }
 #endif

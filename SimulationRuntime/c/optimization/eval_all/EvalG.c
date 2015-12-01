@@ -719,14 +719,14 @@ static inline void printMaxError(Number *g, const int m, const int nx, const int
   if(kk>-1){
     if(kk < nx){
       infoStreamPrint(LOG_IPOPT_ERROR, 0, "max error is %g for the approximation of the state %s(time = %g)\n",
-              gmax, data->modelData.realVarsData[kk].info.name, (double)t[ii][jj]);
+              gmax, data->modelData->realVarsData[kk].info.name, (double)t[ii][jj]);
     }else if(kk < nJ){
       const int ll = kk - nx + optData->dim.index_con;
       infoStreamPrint(LOG_IPOPT_ERROR, 0,"max violation is %g for the constraint %s(time = %g)\n",
-              gmax, data->modelData.realVarsData[ll].info.name, (double)t[ii][jj]);
+              gmax, data->modelData->realVarsData[ll].info.name, (double)t[ii][jj]);
     }else{
       const int ll = kk - nx + optData->dim.index_con;
-      infoStreamPrint(LOG_IPOPT_ERROR, 0,"max violation is %g for the final constraint %s(time = %g)\n", gmax, data->modelData.realVarsData[ll].info.name, (double)t[ii][jj]);
+      infoStreamPrint(LOG_IPOPT_ERROR, 0,"max violation is %g for the final constraint %s(time = %g)\n", gmax, data->modelData->realVarsData[ll].info.name, (double)t[ii][jj]);
     }
   }
 }
@@ -747,7 +747,7 @@ static inline void debugeJac(OptData * optData, Number* vopt){
   const int npv = np*nv;
   const int nt = optData->dim.nt;
   const int NRes = optData->dim.NRes;
-  const int nReal = optData->data->modelData.nVariablesReal;
+  const int nReal = optData->data->modelData->nVariablesReal;
   const int NV = optData->dim.NV;
   Number vopt_shift[NV];
   long double h[nv][nsi][np];
@@ -769,7 +769,7 @@ static inline void debugeJac(OptData * optData, Number* vopt){
 
   fprintf(pFile,"name;time;");
   for(j = 0; j < nx; ++j)
-    fprintf(pFile,"%s;",optData->data->modelData.realVarsData[j].info.name);
+    fprintf(pFile,"%s;",optData->data->modelData->realVarsData[j].info.name);
   for(j = 0; j < nu; ++j)
     fprintf(pFile, "%s;", optData->dim.inputName[j]);
   fprintf(pFile,"\n");
@@ -777,7 +777,7 @@ static inline void debugeJac(OptData * optData, Number* vopt){
   for(i=0;i < nsi; ++i){
     for(j = 0; j < np; ++j){
       for(k = 0; k < nx; ++k){
-        fprintf(pFile,"%s;%f;",optData->data->modelData.realVarsData[k].info.name,(float)optData->time.t[i][j]);
+        fprintf(pFile,"%s;%f;",optData->data->modelData->realVarsData[k].info.name,(float)optData->time.t[i][j]);
         for(jj = 0; jj < nv; ++jj){
           tmpJ = (sJ[k][jj]) ? (optData->J[i][j][k][jj]) : 0.0;
           fprintf(pFile,"%lf;", tmpJ);
@@ -835,7 +835,7 @@ static inline void debugeJac(OptData * optData, Number* vopt){
 
   fprintf(pFile,"name;time;");
   for(j = 0; j < nx; ++j)
-    fprintf(pFile,"%s;",optData->data->modelData.realVarsData[j].info.name);
+    fprintf(pFile,"%s;",optData->data->modelData->realVarsData[j].info.name);
   for(j = 0; j < nu; ++j)
     fprintf(pFile, "%s;", optData->dim.inputName[j]);
   fprintf(pFile,"\n");
@@ -843,7 +843,7 @@ static inline void debugeJac(OptData * optData, Number* vopt){
   for(i=0;i < nsi; ++i){
     for(j = 0; j < np; ++j){
       for(k = 0; k < nx; ++k){
-        fprintf(pFile,"%s;%f;",optData->data->modelData.realVarsData[k].info.name,(float)optData->time.t[i][j]);
+        fprintf(pFile,"%s;%f;",optData->data->modelData->realVarsData[k].info.name,(float)optData->time.t[i][j]);
         for(jj = 0; jj < nv; ++jj){
           tmpJ = (sJ[k][jj]) ? (JJ[i][j][k][jj]) : 0.0;
           fprintf(pFile,"%lf;",tmpJ);
@@ -861,10 +861,10 @@ static inline void debugeJac(OptData * optData, Number* vopt){
     fprintf(pFile,"\"\"\"\nautomatically generated code for analyse derivatives\n\n");
     fprintf(pFile,"  Input i:\n");
     for(j = 0; j < nx; ++j)
-      fprintf(pFile,"   i = %i -> der(%s)\n",j,optData->data->modelData.realVarsData[j].info.name);
+      fprintf(pFile,"   i = %i -> der(%s)\n",j,optData->data->modelData->realVarsData[j].info.name);
     fprintf(pFile," Input j:\n");
     for(j = 0; j < nx; ++j)
-      fprintf(pFile,"   j = %i -> %s\n",j,optData->data->modelData.realVarsData[j].info.name);
+      fprintf(pFile,"   j = %i -> %s\n",j,optData->data->modelData->realVarsData[j].info.name);
     for(j = 0; j < nu; ++j)
       fprintf(pFile,"   j = %i -> %s\n",nx+j,optData->dim.inputName[j]);
     fprintf(pFile,"\n\nVitalij Ruge, vruge@fh-bielefeld.de\n\"\"\"\n\n");
@@ -873,9 +873,9 @@ static inline void debugeJac(OptData * optData, Number* vopt){
     fprintf(pFile,"class OMC_JAC:\n  def __init__(self, filename):\n    self.filename = filename\n");
     fprintf(pFile,"    self.states = [");
     if(nx > 0)
-     fprintf(pFile,"'%s'",optData->data->modelData.realVarsData[0].info.name);
+     fprintf(pFile,"'%s'",optData->data->modelData->realVarsData[0].info.name);
     for(j = 1; j < nx; ++j)
-      fprintf(pFile,",'%s'",optData->data->modelData.realVarsData[j].info.name);
+      fprintf(pFile,",'%s'",optData->data->modelData->realVarsData[j].info.name);
     fprintf(pFile,"]\n");
     fprintf(pFile,"    self.inputs = [");
     if(nu > 0)

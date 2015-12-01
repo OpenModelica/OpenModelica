@@ -565,7 +565,7 @@ typedef struct SIMULATION_INFO
   modelica_boolean* relationsPre;
   modelica_boolean* storedRelations;   /* this array contains a copy of relations each time the event iteration starts */
   modelica_real* mathEventsValuePre;
-  long* zeroCrossingIndex;             /* := {0, 1, 2, ..., data->modelData.nZeroCrossings-1}; pointer for a list events at event instants */
+  long* zeroCrossingIndex;             /* := {0, 1, 2, ..., data->modelData->nZeroCrossings-1}; pointer for a list events at event instants */
 
   /* old vars for event handling */
   modelica_real timeValueOld;
@@ -628,8 +628,8 @@ typedef struct DATA
 {
   RINGBUFFER* simulationData;          /* RINGBUFFER of SIMULATION_DATA */
   SIMULATION_DATA **localData;
-  MODEL_DATA modelData;                /* static stuff */
-  SIMULATION_INFO simulationInfo;
+  MODEL_DATA *modelData;                /* static stuff */
+  SIMULATION_INFO *simulationInfo;
   struct OpenModelicaGeneratedFunctionCallbacks *callback;
 } DATA;
 

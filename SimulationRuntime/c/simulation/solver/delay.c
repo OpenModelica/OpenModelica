@@ -47,7 +47,7 @@
 void initDelay(DATA* data, double startTime)
 {
   /* get the start time of the simulation: time.start. */
-  data->simulationInfo.tStart = startTime;
+  data->simulationInfo->tStart = startTime;
 }
 
 /*
@@ -84,19 +84,19 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
   TIME_AND_VALUE tpl;
 
   /* Allocate more space for expressions */
-  assertStreamPrint(threadData, exprNumber < data->modelData.nDelayExpressions, "storeDelayedExpression: invalid expression number %d", exprNumber);
+  assertStreamPrint(threadData, exprNumber < data->modelData->nDelayExpressions, "storeDelayedExpression: invalid expression number %d", exprNumber);
   assertStreamPrint(threadData, 0 <= exprNumber, "storeDelayedExpression: invalid expression number %d", exprNumber);
-  assertStreamPrint(threadData, data->simulationInfo.tStart <= time, "storeDelayedExpression: time is smaller than starting time. Value ignored");
+  assertStreamPrint(threadData, data->simulationInfo->tStart <= time, "storeDelayedExpression: time is smaller than starting time. Value ignored");
 
   tpl.t = time;
   tpl.value = exprValue;
-  appendRingData(data->simulationInfo.delayStructure[exprNumber], &tpl);
-  infoStreamPrint(LOG_EVENTS, 0, "storeDelayed[%d] %g:%g position=%d", exprNumber, time, exprValue,ringBufferLength(data->simulationInfo.delayStructure[exprNumber]));
+  appendRingData(data->simulationInfo->delayStructure[exprNumber], &tpl);
+  infoStreamPrint(LOG_EVENTS, 0, "storeDelayed[%d] %g:%g position=%d", exprNumber, time, exprValue,ringBufferLength(data->simulationInfo->delayStructure[exprNumber]));
 
   /* dequeue not longer needed values */
-  i = findTime(time-delayMax+DBL_EPSILON,data->simulationInfo.delayStructure[exprNumber]);
+  i = findTime(time-delayMax+DBL_EPSILON,data->simulationInfo->delayStructure[exprNumber]);
   if(i > 0){
-    dequeueNFirstRingDatas(data->simulationInfo.delayStructure[exprNumber], i-1);
+    dequeueNFirstRingDatas(data->simulationInfo->delayStructure[exprNumber], i-1);
     infoStreamPrint(LOG_EVENTS, 0, "delayImpl: dequeueNFirstRingDatas[%d] %g = %g", i, time-delayMax+DBL_EPSILON, delayTime);
   }
 }
@@ -104,7 +104,7 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
 
 double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double exprValue, double time, double delayTime, double delayMax)
 {
-  RINGBUFFER* delayStruct = data->simulationInfo.delayStructure[exprNumber];
+  RINGBUFFER* delayStruct = data->simulationInfo->delayStructure[exprNumber];
   int length = ringBufferLength(delayStruct);
 
   infoStreamPrint(LOG_EVENTS, 0, "delayImpl: exprNumber = %d, exprValue = %g, time = %g, delayTime = %g", exprNumber, exprValue, time, delayTime);
@@ -112,9 +112,9 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
   /* Check for errors */
 
   assertStreamPrint(threadData, 0 <= exprNumber, "invalid exprNumber = %d", exprNumber);
-  assertStreamPrint(threadData, exprNumber < data->modelData.nDelayExpressions, "invalid exprNumber = %d", exprNumber);
+  assertStreamPrint(threadData, exprNumber < data->modelData->nDelayExpressions, "invalid exprNumber = %d", exprNumber);
 
-  if(time <= data->simulationInfo.tStart)
+  if(time <= data->simulationInfo->tStart)
   {
     infoStreamPrint(LOG_EVENTS, 0, "delayImpl: Entered at time < starting time: %g.", exprValue);
     return (exprValue);
@@ -142,7 +142,7 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
    * delayTime need to be a parameter expression. See also Section 3.7.2.1.
    * For non-scalar arguments the function is vectorized according to Section 10.6.12.
    */
-  if(time <= data->simulationInfo.tStart + delayTime)
+  if(time <= data->simulationInfo->tStart + delayTime)
   {
     double res = ((TIME_AND_VALUE*)getRingData(delayStruct, 0))->value;
     infoStreamPrint(LOG_EVENTS, 0, "findTime: time <= tStart + delayTime: [%d] = %g",exprNumber, res);

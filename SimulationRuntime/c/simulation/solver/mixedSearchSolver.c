@@ -168,7 +168,7 @@ modelica_boolean nextVar(modelica_boolean *b, int n) {
  */
 int solveMixedSearch(DATA *data, int sysNumber)
 {
-  MIXED_SYSTEM_DATA* systemData = &(data->simulationInfo.mixedSystemData[sysNumber]);
+  MIXED_SYSTEM_DATA* systemData = &(data->simulationInfo->mixedSystemData[sysNumber]);
   DATA_SEARCHMIXED_SOLVER* solverData = (DATA_SEARCHMIXED_SOLVER*)systemData->solverData;
 
   int eqSystemNumber = systemData->equationIndex;
@@ -260,7 +260,7 @@ int solveMixedSearch(DATA *data, int sysNumber)
           for(i = 0; i < systemData->size; i++)
           {
             ix = (systemData->iterationVarsPtr[i]-data->localData[0]->booleanVars);
-            __name = data->modelData.booleanVarsData[ix].info.name;
+            __name = data->modelData->booleanVarsData[ix].info.name;
             debugStreamPrint(LOG_NLS, 0, "%s changed : %d -> %d", __name, solverData->iterationVars[i], *(systemData->iterationVarsPtr[i]));
           }
         }
@@ -268,13 +268,13 @@ int solveMixedSearch(DATA *data, int sysNumber)
       else
       {
         /* while the initialization it's okay not a solution */
-        if(!data->simulationInfo.initial)
+        if(!data->simulationInfo->initial)
         {
           warningStreamPrint(LOG_STDOUT, 0,
               "Error solving mixed equation system with index %d at time %e",
               eqSystemNumber, data->localData[0]->timeValue);
         }
-        data->simulationInfo.needToIterate = 1;
+        data->simulationInfo->needToIterate = 1;
         found_solution  = -1;
         /*TODO: "break simulation?"*/
       }
@@ -290,7 +290,7 @@ int solveMixedSearch(DATA *data, int sysNumber)
         for(i = 0; i < systemData->size; i++)
         {
           ix = (systemData->iterationVarsPtr[i]-data->localData[0]->booleanVars);
-          __name = data->modelData.booleanVarsData[ix].info.name;
+          __name = data->modelData->booleanVarsData[ix].info.name;
           debugStreamPrint(LOG_NLS, 0, "%s = %d  pre(%s)= %d", __name, *systemData->iterationVarsPtr[i], __name,
               *systemData->iterationPreVarsPtr[i]);
         }

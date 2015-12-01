@@ -61,9 +61,9 @@ int externalInputallocate(DATA* data)
   }
 
 
-  data->simulationInfo.external_input.active = (modelica_boolean) (pFile != NULL);
+  data->simulationInfo->external_input.active = (modelica_boolean) (pFile != NULL);
   n = 0;
-  if(data->simulationInfo.external_input.active){
+  if(data->simulationInfo->external_input.active){
 
     while(1) {
         c = fgetc(pFile);
@@ -78,8 +78,8 @@ int externalInputallocate(DATA* data)
     }
 
     --n;
-    data->simulationInfo.external_input.n = n;
-    data->simulationInfo.external_input.N = data->simulationInfo.external_input.n;
+    data->simulationInfo->external_input.n = n;
+    data->simulationInfo->external_input.N = data->simulationInfo->external_input.n;
     rewind(pFile);
 
     do{
@@ -87,36 +87,36 @@ int externalInputallocate(DATA* data)
       if (c==EOF) break;
     }while(c!='\n');
 
-    m = data->modelData.nInputVars;
-    data->simulationInfo.external_input.u = (modelica_real**)calloc(modelica_integer_max(1,n),sizeof(modelica_real*));
-    for(i = 0; i<data->simulationInfo.external_input.n; ++i)
-      data->simulationInfo.external_input.u[i] = (modelica_real*)calloc(modelica_integer_max(1,m),sizeof(modelica_real));
-    data->simulationInfo.external_input.t = (modelica_real*)calloc(modelica_integer_max(1,data->simulationInfo.external_input.n),sizeof(modelica_real));
+    m = data->modelData->nInputVars;
+    data->simulationInfo->external_input.u = (modelica_real**)calloc(modelica_integer_max(1,n),sizeof(modelica_real*));
+    for(i = 0; i<data->simulationInfo->external_input.n; ++i)
+      data->simulationInfo->external_input.u[i] = (modelica_real*)calloc(modelica_integer_max(1,m),sizeof(modelica_real));
+    data->simulationInfo->external_input.t = (modelica_real*)calloc(modelica_integer_max(1,data->simulationInfo->external_input.n),sizeof(modelica_real));
 
-    for(i = 0; i < data->simulationInfo.external_input.n; ++i){
-      c = fscanf(pFile, "%lf", &data->simulationInfo.external_input.t[i]);
+    for(i = 0; i < data->simulationInfo->external_input.n; ++i){
+      c = fscanf(pFile, "%lf", &data->simulationInfo->external_input.t[i]);
       for(j = 0; j < m; ++j){
-        c = fscanf(pFile, "%lf", &data->simulationInfo.external_input.u[i][j]);
+        c = fscanf(pFile, "%lf", &data->simulationInfo->external_input.u[i][j]);
       }
       if(c<0)
-        data->simulationInfo.external_input.n = i;
+        data->simulationInfo->external_input.n = i;
     }
 
     if(ACTIVE_STREAM(LOG_SIMULATION))
     {
       printf("\nExternal Input");
       printf("\n========================================================");
-      for(i = 0; i < data->simulationInfo.external_input.n; ++i){
-        printf("\nInput: t=%f   \t", data->simulationInfo.external_input.t[i]);
+      for(i = 0; i < data->simulationInfo->external_input.n; ++i){
+        printf("\nInput: t=%f   \t", data->simulationInfo->external_input.t[i]);
         for(j = 0; j < m; ++j){
-          printf("u%d(t)= %f \t",j+1,data->simulationInfo.external_input.u[i][j]);
+          printf("u%d(t)= %f \t",j+1,data->simulationInfo->external_input.u[i][j]);
         }
       }
       printf("\n========================================================\n");
     }
 
     fclose(pFile);
-    data->simulationInfo.external_input.i = 0;
+    data->simulationInfo->external_input.i = 0;
   }
 
   return 0;
@@ -124,14 +124,14 @@ int externalInputallocate(DATA* data)
 
 int externalInputFree(DATA* data)
 {
-  if(data->simulationInfo.external_input.active){
+  if(data->simulationInfo->external_input.active){
     int j;
 
-    free(data->simulationInfo.external_input.t);
-    for(j = 0; j < data->simulationInfo.external_input.N; ++j)
-      free(data->simulationInfo.external_input.u[j]);
-    free(data->simulationInfo.external_input.u);
-    data->simulationInfo.external_input.active = 0;
+    free(data->simulationInfo->external_input.t);
+    for(j = 0; j < data->simulationInfo->external_input.N; ++j)
+      free(data->simulationInfo->external_input.u[j]);
+    free(data->simulationInfo->external_input.u);
+    data->simulationInfo->external_input.active = 0;
   }
   return 0;
 }
@@ -144,48 +144,48 @@ int externalInputUpdate(DATA* data)
   long double dt;
   int i;
 
-  if(!data->simulationInfo.external_input.active){
+  if(!data->simulationInfo->external_input.active){
     return -1;
   }
 
   t = data->localData[0]->timeValue;
-  t1 = data->simulationInfo.external_input.t[data->simulationInfo.external_input.i];
-  t2 = data->simulationInfo.external_input.t[data->simulationInfo.external_input.i+1];
+  t1 = data->simulationInfo->external_input.t[data->simulationInfo->external_input.i];
+  t2 = data->simulationInfo->external_input.t[data->simulationInfo->external_input.i+1];
 
-  while(data->simulationInfo.external_input.i > 0 && t < t1){
-    --data->simulationInfo.external_input.i;
-    t1 = data->simulationInfo.external_input.t[data->simulationInfo.external_input.i];
-    t2 = data->simulationInfo.external_input.t[data->simulationInfo.external_input.i+1];
+  while(data->simulationInfo->external_input.i > 0 && t < t1){
+    --data->simulationInfo->external_input.i;
+    t1 = data->simulationInfo->external_input.t[data->simulationInfo->external_input.i];
+    t2 = data->simulationInfo->external_input.t[data->simulationInfo->external_input.i+1];
   }
 
   while(t > t2
-        && data->simulationInfo.external_input.i+1 < (data->simulationInfo.external_input.n-1)){
-    ++data->simulationInfo.external_input.i;
-    t1 = data->simulationInfo.external_input.t[data->simulationInfo.external_input.i];
-    t2 = data->simulationInfo.external_input.t[data->simulationInfo.external_input.i+1];
+        && data->simulationInfo->external_input.i+1 < (data->simulationInfo->external_input.n-1)){
+    ++data->simulationInfo->external_input.i;
+    t1 = data->simulationInfo->external_input.t[data->simulationInfo->external_input.i];
+    t2 = data->simulationInfo->external_input.t[data->simulationInfo->external_input.i+1];
   }
 
   if(t == t1){
-    for(i = 0; i < data->modelData.nInputVars; ++i){
-      data->simulationInfo.inputVars[i] = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i][i];
+    for(i = 0; i < data->modelData->nInputVars; ++i){
+      data->simulationInfo->inputVars[i] = data->simulationInfo->external_input.u[data->simulationInfo->external_input.i][i];
     }
     return 1;
   }else if(t == t2){
-    for(i = 0; i < data->modelData.nInputVars; ++i){
-      data->simulationInfo.inputVars[i] = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i+1][i];
+    for(i = 0; i < data->modelData->nInputVars; ++i){
+      data->simulationInfo->inputVars[i] = data->simulationInfo->external_input.u[data->simulationInfo->external_input.i+1][i];
     }
     return 1;
   }
 
-  dt = (data->simulationInfo.external_input.t[data->simulationInfo.external_input.i+1] - data->simulationInfo.external_input.t[data->simulationInfo.external_input.i]);
-  for(i = 0; i < data->modelData.nInputVars; ++i){
-    u1 = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i][i];
-    u2 = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i+1][i];
+  dt = (data->simulationInfo->external_input.t[data->simulationInfo->external_input.i+1] - data->simulationInfo->external_input.t[data->simulationInfo->external_input.i]);
+  for(i = 0; i < data->modelData->nInputVars; ++i){
+    u1 = data->simulationInfo->external_input.u[data->simulationInfo->external_input.i][i];
+    u2 = data->simulationInfo->external_input.u[data->simulationInfo->external_input.i+1][i];
 
     if(u1 != u2){
-      data->simulationInfo.inputVars[i] =  (u1*(dt+t1-t)+(t-t1)*u2)/dt;
+      data->simulationInfo->inputVars[i] =  (u1*(dt+t1-t)+(t-t1)*u2)/dt;
     }else{
-      data->simulationInfo.inputVars[i] = u1;
+      data->simulationInfo->inputVars[i] = u1;
     }
   }
  return 0;
