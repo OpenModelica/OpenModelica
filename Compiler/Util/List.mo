@@ -5768,7 +5768,7 @@ public function lengthListElements<T>
   input list<list<T>> inListList;
   output Integer outLength;
 algorithm
-  outLength := intAdd(listLength(lst) for lst in inListList);
+  outLength := sum(listLength(lst) for lst in inListList);
 end lengthListElements;
 
 public function generate<T, ArgT1>
