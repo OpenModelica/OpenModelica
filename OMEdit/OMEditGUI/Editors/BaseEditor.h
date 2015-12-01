@@ -165,9 +165,12 @@ private:
 
     void highlightCurrentLine();
     void highlightParentheses();
+    QString plainTextFromSelection(const QTextCursor &cursor) const;
+    static QString convertToPlainText(const QString &txt);
   protected:
     virtual void resizeEvent(QResizeEvent *pEvent);
     virtual void keyPressEvent(QKeyEvent *pEvent);
+    virtual QMimeData* createMimeDataFromSelection() const;
   };
 public:
   BaseEditor(MainWindow *pMainWindow);

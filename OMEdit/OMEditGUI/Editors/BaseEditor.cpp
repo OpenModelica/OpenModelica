@@ -841,6 +841,49 @@ void BaseEditor::PlainTextEdit::highlightParentheses()
 }
 
 /*!
+ * \brief BaseEditor::PlainTextEdit::plainTextFromSelection
+ * Returns the selected text in plain text format.
+ * \param cursor
+ * \return
+ */
+QString BaseEditor::PlainTextEdit::plainTextFromSelection(const QTextCursor &cursor) const
+{
+  // Copy the selected text as plain text
+  QString text = cursor.selectedText();
+  return convertToPlainText(text);
+}
+
+/*!
+ * \brief BaseEditor::PlainTextEdit::convertToPlainText
+ * Returns the text in plain text format.
+ * \param txt
+ * \return
+ */
+QString BaseEditor::PlainTextEdit::convertToPlainText(const QString &txt)
+{
+  QString ret = txt;
+  QChar *uc = ret.data();
+  QChar *e = uc + ret.size();
+
+  for (; uc != e; ++uc) {
+    switch (uc->unicode()) {
+      case 0xfdd0: // QTextBeginningOfFrame
+      case 0xfdd1: // QTextEndOfFrame
+      case QChar::ParagraphSeparator:
+      case QChar::LineSeparator:
+        *uc = QLatin1Char('\n');
+        break;
+      case QChar::Nbsp:
+        *uc = QLatin1Char(' ');
+        break;
+      default:
+        ;
+    }
+  }
+  return ret;
+}
+
+/*!
  * \brief BaseEditor::PlainTextEdit::resizeEvent
  * Reimplementation of resize event.
  * Resets the size of LineNumberArea.
@@ -907,6 +950,58 @@ void BaseEditor::PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
     cursor.endEditBlock();
     setTextCursor(cursor);
   }
+}
+
+/*!
+ * \brief BaseEditor::PlainTextEdit::createMimeDataFromSelection
+ * Reimplementation of QPlainTextEdit::createMimeDataFromSelection() to allow copying text with formatting.
+ * \return
+ */
+QMimeData* BaseEditor::PlainTextEdit::createMimeDataFromSelection() const
+{
+  if (textCursor().hasSelection()) {
+    QTextCursor cursor = textCursor();
+    QMimeData *mimeData = new QMimeData;
+    QString text = plainTextFromSelection(cursor);
+    mimeData->setText(text);
+    // Create a new document from the selected text document fragment
+    QTextDocument *tempDocument = new QTextDocument;
+    QTextCursor tempCursor(tempDocument);
+    tempCursor.insertFragment(cursor.selection());
+    // Apply the additional formats set by the syntax highlighter
+    QTextBlock start = document()->findBlock(cursor.selectionStart());
+    QTextBlock last = document()->findBlock(cursor.selectionEnd());
+    QTextBlock end = last.next();
+
+    const int selectionStart = cursor.selectionStart();
+    const int endOfDocument = tempDocument->characterCount() - 1;
+    for (QTextBlock current = start; current.isValid() && current != end; current = current.next()) {
+      foreach (const QTextLayout::FormatRange &range, current.layout()->additionalFormats()) {
+        const int startPosition = current.position() + range.start - selectionStart;
+        const int endPosition = startPosition + range.length;
+        if (endPosition <= 0 || startPosition >= endOfDocument) {
+          continue;
+        }
+        tempCursor.setPosition(qMax(startPosition, 0));
+        tempCursor.setPosition(qMin(endPosition, endOfDocument), QTextCursor::KeepAnchor);
+        QTextCharFormat format = range.format;
+        format.setFont(range.format.font());
+        tempCursor.setCharFormat(format);
+      }
+    }
+    // Reset the user states since they are not interesting
+    for (QTextBlock block = tempDocument->begin(); block.isValid(); block = block.next()) {
+      block.setUserState(-1);
+    }
+    // Make sure the text appears pre-formatted
+    tempCursor.setPosition(0);
+    tempCursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+    mimeData->setHtml(tempCursor.selection().toHtml());
+    mimeData->setData(QLatin1String("application/OMEdit.modelica-text"), text.toUtf8());
+    delete tempDocument;
+    return mimeData;
+  }
+  return 0;
 }
 
 /*!
