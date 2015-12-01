@@ -132,7 +132,6 @@ ModelicaTextEditor::ModelicaTextEditor(ModelWidget *pParent)
   setCanHaveBreakpoints(true);
   /* set the document marker */
   mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
-  setModelicaTextDocument(mpPlainTextEdit->document());
 }
 
 /*!
@@ -219,16 +218,6 @@ bool ModelicaTextEditor::validateText()
   return true;
 }
 
-void ModelicaTextEditor::setModelicaTextDocument(QTextDocument *doc)
-{
-  ModelicaTextDocumentLayout *docLayout = qobject_cast<ModelicaTextDocumentLayout*>(doc->documentLayout());
-  if (!docLayout) {
-    docLayout = new ModelicaTextDocumentLayout(doc);
-    doc->setDocumentLayout(docLayout);
-  }
-  mpPlainTextEdit->setDocument(doc);
-}
-
 /*!
  * \brief ModelicaTextEditor::showContextMenu
  * Create a context menu.
@@ -272,8 +261,11 @@ void ModelicaTextEditor::contentsHasChanged(int position, int charsRemoved, int 
       /* if user is changing the read-only class. */
       mpMainWindow->getInfoBar()->showMessage(tr("<b>Warning: </b>You are changing a read-only class."));
     } else {
-      /* if user is changing the normal class. */
+      /* if user is changing, the normal class. */
       if (!mForceSetPlainText) {
+        mpModelWidget->setWindowTitle(QString(mpModelWidget->getLibraryTreeItem()->getNameStructure()).append("*"));
+        mpModelWidget->getLibraryTreeItem()->setIsSaved(false);
+        mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpModelWidget->getLibraryTreeItem());
         mTextChanged = true;
       }
       /* Keep the line numbers and the block information for the line breakpoints updated */
@@ -670,27 +662,18 @@ void ModelicaTextHighlighter::highlightBlock(const QString &text)
     return;
   }
   // store parentheses info
-  TextBlockUserData *pTextBlockUserData = ModelicaTextDocumentLayout::userData(currentBlock());
+  TextBlockUserData *pTextBlockUserData = BaseEditorDocumentLayout::userData(currentBlock());
   if (pTextBlockUserData) {
     pTextBlockUserData->clearParentheses();
-    // left parenthesis
-    int leftPos = text.indexOf('(');
-    while (leftPos != -1) {
-      ParenthesisInfo parenthesisInfo;
-      parenthesisInfo.character = '(';
-      parenthesisInfo.position = leftPos;
-      pTextBlockUserData->insert(parenthesisInfo);
-      leftPos = text.indexOf('(', leftPos + 1);
+    Parentheses parentheses;
+    for (int i = 0 ; i < text.length() ; i++) {
+      if (text.at(i) == '(' || text.at(i) == '{' || text.at(i) == '[') {
+        parentheses.append(Parenthesis(Parenthesis::Opened, text.at(i), i));
+      } else if (text.at(i) == ')' || text.at(i) == '}' || text.at(i) == ']') {
+        parentheses.append(Parenthesis(Parenthesis::Closed, text.at(i), i));
+      }
     }
-    // right parenthesis
-    int rightPos = text.indexOf(')');
-    while (rightPos != -1) {
-      ParenthesisInfo parenthesisInfo;
-      parenthesisInfo.character = ')';
-      parenthesisInfo.position = rightPos;
-      pTextBlockUserData->insert(parenthesisInfo);
-      rightPos = text.indexOf(')', rightPos +1);
-    }
+    pTextBlockUserData->setParentheses(parentheses);
     // set text block user data
     setCurrentBlockUserData(pTextBlockUserData);
   }

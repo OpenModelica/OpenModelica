@@ -172,17 +172,247 @@ TextBlockUserData::~TextBlockUserData()
 {
   TextMarks marks = _marks;
   _marks.clear();
-  foreach (ITextMark *mk, marks)
+  foreach (ITextMark *mk, marks) {
     mk->removeFromEditor();
+  }
 }
 
-void TextBlockUserData::insert(ParenthesisInfo parenthesisInfo)
+/*!
+ * \brief TextBlockUserData::checkOpenParenthesis
+ * Checks the open Parenthesis for any mismatch
+ * \param cursor
+ * \param c
+ * \return
+ */
+TextBlockUserData::MatchType TextBlockUserData::checkOpenParenthesis(QTextCursor *cursor, QChar c)
 {
-  int i = 0;
-  while (i < mParentheses.size() && parenthesisInfo.position > mParentheses.at(i).position) {
-    ++i;
+  QTextBlock block = cursor->block();
+  if (!BaseEditorDocumentLayout::hasParentheses(block)) {
+    return NoMatch;
   }
-  mParentheses.insert(i, parenthesisInfo);
+
+  Parentheses parentheses = BaseEditorDocumentLayout::parentheses(block);
+  Parenthesis openParenthesis, closedParenthesis;
+  QTextBlock closedParenthesisBlock = block;
+  const int cursorPos = cursor->position() - closedParenthesisBlock.position();
+  int i = 0;
+  int ignore = 0;
+  bool foundOpen = false;
+  for (;;) {
+    if (!foundOpen) {
+      if (i >= parentheses.count())
+        return NoMatch;
+      openParenthesis = parentheses.at(i);
+      if (openParenthesis.pos != cursorPos) {
+        ++i;
+        continue;
+      } else {
+        foundOpen = true;
+        ++i;
+      }
+    }
+
+    if (i >= parentheses.count()) {
+      for (;;) {
+        closedParenthesisBlock = closedParenthesisBlock.next();
+        if (!closedParenthesisBlock.isValid())
+          return NoMatch;
+        if (BaseEditorDocumentLayout::hasParentheses(closedParenthesisBlock)) {
+          parentheses = BaseEditorDocumentLayout::parentheses(closedParenthesisBlock);
+          break;
+        }
+      }
+      i = 0;
+    }
+
+    closedParenthesis = parentheses.at(i);
+    if (closedParenthesis.type == Parenthesis::Opened) {
+      ignore++;
+      ++i;
+      continue;
+    } else {
+      if (ignore > 0) {
+        ignore--;
+        ++i;
+        continue;
+      }
+
+      cursor->clearSelection();
+      cursor->setPosition(closedParenthesisBlock.position() + closedParenthesis.pos + 1, QTextCursor::KeepAnchor);
+
+      if ((c == QLatin1Char('{') && closedParenthesis.chr != QLatin1Char('}'))
+          || (c == QLatin1Char('(') && closedParenthesis.chr != QLatin1Char(')'))
+          || (c == QLatin1Char('[') && closedParenthesis.chr != QLatin1Char(']'))) {
+        return Mismatch;
+      }
+
+      return Match;
+    }
+  }
+}
+
+/*!
+ * \brief TextBlockUserData::checkClosedParenthesis
+ * Checks the close Parenthesis for any mismatch
+ * \param cursor
+ * \param c
+ * \return
+ */
+TextBlockUserData::MatchType TextBlockUserData::checkClosedParenthesis(QTextCursor *cursor, QChar c)
+{
+  QTextBlock block = cursor->block();
+  if (!BaseEditorDocumentLayout::hasParentheses(block)) {
+    return NoMatch;
+  }
+
+  Parentheses parentheses = BaseEditorDocumentLayout::parentheses(block);
+  Parenthesis openParenthesis, closedParenthesis;
+  QTextBlock openParenthesisBlock = block;
+  const int cursorPos = cursor->position() - openParenthesisBlock.position();
+  int i = parentheses.count() - 1;
+  int ignore = 0;
+  bool foundClosed = false;
+  for (;;) {
+    if (!foundClosed) {
+      if (i < 0)
+        return NoMatch;
+      closedParenthesis = parentheses.at(i);
+      if (closedParenthesis.pos != cursorPos - 1) {
+        --i;
+        continue;
+      } else {
+        foundClosed = true;
+        --i;
+      }
+    }
+
+    if (i < 0) {
+      for (;;) {
+        openParenthesisBlock = openParenthesisBlock.previous();
+        if (!openParenthesisBlock.isValid())
+          return NoMatch;
+
+        if (BaseEditorDocumentLayout::hasParentheses(openParenthesisBlock)) {
+          parentheses = BaseEditorDocumentLayout::parentheses(openParenthesisBlock);
+          break;
+        }
+      }
+      i = parentheses.count() - 1;
+    }
+
+    openParenthesis = parentheses.at(i);
+    if (openParenthesis.type == Parenthesis::Closed) {
+      ignore++;
+      --i;
+      continue;
+    } else {
+      if (ignore > 0) {
+        ignore--;
+        --i;
+        continue;
+      }
+
+      cursor->clearSelection();
+      cursor->setPosition(openParenthesisBlock.position() + openParenthesis.pos, QTextCursor::KeepAnchor);
+
+      if ((c == QLatin1Char('}') && openParenthesis.chr != QLatin1Char('{'))
+          || (c == QLatin1Char(')') && openParenthesis.chr != QLatin1Char('('))
+          || (c == QLatin1Char(']') && openParenthesis.chr != QLatin1Char('['))) {
+        return Mismatch;
+      }
+      return Match;
+    }
+  }
+}
+
+/*!
+ * \brief TextBlockUserData::matchCursorBackward
+ * Matches the parentheses in the backward direction.
+ * \param cursor
+ * \return
+ */
+TextBlockUserData::MatchType TextBlockUserData::matchCursorBackward(QTextCursor *cursor)
+{
+  cursor->clearSelection();
+  const QTextBlock block = cursor->block();
+  if (!BaseEditorDocumentLayout::hasParentheses(block)) {
+    return NoMatch;
+  }
+
+  const int relPos = cursor->position() - block.position();
+  Parentheses parentheses = BaseEditorDocumentLayout::parentheses(block);
+  const Parentheses::const_iterator cend = parentheses.constEnd();
+  for (Parentheses::const_iterator it = parentheses.constBegin();it != cend; ++it) {
+    const Parenthesis &parenthesis = *it;
+    if (parenthesis.pos == relPos - 1 && parenthesis.type == Parenthesis::Closed) {
+      return checkClosedParenthesis(cursor, parenthesis.chr);
+    }
+  }
+  return NoMatch;
+}
+
+/*!
+ * \brief TextBlockUserData::matchCursorForward
+ * Matches the parentheses in the forward direction.
+ * \param cursor
+ * \return
+ */
+TextBlockUserData::MatchType TextBlockUserData::matchCursorForward(QTextCursor *cursor)
+{
+  cursor->clearSelection();
+  const QTextBlock block = cursor->block();
+  if (!BaseEditorDocumentLayout::hasParentheses(block)) {
+    return NoMatch;
+  }
+
+  const int relPos = cursor->position() - block.position();
+  Parentheses parentheses = BaseEditorDocumentLayout::parentheses(block);
+  const Parentheses::const_iterator cend = parentheses.constEnd();
+  for (Parentheses::const_iterator it = parentheses.constBegin();it != cend; ++it) {
+    const Parenthesis &parenthesis = *it;
+    if (parenthesis.pos == relPos && parenthesis.type == Parenthesis::Opened) {
+      return checkOpenParenthesis(cursor, parenthesis.chr);
+    }
+  }
+  return NoMatch;
+}
+
+/*!
+ * \class BaseEditorDocumentLayout
+ * Implements a custom text layout for BaseEditor to be able to work with QTextDocument::setDocumentLayout().
+ */
+BaseEditorDocumentLayout::BaseEditorDocumentLayout(QTextDocument *document)
+  : QPlainTextDocumentLayout(document), mHasBreakpoint(false)
+{
+
+}
+
+Parentheses BaseEditorDocumentLayout::parentheses(const QTextBlock &block)
+{
+  if (TextBlockUserData *userData = testUserData(block))
+    return userData->parentheses();
+  return Parentheses();
+}
+
+bool BaseEditorDocumentLayout::hasParentheses(const QTextBlock &block)
+{
+  if (TextBlockUserData *userData = testUserData(block))
+    return userData->hasParentheses();
+  return false;
+}
+
+TextBlockUserData* BaseEditorDocumentLayout::testUserData(const QTextBlock &block)
+{
+  return static_cast<TextBlockUserData*>(block.userData());
+}
+
+TextBlockUserData* BaseEditorDocumentLayout::userData(const QTextBlock &block)
+{
+  TextBlockUserData *data = static_cast<TextBlockUserData*>(block.userData());
+  if (!data && block.isValid()) {
+    const_cast<QTextBlock&>(block).setUserData((data = new TextBlockUserData));
+  }
+  return data;
 }
 
 /*!
@@ -193,9 +423,17 @@ BaseEditor::PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   : QPlainTextEdit(pBaseEditor), mpBaseEditor(pBaseEditor)
 {
   setObjectName("BaseEditor");
-  document()->setDocumentMargin(2);
+  QTextDocument *pTextDocument = document();
+  pTextDocument->setDocumentMargin(2);
+  BaseEditorDocumentLayout *pModelicaTextDocumentLayout = new BaseEditorDocumentLayout(pTextDocument);
+  pTextDocument->setDocumentLayout(pModelicaTextDocumentLayout);
+  setDocument(pTextDocument);
   // line numbers widget
   mpLineNumberArea = new LineNumberArea(mpBaseEditor);
+  // parentheses matcher
+  mParenthesesMatchFormat.setBackground(Qt::green);
+  mParenthesesMisMatchFormat.setBackground(palette().color(QPalette::Base).value() < 128 ? Qt::darkRed : Qt::red);
+
   updateLineNumberAreaWidth(0);
   updateHighlights();
   updateCursorPosition();
@@ -540,109 +778,64 @@ void BaseEditor::PlainTextEdit::highlightCurrentLine()
  */
 void BaseEditor::PlainTextEdit::highlightParentheses()
 {
-  TextBlockUserData *pTextBlockUserData = static_cast<TextBlockUserData *>(textCursor().block().userData());
-  if (pTextBlockUserData) {
-    QVector<ParenthesisInfo> parenthesisInfoList = pTextBlockUserData->parentheses();
-    int pos = textCursor().block().position();
-    for (int i = 0; i < parenthesisInfoList.size(); ++i) {
-      ParenthesisInfo parenthesisInfo = parenthesisInfoList.at(i);
-      int curPos = textCursor().position() - textCursor().block().position();
-      if (parenthesisInfo.position == curPos && parenthesisInfo.character == '(') {
-        if (highlightLeftParenthesis(textCursor().block(), i + 1, 0)) {
-          createParenthesisSelection(pos + parenthesisInfo.position);
-        }
-      } else if (parenthesisInfo.position == curPos - 1 && parenthesisInfo.character == ')') {
-        if (highlightRightParenthesis(textCursor().block(), i - 1, 0)) {
-          createParenthesisSelection(pos + parenthesisInfo.position);
-        }
-      }
-    }
+  if (isReadOnly()) {
+    return;
   }
-}
 
-/*!
- * \brief BaseEditor::PlainTextEdit::highlightLeftParenthesis
- * Highlights the left parenthesis.
- * \param currentBlock
- * \param i
- * \param numLeftParentheses
- * \return
- */
-bool BaseEditor::PlainTextEdit::highlightLeftParenthesis(QTextBlock currentBlock, int i, int numLeftParentheses)
-{
-  TextBlockUserData *pTextBlockUserData = static_cast<TextBlockUserData*>(currentBlock.userData());
-  QVector<ParenthesisInfo> parenthesisInfoList = pTextBlockUserData->parentheses();
-  int docPos = currentBlock.position();
-  for (; i < parenthesisInfoList.size(); ++i) {
-    ParenthesisInfo parenthesisInfo = parenthesisInfoList.at(i);
-    if (parenthesisInfo.character == '(') {
-      ++numLeftParentheses;
-      continue;
-    }
-    if (parenthesisInfo.character == ')' && numLeftParentheses == 0) {
-      createParenthesisSelection(docPos + parenthesisInfo.position);
-      return true;
-    } else {
-      --numLeftParentheses;
-    }
+  QTextCursor backwardMatch = textCursor();
+  QTextCursor forwardMatch = textCursor();
+  if (overwriteMode()) {
+    backwardMatch.movePosition(QTextCursor::Right);
   }
-  currentBlock = currentBlock.next();
-  if (currentBlock.isValid()) {
-    return highlightLeftParenthesis(currentBlock, 0, numLeftParentheses);
-  }
-  return false;
-}
 
-/*!
- * \brief BaseEditor::PlainTextEdit::highlightRightParenthesis
- * Highlights the right parenthesis.
- * \param currentBlock
- * \param i
- * \param numRightParentheses
- * \return
- */
-bool BaseEditor::PlainTextEdit::highlightRightParenthesis(QTextBlock currentBlock, int i, int numRightParentheses)
-{
-  TextBlockUserData *pTextBlockUserData = static_cast<TextBlockUserData*>(currentBlock.userData());
-  QVector<ParenthesisInfo> parenthesisInfoList = pTextBlockUserData->parentheses();
-  int docPos = currentBlock.position();
-  for (; i > -1 && parenthesisInfoList.size() > 0; --i) {
-    ParenthesisInfo parenthesisInfo = parenthesisInfoList.at(i);
-    if (parenthesisInfo.character == ')') {
-      ++numRightParentheses;
-      continue;
-    }
-    if (parenthesisInfo.character == '(' && numRightParentheses == 0) {
-      createParenthesisSelection(docPos + parenthesisInfo.position);
-      return true;
-    } else {
-      --numRightParentheses;
-    }
-  }
-  currentBlock = currentBlock.previous();
-  if (currentBlock.isValid()) {
-    return highlightRightParenthesis(currentBlock, 0, numRightParentheses);
-  }
-  return false;
-}
-
-/*!
- * \brief BaseEditor::PlainTextEdit::createParenthesisSelection
- * Creates a selection for matching parentheses.
- * \param pos
- */
-void BaseEditor::PlainTextEdit::createParenthesisSelection(int pos)
-{
+  const TextBlockUserData::MatchType backwardMatchType = TextBlockUserData::matchCursorBackward(&backwardMatch);
+  const TextBlockUserData::MatchType forwardMatchType = TextBlockUserData::matchCursorForward(&forwardMatch);
   QList<QTextEdit::ExtraSelection> selections = extraSelections();
-  QTextEdit::ExtraSelection selection;
-  QTextCharFormat format = selection.format;
-  format.setBackground(Qt::green);
-  selection.format = format;
-  QTextCursor cursor = textCursor();
-  cursor.setPosition(pos);
-  cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor);
-  selection.cursor = cursor;
-  selections.append(selection);
+
+  if (backwardMatchType == TextBlockUserData::NoMatch && forwardMatchType == TextBlockUserData::NoMatch) {
+    setExtraSelections(selections);
+    return;
+  }
+
+  if (backwardMatch.hasSelection()) {
+    QTextEdit::ExtraSelection selection;
+    if (backwardMatchType == TextBlockUserData::Mismatch) {
+      selection.cursor = backwardMatch;
+      selection.format = mParenthesesMisMatchFormat;
+      selections.append(selection);
+    } else {
+      selection.cursor = backwardMatch;
+      selection.format = mParenthesesMatchFormat;
+
+      selection.cursor.setPosition(backwardMatch.selectionStart());
+      selection.cursor.setPosition(selection.cursor.position() + 1, QTextCursor::KeepAnchor);
+      selections.append(selection);
+
+      selection.cursor.setPosition(backwardMatch.selectionEnd());
+      selection.cursor.setPosition(selection.cursor.position() - 1, QTextCursor::KeepAnchor);
+      selections.append(selection);
+    }
+  }
+
+  if (forwardMatch.hasSelection()) {
+    QTextEdit::ExtraSelection selection;
+    if (forwardMatchType == TextBlockUserData::Mismatch) {
+      selection.cursor = forwardMatch;
+      selection.format = mParenthesesMisMatchFormat;
+      selections.append(selection);
+    } else {
+      selection.cursor = forwardMatch;
+      selection.format = mParenthesesMatchFormat;
+
+      selection.cursor.setPosition(forwardMatch.selectionStart());
+      selection.cursor.setPosition(selection.cursor.position() + 1, QTextCursor::KeepAnchor);
+      selections.append(selection);
+
+      selection.cursor.setPosition(forwardMatch.selectionEnd());
+      selection.cursor.setPosition(selection.cursor.position() - 1, QTextCursor::KeepAnchor);
+      selections.append(selection);
+    }
+  }
   setExtraSelections(selections);
 }
 
@@ -718,6 +911,10 @@ void BaseEditor::PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
 /*!
  * \class BaseEditor
  * Base class for all editors.
+ */
+/*!
+ * \brief BaseEditor::BaseEditor
+ * \param pMainWindow
  */
 BaseEditor::BaseEditor(MainWindow *pMainWindow)
   : QWidget(pMainWindow), mpModelWidget(0), mpMainWindow(pMainWindow), mCanHaveBreakpoints(false)

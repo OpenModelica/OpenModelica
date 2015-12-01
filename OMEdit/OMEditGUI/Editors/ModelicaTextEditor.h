@@ -79,7 +79,6 @@ public:
   QString getLastValidText() {return mLastValidText;}
   QStringList getClassNames(QString *errorString);
   bool validateText();
-  void setModelicaTextDocument(QTextDocument *document);
 private:
   QString mLastValidText;
   bool mTextChanged;
@@ -90,32 +89,6 @@ public slots:
   void setPlainText(const QString &text);
   virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded);
   virtual void toggleCommentSelection();
-};
-
-/**
- * @class ModelicaTextDocumentLayout
- * Implements a custom text layout for ModelciatextEditor to be able to
- * Works with QTextDocument::setDocumentLayout().
- */
-class ModelicaTextDocumentLayout : public QPlainTextDocumentLayout
-{
-  Q_OBJECT
-public:
-  ModelicaTextDocumentLayout(QTextDocument *doc) : QPlainTextDocumentLayout(doc), mpHasBreakpoint(false) {}
-  static TextBlockUserData *testUserData(const QTextBlock &block)
-  {
-    return static_cast<TextBlockUserData*>(block.userData());
-  }
-  static TextBlockUserData *userData(const QTextBlock &block)
-  {
-    TextBlockUserData *data = static_cast<TextBlockUserData*>(block.userData());
-    if (!data && block.isValid()) {
-      const_cast<QTextBlock&>(block).setUserData((data = new TextBlockUserData));
-    }
-    return data;
-  }
-  void emitDocumentSizeChanged() {emit documentSizeChanged(documentSize());}
-  bool mpHasBreakpoint;
 };
 
 class ModelicaTextEditorPage;

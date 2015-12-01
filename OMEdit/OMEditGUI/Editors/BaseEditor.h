@@ -74,11 +74,17 @@ private:
   int mIndentSize;
 };
 
-struct ParenthesisInfo
+struct Parenthesis
 {
-  QChar character;
-  int position;
+  enum Type {Opened, Closed};
+  inline Parenthesis() : type(Opened), pos(-1) {}
+  inline Parenthesis(Type t, QChar c, int position)
+      : type(t), chr(c), pos(position) {}
+  Type type;
+  QChar chr;
+  int pos;
 };
+typedef QVector<Parenthesis> Parentheses;
 
 /**
  * @class TextBlockUserData
@@ -98,18 +104,37 @@ public:
   inline void clearMarks() { _marks.clear(); }
   inline void documentClosing()
   {
-    foreach (ITextMark *tm, _marks)
-    {
+    foreach (ITextMark *tm, _marks) {
        tm->documentClosing();
     }
     _marks.clear();
   }
-  QVector<ParenthesisInfo> parentheses() {return mParentheses;}
-  void insert(ParenthesisInfo parenthesisInfo);
+
+  void setParentheses(const Parentheses &parentheses) {mParentheses = parentheses;}
+  Parentheses parentheses() {return mParentheses;}
   inline void clearParentheses() {mParentheses.clear();}
+  inline bool hasParentheses() const {return !mParentheses.isEmpty();}
+  enum MatchType {NoMatch, Match, Mismatch};
+  static MatchType checkOpenParenthesis(QTextCursor *cursor, QChar c);
+  static MatchType checkClosedParenthesis(QTextCursor *cursor, QChar c);
+  static MatchType matchCursorBackward(QTextCursor *cursor);
+  static MatchType matchCursorForward(QTextCursor *cursor);
 private:
   TextMarks _marks;
-  QVector<ParenthesisInfo> mParentheses;
+  QVector<Parenthesis> mParentheses;
+};
+
+class BaseEditorDocumentLayout : public QPlainTextDocumentLayout
+{
+  Q_OBJECT
+public:
+  BaseEditorDocumentLayout(QTextDocument *document);
+  static Parentheses parentheses(const QTextBlock &block);
+  static bool hasParentheses(const QTextBlock &block);
+  static TextBlockUserData *testUserData(const QTextBlock &block);
+  static TextBlockUserData *userData(const QTextBlock &block);
+  void emitDocumentSizeChanged() {emit documentSizeChanged(documentSize());}
+  bool mHasBreakpoint;
 };
 
 class BaseEditor : public QWidget
@@ -135,12 +160,11 @@ private:
   private:
     BaseEditor *mpBaseEditor;
     LineNumberArea *mpLineNumberArea;
+    QTextCharFormat mParenthesesMatchFormat;
+    QTextCharFormat mParenthesesMisMatchFormat;
 
     void highlightCurrentLine();
     void highlightParentheses();
-    bool highlightLeftParenthesis(QTextBlock currentBlock, int index, int numRightParentheses);
-    bool highlightRightParenthesis(QTextBlock currentBlock, int index, int numLeftParentheses);
-    void createParenthesisSelection(int pos);
   protected:
     virtual void resizeEvent(QResizeEvent *pEvent);
     virtual void keyPressEvent(QKeyEvent *pEvent);
