@@ -224,6 +224,8 @@ public:
   void getLinearSolvers(QStringList *methods, QStringList *descriptions);
   void getNonLinearSolvers(QStringList *methods, QStringList *descriptions);
   bool moveClass(QString className, int offset);
+  bool moveClassToTop(QString className);
+  bool moveClassToBottom(QString className);
 signals:
   void commandFinished();
 public slots:

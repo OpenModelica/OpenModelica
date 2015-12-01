@@ -2434,7 +2434,7 @@ void OMCProxy::getNonLinearSolvers(QStringList *methods, QStringList *descriptio
 
 /*!
  * \brief OMCProxy::moveClass
- * Moves the class.
+ * Moves the class by offset in its enclosing class.
  * \param className
  * \param offset
  * \return
@@ -2442,6 +2442,28 @@ void OMCProxy::getNonLinearSolvers(QStringList *methods, QStringList *descriptio
 bool OMCProxy::moveClass(QString className, int offset)
 {
   return mpOMCInterface->moveClass(className, offset);
+}
+
+/*!
+ * \brief OMCProxy::moveClassToTop
+ * Moves the class to top of its enclosing class.
+ * \param className
+ * \return
+ */
+bool OMCProxy::moveClassToTop(QString className)
+{
+  return mpOMCInterface->moveClassToTop(className);
+}
+
+/*!
+ * \brief OMCProxy::moveClassToBottom
+ * Moves the class to bottom of its enclosing class.
+ * \param className
+ * \return
+ */
+bool OMCProxy::moveClassToBottom(QString className)
+{
+  return mpOMCInterface->moveClassToBottom(className);
 }
 
 /*!
