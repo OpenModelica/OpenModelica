@@ -1,6 +1,8 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+EngineV6_evalParams.mos \
+EngineV6_output.mos \
 Bug1687.mos \
 Bug1728.mos \
 Bug1987.mos \
