@@ -1792,16 +1792,20 @@ void LibraryTreeModel::moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, boo
   int row = pLibraryTreeItem->row();
   bool update = false;
   if (top && row > 0) {
-    if (beginMoveRows(parentIndex, row, row, parentIndex, 0)) {
-      pParentLibraryTreeItem->moveChild(row, 0);
-      endMoveRows();
-      update = true;
+    if (mpLibraryWidget->getMainWindow()->getOMCProxy()->moveClassToTop(pLibraryTreeItem->getNameStructure())) {
+      if (beginMoveRows(parentIndex, row, row, parentIndex, 0)) {
+        pParentLibraryTreeItem->moveChild(row, 0);
+        endMoveRows();
+        update = true;
+      }
     }
   } else if (!top && row < pParentLibraryTreeItem->getChildren().size() - 1) {
-    if (beginMoveRows(parentIndex, row, row, parentIndex, pParentLibraryTreeItem->getChildren().size())) {
-      pParentLibraryTreeItem->moveChild(row, pParentLibraryTreeItem->getChildren().size() - 1);
-      endMoveRows();
-      update = true;
+    if (mpLibraryWidget->getMainWindow()->getOMCProxy()->moveClassToBottom(pLibraryTreeItem->getNameStructure())) {
+      if (beginMoveRows(parentIndex, row, row, parentIndex, pParentLibraryTreeItem->getChildren().size())) {
+        pParentLibraryTreeItem->moveChild(row, pParentLibraryTreeItem->getChildren().size() - 1);
+        endMoveRows();
+        update = true;
+      }
     }
   }
   if (update) {
