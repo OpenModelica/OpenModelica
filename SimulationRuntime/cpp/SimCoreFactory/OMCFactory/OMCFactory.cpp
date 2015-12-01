@@ -83,6 +83,10 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      map<string, OutputPointType> outputPointTypeMap = MAP_LIST_OF
        "all", OPT_ALL MAP_LIST_SEP "step", OPT_STEP MAP_LIST_SEP
        "none", OPT_NONE MAP_LIST_END;
+
+	 map<string, OutputFormat> outputFormatTypeMap = MAP_LIST_OF
+       "csv", CSV MAP_LIST_SEP "mat", MAT MAP_LIST_SEP
+       "buffer",  BUFFER MAP_LIST_SEP   "empty", EMPTY MAP_LIST_END;
      po::options_description desc("Allowed options");
 
      //program options that can be overwritten by OMEdit must be declared as vector
@@ -106,6 +110,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
           ("log-settings,V", po::value< vector<string> >(),  "log information: init, nls, ls, solv, output, event, model, other")
           ("alarm,A", po::value<unsigned int >()->default_value(360),  "sets timeout in seconds for simulation")
           ("output-type,O", po::value< string >()->default_value("all"),  "the points in time written to result file: all (output steps + events), step (just output points), none")
+		  ("output-format,P", po::value< string >()->default_value("mat"),  "The simulation results output format")
           ;
 
      // a group for all options that should not be visible if '--help' is set
@@ -224,8 +229,19 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
     			   throw ModelicaSimulationError(MODEL_FACTORY,"log-settings flags not supported: " + log_vec[i] + "\n");
     	 }
      }
-     OutputFormat outputFormat = MAT;
-     fs::path libraries_path = fs::path( runtime_lib_path) ;
+     OutputFormat outputFormat;
+     if (vm.count("output-format"))
+     {
+
+         string outputFormatType_str = vm["output-format"].as<string>();
+         outputFormat = outputFormatTypeMap[outputFormatType_str];
+     }
+     else
+         throw ModelicaSimulationError(MODEL_FACTORY, "output-format is not set");
+
+
+
+	 fs::path libraries_path = fs::path( runtime_lib_path) ;
      fs::path modelica_path = fs::path( modelica_lib_path) ;
 
      libraries_path.make_preferred();

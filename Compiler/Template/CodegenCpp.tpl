@@ -744,14 +744,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        : <%lastIdentOfPath(modelInfo.name)%>StateSelection(globalSettings, simObjects)
    {
 
-     _writeOutput = _sim_objects->LoadWriter(<%numAlgvars(modelInfo)%> + <%numAliasvars(modelInfo)%> + 2*<%numStatevars(modelInfo)%>).lock();
+
 
    }
 
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(<%lastIdentOfPath(modelInfo.name)%>WriteOutput& instance)
        : <%lastIdentOfPath(modelInfo.name)%>StateSelection(instance.getGlobalSettings(), instance._sim_objects)
    {
-    _writeOutput = instance._sim_objects->LoadWriter(<%numAlgvars(modelInfo)%> + <%numAliasvars(modelInfo)%> + 2*<%numStatevars(modelInfo)%>).lock();
+
    }
 
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::~<%lastIdentOfPath(modelInfo.name)%>WriteOutput()
@@ -768,7 +768,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
       if(getGlobalSettings()->getOutputPointType()!= OPT_NONE)
       {
-        _writeOutput->init();
+        _writeOutput = _sim_objects->LoadWriter(<%numAlgvars(modelInfo)%> + <%numAliasvars(modelInfo)%> + 2*<%numStatevars(modelInfo)%>).lock();
+		_writeOutput->init();
         _writeOutput->clear();
       }
    }
