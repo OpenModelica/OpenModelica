@@ -1631,9 +1631,8 @@ author: Waurich TUD 2014-07"
 algorithm
   taskLstOut := matchcontinue(level,iMeta,iSccSimEqMapping)
     local
-      list<Integer> section,simEqSysIdcs, compLst;
-      list<list<Integer>> sections, sectionSimEqSysIdcs;
-      list<list<list<Integer>>> sectionComps, sectionSimEqSys;
+      list<Integer> section, compLst;
+      list<list<Integer>> sections;
       array<list<Integer>> inComps;
       HpcOmSimCode.Task task;
       HpcOmSimCode.TaskList taskLst;
@@ -1641,20 +1640,15 @@ algorithm
       equation
         // generate a serial section
         compLst = List.flatten(List.map1(section,Array.getIndexFirst,inComps));
-        simEqSysIdcs = getSimEqSysIdcsForCompLst(compLst,iSccSimEqMapping);
         //simEqSysIdcs = List.sort(simEqSysIdcs,intGt);
-        task = makeCalcLevelTask(simEqSysIdcs,section);
+        task = makeCalcLevelTask(section,inComps,iSccSimEqMapping);
         taskLst = HpcOmSimCode.SERIALTASKLIST({task}, true);
     then taskLst;
     case(_::_,HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps),_)
       equation
         // generate parallel sections
-        sectionComps = List.mapList1_1(level,Array.getIndexFirst,inComps);
-        sectionComps = List.mapList1_1(sectionComps,List.sort,intGt);
-        sectionSimEqSys = List.map1(sectionComps,getSimEqSysIdcsForNodeLst,iSccSimEqMapping);
-        sectionSimEqSysIdcs = List.map(sectionSimEqSys,List.flatten);
         //sectionSimEqSysIdcs = List.map1(sectionSimEqSysIdcs,List.sort,intGt);
-        taskLst = makeCalcLevelParTaskLst(sectionSimEqSysIdcs,level);
+        taskLst = makeCalcLevelParTaskLstForMergedNodes(level,iSccSimEqMapping,inComps);
     then taskLst;
   end matchcontinue;
 end BLS_generateSchedule;
@@ -1925,52 +1919,46 @@ end deleteIntListMembers;
 //-----------------
 // Level Scheduling
 //-----------------
-public function createLevelSchedule "function createLevelSchedule
-  author: waurich TUD
-  Creates a level scheduling for the given graph"
+public function createLevelSchedule
+  "author: marcusw
+  Creates a level scheduling for the given graph."
   input HpcOmTaskGraph.TaskGraph iGraph;
   input HpcOmTaskGraph.TaskGraphMeta iMeta;
   input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
   output HpcOmSimCode.Schedule oSchedule;
   output HpcOmTaskGraph.TaskGraphMeta oMeta;
 protected
-  list<Integer> startNodes, levelAss;
-  list<list<Integer>> level;
-  list<list<list<Integer>>> levelComps,SCCs;  //level<node<tasks<components or simEqSys>>>
-  array<list<Integer>> inComps;
-  list<HpcOmSimCode.TaskList> levelTasks;
-  HpcOmTaskGraph.TaskGraph graphT;
-  array<tuple<Integer,Real>> exeCosts;
-  array<Integer> nodeMark;
-  array<HpcOmTaskGraph.Communications> commCosts;
-  array<tuple<Integer,Integer,Integer>> varCompMapping, eqCompMapping; //Map each variable to the scc that solves her
-  array<String> compNames, compDescs;
-  array<list<Integer>> compParamMapping;
-  array<HpcOmTaskGraph.ComponentInfo> compInformations;
+  list<list<Integer>> levelTasks;
+  HpcOmSimCode.Schedule tmpSchedule;
+  list<HpcOmSimCode.TaskList> levelTaskLists;
 algorithm
-  HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,varCompMapping=varCompMapping,eqCompMapping=eqCompMapping,compParamMapping=compParamMapping,compNames=compNames,compDescs=compDescs,exeCosts=exeCosts, commCosts=commCosts, compInformations=compInformations) := iMeta;
-
-  graphT := BackendDAEUtil.transposeMatrix(iGraph,arrayLength(iGraph));
-  //(_,startNodes) := List.filterOnTrueSync(arrayList(graphT),listEmpty,List.intRange(arrayLength(graphT)));
-  //startNodes := HpcOmTaskGraph.getRootNodes(iGraph);
-  //print("startnodes "+stringDelimitList(List.map(startNodes,intString),",")+"\n");
-  //level := getGraphLevel(iGraph,{startNodes});
-  level := HpcOmTaskGraph.getLevelNodes(iGraph);
-  //print("level: \n"+stringDelimitList(List.map(level,intListString),"\n")+"\n");
-  if Flags.isSet(Flags.HPCOM_DUMP) then
-    print("number of level: "+intString(listLength(level))+"\nnumber of processors :"+intString(Flags.getConfigInt(Flags.NUM_PROC))+"\n");
-  end if;
-  levelComps := List.mapList1_1(level,Array.getIndexFirst,inComps);
-  //levelComps := List.mapList1_1(levelComps,List.sort,intGt);
-  SCCs := List.map1(levelComps,getSimEqSysIdcsForNodeLst,iSccSimEqMapping);
-  levelTasks := List.threadMap(SCCs,List.mapList(level,List.create),makeCalcLevelParTaskLst);
-  oSchedule := HpcOmSimCode.LEVELSCHEDULE(levelTasks, false);
-
-  //update nodeMark for graphml representation
-  nodeMark := arrayCreate(arrayLength(inComps),-1);
-  ((_,nodeMark)) := List.fold(level,getLevelAssignment,(1,nodeMark));
-  oMeta := HpcOmTaskGraph.TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,compParamMapping,compNames,compDescs,exeCosts,commCosts,nodeMark,compInformations);
+  levelTasks := HpcOmTaskGraph.getLevelNodes(iGraph);
+  levelTaskLists := List.fold(levelTasks, function createLevelScheduleForLevel(iGraph=iGraph, iMeta=iMeta, iSccSimEqMapping=iSccSimEqMapping), {});
+  levelTaskLists := listReverse(levelTaskLists);
+  oSchedule := HpcOmSimCode.LEVELSCHEDULE(levelTaskLists,false);
+  oMeta := iMeta;
 end createLevelSchedule;
+
+public function createLevelScheduleForLevel   "author: marcusw
+  Handles all tasks of one level."
+  input list<Integer> iTasksOfLevel;
+  input HpcOmTaskGraph.TaskGraph iGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iMeta;
+  input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
+  input list<HpcOmSimCode.TaskList> iLevelTaskLists;
+  output list<HpcOmSimCode.TaskList> oLevelTaskLists;
+protected
+  array<tuple<Integer, Real>> exeCosts;
+  HpcOmSimCode.TaskList taskList;
+  array<list<Integer>> inComps;
+  list<Integer> sortedTasksOfLevel;
+  list<HpcOmSimCode.Task> tasksOfLevel;
+algorithm
+  HpcOmTaskGraph.TASKGRAPHMETA(exeCosts=exeCosts,inComps=inComps) := iMeta;
+  sortedTasksOfLevel := List.sort(iTasksOfLevel, function HpcOmTaskGraph.compareTasksByExecTime(iExeCosts=exeCosts, iTaskComps=inComps, iDescending=true));
+  taskList := makeCalcLevelParTaskLst(sortedTasksOfLevel, iSccSimEqMapping, inComps);
+  oLevelTaskLists := taskList :: iLevelTaskLists;
+end createLevelScheduleForLevel;
 
 protected function getLevelAssignment"folding function to get a levelassignment for each node"
   input list<Integer> level;
@@ -1986,22 +1974,49 @@ algorithm
 end getLevelAssignment;
 
 protected function makeCalcLevelParTaskLst "makes a parallel list of CALCTASK_LEVEL-Tasks out of the given lists of simEqSyslst and corresponding node list"
-  input list<list<Integer>> simEqsForNodes;
-  input list<list<Integer>> nodeIdcs;
-  output HpcOmSimCode.TaskList tasksOut;
+  input list<Integer> iNodeIdc;
+  input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
+  input array<list<Integer>> iNodeSccMapping; // maps nodeIdx to a list of SCCs
+  output HpcOmSimCode.TaskList oTasks;
+protected
+  list<list<Integer>> tmpList = {};
+  Integer nodeIdx;
+algorithm
+  for nodeIdx in listReverse(iNodeIdc) loop
+    tmpList := {nodeIdx}::tmpList;
+  end for;
+  oTasks := makeCalcLevelParTaskLstForMergedNodes(tmpList, iSccSimEqMapping, iNodeSccMapping);
+end makeCalcLevelParTaskLst;
+
+protected function makeCalcLevelParTaskLstForMergedNodes "makes a parallel list of CALCTASK_LEVEL-Tasks out of the given lists of simEqSyslst and corresponding node list"
+  input list<list<Integer>> iNodeIdc;
+  input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
+  input array<list<Integer>> iNodeSccMapping; // maps nodeIdx to a list of SCCs
+  output HpcOmSimCode.TaskList oTasks;
 protected
   list<HpcOmSimCode.Task> tmpList;
 algorithm
-  tmpList := List.threadMap(simEqsForNodes,nodeIdcs, makeCalcLevelTask);
-  tasksOut := HpcOmSimCode.PARALLELTASKLIST(tmpList);
-end makeCalcLevelParTaskLst;
+  tmpList := List.map(iNodeIdc, function makeCalcLevelTask(iNodeSccMapping=iNodeSccMapping, iSccSimEqMapping=iSccSimEqMapping));
+  oTasks := HpcOmSimCode.PARALLELTASKLIST(tmpList);
+end makeCalcLevelParTaskLstForMergedNodes;
 
 protected function makeCalcLevelTask" makes a CALCTASK_LEVEL for the given list of SimEqSys and a nodeIdx"
-  input list<Integer> simEqs;
-  input list<Integer> nodeIdx;
-  output HpcOmSimCode.Task taskOut;
+  input list<Integer> iNodeIdc;
+  input array<list<Integer>> iNodeSccMapping; // maps nodeIdx to a list of SCCs
+  input array<list<Integer>> iSccSimEqMapping; //maps SCC-index to a list of sim-equations
+  output HpcOmSimCode.Task oTask;
+protected
+  list<Integer> simEqs = {};
+  list<Integer> sccs;
+  Integer sccIdx;
 algorithm
-  taskOut := HpcOmSimCode.CALCTASK_LEVEL(simEqs,nodeIdx,NONE());
+  for nodeIdx in iNodeIdc loop
+    sccs := arrayGet(iNodeSccMapping, nodeIdx);
+    for sccIdx in sccs loop
+      simEqs := listAppend(simEqs, arrayGet(iSccSimEqMapping, sccIdx));
+    end for;
+  end for;
+  oTask := HpcOmSimCode.CALCTASK_LEVEL(simEqs,iNodeIdc,NONE());
 end makeCalcLevelTask;
 
 public function makeCalcTask" makes a CALCTASK for the given list of SimEqSys and a nodeIdx"
@@ -2114,7 +2129,7 @@ algorithm
   levelExecCosts := HpcOmTaskGraph.getCostsForContractedNodes(iTasksOfLevel, exeCosts);
   threadReadyList := arrayCreate(iNumberOfThreads, 0.0);
   threadTaskList := arrayCreate(iNumberOfThreads, {});
-  sortedTasksOfLevel := List.sort(iTasksOfLevel, function HpcOmTaskGraph.compareTasksByExecTime(iExeCosts=exeCosts, iTaskComps=inComps));
+  sortedTasksOfLevel := List.sort(iTasksOfLevel, function HpcOmTaskGraph.compareTasksByExecTime(iExeCosts=exeCosts, iTaskComps=inComps, iDescending=true));
   _ := List.fold(sortedTasksOfLevel, function createFixedLevelScheduleForTask(iLevelExecCosts=levelExecCosts, iAdviceList=iAdviceList, iThreadReadyList=threadReadyList, iGraph=iGraph, iMeta=iMeta), threadTaskList);
   threadTaskList := Array.map(threadTaskList, listReverse);
   ((_,tasksOfLevel)) := Array.fold2(threadTaskList, createFixedLevelScheduleForLevel0, inComps, iSccSimEqMapping, (1,{}));

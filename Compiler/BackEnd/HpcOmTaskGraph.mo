@@ -1153,6 +1153,7 @@ public function compareTasksByExecTime "author: marcusw
   input Integer iTask2;
   input  array<list<Integer>> iTaskComps;
   input array<tuple<Integer, Real>> iExeCosts;
+  input Boolean iDescending; //true if the result list should be in descending order
   output Boolean oResult;
 protected
   Real exeCosts1, exeCosts2;
@@ -1163,7 +1164,11 @@ algorithm
   exeCosts1 := addUpExeCostsForNode(taskComps1, iExeCosts, 0.0);
   exeCosts2 := addUpExeCostsForNode(taskComps2, iExeCosts, 0.0);
   //print("compareTasksByExecTime: Task '" + intString(iTask1) + "' with exeCost '" + realString(exeCosts1) + "' and Task '" + intString(iTask2) + "' with exeCost '" + realString(exeCosts2) + "'\n");
-  oResult := realGt(exeCosts1, exeCosts2);
+  if(iDescending) then
+    oResult := realLt(exeCosts1, exeCosts2);
+  else
+    oResult := realGt(exeCosts1, exeCosts2);
+  end if;
 end compareTasksByExecTime;
 
 protected function getVarsBySCC "author: marcusw,waurich
