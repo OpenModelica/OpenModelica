@@ -74,6 +74,44 @@ private:
   int mIndentSize;
 };
 
+struct ParenthesisInfo
+{
+  QChar character;
+  int position;
+};
+
+/**
+ * @class TextBlockUserData
+ * Stores breakpoints for text block
+ * Works with QTextBlock::setUserData().
+ */
+class TextBlockUserData : public QTextBlockUserData
+{
+public:
+  inline TextBlockUserData() {}
+  ~TextBlockUserData();
+
+  inline TextMarks marks() const { return _marks; }
+  inline void addMark(ITextMark *mark) { _marks += mark; }
+  inline bool removeMark(ITextMark *mark) { return _marks.removeAll(mark); }
+  inline bool hasMark(ITextMark* mark) const { return _marks.contains(mark); }
+  inline void clearMarks() { _marks.clear(); }
+  inline void documentClosing()
+  {
+    foreach (ITextMark *tm, _marks)
+    {
+       tm->documentClosing();
+    }
+    _marks.clear();
+  }
+  QVector<ParenthesisInfo> parentheses() {return mParentheses;}
+  void insert(ParenthesisInfo parenthesisInfo);
+  inline void clearParentheses() {mParentheses.clear();}
+private:
+  TextMarks _marks;
+  QVector<ParenthesisInfo> mParentheses;
+};
+
 class BaseEditor : public QWidget
 {
   Q_OBJECT
@@ -89,7 +127,7 @@ private:
     void goToLineNumber(int lineNumber);
     void updateLineNumberAreaWidth(int newBlockCount);
     void updateLineNumberArea(const QRect &rect, int dy);
-    void highlightCurrentLine();
+    void updateHighlights();
     void updateCursorPosition();
     void setLineWrapping();
     void toggleBreakpoint(const QString fileName, int lineNumber);
@@ -97,6 +135,12 @@ private:
   private:
     BaseEditor *mpBaseEditor;
     LineNumberArea *mpLineNumberArea;
+
+    void highlightCurrentLine();
+    void highlightParentheses();
+    bool highlightLeftParenthesis(QTextBlock currentBlock, int index, int numRightParentheses);
+    bool highlightRightParenthesis(QTextBlock currentBlock, int index, int numLeftParentheses);
+    void createParenthesisSelection(int pos);
   protected:
     virtual void resizeEvent(QResizeEvent *pEvent);
     virtual void keyPressEvent(QKeyEvent *pEvent);
@@ -136,7 +180,7 @@ private slots:
 public slots:
   void updateLineNumberAreaWidth(int newBlockCount);
   void updateLineNumberArea(const QRect &rect, int dy);
-  void highlightCurrentLine();
+  void updateHighlights();
   void updateCursorPosition();
   virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded) = 0;
   void setLineWrapping();

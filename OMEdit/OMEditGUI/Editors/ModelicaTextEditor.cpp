@@ -669,6 +669,32 @@ void ModelicaTextHighlighter::highlightBlock(const QString &text)
   if (!mpModelicaTextEditorPage->getSyntaxHighlightingCheckbox()->isChecked()) {
     return;
   }
+  // store parentheses info
+  TextBlockUserData *pTextBlockUserData = ModelicaTextDocumentLayout::userData(currentBlock());
+  if (pTextBlockUserData) {
+    pTextBlockUserData->clearParentheses();
+    // left parenthesis
+    int leftPos = text.indexOf('(');
+    while (leftPos != -1) {
+      ParenthesisInfo parenthesisInfo;
+      parenthesisInfo.character = '(';
+      parenthesisInfo.position = leftPos;
+      pTextBlockUserData->insert(parenthesisInfo);
+      leftPos = text.indexOf('(', leftPos + 1);
+    }
+    // right parenthesis
+    int rightPos = text.indexOf(')');
+    while (rightPos != -1) {
+      ParenthesisInfo parenthesisInfo;
+      parenthesisInfo.character = ')';
+      parenthesisInfo.position = rightPos;
+      pTextBlockUserData->insert(parenthesisInfo);
+      rightPos = text.indexOf(')', rightPos +1);
+    }
+    // set text block user data
+    setCurrentBlockUserData(pTextBlockUserData);
+  }
+  // set text block state
   setCurrentBlockState(0);
   setFormat(0, text.length(), mpModelicaTextEditorPage->getTextRuleColor());
   foreach (const HighlightingRule &rule, mHighlightingRules) {
