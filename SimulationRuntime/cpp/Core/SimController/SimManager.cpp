@@ -625,6 +625,8 @@ void SimManager::runSingleProcess()
                     _mixed_system->handleSystemEvents(_events);
                     // Reset time-events
                     _timeevent_system->handleTimeEvent(_timeEventCounter);
+					_cont_system->evaluateAll(IContinuous::CONTINUOUS);
+					_event_system->saveAll();
             }
 
             user_stop = (_solver->getSolverStatus() & ISolver::USER_STOP);
@@ -685,6 +687,8 @@ void SimManager::runSingleProcess()
                     //_cont_system->evaluateODE(IContinuous::CONTINUOUS);
                     //reset time-events
                     _timeevent_system->handleTimeEvent(_timeEventCounter);
+					_cont_system->evaluateAll(IContinuous::CONTINUOUS);
+					_event_system->saveAll();
                 }
             }
 
