@@ -431,8 +431,9 @@ BaseEditor::PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   // line numbers widget
   mpLineNumberArea = new LineNumberArea(mpBaseEditor);
   // parentheses matcher
-  mParenthesesMatchFormat.setBackground(Qt::green);
-  mParenthesesMisMatchFormat.setBackground(palette().color(QPalette::Base).value() < 128 ? Qt::darkRed : Qt::red);
+  mParenthesesMatchFormat.setForeground(Qt::red);
+  mParenthesesMatchFormat.setBackground(QColor(160, 238, 160));
+  mParenthesesMisMatchFormat.setBackground(Qt::red);
 
   updateLineNumberAreaWidth(0);
   updateHighlights();
