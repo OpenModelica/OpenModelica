@@ -168,6 +168,23 @@ int TabSettings::spacesLeftFromPosition(const QString &text, int position)
   return position - i;
 }
 
+TextBlockUserData::~TextBlockUserData()
+{
+  TextMarks marks = _marks;
+  _marks.clear();
+  foreach (ITextMark *mk, marks)
+    mk->removeFromEditor();
+}
+
+void TextBlockUserData::insert(ParenthesisInfo parenthesisInfo)
+{
+  int i = 0;
+  while (i < mParentheses.size() && parenthesisInfo.position > mParentheses.at(i).position) {
+    ++i;
+  }
+  mParentheses.insert(i, parenthesisInfo);
+}
+
 /*!
  * \class BaseEditor::PlainTextEdit
  * Internal QPlainTextEdit for Editor.
@@ -180,12 +197,12 @@ BaseEditor::PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   // line numbers widget
   mpLineNumberArea = new LineNumberArea(mpBaseEditor);
   updateLineNumberAreaWidth(0);
-  highlightCurrentLine();
+  updateHighlights();
   updateCursorPosition();
   setLineWrapping();
   connect(this, SIGNAL(blockCountChanged(int)), mpBaseEditor, SLOT(updateLineNumberAreaWidth(int)));
   connect(this, SIGNAL(updateRequest(QRect,int)), mpBaseEditor, SLOT(updateLineNumberArea(QRect,int)));
-  connect(this, SIGNAL(cursorPositionChanged()), mpBaseEditor, SLOT(highlightCurrentLine()));
+  connect(this, SIGNAL(cursorPositionChanged()), mpBaseEditor, SLOT(updateHighlights()));
   connect(this, SIGNAL(cursorPositionChanged()), mpBaseEditor, SLOT(updateCursorPosition()));
   connect(document(), SIGNAL(contentsChange(int,int,int)), mpBaseEditor, SLOT(contentsHasChanged(int,int,int)));
   OptionsDialog *pOptionsDialog = mpBaseEditor->getMainWindow()->getOptionsDialog();
@@ -366,21 +383,16 @@ void BaseEditor::PlainTextEdit::updateLineNumberArea(const QRect &rect, int dy)
 }
 
 /*!
- * \brief BaseEditor::highlightCurrentLine
- * Slot activated when editor's cursorPositionChanged signal is raised.
- * Hightlights the current line.
+ * \brief BaseEditor::updateHighlights
+ * Slot activated when editor's cursorPositionChanged signal is raised.\n
+ * Updates all the highlights.
  */
-void BaseEditor::PlainTextEdit::highlightCurrentLine()
+void BaseEditor::PlainTextEdit::updateHighlights()
 {
-  QList<QTextEdit::ExtraSelection> extraSelections;
-  QTextEdit::ExtraSelection selection;
-  QColor lineColor = QColor(232, 242, 254);
-  selection.format.setBackground(lineColor);
-  selection.format.setProperty(QTextFormat::FullWidthSelection, true);
-  selection.cursor = textCursor();
-  selection.cursor.clearSelection();
-  extraSelections.append(selection);
-  setExtraSelections(extraSelections);
+  QList<QTextEdit::ExtraSelection> selections;
+  setExtraSelections(selections);
+  highlightCurrentLine();
+  highlightParentheses();
 }
 
 /*!
@@ -503,6 +515,135 @@ void BaseEditor::PlainTextEdit::indentOrUnindent(bool doIndent)
   cursor.insertText(tabSettings.indentationString(startColumn, targetColumn));
   cursor.endEditBlock();
   setTextCursor(cursor);
+}
+
+/*!
+ * \brief BaseEditor::PlainTextEdit::highlightCurrentLine
+ * Hightlights the current line.
+ */
+void BaseEditor::PlainTextEdit::highlightCurrentLine()
+{
+  QList<QTextEdit::ExtraSelection> selections = extraSelections();
+  QTextEdit::ExtraSelection selection;
+  QColor lineColor = QColor(232, 242, 254);
+  selection.format.setBackground(lineColor);
+  selection.format.setProperty(QTextFormat::FullWidthSelection, true);
+  selection.cursor = textCursor();
+  selection.cursor.clearSelection();
+  selections.append(selection);
+  setExtraSelections(selections);
+}
+
+/*!
+ * \brief BaseEditor::PlainTextEdit::highlightParentheses
+ * Highlights the matching parentheses.
+ */
+void BaseEditor::PlainTextEdit::highlightParentheses()
+{
+  TextBlockUserData *pTextBlockUserData = static_cast<TextBlockUserData *>(textCursor().block().userData());
+  if (pTextBlockUserData) {
+    QVector<ParenthesisInfo> parenthesisInfoList = pTextBlockUserData->parentheses();
+    int pos = textCursor().block().position();
+    for (int i = 0; i < parenthesisInfoList.size(); ++i) {
+      ParenthesisInfo parenthesisInfo = parenthesisInfoList.at(i);
+      int curPos = textCursor().position() - textCursor().block().position();
+      if (parenthesisInfo.position == curPos && parenthesisInfo.character == '(') {
+        if (highlightLeftParenthesis(textCursor().block(), i + 1, 0)) {
+          createParenthesisSelection(pos + parenthesisInfo.position);
+        }
+      } else if (parenthesisInfo.position == curPos - 1 && parenthesisInfo.character == ')') {
+        if (highlightRightParenthesis(textCursor().block(), i - 1, 0)) {
+          createParenthesisSelection(pos + parenthesisInfo.position);
+        }
+      }
+    }
+  }
+}
+
+/*!
+ * \brief BaseEditor::PlainTextEdit::highlightLeftParenthesis
+ * Highlights the left parenthesis.
+ * \param currentBlock
+ * \param i
+ * \param numLeftParentheses
+ * \return
+ */
+bool BaseEditor::PlainTextEdit::highlightLeftParenthesis(QTextBlock currentBlock, int i, int numLeftParentheses)
+{
+  TextBlockUserData *pTextBlockUserData = static_cast<TextBlockUserData*>(currentBlock.userData());
+  QVector<ParenthesisInfo> parenthesisInfoList = pTextBlockUserData->parentheses();
+  int docPos = currentBlock.position();
+  for (; i < parenthesisInfoList.size(); ++i) {
+    ParenthesisInfo parenthesisInfo = parenthesisInfoList.at(i);
+    if (parenthesisInfo.character == '(') {
+      ++numLeftParentheses;
+      continue;
+    }
+    if (parenthesisInfo.character == ')' && numLeftParentheses == 0) {
+      createParenthesisSelection(docPos + parenthesisInfo.position);
+      return true;
+    } else {
+      --numLeftParentheses;
+    }
+  }
+  currentBlock = currentBlock.next();
+  if (currentBlock.isValid()) {
+    return highlightLeftParenthesis(currentBlock, 0, numLeftParentheses);
+  }
+  return false;
+}
+
+/*!
+ * \brief BaseEditor::PlainTextEdit::highlightRightParenthesis
+ * Highlights the right parenthesis.
+ * \param currentBlock
+ * \param i
+ * \param numRightParentheses
+ * \return
+ */
+bool BaseEditor::PlainTextEdit::highlightRightParenthesis(QTextBlock currentBlock, int i, int numRightParentheses)
+{
+  TextBlockUserData *pTextBlockUserData = static_cast<TextBlockUserData*>(currentBlock.userData());
+  QVector<ParenthesisInfo> parenthesisInfoList = pTextBlockUserData->parentheses();
+  int docPos = currentBlock.position();
+  for (; i > -1 && parenthesisInfoList.size() > 0; --i) {
+    ParenthesisInfo parenthesisInfo = parenthesisInfoList.at(i);
+    if (parenthesisInfo.character == ')') {
+      ++numRightParentheses;
+      continue;
+    }
+    if (parenthesisInfo.character == '(' && numRightParentheses == 0) {
+      createParenthesisSelection(docPos + parenthesisInfo.position);
+      return true;
+    } else {
+      --numRightParentheses;
+    }
+  }
+  currentBlock = currentBlock.previous();
+  if (currentBlock.isValid()) {
+    return highlightRightParenthesis(currentBlock, 0, numRightParentheses);
+  }
+  return false;
+}
+
+/*!
+ * \brief BaseEditor::PlainTextEdit::createParenthesisSelection
+ * Creates a selection for matching parentheses.
+ * \param pos
+ */
+void BaseEditor::PlainTextEdit::createParenthesisSelection(int pos)
+{
+  QList<QTextEdit::ExtraSelection> selections = extraSelections();
+  QTextEdit::ExtraSelection selection;
+  QTextCharFormat format = selection.format;
+  format.setBackground(Qt::green);
+  selection.format = format;
+  QTextCursor cursor = textCursor();
+  cursor.setPosition(pos);
+  cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor);
+  selection.cursor = cursor;
+  selections.append(selection);
+  setExtraSelections(selections);
 }
 
 /*!
@@ -704,13 +845,13 @@ void BaseEditor::updateLineNumberArea(const QRect &rect, int dy)
 }
 
 /*!
- * \brief BaseEditor::highlightCurrentLine
+ * \brief BaseEditor::updateHighlights
  * Slot activated when editor's cursorPositionChanged signal is raised.
- * Hightlights the current line.
+ * Updates all the highlights.
  */
-void BaseEditor::highlightCurrentLine()
+void BaseEditor::updateHighlights()
 {
-  mpPlainTextEdit->highlightCurrentLine();
+  mpPlainTextEdit->updateHighlights();
 }
 
 /*!

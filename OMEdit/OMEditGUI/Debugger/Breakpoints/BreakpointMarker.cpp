@@ -77,34 +77,12 @@ void BreakpointMarker::removeFromEditor()
 
 void BreakpointMarker::documentClosing()
 {
-    // todo: impl
-}
-
-TextBlockUserData::~TextBlockUserData()
-{
-  TextMarks marks = _marks;
-  _marks.clear();
-  foreach (ITextMark *mk, marks)
-    mk->removeFromEditor();
-}
-
-//! @class ModelicaTextDocumentLayout
-ModelicaTextDocumentLayout::ModelicaTextDocumentLayout(QTextDocument *doc)
-    : QPlainTextDocumentLayout(doc)
-    , mpHasBreakpoint(false)
-{
-
-}
-
-ModelicaTextDocumentLayout::~ModelicaTextDocumentLayout()
-{
-
+  // todo: impl
 }
 
 //! @class DocumentMarker
 DocumentMarker::DocumentMarker(QTextDocument *doc)
-    : ITextMarkable(doc)
-    , mpTextDocument(doc)
+  : ITextMarkable(doc) , mpTextDocument(doc)
 {
 
 }
