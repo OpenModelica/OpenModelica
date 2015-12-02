@@ -1358,7 +1358,7 @@ bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses)
 bool OMCProxy::loadString(QString value, QString fileName, QString encoding, bool checkError)
 {
   bool result = false;
-  result = mpOMCInterface->loadString(value, fileName, encoding);
+  result = mpOMCInterface->loadString(value, fileName, encoding, false);
   if (checkError) {
     printMessagesStringInternal();
   }
