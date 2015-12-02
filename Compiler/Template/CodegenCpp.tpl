@@ -5232,7 +5232,7 @@ case SIMEXTARG(cref=c, isInput =iI, outputIndex=oi, isArray=true, type_=t)then
     let dimStr = listLength(dims)
     let dimsStr = checkDimension(dims)
     let elType = expTypeShort(ty)
-    let extType = extType2(ty, true, false)
+    let extType = if stringEq(elType, "string") then elType else extType2(ty, true, false)
     let extCStr = if stringEq(elType, "string") then 'CStrArray'
     if boolOr(intGt(listLength(dims), 1), stringEq(elType, "bool")) then
       let tmp = match dimsStr
