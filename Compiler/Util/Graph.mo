@@ -964,11 +964,11 @@ algorithm
     case ({},_,_,_,_) then inColored;
     case (((node,nodes))::restGraph, _, _, _, _)
       equation
-        forbiddenColor = addForbiddenColorsInt(node, nodes, inColored, inforbiddenColor, inGraph);
-        color = arrayFindMinColorIndexInt(forbiddenColor, node, 1);
+        addForbiddenColorsInt(node, nodes, inColored, inforbiddenColor, inGraph);
+        color = arrayFindMinColorIndexInt(inforbiddenColor, node, 1);
         colored = arrayUpdate(inColored, node, color);
     then
-      partialDistance2colorInt(restGraph, forbiddenColor, inColors, inGraph, colored);
+      partialDistance2colorInt(restGraph, inforbiddenColor, inColors, inGraph, colored);
     else
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.partialDistance2colorInt failed."}, sourceInfo());
@@ -978,34 +978,22 @@ end partialDistance2colorInt;
 
 protected function addForbiddenColorsInt
   input Integer inNode;
-  input list<Integer> inNodes;
+  input list<Integer> nodes;
   input array<Integer> inColored;
-  input array<Option<list<Integer>>> inForbiddenColor;
+  input array<Option<list<Integer>>> forbiddenColor;
   input array<tuple<Integer, list<Integer>>> inGraph;
-  output array<Option<list<Integer>>> outForbiddenColor;
+protected
+  list<Integer> indexes;
 algorithm
-  outForbiddenColor := matchcontinue(inNode, inNodes, inColored, inForbiddenColor, inGraph)
-  local
-    Integer node;
-    list<Integer> rest;
-    list<Integer> indexes;
-    case (_, {}, _,_, _) then inForbiddenColor;
-    case (_, node::rest, _, _, _)
-      equation
-        ((_,indexes)) = arrayGet(inGraph,node);
-        updateForbiddenColorArrayInt(indexes, inColored, inForbiddenColor, inNode);
-      then
-        addForbiddenColorsInt(inNode, rest, inColored, inForbiddenColor, inGraph);
-/*    case (_, node::rest, _, _, _)
-      equation
-        print("node : " + intString(node) + "\n");
-        print("inGraph : " + intString(arrayLength(inGraph)) + "\n");
-      then fail();
-*/    else
-      equation
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColors failed."}, sourceInfo());
-      then fail();
-  end matchcontinue;
+  try
+    for node in nodes loop
+      ((_,indexes)) := arrayGet(inGraph,node);
+      updateForbiddenColorArrayInt(indexes, inColored, forbiddenColor, inNode);
+    end for;
+  else
+    Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColors failed."}, sourceInfo());
+    fail();
+  end try;
 end addForbiddenColorsInt;
 
 protected function updateForbiddenColorArrayInt
@@ -1013,32 +1001,15 @@ protected function updateForbiddenColorArrayInt
   input array<Integer> inColored;
   input array<Option<list<Integer>>> inForbiddenColor;
   input Integer inNode;
+protected
+  Integer colorIndex;
 algorithm
-  _ := matchcontinue(inIndexes, inColored, inForbiddenColor, inNode)
-  local
-    Integer index;
-    list<Integer> rest;
-    Integer colorIndex;
-    case ({}, _, _, _) then ();
-    case (index::rest, _, _, _)
-      equation
-      colorIndex = arrayGet(inColored, index);
-      true = intGt(colorIndex,0);
+  for index in inIndexes loop
+    colorIndex := arrayGet(inColored, index);
+    if colorIndex > 0 then
       arrayUpdate(inForbiddenColor, colorIndex, SOME({inNode}));
-      updateForbiddenColorArrayInt(rest, inColored, inForbiddenColor, inNode);
-    then ();
-    case (index::rest, _, _, _)
-      equation
-      colorIndex = arrayGet(inColored, index);
-      false = intGt(colorIndex,0);
-      updateForbiddenColorArrayInt(rest, inColored, inForbiddenColor, inNode);
-    then ();
-/*    case (index::rest, _, _, _)
-      equation
-        print("index : " + intString(index) + "\n");
-        print("inColored : " + intString(arrayLength(inColored)) + "\n");
-      then fail();
-*/  end matchcontinue;
+    end if;
+  end for;
 end updateForbiddenColorArrayInt;
 
 protected function arrayFindMinColorIndexInt
