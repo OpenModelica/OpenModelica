@@ -1065,12 +1065,16 @@ function loadString "Parses the data and merges the resulting AST with ithe
   If a filename is given, it is used to provide error-messages as if the string
 was read in binary format from a file with the same name.
   The file is converted to UTF-8 from the given character set.
+  When merge is true the classes cNew in the file will be merged with the already loaded classes cOld in the following way:
+   1. get all the inner class definitions from cOld that were loaded from a different file than itself
+   2. append all elements from step 1 to class cNew public list
 
   NOTE: Encoding is deprecated as *ALL* strings are now UTF-8 encoded.
   "
   input String data;
   input String filename = "<interactive>";
   input String encoding = "UTF-8";
+  input Boolean merge = false "if merge is true the parsed AST is merged with the existing AST, default to false which means that is replaced, not merged";
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");

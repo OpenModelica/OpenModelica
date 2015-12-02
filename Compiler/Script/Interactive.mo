@@ -8419,15 +8419,16 @@ public function updateProgram
    classes and updates the old program with the definitions in the new one.
    It also takes in the current symboltable and returns a new one with any
    replaced functions cache cleared."
-  input Absyn.Program inProgram1;
-  input Absyn.Program inProgram2;
+  input Absyn.Program inNewProgram;
+  input Absyn.Program inOldProgram;
+  input Boolean mergeAST = false "when true, the new program should be merged with the old program";
   output Absyn.Program outProgram;
 protected
   list<Absyn.Class> cs;
   Absyn.Within w;
 algorithm
-  Absyn.PROGRAM(classes=cs,within_=w) := inProgram1;
-  outProgram := updateProgram2(listReverse(cs),w,inProgram2);
+  Absyn.PROGRAM(classes=cs,within_=w) := inNewProgram;
+  outProgram := updateProgram2(listReverse(cs),w,inOldProgram, mergeAST);
 end updateProgram;
 
 protected function updateProgram2
@@ -8436,12 +8437,13 @@ protected function updateProgram2
    classes and updates the old program with the definitions in the new one.
    It also takes in the current symboltable and returns a new one with any
    replaced functions cache cleared."
-  input list<Absyn.Class> classes;
+  input list<Absyn.Class> inNewClasses;
   input Absyn.Within w;
-  input Absyn.Program inProgram2;
+  input Absyn.Program inOldProgram;
+  input Boolean mergeAST = false "when true, the new program should be merged with the old program";
   output Absyn.Program outProgram;
 algorithm
-  outProgram := match (classes,w,inProgram2)
+  outProgram := match (inNewClasses,w,inOldProgram)
     local
       Absyn.Program prg,newp,p2,newp_1;
       Absyn.Class c1;
@@ -8454,16 +8456,16 @@ algorithm
     case ((c1 as Absyn.CLASS(name = name)) :: c2,Absyn.TOP(), (p2 as Absyn.PROGRAM(classes = c3,within_ = w2)))
       equation
         if classInProgram(name, p2) then
-          newp = replaceClassInProgram(c1, p2);
+          newp = replaceClassInProgram(c1, p2, mergeAST);
         else
           newp = Absyn.PROGRAM((c1 :: c3),w2);
         end if;
-      then updateProgram2(c2,w,newp);
+      then updateProgram2(c2,w,newp, mergeAST);
 
     case ((c1 :: c2),Absyn.WITHIN(),p2)
       equation
-        newp = insertClassInProgram(c1, w, p2);
-        newp_1 = updateProgram2(c2,w,newp);
+        newp = insertClassInProgram(c1, w, p2, mergeAST);
+        newp_1 = updateProgram2(c2,w,newp, mergeAST);
       then newp_1;
 
   end match;
@@ -14522,16 +14524,30 @@ protected function replaceClassInProgram
    the Class. It also updates the functionlist for the symboltable if needed."
   input Absyn.Class inClass;
   input Absyn.Program inProgram;
+  input Boolean mergeAST = false "when true, the new program should be merged with the old program";
   output Absyn.Program outProgram;
 protected
   String cls_name1, cls_name2;
-  list<Absyn.Class> clst;
+  list<Absyn.Class> clst, clsFilter;
   Absyn.Within w;
   Boolean replaced;
+  Absyn.Class cls;
 algorithm
   Absyn.CLASS(name = cls_name1) := inClass;
   Absyn.PROGRAM(classes = clst, within_ = w) := inProgram;
-  (clst, replaced) := List.replaceOnTrue(inClass, clst,
+  if mergeAST then
+    clsFilter := List.filterOnTrue(clst, function replaceClassInProgram2(inClassName = cls_name1));
+    if listEmpty(clsFilter)
+    then
+      cls := inClass;
+    else
+      cls::_ := clsFilter;
+      cls := mergeClasses(inClass, cls);
+    end if;
+  else
+   cls := inClass;
+  end if;
+  (clst, replaced) := List.replaceOnTrue(cls, clst,
     function replaceClassInProgram2(inClassName = cls_name1));
 
   if not replaced then
@@ -14548,6 +14564,7 @@ protected function insertClassInProgram
   input Absyn.Class inClass;
   input Absyn.Within inWithin;
   input Absyn.Program inProgram;
+  input Boolean mergeAST = false "when true, the new program should be merged with the old program";
   output Absyn.Program outProgram;
 algorithm
   outProgram := matchcontinue (inClass,inWithin,inProgram)
@@ -14561,16 +14578,16 @@ algorithm
     case (c1,(w as Absyn.WITHIN(path = Absyn.QUALIFIED(name = n1))),p as Absyn.PROGRAM())
       equation
         c2 = getClassInProgram(n1, p);
-        c3 = insertClassInClass(c1, w, c2);
-        pnew = updateProgram(Absyn.PROGRAM({c3},Absyn.TOP()), p);
+        c3 = insertClassInClass(c1, w, c2, mergeAST);
+        pnew = updateProgram(Absyn.PROGRAM({c3},Absyn.TOP()), p, mergeAST);
       then
         pnew;
 
     case (c1,(w as Absyn.WITHIN(path = Absyn.IDENT(name = n1))),p as Absyn.PROGRAM())
       equation
         c2 = getClassInProgram(n1, p);
-        c3 = insertClassInClass(c1, w, c2);
-        pnew = updateProgram(Absyn.PROGRAM({c3},Absyn.TOP()), p);
+        c3 = insertClassInClass(c1, w, c2, mergeAST);
+        pnew = updateProgram(Absyn.PROGRAM({c3},Absyn.TOP()), p, mergeAST);
       then
         pnew;
 
@@ -14599,6 +14616,7 @@ protected function insertClassInClass "
   input Absyn.Class inClass1;
   input Absyn.Within inWithin2;
   input Absyn.Class inClass3;
+  input Boolean mergeAST = false "when true, the new program should be merged with the old program";
   output Absyn.Class outClass;
 algorithm
   outClass := match (inClass1,inWithin2,inClass3)
@@ -14608,14 +14626,14 @@ algorithm
       Absyn.Path path;
 
     case (c1,Absyn.WITHIN(path = Absyn.IDENT()),c2)
-      then replaceInnerClass(c1, c2);
+      then replaceInnerClass(c1, c2, mergeAST);
 
     case (c1,Absyn.WITHIN(path = Absyn.QUALIFIED(path = path)),c2)
       equation
         name2 = getFirstIdentFromPath(path);
         cinner = getInnerClass(c2, name2);
-        cnew = insertClassInClass(c1, Absyn.WITHIN(path), cinner);
-      then replaceInnerClass(cnew, c2);
+        cnew = insertClassInClass(c1, Absyn.WITHIN(path), cinner, mergeAST);
+      then replaceInnerClass(cnew, c2, mergeAST);
 
   end match;
 end insertClassInClass;
@@ -14746,6 +14764,7 @@ protected function replaceInnerClass
   inserted/replaced as a local class inside the second one."
   input Absyn.Class inClass1;
   input Absyn.Class inClass2;
+  input Boolean mergeAST = false "when true, the new program should be merged with the old program";
   output Absyn.Class outClass;
 algorithm
   outClass:=
@@ -14769,7 +14788,7 @@ algorithm
                          body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann=ann,comment = cmt),info = file_info))
       equation
         publst = getPublicList(parts);
-        (publst2, true) = replaceClassInElementitemlist(publst, c1);
+        (publst2, true) = replaceClassInElementitemlist(publst, c1, mergeAST);
         parts2 = replacePublicList(parts, publst2);
       then
         Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
@@ -14779,7 +14798,7 @@ algorithm
                          body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann=ann,comment = cmt),info = file_info))
       equation
         prolst = getProtectedList(parts);
-        (prolst2, true) = replaceClassInElementitemlist(prolst, c1);
+        (prolst2, true) = replaceClassInElementitemlist(prolst, c1, mergeAST);
         parts2 = replaceProtectedList(parts, prolst2);
       then
         Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
@@ -14799,7 +14818,7 @@ algorithm
                          body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications = modif,parts = parts,ann=ann,comment = cmt),info = file_info))
       equation
         publst = getPublicList(parts);
-        (publst2, true) = replaceClassInElementitemlist(publst, c1);
+        (publst2, true) = replaceClassInElementitemlist(publst, c1, mergeAST);
         parts2 = replacePublicList(parts, publst2);
       then
         Absyn.CLASS(a,b,c,d,e,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
@@ -14809,7 +14828,7 @@ algorithm
                          body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications = modif,parts = parts,ann=ann,comment = cmt),info = file_info))
       equation
         prolst = getProtectedList(parts);
-        (prolst2, true) = replaceClassInElementitemlist(prolst, c1);
+        (prolst2, true) = replaceClassInElementitemlist(prolst, c1, mergeAST);
         parts2 = replaceProtectedList(parts, prolst2);
       then
         Absyn.CLASS(a,b,c,d,e,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
@@ -14837,6 +14856,7 @@ protected function replaceClassInElementitemlist
   element list where the class definition of the class is updated or added."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Absyn.Class inClass;
+  input Boolean mergeAST = false "when true, the new program should be merged with the old program";
   output list<Absyn.ElementItem> outAbsynElementItemLst;
   output Boolean replaced "true signals a replacement, false nothing changed!";
 algorithm
@@ -14844,7 +14864,7 @@ algorithm
     local
       list<Absyn.ElementItem> res,xs;
       Absyn.ElementItem a1,e1;
-      Absyn.Class c;
+      Absyn.Class c, c1, c2;
       String name1,name;
       Boolean a,e;
       Option<Absyn.RedeclareKeywords> b;
@@ -14852,13 +14872,17 @@ algorithm
       Option<Absyn.ConstrainClass> h;
       Absyn.InnerOuter io;
 
-    case (((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = a,redeclareKeywords = b,innerOuter = io,specification = Absyn.CLASSDEF(replaceable_ = e,class_ = Absyn.CLASS(name = name1)),constrainClass = h))) :: xs),(c as Absyn.CLASS(name = name)))
+    case (((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = a,redeclareKeywords = b,innerOuter = io,specification = Absyn.CLASSDEF(replaceable_ = e,class_ = c1 as Absyn.CLASS(name = name1)),constrainClass = h))) :: xs),(c2 as Absyn.CLASS(name = name)))
       guard stringEq(name1, name)
-      then (Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,io,Absyn.CLASSDEF(e,c),c.info /* The new CLASS might have update info */,h)) :: xs, true);
+      equation
+        c = if mergeAST then mergeClasses(c2, c1) else c2;
+        Absyn.CLASS(info = info) = c;
+      then
+        (Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,io,Absyn.CLASSDEF(e,c),info /* The new CLASS might have update info */,h)) :: xs, true);
 
     case ((e1 :: xs),c)
       equation
-        (res, replaced) = replaceClassInElementitemlist(xs, c);
+        (res, replaced) = replaceClassInElementitemlist(xs, c, mergeAST);
       then
         (e1 :: res, replaced);
 
@@ -18118,6 +18142,139 @@ algorithm
   outFound := false;
   outContinue := true;
 end setComponentDimensionsInCompitems;
+
+
+protected function mergeClasses
+"@author adrpo
+ merge two classes cNew and cOld in the following way:
+ 1. get all the inner class definitions from cOld that were loaded from a different file than itself
+ 2. append all elements from step 1 to class cNew public list!"
+   input  Absyn.Class cNew;
+   input  Absyn.Class cOld;
+   output Absyn.Class c;
+algorithm
+  c := matchcontinue(cNew, cOld)
+    local
+      list<Absyn.ClassPart> partsC1, partsC2;
+      list<Absyn.ElementItem> pubElementsC1, pubElementsC2;
+      String file;
+      Absyn.Ident n; Boolean p; Boolean f; Boolean e; Absyn.Restriction r; Absyn.Info i;
+      list<list<Absyn.ElementItem>> llEls;
+      list<String> typeVars1, typeVars2;
+      list<Absyn.NamedArg> classAttrs1, classAttr2;
+      list<Absyn.Annotation> ann1, ann2;
+      Option<String> cmt1, cmt2;
+
+
+    // if cOld has no parts then just return cNew
+    case (_, Absyn.CLASS(body = Absyn.PARTS(classParts = {}))) then cNew;
+    case (_, Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {}))) then cNew;
+
+    // if cNew and cOld has parts, get the foreign elements (loaded from other file) from cOld
+    // and append them to the public list of cNew
+    case (Absyn.CLASS(n, p, f, e, r, Absyn.PARTS(typeVars1,classAttrs1,partsC1,ann1,cmt1), i),
+          Absyn.CLASS(body = Absyn.PARTS(classParts = partsC2), info = SOURCEINFO(fileName = file)))
+      equation
+        pubElementsC2 = getPublicList(partsC2);
+        pubElementsC2 = excludeElementsFromFile(file, pubElementsC2);
+        pubElementsC1 = getPublicList(partsC1);
+        pubElementsC1 = mergeElements(pubElementsC1, pubElementsC2);
+        partsC1 = replacePublicList(partsC1, pubElementsC1);
+        c = Absyn.CLASS(n, p, f, e, r, Absyn.PARTS(typeVars1,classAttrs1,partsC1,ann1,cmt1), i);
+      then c;
+
+    // TODO! FIXME! handle also CLASS_EXTENDS!
+    // if the class cNew or cOld is not containing parts then don't bother, just replace the entire class!
+    case (_, _) then cNew;
+  end matchcontinue;
+end mergeClasses;
+
+function mergeElement
+"@author adrpo
+ merge the element given as second argument with the element from the first list with same name.
+  if no such elements are in the first list, just append it at the end"
+  input  list<Absyn.ElementItem> inEls;
+  input  Absyn.ElementItem inEl;
+  output list<Absyn.ElementItem> outEls;
+algorithm
+  outEls := matchcontinue(inEls, inEl)
+    local
+      String n1,n2;
+      list<Absyn.ElementItem> rest, filtered;
+      Absyn.ElementItem e1,e2;
+      Boolean r;
+      Boolean f;
+      Option<Absyn.RedeclareKeywords> redecl;
+      Absyn.InnerOuter innout ;
+      String name;
+      Absyn.Info i;
+      Option<Absyn.ConstrainClass> cc;
+      Absyn.Class c1, c2;
+    case ({}, _) then inEl::{};
+    // not found put it at the end
+    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(f, redecl, innout, Absyn.CLASSDEF(r, c1 as Absyn.CLASS(name = n1)), i, cc)) :: rest,
+          Absyn.ELEMENTITEM(Absyn.ELEMENT(specification = Absyn.CLASSDEF(_,c2 as Absyn.CLASS(name = n2)))))
+      equation
+        true = stringEqual(n1, n2);
+         // element found, merge it!
+        c1 = mergeClasses(c1, c2);
+      then
+        Absyn.ELEMENTITEM(Absyn.ELEMENT(f, redecl, innout, Absyn.CLASSDEF(r, c1), i, cc)) :: rest;
+    case (e1 :: rest, e2)
+      equation
+        // try the second from the first list
+        filtered = mergeElement(rest, e2);
+      then
+         e1::filtered;
+  end matchcontinue;
+end mergeElement;
+
+
+function mergeElements
+  "@author adrpo see merge element"
+   input  list<Absyn.ElementItem> inEls1;
+   input  list<Absyn.ElementItem> inEls2;
+   output list<Absyn.ElementItem> outEls;
+  algorithm
+    outEls := matchcontinue(inEls1, inEls2)
+    local
+      String n1,n2;
+      list<Absyn.ElementItem> rest, merged;
+      Absyn.ElementItem e1,e2;
+      case ({}, _) then inEls2;
+      case (_, {}) then inEls1;
+      case (_, e2::rest)
+        equation
+          merged = mergeElement(inEls1, e2);
+          merged = mergeElements(merged, rest);
+        then merged;
+    end matchcontinue;
+end mergeElements;
+
+function excludeElementsFromFile
+"exclude all elements which are part of the given file"
+  input  String inFile;
+  input  list<Absyn.ElementItem> inEls;
+  output list<Absyn.ElementItem> outEls;
+algorithm
+  outEls := matchcontinue (inFile,inEls)
+    local
+      Absyn.ElementItem e;
+      list<Absyn.ElementItem> rest, filtered;
+      String f,file;
+    case (file,{}) then {};
+    case (file,(e as Absyn.ELEMENTITEM(Absyn.ELEMENT(info = SOURCEINFO(fileName = f))))::rest)
+      equation
+        false = stringEqual(file, f); // not from this file, use it!
+        filtered = excludeElementsFromFile(file, rest);
+      then e::filtered;
+    case (file,(e as Absyn.ELEMENTITEM(Absyn.ELEMENT(info = SOURCEINFO(fileName = f))))::rest)
+      equation
+        true = stringEqual(file, f); // is from this file, discard!
+        filtered = excludeElementsFromFile(file, rest);
+      then filtered;
+  end matchcontinue;
+end excludeElementsFromFile;
 
 annotation(__OpenModelica_Interface="backend");
 end Interactive;
