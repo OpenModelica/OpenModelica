@@ -1409,6 +1409,12 @@ bool StringHandler::naturalSort(const QString &s1, const QString &s2) {
 QProcessEnvironment StringHandler::compilationProcessEnvironment(QString *pCompilationProcessPath)
 {
   QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
+  // remove some environment variables if they exist.
+  environment.remove("GCC_EXEC_PREFIX");
+  environment.remove("CPLUS_INCLUDE_PATH");
+  environment.remove("C_INCLUDE_PATH");
+  environment.remove("LIBRARY_PATH");
+  environment.remove("ADDITIONAL_ARGS");
   const char *OMDEV = getenv("OMDEV");
   if (QString(OMDEV).isEmpty()) {
     QString OMHOME = QString(Helper::OpenModelicaHome).replace("/", "\\");
