@@ -208,12 +208,21 @@ private:
   MainWindow *mpMainWindow;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
+  Label *mpSimulationToolLabel;
+  QComboBox *mpSimulationToolComboBox;
   Label *mpStartCommandLabel;
   QLineEdit *mpStartCommandTextBox;
   Label *mpModelFileLabel;
   QLineEdit *mpModelFileTextBox;
+  Label *mpExactStepFlagLabel;
+  QCheckBox *mpExactStepFlagCheckBox;
   QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+private slots:
+  void changeSimulationToolStartCommand(QString tool);
+  void changeSimulationTool(QString simulationToolStartCommand);
+  void updateSubModelParameters();
 };
 
 class Component;
