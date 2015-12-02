@@ -8,6 +8,7 @@ Bug2943.mos \
 Bug2882.mos \
 Bug3269_deleteFile.mos \
 Bug3282.mos \
+Bug3417.mos \
 Bug3520.mos \
 ConvertUnits.mos \
 choicesAllMatching.mos \
