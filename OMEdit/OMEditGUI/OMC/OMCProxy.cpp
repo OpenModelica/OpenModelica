@@ -2153,20 +2153,18 @@ bool OMCProxy::setIndexReductionMethod(QString method)
 }
 
 /*!
-  Sets the OMC flags.
-  \param options - a space separated list fo OMC command line options e.g. +d=initialization +cheapmatchingAlgorithm=3
-  \return true on success
-  */
+ * \brief OMCProxy::setCommandLineOptions
+ * Sets the OMC flags.
+ * \param options - a space separated list fo OMC command line options e.g. +d=initialization +cheapmatchingAlgorithm=3
+ * \return true on success
+ */
 bool OMCProxy::setCommandLineOptions(QString options)
 {
-  sendCommand("setCommandLineOptions(\"" + options + "\")");
-  if (StringHandler::unparseBool(getResult()))
-    return true;
-  else
-  {
+  bool result = mpOMCInterface->setCommandLineOptions(options);
+  if (!result) {
     printMessagesStringInternal();
-    return false;
   }
+  return result;
 }
 
 /*!
@@ -2310,21 +2308,9 @@ QString OMCProxy::help(QString topic)
   return StringHandler::unparse(getResult());
 }
 
-QStringList OMCProxy::getConfigFlagValidOptions(QString topic, QString *mainDescription, QStringList *descriptions)
+OMCInterface::getConfigFlagValidOptions_res OMCProxy::getConfigFlagValidOptions(QString topic)
 {
-  QStringList validOptions;
-  sendCommand("(v1,v2,v3):=getConfigFlagValidOptions(\"" + topic + "\")");
-  sendCommand("v1");
-  validOptions = StringHandler::unparseStrings(getResult());
-  if (mainDescription) {
-    sendCommand("v2");
-    *mainDescription = StringHandler::unparse(getResult());
-  }
-  if (descriptions) {
-    sendCommand("v3");
-    *descriptions = StringHandler::unparseStrings(getResult());
-  }
-  return validOptions;
+  return mpOMCInterface->getConfigFlagValidOptions(topic);
 }
 
 bool OMCProxy::setDebugFlags(QString debugFlags)

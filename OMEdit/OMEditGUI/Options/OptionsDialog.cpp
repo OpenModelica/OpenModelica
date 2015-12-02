@@ -305,6 +305,18 @@ void OptionsDialog::readSimulationSettings()
       mpSimulationPage->getIndexReductionMethodComboBox()->setCurrentIndex(currentIndex);
     }
   }
+  if (mpSettings->contains("simulation/targetLanguage")) {
+    int currentIndex = mpSimulationPage->getTargetLanguageComboBox()->findText(mpSettings->value("simulation/targetLanguage").toString(), Qt::MatchExactly);
+    if (currentIndex > -1) {
+      mpSimulationPage->getTargetLanguageComboBox()->setCurrentIndex(currentIndex);
+    }
+  }
+  if (mpSettings->contains("simulation/targetCompiler")) {
+    int currentIndex = mpSimulationPage->getTargetCompilerComboBox()->findText(mpSettings->value("simulation/targetCompiler").toString(), Qt::MatchExactly);
+    if (currentIndex > -1) {
+      mpSimulationPage->getTargetCompilerComboBox()->setCurrentIndex(currentIndex);
+    }
+  }
   if (mpSettings->contains("simulation/OMCFlags")) {
     mpSimulationPage->getOMCFlagsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
   }
@@ -710,15 +722,27 @@ void OptionsDialog::saveGraphicalViewsSettings()
 //! Saves the Simulation section settings to omedit.ini
 void OptionsDialog::saveSimulationSettings()
 {
+  // save matching algorithm
   mpSettings->setValue("simulation/matchingAlgorithm", mpSimulationPage->getMatchingAlgorithmComboBox()->currentText());
   mpMainWindow->getOMCProxy()->setMatchingAlgorithm(mpSimulationPage->getMatchingAlgorithmComboBox()->currentText());
+  // save index reduction
   mpSettings->setValue("simulation/indexReductionMethod", mpSimulationPage->getIndexReductionMethodComboBox()->currentText());
   mpMainWindow->getOMCProxy()->setIndexReductionMethod(mpSimulationPage->getIndexReductionMethodComboBox()->currentText());
+  // clear command line options before saving new ones
   mpMainWindow->getOMCProxy()->clearCommandLineOptions();
-  if (mpMainWindow->getOMCProxy()->setCommandLineOptions(mpSimulationPage->getOMCFlagsTextBox()->text()))
+  // save +simCodeTarget
+  mpSettings->setValue("simulation/targetLanguage", mpSimulationPage->getTargetLanguageComboBox()->currentText());
+  mpMainWindow->getOMCProxy()->setCommandLineOptions(QString("+simCodeTarget=%1").arg(mpSimulationPage->getTargetLanguageComboBox()->currentText()));
+  // save +target
+  mpSettings->setValue("simulation/targetCompiler", mpSimulationPage->getTargetCompilerComboBox()->currentText());
+  mpMainWindow->getOMCProxy()->setCommandLineOptions(QString("+target=%1").arg(mpSimulationPage->getTargetCompilerComboBox()->currentText()));
+  // save command line options ste manually by user. This will override above options.
+  if (mpMainWindow->getOMCProxy()->setCommandLineOptions(mpSimulationPage->getOMCFlagsTextBox()->text())) {
     mpSettings->setValue("simulation/OMCFlags", mpSimulationPage->getOMCFlagsTextBox()->text());
-  else
+  } else {
     mpSimulationPage->getOMCFlagsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
+  }
+  // save class before simulation.
   mpSettings->setValue("simulation/saveClassBeforeSimulation", mpSimulationPage->getSaveClassBeforeSimulationCheckBox()->isChecked());
   mpSettings->setValue("simulation/outputMode", mpSimulationPage->getOutputMode());
 }
@@ -2463,8 +2487,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpOptionsDialog->getMainWindow()->getOMCProxy()->getAvailableMatchingAlgorithms(&matchingAlgorithmChoices, &matchingAlgorithmComments);
   mpMatchingAlgorithmComboBox = new QComboBox;
   int i = 0;
-  foreach (QString matchingAlgorithmChoice, matchingAlgorithmChoices)
-  {
+  foreach (QString matchingAlgorithmChoice, matchingAlgorithmChoices) {
     mpMatchingAlgorithmComboBox->addItem(matchingAlgorithmChoice);
     mpMatchingAlgorithmComboBox->setItemData(i, matchingAlgorithmComments[i], Qt::ToolTipRole);
     i++;
@@ -2476,13 +2499,34 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpOptionsDialog->getMainWindow()->getOMCProxy()->getAvailableIndexReductionMethods(&indexReductionMethodChoices, &indexReductionMethodComments);
   mpIndexReductionMethodComboBox = new QComboBox;
   i = 0;
-  foreach (QString indexReductionChoice, indexReductionMethodChoices)
-  {
+  foreach (QString indexReductionChoice, indexReductionMethodChoices) {
     mpIndexReductionMethodComboBox->addItem(indexReductionChoice);
     mpIndexReductionMethodComboBox->setItemData(i, indexReductionMethodComments[i], Qt::ToolTipRole);
     i++;
   }
   mpIndexReductionMethodComboBox->setCurrentIndex(mpIndexReductionMethodComboBox->findText(mpOptionsDialog->getMainWindow()->getOMCProxy()->getIndexReductionMethod()));
+  // Target Language
+  mpTargetLanguageLabel = new Label(tr("Target Language:"));
+  OMCInterface::getConfigFlagValidOptions_res simCodeTarget = mpOptionsDialog->getMainWindow()->getOMCProxy()->getConfigFlagValidOptions("simCodeTarget");
+  mpTargetLanguageComboBox = new QComboBox;
+  mpTargetLanguageComboBox->addItems(simCodeTarget.validOptions);
+  mpTargetLanguageComboBox->setToolTip(simCodeTarget.mainDescription);
+  i = 0;
+  foreach (QString description, simCodeTarget.descriptions) {
+    mpTargetLanguageComboBox->setItemData(i, description, Qt::ToolTipRole);
+    i++;
+  }
+  // Compiler
+  mpCompilerLabel = new Label(tr("Target Compiler:"));
+  OMCInterface::getConfigFlagValidOptions_res target = mpOptionsDialog->getMainWindow()->getOMCProxy()->getConfigFlagValidOptions("target");
+  mpTargetCompilerComboBox = new QComboBox;
+  mpTargetCompilerComboBox->addItems(target.validOptions);
+  mpTargetCompilerComboBox->setToolTip(target.mainDescription);
+  i = 0;
+  foreach (QString description, target.descriptions) {
+    mpTargetCompilerComboBox->setItemData(i, description, Qt::ToolTipRole);
+    i++;
+  }
   // OMC Flags
   mpOMCFlagsLabel = new Label(tr("OMC Flags"));
   mpOMCFlagsLabel->setToolTip(tr("Space separated list of flags e.g. +d=initialization +cheapmatchingAlgorithm=3"));
@@ -2517,10 +2561,14 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   pSimulationLayout->addWidget(mpMatchingAlgorithmComboBox, 0, 1);
   pSimulationLayout->addWidget(mpIndexReductionMethodLabel, 1, 0);
   pSimulationLayout->addWidget(mpIndexReductionMethodComboBox, 1, 1);
-  pSimulationLayout->addWidget(mpOMCFlagsLabel, 2, 0);
-  pSimulationLayout->addWidget(mpOMCFlagsTextBox, 2, 1);
-  pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, 3, 0, 1, 2);
-  pSimulationLayout->addWidget(mpOutputGroupBox, 4, 0, 1, 2);
+  pSimulationLayout->addWidget(mpTargetLanguageLabel, 2, 0);
+  pSimulationLayout->addWidget(mpTargetLanguageComboBox, 2, 1);
+  pSimulationLayout->addWidget(mpCompilerLabel, 3, 0);
+  pSimulationLayout->addWidget(mpTargetCompilerComboBox, 3, 1);
+  pSimulationLayout->addWidget(mpOMCFlagsLabel, 4, 0);
+  pSimulationLayout->addWidget(mpOMCFlagsTextBox, 4, 1);
+  pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, 5, 0, 1, 2);
+  pSimulationLayout->addWidget(mpOutputGroupBox, 6, 0, 1, 2);
   mpSimulationGroupBox->setLayout(pSimulationLayout);
   // set the layout
   QVBoxLayout *pLayout = new QVBoxLayout;
@@ -2528,21 +2576,6 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   pLayout->setContentsMargins(0, 0, 0, 0);
   pLayout->addWidget(mpSimulationGroupBox);
   setLayout(pLayout);
-}
-
-QComboBox* SimulationPage::getMatchingAlgorithmComboBox()
-{
-  return mpMatchingAlgorithmComboBox;
-}
-
-QComboBox* SimulationPage::getIndexReductionMethodComboBox()
-{
-  return mpIndexReductionMethodComboBox;
-}
-
-QLineEdit* SimulationPage::getOMCFlagsTextBox()
-{
-  return mpOMCFlagsTextBox;
 }
 
 void SimulationPage::setOutputMode(QString value)

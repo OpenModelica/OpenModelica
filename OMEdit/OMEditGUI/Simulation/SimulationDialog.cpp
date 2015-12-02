@@ -389,10 +389,15 @@ void SimulationDialog::setUpForm()
   // measure simulation time checkbox
   mpProfilingLabel = new Label(tr("Profiling (enable performance measurements)"));
   mpProfilingComboBox = new QComboBox;
-  QStringList profilingOptions = mpMainWindow->getOMCProxy()->getConfigFlagValidOptions("profiling");
-  mpProfilingComboBox->addItems(profilingOptions);
+  OMCInterface::getConfigFlagValidOptions_res profiling = mpMainWindow->getOMCProxy()->getConfigFlagValidOptions("profiling");
+  mpProfilingComboBox->addItems(profiling.validOptions);
   mpProfilingComboBox->setCurrentIndex(0);
-  mpProfilingComboBox->setToolTip(mpMainWindow->getOMCProxy()->help("profiling"));
+  mpProfilingComboBox->setToolTip(profiling.mainDescription);
+  int i = 0;
+  foreach (QString description, profiling.descriptions) {
+    mpProfilingComboBox->setItemData(i, description, Qt::ToolTipRole);
+    i++;
+  }
   // cpu-time checkbox
   mpCPUTimeCheckBox = new QCheckBox(tr("CPU Time"));
   // enable all warnings
@@ -1214,7 +1219,27 @@ void SimulationDialog::simulate()
     mIsReSimulate = false;
     accept();
     if (isTranslationSuccessful) {
-      createAndShowSimulationOutputWidget(simulationOptions);
+      // check if we can compile using the target compiler
+      SimulationPage *pSimulationPage = mpMainWindow->getOptionsDialog()->getSimulationPage();
+      QString targetCompiler = pSimulationPage->getTargetCompilerComboBox()->currentText();
+      if ((targetCompiler.compare("vxworks69") == 0) || (targetCompiler.compare("debugrt") == 0)) {
+        QString msg = tr("Generated code for the target compiler <b>%1</b> at %2.").arg(targetCompiler)
+            .arg(simulationOptions.getWorkingDirectory());
+        mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                                     Helper::notificationLevel));
+        return;
+      }
+      QString targetLanguage = pSimulationPage->getTargetLanguageComboBox()->currentText();
+      // check if we can compile using the target language
+      if ((targetLanguage.compare("C") == 0) || (targetLanguage.compare("Cpp") == 0)) {
+        createAndShowSimulationOutputWidget(simulationOptions);
+      } else {
+        QString msg = tr("Generated code for the target language <b>%1</b> at %2.").arg(targetLanguage)
+            .arg(simulationOptions.getWorkingDirectory());
+        mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                                     Helper::notificationLevel));
+        return;
+      }
     }
   }
 }
