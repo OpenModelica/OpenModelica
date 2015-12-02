@@ -64,6 +64,69 @@ StringHandler::~StringHandler()
 
 }
 
+QString StringHandler::getSimulationTool(int tool)
+{
+  switch (tool)
+  {
+    case StringHandler::Adams:
+      return "ADAMS";
+    case StringHandler::Beast:
+      return "BEAST";
+    case StringHandler::Dymola:
+      return "Dymola";
+    case StringHandler::OpenModelica:
+      return "OpenModelica";
+    case StringHandler::Simulink:
+      return "Simulink";
+    case StringHandler::WolframSystemModeler:
+      return "Wolfram SystemModeler";
+    case StringHandler::Other:
+      return "Other";
+    default:
+      // should never be reached
+      return "";
+  }
+}
+
+QString StringHandler::getSimulationToolStartCommand(QString tool, QString simulationToolStartCommand)
+{
+  if (tool.toLower().contains("adams"))
+    return "startTLMAdams";
+  else if (tool.toLower().contains("beast"))
+    return "startTLMBeast";
+  else if (tool.toLower().contains("dymola"))
+    return "startTLMDymola";
+  else if (tool.toLower().contains("openmodelica"))
+    return "startTLMOpenModelica";
+  else if (tool.toLower().contains("simulink"))
+    return "startTLMSimulink";
+  else if (tool.toLower().contains("wolfram systemmodeler"))
+    return "startTLMWSM";
+  else if (tool.toLower().contains("other"))
+    return simulationToolStartCommand;
+  else
+    // should never be reached
+    return "";
+}
+
+StringHandler::SimulationTools StringHandler::getSimulationTool(QString simulationToolStartCommand)
+{
+  if (simulationToolStartCommand.toLower().compare("starttlmadams")== 0)
+    return StringHandler::Adams;
+  else if (simulationToolStartCommand.toLower().compare("starttlmbeast")== 0)
+    return StringHandler::Beast;
+  else if (simulationToolStartCommand.toLower().compare("starttlmdymola")== 0)
+    return StringHandler::Dymola;
+  else if (simulationToolStartCommand.toLower().compare("starttlmopenmodelica")== 0)
+    return StringHandler::OpenModelica;
+  else if (simulationToolStartCommand.toLower().compare("starttlmsimulink")== 0)
+    return StringHandler::Simulink;
+  else if (simulationToolStartCommand.toLower().compare("starttlmwsm")== 0)
+    return StringHandler::WolframSystemModeler;
+  else
+    return StringHandler::Other;
+}
+
 QString StringHandler::getModelicaClassType(int type)
 {
   switch (type)
