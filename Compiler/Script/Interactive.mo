@@ -4538,7 +4538,14 @@ algorithm
   match (inString)
     case ("") then Absyn.NONFIELD();
     case ("nonfield") then Absyn.NONFIELD();
-    case ("field") then Absyn.FIELD();
+    case ("field")
+      equation
+        if not Flags.getConfigEnum(Flags.GRAMMAR) == Flags.PDEMODELICA then
+          Error.addMessage(Error.PDEModelica_ERROR,
+            {"Fields not supported in standard modelica. Enable PDEModelica usign flag --grammar=\"PDEModelica\"."});
+          fail();
+        end if;
+      then Absyn.FIELD();
   end match;
 end setElementIsField;
 

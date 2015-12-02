@@ -4281,8 +4281,10 @@ algorithm
         printVariabilityAsCorbaString(variability);
         Print.printBuf(", direction = ");
         printDirectionAsCorbaString(direction);
-        Print.printBuf(", isField = ");
-        printIsFieldAsCorbaString(isField);
+        if intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA) then
+          Print.printBuf(", isField = ");
+          printIsFieldAsCorbaString(isField);
+        end if;
         Print.printBuf(", arrayDim = ");
         printArrayDimAsCorbaString(arrayDim);
         Print.printBuf(" end Absyn.ATTR;");

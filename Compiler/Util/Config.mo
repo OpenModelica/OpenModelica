@@ -166,6 +166,14 @@ algorithm
   outBoolean := intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
 end acceptOptimicaGrammar;
 
+public function acceptPDEModelicaGrammar
+"returns: true if Optimica grammar is accepted or false otherwise
+ usage: omc [+g=Modelica|MetaModelica|ParModelica|Optimica], default to 'Modelica'."
+  output Boolean outBoolean;
+algorithm
+  outBoolean := intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA);
+end acceptPDEModelicaGrammar;
+
 public function getAnnotationVersion
 "returns what flag was given at start
      omc [+annotationVersion=3.x]

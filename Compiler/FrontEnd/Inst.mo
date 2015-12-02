@@ -2248,8 +2248,9 @@ algorithm
         ErrorExt.rollBack("expandableConnectorsOrder");
 
         //Discretization of PDEs:
-//        domainNLst = List.fold(els,InstUtil.findDomains,{});
-        eqs_1 = List.fold1(eqs_1, InstUtil.discretizePDE, domainFieldsLst,/* domainNLst,*/ {});
+        if intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA) then
+          eqs_1 = List.fold1(eqs_1, InstUtil.discretizePDE, domainFieldsLst, {});
+        end if;
 
         //Instantiate equations (see function "instEquation")
         (cache,env5,ih,dae2,csets2,ci_state3,graph) =
@@ -2257,7 +2258,9 @@ algorithm
         DAEUtil.verifyEquationsDAE(dae2);
 
         //Discretization of initial equations of fields:
-        initeqs_1 = List.fold1(initeqs_1, InstUtil.discretizePDE, domainFieldsLst,/* domainNLst,*/ {});
+        if intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA) then
+          initeqs_1 = List.fold1(initeqs_1, InstUtil.discretizePDE, domainFieldsLst,/* domainNLst,*/ {});
+        end if;
         //Instantiate inital equations (see function "instInitialEquation")
         (cache,env5,ih,dae3,csets3,ci_state4,graph) =
           instList(cache, env5, ih, pre, csets2, ci_state3, InstSection.instInitialEquation, initeqs_1, impl, InstTypes.alwaysUnroll, graph);
@@ -3138,7 +3141,9 @@ algorithm
           inInstDims, inImplInst, inCallingScope, outGraph, outSets, inStopOnError);
       arrayUpdate(var_arr, idx, vars);
       arrayUpdate(dae_arr, idx, dae);
-      domainFieldsList := InstUtil.optAppendField(domainFieldsList,fieldDomOpt);
+      if intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA) then
+        domainFieldsList := InstUtil.optAppendField(domainFieldsList,fieldDomOpt);
+      end if;
     end for;
 
     outVars := List.flatten(arrayList(var_arr));
@@ -3564,7 +3569,10 @@ algorithm
         (cache, dims) = InstUtil.elabArraydim(cache, env2, own_cref, t, ad, eq, impl,
           NONE(), true, is_function_input, pre, info, inst_dims);
 
-        (dims, mod_1, outFieldDomOpt) = InstUtil.elabField(inCache, inEnv, name, attr, dims, mod_1, info);
+        //PDEModelica:
+        if intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA) then
+          (dims, mod_1, outFieldDomOpt) = InstUtil.elabField(inCache, inEnv, name, attr, dims, mod_1, info);
+        end if;
 
         // adrpo: 2011-11-18: see if the component is an INPUT or OUTPUT and class is a record
         //                    and add it to the cache!

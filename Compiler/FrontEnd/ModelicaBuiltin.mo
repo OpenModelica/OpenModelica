@@ -46,16 +46,6 @@ annotation(Documentation(info="<html>
 </html>"));
 end der;
 
-function pder "Partial space derivative of the input expression in the first argument with respect to second argument"
-  input Real u(unit="'p");
-  input Real x(unit="'q");
-  output Real du(unit="'p/'q");
-external "builtin";
-annotation(Documentation(info="<html>
-  See <a href=\"???\">der()</a>
-</html>"));
-end pder;
-
 impure function initial "True if in initialization phase"
   output Boolean isInitial;
 external "builtin";
