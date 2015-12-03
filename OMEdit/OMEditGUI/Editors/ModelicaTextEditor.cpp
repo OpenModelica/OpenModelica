@@ -150,8 +150,12 @@ QStringList ModelicaTextEditor::getClassNames(QString *errorString)
     *errorString = tr("Start and End modifiers are different");
     return QStringList();
   } else {
-    classNames = pOMCProxy->parseString("within " + pLibraryTreeItem->parent()->getNameStructure() + ";" + mpPlainTextEdit->toPlainText(),
-                                        pLibraryTreeItem->getNameStructure());
+    QString modelicaText = mpPlainTextEdit->toPlainText();
+    QString stringToParse = modelicaText;
+    if (!modelicaText.startsWith("within")) {
+      stringToParse = QString("within %1;%2").arg(pLibraryTreeItem->parent()->getNameStructure()).arg(modelicaText);
+    }
+    classNames = pOMCProxy->parseString(stringToParse, pLibraryTreeItem->getNameStructure());
   }
   // if user is defining multiple top level classes.
   if (classNames.size() > 1) {

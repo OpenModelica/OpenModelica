@@ -381,6 +381,7 @@ void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res 
       setFileName(classInformation.fileName);
     }
     setReadOnly(classInformation.fileReadOnly);
+    updateAttributes();
   }
 }
 
@@ -1104,7 +1105,7 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
     QString parentName = StringHandler::removeLastWordAfterDot(lib);
     LibraryTreeItem *pParentLibraryTreeItem = findLibraryTreeItem(parentName, pLibraryTreeItem);
     if (pParentLibraryTreeItem) {
-      createLibraryTreeItem(name, pParentLibraryTreeItem, true, false, false);
+      createLibraryTreeItem(name, pParentLibraryTreeItem, pParentLibraryTreeItem->isSaved(), false, false);
     }
   }
 }
@@ -1359,7 +1360,7 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
   }
   // if we first updated the parent class then the child classes needs to be updated as well.
   if (pParentLibraryTreeItem != pLibraryTreeItem) {
-    pOMCProxy->loadString(pParentLibraryTreeItem->getClassText(this), pParentLibraryTreeItem->getFileName(), Helper::utf8, false);
+    pOMCProxy->loadString(pParentLibraryTreeItem->getClassText(this), pParentLibraryTreeItem->getFileName(), Helper::utf8, false, false);
     updateChildLibraryTreeItemClassText(pParentLibraryTreeItem, contents, pParentLibraryTreeItem->getFileName());
     pParentLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pParentLibraryTreeItem->getNameStructure()));
   }
@@ -1688,6 +1689,11 @@ bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
       QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
       expandState = mpLibraryWidget->getLibraryTreeView()->isExpanded(proxyIndex);
     }
+    int i = 0;
+    while(i < pLibraryTreeItem->getChildren().size()) {
+      unloadClassChildren(pLibraryTreeItem->child(i));
+      i = 0;  //Restart iteration
+    }
     // make the class non existing
     pLibraryTreeItem->setNonExisting(true);
     pLibraryTreeItem->setClassText("");
@@ -1702,7 +1708,6 @@ bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem), row, row);
     pLibraryTreeItem->parent()->removeChild(pLibraryTreeItem);
     endRemoveRows();
-
     if (pNextLibraryTreeItem) {
       QModelIndex modelIndex = libraryTreeItemIndex(pNextLibraryTreeItem);
       QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
@@ -1710,17 +1715,6 @@ bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     }
     /* Update the model switcher toolbar button. */
     mpLibraryWidget->getMainWindow()->updateModelSwitcherMenu(0);
-//    if (!pLibraryTreeItem->isTopLevel()) {
-//      LibraryTreeItem *pContainingFileParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
-//      // if we unload in a package saved in one file strucutre then we should update its containing file item text.
-//      if (pContainingFileParentLibraryTreeItem != pLibraryTreeItem) {
-//        updateLibraryTreeItemClassText(pContainingFileParentLibraryTreeItem);
-//      } else {
-//        // if we unload in a package saved in folder strucutre then we should mark its parent unsaved.
-//        pLibraryTreeItem->parent()->setIsSaved(false);
-//        updateLibraryTreeItem(pLibraryTreeItem->parent());
-//      }
-//    }
     return true;
   } else {
     QMessageBox::critical(mpLibraryWidget->getMainWindow(), QString(Helper::applicationName).append(" - ").append(Helper::error),
@@ -1728,6 +1722,38 @@ bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
                           .append(tr("while deleting ") + pLibraryTreeItem->getNameStructure()), Helper::ok);
     return false;
   }
+}
+
+/*!
+ * \brief LibraryTreeModel::removeLibraryTreeItem
+ * Removes the LibraryTreeItem.
+ * \param pLibraryTreeItem
+ * \return
+ */
+bool LibraryTreeModel::removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* QSortFilterProxy::filterAcceptRows changes the expand/collapse behavior of indexes or I am using it in some stupid way.
+   * If index is expanded and we delete it then the next sibling index automatically becomes expanded.
+   * The following code overcomes this issue. It stores the next index expand state and then apply it after deletion.
+   */
+  int row = pLibraryTreeItem->row();
+  LibraryTreeItem *pNextLibraryTreeItem = 0;
+  bool expandState;
+  if (pLibraryTreeItem->parent()->getChildren().size() > row + 1) {
+    pNextLibraryTreeItem = pLibraryTreeItem->parent()->child(row + 1);
+    QModelIndex modelIndex = libraryTreeItemIndex(pNextLibraryTreeItem);
+    QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+    expandState = mpLibraryWidget->getLibraryTreeView()->isExpanded(proxyIndex);
+  }
+  unloadClassChildren(pLibraryTreeItem);
+  if (pNextLibraryTreeItem) {
+    QModelIndex modelIndex = libraryTreeItemIndex(pNextLibraryTreeItem);
+    QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+    mpLibraryWidget->getLibraryTreeView()->setExpanded(proxyIndex, expandState);
+  }
+  /* Update the model switcher toolbar button. */
+  mpLibraryWidget->getMainWindow()->updateModelSwitcherMenu(0);
+  return true;
 }
 
 /*!
@@ -1909,17 +1935,19 @@ LibraryTreeItem* LibraryTreeModel::getLibraryTreeItemFromFileHelper(LibraryTreeI
 QString LibraryTreeModel::readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents)
 {
   QString text;
+  int startTrailingSpaces = 0;
   int trailingSpaces = 0;
   QTextStream textStream(&contents);
   int lineNumber = 1;
-  while (!textStream.atEnd()) {
+  while (!textStream.atEnd() && lineNumber <= pLibraryTreeItem->mClassInformation.lineNumberEnd) {
     QString currentLine = textStream.readLine();
     if (pLibraryTreeItem->inRange(lineNumber)) {
       // if reading the first line then determine the trailing spaces size.
       if (pLibraryTreeItem->mClassInformation.lineNumberStart == lineNumber) {
-        trailingSpaces = StringHandler::getTrailingSpacesSize(currentLine);
+        startTrailingSpaces = StringHandler::getTrailingSpacesSize(currentLine);
+        trailingSpaces = startTrailingSpaces;
       } else {
-        trailingSpaces = qMin(trailingSpaces, StringHandler::getTrailingSpacesSize(currentLine));
+        trailingSpaces = qMin(startTrailingSpaces, StringHandler::getTrailingSpacesSize(currentLine));
       }
       text += currentLine.mid(trailingSpaces) + "\n";
     }
@@ -2995,6 +3023,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeIte
 {
   bool result = false;
   // if some file within folder structure package is changed and has valid file path then we should only save it.
+  pLibraryTreeItem = mpLibraryTreeModel->getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
   if (pLibraryTreeItem->isFilePathValid() && mpLibraryTreeModel->getContainingFileParentLibraryTreeItem(pLibraryTreeItem) == pLibraryTreeItem) {
     result = saveModelicaLibraryTreeItemHelper(pLibraryTreeItem);
   } else {
@@ -3027,7 +3056,14 @@ bool LibraryWidget::saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryT
   } else {
     result = saveModelicaLibraryTreeItemFolder(pLibraryTreeItem);
     for (int i = 0; i < pLibraryTreeItem->getChildren().size(); i++) {
-      saveModelicaLibraryTreeItemHelper(pLibraryTreeItem->child(i));
+      // if any child is saved in package.mo then only mark it saved and update its information becasue it should be already saved.
+      LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
+      if (pLibraryTreeItem->getFileName().compare(pChildLibraryTreeItem->getFileName()) == 0) {
+        saveChildLibraryTreeItemsOneFileHelper(pChildLibraryTreeItem);
+        saveChildLibraryTreeItemsOneFile(pChildLibraryTreeItem);
+      } else {
+        saveModelicaLibraryTreeItemHelper(pChildLibraryTreeItem);
+      }
     }
   }
   return result;
@@ -3097,17 +3133,27 @@ void LibraryWidget::saveChildLibraryTreeItemsOneFile(LibraryTreeItem *pLibraryTr
 {
   for (int i = 0; i < pLibraryTreeItem->getChildren().size(); i++) {
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
-    pChildLibraryTreeItem->setIsSaved(true);
-    pChildLibraryTreeItem->setFileName(pLibraryTreeItem->getFileName());
-    pChildLibraryTreeItem->mClassInformation.fileName = pLibraryTreeItem->getFileName();
-    mpMainWindow->getOMCProxy()->setSourceFile(pChildLibraryTreeItem->getNameStructure(), pLibraryTreeItem->getFileName());
-    if (pChildLibraryTreeItem->getModelWidget() && pChildLibraryTreeItem->getModelWidget()->isLoadedWidgetComponents()) {
-      pChildLibraryTreeItem->getModelWidget()->setWindowTitle(pChildLibraryTreeItem->getNameStructure());
-      pChildLibraryTreeItem->getModelWidget()->setModelFilePathLabel(pLibraryTreeItem->getFileName());
-    }
-    mpLibraryTreeModel->updateLibraryTreeItem(pChildLibraryTreeItem);
+    saveChildLibraryTreeItemsOneFileHelper(pChildLibraryTreeItem);
     saveChildLibraryTreeItemsOneFile(pChildLibraryTreeItem);
   }
+}
+
+/*!
+ * \brief LibraryWidget::saveChildLibraryTreeItemsOneFileHelper
+ * Helper function for LibraryWidget::saveChildLibraryTreeItemsOneFile()
+ * \param pLibraryTreeItem
+ */
+void LibraryWidget::saveChildLibraryTreeItemsOneFileHelper(LibraryTreeItem *pLibraryTreeItem)
+{
+  pLibraryTreeItem->setIsSaved(true);
+  pLibraryTreeItem->setFileName(pLibraryTreeItem->parent()->getFileName());
+  pLibraryTreeItem->mClassInformation.fileName = pLibraryTreeItem->parent()->getFileName();
+  mpMainWindow->getOMCProxy()->setSourceFile(pLibraryTreeItem->getNameStructure(), pLibraryTreeItem->parent()->getFileName());
+  if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->isLoadedWidgetComponents()) {
+    pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getNameStructure());
+    pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(pLibraryTreeItem->parent()->getFileName());
+  }
+  mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
 }
 
 /*!

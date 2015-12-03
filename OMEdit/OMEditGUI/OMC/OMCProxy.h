@@ -153,7 +153,7 @@ public:
   bool loadModel(QString className, QString priorityVersion = QString("default"), bool notify = false, QString languageStandard = QString(""),
                  bool requireExactVersion = false);
   bool loadFile(QString fileName, QString encoding = Helper::utf8, bool uses = true);
-  bool loadString(QString value, QString fileName, QString encoding = Helper::utf8, bool checkError = true);
+  bool loadString(QString value, QString fileName, QString encoding = Helper::utf8, bool merge = false, bool checkError = true);
   QList<QString> parseFile(QString fileName, QString encoding = Helper::utf8);
   QList<QString> parseString(QString value, QString fileName);
   bool createClass(QString type, QString className, LibraryTreeItem *pExtendsLibraryTreeItem);
