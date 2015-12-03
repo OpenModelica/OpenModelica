@@ -149,7 +149,6 @@ public:
   static bool isModelicaFile(QString extension);
   static bool naturalSort(const QString &s1, const QString &s2);
 #ifdef WIN32
-  static QProcessEnvironment compilationProcessEnvironment(QString *pCompilationProcessPath);
   static QProcessEnvironment simulationProcessEnvironment();
 #endif
   static StringHandler::SimulationMessageType getSimulationMessageType(QString type);
