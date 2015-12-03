@@ -218,29 +218,33 @@ void SimController::Start(SimSettings simsettings, string modelKey)
 
         _simMgr->runSimulation();
 
-        shared_ptr<IWriteOutput> writeoutput_system = dynamic_pointer_cast<IWriteOutput>(mixedsystem);
+		if(global_settings->getOutputFormat() == BUFFER)
+		{
+			shared_ptr<IWriteOutput> writeoutput_system = dynamic_pointer_cast<IWriteOutput>(mixedsystem);
 
-        shared_ptr<ISimData> simData = _sim_objects->getSimData(modelKey);
-        //get history object to query simulation results
-        IHistory* history = writeoutput_system->getHistory();
-        //simulation results (output variables)
-        ublas::matrix<double> Ro;
-        //query simulation result outputs
-        history->getOutputResults(Ro);
-        vector<string> output_names;
-        history->getOutputNames(output_names);
-        int j=0;
+			shared_ptr<ISimData> simData = _sim_objects->getSimData(modelKey);
+			simData->clearResults();
+			//get history object to query simulation results
+			IHistory* history = writeoutput_system->getHistory();
+			//simulation results (output variables)
+			ublas::matrix<double> Ro;
+			//query simulation result outputs
+			history->getOutputResults(Ro);
+			vector<string> output_names;
+			history->getOutputNames(output_names);
+			int j=0;
 
-        FOREACH(string& name, output_names)
-        {
-            ublas::vector<double> o_j;
-            o_j = ublas::row(Ro,j);
-            simData->addOutputResults(name,o_j);
-            j++;
-        }
+			FOREACH(string& name, output_names)
+			{
+				ublas::vector<double> o_j;
+				o_j = ublas::row(Ro,j);
+				simData->addOutputResults(name,o_j);
+				j++;
+			}
 
-        vector<double> time_values = history->getTimeEntries();
-        simData->addTimeEntries(time_values);
+			vector<double> time_values = history->getTimeEntries();
+			simData->addTimeEntries(time_values);
+		}
     }
     catch(ModelicaSimulationError & ex)
     {
