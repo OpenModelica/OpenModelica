@@ -698,28 +698,45 @@ end warnAboutIterationVariablesWithDefaultZeroStartAttribute1;
 
 protected function warnAboutVars2 "author: lochel
   TODO: Replace this with an general BackendDump implementation."
-  input list<BackendDAE.Var> inVars;
+  input list<BackendDAE.Var> vars;
   output String outString;
+protected
+  list<String> strs;
+  Integer len;
+  Integer size;
 algorithm
-  outString := match(inVars)
-    local
-      BackendDAE.Var v;
-      list<BackendDAE.Var> vars;
-      String crStr;
-      String str;
-
-    case ({}) then "";
-
-    case (v::{}) equation
-      crStr = "         " + BackendDump.varString(v);
-    then crStr;
-
-    case (v::vars) equation
-      crStr = BackendDump.varString(v);
-      str = "         " + crStr + "\n" + warnAboutVars2(vars);
-    then str;
-  end match;
+  if listEmpty(vars) then
+    outString := "";
+    return;
+  end if;
+  strs := list(BackendDump.varString(v) for v in vars);
+  len := listLength(strs);
+  size := sum(stringLength(s) for s in strs) + len*10;
+  outString := warnAboutVars2Work(strs, "         ", "\n", size);
 end warnAboutVars2;
+
+function warnAboutVars2Work
+  input list<String> strs;
+  input String prefix;
+  input String suffix;
+  input Integer size;
+  output String s="";
+protected
+  // Allocate a string of the exact required length
+  System.StringAllocator sb=System.StringAllocator(size);
+  Integer i=0;
+algorithm
+  for str in strs loop
+    System.stringAllocatorStringCopy(sb, prefix, i);
+    i := i+stringLength(prefix);
+    System.stringAllocatorStringCopy(sb, str, i);
+    i := i+stringLength(str);
+    System.stringAllocatorStringCopy(sb, suffix, i);
+    i := i+stringLength(suffix);
+  end for;
+  // Return the string
+  s := System.stringAllocatorResult(sb,s);
+end warnAboutVars2Work;
 
 protected function warnAboutEqns2 "author: lochel
   TODO: Replace this with an general BackendDump implementation."
