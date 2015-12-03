@@ -1360,13 +1360,18 @@ bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses)
 }
 
 /*!
-  Loads a string in OMC
-  \param value - the string to load.
-  \return true on success
-  */
-bool OMCProxy::loadString(QString value, QString fileName, QString encoding, bool checkError)
+ * \brief OMCProxy::loadString
+ * Loads a string in OMC
+ * \param value - the string to load.
+ * \param fileName
+ * \param encoding
+ * \param merge
+ * \param checkError
+ * \return true on success
+ */
+bool OMCProxy::loadString(QString value, QString fileName, QString encoding, bool merge, bool checkError)
 {
-  bool result = mpOMCInterface->loadString(value, fileName, encoding);
+  bool result = mpOMCInterface->loadString(value, fileName, encoding, merge);
   if (checkError) {
     printMessagesStringInternal();
   }
@@ -1418,7 +1423,7 @@ bool OMCProxy::createClass(QString type, QString className, LibraryTreeItem *pEx
   } else {
     expression = QString("%1 %2 extends %3; end %4;").arg(type).arg(className).arg(pExtendsLibraryTreeItem->getNameStructure()).arg(className);
   }
-  return loadString(expression, className, Helper::utf8, false);
+  return loadString(expression, className, Helper::utf8, false, false);
 }
 
 /*!
@@ -1446,7 +1451,7 @@ bool OMCProxy::createSubClass(QString type, QString className, LibraryTreeItem *
   } else {
     fileName = pParentLibraryTreeItem->getNameStructure() + "." + className;
   }
-  return loadString(expression, fileName, Helper::utf8, false);
+  return loadString(expression, fileName, Helper::utf8, false, false);
 }
 
 /*!

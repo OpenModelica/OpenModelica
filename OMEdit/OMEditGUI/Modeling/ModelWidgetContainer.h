@@ -356,6 +356,7 @@ public:
   void reDrawModelWidget();
   bool validateText();
   bool modelicaEditorTextChanged();
+  void updateChildClasses(LibraryTreeItem *pLibraryTreeItem);
   void clearSelection();
   void updateClassAnnotationIfNeeded();
   void updateModelicaText();

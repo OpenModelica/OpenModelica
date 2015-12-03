@@ -240,6 +240,7 @@ public:
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  bool removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool up);
   void moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, bool top);
   QString getUniqueTopLevelItemName(QString name, int number = 1);
@@ -358,6 +359,7 @@ private:
   bool saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
   bool saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibraryTreeItem);
   void saveChildLibraryTreeItemsOneFile(LibraryTreeItem *pLibraryTreeItem);
+  void saveChildLibraryTreeItemsOneFileHelper(LibraryTreeItem *pLibraryTreeItem);
   bool saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryTreeItem);
   bool saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveTLMLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
