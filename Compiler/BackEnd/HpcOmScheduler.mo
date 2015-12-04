@@ -1281,16 +1281,16 @@ algorithm
 end compareTasksByWeighting;
 
 protected function compareTasksByEqIdc "author: marcusw
-  Compare the given tasks by their equation indices. If the first equation of task1 has a higher index than the first equation of task 2, true is returned."
+  Compare the given tasks by their equation indices. If the last equation of task1 has a higher index than the last equation of task 2, true is returned."
   input HpcOmSimCode.Task iTask1;
   input HpcOmSimCode.Task iTask2;
   output Boolean oResult;
 protected
-  Integer eqIdxTask1, eqIdxTask2;
+  list<Integer> eqIdcTask1, eqIdcTask2;
 algorithm
   oResult := match(iTask1,iTask2)
-    case(HpcOmSimCode.CALCTASK(eqIdc=eqIdxTask1::_), HpcOmSimCode.CALCTASK(eqIdc=eqIdxTask2::_))
-      then intGt(eqIdxTask1,eqIdxTask2);
+    case(HpcOmSimCode.CALCTASK(eqIdc=eqIdcTask1), HpcOmSimCode.CALCTASK(eqIdc=eqIdcTask2))
+      then intGt(List.last(eqIdcTask1),List.last(eqIdcTask2));
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"HpcOmScheduler.compareTasksByEqIdc can only compare CALCTASKs with at least one equation index! Task 1 has type " + getTaskTypeString(iTask1) + " and task 2 has type " + getTaskTypeString(iTask2)});

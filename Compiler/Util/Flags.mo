@@ -991,7 +991,7 @@ constant ConfigFlag CORBA_OBJECT_REFERENCE_FILE_PATH = CONFIG_FLAG(50, "corbaObj
 
 constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(51, "hpcomScheduler",
   NONE(), EXTERNAL(), STRING_FLAG("level"), NONE(),
-  Util.gettext("Sets the scheduler for task graph scheduling (list | listr | level | levelfix | ext | mcp | taskdep | tds | bls | rand | none). Default: level."));
+  Util.gettext("Sets the scheduler for task graph scheduling (list | listr | level | levelfix | ext | metis | mcp | taskdep | tds | bls | rand | none). Default: level."));
 
 constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(52, "hpcomCode",
   NONE(), EXTERNAL(), STRING_FLAG("openmp"), NONE(),
