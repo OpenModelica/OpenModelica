@@ -695,14 +695,19 @@ public:
   FMIPage(OptionsDialog *pOptionsDialog);
   void setFMIExportVersion(double version);
   double getFMIExportVersion();
+  void setFMIExportType(QString type);
+  QString getFMIExportType();
   QLineEdit* getFMUNameTextBox() {return mpFMUNameTextBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpExportGroupBox;
-  Label *mpVersionLabel;
   QGroupBox *mpVersionGroupBox;
   QRadioButton *mpVersion1RadioButton;
   QRadioButton *mpVersion2RadioButton;
+  QGroupBox *mpTypeGroupBox;
+  QRadioButton *mpModelExchangeRadioButton;
+  QRadioButton *mpCoSimulationRadioButton;
+  QRadioButton *mpModelExchangeCoSimulationRadioButton;
   Label *mpFMUNameLabel;
   QLineEdit *mpFMUNameTextBox;
 };

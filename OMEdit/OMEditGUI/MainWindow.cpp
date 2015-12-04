@@ -837,8 +837,9 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   mpProgressBar->setRange(0, 0);
   showProgressBar();
   double version = mpOptionsDialog->getFMIPage()->getFMIExportVersion();
+  QString type = mpOptionsDialog->getFMIPage()->getFMIExportType();
   QString FMUName = mpOptionsDialog->getFMIPage()->getFMUNameTextBox()->text();
-  if (mpOMCProxy->translateModelFMU(pLibraryTreeItem->getNameStructure(), version, FMUName)) {
+  if (mpOMCProxy->translateModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName)) {
     mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FMU_GENERATED)
                                                 .arg(FMUName.isEmpty() ? pLibraryTreeItem->getNameStructure() : FMUName)
                                                 .arg(mpOMCProxy->changeDirectory()), Helper::scriptingKind,

@@ -2008,15 +2008,19 @@ QStringList OMCProxy::getSimulationOptions(QString className, double defaultTole
 }
 
 /*!
-  Creates the FMU of the model.
-  \param className - the name of the class.
-  \return the created FMU location
-  */
-bool OMCProxy::translateModelFMU(QString className, double version, QString fileNamePrefix)
+ * \brief OMCProxy::translateModelFMU
+ * Creates the FMU of the model.
+ * \param className - the name of the class.
+ * \param version - the fmu version
+ * \param type - the fmu type
+ * \param fileNamePrefix
+ * \return
+ */
+bool OMCProxy::translateModelFMU(QString className, double version, QString type, QString fileNamePrefix)
 {
   bool result = false;
   fileNamePrefix = fileNamePrefix.isEmpty() ? "<default>" : fileNamePrefix;
-  QString res = mpOMCInterface->translateModelFMU(className, QString::number(version), "me", fileNamePrefix);
+  QString res = mpOMCInterface->translateModelFMU(className, QString::number(version), type, fileNamePrefix);
   if (res.compare("SimCode: The model " + className + " has been translated to FMU") == 0) {
     result = true;
     mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());

@@ -475,7 +475,7 @@ void Helper::initHelperVariables()
   Helper::parsingFailedJson = tr("Parsing of JSON file failed");
   Helper::expandAll = tr("Expand All");
   Helper::collapseAll = tr("Collapse All");
-  Helper::version = tr("Version:");
+  Helper::version = tr("Version");
   Helper::unlimited = tr("unlimited");
   Helper::simulationOutput = tr("Simulation Output");
   Helper::cancelSimulation = tr("Cancel Simulation");
