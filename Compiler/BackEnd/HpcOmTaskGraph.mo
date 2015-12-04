@@ -2319,6 +2319,8 @@ algorithm
           newNodeList := successor::newNodeList;
         end if;
       end while;
+      newNodeList := List.sort(newNodeList, intGt);
+      newNodeList := List.sortedUnique(newNodeList, intEq);
       zeroFuncTaskGraph := arrayUpdate(zeroFuncTaskGraph, zeroFuncNodeIdx, newNodeList);
     end if;
     nodeIdx := nodeIdx - 1;
