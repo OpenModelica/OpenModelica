@@ -72,6 +72,7 @@ void ItemDelegate::initTextDocument(QTextDocument *pTextDocument, QFont font, in
   pTextDocument->setDefaultTextOption(textOption);
   pTextDocument->setDefaultFont(font);
   pTextDocument->setTextWidth(width);
+  pTextDocument->setDocumentMargin(2);  // the default is 4
 }
 
 void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
@@ -236,7 +237,7 @@ QSize ItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelInd
     QTextDocument textDocument;
     initTextDocument(&textDocument, option.font, width);  /* we can't use option.rect.width() here since it will be empty. */
     textDocument.setHtml(text);
-    size.rheight() = qMax(textDocument.size().height(), (qreal)24.0);
+    size.rheight() = qMax(textDocument.size().height(), (qreal)size.height());
   }
   return size;
 }
