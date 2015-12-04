@@ -828,9 +828,6 @@ void TransformationsWidget::loadTransformations()
     for (int i=0; i<eqs.size(); i++) {
       QVariantMap veq = eqs[i].toMap();
       OMEquation *eq = mEquations[i];
-      if (!hasOperationsEnabled && eq->ops.size() > 0) {
-        hasOperationsEnabled = true;
-      }
       eq->section = veq["section"].toString();
       if (veq["eqIndex"].toInt() != i) {
         QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::parsingFailedJson), Helper::parsingFailedJson + QString(": got index ") + veq["eqIndex"].toString() + QString(" expected ") + QString::number(i), Helper::ok);
@@ -864,6 +861,9 @@ void TransformationsWidget::loadTransformations()
         eq->display = eq->tag;
       }
       variantToSource(veq["source"].toMap(), eq->info, eq->types, eq->ops);
+      if (!hasOperationsEnabled && eq->ops.size() > 0) {
+        hasOperationsEnabled = true;
+      }
     }
     parseProfiling(mProfJSONFullFileName);
     fetchEquations();
