@@ -128,8 +128,8 @@ BreakpointTreeItem* BreakpointsTreeView::getSelectedBreakpointTreeItem() {
 void BreakpointsTreeView::deleteBreakpoint(BreakpointTreeItem *pBreakpointTreeItem) {
   BreakpointsTreeModel *pBreakpointsTreeModel = mpBreakpointsWidget->getBreakpointsTreeModel();
   if (pBreakpointTreeItem) {
-    if (pBreakpointTreeItem->getLibraryTreeNode()) {
-      ModelWidget *pModelWidget = pBreakpointTreeItem->getLibraryTreeNode()->getModelWidget();
+    if (pBreakpointTreeItem->getLibraryTreeItem()) {
+      ModelWidget *pModelWidget = pBreakpointTreeItem->getLibraryTreeItem()->getModelWidget();
       if (pModelWidget && pModelWidget->getEditor()) {
         QString fileName = pBreakpointTreeItem->getFilePath();
         int lineNumber = pBreakpointTreeItem->getLineNumber().toInt();
@@ -151,8 +151,8 @@ void BreakpointsTreeView::deleteBreakpoint(BreakpointTreeItem *pBreakpointTreeIt
   */
 void BreakpointsTreeView::gotoFile() {
   BreakpointTreeItem *pBreakpointTreeItem = getSelectedBreakpointTreeItem();
-  if (pBreakpointTreeItem && pBreakpointTreeItem->getLibraryTreeNode()) {
-    ModelWidget *pModelWidget = pBreakpointTreeItem->getLibraryTreeNode()->getModelWidget();
+  if (pBreakpointTreeItem && pBreakpointTreeItem->getLibraryTreeItem()) {
+    ModelWidget *pModelWidget = pBreakpointTreeItem->getLibraryTreeItem()->getModelWidget();
     if (pModelWidget && pModelWidget->getEditor()) {
       pModelWidget->getModelWidgetContainer()->addModelWidget(pModelWidget, false);
       pModelWidget->getTextViewToolButton()->setChecked(true);
@@ -225,7 +225,7 @@ void BreakpointsTreeView::showContextMenu(QPoint point) {
   QModelIndex index = indexAt(point);
   BreakpointTreeItem *pBreakpointTreeItem = static_cast<BreakpointTreeItem*>(index.internalPointer());
   if (pBreakpointTreeItem) {
-    pBreakpointTreeItem->getLibraryTreeNode() ? mpGotoFileAction->setEnabled(true) : mpGotoFileAction->setEnabled(false);
+    pBreakpointTreeItem->getLibraryTreeItem() ? mpGotoFileAction->setEnabled(true) : mpGotoFileAction->setEnabled(false);
     mpEditBreakpointAction->setEnabled(true);
     mpDeleteBreakpointAction->setEnabled(true);
   } else {
@@ -408,10 +408,10 @@ QModelIndex BreakpointsTreeModel::breakpointTreeItemIndexHelper(const Breakpoint
   Inserts the BreakpointTreeItem into BreakpointsTreeView.\n
   If the debugger is running then also inserts the breakpoint in GDB.\n
   \param pBreakpointMarker - pointer to BreakpointMarker
-  \param pLibraryTreeNode - pointer LibraryTreeNode
+  \param pLibraryTreeItem - pointer LibraryTreeItem
   \param pParentBreakpointTreeItem - pointer BreakpointTreeItem
   */
-void BreakpointsTreeModel::insertBreakpoint(BreakpointMarker *pBreakpointMarker, LibraryTreeNode *pLibraryTreeNode,
+void BreakpointsTreeModel::insertBreakpoint(BreakpointMarker *pBreakpointMarker, LibraryTreeItem *pLibraryTreeItem,
                                             BreakpointTreeItem *pParentBreakpointTreeItem)
 {
   // Add the breakpoint to the list.
@@ -420,7 +420,7 @@ void BreakpointsTreeModel::insertBreakpoint(BreakpointMarker *pBreakpointMarker,
   QVector<QVariant> breakpointItemData;
   breakpointItemData << pBreakpointMarker->filePath() << QString::number(pBreakpointMarker->lineNumber());
   QModelIndex index = breakpointTreeItemIndex(pParentBreakpointTreeItem);
-  BreakpointTreeItem *pBreakpointTreeItem = new BreakpointTreeItem(breakpointItemData, pLibraryTreeNode, pParentBreakpointTreeItem);
+  BreakpointTreeItem *pBreakpointTreeItem = new BreakpointTreeItem(breakpointItemData, pLibraryTreeItem, pParentBreakpointTreeItem);
   pBreakpointTreeItem->setEnabled(pBreakpointMarker->isEnabled());
   pBreakpointTreeItem->setIgnoreCount(pBreakpointMarker->getIgnoreCount());
   pBreakpointTreeItem->setCondition(pBreakpointMarker->getCondition());
@@ -539,11 +539,11 @@ void BreakpointsTreeModel::removeBreakpoint(BreakpointTreeItem *pBreakpointTreeI
   0 -> filePath\n
   1 -> lineNumber
   */
-BreakpointTreeItem::BreakpointTreeItem(const QVector<QVariant> &breakpointItemData, LibraryTreeNode *pLibraryTreeNode,
+BreakpointTreeItem::BreakpointTreeItem(const QVector<QVariant> &breakpointItemData, LibraryTreeItem *pLibraryTreeItem,
                                        BreakpointTreeItem *pParent)
   : mIsRootItem(false)
 {
-  mpLibraryTreeNode = pLibraryTreeNode;
+  mpLibraryTreeItem = pLibraryTreeItem;
   mpParentBreakpointTreeItem = pParent;
   mFilePath = breakpointItemData[0].toString();
   mLineNumber = breakpointItemData[1].toString();

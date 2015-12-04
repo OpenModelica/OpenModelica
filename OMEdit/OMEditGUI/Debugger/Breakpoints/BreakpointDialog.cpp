@@ -57,8 +57,8 @@ BreakpointDialog::BreakpointDialog(BreakpointTreeItem *pBreakpointTreeItem, Brea
   // Create the file name label and text box
   mpFileNameLabel = new Label(tr("File Name:"));
   mpFileNameTextBox = new QLineEdit;
-  if (mpBreakpointTreeItem && mpBreakpointTreeItem->getLibraryTreeNode()) {
-    mpFileNameTextBox->setText(mpBreakpointTreeItem->getLibraryTreeNode()->getNameStructure());
+  if (mpBreakpointTreeItem && mpBreakpointTreeItem->getLibraryTreeItem()) {
+    mpFileNameTextBox->setText(mpBreakpointTreeItem->getLibraryTreeItem()->getNameStructure());
   } else if (mpBreakpointTreeItem) {
     mpFileNameTextBox->setText(mpBreakpointTreeItem->getFilePath());
   }
@@ -129,7 +129,7 @@ BreakpointDialog::BreakpointDialog(BreakpointTreeItem *pBreakpointTreeItem, Brea
 void BreakpointDialog::browseClasses()
 {
   MainWindow *pMainWindow = mpBreakpointsTreeModel->getBreakpointsTreeView()->getBreakpointsWidget()->getDebuggerMainWindow()->getMainWindow();
-  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Class"), mpFileNameTextBox, pMainWindow->getLibraryTreeWidget());
+  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Class"), mpFileNameTextBox, pMainWindow->getLibraryWidget());
   pLibraryBrowseDialog->exec();
 }
 
@@ -170,55 +170,55 @@ void BreakpointDialog::addOrEditBreakpoint()
       pBreakpointMarker->setEnabled(mpEnableCheckBox->isChecked());
       pBreakpointMarker->setIgnoreCount(mpIgnoreCountSpinBox->value());
       pBreakpointMarker->setCondition(mpConditionTextBox->text());
-      /* the breakpoint is file system breakpoint now so remove the mark from the previous editor and set LibraryTreeNode to 0. */
-      if (mpBreakpointTreeItem->getLibraryTreeNode() && mpBreakpointTreeItem->getLibraryTreeNode()->getModelWidget()) {
-        mpBreakpointTreeItem->getLibraryTreeNode()->getModelWidget()->getEditor()->getDocumentMarker()->removeMark(pBreakpointMarker);
+      /* the breakpoint is file system breakpoint now so remove the mark from the previous editor and set LibraryTreeItem to 0. */
+      if (mpBreakpointTreeItem->getLibraryTreeItem() && mpBreakpointTreeItem->getLibraryTreeItem()->getModelWidget()) {
+        mpBreakpointTreeItem->getLibraryTreeItem()->getModelWidget()->getEditor()->getDocumentMarker()->removeMark(pBreakpointMarker);
       }
-      mpBreakpointTreeItem->setLibraryTreeNode(0);
+      mpBreakpointTreeItem->setLibraryTreeItem(0);
       /* update BreakpointTreeItem filePath and lineNumber. */
       mpBreakpointsTreeModel->updateBreakpoint(mpBreakpointTreeItem, mpFileNameTextBox->text(), lineNumber, mpEnableCheckBox->isChecked(),
                                                mpIgnoreCountSpinBox->value(), mpConditionTextBox->text());
     }
   } else {  /* if user has selected a class using Browse Classes button */
-    LibraryTreeWidget *pLibraryTreeWidget;
-    pLibraryTreeWidget = mpBreakpointsTreeModel->getBreakpointsTreeView()->getBreakpointsWidget()->getDebuggerMainWindow()->getMainWindow()->getLibraryTreeWidget();
-    LibraryTreeNode *pLibraryTreeNode = pLibraryTreeWidget->getLibraryTreeNode(mpFileNameTextBox->text());
-    if (pLibraryTreeNode) {
-      if (!pLibraryTreeNode->isSaved()) {
+    LibraryWidget *pLibraryWidget;
+    pLibraryWidget = mpBreakpointsTreeModel->getBreakpointsTreeView()->getBreakpointsWidget()->getDebuggerMainWindow()->getMainWindow()->getLibraryWidget();
+    LibraryTreeItem *pLibraryTreeItem = pLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(mpFileNameTextBox->text());
+    if (pLibraryTreeItem) {
+      if (!pLibraryTreeItem->isSaved()) {
         QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                              GUIMessages::getMessage(GUIMessages::BREAKPOINT_INSERT_NOT_SAVED).arg(pLibraryTreeNode->getNameStructure()),
+                              GUIMessages::getMessage(GUIMessages::BREAKPOINT_INSERT_NOT_SAVED).arg(pLibraryTreeItem->getNameStructure()),
                               Helper::ok);
         return;
-      } else if (pLibraryTreeNode->getLibraryType() != LibraryTreeNode::Modelica) {
+      } else if (pLibraryTreeItem->getLibraryType() != LibraryTreeItem::Modelica) {
         QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                              GUIMessages::getMessage(GUIMessages::BREAKPOINT_INSERT_NOT_MODELICA_CLASS).arg(pLibraryTreeNode->getNameStructure()),
+                              GUIMessages::getMessage(GUIMessages::BREAKPOINT_INSERT_NOT_MODELICA_CLASS).arg(pLibraryTreeItem->getNameStructure()),
                               Helper::ok);
         return;
       } else if (!mpBreakpointTreeItem) { /* Add Case */
-        pBreakpointMarker = new BreakpointMarker(pLibraryTreeNode->getFileName(), lineNumber, mpBreakpointsTreeModel);
+        pBreakpointMarker = new BreakpointMarker(pLibraryTreeItem->getFileName(), lineNumber, mpBreakpointsTreeModel);
         pBreakpointMarker->setEnabled(mpEnableCheckBox->isChecked());
         pBreakpointMarker->setIgnoreCount(mpIgnoreCountSpinBox->value());
         pBreakpointMarker->setCondition(mpConditionTextBox->text());
-        mpBreakpointsTreeModel->insertBreakpoint(pBreakpointMarker, pLibraryTreeNode, mpBreakpointsTreeModel->getRootBreakpointTreeItem());
-        if (pLibraryTreeNode->getModelWidget()) {
-          pLibraryTreeNode->getModelWidget()->getEditor()->getDocumentMarker()->addMark(pBreakpointMarker, lineNumber);
+        mpBreakpointsTreeModel->insertBreakpoint(pBreakpointMarker, pLibraryTreeItem, mpBreakpointsTreeModel->getRootBreakpointTreeItem());
+        if (pLibraryTreeItem->getModelWidget()) {
+          pLibraryTreeItem->getModelWidget()->getEditor()->getDocumentMarker()->addMark(pBreakpointMarker, lineNumber);
         }
       } else {  /* Edit Case */
         /* find the BreakpointMarker and update its filepath and lineNumber. */
         pBreakpointMarker = mpBreakpointsTreeModel->findBreakpointMarker(mpBreakpointTreeItem->getFilePath(), mpBreakpointTreeItem->getLineNumber().toInt());
-        pBreakpointMarker->setFilePath(pLibraryTreeNode->getFileName());
+        pBreakpointMarker->setFilePath(pLibraryTreeItem->getFileName());
         pBreakpointMarker->setLineNumber(lineNumber);
         pBreakpointMarker->setEnabled(mpEnableCheckBox->isChecked());
         pBreakpointMarker->setIgnoreCount(mpIgnoreCountSpinBox->value());
         pBreakpointMarker->setCondition(mpConditionTextBox->text());
-        /* the breakpoint is not a file system breakpoint now so set LibraryTreeNode. */
-        mpBreakpointTreeItem->setLibraryTreeNode(pLibraryTreeNode);
+        /* the breakpoint is not a file system breakpoint now so set LibraryTreeItem. */
+        mpBreakpointTreeItem->setLibraryTreeItem(pLibraryTreeItem);
         /* update BreakpointTreeItem filePath and lineNumber. */
-        mpBreakpointsTreeModel->updateBreakpoint(mpBreakpointTreeItem, pLibraryTreeNode->getFileName(), lineNumber,
+        mpBreakpointsTreeModel->updateBreakpoint(mpBreakpointTreeItem, pLibraryTreeItem->getFileName(), lineNumber,
                                                  mpEnableCheckBox->isChecked(), mpIgnoreCountSpinBox->value(), mpConditionTextBox->text());
-        if (pLibraryTreeNode->getModelWidget()) {
-          pLibraryTreeNode->getModelWidget()->getEditor()->getDocumentMarker()->removeMark(pBreakpointMarker);
-          pLibraryTreeNode->getModelWidget()->getEditor()->getDocumentMarker()->addMark(pBreakpointMarker, lineNumber);
+        if (pLibraryTreeItem->getModelWidget()) {
+          pLibraryTreeItem->getModelWidget()->getEditor()->getDocumentMarker()->removeMark(pBreakpointMarker);
+          pLibraryTreeItem->getModelWidget()->getEditor()->getDocumentMarker()->addMark(pBreakpointMarker, lineNumber);
         }
       }
     } else {

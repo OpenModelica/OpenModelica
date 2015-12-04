@@ -43,24 +43,25 @@
 
 class MainWindow;
 class Label;
-class LibraryTreeWidget;
+class LibraryWidget;
+class LibraryTreeProxyModel;
 
 class LibraryBrowseDialog : public QDialog
 {
   Q_OBJECT
 public:
-  LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, LibraryTreeWidget *pParent);
-  void unHideChildItems(QTreeWidgetItem *pItem);
+  LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, LibraryWidget *pLibraryWidget);
 private:
   QLineEdit *mpLineEdit;
-  LibraryTreeWidget *mpLibraryTreeWidget;
-  QLineEdit *mpFindClassTextBox;
-  QTreeWidget *mpLibraryBrowseTreeWidget;
+  LibraryWidget *mpLibraryWidget;
+  TreeSearchFilters *mpTreeSearchFilters;
+  LibraryTreeProxyModel *mpLibraryTreeProxyModel;
+  QTreeView *mpLibraryTreeView;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
 private slots:
-  void findModelicaClasses();
+  void searchClasses();
   void useModelicaClass();
 };
 
@@ -145,14 +146,14 @@ private slots:
   void showHideSaveContentsInOneFileCheckBox(QString text);
 };
 
-class LibraryTreeNode;
+class LibraryTreeItem;
 class DuplicateClassDialog : public QDialog
 {
   Q_OBJECT
 public:
-  DuplicateClassDialog(LibraryTreeNode *pLibraryTreeNode, MainWindow *pMainWindow);
+  DuplicateClassDialog(LibraryTreeItem *pLibraryTreeItem, MainWindow *pMainWindow);
 private:
-  LibraryTreeNode *mpLibraryTreeNode;
+  LibraryTreeItem *mpLibraryTreeItem;
   MainWindow *mpMainWindow;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
@@ -186,7 +187,6 @@ public slots:
   void renameClass();
 };
 
-class LibraryTreeNode;
 class InformationDialog : public QWidget
 {
 private:
@@ -235,7 +235,7 @@ class SaveChangesDialog : public QDialog
   Q_OBJECT
 public:
   SaveChangesDialog(MainWindow *pMainWindow);
-  bool getUnsavedClasses();
+  void listUnSavedClasses();
 private:
   MainWindow *mpMainWindow;
   Label *mpSaveChangesLabel;
@@ -244,6 +244,8 @@ private:
   QPushButton *mpNoButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+
+  void listUnSavedClasses(LibraryTreeItem *pLibraryTreeItem);
 private slots:
   void saveChanges();
 public slots:
@@ -254,10 +256,10 @@ class ExportFigaroDialog : public QDialog
 {
   Q_OBJECT
 public:
-  ExportFigaroDialog(MainWindow *pMainWindow, LibraryTreeNode *pLibraryTreeNode);
+  ExportFigaroDialog(MainWindow *pMainWindow, LibraryTreeItem *pLibraryTreeItem);
 private:
   MainWindow *mpMainWindow;
-  LibraryTreeNode *mpLibraryTreeNode;
+  LibraryTreeItem *mpLibraryTreeItem;
   Label *mpFigaroModeLabel;
   QComboBox *mpFigaroModeComboBox;
   Label *mpWorkingDirectoryLabel;

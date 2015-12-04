@@ -445,9 +445,11 @@ class SimulationPage : public QWidget
   Q_OBJECT
 public:
   SimulationPage(OptionsDialog *pOptionsDialog);
-  QComboBox* getMatchingAlgorithmComboBox();
-  QComboBox* getIndexReductionMethodComboBox();
-  QLineEdit* getOMCFlagsTextBox();
+  QComboBox* getMatchingAlgorithmComboBox() {return mpMatchingAlgorithmComboBox;}
+  QComboBox* getIndexReductionMethodComboBox() {return mpIndexReductionMethodComboBox;}
+  QComboBox* getTargetLanguageComboBox() {return mpTargetLanguageComboBox;}
+  QComboBox* getTargetCompilerComboBox() {return mpTargetCompilerComboBox;}
+  QLineEdit* getOMCFlagsTextBox() {return mpOMCFlagsTextBox;}
   QCheckBox *getSaveClassBeforeSimulationCheckBox() {return mpSaveClassBeforeSimulationCheckBox;}
   void setOutputMode(QString value);
   QString getOutputMode();
@@ -458,6 +460,10 @@ private:
   QComboBox *mpMatchingAlgorithmComboBox;
   Label *mpIndexReductionMethodLabel;
   QComboBox *mpIndexReductionMethodComboBox;
+  Label *mpTargetLanguageLabel;
+  QComboBox *mpTargetLanguageComboBox;
+  Label *mpCompilerLabel;
+  QComboBox *mpTargetCompilerComboBox;
   Label *mpOMCFlagsLabel;
   QLineEdit *mpOMCFlagsTextBox;
   QCheckBox *mpSaveClassBeforeSimulationCheckBox;

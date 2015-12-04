@@ -30,14 +30,14 @@
 
 #include "FetchInterfaceDataDialog.h"
 
-FetchInterfaceDataDialog::FetchInterfaceDataDialog(LibraryTreeNode *pLibraryTreeNode, MainWindow *pMainWindow)
-  : QDialog(pMainWindow, Qt::WindowTitleHint), mpMainWindow(pMainWindow), mpLibraryTreeNode(pLibraryTreeNode)
+FetchInterfaceDataDialog::FetchInterfaceDataDialog(LibraryTreeItem *pLibraryTreeItem, MainWindow *pMainWindow)
+  : QDialog(pMainWindow, Qt::WindowTitleHint), mpMainWindow(pMainWindow), mpLibraryTreeItem(pLibraryTreeItem)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Fetch Interface Data")).append(" - ")
-                 .append(mpLibraryTreeNode->getNameStructure()));
+                 .append(mpLibraryTreeItem->getNameStructure()));
   setAttribute(Qt::WA_DeleteOnClose);
   setMinimumWidth(550);
-  mpLibraryTreeNode = pLibraryTreeNode;
+  mpLibraryTreeItem = pLibraryTreeItem;
   // progress
   mpProgressLabel = new Label;
   mpProgressLabel->setTextFormat(Qt::RichText);
@@ -99,7 +99,7 @@ void FetchInterfaceDataDialog::cancelFetchingInterfaceData()
 {
   if (mpFetchInterfaceDataThread->isManagerProcessRunning()) {
     mpFetchInterfaceDataThread->getManagerProcess()->kill();
-    mpProgressLabel->setText(tr("Fetching interface data for <b>%1</b> is cancelled.").arg(mpLibraryTreeNode->getNameStructure()));
+    mpProgressLabel->setText(tr("Fetching interface data for <b>%1</b> is cancelled.").arg(mpLibraryTreeItem->getNameStructure()));
     mpCancelButton->setEnabled(false);
     mpFetchAgainButton->setEnabled(true);
   }
@@ -121,7 +121,7 @@ void FetchInterfaceDataDialog::fetchAgainInterfaceData()
  */
 void FetchInterfaceDataDialog::managerProcessStarted()
 {
-  mpProgressLabel->setText(tr("Fetching interface data for <b>%1</b>...").arg(mpLibraryTreeNode->getNameStructure()));
+  mpProgressLabel->setText(tr("Fetching interface data for <b>%1</b>...").arg(mpLibraryTreeItem->getNameStructure()));
   mpProgressBar->setRange(0, 0);
   mpProgressBar->setTextVisible(true);
   mpCancelButton->setEnabled(true);
@@ -168,8 +168,8 @@ void FetchInterfaceDataDialog::managerProcessFinished(int exitCode, QProcess::Ex
   mpFetchAgainButton->setEnabled(true);
   // if manager process has finished successfully then try reading the interface data.
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    mpProgressLabel->setText(tr("Fetched interface data for <b>%1</b>...").arg(mpLibraryTreeNode->getNameStructure()));
-    emit readInterfaceData(mpLibraryTreeNode);
+    mpProgressLabel->setText(tr("Fetched interface data for <b>%1</b>...").arg(mpLibraryTreeItem->getNameStructure()));
+    emit readInterfaceData(mpLibraryTreeItem);
   }
 }
 

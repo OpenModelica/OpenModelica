@@ -74,6 +74,69 @@ private:
   int mIndentSize;
 };
 
+struct Parenthesis
+{
+  enum Type {Opened, Closed};
+  inline Parenthesis() : type(Opened), pos(-1) {}
+  inline Parenthesis(Type t, QChar c, int position)
+      : type(t), chr(c), pos(position) {}
+  Type type;
+  QChar chr;
+  int pos;
+};
+typedef QVector<Parenthesis> Parentheses;
+
+/**
+ * @class TextBlockUserData
+ * Stores breakpoints for text block
+ * Works with QTextBlock::setUserData().
+ */
+class TextBlockUserData : public QTextBlockUserData
+{
+public:
+  inline TextBlockUserData() {}
+  ~TextBlockUserData();
+
+  inline TextMarks marks() const { return _marks; }
+  inline void addMark(ITextMark *mark) { _marks += mark; }
+  inline bool removeMark(ITextMark *mark) { return _marks.removeAll(mark); }
+  inline bool hasMark(ITextMark* mark) const { return _marks.contains(mark); }
+  inline void clearMarks() { _marks.clear(); }
+  inline void documentClosing()
+  {
+    foreach (ITextMark *tm, _marks) {
+       tm->documentClosing();
+    }
+    _marks.clear();
+  }
+
+  void setParentheses(const Parentheses &parentheses) {mParentheses = parentheses;}
+  Parentheses parentheses() {return mParentheses;}
+  inline void clearParentheses() {mParentheses.clear();}
+  inline bool hasParentheses() const {return !mParentheses.isEmpty();}
+  enum MatchType {NoMatch, Match, Mismatch};
+  static MatchType checkOpenParenthesis(QTextCursor *cursor, QChar c);
+  static MatchType checkClosedParenthesis(QTextCursor *cursor, QChar c);
+  static MatchType matchCursorBackward(QTextCursor *cursor);
+  static MatchType matchCursorForward(QTextCursor *cursor);
+private:
+  TextMarks _marks;
+  QVector<Parenthesis> mParentheses;
+};
+
+class BaseEditorDocumentLayout : public QPlainTextDocumentLayout
+{
+  Q_OBJECT
+public:
+  BaseEditorDocumentLayout(QTextDocument *document);
+  static Parentheses parentheses(const QTextBlock &block);
+  static bool hasParentheses(const QTextBlock &block);
+  static TextBlockUserData *testUserData(const QTextBlock &block);
+  static TextBlockUserData *userData(const QTextBlock &block);
+  void emitDocumentSizeChanged() {emit documentSizeChanged(documentSize());}
+  bool mHasBreakpoint;
+};
+
 class BaseEditor : public QWidget
 {
   Q_OBJECT
@@ -89,7 +152,7 @@ private:
     void goToLineNumber(int lineNumber);
     void updateLineNumberAreaWidth(int newBlockCount);
     void updateLineNumberArea(const QRect &rect, int dy);
-    void highlightCurrentLine();
+    void updateHighlights();
     void updateCursorPosition();
     void setLineWrapping();
     void toggleBreakpoint(const QString fileName, int lineNumber);
@@ -97,9 +160,17 @@ private:
   private:
     BaseEditor *mpBaseEditor;
     LineNumberArea *mpLineNumberArea;
+    QTextCharFormat mParenthesesMatchFormat;
+    QTextCharFormat mParenthesesMisMatchFormat;
+
+    void highlightCurrentLine();
+    void highlightParentheses();
+    QString plainTextFromSelection(const QTextCursor &cursor) const;
+    static QString convertToPlainText(const QString &txt);
   protected:
     virtual void resizeEvent(QResizeEvent *pEvent);
     virtual void keyPressEvent(QKeyEvent *pEvent);
+    virtual QMimeData* createMimeDataFromSelection() const;
   };
 public:
   BaseEditor(MainWindow *pMainWindow);
@@ -136,7 +207,7 @@ private slots:
 public slots:
   void updateLineNumberAreaWidth(int newBlockCount);
   void updateLineNumberArea(const QRect &rect, int dy);
-  void highlightCurrentLine();
+  void updateHighlights();
   void updateCursorPosition();
   virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded) = 0;
   void setLineWrapping();

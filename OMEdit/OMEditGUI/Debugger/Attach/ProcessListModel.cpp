@@ -268,7 +268,7 @@ QString ProcessListModel::processIdAt(const QModelIndex &index) const
   if (index.isValid()) {
     return QString::number(mProcesses.at(index.row()).mProcessId);
   }
-  return QString();
+  return "";
 }
 
 /*!

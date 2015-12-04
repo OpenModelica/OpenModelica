@@ -49,7 +49,6 @@
 #include <QtGui/QPlainTextDocumentLayout>
 #endif
 
-class ModelicaTextEditor;
 class BreakpointsTreeModel;
 class ITextMark : public QObject
 {
@@ -120,62 +119,6 @@ private:
   bool mEnabled;
   int mIgnoreCount;
   QString mCondition;
-};
-
-/**
- * @class TextBlockUserData
- * Stores breakpoints for text block
- * Works with QTextBlock::setUserData().
- */
-class TextBlockUserData : public QTextBlockUserData
-{
-public:
-  inline TextBlockUserData()
-  { }
-  ~TextBlockUserData();
-
-  inline TextMarks marks() const { return _marks; }
-  inline void addMark(ITextMark *mark) { _marks += mark; }
-  inline bool removeMark(ITextMark *mark) { return _marks.removeAll(mark); }
-  inline bool hasMark(ITextMark* mark) const { return _marks.contains(mark); }
-  inline void clearMarks() { _marks.clear(); }
-  inline void documentClosing()
-  {
-    foreach (ITextMark *tm, _marks)
-    {
-       tm->documentClosing();
-    }
-    _marks.clear();
-  }
-private:
-  TextMarks _marks;
-};
-
-/**
- * @class ModelicaTextDocumentLayout
- * Implements a custom text layout for ModelciatextEditor to be able to
- * Works with QTextDocument::setDocumentLayout().
- */
-class ModelicaTextDocumentLayout : public QPlainTextDocumentLayout
-{
-  Q_OBJECT
-public:
-  ModelicaTextDocumentLayout(QTextDocument *doc);
-  ~ModelicaTextDocumentLayout();
-
-  static TextBlockUserData *testUserData(const QTextBlock &block)
-  {
-    return static_cast<TextBlockUserData*>(block.userData());
-  }
-  static TextBlockUserData *userData(const QTextBlock &block)
-  {
-    TextBlockUserData *data = static_cast<TextBlockUserData*>(block.userData());
-    if (!data && block.isValid())
-      const_cast<QTextBlock&>(block).setUserData((data = new TextBlockUserData));
-    return data;
-  }
-  void emitDocumentSizeChanged() { emit documentSizeChanged(documentSize()); }
-  bool mpHasBreakpoint;
 };
 
 class DocumentMarker : public ITextMarkable

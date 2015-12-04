@@ -159,6 +159,6 @@ void ImportFMUDialog::importFMU()
                                                                mpGenerateIntputConnectors->isChecked(),
                                                                mpGenerateOutputConnectors->isChecked());
   if (!fmuFileName.isEmpty())
-    mpMainWindow->getLibraryTreeWidget()->openFile(fmuFileName);
+    mpMainWindow->getLibraryWidget()->openFile(fmuFileName);
   accept();
 }

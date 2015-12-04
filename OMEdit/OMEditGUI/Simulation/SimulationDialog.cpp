@@ -44,6 +44,7 @@
 #include "SimulationDialog.h"
 #include "SimulationOutputWidget.h"
 #include "VariablesWidget.h"
+#include "Commands.h"
 
 /*!
   \class SimulationDialog
@@ -85,11 +86,11 @@ SimulationDialog::~SimulationDialog()
 
 /*!
   Reimplementation of QDialog::show method.
-  \param pLibraryTreeNode - pointer to LibraryTreeNode
+  \param pLibraryTreeItem - pointer to LibraryTreeItem
   */
-void SimulationDialog::show(LibraryTreeNode *pLibraryTreeNode, bool isReSimulate, SimulationOptions simulationOptions)
+void SimulationDialog::show(LibraryTreeItem *pLibraryTreeItem, bool isReSimulate, SimulationOptions simulationOptions)
 {
-  mpLibraryTreeNode = pLibraryTreeNode;
+  mpLibraryTreeItem = pLibraryTreeItem;
   initializeFields(isReSimulate, simulationOptions);
   setVisible(true);
 }
@@ -97,13 +98,13 @@ void SimulationDialog::show(LibraryTreeNode *pLibraryTreeNode, bool isReSimulate
 /*!
  * \brief SimulationDialog::directSimulate
  * Directly simulates the model without showing the simulation dialog.
- * \param pLibraryTreeNode
+ * \param pLibraryTreeItem
  * \param launchTransformationalDebugger
  * \param launchAlgorithmicDebugger
  */
-void SimulationDialog::directSimulate(LibraryTreeNode *pLibraryTreeNode, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger)
+void SimulationDialog::directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger)
 {
-  mpLibraryTreeNode = pLibraryTreeNode;
+  mpLibraryTreeItem = pLibraryTreeItem;
   initializeFields(false, SimulationOptions());
   mpBuildOnlyCheckBox->setChecked(false);
   mpLaunchTransformationalDebuggerCheckBox->setChecked(launchTransformationalDebugger);
@@ -388,10 +389,15 @@ void SimulationDialog::setUpForm()
   // measure simulation time checkbox
   mpProfilingLabel = new Label(tr("Profiling (enable performance measurements)"));
   mpProfilingComboBox = new QComboBox;
-  QStringList profilingOptions = mpMainWindow->getOMCProxy()->getConfigFlagValidOptions("profiling");
-  mpProfilingComboBox->addItems(profilingOptions);
+  OMCInterface::getConfigFlagValidOptions_res profiling = mpMainWindow->getOMCProxy()->getConfigFlagValidOptions("profiling");
+  mpProfilingComboBox->addItems(profiling.validOptions);
   mpProfilingComboBox->setCurrentIndex(0);
-  mpProfilingComboBox->setToolTip(mpMainWindow->getOMCProxy()->help("profiling"));
+  mpProfilingComboBox->setToolTip(profiling.mainDescription);
+  int i = 0;
+  foreach (QString description, profiling.descriptions) {
+    mpProfilingComboBox->setItemData(i, description, Qt::ToolTipRole);
+    i++;
+  }
   // cpu-time checkbox
   mpCPUTimeCheckBox = new QCheckBox(tr("CPU Time"));
   // enable all warnings
@@ -567,8 +573,8 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
 {
   if (!isReSimulate) {
     mIsReSimulate = false;
-    mClassName = mpLibraryTreeNode->getNameStructure();
-    mFileName = mpLibraryTreeNode->getFileName();
+    mClassName = mpLibraryTreeItem->getNameStructure();
+    mFileName = mpLibraryTreeItem->getFileName();
     setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::simulationSetup).append(" - ").append(mClassName));
     mpSimulationHeading->setText(QString(Helper::simulationSetup).append(" - ").append(mClassName));
     // if the class has experiment annotation then read it.
@@ -721,8 +727,8 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   }
   /* save the model before translating */
   if (mpMainWindow->getOptionsDialog()->getSimulationPage()->getSaveClassBeforeSimulationCheckBox()->isChecked() &&
-      !mpLibraryTreeNode->isSaved() &&
-      !mpMainWindow->getLibraryTreeWidget()->saveLibraryTreeNode(mpLibraryTreeNode)) {
+      !mpLibraryTreeItem->isSaved() &&
+      !mpMainWindow->getLibraryWidget()->saveLibraryTreeItem(mpLibraryTreeItem)) {
     return false;
   }
   /*
@@ -1005,29 +1011,44 @@ void SimulationDialog::saveSimulationOptions()
   if (mIsReSimulate || !mpSaveSimulationCheckbox->isChecked())
     return;
 
-  QString annotationString;
+  QString oldExperimentAnnotation = "annotate=experiment(";
+  // if the class has experiment annotation then read it.
+  if (mpMainWindow->getOMCProxy()->isExperiment(mpLibraryTreeItem->getNameStructure())) {
+    // get the simulation options....
+    QStringList result = mpMainWindow->getOMCProxy()->getSimulationOptions(mpLibraryTreeItem->getNameStructure());
+    // since we always get simulationOptions so just get the values from array
+    oldExperimentAnnotation.append("StartTime=").append(QString::number(result.at(0).toFloat())).append(",");
+    oldExperimentAnnotation.append("StopTime=").append(QString::number(result.at(1).toFloat())).append(",");
+    oldExperimentAnnotation.append("Tolerance=").append(QString::number(result.at(2).toFloat())).append(",");
+    oldExperimentAnnotation.append("Interval=").append(QString::number(result.at(3).toFloat()));
+  }
+  oldExperimentAnnotation.append(")");
+  QString newExperimentAnnotation;
   // create simulations options annotation
-  annotationString.append("annotate=experiment(");
-  annotationString.append("StartTime=").append(mpStartTimeTextBox->text()).append(",");
-  annotationString.append("StopTime=").append(mpStopTimeTextBox->text()).append(",");
-  annotationString.append("Tolerance=").append(mpToleranceTextBox->text()).append(",");
+  newExperimentAnnotation.append("annotate=experiment(");
+  newExperimentAnnotation.append("StartTime=").append(mpStartTimeTextBox->text()).append(",");
+  newExperimentAnnotation.append("StopTime=").append(mpStopTimeTextBox->text()).append(",");
+  newExperimentAnnotation.append("Tolerance=").append(mpToleranceTextBox->text()).append(",");
   double interval, stopTime, startTime;
   int numberOfIntervals;
   stopTime = mpStopTimeTextBox->text().toDouble();
   startTime = mpStartTimeTextBox->text().toDouble();
   numberOfIntervals = mpNumberofIntervalsSpinBox->value();
   interval = (numberOfIntervals == 0) ? 0 : (stopTime - startTime) / numberOfIntervals;
-  annotationString.append("Interval=").append(QString::number(interval));
-  annotationString.append(")");
-  // send the simulations options annotation to OMC
-  mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeNode->getNameStructure(), annotationString);
-  // make the model modified
-  if (mpLibraryTreeNode->getModelWidget()) {
-    mpLibraryTreeNode->getModelWidget()->setModelModified();
-    if (mpLibraryTreeNode->getModelWidget()->getEditor()->isVisible()) {
-      ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpLibraryTreeNode->getModelWidget()->getEditor());
-      pModelicaTextEditor->setPlainText(mpMainWindow->getOMCProxy()->list(mpLibraryTreeNode->getNameStructure()));
-    }
+  newExperimentAnnotation.append("Interval=").append(QString::number(interval));
+  newExperimentAnnotation.append(")");
+  // if we have ModelWidget for class then put the change on undo stack.
+  if (mpLibraryTreeItem->getModelWidget()) {
+    UpdateClassExperimentAnnotationCommand *pUpdateClassExperimentAnnotationCommand;
+    pUpdateClassExperimentAnnotationCommand = new UpdateClassExperimentAnnotationCommand(mpMainWindow, mpLibraryTreeItem,
+                                                                                         oldExperimentAnnotation, newExperimentAnnotation);
+    mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pUpdateClassExperimentAnnotationCommand);
+    mpLibraryTreeItem->getModelWidget()->updateModelicaText();
+  } else {
+    // send the simulations options annotation to OMC
+    mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), newExperimentAnnotation);
+    LibraryTreeModel *pLibraryTreeModel = mpMainWindow->getLibraryWidget()->getLibraryTreeModel();
+    pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
   }
 }
 
@@ -1077,7 +1098,6 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     if (list.size() > 0) {
       mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
       pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getResultFileName(), workingDirectory, list, simulationOptions);
-      mpMainWindow->getVariablesDockWidget()->show();
     }
   }
 }
@@ -1199,7 +1219,27 @@ void SimulationDialog::simulate()
     mIsReSimulate = false;
     accept();
     if (isTranslationSuccessful) {
-      createAndShowSimulationOutputWidget(simulationOptions);
+      // check if we can compile using the target compiler
+      SimulationPage *pSimulationPage = mpMainWindow->getOptionsDialog()->getSimulationPage();
+      QString targetCompiler = pSimulationPage->getTargetCompilerComboBox()->currentText();
+      if ((targetCompiler.compare("vxworks69") == 0) || (targetCompiler.compare("debugrt") == 0)) {
+        QString msg = tr("Generated code for the target compiler <b>%1</b> at %2.").arg(targetCompiler)
+            .arg(simulationOptions.getWorkingDirectory());
+        mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                                     Helper::notificationLevel));
+        return;
+      }
+      QString targetLanguage = pSimulationPage->getTargetLanguageComboBox()->currentText();
+      // check if we can compile using the target language
+      if ((targetLanguage.compare("C") == 0) || (targetLanguage.compare("Cpp") == 0)) {
+        createAndShowSimulationOutputWidget(simulationOptions);
+      } else {
+        QString msg = tr("Generated code for the target language <b>%1</b> at %2.").arg(targetLanguage)
+            .arg(simulationOptions.getWorkingDirectory());
+        mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                                     Helper::notificationLevel));
+        return;
+      }
     }
   }
 }

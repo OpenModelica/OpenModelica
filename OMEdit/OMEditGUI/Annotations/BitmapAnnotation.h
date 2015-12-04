@@ -48,14 +48,20 @@ class BitmapAnnotation : public ShapeAnnotation
 {
   Q_OBJECT
 public:
-  BitmapAnnotation(QString classFileName, QString annotation, Component *pParent);
-  BitmapAnnotation(QString classFileName, QString annotation, bool inheritedShape, GraphicsView *pGraphicsView);
+  // Used for icon/diagram shape
+  BitmapAnnotation(QString classFileName, QString annotation, GraphicsView *pGraphicsView);
+  // Used for shape inside a component
+  BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  // Used for icon/diagram inherited shape
+  BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
   QRectF boundingRect() const;
   QPainterPath shape() const;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
   void drawBitmapAnnotaion(QPainter *painter);
+  QString getOMCShapeAnnotation();
   QString getShapeAnnotation();
+  void updateShape(ShapeAnnotation *pShapeAnnotation);
 private:
   Component *mpComponent;
 public slots:

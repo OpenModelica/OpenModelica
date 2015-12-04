@@ -99,8 +99,6 @@ public:
   static QString utf8;
   static QFontInfo systemFontInfo;
   static QFontInfo monospacedFontInfo;
-  static QString defaultComponentAnnotationString;
-  static QString errorComponentAnnotationString;
   /* Meta Modelica Types */
   static QString MODELICA_METATYPE;
   static QString MODELICA_STRING;
@@ -122,7 +120,6 @@ public:
   /* Global translated variables */
   static QString newModelicaClass;
   static QString createNewModelicaClass;
-  static QString findClasses;
   static QString openModelicaFiles;
   static QString openConvertModelicaFiles;
   static QString libraries;
@@ -141,6 +138,11 @@ public:
   static QString add;
   static QString edit;
   static QString save;
+  static QString saveTip;
+  static QString saveAs;
+  static QString saveAsTip;
+  static QString saveTotal;
+  static QString saveTotalTip;
   static QString apply;
   static QString chooseDirectory;
   static QString general;
@@ -186,7 +188,7 @@ public:
   static QString duplicateTip;
   static QString unloadClass;
   static QString unloadClassTip;
-  static QString unloadXMLTip;
+  static QString unloadTLMOrTextTip;
   static QString refresh;
   static QString simulate;
   static QString simulateTip;
@@ -250,7 +252,7 @@ public:
   static QString diagramView;
   static QString textView;
   static QString documentationView;
-  static QString searchModelicaClass;
+  static QString searchClasses;
   static QString findReplaceModelicaText;
   static QString left;
   static QString center;

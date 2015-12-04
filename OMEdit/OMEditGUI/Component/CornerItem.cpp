@@ -38,6 +38,7 @@
 
 #include "CornerItem.h"
 #include "Component.h"
+#include "Commands.h"
 
 /*!
   \class CornerItem
@@ -50,7 +51,7 @@
   \param pParent - pointer to ShapeAnnotation
   */
 CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotation *pParent)
-  : QGraphicsItem(pParent), mpShapeAnnotation(pParent), mConnectedPointIndex(connectedPointIndex)
+  : QGraphicsItem(pParent), mpShapeAnnotation(pParent), mOldAnnotation(""), mConnectedPointIndex(connectedPointIndex)
 {
   setCursor(Qt::ArrowCursor);
   setToolTip(Helper::clickAndDragToResize);
@@ -62,7 +63,8 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
     setFlag(QGraphicsItem::ItemIsMovable, false);
   }
   /* Only shapes manipulation via CornerItem's if the class is not a system library class OR not an inherited shape. */
-  if (!mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !mpShapeAnnotation->isInheritedShape()) {
+  if (!mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() &&
+      !mpShapeAnnotation->isInheritedShape()) {
     connect(this, SIGNAL(cornerItemMoved(int,QPointF)), mpShapeAnnotation, SLOT(updateCornerItemPoint(int,QPointF)));
     connect(this, SIGNAL(cornerItemPress()), mpShapeAnnotation, SLOT(cornerItemPressed()));
     connect(this, SIGNAL(cornerItemRelease()), mpShapeAnnotation, SLOT(cornerItemReleased()));
@@ -73,8 +75,6 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
     if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
       connect(this, SIGNAL(cornerItemPositionChanged()), pLineAnnotation, SLOT(updateConnectionAnnotation()));
-    } else {
-      connect(this, SIGNAL(cornerItemPositionChanged()), mpShapeAnnotation->getGraphicsView(), SLOT(addClassAnnotation()));
     }
   }
 }
@@ -99,7 +99,16 @@ void CornerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
-  QPen pen(Qt::red);
+
+  if (mpShapeAnnotation->getGraphicsView()->isRenderingLibraryPixmap()) {
+    return;
+  }
+  QPen pen;
+  if (mpShapeAnnotation->isInheritedShape()) {
+    pen.setColor(Qt::darkRed);
+  } else {
+    pen.setColor(Qt::red);
+  }
   painter->setPen(pen);
   painter->setBrush(pen.color());
   painter->drawRect(mRectangle);
@@ -116,11 +125,7 @@ void CornerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
     if (!signalsBlocked()) {
       emit cornerItemPress();
     }
-    LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
-    if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
-      mpShapeAnnotation->manhattanizeShape();
-      mpShapeAnnotation->removeRedundantPointsGeometriesAndCornerItems();
-    }
+    mOldAnnotation = mpShapeAnnotation->getOMCShapeAnnotation();
     mClickPos = mapToScene(event->pos());
   }
   QGraphicsItem::mousePressEvent(event);
@@ -141,15 +146,20 @@ void CornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
       emit cornerItemRelease();
     }
     if (mClickPos != mapToScene(event->pos())) {
+      ModelWidget *pModelWidget = mpShapeAnnotation->getGraphicsView()->getModelWidget();
       LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
       if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
-        mpShapeAnnotation->manhattanizeShape();
+        mpShapeAnnotation->manhattanizeShape(false);
         mpShapeAnnotation->removeRedundantPointsGeometriesAndCornerItems();
+        QString newAnnotation = mpShapeAnnotation->getOMCShapeAnnotation();
+        pModelWidget->getUndoStack()->push(new UpdateConnectionCommand(pLineAnnotation, mOldAnnotation, newAnnotation));
+        pModelWidget->updateModelicaText();
+      } else {
+        QString newAnnotation = mpShapeAnnotation->getOMCShapeAnnotation();
+        pModelWidget->getUndoStack()->push(new UpdateShapeCommand(mpShapeAnnotation, mOldAnnotation, newAnnotation));
+        pModelWidget->updateClassAnnotationIfNeeded();
+        pModelWidget->updateModelicaText();
       }
-      if (!signalsBlocked()) {
-        emit cornerItemPositionChanged();
-      }
-      mpShapeAnnotation->getGraphicsView()->setCanAddClassAnnotation(true);
     }
   }
 }
@@ -185,11 +195,13 @@ QVariant CornerItem::itemChange(GraphicsItemChange change, const QVariant &value
 ResizerItem::ResizerItem(Component *pComponent)
   : QGraphicsItem(pComponent), mIsPressed(false)
 {
+  setZValue(2999);
   setFlags(QGraphicsItem::ItemIgnoresTransformations | QGraphicsItem::ItemIsSelectable);
   setCursor(Qt::ArrowCursor);
   setToolTip(Helper::clickAndDragToResize);
   mpComponent = pComponent;
   mActivePen = QPen(Qt::red);
+  mInheritedActivePen = QPen(Qt::darkRed);
   mPassivePen = QPen(Qt::transparent);
   mRectangle = QRectF (-3, -3, 6, 6);
   mPen = mPassivePen;
@@ -219,8 +231,13 @@ ResizerItem::ResizePositions ResizerItem::getResizePosition()
   */
 void ResizerItem::setActive()
 {
-  mPen = mActivePen;
-  setParentItem(mpComponent);
+  if (mpComponent->isInheritedComponent()) {
+    mPen = mInheritedActivePen;
+  } else {
+    mPen = mActivePen;
+  }
+  setToolTip(Helper::clickAndDragToResize);
+  setVisible(true);
 }
 
 /*!
@@ -230,7 +247,8 @@ void ResizerItem::setActive()
 void ResizerItem::setPassive()
 {
   mPen = mPassivePen;
-  setParentItem(0);
+  setToolTip("");
+  setVisible(false);
 }
 
 /*!
@@ -253,6 +271,9 @@ void ResizerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *optio
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
+  if (mpComponent->getGraphicsView()->isRenderingLibraryPixmap()) {
+    return;
+  }
   painter->setPen(mPen);
   painter->setBrush(mPen.color());
   painter->drawRect(mRectangle);
@@ -321,11 +342,14 @@ void ResizerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 /*!
   \param pComponent - pointer to Component.
   */
-OriginItem::OriginItem()
+OriginItem::OriginItem(Component *pComponent)
 {
-  setZValue(4000);
+  setZValue(3000);
+  mpComponent = pComponent;
   mActivePen = QPen(Qt::red, 2);
   mActivePen.setCosmetic(true);
+  mInheritedActivePen = QPen(Qt::darkRed, 2);
+  mInheritedActivePen.setCosmetic(true);
   mPassivePen = QPen(Qt::transparent);
   mRectangle = QRectF (-5, -5, 10, 10);
   mPen = mPassivePen;
@@ -338,8 +362,12 @@ OriginItem::OriginItem()
  */
 void OriginItem::setActive()
 {
-  setZValue(4000);
-  mPen = mActivePen;
+  setZValue(3000);
+  if (mpComponent->isInheritedComponent()) {
+    mPen = mInheritedActivePen;
+  } else {
+    mPen = mActivePen;
+  }
 }
 
 /*!
@@ -349,7 +377,7 @@ void OriginItem::setActive()
  */
 void OriginItem::setPassive()
 {
-  setZValue(-4000);
+  setZValue(-3000);
   mPen = mPassivePen;
 }
 
@@ -364,6 +392,9 @@ void OriginItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
+  if (mpComponent->getGraphicsView()->isRenderingLibraryPixmap()) {
+    return;
+  }
   painter->setRenderHint(QPainter::Antialiasing);
   painter->setPen(mPen);
   // draw horizontal Line

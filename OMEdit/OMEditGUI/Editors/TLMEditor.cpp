@@ -61,7 +61,7 @@ void TLMEditor::contentsHasChanged(int position, int charsRemoved, int charsAdde
     }
     /* if user is changing the text. */
     if (!mForceSetPlainText) {
-      mpModelWidget->setModelModified();
+      //mpModelWidget->setModelModified();
       mTextChanged = true;
     }
   }

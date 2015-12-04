@@ -27,41 +27,61 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
+/*
+ * @author Adeel Asghar <adeel.asghar@liu.se>
+ */
 
-#ifndef FETCHINTERFACEDATADIALOG_H
-#define FETCHINTERFACEDATADIALOG_H
+#include "CoOrdinateSystem.h"
 
-#include "MainWindow.h"
-#include "FetchInterfaceDataThread.h"
-
-class FetchInterfaceDataThread;
-
-class FetchInterfaceDataDialog : public QDialog
+/*!
+ * \class CoOrdinateSystem
+ * \brief A class to represent the coordinate system of view.
+ */
+/*!
+ * \brief CoOrdinateSystem::CoOrdinateSystem
+ */
+CoOrdinateSystem::CoOrdinateSystem()
 {
-  Q_OBJECT
-public:
-  FetchInterfaceDataDialog(LibraryTreeItem *pLibraryTreeItem, MainWindow *pMainWindow);
-  void closeEvent(QCloseEvent *event);
-  MainWindow* getMainWindow() {return mpMainWindow;}
-  LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
-private:
-  MainWindow *mpMainWindow;
-  LibraryTreeItem *mpLibraryTreeItem;
-  Label *mpProgressLabel;
-  QProgressBar *mpProgressBar;
-  QPushButton *mpCancelButton;
-  QPushButton *mpFetchAgainButton;
-  Label *mpOutputLabel;
-  QPlainTextEdit *mpOutputTextBox;
-  FetchInterfaceDataThread *mpFetchInterfaceDataThread;
-public slots:
-  void cancelFetchingInterfaceData();
-  void fetchAgainInterfaceData();
-  void managerProcessStarted();
-  void writeManagerOutput(QString output, StringHandler::SimulationMessageType type);
-  void managerProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
-signals:
-  void readInterfaceData(LibraryTreeItem *pLibraryTreeItem);
-};
+  QList<QPointF> extents;
+  extents << QPointF(-100, -100) << QPointF(100, 100);
+  setExtent(extents);
+  setPreserveAspectRatio(true);
+  setInitialScale(0.1);
+  setGrid(QPointF(2, 2));
+}
 
-#endif // FETCHINTERFACEDATADIALOG_H
+/*!
+ * \brief CoOrdinateSystem::CoOrdinateSystem
+ * \param coOrdinateSystem
+ */
+CoOrdinateSystem::CoOrdinateSystem(const CoOrdinateSystem &coOrdinateSystem)
+{
+  setExtent(coOrdinateSystem.getExtent());
+  setPreserveAspectRatio(coOrdinateSystem.getPreserveAspectRatio());
+  setInitialScale(coOrdinateSystem.getInitialScale());
+  setGrid(coOrdinateSystem.getGrid());
+}
+
+/*!
+ * \brief CoOrdinateSystem::getHorizontalGridStep
+ * \return
+ */
+qreal CoOrdinateSystem::getHorizontalGridStep()
+{
+  if (mGrid.x() < 1) {
+    return 2;
+  }
+  return mGrid.x();
+}
+
+/*!
+ * \brief CoOrdinateSystem::getVerticalGridStep
+ * \return
+ */
+qreal CoOrdinateSystem::getVerticalGridStep()
+{
+  if (mGrid.y() < 1) {
+    return 2;
+  }
+  return mGrid.y();
+}

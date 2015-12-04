@@ -61,28 +61,24 @@ void SimulationProcessThread::run()
 void SimulationProcessThread::compileModel()
 {
   mpCompilationProcess = new QProcess;
-  mpCompilationProcess->setWorkingDirectory(mpSimulationOutputWidget->getSimulationOptions().getWorkingDirectory());
+  SimulationOptions simulationOptions = mpSimulationOutputWidget->getSimulationOptions();
+  mpCompilationProcess->setWorkingDirectory(simulationOptions.getWorkingDirectory());
   qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
   connect(mpCompilationProcess, SIGNAL(started()), SLOT(compilationProcessStarted()));
   connect(mpCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readCompilationStandardOutput()));
   connect(mpCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readCompilationStandardError()));
   connect(mpCompilationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(compilationProcessFinished(int,QProcess::ExitStatus)));
   QString numProcs;
-  SimulationOptions simulationOptions = mpSimulationOutputWidget->getSimulationOptions();
   if (simulationOptions.getNumberOfProcessors() == 0) {
     numProcs = QString::number(simulationOptions.getNumberOfProcessors());
   } else {
     numProcs = QString::number(simulationOptions.getNumberOfProcessors());
   }
+  SimulationPage *pSimulationPage = mpSimulationOutputWidget->getMainWindow()->getOptionsDialog()->getSimulationPage();
   QStringList args;
-  int numProcsInt = numProcs.toInt();
-  if (numProcsInt > 1) {
-    args << "-j" + numProcs;
-  }
-  args << "-f" << simulationOptions.getOutputFileName() + ".makefile";
+  args << simulationOptions.getOutputFileName() << pSimulationPage->getTargetCompilerComboBox()->currentText() << "parallel" << numProcs << "0";
 #ifdef WIN32
-  QString compilationProcessPath;
-  mpCompilationProcess->setProcessEnvironment(StringHandler::compilationProcessEnvironment(&compilationProcessPath));
+  QString compilationProcessPath = QString(Helper::OpenModelicaHome) + "/share/omc/scripts/Compile.bat";
   mpCompilationProcess->start(compilationProcessPath, args);
   emit sendCompilationOutput(QString("%1 %2\n").arg(compilationProcessPath).arg(args.join(" ")), Qt::blue);
 #else
@@ -94,13 +90,13 @@ void SimulationProcessThread::compileModel()
 void SimulationProcessThread::runSimulationExecutable()
 {
   mpSimulationProcess = new QProcess;
-  mpSimulationProcess->setWorkingDirectory(mpSimulationOutputWidget->getSimulationOptions().getWorkingDirectory());
+  SimulationOptions simulationOptions = mpSimulationOutputWidget->getSimulationOptions();
+  mpSimulationProcess->setWorkingDirectory(simulationOptions.getWorkingDirectory());
   qRegisterMetaType<StringHandler::SimulationMessageType>("StringHandler::SimulationMessageType");
   connect(mpSimulationProcess, SIGNAL(started()), SLOT(simulationProcessStarted()));
   connect(mpSimulationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readSimulationStandardOutput()));
   connect(mpSimulationProcess, SIGNAL(readyReadStandardError()), SLOT(readSimulationStandardError()));
   connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
-  SimulationOptions simulationOptions = mpSimulationOutputWidget->getSimulationOptions();
   QTcpServer *pTcpServer = new QTcpServer;
   pTcpServer->listen(QHostAddress(QHostAddress::LocalHost));
   connect(pTcpServer, SIGNAL(newConnection()), SLOT(createSimulationProgressSocket()));
@@ -157,6 +153,16 @@ void SimulationProcessThread::readCompilationStandardError()
 void SimulationProcessThread::compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
   mIsCompilationProcessRunning = false;
+  // Read the log file
+//  SimulationOptions simulationOptions = mpSimulationOutputWidget->getSimulationOptions();
+//  QString fileName = QString("%1/%2.log").arg(simulationOptions.getWorkingDirectory()).arg(simulationOptions.getOutputFileName());
+//  QFile logFile(fileName);
+//  if (logFile.open(QIODevice::ReadOnly)) {
+//    emit sendCompilationOutput(QString(logFile.readAll()), Qt::black);
+//    logFile.close();
+//  } else {
+//    emit sendCompilationOutput(QString("Error reading the file %1. %2").arg(fileName).arg(logFile.errorString()), Qt::red);
+//  }
   QString exitCodeStr = tr("Compilation process failed. Exited with code %1.").arg(exitCode);
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     emit sendCompilationOutput(tr("Compilation process finished successfully."), Qt::blue);

@@ -104,7 +104,7 @@ public:
   QModelIndex breakpointTreeItemIndex(const BreakpointTreeItem *pBreakpointTreeItem) const;
   QModelIndex breakpointTreeItemIndexHelper(const BreakpointTreeItem *pBreakpointTreeItem, const BreakpointTreeItem *pParentBreakpointTreeItem,
                                             const QModelIndex &parentIndex) const;
-  void insertBreakpoint(BreakpointMarker *pBreakpointMarker, LibraryTreeNode *pLibraryTreeNode, BreakpointTreeItem *pParentBreakpointTreeItem);
+  void insertBreakpoint(BreakpointMarker *pBreakpointMarker, LibraryTreeItem *pLibraryTreeItem, BreakpointTreeItem *pParentBreakpointTreeItem);
   void updateBreakpoint(BreakpointMarker *pBreakpointMarker, int lineNumber);
   void updateBreakpoint(BreakpointTreeItem *pBreakpointTreeItem, QString filePath, int lineNumber, bool enabled, int ignoreCount,
                         QString condition);
@@ -120,11 +120,11 @@ class BreakpointTreeItem : public QObject
 {
   Q_OBJECT
 public:
-  BreakpointTreeItem(const QVector<QVariant> &breakpointItemData, LibraryTreeNode *pLibraryTreeNode = 0, BreakpointTreeItem *pParent = 0);
+  BreakpointTreeItem(const QVector<QVariant> &breakpointItemData, LibraryTreeItem *pLibraryTreeItem = 0, BreakpointTreeItem *pParent = 0);
   ~BreakpointTreeItem();
   QList<BreakpointTreeItem*> getChildren() const {return mChildren;}
-  void setLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode) {mpLibraryTreeNode = pLibraryTreeNode;}
-  LibraryTreeNode* getLibraryTreeNode() {return mpLibraryTreeNode;}
+  void setLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;}
+  LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
   void setIsRootItem(bool isRootItem) {mIsRootItem = isRootItem;}
   bool isRootItem() {return mIsRootItem;}
   void setFilePath(QString filePath) {mFilePath = filePath;}
@@ -149,7 +149,7 @@ public:
   BreakpointTreeItem *parent() {return mpParentBreakpointTreeItem;}
 private:
   QList<BreakpointTreeItem*> mChildren;
-  LibraryTreeNode *mpLibraryTreeNode;
+  LibraryTreeItem *mpLibraryTreeItem;
   BreakpointTreeItem *mpParentBreakpointTreeItem;
   bool mIsRootItem;
   QString mFilePath;

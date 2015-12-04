@@ -177,13 +177,13 @@ TLMCoSimulationDialog::~TLMCoSimulationDialog()
 
 /*!
   Reimplementation of QDialog::show method.
-  \param pLibraryTreeNode - pointer to LibraryTreeNode
+  \param pLibraryTreeItem - pointer to LibraryTreeItem
   */
-void TLMCoSimulationDialog::show(LibraryTreeNode *pLibraryTreeNode)
+void TLMCoSimulationDialog::show(LibraryTreeItem *pLibraryTreeItem)
 {
-  mpLibraryTreeNode = pLibraryTreeNode;
-  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName).arg(Helper::tlmCoSimulationSetup).arg(mpLibraryTreeNode->getNameStructure()));
-  mpHeadingLabel->setText(QString("%1 - %2").arg(Helper::tlmCoSimulationSetup).arg(mpLibraryTreeNode->getNameStructure()));
+  mpLibraryTreeItem = pLibraryTreeItem;
+  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName).arg(Helper::tlmCoSimulationSetup).arg(mpLibraryTreeItem->getNameStructure()));
+  mpHeadingLabel->setText(QString("%1 - %2").arg(Helper::tlmCoSimulationSetup).arg(mpLibraryTreeItem->getNameStructure()));
   // if user has nothing in TLM plugin path then read from OptionsDialog
   if (mpTLMPluginPathTextBox->text().isEmpty()) {
     mpTLMPluginPathTextBox->setText(mpMainWindow->getOptionsDialog()->getTLMPage()->getTLMPluginPathTextBox()->text());
@@ -255,8 +255,8 @@ bool TLMCoSimulationDialog::validate()
 TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
 {
   TLMCoSimulationOptions tlmCoSimulationOptions;
-  tlmCoSimulationOptions.setClassName(mpLibraryTreeNode->getNameStructure());
-  tlmCoSimulationOptions.setFileName(mpLibraryTreeNode->getFileName());
+  tlmCoSimulationOptions.setClassName(mpLibraryTreeItem->getNameStructure());
+  tlmCoSimulationOptions.setFileName(mpLibraryTreeItem->getFileName());
   tlmCoSimulationOptions.setTLMPluginPath(mpTLMPluginPathTextBox->text());
   tlmCoSimulationOptions.setManagerProcess(mpManagerProcessTextBox->text());
   tlmCoSimulationOptions.setServerPort(mpServerPortTextBox->text());

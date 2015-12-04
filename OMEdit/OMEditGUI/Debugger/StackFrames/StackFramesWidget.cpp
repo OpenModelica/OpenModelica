@@ -97,7 +97,7 @@ QString StackFrameItem::cleanupFileName(const QString &fileName)
   // (a) have no drive letter and (b) are not normalized.
 #ifdef Q_OS_WIN
   if (fileName.isEmpty())
-    return QString();
+    return "";
   QFileInfo fileInfo(fileName);
   if (fileInfo.isReadable())
     cleanFilePath = QDir::cleanPath(fileInfo.absoluteFilePath());
@@ -292,9 +292,8 @@ void StackFramesTreeWidget::createStackFrames(GDBMIValue *pGDBMIValue)
 void StackFramesTreeWidget::showContextMenu(QPoint point)
 {
   int adjust = 24;
-  StackFrameItem *pLibraryTreeNode = dynamic_cast<StackFrameItem*>(itemAt(point));
-  if (pLibraryTreeNode)
-  {
+  StackFrameItem *pStackFrameItem = dynamic_cast<StackFrameItem*>(itemAt(point));
+  if (pStackFrameItem) {
     QMenu menu(this);
     menu.addAction(mpCreateFullBacktraceAction);
     point.setY(point.y() + adjust);
