@@ -1955,7 +1955,10 @@ protected
   list<HpcOmSimCode.Task> tasksOfLevel;
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(exeCosts=exeCosts,inComps=inComps) := iMeta;
-  sortedTasksOfLevel := List.sort(iTasksOfLevel, function HpcOmTaskGraph.compareTasksByExecTime(iExeCosts=exeCosts, iTaskComps=inComps, iDescending=true));
+  //we should not sort the tasks regarding their size, because it seems that the first N tasks are scheduled to thread 1 and the next N tasks are scheduled
+  //to thread 2 and so on
+  //sortedTasksOfLevel := List.sort(iTasksOfLevel, function HpcOmTaskGraph.compareTasksByExecTime(iExeCosts=exeCosts, iTaskComps=inComps, iDescending=true));
+  sortedTasksOfLevel := iTasksOfLevel;
   taskList := makeCalcLevelParTaskLst(sortedTasksOfLevel, iSccSimEqMapping, inComps);
   oLevelTaskLists := taskList :: iLevelTaskLists;
 end createLevelScheduleForLevel;
