@@ -1469,6 +1469,15 @@ void MainWindow::redo()
   }
 }
 
+/*!
+ * \brief MainWindow::focusSearchClasses
+ * Sets the focus on search classes text box in Libraries Browser.
+ */
+void MainWindow::focusSearchClasses()
+{
+  mpLibraryWidget->getTreeSearchFilters()->getSearchTextBox()->setFocus(Qt::ActiveWindowFocusReason);
+}
+
 void MainWindow::setShowGridLines(bool showLines)
 {
   mpModelWidgetContainer->setShowGridLines(showLines);
@@ -2392,6 +2401,10 @@ void MainWindow::createActions()
   mpRedoAction->setShortcut(QKeySequence::Redo);
   mpRedoAction->setEnabled(false);
   connect(mpRedoAction, SIGNAL(triggered()), SLOT(redo()));
+  // search classes action
+  mpSearchClassesAction = new QAction(Helper::searchClasses, this);
+  mpSearchClassesAction->setShortcut(QKeySequence("Ctrl+Shift+f"));
+  connect(mpSearchClassesAction, SIGNAL(triggered()), SLOT(focusSearchClasses()));
   // cut action
   mpCutAction = new QAction(QIcon(":/Resources/icons/cut.svg"), tr("Cut"), this);
   mpCutAction->setShortcut(QKeySequence("Ctrl+x"));
@@ -2724,9 +2737,10 @@ void MainWindow::createMenus()
   pEditMenu->addAction(mpUndoAction);
   pEditMenu->addAction(mpRedoAction);
   pEditMenu->addSeparator();
-  pEditMenu->addAction(mpCutAction);
-  pEditMenu->addAction(mpCopyAction);
-  pEditMenu->addAction(mpPasteAction);
+  pEditMenu->addAction(mpSearchClassesAction);
+//  pEditMenu->addAction(mpCutAction);
+//  pEditMenu->addAction(mpCopyAction);
+//  pEditMenu->addAction(mpPasteAction);
   // add Edit menu to menu bar
   menuBar()->addAction(pEditMenu->menuAction());
   // View menu
@@ -3004,9 +3018,11 @@ void MainWindow::createToolbars()
   mpEditToolBar->setObjectName("Edit Toolbar");
   mpEditToolBar->setAllowedAreas(Qt::TopToolBarArea);
   // add actions to edit toolbar
-  mpEditToolBar->addAction(mpCutAction);
-  mpEditToolBar->addAction(mpCopyAction);
-  mpEditToolBar->addAction(mpPasteAction);
+  mpEditToolBar->addAction(mpUndoAction);
+  mpEditToolBar->addAction(mpRedoAction);
+//  mpEditToolBar->addAction(mpCutAction);
+//  mpEditToolBar->addAction(mpCopyAction);
+//  mpEditToolBar->addAction(mpPasteAction);
   // View Toolbar
   mpViewToolBar = addToolBar(tr("View Toolbar"));
   mpViewToolBar->setObjectName("View Toolbar");

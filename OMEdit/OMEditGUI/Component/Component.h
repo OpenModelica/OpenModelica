@@ -257,7 +257,6 @@ private:
   void hideResizerItems();
   void getScale(qreal *sx, qreal *sy);
   void setOriginAndExtents();
-  void reloadComponent(bool loaded);
   void updateConnections();
   QString getParameterDisplayStringFromExtendsModifiers(QString parameterName);
   QString getParameterDisplayStringFromExtendsParameters(QString parameterName);

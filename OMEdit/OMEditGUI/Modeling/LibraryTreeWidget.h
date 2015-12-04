@@ -141,10 +141,10 @@ public:
   LibraryTreeItem* parent() {return mpParentLibraryTreeItem;}
   bool isTopLevel();
   bool isSimulationAllowed();
-  void emitLoaded() {emit loaded(this);}
-  void emitUnLoaded() {emit unLoaded();}
-  void emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView) {emit shapeAdded(pShapeAnnotation, pGraphicsView);}
-  void emitComponentAdded(Component *pComponent) {emit componentAdded(pComponent);}
+  void emitLoaded();
+  void emitUnLoaded();
+  void emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  void emitComponentAdded(Component *pComponent);
   void emitConnectionAdded(LineAnnotation *pConnectionLineAnnotation) {emit connectionAdded(pConnectionLineAnnotation);}
 
   OMCInterface::getClassInformation_res mClassInformation;
@@ -172,9 +172,13 @@ private:
   bool mNonExisting;
 signals:
   void loaded(LibraryTreeItem *pLibraryTreeItem);
+  void loadedForComponent();
   void unLoaded();
+  void unLoadedForComponent();
   void shapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  void shapeAddedForComponent();
   void componentAdded(Component *pComponent);
+  void componentAddedForComponent();
   void connectionAdded(LineAnnotation *pConnectionLineAnnotation);
   void iconUpdated();
 public slots:
@@ -228,9 +232,8 @@ public:
   void addNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.append(pLibraryTreeItem);}
   void removeNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.removeOne(pLibraryTreeItem);}
   void updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
-  void readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   void updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
-  void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
+  void readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* getContainingFileParentLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeItem);
   void loadDependentLibraries(QStringList libraries);
@@ -252,6 +255,7 @@ private:
   QModelIndex libraryTreeItemIndexHelper(const LibraryTreeItem *pLibraryTreeItem, const LibraryTreeItem *pParentLibraryTreeItem,
                                          const QModelIndex &parentIndex) const;
   LibraryTreeItem* getLibraryTreeItemFromFileHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName, int lineNumber);
+  void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
   QString readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents);
   QString readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem);
   void unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
@@ -337,6 +341,7 @@ class LibraryWidget : public QWidget
 public:
   LibraryWidget(MainWindow *pMainWindow);
   MainWindow* getMainWindow() {return mpMainWindow;}
+  TreeSearchFilters* getTreeSearchFilters() {return mpTreeSearchFilters;}
   LibraryTreeModel* getLibraryTreeModel() {return mpLibraryTreeModel;}
   LibraryTreeProxyModel* getLibraryTreeProxyModel() {return mpLibraryTreeProxyModel;}
   LibraryTreeView* getLibraryTreeView() {return mpLibraryTreeView;}

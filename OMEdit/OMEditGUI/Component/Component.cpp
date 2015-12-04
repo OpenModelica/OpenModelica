@@ -370,10 +370,10 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
   createResizerItems();
   setToolTip(tr("<b>%1</b> %2").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName()));
   if (mpLibraryTreeItem) {
-    connect(mpLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), SLOT(handleLoaded()));
-    connect(mpLibraryTreeItem, SIGNAL(unLoaded()), SLOT(handleUnloaded()));
-    connect(mpLibraryTreeItem, SIGNAL(shapeAdded(ShapeAnnotation*,GraphicsView*)), SLOT(handleShapeAdded()));
-    connect(mpLibraryTreeItem, SIGNAL(componentAdded(Component*)), SLOT(handleComponentAdded()));
+    connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
+    connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
+    connect(mpLibraryTreeItem, SIGNAL(shapeAddedForComponent()), SLOT(handleShapeAdded()));
+    connect(mpLibraryTreeItem, SIGNAL(componentAddedForComponent()), SLOT(handleComponentAdded()));
   }
   connect(this, SIGNAL(transformHasChanged()), SLOT(updatePlacementAnnotation()));
   connect(this, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
@@ -395,8 +395,10 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
   setDialogAnnotation(QStringList());
   mpOriginItem = 0;
   if (mpLibraryTreeItem) {
-    connect(mpLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), SLOT(handleLoaded()));
-    connect(mpLibraryTreeItem, SIGNAL(unLoaded()), SLOT(handleUnloaded()));
+    connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
+    connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
+    connect(mpLibraryTreeItem, SIGNAL(shapeAddedForComponent()), SLOT(handleShapeAdded()));
+    connect(mpLibraryTreeItem, SIGNAL(componentAddedForComponent()), SLOT(handleComponentAdded()));
   }
 }
 
@@ -420,8 +422,10 @@ Component::Component(Component *pComponent, Component *pParentComponent)
   setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName())
              .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
   if (mpLibraryTreeItem) {
-    connect(mpLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), SLOT(handleLoaded()));
-    connect(mpLibraryTreeItem, SIGNAL(unLoaded()), SLOT(handleUnloaded()));
+    connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
+    connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
+    connect(mpLibraryTreeItem, SIGNAL(shapeAddedForComponent()), SLOT(handleShapeAdded()));
+    connect(mpLibraryTreeItem, SIGNAL(componentAddedForComponent()), SLOT(handleComponentAdded()));
   }
   connect(mpReferenceComponent, SIGNAL(added()), SLOT(referenceComponentAdded()));
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceComponentTransformHasChanged()));
@@ -464,8 +468,8 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName())
              .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
   if (mpLibraryTreeItem) {
-    connect(mpLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), SLOT(handleLoaded()));
-    connect(mpLibraryTreeItem, SIGNAL(unLoaded()), SLOT(handleUnloaded()));
+    connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
+    connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
   }
   connect(mpReferenceComponent, SIGNAL(added()), SLOT(referenceComponentAdded()));
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceComponentTransformHasChanged()));
@@ -898,8 +902,10 @@ void Component::shapeUpdated()
 void Component::shapeDeleted()
 {
   mpNonExistingComponentLine->setVisible(false);
-  mpDefaultComponentRectangle->setVisible(false);
-  mpDefaultComponentText->setVisible(false);
+  if (mComponentType == Component::Root) {
+    mpDefaultComponentRectangle->setVisible(false);
+    mpDefaultComponentText->setVisible(false);
+  }
   showNonExistingOrDefaultComponentIfNeeded();
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
@@ -1079,8 +1085,10 @@ void Component::removeChildren()
   foreach (Component *pInheritedComponent, mInheritedComponentsList) {
     pInheritedComponent->removeChildren();
     if (pInheritedComponent->getLibraryTreeItem()) {
-      disconnect(pInheritedComponent->getLibraryTreeItem(), SIGNAL(loaded(LibraryTreeItem*)), pInheritedComponent, SLOT(handleLoaded()));
-      disconnect(pInheritedComponent->getLibraryTreeItem(), SIGNAL(unLoaded()), pInheritedComponent, SLOT(handleUnloaded()));
+      disconnect(pInheritedComponent->getLibraryTreeItem(), SIGNAL(loadedForComponent()), pInheritedComponent, SLOT(handleLoaded()));
+      disconnect(pInheritedComponent->getLibraryTreeItem(), SIGNAL(unLoadedForComponent()), pInheritedComponent, SLOT(handleUnloaded()));
+      disconnect(pInheritedComponent->getLibraryTreeItem(), SIGNAL(shapeAddedForComponent()), pInheritedComponent, SLOT(handleShapeAdded()));
+      disconnect(pInheritedComponent->getLibraryTreeItem(), SIGNAL(componentAddedForComponent()), pInheritedComponent, SLOT(handleComponentAdded()));
     }
     pInheritedComponent->setParentItem(0);
     mpGraphicsView->removeItem(pInheritedComponent);
@@ -1091,8 +1099,10 @@ void Component::removeChildren()
   foreach (Component *pComponent, mComponentsList) {
     pComponent->removeChildren();
     if (pComponent->getLibraryTreeItem()) {
-      disconnect(pComponent->getLibraryTreeItem(), SIGNAL(loaded(LibraryTreeItem*)), pComponent, SLOT(handleLoaded()));
-      disconnect(pComponent->getLibraryTreeItem(), SIGNAL(unLoaded()), pComponent, SLOT(handleUnloaded()));
+      disconnect(pComponent->getLibraryTreeItem(), SIGNAL(loadedForComponent()), pComponent, SLOT(handleLoaded()));
+      disconnect(pComponent->getLibraryTreeItem(), SIGNAL(unLoadedForComponent()), pComponent, SLOT(handleUnloaded()));
+      disconnect(pComponent->getLibraryTreeItem(), SIGNAL(shapeAddedForComponent()), pComponent, SLOT(handleShapeAdded()));
+      disconnect(pComponent->getLibraryTreeItem(), SIGNAL(componentAddedForComponent()), pComponent, SLOT(handleComponentAdded()));
     }
     pComponent->setParentItem(0);
     mpGraphicsView->removeItem(pComponent);
@@ -1259,47 +1269,6 @@ void Component::setOriginAndExtents()
     mTransformation.setOrigin(scenePos());
     mTransformation.setExtent1(extent1);
     mTransformation.setExtent2(extent2);
-  }
-}
-
-/*!
- * \brief Component::reloadComponent
- * Reloads a component.
- */
-void Component::reloadComponent(bool loaded)
-{
-  // clear all shapes & components
-//  removeClassShapes();
-//  removeClassInheritedComponents();
-//  removeClassComponents();
-  if (loaded && mpLibraryTreeItem && !mpLibraryTreeItem->getModelWidget()) {
-    MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-    pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, "", false);
-  }
-  if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
-    if (mComponentType == Component::Root) {
-      mpDefaultComponentRectangle->setVisible(true);
-      mpDefaultComponentText->setVisible(true);
-    }
-  } else if (mpLibraryTreeItem->isNonExisting()) { // if class is non existing
-    mpNonExistingComponentLine->setVisible(true);
-  } else {
-    createClassInheritedComponents();
-    createClassShapes();
-    createClassComponents();
-    if (!hasShapeAnnotation(this)) {
-      if (hasNonExistingClass()) {
-        mpNonExistingComponentLine->setVisible(true);
-      } else {
-        if (mComponentType == Component::Root) {
-          mpDefaultComponentRectangle->setVisible(true);
-          mpDefaultComponentText->setVisible(true);
-        }
-      }
-    }
-    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-      mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
-    }
   }
 }
 
