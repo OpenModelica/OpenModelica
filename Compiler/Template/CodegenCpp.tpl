@@ -328,9 +328,6 @@ template simulationWriteOutputHeaderFile(SimCode simCode ,Text& extraFuncs,Text&
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
-  let n = numProtectedParamVars(modelInfo)
-  let outputtype = match   settings.outputFormat case "mat" then "MatFileWriter" case "buffer"  then "BufferReaderWriter" else "TextFileWriter"
-  let numparams = match   settings.outputFormat case "csv" then "1" else n
   <<
   #pragma once
 
@@ -2214,6 +2211,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let moLib     = makefileParams.compileDir
   let home      = makefileParams.omhome
   let &includeMeasure = buffer "" /*BUFD*/
+  let outputtype = settings.outputFormat
   <<
   #include <Core/ModelicaDefine.h>
   #include <Core/Modelica.h>
@@ -2285,6 +2283,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       opts["-G"] = "<%intervals%>";
       opts["-T"] = "<%tol%>";
       opts["-I"] = "<%solver%>";
+      opts["-P"] = "<%outputtype%>";
       opts["-R"] = "<%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
       opts["-M"] = "<%moLib%>";
       opts["-F"] = "<%simulationResults(getRunningTestsuite(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";

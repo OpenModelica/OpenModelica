@@ -110,7 +110,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
           ("log-settings,V", po::value< vector<string> >(),  "log information: init, nls, ls, solv, output, event, model, other")
           ("alarm,A", po::value<unsigned int >()->default_value(360),  "sets timeout in seconds for simulation")
           ("output-type,O", po::value< string >()->default_value("all"),  "the points in time written to result file: all (output steps + events), step (just output points), none")
-		  ("output-format,P", po::value< string >()->default_value("mat"),  "The simulation results output format")
+          ("output-format,P", po::value< string >()->default_value("mat"),  "The simulation results output format")
           ;
 
      // a group for all options that should not be visible if '--help' is set
