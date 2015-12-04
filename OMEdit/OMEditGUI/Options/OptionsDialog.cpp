@@ -516,6 +516,9 @@ void OptionsDialog::readFMISettings()
   if (mpSettings->contains("FMIExport/Version")) {
     mpFMIPage->setFMIExportVersion(mpSettings->value("FMIExport/Version").toDouble());
   }
+  if (mpSettings->contains("FMIExport/Type")) {
+    mpFMIPage->setFMIExportType(mpSettings->value("FMIExport/Type").toString());
+  }
   if (mpSettings->contains("FMI/FMUName")) {
     mpFMIPage->getFMUNameTextBox()->setText(mpSettings->value("FMI/FMUName").toString());
   }
@@ -855,6 +858,7 @@ void OptionsDialog::saveDebuggerSettings()
 void OptionsDialog::saveFMISettings()
 {
   mpSettings->setValue("FMIExport/Version", mpFMIPage->getFMIExportVersion());
+  mpSettings->setValue("FMIExport/Type", mpFMIPage->getFMIExportType());
   mpSettings->setValue("FMI/FMUName", mpFMIPage->getFMUNameTextBox()->text());
 }
 
@@ -1453,7 +1457,7 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   mpSystemLibrariesTree->setColumnCount(2);
   mpSystemLibrariesTree->setTextElideMode(Qt::ElideMiddle);
   QStringList systemLabels;
-  systemLabels << tr("Name") << tr("Version");
+  systemLabels << tr("Name") << Helper::version;
   mpSystemLibrariesTree->setHeaderLabels(systemLabels);
   connect(mpSystemLibrariesTree, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(openEditSystemLibrary()));
   // system libraries buttons
@@ -1631,7 +1635,7 @@ AddSystemLibraryDialog::AddSystemLibraryDialog(LibrariesPage *pLibrariesPage)
     mpNameComboBox->addItem(key,key);
   }
 
-  mpValueLabel = new Label(Helper::version);
+  mpValueLabel = new Label(Helper::version + ":");
   mpVersionTextBox = new QLineEdit("default");
   mpOkButton = new QPushButton(Helper::ok);
   connect(mpOkButton, SIGNAL(clicked()), SLOT(addSystemLibrary()));
@@ -3361,27 +3365,42 @@ void DebuggerPage::browseGDBPath()
 }
 
 /*!
-  \class DebuggerPage
-  \brief Creates an interface for debugger settings.
-  */
+ * \class DebuggerPage
+ * \brief Creates an interface for debugger settings.
+ */
 /*!
-  \param pParent - pointer to OptionsDialog
-  */
+ * \brief FMIPage::FMIPage
+ * \param pParent - pointer to OptionsDialog
+ */
 FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   : QWidget(pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
   mpExportGroupBox = new QGroupBox(tr("Export"));
   // FMI export version
-  mpVersionLabel = new Label(Helper::version);
+  mpVersionGroupBox = new QGroupBox(Helper::version);
   mpVersion1RadioButton = new QRadioButton("1.0");
   mpVersion2RadioButton = new QRadioButton("2.0");
   mpVersion2RadioButton->setChecked(true);
-  // set the version group box layout
-  QHBoxLayout *pVersionLayout = new QHBoxLayout;
+  // set the version groupbox layout
+  QVBoxLayout *pVersionLayout = new QVBoxLayout;
   pVersionLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pVersionLayout->addWidget(mpVersion1RadioButton);
   pVersionLayout->addWidget(mpVersion2RadioButton);
+  mpVersionGroupBox->setLayout(pVersionLayout);
+  // FMI export type
+  mpTypeGroupBox = new QGroupBox(Helper::type);
+  mpModelExchangeRadioButton = new QRadioButton(tr("Model Exchange"));
+  mpCoSimulationRadioButton = new QRadioButton(tr("Co-Simulation"));
+  mpModelExchangeCoSimulationRadioButton = new QRadioButton(tr("Model Exchange and Co-Simulation"));
+  mpModelExchangeCoSimulationRadioButton->setChecked(true);
+  // set the type groupbox layout
+  QVBoxLayout *pTypeLayout = new QVBoxLayout;
+  pTypeLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pTypeLayout->addWidget(mpModelExchangeRadioButton);
+  pTypeLayout->addWidget(mpCoSimulationRadioButton);
+  pTypeLayout->addWidget(mpModelExchangeCoSimulationRadioButton);
+  mpTypeGroupBox->setLayout(pTypeLayout);
   // FMU name prefix
   mpFMUNameLabel = new Label(tr("FMU Name:"));
   mpFMUNameTextBox = new QLineEdit;
@@ -3389,10 +3408,10 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   // set the export group box layout
   QGridLayout *pExportLayout = new QGridLayout;
   pExportLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pExportLayout->addWidget(mpVersionLabel, 0, 0);
-  pExportLayout->addLayout(pVersionLayout, 0, 1);
-  pExportLayout->addWidget(mpFMUNameLabel, 1, 0);
-  pExportLayout->addWidget(mpFMUNameTextBox, 1, 1);
+  pExportLayout->addWidget(mpVersionGroupBox, 0, 0, 1, 2);
+  pExportLayout->addWidget(mpTypeGroupBox, 1, 0, 1, 2);
+  pExportLayout->addWidget(mpFMUNameLabel, 2, 0);
+  pExportLayout->addWidget(mpFMUNameTextBox, 2, 1);
   mpExportGroupBox->setLayout(pExportLayout);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
@@ -3402,6 +3421,11 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   setLayout(pMainLayout);
 }
 
+/*!
+ * \brief FMIPage::setFMIExportVersion
+ * Sets the FMI export version
+ * \param version
+ */
 void FMIPage::setFMIExportVersion(double version)
 {
   if (version == 1.0) {
@@ -3411,12 +3435,49 @@ void FMIPage::setFMIExportVersion(double version)
   }
 }
 
+/*!
+ * \brief FMIPage::getFMIExportVersion
+ * Gets the FMI export version
+ * \return
+ */
 double FMIPage::getFMIExportVersion()
 {
   if (mpVersion1RadioButton->isChecked()) {
     return 1.0;
   } else {
     return 2.0;
+  }
+}
+
+/*!
+ * \brief FMIPage::setFMIExportType
+ * Sets the FMI export type
+ * \param type
+ */
+void FMIPage::setFMIExportType(QString type)
+{
+  if (type.compare("me") == 0) {
+    mpModelExchangeRadioButton->setChecked(true);
+  } else if (type.compare("cs") == 0) {
+    mpCoSimulationRadioButton->setChecked(true);
+  } else {
+    mpModelExchangeCoSimulationRadioButton->setChecked(true);
+  }
+}
+
+/*!
+ * \brief FMIPage::getFMIExportType
+ * Gets the FMI export type
+ * \return
+ */
+QString FMIPage::getFMIExportType()
+{
+  if (mpModelExchangeRadioButton->isChecked()) {
+    return "me";
+  } else if (mpCoSimulationRadioButton->isChecked()) {
+    return "cs";
+  } else {
+    return "me_cs";
   }
 }
 
