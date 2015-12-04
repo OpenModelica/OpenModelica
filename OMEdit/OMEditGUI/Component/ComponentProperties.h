@@ -50,34 +50,45 @@ public:
     Boolean,
     Enumeration
   };
-  Parameter(ComponentInfo *pComponentInfo, OMCProxy *pOMCProxy, QString className, QString componentBaseClassName,
-            QString componentClassName, QString componentName, bool inheritedComponent, QString inheritedClassName, bool showStartAttribute);
+  Parameter(Component *pComponent, bool showStartAttribute, QString tab, QString groupBox);
+  Component* getComponent() {return mpComponent;}
+  void setTab(QString tab) {mTab = tab;}
+  QString getTab() {return mTab;}
+  void setGroupBox(QString groupBox) {mGroupBox = groupBox;}
+  QString getGroupBox() {return mGroupBox;}
+  void setShowStartAttribute(bool showStartAttribute) {mShowStartAttribute = showStartAttribute;}
+  bool isShowStartAttribute() {return mShowStartAttribute;}
+  void updateNameLabel();
   Label* getNameLabel() {return mpNameLabel;}
   FixedCheckBox* getFixedCheckBox() {return mpFixedCheckBox;}
-  bool isShowStartAttribute() {return mshowStartAttribute;}
+  QString getOriginalFixedValue() {return mOriginalFixedValue;}
   void setValueType(ValueType valueType) {mValueType = valueType;}
+  void setValueWidget(QString value, bool defaultValue);
   ValueType getValueType() {return mValueType;}
   QWidget* getValueWidget();
   bool isValueModified();
   QString getValue();
   Label* getUnitLabel() {return mpUnitLabel;}
   Label* getCommentLabel() {return mpCommentLabel;}
-  void setFixedState(bool defaultFixedValue, QString defaultFixed, QString fixed);
+  void setFixedState(QString fixed, bool defaultValue);
   QString getFixedState();
-  QString getUnitFromDerivedClass(OMCProxy *pOMCProxy, QString className);
+  QString getUnitFromDerivedClass(Component *pComponent);
   void setEnabled(bool enable);
 private:
+  Component *mpComponent;
+  QString mTab;
+  QString mGroupBox;
+  bool mShowStartAttribute;
   Label *mpNameLabel;
   FixedCheckBox *mpFixedCheckBox;
-  bool mshowStartAttribute;
+  QString mOriginalFixedValue;
   ValueType mValueType;
   QComboBox *mpValueComboBox;
   QLineEdit *mpValueTextBox;
   Label *mpUnitLabel;
   Label *mpCommentLabel;
 
-  void createValueWidget(OMCProxy *pOMCProxy, QString className);
-  void setValueWidget(QString value, bool defaultValue);
+  void createValueWidget();
 public slots:
   void valueComboBoxChanged(int index);
   void showFixedMenu();
@@ -120,12 +131,6 @@ class ComponentParameters : public QDialog
 public:
   ComponentParameters(Component *pComponent, MainWindow *pMainWindow);
   ~ComponentParameters();
-  void setUpDialog();
-  void createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString className, QString componentBaseClassName, QString componentClassName,
-                               QString componentName);
-  void createParameters(OMCProxy *pOMCProxy, QString className, QString componentBaseClassName, QString componentClassName,
-                        QString componentName, bool inheritedComponent, QString inheritedClassName, bool isInheritedCycle = false);
-  QList<Parameter*> getParametersList();
 private:
   Component *mpComponent;
   MainWindow *mpMainWindow;
@@ -141,9 +146,19 @@ private:
   QLineEdit *mpModifiersTextBox;
   QMap<QString, int> mTabsMap;
   QList<Parameter*> mParametersList;
+  QList<Parameter*> mOrderedParametersList;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+
+  void setUpDialog();
+  void createTabsGroupBoxesAndParameters(LibraryTreeItem *pLibraryTreeItem);
+  void createTabsGroupBoxesAndParametersHelper(LibraryTreeItem *pLibraryTreeItem, bool useInsert = false);
+  void fetchComponentModifiers();
+  void fetchExtendsModifiers();
+  Parameter* findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter,
+                           Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
+  Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 public slots:
   void updateComponentParameters();
 };
@@ -158,7 +173,6 @@ public:
 private:
   Component *mpComponent;
   MainWindow *mpMainWindow;
-  ComponentInfo *mpComponentInfo;
   Label *mpAttributesHeading;
   QFrame *mHorizontalLine;
   QGroupBox *mpTypeGroupBox;

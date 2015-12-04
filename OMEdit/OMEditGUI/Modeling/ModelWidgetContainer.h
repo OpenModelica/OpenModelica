@@ -48,6 +48,7 @@
 #include <QtWebKit>
 #include <QtXmlPatterns>
 
+#include "CoOrdinateSystem.h"
 #include "Component.h"
 #include "StringHandler.h"
 #include "Helper.h"
@@ -65,28 +66,6 @@ class EllipseAnnotation;
 class TextAnnotation;
 class BitmapAnnotation;
 
-
-class CoOrdinateSystem
-{
-public:
-  CoOrdinateSystem();
-  void setExtent(QList<QPointF> extent);
-  QList<QPointF> getExtent();
-  void setPreserveAspectRatio(bool PreserveAspectRatio);
-  bool getPreserveAspectRatio();
-  void setInitialScale(qreal initialScale);
-  qreal getInitialScale();
-  void setGrid(QPointF grid);
-  QPointF getGrid();
-  qreal getHorizontalGridStep();
-  qreal getVerticalGridStep();
-private:
-  QList<QPointF> mExtent;
-  bool mPreserveAspectRatio;
-  qreal mInitialScale;
-  QPointF mGrid;      // horizontal and vertical spacing for grid
-};
-
 class GraphicsScene : public QGraphicsScene
 {
   Q_OBJECT
@@ -96,17 +75,16 @@ public:
   StringHandler::ViewType mViewType;
 };
 
-class LibraryTreeNode;
+class LibraryTreeItem;
 class GraphicsView : public QGraphicsView
 {
   Q_OBJECT
 private:
   StringHandler::ViewType mViewType;
   ModelWidget *mpModelWidget;
-  CoOrdinateSystem *mpCoOrdinateSystem;
   QRectF mExtentRectangle;
   bool mIsCustomScale;
-  bool mCanAddClassAnnotation;
+  bool mAddClassAnnotationNeeded;
   bool mIsCreatingConnection;
   bool mIsCreatingLineShape;
   bool mIsCreatingPolygonShape;
@@ -116,9 +94,13 @@ private:
   bool mIsCreatingBitmapShape;
   Component *mpClickedComponent;
   bool mIsMovingComponentsAndShapes;
+  bool mRenderingLibraryPixmap;
   QList<Component*> mComponentsList;
   QList<LineAnnotation*> mConnectionsList;
   QList<ShapeAnnotation*> mShapesList;
+  QList<Component*> mInheritedComponentsList;
+  QList<LineAnnotation*> mInheritedConnectionsList;
+  QList<ShapeAnnotation*> mInheritedShapesList;
   LineAnnotation *mpConnectionLineAnnotation;
   LineAnnotation *mpLineShapeAnnotation;
   PolygonAnnotation *mpPolygonShapeAnnotation;
@@ -127,7 +109,7 @@ private:
   TextAnnotation *mpTextShapeAnnotation;
   BitmapAnnotation *mpBitmapShapeAnnotation;
   QAction *mpPropertiesAction;
-  QAction *mpDeleteConnectionAction;
+  QAction *mpManhattanizeAction;
   QAction *mpDeleteAction;
   QAction *mpBringToFrontAction;
   QAction *mpBringForwardAction;
@@ -140,68 +122,85 @@ private:
   QAction *mpFlipVerticalAction;
 public:
   GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent);
+  CoOrdinateSystem mCoOrdinateSystem;
   bool mSkipBackground; /* Do not draw the background rectangle */
-  StringHandler::ViewType getViewType();
-  ModelWidget* getModelWidget();
-  CoOrdinateSystem* getCoOrdinateSystem();
+  StringHandler::ViewType getViewType() {return mViewType;}
+  ModelWidget* getModelWidget() {return mpModelWidget;}
   void setExtentRectangle(qreal x1, qreal y1, qreal x2, qreal y2);
   QRectF getExtentRectangle() {return mExtentRectangle;}
-  void setIsCustomScale(bool enable);
-  bool isCustomScale();
-  void setCanAddClassAnnotation(bool enable);
-  bool canAddClassAnnotation();
+  void setIsCustomScale(bool enable) {mIsCustomScale = enable;}
+  bool isCustomScale() {return mIsCustomScale;}
+  void setAddClassAnnotationNeeded(bool needed) {mAddClassAnnotationNeeded = needed;}
+  bool isAddClassAnnotationNeeded() {return mAddClassAnnotationNeeded;}
   void setIsCreatingConnection(bool enable);
-  bool isCreatingConnection();
+  bool isCreatingConnection() {return mIsCreatingConnection;}
   void setIsCreatingLineShape(bool enable);
-  bool isCreatingLineShape();
+  bool isCreatingLineShape() {return mIsCreatingLineShape;}
   void setIsCreatingPolygonShape(bool enable);
-  bool isCreatingPolygonShape();
+  bool isCreatingPolygonShape() {return mIsCreatingPolygonShape;}
   void setIsCreatingRectangleShape(bool enable);
-  bool isCreatingRectangleShape();
+  bool isCreatingRectangleShape() {return mIsCreatingRectangleShape;}
   void setIsCreatingEllipseShape(bool enable);
-  bool isCreatingEllipseShape();
+  bool isCreatingEllipseShape() {return mIsCreatingEllipseShape;}
   void setIsCreatingTextShape(bool enable);
-  bool isCreatingTextShape();
+  bool isCreatingTextShape() {return mIsCreatingTextShape;}
   void setIsCreatingBitmapShape(bool enable);
-  bool isCreatingBitmapShape();
+  bool isCreatingBitmapShape() {return mIsCreatingBitmapShape;}
   void setItemsFlags(bool enable);
-  void setIsMovingComponentsAndShapes(bool enable);
-  bool isMovingComponentsAndShapes();
+  void updateUndoRedoActions(bool enable);
+  void setIsMovingComponentsAndShapes(bool enable) {mIsMovingComponentsAndShapes = enable;}
+  bool isMovingComponentsAndShapes() {return mIsMovingComponentsAndShapes;}
+  void setRenderingLibraryPixmap(bool renderingLibraryPixmap) {mRenderingLibraryPixmap = renderingLibraryPixmap;}
+  bool isRenderingLibraryPixmap() {return mRenderingLibraryPixmap;}
   QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
-  QAction* getDeleteConnectionAction();
-  QAction* getDeleteAction();
-  QAction* getDuplicateAction();
+  QList<ShapeAnnotation*> getInheritedShapesList() {return mInheritedShapesList;}
+  QAction* getManhattanizeAction() {return mpManhattanizeAction;}
+  QAction* getDeleteAction() {return mpDeleteAction;}
+  QAction* getDuplicateAction() {return mpDuplicateAction;}
   QAction* getBringToFrontAction() {return mpBringToFrontAction;}
   QAction* getBringForwardAction() {return mpBringForwardAction;}
   QAction* getSendToBackAction() {return mpSendToBackAction;}
   QAction* getSendBackwardAction() {return mpSendBackwardAction;}
-  QAction* getRotateClockwiseAction();
-  QAction* getRotateAntiClockwiseAction();
-  QAction* getFlipHorizontalAction();
-  QAction* getFlipVerticalAction();
-  bool addComponent(QString className, QString fileName, QPointF position);
-  void addComponentToView(QString name, QString className, QString transformationString, QPointF point, ComponentInfo *pComponentInfo,
-                          StringHandler::ModelicaClasses type, bool addObject = true, bool openingClass = false, bool inheritedClass = false,
-                          QString inheritedClassName = QString(), QString fileName = QString());
-  void addComponentObject(Component *pComponent);
-  void deleteComponentObject(Component *pComponent);
+  QAction* getRotateClockwiseAction() {return mpRotateClockwiseAction;}
+  QAction* getRotateAntiClockwiseAction() {return mpRotateAntiClockwiseAction;}
+  QAction* getFlipHorizontalAction() {return mpFlipHorizontalAction;}
+  QAction* getFlipVerticalAction() {return mpFlipVerticalAction;}
+  bool addComponent(QString className, QPointF position);
+  void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
+                          QStringList dialogAnnotation, ComponentInfo *pComponentInfo, bool addObject = true, bool openingClass = false);
+  void addComponentToList(Component *pComponent) {mComponentsList.append(pComponent);}
+  void addInheritedComponentToList(Component *pComponent) {mInheritedComponentsList.append(pComponent);}
+  void addComponentToClass(Component *pComponent);
+  void deleteComponent(Component *pComponent);
+  void deleteComponentFromClass(Component *pComponent);
+  void deleteComponentFromList(Component *pComponent) {mComponentsList.removeOne(pComponent);}
+  void deleteInheritedComponentFromList(Component *pComponent) {mInheritedComponentsList.removeOne(pComponent);}
   Component* getComponentObject(QString componentName);
   QString getUniqueComponentName(QString componentName, int number = 1);
   bool checkComponentName(QString componentName);
-  QList<Component*> getComponentList();
-  void createConnection(QString startComponentName, QString endComponentName);
-  void deleteConnection(QString startComponentName, QString endComponentName);
-  void addConnectionObject(LineAnnotation *pConnectionLineAnnotation);
-  void deleteConnectionObject(LineAnnotation *pConnectionLineAnnotation);
-  void addShapeObject(ShapeAnnotation *pShape);
-  void deleteShapeObject(ShapeAnnotation *pShape);
+  QList<Component*> getComponentsList() {return mComponentsList;}
+  QList<Component*> getInheritedComponentsList() {return mInheritedComponentsList;}
+  QList<LineAnnotation*> getConnectionsList() {return mConnectionsList;}
+  QList<LineAnnotation*> getInheritedConnectionsList() {return mInheritedConnectionsList;}
+  void addConnectionToClass(LineAnnotation *pConnectionLineAnnotation);
+  void deleteConnectionFromClass(LineAnnotation *pConnectonLineAnnotation);
+  void addConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.append(pConnectionLineAnnotation);}
+  void addInheritedConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.append(pConnectionLineAnnotation);}
+  void deleteConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.removeOne(pConnectionLineAnnotation);}
+  void deleteInheritedConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.removeOne(pConnectionLineAnnotation);}
+  void addShapeToList(ShapeAnnotation *pShape) {mShapesList.append(pShape);}
+  void addInheritedShapeToList(ShapeAnnotation *pShape) {mInheritedShapesList.append(pShape);}
+  void deleteShape(ShapeAnnotation *pShapeAnnotation);
+  void deleteShapeFromList(ShapeAnnotation *pShape) {mShapesList.removeOne(pShape);}
+  void deleteInheritedShapeFromList(ShapeAnnotation *pShape) {mInheritedShapesList.removeOne(pShape);}
+  void reOrderShapes();
   void bringToFront(ShapeAnnotation *pShape);
   void bringForward(ShapeAnnotation *pShape);
   void sendToBack(ShapeAnnotation *pShape);
   void sendBackward(ShapeAnnotation *pShape);
-  void removeAllComponents();
-  void removeAllShapes();
-  void removeAllConnections();
+  void removeAllComponents() {mComponentsList.clear();}
+  void removeAllShapes() {mShapesList.clear();}
+  void removeAllConnections() {mConnectionsList.clear();}
   void createLineShape(QPointF point);
   void createPolygonShape(QPointF point);
   void createRectangleShape(QPointF point);
@@ -212,10 +211,21 @@ public:
   QPointF snapPointToGrid(QPointF point);
   QPointF movePointByGrid(QPointF point);
   QPointF roundPoint(QPointF point);
+  bool hasAnnotation();
+  void addItem(QGraphicsItem *pGraphicsItem);
+  void removeItem(QGraphicsItem *pGraphicsItem);
 private:
   void createActions();
-  bool isClassDroppedOnItself(LibraryTreeNode *pLibraryTreeNode);
+  bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
+  bool isAnyItemSelectedAndEditable(int key);
 signals:
+  void mouseManhattanize();
+  void mouseDelete();
+  void mouseDuplicate();
+  void mouseRotateClockwise();
+  void mouseRotateAntiClockwise();
+  void mouseFlipHorizontal();
+  void mouseFlipVertical();
   void keyPressDelete();
   void keyPressRotateClockwise();
   void keyPressRotateAntiClockwise();
@@ -232,17 +242,24 @@ signals:
   void keyPressShiftRight();
   void keyPressCtrlRight();
   void keyPressDuplicate();
-  void keyRelease();
 public slots:
   void addConnection(Component *pComponent);
-  void removeConnection();
-  void removeConnection(LineAnnotation *pConnection);
+  void removeCurrentConnection();
+  void deleteConnection(LineAnnotation *pConnectionLineAnnotation);
   void resetZoom();
   void zoomIn();
   void zoomOut();
   void selectAll();
+  void clearSelection();
   void addClassAnnotation();
   void showGraphicsViewProperties();
+  void manhattanizeItems();
+  void deleteItems();
+  void duplicateItems();
+  void rotateClockwise();
+  void rotateAntiClockwise();
+  void flipHorizontal();
+  void flipVertical();
 protected:
   virtual void dragMoveEvent(QDragMoveEvent *event);
   virtual void dropEvent(QDropEvent *event);
@@ -251,6 +268,7 @@ protected:
   virtual void mouseMoveEvent(QMouseEvent *event);
   virtual void mouseReleaseEvent(QMouseEvent *event);
   virtual void mouseDoubleClickEvent(QMouseEvent *event);
+  virtual void focusOutEvent(QFocusEvent *event);
   virtual void keyPressEvent(QKeyEvent *event);
   virtual void keyReleaseEvent(QKeyEvent *event);
   virtual void contextMenuEvent(QContextMenuEvent *event);
@@ -304,31 +322,48 @@ class ModelWidget : public QWidget
 {
   Q_OBJECT
 public:
-  ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer *pModelWidgetContainer, bool newClass, bool extendsClass, QString text);
-  LibraryTreeNode* getLibraryTreeNode() {return mpLibraryTreeNode;}
+  ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer, QString text);
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
-  GraphicsView* getDiagramGraphicsView() {return mpDiagramGraphicsView;}
-  GraphicsView* getIconGraphicsView() {return mpIconGraphicsView;}
-  BaseEditor* getEditor() {return mpEditor;}
+  void setLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;}
+  LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
   QToolButton* getIconViewToolButton() {return mpIconViewToolButton;}
   QToolButton* getDiagramViewToolButton() {return mpDiagramViewToolButton;}
   QToolButton* getTextViewToolButton() {return mpTextViewToolButton;}
   QToolButton* getDocumentationViewToolButton() {return mpDocumentationViewToolButton;}
-  void setModelFilePathLabel(QString path);
+  GraphicsView* getDiagramGraphicsView() {return mpDiagramGraphicsView;}
+  GraphicsView* getIconGraphicsView() {return mpIconGraphicsView;}
+  QUndoStack* getUndoStack() {return mpUndoStack;}
+  BaseEditor* getEditor() {return mpEditor;}
+  void setModelFilePathLabel(QString path) {mpModelFilePathLabel->setText(path);}
   Label* getCursorPositionLabel() {return mpCursorPositionLabel;}
-  void setModelModified();
-  void updateParentModelsText(QString className);
-  void getModelComponents(QString className, bool inheritedCycle = false);
-  void getModelIconDiagramShapes(QString className, bool inheritedCycle = false);
-  void getModelIconDiagramShapes(QString className, QString annotationString, StringHandler::ViewType viewType, bool inheritedCycle = false);
-  void getModelConnections(QString className, bool inheritedCycle = false);
-  void getTLMComponents();
-  void getTLMConnections();
+  bool isLoadedWidgetComponents() {return mCreateModelWidgetComponents;}
+  void addInheritedClass(LibraryTreeItem *pLibraryTreeItem) {mInheritedClassesList.append(pLibraryTreeItem);}
+  void removeInheritedClass(LibraryTreeItem *pLibraryTreeItem) {mInheritedClassesList.removeOne(pLibraryTreeItem);}
+  void clearInheritedClasses() {mInheritedClassesList.clear();}
+  QList<LibraryTreeItem*> getInheritedClassesList() {return mInheritedClassesList;}
+  QMap<QString, QMap<QString, QString> > getExtendsModifiersMap() {return mExtendsModifiersMap;}
+  QMap<QString, QString> getExtendsModifiersMap(QString extendsClass);
+  void fetchExtendsModifiers(QString extendsClass);
+  void reDrawModelWidgetInheritedClasses();
+  ShapeAnnotation* createNonExistingInheritedShape(GraphicsView *pGraphicsView);
+  ShapeAnnotation* createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  Component* createInheritedComponent(Component *pComponent, GraphicsView *pGraphicsView);
+  LineAnnotation* createInheritedConnection(LineAnnotation *pConnectionLineAnnotation);
+  void loadDiagramView();
+  void loadConnections();
+  void createModelWidgetComponents();
   Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
-  void refresh();
+  void reDrawModelWidget();
+  bool validateText();
+  bool modelicaEditorTextChanged();
+  void updateChildClasses(LibraryTreeItem *pLibraryTreeItem);
+  void clearSelection();
+  void updateClassAnnotationIfNeeded();
+  void updateModelicaText();
+  void updateUndoRedoActions();
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
-  LibraryTreeNode *mpLibraryTreeNode;
+  LibraryTreeItem *mpLibraryTreeItem;
   QToolButton *mpIconViewToolButton;
   QToolButton *mpDiagramViewToolButton;
   QToolButton *mpTextViewToolButton;
@@ -344,10 +379,35 @@ private:
   GraphicsScene *mpDiagramGraphicsScene;
   GraphicsView *mpIconGraphicsView;
   GraphicsScene *mpIconGraphicsScene;
+  QUndoStack *mpUndoStack;
+  QUndoView *mpUndoView;
   BaseEditor *mpEditor;
   ModelicaTextHighlighter *mpModelicaTextHighlighter;
   TLMHighlighter *mpTLMHighlighter;
   QStatusBar *mpModelStatusBar;
+  bool mDiagramViewLoaded;
+  bool mConnectionsLoaded;
+  bool mCreateModelWidgetComponents;
+  bool mExtendsModifiersLoaded;
+  QMap<QString, QMap<QString, QString> > mExtendsModifiersMap;
+  QList<LibraryTreeItem*> mInheritedClassesList;
+  QList<ComponentInfo*> mComponentsList;
+  QStringList mComponentsAnnotationsList;
+
+  void getModelInheritedClasses();
+  void drawModelInheritedClassShapes(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
+  void removeInheritedClassShapes(StringHandler::ViewType viewType);
+  void getModelIconDiagramShapes(StringHandler::ViewType viewType);
+  void drawModelInheritedClassComponents(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
+  void removeInheritedClassComponents(StringHandler::ViewType viewType);
+  void getModelComponents();
+  void drawModelIconComponents();
+  void drawModelDiagramComponents();
+  void drawModelInheritedClassConnections(ModelWidget *pModelWidget);
+  void removeInheritedClassConnections();
+  void getModelConnections();
+  void getTLMComponents();
+  void getTLMConnections();
 private slots:
   void showIconView(bool checked);
   void showDiagramView(bool checked);
@@ -355,8 +415,9 @@ private slots:
 public slots:
   void makeFileWritAble();
   void showDocumentationView();
-  bool modelicaEditorTextChanged();
   bool TLMEditorTextChanged();
+  void handleCanUndoChanged(bool canUndo);
+  void handleCanRedoChanged(bool canRedo);
 protected:
   virtual void closeEvent(QCloseEvent *event);
 };
@@ -383,9 +444,6 @@ private:
   QDialog *mpModelSwitcherDialog;
   QListWidget *mpRecentModelsList;
   void loadPreviousViewType(ModelWidget *pModelWidget);
-  void saveModelicaModelWidget(ModelWidget *pModelWidget);
-  void saveTextModelWidget(ModelWidget *pModelWidget);
-  void saveTLMModelWidget(ModelWidget *pModelWidget);
 public slots:
   void openRecentModelWidget(QListWidgetItem *pItem);
   void currentModelWidgetChanged(QMdiSubWindow *pSubWindow);

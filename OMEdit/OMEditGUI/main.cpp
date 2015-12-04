@@ -41,6 +41,11 @@
   Source code documentation. Provides brief information about the classes used.
 
   \section contributors_section Contributors
+  \subsection year_2015_subsection 2015
+  - Adeel Asghar - <a href="mailto:adeel.asghar@liu.se">adeel.asghar@liu.se</a>
+  - Martin Sjölund - <a href="mailto:martin.sjolund@liu.se">martin.sjolund@liu.se</a>
+  - Alachew Shitahun - <a href="mailto:alachew.mengist@liu.se">alachew.mengist@liu.se</a>
+
   \subsection year_2014_subsection 2014
   - Adeel Asghar - <a href="mailto:adeel.asghar@liu.se">adeel.asghar@liu.se</a>
   - Martin Sjölund - <a href="mailto:martin.sjolund@liu.se">martin.sjolund@liu.se</a>
@@ -195,8 +200,9 @@ LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
 
 void printOMEditUsage()
 {
-  printf("Usage: OMEdit [--OMCLogger=true|false] [files]\n");
+  printf("Usage: OMEdit [--OMCLogger=true|false] --Debug=true|false] [files]\n");
   printf("    --OMCLogger=[true|false]    Allows sending OMC commands from OMCLogger. Default is false.\n");
+  printf("    --Debug=[true|false]        Enables the debugging features like QUndoView, diffModelicaFileListings view. Default is false.\n");
   printf("    files                       List of Modelica files(*.mo) to open.\n");
 }
 
@@ -227,13 +233,9 @@ int main(int argc, char *argv[])
     }
   }
   Q_INIT_RESOURCE(resource_omedit);
-  // read the second argument if specified by user.
-  QString fileName = QString();
-  // adding style sheet
-  argc++;
-  argv[(argc - 1)] = (char*)"-stylesheet=:/Resources/css/stylesheet.qss";
-
   QApplication a(argc, argv);
+  // set the stylesheet
+  a.setStyleSheet("file:///:/Resources/css/stylesheet.qss");
 #if !(QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   QTextCodec::setCodecForTr(QTextCodec::codecForName(Helper::utf8.toLatin1().data()));
   QTextCodec::setCodecForCStrings(QTextCodec::codecForName(Helper::utf8.toLatin1().data()));
@@ -285,6 +287,8 @@ int main(int argc, char *argv[])
   setlocale(LC_NUMERIC, "C");
   // if user has requested to open the file by passing it in argument then,
   bool OMCLogger = false;
+  bool debug = false;
+  QString fileName = "";
   QStringList fileNames;
   if (a.arguments().size() > 1) {
     for (int i = 1; i < a.arguments().size(); i++) {
@@ -295,6 +299,14 @@ int main(int argc, char *argv[])
           OMCLogger = true;
         } else {
           OMCLogger = false;
+        }
+      } else if (strncmp(a.arguments().at(i).toStdString().c_str(), "--Debug=",8) == 0) {
+        QString debugArg = a.arguments().at(i);
+        debugArg.remove("--Debug=");
+        if (0 == strcmp("true", debugArg.toStdString().c_str())) {
+          debug = true;
+        } else {
+          debug = false;
         }
       } else {
         fileName = a.arguments().at(i);
@@ -311,14 +323,14 @@ int main(int argc, char *argv[])
     }
   }
   // MainWindow Initialization
-  MainWindow mainwindow(&splashScreen);
+  MainWindow mainwindow(&splashScreen, debug);
   if (mainwindow.getExitApplicationStatus()) {        // if there is some issue in running the application.
     a.quit();
     exit(1);
   }
   // open the files passed as command line arguments
   foreach (QString fileName, fileNames) {
-    mainwindow.getLibraryTreeWidget()->openFile(fileName);
+    mainwindow.getLibraryWidget()->openFile(fileName);
   }
   // hide OMCLogger send custom expression feature if OMCLogger is false
   mainwindow.getOMCProxy()->enableCustomExpression(OMCLogger);

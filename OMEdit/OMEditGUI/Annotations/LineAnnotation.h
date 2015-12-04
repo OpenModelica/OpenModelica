@@ -53,10 +53,20 @@ public:
     ConnectionType,  /* Line is a connection. */
     ShapeType  /* Line is a custom shape. */
   };
-  LineAnnotation(QString annotation, Component *pParent);
-  LineAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView);
+  // Used for icon/diagram shape
+  LineAnnotation(QString annotation, GraphicsView *pGraphicsView);
+  // Used for shape inside a component
+  LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  // Used for icon/diagram inherited shape
+  LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  // Used for creating connection
   LineAnnotation(Component *pStartComponent, GraphicsView *pGraphicsView);
-  LineAnnotation(QString annotation, bool inheritedShape, Component *pStartComponent, Component *pEndComponent, GraphicsView *pGraphicsView);
+  // Used for reading a connection
+  LineAnnotation(QString annotation, Component *pStartComponent, Component *pEndComponent, GraphicsView *pGraphicsView);
+  // Used for non-exisiting component
+  LineAnnotation(Component *pParent);
+  // Used for non-existing class
+  LineAnnotation(GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
   QPainterPath getShape() const;
   QRectF boundingRect() const;
@@ -64,24 +74,27 @@ public:
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
   void drawLineAnnotaion(QPainter *painter);
   QPolygonF drawArrow(QPointF startPos, QPointF endPos, qreal size, int arrowType) const;
+  QString getOMCShapeAnnotation();
   QString getShapeAnnotation();
   QString getTLMShapeAnnotation();
-  void setStartComponent(Component *pStartComponent);
-  Component* getStartComponent();
-  void setEndComponent(Component *pEndComponent);
-  Component* getEndComponent();
   void addPoint(QPointF point);
   void removePoint(int index);
   void clearPoints();
   void updateStartPoint(QPointF point);
   void updateEndPoint(QPointF point);
   void moveAllPoints(qreal offsetX, qreal offsetY);
-  LineType getLineType();
-  void setStartComponentName(QString name);
-  QString getStartComponentName();
-  void setEndComponentName(QString name);
-  QString getEndComponentName();
+  void setLineType(LineType lineType) {mLineType = lineType;}
+  LineType getLineType() {return mLineType;}
+  void setStartComponent(Component *pStartComponent) {mpStartComponent = pStartComponent;}
+  Component* getStartComponent() {return mpStartComponent;}
+  void setStartComponentName(QString name) {mStartComponentName = name;}
+  QString getStartComponentName() {return mStartComponentName;}
+  void setEndComponent(Component *pEndComponent) {mpEndComponent = pEndComponent;}
+  Component* getEndComponent() {return mpEndComponent;}
+  void setEndComponentName(QString name) {mEndComponentName = name;}
+  QString getEndComponentName() {return mEndComponentName;}
   void setShapeFlags(bool enable);
+  void updateShape(ShapeAnnotation *pShapeAnnotation);
 private:
   LineType mLineType;
   Component *mpStartComponent;
@@ -90,7 +103,6 @@ private:
   QString mEndComponentName;
 public slots:
   void handleComponentMoved();
-  void handleComponentRotation();
   void updateConnectionAnnotation();
   void duplicate();
 };

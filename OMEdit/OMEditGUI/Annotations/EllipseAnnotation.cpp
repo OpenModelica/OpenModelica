@@ -37,21 +37,10 @@
  */
 
 #include "EllipseAnnotation.h"
+#include "Commands.h"
 
-EllipseAnnotation::EllipseAnnotation(QString annotation, Component *pParent)
-  : ShapeAnnotation(pParent)
-{
-  // set the default values
-  GraphicItem::setDefaults();
-  FilledShape::setDefaults();
-  ShapeAnnotation::setDefaults();
-  parseShapeAnnotation(annotation);
-  setPos(mOrigin);
-  setRotation(mRotation);
-}
-
-EllipseAnnotation::EllipseAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inheritedShape, pGraphicsView, 0)
+EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   // set the default values
   GraphicItem::setDefaults();
@@ -61,9 +50,30 @@ EllipseAnnotation::EllipseAnnotation(QString annotation, bool inheritedShape, Gr
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
   setShapeFlags(true);
-  mpGraphicsView->addShapeObject(this);
-  mpGraphicsView->scene()->addItem(this);
-  connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
+}
+
+EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+  : ShapeAnnotation(pParent)
+{
+  updateShape(pShapeAnnotation);
+  setPos(mOrigin);
+  setRotation(mRotation);
+  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
+}
+
+EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(true, pGraphicsView, 0)
+{
+  updateShape(pShapeAnnotation);
+  setShapeFlags(true);
+  mpGraphicsView->addItem(this);
+  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
 void EllipseAnnotation::parseShapeAnnotation(QString annotation)
@@ -72,17 +82,14 @@ void EllipseAnnotation::parseShapeAnnotation(QString annotation)
   FilledShape::parseShapeAnnotation(annotation);
   // parse the shape to get the list of attributes of Ellipse.
   QStringList list = StringHandler::getStrings(annotation);
-  if (list.size() < 11)
-  {
+  if (list.size() < 11) {
     return;
   }
   // 9th item is the extent points
   QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)));
-  for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++)
-  {
+  for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++) {
     QStringList extentPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(extentsList[i]));
-    if (extentPoints.size() >= 2)
-    {
+    if (extentPoints.size() >= 2) {
       mExtents.replace(i, QPointF(extentPoints.at(0).toFloat(), extentPoints.at(1).toFloat()));
     }
   }
@@ -147,14 +154,44 @@ void EllipseAnnotation::drawEllipseAnnotaion(QPainter *painter)
   }
 }
 
+/*!
+ * \brief EllipseAnnotation::getOMCShapeAnnotation
+ * Returns Ellipse annotation in format as returned by OMC.
+ * \return
+ */
+QString EllipseAnnotation::getOMCShapeAnnotation()
+{
+  QStringList annotationString;
+  annotationString.append(GraphicItem::getOMCShapeAnnotation());
+  annotationString.append(FilledShape::getOMCShapeAnnotation());
+  // get the extents
+  QString extentString;
+  extentString.append("{");
+  extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
+  extentString.append(QString::number(mExtents.at(0).y())).append("},");
+  extentString.append("{").append(QString::number(mExtents.at(1).x())).append(",");
+  extentString.append(QString::number(mExtents.at(1).y())).append("}");
+  extentString.append("}");
+  annotationString.append(extentString);
+  // get the start angle
+  annotationString.append(QString::number(mStartAngle));
+  // get the end angle
+  annotationString.append(QString::number(mEndAngle));
+  return annotationString.join(",");
+}
+
+/*!
+ * \brief EllipseAnnotation::getShapeAnnotation
+ * Returns Ellipse annotation.
+ * \return
+ */
 QString EllipseAnnotation::getShapeAnnotation()
 {
   QStringList annotationString;
   annotationString.append(GraphicItem::getShapeAnnotation());
   annotationString.append(FilledShape::getShapeAnnotation());
   // get the extents
-  if (mExtents.size() > 1)
-  {
+  if (mExtents.size() > 1) {
     QString extentString;
     extentString.append("extent={");
     extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
@@ -165,37 +202,41 @@ QString EllipseAnnotation::getShapeAnnotation()
     annotationString.append(extentString);
   }
   // get the start angle
-  if (mStartAngle != 0)
-  {
+  if (mStartAngle != 0) {
     annotationString.append(QString("startAngle=").append(QString::number(mStartAngle)));
   }
   // get the end angle
-  if (mEndAngle != 0)
-  {
+  if (mEndAngle != 0) {
     annotationString.append(QString("endAngle=").append(QString::number(mEndAngle)));
   }
   return QString("Ellipse(").append(annotationString.join(",")).append(")");
 }
 
+void EllipseAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
+{
+  // set the default values
+  GraphicItem::setDefaults(pShapeAnnotation);
+  FilledShape::setDefaults(pShapeAnnotation);
+  ShapeAnnotation::setDefaults(pShapeAnnotation);
+}
+
+/*!
+ * \brief EllipseAnnotation::duplicate
+ * Duplicates the shape.
+ */
 void EllipseAnnotation::duplicate()
 {
-  EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation("", false, mpGraphicsView);
-  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
-                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation("", mpGraphicsView);
+  pEllipseAnnotation->updateShape(this);
+  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
   pEllipseAnnotation->setOrigin(mOrigin + gridStep);
-  pEllipseAnnotation->setRotationAngle(mRotation);
   pEllipseAnnotation->initializeTransformation();
-  pEllipseAnnotation->setLineColor(getLineColor());
-  pEllipseAnnotation->setFillColor(getFillColor());
-  pEllipseAnnotation->setLinePattern(getLinePattern());
-  pEllipseAnnotation->setFillPattern(getFillPattern());
-  pEllipseAnnotation->setLineThickness(getLineThickness());
-  pEllipseAnnotation->setExtents(getExtents());
-  pEllipseAnnotation->setStartAngle(getStartAngle());
-  pEllipseAnnotation->setEndAngle(getEndAngle());
   pEllipseAnnotation->drawCornerItems();
-  pEllipseAnnotation->setCornerItemsPassive();
+  pEllipseAnnotation->setCornerItemsActiveOrPassive();
   pEllipseAnnotation->update();
-  mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pEllipseAnnotation));
+  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pEllipseAnnotation, mpGraphicsView);
+  setSelected(false);
+  pEllipseAnnotation->setSelected(true);
 }

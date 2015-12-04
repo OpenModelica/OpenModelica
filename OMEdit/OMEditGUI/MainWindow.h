@@ -80,8 +80,7 @@ class OMCProxy;
 class OptionsDialog;
 class MessagesWidget;
 class TransformationsWidget;
-class SearchClassWidget;
-class LibraryTreeWidget;
+class LibraryWidget;
 class DocumentationWidget;
 class VariablesWidget;
 class SimulationDialog;
@@ -98,13 +97,14 @@ class MainWindow : public QMainWindow
   Q_OBJECT
 public:
   enum { MaxRecentFiles = 8 };
-  MainWindow(QSplashScreen *pSplashScreen, QWidget *parent = 0);
+  MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent = 0);
+  bool isDebug() {return mDebug;}
   OMCProxy* getOMCProxy();
   void setExitApplicationStatus(bool status);
   bool getExitApplicationStatus();
   OptionsDialog* getOptionsDialog();
   MessagesWidget* getMessagesWidget();
-  LibraryTreeWidget* getLibraryTreeWidget();
+  LibraryWidget* getLibraryWidget();
   DocumentationWidget* getDocumentationWidget();
   QDockWidget* getDocumentationDockWidget();
   VariablesWidget* getVariablesWidget();
@@ -123,9 +123,11 @@ public:
   QTabBar* getPerspectiveTabBar();
   QAction* getSaveAction();
   QAction* getSaveAsAction();
-  QAction* getSaveTotalModelAction() {return mpSaveTotalModelAction;}
+  QAction* getSaveTotalAction() {return mpSaveTotalAction;}
   QAction* getPrintModelAction();
   QAction* getSaveAllAction();
+  QAction* getUndoAction() {return mpUndoAction;}
+  QAction* getRedoAction() {return mpRedoAction;}
   QAction* getShowGridLinesAction();
   QAction* getResetZoomAction();
   QAction* getZoomInAction();
@@ -161,22 +163,22 @@ public:
   void beforeClosingMainWindow();
   void openDroppedFile(QDropEvent *event);
   void openResultFiles(QStringList fileNames);
-  void simulate(LibraryTreeNode *pLibraryTreeNode);
-  void simulateWithTransformationalDebugger(LibraryTreeNode *pLibraryTreeNode);
-  void simulateWithAlgorithmicDebugger(LibraryTreeNode *pLibraryTreeNode);
-  void simulationSetup(LibraryTreeNode *pLibraryTreeNode);
-  void instantiatesModel(LibraryTreeNode *pLibraryTreeNode);
-  void checkModel(LibraryTreeNode *pLibraryTreeNode);
-  void checkAllModels(LibraryTreeNode *pLibraryTreeNode);
-  void exportModelFMU(LibraryTreeNode *pLibraryTreeNode);
-  void exportModelXML(LibraryTreeNode *pLibraryTreeNode);
-  void exportModelFigaro(LibraryTreeNode *pLibraryTreeNode);
-  void fetchInterfaceData(LibraryTreeNode *pLibraryTreeNode);
-  void TLMSimulate(LibraryTreeNode *pLibraryTreeNode);
-  void exportModelToOMNotebook(LibraryTreeNode *pLibraryTreeNode);
-  void createOMNotebookTitleCell(LibraryTreeNode *pLibraryTreeNode, QDomDocument xmlDocument, QDomElement domElement);
-  void createOMNotebookImageCell(LibraryTreeNode *pLibraryTreeNode, QDomDocument xmlDocument, QDomElement domElement, QString filePath);
-  void createOMNotebookCodeCell(LibraryTreeNode *pLibraryTreeNode, QDomDocument xmlDocument, QDomElement domElement);
+  void simulate(LibraryTreeItem *pLibraryTreeItem);
+  void simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryTreeItem);
+  void simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeItem);
+  void simulationSetup(LibraryTreeItem *pLibraryTreeItem);
+  void instantiateModel(LibraryTreeItem *pLibraryTreeItem);
+  void checkModel(LibraryTreeItem *pLibraryTreeItem);
+  void checkAllModels(LibraryTreeItem *pLibraryTreeItem);
+  void exportModelFMU(LibraryTreeItem *pLibraryTreeItem);
+  void exportModelXML(LibraryTreeItem *pLibraryTreeItem);
+  void exportModelFigaro(LibraryTreeItem *pLibraryTreeItem);
+  void fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem);
+  void TLMSimulate(LibraryTreeItem *pLibraryTreeItem);
+  void exportModelToOMNotebook(LibraryTreeItem *pLibraryTreeItem);
+  void createOMNotebookTitleCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement);
+  void createOMNotebookImageCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement, QString filePath);
+  void createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement);
   TransformationsWidget* showTransformationsWidget(QString fileName);
   static void PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char* title, const char* grid,
                                    const char* plotType, const char* logX, const char* logY, const char* xLabel, const char* yLabel,
@@ -184,6 +186,7 @@ public:
                                    const char* curveStyle, const char* legendPosition, const char* footer, const char* autoScale,
                                    const char* variables);
 private:
+  bool mDebug;
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
   OptionsDialog *mpOptionsDialog;
@@ -193,10 +196,8 @@ private:
   FileDataNotifier *mpOutputFileDataNotifier;
   QFile mErrorFile;
   FileDataNotifier *mpErrorFileDataNotifier;
-  SearchClassWidget *mpSearchClassWidget;
-  QDockWidget *mpSearchClassDockWidget;
-  LibraryTreeWidget *mpLibraryTreeWidget;
-  QDockWidget *mpLibraryTreeDockWidget;
+  LibraryWidget *mpLibraryWidget;
+  QDockWidget *mpLibraryDockWidget;
   DocumentationWidget *mpDocumentationWidget;
   QDockWidget *mpDocumentationDockWidget;
   VariablesWidget *mpVariablesWidget;
@@ -233,12 +234,15 @@ private:
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
   QAction *mpSaveAllAction;
-  QAction *mpSaveTotalModelAction;
+  QAction *mpSaveTotalAction;
   QAction *mpRecentFileActions[MaxRecentFiles];
   QAction *mpClearRecentFilesAction;
   QAction *mpPrintModelAction;
   QAction *mpQuitAction;
   // Edit Menu
+  QAction *mpUndoAction;
+  QAction *mpRedoAction;
+  QAction *mpSearchClassesAction;
   QAction *mpCutAction;
   QAction *mpCopyAction;
   QAction *mpPasteAction;
@@ -270,6 +274,7 @@ private:
   QAction *mpExportFigaroAction;
   // Tools Menu
   QAction *mpShowOMCLoggerWidgetAction;
+  QAction *mpShowOMCDiffWidgetAction;
   QAction *mpExportToOMNotebookAction;
   QAction *mpImportFromOMNotebookAction;
   QAction *mpImportNgspiceNetlistAction;
@@ -334,9 +339,11 @@ public slots:
   void loadSystemLibrary();
   void readOutputFile(qint64 bytes);
   void readErrorFile(qint64 bytes);
-  void focusSearchClassWidget(bool visible);
   void openRecentFile();
   void clearRecentFilesList();
+  void undo();
+  void redo();
+  void focusSearchClasses();
   void setShowGridLines(bool On);
   void resetZoom();
   void zoomIn();
@@ -348,7 +355,7 @@ public slots:
   void cascadeSubWindows();
   void tileSubWindowsHorizontally();
   void tileSubWindowsVertically();
-  void instantiatesModel();
+  void instantiateModel();
   void checkModel();
   void checkAllModels();
   void simulateModel();
@@ -387,7 +394,7 @@ public slots:
   void hideProgressBar();
   void updateModelSwitcherMenu(QMdiSubWindow *pSubWindow);
   void toggleAutoSave();
-  void readInterfaceData(LibraryTreeNode *pLibraryTreeNode);
+  void readInterfaceData(LibraryTreeItem *pLibraryTreeItem);
 private slots:
   void perspectiveTabChanged(int tabIndex);
   void autoSave();
@@ -404,7 +411,7 @@ private:
   void switchToPlottingPerspective();
   void closeAllWindowsButThis(QMdiArea *pMdiArea);
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
-  void fetchInterfaceDataHelper(LibraryTreeNode *pLibraryTreeNode);
+  void fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem);
 protected:
   virtual void dragEnterEvent(QDragEnterEvent *event);
   virtual void dragMoveEvent(QDragMoveEvent *event);

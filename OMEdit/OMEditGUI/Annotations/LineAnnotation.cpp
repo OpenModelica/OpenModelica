@@ -37,25 +37,12 @@
  */
 
 #include "LineAnnotation.h"
+#include "Commands.h"
 
-LineAnnotation::LineAnnotation(QString annotation, Component *pParent)
-  : ShapeAnnotation(pParent)
+LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
-  mLineType = LineAnnotation::ComponentType;
-  setStartComponent(0);
-  setEndComponent(0);
-  // set the default values
-  GraphicItem::setDefaults();
-  ShapeAnnotation::setDefaults();
-  parseShapeAnnotation(annotation);
-  setPos(mOrigin);
-  setRotation(mRotation);
-}
-
-LineAnnotation::LineAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inheritedShape, pGraphicsView, 0)
-{
-  mLineType = LineAnnotation::ShapeType;
+  setLineType(LineAnnotation::ShapeType);
   setStartComponent(0);
   setEndComponent(0);
   // set the default values
@@ -65,9 +52,33 @@ LineAnnotation::LineAnnotation(QString annotation, bool inheritedShape, Graphics
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
   setShapeFlags(true);
-  mpGraphicsView->addShapeObject(this);
-  mpGraphicsView->scene()->addItem(this);
-  connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
+}
+
+LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+  : ShapeAnnotation(pParent)
+{
+  updateShape(pShapeAnnotation);
+  setLineType(LineAnnotation::ComponentType);
+  setStartComponent(0);
+  setEndComponent(0);
+  setPos(mOrigin);
+  setRotation(mRotation);
+  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
+}
+
+LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(true, pGraphicsView, 0)
+{
+  updateShape(pShapeAnnotation);
+  setShapeFlags(true);
+  mpGraphicsView->addItem(this);
+  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
 LineAnnotation::LineAnnotation(Component *pStartComponent, GraphicsView *pGraphicsView)
@@ -75,7 +86,7 @@ LineAnnotation::LineAnnotation(Component *pStartComponent, GraphicsView *pGraphi
 {
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::ConnectionType;
-  setZValue(2000);
+  setZValue(1000);
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -85,19 +96,18 @@ LineAnnotation::LineAnnotation(Component *pStartComponent, GraphicsView *pGraphi
     mLineColor = pShapeAnnotation->getLineColor();
   }
   // set the graphics view
-  mpGraphicsView->scene()->addItem(this);
+  mpGraphicsView->addItem(this);
   // set the start component
   setStartComponent(pStartComponent);
   setEndComponent(0);
 }
 
-LineAnnotation::LineAnnotation(QString annotation, bool inheritedShape, Component *pStartComponent, Component *pEndComponent,
-                               GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inheritedShape, pGraphicsView, 0)
+LineAnnotation::LineAnnotation(QString annotation, Component *pStartComponent, Component *pEndComponent, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::ConnectionType;
-  setZValue(2000);
+  setZValue(1000);
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -115,7 +125,57 @@ LineAnnotation::LineAnnotation(QString annotation, bool inheritedShape, Componen
   mPoints = points;
   mOrigin = QPointF(0, 0);
   // set the graphics view
-  mpGraphicsView->scene()->addItem(this);
+  mpGraphicsView->addItem(this);
+}
+
+LineAnnotation::LineAnnotation(Component *pParent)
+  : ShapeAnnotation(pParent)
+{
+  setLineType(LineAnnotation::ComponentType);
+  setStartComponent(0);
+  setEndComponent(0);
+  // set the default values
+  GraphicItem::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // create a red cross
+  setLineColor(QColor(255, 0, 0));
+  // create a red cross with points
+  addPoint(QPointF(-100, -100));
+  addPoint(QPointF(100, 100));
+  addPoint(QPointF(-100, 100));
+  addPoint(QPointF(100, -100));
+  addPoint(QPointF(-100, -100));
+  addPoint(QPointF(-100, 100));
+  addPoint(QPointF(100, 100));
+  addPoint(QPointF(100, -100));
+  setPos(mOrigin);
+  setRotation(mRotation);
+}
+
+LineAnnotation::LineAnnotation(GraphicsView *pGraphicsView)
+  : ShapeAnnotation(true, pGraphicsView, 0)
+{
+  setLineType(LineAnnotation::ShapeType);
+  setStartComponent(0);
+  setEndComponent(0);
+  // set the default values
+  GraphicItem::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  // create a red cross
+  setLineColor(QColor(255, 0, 0));
+  // create a red cross with points
+  addPoint(QPointF(-100, -100));
+  addPoint(QPointF(100, 100));
+  addPoint(QPointF(-100, 100));
+  addPoint(QPointF(100, -100));
+  addPoint(QPointF(-100, -100));
+  addPoint(QPointF(-100, 100));
+  addPoint(QPointF(100, 100));
+  addPoint(QPointF(100, -100));
+  setShapeFlags(true);
+  mpGraphicsView->addItem(this);
 }
 
 void LineAnnotation::parseShapeAnnotation(QString annotation)
@@ -126,6 +186,7 @@ void LineAnnotation::parseShapeAnnotation(QString annotation)
   if (list.size() < 10) {
     return;
   }
+  mPoints.clear();
   // 4th item of list contains the points.
   QStringList pointsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(3)));
   foreach (QString point, pointsList) {
@@ -295,6 +356,60 @@ QPolygonF LineAnnotation::drawArrow(QPointF startPos, QPointF endPos, qreal size
   return polygon;
 }
 
+/*!
+ * \brief LineAnnotation::getOMCShapeAnnotation
+ * Returns Line annotation in format as returned by OMC.
+ * \return
+ */
+QString LineAnnotation::getOMCShapeAnnotation()
+{
+  QStringList annotationString;
+  annotationString.append(GraphicItem::getOMCShapeAnnotation());
+  // get points
+  QString pointsString;
+  if (mPoints.size() > 0) {
+    pointsString.append("{");
+  }
+  for (int i = 0 ; i < mPoints.size() ; i++) {
+    pointsString.append("{").append(QString::number(mPoints[i].x())).append(",");
+    pointsString.append(QString::number(mPoints[i].y())).append("}");
+    if (i < mPoints.size() - 1) {
+      pointsString.append(",");
+    }
+  }
+  if (mPoints.size() > 0) {
+    pointsString.append("}");
+    annotationString.append(pointsString);
+  }
+  // get the line color
+  QString colorString;
+  colorString.append("{");
+  colorString.append(QString::number(mLineColor.red())).append(",");
+  colorString.append(QString::number(mLineColor.green())).append(",");
+  colorString.append(QString::number(mLineColor.blue()));
+  colorString.append("}");
+  annotationString.append(colorString);
+  // get the line pattern
+  annotationString.append(StringHandler::getLinePatternString(mLinePattern));
+  // get the thickness
+  annotationString.append(QString::number(mLineThickness));
+  // get the start and end arrow
+  QString arrowString;
+  arrowString.append("{").append(StringHandler::getArrowString(mArrow.at(0))).append(",");
+  arrowString.append(StringHandler::getArrowString(mArrow.at(1))).append("}");
+  annotationString.append(arrowString);
+  // get the arrow size
+  annotationString.append(QString::number(mArrowSize));
+  // get the smooth
+  annotationString.append(StringHandler::getSmoothString(mSmooth));
+  return annotationString.join(",");
+}
+
+/*!
+ * \brief LineAnnotation::getShapeAnnotation
+ * Returns Line annotation.
+ * \return
+ */
 QString LineAnnotation::getShapeAnnotation()
 {
   QStringList annotationString;
@@ -379,27 +494,6 @@ QString LineAnnotation::getTLMShapeAnnotation()
   return annotationString.join(",");
 }
 
-
-void LineAnnotation::setStartComponent(Component *pStartComponent)
-{
-  mpStartComponent = pStartComponent;
-}
-
-Component* LineAnnotation::getStartComponent()
-{
-  return mpStartComponent;
-}
-
-void LineAnnotation::setEndComponent(Component *pEndComponent)
-{
-  mpEndComponent = pEndComponent;
-}
-
-Component* LineAnnotation::getEndComponent()
-{
-  return mpEndComponent;
-}
-
 void LineAnnotation::addPoint(QPointF point)
 {
   mPoints.append(point);
@@ -464,7 +558,7 @@ void LineAnnotation::updateStartPoint(QPointF point)
     if ((mGeometries[0] == ShapeAnnotation::HorizontalLine && mPoints[0].y() != point.y()) ||
         (mGeometries[0] == ShapeAnnotation::VerticalLine && mPoints[0].x() != point.x())) {
       insertPointsGeometriesAndCornerItems(1);
-      setCornerItemsPassive();
+      setCornerItemsActiveOrPassive();
     }
   }
   /* update the 1st point */
@@ -510,7 +604,7 @@ void LineAnnotation::updateEndPoint(QPointF point)
       if ((mGeometries[secondLastIndex] == ShapeAnnotation::HorizontalLine && mPoints[lastIndex].y() != point.y()) ||
           (mGeometries[secondLastIndex] == ShapeAnnotation::VerticalLine && mPoints[lastIndex].x() != point.x())) {
         insertPointsGeometriesAndCornerItems(lastIndex);
-        setCornerItemsPassive();
+        setCornerItemsActiveOrPassive();
         lastIndex = mPoints.size() - 1;
         secondLastIndex = mPoints.size() - 2;
       }
@@ -544,31 +638,6 @@ void LineAnnotation::moveAllPoints(qreal offsetX, qreal offsetY)
   }
 }
 
-LineAnnotation::LineType LineAnnotation::getLineType()
-{
-  return mLineType;
-}
-
-void LineAnnotation::setStartComponentName(QString name)
-{
-  mStartComponentName = name;
-}
-
-QString LineAnnotation::getStartComponentName()
-{
-  return mStartComponentName;
-}
-
-void LineAnnotation::setEndComponentName(QString name)
-{
-  mEndComponentName = name;
-}
-
-QString LineAnnotation::getEndComponentName()
-{
-  return mEndComponentName;
-}
-
 /*!
   Sets the shape flags.
   */
@@ -579,7 +648,7 @@ void LineAnnotation::setShapeFlags(bool enable)
       Only set the ItemIsMovable & ItemSendsGeometryChanges flags on Line if the class is not a system library class
       AND Line is not an inherited Line AND Line type is not ConnectionType.
       */
-    bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary();
+    bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary();
     if (!isSystemLibrary && !isInheritedShape() && mLineType != LineAnnotation::ConnectionType) {
       setFlag(QGraphicsItem::ItemIsMovable, enable);
       setFlag(QGraphicsItem::ItemSendsGeometryChanges, enable);
@@ -588,43 +657,34 @@ void LineAnnotation::setShapeFlags(bool enable)
   }
 }
 
+void LineAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
+{
+  LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(pShapeAnnotation);
+  setLineType(pLineAnnotation->getLineType());
+  setStartComponent(pLineAnnotation->getStartComponent());
+  setStartComponentName(pLineAnnotation->getStartComponentName());
+  setEndComponent(pLineAnnotation->getEndComponent());
+  setEndComponentName(pLineAnnotation->getEndComponentName());
+  // set the default values
+  GraphicItem::setDefaults(pShapeAnnotation);
+  mPoints.clear();
+  QList<QPointF> points = pShapeAnnotation->getPoints();
+  for (int i = 0 ; i < points.size() ; i++) {
+    addPoint(points[i]);
+  }
+  ShapeAnnotation::setDefaults(pShapeAnnotation);
+}
+
+/*!
+ * \brief LineAnnotation::handleComponentMoved
+ * If the component associated with the connection is moved then update the connection accordingly.
+ */
 void LineAnnotation::handleComponentMoved()
 {
   if (mPoints.size() < 2) {
     return;
   }
-  // if both the components are moved then move the whole connection
-  if (mpStartComponent && mpEndComponent) {
-    if (mpStartComponent->getRootParentComponent()->isSelected() && mpEndComponent->getRootParentComponent()->isSelected()) {
-      moveAllPoints(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()).x() - mPoints[0].x(),
-                    mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()).y() - mPoints[0].y());
-    } else {
-      Component *pComponent = qobject_cast<Component*>(sender());
-      if (pComponent == mpStartComponent->getRootParentComponent()) {
-        updateStartPoint(mpGraphicsView->roundPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center())));
-      } else if (pComponent == mpEndComponent->getRootParentComponent()) {
-        updateEndPoint(mpGraphicsView->roundPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center())));
-      }
-    }
-  } else if (mpStartComponent) {
-    Component *pComponent = qobject_cast<Component*>(sender());
-    if (pComponent == mpStartComponent->getRootParentComponent()) {
-      updateStartPoint(mpGraphicsView->roundPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center())));
-    }
-  } else if (mpEndComponent) {
-    Component *pComponent = qobject_cast<Component*>(sender());
-    if (pComponent == mpEndComponent->getRootParentComponent()) {
-      updateEndPoint(mpGraphicsView->roundPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center())));
-    }
-  }
-  update();
-}
-
-void LineAnnotation::handleComponentRotation()
-{
-  if (mPoints.size() < 2) {
-    return;
-  }
+  prepareGeometryChange();
   if (mpStartComponent) {
     Component *pComponent = qobject_cast<Component*>(sender());
     if (pComponent == mpStartComponent->getRootParentComponent()) {
@@ -637,12 +697,15 @@ void LineAnnotation::handleComponentRotation()
       updateEndPoint(mpGraphicsView->roundPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center())));
     }
   }
-  update();
 }
 
+/*!
+ * \brief LineAnnotation::updateConnectionAnnotation
+ * Updates the connection annotation.
+ */
 void LineAnnotation::updateConnectionAnnotation()
 {
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM) {
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::TLM) {
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpGraphicsView->getModelWidget()->getEditor());
     pTLMEditor->updateTLMConnectiontAnnotation(getStartComponentName(), getEndComponentName(), getTLMShapeAnnotation());
 
@@ -652,36 +715,29 @@ void LineAnnotation::updateConnectionAnnotation()
     // update the connection
     OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
     pOMCProxy->updateConnection(getStartComponentName(), getEndComponentName(),
-                                mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getNameStructure(), annotationString);
+                                mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), annotationString);
   }
-  // make the model modified
-  mpGraphicsView->getModelWidget()->setModelModified();
 }
 
+/*!
+ * \brief LineAnnotation::duplicate
+ * Duplicates the shape.
+ */
 void LineAnnotation::duplicate()
 {
-  LineAnnotation *pLineAnnotation = new LineAnnotation("", false, mpGraphicsView);
-  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
-                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  LineAnnotation *pLineAnnotation = new LineAnnotation("", mpGraphicsView);
+  pLineAnnotation->updateShape(this);
+  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
   pLineAnnotation->setOrigin(mOrigin + gridStep);
-  pLineAnnotation->setRotationAngle(mRotation);
   pLineAnnotation->initializeTransformation();
-  pLineAnnotation->setLineColor(getLineColor());
-  pLineAnnotation->setLinePattern(getLinePattern());
-  pLineAnnotation->setLineThickness(getLineThickness());
-  pLineAnnotation->setStartArrow(getStartArrow());
-  pLineAnnotation->setEndArrow(getEndArrow());
-  pLineAnnotation->setArrowSize(getArrowSize());
-  pLineAnnotation->setSmooth(getSmooth());
-  QList<QPointF> points = getPoints();
-  for (int i = 0 ; i < points.size() ; i++) {
-    pLineAnnotation->addPoint(points[i]);
-  }
   pLineAnnotation->drawCornerItems();
-  pLineAnnotation->setCornerItemsPassive();
+  pLineAnnotation->setCornerItemsActiveOrPassive();
   pLineAnnotation->update();
-  mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pLineAnnotation));
+  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pLineAnnotation, mpGraphicsView);
+  setSelected(false);
+  pLineAnnotation->setSelected(true);
 }
 
 ConnectionArray::ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, QWidget *pParent)
@@ -808,15 +864,16 @@ void ConnectionArray::saveArrayIndex()
       }
     }
   }
-  mpGraphicsView->createConnection(startComponentName, endComponentName);
-  mpConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)").arg(startComponentName, endComponentName));
-  mpConnectionLineAnnotation->drawCornerItems();
-  mpConnectionLineAnnotation->setCornerItemsPassive();
+  mpConnectionLineAnnotation->setStartComponentName(startComponentName);
+  mpConnectionLineAnnotation->setEndComponentName(endComponentName);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
+  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
+  mpGraphicsView->getModelWidget()->updateModelicaText();
   accept();
 }
 
 void ConnectionArray::cancelArrayIndex()
 {
-  mpGraphicsView->removeConnection();
+  mpGraphicsView->removeCurrentConnection();
   reject();
 }

@@ -56,18 +56,21 @@ class MainWindow;
 class GraphicsView;
 class CornerItem;
 class ResizerItem;
+class ShapeAnnotation;
 
 class GraphicItem
 {
 public:
   GraphicItem() {}
   void setDefaults();
+  void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void parseShapeAnnotation(QString annotation);
+  QStringList getOMCShapeAnnotation();
   QStringList getShapeAnnotation();
-  void setOrigin(QPointF origin);
-  QPointF getOrigin();
-  void setRotationAngle(qreal rotation);
-  qreal getRotation();
+  void setOrigin(QPointF origin) {mOrigin = origin;}
+  QPointF getOrigin() {return mOrigin;}
+  void setRotationAngle(qreal rotation) {mRotation = rotation;}
+  qreal getRotation() {return mRotation;}
 protected:
   bool mVisible;
   QPointF mOrigin;
@@ -79,18 +82,20 @@ class FilledShape
 public:
   FilledShape() {}
   void setDefaults();
+  void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void parseShapeAnnotation(QString annotation);
+  QStringList getOMCShapeAnnotation();
   QStringList getShapeAnnotation();
-  void setLineColor(QColor color);
-  QColor getLineColor();
-  void setFillColor(QColor color);
-  QColor getFillColor();
-  void setLinePattern(StringHandler::LinePattern pattern);
-  StringHandler::LinePattern getLinePattern();
-  void setFillPattern(StringHandler::FillPattern pattern);
-  StringHandler::FillPattern getFillPattern();
-  void setLineThickness(qreal thickness);
-  qreal getLineThickness();
+  void setLineColor(QColor color) {mLineColor = color;}
+  QColor getLineColor() {return mLineColor;}
+  void setFillColor(QColor color) {mFillColor = color;}
+  QColor getFillColor() {return mFillColor;}
+  void setLinePattern(StringHandler::LinePattern pattern) {mLinePattern = pattern;}
+  StringHandler::LinePattern getLinePattern() {return mLinePattern;}
+  void setFillPattern(StringHandler::FillPattern pattern) {mFillPattern = pattern;}
+  StringHandler::FillPattern getFillPattern() {return mFillPattern;}
+  void setLineThickness(qreal thickness) {mLineThickness = thickness;}
+  qreal getLineThickness() {return mLineThickness;}
 protected:
   QColor mLineColor;
   QColor mFillColor;
@@ -106,16 +111,16 @@ class ShapeAnnotation : public QObject, public QGraphicsItem, public GraphicItem
 private:
   bool mIsCustomShape;
   bool mIsInheritedShape;
-  QPointF mOldPosition;
+  QPointF mOldScenePosition;
   bool mIsCornerItemClicked;
   QAction *mpShapePropertiesAction;
-  QAction *mpManhattanizeShapeAction;
 public:
   enum LineGeometryType {VerticalLine, HorizontalLine};
+  Transformation mTransformation;
   ShapeAnnotation(QGraphicsItem *pParent);
   ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsView, QGraphicsItem *pParent = 0);
-  ~ShapeAnnotation();
   void setDefaults();
+  void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void setUserDefaults();
   bool isInheritedShape();
   void createActions();
@@ -123,58 +128,56 @@ public:
   QRectF getBoundingRect() const;
   void applyLinePattern(QPainter *painter);
   void applyFillPattern(QPainter *painter);
+  virtual void parseShapeAnnotation(QString annotation);
+  virtual QString getOMCShapeAnnotation();
   virtual QString getShapeAnnotation();
   void initializeTransformation();
   void drawCornerItems();
-  void setCornerItemsActive();
-  void setCornerItemsPassive();
+  void setCornerItemsActiveOrPassive();
   void removeCornerItems();
-  void setOldPosition(QPointF oldPosition);
-  QPointF getOldPosition();
-  virtual void addPoint(QPointF point);
-  virtual void clearPoints();
+  void setOldScenePosition(QPointF oldScenePosition) {mOldScenePosition = oldScenePosition;}
+  QPointF getOldScenePosition() {return mOldScenePosition;}
+  virtual void addPoint(QPointF point) {Q_UNUSED(point);}
+  virtual void clearPoints() {}
   virtual void replaceExtent(int index, QPointF point);
   virtual void updateEndExtent(QPointF point);
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
-  Transformation* getTransformation() {return mpTransformation;}
   void setPoints(QList<QPointF> points) {mPoints = points;}
   QList<QPointF> getPoints() {return mPoints;}
-  void setStartArrow(StringHandler::Arrow startArrow);
-  StringHandler::Arrow getStartArrow();
-  void setEndArrow(StringHandler::Arrow endArrow);
-  StringHandler::Arrow getEndArrow();
-  void setArrowSize(qreal arrowSize);
-  qreal getArrowSize();
-  void setSmooth(StringHandler::Smooth smooth);
-  StringHandler::Smooth getSmooth();
-  void setExtents(QList<QPointF> extents);
-  QList<QPointF> getExtents();
-  void setBorderPattern(StringHandler::BorderPattern pattern);
-  StringHandler::BorderPattern getBorderPattern();
-  void setRadius(qreal radius);
-  qreal getRadius();
-  void setStartAngle(qreal startAngle);
-  qreal getStartAngle();
-  void setEndAngle(qreal endAngle);
-  qreal getEndAngle();
+  void setStartArrow(StringHandler::Arrow startArrow) {mArrow.replace(0, startArrow);}
+  StringHandler::Arrow getStartArrow() {return mArrow.at(0);}
+  void setEndArrow(StringHandler::Arrow endArrow) {mArrow.replace(1, endArrow);}
+  StringHandler::Arrow getEndArrow() {return mArrow.at(1);}
+  void setArrowSize(qreal arrowSize) {mArrowSize = arrowSize;}
+  qreal getArrowSize() {return mArrowSize;}
+  void setSmooth(StringHandler::Smooth smooth) {mSmooth = smooth;}
+  StringHandler::Smooth getSmooth() {return mSmooth;}
+  void setExtents(QList<QPointF> extents) {mExtents = extents;}
+  QList<QPointF> getExtents() {return mExtents;}
+  void setBorderPattern(StringHandler::BorderPattern pattern) {mBorderPattern = pattern;}
+  StringHandler::BorderPattern getBorderPattern() {return mBorderPattern;}
+  void setRadius(qreal radius) {mRadius = radius;}
+  qreal getRadius() {return mRadius;}
+  void setStartAngle(qreal startAngle) {mStartAngle = startAngle;}
+  qreal getStartAngle() {return mStartAngle;}
+  void setEndAngle(qreal endAngle) {mEndAngle = endAngle;}
+  qreal getEndAngle() {return mEndAngle;}
   void setTextString(QString textString);
-  QString getTextString();
-  void setFontName(QString fontName);
-  QString getFontName();
-  void setFontSize(qreal fontSize);
-  qreal getFontSize();
-  void setTextStyles(QList<StringHandler::TextStyle> textStyles);
-  QList<StringHandler::TextStyle> getTextStyles();
-  void setTextHorizontalAlignment(StringHandler::TextAlignment textAlignment);
-  StringHandler::TextAlignment getTextHorizontalAlignment();
+  QString getTextString() {return mOriginalTextString;}
+  void setFontName(QString fontName) {mFontName = fontName;}
+  QString getFontName() {return mFontName;}
+  void setFontSize(qreal fontSize) {mFontSize = fontSize;}
+  qreal getFontSize() {return mFontSize;}
+  void setTextStyles(QList<StringHandler::TextStyle> textStyles) {mTextStyles = textStyles;}
+  QList<StringHandler::TextStyle> getTextStyles() {return mTextStyles;}
+  void setTextHorizontalAlignment(StringHandler::TextAlignment textAlignment) {mHorizontalAlignment = textAlignment;}
+  StringHandler::TextAlignment getTextHorizontalAlignment() {return mHorizontalAlignment;}
   void setFileName(QString fileName, Component *pComponent = 0);
   QString getFileName();
   void setImageSource(QString imageSource);
   QString getImageSource();
   void setImage(QImage image);
   QImage getImage();
-  void rotateClockwise();
-  void rotateAntiClockwise();
   void applyRotation(qreal angle);
   void adjustPointsWithOrigin();
   void adjustExtentsWithOrigin();
@@ -185,8 +188,16 @@ public:
   void removeRedundantPointsGeometriesAndCornerItems();
   void adjustGeometries();
   virtual void setShapeFlags(bool enable);
+  virtual void updateShape(ShapeAnnotation *pShapeAnnotation);
+  void emitAdded() {emit added();}
+  void emitChanged() {emit changed();}
+  void emitDeleted() {emit deleted();}
+  void emitPrepareGeometryChange() {prepareGeometryChange();}
 signals:
-  void updateClassAnnotation();
+  void updateReferenceShapes();
+  void added();
+  void changed();
+  void deleted();
 public slots:
   void deleteConnection();
   void deleteMe();
@@ -195,10 +206,8 @@ public slots:
   void bringForward();
   void sendToBack();
   void sendBackward();
-  void rotateClockwiseKeyPress();
-  void rotateAntiClockwiseKeyPress();
-  void rotateClockwiseMouseRightClick();
-  void rotateAntiClockwiseMouseRightClick();
+  void rotateClockwise();
+  void rotateAntiClockwise();
   void moveUp();
   void moveShiftUp();
   void moveCtrlUp();
@@ -217,10 +226,13 @@ public slots:
   LineGeometryType findLineGeometryType(QPointF point1, QPointF point2);
   bool isLineStraight(QPointF point1, QPointF point2);
   void showShapeProperties();
-  void manhattanizeShape();
+  void manhattanizeShape(bool addToStack = true);
+  void referenceShapeAdded();
+  void referenceShapeChanged();
+  void referenceShapeDeleted();
 protected:
   GraphicsView *mpGraphicsView;
-  Transformation *mpTransformation;
+  Component *mpParentComponent;
   QList<QPointF> mPoints;
   QList<LineGeometryType> mGeometries;
   QList<StringHandler::Arrow> mArrow;

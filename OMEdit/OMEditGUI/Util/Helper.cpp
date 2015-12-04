@@ -53,7 +53,7 @@ QString Helper::omFileTypes = "Modelica Files (*.mo)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
 QString Helper::ngspiceNetlistFileTypes = "ngspice Netlist Files (*.cir *.sp *.spice)";
 QString Helper::imageFileTypes = "SVG (*.svg);;PNG image (*.png);;Windows BMP image (*.bmp);;TIFF (*.tiff)";
-QString Helper::bitmapFileTypes = "PNG image (*.png);;Windows BMP image (*.bmp);;JPEG (*.jpg *.jpeg)";
+QString Helper::bitmapFileTypes = "PNG image (*.png);Windows BMP image (*.bmp);JPEG (*.jpg *.jpeg)";
 QString Helper::fmuFileTypes = "FMU Files (*.fmu)";
 QString Helper::xmlFileTypes = "XML Files (*.xml)";
 QString Helper::infoXmlFileTypes = "OM Info Files (*_info.xml *_info.json)";
@@ -92,13 +92,6 @@ QString Helper::textOutput = "Text";
 QString Helper::utf8 = "UTF-8";
 QFontInfo Helper::systemFontInfo = QFontInfo(QFont());
 QFontInfo Helper::monospacedFontInfo = QFontInfo(QFont());
-QString Helper::defaultComponentAnnotationString = QString("{-100.0,-100.0,100.0,100.0,true,0.1,2.0,2.0,"
-                                                  "{Rectangle(true, {0.0, 0.0}, 0, {0, 0, 0}, {240, 240, 240}, LinePattern.Solid, FillPattern.Solid, 0.25, BorderPattern.None, {{-100, 100}, {100, -100}}, 0),"
-                                                  "Text(true, {0.0, 0.0}, 0, {0, 0, 0}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-100, 20}, {100, -20}}, \"%name\", 0, TextAlignment.Center)}}");
-QString Helper::errorComponentAnnotationString = QString("{-100.0,-100.0,100.0,100.0,false,0.1,2.0,2.0,"
-                                                         "{Rectangle(true, {0.0, 0.0}, 0, {255, 0, 0}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, BorderPattern.None, {{-100, -100}, {100, 100}}, 0),"
-                                                         "Line(true, {0.0, 0.0}, 0, {{-100, 100}, {100, -100}}, {255, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None),"
-                                                         "Line(true, {0.0, 0.0}, 0, {{100, 100}, {-100, -100}}, {255, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None)}}");
 /* Meta Modelica Types */
 QString Helper::MODELICA_METATYPE = QString("modelica_metatype");
 QString Helper::MODELICA_STRING = QString("modelica_string");
@@ -120,7 +113,6 @@ QString Helper::REAL = QString("Real");
 /* Global translated variables */
 QString Helper::newModelicaClass;
 QString Helper::createNewModelicaClass;
-QString Helper::findClasses;
 QString Helper::openModelicaFiles;
 QString Helper::openConvertModelicaFiles;
 QString Helper::libraries;
@@ -139,6 +131,11 @@ QString Helper::properties;
 QString Helper::add;
 QString Helper::edit;
 QString Helper::save;
+QString Helper::saveTip;
+QString Helper::saveAs;
+QString Helper::saveAsTip;
+QString Helper::saveTotal;
+QString Helper::saveTotalTip;
 QString Helper::apply;
 QString Helper::chooseDirectory;
 QString Helper::general;
@@ -184,7 +181,7 @@ QString Helper::unloadClass;
 QString Helper::duplicate;
 QString Helper::duplicateTip;
 QString Helper::unloadClassTip;
-QString Helper::unloadXMLTip;
+QString Helper::unloadTLMOrTextTip;
 QString Helper::refresh;
 QString Helper::simulate;
 QString Helper::simulateTip;
@@ -248,7 +245,7 @@ QString Helper::iconView;
 QString Helper::diagramView;
 QString Helper::textView;
 QString Helper::documentationView;
-QString Helper::searchModelicaClass;
+QString Helper::searchClasses;
 QString Helper::findReplaceModelicaText;
 QString Helper::left;
 QString Helper::center;
@@ -305,7 +302,6 @@ void Helper::initHelperVariables()
   /* Global translated variables */
   Helper::newModelicaClass = tr("New Modelica Class");
   Helper::createNewModelicaClass = tr("Create New Modelica Class");
-  Helper::findClasses = tr("Find Classes");
   Helper::openModelicaFiles = tr("Open Model/Library File(s)");
   Helper::openConvertModelicaFiles = tr("Open/Convert Modelica File(s) With Encoding");
   Helper::libraries = tr("Libraries");
@@ -324,6 +320,11 @@ void Helper::initHelperVariables()
   Helper::add = tr("Add");
   Helper::edit = tr("Edit");
   Helper::save = tr("Save");
+  Helper::saveTip = tr("Save a file");
+  Helper::saveAs = tr("Save As");
+  Helper::saveAsTip = tr("Save a copy of the class in a new file");
+  Helper::saveTotal = tr("Save Total");
+  Helper::saveTotalTip = tr("Save class with all used classes");
   Helper::apply = tr("Apply");
   Helper::importFMU = tr("Import FMU");
   Helper::chooseDirectory = tr("Choose Directory");
@@ -370,7 +371,7 @@ void Helper::initHelperVariables()
   Helper::duplicateTip = tr("Duplicates the item");
   Helper::unloadClass = tr("Unload");
   Helper::unloadClassTip = tr("Unload the Modelica class");
-  Helper::unloadXMLTip = tr("Unload the XML file");
+  Helper::unloadTLMOrTextTip = tr("Unload the TLM/Text file");
   Helper::refresh = tr("Refresh");
   Helper::simulate = tr("Simulate");
   Helper::simulateTip = tr("Simulates the Modelica class");
@@ -434,7 +435,7 @@ void Helper::initHelperVariables()
   Helper::diagramView = tr("Diagram View");
   Helper::textView = tr("Text View");
   Helper::documentationView = tr("Documentation View");
-  Helper::searchModelicaClass = tr("Search Modelica Class");
+  Helper::searchClasses = tr("Search Classes");
   Helper::findReplaceModelicaText = tr("Find/Replace...");
   Helper::left = tr("Left");
   Helper::center = tr("Center");
@@ -520,7 +521,7 @@ QString GUIMessages::getMessage(int type)
     case ERROR_IN_MODELICA_TEXT:
       return tr("Problems are found in Modelica Text. <br />");
     case REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY:
-      return tr("<br /><br />For normal users it is recommended to choose <b>Revert from previous</b>. You can also choose <b>Fix errors manually</b> if you want to fix them by your own.");
+      return tr("<br /><br />If you cannot find the source of the error, you can always <b>revert to the last correct version</b>.");
     case NO_OPENMODELICA_KEYWORDS:
       return tr("Please make sure you are not using any OpenModelica Keywords like (model, package, record, class etc.)");
     case UNABLE_TO_LOAD_FILE:

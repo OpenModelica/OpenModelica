@@ -42,7 +42,8 @@ QMainWindow::separator {
 }
 
 /* Tree Styles */
-QTreeWidget#TreeWithBranches::branch:has-siblings,
+/* Don't show custom tree collapse/expand icons. */
+/*QTreeWidget#TreeWithBranches::branch:has-siblings,
 QTreeWidget#TreeWithBranches::branch:open:has-children:has-siblings,
 QTreeView#TreeWithBranches::branch:has-siblings,
 QTreeView#TreeWithBranches::branch:open:has-children:has-siblings {
@@ -86,7 +87,7 @@ QTreeView#TreeWithBranches::branch:open:has-children:!has-siblings:adjoins-item 
   background-position: top;
   image: url(:/Resources/icons/branch-open.png);
   image-position: top;
-}
+}*/
 /* End of Tree Styles */
 
 QLineEdit {

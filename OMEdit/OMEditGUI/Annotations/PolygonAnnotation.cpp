@@ -37,21 +37,10 @@
  */
 
 #include "PolygonAnnotation.h"
+#include "Commands.h"
 
-PolygonAnnotation::PolygonAnnotation(QString annotation, Component *pParent)
-  : ShapeAnnotation(pParent)
-{
-  // set the default values
-  GraphicItem::setDefaults();
-  FilledShape::setDefaults();
-  ShapeAnnotation::setDefaults();
-  parseShapeAnnotation(annotation);
-  setPos(mOrigin);
-  setRotation(mRotation);
-}
-
-PolygonAnnotation::PolygonAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inheritedShape, pGraphicsView, 0)
+PolygonAnnotation::PolygonAnnotation(QString annotation, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   // set the default values
   GraphicItem::setDefaults();
@@ -61,9 +50,30 @@ PolygonAnnotation::PolygonAnnotation(QString annotation, bool inheritedShape, Gr
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
   setShapeFlags(true);
-  mpGraphicsView->addShapeObject(this);
-  mpGraphicsView->scene()->addItem(this);
-  connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
+}
+
+PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+  : ShapeAnnotation(pParent)
+{
+  updateShape(pShapeAnnotation);
+  setPos(mOrigin);
+  setRotation(mRotation);
+  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
+}
+
+PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(true, pGraphicsView, 0)
+{
+  updateShape(pShapeAnnotation);
+  setShapeFlags(true);
+  mpGraphicsView->addItem(this);
+  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
 void PolygonAnnotation::parseShapeAnnotation(QString annotation)
@@ -72,29 +82,30 @@ void PolygonAnnotation::parseShapeAnnotation(QString annotation)
   FilledShape::parseShapeAnnotation(annotation);
   // parse the shape to get the list of attributes of Polygon.
   QStringList list = StringHandler::getStrings(annotation);
-  if (list.size() < 10)
+  if (list.size() < 10) {
     return;
+  }
+  mPoints.clear();
   // 9th item of list contains the points.
   QStringList pointsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)));
-  foreach (QString point, pointsList)
-  {
+  foreach (QString point, pointsList) {
     QStringList polygonPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(point));
-    if (polygonPoints.size() >= 2)
+    if (polygonPoints.size() >= 2) {
       mPoints.append(QPointF(polygonPoints.at(0).toFloat(), polygonPoints.at(1).toFloat()));
+    }
   }
   /* The polygon is automatically closed, if the first and the last points are not identical. */
-  if (mPoints.size() == 1)
-  {
+  if (mPoints.size() == 1) {
     mPoints.append(mPoints.first());
     mPoints.append(mPoints.first());
-  }
-  else if (mPoints.size() == 2)
-  {
+  } else if (mPoints.size() == 2) {
     mPoints.append(mPoints.first());
   }
-  if (mPoints.size() > 0)
-    if (mPoints.first() != mPoints.last())
+  if (mPoints.size() > 0) {
+    if (mPoints.first() != mPoints.last()) {
       mPoints.append(mPoints.first());
+    }
+  }
   // 10th item of the list is smooth.
   mSmooth = StringHandler::getSmoothType(list.at(9));
 }
@@ -102,19 +113,13 @@ void PolygonAnnotation::parseShapeAnnotation(QString annotation)
 QPainterPath PolygonAnnotation::getShape() const
 {
   QPainterPath path;
-  if (mPoints.size() > 0)
-  {
-    if (mSmooth)
-    {
+  if (mPoints.size() > 0) {
+    if (mSmooth) {
       path.moveTo(mPoints.at(0));
-      if (mPoints.size() == 2)
-      {
+      if (mPoints.size() == 2) {
         path.lineTo(mPoints.at(1));
-      }
-      else
-      {
-        for (int i = 2 ; i < mPoints.size() ; i++)
-        {
+      } else {
+        for (int i = 2 ; i < mPoints.size() ; i++) {
           QPointF point3 = mPoints.at(i);
           // if points are only two then spline acts as simple line
           // calculate middle points for bezier curves
@@ -125,15 +130,12 @@ QPainterPath PolygonAnnotation::getShape() const
           path.lineTo(point12);
           path.cubicTo(point12, point2, point23);
           // if its the last point
-          if (i == mPoints.size() - 1)
-          {
+          if (i == mPoints.size() - 1) {
             path.lineTo(point3);
           }
         }
       }
-    }
-    else
-    {
+    } else {
       path.addPolygon(QPolygonF(mPoints.toVector()));
     }
   }
@@ -148,12 +150,9 @@ QRectF PolygonAnnotation::boundingRect() const
 QPainterPath PolygonAnnotation::shape() const
 {
   QPainterPath path = getShape();
-  if (mFillPattern == StringHandler::FillNone)
-  {
+  if (mFillPattern == StringHandler::FillNone) {
     return addPathStroker(path);
-  }
-  else
-  {
+  } else {
     return path;
   }
 }
@@ -162,8 +161,7 @@ void PolygonAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
-  if (mVisible)
-  {
+  if (mVisible) {
     drawPolygonAnnotaion(painter);
   }
 }
@@ -175,6 +173,42 @@ void PolygonAnnotation::drawPolygonAnnotaion(QPainter *painter)
   painter->drawPath(getShape());
 }
 
+/*!
+ * \brief PolygonAnnotation::getOMCShapeAnnotation
+ * Returns Polygon annotation in format as returned by OMC.
+ * \return
+ */
+QString PolygonAnnotation::getOMCShapeAnnotation()
+{
+  QStringList annotationString;
+  annotationString.append(GraphicItem::getOMCShapeAnnotation());
+  annotationString.append(FilledShape::getOMCShapeAnnotation());
+  // get points
+  QString pointsString;
+  if (mPoints.size() > 0) {
+    pointsString.append("{");
+  }
+  for (int i = 0 ; i < mPoints.size() ; i++) {
+    pointsString.append("{").append(QString::number(mPoints[i].x())).append(",");
+    pointsString.append(QString::number(mPoints[i].y())).append("}");
+    if (i < mPoints.size() - 1) {
+      pointsString.append(",");
+    }
+  }
+  if (mPoints.size() > 0) {
+    pointsString.append("}");
+    annotationString.append(pointsString);
+  }
+  // get the smooth
+  annotationString.append(StringHandler::getSmoothString(mSmooth));
+  return annotationString.join(",");
+}
+
+/*!
+ * \brief PolygonAnnotation::getShapeAnnotation
+ * Returns Polygon annotation.
+ * \return
+ */
 QString PolygonAnnotation::getShapeAnnotation()
 {
   QStringList annotationString;
@@ -182,27 +216,22 @@ QString PolygonAnnotation::getShapeAnnotation()
   annotationString.append(FilledShape::getShapeAnnotation());
   // get points
   QString pointsString;
-  if (mPoints.size() > 0)
-  {
+  if (mPoints.size() > 0) {
     pointsString.append("points={");
   }
-  for (int i = 0 ; i < mPoints.size() ; i++)
-  {
+  for (int i = 0 ; i < mPoints.size() ; i++) {
     pointsString.append("{").append(QString::number(mPoints[i].x())).append(",");
     pointsString.append(QString::number(mPoints[i].y())).append("}");
-    if (i < mPoints.size() - 1)
-    {
+    if (i < mPoints.size() - 1) {
       pointsString.append(",");
     }
   }
-  if (mPoints.size() > 0)
-  {
+  if (mPoints.size() > 0) {
     pointsString.append("}");
     annotationString.append(pointsString);
   }
   // get the smooth
-  if (mSmooth != StringHandler::SmoothNone)
-  {
+  if (mSmooth != StringHandler::SmoothNone) {
     annotationString.append(QString("smooth=").append(StringHandler::getSmoothString(mSmooth)));
   }
   return QString("Polygon(").append(annotationString.join(",")).append(")");
@@ -232,24 +261,33 @@ void PolygonAnnotation::updateEndPoint(QPointF point)
   mPoints.replace(mPoints.size() - 2, point);
 }
 
+void PolygonAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
+{
+  // set the default values
+  GraphicItem::setDefaults(pShapeAnnotation);
+  FilledShape::setDefaults(pShapeAnnotation);
+  mPoints.clear();
+  setPoints(pShapeAnnotation->getPoints());
+  ShapeAnnotation::setDefaults(pShapeAnnotation);
+}
+
+/*!
+ * \brief PolygonAnnotation::duplicate
+ * Duplicates the shape.
+ */
 void PolygonAnnotation::duplicate()
 {
-  PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation("", false, mpGraphicsView);
-  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
-                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation("", mpGraphicsView);
+  pPolygonAnnotation->updateShape(this);
+  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
   pPolygonAnnotation->setOrigin(mOrigin + gridStep);
-  pPolygonAnnotation->setRotationAngle(mRotation);
   pPolygonAnnotation->initializeTransformation();
-  pPolygonAnnotation->setLineColor(getLineColor());
-  pPolygonAnnotation->setFillColor(getFillColor());
-  pPolygonAnnotation->setLinePattern(getLinePattern());
-  pPolygonAnnotation->setFillPattern(getFillPattern());
-  pPolygonAnnotation->setLineThickness(getLineThickness());
-  pPolygonAnnotation->setSmooth(getSmooth());
-  pPolygonAnnotation->setPoints(getPoints());
   pPolygonAnnotation->drawCornerItems();
-  pPolygonAnnotation->setCornerItemsPassive();
+  pPolygonAnnotation->setCornerItemsActiveOrPassive();
   pPolygonAnnotation->update();
-  mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pPolygonAnnotation));
+  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pPolygonAnnotation, mpGraphicsView);
+  setSelected(false);
+  pPolygonAnnotation->setSelected(true);
 }

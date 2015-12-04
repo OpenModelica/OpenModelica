@@ -37,21 +37,10 @@
  */
 
 #include "RectangleAnnotation.h"
+#include "Commands.h"
 
-RectangleAnnotation::RectangleAnnotation(QString annotation, Component *pParent)
-  : ShapeAnnotation(pParent)
-{
-  // set the default values
-  GraphicItem::setDefaults();
-  FilledShape::setDefaults();
-  ShapeAnnotation::setDefaults();
-  parseShapeAnnotation(annotation);
-  setPos(mOrigin);
-  setRotation(mRotation);
-}
-
-RectangleAnnotation::RectangleAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inheritedShape, pGraphicsView, 0)
+RectangleAnnotation::RectangleAnnotation(QString annotation, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   // set the default values
   GraphicItem::setDefaults();
@@ -61,9 +50,48 @@ RectangleAnnotation::RectangleAnnotation(QString annotation, bool inheritedShape
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
   setShapeFlags(true);
-  mpGraphicsView->addShapeObject(this);
-  mpGraphicsView->scene()->addItem(this);
-  connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
+}
+
+RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+  : ShapeAnnotation(pParent)
+{
+  updateShape(pShapeAnnotation);
+  setPos(mOrigin);
+  setRotation(mRotation);
+  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
+}
+
+RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(true, pGraphicsView, 0)
+{
+  updateShape(pShapeAnnotation);
+  setShapeFlags(true);
+  mpGraphicsView->addItem(this);
+  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
+  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
+}
+
+RectangleAnnotation::RectangleAnnotation(Component *pParent)
+  : ShapeAnnotation(pParent)
+{
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // create a grey rectangle
+  setLineColor(QColor(0, 0, 0));
+  setFillColor(QColor(240, 240, 240));
+  setFillPattern(StringHandler::FillSolid);
+  QList<QPointF> extents;
+  extents << QPointF(-100, -100) << QPointF(100, 100);
+  setExtents(extents);
+  setPos(mOrigin);
+  setRotation(mRotation);
 }
 
 void RectangleAnnotation::parseShapeAnnotation(QString annotation)
@@ -72,17 +100,18 @@ void RectangleAnnotation::parseShapeAnnotation(QString annotation)
   FilledShape::parseShapeAnnotation(annotation);
   // parse the shape to get the list of attributes of Rectangle.
   QStringList list = StringHandler::getStrings(annotation);
-  if (list.size() < 11)
+  if (list.size() < 11) {
     return;
+  }
   // 9th item of the list contains the border pattern.
   mBorderPattern = StringHandler::getBorderPatternType(list.at(8));
   // 10th item is the extent points
   QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(9)));
-  for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++)
-  {
+  for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++) {
     QStringList extentPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(extentsList[i]));
-    if (extentPoints.size() >= 2)
+    if (extentPoints.size() >= 2) {
       mExtents.replace(i, QPointF(extentPoints.at(0).toFloat(), extentPoints.at(1).toFloat()));
+    }
   }
   // 11th item of the list contains the corner radius.
   mRadius = list.at(10).toFloat();
@@ -118,17 +147,50 @@ void RectangleAnnotation::drawRectangleAnnotaion(QPainter *painter)
   painter->drawRoundedRect(getBoundingRect(), mRadius, mRadius);
 }
 
+/*!
+ * \brief RectangleAnnotation::getOMCShapeAnnotation
+ * Returns Rectangle annotation in format as returned by OMC.
+ * \return
+ */
+QString RectangleAnnotation::getOMCShapeAnnotation()
+{
+  QStringList annotationString;
+  annotationString.append(GraphicItem::getOMCShapeAnnotation());
+  annotationString.append(FilledShape::getOMCShapeAnnotation());
+  // get the border pattern
+  annotationString.append(StringHandler::getBorderPatternString(mBorderPattern));
+  // get the extents
+  if (mExtents.size() > 1) {
+    QString extentString;
+    extentString.append("{");
+    extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
+    extentString.append(QString::number(mExtents.at(0).y())).append("},");
+    extentString.append("{").append(QString::number(mExtents.at(1).x())).append(",");
+    extentString.append(QString::number(mExtents.at(1).y())).append("}");
+    extentString.append("}");
+    annotationString.append(extentString);
+  }
+  // get the radius
+  annotationString.append(QString::number(mRadius));
+  return annotationString.join(",");
+}
+
+/*!
+ * \brief RectangleAnnotation::getShapeAnnotation
+ * Returns Rectangle annotation.
+ * \return
+ */
 QString RectangleAnnotation::getShapeAnnotation()
 {
   QStringList annotationString;
   annotationString.append(GraphicItem::getShapeAnnotation());
   annotationString.append(FilledShape::getShapeAnnotation());
   // get the border pattern
-  if (mBorderPattern != StringHandler::BorderNone)
+  if (mBorderPattern != StringHandler::BorderNone) {
     annotationString.append(QString("borderPattern=").append(StringHandler::getBorderPatternString(mBorderPattern)));
+  }
   // get the extents
-  if (mExtents.size() > 1)
-  {
+  if (mExtents.size() > 1) {
     QString extentString;
     extentString.append("extent={");
     extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
@@ -139,30 +201,37 @@ QString RectangleAnnotation::getShapeAnnotation()
     annotationString.append(extentString);
   }
   // get the radius
-  if (mRadius != 0)
+  if (mRadius != 0) {
     annotationString.append(QString("radius=").append(QString::number(mRadius)));
+  }
   return QString("Rectangle(").append(annotationString.join(",")).append(")");
 }
 
+void RectangleAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
+{
+  // set the default values
+  GraphicItem::setDefaults(pShapeAnnotation);
+  FilledShape::setDefaults(pShapeAnnotation);
+  ShapeAnnotation::setDefaults(pShapeAnnotation);
+}
+
+/*!
+ * \brief RectangleAnnotation::duplicate
+ * Duplicates the shape.
+ */
 void RectangleAnnotation::duplicate()
 {
-  RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation("", false, mpGraphicsView);
-  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
-                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation("", mpGraphicsView);
+  pRectangleAnnotation->updateShape(this);
+  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
   pRectangleAnnotation->setOrigin(mOrigin + gridStep);
-  pRectangleAnnotation->setRotationAngle(mRotation);
   pRectangleAnnotation->initializeTransformation();
-  pRectangleAnnotation->setLineColor(getLineColor());
-  pRectangleAnnotation->setFillColor(getFillColor());
-  pRectangleAnnotation->setLinePattern(getLinePattern());
-  pRectangleAnnotation->setFillPattern(getFillPattern());
-  pRectangleAnnotation->setLineThickness(getLineThickness());
-  pRectangleAnnotation->setBorderPattern(getBorderPattern());
-  pRectangleAnnotation->setExtents(getExtents());
-  pRectangleAnnotation->setRadius(getRadius());
   pRectangleAnnotation->drawCornerItems();
-  pRectangleAnnotation->setCornerItemsPassive();
+  pRectangleAnnotation->setCornerItemsActiveOrPassive();
   pRectangleAnnotation->update();
-  mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->setCanAddClassAnnotation(true);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pRectangleAnnotation));
+  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pRectangleAnnotation, mpGraphicsView);
+  setSelected(false);
+  pRectangleAnnotation->setSelected(true);
 }

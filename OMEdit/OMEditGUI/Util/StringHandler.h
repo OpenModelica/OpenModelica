@@ -55,7 +55,7 @@ public:
   StringHandler();
   ~StringHandler();
   enum ViewType {Icon, Diagram, ModelicaText, NoView};
-  enum ModelicaClasses {Model, Class, Connector, ExpandableConnector, Record, Block, Function, Package, Primitive, Type, Operator,
+  enum ModelicaClasses {Model, Class, ExpandableConnector, Connector, Record, Block, Function, Package, Primitive, Type, Operator,
                         OperatorRecord, OperatorFunction, Optimization, Parameter, Constant, Protected, Enumeration};
   enum OpenModelicaErrors {Notification, Warning, OMError, NoOMError};
   enum OpenModelicaErrorKinds {Syntax, Grammar, Translation, Symbolic, Simulation, Scripting, NoOMErrorKind};
@@ -132,13 +132,15 @@ public:
   static QStringList unparseArrays(QString value);
   // Returns false on failure
   static bool unparseBool(QString value);
-  static QString getSaveFileName(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0, const QString & filter = QString(),
-                                 QString * selectedFilter = 0, const QString &defaultSuffix = QString(), const QString *purposedName = 0);
-  static QString getOpenFileName(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0, const QString & filter = QString(),
+  static QString getSaveFileName(QWidget* parent = 0, const QString &caption = "", QString * dir = 0, const QString & filter = "",
+                                 QString * selectedFilter = 0, const QString &defaultSuffix = "", const QString *proposedName = 0);
+  static QString getSaveFolderName(QWidget* parent = 0, const QString &caption = "", QString * dir = 0, const QString & filter = "",
+                                   QString * selectedFilter = 0, const QString *proposedName = 0);
+  static QString getOpenFileName(QWidget* parent = 0, const QString &caption = "", QString * dir = 0, const QString & filter = "",
                                  QString * selectedFilter = 0);
-  static QStringList getOpenFileNames(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0, const QString & filter = QString(),
-                                 QString * selectedFilter = 0);
-  static QString getExistingDirectory(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0);
+  static QStringList getOpenFileNames(QWidget* parent = 0, const QString &caption = "", QString * dir = 0, const QString & filter = "",
+                                      QString * selectedFilter = 0);
+  static QString getExistingDirectory(QWidget* parent = 0, const QString &caption = "", QString * dir = 0);
   static void setLastOpenDirectory(QString lastOpenDirectory);
   static QString getLastOpenDirectory();
   static QStringList getDialogAnnotation(QString componentAnnotation);
@@ -151,7 +153,6 @@ public:
   static bool isModelicaFile(QString extension);
   static bool naturalSort(const QString &s1, const QString &s2);
 #ifdef WIN32
-  static QProcessEnvironment compilationProcessEnvironment(QString *pCompilationProcessPath);
   static QProcessEnvironment simulationProcessEnvironment();
 #endif
   static StringHandler::SimulationMessageType getSimulationMessageType(QString type);
@@ -159,6 +160,8 @@ public:
   static QColor getSimulationMessageTypeColor(StringHandler::SimulationMessageType type);
   static QString makeClassNameRelative(QString draggedClassName, QString droppedClassName);
   static QString toCamelCase(QString str);
+  static int getTrailingSpacesSize(QString str);
+  static bool isFileWritAble(QString filePath);
 protected:
   static QString mLastOpenDir;
 };

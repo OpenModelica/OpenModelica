@@ -188,11 +188,7 @@ private:
   QString mInfoXMLFullFileName, mProfJSONFullFileName, mProfilingDataRealFileName;
   int profilingNumSteps;
   MyHandler *mpInfoXMLFileHandler;
-  QLineEdit *mpFindVariablesTextBox;
-  QComboBox *mpFindSyntaxComboBox;
-  QCheckBox *mpFindCaseSensitiveCheckBox;
-  QPushButton *mpExpandAllButton;
-  QPushButton *mpCollapseAllButton;
+  TreeSearchFilters *mpTreeSearchFilters;
   TVariablesTreeView *mpTVariablesTreeView;
   TVariablesTreeModel *mpTVariablesTreeModel;
   TVariableTreeProxyModel *mpTVariableTreeProxyModel;

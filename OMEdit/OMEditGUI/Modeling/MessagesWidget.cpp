@@ -199,7 +199,8 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
   }
   if (messageItem.getFileName().isEmpty()) { // if custom error message
     errorMessage = message;
-  } else if (messageItem.getMessageItemType()== MessageItem::TLM || mpMainWindow->getOMCProxy()->existClass(messageItem.getFileName())) {
+  } else if (messageItem.getMessageItemType()== MessageItem::TLM ||
+             mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(messageItem.getFileName())) {
     // If the class is only loaded in AST via loadString then create link for the error message.
     errorMessage = linkFormat.arg(messageItem.getFileName())
         .arg(messageItem.getLocation())
@@ -208,12 +209,13 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
         .arg(message);
   } else {
     // Find the class name using the file name and line number.
-    LibraryTreeNode *pLibraryTreeNode = mpMainWindow->getLibraryTreeWidget()->getLibraryTreeNodeFromFile(messageItem.getFileName(),
-                                                                                                         messageItem.getLineStart().toInt());
-    if (pLibraryTreeNode) {
-      errorMessage = linkFormat.arg(pLibraryTreeNode->getNameStructure())
+    LibraryTreeItem *pLibraryTreeItem;
+    pLibraryTreeItem = mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->getLibraryTreeItemFromFile(messageItem.getFileName(),
+                                                                                                           messageItem.getLineStart().toInt());
+    if (pLibraryTreeItem) {
+      errorMessage = linkFormat.arg(pLibraryTreeItem->getNameStructure())
           .arg(messageItem.getLocation())
-          .arg(pLibraryTreeNode->getNameStructure())
+          .arg(pLibraryTreeItem->getNameStructure())
           .arg(messageItem.getLineStart())
           .arg(message);
     } else {
@@ -258,10 +260,10 @@ void MessagesWidget::openErrorMessageClass(QUrl url)
   }
   QString className = url.path();
   if (className.startsWith("/")) className.remove(0, 1);
-  LibraryTreeNode *pLibraryTreeNode = mpMainWindow->getLibraryTreeWidget()->getLibraryTreeNode(className);
-  if (pLibraryTreeNode) {
-    mpMainWindow->getLibraryTreeWidget()->showModelWidget(pLibraryTreeNode);
-    ModelWidget *pModelWidget = pLibraryTreeNode->getModelWidget();
+  LibraryTreeItem *pLibraryTreeItem = mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className);
+  if (pLibraryTreeItem) {
+    mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+    ModelWidget *pModelWidget = pLibraryTreeItem->getModelWidget();
     if (pModelWidget && pModelWidget->getEditor()) {
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
       QUrlQuery query(url);

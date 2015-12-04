@@ -27,41 +27,36 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
+/*
+ * @author Adeel Asghar <adeel.asghar@liu.se>
+ */
 
-#ifndef FETCHINTERFACEDATADIALOG_H
-#define FETCHINTERFACEDATADIALOG_H
+#ifndef COORDINATESYSTEM_H
+#define COORDINATESYSTEM_H
 
-#include "MainWindow.h"
-#include "FetchInterfaceDataThread.h"
+#include <QList>
+#include <QPointF>
 
-class FetchInterfaceDataThread;
-
-class FetchInterfaceDataDialog : public QDialog
+class CoOrdinateSystem
 {
-  Q_OBJECT
 public:
-  FetchInterfaceDataDialog(LibraryTreeItem *pLibraryTreeItem, MainWindow *pMainWindow);
-  void closeEvent(QCloseEvent *event);
-  MainWindow* getMainWindow() {return mpMainWindow;}
-  LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
+  CoOrdinateSystem();
+  CoOrdinateSystem(const CoOrdinateSystem &coOrdinateSystem);
+  void setExtent(QList<QPointF> extent) {mExtent = extent;}
+  QList<QPointF> getExtent() const {return mExtent;}
+  void setPreserveAspectRatio(bool PreserveAspectRatio) {mPreserveAspectRatio = PreserveAspectRatio;}
+  bool getPreserveAspectRatio() const {return mPreserveAspectRatio;}
+  void setInitialScale(qreal initialScale) {mInitialScale = initialScale;}
+  qreal getInitialScale() const {return mInitialScale;}
+  void setGrid(QPointF grid) {mGrid = grid;}
+  QPointF getGrid() const {return mGrid;}
+  qreal getHorizontalGridStep();
+  qreal getVerticalGridStep();
 private:
-  MainWindow *mpMainWindow;
-  LibraryTreeItem *mpLibraryTreeItem;
-  Label *mpProgressLabel;
-  QProgressBar *mpProgressBar;
-  QPushButton *mpCancelButton;
-  QPushButton *mpFetchAgainButton;
-  Label *mpOutputLabel;
-  QPlainTextEdit *mpOutputTextBox;
-  FetchInterfaceDataThread *mpFetchInterfaceDataThread;
-public slots:
-  void cancelFetchingInterfaceData();
-  void fetchAgainInterfaceData();
-  void managerProcessStarted();
-  void writeManagerOutput(QString output, StringHandler::SimulationMessageType type);
-  void managerProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
-signals:
-  void readInterfaceData(LibraryTreeItem *pLibraryTreeItem);
+  QList<QPointF> mExtent;
+  bool mPreserveAspectRatio;
+  qreal mInitialScale;
+  QPointF mGrid;      // horizontal and vertical spacing for grid
 };
 
-#endif // FETCHINTERFACEDATADIALOG_H
+#endif // COORDINATESYSTEM_H

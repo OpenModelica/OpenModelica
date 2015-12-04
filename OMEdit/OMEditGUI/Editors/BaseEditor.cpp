@@ -168,6 +168,253 @@ int TabSettings::spacesLeftFromPosition(const QString &text, int position)
   return position - i;
 }
 
+TextBlockUserData::~TextBlockUserData()
+{
+  TextMarks marks = _marks;
+  _marks.clear();
+  foreach (ITextMark *mk, marks) {
+    mk->removeFromEditor();
+  }
+}
+
+/*!
+ * \brief TextBlockUserData::checkOpenParenthesis
+ * Checks the open Parenthesis for any mismatch
+ * \param cursor
+ * \param c
+ * \return
+ */
+TextBlockUserData::MatchType TextBlockUserData::checkOpenParenthesis(QTextCursor *cursor, QChar c)
+{
+  QTextBlock block = cursor->block();
+  if (!BaseEditorDocumentLayout::hasParentheses(block)) {
+    return NoMatch;
+  }
+
+  Parentheses parentheses = BaseEditorDocumentLayout::parentheses(block);
+  Parenthesis openParenthesis, closedParenthesis;
+  QTextBlock closedParenthesisBlock = block;
+  const int cursorPos = cursor->position() - closedParenthesisBlock.position();
+  int i = 0;
+  int ignore = 0;
+  bool foundOpen = false;
+  for (;;) {
+    if (!foundOpen) {
+      if (i >= parentheses.count())
+        return NoMatch;
+      openParenthesis = parentheses.at(i);
+      if (openParenthesis.pos != cursorPos) {
+        ++i;
+        continue;
+      } else {
+        foundOpen = true;
+        ++i;
+      }
+    }
+
+    if (i >= parentheses.count()) {
+      for (;;) {
+        closedParenthesisBlock = closedParenthesisBlock.next();
+        if (!closedParenthesisBlock.isValid())
+          return NoMatch;
+        if (BaseEditorDocumentLayout::hasParentheses(closedParenthesisBlock)) {
+          parentheses = BaseEditorDocumentLayout::parentheses(closedParenthesisBlock);
+          break;
+        }
+      }
+      i = 0;
+    }
+
+    closedParenthesis = parentheses.at(i);
+    if (closedParenthesis.type == Parenthesis::Opened) {
+      ignore++;
+      ++i;
+      continue;
+    } else {
+      if (ignore > 0) {
+        ignore--;
+        ++i;
+        continue;
+      }
+
+      cursor->clearSelection();
+      cursor->setPosition(closedParenthesisBlock.position() + closedParenthesis.pos + 1, QTextCursor::KeepAnchor);
+
+      if ((c == QLatin1Char('{') && closedParenthesis.chr != QLatin1Char('}'))
+          || (c == QLatin1Char('(') && closedParenthesis.chr != QLatin1Char(')'))
+          || (c == QLatin1Char('[') && closedParenthesis.chr != QLatin1Char(']'))) {
+        return Mismatch;
+      }
+
+      return Match;
+    }
+  }
+}
+
+/*!
+ * \brief TextBlockUserData::checkClosedParenthesis
+ * Checks the close Parenthesis for any mismatch
+ * \param cursor
+ * \param c
+ * \return
+ */
+TextBlockUserData::MatchType TextBlockUserData::checkClosedParenthesis(QTextCursor *cursor, QChar c)
+{
+  QTextBlock block = cursor->block();
+  if (!BaseEditorDocumentLayout::hasParentheses(block)) {
+    return NoMatch;
+  }
+
+  Parentheses parentheses = BaseEditorDocumentLayout::parentheses(block);
+  Parenthesis openParenthesis, closedParenthesis;
+  QTextBlock openParenthesisBlock = block;
+  const int cursorPos = cursor->position() - openParenthesisBlock.position();
+  int i = parentheses.count() - 1;
+  int ignore = 0;
+  bool foundClosed = false;
+  for (;;) {
+    if (!foundClosed) {
+      if (i < 0)
+        return NoMatch;
+      closedParenthesis = parentheses.at(i);
+      if (closedParenthesis.pos != cursorPos - 1) {
+        --i;
+        continue;
+      } else {
+        foundClosed = true;
+        --i;
+      }
+    }
+
+    if (i < 0) {
+      for (;;) {
+        openParenthesisBlock = openParenthesisBlock.previous();
+        if (!openParenthesisBlock.isValid())
+          return NoMatch;
+
+        if (BaseEditorDocumentLayout::hasParentheses(openParenthesisBlock)) {
+          parentheses = BaseEditorDocumentLayout::parentheses(openParenthesisBlock);
+          break;
+        }
+      }
+      i = parentheses.count() - 1;
+    }
+
+    openParenthesis = parentheses.at(i);
+    if (openParenthesis.type == Parenthesis::Closed) {
+      ignore++;
+      --i;
+      continue;
+    } else {
+      if (ignore > 0) {
+        ignore--;
+        --i;
+        continue;
+      }
+
+      cursor->clearSelection();
+      cursor->setPosition(openParenthesisBlock.position() + openParenthesis.pos, QTextCursor::KeepAnchor);
+
+      if ((c == QLatin1Char('}') && openParenthesis.chr != QLatin1Char('{'))
+          || (c == QLatin1Char(')') && openParenthesis.chr != QLatin1Char('('))
+          || (c == QLatin1Char(']') && openParenthesis.chr != QLatin1Char('['))) {
+        return Mismatch;
+      }
+      return Match;
+    }
+  }
+}
+
+/*!
+ * \brief TextBlockUserData::matchCursorBackward
+ * Matches the parentheses in the backward direction.
+ * \param cursor
+ * \return
+ */
+TextBlockUserData::MatchType TextBlockUserData::matchCursorBackward(QTextCursor *cursor)
+{
+  cursor->clearSelection();
+  const QTextBlock block = cursor->block();
+  if (!BaseEditorDocumentLayout::hasParentheses(block)) {
+    return NoMatch;
+  }
+
+  const int relPos = cursor->position() - block.position();
+  Parentheses parentheses = BaseEditorDocumentLayout::parentheses(block);
+  const Parentheses::const_iterator cend = parentheses.constEnd();
+  for (Parentheses::const_iterator it = parentheses.constBegin();it != cend; ++it) {
+    const Parenthesis &parenthesis = *it;
+    if (parenthesis.pos == relPos - 1 && parenthesis.type == Parenthesis::Closed) {
+      return checkClosedParenthesis(cursor, parenthesis.chr);
+    }
+  }
+  return NoMatch;
+}
+
+/*!
+ * \brief TextBlockUserData::matchCursorForward
+ * Matches the parentheses in the forward direction.
+ * \param cursor
+ * \return
+ */
+TextBlockUserData::MatchType TextBlockUserData::matchCursorForward(QTextCursor *cursor)
+{
+  cursor->clearSelection();
+  const QTextBlock block = cursor->block();
+  if (!BaseEditorDocumentLayout::hasParentheses(block)) {
+    return NoMatch;
+  }
+
+  const int relPos = cursor->position() - block.position();
+  Parentheses parentheses = BaseEditorDocumentLayout::parentheses(block);
+  const Parentheses::const_iterator cend = parentheses.constEnd();
+  for (Parentheses::const_iterator it = parentheses.constBegin();it != cend; ++it) {
+    const Parenthesis &parenthesis = *it;
+    if (parenthesis.pos == relPos && parenthesis.type == Parenthesis::Opened) {
+      return checkOpenParenthesis(cursor, parenthesis.chr);
+    }
+  }
+  return NoMatch;
+}
+
+/*!
+ * \class BaseEditorDocumentLayout
+ * Implements a custom text layout for BaseEditor to be able to work with QTextDocument::setDocumentLayout().
+ */
+BaseEditorDocumentLayout::BaseEditorDocumentLayout(QTextDocument *document)
+  : QPlainTextDocumentLayout(document), mHasBreakpoint(false)
+{
+
+}
+
+Parentheses BaseEditorDocumentLayout::parentheses(const QTextBlock &block)
+{
+  if (TextBlockUserData *userData = testUserData(block))
+    return userData->parentheses();
+  return Parentheses();
+}
+
+bool BaseEditorDocumentLayout::hasParentheses(const QTextBlock &block)
+{
+  if (TextBlockUserData *userData = testUserData(block))
+    return userData->hasParentheses();
+  return false;
+}
+
+TextBlockUserData* BaseEditorDocumentLayout::testUserData(const QTextBlock &block)
+{
+  return static_cast<TextBlockUserData*>(block.userData());
+}
+
+TextBlockUserData* BaseEditorDocumentLayout::userData(const QTextBlock &block)
+{
+  TextBlockUserData *data = static_cast<TextBlockUserData*>(block.userData());
+  if (!data && block.isValid()) {
+    const_cast<QTextBlock&>(block).setUserData((data = new TextBlockUserData));
+  }
+  return data;
+}
+
 /*!
  * \class BaseEditor::PlainTextEdit
  * Internal QPlainTextEdit for Editor.
@@ -176,16 +423,25 @@ BaseEditor::PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   : QPlainTextEdit(pBaseEditor), mpBaseEditor(pBaseEditor)
 {
   setObjectName("BaseEditor");
-  document()->setDocumentMargin(2);
+  QTextDocument *pTextDocument = document();
+  pTextDocument->setDocumentMargin(2);
+  BaseEditorDocumentLayout *pModelicaTextDocumentLayout = new BaseEditorDocumentLayout(pTextDocument);
+  pTextDocument->setDocumentLayout(pModelicaTextDocumentLayout);
+  setDocument(pTextDocument);
   // line numbers widget
   mpLineNumberArea = new LineNumberArea(mpBaseEditor);
+  // parentheses matcher
+  mParenthesesMatchFormat.setForeground(Qt::red);
+  mParenthesesMatchFormat.setBackground(QColor(160, 238, 160));
+  mParenthesesMisMatchFormat.setBackground(Qt::red);
+
   updateLineNumberAreaWidth(0);
-  highlightCurrentLine();
+  updateHighlights();
   updateCursorPosition();
   setLineWrapping();
   connect(this, SIGNAL(blockCountChanged(int)), mpBaseEditor, SLOT(updateLineNumberAreaWidth(int)));
   connect(this, SIGNAL(updateRequest(QRect,int)), mpBaseEditor, SLOT(updateLineNumberArea(QRect,int)));
-  connect(this, SIGNAL(cursorPositionChanged()), mpBaseEditor, SLOT(highlightCurrentLine()));
+  connect(this, SIGNAL(cursorPositionChanged()), mpBaseEditor, SLOT(updateHighlights()));
   connect(this, SIGNAL(cursorPositionChanged()), mpBaseEditor, SLOT(updateCursorPosition()));
   connect(document(), SIGNAL(contentsChange(int,int,int)), mpBaseEditor, SLOT(contentsHasChanged(int,int,int)));
   OptionsDialog *pOptionsDialog = mpBaseEditor->getMainWindow()->getOptionsDialog();
@@ -236,8 +492,9 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
     /* paint line numbers */
     if (block.isVisible() && bottom >= event->rect().top()) {
       QString number;
-      if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::Modelica) {
-        number = QString::number(blockNumber + mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getClassInformation().lineNumberStart);
+      if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isInPackageOneFile() &&
+          mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+        number = QString::number(blockNumber + mpBaseEditor->getModelWidget()->getLibraryTreeItem()->mClassInformation.lineNumberStart);
       } else {
         number = QString::number(blockNumber + 1);
       }
@@ -295,11 +552,11 @@ void BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
     }
   } else if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonDblClick) {
     /* Do not allow breakpoints if file is not saved. */
-    if (!mpBaseEditor->getModelWidget()->getLibraryTreeNode()->isSaved()) {
+    if (!mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isSaved()) {
       mpBaseEditor->getMainWindow()->getInfoBar()->showMessage(tr("<b>Information: </b>Breakpoints are only allowed on saved classes."));
       return;
     }
-    QString fileName = mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getFileName();
+    QString fileName = mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getFileName();
     int lineNumber = cursor.blockNumber() + 1;
     if (event->button() == Qt::LeftButton) {  //! left clicked: add/remove breakpoint
       toggleBreakpoint(fileName, lineNumber);
@@ -319,8 +576,9 @@ void BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
  */
 void BaseEditor::PlainTextEdit::goToLineNumber(int lineNumber)
 {
-  if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::Modelica) {
-    int lineNumberStart = mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getClassInformation().lineNumberStart;
+  if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isInPackageOneFile() &&
+      mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    int lineNumberStart = mpBaseEditor->getModelWidget()->getLibraryTreeItem()->mClassInformation.lineNumberStart;
     int lineNumberDifferenceFromStart = lineNumberStart - 1;
     lineNumber -= lineNumberDifferenceFromStart;
   }
@@ -364,21 +622,16 @@ void BaseEditor::PlainTextEdit::updateLineNumberArea(const QRect &rect, int dy)
 }
 
 /*!
- * \brief BaseEditor::highlightCurrentLine
- * Slot activated when editor's cursorPositionChanged signal is raised.
- * Hightlights the current line.
+ * \brief BaseEditor::updateHighlights
+ * Slot activated when editor's cursorPositionChanged signal is raised.\n
+ * Updates all the highlights.
  */
-void BaseEditor::PlainTextEdit::highlightCurrentLine()
+void BaseEditor::PlainTextEdit::updateHighlights()
 {
-  QList<QTextEdit::ExtraSelection> extraSelections;
-  QTextEdit::ExtraSelection selection;
-  QColor lineColor = QColor(232, 242, 254);
-  selection.format.setBackground(lineColor);
-  selection.format.setProperty(QTextFormat::FullWidthSelection, true);
-  selection.cursor = textCursor();
-  selection.cursor.clearSelection();
-  extraSelections.append(selection);
-  setExtraSelections(extraSelections);
+  QList<QTextEdit::ExtraSelection> selections;
+  setExtraSelections(selections);
+  highlightCurrentLine();
+  highlightParentheses();
 }
 
 /*!
@@ -436,7 +689,7 @@ void BaseEditor::PlainTextEdit::toggleBreakpoint(const QString fileName, int lin
     /* Add the marker to document marker */
     mpBaseEditor->getDocumentMarker()->addMark(pBreakpointMarker, lineNumber);
     /* insert the breakpoint in BreakpointsWidget */
-    pBreakpointsTreeModel->insertBreakpoint(pBreakpointMarker, mpBaseEditor->getModelWidget()->getLibraryTreeNode(), pBreakpointsTreeModel->getRootBreakpointTreeItem());
+    pBreakpointsTreeModel->insertBreakpoint(pBreakpointMarker, mpBaseEditor->getModelWidget()->getLibraryTreeItem(), pBreakpointsTreeModel->getRootBreakpointTreeItem());
   } else {
     mpBaseEditor->getDocumentMarker()->removeMark(pBreakpointMarker);
     pBreakpointsTreeModel->removeBreakpoint(pBreakpointMarker);
@@ -501,6 +754,133 @@ void BaseEditor::PlainTextEdit::indentOrUnindent(bool doIndent)
   cursor.insertText(tabSettings.indentationString(startColumn, targetColumn));
   cursor.endEditBlock();
   setTextCursor(cursor);
+}
+
+/*!
+ * \brief BaseEditor::PlainTextEdit::highlightCurrentLine
+ * Hightlights the current line.
+ */
+void BaseEditor::PlainTextEdit::highlightCurrentLine()
+{
+  QList<QTextEdit::ExtraSelection> selections = extraSelections();
+  QTextEdit::ExtraSelection selection;
+  QColor lineColor = QColor(232, 242, 254);
+  selection.format.setBackground(lineColor);
+  selection.format.setProperty(QTextFormat::FullWidthSelection, true);
+  selection.cursor = textCursor();
+  selection.cursor.clearSelection();
+  selections.append(selection);
+  setExtraSelections(selections);
+}
+
+/*!
+ * \brief BaseEditor::PlainTextEdit::highlightParentheses
+ * Highlights the matching parentheses.
+ */
+void BaseEditor::PlainTextEdit::highlightParentheses()
+{
+  if (isReadOnly()) {
+    return;
+  }
+
+  QTextCursor backwardMatch = textCursor();
+  QTextCursor forwardMatch = textCursor();
+  if (overwriteMode()) {
+    backwardMatch.movePosition(QTextCursor::Right);
+  }
+
+  const TextBlockUserData::MatchType backwardMatchType = TextBlockUserData::matchCursorBackward(&backwardMatch);
+  const TextBlockUserData::MatchType forwardMatchType = TextBlockUserData::matchCursorForward(&forwardMatch);
+  QList<QTextEdit::ExtraSelection> selections = extraSelections();
+
+  if (backwardMatchType == TextBlockUserData::NoMatch && forwardMatchType == TextBlockUserData::NoMatch) {
+    setExtraSelections(selections);
+    return;
+  }
+
+  if (backwardMatch.hasSelection()) {
+    QTextEdit::ExtraSelection selection;
+    if (backwardMatchType == TextBlockUserData::Mismatch) {
+      selection.cursor = backwardMatch;
+      selection.format = mParenthesesMisMatchFormat;
+      selections.append(selection);
+    } else {
+      selection.cursor = backwardMatch;
+      selection.format = mParenthesesMatchFormat;
+
+      selection.cursor.setPosition(backwardMatch.selectionStart());
+      selection.cursor.setPosition(selection.cursor.position() + 1, QTextCursor::KeepAnchor);
+      selections.append(selection);
+
+      selection.cursor.setPosition(backwardMatch.selectionEnd());
+      selection.cursor.setPosition(selection.cursor.position() - 1, QTextCursor::KeepAnchor);
+      selections.append(selection);
+    }
+  }
+
+  if (forwardMatch.hasSelection()) {
+    QTextEdit::ExtraSelection selection;
+    if (forwardMatchType == TextBlockUserData::Mismatch) {
+      selection.cursor = forwardMatch;
+      selection.format = mParenthesesMisMatchFormat;
+      selections.append(selection);
+    } else {
+      selection.cursor = forwardMatch;
+      selection.format = mParenthesesMatchFormat;
+
+      selection.cursor.setPosition(forwardMatch.selectionStart());
+      selection.cursor.setPosition(selection.cursor.position() + 1, QTextCursor::KeepAnchor);
+      selections.append(selection);
+
+      selection.cursor.setPosition(forwardMatch.selectionEnd());
+      selection.cursor.setPosition(selection.cursor.position() - 1, QTextCursor::KeepAnchor);
+      selections.append(selection);
+    }
+  }
+  setExtraSelections(selections);
+}
+
+/*!
+ * \brief BaseEditor::PlainTextEdit::plainTextFromSelection
+ * Returns the selected text in plain text format.
+ * \param cursor
+ * \return
+ */
+QString BaseEditor::PlainTextEdit::plainTextFromSelection(const QTextCursor &cursor) const
+{
+  // Copy the selected text as plain text
+  QString text = cursor.selectedText();
+  return convertToPlainText(text);
+}
+
+/*!
+ * \brief BaseEditor::PlainTextEdit::convertToPlainText
+ * Returns the text in plain text format.
+ * \param txt
+ * \return
+ */
+QString BaseEditor::PlainTextEdit::convertToPlainText(const QString &txt)
+{
+  QString ret = txt;
+  QChar *uc = ret.data();
+  QChar *e = uc + ret.size();
+
+  for (; uc != e; ++uc) {
+    switch (uc->unicode()) {
+      case 0xfdd0: // QTextBeginningOfFrame
+      case 0xfdd1: // QTextEndOfFrame
+      case QChar::ParagraphSeparator:
+      case QChar::LineSeparator:
+        *uc = QLatin1Char('\n');
+        break;
+      case QChar::Nbsp:
+        *uc = QLatin1Char(' ');
+        break;
+      default:
+        ;
+    }
+  }
+  return ret;
 }
 
 /*!
@@ -573,8 +953,64 @@ void BaseEditor::PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
 }
 
 /*!
+ * \brief BaseEditor::PlainTextEdit::createMimeDataFromSelection
+ * Reimplementation of QPlainTextEdit::createMimeDataFromSelection() to allow copying text with formatting.
+ * \return
+ */
+QMimeData* BaseEditor::PlainTextEdit::createMimeDataFromSelection() const
+{
+  if (textCursor().hasSelection()) {
+    QTextCursor cursor = textCursor();
+    QMimeData *mimeData = new QMimeData;
+    QString text = plainTextFromSelection(cursor);
+    mimeData->setText(text);
+    // Create a new document from the selected text document fragment
+    QTextDocument *tempDocument = new QTextDocument;
+    QTextCursor tempCursor(tempDocument);
+    tempCursor.insertFragment(cursor.selection());
+    // Apply the additional formats set by the syntax highlighter
+    QTextBlock start = document()->findBlock(cursor.selectionStart());
+    QTextBlock last = document()->findBlock(cursor.selectionEnd());
+    QTextBlock end = last.next();
+
+    const int selectionStart = cursor.selectionStart();
+    const int endOfDocument = tempDocument->characterCount() - 1;
+    for (QTextBlock current = start; current.isValid() && current != end; current = current.next()) {
+      foreach (const QTextLayout::FormatRange &range, current.layout()->additionalFormats()) {
+        const int startPosition = current.position() + range.start - selectionStart;
+        const int endPosition = startPosition + range.length;
+        if (endPosition <= 0 || startPosition >= endOfDocument) {
+          continue;
+        }
+        tempCursor.setPosition(qMax(startPosition, 0));
+        tempCursor.setPosition(qMin(endPosition, endOfDocument), QTextCursor::KeepAnchor);
+        QTextCharFormat format = range.format;
+        format.setFont(range.format.font());
+        tempCursor.setCharFormat(format);
+      }
+    }
+    // Reset the user states since they are not interesting
+    for (QTextBlock block = tempDocument->begin(); block.isValid(); block = block.next()) {
+      block.setUserState(-1);
+    }
+    // Make sure the text appears pre-formatted
+    tempCursor.setPosition(0);
+    tempCursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+    mimeData->setHtml(tempCursor.selection().toHtml());
+    mimeData->setData(QLatin1String("application/OMEdit.modelica-text"), text.toUtf8());
+    delete tempDocument;
+    return mimeData;
+  }
+  return 0;
+}
+
+/*!
  * \class BaseEditor
  * Base class for all editors.
+ */
+/*!
+ * \brief BaseEditor::BaseEditor
+ * \param pMainWindow
  */
 BaseEditor::BaseEditor(MainWindow *pMainWindow)
   : QWidget(pMainWindow), mpModelWidget(0), mpMainWindow(pMainWindow), mCanHaveBreakpoints(false)
@@ -702,13 +1138,13 @@ void BaseEditor::updateLineNumberArea(const QRect &rect, int dy)
 }
 
 /*!
- * \brief BaseEditor::highlightCurrentLine
+ * \brief BaseEditor::updateHighlights
  * Slot activated when editor's cursorPositionChanged signal is raised.
- * Hightlights the current line.
+ * Updates all the highlights.
  */
-void BaseEditor::highlightCurrentLine()
+void BaseEditor::updateHighlights()
 {
-  mpPlainTextEdit->highlightCurrentLine();
+  mpPlainTextEdit->updateHighlights();
 }
 
 /*!
@@ -1121,8 +1557,9 @@ GotoLineDialog::GotoLineDialog(BaseEditor *pBaseEditor)
  */
 int GotoLineDialog::exec()
 {
-  if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::Modelica) {
-    int lineNumberStart = mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getClassInformation().lineNumberStart;
+  if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isInPackageOneFile() &&
+      mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    int lineNumberStart = mpBaseEditor->getModelWidget()->getLibraryTreeItem()->mClassInformation.lineNumberStart;
     mpLineNumberLabel->setText(tr("Enter line number (%1 to %2):").arg(QString::number(lineNumberStart))
                                .arg(QString::number(mpBaseEditor->getPlainTextEdit()->blockCount() + lineNumberStart - 1)));
   } else {
