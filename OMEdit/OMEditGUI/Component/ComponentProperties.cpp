@@ -1182,45 +1182,99 @@ void SubModelAttributes::setUpDialog()
   mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit;
   mpNameTextBox->setReadOnly(true);
+  // Create the simulation tool label and combo box
+  mpSimulationToolLabel = new Label(tr("Simulation Tool"));
+  mpSimulationToolComboBox = new QComboBox;
+  mpSimulationToolComboBox->addItem(StringHandler::getSimulationTool(StringHandler::Adams));
+  mpSimulationToolComboBox->addItem(StringHandler::getSimulationTool(StringHandler::Beast));
+  mpSimulationToolComboBox->addItem(StringHandler::getSimulationTool(StringHandler::Dymola));
+  mpSimulationToolComboBox->addItem(StringHandler::getSimulationTool(StringHandler::OpenModelica));
+  mpSimulationToolComboBox->addItem(StringHandler::getSimulationTool(StringHandler::Simulink));
+  mpSimulationToolComboBox->addItem(StringHandler::getSimulationTool(StringHandler::WolframSystemModeler));
+  mpSimulationToolComboBox->addItem(StringHandler::getSimulationTool(StringHandler::Other));
+  connect(mpSimulationToolComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(changeSimulationToolStartCommand(QString)));
   // Create the start command label and text box
   mpStartCommandLabel = new Label(tr("Start Command:"));
   mpStartCommandTextBox = new QLineEdit;
-  mpStartCommandTextBox->setReadOnly(true);
+  connect(mpStartCommandTextBox, SIGNAL(textChanged(QString)), SLOT(changeSimulationTool(QString)));
   // Create the model file label and text box
   mpModelFileLabel = new Label(tr("Model File:"));
   mpModelFileTextBox = new QLineEdit;
   mpModelFileTextBox->setReadOnly(true);
+  // Create the exact step flag check box
+  mpExactStepFlagCheckBox = new QCheckBox(tr("Exact Step Flag"));
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(accept()));
+  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(updateSubModelParameters()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  // Create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   // Create a layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   pMainLayout->addWidget(mpNameLabel, 0, 0);
   pMainLayout->addWidget(mpNameTextBox, 0, 1);
-  pMainLayout->addWidget(mpStartCommandLabel, 1, 0);
-  pMainLayout->addWidget(mpStartCommandTextBox, 1, 1);
-  pMainLayout->addWidget(mpModelFileLabel, 2, 0);
-  pMainLayout->addWidget(mpModelFileTextBox, 2, 1);
-  pMainLayout->addWidget(mpButtonBox, 3, 0, 1, 2, Qt::AlignRight);
+  pMainLayout->addWidget(mpModelFileLabel, 1, 0);
+  pMainLayout->addWidget(mpModelFileTextBox, 1, 1);
+  pMainLayout->addWidget(mpSimulationToolLabel, 2, 0);
+  pMainLayout->addWidget(mpSimulationToolComboBox, 2, 1);
+  pMainLayout->addWidget(mpStartCommandLabel, 3, 0);
+  pMainLayout->addWidget(mpStartCommandTextBox, 3, 1);
+  pMainLayout->addWidget(mpExactStepFlagCheckBox, 4, 0 );
+  pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 2, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
 /*!
-  Initialize the fields with default values.
+  Initialize the fields with values.
   */
 void SubModelAttributes::initializeDialog()
 {
   // get component Name
   mpNameTextBox->setText(mpComponent->getName());
-  mpStartCommandTextBox->setText("StartTLMOpenModelica");
+  // get the simulation start command and exact step flag of the submodel
+  LibraryTreeItem *pLibraryTreeItem = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem();
+  if (pLibraryTreeItem->getLibraryType()== LibraryTreeItem::TLM) {
+    TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
+    mpStartCommandTextBox->setText(pTLMEditor->getSimulationToolStartCommand(mpComponent->getName()));
+    mpExactStepFlagCheckBox->setChecked(pTLMEditor->isExactStepFlagSet(mpComponent->getName()));
+  }
+  // get the simulation tool of the submodel
+  mpSimulationToolComboBox->setCurrentIndex(StringHandler::getSimulationTool(mpStartCommandTextBox->text()));
   QFileInfo fileInfo(mpComponent->getLibraryTreeItem()->getFileName());
   mpModelFileTextBox->setText(fileInfo.fileName());
 }
 
+void SubModelAttributes::changeSimulationToolStartCommand(QString tool)
+{
+  mpStartCommandTextBox->setText(StringHandler::getSimulationToolStartCommand(tool, mpStartCommandTextBox->text()));
+}
+
+void SubModelAttributes::changeSimulationTool(QString simulationToolStartCommand)
+{
+  mpSimulationToolComboBox->setCurrentIndex(StringHandler::getSimulationTool(simulationToolStartCommand));
+}
+
+
+/*!
+  Updates subModel parameters.\n
+  Slot activated when mpOkButton clicked signal is raised.
+  */
+void SubModelAttributes::updateSubModelParameters()
+{
+  QString exactStepFlag = mpExactStepFlagCheckBox->isChecked() ? "1" : "0";
+  LibraryTreeItem *pLibraryTreeItem = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem();
+  if (pLibraryTreeItem->getLibraryType()== LibraryTreeItem::TLM) {
+    TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
+    pTLMEditor->updateSubModelParameters(mpComponent->getName(), mpStartCommandTextBox->text(), exactStepFlag);
+    accept();
+  }
+}
 TLMInterfacePointInfo::TLMInterfacePointInfo(QString name, QString className, QString interfaceName)
 {
   mName = name;

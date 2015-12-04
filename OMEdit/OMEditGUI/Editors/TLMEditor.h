@@ -53,10 +53,13 @@ public:
   QDomNodeList getSubModels();
   QDomElement getConnectionsElement();
   QDomNodeList getConnections();
+  QString getSimulationToolStartCommand(QString name);
   bool addSubModel(QString name, QString exactStep, QString modelFile, QString startCommand, QString visible, QString origin, QString extent,
                    QString rotation);
   void createAnnotationElement(QDomElement subModel, QString visible, QString origin, QString extent, QString rotation);
   void updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation);
+  void updateSubModelParameters(QString name, QString startCommand, QString exactStepFlag);
+  bool isExactStepFlagSet(QString subModelName);
   bool createConnection(QString From, QString To, QString delay, QString alpha, QString zf, QString zfr, QString points);
   void updateTLMConnectiontAnnotation(QString fromSubModel, QString toSubModel, QString points);
   void addInterfacesData(QDomElement interfaces);
