@@ -41,6 +41,6 @@ qjson-build:
 	mkdir -p qjson/build/include/qjson
 	(cd qjson/build && test -f Makefile || CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" $(CMAKE) .. -G $(CMAKE_TARGET))
 	test -f qjson/build/lib/libqjson$(SHREXT) || $(MAKE) -C qjson/build
-	test "(" ! `uname` = Darwin ")" -o "(" ! -f qjson/build/lib/libqjson$(SHREXT) ")" || install_name_tool -id @rpath/libqjson$(SHREXT) 3rdParty/qjson/build/lib/libqjson$(SHREXT)
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libqjson.0.dylib qjson/build/lib/libqjson.0.dylib
 	cp -a qjson/build/lib/libqjson*$(SHREXT)* @OMBUILDDIR@/lib/@host_short@/omc/
 	cp -a qjson/src/*.h qjson/build/include/qjson

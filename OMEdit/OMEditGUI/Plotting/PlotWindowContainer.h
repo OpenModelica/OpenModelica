@@ -40,7 +40,7 @@
 #define PLOTWINDOWCONTAINER_H
 
 #include "MainWindow.h"
-#include "Plot.h"
+#include "OMPlot.h"
 
 class MainWindow;
 
