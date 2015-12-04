@@ -92,6 +92,8 @@ QString Helper::textOutput = "Text";
 QString Helper::utf8 = "UTF-8";
 QFontInfo Helper::systemFontInfo = QFontInfo(QFont());
 QFontInfo Helper::monospacedFontInfo = QFontInfo(QFont());
+QString Helper::toolsOptionsPath = "Tools->Options";
+QString Helper::toolsOptionsPathMAC = "OMEdit->Preferences";
 /* Meta Modelica Types */
 QString Helper::MODELICA_METATYPE = QString("modelica_metatype");
 QString Helper::MODELICA_STRING = QString("modelica_string");
@@ -573,15 +575,7 @@ QString GUIMessages::getMessage(int type)
     case WRONG_MODIFIER:
       return tr("The Modifier <b>%1</b> format is invalid. The correct format is <b>phi(start=1)</b>");
     case SET_INFO_XML_FLAG:
-      return tr("The operations were not generated. Check Generate Operations in %1 OR you must set the +d=infoXmlOperations flag via %2 and simulate again.");
-    case GENERATE_OPERATIONS_MSG:
-      return tr("Tools->Options->Debugger->Transformational Debugger");
-    case GENERATE_OPERATIONS_MSG_MAC:
-      return tr("OMEdit->Preferences->Debugger->Transformational Debugger");
-    case SET_INFO_XML_FLAG_MSG:
-      return tr("Tools->Options->Simulation->OMC Flags");
-    case SET_INFO_XML_FLAG_MSG_MAC:
-      return tr("OMEdit->Preferences->Simulation->OMC Flags");
+      return tr("The operations were not generated. Check Generate Operations in <b>%1->Debugger->Transformational Debugger</b> OR you must set the +d=infoXmlOperations flag via <b>%2->Simulation->OMC Flags</b> and simulate again.");
     case DEBUG_CONFIGURATION_EXISTS_MSG:
       return tr("A debug configuration with name <b>%1</b> already exists. Error occurred while saving the debug configuration <b>%2<b>.");
     case DEBUG_CONFIGURATION_SIZE_EXCEED:
@@ -597,15 +591,13 @@ QString GUIMessages::getMessage(int type)
     case BREAKPOINT_INSERT_NOT_MODELICA_CLASS:
       return tr("The class <b>%1</b> is not a modelica class. Breakpoints are only allowed on modelica classes.");
     case TLMMANAGER_NOT_SET:
-      return tr("TLM Manager executable path is not set. Set it via <b>%1</b>");
-    case TLMMANAGER_NOT_SET_MSG:
-      return tr("Tools->Options->TLM");
-    case TLMMANAGER_NOT_SET_MSG_MAC:
-      return tr("OMEdit->Preferences->TLM");
+      return tr("TLM Manager executable path is not set. Set it via <b>%1->TLM</b>");
     case METAMODEL_UNSAVED:
       return tr("Metamodel <b>%1</b> has unsaved changes. Do you want to save?");
     case TLMCOSIMULATION_ALREADY_RUNNING:
       return tr("TLM co-simulation session is already running. Only one session is allowed.");
+    case TERMINAL_COMMAND_NOT_SET:
+      return tr("Terminal command is not set. You can define a new terminal command in <b>%1->General->Terminal Command</b>.");
     default:
       return "";
   }

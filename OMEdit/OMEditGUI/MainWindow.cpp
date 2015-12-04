@@ -904,9 +904,9 @@ void MainWindow::fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem)
   if (mpOptionsDialog->getTLMPage()->getTLMManagerProcessTextBox()->text().isEmpty()) {
     QString message;
 #ifdef Q_OS_MAC
-    message = GUIMessages::getMessage(GUIMessages::TLMMANAGER_NOT_SET).arg(GUIMessages::getMessage(GUIMessages::TLMMANAGER_NOT_SET_MSG_MAC));
+    message = GUIMessages::getMessage(GUIMessages::TLMMANAGER_NOT_SET).arg(Helper::toolsOptionsPathMAC);
 #else
-    message = GUIMessages::getMessage(GUIMessages::TLMMANAGER_NOT_SET).arg(GUIMessages::getMessage(GUIMessages::TLMMANAGER_NOT_SET_MSG));
+    message = GUIMessages::getMessage(GUIMessages::TLMMANAGER_NOT_SET).arg(Helper::toolsOptionsPath);
 #endif
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information), message, Helper::ok);
   } else {
@@ -1965,6 +1965,47 @@ void MainWindow::TLMSimulate()
 }
 
 /*!
+ * \brief MainWindow::openWorkingDirectory
+ * Opens the current working directory.
+ */
+void MainWindow::openWorkingDirectory()
+{
+  QUrl workingDirectory (QString("file:///%1").arg(mpOptionsDialog->getGeneralSettingsPage()->getWorkingDirectory()));
+  if (!QDesktopServices::openUrl(workingDirectory)) {
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(workingDirectory.toString()),
+                                                Helper::scriptingKind, Helper::errorLevel));
+  }
+}
+
+/*!
+ * \brief MainWindow::openTerminal
+ * Opens the terminal.
+ */
+void MainWindow::openTerminal()
+{
+  QString terminalCommand = mpOptionsDialog->getGeneralSettingsPage()->getTerminalCommand();
+  if (terminalCommand.isEmpty()) {
+    QString message;
+#ifdef Q_OS_MAC
+    message = GUIMessages::getMessage(GUIMessages::TERMINAL_COMMAND_NOT_SET).arg(Helper::toolsOptionsPathMAC);
+#else
+    message = GUIMessages::getMessage(GUIMessages::TERMINAL_COMMAND_NOT_SET).arg(Helper::toolsOptionsPath);
+#endif
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, message, Helper::scriptingKind,
+                                                Helper::errorLevel));
+    return;
+  }
+  QString arguments = mpOptionsDialog->getGeneralSettingsPage()->getTerminalCommandArguments();
+  QStringList args = arguments.split(" ");
+  if (!QProcess::startDetached(terminalCommand, args, mpOptionsDialog->getGeneralSettingsPage()->getWorkingDirectory())) {
+    QString errorString = tr("Unable to run terminal command <b>%1</b> with arguments <b>%2</b>.").arg(terminalCommand).arg(arguments);
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString, Helper::scriptingKind,
+                                                Helper::errorLevel));
+  }
+}
+
+/*!
  * \brief MainWindow::openConfigurationOptions
  * Slot activated when mpOptionsAction triggered signal is raised.
  * Shows the OptionsDialog
@@ -2553,6 +2594,14 @@ void MainWindow::createActions()
   mpImportNgspiceNetlistAction = new QAction(Helper::importNgspiceNetlist, this);
   mpImportNgspiceNetlistAction->setStatusTip(Helper::importNgspiceNetlistTip);
   connect(mpImportNgspiceNetlistAction, SIGNAL(triggered()), SLOT(importNgspiceNetlist()));
+  // open working directory action
+  mpOpenWorkingDirectoryAction = new QAction(tr("Open Working Directory"), this);
+  mpOpenWorkingDirectoryAction->setStatusTip(tr("Opens the current working directory"));
+  connect(mpOpenWorkingDirectoryAction, SIGNAL(triggered()), SLOT(openWorkingDirectory()));
+  // open terminal action
+  mpOpenTerminalAction = new QAction(tr("Open Terminal"), this);
+  mpOpenTerminalAction->setStatusTip(tr("Opens the terminal"));
+  connect(mpOpenTerminalAction, SIGNAL(triggered()), SLOT(openTerminal()));
   // open options action
   mpOptionsAction = new QAction(QIcon(":/Resources/icons/options.svg"), tr("Options"), this);
   mpOptionsAction->setStatusTip(tr("Shows the options window"));
@@ -2829,6 +2878,9 @@ void MainWindow::createMenus()
   pToolsMenu->addAction(mpImportFromOMNotebookAction);
   pToolsMenu->addSeparator();
   pToolsMenu->addAction(mpImportNgspiceNetlistAction);
+  pToolsMenu->addSeparator();
+  pToolsMenu->addAction(mpOpenWorkingDirectoryAction);
+  pToolsMenu->addAction(mpOpenTerminalAction);
   pToolsMenu->addSeparator();
   pToolsMenu->addAction(mpOptionsAction);
   // add Tools menu to menu bar

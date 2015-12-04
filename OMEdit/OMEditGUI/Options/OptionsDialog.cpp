@@ -119,6 +119,14 @@ void OptionsDialog::readGeneralSettings()
   if (mpSettings->contains("userCustomizations")) {
     mpGeneralSettingsPage->setPreserveUserCustomizations(mpSettings->value("userCustomizations").toBool());
   }
+  // read the terminal command
+  if (mpSettings->contains("terminalCommand")) {
+    mpGeneralSettingsPage->setTerminalCommand(mpSettings->value("terminalCommand").toString());
+  }
+  // read the terminal command arguments
+  if (mpSettings->contains("terminalCommandArgs")) {
+    mpGeneralSettingsPage->setTerminalCommandArguments(mpSettings->value("terminalCommandArgs").toString());
+  }
   // read library icon size
   if (mpSettings->contains("libraryIconSize")) {
     mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->setValue(mpSettings->value("libraryIconSize").toInt());
@@ -601,6 +609,10 @@ void OptionsDialog::saveGeneralSettings()
   mpSettings->setValue("toolbarIconSize", mpGeneralSettingsPage->getToolbarIconSizeSpinBox()->value());
   // save user customizations
   mpSettings->setValue("userCustomizations", mpGeneralSettingsPage->getPreserveUserCustomizations());
+  // save terminal command
+  mpSettings->setValue("terminalCommand", mpGeneralSettingsPage->getTerminalCommand());
+  // save terminal command arguments
+  mpSettings->setValue("terminalCommandArgs", mpGeneralSettingsPage->getTerminalCommandArguments());
   // save library icon size
   mpSettings->setValue("libraryIconSize", mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->value());
   // save show protected classes
@@ -1160,6 +1172,22 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpToolbarIconSizeSpinBox->setValue(24);
   // Store Customizations Option
   mpPreserveUserCustomizations = new QCheckBox(tr("Preserve User's GUI Customizations"));
+  // terminal command
+  mpTerminalCommandLabel = new Label(tr("Terminal Command:"));
+  mpTerminalCommandTextBox = new QLineEdit;
+#ifdef Q_OS_WIN32
+  mpTerminalCommandTextBox->setText("cmd.exe");
+#elif Q_OS_MAC
+  mpTerminalCommandTextBox->setText("");
+#else
+  mpTerminalCommandTextBox->setText("");
+#endif
+  mpTerminalCommandBrowseButton = new QPushButton(Helper::browse);
+  mpTerminalCommandBrowseButton->setAutoDefault(false);
+  connect(mpTerminalCommandBrowseButton, SIGNAL(clicked()), SLOT(selectTerminalCommand()));
+  // terminal command args
+  mpTerminalCommandArgumentsLabel = new Label(tr("Terminal Command Arguments:"));
+  mpTerminalCommandArgumentsTextBox = new QLineEdit;
   // set the layout of general settings group
   QGridLayout *generalSettingsLayout = new QGridLayout;
   generalSettingsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -1171,6 +1199,11 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   generalSettingsLayout->addWidget(mpToolbarIconSizeLabel, 2, 0);
   generalSettingsLayout->addWidget(mpToolbarIconSizeSpinBox, 2, 1, 1, 2);
   generalSettingsLayout->addWidget(mpPreserveUserCustomizations, 3, 0, 1, 3);
+  generalSettingsLayout->addWidget(mpTerminalCommandLabel, 4, 0);
+  generalSettingsLayout->addWidget(mpTerminalCommandTextBox, 4, 1);
+  generalSettingsLayout->addWidget(mpTerminalCommandBrowseButton, 4, 2);
+  generalSettingsLayout->addWidget(mpTerminalCommandArgumentsLabel, 5, 0);
+  generalSettingsLayout->addWidget(mpTerminalCommandArgumentsTextBox, 5, 1, 1, 2);
   mpGeneralSettingsGroupBox->setLayout(generalSettingsLayout);
   // Libraries Browser group box
   mpLibrariesBrowserGroupBox = new QGroupBox(tr("Libraries Browser"));
@@ -1421,13 +1454,31 @@ QCheckBox* GeneralSettingsPage::getShowLatestNewsCheckBox()
   return mpShowLatestNewsCheckBox;
 }
 
-//! Slot activated when mpWorkingDirectoryBrowseButton clicked signal is raised.
-//! Allows user to choose a new working directory.
+/*!
+ * \brief GeneralSettingsPage::selectWorkingDirectory
+ * Slot activated when mpWorkingDirectoryBrowseButton clicked signal is raised.
+ * Allows user to choose a new working directory.
+ */
 void GeneralSettingsPage::selectWorkingDirectory()
 {
   mpWorkingDirectoryTextBox->setText(StringHandler::getExistingDirectory(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseDirectory), NULL));
 }
 
+/*!
+ * \brief GeneralSettingsPage::selectTerminalCommand
+ * Slot activated when mpTerminalCommandBrowseButton clicked signal is raised.
+ * Allows user to select a new terminal command.
+ */
+void GeneralSettingsPage::selectTerminalCommand()
+{
+  mpTerminalCommandTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseFile), NULL, NULL, NULL));
+}
+
+/*!
+ * \brief GeneralSettingsPage::autoSaveIntervalValueChanged
+ * Slot activated when mpAutoSaveIntervalSpinBox valueChanged signal is raised.
+ * \param value
+ */
 void GeneralSettingsPage::autoSaveIntervalValueChanged(int value)
 {
   mpAutoSaveSecondsLabel->setText(tr("(%1 minute(s))").arg((double)value/60));

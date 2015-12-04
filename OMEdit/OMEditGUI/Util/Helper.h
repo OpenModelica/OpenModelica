@@ -99,6 +99,8 @@ public:
   static QString utf8;
   static QFontInfo systemFontInfo;
   static QFontInfo monospacedFontInfo;
+  static QString toolsOptionsPath;
+  static QString toolsOptionsPathMAC;
   /* Meta Modelica Types */
   static QString MODELICA_METATYPE;
   static QString MODELICA_STRING;
@@ -352,10 +354,6 @@ public:
     DELETE_TEXT_FILE_MSG,
     WRONG_MODIFIER,
     SET_INFO_XML_FLAG,
-    GENERATE_OPERATIONS_MSG,
-    GENERATE_OPERATIONS_MSG_MAC,
-    SET_INFO_XML_FLAG_MSG,
-    SET_INFO_XML_FLAG_MSG_MAC,
     DEBUG_CONFIGURATION_EXISTS_MSG,
     DEBUG_CONFIGURATION_SIZE_EXCEED,
     DELETE_DEBUG_CONFIGURATION_MSG,
@@ -364,10 +362,9 @@ public:
     BREAKPOINT_INSERT_NOT_SAVED,
     BREAKPOINT_INSERT_NOT_MODELICA_CLASS,
     TLMMANAGER_NOT_SET,
-    TLMMANAGER_NOT_SET_MSG,
-    TLMMANAGER_NOT_SET_MSG_MAC,
     METAMODEL_UNSAVED,
-    TLMCOSIMULATION_ALREADY_RUNNING
+    TLMCOSIMULATION_ALREADY_RUNNING,
+    TERMINAL_COMMAND_NOT_SET
   };
 
   static QString getMessage(int type);

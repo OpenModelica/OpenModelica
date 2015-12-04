@@ -278,6 +278,8 @@ private:
   QAction *mpExportToOMNotebookAction;
   QAction *mpImportFromOMNotebookAction;
   QAction *mpImportNgspiceNetlistAction;
+  QAction *mpOpenWorkingDirectoryAction;
+  QAction *mpOpenTerminalAction;
   QAction *mpOptionsAction;
   // Help Menu
   QAction *mpUsersGuideAction;
@@ -373,6 +375,8 @@ public slots:
   void exportToClipboard();
   void fetchInterfaceData();
   void TLMSimulate();
+  void openWorkingDirectory();
+  void openTerminal();
   void openConfigurationOptions();
   void openUsersGuide();
   void openUsersGuidePdf();
