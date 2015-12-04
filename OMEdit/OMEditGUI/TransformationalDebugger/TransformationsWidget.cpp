@@ -929,13 +929,9 @@ void TransformationsWidget::fetchOperations(const OMVariable &variable)
   } else {
     QString message;
 #ifdef Q_OS_MAC
-    message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG)
-        .arg(GUIMessages::getMessage(GUIMessages::GENERATE_OPERATIONS_MSG_MAC))
-        .arg(GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG_MSG_MAC));
+    message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(Helper::toolsOptionsPathMAC).arg(Helper::toolsOptionsPathMAC);
 #else
-    message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG)
-        .arg(GUIMessages::getMessage(GUIMessages::GENERATE_OPERATIONS_MSG))
-        .arg(GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG_MSG));
+    message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(Helper::toolsOptionsPath).arg(Helper::toolsOptionsPath);
 #endif
     QStringList values;
     values << message;
@@ -1130,13 +1126,9 @@ void TransformationsWidget::fetchOperations(OMEquation *equation)
   } else {
     QString message;
 #ifdef Q_OS_MAC
-    message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG)
-        .arg(GUIMessages::getMessage(GUIMessages::GENERATE_OPERATIONS_MSG_MAC))
-        .arg(GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG_MSG_MAC));
+    message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(Helper::toolsOptionsPathMAC).arg(Helper::toolsOptionsPathMAC);
 #else
-    message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG)
-        .arg(GUIMessages::getMessage(GUIMessages::GENERATE_OPERATIONS_MSG))
-        .arg(GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG_MSG));
+    message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(Helper::toolsOptionsPath).arg(Helper::toolsOptionsPath);
 #endif
     QStringList values;
     values << message;

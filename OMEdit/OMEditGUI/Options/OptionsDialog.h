@@ -165,6 +165,10 @@ public:
   QSpinBox* getToolbarIconSizeSpinBox() {return mpToolbarIconSizeSpinBox;}
   void setPreserveUserCustomizations(bool value);
   bool getPreserveUserCustomizations();
+  void setTerminalCommand(QString value) {mpTerminalCommandTextBox->setText(value);}
+  QString getTerminalCommand() {return mpTerminalCommandTextBox->text();}
+  void setTerminalCommandArguments(QString value) {mpTerminalCommandArgumentsTextBox->setText(value);}
+  QString getTerminalCommandArguments() {return mpTerminalCommandArgumentsTextBox->text();}
   QSpinBox* getLibraryIconSizeSpinBox() {return mpLibraryIconSizeSpinBox;}
   void setShowProtectedClasses(bool value);
   bool getShowProtectedClasses();
@@ -190,6 +194,11 @@ private:
   Label *mpToolbarIconSizeLabel;
   QSpinBox *mpToolbarIconSizeSpinBox;
   QCheckBox *mpPreserveUserCustomizations;
+  Label *mpTerminalCommandLabel;
+  QLineEdit *mpTerminalCommandTextBox;
+  QPushButton *mpTerminalCommandBrowseButton;
+  Label *mpTerminalCommandArgumentsLabel;
+  QLineEdit *mpTerminalCommandArgumentsTextBox;
   QGroupBox *mpLibrariesBrowserGroupBox;
   Label *mpLibraryIconSizeLabel;
   QSpinBox *mpLibraryIconSizeSpinBox;
@@ -214,6 +223,7 @@ private:
   QCheckBox *mpShowLatestNewsCheckBox;
 public slots:
   void selectWorkingDirectory();
+  void selectTerminalCommand();
   void autoSaveIntervalValueChanged(int value);
 };
 
