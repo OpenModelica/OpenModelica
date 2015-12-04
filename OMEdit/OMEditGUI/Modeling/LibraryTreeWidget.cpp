@@ -658,6 +658,49 @@ bool LibraryTreeItem::isSimulationAllowed()
 }
 
 /*!
+ * \brief LibraryTreeItem::emitLoaded
+ * Emits the loaded and loadedForComponent signals.
+ */
+void LibraryTreeItem::emitLoaded()
+{
+  emit loaded(this);
+  emit loadedForComponent();
+}
+
+/*!
+ * \brief LibraryTreeItem::emitUnLoaded
+ * Emits the unLoaded and unLoadedForComponent signals.
+ */
+void LibraryTreeItem::emitUnLoaded()
+{
+  emit unLoaded();
+  emit unLoadedForComponent();
+}
+
+/*!
+ * \brief LibraryTreeItem::emitShapeAdded
+ * Emits the shapeAdded and shapeAddedForComponent signals.
+ * \param pShapeAnnotation
+ * \param pGraphicsView
+ */
+void LibraryTreeItem::emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
+{
+  emit shapeAdded(pShapeAnnotation, pGraphicsView);
+  emit shapeAddedForComponent();
+}
+
+/*!
+ * \brief LibraryTreeItem::emitComponentAdded
+ * Emits the componentAdded and componentAddedForComponent signals.
+ * \param pComponent
+ */
+void LibraryTreeItem::emitComponentAdded(Component *pComponent)
+{
+  emit componentAdded(pComponent);
+  emit componentAddedForComponent();
+}
+
+/*!
  * \brief LibraryTreeItem::handleLoaded
  * Handles the case when an undefined inherited class is loaded.
  * \param pLibraryTreeItem
@@ -1293,41 +1336,6 @@ void LibraryTreeModel::updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 }
 
 /*!
- * \brief LibraryTreeModel::readLibraryTreeItemClassText
- * Reads the LibraryTreeItem class text from file/OMC.
- * \param pLibraryTreeItem
- */
-void LibraryTreeModel::readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem)
-{
-  if (!pLibraryTreeItem->isFilePathValid()) {
-    // If class is top level then
-    if (pLibraryTreeItem->isTopLevel()) {
-      if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
-        pLibraryTreeItem->setClassText(mpLibraryWidget->getMainWindow()->getOMCProxy()->listFile(pLibraryTreeItem->getNameStructure()));
-      }
-    } else {
-      // If class is nested in a class
-      updateLibraryTreeItemClassText(pLibraryTreeItem);
-    }
-  } else {
-    // If class is top level then simply read its file contents.
-    if (pLibraryTreeItem->isTopLevel()) {
-      pLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromFile(pLibraryTreeItem));
-    } else {
-      // If class is nested in a class and nested class is saved in the same file as parent.
-      if (pLibraryTreeItem->isInPackageOneFile()) {
-        LibraryTreeItem *pParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
-        if (pParentLibraryTreeItem) {
-          pLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromText(pLibraryTreeItem, pParentLibraryTreeItem->getClassText(this)));
-        }
-      } else {
-        pLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromFile(pLibraryTreeItem));
-      }
-    }
-  }
-}
-
-/*!
  * \brief LibraryTreeModel::updateLibraryTreeItemClassText
  * Updates the class text of LibraryTreeItem
  * Uses OMCProxy::listFile() and OMCProxy::diffModelicaFileListings() to get the correct Modelica Text.
@@ -1367,30 +1375,35 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
 }
 
 /*!
- * \brief LibraryTreeModel::updateChildLibraryTreeItemClassText
- * Updates the class text of child LibraryTreeItems
+ * \brief LibraryTreeModel::readLibraryTreeItemClassText
+ * Reads the LibraryTreeItem class text from file/OMC.
  * \param pLibraryTreeItem
- * \param contents
- * \param fileName
  */
-void LibraryTreeModel::updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName)
+void LibraryTreeModel::readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem)
 {
-  for (int i = 0; i < pLibraryTreeItem->getChildren().size(); i++) {
-    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
-    if (pChildLibraryTreeItem && pChildLibraryTreeItem->getFileName().compare(fileName) == 0) {
-      pChildLibraryTreeItem->setClassInformation(mpLibraryWidget->getMainWindow()->getOMCProxy()->getClassInformation(pChildLibraryTreeItem->getNameStructure()));
-      pChildLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromText(pChildLibraryTreeItem, contents));
-      if (pChildLibraryTreeItem->getModelWidget()) {
-        ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pChildLibraryTreeItem->getModelWidget()->getEditor());
-        if (pModelicaTextEditor) {
-          pModelicaTextEditor->setPlainText(pChildLibraryTreeItem->getClassText(this));
-          if (pModelicaTextEditor->isVisible()) {
-            pModelicaTextEditor->getPlainTextEdit()->getLineNumberArea()->update();
-          }
-        }
+  if (!pLibraryTreeItem->isFilePathValid()) {
+    // If class is top level then
+    if (pLibraryTreeItem->isTopLevel()) {
+      if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+        pLibraryTreeItem->setClassText(mpLibraryWidget->getMainWindow()->getOMCProxy()->listFile(pLibraryTreeItem->getNameStructure()));
       }
-      if (pChildLibraryTreeItem->getChildren().size() > 0) {
-        updateChildLibraryTreeItemClassText(pChildLibraryTreeItem, contents, fileName);
+    } else {
+      // If class is nested in a class
+      updateLibraryTreeItemClassText(pLibraryTreeItem);
+    }
+  } else {
+    // If class is top level then simply read its file contents.
+    if (pLibraryTreeItem->isTopLevel()) {
+      pLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromFile(pLibraryTreeItem));
+    } else {
+      // If class is nested in a class and nested class is saved in the same file as parent.
+      if (pLibraryTreeItem->isInPackageOneFile()) {
+        LibraryTreeItem *pParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
+        if (pParentLibraryTreeItem) {
+          pLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromText(pLibraryTreeItem, pParentLibraryTreeItem->getClassText(this)));
+        }
+      } else {
+        pLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromFile(pLibraryTreeItem));
       }
     }
   }
@@ -1923,6 +1936,36 @@ LibraryTreeItem* LibraryTreeModel::getLibraryTreeItemFromFileHelper(LibraryTreeI
     }
   }
   return 0;
+}
+
+/*!
+ * \brief LibraryTreeModel::updateChildLibraryTreeItemClassText
+ * Updates the class text of child LibraryTreeItems
+ * \param pLibraryTreeItem
+ * \param contents
+ * \param fileName
+ */
+void LibraryTreeModel::updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName)
+{
+  for (int i = 0; i < pLibraryTreeItem->getChildren().size(); i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
+    if (pChildLibraryTreeItem && pChildLibraryTreeItem->getFileName().compare(fileName) == 0) {
+      pChildLibraryTreeItem->setClassInformation(mpLibraryWidget->getMainWindow()->getOMCProxy()->getClassInformation(pChildLibraryTreeItem->getNameStructure()));
+      pChildLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromText(pChildLibraryTreeItem, contents));
+      if (pChildLibraryTreeItem->getModelWidget()) {
+        ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pChildLibraryTreeItem->getModelWidget()->getEditor());
+        if (pModelicaTextEditor) {
+          pModelicaTextEditor->setPlainText(pChildLibraryTreeItem->getClassText(this));
+          if (pModelicaTextEditor->isVisible()) {
+            pModelicaTextEditor->getPlainTextEdit()->getLineNumberArea()->update();
+          }
+        }
+      }
+      if (pChildLibraryTreeItem->getChildren().size() > 0) {
+        updateChildLibraryTreeItemClassText(pChildLibraryTreeItem, contents, fileName);
+      }
+    }
+  }
 }
 
 /*!

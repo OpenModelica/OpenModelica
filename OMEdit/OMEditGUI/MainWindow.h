@@ -242,6 +242,7 @@ private:
   // Edit Menu
   QAction *mpUndoAction;
   QAction *mpRedoAction;
+  QAction *mpSearchClassesAction;
   QAction *mpCutAction;
   QAction *mpCopyAction;
   QAction *mpPasteAction;
@@ -342,6 +343,7 @@ public slots:
   void clearRecentFilesList();
   void undo();
   void redo();
+  void focusSearchClasses();
   void setShowGridLines(bool On);
   void resetZoom();
   void zoomIn();
