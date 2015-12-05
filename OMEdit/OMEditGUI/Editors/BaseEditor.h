@@ -68,6 +68,7 @@ public:
 
   static int firstNonSpace(const QString &text);
   static int spacesLeftFromPosition(const QString &text, int position);
+  static bool cursorIsAtBeginningOfLine(const QTextCursor &cursor);
 private:
   TabPolicy mTabPolicy;
   int mTabSize;
