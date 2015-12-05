@@ -1177,7 +1177,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpTerminalCommandTextBox = new QLineEdit;
 #ifdef Q_OS_WIN32
   mpTerminalCommandTextBox->setText("cmd.exe");
-#elif Q_OS_MAC
+#elif defined(Q_OS_MAC)
   mpTerminalCommandTextBox->setText("");
 #else
   mpTerminalCommandTextBox->setText("");
