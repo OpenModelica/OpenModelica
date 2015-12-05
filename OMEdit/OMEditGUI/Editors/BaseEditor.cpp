@@ -168,6 +168,19 @@ int TabSettings::spacesLeftFromPosition(const QString &text, int position)
   return position - i;
 }
 
+/*!
+ * \brief TabSettings::cursorIsAtBeginningOfLine
+ * Returns true if cursor is at beginning of line.
+ * \param cursor
+ * \return
+ */
+bool TabSettings::cursorIsAtBeginningOfLine(const QTextCursor &cursor)
+{
+  QString text = cursor.block().text();
+  int fns = firstNonSpace(text);
+  return (cursor.position() - cursor.block().position() <= fns);
+}
+
 TextBlockUserData::~TextBlockUserData()
 {
   TextMarks marks = _marks;
@@ -996,9 +1009,31 @@ QMimeData* BaseEditor::PlainTextEdit::createMimeDataFromSelection() const
     // Make sure the text appears pre-formatted
     tempCursor.setPosition(0);
     tempCursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+    QTextBlockFormat blockFormat = tempCursor.blockFormat();
+    blockFormat.setNonBreakableLines(true);
+    tempCursor.setBlockFormat(blockFormat);
     mimeData->setHtml(tempCursor.selection().toHtml());
-    mimeData->setData(QLatin1String("application/OMEdit.modelica-text"), text.toUtf8());
     delete tempDocument;
+
+    // Try to figure out whether we are copying an entire block, and store the complete block including indentation
+    QTextCursor selectedStartCursor = cursor;
+    selectedStartCursor.setPosition(cursor.selectionStart());
+    QTextCursor selectedEndCursor = cursor;
+    selectedEndCursor.setPosition(cursor.selectionEnd());
+
+    bool startOk = TabSettings::cursorIsAtBeginningOfLine(selectedStartCursor);
+    bool multipleBlocks = (selectedEndCursor.block() != selectedStartCursor.block());
+
+    if (startOk && multipleBlocks) {
+      selectedStartCursor.movePosition(QTextCursor::StartOfBlock);
+      if (TabSettings::cursorIsAtBeginningOfLine(selectedEndCursor)) {
+        selectedEndCursor.movePosition(QTextCursor::StartOfBlock);
+      }
+      cursor.setPosition(selectedStartCursor.position());
+      cursor.setPosition(selectedEndCursor.position(), QTextCursor::KeepAnchor);
+      text = plainTextFromSelection(cursor);
+      mimeData->setData(QLatin1String("application/OMEdit.modelica-text"), text.toUtf8());
+    }
     return mimeData;
   }
   return 0;
