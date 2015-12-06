@@ -4637,7 +4637,7 @@ algorithm
     case (Absyn.COMPONENTS(attributes = attr,typeSpec = typeSpec,components = lst))
       equation
         typename = Dump.unparseTypeSpec(typeSpec);
-        names = getComponentitemsName(lst,false);
+        names = getComponentItemsName(lst,false);
         flowPrefixstr = attrFlowStr(attr);
         streamPrefixstr = attrStreamStr(attr);
         variability_str = attrVariabilityStr(attr);
@@ -10548,14 +10548,12 @@ end getComponentCommentInCompitems;
 
 protected function getClassCommentInCommentOpt
 "Helper function to getComponentComment."
-  input Option<Absyn.Comment> inAbsynCommentOption;
+  input Option<Absyn.Comment> inComment;
   output String outString;
 algorithm
-  outString := match (inAbsynCommentOption)
-    local
-      String cmt;
-    case (SOME(Absyn.COMMENT(_,SOME(cmt)))) then cmt;
-    case (SOME(Absyn.COMMENT(_,_))) then "";
+  outString := match inComment
+    case SOME(Absyn.COMMENT(comment = SOME(outString))) then outString;
+    else "";
   end match;
 end getClassCommentInCommentOpt;
 
@@ -13861,7 +13859,7 @@ algorithm
           else Absyn.pathString(p);
         end matchcontinue;
         typename = if b then stringAppendList({"\"",typename,"\""}) else typename;
-        names = getComponentitemsName(lst,b);
+        names = getComponentItemsName(lst,b);
         dims = getComponentitemsDimension(lst);
         strLst = prefixTypename(typename, names);
         finalPrefix = boolString(f);
@@ -14017,7 +14015,7 @@ algorithm
         tpname = Absyn.pathLastIdent(p);
         p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
         typename = Absyn.pathString(p_1);
-        names = getComponentitemsName(lst,false);
+        names = getComponentItemsName(lst,false);
         strList = prefixTypename(typename, names);
       then
         strList;
@@ -14027,7 +14025,7 @@ algorithm
           _)
       equation
         typename = Absyn.pathString(p);
-        names = getComponentitemsName(lst,false);
+        names = getComponentItemsName(lst,false);
         strList = prefixTypename(typename, names);
       then
         strList;
@@ -14212,69 +14210,35 @@ end suffixInfos;
 
 protected function prefixTypename
 "Helper function to getComponentInfo. Add a prefix typename to each string in the list."
-  input String inString;
-  input list<String> inStringLst;
-  output list<String> outStringLst;
-algorithm
-  outStringLst:=
-  match (inString,inStringLst)
-    local
-      list<String> res,rest;
-      String str_1,tp,str;
-    case (_,{}) then {};
-    case (tp,(str :: rest))
-      equation
-        res = prefixTypename(tp, rest);
-        str_1 = stringAppendList({tp,",",str});
-      then
-        (str_1 :: res);
-  end match;
+  input String inType;
+  input list<String> inComponents;
+  output list<String> outComponents =
+    list(stringAppendList({inType, ",", c}) for c in inComponents);
 end prefixTypename;
 
-public function getComponentitemsName
+public function getComponentItemsName
 " separated list of all component names and comments (if any)."
-  input list<Absyn.ComponentItem> inAbsynComponentItemLst;
-  input Boolean inBoolean;
-  output list<String> outStringLst;
+  input list<Absyn.ComponentItem> inComponents;
+  input Boolean inQuoteNames "Adds quotes around the component names if true.";
+  output list<String> outStrings = {};
+protected
+  String name, cmt_str, str;
 algorithm
-  outStringLst:=
-  matchcontinue (inAbsynComponentItemLst,inBoolean)
-    local
-      String str,c1,s2;
-      list<String> lst,res;
-      Absyn.ComponentItem c2;
-      list<Absyn.ComponentItem> rest;
-      Boolean b;
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = SOME(Absyn.COMMENT(_,SOME(s2)))) :: (c2 :: rest)),b)
-      equation
-        lst = getComponentitemsName((c2 :: rest),b);
-        str = if b then stringAppendList({"\"", c1, "\"", ",", "\"", s2, "\""}) else stringAppendList({c1, ",", "\"", s2, "\""});
-      then
-        (str :: lst);
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = NONE()) :: (c2 :: rest)),b)
-      equation
-        lst = getComponentitemsName((c2 :: rest),b);
-        str = if b then stringAppendList({"\"", c1, "\"", ",", "\"\""}) else stringAppendList({c1, ",", "\"\""});
-      then
-        (str :: lst);
-    case ((_ :: rest),b)
-      equation
-        res = getComponentitemsName(rest,b);
-      then
-        res;
-    case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = SOME(Absyn.COMMENT(_,SOME(s2))))},b)
-      equation
-        str = if b then stringAppendList({"\"", c1, "\"", ",", "\"", s2, "\""}) else stringAppendList({c1, ",", "\"", s2, "\""});
-      then
-        {str};
-    case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1))},b)
-      equation
-        str = if b then stringAppendList({"\"", c1, "\"", ",", "\"\""}) else stringAppendList({c1, ",", "\"\""});
-      then
-        {str};
-    case ({_},_) then {};
-  end matchcontinue;
-end getComponentitemsName;
+  for comp in listReverse(inComponents) loop
+    _ := match comp
+      case Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = name))
+        algorithm
+          cmt_str := getClassCommentInCommentOpt(comp.comment);
+          outStrings := (if inQuoteNames then
+            stringAppendList({"\"", name, "\",\"", cmt_str, "\""}) else
+            stringAppendList({name, ",\"", cmt_str, "\""})) :: outStrings;
+        then
+          ();
+
+      else ();
+    end match;
+  end for;
+end getComponentItemsName;
 
 public function addToPublic
 " This function takes a Class definition and adds an
@@ -17421,7 +17385,7 @@ algorithm
     case (Absyn.COMPONENTS(components = lst))
       equation
 //        str = Dump.unparseTypeSpec(typeSpec);
-        names = getComponentitemsName(lst,false);
+        names = getComponentItemsName(lst,false);
         str = stringDelimitList(names, ", ");
         //print("names: " + str + "\n");
       then
@@ -17456,7 +17420,7 @@ algorithm
     case (Absyn.COMPONENTS(typeSpec = typeSpec))
       equation
         str = Dump.unparseTypeSpec(typeSpec);
-//        names = getComponentitemsName(lst);
+//        names = getComponentItemsName(lst);
       then
         str;
   end match;
