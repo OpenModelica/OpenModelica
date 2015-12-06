@@ -582,10 +582,14 @@ CoOrdinateSystem Component::getCoOrdinateSystem() const
 {
   CoOrdinateSystem coOrdinateSystem;
   if (mpLibraryTreeItem && !mpLibraryTreeItem->isNonExisting()) {
-    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-      coOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->mCoOrdinateSystem;
+    if (mpLibraryTreeItem->isConnector()) {
+      if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+        coOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->mCoOrdinateSystem;
+      } else {
+        coOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->mCoOrdinateSystem;
+      }
     } else {
-      coOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->mCoOrdinateSystem;
+      coOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->mCoOrdinateSystem;
     }
   }
   return coOrdinateSystem;
@@ -849,9 +853,10 @@ QString Component::getParameterDisplayString(QString parameterName)
   /* case 2 */
   if (displayString.isEmpty()) {
     if (mpLibraryTreeItem) {
+      mpLibraryTreeItem->getModelWidget()->loadDiagramView();
       foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
         if (pComponent->getComponentInfo()->getName().compare(parameterName) == 0) {
-          displayString = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, className);
+          displayString = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, mpLibraryTreeItem->getNameStructure());
           break;
         }
       }
@@ -1063,6 +1068,7 @@ void Component::createClassComponents()
     foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentsList()) {
       mComponentsList.append(new Component(pComponent, this));
     }
+    mpLibraryTreeItem->getModelWidget()->loadDiagramView();
     foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
       if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) {
         continue;
@@ -1340,11 +1346,11 @@ QString Component::getParameterDisplayStringFromExtendsParameters(QString parame
   QString displayString = "";
   foreach (Component *pInheritedComponent, mInheritedComponentsList) {
     if (pInheritedComponent->getLibraryTreeItem()) {
+      pInheritedComponent->getLibraryTreeItem()->getModelWidget()->loadDiagramView();
       foreach (Component *pComponent, pInheritedComponent->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
         if (pComponent->getComponentInfo()->getName().compare(parameterName) == 0) {
           OMCProxy *pOMCProxy = pComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
-          QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-          displayString = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, className);
+          displayString = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, pComponent->getLibraryTreeItem()->getNameStructure());
           if (!displayString.isEmpty()) {
             return displayString;
           }
