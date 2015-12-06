@@ -1179,7 +1179,7 @@ void GraphicsView::addClassAnnotation()
   qreal y1 = extent.at(0).y();
   qreal x2 = extent.at(1).x();
   qreal y2 = extent.at(1).y();
-  if (x1 != -100 && y1 != -100 && x1 != 100 && y2 != 100) {
+  if (x1 != -100 || y1 != -100 || x1 != 100 || y2 != 100) {
     coOrdinateSystemList.append(QString("extent={{%1, %2}, {%3, %4}}").arg(x1).arg(y1).arg(x2).arg(y2));
   }
   // add the preserveAspectRatio
@@ -1192,7 +1192,7 @@ void GraphicsView::addClassAnnotation()
   }
   // add the grid
   QPointF grid = mCoOrdinateSystem.getGrid();
-  if (grid.x() != 2 && grid.y() != 2) {
+  if (grid.x() != 2 || grid.y() != 2) {
     coOrdinateSystemList.append(QString("grid={%1, %2}").arg(grid.x()).arg(grid.y()));
   }
   // graphics annotations
