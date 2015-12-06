@@ -48,9 +48,10 @@ class Component;
 class Transformation
 {
 public:
-  Transformation() {mValid = false;}
+  Transformation();
   Transformation(StringHandler::ViewType viewType);
   Transformation(const Transformation &transformation);
+  void initialize(StringHandler::ViewType viewType);
   void parseTransformationString(QString value, qreal width, qreal height);
   void updateTransformation(const Transformation &transformation);
   QTransform getTransformationMatrix();
@@ -61,9 +62,9 @@ public:
   void setOrigin(QPointF origin);
   QPointF getOrigin();
   void setExtent1(QPointF extent);
-  QPointF getExtent1();
+  QPointF getExtent1() const;
   void setExtent2(QPointF extent);
-  QPointF getExtent2();
+  QPointF getExtent2() const;
   void setRotateAngle(qreal rotateAngle);
   qreal getRotateAngle();
   QPointF getPosition();
