@@ -600,7 +600,7 @@ QVariant LibraryTreeItem::data(int column, int role) const
         case Qt::ToolTipRole:
           return mToolTip;
         case Qt::ForegroundRole:
-          return mIsSaved ? QVariant() : Qt::darkRed;
+          return mIsSaved ? QVariant() : QColor(Qt::darkRed);
         default:
           return QVariant();
       }
