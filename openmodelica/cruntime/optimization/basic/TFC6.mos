@@ -36,7 +36,7 @@ end testFinalCon6;
 ");
 getErrorString();
 
-setCommandLineOptions("+maxSizeSolveLinearSystem=10 +d=addDerAliases");
+setCommandLineOptions("+maxSizeSolveLinearSystem=10 --preOptModules+=introduceDerAlias");
 getErrorString();
 optimize(testFinalCon6, numberOfIntervals=50, tolerance = 1e-08, stopTime = 5, simflags="-lv LOG_IPOPT_ERROR,LOG_LS -optimizerNP 3");
 getErrorString();

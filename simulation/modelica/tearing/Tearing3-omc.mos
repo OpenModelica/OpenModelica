@@ -6,8 +6,9 @@
 
 loadFile("Tearing3.mo"); getErrorString();
 
-setDebugFlags("backenddaeinfo,disableComSubExp"); getErrorString();
+setDebugFlags("backenddaeinfo"); getErrorString();
 setTearingMethod("omcTearing"); getErrorString();
+setCommandLineOptions("--preOptModules-=comSubExp"); getErrorString();
 simulate(Tearing3); getErrorString();
 
 val(u0,0.0); getErrorString();
@@ -22,6 +23,8 @@ val(iL,0.0); getErrorString();
 val(iC,0.0); getErrorString();
 
 // Result:
+// true
+// ""
 // true
 // ""
 // true

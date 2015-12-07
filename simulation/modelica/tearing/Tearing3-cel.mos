@@ -6,9 +6,9 @@
 
 loadFile("Tearing3.mo"); getErrorString();
 
-setDebugFlags("backenddaeinfo,disableComSubExp"); getErrorString();
+setDebugFlags("backenddaeinfo"); getErrorString();
 setTearingMethod("cellier"); getErrorString();
-setCommandLineOptions("+tearingHeuristic=MC1"); getErrorString();
+setCommandLineOptions("+tearingHeuristic=MC1 --preOptModules-=comSubExp"); getErrorString();
 simulate(Tearing3); getErrorString();
 
 val(u0,0.0); getErrorString();

@@ -13,7 +13,7 @@
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 setTearingMethod("omcTearing");
-setCommandLineOptions("+d=addDerAliases");
+setCommandLineOptions("--preOptModules+=introduceDerAlias");
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation);
 compareVars :=

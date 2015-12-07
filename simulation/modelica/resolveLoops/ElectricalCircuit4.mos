@@ -6,7 +6,8 @@
 loadModel(Modelica, {"3.2.1"}); getErrorString();
 
 loadFile("ElectricalCircuit4.mo"); getErrorString();
-setDebugFlags("resolveLoops,backenddaeinfo,stateselection"); getErrorString();
+setDebugFlags("backenddaeinfo,stateselection"); getErrorString();
+setCommandLineOptions("--preOptModules+=resolveLoops"); getErrorString();
 simulate(ElectricalCircuit4); getErrorString();
 res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit4_res.mat",
   getEnvironmentVar("REFERENCEFILES")+"/resolveLoops/ElectricalCircuit4.mat",
@@ -24,6 +25,8 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit4_res.m
    "C5.i",
    "C6.i"});
 // Result:
+// true
+// ""
 // true
 // ""
 // true

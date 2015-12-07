@@ -34,9 +34,9 @@ end Tearing3;
 
 //test the CSE of binary terms with introducing cse variables
 
-setDebugFlags("dumpCSE,disableComSubExp"); getErrorString();
+setDebugFlags("dumpCSE"); getErrorString();
 setTearingMethod("cellier"); getErrorString();
-setCommandLineOptions("+tearingHeuristic=MC1 +cseCall +cseBinary"); getErrorString();
+setCommandLineOptions("+tearingHeuristic=MC1 +cseCall +cseBinary --preOptModules-=comSubExp"); getErrorString();
 simulate(Tearing3); getErrorString();
 
 // Result:
