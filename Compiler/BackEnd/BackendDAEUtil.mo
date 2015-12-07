@@ -7102,13 +7102,14 @@ protected function allPostOptimizationModules
     (BackendInline.lateInlineFunction, "lateInlineFunction"),
     (DynamicOptimization.simplifyConstraints, "simplifyConstraints"),
     (CommonSubExpression.wrapFunctionCalls, "wrapFunctionCalls"),
-    (CommonSubExpression.CSE, "CSE"),
+    (CommonSubExpression.cseBinary, "cseBinary"),
     (OnRelaxation.relaxSystem, "relaxSystem"),
     (InlineArrayEquations.inlineArrayEqn, "inlineArrayEqn"),
     (SymbolicJacobian.constantLinearSystem, "constantLinearSystem"),
     (BackendDAEOptimize.simplifysemiLinear, "simplifysemiLinear"),
     (ResolveLoops.solveLinearSystem, "solveLinearSystem"),
-    (BackendDAEOptimize.addedScaledVars, "addScaledVars"),
+    (BackendDAEOptimize.addedScaledVars_states, "addScaledVars_states"),
+    (BackendDAEOptimize.addedScaledVars_inputs, "addScaledVars_inputs"),
     (RemoveSimpleEquations.removeSimpleEquations, "removeSimpleEquations"),
     (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction"),
     (BackendDAEOptimize.symEuler, "symEuler"),
@@ -7173,6 +7174,19 @@ algorithm
     Error.addCompilerWarning("Deprecated debug flag --d=" + Flags.debugFlagName(inFlag) + " detected. Use --" + inPhase + "=" + inModule + " instead.");
   end if;
 end deprecatedDebugFlag;
+
+protected function deprecatedConfigFlag
+  input Flags.ConfigFlag inFlag;
+  input list<String> inModuleList;
+  input String inModule;
+  input String inPhase;
+  output list<String> outModuleList = inModuleList;
+algorithm
+  if Flags.getConfigBool(inFlag) then
+    outModuleList := inModule::inModuleList;
+    Error.addCompilerWarning("Deprecated flag --" + Flags.configFlagName(inFlag) + " detected. Use --" + inPhase + "=" + inModule + " instead.");
+  end if;
+end deprecatedConfigFlag;
 
 protected function getPreOptModules
   input Option<list<String>> inPreOptModules;
@@ -7245,38 +7259,24 @@ algorithm
       enabledModules := "simplifyConstraints"::enabledModules;
     end if;
 
-    if Flags.isSet(Flags.REDUCE_DYN_OPT) then
-      enabledModules := "reduceDynamicOptimization"::enabledModules;
-    end if;
+    enabledModules := deprecatedDebugFlag(Flags.REDUCE_DYN_OPT, enabledModules, "reduceDynamicOptimization", "postOptModules+");
 
     if not Flags.getConfigString(Flags.LOOP2CON) == "none" then
       enabledModules := "extendDynamicOptimization"::enabledModules;
     end if;
 
-    if Flags.getConfigBool(Flags.CSE_BINARY) then
-      enabledModules := "CSE"::enabledModules;
-    end if;
-
-    if Flags.getConfigBool(Flags.CSE_CALL) or
-       Flags.getConfigBool(Flags.CSE_EACHCALL) then
-      enabledModules := "wrapFunctionCalls"::enabledModules;
-    end if;
-
-    if Flags.isSet(Flags.ON_RELAXATION) then
-      enabledModules := "relaxSystem"::enabledModules;
-    end if;
-
-    if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
-      enabledModules := "generateSymbolicJacobian"::enabledModules;
-    end if;
+    enabledModules := deprecatedConfigFlag(Flags.CSE_BINARY, enabledModules, "cseBinary", "postOptModules+");
+    enabledModules := deprecatedConfigFlag(Flags.CSE_CALL, enabledModules, "wrapFunctionCalls", "postOptModules+");
+    enabledModules := deprecatedConfigFlag(Flags.CSE_EACHCALL, enabledModules, "wrapFunctionCalls", "postOptModules+");
+    enabledModules := deprecatedDebugFlag(Flags.ON_RELAXATION, enabledModules, "relaxSystem", "postOptModules+");
+    enabledModules := deprecatedConfigFlag(Flags.GENERATE_SYMBOLIC_JACOBIAN, enabledModules, "generateSymbolicJacobian", "postOptModules+");
 
     if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION) then
       enabledModules := "generateSymbolicLinearization"::enabledModules;
     end if;
 
-    if Flags.isSet(Flags.ADD_SCALED_VARS) or Flags.isSet(Flags.ADD_SCALED_VARS_INPUT) then
-      enabledModules := "addScaledVars"::enabledModules;
-    end if;
+    enabledModules := deprecatedDebugFlag(Flags.ADD_SCALED_VARS, enabledModules, "addScaledVars_states", "postOptModules+");
+    enabledModules := deprecatedDebugFlag(Flags.ADD_SCALED_VARS_INPUT, enabledModules, "addScaledVars_inputs", "postOptModules+");
 
     if Flags.getConfigBool(Flags.SYM_EULER) then
       enabledModules := "symEuler"::enabledModules;
@@ -7290,9 +7290,7 @@ algorithm
       enabledModules := "countOperations"::enabledModules;
     end if;
 
-    if Flags.getConfigBool(Flags.ADD_TIME_AS_STATE) then
-      enabledModules := "addTimeAsState"::enabledModules;
-    end if;
+    enabledModules := deprecatedConfigFlag(Flags.ADD_TIME_AS_STATE, enabledModules, "addTimeAsState", "postOptModules+");
 
     if 1 < Flags.getConfigInt(Flags.MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM) then
       enabledModules := "solveLinearSystem"::enabledModules;
@@ -7311,9 +7309,7 @@ algorithm
     end if;
 
     // handle special flags, which disable modules
-    if Flags.isSet(Flags.DIS_SIMP_FUN) then
-      disabledModules := "simplifyComplexFunction"::disabledModules;
-    end if;
+    disabledModules := deprecatedDebugFlag(Flags.DIS_SIMP_FUN, disabledModules, "simplifyComplexFunction", "postOptModules-");
 
     if Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "none" or
        Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "fastAcausal" or
@@ -7361,9 +7357,7 @@ algorithm
     end if;
 
     // handle special flags, which disable modules
-    if Flags.isSet(Flags.DIS_SIMP_FUN) then
-      disabledModules := "simplifyComplexFunction"::disabledModules;
-    end if;
+    disabledModules := deprecatedDebugFlag(Flags.DIS_SIMP_FUN, disabledModules, "simplifyComplexFunction", "initOptModules-");
 
     if Config.getTearingMethod() == "noTearing" then
       disabledModules := "tearingSystem"::disabledModules;

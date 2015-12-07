@@ -173,31 +173,23 @@ end detectSparsePatternODE;
 public function generateSymbolicJacobianPast
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
+protected
+  BackendDAE.EqSystems eqs;
+  BackendDAE.Shared shared;
+  BackendDAE.SymbolicJacobian symJacA;
+  BackendDAE.SparsePattern sparsePattern;
+  BackendDAE.SparseColoring sparseColoring;
+  DAE.FunctionTree funcs, functionTree;
 algorithm
-  outBackendDAE := matchcontinue(inBackendDAE)
-  local
-    BackendDAE.EqSystems eqs;
-    BackendDAE.Shared shared;
-    BackendDAE.SymbolicJacobian symJacA;
-    BackendDAE.SparsePattern sparsePattern;
-    BackendDAE.SparseColoring sparseColoring;
-    DAE.FunctionTree funcs, functionTree;
-
-  case(_) equation
-    true = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN);
-    System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
-    BackendDAE.DAE(eqs=eqs,shared=shared) = inBackendDAE;
-    (symJacA , sparsePattern, sparseColoring, funcs) = createSymbolicJacobianforStates(inBackendDAE);
-    shared = addBackendDAESharedJacobian(symJacA, sparsePattern, sparseColoring, shared);
-    functionTree = BackendDAEUtil.getFunctions(shared);
-    functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
-    shared = BackendDAEUtil.setSharedFunctionTree(shared, functionTree);
-    outBackendDAE = BackendDAE.DAE(eqs,shared);
-    _ = System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
-  then outBackendDAE;
-
-  else inBackendDAE;
-  end matchcontinue;
+  System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
+  BackendDAE.DAE(eqs=eqs,shared=shared) := inBackendDAE;
+  (symJacA , sparsePattern, sparseColoring, funcs) := createSymbolicJacobianforStates(inBackendDAE);
+  shared := addBackendDAESharedJacobian(symJacA, sparsePattern, sparseColoring, shared);
+  functionTree := BackendDAEUtil.getFunctions(shared);
+  functionTree := DAEUtil.joinAvlTrees(functionTree, funcs);
+  shared := BackendDAEUtil.setSharedFunctionTree(shared, functionTree);
+  outBackendDAE := BackendDAE.DAE(eqs,shared);
+  System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
 end generateSymbolicJacobianPast;
 
 protected function createSymbolicJacobianforStates "author: wbraun

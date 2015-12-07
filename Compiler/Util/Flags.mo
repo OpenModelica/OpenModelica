@@ -283,7 +283,7 @@ constant DebugFlag PARAM_DLOW_DUMP = DEBUG_FLAG(58, "paramdlowdump", false,
 constant DebugFlag DUMP_ENCAPSULATECONDITIONS = DEBUG_FLAG(59, "dumpEncapsulateConditions", false,
   Util.gettext("Dumps the results of the preOptModule encapsulateWhenConditions."));
 constant DebugFlag ON_RELAXATION = DEBUG_FLAG(60, "onRelaxation", false,
-  Util.gettext("Perform O(n) relaxation."));
+  Util.gettext("Perform O(n) relaxation.\nDeprecated flag: Use --postOptModules+=relaxSystem instead."));
 constant DebugFlag SHORT_OUTPUT = DEBUG_FLAG(61, "shortOutput", false,
   Util.gettext("Enables short output of the simulate() command. Useful for tools like OMNotebook."));
 constant DebugFlag COUNT_OPERATIONS = DEBUG_FLAG(62, "countOperations", false,
@@ -428,13 +428,13 @@ constant DebugFlag ADVANCE_TEARING = DEBUG_FLAG(129, "advanceTearing", false,
 constant DebugFlag CONSTJAC = DEBUG_FLAG(130, "constjac", false,
   Util.gettext("solves linear systems with constant Jacobian and variable b-Vector symbolically"));
 constant DebugFlag REDUCE_DYN_OPT = DEBUG_FLAG(131, "reduceDynOpt", false,
-  Util.gettext("remove eqs which not need for the calculations of cost and constraints"));
+  Util.gettext("remove eqs which not need for the calculations of cost and constraints\nDeprecated flag: Use --postOptModules+=reduceDynamicOptimization instead."));
 constant DebugFlag VISUAL_XML = DEBUG_FLAG(132, "visxml", false,
   Util.gettext("Outputs a xml-file that contains information for visualization."));
 constant DebugFlag ADD_SCALED_VARS = DEBUG_FLAG(133, "addScaledVars", false,
-  Util.gettext("Adds an alias equation var_nrom = var/nominal where var is state"));
+  Util.gettext("Adds an alias equation var_nrom = var/nominal where var is state\nDeprecated flag: Use --postOptModules+=addScaledVars_states instead."));
 constant DebugFlag ADD_SCALED_VARS_INPUT = DEBUG_FLAG(134, "addScaledVarsInput", false,
-  Util.gettext("Adds an alias equation var_nrom = var/nominal where var is input"));
+  Util.gettext("Adds an alias equation var_nrom = var/nominal where var is input\nDeprecated flag: Use --postOptModules+=addScaledVars_inputs instead."));
 constant DebugFlag VECTORIZE = DEBUG_FLAG(135, "vectorize", false,
   Util.gettext("Activates vectorization in the backend."));
 constant DebugFlag CHECK_EXT_LIBS = DEBUG_FLAG(136, "buildExternalLibs", true,
@@ -450,7 +450,7 @@ constant DebugFlag DUMP_SIMPLIFY_LOOPS = DEBUG_FLAG(140, "dumpSimplifyLoops", fa
 constant DebugFlag DUMP_RTEARING = DEBUG_FLAG(141, "dumpRecursiveTearing", false,
   Util.gettext("Dump between steps of recursiveTearing"));
 constant DebugFlag DIS_SIMP_FUN = DEBUG_FLAG(142, "disableSimplifyComplexFunction", false,
-  Util.gettext("disable simplifyComplexFunction"));
+  Util.gettext("disable simplifyComplexFunction\nDeprecated flag: Use --postOptModules-=simplifyComplexFunction/--initOptModules-=simplifyComplexFunction instead."));
 constant DebugFlag DIS_SYMJAC_FMI20 = DEBUG_FLAG(143, "disableSymbolicLinearization", false,
   Util.gettext("For FMI 2.0 only dependecy analysis will be perform."));
 constant DebugFlag EVAL_ALL_PARAMS = DEBUG_FLAG(144, "evalAllParams", false,
@@ -789,13 +789,14 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "simplifyAllExpressions"
     }),
   SOME(STRING_DESC_OPTION({
-    ("addScaledVars", Util.notrans("added var_norm = var/nominal, where var is state")),
+    ("addScaledVars_states", Util.notrans("added var_norm = var/nominal, where var is state")),
+    ("addScaledVars_inputs", Util.notrans("added var_norm = var/nominal, where var is input")),
     ("addTimeAsState", Util.gettext("Experimental feature: this replaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0")),
     ("calculateStateSetsJacobians", Util.gettext("Generates analytical Jacobian for dynamic state selection sets.")),
     ("calculateStrongComponentJacobians", Util.gettext("Generates analytical Jacobian for non-linear strong components.")),
     ("constantLinearSystem", Util.gettext("Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time.")),
     ("countOperations", Util.gettext("Count the mathematical operations of the system.")),
-    ("CSE", Util.gettext("Common Sub-expression Elimination")),
+    ("cseBinary", Util.gettext("Common Sub-expression Elimination")),
     ("detectJacobianSparsePattern", Util.gettext("Detects the sparse pattern for Jacobian A.")),
     ("dumpComponentsGraphStr", Util.notrans("Dumps the assignment graph used to determine strong components to format suitable for Mathematica")),
     ("dumpDAE", Util.gettext("dumps the DAE representation of the current transformation state")),
@@ -1015,7 +1016,7 @@ constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(54, "replaceHomotopy",
 
 constant ConfigFlag GENERATE_SYMBOLIC_JACOBIAN = CONFIG_FLAG(55, "generateSymbolicJacobian",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Generates symbolic Jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be utilise by dassl with the runtime option: -dasslJacobian=coloredSymbolical|symbolical."));
+  Util.gettext("Generates symbolic Jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be utilise by dassl with the runtime option: -dasslJacobian=coloredSymbolical|symbolical.\nDeprecated flag: Use --postOptModules+=generateSymbolicJacobian instead."));
 
 constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(56, "generateSymbolicLinearization",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
@@ -1050,7 +1051,7 @@ constant ConfigFlag CSE_CALL = CONFIG_FLAG(61,
 
 constant ConfigFlag CSE_BINARY = CONFIG_FLAG(62,
   "cseBinary", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Experimental feature: cse of duplicate binary expressions"));
+  Util.gettext("Deprecated flag: Use --postOptModules+=cseBinary instead."));
 
 constant ConfigFlag CSE_EACHCALL = CONFIG_FLAG(63,
   "cseEachCall", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
@@ -1086,7 +1087,7 @@ constant ConfigFlag SYM_EULER = CONFIG_FLAG(68, "symEuler",
 
 constant ConfigFlag ADD_TIME_AS_STATE = CONFIG_FLAG(69,
   "addTimeAsState", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Experimental feature: this replaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0"));
+  Util.gettext("Experimental feature: this replaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0\nDeprecated flag: Use --postOptModules+=addTimeAsState instead."));
 
 constant ConfigFlag LOOP2CON = CONFIG_FLAG(70, "loop2con",
   NONE(), EXTERNAL(), STRING_FLAG("none"),

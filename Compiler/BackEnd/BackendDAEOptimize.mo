@@ -3932,19 +3932,8 @@ end updateStatesVars;
 //
 // =============================================================================
 
-public function addedScaledVars
+public function addedScaledVars_states
   "added var_norm = var/nominal, where var is state."
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-algorithm
-  if Flags.isSet(Flags.ADD_SCALED_VARS) or Flags.isSet(Flags.ADD_SCALED_VARS_INPUT) then
-    outDAE := addedScaledVarsWork(inDAE);
-  else
-    outDAE := inDAE;
-  end if;
-end addedScaledVars;
-
-protected function addedScaledVarsWork
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
@@ -3952,7 +3941,7 @@ protected
   list<BackendDAE.EqSystem> osystlst = {};
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
-  list<BackendDAE.Var> kvarlst, lst_states, lst_inputs;
+  list<BackendDAE.Var> lst_states;
   BackendDAE.Var tmpv;
   DAE.ComponentRef cref;
   DAE.Exp norm, y_norm, y, lhs;
@@ -3961,55 +3950,19 @@ protected
   BackendDAE.EqSystem syst;
 algorithm
   BackendDAE.DAE(systlst, oshared) := inDAE;
-  kvarlst := BackendVariable.varList(oshared.knownVars);
-  lst_inputs := List.select(kvarlst, BackendVariable.isVarOnTopLevelAndInputNoDerInput);
-  // states
-  if Flags.isSet(Flags.ADD_SCALED_VARS) then
-    for syst in systlst loop
-      syst := match syst
-        local
-          BackendDAE.EqSystem syst1;
-        case syst1 as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns)
-          algorithm
-            // get vars
-            lst_states := List.select(BackendVariable.varList(vars), BackendVariable.isStateVar);
-            //BackendDump.printVarList(lst_states);
-            for v in lst_states loop
-              cref := BackendVariable.varCref(v);
-              tmpv := BackendVariable.createVar(cref, "__OMC$scaled_state");
-              y := Expression.crefExp(cref);
-              norm := BackendVariable.getVarNominalValue(v);
-              y_norm := Expression.expDiv(y,norm);
-              (y_norm,_) := ExpressionSimplify.simplify(y_norm);
-              // lhs
-              cref := BackendVariable.varCref(tmpv);
-              lhs := Expression.crefExp(cref);
-              eqn := BackendDAE.EQUATION(lhs, y_norm, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-              //print("\n" + BackendDump.equationString(eqn));
-              eqns := BackendEquation.addEquation(eqn, eqns);
-              vars := BackendVariable.addVar(tmpv, vars);
-            end for;
-            syst1.orderedVars := vars;
-            syst1.orderedEqs := eqns;
-          then BackendDAEUtil.clearEqSyst(syst1);
-      end match;
-      osystlst := syst::osystlst;
-    end for;
-  else
-    osystlst := systlst;
-  end if;
-  // inputs
-  if Flags.isSet(Flags.ADD_SCALED_VARS_INPUT) then
-    //BackendDump.printVarList(lst_inputs);
-    syst :: osystlst := osystlst;
+
+  for syst in systlst loop
     syst := match syst
       local
         BackendDAE.EqSystem syst1;
-      case syst1 as BackendDAE.EQSYSTEM(orderedEqs=eqns, orderedVars=vars)
+      case syst1 as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns)
         algorithm
-          for v in lst_inputs loop
+          // get vars
+          lst_states := List.select(BackendVariable.varList(vars), BackendVariable.isStateVar);
+          //BackendDump.printVarList(lst_states);
+          for v in lst_states loop
             cref := BackendVariable.varCref(v);
-            tmpv := BackendVariable.createVar(cref, "__OMC$scaled_input");
+            tmpv := BackendVariable.createVar(cref, "__OMC$scaled_state");
             y := Expression.crefExp(cref);
             norm := BackendVariable.getVarNominalValue(v);
             y_norm := Expression.expDiv(y,norm);
@@ -4022,14 +3975,67 @@ algorithm
             eqns := BackendEquation.addEquation(eqn, eqns);
             vars := BackendVariable.addVar(tmpv, vars);
           end for;
-          syst1.orderedEqs := eqns;
           syst1.orderedVars := vars;
+          syst1.orderedEqs := eqns;
         then BackendDAEUtil.clearEqSyst(syst1);
     end match;
     osystlst := syst::osystlst;
-  end if;
+  end for;
+
   outDAE := BackendDAE.DAE(osystlst, oshared);
-end addedScaledVarsWork;
+end addedScaledVars_states;
+
+public function addedScaledVars_inputs
+  "added var_norm = var/nominal, where var is state."
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  list<BackendDAE.EqSystem> systlst;
+  list<BackendDAE.EqSystem> osystlst = {};
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+  list<BackendDAE.Var> kvarlst, lst_inputs;
+  BackendDAE.Var tmpv;
+  DAE.ComponentRef cref;
+  DAE.Exp norm, y_norm, y, lhs;
+  BackendDAE.Equation eqn;
+  BackendDAE.Shared oshared;
+  BackendDAE.EqSystem syst;
+algorithm
+  BackendDAE.DAE(systlst, oshared) := inDAE;
+  kvarlst := BackendVariable.varList(oshared.knownVars);
+  lst_inputs := List.select(kvarlst, BackendVariable.isVarOnTopLevelAndInputNoDerInput);
+
+  //BackendDump.printVarList(lst_inputs);
+  syst :: osystlst := systlst;
+  syst := match syst
+    local
+      BackendDAE.EqSystem syst1;
+    case syst1 as BackendDAE.EQSYSTEM(orderedEqs=eqns, orderedVars=vars)
+      algorithm
+        for v in lst_inputs loop
+          cref := BackendVariable.varCref(v);
+          tmpv := BackendVariable.createVar(cref, "__OMC$scaled_input");
+          y := Expression.crefExp(cref);
+          norm := BackendVariable.getVarNominalValue(v);
+          y_norm := Expression.expDiv(y,norm);
+          (y_norm,_) := ExpressionSimplify.simplify(y_norm);
+          // lhs
+          cref := BackendVariable.varCref(tmpv);
+          lhs := Expression.crefExp(cref);
+          eqn := BackendDAE.EQUATION(lhs, y_norm, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+          //print("\n" + BackendDump.equationString(eqn));
+          eqns := BackendEquation.addEquation(eqn, eqns);
+          vars := BackendVariable.addVar(tmpv, vars);
+        end for;
+        syst1.orderedEqs := eqns;
+        syst1.orderedVars := vars;
+      then BackendDAEUtil.clearEqSyst(syst1);
+  end match;
+  osystlst := syst::osystlst;
+
+  outDAE := BackendDAE.DAE(osystlst, oshared);
+end addedScaledVars_inputs;
 
 // =============================================================================
 // section for sortEqnsVars
@@ -4161,18 +4167,6 @@ end compWeightsEqns;
 // =============================================================================
 
 public function simplifyComplexFunction
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-algorithm
-  if Flags.isSet(Flags.DIS_SIMP_FUN) then
-    outDAE := inDAE;
-  else
-    outDAE := simplifyComplexFunction1(inDAE);
-  end if;
-end simplifyComplexFunction;
-
-
-public function simplifyComplexFunction1
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE = inDAE;
 protected
@@ -4320,7 +4314,7 @@ algorithm
   end for; // syst
 
   outDAE.eqs := systlst;
-end simplifyComplexFunction1;
+end simplifyComplexFunction;
 
 function simplifyComplexFunction2
   input DAE.Exp e1;
@@ -5351,18 +5345,16 @@ protected
   BackendDAE.EquationArray orderedEqs "ordered Equations";
   BackendDAE.Var var;
 algorithm
-  if Flags.getConfigBool(Flags.ADD_TIME_AS_STATE) then
-    (BackendDAE.DAE(eqs, shared), _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, addTimeAsState1, 0);
-    orderedVars := BackendVariable.emptyVars();
-    var := BackendDAE.VAR(DAE.crefTimeState, BackendDAE.STATE(1, NONE()), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
-    var := BackendVariable.setVarFixed(var, true);
-    var := BackendVariable.setVarStartValue(var, DAE.CREF(DAE.crefTime, DAE.T_REAL_DEFAULT));
-    orderedVars := BackendVariable.addVar(var, orderedVars);
-    orderedEqs := BackendEquation.emptyEqns();
-    orderedEqs := BackendEquation.addEquation(BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"), {DAE.CREF(DAE.crefTimeState, DAE.T_REAL_DEFAULT)}, DAE.callAttrBuiltinReal), DAE.RCONST(1.0), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), orderedEqs);
-    eq := BackendDAEUtil.createEqSystem(orderedVars, orderedEqs, {}, BackendDAE.CONTINUOUS_TIME_PARTITION());
-    outDAE := BackendDAE.DAE(eq::eqs, shared);
-  end if;
+  (BackendDAE.DAE(eqs, shared), _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, addTimeAsState1, 0);
+  orderedVars := BackendVariable.emptyVars();
+  var := BackendDAE.VAR(DAE.crefTimeState, BackendDAE.STATE(1, NONE()), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+  var := BackendVariable.setVarFixed(var, true);
+  var := BackendVariable.setVarStartValue(var, DAE.CREF(DAE.crefTime, DAE.T_REAL_DEFAULT));
+  orderedVars := BackendVariable.addVar(var, orderedVars);
+  orderedEqs := BackendEquation.emptyEqns();
+  orderedEqs := BackendEquation.addEquation(BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"), {DAE.CREF(DAE.crefTimeState, DAE.T_REAL_DEFAULT)}, DAE.callAttrBuiltinReal), DAE.RCONST(1.0), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), orderedEqs);
+  eq := BackendDAEUtil.createEqSystem(orderedVars, orderedEqs, {}, BackendDAE.CONTINUOUS_TIME_PARTITION());
+  outDAE := BackendDAE.DAE(eq::eqs, shared);
 end addTimeAsState;
 
 protected function addTimeAsState1

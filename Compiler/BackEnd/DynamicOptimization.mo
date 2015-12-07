@@ -898,42 +898,37 @@ protected
   BackendDAE.Variables v;
   BackendDAE.Shared shared;
 algorithm
-  if Flags.isSet(Flags.REDUCE_DYN_OPT) then
+  //BackendDump.bltdump("START:reduceDynamicOptimization", inDAE);
+  BackendDAE.DAE(systlst, shared) := inDAE;
+  // ToDo
+  shared := BackendVariable.removeAliasVars(shared);
 
-    //BackendDump.bltdump("START:reduceDynamicOptimization", inDAE);
-    BackendDAE.DAE(systlst, shared) := inDAE;
-    // ToDo
-    shared := BackendVariable.removeAliasVars(shared);
+  for syst in systlst loop
 
-    for syst in systlst loop
+    syst := BackendEquation.removeRemovedEqs(syst);
 
-      syst := BackendEquation.removeRemovedEqs(syst);
+    BackendDAE.EQSYSTEM(orderedVars = v) := syst;
+    varlst := BackendVariable.varList(v);
 
-      BackendDAE.EQSYSTEM(orderedVars = v) := syst;
-      varlst := BackendVariable.varList(v);
+    opt_varlst := {};
 
-      opt_varlst := {};
+    conVarsList := List.select(varlst, BackendVariable.isRealOptimizeConstraintsVars);
+    fconVarsList := List.select(varlst, BackendVariable.isRealOptimizeFinalConstraintsVars);
+    objMayer := checkObjectIsSet(v,BackendDAE.optimizationMayerTermName);
+    objLagrange := checkObjectIsSet(v,BackendDAE.optimizationLagrangeTermName);
 
-      conVarsList := List.select(varlst, BackendVariable.isRealOptimizeConstraintsVars);
-      fconVarsList := List.select(varlst, BackendVariable.isRealOptimizeFinalConstraintsVars);
-      objMayer := checkObjectIsSet(v,BackendDAE.optimizationMayerTermName);
-      objLagrange := checkObjectIsSet(v,BackendDAE.optimizationLagrangeTermName);
+    opt_varlst := List.appendNoCopy(opt_varlst, conVarsList);
+    opt_varlst := List.appendNoCopy(opt_varlst, fconVarsList);
+    opt_varlst := List.appendNoCopy(opt_varlst, objMayer);
+    opt_varlst := List.appendNoCopy(opt_varlst, objLagrange);
 
-      opt_varlst := List.appendNoCopy(opt_varlst, conVarsList);
-      opt_varlst := List.appendNoCopy(opt_varlst, fconVarsList);
-      opt_varlst := List.appendNoCopy(opt_varlst, objMayer);
-      opt_varlst := List.appendNoCopy(opt_varlst, objLagrange);
+    if not listEmpty(opt_varlst) then
+      newsyst := BackendDAEUtil.tryReduceEqSystem(syst, shared, opt_varlst) :: newsyst;
+    end if;
+  end for;
 
-      if not listEmpty(opt_varlst) then
-        newsyst := BackendDAEUtil.tryReduceEqSystem(syst, shared, opt_varlst) :: newsyst;
-      end if;
-    end for;
-
-    outDAE := BackendDAE.DAE(newsyst, shared);
-    //BackendDump.bltdump("END:reduceDynamicOptimization", outDAE);
-  else
-    outDAE := inDAE;
-  end if;
+  outDAE := BackendDAE.DAE(newsyst, shared);
+  //BackendDump.bltdump("END:reduceDynamicOptimization", outDAE);
 end reduceDynamicOptimization;
 
 public function checkObjectIsSet
