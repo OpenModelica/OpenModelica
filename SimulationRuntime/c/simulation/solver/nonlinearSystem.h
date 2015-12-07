@@ -48,6 +48,7 @@ extern "C" {
 
 typedef void* NLS_SOLVER_DATA;
 
+void cleanUpOldValueListAfterEvent(DATA *data, double time);
 int initializeNonlinearSystems(DATA *data, threadData_t *threadData);
 int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData);
 int freeNonlinearSystems(DATA *data, threadData_t *threadData);
