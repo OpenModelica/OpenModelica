@@ -3328,17 +3328,17 @@ void ModelWidget::getModelConnections()
     // get start and end components
     QStringList startComponentList = connectionList.at(0).split(".");
     QStringList endComponentList = connectionList.at(1).split(".");
+    QString errorMessage = tr("Unable to find component %1 while parsing connection %2.").arg(connectionList.at(0)).arg(connectionString);
     // get start component
     Component *pStartComponent = 0;
     if (startComponentList.size() > 0) {
-      pStartComponent = mpDiagramGraphicsView->getComponentObject(startComponentList.at(0));
+      QString startComponentName = startComponentList.at(0);
+      if (startComponentName.contains("[")) {
+        startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
+      }
+      pStartComponent = mpDiagramGraphicsView->getComponentObject(startComponentName);
     }
-    // get end component
-    Component *pEndComponent = 0;
-    if (endComponentList.size() > 0) {
-      pEndComponent = mpDiagramGraphicsView->getComponentObject(endComponentList.at(0));
-    }
-    // get start and end connectors
+    // get start connector
     Component *pStartConnectorComponent = 0;
     Component *pEndConnectorComponent = 0;
     if (pStartComponent) {
@@ -3358,6 +3358,22 @@ void ModelWidget::getModelConnections()
         pStartConnectorComponent = getConnectorComponent(pStartComponent, startComponentName);
       }
     }
+    // show error message if start component is not found.
+    if (!pStartConnectorComponent) {
+      pMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
+                                                                  Helper::scriptingKind, Helper::errorLevel));
+      continue;
+    }
+    // get end component
+    Component *pEndComponent = 0;
+    if (endComponentList.size() > 0) {
+      QString endComponentName = endComponentList.at(0);
+      if (endComponentName.contains("[")) {
+        endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
+      }
+      pEndComponent = mpDiagramGraphicsView->getComponentObject(endComponentList.at(0));
+    }
+    // get the end connector
     if (pEndComponent) {
       // if a component type is connector then we only get one item in endComponentList
       // check the endcomponentlist
@@ -3373,6 +3389,12 @@ void ModelWidget::getModelConnections()
         }
         pEndConnectorComponent = getConnectorComponent(pEndComponent, endComponentName);
       }
+    }
+    // show error message if end component is not found.
+    if (!pEndConnectorComponent) {
+      pMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
+                                                                  Helper::scriptingKind, Helper::errorLevel));
+      continue;
     }
     // get the connector annotations from OMC
     QString connectionAnnotationString = pMainWindow->getOMCProxy()->getNthConnectionAnnotation(mpLibraryTreeItem->getNameStructure(), i);
