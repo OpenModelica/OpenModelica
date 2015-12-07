@@ -197,15 +197,11 @@ Evaluates all parameters and replaces them with their value, if possible."
 protected
   BackendVarTransform.VariableReplacements repl;
 algorithm
-  if Flags.isSet(Flags.EVAL_ALL_PARAMS) then
-	  (outDAE,repl) := evaluateParameters(inDAE,BackendVariable.isParam);
-	  if not BackendVarTransform.isReplacementEmpty(repl) then
-	    //BackendVarTransform.dumpReplacements(repl);
-	    outDAE := replaceEvaluatedParametersEqns(outDAE, repl);
-	  end if;
-	else
-	  outDAE := inDAE;
-	end if;
+  (outDAE, repl) := evaluateParameters(inDAE, BackendVariable.isParam);
+  if not BackendVarTransform.isReplacementEmpty(repl) then
+    //BackendVarTransform.dumpReplacements(repl);
+    outDAE := replaceEvaluatedParametersEqns(outDAE, repl);
+  end if;
 end evaluateAllParameters;
 
 /*

@@ -69,12 +69,8 @@ protected
   BackendDAE.EqSystems eqSysts;
   BackendDAE.Shared shared;
 algorithm
-  if Flags.isSet(Flags.RESOLVE_LOOPS) then
-    (eqSysts, shared, _) := List.mapFold2(inDAE.eqs, resolveLoops_main, inDAE.shared, 1);
-    outDAE := BackendDAE.DAE(eqSysts, shared);
-  else
-    outDAE := inDAE;
-  end if;
+  (eqSysts, shared, _) := List.mapFold2(inDAE.eqs, resolveLoops_main, inDAE.shared, 1);
+  outDAE := BackendDAE.DAE(eqSysts, shared);
 end resolveLoops;
 
 protected function resolveLoops_main "author: Waurich TUD 2014-01

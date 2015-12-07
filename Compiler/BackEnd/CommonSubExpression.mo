@@ -997,19 +997,12 @@ REMARK: this is just a basic prototype. feel free to extend.
 author:Waurich TUD 2014-11"
   input BackendDAE.BackendDAE daeIn;
   output BackendDAE.BackendDAE daeOut;
-protected
-  BackendDAE.EqSystems eqs;
-  BackendDAE.Shared shared;
 algorithm
-    //print("SYSTEM IN\n");
-    //BackendDump.printBackendDAE(daeIn);
-    if Flags.isSet(Flags.DISABLE_COMSUBEXP) then
-      daeOut := daeIn;
-    else
-      daeOut := BackendDAEUtil.mapEqSystem(daeIn, commonSubExpression);
-    end if;
-    //print("SYSTEM OUT\n");
-    //BackendDump.printBackendDAE(daeOut);
+  //print("SYSTEM IN\n");
+  //BackendDump.printBackendDAE(daeIn);
+  daeOut := BackendDAEUtil.mapEqSystem(daeIn, commonSubExpression);
+  //print("SYSTEM OUT\n");
+  //BackendDump.printBackendDAE(daeOut);
 end commonSubExpressionReplacement;
 
 protected function commonSubExpression

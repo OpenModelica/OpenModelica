@@ -7161,6 +7161,19 @@ algorithm
   strPreOptModules := Config.getPreOptModules();
 end getPreOptModulesString;
 
+protected function deprecatedDebugFlag
+  input Flags.DebugFlag inFlag;
+  input list<String> inModuleList;
+  input String inModule;
+  input String inPhase;
+  output list<String> outModuleList = inModuleList;
+algorithm
+  if Flags.isSet(inFlag) then
+    outModuleList := inModule::inModuleList;
+    Error.addCompilerWarning("Deprecated debug flag --d=" + Flags.debugFlagName(inFlag) + " detected. Use --" + inPhase + "=" + inModule + " instead.");
+  end if;
+end deprecatedDebugFlag;
+
 protected function getPreOptModules
   input Option<list<String>> inPreOptModules;
   output list<tuple<BackendDAEFunc.optimizationModule, String>> outPreOptModules;
@@ -7174,42 +7187,25 @@ algorithm
 
   if Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) then
     // handle special flags, which enable modules
-    if Flags.isSet(Flags.SORT_EQNS_AND_VARS) then
-      enabledModules := "sortEqnsVars"::enabledModules;
-    end if;
-
+    enabledModules := deprecatedDebugFlag(Flags.SORT_EQNS_AND_VARS, enabledModules, "sortEqnsVars", "preOptModules+");
+    enabledModules := deprecatedDebugFlag(Flags.RESOLVE_LOOPS, enabledModules, "resolveLoops", "preOptModules+");
+    enabledModules := deprecatedDebugFlag(Flags.EVAL_ALL_PARAMS, enabledModules, "evaluateAllParameters", "preOptModules+");
+    enabledModules := deprecatedDebugFlag(Flags.ADD_DER_ALIASES, enabledModules, "introduceDerAlias", "preOptModules+");
     if Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM) then
       enabledModules := "inputDerivativesForDynOpt"::enabledModules;
     end if;
 
-    if Flags.isSet(Flags.RESOLVE_LOOPS) then
-      enabledModules := "resolveLoops"::enabledModules;
-    end if;
-
-    if Flags.isSet(Flags.EVALUATE_CONST_FUNCTIONS) then
-      enabledModules := "evalFunc"::enabledModules;
-    end if;
-
-    if Flags.isSet(Flags.EVAL_ALL_PARAMS) then
-      enabledModules := "evaluateAllParameters"::enabledModules;
-    end if;
-
-    if Flags.isSet(Flags.ADD_DER_ALIASES) then
-      enabledModules := "introduceDerAlias"::enabledModules;
-    end if;
-
     // handle special flags, which disable modules
-    if Flags.isSet(Flags.NO_PARTITIONING) then
-      disabledModules := "clockPartitioning"::disabledModules;
-    end if;
-
+    disabledModules := deprecatedDebugFlag(Flags.NO_PARTITIONING, disabledModules, "clockPartitioning", "preOptModules-");
+    disabledModules := deprecatedDebugFlag(Flags.DISABLE_COMSUBEXP, disabledModules, "comSubExp", "preOptModules-");
     if Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "causal" or
        Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "none" then
       disabledModules := "removeSimpleEquations"::disabledModules;
     end if;
 
-    if Flags.isSet(Flags.DISABLE_COMSUBEXP) then
-      disabledModules := "comSubExp"::disabledModules;
+    if not Flags.isSet(Flags.EVALUATE_CONST_FUNCTIONS) then
+      disabledModules := "evalFunc"::disabledModules;
+      Error.addCompilerWarning("Deprecated debug flag --d=evalConstFuncs=false detected. Use --preOptModules-=evalFunc instead.");
     end if;
   end if;
 

@@ -4039,13 +4039,6 @@ end addedScaledVarsWork;
 
 public function sortEqnsVars
   input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-algorithm
-  outDAE := if Flags.isSet(Flags.SORT_EQNS_AND_VARS) then sortEqnsVarsWork(inDAE) else inDAE;
-end sortEqnsVars;
-
-protected function sortEqnsVarsWork
-  input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE = inDAE;
 protected
   list<BackendDAE.EqSystem> systlst, new_systlst = {};
@@ -4110,7 +4103,7 @@ algorithm
 
   outDAE:= BackendDAE.DAE(new_systlst, shared);
   //BackendDump.bltdump("ENDE:", outDAE);
-end sortEqnsVarsWork;
+end sortEqnsVars;
 
 protected function sortEqnsVarsWorkTpl
   input list<tuple<Integer,Integer>> tplIndexWeight;
@@ -5007,11 +5000,7 @@ public function introduceDerAlias
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  if Flags.isSet(Flags.ADD_DER_ALIASES) then
-    outDAE := BackendDAEUtil.mapEqSystem(inDAE, introduceDerAliasWork);
-  else
-    outDAE := inDAE;
-  end if;
+  outDAE := BackendDAEUtil.mapEqSystem(inDAE, introduceDerAliasWork);
 end introduceDerAlias;
 
 protected function introduceDerAliasWork

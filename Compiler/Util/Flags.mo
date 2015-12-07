@@ -359,7 +359,7 @@ constant DebugFlag INFO_XML_OPERATIONS = DEBUG_FLAG(96, "infoXmlOperations", fal
 constant DebugFlag HPCOM_DUMP = DEBUG_FLAG(97, "hpcomDump", false,
   Util.gettext("Dumps additional information on the parallel execution with hpcom."));
 constant DebugFlag RESOLVE_LOOPS = DEBUG_FLAG(98, "resolveLoops", false,
-  Util.gettext("Activates the resolveLoops module."));
+  Util.gettext("Activates the resolveLoops module.\nDeprecated flag: Use --preOptModules+=resolveLoops instead."));
 constant DebugFlag DISABLE_WINDOWS_PATH_CHECK_WARNING = DEBUG_FLAG(99, "disableWindowsPathCheckWarning", false,
   Util.gettext("Disables warnings on Windows if OPENMODELICAHOME/MinGW is missing."));
 constant DebugFlag DISABLE_RECORD_CONSTRUCTOR_OUTPUT = DEBUG_FLAG(100, "disableRecordConstructorOutput", false,
@@ -367,7 +367,7 @@ constant DebugFlag DISABLE_RECORD_CONSTRUCTOR_OUTPUT = DEBUG_FLAG(100, "disableR
 constant DebugFlag DUMP_TRANSFORMED_MODELICA_MODEL = DEBUG_FLAG(101, "dumpTransformedModelica", false,
   Util.gettext("Dumps the back-end DAE to a Modelica-like model after all symbolic transformations are applied."));
 constant DebugFlag EVALUATE_CONST_FUNCTIONS = DEBUG_FLAG(102, "evalConstFuncs", true,
-  Util.gettext("Evaluates functions complete and partially and checks for constant output."));
+  Util.gettext("Evaluates functions complete and partially and checks for constant output.\nDeprecated flag: Use --preOptModules+=evalFunc instead."));
 constant DebugFlag IMPL_ODE = DEBUG_FLAG(103, "implOde", false,
   Util.gettext("activates implicit codegen"));
 constant DebugFlag EVAL_FUNC_DUMP = DEBUG_FLAG(104, "evalFuncDump", false,
@@ -415,13 +415,14 @@ constant DebugFlag DUMP_CSE_VERBOSE = DEBUG_FLAG(124, "dumpCSE_verbose", false,
 constant DebugFlag ADD_DER_ALIASES = DEBUG_FLAG(125, "addDerAliases", false,
   Util.gettext("Adds for every der-call an alias equation e.g. dx = der(x). It's a work-a-round flag,
                 which helps im some cases to simulate the models e.g.
-                Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation."));
+                Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation.
+                Deprecated flag: Use --preOptModules+=introduceDerAlias instead."));
 constant DebugFlag DISABLE_COMSUBEXP = DEBUG_FLAG(126, "disableComSubExp", false,
-  Util.gettext("Deactivates module 'comSubExp'"));
+  Util.gettext("Deactivates module 'comSubExp'\nDeprecated flag: Use --preOptModules-=comSubExp instead."));
 constant DebugFlag NO_START_CALC = DEBUG_FLAG(127, "disableStartCalc", false,
   Util.gettext("Deactivates the pre-calculation of start values during compile-time."));
 constant DebugFlag NO_PARTITIONING = DEBUG_FLAG(128, "disablePartitioning", false,
-  Util.gettext("Deactivates partitioning of entire equation system."));
+  Util.gettext("Deactivates partitioning of entire equation system.\nDeprecated flag: Use --preOptModules-=clockPartitioning instead."));
 constant DebugFlag ADVANCE_TEARING = DEBUG_FLAG(129, "advanceTearing", false,
   Util.gettext("Using ExpressionSolve in adjacencyRowEnhanced"));
 constant DebugFlag CONSTJAC = DEBUG_FLAG(130, "constjac", false,
@@ -443,7 +444,7 @@ constant DebugFlag RUNTIME_STATIC_LINKING = DEBUG_FLAG(137, "runtimeStaticLinkin
 constant DebugFlag DYNAMIC_TEARING_INFO = DEBUG_FLAG(138, "dynamicTearingInfo", false,
   Util.gettext("Dumps information about the strict and casual sets of the tearing system."));
 constant DebugFlag SORT_EQNS_AND_VARS = DEBUG_FLAG(139, "sortEqnsAndVars", false,
-  Util.gettext("Heuristic sorting for equations and variables. Influenced: removeSimpleEquations and tearing."));
+  Util.gettext("Heuristic sorting for equations and variables. Influenced: removeSimpleEquations and tearing.\nDeprecated flag: Use --preOptModules+=sortEqnsVars instead."));
 constant DebugFlag DUMP_SIMPLIFY_LOOPS = DEBUG_FLAG(140, "dumpSimplifyLoops", false,
   Util.gettext("Dump between steps of simplifyLoops"));
 constant DebugFlag DUMP_RTEARING = DEBUG_FLAG(141, "dumpRecursiveTearing", false,
@@ -453,7 +454,7 @@ constant DebugFlag DIS_SIMP_FUN = DEBUG_FLAG(142, "disableSimplifyComplexFunctio
 constant DebugFlag DIS_SYMJAC_FMI20 = DEBUG_FLAG(143, "disableSymbolicLinearization", false,
   Util.gettext("For FMI 2.0 only dependecy analysis will be perform."));
 constant DebugFlag EVAL_ALL_PARAMS = DEBUG_FLAG(144, "evalAllParams", false,
-  Util.gettext("Evaluates all parameters in order to increase simulation speed."));
+  Util.gettext("Evaluates all parameters in order to increase simulation speed.\nDeprecated flag: Use --preOptModules+=evaluateAllParameters instead."));
 constant DebugFlag EVAL_OUTPUT_ONLY = DEBUG_FLAG(145, "evalOutputOnly", false,
   Util.gettext("Generates equations to calculate outputs only."));
 constant DebugFlag HARDCODED_START_VALUES = DEBUG_FLAG(146, "hardcodedStartValues", false,
@@ -689,6 +690,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "inlineArrayEqn",
     "removeSimpleEquations",
     "comSubExp",
+    "evalFunc",
     "encapsulateWhenConditions"
     }),
   SOME(STRING_DESC_OPTION({
