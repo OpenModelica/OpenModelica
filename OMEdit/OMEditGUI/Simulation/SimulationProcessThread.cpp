@@ -76,12 +76,17 @@ void SimulationProcessThread::compileModel()
   }
   SimulationPage *pSimulationPage = mpSimulationOutputWidget->getMainWindow()->getOptionsDialog()->getSimulationPage();
   QStringList args;
-  args << simulationOptions.getOutputFileName() << pSimulationPage->getTargetCompilerComboBox()->currentText() << "parallel" << numProcs << "0";
 #ifdef WIN32
+  args << simulationOptions.getOutputFileName() << pSimulationPage->getTargetCompilerComboBox()->currentText() << "parallel" << numProcs << "0";
   QString compilationProcessPath = QString(Helper::OpenModelicaHome) + "/share/omc/scripts/Compile.bat";
   mpCompilationProcess->start(compilationProcessPath, args);
   emit sendCompilationOutput(QString("%1 %2\n").arg(compilationProcessPath).arg(args.join(" ")), Qt::blue);
 #else
+  int numProcsInt = numProcs.toInt();
+  if (numProcsInt > 1) {
+    args << "-j" + numProcs;
+  }
+  args << "-f" << simulationOptions.getOutputFileName() + ".makefile";
   mpCompilationProcess->start("make", args);
   emit sendCompilationOutput(QString("%1 %2\n").arg("make").arg(args.join(" ")), Qt::blue);
 #endif
