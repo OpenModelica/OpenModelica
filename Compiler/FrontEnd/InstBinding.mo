@@ -618,7 +618,9 @@ algorithm
 
     case (cache,_,DAE.NOMOD(),_) then (cache,DAE.UNBOUND());
 
-    case (cache,_,DAE.REDECL(),_) then (cache,DAE.UNBOUND());
+    case (_, _, DAE.REDECL(), _)
+      then makeBinding(inCache, inEnv, inAttributes, inMod.mod, inType,
+        inPrefix, componentName, inInfo);
 
     // adrpo: if the binding is missing for a parameter and
     //        the parameter has a start value modification,
