@@ -743,10 +743,10 @@ void LineAnnotation::duplicate()
 ConnectionArray::ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, QWidget *pParent)
   : QDialog(pParent, Qt::WindowTitleHint), mpGraphicsView(pGraphicsView), mpConnectionLineAnnotation(pConnectionLineAnnotation)
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::connectArray));
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::createConnection));
   setAttribute(Qt::WA_DeleteOnClose);
   // heading
-  mpHeading = new Label(Helper::connectArray);
+  mpHeading = new Label(Helper::createConnection);
   mpHeading->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
   mpHeading->setAlignment(Qt::AlignTop);
   // horizontal line
@@ -754,114 +754,139 @@ ConnectionArray::ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pC
   mpHorizontalLine->setFrameShape(QFrame::HLine);
   mpHorizontalLine->setFrameShadow(QFrame::Sunken);
   // Description text
-  QString indexString = tr("<b>[index]</b>");
-  QString startComponentDescription;
-  if (pConnectionLineAnnotation->getStartComponent()->getParentComponent()) {
-    startComponentDescription = QString("<b>").append(pConnectionLineAnnotation->getStartComponent()->getParentComponent()->getName())
-        .append(".").append(pConnectionLineAnnotation->getStartComponent()->getName()).append("</b>");
-  } else {
-    startComponentDescription = QString("<b>").append(pConnectionLineAnnotation->getStartComponent()->getName()).append("</b>");
-  }
-  if (pConnectionLineAnnotation->getStartComponent()->getComponentInfo()) {
-    if (pConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray()) {
-      startComponentDescription.append(indexString);
+  mpDescriptionLabel = new Label(tr("Connect to only parts of the connectors, by giving indicies below."));
+  if (mpConnectionLineAnnotation->getStartComponent()->getParentComponent()) {
+    mpStartRootComponentLabel = new Label(mpConnectionLineAnnotation->getStartComponent()->getRootParentComponent()->getName());
+    if (mpConnectionLineAnnotation->getStartComponent()->getRootParentComponent()->getComponentInfo()->isArray()) {
+      mpStartRootComponentSpinBox = createSpinBox(mpConnectionLineAnnotation->getStartComponent()->getRootParentComponent()->getComponentInfo()->getArrayIndex());
     }
   }
-  QString endComponentDescription;
-  if (pConnectionLineAnnotation->getEndComponent()->getParentComponent()) {
-    endComponentDescription = QString("<b>").append(pConnectionLineAnnotation->getEndComponent()->getParentComponent()->getName())
-        .append(".").append(pConnectionLineAnnotation->getEndComponent()->getName()).append("</b>");
-  } else {
-    endComponentDescription = QString("<b>").append(pConnectionLineAnnotation->getEndComponent()->getName()).append("</b>");
+  mpStartComponentLabel = new Label(mpConnectionLineAnnotation->getStartComponent()->getName());
+  if (mpConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray()) {
+    mpStartComponentSpinBox = createSpinBox(mpConnectionLineAnnotation->getStartComponent()->getComponentInfo()->getArrayIndex());
   }
-  if (pConnectionLineAnnotation->getEndComponent()->getComponentInfo()) {
-    if (pConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray()) {
-      endComponentDescription.append(indexString);
+  if (mpConnectionLineAnnotation->getEndComponent()->getParentComponent()) {
+    mpEndRootComponentLabel = new Label(mpConnectionLineAnnotation->getEndComponent()->getRootParentComponent()->getName());
+    if (mpConnectionLineAnnotation->getEndComponent()->getRootParentComponent()->getComponentInfo()->isArray()) {
+      mpEndRootComponentSpinBox = createSpinBox(mpConnectionLineAnnotation->getEndComponent()->getRootParentComponent()->getComponentInfo()->getArrayIndex());
     }
   }
-  mpDescriptionLabel = new Label(tr("Connect ").append(startComponentDescription).append(tr(" with ")).append(endComponentDescription));
-  // start component
-  if (pConnectionLineAnnotation->getStartComponent()->getParentComponent()) {
-    mpStartComponentLabel = new Label(tr("Enter <b>index</b> value for <b>").append(pConnectionLineAnnotation->getStartComponent()->getParentComponent()->getName())
-                                      .append(".").append(pConnectionLineAnnotation->getStartComponent()->getName()).append("<b>"));
-  } else {
-    mpStartComponentLabel = new Label(tr("Enter <b>index</b> value for <b>").append(pConnectionLineAnnotation->getStartComponent()->getName()).append("<b>"));
+  mpEndComponentLabel = new Label(mpConnectionLineAnnotation->getEndComponent()->getName());
+  if (mpConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray()) {
+    mpEndComponentSpinBox = createSpinBox(mpConnectionLineAnnotation->getEndComponent()->getComponentInfo()->getArrayIndex());
   }
-  mpStartComponentTextBox = new QLineEdit;
-  // end component
-  if (pConnectionLineAnnotation->getEndComponent()->getParentComponent()) {
-    mpEndComponentLabel = new Label(tr("Enter <b>index</b> value for <b>").append(pConnectionLineAnnotation->getEndComponent()->getParentComponent()->getName())
-                                    .append(".").append(pConnectionLineAnnotation->getEndComponent()->getName()).append("</b>"));
-  } else {
-    mpEndComponentLabel = new Label(tr("Enter <b>index</b> value for <b>").append(pConnectionLineAnnotation->getEndComponent()->getName()).append("</b>"));
-  }
-  mpEndComponentTextBox = new QLineEdit;
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(saveArrayIndex()));
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(createArrayConnection()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(cancelArrayIndex()));
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(cancelArrayConnection()));
   // add buttons
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   // Create a layout
-  QGridLayout *mainLayout = new QGridLayout;
-  mainLayout->addWidget(mpHeading, 0, 0);
-  mainLayout->addWidget(mpHorizontalLine, 1, 0);
-  mainLayout->addWidget(mpDescriptionLabel, 2, 0);
-  int i = 3;
-  if (pConnectionLineAnnotation->getStartComponent()->getComponentInfo()) {
-    if (pConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray()) {
-      mainLayout->addWidget(mpStartComponentLabel, i, 0);
-      mainLayout->addWidget(mpStartComponentTextBox, i+1, 0);
-      i = i + 2;
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignTop);
+  pMainLayout->addWidget(mpHeading, 0, 0, 1, 2);
+  pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
+  pMainLayout->addWidget(mpDescriptionLabel, 2, 0, 1, 2);
+  pMainLayout->addWidget(new Label("connect("), 3, 0);
+  // connection start horizontal layout
+  QHBoxLayout *pConnectionStartHorizontalLayout = new QHBoxLayout;
+  pConnectionStartHorizontalLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  if (mpConnectionLineAnnotation->getStartComponent()->getParentComponent()) {
+    pConnectionStartHorizontalLayout->addWidget(mpStartRootComponentLabel);
+    if (mpConnectionLineAnnotation->getStartComponent()->getRootParentComponent()->getComponentInfo()->isArray()) {
+      pConnectionStartHorizontalLayout->addWidget(mpStartRootComponentSpinBox);
     }
+    pConnectionStartHorizontalLayout->addWidget(new Label("."));
   }
-  if (pConnectionLineAnnotation->getEndComponent()->getComponentInfo()) {
-    if (pConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray()) {
-      mainLayout->addWidget(mpEndComponentLabel, i, 0);
-      mainLayout->addWidget(mpEndComponentTextBox, i+1, 0);
-      i = i + 2;
+  pConnectionStartHorizontalLayout->addWidget(mpStartComponentLabel);
+  if (mpConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray()) {
+    pConnectionStartHorizontalLayout->addWidget(mpStartComponentSpinBox);
+  }
+  pConnectionStartHorizontalLayout->addWidget(new Label(","));
+  pMainLayout->addLayout(pConnectionStartHorizontalLayout, 3, 1, 1, 1, Qt::AlignLeft);
+  pMainLayout->addItem(new QSpacerItem(1, 1), 4, 0);
+  // connection end horizontal layout
+  QHBoxLayout *pConnectionEndHorizontalLayout = new QHBoxLayout;
+  pConnectionEndHorizontalLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  if (mpConnectionLineAnnotation->getEndComponent()->getParentComponent()) {
+    pConnectionEndHorizontalLayout->addWidget(mpEndRootComponentLabel);
+    if (mpConnectionLineAnnotation->getEndComponent()->getRootParentComponent()->getComponentInfo()->isArray()) {
+      pConnectionEndHorizontalLayout->addWidget(mpEndRootComponentSpinBox);
     }
+    pConnectionEndHorizontalLayout->addWidget(new Label("."));
   }
-  mainLayout->addWidget(mpButtonBox, i, 0);
-  setLayout(mainLayout);
+  pConnectionEndHorizontalLayout->addWidget(mpEndComponentLabel);
+  if (mpConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray()) {
+    pConnectionEndHorizontalLayout->addWidget(mpEndComponentSpinBox);
+  }
+  pConnectionEndHorizontalLayout->addWidget(new Label(");"));
+  pMainLayout->addLayout(pConnectionEndHorizontalLayout, 4, 1, 1, 1, Qt::AlignLeft);
+  pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 2, Qt::AlignRight);
+  setLayout(pMainLayout);
 }
 
-void ConnectionArray::saveArrayIndex()
+/*!
+ * \brief ConnectionArray::createSpinBox
+ * Creates a QSpinBox with arrayIndex limit.
+ * \param arrayIndex
+ * \return
+ */
+QSpinBox* ConnectionArray::createSpinBox(QString arrayIndex)
+{
+  QSpinBox *pSpinBox = new QSpinBox;
+  pSpinBox->setPrefix("[");
+  pSpinBox->setSuffix("]");
+  pSpinBox->setSpecialValueText("[:]");
+  arrayIndex = StringHandler::removeFirstLastCurlBrackets(arrayIndex);
+  int intArrayIndex = arrayIndex.toInt();
+  if (intArrayIndex > 0) {
+    pSpinBox->setMaximum(intArrayIndex);
+  }
+  return pSpinBox;
+}
+
+/*!
+ * \brief ConnectionArray::createArrayConnection
+ * Slot activated when mpOkButton clicked SIGNAL is raised. Creates an array connection.
+ */
+void ConnectionArray::createArrayConnection()
 {
   QString startComponentName, endComponentName;
   // set start component name
   if (mpConnectionLineAnnotation->getStartComponent()->getParentComponent()) {
-    startComponentName = QString(mpConnectionLineAnnotation->getStartComponent()->getParentComponent()->getName()).append(".")
-        .append(mpConnectionLineAnnotation->getStartComponent()->getName());
-  } else {
-    startComponentName = mpConnectionLineAnnotation->getStartComponent()->getName();
-  }
-  // set the start component name if start component is an array
-  if (mpConnectionLineAnnotation->getStartComponent()->getComponentInfo()) {
-    if (mpConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray()) {
-      if (!mpStartComponentTextBox->text().isEmpty()) {
-        startComponentName = QString(startComponentName).append("[").append(mpStartComponentTextBox->text()).append("]");
+    startComponentName = mpConnectionLineAnnotation->getStartComponent()->getParentComponent()->getName();
+    if (mpConnectionLineAnnotation->getStartComponent()->getRootParentComponent()->getComponentInfo()->isArray()) {
+      if (mpStartRootComponentSpinBox->value() > 0) {
+        startComponentName += QString("[%1]").arg(mpStartRootComponentSpinBox->value());
       }
+    }
+    startComponentName += ".";
+  }
+  startComponentName += mpConnectionLineAnnotation->getStartComponent()->getName();
+  if (mpConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray()) {
+    if (mpStartComponentSpinBox->value() > 0) {
+      startComponentName += QString("[%1]").arg(mpStartComponentSpinBox->value());
     }
   }
   // set end component name
   if (mpConnectionLineAnnotation->getEndComponent()->getParentComponent()) {
-    endComponentName = QString(mpConnectionLineAnnotation->getEndComponent()->getParentComponent()->getName()).append(".")
-        .append(mpConnectionLineAnnotation->getEndComponent()->getName());
-  } else {
-    endComponentName = mpConnectionLineAnnotation->getEndComponent()->getName();
-  }
-  // set the end component name if end component is an array
-  if (mpConnectionLineAnnotation->getEndComponent()->getComponentInfo()) {
-    if (mpConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray()) {
-      if (!mpEndComponentTextBox->text().isEmpty()) {
-        endComponentName = QString(endComponentName).append("[").append(mpEndComponentTextBox->text()).append("]");
+    endComponentName = mpConnectionLineAnnotation->getEndComponent()->getParentComponent()->getName();
+    if (mpConnectionLineAnnotation->getEndComponent()->getRootParentComponent()->getComponentInfo()->isArray()) {
+      if (mpEndRootComponentSpinBox->value() > 0) {
+        endComponentName += QString("[%1]").arg(mpEndRootComponentSpinBox->value());
       }
+    }
+    endComponentName += ".";
+  }
+  endComponentName += mpConnectionLineAnnotation->getEndComponent()->getName();
+  if (mpConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray()) {
+    if (mpEndComponentSpinBox->value() > 0) {
+      endComponentName += QString("[%1]").arg(mpEndComponentSpinBox->value());
     }
   }
   mpConnectionLineAnnotation->setStartComponentName(startComponentName);
@@ -872,8 +897,11 @@ void ConnectionArray::saveArrayIndex()
   accept();
 }
 
-void ConnectionArray::cancelArrayIndex()
+/*!
+ * \brief ConnectionArray::cancelArrayConnection
+ * Slot activated when mpCancelButton clicked SIGNAL is raised.
+ */
+void ConnectionArray::cancelArrayConnection()
 {
-  mpGraphicsView->removeCurrentConnection();
   reject();
 }

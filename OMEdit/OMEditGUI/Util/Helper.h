@@ -259,7 +259,7 @@ public:
   static QString left;
   static QString center;
   static QString right;
-  static QString connectArray;
+  static QString createConnection;
   static QString findVariables;
   static QString viewClass;
   static QString viewClassTip;
