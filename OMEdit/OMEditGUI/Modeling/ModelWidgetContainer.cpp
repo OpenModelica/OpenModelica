@@ -1042,21 +1042,21 @@ void GraphicsView::addConnection(Component *pComponent)
                                GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_CONNECT), Helper::ok);
       removeCurrentConnection();
     } else {
+      // check of any of starting or ending components are array
       bool showConnectionArrayDialog = false;
-      if (pStartComponent->getComponentInfo()) {
-        if (pStartComponent->getComponentInfo()->isArray()) {
-          showConnectionArrayDialog = true;
-        }
-      }
-      if (pComponent->getComponentInfo()) {
-        if (pComponent->getComponentInfo()->isArray()) {
-          showConnectionArrayDialog = true;
-        }
+      if ((pStartComponent->getParentComponent() && pStartComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
+          (pStartComponent->getComponentInfo() && pStartComponent->getComponentInfo()->isArray()) ||
+          (pComponent->getParentComponent() && pComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
+          (pComponent->getComponentInfo() && pComponent->getComponentInfo()->isArray())) {
+        showConnectionArrayDialog = true;
       }
       if (showConnectionArrayDialog) {
         ConnectionArray *pConnectionArray = new ConnectionArray(this, mpConnectionLineAnnotation,
                                                                 mpModelWidget->getModelWidgetContainer()->getMainWindow());
-        pConnectionArray->exec();
+        // if user cancels the array connection
+        if (!pConnectionArray->exec()) {
+          removeCurrentConnection();
+        }
       } else {
         QString startComponentName, endComponentName;
         if (pStartComponent->getParentComponent()) {

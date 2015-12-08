@@ -118,16 +118,22 @@ private:
   Label *mpHeading;
   QFrame *mpHorizontalLine;
   Label *mpDescriptionLabel;
+  Label *mpStartRootComponentLabel;
+  QSpinBox *mpStartRootComponentSpinBox;
   Label *mpStartComponentLabel;
-  QLineEdit *mpStartComponentTextBox;
+  QSpinBox *mpStartComponentSpinBox;
+  Label *mpEndRootComponentLabel;
+  QSpinBox *mpEndRootComponentSpinBox;
   Label *mpEndComponentLabel;
-  QLineEdit *mpEndComponentTextBox;
+  QSpinBox *mpEndComponentSpinBox;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+
+  QSpinBox* createSpinBox(QString arrayIndex);
 public slots:
-  void saveArrayIndex();
-  void cancelArrayIndex();
+  void createArrayConnection();
+  void cancelArrayConnection();
 };
 
 #endif // LINEANNOTATION_H

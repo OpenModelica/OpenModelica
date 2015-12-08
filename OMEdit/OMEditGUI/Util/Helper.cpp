@@ -252,7 +252,7 @@ QString Helper::findReplaceModelicaText;
 QString Helper::left;
 QString Helper::center;
 QString Helper::right;
-QString Helper::connectArray;
+QString Helper::createConnection;
 QString Helper::findVariables;
 QString Helper::viewClass;
 QString Helper::viewClassTip;
@@ -442,7 +442,7 @@ void Helper::initHelperVariables()
   Helper::left = tr("Left");
   Helper::center = tr("Center");
   Helper::right = tr("Right");
-  Helper::connectArray = tr("Connect Array");
+  Helper::createConnection = tr("Create Connection");
   Helper::findVariables = tr("Find Variables");
   Helper::viewClass = tr("View Class");
   Helper::viewClassTip = tr("Opens the class details");
