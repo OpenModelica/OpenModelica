@@ -157,6 +157,7 @@ static inline modelica_metatype arrayCreateNoInit(modelica_integer nelts, modeli
 }
 #define arrayGetNoBoundsChecking(arr,ix) (MMC_STRUCTDATA((arr))[(ix)-1])
 #define arrayUpdate(X,Y,Z) boxptr_arrayUpdate(threadData,X,mmc_mk_icon(Y),Z)
+#define arrayUpdateNoBoundsChecking(X,Y,Z) boxptr_arrayUpdateNoBoundsChecking(threadData,X,mmc_mk_icon(Y),Z)
 extern modelica_metatype arrayAppend(modelica_metatype, modelica_metatype);
 
 extern modelica_metatype boxptr_arrayNth(threadData_t *threadData,modelica_metatype,modelica_metatype);
@@ -172,6 +173,15 @@ static inline modelica_metatype boxptr_arrayUpdate(threadData_t *threadData,mode
 }
 
 extern modelica_metatype boxptr_arrayUpdate(threadData_t *threadData,modelica_metatype, modelica_metatype, modelica_metatype);
+
+static inline modelica_metatype boxptr_arrayUpdateNoBoundsChecking(threadData_t *threadData,modelica_metatype arr, modelica_metatype i, modelica_metatype val)
+{
+  int ix = mmc_unbox_integer(i);
+  MMC_STRUCTDATA(arr)[ix-1] = val;
+  return arr;
+}
+
+extern modelica_metatype boxptr_arrayUpdateNoBoundsChecking(threadData_t *threadData,modelica_metatype, modelica_metatype, modelica_metatype);
 
 /* Misc Operations */
 #ifndef __cplusplus
