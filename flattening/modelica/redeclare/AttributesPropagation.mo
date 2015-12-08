@@ -4565,17 +4565,15 @@ end BoreholeSegment;
 //   seg.soi.C[7] = 3.141592653589793 * seg.soi.d * seg.soi.c * seg.soi.h * (seg.soi.r[8] ^ 2.0 - seg.soi.r[7] ^ 2.0);
 //   seg.soi.C[8] = 3.141592653589793 * seg.soi.d * seg.soi.c * seg.soi.h * (seg.soi.r[9] ^ 2.0 - seg.soi.r[8] ^ 2.0);
 //   seg.soi.C[9] = 3.141592653589793 * seg.soi.d * seg.soi.c * seg.soi.h * (seg.soi.r[10] ^ 2.0 - seg.soi.r[9] ^ 2.0);
-//   if not seg.soi.material.steadyState then
-//     seg.soi.T[1] = seg.soi.TInt_start + (seg.soi.TExt_start - seg.soi.TInt_start) * log(seg.soi.rC[1] / seg.soi.r_a) / log(seg.soi.r_b / seg.soi.r_a);
-//     seg.soi.T[2] = seg.soi.TInt_start + (seg.soi.TExt_start - seg.soi.TInt_start) * log(seg.soi.rC[2] / seg.soi.r_a) / log(seg.soi.r_b / seg.soi.r_a);
-//     seg.soi.T[3] = seg.soi.TInt_start + (seg.soi.TExt_start - seg.soi.TInt_start) * log(seg.soi.rC[3] / seg.soi.r_a) / log(seg.soi.r_b / seg.soi.r_a);
-//     seg.soi.T[4] = seg.soi.TInt_start + (seg.soi.TExt_start - seg.soi.TInt_start) * log(seg.soi.rC[4] / seg.soi.r_a) / log(seg.soi.r_b / seg.soi.r_a);
-//     seg.soi.T[5] = seg.soi.TInt_start + (seg.soi.TExt_start - seg.soi.TInt_start) * log(seg.soi.rC[5] / seg.soi.r_a) / log(seg.soi.r_b / seg.soi.r_a);
-//     seg.soi.T[6] = seg.soi.TInt_start + (seg.soi.TExt_start - seg.soi.TInt_start) * log(seg.soi.rC[6] / seg.soi.r_a) / log(seg.soi.r_b / seg.soi.r_a);
-//     seg.soi.T[7] = seg.soi.TInt_start + (seg.soi.TExt_start - seg.soi.TInt_start) * log(seg.soi.rC[7] / seg.soi.r_a) / log(seg.soi.r_b / seg.soi.r_a);
-//     seg.soi.T[8] = seg.soi.TInt_start + (seg.soi.TExt_start - seg.soi.TInt_start) * log(seg.soi.rC[8] / seg.soi.r_a) / log(seg.soi.r_b / seg.soi.r_a);
-//     seg.soi.T[9] = seg.soi.TInt_start + (seg.soi.TExt_start - seg.soi.TInt_start) * log(seg.soi.rC[9] / seg.soi.r_a) / log(seg.soi.r_b / seg.soi.r_a);
-//   end if;
+//   seg.soi.T[1] = seg.soi.TInt_start + (seg.soi.TExt_start - seg.soi.TInt_start) * log(seg.soi.rC[1] / seg.soi.r_a) / log(seg.soi.r_b / seg.soi.r_a);
+//   seg.soi.T[2] = seg.soi.TInt_start + (seg.soi.TExt_start - seg.soi.TInt_start) * log(seg.soi.rC[2] / seg.soi.r_a) / log(seg.soi.r_b / seg.soi.r_a);
+//   seg.soi.T[3] = seg.soi.TInt_start + (seg.soi.TExt_start - seg.soi.TInt_start) * log(seg.soi.rC[3] / seg.soi.r_a) / log(seg.soi.r_b / seg.soi.r_a);
+//   seg.soi.T[4] = seg.soi.TInt_start + (seg.soi.TExt_start - seg.soi.TInt_start) * log(seg.soi.rC[4] / seg.soi.r_a) / log(seg.soi.r_b / seg.soi.r_a);
+//   seg.soi.T[5] = seg.soi.TInt_start + (seg.soi.TExt_start - seg.soi.TInt_start) * log(seg.soi.rC[5] / seg.soi.r_a) / log(seg.soi.r_b / seg.soi.r_a);
+//   seg.soi.T[6] = seg.soi.TInt_start + (seg.soi.TExt_start - seg.soi.TInt_start) * log(seg.soi.rC[6] / seg.soi.r_a) / log(seg.soi.r_b / seg.soi.r_a);
+//   seg.soi.T[7] = seg.soi.TInt_start + (seg.soi.TExt_start - seg.soi.TInt_start) * log(seg.soi.rC[7] / seg.soi.r_a) / log(seg.soi.r_b / seg.soi.r_a);
+//   seg.soi.T[8] = seg.soi.TInt_start + (seg.soi.TExt_start - seg.soi.TInt_start) * log(seg.soi.rC[8] / seg.soi.r_a) / log(seg.soi.r_b / seg.soi.r_a);
+//   seg.soi.T[9] = seg.soi.TInt_start + (seg.soi.TExt_start - seg.soi.TInt_start) * log(seg.soi.rC[9] / seg.soi.r_a) / log(seg.soi.r_b / seg.soi.r_a);
 // initial algorithm
 //   assert(seg.pipFil.energyDynamics == Modelica.Fluid.Types.Dynamics.SteadyState or seg.pipFil.tau1 > 1e-15, "The parameter tau1, or the volume of the model from which tau may be derived, is unreasonably small.
 //            You need to set energyDynamics == Modelica.Fluid.Types.Dynamics.SteadyState to model steady-state.
@@ -4737,27 +4735,15 @@ end BoreholeSegment;
 //   seg.soi.Q_flow[7] = seg.soi.G[7] * (seg.soi.T[6] - seg.soi.T[7]);
 //   seg.soi.Q_flow[8] = seg.soi.G[8] * (seg.soi.T[7] - seg.soi.T[8]);
 //   seg.soi.Q_flow[9] = seg.soi.G[9] * (seg.soi.T[8] - seg.soi.T[9]);
-//   if seg.soi.material.steadyState then
-//     seg.soi.Q_flow[2] = seg.soi.Q_flow[1];
-//     seg.soi.Q_flow[3] = seg.soi.Q_flow[1];
-//     seg.soi.Q_flow[4] = seg.soi.Q_flow[1];
-//     seg.soi.Q_flow[5] = seg.soi.Q_flow[1];
-//     seg.soi.Q_flow[6] = seg.soi.Q_flow[1];
-//     seg.soi.Q_flow[7] = seg.soi.Q_flow[1];
-//     seg.soi.Q_flow[8] = seg.soi.Q_flow[1];
-//     seg.soi.Q_flow[9] = seg.soi.Q_flow[1];
-//     seg.soi.Q_flow[10] = seg.soi.Q_flow[1];
-//   else
-//     der(seg.soi.T[1]) = (seg.soi.Q_flow[1] - seg.soi.Q_flow[2]) / seg.soi.C[1];
-//     der(seg.soi.T[2]) = (seg.soi.Q_flow[2] - seg.soi.Q_flow[3]) / seg.soi.C[2];
-//     der(seg.soi.T[3]) = (seg.soi.Q_flow[3] - seg.soi.Q_flow[4]) / seg.soi.C[3];
-//     der(seg.soi.T[4]) = (seg.soi.Q_flow[4] - seg.soi.Q_flow[5]) / seg.soi.C[4];
-//     der(seg.soi.T[5]) = (seg.soi.Q_flow[5] - seg.soi.Q_flow[6]) / seg.soi.C[5];
-//     der(seg.soi.T[6]) = (seg.soi.Q_flow[6] - seg.soi.Q_flow[7]) / seg.soi.C[6];
-//     der(seg.soi.T[7]) = (seg.soi.Q_flow[7] - seg.soi.Q_flow[8]) / seg.soi.C[7];
-//     der(seg.soi.T[8]) = (seg.soi.Q_flow[8] - seg.soi.Q_flow[9]) / seg.soi.C[8];
-//     der(seg.soi.T[9]) = (seg.soi.Q_flow[9] - seg.soi.Q_flow[10]) / seg.soi.C[9];
-//   end if;
+//   der(seg.soi.T[1]) = (seg.soi.Q_flow[1] - seg.soi.Q_flow[2]) / seg.soi.C[1];
+//   der(seg.soi.T[2]) = (seg.soi.Q_flow[2] - seg.soi.Q_flow[3]) / seg.soi.C[2];
+//   der(seg.soi.T[3]) = (seg.soi.Q_flow[3] - seg.soi.Q_flow[4]) / seg.soi.C[3];
+//   der(seg.soi.T[4]) = (seg.soi.Q_flow[4] - seg.soi.Q_flow[5]) / seg.soi.C[4];
+//   der(seg.soi.T[5]) = (seg.soi.Q_flow[5] - seg.soi.Q_flow[6]) / seg.soi.C[5];
+//   der(seg.soi.T[6]) = (seg.soi.Q_flow[6] - seg.soi.Q_flow[7]) / seg.soi.C[6];
+//   der(seg.soi.T[7]) = (seg.soi.Q_flow[7] - seg.soi.Q_flow[8]) / seg.soi.C[7];
+//   der(seg.soi.T[8]) = (seg.soi.Q_flow[8] - seg.soi.Q_flow[9]) / seg.soi.C[8];
+//   der(seg.soi.T[9]) = (seg.soi.Q_flow[9] - seg.soi.Q_flow[10]) / seg.soi.C[9];
 //   assert(seg.soi.r_a < seg.soi.r_b, "Error: Model requires r_a < r_b.");
 //   assert(0.0 < seg.soi.r_a, "Error: Model requires 0 < r_a.");
 //   assert(abs(seg.soi.r[10] - seg.soi.r_b) < 1e-10, "Error: Wrong computation of radius. r[nSta+1]=" + String(seg.soi.r[10], 0, true, 6));
