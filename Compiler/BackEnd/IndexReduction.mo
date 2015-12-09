@@ -297,7 +297,7 @@ algorithm
         // fcall(Flags.BLT_DUMP, print, eqnstr);
         // remove allready diffed equations
         //_ = List.fold1r(ueqns1,arrayUpdate,mark,markarr);
-        (eqnstpl, shared) = differentiateEqnsLst(eqns1,vars,eqnsarray,inShared,{});
+        (eqnstpl, shared) = differentiateEqnsLst(eqns1,vars,eqnsarray,inShared);
         (syst,shared,ass1,ass2,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,notDiffableMSS) = differentiateEqns(eqnstpl,eqns1,unassignedStates,unassignedEqns,inSystem, shared,inAssignments1,inAssignments2,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,iNotDiffableMSS);
       then
         (syst,shared,ass1,ass2,(so,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,noofeqns),notDiffableMSS);
@@ -696,49 +696,68 @@ algorithm
   end matchcontinue;
 end searchDerivativesExp;
 
+
 protected function differentiateEqnsLst
-"author: Frenkel TUD 2012-11
-  differentiates the constraint equations for
+"differentiates the constraint equations for
   Pantelides index reduction method."
   input list<Integer> inEqns;
   input BackendDAE.Variables vars;
   input BackendDAE.EquationArray eqns;
   input BackendDAE.Shared inShared;
-  input list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> inEqnTpl; //<originalIdx, SOME<derivedEq>, OrigEq>
-  output list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> outEqnTpl;
+  output list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> outEqnTpl; //<originalIdx, SOME<derivedEq>, OrigEq>
+  output BackendDAE.Shared oShared;
+protected
+  Integer e;
+  tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation> eqTpl;
+algorithm
+  outEqnTpl := {};
+  oShared := inShared;
+  for e in inEqns loop
+    (eqTpl, oShared) := differentiateEqnsLst1(e,vars,eqns,oShared);
+    outEqnTpl := eqTpl::outEqnTpl;
+  end for;
+end differentiateEqnsLst;
+
+protected function differentiateEqnsLst1
+"author: Frenkel TUD 2012-11
+  differentiates the constraint equations for
+  Pantelides index reduction method."
+  input Integer eqIdx;
+  input BackendDAE.Variables vars;
+  input BackendDAE.EquationArray eqns;
+  input BackendDAE.Shared inShared;
+  output tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation> oEqTpl;
   output BackendDAE.Shared oshared;
 algorithm
-  (outEqnTpl, oshared) := matchcontinue (inEqns,vars,eqns,inShared,inEqnTpl)
+  (oEqTpl, oshared) := matchcontinue (eqIdx,vars,eqns,inShared)
     local
       Integer e;
       BackendDAE.Equation eqn,eqn_1;
       list<Integer> es;
       BackendDAE.Shared shared;
-      list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> eqntpl;
-    case ({},_,_,_,_) then (inEqnTpl, inShared);
-    case (e::es,_,_,_,_)
+    case (e,_,_,_)
       equation
         eqn = BackendEquation.equationNth1(eqns, e);
         true = BackendEquation.isDifferentiated(eqn);
         if Flags.isSet(Flags.BLT_DUMP) then
           BackendDump.debugStrEqnStr("Skip already differentiated equation\n",eqn,"\n");
         end if;
-        (eqntpl, shared) = differentiateEqnsLst(es,vars,eqns,inShared,(e,NONE(),eqn)::inEqnTpl);
-      then
-        (eqntpl, shared);
-    case (e::es,_,_,_,_)
+      then ((e,NONE(),eqn),inShared);
+    case (e,_,_,_)
       equation
         eqn = BackendEquation.equationNth1(eqns, e);
           //if Flags.isSet(Flags.BLT_DUMP) then print("differentiate equation " + intString(e) + " " + BackendDump.equationString(eqn) + "\n"); end if;
         (eqn_1, shared) = Differentiate.differentiateEquationTime(eqn, vars, inShared);
           //if Flags.isSet(Flags.BLT_DUMP) then print("differentiated equation " + intString(e) + " " + BackendDump.equationString(eqn_1) + "\n"); end if;
         eqn = BackendEquation.markDifferentiated(eqn);
-        (eqntpl, shared) = differentiateEqnsLst(es,vars,eqns,shared,(e,SOME(eqn_1),eqn)::inEqnTpl);
       then
-        (eqntpl, shared);
-    case (_,_,_,_,_) then ({}, inShared);
+        ((e,SOME(eqn_1),eqn),shared);
+     else
+     equation
+       print("differentiateEqnsLst1 failed.\n");
+       then fail();
   end matchcontinue;
-end differentiateEqnsLst;
+end differentiateEqnsLst1;
 
 protected function replaceDifferentiatedEqns
 "author: Frenkel TUD 2012-11
