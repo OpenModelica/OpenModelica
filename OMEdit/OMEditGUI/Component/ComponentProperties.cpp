@@ -341,7 +341,7 @@ GroupBox::GroupBox(const QString &title, QWidget *parent)
   */
 void GroupBox::setGroupImage(QString groupImage)
 {
-  if (!mpGroupImageLabel->pixmap() || (mpGroupImageLabel->pixmap() && mpGroupImageLabel->pixmap()->isNull())) {
+  if (QFile::exists(groupImage)) {
     QPixmap pixmap(groupImage);
     mpGroupImageLabel->setPixmap(pixmap);
   }
@@ -677,7 +677,9 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
       }
       // get the group image
       groupImage = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(9));
-      groupImage = mpMainWindow->getOMCProxy()->uriToFilename(groupImage);
+      if (!groupImage.isEmpty()) {
+        groupImage = mpMainWindow->getOMCProxy()->uriToFilename(groupImage);
+      }
     }
     // if showStartAttribute true and group name is empty or Parameters then we should make group name Initialization
     if (showStartAttribute && groupBox.isEmpty()) {
@@ -695,18 +697,19 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
     } else {
       ParametersScrollArea *pParametersScrollArea;
       pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(tab)));
-      if (pParametersScrollArea && !pParametersScrollArea->getGroupBox(groupBox)) {
-        GroupBox *pGroupBox = new GroupBox(groupBox);
-        // set the group image
-        pGroupBox->setGroupImage(groupImage);
+      GroupBox *pGroupBox = pParametersScrollArea->getGroupBox(groupBox);
+      if (pParametersScrollArea && !pGroupBox) {
+        pGroupBox = new GroupBox(groupBox);
         pParametersScrollArea->addGroupBox(pGroupBox);
       }
+      // set the group image
+      pGroupBox->setGroupImage(groupImage);
     }
     // create the Parameter
     Parameter *pParameter = new Parameter(pComponent, showStartAttribute, tab, groupBox);
     pParameter->setEnabled(enable);
     QString componentDefinedInClass = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-    QString value = pOMCProxy->getParameterValue(componentDefinedInClass, pComponent->getName());
+    QString value = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, componentDefinedInClass);
     pParameter->setValueWidget(value, true);
     if (showStartAttribute) {
       pParameter->setValueWidget(start, true);
