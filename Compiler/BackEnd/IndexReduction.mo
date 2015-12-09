@@ -699,7 +699,7 @@ end searchDerivativesExp;
 
 protected function differentiateEqnsLst
 "differentiates the constraint equations for
-  Pantelides index reduction method."
+  Pantelides index reduction method. waurich: if one of these equation cannot be derived, output an empty list -> not differentiable MSS"
   input list<Integer> inEqns;
   input BackendDAE.Variables vars;
   input BackendDAE.EquationArray eqns;
@@ -708,14 +708,23 @@ protected function differentiateEqnsLst
   output BackendDAE.Shared oShared;
 protected
   Integer e;
-  tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation> eqTpl;
+  list<Integer> eqs;
+  Option<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> eqTplOpt;
 algorithm
   outEqnTpl := {};
   oShared := inShared;
-  for e in inEqns loop
-    (eqTpl, oShared) := differentiateEqnsLst1(e,vars,eqns,oShared);
-    outEqnTpl := eqTpl::outEqnTpl;
-  end for;
+  eqs := inEqns;
+  while not listEmpty(eqs) loop
+    e::eqs := eqs;
+      (eqTplOpt, oShared) := differentiateEqnsLst1(e,vars,eqns,oShared);
+      if Util.isSome(eqTplOpt) then
+         outEqnTpl := Util.getOption(eqTplOpt)::outEqnTpl;
+      else
+			  outEqnTpl := {};
+			  oShared := inShared;
+       return;
+      end if;
+  end while;
 end differentiateEqnsLst;
 
 protected function differentiateEqnsLst1
@@ -726,7 +735,7 @@ protected function differentiateEqnsLst1
   input BackendDAE.Variables vars;
   input BackendDAE.EquationArray eqns;
   input BackendDAE.Shared inShared;
-  output tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation> oEqTpl;
+  output Option<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> oEqTpl;
   output BackendDAE.Shared oshared;
 algorithm
   (oEqTpl, oshared) := matchcontinue (eqIdx,vars,eqns,inShared)
@@ -742,7 +751,7 @@ algorithm
         if Flags.isSet(Flags.BLT_DUMP) then
           BackendDump.debugStrEqnStr("Skip already differentiated equation\n",eqn,"\n");
         end if;
-      then ((e,NONE(),eqn),inShared);
+      then (SOME((e,NONE(),eqn)),inShared);
     case (e,_,_,_)
       equation
         eqn = BackendEquation.equationNth1(eqns, e);
@@ -751,11 +760,10 @@ algorithm
           //if Flags.isSet(Flags.BLT_DUMP) then print("differentiated equation " + intString(e) + " " + BackendDump.equationString(eqn_1) + "\n"); end if;
         eqn = BackendEquation.markDifferentiated(eqn);
       then
-        ((e,SOME(eqn_1),eqn),shared);
+        (SOME((e,SOME(eqn_1),eqn)),shared);
      else
      equation
-       print("differentiateEqnsLst1 failed.\n");
-       then fail();
+       then (NONE(),inShared);
   end matchcontinue;
 end differentiateEqnsLst1;
 
