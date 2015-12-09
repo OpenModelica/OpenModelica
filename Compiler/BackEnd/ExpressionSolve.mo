@@ -484,8 +484,9 @@ preprocessing for solve1,
   list<DAE.Exp> lhsWithX, rhsWithX, lhsWithoutX, rhsWithoutX, eWithX, factorWithX, factorWithoutX;
   DAE.Exp lhsX, rhsX, lhsY, rhsY, N;
   DAE.ComponentRef cr;
-  DAE.Boolean con, new_x, collect = true, inlineFun = true;
+  DAE.Boolean con, new_x, inlineFun = true;
   Integer iter;
+  Integer numSimplifed = 0 ;
 
  algorithm
    (x, _) := ExpressionSimplify.simplify(inExp1);
@@ -525,8 +526,11 @@ preprocessing for solve1,
      con := new_x or con;
      end if;
 
-     if not con then
-       (x, con) := ExpressionSimplify.simplify(x);
+     if (not con) then
+       if (numSimplifed < 3) then
+         (x, con) := ExpressionSimplify.simplify(x);
+         numSimplifed := numSimplifed + 1;
+       end if;
        // Z/N = rhs -> Z = rhs*N
        (x,N) := Expression.makeFraction(x);
        if not Expression.isOne(N) then
@@ -536,31 +540,22 @@ preprocessing for solve1,
        end if;
 
        con := new_x or con;
-       iter := iter + 50;
      end if;
 
-     if con and collect then
+     if con  then
        (lhsX, lhsY) := preprocessingSolve5(x, inExp3, true);
        (rhsX, rhsY) := preprocessingSolve5(y, inExp3, false);
        x := Expression.expSub(lhsX, rhsX);
        y := Expression.expSub(rhsY, lhsY);
-       collect := true;
-       inlineFun := true;
-     elseif collect then
-       collect := false;
-       con := true;
-       iter := iter + 50;
      elseif inlineFun then
-       (x,con) := solveFunCalls(x, inExp3, functions);
-       collect := con;
-       inlineFun := false;
-     end if;
-
-     if con and collect then
-       (lhsX, lhsY) := preprocessingSolve5(x, inExp3, true);
-       (rhsX, rhsY) := preprocessingSolve5(y, inExp3, false);
-       x := Expression.expSub(lhsX, rhsX);
-       y := Expression.expSub(rhsY, lhsY);
+       iter := iter + 50;
+       if inlineFun then
+	       (x,con) := solveFunCalls(x, inExp3, functions);
+	       inlineFun := false;
+	       if con then
+	         numSimplifed := 0;
+	       end if;
+       end if;
      end if;
 
      iter := iter + 1;
@@ -570,9 +565,9 @@ preprocessing for solve1,
    (y,_) := ExpressionSimplify.simplify1(y);
 
 /*
-   if not Expression.expEqual(inExp1,h) then
+   if not Expression.expEqual(inExp1,x) then
      print("\nIn: ");print(ExpressionDump.printExpStr(inExp1));print(" = ");print(ExpressionDump.printExpStr(inExp2));
-     print("\nOut: ");print(ExpressionDump.printExpStr(h));print(" = ");print(ExpressionDump.printExpStr(k));
+     print("\nOut: ");print(ExpressionDump.printExpStr(x));print(" = ");print(ExpressionDump.printExpStr(y));
      print("\t w.r.t ");print(ExpressionDump.printExpStr(inExp3));
    end if;
 */
@@ -1021,61 +1016,49 @@ protected function preprocessingSolve5
   input DAE.Exp inExp1 "lhs";
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
   input DAE.Boolean expand;
-  output DAE.Exp outLhs = DAE.RCONST(0.0);
+  output DAE.Exp outLhs;
   output DAE.Exp outRhs;
 
 protected
-  DAE.Exp res;
-  list<DAE.Exp> lhs, rhs, resTerms;
-
+  list<DAE.Exp> lhs, rhs;
+  DAE.Exp tmpLhs, e1;
+  Boolean b;
+  DAE.ComponentRef cr;
 algorithm
 
-   //can be improve with Expression.getTermsContainingX ???
-
    if expHasCref(inExp1, inExp3) then
-     resTerms := Expression.terms(inExp1);
-     // split
-     (lhs, rhs) := List.split1OnTrue(resTerms, expHasCref, inExp3);
-     //print("\nlhs =");print(ExpressionDump.printExpListStr(lhs));
-     //print("\nrhs =");print(ExpressionDump.printExpListStr(rhs));
 
-     // sort
-     // a*f(x)*b -> c*f(x)
-     for e in lhs loop
-       outLhs := expAddX(e, outLhs, inExp3); // special add
-     end for;
+    if expand then
+      (cr, b) := Expression.expOrDerCref(inExp3);
+      if b then
+        (lhs, rhs) := Expression.allTermsForCref(inExp1, cr, Expression.Expression.expHasDerCref);
+      else
+        (lhs, rhs) := Expression.allTermsForCref(inExp1, cr, Expression.expHasCrefNoPreOrStart);
+      end if;
+    else
+      (lhs, rhs) := List.split1OnTrue(Expression.terms(inExp1), expHasCref, inExp3);
+    end if;
 
-     //rhs
-     outRhs := Expression.makeSum(rhs);
-     (outRhs,_) := ExpressionSimplify.simplify1(outRhs);
-
-     if expand then
-       resTerms := Expression.terms(Expression.expand(outLhs));
-       (lhs, rhs) := List.split1OnTrue(resTerms, expHasCref, inExp3);
-       outLhs := DAE.RCONST(0.0);
-       // sort
-       // a*f(x)*b -> c*f(x)
-       for e in lhs loop
-         outLhs := expAddX(e, outLhs, inExp3); // special add
-       end for;
-       //rhs
-       outRhs := Expression.expAdd(outRhs,Expression.makeSum(rhs));
-       (outRhs,_) := ExpressionSimplify.simplify1(outRhs);
-
-       (lhs, rhs) := Expression.allTermsForCref(outLhs, Expression.expOrDerCref(inExp3));
-       // sort
-       // a*f(x)*b -> c*f(x)
-       outLhs := DAE.RCONST(0.0);
-       for e in lhs loop
-         outLhs := expAddX(e, outLhs, inExp3); // special add
-       end for;
-       //rhs
-       outRhs := Expression.expAdd(outRhs,Expression.makeSum(rhs));
-       (outRhs,_) := ExpressionSimplify.simplify1(outRhs);
-
-     end if;
+    // sort
+    // a*f(x)*b -> c*f(x)
+    outLhs := DAE.RCONST(0.0);
+    tmpLhs := DAE.RCONST(0.0);
+    for e in lhs loop
+      if Expression.isNegativeUnary(e) then
+        DAE.UNARY(exp = e1) := e;
+        tmpLhs := expAddX(e1, tmpLhs, inExp3); // special add
+      else
+        outLhs := expAddX(e, outLhs, inExp3); // special add
+      end if;
+    end for;
+    outLhs := expAddX(outLhs, Expression.negate(tmpLhs), inExp3);
+    //rhs
+    outRhs := Expression.makeSum1(rhs);
+    (outRhs,_) := ExpressionSimplify.simplify1(outRhs);
+    (outLhs,_) := ExpressionSimplify.simplify1(outLhs);
 
    else
+    outLhs := DAE.RCONST(0.0);
     outRhs := inExp1;
    end if;
 
@@ -1296,11 +1279,11 @@ author: vitalij
      Boolean b;
 
    case(DAE.CALL(),(X, functions))
+     guard expHasCref(inExp, X)
      equation
-       //print("\nIn: ");print(ExpressionDump.printExpStr(inExp));
-       true = expHasCref(inExp, X);
+       //print("\nfIn: ");print(ExpressionDump.printExpStr(inExp));
        (e,_,b) = Inline.forceInlineExp(inExp,(functions,{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
-       //print("\nOut: ");print(ExpressionDump.printExpStr(e));
+       //print("\nfOut: ");print(ExpressionDump.printExpStr(e));
      then (e, not b, iT);
    else (inExp, true, iT);
    end matchcontinue;

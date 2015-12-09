@@ -2700,8 +2700,16 @@ public function allTermsForCref
  allTerms((a(x)+b(x))*(c+d)) => {a(x)*(c+d),b(x)*(c+d)}"
   input DAE.Exp inExp;
   input DAE.ComponentRef cr "x";
+  input MapFunc inFunc;
   output list<DAE.Exp> outExpLstWithX;
   output list<DAE.Exp> outExpLstWithoutX;
+
+  partial function MapFunc
+    input DAE.Exp inElement;
+    input DAE.ComponentRef inCr;
+    output Boolean outElement;
+  end MapFunc;
+
 algorithm
   (outExpLstWithX,outExpLstWithoutX) := matchcontinue (inExp)
     local
@@ -2711,8 +2719,8 @@ algorithm
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(),exp2 = e2))
       equation
-        (fx1,f1) = allTermsForCref(e1, cr);
-        (fx2,f2) = allTermsForCref(e2, cr);
+        (fx1,f1) = allTermsForCref(e1, cr, inFunc);
+        (fx2,f2) = allTermsForCref(e2, cr, inFunc);
         res = listAppend(f1, f2);
         resx = listAppend(fx1, fx2);
       then
@@ -2720,8 +2728,8 @@ algorithm
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.SUB(),exp2 = e2))
       equation
-        (fx1,f1) = allTermsForCref(e1, cr);
-        (fx2,f2) = allTermsForCref(e2, cr);
+        (fx1,f1) = allTermsForCref(e1, cr, inFunc);
+        (fx2,f2) = allTermsForCref(e2, cr, inFunc);
         f2 = List.map(f2, negate);
         fx2 = List.map(fx2, negate);
         res = listAppend(f1, f2);
@@ -2731,19 +2739,21 @@ algorithm
 
     // terms( a*(b+c)) => {a*b, c*b}
     case (DAE.BINARY(e1,DAE.MUL(_),e2))
-      guard expHasCrefNoPreOrStart(e2,cr)
+      guard inFunc(e2,cr)
       equation
-        (fx1 as _::_::_, f1) = allTermsForCref(e2, cr);
-        (fx1,f2) = List.split1OnTrue(fx1, expHasCrefNoPreOrStart, cr);
+        (fx1, f1) = allTermsForCref(e2, cr, inFunc);
+        (fx1, f2) = List.split1OnTrue(fx1, inFunc, cr);
         res = listAppend(f1, f2);
         e = makeSum1(res);
         e = expMul(e, e1);
         fx1 = List.map1(fx1,expMul,e1);
-        if expHasCrefNoPreOrStart(e1,cr) then
-          fx1 = e :: fx1;
-          f1 = {};
-        else
-          f1 = {e};
+        if not isZero(e) then
+	        if expHasCrefNoPreOrStart(e1,cr) then
+	          fx1 = e :: fx1;
+	          f1 = {};
+	        else
+	          f1 = {e};
+	        end if;
         end if;
         //f1 = List.flatten(List.map1(fx1,allTermsForCref, cr));
       then
@@ -2751,19 +2761,21 @@ algorithm
 
     // terms( (b+c)*a) => {b*a, c*a}
     case (DAE.BINARY(e1,DAE.MUL(_),e2))
-      guard expHasCrefNoPreOrStart(e1,cr)
+      guard inFunc(e1,cr)
       equation
-        (fx1 as _::_::_, f1) = allTermsForCref(e1, cr);
-        (fx1,f2) = List.split1OnTrue(fx1, expHasCrefNoPreOrStart, cr);
+        (fx1, f1) = allTermsForCref(e1, cr, inFunc);
+        (fx1, f2) = List.split1OnTrue(fx1, inFunc, cr);
         res = listAppend(f1, f2);
         e = makeSum1(res);
         e = expMul(e, e2);
         fx1 = List.map1(fx1,expMul,e2);
-        if expHasCrefNoPreOrStart(e2,cr) then
-          fx1 = e :: fx1;
-          f1 = {};
-        else
-          f1 = {e};
+        if not isZero(e) then
+	        if expHasCrefNoPreOrStart(e1,cr) then
+	          fx1 = e :: fx1;
+	          f1 = {};
+	        else
+	          f1 = {e};
+	        end if;
         end if;
         //fx1 = List.flatten(List.map1(fx1,allTermsForCref, cr));
       then
@@ -2771,19 +2783,21 @@ algorithm
 
     // terms( (b+c)/a) => {b/a, c/a}
     case (DAE.BINARY(e1,DAE.DIV(_),e2))
-      guard expHasCrefNoPreOrStart(e1,cr)
+      guard inFunc(e1,cr)
       equation
-        (fx1 as _::_::_, f1) = allTermsForCref(e1, cr);
-        (fx1,f2) = List.split1OnTrue(fx1, expHasCrefNoPreOrStart, cr);
+        (fx1, f1) = allTermsForCref(e1, cr, inFunc);
+        (fx1, f2) = List.split1OnTrue(fx1, inFunc, cr);
         res = listAppend(f1, f2);
         e = makeSum1(res);
         e = makeDiv(e, e2);
         fx1 = List.map1(fx1,makeDiv,e2);
-        if expHasCrefNoPreOrStart(e2,cr) then
-          fx1 = e :: fx1;
-          f1 = {};
-        else
-          f1 = {e};
+        if not isZero(e) then
+	        if expHasCrefNoPreOrStart(e1,cr) then
+	          fx1 = e :: fx1;
+	          f1 = {};
+	        else
+	          f1 = {e};
+	        end if;
         end if;
         //fx1 = List.flatten(List.map1(fx1,allTermsForCref, cr));
       then
@@ -2792,7 +2806,7 @@ algorithm
     // -()
     case (DAE.UNARY(operator = DAE.UMINUS(),exp=e1))
       equation
-        (fx1,f1) = allTermsForCref(e1, cr);
+        (fx1,f1) = allTermsForCref(e1, cr, inFunc);
         f1 = List.map(f1,negate);
         fx1 = List.map(fx1,negate);
       then
@@ -2800,12 +2814,12 @@ algorithm
 
     else
       equation
-        if expHasCrefNoPreOrStart(inExp,cr) then
+        if inFunc(inExp,cr) then
           res = {};
           resx = {inExp};
         else
-          res = {};
-          resx = {inExp};
+          resx = {};
+          res = {inExp};
         end if;
         then (resx, res);
   end matchcontinue;
@@ -7765,6 +7779,18 @@ algorithm
   end match;
 end isSub;
 
+public function isAddOrSubBinary "returns true if BINARY is a+b or a-b"
+  input DAE.Exp iExp;
+  output Boolean res;
+protected
+  DAE.Operator op;
+algorithm
+  res := match(iExp)
+         case(DAE.BINARY(_,op,_)) then isAddOrSub(op);
+         else false;
+         end match;
+end isAddOrSubBinary;
+
 public function isMulOrDiv "returns true if operator is MUL or DIV"
   input DAE.Operator op;
   output Boolean res = isMul(op) or isDiv(op);
@@ -7803,6 +7829,19 @@ algorithm
          else false;
          end match;
 end isDivBinary;
+
+
+public function isMulorDivBinary "returns true if BINARY is a/b or a*b"
+  input DAE.Exp iExp;
+  output Boolean res;
+protected
+  DAE.Operator op;
+algorithm
+  res := match(iExp)
+         case(DAE.BINARY(_,op,_)) then isMulOrDiv(op);
+         else false;
+         end match;
+end isMulorDivBinary;
 
 public function isPow "returns true if operator is POW"
   input DAE.Operator op;
