@@ -2907,6 +2907,7 @@ algorithm
   for var in inVars loop
     (_, outIndices) := traversingVarIndexFinder(var, inVariables, outIndices);
   end for;
+  outIndices := listReverse(outIndices);
 end getVarIndexFromVars;
 
 public function getVarIndexFromVariables
@@ -2914,8 +2915,8 @@ public function getVarIndexFromVariables
   input BackendDAE.Variables inVariables2;
   output list<Integer> v_lst;
 algorithm
-  v_lst := traverseBackendDAEVars(inVariables,
-    function traversingVarIndexFinder(inVars = inVariables2), {});
+  v_lst := listReverse(traverseBackendDAEVars(inVariables,
+    function traversingVarIndexFinder(inVars = inVariables2), {}));
 end getVarIndexFromVariables;
 
 protected function traversingVarIndexFinder
@@ -2932,7 +2933,7 @@ algorithm
   try
     cr := varCref(inVar);
     (_, indices) := getVar(cr, inVars);
-    outIndices := listAppend(inIndices, indices);
+    outIndices := listAppend(listReverse(indices), inIndices);
   else
     outIndices := inIndices;
   end try;
