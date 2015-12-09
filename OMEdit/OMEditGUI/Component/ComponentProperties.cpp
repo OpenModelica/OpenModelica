@@ -59,7 +59,6 @@ Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab
   mpNameLabel = new Label;
   mpFixedCheckBox = new FixedCheckBox;
   connect(mpFixedCheckBox, SIGNAL(clicked()), SLOT(showFixedMenu()));
-  mOriginalFixedValue = "";
   setFixedState("false", true);
   // set the value type based on component type.
   OMCProxy *pOMCProxy = mpComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
@@ -503,23 +502,25 @@ void ComponentParameters::setUpDialog()
     ParametersScrollArea *pParametersScrollArea;
     pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
     if (pParametersScrollArea) {
-      GroupBox *pGroupBox = pParametersScrollArea->getGroupBox(pParameter->getGroupBox());
-      if (pGroupBox) {
-        /* We hide the groupbox when we create it. Show the groupbox now since it has a parameter. */
-        pGroupBox->show();
-        QGridLayout *pGroupBoxGridLayout = pGroupBox->getGridLayout();
-        int layoutIndex = pGroupBoxGridLayout->rowCount();
-        int columnIndex = 0;
-        pParameter->updateNameLabel();
-        pGroupBoxGridLayout->addWidget(pParameter->getNameLabel(), layoutIndex, columnIndex++);
-        if (pParameter->isShowStartAttribute()) {
-          pGroupBoxGridLayout->addWidget(pParameter->getFixedCheckBox(), layoutIndex, columnIndex++);
-        } else {
-          pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
+      if (!pParameter->getGroupBox().isEmpty()) {
+        GroupBox *pGroupBox = pParametersScrollArea->getGroupBox(pParameter->getGroupBox());
+        if (pGroupBox) {
+          /* We hide the groupbox when we create it. Show the groupbox now since it has a parameter. */
+          pGroupBox->show();
+          QGridLayout *pGroupBoxGridLayout = pGroupBox->getGridLayout();
+          int layoutIndex = pGroupBoxGridLayout->rowCount();
+          int columnIndex = 0;
+          pParameter->updateNameLabel();
+          pGroupBoxGridLayout->addWidget(pParameter->getNameLabel(), layoutIndex, columnIndex++);
+          if (pParameter->isShowStartAttribute()) {
+            pGroupBoxGridLayout->addWidget(pParameter->getFixedCheckBox(), layoutIndex, columnIndex++);
+          } else {
+            pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
+          }
+          pGroupBoxGridLayout->addWidget(pParameter->getValueWidget(), layoutIndex, columnIndex++);
+          pGroupBoxGridLayout->addWidget(pParameter->getUnitLabel(), layoutIndex, columnIndex++);
+          pGroupBoxGridLayout->addWidget(pParameter->getCommentLabel(), layoutIndex, columnIndex++);
         }
-        pGroupBoxGridLayout->addWidget(pParameter->getValueWidget(), layoutIndex, columnIndex++);
-        pGroupBoxGridLayout->addWidget(pParameter->getUnitLabel(), layoutIndex, columnIndex++);
-        pGroupBoxGridLayout->addWidget(pParameter->getCommentLabel(), layoutIndex, columnIndex++);
       }
     }
   }
@@ -601,17 +602,21 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
           if (extendsModifiersIterator.key().compare(parameterName + ".start") == 0) {
             QString start = extendsModifiersIterator.value();
             if (!start.isEmpty()) {
-              pParameter->setGroupBox("Initialization");
+              if (pParameter->getGroupBox().isEmpty()) {
+                pParameter->setGroupBox("Initialization");
+              }
               pParameter->setShowStartAttribute(true);
-              pParameter->setValueWidget(start, false);
+              pParameter->setValueWidget(start, true);
             }
           }
           else if (extendsModifiersIterator.key().compare(parameterName + ".fixed") == 0) {
             QString fixed = extendsModifiersIterator.value();
             if (!fixed.isEmpty()) {
-              pParameter->setGroupBox("Initialization");
+              if (pParameter->getGroupBox().isEmpty()) {
+                pParameter->setGroupBox("Initialization");
+              }
               pParameter->setShowStartAttribute(true);
-              pParameter->setFixedState(fixed, false);
+              pParameter->setFixedState(fixed, true);
             }
           } else {
             pParameter->setValueWidget(extendsModifiersIterator.value(), true);
@@ -659,62 +664,60 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
     /* get the dialog annotation */
     QStringList dialogAnnotation = pComponent->getDialogAnnotation();
     QString groupImage = "";
-    if (isParameter || (dialogAnnotation.size() > 0) || showStartAttribute) {
-      if (dialogAnnotation.size() > 0) {
-        // get the tab value
-        tab = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(0));
-        // get the group value
-        groupBox = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(1));
-        // get the enable value
-        enable = (dialogAnnotation.at(2).compare("true") == 0);
-        // get the showStartAttribute value
-        if (dialogAnnotation.at(3).compare("-") != 0) {
-          showStartAttribute = (dialogAnnotation.at(3).compare("true") == 0);
-        }
-        // get the group image
-        groupImage = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(9));
-        groupImage = mpMainWindow->getOMCProxy()->uriToFilename(groupImage);
+    if (dialogAnnotation.size() > 0) {
+      // get the tab value
+      tab = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(0));
+      // get the group value
+      groupBox = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(1));
+      // get the enable value
+      enable = (dialogAnnotation.at(2).compare("true") == 0);
+      // get the showStartAttribute value
+      if (dialogAnnotation.at(3).compare("-") != 0) {
+        showStartAttribute = (dialogAnnotation.at(3).compare("true") == 0);
       }
-      // if showStartAttribute true and group name is empty or Parameters then we should make group name Initialization
-      if (showStartAttribute && groupBox.isEmpty()) {
-        groupBox = "Initialization";
-      } else if (groupBox.isEmpty()) {
-        groupBox = "Parameters";
-      }
-      if (!mTabsMap.contains(tab)) {
-        ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
+      // get the group image
+      groupImage = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(9));
+      groupImage = mpMainWindow->getOMCProxy()->uriToFilename(groupImage);
+    }
+    // if showStartAttribute true and group name is empty or Parameters then we should make group name Initialization
+    if (showStartAttribute && groupBox.isEmpty()) {
+      groupBox = "Initialization";
+    } else if (groupBox.isEmpty() && (isParameter || (dialogAnnotation.size() > 0))) {
+      groupBox = "Parameters";
+    }
+    if (!mTabsMap.contains(tab)) {
+      ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
+      GroupBox *pGroupBox = new GroupBox(groupBox);
+      // set the group image
+      pGroupBox->setGroupImage(groupImage);
+      pParametersScrollArea->addGroupBox(pGroupBox);
+      mTabsMap.insert(tab, mpParametersTabWidget->addTab(pParametersScrollArea, tab));
+    } else {
+      ParametersScrollArea *pParametersScrollArea;
+      pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(tab)));
+      if (pParametersScrollArea && !pParametersScrollArea->getGroupBox(groupBox)) {
         GroupBox *pGroupBox = new GroupBox(groupBox);
         // set the group image
         pGroupBox->setGroupImage(groupImage);
         pParametersScrollArea->addGroupBox(pGroupBox);
-        mTabsMap.insert(tab, mpParametersTabWidget->addTab(pParametersScrollArea, tab));
-      } else {
-        ParametersScrollArea *pParametersScrollArea;
-        pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(tab)));
-        if (pParametersScrollArea && !pParametersScrollArea->getGroupBox(groupBox)) {
-          GroupBox *pGroupBox = new GroupBox(groupBox);
-          // set the group image
-          pGroupBox->setGroupImage(groupImage);
-          pParametersScrollArea->addGroupBox(pGroupBox);
-        }
       }
-      // create the Parameter
-      Parameter *pParameter = new Parameter(pComponent, showStartAttribute, tab, groupBox);
-      pParameter->setEnabled(enable);
-      QString componentDefinedInClass = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-      QString value = pOMCProxy->getParameterValue(componentDefinedInClass, pComponent->getName());
-      pParameter->setValueWidget(value, true);
-      if (showStartAttribute) {
-        pParameter->setValueWidget(start, true);
-        pParameter->setFixedState(fixed, true);
-      }
-      if (useInsert) {
-        mParametersList.insert(insertIndex, pParameter);
-      } else {
-        mParametersList.append(pParameter);
-      }
-      insertIndex++;
     }
+    // create the Parameter
+    Parameter *pParameter = new Parameter(pComponent, showStartAttribute, tab, groupBox);
+    pParameter->setEnabled(enable);
+    QString componentDefinedInClass = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+    QString value = pOMCProxy->getParameterValue(componentDefinedInClass, pComponent->getName());
+    pParameter->setValueWidget(value, true);
+    if (showStartAttribute) {
+      pParameter->setValueWidget(start, true);
+      pParameter->setFixedState(fixed, true);
+    }
+    if (useInsert) {
+      mParametersList.insert(insertIndex, pParameter);
+    } else {
+      mParametersList.append(pParameter);
+    }
+    insertIndex++;
   }
 }
 
@@ -739,7 +742,9 @@ void ComponentParameters::fetchComponentModifiers()
       if (modifiersIterator.key().compare(parameterName + ".start") == 0) {
         QString start = modifiersIterator.value();
         if (!start.isEmpty()) {
-          pParameter->setGroupBox("Initialization");
+          if (pParameter->getGroupBox().isEmpty()) {
+            pParameter->setGroupBox("Initialization");
+          }
           pParameter->setShowStartAttribute(true);
           pParameter->setValueWidget(start, mpComponent->getReferenceComponent() ? true : false);
         }
@@ -747,7 +752,9 @@ void ComponentParameters::fetchComponentModifiers()
       else if (modifiersIterator.key().compare(parameterName + ".fixed") == 0) {
         QString fixed = modifiersIterator.value();
         if (!fixed.isEmpty()) {
-          pParameter->setGroupBox("Initialization");
+          if (pParameter->getGroupBox().isEmpty()) {
+            pParameter->setGroupBox("Initialization");
+          }
           pParameter->setShowStartAttribute(true);
           pParameter->setFixedState(fixed, mpComponent->getReferenceComponent() ? true : false);
         }
@@ -776,7 +783,9 @@ void ComponentParameters::fetchExtendsModifiers()
           if (extendsModifiersIterator.key().compare(parameterName + ".start") == 0) {
             QString start = extendsModifiersIterator.value();
             if (!start.isEmpty()) {
-              pParameter->setGroupBox("Initialization");
+              if (pParameter->getGroupBox().isEmpty()) {
+                pParameter->setGroupBox("Initialization");
+              }
               pParameter->setShowStartAttribute(true);
               pParameter->setValueWidget(start, false);
             }
@@ -784,7 +793,9 @@ void ComponentParameters::fetchExtendsModifiers()
           else if (extendsModifiersIterator.key().compare(parameterName + ".fixed") == 0) {
             QString fixed = extendsModifiersIterator.value();
             if (!fixed.isEmpty()) {
-              pParameter->setGroupBox("Initialization");
+              if (pParameter->getGroupBox().isEmpty()) {
+                pParameter->setGroupBox("Initialization");
+              }
               pParameter->setShowStartAttribute(true);
               pParameter->setFixedState(fixed, false);
             }
