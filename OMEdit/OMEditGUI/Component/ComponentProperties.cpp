@@ -60,6 +60,7 @@ Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab
   mpFixedCheckBox = new FixedCheckBox;
   connect(mpFixedCheckBox, SIGNAL(clicked()), SLOT(showFixedMenu()));
   mOriginalFixedValue = "";
+  setFixedState("false", true);
   // set the value type based on component type.
   OMCProxy *pOMCProxy = mpComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   if (mpComponent->getComponentInfo()->getClassName().compare("Boolean") == 0) {
@@ -484,8 +485,10 @@ void ComponentParameters::setUpDialog()
   ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
   // first add the Component Group Box
   pParametersScrollArea->getLayout()->addWidget(mpComponentGroupBox);
-  GroupBox *pGroupBox = new GroupBox("Parameters");
-  pParametersScrollArea->addGroupBox(pGroupBox);
+  GroupBox *pParametersGroupBox = new GroupBox("Parameters");
+  pParametersScrollArea->addGroupBox(pParametersGroupBox);
+  GroupBox *pInitializationGroupBox = new GroupBox("Initialization");
+  pParametersScrollArea->addGroupBox(pInitializationGroupBox);
   mTabsMap.insert("General", mpParametersTabWidget->addTab(pParametersScrollArea, "General"));
   // create parameters tabs and groupboxes
   createTabsGroupBoxesAndParameters(mpComponent->getLibraryTreeItem());
