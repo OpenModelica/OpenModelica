@@ -1223,7 +1223,7 @@ algorithm
     //BackendDump.dumpIncidenceMatrix(m_);
 
     // get state-index list
-    stateIndices := BackendVariable.getVarIndexFromVariables(initVars, inEqSystem.orderedVars);
+    stateIndices := BackendVariable.getVarIndexFromVariables(inEqSystem.orderedVars, initVars);
     //print("{" + stringDelimitList(List.map(stateIndices, intString), ",") + "}\n");
 
     // get initial equation-index list
