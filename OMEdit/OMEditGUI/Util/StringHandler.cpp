@@ -1478,7 +1478,7 @@ QProcessEnvironment StringHandler::simulationProcessEnvironment()
 {
   QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
   QString OMHOME = QString(Helper::OpenModelicaHome).replace("/", "\\");
-  QString OMHOMEBin = OMHOME + "\\bin;" + OMHOME + "\\lib\\omc\\msvc" + OMHOME + "\\lib\\omc\\cpp\\msvc";
+  QString OMHOMEBin = OMHOME + "\\bin;" + OMHOME + "\\lib\\omc\\msvc;" + OMHOME + "\\lib\\omc\\cpp\\msvc";
   environment.insert("PATH", OMHOMEBin + ";" + environment.value("PATH"));
   return environment;
 }
