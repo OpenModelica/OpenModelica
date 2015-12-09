@@ -10,7 +10,8 @@ HashTableTest.mos \
 PriorityQueue.mos \
 SimplifyTest.mos \
 System.mos \
-UtilTest.mos
+UtilTest.mos \
+VectorTest.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
