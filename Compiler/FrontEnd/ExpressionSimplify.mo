@@ -2492,6 +2492,7 @@ algorithm
       list<DAE.Exp> e_lst,const_es1,notconst_es1,const_es1_1;
       DAE.Exp res,e,e1,e2,res1,res2;
       Type tp;
+      DAE.Operator op;
 
     // e1 * e2
     case ((e as DAE.BINARY(operator = DAE.MUL())))
@@ -2514,11 +2515,15 @@ algorithm
         e_lst = Expression.terms(e);
         //e_lst_1 = List.map(e_lst,simplify2);
         (const_es1, notconst_es1) =
-          List.splitOnTrue(e_lst, Expression.isConst);
-        const_es1_1 = simplifyBinaryAddConstants(const_es1);
-        res1 = Expression.makeSum(const_es1_1);
-        res2 = Expression.makeSum(notconst_es1); // Cannot simplify this, if const_es1_1 empty => infinite recursion.
-        res = Expression.makeSum({res1,res2});
+          List.splitOnTrue(e_lst, Expression.isConstValue);
+        if not listEmpty(notconst_es1) then
+          const_es1_1 = simplifyBinaryAddConstants(const_es1);
+          res1 = Expression.makeSum1(const_es1_1);
+          res2 = Expression.makeSum1(notconst_es1); // Cannot simplify this, if const_es1_1 empty => infinite recursion.
+          res = Expression.expAdd(res1, res2);
+        else
+          res = inExp;
+        end if;
       then
         res;
 
@@ -5116,7 +5121,7 @@ algorithm
   const_es1_1 := simplifyBinaryMulConstants(const_es1);
   (res1,_) := simplify1(Expression.makeProductLst(const_es1_1)); // simplify1 for basic constant evaluation.
   res2 := Expression.makeProductLst(notconst_es1); // Cannot simplify this, if const_es1_1 empty => infinite recursion.
-  outExp := Expression.makeProductLst({res1,res2});
+  outExp := Expression.expMul(res1,res2);
 end simplifyBinarySortConstantsMul;
 
 protected function simplifyBuiltinConstantDer
