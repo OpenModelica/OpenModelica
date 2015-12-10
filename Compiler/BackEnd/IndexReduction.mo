@@ -624,7 +624,7 @@ algorithm
     ass2 := List.fold1r(assEqs,arrayUpdate,-1,inAss2);
     ass1 := List.fold1r(changedVars,arrayUpdate,-1,inAss1);
     //get adjacent equations for the changed vars
-    eqnslst1 := collectVarEqns(changedVars,{},mt,arrayLength(mt),arrayLength(m));
+    eqnslst1 := collectVarEqns(changedVars,mt,arrayLength(mt),arrayLength(m));
     syst.orderedVars := v1;
     syst.orderedEqs := eqns_1;
     eqnslst1 := List.map1r(eqnslst1,arrayGet,imapIncRowEqn);
@@ -649,40 +649,24 @@ algorithm
 end differentiateEqns;
 
 protected function collectVarEqns
-"author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05, waurich 12-15
   collect all equations of a list with var indexes"
-  input list<Integer> inIntegerLst1;
-  input list<Integer> inIntegerLst2;
-  input BackendDAE.IncidenceMatrixT inMT;
-  input Integer inArrayLength;
-  input Integer inNEquations "size of equations array, maximal entry in inMT";
-  output list<Integer> outIntegerLst;
+  input list<Integer> varIdcsIn;
+  input BackendDAE.IncidenceMatrixT mT;
+  input Integer numVars;
+  input Integer numEqs "size of equations array, maximal entry in inMT";
+  output list<Integer> eqIdcsOut = {};
+protected
+  Integer varIdx;
+  list<Integer> eqIdcs;
 algorithm
-  outIntegerLst := matchcontinue (inIntegerLst1,inIntegerLst2,inMT,inArrayLength,inNEquations)
-    local
-      Integer i;
-      list<Integer> rest,eqns,ilst,ilst1;
-    case ({},_,_,_,_)
-      then
-        List.uniqueIntN(inIntegerLst2,inNEquations);
-    case (i::rest,_,_,_,_)
-      equation
-        true = intLt(i,inArrayLength);
-        eqns = List.map(inMT[i],intAbs);
-        ilst = listAppend(eqns,inIntegerLst2);
-        ilst1 = collectVarEqns(rest,ilst,inMT,inArrayLength,inNEquations);
-      then
-        ilst1;
-    case (_::rest,_,_,_,_)
-      equation
-        ilst1 = collectVarEqns(rest,inIntegerLst2,inMT,inArrayLength,inNEquations);
-      then
-        ilst1;
-    case (i::_,_,_,_,_)
-      equation
-        print("collectVarEqns failed for eqn " + intString(i) + "\n");
-      then fail();
-  end matchcontinue;
+  for varIdx in varIdcsIn loop
+    if intLt(varIdx,numVars) then
+      eqIdcs := List.map(mT[varIdx],intAbs);
+      eqIdcsOut := listAppend(eqIdcs,eqIdcsOut);
+    end if;
+  end for;
+  eqIdcsOut := List.uniqueIntN(eqIdcsOut,numEqs);
 end collectVarEqns;
 
 protected function searchDerivativesExp "author: Frenkel TUD 2012-11"
@@ -1033,7 +1017,7 @@ algorithm
         varlst = BackendVariable.setVarsKind(varlst, BackendDAE.VARIABLE());
         syst.orderedVars = BackendVariable.addVars(varlst, syst.orderedVars);
         // update IncidenceMatrix
-        eqnslst1 = collectVarEqns(statesWithUnusedDer, {}, mt, arrayLength(mt), arrayLength(m));
+        eqnslst1 = collectVarEqns(statesWithUnusedDer, mt, arrayLength(mt), arrayLength(m));
         eqnslst1 = List.map1r(eqnslst1, arrayGet, imapIncRowEqn);
         if Flags.isSet(Flags.BLT_DUMP) then
           print("Update Incidence Matrix: ");
@@ -1077,7 +1061,7 @@ algorithm
           BackendDump.printVarList(varlst);
         end if;
         // update IncidenceMatrix
-        eqnslst1 = collectVarEqns({i}, {}, mt, arrayLength(mt), arrayLength(m));
+        eqnslst1 = collectVarEqns({i}, mt, arrayLength(mt), arrayLength(m));
         eqnslst1 = List.map1r(eqnslst1, arrayGet, imapIncRowEqn);
         if Flags.isSet(Flags.BLT_DUMP) then
           print("Update Incidence Matrix: ");
