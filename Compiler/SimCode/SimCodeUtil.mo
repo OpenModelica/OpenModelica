@@ -225,6 +225,7 @@ protected
   list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
 algorithm
   try
+    execStat("Backend phase and start with SimCode phase");
     dlow := inBackendDAE;
 
     System.tmpTickReset(0);
@@ -248,6 +249,7 @@ algorithm
     else
       initialEquations_lambda0 := {};
     end if;
+    execStat("simCode: created initialization part");
 
     shared as BackendDAE.SHARED(knownVars=knownVars,
                                 constraints=constraints,
@@ -265,6 +267,7 @@ algorithm
     zeroCrossings := if ifcpp then listAppend(zeroCrossings, sampleZC) else zeroCrossings;
 
     (clockedSysts, contSysts) := List.splitOnTrue(dlow.eqs, BackendDAEUtil.isClockedSyst);
+    execStat("simCode: created event and clocks part");
 
     (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsForZeroCrossings, tempvars,
       equationSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) :=
@@ -273,6 +276,7 @@ algorithm
           translateClockedEquations(clockedSysts, dlow.shared, sccOffset, uniqueEqIndex,
                                     backendMapping, equationSccMapping, eqBackendSimCodeMapping, tempvars);
     outMapping := (uniqueEqIndex /* highestSimEqIndex */, equationSccMapping);
+    execStat("simCode: created simulation system equations");
 
     //(remEqLst, paramAsserts) := List.fold1(BackendEquation.equationList(removedEqs), getParamAsserts, knownVars,({},{}));
     //((uniqueEqIndex, removedEquations)) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(remEqLst), traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
@@ -292,6 +296,7 @@ algorithm
     discreteModelVars := BackendDAEUtil.foldEqSystem(dlow, extractDiscreteModelVars, {});
     makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, isFMU);
     (delayedExps, maxDelayedExpIndex) := extractDelayedExpressions(dlow);
+    execStat("simCode: created of all other equations (e.g. parameter, nominal, assert, etc)");
 
     // append removed equation to all equations, since these are actually
     // just the algorithms without outputs
@@ -305,6 +310,7 @@ algorithm
     // create model info
     modelInfo := createModelInfo(inClassName, dlow, inInitDAE, functions, {}, numStateSets, inFileDir, listLength(clockedSysts));
     modelInfo := addTempVars(tempvars, modelInfo);
+    execStat("simCode: created modelInfo and variables");
 
     // external objects
     extObjInfo := createExtObjInfo(shared);
@@ -351,6 +357,7 @@ algorithm
     SymbolicJacs := listAppend(SymbolicJacsNLS, SymbolicJacs);
     jacobianSimvars := collectAllJacobianVars(SymbolicJacs, {});
     modelInfo := setJacobianVars(jacobianSimvars, modelInfo);
+    execStat("simCode: created linear, non-linear and system jacobian parts");
 
     // map index also odeEquations and algebraicEquations
     systemIndexMap := List.fold(allEquations, getSystemIndexMap, arrayCreate(uniqueEqIndex, -1));
@@ -454,6 +461,7 @@ algorithm
     // adrpo: collect all the files from SourceInfo and DAE.ElementSource
     // simCode := collectAllFiles(simCode);
     // print("*** SimCode -> collect all files done!: " + realString(clock()) + "\n");
+    execStat("simCode: all other stuff during SimCode phase");
 
     if Flags.isSet(Flags.DUMP_SIMCODE) then
         dumpSimCodeDebug(simCode);
@@ -3619,7 +3627,6 @@ algorithm
         // if optModule is not activated add dummy matrices
         res = addLinearizationMatrixes(res);
         // _ = Flags.set(Flags.EXEC_STAT, b);
-        execStat("SimCode generated analytical Jacobians");
       then (res,ouniqueEqIndex);
     else
       equation
