@@ -3211,27 +3211,24 @@ protected function jacobianNonlinear "author: PA
   TODO: Algorithms and array equations"
   input BackendDAE.Variables vars;
   input list<tuple<Integer, Integer, BackendDAE.Equation>> inTplIntegerIntegerEquationLst;
-  output Boolean outBoolean;
+  output Boolean isNonLinear = false;
+protected
+  DAE.Exp e1,e2,e;
+  BackendDAE.Equation eq;
+  tuple<Integer, Integer, BackendDAE.Equation> tpl;
 algorithm
-  outBoolean := matchcontinue (vars,inTplIntegerIntegerEquationLst)
-    local
-      DAE.Exp e1,e2,e;
-      list<tuple<Integer, Integer, BackendDAE.Equation>> xs;
-
-    case (_,((_,_,BackendDAE.EQUATION(exp = e1,scalar = e2))::xs))
-      equation
-        false = jacobianNonlinearExp(vars, e1);
-        false = jacobianNonlinearExp(vars, e2);
-      then
-        jacobianNonlinear(vars, xs);
-    case (_,((_,_,BackendDAE.RESIDUAL_EQUATION(exp = e))::xs))
-      equation
-        false = jacobianNonlinearExp(vars, e);
-      then
-        jacobianNonlinear(vars, xs);
-    case (_,{}) then false;
-    else true;
-  end matchcontinue;
+  for tpl in inTplIntegerIntegerEquationLst loop
+    (_,_,eq) := tpl;
+    isNonLinear := match(vars,eq)
+      case(_,BackendDAE.EQUATION(exp = e1,scalar = e2))
+        then jacobianNonlinearExp(vars, e1) or jacobianNonlinearExp(vars, e2);
+      case(_,BackendDAE.RESIDUAL_EQUATION(exp = e))
+        then jacobianNonlinearExp(vars, e);
+      end match;
+    if isNonLinear then
+      return;
+    end if;
+  end for;
 end jacobianNonlinear;
 
 protected function jacobianNonlinearExp "author: PA
