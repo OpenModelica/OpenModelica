@@ -297,9 +297,9 @@ CONSTRAINT : 'constraint' { if (!optimica_enabled()) $type = IDENT; };
 // PDEModelica
 // ---------
 
-FIELD : 'field';
-NONFIELD : 'nonfield';
-INDOMAIN : 'indomain';
+FIELD : 'field' { if (!pdemodelica_enabled()) $type = IDENT; };
+NONFIELD : 'nonfield' { if (!pdemodelica_enabled()) $type = IDENT; };
+INDOMAIN : 'indomain' { if (!pdemodelica_enabled()) $type = IDENT; };
 
 /*------------------------------------------------------------------
  * LEXER RULES
