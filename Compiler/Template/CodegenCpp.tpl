@@ -746,7 +746,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    }
 
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(<%lastIdentOfPath(modelInfo.name)%>WriteOutput& instance)
-       : <%lastIdentOfPath(modelInfo.name)%>StateSelection(instance.getGlobalSettings(), instance._sim_objects)
+       : <%lastIdentOfPath(modelInfo.name)%>StateSelection(instance.getGlobalSettings(), instance.getSimObjects())
    {
 
    }
@@ -765,7 +765,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
       if(getGlobalSettings()->getOutputPointType()!= OPT_NONE)
       {
-        _writeOutput = _sim_objects->LoadWriter(<%numAlgvars(modelInfo)%> + <%numAliasvars(modelInfo)%> + 2*<%numStatevars(modelInfo)%>).lock();
+        _writeOutput = getSimObjects()->LoadWriter(<%numAlgvars(modelInfo)%> + <%numAliasvars(modelInfo)%> + 2*<%numStatevars(modelInfo)%>).lock();
 		_writeOutput->init();
         _writeOutput->clear();
       }
@@ -3559,12 +3559,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     /* Constructor */
     <%className%>::<%className%>(IGlobalSettings* globalSettings, shared_ptr<ISimObjects> simObjects)
-        : SystemDefaultImplementation(globalSettings,simObjects->getSimData( "<%className%>"),simObjects->getSimVars("<%className%>"),simObjects)
+        : SystemDefaultImplementation(globalSettings, simObjects, "<%className%>")
         , _algLoopSolverFactory(simObjects->getAlgLoopSolverFactory())
-        , _pointerToRealVars(simObjects->getSimVars("<%className%>")->getRealVarsVector())
-        , _pointerToIntVars(simObjects->getSimVars("<%className%>")->getIntVarsVector())
-        , _pointerToBoolVars(simObjects->getSimVars("<%className%>")->getBoolVarsVector())
-        , _pointerToStringVars(simObjects->getSimVars("<%className%>")->getStringVarsVector())
+        , _pointerToRealVars(getSimVars()->getRealVarsVector())
+        , _pointerToIntVars(getSimVars()->getIntVarsVector())
+        , _pointerToBoolVars(getSimVars()->getBoolVarsVector())
+        , _pointerToStringVars(getSimVars()->getStringVarsVector())
         <%additionalConstructorVarDefsBuffer%>
     {
         <%generateSimulationCppConstructorContent(simCode, context, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
@@ -3572,11 +3572,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     }
 
     <%className%>::<%className%>(<%className%> &instance) : SystemDefaultImplementation(instance)
-        , _algLoopSolverFactory(instance._algLoopSolverFactory)
-        , _pointerToRealVars(instance._pointerToRealVars)
-        , _pointerToIntVars(instance._pointerToIntVars)
-        , _pointerToBoolVars(instance._pointerToBoolVars)
-        , _pointerToStringVars(instance._pointerToStringVars)
+        , _algLoopSolverFactory(instance.getAlgLoopSolverFactory())
+        , _pointerToRealVars(getSimVars()->getRealVarsVector())
+        , _pointerToIntVars(getSimVars()->getIntVarsVector())
+        , _pointerToBoolVars(getSimVars()->getBoolVarsVector())
+        , _pointerToStringVars(getSimVars()->getStringVarsVector())
         <%additionalConstructorVarDefsBuffer%>
     {
         <%generateSimulationCppConstructorContent(simCode, context, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
@@ -3612,17 +3612,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
       deleteAlgloopSolverVariables();
     }
-    /*
+
     shared_ptr<IAlgLoopSolverFactory> <%className%>::getAlgLoopSolverFactory()
     {
         return _algLoopSolverFactory;
     }
 
-    shared_ptr<ISimData> <%className%>::getSimData()
-    {
-        return _sim_data;
-    }
-    */
     <%generateInitAlgloopsolverVariables(jacobianMatrixes,listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,className)%>
 
     <%generateDeleteAlgloopsolverVariables(jacobianMatrixes,listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,className)%>
@@ -5878,7 +5873,7 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
         #else
         _reader  =  shared_ptr<IPropertyReader>(new XmlPropertyReader("<%makefileParams.compileDir%>/OMCpp<%fileNamePrefix%>Init.xml"));
         #endif
-        _reader->readInitialValues(*this, _sim_vars);
+        _reader->readInitialValues(*this, getSimVars());
       #endif
       initializeFreeVariables();
       /*Start complex expressions */
@@ -5898,7 +5893,7 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
 
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeMemory()
    {
-      _discrete_events = _event_handling->initialize(this,_sim_vars);
+      _discrete_events = _event_handling->initialize(this,getSimVars());
 
       //create and initialize Algloopsolvers
       <%generateAlgloopsolvers( listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
@@ -7146,10 +7141,9 @@ match modelInfo
 
       <%generateMethodDeclarationCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
       virtual bool getCondition(unsigned int index);
-      /*
+
       shared_ptr<IAlgLoopSolverFactory> getAlgLoopSolverFactory();
-      shared_ptr<ISimData> getSimData();
-      */
+
   protected:
       //Methods:
       void initializeAlgloopSolverVariables();
@@ -8128,7 +8122,7 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
       match(createDebugCode)
         case true then
           let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences))%>'
-          let &additionalConstructorVariables += ',<%cref(name,useFlatArrayNotation)%>(_sim_vars->init<%type%>Var(<%index%>))<%\n%>'
+          let &additionalConstructorVariables += ',<%cref(name,useFlatArrayNotation)%>(getSimVars()->init<%type%>Var(<%index%>))<%\n%>'
           ""
         else ""
     case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
@@ -8146,7 +8140,7 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
             match(createDebugCode)
               case true then
                 let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences))%>'
-                let& additionalConstructorVariables += ',<%arrayName%>(_sim_vars->init<%type%>Var(<%index%>))'
+                let& additionalConstructorVariables += ',<%arrayName%>(getSimVars()->init<%type%>Var(<%index%>))'
                 ""
               else ""
           else
@@ -8160,7 +8154,7 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
               let arrayIndices = SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences) |> idx => '<%idx%>'; separator=" LIST_SEP "
               <<
               <%typeString%>* <%arrayName%>_ref_data[<%size%>];
-              _sim_vars->init<%type%>AliasArray(LIST_OF <%arrayIndices%> LIST_END, <%arrayName%>_ref_data);
+              getSimVars()->init<%type%>AliasArray(LIST_OF <%arrayIndices%> LIST_END, <%arrayName%>_ref_data);
               <%arrayName%> = RefArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>>(<%arrayName%>_ref_data);
               >>
    /*special case for variables that marked as array but are not arrays */
@@ -8174,7 +8168,7 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
           match createDebugCode
             case true then
               let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences))%>'
-              let& additionalConstructorVariables += ',<%varName%>(_sim_vars->init<%type%>Var(<%index%>))'
+              let& additionalConstructorVariables += ',<%varName%>(getSimVars()->init<%type%>Var(<%index%>))'
               ""
             else ""
         else ''
@@ -9404,7 +9398,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
     <<
     void <%className%>::saveAll()
     {
-         _sim_vars->savePreVariables();
+         getSimVars()->savePreVariables();
     }
     >>
 
@@ -14032,31 +14026,31 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
 
       void <%lastIdentOfPath(name)%>::getReal(double* z)
       {
-        const double* real_vars = _sim_vars->getRealVarsVector();
-        memcpy(z,real_vars,<%numRealvars(modelInfo)%>);
+        const double* real_vars = getSimVars()->getRealVarsVector();
+        memcpy(z,real_vars,<%numRealvars(modelInfo)%>*sizeof(double));
       }
 
 
 
       void <%lastIdentOfPath(name)%>::setReal(const double* z)
       {
-         _sim_vars->setRealVarsVector(z);
+         getSimVars()->setRealVarsVector(z);
       }
 
 
 
       void <%lastIdentOfPath(name)%>::getInteger(int* z)
       {
-        const int* int_vars = _sim_vars->getIntVarsVector();
-        memcpy(z,int_vars,<%numIntvars(modelInfo)%>);
+        const int* int_vars = getSimVars()->getIntVarsVector();
+        memcpy(z,int_vars,<%numIntvars(modelInfo)%>*sizeof(int));
       }
 
 
 
       void <%lastIdentOfPath(name)%>::getBoolean(bool* z)
       {
-        const bool* bool_vars = _sim_vars->getBoolVarsVector();
-        memcpy(z,bool_vars,<%numBoolvars(modelInfo)%>);
+        const bool* bool_vars = getSimVars()->getBoolVarsVector();
+        memcpy(z,bool_vars,<%numBoolvars(modelInfo)%>*sizeof(bool));
       }
 
 
@@ -14068,12 +14062,12 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
 
       void <%lastIdentOfPath(name)%>::setInteger(const int* z)
       {
-         _sim_vars->setIntVarsVector(z);
+         getSimVars()->setIntVarsVector(z);
       }
 
       void <%lastIdentOfPath(name)%>::setBoolean(const bool* z)
       {
-        _sim_vars->setBoolVarsVector(z);
+        getSimVars()->setBoolVarsVector(z);
       }
 
       void <%lastIdentOfPath(name)%>::setString(const string* z)

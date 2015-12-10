@@ -15,7 +15,6 @@ public:
   SimObjectOMCFactory(PATH library_path,PATH modelicasystem_path,PATH config_path)
     :ObjectFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
   {
-
     _simobject_type_map = new type_map();
 #ifndef RUNTIME_STATIC_LINKING
     initializeLibraries(library_path, modelicasystem_path, config_path);

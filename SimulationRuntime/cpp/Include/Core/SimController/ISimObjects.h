@@ -31,8 +31,10 @@ public:
 
   virtual shared_ptr<ISimData> getSimData(string modelname) = 0;
   virtual shared_ptr<ISimVars> getSimVars(string modelname) = 0;
-  virtual void eraseSimData(string modelname)= 0;
-  virtual void eraseSimVars(string modelname)= 0;
+  virtual void eraseSimData(string modelname) = 0;
+  virtual void eraseSimVars(string modelname) = 0;
+
+  virtual ISimObjects* clone() = 0;
 
   virtual shared_ptr<IAlgLoopSolverFactory> getAlgLoopSolverFactory() = 0;
 };

@@ -87,7 +87,9 @@ return true;
     memcpy(oldColPivot.get(), _colPivot[i].get(), _dimStateCanditates[i]*sizeof(int));
     memcpy(oldRowPivot.get(), _rowPivot[i].get(), _dimDummyStates[i]*sizeof(int));
 
-   const double* jac =    stateset_matrix.data().begin();
+    const double* jac =    stateset_matrix.data().begin();
+    int* piv=_colPivot[i].get();
+
    double* jac_ = new double[_dimDummyStates[i]*_dimStateCanditates[i]];
    memcpy(jac_, jac, _dimDummyStates[i]*_dimStateCanditates[i]*sizeof(double));
 
@@ -97,7 +99,6 @@ return true;
     {
       throw ModelicaSimulationError(MATH_FUNCTION,"Error, singular Jacobian for dynamic state selection at time");
     }
-
     /* if we have a new set throw event for reinitialization
     and set the A matrix for set.x=A*(states) */
     res = comparePivot(oldColPivot.get(), _colPivot[i].get(), switchStates,i);

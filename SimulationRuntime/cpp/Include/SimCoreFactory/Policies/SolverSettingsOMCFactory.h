@@ -37,7 +37,19 @@ public:
     {
 
         string solver_settings_key;
-        if(solvername.compare("euler")==0)
+        if(solvername.compare("cppdassl")==0)
+        {
+            fs::path cppdassl_path = ObjectFactory<CreationPolicy>::_library_path;
+            fs::path cppdassl_name(CPPDASSL_LIB);
+            cppdassl_path/=cppdassl_name;
+            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(cppdassl_path.string(),*_solver_type_map);
+            if (result != LOADER_SUCCESS)
+            {
+                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading CppDASSL solver library!");
+            }
+            solver_settings_key.assign("createCppDASSLSettings");
+        }
+        else if(solvername.compare("euler")==0)
         {
             fs::path euler_path = ObjectFactory<CreationPolicy>::_library_path;
             fs::path euler_name(EULER_LIB);

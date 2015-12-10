@@ -8,19 +8,31 @@
 
 
 SimObjects::SimObjects(PATH library_path, PATH modelicasystem_path,IGlobalSettings* globalSettings)
-: SimObjectPolicy(library_path, modelicasystem_path, library_path)
-,_globalSettings(globalSettings)
+    : SimObjectPolicy(library_path, modelicasystem_path, library_path)
+      ,_globalSettings(globalSettings)
 {
     _algloopsolverfactory = createAlgLoopSolverFactory(globalSettings);
+}
+
+SimObjects::SimObjects(SimObjects& instance) : SimObjectPolicy(instance)
+{
+    //clone sim_data
+    for(std::map<string, shared_ptr<ISimData> >::iterator it = instance._sim_data.begin(); it != instance._sim_data.end(); it++)
+        _sim_data.insert(pair<string, shared_ptr<ISimData>>(it->first, shared_ptr<ISimData>(it->second->clone())));
+
+    //clone sim_vars
+    for(std::map<string, shared_ptr<ISimVars> >::iterator it = instance._sim_vars.begin(); it != instance._sim_vars.end(); it++)
+        _sim_vars.insert(pair<string, shared_ptr<ISimVars>>(it->first, shared_ptr<ISimVars>(it->second->clone())));
+
+    _algloopsolverfactory = instance.getAlgLoopSolverFactory();
+    _globalSettings = instance.getGlobalSettings();
+    _write_output = instance.getWriter();
 }
 
 SimObjects::~SimObjects()
 {
 
 }
-
-
-
 
 weak_ptr<ISimData> SimObjects::LoadSimData(string modelKey)
 {
@@ -89,6 +101,7 @@ void SimObjects::eraseSimData(string modelname)
         _sim_data.erase(iter);
     }
 }
+
 void SimObjects::eraseSimVars(string modelname)
 {
 
@@ -100,11 +113,12 @@ void SimObjects::eraseSimVars(string modelname)
     }
 
 }
+
 shared_ptr<IAlgLoopSolverFactory> SimObjects::getAlgLoopSolverFactory()
 {
-
    return _algloopsolverfactory;
 }
+
  weak_ptr<IHistory> SimObjects::LoadWriter(size_t dim)
 {
 
@@ -131,4 +145,18 @@ shared_ptr<IAlgLoopSolverFactory> SimObjects::getAlgLoopSolverFactory()
     return _write_output;
 }
 
+ISimObjects* SimObjects::clone()
+{
+    return new SimObjects(*this);
+}
+
+IGlobalSettings* SimObjects::getGlobalSettings()
+{
+    return _globalSettings;
+}
+
+shared_ptr<IHistory> SimObjects::getWriter()
+{
+    return _write_output;
+}
 /** @} */ // end of coreSimcontroller

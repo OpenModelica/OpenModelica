@@ -114,7 +114,6 @@ private:
    int* _Ap;
    double* _Ax;
    int _nonzeros;
-
 */
 };
 /** @} */ // end of solverKinsol

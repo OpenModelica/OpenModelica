@@ -16,9 +16,11 @@
 Peer::Peer(IMixedSystem* system, ISolverSettings* settings)
     : SolverDefaultImplementation(system, settings),
       _peersettings(dynamic_cast<ISolverSettings*>(_settings)),
-      _h(2e-2),
+      _h(1e-4),
       _continuous_system(),
-      _time_system()
+      _time_system(),
+      _hOut(0.0),
+      _reuseJacobi(5000)
 /*      _cvodeMem(NULL),
       _z(NULL),
       _zInit(NULL),
@@ -86,6 +88,9 @@ void Peer::initialize()
 {
     IContinuous *continuous_system = dynamic_cast<IContinuous*>(_system);
     ITime *time_system =  dynamic_cast<ITime*>(_system);
+    IGlobalSettings* global_settings = dynamic_cast<ISolverSettings*>(_peersettings)->getGlobalSettings();
+    _numThreads=_peersettings->getGlobalSettings()->getSolverThreads();
+    _hOut = global_settings->gethOutput();
 #ifdef MPIPEER
     MPI_Comm_size(MPI_COMM_WORLD, &_size);
     if(_size>=5) {
@@ -294,15 +299,18 @@ void Peer::ros2(double * y, double& tstart, double tend, IContinuous *continuous
 
 void Peer::solve(const SOLVERCALL action)
 {
+    double twrite=_hOut;
     if ((action & RECORDCALL) && (action & FIRST_CALL)) {
         initialize();
         return;
     }
+    bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == OPT_NONE);
     double t=_tCurrent;
   // Initialization phase
-
-    _continuous_system[0]->evaluateAll(IContinuous::ALL);
-    SolverDefaultImplementation::writeToFile(0, t, _h);
+    if(writeOutput) {
+        _continuous_system[0]->evaluateAll(IContinuous::ALL);
+        SolverDefaultImplementation::writeToFile(0, t, _h);
+    }
 
 #ifdef MPIPEER
     std::copy(_y,_y+_dimSys,_Y1);
@@ -320,7 +328,7 @@ void Peer::solve(const SOLVERCALL action)
     }
     t+=_h;
 #else
-#pragma omp parallel for
+#pragma omp parallel for num_threads(_numThreads)
     for(int _rank=0; _rank<5; ++_rank) {
         std::copy(_y,_y+_dimSys,&_Y1[_rank*_dimSys]);
         if (abs(_c[_rank]+1.)>1e-12)
@@ -332,8 +340,13 @@ void Peer::solve(const SOLVERCALL action)
     t+=_h;
     _time_system[0]->setTime(t);
     _continuous_system[0]->setContinuousStates(&_Y1[2*_dimSys]);
-    _continuous_system[0]->evaluateAll(IContinuous::ALL);
-    SolverDefaultImplementation::writeToFile(0, t, _h);
+    if(writeOutput) {
+        if(t>=twrite) {
+            _continuous_system[0]->evaluateAll(IContinuous::ALL);
+            SolverDefaultImplementation::writeToFile(0, t, _h);
+            twrite+=_hOut;
+        }
+    }
 #endif
 
 
@@ -343,6 +356,7 @@ void Peer::solve(const SOLVERCALL action)
     t+=_h;
     char trans='N';
     long int dim=1;
+    int count=0;
     while(std::abs(t-_tEnd)>1e-8)
     {
 #ifdef MPIPEER
@@ -448,21 +462,25 @@ void Peer::solve(const SOLVERCALL action)
 //                Y3.vector(i)=Y2*mtl::vector::trans(E[i][iall]);
             }
 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(_numThreads)
         for(int _rank=0; _rank<5; ++_rank) {
             long int info;
             evalF(t+_c[_rank]*_h,&_Y2[_rank*_dimSys],&_F[_rank*_dimSys],_continuous_system[_rank], _time_system[_rank]);
-            evalJ(t+_c[_rank]*_h,&_Y2[_rank*_dimSys],&_T[_rank*_dimSys*_dimSys], _continuous_system[_rank], _time_system[_rank]);
-            for(int i=0; i<_dimSys; ++i) {
-                for(int j=0; j<_dimSys; ++j) {
-                    _T[_rank*_dimSys*_dimSys+i*_dimSys+j]*=-_h*_G[_rank];
+            if(!(count%_reuseJacobi)) {
+               evalJ(t+_c[_rank]*_h,&_Y2[_rank*_dimSys],&_T[_rank*_dimSys*_dimSys], _continuous_system[_rank], _time_system[_rank]);
+                for(int i=0; i<_dimSys; ++i) {
+                    for(int j=0; j<_dimSys; ++j) {
+                        _T[_rank*_dimSys*_dimSys+i*_dimSys+j]*=-_h*_G[_rank];
+                    }
+                    _T[_rank*_dimSys*_dimSys+i*_dimSys+i]+=1.;
                 }
-                _T[_rank*_dimSys*_dimSys+i*_dimSys+i]+=1.;
+
+                dgetrf_(&_dimSys, &_dimSys, &_T[_rank*_dimSys*_dimSys], &_dimSys, &_P[_rank*_dimSys], &info);
             }
 
 
     //        std::cerr << "Finished iteration matrix calculation step at rank  " << _rank<<std::endl;
-            dgetrf_(&_dimSys, &_dimSys, &_T[_rank*_dimSys*_dimSys], &_dimSys, &_P[_rank*_dimSys], &info);
+
             for(int i=0; i<_dimSys; ++i) {
                 _F[_rank*_dimSys+i]*=_h;
                 _F[_rank*_dimSys+i]-=_Y3[_rank*_dimSys+i];
@@ -474,12 +492,18 @@ void Peer::solve(const SOLVERCALL action)
             }
         }
 
-
+        count++;
         if(t+_h>_tEnd) _h=_tEnd-t;
         _time_system[0]->setTime(t);
         _continuous_system[0]->setContinuousStates(&_Y1[2*_dimSys]);
-        _continuous_system[0]->evaluateAll(IContinuous::ALL);
-        SolverDefaultImplementation::writeToFile(0, t, _h);
+
+        if(writeOutput) {
+            if(t>=twrite) {
+                _continuous_system[0]->evaluateAll(IContinuous::ALL);
+                SolverDefaultImplementation::writeToFile(0, t, _h);
+                twrite+=_hOut;
+            }
+        }
         t+=_h;
 #endif
 
@@ -497,8 +521,10 @@ void Peer::solve(const SOLVERCALL action)
     _tCurrent=_tEnd;
     _time_system[0]->setTime(_tCurrent);
     _continuous_system[0]->setContinuousStates(&_Y1[4*_dimSys]);
-    _continuous_system[0]->evaluateAll(IContinuous::ALL);
-    SolverDefaultImplementation::writeToFile(0, t, _h);
+    if(writeOutput) {
+        _continuous_system[0]->evaluateAll(IContinuous::ALL);
+        SolverDefaultImplementation::writeToFile(0, t, _h);
+    }
     _solverStatus = ISolver::DONE;
 }
 

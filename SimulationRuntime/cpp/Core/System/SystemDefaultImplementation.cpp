@@ -34,13 +34,11 @@ bool greaterTime( pair<unsigned int,double> t1, double t2)
   return t1.second > t2;
 }
 
-SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *globalSettings,shared_ptr<ISimData> sim_data, shared_ptr<ISimVars> sim_vars,shared_ptr<ISimObjects> sim_objects)
+SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *globalSettings,shared_ptr<ISimObjects> simObjects,string modelName)
   : _simTime        (0.0)
-  ,_sim_data(sim_data)
-  , _sim_vars(sim_vars)
-  ,_sim_objects(sim_objects)
-  , __z          (sim_vars->getStateVector())
-  , __zDot        (sim_vars->getDerStateVector())
+  , _simObjects (simObjects)
+  , __z          (_simObjects->getSimVars(modelName)->getStateVector())
+  , __zDot        (_simObjects->getSimVars(modelName)->getDerStateVector())
   , _conditions      (NULL)
   , _time_conditions    (NULL)
   , _dimContinuousStates  (0)
@@ -65,15 +63,17 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *global
   , _terminal        (false)
   , _terminate      (false)
   , _global_settings    (globalSettings)
-  ,_conditions0(NULL)
-  ,_event_system(NULL)
+  , _conditions0(NULL)
+  , _event_system(NULL)
+  , _modelName(modelName)
 {
 }
 
 SystemDefaultImplementation::SystemDefaultImplementation(SystemDefaultImplementation& instance)
   : _simTime        (0.0)
-  , _sim_data(instance.getSimData()->clone())
-  , _sim_vars(instance.getSimVars()->clone())
+  , _simObjects (shared_ptr<ISimObjects>(instance.getSimObjects()->clone()))
+  , __z          (_simObjects->getSimVars(instance.getModelName())->getStateVector())
+  , __zDot        (_simObjects->getSimVars(instance.getModelName())->getDerStateVector())
   , _conditions      (NULL)
   , _time_conditions    (NULL)
   , _dimContinuousStates  (0)
@@ -98,9 +98,10 @@ SystemDefaultImplementation::SystemDefaultImplementation(SystemDefaultImplementa
   , _terminal        (false)
   , _terminate      (false)
   , _global_settings    (instance.getGlobalSettings())
+  , _conditions0(NULL)
+  , _event_system(NULL)
+  , _modelName(instance.getModelName())
 {
-  __z = _sim_vars->getStateVector();
-  __zDot = _sim_vars->getDerStateVector();
 }
 
 /*
@@ -319,14 +320,24 @@ IGlobalSettings* SystemDefaultImplementation::getGlobalSettings()
     return _global_settings;
 }
 
-shared_ptr<ISimVars> SystemDefaultImplementation::getSimVars()
+shared_ptr<ISimObjects> SystemDefaultImplementation::getSimObjects() const
 {
-  return _sim_vars;
+  return _simObjects;
+}
+
+string SystemDefaultImplementation::getModelName() const
+{
+  return _modelName;
 }
 
 shared_ptr<ISimData> SystemDefaultImplementation::getSimData()
 {
-  return _sim_data;
+    return _simObjects->getSimData(_modelName);
+}
+
+shared_ptr<ISimVars> SystemDefaultImplementation::getSimVars()
+{
+    return _simObjects->getSimVars(_modelName);
 }
 
 bool SystemDefaultImplementation::isConsistent()

@@ -479,9 +479,7 @@ void Kinsol::solve()
 		//print_m (b, "b vector");
 		if(_sparse == false)
 		{
-
-
-			const matrix_t& A = _algLoop->getSystemMatrix(); //klu
+            const matrix_t& A = _algLoop->getSystemMatrix(); //klu
 
 			//matrix_t  A_copy(A);
 

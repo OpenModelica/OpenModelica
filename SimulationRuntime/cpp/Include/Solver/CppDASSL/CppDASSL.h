@@ -2,11 +2,13 @@
 #pragma once
 
 #include "FactoryExport.h"
-
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
 #include <Core/Solver/SolverDefaultImplementation.h>
 #include <Core/Utils/extension/measure_time.hpp>
+#include <Solver/CppDASSL/dassl.h>
 
-
+#if defined(USE_OPENMP)
 /*****************************************************************************/
 // Peer
 // BDF-Verfahren für steife und nicht-steife ODEs
@@ -15,15 +17,15 @@
 /*****************************************************************************
 Copyright (c) 2014, IWR TU Dresden, All rights reserved
 *****************************************************************************/
-#if defined(USE_MPI) || defined(USE_OPENMP)
-class Peer
+
+class CppDASSL
   : public ISolver,  public SolverDefaultImplementation
 {
 public:
 
-  Peer(IMixedSystem* system, ISolverSettings* settings);
+  CppDASSL(IMixedSystem* system, ISolverSettings* settings);
 
-  virtual ~Peer();
+  virtual ~CppDASSL();
 
   // geerbt von Object (in SolverDefaultImplementation)
   //---------------------------------------
@@ -75,46 +77,30 @@ private:
 
 
   // Nulltellenfunktion
-  void writePeerOutput(const double &time,const double &h,const int &stp);
-  void evalJ(const double& t, const double* z, double* T, IContinuous *continuousSystem, ITime *timeSystem, double fac=1);
-  void evalF(const double& t, const double* z, double* f, IContinuous *continuousSystem, ITime *timeSystem);
-  void evalD(const double& t, const double* y, double* T, IContinuous *continuousSystem, ITime *timeSystem);
-  void setcycletime(double cycletime);
-  void ros2(double * y, double& tstart, double tend, IContinuous *continuousSystem, ITime *timeSystem);
+  void writeCppDASSLOutput(const double &time,const double &h,const int &stp);
 
   ISolverSettings
-    *_peersettings;              ///< Input      - Solver settings
+    *_cppdasslsettings;              ///< Input      - Solver settings
 
-  long int
-    _dimSys;                 ///< Input       - (total) Dimension of system (=number of ODE)
+  dassl
+    dasslSolver;
 
+  double
+    *_y,
+    *_yp,
+    _hOut;
+  int
+    _dimSys,               ///< Input       - (total) Dimension of system (=number of ODE)
+    _dimZeroFunc,
+    *_jroot,
+    _numThreads;
+  void
+    *_data;
 
-    int
-        _rstages,
-        _rank,
-        _size,
-        _reuseJacobi,
-        _numThreads;
-
-    long int
-        *_P;
-
-    double
-        *_G,
-        *_E,
-        *_Theta,
-        *_c,
-        *_F,
-        *_y,
-        *_Y1,
-        *_Y2,
-        *_Y3,
-        *_T,
-        _h,
-        _hOut;
-
-
-
+  static int res(const double* t, const double* y, const double* yprime, double* cj, double* delta, int* ires, void *par);
+  int calcFunction(const double* t, const double* y, const double* yprime, double* cj, double* delta, int* ires);
+  static int zeroes(const int* NEQ, const double* T, const double* Y, const double* YP, int* NRT, double* RVAL, void *par);
+  void giveZeroVal(const double &t, const double *y, double *zeroValue);
   // Variables for Coloured Jacobians
 //  int  _sizeof_sparsePattern_colorCols;
 //  int* _sparsePattern_colorCols;
@@ -133,22 +119,26 @@ private:
 
 
 //   ISystemProperties* _properties;
-   IContinuous* _continuous_system[5];
+   vector<IContinuous*> _continuous_systems;
 //   IEvent* _event_system;
 //   IMixedSystem* _mixed_system;
-   ITime* _time_system[5];
-
+   vector<ITime*> _time_systems;
+   IEvent* _event_system;
+   vector<IMixedSystem*> _mixed_systems;
+   vector<IStateSelection*> _state_selections;
 //   std::vector<MeasureTimeData> measureTimeFunctionsArray;
 //   MeasureTimeValues *measuredFunctionStartValues, *measuredFunctionEndValues;
+   DynArrayDim2<int> _matrix;
+   double* _states;
 
 };
 #else
-class Peer : public ISolver, public SolverDefaultImplementation
+class CppDASSL : public ISolver, public SolverDefaultImplementation
 {
 public:
-	Peer(IMixedSystem* system, ISolverSettings* settings) : ISolver(), SolverDefaultImplementation(system, settings)
+	CppDASSL(IMixedSystem* system, ISolverSettings* settings) : ISolver(), SolverDefaultImplementation(system, settings)
 	{
-		throw std::runtime_error("Peer solver is not available.");
+		throw std::runtime_error("CppDASSL solver is not available.");
 	}
 
 	virtual void setStartTime(const double& time)
@@ -182,5 +172,6 @@ public:
 
 	virtual void writeSimulationInfo()
 	{}
+
 };
 #endif

@@ -235,6 +235,9 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     <%modelShortName%>SimObjects(IGlobalSettings *globalSettings) {
       _algLoopSolverFactory = shared_ptr<IAlgLoopSolverFactory>(<%solverFactory%>);
     }
+    <%modelShortName%>SimObjects(<%modelShortName%>SimObjects& instance) {
+      _algLoopSolverFactory = instance._algLoopSolverFactory;
+    }
     weak_ptr<ISimData> LoadSimData(string modelKey) {
       return shared_ptr<ISimData>();
     }
@@ -255,6 +258,10 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     void eraseSimVars(string modelKey) {}
     shared_ptr<IAlgLoopSolverFactory> getAlgLoopSolverFactory() {
       return _algLoopSolverFactory;
+    }
+
+    ISimObjects* clone() {
+      return new <%modelShortName%>SimObjects(*this);
     }
    protected:
     shared_ptr<ISimVars> _simVars;
