@@ -2968,6 +2968,10 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   mpMainWindow->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
   mpMainWindow->showProgressBar();
   if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+    /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
+    if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText()) {
+      return false;
+    }
     result = saveModelicaLibraryTreeItem(pLibraryTreeItem);
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::TLM) {
     result = saveTLMLibraryTreeItem(pLibraryTreeItem);
