@@ -805,7 +805,7 @@ algorithm
       end if;
       eqns1 = BackendEquation.setAtIndex(eqns1, e, eqn_1);
       //collect original equations
-      orgEqnsLst = addOrgEqn(inOrgEqnsLst, e, eqn);
+      orgEqnsLst = addOrgEqn( e, eqn, inOrgEqnsLst);
       (outVars, outEqns, outChangedVars, outOrgEqnsLst) = replaceDifferentiatedEqns(rest, vars1, eqns1, mt, imapIncRowEqn, changedVars, orgEqnsLst);
     then (outVars, outEqns, outChangedVars, outOrgEqnsLst);
 
@@ -1245,7 +1245,7 @@ algorithm
   if Flags.isSet(Flags.BLT_DUMP) then
     dumpStateOrder(so);
   end if;
-  outArg := (so,{},mapEqnIncRow,mapIncRowEqn,BackendDAEUtil.equationArraySize(eqns));
+  outArg := (so,arrayCreate(BackendDAEUtil.equationArraySize(eqns),{}),mapEqnIncRow,mapIncRowEqn,BackendDAEUtil.equationArraySize(eqns));
 end getStructurallySingularSystemHandlerArg;
 
 // =============================================================================
@@ -1317,7 +1317,6 @@ algorithm
     end if;
   end for;
   osysts := listReverse(osysts);
-
 end mapdynamicStateSelection;
 
 protected function dynamicStateSelectionWork
@@ -1340,11 +1339,9 @@ protected
   BackendDAE.Variables v;
   DAE.FunctionTree funcs;
   Integer freestatevars,orgeqnscount;
-
 algorithm
-
   (so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,_) := inArg;
-  if listEmpty(orgEqnsLst) then
+  if Array.arrayListsEmpty(orgEqnsLst) then
     // no state selection necessary (OrgEqnsLst is Empty)
     osyst := inSystem;
     oshared := inShared;
@@ -1355,7 +1352,7 @@ algorithm
     BackendDAE.EQSYSTEM(orderedVars=v) := inSystem;
     BackendDAE.SHARED(functionTree=funcs) := inShared;
     // do late Inline also in orgeqnslst
-    orgEqnsLst := inlineOrgEqns(orgEqnsLst,(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()}),{});
+    orgEqnsLst := inlineOrgEqns(orgEqnsLst,(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()}));
     if Flags.isSet(Flags.BLT_DUMP) then
       print("Dynamic State Selection\n");
       BackendDump.dumpEqSystem(inSystem, "Index Reduced System");
@@ -1423,14 +1420,14 @@ protected function countOrgEqns
 protected
   list<BackendDAE.Equation> orgeqns;
   tuple<Integer,list<BackendDAE.Equation>> orgEqn;
-  Integer size;
+  Integer size, numEqs, e;
 algorithm
-  for orgEqn in inOrgEqns loop
-    (_, orgeqns) := orgEqn;
+  numEqs := arrayLength(inOrgEqns);
+  for e in List.intRange(numEqs) loop
+    orgeqns := arrayGet(inOrgEqns,e);
     size := BackendEquation.equationLstSize(orgeqns);
     oCount := oCount + size;
   end for;
-
 end countOrgEqns;
 
 protected function inlineOrgEqns
@@ -1438,22 +1435,21 @@ protected function inlineOrgEqns
   add an equation to the ConstrainEquations."
   input BackendDAE.ConstraintEquations inOrgEqns;
   input Inline.Functiontuple inA;
-  input BackendDAE.ConstraintEquations inAcc;
-  output BackendDAE.ConstraintEquations outOrgEqns = {};
+  output BackendDAE.ConstraintEquations outOrgEqns;
   replaceable type Type_a subtypeof Any;
 protected
   tuple<Integer,list<BackendDAE.Equation>> orgEqn;
   list<BackendDAE.Equation> orgeqns;
-  Integer e;
+  Integer e, numEqs;
 algorithm
-
-  for orgEqn in inOrgEqns loop
-    (e,orgeqns) := orgEqn;
+  outOrgEqns := inOrgEqns;
+  numEqs := arrayLength(inOrgEqns);
+  for e in List.intRange(numEqs) loop
+   orgeqns := arrayGet(inOrgEqns,e);
     (orgeqns,_) := BackendInline.inlineEqs(orgeqns, inA,{},false);
-     outOrgEqns := (e,orgeqns) :: outOrgEqns;
+     arrayUpdate(outOrgEqns,e,orgeqns);
   end for;
-  outOrgEqns := listReverse(outOrgEqns);
-
+  //outOrgEqns := listReverse(outOrgEqns);
 end inlineOrgEqns;
 
 protected function replaceDerStatesStatesExp
@@ -1737,7 +1733,7 @@ algorithm
       guard intEq(nfreeStates,nOrgEqns)
       equation
         // add the original equations to the systems
-        eqnslst = List.flatten(List.map(orgEqnsLst,Util.tuple22));
+        eqnslst = List.flatten(arrayList(orgEqnsLst));
         syst = BackendEquation.equationsAddDAE(eqnslst, inSystem);
         // change dummy states
         (syst,ht) = addAllDummyStates(syst,iSo,iHt);
@@ -1803,7 +1799,7 @@ protected function selectStatesWork
   output Integer oSetIndex;
 algorithm
   (osyst,oshared,oHt,oSetIndex) :=
-  match (inSystem, iOrgEqnsLst)
+  matchcontinue (inSystem, iOrgEqnsLst)
     local
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
@@ -1820,11 +1816,14 @@ algorithm
       BackendDAE.ConstraintEquations orgEqnsLst;
       HashTableCrIntToExp.HashTable ht;
       HashTable2.HashTable repl;
-    case (_,{}) then (inSystem,inShared,iHt,iSetIndex);
+    case (_,_)
+      equation
+        true = Array.arrayListsEmpty(iOrgEqnsLst);
+      then (inSystem,inShared,iHt,iSetIndex);
     case (BackendDAE.EQSYSTEM(orderedVars=vars,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)),_)
       equation
         // get orgequations of that level
-        (eqnslst1,_,orgEqnsLst) = getFirstOrgEqns(iOrgEqnsLst);
+        (eqnslst1,orgEqnsLst) = removeFirstOrgEqns(iOrgEqnsLst);
         // replace final parameter
         (eqnslst,_) = BackendEquation.traverseExpsOfEquationList(eqnslst1, replaceFinalVarsEqn,(BackendVariable.daeKnVars(inShared),false,BackendVarTransform.emptyReplacements()));
         // replace all der(x) with dx
@@ -1886,7 +1885,7 @@ algorithm
         (syst,shared,ht,setIndex) = selectStatesWork(level+1,lov,syst,inShared,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,ht,setIndex);
       then
         (syst,shared,ht,setIndex);
-  end match;
+  end matchcontinue;
 end selectStatesWork;
 
 protected function removeFirstOrderDerivatives
@@ -2852,30 +2851,31 @@ algorithm
   end matchcontinue;
 end getEqnsforDynamicStateSelectionRows;
 
-protected function getFirstOrgEqns
+protected function removeFirstOrgEqns
 "author: Frenkel TUD 2011-11
-  returns the first equation of each orgeqn list."
+  removes the first equation of each the orgeqn list."
   input BackendDAE.ConstraintEquations inOrgEqns;
-  output list<BackendDAE.Equation> outEqns = {};
-  output list<Integer> outIndxs = {};
-  output BackendDAE.ConstraintEquations outOrgEqns = {};
+  output list<BackendDAE.Equation> outEqnsLst = {};
+  output BackendDAE.ConstraintEquations outOrgEqns;
 protected
   tuple<Integer,list<BackendDAE.Equation>> orgEqn;
   list<BackendDAE.Equation> orgeqns;
-  Integer e;
+  Integer e, numEqs;
 algorithm
-
-  for orgEqn in inOrgEqns loop
-    (e, orgeqns) := orgEqn;
-    outIndxs := e :: outIndxs;
-    (outEqns, outOrgEqns) := match orgeqns
-                             local BackendDAE.Equation eqn; list<BackendDAE.Equation> eqns;
-                             case {eqn} then (eqn :: outEqns, outOrgEqns);
-                             case eqn::eqns then (eqn :: outEqns, (e, eqns) :: outOrgEqns);
-                             end match;
+  outOrgEqns := inOrgEqns;
+  numEqs := arrayLength(inOrgEqns);
+  for e in List.intRange(numEqs) loop
+    orgeqns := arrayGet(outOrgEqns,e);
+    if not listEmpty(orgeqns) then
+	    (outEqnsLst, orgeqns) := match orgeqns
+	                             local BackendDAE.Equation eqn; list<BackendDAE.Equation> eqns;
+	                             case {eqn} then (eqn :: outEqnsLst, {});
+	                             case eqn::eqns then (eqn :: outEqnsLst, eqns);
+	                             end match;
+	    arrayUpdate(outOrgEqns,e,orgeqns);
+	  end if;
   end for;
-
-end getFirstOrgEqns;
+end removeFirstOrgEqns;
 
 protected function sortStateCandidatesVars
 "author: Frenkel TUD 2012-08
@@ -4348,13 +4348,20 @@ end getDerStateOrder;
 protected function addOrgEqn
 "author: Frenkel TUD 2011-05
   add an equation to the ConstrainEquations."
-  input BackendDAE.ConstraintEquations inOrgEqns;
   input Integer e;
   input BackendDAE.Equation inEqn;
+  input BackendDAE.ConstraintEquations inOrgEqns;
   output BackendDAE.ConstraintEquations outOrgEqns;
+protected
+  list<BackendDAE.Equation> eqs;
 algorithm
+  outOrgEqns := inOrgEqns;
+  eqs := arrayGet(inOrgEqns,e);
+  eqs := inEqn::eqs;
+  arrayUpdate(outOrgEqns,e,eqs);
+  /*
   outOrgEqns :=
-  matchcontinue (inOrgEqns,e,inEqn)
+  matchcontinue (e,inEqn, inOrgEqns)
     local
       list<BackendDAE.Equation> orgeqns;
       Integer e1;
@@ -4377,6 +4384,7 @@ algorithm
       then
         (e1,orgeqns)::orgeqnslst;
   end matchcontinue;
+  */
 end addOrgEqn;
 
 protected function dumpStateOrder

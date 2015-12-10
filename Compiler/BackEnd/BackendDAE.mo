@@ -466,7 +466,7 @@ type StructurallySingularSystemHandlerArg = tuple<StateOrder,ConstraintEquations
 "StateOrder,ConstraintEqns,Eqn->EqnsIndxes,EqnIndex->Eqns,NrOfEqnsbeforeIndexReduction";
 
 public
-type ConstraintEquations = list<tuple<Integer,list<Equation>>>;
+type ConstraintEquations = array<list<Equation>>;
 
 public
 uniontype StateOrder

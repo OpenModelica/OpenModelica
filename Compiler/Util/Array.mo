@@ -727,5 +727,20 @@ algorithm
   end for;
 end reverse;
 
+public function arrayListsEmpty<T>"output true if all lists in the array are empty"
+  input array<list<T>> arr;
+  output Boolean isEmpty;
+algorithm
+  isEmpty := fold(arr,arrayListsEmpty1,true);
+end arrayListsEmpty;
+
+public function arrayListsEmpty1<T>
+  input list<T> lst;
+  input Boolean isEmptyIn;
+  output Boolean isEmptyOut;
+algorithm
+  isEmptyOut := listEmpty(lst) and isEmptyIn;
+end arrayListsEmpty1;
+
 annotation(__OpenModelica_Interface="util");
 end Array;
