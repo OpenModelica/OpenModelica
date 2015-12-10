@@ -2939,6 +2939,42 @@ algorithm
   end try;
 end traversingVarIndexFinder;
 
+public function getVarIndexFromVariablesIndexInFirstSet
+  input BackendDAE.Variables inVariables;
+  input BackendDAE.Variables inVariables2;
+  output list<Integer> v_lst;
+protected
+  array<list<Integer>> a;
+algorithm
+  (a,_) := traverseBackendDAEVars(inVariables,
+    function traversingVarIndexInFirstSetFinder(inVars = inVariables2), (arrayCreate(1,{}),arrayCreate(1,1)));
+  v_lst := listReverse(a[1]);
+end getVarIndexFromVariablesIndexInFirstSet;
+
+protected function traversingVarIndexInFirstSetFinder
+"author: Frenkel TUD 2010-11"
+  input BackendDAE.Var inVar;
+  input BackendDAE.Variables inVars;
+  input tuple<array<list<Integer>>,array<Integer>> inIndices;
+  output BackendDAE.Var outVar = inVar;
+  output tuple<array<list<Integer>>,array<Integer>> outIndices;
+protected
+  DAE.ComponentRef cr;
+  list<Integer> indices1,indices2;
+  array<list<Integer>> l;
+  array<Integer> i;
+algorithm
+  (l,i) := inIndices;
+  outIndices := inIndices;
+  try
+    cr := varCref(inVar);
+    getVar(cr, inVars);
+    l[1] := i[1]::l[1];
+  else
+  end try;
+  i[1] := i[1]+1;
+end traversingVarIndexInFirstSetFinder;
+
 public function mergeVariables
   "Merges two sets of Variables, where the variables of the first set takes
    precedence over the second set."

@@ -1220,11 +1220,11 @@ algorithm
     (m_, _, _, mapIncRowEqn) := BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs));
     //BackendDump.dumpEqSystem(syst, "fixInitialSystem");
     //BackendDump.dumpVariables(initVars, "selected initialization variables");
+    //BackendDump.dumpVariables(inEqSystem.orderedVars, "vars in the system");
     //BackendDump.dumpIncidenceMatrix(m_);
 
     // get state-index list
-    stateIndices := BackendVariable.getVarIndexFromVariables(inEqSystem.orderedVars, initVars);
-    //print("{" + stringDelimitList(List.map(stateIndices, intString), ",") + "}\n");
+    stateIndices := BackendVariable.getVarIndexFromVariablesIndexInFirstSet(inEqSystem.orderedVars, initVars);
 
     // get initial equation-index list
     //(initEqs, _) := List.extractOnTrue(BackendEquation.equationList(inEqSystem.orderedEqs), BackendEquation.isInitialEquation);
