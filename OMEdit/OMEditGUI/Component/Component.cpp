@@ -333,7 +333,7 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
   mTransformationString = transformation;
   // Construct the temporary polygon that is used when scaling
   mpResizerRectangle = new QGraphicsRectItem;
-  mpResizerRectangle->setZValue(5000);  // set to a very high value
+  mpResizerRectangle->setZValue(-5000);  // set to a very low value
   mpGraphicsView->addItem(mpResizerRectangle);
   QPen pen;
   pen.setStyle(Qt::DotLine);
@@ -391,7 +391,7 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
   createNonExistingComponent();
   mpDefaultComponentRectangle = 0;
   mpDefaultComponentText = 0;
-  drawComponent();
+  drawInheritedComponentsAndShapes();
   setDialogAnnotation(QStringList());
   mpOriginItem = 0;
   if (mpLibraryTreeItem) {
@@ -402,8 +402,8 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
   }
 }
 
-Component::Component(Component *pComponent, Component *pParentComponent)
-  : QGraphicsItem(pParentComponent), mpReferenceComponent(pComponent), mpParentComponent(pParentComponent)
+Component::Component(Component *pComponent, Component *pParentComponent, Component *pRootParentComponent)
+  : QGraphicsItem(pRootParentComponent), mpReferenceComponent(pComponent), mpParentComponent(pParentComponent)
 {
   mpLibraryTreeItem = mpReferenceComponent->getLibraryTreeItem();
   mpComponentInfo = mpReferenceComponent->getComponentInfo();
@@ -415,7 +415,7 @@ Component::Component(Component *pComponent, Component *pParentComponent)
   createNonExistingComponent();
   mpDefaultComponentRectangle = 0;
   mpDefaultComponentText = 0;
-  drawComponent();
+  drawInheritedComponentsAndShapes();
   mTransformation = Transformation(mpReferenceComponent->mTransformation);
   setTransform(mTransformation.getTransformationMatrix());
   mpOriginItem = 0;
@@ -764,6 +764,37 @@ QString Component::getTransformationExtent()
   return transformationExtent;
 }
 
+/*!
+ * \brief Component::createClassComponents
+ * Creates a class components.
+ */
+void Component::createClassComponents()
+{
+  foreach (Component *pInheritedComponent, mInheritedComponentsList) {
+    pInheritedComponent->createClassComponents();
+  }
+  if (!mpLibraryTreeItem->isNonExisting()) {
+    if (!mpLibraryTreeItem->getModelWidget()) {
+      MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, "", false);
+    }
+    foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentsList()) {
+      mComponentsList.append(new Component(pComponent, this, getRootParentComponent()));
+    }
+    mpLibraryTreeItem->getModelWidget()->loadDiagramView();
+    foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
+      if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) {
+        continue;
+      }
+      Component *pNewComponent = new Component(pComponent, this, getRootParentComponent());
+      // Set the Parent Item to 0 beacause we don't want to render Diagram components. We just want to store them for Parameters Dialog.
+      pNewComponent->setParentItem(0);
+      mpGraphicsView->removeItem(pNewComponent);
+      mComponentsList.append(pNewComponent);
+    }
+  }
+}
+
 void Component::applyRotation(qreal angle)
 {
   Transformation oldTransformation = mTransformation;
@@ -979,6 +1010,25 @@ void Component::drawComponent()
 }
 
 /*!
+ * \brief Component::drawInheritedComponentsAndShapes
+ * Draws the inherited components and their shapes.
+ */
+void Component::drawInheritedComponentsAndShapes()
+{
+  if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
+    if (mComponentType == Component::Root) {
+      mpDefaultComponentRectangle->setVisible(true);
+      mpDefaultComponentText->setVisible(true);
+    }
+  } else if (mpLibraryTreeItem->isNonExisting()) { // if class is non existing
+    mpNonExistingComponentLine->setVisible(true);
+  } else {
+    createClassInheritedComponents();
+    createClassShapes();
+  }
+}
+
+/*!
  * \brief Component::showNonExistingOrDefaultComponentIfNeeded
  * Show non-existing or default Component if needed.
  */
@@ -1050,34 +1100,6 @@ void Component::createClassShapes()
       } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
         mShapesList.append(new BitmapAnnotation(pShapeAnnotation, this));
       }
-    }
-  }
-}
-
-/*!
- * \brief Component::createClassComponents
- * Creates a class components.
- */
-void Component::createClassComponents()
-{
-  if (!mpLibraryTreeItem->isNonExisting()) {
-    if (!mpLibraryTreeItem->getModelWidget()) {
-      MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, "", false);
-    }
-    foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentsList()) {
-      mComponentsList.append(new Component(pComponent, this));
-    }
-    mpLibraryTreeItem->getModelWidget()->loadDiagramView();
-    foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
-      if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) {
-        continue;
-      }
-      Component *pNewComponent = new Component(pComponent, this);
-      // Set the Parent Item to 0 beacause we don't want to render Diagram components. We just want to store them for Parameters Dialog.
-      pNewComponent->setParentItem(0);
-      mpGraphicsView->removeItem(pNewComponent);
-      mComponentsList.append(pNewComponent);
     }
   }
 }

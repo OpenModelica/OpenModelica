@@ -145,7 +145,7 @@ public:
   Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformation, QPointF position, QStringList dialogAnnotation,
             ComponentInfo *pComponentInfo, GraphicsView *pGraphicsView);
   Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentComponent);
-  Component(Component *pComponent, Component *pParentComponent);
+  Component(Component *pComponent, Component *pParentComponent, Component *pRootParentComponent);
   Component(Component *pComponent, GraphicsView *pGraphicsView);
   bool isInheritedComponent() {return mIsInheritedComponent;}
   bool hasShapeAnnotation(Component *pComponent);
@@ -185,6 +185,7 @@ public:
   QString getOMCPlacementAnnotation(QPointF position);
   QString getTransformationOrigin();
   QString getTransformationExtent();
+  void createClassComponents();
   void applyRotation(qreal angle);
   void addConnectionDetails(LineAnnotation *pConnectorLineAnnotation);
   void removeConnectionDetails(LineAnnotation *pConnectorLineAnnotation);
@@ -245,10 +246,10 @@ private:
   void createNonExistingComponent();
   void createDefaultComponent();
   void drawComponent();
+  void drawInheritedComponentsAndShapes();
   void showNonExistingOrDefaultComponentIfNeeded();
   void createClassInheritedComponents();
   void createClassShapes();
-  void createClassComponents();
   void removeChildren();
   void createActions();
   void createResizerItems();
