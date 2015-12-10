@@ -1,4 +1,4 @@
-.. debugging :
+.. _debugging :
 
 Debugging
 =========

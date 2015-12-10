@@ -835,4 +835,4 @@ FMI
 Debugger
 --------
 
-For debugging capability, see `debugging`_.
+For debugging capability, see :ref:`debugging`.
