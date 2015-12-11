@@ -5,6 +5,7 @@ to the following object libraries
   ModelicaInternal.c
   ModelicaStrings.c
   ModelicaRandom.c
+  ModelicaFFT.c
   win32_dirent.c (for Visual C++ on Windows)
 
 - ModelicaStandardTables (.lib, .dll, .a, .so, depending on tool and OS) containing:

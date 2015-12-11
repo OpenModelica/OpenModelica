@@ -1,46 +1,46 @@
-/*
- * Copyright (C) 2005-2013 Christopher C. Hulbert
- *
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *    1. Redistributions of source code must retain the above copyright notice,
- *       this list of conditions and the following disclaimer.
- *
- *    2. Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY CHRISTOPHER C. HULBERT ``AS IS'' AND ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL CHRISTOPHER C. HULBERT OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* ModelicaMatIO.c - MAT file I/O functions
+
+   Copyright (C) 2005-2013, Christopher C. Hulbert
+   Copyright (C) 2013-2015, Modelica Association and ITI GmbH
+   All rights reserved.
+
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are met:
+
+   1. Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+
+   2. Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+   FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+   DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+   SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+   CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 /*
-  This file was created by concatenation of the following C source files of the
-  MAT file I/O library from <http://sourceforge.net/projects/matio/>:
+   This file was created by concatenation of the following C source files of the
+   MAT file I/O library from <http://sourceforge.net/projects/matio/>:
 
-  endian.c
-  inflate.c
-  io.c
-  read_data.c
-  snprintf.c
-  mat.c
-  mat4.c
-  mat5.c
-  mat73.c
-  matvar_cell.c
-  matvar_struct.c
+   endian.c
+   inflate.c
+   io.c
+   read_data.c
+   snprintf.c
+   mat.c
+   mat4.c
+   mat5.c
+   mat73.c
+   matvar_cell.c
+   matvar_struct.c
 */
 
 /*
@@ -48,11 +48,11 @@
    formats require additional preprocessor options and third-party libraries.
    The following #define's are available.
 
-    NO_FILE_SYSTEM: A file system is not present (e.g. on dSPACE or xPC).
-    HAVE_ZLIB=1   : Enables the support of v7 MAT-files
-                    The zlib (>= v1.2.3) library is required.
-    HAVE_HDF5=1   : Enables the support of v7.3 MAT-files
-                    The hdf5 (>= v1.8) and szip libraries are required.
+   NO_FILE_SYSTEM: A file system is not present (e.g. on dSPACE or xPC).
+   HAVE_ZLIB=1   : Enables the support of v7 MAT-files
+                   The zlib (>= v1.2.3) library is required.
+   HAVE_HDF5=1   : Enables the support of v7.3 MAT-files
+                   The hdf5 (>= v1.8) and szip libraries are required.
 */
 
 #include "ModelicaUtilities.h"
@@ -10628,12 +10628,15 @@ Mat_VarReadNextInfo( mat_t *mat )
 matvar_t *
 Mat_VarReadInfo( mat_t *mat, const char *name )
 {
+    long fpos;
     matvar_t *matvar = NULL;
 
     if ( (mat == NULL) || (name == NULL) )
         return NULL;
 
     if ( mat->version == MAT_FT_MAT73 ) {
+        fpos = mat->next_index;
+        mat->next_index = 0;
         do {
             matvar = Mat_VarReadNextInfo(mat);
             if ( matvar != NULL ) {
@@ -10649,8 +10652,9 @@ Mat_VarReadInfo( mat_t *mat, const char *name )
                 break;
             }
         } while ( NULL == matvar && mat->next_index < mat->num_datasets);
+        mat->next_index = fpos;
     } else {
-        long fpos = ftell(mat->fp);
+        fpos = ftell(mat->fp);
         fseek(mat->fp,mat->bof,SEEK_SET);
         do {
             matvar = Mat_VarReadNextInfo(mat);
@@ -10685,14 +10689,18 @@ Mat_VarReadInfo( mat_t *mat, const char *name )
 matvar_t *
 Mat_VarRead( mat_t *mat, const char *name )
 {
-    long  fpos = 0;
-    matvar_t *matvar = NULL;;
+    long fpos = 0;
+    matvar_t *matvar = NULL;
 
     if ( (mat == NULL) || (name == NULL) )
         return NULL;
 
     if ( MAT_FT_MAT73 != mat->version )
         fpos = ftell(mat->fp);
+    else {
+        fpos = mat->next_index;
+        mat->next_index = 0;
+    }
 
     matvar = Mat_VarReadInfo(mat,name);
     if ( matvar )
@@ -10700,6 +10708,9 @@ Mat_VarRead( mat_t *mat, const char *name )
 
     if ( MAT_FT_MAT73 != mat->version )
         fseek(mat->fp,fpos,SEEK_SET);
+    else {
+        mat->next_index = fpos;
+    }
     return matvar;
 }
 
@@ -16226,11 +16237,11 @@ ReadData5(mat_t *mat,matvar_t *matvar,void *data,
                 ReadCompressedDataSlab2(mat,&z,complex_data->Im,
                     matvar->class_type,matvar->data_type,matvar->dims,
                     start,stride,edge);
-                inflateEnd(&z);
             } else {
                 ReadCompressedDataSlab2(mat,&z,data,matvar->class_type,
                     matvar->data_type,matvar->dims,start,stride,edge);
             }
+            inflateEnd(&z);
         }
 #endif
     } else {
@@ -16286,12 +16297,12 @@ ReadData5(mat_t *mat,matvar_t *matvar,void *data,
                 ReadCompressedDataSlabN(mat,&z,complex_data->Im,
                     matvar->class_type,matvar->data_type,matvar->rank,
                     matvar->dims,start,stride,edge);
-                inflateEnd(&z);
             } else {
                 ReadCompressedDataSlabN(mat,&z,data,matvar->class_type,
                     matvar->data_type,matvar->rank,matvar->dims,
                     start,stride,edge);
             }
+            inflateEnd(&z);
         }
 #endif
     }

@@ -1,11 +1,29 @@
-#ifndef MODELICA_UTILITIES_H
-#define MODELICA_UTILITIES_H
+/* ModelicaUtilities.h - External utility functions header
 
-#include <stddef.h>
-#include <stdarg.h>
-#if defined(__cplusplus)
-extern "C" {
-#endif
+   Copyright (C) 2010-2015, Modelica Association and DLR
+   All rights reserved.
+
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are met:
+
+   1. Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+
+   2. Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+   FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+   DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+   SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+   CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 /* Utility functions which can be called by external Modelica functions.
 
@@ -19,15 +37,25 @@ extern "C" {
    this header file is shipped with the Modelica Standard Library.
 */
 
+#ifndef MODELICA_UTILITIES_H
+#define MODELICA_UTILITIES_H
+
+#include <stddef.h>
+#include <stdarg.h>
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 /*
- * Some of the functions never return to the caller. In order to compile
- * external Modelica C-code in most compilers, noreturn attributes need to
- * be present to avoid warnings or errors.
- *
- * The following macros handle noreturn attributes according to the latest
- * C11/C++11 standard with fallback to GNU or MSVC extensions if using an
- * older compiler.
- */
+  Some of the functions never return to the caller. In order to compile
+  external Modelica C-code in most compilers, noreturn attributes need to
+  be present to avoid warnings or errors.
+
+  The following macros handle noreturn attributes according to the latest
+  C11/C++11 standard with fallback to GNU or MSVC extensions if using an
+  older compiler.
+*/
+
 #if __STDC_VERSION__ >= 201112L
 #define MODELICA_NORETURN _Noreturn
 #define MODELICA_NORETURNATTR

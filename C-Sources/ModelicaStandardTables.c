@@ -1,76 +1,4 @@
-/* Implementation of external functions for table computation
-   in the Modelica Standard Library:
-
-       Modelica.Blocks.Sources.CombiTimeTable
-       Modelica.Blocks.Tables.CombiTable1D
-       Modelica.Blocks.Tables.CombiTable1Ds
-       Modelica.Blocks.Tables.CombiTable2D
-
-   The following #define's are available.
-
-    NO_FILE_SYSTEM        : A file system is not present (e.g. on dSPACE or xPC).
-    DEBUG_TIME_EVENTS     : Trace time events of CombiTimeTable
-    DUMMY_FUNCTION_USERTAB: Use a dummy function "usertab"
-    NO_TABLE_COPY         : Do not copy table data passed to _init functions
-                            This is a potentially unsafe optimization (ticket #1143).
-    TABLE_SHARE           : If NO_FILE_SYTEM is not defined then common/shared table
-                            arrays are stored in a global hash table in order to
-                            avoid superfluous file input access and to decrease the
-                            utilized memory (tickets #1110 and #1550).
-
-   Release Notes:
-      Nov. 16, 2015: by Thomas Beutlich, ITI GmbH
-                     Fixed support of 2x3 and 3x2 2D tables with spline
-                     interpolation (ticket #1820)
-
-      Nov. 03, 2015: by Thomas Beutlich, ITI GmbH.
-                     Added range checks for column indices of CombiTimeTable and
-                     CombiTable1D (ticket #1816)
-
-      Aug. 31, 2015: by Thomas Beutlich, ITI GmbH.
-                     Fixed event detection of CombiTimeTable when using a fixed time
-                     step integrator with a step size greater than the event
-                     resolution of the table (ticket #1768)
-
-      May 11, 2015:  by Thomas Beutlich, ITI GmbH.
-                     Added univariate Fritsch-Butland-spline interpolation
-                     (ticket #1717)
-
-      Apr. 16, 2015: by Thomas Beutlich, ITI GmbH.
-                     Fixed event detection of CombiTimeTable with scaled time
-                     (ticket #1627)
-
-      Mar. 18, 2015: by Thomas Beutlich, ITI GmbH.
-                     Fixed poor performance of readMatTable for MATLAB MAT-files with
-                     compressed array streams and large (> 1e5) number of rows
-                     (ticket #1682)
-
-      Jan. 02, 2015: by Thomas Beutlich, ITI GmbH.
-                     Fixed event detection of CombiTimeTable with non-zero start time
-                     (ticket #1619)
-
-      Aug. 22, 2014: by Thomas Beutlich, ITI GmbH.
-                     Fixed multi-threaded access of common/shared table arrays
-                     (ticket #1556)
-
-      Aug. 07, 2014: by Thomas Beutlich, ITI GmbH.
-                     Added pure C implementation of common/shared table arrays
-                     (ticket #1550)
-
-      May 21, 2014:  by Thomas Beutlich, ITI GmbH.
-                     Fixed bivariate Akima-spline extrapolation (ticket #1465)
-
-      Oct. 17, 2013: by Thomas Beutlich, ITI GmbH.
-                     Added support of 2D tables that actually degrade to 1D tables
-                     (ticket #1307)
-
-      Sep. 05, 2013: by Thomas Beutlich, ITI GmbH.
-                     Fixed ANSI-C compliance (ticket #1263)
-                     Fixed reading table files with Windows line endings on Linux
-                     (ticket #1264)
-
-      Apr. 09, 2013: by Thomas Beutlich, ITI GmbH.
-                     Implemented a first version
+/* ModelicaStandardTable.c - External table functions
 
    Copyright (C) 2013-2015, Modelica Association, DLR and ITI GmbH
    All rights reserved.
@@ -78,14 +6,12 @@
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are met:
 
-    * Redistributions of source code must retain the above copyright notice,
+   1. Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
+
+   2. Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
-    * Neither the name of the Modelica Association nor the names of its
-      contributors may be used to endorse or promote products derived from
-      this software without specific prior written permission.
 
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -97,6 +23,85 @@
    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+/* Implementation of external functions for table computation
+   in the Modelica Standard Library:
+
+      Modelica.Blocks.Sources.CombiTimeTable
+      Modelica.Blocks.Tables.CombiTable1D
+      Modelica.Blocks.Tables.CombiTable1Ds
+      Modelica.Blocks.Tables.CombiTable2D
+
+   The following #define's are available.
+
+   NO_FILE_SYSTEM        : A file system is not present (e.g. on dSPACE or xPC).
+   DEBUG_TIME_EVENTS     : Trace time events of CombiTimeTable
+   DUMMY_FUNCTION_USERTAB: Use a dummy function "usertab"
+   NO_TABLE_COPY         : Do not copy table data passed to _init functions
+                           This is a potentially unsafe optimization (ticket #1143).
+   TABLE_SHARE           : If NO_FILE_SYTEM is not defined then common/shared table
+                           arrays are stored in a global hash table in order to
+                           avoid superfluous file input access and to decrease the
+                           utilized memory (tickets #1110 and #1550).
+
+   Release Notes:
+      Nov. 25, 2015: by Thomas Beutlich, ITI GmbH
+                     Added support of struct variables of MATLAB MAT-files
+                     (ticket #1840)
+
+      Nov. 16, 2015: by Thomas Beutlich, ITI GmbH
+                     Fixed support of 2x3 and 3x2 2D tables with spline
+                     interpolation (ticket #1820)
+
+      Nov. 03, 2015: by Thomas Beutlich, ITI GmbH
+                     Added range checks for column indices of CombiTimeTable and
+                     CombiTable1D (ticket #1816)
+
+      Aug. 31, 2015: by Thomas Beutlich, ITI GmbH
+                     Fixed event detection of CombiTimeTable when using a fixed time
+                     step integrator with a step size greater than the event
+                     resolution of the table (ticket #1768)
+
+      May 11, 2015:  by Thomas Beutlich, ITI GmbH
+                     Added univariate Fritsch-Butland-spline interpolation
+                     (ticket #1717)
+
+      Apr. 16, 2015: by Thomas Beutlich, ITI GmbH
+                     Fixed event detection of CombiTimeTable with scaled time
+                     (ticket #1627)
+
+      Mar. 18, 2015: by Thomas Beutlich, ITI GmbH
+                     Fixed poor performance of readMatTable for MATLAB MAT-files with
+                     compressed array streams and large (> 1e5) number of rows
+                     (ticket #1682)
+
+      Jan. 02, 2015: by Thomas Beutlich, ITI GmbH
+                     Fixed event detection of CombiTimeTable with non-zero start time
+                     (ticket #1619)
+
+      Aug. 22, 2014: by Thomas Beutlich, ITI GmbH
+                     Fixed multi-threaded access of common/shared table arrays
+                     (ticket #1556)
+
+      Aug. 07, 2014: by Thomas Beutlich, ITI GmbH
+                     Added pure C implementation of common/shared table arrays
+                     (ticket #1550)
+
+      May 21, 2014:  by Thomas Beutlich, ITI GmbH
+                     Fixed bivariate Akima-spline extrapolation (ticket #1465)
+
+      Oct. 17, 2013: by Thomas Beutlich, ITI GmbH
+                     Added support of 2D tables that actually degrade to 1D tables
+                     (ticket #1307)
+
+      Sep. 05, 2013: by Thomas Beutlich, ITI GmbH
+                     Fixed ANSI-C compliance (ticket #1263)
+                     Fixed reading table files with Windows line endings on Linux
+                     (ticket #1264)
+
+      Apr. 09, 2013: by Thomas Beutlich, ITI GmbH
+                     Implemented a first version
 */
 
 #if defined(__gnu_linux__) && !defined(NO_FILE_SYSTEM)
@@ -4031,18 +4036,33 @@ static double* readMatTable(const char* tableName, const char* fileName,
     if (tableName != NULL && fileName != NULL && _nRow != NULL && _nCol != NULL) {
         mat_t* mat;
         matvar_t* matvar;
+        matvar_t* matvarRoot;
         size_t nRow, nCol;
         int tableReadError = 0;
+        char* tableNameCopy;
+        char* token;
+
+        tableNameCopy = (char*)malloc((strlen(tableName) + 1)*sizeof(char));
+        if (tableNameCopy != NULL) {
+            strcpy(tableNameCopy, tableName);
+        }
+        else {
+            ModelicaError("Memory allocation error\n");
+            return NULL;
+        }
 
         mat = Mat_Open(fileName, (int)MAT_ACC_RDONLY);
         if (mat == NULL) {
+            free(tableNameCopy);
             ModelicaFormatError("Not possible to open file \"%s\": "
                 "No such file or directory\n", fileName);
             return NULL;
         }
 
-        matvar = Mat_VarReadInfo(mat, tableName);
-        if (matvar == NULL) {
+        token = strtok(tableNameCopy, ".");
+        matvarRoot = Mat_VarReadInfo(mat, token == NULL ? tableName : token);
+        if (matvarRoot == NULL) {
+            free(tableNameCopy);
             (void)Mat_Close(mat);
             ModelicaFormatError(
                 "Table matrix \"%s\" not found on file \"%s\".\n", tableName,
@@ -4050,27 +4070,38 @@ static double* readMatTable(const char* tableName, const char* fileName,
             return NULL;
         }
 
-        /* Check if array is a matrix */
+        matvar = matvarRoot;
+        token = strtok(NULL, ".");
+        /* Get field while matvar is of struct class and of 1x1 size */
+        while (token != NULL && matvar != NULL &&
+            matvar->class_type == MAT_C_STRUCT && matvar->rank == 2 &&
+            matvar->dims[0] == 1 && matvar->dims[1] == 1) {
+            matvar = Mat_VarGetStructField(matvar, (void*)token, MAT_BY_NAME, 0);
+            token = strtok(NULL, ".");
+        }
+        free(tableNameCopy);
+
+        /* Check if matvar is a matrix */
         if (matvar->rank != 2) {
-            Mat_VarFree(matvar);
+            Mat_VarFree(matvarRoot);
             (void)Mat_Close(mat);
             ModelicaFormatError(
                 "Table array \"%s\" has not the required rank 2.\n", tableName);
             return NULL;
         }
 
-        /* Check if array is of double precision class (and thus non-sparse) */
+        /* Check if matvar is of double precision class (and thus non-sparse) */
         if (matvar->class_type != MAT_C_DOUBLE) {
-            Mat_VarFree(matvar);
+            Mat_VarFree(matvarRoot);
             (void)Mat_Close(mat);
             ModelicaFormatError("Table matrix \"%s\" has not the required "
                 "double precision class.\n", tableName);
             return NULL;
         }
 
-        /* Check if array is purely real-valued */
+        /* Check if matvar is purely real-valued */
         if (matvar->isComplex) {
-            Mat_VarFree(matvar);
+            Mat_VarFree(matvarRoot);
             (void)Mat_Close(mat);
             ModelicaFormatError("Table matrix \"%s\" must not be complex.\n",
                 tableName);
@@ -4079,7 +4110,7 @@ static double* readMatTable(const char* tableName, const char* fileName,
 
         table = (double*)malloc(matvar->dims[0]*matvar->dims[1]*sizeof(double));
         if (table == NULL) {
-            Mat_VarFree(matvar);
+            Mat_VarFree(matvarRoot);
             (void)Mat_Close(mat);
             ModelicaError("Memory allocation error\n");
             return NULL;
@@ -4096,7 +4127,7 @@ static double* readMatTable(const char* tableName, const char* fileName,
             tableReadError = Mat_VarReadData(mat, matvar, table, start, stride, edge);
         }
 
-        Mat_VarFree(matvar);
+        Mat_VarFree(matvarRoot);
         (void)Mat_Close(mat);
 
         if (tableReadError == 0) {

@@ -1,37 +1,17 @@
-/* External functions for Modelica.Math.Random library
+/* ModelicaRandom.c - External functions for Modelica.Math.Random library
 
-   The functions in this file are non-portable. The following #define's are used
-   to define the system calls of the operating system
-
-    _MSC_VER       : Microsoft Visual C++
-    MODELICA_EXPORT: Prefix used for function calls. If not defined, blank is used
-                     Useful definitions:
-                     - "static" that is all functions become static
-                       (useful if file is included with other C-sources for an
-                        embedded system)
-                     - "__declspec(dllexport)" if included in a DLL and the
-                       functions shall be visible outside of the DLL
-
-   Release Notes:
-      Oct. 27, 2015: by Thomas Beutlich, ITI GmbH
-                     Added nonnull attribute/annotations (ticket #1436)
-
-      Feb. 17, 2015: by Andreas Kloeckner and Martin Otter, DLR-SR
-                     Implemented a first version
-
-   This file is licensed under the BSD 2-Clause License:
-
-   Copyright (C) 2015, DLR and Modelica Association.
+   Copyright (C) 2015, Modelica Association and DLR
+   All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are met:
 
-    1. Redistributions of source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
+   1. Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
 
-    2. Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in the
-       documentation and/or other materials provided with the distribution.
+   2. Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
 
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -44,6 +24,27 @@
    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
+/* The functions in this file are non-portable. The following #define's are used
+   to define the system calls of the operating system
+
+   _MSC_VER       : Microsoft Visual C++
+   MODELICA_EXPORT: Prefix used for function calls. If not defined, blank is used
+                    Useful definitions:
+                    - "static" that is all functions become static
+                      (useful if file is included with other C-sources for an
+                       embedded system)
+                    - "__declspec(dllexport)" if included in a DLL and the
+                      functions shall be visible outside of the DLL
+
+   Release Notes:
+      Oct. 27, 2015: by Thomas Beutlich, ITI GmbH
+                     Added nonnull attribute/annotations (ticket #1436)
+
+      Feb. 17, 2015: by Andreas Kloeckner and Martin Otter, DLR-SR
+                     Implemented a first version
+*/
+
 #if !defined(MODELICA_EXPORT)
 #   define MODELICA_EXPORT
 #endif
@@ -472,7 +473,29 @@ MODELICA_EXPORT double ModelicaRandom_impureRandom_xorshift1024star(int id) {
     return y;
 }
 
-/* original algorithms */
+int  ModelicaInternal_getpid(void);
+void ModelicaInternal_getTime(int* ms, int* sec, int* min, int* hour, int* mday, int* mon, int* year);
+
+MODELICA_EXPORT int ModelicaRandom_automaticGlobalSeed() {
+   /* Creates an automatic integer seed (typically from the current time and process id) */
+
+   int ms, sec, min, hour, mday, mon, year;
+   int pid;
+   int seed;
+
+   ModelicaInternal_getTime(&ms, &sec, &min, &hour, &mday, &mon, &year);
+   pid = ModelicaInternal_getpid();
+
+   /* Check that worst case combination can be included in an Integer:
+
+         1000*60*60 = 3.6e6 < 2^31 = 2147483648 (2.1e9)
+
+      Everything is added to 1, in order to guard against the very unlikely case that the sum is zero.
+   */
+   seed = 1 + ms + 1000*sec + 1000*60*min + 1000*60*60*hour + 6007*pid;
+   return seed;
+}
+
 
 MODELICA_EXPORT void ModelicaRandom_convertRealToIntegers(double d, int i[]) {
     /* Cast a double to two integers */

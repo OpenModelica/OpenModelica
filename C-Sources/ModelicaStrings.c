@@ -1,18 +1,42 @@
-/* External utility functions for Modelica package
-   Modelica.Functions.Strings.
+/* ModelicaStrings.c - External functions for Modelica.Functions.Strings
 
-   The functions are mostly non-portable. The following #define's are used
+   Copyright (C) 2002-2015, Modelica Association and DLR
+   All rights reserved.
+
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are met:
+
+   1. Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+
+   2. Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+   FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+   DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+   SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+   CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+/* The functions are mostly non-portable. The following #define's are used
    to define the system calls of the operating system
 
-    _MSC_VER       : Microsoft Visual C++
-    __GNUC__       : GNU C compiler
-    MODELICA_EXPORT: Prefix used for function calls. If not defined, blank is used
-                     Useful definitions:
-                     - "static" that is all functions become static
-                       (useful if file is included with other C-sources for an
-                        embedded system)
-                     - "__declspec(dllexport)" if included in a DLL and the
-                       functions shall be visible outside of the DLL
+   _MSC_VER       : Microsoft Visual C++
+   __GNUC__       : GNU C compiler
+   MODELICA_EXPORT: Prefix used for function calls. If not defined, blank is used
+                    Useful definitions:
+                    - "static" that is all functions become static
+                      (useful if file is included with other C-sources for an
+                       embedded system)
+                    - "__declspec(dllexport)" if included in a DLL and the
+                      functions shall be visible outside of the DLL
 
    Release Notes:
       Oct. 27, 2015: by Thomas Beutlich, ITI GmbH
@@ -34,7 +58,7 @@
       Sep. 24, 2004: by Martin Otter, DLR
                      Final cleaning up of the code
 
-      Sep.  9, 2004: by Dag Bruck, Dynasim AB.
+      Sep.  9, 2004: by Dag Bruck, Dynasim AB
                      Implementation of scan functions
 
       Aug. 19, 2004: by Martin Otter, DLR
@@ -43,14 +67,8 @@
 
       Jan.  7, 2002: by Martin Otter, DLR
                      Implemented a first version
-
-   Copyright (C) 2002-2015, Modelica Association and DLR.
-
-   The content of this file is free software; it can be redistributed
-   and/or modified under the terms of the Modelica License 2, see the
-   license conditions and the accompanying disclaimer in file
-   Modelica/ModelicaLicense2.html or in Modelica.UsersGuide.ModelicaLicense2.
 */
+
 #if !defined(MODELICA_EXPORT)
 #   define MODELICA_EXPORT
 #endif

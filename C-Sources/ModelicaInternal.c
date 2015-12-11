@@ -1,81 +1,111 @@
-/* External utility functions for Modelica packages
-   Modelica_Utilities.Internal
+/* ModelicaInternal.c - External functions for Modelica.Utilities.Internal
 
-   The functions are mostly non-portable. The following #define's are used
+   Copyright (C) 2002-2015, Modelica Association and DLR
+   All rights reserved.
+
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are met:
+
+   1. Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+
+   2. Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+   FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+   DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+   SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+   CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+/* The functions are mostly non-portable. The following #define's are used
    to define the system calls of the operating system
 
-    _WIN32         : System calls of Windows'95, Windows'NT
-                     (Note, that these system calls allow both '/' and '\'
-                     as directory separator for input arguments. As return
-                     argument '\' is used).
-                     All system calls are from the library libc.a.
-    _POSIX_        : System calls of POSIX
-    _MSC_VER       : Microsoft Visual C++
-    __GNUC__       : GNU C compiler
-    NO_FILE_SYSTEM : A file system is not present (e.g. on dSPACE or xPC).
-    MODELICA_EXPORT: Prefix used for function calls. If not defined, blank is used
-                     Useful definitions:
-                     - "static" that is all functions become static
-                       (useful if file is included with other C-sources for an
-                        embedded system)
-                     - "__declspec(dllexport)" if included in a DLL and the
-                       functions shall be visible outside of the DLL
+   _WIN32         : System calls of Windows'95, Windows'NT
+                    (Note, that these system calls allow both '/' and '\'
+                    as directory separator for input arguments. As return
+                    argument '\' is used).
+                    All system calls are from the library libc.a.
+   _POSIX_        : System calls of POSIX
+   _MSC_VER       : Microsoft Visual C++
+   __GNUC__       : GNU C compiler
+   NO_FILE_SYSTEM : A file system is not present (e.g. on dSPACE or xPC).
+   NO_PID         : No getpid is present
+   NO_TIME        : No API to retrieve current time
+   MODELICA_EXPORT: Prefix used for function calls. If not defined, blank is used
+                    Useful definitions:
+                    - "static" that is all functions become static
+                      (useful if file is included with other C-sources for an
+                       embedded system)
+                    - "__declspec(dllexport)" if included in a DLL and the
+                      functions shall be visible outside of the DLL
 
-    Release Notes:
-      Oct. 27, 2015, by Thomas Beutlich, ITI GmbH
-        Added nonnull attributes/annotations (ticket #1436)
+   Release Notes:
+      Dec. 10, 2015: by Martin Otter, DLR
+                     Added flags NO_PID and NO_TIME ()
 
-      Oct. 05, 2015, by Thomas Beutlich, ITI GmbH
-        Added functions ModelicaInternal_getpid/_getTime from ModelicaRandom.c
-        of https://github.com/DLR-SR/Noise (ticket #1662)
+      Oct. 27, 2015: by Thomas Beutlich, ITI GmbH
+                     Added nonnull attributes/annotations (ticket #1436)
 
-      Nov. 20, 2014, by Thomas Beutlich, ITI GmbH
-        Fixed platform dependency of ModelicaInternal_readLine/_readFile (ticket #1580)
+      Oct. 05, 2015: by Thomas Beutlich, ITI GmbH
+                     Added functions ModelicaInternal_getpid/_getTime from
+                     ModelicaRandom.c of https://github.com/DLR-SR/Noise
+                     (ticket #1662)
 
-      Aug. 22, 2014, by Thomas Beutlich, ITI GmbH
-        Fixed multi-threaded access of common/shared file cache (ticket #1556)
+      Nov. 20, 2014: by Thomas Beutlich, ITI GmbH
+                     Fixed platform dependency of ModelicaInternal_readLine/_readFile
+                     (ticket #1580)
 
-      Aug. 11, 2014, by Thomas Beutlich, ITI GmbH
-        Increased cache size of opened files and made it thread-safe (ticket #1433)
-        Made getenv/putenv thread-safe for Visual Studio 2005 and later (ticket #1433)
+      Aug. 22, 2014: by Thomas Beutlich, ITI GmbH
+                     Fixed multi-threaded access of common/shared file cache
+                     (ticket #1556)
 
-      May 21, 2013, by Martin Otter, DLR
-        Included the improvements from DS Lund:
-          - Changed implementation of print to do nothing in case of missing file-system.
-            Otherwise we just end up with an error message that is not written,
-            and the failure in itself is not sufficiently fatal to just stop
-          - Caching when reading from file
+      Aug. 11, 2014: by Thomas Beutlich, ITI GmbH
+                     Increased cache size of opened files and made it
+                     thread-safe (ticket #1433)
+                     Made getenv/putenv thread-safe for Visual Studio 2005 and
+                     later (ticket #1433)
 
-      March 26, 2013, by Martin Otter, DLR
-        Changed type of variable valueStart from int to size_t (ticket #1032)
+      May 21, 2013:  by Martin Otter, DLR
+                     Included the improvements from DS Lund:
+                     - Changed implementation of print to do nothing in case of
+                       missing file-system. Otherwise we just end up with an
+                       error message that is not written, and the failure in
+                       itself is not sufficiently fatal to just stop.
+                     - Caching when reading from file
 
-      Jan.   5, 2013: by Martin Otter, DLR
-        Removed "static" declarations from the Modelica interface functions.
+      Mar, 26, 2013: by Martin Otter, DLR
+                     Changed type of variable valueStart from int to size_t
+                     (ticket #1032)
 
-      Sept. 26, 2004: by Martin Otter, DLR
-        Added missing implementations, merged code from previous ModelicaFiles
-        and clean-up of code.
+      Jan. 05, 2013: by Martin Otter, DLR
+                     Removed "static" declarations from the Modelica interface
+                     functions
 
-      Sep.  9, 2004: by Dag Bruck, Dynasim AB
-        Further implementation and clean-up of code.
+      Sep. 26, 2004: by Martin Otter, DLR
+                     Added missing implementations, merged code from previous
+                     ModelicaFiles and clean-up of code
+
+      Sep. 09, 2004: by Dag Bruck, Dynasim AB
+                     Further implementation and clean-up of code
 
       Aug. 24, 2004: by Martin Otter, DLR
-        Adapted to Dymola 5.3 with minor improvements.
+                     Adapted to Dymola 5.3 with minor improvements
 
-      Jan.  7, 2002: by Martin Otter, DLR
-        First version implemented.
-        Only tested for _WIN32, but implemented all
-        functions also for _POSIX_, with the exception of
-        ModelicaInternal_getFullPath
-
-   Copyright (C) 2002-2015, Modelica Association and DLR.
-
-   The content of this file is free software; it can be redistributed
-   and/or modified under the terms of the Modelica License 2, see the
-   license conditions and the accompanying disclaimer in file
-   Modelica/ModelicaLicense2.html or in Modelica.UsersGuide.ModelicaLicense2.
-
+      Jan. 07, 2002: by Martin Otter, DLR
+                     First version implemented:
+                     Only tested for _WIN32, but implemented all
+                     functions also for _POSIX_, with the exception of
+                     ModelicaInternal_getFullPath
 */
+
 #if !defined(MODELICA_EXPORT)
   #define MODELICA_EXPORT
 #endif
@@ -1132,14 +1162,27 @@ MODELICA_EXPORT void ModelicaInternal_setenv(const char* name, const char* value
 /* Some parts from: http://nadeausoftware.com/articles/2012/04/c_c_tip_how_measure_elapsed_real_time_benchmarking */
 
 MODELICA_EXPORT int ModelicaInternal_getpid(void) {
+#if defined(NO_PID)
+    return 0;
+#else
 #if defined(_POSIX_) || defined(__GNUC__) || defined(__WATCOMC__) || defined(__BORLANDC__) || defined(__LCC__)
     return getpid();
 #else
     return _getpid();
 #endif
+#endif
 }
 
 MODELICA_EXPORT void ModelicaInternal_getTime(int* ms, int* sec, int* min, int* hour, int* mday, int* mon, int* year) {
+#if defined(NO_TIME)
+    *ms   = 0;
+    *sec  = 0;
+    *min  = 0;
+    *hour = 0;
+    *mday = 0;
+    *mon  = 0;
+    *year = 0;
+#else
     struct tm* tlocal;
     time_t calendarTime;
     int ms0;
@@ -1180,6 +1223,7 @@ MODELICA_EXPORT void ModelicaInternal_getTime(int* ms, int* sec, int* min, int* 
     *mday = tlocal->tm_mday;
     *mon = tlocal->tm_mon;
     *year = tlocal->tm_year;
+#endif
 }
 
 #endif
