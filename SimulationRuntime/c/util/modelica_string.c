@@ -231,9 +231,12 @@ modelica_string modelica_boolean_to_modelica_string(modelica_boolean b, modelica
 
 /* Convert a modelica_enumeration to a modelica_string, used in String(b) */
 
-modelica_string modelica_enumeration_to_modelica_string(modelica_integer nr,const modelica_string e[],modelica_integer minLen, modelica_boolean leftJustified)
+modelica_string enum_to_modelica_string(modelica_integer nr, const char *e[],modelica_integer minLen, modelica_boolean leftJustified)
 {
-  return mmc_mk_scon(e[nr-1]);
+  size_t sz = snprintf(NULL, 0, leftJustified ? "%-*s" : "%*s", (int) minLen, e[nr-1]);
+  void *res = alloc_modelica_string(sz);
+  sprintf(MMC_STRINGDATA(res), leftJustified ? "%-*s" : "%*s", (int) minLen, e[nr-1]);
+  return res;
 }
 
 modelica_string alloc_modelica_string(int length)

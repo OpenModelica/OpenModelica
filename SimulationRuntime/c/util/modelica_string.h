@@ -59,7 +59,7 @@ extern modelica_string modelica_integer_to_modelica_string(modelica_integer i,
 extern modelica_string modelica_boolean_to_modelica_string(modelica_boolean b,
                                    modelica_integer minLen, modelica_boolean leftJustified);
 
-extern modelica_string modelica_enumeration_to_modelica_string(modelica_integer nr, const modelica_string e[],
+extern modelica_string enum_to_modelica_string(modelica_integer nr, const char *e[],
                                    modelica_integer minLen, modelica_boolean leftJustified);
 
 /* Escape string */

@@ -4108,6 +4108,14 @@ template tempDecl(String ty, Text &varDecls)
   newVar
 end tempDecl;
 
+template tempDeclArray(String ty, Text len, Text elts, Text &varDecls)
+ "Declares a temporary variable in varDecls and returns the name."
+::=
+  let newVarIx = 'tmp<%System.tmpTick()%>'
+  let &varDecls += '<%ty%> <%newVarIx%>[<%len%>] = {<%elts%>};<%\n%>'
+  newVarIx
+end tempDeclArray;
+
 template tempDeclZero(String ty, Text &varDecls)
  "Declares a temporary variable initialized to zero in varDecls and returns the name."
 ::=
@@ -5616,13 +5624,17 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let sExp = daeExp(s, context, &preExp, &varDecls, &auxFunction)
     let minlenExp = daeExp(minlen, context, &preExp, &varDecls, &auxFunction)
     let leftjustExp = daeExp(leftjust, context, &preExp, &varDecls, &auxFunction)
-    let typeStr = expTypeFromExpModelica(s)
+    let enumStr = (match typeof(s)
+      case T_ENUMERATION(__) then
+      let strs = names |> s => '"<%Util.escapeModelicaStringToCString(s)%>"' ; separator = ", "
+      ', <%tempDeclArray("const char*", listLength(names), strs, &varDecls)%>')
+    let typeStr = (if enumStr then "enum" else expTypeFromExpModelica(s))
     match typeStr
     case "modelica_real" then
       let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>, 6);<%\n%>'
       '<%tvar%>'
     else
-    let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
+    let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%><%enumStr%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
     '<%tvar%>'
     end match
 
