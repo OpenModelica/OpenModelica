@@ -65,8 +65,6 @@ MainWindow & Browsers
 
 The MainWindow contains several dockable browsers,
 
--  Search Browser
-
 -  Libraries Browser
 
 -  Documentation Browser
@@ -92,16 +90,11 @@ see section :ref:`omedit-settings-general`.
 Search Browser
 ~~~~~~~~~~~~~~
 
-.. figure :: media/omedit-search-browser.png
+  Search Classes.
 
-  Search Browser.
-
-To view the Search Browser click Edit->Search Browser or press keyboard
+To search a class click Edit->Search Classes or press keyboard
 shortcut Ctrl+Shift+F. The loaded Modelica classes can be searched by
-typing any part of the class name. It is also possible to search the
-Modelica class if one knows the text string that is used within it but
-Within Modelica text checkbox should be checked for this feature to
-work.
+typing any part of the class name.
 
 Libraries Browser
 ~~~~~~~~~~~~~~~~~
@@ -317,13 +310,15 @@ General Tab
 
 -  *Tolerance* – the simulation tolerance.
 
+- *DASSL Options*
+
 -  *Compiler Flags (Optional)* – the optional C compiler flags.
 
--  *Number of Processors* – the number of processors used to build the
-       simulation.
+-  *Number of Processors* – the number of processors used to build the simulation.
 
--  *Launch Transformational Debugger* – launches the transformational
-       debugger.
+-  *Build Only* – only builds the class.
+       
+-  *Launch Transformational Debugger* – launches the transformational debugger.
 
 -  *Launch Algorithmic Debugger* – launches the algorithmic debugger.
 
@@ -340,6 +335,9 @@ Output Tab
 
 -  *Protected Variables –* adds the protected variables in result file.
 
+-  *Equidistant Time Grid –* output the internal steps given by dassl instead of interpolating results
+       into an equidistant time grid as given by stepSize or numberOfIntervals
+
 -  *Store Variables at Events –* adds the variables at time events.
 
 -  *Show Generated File* – displays the generated files in a dialog box.
@@ -347,11 +345,9 @@ Output Tab
 Simulation Flags Tab
 ~~~~~~~~~~~~~~~~~~~~
 
--  *Model Setup File (Optional)* – specifies a new setup XML file to the
-       generated simulation code.
+-  *Model Setup File (Optional)* – specifies a new setup XML file to the generated simulation code.
 
--  *Initialization Method (Optional)* – specifies the initialization
-       method.
+-  *Initialization Method (Optional)* – specifies the initialization method.
 
 -  *Equation System Initialization File (Optional)* – specifies an
        external file for the initialization of the model.
@@ -425,6 +421,12 @@ Simulation Flags Tab
 
 -  *Additional Simulation Flags (Optional)* – specify any other
        simulation flag.
+
+Archived Simulations Tab
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Shows the list of simulations already finished or running.
+Double clicking on any of them opens the simulation output window.
 
 Plotting the Simulation Results
 -------------------------------
