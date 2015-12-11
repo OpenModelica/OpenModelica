@@ -18,11 +18,11 @@ SimObjects::SimObjects(SimObjects& instance) : SimObjectPolicy(instance)
 {
     //clone sim_data
     for(std::map<string, shared_ptr<ISimData> >::iterator it = instance._sim_data.begin(); it != instance._sim_data.end(); it++)
-        _sim_data.insert(pair<string, shared_ptr<ISimData>>(it->first, shared_ptr<ISimData>(it->second->clone())));
+        _sim_data.insert(pair<string, shared_ptr<ISimData> >(it->first, shared_ptr<ISimData>(it->second->clone())));
 
     //clone sim_vars
     for(std::map<string, shared_ptr<ISimVars> >::iterator it = instance._sim_vars.begin(); it != instance._sim_vars.end(); it++)
-        _sim_vars.insert(pair<string, shared_ptr<ISimVars>>(it->first, shared_ptr<ISimVars>(it->second->clone())));
+        _sim_vars.insert(pair<string, shared_ptr<ISimVars> >(it->first, shared_ptr<ISimVars>(it->second->clone())));
 
     _algloopsolverfactory = instance.getAlgLoopSolverFactory();
     _globalSettings = instance.getGlobalSettings();
