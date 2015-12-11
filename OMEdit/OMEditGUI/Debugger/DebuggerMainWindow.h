@@ -131,7 +131,6 @@ public:
   DebuggerConfigurationPage(DebuggerConfiguration debuggerConfiguration, QListWidgetItem *pListWidgetItem,
                             DebuggerConfigurationsDialog *pDebuggerConfigurationsDialog);
   DebuggerConfiguration getDebuggerConfiguration() {return mDebuggerConfiguration;}
-  bool isDirty();
   bool configurationExists(QString configurationKeyToCheck);
 public slots:
   void browseProgramFile();
