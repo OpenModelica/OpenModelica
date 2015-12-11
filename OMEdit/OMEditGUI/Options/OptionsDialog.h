@@ -308,6 +308,7 @@ public:
   QSpinBox *getTabSizeSpinBox() {return mpTabSizeSpinBox;}
   QSpinBox *getIndentSpinBox() {return mpIndentSpinBox;}
   QCheckBox* getSyntaxHighlightingCheckbox() {return mpSyntaxHighlightingCheckbox;}
+  QCheckBox* getMatchParenthesesCommentsQuotesCheckBox() {return mpMatchParenthesesCommentsQuotesCheckBox;}
   QCheckBox* getLineWrappingCheckbox() {return mpLineWrappingCheckbox;}
   QFontComboBox* getFontFamilyComboBox() {return mpFontFamilyComboBox;}
   DoubleSpinBox* getFontSizeSpinBox() {return mpFontSizeSpinBox;}
@@ -337,6 +338,7 @@ private:
   QSpinBox *mpIndentSpinBox;
   QGroupBox *mpSyntaxHighlightAndTextWrappingGroupBox;
   QCheckBox *mpSyntaxHighlightingCheckbox;
+  QCheckBox *mpMatchParenthesesCommentsQuotesCheckBox;
   QCheckBox *mpLineWrappingCheckbox;
   QGroupBox *mpFontColorsGroupBox;
   Label *mpFontFamilyLabel;

@@ -596,17 +596,25 @@ void ModelicaTextHighlighter::initializeSettings()
   mHighlightingRules.append(rule);
 }
 
-//! Highlights the multilines text.
-//! Quoted text or multiline comments.
+/*!
+ * \brief ModelicaTextHighlighter::highlightMultiLine
+ * Highlights the multilines text.
+ * Quoted text or multiline comments.
+ * \param text
+ * \param text
+ */
 void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
 {
   /* Hand-written recognizer beats the crap known as QRegEx ;) */
   int index = 0, startIndex = 0;
   int blockState = previousBlockState();
-  // fprintf(stderr, "%s with blockState %d\n", text.toStdString().c_str(), blockState);
-
-  while (index < text.length())
-  {
+  // store parentheses info
+  Parentheses parentheses;
+  TextBlockUserData *pTextBlockUserData = BaseEditorDocumentLayout::userData(currentBlock());
+  if (pTextBlockUserData) {
+    pTextBlockUserData->clearParentheses();
+  }
+  while (index < text.length()) {
     switch (blockState) {
       /* if the block already has single line comment then don't check for multi line comment and quotes. */
       case 1:
@@ -644,7 +652,20 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
           blockState = 3;
         }
     }
+    // if no single line comment, no multi line comment and no quotes then store the parentheses
+    if (pTextBlockUserData && (blockState < 1 || blockState > 3 || mpModelicaTextEditorPage->getMatchParenthesesCommentsQuotesCheckBox()->isChecked())) {
+      if (text[index] == '(' || text[index] == '{' || text[index] == '[') {
+        parentheses.append(Parenthesis(Parenthesis::Opened, text[index], index));
+      } else if (text[index] == ')' || text[index] == '}' || text[index] == ']') {
+        parentheses.append(Parenthesis(Parenthesis::Closed, text[index], index));
+      }
+    }
     index++;
+  }
+  if (pTextBlockUserData) {
+    pTextBlockUserData->setParentheses(parentheses);
+    // set text block user data
+    setCurrentBlockUserData(pTextBlockUserData);
   }
   switch (blockState) {
     case 2:
@@ -664,22 +685,6 @@ void ModelicaTextHighlighter::highlightBlock(const QString &text)
   /* Only highlight the text if user has enabled the syntax highlighting */
   if (!mpModelicaTextEditorPage->getSyntaxHighlightingCheckbox()->isChecked()) {
     return;
-  }
-  // store parentheses info
-  TextBlockUserData *pTextBlockUserData = BaseEditorDocumentLayout::userData(currentBlock());
-  if (pTextBlockUserData) {
-    pTextBlockUserData->clearParentheses();
-    Parentheses parentheses;
-    for (int i = 0 ; i < text.length() ; i++) {
-      if (text.at(i) == '(' || text.at(i) == '{' || text.at(i) == '[') {
-        parentheses.append(Parenthesis(Parenthesis::Opened, text.at(i), i));
-      } else if (text.at(i) == ')' || text.at(i) == '}' || text.at(i) == ']') {
-        parentheses.append(Parenthesis(Parenthesis::Closed, text.at(i), i));
-      }
-    }
-    pTextBlockUserData->setParentheses(parentheses);
-    // set text block user data
-    setCurrentBlockUserData(pTextBlockUserData);
   }
   // set text block state
   setCurrentBlockState(0);

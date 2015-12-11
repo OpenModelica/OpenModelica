@@ -226,6 +226,9 @@ void OptionsDialog::readModelicaTextSettings()
   if (mpSettings->contains("textEditor/enableSyntaxHighlighting")) {
     mpModelicaTextEditorPage->getSyntaxHighlightingCheckbox()->setChecked(mpSettings->value("textEditor/enableSyntaxHighlighting").toBool());
   }
+  if (mpSettings->contains("textEditor/matchParenthesesCommentsQuotes")) {
+    mpModelicaTextEditorPage->getMatchParenthesesCommentsQuotesCheckBox()->setChecked(mpSettings->value("textEditor/matchParenthesesCommentsQuotes").toBool());
+  }
   if (mpSettings->contains("textEditor/enableLineWrapping")) {
     mpModelicaTextEditorPage->getLineWrappingCheckbox()->setChecked(mpSettings->value("textEditor/enableLineWrapping").toBool());
   }
@@ -701,6 +704,7 @@ void OptionsDialog::saveModelicaTextSettings()
   mpSettings->setValue("textEditor/tabSize", mpModelicaTextEditorPage->getTabSizeSpinBox()->value());
   mpSettings->setValue("textEditor/indentSize", mpModelicaTextEditorPage->getIndentSpinBox()->value());
   mpSettings->setValue("textEditor/enableSyntaxHighlighting", mpModelicaTextEditorPage->getSyntaxHighlightingCheckbox()->isChecked());
+  mpSettings->setValue("textEditor/matchParenthesesCommentsQuotes", mpModelicaTextEditorPage->getMatchParenthesesCommentsQuotesCheckBox()->isChecked());
   mpSettings->setValue("textEditor/enableLineWrapping", mpModelicaTextEditorPage->getLineWrappingCheckbox()->isChecked());
   mpSettings->setValue("textEditor/fontFamily", mpModelicaTextEditorPage->getFontFamilyComboBox()->currentFont().family());
   mpSettings->setValue("textEditor/fontSize", mpModelicaTextEditorPage->getFontSizeSpinBox()->value());
@@ -1930,6 +1934,8 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
   // syntax highlighting checkbox
   mpSyntaxHighlightingCheckbox = new QCheckBox(tr("Enable Syntax Highlighting"));
   mpSyntaxHighlightingCheckbox->setChecked(true);
+  // syntax highlighting checkbox
+  mpMatchParenthesesCommentsQuotesCheckBox = new QCheckBox(tr("Match Parentheses within Comments and Quotes"));
   // line wrap checkbox
   mpLineWrappingCheckbox = new QCheckBox(tr("Enable Line Wrapping"));
   mpLineWrappingCheckbox->setChecked(true);
@@ -1937,7 +1943,8 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
   // set Syntax Highlight & Text Wrapping groupbox layout
   QGridLayout *pSyntaxHighlightAndTextWrappingGroupBoxLayout = new QGridLayout;
   pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpSyntaxHighlightingCheckbox, 0, 0);
-  pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpLineWrappingCheckbox, 1, 0);
+  pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpMatchParenthesesCommentsQuotesCheckBox, 1, 0);
+  pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpLineWrappingCheckbox, 2, 0);
   mpSyntaxHighlightAndTextWrappingGroupBox->setLayout(pSyntaxHighlightAndTextWrappingGroupBoxLayout);
   // fonts & colors groupbox
   mpFontColorsGroupBox = new QGroupBox(Helper::fontAndColors);
@@ -1988,6 +1995,7 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
   ModelicaTextHighlighter *pModelicaTextHighlighter = new ModelicaTextHighlighter(this, mpPreviewPlainTextBox);
   connect(this, SIGNAL(updatePreview()), pModelicaTextHighlighter, SLOT(settingsChanged()));
   connect(mpSyntaxHighlightingCheckbox, SIGNAL(toggled(bool)), pModelicaTextHighlighter, SLOT(settingsChanged()));
+  connect(mpMatchParenthesesCommentsQuotesCheckBox, SIGNAL(toggled(bool)), pModelicaTextHighlighter, SLOT(settingsChanged()));
   // set fonts & colors groupbox layout
   QGridLayout *pFontsColorsGroupBoxLayout = new QGridLayout;
   pFontsColorsGroupBoxLayout->addWidget(mpFontFamilyLabel, 0, 0);
