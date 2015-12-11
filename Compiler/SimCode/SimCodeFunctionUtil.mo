@@ -2830,6 +2830,12 @@ algorithm
   end match;
 end codegenPeekTryThrowIndex;
 
+public function execStatReset
+algorithm
+  System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT);
+  System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);
+end execStatReset;
+
 public function execStat
   "Prints an execution stat on the format:
   *** %name% -> time: %time%, memory %memory%

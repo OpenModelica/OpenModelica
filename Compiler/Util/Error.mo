@@ -696,6 +696,10 @@ public constant Message GENERATE_SEPARATE_CODE_DEPENDENCIES_FAILED_UNKNOWN_PACKA
   Util.gettext("Failed to get dependencies for package %s. %s contains an import to non-existing package %s."));
 public constant Message USE_OF_PARTIAL_CLASS = MESSAGE(285, TRANSLATION(), ERROR(),
   Util.gettext("component %s contains the definition of a partial class %s.\nPlease redeclare it to any package compatible with %s."));
+public constant Message SCANNER_ERROR = MESSAGE(286, SYNTAX(), ERROR(),
+  Util.gettext("Syntax error, unrecognized input: %s."));
+public constant Message SCANNER_ERROR_LIMIT = MESSAGE(287, SYNTAX(), ERROR(),
+  Util.gettext("Additional syntax errors were suppressed."));
 
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));

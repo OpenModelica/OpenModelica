@@ -1,5 +1,8 @@
 %{
 import DiffAlgorithm;
+protected
+import Error;
+public
 %}
 
 %x c_comment
@@ -10,9 +13,12 @@ whitespace1  [ \t]+
 whitespace2  \n
 letter       [a-zA-Z]
 wild         [_]
+nondigit     [_a-zA-Z]
+qchar        []_a-zA-Z0-9!#$%&()*+,./:;<>=?@[^{}| \-]
+sescape      "\\"['"=abfnryv\\]
 digit        [0-9]
+digitnondigit [_a-zA-Z0-9]
 digits       {digit}+
-ident        (({letter}|{wild})|['\'']({letter}|{digit}|[-*+/^=])*['\''])({letter}|{digit}|{wild})*
 exponent     ([e]|[E])([+]|[-])?{digits}
 real         {digits}[\.]({digits})?({exponent})?
 real2        {digits}{exponent}
@@ -31,9 +37,9 @@ initialalgorithm  "initial"{whitespace}"algorithm"
 {real}      return UNSIGNED_REAL;
 {real2}     return UNSIGNED_REAL;
 {real3}     return UNSIGNED_REAL;
-"algorithm" return T_ALGORITHM;
-"and" return T_AND;
-"annotation" return T_ANNOTATION;
+"algorithm" return ALGORITHM;
+"and" return AND;
+"annotation" return ANNOTATION;
 "block" return BLOCK;
 "class" return CLASS;
 "connect" return CONNECT;
@@ -46,7 +52,7 @@ initialalgorithm  "initial"{whitespace}"algorithm"
 "else" return ELSE;
 "elseif" return ELSEIF;
 "elsewhen" return ELSEWHEN;
-"end" return T_END;
+"end" return END;
 "enumeration" return ENUMERATION;
 "equation" return EQUATION;
 "encapsulated" return ENCAPSULATED;
@@ -54,26 +60,26 @@ initialalgorithm  "initial"{whitespace}"algorithm"
 "extends" return EXTENDS;
 "constrainedby" return CONSTRAINEDBY;
 "external" return EXTERNAL;
-"false" return T_FALSE;
+"false" return FALSE;
 "final" return FINAL;
 "flow" return FLOW;
 "for" return FOR;
 "function" return FUNCTION;
 "if" return IF;
 "import" return IMPORT;
-"in" return T_IN;
-"initial" return T_INITIAL;
+"in" return IN;
+"initial" return INITIAL;
 "inner" return INNER;
-"input" return T_INPUT;
+"input" return INPUT;
 "loop" return LOOP;
 "model" return MODEL;
-"not" return T_NOT;
-"outer" return T_OUTER;
+"not" return NOT;
+"outer" return OUTER;
 "operator" return OPERATOR;
 "overload" return OVERLOAD;
-"or" return T_OR;
-"output" return T_OUTPUT;
-"package" return T_PACKAGE;
+"or" return OR;
+"output" return OUTPUT;
+"package" return PACKAGE;
 "parameter" return PARAMETER;
 "partial" return PARTIAL;
 "protected" return PROTECTED;
@@ -83,7 +89,7 @@ initialalgorithm  "initial"{whitespace}"algorithm"
 "replaceable" return REPLACEABLE;
 "results" return RESULTS;
 "then" return THEN;
-"true" return T_TRUE;
+"true" return TRUE;
 "type" return TYPE;
 "when" return WHEN;
 "while" return WHILE;
@@ -107,7 +113,7 @@ initialalgorithm  "initial"{whitespace}"algorithm"
 
 "pure" return PURE;
 "impure" return IMPURE;
-"optimization" return T_OPTIMIZATION;
+"optimization" return OPTIMIZATION;
 
 ".+" return PLUS_EW;
 ".-" return MINUS_EW;
@@ -133,7 +139,10 @@ initialalgorithm  "initial"{whitespace}"algorithm"
 
 "\." return DOT;
 
-{ident}      return IDENT;
+{nondigit}{digitnondigit}* return IDENT;
+
+"'"({qchar}|{sescape})+"'"  return IDENT;
+
 {digits}     return UNSIGNED_INTEGER;
 
 "\""       {
@@ -189,21 +198,21 @@ algorithm
     return;
   end if;
   b := match ida
-    case TokenId.IDENT then tokenContent(ta)==tokenContent(tb);
-    case TokenId.UNSIGNED_INTEGER then tokenContent(ta)==tokenContent(tb);
+    case TokenId.IDENT then tokenContentEq(ta,tb);
+    case TokenId.UNSIGNED_INTEGER then tokenContentEq(ta,tb);
     case TokenId.UNSIGNED_REAL
       then stringReal(tokenContent(ta))==stringReal(tokenContent(tb));
     case TokenId.BLOCK_COMMENT
       then valueEq(blockCommentCanonical(ta),blockCommentCanonical(tb));
-    case TokenId.LINE_COMMENT then tokenContent(ta)==tokenContent(tb);
-    case TokenId.STRING then tokenContent(ta)==tokenContent(tb);
+    case TokenId.LINE_COMMENT then tokenContentEq(ta,tb);
+    case TokenId.STRING then tokenContentEq(ta,tb);
     case TokenId.WHITESPACE then true; // tokenContent(ta)==tokenContent(tb);
     else true;
   end match;
 end modelicaDiffTokenEq;
 
 function modelicaDiffTokenWhitespace
-  import LexerModelicaDiff.{Token,TokenId,tokenContent};
+  import LexerModelicaDiff.{Token,TokenId};
   input Token t;
   output Boolean b;
 protected
@@ -413,7 +422,7 @@ algorithm
 end blockCommentCanonical;
 
 function deleteWhitespaceFollowedByEqualNonWhitespace
-  import LexerModelicaDiff.{Token,TokenId,TOKEN,tokenContent};
+  import LexerModelicaDiff.{Token,TokenId,TOKEN};
   import DiffAlgorithm.Diff;
   input list<tuple<Diff, Token>> inRest;
   output Boolean b;
@@ -465,5 +474,23 @@ algorithm
   end for;
   result := rest;
 end deleteWhitespaceFollowedByEqualNonWhitespace;
+
+function reportErrors
+  import LexerModelicaDiff.{Token,TokenId,tokenContent,tokenSourceInfo};
+  input list<Token> tokens;
+protected
+  Integer i=0;
+algorithm
+  for t in tokens loop
+    i := i+1;
+    if i>10 then
+      Error.addMessage(Error.SCANNER_ERROR_LIMIT, {});
+    end if;
+    Error.addSourceMessage(Error.SCANNER_ERROR, {tokenContent(t)}, tokenSourceInfo(t));
+  end for;
+  if not listEmpty(tokens) then
+    fail();
+  end if;
+end reportErrors;
 
 annotation(__OpenModelica_Interface="backend");

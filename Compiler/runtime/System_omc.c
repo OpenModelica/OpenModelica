@@ -255,6 +255,15 @@ extern int System_strcmp(const char *str1, const char *str2)
   return res;
 }
 
+extern int System_strcmp_offset(const char *str1, int offset1, int length1, const char *str2, int offset2, int length2)
+{
+  int n = length1 > length2 ? length1 : length2;
+  int res = strncmp(str1+offset1-1, str2+offset2-1, n);
+  if (res>0) res = 1;
+  else if (res<0) res = -1;
+  return res;
+}
+
 extern int System_getHasExpandableConnectors()
 {
   return hasExpandableConnectors;

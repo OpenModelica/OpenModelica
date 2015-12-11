@@ -673,8 +673,7 @@ algorithm
     case (cache, graph, _, (st as GlobalScript.SYMBOLTABLE(ast=p)), filenameprefix, _, _, _) equation
       // calculate stuff that we need to create SimCode data structure
       System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
-      System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT);
-      System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);
+      SimCodeFunctionUtil.execStatReset();
       (cache, graph, dae, st) = CevalScriptBackend.runFrontEnd(cache, graph, className, st, false);
       SimCodeFunctionUtil.execStat("FrontEnd");
       timeFrontend = System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);

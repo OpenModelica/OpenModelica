@@ -466,8 +466,7 @@ algorithm
       equation
         //print("Class to instantiate: " + Config.classToInstantiate() + "\n");
         isEmptyOrFirstIsModelicaFile(libs);
-        System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT);
-        System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);
+        SimCodeFunctionUtil.execStatReset();
         // Parse libraries and extra mo-files that might have been given at the command line.
         GlobalScript.SYMBOLTABLE(ast = p) = List.fold(libs, loadLib, GlobalScript.emptySymboltable);
         // Show any errors that occured during parsing.

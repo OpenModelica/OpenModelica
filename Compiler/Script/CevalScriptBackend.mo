@@ -95,6 +95,7 @@ import NFInst;
 import NFSCodeEnv;
 import NFSCodeFlatten;
 import SimCodeMain;
+import SimpleModelicaParser;
 import System;
 import StaticScript;
 import SCode;
@@ -659,7 +660,7 @@ public function cevalInteractiveFunctions3
   output Values.Value outValue;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
 protected
-  import LexerModelicaDiff.{Token,TokenId,tokenContent,scanString,filterModelicaDiff,modelicaDiffTokenEq,modelicaDiffTokenWhitespace};
+  import LexerModelicaDiff.{Token,TokenId,tokenContent,scanString,reportErrors,filterModelicaDiff,modelicaDiffTokenEq,modelicaDiffTokenWhitespace};
   import DiffAlgorithm.{Diff,diff,printActual,printDiffTerminalColor,printDiffXml};
 algorithm
   (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (inCache,inEnv,inFunctionName,inVals,inSt,msg)
@@ -745,8 +746,10 @@ algorithm
       SCode.Encapsulated encflag;
       SCode.Restriction restr;
       list<list<Values.Value>> valsLst;
-      list<Token> tokens1, tokens2;
+      list<Token> tokens1, tokens2, errorTokens;
+      list<SimpleModelicaParser.ParseTree> parseTree1, parseTree2;
       list<tuple<Diff, list<Token>>> diffs;
+      list<tuple<Diff, list<SimpleModelicaParser.ParseTree>>> treeDiffs;
 
     case (cache,_,"setClassComment",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str)},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
@@ -828,27 +831,75 @@ algorithm
 
     case (cache,_,"diffModelicaFileListings",{Values.STRING(s1),Values.STRING(s2),Values.ENUM_LITERAL(name=path)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       algorithm
-        tokens1 := scanString(s1);
+        SimCodeFunctionUtil.execStatReset();
+
+        (tokens1, errorTokens) := scanString(s1);
+        reportErrors(errorTokens);
+
+        if false and s1<>stringAppendList(list(tokenContent(t) for t in tokens1)) then
+          // Debugging code. Make sure the scanner works before debugging the diff.
+          System.writeFile("string.before", s1);
+          System.writeFile("string.after", stringAppendList(list(tokenContent(t) for t in tokens1)));
+          Error.assertion(false, "Lexed string does not match the original. See files string.before and string.after", sourceInfo());
+          fail();
+        end if;
+
+        SimCodeFunctionUtil.execStat("diffModelicaFileListings scan string 1");
+        (_,parseTree1) := SimpleModelicaParser.stored_definition(tokens1, {});
+        SimCodeFunctionUtil.execStat("diffModelicaFileListings parse string 1");
+
+        if false and s1<>SimpleModelicaParser.parseTreeStr(parseTree1) then
+          // Debugging code. Make sure the parser works before debugging the diff.
+          System.writeFile("string.before", s1);
+          System.writeFile("string.after", SimpleModelicaParser.parseTreeStr(parseTree1));
+          Error.assertion(false, "Parsed string does not match the original. See files string.before and string.after", sourceInfo());
+          fail();
+        end if;
+
         tokens2 := scanString(s2);
+        reportErrors(errorTokens);
+        SimCodeFunctionUtil.execStat("diffModelicaFileListings scan string 2");
+        (_,parseTree2) := SimpleModelicaParser.stored_definition(tokens2, {});
+        SimCodeFunctionUtil.execStat("diffModelicaFileListings parse string 2");
+
+        if false and s2<>SimpleModelicaParser.parseTreeStr(parseTree2) then
+          // Debugging code. Make sure the parser works before debugging the diff.
+          System.writeFile("string.before", s2);
+          System.writeFile("string.after", SimpleModelicaParser.parseTreeStr(parseTree2));
+          Error.assertion(false, "Parsed string does not match the original. See files string.before and string.after", sourceInfo());
+          fail();
+        end if;
+
+        treeDiffs := SimpleModelicaParser.treeDiff(parseTree1, parseTree2, max(listLength(tokens1),listLength(tokens2)));
+
+        SimCodeFunctionUtil.execStat("treeDiff");
+
+        /*
         diffs := diff(tokens1, tokens2, modelicaDiffTokenEq, modelicaDiffTokenWhitespace, tokenContent);
+        SimCodeFunctionUtil.execStat("diffModelicaFileListings diff 1");
         // print("Before filtering:\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
         diffs := filterModelicaDiff(diffs,removeWhitespace=false);
+        SimCodeFunctionUtil.execStat("diffModelicaFileListings filter diff 1");
         // Scan a second time, with comments filtered into place
         str := printActual(diffs, tokenContent);
         // print("Intermediate string:\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
         tokens2 := scanString(str);
+        SimCodeFunctionUtil.execStat("diffModelicaFileListings prepare pass 2");
         diffs := diff(tokens1, tokens2, modelicaDiffTokenEq, modelicaDiffTokenWhitespace, tokenContent);
+        SimCodeFunctionUtil.execStat("diffModelicaFileListings diff 2");
         // print("Before filtering (2):\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
         diffs := filterModelicaDiff(diffs);
-        str := match Absyn.pathLastIdent(path)
-          case "plain" then printActual(diffs, tokenContent);
-          case "color" then printDiffTerminalColor(diffs, tokenContent);
-          case "xml" then printDiffXml(diffs, tokenContent);
+        SimCodeFunctionUtil.execStat("diffModelicaFileListings filter diff 2");
+        */
+        str := matchcontinue Absyn.pathLastIdent(path)
+          case "plain" then printActual(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
+          case "color" then printDiffTerminalColor(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
+          case "xml" then printDiffXml(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
           else
             algorithm
               Error.addInternalError("Unknown diffModelicaFileListings choice", sourceInfo());
             then fail();
-        end match;
+        end matchcontinue;
       then (cache,Values.STRING(str),st);
 
     case (cache,_,"diffModelicaFileListings",_,st,_) then (cache,Values.STRING(""),st);

@@ -265,5 +265,20 @@ algorithm
   outStrings := listReverseInPlace(outStrings);
 end wordWrap;
 
+function repeat
+  "Repeat str n times"
+  input String str;
+  input Integer n;
+  output String res="";
+protected
+  Integer len = stringLength(str);
+  System.StringAllocator ext = System.StringAllocator(len*n);
+algorithm
+  for i in 0:n-1 loop
+    System.stringAllocatorStringCopy(ext, str, len*i);
+  end for;
+  res := System.stringAllocatorResult(ext, res);
+end repeat;
+
 annotation(__OpenModelica_Interface="util");
 end StringUtil;

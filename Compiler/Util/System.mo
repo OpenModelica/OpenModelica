@@ -80,6 +80,19 @@ public function strcmp
   external "C" outInteger=System_strcmp(inString1,inString2) annotation(Library = "omcruntime");
 end strcmp;
 
+public function strcmp_offset
+"Like strcmp, but also takes offset and lengths of the strings in order to avoid building them through substring"
+  input String string1;
+  input Integer offset1;
+  input Integer length1;
+  input String string2;
+  input Integer offset2;
+  input Integer length2;
+  output Integer outInteger;
+
+  external "C" outInteger=System_strcmp_offset(string1,offset1,length1,string2,offset2,length2) annotation(Library = "omcruntime");
+end strcmp_offset;
+
 public function stringFind "locates substring searchStr in str. If succeeds return position, otherwise return -1"
   input String str;
   input String searchStr;
@@ -1194,6 +1207,9 @@ class StringAllocator
   external "C" str=StringAllocator_constructor(sz) annotation(Include="
 void* StringAllocator_constructor(int sz)
 {
+  if (sz < 0) {
+    MMC_THROW();
+  }
   return mmc_alloc_scon(sz);
 }
 ");
@@ -1221,7 +1237,7 @@ end stringAllocatorStringCopy;
 
 function stringAllocatorResult<T>
   input StringAllocator sa;
-  input T dummy annotation(__OpenModelica_UnusedVariable=true);
+  input T dummy "This is just added so we do not make an extra allocation for the string" annotation(__OpenModelica_UnusedVariable=true);
   output T res;
 external "C" res=om_stringAllocatorResult(sa) annotation(Include="
 const char* om_stringAllocatorResult(void *sa) {

@@ -83,7 +83,7 @@ algorithm
   start2 := 1;
   end1 := arrayLength(arr1);
   end2 := arrayLength(arr2);
-  out := diffSeq(arr1,arr2,equals,isWhitespace,toString,1,arrayLength(arr1),1,arrayLength(arr2));
+  out := diffSeq(arr1, arr2, equals, isWhitespace, toString, 1, arrayLength(arr1), 1, arrayLength(arr2));
 end diff;
 
 partial function partialPrintDiff<T>
@@ -123,7 +123,7 @@ algorithm
       case (Diff.Delete,ts)
         then (DiffStrings.delOpen,DiffStrings.delClose,ts,DiffStrings.printDelete);
     end match;
-    if b or (DiffStrings.printEqual and DiffStrings.printAdd and DiffStrings.printDelete /* optimization */) then
+    if not listEmpty(ts) and (b or (DiffStrings.printEqual and DiffStrings.printAdd and DiffStrings.printDelete /* optimization */)) then
       Print.printBuf(open);
       for t in ts loop
         Print.printBuf(toString(t));

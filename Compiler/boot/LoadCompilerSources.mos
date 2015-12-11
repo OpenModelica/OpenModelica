@@ -278,6 +278,7 @@ if true then /* Suppress output */
     "../FrontEnd/UnitChecker.mo",
 
     "../Lexers/LexerModelicaDiff.mo",
+    "../Parsers/SimpleModelicaParser.mo",
 
     "../Script/Refactor.mo",
     "../Script/RewriteRules.mo",

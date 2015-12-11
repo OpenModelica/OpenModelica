@@ -111,6 +111,14 @@ function getStacktraceMessages
 </html>"));
 end getStacktraceMessages;
 
+function setStacktraceMessages
+  input Integer numSkip;
+  input Integer numFrames;
+  external "C" mmc_setStacktraceMessages_threadData(OpenModelica.threadData(), numSkip, numFrames)annotation(Documentation(info="<html>
+<p>Generate a stacktrace at the current position of code.</p>
+</html>"));
+end setStacktraceMessages;
+
 function hasStacktraceMessages
   output Boolean b;
   external "C" b=mmc_hasStacktraceMessages(OpenModelica.threadData())annotation(Documentation(info="<html>
