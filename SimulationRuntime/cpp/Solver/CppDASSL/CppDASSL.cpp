@@ -68,10 +68,10 @@ void CppDASSL::initialize()
     ITime *time_system =  dynamic_cast<ITime*>(_system);
     _numThreads=_cppdasslsettings->getGlobalSettings()->getSolverThreads();
     dasslSolver.setNumThreads(_numThreads);
-    _continuous_systems = vector<IContinuous*>(_numThreads, NULL);
-    _time_systems = vector<ITime*>(_numThreads, NULL);
-    _mixed_systems = vector<IMixedSystem*>(_numThreads, NULL);
-    _state_selections=vector<IStateSelection*>(_numThreads, NULL);
+    _continuous_systems = vector<IContinuous*>(size_t(_numThreads), NULL);
+    _time_systems = vector<ITime*>(size_t(_numThreads), NULL);
+    _mixed_systems = vector<IMixedSystem*>(size_t(_numThreads), NULL);
+    _state_selections=vector<IStateSelection*>(size_t(_numThreads), NULL);
     _continuous_systems[0] = continuous_system;
     _time_systems[0] = time_system;
     _event_system = dynamic_cast<IEvent*>(_system);
