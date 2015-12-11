@@ -311,15 +311,6 @@ DebuggerConfigurationPage::DebuggerConfigurationPage(DebuggerConfiguration debug
   setLayout(pMainLayout);
 }
 
-bool DebuggerConfigurationPage::isDirty()
-{
-  return (mpNameTextBox->isModified()
-          || mpProgramTextBox->isModified()
-          || mpWorkingDirectoryTextBox->isModified()
-          || mpGDBPathTextBox->isModified()
-          || mpArgumentsTextBox->document()->isModified());
-}
-
 bool DebuggerConfigurationPage::configurationExists(QString configurationKeyToCheck)
 {
   QSettings *pSettings = OpenModelica::getApplicationSettings();
@@ -375,24 +366,17 @@ void DebuggerConfigurationPage::browseGDBPath()
   */
 bool DebuggerConfigurationPage::saveDebugConfiguration()
 {
-  if (!isDirty())
-    return true;
-
   QSettings *pSettings = OpenModelica::getApplicationSettings();
   pSettings->beginGroup("debuggerConfigurationList");
   // remove the configuration setting if we have changed its name. But first check if there is no configuration with the new name.
-  if (mDebuggerConfiguration.name.compare(mpNameTextBox->text()) != 0)
-  {
-    if (configurationExists(mpNameTextBox->text()))
-    {
+  if (mDebuggerConfiguration.name.compare(mpNameTextBox->text()) != 0) {
+    if (configurationExists(mpNameTextBox->text())) {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
                             GUIMessages::getMessage(GUIMessages::DEBUG_CONFIGURATION_EXISTS_MSG).arg(mpNameTextBox->text())
                             .arg(mDebuggerConfiguration.name), Helper::ok);
       pSettings->endGroup();
       return false;
-    }
-    else
-    {
+    } else {
       pSettings->remove(mDebuggerConfiguration.name);
     }
   }
