@@ -19,6 +19,8 @@
 #     if write output should be handled in parallel                                -DUSE_PARALLEL_OUTPUT=ON [default: OFF]
 #     if ScoreP should be used for performance analysis                            -DUSE_SCOREP=ON [default: OFF]
 #     the path to the scorep-installation                                          -DSCOREP_HOME="..." [default: ""]
+#     if dgesv library should NOT be used to solve simple equation systems in FMUs -DUSE_DGESV=OFF [default: ON]
+#     the path to the dgesv-installation                                           -DDGESV_HOME="..." [default: ""]
 #     if the boost libraries should be linked statically                           -DBOOST_STATIC_LINKING=ON [default: OFF]
 #     if boost libraries should be linked against absolute path libraries          -DUSE_BOOST_REALPATHS=ON [default: OFF]
 #     disable c++11, even if the compiler is able to use it                        -DUSE_CPP_03=ON [default: OFF]
@@ -42,6 +44,7 @@ STRING(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
 #Set Options
 OPTION(USE_PARALLEL_OUTPUT "USE_PARALLEL_OUTPUT" OFF)
 OPTION(USE_SCOREP "USE_SCOREP" OFF)
+OPTION(USE_DGESV "USE_DGESV" ON)
 OPTION(BOOST_STATIC_LINKING "BOOST_STATIC_LINKING" OFF)
 OPTION(USE_BOOST_REALPATHS "USE_BOOST_REALPATHS" OFF)
 OPTION(RUNTIME_PROFILING "RUNTIME_PROFILING" OFF)
@@ -87,6 +90,7 @@ SET(ExtensionUtilitiesName ${LIBPREFIX}ExtensionUtilities)
 SET(BasiLibName ${LIBPREFIX}Base)
 SET(ModelicaCompilerName ${LIBPREFIX}ModelicaCompiler)
 SET(FMUName ${LIBPREFIX}FMU)
+SET(DgesvName ${LIBPREFIX}Dgesv)
 
 SET(USE_MICO OFF)
 SET(REDUCE_DAE OFF)
@@ -105,7 +109,7 @@ ENDIF(USE_BOOST_REALPATHS)
 
 # Precompiled Header
 IF(MSVC)
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zm113")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zm113")
 ENDIF(MSVC)
 INCLUDE(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
 
@@ -188,10 +192,24 @@ IF(USE_SCOREP)
   MESSAGE(STATUS "ScoreP enabled")
   include_directories(${SCOREP_INCLUDE_DIR})
 ELSE(USE_SCOREP)
-    SET(SCOREP_INCLUDE_ ".")
-    SET(USE_SCOREP_ "OFF")
+  SET(SCOREP_INCLUDE_ ".")
+  SET(USE_SCOREP_ "OFF")
   MESSAGE(STATUS "ScoreP disabled")
 ENDIF(USE_SCOREP)
+
+# Handle dgesv
+IF(USE_DGESV)
+  ADD_DEFINITIONS(-DUSE_DGESV)
+  SET(USE_DGESV_ "ON")
+  FIND_PACKAGE(Dgesv)
+  SET(DGESV_INCLUDE_ ${DGESV_INCLUDE_DIR})
+  MESSAGE(STATUS "Dgesv enabled")
+ELSE(USE_DGESV)
+  SET(DGESV_INCLUDE_ ".")
+  SET(USE_DGESV_ "OFF")
+  MESSAGE(STATUS "Dgesv disabled")
+ENDIF(USE_DGESV)
+
 
 # Handle runtime profiling
 IF(RUNTIME_PROFILING)
@@ -522,6 +540,13 @@ include_directories ("Solver")
 #include_directories ("Include/Solver/KLU")
 
 #add_subdirectory (Solver/KLU)
+# Needs to be included before Core/Modelica othwise environment variables are not set.
+IF(USE_DGESV)
+  ADD_SUBDIRECTORY(Solver/Dgesv)
+
+  GET_TARGET_PROPERTY(libDgesv ${DgesvName} LOCATION)
+  GET_FILENAME_COMPONENT(libDgesvName ${libDgesv} NAME)
+ENDIF(USE_DGESV)
 
 add_subdirectory (Core/Modelica)
 add_subdirectory (Core/Math)
@@ -634,7 +659,6 @@ GET_FILENAME_COMPONENT(libRTEulerName ${libRTEuler} NAME)
 GET_TARGET_PROPERTY(libHybrj ${HybrjName} LOCATION)
 GET_FILENAME_COMPONENT(libHybrjName ${libHybrj} NAME)
 
-
 GET_TARGET_PROPERTY(libSetFactory ${SimulationSettings} LOCATION)
 GET_FILENAME_COMPONENT(libSetFactoryName ${libSetFactory} NAME)
 
@@ -686,6 +710,7 @@ set (SIMCONTROLLER_LIB ${libSimControllerName})
 set (EXTENSIONUTILITIES_LIB ${libExtensionUtilitiesName})
 set (MODELICACOMPILER_LIB ${libModelicaCompilerName})
 set (FMU_LIB ${libFMUName})
+set (DGESV_LIB ${libDgesvName})
 
 # configure a header file to pass some library names
 # to the source code which are used to dynamic load and instantiate
