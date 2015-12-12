@@ -87,10 +87,8 @@ areas. If you want OMEdit to remember the new docked position of the
 browsers then you must enable Preserve User's GUI Customizations option,
 see section :ref:`omedit-settings-general`.
 
-Search Browser
+Search Classes
 ~~~~~~~~~~~~~~
-
-  Search Classes.
 
 To search a class click Edit->Search Classes or press keyboard
 shortcut Ctrl+Shift+F. The loaded Modelica classes can be searched by
@@ -335,8 +333,7 @@ Output Tab
 
 -  *Protected Variables –* adds the protected variables in result file.
 
--  *Equidistant Time Grid –* output the internal steps given by dassl instead of interpolating results
-       into an equidistant time grid as given by stepSize or numberOfIntervals
+-  *Equidistant Time Grid –* output the internal steps given by dassl instead of interpolating results into an equidistant time grid as given by stepSize or numberOfIntervals
 
 -  *Store Variables at Events –* adds the variables at time events.
 
@@ -566,6 +563,10 @@ General
 -  *Preserve User’s GUI Customizations* – If true then OMEdit will
    remember its windows and toolbars positions and sizes.
 
+-  *Terminal Command* – Sets the terminal command.
+
+-  *Terminal Command Arguments* – Sets the terminal command arguments.
+
 -  Libraries Browser
 
 -  *Library Icon Size* – Sets the size for library icons.
@@ -575,10 +576,6 @@ General
 -  Modeling View Mode
 
 -  *Tabbed View/SubWindow View* – Sets the view mode for modeling.
-
--  Plotting View Mode
-
--  *Tabbed View/SubWindow View* – Sets the view mode for plotting.
 
 -  Default View
 
@@ -621,11 +618,22 @@ Libraries
 Modelica Text Editor
 ~~~~~~~~~~~~~~~~~~~~
 
--  General
+-  Tabs and Indentation
+
+-  *Tab Policy* – Sets the tab policy to either spaces or tabs only.
+
+-  *Tab Size* – Sets the tab size.
+
+-  *Indent Size* – Sets the indent size.
+
+-  Syntax Highlight and Text Wrapping
 
 -  *Enable Syntax Highlighting* – Enable/Disable the syntax highlighting
    for the Modelica Text Widget.
 
+-  *Match Parentheses within Comments and Quotes* – Enable/Disable the matching of parenthese
+   within comments and quotes.
+   
 -  *Enable Line Wrapping* – Enable/Disable the line wrapping for the
    Modelica Text Widget.
 
@@ -679,6 +687,10 @@ Simulation
 
 -  *Index Reduction Method* – sets the index reduction method for
    simulation.
+
+-  *Target Language* – sets the target language in which the code is generated.
+
+-  *Target Compiler* – sets the target compiler for compiling the generated code.
 
 -  *OMC Flags* – sets the omc flags for simulation.
 
@@ -770,8 +782,16 @@ Fill Style
 
 -  *Pattern* – Sets the fill pattern.
 
-Curve Style
-~~~~~~~~~~~
+Plotting
+~~~~~~~~
+
+-  General
+
+-  *Auto Scale* – sets whether to auto scale the plots or not.
+
+-  Plotting View Mode
+
+-  *Tabbed View/SubWindow View* – Sets the view mode for plotting.
 
 -  Curve Style
 
@@ -784,13 +804,11 @@ Figaro
 
 -  Figaro
 
--  *Figaro Database File* – the Figaro database file path.
+-  *Figaro Library* – the Figaro library file path.
 
--  *Figaro Mode* –
+-  *Tree generation options* – the Figaro tree generation options file path.
 
--  *Figaro Options File* – the Figaro options file path.
-
--  *Figaro Process* – the Figaro process location.
+-  *Figaro Processor* – the Figaro processor location.
 
 .. _omedit-settings-debugger :
 
@@ -802,6 +820,8 @@ Debugger
 -  *GDB Path* – the gnu debugger path
 
 -  *GDB Command Timeout* – timeout for gdb commands.
+
+-  *GDB Output Limit* – limits the GDB output to N characters.
 
 -  *Display C frames* – if true then shows the C stack frames.
 
@@ -830,9 +850,21 @@ FMI
 
 -  Export
 
--  *Version 1.0* – Sets the FMI export version to 1.0
+-  Version
 
--  *Version 2.0* – Sets the FMI export version to 2.0
+  -  *1.0* – Sets the FMI export version to 1.0
+
+  -  *2.0* – Sets the FMI export version to 2.0
+
+-  Type
+
+  -  *Model Exchange* – Sets the FMI export type to Model Exchange.
+
+  -  *Co-Simulation* – Sets the FMI export type to Co-Simulation.
+
+  -  *Model Exchange and Co-Simulation* – Sets the FMI export type to Model Exchange and Co-Simulation.
+
+-  *FMU Name* – Sets a prefix for generated FMU file.
 
 Debugger
 --------
