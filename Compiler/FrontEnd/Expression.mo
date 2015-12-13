@@ -4155,6 +4155,21 @@ algorithm
   outExp := DAE.CALL(Absyn.IDENT("max"),{e1,e2},DAE.CALL_ATTR(tp,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 end expMaxScalar;
 
+public function expOptMaxScalar
+  input Option<DAE.Exp> e1;
+  input Option<DAE.Exp> e2;
+  output Option<DAE.Exp> outExp;
+protected
+algorithm
+  outExp := match(e1,e2)
+            local DAE.Exp e11, e22;
+            case(_, NONE()) then e1;
+            case(NONE(), ) then e2;
+            case(SOME(e11), SOME(e22)) then SOME(expMaxScalar(e11, e22));
+            end match;
+end expOptMaxScalar;
+
+
 public function expMinScalar "author: Frenkel TUD 2011-04
   returns min(e1,e2)."
   input DAE.Exp e1;
@@ -4167,6 +4182,21 @@ algorithm
   tp := typeof(e1);
   outExp := DAE.CALL(Absyn.IDENT("min"),{e1,e2},DAE.CALL_ATTR(tp, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
 end expMinScalar;
+
+public function expOptMinScalar
+  input Option<DAE.Exp> e1;
+  input Option<DAE.Exp> e2;
+  output Option<DAE.Exp> outExp;
+protected
+algorithm
+  outExp := match(e1,e2)
+            local DAE.Exp e11, e22;
+            case(_, NONE()) then e1;
+            case(NONE(), ) then e2;
+            case(SOME(e11), SOME(e22)) then SOME(expMinScalar(e11, e22));
+            end match;
+end expOptMinScalar;
+
 
 public function makeProductVector "takes and expression e1 and a list of expressisions {v1,v2,...,vn} and returns
 {e1*v1,e1*v2,...,e1*vn}"

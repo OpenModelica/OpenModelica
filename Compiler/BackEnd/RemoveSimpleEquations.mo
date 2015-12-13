@@ -3093,72 +3093,17 @@ protected function mergeMinMax1 "author: Frenkel TUD 2012-12"
   input tuple<Option<DAE.Exp>, Option<DAE.Exp>> ominmax;
   input tuple<Option<DAE.Exp>, Option<DAE.Exp>> ominmax1;
   output tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+protected
+  Option<DAE.Exp> omin, omin1;
+  Option<DAE.Exp> omax, omax1;
 algorithm
-  minMax :=
-  match (ominmax, ominmax1)
-    local
-      DAE.Exp min, max, min1, max1, min_2, max_2, smin, smax;
-    // (_, _), ()
-    case (_, (NONE(), NONE()))
-      then ominmax;
-    case ((NONE(), NONE()), _)
-      then ominmax1;
-    // (min, ), (min, )
-    case ((SOME(min), NONE()), (SOME(min1), NONE()))
-      equation
-        min_2 = Expression.expMaxScalar(min, min1);
-        (smin, _) = ExpressionSimplify.simplify(min_2);
-      then ((SOME(smin), NONE()));
-    // (, max), (, max)
-    case ((NONE(), SOME(max)), (NONE(), SOME(max1)))
-      equation
-        max_2 = Expression.expMinScalar(max, max1);
-        (smax, _) = ExpressionSimplify.simplify(max_2);
-      then ((NONE(), SOME(smax)));
-    // (min, ), (, max)
-    case ((SOME(min), NONE()), (NONE(), SOME(max1)))
-      then ((SOME(min), SOME(max1)));
-    // (, max), (min, )
-    case ((NONE(), SOME(max)), (SOME(min1), NONE()))
-      then ((SOME(min1), SOME(max)));
-    // (, max), (min, max)
-    case ((NONE(), SOME(max)), (SOME(min1), SOME(max1)))
-      equation
-        max_2 = Expression.expMinScalar(max, max1);
-        (smax, _) = ExpressionSimplify.simplify(max_2);
-      then ((SOME(min1), SOME(smax)));
-    // (min, max), (, max)
-    case ((SOME(min), SOME(max)), (NONE(), SOME(max1)))
-      equation
-        max_2 = Expression.expMinScalar(max, max1);
-        (smax, _) = ExpressionSimplify.simplify(max_2);
-      then ((SOME(min), SOME(smax)));
-    // (min, ), (min, max)
-    case ((SOME(min), NONE()), (SOME(min1), SOME(max1)))
-      equation
-        min_2 = Expression.expMaxScalar(min, min1);
-        (smin, _) = ExpressionSimplify.simplify(min_2);
-      then ((SOME(smin), SOME(max1)));
-    // (min, max), (min, )
-    case ((SOME(min), SOME(max)), (SOME(min1), NONE()))
-      equation
-        min_2 = Expression.expMaxScalar(min, min1);
-        (smin, _) = ExpressionSimplify.simplify(min_2);
-      then ((SOME(smin), SOME(max)));
-    // (min, max), (min, max)
-    case ((SOME(min), SOME(max)), (SOME(min1), SOME(max1)))
-      equation
-        min_2 = Expression.expMaxScalar(min, min1);
-        max_2 = Expression.expMinScalar(max, max1);
-        (smin, _) = ExpressionSimplify.simplify(min_2);
-        (smax, _) = ExpressionSimplify.simplify(max_2);
-      then ((SOME(smin), SOME(smax)));
-    else
-      equation
-        print("RemoveSimpleEquations.mergeMinMax1 failed!\n");
-      then
-        fail();
-  end match;
+  (omin, omax) := ominmax;
+  (omin1, omax1) := ominmax1;
+
+  omin := Expression.expOptMaxScalar(omin, omin1);
+  omax := Expression.expOptMinScalar(omax, omax1);
+  minMax := (omin, omax);
+
 end mergeMinMax1;
 
 protected function checkMinMax "author: Frenkel TUD 2012-12"
