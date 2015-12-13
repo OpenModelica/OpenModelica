@@ -1467,7 +1467,7 @@ simulate(TestMedia.TestModels.TestWater); getErrorString();
 //   output Real rho_der \"derivative of density\";
 // algorithm
 //   if aux.region == 4 then
-//     rho_der := aux.rho * (1.0 + aux.rho * aux.cv / aux.dpT) * p_der / (aux.T * aux.dpT) - h_der * aux.rho ^ 2.0 / (aux.T * aux.dpT);
+//     rho_der := aux.rho * (1.0 + aux.rho * aux.cv / aux.dpT) * p_der / (aux.T * aux.dpT) - h_der * aux.rho ^ 2.0 / (aux.dpT * aux.T);
 //   elseif aux.region == 3 then
 //     rho_der := aux.rho * (aux.cv * aux.rho + aux.pt) * p_der / (aux.rho ^ 2.0 * aux.pd * aux.cv + aux.T * aux.pt ^ 2.0) - aux.rho ^ 2.0 * aux.pt * h_der / (aux.rho ^ 2.0 * aux.pd * aux.cv + aux.T * aux.pt ^ 2.0);
 //   else

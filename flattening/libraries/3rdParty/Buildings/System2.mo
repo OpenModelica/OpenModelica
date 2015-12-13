@@ -9649,9 +9649,9 @@ end System2;
 //   vol.dynBal.medium.state.T = vol.dynBal.medium.T;
 //   vol.dynBal.medium.state.X[1] = vol.dynBal.medium.X[1];
 //   vol.dynBal.medium.state.X[2] = vol.dynBal.medium.X[2];
-//   vol.dynBal.medium.x_sat = steam.MM * vol.dynBal.medium.p_steam_sat / (dryair.MM * max(1e-13, vol.dynBal.medium.p - vol.dynBal.medium.p_steam_sat));
+//   vol.dynBal.medium.x_sat = steam.MM * vol.dynBal.medium.p_steam_sat / (max(1e-13, vol.dynBal.medium.p - vol.dynBal.medium.p_steam_sat) * dryair.MM);
 //   vol.dynBal.medium.x_water = vol.dynBal.medium.Xi[1] / max(vol.dynBal.medium.X_air, 1e-13);
-//   vol.dynBal.medium.phi = vol.dynBal.medium.p * vol.dynBal.medium.Xi[1] / (vol.dynBal.medium.p_steam_sat * (vol.dynBal.medium.Xi[1] + steam.MM * vol.dynBal.medium.X_air / dryair.MM));
+//   vol.dynBal.medium.phi = vol.dynBal.medium.p * vol.dynBal.medium.Xi[1] / ((vol.dynBal.medium.Xi[1] + steam.MM * vol.dynBal.medium.X_air / dryair.MM) * vol.dynBal.medium.p_steam_sat);
 //   vol.dynBal.medium.Xi[1] = vol.dynBal.medium.X[1];
 //   vol.dynBal.medium.X[2] = 1.0 - vol.dynBal.medium.Xi[1];
 //   assert(vol.dynBal.medium.X[1] >= -1e-05 and vol.dynBal.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(vol.dynBal.medium.X[1], 0, true, 6) + "of substance " + "water" + "

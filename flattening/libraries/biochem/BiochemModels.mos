@@ -1098,7 +1098,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   cytosol.vpfk.s1.r = cytosol.vpfk.nS1 * cytosol.vpfk.rr;
 //   cytosol.vpfk.p1.r = (-cytosol.vpfk.nP1) * cytosol.vpfk.rr;
 //   cytosol.vpfk.p2.r = (-cytosol.vpfk.nP2) * cytosol.vpfk.rr;
-//   cytosol.vldh.rr = cytosol.vldh.e0 * (cytosol.vldh.s2.c * cytosol.vldh.s1.c * cytosol.vldh.kf / (cytosol.vldh.kmb * cytosol.vldh.kia) - cytosol.vldh.kr * cytosol.vldh.p1.c * cytosol.vldh.m1.c / (cytosol.vldh.kmp * cytosol.vldh.kiq)) / (cytosol.vldh.s2.c * (1.0 / cytosol.vldh.kia + (1.0 / (cytosol.vldh.kmb * cytosol.vldh.kia) + cytosol.vldh.p1.c / (cytosol.vldh.kia * cytosol.vldh.kip * cytosol.vldh.kmb)) * cytosol.vldh.s1.c + cytosol.vldh.kmq * cytosol.vldh.p1.c / (cytosol.vldh.kmp * cytosol.vldh.kiq * cytosol.vldh.kia)) + (1.0 + cytosol.vldh.s1.c / cytosol.vldh.k1ib) * (1.0 + cytosol.vldh.s1.c * cytosol.vldh.kma / (cytosol.vldh.kmb * cytosol.vldh.kia) + cytosol.vldh.kmq * cytosol.vldh.p1.c / (cytosol.vldh.kiq * cytosol.vldh.kmp)) + cytosol.vldh.m1.c / cytosol.vldh.kiq + cytosol.vldh.s1.c * cytosol.vldh.kma * cytosol.vldh.m1.c / (cytosol.vldh.kia * cytosol.vldh.kiq * cytosol.vldh.kmb) + cytosol.vldh.p1.c * cytosol.vldh.m1.c / (cytosol.vldh.kmp * cytosol.vldh.kiq) + cytosol.vldh.s1.c * cytosol.vldh.p1.c * cytosol.vldh.m1.c / (cytosol.vldh.kib * cytosol.vldh.kiq * cytosol.vldh.kmp));
+//   cytosol.vldh.rr = cytosol.vldh.e0 * (cytosol.vldh.s2.c * cytosol.vldh.s1.c * cytosol.vldh.kf / (cytosol.vldh.kmb * cytosol.vldh.kia) - cytosol.vldh.kr * cytosol.vldh.p1.c * cytosol.vldh.m1.c / (cytosol.vldh.kmp * cytosol.vldh.kiq)) / (cytosol.vldh.s2.c * (1.0 / cytosol.vldh.kia + (1.0 / (cytosol.vldh.kmb * cytosol.vldh.kia) + cytosol.vldh.p1.c / (cytosol.vldh.kmb * cytosol.vldh.kip * cytosol.vldh.kia)) * cytosol.vldh.s1.c + cytosol.vldh.kmq * cytosol.vldh.p1.c / (cytosol.vldh.kmp * cytosol.vldh.kiq * cytosol.vldh.kia)) + (1.0 + cytosol.vldh.s1.c / cytosol.vldh.k1ib) * (1.0 + cytosol.vldh.s1.c * cytosol.vldh.kma / (cytosol.vldh.kmb * cytosol.vldh.kia) + cytosol.vldh.kmq * cytosol.vldh.p1.c / (cytosol.vldh.kmp * cytosol.vldh.kiq)) + cytosol.vldh.m1.c / cytosol.vldh.kiq + cytosol.vldh.s1.c * cytosol.vldh.kma * cytosol.vldh.m1.c / (cytosol.vldh.kia * cytosol.vldh.kiq * cytosol.vldh.kmb) + cytosol.vldh.p1.c * cytosol.vldh.m1.c / (cytosol.vldh.kmp * cytosol.vldh.kiq) + cytosol.vldh.s1.c * cytosol.vldh.p1.c * cytosol.vldh.m1.c / (cytosol.vldh.kib * cytosol.vldh.kiq * cytosol.vldh.kmp));
 //   cytosol.vldh.s1.r = cytosol.vldh.nS1 * cytosol.vldh.rr;
 //   cytosol.vldh.s2.r = cytosol.vldh.nS2 * cytosol.vldh.rr;
 //   cytosol.vldh.p1.r = (-cytosol.vldh.nP1) * cytosol.vldh.rr;
@@ -1136,7 +1136,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   cytosol.mitochondria.NADm.c = cytosol.mitochondria.NADm.n1.c;
 //   cytosol.mitochondria.V = cytosol.mitochondria.NADm.n1.V;
 //   cytosol.mitochondria.NADm.c = cytosol.mitochondria.NADm.n / cytosol.mitochondria.V;
-//   cytosol.mitochondria.jox.rr = 10000.0 * cytosol.mitochondria.jox.s1.c * cytosol.mitochondria.jox.s2.c / ((0.01 + cytosol.mitochondria.jox.s1.c) * (0.15 + cytosol.mitochondria.jox.s2.c));
+//   cytosol.mitochondria.jox.rr = 10000.0 * cytosol.mitochondria.jox.s1.c * cytosol.mitochondria.jox.s2.c / ((0.15 + cytosol.mitochondria.jox.s2.c) * (0.01 + cytosol.mitochondria.jox.s1.c));
 //   cytosol.mitochondria.jox.s1.r = cytosol.mitochondria.jox.nS1 * cytosol.mitochondria.jox.rr;
 //   cytosol.mitochondria.jox.s2.r = cytosol.mitochondria.jox.nS2 * cytosol.mitochondria.jox.rr;
 //   cytosol.mitochondria.jox.p1.r = (-cytosol.mitochondria.jox.nP1) * cytosol.mitochondria.jox.rr;
@@ -1160,7 +1160,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   cytosol.G3P.c = cytosol.G3P.n1.c;
 //   cytosol.V = cytosol.G3P.n1.V;
 //   cytosol.G3P.c = cytosol.G3P.n / cytosol.V;
-//   cytosol.vgpdh_1.rr = cytosol.vgpdh_1.KcatGPDH * cytosol.vgpdh_1.s2.c * cytosol.vgpdh_1.s1.c * cytosol.vgpdh_1.m1.c / ((cytosol.vgpdh_1.KmGPDH + cytosol.vgpdh_1.s2.c) * (cytosol.vgpdh_1.s1.c + cytosol.vgpdh_1.KmADP) * (cytosol.vgpdh_1.m1.c + cytosol.vgpdh_1.KmPN));
+//   cytosol.vgpdh_1.rr = cytosol.vgpdh_1.KcatGPDH * cytosol.vgpdh_1.s2.c * cytosol.vgpdh_1.s1.c * cytosol.vgpdh_1.m1.c / ((cytosol.vgpdh_1.m1.c + cytosol.vgpdh_1.KmPN) * (cytosol.vgpdh_1.s1.c + cytosol.vgpdh_1.KmADP) * (cytosol.vgpdh_1.KmGPDH + cytosol.vgpdh_1.s2.c));
 //   cytosol.vgpdh_1.s1.r = cytosol.vgpdh_1.nS1 * cytosol.vgpdh_1.rr;
 //   cytosol.vgpdh_1.s2.r = cytosol.vgpdh_1.nS2 * cytosol.vgpdh_1.rr;
 //   cytosol.vgpdh_1.p1.r = (-cytosol.vgpdh_1.nP1) * cytosol.vgpdh_1.rr;

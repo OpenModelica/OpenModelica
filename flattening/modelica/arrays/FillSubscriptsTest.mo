@@ -6403,7 +6403,7 @@ end Manifold;
 //   sou_2.medium.state.X[2] = sou_2.medium.X[2];
 //   sou_2.medium.x_sat = 0.6219647130774989 * sou_2.medium.p_steam_sat / max(1e-13, sou_2.medium.p - sou_2.medium.p_steam_sat);
 //   sou_2.medium.x_water = sou_2.medium.Xi[1] / max(sou_2.medium.X_air, 1e-13);
-//   sou_2.medium.phi = sou_2.medium.p * sou_2.medium.Xi[1] / (sou_2.medium.p_steam_sat * (sou_2.medium.Xi[1] + 0.6219647130774989 * sou_2.medium.X_air));
+//   sou_2.medium.phi = sou_2.medium.p * sou_2.medium.Xi[1] / ((sou_2.medium.Xi[1] + 0.6219647130774989 * sou_2.medium.X_air) * sou_2.medium.p_steam_sat);
 //   sou_2.medium.Xi[1] = sou_2.medium.X[1];
 //   sou_2.medium.X[2] = 1.0 - sou_2.medium.Xi[1];
 //   assert(sou_2.medium.X[1] >= -1e-05 and sou_2.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(sou_2.medium.X[1], 0, true, 6) + "of substance " + "water" + "
@@ -6440,7 +6440,7 @@ end Manifold;
 //   sin_2.medium.state.X[2] = sin_2.medium.X[2];
 //   sin_2.medium.x_sat = 0.6219647130774989 * sin_2.medium.p_steam_sat / max(1e-13, sin_2.medium.p - sin_2.medium.p_steam_sat);
 //   sin_2.medium.x_water = sin_2.medium.Xi[1] / max(sin_2.medium.X_air, 1e-13);
-//   sin_2.medium.phi = sin_2.medium.p * sin_2.medium.Xi[1] / (sin_2.medium.p_steam_sat * (sin_2.medium.Xi[1] + 0.6219647130774989 * sin_2.medium.X_air));
+//   sin_2.medium.phi = sin_2.medium.p * sin_2.medium.Xi[1] / ((sin_2.medium.Xi[1] + 0.6219647130774989 * sin_2.medium.X_air) * sin_2.medium.p_steam_sat);
 //   sin_2.medium.Xi[1] = sin_2.medium.X[1];
 //   sin_2.medium.X[2] = 1.0 - sin_2.medium.Xi[1];
 //   assert(sin_2.medium.X[1] >= -1e-05 and sin_2.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(sin_2.medium.X[1], 0, true, 6) + "of substance " + "water" + "

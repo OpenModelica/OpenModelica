@@ -3076,7 +3076,7 @@ end BoreholeSegment;
 //     for i in 1:iSam + -1 loop
 //       QL_flow := Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.exchangeValues(table, iSam, Q_flow, 1 + iSam - i);
 //       QU_flow := Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.exchangeValues(table, iSam, Q_flow, iSam - i);
-//       dT := dT + 0.07957747154594767 * Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.powerSeries(0.25 * c * d * rExt ^ 2.0 / (k * /*Real*/(i) * samplePeriod), 10) * (QL_flow - QU_flow) / (k * hSeg);
+//       dT := dT + 0.07957747154594767 * Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.powerSeries(0.25 * c * d * rExt ^ 2.0 / (samplePeriod * /*Real*/(i) * k), 10) * (QL_flow - QU_flow) / (hSeg * k);
 //     end for;
 //   end if;
 // end Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.temperatureDrop;
