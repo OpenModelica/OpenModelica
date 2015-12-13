@@ -2639,24 +2639,22 @@ protected function simplifyMulJoinFactors
   Joins expressions that have the same base.
   E.g. {(a,2), (a,4), (b,2)} => {(a,6), (b,2)}"
   input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
-  output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
+  output list<tuple<DAE.Exp, Real>> outTplExpRealLst = {};
+protected
+  list<tuple<DAE.Exp, Real>> tplExpRealLst = inTplExpRealLst;
+  DAE.Exp e;
+  Real coeff, coeff2;
 algorithm
-  outTplExpRealLst := match (inTplExpRealLst)
-    local
-      Real coeff2,coeff_1,coeff;
-      list<tuple<DAE.Exp, Real>> rest_1,res,rest;
-      DAE.Exp e;
 
-    case ({}) then {};
+  while not listEmpty(tplExpRealLst) loop
+    (e, coeff) :: tplExpRealLst := tplExpRealLst;
+    (coeff2, tplExpRealLst) := simplifyMulJoinFactorsFind(e, tplExpRealLst);
+    coeff := coeff + coeff2;
+    outTplExpRealLst := (e, coeff) :: outTplExpRealLst;
+  end while;
 
-    case (((e,coeff) :: rest))
-      equation
-        (coeff2,rest_1) = simplifyMulJoinFactorsFind(e, rest);
-        res = simplifyMulJoinFactors(rest_1);
-        coeff_1 = coeff + coeff2;
-      then
-        ((e,coeff_1) :: res);
-  end match;
+  outTplExpRealLst := listReverse(outTplExpRealLst);
+
 end simplifyMulJoinFactors;
 
 protected function simplifyMulJoinFactorsFind
@@ -2914,7 +2912,7 @@ protected function simplifyBinaryMulCoeff2
   input DAE.Exp inExp;
   output tuple<DAE.Exp, Real> outRes;
 algorithm
-  outRes := matchcontinue (inExp)
+  outRes := match (inExp)
     local
       DAE.Exp e,e1,e2;
       ComponentRef cr;
@@ -2947,14 +2945,13 @@ algorithm
         ((e1,coeff_1));
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(),exp2 = e2))
-      equation
-        true = Expression.expEqual(e1, e2);
+      guard Expression.expEqual(e1, e2)
       then
         ((e1,2.0));
 
     else ((inExp,1.0));
 
-  end matchcontinue;
+  end match;
 end simplifyBinaryMulCoeff2;
 
 public function simplifySumOperatorExpression
