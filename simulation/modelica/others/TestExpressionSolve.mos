@@ -34,6 +34,7 @@ end nls3;
 model nls4
  Real x(start = 0, fixed = true);
  Real y(start = 1, fixed = true);
+ Real vv = x + y;
 equation
  (100 + exp(time)- (log10(1e10*log(exp(sqrt(der(x)))))^3 - 1e-10*(y+10)^3) + 10)^8= -0;
   der(y) = 0;
@@ -44,6 +45,7 @@ model nls5
  Real y;
  Real z;
  Real a;
+ Real vv = y + z; 
 equation
  time - 1 + exp(-100*time) = x^3/(x^3 + 1 + time);
  time+10 = 1/y + (1/y)*(exp(time));
@@ -54,6 +56,7 @@ end nls5;
 model nls6
   Real x(start = 0, fixed = true), y, z(start = 1, fixed = true); 
   Real x1, x2, x3, x4, x5(start = 0, fixed = true), x6, x7, x8;
+  Real vv = x + x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8;
 equation 
   max(min(x,0.9999),-0.9999) = tanh(y);
   der(x) = 10*sin(10*time);
@@ -70,6 +73,7 @@ end nls6;
 
 model nls7
  Real x;
+ Real vv = x;
 equation
  1 + x = cos(sin(exp(time*sin(time))))*x;
 end nls7;
@@ -77,6 +81,7 @@ end nls7;
 model nls8
  Real x(start = 10);
  Real y;
+ Real vv = x + y;
 equation
  x*y*x*exp(y)*y*x*x*x*y*y*sin(y)*x*x*x^3*y*x*x^5*x^(1/3)*x^7*y*exp(y)/(x*y*x*y*x*x^5*exp(y)*y^5) = 0;
  y = exp(time);
@@ -109,14 +114,38 @@ end exp3;
   Real x;
   Real y;
   Real z;
+  Real vv = x + y + z;
 equation
   expr(x) = (1+time);
   exp(time+1) = exp2(x,y+1);
   z = exp3(z);
 end nls9;
 
+
+model nls13
+
+function f
+  input Real x;
+  output Real y;
+algorithm
+  y := 3*x^3;
+end f;
+
+  constant Real[13] A = {1+sin(i/13*7) for i in 1:13};
+  Real[13] B = {1/i*z for i in 1:13};
+  Real x,y,z(start = 1, fixed =true);
+  Real vv = x + y + z;
+equation
+  sin(time) + x^3 = sum({f(A[i]*x) for  i in 1:13}) - f(A[1]*x) - f(A[2]*x);
+  der(z) = -(1e-6*abs(sum({f(A[i]*x) for  i in 1:13}) - f(B[1]*x) - f(B[2]*x)
+   +  z^3 + sum({f(B[i]*x) for  i in 1:13}) - f(B[1]*x) - f(B[2]*x)
+   +  z^3 + sum({f(B[i]*x) for  i in 1:13}) - f(B[1]*x) - f(B[2]*x)))^2;
+  y^3  + x = sum({f(A[i]*x) for  i in 1:13}) + sum({f(A[i]*x*y) for  i in 1:13}) - f(A[1]*x) - f(A[2]*x) + f(sum({f(A[i]*x) for  i in 1:13})) - f(f(sum({f(A[i]*x*y) for  i in 1:13})))^(3/27);
+end nls13;
+
 model nls10
  Real x(start = 1/2, fixed = true), y, z, w, v;
+ Real vv = x + y +  z + w + v;
  equation
  der(x) = min(max(5*sin(time*6*v)*cos(6*y^2-1)*sin(2*z^4+1)*cos(time*w*6) +sign(delay(y,0.01))*exp(time*x^2 + time),-2),2);
  (if(x < 0) then 2*y -10 else 3*y + 1) = (if(x < 0.5) then 3*x*y+17 else x*y/2 - 13);
@@ -138,6 +167,7 @@ model nls11
  Real y(start = -1),z(start = 1);
  Real w(start = -1), v(start = 1);
  Real k(start = 1), k1(start = -1);
+ Real vv = x1 + y + w + k;
 equation
  abs(x1) = time+1;
  abs(x2) = time+1;
@@ -151,6 +181,7 @@ end nls11;
 
 model nls12
   Real x(start = -1), y(start =1);
+  Real vv = x + y;
 equation
   (if time < 0.5 then abs(x) else if time < 0.7 then x^2 else abs(x)^4) = time+1;
   (if time < 0.5 then abs(y) else if time < 0.7 then y^2 else abs(y)^4) = time+1;
@@ -159,6 +190,7 @@ end nls12;
 model nls14
   Real x(start = 1), y(start = 1);
   Real z(start = 0, fixed = true);
+  Real vv = x + y;
 equation
   time/((if time < 0.5 then x else x*2)*3*(if time > 0.4 then x^4 else x*5)) = 1;
   ((if time < 0.5 then y else y*2)*3*(if time > 0.4 then y^4 else y*5)) = time;
@@ -168,6 +200,7 @@ end nls14;
 
 model nls15
   Real x(start = -10), y(start = 10),z(start = 0, fixed = true);
+  Real vv = x + y + z;
 equation
   cosh(x) = max(3*time+10,1);
   cosh(y) = max(3*time+10,1);
@@ -183,6 +216,7 @@ model nls16
   Real z1(start = -10);
   Real z2, z3;
   Real a, b, c;
+  Real vv = x + x1 + x2 + x3 + z + z1 + z2 + z3;
 equation
   a = exp(time);
   b = cos(time);
@@ -214,6 +248,7 @@ model nls17
   Real z;
   Real sol = sqrt(sqrt(4*time+1)-1)/(sqrt(2));
   Real w(start=1), v;
+  Real vv = x + y + z + sol + w + p+q+k+l+d+e;
 initial equation
   1/(p^2) + p^(-1) = 1;
   q^(-2) + 1/q = 1;
@@ -231,8 +266,8 @@ end nls17;
 model nls18
   model A
     Real x(start = p * asin(1) * 2), y, z, err(start = 0, fixed = true);
-    final parameter Real p;
-     Real lhs = time*0.9;
+    parameter Real p;
+    Real lhs = time*0.9; 
   equation
     cos(x) = lhs;
     cos(x) = y;
@@ -241,6 +276,7 @@ model nls18
   end A;
 
   Real err = a1.err + a2.err + a3.err + a4.err + a5.err;
+  Real vv = err;
   A a1(p = 0);
   A a2(p = 1);
   A a3(p = 2);
@@ -258,6 +294,7 @@ model nls19
   Real x;
   Real y;
   Real z(start = 0, fixed = true);
+  Real vv = x + y + z;
 equation
   exp(time+1) = f(x)^2 + f(x);
   exp(y) + exp(y)^2 = exp(time+1);
@@ -274,6 +311,7 @@ model nls20
   Real z1(start = -10);
   Real z2, z3;
   Real a, b, c;
+  Real vv = x + x1 + x2 + x3 + z + z1 + z2 + z3 + a + b + c;
 equation
   a = exp(time);
   b = cos(time);
@@ -308,6 +346,7 @@ model noNls
  nls10 m10;
  nls11 m11;
  nls12 m12;
+ nls13 m13;
  nls14 m14;
  nls15 m15;
  nls16 m16;
@@ -315,6 +354,30 @@ model noNls
  nls18 m18;
  nls19 m19;
  nls20 m20;
+ 
+ Real v(start = 1, fixed = true);
+ equation
+ der(v) = 1.0
+ + abs(m1.x + m1.y + m1.z) 
+ + abs(m2.x + m2.y)
+ + abs(m3.x + m3.y)
+ + abs(m4.vv)
+ + abs(m5.vv)
+ + abs(m6.vv)
+ + abs(m7.vv) 
+ + abs(m8.vv) 
+ + abs(m9.vv) 
+ + abs(m10.vv) 
+ + abs(m11.vv) 
+ + abs(m12.vv)
+ //+ abs(m13.vv)
+ + abs(m14.vv) 
+ + abs(m15.vv) 
+ + abs(m16.vv) 
+ + abs(m17.vv)  
+ + abs(m18.vv)  
+ + abs(m19.vv)  
+ + abs(m20.vv);    
 end noNls;
 
 "); getErrorString();
@@ -325,6 +388,8 @@ val(m2.x,0.0);
 val(m3.x,0.0);
 val(m4.x,0.0);
 val(m5.x,0.0);
+val(m5.y,{0.0,1.0});
+val(m5.z,{0.0,1.0});
 val(m6.x,0.0);
 val(m7.x,0.0);
 val(m8.x,0.0);
@@ -374,6 +439,10 @@ val(m11.k,1.0);
 val(m11.k1,1.0);
 val(m12.x, 1.0);
 val(m12.y, 1.0);
+val(m13.y, {0,1.0});
+val(m13.x, {0,1.0});
+val(m13.z, {0,0.9e-10,1.1e-10,1e-8,1.0});
+val(der(m13.z), {0,0.9e-10,1.e-10,1e-8,1.0});
 val(m14.z, 1.0);
 val(m15.z, 1.0);
 val(m16.x, 1.0);
@@ -395,6 +464,9 @@ val(m20.z, 0.5);
 val(m20.z1, 1.0);
 val(m20.z, 1.0);
 
+val(v, {0, 0.1, 0.2, 0.5, 0.8, 0.9, 1.0});
+
+
 // Result:
 // true
 // ""
@@ -415,9 +487,11 @@ val(m20.z, 1.0);
 // 1.6094379124341
 // 0.0
 // 0.0
+// {0.2,0.3380256207690041}
+// {-5.0,-5.5}
 // 0.0
 // -2.997303135077413
-// -0.0
+// 0.0
 // 0.0
 // -0.0
 // 0.5
@@ -449,10 +523,10 @@ val(m20.z, 1.0);
 // 4.090638938524548e-11
 // 1.791759469228055
 // 4.291811252376209e-11
-// 0.0
+// 4.205916067935033e-15
 // 1.843473852116849
 // -3.899895249402686
-// -0.0
+// 0.0
 // 0.6931471805599453
 // -0.0
 // 0.5064826605767841
@@ -464,6 +538,10 @@ val(m20.z, 1.0);
 // -4.113250378782928
 // -1.189207115002721
 // 1.189207115002721
+// {0.0,1.496451894214357}
+// {0.0,0.226706998195829}
+// {1.0,1.0,1.0,1.0,0.9999999999929149}
+// {-4e-12,-4.000000000498514e-12,-4.000000000553903e-12,-4.000000055772649e-12,-1.006458451495744e-11}
 // 0.0
 // -3.827439653464492e-16
 // 0.7641190432599388
@@ -478,10 +556,11 @@ val(m20.z, 1.0);
 // 0.9258043882484928
 // 2.008214144007162e-26
 // 1.272019649514069
-// 7.362092778534042
+// 7.362092778534041
 // 0.0
 // 1.773637767940148
 // 1.773637767940148
 // 0.9830028645057538
 // 0.9830028645057538
+// {1.0,4.654362675809,8.705466283953468,27.09531541751682,43.99951835351838,50.06568873887827,56.55455651787845}
 // endResult
