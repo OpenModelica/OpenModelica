@@ -2591,14 +2591,13 @@ protected function simplifyBinaryAddConstants
 "author: PA
   Adds all expressions in the list, given that they are constant."
   input list<DAE.Exp> inExpLst;
-  output DAE.Exp outExp = DAE.RCONST(0.0);
+  output DAE.Exp outExp;
 protected
   Type tp;
   list<DAE.Exp> es;
 algorithm
   outExp :: es := inExpLst;
   tp := Expression.typeof(outExp);
-
   for e in es loop
     outExp := simplifyBinaryConst(DAE.ADD(tp), outExp, e);
   end for;
@@ -2609,26 +2608,16 @@ protected function simplifyBinaryMulConstants
 "author: PA
   Multiplies all expressions in the list, given that they are constant."
   input list<DAE.Exp> inExpLst;
-  output list<DAE.Exp> outExpLst;
+  output DAE.Exp outExp;
+protected
+  list<DAE.Exp> es;
+  Type tp;
 algorithm
-  outExpLst := matchcontinue (inExpLst)
-    local
-      DAE.Exp e,e_1,e1;
-      list<DAE.Exp> es;
-      Type tp;
-
-    case ({}) then {};
-
-    case ({e}) then {e};
-
-    case ((e1 :: es))
-      equation
-        {e} = simplifyBinaryMulConstants(es);
-        tp = Expression.typeof(e);
-        e_1 = simplifyBinaryConst(DAE.MUL(tp), e1, e);
-      then
-        {e_1};
-  end matchcontinue;
+  outExp :: es := inExpLst;
+  tp := Expression.typeof(outExp);
+  for e in es loop
+    outExp := simplifyBinaryConst(DAE.MUL(tp), outExp, e);
+  end for;
 end simplifyBinaryMulConstants;
 
 protected function simplifyMul
@@ -5103,10 +5092,16 @@ algorithm
   //e_lst_1 := List.map(e_lst,simplify2); // simplify2 for recursive
   (const_es1, notconst_es1) :=
     List.splitOnTrue(e_lst, Expression.isConst);
-  const_es1_1 := simplifyBinaryMulConstants(const_es1);
-  (res1,_) := simplify1(Expression.makeProductLst(const_es1_1)); // simplify1 for basic constant evaluation.
-  res2 := Expression.makeProductLst(notconst_es1); // Cannot simplify this, if const_es1_1 empty => infinite recursion.
-  outExp := Expression.expMul(res1,res2);
+
+  if not listEmpty(const_es1) then
+    res1 := simplifyBinaryMulConstants(const_es1);
+    (res1,_) := simplify1(res1); // simplify1 for basic constant evaluation.
+    res2 := Expression.makeProductLst(notconst_es1); // Cannot simplify this, if const_es1_1 empty => infinite recursion.
+    outExp := Expression.expMul(res1,res2);
+  else
+    outExp := inExp;
+  end if;
+
 end simplifyBinarySortConstantsMul;
 
 protected function simplifyBuiltinConstantDer
