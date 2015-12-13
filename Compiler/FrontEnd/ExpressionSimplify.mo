@@ -2492,7 +2492,6 @@ algorithm
       list<DAE.Exp> e_lst,const_es1,notconst_es1,const_es1_1;
       DAE.Exp res,e,e1,e2,res1,res2;
       Type tp;
-      DAE.Operator op;
 
     // e1 * e2
     case ((e as DAE.BINARY(operator = DAE.MUL())))
@@ -2516,9 +2515,8 @@ algorithm
         //e_lst_1 = List.map(e_lst,simplify2);
         (const_es1, notconst_es1) =
           List.splitOnTrue(e_lst, Expression.isConstValue);
-        if not listEmpty(notconst_es1) then
-          const_es1_1 = simplifyBinaryAddConstants(const_es1);
-          res1 = Expression.makeSum1(const_es1_1);
+        if not listEmpty(const_es1) then
+          res1 = simplifyBinaryAddConstants(const_es1);
           res2 = Expression.makeSum1(notconst_es1); // Cannot simplify this, if const_es1_1 empty => infinite recursion.
           res = Expression.expAdd(res1, res2);
         else
@@ -2593,31 +2591,18 @@ protected function simplifyBinaryAddConstants
 "author: PA
   Adds all expressions in the list, given that they are constant."
   input list<DAE.Exp> inExpLst;
-  output list<DAE.Exp> outExpLst;
+  output DAE.Exp outExp = DAE.RCONST(0.0);
+protected
+  Type tp;
+  list<DAE.Exp> es;
 algorithm
-  outExpLst := matchcontinue (inExpLst)
-    local
-      DAE.Exp e,e_1,e1;
-      list<DAE.Exp> es;
+  outExp :: es := inExpLst;
+  tp := Expression.typeof(outExp);
 
-    case ({}) then {};
+  for e in es loop
+    outExp := simplifyBinaryConst(DAE.ADD(tp), outExp, e);
+  end for;
 
-    case ({e}) then {e};
-
-    case ((e1 :: es))
-      equation
-        {e} = simplifyBinaryAddConstants(es);
-        e_1 = simplifyBinaryConst(DAE.ADD(DAE.T_REAL_DEFAULT), e1, e);
-      then
-        {e_1};
-
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- ExpressionSimplify.simplifyBinaryAddConstants failed\n");
-      then
-        fail();
-  end matchcontinue;
 end simplifyBinaryAddConstants;
 
 protected function simplifyBinaryMulConstants
