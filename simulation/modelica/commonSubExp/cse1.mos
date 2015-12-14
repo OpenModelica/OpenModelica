@@ -28,7 +28,7 @@ end Tearing15;
 
 setDebugFlags("dumpCSE"); getErrorString();
 setTearingMethod("cellier"); getErrorString();
-setCommandLineOptions("+tearingHeuristic=MC1 +cseCall +cseBinary"); getErrorString();
+setCommandLineOptions("+tearingHeuristic=MC1 --postOptModules+=wrapFunctionCalls,cseBinary"); getErrorString();
 simulate(Tearing15); getErrorString();
 
 // Result:

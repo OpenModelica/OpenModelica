@@ -10,9 +10,9 @@ val(x,{0.0,0.1,0.2,0.7,1.0});
 simulate(problem2); getErrorString();
 
 val(y,{0.0,0.1,0.2,0.7,1.0});
- val(z,{0.0,0.1,0.2,0.7,1.0});
+val(z,{0.0,0.1,0.2,0.7,1.0});
 
-setCommandLineOptions("+cseEachCall"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
 simulate(problem1); getErrorString();
 
 val(x,{0.0,0.1,0.2,0.7,1.0}); getErrorString();
@@ -22,14 +22,14 @@ simulate(problem2); getErrorString();
 val(y,{0.0,0.1,0.2,0.7,1.0});
 val(z,{0.0,0.1,0.2,0.7,1.0});
 
-setCommandLineOptions("+d=disableSimplifyComplexFunction +cseEachCall=false"); getErrorString();
+setCommandLineOptions("--postOptModules-=wrapFunctionCalls,simplifyComplexFunction --initOptModules-=simplifyComplexFunction"); getErrorString();
 simulate(problem1); getErrorString();
 
 val(x,{0.0,0.1,0.2,0.7,1.0});
 
 simulate(problem2); getErrorString() == "";
 
-setCommandLineOptions("+d=disableSimplifyComplexFunction +cseEachCall"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
 simulate(problem1); getErrorString() == "";
 
 simulate(problem2); getErrorString() == "";

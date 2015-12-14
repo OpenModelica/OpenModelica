@@ -21,7 +21,7 @@ model testOptdaedump
   Real y = exp(time^3) + x;
 end testOptdaedump;
 "); getErrorString();
-setCommandLineOptions("+cseCall");
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls");
 setDebugFlags("optdaedump"); getErrorString();
 buildModel(testOptdaedump); getErrorString();
 
@@ -300,6 +300,18 @@ buildModel(testOptdaedump); getErrorString();
 // State Sets
 // ========================================
 //
+//
+// Incidence Matrix (row: equation)
+// ========================================
+// number of rows: 2
+// 1: 2
+// 2: 2 1
+//
+// Transposed Incidence Matrix (row: variable)
+// ========================================
+// number of rows: 2
+// 1: 2
+// 2: 2 1
 //
 // no matching
 //

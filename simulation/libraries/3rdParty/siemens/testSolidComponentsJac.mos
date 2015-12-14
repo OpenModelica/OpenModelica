@@ -9,9 +9,8 @@
 loadModel(SiemensPower, {"2.1 beta"});getErrorString();
 
 // test jacobians
-setCommandLineOptions("+generateSymbolicJacobian");
-simulate(SiemensPower.Components.SolidComponents.Tests.wall_test, stopTime=25, method="dassl", simflags="-dasslJacobian=symbolical");
-getErrorString();
+setCommandLineOptions("--postOptModules+=generateSymbolicJacobian"); getErrorString();
+simulate(SiemensPower.Components.SolidComponents.Tests.wall_test, stopTime=25, method="dassl", simflags="-dasslJacobian=symbolical"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.SolidComponents.Tests.wall_test_res.mat",getEnvironmentVar("REFERENCEFILES")+"/SiemensPower/wall_test.mat","SiemensPower.Components.SolidComponents.Tests.wall_test_diff.csv",0.01,0.00001,
   { "heatInput.C1signal.y",
@@ -38,6 +37,7 @@ res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.
 // true
 // ""
 // true
+// ""
 // record SimulationResult
 //     resultFile = "SiemensPower.Components.SolidComponents.Tests.wall_test_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 25.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SiemensPower.Components.SolidComponents.Tests.wall_test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-dasslJacobian=symbolical'",

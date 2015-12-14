@@ -179,7 +179,7 @@ end CSE;
 "); getErrorString();
 
 setDebugFlags("dumpCSE"); getErrorString();
-setCommandLineOptions("+cseCall"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
 
 simulate(CSE.FunctionCallTest1); getErrorString();
 simulate(CSE.FunctionCallTest2); getErrorString();
