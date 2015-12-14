@@ -2514,6 +2514,12 @@ algorithm
       list<BackendDAE.WhenOperator> rest;
 
     case {} then inRow;
+    case (BackendDAE.ASSIGN(left = DAE.WILD(), right = e2)::rest)
+      equation
+        outRow = incidenceRowExp(e2, inVariables, inRow, functionTree, inIndexType);
+        outRow = incidenceRowWhenOps(rest, inVariables, inIndexType, functionTree, outRow);
+    then outRow;
+
     case (BackendDAE.ASSIGN(left = cr, right = e2)::rest)
       equation
         e1 = Expression.crefExp(cr);
