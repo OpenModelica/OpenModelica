@@ -5702,7 +5702,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
   case CALL(path=IDENT(name = name as "intBitLShift"),expLst={e1,e2})
   case CALL(path=IDENT(name = name as "intBitRShift"),expLst={e1,e2}) then
     let i1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
-    let i2 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
+    let i2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
     let op = (match name
       case "intBitAnd" then "&"
       case "intBitOr" then "|"
