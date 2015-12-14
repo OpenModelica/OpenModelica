@@ -1169,6 +1169,10 @@ void LatexCell::eval()
     if (!expr.isEmpty())
     {
         expr.replace("\\begin{document}","\\begin{document} \\thispagestyle{empty}");
+        if (!expr.contains("\\begin{document}")) {
+            expr.prepend("\\documentclass{article}\\begin{document}\\thispagestyle{empty}");
+            expr.append("\\end{document}");
+        }
         QFile file(Tex);
         file.open(QIODevice::WriteOnly);
         QTextStream stream(&file);

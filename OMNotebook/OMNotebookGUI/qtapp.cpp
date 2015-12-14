@@ -75,6 +75,9 @@ int main(int argc, char *argv[])
   getrlimit(RLIMIT_STACK, &limits);
   limits.rlim_cur = limits.rlim_max;
   setrlimit(RLIMIT_STACK, &limits);
+
+  // App path is not same as command line path, so add /us/texbin for latex-cell support
+  qputenv("PATH", qgetenv("PATH") + ":/usr/texbin");
 #endif
 
   MMC_INIT();
