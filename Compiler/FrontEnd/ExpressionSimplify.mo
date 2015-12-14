@@ -1891,14 +1891,14 @@ public function simplify2
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(inExp)
+  outExp := match(inExp)
     local
       DAE.Exp e,exp,e1,e2,exp_2,exp_3;
       Operator op;
 
     case ((exp as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2))) /* multiple terms/factor simplifications */
+      guard  Expression.isIntegerOrReal(Expression.typeof(exp))
       equation
-        true = Expression.isIntegerOrReal(Expression.typeof(exp));
         e1 = simplify2(e1);
         e2 = simplify2(e2);
         /* Sorting constants, 1+a+2+b => 3+a+b */
@@ -1916,7 +1916,7 @@ algorithm
 
     else inExp;
 
-  end matchcontinue;
+  end match;
 end simplify2;
 
 protected function simplifyBinaryArray "Simplifies binary array expressions,
@@ -2666,7 +2666,7 @@ protected function simplifyMulJoinFactorsFind
   output Real outReal;
   output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
 algorithm
-  (outReal,outTplExpRealLst) := matchcontinue (inExp,inTplExpRealLst)
+  (outReal,outTplExpRealLst) := match (inExp,inTplExpRealLst)
     local
       Real coeff2,coeff3,coeff;
       list<tuple<DAE.Exp, Real>> res,rest;
@@ -2676,16 +2676,16 @@ algorithm
     case (_,{}) then (0.0,{});
 
     case (e,((e2,coeff) :: rest)) /* e1 == e2 */
+      guard Expression.expEqual(e, e2)
       equation
-        true = Expression.expEqual(e, e2);
         (coeff2,res) = simplifyMulJoinFactorsFind(e, rest);
         coeff3 = coeff + coeff2;
       then
         (coeff3,res);
 
     case (e,((DAE.BINARY(exp1 = e1,operator = op as DAE.DIV(),exp2 = e2),coeff) :: rest)) // pow(a/b,n) * pow(b/a,m) = pow(a/b,n-m)
+    guard if Expression.isOne(e1) then Expression.expEqual(e, e2) else Expression.expEqual(e, DAE.BINARY(e2, op, e1))
       equation
-        true = if Expression.isOne(e1) then Expression.expEqual(e, e2) else Expression.expEqual(e, DAE.BINARY(e2, op, e1));
         (coeff2,res) = simplifyMulJoinFactorsFind(e, rest);
         coeff3 = coeff2 - coeff;
       then
@@ -2696,7 +2696,7 @@ algorithm
         (coeff2,res) = simplifyMulJoinFactorsFind(e, rest);
       then
         (coeff2,((e2,coeff) :: res));
-  end matchcontinue;
+  end match;
 end simplifyMulJoinFactorsFind;
 
 protected function simplifyMulMakePow
