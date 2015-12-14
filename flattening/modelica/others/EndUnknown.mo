@@ -34,7 +34,7 @@ end EndUnknown;
 //   output Real res;
 // algorithm
 //   if size(vals, 1) >= 3 then
-//     res := (b - a) * (vals[1] + 2.0 * sum(vals[3:2:size(vals, 1) + -1]) + 4.0 * sum(vals[2:2:size(vals, 1) + -1]) + vals[size(vals, 1)]) * 0.3333333333333333 / /*Real*/(size(vals, 1) + -1);
+//     res := 0.3333333333333333 * (b - a) * (vals[1] + 2.0 * sum(vals[3:2:size(vals, 1) + -1]) + 4.0 * sum(vals[2:2:size(vals, 1) + -1]) + vals[size(vals, 1)]) / /*Real*/(size(vals, 1) + -1);
 //   else
 //     res := 0.5 * (b - a) * sum(vals);
 //   end if;

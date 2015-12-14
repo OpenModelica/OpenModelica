@@ -3015,18 +3015,18 @@ end BoreholeSegment;
 //   protected Real Ra_LS;
 //   protected Integer i = 1;
 // algorithm
-//   RCondPipe := log((rTub + eTub) / rTub) / (kTub * hSeg * 6.283185307179586);
+//   RCondPipe := 0.1591549430918953 * log((rTub + eTub) / rTub) / (hSeg * kTub);
 //   sigma := (kFil - kSoi) / (kFil + kSoi);
-//   R_1delta_LS := (log(rBor / (rTub + eTub)) + log(0.5 * rBor / xC) + sigma * log(rBor ^ 4.0 / (rBor ^ 4.0 - xC ^ 4.0))) / (kFil * 6.283185307179586);
-//   R_1delta_MP := R_1delta_LS + -0.25 * ((rTub + eTub) * (1.0 + -4.0 * sigma * xC ^ 4.0 / (rBor ^ 4.0 - xC ^ 4.0)) / xC) ^ 2.0 * 0.1591549430918953 / (((1.0 + beta) / (1.0 - beta) + 0.25 * ((rTub + eTub) / xC) ^ 2.0 * (1.0 + 16.0 * sigma * (xC * rBor) ^ 4.0 / (rBor ^ 4.0 - xC ^ 4.0) ^ 2.0)) * kFil);
-//   Ra_LS := (log(2.0 * xC / rTub) + sigma * log((rBor ^ 2.0 + xC ^ 2.0) / (rBor ^ 2.0 - xC ^ 2.0))) / (kFil * 3.141592653589793);
+//   R_1delta_LS := 0.1591549430918953 * (log(rBor / (rTub + eTub)) + log(0.5 * rBor / xC) + sigma * log(rBor ^ 4.0 / (rBor ^ 4.0 - xC ^ 4.0))) / kFil;
+//   R_1delta_MP := R_1delta_LS + -0.03978873577297384 * ((rTub + eTub) * (1.0 + -4.0 * sigma * xC ^ 4.0 / (rBor ^ 4.0 - xC ^ 4.0)) / xC) ^ 2.0 / (((1.0 + beta) / (1.0 - beta) + 0.25 * ((rTub + eTub) / xC) ^ 2.0 * (1.0 + 16.0 * sigma * (xC * rBor) ^ 4.0 / (rBor ^ 4.0 - xC ^ 4.0) ^ 2.0)) * kFil);
+//   Ra_LS := 0.3183098861837907 * (log(2.0 * xC / rTub) + sigma * log((rBor ^ 2.0 + xC ^ 2.0) / (rBor ^ 2.0 - xC ^ 2.0))) / kFil;
 //   beta := 6.283185307179586 * kFil * RCondPipe;
 //   Rb := 0.5 * R_1delta_MP;
-//   Ra := Ra_LS + -0.07957747154594767 * (rTub / xC) ^ 2.0 * (1.0 + 4.0 * sigma * rBor ^ 4.0 * xC ^ 2.0 / (rBor ^ 4.0 - xC ^ 4.0)) / (((1.0 + beta) / (1.0 - beta) + -0.25 * (rTub / xC) ^ 2.0 + 2.0 * sigma * (rTub * rBor) ^ 2.0 * (rBor ^ 4.0 + xC ^ 4.0) / (rBor ^ 4.0 - xC ^ 4.0) ^ 2.0) * kFil);
+//   Ra := Ra_LS + -0.07957747154594767 * (rTub / xC) ^ 2.0 * (1.0 + 4.0 * sigma * rBor ^ 4.0 * xC ^ 2.0 / (rBor ^ 4.0 - xC ^ 4.0)) / (kFil * ((1.0 + beta) / (1.0 - beta) + -0.25 * (rTub / xC) ^ 2.0 + 2.0 * sigma * (rTub * rBor) ^ 2.0 * (rBor ^ 4.0 + xC ^ 4.0) / (rBor ^ 4.0 - xC ^ 4.0) ^ 2.0));
 //   Rg := 2.0 * Rb / hSeg;
 //   Rar := Ra / hSeg;
 //   while test == false and i <= 15 loop
-//     x := 0.06666666666666667 * log(0.5 * sqrt(rBor ^ 2.0 + 2.0 * (rTub + eTub) ^ 2.0) / (rTub + eTub)) * /*Real*/(16 - i) / log(rBor / ((rTub + eTub) * 1.414213562373095));
+//     x := 0.06666666666666667 * log(0.5 * sqrt(rBor ^ 2.0 + 2.0 * (rTub + eTub) ^ 2.0) / (rTub + eTub)) * /*Real*/(16 - i) / log(0.7071067811865475 * rBor / (rTub + eTub));
 //     Rgb := (1.0 - x) * Rg;
 //     Rgg := 2.0 * Rgb * (Rar + -2.0 * x * Rg) / (2.0 * Rgb + 2.0 * x * Rg - Rar);
 //     test := 1.0 / Rgg + 0.5 / Rgb > 0.0;
@@ -3064,9 +3064,9 @@ end BoreholeSegment;
 //   output Real dT(quantity = "ThermodynamicTemperature", unit = "K");
 //   protected Real QL_flow(quantity = "Power", unit = "W");
 //   protected Real QU_flow(quantity = "Power", unit = "W");
-//   protected Real minSamplePeriod(quantity = "Time", unit = "s") = rExt ^ 2.0 * d * c / (k * 15.2);
+//   protected Real minSamplePeriod(quantity = "Time", unit = "s") = 0.06578947368421052 * rExt ^ 2.0 * c * d / k;
 // algorithm
-//   assert(0.25 * rExt ^ 2.0 * d * c / (samplePeriod * k) <= 3.8, "The samplePeriod has to be bigger than " + String(minSamplePeriod, 0, true, 6) + " for convergence purpose.
+//   assert(0.25 * rExt ^ 2.0 * d * c / (k * samplePeriod) <= 3.8, "The samplePeriod has to be bigger than " + String(minSamplePeriod, 0, true, 6) + " for convergence purpose.
 //                 samplePeriod = " + String(samplePeriod, 0, true, 6));
 //   if iSam == 1 then
 //     dT := 0.0;
@@ -3375,7 +3375,7 @@ end BoreholeSegment;
 //     y_d := delta ^ n;
 //     yP_d := n * delta ^ (-1.0 + n);
 //     yPP_d := n * (-1.0 + n) * delta ^ (-2.0 + n);
-//     a1 := (yPP_d - yP_d / delta) / (delta2 * 8.0);
+//     a1 := -0.125 * (yP_d / delta - yPP_d) / delta2;
 //     a3 := 0.5 * yPP_d + -6.0 * a1 * delta2;
 //     a5 := y_d - delta2 * (a3 + delta2 * a1);
 //     y := a5 + x2 * (a3 + x2 * a1);
@@ -3732,7 +3732,7 @@ end BoreholeSegment;
 //       y0d := yd0;
 //     else
 //       w := x2 / x1;
-//       y0d := 0.5 * ((3.0 * y2 - x2 * y2d) / w + (x1 * y1d + -3.0 * y1) * w) / ((1.0 - w) * x1);
+//       y0d := 0.5 * ((3.0 * y2 - x2 * y2d) / w + (x1 * y1d + -3.0 * y1) * w) / (x1 * (1.0 - w));
 //     end if;
 //     w1 := 2.23606797749979 * k1 * x1;
 //     w2 := 2.23606797749979 * k2 * abs(x2);

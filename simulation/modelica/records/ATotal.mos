@@ -176,7 +176,7 @@ simulate(A); getErrorString();
 //   protected Real vte(quantity = \"ElectricPotential\", unit = \"V\");
 // algorithm
 //   vte := 8.61726105451295e-05 * temp * ncoeff;
-//   ret := vte * log(vte / (satcur * 1.414213562373095));
+//   ret := vte * log(0.7071067811865475 * vte / satcur);
 //   ret := if ret > 10000000000.0 then 10000000000.0 else ret;
 // end Modelica.Electrical.Spice3.Internal.Functions.junctionVCrit;
 //
@@ -477,8 +477,8 @@ simulate(A); getErrorString();
 //       vddif := 2.0 * in_c.m_vdsat - vds;
 //       vddif1 := in_c.m_vdsat - vds;
 //       vddif2 := vddif ^ 2.0;
-//       out_qm.qm_capgd := in_c.m_capOx * (0.3333333333333333 - in_c.m_vdsat ^ 2.0 / (vddif2 * 3.0));
-//       out_qm.qm_capgs := in_c.m_capOx * (0.3333333333333333 - vddif1 ^ 2.0 / (vddif2 * 3.0));
+//       out_qm.qm_capgd := 0.3333333333333333 * in_c.m_capOx * (1.0 - in_c.m_vdsat ^ 2.0 / vddif2);
+//       out_qm.qm_capgs := 0.3333333333333333 * in_c.m_capOx * (1.0 - vddif1 ^ 2.0 / vddif2);
 //       out_qm.qm_capgb := 0.0;
 //     end if;
 //   end if;

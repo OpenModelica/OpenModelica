@@ -26646,11 +26646,11 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </aliasVariables>
 // </variables>
 // <equations dimension=\"30\">
-// <equation id=\"1\">rev.tau = 0.001 * body.z_a[3] + 0.001 * body.w_a[1] * body.w_a[2] + -0.001 * body.w_a[2] * body.w_a[1] + body.r_CM[2] * rev.frame_b.f[1] - body.r_CM[1] * rev.frame_b.f[2]
+// <equation id=\"1\">rev.tau = 0.001 * body.z_a[3] + 0.001 * body.w_a[1] * body.w_a[2] + 0.001 * (-body.w_a[2]) * body.w_a[1] + body.r_CM[2] * rev.frame_b.f[1] - body.r_CM[1] * rev.frame_b.f[2]
 // </equation>
-// <equation id=\"2\">-rev.frame_b.t[2] = 0.001 * body.z_a[2] + 0.001 * body.w_a[3] * body.w_a[1] + -0.001 * body.w_a[1] * body.w_a[3] + body.r_CM[1] * rev.frame_b.f[3] - body.r_CM[3] * rev.frame_b.f[1]
+// <equation id=\"2\">-rev.frame_b.t[2] = 0.001 * body.z_a[2] + 0.001 * body.w_a[3] * body.w_a[1] + 0.001 * (-body.w_a[1]) * body.w_a[3] + body.r_CM[1] * rev.frame_b.f[3] - body.r_CM[3] * rev.frame_b.f[1]
 // </equation>
-// <equation id=\"3\">-rev.frame_b.t[1] = 0.001 * body.z_a[1] + 0.001 * body.w_a[2] * body.w_a[3] + -0.001 * body.w_a[3] * body.w_a[2] + body.r_CM[3] * rev.frame_b.f[2] - body.r_CM[2] * rev.frame_b.f[3]
+// <equation id=\"3\">-rev.frame_b.t[1] = 0.001 * body.z_a[1] + 0.001 * body.w_a[2] * body.w_a[3] + 0.001 * (-body.w_a[3]) * body.w_a[2] + body.r_CM[3] * rev.frame_b.f[2] - body.r_CM[2] * rev.frame_b.f[3]
 // </equation>
 // <equation id=\"4\">-rev.frame_b.f[3] = (body.z_a[1] * body.r_CM[2] + body.w_a[1] * (body.w_a[3] * body.r_CM[1] - body.w_a[1] * body.r_CM[3]) + body.w_a[2] * (body.w_a[3] * body.r_CM[2] - body.w_a[2] * body.r_CM[3]) - body.z_a[2] * body.r_CM[1]) * body.m
 // </equation>

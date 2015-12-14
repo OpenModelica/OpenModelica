@@ -344,7 +344,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   if Re > Re1 then
 //     Re := -2.0 * sqrt(lambda2) * log10(2.51 / sqrt(lambda2) + 0.27 * Delta);
 //     aux2 := sqrt(aux1 * abs(dp_fric));
-//     dRe_ddp := 0.4342944819032518 * (2.51 / ((2.51 / aux2 + 0.27 * Delta) * abs(dp_fric)) - log(2.51 / aux2 + 0.27 * Delta) * aux1 / aux2);
+//     dRe_ddp := 0.4342944819032518 * (2.51 / (abs(dp_fric) * (2.51 / aux2 + 0.27 * Delta)) - log(2.51 / aux2 + 0.27 * Delta) * aux1 / aux2);
 //     if Re < Re2 then
 //       (Re, dRe_ddp) := Modelica.Fluid.Pipes.StaticPipe$pipe1.FlowModel$pipe1$flowModel.WallFriction.Internal.m_flow_of_dp_fric.interpolateInRegion2_withDerivative(lambda2, Re1, Re2, Delta, dp_fric);
 //     end if;
@@ -473,7 +473,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   protected Real diff_x = x2 - x1;
 //   protected Real aux3 = log10(aux2);
 //   protected Real L2 = 0.25 * (Re2 / aux3) ^ 2.0;
-//   protected Real yd2 = 2.0 + 4.0 * aux1 / (Re2 ^ 0.9 * aux2 * aux3);
+//   protected Real yd2 = 2.0 + 4.0 * aux1 / (Re2 ^ 0.9 * aux3 * aux2);
 //   protected Real aux4 = 2.51 / sqrt(L2) + 0.27 * Delta;
 //   protected Real y2 = log10(L2);
 //   protected Real aux5 = -2.0 * sqrt(L2) * log10(aux4);
@@ -624,7 +624,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   if Re > Re1 then
 //     Re := -2.0 * sqrt(lambda2) * log10(2.51 / sqrt(lambda2) + 0.27 * Delta);
 //     aux2 := sqrt(aux1 * abs(dp_fric));
-//     dRe_ddp := 0.4342944819032518 * (2.51 / ((2.51 / aux2 + 0.27 * Delta) * abs(dp_fric)) - log(2.51 / aux2 + 0.27 * Delta) * aux1 / aux2);
+//     dRe_ddp := 0.4342944819032518 * (2.51 / (abs(dp_fric) * (2.51 / aux2 + 0.27 * Delta)) - log(2.51 / aux2 + 0.27 * Delta) * aux1 / aux2);
 //     if Re < Re2 then
 //       (Re, dRe_ddp) := Modelica.Fluid.Pipes.StaticPipe$pipe2.FlowModel$pipe2$flowModel.WallFriction.Internal.m_flow_of_dp_fric.interpolateInRegion2_withDerivative(lambda2, Re1, Re2, Delta, dp_fric);
 //     end if;
@@ -753,7 +753,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   protected Real diff_x = x2 - x1;
 //   protected Real aux3 = log10(aux2);
 //   protected Real L2 = 0.25 * (Re2 / aux3) ^ 2.0;
-//   protected Real yd2 = 2.0 + 4.0 * aux1 / (Re2 ^ 0.9 * aux2 * aux3);
+//   protected Real yd2 = 2.0 + 4.0 * aux1 / (Re2 ^ 0.9 * aux3 * aux2);
 //   protected Real aux4 = 2.51 / sqrt(L2) + 0.27 * Delta;
 //   protected Real y2 = log10(L2);
 //   protected Real aux5 = -2.0 * sqrt(L2) * log10(aux4);
@@ -904,7 +904,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   if Re > Re1 then
 //     Re := -2.0 * sqrt(lambda2) * log10(2.51 / sqrt(lambda2) + 0.27 * Delta);
 //     aux2 := sqrt(aux1 * abs(dp_fric));
-//     dRe_ddp := 0.4342944819032518 * (2.51 / ((2.51 / aux2 + 0.27 * Delta) * abs(dp_fric)) - log(2.51 / aux2 + 0.27 * Delta) * aux1 / aux2);
+//     dRe_ddp := 0.4342944819032518 * (2.51 / (abs(dp_fric) * (2.51 / aux2 + 0.27 * Delta)) - log(2.51 / aux2 + 0.27 * Delta) * aux1 / aux2);
 //     if Re < Re2 then
 //       (Re, dRe_ddp) := Modelica.Fluid.Pipes.StaticPipe$pipe3.FlowModel$pipe3$flowModel.WallFriction.Internal.m_flow_of_dp_fric.interpolateInRegion2_withDerivative(lambda2, Re1, Re2, Delta, dp_fric);
 //     end if;
@@ -1033,7 +1033,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   protected Real diff_x = x2 - x1;
 //   protected Real aux3 = log10(aux2);
 //   protected Real L2 = 0.25 * (Re2 / aux3) ^ 2.0;
-//   protected Real yd2 = 2.0 + 4.0 * aux1 / (Re2 ^ 0.9 * aux2 * aux3);
+//   protected Real yd2 = 2.0 + 4.0 * aux1 / (Re2 ^ 0.9 * aux3 * aux2);
 //   protected Real aux4 = 2.51 / sqrt(L2) + 0.27 * Delta;
 //   protected Real y2 = log10(L2);
 //   protected Real aux5 = -2.0 * sqrt(L2) * log10(aux4);
@@ -1206,7 +1206,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //     elseif abs(y1d + y0d + -2.0 * Delta0) < 1e-13 then
 //       aux02 := 9.999999999999999e+59 * (6.0 * Delta0 * (y1d + y0d + -1.5 * Delta0) + (-y1d) * y0d - y1d ^ 2.0 - y0d ^ 2.0) * (if y1d + y0d + -2.0 * Delta0 >= 0.0 then 1.0 else -1.0);
 //     else
-//       aux02 := (6.0 * Delta0 * (y1d + y0d + -1.5 * Delta0) + (-y0d ^ 2.0) - y1d * y0d - y1d ^ 2.0) / ((y1d + y0d + -2.0 * Delta0) * 3.0);
+//       aux02 := 0.3333333333333333 * (6.0 * Delta0 * (y1d + y0d + -1.5 * Delta0) + (-y0d ^ 2.0) - y1d * y0d - y1d ^ 2.0) / (y1d + y0d + -2.0 * Delta0);
 //     end if;
 //     if (mu > 0.0 and eta < h0 and Delta0 * omega <= 0.0 or abs(aux01) < abs(aux02) and aux02 * Delta0 >= 0.0 or abs(aux01) < abs(0.1 * Delta0)) and not useSingleCubicPolynomial then
 //       c := aux01;
@@ -1287,7 +1287,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //       y0d := yd0;
 //     else
 //       w := x2 / x1;
-//       y0d := 0.5 * ((3.0 * y2 - x2 * y2d) / w + (x1 * y1d + -3.0 * y1) * w) / ((1.0 - w) * x1);
+//       y0d := 0.5 * ((3.0 * y2 - x2 * y2d) / w + (x1 * y1d + -3.0 * y1) * w) / (x1 * (1.0 - w));
 //     end if;
 //     w1 := 2.23606797749979 * k1 * x1;
 //     w2 := 2.23606797749979 * k2 * abs(x2);
@@ -2382,7 +2382,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   pipe1.flowModel.mus_act[1] = if noEvent(pipe1.flowModel.m_flows[1] > 0.0) then pipe1.flowModel.mus[1] else pipe1.flowModel.mus[2];
 //   pipe1.flowModel.Ib_flows[1] = 0.0;
 //   pipe1.flowModel.Fs_p[1] = 0.5 * (pipe1.flowModel.crossAreas[1] + pipe1.flowModel.crossAreas[2]) * (Modelica.Fluid.Pipes.StaticPipe$pipe1.FlowModel$pipe1$flowModel.Medium.pressure(pipe1.flowModel.states[2]) - Modelica.Fluid.Pipes.StaticPipe$pipe1.FlowModel$pipe1$flowModel.Medium.pressure(pipe1.flowModel.states[1])) * pipe1.flowModel.nParallel;
-//   pipe1.flowModel.dps_fg[1] = 2.0 * pipe1.flowModel.Fs_fg[1] / ((pipe1.flowModel.crossAreas[1] + pipe1.flowModel.crossAreas[2]) * pipe1.flowModel.nParallel);
+//   pipe1.flowModel.dps_fg[1] = 2.0 * pipe1.flowModel.Fs_fg[1] / (pipe1.flowModel.nParallel * (pipe1.flowModel.crossAreas[1] + pipe1.flowModel.crossAreas[2]));
 //   pipe1.flowModel.Is[1] = pipe1.flowModel.m_flows[1] * pipe1.flowModel.pathLengths[1];
 //   0.0 = pipe1.flowModel.Ib_flows[1] - pipe1.flowModel.Fs_p[1] - pipe1.flowModel.Fs_fg[1];
 //   pipe1.port_a.m_flow = pipe1.flowModel.m_flows[1];
@@ -2409,7 +2409,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   pipe2.flowModel.mus_act[1] = if noEvent(pipe2.flowModel.m_flows[1] > 0.0) then pipe2.flowModel.mus[1] else pipe2.flowModel.mus[2];
 //   pipe2.flowModel.Ib_flows[1] = 0.0;
 //   pipe2.flowModel.Fs_p[1] = 0.5 * (pipe2.flowModel.crossAreas[1] + pipe2.flowModel.crossAreas[2]) * (Modelica.Fluid.Pipes.StaticPipe$pipe2.FlowModel$pipe2$flowModel.Medium.pressure(pipe2.flowModel.states[2]) - Modelica.Fluid.Pipes.StaticPipe$pipe2.FlowModel$pipe2$flowModel.Medium.pressure(pipe2.flowModel.states[1])) * pipe2.flowModel.nParallel;
-//   pipe2.flowModel.dps_fg[1] = 2.0 * pipe2.flowModel.Fs_fg[1] / ((pipe2.flowModel.crossAreas[1] + pipe2.flowModel.crossAreas[2]) * pipe2.flowModel.nParallel);
+//   pipe2.flowModel.dps_fg[1] = 2.0 * pipe2.flowModel.Fs_fg[1] / (pipe2.flowModel.nParallel * (pipe2.flowModel.crossAreas[1] + pipe2.flowModel.crossAreas[2]));
 //   pipe2.flowModel.Is[1] = pipe2.flowModel.m_flows[1] * pipe2.flowModel.pathLengths[1];
 //   0.0 = pipe2.flowModel.Ib_flows[1] - pipe2.flowModel.Fs_p[1] - pipe2.flowModel.Fs_fg[1];
 //   pipe2.port_a.m_flow = pipe2.flowModel.m_flows[1];
@@ -2436,7 +2436,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   pipe3.flowModel.mus_act[1] = if noEvent(pipe3.flowModel.m_flows[1] > 0.0) then pipe3.flowModel.mus[1] else pipe3.flowModel.mus[2];
 //   pipe3.flowModel.Ib_flows[1] = 0.0;
 //   pipe3.flowModel.Fs_p[1] = 0.5 * (pipe3.flowModel.crossAreas[1] + pipe3.flowModel.crossAreas[2]) * (Modelica.Fluid.Pipes.StaticPipe$pipe3.FlowModel$pipe3$flowModel.Medium.pressure(pipe3.flowModel.states[2]) - Modelica.Fluid.Pipes.StaticPipe$pipe3.FlowModel$pipe3$flowModel.Medium.pressure(pipe3.flowModel.states[1])) * pipe3.flowModel.nParallel;
-//   pipe3.flowModel.dps_fg[1] = 2.0 * pipe3.flowModel.Fs_fg[1] / ((pipe3.flowModel.crossAreas[1] + pipe3.flowModel.crossAreas[2]) * pipe3.flowModel.nParallel);
+//   pipe3.flowModel.dps_fg[1] = 2.0 * pipe3.flowModel.Fs_fg[1] / (pipe3.flowModel.nParallel * (pipe3.flowModel.crossAreas[1] + pipe3.flowModel.crossAreas[2]));
 //   pipe3.flowModel.Is[1] = pipe3.flowModel.m_flows[1] * pipe3.flowModel.pathLengths[1];
 //   0.0 = pipe3.flowModel.Ib_flows[1] - pipe3.flowModel.Fs_p[1] - pipe3.flowModel.Fs_fg[1];
 //   pipe3.port_a.m_flow = pipe3.flowModel.m_flows[1];
