@@ -192,6 +192,8 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
   setContextMenuPolicy(Qt::CustomContextMenu);
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
   mpDocumentationWidget = pParent;
+  zoomFact = 1.;
+  setZoomFactor(zoomFact);
   // set DocumentationViewer settings
   settings()->setFontFamily(QWebSettings::StandardFont, "Verdana");
   settings()->setFontSize(QWebSettings::DefaultFontSize, 10);
@@ -297,15 +299,52 @@ void DocumentationViewer::keyPressEvent(QKeyEvent *event)
   if (event->modifiers().testFlag(Qt::ShiftModifier) && event->key() == Qt::Key_Backspace)
   {
     if (mpDocumentationWidget->getNextToolButton()->isEnabled())
+    {
       mpDocumentationWidget->nextDocumentation();
+    }
   }
   else if (event->key() == Qt::Key_Backspace)
   {
     if (mpDocumentationWidget->getPreviousToolButton()->isEnabled())
+    {
       mpDocumentationWidget->previousDocumentation();
+    }
   }
   else
   {
     QWebView::keyPressEvent(event);
   }
 }
+
+//! Reimplementation of wheelevent.
+//! Defines what to do for control+scrolling the wheel
+void DocumentationViewer::wheelEvent(QWheelEvent *event)
+{
+  if (event->orientation() == Qt::Vertical && event->modifiers().testFlag(Qt::ControlModifier))
+  {
+      zoomFact+=event->delta()/120.;
+      if (zoomFact > 5.) zoomFact = 5.;
+      if (zoomFact < .1) zoomFact = .1;
+      setZoomFactor(zoomFact);
+  }
+  else
+  {
+    QWebView::wheelEvent(event);
+  }
+}
+
+//! Reimplementation of mousedoubleclickevent.
+//! Defines what to do for control+doubleclick
+void DocumentationViewer::mouseDoubleClickEvent(QMouseEvent *event)
+{
+  if (event->modifiers().testFlag(Qt::ControlModifier))
+  {
+    zoomFact=1.;
+    setZoomFactor(zoomFact);
+  }
+  else
+  {
+    QWebView::mouseDoubleClickEvent(event);
+  }
+}
+
