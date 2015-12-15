@@ -10202,7 +10202,7 @@ let store_delay_expr = functionStoreDelay(delayedExps, simCode ,&extraFuncs ,&ex
           let &optpreExp = buffer "" /*BUFD*/
 
           let outputnames = vars.outputVars |>  SIMVAR(__) hasindex i0 =>
-             'dynamic_cast<SimDouble*>(_sim_data->Get("<%cref(name, useFlatArrayNotation)%>"))->getValue() = <%cref(name, useFlatArrayNotation)%>;';separator="\n"
+             'dynamic_cast<SimDouble*>( _simObjects->getSimData(_modelName)->Get("<%cref(name, useFlatArrayNotation)%>"))->getValue() = <%cref(name, useFlatArrayNotation)%>;';separator="\n"
           <<
           #if defined(__TRICORE__) || defined(__vxworks)
               <%outputnames%>
@@ -10371,7 +10371,7 @@ then
           let &optpreExp = buffer "" /*BUFD*/
 
           let inputnames = vars.inputVars |>  SIMVAR(__) hasindex i0 =>
-             '<%cref(name, useFlatArrayNotation)%> = dynamic_cast<SimDouble*>(_sim_data->Get("<%cref(name, useFlatArrayNotation)%>"))->getValue();';separator="\n"
+             '<%cref(name, useFlatArrayNotation)%> = dynamic_cast<SimDouble*>(_simObjects->getSimData(_modelName)->Get("<%cref(name, useFlatArrayNotation)%>"))->getValue();';separator="\n"
           <<
           #if defined(__TRICORE__) || defined(__vxworks)
               <%inputnames%>
