@@ -1889,24 +1889,65 @@ public function simplify2
 "Advanced simplifications covering several
  terms or factors, like a +2a +3a = 5a "
   input DAE.Exp inExp;
+  input Boolean simplifyAddOrSub = true;
+  input Boolean simplifyMulOrDiv = true;
   output DAE.Exp outExp;
 algorithm
   outExp := match(inExp)
     local
-      DAE.Exp e,exp,e1,e2,exp_2,exp_3;
+      DAE.Exp e1,e2,exp_2,exp_3;
       Operator op;
 
-    case ((exp as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2))) /* multiple terms/factor simplifications */
-      guard  Expression.isIntegerOrReal(Expression.typeof(exp))
+    // global simplify ADD and SUB
+    case DAE.BINARY(operator = op) /* multiple terms simplifications */
+      guard  simplifyAddOrSub and Expression.isIntegerOrReal(Expression.typeof(inExp)) and Expression.isAddOrSub(op)
       equation
-        e1 = simplify2(e1);
-        e2 = simplify2(e2);
         /* Sorting constants, 1+a+2+b => 3+a+b */
-        exp_2 = simplifyBinarySortConstants(DAE.BINARY(e1,op,e2));
+        exp_2 = simplifyBinarySortConstants(inExp);
         /* Merging coefficients 2a+4b+3a+b => 5a+5b */
         exp_3 = simplifyBinaryCoeff(exp_2);
       then
-        exp_3;
+        simplify2(exp_3, false, true);
+
+    //locked global simplify ADD and SUB
+    //unlocked global simplify MUL and DIV
+     case DAE.BINARY(exp1 = e1,operator = op,exp2 = e2) /* multiple factors simplifications */
+      guard  Expression.isIntegerOrReal(Expression.typeof(inExp)) and Expression.isAddOrSub(op)
+      equation
+        e1 = simplify2(e1, false, true);
+        e2 = simplify2(e2, false, true);
+      then
+        DAE.BINARY(e1,op,e2);
+
+    //global simplify MUL and DIV
+     case DAE.BINARY(operator = op) /* multiple factors simplifications */
+      guard  simplifyMulOrDiv and Expression.isIntegerOrReal(Expression.typeof(inExp)) and Expression.isMulOrDiv(op)
+      equation
+        /* Sorting constants, 1+a+2+b => 3+a+b */
+        exp_2 = simplifyBinarySortConstants(inExp);
+        /* Merging coefficients 2a+4b+3a+b => 5a+5b */
+        exp_3 = simplifyBinaryCoeff(exp_2);
+      then
+        simplify2(exp_3, true, false);
+
+    //unlocked global simplify ADD and SUB
+    //locked global simplify MUL and DIV
+     case DAE.BINARY(exp1 = e1,operator = op,exp2 = e2) /* multiple terms simplifications */
+      guard  Expression.isIntegerOrReal(Expression.typeof(inExp)) and Expression.isMulOrDiv(op)
+      equation
+        e1 = simplify2(e1, true, false);
+        e2 = simplify2(e2, true, false);
+      then
+        simplifyBinarySortConstants(DAE.BINARY(e1,op,e2));
+
+    //others operators
+    case DAE.BINARY(exp1 = e1,operator = op,exp2 = e2) /* multiple terms/factor simplifications */
+      guard  Expression.isIntegerOrReal(Expression.typeof(inExp))
+      equation
+        e1 = simplify2(e1);
+        e2 = simplify2(e2);
+      then
+        DAE.BINARY(e1,op,e2);
 
     case(DAE.UNARY(op,e1))
       equation
