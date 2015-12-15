@@ -13408,7 +13408,8 @@ template equationAlgorithm(SimEqSystem eq, Context context,Text &varDecls /*BUFP
  "Generates an equation that is an algorithm."
 ::=
 match eq
-case SES_ALGORITHM(__) then
+case SES_ALGORITHM(__)
+case SES_INVERSE_ALGORITHM(__) then
   (statements |> stmt =>
     algStatement(stmt, context, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   ;separator="\n")
