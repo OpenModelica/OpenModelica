@@ -342,7 +342,7 @@ template functionHeader(Function fn, Boolean inFunc, Boolean isSimulation, Text 
       >>
     case RECORD_CONSTRUCTOR(__) then
       let fname = underscorePath(name)
-      let funArgsStr = (funArgs |> var as VARIABLE(__) => ', <%varType(var)%> <%crefStr(name)%>')
+      let funArgsStr = (funArgs |> var as VARIABLE(__) => ', <%varType(var)%> omc_<%crefStr(name)%>')
       <<
       <% match visibility case PUBLIC() then "DLLExport" %>
       <%fname%> omc_<%fname%>(threadData_t *threadData<%funArgsStr%>); /* record head */
@@ -1353,11 +1353,11 @@ case RECORD_CONSTRUCTOR(__) then
   let boxedFn = functionBodyBoxed(fn, isSimulation)
   <<
   <%auxFunction%>
-  <%fname%> omc_<%fname%>(threadData_t *threadData<%funArgs |> VARIABLE(__) => ', <%expTypeArrayIf(ty)%> <%crefStr(name)%>'%>)
+  <%fname%> omc_<%fname%>(threadData_t *threadData<%funArgs |> VARIABLE(__) => ', <%expTypeArrayIf(ty)%> omc_<%crefStr(name)%>'%>)
   {
     <%varDecls%>
     <%varInits%>
-    <%funArgs |> VARIABLE(__) => '<%structVar%>._<%crefStr(name)%> = <%crefStr(name)%>;' ;separator="\n"%>
+    <%funArgs |> VARIABLE(__) => '<%structVar%>._<%crefStr(name)%> = omc_<%crefStr(name)%>;' ;separator="\n"%>
     return <%structVar%>;
   }
 
