@@ -79,6 +79,7 @@ class DocumentationViewer : public QWebView
   Q_OBJECT
 private:
   DocumentationWidget *mpDocumentationWidget;
+  qreal zoomFact;
 public:
   DocumentationViewer(DocumentationWidget *pParent);
 public slots:
@@ -89,6 +90,8 @@ public slots:
 protected:
   virtual QWebView* createWindow(QWebPage::WebWindowType type);
   virtual void keyPressEvent(QKeyEvent *event);
+  virtual void wheelEvent(QWheelEvent *event);
+  virtual void mouseDoubleClickEvent(QMouseEvent *event);
 };
 
 #endif // DOCUMENTATIONWIDGET_H
