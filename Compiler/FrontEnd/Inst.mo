@@ -2039,9 +2039,9 @@ algorithm
       list<DAE.ComponentRef> smInitialCrefs "state machine crefs of initial states";
       FCore.Ref lastRef;
       InstStateMachineUtil.SMNodeToFlatSMGroupTable smCompToFlatSM;
-      //List<Tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomLst;
+      //List<tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomLst;
       InstUtil.DomainFieldsLst domainFieldsLst;
-//      list<Tuple<String,Integer>> domainNLst;
+//      list<tuple<String,Integer>> domainNLst;
 
     /*// uncomment for debugging
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,inClassDef6,
@@ -3101,7 +3101,7 @@ public function instElementList
   output ClassInf.State outState = inState;
   output list<DAE.Var> outVars;
   output ConnectionGraph.ConnectionGraph outGraph = inGraph;
-  //output List<Tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomLst = {};
+  //output List<tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomLst = {};
   output InstUtil.DomainFieldsLst domainFieldsList = {};
 protected
   list<tuple<SCode.Element, DAE.Mod>> el;
@@ -3110,7 +3110,7 @@ protected
   list<DAE.Element> dae;
   list<list<DAE.Var>> varsl = {};
   list<list<DAE.Element>> dael = {};
-  Option<Tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomOpt;
+  Option<tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomOpt;
   list<Integer> element_order;
   array<tuple<SCode.Element, DAE.Mod>> el_arr;
   array<list<DAE.Var>> var_arr;
@@ -3228,7 +3228,7 @@ public function instElement2
   output ClassInf.State outState = inState;
   output list<DAE.Var> outVars = {};
   output ConnectionGraph.ConnectionGraph outGraph = inGraph;
-  output Option<Tuple<Absyn.ComponentRef,DAE.ComponentRef>> outFieldDomOpt;
+  output Option<tuple<Absyn.ComponentRef,DAE.ComponentRef>> outFieldDomOpt;
 protected
   tuple<SCode.Element, DAE.Mod> elt;
   Boolean is_deleted;
@@ -3343,7 +3343,7 @@ public function instElement "
   output ClassInf.State outState;
   output list<DAE.Var> outVars;
   output ConnectionGraph.ConnectionGraph outGraph;
-  output Option<Tuple<Absyn.ComponentRef,DAE.ComponentRef>> outFieldDomOpt = NONE();
+  output Option<tuple<Absyn.ComponentRef,DAE.ComponentRef>> outFieldDomOpt = NONE();
 algorithm
   (outCache, outEnv, outIH, outUnitStore, outDae, outSets, outState, outVars, outGraph):=
   matchcontinue (inCache, inEnv, inIH, inUnitStore, inMod, inPrefix, inState,

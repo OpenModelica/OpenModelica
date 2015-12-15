@@ -8732,7 +8732,7 @@ end propagateModFinal;
 //------  PDE extension:  ------
 //------------------------------
 
-public type DomainFieldsLst = List<Tuple<DAE.ComponentRef,List<Absyn.ComponentRef>>>;
+public type DomainFieldsLst = List<tuple<DAE.ComponentRef,List<Absyn.ComponentRef>>>;
 
 public function elabField
 //For field variables: finds the "domain" modifier,
@@ -8747,7 +8747,7 @@ public function elabField
   input SourceInfo inInfo;
   output DAE.Dimensions outDims;
   output DAE.Mod outMod;
-  output Option<Tuple<Absyn.ComponentRef,DAE.ComponentRef>> outFieldDomOpt;
+  output Option<tuple<Absyn.ComponentRef,DAE.ComponentRef>> outFieldDomOpt;
 
 algorithm
   (outDims, outMod, outFieldDomOpt) := match(attr, inMod)
@@ -8869,7 +8869,7 @@ end addEach;
 
 public function optAppendField
   input DomainFieldsLst inDomFieldsLst;
-  input Option<Tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomOpt;
+  input Option<tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomOpt;
   output DomainFieldsLst outDomFieldsLst;
 algorithm
   outDomFieldsLst := matchcontinue fieldDomOpt
@@ -8891,11 +8891,11 @@ algorithm
 end optAppendField;
 
 protected function optAppendFieldMapFun
-  input Tuple<DAE.ComponentRef,List<Absyn.ComponentRef>> inDomainFields;
+  input tuple<DAE.ComponentRef,List<Absyn.ComponentRef>> inDomainFields;
   input DAE.ComponentRef domainCrToAdd;
   input Absyn.ComponentRef fieldCrToAdd;
   input Boolean inFound;
-  output Tuple<DAE.ComponentRef,List<Absyn.ComponentRef>> outDomainFields;
+  output tuple<DAE.ComponentRef,List<Absyn.ComponentRef>> outDomainFields;
   output Boolean outFound;
 algorithm
   (outDomainFields, outFound) := matchcontinue (inDomainFields,inFound)
@@ -8918,7 +8918,7 @@ public function discretizePDE
 //main discretization function, converts PDE into set of ODEs
   input SCode.Equation inEQ;
   input DomainFieldsLst inDomFieldLst;
-//  input list<Tuple<String,Integer>> domainNLst;
+//  input list<tuple<String,Integer>> domainNLst;
   input List<SCode.Equation> inDiscretizedEQs;
   output List<SCode.Equation> outDiscretizedEQs;
   protected List<SCode.Equation> newDiscretizedEQs;
@@ -8992,9 +8992,9 @@ algorithm
 end getDomNFields;
 
 protected function domNFieldsFindFun
-  input Tuple<DAE.ComponentRef,List<Absyn.ComponentRef>> inDomFields;
+  input tuple<DAE.ComponentRef,List<Absyn.ComponentRef>> inDomFields;
   input Absyn.ComponentRef inDomainCr;
-  output Option<Tuple<Integer,List<Absyn.ComponentRef>>> outOptNFields;
+  output Option<tuple<Integer,List<Absyn.ComponentRef>>> outOptNFields;
 algorithm
   outOptNFields := matchcontinue inDomFields
   local
@@ -9127,7 +9127,7 @@ end newEQFun;
  end discretizeTraverseFun;
 
 protected function findDomF<T>
-  input Tuple<String,T> inTup;
+  input tuple<String,T> inTup;
   input String name;
   output Boolean found;
 algorithm
@@ -9143,8 +9143,8 @@ end findDomF;
 /*
 public function findDomains
   input SCode.Element el;
-  input list<Tuple<String,Integer>> domainLstIn;
-  output list<Tuple<String,Integer>> domainLstOut;
+  input list<tuple<String,Integer>> domainLstIn;
+  output list<tuple<String,Integer>> domainLstOut;
 algorithm
 //TODO: rewrite to use instantiated domain elements
   domainLstOut := match el
