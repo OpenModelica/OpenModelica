@@ -7864,7 +7864,7 @@ algorithm
   end match;
 end isWhenComp;
 
-public function isSingleEquationComp"outputs true if the strongComponent is a singleEquation"
+public function isSingleEquationComp "outputs true if the strongComponent is a singleEquation"
   input BackendDAE.StrongComponent comp;
   output Boolean isWhen;
 algorithm
@@ -7875,7 +7875,7 @@ algorithm
   end match;
 end isSingleEquationComp;
 
-public function isLinearEqSystemComp"outputs true if the strongComponent is a linear equationsystem"
+public function isLinearEqSystemComp "outputs true if the strongComponent is a linear equationsystem"
   input BackendDAE.StrongComponent comp;
   output Boolean isWhen;
 algorithm
@@ -7886,7 +7886,18 @@ algorithm
   end match;
 end isLinearEqSystemComp;
 
-public function isLinearTornSystem"outputs true if the strongComponent is a torn system"
+public function isNonLinearEqSystemComp "outputs true if the strongComponent is a nonlinear equationsystem"
+  input BackendDAE.StrongComponent comp;
+  output Boolean isWhen;
+algorithm
+  isWhen := match(comp)
+    case(BackendDAE.EQUATIONSYSTEM(jacType = BackendDAE.JAC_NONLINEAR()))
+      then true;
+  else false;
+  end match;
+end isNonLinearEqSystemComp;
+
+public function isLinearTornSystemComp "outputs true if the strongComponent is a linear torn system"
   input BackendDAE.StrongComponent comp;
   output Boolean isWhen;
 algorithm
@@ -7895,7 +7906,18 @@ algorithm
       then true;
   else false;
   end match;
-end isLinearTornSystem;
+end isLinearTornSystemComp;
+
+public function isNonLinearTornSystemComp "outputs true if the strongComponent is a nonlinear torn system"
+  input BackendDAE.StrongComponent comp;
+  output Boolean isWhen;
+algorithm
+  isWhen := match(comp)
+    case(BackendDAE.TORNSYSTEM(linear=false))
+      then true;
+  else false;
+  end match;
+end isNonLinearTornSystemComp;
 
 public function extendRange
   input DAE.Exp inRangeExp;

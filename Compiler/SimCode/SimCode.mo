@@ -199,6 +199,7 @@ uniontype ModelInfo "Container for metadata about a Modelica model."
     Integer maxDer "the highest derivative in the model";
     Integer nClocks;
     Integer nSubClocks;
+    Boolean hasLargeLinearEquationSystems; // True if model has large linear eq. systems that are crucial for performance.
   end MODELINFO;
 end ModelInfo;
 

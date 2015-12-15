@@ -5690,6 +5690,7 @@ protected
   Integer maxDer;
   list<SimCodeVar.SimVar> states1, states_lst, states_lst2, der_states_lst;
   list<SimCodeVar.SimVar> states_2, derivatives_2;
+  Boolean hasLargeEqSystems;
 algorithm
   try
     // name = Absyn.pathStringNoQual(class_);
@@ -5719,9 +5720,10 @@ algorithm
                              ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,
                              numStateSets, numOptimizeConstraints, numOptimizeFinalConstraints);
     maxDer := getHighestDerivation(dlow);
+    hasLargeEqSystems := hasLargeEquationSystems(dlow, inInitDAE);
     modelInfo := SimCode.MODELINFO(class_, dlow.shared.info.description, directory, varInfo, vars, functions,
                                    labels, maxDer, arrayLength(dlow.shared.partitionsInfo.basePartitions),
-                                   arrayLength(dlow.shared.partitionsInfo.subPartitions));
+                                   arrayLength(dlow.shared.partitionsInfo.subPartitions), hasLargeEqSystems);
   else
     Error.addInternalError("createModelInfo failed", sourceInfo());
     fail();
@@ -9217,10 +9219,11 @@ protected
   list<SimCode.Function> functions;
   list<String> labels;
   Integer maxDer, nClocks, nSubClocks;
+  Boolean hasLargeLinearEquationSystems;
 algorithm
   if not Config.acceptMetaModelicaGrammar() then
     modelInfo := outSimCode.modelInfo;
-    SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, maxDer, nClocks, nSubClocks) := modelInfo;
+    SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, maxDer, nClocks, nSubClocks, hasLargeLinearEquationSystems) := modelInfo;
     files := getFilesFromSimVars(vars, files);
     files := getFilesFromFunctions(functions, files);
     files := getFilesFromSimEqSystems( outSimCode.allEquations :: outSimCode.startValueEquations :: outSimCode.nominalValueEquations
@@ -9231,7 +9234,7 @@ algorithm
     files := getFilesFromExtObjInfo(outSimCode.extObjInfo, files);
     files := getFilesFromJacobianMatrixes(outSimCode.jacobianMatrixes, files);
     files := List.sort(files, greaterFileInfo);
-    modelInfo := SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, maxDer, nClocks, nSubClocks);
+    modelInfo := SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, maxDer, nClocks, nSubClocks, hasLargeLinearEquationSystems);
     outSimCode.modelInfo := modelInfo;
   end if;
 end collectAllFiles;
@@ -11832,6 +11835,74 @@ algorithm
     then derivationIn+1;
   end matchcontinue;
 end getHighestDerivation1;
+
+protected function hasLargeEquationSystems "Returns true if the model contains large linear or nonlinear equation
+systems that are crucial for performance. If the model has a large linear or nonlinear system, the use of Lapack is prefered.
+Otherwise the use of dgesv (OMCompiler/3rdParty/) is prefered.
+author: marcusw, mflehmig TUD 2015-12"
+  input BackendDAE.BackendDAE iDlow "simulation";
+  input BackendDAE.BackendDAE iInitDAE "initialization";
+  output Boolean oHasLargeEqSystem;
+protected
+  Boolean hasLargeEqSystem = false;
+  list<BackendDAE.EqSystem> eqs = {};
+algorithm
+  BackendDAE.DAE(eqs=eqs) := iDlow;
+  for eqsys in eqs loop
+    if(boolNot(hasLargeEqSystem)) then
+      hasLargeEqSystem := hasLargeEquationSystems1(BackendDAEUtil.getStrongComponents(eqsys));
+    end if;
+  end for;
+
+  // If we found a large system, we do not need to search in iInitDAE.
+  if(boolNot(hasLargeEqSystem)) then
+    BackendDAE.DAE(eqs=eqs) := iInitDAE;
+    for eqsys in eqs loop
+      if(boolNot(hasLargeEqSystem)) then
+        hasLargeEqSystem := hasLargeEquationSystems1(BackendDAEUtil.getStrongComponents(eqsys));
+      end if;
+    end for;
+  end if;
+
+  // Output information if flag dump_dgesv is set.
+  if(Flags.isSet(Flags.DUMP_DGESV)) then
+    if(boolNot(hasLargeEqSystem)) then
+      print("This model has no large linear or nonlinear equation system, thus the use of dgesv (OMCompiler/3rdParty/) is prefered.\n");
+    else
+      print("This model has at least one large or nonlinear linear equation system, thus the use of Lapack is prefered.\n");
+    end if;
+  end if;
+
+  oHasLargeEqSystem := hasLargeEqSystem;
+end hasLargeEquationSystems;
+
+protected function hasLargeEquationSystems1 "Helper function, that really returns true if the model
+contains large linear or non-linear equation systems that are crucial for performance. Heuristic value: 10.
+author: marcusw, mflehmig TUD 2015-12"
+  input BackendDAE.StrongComponents iComps;
+  output Boolean oHasLargeEquationSystems;
+protected
+  Boolean hasLargeEqSystem = false;
+  list<Integer> vars;
+algorithm
+  for comp in iComps loop
+    if(boolNot(hasLargeEqSystem)) then
+      if(boolOr(BackendDAEUtil.isLinearEqSystemComp(comp), BackendDAEUtil.isNonLinearEqSystemComp(comp))) then
+        BackendDAE.EQUATIONSYSTEM(vars=vars) := comp;
+        hasLargeEqSystem := intGt(listLength(vars), 10);
+        //print("DGESV1: " + intString(listLength(vars)) + "\n");
+      else
+        if(boolOr(BackendDAEUtil.isLinearTornSystemComp(comp), BackendDAEUtil.isNonLinearTornSystemComp(comp))) then
+          BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vars)) := comp;
+          hasLargeEqSystem := intGt(listLength(vars), 10);
+          //print("DGESV2: " + intString(listLength(vars)) + "\n");
+        end if;
+      end if;
+    end if;
+  end for;
+  oHasLargeEquationSystems := hasLargeEqSystem;
+end hasLargeEquationSystems1;
+
 
 /*****************************************************************************************************
         FMU EXPERIMENTAL

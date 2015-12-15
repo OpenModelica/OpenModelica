@@ -743,8 +743,17 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   OMCPP_LIBS=-lOMCppSystem_FMU_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppFMU_static $(OMCPP_SOLVER_LIBS) -lOMCppExtensionUtilities_static
 
-  MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)
+  MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables
   LIBS=$(OMCPP_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB)
+  ifeq (hasLargeLinearEquationSystems,0)
+    ifeq ($(USE_DGESV),ON)
+      $(eval LIBS=$(LIBS) $(LIBOMCPPDGESV))
+    else
+      $(eval LIBS=$(LIBS) -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES))
+    endif
+  else
+    $(eval LIBS=$(LIBS) -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES))
+  endif
 
   BINARIES=<%fileNamePrefix%>$(DLLEXT) <%platformbins%>
 
