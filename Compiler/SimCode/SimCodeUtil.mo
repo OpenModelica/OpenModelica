@@ -464,7 +464,7 @@ algorithm
     execStat("simCode: all other stuff during SimCode phase");
 
     if Flags.isSet(Flags.DUMP_SIMCODE) then
-        dumpSimCodeDebug(simCode);
+      dumpSimCodeDebug(simCode);
     end if;
   else
     Error.addInternalError("function createSimCode failed [Transformation from optimised DAE to simulation code structure failed]", sourceInfo());
@@ -6877,6 +6877,9 @@ algorithm
   print("\n--------------\n");
   print("initialEquations: ("+intString(listLength(simCode.initialEquations))+")\n-----------------------\n");
   dumpSimEqSystemLst(simCode.initialEquations,"\n");
+  print("\n--------------\n");
+  print("initialEquations_lambda0: ("+intString(listLength(simCode.initialEquations_lambda0))+")\n-----------------------\n");
+  dumpSimEqSystemLst(simCode.initialEquations_lambda0,"\n");
   print("removedInitialEquations: \n-----------------------\n");
   dumpSimEqSystemLst(simCode.removedInitialEquations,"\n");
   print("startValueEquations: \n-----------------------\n");
@@ -6889,6 +6892,8 @@ algorithm
   dumpSimEqSystemLst(simCode.maxValueEquations,"\n");
   print("parameterEquations: \n-----------------------\n");
   dumpSimEqSystemLst(simCode.parameterEquations,"\n");
+  print("removedEquations: \n-----------------------\n");
+  dumpSimEqSystemLst(simCode.removedEquations,"\n");
   print("algorithmAndEquationAsserts: \n-----------------------\n");
   dumpSimEqSystemLst(simCode.algorithmAndEquationAsserts,"\n");
   print("equationsForZeroCrossings: \n-----------------------\n");
