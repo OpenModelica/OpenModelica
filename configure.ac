@@ -94,6 +94,7 @@ FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following optio
 m4_include([common/m4/pre-commit.m4])
 cp common/install-sh common/config.guess common/config.sub ./
 m4_include([common/m4/ombuilddir.m4])
+m4_include([m4/lapack.m4])
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
@@ -514,39 +515,7 @@ fi
 
 fi
 
-# Cannot use AX_LAPACK since it assumes a Fortran compiler is used
-AC_ARG_WITH(lapack,  [  --with-lapack=[-llapack -lblas]    (use -llapack -lblas to use system-provided version instead of OpenBLAS. Use openblas for automatically detected OpenBLAS. Use --with-lapack=openblas-NEHALEM or other OpenBLAS target to compile against a certain architecture. Note that you need to include BLAS in this.)],[LD_LAPACK="$withval"],
-  [
-    if test ! -z "$MINGWNUM"; then
-      LD_LAPACK="-Wl,-Bstatic -lopenblas -lgfortran -lquadmath -Wl,-Bdynamic"
-    else
-      LD_LAPACK="-llapack -lblas"
-    fi
-  ])
-
-if test "$LD_LAPACK" = "no"; then
-  FINAL_MESSAGES="$FINAL_MESSAGES\nLAPACK IS NOT AVAILABLE! ONLY USED FOR CROSS-COMPILING/BOOTSTRAPPING"
-  LD_LAPACK=""
-  NO_LAPACK="#define NO_LAPACK"
-else
-
-AC_MSG_CHECKING([LAPACK/BLAS flags])
-if echo "$LD_LAPACK" | grep -oq "^openblas"; then
-  LD_LAPACK=`echo $LD_LAPACK | sed s/"^openblas-//"`
-  if test "$LD_LAPACK" = "openblas"; then
-    AC_MSG_RESULT([OpenBLAS compiled using auto detected architecture])
-  else
-    OPENBLAS_EXTRA_ARGS="TARGET=$LD_LAPACK"
-    AC_MSG_RESULT([OpenBLAS compiled using architecture $LD_LAPACK])
-  fi
-  LD_LAPACK="-lopenblas_openmodelica"
-  LAPACK_TARGET="openblas"
-else
-  LIBS="$LD_LAPACK"
-  AC_LINK_IFELSE([AC_LANG_CALL([], [dgesv_])],[],[AC_MSG_ERROR([dgesv (LAPACK) linking failed using $LD_LAPACK])])
-  AC_LINK_IFELSE([AC_LANG_CALL([], [dswap_])],[AC_MSG_RESULT([$LD_LAPACK])],[AC_MSG_ERROR([dswap (BLAS) linking failed using $LD_LAPACK])])
-fi
-fi
+OMC_AC_LAPACK(RequireFound)
 
 AC_CHECK_HEADERS(kinsol/kinsol.h kinsol/kinsol_dense.h nvector/nvector_serial.h sundials/sundials_types.h sundials/sundials_math.h,[],[NO_SUNDIALS="yes"])
 SUNDIALS_LDFLAGS="-lsundials_kinsol -lsundials_nvecserial $LD_LAPACK"

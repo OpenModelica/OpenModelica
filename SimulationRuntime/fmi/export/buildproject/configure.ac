@@ -115,18 +115,13 @@ dnl Checks for library functions.
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(strdup strerror)
 
-# Cannot use AX_LAPACK since it assumes a Fortran compiler is used
-AC_ARG_WITH(lapack,  [  --with-lapack=[-llapack -lblas]    (use -llapack -lblas to use system-provided version.)],[LD_LAPACK="$withval"],[
-  LD_LAPACK="-Wl,-Bstatic -llapack -lblas -Wl,-Bdynamic"
-])
-
-AC_MSG_CHECKING([LAPACK/BLAS flags])
-
-OLDLIBS="$LIBS"
-LIBS="$LIBS $LD_LAPACK"
-AC_LINK_IFELSE([AC_LANG_CALL([], [dgesv_])],[
-  AC_LINK_IFELSE([AC_LANG_CALL([], [dswap_])],[AC_MSG_RESULT([$LD_LAPACK])],[LIBS="$OLDLIBS"; NEED_DGESV=1; AC_MSG_RESULT([dswap (BLAS) linking failed using $LD_LAPACK])])
-],[LIBS="$OLDLIBS"; NEED_DGESV=1; AC_MSG_RESULT([dgesv (LAPACK) linking failed using $LD_LAPACK])])
+m4_include([../../../../m4/lapack.m4])
+OMC_AC_LAPACK(static)
+if test -z "$LD_LAPACK"; then
+  NEED_DGESV=1
+else
+  LIBS="$LIBS $LD_LAPACK"
+fi
 
 AC_MSG_CHECKING([for static pthreads])
 OLDLIBS=$LIBS

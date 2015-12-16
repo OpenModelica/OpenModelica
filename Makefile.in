@@ -106,7 +106,7 @@ Makefile: Makefile.in config.status common/m4/*.m4
 
 config.status: configure
 	./config.status -recheck
-configure: configure.ac
+configure: configure.ac m4/lapack.m4 common/m4/*.m4
 	autoconf
 
 emcc: msl-external-libs-emcc emcc-simulationruntime
