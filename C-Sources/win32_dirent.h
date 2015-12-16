@@ -82,4 +82,3 @@ void  seekdir (DIR*, long);
 #endif
 
 #endif /* Not _DIRENT_H_ */
-

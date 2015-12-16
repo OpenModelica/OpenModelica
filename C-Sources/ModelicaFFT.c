@@ -96,6 +96,24 @@ struct mrkiss_fftr_state {
 };
 typedef struct mrkiss_fftr_state* mrkiss_fftr_cfg;
 
+/*
+ * Non-null pointers need to be passed to external functions.
+ *
+ * The following macros handle nonnull attributes for GNU C and Microsoft SAL.
+ */
+#if defined(__GNUC__)
+#define MODELICA_NONNULLATTR __attribute__((nonnull))
+#else
+#define MODELICA_NONNULLATTR
+#endif
+#if !defined(__ATTR_SAL)
+#define _In_
+#define _Out_
+#endif
+
+MODELICA_EXPORT int ModelicaFFT_kiss_fftr(_In_ double u[], size_t nu, _In_ double work[], size_t nwork,
+    _Out_ double *amplitudes, _Out_ double *phases) MODELICA_NONNULLATTR;
+
 /* include from _kiss_fft_guts.h ------------------------------------------ */
 
 /*
