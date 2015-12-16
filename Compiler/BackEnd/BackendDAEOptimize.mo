@@ -2016,8 +2016,7 @@ algorithm
 
     case (e as DAE.IFEXP(expCond=cond,expThen=exp1,expElse=exp2),_,_) equation
       //count all branches, use the complete count for the condition and one additional logical count
-      (_,tpl) = traversecountOperationsExp(cond,shared,inTuple);
-      (_,tpl) = traversecountOperationsExp(exp1,shared,tpl);
+      (_,tpl) = traversecountOperationsExp(exp1,shared,inTuple);
       (_,tpl) = traversecountOperationsExp(exp2,shared,tpl);
       (_,(i1,i2,i3,i4,i5,i6,i7,i8)) = traversecountOperationsExp(cond,shared,tpl);
       then (e, (i1,i2,i3,i4,i5,i6+1,i7,i8));
@@ -2127,7 +2126,7 @@ algorithm
       then (i1+1,i2,i3,i4,i5,i6,i7,i8);
     case (DAE.UMINUS_ARR(ty=tp),(i1,i2,i3,i4,i5,i6,i7,i8)) equation
       i = Expression.sizeOf(tp);
-      then (i1+i,i2,i3+i,i4,i5,i6,i7,i8);
+      then (i1+i,i2,i3,i4,i5,i6,i7,i8);
     case (DAE.ADD_ARR(ty=tp),(i1,i2,i3,i4,i5,i6,i7,i8)) equation
       i = Expression.sizeOf(tp);
       then (i1+i,i2,i3,i4,i5,i6,i7,i8);
@@ -2140,7 +2139,7 @@ algorithm
     case (DAE.DIV_ARR(ty=tp),(i1,i2,i3,i4,i5,i6,i7,i8)) equation
       i = Expression.sizeOf(tp);
       then (i1,i2,i3+i,i4,i5,i6,i7,i8);
-    case (DAE.MUL_ARRAY_SCALAR(),(i1,i2,i3,i4,i5,i6,i7,i8)) equation
+    case (DAE.MUL_ARRAY_SCALAR(),(i1,i2,i3,i4,i5,i6,i7,i8))
       then (i1,i2+1,i3,i4,i5,i6,i7,i8);
     case (DAE.ADD_ARRAY_SCALAR(),(i1,i2,i3,i4,i5,i6,i7,i8))
       then (i1+1,i2,i3,i4,i5,i6,i7,i8);
@@ -2165,10 +2164,8 @@ algorithm
     case (DAE.AND(),(i1,i2,i3,i4,i5,i6,i7,i8))
       then (i1,i2,i3,i4,i5,i6+1,i7,i8);
     case (DAE.OR(),(i1,i2,i3,i4,i5,i6,i7,i8))
-      equation
       then (i1,i2,i3,i4,i5,i6+1,i7,i8);
     case (DAE.NOT(),(i1,i2,i3,i4,i5,i6,i7,i8))
-      equation
       then (i1,i2,i3,i4,i5,i6+1,i7,i8);
     case (DAE.LESS(),(i1,i2,i3,i4,i5,i6,i7,i8))
       then (i1,i2,i3,i4,i5+1,i6,i7,i8);
