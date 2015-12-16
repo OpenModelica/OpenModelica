@@ -427,9 +427,9 @@ protected function transformBuiltinExpression "author: lochel
   output DAE.Exp outExp;
   output tuple<HashTableExpToIndex.HashTable, Integer /*iDelay*/, Integer /*iSample*/, list<BackendDAE.TimeEvent>> outTuple;
 algorithm
-  (outExp,outTuple) := matchcontinue (inExp,inTuple)
+  (outExp,outTuple) := matchcontinue (inExp, inTuple)
     local
-      DAE.Exp e, start, interval;
+      DAE.Exp start, interval;
       list<DAE.Exp> es;
       HashTableExpToIndex.HashTable ht;
       Integer iDelay, iSample, i;
@@ -437,29 +437,27 @@ algorithm
       DAE.CallAttributes attr;
 
     // delay [already in ht]
-    case (e as DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample, timeEvents)) equation
-      i = BaseHashTable.get(e, ht);
+    case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample, timeEvents)) equation
+      i = BaseHashTable.get(inExp, ht);
     then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(i)::es, attr), (ht, iDelay, iSample, timeEvents));
 
     // delay [not yet in ht]
-    case (e as DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample, timeEvents)) equation
-      ht = BaseHashTable.add((e, iDelay+1), ht);
+    case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample, timeEvents)) equation
+      ht = BaseHashTable.add((inExp, iDelay+1), ht);
     then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(iDelay)::es, attr), (ht, iDelay+1, iSample, timeEvents));
 
     // sample [already in ht]
-    case (e as DAE.CALL(Absyn.IDENT("sample"), es, attr), (ht, iDelay, iSample, timeEvents))
-    guard (not Types.isClockOrSubTypeClock(Expression.typeof(listGet(es, 2))))
-      equation
-        i = BaseHashTable.get(e, ht);
+    case (DAE.CALL(Absyn.IDENT("sample"), es as {start, interval}, attr), (ht, iDelay, iSample, timeEvents))
+    guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval))) equation
+      i = BaseHashTable.get(inExp, ht);
     then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(i)::es, attr), (ht, iDelay, iSample, timeEvents));
 
     // sample [not yet in ht]
-    case (e as DAE.CALL(Absyn.IDENT("sample"), es as {start, interval}, attr), (ht, iDelay, iSample, timeEvents))
-    guard (not Types.isClockOrSubTypeClock(Expression.typeof(listGet(es, 2))))
-      equation
-        iSample = iSample+1;
-        timeEvents = listAppend(timeEvents, {BackendDAE.SAMPLE_TIME_EVENT(iSample, start, interval)});
-        ht = BaseHashTable.add((e, iSample), ht);
+    case (DAE.CALL(Absyn.IDENT("sample"), es as {start, interval}, attr), (ht, iDelay, iSample, timeEvents))
+    guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval))) equation
+      iSample = iSample+1;
+      timeEvents = listAppend(timeEvents, {BackendDAE.SAMPLE_TIME_EVENT(iSample, start, interval)});
+      ht = BaseHashTable.add((inExp, iSample), ht);
     then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(iSample)::es, attr), (ht, iDelay, iSample, timeEvents));
 
     else (inExp,inTuple);
