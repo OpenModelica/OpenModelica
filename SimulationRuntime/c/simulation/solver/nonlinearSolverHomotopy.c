@@ -368,24 +368,30 @@ void debugMatrixPermutedDouble(int logName, char* matrixName, double* matrix, in
   {
     int i, j;
     int sparsity = 0;
-    char buffer[4096];
+    char *buffer = (char*)malloc(sizeof(char)*m*20);
 
     infoStreamPrint(logName, 1, "%s [%dx%d-dim]", matrixName, n, m);
     for(i=0; i<n;i++)
     {
       buffer[0] = 0;
       for(j=0; j<m; j++)
-        if (sparsity) {
+      {
+        if (sparsity)
+        {
           if (fabs(matrix[indRow[i] + indCol[j]*(m-1)])<1e-12)
             sprintf(buffer, "%s 0", buffer);
           else
             sprintf(buffer, "%s *", buffer);
-        } else {
+        }
+        else
+        {
           sprintf(buffer, "%s%16.8g ", buffer, matrix[indRow[i] + indCol[j]*(m-1)]);
         }
+      }
       infoStreamPrint(logName, 0, "%s", buffer);
     }
     messageClose(logName);
+    free(buffer);
   }
 }
 
@@ -395,33 +401,39 @@ void debugMatrixDouble(int logName, char* matrixName, double* matrix, int n, int
   {
     int i, j;
     int sparsity = 0;
-    char buffer[4096];
+    char *buffer = (char*)malloc(sizeof(char)*m*20);
 
     infoStreamPrint(logName, 1, "%s [%dx%d-dim]", matrixName, n, m);
     for(i=0; i<n;i++)
     {
       buffer[0] = 0;
       for(j=0; j<m; j++)
-        if (sparsity) {
+      {
+        if (sparsity)
+        {
           if (fabs(matrix[i + j*(m-1)])<1e-12)
             sprintf(buffer, "%s 0", buffer);
           else
             sprintf(buffer, "%s *", buffer);
-        } else {
+        }
+        else
+        {
           sprintf(buffer, "%s%16.8g ", buffer, matrix[i + j*(m-1)]);
         }
+      }
       infoStreamPrint(logName, 0, "%s", buffer);
     }
     messageClose(logName);
+    free(buffer);
   }
 }
 
 void debugVectorDouble(int logName, char* vectorName, double* vector, int n)
 {
-   if(ACTIVE_STREAM(logName))
+  if(ACTIVE_STREAM(logName))
   {
     int i;
-    char buffer[4096];
+    char *buffer = (char*)malloc(sizeof(char)*n*20);
 
     infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
     buffer[0] = 0;
@@ -436,6 +448,7 @@ void debugVectorDouble(int logName, char* vectorName, double* vector, int n)
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     messageClose(logName);
+    free(buffer);
   }
 }
 
@@ -444,7 +457,7 @@ void debugVectorInt(int logName, char* vectorName, modelica_boolean* vector, int
    if(ACTIVE_STREAM(logName))
   {
     int i;
-    char buffer[4096];
+    char *buffer = (char*)malloc(sizeof(char)*n*20);
 
     infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
     buffer[0] = 0;
@@ -459,6 +472,7 @@ void debugVectorInt(int logName, char* vectorName, modelica_boolean* vector, int
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     messageClose(logName);
+    free(buffer);
   }
 }
 
