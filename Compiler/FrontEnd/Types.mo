@@ -649,19 +649,13 @@ end isIntegerOrSubTypeInteger;
 protected function isClockOrSubTypeClock1
   input DAE.Type inType;
   output Boolean b;
+protected
+  Boolean lb1, lb2, lb3;
 algorithm
-  b := matchcontinue(inType)
-    local Type ty; Boolean lb1,lb2,lb3, lb4;
-    case(ty)
-      equation
-        lb1 = isClock(ty);
-        lb2 = subtype(ty, DAE.T_CLOCK_DEFAULT);
-        lb3 = subtype(DAE.T_CLOCK_DEFAULT,ty);
-        lb1 = boolOr(lb1,boolAnd(lb2,lb3));
-
-      then lb1;
-    else false;
-end matchcontinue;
+  lb1 := isClock(inType);
+  lb2 := equivtypes(inType, DAE.T_CLOCK_DEFAULT);
+  lb3 := not equivtypes(inType, DAE.T_UNKNOWN_DEFAULT);
+  b := lb1 or (lb2 and lb3);
 end isClockOrSubTypeClock1;
 
 public function isClockOrSubTypeClock
@@ -671,7 +665,7 @@ algorithm
   b := match inType
     local
       DAE.Type ty;
-    case DAE.T_FUNCTION(funcResultType = ty)
+    case DAE.T_FUNCTION(funcResultType=ty)
       then isClockOrSubTypeClock1(ty);
     else isClockOrSubTypeClock1(inType);
   end match;
