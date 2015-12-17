@@ -2704,40 +2704,36 @@ protected function simplifyMulJoinFactorsFind
   Searches rest of list to find all occurences of a base."
   input DAE.Exp inExp;
   input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
-  output Real outReal;
-  output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
+  output Real outReal = 0.0;
+  output list<tuple<DAE.Exp, Real>> outTplExpRealLst = {};
+protected
+   tuple<DAE.Exp, Real> tplExpReal;
 algorithm
-  (outReal,outTplExpRealLst) := match (inExp,inTplExpRealLst)
+  for tplExpReal in inTplExpRealLst loop
+
+   (outReal,outTplExpRealLst) := match (tplExpReal)
     local
-      Real coeff2,coeff3,coeff;
-      list<tuple<DAE.Exp, Real>> res,rest;
-      DAE.Exp e,e2,e1;
+      Real coeff;
+      DAE.Exp e2,e1;
       DAE.Operator op;
 
-    case (_,{}) then (0.0,{});
-
-    case (e,((e2,coeff) :: rest)) /* e1 == e2 */
-      guard Expression.expEqual(e, e2)
-      equation
-        (coeff2,res) = simplifyMulJoinFactorsFind(e, rest);
-        coeff3 = coeff + coeff2;
+    case (e2,coeff) /* e1 == e2 */
+      guard Expression.expEqual(inExp, e2)
       then
-        (coeff3,res);
+        (coeff + outReal, outTplExpRealLst);
 
-    case (e,((DAE.BINARY(exp1 = e1,operator = op as DAE.DIV(),exp2 = e2),coeff) :: rest)) // pow(a/b,n) * pow(b/a,m) = pow(a/b,n-m)
-    guard if Expression.isOne(e1) then Expression.expEqual(e, e2) else Expression.expEqual(e, DAE.BINARY(e2, op, e1))
-      equation
-        (coeff2,res) = simplifyMulJoinFactorsFind(e, rest);
-        coeff3 = coeff2 - coeff;
+    case (DAE.BINARY(exp1 = e1,operator = op as DAE.DIV(),exp2 = e2),coeff) // pow(a/b,n) * pow(b/a,m) = pow(a/b,n-m)
+    guard if Expression.isOne(e1) then Expression.expEqual(inExp, e2) else Expression.expEqual(inExp, DAE.BINARY(e2, op, e1))
       then
-        (coeff3,res);
+        (outReal - coeff, outTplExpRealLst);
 
-    case (e,((e2,coeff) :: rest)) /* not Expression.expEqual */
-      equation
-        (coeff2,res) = simplifyMulJoinFactorsFind(e, rest);
-      then
-        (coeff2,((e2,coeff) :: res));
-  end match;
+    else /* not Expression.expEqual */
+        (outReal, tplExpReal :: outTplExpRealLst);
+    end match;
+
+  end for;
+
+ outTplExpRealLst := listReverse(outTplExpRealLst);
 end simplifyMulJoinFactorsFind;
 
 protected function simplifyMulMakePow
