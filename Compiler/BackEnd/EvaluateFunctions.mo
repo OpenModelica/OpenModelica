@@ -1332,7 +1332,7 @@ algorithm
         ({stmt},_) = BackendVarTransform.replaceStatementLst({stmtIn},repl,NONE(),{},false);
         DAE.STMT_ASSIGN(exp1=e1,exp=e2) = stmt;
         b1 = Expression.isConst(e1);
-        b2 = Expression.isConst(e2) and b1;
+        b2 = Expression.isConst(e2);
         //stmt = if_(b1,stmtIn,stmt);
         stmt = stmtIn;
       then

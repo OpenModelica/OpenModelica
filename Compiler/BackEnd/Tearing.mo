@@ -1480,7 +1480,7 @@ algorithm
     case BackendDAE.SOLVABILITY_CONSTONE() then true;
     case BackendDAE.SOLVABILITY_CONST() then true;
     case BackendDAE.SOLVABILITY_PARAMETER(b=b) then b;
-    case BackendDAE.SOLVABILITY_LINEAR(b=b) then false;
+    case BackendDAE.SOLVABILITY_LINEAR() then false;
     case BackendDAE.SOLVABILITY_NONLINEAR() then false;
     case BackendDAE.SOLVABILITY_UNSOLVABLE() then false;
     case BackendDAE.SOLVABILITY_SOLVABLE() then true;
@@ -3070,20 +3070,12 @@ algorithm
   size := List.fold2(interEqs,sizeOfAssignable,me,ass1In,0);
   arrayUpdate(ass1In,Var,-1);
 
-  OutValue := matchcontinue(size,num)
-  case(_,_)
-    equation
-      true = size < num;
-     then ((me,ass1In,selEqs,selVars,cVars,num,indx+1,size::counts));
-    case(_,_)
-    equation
-      true = size == num;
-     then ((me,ass1In,selEqs,selVars,indx::cVars,num,indx+1,size::counts));
-    case(_,_)
-    equation
-      true = size > num;
-     then ((me,ass1In,selEqs,selVars,{indx},size,indx+1,size::counts));
-  end matchcontinue;
+  OutValue := if size < num then
+                ((me,ass1In,selEqs,selVars,cVars,num,indx+1,size::counts))
+              else if size == num then
+                ((me,ass1In,selEqs,selVars,indx::cVars,num,indx+1,size::counts))
+              else
+                ((me,ass1In,selEqs,selVars,{indx},size,indx+1,size::counts));
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("Var " + intString(listGet(selVars,indx)) + " would causalize " + intString(size) + " Eqns\n");

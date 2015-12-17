@@ -2288,20 +2288,17 @@ protected function replaceStateIndex
   input Integer iR;
   input array<Integer> stateindexs;
   output Integer oR;
+protected
+  Integer s,r;
 algorithm
-  oR := matchcontinue(iR,stateindexs)
-    local
-      Integer s,r;
-    case (_,_)
-      equation
-        false = intGt(iR,0);
-        r = intAbs(iR);
-        s = stateindexs[r];
-        true = intGt(s,0);
-      then
-        s;
-    case (_,_) then iR;
-  end matchcontinue;
+  oR := iR;
+  if not intGt(iR,0) then
+    r := intAbs(iR);
+    s := stateindexs[r];
+    if intGt(s,0) then
+      oR := s;
+    end if;
+  end if;
 end replaceStateIndex;
 
 protected function getIncidenceMatrixLevelEquations
