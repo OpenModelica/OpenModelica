@@ -2694,7 +2694,7 @@ algorithm
     outTplExpRealLst := (e, coeff) :: outTplExpRealLst;
   end while;
 
-  outTplExpRealLst := listReverse(outTplExpRealLst);
+ // outTplExpRealLst := listReverse(outTplExpRealLst);
 
 end simplifyMulJoinFactors;
 
@@ -2746,30 +2746,16 @@ protected function simplifyMulMakePow
   Makes each item in the list into a pow
   expression, except when exponent is 1.0."
   input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
-  output list<DAE.Exp> outExpLst;
+  output list<DAE.Exp> outExpLst = {};
+protected
+  tuple<DAE.Exp, Real> tplExpReal;
+  DAE.Exp e;
+  Real r;
 algorithm
-  outExpLst := matchcontinue (inTplExpRealLst)
-    local
-      list<DAE.Exp> res;
-      DAE.Exp e;
-      Real r;
-      list<tuple<DAE.Exp, Real>> xs;
-
-    case ({}) then {};
-
-    case (((e,r) :: xs))
-      equation
-        (r == 1.0) = true;
-        res = simplifyMulMakePow(xs);
-      then
-        (e :: res);
-
-    case (((e,r) :: xs))
-      equation
-        res = simplifyMulMakePow(xs);
-      then
-        (DAE.BINARY(e,DAE.POW(DAE.T_REAL_DEFAULT),DAE.RCONST(r)) :: res);
-  end matchcontinue;
+  for tplExpReal in inTplExpRealLst loop
+    (e,r) := tplExpReal;
+    outExpLst := if r == 1.0 then e :: outExpLst else DAE.BINARY(e,DAE.POW(DAE.T_REAL_DEFAULT),DAE.RCONST(r)) :: outExpLst;
+  end for;
 end simplifyMulMakePow;
 
 protected function simplifyAdd
