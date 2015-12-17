@@ -2792,24 +2792,20 @@ protected function simplifyAddJoinTerms
   Join all terms with the same expression.
   i.e. 2a+4a gives an element (a,6) in the list."
   input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
-  output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
+  output list<tuple<DAE.Exp, Real>> outTplExpRealLst = {};
+protected
+  list<tuple<DAE.Exp, Real>> tplExpRealLst = inTplExpRealLst;
+  DAE.Exp e;
+  Real coeff, coeff2;
 algorithm
-  outTplExpRealLst := match (inTplExpRealLst)
-    local
-      Real coeff2,coeff3,coeff;
-      list<tuple<DAE.Exp, Real>> rest_1,res,rest;
-      DAE.Exp e;
 
-    case ({}) then {};
-
-    case (((e,coeff) :: rest))
-      equation
-        (coeff2,rest_1) = simplifyAddJoinTermsFind(e, rest);
-        res = simplifyAddJoinTerms(rest_1);
-        coeff3 = coeff + coeff2;
-      then
-        ((e,coeff3) :: res);
-  end match;
+  while not listEmpty(tplExpRealLst) loop
+    (e, coeff) :: tplExpRealLst := tplExpRealLst;
+    (coeff2, tplExpRealLst) := simplifyAddJoinTermsFind(e, tplExpRealLst);
+    coeff := coeff + coeff2;
+    outTplExpRealLst := (e, coeff) :: outTplExpRealLst;
+  end while;
+outTplExpRealLst := listReverse(outTplExpRealLst);
 end simplifyAddJoinTerms;
 
 protected function simplifyAddJoinTermsFind
