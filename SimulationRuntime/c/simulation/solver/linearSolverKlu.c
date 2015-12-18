@@ -317,7 +317,12 @@ void printMatrixCSC(int* Ap, int* Ai, double* Ax, int n)
 {
   int i, j, k, l;
 
-  char buffer[400][4096] = {0};
+  char **buffer = (char**)malloc(sizeof(char*)*n);
+  for (l=0; l<n; l++)
+  {
+    buffer[l] = (char*)malloc(sizeof(char)*n*20);
+    buffer[l][0] = 0;
+  }
 
   k = 0;
   for (i = 0; i < n; i++)
@@ -338,18 +343,20 @@ void printMatrixCSC(int* Ap, int* Ai, double* Ax, int n)
   for (l = 0; l < n; l++)
   {
     infoStreamPrint(LOG_LS_V, 0, "%s", buffer[l]);
+    free(buffer[l]);
   }
-
+  free(buffer);
 }
 
 static
 void printMatrixCSR(int* Ap, int* Ai, double* Ax, int n)
 {
   int i, j, k;
-  char buffer[1024] = {0};
+  char *buffer = (char*)malloc(sizeof(char)*n*15);
   k = 0;
   for (i = 0; i < n; i++)
   {
+    buffer[0] = 0;
     for (j = 0; j < n; j++)
     {
       if ((k < Ap[i + 1]) && (Ai[k] == j))
@@ -363,8 +370,8 @@ void printMatrixCSR(int* Ap, int* Ai, double* Ax, int n)
       }
     }
     infoStreamPrint(LOG_LS_V, 0, "%s", buffer);
-    memset(buffer, 0, 1024);
   }
+  free(buffer);
 }
 
 #endif

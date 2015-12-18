@@ -109,21 +109,22 @@ freeLisData(void **voiddata)
 
 void printLisMatrixCSR(LIS_MATRIX A, int n)
 {
-  char buffer[16384];
   int i, j;
   /* A matrix */
   infoStreamPrint(LOG_LS_V, 1, "A matrix [%dx%d] nnz = %d ", n, n, A->nnz);
   for(i=0; i<n; i++)
   {
+    char *buffer = (char*)malloc(sizeof(char)*A->ptr[i+1]*50);
     buffer[0] = 0;
-    for(j=A->ptr[i]; j<A->ptr[i+1]; j++){
+    for(j=A->ptr[i]; j<A->ptr[i+1]; j++)
+    {
        sprintf(buffer, "%s(%d,%d,%g) ", buffer, i, A->index[j], A->value[j]);
     }
     infoStreamPrint(LOG_LS_V, 0, "%s", buffer);
+    free(buffer);
   }
 
   messageClose(LOG_LS_V);
-
 }
 
 /*! \fn getAnalyticalJacobian
@@ -262,7 +263,7 @@ solveLis(DATA *data, threadData_t *threadData, int sysNumber)
   /* Log A*x=b */
   if(ACTIVE_STREAM(LOG_LS_V))
   {
-    char buffer[16384];
+    char *buffer = (char*)malloc(sizeof(char)*n*25);
 
     printLisMatrixCSR(solverData->A, n);
 
@@ -275,6 +276,7 @@ solveLis(DATA *data, threadData_t *threadData, int sysNumber)
       infoStreamPrint(LOG_LS_V, 0, "%s", buffer);
     }
     messageClose(LOG_LS_V);
+    free(buffer);
   }
 
   /* print solution */

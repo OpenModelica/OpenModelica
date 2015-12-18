@@ -372,7 +372,7 @@ static int wrapper_fvec_hybrj(const integer* n, const double* x, double* f, doub
 
       if(ACTIVE_STREAM(LOG_NLS_JAC))
       {
-        char buffer[16384];
+        char *buffer = (char*)malloc(sizeof(char)*(*n)*25);
         infoStreamPrint(LOG_NLS_JAC, 1, "jacobian matrix [%dx%d]", (int)*n, (int)*n);
         for(i=0; i<*n; i++)
         {
@@ -382,6 +382,7 @@ static int wrapper_fvec_hybrj(const integer* n, const double* x, double* f, doub
           infoStreamPrint(LOG_NLS_JAC, 0, "%s", buffer);
         }
         messageClose(LOG_NLS_JAC);
+        free(buffer);
       }
     }
     /* reset residual function again */
@@ -646,7 +647,7 @@ int solveHybrd(DATA *data, threadData_t *threadData, int sysNumber)
         /* debug output */
         if(ACTIVE_STREAM(LOG_NLS_JAC))
         {
-          char buffer[4096];
+          char *buffer = (char*)malloc(sizeof(char)*solverData->n*15);
 
           infoStreamPrint(LOG_NLS_JAC, 1, "jacobian matrix [%dx%d]", (int)solverData->n, (int)solverData->n);
           for(i=0; i<solverData->n; i++)
@@ -657,6 +658,7 @@ int solveHybrd(DATA *data, threadData_t *threadData, int sysNumber)
             infoStreamPrint(LOG_NLS_JAC, 0, "%s", buffer);
           }
           messageClose(LOG_NLS_JAC);
+          free(buffer);
         }
 
         /* check for error  */

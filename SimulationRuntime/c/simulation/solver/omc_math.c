@@ -737,21 +737,26 @@ void _omc_printVector(_omc_vector* vec, const char* name, const int logLevel)
  *  \param [in]  [logLevel] !TODO: DESCRIBE ME!
  */
 void _omc_printMatrix(_omc_matrix* mat, const char* name, const int logLevel) {
-  _omc_size i, j;
-  char buffer[4096];
-  if (!ACTIVE_STREAM(logLevel)) return;
+  if (ACTIVE_STREAM(logLevel))
+  {
+    _omc_size i, j;
+    char *buffer = (char*)malloc(sizeof(char)*mat->cols*20);
 
-  assertStreamPrint(NULL, NULL != mat->data, "matrix data is NULL pointer");
+    assertStreamPrint(NULL, NULL != mat->data, "matrix data is NULL pointer");
 
-  infoStreamPrint(logLevel, 1, "%s", name);
-  for (i = 0; i < mat->rows; ++i) {
-    buffer[0] = 0;
-    for (j = 0; j < mat->cols; ++j){
-      sprintf(buffer, "%s%10g ", buffer, _omc_getMatrixElement(mat, i, j));
+    infoStreamPrint(logLevel, 1, "%s", name);
+    for (i = 0; i < mat->rows; ++i)
+    {
+      buffer[0] = 0;
+      for (j = 0; j < mat->cols; ++j)
+      {
+        sprintf(buffer, "%s%10g ", buffer, _omc_getMatrixElement(mat, i, j));
+      }
+      infoStreamPrint(logLevel, 0, "%s", buffer);
     }
-    infoStreamPrint(logLevel, 0, "%s", buffer);
+    messageClose(logLevel);
+    free(buffer);
   }
-  messageClose(logLevel);
 }
 
 /*! \fn _omc_scalar _omc_euclideanVectorNorm(_omc_vector* vec)

@@ -191,7 +191,7 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
   /*
   if(ACTIVE_STREAM(LOG_DSS))
   {
-    char buffer[4096];
+    char *buffer = (char*)malloc(sizeof(char)*data->simulationInfo->analyticJacobians[jacIndex].sizeCols*10);
 
     infoStreamPrint(LOG_DSS, "jacobian %dx%d [id: %d]", data->simulationInfo->analyticJacobians[jacIndex].sizeRows, data->simulationInfo->analyticJacobians[jacIndex].sizeCols, jacIndex);
     INDENT(LOG_DSS);
@@ -202,6 +202,7 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
         sprintf(buffer, "%s%.5e ", buffer, jac[i*data->simulationInfo->analyticJacobians[jacIndex].sizeCols+j]);
       infoStreamPrint(LOG_DSS, "%s", buffer);
     }
+    free(buffer);
     RELEASE(LOG_DSS);
   }
   */
@@ -335,7 +336,7 @@ int stateSelection(DATA *data, threadData_t *threadData, char reportError, int s
     if((pivot(set->J, set->nDummyStates, set->nCandidates, set->rowPivot, set->colPivot) != 0) && reportError)
     {
       /* error, report the matrix and the time */
-      char buffer[4096];
+      char *buffer = (char*)malloc(sizeof(char)*data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols*10);
 
       warningStreamPrint(LOG_DSS, 1, "jacobian %dx%d [id: %ld]", data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeRows, data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols, set->jacobianIndex);
       for(i=0; i < data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeRows; i++)
@@ -345,6 +346,7 @@ int stateSelection(DATA *data, threadData_t *threadData, char reportError, int s
           sprintf(buffer, "%s%.5e ", buffer, set->J[i*data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols+j]);
         warningStreamPrint(LOG_DSS, 0, "%s", buffer);
       }
+      free(buffer);
 
       for(i=0; i<set->nCandidates; i++)
         warningStreamPrint(LOG_DSS, 0, "%s", set->statescandidates[i]->name);

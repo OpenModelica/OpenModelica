@@ -51,24 +51,30 @@ void debugMatrixDoubleLS(int logName, char* matrixName, double* matrix, int n, i
   {
     int i, j;
     int sparsity = 0;
-    char buffer[4096];
+    char *buffer = (char*)malloc(sizeof(char)*m*18);
 
     infoStreamPrint(logName, 1, "%s [%dx%d-dim]", matrixName, n, m);
     for(i=0; i<n;i++)
     {
       buffer[0] = 0;
       for(j=0; j<m; j++)
-        if (sparsity) {
+      {
+        if (sparsity)
+        {
           if (fabs(matrix[i + j*(m-1)])<1e-12)
             sprintf(buffer, "%s 0", buffer);
           else
             sprintf(buffer, "%s *", buffer);
-        } else {
+        }
+        else
+        {
           sprintf(buffer, "%s%12.4g ", buffer, matrix[i + j*(m-1)]);
         }
+      }
       infoStreamPrint(logName, 0, "%s", buffer);
     }
     messageClose(logName);
+    free(buffer);
   }
 }
 
@@ -77,7 +83,7 @@ void debugVectorDoubleLS(int logName, char* vectorName, double* vector, int n)
    if(ACTIVE_STREAM(logName))
   {
     int i;
-    char buffer[4096];
+    char *buffer = (char*)malloc(sizeof(char)*n*22);
 
     infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
     buffer[0] = 0;
@@ -91,6 +97,7 @@ void debugVectorDoubleLS(int logName, char* vectorName, double* vector, int n)
         sprintf(buffer, "%s%16.8g ", buffer, vector[i]);
     }
     infoStreamPrint(logName, 0, "%s", buffer);
+    free(buffer);
     messageClose(logName);
   }
 }

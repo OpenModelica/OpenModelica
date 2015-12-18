@@ -99,7 +99,8 @@ int initializeNLScsvData(DATA* data, NONLINEAR_SYSTEM_DATA* systemData)
  */
 int print_csvLineCallStatsHeader(OMC_WRITE_CSV* csvData)
 {
-  char buffer[1024] = "";
+  char buffer[1024];
+  buffer[0] = 0;
 
   /* number of call */
   sprintf(buffer,"numberOfCall");
