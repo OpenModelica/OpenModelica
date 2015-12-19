@@ -2801,7 +2801,7 @@ algorithm
     coeff := coeff + coeff2;
     outTplExpRealLst := (e, coeff) :: outTplExpRealLst;
   end while;
-outTplExpRealLst := listReverse(outTplExpRealLst);
+//outTplExpRealLst := listReverse(outTplExpRealLst);
 end simplifyAddJoinTerms;
 
 protected function simplifyAddJoinTermsFind
@@ -2841,39 +2841,36 @@ protected function simplifyAddMakeMul
   Makes multiplications of each element
   in the list, except for coefficient 1.0"
   input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
-  output list<DAE.Exp> outExpLst;
+  output list<DAE.Exp> outExpLst = {};
+protected
+  tuple<DAE.Exp, Real> tplExpReal;
 algorithm
-  outExpLst := matchcontinue (inTplExpRealLst)
+  for tplExpReal in inTplExpRealLst loop
+
+    outExpLst := matchcontinue (tplExpReal)
     local
-      list<DAE.Exp> res;
       DAE.Exp e;
       Real r;
-      list<tuple<DAE.Exp, Real>> xs;
       Integer tmpInt;
 
-    case ({}) then {};
-
-    case (((e,r) :: xs))
-      equation
-        (r == 1.0) = true;
-        res = simplifyAddMakeMul(xs);
+    case (e,r)
+      guard (r == 1.0)
       then
-        (e :: res);
+        (e :: outExpLst);
 
-    case (((e,r) :: xs))
+    case (e,r)
       equation
         DAE.T_INTEGER() = Expression.typeof(e);
-        res = simplifyAddMakeMul(xs);
         tmpInt = realInt(r);
       then
-        (DAE.BINARY(DAE.ICONST(tmpInt),DAE.MUL(DAE.T_INTEGER_DEFAULT),e) :: res);
+        (DAE.BINARY(DAE.ICONST(tmpInt),DAE.MUL(DAE.T_INTEGER_DEFAULT),e) :: outExpLst);
 
-    case (((e,r) :: xs))
-      equation
-        res = simplifyAddMakeMul(xs);
+    case (e,r)
       then
-        (DAE.BINARY(DAE.RCONST(r),DAE.MUL(DAE.T_REAL_DEFAULT),e) :: res);
-  end matchcontinue;
+        (DAE.BINARY(DAE.RCONST(r),DAE.MUL(DAE.T_REAL_DEFAULT),e) :: outExpLst);
+    end matchcontinue;
+
+  end for;
 end simplifyAddMakeMul;
 
 protected function simplifyBinaryAddCoeff2
