@@ -7,6 +7,7 @@ Bug1687.mos \
 Bug1728.mos \
 Bug1987.mos \
 Bug2432.mos \
+Bug2536.mos \
 Bug2633.mos \
 Bug2704.mos \
 Bug2788.mos \
