@@ -38,11 +38,12 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_CLOCK */                 "clock",
   /* FLAG_CPU */                   "cpu",
   /* FLAG_DASSL_JACOBIAN */        "dasslJacobian",
-  /* FLAG_DASSL_NO_ROOTFINDING */  "dasslnoRootFinding",
   /* FLAG_DASSL_NO_RESTART */      "dasslnoRestart",
+  /* FLAG_DASSL_NO_ROOTFINDING */  "dasslnoRootFinding",
   /* FLAG_EMIT_PROTECTED */        "emit_protected",
   /* FLAG_F */                     "f",
   /* FLAG_HELP */                  "help",
+  /* FLAG_IGNORE_HIDERESULT */     "ignoreHideResult",
   /* FLAG_IIF */                   "iif",
   /* FLAG_IIM */                   "iim",
   /* FLAG_IIT */                   "iit",
@@ -51,8 +52,8 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_INPUT_FILE */            "exInputFile",
   /* FLAG_INPUT_FILE_STATES */     "stateFile",
   /* FLAG_IPOPT_HESSE*/            "ipopt_hesse",
-  /* FLAG_IPOPT_JAC*/              "ipopt_jac",
   /* FLAG_IPOPT_INIT*/             "ipopt_init",
+  /* FLAG_IPOPT_JAC*/              "ipopt_jac",
   /* FLAG_IPOPT_MAX_ITER */        "ipopt_max_iter",
   /* FLAG_IPOPT_WARM_START */      "ipopt_warm_start",
   /* FLAG_L */                     "l",
@@ -60,8 +61,8 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_LS */                    "ls",
   /* FLAG_LS_IPOPT */              "ls_ipopt",
   /* FLAG_LV */                    "lv",
-  /* FLAG_MAX_STEP_SIZE */         "maxStepSize",
   /* FLAG_MAX_ORDER */             "maxIntegrationOrder",
+  /* FLAG_MAX_STEP_SIZE */         "maxStepSize",
   /* FLAG_MEASURETIMEPLOTFORMAT */ "measureTimePlotFormat",
   /* FLAG_NEWTON_STRATEGY */       "newton",
   /* FLAG_NLS */                   "nls",
@@ -72,15 +73,15 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_NOEQUIDISTANT_OUT_TIME*/ "noEquidistantOutputTime",
   /* FLAG_NOEVENTEMIT */           "noEventEmit",
   /* FLAG_OPTDEBUGEJAC */          "optDebugeJac",
+  /* FLAG_OPTIMIZER_NP */          "optimizerNP",
+  /* FLAG_OPTIMIZER_TGRID */       "optimizerTimeGrid",
   /* FLAG_OUTPUT */                "output",
   /* FLAG_OVERRIDE */              "override",
   /* FLAG_OVERRIDE_FILE */         "overrideFile",
-  /* FLAG_OPTIMIZER_NP */          "optimizerNP",
-  /* FLAG_OPTIMIZER_TGRID */       "optimizerTimeGrid",
-  /* FLAG_UP_HESSIAN */            "keepHessian",
   /* FLAG_PORT */                  "port",
   /* FLAG_R */                     "r",
   /* FLAG_S */                     "s",
+  /* FLAG_UP_HESSIAN */            "keepHessian",
   /* FLAG_W */                     "w",
 
   "FLAG_MAX"
@@ -94,11 +95,12 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_CLOCK */                 "selects the type of clock to use -clock=RT, -clock=CYC or -clock=CPU",
   /* FLAG_CPU */                   "dumps the cpu-time into the results-file",
   /* FLAG_DASSL_JACOBIAN */        "selects the type of the jacobians that is used for the dassl solver.\n  dasslJacobian=[coloredNumerical (default) |numerical|internalNumerical|coloredSymbolical|symbolical].",
-  /* FLAG_DASSL_NO_ROOTFINDING */  "flag deactivates the internal root finding procedure of dassl.",
   /* FLAG_DASSL_NO_RESTART */      "flag deactivates the restart of dassl after an event is performed.",
+  /* FLAG_DASSL_NO_ROOTFINDING */  "flag deactivates the internal root finding procedure of dassl.",
   /* FLAG_EMIT_PROTECTED */        "emits protected variables to the result-file",
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
   /* FLAG_HELP */                  "get detailed information that specifies the command-line flag",
+  /* FLAG_IGNORE_HIDERESULT */     "ignore HideResult=true annotation",
   /* FLAG_IIF */                   "value specifies an external file for the initialization of the model",
   /* FLAG_IIM */                   "value specifies the initialization method",
   /* FLAG_IIT */                   "[double] value specifies a time for the initialization of the model",
@@ -107,8 +109,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_INPUT_FILE */            "value specifies an external file with inputs for the simulation/optimization of the model",
   /* FLAG_INPUT_FILE_STATES */     "value specifies an file with states start values for the optimization of the model",
   /* FLAG_IPOPT_HESSE */           "value specifies the hessian for Ipopt",
-  /* FLAG_IPOPT_JAC */             "value specifies the jacobian for Ipopt",
   /* FLAG_IPOPT_INIT */            "value specifies the initial guess for optimization",
+  /* FLAG_IPOPT_JAC */             "value specifies the jacobian for Ipopt",
   /* FLAG_IPOPT_MAX_ITER */        "value specifies the max number of iteration for ipopt",
   /* FLAG_IPOPT_WARM_START */      "value specifies lvl for a warm start in ipopt: 1,2,3,...",
   /* FLAG_L */                     "value specifies a time where the linearization of the model should be performed",
@@ -116,8 +118,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_LS */                    "value specifies the linear solver method",
   /* FLAG_LS_IPOPT */              "value specifies the linear solver method for ipopt",
   /* FLAG_LV */                    "[string list] value specifies the logging level",
-  /* FLAG_MAX_STEP_SIZE */         "value specifies maximum absolute step size, used by dassl solver",
   /* FLAG_MAX_ORDER */             "value specifies maximum integration order, used by dassl solver",
+  /* FLAG_MAX_STEP_SIZE */         "value specifies maximum absolute step size, used by dassl solver",
   /* FLAG_MEASURETIMEPLOTFORMAT */ "value specifies the output format of the measure time functionality",
   /* FLAG_NEWTON_STRATEGY */       "value specifies the damping strategy for the newton solver",
   /* FLAG_NLS */                   "value specifies the nonlinear solver",
@@ -128,15 +130,15 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_NOEQUIDISTANT_OUT_TIME*/ "value controls the output time point in noEquidistantOutputTime mode",
   /* FLAG_NOEVENTEMIT */           "do not emit event points to the result file",
   /* FLAG_OPTDEBUGEJAC */          "value specifies the number of iter from the dyn. optimization, which will be debuge, creating *csv and *py file",
+  /* FLAG_OPTIMIZER_NP */          "value specifies the number of points in a subinterval",
+  /* FLAG_OPTIMIZER_TGRID */       "value specifies external file with time points.",
   /* FLAG_OUTPUT */                "output the variables a, b and c at the end of the simulation to the standard output",
   /* FLAG_OVERRIDE */              "override the variables or the simulation settings in the XML setup file",
   /* FLAG_OVERRIDE_FILE */         "will override the variables or the simulation settings in the XML setup file with the values from the file",
-  /* FLAG_OPTIMIZER_NP */          "value specifies the number of points in a subinterval",
-  /* FLAG_OPTIMIZER_TGRID */       "value specifies external file with time points.",
-  /* FLAG_UP_HESSIAN */            "value specifies the number of steps, which keep hessian matrix constant",
   /* FLAG_PORT */                  "value specifies the port for simulation status (default disabled)",
   /* FLAG_R */                     "value specifies a new result file than the default Model_res.mat",
   /* FLAG_S */                     "value specifies the solver",
+  /* FLAG_UP_HESSIAN */            "value specifies the number of steps, which keep hessian matrix constant",
   /* FLAG_W */                     "shows all warnings even if a related log-stream is inactive",
 
   "FLAG_MAX"
@@ -162,10 +164,10 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  * coloredSymbolical (colored symbolical Jacobian. Only usable if the simulation is compiled with --generateSymbolicJacobian or --generateSymbolicLinearization.\n"
   "  * numerical - numerical Jacobian.\n\n"
   "  * symbolical - symbolical Jacobian. Only usable if the simulation is compiled with --generateSymbolicJacobian or --generateSymbolicLinearization.",
-  /* FLAG_DASSL_NO_ROOTFINDING */
-  "  Deactivates the internal root finding procedure of dassl.",
   /* FLAG_DASSL_NO_RESTART */
   "  Deactivates the restart of dassl after an event is performed.",
+  /* FLAG_DASSL_NO_ROOTFINDING */
+  "  Deactivates the internal root finding procedure of dassl.",
   /* FLAG_EMIT_PROTECTED */
   "  Emits protected variables to the result-file.",
   /* FLAG_F */
@@ -173,6 +175,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_HELP */
   "  Get detailed information that specifies the command-line flag\n"
   "  For example, -help=f prints detailed information for command-line flag f.",
+  /* FLAG_IGNORE_HIDERESULT */
+  "  Emits also variables with HideResult=true annotation.",
   /* FLAG_IIF */
   "  Value specifies an external file for the initialization of the model.",
   /* FLAG_IIM */
@@ -190,10 +194,10 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies an file with states start values for the optimization of the model.",
   /* FLAG_IPOPT_HESSE */
   "  Value specifies the hessematrix for Ipopt(OMC, BFGS, const).",
-  /* FLAG_IPOPT_JAC */
-  "  Value specifies the jacobian for Ipopt(SYM, NUM, NUMDENSE).",
   /* FLAG_IPOPT_INIT */
   "  Value specifies the initial guess for optimization (sim, const).",
+  /* FLAG_IPOPT_JAC */
+  "  Value specifies the jacobian for Ipopt(SYM, NUM, NUMDENSE).",
   /* FLAG_IPOPT_MAX_ITER */
   "  Value specifies the max number of iteration for ipopt.",
   /* FLAG_IPOPT_WARM_START */
@@ -212,10 +216,10 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_LV */
   "  Value (a comma-separated String list) specifies which logging levels to\n"
   "  enable. Multiple options can be enabled at the same time.",
-  /* FLAG_MAX_STEP_SIZE */
-  "  Value specifies maximum absolute step size, used by dassl solver.",
   /* FLAG_MAX_ORDER */
   "  Value specifies maximum integration order, used by dassl solver.",
+  /* FLAG_MAX_STEP_SIZE */
+  "  Value specifies maximum absolute step size, used by dassl solver.",
   /* FLAG_MEASURETIMEPLOTFORMAT */
   "  Value specifies the output format of the measure time functionality\n\n"
   "  * svg\n"
@@ -249,6 +253,11 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_OPTDEBUGEJAC */
   "  Value specifies the number of itereations from the dynamic optimization, which\n"
   "  will be debugged, creating .csv and .py files.",
+  /* FLAG_OPTIMIZER_NP */
+  "  Value specifies the number of points in a subinterval.\n"
+  "  Currently supports numbers 1 and 3.",
+  /* FLAG_OPTIMIZER_TGRID */
+  "  Value specifies external file with time points.",
   /* FLAG_OUTPUT */
   "  Output the variables a, b and c at the end of the simulation to the standard\n"
   "  output: time = value, a = value, b = value, c = value",
@@ -261,13 +270,6 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Note that: -overrideFile CANNOT be used with -override.\n"
   "  Use when variables for -override are too many.\n"
   "  overrideFileName contains lines of the form: var1=start1",
-  /* FLAG_OPTIMIZER_NP */
-  "  Value specifies the number of points in a subinterval.\n"
-  "  Currently supports numbers 1 and 3.",
-  /* FLAG_OPTIMIZER_TGRID */
-  "  Value specifies external file with time points.",
-  /* FLAG_UP_HESSIAN */
-  "  Value specifies the number of steps, which keep hessian matrix constant.",
   /* FLAG_PORT */
   "  Value specifies the port for simulation status (default disabled).",
   /* FLAG_R */
@@ -276,6 +278,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  For example: Model_res.mat.",
   /* FLAG_S */
   "  Value specifies the solver (integration method).",
+  /* FLAG_UP_HESSIAN */
+  "  Value specifies the number of steps, which keep hessian matrix constant.",
   /* FLAG_W */
   "  Shows all warnings even if a related log-stream is inactive.",
 
@@ -290,11 +294,12 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_CLOCK */                 FLAG_TYPE_OPTION,
   /* FLAG_CPU */                   FLAG_TYPE_FLAG,
   /* FLAG_DASSL_JACOBIAN */        FLAG_TYPE_OPTION,
-  /* FLAG_DASSL_NO_ROOTFINDING */  FLAG_TYPE_FLAG,
   /* FLAG_DASSL_NO_RESTART */      FLAG_TYPE_FLAG,
+  /* FLAG_DASSL_NO_ROOTFINDING */  FLAG_TYPE_FLAG,
   /* FLAG_EMIT_PROTECTED */        FLAG_TYPE_FLAG,
   /* FLAG_F */                     FLAG_TYPE_OPTION,
   /* FLAG_HELP */                  FLAG_TYPE_OPTION,
+  /* FLAG_IGNORE_HIDERESULT */     FLAG_TYPE_FLAG,
   /* FLAG_IIF */                   FLAG_TYPE_OPTION,
   /* FLAG_IIM */                   FLAG_TYPE_OPTION,
   /* FLAG_IIT */                   FLAG_TYPE_OPTION,
@@ -303,8 +308,8 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_INPUT_FILE */            FLAG_TYPE_OPTION,
   /* FLAG_INPUT_FILE_STATES */     FLAG_TYPE_OPTION,
   /* FLAG_IPOPT_HESSE */           FLAG_TYPE_OPTION,
-  /* FLAG_IPOPT_JAC */             FLAG_TYPE_OPTION,
   /* FLAG_IPOPT_INIT */            FLAG_TYPE_OPTION,
+  /* FLAG_IPOPT_JAC */             FLAG_TYPE_OPTION,
   /* FLAG_IPOPT_MAX_ITER */        FLAG_TYPE_OPTION,
   /* FLAG_IPOPT_WARM_START */      FLAG_TYPE_OPTION,
   /* FLAG_L */                     FLAG_TYPE_OPTION,
@@ -312,8 +317,8 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_LS */                    FLAG_TYPE_OPTION,
   /* FLAG_LS_IPOPT */              FLAG_TYPE_OPTION,
   /* FLAG_LV */                    FLAG_TYPE_OPTION,
-  /* FLAG_MAX_STEP_SIZE */         FLAG_TYPE_OPTION,
   /* FLAG_MAX_ORDER */             FLAG_TYPE_OPTION,
+  /* FLAG_MAX_STEP_SIZE */         FLAG_TYPE_OPTION,
   /* FLAG_MEASURETIMEPLOTFORMAT */ FLAG_TYPE_OPTION,
   /* FLAG_NEWTON_STRATEGY */       FLAG_TYPE_OPTION,
   /* FLAG_NLS */                   FLAG_TYPE_OPTION,
@@ -324,15 +329,15 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_NOEQUIDISTANT_OUT_TIME*/ FLAG_TYPE_OPTION,
   /* FLAG_NOEVENTEMIT */           FLAG_TYPE_FLAG,
   /* FLAG_OPTDEBUGEJAC */          FLAG_TYPE_OPTION,
+  /* FLAG_OPTIZER_NP */            FLAG_TYPE_OPTION,
+  /* FLAG_OPTIZER_TGRID */         FLAG_TYPE_OPTION,
   /* FLAG_OUTPUT */                FLAG_TYPE_OPTION,
   /* FLAG_OVERRIDE */              FLAG_TYPE_OPTION,
   /* FLAG_OVERRIDE_FILE */         FLAG_TYPE_OPTION,
-  /* FLAG_OPTIZER_NP */            FLAG_TYPE_OPTION,
-  /* FLAG_OPTIZER_TGRID */         FLAG_TYPE_OPTION,
-  /* FLAG_UP_HESSIAN */            FLAG_TYPE_OPTION,
   /* FLAG_PORT */                  FLAG_TYPE_OPTION,
   /* FLAG_R */                     FLAG_TYPE_OPTION,
   /* FLAG_S */                     FLAG_TYPE_OPTION,
+  /* FLAG_UP_HESSIAN */            FLAG_TYPE_OPTION,
   /* FLAG_W */                     FLAG_TYPE_FLAG
 };
 

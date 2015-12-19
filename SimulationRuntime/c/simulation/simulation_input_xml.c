@@ -603,7 +603,7 @@ void read_input_xml(MODEL_DATA* modelData,
       infoStreamPrint(LOG_DEBUG, 0, "filtering protected variable %s", info->name); \
       out[j].filterOutput = 1; \
     } \
-    else if (0 == strcmp(findHashStringString(v, "hideResult"), "true")) \
+    else if (!omc_flag[FLAG_IGNORE_HIDERESULT] && 0 == strcmp(findHashStringString(v, "hideResult"), "true")) \
     { \
       infoStreamPrint(LOG_DEBUG, 0, "filtering variable %s due to HideResult annotation", info->name); \
       out[j].filterOutput = 1; \
