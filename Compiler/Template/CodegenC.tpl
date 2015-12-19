@@ -5500,7 +5500,7 @@ template ScalarVariableAttribute(SimVar simVar, Integer classIndex, String class
  "Generates code for ScalarVariable Attribute file for FMU target."
 ::=
   match simVar
-    case SIMVAR(source = SOURCE(info = info)) then
+    case SIMVAR(source=SOURCE(info=info)) then
       let valueReference = '<%System.tmpTick()%>'
       let variability = getVariablity(varKind)
       let description = if comment then 'description = "<%Util.escapeModelicaStringToXmlString(comment)%>"'
@@ -5514,7 +5514,7 @@ template ScalarVariableAttribute(SimVar simVar, Integer classIndex, String class
       causality = "<%caus%>" isValueChangeable = "<%isValueChangeable%>"
       alias = <%alias%>
       classIndex = "<%classIndex%>" classType = "<%classType%>"
-      isProtected = "<%isProtected%>"
+      isProtected = "<%isProtected%>" hideResult = "<%hideResult%>"
       <%getInfoArgs(info)%>
       >>
 end ScalarVariableAttribute;

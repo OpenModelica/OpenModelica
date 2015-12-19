@@ -226,6 +226,7 @@ package SimCodeVar
       list<String> numArrayElement;
       Boolean isValueChangeable;
       Boolean isProtected;
+      Boolean hideResult;
     end SIMVAR;
   end SimVar;
 

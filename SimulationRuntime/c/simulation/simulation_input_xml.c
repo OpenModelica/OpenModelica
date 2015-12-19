@@ -584,7 +584,7 @@ void read_input_xml(MODEL_DATA* modelData,
 
   /* read all static data from File for every variable */
 
-#define READ_VARIABLES(out,in,attributeKind,read_var_attribute,debugName,start,nStates,mapAlias) \
+#define READ_VARIABLES(out, in, attributeKind, read_var_attribute, debugName, start, nStates, mapAlias) \
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for %s", debugName); \
   for(i = 0; i < nStates; i++) \
   { \
@@ -594,10 +594,18 @@ void read_input_xml(MODEL_DATA* modelData,
     omc_ScalarVariable *v = *findHashLongVar(in, i); \
     read_var_info(v, info); \
     read_var_attribute(v, attribute); \
-    if (info->name[0] == '$') { \
+    if (info->name[0] == '$') \
+    { \
       out[j].filterOutput = 1; \
-    } else if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == strcmp(findHashStringString(v,"isProtected"),"true")) { \
+    } \
+    else if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == strcmp(findHashStringString(v, "isProtected"), "true")) \
+    { \
       infoStreamPrint(LOG_DEBUG, 0, "filtering protected variable %s", info->name); \
+      out[j].filterOutput = 1; \
+    } \
+    else if (0 == strcmp(findHashStringString(v, "hideResult"), "true")) \
+    { \
+      infoStreamPrint(LOG_DEBUG, 0, "filtering variable %s due to HideResult annotation", info->name); \
       out[j].filterOutput = 1; \
     } \
     addHashStringLong(&mapAlias, info->name, j); /* create a mapping for Alias variable to get the correct index */ \

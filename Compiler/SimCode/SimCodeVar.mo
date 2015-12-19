@@ -100,6 +100,7 @@ public uniontype SimVar "Information about a variable in a Modelica model."
     list<String> numArrayElement;
     Boolean isValueChangeable;
     Boolean isProtected;
+    Boolean hideResult;
   end SIMVAR;
 end SimVar;
 
