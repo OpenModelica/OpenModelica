@@ -19,7 +19,7 @@ end Vectorizable7;
 // function Vectorizable7.f
 //   input Integer m;
 //   output Real y;
-//   protected parameter Real[m] phi = array(/*Real*/(i + -1) / /*Real*/(m + -1) for i in 1:m);
+//   protected parameter Real[m] phi = array(/*Real*/(-1 + i) / /*Real*/(-1 + m) for i in 1:m);
 //   protected parameter Real[m] t = array(cos($tmpVar5) for $tmpVar5 in phi);
 // algorithm
 //   y := sum(t);

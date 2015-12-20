@@ -844,7 +844,7 @@ simulate(A); getErrorString();
 //             fermig := 0.5 * /*Real*/(in_m_type) * in_p.m_gateType * egfet1;
 //             wkfng := 3.25 + 0.5 * egfet1 - fermig;
 //           end if;
-//           wkfngs := wkfng + -3.25 + -0.5 * egfet1 - fermis;
+//           wkfngs := -3.25 + wkfng + -0.5 * egfet1 - fermis;
 //           if not in_p.m_gammaIsGiven > 0.5 then
 //             out_v.m_gamma := 5.761561600860045e-12 * sqrt(in_p.m_substrateDoping / out_v.m_oxideCapFactor);
 //           end if;
@@ -1018,7 +1018,7 @@ simulate(A); getErrorString();
 //   input Real Celsius(quantity = \"ThermodynamicTemperature\", unit = \"degC\") \"Celsius value\";
 //   output Real Kelvin(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) \"Kelvin value\";
 // algorithm
-//   Kelvin := Celsius + 273.15;
+//   Kelvin := 273.15 + Celsius;
 // end Modelica.SIunits.Conversions.from_degC;
 //
 // class A

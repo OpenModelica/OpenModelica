@@ -612,7 +612,7 @@ simulate(TestMedia.TestModels.TestNitrogen); getErrorString();
 //   input Real Celsius(quantity = \"ThermodynamicTemperature\", unit = \"degC\") \"Celsius value\";
 //   output Real Kelvin(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"Kelvin value\";
 // algorithm
-//   Kelvin := Celsius + 273.15;
+//   Kelvin := 273.15 + Celsius;
 // end Modelica.SIunits.Conversions.from_degC;
 //
 // function TestMedia.TestModels.TestNitrogen.Medium.FluidConstants \"Automatically generated record constructor for TestMedia.TestModels.TestNitrogen.Medium.FluidConstants\"

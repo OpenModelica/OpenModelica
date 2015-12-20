@@ -4128,7 +4128,7 @@ end IntroductoryExamples_Systems_InvertedPendulum;
 //     if next < nrow then
 //       nextEvent := startTime + table[next,1];
 //     end if;
-//     next0 := next + -1;
+//     next0 := -1 + next;
 //     dt := table[next,1] - table[next0,1];
 //     if dt <= TimeEps * abs(table[next,1]) then
 //       a := 0.0;

@@ -81,15 +81,15 @@ end AbsIssues;
 //   if nx == 1 then
 //     yi := y[1];
 //   else
-//     i := min(max(iLast, 1), nx + -1);
+//     i := min(max(iLast, 1), -1 + nx);
 //     if xi >= x[i] then
 //       while i < nx and xi >= x[i] loop
 //         i := 1 + i;
 //       end while;
-//       i := i + -1;
+//       i := -1 + i;
 //     else
 //       while i > 1 and xi < x[i] loop
-//         i := i + -1;
+//         i := -1 + i;
 //       end while;
 //     end if;
 //     x1 := x[i];

@@ -645,7 +645,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   protected Real fb;
 //   protected Real fc;
 //   protected Boolean found = false;
-//   protected Real x_min2 = x_min + -1e-10;
+//   protected Real x_min2 = -1e-10 + x_min;
 //   protected Real x_max2 = 1e-10 + x_max;
 //   protected Real a = x_min2;
 //   protected Real b = x_max2;
@@ -1779,7 +1779,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   protected Real fb;
 //   protected Real fc;
 //   protected Boolean found = false;
-//   protected Real x_min2 = x_min + -1e-10;
+//   protected Real x_min2 = -1e-10 + x_min;
 //   protected Real x_max2 = 1e-10 + x_max;
 //   protected Real a = x_min2;
 //   protected Real b = x_max2;

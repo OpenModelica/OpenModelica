@@ -3698,7 +3698,7 @@ end InnerOuterSamePrefix;// Result:
 //   input Real[4] Q "Quaternions orientation object to rotate frame 1 into frame 2";
 //   output Real[1] residue "Residue constraint (shall be zero)";
 // algorithm
-//   residue := {Q[1] ^ 2.0 + Q[2] ^ 2.0 + Q[3] ^ 2.0 + Q[4] ^ 2.0 + -1.0};
+//   residue := {-1.0 + Q[1] ^ 2.0 + Q[2] ^ 2.0 + Q[3] ^ 2.0 + Q[4] ^ 2.0};
 // end Modelica.Mechanics.MultiBody.Frames.Quaternions.orientationConstraint;
 //
 // function Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotation "Inline before index reduction" "Return absolute orientation object from another absolute and a relative orientation object"
@@ -3825,7 +3825,7 @@ end InnerOuterSamePrefix;// Result:
 //   input Real[3] w(quantity = "AngularVelocity", unit = "rad/s") "Angular velocity from frame 2 with respect to frame 1, resolved in frame 2";
 //   output Modelica.Mechanics.MultiBody.Frames.Orientation R "Orientation object to rotate frame 1 into frame 2";
 // algorithm
-//   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{2.0 * (Q[1] ^ 2.0 + Q[4] ^ 2.0) + -1.0, 2.0 * (Q[1] * Q[2] + Q[3] * Q[4]), 2.0 * (Q[1] * Q[3] - Q[2] * Q[4])}, {2.0 * (Q[2] * Q[1] - Q[3] * Q[4]), 2.0 * (Q[2] ^ 2.0 + Q[4] ^ 2.0) + -1.0, 2.0 * (Q[2] * Q[3] + Q[1] * Q[4])}, {2.0 * (Q[3] * Q[1] + Q[2] * Q[4]), 2.0 * (Q[3] * Q[2] - Q[1] * Q[4]), 2.0 * (Q[3] ^ 2.0 + Q[4] ^ 2.0) + -1.0}}, {w[1], w[2], w[3]});
+//   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{-1.0 + 2.0 * (Q[1] ^ 2.0 + Q[4] ^ 2.0), 2.0 * (Q[1] * Q[2] + Q[3] * Q[4]), 2.0 * (Q[1] * Q[3] - Q[2] * Q[4])}, {2.0 * (Q[2] * Q[1] - Q[3] * Q[4]), -1.0 + 2.0 * (Q[2] ^ 2.0 + Q[4] ^ 2.0), 2.0 * (Q[2] * Q[3] + Q[1] * Q[4])}, {2.0 * (Q[3] * Q[1] + Q[2] * Q[4]), 2.0 * (Q[3] * Q[2] - Q[1] * Q[4]), -1.0 + 2.0 * (Q[3] ^ 2.0 + Q[4] ^ 2.0)}}, {w[1], w[2], w[3]});
 // end Modelica.Mechanics.MultiBody.Frames.from_Q;
 //
 // function Modelica.Mechanics.MultiBody.Frames.from_nxy "Return fixed orientation object from n_x and n_y vectors"

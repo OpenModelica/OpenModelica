@@ -6705,7 +6705,7 @@ end System2;
 //   input Real Tsat(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
 //   output Real psat(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0);
 // algorithm
-//   psat := Buildings.Utilities.Math.Functions.spliceFunction(Buildings.Fluid.Interfaces.ConservationEquation$vol$dynBal.Medium.saturationPressureLiquid(Tsat), Buildings.Fluid.Interfaces.ConservationEquation$vol$dynBal.Medium.sublimationPressureIce(Tsat), Tsat + -273.16, 1.0);
+//   psat := Buildings.Utilities.Math.Functions.spliceFunction(Buildings.Fluid.Interfaces.ConservationEquation$vol$dynBal.Medium.saturationPressureLiquid(Tsat), Buildings.Fluid.Interfaces.ConservationEquation$vol$dynBal.Medium.sublimationPressureIce(Tsat), -273.16 + Tsat, 1.0);
 // end Buildings.Fluid.Interfaces.ConservationEquation$vol$dynBal.Medium.saturationPressure;
 //
 // function Buildings.Fluid.Interfaces.ConservationEquation$vol$dynBal.Medium.saturationPressureLiquid
@@ -6869,7 +6869,7 @@ end System2;
 //   input Real Tsat(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
 //   output Real psat(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0);
 // algorithm
-//   psat := Buildings.Utilities.Math.Functions.spliceFunction(Buildings.Fluid.MixingVolumes.MixingVolume$vol.Medium.saturationPressureLiquid(Tsat), Buildings.Fluid.MixingVolumes.MixingVolume$vol.Medium.sublimationPressureIce(Tsat), Tsat + -273.16, 1.0);
+//   psat := Buildings.Utilities.Math.Functions.spliceFunction(Buildings.Fluid.MixingVolumes.MixingVolume$vol.Medium.saturationPressureLiquid(Tsat), Buildings.Fluid.MixingVolumes.MixingVolume$vol.Medium.sublimationPressureIce(Tsat), -273.16 + Tsat, 1.0);
 // end Buildings.Fluid.MixingVolumes.MixingVolume$vol.Medium.saturationPressure;
 //
 // function Buildings.Fluid.MixingVolumes.MixingVolume$vol.Medium.saturationPressureLiquid
@@ -6917,7 +6917,7 @@ end System2;
 //   input Buildings.Fluid.MixingVolumes.MixingVolume$vol.Medium.ThermodynamicState state;
 //   output Real u(quantity = "SpecificEnergy", unit = "J/kg", min = -100000000.0, max = 100000000.0, nominal = 1000000.0);
 // algorithm
-//   u := Buildings.Media.GasesPTDecoupled.MoistAirUnsaturated.h_pTX(state.p, state.T, {state.X[1], state.X[2]}) + -84437.5;
+//   u := -84437.5 + Buildings.Media.GasesPTDecoupled.MoistAirUnsaturated.h_pTX(state.p, state.T, {state.X[1], state.X[2]});
 // end Buildings.Fluid.MixingVolumes.MixingVolume$vol.Medium.specificInternalEnergy;
 //
 // function Buildings.Fluid.MixingVolumes.MixingVolume$vol.Medium.sublimationPressureIce
@@ -6960,7 +6960,7 @@ end System2;
 //     eta := data.eta[1];
 //   else
 //     i := 1;
-//     for j in 1:n + -1 loop
+//     for j in 1:-1 + n loop
 //       if r_V > data.r_V[j] then
 //         i := j;
 //       end if;
@@ -7296,7 +7296,7 @@ end System2;
 //   input Real Tsat(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
 //   output Real psat(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0);
 // algorithm
-//   psat := Buildings.Utilities.Math.Functions.spliceFunction(Buildings.Media.GasesPTDecoupled.MoistAirUnsaturated.saturationPressureLiquid(Tsat), Buildings.Media.GasesPTDecoupled.MoistAirUnsaturated.sublimationPressureIce(Tsat), Tsat + -273.16, 1.0);
+//   psat := Buildings.Utilities.Math.Functions.spliceFunction(Buildings.Media.GasesPTDecoupled.MoistAirUnsaturated.saturationPressureLiquid(Tsat), Buildings.Media.GasesPTDecoupled.MoistAirUnsaturated.sublimationPressureIce(Tsat), -273.16 + Tsat, 1.0);
 // end Buildings.Media.GasesPTDecoupled.MoistAirUnsaturated.saturationPressure;
 //
 // function Buildings.Media.GasesPTDecoupled.MoistAirUnsaturated.saturationPressureLiquid
@@ -7432,7 +7432,7 @@ end System2;
 //   input Real Tsat(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
 //   output Real psat(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0);
 // algorithm
-//   psat := Buildings.Utilities.Math.Functions.spliceFunction(Buildings.Media.PerfectGases.MoistAir.saturationPressureLiquid(Tsat), Buildings.Media.PerfectGases.MoistAir.sublimationPressureIce(Tsat), Tsat + -273.16, 1.0);
+//   psat := Buildings.Utilities.Math.Functions.spliceFunction(Buildings.Media.PerfectGases.MoistAir.saturationPressureLiquid(Tsat), Buildings.Media.PerfectGases.MoistAir.sublimationPressureIce(Tsat), -273.16 + Tsat, 1.0);
 // end Buildings.Media.PerfectGases.MoistAir.saturationPressure;
 //
 // function Buildings.Media.PerfectGases.MoistAir.saturationPressureLiquid
@@ -7510,13 +7510,13 @@ end System2;
 //     monotonic := true;
 //     if strict then
 //       if x[1] >= x[n] then
-//         for i in 1:n + -1 loop
+//         for i in 1:-1 + n loop
 //           if not x[i] > x[1 + i] then
 //             monotonic := false;
 //           end if;
 //         end for;
 //       else
-//         for i in 1:n + -1 loop
+//         for i in 1:-1 + n loop
 //           if not x[i] < x[1 + i] then
 //             monotonic := false;
 //           end if;
@@ -7524,13 +7524,13 @@ end System2;
 //       end if;
 //     else
 //       if x[1] >= x[n] then
-//         for i in 1:n + -1 loop
+//         for i in 1:-1 + n loop
 //           if not x[i] >= x[1 + i] then
 //             monotonic := false;
 //           end if;
 //         end for;
 //       else
-//         for i in 1:n + -1 loop
+//         for i in 1:-1 + n loop
 //           if not x[i] <= x[1 + i] then
 //             monotonic := false;
 //           end if;
@@ -7622,7 +7622,7 @@ end System2;
 //   protected Real beta;
 //   protected Real tau;
 //   protected Integer n = size(x, 1);
-//   protected Real[n + -1] delta;
+//   protected Real[-1 + n] delta;
 // algorithm
 //   if n > 1 then
 //     assert(x[1] < x[n], "x must be strictly increasing.
@@ -7639,17 +7639,17 @@ end System2;
 //     d[1] := (y[2] - y[1]) / (x[2] - x[1]);
 //     d[2] := d[1];
 //   else
-//     for i in 1:n + -1 loop
+//     for i in 1:-1 + n loop
 //       delta[i] := (y[1 + i] - y[i]) / (x[1 + i] - x[i]);
 //     end for;
 //     d[1] := delta[1];
-//     d[n] := delta[n + -1];
-//     for i in 2:n + -1 loop
-//       d[i] := 0.5 * (delta[i + -1] + delta[i]);
+//     d[n] := delta[-1 + n];
+//     for i in 2:-1 + n loop
+//       d[i] := 0.5 * (delta[-1 + i] + delta[i]);
 //     end for;
 //   end if;
 //   if n > 2 and ensureMonotonicity then
-//     for i in 1:n + -1 loop
+//     for i in 1:-1 + n loop
 //       if abs(delta[i]) < 1e-60 then
 //         d[i] := 0.0;
 //         d[1 + i] := 0.0;
@@ -7694,7 +7694,7 @@ end System2;
 //   protected Real[order] den1;
 // algorithm
 //   if normalized then
-//     alpha := sqrt(10.0 ^ (0.3 / /*Real*/(order)) + -1.0);
+//     alpha := sqrt(-1.0 + 10.0 ^ (0.3 / /*Real*/(order)));
 //   else
 //     alpha := 1.0;
 //   end if;
@@ -8027,7 +8027,7 @@ end System2;
 //               is negative. It must be positive.
 //               ");
 //   end for;
-//   if nX > 0 and abs(sum(X_boundary) + -1.0) > 1e-10 then
+//   if nX > 0 and abs(-1.0 + sum(X_boundary)) > 1e-10 then
 //     X_str := "";
 //     for i in 1:nX loop
 //       X_str := X_str + "   X_boundary[" + String(i, 0, true) + "] = " + String(X_boundary[i], 0, true, 6) + " \"" + substanceNames[i] + "\"
@@ -8341,7 +8341,7 @@ end System2;
 //   input Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 0.0, start = 288.15, nominal = 300.0);
 //   output Real h(quantity = "SpecificEnergy", unit = "J/kg");
 // algorithm
-//   h := Modelica.Media.Air.MoistAir.Utilities.spliceFunction(4200.0 * (-273.15 + T), 2050.0 * (-273.15 + T) + -333000.0, T + -273.16, 0.1);
+//   h := Modelica.Media.Air.MoistAir.Utilities.spliceFunction(4200.0 * (-273.15 + T), -333000.0 + 2050.0 * (-273.15 + T), -273.16 + T, 0.1);
 // end Modelica.Media.Air.MoistAir.enthalpyOfWater;
 //
 // function Modelica.Media.Air.MoistAir.h_pTX
@@ -8367,7 +8367,7 @@ end System2;
 //   input Real Tsat(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 190.0, max = 647.0, start = 300.0, nominal = 300.0);
 //   output Real psat(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0);
 // algorithm
-//   psat := Modelica.Media.Air.MoistAir.Utilities.spliceFunction(Modelica.Media.Air.MoistAir.saturationPressureLiquid(Tsat), Modelica.Media.Air.MoistAir.sublimationPressureIce(Tsat), Tsat + -273.16, 1.0);
+//   psat := Modelica.Media.Air.MoistAir.Utilities.spliceFunction(Modelica.Media.Air.MoistAir.saturationPressureLiquid(Tsat), Modelica.Media.Air.MoistAir.sublimationPressureIce(Tsat), -273.16 + Tsat, 1.0);
 // end Modelica.Media.Air.MoistAir.saturationPressure;
 //
 // function Modelica.Media.Air.MoistAir.saturationPressureLiquid
@@ -8616,7 +8616,7 @@ end System2;
 //   input Real Celsius(quantity = "ThermodynamicTemperature", unit = "degC");
 //   output Real Kelvin(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 0.0, start = 288.15, nominal = 300.0);
 // algorithm
-//   Kelvin := Celsius + 273.15;
+//   Kelvin := 273.15 + Celsius;
 // end Modelica.SIunits.Conversions.from_degC;
 //
 // function Modelica.SIunits.Conversions.to_bar
@@ -9897,16 +9897,16 @@ end System2;
 //   rad.dTRad[3] = rad.heatPortRad.T - rad.vol[3].T;
 //   rad.dTRad[4] = rad.heatPortRad.T - rad.vol[4].T;
 //   rad.dTRad[5] = rad.heatPortRad.T - rad.vol[5].T;
-//   rad.preHeaFloCon[1].Q_flow = homotopy(rad.dTCon[1] * (1.0 - rad.fraRad) * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTCon[1], rad.n + -1.0, 0.05), abs(rad.dTCon_nominal[1]) ^ (rad.n + -1.0) * (1.0 - rad.fraRad) * rad.UAEle * rad.dTCon[1]);
-//   rad.preHeaFloCon[2].Q_flow = homotopy(rad.dTCon[2] * (1.0 - rad.fraRad) * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTCon[2], rad.n + -1.0, 0.05), abs(rad.dTCon_nominal[2]) ^ (rad.n + -1.0) * (1.0 - rad.fraRad) * rad.UAEle * rad.dTCon[2]);
-//   rad.preHeaFloCon[3].Q_flow = homotopy(rad.dTCon[3] * (1.0 - rad.fraRad) * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTCon[3], rad.n + -1.0, 0.05), abs(rad.dTCon_nominal[3]) ^ (rad.n + -1.0) * (1.0 - rad.fraRad) * rad.UAEle * rad.dTCon[3]);
-//   rad.preHeaFloCon[4].Q_flow = homotopy(rad.dTCon[4] * (1.0 - rad.fraRad) * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTCon[4], rad.n + -1.0, 0.05), abs(rad.dTCon_nominal[4]) ^ (rad.n + -1.0) * (1.0 - rad.fraRad) * rad.UAEle * rad.dTCon[4]);
-//   rad.preHeaFloCon[5].Q_flow = homotopy(rad.dTCon[5] * (1.0 - rad.fraRad) * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTCon[5], rad.n + -1.0, 0.05), abs(rad.dTCon_nominal[5]) ^ (rad.n + -1.0) * (1.0 - rad.fraRad) * rad.UAEle * rad.dTCon[5]);
-//   rad.preHeaFloRad[1].Q_flow = homotopy(rad.dTRad[1] * rad.fraRad * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTRad[1], rad.n + -1.0, 0.05), abs(rad.dTRad_nominal[1]) ^ (rad.n + -1.0) * rad.fraRad * rad.UAEle * rad.dTRad[1]);
-//   rad.preHeaFloRad[2].Q_flow = homotopy(rad.dTRad[2] * rad.fraRad * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTRad[2], rad.n + -1.0, 0.05), abs(rad.dTRad_nominal[2]) ^ (rad.n + -1.0) * rad.fraRad * rad.UAEle * rad.dTRad[2]);
-//   rad.preHeaFloRad[3].Q_flow = homotopy(rad.dTRad[3] * rad.fraRad * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTRad[3], rad.n + -1.0, 0.05), abs(rad.dTRad_nominal[3]) ^ (rad.n + -1.0) * rad.fraRad * rad.UAEle * rad.dTRad[3]);
-//   rad.preHeaFloRad[4].Q_flow = homotopy(rad.dTRad[4] * rad.fraRad * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTRad[4], rad.n + -1.0, 0.05), abs(rad.dTRad_nominal[4]) ^ (rad.n + -1.0) * rad.fraRad * rad.UAEle * rad.dTRad[4]);
-//   rad.preHeaFloRad[5].Q_flow = homotopy(rad.dTRad[5] * rad.fraRad * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTRad[5], rad.n + -1.0, 0.05), abs(rad.dTRad_nominal[5]) ^ (rad.n + -1.0) * rad.fraRad * rad.UAEle * rad.dTRad[5]);
+//   rad.preHeaFloCon[1].Q_flow = homotopy(rad.dTCon[1] * (1.0 - rad.fraRad) * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTCon[1], -1.0 + rad.n, 0.05), abs(rad.dTCon_nominal[1]) ^ (-1.0 + rad.n) * (1.0 - rad.fraRad) * rad.UAEle * rad.dTCon[1]);
+//   rad.preHeaFloCon[2].Q_flow = homotopy(rad.dTCon[2] * (1.0 - rad.fraRad) * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTCon[2], -1.0 + rad.n, 0.05), abs(rad.dTCon_nominal[2]) ^ (-1.0 + rad.n) * (1.0 - rad.fraRad) * rad.UAEle * rad.dTCon[2]);
+//   rad.preHeaFloCon[3].Q_flow = homotopy(rad.dTCon[3] * (1.0 - rad.fraRad) * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTCon[3], -1.0 + rad.n, 0.05), abs(rad.dTCon_nominal[3]) ^ (-1.0 + rad.n) * (1.0 - rad.fraRad) * rad.UAEle * rad.dTCon[3]);
+//   rad.preHeaFloCon[4].Q_flow = homotopy(rad.dTCon[4] * (1.0 - rad.fraRad) * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTCon[4], -1.0 + rad.n, 0.05), abs(rad.dTCon_nominal[4]) ^ (-1.0 + rad.n) * (1.0 - rad.fraRad) * rad.UAEle * rad.dTCon[4]);
+//   rad.preHeaFloCon[5].Q_flow = homotopy(rad.dTCon[5] * (1.0 - rad.fraRad) * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTCon[5], -1.0 + rad.n, 0.05), abs(rad.dTCon_nominal[5]) ^ (-1.0 + rad.n) * (1.0 - rad.fraRad) * rad.UAEle * rad.dTCon[5]);
+//   rad.preHeaFloRad[1].Q_flow = homotopy(rad.dTRad[1] * rad.fraRad * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTRad[1], -1.0 + rad.n, 0.05), abs(rad.dTRad_nominal[1]) ^ (-1.0 + rad.n) * rad.fraRad * rad.UAEle * rad.dTRad[1]);
+//   rad.preHeaFloRad[2].Q_flow = homotopy(rad.dTRad[2] * rad.fraRad * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTRad[2], -1.0 + rad.n, 0.05), abs(rad.dTRad_nominal[2]) ^ (-1.0 + rad.n) * rad.fraRad * rad.UAEle * rad.dTRad[2]);
+//   rad.preHeaFloRad[3].Q_flow = homotopy(rad.dTRad[3] * rad.fraRad * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTRad[3], -1.0 + rad.n, 0.05), abs(rad.dTRad_nominal[3]) ^ (-1.0 + rad.n) * rad.fraRad * rad.UAEle * rad.dTRad[3]);
+//   rad.preHeaFloRad[4].Q_flow = homotopy(rad.dTRad[4] * rad.fraRad * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTRad[4], -1.0 + rad.n, 0.05), abs(rad.dTRad_nominal[4]) ^ (-1.0 + rad.n) * rad.fraRad * rad.UAEle * rad.dTRad[4]);
+//   rad.preHeaFloRad[5].Q_flow = homotopy(rad.dTRad[5] * rad.fraRad * rad.UAEle * Buildings.Utilities.Math.Functions.regNonZeroPower(rad.dTRad[5], -1.0 + rad.n, 0.05), abs(rad.dTRad_nominal[5]) ^ (-1.0 + rad.n) * rad.fraRad * rad.UAEle * rad.dTRad[5]);
 //   rad.QCon_flow = rad.preHeaFloCon[1].Q_flow + rad.preHeaFloCon[2].Q_flow + rad.preHeaFloCon[3].Q_flow + rad.preHeaFloCon[4].Q_flow + rad.preHeaFloCon[5].Q_flow;
 //   rad.QRad_flow = rad.preHeaFloRad[1].Q_flow + rad.preHeaFloRad[2].Q_flow + rad.preHeaFloRad[3].Q_flow + rad.preHeaFloRad[4].Q_flow + rad.preHeaFloRad[5].Q_flow;
 //   rad.Q_flow = rad.QCon_flow + rad.QRad_flow;

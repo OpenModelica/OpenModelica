@@ -22,7 +22,7 @@ end Test;
 //   input Integer x;
 //   output Integer y;
 // algorithm
-//   y := if x > 0 then x * Faculty1(x + -1) else 1;
+//   y := if x > 0 then x * Faculty1(-1 + x) else 1;
 // end Faculty1;
 //
 // class Test

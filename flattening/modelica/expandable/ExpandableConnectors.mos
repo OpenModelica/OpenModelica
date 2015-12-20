@@ -109,11 +109,11 @@ checkModel(Test07); getErrorString();
 //     while xVal > x[index] and index <= size(x, 1) loop
 //       index := 1 + index;
 //     end while;
-//     x1 := x[index + -1];
+//     x1 := x[-1 + index];
 //     x2 := x[index];
-//     y1 := y[index + -1];
+//     y1 := y[-1 + index];
 //     y2 := y[index];
-//     slope1 := slope[index + -1];
+//     slope1 := slope[-1 + index];
 //     slope2 := slope[index];
 //     a1 := (x2 * (slope2 + slope1) - -2.0 * y1 - 2.0 * y2 - slope1 * x1 - slope2 * x1) / (x2 - x1) ^ 3.0;
 //     a2 := (x2 ^ 2.0 * (-2.0 * slope1 - slope2) + x2 * (-3.0 * y1 + slope1 * x1 + 3.0 * y2 - slope2 * x1) + -3.0 * y1 * x1 + slope1 * x1 ^ 2.0 + 3.0 * y2 * x1 + 2.0 * slope2 * x1 ^ 2.0) / (x2 - x1) ^ 3.0;

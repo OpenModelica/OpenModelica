@@ -47,7 +47,7 @@ end Algorithm1;
 //   y = sin(time);
 // algorithm
 //   i := 0;
-//   a := y + -1.0;
+//   a := -1.0 + y;
 //   while 0.1 * /*Real*/(i) < y loop
 //     a := 0.5 + a;
 //     i := 1 + i;

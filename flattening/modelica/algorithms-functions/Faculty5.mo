@@ -172,7 +172,7 @@ end M1_solutions_E03_Faculty_FacultyCall;
 //   output Integer k = 1;
 // algorithm
 //   assert(n >= 0, "n must be larger than 0");
-//   k := if n == 0 then 1 else n * M1_solutions.E03.Faculty.faculty_rec(n + -1);
+//   k := if n == 0 then 1 else n * M1_solutions.E03.Faculty.faculty_rec(-1 + n);
 // end M1_solutions.E03.Faculty.faculty_rec;
 //
 // class M1_solutions_E03_Faculty_FacultyCall

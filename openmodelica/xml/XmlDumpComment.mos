@@ -26855,7 +26855,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 //   input Real[3] w(quantity = &quot;AngularVelocity&quot;, unit = &quot;rad/s&quot;) &quot;Angular velocity from frame 2 with respect to frame 1, resolved in frame 2&quot;;
 //   output Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
 // algorithm
-//   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{2.0 * (Q[1] ^ 2.0 + Q[4] ^ 2.0) + -1.0, 2.0 * (Q[1] * Q[2] + Q[3] * Q[4]), 2.0 * (Q[1] * Q[3] - Q[2] * Q[4])}, {2.0 * (Q[2] * Q[1] - Q[3] * Q[4]), 2.0 * (Q[2] ^ 2.0 + Q[4] ^ 2.0) + -1.0, 2.0 * (Q[2] * Q[3] + Q[1] * Q[4])}, {2.0 * (Q[3] * Q[1] + Q[2] * Q[4]), 2.0 * (Q[3] * Q[2] - Q[1] * Q[4]), 2.0 * (Q[3] ^ 2.0 + Q[4] ^ 2.0) + -1.0}}, {w[1], w[2], w[3]});
+//   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{-1.0 + 2.0 * (Q[1] ^ 2.0 + Q[4] ^ 2.0), 2.0 * (Q[1] * Q[2] + Q[3] * Q[4]), 2.0 * (Q[1] * Q[3] - Q[2] * Q[4])}, {2.0 * (Q[2] * Q[1] - Q[3] * Q[4]), -1.0 + 2.0 * (Q[2] ^ 2.0 + Q[4] ^ 2.0), 2.0 * (Q[2] * Q[3] + Q[1] * Q[4])}, {2.0 * (Q[3] * Q[1] + Q[2] * Q[4]), 2.0 * (Q[3] * Q[2] - Q[1] * Q[4]), -1.0 + 2.0 * (Q[3] ^ 2.0 + Q[4] ^ 2.0)}}, {w[1], w[2], w[3]});
 // end Modelica.Mechanics.MultiBody.Frames.from_Q;
 //
 //
@@ -27073,7 +27073,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 //   input Real[4] Q &quot;Quaternions orientation object to rotate frame 1 into frame 2&quot;;
 //   output Real[1] residue &quot;Residue constraint (shall be zero)&quot;;
 // algorithm
-//   residue := {Q[1] ^ 2.0 + Q[2] ^ 2.0 + Q[3] ^ 2.0 + Q[4] ^ 2.0 + -1.0};
+//   residue := {-1.0 + Q[1] ^ 2.0 + Q[2] ^ 2.0 + Q[3] ^ 2.0 + Q[4] ^ 2.0};
 // end Modelica.Mechanics.MultiBody.Frames.Quaternions.orientationConstraint;
 //
 //

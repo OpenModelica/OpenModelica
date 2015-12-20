@@ -734,7 +734,7 @@ readFile("testModel_info.xml");getErrorString();
 //     </source>
 //   </equation>
 //   <equation index=\"13\" parent=\"14\">
-//     <residual>x ^ 2.0 + y ^ 2.0 + -1.0</residual>
+//     <residual>-1.0 + x ^ 2.0 + y ^ 2.0</residual>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
 //       <part-of>within testModel;</part-of>
@@ -827,7 +827,7 @@ readFile("testModel_info.xml");getErrorString();
 //     </source>
 //   </equation>
 //   <equation index=\"21\" parent=\"22\">
-//     <residual>x ^ 2.0 + y ^ 2.0 + -1.0</residual>
+//     <residual>-1.0 + x ^ 2.0 + y ^ 2.0</residual>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
 //       <part-of>within testModel;</part-of>

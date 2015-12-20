@@ -719,7 +719,7 @@ simulate(TestMedia.TestModels.TestWater); getErrorString();
 //   eta := 5e-07 * h;
 //   etabc := 0.001 * h;
 //   if pi < 4.0 then
-//     eta2a := eta + -2.1;
+//     eta2a := -2.1 + eta;
 //     o[1] := eta2a ^ 2.0;
 //     o[2] := o[1] ^ 2.0;
 //     o[3] := pi ^ 2.0;
@@ -727,8 +727,8 @@ simulate(TestMedia.TestModels.TestWater); getErrorString();
 //     o[5] := o[3] * pi;
 //     T := 1089.8952318288 + (1.844574935579 + -0.0061707422868339 * pi) * pi + eta2a * (849.51654495535 + -4.1792700549624 * pi + eta2a * (-107.81748091826 + (6.2478196935812 + -0.31078046629583 * pi) * pi + eta2a * (33.153654801263 + -17.344563108114 * pi + o[2] * (-7.4232016790248 + pi * (-200.58176862096 + 11.670873077107 * pi) + o[1] * (271.96065473796 * pi + o[1] * (eta2a * (1.3865724283226 * o[4] + o[1] * o[2] * (3091.9688604755 * pi + o[1] * (11.765048724356 + o[2] * (o[2] * (o[2] * (o[4] * (235988.32556514 + 7399.9835474766 * pi) + o[1] * (19127.72923966 * o[3] * o[4] + o[1] * (o[3] * (128127984.04046 + -551966.9703006 * o[5]) + o[1] * (o[1] * (2822454697.3002 * o[3] + o[1] * (o[3] * (-3594897141.0703 + 3715408.5996233 * o[5]) + o[1] * pi * (252266.40357872 + pi * (1722734991.3197 + pi * (12848734.66465 + (-13105236.545054 + -415351.64835634 * o[3]) * pi))))) + -985549096.23276 * o[3])))) + -62.459855192507 * o[3] * o[4] * pi) + -13551.334240775 * o[5])))) + -455.11318285818 * pi))))));
 //   elseif pi < 905.84278514723 + (-0.67955786399241 + 0.00012809002730136 * etabc) * etabc then
-//     eta2b := eta + -2.6;
-//     pi2b := pi + -2.0;
+//     eta2b := -2.6 + eta;
+//     pi2b := -2.0 + pi;
 //     o[1] := pi2b ^ 2.0;
 //     o[2] := o[1] * pi2b;
 //     o[3] := o[1] ^ 2.0;
@@ -738,7 +738,7 @@ simulate(TestMedia.TestModels.TestWater); getErrorString();
 //     o[7] := o[5] ^ 2.0;
 //     T := 1489.5041079516 + 0.9374714737793201 * pi2b + eta2b * (743.0779831403401 + o[2] * (0.00011032831789999 + -1.7565233969407e-18 * o[1] * o[3]) + eta2b * (-97.70831879783699 + pi2b * (3.3593118604916 + pi2b * (-0.021810755324761 + pi2b * (0.00018955248387902 + (2.8640237477456e-07 + -8.1456365207833e-14 * o[2]) * pi2b))) + o[5] * (3.3809355601454 * pi2b + o[4] * (o[5] * (2.4742464705674 + (0.16844539671904 + o[1] * (0.0030891541160537 + -1.0779857357512e-05 * pi2b)) * pi2b + o[6] * (-0.63281320016026 + pi2b * (0.73875745236695 + (-0.046333324635812 + o[1] * (-7.6462712454814e-05 + 2.821728163504e-07 * pi2b)) * pi2b) + o[6] * (1.1385952129658 + pi2b * (-0.47128737436186 + o[1] * (0.0013555504554949 + (1.4052392818316e-05 + 1.2704902271945e-06 * pi2b) * pi2b)) + o[5] * (-0.47811863648625 + (0.15020273139707 + o[2] * (-3.1083814331434e-05 + o[1] * (-1.1030139238909e-08 + -2.5180545682962e-11 * pi2b))) * pi2b + o[5] * o[7] * (0.0085208123431544 + pi2b * (-0.002176411421975 + pi2b * (7.1280351959551e-05 + o[1] * (-1.0302738212103e-06 + (7.3803353468292e-08 + 8.6934156344163e-15 * o[3]) * pi2b)))))))) + -0.10829784403677 * o[1]))));
 //   else
-//     eta2c := eta + -1.8;
+//     eta2c := -1.8 + eta;
 //     pi2c := 25.0 + pi;
 //     o[1] := pi2c ^ 2.0;
 //     o[2] := o[1] ^ 2.0;
@@ -848,7 +848,7 @@ simulate(TestMedia.TestModels.TestWater); getErrorString();
 //   protected Integer subregion \"1 for subregion 3a, 2 for subregion 3b\";
 // algorithm
 //   if p < 22064000.0 then
-//     subregion := if h < 10.0 + Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hl_p(p) then 1 else if h > Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hv_p(p) + -10.0 then 2 else 0;
+//     subregion := if h < 10.0 + Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hl_p(p) then 1 else if h > -10.0 + Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hv_p(p) then 2 else 0;
 //     assert(subregion <> 0, \"inverse iteration of dt from ph called in 2 phase region: this can not work\");
 //   else
 //     subregion := if h < Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.h3ab_p(p) then 1 else 2;
@@ -1061,7 +1061,7 @@ simulate(TestMedia.TestModels.TestWater); getErrorString();
 //   pi := p / 16530000.0;
 //   tau := 1386.0 / T;
 //   pi1 := 7.1 - pi;
-//   tau1 := tau + -1.222;
+//   tau1 := -1.222 + tau;
 //   o[1] := tau1 ^ 2.0;
 //   o[2] := o[1] ^ 2.0;
 //   o[3] := o[2] ^ 2.0;
@@ -1089,7 +1089,7 @@ simulate(TestMedia.TestModels.TestWater); getErrorString();
 // algorithm
 //   pi := 1e-06 * p;
 //   tau := 540.0 / T;
-//   tau2 := tau + -0.5;
+//   tau2 := -0.5 + tau;
 //   o[1] := tau2 ^ 2.0;
 //   o[2] := o[1] * tau2;
 //   o[3] := o[1] ^ 2.0;
@@ -1622,7 +1622,7 @@ simulate(TestMedia.TestModels.TestWater); getErrorString();
 //   input Real Celsius(quantity = \"ThermodynamicTemperature\", unit = \"degC\") \"Celsius value\";
 //   output Real Kelvin(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"Kelvin value\";
 // algorithm
-//   Kelvin := Celsius + 273.15;
+//   Kelvin := 273.15 + Celsius;
 // end Modelica.SIunits.Conversions.from_degC;
 //
 // function TestMedia.TestModels.TestWater.Medium.FluidConstants \"Automatically generated record constructor for TestMedia.TestModels.TestWater.Medium.FluidConstants\"

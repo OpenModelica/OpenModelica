@@ -30,7 +30,7 @@ end RecursiveFunctionCall;
 //   if n <= 1 then
 //     y := 1;
 //   else
-//     y := n * pkg.factorial(n + -1);
+//     y := n * pkg.factorial(-1 + n);
 //   end if;
 // end pkg.factorial;
 //

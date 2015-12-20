@@ -41,7 +41,7 @@ end WaveEquationSample;
 //   protected parameter Real L = 10.0;
 // algorithm
 //   for i in 1:n loop
-//     p[i] := exp(-(L * (-0.5 + /*Real*/(i + -1) / /*Real*/(n + -1))) ^ 2.0);
+//     p[i] := exp(-(L * (-0.5 + /*Real*/(-1 + i) / /*Real*/(-1 + n))) ^ 2.0);
 //   end for;
 // end WaveEquationSample.initialPressure;
 //

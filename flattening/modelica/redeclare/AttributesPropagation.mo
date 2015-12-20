@@ -3073,7 +3073,7 @@ end BoreholeSegment;
 //     QL_flow := Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.exchangeValues(table, iSam, Q_flow, iSam);
 //   else
 //     dT := 0.0;
-//     for i in 1:iSam + -1 loop
+//     for i in 1:-1 + iSam loop
 //       QL_flow := Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.exchangeValues(table, iSam, Q_flow, 1 + iSam - i);
 //       QU_flow := Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.exchangeValues(table, iSam, Q_flow, iSam - i);
 //       dT := dT + 0.07957747154594767 * Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.powerSeries(0.25 * c * d * rExt ^ 2.0 / (samplePeriod * /*Real*/(i) * k), 10) * (QL_flow - QU_flow) / (hSeg * k);
@@ -3658,7 +3658,7 @@ end BoreholeSegment;
 //               is negative. It must be positive.
 //               ");
 //   end for;
-//   if nX > 0 and abs(sum(X_boundary) + -1.0) > 1e-10 then
+//   if nX > 0 and abs(-1.0 + sum(X_boundary)) > 1e-10 then
 //     X_str := "";
 //     for i in 1:nX loop
 //       X_str := X_str + "   X_boundary[" + String(i, 0, true) + "] = " + String(X_boundary[i], 0, true, 6) + " \"" + substanceNames[i] + "\"
@@ -3856,7 +3856,7 @@ end BoreholeSegment;
 //   input Real Celsius(quantity = "ThermodynamicTemperature", unit = "degC");
 //   output Real Kelvin(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 0.0, start = 288.15, nominal = 300.0);
 // algorithm
-//   Kelvin := Celsius + 273.15;
+//   Kelvin := 273.15 + Celsius;
 // end Modelica.SIunits.Conversions.from_degC;
 //
 // function Modelica.SIunits.Conversions.to_bar

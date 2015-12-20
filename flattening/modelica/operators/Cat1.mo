@@ -47,8 +47,8 @@ end Cat1;
 //   parameter Real b;
 //   final parameter Real aDivisions[1] = a / /*Real*/(n);
 //   final parameter Real aDivisions[2] = a / /*Real*/(n);
-//   final parameter Real bDivisions[1] = if myDivision == MyType.divisionType1 then 0.5 * b / /*Real*/(n + -1) else b / /*Real*/(n);
-//   final parameter Real bDivisions[2] = if myDivision == MyType.divisionType1 then 0.5 * b / /*Real*/(n + -1) else b / /*Real*/(n);
+//   final parameter Real bDivisions[1] = if myDivision == MyType.divisionType1 then 0.5 * b / /*Real*/(-1 + n) else b / /*Real*/(n);
+//   final parameter Real bDivisions[2] = if myDivision == MyType.divisionType1 then 0.5 * b / /*Real*/(-1 + n) else b / /*Real*/(n);
 // equation
 //   z[1] = x[1] * y[1];
 //   z[2] = x[2] * y[2];

@@ -3938,7 +3938,7 @@ end Gear;
 //       while i < n and u >= table[i,1] loop
 //         i := 1 + i;
 //       end while;
-//       i := i + -1;
+//       i := -1 + i;
 //     end if;
 //     u1 := table[i,1];
 //     u2 := table[1 + i,1];

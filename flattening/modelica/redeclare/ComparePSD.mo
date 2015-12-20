@@ -551,10 +551,10 @@ end ComparePSD;
 //     states_out[1] := states_out[1] + a[i] * states_in[i];
 //   end for;
 //   states_out[1] := integer(/*Real*/(mod(states_out[1] + c, m)));
-//   for i in 1:size(a, 1) + -1 loop
+//   for i in 1:-1 + size(a, 1) loop
 //     states_out[1 + i] := states_in[i];
 //   end for;
-//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(m + -1));
+//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(-1 + m));
 // end Noise.PRNG$IdealLowPass.PSD.PDF.RNG.RNG;
 //
 // function Noise.PRNG$IdealLowPass.PSD.PDF.RNG.Seed
@@ -598,10 +598,10 @@ end ComparePSD;
 //     states_out[1] := states_out[1] + a[i] * states_in[i];
 //   end for;
 //   states_out[1] := integer(/*Real*/(mod(states_out[1] + c, m)));
-//   for i in 1:size(a, 1) + -1 loop
+//   for i in 1:-1 + size(a, 1) loop
 //     states_out[1 + i] := states_in[i];
 //   end for;
-//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(m + -1));
+//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(-1 + m));
 // end Noise.PRNG$IdealLowPass.SampleFreePDF0.RNG.RNG;
 //
 // function Noise.PRNG$IdealLowPass.SampleFreePDF0.RNG.Seed
@@ -700,10 +700,10 @@ end ComparePSD;
 //     states_out[1] := states_out[1] + a[i] * states_in[i];
 //   end for;
 //   states_out[1] := integer(/*Real*/(mod(states_out[1] + c, m)));
-//   for i in 1:size(a, 1) + -1 loop
+//   for i in 1:-1 + size(a, 1) loop
 //     states_out[1 + i] := states_in[i];
 //   end for;
-//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(m + -1));
+//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(-1 + m));
 // end Noise.PRNG$IdealLowPass.SampleFreePSD0.PDF.RNG.RNG;
 //
 // function Noise.PRNG$IdealLowPass.SampleFreePSD0.PDF.RNG.Seed
@@ -732,10 +732,10 @@ end ComparePSD;
 //     states_out[1] := states_out[1] + a[i] * states_in[i];
 //   end for;
 //   states_out[1] := integer(/*Real*/(mod(states_out[1] + c, m)));
-//   for i in 1:size(a, 1) + -1 loop
+//   for i in 1:-1 + size(a, 1) loop
 //     states_out[1 + i] := states_in[i];
 //   end for;
-//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(m + -1));
+//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(-1 + m));
 // end Noise.PRNG$IdealLowPass.SampleFreeRNG0.RNG;
 //
 // function Noise.PRNG$IdealLowPass.SampleFreeRNG0.Seed
@@ -762,7 +762,7 @@ end ComparePSD;
 //   protected Integer[max(n, 2)] internal_states;
 // algorithm
 //   assert(n > 0, "You are seeding a state vector of size 0!");
-//   internal_states := cat(1, {local_seed, global_seed}, fill(0, max(n, 2) + -2));
+//   internal_states := cat(1, {local_seed, global_seed}, fill(0, -2 + max(n, 2)));
 //   for i in 1:k loop
 //     (dummy, internal_states) := Noise.RNG.SampleBased.RNG_MRG(real_seed, internal_states, a, c, m);
 //   end for;
@@ -821,10 +821,10 @@ end ComparePSD;
 //     states_out[1] := states_out[1] + a[i] * states_in[i];
 //   end for;
 //   states_out[1] := integer(/*Real*/(mod(states_out[1] + c, m)));
-//   for i in 1:size(a, 1) + -1 loop
+//   for i in 1:-1 + size(a, 1) loop
 //     states_out[1 + i] := states_in[i];
 //   end for;
-//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(m + -1));
+//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(-1 + m));
 // end Noise.PRNG$Linear.PSD.PDF.RNG.RNG;
 //
 // function Noise.PRNG$Linear.PSD.PDF.RNG.Seed
@@ -868,10 +868,10 @@ end ComparePSD;
 //     states_out[1] := states_out[1] + a[i] * states_in[i];
 //   end for;
 //   states_out[1] := integer(/*Real*/(mod(states_out[1] + c, m)));
-//   for i in 1:size(a, 1) + -1 loop
+//   for i in 1:-1 + size(a, 1) loop
 //     states_out[1 + i] := states_in[i];
 //   end for;
-//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(m + -1));
+//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(-1 + m));
 // end Noise.PRNG$Linear.SampleFreePDF0.RNG.RNG;
 //
 // function Noise.PRNG$Linear.SampleFreePDF0.RNG.Seed
@@ -969,10 +969,10 @@ end ComparePSD;
 //     states_out[1] := states_out[1] + a[i] * states_in[i];
 //   end for;
 //   states_out[1] := integer(/*Real*/(mod(states_out[1] + c, m)));
-//   for i in 1:size(a, 1) + -1 loop
+//   for i in 1:-1 + size(a, 1) loop
 //     states_out[1 + i] := states_in[i];
 //   end for;
-//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(m + -1));
+//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(-1 + m));
 // end Noise.PRNG$Linear.SampleFreePSD0.PDF.RNG.RNG;
 //
 // function Noise.PRNG$Linear.SampleFreePSD0.PDF.RNG.Seed
@@ -1001,10 +1001,10 @@ end ComparePSD;
 //     states_out[1] := states_out[1] + a[i] * states_in[i];
 //   end for;
 //   states_out[1] := integer(/*Real*/(mod(states_out[1] + c, m)));
-//   for i in 1:size(a, 1) + -1 loop
+//   for i in 1:-1 + size(a, 1) loop
 //     states_out[1 + i] := states_in[i];
 //   end for;
-//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(m + -1));
+//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(-1 + m));
 // end Noise.PRNG$Linear.SampleFreeRNG0.RNG;
 //
 // function Noise.PRNG$Linear.SampleFreeRNG0.Seed
@@ -1031,7 +1031,7 @@ end ComparePSD;
 //   protected Integer[max(n, 2)] internal_states;
 // algorithm
 //   assert(n > 0, "You are seeding a state vector of size 0!");
-//   internal_states := cat(1, {local_seed, global_seed}, fill(0, max(n, 2) + -2));
+//   internal_states := cat(1, {local_seed, global_seed}, fill(0, -2 + max(n, 2)));
 //   for i in 1:k loop
 //     (dummy, internal_states) := Noise.RNG.SampleBased.RNG_MRG(real_seed, internal_states, a, c, m);
 //   end for;
@@ -1082,10 +1082,10 @@ end ComparePSD;
 //     states_out[1] := states_out[1] + a[i] * states_in[i];
 //   end for;
 //   states_out[1] := integer(/*Real*/(mod(states_out[1] + c, m)));
-//   for i in 1:size(a, 1) + -1 loop
+//   for i in 1:-1 + size(a, 1) loop
 //     states_out[1 + i] := states_in[i];
 //   end for;
-//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(m + -1));
+//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(-1 + m));
 // end Noise.PRNG$WhiteNoise.PSD.PDF.RNG.RNG;
 //
 // function Noise.PRNG$WhiteNoise.PSD.PDF.RNG.Seed
@@ -1129,10 +1129,10 @@ end ComparePSD;
 //     states_out[1] := states_out[1] + a[i] * states_in[i];
 //   end for;
 //   states_out[1] := integer(/*Real*/(mod(states_out[1] + c, m)));
-//   for i in 1:size(a, 1) + -1 loop
+//   for i in 1:-1 + size(a, 1) loop
 //     states_out[1 + i] := states_in[i];
 //   end for;
-//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(m + -1));
+//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(-1 + m));
 // end Noise.PRNG$WhiteNoise.SampleFreePDF0.RNG.RNG;
 //
 // function Noise.PRNG$WhiteNoise.SampleFreePDF0.RNG.Seed
@@ -1205,10 +1205,10 @@ end ComparePSD;
 //     states_out[1] := states_out[1] + a[i] * states_in[i];
 //   end for;
 //   states_out[1] := integer(/*Real*/(mod(states_out[1] + c, m)));
-//   for i in 1:size(a, 1) + -1 loop
+//   for i in 1:-1 + size(a, 1) loop
 //     states_out[1 + i] := states_in[i];
 //   end for;
-//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(m + -1));
+//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(-1 + m));
 // end Noise.PRNG$WhiteNoise.SampleFreePSD0.PDF.RNG.RNG;
 //
 // function Noise.PRNG$WhiteNoise.SampleFreePSD0.PDF.RNG.Seed
@@ -1237,10 +1237,10 @@ end ComparePSD;
 //     states_out[1] := states_out[1] + a[i] * states_in[i];
 //   end for;
 //   states_out[1] := integer(/*Real*/(mod(states_out[1] + c, m)));
-//   for i in 1:size(a, 1) + -1 loop
+//   for i in 1:-1 + size(a, 1) loop
 //     states_out[1 + i] := states_in[i];
 //   end for;
-//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(m + -1));
+//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(-1 + m));
 // end Noise.PRNG$WhiteNoise.SampleFreeRNG0.RNG;
 //
 // function Noise.PRNG$WhiteNoise.SampleFreeRNG0.Seed
@@ -1267,7 +1267,7 @@ end ComparePSD;
 //   protected Integer[max(n, 2)] internal_states;
 // algorithm
 //   assert(n > 0, "You are seeding a state vector of size 0!");
-//   internal_states := cat(1, {local_seed, global_seed}, fill(0, max(n, 2) + -2));
+//   internal_states := cat(1, {local_seed, global_seed}, fill(0, -2 + max(n, 2)));
 //   for i in 1:k loop
 //     (dummy, internal_states) := Noise.RNG.SampleBased.RNG_MRG(real_seed, internal_states, a, c, m);
 //   end for;
@@ -1292,10 +1292,10 @@ end ComparePSD;
 //     states_out[1] := states_out[1] + a[i] * states_in[i];
 //   end for;
 //   states_out[1] := integer(/*Real*/(mod(states_out[1] + c, m)));
-//   for i in 1:size(a, 1) + -1 loop
+//   for i in 1:-1 + size(a, 1) loop
 //     states_out[1 + i] := states_in[i];
 //   end for;
-//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(m + -1));
+//   rand := abs(/*Real*/(states_out[1]) / /*Real*/(-1 + m));
 // end Noise.RNG.SampleBased.RNG_MRG;
 //
 // function Noise.Utilities.Auxiliary.SeedReal
