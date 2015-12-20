@@ -1895,19 +1895,26 @@ public function simplify2
 algorithm
   outExp := match(inExp)
     local
-      DAE.Exp e1,e2,exp_2,exp_3;
+      DAE.Exp e1,e2,exp_2,exp_3, resConst;
+      list<DAE.Exp> lstConstExp, lstExp;
       Operator op;
+      Boolean hasConst;
 
     // global simplify ADD and SUB
     case DAE.BINARY(operator = op) /* multiple terms simplifications */
       guard  simplifyAddOrSub and Expression.isIntegerOrReal(Expression.typeof(inExp)) and Expression.isAddOrSub(op)
       equation
         /* Sorting constants, 1+a+2+b => 3+a+b */
-        exp_2 = simplifyBinarySortConstants(inExp);
+        lstExp = Expression.terms(inExp);
+        (lstConstExp, lstExp) = List.splitOnTrue(lstExp, Expression.isConstValue);
+        hasConst =  not listEmpty(lstConstExp);
+        resConst =  if hasConst then  simplifyBinaryAddConstants(lstConstExp) else DAE.RCONST(0.0);
+        exp_2 = simplifyBinarySortConstants(Expression.makeSum1(lstExp));
         /* Merging coefficients 2a+4b+3a+b => 5a+5b */
         exp_3 = simplifyBinaryCoeff(exp_2);
+        exp_3 = if hasConst then Expression.expAdd(resConst,simplify2(exp_3, false, true)) else simplify2(exp_3, false, true);
       then
-        simplify2(exp_3, false, true);
+        exp_3;
 
     //locked global simplify ADD and SUB
     //unlocked global simplify MUL and DIV
