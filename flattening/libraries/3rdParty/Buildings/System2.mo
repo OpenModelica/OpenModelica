@@ -6516,7 +6516,7 @@ end System2;
 //   input Real[1] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1);
 //   output Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
 // algorithm
-//   T := 273.15 + h / 4184.0;
+//   T := 273.15 + 0.0002390057361376673 * h;
 // end Buildings.Fluid.Delays.DelayFirstOrder$pumRad$vol.Medium.temperature_phX;
 //
 // function Buildings.Fluid.HeatExchangers.Radiators.RadiatorEN442_2$rad.Medium.FluidConstants "Automatically generated record constructor for Buildings.Fluid.HeatExchangers.Radiators.RadiatorEN442_2$rad.Medium.FluidConstants"
@@ -6574,7 +6574,7 @@ end System2;
 //   input Real[1] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1);
 //   output Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
 // algorithm
-//   T := 273.15 + h / 4184.0;
+//   T := 273.15 + 0.0002390057361376673 * h;
 // end Buildings.Fluid.HeatExchangers.Radiators.RadiatorEN442_2$rad.Medium.temperature_phX;
 //
 // function Buildings.Fluid.Interfaces.ConservationEquation$pumRad$vol$dynBal.Medium.FluidConstants "Automatically generated record constructor for Buildings.Fluid.Interfaces.ConservationEquation$pumRad$vol$dynBal.Medium.FluidConstants"
@@ -6805,7 +6805,7 @@ end System2;
 //   input Real[1] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1);
 //   output Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
 // algorithm
-//   T := 273.15 + h / 4184.0;
+//   T := 273.15 + 0.0002390057361376673 * h;
 // end Buildings.Fluid.MixingVolumes.MixingVolume$rad$vol.Medium.temperature_phX;
 //
 // function Buildings.Fluid.MixingVolumes.MixingVolume$vol.Medium.FluidConstants "Automatically generated record constructor for Buildings.Fluid.MixingVolumes.MixingVolume$vol.Medium.FluidConstants"
@@ -7026,7 +7026,7 @@ end System2;
 //   input Real[1] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1);
 //   output Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
 // algorithm
-//   T := 273.15 + h / 4184.0;
+//   T := 273.15 + 0.0002390057361376673 * h;
 // end Buildings.Fluid.Movers.BaseClasses.IdealSource$pumRad$preSou.Medium.temperature_phX;
 //
 // function Buildings.Fluid.Movers.FlowMachine_m_flow$pumRad.Medium.FluidConstants "Automatically generated record constructor for Buildings.Fluid.Movers.FlowMachine_m_flow$pumRad.Medium.FluidConstants"
@@ -7091,7 +7091,7 @@ end System2;
 //   input Real[1] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1);
 //   output Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
 // algorithm
-//   T := 273.15 + h / 4184.0;
+//   T := 273.15 + 0.0002390057361376673 * h;
 // end Buildings.Fluid.Movers.FlowMachine_m_flow$pumRad.Medium.temperature_phX;
 //
 // function Buildings.Fluid.Sensors.TemperatureTwoPort$temSup.Medium.FluidConstants "Automatically generated record constructor for Buildings.Fluid.Sensors.TemperatureTwoPort$temSup.Medium.FluidConstants"
@@ -7140,7 +7140,7 @@ end System2;
 //   input Real[1] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1);
 //   output Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
 // algorithm
-//   T := 273.15 + h / 4184.0;
+//   T := 273.15 + 0.0002390057361376673 * h;
 // end Buildings.Fluid.Sensors.TemperatureTwoPort$temSup.Medium.temperature_phX;
 //
 // function Buildings.Fluid.Sources.FixedBoundary$sin.Medium.FluidConstants "Automatically generated record constructor for Buildings.Fluid.Sources.FixedBoundary$sin.Medium.FluidConstants"
@@ -9529,7 +9529,7 @@ end System2;
 //   protected parameter enumeration(CriticalDamping, Bessel, Butterworth, ChebyshevI) pumRad.filter.analogFilter = Modelica.Blocks.Types.AnalogFilter.CriticalDamping;
 //   protected parameter enumeration(LowPass, HighPass, BandPass, BandStop) pumRad.filter.filterType = Modelica.Blocks.Types.FilterType.LowPass;
 //   protected parameter Integer pumRad.filter.order(min = 1) = 2;
-//   protected parameter Real pumRad.filter.f_cut(quantity = "Frequency", unit = "Hz") = 5.0 / (pumRad.riseTime * 6.283185307179586);
+//   protected parameter Real pumRad.filter.f_cut(quantity = "Frequency", unit = "Hz") = 5.0 / (6.283185307179586 * pumRad.riseTime);
 //   protected parameter Real pumRad.filter.gain = 1.0;
 //   protected parameter Real pumRad.filter.A_ripple(unit = "dB") = 0.5;
 //   protected parameter Real pumRad.filter.f_min(quantity = "Frequency", unit = "Hz") = 0.0;
@@ -9644,7 +9644,7 @@ end System2;
 //   vol.dynBal.medium.h = Buildings.Fluid.Interfaces.ConservationEquation$vol$dynBal.Medium.specificEnthalpy_pTX(vol.dynBal.medium.p, vol.dynBal.medium.T, {vol.dynBal.medium.Xi[1]});
 //   vol.dynBal.medium.R = dryair.R * (1.0 - vol.dynBal.medium.Xi[1]) + steam.R * vol.dynBal.medium.Xi[1];
 //   vol.dynBal.medium.u = -84437.5 + vol.dynBal.medium.h;
-//   vol.dynBal.medium.d / 1.2 = vol.dynBal.medium.p / 101325.0;
+//   0.8333333333333334 * vol.dynBal.medium.d = 9.869232667160129e-06 * vol.dynBal.medium.p;
 //   vol.dynBal.medium.state.p = vol.dynBal.medium.p;
 //   vol.dynBal.medium.state.T = vol.dynBal.medium.T;
 //   vol.dynBal.medium.state.X[1] = vol.dynBal.medium.X[1];

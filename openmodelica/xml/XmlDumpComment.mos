@@ -16009,7 +16009,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </variable>
 // <variable id=\"623\" name=\"world.defaultBodyDiameter\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Default for diameter of sphere representing the center of mass of a body\">
 // <bindValueExpression>
-// <bindExpression string=\"world.nominalLength / 9.0\">
+// <bindExpression string=\"0.1111111111111111 * world.nominalLength\">
 // </bindExpression>
 // </bindValueExpression>
 // <classesNames>
@@ -17822,7 +17822,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </variable>
 // <variable id=\"705\" name=\"body.cylinderDiameter\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Diameter of cylinder\">
 // <bindValueExpression>
-// <bindExpression string=\"body.sphereDiameter / 3.0\">
+// <bindExpression string=\"0.3333333333333333 * body.sphereDiameter\">
 // </bindExpression>
 // </bindValueExpression>
 // <classesNames>

@@ -141,10 +141,10 @@ simulate(A); getErrorString();
 //   vt := 8.61726105451295e-05 * temp;
 //   vtnom := 8.61726105451295e-05 * tnom;
 //   arg := 1.345417051337526e+20 + -3.621481323477592e+22 * phibtemp / temp;
-//   fact2 := temp / 300.15;
+//   fact2 := 0.003331667499583542 * temp;
 //   pbfact := -2.0 * vt * (1.5 * log(fact2) + 1.6021918e-19 * arg);
 //   arg1 := 1.345417051337526e+20 + -3.621481323477592e+22 * phibtnom / tnom;
-//   fact1 := tnom / 300.15;
+//   fact1 := 0.003331667499583542 * tnom;
 //   pbfact1 := -2.0 * vtnom * (1.5 * log(fact1) + 1.6021918e-19 * arg1);
 //   pbo := (phi0 - pbfact1) / fact1;
 //   junctionpot := pbfact + fact2 * pbo;
@@ -465,12 +465,12 @@ simulate(A); getErrorString();
 //     out_qm.qm_capgd := 0.0;
 //   elseif vgst <= 0.0 then
 //     out_qm.qm_capgb := -0.5 * vgst * in_c.m_capOx / in_c.m_tPhi;
-//     out_qm.qm_capgs := 0.6666666666666666 * vgst * in_c.m_capOx / in_c.m_tPhi + in_c.m_capOx / 3.0;
+//     out_qm.qm_capgs := 0.6666666666666666 * vgst * in_c.m_capOx / in_c.m_tPhi + 0.3333333333333333 * in_c.m_capOx;
 //     out_qm.qm_capgd := 0.0;
 //   else
 //     vds := vgs - vgd;
 //     if in_c.m_vdsat <= vds then
-//       out_qm.qm_capgs := in_c.m_capOx / 3.0;
+//       out_qm.qm_capgs := 0.3333333333333333 * in_c.m_capOx;
 //       out_qm.qm_capgd := 0.0;
 //       out_qm.qm_capgb := 0.0;
 //     else

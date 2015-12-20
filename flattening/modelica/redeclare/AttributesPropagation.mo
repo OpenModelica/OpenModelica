@@ -2703,7 +2703,7 @@ end BoreholeSegment;
 //   input Real[1] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1);
 //   output Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
 // algorithm
-//   T := 273.15 + h / 4184.0;
+//   T := 273.15 + 0.0002390057361376673 * h;
 // end Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.BoreholeSegment$seg.Medium1.temperature_phX;
 //
 // function Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.BoreholeSegment$seg.Medium2.FluidConstants "Automatically generated record constructor for Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.BoreholeSegment$seg.Medium2.FluidConstants"
@@ -2745,7 +2745,7 @@ end BoreholeSegment;
 //   input Real[1] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1);
 //   output Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
 // algorithm
-//   T := 273.15 + h / 4184.0;
+//   T := 273.15 + 0.0002390057361376673 * h;
 // end Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.BoreholeSegment$seg.Medium2.temperature_phX;
 //
 // function Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.ExtendableArray.constructor
@@ -2876,7 +2876,7 @@ end BoreholeSegment;
 //   input Real[1] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1);
 //   output Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
 // algorithm
-//   T := 273.15 + h / 4184.0;
+//   T := 273.15 + 0.0002390057361376673 * h;
 // end Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.HexInternalElement$seg$pipFil.Medium1.temperature_phX;
 //
 // function Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.HexInternalElement$seg$pipFil.Medium2.FluidConstants "Automatically generated record constructor for Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.HexInternalElement$seg$pipFil.Medium2.FluidConstants"
@@ -2941,7 +2941,7 @@ end BoreholeSegment;
 //   input Real[1] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1);
 //   output Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
 // algorithm
-//   T := 273.15 + h / 4184.0;
+//   T := 273.15 + 0.0002390057361376673 * h;
 // end Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.HexInternalElement$seg$pipFil.Medium2.temperature_phX;
 //
 // function Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.convectionResistance
@@ -2956,9 +2956,9 @@ end BoreholeSegment;
 //   protected Real h(quantity = "CoefficientOfHeatTransfer", unit = "W/(m2.K)");
 //   protected Real k(unit = "s/kg");
 // algorithm
-//   k := 2.0 / (rTub * mueMed * 3.141592653589793);
+//   k := 2.0 / (3.141592653589793 * mueMed * rTub);
 //   h := 0.0115 * kMed * (cpMed * mueMed / kMed) ^ 0.35 * Buildings.Utilities.Math.Functions.regNonZeroPower(m_flow * k, 0.8, 0.01 * m_flow_nominal * k) / rTub;
-//   R := 1.0 / (h * hSeg * rTub * 6.283185307179586);
+//   R := 0.1591549430918953 / (h * hSeg * rTub);
 // end Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.convectionResistance;
 //
 // function Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.exchangeValues
@@ -3015,14 +3015,14 @@ end BoreholeSegment;
 //   protected Real Ra_LS;
 //   protected Integer i = 1;
 // algorithm
-//   RCondPipe := 0.1591549430918953 * log((rTub + eTub) / rTub) / (hSeg * kTub);
+//   RCondPipe := 0.1591549430918953 * log((rTub + eTub) / rTub) / (kTub * hSeg);
 //   sigma := (kFil - kSoi) / (kFil + kSoi);
 //   R_1delta_LS := 0.1591549430918953 * (log(rBor / (rTub + eTub)) + log(0.5 * rBor / xC) + sigma * log(rBor ^ 4.0 / (rBor ^ 4.0 - xC ^ 4.0))) / kFil;
-//   R_1delta_MP := R_1delta_LS + -0.03978873577297384 * ((rTub + eTub) * (1.0 + -4.0 * sigma * xC ^ 4.0 / (rBor ^ 4.0 - xC ^ 4.0)) / xC) ^ 2.0 / (((1.0 + beta) / (1.0 - beta) + 0.25 * ((rTub + eTub) / xC) ^ 2.0 * (1.0 + 16.0 * sigma * (xC * rBor) ^ 4.0 / (rBor ^ 4.0 - xC ^ 4.0) ^ 2.0)) * kFil);
+//   R_1delta_MP := R_1delta_LS + -0.03978873577297384 * ((rTub + eTub) * (1.0 + -4.0 * sigma * xC ^ 4.0 / (rBor ^ 4.0 - xC ^ 4.0)) / xC) ^ 2.0 / (kFil * ((1.0 + beta) / (1.0 - beta) + 0.25 * ((rTub + eTub) / xC) ^ 2.0 * (1.0 + 16.0 * sigma * (xC * rBor) ^ 4.0 / (rBor ^ 4.0 - xC ^ 4.0) ^ 2.0)));
 //   Ra_LS := 0.3183098861837907 * (log(2.0 * xC / rTub) + sigma * log((rBor ^ 2.0 + xC ^ 2.0) / (rBor ^ 2.0 - xC ^ 2.0))) / kFil;
 //   beta := 6.283185307179586 * kFil * RCondPipe;
 //   Rb := 0.5 * R_1delta_MP;
-//   Ra := Ra_LS + -0.07957747154594767 * (rTub / xC) ^ 2.0 * (1.0 + 4.0 * sigma * rBor ^ 4.0 * xC ^ 2.0 / (rBor ^ 4.0 - xC ^ 4.0)) / (kFil * ((1.0 + beta) / (1.0 - beta) + -0.25 * (rTub / xC) ^ 2.0 + 2.0 * sigma * (rTub * rBor) ^ 2.0 * (rBor ^ 4.0 + xC ^ 4.0) / (rBor ^ 4.0 - xC ^ 4.0) ^ 2.0));
+//   Ra := Ra_LS + -0.07957747154594767 * (rTub / xC) ^ 2.0 * (1.0 + 4.0 * sigma * rBor ^ 4.0 * xC ^ 2.0 / (rBor ^ 4.0 - xC ^ 4.0)) / (((1.0 + beta) / (1.0 - beta) + -0.25 * (rTub / xC) ^ 2.0 + 2.0 * sigma * (rTub * rBor) ^ 2.0 * (rBor ^ 4.0 + xC ^ 4.0) / (rBor ^ 4.0 - xC ^ 4.0) ^ 2.0) * kFil);
 //   Rg := 2.0 * Rb / hSeg;
 //   Rar := Ra / hSeg;
 //   while test == false and i <= 15 loop
@@ -3064,9 +3064,9 @@ end BoreholeSegment;
 //   output Real dT(quantity = "ThermodynamicTemperature", unit = "K");
 //   protected Real QL_flow(quantity = "Power", unit = "W");
 //   protected Real QU_flow(quantity = "Power", unit = "W");
-//   protected Real minSamplePeriod(quantity = "Time", unit = "s") = 0.06578947368421052 * rExt ^ 2.0 * c * d / k;
+//   protected Real minSamplePeriod(quantity = "Time", unit = "s") = 0.06578947368421052 * rExt ^ 2.0 * d * c / k;
 // algorithm
-//   assert(0.25 * rExt ^ 2.0 * d * c / (k * samplePeriod) <= 3.8, "The samplePeriod has to be bigger than " + String(minSamplePeriod, 0, true, 6) + " for convergence purpose.
+//   assert(0.25 * rExt ^ 2.0 * d * c / (samplePeriod * k) <= 3.8, "The samplePeriod has to be bigger than " + String(minSamplePeriod, 0, true, 6) + " for convergence purpose.
 //                 samplePeriod = " + String(samplePeriod, 0, true, 6));
 //   if iSam == 1 then
 //     dT := 0.0;
@@ -3076,7 +3076,7 @@ end BoreholeSegment;
 //     for i in 1:-1 + iSam loop
 //       QL_flow := Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.exchangeValues(table, iSam, Q_flow, 1 + iSam - i);
 //       QU_flow := Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.exchangeValues(table, iSam, Q_flow, iSam - i);
-//       dT := dT + 0.07957747154594767 * Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.powerSeries(0.25 * c * d * rExt ^ 2.0 / (samplePeriod * /*Real*/(i) * k), 10) * (QL_flow - QU_flow) / (hSeg * k);
+//       dT := dT + 0.07957747154594767 * Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.powerSeries(0.25 * c * d * rExt ^ 2.0 / (k * /*Real*/(i) * samplePeriod), 10) * (QL_flow - QU_flow) / (k * hSeg);
 //     end for;
 //   end if;
 // end Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.temperatureDrop;
@@ -3214,7 +3214,7 @@ end BoreholeSegment;
 //   input Real[1] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1);
 //   output Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
 // algorithm
-//   T := 273.15 + h / 4184.0;
+//   T := 273.15 + 0.0002390057361376673 * h;
 // end Buildings.Fluid.MixingVolumes.MixingVolume$seg$pipFil$vol1.Medium.temperature_phX;
 //
 // function Buildings.Fluid.MixingVolumes.MixingVolume$seg$pipFil$vol2.Medium.FluidConstants "Automatically generated record constructor for Buildings.Fluid.MixingVolumes.MixingVolume$seg$pipFil$vol2.Medium.FluidConstants"
@@ -3270,7 +3270,7 @@ end BoreholeSegment;
 //   input Real[1] X(quantity = "MassFraction", unit = "kg/kg", min = 0.0, max = 1.0, nominal = 0.1);
 //   output Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0);
 // algorithm
-//   T := 273.15 + h / 4184.0;
+//   T := 273.15 + 0.0002390057361376673 * h;
 // end Buildings.Fluid.MixingVolumes.MixingVolume$seg$pipFil$vol2.Medium.temperature_phX;
 //
 // function Buildings.Fluid.Sources.Boundary_pT$sin_2.Medium.FluidConstants "Automatically generated record constructor for Buildings.Fluid.Sources.Boundary_pT$sin_2.Medium.FluidConstants"
@@ -3732,7 +3732,7 @@ end BoreholeSegment;
 //       y0d := yd0;
 //     else
 //       w := x2 / x1;
-//       y0d := 0.5 * ((3.0 * y2 - x2 * y2d) / w + (x1 * y1d + -3.0 * y1) * w) / (x1 * (1.0 - w));
+//       y0d := 0.5 * ((3.0 * y2 - x2 * y2d) / w + (x1 * y1d + -3.0 * y1) * w) / ((1.0 - w) * x1);
 //     end if;
 //     w1 := 2.23606797749979 * k1 * x1;
 //     w2 := 2.23606797749979 * k2 * abs(x2);
