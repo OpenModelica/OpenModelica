@@ -1909,7 +1909,7 @@ algorithm
         (lstConstExp, lstExp) = List.splitOnTrue(lstExp, Expression.isConstValue);
         hasConst =  not listEmpty(lstConstExp);
         resConst =  if hasConst then  simplifyBinaryAddConstants(lstConstExp) else DAE.RCONST(0.0);
-        exp_2 = simplifyBinarySortConstants(Expression.makeSum1(lstExp));
+        exp_2 = if hasConst then Expression.makeSum1(lstExp) else inExp;
         /* Merging coefficients 2a+4b+3a+b => 5a+5b */
         exp_3 = simplifyBinaryCoeff(exp_2);
         exp_3 = if hasConst then Expression.expAdd(resConst,simplify2(exp_3, false, true)) else simplify2(exp_3, false, true);
@@ -1931,11 +1931,24 @@ algorithm
       guard  simplifyMulOrDiv and Expression.isIntegerOrReal(Expression.typeof(inExp)) and Expression.isMulOrDiv(op)
       equation
         /* Sorting constants, 1+a+2+b => 3+a+b */
-        exp_2 = simplifyBinarySortConstants(inExp);
-        /* Merging coefficients 2a+4b+3a+b => 5a+5b */
-        exp_3 = simplifyBinaryCoeff(exp_2);
+        lstExp = Expression.factors(inExp);
+        (lstConstExp, lstExp) = List.splitOnTrue(lstExp, Expression.isConst);
+        if not listEmpty(lstConstExp) then
+          resConst = simplifyBinaryMulConstants(lstConstExp);
+          exp_2 = Expression.makeProductLst(simplifyMul(lstExp));
+          if Expression.isConstOne(resConst) then
+            exp_3 = simplify2(exp_2, true, false);
+          elseif Expression.isConstMinusOne(resConst) then
+            exp_3 = Expression.negate(simplify2(exp_2, true, false));
+          else
+            exp_3 = Expression.expMul(resConst,simplify2(exp_2, true, false));
+          end if;
+        else
+          exp_2 =  simplifyBinaryCoeff(inExp);
+          exp_3 =  simplify2(exp_2, true, false);
+        end if;
       then
-        simplify2(exp_3, true, false);
+        exp_3;
 
     //unlocked global simplify ADD and SUB
     //locked global simplify MUL and DIV
@@ -1945,7 +1958,7 @@ algorithm
         e1 = simplify2(e1, true, false);
         e2 = simplify2(e2, true, false);
       then
-        simplifyBinarySortConstants(DAE.BINARY(e1,op,e2));
+        DAE.BINARY(e1,op,e2);
 
     //others operators
     case DAE.BINARY(exp1 = e1,operator = op,exp2 = e2) /* multiple terms/factor simplifications */
