@@ -8,6 +8,7 @@ ExpressionTest.mos \
 GraphTest.mos \
 HashTableTest.mos \
 PriorityQueue.mos \
+PVectorTest.mos \
 SimplifyTest.mos \
 System.mos \
 UtilTest.mos \
