@@ -55,6 +55,7 @@ protected import HpcOmBenchmark;
 protected import HpcOmEqSystems;
 protected import HpcOmScheduler;
 protected import List;
+protected import SimCodeUtil;
 protected import SCode;
 protected import System;
 protected import Util;
@@ -6276,6 +6277,389 @@ algorithm
       then -1;
   end matchcontinue;
 end getNodeForVarIdx;
+
+//----------------------------
+//  MAPPING FUNCTIONS
+//----------------------------
+
+public function setUpHpcOmMapping"creates mappings between simcode and backendDAE for the hpcom module
+author: waurich 12-2015"
+	input BackendDAE.BackendDAE daeIn;
+	input SimCode.SimCode simCodeIn;
+	input Integer lastEqMappingIdx;
+	input list<tuple<Integer,Integer>> equationSccMappingIn; //Maps each simEq to the scc
+	output array<Integer> simeqCompMapping; //Maps each simEq to the scc
+	output array<list<Integer>> sccSimEqMapping; //Maps each scc to a list of simEqs
+	output array<list<Integer>> daeSccSimEqMapping; //Maps each scc to a list of simEqs, including removed equations like asserts
+protected
+	Integer highestSccIdx, compCountPlusDummy;
+	list<tuple<Integer,Integer>> equationSccMapping,equationSccMapping1;
+	BackendDAE.StrongComponents allComps;
+algorithm
+	(allComps,_) := getSystemComponents(daeIn);
+	highestSccIdx := findHighestSccIdxInMapping(equationSccMappingIn,-1);
+	compCountPlusDummy := listLength(allComps)+1;
+	equationSccMapping1 := removeDummyStateFromMapping(equationSccMappingIn);
+	//the mapping can contain a dummy state as first scc
+	equationSccMapping := if intEq(highestSccIdx, compCountPlusDummy) then equationSccMapping1 else equationSccMappingIn;
+	sccSimEqMapping := convertToSccSimEqMapping(equationSccMapping, listLength(allComps));
+	simeqCompMapping := convertToSimeqCompMapping(equationSccMapping, lastEqMappingIdx);
+	//for the dae-system
+	daeSccSimEqMapping := listArray(List.map(SimCodeUtil.getRemovedEquationSimEqSysIdxes(simCodeIn),List.create));
+  daeSccSimEqMapping := arrayAppend(sccSimEqMapping,daeSccSimEqMapping);
+
+	//_ = getSimEqIdxSimEqMapping(simCode.allEquations, arrayLength(simeqCompMapping)); // CAN WE REMOVE IT????
+	//dumpSimEqSCCMapping(simeqCompMapping);
+	//dumpSccSimEqMapping(sccSimEqMapping);
+end setUpHpcOmMapping;
+
+protected function findHighestSccIdxInMapping "function findHighestSccIdxInMapping
+  author: marcusw
+  Find the highest scc-index in the mapping list."
+  input list<tuple<Integer,Integer>> iEquationSccMapping; //<simEqIdx,sccIdx>
+  input Integer iHighestIndex;
+  output Integer oIndex;
+protected
+  Integer eqIdx, sccIdx;
+  list<tuple<Integer,Integer>> rest;
+algorithm
+  oIndex := matchcontinue(iEquationSccMapping,iHighestIndex)
+    case((eqIdx,sccIdx)::rest,_)
+      equation
+        true = intGt(sccIdx,iHighestIndex);
+      then findHighestSccIdxInMapping(rest,sccIdx);
+    case((eqIdx,sccIdx)::rest,_)
+      then findHighestSccIdxInMapping(rest,iHighestIndex);
+    else iHighestIndex;
+  end matchcontinue;
+end findHighestSccIdxInMapping;
+
+protected function removeDummyStateFromMapping "function removeDummyStateFromMapping
+  author: marcusw
+  Removes all mappings with sccIdx=1 from the list and decrements all other scc-indices by 1."
+  input list<tuple<Integer,Integer>> iEquationSccMapping;
+  output list<tuple<Integer,Integer>> oEquationSccMapping;
+algorithm
+  oEquationSccMapping := List.fold(iEquationSccMapping, removeDummyStateFromMapping1, {});
+end removeDummyStateFromMapping;
+
+protected function removeDummyStateFromMapping1 "function removeDummyStateFromMapping1
+  author: marcusw
+  Helper function of removeDummyStateFromMapping. Handles one list-element."
+  input tuple<Integer,Integer> iTuple; //<eqIdx,sccIdx>
+  input list<tuple<Integer,Integer>> iNewList;
+  output list<tuple<Integer,Integer>> oNewList;
+protected
+  Integer eqIdx,sccIdx;
+  tuple<Integer,Integer> newElem;
+algorithm
+  oNewList := matchcontinue(iTuple,iNewList)
+    case((eqIdx,sccIdx),_)
+      equation
+        true = intEq(sccIdx,1);
+      then iNewList;
+    case((eqIdx,sccIdx),_)
+      equation
+        newElem = (eqIdx,sccIdx-1);
+      then newElem::iNewList;
+    else
+      equation
+        print("removeDummyStateFromMapping1 failed\n");
+    then iNewList;
+  end matchcontinue;
+end removeDummyStateFromMapping1;
+
+
+protected function convertToSccSimEqMapping "function convertToSccSimEqMapping
+  author: marcusw
+  Converts the given mapping (simEqIndex -> sccIndex) to the inverse mapping (sccIndex->simEqIndex)."
+  input list<tuple<Integer,Integer>> iMapping; //the mapping (simEqIndex -> sccIndex)
+  input Integer numOfSccs; //important for arrayCreate
+  output array<list<Integer>> oMapping; //the created mapping (sccIndex->simEqIndex)
+protected
+  array<list<Integer>> tmpMapping;
+algorithm
+  tmpMapping := arrayCreate(numOfSccs,{});
+  //print("convertToSccSimEqMapping with " + intString(numOfSccs) + " sccs.\n");
+  _ := List.fold(iMapping, convertToSccSimEqMapping1, tmpMapping);
+  oMapping := tmpMapping;
+end convertToSccSimEqMapping;
+
+protected function convertToSccSimEqMapping1 "function convertToSccSimEqMapping1
+  author: marcusw
+  Helper function for convertToSccSimEqMapping. It will update the arrayIndex of the given mapping value."
+  input tuple<Integer,Integer> iMapping; //<simEqIdx,sccIdx>
+  input array<list<Integer>> iSccMapping;
+  output array<list<Integer>> oSccMapping;
+protected
+  Integer i1,i2;
+  List<Integer> tmpList;
+algorithm
+  (i1,i2) := iMapping;
+  //print("convertToSccSimEqMapping1 accessing index " + intString(i2) + ".\n");
+  tmpList := arrayGet(iSccMapping,i2);
+  tmpList := i1 :: tmpList;
+  oSccMapping := arrayUpdate(iSccMapping,i2,tmpList);
+end convertToSccSimEqMapping1;
+
+
+protected function convertToSimeqCompMapping "function convertToSimeqCompMapping
+  author: marcusw
+  Converts the given mapping (simEqIndex -> sccIndex) bases on tuples to an array mapping."
+  input list<tuple<Integer,Integer>> iMapping; //<simEqIdx,sccIdx>
+  input Integer numOfSimEqs;
+  output array<Integer> oMapping; //maps each simEq to the scc
+protected
+  array<Integer> tmpMapping;
+algorithm
+  tmpMapping := arrayCreate(numOfSimEqs, -1);
+  oMapping := List.fold(iMapping, convertToSimeqCompMapping1, tmpMapping);
+end convertToSimeqCompMapping;
+
+
+protected function convertToSimeqCompMapping1 "function convertToSimeqCompMapping1
+  author: marcusw
+  Helper function for convertToSimeqCompMapping. It will update the array at the given index."
+  input tuple<Integer,Integer> iSimEqTuple; //<simEqIdx,sccIdx>
+  input array<Integer> iMapping;
+  output array<Integer> oMapping;
+protected
+  Integer simEqIdx,sccIdx;
+algorithm
+  (simEqIdx,sccIdx) := iSimEqTuple;
+  //print("convertToSimeqCompMapping1 " + intString(simEqIdx) + " .. " + intString(sccIdx) + " iMapping_len: " + intString(arrayLength(iMapping)) + "\n");
+  oMapping := arrayUpdate(iMapping,simEqIdx,sccIdx);
+end convertToSimeqCompMapping1;
+
+
+protected function getSimEqIdxSimEqMapping "author: marcusw
+  Get a mapping from simEqIdx -> option(simEq)."
+  input list<SimCode.SimEqSystem> iAllEquations;
+  input Integer iSimEqSystemHighestIdx;
+  output array<Option<SimCode.SimEqSystem>> oMapping;
+protected
+  array<Option<SimCode.SimEqSystem>> tmpMapping;
+algorithm
+  tmpMapping := arrayCreate(iSimEqSystemHighestIdx, NONE());
+  oMapping := List.fold(iAllEquations, getSimEqIdxSimEqMapping1, tmpMapping);
+end getSimEqIdxSimEqMapping;
+
+
+protected function getSimEqIdxSimEqMapping1 "author: marcusw
+  Helper function that adds the index of the given equation to the mapping."
+  input SimCode.SimEqSystem iEquation;
+  input array<Option<SimCode.SimEqSystem>> iMapping;
+  output array<Option<SimCode.SimEqSystem>> oMapping;
+protected
+  Integer simEqIdx;
+  array<Option<SimCode.SimEqSystem>> tmpMapping;
+algorithm
+  oMapping := matchcontinue(iEquation, iMapping)
+    case(_,_)
+      equation
+        (simEqIdx,_) = getIndexBySimCodeEq(iEquation);
+        tmpMapping = arrayUpdate(iMapping, simEqIdx, SOME(iEquation));
+      then tmpMapping;
+    else
+      equation
+        (simEqIdx,_) = getIndexBySimCodeEq(iEquation);
+        //print("getSimEqIdxSimEqMapping1: Can't access idx " + intString(simEqIdx) + "\n");
+      then iMapping;
+  end matchcontinue;
+end getSimEqIdxSimEqMapping1;
+
+
+public function getSimCodeEqByIndexAndMapping "author: marcusw
+  Returns the SimEqSystem which has the given Index."
+  input array<Option<SimCode.SimEqSystem>> iSimEqIdxSimEqMapping; //All SimEqSystems
+  input Integer iIdx; //The index of the required system
+  output SimCode.SimEqSystem oSimEqSystem;
+protected
+  Option<SimCode.SimEqSystem> tmpSimEqSystem;
+algorithm
+  tmpSimEqSystem := arrayGet(iSimEqIdxSimEqMapping, iIdx);
+  oSimEqSystem := getSimCodeEqByIndexAndMapping1(tmpSimEqSystem, iIdx);
+end getSimCodeEqByIndexAndMapping;
+
+
+protected function getSimCodeEqByIndexAndMapping1 "author: marcusw
+  Returns the SimEqSystem if it's not NONE()."
+  input Option<SimCode.SimEqSystem> iSimEqSystem;
+  input Integer iIdx;
+  output SimCode.SimEqSystem oSimEqSystem;
+protected
+  SimCode.SimEqSystem tmpSys;
+algorithm
+  oSimEqSystem := match(iSimEqSystem,iIdx)
+    case(SOME(tmpSys),_)
+      then tmpSys;
+    else
+      equation
+        print("getSimCodeEqByIndexAndMapping1 failed. Looking for Index " + intString(iIdx) + "\n");
+        //print(" -- available indices: " + stringDelimitList(List.map(List.map(iEqs,getIndexBySimCodeEq), intString), ",") + "\n");
+      then fail();
+  end match;
+end getSimCodeEqByIndexAndMapping1;
+
+
+public function getSimCodeEqByIndex "function getSimCodeEqByIndex
+  author: marcusw
+  Returns the SimEqSystem which has the given Index. This method is called from susan."
+  input list<SimCode.SimEqSystem> iEqs; //All SimEqSystems
+  input Integer iIdx; //The index of the required system
+  output SimCode.SimEqSystem oEq;
+protected
+  list<SimCode.SimEqSystem> rest;
+  SimCode.SimEqSystem head;
+  Integer headIdx,headIdx2;
+algorithm
+  oEq := matchcontinue(iEqs,iIdx)
+    case(head::rest,_)
+      equation
+        (headIdx,headIdx2) = getIndexBySimCodeEq(head);
+        //print("getSimCodeEqByIndex listLength: " + intString(listLength(iEqs)) + " head idx: " + intString(headIdx) + "\n");
+        true = intEq(headIdx,iIdx) or intEq(headIdx2,iIdx);
+      then head;
+    case(head::rest,_) then getSimCodeEqByIndex(rest,iIdx);
+    else
+      equation
+        print("getSimCodeEqByIndex failed. Looking for Index " + intString(iIdx) + "\n");
+        //print(" -- available indices: " + stringDelimitList(List.map(List.map(iEqs,getIndexBySimCodeEq), intString), ",") + "\n");
+      then fail();
+  end matchcontinue;
+end getSimCodeEqByIndex;
+
+
+protected function getIndexBySimCodeEq "function getIndexBySimCodeEq
+  author: marcusw
+  Just a small helper function to get the index of a SimEqSystem."
+  input SimCode.SimEqSystem iEq;
+  output Integer oIdx;
+  output Integer oIdx2;
+protected
+  Integer index,index2;
+algorithm
+  (oIdx,oIdx2) := match(iEq)
+    case(SimCode.SES_RESIDUAL(index=index)) then (index,0);
+    case(SimCode.SES_SIMPLE_ASSIGN(index=index)) then (index,0);
+    case(SimCode.SES_ARRAY_CALL_ASSIGN(index=index)) then (index,0);
+    case(SimCode.SES_IFEQUATION(index=index)) then (index,0);
+    case(SimCode.SES_ALGORITHM(index=index)) then (index,0);
+    // no dynamic tearing
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index), NONE())) then (index,0);
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index), NONE())) then (index,0);
+    // dynamic tearing
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index), SOME(SimCode.LINEARSYSTEM(index=index2)))) then (index,index2);
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index), SOME(SimCode.NONLINEARSYSTEM(index=index2)))) then (index,index2);
+    case(SimCode.SES_MIXED(index=index)) then (index,0);
+    case(SimCode.SES_WHEN(index=index)) then (index,0);
+    else fail();
+  end match;
+end getIndexBySimCodeEq;
+
+
+protected function getSimCodeEqsByTaskList "author: marcusw
+  Get the simCode.SimEqSystem - objects references by the given tasks."
+  input list<HpcOmSimCode.Task> iTaskList;
+  input array<Option<SimCode.SimEqSystem>> iSimEqIdxSimEqMapping;
+  output list<SimCode.SimEqSystem> oSimEqs;
+protected
+  list<list<SimCode.SimEqSystem>> tmpSimEqs;
+algorithm
+  tmpSimEqs := List.map1(iTaskList, getSimCodeEqsByTaskList0, iSimEqIdxSimEqMapping);
+  oSimEqs := List.flatten(tmpSimEqs);
+end getSimCodeEqsByTaskList;
+
+protected function getSimCodeEqsByTaskList0 "author: marcusw
+  Get the simCode.SimEqSystem - objects references by the given task."
+  input HpcOmSimCode.Task iTask;
+  input array<Option<SimCode.SimEqSystem>> iSimEqIdxSimEqMapping;
+  output list<SimCode.SimEqSystem> oSimEqs;
+protected
+  list<Integer> eqIdc;
+  list<SimCode.SimEqSystem> tmpSimEqs;
+algorithm
+  oSimEqs := match(iTask, iSimEqIdxSimEqMapping)
+    case(HpcOmSimCode.CALCTASK(eqIdc=eqIdc),_)
+      equation
+        tmpSimEqs = List.map1r(eqIdc, getSimCodeEqByIndexAndMapping, iSimEqIdxSimEqMapping);
+      then tmpSimEqs;
+    case(HpcOmSimCode.CALCTASK_LEVEL(eqIdc=eqIdc),_)
+      equation
+        tmpSimEqs = List.map1r(eqIdc, getSimCodeEqByIndexAndMapping, iSimEqIdxSimEqMapping);
+      then tmpSimEqs;
+    else {};
+  end match;
+end getSimCodeEqsByTaskList0;
+
+
+public function dumpSimEqSCCMapping "author: marcusw
+  Prints the given mapping out to the console."
+  input array<Integer> iSccMapping;
+protected
+  String text;
+algorithm
+  text := "SimEqToSCCMapping";
+  ((_,text)) := Array.fold(iSccMapping, dumpSimEqSCCMapping1, (1,text));
+  print(text + "\n");
+end dumpSimEqSCCMapping;
+
+
+protected function dumpSimEqSCCMapping1 "author: marcusw
+  Helper function of dumpSimEqSCCMapping to print one mapping entry."
+  input Integer iMapping;
+  input tuple<Integer,String> iIndexText;
+  output tuple<Integer,String> oIndexText;
+protected
+  Integer iIndex;
+  String text, iText;
+algorithm
+  (iIndex,iText) := iIndexText;
+  text := intString(iMapping);
+  text := iText + "\nSimEq " + intString(iIndex) + ": {" + text + "}";
+  oIndexText := (iIndex+1,text);
+end dumpSimEqSCCMapping1;
+
+
+public function dumpSccSimEqMapping "function dumpSccSimEqMapping
+  author: marcusw
+  Prints the given mapping out to the console."
+  input array<list<Integer>> iSccMapping;
+protected
+  String text;
+algorithm
+  text := "SccToSimEqMapping";
+  ((_,text)) := Array.fold(iSccMapping, dumpSccSimEqMapping1, (1,text));
+  print(text + "\n");
+end dumpSccSimEqMapping;
+
+
+protected function dumpSccSimEqMapping1 "function dumpSccSimEqMapping1
+  author: marcusw
+  Helper function of dumpSccSimEqMapping to print one mapping list."
+  input list<Integer> iMapping;
+  input tuple<Integer,String> iIndexText;
+  output tuple<Integer,String> oIndexText;
+protected
+  Integer iIndex;
+  String text, iText;
+algorithm
+  (iIndex,iText) := iIndexText;
+  text := List.fold(iMapping, dumpSccSimEqMapping2, " ");
+  text := iText + "\nSCC " + intString(iIndex) + ": {" + text + "}";
+  oIndexText := (iIndex+1,text);
+end dumpSccSimEqMapping1;
+
+
+protected function dumpSccSimEqMapping2 "function dumpSccSimEqMapping2
+  author: marcusw
+  Helper function of dumpSccSimEqMapping1 to print one mapping element."
+  input Integer iIndex;
+  input String iText;
+  output String oText;
+algorithm
+  oText := iText + intString(iIndex) + " ";
+end dumpSccSimEqMapping2;
 
 annotation(__OpenModelica_Interface="backend");
 end HpcOmTaskGraph;

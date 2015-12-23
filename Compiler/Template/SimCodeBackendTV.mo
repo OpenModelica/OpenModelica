@@ -101,14 +101,13 @@ package HpcOmScheduler
   end convertFixedLevelScheduleToLevelThreadLists;
 end HpcOmScheduler;
 
-package HpcOmSimCodeMain
+package HpcOmTaskGraph
   function getSimCodeEqByIndex
     input list<SimCode.SimEqSystem> iEqs;
     input Integer iIdx;
     output SimCode.SimEqSystem oEq;
   end getSimCodeEqByIndex;
-end HpcOmSimCodeMain;
-
+end HpcOmTaskGraph;
 
 package FMI
   uniontype Info
