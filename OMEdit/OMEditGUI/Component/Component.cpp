@@ -1372,9 +1372,11 @@ QString Component::getParameterDisplayStringFromExtendsParameters(QString parame
       foreach (Component *pComponent, pInheritedComponent->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
         if (pComponent->getComponentInfo()->getName().compare(parameterName) == 0) {
           OMCProxy *pOMCProxy = pComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
-          displayString = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, pComponent->getLibraryTreeItem()->getNameStructure());
-          if (!displayString.isEmpty()) {
-            return displayString;
+          if (pComponent->getLibraryTreeItem()) {
+            displayString = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, pComponent->getLibraryTreeItem()->getNameStructure());
+            if (!displayString.isEmpty()) {
+              return displayString;
+            }
           }
         }
       }
