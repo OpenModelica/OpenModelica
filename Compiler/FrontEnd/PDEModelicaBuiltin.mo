@@ -50,3 +50,8 @@ annotation(Documentation(info="<html>
   See <a href=\"???\">pder()</a>
 </html>"));
 end pder;
+
+function extrapolateField "Extrapolates field in the boundary"
+  output Real u;
+external "builtin";
+end extrapolateField;

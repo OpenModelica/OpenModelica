@@ -8929,7 +8929,7 @@ algorithm
 	  newDiscretizedEQs := matchcontinue inEQ
 	    local
 	      Absyn.Exp lhs_exp, rhs_exp;
-	      Absyn.ComponentRef domainCr, domainCr1;
+	      Absyn.ComponentRef domainCr, domainCr1, fieldCr;
 	      SCode.Comment comment;
 	      SCode.SourceInfo info;
 	      Integer N;
@@ -8953,6 +8953,43 @@ algorithm
 	        domainCr1 = Absyn.CREF_IDENT(name, subscripts);
 	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
 	      then list(newEQFun(i, lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst) for i in 2:N-1);
+
+
+	    //left boundary extrapolation
+	    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp,
+	                domainOpt = SOME(domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="left"))),
+	                comment = comment, info = info))
+	      equation
+//	        Absyn.CALL(function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}), functionArgs = Absyn.FUNCTIONARGS(args = {})) = rhs_exp;
+//	        Absyn.CREF(fieldCr as Absyn.CREF_IDENT()) = lhs_exp;
+          fieldCr = matchExtrapAndField(lhs_exp, rhs_exp);
+	        domainCr1 = Absyn.CREF_IDENT(name, subscripts);
+	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
+	      then
+          {extrapolateFieldEq(false, fieldCr, domainCr1, N, comment, info, fieldLst)};
+
+	    //right boundary extrapolation
+	    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp,
+	                domainOpt = SOME(domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="right"))),
+	                comment = comment, info = info))
+	      equation
+//	        Absyn.CALL(function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}), functionArgs = Absyn.FUNCTIONARGS(args = {})) = rhs_exp;
+//	        Absyn.CREF(fieldCr as Absyn.CREF_IDENT()) = lhs_exp;
+          fieldCr = matchExtrapAndField(lhs_exp, rhs_exp);
+	        domainCr1 = Absyn.CREF_IDENT(name, subscripts);
+	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
+	      then
+          {extrapolateFieldEq(true, fieldCr, domainCr1, N, comment, info, fieldLst)};
+
+
+
+
+
+
+
+
+
+
 	    //left boundary condition
 	    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp,
 	                domainOpt = SOME(domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="left"))),
@@ -8976,6 +9013,24 @@ algorithm
 
   outDiscretizedEQs := listAppend(inDiscretizedEQs, newDiscretizedEQs);
 end discretizePDE;
+
+protected function matchExtrapAndField
+  input Absyn.Exp lhs_exp;
+  input Absyn.Exp rhs_exp;
+  output Absyn.ComponentRef fieldCr;
+algorithm
+  fieldCr := match (lhs_exp, rhs_exp)
+    local
+      Absyn.ComponentRef fcr;
+    case (Absyn.CALL(function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}), functionArgs = Absyn.FUNCTIONARGS(args = {})), Absyn.CREF(fcr as Absyn.CREF_IDENT()))
+    then
+      fcr;
+    case (Absyn.CREF(fcr as Absyn.CREF_IDENT()),Absyn.CALL(function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}), functionArgs = Absyn.FUNCTIONARGS(args = {})))
+    then
+      fcr;
+  end match;
+
+end matchExtrapAndField;
 
 protected function getDomNFields
   input DomainFieldsLst inDomFieldLst;
@@ -9031,6 +9086,68 @@ protected function absynDAECrefEqualName
       false;
   end matchcontinue;
 end absynDAECrefEqualName;
+
+
+protected function extrapolateFieldEq
+//extrapolateFieldEq(false,lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst)
+  input Boolean isRight; //otherwise is left
+  input Absyn.ComponentRef fieldCr;
+  input Absyn.ComponentRef domainCr;
+  input Integer N;
+  input SCode.Comment comment;
+  input SCode.SourceInfo info;
+  input List<Absyn.ComponentRef> fieldLst;
+  output SCode.Equation outEQ;
+  protected Absyn.Ident name;
+  protected list<Absyn.Subscript> subscripts;
+  protected Integer i1 = 1, i2 = 2, i3 = 3;
+algorithm
+  if List.isMemberOnTrue(fieldCr,fieldLst,Absyn.crefEqual) then
+    (name, subscripts) := match fieldCr
+      case Absyn.CREF_IDENT(name = name, subscripts = subscripts)
+      then
+        (name, subscripts);
+    end match;
+     //left eq:   u_1 = 2*u_2 - u_3
+     //right eq:  u_N = 2*u_{N-1} - u_{N-2}
+    if isRight then
+      i1 := N;
+      i2 := N - 1;
+      i3 := N - 2;
+    end if;
+    outEQ := SCode.EQUATION(SCode.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i1))::subscripts)),Absyn.BINARY(
+               Absyn.BINARY(
+                 Absyn.INTEGER(2),
+                 Absyn.MUL(),
+                 Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i2))::subscripts))
+               ),
+               Absyn.SUB(),
+               Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i3))::subscripts))
+             ), NONE(), comment, info));
+  else
+   fail();
+  end if;
+end extrapolateFieldEq;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 protected function newEQFun
   input Integer i;
