@@ -127,11 +127,11 @@ getClassNames(A);
 // "model test2
 //   Integer y;
 // end test2;
-// 
+//
 // model A
 //   model test
-//     Real z;
 //     Integer x = 33;
+//     Real z;
 //     annotation(Icon(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}), Diagram(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}), Documentation(info = \"<HTML>foo</HTML>\", revisions = \"1.0\"));
 //   end test;
 // end A;"
@@ -154,7 +154,7 @@ getClassNames(A);
 // Evaluating: getComponentCount(test2)
 // 1
 // Evaluating: getComponents(A.test)
-// {{Real,z,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{Integer,x,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// {{Integer,x,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{Real,z,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
 // Evaluating: addConnection(a.n, b.z, A.test)
 // Ok
 // Evaluating: addConnection(a.n[1], b.z[2], A.test)
@@ -211,11 +211,11 @@ getClassNames(A);
 // "model test2
 //   Integer y;
 // end test2;
-// 
+//
 // model A
 //   model test
-//     Real z;
 //     Integer x = 33;
+//     Real z;
 //     annotation(Icon(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}), Diagram(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}), Documentation(info = \"<HTML>foo</HTML>\", revisions = \"1.0\"));
 //   end test;
 // end A;"
@@ -238,7 +238,7 @@ getClassNames(A);
 // Evaluating: getComponentCount(test2)
 // 1
 // Evaluating: getComponents(A.test)
-// {{Real,z,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{Integer,x,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// {{Integer,x,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{Real,z,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
 // Evaluating: addConnection(a.n, b.z, A.test)
 // Ok
 // Evaluating: addConnection(a.n[1], b.z[2], A.test)
