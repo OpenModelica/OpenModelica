@@ -382,13 +382,12 @@ AC_TRY_LINK([
 #endif
 #include <omp.h>
 #include <stdio.h>
-], [int main() {
+], [
   int i;
 #pragma omp parallel for private(i) schedule(dynamic)
   for (i=0; i<16; i++)
     printf("Thread %d\n", i);
   return 0;
-}
 ], [OMPCC="$CC$CFLAGS"; AC_MSG_RESULT([$OMPCC]); CONFIG_WITH_OPENMP=1],
   [
   if test -z "$OMPCC"; then
