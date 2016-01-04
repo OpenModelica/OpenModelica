@@ -1096,10 +1096,12 @@ algorithm
         {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
          Absyn.CREF(componentRef = model_)} := args;
         {} := getApiFunctionNamedArgs(inStatements);
-        p := deleteComponent(name, model_, p);
+        p := deleteOrUpdateComponent(name, model_, p, NONE());
         Print.clearBuf();
-      then
-        "true";
+      then "true";
+
+    case "deleteComponent"
+      then "false";
 
     case "getComponentCount"
       algorithm
@@ -4183,7 +4185,7 @@ algorithm
         publst = getPublicList(parts);
         Absyn.ELEMENTITEM(elt) = getElementitemContainsName(Absyn.CREF_IDENT(cr,{}), publst);
         elt_1 = setComponentPropertiesInElement(elt, cr, finalPrefix, flowPrefix, streamPrefix, repl, parallelism, variability, dyn_ref, causality);
-        publst_1 = deleteComponentFromElementitems(cr, publst);
+        publst_1 = deleteOrUpdateComponentFromElementitems(cr, publst, NONE()); // TODO: Do not move the component...
         protlst = getProtectedList(parts);
         protlst_1 = listAppend(protlst, {Absyn.ELEMENTITEM(elt_1)});
         parts_1 = replaceProtectedList(parts, protlst_1);
@@ -4196,7 +4198,7 @@ algorithm
         protlst = getProtectedList(parts);
         Absyn.ELEMENTITEM(elt) = getElementitemContainsName(Absyn.CREF_IDENT(cr,{}), protlst);
         elt_1 = setComponentPropertiesInElement(elt, cr, finalPrefix, flowPrefix, streamPrefix, repl, parallelism, variability, dyn_ref, causality);
-        protlst_1 = deleteComponentFromElementitems(cr, protlst);
+        protlst_1 = deleteOrUpdateComponentFromElementitems(cr, protlst, NONE()); // TODO: Do not move the component...
         publst = getPublicList(parts);
         publst_1 = listAppend(publst, {Absyn.ELEMENTITEM(elt_1)});
         parts_1 = replacePublicList(parts, publst_1);
@@ -8653,18 +8655,17 @@ algorithm
   end matchcontinue;
 end lookupClassdef;
 
-protected function deleteComponent
+protected function deleteOrUpdateComponent
 " This function deletes a component from a class given the name of the
    component instance, the model in which the component is instantiated in,
    and the Program. Both public and protected lists are searched."
   input String inString;
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Program inProgram;
+  input Option<tuple<Absyn.Path,Absyn.ComponentItem>> item;
   output Absyn.Program outProgram;
-  output String outString;
 algorithm
-  (outProgram,outString):=
-  matchcontinue (inString,inComponentRef,inProgram)
+  outProgram := match (inString,inComponentRef,inProgram)
     local
       Absyn.Path modelpath,modelwithin;
       String name;
@@ -8673,43 +8674,33 @@ algorithm
       Absyn.Class cdef,newcdef;
       Absyn.Within w;
 
-    case (_,model_,p)
-      equation
-        modelpath = Absyn.crefToPath(model_);
-        failure(_ = getPathedClassInProgram(modelpath, p));
-      then
-        (p,"false\n");
-
     case (name,(model_ as Absyn.CREF_QUAL()),(p as Absyn.PROGRAM()))
       equation
         modelpath = Absyn.crefToPath(model_);
         modelwithin = Absyn.stripLast(modelpath);
         cdef = getPathedClassInProgram(modelpath, p);
-        newcdef = deleteComponentFromClass(name, cdef);
+        newcdef = deleteOrUpdateComponentFromClass(name, cdef, item);
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
-      then
-        (newp,"true\n");
+      then newp;
 
     case (name,(model_ as Absyn.CREF_IDENT()),(p as Absyn.PROGRAM()))
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
-        newcdef = deleteComponentFromClass(name, cdef);
+        newcdef = deleteOrUpdateComponentFromClass(name, cdef, item);
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
-      then
-        (newp,"true\n");
+      then newp;
 
-    else (inProgram,"false\n");
+  end match;
+end deleteOrUpdateComponent;
 
-  end matchcontinue;
-end deleteComponent;
-
-protected function deleteComponentFromClass
+protected function deleteOrUpdateComponentFromClass
 " This function deletes a component from a class given
    the name of the component instance, and a \'Class\'.
    Both public and protected lists are searched."
   input String inString;
   input Absyn.Class inClass;
+  input Option<tuple<Absyn.Path,Absyn.ComponentItem>> item;
   output Absyn.Class outClass;
 algorithm
   outClass := matchcontinue (inString,inClass)
@@ -8734,11 +8725,11 @@ algorithm
                            info = file_info))
       equation
         publst = getPublicList(parts);
-        publst2 = deleteComponentFromElementitems(name, publst);
+        publst2 = deleteOrUpdateComponentFromElementitems(name, publst, item);
         l2 = listLength(publst2);
         l1 = listLength(publst);
         l1_1 = l1 - 1;
-        true = intEq(l1_1, l2);
+        true = intEq(l1_1, l2) or isSome(item);
         parts2 = replacePublicList(parts, publst2);
       then
         Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
@@ -8749,11 +8740,11 @@ algorithm
                            info = file_info))
       equation
         protlst = getProtectedList(parts);
-        protlst2 = deleteComponentFromElementitems(name, protlst);
+        protlst2 = deleteOrUpdateComponentFromElementitems(name, protlst, item);
         l2 = listLength(protlst2);
         l1 = listLength(protlst);
         l1_1 = l1 - 1;
-        true = intEq(l1_1, l2);
+        true = intEq(l1_1, l2) or isSome(item);
         parts2 = replaceProtectedList(parts, protlst2);
       then
         Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
@@ -8764,11 +8755,11 @@ algorithm
                            info = file_info))
       equation
         publst = getPublicList(parts);
-        publst2 = deleteComponentFromElementitems(name, publst);
+        publst2 = deleteOrUpdateComponentFromElementitems(name, publst, item);
         l2 = listLength(publst2);
         l1 = listLength(publst);
         l1_1 = l1 - 1;
-        true = intEq(l1_1, l2);
+        true = intEq(l1_1, l2) or isSome(item);
         parts2 = replacePublicList(parts, publst2);
       then
         Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcpath,mod,cmt,parts2,ann),file_info);
@@ -8779,49 +8770,105 @@ algorithm
                            info = file_info))
       equation
         protlst = getProtectedList(parts);
-        protlst2 = deleteComponentFromElementitems(name, protlst);
+        protlst2 = deleteOrUpdateComponentFromElementitems(name, protlst, item);
         l2 = listLength(protlst2);
         l1 = listLength(protlst);
         l1_1 = l1 - 1;
-        true = intEq(l1_1, l2);
+        true = intEq(l1_1, l2) or isSome(item);
         parts2 = replaceProtectedList(parts, protlst2);
       then
         Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcpath,mod,cmt,parts2,ann),file_info);
 
   end matchcontinue;
-end deleteComponentFromClass;
+end deleteOrUpdateComponentFromClass;
 
-protected function deleteComponentFromElementitems
-"Helper function to deleteComponentFromClass."
+protected function deleteOrUpdateComponentFromElementitems
+"Helper function to deleteOrUpdateComponentFromClass."
   input String inString;
   input list<Absyn.ElementItem> inAbsynElementItemLst;
+  input Option<tuple<Absyn.Path,Absyn.ComponentItem>> item;
   output list<Absyn.ElementItem> outAbsynElementItemLst;
 algorithm
-  outAbsynElementItemLst:=
-  matchcontinue (inString,inAbsynElementItemLst)
+  outAbsynElementItemLst := match (inString,inAbsynElementItemLst)
     local
       String name,name2;
       list<Absyn.ElementItem> xs,res;
       Absyn.ElementItem x;
+      Absyn.Element elt, eltold;
+      list<Absyn.ComponentItem> comps;
+      Absyn.ComponentItem compitem;
+      Absyn.ElementSpec spec;
+      Absyn.Path tppath;
+      Absyn.TypeSpec typeSpec;
+      Boolean hasOtherComponents;
     case (_,{}) then {};
-    case (name,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = {Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = name2))}))) :: xs))
-      equation
-        true = stringEq(name, name2);
-      then
-        xs;
-    case (name,((x as Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = {Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = name2))})))) :: xs))
-      equation
-        false = stringEq(name, name2);
-        res = deleteComponentFromElementitems(name, xs);
-      then
-        (x :: res);
+    case (name,(x as Absyn.ELEMENTITEM(element = elt as Absyn.ELEMENT(specification = spec as Absyn.COMPONENTS(typeSpec = typeSpec as Absyn.TPATH(), components = comps)))) :: xs)
+      algorithm
+        if max(match c
+            case Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = name2)) guard stringEq(name, name2) then true;
+            else false;
+            end match for c in comps) then
+          // These components do contain the name we are looking for
+          res := match item
+            case SOME((tppath, compitem))
+              algorithm
+                // It is an update operation
+                if Absyn.pathEqual(tppath, Absyn.typeSpecPath(spec.typeSpec)) then
+                  spec.components := list(match c
+                    case Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = name2)) guard stringEq(name, name2) then compitem;
+                    else c;
+                  end match for c in comps);
+                  elt.specification := spec;
+                  res := Absyn.ELEMENTITEM(elt)::xs;
+                else
+                  /* We need to split the old component into two parts: one with the renamed typename */
+                  spec.components := list(c for c
+                    guard match c
+                      case Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = name2)) then not stringEq(name, name2);
+                      else true;
+                    end match in comps);
+                  hasOtherComponents := not listEmpty(spec.components);
+                  if hasOtherComponents then
+                    elt.specification := spec;
+                    eltold := elt;
+                  end if;
+                  spec.components := {compitem};
+                  typeSpec.path := tppath;
+                  spec.typeSpec := typeSpec;
+                  elt.specification := spec;
+                  res := Absyn.ELEMENTITEM(elt)::xs;
+                  if hasOtherComponents then
+                    res := Absyn.ELEMENTITEM(eltold)::res;
+                  end if;
+                end if;
+              then res;
+            else
+              algorithm
+                // It is a deletion
+                if listLength(comps)==1 then
+                  res := xs;
+                else
+                  spec.components := list(c for c
+                    guard match c
+                      case Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = name2)) then not stringEq(name, name2);
+                      else true;
+                    end match in comps);
+                  elt.specification := spec;
+                  res := Absyn.ELEMENTITEM(elt)::xs;
+                end if;
+              then res;
+          end match;
+        else
+          res := x :: deleteOrUpdateComponentFromElementitems(name, xs, item);
+        end if;
+      then res;
     case (name,(x :: xs))
       equation
-        res = deleteComponentFromElementitems(name, xs);
-      then
-        (x :: res);
-  end matchcontinue;
-end deleteComponentFromElementitems;
+        // Did not find the name we are looking for in element x
+        res = deleteOrUpdateComponentFromElementitems(name, xs, item);
+      then (x :: res);
+  end match;
+end deleteOrUpdateComponentFromElementitems;
 
 public function addComponent " This function takes:
    arg1 - string giving the instancename,
@@ -9007,17 +9054,17 @@ protected function updateComponent
    all optional arguments must be present to the add_componentfunction
    in order to get the same component attributes,etc. as previous."
   input String inString1;
-  input Absyn.ComponentRef inComponentRef2;
+  input Absyn.ComponentRef inTypeCref;
   input Absyn.ComponentRef inComponentRef3;
   input list<Absyn.NamedArg> inAbsynNamedArgLst4;
   input Absyn.Program inProgram5;
   output Absyn.Program outProgram;
   output String outString;
 algorithm
-  (outProgram,outString) := matchcontinue (inString1,inComponentRef2,inComponentRef3,inAbsynNamedArgLst4,inProgram5)
+  (outProgram,outString) := matchcontinue (inString1,inComponentRef3,inAbsynNamedArgLst4,inProgram5)
     local
       Absyn.ComponentRef tp;
-      Absyn.Path modelpath,modelwithin,tppath;
+      Absyn.Path modelpath,modelwithin,tppath,tppath2;
       Option<Absyn.ArrayDim> x;
       Absyn.Program p_1,newp,p;
       list<Absyn.ClassPart> parts;
@@ -9039,93 +9086,19 @@ algorithm
       list<Absyn.NamedArg> nargs;
       Absyn.Within w;
 
-    // Updating a public component to model that resides inside package
-    case (name,_,(model_ as Absyn.CREF_QUAL()),nargs,(p as Absyn.PROGRAM()))
+    // Updating a component to a model
+    case (name,model_,nargs,(p as Absyn.PROGRAM()))
       equation
         modelpath = Absyn.crefToPath(model_);
-        modelwithin = Absyn.stripLast(modelpath);
-        (p_1,_) = deleteComponent(name, model_, p);
+        tppath2 = Absyn.crefToPath(inTypeCref);
         Absyn.CLASS(body = Absyn.PARTS(classParts = parts)) = getPathedClassInProgram(modelpath, p);
-        cdef = getPathedClassInProgram(modelpath, p_1);
         publst = getPublicList(parts);
-        Absyn.ELEMENT(finalPrefix,repl,inout,Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), publst);
-        Absyn.COMPONENTITEM(Absyn.COMPONENT(_,arrayDimensions,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
-        annotation_ = annotationListToAbsynComment(nargs, ann);
-        modification = modificationToAbsyn(nargs, mod);
-        newcdef = addToPublic(cdef,
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(finalPrefix,repl,inout,
-          Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),
-            {Absyn.COMPONENTITEM(Absyn.COMPONENT(name,arrayDimensions,modification),cond,annotation_)}),info,constr)));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
-      then
-        (newp,"true");
-
-    // Updating a protected component to model that resides inside package
-    case (name,_,(model_ as Absyn.CREF_QUAL()),nargs,(p as Absyn.PROGRAM()))
-      equation
-        modelpath = Absyn.crefToPath(model_);
-        modelwithin = Absyn.stripLast(modelpath);
-        (p_1,_) = deleteComponent(name, model_, p);
-        Absyn.CLASS(body=Absyn.PARTS(classParts=parts)) = getPathedClassInProgram(modelpath, p);
-        cdef = getPathedClassInProgram(modelpath, p_1);
         protlst = getProtectedList(parts);
-        Absyn.ELEMENT(finalPrefix,repl,inout,Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), protlst);
+        Absyn.ELEMENT(finalPrefix,repl,inout,Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), listAppend(publst, protlst));
         Absyn.COMPONENTITEM(Absyn.COMPONENT(_,arrayDimensions,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
         annotation_ = annotationListToAbsynComment(nargs, ann);
         modification = modificationToAbsyn(nargs, mod);
-        newcdef = addToProtected(cdef,
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(finalPrefix,repl,inout,
-          Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),{
-          Absyn.COMPONENTITEM(Absyn.COMPONENT(name,arrayDimensions,modification),cond,annotation_)}),info,constr)));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
-      then
-        (newp,"true");
-
-    // Updating a public component to model that resides on top level
-    case (name,tp,(model_ as Absyn.CREF_IDENT()),nargs,(p as Absyn.PROGRAM()))
-      equation
-        modelpath = Absyn.crefToPath(model_);
-        cdef = getPathedClassInProgram(modelpath, p);
-        tppath = Absyn.crefToPath(tp);
-        (p_1,_) = deleteComponent(name, model_, p);
-        cdef = getPathedClassInProgram(modelpath, p_1);
-        Absyn.CLASS(body=Absyn.PARTS(classParts=parts)) = getPathedClassInProgram(modelpath, p);
-        publst = getPublicList(parts);
-        Absyn.ELEMENT(finalPrefix,repl,inout,Absyn.COMPONENTS(attr,Absyn.TPATH(_,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), publst);
-        Absyn.COMPONENTITEM(Absyn.COMPONENT(_,arrayDimensions,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
-        annotation_ = annotationListToAbsynComment(nargs, ann);
-        modification = modificationToAbsyn(nargs, mod);
-        newcdef = addToPublic(cdef,
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(finalPrefix,repl,inout,
-          Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),{
-          Absyn.COMPONENTITEM(Absyn.COMPONENT(name,arrayDimensions,modification),cond,annotation_)}),info,constr)));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
-      then
-        (newp,"true");
-
-    // Updating a protected component to model that resides on top level
-    case (name,tp,(model_ as Absyn.CREF_IDENT()),nargs,(p as Absyn.PROGRAM()))
-      equation
-        modelpath = Absyn.crefToPath(model_);
-        cdef = getPathedClassInProgram(modelpath, p);
-        tppath = Absyn.crefToPath(tp);
-        (p_1,_) = deleteComponent(name, model_, p);
-        cdef = getPathedClassInProgram(modelpath, p_1);
-        Absyn.CLASS(body=Absyn.PARTS(classParts=parts)) = getPathedClassInProgram(modelpath, p);
-        protlst = getProtectedList(parts);
-        Absyn.ELEMENT(finalPrefix,repl,inout,Absyn.COMPONENTS(attr,Absyn.TPATH(_,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), protlst);
-        Absyn.COMPONENTITEM(Absyn.COMPONENT(_,arrayDimensions,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
-        annotation_ = annotationListToAbsynComment(nargs, ann);
-        modification = modificationToAbsyn(nargs, mod);
-        newcdef = addToProtected(cdef,
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(finalPrefix,repl,inout,
-          Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),{
-          Absyn.COMPONENTITEM(Absyn.COMPONENT(name,arrayDimensions,modification),cond,annotation_)}),info,constr)));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
+        newp = deleteOrUpdateComponent(name, model_, p, SOME((tppath2, Absyn.COMPONENTITEM(Absyn.COMPONENT(name,arrayDimensions,modification),cond,annotation_))));
       then
         (newp,"true");
 
