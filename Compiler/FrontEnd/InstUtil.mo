@@ -8944,7 +8944,8 @@ algorithm
 	                domainOpt = SOME(domainCr as Absyn.CREF_IDENT()), comment = comment, info = info))
 	      equation
 	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr,info);
-	      then list(newEQFun(i, lhs_exp, rhs_exp, domainCr, comment, info, fieldLst) for i in 2:N-1);
+//	      then list(newEQFun(i, lhs_exp, rhs_exp, domainCr, comment, info, fieldLst) for i in 2:N-1);
+	      then creatFieldEqs(lhs_exp, rhs_exp, domainCr, N, comment, info, fieldLst);
 	    //same as previous but with ".interior"
 	    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp,
 	                domainOpt = SOME(domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="interior"))),
@@ -8952,8 +8953,8 @@ algorithm
 	      equation
 	        domainCr1 = Absyn.CREF_IDENT(name, subscripts);
 	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
-	      then list(newEQFun(i, lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst) for i in 2:N-1);
-
+//	      then list(newEQFun(i, lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst) for i in 2:N-1);
+	      then creatFieldEqs(lhs_exp, rhs_exp, domainCr, N, comment, info, fieldLst);
 
 	    //left boundary extrapolation
 	    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp,
@@ -8980,16 +8981,6 @@ algorithm
 	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
 	      then
           {extrapolateFieldEq(true, fieldCr, domainCr1, N, comment, info, fieldLst)};
-
-
-
-
-
-
-
-
-
-
 	    //left boundary condition
 	    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp,
 	                domainOpt = SOME(domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="left"))),
@@ -9129,25 +9120,44 @@ algorithm
   end if;
 end extrapolateFieldEq;
 
+protected function creatFieldEqs "creates list of equations for fields. If the equation contains pder it spans 2:N-1, otherwise 1:N"
+  input Absyn.Exp lhs_exp;
+  input Absyn.Exp rhs_exp;
+  input Absyn.ComponentRef domainCr;
+  input Integer N;
+  input SCode.Comment comment;
+  input SCode.SourceInfo info;
+  input List<Absyn.ComponentRef> fieldLst;
+  output List<SCode.Equation> outDiscretizedEQs;
+  protected Boolean bl, br;
+algorithm
+  (_,bl) := Absyn.traverseExp(lhs_exp, hasPderTraverseFun, false);
+  (_,br) := Absyn.traverseExp(rhs_exp, hasPderTraverseFun, false);
+  //outDiscretizedEQs := match (Absyn.traverseExp(lhs_exp, hasPderTraverseFun, false),Absyn.traverseExp(rhs_exp, hasPderTraverseFun, false))
+  outDiscretizedEQs := match (bl, br)
+    //case ((_,false),(_,false)) //no pder()
+    case (false,false) //no pder()
+    then
+      list(newEQFun(i, lhs_exp, rhs_exp, domainCr, comment, info, fieldLst) for i in 1:N);
+    else  //contains some pder()
+      list(newEQFun(i, lhs_exp, rhs_exp, domainCr, comment, info, fieldLst) for i in 2:N-1);
+  end match;
+end creatFieldEqs;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+protected function hasPderTraverseFun
+  input Absyn.Exp inExp;
+  input Boolean inHasPder;
+  output Absyn.Exp outExp = inExp;
+  output Boolean outHasPder;
+algorithm
+  outHasPder := match (inExp,inHasPder)
+    case (_,true)
+      then true;
+    case (Absyn.CALL(function_ = Absyn.CREF_IDENT(name="pder")),_)
+      then true;
+  else false;
+  end match;
+end hasPderTraverseFun;
 
 protected function newEQFun
   input Integer i;
@@ -9165,83 +9175,83 @@ algorithm
   outEQ := SCode.EQUATION(SCode.EQ_EQUALS(outLhs_exp, outRhs_exp, NONE(), comment, info));
 end newEQFun;
 
- protected function discretizeTraverseFun
-   input Absyn.Exp inExp;
-   input tuple<Integer, list<Absyn.ComponentRef>, Absyn.ComponentRef, SCode.SourceInfo,Boolean> inTup;
-   output Absyn.Exp outExp;
-   output tuple<Integer, list<Absyn.ComponentRef>, Absyn.ComponentRef, SCode.SourceInfo,Boolean> outTup;
-   protected Integer i;
+protected function discretizeTraverseFun
+  input Absyn.Exp inExp;
+  input tuple<Integer, list<Absyn.ComponentRef>, Absyn.ComponentRef, SCode.SourceInfo,Boolean> inTup;
+  output Absyn.Exp outExp;
+  output tuple<Integer, list<Absyn.ComponentRef>, Absyn.ComponentRef, SCode.SourceInfo,Boolean> outTup;
+  protected Integer i;
 //   protected String eqDomainName;
-   protected list<Absyn.ComponentRef> fieldLst;
-   protected SCode.SourceInfo info;
-   protected Boolean skip, failVar;
-   protected Absyn.ComponentRef domainCr;
-   protected Absyn.Ident domName;
- algorithm
-   failVar := false;
-   (i, fieldLst, domainCr, info, skip) := inTup;
-   Absyn.CREF_IDENT(name = domName) := domainCr;
-   if skip then
-     outExp := inExp;
-     outTup := inTup;
-     return;
-   end if;
-   outExp := matchcontinue inExp
-     local
-       Absyn.Ident name, fieldDomainName;
-       list<Absyn.Subscript> subscripts;
-       Absyn.ComponentRef fieldCr;
-     case  Absyn.CREF(Absyn.CREF_QUAL(name = domName, subscripts = {}, componentRef=Absyn.CREF_IDENT(name="x",subscripts={})))
-       //coordinate x
-       then
-         Absyn.CREF(Absyn.CREF_QUAL(name = domName, subscripts = {}, componentRef=Absyn.CREF_IDENT(name="x",subscripts = {Absyn.SUBSCRIPT(Absyn.INTEGER(i))})));
-     case Absyn.CREF(fieldCr as Absyn.CREF_IDENT(name, subscripts))
-       //field
-       equation
-       true = List.isMemberOnTrue(fieldCr,fieldLst,Absyn.crefEqual);
-       then
-          Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i))::subscripts));
-     case Absyn.CALL(Absyn.CREF_IDENT("pder",subscripts),Absyn.FUNCTIONARGS({Absyn.CREF(fieldCr as Absyn.CREF_IDENT(name, subscripts)),Absyn.CREF(Absyn.CREF_IDENT(name="x"))},_))
-       //pder
-       equation
-         if not List.isMemberOnTrue(fieldCr,fieldLst,Absyn.crefEqual) then
-           failVar = true;
-           Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Field variable '" +  name + "' has different domain than the equation or is not a field." }, info);
-         end if;
-         skip = true;
-       then
-         Absyn.BINARY(
-           Absyn.BINARY(
-                 Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i+1))::subscripts)),
-                 Absyn.SUB(),
-                 Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i-1))::subscripts))
-           ),
-           Absyn.DIV(),
-           Absyn.BINARY(
-                   Absyn.INTEGER(2),
-                   Absyn.MUL(),
-                   Absyn.CREF(Absyn.CREF_QUAL(domName,{},Absyn.CREF_IDENT("dx",{})))
-           )
-         );
-     case Absyn.CALL(Absyn.CREF_IDENT("pder",subscripts),Absyn.FUNCTIONARGS({Absyn.CREF(_),_},_))
-       //pder with differentiating wrt wrong variable
-       equation
-         Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"You are differentiating with respect to variable that is not a coordinate."}, info);
-       then
-         inExp;
-     case Absyn.CALL(Absyn.CREF_IDENT("pder",subscripts),Absyn.FUNCTIONARGS({_,_},_))
-       equation
-         Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Unsupported partial derivative."}, info);
-       then
-         inExp;
-     else
-       inExp;
-   end matchcontinue;
-   if failVar then
-     fail();
-   end if;
-   outTup := (i, fieldLst, domainCr, info, skip);
- end discretizeTraverseFun;
+  protected list<Absyn.ComponentRef> fieldLst;
+  protected SCode.SourceInfo info;
+  protected Boolean skip, failVar;
+  protected Absyn.ComponentRef domainCr;
+  protected Absyn.Ident domName;
+algorithm
+  failVar := false;
+  (i, fieldLst, domainCr, info, skip) := inTup;
+  Absyn.CREF_IDENT(name = domName) := domainCr;
+  if skip then
+    outExp := inExp;
+    outTup := inTup;
+    return;
+  end if;
+  outExp := matchcontinue inExp
+    local
+      Absyn.Ident name, fieldDomainName;
+      list<Absyn.Subscript> subscripts;
+      Absyn.ComponentRef fieldCr;
+    case  Absyn.CREF(Absyn.CREF_QUAL(name = domName, subscripts = {}, componentRef=Absyn.CREF_IDENT(name="x",subscripts={})))
+    //coordinate x
+    then
+      Absyn.CREF(Absyn.CREF_QUAL(name = domName, subscripts = {}, componentRef=Absyn.CREF_IDENT(name="x",subscripts = {Absyn.SUBSCRIPT(Absyn.INTEGER(i))})));
+    case Absyn.CREF(fieldCr as Absyn.CREF_IDENT(name, subscripts))
+    //field
+      equation
+        true = List.isMemberOnTrue(fieldCr,fieldLst,Absyn.crefEqual);
+      then
+        Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i))::subscripts));
+    case Absyn.CALL(Absyn.CREF_IDENT("pder",subscripts),Absyn.FUNCTIONARGS({Absyn.CREF(fieldCr as Absyn.CREF_IDENT(name, subscripts)),Absyn.CREF(Absyn.CREF_IDENT(name="x"))},_))
+    //pder
+      equation
+        if not List.isMemberOnTrue(fieldCr,fieldLst,Absyn.crefEqual) then
+          failVar = true;
+          Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Field variable '" +  name + "' has different domain than the equation or is not a field." }, info);
+        end if;
+          skip = true;
+        then
+          Absyn.BINARY(
+            Absyn.BINARY(
+              Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i+1))::subscripts)),
+              Absyn.SUB(),
+              Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i-1))::subscripts))
+            ),
+            Absyn.DIV(),
+            Absyn.BINARY(
+              Absyn.INTEGER(2),
+              Absyn.MUL(),
+              Absyn.CREF(Absyn.CREF_QUAL(domName,{},Absyn.CREF_IDENT("dx",{})))
+            )
+          );
+    case Absyn.CALL(Absyn.CREF_IDENT("pder",subscripts),Absyn.FUNCTIONARGS({Absyn.CREF(_),_},_))
+    //pder with differentiating wrt wrong variable
+      equation
+        Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"You are differentiating with respect to variable that is not a coordinate."}, info);
+      then
+        inExp;
+    case Absyn.CALL(Absyn.CREF_IDENT("pder",subscripts),Absyn.FUNCTIONARGS({_,_},_))
+      equation
+        Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Unsupported partial derivative."}, info);
+      then
+        inExp;
+      else
+        inExp;
+  end matchcontinue;
+  if failVar then
+    fail();
+  end if;
+  outTup := (i, fieldLst, domainCr, info, skip);
+end discretizeTraverseFun;
 
 protected function findDomF<T>
   input tuple<String,T> inTup;
