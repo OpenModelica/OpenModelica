@@ -64,8 +64,8 @@ protected import SimCodeFunctionUtil;
 protected import System;
 protected import Util;
 
-public function createSimCode "function createSimCode
-  entry point to create SimCode from BackendDAE."
+public function createSimCode "
+  Entry point to create SimCode from BackendDAE."
   input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.BackendDAE inInitDAE;
   input Boolean inUseHomotopy "true if homotopy(...) is used during initialization";
@@ -342,9 +342,9 @@ algorithm
   end match;
 end createAndExportInitialSystemTaskGraph;
 
-protected function setNumProc "sets the number of processors. its upper limit is the number of processsors provided by the system.
-if no n-flag is set, a ideal number is suggested but the simulation fails.
-author: Waurich TUD 2013-11"
+protected function setNumProc "author: Waurich TUD 2013-11
+  Sets the number of processors. its upper limit is the number of processsors provided by the system.
+  If no n-flag is set, a ideal number is suggested but the simulation fails."
   input Integer numProcFlag;
   input Real cpCosts;
   input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
@@ -389,8 +389,9 @@ algorithm
 end setNumProc;
 
 
-public function applyGRS"applies several task graph rewriting rules to merge tasks. builds a new incidence matrix for the task graph after finishing their merging
-author:Waurich 2014-11"
+public function applyGRS "author: Waurich 2014-11
+  Applies several task graph rewriting rules to merge tasks. builds a new incidence matrix for the
+  task graph after finishing their merging."
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   output HpcOmTaskGraph.TaskGraph oTaskGraph;
@@ -427,8 +428,8 @@ protected
 end applyGRS;
 
 
-public function applyGRS1"applies several task graph rewriting rules to merge tasks.
-author:Waurich 2014-11"
+public function applyGRS1 "author: Waurich 2014-11
+  Applies several task graph rewriting rules to merge tasks."
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraph iTaskGraphT;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
@@ -456,8 +457,8 @@ algorithm
   end match;
 end applyGRS1;
 
-public function applyGRSForScheduler "applies graph rewriting rules that are specific for the scheduler.
-author:mwalther 2014-12"
+public function applyGRSForScheduler "author:mwalther 2014-12
+  applies graph rewriting rules that are specific for the scheduler."
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraph iTaskGraphT;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
@@ -485,8 +486,8 @@ algorithm
   end matchcontinue;
 end applyGRSForScheduler;
 
-public function applyGRSForLevelFixScheduler "merges all tasks of one and the same level together, if the execution costs are below 2000 cycles
-author:mwalther 2014-12"
+public function applyGRSForLevelFixScheduler "author:mwalther 2014-12
+  merges all tasks of one and the same level together, if the execution costs are below 2000 cycles"
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input array<Integer> iContractedTasks; //previously contracted nodes
   input list<list<Integer>> iLevelNodes; //all nodes of all levels
@@ -523,8 +524,8 @@ algorithm
   end match;
 end applyGRSForLevelFixScheduler;
 
-public function applyGRSForLevelFixSchedulerLevel "merges small and big nodes of the same level into one, until they reach a critical size
-author:mwalther 2014-12"
+public function applyGRSForLevelFixSchedulerLevel "author:mwalther 2014-12
+  merges small and big nodes of the same level into one, until they reach a critical size"
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input array<Integer> iContractedTasks;
   input Integer iCriticalSize;
@@ -659,8 +660,8 @@ algorithm
 end GRS_newGraph2;
 
 
-protected function createSchedule "create a schedule for the given task graph and the given number of processors.
-author: mwalther, Waurich TUD"
+protected function createSchedule "author: mwalther, Waurich TUD
+  create a schedule for the given task graph and the given number of processors."
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input array<list<Integer>> iSccSimEqMapping;
@@ -695,8 +696,8 @@ algorithm
   oSchedule := HpcOmScheduler.expandSchedule(iNumProc, numProcToUse, tmpSchedule);
 end createSchedule;
 
-protected function createSchedule1 "check if the given scheduler is known and create it, otherwise fail
-author: mwalther, Waurich TUD"
+protected function createSchedule1 "author: mwalther, Waurich TUD
+  check if the given scheduler is known and create it, otherwise fail"
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input array<list<Integer>> iSccSimEqMapping;
@@ -814,9 +815,9 @@ end createSchedule1;
 //------------------------------------------
 //------------------------------------------
 
-protected function checkOdeSystemSize "Compares the number of components in the graph with the number of ode-equations in the simCode-structure.
-Remark: this can occur when asserts are added to the ode-system.
-author:marcusw"
+protected function checkOdeSystemSize "author:marcusw
+  Compares the number of components in the graph with the number of ode-equations in the simCode-structure.
+Remark: this can occur when asserts are added to the ode-system."
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input list<list<SimCode.SimEqSystem>> iOdeEqs;
   input array<list<Integer>> iSccSimEqMapping;
@@ -849,8 +850,8 @@ algorithm
   end if;
 end checkOdeSystemSize;
 
-protected function checkTaskGraphMetaConsistency "Check if the number of nodes in task graph meta is equal to the number of nodes in the task graph.
-author:marcusw"
+protected function checkTaskGraphMetaConsistency "author:marcusw
+  Check if the number of nodes in task graph meta is equal to the number of nodes in the task graph."
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input String iSystemName;
@@ -869,8 +870,8 @@ algorithm
   end if;
 end checkTaskGraphMetaConsistency;
 
-protected function checkEquationCount "Check if the number of equations in the nodes of the task graph is equal to the given expected number.
-author:marcusw"
+protected function checkEquationCount "author:marcusw
+  Check if the number of equations in the nodes of the task graph is equal to the given expected number."
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input String iSystemName;
   input Integer iExpectedNumberOfEqs;
@@ -901,9 +902,9 @@ algorithm
 end checkEquationCount;
 
 /*
-protected function repeatScheduleWithOtherNumProc"checks if the scheduling with the given numProc is fine.
- if n=auto, more cores are available and more speedup could be achieved repeat schedule with increased num of procs.
- author:Waurich TUD 2013-011"
+protected function repeatScheduleWithOtherNumProc "author:Waurich TUD 2013-011
+  checks if the scheduling with the given numProc is fine.
+ if n=auto, more cores are available and more speedup could be achieved repeat schedule with increased num of procs."
   input HpcOmTaskGraph.TaskGraph taskGraphIn;
   input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
   input array<list<Integer>> sccSimEqMappingIn;
@@ -925,9 +926,9 @@ algorithm
 end repeatScheduleWithOtherNumProc;
 
 
-protected function repeatScheduleWithOtherNumProc1"checks if the scheduling with the given numProc is fine.
- if n=auto, more cores are available and more speedup could be achieved repeat schedule with increased num of procs.
- author:Waurich TUD 2013-011"
+protected function repeatScheduleWithOtherNumProc1 "author:Waurich TUD 2013-011
+  checks if the scheduling with the given numProc is fine.
+ if n=auto, more cores are available and more speedup could be achieved repeat schedule with increased num of procs."
   input HpcOmTaskGraph.TaskGraph taskGraphIn;
   input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
   input BackendDAE.BackendDAE inDAE;
@@ -988,8 +989,8 @@ end repeatScheduleWithOtherNumProc1;
 // output data about operations in equations and composition of systems of equations
 //----------------------------
 
-public function outputTimeBenchmark"outputs infos about all equations and equationsystems of the strongComponents.
-author:Waurich TUD "
+public function outputTimeBenchmark "author:Waurich TUD
+  outputs infos about all equations and equationsystems of the strongComponents."
   input HpcOmTaskGraph.TaskGraphMeta graphData;
   input BackendDAE.BackendDAE dae;
 protected
@@ -1006,8 +1007,8 @@ algorithm
     print("finish cost benchmark\n");
 end outputTimeBenchmark;
 
-protected function outputTimeBenchmark2"traverses all comps and compares measured and estimated execosts.
-author:Waurich TUD 2014-12"
+protected function outputTimeBenchmark2 "author:Waurich TUD 2014-12
+  traverses all comps and compares measured and estimated execosts."
   input list<BackendDAE.StrongComponent> compsIn;
   input list<Real> numCycles;
   input list<BackendDAE.EqSystem> eqSystemsIn;

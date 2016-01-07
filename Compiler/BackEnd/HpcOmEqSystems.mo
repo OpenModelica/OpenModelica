@@ -112,11 +112,10 @@ algorithm
   end matchcontinue;
 end partitionLinearTornSystem;
 
-
-public function reduceLinearTornSystem  "checks the EqSystem for tornSystems in order to dissassemble them into various SingleEquation and a reduced EquationSystem.
+public function reduceLinearTornSystem "author:Waurich TUD 2013-09
+  checks the EqSystem for tornSystems in order to dissassemble them into various SingleEquation and a reduced EquationSystem.
 This is useful in order to reduce the execution costs of the equationsystem and generate a bunch of parallel singleEquations. use +d=doLienarTearing +partlintorn=x to activate it.
-Remark: this is still under development
-author:Waurich TUD 2013-09"
+Remark: this is still under development"
   input BackendDAE.EqSystem systIn;
   input BackendDAE.Shared sharedIn;
   input Integer tornSysIdxIn;
@@ -149,8 +148,8 @@ algorithm
 end reduceLinearTornSystem;
 
 
-protected function reduceLinearTornSystem1  "traverses all StrongComponents for tornSystems, reduces them and rebuilds the BLT, the matching and the info about vars and equations
-author: Waurich TUD 2013-09"
+protected function reduceLinearTornSystem1 "author: Waurich TUD 2013-09
+  traverses all StrongComponents for tornSystems, reduces them and rebuilds the BLT, the matching and the info about vars and equations"
   input Integer compIdx;
   input BackendDAE.StrongComponents compsIn;
   input array<Integer> ass1;
@@ -314,8 +313,8 @@ algorithm
   end matchcontinue;
 end reduceLinearTornSystem1;
 
-protected function compHasDummyState"outputs true if the component solves a dummy state var
-author: Waurich TUD 2014-12"
+protected function compHasDummyState "author: Waurich TUD 2014-12
+  outputs true if the component solves a dummy state var"
   input BackendDAE.StrongComponent comp;
   input BackendDAE.EqSystem syst;
   output Boolean hasDummy;
@@ -348,8 +347,8 @@ algorithm
   end match;
 end compHasDummyState;
 
-protected function updateAssignmentsByComp"updates the assignments by the information given in the component.
-author:Waurich TUD 2014-11"
+protected function updateAssignmentsByComp "author:Waurich TUD 2014-11
+  updates the assignments by the information given in the component."
   input BackendDAE.StrongComponent comp;
   input array<Integer> ass1;
   input array<Integer> ass2;
@@ -361,7 +360,7 @@ algorithm
   arrayUpdate(ass1,var,eqn);
 end updateAssignmentsByComp;
 
-protected function matchComponent""
+protected function matchComponent
   input list<BackendDAE.Equation> eqLstIn;
   input list<BackendDAE.Var> varLstIn;
   input list<Integer> eqIdcs;
@@ -397,8 +396,8 @@ algorithm
 end replaceIndecesInComp;
 
 
-protected function reduceLinearTornSystem2  " builds from a torn system various linear equation systems that can be computed in parallel.
-author: Waurich TUD 2013-07"
+protected function reduceLinearTornSystem2 "author: Waurich TUD 2013-07
+  builds from a torn system various linear equation systems that can be computed in parallel."
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input list<Integer> tVarIdcs0;
@@ -533,7 +532,8 @@ algorithm
        //BackendDump.dumpComponents(oComps);
 end reduceLinearTornSystem2;
 
-protected function addDerReplacement"if var1 is a state and var2 is $DER.var, add a new replacement rule: $DER.var-->der(var)"
+protected function addDerReplacement "
+  if var1 is a state and var2 is $DER.var, add a new replacement rule: $DER.var-->der(var)"
   input BackendDAE.Var var1;
   input BackendDAE.Var var2;
   input BackendVarTransform.VariableReplacements replIn;
@@ -651,8 +651,8 @@ algorithm
   end matchcontinue;
 end simplifyNewEquations1;
 
-protected function buildEqSystemComponent "builds a strongComponent for the reduced System. if the system size is 1, a SingleEquation is built, otherwise a EqSystem with jacobian.
-author:Waurich TUD 2013-12"
+protected function buildEqSystemComponent "author:Waurich TUD 2013-12
+  builds a strongComponent for the reduced System. if the system size is 1, a SingleEquation is built, otherwise a EqSystem with jacobian."
   input list<Integer> eqIdcsIn;
   input list<Integer> varIdcsIn;
   input list<BackendDAE.Equation> resEqsIn;
@@ -704,8 +704,8 @@ algorithm
 end buildEqSystemComponent;
 
 
-protected function buildLinearJacobian "builds the jacobian out of the given jacobian-entries
-author:Waurich TUD 2013-12"
+protected function buildLinearJacobian "author:Waurich TUD 2013-12
+  builds the jacobian out of the given jacobian-entries"
   input list<list<BackendDAE.Var>> inElements;  //outer list refers to the row, inner list to the column
   input list<Integer> eqIdcs;
   input list<Integer> varIdcs;
@@ -719,8 +719,8 @@ algorithm
 end buildLinearJacobian;
 
 
-protected function buildLinearJacobian1 "helper for buildLinearJacobian.
-author:Waurich TUD 2013-12"
+protected function buildLinearJacobian1 "author:Waurich TUD 2013-12
+  helper for buildLinearJacobian."
   input Integer rowIdx;
   input list<Integer> columns;
   input list<list<BackendDAE.Var>> inElements;
@@ -736,8 +736,8 @@ algorithm
 end buildLinearJacobian1;
 
 
-protected function buildLinearJacobian2 "helper for buildLinearJacobian
-author:Waurich TUD 2013-12"
+protected function buildLinearJacobian2 "author:Waurich TUD 2013-12
+  helper for buildLinearJacobian"
   input Integer colIdx;
   input list<BackendDAE.Var> inElements;
   input Integer rowIdx;
@@ -761,8 +761,8 @@ algorithm
 end buildLinearJacobian2;
 
 
-protected function updateMatching "inserts the information of matching2 into matching1 by adding an index offset for the vars and eqs of matching2.Actually only one assignment for matching 2 is needed.
-author: Waurich TUD 2013-09"
+protected function updateMatching "author: Waurich TUD 2013-09
+  inserts the information of matching2 into matching1 by adding an index offset for the vars and eqs of matching2.Actually only one assignment for matching 2 is needed."
   input Integer idx;
   input tuple<Integer,Integer> offsetTpl;
   input tuple<array<Integer>,array<Integer>> matching2;
@@ -783,8 +783,8 @@ algorithm
 end updateMatching;
 
 
-protected function updateResidualMatching "sets the matching between tearingVars and residuals.
-author: Waurich TUD 2013-09"
+protected function updateResidualMatching "author: Waurich TUD 2013-09
+  sets the matching between tearingVars and residuals."
   input Integer idx;
   input list<Integer> tvars;
   input list<Integer> resEqs;
@@ -803,8 +803,8 @@ algorithm
 end updateResidualMatching;
 
 
-protected function getOtherComps "builds ordered StrongComponents and matching for the other equations.
-author: Waurich TUD 2013-09"
+protected function getOtherComps "author: Waurich TUD 2013-09
+  builds ordered StrongComponents and matching for the other equations."
   input list<tuple<Integer, list<Integer>>> otherEqsVarTpl;
   input array<Integer> ass1;
   input array<Integer> ass2;
@@ -819,8 +819,8 @@ algorithm
 end getOtherComps;
 
 
-protected function getOtherComps1 "implementation of getOtherComps
-author:waurich TUD 2013-09"
+protected function getOtherComps1 "author:waurich TUD 2013-09
+  implementation of getOtherComps"
   input tuple<Integer,list<Integer>> otherEqsVarTpl;
   input tuple<array<Integer>, array<Integer>, BackendDAE.StrongComponents> tplIn;
   output tuple<array<Integer>, array<Integer>, BackendDAE.StrongComponents> tplOut;
@@ -851,8 +851,8 @@ algorithm
 end getOtherComps1;
 
 
-protected function replaceAtPositionFromList  "replaces the entry from inLst indexed by positionLst[n] with the nth entry in replacingLst. n is first input so it can be used in a folding functions.
-author: Waurich TUD 2013-09"
+protected function replaceAtPositionFromList "author: Waurich TUD 2013-09
+  replaces the entry from inLst indexed by positionLst[n] with the nth entry in replacingLst. n is first input so it can be used in a folding functions."
   replaceable type ElementType subtypeof Any;
   input Integer n;
   input list<ElementType> replacingLst;
@@ -869,8 +869,8 @@ algorithm
 end replaceAtPositionFromList;
 
 
-protected function updateIndicesInComp " raises the indices of the vars and eqs in the given component according to the given offsets.
-author: Waurich TUD 2013-09"
+protected function updateIndicesInComp "author: Waurich TUD 2013-09
+  raises the indices of the vars and eqs in the given component according to the given offsets."
   input BackendDAE.StrongComponent compIn;
   input Integer varOffset;
   input Integer eqOffset;
@@ -896,8 +896,8 @@ algorithm
   end matchcontinue;
 end updateIndicesInComp;
 
-protected function buildNewResidualEquation "function to build the new linear residual equations res=0=A*xt+a0 whicht is solved for xt
-author: Waurich TUD 2013-09"
+protected function buildNewResidualEquation "author: Waurich TUD 2013-09
+  function to build the new linear residual equations res=0=A*xt+a0 whicht is solved for xt"
   input Integer resIdx;
   input list<list<BackendDAE.Var>> aCoeffLst;
   input list<BackendDAE.Var> a0CoeffLst;
@@ -943,8 +943,8 @@ algorithm
 end buildNewResidualEquation;
 
 
-protected function buildNewResidualEquation2 "function to build the sum of the rhs of the new residual equation, i.e. the sum of all tvars and their coefficients
-author: Waurich TUD 2013-09"
+protected function buildNewResidualEquation2 "author: Waurich TUD 2013-09
+  function to build the sum of the rhs of the new residual equation, i.e. the sum of all tvars and their coefficients"
   input Integer idx;
   input list<BackendDAE.Var> coeffs;
   input list<BackendDAE.Var> tVars;
@@ -995,8 +995,8 @@ algorithm
 end buildNewResidualEquation2;
 
 
-protected function addProductToExp " function to add the product of the given 2 BackendDAE.Var to the given inExp. expOut = expIn + fac1*fac2
-author: Waurich TUD 2013-09"
+protected function addProductToExp "author: Waurich TUD 2013-09
+  function to add the product of the given 2 BackendDAE.Var to the given inExp. expOut = expIn + fac1*fac2"
   input BackendDAE.Var var1;
   input BackendDAE.Var var2;
   input DAE.Exp inExp;
@@ -1014,8 +1014,8 @@ algorithm
 end addProductToExp;
 
 
-protected function buildSingleEquationSystem "function to build a system of singleEquations which can be solved partially parallel.
-author: Waurich TUD 2013-07"
+protected function buildSingleEquationSystem "author: Waurich TUD 2013-07
+  function to build a system of singleEquations which can be solved partially parallel."
   input Integer eqSizeOrig;
   input list<BackendDAE.Equation> inEqs;
   input list<BackendDAE.Var> inVars;
@@ -1073,13 +1073,13 @@ algorithm
 end buildSingleEquationSystem;
 
 
-protected function getTornSystemCoefficients "gets the co-efficients for the new residual equations of the linear torn system
+protected function getTornSystemCoefficients "author: Waurich TUD 2013-08
+  gets the co-efficients for the new residual equations of the linear torn system
 the first index is for the residualvar and the second for the tearingvar
 (r1) = (a11 a12..) (xt1)+(a01)
 (r2) = (a21 a22..)*(xt2)+(a02)
 (:)  = (:   :    ) ( : )+( : )
-this is meant to be a matrix :)
-author: Waurich TUD 2013-08"
+this is meant to be a matrix :)"
   input list<Integer> iValueRange;
   input Integer numTVars;
   input Integer tornSysIdx;
@@ -1122,8 +1122,8 @@ algorithm
 end getTornSystemCoefficients;
 
 
-protected function getTornSystemCoefficients1 "gets the equations with coefficients for one e_i
-author: Waurich TUD 2013-08"
+protected function getTornSystemCoefficients1 "author: Waurich TUD 2013-08
+  gets the equations with coefficients for one e_i"
   input list<Integer> resIdxLst;
   input Integer iIdx;
   input array<list<DAE.Exp>> h_iArr;
@@ -1221,8 +1221,8 @@ algorithm
   end matchcontinue;
 end getTornSystemCoefficients1;
 
-protected function varExp "gets an DAE.Exp for the CREF of the given BackendDAE.Var
-author: Waurich TUD 2013-08"
+protected function varExp "author: Waurich TUD 2013-08
+  gets an DAE.Exp for the CREF of the given BackendDAE.Var"
   input BackendDAE.Var varIn;
   output DAE.Exp expOut;
 protected
@@ -1234,8 +1234,8 @@ algorithm
   expOut := DAE.CREF(cr,ty);
 end varExp;
 
-protected function getResidualExpressions "adds a variable r_x to  the right hand side of an equation. this corresponds to the residual value in a residual equation
-author: Waurich TUD 2013-08"
+protected function getResidualExpressions "author: Waurich TUD 2013-08
+  adds a variable r_x to  the right hand side of an equation. this corresponds to the residual value in a residual equation"
   input list<Integer> iIn;
   input list<BackendDAE.Equation> resEqLstIn;
   input array<BackendVarTransform.VariableReplacements> replArrIn;
@@ -1248,8 +1248,8 @@ algorithm
   h_iArrOut := List.fold2(iIn,getResidualExpressions1,resExps,replArrIn,h_iArrIn);
 end getResidualExpressions;
 
-protected function getResidualExpressions1 "function to parse the expressions of one residualEquation.
-author:Waurich TUD 2013-08 "
+protected function getResidualExpressions1 "author:Waurich TUD 2013-08
+  function to parse the expressions of one residualEquation."
   input Integer i;
   input list<DAE.Exp> resExpsIn;
   input array<BackendVarTransform.VariableReplacements> replArr;
@@ -1277,7 +1277,8 @@ algorithm
   end matchcontinue;
 end getResidualExpressions1;
 
-protected function getResidualExpressionForEquation"subtracts the lhs from the rhs of the equation. a=b+c --> b+c-a "
+protected function getResidualExpressionForEquation "
+  subtracts the lhs from the rhs of the equation. a=b+c --> b+c-a"
   input BackendDAE.Equation eq;
   output DAE.Exp exp;
 algorithm
@@ -1299,8 +1300,8 @@ algorithm
 end getResidualExpressionForEquation;
 
 
-protected function varInFrontList  " puts the varIn at the front of the first list of lists
-author: Waurich TUD 2013-08"
+protected function varInFrontList "author: Waurich TUD 2013-08
+  puts the varIn at the front of the first list of lists"
   input BackendDAE.Var varIn;
   input list<list<BackendDAE.Var>> lstLstIn;
   output list<list<BackendDAE.Var>> lstLstOut;
@@ -1322,8 +1323,8 @@ algorithm
 end varInFrontList;
 
 
-protected function eqInFrontList  " puts the eqIn at the front of the first list of lists
-author: Waurich TUD 2013-08"
+protected function eqInFrontList "author: Waurich TUD 2013-08
+  puts the eqIn at the front of the first list of lists"
   input BackendDAE.Equation eqIn;
   input list<list<BackendDAE.Equation>> lstLstIn;
   output list<list<BackendDAE.Equation>> lstLstOut;
@@ -1345,10 +1346,10 @@ algorithm
 end eqInFrontList;
 
 
-protected function getAlgebraicEquationsForEI "computes from otherEqs the equations to solve for xa_i by:
+protected function getAlgebraicEquationsForEI "author: Waurich TUD 2013-08
+  computes from otherEqs the equations to solve for xa_i by:
 -replacing (i+1)-times in all otherEqs the tvars with i=0: all tvars=0, i=1: all tvars=0 but tvar{1}=1, i=2: all tvars=0 but tvar{2}=1  etc.
-- replacing (i+1)-times in all otherEqs the otherVars(algebraic vars) with $Xai.cref in order to solve for them
-author: Waurich TUD 2013-08"
+- replacing (i+1)-times in all otherEqs the otherVars(algebraic vars) with $Xai.cref in order to solve for them"
   input list<Integer> iIn;
   input Integer size;
   input list<BackendDAE.Equation> otherEqLstIn;
@@ -1437,8 +1438,8 @@ algorithm
 end getAlgebraicEquationsForEI;
 
 
-protected function replaceTVarWithReal "adds the replacement rule to set the tvar to realIn
-author: Waurich TUD 2013-08"
+protected function replaceTVarWithReal "author: Waurich TUD 2013-08
+  adds the replacement rule to set the tvar to realIn"
   input DAE.ComponentRef tVarCRefIn;
   input Real realIn;
   input BackendVarTransform.VariableReplacements replacementIn;
@@ -1448,8 +1449,8 @@ algorithm
 end replaceTVarWithReal;
 
 
-protected function replaceOtherVarsWithPrefixCref "adds the replacement rule to set the cref to $prefix.cref
-author: Waurich TUD 2013-07"
+protected function replaceOtherVarsWithPrefixCref "author: Waurich TUD 2013-07
+  adds the replacement rule to set the cref to $prefix.cref"
   input Integer indxIn;
   input String prefix;
   input list<DAE.ComponentRef> oVarCRefLstIn;
@@ -1481,8 +1482,8 @@ end replaceOtherVarsWithPrefixCref;
 // get EqSystem object
 //-------------------------------------------------//
 
-protected function getEqSystem"gets a eqSys object for the given set of variables and equations.
-author:Waurich TUD 2014-11"
+protected function getEqSystem "author:Waurich TUD 2014-11
+  gets a eqSys object for the given set of variables and equations."
   input list<BackendDAE.Equation> eqLst;
   input list<BackendDAE.Var> varLst;
   output EqSys syst;
@@ -1509,7 +1510,8 @@ algorithm
   sys := LINSYS(dim,matrixA,vectorB,listArray(varLst));
 end createEqSystem;
 
-protected function getEqSystem2"gets the coefficents and offsets from the equations"
+protected function getEqSystem2 "
+  gets the coefficents and offsets from the equations"
   input BackendDAE.Equation eq;
   input list<DAE.ComponentRef> crefs;
   input tuple<EqSys,Integer> foldIn;
@@ -1538,7 +1540,8 @@ algorithm
   foldOut := (sys,idx+1);
 end getEqSystem2;
 
-protected function getEqSystem3"divides the given expressions into coefficient-terms and the rest"
+protected function getEqSystem3 "
+  divides the given expressions into coefficient-terms and the rest"
   input DAE.ComponentRef  cref;
   input tuple<list<DAE.Exp>,list<DAE.Exp>> foldIn;
   output tuple<list<DAE.Exp>,list<DAE.Exp>> foldOut;
@@ -1558,7 +1561,8 @@ algorithm
   foldOut := (allTerms,coeff::coeffsIn);
 end getEqSystem3;
 
-protected function containsFunctioncallOfCref"outputs true if the expIn contains a function call which has cref as input"
+protected function containsFunctioncallOfCref "
+  outputs true if the expIn contains a function call which has cref as input"
   input DAE.Exp expIn;
   input DAE.ComponentRef cref;
   output Boolean hasCrefInCall;
@@ -1573,8 +1577,8 @@ algorithm
   end if;
 end containsFunctioncallOfCref;
 
-public function getCallExpLst "returns the list of expressions from a call.
-author:Waurich TUD 2015-08"
+public function getCallExpLst "author:Waurich TUD 2015-08
+  returns the list of expressions from a call."
   input DAE.Exp eIn;
   input list<DAE.Exp> eLstIn;
   output DAE.Exp eOut;
@@ -1590,7 +1594,8 @@ algorithm
   end matchcontinue;
 end getCallExpLst;
 
-protected function getSummands"gets all sum-terms in the equation"
+protected function getSummands "
+  gets all sum-terms in the equation"
   input BackendDAE.Equation eq;
   output list<DAE.Exp> exps;
 algorithm
@@ -1684,8 +1689,8 @@ algorithm
   end matchcontinue;
 end ChiosCondensation2;
 
-protected function generateCramerEqs"generate all equations to compute the xVector.
-author:Waurich TUD 2014-11"
+protected function generateCramerEqs "author:Waurich TUD 2014-11
+  generate all equations to compute the xVector."
   input list<Integer> varIdcs;
   input Integer dim;
   input array<BackendDAE.Var> vectorX;
@@ -1959,7 +1964,8 @@ algorithm
   end match;
 end CramerRule1;
 
-protected function determinant"calculates the determinant of a matrix"
+protected function determinant "
+  calculates the determinant of a matrix"
   input array<list<DAE.Exp>> matrix;
   output DAE.Exp detOut;
 algorithm
@@ -2040,7 +2046,8 @@ algorithm
    matrixOut := LINSYS(dim = listLength(bVars),matrixA=matrixA, vectorB=vectorB,vectorX=vectorX);
 end getMatrixFromJac;
 
-protected function transposeMatrix"transposes a matrix of the form array<list<DAE.Exp>>"
+protected function transposeMatrix "
+  transposes a matrix of the form array<list<DAE.Exp>>"
   input array<list<DAE.Exp>> matrixIn;
   output array<list<DAE.Exp>> matrixOut;
 protected
@@ -2110,8 +2117,8 @@ algorithm
 end dumpMatrix;
 
 
-protected function dumpVarArrLst "dumps a list<list<BackendDAE.Var>> as a String. TODO: remove when finished
-author: Waurich TUD 2013-08"
+protected function dumpVarArrLst "author: Waurich TUD 2013-08
+  dumps a list<list<BackendDAE.Var>> as a String. TODO: remove when finished"
   input array<list<BackendDAE.Var>> inArrLst;
   input String heading;
 protected
@@ -2124,8 +2131,8 @@ algorithm
 end dumpVarArrLst;
 
 
-protected function dumpVarArrLst1 "mapping function for dumpVarArrLst  TODO: remove when finished
-author: Waurich TUD 2013-08"
+protected function dumpVarArrLst1 "author: Waurich TUD 2013-08
+  mapping function for dumpVarArrLst  TODO: remove when finished"
   input Integer lstIdx;
   input list<list<BackendDAE.Var>> inLstLst;
   input String heading;
@@ -2141,8 +2148,8 @@ algorithm
 end dumpVarArrLst1;
 
 
-protected function dumpEqArrLst "dumps a list<list<BackendDAE.Equation>> as a String.  TODO: remove when finished
-author: Waurich TUD 2013-08"
+protected function dumpEqArrLst "author: Waurich TUD 2013-08
+  dumps a list<list<BackendDAE.Equation>> as a String.  TODO: remove when finished"
   input array<list<BackendDAE.Equation>> inArrLst;
   input String heading;
 protected
@@ -2155,8 +2162,8 @@ algorithm
 end dumpEqArrLst;
 
 
-protected function dumpEqArrLst1 "mapping function for dumpEqArrLst  TODO: remove when finished
-author: Waurich TUD 2013-08"
+protected function dumpEqArrLst1 "author: Waurich TUD 2013-08
+  mapping function for dumpEqArrLst  TODO: remove when finished"
   input Integer lstIdx;
   input list<list<BackendDAE.Equation>> inLstLst;
   input String heading;
@@ -2176,8 +2183,8 @@ end dumpEqArrLst1;
 // solve torn systems in parallel
 //-------------------------------------------------//
 
-public function parallelizeTornSystems"analyse torn systems.
-author:Waurich TUD 2014-07"
+public function parallelizeTornSystems "author:Waurich TUD 2014-07
+  analyse torn systems."
   input HpcOmTaskGraph.TaskGraph graphIn;
   input HpcOmTaskGraph.TaskGraphMeta metaIn;
   input array<list<Integer>> sccSimEqMapping;
@@ -2423,8 +2430,9 @@ end genSystemVarIdcs;
 
 
 //05-09-2014 marcusw: Changed because of dependency-task restructuring for MPI
-//protected function appendStringToLockIdcs"appends the suffix to the lockIds of the given tasks
-//author: Waurich TUD 2014-07"
+//protected function appendStringToLockIdcs "author: Waurich TUD 2014-07
+//  appends the suffix to the lockIds of the given tasks
+//"
 //  input list<HpcOmSimCode.Task> taskLstIn;
 //  input String suffix;
 //  output list<HpcOmSimCode.Task> taskLstOut;
@@ -2432,8 +2440,9 @@ end genSystemVarIdcs;
 //  taskLstOut := List.map1(taskLstIn,appendStringToLockIdcs1,suffix);
 //end appendStringToLockIdcs;
 //
-//protected function appendStringToLockIdcs1"appends the suffix to the lockIds of the given tasks
-//author: Waurich TUD 2014-07"
+//protected function appendStringToLockIdcs1 "author: Waurich TUD 2014-07
+//  appends the suffix to the lockIds of the given tasks
+//"
 //  input HpcOmSimCode.Task taskIn;
 //  input String suffix;
 //  output HpcOmSimCode.Task taskOut;
@@ -2485,8 +2494,8 @@ algorithm
   end matchcontinue;
 end buildMatchedGraphForTornSystem;
 
-protected function buildTaskgraphMetaForTornSystem"creates a preliminary task graph meta object
-author:Waurich TUD 2014-07"
+protected function buildTaskgraphMetaForTornSystem "author:Waurich TUD 2014-07
+  creates a preliminary task graph meta object"
   input HpcOmTaskGraph.TaskGraph graph;
   input list<BackendDAE.Equation> eqLst;
   input list<BackendDAE.Var> varLst;
@@ -2524,8 +2533,8 @@ algorithm
   metaOut := HpcOmTaskGraph.TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,compParamMapping,compNames,compDescs,exeCosts,commCosts,nodeMark,compInformations);
 end buildTaskgraphMetaForTornSystem;
 
-protected function buildDummyCommCosts "generates preliminary commCosts for a children list.
-author:Waurich TUD 2014-07"
+protected function buildDummyCommCosts "author:Waurich TUD 2014-07
+  generates preliminary commCosts for a children list."
   input list<Integer> childNodes;
   output HpcOmTaskGraph.Communications commCosts;
 algorithm
