@@ -7,6 +7,7 @@ AddComponent.mos \
 AddComponent2.mos \
 AddDeleteComponent.mos \
 ChangeSourceFile.mos \
+LargeFileChange.mos \
 ListFile.mos \
 removeComponentModifiers.mos \
 TestDiffListAPI.mos

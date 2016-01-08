@@ -33,7 +33,9 @@ if answer<>diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.pl
   print("\nStart model:\n\n" + s1 + "\n");
   print("\nAdded rectangle+listFile:\n\n" + s2 + "\n");
   print("\nDiff:\n\n" + diffModelicaFileListings(s1, s2) + "\n");
+  print("\nXML Diff:\n\n" + diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.xml) + "\n");
   print(getErrorString());
+  exit(1);
 end if;
 print("OK\n");
 
