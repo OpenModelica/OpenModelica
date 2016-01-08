@@ -1003,7 +1003,7 @@ protected
   Absyn.Path path;
   list<Absyn.NamedArg> nargs;
   Integer n;
-  String cmt, variability, causality, isField;
+  String cmt, variability, causality/*, isField*/;
   Absyn.Class cls;
   list<GlobalScript.LoadedFile> lf;
   Absyn.Modification mod;
@@ -1546,8 +1546,8 @@ algorithm
          // Absyn.ARRAY(arrayExp = {Absyn.STRING(value = parallelism)}),
          Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
          Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),
-         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)}),
-         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = isField)})} := args;
+         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})/*,
+         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = isField)})*/} := args;
 
         if listLength(expl) == 5 then
           {Absyn.BOOL(value = finalPrefix),
@@ -1565,7 +1565,7 @@ algorithm
 
         (outResult, p) := setComponentProperties(Absyn.crefToPath(class_), cr,
             finalPrefix, flowPrefix, streamPrefix, protected_, repl,
-            /*parallelism,*/ variability, {dref1,dref2}, causality, p, isField);
+            /*parallelism,*/ variability, {dref1,dref2}, causality, p/*, isField*/);
       then
         outResult;
 
@@ -4041,7 +4041,7 @@ protected function setComponentProperties
             bool list, /* dynamic_ref, two booleans */
             string, /* causality */
             Absyn.Program,
-            string, /*isField*/)
+            //string, /*isField*/)
   outputs: (string, Absyn.Program)"
   input Absyn.Path inPath1;
   input Absyn.ComponentRef inComponentRef2;
@@ -4055,12 +4055,12 @@ protected function setComponentProperties
   input list<Boolean> inBooleanLst8;
   input String inString9;
   input Absyn.Program inProgram10;
-  input String inString11;
+  // input String inString11;  //isField also removed
   output String outString;
   output Absyn.Program outProgram;
 algorithm
   (outString,outProgram):=
-  matchcontinue (inPath1,inComponentRef2,inFinal,inFlow,inStream,inProtected,inReplaceable,/*inString6,*/inString7,inBooleanLst8,inString9,inProgram10,inString11)
+  matchcontinue (inPath1,inComponentRef2,inFinal,inFlow,inStream,inProtected,inReplaceable,/*inString6,*/inString7,inBooleanLst8,inString9,inProgram10/*,inString11*/)
     local
       Absyn.Within within_;
       Absyn.Class cdef,cdef_1;
@@ -4069,11 +4069,11 @@ algorithm
       String varname,variability,causality,isField;
       Boolean finalPrefix,flowPrefix,streamPrefix,prot,repl;
       list<Boolean> dyn_ref;
-    case (p_class,Absyn.CREF_IDENT(name = varname),finalPrefix,flowPrefix,streamPrefix,prot,repl, /*parallelism,*/ variability,dyn_ref,causality,p as Absyn.PROGRAM(),isField)
+    case (p_class,Absyn.CREF_IDENT(name = varname),finalPrefix,flowPrefix,streamPrefix,prot,repl, /*parallelism,*/ variability,dyn_ref,causality,p as Absyn.PROGRAM()/*,isField*/)
       equation
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
-        cdef_1 = setComponentPropertiesInClass(cdef, varname, finalPrefix, flowPrefix, streamPrefix, prot, repl, "" /*parallelism*/, variability, dyn_ref, causality, isField);
+        cdef_1 = setComponentPropertiesInClass(cdef, varname, finalPrefix, flowPrefix, streamPrefix, prot, repl, "" /*parallelism*/, variability, dyn_ref, causality, "" /*isField*/);
         newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
       then
         ("Ok",newp);
