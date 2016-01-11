@@ -84,7 +84,7 @@ end EqSys;
 // start functions for handling linearTornSystems from here
 //-------------------------------------------------//
 
-public function partitionLinearTornSystem"checks the EqSystem for tornSystems in order to dissassemble them into various SingleEquation and a reduced EquationSystem.
+public function partitionLinearTornSystem "checks the EqSystem for tornSystems in order to dissassemble them into various SingleEquation and a reduced EquationSystem.
 This is useful in order to reduce the execution costs of the equationsystem and generate a bunch of parallel singleEquations. use +d=doLienarTearing +partlintorn=x to activate it.
 Remark: this is still under development
 
@@ -112,10 +112,11 @@ algorithm
   end matchcontinue;
 end partitionLinearTornSystem;
 
-public function reduceLinearTornSystem "author:Waurich TUD 2013-09
-  checks the EqSystem for tornSystems in order to dissassemble them into various SingleEquation and a reduced EquationSystem.
-This is useful in order to reduce the execution costs of the equationsystem and generate a bunch of parallel singleEquations. use +d=doLienarTearing +partlintorn=x to activate it.
-Remark: this is still under development"
+protected function reduceLinearTornSystem "author: Waurich TUD 2013-09
+  Checks the EqSystem for tornSystems in order to dissassemble them into various SingleEquation and
+  a reduced EquationSystem. This is useful in order to reduce the execution costs of the equationsystem
+  and generate a bunch of parallel singleEquations. use +d=doLienarTearing +partlintorn=x to activate it.
+  Remark: this is still under development"
   input BackendDAE.EqSystem systIn;
   input BackendDAE.Shared sharedIn;
   input Integer tornSysIdxIn;
@@ -146,7 +147,6 @@ algorithm
         fail();
   end matchcontinue;
 end reduceLinearTornSystem;
-
 
 protected function reduceLinearTornSystem1 "author: Waurich TUD 2013-09
   traverses all StrongComponents for tornSystems, reduces them and rebuilds the BLT, the matching and the info about vars and equations"
@@ -1577,8 +1577,8 @@ algorithm
   end if;
 end containsFunctioncallOfCref;
 
-public function getCallExpLst "author:Waurich TUD 2015-08
-  returns the list of expressions from a call."
+protected function getCallExpLst "author: Waurich TUD 2015-08
+  Returns the list of expressions from a call."
   input DAE.Exp eIn;
   input list<DAE.Exp> eLstIn;
   output DAE.Exp eOut;

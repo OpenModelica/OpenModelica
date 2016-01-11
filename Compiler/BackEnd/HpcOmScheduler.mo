@@ -1335,7 +1335,8 @@ algorithm
   str := s + "---------------------\n";
 end dumpTaskDepSchedule;
 
-public function printTaskList
+protected function printTaskList "
+  Printing the given list of tasks using the dumpTaskList function."
   input list<HpcOmSimCode.Task> iTaskList;
 algorithm
   print(dumpTaskList(iTaskList));
@@ -1902,7 +1903,7 @@ algorithm
  sum := List.fold(reals,realAdd,0.0);
 end realSum;
 
-public function deleteIntListMembers "author: Waurich TUD 2014-07
+protected function deleteIntListMembers "author: Waurich TUD 2014-07
   Deletes all entries of lst2 in lst1."
   input list<Integer> lst1;
   input list<Integer> lst2;
@@ -1934,7 +1935,7 @@ algorithm
   oMeta := iMeta;
 end createLevelSchedule;
 
-public function createLevelScheduleForLevel "author: marcusw
+protected function createLevelScheduleForLevel "author: marcusw
   Handles all tasks of one level."
   input list<Integer> iTasksOfLevel;
   input HpcOmTaskGraph.TaskGraph iGraph;
@@ -4912,8 +4913,8 @@ algorithm
   end match;
 end traverseAndUpdateThreadsInSchedule;
 
-protected function createScheduleFromAssignments "author:Waurich TUD 2013-12
-  creates the ThreadSchedule from the taskAssignment i.e. which task is computed in which thread."
+protected function createScheduleFromAssignments "author: Waurich TUD 2013-12
+  Creates the ThreadSchedule from the taskAssignment i.e. which task is computed in which thread."
   input array<Integer> taskAss;
   input array<list<Integer>> procAss;
   input Option<list<Integer>> orderOpt;
@@ -5312,7 +5313,7 @@ algorithm
   (outElement,outIdx,found) := getMemberOnTrueWithIdx1(1,inValue,inList,inCompFunc);
 end getMemberOnTrueWithIdx;
 
-public function getMemberOnTrueWithIdx1 "author:Waurich TUD 2013-11
+protected function getMemberOnTrueWithIdx1 "author:Waurich TUD 2013-11
   implementation of getMemberOnTrueWithIdx."
   input Integer inIdx;
   input Real inValue;
@@ -5640,7 +5641,7 @@ algorithm
   print(dumpSchedule(iSchedule));
 end printSchedule;
 
-public function dumpSchedule
+protected function dumpSchedule
   input HpcOmSimCode.Schedule iSchedule;
   output String str;
 protected
@@ -5941,7 +5942,7 @@ algorithm
   speedUpMaxOut := speedUpMax;
 end predictExecutionTime;
 
-public function printPredictedExeTimeInfo "author:Waurich TUD 2013-11
+protected function printPredictedExeTimeInfo "author:Waurich TUD 2013-11
   function to print the information about the predicted execution times."
   input Real serTime;
   input Real parTime;

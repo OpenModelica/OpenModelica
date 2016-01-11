@@ -427,19 +427,18 @@ protected
    //(oTaskGraph,oTaskGraphMeta) := (taskGraph1,taskGraphMeta1);
 end applyGRS;
 
-
-public function applyGRS1 "author: Waurich 2014-11
+protected function applyGRS1 "author: Waurich 2014-11
   Applies several task graph rewriting rules to merge tasks."
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraph iTaskGraphT;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
-  input array<Integer> contractedTasksIn; // is updated on the fly
+  input array<Integer> iContractedTasks; // is updated on the fly
   input Boolean again;
   output HpcOmTaskGraph.TaskGraph oTaskGraph;
   output HpcOmTaskGraph.TaskGraph oTaskGraphT;
   output HpcOmTaskGraph.TaskGraphMeta oTaskGraphMeta;
 algorithm
-  (oTaskGraph,oTaskGraphT,oTaskGraphMeta) := match(iTaskGraph,iTaskGraphT,iTaskGraphMeta,contractedTasksIn,again)
+  (oTaskGraph,oTaskGraphT,oTaskGraphMeta) := match(iTaskGraph,iTaskGraphT,iTaskGraphMeta,iContractedTasks,again)
     local
       Boolean changed,changed2;
       HpcOmTaskGraph.TaskGraph tmpTaskGraph, tmpTaskGraphT;
@@ -448,7 +447,7 @@ algorithm
     case(_,_,_,_,true)
       equation
         //Merge nodes
-        (tmpTaskGraph,tmpTaskGraphT,tmpTaskGraphMeta,tmpContractedTasks,changed) = HpcOmTaskGraph.mergeSimpleNodes(iTaskGraph, iTaskGraphT, iTaskGraphMeta, contractedTasksIn);
+        (tmpTaskGraph,tmpTaskGraphT,tmpTaskGraphMeta,tmpContractedTasks,changed) = HpcOmTaskGraph.mergeSimpleNodes(iTaskGraph, iTaskGraphT, iTaskGraphMeta, iContractedTasks);
         (tmpTaskGraph,tmpTaskGraphT,tmpTaskGraphMeta,tmpContractedTasks,changed2) = HpcOmTaskGraph.mergeParentNodes(tmpTaskGraph, tmpTaskGraphT, tmpTaskGraphMeta, tmpContractedTasks);
         changed = changed or changed2;
         //Repeat if something has changed
@@ -457,7 +456,7 @@ algorithm
   end match;
 end applyGRS1;
 
-public function applyGRSForScheduler "author:mwalther 2014-12
+protected function applyGRSForScheduler "author:mwalther 2014-12
   applies graph rewriting rules that are specific for the scheduler."
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraph iTaskGraphT;
@@ -600,8 +599,8 @@ algorithm
   end matchcontinue;
 end applyGRSForLevelFixSchedulerLevel;
 
-protected function GRS_newGraph"build a new task graph and update the inComps for the merged nodes.
-author:Waurich TUD 2014-11"
+protected function GRS_newGraph "author: Waurich TUD 2014-11
+  Build a new task graph and update the inComps for the merged nodes."
   input HpcOmTaskGraph.TaskGraph graphIn;
   input HpcOmTaskGraph.TaskGraphMeta metaIn;
   input array<Integer> contrTasks;
@@ -623,8 +622,8 @@ algorithm
   metaOut := HpcOmTaskGraph.setInCompsInMeta(inCompsNew,metaIn);
 end GRS_newGraph;
 
-protected function GRS_newGraph2"build a new task graph and update the inComps for the merged nodes.
-author: Waurich TUD 2014-11"
+protected function GRS_newGraph2 "author: Waurich TUD 2014-11
+  Build a new task graph and update the inComps for the merged nodes."
   input list<Integer> origNodes;
   input list<Integer> removedNodes;
   input array<Integer> contrTasks;
@@ -659,9 +658,8 @@ algorithm
   end match;
 end GRS_newGraph2;
 
-
 protected function createSchedule "author: mwalther, Waurich TUD
-  create a schedule for the given task graph and the given number of processors."
+  Create a schedule for the given task graph and the given number of processors."
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input array<list<Integer>> iSccSimEqMapping;
@@ -697,7 +695,7 @@ algorithm
 end createSchedule;
 
 protected function createSchedule1 "author: mwalther, Waurich TUD
-  check if the given scheduler is known and create it, otherwise fail"
+  Check if the given scheduler is known and create it, otherwise fail."
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input array<list<Integer>> iSccSimEqMapping;
@@ -811,13 +809,14 @@ algorithm
   end matchcontinue;
 end createSchedule1;
 
+
 // test functions
 //------------------------------------------
 //------------------------------------------
 
-protected function checkOdeSystemSize "author:marcusw
+protected function checkOdeSystemSize "author: marcusw
   Compares the number of components in the graph with the number of ode-equations in the simCode-structure.
-Remark: this can occur when asserts are added to the ode-system."
+  Remark: this can occur when asserts are added to the ode-system."
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input list<list<SimCode.SimEqSystem>> iOdeEqs;
   input array<list<Integer>> iSccSimEqMapping;
@@ -850,7 +849,7 @@ algorithm
   end if;
 end checkOdeSystemSize;
 
-protected function checkTaskGraphMetaConsistency "author:marcusw
+protected function checkTaskGraphMetaConsistency "author: marcusw
   Check if the number of nodes in task graph meta is equal to the number of nodes in the task graph."
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
@@ -870,7 +869,7 @@ algorithm
   end if;
 end checkTaskGraphMetaConsistency;
 
-protected function checkEquationCount "author:marcusw
+protected function checkEquationCount "author: marcusw
   Check if the number of equations in the nodes of the task graph is equal to the given expected number."
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input String iSystemName;

@@ -247,7 +247,7 @@ algorithm
   oMapping := listAppend(iMapping,{(isyst,isystIdx)});
 end getSystemComponents1;
 
-public function getNumberOfSystemComponents "author: marcusw
+protected function getNumberOfSystemComponents "author: marcusw
   Returns the number of components stored in the BackendDAE."
   input BackendDAE.BackendDAE iDae;
   output Integer oNumOfComps;
@@ -258,7 +258,7 @@ algorithm
   oNumOfComps := List.fold(eqs, getNumberOfEqSystemComponents, 0);
 end getNumberOfSystemComponents;
 
-public function getNumberOfEqSystemComponents "author: marcusw
+protected function getNumberOfEqSystemComponents "author: marcusw
   Adds the number of components in the given eqSystem to the iNumOfComps."
   input BackendDAE.EqSystem iEqSystem;
   input Integer iNumOfComps;
@@ -765,7 +765,7 @@ algorithm
   end matchcontinue;
 end getVarString;
 
-public function shortenVarString "author: Waurich TUD 2013-06
+protected function shortenVarString "author: Waurich TUD 2013-06
   Terminates var string at :"
   input List<String> iString;
   output List<String> oString;
@@ -1248,7 +1248,7 @@ algorithm
   end match;
 end getVarsBySCC;
 
-public function tupleToString "author: marcusw
+protected function tupleToString "author: marcusw
   Returns the given tuple as string."
   input tuple<Integer,Integer> inTuple;
   output String result;
@@ -1878,7 +1878,7 @@ algorithm
   end match;
 end getAllSuccessors2;
 
-public function getChildNodes "author: waurich TUD 2013-06
+protected function getChildNodes "author: waurich TUD 2013-06
   Gets the successor nodes for a list of parent nodes."
   input array<list<Integer>> adjacencyLstIn;
   input list<Integer> parents;
@@ -2391,7 +2391,7 @@ algorithm
   oTpl := (oLst,map);
 end mapIntegers;
 
-public function getEventSystem "author: marcusw
+protected function getEventSystem "author: marcusw
   Gets the graph and the adjacencyLst only for the EventSystem. This means that all branches which leads to a node solving
   a whencondition or another boolean condition will remain."
   input TaskGraph iTaskGraph;
@@ -3018,7 +3018,7 @@ algorithm
   print("\n");
 end printTaskGraph;
 
-public function dumpAdjacencyLst "author: Waurich TUD 2013-07
+protected function dumpAdjacencyLst "author: Waurich TUD 2013-07
   Prints the adjacencyLst."
   input list<list<Integer>> inIntegerLstLst;
   input Integer rowIndex;
@@ -3038,7 +3038,7 @@ algorithm
   end match;
 end dumpAdjacencyLst;
 
-public function dumpAdjacencyRow "author: PA
+protected function dumpAdjacencyRow "author: PA
   Helper function to dumpIncidenceMatrix2."
   input list<Integer> inIntegerLst;
 algorithm
@@ -3106,7 +3106,7 @@ algorithm
   print("\n");
 end printTaskGraphMeta;
 
-public function printInComps "author:Waurich TUD 2013-06
+protected function printInComps "author:Waurich TUD 2013-06
   Prints the information about the assigned components to a taskgraph node."
   input array<list<Integer>> iInComps;
 protected
@@ -3120,7 +3120,7 @@ algorithm
   print("--------------------------------\n");
 end printInComps;
 
-public function printVarCompMapping "author: Waurich TUD 2013-07 / marcusw
+protected function printVarCompMapping "author: Waurich TUD 2013-07 / marcusw
   Prints the information about how the vars are assigned to the graph nodes."
   input array<tuple<Integer, Integer, Integer>> iVarCompMapping;
 protected
@@ -3134,7 +3134,7 @@ algorithm
   print("--------------------------------\n");
 end printVarCompMapping;
 
-public function printEqCompMapping "author: Waurich TUD 2013-07 / marcusw
+protected function printEqCompMapping "author: Waurich TUD 2013-07 / marcusw
   Prints the information about which equations are assigned to the graph nodes."
   input array<tuple<Integer,Integer,Integer>> iEqCompMapping;
 protected
@@ -3148,7 +3148,7 @@ algorithm
   print("--------------------------------\n");
 end printEqCompMapping;
 
-public function printCompParamMapping "author: marcusw
+protected function printCompParamMapping "author: marcusw
   Prints the information which components contains which parameters."
   input array<list<Integer>> iCompParamMapping;
 protected
@@ -3219,7 +3219,7 @@ algorithm
   print("--------------------------------\n");
 end printCommCosts;
 
-public function printCommCost "author: marcusw
+protected function printCommCost "author: marcusw
   Prints the information about the the communication costs of one edge."
   input Communication iComm;
   output String oCommString;
@@ -3235,7 +3235,7 @@ algorithm
   oCommString := "(target node: " + intString(childNode) + " ints: " + intString(numberOfIntegers) + " floats: " + intString(numberOfFloats) + " booleans: " + intString(numberOfBooleans) + " [requiredTime: " + realString(requiredTime) + " for " + intString(numberOfVars) + " variables)";
 end printCommCost;
 
-public function printNodeMarks "author: Waurich TUD 2013-07 / marcusw
+protected function printNodeMarks "author: Waurich TUD 2013-07 / marcusw
   Prints the information about additional NodeMark."
   input array<Integer> iNodeMarks;
 protected
@@ -3248,7 +3248,7 @@ algorithm
   print("--------------------------------\n");
 end printNodeMarks;
 
-public function printComponentInformations "author: marcusw
+protected function printComponentInformations "author: marcusw
   Function to print the component information of task graph meta."
   input array<ComponentInfo> iComponentInformations;
 protected
@@ -3313,7 +3313,7 @@ algorithm
   oString := intLstString(listGet(criticalPathsIn,cpIdx))+"";
 end dumpCriticalPathInfo1;
 
-public function printCriticalPathInfo "author: Waurich TUD 2013-07
+protected function printCriticalPathInfo "author: Waurich TUD 2013-07
   Prints the criticalPath and the costs."
   input list<list<Integer>> criticalPathsIn;
   input Real cpCosts;
@@ -3348,7 +3348,7 @@ end printCriticalPathInfo1;
 //  Functions to merge nodes
 //--------------------------
 
-public function mergeSingleNodes "
+protected function mergeSingleNodes "
   Merges all single nodes. The max number of remaining single nodes is numProc."
   input TaskGraph iTaskGraph;
   input TaskGraphMeta iTaskGraphMeta;
@@ -3552,7 +3552,7 @@ algorithm
 end mergeSimpleNodes;
 
 public function mergeParentNodes "author: marcusw, waurich
-  Merges parent nodes into child if this produces a shorter execution time."
+  Merges parent nodes into child if this produces a shorter execution time due to omitted communication costs."
   input TaskGraph graphIn;
   input TaskGraph graphTIn;
   input TaskGraphMeta graphDataIn;
@@ -3632,6 +3632,29 @@ algorithm
     else iMergedNodes;
   end matchcontinue;
 end mergeParentNodes0;
+
+protected function mergeSinkNodes "author: mflehmig
+  Nodes that have a only one dependency to the very same node are merged with this 'sink' node."
+  input TaskGraph graphIn;
+  input TaskGraph graphTIn;
+  input TaskGraphMeta graphDataIn;
+  input array<Integer> contractedTasksIn;
+  output TaskGraph graphOut;
+  output TaskGraph graphTOut;
+  output TaskGraphMeta graphDataOut;
+  output array<Integer> contractedTasksOut;
+  output Boolean changed;
+protected
+  array<Integer> alreadyMerged;
+  list<list<Integer>> mergedNodes;
+algorithm
+  alreadyMerged := arrayCreate(arrayLength(graphIn),0);
+  mergedNodes := mergeParentNodes0(graphIn, graphTIn, graphDataIn, contractedTasksIn, alreadyMerged, 1, {});
+  //print("mergedNodes "+stringDelimitList(List.map(mergedNodes,intLstString),"\n")+"\n");
+  (graphOut,graphTOut,graphDataOut,contractedTasksOut) := contractNodesInGraph(mergedNodes,graphIn,graphTIn,graphDataIn,contractedTasksIn);
+  changed := not listEmpty(mergedNodes);
+  //print("contractedTasksOut "+stringDelimitList(List.map(arrayList(contractedTasksOut),intString),"\n")+"\n");
+end mergeSinkNodes;
 
 public function markSystemComponents "author: marcusw
   Mark all components that are part of the given Task Graph in the target task graph meta with (ComponentInfo OR iComponentInfo)."
@@ -4150,7 +4173,7 @@ algorithm
   graphDataOut := TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,compParamMapping,compNames,compDescs,exeCosts,commCosts,nodeMark,compInformations);
 end getMergedSystemData;
 
-public function updateCompNamesForMerging "author: Waurich TUD 2013-07
+protected function updateCompNamesForMerging "author: Waurich TUD 2013-07
   Updates the compNames with the merging information."
   input Integer compIdx;
   input array<list<Integer>> inComps;
@@ -4532,7 +4555,7 @@ algorithm
   end matchcontinue;
 end createCosts;
 
-public function estimateCosts "author: Waurich TUD 09-2013
+protected function estimateCosts "author: Waurich TUD 09-2013
   Estimates the communication and execution costs very roughly so hpcom can work with something when there is no prof_xml file."
   input BackendDAE.BackendDAE daeIn;
   input TaskGraphMeta taskGraphMetaIn;
@@ -5733,7 +5756,7 @@ algorithm
 end transposeCommCosts1;
 
 //TODO: Can this be merged with getCommCostBetweenNodes?
-public function getCommunicationCost "author: waurich TUD 2013-06.
+protected function getCommunicationCost "author: waurich TUD 2013-06.
   Gets the communication cost for an edge from parent node to child node.
   REMARK: use the primal indeces!!!!!!"
   input Integer childIdx;
@@ -5792,7 +5815,7 @@ algorithm
   oCommCost := requiredTime;
 end getCommCostTimeBetweenNodes;
 
-public function getCommCostBetweenNodes "author: marcusw
+protected function getCommCostBetweenNodes "author: marcusw
   Get the edge with highest communication costs between the given nodes."
   input Integer iParentNodeIdx;
   input Integer iChildNodeIdx;
@@ -6468,7 +6491,7 @@ algorithm
   end matchcontinue;
 end getSimEqIdxSimEqMapping1;
 
-public function getSimCodeEqByIndexAndMapping "author: marcusw
+protected function getSimCodeEqByIndexAndMapping "author: marcusw
   Returns the SimEqSystem which has the given Index."
   input array<Option<SimCode.SimEqSystem>> iSimEqIdxSimEqMapping; //All SimEqSystems
   input Integer iIdx; //The index of the required system
@@ -6585,7 +6608,7 @@ algorithm
   end match;
 end getSimCodeEqsByTaskList0;
 
-public function dumpSimEqSCCMapping "author: marcusw
+protected function dumpSimEqSCCMapping "author: marcusw
   Prints the given mapping out to the console."
   input array<Integer> iSccMapping;
 protected
@@ -6611,7 +6634,7 @@ algorithm
   oIndexText := (iIndex+1,text);
 end dumpSimEqSCCMapping1;
 
-public function dumpSccSimEqMapping "author: marcusw
+protected function dumpSccSimEqMapping "author: marcusw
   Prints the given mapping out to the console."
   input array<list<Integer>> iSccMapping;
 protected
