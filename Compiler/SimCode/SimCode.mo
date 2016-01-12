@@ -77,6 +77,8 @@ type JacobianMatrix = tuple<list<JacobianColumn>,                         // col
 
 public constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For CodegenC.tpl";
 public constant list<Variable> boxedRecordOutVars = VARIABLE(DAE.CREF_IDENT("",DAE.T_COMPLEX_DEFAULT_RECORD,{}),DAE.T_COMPLEX_DEFAULT_RECORD,NONE(),{},DAE.NON_PARALLEL(),DAE.VARIABLE())::{} "For CodegenC.tpl";
+constant PartitionData emptyPartitionData = PARTITIONDATA(-1,{},{},{});
+
 
 uniontype SimCode
   "Root data structure containing information required for templates to
@@ -128,6 +130,7 @@ uniontype SimCode
     Option<BackendMapping> backendMapping;
     //FMI 2.0 data for model structure
     Option<FmiModelStructure> modelStructure;
+    PartitionData partitionData;
   end SIMCODE;
 end SimCode;
 
@@ -163,6 +166,15 @@ uniontype BackendMapping
   record NO_MAPPING
   end NO_MAPPING;
 end BackendMapping;
+
+public uniontype PartitionData
+  record PARTITIONDATA
+    Integer numPartitions;
+    list<list<Integer>> partitions; // which equations are assigned to the partitions
+    list<list<Integer>> activatorsForPartitions; // which activators can activate each partition
+    list<Integer> stateToActivators; // which states belong to which activator
+  end PARTITIONDATA;
+end PartitionData;
 
 uniontype DelayedExpression
   "Delayed expressions type"

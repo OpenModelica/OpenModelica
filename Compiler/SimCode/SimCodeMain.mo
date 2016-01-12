@@ -456,6 +456,11 @@ algorithm
       SimCode.SimCode tmpSimCode;
 
     case(_, _, _, _, _, _, _, _, _, _,_, _, _) equation
+      // MULTI_RATE PARTITIONINIG
+      true = Flags.isSet(Flags.MULTIRATE_PARTITION);
+    then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args);
+
+    case(_, _, _, _, _, _, _, _, _, _,_, _, _) equation
       true = Flags.isSet(Flags.HPCOM);
 
       // either generate code for profiling or for parallel simulation

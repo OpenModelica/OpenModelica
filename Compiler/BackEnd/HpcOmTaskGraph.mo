@@ -6314,6 +6314,271 @@ end getNodeForVarIdx;
 
 
 //----------------------------
+//  MULTIRATE PARTITIONING
+//----------------------------
+
+public function multirate_partitioning"partitions the task-graph so that every partition has a unique set of states which activate it.
+author: Waurich TUD 2016-01"
+  input TaskGraph odeGraph;
+  input TaskGraphMeta odeGraphData;
+  input array<list<Integer>> sccSimEqMapping;
+  output SimCode.PartitionData partitionDataOut;
+protected
+  array<Integer> stateTasksArray;
+  array<list<Integer>> stateTaskAssign;
+  list<Integer> stateTasks;
+  list<list<Integer>> tasksPerLevel, partitions;
+  TaskGraph odeGraphT;
+  Integer numPartitions;
+  list<list<Integer>> activatorsForPartitions;
+  list<Integer> stateToActivators;
+algorithm
+  //get the levels of the taskgraph
+  tasksPerLevel := HpcOmTaskGraph.getLevelNodes(odeGraph);
+   print("tasksPerLevel "+stringDelimitList(List.map(tasksPerLevel,intLstString),"\n")+"\n");
+
+  //get the state tasks
+  stateTasks := getLeafNodes(odeGraph);
+   print("stateTasks "+intLstString(stateTasks)+"\n");
+
+  //traverse levels top down and colour according to the states
+  odeGraphT := BackendDAEUtil.transposeMatrix(odeGraph,arrayLength(odeGraph));
+  stateTaskAssign := multirate_assignTasksToStates(tasksPerLevel,stateTasks,odeGraphT);
+  dumpStateAssign(stateTaskAssign);
+
+  //traverse tasks, group nodes of same partitions
+  partitions := multirate_getPartitions(stateTaskAssign,stateTasks,odeGraphT);
+    print("PARTITIONS :\n"+stringDelimitList(List.map(partitions,intLstString),"\n")+"\n");
+
+  //build the simcode.partitionData
+  activatorsForPartitions := List.mapMap(partitions,listHead,function Array.getIndexFirst(inArray = stateTaskAssign));
+  partitions := List.map1(partitions,getSimEqsIdxLstForSCCIdxLst,sccSimEqMapping); // convert to simEqSys indexes
+  numPartitions := listLength(partitions);
+  stateToActivators := stateTasks;
+    //print("PARTITIONS2 :\n"+stringDelimitList(List.map(partitions,intLstString),"\n")+"\n");
+
+  //fill partition data
+  partitionDataOut := SimCode.PARTITIONDATA(numPartitions,partitions,activatorsForPartitions,stateToActivators);
+  dumpPartitionData(partitionDataOut);
+end multirate_partitioning;
+
+protected function getSimEqIdxForSCCIdx"get the simEqSystem-index for a scc-index. if the scc is equation-system, only the first simEqsystem-index is returned.
+author:Waurich TUD 2016-01"
+  input Integer sccIdx;
+  input array<list<Integer>> sccSimEqMapping;
+  output Integer simEqIdx;
+algorithm
+  simEqIdx := listHead(arrayGet(sccSimEqMapping,sccIdx));
+end getSimEqIdxForSCCIdx;
+
+protected function getSimEqsIdxLstForSCCIdxLst"getSimEqIdxForSCCIdx for a list of scc-indexes
+author:Waurich TUD 2016-01"
+  input list<Integer> sccIdxs;
+  input array<list<Integer>> sccSimEqMapping;
+  output list<Integer> simEqIdxs;
+algorithm
+  simEqIdxs := List.map1(sccIdxs,getSimEqIdxForSCCIdx,sccSimEqMapping);
+end getSimEqsIdxLstForSCCIdxLst;
+
+protected function multirate_getPartitions "traverse all leave nodes and group tasks with same stateTaskAssign.
+repeat till there are no.
+author: Waurich TUD 2016-01"
+  input array<list<Integer>> stateTaskAssign;
+  input list<Integer> stateTasks;
+  input TaskGraph odeGraphT;
+  output list<list<Integer>> partitions = {};
+protected
+  Integer task, numStates, numAssigns;
+  list<Integer> leaveNodes, predecessors, samePartTasks, partition, otherPartTasks, stateAss;
+  array<Integer> visitedTasks;
+  array<list<Integer>> leaveNodesWithNassigns;
+algorithm
+  //which tasks have already been visited
+  visitedTasks := arrayCreate(arrayLength(odeGraphT),-1);
+
+  //leave nodes with <arrayIdx> stateAssigns, in the first run, only states with one stateAssign are leaveNodes
+  numStates := listLength(stateTasks);
+  leaveNodesWithNassigns := arrayCreate(numStates, {});
+  arrayUpdate(leaveNodesWithNassigns, 1, stateTasks);
+
+  //traverse the leave nodes with a certain number of stateAssigns
+  for numAssigns in List.intRange(numStates) loop
+    leaveNodes := arrayGet(leaveNodesWithNassigns,numAssigns);
+    leaveNodes := List.unique(leaveNodes);
+      //print("\nleaveNodes with "+intString(numAssigns)+" stateAssigns\n");
+      //print("leaveNodes "+intLstString(leaveNodes)+"\n");
+
+    //traverse all these leaveNodes
+    while not listEmpty(leaveNodes) loop
+      stateAss := arrayGet(stateTaskAssign,listHead(leaveNodes));
+
+      // get the leave nodes of the same partition
+      (samePartTasks,leaveNodes) := List.separateOnTrue(leaveNodes,function hasSameStateAssign(stateTaskAssign=stateTaskAssign,refStateAssign=stateAss));
+
+      // predecessorTasks
+      (partition, otherPartTasks) := multirate_getPartitionPredecessors(samePartTasks,odeGraphT,stateTaskAssign,stateAss,visitedTasks);
+      partition := List.sort(partition,intGt);
+        //print("partition "+intLstString(partition)+"\n");
+        //print("otherPartTasks "+intLstString(otherPartTasks)+"\n");
+
+      //dispatch the otherPartTasks to the lists of new leaveNodes in leaveNodesWithNassigns
+      multirate_dispatchLeaveNodes(otherPartTasks, stateTaskAssign, leaveNodesWithNassigns);
+
+      partitions := partition::partitions;
+    end while;
+  end for;
+end multirate_getPartitions;
+
+protected function multirate_dispatchLeaveNodes"dispatches the given tasks to the lists of leaveNodes with a certain number of stateAss"
+  input list<Integer> tasksIn;
+  input array<list<Integer>> stateTaskAssign;
+  input array<list<Integer>> leaveNodesWithNassigns;
+protected
+  Integer numAss;
+  list<Integer> stateAss, leaveNodes;
+algorithm
+  for task in tasksIn loop
+    stateAss := arrayGet(stateTaskAssign,task);
+    numAss := listLength(stateAss);
+    leaveNodes := arrayGet(leaveNodesWithNassigns, numAss);
+    leaveNodes := task::leaveNodes;
+    _ := arrayUpdate(leaveNodesWithNassigns,numAss,leaveNodes);
+  end for;
+end multirate_dispatchLeaveNodes;
+
+
+protected function multirate_getPartitionPredecessors"gets all predecessors with the same stateAssign for the given leave nodes.
+All predecessors which have different stateAssigns are collected in otherLeaveNodes.
+author: Waurich TUD 2016-01"
+  input list<Integer> leavesIn;  // all leaves with the same partition
+  input TaskGraph odeGraphT;
+  input array<list<Integer>> stateTaskAssign;
+  input list<Integer> refStateAssign;
+  input array<Integer> visitedTasks;
+  output list<Integer> partitionTasks = {};
+  output list<Integer> otherLeaveNodes = {};
+protected
+  Boolean cont;
+  Integer task;
+  list<Integer> tasks, predecessors, samePartTasks, otherLeaves;
+algorithm
+  // BFS to find all predecessors of same partition
+  cont := true;
+  tasks := leavesIn;
+  while cont loop
+    task::tasks := tasks;
+      //print("check task "+intString(task)+"\n");
+    predecessors := arrayGet(odeGraphT,task);
+    predecessors := List.filter1OnTrue(predecessors, taskIsNotVisited, visitedTasks);
+    (samePartTasks,otherLeaves) := List.separateOnTrue(predecessors,function hasSameStateAssign(stateTaskAssign=stateTaskAssign,refStateAssign=refStateAssign));
+      //print("samePartTasks "+intLstString(samePartTasks)+"\n");
+      //print("otherLeaves "+intLstString(otherLeaves)+"\n");
+
+    // add the tasks to the corresponding lists
+    partitionTasks := task::partitionTasks;
+    partitionTasks := listAppend(samePartTasks,partitionTasks);
+    tasks := listAppend(samePartTasks,tasks);
+    otherLeaveNodes := listAppend(otherLeaves,otherLeaveNodes);
+
+    // update the visitedTasks
+    _ := arrayUpdate(visitedTasks,task,0);
+    List.map2_0(samePartTasks, Array.updateIndexFirst, 0, visitedTasks);
+    List.map2_0(otherLeaves, Array.updateIndexFirst, 0, visitedTasks);
+
+    if listEmpty(tasks) then cont := false; end if;
+  end while;
+  partitionTasks := List.unique(partitionTasks);  // this can be removed if we consider a bit more in the taskVisited
+  otherLeaveNodes := List.unique(otherLeaveNodes); // ...
+end multirate_getPartitionPredecessors;
+
+protected function taskIsNotVisited
+  input Integer task;
+  input array<Integer> visitedTasks;
+  output Boolean isNotVisited;
+algorithm
+  isNotVisited := intEq(-1,arrayGet(visitedTasks,task));
+end taskIsNotVisited;
+
+protected function hasSameStateAssign"gets the assigned states for a task and compares with the refStateAssign"
+  input Integer task;
+  input array<list<Integer>> stateTaskAssign;
+  input list<Integer> refStateAssign;
+  output Boolean sameStateAssign;
+algorithm
+  sameStateAssign := List.isEqual(arrayGet(stateTaskAssign,task),refStateAssign,true);
+end hasSameStateAssign;
+
+protected function multirate_assignTasksToStates"which task is evident for which state"
+  input list<list<Integer>> tasksPerLevel;
+  input list<Integer> stateTasks;
+  input TaskGraph odeGraphT;
+  output array<list<Integer>> stateTaskAssignOut;
+protected
+  Integer taskIdx;
+  list<Integer> assignments, predecessors;
+algorithm
+  // create stateTaskAssignArray
+  stateTaskAssignOut := arrayCreate(arrayLength(odeGraphT),{});
+
+  // assign the tasks for the states
+  taskIdx := 1;
+  for task in stateTasks loop
+    stateTaskAssignOut := arrayUpdate(stateTaskAssignOut,task,{taskIdx});
+    taskIdx := taskIdx+1;
+  end for;
+
+  //traverse all levels top down and assign the predecessors with the same state assignment
+  for levelTasks in listReverse(tasksPerLevel) loop
+    for task in levelTasks loop
+        //print("task: "+intString(task)+"\n");
+      assignments := arrayGet(stateTaskAssignOut,task);
+      predecessors := arrayGet(odeGraphT,task);
+      stateTaskAssignOut := List.fold1(predecessors,appendToElementUnique,assignments,stateTaskAssignOut);
+    end for;
+  end for;
+  stateTaskAssignOut := Array.map1(stateTaskAssignOut,List.sort,intGt);
+end multirate_assignTasksToStates;
+
+protected function appendToElementUnique<T>
+  "Appends a list to a list element of an array and applies List.unique."
+  input Integer inIndex;
+  input list<T> inElements;
+  input array<list<T>> inArray;
+  output array<list<T>> outArray;
+algorithm
+  outArray := arrayUpdate(inArray, inIndex, List.unique(listAppend(inArray[inIndex], inElements)));
+end appendToElementUnique;
+
+protected function dumpStateAssign
+  input array<list<Integer>> stateAssign;
+algorithm
+  print("stateAssign "+stringDelimitList(List.map(arrayList(stateAssign),intLstString),"\n")+"\n");
+end dumpStateAssign;
+
+protected function dumpPartitionData"dumps the partitiondata info.
+author: Waurich TUD 2016-01"
+  input SimCode.PartitionData partData;
+protected
+  Integer numPartitions, act,  part, state;
+  list<list<Integer>> activatorsForPartitions, partitions;
+  list<Integer>  stateToActivators;
+algorithm
+  SimCode.PARTITIONDATA(numPartitions=numPartitions, partitions=partitions, activatorsForPartitions=activatorsForPartitions, stateToActivators=stateToActivators) := partData;
+  print("Multirate Partition Data\n");
+  print(intString(numPartitions)+" partitions:\n");
+  act := 1;
+  for state in stateToActivators loop
+    print("activator "+intString(act)+" is state "+intString(state)+"\n");
+    act := act+1;
+  end for;
+  print("\n");
+  for part in List.intRange(numPartitions) loop
+    //print("activators: "+intLstString(listGet(activatorsForPartitions,part))+"\t\t\t\tnodes: \t"+intLstString(listGet(partitions,part))+"\n\n");
+    print("activators: "+intLstString(listGet(activatorsForPartitions,part))+"\t\t\t\tderStateTasks: "+intLstString(List.map1(listGet(activatorsForPartitions,part),List.getIndexFirst,stateToActivators))+"\t\t\t\tnodes: \t"+intLstString(listGet(partitions,part))+"\n");
+  end for;
+end dumpPartitionData;
+
+//----------------------------
 //  MAPPING FUNCTIONS
 //----------------------------
 

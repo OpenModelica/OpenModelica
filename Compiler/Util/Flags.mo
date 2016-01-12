@@ -469,6 +469,8 @@ constant DebugFlag FMU_EXPERIMENTAL = DEBUG_FLAG(150, "fmuExperimental", false,
   Util.gettext("Include an extra function in the FMU fmi2GetSpecificDerivatives."));
 constant DebugFlag DUMP_DGESV = DEBUG_FLAG(151, "dumpdgesv", false,
   Util.gettext("Enables dumping of the information whether DGESV is used to solve linear systems."));
+constant DebugFlag MULTIRATE_PARTITION = DEBUG_FLAG(152, "multirate", false,
+  Util.gettext("The solver can switch partitions in the system."));
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -627,7 +629,8 @@ constant list<DebugFlag> allDebugFlags = {
   DEBUG_DIFFERENTIATION,
   DEBUG_DIFFERENTIATION_VERBOSE,
   FMU_EXPERIMENTAL,
-  DUMP_DGESV
+  DUMP_DGESV,
+  MULTIRATE_PARTITION
 };
 
 public

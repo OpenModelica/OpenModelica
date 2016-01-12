@@ -450,7 +450,8 @@ algorithm
                               crefToSimVarHT,
                               crefToClockIndexHT,
                               SOME(backendMapping),
-                              modelStruct);
+                              modelStruct,
+                              SimCode.emptyPartitionData);
 
     (simCode, (_, _, lits)) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);
 
@@ -10790,7 +10791,12 @@ public function getSimEqSysForIndex
   input list<SimCode.SimEqSystem> allSimEqs;
   output SimCode.SimEqSystem outSimEq;
 algorithm
-  outSimEq :=List.getMemberOnTrue(idx,allSimEqs,indexIsEqual);
+  try
+    outSimEq := List.getMemberOnTrue(idx,allSimEqs,indexIsEqual);
+  else
+    print("getSimEqSysForIndex failed!\n");
+    fail();
+  end try;
 end getSimEqSysForIndex;
 
 public function getSimVarMappingOfBackendMapping "author: mwalther
@@ -11988,6 +11994,14 @@ algorithm
         then listReverse(computeDependenciesHelper(listReverse(eqs),{cref},{}));
     end match;
 end computeDependencies;
+
+public function getSimEqSystemsByIndexLst
+  input list<Integer> idcs;
+  input list<SimCode.SimEqSystem> allSes;
+  output list<SimCode.SimEqSystem> sesOut;
+algorithm
+  sesOut := List.map1(idcs,getSimEqSysForIndex,allSes);
+end getSimEqSystemsByIndexLst;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

@@ -121,7 +121,66 @@ algorithm
       HpcOmSimCode.HpcOmData hpcomData;
       HashTableCrIListArray.HashTable varToArrayIndexMapping;
       HashTableCrILst.HashTable varToIndexMapping;
+
+      SimCode.PartitionData partData;
+      list<list<Integer>> partitions, activatorsForPartitions;
+      list<Integer> stateToActivators;
+
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _,_, _, _, _, _, _, _, _) equation
+      // DO MULTI-RATE-PARTITIONING
+      true =  Flags.isSet(Flags.MULTIRATE_PARTITION);
+      print("DO MULTIRATE\n");
+
+      //Setup
+      //-----
+      (simCode,(lastEqMappingIdx,equationSccMapping)) =
+          SimCodeUtil.createSimCode( inBackendDAE, inInitDAE, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions,
+                                     externalFunctionIncludes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args );
+
+      //get simCode-backendDAE mappings
+      //----------------------------
+      simVarMapping = SimCodeUtil.getSimVarMappingOfBackendMapping(simCode.backendMapping);
+      (simeqCompMapping, sccSimEqMapping, daeSccSimEqMapping) = HpcOmTaskGraph.setUpHpcOmMapping(inBackendDAE, simCode, lastEqMappingIdx, equationSccMapping);
+      SimCodeFunctionUtil.execStat("hpcom setup");
+
+      //Get small DAE System (without removed equations)
+      //------------------------------------------------
+      (taskGraph,taskGraphData) = HpcOmTaskGraph.createTaskGraph(inBackendDAE);
+
+      //Get complete DAE System
+      //-----------------------
+      taskGraphDae = arrayCopy(taskGraph);
+      taskGraphDataDae = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
+      (taskGraphDae,taskGraphDataDae) = HpcOmTaskGraph.appendRemovedEquations(inBackendDAE,taskGraphDae,taskGraphDataDae);
+
+      //Create Costs
+      //------------
+      taskGraphDataDae = HpcOmTaskGraph.createCosts(inBackendDAE, filenamePrefix + "_eqs_prof" , simeqCompMapping, taskGraphDataDae);
+      taskGraphData = HpcOmTaskGraph.copyCosts(taskGraphDataDae, taskGraphData);
+
+      //Get ODE System
+      //--------------
+      taskGraphOde = arrayCopy(taskGraph);
+      taskGraphDataOde = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
+      (taskGraphOde,taskGraphDataOde) = HpcOmTaskGraph.getOdeSystem(taskGraphOde,taskGraphDataOde,inBackendDAE);
+
+      fileName = ("taskGraph"+filenamePrefix+"_ODE.graphml");
+      schedulerInfo = arrayCreate(arrayLength(taskGraphOde), (-1,-1,-1.0));
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName, "", {}, {}, daeSccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
+
+      //Get state-partitioning
+      //--------------------
+      partData  = HpcOmTaskGraph.multirate_partitioning(taskGraphOde,taskGraphDataOde,sccSimEqMapping);
+
+
+      simCode.partitionData = partData;
+    then
+      simCode;
+
+    case (BackendDAE.DAE(eqs=eqs), _, _, _, _,_, _, _, _, _, _, _, _) equation
+      // DO HPCOM PARALLELIZATION
+      true =  Flags.isSet(Flags.HPCOM);
+
       //Initial System
       //--------------
       //createAndExportInitialSystemTaskGraph(inInitDAE, filenamePrefix);

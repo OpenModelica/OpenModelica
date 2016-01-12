@@ -304,8 +304,18 @@ package SimCode
       HpcOmSimCode.HpcOmData hpcomData;
       HashTableCrIListArray.HashTable varToArrayIndexMapping;
       Option<FmiModelStructure> modelStructure;
+      PartitionData partitionData;
     end SIMCODE;
   end SimCode;
+
+	uniontype PartitionData
+	  record PARTITIONDATA
+	    Integer numPartitions;
+	    list<list<Integer>> partitions; // which equations are assigned to the partitions
+	    list<list<Integer>> activatorsForPartitions; // which activators can activate each partition
+	    list<Integer> stateToActivators; // which states belong to which activator
+	  end PARTITIONDATA;
+	end PartitionData;
 
   uniontype ClockedPartition
     record CLOCKED_PARTITION
@@ -861,6 +871,13 @@ package SimCodeUtil
     input DAE.ComponentRef cref;
     output list<SimCode.SimEqSystem> deps;
   end computeDependencies;
+
+	function getSimEqSystemsByIndexLst
+	  input list<Integer> idcs;
+	  input list<SimCode.SimEqSystem> allSes;
+	  output list<SimCode.SimEqSystem> sesOut;
+	end getSimEqSystemsByIndexLst;
+
 end SimCodeUtil;
 
 package SimCodeFunctionUtil
@@ -3227,6 +3244,7 @@ package Flags
   constant ConfigFlag CPP_FLAGS;
   constant ConfigFlag MATRIX_FORMAT;
   constant DebugFlag FMU_EXPERIMENTAL;
+  constant DebugFlag MULTIRATE_PARTITION;
 
   function isSet
     input DebugFlag inFlag;
