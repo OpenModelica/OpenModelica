@@ -549,8 +549,8 @@ void SimManager::runSingleProcess()
     _solver->setStartTime(_tStart);
     _solver->setEndTime(_tEnd);
 
-    //_solver->solve(_solverTask);
-    initialize();
+    _solver->solve(_solverTask);
+    //initialize();
     _solverTask = ISolver::SOLVERCALL(_solverTask ^ ISolver::RECORDCALL);
     /* Logs temporarily disabled
      BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) <<"Run single process." ; */
