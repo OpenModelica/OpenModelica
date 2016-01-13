@@ -74,6 +74,7 @@ SET(PeerName ${LIBPREFIX}Peer)
 SET(CppDASSLName ${LIBPREFIX}CppDASSL)
 SET(RTRKName ${LIBPREFIX}RTRK)
 SET(EulerName ${LIBPREFIX}Euler)
+SET(RK12Name ${LIBPREFIX}RK12)
 #SET(kluName ${LIBPREFIX}klu)
 SET(RTEulerName ${LIBPREFIX}RTEuler)
 SET(IdaName ${LIBPREFIX}Ida)
@@ -568,6 +569,8 @@ add_subdirectory (Core/SimController)
 
 #add  Euler solver project
 add_subdirectory (Solver/Euler)
+add_subdirectory (Solver/RK12)
+
 
 add_subdirectory (Solver/RTEuler)
 add_subdirectory (Solver/Newton)
@@ -650,6 +653,9 @@ GET_FILENAME_COMPONENT(libUmfPackName ${libUmfPack} NAME)
 GET_TARGET_PROPERTY(libEuler ${EulerName} LOCATION)
 GET_FILENAME_COMPONENT(libEulerName ${libEuler} NAME)
 
+GET_TARGET_PROPERTY(libRK12 ${RK12Name} LOCATION)
+GET_FILENAME_COMPONENT(libRK12Name ${libRK12} NAME)
+
 #GET_TARGET_PROPERTY(libKlu ${kluName} LOCATION)
 #GET_FILENAME_COMPONENT(libKluName ${libKlu} NAME)
 
@@ -691,6 +697,7 @@ GET_FILENAME_COMPONENT(libFMUName ${libFMU} NAME)
 
 #set (KLU_LIB ${libKluName})
 set (EULER_LIB ${libEulerName})
+set (RK12_LIB ${libRK12Name})
 set (RTEULER_LIB ${libRTEulerName})
 set (SETTINGSFACTORY_LIB ${libSetFactoryName})
 set (MODELICASYSTEM_LIB ${libModelicaName})

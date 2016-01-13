@@ -61,6 +61,18 @@ public:
             }
             solver_settings_key.assign("createEulerSettings");
         }
+        else if(solvername.compare("rk12")==0)
+        {
+            fs::path rk12_path = ObjectFactory<CreationPolicy>::_library_path;
+            fs::path rk12_name(RK12_LIB);
+            rk12_path/=rk12_name;
+            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(rk12_name.string(),*_solver_type_map);
+            if (result != LOADER_SUCCESS)
+            {
+                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading RK12 solver library!");
+            }
+            solver_settings_key.assign("createRK12Settings");
+        }
         else if(solvername.compare("peer")==0)
         {
             fs::path peer_path = ObjectFactory<CreationPolicy>::_library_path;

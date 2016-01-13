@@ -3661,11 +3661,25 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     >>
 end simulationCppFile;
 
+template partitionInfoInit(Integer numPartitions, Integer numStates, list<Integer> stateActivators)
+::=
+  let stateActs = (stateActivators |> act hasindex i0 => '_stateActivator[<%i0%>] = <%intSub(act,1)%>;' ;separator="\n")
+  <<
+  //partitioning of the system, all partitions are active at t0
+  _dimPartitions = <%numPartitions%>;
+  _partitionActivation = new bool[_dimPartitions]();
+  memset(_partitionActivation,true,_dimPartitions*sizeof(bool));
+  _stateActivator = new int[<%numStates%>]();
+  <%stateActs%>
+  >>
+end partitionInfoInit;
+
 template generateSimulationCppConstructorContent(SimCode simCode, Context context, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
 match simCode
-  case SIMCODE(modelInfo = MODELINFO(__)) then
+  case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__)), partitionData=PARTITIONDATA(__)) then
     let className = lastIdentOfPath(modelInfo.name)
+    let partitionInit = if Flags.isSet(Flags.MULTIRATE_PARTITION) then partitionInfoInit(partitionData.numPartitions, vi.numStateVars, partitionData.stateToActivators) else ""
       <<
       defineConstVals();
       defineAlgVars();
@@ -3730,6 +3744,8 @@ match simCode
         %>
         //DAEs are not supported yet, Index reduction is enabled
         _dimAE = 0; // algebraic equations
+        <%partitionInit%>
+
         //Initialize the state vector
         SystemDefaultImplementation::initialize();
         //Instantiate auxiliary object for event handling functionality
@@ -7189,6 +7205,10 @@ match modelInfo
       bool* _pointerToBoolVars;
       string* _pointerToStringVars;
 
+      int _dimPartitions;
+      bool* _partitionActivation;
+      int* _stateActivator;
+
       <%memberVariableDefinitions%>
       <%memberPreVariableDefinitions%>
       <%conditionvariables%>
@@ -7502,9 +7522,29 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
          SystemDefaultImplementation::setStringStartValue(var, val);
        }
 
+       void <%lastIdentOfPath(modelInfo.name)%>::setNumPartitions(int numPartitions)
+       {
+         _dimPartitions = numPartitions;
+       }
 
+       int <%lastIdentOfPath(modelInfo.name)%>::getNumPartitions()
+       {
+         return _dimPartitions;
+       }
+       void <%lastIdentOfPath(modelInfo.name)%>::setPartitionActivation(bool* partitions)
+       {
+         _partitionActivation = partitions;
+       }
 
+       void <%lastIdentOfPath(modelInfo.name)%>::getPartitionActivation(bool* partitions)
+       {
+         partitions = _partitionActivation;
+       }
 
+       int <%lastIdentOfPath(modelInfo.name)%>::getActivator(int state)
+       {
+         return (int)_stateActivator[state];
+       }
 
       // Provide the right hand side (according to the index)
       void <%lastIdentOfPath(modelInfo.name)%>::getRHS(double* f)
@@ -7717,6 +7757,12 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
     virtual void setBoolStartValue(bool& var,bool val);
     virtual void setIntStartValue(int& var,int val);
     virtual void setStringStartValue(string& var,string val);
+
+    virtual void setNumPartitions(int numPartitions);
+    virtual int getNumPartitions();
+    virtual void setPartitionActivation(bool* partitions);
+    virtual void getPartitionActivation(bool* partitions);
+    virtual int getActivator(int state);
 
     //Resets all time events
 
@@ -9777,7 +9823,7 @@ end clockIntervalsInit;
 template dimension1(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
   match simCode
-    case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__)))
+    case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__)), partitionData = PARTITIONDATA(__))
       then
         let numRealVars = numRealvars(modelInfo)
         let numIntVars = numIntvars(modelInfo)
@@ -9790,6 +9836,7 @@ template dimension1(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text 
         _dimInteger = <%numIntVars%>;
         _dimString = <%numStringVars%>;
         _dimReal = <%numRealVars%>;
+        _dimPartitions = <%partitionData.numPartitions%>;
         >>
 end dimension1;
 
@@ -12847,12 +12894,18 @@ end createEvaluateConditions;
 
 template createEvaluate(list<list<SimEqSystem>> odeEquations, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Boolean createMeasureTime)
 ::=
+  match simCode
+  case SIMCODE(partitionData = PARTITIONDATA(partitions = partitions, activatorsForPartitions=activatorsForPartitions)) then
+//case MODELINFO(vars = vars as SIMVARS(__))
   let className = lastIdentOfPathFromSimCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
   let &varDecls = buffer "" /*BUFD*/
 
-  let equation_ode_func_calls = (List.partition(List.flatten(odeEquations), 100) |> eqs hasindex i0 =>
+  let equation_ode_func_calls = if not Flags.isSet(Flags.MULTIRATE_PARTITION) then (List.partition(List.flatten(odeEquations), 100) |> eqs hasindex i0 =>
                                  createEvaluateWithSplit(i0, context, eqs, "evaluateODE", className, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
                                  ;separator="\n")
+								else ( List.intRange(partitionData.numPartitions) |> partIdx =>
+								createEvaluatePartitions(partIdx, context, List.flatten(odeEquations), listGet(partitions, partIdx),
+								listGet(activatorsForPartitions,partIdx), className,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace) ;separator="\n")
   <<
   void <%className%>::evaluateODE(const UPDATETYPE command)
   {
@@ -12864,6 +12917,31 @@ template createEvaluate(list<list<SimEqSystem>> odeEquations, SimCode simCode ,T
   }
   >>
 end createEvaluate;
+
+template createEvaluatePartitions(Integer partIdx, Context context, list<SimEqSystem> odeEquations, list<Integer> partition, list<Integer> activators, String className, SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let condition = partitionCondition(activators)
+  let equation_func_calls = (SimCodeUtil.getSimEqSystemsByIndexLst(partition,odeEquations) |> eq  =>
+                    equation_function_call(eq, context, &varDecls /*BUFC*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, "evaluate")
+                    ;separator="\n")
+<<
+// Partition <%partIdx%>
+if (<%condition%>)
+{
+    <%varDecls%>
+    <%equation_func_calls%>
+}
+>>
+end createEvaluatePartitions;
+
+template partitionCondition(list<Integer> partitions)
+::=
+let bVec = (partitions |> part =>  "_partitionActivation[" + intSub(part,1) + "]" ;separator=" || ")
+<<
+<%bVec%>
+>>
+end partitionCondition;
 
 template createEvaluateZeroFuncs( list<SimEqSystem> equationsForZeroCrossings, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context)
 ::=
@@ -12907,6 +12985,7 @@ template createEvaluateWithSplit(Integer sectionIndex, Context context, list<Sim
   <%functionName%>_<%sectionIndex%>(command);
   >>
 end createEvaluateWithSplit;
+
 
 /*
  //! Evaluates only the equations whose indexs are passed to it.

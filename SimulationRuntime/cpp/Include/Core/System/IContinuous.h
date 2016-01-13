@@ -109,6 +109,15 @@ public:
     virtual void setBoolStartValue(bool& var,bool val) = 0;
     virtual void setIntStartValue(int& var,int val) = 0;
     virtual void setStringStartValue(string& var,string val) = 0;
+
+    //in case of solver-based activation of system equations
+    virtual void setNumPartitions(int numPartitions) = 0;
+    virtual int getNumPartitions() = 0;
+    virtual void setPartitionActivation(bool* partitions) = 0;
+    virtual void getPartitionActivation(bool* partitions) = 0;
+    virtual int getActivator(int state) = 0;
+
+
 };
 /** @} */ // end of coreSystem
 /*
