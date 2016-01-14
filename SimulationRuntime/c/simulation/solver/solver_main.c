@@ -51,6 +51,7 @@
 #include "simulation/solver/epsilon.h"
 #include "linearSystem.h"
 #include "sym_imp_euler.h"
+#include "simulation/solver/embedded_server.h"
 
 #include "optimization/OptimizerInterface.h"
 
@@ -114,9 +115,9 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
 
 #ifdef WITH_IPOPT
   case S_OPTIMIZATION:
-    if((int)(data->modelData->nStates + data->modelData->nInputVars) > 0){
+    if ((int)(data->modelData->nStates + data->modelData->nInputVars) > 0){
       retVal = ipopt_step(data, threadData, solverInfo);
-    }else{
+    } else {
       solverInfo->solverMethod = S_EULER;
       retVal = euler_ex_step(data, solverInfo);
     }
@@ -495,8 +496,9 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     updateDiscreteSystem(data, threadData);
 
     /* prevent emit if noeventemit flag is used */
-    if (!(omc_flag[FLAG_NOEVENTEMIT]))
+    if (!(omc_flag[FLAG_NOEVENTEMIT])) {
       sim_result.emit(&sim_result, data, threadData);
+    }
 
     data->simulationInfo->terminal = 0;
   }
@@ -607,7 +609,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
  *  This is the main function of the solver, it performs the simulation.
  */
 int solver_main(DATA* data, threadData_t *threadData, const char* init_initMethod, const char* init_file,
-    double init_time, int lambda_steps, int solverID, const char* outputVariablesAtEnd)
+    double init_time, int lambda_steps, int solverID, const char* outputVariablesAtEnd, const char *argv_0)
 {
   TRACE_PUSH
 
@@ -647,33 +649,32 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   omc_alloc_interface.collect_a_little();
 
   /* initialize all parts of the model */
-  if(0 == retVal)
-  {
+  if(0 == retVal) {
     retVal = initializeModel(data, threadData, init_initMethod, init_file, init_time, lambda_steps);
   }
   omc_alloc_interface.collect_a_little();
 
-  if(0 == retVal)
-  {
+  embedded_server_load_functions();
+  embedded_server_init(data, data->localData[0]->timeValue, solverInfo.currentStepSize, argv_0);
+
+  if(0 == retVal) {
     /* if the model has no time changing variables skip the main loop*/
     if(data->modelData->nVariablesReal == 0    &&
        data->modelData->nVariablesInteger == 0 &&
        data->modelData->nVariablesBoolean == 0 &&
-       data->modelData->nVariablesString == 0 )
-    {
+       data->modelData->nVariablesString == 0 ) {
       /* prevent emit if noeventemit flag is used */
-      if (!(omc_flag[FLAG_NOEVENTEMIT]))
+      if (!(omc_flag[FLAG_NOEVENTEMIT])) {
         sim_result.emit(&sim_result, data, threadData);
+      }
 
       infoStreamPrint(LOG_SOLVER, 0, "The model has no time changing variables, no integration will be performed.");
       solverInfo.currentTime = simInfo->stopTime;
       data->localData[0]->timeValue = simInfo->stopTime;
       overwriteOldSimulationData(data);
       finishSimulation(data, threadData, &solverInfo, outputVariablesAtEnd);
-    }
-    /* starts the simulation main loop - special solvers */
-    else if(S_QSS == solverInfo.solverMethod)
-    {
+    } else if(S_QSS == solverInfo.solverMethod) {
+      /* starts the simulation main loop - special solvers */
       sim_result.emit(&sim_result,data,threadData);
 
       /* overwrite the whole ring-buffer with initialized values */
@@ -686,12 +687,11 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
       /* terminate the simulation */
       finishSimulation(data, threadData, &solverInfo, outputVariablesAtEnd);
       omc_alloc_interface.collect_a_little();
-    }
-    /* starts the simulation main loop - standard solver interface */
-    else
-    {
-      if(solverInfo.solverMethod != S_OPTIMIZATION)
+    } else {
+      /* starts the simulation main loop - standard solver interface */
+      if(solverInfo.solverMethod != S_OPTIMIZATION) {
         sim_result.emit(&sim_result,data,threadData);
+      }
 
       /* overwrite the whole ring-buffer with initialized values */
       overwriteOldSimulationData(data);
@@ -708,6 +708,10 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
       omc_alloc_interface.collect_a_little();
     }
   }
+
+  fprintf(stderr, "call embedded_server_deinit\n");
+  embedded_server_deinit();
+  fprintf(stderr, "call embedded_server_deinit done\n");
 
   /* free SolverInfo memory */
   freeSolverData(data, &solverInfo);

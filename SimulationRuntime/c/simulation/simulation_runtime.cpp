@@ -101,6 +101,9 @@ int sim_noemit = 0;           /* Flag for not emitting data */
 
 const std::string *init_method = NULL; /* method for  initialization. */
 
+static int callSolver(DATA* simData, threadData_t *threadData, string init_initMethod, string init_file,
+      double init_time, int lambda_steps, string outputVariablesAtEnd, int cpuTime, const char *argv_0);
+
 /*! \fn void setGlobalVerboseLevel(int argc, char**argv)
  *
  *  \brief determine verboselevel by investigating flag -lv flags
@@ -490,7 +493,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     outputVariablesAtEnd = omc_flagValue[FLAG_OUTPUT];
   }
 
-  retVal = callSolver(data, threadData, init_initMethod, init_file, init_time, init_lambda_steps, outputVariablesAtEnd, cpuTime);
+  retVal = callSolver(data, threadData, init_initMethod, init_file, init_time, init_lambda_steps, outputVariablesAtEnd, cpuTime, argv[0]);
 
   if (omc_flag[FLAG_ALARM]) {
     alarm(0);
@@ -590,8 +593,8 @@ int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime)
  * "euler" calls an Euler solver
  * "rungekutta" calls a fourth-order Runge-Kutta Solver
  */
-int callSolver(DATA* simData, threadData_t *threadData, string init_initMethod, string init_file,
-      double init_time, int lambda_steps, string outputVariablesAtEnd, int cpuTime)
+static int callSolver(DATA* simData, threadData_t *threadData, string init_initMethod, string init_file,
+      double init_time, int lambda_steps, string outputVariablesAtEnd, int cpuTime, const char *argv_0)
 {
   TRACE_PUSH
   int retVal = -1;
@@ -644,7 +647,7 @@ int callSolver(DATA* simData, threadData_t *threadData, string init_initMethod, 
                         simData->simulationInfo->numSteps, simData->simulationInfo->tolerance, 3);
     } else /* standard solver interface */
 #endif
-      retVal = solver_main(simData, threadData, init_initMethod.c_str(), init_file.c_str(), init_time, lambda_steps, solverID, outVars);
+      retVal = solver_main(simData, threadData, init_initMethod.c_str(), init_file.c_str(), init_time, lambda_steps, solverID, outVars, argv_0);
   }
 
   MMC_CATCH_INTERNAL(mmc_jumper)
@@ -863,6 +866,7 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *thre
   }
 #endif
 
+  fprintf(stderr, "_main_SimulationRuntime done\n");
   return retVal;
 }
 

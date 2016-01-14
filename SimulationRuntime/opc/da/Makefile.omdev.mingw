@@ -1,0 +1,39 @@
+# The path to the OMDev-mingw package MUST BE SET!
+#OMDEV=$OMDEV
+# Test if the needed variables are there...
+
+top_builddir = ../../..
+builddir_bin=$(OMBUILDDIR)/bin
+builddir_lib=$(OMBUILDDIR)/lib/omc
+builddir_inc=$(OMBUILDDIR)/include/omc
+
+builddir = $(OMBUILDDIR)
+
+AR = ar -ru
+CC = gcc
+CXX = g++
+FC = g77
+#include the sundials, ipopt from OMDev and the top_builddir for revision.h
+CFLAGS = -O2 -g -falign-functions -I$(OMDEV)/include/opc/ -I$(builddir_inc)/c/
+CXXFLAGS = $(CFLAGS)
+LDFLAGS = -L$(OMDEV)/lib/opc -lOPCregistry -lOPCKit -lpthread # -s
+
+.PHONY: test clean
+
+OBJS=opc_da.o opc_utility.o adopcs_stubs.o
+
+libomopcda.dll: $(OBJS)
+	$(CXX) $(CXXFLAGS) -shared -o "$@" $(OBJS) $(LDFLAGS)
+
+test.exe: test.o
+	$(CXX) -Os -o "$@" test.o
+
+test: test.exe libomopcda.dll
+	rm -rf .tmptest
+	mkdir -p .tmptest
+	cp test.exe libomopcda.dll $(OMDEV)/lib/opc/*.dll .tmptest/
+	cd .tmptest && ./test.exe
+	rm -rf .tmptest
+
+clean:
+	rm -f $(OBJS)

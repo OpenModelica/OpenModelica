@@ -79,7 +79,7 @@ typedef struct SOLVER_INFO
 
 extern int solver_main(DATA* data, threadData_t *threadData, const char* init_initMethod,
     const char* init_file, double init_time, int lambda_steps,
-    int solverID, const char* outputVariablesAtEnd);
+    int solverID, const char* outputVariablesAtEnd, const char *argv_0);
 
 /* Provide solver interface to interactive stuff */
 extern int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);

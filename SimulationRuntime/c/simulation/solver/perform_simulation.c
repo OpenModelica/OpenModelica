@@ -49,6 +49,7 @@
 #include <float.h>
 
 #include "simulation/solver/synchronous.h"
+#include "simulation/solver/embedded_server.h"
 
 /*! \fn updateContinuousSystem
  *
@@ -212,10 +213,11 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
   }
 
   /* prevent emit if noEventEmit flag is used, if it's an event */
-  if ((omc_flag[FLAG_NOEVENTEMIT] && didEventStep == 0) || !omc_flag[FLAG_NOEVENTEMIT])
-  {
+  if ((omc_flag[FLAG_NOEVENTEMIT] && didEventStep == 0) || !omc_flag[FLAG_NOEVENTEMIT]) {
     sim_result.emit(&sim_result, data, threadData);
   }
+  fprintf(stderr, "call embedded_server_update\n");
+  embedded_server_update(data->localData[0]->timeValue);
 
   printAllVarsDebug(data, 0, LOG_DEBUG);  /* ??? */
 }
@@ -320,8 +322,9 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
     threadData->currentErrorStage = ERROR_SIMULATION;
 
 #ifdef USE_DEBUG_TRACE
-    if(useStream[LOG_TRACE])
+    if(useStream[LOG_TRACE]) {
       printf("TRACE: push loop step=%u, time=%.12g\n", __currStepNo, solverInfo->currentTime);
+    }
 #endif
 
     omc_alloc_interface.collect_a_little();
@@ -337,25 +340,19 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
       modelica_boolean syncEventStep = solverInfo->didEventStep || syncStep;
 
       /***** Calculation next step size *****/
-      if(syncEventStep)
-      {
+      if(syncEventStep) {
         infoStreamPrint(LOG_SOLVER, 0, "offset value for the next step: %.16g", (solverInfo->currentTime - solverInfo->laststep));
-      }
-      else
-      {
+      } else {
         if (solverInfo->solverNoEquidistantGrid)
         {
           if (solverInfo->currentTime >= solverInfo->lastdesiredStep)
           {
-            do
-            {
+            do {
               __currStepNo++;
               solverInfo->currentStepSize = (double)(__currStepNo*(simInfo->stopTime-simInfo->startTime))/(simInfo->numSteps) + simInfo->startTime - solverInfo->currentTime;
-            }while(solverInfo->currentStepSize <= 0);
+            } while(solverInfo->currentStepSize <= 0);
           }
-        }
-        else
-        {
+        } else {
           __currStepNo++;
         }
       }
@@ -363,8 +360,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
       solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
 
       /* if retry reduce stepsize */
-      if(0 != retry)
-      {
+      if (0 != retry) {
         solverInfo->currentStepSize /= 2;
       }
       /***** End calculation next step size *****/
@@ -402,26 +398,19 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
        * - non-linear system failed to solve
        * - assert was called
        */
-      if(retValIntegrator)
-      {
+      if (retValIntegrator) {
         retValue = -1 + retValIntegrator;
         infoStreamPrint(LOG_STDOUT, 0, "model terminate | Integrator failed. | Simulation terminated at time %g", solverInfo->currentTime);
         break;
-      }
-      else if(check_nonlinear_solutions(data, 0))
-      {
+      } else if(check_nonlinear_solutions(data, 0)) {
         retValue = -2;
         infoStreamPrint(LOG_STDOUT, 0, "model terminate | non-linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
         break;
-      }
-      else if(check_linear_solutions(data, 0))
-      {
+      } else if(check_linear_solutions(data, 0)) {
         retValue = -3;
         infoStreamPrint(LOG_STDOUT, 0, "model terminate | linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
         break;
-      }
-      else if(check_mixed_solutions(data, 0))
-      {
+      } else if(check_mixed_solutions(data, 0)) {
         retValue = -4;
         infoStreamPrint(LOG_STDOUT, 0, "model terminate | mixed system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
         break;
@@ -431,15 +420,11 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
 #if !defined(OMC_EMCC)
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
-    if (!success) /* catch */
-    {
-      if(0 == retry)
-      {
+    if (!success) { /* catch */
+      if(0 == retry) {
         retrySimulationStep(data, threadData, solverInfo);
         retry = 1;
-      }
-      else
-      {
+      } else {
         retValue =  -1;
         infoStreamPrint(LOG_STDOUT, 0, "model terminate | Simulation terminated by an assert at time: %g", data->localData[0]->timeValue);
         break;

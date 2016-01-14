@@ -38,7 +38,8 @@ MATH_HFILES = blaswrap.h
 
 SOLVER_OBJS_FMU=delay$(OBJ_EXT) linearSystem$(OBJ_EXT) linearSolverLapack$(OBJ_EXT) linearSolverTotalPivot$(OBJ_EXT) mixedSystem$(OBJ_EXT) mixedSearchSolver$(OBJ_EXT) nonlinearSystem$(OBJ_EXT) nonlinearValuesList$(OBJ_EXT) nonlinearSolverHybrd$(OBJ_EXT) nonlinearSolverHomotopy$(OBJ_EXT) omc_math$(OBJ_EXT) model_help$(OBJ_EXT) stateset$(OBJ_EXT) synchronous$(OBJ_EXT)
 ifeq ($(OMC_FMI_RUNTIME),)
-SOLVER_OBJS_MINIMAL=$(SOLVER_OBJS_FMU) events$(OBJ_EXT) external_input$(OBJ_EXT) solver_main$(OBJ_EXT)
+SOLVER_OBJS_MINIMAL=$(SOLVER_OBJS_FMU) events$(OBJ_EXT) external_input$(OBJ_EXT) solver_main$(OBJ_EXT) embedded_server$(OBJ_EXT)
+
 else
 SOLVER_OBJS_MINIMAL=$(SOLVER_OBJS_FMU)
 endif

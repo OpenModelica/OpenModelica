@@ -17,7 +17,7 @@ AR = ar -ru
 CC = gcc
 FC = g77
 #include the sundials, ipopt from OMDev and the top_builddir for revision.h
-CONFIG_CFLAGS = -O2 -falign-functions -msse2 -mfpmath=sse \
+CONFIG_CFLAGS = -O2 -g -falign-functions -msse2 -mfpmath=sse \
 -I$(OMDEV)/lib/3rdParty/Ipopt/include/ \
 -I$(top_builddir)/3rdParty/sundials/build/include \
 -I$(OMDEV)/include/lis -I$(top_builddir)/ -I$(builddir_inc)/ \
