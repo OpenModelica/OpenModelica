@@ -1154,6 +1154,7 @@ algorithm
     HashTableCrToUnit.HashTable HtCr2U;
 
   case (BackendDAE.VAR(varType=DAE.T_REAL(), values = SOME(DAE.VAR_ATTR_REAL(unit=SOME(DAE.SCONST(unitString))))), (HtCr2U, HtS2U, HtU2S))
+    guard(unitString <> "")
     equation
       cr = BackendVariable.varCref(var);
       (ut, HtS2U, HtU2S) = parse(unitString, cr, HtS2U, HtU2S);
