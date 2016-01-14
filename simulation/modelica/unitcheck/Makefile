@@ -16,6 +16,7 @@ UnitCheck12.mos \
 UnitCheck13.mos \
 UnitCheck14.mos \
 UnitCheck15.mos \
+ticket3631.mos \
 
 
 # test that currently fail. Move up when fixed. 

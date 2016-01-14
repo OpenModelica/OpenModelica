@@ -1,0 +1,36 @@
+// name: ticket3631
+// status: correct
+
+loadString("
+package unitCheckTests
+  model ticket3631
+    Real x(final unit = \"\");
+    Real y(final unit = \"\");
+  equation
+    x = time;
+    x + y = sin(time);
+  end ticket3631;
+end unitCheckTests;
+"); getErrorString();
+
+setCommandLineOptions("--preOptModules+=unitChecking +d=dumpUnits"); getErrorString();
+translateModel(unitCheckTests.ticket3631); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// #####################################
+// HashTable:
+// {y,{MASTER(y)}}
+// {x,{MASTER(x)}}
+// HashTable:
+// {y,{1.0 * s^(1)}}
+// {x,{1.0 * s^(1)}}
+// ######## UnitCheck COMPLETED ########
+// true
+// "Notification: "y" has the Unit "s"
+// "x" has the Unit "s"
+// "
+// endResult
