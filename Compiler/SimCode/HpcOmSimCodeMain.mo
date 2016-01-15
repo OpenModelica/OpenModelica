@@ -170,7 +170,7 @@ algorithm
 
       //Get state-partitioning
       //--------------------
-      partData  = HpcOmTaskGraph.multirate_partitioning(taskGraphOde,taskGraphDataOde,sccSimEqMapping);
+      partData  = HpcOmTaskGraph.multirate_partitioning(taskGraphOde,taskGraphDataOde,inBackendDAE,simCode,sccSimEqMapping);
 
 
       simCode.partitionData = partData;

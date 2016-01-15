@@ -16,12 +16,12 @@ RK12::RK12(IMixedSystem* system, ISolverSettings* settings)
     : SolverDefaultImplementation(system, settings)
     , _RK12Settings      (dynamic_cast<IRK12Settings*>(_settings))
     , _z                (NULL)
-	, _z_act		    (NULL)
+	, _z_a		    (NULL)
     , _z0               (NULL)
-	, _z0_act			(NULL)
+	, _z_a_0			(NULL)
 	, _zPred            (NULL)
     , _z1               (NULL)
-	, _z1_act			(NULL)
+	, _z_a_1			(NULL)
     , _zInit            (NULL)
     , _zWrite           (NULL)
 	, _zDot0			(NULL)
@@ -40,7 +40,7 @@ RK12::RK12(IMixedSystem* system, ISolverSettings* settings)
     , _h01              (0.0)
     , _h10              (0.0)
     , _h11              (0.0)
-	, _hactive			(0.0)
+	, _h_a			(0.0)
     , _f0               (NULL)
     , _f1               (NULL)
     ,_zeroTol            (1e-8)
@@ -48,6 +48,7 @@ RK12::RK12(IMixedSystem* system, ISolverSettings* settings)
     ,_tZero(-1)
 	,_dimParts 	(0)
 	,_activePartitions	(NULL)
+	,_activeStates		(NULL)
 {
 }
 
@@ -78,7 +79,6 @@ bool RK12::stateSelection()
  }
 void RK12::initialize()
 {
-	std::cout<<"initialize"<<std::endl;
     // Kennzeichnung, dass assemble() (vor der Integration) aufgerufen wurde
     _idid = 5000;
 
@@ -90,12 +90,10 @@ void RK12::initialize()
 
     //(Re-) Initialization of solver -> call default implementation service
     SolverDefaultImplementation::initialize();
-	std::cout<<"SolverDefaultImplementation::initialize()"<<std::endl;
 
     // Dimension of the system (number of variables)
     _dimSys   = _continuous_system->getDimContinuousStates();
     _dimParts = _continuous_system->getNumPartitions();
-	std::cout<<"test1"<<std::endl;
 
     // Check system dimension
     if(_dimSys <= 0 || !(_properties->isODE()))
@@ -110,9 +108,9 @@ void RK12::initialize()
         if(_z0)        		delete [] _z0;
         if(_zPred)        	delete [] _zPred;
         if(_z1)        		delete [] _z1;
-        if(_z_act)          delete [] _z_act;
-        if(_z0_act)        	delete [] _z0_act;
-        if(_z1_act)         delete [] _z1_act;
+        if(_z_a)          delete [] _z_a;
+        if(_z_a_0)        	delete [] _z_a_0;
+        if(_z_a_1)         delete [] _z_a_1;
 
         if(_zPred)        	delete [] _zPred;
         if(_zDotPred)      delete [] _zDotPred;
@@ -125,13 +123,15 @@ void RK12::initialize()
         if(_f1)        		delete [] _f1;
         if(_zeroSignIter)   delete [] _zeroSignIter;
 
+        if(_activeStates)	delete [] _activeStates;
+
         _z  		= new double[_dimSys];
         _z0 		= new double[_dimSys];
         _zPred 		= new double[_dimSys];
         _z1 		= new double[_dimSys];
-        _z_act  	= new double[_dimSys];
-        _z0_act 	= new double[_dimSys];
-        _z1_act 	= new double[_dimSys];
+        _z_a  	= new double[_dimSys];
+        _z_a_0 	= new double[_dimSys];
+        _z_a_1 	= new double[_dimSys];
 
         _zPred	 	= new double[_dimSys];
         _zDotPred 	= new double[_dimSys];
@@ -144,13 +144,15 @@ void RK12::initialize()
         _f1         = new double[_dimSys];
         _zeroSignIter	= new int[_dimZeroFunc];
 
+        _activeStates = new bool[_dimSys];
+
         memset(_z,			0,_dimSys*sizeof(double));
         memset(_z0,			0,_dimSys*sizeof(double));
         memset(_zPred,		0,_dimSys*sizeof(double));
         memset(_z1,			0,_dimSys*sizeof(double));
-        memset(_z_act,		0,_dimSys*sizeof(double));
-        memset(_z0_act,		0,_dimSys*sizeof(double));
-        memset(_z1_act,		0,_dimSys*sizeof(double));
+        memset(_z_a,		0,_dimSys*sizeof(double));
+        memset(_z_a_0,		0,_dimSys*sizeof(double));
+        memset(_z_a_1,		0,_dimSys*sizeof(double));
 
         memset(_zPred		,0,_dimSys*sizeof(double));
         memset(_zDotPred	,0,_dimSys*sizeof(double));
@@ -161,7 +163,9 @@ void RK12::initialize()
 
         memset(_f0,0,_dimSys*sizeof(double));
         memset(_f1,0,_dimSys*sizeof(double));
-        memset(_zeroSignIter,0,_dimSys*sizeof(double));
+        memset(_zeroSignIter,0,_dimSys*sizeof(int));
+
+        memset(_activeStates,0,_dimSys*sizeof(bool));
 
         // Counter initialisieren
         _outputStps    = 0;
@@ -182,10 +186,10 @@ void RK12::initialize()
 	// partition activation
 	if(_dimParts != -1)
 	{
-		std::cout<<"partition activation"<<std::endl;
+		if(_activePartitions)   delete [] _activePartitions;
 		_activePartitions = new bool[_dimParts];
 		memset(_activePartitions,true,_dimParts*sizeof(bool));
-		_hactive = 0.5*_h;
+		_h_a = 0.5*_h;
 	}
 
 }
@@ -300,37 +304,49 @@ void RK12::solve(const SOLVERCALL command)
     }
 }
 
-void RK12::RK12Integration(double time, double *z0, double *z1, double h, double *error, double maxRelError, int *numErrors)
+void RK12::RK12Integration(bool *activeStates, double time, double *z0, double *z1, double h, double *error, double relTol, double absTol, int *numErrors)
 {
 	*numErrors = 0;
 	//calculate system
 	calcFunction(time, z0, _zDot0);
 
 	for(int i = 0; i < _dimSys; ++i){
-		//do a forward euler step as predictor
-		_zPred[i] = _z0[i] + h * _zDot0[i];
-	    }
+		//calculate the activated states only
+		if (activeStates[i] == true){
+			//do a forward euler step as predictor
+			_zPred[i] = _z0[i] + h * _zDot0[i];
+		}
+	}
 
 	//calculate system for predictor
 	calcFunction(time+h, _zPred, _zDotPred);
 
 	//final modified euler step
 	for(int i = 0; i < _dimSys; ++i){
-		z1[i] = z0[i] + 0.5*h *(_zDot0[i] + _zDotPred[i]);
-
-	    //calculate error
-		error[i] = relativeTolerance(z0[i], z1[i]);
-	    if (error[i] >= maxRelError) {
-	    	*numErrors = *numErrors+1;
-	    }
-	    }
-
+		if (activeStates[i] == true){
+			z1[i] = z0[i] + 0.5*h *(_zDot0[i] + _zDotPred[i]);
+			//calculate error
+			if (!toleranceOK(z0[i], z1[i], relTol, absTol)) {
+				*numErrors = *numErrors+1;
+			}
+		}
+	}
 	//printing
 	for (int i=0;i < _dimSys; i++) {
-		 std::cout<<"state"<<i<<" at "<<time<<"   z0  "<<z0[i]<<"  _zDot0	"<<_zDot0[i]<<"  _zPred  "<<_zPred[i]<<"  _zDotPred  "<<_zDotPred[i]<<"	 z1	"<<z1[i]<<"   error    "<<error[i]<<"  wrong?  "<<(error[i] >= maxRelError)<<std::endl;
+		if (activeStates[i] == true){
+		 //std::cout<<"state"<<i<<" at "<<time<<"   z0  "<<z0[i]<<"  _zDot0	"<<_zDot0[i]<<"  _zPred  "<<_zPred[i]<<"  _zDotPred  "<<_zDotPred[i]<<"	 z1	"<<z1[i]<<" relError "<<relError(z0[i],z1[i])<<"  correct?  "<<toleranceOK(z0[i], z1[i], relTol, absTol)<<std::endl;
 	 	 }
+	}
 }
 
+
+void RK12::RK12InterpolateStates(bool *activeStates, double *leftIntervalStates, double *rightIntervalStates,double leftTime,double rightTime, double *interpolStates, double interpolTime){
+	for (int i; i<_dimSys;i++)
+	{
+		if (activeStates[i] == false)
+			interpolStates[i] = ( (rightIntervalStates[i]-leftIntervalStates[i]) * (interpolTime-leftTime) / (rightTime-leftTime) ) +  leftIntervalStates[i];
+	}
+}
 
 
 void RK12::doRK12()
@@ -341,138 +357,159 @@ void RK12::doRK12()
 		numErrors = 0;
 
     double
-		tNext, tActNext, tActCurrent;						// point of time after another step with step size _h
+		tNext,
+		tActNext,
+		tActCurrent;						// point of time after another step with step size _h
 
     double
-		maxStepError = 1e-4;					// the max relative error per step per state
+		hNew = _h;
+
+    double
+	    absTol = 1e-6,					// the max absolute error per step per state
+		relTol = 1e-4;					// the max relative error per step per state
 
     double
 		*delta_z = new double[_dimSys];			// the error
 
     bool
-		*allPartitionsActive = new bool[_dimParts];						// to switch on all partitions
+		*allPartitionsActive = new bool[_dimParts],						// to switch on all partitions
+    	*allStatesActive = new bool[_dimSys];							// to calculate all states
     	memset(allPartitionsActive,true,_dimParts*sizeof(bool));
+    	memset(allStatesActive,true,_dimSys*sizeof(bool));
+
 
     while( _idid == 0 && _solverStatus != USER_STOP )
     {
+    	//update step size
+        _h = hNew;
 
     	// adapt step size of the last step before endTime
         if((_tCurrent + _h) > _tEnd) {
-            std::cout<<"last step "<<std::endl;
             _h = (_tEnd - _tCurrent);
             std::cout<<"last step size "<<_h<<std::endl;
         }
 
-        // target point of time
+        // time for the next latent step
         tNext = _tCurrent + _h;
 
         //MAKE A LATENT STEP
         //------------------
-        std::cout<<"START LATENT STEP ("<<_h<<") at "<<_tCurrent<<std::endl;
-
-		_continuous_system->setPartitionActivation(allPartitionsActive);
-
-		 std::cout<<"active partitions at "<<_tCurrent;
-		for (int i=0;i < _dimParts; i++) std::cout<<"  "<<_activePartitions[i];
-		std::cout<<std::endl;
+        //std::cout<<"START LATENT STEP ("<<_h<<") at "<<_tCurrent<<std::endl;
 
         // save old state vector for latent step
         memcpy(_z0,_z,(int)_dimSys*sizeof(double));
 
+        //set partitions to active
+		_continuous_system->setPartitionActivation(allPartitionsActive);
+
         //integrate with latent step size
-        RK12Integration(_tCurrent, _z0, _z, _h, delta_z, maxStepError, &numErrors);
-    	std::cout<<"numErrors "<<numErrors<<std::endl;
+        RK12Integration(allStatesActive, _tCurrent, _z0, _z, _h, delta_z, relTol, absTol, &numErrors);
 
     	//latent step is completely or partially ok
-        if (numErrors == 0 ) {
+        if (numErrors == 0) {
 			++ numAccSteps;
 			if (numAccSteps==4) {
-		        std::cout<<"INCREASE LATENT STEP SIZE "<<_h<<std::endl;
-				_h = _h*2.0;
+				// increase step size for the next step
+		        //std::cout<<"INCREASE LATENT STEP SIZE "<<_h<<std::endl;
+		        hNew = _h*2.0;
 				numAccSteps = 0;
 			}
+
+			// some printing
+			RK12::outputStepSize(_activeStates, _tCurrent, _h, -2.0);
+
         }
     	//latent step is completely wrong
         else if(numErrors == _dimSys) {
-            std::cout<<"ALL IS WRONG -> REDUCE LATENT STEP SIZE "<<_h<<std::endl;
-          	_h = _h/ 2.0;
+            //std::cout<<"ALL IS WRONG -> REDUCE LATENT STEP SIZE "<<_h<<std::endl;
+            hNew = _h/ 2.0;
             memcpy(_z,_z0,(int)_dimSys*sizeof(double));
           	tNext = _tCurrent;
         }
 
-		//refine wrong states in an active step
-        else {
-
-			//which partitions belong to this errors?
-			for (int i=0;  i<  _dimSys; i++ ){
-				int j = _continuous_system->getActivator(i);
-				if (delta_z[i] < maxStepError) {
-					//this error is small enough, no need to calculate this partition
-					_activePartitions[j] = false;
-					}
+				//refine wrong states in an active step
 				else {
-					_activePartitions[j] = true;
-				}
-			}
-			_continuous_system->setPartitionActivation(_activePartitions);
+					//which partitions belong to this errors?
+					for (int i=0;  i<  _dimSys; i++ ){
+						int j = _continuous_system->getActivator(i);
+						if (toleranceOK(_z0[i], _z[i], relTol, absTol)) {
+							//this error is small enough, no need to calculate this partition
+							_activePartitions[j] = false;
+							_activeStates[i] = false;
+							}
+						else {
+							_activePartitions[j] = true;
+							_activeStates[i] = true;
+						}
+					}
+					_continuous_system->setPartitionActivation(_activePartitions);
 
-	        // integrate with active step size
-            tActCurrent = _tCurrent;
+					//std::cout<<"active partitions ";
+					//for (int i=0;i < _dimParts; i++) std::cout<<"  "<<_activePartitions[i];
+					//std::cout<<std::endl;
 
-	        // save old state vector
-	        memcpy(_z0_act,_z0,(int)_dimSys*sizeof(double));
 
-			while (tActCurrent < tNext) {
-				numErrors = 0;
+					// integrate with active step size
+					tActCurrent = _tCurrent;
 
-				// In case the active step size is too big for the latent one, reduce it, adapt last step as well
-				if (_h <= _hactive) _hactive = _h/2;
-				if (tActCurrent + _hactive - tNext > 1e-8) std::cout<<"ADAPT LAST ACTIVE STEP "<<std::endl;
+					// set the start values for the active interval
+					memcpy(_z_a_0,_z0,(int)_dimSys*sizeof(double));
 
-	            std::cout<<"START ACTIVE STEP ("<<_hactive<<") at "<<tActCurrent<<std::endl;
+					while (tActCurrent < tNext) {
+						numErrors = 0;
 
-				 std::cout<<"active partitions ";
-				for (int i=0;i < _dimParts; i++) std::cout<<"  "<<_activePartitions[i];
-				std::cout<<std::endl;
+						// In case the active step size is too big for the latent one, reduce it, adapt last step as well
+						if (_h <= _h_a) _h_a = _h/2;
+						if (tActCurrent + _h_a - tNext > 1e-8) std::cout<<"ADAPT LAST ACTIVE STEP "<<std::endl;
 
-				//interpolate states
-				//RK12InterpolateStates();
+						//some printing
+						//std::cout<<"START ACTIVE STEP ("<<_h_a<<") at "<<tActCurrent<<std::endl;
+						//std::cout<<"active partitions in active step";
+						//for (int i=0;i < _dimParts; i++) std::cout<<"  "<<_activePartitions[i];
+						//std::cout<<std::endl;
 
-		        // save old state vector
-		        memcpy(_z0_act,_z0,(int)_dimSys*sizeof(double));
+						//interpolate states
+						RK12InterpolateStates(_activeStates, _z0,_z,_tCurrent,tNext, _z_a_0,tActCurrent);
 
-		        //integrate with active step size
-		        RK12Integration(tActCurrent, _z0_act, _z_act, _hactive, delta_z, maxStepError, &numErrors);
+						//integrate with active step size
+						RK12Integration(_activeStates, tActCurrent, _z_a_0, _z_a, _h_a, delta_z, relTol, absTol, &numErrors);
 
-				//active step is ok
-		        if(numErrors == 0)
-		        {
-		        	if (numAccActiveSteps == 4) {
-		        		_hactive = _hactive * 2.0;
-		        		numAccActiveSteps = 0;
-		        		std::cout<<"INCREASE ACTIVE STEP SIZE "<<_hactive<<std::endl;
+						//active step is ok
+						if(numErrors == 0)
+						{
+							if (numAccActiveSteps == 4) {
+								_h_a = _h_a * 2.0;
+								numAccActiveSteps = 0;
+								//std::cout<<"INCREASE ACTIVE STEP SIZE "<<_h_a<<std::endl;
 
-		        	}
-		        	else {
-		        		numAccActiveSteps = numAccActiveSteps+1;
-		        	}
-	        		std::cout<<"ACTIVE STEP WAS OK "<<std::endl;
+							}
+							else {
+								numAccActiveSteps = numAccActiveSteps+1;
+							}
+							//std::cout<<"ACTIVE STEP WAS OK "<<std::endl;
+							tActCurrent = tActCurrent+_h_a;
+							//set state for the next step
+							memcpy(_z_a_0, _z_a, (int)_dimSys*sizeof(double));
 
-		            tActCurrent = tActCurrent+_hactive;
-		        }
-		        //active step is wrong
-		        else {
-		            std::cout<<"REDUCE ACTIVE STEP SIZE AND REPEAT"<<std::endl;
-					_hactive = _hactive / 2.0;
-				}
-			  }
-			}
+							// some printing
+							RK12::outputStepSize(_activeStates, tActCurrent, _h, _h_a);
+
+						}
+						//active step is wrong
+						else {
+							//std::cout<<"REDUCE ACTIVE STEP SIZE AND REPEAT"<<std::endl;
+							_h_a = _h_a / 2.0;
+						}
+					  }
+					}
 
         ++ _totStps;
 
         //write result to right interval boarder vector
         memcpy(_z1,_z,_dimSys*sizeof(double));
 
+
+    	//printing
         solverOutput(_accStps,tNext,_z,_h);
 
         //event handling
@@ -508,10 +545,49 @@ void RK12::doRK12()
 }
 
 
-double RK12::relativeTolerance(double z1, double z2)
+void RK12::outputStepSize(bool *_activeStates, double time ,double hLatent, double hActive){
+	double stepsize = 0.0;
+	std::cout<<"time "<<time;
+	for (int i=0; i<_dimSys; i++) {
+		if (_activeStates[i]==true)
+		{
+			stepsize = hActive;
+		}
+		else
+		{
+			stepsize = hLatent;
+		}
+		std::cout<<"  ;  "<<stepsize;
+	}
+	std::cout<<""<<std::endl;
+}
+
+double RK12::toleranceOK(double z1, double z2, double relTol, double absTol)
+{
+	double absError = fabs(z1-z2);
+	//std::cout<<"absError "<<absError<<std::endl;
+	//std::cout<<"relError "<<relError(z1,z2)<<std::endl;
+
+	if (absError <= absTol)
+	{
+		return true;
+	}
+
+	else if (absError/max(max(fabs(z1),fabs(z2)),1e-12) <= relTol)
+	{
+		return true;
+	}
+
+	else {
+		return false;
+	}
+}
+
+double RK12::relError(double z1, double z2)
 {
 	return fabs(z1-z2)/max(max(fabs(z1),fabs(z2)),1e-12);
 }
+
 
 void RK12::doRK12_stepControl()
 {
@@ -520,7 +596,7 @@ void RK12::doRK12_stepControl()
 
     double      tNext,
 				tCurrent;											// point of time after another step with step size _h
-    double      maxStepError = 1e-4;									// the max error per step per state
+    double      relTol = 1e-4;									// the max error per step per state
 
     double
 		*_zPred1 = new double[_dimSys],									//predictor state vector after one FE step
@@ -556,7 +632,7 @@ void RK12::doRK12_stepControl()
         	_z[i] = _z[i] + 0.5*(_h *_zDot0[i] + _h*_zDotPred1[i]);
         	//calculate error
         	delta_z[i] = fabs(_zPred1[i]-_z[i]);
-        	if (stepAcc && delta_z[i] >= maxStepError) stepAcc = false;
+        	if (stepAcc && delta_z[i] >= relTol) stepAcc = false;
 
         }
 

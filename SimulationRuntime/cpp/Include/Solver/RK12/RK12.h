@@ -65,7 +65,11 @@ private:
     void doRK12();
     void doRK12_stepControl();
 
-    void RK12Integration(double time, double *z0, double *z1, double h, double *error, double maxRelError, int *numErrors);
+    void outputStepSize(bool *_activeStates, double time ,double hLatent, double hActive);
+
+    void RK12Integration(bool *activeStates, double time, double *z0, double *z1, double h, double *error, double relTol, double absTol, int *numErrors);
+
+    void RK12InterpolateStates(bool *activeStates, double *leftIntervalStates,double *rightIntervalStates,double leftTime,double rightTime, double *interpolStates, double interpolTime);
 
     /// Encapsulation of determination of right hand side
     void calcFunction(const double& t, const double* z, double* zDot);
@@ -78,7 +82,9 @@ private:
     // Interpolation der Lösung für RK12-Verfahren
     void interp1(double time, double* value);
 
-    double relativeTolerance(double z1, double z2);
+    double toleranceOK(double z1, double z2, double relTol, double absTol);
+
+    double relError(double z1, double z2);
 
     /// Kapselung der Nullstellensuche
     void doMyZeroSearch();
@@ -104,16 +110,18 @@ private:
 		_dimParts;                                  ///      				- number of partitions
 
     int
-         _outputStp,
+		_latentSteps,
+		_activeSteps,
+        _outputStp,
         _outputStps;                                ///< Output            - Number of output steps
 
     double
         *_z,                                        // State vector in latent step
         *_z0,                                       // (Old) state vector at left border of latent interval
         *_z1,                                       // (New) state vector at right border of latent interval
-		*_z_act,									// State vector in active step
-		*_z0_act,									// (Old) state vector at left border of active interval
-		*_z1_act,									// (New) state vector at right border of active interval
+		*_z_a,										// State vector in active step
+		*_z_a_0,									// (Old) state vector at left border of active interval
+		*_z_a_1,									// (New) state vector at right border of active interval
         *_zPred,									// Predictor state after first step in RK12
 
         *_zInit,                                    // Temp            - Initial state vector
@@ -133,7 +141,7 @@ private:
          _h01,
          _h10,
          _h11,
-		 _hactive;									// step size for the active step
+		 _h_a;										// step size for the active step
 
 
     double
@@ -149,8 +157,10 @@ private:
     int
         *_zeroSignIter;                                ///< Temp            - Temporary zeroSign Vector
 
+
     bool
-		*_activePartitions;								///<Temp			- boolean vector which partition has to be activated
+		*_activePartitions,							// boolean vector which partition has to be activated
+		*_activeStates;								// boolean vector which state has to be calculated in an active step
 
     ISystemProperties* _properties;
     IContinuous* _continuous_system;

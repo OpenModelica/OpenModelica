@@ -56,6 +56,7 @@ protected import HpcOmEqSystems;
 protected import HpcOmScheduler;
 protected import List;
 protected import SimCodeUtil;
+protected import SimCodeVar;
 protected import SCode;
 protected import System;
 protected import Util;
@@ -2683,7 +2684,7 @@ algorithm
   name := ("TaskGraph_"+fileName+".graphml");
   schedulerInfo := arrayCreate(arrayLength(taskGraph), (-1,-1,-1.0));
   sccSimEqMapping := arrayCreate(arrayLength(taskGraph),{-1});
-  HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, name, "", {}, {}, sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
+  dumpAsGraphMLSccLevel(taskGraph, taskGraphData, name, "", {}, {}, sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
 end dumpTaskGraph;
 
 public function dumpAsGraphMLSccLevel "author: marcusw, waurich
@@ -6321,6 +6322,8 @@ public function multirate_partitioning"partitions the task-graph so that every p
 author: Waurich TUD 2016-01"
   input TaskGraph odeGraph;
   input TaskGraphMeta odeGraphData;
+  input BackendDAE.BackendDAE backendDAE;
+  input SimCode.SimCode simCode;
   input array<list<Integer>> sccSimEqMapping;
   output SimCode.PartitionData partitionDataOut;
 protected
@@ -6339,6 +6342,8 @@ algorithm
 
   //get the state tasks
   stateTasks := getLeafNodes(odeGraph);
+  //!!We have to set up a simVar-task mapping somewhere. This function is only fine for the first try!!//
+  stateTasks := multirate_orderStateTasksInSimVarStateOrder(stateTasks, odeGraphData, backendDAE, simCode);  //so that the first activator corresponds to the first state ettc.
    print("stateTasks "+intLstString(stateTasks)+"\n");
 
   //traverse levels top down and colour according to the states
@@ -6354,13 +6359,59 @@ algorithm
   activatorsForPartitions := List.mapMap(partitions,listHead,function Array.getIndexFirst(inArray = stateTaskAssign));
   partitions := List.map1(partitions,getSimEqsIdxLstForSCCIdxLst,sccSimEqMapping); // convert to simEqSys indexes
   numPartitions := listLength(partitions);
-  stateToActivators := stateTasks;
+  stateToActivators := List.intRange(listLength(stateTasks)); //if every state gets its own activator
     //print("PARTITIONS2 :\n"+stringDelimitList(List.map(partitions,intLstString),"\n")+"\n");
 
   //fill partition data
   partitionDataOut := SimCode.PARTITIONDATA(numPartitions,partitions,activatorsForPartitions,stateToActivators);
   dumpPartitionData(partitionDataOut);
 end multirate_partitioning;
+
+
+protected function multirate_orderStateTasksInSimVarStateOrder"each activator maps one or more states.
+The order in the state-vector in simcode has to be the same as in the taskgraph"
+  input list<Integer> stateTasks;
+  input TaskGraphMeta taskGraphData;
+  input BackendDAE.BackendDAE dae;
+  input SimCode.SimCode simCode;
+  output list<Integer> orderedTasks;
+protected
+  Integer state,compIdx,eqSysIdx,offset,varIdx,simVarIdx;
+  list<Integer> simVarIdxs, order;
+  tuple<Integer,Integer,Integer> varMapTpl;
+  array<tuple<Integer,Integer,Integer>> varCompMapping;
+  BackendDAE.Var var;
+  BackendDAE.EqSystem eqSys;
+  DAE.ComponentRef cref;
+  SimCodeVar.SimVar simVar;
+  list<BackendDAE.EqSystem> eqSystems;
+algorithm
+   BackendDAE.DAE(eqs=eqSystems) := dae;
+   simVarIdxs := {};
+  for state in stateTasks loop
+    compIdx := listHead(arrayGet(taskGraphData.inComps,state));
+    (SOME((compIdx,eqSysIdx,offset)),varIdx) := Array.findFirstOnTrueWithIdx(taskGraphData.varCompMapping, function varMappingTupleCompEqual(compIdx=compIdx));
+    eqSys := listGet(eqSystems,eqSysIdx);
+    varIdx := varIdx-offset;
+    var := BackendVariable.getVarAt(eqSys.orderedVars,varIdx);
+    cref := var.varName;
+    {simVar} := SimCodeUtil.getSimVars2Crefs({cref},simCode.crefToSimVarHT);
+    simVarIdx := simVar.index;
+    simVarIdxs := simVarIdx::simVarIdxs;
+  end for;
+  (_,order) := HpcOmScheduler.quicksortWithOrder(List.map(listReverse(simVarIdxs),intReal));
+  orderedTasks := List.map1(order,List.getIndexFirst,stateTasks);
+end multirate_orderStateTasksInSimVarStateOrder;
+
+
+protected function varMappingTupleCompEqual
+  input tuple<Integer,Integer,Integer> tpl;
+  input Integer compIdx;
+  output Boolean compEqual;
+algorithm
+  compEqual := intEq(compIdx,Util.tuple31(tpl));
+end varMappingTupleCompEqual;
+
 
 protected function getSimEqIdxForSCCIdx"get the simEqSystem-index for a scc-index. if the scc is equation-system, only the first simEqsystem-index is returned.
 author:Waurich TUD 2016-01"

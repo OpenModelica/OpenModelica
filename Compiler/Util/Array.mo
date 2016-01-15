@@ -100,6 +100,30 @@ algorithm
   end for;
 end findFirstOnTrue;
 
+public function findFirstOnTrueWithIdx<T>
+  input array<T> inArray;
+  input FuncType inPredicate;
+  output Option<T> outElement;
+  output Integer idxOut = -1;
+
+  partial function FuncType
+    input T inElement;
+    output Boolean outMatch;
+  end FuncType;
+protected
+  Integer idx=1;
+algorithm
+  outElement := NONE();
+  for e in inArray loop
+    if inPredicate(e) then
+      idxOut := idx;
+      outElement := SOME(e);
+      break;
+    end if;
+    idx := idx+1;
+  end for;
+end findFirstOnTrueWithIdx;
+
 public function select<T>
   "Takes an array and a list of indices, and returns a new array with the
    indexed elements. Will fail if any index is out of bounds."

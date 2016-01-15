@@ -172,7 +172,7 @@ public uniontype PartitionData
     Integer numPartitions;
     list<list<Integer>> partitions; // which equations are assigned to the partitions
     list<list<Integer>> activatorsForPartitions; // which activators can activate each partition
-    list<Integer> stateToActivators; // which states belong to which activator
+    list<Integer> stateToActivators; // which states belong to which activator, important if various states are gathered in one partition/activator
   end PARTITIONDATA;
 end PartitionData;
 

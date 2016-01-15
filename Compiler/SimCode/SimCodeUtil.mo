@@ -3844,7 +3844,7 @@ algorithm
   end matchcontinue;
 end createSymbolicJacobianssSimCode;
 
-protected function getSimVars2Crefs
+public function getSimVars2Crefs
   input list<DAE.ComponentRef> inCrefs;
   input SimCode.HashTableCrefToSimVar inSimVarHT;
   output list<SimCodeVar.SimVar> outSimVars = {};
