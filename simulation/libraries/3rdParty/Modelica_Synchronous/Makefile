@@ -3,6 +3,10 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+Modelica_Synchronous.Examples.SimpleControlledDrive.Continuous.mos \
+Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscreteTextbookController.mos \
+Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscreteController.mos \
+Modelica_Synchronous.Examples.CascadeControlledDrive.Continuous.mos \
 Modelica_Synchronous.Examples.Elementary.RealSignals.TimeBasedStep.mos \
 Modelica_Synchronous.Examples.Elementary.RealSignals.TickBasedStep.mos \
 Modelica_Synchronous.Examples.Elementary.RealSignals.TimeBasedSine.mos \
@@ -12,6 +16,14 @@ Modelica_Synchronous.Examples.Elementary.RealSignals.TickBasedRamp.mos \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=  \
+Modelica_Synchronous.Examples.SimpleControlledDrive.ExactlyClockedWithDiscreteController.mos \
+Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscretizedContinuousController.mos \
+Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWith_AD_DA_Effects.mos \
+Modelica_Synchronous.Examples.CascadeControlledDrive.SubClocked.mos \
+Modelica_Synchronous.Examples.CascadeControlledDrive.SuperSampled.mos \
+Modelica_Synchronous.Examples.CascadeControlledDrive.AbsoluteClocks.mos \
+Modelica_Synchronous.Examples.Systems.ControlledMixingUnit.mos \
+Modelica_Synchronous.Examples.Systems.EngineThrottleControl.mos \
 Modelica_Synchronous.Examples.Elementary.IntegerSignals.TimeBasedStep.mos \
 Modelica_Synchronous.Examples.Elementary.RealSignals.Sample1.mos \
 Modelica_Synchronous.Examples.Elementary.RealSignals.Sample2.mos \
