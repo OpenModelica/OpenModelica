@@ -12,6 +12,8 @@ Modelica_Synchronous.Examples.Elementary.RealSignals.TickBasedStep.mos \
 Modelica_Synchronous.Examples.Elementary.RealSignals.TimeBasedSine.mos \
 Modelica_Synchronous.Examples.Elementary.RealSignals.TimeBasedRamp.mos \
 Modelica_Synchronous.Examples.Elementary.RealSignals.TickBasedRamp.mos \
+Modelica_Synchronous.Examples.Elementary.BooleanSignals.TimeBasedStep.mos \
+Modelica_Synchronous.Examples.Elementary.BooleanSignals.TickBasedStep.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -46,7 +48,34 @@ Modelica_Synchronous.Examples.Elementary.RealSignals.AssignClockToTriggerHold.mo
 Modelica_Synchronous.Examples.Elementary.RealSignals.AssignClockToSquareWaveHold.mos \
 Modelica_Synchronous.Examples.Elementary.RealSignals.UniformNoise.mos \
 Modelica_Synchronous.Examples.Elementary.RealSignals.FractionalDelay.mos \
-Modelica_Synchronous.Examples.Elementary.RealSignals.TickBasedSine \
+Modelica_Synchronous.Examples.Elementary.RealSignals.TickBasedSine.mos \
+Modelica_Synchronous.Examples.Elementary.IntegerSignals.Sample1.mos \
+Modelica_Synchronous.Examples.Elementary.IntegerSignals.Sample2.mos \
+Modelica_Synchronous.Examples.Elementary.IntegerSignals.SampleClocked.mos \
+Modelica_Synchronous.Examples.Elementary.IntegerSignals.SampleVectorizedAndClocked.mos \
+Modelica_Synchronous.Examples.Elementary.IntegerSignals.Hold.mos \
+Modelica_Synchronous.Examples.Elementary.IntegerSignals.SubSample.mos \
+Modelica_Synchronous.Examples.Elementary.IntegerSignals.SuperSample.mos \
+Modelica_Synchronous.Examples.Elementary.IntegerSignals.ShiftSample.mos \
+Modelica_Synchronous.Examples.Elementary.IntegerSignals.BackSample.mos \
+Modelica_Synchronous.Examples.Elementary.IntegerSignals.AssignClock.mos \
+Modelica_Synchronous.Examples.Elementary.IntegerSignals.AssignClockVectorized.mos \
+Modelica_Synchronous.Examples.Elementary.IntegerSignals.UpSample.mos \
+Modelica_Synchronous.Examples.Elementary.IntegerSignals.TickBasedStep.mos \
+Modelica_Synchronous.Examples.Elementary.BooleanSignals.Sample1.mos \
+Modelica_Synchronous.Examples.Elementary.BooleanSignals.Sample2.mos \
+Modelica_Synchronous.Examples.Elementary.BooleanSignals.SampleClocked.mos \
+Modelica_Synchronous.Examples.Elementary.BooleanSignals.SampleVectorizedAndClocked.mos \
+Modelica_Synchronous.Examples.Elementary.BooleanSignals.Hold.mos \
+Modelica_Synchronous.Examples.Elementary.BooleanSignals.SubSample.mos \
+Modelica_Synchronous.Examples.Elementary.BooleanSignals.SuperSample.mos \
+Modelica_Synchronous.Examples.Elementary.BooleanSignals.ShiftSample.mos \
+Modelica_Synchronous.Examples.Elementary.BooleanSignals.BackSample.mos \
+Modelica_Synchronous.Examples.Elementary.BooleanSignals.AssignClock.mos \
+Modelica_Synchronous.Examples.Elementary.BooleanSignals.AssignClockVectorized.mos \
+Modelica_Synchronous.Examples.Elementary.BooleanSignals.UpSample \
+Modelica_Synchronous.Examples.Elementary.BooleanSignals.TimeBasedPulse \
+Modelica_Synchronous.Examples.Elementary.BooleanSignals.TickBasedPulse \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
