@@ -10,7 +10,7 @@ translateModel(ThermoPower.Examples.RankineCycle.Simulators.ClosedLoop); getErro
 // true
 // ""
 // true
-// "[ThermoPower 3.1/Examples.mo:2541:21-2541:69:writable] Error: Cyclically dependent constants or parameters found in scope : {q_nom}, {head_nom}.
+// "[ThermoPower 3.1/Examples.mo:2546:21-2546:69:writable] Error: Cyclically dependent constants or parameters found in scope : {q_nom}, {head_nom}.
 // Warning: Alias set with several free start values
 //  * candidate: plant.temperatureActuator.y(start = plant.temperatureActuator.y_start)
 //  * candidate: plant.sourceW_gas.gas.T(start = plant.sourceW_gas.T)
