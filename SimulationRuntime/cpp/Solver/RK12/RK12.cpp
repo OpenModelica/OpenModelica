@@ -591,116 +591,118 @@ double RK12::relError(double z1, double z2)
 
 void RK12::doRK12_stepControl()
 {
-	bool 		stepAcc = true;
-	int			numAccSteps = 0;
-
-    double      tNext,
-				tCurrent;											// point of time after another step with step size _h
-    double      relTol = 1e-4;									// the max error per step per state
+	int
+		numAccSteps = 0,
+		numErrors = 0;
 
     double
-		*_zPred1 = new double[_dimSys],									//predictor state vector after one FE step
-		*_zDotPred1 = new double[_dimSys],								//state derivatives at zPred1
-		*_zDot0 = new double[_dimSys];									//state dervative at start of time step
+		tNext;
 
-    double	*delta_z = new double[_dimSys];								// the error
+    double
+		hNew = _h;
 
-    while(  _idid == 0 && _solverStatus != USER_STOP )
+    double
+	    absTol = 1e-6,					// the max absolute error per step per state
+		relTol = 1e-4;					// the max relative error per step per state
+
+    double
+		*delta_z = new double[_dimSys];			// the error
+
+    bool
+		*allPartitionsActive = new bool[_dimParts],						// to switch on all partitions
+    	*allStatesActive = new bool[_dimSys];							// to calculate all states
+    	memset(allPartitionsActive,true,_dimParts*sizeof(bool));
+    	memset(allStatesActive,true,_dimSys*sizeof(bool));
+
+
+	//set partitions to active
+	_continuous_system->setPartitionActivation(allPartitionsActive);
+
+    while( _idid == 0 && _solverStatus != USER_STOP )
     {
-    	stepAcc = true;
-        // save old state vector
-        memcpy(_z0,_z,(int)_dimSys*sizeof(double));
+    	//update step size
+        _h = hNew;
 
-        // adapt last step size
-        if((_tCurrent + _h) > _tEnd)
+    	// adapt step size of the last step before endTime
+        if((_tCurrent + _h) > _tEnd) {
             _h = (_tEnd - _tCurrent);
+            std::cout<<"last step size "<<_h<<std::endl;
+        }
 
-        // new point of time
+        // time for the next latent step
         tNext = _tCurrent + _h;
 
-        //calculate system
-        calcFunction(_tCurrent, _z, _zDot0);
+        //MAKE A LATENT STEP
+        //------------------
+        //std::cout<<"START LATENT STEP ("<<_h<<") at "<<_tCurrent<<std::endl;
 
-        //do a forward euler step as predictor
-        for(int i = 0; i < _dimSys; ++i){
-        	_zPred1[i] = _z[i] + _h * _zDot0[i];
-        }
-    	//compute system
-        calcFunction(tNext,_zPred1,_zDotPred1);
-        //final modified euler step
-        for(int i = 0; i < _dimSys; ++i){
-        	_z[i] = _z[i] + 0.5*(_h *_zDot0[i] + _h*_zDotPred1[i]);
-        	//calculate error
-        	delta_z[i] = fabs(_zPred1[i]-_z[i]);
-        	if (stepAcc && delta_z[i] >= relTol) stepAcc = false;
+        // save old state vector for latent step
+        memcpy(_z0,_z,(int)_dimSys*sizeof(double));
 
-        }
+        //integrate with latent step size
+        RK12Integration(allStatesActive, _tCurrent, _z0, _z, _h, delta_z, relTol, absTol, &numErrors);
 
-        std::cout<<"delta_z "<<"\t\t | \t\t"<<_h      <<"\t\t | \t\t"<<_tCurrent<<"\t\t | \t\t"<<delta_z[0]<<"\t\t | \t\t"<<delta_z[1]<<std::endl;
-
-        // step size control
-        ++ _totStps;
-
-        if (!stepAcc) {
-			//repeat step, reduce step size
-			_h = _h*0.7;
-			//std::cout<<"Reduce step size "<<_h<<std::endl;
-			numAccSteps = 0;
-			memcpy(_z,_z0,(int)_dimSys*sizeof(double));
-			tNext = _tCurrent;
-        }
-
-        else {
-			//accepted step
+    	//latent step is completely or partially ok
+        if (numErrors == 0) {
 			++ numAccSteps;
-
 			if (numAccSteps==4) {
-				_h = _h*2.0;
-				//std::cout<<"Increase step size "<<_h<<std::endl;
+				// increase step size for the next step
+		        //std::cout<<"INCREASE LATENT STEP SIZE "<<_h<<std::endl;
+		        hNew = _h*2.0;
 				numAccSteps = 0;
 			}
-			//std::cout<<"TIME: "<<_tCurrent<<"	h  "<<_h<<std::endl;
+        }
 
-			++ _accStps;
+    	//latent step is completely wrong
+        else {
+            //std::cout<<"ALL IS WRONG -> REDUCE LATENT STEP SIZE "<<_h<<std::endl;
+            hNew = _h/ 2.0;
+            memcpy(_z,_z0,(int)_dimSys*sizeof(double));
+          	tNext = _tCurrent;
+        }
 
-			//write result to right interval boarder vector
-			memcpy(_z1,_z,_dimSys*sizeof(double));
+		// some printing
+		RK12::outputStepSize(_activeStates, _tCurrent, _h, -2.0);
+
+		++ _accStps;
+
+		//write result to right interval boarder vector
+		memcpy(_z1,_z,_dimSys*sizeof(double));
 
 
-			solverOutput(_accStps,tNext,_z,_h);
+		solverOutput(_accStps,tNext,_z,_h);
 
-			//event handling
-			doMyZeroSearch();
+		//event handling
+		doMyZeroSearch();
 
-			if (((_tEnd - _tCurrent) < dynamic_cast<ISolverSettings*>(_RK12Settings)->getEndTimeTol()))
-				break;
+		if (((_tEnd - _tCurrent) < dynamic_cast<ISolverSettings*>(_RK12Settings)->getEndTimeTol()))
+			break;
 
-			if (_zeroStatus ==EQUAL_ZERO && _tZero > -1)   {
+		if (_zeroStatus ==EQUAL_ZERO && _tZero > -1)   {
 
-				// found zero crossing -> complete step
-				_firstStep            = true;
-				_hUpLim = dynamic_cast<ISolverSettings*>(_RK12Settings)->getUpperLimit();
+			// found zero crossing -> complete step
+			_firstStep            = true;
+			_hUpLim = dynamic_cast<ISolverSettings*>(_RK12Settings)->getUpperLimit();
 
-				//handle all events that occured at this t
-				//update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
+			//handle all events that occured at this t
+			//update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
 
-				_mixed_system->handleSystemEvents(_events/*,boost::ref(update_event)*/);
-				_event_system->getZeroFunc(_zeroVal);
-				_zeroStatus = EQUAL_ZERO;
-				memcpy(_zeroValLastSuccess,_zeroVal,_dimZeroFunc*sizeof(double));
-			}
+			_mixed_system->handleSystemEvents(_events/*,boost::ref(update_event)*/);
+			_event_system->getZeroFunc(_zeroVal);
+			_zeroStatus = EQUAL_ZERO;
+			memcpy(_zeroValLastSuccess,_zeroVal,_dimZeroFunc*sizeof(double));
+		}
 
-			if (_tZero > -1) {
-				solverOutput(_accStps,_tZero,_z,_h);
-				_tCurrent = _tZero;
-				_tZero=-1;
-			}
-			else {
-				//_tCurrent += _h;
-				_tCurrent = tNext;
-			}
-       }
-    }
+		if (_tZero > -1) {
+			solverOutput(_accStps,_tZero,_z,_h);
+			_tCurrent = _tZero;
+			_tZero=-1;
+		}
+		else {
+			//_tCurrent += _h;
+			_tCurrent = tNext;
+		}
+   }
 }
 
 
