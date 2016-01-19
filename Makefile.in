@@ -127,7 +127,7 @@ install: install-dirs
 	# man pages
 	# cp -p "@OMBUILDDIR@"/share/man/man1/*.gz ${INSTALL_MANDIR}/man1/
 	# Shared data
-	cp -p "@OMBUILDDIR@"/share/omc/*.* "@OMBUILDDIR@"/share/omc/runtime ${INSTALL_SHAREDIR}/omc/
+	cp -a "@OMBUILDDIR@"/share/omc/*.* "@OMBUILDDIR@"/share/omc/runtime ${INSTALL_SHAREDIR}/omc/
 	test ! -d "@OMBUILDDIR@"/share/omnotebook/ || cp -rp "@OMBUILDDIR@"/share/omnotebook/* ${INSTALL_SHAREDIR}/omnotebook/
 	test ! -d "@OMBUILDDIR@"/share/omshell/ || cp -p "@OMBUILDDIR@"/share/omshell/*.xml ${INSTALL_SHAREDIR}/omshell/
 	test ! -d "@OMBUILDDIR@"/share/omshell/nls/ || cp -p "@OMBUILDDIR@"/share/omshell/nls/*.qm ${INSTALL_SHAREDIR}/omshell/nls/
