@@ -623,7 +623,7 @@ algorithm
   outEquations := listReverse(outEquations);
 end traverseExpsOfEquationList;
 
-protected function traverseExpsOfEquationList_WithStop "author: Frenkel TUD 2012-09
+public function traverseExpsOfEquationList_WithStop "author: Frenkel TUD 2012-09
   Traverses all expressions of a list of equations.
   It is possible to change the equations."
   replaceable type Type_a subtypeof Any;
@@ -780,7 +780,7 @@ end traverseExpsOfEquation;
 
 public function traverseExpsOfEquation_WithStop<T> "author: Frenkel TUD 2010-11
   Traverses all expressions of a equation.
-  It is possible to change the equation."
+  It is not possible to change the equation."
   input BackendDAE.Equation inEquation;
   input FuncExpType func;
   input T inTypeA;
@@ -851,8 +851,9 @@ algorithm
 
     case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS()), _, _)
       equation
-        print("not implemented error - BackendDAE.ALGORITHM - BackendEquation.traverseExpsOfEquation_WithStop\n");
-       // (stmts1, ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts, func, inTypeA);
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("not implemented error - BackendDAE.ALGORITHM - BackendEquation.traverseExpsOfEquation_WithStop\n");
+        //(_, ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(statementLst, func, inTypeA);
       then fail();
 
     //(true, inTypeA);

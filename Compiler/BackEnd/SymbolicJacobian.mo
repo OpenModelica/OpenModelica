@@ -2281,9 +2281,9 @@ algorithm
       String name;
       Boolean mixedSystem;
 
-      case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl), NONE(), linear=b, mixedSystem=mixedSystem), _, _, _)
+      // linear
+      case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl), NONE(), linear=true, mixedSystem=mixedSystem), _, _, _)
         equation
-          true = (Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN) and not b) or b;
           // get iteration vars
           iterationvars = List.map1r(iterationvarsInts, BackendVariable.getVarAt, inVars);
           iterationvars = List.map(iterationvars, BackendVariable.transformXToXd);
@@ -2304,6 +2304,8 @@ algorithm
           otherEqnsInts = List.map(otherEqnVarTpl, Util.tuple21);
           otherEqnsLst = BackendEquation.getEqns(otherEqnsInts, inEqns);
           otherEqnsLst = BackendEquation.replaceDerOpInEquationList(otherEqnsLst);
+          //check if we are able to calc symbolic jacobian
+          //(true, _) = BackendEquation.traverseExpsOfEquationList_WithStop(otherEqnsLst, traverserhasEqnNonDiffParts, ({}, true));
           oeqns = BackendEquation.listEquation(otherEqnsLst);
 
           // get other vars
@@ -2319,8 +2321,55 @@ algorithm
           // generate generic jacobian backend dae
           (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
 
-      then (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationvarsInts, residualequations, otherEqnVarTpl, jacobian), NONE(), b, mixedSystem), shared);
+      then (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationvarsInts, residualequations, otherEqnVarTpl, jacobian), NONE(), true, mixedSystem), shared);
 
+      case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl), NONE(), linear=false, mixedSystem=mixedSystem), _, _, _)
+        equation
+          true = Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN);
+          // get iteration vars
+          iterationvars = List.map1r(iterationvarsInts, BackendVariable.getVarAt, inVars);
+          iterationvars = List.map(iterationvars, BackendVariable.transformXToXd);
+          diffVars = BackendVariable.listVar1(iterationvars);
+
+          // get residual eqns
+          reqns = BackendEquation.getEqns(residualequations, inEqns);
+
+          //check if we are able to calc symbolic jacobian
+          (true, _) = BackendEquation.traverseExpsOfEquationList_WithStop(reqns, traverserhasEqnNonDiffParts, ({}, true, false));
+
+          reqns = BackendEquation.replaceDerOpInEquationList(reqns);
+          eqns = BackendEquation.listEquation(reqns);
+          // create  residual equations
+          reqns = BackendEquation.traverseEquationArray(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
+          reqns = listReverse(reqns);
+          (reqns, resVarsLst) = convertResidualsIntoSolvedEquations(reqns);
+          resVars = BackendVariable.listVar1(resVarsLst);
+          eqns = BackendEquation.listEquation(reqns);
+
+          // get other eqns
+          otherEqnsInts = List.map(otherEqnVarTpl, Util.tuple21);
+          otherEqnsLst = BackendEquation.getEqns(otherEqnsInts, inEqns);
+          otherEqnsLst = BackendEquation.replaceDerOpInEquationList(otherEqnsLst);
+          //check if we are able to calc symbolic jacobian
+          (true, _) = BackendEquation.traverseExpsOfEquationList_WithStop(otherEqnsLst, traverserhasEqnNonDiffParts, ({}, true, false));
+          oeqns = BackendEquation.listEquation(otherEqnsLst);
+
+          // get other vars
+          otherVarsIntsLst = List.map(otherEqnVarTpl, Util.tuple22);
+          otherVarsInts = List.flatten(otherVarsIntsLst);
+          ovarsLst = List.map1r(otherVarsInts, BackendVariable.getVarAt, inVars);
+          ovarsLst = List.map(ovarsLst, BackendVariable.transformXToXd);
+          ovars = BackendVariable.listVar1(ovarsLst);
+
+          //generate jacobian name
+          name = "NLSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
+
+          // generate generic jacobian backend dae
+          (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
+
+      then (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationvarsInts, residualequations, otherEqnVarTpl, jacobian), NONE(), false, mixedSystem), shared);
+
+      // dynamic tearing
       case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl), SOME(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts2, residualequations=residualequations2, otherEqnVarTpl=otherEqnVarTpl2)), linear=b, mixedSystem=mixedSystem), _, _, _)
         equation
           true = (Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN) and not b) or b;
@@ -2416,6 +2465,9 @@ algorithm
           // get residual eqns
           reqns = BackendEquation.getEqns(residualequations, inEqns);
           reqns = BackendEquation.replaceDerOpInEquationList(reqns);
+          //check if we are able to calc symbolic jacobian
+          (true, _) = BackendEquation.traverseExpsOfEquationList_WithStop(reqns, traverserhasEqnNonDiffParts, ({}, true, false));
+
           eqns = BackendEquation.listEquation(reqns);
           // create  residual equations
           reqns = BackendEquation.traverseEquationArray(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
@@ -2439,6 +2491,73 @@ algorithm
       case (comp, _, _, _) then (comp, inShared);
   end matchcontinue;
 end calculateJacobianComponent;
+
+protected function traverserhasEqnNonDiffParts
+"function breaks differentiation for
+ currently not working parts of functions"
+  input DAE.Exp inExp;
+  input tuple<list<DAE.Exp>, Boolean, Boolean> inTpl;
+  output DAE.Exp outExp;
+  output Boolean cont;
+  output tuple<list<DAE.Exp>, Boolean, Boolean> outTpl = inTpl;
+protected
+ list<DAE.Exp> expList;
+algorithm
+  (outExp, (expList, cont, _)) := Expression.traverseExpTopDown(inExp, hasEqnNonDiffParts, inTpl);
+  if Flags.isSet(Flags.DUMP_EXCLUDED_EXP) and not cont then
+    print("Traverser for catching functions, that should not differentiated\n");
+    print(stringDelimitList(List.map(expList, ExpressionDump.printExpStr), "\n"));
+    print("\n\n");
+  end if;
+end traverserhasEqnNonDiffParts;
+
+protected function hasEqnNonDiffParts
+"function breaks differentiation for
+ currently not working parts of functions"
+  input DAE.Exp inExp;
+  input tuple<list<DAE.Exp>, Boolean, Boolean> inTpl;
+  output DAE.Exp outExp;
+  output Boolean cont;
+  output tuple<list<DAE.Exp>, Boolean, Boolean> outTpl;
+algorithm
+  (outExp, cont, outTpl) := matchcontinue(inExp, inTpl)
+  local
+    list<DAE.Exp> expLst, expLst1;
+    Boolean b, insideCall;
+    DAE.Type ty;
+    case (DAE.CALL(path=Absyn.IDENT("delay")), (expLst, _, insideCall)) then (inExp, false, (inExp::expLst, false, insideCall));
+    case (DAE.CALL(path=Absyn.IDENT("homotopy")), (expLst, _, insideCall)) then (inExp, false, (inExp::expLst, false, insideCall));
+    case (_, (expLst, _, true)) guard(Expression.isRecord(inExp)) then (inExp, false, (inExp::expLst, false, true));
+    case (_, (expLst, _, true)) guard(Expression.isMatrix(inExp)) then (inExp, false, (inExp::expLst, false, true));
+    case (DAE.CALL(attr=DAE.CALL_ATTR(ty = ty, builtin=false)), (expLst, b, insideCall))
+      equation
+        true = isRecordInvoled(ty);
+    then (inExp, false, (inExp::expLst, false, insideCall));
+    case (DAE.CALL(expLst=expLst1,attr=DAE.CALL_ATTR(builtin=false)), (expLst, b, insideCall))
+      equation
+        (_, (_, false, _)) = Expression.traverseExpListTopDown(expLst1, hasEqnNonDiffParts, (expLst, b, true));
+    then (inExp, false, (inExp::expLst, false, insideCall));
+    case (outExp, (_, b, _)) then (outExp, b, inTpl);
+  end matchcontinue;
+end hasEqnNonDiffParts;
+
+
+protected function isRecordInvoled
+  input DAE.Type inType;
+  output Boolean out;
+algorithm
+  out := match(inType)
+  local
+    DAE.Type ty;
+    list<DAE.Type> types;
+    list<Boolean> blst;
+    case DAE.T_COMPLEX() then true;
+    case DAE.T_ARRAY(ty=ty) then isRecordInvoled(ty);
+    case DAE.T_TUPLE(types)
+    then Util.boolOrList(List.map(types, isRecordInvoled));
+    else false;
+  end match;
+end isRecordInvoled;
 
 protected function getSymbolicJacobian "author: wbraun
   This function creates a symbolic Jacobian column for non-linear systems and
