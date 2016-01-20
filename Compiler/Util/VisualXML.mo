@@ -130,8 +130,11 @@ protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqs;
 algorithm
+  try
   BackendDAE.EQSYSTEM(orderedEqs=eqs, orderedVars=vars, matching=BackendDAE.MATCHING(ass1=ass1)) := eqSysIn;
   BackendVariable.traverseBackendDAEVarsWithUpdate(vars, setBindingForProtectedVars1, (1, ass1, eqs));
+  else
+  end try;
   eqSysOut := eqSysIn;
 end setBindingForProtectedVars;
 
