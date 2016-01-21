@@ -101,6 +101,7 @@ public uniontype SimVar "Information about a variable in a Modelica model."
     Boolean isValueChangeable;
     Boolean isProtected;
     Boolean hideResult;
+    Option<array<Integer>> inputIndex;
   end SIMVAR;
 end SimVar;
 

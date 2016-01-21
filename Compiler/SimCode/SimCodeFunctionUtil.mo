@@ -242,7 +242,7 @@ algorithm
         "Template did not find the simulation variable for "+ ComponentReference.printComponentRefStr(cref) + ". ";
         Error.addInternalError(errstr, sourceInfo());*/
       then
-         SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.INTERNAL(), NONE(), {}, false, true, false);
+         SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.INTERNAL(), NONE(), {}, false, true, false, NONE());
   end matchcontinue;
 end cref2simvar;
 

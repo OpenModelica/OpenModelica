@@ -308,14 +308,14 @@ package SimCode
     end SIMCODE;
   end SimCode;
 
-	uniontype PartitionData
-	  record PARTITIONDATA
-	    Integer numPartitions;
-	    list<list<Integer>> partitions; // which equations are assigned to the partitions
-	    list<list<Integer>> activatorsForPartitions; // which activators can activate each partition
-	    list<Integer> stateToActivators; // which states belong to which activator
-	  end PARTITIONDATA;
-	end PartitionData;
+  uniontype PartitionData
+    record PARTITIONDATA
+      Integer numPartitions;
+      list<list<Integer>> partitions; // which equations are assigned to the partitions
+      list<list<Integer>> activatorsForPartitions; // which activators can activate each partition
+      list<Integer> stateToActivators; // which states belong to which activator
+    end PARTITIONDATA;
+  end PartitionData;
 
   uniontype ClockedPartition
     record CLOCKED_PARTITION
@@ -872,12 +872,16 @@ package SimCodeUtil
     output list<SimCode.SimEqSystem> deps;
   end computeDependencies;
 
-	function getSimEqSystemsByIndexLst
-	  input list<Integer> idcs;
-	  input list<SimCode.SimEqSystem> allSes;
-	  output list<SimCode.SimEqSystem> sesOut;
-	end getSimEqSystemsByIndexLst;
+  function getSimEqSystemsByIndexLst
+    input list<Integer> idcs;
+    input list<SimCode.SimEqSystem> allSes;
+    output list<SimCode.SimEqSystem> sesOut;
+  end getSimEqSystemsByIndexLst;
 
+  function getInputIndex
+    input SimCodeVar.SimVar var;
+    output Integer inputIndex;
+  end getInputIndex;
 end SimCodeUtil;
 
 package SimCodeFunctionUtil

@@ -342,8 +342,13 @@ static void XMLCALL endElement(void *userData, const char *name)
 
 static void read_var_info(omc_ScalarVariable *v, VAR_INFO *info)
 {
+  modelica_integer inputIndex;
   read_value_string(findHashStringString(v,"name"), &info->name);
   debugStreamPrint(LOG_DEBUG, 1, "read var %s from setup file", info->name);
+
+  read_value_long(findHashStringStringNull(v,"inputIndex"), &inputIndex, -1);
+  info->inputIndex = inputIndex;
+  debugStreamPrint(LOG_DEBUG, 0, "read input index %d from setup file", info->inputIndex);
 
   read_value_int(findHashStringString(v,"valueReference"), &info->id);
   debugStreamPrint(LOG_DEBUG, 0, "read for %s id %d from setup file", info->name, info->id);
@@ -423,6 +428,7 @@ void read_input_xml(MODEL_DATA* modelData,
   hash_string_long *mapAlias = NULL, *mapAliasParam = NULL;
   long *it, *itParam;
   mmc_sint_t i;
+  int inputIndex = 0;
 
   modelica_integer nxchk, nychk, npchk;
   modelica_integer nyintchk, npintchk;
@@ -837,9 +843,9 @@ static inline void read_value_bool(const char *s, modelica_boolean* res)
 /* reads integer value from a string */
 static inline void read_value_long(const char *s, modelica_integer* res, modelica_integer default_value)
 {
-  if (*s == '\0') {
+  if (s == NULL || *s == '\0') {
     *res = default_value;
-  } if (0 == strcmp(s, "true")) {
+  } else if (0 == strcmp(s, "true")) {
     *res = 1;
   } else if (0 == strcmp(s, "false")) {
     *res = 0;

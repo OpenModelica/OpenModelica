@@ -75,8 +75,8 @@ static void generateData_1(DATA *data, threadData_t *threadData, double* &data_1
 static int calcDataSize(simulation_result *self,DATA *data);
 static const VAR_INFO** calcDataNames(simulation_result *self,DATA *data,int dataSize);
 
-static const struct VAR_INFO timeValName = {0,"time","Simulation time [s]",{"",-1,-1,-1,-1}};
-static const struct VAR_INFO cpuTimeValName = {0,"$cpuTime","cpu time [s]",{"",-1,-1,-1,-1}};
+static const struct VAR_INFO timeValName = {0,-1,"time","Simulation time [s]",{"",-1,-1,-1,-1}};
+static const struct VAR_INFO cpuTimeValName = {0,-1,"$cpuTime","cpu time [s]",{"",-1,-1,-1,-1}};
 
 static int calcDataSize(simulation_result *self,DATA *data)
 {

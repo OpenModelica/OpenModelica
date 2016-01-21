@@ -5506,18 +5506,26 @@ template ScalarVariableAttribute(SimVar simVar, Integer classIndex, String class
       let description = if comment then 'description = "<%Util.escapeModelicaStringToXmlString(comment)%>"'
       let alias = getAliasVar(aliasvar)
       let caus = getCausality(causality)
+      let inputIndex = getInputIndexXml(simVar)
       <<
       name = "<%Util.escapeModelicaStringToXmlString(crefStrNoUnderscore(name))%>"
       valueReference = "<%valueReference%>"
       <%description%>
       variability = "<%variability%>" isDiscrete = "<%isDiscrete%>"
-      causality = "<%caus%>" isValueChangeable = "<%isValueChangeable%>"
+      causality = "<%caus%>"<%inputIndex%> isValueChangeable = "<%isValueChangeable%>"
       alias = <%alias%>
       classIndex = "<%classIndex%>" classType = "<%classType%>"
       isProtected = "<%isProtected%>" hideResult = "<%hideResult%>"
       <%getInfoArgs(info)%>
       >>
 end ScalarVariableAttribute;
+
+template getInputIndexXml(SimVar simVar)
+::=
+  match SimCodeUtil.getInputIndex(simVar)
+    case -1 then ""
+    case ix then ' inputIndex="<%ix%>"'
+end getInputIndexXml;
 
 template getInfoArgs(builtin.SourceInfo info)
 ::=
