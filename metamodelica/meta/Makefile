@@ -70,6 +70,7 @@ MatchCaseInteractive3.mos \
 MatchDotNotation.mos \
 MatchElse1.mos \
 MatchIfEquation1.mos \
+MatchNoRetCall.mos \
 MatchShadowing.mo \
 OptimizeContinue.mo \
 OptimizeMatchToIfExp.mo \
