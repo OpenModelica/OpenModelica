@@ -6518,7 +6518,7 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
     /* Check guard condition after assignments */
     if (!<%daeExp(exp,context,&preGuardCheck,&varDeclsCaseInner, &auxFunction)%>) <%onPatternFail%>;<%\n%>
     >>)
-  let caseRes = (match c.result
+  let caseRes = match res case "" then "" else (match c.result
     case SOME(TUPLE(PR=exps)) then
       (exps |> e hasindex i1 fromindex 1 =>
       '<%getTempDeclMatchOutputName(exps, res, startIndexOutputs, i1)%> = <%daeExp(e,context,&preRes,&varDeclsCaseInner, &auxFunction)%>;<%\n%>')
