@@ -2538,12 +2538,14 @@ algorithm
     DAE.Type ty;
     case (DAE.CALL(path=Absyn.IDENT("delay")), (expLst, _, insideCall)) then (inExp, false, (inExp::expLst, false, insideCall));
     case (DAE.CALL(path=Absyn.IDENT("homotopy")), (expLst, _, insideCall)) then (inExp, false, (inExp::expLst, false, insideCall));
-    case (_, (expLst, _, true)) guard(Expression.isRecord(inExp)) then (inExp, false, (inExp::expLst, false, true));
+    //case (_, (expLst, _, true)) guard(Expression.isRecord(inExp)) then (inExp, false, (inExp::expLst, false, true));
     case (_, (expLst, _, true)) guard(Expression.isMatrix(inExp)) then (inExp, false, (inExp::expLst, false, true));
+    /*
     case (DAE.CALL(attr=DAE.CALL_ATTR(ty = ty, builtin=false)), (expLst, b, insideCall))
       equation
         true = isRecordInvoled(ty);
     then (inExp, false, (inExp::expLst, false, insideCall));
+    */
     case (DAE.CALL(expLst=expLst1,attr=DAE.CALL_ATTR(builtin=false)), (expLst, b, insideCall))
       equation
         (_, (_, false, _)) = Expression.traverseExpListTopDown(expLst1, hasEqnNonDiffParts, (expLst, b, true));
