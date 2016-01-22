@@ -1730,14 +1730,11 @@ algorithm
         seedlst = List.map1(comref_vars, createSeedVars, inName);
         s1 =  intString(listLength(inVars));
 
-        //SimCodeFunctionUtil.execStat("analytical Jacobians -> starting to generate the jacobian. DiffVars:" + s + " diffed equations: " +  s1);
-
         // Differentiate the ODE system w.r.t states for jacobian
         (backendDAE as BackendDAE.DAE(shared=shared), funcs) = generateSymbolicJacobian(reduceDAE, inDiffVars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName);
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated equations for Jacobian " + inName + " time: " + realString(clock()) + "\n");
         end if;
-        //SimCodeFunctionUtil.execStat("analytical Jacobians -> generated jacobian equations");
 
         knvars1 = BackendVariable.daeKnVars(shared);
         knvarsTmp = BackendVariable.varList(knvars1);
@@ -1765,7 +1762,6 @@ algorithm
 
         // generate sparse pattern
         (sparsepattern,colsColors) = generateSparsePattern(reduceDAE, inDiffVars, diffedVars);
-        //SimCodeFunctionUtil.execStat("analytical Jacobians -> generated generateSparsePattern");
      then
         ((backendDAE, inName, inDiffVars, diffedVars, inVars), sparsepattern, colsColors, funcs);
     else
@@ -1818,6 +1814,7 @@ algorithm
                                                                    {"removeEqualFunctionCalls",
                                                                     "removeSimpleEquations",
                                                                     "evalFunc",
+                                                                    //"wrapFunctionCalls",
                                                                     "simplifyAllExpressions"},
                                                                    NONE(),
                                                                    NONE(),
@@ -1916,11 +1913,11 @@ algorithm
       diffData = BackendDAE.DIFFINPUTDATA(SOME(diffVarsArr), SOME(diffedVars), SOME(knownVars), SOME(orderedVars), {}, comref_diffvars, SOME(matrixName));
       eqns = BackendEquation.equationList(orderedEqs);
       if Flags.isSet(Flags.JAC_DUMP2) then
-        print("*** analytical Jacobians -> before derive all equation." + realString(clock()) + "\n");
+        print("*** analytical Jacobians -> before derive all equation: " + realString(clock()) + "\n");
       end if;
       (derivedEquations, functions) = deriveAll(eqns, arrayList(ass2), x, diffData, {}, functions);
       if Flags.isSet(Flags.JAC_DUMP2) then
-        print("*** analytical Jacobians -> after derive all equation." + realString(clock()) + "\n");
+        print("*** analytical Jacobians -> after derive all equation: " + realString(clock()) + "\n");
       end if;
       // replace all der(x), since ExpressionSolve can't handle der(x) proper
       derivedEquations = BackendEquation.replaceDerOpInEquationList(derivedEquations);
@@ -2251,6 +2248,78 @@ algorithm
   end matchcontinue;
 end convertResidualsIntoSolvedEquations2;
 
+protected function prepareTornStrongComponentData
+  input BackendDAE.Variables inVars;
+  input BackendDAE.EquationArray inEqns;
+  input list<Integer> inIterationvarsInts;
+  input list<Integer> inResidualequations;
+  input list<tuple<Integer,list<Integer>>> inOtherEqnVarTpl;
+  output BackendDAE.Variables outDiffVars;
+  output BackendDAE.Variables outResidualVars;
+  output BackendDAE.Variables outOtherVars;
+  output BackendDAE.EquationArray outResidualEqns;
+  output BackendDAE.EquationArray outOtherEqns;
+protected
+  list<BackendDAE.Var> iterationvars, resVarsLst, ovarsLst;
+  list<BackendDAE.Equation> reqns, otherEqnsLst;
+  list<list<Integer>> otherVarsIntsLst;
+  list<Integer> otherEqnsInts, otherVarsInts;
+algorithm
+try
+	// get iteration vars
+	iterationvars := List.map1r(inIterationvarsInts, BackendVariable.getVarAt, inVars);
+	iterationvars := List.map(iterationvars, BackendVariable.transformXToXd);
+	outDiffVars := BackendVariable.listVar1(iterationvars);
+
+	// debug
+	if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
+	  print("*** got iteration variables at time: " + realString(clock()) + "\n");
+	  BackendDump.printVarList(iterationvars);
+	end if;
+
+	// get residual eqns
+	reqns := BackendEquation.getEqns(inResidualequations, inEqns);
+	reqns := BackendEquation.replaceDerOpInEquationList(reqns);
+	outResidualEqns := BackendEquation.listEquation(reqns);
+	// create  residual equations
+	reqns := BackendEquation.traverseEquationArray(outResidualEqns, BackendEquation.traverseEquationToScalarResidualForm, {});
+	reqns := listReverse(reqns);
+	(reqns, resVarsLst) := convertResidualsIntoSolvedEquations(reqns);
+	outResidualVars := BackendVariable.listVar1(resVarsLst);
+	outResidualEqns := BackendEquation.listEquation(reqns);
+
+	// debug
+	if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
+	  print("*** got residual equation and created corresponding variables at time: " + realString(clock()) + "\n");
+	  print("Equations:\n");
+	  BackendDump.printEquationList(reqns);
+	end if;
+
+	// get other eqns
+	otherEqnsInts := List.map(inOtherEqnVarTpl, Util.tuple21);
+	otherEqnsLst := BackendEquation.getEqns(otherEqnsInts, inEqns);
+	otherEqnsLst := BackendEquation.replaceDerOpInEquationList(otherEqnsLst);
+	outOtherEqns := BackendEquation.listEquation(otherEqnsLst);
+
+	// get other vars
+	otherVarsIntsLst := List.map(inOtherEqnVarTpl, Util.tuple22);
+	otherVarsInts := List.flatten(otherVarsIntsLst);
+	ovarsLst := List.map1r(otherVarsInts, BackendVariable.getVarAt, inVars);
+	ovarsLst := List.map(ovarsLst, BackendVariable.transformXToXd);
+	outOtherVars := BackendVariable.listVar1(ovarsLst);
+  // debug
+	if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
+	  print("*** got residual equation and created corresponding variables at time: " + realString(clock()) + "\n");
+	  print("other Equations:\n");
+	  BackendDump.printEquationList(otherEqnsLst);
+	  print("other Variables:\n");
+	  BackendDump.printVarList(ovarsLst);
+	end if;
+else
+  fail();
+end try;
+end prepareTornStrongComponentData;
+
 protected function calculateJacobianComponent
   input BackendDAE.StrongComponent inComp;
   input BackendDAE.Variables inVars;
@@ -2279,44 +2348,23 @@ algorithm
       BackendDAE.Jacobian jacobian,jacobian2;
 
       String name;
-      Boolean mixedSystem;
+      Boolean mixedSystem, b1, b2;
 
       // linear
       case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl), NONE(), linear=true, mixedSystem=mixedSystem), _, _, _)
         equation
-          // get iteration vars
-          iterationvars = List.map1r(iterationvarsInts, BackendVariable.getVarAt, inVars);
-          iterationvars = List.map(iterationvars, BackendVariable.transformXToXd);
-          diffVars = BackendVariable.listVar1(iterationvars);
+          // generate jacobian name
+          name = "LSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
 
-          // get residual eqns
-          reqns = BackendEquation.getEqns(residualequations, inEqns);
-          reqns = BackendEquation.replaceDerOpInEquationList(reqns);
-          eqns = BackendEquation.listEquation(reqns);
-          // create  residual equations
-          reqns = BackendEquation.traverseEquationArray(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
-          reqns = listReverse(reqns);
-          (reqns, resVarsLst) = convertResidualsIntoSolvedEquations(reqns);
-          resVars = BackendVariable.listVar1(resVarsLst);
-          eqns = BackendEquation.listEquation(reqns);
+          if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
+            print("*** LS-JAC *** start creating Jacobian for a torn linear system " + name + " of size " + intString(listLength(iterationvarsInts)) + " time: " + realString(clock()) + "\n");
+          end if;
 
-          // get other eqns
-          otherEqnsInts = List.map(otherEqnVarTpl, Util.tuple21);
-          otherEqnsLst = BackendEquation.getEqns(otherEqnsInts, inEqns);
-          otherEqnsLst = BackendEquation.replaceDerOpInEquationList(otherEqnsLst);
-          //check if we are able to calc symbolic jacobian
-          //(true, _) = BackendEquation.traverseExpsOfEquationList_WithStop(otherEqnsLst, traverserhasEqnNonDiffParts, ({}, true));
-          oeqns = BackendEquation.listEquation(otherEqnsLst);
+          (diffVars, resVars, ovars, eqns, oeqns) = prepareTornStrongComponentData(inVars, inEqns, iterationvarsInts, residualequations, otherEqnVarTpl);
 
-          // get other vars
-          otherVarsIntsLst = List.map(otherEqnVarTpl, Util.tuple22);
-          otherVarsInts = List.flatten(otherVarsIntsLst);
-          ovarsLst = List.map1r(otherVarsInts, BackendVariable.getVarAt, inVars);
-          ovarsLst = List.map(ovarsLst, BackendVariable.transformXToXd);
-          ovars = BackendVariable.listVar1(ovarsLst);
-
-          //generate jacobian name
-          name = "NLSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
+          if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
+            print("*** LS-JAC *** prepare all data for differentiation at time: " + realString(clock()) + "\n");
+          end if;
 
           // generate generic jacobian backend dae
           (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
@@ -2326,43 +2374,27 @@ algorithm
       case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl), NONE(), linear=false, mixedSystem=mixedSystem), _, _, _)
         equation
           true = Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN);
-          // get iteration vars
-          iterationvars = List.map1r(iterationvarsInts, BackendVariable.getVarAt, inVars);
-          iterationvars = List.map(iterationvars, BackendVariable.transformXToXd);
-          diffVars = BackendVariable.listVar1(iterationvars);
 
-          // get residual eqns
-          reqns = BackendEquation.getEqns(residualequations, inEqns);
-
-          //check if we are able to calc symbolic jacobian
-          (true, _) = BackendEquation.traverseExpsOfEquationList_WithStop(reqns, traverserhasEqnNonDiffParts, ({}, true, false));
-
-          reqns = BackendEquation.replaceDerOpInEquationList(reqns);
-          eqns = BackendEquation.listEquation(reqns);
-          // create  residual equations
-          reqns = BackendEquation.traverseEquationArray(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
-          reqns = listReverse(reqns);
-          (reqns, resVarsLst) = convertResidualsIntoSolvedEquations(reqns);
-          resVars = BackendVariable.listVar1(resVarsLst);
-          eqns = BackendEquation.listEquation(reqns);
-
-          // get other eqns
-          otherEqnsInts = List.map(otherEqnVarTpl, Util.tuple21);
-          otherEqnsLst = BackendEquation.getEqns(otherEqnsInts, inEqns);
-          otherEqnsLst = BackendEquation.replaceDerOpInEquationList(otherEqnsLst);
-          //check if we are able to calc symbolic jacobian
-          (true, _) = BackendEquation.traverseExpsOfEquationList_WithStop(otherEqnsLst, traverserhasEqnNonDiffParts, ({}, true, false));
-          oeqns = BackendEquation.listEquation(otherEqnsLst);
-
-          // get other vars
-          otherVarsIntsLst = List.map(otherEqnVarTpl, Util.tuple22);
-          otherVarsInts = List.flatten(otherVarsIntsLst);
-          ovarsLst = List.map1r(otherVarsInts, BackendVariable.getVarAt, inVars);
-          ovarsLst = List.map(ovarsLst, BackendVariable.transformXToXd);
-          ovars = BackendVariable.listVar1(ovarsLst);
-
-          //generate jacobian name
+          // generate jacobian name
           name = "NLSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
+
+          if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
+            print("*** NLS-JAC *** start creating Jacobian for a torn non-linear system " + name + " of size " + intString(listLength(iterationvarsInts)) + " time: " + realString(clock()) + "\n");
+          end if;
+
+          (diffVars, resVars, ovars, eqns, oeqns) = prepareTornStrongComponentData(inVars, inEqns, iterationvarsInts, residualequations, otherEqnVarTpl);
+
+          //check if we are able to calc symbolic jacobian
+          otherEqnsLst = BackendEquation.equationList(oeqns);
+          reqns = BackendEquation.equationList(eqns);
+          (b1, _) = BackendEquation.traverseExpsOfEquationList_WithStop(otherEqnsLst, traverserhasEqnNonDiffParts, ({}, true, false));
+          (b2, _) = BackendEquation.traverseExpsOfEquationList_WithStop(reqns, traverserhasEqnNonDiffParts, ({}, true, false));
+          if (b1 or b2) then
+            if Flags.isSet(Flags.FAILTRACE) then
+              Debug.traceln("Skip symbolic jacobian for non-linear system " + name + "\n");
+              fail();
+            end if;
+          end if;
 
           // generate generic jacobian backend dae
           (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
@@ -2375,74 +2407,53 @@ algorithm
           true = (Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN) and not b) or b;
 
           // Get Jacobian for strict tearing set
-          // get iteration vars
-          iterationvars = List.map1r(iterationvarsInts, BackendVariable.getVarAt, inVars);
-          iterationvars = List.map(iterationvars, BackendVariable.transformXToXd);
-          diffVars = BackendVariable.listVar1(iterationvars);
 
-          // get residual eqns
-          reqns = BackendEquation.getEqns(residualequations, inEqns);
-          reqns = BackendEquation.replaceDerOpInEquationList(reqns);
-          eqns = BackendEquation.listEquation(reqns);
-          // create  residual equations
-          reqns = BackendEquation.traverseEquationArray(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
-          reqns = listReverse(reqns);
-          (reqns, resVarsLst) = convertResidualsIntoSolvedEquations(reqns);
-          resVars = BackendVariable.listVar1(resVarsLst);
-          eqns = BackendEquation.listEquation(reqns);
-
-          // get other eqns
-          otherEqnsInts = List.map(otherEqnVarTpl, Util.tuple21);
-          otherEqnsLst = BackendEquation.getEqns(otherEqnsInts, inEqns);
-          otherEqnsLst = BackendEquation.replaceDerOpInEquationList(otherEqnsLst);
-          oeqns = BackendEquation.listEquation(otherEqnsLst);
-
-          // get other vars
-          otherVarsIntsLst = List.map(otherEqnVarTpl, Util.tuple22);
-          otherVarsInts = List.flatten(otherVarsIntsLst);
-          ovarsLst = List.map1r(otherVarsInts, BackendVariable.getVarAt, inVars);
-          ovarsLst = List.map(ovarsLst, BackendVariable.transformXToXd);
-          ovars = BackendVariable.listVar1(ovarsLst);
-
-          //generate jacobian name
+          // generate jacobian name
           name = "NLSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
+
+          if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
+            print("*** NLS-JAC *** start creating Jacobian for a torn non-linear system " + name + " of size " + intString(listLength(iterationvarsInts)) + " time: " + realString(clock()) + "\n");
+          end if;
+
+          (diffVars, resVars, ovars, eqns, oeqns) = prepareTornStrongComponentData(inVars, inEqns, iterationvarsInts, residualequations, otherEqnVarTpl);
+
+          //check if we are able to calc symbolic jacobian
+          otherEqnsLst = BackendEquation.equationList(oeqns);
+          reqns = BackendEquation.equationList(eqns);
+          (b1, _) = BackendEquation.traverseExpsOfEquationList_WithStop(otherEqnsLst, traverserhasEqnNonDiffParts, ({}, true, false));
+          (b2, _) = BackendEquation.traverseExpsOfEquationList_WithStop(reqns, traverserhasEqnNonDiffParts, ({}, true, false));
+          if (b1 or b2) then
+            if Flags.isSet(Flags.FAILTRACE) then
+              Debug.traceln("Skip symbolic jacobian for non-linear system " + name + "\n");
+              fail();
+            end if;
+          end if;
 
           // generate generic jacobian backend dae
           (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
 
 
           // Get Jacobian for casual tearing set
-          // get iteration vars
-          iterationvars = List.map1r(iterationvarsInts2, BackendVariable.getVarAt, inVars);
-          iterationvars = List.map(iterationvars, BackendVariable.transformXToXd);
-          diffVars = BackendVariable.listVar1(iterationvars);
-
-          // get residual eqns
-          reqns = BackendEquation.getEqns(residualequations2, inEqns);
-          reqns = BackendEquation.replaceDerOpInEquationList(reqns);
-          eqns = BackendEquation.listEquation(reqns);
-          // create  residual equations
-          reqns = BackendEquation.traverseEquationArray(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
-          reqns = listReverse(reqns);
-          (reqns, resVarsLst) = convertResidualsIntoSolvedEquations(reqns);
-          resVars = BackendVariable.listVar1(resVarsLst);
-          eqns = BackendEquation.listEquation(reqns);
-
-          // get other eqns
-          otherEqnsInts = List.map(otherEqnVarTpl2, Util.tuple21);
-          otherEqnsLst = BackendEquation.getEqns(otherEqnsInts, inEqns);
-          otherEqnsLst = BackendEquation.replaceDerOpInEquationList(otherEqnsLst);
-          oeqns = BackendEquation.listEquation(otherEqnsLst);
-
-          // get other vars
-          otherVarsIntsLst = List.map(otherEqnVarTpl2, Util.tuple22);
-          otherVarsInts = List.flatten(otherVarsIntsLst);
-          ovarsLst = List.map1r(otherVarsInts, BackendVariable.getVarAt, inVars);
-          ovarsLst = List.map(ovarsLst, BackendVariable.transformXToXd);
-          ovars = BackendVariable.listVar1(ovarsLst);
-
-          //generate jacobian name
+          // generate jacobian name
           name = "NLSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
+
+          if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
+            print("*** NLS-JAC *** start creating Jacobian for a torn non-linear system " + name + " of size " + intString(listLength(iterationvarsInts)) + " time: " + realString(clock()) + "\n");
+          end if;
+
+          (diffVars, resVars, ovars, eqns, oeqns) = prepareTornStrongComponentData(inVars, inEqns, iterationvarsInts, residualequations, otherEqnVarTpl);
+
+          //check if we are able to calc symbolic jacobian
+          otherEqnsLst = BackendEquation.equationList(oeqns);
+          reqns = BackendEquation.equationList(eqns);
+          (b1, _) = BackendEquation.traverseExpsOfEquationList_WithStop(otherEqnsLst, traverserhasEqnNonDiffParts, ({}, true, false));
+          (b2, _) = BackendEquation.traverseExpsOfEquationList_WithStop(reqns, traverserhasEqnNonDiffParts, ({}, true, false));
+          if (b1 or b2) then
+            if Flags.isSet(Flags.FAILTRACE) then
+              Debug.traceln("Skip symbolic jacobian for non-linear system " + name + "\n");
+              fail();
+            end if;
+          end if;
 
           // generate generic jacobian backend dae
           (jacobian2, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
@@ -2527,12 +2538,14 @@ algorithm
     DAE.Type ty;
     case (DAE.CALL(path=Absyn.IDENT("delay")), (expLst, _, insideCall)) then (inExp, false, (inExp::expLst, false, insideCall));
     case (DAE.CALL(path=Absyn.IDENT("homotopy")), (expLst, _, insideCall)) then (inExp, false, (inExp::expLst, false, insideCall));
-    case (_, (expLst, _, true)) guard(Expression.isRecord(inExp)) then (inExp, false, (inExp::expLst, false, true));
+    //case (_, (expLst, _, true)) guard(Expression.isRecord(inExp)) then (inExp, false, (inExp::expLst, false, true));
     case (_, (expLst, _, true)) guard(Expression.isMatrix(inExp)) then (inExp, false, (inExp::expLst, false, true));
+    /*
     case (DAE.CALL(attr=DAE.CALL_ATTR(ty = ty, builtin=false)), (expLst, b, insideCall))
       equation
         true = isRecordInvoled(ty);
     then (inExp, false, (inExp::expLst, false, insideCall));
+    */
     case (DAE.CALL(expLst=expLst1,attr=DAE.CALL_ATTR(builtin=false)), (expLst, b, insideCall))
       equation
         (_, (_, false, _)) = Expression.traverseExpListTopDown(expLst1, hasEqnNonDiffParts, (expLst, b, true));

@@ -334,7 +334,7 @@ constant DebugFlag PEDANTIC = DEBUG_FLAG(84, "pedantic", false,
   Util.gettext("Switch into pedantic debug-mode, to get much more feedback."));
 constant DebugFlag SHOW_EQUATION_SOURCE = DEBUG_FLAG(85, "showEquationSource", false,
   Util.gettext("Display the element source information in the dumped DAE for easier debugging."));
-constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(86, "NLSanalyticJacobian", true,
+constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(86, "NLSanalyticJacobian", false,
   Util.gettext("Generates analytical Jacobian for non-linear algebraic loops."));
 constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(87, "inlineSolver", false,
   Util.gettext("Generates code for inline solver."));
@@ -473,6 +473,8 @@ constant DebugFlag MULTIRATE_PARTITION = DEBUG_FLAG(152, "multirate", false,
   Util.gettext("The solver can switch partitions in the system."));
 constant DebugFlag DUMP_EXCLUDED_EXP = DEBUG_FLAG(153, "dumpExcludedSymJacExps", false,
   Util.gettext("This flags dumps all expression that are excluded from differentiation of a symbolic Jacobian."));
+constant DebugFlag DEBUG_ALGLOOP_JACOBIAN = DEBUG_FLAG(154, "debugAlgebraicLoopsJacobian", false,
+  Util.gettext("Dumps debug output while creating symbolic jacobians for non-linear systems."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -632,7 +634,8 @@ constant list<DebugFlag> allDebugFlags = {
   FMU_EXPERIMENTAL,
   DUMP_DGESV,
   MULTIRATE_PARTITION,
-  DUMP_EXCLUDED_EXP
+  DUMP_EXCLUDED_EXP,
+  DEBUG_ALGLOOP_JACOBIAN
 };
 
 public
