@@ -2389,11 +2389,11 @@ algorithm
           reqns = BackendEquation.equationList(eqns);
           (b1, _) = BackendEquation.traverseExpsOfEquationList_WithStop(otherEqnsLst, traverserhasEqnNonDiffParts, ({}, true, false));
           (b2, _) = BackendEquation.traverseExpsOfEquationList_WithStop(reqns, traverserhasEqnNonDiffParts, ({}, true, false));
-          if (b1 or b2) then
+          if not (b1 and b2) then
             if Flags.isSet(Flags.FAILTRACE) then
               Debug.traceln("Skip symbolic jacobian for non-linear system " + name + "\n");
-              fail();
             end if;
+            fail();
           end if;
 
           // generate generic jacobian backend dae
@@ -2422,11 +2422,11 @@ algorithm
           reqns = BackendEquation.equationList(eqns);
           (b1, _) = BackendEquation.traverseExpsOfEquationList_WithStop(otherEqnsLst, traverserhasEqnNonDiffParts, ({}, true, false));
           (b2, _) = BackendEquation.traverseExpsOfEquationList_WithStop(reqns, traverserhasEqnNonDiffParts, ({}, true, false));
-          if (b1 or b2) then
+          if not (b1 and b2) then
             if Flags.isSet(Flags.FAILTRACE) then
               Debug.traceln("Skip symbolic jacobian for non-linear system " + name + "\n");
-              fail();
             end if;
+            fail();
           end if;
 
           // generate generic jacobian backend dae
@@ -2448,11 +2448,11 @@ algorithm
           reqns = BackendEquation.equationList(eqns);
           (b1, _) = BackendEquation.traverseExpsOfEquationList_WithStop(otherEqnsLst, traverserhasEqnNonDiffParts, ({}, true, false));
           (b2, _) = BackendEquation.traverseExpsOfEquationList_WithStop(reqns, traverserhasEqnNonDiffParts, ({}, true, false));
-          if (b1 or b2) then
+          if not (b1 and b2) then
             if Flags.isSet(Flags.FAILTRACE) then
               Debug.traceln("Skip symbolic jacobian for non-linear system " + name + "\n");
-              fail();
             end if;
+            fail();
           end if;
 
           // generate generic jacobian backend dae
@@ -2538,14 +2538,12 @@ algorithm
     DAE.Type ty;
     case (DAE.CALL(path=Absyn.IDENT("delay")), (expLst, _, insideCall)) then (inExp, false, (inExp::expLst, false, insideCall));
     case (DAE.CALL(path=Absyn.IDENT("homotopy")), (expLst, _, insideCall)) then (inExp, false, (inExp::expLst, false, insideCall));
-    //case (_, (expLst, _, true)) guard(Expression.isRecord(inExp)) then (inExp, false, (inExp::expLst, false, true));
+    case (_, (expLst, _, true)) guard(Expression.isRecord(inExp)) then (inExp, false, (inExp::expLst, false, true));
     case (_, (expLst, _, true)) guard(Expression.isMatrix(inExp)) then (inExp, false, (inExp::expLst, false, true));
-    /*
     case (DAE.CALL(attr=DAE.CALL_ATTR(ty = ty, builtin=false)), (expLst, b, insideCall))
       equation
         true = isRecordInvoled(ty);
     then (inExp, false, (inExp::expLst, false, insideCall));
-    */
     case (DAE.CALL(expLst=expLst1,attr=DAE.CALL_ATTR(builtin=false)), (expLst, b, insideCall))
       equation
         (_, (_, false, _)) = Expression.traverseExpListTopDown(expLst1, hasEqnNonDiffParts, (expLst, b, true));
