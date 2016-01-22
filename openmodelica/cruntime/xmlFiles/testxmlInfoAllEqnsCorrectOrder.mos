@@ -530,61 +530,61 @@ readFile("testModel_info.xml");getErrorString();
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </variable>
-//   <variable name=\"der(yd.$pDERNLSJac0.dummyVarNLSJac0)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//   <variable name=\"der(yd.$pDERLSJac0.dummyVarLSJac0)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </variable>
-//   <variable name=\"$PRE.der(yd.$pDERNLSJac0.dummyVarNLSJac0)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//   <variable name=\"$PRE.der(yd.$pDERLSJac0.dummyVarLSJac0)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </variable>
-//   <variable name=\"der(xd.$pDERNLSJac0.dummyVarNLSJac0)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//   <variable name=\"der(xd.$pDERLSJac0.dummyVarLSJac0)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </variable>
-//   <variable name=\"$PRE.der(xd.$pDERNLSJac0.dummyVarNLSJac0)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//   <variable name=\"$PRE.der(xd.$pDERLSJac0.dummyVarLSJac0)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </variable>
-//   <variable name=\"$res1.$pDERNLSJac0.dummyVarNLSJac0\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//   <variable name=\"$res1.$pDERLSJac0.dummyVarLSJac0\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </variable>
-//   <variable name=\"$PRE.$res1.$pDERNLSJac0.dummyVarNLSJac0\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//   <variable name=\"$PRE.$res1.$pDERLSJac0.dummyVarLSJac0\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </variable>
-//   <variable name=\"u.$pDERNLSJac1.dummyVarNLSJac1\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//   <variable name=\"u.$pDERLSJac1.dummyVarLSJac1\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </variable>
-//   <variable name=\"$PRE.u.$pDERNLSJac1.dummyVarNLSJac1\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//   <variable name=\"$PRE.u.$pDERLSJac1.dummyVarLSJac1\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </variable>
-//   <variable name=\"$res1.$pDERNLSJac1.dummyVarNLSJac1\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//   <variable name=\"$res1.$pDERLSJac1.dummyVarLSJac1\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </variable>
-//   <variable name=\"$PRE.$res1.$pDERNLSJac1.dummyVarNLSJac1\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//   <variable name=\"$PRE.$res1.$pDERLSJac1.dummyVarLSJac1\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
@@ -941,11 +941,11 @@ readFile("testModel_info.xml");getErrorString();
 //   </equation>
 //   <equation index=\"30\" parent=\"33\">
 //     <assign>
-//       <defines name=\"der(xd.$pDERNLSJac0.dummyVarNLSJac0)\" />
+//       <defines name=\"der(xd.$pDERLSJac0.dummyVarLSJac0)\" />
 //       <depends name=\"L\" />
-//       <depends name=\"FoSeedNLSJac0\" />
+//       <depends name=\"FoSeedLSJac0\" />
 //       <depends name=\"x\" />
-//       <rhs>2.0 * (-x) * DIVISION(FoSeedNLSJac0, L)</rhs>
+//       <rhs>2.0 * (-x) * DIVISION(FoSeedLSJac0, L)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"21\" lineEnd=\"21\" colStart=\"3\" colEnd=\"24\"/>
@@ -954,11 +954,11 @@ readFile("testModel_info.xml");getErrorString();
 //   </equation>
 //   <equation index=\"31\" parent=\"33\">
 //     <assign>
-//       <defines name=\"der(yd.$pDERNLSJac0.dummyVarNLSJac0)\" />
+//       <defines name=\"der(yd.$pDERLSJac0.dummyVarLSJac0)\" />
 //       <depends name=\"L\" />
 //       <depends name=\"y\" />
-//       <depends name=\"FoSeedNLSJac0\" />
-//       <rhs>2.0 * (-FoSeedNLSJac0) * DIVISION(y, L)</rhs>
+//       <depends name=\"FoSeedLSJac0\" />
+//       <rhs>2.0 * (-FoSeedLSJac0) * DIVISION(y, L)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"22\" lineEnd=\"22\" colStart=\"3\" colEnd=\"33\"/>
@@ -967,12 +967,12 @@ readFile("testModel_info.xml");getErrorString();
 //   </equation>
 //   <equation index=\"32\" parent=\"33\">
 //     <assign>
-//       <defines name=\"$res1.$pDERNLSJac0.dummyVarNLSJac0\" />
-//       <depends name=\"der(yd.$pDERNLSJac0.dummyVarNLSJac0)\" />
+//       <defines name=\"$res1.$pDERLSJac0.dummyVarLSJac0\" />
+//       <depends name=\"der(yd.$pDERLSJac0.dummyVarLSJac0)\" />
 //       <depends name=\"y\" />
-//       <depends name=\"der(xd.$pDERNLSJac0.dummyVarNLSJac0)\" />
+//       <depends name=\"der(xd.$pDERLSJac0.dummyVarLSJac0)\" />
 //       <depends name=\"x\" />
-//       <rhs>2.0 * (x * $DER.xd.$pDERNLSJac0.dummyVarNLSJac0 + y * $DER.yd.$pDERNLSJac0.dummyVarNLSJac0)</rhs>
+//       <rhs>2.0 * (x * $DER.xd.$pDERLSJac0.dummyVarLSJac0 + y * $DER.yd.$pDERLSJac0.dummyVarLSJac0)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
@@ -1069,11 +1069,11 @@ readFile("testModel_info.xml");getErrorString();
 //   </equation>
 //   <equation index=\"40\" parent=\"42\">
 //     <assign>
-//       <defines name=\"u.$pDERNLSJac1.dummyVarNLSJac1\" />
+//       <defines name=\"u.$pDERLSJac1.dummyVarLSJac1\" />
 //       <depends name=\"a\" />
-//       <depends name=\"vSeedNLSJac1\" />
+//       <depends name=\"vSeedLSJac1\" />
 //       <depends name=\"b\" />
-//       <rhs>DIVISION(b * vSeedNLSJac1, a)</rhs>
+//       <rhs>DIVISION(b * vSeedLSJac1, a)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"18\" lineEnd=\"18\" colStart=\"3\" colEnd=\"12\"/>
@@ -1082,12 +1082,12 @@ readFile("testModel_info.xml");getErrorString();
 //   </equation>
 //   <equation index=\"41\" parent=\"42\">
 //     <assign>
-//       <defines name=\"$res1.$pDERNLSJac1.dummyVarNLSJac1\" />
-//       <depends name=\"u.$pDERNLSJac1.dummyVarNLSJac1\" />
+//       <defines name=\"$res1.$pDERLSJac1.dummyVarLSJac1\" />
+//       <depends name=\"u.$pDERLSJac1.dummyVarLSJac1\" />
 //       <depends name=\"s\" />
-//       <depends name=\"vSeedNLSJac1\" />
+//       <depends name=\"vSeedLSJac1\" />
 //       <depends name=\"t\" />
-//       <rhs>t * vSeedNLSJac1 + s * u.$pDERNLSJac1.dummyVarNLSJac1</rhs>
+//       <rhs>t * vSeedLSJac1 + s * u.$pDERLSJac1.dummyVarLSJac1</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"17\" lineEnd=\"17\" colStart=\"3\" colEnd=\"15\"/>
