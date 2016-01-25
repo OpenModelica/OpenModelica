@@ -10,7 +10,7 @@ public
 %x c_string
 
 whitespace1  [ \t]+
-whitespace2  \n
+whitespace2  \r?\n
 letter       [a-zA-Z]
 wild         [_]
 nondigit     [_a-zA-Z]
