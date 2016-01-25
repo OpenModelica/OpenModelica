@@ -2216,14 +2216,22 @@ template extFunCallBiVar(Variable var, Text &preExp, Text &varDecls, Text &auxFu
 ::=
   match var
   case var as VARIABLE(__) then
-    let var_name = extVarName(name)
+    let var_name = contextCref(name, contextFunction, &auxFunction)
     let &varDecls += '<%varType(var)%> <%var_name%>;<%\n%>'
     let defaultValue = match value
       case SOME(v) then
-        daeExp(v, contextFunction, &preExp, &varDecls, &auxFunction)
+        '<%daeExp(v, contextFunction, &preExp, &varDecls, &auxFunction)%>'
       else ""
-    let &preExp += if defaultValue then '<%var_name%> = <%defaultValue%>;<%\n%>'
-    ""
+    let instDimsInit = (instDims |> exp =>
+      daeExp(exp, contextFunction, &preExp, &varDecls, &auxFunction) ;separator=", ")
+    if instDims then
+      let type = expTypeArray(var.ty)
+      let &preExp += 'alloc_<%type%>(&<%var_name%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+      let &preExp += if defaultValue then 'copy_<%type%>(<%defaultValue%>, &<%var_name%>);<%\n%>' else ''
+      ""
+    else
+      let &preExp += if defaultValue then '<%var_name%> = <%defaultValue%>;<%\n%>' else ''
+      ""
 end extFunCallBiVar;
 
 template extFunCallBiVarF77(Variable var, Text &preExp, Text &varDecls, Text &auxFunction)
