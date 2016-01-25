@@ -1383,14 +1383,13 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
 void LibraryTreeModel::readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem)
 {
   if (!pLibraryTreeItem->isFilePathValid()) {
-    // If class is top level then
-    if (pLibraryTreeItem->isTopLevel()) {
+    // If class is nested in a class and nested class is saved in the same file as parent.
+    if (pLibraryTreeItem->isInPackageOneFile()) {
+      updateLibraryTreeItemClassText(pLibraryTreeItem);
+    } else {
       if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
         pLibraryTreeItem->setClassText(mpLibraryWidget->getMainWindow()->getOMCProxy()->listFile(pLibraryTreeItem->getNameStructure()));
       }
-    } else {
-      // If class is nested in a class
-      updateLibraryTreeItemClassText(pLibraryTreeItem);
     }
   } else {
     // If class is top level then simply read its file contents.
