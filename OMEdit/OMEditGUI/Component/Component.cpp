@@ -1666,8 +1666,20 @@ void Component::componentNameHasChanged()
   } else {
     setToolTip(tr("<b>%1</b> %2").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName()));
   }
-  emit displayTextChanged();
+  displayTextChangedRecursive();
   update();
+}
+
+/*!
+ * \brief Component::displayTextChangedRecursive
+ * Notifies all the TextAnnotation's about the name change.
+ */
+void Component::displayTextChangedRecursive()
+{
+  emit displayTextChanged();
+  foreach (Component *pInheritedComponent, mInheritedComponentsList) {
+    pInheritedComponent->displayTextChangedRecursive();
+  }
 }
 
 /*!

@@ -284,6 +284,7 @@ public slots:
   void finishResizeComponent();
   void resizedComponent();
   void componentNameHasChanged();
+  void displayTextChangedRecursive();
   void deleteMe();
   void duplicate();
   void rotateClockwise();
