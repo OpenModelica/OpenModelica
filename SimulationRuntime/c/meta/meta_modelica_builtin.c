@@ -359,7 +359,7 @@ modelica_integer nobox_stringGet(threadData_t *threadData,metamodelica_string st
 {
   if (ix < 1 || ix > (long) MMC_STRLEN(str))
     MMC_THROW_INTERNAL();
-  return MMC_STRINGDATA(str)[ix-1];
+  return ((unsigned char*)MMC_STRINGDATA(str))[ix-1];
 }
 
 modelica_metatype boxptr_stringUpdateStringChar(threadData_t *threadData,metamodelica_string str, metamodelica_string c, modelica_metatype iix)
