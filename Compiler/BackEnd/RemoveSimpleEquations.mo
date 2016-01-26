@@ -4855,26 +4855,22 @@ add all non-constant alias variables to the hash table HTCrToExp
   input list<tuple<DAE.ComponentRef,list<tuple<DAE.ComponentRef,BackendDAE.Equation>>>> tplCrEqLst;
   input HashTableCrToExp.HashTable inHTCrToExp;
   input HashTableCrToCrEqLst.HashTable inHTCrToCrEqLst;
-  output HashTableCrToExp.HashTable outHTCrToExp;
+  output HashTableCrToExp.HashTable HTCrToExp = inHTCrToExp;
+protected
+  DAE.ComponentRef cr1;
+  list<tuple<DAE.ComponentRef,BackendDAE.Equation>> cr_eq_lst;
 algorithm
-  (outHTCrToExp) := matchcontinue(tplCrEqLst, inHTCrToExp)
-  local
-    DAE.ComponentRef cr1;
-    HashTableCrToExp.HashTable HTCrToExp;
-    list<tuple<DAE.ComponentRef,list<tuple<DAE.ComponentRef,BackendDAE.Equation>>>> tplCrEqRest;
-    list<tuple<DAE.ComponentRef,BackendDAE.Equation>> cr_eq_lst;
-
-    case ({},HTCrToExp) then HTCrToExp;
-    case ((cr1,cr_eq_lst)::tplCrEqRest, HTCrToExp) equation
-      if (not BaseHashTable.hasKey(cr1, HTCrToExp)) then
-        HTCrToExp = addThisCrefs(cr_eq_lst, HTCrToExp, inHTCrToCrEqLst);
+  try
+    for tpl in tplCrEqLst loop
+      (cr1,cr_eq_lst) := tpl;
+      if not BaseHashTable.hasKey(cr1, HTCrToExp) then
+        HTCrToExp := addThisCrefs(cr_eq_lst, HTCrToExp, inHTCrToCrEqLst);
       end if;
-      HTCrToExp = addRestCrefs(tplCrEqRest, HTCrToExp, inHTCrToCrEqLst);
-    then (HTCrToExp);
-    else equation
-      print("\n++++++++++ Error in RemoveSimpleEquations.addRestCrefs ++++++++++\n");
-    then (inHTCrToExp);
-  end matchcontinue;
+    end for;
+  else
+    print("\n++++++++++ Error in RemoveSimpleEquations.addRestCrefs ++++++++++\n");
+    fail();
+  end try;
 end addRestCrefs;
 
 protected function addThisCrefs "BB
