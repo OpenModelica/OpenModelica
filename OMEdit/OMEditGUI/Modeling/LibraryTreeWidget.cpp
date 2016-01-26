@@ -2193,10 +2193,12 @@ void LibraryTreeView::createActions()
   connect(mpDuplicateClassAction, SIGNAL(triggered()), SLOT(duplicateClass()));
   // unload Action
   mpUnloadClassAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
+  mpUnloadClassAction->setShortcut(QKeySequence::Delete);
   mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
   connect(mpUnloadClassAction, SIGNAL(triggered()), SLOT(unloadClass()));
   // unload TLM/Text file Action
   mpUnloadTLMFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
+  mpUnloadTLMFileAction->setShortcut(QKeySequence::Delete);
   mpUnloadTLMFileAction->setStatusTip(Helper::unloadTLMOrTextTip);
   connect(mpUnloadTLMFileAction, SIGNAL(triggered()), SLOT(unloadTLMOrTextFile()));
   // Export FMU Action
@@ -2710,6 +2712,26 @@ void LibraryTreeView::startDrag(Qt::DropActions supportedActions)
     }
     drag->exec(supportedActions);
   }
+}
+
+/*!
+ * \brief LibraryTreeView::keyPressEvent
+ * Reimplementation of keypressevent.
+ * \param event
+ */
+void LibraryTreeView::keyPressEvent(QKeyEvent *event)
+{
+  if (event->key() == Qt::Key_Delete) {
+    LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+    if (pLibraryTreeItem) {
+      if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+        unloadClass();
+      } else {
+        unloadTLMOrTextFile();
+      }
+    }
+  }
+  QTreeView::keyPressEvent(event);
 }
 
 /*!
