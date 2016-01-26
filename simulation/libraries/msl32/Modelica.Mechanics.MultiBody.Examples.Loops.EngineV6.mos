@@ -85,7 +85,7 @@ runScript(modelTesting);getErrorString();
 //  * Linear torn systems: 7 {(31,13.2%) 425,(1,100.0%) 5,(1,100.0%) 5,(1,100.0%) 5,(1,100.0%) 5,(1,100.0%) 5,(1,100.0%) 5}
 //  * Non-linear torn systems: 6 {1 13,1 13,1 13,1 13,1 13,1 13}
 // Notification: Model statistics after passing the back-end for simulation:
-//  * Number of independent subsystems: 724
+//  * Number of independent subsystems: 737
 //  * Number of states: 4 (load.phi,load.w,filter.x[1],filter.x[2])
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)

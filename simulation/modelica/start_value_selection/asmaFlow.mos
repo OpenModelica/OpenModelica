@@ -644,7 +644,199 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // unspecified partition
 // ========================================
 //
-// Variables (99)
+// Variables (1)
+// ========================================
+// 1: $DER.aimc.phiMechanical:DUMMY_DER(fixed = false )  "Mechanical angle of rotor against stator".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.SIunits.Angle$aimc$phiMechanical type: Real
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): $DER.aimc.phiMechanical = aimc.inertiaRotor.w   [binding]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: aimc.wMechanical:VARIABLE(start = 0.0 unit = "rad/s" fixed = false )  "Mechanical angular velocity of rotor against stator".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.SIunits.AngularVelocity$aimc$wMechanical type: Real
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): aimc.wMechanical = aimc.inertiaRotor.w   [binding]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: $DER.aimc.friction.phi:DUMMY_DER(fixed = false )  "Angle between shaft and support".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.Losses.Friction$aimc$friction, .Modelica.SIunits.Angle type: Real
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): $DER.aimc.friction.phi = aimc.inertiaRotor.w   [binding]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: aimc.friction.w:VARIABLE(unit = "rad/s" fixed = false )  "Relative angular velocity of flange and support".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.Losses.Friction$aimc$friction, .Modelica.SIunits.AngularVelocity type: Real
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): aimc.friction.w = aimc.inertiaRotor.w   [binding]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: $DER.aimc.strayLoad.phi:DUMMY_DER(fixed = false )  "Angle between shaft and support".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.Losses.InductionMachines.StrayLoad$aimc$strayLoad, .Modelica.SIunits.Angle type: Real
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): $DER.aimc.strayLoad.phi = aimc.inertiaRotor.w   [binding]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: aimc.strayLoad.w:VARIABLE(unit = "rad/s" fixed = false )  "Relative angular velocity of flange and support".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.Losses.InductionMachines.StrayLoad$aimc$strayLoad, .Modelica.SIunits.AngularVelocity type: Real
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): aimc.strayLoad.w = aimc.inertiaRotor.w   [binding]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (93)
 // ========================================
 // 1: sinevoltage1.i[3]:DUMMY_STATE(unit = "A" )  "Currents flowing into positive plugs".asmaFlow, .Modelica.Electrical.MultiPhase.Sources.SineVoltage$sinevoltage1, .Modelica.SIunits.Current type: Real [3]
 // 2: sinevoltage1.i[2]:DUMMY_STATE(unit = "A" )  "Currents flowing into positive plugs".asmaFlow, .Modelica.Electrical.MultiPhase.Sources.SineVoltage$sinevoltage1, .Modelica.SIunits.Current type: Real [3]
@@ -734,20 +926,14 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 86: $DER.aimc.spacePhasorS.i[2]:DUMMY_DER(fixed = false )  "Instantaneous phase currents".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.SpacePhasors.Components.SpacePhasor$aimc$spacePhasorS, .Modelica.SIunits.Current type: Real [3]
 // 87: $DER.aimc.spacePhasorS.i[3]:DUMMY_DER(fixed = false )  "Instantaneous phase currents".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.SpacePhasors.Components.SpacePhasor$aimc$spacePhasorS, .Modelica.SIunits.Current type: Real [3]
 // 88: $DER.aimc.i_0_s:DUMMY_DER(fixed = false )  "Stator zero-sequence current".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.SIunits.Current$aimc$i_0_s type: Real
-// 89: aimc.strayLoad.w:VARIABLE(unit = "rad/s" fixed = false )  "Relative angular velocity of flange and support".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.Losses.InductionMachines.StrayLoad$aimc$strayLoad, .Modelica.SIunits.AngularVelocity type: Real
-// 90: $DER.aimc.strayLoad.phi:DUMMY_DER(fixed = false )  "Angle between shaft and support".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.Losses.InductionMachines.StrayLoad$aimc$strayLoad, .Modelica.SIunits.Angle type: Real
-// 91: aimc.friction.w:VARIABLE(unit = "rad/s" fixed = false )  "Relative angular velocity of flange and support".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.Losses.Friction$aimc$friction, .Modelica.SIunits.AngularVelocity type: Real
-// 92: $DER.aimc.friction.phi:DUMMY_DER(fixed = false )  "Angle between shaft and support".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.Losses.Friction$aimc$friction, .Modelica.SIunits.Angle type: Real
-// 93: aimc.fixed.flange.tau:VARIABLE(flow=true unit = "N.m" fixed = false )  "Cut torque in the flange".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Mechanics.Rotational.Components.Fixed, .Modelica.Mechanics.Rotational.Interfaces.Flange_b, .Modelica.SIunits.Torque type: Real
-// 94: aimc.wMechanical:VARIABLE(start = 0.0 unit = "rad/s" fixed = false )  "Mechanical angular velocity of rotor against stator".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.SIunits.AngularVelocity$aimc$wMechanical type: Real
-// 95: $DER.aimc.phiMechanical:DUMMY_DER(fixed = false )  "Mechanical angle of rotor against stator".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.SIunits.Angle$aimc$phiMechanical type: Real
-// 96: $DER.aimc.airGapS.psi_mr[1]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the rotor fixed frame".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.AirGapS$aimc$airGapS, .Modelica.SIunits.MagneticFlux type: Real [2]
-// 97: $DER.aimc.airGapS.psi_ms[2]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the stator fixed frame".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.AirGapS$aimc$airGapS, .Modelica.SIunits.MagneticFlux type: Real [2]
-// 98: $DER.aimc.airGapS.psi_ms[1]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the stator fixed frame".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.AirGapS$aimc$airGapS, .Modelica.SIunits.MagneticFlux type: Real [2]
-// 99: $DER.aimc.airGapS.psi_mr[2]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the rotor fixed frame".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.AirGapS$aimc$airGapS, .Modelica.SIunits.MagneticFlux type: Real [2]
+// 89: aimc.fixed.flange.tau:VARIABLE(flow=true unit = "N.m" fixed = false )  "Cut torque in the flange".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Mechanics.Rotational.Components.Fixed, .Modelica.Mechanics.Rotational.Interfaces.Flange_b, .Modelica.SIunits.Torque type: Real
+// 90: $DER.aimc.airGapS.psi_mr[1]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the rotor fixed frame".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.AirGapS$aimc$airGapS, .Modelica.SIunits.MagneticFlux type: Real [2]
+// 91: $DER.aimc.airGapS.psi_ms[2]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the stator fixed frame".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.AirGapS$aimc$airGapS, .Modelica.SIunits.MagneticFlux type: Real [2]
+// 92: $DER.aimc.airGapS.psi_ms[1]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the stator fixed frame".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.AirGapS$aimc$airGapS, .Modelica.SIunits.MagneticFlux type: Real [2]
+// 93: $DER.aimc.airGapS.psi_mr[2]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the rotor fixed frame".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.AirGapS$aimc$airGapS, .Modelica.SIunits.MagneticFlux type: Real [2]
 //
 //
-// Equations (99, 99)
+// Equations (93, 93)
 // ========================================
 // 1/1 (1): aimc.phiMechanical = speedSensor.flange.phi - aimc.fixed.phi0   [binding]
 // 2/2 (1): aimc.friction.phi = speedSensor.flange.phi - aimc.fixed.phi0   [dynamic]
@@ -837,17 +1023,11 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 86/86 (1): aimc.powerBalance.powerStator = Modelica.Electrical.Machines.SpacePhasors.Functions.activePower({aimc.vs[1], aimc.vs[2], aimc.vs[3]}, {sinevoltage1.i[1], sinevoltage1.i[2], sinevoltage1.i[3]})   [binding]
 // 87/87 (1): $DER.aimc.lssigma.i_[1] = aimc.airGapS.RotationMatrix[2,2] * der(aimc.idq_sr[1]) + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.idq_sr[1] + (-aimc.airGapS.RotationMatrix[2,1]) * der(aimc.idq_sr[2]) - $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.idq_sr[2]   [dynamic]
 // 88/88 (1): $DER.aimc.lssigma.i_[2] = aimc.airGapS.RotationMatrix[2,1] * der(aimc.idq_sr[1]) + $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.idq_sr[1] + aimc.airGapS.RotationMatrix[2,2] * der(aimc.idq_sr[2]) + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.idq_sr[2]   [dynamic]
-// 89/89 (1): aimc.strayLoad.w = aimc.inertiaRotor.w   [binding]
-// 90/90 (1): $DER.aimc.strayLoad.phi = aimc.inertiaRotor.w   [binding]
-// 91/91 (1): aimc.friction.w = aimc.inertiaRotor.w   [binding]
-// 92/92 (1): $DER.aimc.friction.phi = aimc.inertiaRotor.w   [binding]
-// 93/93 (1): aimc.fixed.flange.tau = -aimc.tauElectrical   [binding]
-// 94/94 (1): aimc.wMechanical = aimc.inertiaRotor.w   [binding]
-// 95/95 (1): $DER.aimc.phiMechanical = aimc.inertiaRotor.w   [binding]
-// 96/96 (1): $DER.aimc.airGapS.psi_mr[1] = aimc.airGapS.spacePhasor_r.v_[1]   [binding]
-// 97/97 (1): $DER.aimc.airGapS.psi_ms[2] = aimc.airGapS.spacePhasor_s.v_[2]   [binding]
-// 98/98 (1): $DER.aimc.airGapS.psi_ms[1] = aimc.airGapS.spacePhasor_s.v_[1]   [binding]
-// 99/99 (1): $DER.aimc.airGapS.psi_mr[2] = aimc.airGapS.spacePhasor_r.v_[2]   [binding]
+// 89/89 (1): aimc.fixed.flange.tau = -aimc.tauElectrical   [binding]
+// 90/90 (1): $DER.aimc.airGapS.psi_mr[1] = aimc.airGapS.spacePhasor_r.v_[1]   [binding]
+// 91/91 (1): $DER.aimc.airGapS.psi_ms[2] = aimc.airGapS.spacePhasor_s.v_[2]   [binding]
+// 92/92 (1): $DER.aimc.airGapS.psi_ms[1] = aimc.airGapS.spacePhasor_s.v_[1]   [binding]
+// 93/93 (1): $DER.aimc.airGapS.psi_mr[2] = aimc.airGapS.spacePhasor_r.v_[2]   [binding]
 //
 //
 // Simple Equations (4, 0)
@@ -872,9 +1052,9 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 //
 // Matching
 // ========================================
-// 99 variables and equations
-// var 1 is solved in eqn 11
-// var 2 is solved in eqn 12
+// 93 variables and equations
+// var 1 is solved in eqn 10
+// var 2 is solved in eqn 11
 // var 3 is solved in eqn 14
 // var 4 is solved in eqn 24
 // var 5 is solved in eqn 25
@@ -886,10 +1066,10 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // var 11 is solved in eqn 45
 // var 12 is solved in eqn 20
 // var 13 is solved in eqn 17
-// var 14 is solved in eqn 61
-// var 15 is solved in eqn 63
-// var 16 is solved in eqn 67
-// var 17 is solved in eqn 62
+// var 14 is solved in eqn 62
+// var 15 is solved in eqn 64
+// var 16 is solved in eqn 68
+// var 17 is solved in eqn 63
 // var 18 is solved in eqn 5
 // var 19 is solved in eqn 6
 // var 20 is solved in eqn 22
@@ -899,19 +1079,19 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // var 24 is solved in eqn 4
 // var 25 is solved in eqn 34
 // var 26 is solved in eqn 3
-// var 27 is solved in eqn 10
-// var 28 is solved in eqn 9
+// var 27 is solved in eqn 9
+// var 28 is solved in eqn 12
 // var 29 is solved in eqn 13
-// var 30 is solved in eqn 73
+// var 30 is solved in eqn 78
 // var 31 is solved in eqn 79
-// var 32 is solved in eqn 80
+// var 32 is solved in eqn 72
 // var 33 is solved in eqn 74
-// var 34 is solved in eqn 68
-// var 35 is solved in eqn 72
+// var 34 is solved in eqn 73
+// var 35 is solved in eqn 71
 // var 36 is solved in eqn 8
 // var 37 is solved in eqn 7
 // var 38 is solved in eqn 69
-// var 39 is solved in eqn 71
+// var 39 is solved in eqn 81
 // var 40 is solved in eqn 36
 // var 41 is solved in eqn 35
 // var 42 is solved in eqn 40
@@ -924,9 +1104,9 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // var 49 is solved in eqn 38
 // var 50 is solved in eqn 42
 // var 51 is solved in eqn 48
-// var 52 is solved in eqn 78
-// var 53 is solved in eqn 60
-// var 54 is solved in eqn 64
+// var 52 is solved in eqn 80
+// var 53 is solved in eqn 61
+// var 54 is solved in eqn 65
 // var 55 is solved in eqn 19
 // var 56 is solved in eqn 16
 // var 57 is solved in eqn 87
@@ -948,40 +1128,28 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // var 73 is solved in eqn 31
 // var 74 is solved in eqn 33
 // var 75 is solved in eqn 32
-// var 76 is solved in eqn 59
-// var 77 is solved in eqn 65
+// var 76 is solved in eqn 60
+// var 77 is solved in eqn 66
 // var 78 is solved in eqn 70
-// var 79 is solved in eqn 66
-// var 80 is solved in eqn 77
-// var 81 is solved in eqn 55
+// var 79 is solved in eqn 67
+// var 80 is solved in eqn 55
+// var 81 is solved in eqn 56
 // var 82 is solved in eqn 82
-// var 83 is solved in eqn 81
+// var 83 is solved in eqn 59
 // var 84 is solved in eqn 57
-// var 85 is solved in eqn 58
-// var 86 is solved in eqn 56
-// var 87 is solved in eqn 76
+// var 85 is solved in eqn 77
+// var 86 is solved in eqn 76
+// var 87 is solved in eqn 58
 // var 88 is solved in eqn 75
 // var 89 is solved in eqn 89
 // var 90 is solved in eqn 90
 // var 91 is solved in eqn 91
 // var 92 is solved in eqn 92
 // var 93 is solved in eqn 93
-// var 94 is solved in eqn 94
-// var 95 is solved in eqn 95
-// var 96 is solved in eqn 96
-// var 97 is solved in eqn 97
-// var 98 is solved in eqn 98
-// var 99 is solved in eqn 99
 //
 //
 // StrongComponents
 // ========================================
-// {95:95}
-// {94:94}
-// {92:92}
-// {91:91}
-// {90:90}
-// {89:89}
 // {54:66}
 // {31:73}
 // {29:10}
@@ -996,14 +1164,14 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // {8:36}
 // {{{9:28}, {10:1}, {13:29}, {12:2}, {14:3}}
 // ,{11:27}} Size: 1 linear
-// {39:43}
-// {41:47}
-// {42:50}
-// {40:42}
 // {35:41}
 // {37:46}
 // {38:49}
 // {36:40}
+// {39:43}
+// {41:47}
+// {42:50}
+// {40:42}
 // {28:8}
 // {34:25}
 // {43:45}
@@ -1025,21 +1193,21 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // {51:69}
 // {52:65}
 // {53:70}
-// {93:93}
+// {89:89}
 // {22:20}
 // {23:21}
 // {32:75}
 // {33:74}
-// {{{67:79}, {62:14}, {70:78}, {61:53}, {63:15}, {64:54}, {65:77}, {60:76}, {66:84}, {59:83}, {69:38}, {81:39}, {68:34}, {71:35}, {78:30}, {80:32}, {73:31}, {74:33}, {75:88}, {82:82}, {57:86}, {76:85}, {56:81}, {77:80}}
-// ,{79, 72, 58, 55:87, 52, 17, 16}} Size: 4 linear
-// {96:96}
-// {98:98}
-// {99:99}
+// {{{67:79}, {63:15}, {62:14}, {64:54}, {61:53}, {70:78}, {65:77}, {60:76}, {66:84}, {59:83}, {69:38}, {81:39}, {68:34}, {71:35}, {80:32}, {79:31}, {78:30}, {74:33}, {75:88}, {82:82}, {57:86}, {76:85}, {56:81}, {77:80}}
+// ,{73, 55, 58, 72:87, 52, 17, 16}} Size: 4 linear
+// {93:93}
+// {91:91}
 // {83:62}
 // {84:61}
 // {85:60}
 // {86:67}
-// {97:97}
+// {92:92}
+// {90:90}
 // {88, 87:57, 58} Size: 2 Jacobian Linear
 // {3:26}
 // {2:68}
