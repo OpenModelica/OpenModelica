@@ -332,6 +332,7 @@ public slots:
 protected:
   virtual void mouseDoubleClickEvent(QMouseEvent *event);
   virtual void startDrag(Qt::DropActions supportedActions);
+  virtual void keyPressEvent(QKeyEvent *event);
 };
 
 class MainWindow;
