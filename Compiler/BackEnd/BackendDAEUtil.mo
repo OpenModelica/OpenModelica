@@ -3374,18 +3374,7 @@ protected function getOldVars
   input Integer pos;
   output  list<Integer> oldvars;
 algorithm
-  oldvars := matchcontinue(m,pos)
-  local
-    Integer alen;
-    case(_,_)
-      equation
-        alen = arrayLength(m);
-        (pos <= alen) = true;
-        oldvars = m[pos];
-      then
-        oldvars;
-    case (_,_) then {};
-  end matchcontinue;
+  oldvars := if pos <= arrayLength(m) then m[pos] else {};
 end getOldVars;
 
 protected function removeValuefromMatrix
@@ -5240,7 +5229,7 @@ public function solvabilityCMP
   input BackendDAE.Solvability sb;
   output Boolean b;
 algorithm
-  b := matchcontinue(sa,sb)
+  b := match(sa,sb)
     case (BackendDAE.SOLVABILITY_SOLVED(),BackendDAE.SOLVABILITY_SOLVED()) then false;
     case (_,BackendDAE.SOLVABILITY_SOLVED()) then true;
     case (BackendDAE.SOLVABILITY_SOLVED(),BackendDAE.SOLVABILITY_CONSTONE()) then false;
@@ -5270,7 +5259,7 @@ algorithm
     case (_,BackendDAE.SOLVABILITY_NONLINEAR()) then true;
     case (BackendDAE.SOLVABILITY_UNSOLVABLE(),BackendDAE.SOLVABILITY_UNSOLVABLE()) then false;
     case (BackendDAE.SOLVABILITY_UNSOLVABLE(),_) then true;
-  end matchcontinue;
+  end match;
 end solvabilityCMP;
 
 public function getArrayEquationSub"author: Frenkel TUD
@@ -8359,38 +8348,29 @@ algorithm
       list<Integer> l1,l2,k1,k2;
       list<tuple<Integer,list<Integer>>> l3,k3;
   case(BackendDAE.SINGLEEQUATION(eqn=i1,var=i2),BackendDAE.SINGLEEQUATION(eqn=j1,var=j2))
-    equation
   then intEq(i1,j1) and intEq(i2,j2);
 
   case(BackendDAE.EQUATIONSYSTEM(eqns=l1,vars=l2),BackendDAE.EQUATIONSYSTEM(eqns=k1,vars=k2))
-    equation
   then List.isEqualOnTrue(l1,k1,intEq) and List.isEqualOnTrue(l2,k2,intEq);
 
   case(BackendDAE.SINGLEARRAY(eqn=i1,vars=l1),BackendDAE.SINGLEARRAY(eqn=j1,vars=k1))
-    equation
   then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
 
   case(BackendDAE.SINGLEALGORITHM(eqn=i1,vars=l1),BackendDAE.SINGLEALGORITHM(eqn=j1,vars=k1))
-    equation
   then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
 
   case(BackendDAE.SINGLECOMPLEXEQUATION(eqn=i1,vars=l1),BackendDAE.SINGLECOMPLEXEQUATION(eqn=j1,vars=k1))
-    equation
   then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
 
   case(BackendDAE.SINGLEWHENEQUATION(eqn=i1,vars=l1),BackendDAE.SINGLEWHENEQUATION(eqn=j1,vars=k1))
-    equation
   then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
 
   case(BackendDAE.SINGLEIFEQUATION(eqn=i1,vars=l1),BackendDAE.SINGLEIFEQUATION(eqn=j1,vars=k1))
-    equation
   then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
 
   case(BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=l1,residualequations=l2,otherEqnVarTpl=l3)),BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=k1,residualequations=k2,otherEqnVarTpl=k3)))
-    equation
   then List.isEqualOnTrue(l1,k1,intEq) and List.isEqualOnTrue(l2,k2,intEq) and List.isEqualOnTrue(l3,k3,otherEqnVarTplEqual);
-  else
-    then false;
+  else false;
   end matchcontinue;
 end componentsEqual;
 
@@ -8404,11 +8384,10 @@ algorithm
       Integer i1,i2;
       list<Integer> l1,l2;
   case((i1,l1),(i2,l2))
-    equation
   then intEq(i1,i2) and List.isEqualOnTrue(l1,l2,intEq);
 
   else
-    then false;
+    false;
   end matchcontinue;
 end otherEqnVarTplEqual;
 

@@ -331,7 +331,7 @@ protected function numerateList
   input Integer index;
   output String out;
 algorithm
-  out:=matchcontinue(elems,index)
+  out:=match(elems,index)
     local String h,s,ss; list<String> t;
     case({},_)
       then "";
@@ -344,7 +344,7 @@ algorithm
           s="{"+(intString(index))+","+h+"}";
           ss=s+","+(numerateList(t,index+1));
         then ss;
-  end matchcontinue;
+  end match;
 end numerateList;
 
 protected function numerateListIndex
@@ -352,7 +352,7 @@ protected function numerateListIndex
   input list<Integer> indices;
   output String out;
 algorithm
-  out:=matchcontinue(elems,indices)
+  out:=match(elems,indices)
     local String h,s,ss; list<String> t;Integer n; list<Integer> tn;
     case({},_)
       then "";
@@ -365,7 +365,7 @@ algorithm
           s="{"+(intString(n))+","+h+"}";
           ss=s+","+(numerateListIndex(t,tn));
         then ss;
-  end matchcontinue;
+  end match;
 
 end numerateListIndex;
 
@@ -1287,18 +1287,12 @@ protected function getEquationsHelper
   input list<Integer> eqns;
   output Boolean out;
 algorithm
-out:=matchcontinue(m,eqns)
-  local
-    Integer e;
-  case((e,_),_)
-      equation
-      true = List.isMemberOnTrue(e,eqns,intEq);
-  then true;
-  case((e,_),_)
-      equation
-      false = List.isMemberOnTrue(e,eqns,intEq);
-  then false;
-end matchcontinue;
+  out:=match(m,eqns)
+    local
+      Integer e;
+    case((e,_),_)
+      then List.isMemberOnTrue(e,eqns,intEq);
+  end match;
 end getEquationsHelper;
 
 protected function getEquations

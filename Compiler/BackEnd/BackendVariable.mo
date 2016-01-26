@@ -600,11 +600,11 @@ public function varHasUncertainValueRefine "author: Daniel Hedberg, 2011-01
   input BackendDAE.Var var;
   output Boolean b;
 algorithm
-  b := matchcontinue (var)
+  b := match (var)
     case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(uncertainOption=SOME(DAE.REFINE()))))) then true;
     case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_INT(uncertainOption=SOME(DAE.REFINE()))))) then true;
     else false;
-  end matchcontinue;
+  end match;
 end varHasUncertainValueRefine;
 
 public function varDistribution "author: Peter Aronsson, 2012-05
@@ -941,7 +941,7 @@ public function isVarConst
   output Boolean result;
 algorithm
   result :=
-  matchcontinue (var)
+  match (var)
     local
       BackendDAE.Type typeVar;
     /* bool variable */
@@ -957,13 +957,11 @@ algorithm
     case (BackendDAE.VAR(varType = DAE.T_STRING()))
       then false;
     /* non-string variable */
-    case _
-      equation
-        true = isConst(var);
+    case (_) guard isConst(var)
       then true;
-    case (_)
-      then false;
-  end matchcontinue;
+    else
+      false;
+  end match;
 end isVarConst;
 
 public function isVarStringConst
@@ -971,17 +969,15 @@ public function isVarStringConst
   output Boolean result;
 algorithm
   result :=
-  matchcontinue (var)
+  match (var)
     local
       BackendDAE.Type typeVar;
     /* string variable */
-    case (BackendDAE.VAR(varType = DAE.T_STRING()))
-      equation
-        true = isConst(var);
+    case (BackendDAE.VAR(varType = DAE.T_STRING())) guard isConst(var)
       then true;
-    case (_)
-      then false;
-  end matchcontinue;
+    else
+      false;
+  end match;
 end isVarStringConst;
 
 public function isVarIntConst
@@ -989,21 +985,17 @@ public function isVarIntConst
   output Boolean result;
 algorithm
   result :=
-  matchcontinue (var)
+  match (var)
     local
       BackendDAE.Type typeVar;
     /* int variable */
-    case (BackendDAE.VAR(varType = DAE.T_INTEGER()))
-      equation
-        true = isConst(var);
+    case (BackendDAE.VAR(varType = DAE.T_INTEGER())) guard isConst(var)
       then true;
-    case (BackendDAE.VAR(varType = DAE.T_ENUMERATION()))
-      equation
-        true = isConst(var);
+    case (BackendDAE.VAR(varType = DAE.T_ENUMERATION())) guard isConst(var)
       then true;
-    case (_)
-      then false;
-  end matchcontinue;
+    else
+      false;
+  end match;
 end isVarIntConst;
 
 public function isVarBoolConst
@@ -1011,17 +1003,15 @@ public function isVarBoolConst
   output Boolean result;
 algorithm
   result :=
-  matchcontinue (var)
+  match (var)
     local
       BackendDAE.Type typeVar;
     /* string variable */
-    case (BackendDAE.VAR(varType = DAE.T_BOOL()))
-      equation
-        true = isConst(var);
+    case (BackendDAE.VAR(varType = DAE.T_BOOL())) guard isConst(var)
       then true;
-    case (_)
-      then false;
-  end matchcontinue;
+    else
+      false;
+  end match;
 end isVarBoolConst;
 
 /* TODO: Is this correct? */
@@ -1030,7 +1020,7 @@ public function isVarParam
   output Boolean result;
 algorithm
   result :=
-  matchcontinue (var)
+  match (var)
     local
       BackendDAE.Type typeVar;
     /* bool variable */
@@ -1046,13 +1036,11 @@ algorithm
     case (BackendDAE.VAR(varType = DAE.T_ENUMERATION()))
       then false;
     /* non-string variable */
-    case _
-      equation
-        true = isParam(var);
+    case (_) guard isParam(var)
       then true;
-    case (_)
-      then false;
-  end matchcontinue;
+    else
+      false;
+  end match;
 end isVarParam;
 
 
@@ -1061,17 +1049,15 @@ public function isVarStringParam
   output Boolean result;
 algorithm
   result :=
-  matchcontinue (var)
+  match (var)
     local
       BackendDAE.Type typeVar;
     /* string variable */
-    case (BackendDAE.VAR(varType = DAE.T_STRING()))
-      equation
-        true = isParam(var);
+    case (BackendDAE.VAR(varType = DAE.T_STRING())) guard isParam(var)
       then true;
-    case (_)
-      then false;
-  end matchcontinue;
+    else
+      false;
+  end match;
 end isVarStringParam;
 
 
@@ -1080,22 +1066,18 @@ public function isVarIntParam
   output Boolean result;
 algorithm
   result :=
-  matchcontinue (var)
+  match (var)
     local
       BackendDAE.Type typeVar;
     // int variable
-    case (BackendDAE.VAR(varType = DAE.T_INTEGER()))
-      equation
-        true = isParam(var);
+    case (BackendDAE.VAR(varType = DAE.T_INTEGER())) guard isParam(var)
       then true;
     // enum is also mapped to long
-    case (BackendDAE.VAR(varType = DAE.T_ENUMERATION()))
-      equation
-        true = isParam(var);
+    case (BackendDAE.VAR(varType = DAE.T_ENUMERATION())) guard isParam(var)
       then true;
-    case (_)
-      then false;
-  end matchcontinue;
+    else
+      false;
+  end match;
 end isVarIntParam;
 
 public function isVarBoolParam
@@ -1103,17 +1085,15 @@ public function isVarBoolParam
   output Boolean result;
 algorithm
   result :=
-  matchcontinue (var)
+  match (var)
     local
       BackendDAE.Type typeVar;
     /* string variable */
-    case (BackendDAE.VAR(varType = DAE.T_BOOL()))
-      equation
-        true = isParam(var);
+    case (BackendDAE.VAR(varType = DAE.T_BOOL())) guard isParam(var)
       then true;
-    case (_)
-      then false;
-  end matchcontinue;
+    else
+      false;
+  end match;
 end isVarBoolParam;
 
 public function isVarConnector
@@ -1133,10 +1113,10 @@ public function isFlowVar
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inVar)
+  match (inVar)
     case BackendDAE.VAR(connectorType = DAE.FLOW()) then true;
     else false;
-  end matchcontinue;
+  end match;
 end isFlowVar;
 
 public function isConst
@@ -1145,10 +1125,10 @@ public function isConst
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inVar)
+  match (inVar)
     case BackendDAE.VAR(varKind = BackendDAE.CONST()) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isConst;
 
 public function isParam
@@ -1157,11 +1137,11 @@ public function isParam
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inVar)
+  match (inVar)
     case BackendDAE.VAR(varKind = BackendDAE.PARAM()) then true;
     case BackendDAE.VAR(varKind = BackendDAE.OPT_TGRID()) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isParam;
 
 public function isIntParam
@@ -1170,11 +1150,11 @@ public function isIntParam
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inVar)
+  match (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),varType = DAE.T_INTEGER())) then true;
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),varType = DAE.T_ENUMERATION())) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isIntParam;
 
 public function isBoolParam
@@ -1183,10 +1163,10 @@ public function isBoolParam
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inVar)
+  match (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),varType = DAE.T_BOOL())) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isBoolParam;
 
 public function isStringParam
@@ -1195,10 +1175,10 @@ public function isStringParam
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inVar)
+  match (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),varType = DAE.T_STRING())) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isStringParam;
 
 public function isExtObj
@@ -1207,10 +1187,10 @@ public function isExtObj
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inVar)
+  match (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.EXTOBJ(_))) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isExtObj;
 
 public function isAlgState
@@ -1229,10 +1209,10 @@ public function isRealParam
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inVar)
+  outBoolean := match (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),varType = DAE.T_REAL())) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isRealParam;
 
 public function isRealOptimizeConstraintsVars
@@ -1359,10 +1339,10 @@ public function isInput
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inVar)
+  match (inVar)
     case (BackendDAE.VAR(varDirection = DAE.INPUT())) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isInput;
 
 public function isOutputVar "Return true if variable is declared as output. Note that the output
@@ -1371,10 +1351,10 @@ public function isOutputVar "Return true if variable is declared as output. Note
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inVar)
+  outBoolean := match (inVar)
     case (BackendDAE.VAR(varDirection = DAE.OUTPUT())) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isOutputVar;
 
 public function isOutput
@@ -3461,34 +3441,25 @@ protected function startValueType "author: Frenkel TUD 2012-10
   input DAE.Type iTy;
   output DAE.Exp oExp;
 algorithm
-  oExp := matchcontinue(iExp,iTy)
+  oExp := match(iExp,iTy)
     local
       DAE.Exp e;
     case(SOME(e),_) then e;
-    case(NONE(),_)
-      equation
-        true = Types.isRealOrSubTypeReal(iTy);
+    case(NONE(),_) guard Types.isRealOrSubTypeReal(iTy)
       then
         DAE.RCONST(0.0);
-    case(NONE(),_)
-      equation
-        true = Types.isIntegerOrSubTypeInteger(iTy);
+    case(NONE(),_) guard Types.isIntegerOrSubTypeInteger(iTy)
       then
         DAE.ICONST(0);
-    case(NONE(),_)
-      equation
-        true = Types.isBooleanOrSubTypeBoolean(iTy);
+    case(NONE(),_) guard Types.isBooleanOrSubTypeBoolean(iTy)
       then
         DAE.BCONST(false);
-    case(NONE(),_)
-      equation
-        true = Types.isStringOrSubTypeString(iTy);
+    case(NONE(),_) guard Types.isStringOrSubTypeString(iTy)
       then
         DAE.SCONST("");
     else
-      then
-        DAE.RCONST(0.0);
-  end matchcontinue;
+      DAE.RCONST(0.0);
+  end match;
 end startValueType;
 
 protected function mergeStartFixed1 "author: Frenkel TUD 2011-04"
