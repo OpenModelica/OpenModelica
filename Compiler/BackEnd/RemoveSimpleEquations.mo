@@ -2029,7 +2029,7 @@ protected function circularEqualityMsg_dispatch "author: Frenkel TUD 2013-05, ad
   input list<String> iMsg;
   output list<String> oMsg;
 algorithm
-  oMsg := matchcontinue(stack, iR, simpleeqnsarr, iMsg)
+  oMsg := match(stack, iR, simpleeqnsarr, iMsg)
     local
       Integer r;
       list<Integer> rest;
@@ -2037,23 +2037,16 @@ algorithm
       list<DAE.ComponentRef> names;
       list<String> slst;
     case ({}, _, _, _) then iMsg;
+    case (r::_, _, _, _) guard intEq(r, iR) then iMsg;
     case (r::rest, _, _, _)
       equation
-        false = intEq(r, iR);
         names = getVarsNames(simpleeqnsarr[r]);
         slst = List.map(names, ComponentReference.printComponentRefStr);
         slst = listAppend(slst, {"----------------------------------"});
         slst = listAppend(iMsg, slst);
       then
         circularEqualityMsg_dispatch(rest, iR, simpleeqnsarr, slst);
-
-    case (r::_, _, _, _)
-      equation
-        true = intEq(r, iR);
-      then
-        iMsg;
-
-  end matchcontinue;
+  end match;
 end circularEqualityMsg_dispatch;
 
 protected function getVarsNames "author: Frenkel TUD 2013-05"
@@ -3318,7 +3311,7 @@ protected function selectNonZeroExpression
   input list<tuple<DAE.Exp, DAE.ComponentRef, Integer>> iFavorit;
   output tuple<DAE.Exp, DAE.ComponentRef, Integer> selected;
 algorithm
-  selected := matchcontinue(iFavorit)
+  selected := match(iFavorit)
     local
       DAE.Exp e;
       DAE.ComponentRef cr;
@@ -3327,19 +3320,12 @@ algorithm
 
     case ({(e, cr, i)}) then ((e, cr, i));
 
-    case ((e, cr, i)::_)
-      equation
-        false = Expression.isZero(e);
-      then
-        ((e, cr, i));
+    case ((e, cr, i)::_) guard not Expression.isZero(e) then ((e, cr, i));
 
     case ((e, cr, i)::rest)
-      equation
-        true = Expression.isZero(e);
-        ((e, cr, i)) = selectNonZeroExpression(rest);
       then
-        ((e, cr, i));
-  end matchcontinue;
+        selectNonZeroExpression(rest);
+  end match;
 end selectNonZeroExpression;
 
 protected function selectFreeValue1 "author: Frenkel TUD 2012-12
