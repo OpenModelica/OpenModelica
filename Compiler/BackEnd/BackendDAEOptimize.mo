@@ -4341,6 +4341,152 @@ algorithm
 end simplifyComplexFunction2;
 
 // =============================================================================
+// section for hets
+//
+// (h)euristic (e)quation (t)erms (s)ort
+// heuristic sorting of terms for better numeric in equations(res, torn,...)
+//
+// author: Vitalij Ruge
+// =============================================================================
+
+public function hets
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  if Flags.getConfigString(Flags.HETS)<> "none" then
+    outDAE := hetsWork(inDAE);
+  else
+    outDAE := inDAE;
+  end if;
+end hets;
+
+protected function hetsWork
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE = inDAE;
+protected
+  BackendDAE.EquationArray eqns;
+  BackendDAE.Variables vars;
+  BackendDAE.Matching matching;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
+  tuple<Integer,list<Integer>> tpl;
+  Integer i,j;
+  BackendDAE.Equation eqn;
+  list<Integer> tvars "be careful with states, this are solved for der(x)";
+  list<Integer> teqns;
+  DAE.ComponentRef cr;
+  BackendDAE.StrongComponents comps;
+  BackendDAE.Shared shared;
+algorithm
+  shared := outDAE.shared;
+  for syst in outDAE.eqs loop
+    BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching as BackendDAE.MATCHING(comps=comps),stateSets=stateSets,partitionKind=partitionKind) := syst;
+
+    for comp in comps loop
+      if BackendEquation.isTornSystem(comp) then
+
+        BackendDAE.TORNSYSTEM(strictTearingSet = BackendDAE.TEARINGSET(tearingvars=tvars, residualequations=teqns, otherEqnVarTpl= otherEqnVarTpl)) := comp;
+        for tpl in otherEqnVarTpl loop
+           try
+            (i,{j}) := tpl;
+            eqn := BackendEquation.equationNth1(eqns, i);
+            BackendDAE.VAR(varName = cr) := BackendVariable.getVarAt(vars, j);
+            eqn := BackendEquation.solveEquation(eqn, Expression.crefExp(cr), SOME(shared.functionTree));
+            eqn := hetsSplitRhs(eqn);
+            eqns := BackendEquation.setAtIndex(eqns, i, eqn);
+           else
+           end try;
+        end for;
+
+        for i in teqns loop
+          eqn := BackendEquation.equationNth1(eqns, i);
+          eqn := hetsSplitRes(eqn);
+          eqns := BackendEquation.setAtIndex(eqns, i, eqn);
+        end for;
+      elseif BackendEquation.isEquationsSystem(comp) then
+        BackendDAE.EQUATIONSYSTEM(eqns=teqns) := comp;
+        for i in teqns loop
+          eqn := BackendEquation.equationNth1(eqns, i);
+          eqn := hetsSplitRes(eqn);
+          eqns := BackendEquation.setAtIndex(eqns, i, eqn);
+        end for;
+      end if;
+    end for;
+  end for;
+end hetsWork;
+
+function hetsSplitRes
+ input BackendDAE.Equation iEqn;
+ output BackendDAE.Equation oEqn;
+
+algorithm
+  oEqn := match iEqn
+          local DAE.Exp e1,e2, e;
+          DAE.ElementSource source;
+          BackendDAE.EquationAttributes attr;
+
+          case BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=attr)
+            equation
+            e = Expression.createResidualExp(e1, e2);
+            e = hetsSplitExp(e);
+          then BackendDAE.RESIDUAL_EQUATION(e, source, attr);
+
+          case BackendDAE.RESIDUAL_EQUATION(e, source, attr)
+            equation
+            e = hetsSplitExp(e);
+          then BackendDAE.RESIDUAL_EQUATION(e, source, attr);
+
+          else iEqn;
+          end match;
+end hetsSplitRes;
+
+function hetsSplitRhs
+ input BackendDAE.Equation iEqn;
+ output BackendDAE.Equation oEqn;
+
+algorithm
+  oEqn := match iEqn
+          local DAE.Exp e1,e2, e;
+          DAE.ElementSource source;
+          BackendDAE.EquationAttributes attr;
+
+          case BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=attr)
+            equation
+            e2 = hetsSplitExp(e2);
+          then BackendDAE.EQUATION(e1, e2, source, attr);
+
+          else iEqn;
+          end match;
+end hetsSplitRhs;
+
+function hetsSplitExp
+  input DAE.Exp iExp;
+  output DAE.Exp oExp;
+algorithm
+  oExp := match iExp
+          local DAE.Exp e,e1,e2; DAE.Operator op;
+          list<DAE.Exp> terms, termsDer;
+
+          case DAE.BINARY(e1, op, e2)
+          guard Expression.isMulOrDiv(op)
+            algorithm
+              e1 := hetsSplitExp(e1);
+              e2 := hetsSplitExp(e2);
+            then DAE.BINARY(e1, op, e2);
+
+          case e as DAE.BINARY(e1, op, e2)
+          guard Expression.isAddOrSub(op)
+            algorithm
+              terms := Expression.terms(e);
+              terms := list(hetsSplitExp(t) for t in terms);
+              (terms, termsDer) := List.splitOnTrue(terms, Expression.expHasDer);
+            then Expression.expAdd(Expression.makeSum1(terms), Expression.makeSum1(termsDer));
+          else iExp;
+          end match;
+end hetsSplitExp;
+
+// =============================================================================
 // section for simplifyLoops
 //
 // simplify(hopful) loops for simulation/optimization

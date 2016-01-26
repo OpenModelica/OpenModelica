@@ -6395,6 +6395,37 @@ algorithm
   end matchcontinue;
 end traversingexpHasDerCref;
 
+public function expHasDer "
+ returns true if the expression contains the  function der"
+  input DAE.Exp inExp;
+  output Boolean hasCref;
+algorithm
+  (_, hasCref) := traverseExpTopDown(inExp, traversingexpHasDer, false);
+end expHasDer;
+
+public function traversingexpHasDer "
+Returns a true if the exp contains in der"
+  input DAE.Exp inExp;
+  input Boolean inTpl;
+  output DAE.Exp outExp;
+  output Boolean cont;
+  output Boolean outTpl;
+algorithm
+  (outExp,cont,outTpl) := matchcontinue(inExp,inTpl)
+    local
+      Boolean b;
+
+    case (DAE.CALL(path= Absyn.IDENT("der")), (false))
+      then (inExp,false,true);
+
+    //isAlias
+
+    case (_,b) then (inExp, not b, inTpl);
+
+  end matchcontinue;
+end traversingexpHasDer;
+
+
 public function expHasCrefNoPreorDer "
 @author: Frenkel TUD 2011-04
  returns true if the expression contains the cref, but not in pre,change,edge"

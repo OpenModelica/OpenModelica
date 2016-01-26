@@ -1197,6 +1197,13 @@ constant ConfigFlag INIT_OPT_MODULES_SUB = CONFIG_FLAG(86, "initOptModules-",
 constant ConfigFlag PERMISSIVE = CONFIG_FLAG(87, "permissive",
   NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Disables some error checks to allow erroneous models to compile."));
+constant ConfigFlag HETS = CONFIG_FLAG(88, "hets",
+  NONE(), INTERNAL(), STRING_FLAG("none"),SOME(
+    STRING_DESC_OPTION({
+    ("none", Util.gettext("do nothing")),
+    ("derCalls", Util.gettext("sort terms based on der-calls"))
+    })),
+  Util.gettext("heuristic euqtion terms sort"));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1289,7 +1296,8 @@ constant list<ConfigFlag> allConfigFlags = {
   POST_OPT_MODULES_SUB,
   INIT_OPT_MODULES_ADD,
   INIT_OPT_MODULES_SUB,
-  PERMISSIVE
+  PERMISSIVE,
+  HETS
 };
 
 public function new

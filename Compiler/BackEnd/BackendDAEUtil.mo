@@ -7127,6 +7127,7 @@ protected function allPostOptimizationModules
     (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations"),
     (BackendDAEOptimize.simplifyTimeIndepFuncCalls, "simplifyTimeIndepFuncCalls"),
     (BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions"),
+    (BackendDAEOptimize.hets, "hets"),
     // TODO: move the following modules to the correct position
     (BackendDump.dumpComponentsGraphStr, "dumpComponentsGraphStr"),
     (BackendDump.dumpDAE, "dumpDAE"),
@@ -7280,6 +7281,11 @@ algorithm
     if Flags.getConfigInt(Flags.SIMPLIFY_LOOPS) > 0 then
       enabledModules := "simplifyLoops"::enabledModules;
     end if;
+
+    if Flags.getConfigString(Flags.HETS) <> "none" then
+      enabledModules := "hets"::enabledModules;
+    end if;
+
 
     if Flags.isSet(Flags.COUNT_OPERATIONS) then
       enabledModules := "countOperations"::enabledModules;
