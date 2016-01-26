@@ -527,7 +527,7 @@ void ComponentParameters::setUpDialog()
   // create Modifiers tab
   QWidget *pModifiersTab = new QWidget;
   // add items to modifiers tab
-  mpModifiersLabel = new Label(tr("Add new modifiers, e.g phi(start=1),w(start=2)"));
+  mpModifiersLabel = new Label(tr("Add new modifiers, e.g., phi(start=1), w(start=2)"));
   mpModifiersTextBox = new QLineEdit;
   QVBoxLayout *pModifiersTabLayout = new QVBoxLayout;
   pModifiersTabLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
