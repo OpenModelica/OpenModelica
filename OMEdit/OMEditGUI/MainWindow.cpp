@@ -762,6 +762,10 @@ void MainWindow::instantiateModel(LibraryTreeItem *pLibraryTreeItem)
   // show the progress bar
   mpProgressBar->setRange(0, 0);
   showProgressBar();
+  // check reset messages number before instantiating
+  if (mpOptionsDialog->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
+    mpMessagesWidget->resetMessagesNumber();
+  }
   QString instantiateModelResult = mpOMCProxy->instantiateModel(pLibraryTreeItem->getNameStructure());
   if (!instantiateModelResult.isEmpty()) {
     QString windowTitle = QString(Helper::instantiateModel).append(" - ").append(pLibraryTreeItem->getName());
@@ -787,6 +791,10 @@ void MainWindow::checkModel(LibraryTreeItem *pLibraryTreeItem)
   // show the progress bar
   mpProgressBar->setRange(0, 0);
   showProgressBar();
+  // check reset messages number before checking
+  if (mpOptionsDialog->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
+    mpMessagesWidget->resetMessagesNumber();
+  }
   QString checkModelResult = mpOMCProxy->checkModel(pLibraryTreeItem->getNameStructure());
   if (!checkModelResult.isEmpty()) {
     QString windowTitle = QString(Helper::checkModel).append(" - ").append(pLibraryTreeItem->getName());
