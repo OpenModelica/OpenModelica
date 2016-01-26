@@ -257,7 +257,7 @@ protected function fixAliasVarsCausal2
   output BackendDAE.BackendDAE outDAE;
 protected
   DAE.Exp binding;
-  DAE.ComponentRef rightCref;
+  list<DAE.ComponentRef> rightCrefs;
   BackendDAE.EqSystems eqs, eqs1 = {};
   BackendDAE.Shared shared;
   Boolean done=false;
@@ -270,15 +270,14 @@ protected
 algorithm
   try
     binding := BackendVariable.varBindExp(inVar);
-    rightCref::{} := Expression.getAllCrefs(binding);
-    //print("rightCref: " + ComponentReference.printComponentRefStr(rightCref) + "\n");
+    rightCrefs := Expression.getAllCrefs(binding);
     BackendDAE.DAE(eqs, shared) := inDAE;
     var := BackendVariable.setBindExp(inVar, NONE());
     var := BackendVariable.setVarFixed(var, false) "??? should we do this ???";
     eqn := BackendDAE.EQUATION(BackendVariable.varExp(var), binding, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
     for eq in eqs loop
       BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs) := eq;
-      if BackendVariable.existsVar(rightCref, orderedVars, false) then
+      if BackendVariable.existsAnyVar(rightCrefs, orderedVars, false) then
         orderedVars := BackendVariable.addVar(var, orderedVars);
         orderedEqs := BackendEquation.addEquation(eqn, orderedEqs);
         eqs1 := BackendDAEUtil.setEqSystEqs(BackendDAEUtil.setEqSystVars(eq, orderedVars), orderedEqs)::eqs1;
