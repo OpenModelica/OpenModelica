@@ -6414,11 +6414,16 @@ algorithm
   (outExp,cont,outTpl) := matchcontinue(inExp,inTpl)
     local
       Boolean b;
+      ComponentRef cr;
 
-    case (DAE.CALL(path= Absyn.IDENT("der")), (false))
+    case (DAE.CALL(path= Absyn.IDENT("der")), false)
       then (inExp,false,true);
 
     //isAlias
+    case(DAE.CREF(componentRef = cr), false)
+    guard intEq(System.strncmp(ComponentReference.crefStr(cr),"$DERAlias",9),0)  //BackendDAE.derivativeNamePrefix
+     equation
+      then (inExp,false,true);
 
     case (_,b) then (inExp, not b, inTpl);
 
