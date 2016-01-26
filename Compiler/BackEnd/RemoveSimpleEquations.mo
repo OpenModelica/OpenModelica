@@ -4532,25 +4532,12 @@ protected function removeStateDerInfo "BB,
 remove stateDerInfo! This information should be collected after removeSimpleEquations
 "
   input list<BackendDAE.Var> inVarList;
-  output list<BackendDAE.Var> outVarList;
+  output list<BackendDAE.Var> vars = {};
 algorithm
-  outVarList := matchcontinue(inVarList)
-    local
-     BackendDAE.Var var, var1;
-     DAE.ComponentRef cr;
-     list<BackendDAE.Var> varsRest;
-    case ({}) then {};
-    case (var::varsRest) equation
-      var = BackendVariable.setStateDerivative(var, NONE());
-      outVarList = removeStateDerInfo(varsRest);
-    then (var::outVarList);
-    case (var::varsRest) equation
-      outVarList = removeStateDerInfo(varsRest);
-    then (var::outVarList);
-    else equation
-      print("\n++++++++++ Error in RemoveSimpleEquations.removeStateDerInfo ++++++++++\n");
-    then inVarList;
-  end matchcontinue;
+  for var in inVarList loop
+    vars := (if BackendVariable.isStateVar(var) then BackendVariable.setStateDerivative(var, NONE()) else var) :: vars;
+  end for;
+  vars := MetaModelica.Dangerous.listReverseInPlace(vars);
 end removeStateDerInfo;
 
 protected function findSimpleEquations "BB,
