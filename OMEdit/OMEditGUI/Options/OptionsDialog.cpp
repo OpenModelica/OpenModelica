@@ -2680,7 +2680,7 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   mpOutputSizeSpinBox->setSuffix(" rows");
   mpOutputSizeSpinBox->setSpecialValueText(Helper::unlimited);
   // reset messages number before simulation
-  mpResetMessagesNumberBeforeSimulationCheckBox = new QCheckBox(tr("Reset messages number before simulation"));
+  mpResetMessagesNumberBeforeSimulationCheckBox = new QCheckBox(tr("Reset messages number before checking, instantiation && simulation"));
   mpResetMessagesNumberBeforeSimulationCheckBox->setChecked(true);
   // set general groupbox layout
   QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
