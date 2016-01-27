@@ -6411,7 +6411,7 @@ Returns a true if the exp contains in der"
   output Boolean cont;
   output Boolean outTpl;
 algorithm
-  (outExp,cont,outTpl) := matchcontinue(inExp,inTpl)
+  (outExp,cont,outTpl) := match(inExp,inTpl)
     local
       Boolean b;
       ComponentRef cr;
@@ -6427,7 +6427,7 @@ algorithm
 
     case (_,b) then (inExp, not b, inTpl);
 
-  end matchcontinue;
+  end match;
 end traversingexpHasDer;
 
 
@@ -6562,7 +6562,7 @@ Returns a true if the exp contains the componentRef in if,sign,semiLinear"
   output Boolean cont;
   output tuple<DAE.ComponentRef,Boolean> outTpl;
 algorithm
-  (outExp,cont,outTpl) := matchcontinue(inExp,inTpl)
+  (outExp,cont,outTpl) := match(inExp,inTpl)
     local
       Boolean b;
       Integer i;
@@ -6598,7 +6598,7 @@ algorithm
     case (_, (_,true)) then (inExp,false,inTpl);
     else (inExp, true, inTpl);
 
-  end matchcontinue;
+  end match;
 end expHasCrefInIfWork;
 
 
