@@ -3608,6 +3608,24 @@ algorithm
   end matchcontinue;
 end createSymbolicSimulationJacobian;
 
+protected function getFurtherVars
+  input BackendDAE.Var v;
+  input tuple<list<BackendDAE.Var>, DAE.ComponentRef> inTpl;
+  output BackendDAE.Var outVar = v;
+  output tuple<list<BackendDAE.Var>, DAE.ComponentRef> outTpl;
+protected
+  DAE.ComponentRef diffCref;
+  list<BackendDAE.Var> vars;
+  Boolean b;
+algorithm
+  (vars, diffCref) := inTpl;
+  b := ComponentReference.crefLastIdentEqual(BackendVariable.varCref(v), diffCref);
+  if not b then
+    vars := v::vars;
+  end if;
+  outTpl := (vars, diffCref);
+end getFurtherVars;
+
 protected function createJacobianLinearCode
   input BackendDAE.SymbolicJacobians inSymjacs;
   input SimCode.ModelInfo inModelInfo;

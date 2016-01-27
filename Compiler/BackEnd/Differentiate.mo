@@ -2093,7 +2093,7 @@ algorithm
         fail();
 
     // try to inline
-    case (DAE.CALL(attr=DAE.CALL_ATTR(builtin=false)), _, _, BackendDAE.DIFFERENTIATION_TIME(), _)
+    case (DAE.CALL(attr=DAE.CALL_ATTR(builtin=false)), _, _, _, _)
       equation
         (e,_,true) = Inline.forceInlineExp(inExp,(SOME(inFunctionTree),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
         e = Expression.addNoEventToRelations(e);
@@ -2115,6 +2115,10 @@ algorithm
           BackendDump.debugStrExpStr("### Differentiate call\n ", e, " w.r.t. " + ComponentReference.crefStr(inDiffwrtCref) + "\n");
         end if;
         (de, functions) = differentiateFunctionCallPartial(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter, expStack);
+        (e,_,b) = Inline.forceInlineExp(de,(SOME(functions),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
+        if b then
+          de = e;
+        end if;
         // Debug dump
         if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
           BackendDump.debugStrExpStr("### result output :\n", de, " w.r.t. " + ComponentReference.crefStr(inDiffwrtCref) + "\n");
@@ -2446,7 +2450,7 @@ algorithm
       DAE.CallAttributes attr;
       list<list<DAE.Exp>> rest;
       list<DAE.Exp> expLst, restDiff;
-      DAE.Exp de, res;
+      DAE.Exp de, res, zero;
       DAE.Type ty;
       Integer ix;
 
@@ -2455,13 +2459,17 @@ algorithm
 
     case (expLst::rest, de::restDiff, DAE.TSUB(exp=DAE.CALL(path=path, attr=attr), ix =ix, ty=ty), _) equation
       res = DAE.TSUB(DAE.CALL(path, expLst, attr), ix, ty);
-      res = Expression.expMul(de, res);
+      ty = Expression.typeof(de);
+      (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(ty));
+      res = DAE.IFEXP(DAE.RELATION(de, DAE.NEQUAL(ty), zero, -1, NONE()), Expression.expMul(de, res), zero);
       res = Expression.expAdd(inAccum, res);
     then createPartialSum(rest, restDiff, inCall, res);
 
     case (expLst::rest, de::restDiff, DAE.CALL(path=path, attr=attr), _) equation
       res = DAE.CALL(path, expLst, attr);
-      res = Expression.expMul(de, res);
+      ty = Expression.typeof(de);
+      (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(ty));
+      res = DAE.IFEXP(DAE.RELATION(de, DAE.NEQUAL(ty), zero, -1, NONE()), Expression.expMul(de, res), zero);
       res = Expression.expAdd(inAccum, res);
     then createPartialSum(rest, restDiff, inCall, res);
   end match;
