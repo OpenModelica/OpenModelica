@@ -253,8 +253,8 @@
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="577"/>
-        <source>Add new modifiers, e.g phi(start=1),w(start=2)</source>
-        <translation>Добавить новые модификаторы, например phi(start=1),w(start=2)</translation>
+        <source>Add new modifiers, e.g., phi(start=1), w(start=2)</source>
+        <translation>Добавить новые модификаторы, например phi(start=1), w(start=2)</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="796"/>
