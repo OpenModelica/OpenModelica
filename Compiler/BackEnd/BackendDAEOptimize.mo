@@ -4480,7 +4480,7 @@ algorithm
             algorithm
               terms := Expression.terms(e);
               terms := list(hetsSplitExp(t) for t in terms);
-              (terms, termsDer) := List.splitOnTrue(terms, Expression.expHasDer);
+              (termsDer, terms) := List.splitOnTrue(terms, Expression.expHasDer);
             then Expression.expAdd(Expression.makeSum1(terms), Expression.makeSum1(termsDer));
           else iExp;
           end match;
