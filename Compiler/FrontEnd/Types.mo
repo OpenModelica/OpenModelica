@@ -687,11 +687,11 @@ public function isIntegerOrRealOrSubTypeOfEither
   input DAE.Type t;
   output Boolean b;
 algorithm
-  b := matchcontinue(t)
-    case _ equation true = isRealOrSubTypeReal(t); then true;
-    case _ equation true = isIntegerOrSubTypeInteger(t); then true;
+  b := match(t)
+    case _ guard isRealOrSubTypeReal(t) then true;
+    case _ guard isIntegerOrSubTypeInteger(t) then true;
     else false;
-  end matchcontinue;
+  end match;
 end isIntegerOrRealOrSubTypeOfEither;
 
 public function isIntegerOrRealOrBooleanOrSubTypeOfEither
@@ -699,12 +699,12 @@ public function isIntegerOrRealOrBooleanOrSubTypeOfEither
   input DAE.Type t;
   output Boolean b;
 algorithm
-  b := matchcontinue(t)
-    case _ equation true = isRealOrSubTypeReal(t); then true;
-    case _ equation true = isIntegerOrSubTypeInteger(t); then true;
-    case _ equation true = isBooleanOrSubTypeBoolean(t); then true;
+  b := match(t)
+    case _ guard isRealOrSubTypeReal(t) then true;
+    case _ guard isIntegerOrSubTypeInteger(t) then true;
+    case _ guard isBooleanOrSubTypeBoolean(t) then true;
     else false;
-  end matchcontinue;
+  end match;
 end isIntegerOrRealOrBooleanOrSubTypeOfEither;
 
 public function isClock
@@ -858,20 +858,12 @@ public function isArrayOrString "Return true if Type is array or the builtin Str
   input DAE.Type inType;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inType)
+  outBoolean := match (inType)
     local Type ty;
-    case ty
-      equation
-        true = isArray(ty);
-      then
-        true;
-    case ty
-      equation
-        true = isString(ty);
-      then
-        true;
+    case ty guard isArray(ty) then true;
+    case ty guard isString(ty) then true;
     else false;
-  end matchcontinue;
+  end match;
 end isArrayOrString;
 
 public function numberOfDimensions "Return the number of dimensions of a Type."
@@ -5243,8 +5235,7 @@ algorithm
     case (_, _)
       equation
         equality(c1 = c2);
-      then
-        true;
+      then true;
     else false;
   end matchcontinue;
 end constEqual;
@@ -7337,7 +7328,7 @@ public function scalarSuperType
   input DAE.Type ity2;
   output DAE.Type ty;
 algorithm
-  ty := matchcontinue (ity1,ity2)
+  ty := match (ity1,ity2)
     local Type ty1, ty2;
     case (DAE.T_INTEGER(),DAE.T_INTEGER()) then DAE.T_INTEGER_DEFAULT;
     case (DAE.T_REAL(),DAE.T_REAL())       then DAE.T_REAL_DEFAULT;
@@ -7349,7 +7340,7 @@ algorithm
     case (DAE.T_BOOL(),DAE.T_BOOL())       then DAE.T_BOOL_DEFAULT;
     // adrpo: TODO? Why not string here?
     // case (DAE.T_STRING(varLst = _),DAE.T_STRING(varLst = _))   then DAE.T_STRING_DEFAULT;
-  end matchcontinue;
+  end match;
 end scalarSuperType;
 
 protected function optInteger

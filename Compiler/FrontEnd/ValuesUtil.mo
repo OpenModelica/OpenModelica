@@ -531,7 +531,7 @@ algorithm
   pt := unparsePrimType(lst);
   s1 := stringAppend("# ", pt);
   s2 := stringAppend(s1, "[");
-  i1 := unparseNumDims(lst);
+  i1 := unparseNumDims(lst,0);
   s3 := intString(i1);
   s4 := stringAppend(s2, s3);
   s5 := stringAppend(s4, " ");
@@ -546,7 +546,7 @@ protected function unparsePrimType "
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inValueLst)
+  match (inValueLst)
     local
       String res;
       list<Values.Value> elts;
@@ -561,27 +561,26 @@ algorithm
     case ((Values.BOOL() :: _)) then "b";
     case ({}) then "{}";
     else "error";
-  end matchcontinue;
+  end match;
 end unparsePrimType;
 
 protected function unparseNumDims "
   Helper function to unparse_array_description.
 "
   input list<Values.Value> inValueLst;
+  input Integer inInteger;
   output Integer outInteger;
 algorithm
   outInteger:=
-  matchcontinue (inValueLst)
+  match (inValueLst)
     local
       Integer i1;
       list<Values.Value> vals;
     case ((Values.ARRAY(valueLst = vals) :: _))
-      equation
-        i1 = unparseNumDims(vals);
       then
-        i1 + 1;
-    else 1;
-  end matchcontinue;
+        unparseNumDims(vals, inInteger + 1);
+    else inInteger + 1;
+  end match;
 end unparseNumDims;
 
 protected function unparseDimSizes "
@@ -2447,12 +2446,12 @@ public function valueDimensions
   input Values.Value inValue;
   output list<Integer> outDimensions;
 algorithm
-  outDimensions := matchcontinue(inValue)
+  outDimensions := match(inValue)
     local
       list<Integer> dims;
     case Values.ARRAY(dimLst = dims) then dims;
     else {};
-  end matchcontinue;
+  end match;
 end valueDimensions;
 
 public function extractValueString

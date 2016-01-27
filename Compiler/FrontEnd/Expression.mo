@@ -4384,10 +4384,10 @@ protected function checkIfOther
 input DAE.Type inTp;
 output DAE.Type outTp;
 algorithm
-  outTp := matchcontinue(inTp)
+  outTp := match(inTp)
     case (DAE.T_UNKNOWN(_)) then DAE.T_REAL_DEFAULT;
     else inTp;
-  end matchcontinue;
+  end match;
 end checkIfOther;
 
 public function expDiv "
@@ -4482,11 +4482,11 @@ public function makeConstOne
   input DAE.Type inType;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inType)
+  outExp := match (inType)
     case (DAE.T_INTEGER()) then DAE.ICONST(1);
     case (DAE.T_REAL()) then DAE.RCONST(1.0);
     else DAE.RCONST(1.0);
-  end matchcontinue;
+  end match;
 end makeConstOne;
 
 public function makeConstZero
@@ -4494,11 +4494,11 @@ public function makeConstZero
   input DAE.Type inType;
   output DAE.Exp const;
 algorithm
-  const := matchcontinue(inType)
+  const := match(inType)
     case (DAE.T_REAL()) then DAE.RCONST(0.0);
     case (DAE.T_INTEGER()) then DAE.ICONST(0);
     else DAE.RCONST(0.0);
-  end matchcontinue;
+  end match;
 end makeConstZero;
 
 public function makeConstZeroE
@@ -4514,19 +4514,13 @@ end makeConstZeroE;
 
 public function makeListOfZeros
   input Integer inDimension;
-  output list<DAE.Exp> outList;
+  output list<DAE.Exp> outList = {};
 algorithm
-  outList := matchcontinue(inDimension)
-    local Integer dimension;
-      DAE.Exp head;
-      list<DAE.Exp> tail;
-      case(0)
-        then {};
-      case(dimension) equation
-        head = DAE.RCONST(0.0);
-        tail = makeListOfZeros(dimension-1);
-        then head :: tail;
-  end matchcontinue;
+  if (inDimension > 0) then
+    for i in 1:inDimension loop
+      outList := DAE.RCONST(0.0) :: outList;
+    end for;
+  end if;
 end makeListOfZeros;
 
 public function makeRealArrayOfZeros
@@ -7360,7 +7354,7 @@ public function isOne
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inExp)
+  outBoolean := match (inExp)
     local
       Integer ival;
       Real rval;
@@ -7376,7 +7370,7 @@ algorithm
       then
         res;
     else false;
-  end matchcontinue;
+  end match;
 end isOne;
 
 public function isZero
@@ -7533,7 +7527,7 @@ protected function isImpureWork "author: lochel"
   output Boolean cont;
   output Boolean outImpure;
 algorithm
-  (outExp,cont,outImpure) := matchcontinue (inExp,isImpure)
+  (outExp,cont,outImpure) := match (inExp,isImpure)
     case (_, true) then (inExp,true,true);
 
     case (DAE.CALL(attr=DAE.CALL_ATTR(isImpure=true)), _)
@@ -7574,7 +7568,7 @@ algorithm
       then (inExp,false,true);
 
     else (inExp,true,false);
-  end matchcontinue;
+  end match;
 end isImpureWork;
 
 public function isConst
@@ -7805,7 +7799,7 @@ public function isEventTriggeringFunctionExp
   input DAE.Exp inExp;
   output Boolean outB;
 algorithm
-  outB := matchcontinue(inExp)
+  outB := match(inExp)
     case (DAE.CALL(path = Absyn.IDENT("div"))) then true;
     case (DAE.CALL(path = Absyn.IDENT("mod"))) then true;
     case (DAE.CALL(path = Absyn.IDENT("rem"))) then true;
@@ -7813,7 +7807,7 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT("floor"))) then true;
     case (DAE.CALL(path = Absyn.IDENT("integer"))) then true;
     else false;
-  end matchcontinue;
+  end match;
 end isEventTriggeringFunctionExp;
 
 public function isAddOrSub "returns true if operator is ADD or SUB"
@@ -7995,7 +7989,7 @@ public function typeBuiltin
   input DAE.Type inType;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inType)
+  outBoolean := match (inType)
     case (DAE.T_INTEGER()) then true;
     case (DAE.T_REAL()) then true;
     case (DAE.T_STRING()) then true;
@@ -8003,47 +7997,41 @@ algorithm
     // BTH
     case (DAE.T_CLOCK()) then true;
     else false;
-  end matchcontinue;
+  end match;
 end typeBuiltin;
 
 public function isWholeDim ""
   input DAE.Subscript s;
   output Boolean b;
 algorithm
-  b := matchcontinue(s)
+  b := match(s)
     case(DAE.WHOLEDIM()) then true;
     else false;
-  end matchcontinue;
+  end match;
 end isWholeDim;
 
 public function isInt ""
   input DAE.Type it;
-  output Boolean re;
+  output Boolean re = false;
 algorithm
-  re := matchcontinue(it)
+  re := match(it)
     local
       Type t1,t2;
-    case(DAE.T_ARRAY(ty=t2))
-      then
-        isReal(t2);
     case(DAE.T_INTEGER()) then true;
-    else false;
-  end matchcontinue;
+    case(DAE.T_ARRAY(ty=t2)) then isInt(t2);
+  end match;
 end isInt;
 
 public function isReal ""
   input DAE.Type it;
-  output Boolean re;
+  output Boolean re = false;
 algorithm
-  re := matchcontinue(it)
+  re := match(it)
     local
       Type t1,t2;
-    case(DAE.T_ARRAY(ty=t2))
-      then
-        isReal(t2);
     case(DAE.T_REAL()) then true;
-    else false;
-  end matchcontinue;
+    case(DAE.T_ARRAY(ty=t2)) then isReal(t2);
+  end match;
 end isReal;
 
 public function isExpReal ""
@@ -8505,22 +8493,18 @@ This function takes a list of Exp, assumes they are all ICONST
 and checks wheter the ICONST are in order."
   input Integer expectedValue;
   input list<DAE.Exp> integers;
-  output Boolean ob;
+  output Boolean ob = false;
 algorithm
-  ob := matchcontinue(expectedValue,integers)
+  ob := match(expectedValue,integers)
     local
       list<DAE.Exp> expl;
       Integer x1,x2;
       Boolean b;
     case(_,{}) then true;
-    case(x1, DAE.ICONST(x2)::expl)
-      equation
-        true = intEq(x1, x2);
-        b = expIntOrder(x1+1,expl);
+    case(x1, DAE.ICONST(x2)::expl) guard intEq(x1, x2)
       then
-        b;
-    else false;
-  end matchcontinue;
+        expIntOrder(x1+1,expl);
+  end match;
 end expIntOrder;
 
 public function isArray "returns true if expression is an array.
@@ -9386,46 +9370,36 @@ public function expStructuralEqualList
 "Returns true if the two lists of expressions are structural equal."
   input list<DAE.Exp> inExp1;
   input list<DAE.Exp> inExp2;
-  output Boolean outBoolean;
+  output Boolean outBoolean = false;
 algorithm
-  outBoolean := matchcontinue (inExp1,inExp2)
+  outBoolean := match (inExp1,inExp2)
     local
       DAE.Exp e1,e2;
       list<DAE.Exp> es1,es2;
       Boolean b;
     case ({},{}) then true;
-    case (e1::es1,e2::es2)
-      equation
-        true = expStructuralEqual(e1,e2);
+    case (e1::es1,e2::es2) guard expStructuralEqual(e1,e2)
       then
         expStructuralEqualList(es1, es2);
-    else
-      then
-        false;
-  end matchcontinue;
+  end match;
 end expStructuralEqualList;
 
 protected function expStructuralEqualListLst
 "Returns true if the two lists of lists of expressions are structural equal."
   input list<list<DAE.Exp>> inExp1;
   input list<list<DAE.Exp>> inExp2;
-  output Boolean outBoolean;
+  output Boolean outBoolean = false;
 algorithm
-  outBoolean := matchcontinue (inExp1,inExp2)
+  outBoolean := match (inExp1,inExp2)
     local
       list<DAE.Exp> e1,e2;
       list<list<DAE.Exp>> es1,es2;
       Boolean b;
     case ({},{}) then true;
-    case (e1::es1,e2::es2)
-      equation
-        true = expStructuralEqualList(e1,e2);
+    case (e1::es1,e2::es2) guard expStructuralEqualList(e1,e2)
       then
         expStructuralEqualListLst(es1, es2);
-    else
-      then
-        false;
-  end matchcontinue;
+  end match;
 end expStructuralEqualListLst;
 
 public function expContains
@@ -9613,11 +9587,11 @@ public function isExpCrefOrIfExp
   input DAE.Exp e;
   output Boolean res;
 algorithm
-  res := matchcontinue(e)
+  res := match(e)
     case(DAE.CREF(_,_)) then true;
     case(DAE.IFEXP(_,_,_)) then true;
     else false;
-  end matchcontinue;
+  end match;
 end isExpCrefOrIfExp;
 
 public function operatorEqual
@@ -9626,9 +9600,8 @@ public function operatorEqual
   input DAE.Operator inOperator2;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inOperator1,inOperator2)
+  outBoolean := match (inOperator1,inOperator2)
     local
-      Boolean res;
       Absyn.Path p1,p2;
 
     case (DAE.ADD(),DAE.ADD()) then true;
@@ -9663,12 +9636,10 @@ algorithm
     case (DAE.EQUAL(),DAE.EQUAL()) then true;
     case (DAE.NEQUAL(),DAE.NEQUAL()) then true;
     case (DAE.USERDEFINED(fqName = p1),DAE.USERDEFINED(fqName = p2))
-      equation
-        res = Absyn.pathEqual(p1, p2);
       then
-        res;
+        Absyn.pathEqual(p1, p2);
     else false;
-  end matchcontinue;
+  end match;
 end operatorEqual;
 
 public function arrayContainZeroDimension
@@ -9692,13 +9663,13 @@ public function arrayContainWholeDimension
   input DAE.Dimensions inDim;
   output Boolean wholedim;
 algorithm
-  wholedim := matchcontinue(inDim)
+  wholedim := match(inDim)
     local
       DAE.Dimensions rest_dims;
     case ({}) then false;
     case (DAE.DIM_UNKNOWN() :: _) then true;
     case (_ :: rest_dims) then arrayContainWholeDimension(rest_dims);
-  end matchcontinue;
+  end match;
 end arrayContainWholeDimension;
 
 public function isArrayType
@@ -9767,7 +9738,7 @@ public function dimensionsEqual
   input DAE.Dimension dim2;
   output Boolean res;
 algorithm
-  res := matchcontinue(dim1, dim2)
+  res := match(dim1, dim2)
     local Boolean b;
     case (DAE.DIM_UNKNOWN(), _) then true;
     case (_, DAE.DIM_UNKNOWN()) then true;
@@ -9779,7 +9750,7 @@ algorithm
         b = intEq(dimensionSize(dim1), dimensionSize(dim2));
       then
         b;
-  end matchcontinue;
+  end match;
 end dimensionsEqual;
 
 public function dimsEqual
@@ -9788,20 +9759,17 @@ public function dimsEqual
   input DAE.Dimensions dims2;
   output Boolean res;
 algorithm
-  res := matchcontinue(dims1, dims2)
+  res := match(dims1, dims2)
     local
       DAE.Dimension d1, d2;
       DAE.Dimensions dl1, dl2;
 
     case ({}, {}) then true;
-    case (d1::dl1, d2::dl2)
-      equation
-        true = dimensionsEqual(d1, d2);
-        true = dimsEqual(dl1, dl2);
+    case (d1::dl1, d2::dl2) guard dimensionsEqual(d1, d2)
       then
-        true;
+        dimsEqual(dl1, dl2);
     else false;
-  end matchcontinue;
+  end match;
 end dimsEqual;
 
 public function dimsEqualAllowZero
@@ -9811,20 +9779,17 @@ public function dimsEqualAllowZero
   input DAE.Dimensions dims2;
   output Boolean res;
 algorithm
-  res := matchcontinue(dims1, dims2)
+  res := match(dims1, dims2)
     local
       DAE.Dimension d1, d2;
       DAE.Dimensions dl1, dl2;
 
     case ({}, {}) then true;
-    case (d1::dl1, d2::dl2)
-      equation
-        true = dimensionsEqualAllowZero(d1, d2);
-        true = dimsEqualAllowZero(dl1, dl2);
+    case (d1::dl1, d2::dl2) guard dimensionsEqualAllowZero(d1, d2)
       then
-        true;
+        dimsEqualAllowZero(dl1, dl2);
     else false;
-  end matchcontinue;
+  end match;
 end dimsEqualAllowZero;
 
 public function dimensionsEqualAllowZero
@@ -10048,22 +10013,18 @@ protected function subscriptContain2 "
 "
   input Integer inInt;
   input list<DAE.Exp> inExp2;
-  output Boolean contained;
+  output Boolean contained = false;
 algorithm
-  contained := matchcontinue(inInt,inExp2)
+  contained := match(inInt,inExp2)
     local
       Boolean b,b2;
       DAE.Exp e1,e2;
       list<DAE.Exp> expl,expl2;
       Integer i,j;
-      case(i,( (DAE.ICONST(j)) :: _))
-        equation
-            true = (i == j);
+      case(i,( (DAE.ICONST(j)) :: _)) guard (i == j)
           then
             true;
-      case(i,(( DAE.ICONST(_)) :: expl))
-        equation
-            true = subscriptContain2(i,expl);
+      case(i,(( DAE.ICONST(_)) :: expl)) guard subscriptContain2(i,expl)
           then
             true;
       case(i,( (DAE.ARRAY(_,_,expl2)) :: expl))
@@ -10073,8 +10034,7 @@ algorithm
           b = Util.boolOrList({b,b2});
         then
           b;
-      else false;
-  end matchcontinue;
+  end match;
 end subscriptContain2;
 
 public function hasNoSideEffects
@@ -11571,11 +11531,11 @@ public function checkExpDimensionSizes
   input DAE.Exp dim;
   output Boolean value;
 algorithm
-  value := matchcontinue(dim)
+  value := match(dim)
     case DAE.ICONST() then if dim.integer > 0 then true else false;
     else
      false;
-  end matchcontinue;
+  end match;
 end checkExpDimensionSizes;
 
 public function checkDimensionSizes
@@ -11609,16 +11569,15 @@ protected
   list<Boolean> boolHelperList;
   list<Integer> dims;
 algorithm
- outValues := matchcontinue(inDims)
+  outValues := matchcontinue(inDims)
     case (_)
-    equation
-    boolHelperList = List.map(inDims, checkDimensionSizes);
-    true = List.reduce(boolHelperList,boolAnd);
-    dims = List.map(inDims, dimensionSizeAll);
-    then dims;
-    case (_)
-      then {};
-   end matchcontinue;
+      equation
+        boolHelperList = List.map(inDims, checkDimensionSizes);
+        true = List.reduce(boolHelperList,boolAnd);
+        dims = List.map(inDims, dimensionSizeAll);
+      then dims;
+    else {};
+  end matchcontinue;
 end dimensionsList;
 
 
@@ -11630,16 +11589,15 @@ protected
   list<Boolean> boolHelperList;
   list<Integer> dims;
 algorithm
- outValues := matchcontinue(inDims)
+  outValues := matchcontinue(inDims)
     case (_)
-    equation
-     boolHelperList = List.map(inDims, checkExpDimensionSizes);
-    true = List.reduce(boolHelperList,boolAnd);
-    dims = List.map(inDims, expInt);
-    then dims;
-    case (_)
-      then {};
-   end matchcontinue;
+      equation
+        boolHelperList = List.map(inDims, checkExpDimensionSizes);
+        true = List.reduce(boolHelperList,boolAnd);
+        dims = List.map(inDims, expInt);
+        then dims;
+    else {};
+  end matchcontinue;
 end expDimensionsList;
 
 public function isCrefListWithEqualIdents

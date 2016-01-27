@@ -1029,12 +1029,11 @@ protected function amortizeUnion "performs listUnion but in an 'amortized' way, 
   input list<DAE.ComponentRef> inCrefs;
   output list<DAE.ComponentRef> crefs;
 algorithm
-  crefs := matchcontinue(inCrefs)
-    case(_) equation
-      true = intMod(listLength(inCrefs),7)==0; // Experiments performed on different values: {{5, 102}, {6, 99}, {7, 98.8}, {8, 101}, {10, 101}, 20, 104}}
+  crefs := match(inCrefs)
+    case(_) guard intMod(listLength(inCrefs),7)==0 // Experiments performed on different values: {{5, 102}, {6, 99}, {7, 98.8}, {8, 101}, {10, 101}, 20, 104}}
       then List.union({},inCrefs);
     else inCrefs;
-  end matchcontinue;
+  end match;
 end amortizeUnion;
 
 public function addReplacementIfNot "Calls addReplacement() if condition (first argument) is false,

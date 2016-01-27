@@ -2068,7 +2068,7 @@ protected function getRangeBounds
   output Integer stop;
   output Integer step;
 algorithm
-  (start, stop, step) := matchcontinue(range)
+  (start, stop, step) := match(range)
     local
       Integer i1,i2,i3;
   case(DAE.RANGE(start= DAE.ICONST(i1),step=NONE(),stop=DAE.ICONST(i2)))
@@ -2079,7 +2079,7 @@ algorithm
   equation
     //print("getRangeBounds failed!"+ExpressionDump.printExpStr(range)+"\n");
     then fail();
-  end matchcontinue;
+  end match;
 end getRangeBounds;
 
 

@@ -660,7 +660,7 @@ algorithm
   // Go through all the strongly connected components.
   for comp in comps loop
     // Get the component's variables and select the correct error message.
-    (err, vlst) := matchcontinue(comp)
+    (err, vlst) := match(comp)
       case BackendDAE.EQUATIONSYSTEM(vars = vlst, jacType = BackendDAE.JAC_NONLINEAR())
         then ("nonlinear equation system:\n", vlst);
       case BackendDAE.EQUATIONSYSTEM(vars = vlst, jacType = BackendDAE.JAC_GENERIC())
@@ -671,7 +671,7 @@ algorithm
         then ("torn nonlinear equation system:\n", vlst);
       // If the component is none of these types, do nothing.
       else ("", {});
-    end matchcontinue;
+    end match;
 
     if not listEmpty(vlst) then
       // Filter out the variables that are missing start values.
@@ -1512,7 +1512,7 @@ protected function isVarExplicitSolvable
   input Integer inVarID;
   output Boolean outSolvable;
 algorithm
-  outSolvable := matchcontinue(inElem)
+  outSolvable := match(inElem)
     local
       Integer id;
       BackendDAE.AdjacencyMatrixElementEnhanced elem;
@@ -1521,22 +1521,19 @@ algorithm
     case {}
     then true;
 
-    //case (id, BackendDAE.SOLVABILITY_SOLVED())::elem equation
-    //  true = intEq(id, inVarID);
+    //case (id, BackendDAE.SOLVABILITY_SOLVED())::elem guard intEq(id, inVarID)
     //then false;
 
-    case (id, BackendDAE.SOLVABILITY_UNSOLVABLE())::_ equation
-      true = intEq(id, inVarID);
+    case (id, BackendDAE.SOLVABILITY_UNSOLVABLE())::_ guard intEq(id, inVarID)
     then false;
 
-    case (id, BackendDAE.SOLVABILITY_NONLINEAR())::_ equation
-      true = intEq(id, inVarID);
+    case (id, BackendDAE.SOLVABILITY_NONLINEAR())::_ guard intEq(id, inVarID)
     then false;
 
     case (_, _)::elem equation
       b = isVarExplicitSolvable(elem, inVarID);
     then b;
-  end matchcontinue;
+  end match;
 end isVarExplicitSolvable;
 
 protected function splitStrongComponents "author: mwenzler"

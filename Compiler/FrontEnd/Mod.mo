@@ -2068,7 +2068,7 @@ public function subModEqual "Returns true if two submod are equal."
   input DAE.SubMod subMod2;
   output Boolean equal;
 algorithm
-  equal := matchcontinue(subMod1,subMod2)
+  equal := match(subMod1,subMod2)
     local
       DAE.Ident id1,id2;
       DAE.Mod mod1,mod2;
@@ -2076,16 +2076,13 @@ algorithm
       list<Integer> indx1,indx2;
       list<Boolean> blst1;
 
-    case (DAE.NAMEMOD(id1,mod1),DAE.NAMEMOD(id2,mod2))
-      equation
-        true = stringEq(id1,id2);
-        true = modEqual(mod1,mod2);
+    case (DAE.NAMEMOD(id1,mod1),DAE.NAMEMOD(id2,mod2)) guard stringEq(id1,id2) and modEqual(mod1,mod2)
       then
         true;
 
     // otherwise false
     else false;
-  end matchcontinue;
+  end match;
 end subModEqual;
 
 protected function valEqual
@@ -2418,16 +2415,14 @@ public function renameNamedSubMod
   input String newIdent;
   output DAE.SubMod outMod;
 algorithm
-  outMod := matchcontinue (submod,oldIdent,newIdent)
+  outMod := match (submod,oldIdent,newIdent)
     local
       DAE.Mod mod;
       String id;
-    case (DAE.NAMEMOD(id,mod),_,_)
-      equation
-        true = stringEq(id,oldIdent);
+    case (DAE.NAMEMOD(id,mod),_,_) guard stringEq(id,oldIdent)
       then DAE.NAMEMOD(newIdent,mod);
     else submod;
-  end matchcontinue;
+  end match;
 end renameNamedSubMod;
 
 public function emptyModOrEquality
@@ -2774,7 +2769,7 @@ helper function for removeFirstSubsRedecl"
   input list<SubMod> isubs;
   output list<SubMod> osubs;
 algorithm
-  osubs := matchcontinue(isubs)
+  osubs := match(isubs)
     local
       SubMod sm;
       String s;
@@ -2787,7 +2782,7 @@ algorithm
         osubs = removeRedecl(subs);
       then
         sm::osubs;
-  end matchcontinue;
+  end match;
 end removeRedecl;
 
 public function removeModList "
