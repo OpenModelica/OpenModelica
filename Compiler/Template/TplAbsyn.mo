@@ -975,7 +975,7 @@ public function isAssignedIdent
 
   output Boolean outIsAssigned;
 algorithm
-  (outIsAssigned) := matchcontinue (inStatementList, inIdent)
+  (outIsAssigned) := match (inStatementList, inIdent)
     local
       Ident ident;
       list<Ident> largs;
@@ -983,9 +983,7 @@ algorithm
 
     case ( {}, _ )  then  false;
 
-    case ( MM_ASSIGN(lhsArgs = largs) :: _, ident )
-      equation
-        true = listMember(ident, largs);
+    case ( MM_ASSIGN(lhsArgs = largs) :: _, ident ) guard listMember(ident, largs)
       then
         true;
 
@@ -993,7 +991,7 @@ algorithm
       then
         isAssignedIdent(rest, ident);
 
-  end matchcontinue;
+  end match;
 end isAssignedIdent;
 
 
@@ -5713,8 +5711,8 @@ protected function typesEqualConcrete "function typesEqualConcrete:
 This function compares two type signatures.
 It assumes the input types are deAliasedType-ed.
 "
-  input TypeSignature inTypeA "must be conrete - dealiased without type variables";
-  input TypeSignature inTypeB "must be conrete - dealiased without type variables";
+  input TypeSignature inTypeA "must be concrete - dealiased without type variables";
+  input TypeSignature inTypeB "must be concrete - dealiased without type variables";
   input list<ASTDef> inASTDefs;
 
 algorithm
@@ -6581,32 +6579,30 @@ end canBeEscapedUnquoted;
 
 protected function canBeEscapedUnquotedChars
   input list<String> inChars;
-  output Boolean outCanBeUnquated;
+  output Boolean outCanBeUnquoted;
 algorithm
-  outCanBeUnquated :=
-  matchcontinue(inChars)
+  outCanBeUnquoted :=
+  match(inChars)
     local
       String c;
       list<String> chars;
 
     case ({}) then true;
 
-    case ( c  :: chars)
-      equation
         // \a \b \f \r \v  ... TODO: Error in the .srz or .c compilation(\r)
-        true =
-            (c == "\'")
+    case ( c  :: chars)
+      guard (c == "\'")
          or (c == "\"")
          or (c == "?")
          or (c == "\\")
          or (c == "\n")
          or (c == "\t")
-         or (c == " ");
+         or (c == " ")
       then canBeEscapedUnquotedChars(chars);
 
     else false;
 
-  end matchcontinue;
+  end match;
 end canBeEscapedUnquotedChars;
 
 

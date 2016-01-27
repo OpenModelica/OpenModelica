@@ -8649,29 +8649,25 @@ end setFirstOrderInSecondOrderVarIndex;
 /********* for dimension *******/
 
 protected function calculateVariableDimensions "
-Calcuates the dimesion of the statevaribale with order 0, 1, 2
+Calcuates the dimension of the statevaribale with order 0, 1, 2
 "
    input list<tuple<DAE.ComponentRef, Integer>> in_vars;
+   input Integer inNvar1;
+   input Integer inNvar2;
    output Integer OutInteger1; // number of ordinary differential equations of 1st order
    output Integer OutInteger2; // number of ordinary differential equations of 2st order
 
-algorithm (OutInteger1, OutInteger2) := matchcontinue(in_vars)
+algorithm (OutInteger1, OutInteger2) := match(in_vars)
   local
     list<tuple<DAE.ComponentRef, Integer>> rest;
-    DAE.ComponentRef cr;
-    Integer nvar1, nvar2;
-  case({}) then (0, 0);
+  case({}) then (inNvar1, inNvar2);
   case((_, 0)::rest)
-    equation
-     (nvar1, nvar2) = calculateVariableDimensions(rest);
     then
-      (nvar1+1, nvar2);
+      calculateVariableDimensions(rest,inNvar1+1,inNvar2);
   case((_, _)::rest)
-    equation
-      (nvar1, nvar2) = calculateVariableDimensions(rest);
     then
-      (nvar1, nvar2+1);
-end matchcontinue;
+      calculateVariableDimensions(rest,inNvar1,inNvar2+1);
+end match;
 end calculateVariableDimensions;
 
 /********************/
@@ -8688,7 +8684,7 @@ algorithm (OutInteger1, OutInteger2):= matchcontinue(dae_low)
   case(BackendDAE.DAE(eqs=eqsystems))
     equation
        ordered_states=setVariableDerIndex(dae_low, eqsystems);
-      (nvar1, nvar2)=calculateVariableDimensions(ordered_states);
+      (nvar1, nvar2)=calculateVariableDimensions(ordered_states,0,0);
       then
         (nvar1, nvar2);
   else

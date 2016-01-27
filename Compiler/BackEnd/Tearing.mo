@@ -1111,21 +1111,18 @@ protected function removeMatched
   input BackendDAE.AdjacencyMatrixElementEnhanced iAcc;
   output BackendDAE.AdjacencyMatrixElementEnhanced oAcc;
 algorithm
-  oAcc := matchcontinue(elem,ass2,iAcc)
+  oAcc := match(elem,ass2,iAcc)
     local
       Integer e;
       BackendDAE.AdjacencyMatrixElementEnhanced rest;
       BackendDAE.Solvability s;
     case ({},_,_) then iAcc;
-    case ((e,s)::rest,_,_)
-      equation
-        true = intLt(ass2[e],0);
-      then
-        removeMatched(rest,ass2,(e,s)::iAcc);
-    case ((_,_)::rest,_,_)
-      then
+    case ((e,s)::rest,_,_) then
+      if intLt(ass2[e],0) then
+        removeMatched(rest,ass2,(e,s)::iAcc)
+      else
         removeMatched(rest,ass2,iAcc);
-  end matchcontinue;
+  end match;
 end removeMatched;
 
 
@@ -1231,17 +1228,15 @@ protected function isAssignedSaveEnhanced " returns true if var/eqn is already a
   input tuple<Integer,BackendDAE.Solvability> inTpl;
   output Boolean outB;
 algorithm
-  outB := matchcontinue(ass,inTpl)
+  outB := match(ass,inTpl)
     local
       Integer i;
-    case (_,(i,_))
-      equation
-        true = intGt(i,0);
+    case (_,(i,_)) guard intGt(i,0)
       then
         intGt(ass[i],0);
     else
       true;
-  end matchcontinue;
+  end match;
 end isAssignedSaveEnhanced;
 
 
@@ -3316,21 +3311,17 @@ protected function getUnassigned " finds the unassigned vars or eqs.combine with
   input tuple<Integer,list<Integer>> InValue;
   output tuple<Integer,list<Integer>> OutValue;
 algorithm
-OutValue := matchcontinue(assEntry,InValue)
+OutValue := match(assEntry,InValue)
   local
     Integer indx;
     list<Integer> lst;
   case(_,(indx,lst))
-    equation
-    true = intEq(assEntry,-1);
     then
-      ((indx+1,indx::lst));
-  case(_,(indx,lst))
-    equation
-    false = intEq(assEntry,-1);
-    then
-      ((indx+1,lst));
-  end matchcontinue;
+      if intEq(assEntry,-1) then
+        ((indx+1,indx::lst))
+      else
+        ((indx+1,lst));
+  end match;
 end getUnassigned;
 
 
@@ -3562,24 +3553,20 @@ author: Waurich TUD 2012-10"
   output tuple<Integer,Integer,list<Integer>> outValue;
 algorithm
   outValue :=
-    matchcontinue(value,inValue)
+    match(value,inValue)
       local
         Integer indx;
         Integer maxValue;
         list<Integer> ilst;
       case(_,(indx,maxValue,ilst))
-        equation
-          true = value < maxValue;
-          then ((indx+1,maxValue,ilst));
-      case(_,(indx,maxValue,ilst))
-        equation
-          true = intEq(value,maxValue);
-          then ((indx+1,maxValue,indx::ilst));
-      case(_,(indx,maxValue,_))
-        equation
-          true = intGt(value,maxValue);
-          then ((indx+1,value,{indx}));
-    end matchcontinue;
+          then
+            if value < maxValue then
+              ((indx+1,maxValue,ilst))
+            else if intEq(value,maxValue) then
+              ((indx+1,maxValue,indx::ilst))
+            else
+              ((indx+1,value,{indx}));
+    end match;
   end maxListInthelp;
 
 
@@ -3656,26 +3643,23 @@ author: Waurich TUD 2012-10"
   input list<Integer> row;
   input tuple<Integer,list<list<Integer>>> inValue;
   output tuple<Integer,list<list<Integer>>> outValue;
+protected
+  Integer length1;
 algorithm
+  length1 := listLength(row);
   outValue:=
-  matchcontinue(row,inValue)
+  match(row,inValue)
     local
-      Integer length,length1;
+      Integer length;
       list<list<Integer>> ilst;
-    case(_,(length,_))
-      equation
-        length1 = listLength(row);
-        true = length1 > length;
+    case(_,(length,_)) guard length1 > length
       then
         ((length1,{row}));
-    case(_,(length,ilst))
-      equation
-        length1 = listLength(row);
-        true = intEq(length1,length);
+    case(_,(length,ilst)) guard intEq(length1,length)
       then
         ((length1,row::ilst));
     else inValue;
-  end matchcontinue;
+  end match;
 end findMostEntries;
 
 
@@ -3685,31 +3669,24 @@ author: Waurich TUD 2012-10"
  input list<Integer> row;
  input tuple<Integer,Integer,list<Integer>> inValue;
  output tuple<Integer,Integer,list<Integer>> outValue;
+protected
+  Integer length1;
 algorithm
+  length1 := listLength(row);
   outValue :=
-  matchcontinue(row,inValue)
+  match(row,inValue)
     local
-      Integer length,length1,indx;
+      Integer length,indx;
       list<Integer> ilst;
-    case(_,(length,indx,_))
-      equation
-        length1 = listLength(row);
-        true = length1 > length;
-      then
-        ((length1,indx+1,{indx}));
     case(_,(length,indx,ilst))
-      equation
-        length1 = listLength(row);
-        true = intEq(length1,length);
       then
-        ((length,indx+1,indx::ilst));
-    case(_,(length,indx,ilst))
-      equation
-        length1 = listLength(row);
-        true = length1 < length;
-      then
-        ((length,indx+1,ilst));
-  end matchcontinue;
+        if length1 > length then
+          ((length1,indx+1,{indx}))
+        else if intEq(length1,length) then
+          ((length,indx+1,indx::ilst))
+        else
+          ((length,indx+1,ilst));
+  end match;
 end findMostEntries2;
 
 
@@ -3719,23 +3696,20 @@ author: Waurich TUD 2012-10"
   input list<Integer> row;
   input tuple<Integer,Integer,list<Integer>> inValue;
   output tuple<Integer,Integer,list<Integer>> outValue;
+protected
+  Integer length;
 algorithm
+  length := listLength(row);
   outValue :=
-  matchcontinue(row,inValue)
+  match(row,inValue)
     local
-      Integer num,indx,length;
+      Integer num,indx;
       list<Integer> ilst;
-    case(_,(num,indx,ilst))
-      equation
-      length = listLength(row);
-      true = intEq(num,length);
+    case(_,(num,indx,ilst)) guard intEq(num,length)
       then ((num,indx+1,indx::ilst));
-    case(_,(num,indx,ilst))
-      equation
-      length = listLength(row);
-      true = num <> length;
+    case(_,(num,indx,ilst)) guard num <> length
       then ((num,indx+1,ilst));
-  end matchcontinue;
+  end match;
 end findNEntries;
 
 // =============================================================================

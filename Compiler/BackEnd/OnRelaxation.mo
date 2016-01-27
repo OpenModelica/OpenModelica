@@ -1054,13 +1054,13 @@ algorithm
   end matchcontinue;
 end getOrphansOrderEdvanced;
 
-protected function hasOrphanEdvanced "author: Frenkel TUD 2012-07"
+protected function hasOrphanAdvanced "author: Frenkel TUD 2012-07"
   input list<Integer> rows;
   input array<Integer> ass1;
   input list<Integer> iAcc;
   output list<Integer> oAcc;
 algorithm
-  oAcc := matchcontinue(rows, ass1, iAcc)
+  oAcc := match(rows, ass1, iAcc)
     local
       list<Integer> rest;
       Integer r;
@@ -1068,15 +1068,13 @@ algorithm
       then
         iAcc;
     case (r::rest, _, _)
-      equation
-        false = intGt(ass1[r], 0);
       then
-        hasOrphanEdvanced(rest, ass1, r::iAcc);
-    case (_::rest, _, _)
-      then
-        hasOrphanEdvanced(rest, ass1, iAcc);
-  end matchcontinue;
-end hasOrphanEdvanced;
+        if not intGt(ass1[r], 0) then
+          hasOrphanAdvanced(rest, ass1, r::iAcc)
+        else
+          hasOrphanAdvanced(rest, ass1, iAcc);
+  end match;
+end hasOrphanAdvanced;
 
 protected function addPreOrphan
   input Integer orphan;
@@ -1143,7 +1141,7 @@ algorithm
         false = intEq(colummarks[e], mark);
         r = List.removeOnTrue(preorphan, intEq, m[e]) "vars of equation without preorphan";
         //  print("search in " + stringDelimitList(List.map(r, intString), ", ") + "\n");
-        olst = hasOrphanEdvanced(r, ass1, {});
+        olst = hasOrphanAdvanced(r, ass1, {});
         arrayUpdate(colummarks, e, mark);
         //  print("Found Orphans " + stringDelimitList(List.map(olst, intString), ", ") + " ChildOrphan is " + intString(preorphan) + "\n");
         addPreOrphans(preorphan, olst, orphans);
@@ -1237,7 +1235,7 @@ algorithm
         false = intEq(colummarks[e], mark);
         r = List.removeOnTrue(preorphan, intEq, m[e]) "vars of equation without preorphan";
         //  print("search in " + stringDelimitList(List.map(r, intString), ", ") + "\n");
-        olst = hasOrphanEdvanced(r, ass1, {});
+        olst = hasOrphanAdvanced(r, ass1, {});
         arrayUpdate(colummarks, e, mark);
         //  print("Found Orphans " + stringDelimitList(List.map(olst, intString), ", ") + " ChildOrphan is " + intString(preorphan) + "\n");
         addPreOrphans(preorphan, olst, orphans);
@@ -1986,26 +1984,20 @@ protected function diagonalEntry "author: Frenkel TUD
   input list<tuple<Integer, DAE.Exp>> row;
   output Option<DAE.Exp> oe;
 algorithm
-  oe := matchcontinue(col, row)
+  oe := match(col, row)
     local
       list<tuple<Integer, DAE.Exp>> rest;
       Integer r;
       DAE.Exp e;
-    case (_, (r, e)::_)
-      equation
-        true = intEq(r, col);
-        false = Expression.isZero(e);
+    case (_, (r, e)::rest)
       then
-        SOME(e);
-    case (_, (r, _)::_)
-      equation
-        true = intGt(r, col);
-      then
-        NONE();
-    case (_, _::rest)
-      then
-        diagonalEntry(col, rest);
-  end matchcontinue;
+        if intEq(r, col) and not Expression.isZero(e) then
+          SOME(e)
+        else if intGt(r, col) then
+          NONE()
+        else
+          diagonalEntry(col, rest);
+  end match;
 end diagonalEntry;
 
 protected function isConstOneMinusOne "author: Frenkel TUD
@@ -3227,17 +3219,7 @@ protected function isAssignedSaveEnhanced "author: Frenkel TUD 2012-05"
   input Integer inTpl;
   output Boolean outB;
 algorithm
-  outB := matchcontinue(ass, inTpl)
-    local
-      Integer i;
-    case (_, i)
-      equation
-        true = intGt(i, 0);
-      then
-        intGt(ass[i], 0);
-    else
-      true;
-  end matchcontinue;
+  outB := if intGt(inTpl, 0) then intGt(ass[inTpl], 0) else true;
 end isAssignedSaveEnhanced;
 
 protected function onefreeMatchingBFS1 "author: Frenkel TUD 2012-05"

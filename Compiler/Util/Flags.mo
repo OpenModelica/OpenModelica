@@ -1392,14 +1392,12 @@ protected function checkDebugFlag
   input Integer inFlagIndex;
   output Integer outNextFlagIndex;
 algorithm
-  outNextFlagIndex := matchcontinue(inDebugFlag, inFlagIndex)
+  outNextFlagIndex := match(inDebugFlag, inFlagIndex)
     local
       Integer index;
       String name, index_str, err_str;
 
-    case (DEBUG_FLAG(index = index), _)
-      equation
-        true = intEq(index, inFlagIndex);
+    case (DEBUG_FLAG(index = index), _) guard intEq(index, inFlagIndex)
       then inFlagIndex + 1;
 
     case (DEBUG_FLAG(index = index, name = name), _)
@@ -1409,7 +1407,7 @@ algorithm
           " in Flags.allDebugFlags. Make sure that all flags are present and ordered correctly.";
         Error.addSourceMessage(Error.INTERNAL_ERROR, {err_str}, sourceInfo());
       then fail();
-  end matchcontinue;
+  end match;
 end checkDebugFlag;
 
 protected function defaultDebugFlag
@@ -2602,7 +2600,7 @@ protected function defaultFlagSphinx
   input FlagData flag;
   output String str;
 algorithm
-  str := matchcontinue flag
+  str := match flag
     local
       Integer i;
     case BOOL_FLAG() then System.gettext("Boolean (default")+" ``" + boolString(flag.data) + "``).";
@@ -2623,7 +2621,7 @@ algorithm
         end for;
       then "#ENUM_FLAG Failed#" + anyString(flag);
     else "Unknown default value" + anyString(flag);
-  end matchcontinue;
+  end match;
 end defaultFlagSphinx;
 
 protected function printFlagOptionDescShort

@@ -292,14 +292,12 @@ public function getEnumerationTypeFromTypes
   input String inBaseType;
   output String outEnumerationType;
 algorithm
-  outEnumerationType := matchcontinue (inTypeDefinitionsList, inBaseType)
+  outEnumerationType := match (inTypeDefinitionsList, inBaseType)
     local
       list<TypeDefinitions> xs;
       String name_;
       String baseType;
-    case ((ENUMERATIONTYPE(name = name_) :: _), baseType)
-      equation
-        true = stringEqual(name_, baseType);
+    case ((ENUMERATIONTYPE(name = name_) :: _), baseType) guard stringEqual(name_, baseType)
       then
         name_;
     case ((_ :: xs), baseType)
@@ -308,7 +306,7 @@ algorithm
       then
         name_;
     case ({}, _) then "";
-  end matchcontinue;
+  end match;
 end getEnumerationTypeFromTypes;
 
 annotation(__OpenModelica_Interface="util");
