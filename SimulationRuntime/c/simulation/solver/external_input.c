@@ -37,21 +37,30 @@
 
 #include "util/omc_error.h"
 #include "util/memory_pool.h"
+#include "util/read_csv.h"
+#include "util/libcsv.h"
+#include "util/read_matlab4.h"
 
 #include "simulation/simulation_runtime.h"
 #include "simulation/solver/solver_main.h"
 #include "simulation/solver/model_help.h"
 #include "simulation/options.h"
 
+static inline void externalInputallocate1(DATA* data, FILE * pFile);
+static inline void externalInputallocate2(DATA* data, char *filename);
+
 int externalInputallocate(DATA* data)
 {
   FILE * pFile = NULL;
-  int n,m,c;
   int i,j;
+  short useLibCsvH = 1;
+  char * cflags = NULL;
 
-  {
-    char * cflags = NULL;
+
+  cflags = (char*)omc_flagValue[FLAG_INPUT_CSV];
+  if(!cflags){
     cflags = (char*)omc_flagValue[FLAG_INPUT_FILE];
+    useLibCsvH = 0;
     if(cflags){
       pFile = fopen(cflags,"r");
       if(pFile == NULL)
@@ -61,46 +70,13 @@ int externalInputallocate(DATA* data)
   }
 
 
+
   data->simulationInfo->external_input.active = (modelica_boolean) (pFile != NULL);
-  n = 0;
-  if(data->simulationInfo->external_input.active){
-
-    while(1) {
-        c = fgetc(pFile);
-        if (c==EOF) break;
-        if (c=='\n') ++n;
-    }
-    // check if csv file is empty!
-    if (n == 0)
-    {
-      fprintf(stderr, "External input file: externalInput.csv is empty!\n"); fflush(NULL);
-      EXIT(1);
-    }
-
-    --n;
-    data->simulationInfo->external_input.n = n;
-    data->simulationInfo->external_input.N = data->simulationInfo->external_input.n;
-    rewind(pFile);
-
-    do{
-      c = fgetc(pFile);
-      if (c==EOF) break;
-    }while(c!='\n');
-
-    m = data->modelData->nInputVars;
-    data->simulationInfo->external_input.u = (modelica_real**)calloc(modelica_integer_max(1,n),sizeof(modelica_real*));
-    for(i = 0; i<data->simulationInfo->external_input.n; ++i)
-      data->simulationInfo->external_input.u[i] = (modelica_real*)calloc(modelica_integer_max(1,m),sizeof(modelica_real));
-    data->simulationInfo->external_input.t = (modelica_real*)calloc(modelica_integer_max(1,data->simulationInfo->external_input.n),sizeof(modelica_real));
-
-    for(i = 0; i < data->simulationInfo->external_input.n; ++i){
-      c = fscanf(pFile, "%lf", &data->simulationInfo->external_input.t[i]);
-      for(j = 0; j < m; ++j){
-        c = fscanf(pFile, "%lf", &data->simulationInfo->external_input.u[i][j]);
-      }
-      if(c<0)
-        data->simulationInfo->external_input.n = i;
-    }
+  if(data->simulationInfo->external_input.active || useLibCsvH){
+    if(useLibCsvH){
+      externalInputallocate2(data, cflags);
+    }else
+      externalInputallocate1(data, pFile);
 
     if(ACTIVE_STREAM(LOG_SIMULATION))
     {
@@ -108,18 +84,85 @@ int externalInputallocate(DATA* data)
       printf("\n========================================================");
       for(i = 0; i < data->simulationInfo->external_input.n; ++i){
         printf("\nInput: t=%f   \t", data->simulationInfo->external_input.t[i]);
-        for(j = 0; j < m; ++j){
+        for(j = 0; j < data->modelData->nInputVars; ++j){
           printf("u%d(t)= %f \t",j+1,data->simulationInfo->external_input.u[i][j]);
         }
       }
       printf("\n========================================================\n");
     }
 
-    fclose(pFile);
     data->simulationInfo->external_input.i = 0;
   }
 
   return 0;
+}
+
+static inline void externalInputallocate2(DATA* data, char *filename){
+  int i, j, k;
+  struct csv_data *res = read_csv(filename);
+  data->modelData->nInputVars = res->numvars - 1;
+  data->simulationInfo->external_input.n = res->numsteps;
+  data->simulationInfo->external_input.N = data->simulationInfo->external_input.n;
+
+  data->simulationInfo->external_input.u = (modelica_real**)calloc(modelica_integer_max(1,res->numsteps),sizeof(modelica_real*));
+  for(i = 0; i<data->simulationInfo->external_input.n; ++i)
+    data->simulationInfo->external_input.u[i] = (modelica_real*)calloc(modelica_integer_max(1,data->modelData->nInputVars),sizeof(modelica_real));
+  data->simulationInfo->external_input.t = (modelica_real*)calloc(modelica_integer_max(1,data->simulationInfo->external_input.n),sizeof(modelica_real));
+
+
+  for(i = 0, k= 0; i < data->simulationInfo->external_input.n; ++i)
+    data->simulationInfo->external_input.t[i] = res->data[k++];
+  for(j = 0; j < data->modelData->nInputVars; ++j){
+    for(i = 0; i < data->simulationInfo->external_input.n; ++i){
+      data->simulationInfo->external_input.u[i][j] = res->data[k++];
+    }
+  }
+  omc_free_csv_reader(res);
+  data->simulationInfo->external_input.active = data->simulationInfo->external_input.n > 0;
+}
+
+static inline void externalInputallocate1(DATA* data, FILE * pFile){
+	int n,m,c;
+	int i,j;
+	n = 0;
+
+	while(1) {
+		c = fgetc(pFile);
+		if (c==EOF) break;
+		if (c=='\n') ++n;
+	}
+	// check if csv file is empty!
+	if (n == 0)
+	{
+	  fprintf(stderr, "External input file: externalInput.csv is empty!\n"); fflush(NULL);
+	  EXIT(1);
+	}
+
+	--n;
+	data->simulationInfo->external_input.n = n;
+	data->simulationInfo->external_input.N = data->simulationInfo->external_input.n;
+	rewind(pFile);
+
+	do{
+	  c = fgetc(pFile);
+	  if (c==EOF) break;
+	}while(c!='\n');
+
+	m = data->modelData->nInputVars;
+	data->simulationInfo->external_input.u = (modelica_real**)calloc(modelica_integer_max(1,n),sizeof(modelica_real*));
+	for(i = 0; i<data->simulationInfo->external_input.n; ++i)
+	  data->simulationInfo->external_input.u[i] = (modelica_real*)calloc(modelica_integer_max(1,m),sizeof(modelica_real));
+	data->simulationInfo->external_input.t = (modelica_real*)calloc(modelica_integer_max(1,data->simulationInfo->external_input.n),sizeof(modelica_real));
+
+	for(i = 0; i < data->simulationInfo->external_input.n; ++i){
+	  c = fscanf(pFile, "%lf", &data->simulationInfo->external_input.t[i]);
+	  for(j = 0; j < m; ++j){
+		c = fscanf(pFile, "%lf", &data->simulationInfo->external_input.u[i][j]);
+	  }
+	  if(c<0)
+		data->simulationInfo->external_input.n = i;
+	}
+	fclose(pFile);
 }
 
 int externalInputFree(DATA* data)
@@ -190,3 +233,4 @@ int externalInputUpdate(DATA* data)
   }
  return 0;
 }
+

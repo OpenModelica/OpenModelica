@@ -49,6 +49,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_IIT */                   "iit",
   /* FLAG_ILS */                   "ils",
   /* FLAG_INITIAL_STEP_SIZE */     "initialStepSize",
+  /* FLAG_INPUT_CSV */             "csvInput",
   /* FLAG_INPUT_FILE */            "exInputFile",
   /* FLAG_INPUT_FILE_STATES */     "stateFile",
   /* FLAG_IPOPT_HESSE*/            "ipopt_hesse",
@@ -106,6 +107,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_IIT */                   "[double] value specifies a time for the initialization of the model",
   /* FLAG_ILS */                   "[int] default: 1",
   /* FLAG_INITIAL_STEP_SIZE */     "value specifies an initial stepsize for the dassl solver",
+  /* FLAG_INPUT_CSV */             "value specifies an csv-file with inputs for the simulation/optimization of the model",
   /* FLAG_INPUT_FILE */            "value specifies an external file with inputs for the simulation/optimization of the model",
   /* FLAG_INPUT_FILE_STATES */     "value specifies an file with states start values for the optimization of the model",
   /* FLAG_IPOPT_HESSE */           "value specifies the hessian for Ipopt",
@@ -188,9 +190,11 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  The value is an Integer with default value 1.",
   /* FLAG_INITIAL_STEP_SIZE */
   "  Value specifies an initial stepsize for the dassl solver.",
+   /* FLAG_INPUT_CSV */
+  "  Value specifies an csv-file with inputs for the simulation/optimization of the model",
   /* FLAG_INPUT_FILE */
   "  Value specifies an external file with inputs for the simulation/optimization of the model.",
-  /* FLAG_INPUT_FILE_STATES */
+ /* FLAG_INPUT_FILE_STATES */
   "  Value specifies an file with states start values for the optimization of the model.",
   /* FLAG_IPOPT_HESSE */
   "  Value specifies the hessematrix for Ipopt(OMC, BFGS, const).",
@@ -305,6 +309,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_IIT */                   FLAG_TYPE_OPTION,
   /* FLAG_ILS */                   FLAG_TYPE_OPTION,
   /* FLAG_INITIAL_STEP_SIZE */     FLAG_TYPE_OPTION,
+  /* FLAG_INPUT_CSV */             FLAG_TYPE_OPTION,
   /* FLAG_INPUT_FILE */            FLAG_TYPE_OPTION,
   /* FLAG_INPUT_FILE_STATES */     FLAG_TYPE_OPTION,
   /* FLAG_IPOPT_HESSE */           FLAG_TYPE_OPTION,
