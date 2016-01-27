@@ -253,7 +253,7 @@
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="577"/>
-        <source>Add new modifiers, e.g phi(start=1),w(start=2)</source>
+        <source>Add new modifiers, e.g., phi(start=1), w(start=2)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
