@@ -1758,7 +1758,9 @@ algorithm
         end if;
         knvars = BackendVariable.listVar1(knvarsTmp);
         backendDAE = BackendDAEUtil.setKnownVars(backendDAE, knvars);
-        SimCodeFunctionUtil.execStat("analytical Jacobians -> generated optimized jacobians");
+        if Flags.isSet(Flags.JAC_DUMP2) then
+          print("analytical Jacobians -> generated optimized jacobians: " + realString(clock()) + "\n");
+        end if;
 
         // generate sparse pattern
         (sparsepattern,colsColors) = generateSparsePattern(reduceDAE, inDiffVars, diffedVars);
@@ -2456,7 +2458,7 @@ algorithm
           end if;
 
           // generate generic jacobian backend dae
-          (jacobian2, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
+          (jacobian2, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, shared, inVars, name);
 
       then (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationvarsInts, residualequations, otherEqnVarTpl, jacobian), SOME(BackendDAE.TEARINGSET(iterationvarsInts2, residualequations2, otherEqnVarTpl2, jacobian2)), b, mixedSystem), shared);
 
@@ -2687,6 +2689,7 @@ algorithm
           inResVars,
           dependentVarsLst,
           inName);
+
         shared = BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
 
       then (BackendDAE.GENERIC_JACOBIAN(symJacBDAE, sparsePattern, sparseColoring), shared);

@@ -2840,6 +2840,7 @@ public function extendsFunctionTypeArgs
   Extends function argument list adding var for element list."
   input DAE.Type inType;
   input list<DAE.Element> inElementLst;
+  input list<DAE.Element> inOutputElementLst;
   input list<Boolean> inBooltLst;
   output DAE.Type outType;
 protected
@@ -2852,8 +2853,64 @@ algorithm
   (fargs1, _) := List.splitOnBoolList(fargs, inBooltLst);
   newfargs := List.threadMap(inElementLst, fargs1, makeElementFarg);
   newfargs := listAppend(fargs, newfargs);
+  rettype := makeElementReturnType(inOutputElementLst);
   outType := DAE.T_FUNCTION(newfargs,rettype,functionAttributes,tysrc);
 end extendsFunctionTypeArgs;
+
+protected function makeElementReturnType "
+  Create a return type from a list of Element output variables.
+  Depending on the length of the output variable list, different
+  kinds of return types are created."
+  input list<DAE.Element> inElementLst;
+  output DAE.Type outType;
+algorithm
+  outType := match(inElementLst)
+    local
+      Type ty;
+      DAE.Element element;
+      list<DAE.Element> elements;
+      list<Type> types;
+      list<String> names;
+      Option<list<String>> namesOpt;
+
+
+    case {} then DAE.T_NORETCALL(DAE.emptyTypeSource);
+
+    case {element}
+      equation
+        ty = makeElementReturnTypeSingle(element);
+      then
+        ty;
+
+    case elements
+      algorithm
+        types := {};
+        names := {};
+        for element in elements loop
+          types := makeElementReturnTypeSingle(element)::types;
+          names := DAEUtil.varName(element)::names;
+        end for;
+      if listEmpty(names) then
+        namesOpt := NONE();
+      else
+        namesOpt := SOME(listReverse(names));
+      end if;
+      then DAE.T_TUPLE(listReverse(types), namesOpt, DAE.emptyTypeSource);
+  end match;
+end makeElementReturnType;
+
+protected function makeElementReturnTypeSingle
+"Create the return type from an Element for a single return value."
+  input DAE.Element inElement;
+  output DAE.Type outType;
+algorithm
+  outType := match (inElement)
+    local
+      Type ty;
+
+    case DAE.VAR(ty = ty) then ty;
+  end match;
+end makeElementReturnTypeSingle;
 
 public function makeEnumerationType
   "Creates an enumeration type from a name and an enumeration type containing
