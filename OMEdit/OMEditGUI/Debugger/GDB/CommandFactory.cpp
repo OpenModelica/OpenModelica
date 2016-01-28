@@ -130,7 +130,7 @@ QByteArray CommandFactory::attach(QString processID)
 
 /*!
   Changes the stdout & stderr stream buffer.\n
-  Sets them to NULL so that executable can flush the output as they recieve it.
+  Sets them to NULL so that executable can flush the output as they receive it.
   \return the command.
   */
 QByteArray CommandFactory::changeStdStreamBuffer()

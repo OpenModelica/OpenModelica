@@ -1309,7 +1309,7 @@ QString StringHandler::getPlacementAnnotation(QString componentAnnotation)
 /*!
  * \brief StringHandler::getNormalizedAngle
  * Reduces Angle to useful values. Finds the angle between 0° and 360°.\n
- * This functin is useful for performing shapes and components flipping.\n\n
+ * This function is useful for performing shapes and components flipping.\n\n
  * <B>Find the angle between 0° and 360° that corresponds to 1275°</B>\n\n
  * 1275 ÷ 360 = 3.541 the only part we care about is the "3", which tells us that 360° fits into 1275° three times,\n
  * 1275° – 3×360° = 1275° – 1080° = 195°\n\n

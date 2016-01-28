@@ -608,7 +608,7 @@ class diff_match_patch {
 
   /**
    * A safer version of QString.mid(pos).  This one returns "" instead of
-   * null when the postion equals the string length.
+   * null when the position equals the string length.
    * @param str String to take a substring from.
    * @param pos Position to start the substring from.
    * @return Substring.
@@ -620,7 +620,7 @@ class diff_match_patch {
 
   /**
    * A safer version of QString.mid(pos, len).  This one returns "" instead of
-   * null when the postion equals the string length.
+   * null when the position equals the string length.
    * @param str String to take a substring from.
    * @param pos Position to start the substring from.
    * @param len Length of substring.
