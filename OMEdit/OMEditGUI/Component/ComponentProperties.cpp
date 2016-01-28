@@ -459,7 +459,7 @@ void ComponentParameters::setUpDialog()
   mpParametersHeading = new Label(Helper::parameters);
   mpParametersHeading->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
   mpParametersHeading->setAlignment(Qt::AlignTop);
-  // set seperator line
+  // set separator line
   mHorizontalLine = new QFrame();
   mHorizontalLine->setFrameShape(QFrame::HLine);
   mHorizontalLine->setFrameShadow(QFrame::Sunken);
@@ -726,7 +726,7 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
 
 /*!
  * \brief ComponentParameters::fetchComponentModifiers
- * Fetches the Component's modifiers and apply modifier values on the approriate Parameters.
+ * Fetches the Component's modifiers and apply modifier values on the appropriate Parameters.
  */
 void ComponentParameters::fetchComponentModifiers()
 {
@@ -959,7 +959,7 @@ void ComponentAttributes::setUpDialog()
   mpAttributesHeading = new Label(Helper::attributes);
   mpAttributesHeading->setFont(QFont("", Helper::headingFontSize));
   mpAttributesHeading->setAlignment(Qt::AlignTop);
-  // set seperator line
+  // set separator line
   mHorizontalLine = new QFrame();
   mHorizontalLine->setFrameShape(QFrame::HLine);
   mHorizontalLine->setFrameShadow(QFrame::Sunken);

@@ -134,7 +134,7 @@ void CornerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 /*!
   Reimplementation of mouseReleaseEvent.\n
   Emits the CornerItem::CornerItemRelease SIGNAL.\n
-  Checks the CornerItem old postion with the current postion.
+  Checks the CornerItem old position with the current position.
   If the position is changed then emits the CornerItem::CornerItemPositionChanged SIGNAL.
   \param event - pointer to QGraphicsSceneMouseEvent
   */
