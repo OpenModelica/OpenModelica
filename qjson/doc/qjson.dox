@@ -44,7 +44,7 @@ bool ok;
 
 QVariantMap result = parser.parse (json, &ok).toMap();
 if (!ok) {
-  qFatal("An error occured during parsing");
+  qFatal("An error occurred during parsing");
   exit (1);
 }
 

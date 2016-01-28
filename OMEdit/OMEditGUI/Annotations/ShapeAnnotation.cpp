@@ -1058,7 +1058,7 @@ void ShapeAnnotation::referenceShapeDeleted()
 }
 
 /*!
-  Slot activated when Delete option is choosen from context menu of the shape.\n
+  Slot activated when Delete option is chosen from context menu of the shape.\n
   Deletes the connection.
   */
 void ShapeAnnotation::deleteConnection()
@@ -1072,7 +1072,7 @@ void ShapeAnnotation::deleteConnection()
 /*!
  * \brief ShapeAnnotation::deleteMe
  * Deletes the shape. Slot activated when Del key is pressed while the shape is selected.\n
- * Slot activated when Delete option is choosen from context menu of the shape.\n
+ * Slot activated when Delete option is chosen from context menu of the shape.\n
  */
 void ShapeAnnotation::deleteMe()
 {
@@ -1460,7 +1460,7 @@ bool ShapeAnnotation::isLineStraight(QPointF point1, QPointF point2)
 
 /*!
  * \brief ShapeAnnotation::showShapeProperties
- * Slot activated when Properties option is choosen from context menu of the shape.
+ * Slot activated when Properties option is chosen from context menu of the shape.
  */
 void ShapeAnnotation::showShapeProperties()
 {

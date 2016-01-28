@@ -120,7 +120,7 @@ void TreeSearchFilters::showHideFilters(bool On)
 
 /*!
  * \class FileDataNotifier
- * \brief Looks for new data on file. When data is availabe emits bytesAvailable SIGNAL.
+ * \brief Looks for new data on file. When data is available emits bytesAvailable SIGNAL.
  * \brief FileDataNotifier::FileDataNotifier
  * \param fileName
  */

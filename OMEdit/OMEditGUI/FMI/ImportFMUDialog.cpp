@@ -58,7 +58,7 @@ ImportFMUDialog::ImportFMUDialog(MainWindow *pParent)
   // set import heading
   mpImportFMUHeading = new Label(Helper::importFMU);
   mpImportFMUHeading->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
-  // set seperator line
+  // set separator line
   mpHorizontalLine = new QFrame();
   mpHorizontalLine->setFrameShape(QFrame::HLine);
   mpHorizontalLine->setFrameShadow(QFrame::Sunken);
