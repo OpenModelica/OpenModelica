@@ -60,7 +60,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpShapePropertiesHeading = new Label(QString(title).append(" ").append(Helper::properties));
   mpShapePropertiesHeading->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
   mpShapePropertiesHeading->setAlignment(Qt::AlignTop);
-  // set seperator line
+  // set separator line
   mHorizontalLine = new QFrame();
   mHorizontalLine->setFrameShape(QFrame::HLine);
   mHorizontalLine->setFrameShadow(QFrame::Sunken);
@@ -815,7 +815,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
       LibraryTreeItem *pLibraryTreeItem = mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem();
       QString nameStructure = StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure());
       pLibraryTreeItem = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(nameStructure);
-      /* get the class directory path and use it to get the relative path of the choosen bitmap file */
+      /* get the class directory path and use it to get the relative path of the chosen bitmap file */
       QFileInfo classFileInfo(pLibraryTreeItem->getFileName());
       QDir classDirectory = classFileInfo.absoluteDir();
       QString relativeImagePath = classDirectory.relativeFilePath(mpFileTextBox->text());

@@ -1585,7 +1585,7 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
     }
   }
   /* Delete the class in OMC.
-   * If deleteClass is successfull remove the class from Library Browser and delete the corresponding ModelWidget.
+   * If deleteClass is successful remove the class from Library Browser and delete the corresponding ModelWidget.
    */
   if (mpLibraryWidget->getMainWindow()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
     /* QSortFilterProxy::filterAcceptRows changes the expand/collapse behavior of indexes or I am using it in some stupid way.
@@ -1686,7 +1686,7 @@ bool LibraryTreeModel::unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bo
 bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
   /* Delete the class in OMC.
-   * If deleteClass is successfull remove the class from Library Browser.
+   * If deleteClass is successful remove the class from Library Browser.
    */
   if (mpLibraryWidget->getMainWindow()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
     /* QSortFilterProxy::filterAcceptRows changes the expand/collapse behavior of indexes or I am using it in some stupid way.
@@ -3125,7 +3125,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryT
   } else {
     result = saveModelicaLibraryTreeItemFolder(pLibraryTreeItem);
     for (int i = 0; i < pLibraryTreeItem->getChildren().size(); i++) {
-      // if any child is saved in package.mo then only mark it saved and update its information becasue it should be already saved.
+      // if any child is saved in package.mo then only mark it saved and update its information because it should be already saved.
       LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
       if (pLibraryTreeItem->getFileName().compare(pChildLibraryTreeItem->getFileName()) == 0) {
         saveChildLibraryTreeItemsOneFileHelper(pChildLibraryTreeItem);

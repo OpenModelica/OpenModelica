@@ -1484,7 +1484,7 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
   } else if (dynamic_cast<ResizerItem*>(itemAt(event->pos()))) {
     // do nothing if resizer item is clicked. It will be handled in its class mousePressEvent();
   } else {
-    // this flag is just used to have seperate identity for if statement in mouse release event of graphicsview
+    // this flag is just used to have separate identity for if statement in mouse release event of graphicsview
     setIsMovingComponentsAndShapes(true);
     // save the position of all components
     foreach (Component *pComponent, mComponentsList) {
