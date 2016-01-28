@@ -1263,10 +1263,10 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pDefaultViewRadioButtonsGridLayout->addWidget(mpTextViewRadioButton, 1, 0);
   pDefaultViewRadioButtonsGridLayout->addWidget(mpDocumentationViewRadioButton, 1, 1);
   // set the layout of default view group
-  QGridLayout *pDefautlViewLayout = new QGridLayout;
-  pDefautlViewLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pDefautlViewLayout->addLayout(pDefaultViewRadioButtonsGridLayout, 0, 0);
-  mpDefaultViewGroupBox->setLayout(pDefautlViewLayout);
+  QGridLayout *pDefaultViewLayout = new QGridLayout;
+  pDefaultViewLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pDefaultViewLayout->addLayout(pDefaultViewRadioButtonsGridLayout, 0, 0);
+  mpDefaultViewGroupBox->setLayout(pDefaultViewLayout);
   // Auto Save
   mpEnableAutoSaveGroupBox = new QGroupBox(tr("Enable Auto Save"));
   mpEnableAutoSaveGroupBox->setToolTip("Auto save feature is experimental. If you encounter unexpected crashes then disable it.");
