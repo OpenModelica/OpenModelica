@@ -2208,7 +2208,7 @@ protected function convertResidualsIntoSolvedEquations2 "author: lochel"
   output list<BackendDAE.Equation> outEquationList;
   output list<BackendDAE.Var> outVariableList;
 algorithm
-  (outEquationList, outVariableList) := matchcontinue(inEquationList, inIndex)
+  (outEquationList, outVariableList) := match(inEquationList, inIndex)
     local
       Integer index;
       list<BackendDAE.Equation> restEquationList;
@@ -2235,18 +2235,14 @@ algorithm
       currEquation = BackendDAE.EQUATION(expVarName, exp, source, eqAttr);
 
       currVariable = BackendDAE.VAR(componentRef, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
-
       (equationList, variableList) = convertResidualsIntoSolvedEquations2(restEquationList, index+1,currEquation::iEquationList,currVariable::iVariableList);
     then (equationList, variableList);
 
-    case (currEquation::_, _) equation
-      Error.addInternalError("function convertResidualsIntoSolvedEquations2 failed", sourceInfo());
-    then fail();
-
     else equation
+      true = Flags.isSet(Flags.FAILTRACE);
       Error.addInternalError("function convertResidualsIntoSolvedEquations2 failed", sourceInfo());
     then fail();
-  end matchcontinue;
+  end match;
 end convertResidualsIntoSolvedEquations2;
 
 protected function prepareTornStrongComponentData
