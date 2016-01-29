@@ -480,7 +480,7 @@ preprocessing for solve1,
 
  protected
   DAE.Exp res;
-  list<DAE.Exp> lhs, rhs, resTerms;
+  list<DAE.Exp> lhs, rhs;
   list<DAE.Exp> lhsWithX, rhsWithX, lhsWithoutX, rhsWithoutX, eWithX, factorWithX, factorWithoutX;
   DAE.Exp lhsX, rhsX, lhsY, rhsY, N;
   DAE.ComponentRef cr;
@@ -492,7 +492,6 @@ preprocessing for solve1,
    (x, _) := ExpressionSimplify.simplify(inExp1);
    (y, _) := ExpressionSimplify.simplify(inExp2);
    res := Expression.expSub(x, y);
-   resTerms :=  Expression.terms(res);
 
    // split and sort
    (lhsX, lhsY) := preprocessingSolve5(inExp1, inExp3,true);

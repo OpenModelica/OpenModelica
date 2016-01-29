@@ -320,7 +320,7 @@ int cmp_modelica_real(const void *v1, const void *v2) {
 
 static inline void overwriteTimeGridModel(OptDataTime * time, long double c[], const int np, const int nsi){
   int i,k;
-  const int np1 = np - 1;
+
   time->t0 = time->tt[0];
   time->tf = time->tt[nsi];
 
@@ -691,7 +691,7 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
 
 
   modelica_real * realVars[3];
-  modelica_real * tmpVars[2];
+  modelica_real * tmpVars[2] = {NULL, NULL};
 
   int i, j, k, shift, l;
   DATA * data = optData->data;

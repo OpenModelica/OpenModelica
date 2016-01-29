@@ -741,12 +741,9 @@ static inline void debugeJac(OptData * optData, Number* vopt){
   const int nx = optData->dim.nx;
   const int nu = optData->dim.nu;
   const int nsi = optData->dim.nsi;
-  const int nJ = optData->dim.nJ;
   const int np = optData->dim.np;
   const int nc = optData->dim.nc;
-  const int npv = np*nv;
   const int nt = optData->dim.nt;
-  const int NRes = optData->dim.NRes;
   const int nReal = optData->data->modelData->nVariablesReal;
   const int NV = optData->dim.NV;
   Number vopt_shift[NV];
@@ -754,7 +751,6 @@ static inline void debugeJac(OptData * optData, Number* vopt){
   long double hh;
   const modelica_real * const vmax = optData->bounds.vmax;
   const modelica_real * const vmin = optData->bounds.vmin;
-  const modelica_real * vnom = optData->bounds.vnom;
   modelica_real vv[nsi][np][nReal];
   FILE *pFile;
   char buffer[4096];

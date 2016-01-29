@@ -527,12 +527,6 @@ protected function findLoops1
   output BackendDAE.Shared oshared = ishared;
   output Boolean changed = inchanged "not used";
 protected
-  Boolean b;
-  BackendDAE.StrongComponent c;
-  Integer i = 1;
-  BackendDAE.Variables vars;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
   BackendDAE.EquationArray eqns;
   Boolean l2p_all = Flags.getConfigString(Flags.LOOP2CON) == "all";
   Boolean l2p_nl;
@@ -540,7 +534,7 @@ protected
 algorithm
 
   if l2p_all then
-    l2p_nl := true;
+    //l2p_nl := true;
     l2p_l := true;
   else
     l2p_nl := Flags.getConfigString(Flags.LOOP2CON) == "noLin";
@@ -659,10 +653,9 @@ algorithm
 
   BackendDAE.SHARED(knownVars=knvars) := oshared;
 
-  for name in name_lst loop
+  for var_ in var_lst loop
 
     // res -> con
-    var_::var_lst := var_lst;
     cr_var :: cr_lst := cr_lst;
     eqn :: eqn_lst := eqn_lst;
     ind_e :: ind_lst_e := ind_lst_e;
@@ -749,7 +742,7 @@ algorithm
        if (match comp case BackendDAE.SINGLEEQUATION() then true; else false; end match) then
 
          BackendDAE.SINGLEEQUATION(eqn=eindex,var=vindx) := comp;
-         (var_con as BackendDAE.VAR(varName = cr)) := BackendVariable.getVarAt(vars, vindx);
+         var_con := BackendVariable.getVarAt(vars, vindx);
          b3 := BackendVariable.isRealOptimizeConstraintsVars(var_con);
          if b3 then
            try
@@ -893,7 +886,7 @@ public function reduceDynamicOptimization
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
-  list<BackendDAE.Var> varlst, opt_varlst, conVarsList, fconVarsList, objMayer = {}, objLagrange = {};
+  list<BackendDAE.Var> varlst, opt_varlst, conVarsList, fconVarsList, objMayer, objLagrange;
   list<BackendDAE.EqSystem> systlst, newsyst = {};
   BackendDAE.Variables v;
   BackendDAE.Shared shared;
