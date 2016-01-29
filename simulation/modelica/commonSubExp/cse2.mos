@@ -80,8 +80,8 @@ simulate(Tearing3); getErrorString();
 // 13: $DER.i1:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real
 // 14: $DER.u1:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real
 // 15: $DER.uL:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real
-// 16: $cse3:VARIABLE()  type: Real unreplaceable
-// 17: $cse2:VARIABLE()  type: Real unreplaceable
+// 16: $cse2:VARIABLE()  type: Real unreplaceable
+// 17: $cse1:VARIABLE()  type: Real unreplaceable
 //
 //
 // ########### Updated Equation List ########### (17, 17)
@@ -94,15 +94,15 @@ simulate(Tearing3); getErrorString();
 // 6/6 (1): uL = L * $DER.iL   [dynamic]
 // 7/7 (1): $DER.uL = R2 * der(i2)   [dynamic]
 // 8/8 (1): $DER.u1 = R1 * $DER.i1   [dynamic]
-// 9/9 (1): $DER.u0 = $cse2   [dynamic]
-// 10/10 (1): u0 = $cse3   [dynamic]
+// 9/9 (1): $DER.u0 = $cse1   [dynamic]
+// 10/10 (1): u0 = $cse2   [dynamic]
 // 11/11 (1): u1 = R1 * i1   [dynamic]
 // 12/12 (1): uL = R2 * i2   [dynamic]
 // 13/13 (1): u0 = u1 + uL   [dynamic]
 // 14/14 (1): uC = u1 + uL   [dynamic]
 // 15/15 (1): i1 = i2 + iL   [dynamic]
-// 16/16 (1): $cse3 = sin(time)   [binding]
-// 17/17 (1): $cse2 = cos(time)   [binding]
+// 16/16 (1): $cse2 = sin(time)   [binding]
+// 17/17 (1): $cse1 = cos(time)   [binding]
 //
 //
 // ########### Updated Variable List ########### (19)
@@ -122,33 +122,33 @@ simulate(Tearing3); getErrorString();
 // 13: $DER.i1:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real
 // 14: $DER.u1:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real
 // 15: $DER.uL:DUMMY_DER(fixed = false ) .Tearing3, .Real type: Real
-// 16: $cse3:VARIABLE()  type: Real unreplaceable
-// 17: $cse2:VARIABLE()  type: Real unreplaceable
-// 18: $cseb13:VARIABLE()  type: Real unreplaceable
-// 19: $cseb6:VARIABLE()  type: Real unreplaceable
+// 16: $cse2:VARIABLE()  type: Real unreplaceable
+// 17: $cse1:VARIABLE()  type: Real unreplaceable
+// 18: $cseb10:VARIABLE()  type: Real unreplaceable
+// 19: $cseb3:VARIABLE()  type: Real unreplaceable
 //
 //
 // ########### Updated Equation List ########### (19, 19)
 // ========================================
 // 1/1 (1): $DER.i1 = der(i2) + $DER.iL   [dynamic]
 // 2/2 (1): i0 = i1 + iC   [dynamic]
-// 3/3 (1): $DER.uC = $cseb6   [dynamic]
-// 4/4 (1): $DER.u0 = $cseb6   [dynamic]
+// 3/3 (1): $DER.uC = $cseb3   [dynamic]
+// 4/4 (1): $DER.u0 = $cseb3   [dynamic]
 // 5/5 (1): iC = C * $DER.uC   [dynamic]
 // 6/6 (1): uL = L * $DER.iL   [dynamic]
 // 7/7 (1): $DER.uL = R2 * der(i2)   [dynamic]
 // 8/8 (1): $DER.u1 = R1 * $DER.i1   [dynamic]
-// 9/9 (1): $DER.u0 = $cse2   [dynamic]
-// 10/10 (1): u0 = $cse3   [dynamic]
+// 9/9 (1): $DER.u0 = $cse1   [dynamic]
+// 10/10 (1): u0 = $cse2   [dynamic]
 // 11/11 (1): u1 = R1 * i1   [dynamic]
 // 12/12 (1): uL = R2 * i2   [dynamic]
-// 13/13 (1): u0 = $cseb13   [dynamic]
-// 14/14 (1): uC = $cseb13   [dynamic]
+// 13/13 (1): u0 = $cseb10   [dynamic]
+// 14/14 (1): uC = $cseb10   [dynamic]
 // 15/15 (1): i1 = i2 + iL   [dynamic]
-// 16/16 (1): $cse3 = sin(time)   [binding]
-// 17/17 (1): $cse2 = cos(time)   [binding]
-// 18/18 (1): $cseb13 = u1 + uL   [binding]
-// 19/19 (1): $cseb6 = $DER.u1 + $DER.uL   [binding]
+// 16/16 (1): $cse2 = sin(time)   [binding]
+// 17/17 (1): $cse1 = cos(time)   [binding]
+// 18/18 (1): $cseb10 = u1 + uL   [binding]
+// 19/19 (1): $cseb3 = $DER.u1 + $DER.uL   [binding]
 //
 //
 // ########### Updated Variable List ########### (3)
