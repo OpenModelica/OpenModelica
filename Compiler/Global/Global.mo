@@ -68,6 +68,9 @@ constant Integer backendDAE_fileSequence = 20;
 constant Integer backendDAE_jacobianSeq = 21;
 // nodeId
 constant Integer fgraph_nextId = 22;
+// csevar name
+constant Integer backendDAE_cseIndex = 23;
+
 // ----------------------
 
 public function initialize "Called to initialize global roots (when needed)"
