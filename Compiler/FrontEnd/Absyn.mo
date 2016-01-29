@@ -463,8 +463,13 @@ uniontype Equation "Information on one (kind) of equation, different constructor
   record EQ_EQUALS
     Exp leftSide "leftSide" ;
     Exp rightSide "rightSide Connect stmt" ;
-    Option<ComponentRef> domainOpt "domain for PDEs" ;
   end EQ_EQUALS;
+
+  record EQ_PDE
+    Exp leftSide "leftSide" ;
+    Exp rightSide "rightSide Connect stmt" ;
+    ComponentRef domain "domain for PDEs" ;
+  end EQ_PDE;
 
   record EQ_CONNECT
     ComponentRef connector1 "connector1" ;
@@ -2199,19 +2204,19 @@ algorithm
       then
         (EQ_IF(e1, eqil1, else_branch, eqil2), arg);
 
-    case (EQ_EQUALS(leftSide = e1, rightSide = e2, domainOpt = NONE()), _, _, arg)
+    case (EQ_EQUALS(leftSide = e1, rightSide = e2), _, _, arg)
       equation
         (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (e2, arg) = traverseExpBidir(e2, enterFunc, exitFunc, arg);
       then
-        (EQ_EQUALS(e1, e2,NONE()), arg);
-    case (EQ_EQUALS(leftSide = e1, rightSide = e2, domainOpt = SOME(cref1)), _, _, arg)
+        (EQ_EQUALS(e1, e2), arg);
+    case (EQ_PDE(leftSide = e1, rightSide = e2, domain = cref1), _, _, arg)
       equation
         (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (e2, arg) = traverseExpBidir(e2, enterFunc, exitFunc, arg);
         cref1 = traverseExpBidirCref(cref1, enterFunc, exitFunc, arg);
       then
-        (EQ_EQUALS(e1, e2,SOME(cref1)), arg);
+        (EQ_PDE(e1, e2,cref1), arg);
 
     case (EQ_CONNECT(connector1 = cref1, connector2 = cref2), _, _, arg)
       equation

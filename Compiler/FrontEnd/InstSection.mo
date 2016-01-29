@@ -4829,6 +4829,7 @@ algorithm
         ();
 
     case SCode.EQ_EQUALS() then ();
+    case SCode.EQ_PDE() then ();
 
     // connect is not allowed in when equations.
     case SCode.EQ_CONNECT(crefLeft = cr1, crefRight = cr2, info = info)

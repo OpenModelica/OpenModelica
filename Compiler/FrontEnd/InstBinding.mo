@@ -551,7 +551,7 @@ algorithm
         lhs := Expression.makeCrefExp(inComponentRef, t);
         acr := ComponentReference.unelabCref(inComponentRef);
         aexp1 := Absyn.CREF(acr);
-        scode := SCode.EQ_EQUALS(aexp1,aexp2,NONE(),SCode.noComment,info);
+        scode := SCode.EQ_EQUALS(aexp1,aexp2,SCode.noComment,info);
         source := DAEUtil.addSymbolicTransformation(inSource,DAE.FLATTEN(scode,NONE()));
         dae := InstSection.instEqEquation(lhs, DAE.PROP(inType,DAE.C_VAR()), e, prop2, source, SCode.NON_INITIAL(), inImpl);
       then

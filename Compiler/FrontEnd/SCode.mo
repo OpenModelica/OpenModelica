@@ -270,10 +270,17 @@ uniontype EEquation
   record EQ_EQUALS "the equality equation"
     Absyn.Exp expLeft  "the expression on the left side of the operator";
     Absyn.Exp expRight "the expression on the right side of the operator";
-    Option<Absyn.ComponentRef> domainOpt "domain for PDEs" ;
     Comment comment;
     SourceInfo info;
   end EQ_EQUALS;
+
+  record EQ_PDE "partial differential equation or boundary condition"
+    Absyn.Exp expLeft  "the expression on the left side of the operator";
+    Absyn.Exp expRight "the expression on the right side of the operator";
+    Absyn.ComponentRef domain "domain for PDEs" ;
+    Comment comment;
+    SourceInfo info;
+  end EQ_PDE;
 
   record EQ_CONNECT "the connect equation"
     Absyn.ComponentRef crefLeft  "the connector/component reference on the left side";
@@ -1461,14 +1468,14 @@ algorithm
       then
         true;
 
-    case(EQ_EQUALS(expLeft = e11, expRight = e12, domainOpt = NONE()),EQ_EQUALS(expLeft = e21, expRight = e22, domainOpt = NONE()))
+    case(EQ_EQUALS(expLeft = e11, expRight = e12),EQ_EQUALS(expLeft = e21, expRight = e22))
       equation
         true = Absyn.expEqual(e11,e21);
         true = Absyn.expEqual(e12,e22);
       then
         true;
 
-    case(EQ_EQUALS(expLeft = e11, expRight = e12, domainOpt = SOME(cr1)),EQ_EQUALS(expLeft = e21, expRight = e22, domainOpt = SOME(cr2)))
+    case(EQ_PDE(expLeft = e11, expRight = e12, domain = cr1),EQ_PDE(expLeft = e21, expRight = e22, domain = cr2))
       equation
         true = Absyn.expEqual(e11,e21);
         true = Absyn.expEqual(e12,e22);
@@ -2077,6 +2084,7 @@ algorithm
   info := match eq
     case EQ_IF(info=info) then info;
     case EQ_EQUALS(info=info) then info;
+    case EQ_PDE(info=info) then info;
     case EQ_CONNECT(info=info) then info;
     case EQ_FOR(info=info) then info;
     case EQ_WHEN(info=info) then info;
@@ -2225,6 +2233,13 @@ algorithm
         List.fold1(inEquation.elseBranch, foldEEquationsExps, inFunc, outArg);
 
     case EQ_EQUALS()
+      algorithm
+        outArg := inFunc(inEquation.expLeft, outArg);
+        outArg := inFunc(inEquation.expRight, outArg);
+      then
+        outArg;
+
+    case EQ_PDE()
       algorithm
         outArg := inFunc(inEquation.expLeft, outArg);
         outArg := inFunc(inEquation.expRight, outArg);
@@ -2564,9 +2579,8 @@ algorithm
       list<tuple<Absyn.Exp, list<EEquation>>> else_when;
       Comment comment;
       SourceInfo info;
-      Absyn.ComponentRef cr1, cr2;
+      Absyn.ComponentRef cr1, cr2, domain;
       Ident index;
-      Option<Absyn.ComponentRef> domainOpt;
 
     case (EQ_IF(expl1, then_branch, else_branch, comment, info), traverser, arg)
       equation
@@ -2574,12 +2588,19 @@ algorithm
       then
         (EQ_IF(expl1, then_branch, else_branch, comment, info), arg);
 
-    case (EQ_EQUALS(e1, e2, domainOpt, comment, info), traverser, arg)
+    case (EQ_EQUALS(e1, e2, comment, info), traverser, arg)
       equation
         (e1, arg) = traverser(e1, arg);
         (e2, arg) = traverser(e2, arg);
       then
-        (EQ_EQUALS(e1, e2, domainOpt, comment, info), arg);
+        (EQ_EQUALS(e1, e2, comment, info), arg);
+
+    case (EQ_PDE(e1, e2, domain, comment, info), traverser, arg)
+      equation
+        (e1, arg) = traverser(e1, arg);
+        (e2, arg) = traverser(e2, arg);
+      then
+        (EQ_PDE(e1, e2, domain, comment, info), arg);
 
     case (EQ_CONNECT(cr1, cr2, comment, info), _, _)
       equation
@@ -3200,6 +3221,7 @@ algorithm
 
     case EQ_IF(info = info) then info;
     case EQ_EQUALS(info = info) then info;
+    case EQ_PDE(info = info) then info;
     case EQ_CONNECT(info = info) then info;
     case EQ_FOR(info = info) then info;
     case EQ_WHEN(info = info) then info;

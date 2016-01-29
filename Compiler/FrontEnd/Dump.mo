@@ -1417,6 +1417,7 @@ algorithm
   name := match eq
     case Absyn.EQ_IF() then "if";
     case Absyn.EQ_EQUALS() then "equals";
+    case Absyn.EQ_PDE() then "pde";
     case Absyn.EQ_CONNECT() then "connect";
     case Absyn.EQ_WHEN_E() then "when";
     case Absyn.EQ_NORETCALL() then "function call";
@@ -1452,7 +1453,7 @@ algorithm
       then
         ();
 
-    case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2,domainOpt = NONE()))
+    case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2))
       equation
         Print.printBuf("EQ_EQUALS(");
         printExp(e1);
@@ -1462,9 +1463,9 @@ algorithm
       then
         ();
 
-    case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2,domainOpt = SOME(cr)))
+    case (Absyn.EQ_PDE(leftSide = e1,rightSide = e2,domain = cr))
       equation
-        Print.printBuf("EQ_EQUALS(");
+        Print.printBuf("EQ_PDE(");
         printExp(e1);
         Print.printBuf(",");
         printExp(e2);
@@ -3944,7 +3945,7 @@ algorithm
         printListAsCorbaString(equationElseItems, printEquationItemAsCorbaString, ",");
         Print.printBuf(" end Absyn.EQ_IF;");
       then ();
-    case Absyn.EQ_EQUALS(leftSide,rightSide,NONE())
+    case Absyn.EQ_EQUALS(leftSide,rightSide)
       equation
         Print.printBuf("record Absyn.EQ_EQUALS leftSide = ");
         printExpAsCorbaString(leftSide);
@@ -3952,15 +3953,15 @@ algorithm
         printExpAsCorbaString(rightSide);
         Print.printBuf(" end Absyn.EQ_EQUALS;");
       then ();
-    case Absyn.EQ_EQUALS(leftSide,rightSide,SOME(cr))
+    case Absyn.EQ_PDE(leftSide,rightSide,cr)
       equation
-        Print.printBuf("record Absyn.EQ_EQUALS leftSide = ");
+        Print.printBuf("record Absyn.EQ_PDE leftSide = ");
         printExpAsCorbaString(leftSide);
         Print.printBuf(", rightSide = ");
         printExpAsCorbaString(rightSide);
         Print.printBuf(", domain = ");
         printComponentRefAsCorbaString(cr);
-        Print.printBuf(" end Absyn.EQ_EQUALS;");
+        Print.printBuf(" end Absyn.EQ_PDE;");
       then ();
     case Absyn.EQ_CONNECT(connector1,connector2)
       equation

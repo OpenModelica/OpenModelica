@@ -8937,18 +8937,18 @@ algorithm
 	      Absyn.Ident name;
 	      list<Absyn.Subscript> subscripts;
 	    //Normal equation withhout domain specified, no field variables present:
-	    case SCode.EQUATION(SCode.EQ_EQUALS(domainOpt = NONE()))
+	    case SCode.EQUATION(SCode.EQ_EQUALS())
 	    then {inEQ};
-	    //Equation with domain specified, allow for field variables:
-	    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp,
-	                domainOpt = SOME(domainCr as Absyn.CREF_IDENT()), comment = comment, info = info))
+	    //PDE with domain specified, allow for field variables:
+	    case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
+	                domain = domainCr as Absyn.CREF_IDENT(), comment = comment, info = info))
 	      equation
 	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr,info);
 //	      then list(newEQFun(i, lhs_exp, rhs_exp, domainCr, comment, info, fieldLst) for i in 2:N-1);
 	      then creatFieldEqs(lhs_exp, rhs_exp, domainCr, N, comment, info, fieldLst);
 	    //same as previous but with ".interior"
-	    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp,
-	                domainOpt = SOME(domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="interior"))),
+	    case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
+	                domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="interior")),
 	                comment = comment, info = info))
 	      equation
 	        domainCr1 = Absyn.CREF_IDENT(name, subscripts);
@@ -8957,8 +8957,8 @@ algorithm
 	      then creatFieldEqs(lhs_exp, rhs_exp, domainCr, N, comment, info, fieldLst);
 
 	    //left boundary extrapolation
-	    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp,
-	                domainOpt = SOME(domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="left"))),
+	    case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
+	                domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="left")),
 	                comment = comment, info = info))
 	      equation
 //	        Absyn.CALL(function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}), functionArgs = Absyn.FUNCTIONARGS(args = {})) = rhs_exp;
@@ -8970,8 +8970,8 @@ algorithm
           {extrapolateFieldEq(false, fieldCr, domainCr1, N, comment, info, fieldLst)};
 
 	    //right boundary extrapolation
-	    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp,
-	                domainOpt = SOME(domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="right"))),
+	    case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
+	                domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="right")),
 	                comment = comment, info = info))
 	      equation
 //	        Absyn.CALL(function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}), functionArgs = Absyn.FUNCTIONARGS(args = {})) = rhs_exp;
@@ -8982,8 +8982,8 @@ algorithm
 	      then
           {extrapolateFieldEq(true, fieldCr, domainCr1, N, comment, info, fieldLst)};
 	    //left boundary condition
-	    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp,
-	                domainOpt = SOME(domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="left"))),
+	    case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
+	                domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="left")),
 	                comment = comment, info = info))
 	      equation
 	        domainCr1 = Absyn.CREF_IDENT(name, subscripts);
@@ -8991,8 +8991,8 @@ algorithm
 	      then
 	        {newEQFun(1, lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst)};
       //right boundary condition
-	    case SCode.EQUATION(SCode.EQ_EQUALS(expLeft = lhs_exp, expRight = rhs_exp,
-	                domainOpt = SOME(domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="right"))),
+	    case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
+	                domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="right")),
 	                comment = comment, info = info))
 	      equation
 	        domainCr1 = Absyn.CREF_IDENT(name, subscripts);
@@ -9114,7 +9114,7 @@ algorithm
                ),
                Absyn.SUB(),
                Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i3))::subscripts))
-             ), NONE(), comment, info));
+             ), comment, info));
   else
    fail();
   end if;
@@ -9172,7 +9172,7 @@ protected function newEQFun
 algorithm
   (outLhs_exp, _) := Absyn.traverseExpTopDown(inLhs_exp,discretizeTraverseFun,(i,fieldLst,domainCr,info,false));
   (outRhs_exp, _) := Absyn.traverseExpTopDown(inRhs_exp,discretizeTraverseFun,(i,fieldLst,domainCr,info,false));
-  outEQ := SCode.EQUATION(SCode.EQ_EQUALS(outLhs_exp, outRhs_exp, NONE(), comment, info));
+  outEQ := SCode.EQUATION(SCode.EQ_EQUALS(outLhs_exp, outRhs_exp, comment, info));
 end newEQFun;
 
 protected function discretizeTraverseFun

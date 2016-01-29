@@ -2211,19 +2211,19 @@ algorithm
         elses_1 = renameComponentInEquationList(elses, old_comp, new_comp);
       then
         Absyn.EQ_IF(exp_1,true_items_1,exp_elseifs_1,elses_1);
-    case (Absyn.EQ_EQUALS(leftSide = exp1,rightSide = exp2,domainOpt = NONE()),old_comp,new_comp)
+    case (Absyn.EQ_EQUALS(leftSide = exp1,rightSide = exp2),old_comp,new_comp)
       equation
         exp1_1 = renameComponentInExp(exp1, old_comp, new_comp);
         exp2_1 = renameComponentInExp(exp2, old_comp, new_comp);
       then
-        Absyn.EQ_EQUALS(exp1_1,exp2_1,NONE());
-    case (Absyn.EQ_EQUALS(leftSide = exp1,rightSide = exp2,domainOpt = SOME(cref1)),old_comp,new_comp)
+        Absyn.EQ_EQUALS(exp1_1,exp2_1);
+    case (Absyn.EQ_PDE(leftSide = exp1,rightSide = exp2,domain = cref1),old_comp,new_comp)
       equation
         exp1_1 = renameComponentInExp(exp1, old_comp, new_comp);
         exp2_1 = renameComponentInExp(exp2, old_comp, new_comp);
         cref1_1 = replaceStartInComponentRef(cref1, old_comp, new_comp);
       then
-        Absyn.EQ_EQUALS(exp1_1,exp2_1,SOME(cref1_1));
+        Absyn.EQ_PDE(exp1_1,exp2_1,cref1_1);
     case (Absyn.EQ_CONNECT(connector1 = cref1,connector2 = cref2),old_comp,new_comp)
       equation
         cref1_1 = replaceStartInComponentRef(cref1, old_comp, new_comp);
@@ -16520,20 +16520,20 @@ algorithm
       then
         Absyn.EQ_IF(e11,thenpart1,elseifpart1,elsepart1);
 
-    case(Absyn.EQ_EQUALS(e1,e2,NONE()))
+    case(Absyn.EQ_EQUALS(e1,e2))
       equation
         (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
         (e21,_) = Absyn.traverseExp(e2,transformFlatExp,0);
       then
-        Absyn.EQ_EQUALS(e11,e21,NONE());
+        Absyn.EQ_EQUALS(e11,e21);
 
-    case(Absyn.EQ_EQUALS(e1,e2,SOME(cr1)))
+    case(Absyn.EQ_PDE(e1,e2,cr1))
       equation
         (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
         (e21,_) = Absyn.traverseExp(e2,transformFlatExp,0);
         cr11 = transformFlatComponentRef(cr1);
       then
-        Absyn.EQ_EQUALS(e11,e21,SOME(cr11));
+        Absyn.EQ_PDE(e11,e21,cr11);
 
     case(Absyn.EQ_CONNECT(cr1,cr2))
       equation

@@ -902,9 +902,9 @@ equality_or_noretcall_equation returns [void* ast]
       {
         modelicaParserAssert(ass==0,"Equations can not contain assignments (':='), use equality ('=') instead", equality_or_noretcall_equation, $ass->line, $ass->charPosition+1, $ass->line, $ass->charPosition+2);
         if (cr.ast != 0) {
-                $ast = Absyn__EQ_5fEQUALS(e1,e2.ast,mmc_mk_some(cr.ast));
+                $ast = Absyn__EQ_5fPDE(e1,e2.ast,mmc_mk_some(cr.ast));
         } else {
-                $ast = Absyn__EQ_5fEQUALS(e1,e2.ast,mmc_mk_none());
+                $ast = Absyn__EQ_5fEQUALS(e1,e2.ast);
         }
       }
     | {LA(1) != EQUALS && LA(1) != ASSIGN}? /* It has to be a CALL */

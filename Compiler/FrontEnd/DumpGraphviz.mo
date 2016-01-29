@@ -364,7 +364,7 @@ algorithm
       list<Absyn.EquationItem> eqs;
       Absyn.ForIterators iterators;
 
-    case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2,domainOpt = NONE()))
+    case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2))
       equation
         s1 = Dump.printExpStr(e1);
         s2 = Dump.printExpStr(e2);
@@ -373,7 +373,7 @@ algorithm
       then
         Graphviz.LNODE("EQ_EQUALS",{s_1},{},{});
 
-    case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2,domainOpt = SOME(c1)))
+    case (Absyn.EQ_PDE(leftSide = e1,rightSide = e2,domain = c1))
       equation
         s1 = Dump.printExpStr(e1);
         s2 = Dump.printExpStr(e2);
@@ -383,7 +383,7 @@ algorithm
         s_1 = stringAppend(s_1, " indomain ");
         s_1 = stringAppend(s_1, s3);
       then
-        Graphviz.LNODE("EQ_EQUALS",{s_1},{},{});
+        Graphviz.LNODE("EQ_PDE",{s_1},{},{});
 
 
     case (Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2))

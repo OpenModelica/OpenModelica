@@ -1640,7 +1640,10 @@ algorithm
         SCode.EQ_WHEN(inEquation.whenExp, body, branches, inComment, inInfo);
 
     case Absyn.EQ_EQUALS()
-      then SCode.EQ_EQUALS(inEquation.leftSide, inEquation.rightSide, inEquation.domainOpt, inComment, inInfo);
+      then SCode.EQ_EQUALS(inEquation.leftSide, inEquation.rightSide, inComment, inInfo);
+
+    case Absyn.EQ_PDE()
+      then SCode.EQ_PDE(inEquation.leftSide, inEquation.rightSide, inEquation.domain, inComment, inInfo);
 
     case Absyn.EQ_CONNECT()
       algorithm
