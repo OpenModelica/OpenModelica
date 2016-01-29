@@ -498,18 +498,21 @@ bool Component::hasShapeAnnotation(Component *pComponent)
       return iconAnnotationFound;
     }
   }
-  foreach (Component *pChildComponent, pComponent->getComponentsList()) {
-    iconAnnotationFound = hasShapeAnnotation(pChildComponent);
-    if (iconAnnotationFound) {
-      return iconAnnotationFound;
-    }
-    foreach (Component *pInheritedComponent, pChildComponent->getInheritedComponentsList()) {
-      iconAnnotationFound = hasShapeAnnotation(pInheritedComponent);
-      if (iconAnnotationFound) {
-        return iconAnnotationFound;
-      }
-    }
-  }
+  /* Ticket #3654
+   * Don't check components because if it has components and no shapes then it looks empty.
+   */
+//  foreach (Component *pChildComponent, pComponent->getComponentsList()) {
+//    iconAnnotationFound = hasShapeAnnotation(pChildComponent);
+//    if (iconAnnotationFound) {
+//      return iconAnnotationFound;
+//    }
+//    foreach (Component *pInheritedComponent, pChildComponent->getInheritedComponentsList()) {
+//      iconAnnotationFound = hasShapeAnnotation(pInheritedComponent);
+//      if (iconAnnotationFound) {
+//        return iconAnnotationFound;
+//      }
+//    }
+//  }
   return iconAnnotationFound;
 }
 
