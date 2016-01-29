@@ -26,7 +26,6 @@ problem3_newton.mos \
 problem3_symjac.mos \
 problem3_symjac_tearing.mos \
 problem4.mos \
-problem4_newton.mos \
 problem4_symjac.mos \
 problem4_symjac_tearing.mos \
 problem5.mos \
@@ -55,6 +54,7 @@ nanTest_kinsol.mos \
 nonlinearDelayTest_kinsol.mos \
 problem2_kinsol.mos \
 problem4_kinsol.mos \
+problem4_newton.mos \
 problem5_kinsol.mos \
 problem5_symjac.mos \
 problem5_symjac_tearing.mos \

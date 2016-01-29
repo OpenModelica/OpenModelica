@@ -30,12 +30,13 @@ end testFinalCon;
 ");
 getErrorString();
 
+/*
 optimize(testFinalCon, numberOfIntervals=50, tolerance = 1e-08, stopTime = 5, simflags="-stateFile ReferenceFiles/initTCF_2.csv -lv LOG_IPOPT_ERROR");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("testFinalCon_res.mat","ReferenceFiles/testFinalCon3_ref.mat","testFinalCon_diff.csv",0.01,0.0001);
 getErrorString();
-
+*/
 optimize(testFinalCon, numberOfIntervals=50, tolerance = 1e-08, stopTime = 5, simflags="-iif ReferenceFiles/testFinalCon3_ref.mat -lv LOG_IPOPT_ERROR -ipopt_max_iter=-1 -ipopt_init FILE -iim none");
 getErrorString();
 res := OpenModelica.Scripting.compareSimulationResults("testFinalCon_res.mat","ReferenceFiles/testFinalCon3_ref.mat","testFinalCon_diff.csv",0.01,0.0001);
@@ -45,51 +46,6 @@ getErrorString();
 // true
 // ""
 // true
-// ""
-// record SimulationResult
-//     resultFile = "testFinalCon_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testFinalCon', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-stateFile ReferenceFiles/initTCF_2.csv -lv LOG_IPOPT_ERROR'",
-//     messages = "
-// [0]set x1.start 1
-// [1]set x2.start -1
-// [2]set y1.start 10
-// [3]set y3.start 100
-//
-// Optimizer Variables
-// ========================================================
-// State[0]:x1(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 1)
-// State[1]:x2(start = 0, nominal = 1, min = -Inf, max = +Inf, init = -1)
-// Input[2]:u(start = 0, nominal = 1, min = -Inf, max = +Inf)
-// --------------------------------------------------------
-// number of nonlinear constraints: 0
-// ========================================================
-//
-// ******************************************************************************
-// This program contains Ipopt, a library for large-scale nonlinear optimization.
-//  Ipopt is released as open source code under the Eclipse Public License (EPL).
-//          For more information visit http://projects.coin-or.org/Ipopt
-// ******************************************************************************
-//
-// LOG_IPOPT_ERROR   | info    | max violation is 8.24326 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 1.47124 for the approximation of the state x1(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 0.870659 for the approximation of the state x1(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 0.64139 for the approximation of the state x1(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 0.4942 for the approximation of the state x1(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 0.390731 for the approximation of the state x1(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 0.0673306 for the approximation of the state x1(time = 1.81551)
-// LOG_IPOPT_ERROR   | info    | max error is 0.187613 for the approximation of the state x1(time = 2.56449)
-// LOG_IPOPT_ERROR   | info    | max error is 0.116297 for the approximation of the state x1(time = 3.4)
-// LOG_IPOPT_ERROR   | info    | max error is 0.11442 for the approximation of the state x1(time = 2.6)
-// LOG_IPOPT_ERROR   | info    | max error is 0.0811858 for the approximation of the state x1(time = 3.2)
-// LOG_IPOPT_ERROR   | info    | max error is 0.00689615 for the approximation of the state x1(time = 2.66449)
-// LOG_IPOPT_ERROR   | info    | max error is 2.40502e-05 for the approximation of the state x1(time = 2.7)
-// LOG_IPOPT_ERROR   | info    | max error is 1.12435e-09 for the approximation of the state x1(time = 2.7)
-// "
-// end SimulationResult;
-// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
-// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
-// "
-// {"Files Equal!"}
 // ""
 // record SimulationResult
 //     resultFile = "testFinalCon_res.mat",

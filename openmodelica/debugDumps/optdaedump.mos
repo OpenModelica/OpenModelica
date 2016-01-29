@@ -2255,6 +2255,106 @@ buildModel(testOptdaedump); getErrorString();
 //
 // pre-optimization done.
 //
+// post-optimization module wrapFunctionCalls (jacobian):
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: $res1.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real unreplaceable
+// 2: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): u1.$pDERLSJac0.dummyVarLSJac0 = R1 * i1SeedLSJac0   [dynamic]
+// 2/2 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = R2 * i1SeedLSJac0 + u1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 2 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known Variables (constants) (7)
+// ========================================
+// 1: input i1SeedLSJac0:STATE_DER()  type: Real
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 3: input iL:VARIABLE() .testOptdaedump, .Real type: Real
+// 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 5: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 6: input i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 7: input $res1:VARIABLE()  type: Real
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (2)
+// ========================================
+// 1: i2.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = i1SeedLSJac0  type: Real
+// 2: uL.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -u1.$pDERLSJac0.dummyVarLSJac0  type: Real
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module inlineArrayEqn (jacobian):
 //
 //
@@ -2455,106 +2555,6 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module removeSimpleEquations (jacobian):
-//
-//
-// unknown partition
-// ========================================
-//
-// Variables (2)
-// ========================================
-// 1: $res1.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real unreplaceable
-// 2: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real
-//
-//
-// Equations (2, 2)
-// ========================================
-// 1/1 (1): u1.$pDERLSJac0.dummyVarLSJac0 = R1 * i1SeedLSJac0   [dynamic]
-// 2/2 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = R2 * i1SeedLSJac0 + u1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 2 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-//
-//
-// StrongComponents
-// ========================================
-// {1:2}
-// {2:1}
-//
-//
-//
-// BackendDAEType: jacobian
-//
-//
-// Known Variables (constants) (7)
-// ========================================
-// 1: input $res1:VARIABLE()  type: Real
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real
-// 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real
-// 5: input iL:VARIABLE() .testOptdaedump, .Real type: Real
-// 6: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
-// 7: input i1SeedLSJac0:STATE_DER()  type: Real
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (2)
-// ========================================
-// 1: i2.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = i1SeedLSJac0  type: Real
-// 2: uL.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -u1.$pDERLSJac0.dummyVarLSJac0  type: Real
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
 // post-optimization module tearingSystem (jacobian):
 //
 //
@@ -2600,13 +2600,13 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (7)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 1: input i1SeedLSJac0:STATE_DER()  type: Real
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 3: input iL:VARIABLE() .testOptdaedump, .Real type: Real
 // 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real
-// 5: input iL:VARIABLE() .testOptdaedump, .Real type: Real
-// 6: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
-// 7: input i1SeedLSJac0:STATE_DER()  type: Real
+// 5: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 6: input i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 7: input $res1:VARIABLE()  type: Real
 //
 //
 // External Objects (0)
@@ -2700,13 +2700,13 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (7)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 1: input i1SeedLSJac0:STATE_DER()  type: Real
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 3: input iL:VARIABLE() .testOptdaedump, .Real type: Real
 // 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real
-// 5: input iL:VARIABLE() .testOptdaedump, .Real type: Real
-// 6: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
-// 7: input i1SeedLSJac0:STATE_DER()  type: Real
+// 5: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 6: input i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 7: input $res1:VARIABLE()  type: Real
 //
 //
 // External Objects (0)
@@ -2800,13 +2800,13 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (7)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 1: input i1SeedLSJac0:STATE_DER()  type: Real
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 3: input iL:VARIABLE() .testOptdaedump, .Real type: Real
 // 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real
-// 5: input iL:VARIABLE() .testOptdaedump, .Real type: Real
-// 6: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
-// 7: input i1SeedLSJac0:STATE_DER()  type: Real
+// 5: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 6: input i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 7: input $res1:VARIABLE()  type: Real
 //
 //
 // External Objects (0)
@@ -2900,13 +2900,13 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (7)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 1: input i1SeedLSJac0:STATE_DER()  type: Real
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 3: input iL:VARIABLE() .testOptdaedump, .Real type: Real
 // 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real
-// 5: input iL:VARIABLE() .testOptdaedump, .Real type: Real
-// 6: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
-// 7: input i1SeedLSJac0:STATE_DER()  type: Real
+// 5: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 6: input i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 7: input $res1:VARIABLE()  type: Real
 //
 //
 // External Objects (0)
@@ -3000,13 +3000,13 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (7)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 1: input i1SeedLSJac0:STATE_DER()  type: Real
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 3: input iL:VARIABLE() .testOptdaedump, .Real type: Real
 // 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real
-// 5: input iL:VARIABLE() .testOptdaedump, .Real type: Real
-// 6: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
-// 7: input i1SeedLSJac0:STATE_DER()  type: Real
+// 5: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 6: input i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 7: input $res1:VARIABLE()  type: Real
 //
 //
 // External Objects (0)
@@ -3100,13 +3100,13 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (7)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 1: input i1SeedLSJac0:STATE_DER()  type: Real
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 3: input iL:VARIABLE() .testOptdaedump, .Real type: Real
 // 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real
-// 5: input iL:VARIABLE() .testOptdaedump, .Real type: Real
-// 6: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
-// 7: input i1SeedLSJac0:STATE_DER()  type: Real
+// 5: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 6: input i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 7: input $res1:VARIABLE()  type: Real
 //
 //
 // External Objects (0)
@@ -5005,6 +5005,108 @@ buildModel(testOptdaedump); getErrorString();
 //
 // pre-optimization done.
 //
+// post-optimization module wrapFunctionCalls (jacobian):
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: $res1.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real unreplaceable
+// 2: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): u1.$pDERLSJac1.dummyVarLSJac1 = R1 * i1SeedLSJac1   [dynamic]
+// 2/2 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = R2 * i1SeedLSJac1 + u1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 2 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known Variables (constants) (9)
+// ========================================
+// 1: input i1SeedLSJac1:STATE_DER()  type: Real
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 3: input iL:STATE(1)() .testOptdaedump, .Real type: Real
+// 4: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
+// 5: input R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real
+// 6: input uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 7: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 8: input i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 9: input $res1:VARIABLE()  type: Real
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (2)
+// ========================================
+// 1: i2.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = i1SeedLSJac1  type: Real
+// 2: uL.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -u1.$pDERLSJac1.dummyVarLSJac1  type: Real
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization module inlineArrayEqn (jacobian):
 //
 //
@@ -5209,108 +5311,6 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module removeSimpleEquations (jacobian):
-//
-//
-// unknown partition
-// ========================================
-//
-// Variables (2)
-// ========================================
-// 1: $res1.$pDERLSJac1.dummyVarLSJac1:STATE_DER()  type: Real unreplaceable
-// 2: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  type: Real
-//
-//
-// Equations (2, 2)
-// ========================================
-// 1/1 (1): u1.$pDERLSJac1.dummyVarLSJac1 = R1 * i1SeedLSJac1   [dynamic]
-// 2/2 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = R2 * i1SeedLSJac1 + u1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 2 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-//
-//
-// StrongComponents
-// ========================================
-// {1:2}
-// {2:1}
-//
-//
-//
-// BackendDAEType: jacobian
-//
-//
-// Known Variables (constants) (9)
-// ========================================
-// 1: input $res1:VARIABLE()  type: Real
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real
-// 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real
-// 5: input R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real
-// 6: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
-// 7: input iL:STATE(1)() .testOptdaedump, .Real type: Real
-// 8: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
-// 9: input i1SeedLSJac1:STATE_DER()  type: Real
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (2)
-// ========================================
-// 1: i2.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = i1SeedLSJac1  type: Real
-// 2: uL.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -u1.$pDERLSJac1.dummyVarLSJac1  type: Real
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
 // post-optimization module tearingSystem (jacobian):
 //
 //
@@ -5356,15 +5356,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (9)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real
-// 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 1: input i1SeedLSJac1:STATE_DER()  type: Real
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 3: input iL:STATE(1)() .testOptdaedump, .Real type: Real
+// 4: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
 // 5: input R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real
-// 6: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
-// 7: input iL:STATE(1)() .testOptdaedump, .Real type: Real
-// 8: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
-// 9: input i1SeedLSJac1:STATE_DER()  type: Real
+// 6: input uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 7: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 8: input i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 9: input $res1:VARIABLE()  type: Real
 //
 //
 // External Objects (0)
@@ -5458,15 +5458,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (9)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real
-// 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 1: input i1SeedLSJac1:STATE_DER()  type: Real
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 3: input iL:STATE(1)() .testOptdaedump, .Real type: Real
+// 4: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
 // 5: input R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real
-// 6: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
-// 7: input iL:STATE(1)() .testOptdaedump, .Real type: Real
-// 8: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
-// 9: input i1SeedLSJac1:STATE_DER()  type: Real
+// 6: input uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 7: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 8: input i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 9: input $res1:VARIABLE()  type: Real
 //
 //
 // External Objects (0)
@@ -5560,15 +5560,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (9)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real
-// 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 1: input i1SeedLSJac1:STATE_DER()  type: Real
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 3: input iL:STATE(1)() .testOptdaedump, .Real type: Real
+// 4: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
 // 5: input R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real
-// 6: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
-// 7: input iL:STATE(1)() .testOptdaedump, .Real type: Real
-// 8: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
-// 9: input i1SeedLSJac1:STATE_DER()  type: Real
+// 6: input uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 7: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 8: input i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 9: input $res1:VARIABLE()  type: Real
 //
 //
 // External Objects (0)
@@ -5662,15 +5662,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (9)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real
-// 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 1: input i1SeedLSJac1:STATE_DER()  type: Real
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 3: input iL:STATE(1)() .testOptdaedump, .Real type: Real
+// 4: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
 // 5: input R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real
-// 6: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
-// 7: input iL:STATE(1)() .testOptdaedump, .Real type: Real
-// 8: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
-// 9: input i1SeedLSJac1:STATE_DER()  type: Real
+// 6: input uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 7: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 8: input i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 9: input $res1:VARIABLE()  type: Real
 //
 //
 // External Objects (0)
@@ -5764,15 +5764,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (9)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real
-// 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 1: input i1SeedLSJac1:STATE_DER()  type: Real
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 3: input iL:STATE(1)() .testOptdaedump, .Real type: Real
+// 4: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
 // 5: input R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real
-// 6: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
-// 7: input iL:STATE(1)() .testOptdaedump, .Real type: Real
-// 8: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
-// 9: input i1SeedLSJac1:STATE_DER()  type: Real
+// 6: input uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 7: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 8: input i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 9: input $res1:VARIABLE()  type: Real
 //
 //
 // External Objects (0)
@@ -5866,15 +5866,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (9)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real
-// 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 1: input i1SeedLSJac1:STATE_DER()  type: Real
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
+// 3: input iL:STATE(1)() .testOptdaedump, .Real type: Real
+// 4: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
 // 5: input R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real
-// 6: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real
-// 7: input iL:STATE(1)() .testOptdaedump, .Real type: Real
-// 8: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real
-// 9: input i1SeedLSJac1:STATE_DER()  type: Real
+// 6: input uL:VARIABLE() .testOptdaedump, .Real type: Real
+// 7: input u1:VARIABLE() .testOptdaedump, .Real type: Real
+// 8: input i2:VARIABLE() .testOptdaedump, .Real type: Real
+// 9: input $res1:VARIABLE()  type: Real
 //
 //
 // External Objects (0)

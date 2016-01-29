@@ -61,15 +61,18 @@ val(der(y[8]), stopTime);
 //     messages = ""
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Error: Too few equations, under-determined system. The model has 2 equation(s) and 5 variable(s).
+// Error: Internal error Transformation Module PFPlusExt index Reduction Method Pantelides failed!
+// [BackEnd/SymbolicJacobian.mo:0:0-0:0:writable] Error: Internal error function createJacobian failed
 // "
 // {"Files Equal!"}
 // ""
-// 0.0007369290419363762
-// 0.0001442086592844516
-// 5.884991587645002e-05
-// 0.001175269748558053
-// 0.002380428328757465
-// 0.006220476175018463
-// 0.002845778811831937
-// 0.002854221188168088
+// 0.0007369290419336051
+// 0.0001442086592837993
+// 5.884991587593799e-05
+// 0.001175269748552708
+// 0.002380428328677007
+// 0.006220476174766051
+// 0.002845778811775289
+// 0.002854221188224788
 // endResult

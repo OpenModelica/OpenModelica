@@ -54,6 +54,9 @@ getErrorString();
 //     messages = ""
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Error: Too few equations, under-determined system. The model has 75 equation(s) and 150 variable(s).
+// Error: Internal error Transformation Module PFPlusExt index Reduction Method Pantelides failed!
+// [BackEnd/SymbolicJacobian.mo:0:0-0:0:writable] Error: Internal error function createJacobian failed
 // "
 // {"Files Equal!"}
 // ""
