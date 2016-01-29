@@ -114,6 +114,7 @@ algorithm
   end for;
   eqs := listReverse(eqs);
 
+  System.tmpTickSetIndex(index, Global.backendDAE_cseIndex);
   outDAE := BackendDAE.DAE(eqs, shared);
   // TODO: change pre-opt module order
   //outDAE := SynchronousFeatures.clockPartitioning(BackendDAE.DAE({syst}, shared));
@@ -711,31 +712,31 @@ algorithm
       list<String> varNames;
 
     case DAE.T_REAL() equation
-      str = inPrefix + String(System.tmpTickIndex(Global.backendDAE_cseIndex));
+      str = inPrefix + intString(inIndex);
       cr = DAE.CREF_IDENT(str, DAE.T_REAL_DEFAULT, {});
       value = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
     then (value, inIndex + 1);
 
     case DAE.T_INTEGER() equation
-      str = inPrefix + String(System.tmpTickIndex(Global.backendDAE_cseIndex));
+      str = inPrefix + intString(inIndex);
       cr = DAE.CREF_IDENT(str, DAE.T_INTEGER_DEFAULT, {});
       value = DAE.CREF(cr, DAE.T_INTEGER_DEFAULT);
     then (value, inIndex + 1);
 
     case DAE.T_STRING() equation
-      str = inPrefix + String(System.tmpTickIndex(Global.backendDAE_cseIndex));
+      str = inPrefix + intString(inIndex);
       cr = DAE.CREF_IDENT(str, DAE.T_STRING_DEFAULT, {});
       value = DAE.CREF(cr, DAE.T_STRING_DEFAULT);
     then (value, inIndex + 1);
 
     case DAE.T_BOOL() equation
-      str = inPrefix + String(System.tmpTickIndex(Global.backendDAE_cseIndex));
+      str = inPrefix + intString(inIndex);
       cr = DAE.CREF_IDENT(str, DAE.T_BOOL_DEFAULT, {});
       value = DAE.CREF(cr, DAE.T_BOOL_DEFAULT);
     then (value, inIndex + 1);
 
     case DAE.T_CLOCK() equation
-      str = inPrefix + String(System.tmpTickIndex(Global.backendDAE_cseIndex));
+      str = inPrefix + intString(inIndex);
       cr = DAE.CREF_IDENT(str, DAE.T_CLOCK_DEFAULT, {});
       value = DAE.CREF(cr, DAE.T_CLOCK_DEFAULT);
     then (value, inIndex + 1);
@@ -747,7 +748,7 @@ algorithm
 
     // Expanding
     case DAE.T_ARRAY() equation
-      str = inPrefix + String(System.tmpTickIndex(Global.backendDAE_cseIndex));
+      str = inPrefix + intString(inIndex);
       cr = DAE.CREF_IDENT(str, inType, {});
       // crefs = ComponentReference.expandCref(cr, false);
       // expLst = List.map(crefs, Expression.crefExp);
@@ -757,7 +758,7 @@ algorithm
 
     // record types
     case DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(path)) equation
-      str = inPrefix + String(System.tmpTickIndex(Global.backendDAE_cseIndex));
+      str = inPrefix + intString(inIndex);
       cr = DAE.CREF_IDENT(str, inType, {});       //inType?
       // crefs = ComponentReference.expandCref(cr, true);
       // expLst = List.map(crefs, Expression.crefExp);
