@@ -1657,7 +1657,7 @@ algorithm
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
         files = List.flatten(List.map(mps, System.moFiles));
-        dirs = List.flatten(List.map(mps, System.subDirectories));
+        dirs = List.flatten(List.map(mps, getLibrarySubdirectories));
         files = List.map(List.map1(listAppend(files,dirs), System.strtok, ". "), listHead);
         (str, status) = System.popen("impact search '' | perl -pe 's/\\e\\[?.*?[\\@-~]//g' | grep '[^ :]*:' | cut -d: -f1 2>&1");
         if 0==status then
@@ -2289,6 +2289,20 @@ algorithm
  end matchcontinue;
 end cevalInteractiveFunctions3;
 
+protected function getLibrarySubdirectories "author: lochel
+  This function returns a list of subdirectories that contain a package.mo file."
+  input String inPath;
+  output list<String> outSubdirectories = {};
+protected
+  list<String> allSubdirectories = System.subDirectories(inPath);
+  String pd = System.pathDelimiter();
+algorithm
+  for dir in allSubdirectories loop
+    if System.regularFileExists(inPath + pd + dir + pd + "package.mo") then
+      outSubdirectories := dir::outSubdirectories;
+    end if;
+  end for;
+end getLibrarySubdirectories;
 
 protected function getSimulationExtension
 input String inString;
