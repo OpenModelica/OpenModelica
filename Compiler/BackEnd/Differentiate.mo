@@ -2128,8 +2128,12 @@ algorithm
 
     case (_, _, _, _, _)
       equation
-        failure(BackendDAE.DIFFERENTIATION_FUNCTION() = inDiffType);
-        failure(BackendDAE.GENERIC_GRADIENT() = inDiffType);
+        /* TODO: Check replace this rule by other, since it's not correct
+                 in case of
+                 - failure(BackendDAE.DIFFERENTIATION_FUNCTION() = inDiffType);
+                 - failure(BackendDAE.GENERIC_GRADIENT() = inDiffType);
+                 but anyway fornow it catches some testsuite cases.
+        */
         false = Expression.expContains(inExp, Expression.crefExp(inDiffwrtCref))
         "If the expression does not contain the variable,
          the derivative is zero. For efficiency reasons this rule

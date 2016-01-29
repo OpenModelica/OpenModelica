@@ -3558,7 +3558,10 @@ algorithm
         residualVars = BackendVariable.listVar1(residualVarsLst);
         independentVars = BackendVariable.listVar1(independentVarsLst);
 
-        columnVars = createAllDiffedSimVars(dependentVarsLst, x, residualVars, 0, name, {});
+        ((allVars, _)) = BackendVariable.traverseBackendDAEVars(syst.orderedVars, getFurtherVars , ({}, x));
+        systvars = BackendVariable.listVar1(allVars);
+        ((columnVars, _)) =  BackendVariable.traverseBackendDAEVars(systvars, traversingdlowvarToSimvar, ({}, emptyVars));
+        columnVars = createAllDiffedSimVars(dependentVarsLst, x, residualVars, 0, name, columnVars);
         columnVars = listReverse(columnVars);
 
        if Flags.isSet(Flags.JAC_DUMP2) then
@@ -3684,10 +3687,10 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       BackendDAE.StrongComponents comps;
-      BackendDAE.Variables vars, knvars, empty;
+      BackendDAE.Variables vars, knvars, empty, systvars, emptyVars;
 
       DAE.ComponentRef x;
-      list<BackendDAE.Var>  diffVars, diffedVars, alldiffedVars, seedVarLst;
+      list<BackendDAE.Var>  diffVars, diffedVars, alldiffedVars, seedVarLst, allVars;
       list<DAE.ComponentRef> diffCompRefs, diffedCompRefs, allCrefs;
 
       Integer uniqueEqIndex;
@@ -3697,7 +3700,7 @@ algorithm
 
       SimCodeVar.SimVars simvars;
       list<SimCode.SimEqSystem> columnEquations;
-      list<SimCodeVar.SimVar> columnVars;
+      list<SimCodeVar.SimVar> columnVars, otherColumnVars;
       list<SimCodeVar.SimVar> columnVarsKn;
       list<SimCodeVar.SimVar> seedVars, indexVars, seedIndexVars;
 
@@ -3793,6 +3796,11 @@ algorithm
         dummyVar = ("dummyVar" + name);
         x = DAE.CREF_IDENT(dummyVar, DAE.T_REAL_DEFAULT, {});
 
+        emptyVars =  BackendVariable.emptyVars();
+        ((allVars, _)) = BackendVariable.traverseBackendDAEVars(syst.orderedVars, getFurtherVars , ({}, x));
+        systvars = BackendVariable.listVar1(allVars);
+        ((otherColumnVars, _)) =  BackendVariable.traverseBackendDAEVars(systvars, traversingdlowvarToSimvar, ({}, emptyVars));
+
         //sort variable for index
         empty = BackendVariable.listVar1(alldiffedVars);
         allCrefs = List.map(alldiffedVars, BackendVariable.varCref);
@@ -3801,10 +3809,12 @@ algorithm
         (_, (_, alldiffedVars)) = List.mapFoldTuple(columnVars, sortBackVarWithSimVarsOrder, (empty, {}));
         alldiffedVars = listReverse(alldiffedVars);
         vars = BackendVariable.listVar1(diffedVars);
-        columnVars = createAllDiffedSimVars(alldiffedVars, x, vars, 0, name, {});
+        columnVars = createAllDiffedSimVars(alldiffedVars, x, vars, 0, name, otherColumnVars);
 
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> create all SimCode vars for Matrix " + name + " time: " + realString(clock()) + "\n");
+          print("\n---+++  columnVars +++---\n");
+          print(Tpl.tplString(SimCodeDump.dumpVarsShort, columnVars));
         end if;
 
         seedVars = getSimVars2Crefs(diffCompRefs, inSimVarHT);
