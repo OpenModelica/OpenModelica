@@ -72,7 +72,7 @@ int omc_write_csv(OMC_WRITE_CSV* csvData, const void* csvLine){
 
   dest_size  = csv_write(&buffer, CSV_BUFFER_SIZE, csvLine, strlen(csvLine));
   if (dest_size > CSV_BUFFER_SIZE){
-    unsigned char* newbuffer = (unsigned char*) malloc(dest_size*sizeof(char));
+    unsigned char* newbuffer = (unsigned char*) malloc(dest_size*sizeof(unsigned char));
     dest_size  = csv_write(&newbuffer, dest_size, csvLine, strlen(csvLine));
     fprintf(csvData->handle, "%s", newbuffer);
   }else{
