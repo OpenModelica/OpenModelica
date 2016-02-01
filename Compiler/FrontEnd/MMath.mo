@@ -156,10 +156,10 @@ public function intGcd "returns the greatest common divisor for two Integers"
   input Integer i2;
   output Integer i;
 algorithm
-  i := matchcontinue(i1,i2)
+  i := match(i1,i2)
     case (_,0) then i1;
     else intGcd(i2,intMod(i1,i2));
-  end matchcontinue;
+  end match;
 end intGcd;
 
 /* Tests */
@@ -169,7 +169,7 @@ algorithm
   _ := matchcontinue()
 
     case() equation
-      RATIONAL(7,6) =  addRational(RATIONAL(1,2),RATIONAL(2,3));
+      RATIONAL(7,6) = addRational(RATIONAL(1,2),RATIONAL(2,3));
       RATIONAL(2,1) = addRational(RATIONAL(1,2),RATIONAL(3,2));
 
       RATIONAL(1,1) = subRational(RATIONAL(3,2),RATIONAL(1,2));

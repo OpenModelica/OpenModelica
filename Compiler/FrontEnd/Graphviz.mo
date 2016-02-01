@@ -144,37 +144,37 @@ protected function makeLabel "Creates a label from a list of strings."
 protected
   Label s0,s1;
 algorithm
-  s0 := makeLabelReq(sl);
+  s0 := makeLabelReq(sl,"");
   s1 := stringAppend("\"", s0);
   s2 := stringAppend(s1, "\"");
 end makeLabel;
 
 protected function makeLabelReq "Helper function to makeLabel"
   input list<String> inStringLst;
+  input String inString;
   output String outString;
 algorithm
-  outString := matchcontinue (inStringLst)
+  outString := match (inStringLst)
     local
-      Label s,res,s1,s2,old;
+      Label s,s1,s2;
       list<Label> rest;
 
-    case {s} then s;
+    case {s} then stringAppend(inString, s);
 
     case {s1,s2}
       equation
-        s = stringAppend(s1, "\\n");
-        res = stringAppend(s, s2);
-      then
-        res;
+        s = stringAppend(inString, s1);
+        s = stringAppend(s, "\\n");
+        s = stringAppend(s, s2);
+      then s;
 
     case (s1 :: rest)
       equation
-        old = makeLabelReq(rest);
-        s = stringAppend(s1, "\\n");
-        res = stringAppend(s, old);
+        s = stringAppend(inString, s1);
+        s = stringAppend(s, "\\n");
       then
-        res;
-  end matchcontinue;
+        makeLabelReq(rest, s);
+  end match;
 end makeLabelReq;
 
 protected function dumpChildren "Helper function to dumpNode"
@@ -252,37 +252,37 @@ protected function makeAttr "Creates a string from an Attribute list."
 protected
   Label res,s;
 algorithm
-  res := makeAttrReq(l);
+  res := makeAttrReq(l, "");
   s := stringAppend("[", res);
   str := stringAppend(s, "]");
 end makeAttr;
 
-protected function makeAttrReq "Helper function to makeAttrReq."
+protected function makeAttrReq "Helper function to makeAttr."
   input list<Attribute> inAttributeLst;
+  input String inString;
   output String outString;
 algorithm
-  outString := matchcontinue (inAttributeLst)
+  outString := match (inAttributeLst)
     local
-      Label s,str,name,v,old,s_1,s_2;
+      Label s,name,v;
       list<Attribute> rest;
 
     case {ATTR(name = name,value = v)}
       equation
-        s = stringAppend(name, "=");
-        str = stringAppend(s, v);
+        s = stringAppend(inString, name);
+        s = stringAppend(s, "=");
       then
-        str;
+        stringAppend(s, v);
 
     case ((ATTR(name = name,value = v) :: rest))
       equation
-        old = makeAttrReq(rest);
-        s = stringAppend(name, "=");
-        s_1 = stringAppend(s, v);
-        s_2 = stringAppend(s_1, ",");
-        str = stringAppend(s_2, old);
+        s = stringAppend(inString, name);
+        s = stringAppend(s, "=");
+        s = stringAppend(s, v);
+        s = stringAppend(s, ",");
       then
-        str;
-  end matchcontinue;
+        makeAttrReq(rest, s);
+  end match;
 end makeAttrReq;
 
 annotation(__OpenModelica_Interface="frontend");

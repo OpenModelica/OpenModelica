@@ -234,7 +234,7 @@ public function printState
   input State inState;
 algorithm
   _:=
-  matchcontinue (inState)
+  match (inState)
     local Absyn.Path p;
 
     case UNKNOWN(path = p)
@@ -334,7 +334,7 @@ algorithm
         Print.printBuf(Absyn.pathString(p));
         Print.printBuf(printStateStr(inState));
       then ();
-  end matchcontinue;
+  end match;
 end printState;
 
 public function getStateName "Returns the classname of the state."
@@ -663,9 +663,8 @@ public function matchingState "
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inState,inStateLst)
+  match (inState,inStateLst)
     local
-      State st,first;
       list<State> rest;
       Boolean res;
     case (_,{}) then false;
@@ -685,12 +684,12 @@ algorithm
     // BTH
     case (TYPE_CLOCK(),(TYPE_CLOCK() :: _)) then true;
     case (TYPE_ENUM(),(TYPE_ENUM() :: _)) then true;
-    case (st,(_ :: rest))
+    case (_,(_ :: rest))
       equation
-        res = matchingState(st, rest);
+        res = matchingState(inState, rest);
       then
         res;
-  end matchcontinue;
+  end match;
 end matchingState;
 
 public function isFunction

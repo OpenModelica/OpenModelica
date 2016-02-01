@@ -1333,7 +1333,7 @@ protected function getRhsExp
   input list<DAE.Element> inElementList;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(inElementList)
+  outExp := match(inElementList)
     local
       list<DAE.Element> cdr;
       DAE.Exp res;
@@ -1351,7 +1351,7 @@ algorithm
         res = getRhsExp(cdr);
       then
         res;
-  end matchcontinue;
+  end match;
 end getRhsExp;
 
 protected function replaceArgs
