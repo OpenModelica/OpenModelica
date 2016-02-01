@@ -284,6 +284,7 @@ if true then /* Suppress output */
     "../Script/RewriteRules.mo",
     "../Script/Figaro.mo",
     "../Script/BlockCallRewrite.mo",
+    "../Script/Binding.mo",
     "../Script/OpenModelicaScriptingAPI.mo",
 
     "../Script/CevalScriptBackend.mo",

@@ -2181,6 +2181,13 @@ external "builtin";
 annotation(preferredView="text");
 end exportToFigaro;
 
+function inferBindings
+  input TypeName path;
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end inferBindings;
+
 public function rewriteBlockCall "Function for property modeling, transforms block calls into instantiations for a loaded model"
   input TypeName className;
   input TypeName inDefs;

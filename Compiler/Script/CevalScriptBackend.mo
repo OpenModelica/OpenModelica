@@ -120,6 +120,7 @@ import UnitAbsynBuilder;
 import UnitParserExt;
 import RewriteRules;
 import BlockCallRewrite;
+import Binding;
 
 protected constant DAE.Type simulationResultType_rtest = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
@@ -689,7 +690,7 @@ algorithm
       DAE.Exp startTimeExp,stopTimeExp,toleranceExp,intervalExp;
       DAE.Type tp, ty;
       list<DAE.Type> tys;
-      Absyn.Class absynClass;
+      Absyn.Class absynClass, absynClass2;
       Absyn.ClassDef cdef;
       Absyn.Exp aexp;
       DAE.DAElist dae;
@@ -914,6 +915,23 @@ algorithm
       then (cache, Values.BOOL(true), st);
 
     case (cache, _, "exportToFigaro", _, st, _)
+      then (cache, Values.BOOL(false), st);
+
+         case (cache,_, "inferBindings", {Values.CODE(Absyn.C_TYPENAME(classpath))},
+       (st as GlobalScript.SYMBOLTABLE(p as Absyn.PROGRAM())),_)
+       equation
+        absynClass = Interactive.getPathedClassInProgram(classpath, p);
+        Binding.inferBindings(absynClass, p);
+        //pnew = Interactive.updateProgram(pnew, p);
+        //newst = GlobalScriptUtil.setSymbolTableAST(st, pnew);
+      then
+       // (FCore.emptyCache(),Values.BOOL(true), newst);
+         (cache,Values.BOOL(true), st);
+
+
+    case (cache, _, "inferBindings", _, st, _)
+      equation
+        print("failed inferBindings\n");
       then (cache, Values.BOOL(false), st);
 
     case (_,_, "rewriteBlockCall",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))},
