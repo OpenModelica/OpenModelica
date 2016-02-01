@@ -1604,8 +1604,8 @@ QString OMCProxy::diffModelicaFileListings(QString before, QString after)
 {
   QString escapedBefore = StringHandler::escapeString(before);
   QString escapedAfter = StringHandler::escapeString(after);
-  sendCommand("diffModelicaFileListings(\"" + escapedBefore + "\", \"" + escapedAfter + "\", OpenModelica.Scripting.DiffFormat.plain)");
-  QString result = StringHandler::unparse(getResult());
+  // sendCommand("diffModelicaFileListings(\"" + escapedBefore + "\", \"" + escapedAfter + "\", OpenModelica.Scripting.DiffFormat.plain)");
+  QString result = after; // StringHandler::unparse(getResult());
   if (mpMainWindow->isDebug()) {
     mpOMCDiffBeforeTextBox->setPlainText(before);
     mpOMCDiffAfterTextBox->setPlainText(after);
