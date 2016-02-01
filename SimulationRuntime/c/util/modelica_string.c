@@ -199,6 +199,15 @@ modelica_string modelica_real_to_modelica_string_format(modelica_real r,modelica
   return res;
 }
 
+/* Convert a modelica_string to a modelica_string, used in String(s) */
+
+modelica_string modelica_string_to_modelica_string(modelica_string s)
+{
+  void *res = alloc_modelica_string(MMC_STRLEN(s));
+  strcpy(MMC_STRINGDATA(res), MMC_STRINGDATA(s));
+  return res;
+}
+
 /* Convert a modelica_integer to a modelica_string, used in String(i) */
 
 modelica_string modelica_integer_to_modelica_string(modelica_integer i, modelica_integer minLen, modelica_boolean leftJustified)
