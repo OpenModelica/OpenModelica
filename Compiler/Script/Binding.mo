@@ -78,16 +78,15 @@ input Absyn.Program env;
 output Boolean isBindingPossible;
 //output String bindingExpression;
  algorithm
-  isBindingPossible := matchcontinue(client_list)
+  isBindingPossible := match(client_list)
    local
      Client_e ce;
      list<Client_e> rest;
     case {} then true;
     case ce::rest
-      equation
-       // inferBindingClient(ce);
+      //guard inferBindingClient(ce)
         then inferBindingClientList(rest, vmodel, env);
-   end matchcontinue;
+   end match;
 end inferBindingClientList;
 
 /* function parseAscendants
@@ -148,19 +147,19 @@ input Ident name;
 input list<Absyn.Class> elems;
 output Boolean isM;
   algorithm
- isM := matchcontinue(clients)
+ isM := match(clients)
    local
      String className;
    String instance;
    list<Client> rest;
     case {} then {};
     case CLIENT(className, instance)::rest
-      equation
-       className = name;
+      guard
+       stringEq(className, name)
         then true;
     case _::rest
         then specifiesBindingFor(name, rest);
-   end matchcontinue;
+   end match;
 end getProviders; */
 
 protected function buildInstList "mark all the clients and providers in the model"
@@ -231,7 +230,7 @@ input list<Mediator> mediators;
 output Boolean isClient;
 output List<Mediator> m;
 algorithm
-  (isClient, m) := matchcontinue(mediators)
+  (isClient, m) := match(mediators)
    local
      String name;
      String mType;
@@ -241,13 +240,14 @@ algorithm
      list<Mediator> rest;
     case {} then (false, {});
     case MEDIATOR(name, mType, template, clients, providers)::rest
+      guard
+        isClientInMediator(ci_name, clients)
       equation
-        true = isClientInMediator(ci_name, clients);
         print("... found client : "+ ci_name +"\n");
         then (true, {MEDIATOR(name, mType, template, clients, providers)});
     case _::rest
         then isClient(ci_name, rest);
-   end matchcontinue;
+   end match;
 end isClient;
 
 protected function isClientInMediator
@@ -256,7 +256,7 @@ input list<Client> clients;
 output Boolean isClient;
 algorithm
 
-  isClient := matchcontinue(clients)
+  isClient := match(clients)
    local
       list<Absyn.Class> parents;
      Absyn.Class current_ci;
@@ -264,12 +264,11 @@ algorithm
      list<Client> rest;
     case {} then (false);
     case CLIENT(name, _)::rest
-      equation
-        true = (name == ci_name);
+      guard stringEq(name, ci_name)
         then true;
     case _::rest
         then isClientInMediator(ci_name, rest);
-   end matchcontinue;
+   end match;
 end isClientInMediator;
 
 
@@ -279,19 +278,19 @@ input Ident name;
 input list<Client> clients;
 output Boolean isM;
   algorithm
- isM := matchcontinue(clients)
+ isM := match(clients)
    local
      String className;
    String instance;
    list<Client> rest;
     case {} then false;
     case CLIENT(className, instance)::rest
-      equation
-       className = name;
+      guard
+       stringEq(className, name)
         then true;
     case _::rest
         then specifiesBindingFor(name, rest);
-   end matchcontinue;
+   end match;
 end specifiesBindingFor;
 
 
@@ -408,19 +407,19 @@ input  list<Absyn.NamedArg> argNames;
 input  String name;
 output  String val;
   algorithm
-  val := matchcontinue(argNames)
+  val := match(argNames)
    local
     String str, nname;
      list<Absyn.NamedArg> rest;
     case {}
         then "";
     case Absyn.NAMEDARG(nname, Absyn.STRING(str))::rest
-        equation
-           nname = name;
+        guard
+           stringEq(nname, name)
         then str;
     case _::rest
         then getArg(rest, name);
-   end matchcontinue;
+   end match;
 end getArg;
 
 
@@ -429,7 +428,7 @@ input list<SCode.Element> elems;
 output Boolean result;
 output Option<SCode.Mod> mods;
   algorithm
-  (result, mods) := matchcontinue(elems)
+  (result, mods) := match(elems)
    local
      list<SCode.Element> rest;
      SCode.Element el;
@@ -441,7 +440,7 @@ output Option<SCode.Mod> mods;
         then (true, SOME(mod));
     case el::rest
         then isMediator(rest);
-   end matchcontinue;
+   end match;
 end isMediator;
 
 protected function getValue
