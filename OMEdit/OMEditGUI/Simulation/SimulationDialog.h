@@ -210,6 +210,7 @@ public:
   void showAlgorithmicDebugger(SimulationOptions simulationOptions);
   void simulationProcessFinished(SimulationOptions simulationOptions, QDateTime resultFileLastModifiedDateTime);
 public slots:
+  void updateMethodToolTip(int index);
   void enableDasslOptions(QString method);
   void showIntegrationHelp();
   void buildOnly(bool checked);

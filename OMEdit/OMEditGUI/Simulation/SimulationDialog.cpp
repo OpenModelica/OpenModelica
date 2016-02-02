@@ -154,6 +154,7 @@ void SimulationDialog::setUpForm()
   for (int i = 0 ; i < solverMethodsDesc.size() ; i++) {
     mpMethodComboBox->setItemData(i, solverMethodsDesc.at(i), Qt::ToolTipRole);
   }
+  connect(mpMethodComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateMethodToolTip(int)));
   // make dassl default solver method.
   int currentIndex = mpMethodComboBox->findText("dassl", Qt::MatchExactly);
   if (currentIndex > -1) {
@@ -1100,6 +1101,16 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
       pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getResultFileName(), workingDirectory, list, simulationOptions);
     }
   }
+}
+
+/*!
+ * \brief SimulationDialog::updateMethodToolTip
+ * Updates the Method combobox tooltip.
+ * \param index
+ */
+void SimulationDialog::updateMethodToolTip(int index)
+{
+  mpMethodComboBox->setToolTip(mpMethodComboBox->itemData(index, Qt::ToolTipRole).toString());
 }
 
 /*!
