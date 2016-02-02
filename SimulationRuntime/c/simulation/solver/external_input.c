@@ -97,9 +97,6 @@ int externalInputallocate(DATA* data)
 }
 
 
-int cmp_modelica_integer(const void *v1, const void *v2) {
-           return (*(modelica_integer*)v1 - *(modelica_integer*)v2);
-}
 
 void externalInputallocate2(DATA* data, char *filename){
   int i, j, k;
@@ -135,8 +132,6 @@ void externalInputallocate2(DATA* data, char *filename){
       }
     }
   }
-
-  qsort((void*) indx, nu, sizeof(int), &cmp_modelica_integer);
 
   for(i = 0, k= 0; i < data->simulationInfo->external_input.n; ++i)
     data->simulationInfo->external_input.t[i] = res->data[k++];
