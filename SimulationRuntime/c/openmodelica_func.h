@@ -319,6 +319,10 @@ int (*function_equationsSynchronous)(DATA *data, threadData_t *threadData, long 
  */
 void (*read_input_fmu)(MODEL_DATA* modelData, SIMULATION_INFO* simulationData);
 
+/*
+ * return input names
+ */
+int (*inputNames)(DATA* modelData, char ** names);
 #ifdef FMU_EXPERIMENTAL
 /* functionODEPartial contains those equations that are needed
  * to calculate the state derivative i-th */

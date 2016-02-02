@@ -65,11 +65,10 @@ int externalInputallocate(DATA* data)
       pFile = fopen(cflags,"r");
       if(pFile == NULL)
         warningStreamPrint(LOG_STDOUT, 0, "OMC can't find the file %s.",cflags);
-    }else
+    }else{
       pFile = fopen("externalInput.csv","r");
+    }
   }
-
-
 
   data->simulationInfo->external_input.active = (modelica_boolean) (pFile != NULL);
   if(data->simulationInfo->external_input.active || useLibCsvH){
@@ -97,27 +96,63 @@ int externalInputallocate(DATA* data)
   return 0;
 }
 
-static inline void externalInputallocate2(DATA* data, char *filename){
+
+int cmp_modelica_integer(const void *v1, const void *v2) {
+           return (*(modelica_integer*)v1 - *(modelica_integer*)v2);
+}
+
+void externalInputallocate2(DATA* data, char *filename){
   int i, j, k;
   struct csv_data *res = read_csv(filename);
-  data->modelData->nInputVars = res->numvars - 1;
+  char ** names;
+  int * indx;
+  const int nu = data->modelData->nInputVars;
+  const int nnu = modelica_integer_min(nu, res->numvars - 1);
+
+  data->modelData->nInputVars = nu;
   data->simulationInfo->external_input.n = res->numsteps;
   data->simulationInfo->external_input.N = data->simulationInfo->external_input.n;
 
-  data->simulationInfo->external_input.u = (modelica_real**)calloc(modelica_integer_max(1,res->numsteps),sizeof(modelica_real*));
-  for(i = 0; i<data->simulationInfo->external_input.n; ++i)
-    data->simulationInfo->external_input.u[i] = (modelica_real*)calloc(modelica_integer_max(1,data->modelData->nInputVars),sizeof(modelica_real));
-  data->simulationInfo->external_input.t = (modelica_real*)calloc(modelica_integer_max(1,data->simulationInfo->external_input.n),sizeof(modelica_real));
+  data->simulationInfo->external_input.u = (modelica_real**)calloc(data->simulationInfo->external_input.n+1, sizeof(modelica_real*));
 
+  names = (char**)malloc(nu * sizeof(char*));
+
+  for(i = 0; i<data->simulationInfo->external_input.n; ++i){
+    data->simulationInfo->external_input.u[i] = (modelica_real*)calloc(nnu, sizeof(modelica_real));
+  }
+
+  data->simulationInfo->external_input.t = (modelica_real*)calloc(data->simulationInfo->external_input.n+1, sizeof(modelica_real));
+
+  data->callback->inputNames(data, names);
+
+  indx = (int*)malloc(nu*sizeof(int));
+  for(i = 0; i < nu; ++i){
+    indx[i] = -1;
+    for(j = 0; j < (res->numvars - 1); ++j){
+      if(strcmp(names[i], res->variables[j]) == 0){
+        indx[i] = j;
+        break;
+      }
+    }
+  }
+
+  qsort((void*) indx, nu, sizeof(int), &cmp_modelica_integer);
 
   for(i = 0, k= 0; i < data->simulationInfo->external_input.n; ++i)
     data->simulationInfo->external_input.t[i] = res->data[k++];
-  for(j = 0; j < data->modelData->nInputVars; ++j){
-    for(i = 0; i < data->simulationInfo->external_input.n; ++i){
-      data->simulationInfo->external_input.u[i][j] = res->data[k++];
+
+  for(j = 0; j < nu; ++j){
+    if(indx[j] != -1){
+      k = (indx[j])*data->simulationInfo->external_input.n;
+      for(i = 0; i < data->simulationInfo->external_input.n; ++i){
+        data->simulationInfo->external_input.u[i][j] = res->data[k++];
+      }
     }
   }
+
   omc_free_csv_reader(res);
+  free(names);
+  free(indx);
   data->simulationInfo->external_input.active = data->simulationInfo->external_input.n > 0;
 }
 

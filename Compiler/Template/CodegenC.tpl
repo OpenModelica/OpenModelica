@@ -150,6 +150,7 @@ end translateInitFile;
     extern int <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>(DATA * data, threadData_t *threadData, long i);
     extern void <%symbolName(modelNamePrefixStr,"read_input_fmu")%>(MODEL_DATA* modelData, SIMULATION_INFO* simulationData);
     extern void <%symbolName(modelNamePrefixStr,"function_savePreSynchronous")%>(DATA *data, threadData_t *threadData);
+    extern int <%symbolName(modelNamePrefixStr,"inputNames")%>(DATA* data, char ** names);
     <%\n%>
     >>
   end match
@@ -972,6 +973,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
        ,<%symbolName(modelNamePrefixStr,"functionODE_Partial")%>
        ,<%symbolName(modelNamePrefixStr,"functionFMIJacobian")%>
        #endif
+       ,<%symbolName(modelNamePrefixStr,"inputNames")%>
 
     <%\n%>
     };
@@ -1591,6 +1593,18 @@ template functionInput(ModelInfo modelInfo, String modelNamePrefix)
 
       <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
         '$P$ATTRIBUTE<%cref(name)%>.start = data->simulationInfo->inputVars[<%i0%>];'
+        ;separator="\n"
+      %>
+
+      TRACE_POP
+      return 0;
+    }
+
+    int <%symbolName(modelNamePrefix,"inputNames")%>(DATA *data, char ** names){
+      TRACE_PUSH
+
+      <%vars.inputVars |> simVar as SIMVAR(__) hasindex i0 =>
+        'names[<%i0%>] = (char *) <%cref(name)%>__varInfo.name;'
         ;separator="\n"
       %>
 
