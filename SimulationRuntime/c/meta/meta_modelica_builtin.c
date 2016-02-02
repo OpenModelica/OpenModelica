@@ -400,6 +400,13 @@ metamodelica_string_const stringAppend(metamodelica_string_const s1, metamodelic
   /* fprintf(stderr, "stringAppend([%p] %s, [%p] %s)->\n", s1, anyString(s1), s2, anyString(s2)); fflush(NULL); */
   len1 = MMC_STRLEN(s1);
   len2 = MMC_STRLEN(s2);
+
+  if (len1==0) {
+    return s2;
+  } else if (len2==0) {
+    return s1;
+  }
+
   nbytes = len1+len2;
   header = MMC_STRINGHDR(nbytes);
   nwords = MMC_HDRSLOTS(header) + 1;
