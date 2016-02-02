@@ -203,9 +203,7 @@ modelica_string modelica_real_to_modelica_string_format(modelica_real r,modelica
 
 modelica_string modelica_string_to_modelica_string(modelica_string s)
 {
-  void *res = alloc_modelica_string(MMC_STRLEN(s));
-  strcpy(MMC_STRINGDATA(res), MMC_STRINGDATA(s));
-  return res;
+  return s;
 }
 
 /* Convert a modelica_integer to a modelica_string, used in String(i) */
