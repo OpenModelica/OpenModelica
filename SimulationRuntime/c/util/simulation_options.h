@@ -127,7 +127,7 @@ enum SOLVER_METHOD
   S_LOBATTO6,      /* 10 */
   S_SYM_EULER,     /* 11 */
   S_SYM_IMP_EULER, /* 12 */
-  S_TRAPEZOIDAL,   /* 13 */
+  S_HEUN,          /* 13 */
   S_QSS,
 
   S_MAX

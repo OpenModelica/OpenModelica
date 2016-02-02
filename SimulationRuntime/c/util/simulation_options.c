@@ -360,25 +360,25 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
   "lobatto6",
   "symEuler",
   "symEulerSsc",
-  "trapezoidal",
+  "heun",
   "qss"
 };
 
 const char *SOLVER_METHOD_DESC[S_MAX] = {
   "unknown",
-  "euler",
-  "rungekutta (fixed step, order 4)",
+  "Explicit Euler (order 1)",
+  "Runge-Kutta (fixed step, order 4)",
   "dassl with colored numerical jacobian, with interval root finding - default",
   "optimization",
-  "radau5 [sundial/kinsol needed]",
-  "radau3 [sundial/kinsol needed]",
-  "radau1 [sundial/kinsol needed]",
-  "lobatto2 [sundial/kinsol needed]",
+  "radau5 (implicit Runge-Kutta) [sundial/kinsol needed]",
+  "radau3 (implicit Runge-Kutta) [sundial/kinsol needed]",
+  "radau1 (implicit Euler, order 1) [sundial/kinsol needed]",
+  "lobatto2 (trapezoidal method) [sundial/kinsol needed]",
   "lobatto4 [sundial/kinsol needed]",
   "lobatto6 [sundial/kinsol needed]",
   "symbolic implicit euler, [compiler flag +symEuler needed]",
   "symbolic implicit euler with step-size control, [compiler flag +symEuler needed]",
-  "trapezoidal method (fixed step, order 2)",
+  "Heun's method (fixed step, order 2)",
   "qss"
 };
 

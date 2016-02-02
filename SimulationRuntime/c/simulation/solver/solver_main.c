@@ -99,7 +99,7 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     retVal = euler_ex_step(data, solverInfo);
     TRACE_POP
     return retVal;
-  case S_TRAPEZOIDAL:
+  case S_HEUN:
   case S_RUNGEKUTTA:
     retVal = rungekutta_step(data, threadData, solverInfo);
     TRACE_POP
@@ -199,7 +199,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     break;
   }
   case S_RUNGEKUTTA:
-  case S_TRAPEZOIDAL:
+  case S_HEUN:
   {
     /* Allocate RK work arrays */
 
@@ -207,9 +207,9 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     static const double rungekutta_b[4] = { 1.0 / 6.0, 1.0 / 3.0, 1.0 / 3.0, 1.0 / 6.0 };
     static const double rungekutta_c[4] = { 0.0, 0.5, 0.5, 1.0 };
 
-    static const int trapezoidal_s = 2;
-    static const double trapezoidal_b[2] = { 1.0 / 2.0, 1.0 / 2.0 };
-    static const double trapezoidal_c[2] = { 0.0, 1.0 };
+    static const int heun_s = 2;
+    static const double heun_b[2] = { 1.0 / 2.0, 1.0 / 2.0 };
+    static const double heun_c[2] = { 0.0, 1.0 };
 
     RK4_DATA* rungeData = (RK4_DATA*) malloc(sizeof(RK4_DATA));
 
@@ -217,10 +217,10 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
       rungeData->work_states_ndims = rungekutta_s;
       rungeData->b = rungekutta_b;
       rungeData->c = rungekutta_c;
-    } else if (solverInfo->solverMethod==S_TRAPEZOIDAL) {
-      rungeData->work_states_ndims = trapezoidal_s;
-      rungeData->b = trapezoidal_b;
-      rungeData->c = trapezoidal_c;
+    } else if (solverInfo->solverMethod==S_HEUN) {
+      rungeData->work_states_ndims = heun_s;
+      rungeData->b = heun_b;
+      rungeData->c = heun_c;
     } else {
       throwStreamPrint(threadData, "Unknown RK solver");
     }
@@ -336,7 +336,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   {
     freeSymEulerImp(solverInfo);
   }
-  else if(solverInfo->solverMethod == S_RUNGEKUTTA || solverInfo->solverMethod == S_TRAPEZOIDAL)
+  else if(solverInfo->solverMethod == S_RUNGEKUTTA || solverInfo->solverMethod == S_HEUN)
   {
     /* free RK work arrays */
     for(i = 0; i < ((RK4_DATA*)(solverInfo->solverData))->work_states_ndims + 1; i++)
