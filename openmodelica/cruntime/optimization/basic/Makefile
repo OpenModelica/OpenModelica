@@ -16,6 +16,7 @@ CM.mos \
 CM2.mos \
 DM.mos \
 DMwarm.mos \
+DMwarmCsv.mos \
 LoopTest.mos \
 LRB.mos \
 LRB2.mos \
