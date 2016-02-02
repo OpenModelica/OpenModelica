@@ -53,18 +53,23 @@ We simulate as usual, but set measureTime=true to activate the profiling:
   setCommandLineOptions("--profiling=blocks+html")
   simulate(ProfilingTest)
 
-.. omc-mos ::
-  :hidden:
+.. error ::
+  Profiling output should go here, but is currently broken on the build server.
 
-  :target: ProfilingTest_prof.999.svg
-  system("pandoc -o ProfilingTest_prof.rst ProfilingTest_prof.html")
-  system("sed -i= 's/:target: ProfilingTest_prof.*/:width: 32px/' ProfilingTest_prof.rst")
-  system("mv ProfilingTest_prof.rst ../source/ProfilingTest_prof.inc")
-  system("rm ProfilingTest_prof.html")
-  system("cp ProfilingTest_prof* ../source/")
-  system("cp ProfilingTest_prof.xml ProfilingTest_res.mat ProfilingTest_prof.data ../build/html/")
+.. comment
 
-.. include :: ProfilingTest_prof.inc
+  .. omc-mos ::
+    :hidden:
+
+    :target: ProfilingTest_prof.999.svg
+    system("pandoc -o ProfilingTest_prof.rst ProfilingTest_prof.html")
+    system("sed -i= 's/:target: ProfilingTest_prof.*/:width: 32px/' ProfilingTest_prof.rst")
+    system("mv ProfilingTest_prof.rst ../source/ProfilingTest_prof.inc")
+    system("rm ProfilingTest_prof.html")
+    system("cp ProfilingTest_prof* ../source/")
+    system("cp ProfilingTest_prof.xml ProfilingTest_res.mat ProfilingTest_prof.data ../build/html/")
+
+  .. include :: ProfilingTest_prof.inc
 
 Genenerated JSON for the Example
 ================================
