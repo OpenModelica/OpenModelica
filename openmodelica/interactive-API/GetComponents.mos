@@ -25,12 +25,18 @@ loadString("
   model D
     parameter Real r1 = 0.1 annotation(Dialog(group = \"Group\", tab = \"Tab\")), r2;
   end D;
+
+  model E
+    Foo f;
+    A a;
+  end E;
 "); getErrorString();
 
 getComponents(A);
 getComponents(B);
 getComponents(C);
 getComponents(D);
+getComponents(E);
 
 // Result:
 // true
@@ -39,4 +45,5 @@ getComponents(D);
 // {{Real,a,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{Real,b,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
 // {{A,a,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{B,b,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
 // {{Real,r1,"", "public", false, false, false, false, "parameter", "none", "unspecified",{}},{Real,r2,"", "public", false, false, false, false, "parameter", "none", "unspecified",{}}}
+// {{,f,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{A,a,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
 // endResult
