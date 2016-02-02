@@ -482,6 +482,9 @@ private:
   QGroupBox *mpOutputGroupBox;
   QRadioButton *mpStructuredRadioButton;
   QRadioButton *mpFormattedTextRadioButton;
+public slots:
+  void updateMatchingAlgorithmToolTip(int index);
+  void updateIndexReductionToolTip(int index);
 };
 
 class MessagesPage : public QWidget

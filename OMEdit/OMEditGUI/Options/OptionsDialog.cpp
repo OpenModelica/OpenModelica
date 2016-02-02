@@ -2555,6 +2555,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
     mpMatchingAlgorithmComboBox->setItemData(i, matchingAlgorithmComments[i], Qt::ToolTipRole);
     i++;
   }
+  connect(mpMatchingAlgorithmComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateMatchingAlgorithmToolTip(int)));
   mpMatchingAlgorithmComboBox->setCurrentIndex(mpMatchingAlgorithmComboBox->findText(mpOptionsDialog->getMainWindow()->getOMCProxy()->getMatchingAlgorithm()));
   // Index Reduction Method
   mpIndexReductionMethodLabel = new Label(tr("Index Reduction Method:"));
@@ -2567,6 +2568,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
     mpIndexReductionMethodComboBox->setItemData(i, indexReductionMethodComments[i], Qt::ToolTipRole);
     i++;
   }
+  connect(mpIndexReductionMethodComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateIndexReductionToolTip(int)));
   mpIndexReductionMethodComboBox->setCurrentIndex(mpIndexReductionMethodComboBox->findText(mpOptionsDialog->getMainWindow()->getOMCProxy()->getIndexReductionMethod()));
   // Target Language
   mpTargetLanguageLabel = new Label(tr("Target Language:"));
@@ -2657,6 +2659,26 @@ QString SimulationPage::getOutputMode()
   } else {
     return Helper::textOutput;
   }
+}
+
+/*!
+ * \brief SimulationPage::updateMatchingAlgorithmToolTip
+ * Updates the matching algorithm combobox tooltip.
+ * \param index
+ */
+void SimulationPage::updateMatchingAlgorithmToolTip(int index)
+{
+  mpMatchingAlgorithmComboBox->setToolTip(mpMatchingAlgorithmComboBox->itemData(index, Qt::ToolTipRole).toString());
+}
+
+/*!
+ * \brief SimulationPage::updateIndexReductionToolTip
+ * Updates the index reduction combobox tooltip.
+ * \param index
+ */
+void SimulationPage::updateIndexReductionToolTip(int index)
+{
+  mpIndexReductionMethodComboBox->setToolTip(mpIndexReductionMethodComboBox->itemData(index, Qt::ToolTipRole).toString());
 }
 
 //! @class MessagesPage
