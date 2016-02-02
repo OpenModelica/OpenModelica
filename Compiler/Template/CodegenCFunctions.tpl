@@ -5642,7 +5642,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
       let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>, 6);<%\n%>'
       '<%tvar%>'
     case "modelica_string" then
-      let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%>);<%\n%>'
+      let &preExp += '<%tvar%> = <%sExp%>;<%\n%>'
       '<%tvar%>'
     else
     let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%><%enumStr%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
