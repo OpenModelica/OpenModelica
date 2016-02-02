@@ -92,6 +92,7 @@ protected import Print;
 protected import Refactor;
 protected import Static;
 protected import StaticScript;
+protected import StringUtil;
 protected import System;
 protected import Types;
 protected import UnitAbsyn;
@@ -13797,62 +13798,64 @@ protected function getComponentInfo
    inputs: (Absyn.Element, string, /* public or protected */, FCore.Graph)
    outputs: string list"
   input Absyn.Element inElement;
-  input Boolean inBoolean;
-  input String inString;
+  input Boolean inQuoteNames;
+  input String inVisibility;
   input FCore.Graph inEnv;
   output list<String> outStringLst;
 algorithm
-  outStringLst := match (inElement,inBoolean,inString,inEnv)
+  outStringLst := match inElement
     local
-      SCode.Element c;
-      FCore.Graph env_1,env;
-      Absyn.Path envpath,p_1,p;
-      String tpname,typename,finalPrefix,repl,inout_str,flowPrefixstr,streamPrefixstr,variability_str,dir_str,str,access;
-      String typeAdStr;
-      list<Absyn.ComponentItem> lst;
-      list<String> names,lst_1,dims,strLst;
-      Boolean r_1,f,b;
-      Option<Absyn.RedeclareKeywords> r;
-      Absyn.InnerOuter inout;
       Absyn.ElementAttributes attr;
-      Option<Absyn.ArrayDim> typeAd;
+      Absyn.Path p, env_path;
+      list<Absyn.ComponentItem> comps;
+      FCore.Graph env;
+      list<String> names, dims;
+      Option<Absyn.Path> oenv_path;
+      String tp_name, typename, final_str, repl_str, io_str;
+      String flow_str, stream_str, var_str, dir_str, dim_str, str;
 
-    case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,
-                        specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, _),components = lst)),
-          b,access,env)
-      equation
-        typename = matchcontinue ()
-          case ()
-            equation
-              (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, p);
-              SOME(envpath) = FGraph.getScopePath(env_1);
-              tpname = Absyn.pathLastIdent(p);
-              p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
-            then Absyn.pathString(p_1);
-          else Absyn.pathString(p);
-        end matchcontinue;
-        typename = if b then stringAppendList({"\"",typename,"\""}) else typename;
-        names = getComponentItemsName(lst,b);
-        dims = getComponentitemsDimension(lst);
-        strLst = prefixTypename(typename, names);
-        finalPrefix = boolString(f);
-        finalPrefix = if b then stringAppendList({"\"",finalPrefix,"\""}) else finalPrefix;
-        r_1 = keywordReplaceable(r);
-        repl = boolString(r_1);
-        repl = if b then stringAppendList({"\"",repl,"\""}) else repl;
-        inout_str = innerOuterStr(inout);
-        flowPrefixstr = attrFlowStr(attr);
-        flowPrefixstr = if b then stringAppendList({"\"",flowPrefixstr,"\""}) else flowPrefixstr;
-        streamPrefixstr = attrStreamStr(attr);
-        streamPrefixstr = if b then stringAppendList({"\"",streamPrefixstr,"\""}) else streamPrefixstr;
-        // parallelism_str = attrParallelismStr(attr);
-        variability_str = attrVariabilityStr(attr);
-        dir_str = attrDirectionStr(attr);
-        str = stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,/*parallelism_str,*/variability_str,inout_str,dir_str}, ", ");
-        typeAdStr =  attrDimensionStr(attr);
-        lst_1 = suffixInfos(strLst,dims,typeAdStr,str,b);
+    case Absyn.ELEMENT(specification = Absyn.COMPONENTS(
+        attributes = attr, typeSpec = Absyn.TPATH(path = p), components = comps))
+      algorithm
+        try
+          (_, _, env) := Lookup.lookupClass(FCore.emptyCache(), inEnv, p);
+          oenv_path := FGraph.getScopePath(env);
+
+          if isSome(oenv_path) then
+            SOME(env_path) := FGraph.getScopePath(env);
+            tp_name := Absyn.pathLastIdent(p);
+            typename := Absyn.pathString(Absyn.suffixPath(env_path, tp_name));
+          else
+            typename := Absyn.pathString(p);
+          end if;
+        else
+          typename := "";
+        end try;
+
+        names := getComponentItemsName(comps, inQuoteNames);
+        dims := getComponentitemsDimension(comps);
+        final_str := boolString(inElement.finalPrefix);
+        repl_str := boolString(keywordReplaceable(inElement.redeclareKeywords));
+        io_str := innerOuterStr(inElement.innerOuter);
+        flow_str := attrFlowStr(attr);
+        stream_str := attrStreamStr(attr);
+        var_str := attrVariabilityStr(attr);
+        dir_str := attrDirectionStr(attr);
+        dim_str := attrDimensionStr(attr);
+
+        if inQuoteNames then
+          typename := StringUtil.quote(typename);
+          final_str := StringUtil.quote(final_str);
+          repl_str := StringUtil.quote(repl_str);
+          flow_str := StringUtil.quote(flow_str);
+          stream_str := StringUtil.quote(stream_str);
+        end if;
+
+        names := prefixTypename(typename, names);
+        str := stringDelimitList({inVisibility, final_str, flow_str,
+          stream_str, repl_str, var_str, io_str, dir_str}, ", ");
       then
-        lst_1;
+        suffixInfos(names, dims, dim_str, str, inQuoteNames);
 
     else {};
 

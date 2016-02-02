@@ -280,5 +280,12 @@ algorithm
   res := System.stringAllocatorResult(ext, res);
 end repeat;
 
+function quote
+  "Adds quotation marks to the beginning and end of a string."
+  input String inString;
+  output String outString = stringAppendList({"\"", inString, "\""});
+  annotation(__OpenModelica_EarlyInline = true);
+end quote;
+
 annotation(__OpenModelica_Interface="util");
 end StringUtil;
