@@ -1668,11 +1668,16 @@ algorithm
       list<DAE.SubMod> submods;
       DAE.SubMod submod;
 
-    // Redeclaring the same component.
+    // Redeclaration of component with no constraining class on the inner modifier.
+    case (DAE.REDECL(element = SCode.COMPONENT()),
+          DAE.REDECL(element = SCode.COMPONENT(prefixes =
+            SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(cc = NONE())))))
+      then inModOuter;
+
+    // Redeclaration of component with constraining class on the inner modifier.
     case (DAE.REDECL(element = el1 as SCode.COMPONENT(), mod = emod1),
           DAE.REDECL(element = el2 as SCode.COMPONENT(), mod = emod2))
       algorithm
-        true := el1.name == el2.name;
         smod1 := SCodeUtil.getConstrainedByModifiers(el1.prefixes);
         smod1 := SCode.mergeModifiers(el1.modifications, smod1);
         dmod1 := elabUntypedMod(smod1, COMPONENT(el1.name));
@@ -1693,11 +1698,16 @@ algorithm
       then
         outMod;
 
-    // Redeclaring the same class.
+    // Redeclaration of class with no constraining class on the inner modifier.
+    case (DAE.REDECL(element = SCode.CLASS()),
+          DAE.REDECL(element = SCode.CLASS(prefixes =
+            SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(cc = NONE())))))
+      then inModOuter;
+
+    // Redeclaration of class with constraining class on the inner modifier.
     case (DAE.REDECL(element = el1 as SCode.CLASS(), mod = emod1),
           DAE.REDECL(element = el2 as SCode.CLASS(), mod = emod2))
       algorithm
-        true := el1.name == el2.name;
         smod1 := SCodeUtil.getConstrainedByModifiers(el1.prefixes);
         dmod1 := elabUntypedMod(smod1, COMPONENT(el1.name));
         emod1 := merge(emod1, dmod1, el1.name, inCheckFinal);
@@ -1717,15 +1727,6 @@ algorithm
         outMod.mod := emod;
       then
         outMod;
-
-    // Two identical redeclares, return one of them.
-    case (DAE.REDECL(), DAE.REDECL())
-      algorithm
-        true := SCode.eachEqual(outMod.eachPrefix, inModInner.eachPrefix);
-        true := SCode.finalEqual(outMod.finalPrefix, inModInner.finalPrefix);
-        true := SCode.elementEqual(inModInner.element, outMod.element);
-      then
-        inModOuter;
 
     case (DAE.REDECL(element = el1, mod = emod),
           DAE.MOD())
