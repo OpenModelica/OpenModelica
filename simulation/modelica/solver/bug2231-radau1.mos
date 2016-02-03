@@ -3,7 +3,7 @@
 // teardown_command: rm -f testSolver.problem1* output.log
 
 loadFile("testSolverPackage.mo"); getErrorString();
-simulate(testSolver.bug2231, method="radau1"); 
+simulate(testSolver.bug2231, method="impeuler");
 getErrorString();
 val(x[1],1);
 getErrorString();
@@ -13,7 +13,7 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "testSolver.bug2231_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'radau1', fileNamePrefix = 'testSolver.bug2231', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'impeuler', fileNamePrefix = 'testSolver.bug2231', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.

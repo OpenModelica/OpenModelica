@@ -2,9 +2,9 @@
 // keywords: der inputs
 // status: correct
 // teardown_command: rm -rf LotkaVolterra_* LotkaVolterra LotkaVolterra.exe LotkaVolterra.cpp LotkaVolterra.makefile LotkaVolterra.libs LotkaVolterra.log output.log
-// 
-//  
-// 
+//
+//
+//
 
 loadString("
 
@@ -34,7 +34,7 @@ equation
 end LotkaVolterraWithInput;
 ");
 
-simulate(LotkaVolterra,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, outputFormat="mat"); 
+simulate(LotkaVolterra,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, outputFormat="mat");
 val(rabbits,180);
 val(foxes,200);
 val(rabbits,666);
@@ -43,10 +43,10 @@ val(der(rabbits),42);
 val(der(rabbits),420);
 
 // create external input file for the next tests
-simulate(LotkaVolterra,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, outputFormat="csv"); 
+simulate(LotkaVolterra,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, outputFormat="csv");
 system("awk -F, '{print $1, $3}' LotkaVolterra_res.csv > externalInput.csv");
 
-simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8); 
+simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8);
 val(rabbits,180);
 val(foxes,200);
 val(rabbits,666);
@@ -54,7 +54,7 @@ val(foxes,760);
 val(derrabbits,42);
 val(derrabbits,420);
 
-simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760, numberOfIntervals=760, tolerance=1e-8, method="euler"); 
+simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760, numberOfIntervals=760, tolerance=1e-8, method="euler");
 val(rabbits,180);
 val(foxes,200);
 val(rabbits,666);
@@ -62,7 +62,7 @@ val(foxes,760);
 val(derrabbits,42);
 val(derrabbits,420);
 
-simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="rungekutta"); 
+simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="rungekutta");
 val(rabbits,180);
 val(foxes,200);
 val(rabbits,666);
@@ -70,7 +70,7 @@ val(foxes,760);
 val(derrabbits,42);
 val(derrabbits,420);
 
-simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="radau1");
+simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="impeuler");
 val(rabbits,180);
 val(foxes,200);
 val(rabbits,666);
@@ -78,7 +78,7 @@ val(foxes,760);
 val(derrabbits,42);
 val(derrabbits,420);
 
-simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="radau5"); 
+simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="radau5");
 val(rabbits,180);
 val(foxes,200);
 val(rabbits,666);
@@ -86,7 +86,7 @@ val(foxes,760);
 val(derrabbits,42);
 val(derrabbits,420);
 
-simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="lobatto6"); 
+simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="lobatto6");
 val(rabbits,180);
 val(foxes,200);
 val(rabbits,666);
@@ -149,7 +149,7 @@ val(derrabbits,420);
 // 76.41278697013256
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'radau1', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'impeuler', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
 // 4310.037646344409
