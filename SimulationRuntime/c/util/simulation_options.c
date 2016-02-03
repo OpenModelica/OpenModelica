@@ -354,8 +354,8 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
   "optimization",
   "radau5",
   "radau3",
-  "radau1",
-  "lobatto2",
+  "impeuler",
+  "trapezoid",
   "lobatto4",
   "lobatto6",
   "symEuler",
@@ -366,20 +366,20 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
 
 const char *SOLVER_METHOD_DESC[S_MAX] = {
   "unknown",
-  "Explicit Euler (order 1)",
-  "Runge-Kutta (fixed step, order 4)",
-  "dassl with colored numerical jacobian, with interval root finding - default",
-  "optimization",
-  "radau5 (implicit Runge-Kutta) [sundial/kinsol needed]",
-  "radau3 (implicit Runge-Kutta) [sundial/kinsol needed]",
-  "radau1 (implicit Euler, order 1) [sundial/kinsol needed]",
-  "lobatto2 (trapezoidal method) [sundial/kinsol needed]",
-  "lobatto4 [sundial/kinsol needed]",
-  "lobatto6 [sundial/kinsol needed]",
-  "symbolic implicit euler, [compiler flag +symEuler needed]",
-  "symbolic implicit euler with step-size control, [compiler flag +symEuler needed]",
-  "Heun's method (fixed step, order 2)",
-  "qss"
+  "euler - Explicit Euler (order 1)",
+  "rungekutta - Runge-Kutta (fixed step, order 4)",
+  "dassl - BDF solver with colored numerical jacobian, with interval root finding - default",
+  "optimization - Special solver for dynamic optimization",
+  "radau5 - Radau IIA with 3 points, \"Implicit Runge-Kutta\", order 5 [sundial/kinsol needed]",
+  "radau3 - Radau IIA with 2 points, \"Implicit Runge-Kutta\", order 3 [sundial/kinsol needed]",
+  "impeuler - Implicit Euler (actually Radau IIA, order 1) [sundial/kinsol needed]",
+  "trapezoid - Trapezoidal rule (actually Lobatto IIA with 2 points) [sundial/kinsol needed]",
+  "lobatto4 - Lobatto IIA with 3 points, order 4 [sundial/kinsol needed]",
+  "lobatto6 - Lobatto IIA with 4 points, order 6 [sundial/kinsol needed]",
+  "symEuler - symbolic implicit euler, [compiler flag +symEuler needed]",
+  "symEulerSsc - symbolic implicit euler with step-size control, [compiler flag +symEuler needed]",
+  "heun - Heun's method (Runge-Kutta fixed step, order 2)",
+  "qss - A QSS solver [experimental]"
 };
 
 const char *INIT_METHOD_NAME[IIM_MAX] = {
