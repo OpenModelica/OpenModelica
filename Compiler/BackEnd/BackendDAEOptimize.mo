@@ -4303,11 +4303,10 @@ algorithm
         eqns := BackendEquation.equationRemove(i,eqns);
       end for;
       eqns := BackendEquation.listEquation(BackendEquation.equationList(eqns));
-      systlst := BackendDAEUtil.createEqSystem(vars, eqns) :: systlst;
+      systlst := BackendDAEUtil.createEqSystem(vars, eqns, syst.stateSets, syst.partitionKind, syst.removedEqs) :: systlst;
     else
       systlst := syst :: systlst;
     end if;
-
   end for; // syst
 
   outDAE.eqs := systlst;
