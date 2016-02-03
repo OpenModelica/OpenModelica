@@ -1560,6 +1560,8 @@ algorithm
       print(String(depth) + " merged tree size: " + String(stringLength(DiffAlgorithm.printActual(res, SimpleModelicaParser.parseTreeNodeStr))) + "\n");
       print(String(depth) + " before top="+firstTokenDebugStr(before)+"\n");
       print(" before all="+parseTreeStr(before)+"\n");
+      print(" middle all="+parseTreeStr(middle)+"\n");
+      print(" after all="+parseTreeStr(after)+"\n");
       print("middle top="+firstTokenDebugStr(middle)+"\n");
       print("after top="+firstTokenDebugStr(after)+"\n");
       print("added top="+firstTokenDebugStr(addedTree::{})+"\n");
@@ -1741,7 +1743,9 @@ algorithm
           hasAddedWS := false;
           for t in tree loop
             _ := match (diffEnum, firstNTokensInTree_reverse(t, 2))
-              case (Diff.Equal, _) then ();
+              case (Diff.Equal, _)
+                algorithm
+                then ();
               case (_, {LexerModelicaDiff.TOKEN(id=TokenId.WHITESPACE, length=length),tok as LexerModelicaDiff.TOKEN(id=TokenId.NEWLINE)})
                 algorithm
                   treeLocal := replaceFirstTokensInTree(t, {tok,makeToken(TokenId.WHITESPACE, indentationStr)})::treeLocal;
@@ -1749,14 +1753,17 @@ algorithm
                 then ();
               case (_, {LexerModelicaDiff.TOKEN(id=TokenId.WHITESPACE, length=length)}) guard lastTokenNewline
                 algorithm
-                  replaceFirstTokensInTree(t, {makeToken(TokenId.WHITESPACE, indentationStr)});
+                  treeLocal := replaceFirstTokensInTree(t, {makeToken(TokenId.WHITESPACE, indentationStr)})::treeLocal;
                   hasAddedWS := true;
                 then ();
-              else ();
+              else
+                algorithm
+                  treeLocal := t::treeLocal;
+                then ();
             end match;
             lastTokenNewline := match lastToken(t) case LexerModelicaDiff.TOKEN(id=TokenId.NEWLINE) then true; else false; end match;
           end for;
-          diffLocal := if hasAddedWS then (diffEnum, listReverse(treeLocal))::diffLocal else d::diffLocal;
+          diffLocal := if hasAddedWS then ((diffEnum, listReverse(treeLocal))::diffLocal) else (d::diffLocal);
         then ();
     end match;
   end for;
@@ -2424,6 +2431,7 @@ protected
   Integer i;
 algorithm
   _ := match tree
+    // TODO: Normalize line-endings? We can output mixed CRLF/LF now...
     case LEAF() algorithm Print.printBuf(tokenContent(tree.token)); then ();
     case EMPTY() algorithm Print.printBuf("<EMPTY>"); then ();
     case NODE()
