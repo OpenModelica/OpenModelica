@@ -1,0 +1,11 @@
+// status: correct
+
+diffModelicaFileListings("model M \"Linköping\"
+end M;", "model M \"Linköping University\"
+end M;");
+getErrorString();
+// Result:
+// "model M [9;31m\"Linköping\"[0m[4;32m\"Linköping University\"[0m
+// end M;"
+// ""
+// endResult
