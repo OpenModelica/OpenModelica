@@ -677,7 +677,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /MD - link with MSVCRT.LIB
   # /link - [linker options and libraries]
   # /LIBPATH: - Directories where libs can be found
-  LDFLAGS=/link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" OMCppSystem_FMU_static.lib OMCppMath_static.lib OMCppModelicaUtilities_static.lib OMCppExtensionUtilities_static.lib OMCppFMU_static.lib ModelicaExternalC.lib ModelicaStandardTables.lib
+  OMCPP_SOLVER_LIBS=OMCppNewton_static.lib OMCppDgesv_static.lib
+  LDFLAGS=/link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" OMCppSystem_FMU_static.lib OMCppMath_static.lib OMCppModelicaUtilities_static.lib OMCppExtensionUtilities_static.lib OMCppFMU_static.lib $(OMCPP_SOLVER_LIBS) ModelicaExternalC.lib ModelicaStandardTables.lib
   PLATFORM="win32"
 
   MODEL_NAME=<%modelName%>
