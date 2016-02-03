@@ -11,6 +11,7 @@ LargeFileChange.mos \
 ListFile.mos \
 removeComponentModifiers.mos \
 TestDiffListAPI.mos \
+ticket3642.mos \
 UTF8.mos
 
 # test that currently fail. Move up when fixed.
