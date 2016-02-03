@@ -102,6 +102,7 @@ import SCode;
 import SCodeUtil;
 import Settings;
 import SimulationResults;
+import StringUtil;
 import SymbolicJacobian;
 import TaskGraphResults;
 import Tpl;
@@ -666,7 +667,7 @@ protected
 algorithm
   (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (inCache,inEnv,inFunctionName,inVals,inSt,msg)
     local
-      String omdev,simflags,s1,s2,s3,str,str1,str2,str3,token,varid,cmd,executable,executable1,encoding,method_str,
+      String omdev,simflags,s1,s2,s3,s4,str,str1,str2,str3,token,varid,cmd,executable,executable1,encoding,method_str,
              outputFormat_str,initfilename,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,
              call,str_1,mp,pathstr,name,cname,errMsg,errorStr,
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
@@ -713,7 +714,7 @@ algorithm
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r,r1,r2,linearizeTime,curveWidth,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
       GlobalScript.Statements istmts;
       list<GlobalScript.Statements> istmtss;
-      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, logX, logY, autoScale, forceOMPlot, gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors;
+      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, logX, logY, autoScale, forceOMPlot, gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors, sanityCheckFailed;
       FCore.Cache cache;
       list<GlobalScript.LoadedFile> lf;
       Absyn.ComponentRef  crefCName;
@@ -875,6 +876,18 @@ algorithm
 
         SimCodeFunctionUtil.execStat("treeDiff");
 
+        sanityCheckFailed := false;
+
+        if true then
+          // Do a sanity check
+          s3 := Dump.unparseStr(Parser.parsestring(s2));
+          s4 := Dump.unparseStr(Parser.parsestring(printActual(treeDiffs, SimpleModelicaParser.parseTreeNodeStr)));
+          if not StringUtil.equalIgnoreSpace(s3, s4) then
+            Error.addInternalError("After merging the strings, the semantics changed for some reason (will simply return s2):\n"+s3+"\n"+s4, sourceInfo());
+            sanityCheckFailed := true;
+          end if;
+        end if;
+
         /*
         diffs := diff(tokens1, tokens2, modelicaDiffTokenEq, modelicaDiffTokenWhitespace, tokenContent);
         SimCodeFunctionUtil.execStat("diffModelicaFileListings diff 1");
@@ -892,7 +905,7 @@ algorithm
         diffs := filterModelicaDiff(diffs);
         SimCodeFunctionUtil.execStat("diffModelicaFileListings filter diff 2");
         */
-        str := matchcontinue Absyn.pathLastIdent(path)
+        str := if sanityCheckFailed then s2 else matchcontinue Absyn.pathLastIdent(path)
           case "plain" then printActual(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
           case "color" then printDiffTerminalColor(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
           case "xml" then printDiffXml(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);

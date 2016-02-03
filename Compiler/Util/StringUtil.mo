@@ -287,5 +287,36 @@ function quote
   annotation(__OpenModelica_EarlyInline = true);
 end quote;
 
+function equalIgnoreSpace
+  input String s1;
+  input String s2;
+  output Boolean b;
+protected
+  Integer j=1;
+algorithm
+  b := true;
+  for i in 1:stringLength(s1) loop
+    if MetaModelica.Dangerous.stringGetNoBoundsChecking(s1, i) <> stringCharInt(" ") then
+      b := false;
+      for j2 in j:stringLength(s2) loop
+        if MetaModelica.Dangerous.stringGetNoBoundsChecking(s2, j2) <> stringCharInt(" ") then
+          j := j2+1;
+          b := true;
+          break;
+        end if;
+      end for;
+      if not b then
+        return;
+      end if;
+    end if;
+  end for;
+  for j2 in j:stringLength(s2) loop
+    if MetaModelica.Dangerous.stringGetNoBoundsChecking(s2, j2) <> stringCharInt(" ") then
+      b := false;
+      return;
+    end if;
+  end for;
+end equalIgnoreSpace;
+
 annotation(__OpenModelica_Interface="util");
 end StringUtil;
