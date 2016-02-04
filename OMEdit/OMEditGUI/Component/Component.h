@@ -261,6 +261,7 @@ private:
   void updateConnections();
   QString getParameterDisplayStringFromExtendsModifiers(QString parameterName);
   QString getParameterDisplayStringFromExtendsParameters(QString parameterName);
+  void updateToolTip();
 signals:
   void added();
   void transformChange();
@@ -283,6 +284,7 @@ public slots:
   void resizeComponent(QPointF newPosition);
   void finishResizeComponent();
   void resizedComponent();
+  void componentCommentHasChanged();
   void componentNameHasChanged();
   void displayTextChangedRecursive();
   void deleteMe();
