@@ -82,6 +82,8 @@ typedef struct OptDataDim{
  int dim_tmpVars[2];
  modelica_boolean exTimeGrid;
 
+ int iter;
+
 }OptDataDim;
 
 typedef struct OptDataTime{
@@ -121,6 +123,8 @@ typedef struct OptDataIpopt{
   double *mult_g;
   double *mult_x_L;
   double *mult_x_U;
+  char * csvOstep;
+  char * debugeJ;
 }OptDataIpopt;
 
 typedef struct OptDataStructure{

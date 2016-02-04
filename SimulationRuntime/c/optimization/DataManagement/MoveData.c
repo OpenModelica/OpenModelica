@@ -917,7 +917,7 @@ static inline void pickUpStates(OptData* optData){
       }
       // check if csv file is empty!
       if(n == 0){
-        fprintf(stderr, "External input file: externalInput.csv is empty!\n"); fflush(NULL);
+        fprintf(stderr, "External input file: %s is empty!\n",cflags); fflush(NULL);
         EXIT(1);
       }else{
         int i, j;

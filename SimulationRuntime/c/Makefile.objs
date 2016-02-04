@@ -53,7 +53,7 @@ INITIALIZATION_OBJS = initialization$(OBJ_EXT)
 INITIALIZATION_HFILES = initialization.h
 
 ifeq ($(OMC_MINIMAL_RUNTIME),)
-OPTIMIZATION_OBJS=DataManagement/MoveData$(OBJ_EXT) DataManagement/DerStructure$(OBJ_EXT) DataManagement/InitialGuess$(OBJ_EXT) optimizer_main$(OBJ_EXT) eval_all/EvalG$(OBJ_EXT) eval_all/EvalF$(OBJ_EXT) eval_all/EvalL$(OBJ_EXT)
+OPTIMIZATION_OBJS=DataManagement/MoveData$(OBJ_EXT) DataManagement/DerStructure$(OBJ_EXT) DataManagement/InitialGuess$(OBJ_EXT) DataManagement/DebugeOptimization$(OBJ_EXT) optimizer_main$(OBJ_EXT) eval_all/EvalG$(OBJ_EXT) eval_all/EvalF$(OBJ_EXT) eval_all/EvalL$(OBJ_EXT)
 OPTIMIZATION_HFILES=OptimizerData.h OptimizerLocalFunction.h OptimizerInterface.h
 else
 OPTIMIZATION_OBJS=

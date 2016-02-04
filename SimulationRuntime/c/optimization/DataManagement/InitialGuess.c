@@ -58,6 +58,10 @@ inline void initial_guess_optimizer(OptData *optData, SOLVER_INFO* solverInfo){
   int i, j;
   char buffer[4096];
   const int nu = optData->dim.nu;
+  optData->dim.iter = 0;
+  optData->ipop.csvOstep = (char*)(omc_flagValue[FLAG_CSV_OSTEP]);
+  optData->ipop.debugeJ = (char*)omc_flagValue[FLAG_OPTDEBUGEJAC];
+
 
   optData->pFile = fopen("optimizeInput.csv", "wt");
   fprintf(optData->pFile, "%s ", "time");

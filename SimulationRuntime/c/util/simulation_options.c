@@ -37,6 +37,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_ALARM */                 "alarm",
   /* FLAG_CLOCK */                 "clock",
   /* FLAG_CPU */                   "cpu",
+  /* FLAG_CSV_OSTEP */             "csvOstep",
   /* FLAG_DASSL_JACOBIAN */        "dasslJacobian",
   /* FLAG_DASSL_NO_RESTART */      "dasslnoRestart",
   /* FLAG_DASSL_NO_ROOTFINDING */  "dasslnoRootFinding",
@@ -95,6 +96,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_ALARM */                 "aborts after the given number of seconds (0 disables)",
   /* FLAG_CLOCK */                 "selects the type of clock to use -clock=RT, -clock=CYC or -clock=CPU",
   /* FLAG_CPU */                   "dumps the cpu-time into the results-file",
+  /* FLAG_CSV_OSTEP */             "value specifies csv-files for debuge values for optimizer step",
   /* FLAG_DASSL_JACOBIAN */        "selects the type of the jacobians that is used for the dassl solver.\n  dasslJacobian=[coloredNumerical (default) |numerical|internalNumerical|coloredSymbolical|symbolical].",
   /* FLAG_DASSL_NO_RESTART */      "flag deactivates the restart of dassl after an event is performed.",
   /* FLAG_DASSL_NO_ROOTFINDING */  "flag deactivates the internal root finding procedure of dassl.",
@@ -159,6 +161,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  * CPU (process-based CPU-time)",
   /* FLAG_CPU */
   "  Dumps the cpu-time into the result-file using the variable named $cpuTime",
+  /* FLAG_CSV_OSTEP */
+  "value specifies csv-files for debuge values for optimizer step",
   /* FLAG_DASSL_JACOBIAN */
   "  Selects the type of the Jacobian that is used for the dassl solver:\n\n"
   "  * coloredNumerical (colored numerical Jacobian, the default).\n"
@@ -297,6 +301,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_ALARM */                 FLAG_TYPE_OPTION,
   /* FLAG_CLOCK */                 FLAG_TYPE_OPTION,
   /* FLAG_CPU */                   FLAG_TYPE_FLAG,
+  /* FLAG_CSV_OSTEP */             FLAG_TYPE_OPTION,
   /* FLAG_DASSL_JACOBIAN */        FLAG_TYPE_OPTION,
   /* FLAG_DASSL_NO_RESTART */      FLAG_TYPE_FLAG,
   /* FLAG_DASSL_NO_ROOTFINDING */  FLAG_TYPE_FLAG,

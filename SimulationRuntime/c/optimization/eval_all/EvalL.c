@@ -139,6 +139,9 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
       optData2ModelData(optData, vopt, 1);
     }
     */
+    if(optData->ipop.csvOstep)
+      debugeSteps(optData, vopt, lambda);
+    ++optData->dim.iter;
     optData->dim.iter_updateHessian = 0;
     upC2 = upC && optData->s.mayer;
     upC = upC && optData->s.lagrange;
