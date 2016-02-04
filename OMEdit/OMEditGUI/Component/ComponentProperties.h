@@ -140,8 +140,11 @@ private:
   QGroupBox *mpComponentGroupBox;
   Label *mpComponentNameLabel;
   Label *mpComponentNameTextBox;
+  QGroupBox *mpComponentClassGroupBox;
   Label *mpComponentClassNameLabel;
   Label *mpComponentClassNameTextBox;
+  Label *mpComponentClassCommentLabel;
+  Label *mpComponentClassCommentTextBox;
   Label *mpModifiersLabel;
   QLineEdit *mpModifiersTextBox;
   QMap<QString, int> mTabsMap;
