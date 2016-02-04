@@ -18,7 +18,10 @@
  */
 
 #include <stdint.h>
-#include <inttypes.h>
+/* #include <inttypes.h> */
+#if defined(_MSC_VER) && !defined(inline)
+#define inline __inline
+#endif
 
 #define TINYMT64_MEXP 127
 #define TINYMT64_SH0 12

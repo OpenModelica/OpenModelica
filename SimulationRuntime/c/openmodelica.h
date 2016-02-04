@@ -134,7 +134,7 @@ struct type_desc_s {
       size_t elements;
       struct type_desc_s *element;
     } tuple;
-    modelica_complex complex;
+    modelica_complex om_complex;
     struct _record {
       const char *record_name;
       size_t elements;

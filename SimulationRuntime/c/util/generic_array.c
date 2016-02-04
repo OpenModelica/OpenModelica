@@ -41,8 +41,8 @@
 #include <math.h>
 
 
-void* generic_ptrget(const base_array_t *a, size_t sze, size_t i) {
-  return (a->data) + (i*sze);
+static inline void* generic_ptrget(const base_array_t *a, size_t sze, size_t i) {
+  return ((char*)a->data) + (i*sze);
 }
 
 void alloc_generic_array(base_array_t* dest, size_t sze, int ndims,...)

@@ -576,7 +576,7 @@ int read_modelica_complex(type_description **descptr, modelica_complex *data)
   type_description *desc = (*descptr)++;
   switch (desc->type) {
   case TYPE_DESC_COMPLEX:
-    *data = desc->data.complex;
+    *data = desc->data.om_complex;
     return 0;
   default:
     break;
@@ -592,7 +592,7 @@ void write_modelica_complex(type_description *desc, const modelica_complex *data
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_COMPLEX;
-  desc->data.complex = *data;
+  desc->data.om_complex = *data;
 }
 
 /* function pointer functions - added by stefan */
