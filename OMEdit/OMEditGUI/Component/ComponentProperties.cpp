@@ -470,20 +470,31 @@ void ComponentParameters::setUpDialog()
   // Component name
   mpComponentNameLabel = new Label(Helper::name);
   mpComponentNameTextBox = new Label(mpComponent->getName());
-  // Component class name
-  mpComponentClassNameLabel = new Label(Helper::path);
-  mpComponentClassNameTextBox = new Label(mpComponent->getComponentInfo()->getClassName());
   QGridLayout *pComponentGroupBoxLayout = new QGridLayout;
   pComponentGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pComponentGroupBoxLayout->addWidget(mpComponentNameLabel, 0, 0);
   pComponentGroupBoxLayout->addWidget(mpComponentNameTextBox, 0, 1);
-  pComponentGroupBoxLayout->addWidget(mpComponentClassNameLabel, 1, 0);
-  pComponentGroupBoxLayout->addWidget(mpComponentClassNameTextBox, 1, 1);
   mpComponentGroupBox->setLayout(pComponentGroupBoxLayout);
+  // Component Class Group Box
+  mpComponentClassGroupBox = new QGroupBox(tr("Class"));
+  // Component class name
+  mpComponentClassNameLabel = new Label(Helper::path);
+  mpComponentClassNameTextBox = new Label(mpComponent->getComponentInfo()->getClassName());
+  // Component comment
+  mpComponentClassCommentLabel = new Label(Helper::comment);
+  mpComponentClassCommentTextBox = new Label(mpComponent->getLibraryTreeItem() ? mpComponent->getLibraryTreeItem()->mClassInformation.comment : "");
+  QGridLayout *pComponentClassGroupBoxLayout = new QGridLayout;
+  pComponentClassGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pComponentClassGroupBoxLayout->addWidget(mpComponentClassNameLabel, 0, 0);
+  pComponentClassGroupBoxLayout->addWidget(mpComponentClassNameTextBox, 0, 1);
+  pComponentClassGroupBoxLayout->addWidget(mpComponentClassCommentLabel, 1, 0);
+  pComponentClassGroupBoxLayout->addWidget(mpComponentClassCommentTextBox, 1, 1);
+  mpComponentClassGroupBox->setLayout(pComponentClassGroupBoxLayout);
   // Create General tab and Parameters GroupBox
   ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
-  // first add the Component Group Box
+  // first add the Component Group Box and component class group box
   pParametersScrollArea->getLayout()->addWidget(mpComponentGroupBox);
+  pParametersScrollArea->getLayout()->addWidget(mpComponentClassGroupBox);
   GroupBox *pParametersGroupBox = new GroupBox("Parameters");
   pParametersScrollArea->addGroupBox(pParametersGroupBox);
   GroupBox *pInitializationGroupBox = new GroupBox("Initialization");
