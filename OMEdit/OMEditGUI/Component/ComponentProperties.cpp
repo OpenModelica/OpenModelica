@@ -483,6 +483,7 @@ void ComponentParameters::setUpDialog()
   // Component comment
   mpComponentClassCommentLabel = new Label(Helper::comment);
   mpComponentClassCommentTextBox = new Label(mpComponent->getLibraryTreeItem() ? mpComponent->getLibraryTreeItem()->mClassInformation.comment : "");
+  mpComponentClassCommentTextBox->setTextFormat(Qt::RichText);
   QGridLayout *pComponentClassGroupBoxLayout = new QGridLayout;
   pComponentClassGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pComponentClassGroupBoxLayout->addWidget(mpComponentClassNameLabel, 0, 0);

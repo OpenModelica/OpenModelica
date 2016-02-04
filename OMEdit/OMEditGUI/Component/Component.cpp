@@ -368,7 +368,7 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
   createActions();
   mpOriginItem = new OriginItem(this);
   createResizerItems();
-  setToolTip(tr("<b>%1</b> %2").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName()));
+  updateToolTip();
   if (mpLibraryTreeItem) {
     connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
     connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
@@ -419,8 +419,7 @@ Component::Component(Component *pComponent, Component *pParentComponent, Compone
   mTransformation = Transformation(mpReferenceComponent->mTransformation);
   setTransform(mTransformation.getTransformationMatrix());
   mpOriginItem = 0;
-  setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName())
-             .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+  updateToolTip();
   if (mpLibraryTreeItem) {
     connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
     connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
@@ -465,8 +464,7 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   mpGraphicsView->addItem(mpOriginItem);
   createResizerItems();
   mpGraphicsView->addItem(this);
-  setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName())
-             .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+  updateToolTip();
   if (mpLibraryTreeItem) {
     connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
     connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
@@ -1392,6 +1390,21 @@ QString Component::getParameterDisplayStringFromExtendsParameters(QString parame
   return displayString;
 }
 
+/*!
+ * \brief Component::updateToolTip
+ * Updates the Component's tooltip.
+ */
+void Component::updateToolTip()
+{
+  if (mIsInheritedComponent || mComponentType == Component::Port) {
+    setToolTip(tr("<b>%1</b> %2<br/>%3<br /><br />Component declared in %4").arg(mpComponentInfo->getClassName())
+               .arg(mpComponentInfo->getName()).arg(mpComponentInfo->getComment())
+               .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+  } else {
+    setToolTip(tr("<b>%1</b> %2<br/>%3").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName()).arg(mpComponentInfo->getComment()));
+  }
+}
+
 void Component::updatePlacementAnnotation()
 {
   // Add component annotation.
@@ -1657,18 +1670,22 @@ void Component::resizedComponent()
 }
 
 /*!
+ * \brief Component::componentCommentHasChanged
+ * Updates the Component's tooltip when the component comment has changed.
+ */
+void Component::componentCommentHasChanged()
+{
+  updateToolTip();
+  update();
+}
+
+/*!
  * \brief Component::componentNameHasChanged
  * Updates the Component's tooltip when the component name has changed. Emits displayTextChanged signal.
  */
 void Component::componentNameHasChanged()
 {
-  if (mIsInheritedComponent || mComponentType == Component::Port) {
-    setToolTip(tr("<b>%1</b> %2<br /><br />Component declared in %3").arg(mpComponentInfo->getClassName())
-               .arg(mpComponentInfo->getName())
-               .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
-  } else {
-    setToolTip(tr("<b>%1</b> %2").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName()));
-  }
+  updateToolTip();
   displayTextChangedRecursive();
   update();
 }
