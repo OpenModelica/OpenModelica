@@ -433,7 +433,7 @@ void LibraryTreeItem::updateAttributes() {
   setIcon(getLibraryTreeItemIcon());
   QString tooltip;
   if (mLibraryType == LibraryTreeItem::Modelica) {
-    tooltip = QString("%1: %2<br />%3: %4<br />%5: %6<br />%7: %8<br />%9: %10")
+    tooltip = QString("%1: %2<br />%3 %4<br />%5: %6<br />%7: %8<br />%9: %10")
         .arg(Helper::type).arg(mClassInformation.restriction)
         .arg(Helper::name).arg(mName)
         .arg(Helper::description).arg(mClassInformation.comment)
