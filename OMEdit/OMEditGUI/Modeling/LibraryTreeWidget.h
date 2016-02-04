@@ -272,7 +272,7 @@ public:
   LibraryWidget* getLibraryWidget() {return mpLibraryWidget;}
 private:
   LibraryWidget *mpLibraryWidget;
-  QAction *mpViewClassAction;
+  QAction *mpOpenClassAction;
   QAction *mpViewDocumentationAction;
   QAction *mpNewModelicaClassAction;
   QAction *mpSaveAction;
@@ -304,7 +304,7 @@ private:
 public slots:
   void libraryTreeItemExpanded(QModelIndex index);
   void showContextMenu(QPoint point);
-  void viewClass();
+  void openClass();
   void viewDocumentation();
   void createNewModelicaClass();
   void saveClass();

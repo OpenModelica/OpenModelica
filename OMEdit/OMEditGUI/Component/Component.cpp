@@ -1158,10 +1158,10 @@ void Component::createActions()
   mpAttributesAction = new QAction(Helper::attributes, mpGraphicsView);
   mpAttributesAction->setStatusTip(tr("Shows the component attributes"));
   connect(mpAttributesAction, SIGNAL(triggered()), SLOT(showAttributes()));
-  // View Class Action
-  mpViewClassAction = new QAction(QIcon(":/Resources/icons/model.svg"), Helper::viewClass, mpGraphicsView);
-  mpViewClassAction->setStatusTip(Helper::viewClassTip);
-  connect(mpViewClassAction, SIGNAL(triggered()), SLOT(viewClass()));
+  // Open Class Action
+  mpOpenClassAction = new QAction(QIcon(":/Resources/icons/model.svg"), Helper::openClass, mpGraphicsView);
+  mpOpenClassAction->setStatusTip(Helper::openClassTip);
+  connect(mpOpenClassAction, SIGNAL(triggered()), SLOT(openClass()));
   // View Documentation Action
   mpViewDocumentationAction = new QAction(QIcon(":/Resources/icons/info-icon.svg"), Helper::viewDocumentation, mpGraphicsView);
   mpViewDocumentationAction->setStatusTip(Helper::viewDocumentationTip);
@@ -2028,8 +2028,11 @@ void Component::showAttributes()
   pComponentAttributes->exec();
 }
 
-//! Slot that opens up the component Modelica class in a new tab/window.
-void Component::viewClass()
+/*!
+ * \brief Component::openClass
+ * Slot that opens up the component Modelica class in a new tab/window.
+ */
+void Component::openClass()
 {
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
   pMainWindow->getLibraryWidget()->openLibraryTreeItem(mpLibraryTreeItem->getNameStructure());
@@ -2096,7 +2099,7 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
   menu.addAction(pComponent->getParametersAction());
   menu.addAction(pComponent->getAttributesAction());
   menu.addSeparator();
-  menu.addAction(pComponent->getViewClassAction());
+  menu.addAction(pComponent->getOpenClassAction());
   menu.addAction(pComponent->getViewDocumentationAction());
   menu.addSeparator();
   LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
@@ -2108,7 +2111,7 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         menu.addAction(pComponent->getParametersAction());
         menu.addAction(pComponent->getAttributesAction());
         menu.addSeparator();
-        menu.addAction(pComponent->getViewClassAction());
+        menu.addAction(pComponent->getOpenClassAction());
         menu.addAction(pComponent->getViewDocumentationAction());
         menu.addSeparator();
         if (pComponent->isInheritedComponent()) {

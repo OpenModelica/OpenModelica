@@ -2105,10 +2105,10 @@ LibraryTreeView::LibraryTreeView(LibraryWidget *pLibraryWidget)
  */
 void LibraryTreeView::createActions()
 {
-  // show Model Action
-  mpViewClassAction = new QAction(QIcon(":/Resources/icons/modeling.png"), Helper::viewClass, this);
-  mpViewClassAction->setStatusTip(Helper::viewClassTip);
-  connect(mpViewClassAction, SIGNAL(triggered()), SLOT(viewClass()));
+  // open class action
+  mpOpenClassAction = new QAction(QIcon(":/Resources/icons/modeling.png"), Helper::openClass, this);
+  mpOpenClassAction->setStatusTip(Helper::openClassTip);
+  connect(mpOpenClassAction, SIGNAL(triggered()), SLOT(openClass()));
   // view documentation Action
   mpViewDocumentationAction = new QAction(QIcon(":/Resources/icons/info-icon.svg"), Helper::viewDocumentation, this);
   mpViewDocumentationAction->setStatusTip(Helper::viewDocumentationTip);
@@ -2297,7 +2297,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
     switch (pLibraryTreeItem->getLibraryType()) {
       case LibraryTreeItem::Modelica:
       default:
-        menu.addAction(mpViewClassAction);
+        menu.addAction(mpOpenClassAction);
         menu.addAction(mpViewDocumentationAction);
         if (!pLibraryTreeItem->isSystemLibrary()) {
           menu.addSeparator();
@@ -2364,10 +2364,10 @@ void LibraryTreeView::showContextMenu(QPoint point)
 }
 
 /*!
- * \brief LibraryTreeView::viewClass
+ * \brief LibraryTreeView::openClass
  * Shows the class view of the selected LibraryTreeItem.
  */
-void LibraryTreeView::viewClass()
+void LibraryTreeView::openClass()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
