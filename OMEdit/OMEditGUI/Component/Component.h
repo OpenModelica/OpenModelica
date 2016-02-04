@@ -166,7 +166,7 @@ public:
   OriginItem* getOriginItem() {return mpOriginItem;}
   QAction* getParametersAction() {return mpParametersAction;}
   QAction* getAttributesAction() {return mpAttributesAction;}
-  QAction* getViewClassAction() {return mpViewClassAction;}
+  QAction* getOpenClassAction() {return mpOpenClassAction;}
   QAction* getViewDocumentationAction() {return mpViewDocumentationAction;}
   QAction* getTLMAttributesAction() {return mpTLMAttributesAction;}
   ComponentInfo* getComponentInfo() {return mpComponentInfo;}
@@ -222,7 +222,7 @@ private:
   TextAnnotation *mpDefaultComponentText;
   QAction *mpParametersAction;
   QAction *mpAttributesAction;
-  QAction *mpViewClassAction;
+  QAction *mpOpenClassAction;
   QAction *mpViewDocumentationAction;
   QAction *mpTLMAttributesAction;
   ResizerItem *mpBottomLeftResizerItem;
@@ -307,7 +307,7 @@ public slots:
   void moveCtrlRight();
   void showParameters();
   void showAttributes();
-  void viewClass();
+  void openClass();
   void viewDocumentation();
   void showTLMAttributes();
 protected:

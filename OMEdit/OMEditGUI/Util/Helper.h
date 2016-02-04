@@ -261,8 +261,8 @@ public:
   static QString right;
   static QString createConnection;
   static QString findVariables;
-  static QString viewClass;
-  static QString viewClassTip;
+  static QString openClass;
+  static QString openClassTip;
   static QString viewDocumentation;
   static QString viewDocumentationTip;
   static QString dontShowThisMessageAgain;
