@@ -3269,7 +3269,7 @@ AboutOMEditWidget::AboutOMEditWidget(MainWindow *pMainWindow)
       .append("Initially developed by <b>Adeel Asghar</b> and <b>Sonia Tariq</b> as part of their final master thesis.");
   Label *pAboutTextLabel = new Label;
   pAboutTextLabel->setTextFormat(Qt::RichText);
-  pAboutTextLabel->setTextInteractionFlags(pAboutTextLabel->textInteractionFlags() |Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
+  pAboutTextLabel->setTextInteractionFlags(pAboutTextLabel->textInteractionFlags() | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
   pAboutTextLabel->setOpenExternalLinks(true);
   pAboutTextLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::systemFontInfo.pointSize() - 4 + MAC_FONT_FACTOR));
   pAboutTextLabel->setWordWrap(true);

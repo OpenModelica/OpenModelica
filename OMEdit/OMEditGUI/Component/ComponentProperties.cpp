@@ -482,8 +482,14 @@ void ComponentParameters::setUpDialog()
   mpComponentClassNameTextBox = new Label(mpComponent->getComponentInfo()->getClassName());
   // Component comment
   mpComponentClassCommentLabel = new Label(Helper::comment);
-  mpComponentClassCommentTextBox = new Label(mpComponent->getLibraryTreeItem() ? mpComponent->getLibraryTreeItem()->mClassInformation.comment : "");
+  mpComponentClassCommentTextBox = new Label;
   mpComponentClassCommentTextBox->setTextFormat(Qt::RichText);
+  mpComponentClassCommentTextBox->setTextInteractionFlags(mpComponentClassCommentTextBox->textInteractionFlags()
+                                                          | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
+  if (mpComponent->getLibraryTreeItem()) {
+    mpComponentClassCommentTextBox->setText(mpComponent->getLibraryTreeItem()->mClassInformation.comment);
+  }
+  connect(mpComponentClassCommentTextBox, SIGNAL(linkActivated(QString)), SLOT(commentLinkClicked(QString)));
   QGridLayout *pComponentClassGroupBoxLayout = new QGridLayout;
   pComponentClassGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pComponentClassGroupBoxLayout->addWidget(mpComponentClassNameLabel, 0, 0);
@@ -858,6 +864,20 @@ Parameter* ComponentParameters::findParameter(const QString &parameter, Qt::Case
     }
   }
   return 0;
+}
+
+void ComponentParameters::commentLinkClicked(QString link)
+{
+  QUrl linkUrl(link);
+  if (linkUrl.scheme().compare("modelica") == 0) {
+    link = link.remove("modelica://");
+    LibraryTreeItem *pLibraryTreeItem = mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(link);
+    if (pLibraryTreeItem) {
+      mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+    }
+  } else {
+    QDesktopServices::openUrl(link);
+  }
 }
 
 /*!
