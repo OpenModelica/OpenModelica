@@ -163,6 +163,7 @@ private:
                            Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 public slots:
+  void commentLinkClicked(QString link);
   void updateComponentParameters();
 };
 

@@ -1396,12 +1396,16 @@ QString Component::getParameterDisplayStringFromExtendsParameters(QString parame
  */
 void Component::updateToolTip()
 {
+  QString comment = mpComponentInfo->getComment().replace("\\\"", "\"");
+  OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  comment = pOMCProxy->makeDocumentationUriToFileName(comment);
+
   if (mIsInheritedComponent || mComponentType == Component::Port) {
     setToolTip(tr("<b>%1</b> %2<br/>%3<br /><br />Component declared in %4").arg(mpComponentInfo->getClassName())
-               .arg(mpComponentInfo->getName()).arg(mpComponentInfo->getComment())
+               .arg(mpComponentInfo->getName()).arg(comment)
                .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
   } else {
-    setToolTip(tr("<b>%1</b> %2<br/>%3").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName()).arg(mpComponentInfo->getComment()));
+    setToolTip(tr("<b>%1</b> %2<br/>%3").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName()).arg(comment));
   }
 }
 

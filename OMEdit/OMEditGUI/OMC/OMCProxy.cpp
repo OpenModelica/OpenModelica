@@ -781,7 +781,11 @@ QStringList OMCProxy::searchClassNames(QString searchText, bool findInText)
   */
 OMCInterface::getClassInformation_res OMCProxy::getClassInformation(QString className)
 {
-  return mpOMCInterface->getClassInformation(className);
+  OMCInterface::getClassInformation_res classInformation = mpOMCInterface->getClassInformation(className);
+  QString comment = classInformation.comment.replace("\\\"", "\"");
+  comment = makeDocumentationUriToFileName(comment);
+  classInformation.comment = comment;
+  return classInformation;
 }
 
 /*!
