@@ -17,14 +17,6 @@ add_library(${SystemName}_static STATIC AlgLoopDefaultImplementation.cpp AlgLoop
 set_target_properties(${SystemName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
 install (TARGETS ${SystemName}_static DESTINATION ${LIBINSTALLEXT})
 
-add_library(${SystemName}_FMU_static STATIC AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp DiscreteEvents.cpp ContinuousEvents.cpp SystemDefaultImplementation.cpp SimVars.cpp FactoryExport.cpp)
-if(FMU_SUNDIALS)
-  set_target_properties(${SystemName}_FMU_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
-else(FMU_SUNDIALS)
-  set_target_properties(${SystemName}_FMU_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
-endif(FMU_SUNDIALS)
-install (TARGETS ${SystemName}_FMU_static DESTINATION ${LIBINSTALLEXT})
-
 add_library(${SystemName} SHARED AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp DiscreteEvents.cpp ContinuousEvents.cpp SystemDefaultImplementation.cpp SimVars.cpp FactoryExport.cpp)
 
 target_link_libraries (${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${OMCFactoryName}_static ${SimulationSettings} ${ExtensionUtilitiesName})
@@ -34,7 +26,6 @@ install (TARGETS ${SystemName} DESTINATION ${LIBINSTALLEXT})
 if (UNIX)
   set_target_properties(${SystemName} PROPERTIES COMPILE_FLAGS -fPIC)
   set_target_properties(${SystemName}_static PROPERTIES COMPILE_FLAGS -fPIC)
-  set_target_properties(${SystemName}_FMU_static PROPERTIES COMPILE_FLAGS -fPIC)
 endif(UNIX)
 
 #IF (NOT ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") OR  MSVC))

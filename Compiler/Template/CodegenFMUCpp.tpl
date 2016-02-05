@@ -678,7 +678,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /link - [linker options and libraries]
   # /LIBPATH: - Directories where libs can be found
   OMCPP_SOLVER_LIBS=OMCppNewton_static.lib OMCppDgesv_static.lib
-  LDFLAGS=/link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" OMCppSystem_FMU_static.lib OMCppMath_static.lib OMCppModelicaUtilities_static.lib OMCppExtensionUtilities_static.lib OMCppFMU_static.lib $(OMCPP_SOLVER_LIBS) ModelicaExternalC.lib ModelicaStandardTables.lib
+  LDFLAGS=/link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" OMCppSystem_static.lib OMCppMath_static.lib OMCppModelicaUtilities_static.lib OMCppExtensionUtilities_static.lib OMCppFMU_static.lib $(OMCPP_SOLVER_LIBS) ModelicaExternalC.lib ModelicaStandardTables.lib
   PLATFORM="win32"
 
   MODEL_NAME=<%modelName%>
@@ -747,7 +747,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   BINARIES=<%fileNamePrefix%>$(DLLEXT) <%platformbins%>
 
-  OMCPP_LIBS=-lOMCppSystem_FMU_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppFMU_static $(OMCPP_SOLVER_LIBS) -lOMCppExtensionUtilities_static
+  OMCPP_LIBS=-lOMCppSystem_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppFMU_static $(OMCPP_SOLVER_LIBS) -lOMCppExtensionUtilities_static
   MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables
   LIBS=$(OMCPP_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB)
 
