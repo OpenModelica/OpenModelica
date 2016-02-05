@@ -313,7 +313,6 @@ typedef struct NONLINEAR_SYSTEM_DATA
   unsigned long numberOfIterations;     /* number of iteration of non-linear solvers of this system */
   double totalTime;                     /* save the totalTime */
   rtclock_t totalTimeClock;             /* time clock for the totalTime  */
-
   void* csvData;                        /* information to save csv data */
 } NONLINEAR_SYSTEM_DATA;
 
