@@ -326,3 +326,32 @@ int GC_asprintf(char **strp, const char *fmt, ...) {
   va_end(ap);
   return len;
 }
+
+modelica_string stringAppend(modelica_string s1, modelica_string s2)
+{
+  unsigned len1 = 0, len2 = 0, nbytes = 0, header = 0, nwords = 0;
+  void *res = NULL;
+  struct mmc_string *p = NULL;
+  MMC_CHECK_STRING(s1);
+  MMC_CHECK_STRING(s2);
+
+  /* fprintf(stderr, "stringAppend([%p] %s, [%p] %s)->\n", s1, anyString(s1), s2, anyString(s2)); fflush(NULL); */
+  len1 = MMC_STRLEN(s1);
+  len2 = MMC_STRLEN(s2);
+
+  if (len1==0) {
+    return s2;
+  } else if (len2==0) {
+    return s1;
+  }
+
+  nbytes = len1+len2;
+  res = mmc_alloc_scon(nbytes);
+
+  memcpy(MMC_STRINGDATA(res), MMC_STRINGDATA(s1), len1);
+  memcpy(MMC_STRINGDATA(res) + len1, MMC_STRINGDATA(s2), len2 + 1);
+
+  MMC_CHECK_STRING(res);
+
+  return res;
+}

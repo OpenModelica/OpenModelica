@@ -38,6 +38,7 @@
 #include "meta/meta_modelica_data.h"
 #include "modelica_string_lit.h"
 
+extern modelica_string stringAppend(modelica_string s1, modelica_string s2);
 #define stringCompare(x,y) mmc_stringCompare(x,y)
 #define stringEqual(x,y) (MMC_STRLEN(x) == MMC_STRLEN(y) && !stringCompare(x,y))
 
