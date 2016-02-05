@@ -3261,7 +3261,7 @@ AboutOMEditWidget::AboutOMEditWidget(MainWindow *pMainWindow)
   Label *pIntroLabel = new Label(Helper::applicationIntroText);
   pIntroLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::systemFontInfo.pointSize() + 3 + MAC_FONT_FACTOR));
   // OpenModelica compiler info
-  Label *pConnectedLabel = new Label(QString("Connected to OpenModelica ").append(Helper::OpenModelicaVersion));
+  Label *pConnectedLabel = new Label(QString("Connected to ").append(Helper::OpenModelicaVersion));
   pConnectedLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::systemFontInfo.pointSize() - 2 + MAC_FONT_FACTOR));
   // about text
   QString aboutText = QString("Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />")
