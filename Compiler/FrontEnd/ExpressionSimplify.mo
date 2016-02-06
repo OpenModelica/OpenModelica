@@ -4572,7 +4572,7 @@ protected function simplifyTwoBinaryExpressions
   input Boolean operatorEqualLhsRhs;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (e1,lhsOperator,e2,mainOperator,e3,rhsOperator,e4,expEqual_e1_e3,expEqual_e1_e4,expEqual_e2_e3,expEqual_e2_e4,isConst_e1,isConst_e2,isConst_e3,operatorEqualLhsRhs)
+  outExp := match (e1,lhsOperator,e2,mainOperator,e3,rhsOperator,e4,expEqual_e1_e3,expEqual_e1_e4,expEqual_e2_e3,expEqual_e2_e4,isConst_e1,isConst_e2,isConst_e3,operatorEqualLhsRhs)
     local
       DAE.Exp e1_1,e,e_1,e_2,e_3,e_4,e_5,e_6,res,one;
       Operator oper, op1 ,op2, op3, op;
@@ -4655,9 +4655,7 @@ algorithm
           op1,
           _,_,_,
           _,_,_,true /*e2==e4*/,_,false /*isConst(e2)*/,_,true /*op2==op3*/)
-      equation
-       true = Expression.isAddOrSub(op1);
-       true = Expression.isMulOrDiv(op2);
+      guard Expression.isAddOrSub(op1) and Expression.isMulOrDiv(op2)
       then
         DAE.BINARY(DAE.BINARY(e1,op1,e3),op2,e4);
 
@@ -4667,8 +4665,8 @@ algorithm
           op1,
           _,DAE.DIV(_),_,
           true /*e1==e3*/,_,_,_,false /*isConst(e1)*/,_,_,_)
+      guard Expression.isAddOrSub(op1)
       equation
-       true = Expression.isAddOrSub(op1);
        one = Expression.makeConstOne(ty);
        e = Expression.makeDiv(one,e4);
       then
@@ -4680,8 +4678,8 @@ algorithm
           op1,
           _,DAE.MUL(_),_,
           true /*e1==e3*/,_,_,_,false /*isConst(e1)*/,_,_,_)
+      guard Expression.isAddOrSub(op1)
       equation
-       true = Expression.isAddOrSub(op1);
        one = Expression.makeConstOne(ty);
        e = Expression.makeDiv(one,e2);
       then
@@ -4693,9 +4691,8 @@ algorithm
           op1,
           e,_,_,
           _,_,_,true /*e2==e4==e_3==e_5*/,_,false /*isConst(e2==e_3)*/,_,true /*op2==op3*/)
+      guard Expression.isAddOrSub(op1) and Expression.isMulOrDiv(op2)
       equation
-       true = Expression.isAddOrSub(op1);
-       true = Expression.isMulOrDiv(op2);
        res = DAE.BINARY(e1_1,op1,e);
       then DAE.BINARY(res,op2,e_3);
 
@@ -4705,12 +4702,9 @@ algorithm
           op1,
           e,op3,e_6,
           _,_,_,_,_,_,_,_)
+      guard (not Expression.isConstValue(e_2)) and  Expression.expEqual(e_2,e_6) and Expression.operatorEqual(op2,op3) and Expression.isAddOrSub(op1)
+            and Expression.isMulOrDiv(op2)
       equation
-        false = Expression.isConstValue(e_2);
-        true = Expression.expEqual(e_2,e_6);
-        true = Expression.operatorEqual(op2,op3);
-        true = Expression.isAddOrSub(op1);
-        true = Expression.isMulOrDiv(op2);
         e1_1 = DAE.BINARY(e_1, DAE.MUL(ty),e_3);
         res = DAE.BINARY(e1_1,op1,e);
       then DAE.BINARY(res,op2,e_2);
@@ -4721,13 +4715,9 @@ algorithm
           op1,
           DAE.BINARY(e_4,op3,e_5),DAE.MUL(_),e_6,
           _,_,_,_,_,_,_,_)
+      guard (not Expression.isConstValue(e_2)) and Expression.expEqual(e_2,e_5) and Expression.operatorEqual(op2,op3) and  Expression.isAddOrSub(op1)
+            and Expression.isMulOrDiv(op2)
       equation
-        false = Expression.isConstValue(e_2);
-        true = Expression.expEqual(e_2,e_5);
-        true = Expression.operatorEqual(op2,op3);
-        true = Expression.isAddOrSub(op1);
-        true = Expression.isMulOrDiv(op2);
-
         e1_1 = DAE.BINARY(e_1, DAE.MUL(ty),e_3);
         e = DAE.BINARY(e_4, DAE.MUL(ty),e_6);
         res = DAE.BINARY(e1_1,op1,e);
@@ -4739,11 +4729,9 @@ algorithm
           op1,
           DAE.BINARY(e_4,op3,e_5),DAE.MUL(ty),e_6,
           _,_,_,_,_,false /*isConst(e2==e_3)*/,_,_)
+      guard Expression.expEqual(e_3,e_5) and Expression.operatorEqual(op2,op3) and  Expression.isAddOrSub(op1)
+            and  Expression.isMulOrDiv(op2)
       equation
-        true = Expression.expEqual(e_3,e_5);
-        true = Expression.operatorEqual(op2,op3);
-        true = Expression.isAddOrSub(op1);
-        true = Expression.isMulOrDiv(op2);
         e = DAE.BINARY(e_4,DAE.MUL(ty),e_6);
         res = DAE.BINARY(e_1,op1,e);
       then DAE.BINARY(res,op2,e_3);
@@ -4762,7 +4750,7 @@ algorithm
           _,true /*e1==e4*/,_,_,_,_,_,_)
       then DAE.BINARY(e1,lhsOperator,DAE.BINARY(e2,mainOperator,e3));
 
-  end matchcontinue;
+  end match;
 end simplifyTwoBinaryExpressions;
 
 protected function simplifyLBinary
