@@ -254,7 +254,7 @@ OMS::OMS( QWidget* parent )
 
   // sett start message
   const char* dateStr = __DATE__; // "Mmm dd yyyy", so dateStr+7 = "yyyy"
-  copyright_info_ = QString("OMShell 1.1 Copyright Open Source Modelica Consortium (OSMC) 2002-") + (dateStr+7) + "\nDistributed under OMSC-PL and GPL, see www.openmodelica.org\n\nConnected to OpenModelica " + omc_version_;
+  copyright_info_ = QString("OMShell 1.1 Copyright Open Source Modelica Consortium (OSMC) 2002-") + (dateStr+7) + "\nDistributed under OMSC-PL and GPL, see www.openmodelica.org\n\nConnected to " + omc_version_;
   cursor_.insertText( copyright_info_, textFormat_ );
   cursor_.insertText( tr("\nTo get help on using OMShell and OpenModelica, type \"help()\" and press enter.\n"), textFormat_ );
 
