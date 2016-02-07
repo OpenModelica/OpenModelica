@@ -3610,7 +3610,7 @@ void NotebookWindow::sketchImageEdit()
 
   // check if text is selected
   QTextCursor cursor = subject_->getCursor()->currentCell()->textCursor();
-  int pos=(subject_->getCursor()->currentCell()->textCursor().position());
+  //int pos=(subject_->getCursor()->currentCell()->textCursor().position());
 
   /*for(int i=0;i<cells.size();i++)
   {
@@ -3982,22 +3982,13 @@ QVector<Cell*> NotebookWindow::SearchCells(Cell* current)
                                         {
                                             totalcells.append(current4);
                                             current4=current4->next();
-
                                         }
                                     }
-
                                     current3=current3->next();
-
                                 }
-
                             }
-
                             current2=current2->next();
-
                         }
-
-                        current2=current1->next();
-
                     }
                     current1=current1->next();
                 }
