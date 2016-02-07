@@ -2694,7 +2694,7 @@ void NotebookWindow::aboutQTNotebook()
   QString version = OmcInteractiveEnvironment::OMCVersion();
   QString abouttext = QString("OMNotebook 3.0 Copyright 2004-") + QString(dateStr+7) + " Open Source Modelica Consortium (OSMC)\n"
       "Distributed under OMSC-PL and GPL, see www.openmodelica.org\n\n" +
-      "Connected to OpenModelica " + version + "\n" +
+      "Connected to " + version + "\n" +
       "Created by Ingemar Axelsson (2004-2005), Anders Fernstr" + QString(QChar(246, 0)) +"m (2005-2006) and Henrik Eriksson (2006-2007) as part of their final theses.";
 
   QMessageBox::about( this, "OMNotebook", abouttext );
