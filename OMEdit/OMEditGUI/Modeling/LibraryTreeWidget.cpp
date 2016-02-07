@@ -2132,18 +2132,22 @@ void LibraryTreeView::createActions()
   connect(mpSaveTotalAction, SIGNAL(triggered()), SLOT(saveTotalClass()));
   // Move class up action
   mpMoveUpAction = new QAction(QIcon(":/Resources/icons/up.svg"), tr("Move Up"), this);
+  mpMoveUpAction->setShortcut(QKeySequence("Ctrl+Up"));
   mpMoveUpAction->setStatusTip(tr("Moves the class one level up"));
   connect(mpMoveUpAction, SIGNAL(triggered()), SLOT(moveClassUp()));
   // Move class down action
   mpMoveDownAction = new QAction(QIcon(":/Resources/icons/down.svg"), tr("Move Down"), this);
+  mpMoveDownAction->setShortcut(QKeySequence("Ctrl+Down"));
   mpMoveDownAction->setStatusTip(tr("Moves the class one level down"));
   connect(mpMoveDownAction, SIGNAL(triggered()), SLOT(moveClassDown()));
   // Move class top action
   mpMoveTopAction = new QAction(QIcon(":/Resources/icons/top.svg"), tr("Move to Top"), this);
+  mpMoveTopAction->setShortcut(QKeySequence("Ctrl+PgUp"));
   mpMoveTopAction->setStatusTip(tr("Moves the class to top"));
   connect(mpMoveTopAction, SIGNAL(triggered()), SLOT(moveClassTop()));
   // Move class bottom action
   mpMoveBottomAction = new QAction(QIcon(":/Resources/icons/bottom.svg"), tr("Move to Bottom"), this);
+  mpMoveBottomAction->setShortcut(QKeySequence("Ctrl+PgDown"));
   mpMoveBottomAction->setStatusTip(tr("Moves the class to bottom"));
   connect(mpMoveBottomAction, SIGNAL(triggered()), SLOT(moveClassBottom()));
   // Order Menu
@@ -2721,17 +2725,31 @@ void LibraryTreeView::startDrag(Qt::DropActions supportedActions)
  */
 void LibraryTreeView::keyPressEvent(QKeyEvent *event)
 {
-  if (event->key() == Qt::Key_Delete) {
-    LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
-    if (pLibraryTreeItem) {
-      if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+  bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    bool isModelicaLibraryType = pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica ? true : false;
+    bool isTopLevel = pLibraryTreeItem->isTopLevel() ? true : false;
+    if (controlModifier && event->key() == Qt::Key_Up && isModelicaLibraryType && !isTopLevel) {
+      moveClassUp();
+    } else if (controlModifier && event->key() == Qt::Key_Down && isModelicaLibraryType && !isTopLevel) {
+      moveClassDown();
+    } else if (controlModifier && event->key() == Qt::Key_PageUp && isModelicaLibraryType && !isTopLevel) {
+      moveClassTop();
+    } else if (controlModifier && event->key() == Qt::Key_PageDown && isModelicaLibraryType && !isTopLevel) {
+      moveClassBottom();
+    } else if (event->key() == Qt::Key_Delete) {
+      if (isModelicaLibraryType) {
         unloadClass();
       } else {
         unloadTLMOrTextFile();
       }
+    } else {
+      QTreeView::keyPressEvent(event);
     }
+  } else {
+    QTreeView::keyPressEvent(event);
   }
-  QTreeView::keyPressEvent(event);
 }
 
 /*!
