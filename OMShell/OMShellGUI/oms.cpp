@@ -213,7 +213,7 @@ void MyTextEdit::insertFromMimeData(const QMimeData *source)
 
 
 OMS::OMS( QWidget* parent )
-  : QMainWindow( parent )
+  : QMainWindow( parent ), mpSettings(getApplicationSettings())
 {
   delegate_ = 0;
   omc_version_ = "(version)";
@@ -235,7 +235,11 @@ OMS::OMS( QWidget* parent )
   layout_->setMargin( 0 );
   layout_->setSpacing( 5 );
 
-  fontSize_ = 11;
+  mpSettings->sync();
+  if (mpSettings->contains("FontSize"))
+    fontSize_ = mpSettings->value("FontSize").toInt();
+  else
+    fontSize_ = 11;
   createMoshEdit();
   //createMoshError();
   createAction();
@@ -252,7 +256,7 @@ OMS::OMS( QWidget* parent )
   setWindowTitle( tr("OMShell - OpenModelica Shell") );
   setWindowIcon( QIcon(":/Resources/omshell-large.svg") );
 
-  // sett start message
+  // set start message
   const char* dateStr = __DATE__; // "Mmm dd yyyy", so dateStr+7 = "yyyy"
   copyright_info_ = QString("OMShell 1.1 Copyright Open Source Modelica Consortium (OSMC) 2002-") + (dateStr+7) + "\nDistributed under OMSC-PL and GPL, see www.openmodelica.org\n\nConnected to " + omc_version_;
   cursor_.insertText( copyright_info_, textFormat_ );
@@ -446,7 +450,7 @@ void OMS::addCommandLine()
   cursor_.movePosition( QTextCursor::End, QTextCursor::MoveAnchor );
   moshEdit_->setTextCursor( cursor_ );
 
-  // sett original text settings
+  // set original text settings
   moshEdit_->document()->setDefaultFont(QFont("Courier New", fontSize_, QFont::Normal));
   textFormat_.setFontFamily( "Courier New" );
   textFormat_.setFontWeight( QFont::Normal );
@@ -838,10 +842,14 @@ void OMS::fontSize()
     font.setPointSize(fontSize_);
     moshEdit_->document()->setDefaultFont(font);
     textFormat_.setFontPointSize( fontSize_ );
+    commandSignFormat_.setFontPointSize( fontSize_ );
 
     //cursor_ = moshEdit_->textCursor();
     cursor_.clearSelection();
     moshEdit_->setTextCursor(cursor_);
+
+    mpSettings->setValue("FontSize", fontSize_);
+    mpSettings->sync();
   }
   else
   {
@@ -944,7 +952,7 @@ void OMS::clear()
 {
   moshEdit_->clear();
 
-  // sett original text settings
+  // set original text settings
   moshEdit_->document()->setDefaultFont(QFont("Courier New", fontSize_, QFont::Normal));
 
   addCommandLine();
@@ -974,5 +982,21 @@ void OMS::paste()
 {
   QKeyEvent* key = new QKeyEvent( QEvent::KeyPress, Qt::Key_V, Qt::ControlModifier, "v" );
   ((MyTextEdit*)moshEdit_)->sendKey( key );
+}
+
+QString OMS::organization = "openmodelica";  /* case-sensitive string. Don't change it. Used by ini settings file. */
+QString OMS::application = "omshell"; /* case-sensitive string. Don't change it. Used by ini settings file. */
+QString OMS::utf8 = "UTF-8";
+
+QSettings* OMS::getApplicationSettings()
+{
+  static int init = 0;
+  static QSettings *pSettings;
+  if (!init) {
+    init = 1;
+    pSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, organization, application);
+    pSettings->setIniCodec(utf8.toStdString().data());
+  }
+  return pSettings;
 }
 

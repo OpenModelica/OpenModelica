@@ -68,6 +68,7 @@ using namespace std;
 #include <QtGui/QTextCharFormat>
 #include <QtGui/QTextCursor>
 #include <QtGui/QPlainTextEdit>
+#include <QtCore/QSettings>
 #endif
 
 //IAEX Headers
@@ -136,6 +137,7 @@ private:
   QVBoxLayout* layout_;
   QString clipboard_;
   QString copyright_info_;
+  QSettings *mpSettings;
 
   IAEX::CommandCompletion* commandcompletion_;
   int fontSize_;
@@ -162,6 +164,12 @@ private:
   QAction* aboutOMS_;
   QAction* aboutQT_;        // Added 2006-02-21 AF
   QAction* clearWindow_;
+
+  static QString organization;
+  static QString application;
+  static QString utf8;
+
+  QSettings* getApplicationSettings();
 };
 
 //********************************
