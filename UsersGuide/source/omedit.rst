@@ -554,53 +554,52 @@ General
 
 -  General
 
--  *Language* – Sets the application language.
+  -  *Language* – Sets the application language.
 
--  *Working Directory* – Sets the application working directory.
+  -  *Working Directory* – Sets the application working directory.
 
--  *Toolbar Icon Size* – Sets the size for toolbar icons.
+  -  *Toolbar Icon Size* – Sets the size for toolbar icons.
 
--  *Preserve User’s GUI Customizations* – If true then OMEdit will
-   remember its windows and toolbars positions and sizes.
+  -  *Preserve User’s GUI Customizations* – If true then OMEdit will
+     remember its windows and toolbars positions and sizes.
 
--  *Terminal Command* – Sets the terminal command.
+  -  *Terminal Command* – Sets the terminal command.
 
--  *Terminal Command Arguments* – Sets the terminal command arguments.
+  -  *Terminal Command Arguments* – Sets the terminal command arguments.
 
 -  Libraries Browser
 
--  *Library Icon Size* – Sets the size for library icons.
+  -  *Library Icon Size* – Sets the size for library icons.
 
--  *Show Protected Classes* – Sets the application language.
+  -  *Show Protected Classes* – Sets the application language.
 
 -  Modeling View Mode
 
--  *Tabbed View/SubWindow View* – Sets the view mode for modeling.
+  -  *Tabbed View/SubWindow View* – Sets the view mode for modeling.
 
 -  Default View
 
--  *Icon View/DiagramView/Modelica Text View/Documentation View* – If no
-   preferredView annotation is defined then this setting is used to show
-   the respective view when user double clicks on the class in the
-   Libraries Browser.
+  -  *Icon View/DiagramView/Modelica Text View/Documentation View* – If no
+     preferredView annotation is defined then this setting is used to show
+     the respective view when user double clicks on the class in the
+     Libraries Browser.
 
 -  Enable Auto Save
 
--  *Auto Save interval* – Sets the auto save interval value. The minimum
-   possible interval value is 60 seconds.
+  -  *Auto Save interval* – Sets the auto save interval value. The minimum
+     possible interval value is 60 seconds.
 
--  *Enable Auto Save for single classes* – Enables the auto save for one
-   class saved in one file.
+  -  *Enable Auto Save for single classes* – Enables the auto save for one
+     class saved in one file.
 
--  *Enable Auto Save for one file packages* – Enables the auto save for
-   packages saved in one file.
+  -  *Enable Auto Save for one file packages* – Enables the auto save for
+     packages saved in one file.
 
 -  Welcome Page
 
--  *Horizontal View/Vertical View* – Sets the view mode for welcome
-   page.
+  -  *Horizontal View/Vertical View* – Sets the view mode for welcome page.
 
--  *Show Latest News –* if true then displays the latest news.
+  -  *Show Latest News –* if true then displays the latest news.
 
 Libraries
 ~~~~~~~~~
@@ -620,34 +619,36 @@ Modelica Text Editor
 
 -  Tabs and Indentation
 
--  *Tab Policy* – Sets the tab policy to either spaces or tabs only.
+  -  *Tab Policy* – Sets the tab policy to either spaces or tabs only.
 
--  *Tab Size* – Sets the tab size.
+  -  *Tab Size* – Sets the tab size.
 
--  *Indent Size* – Sets the indent size.
+  -  *Indent Size* – Sets the indent size.
+
+  -  *Preserve Text Indentation* – If true then uses *diffModelicaFileListings* API call otherwise uses the OMC pretty-printing.
 
 -  Syntax Highlight and Text Wrapping
 
--  *Enable Syntax Highlighting* – Enable/Disable the syntax highlighting
-   for the Modelica Text Widget.
+  -  *Enable Syntax Highlighting* – Enable/Disable the syntax highlighting
+     for the Modelica Text Widget.
 
--  *Match Parentheses within Comments and Quotes* – Enable/Disable the matching of parenthese
-   within comments and quotes.
+  -  *Match Parentheses within Comments and Quotes* – Enable/Disable the matching of parenthese
+     within comments and quotes.
    
--  *Enable Line Wrapping* – Enable/Disable the line wrapping for the
-   Modelica Text Widget.
+  -  *Enable Line Wrapping* – Enable/Disable the line wrapping for the
+     Modelica Text Widget.
 
 -  Fonts and Colors
 
--  *Font Family* – Contains the names list of available fonts.
+  -  *Font Family* – Contains the names list of available fonts.
 
--  *Font Size* – Sets the font size.
+  -  *Font Size* – Sets the font size.
 
--  *Items* – List of categories used of syntax highlighting the code.
+  -  *Items* – List of categories used of syntax highlighting the code.
 
--  *Item Color* – Sets the color for the selected item.
+  -  *Item Color* – Sets the color for the selected item.
 
--  *Preview* – Shows the demo of the syntax highlighting.
+  -  *Preview* – Shows the demo of the syntax highlighting.
 
 Graphical Views
 ~~~~~~~~~~~~~~~
@@ -683,27 +684,27 @@ Simulation
 
 -  Simulation
 
--  *Matching Algorithm* – sets the matching algorithm for simulation.
+  -  *Matching Algorithm* – sets the matching algorithm for simulation.
 
--  *Index Reduction Method* – sets the index reduction method for
-   simulation.
+  -  *Index Reduction Method* – sets the index reduction method for
+     simulation.
 
--  *Target Language* – sets the target language in which the code is generated.
+  -  *Target Language* – sets the target language in which the code is generated.
 
--  *Target Compiler* – sets the target compiler for compiling the generated code.
+  -  *Target Compiler* – sets the target compiler for compiling the generated code.
 
--  *OMC Flags* – sets the omc flags for simulation.
+  -  *OMC Flags* – sets the omc flags for simulation.
 
--  *Save class before simulation* – if ture then always saves the class
-   before running the simulation.
+  -  *Save class before simulation* – if ture then always saves the class
+     before running the simulation.
 
--  Output
+  -  Output
 
--  *Structured –* Shows the simulation output in the form of tree
-   structure.
+    -  *Structured –* Shows the simulation output in the form of tree
+       structure.
 
--  *Formatted Text –* Shows the simulation output in the form of
-   formatted text.
+    -  *Formatted Text –* Shows the simulation output in the form of
+       formatted text.
 
 .. _omedit-settings-messages :
 
@@ -712,103 +713,103 @@ Messages
 
 -  General
 
--  *Output Size* - Specifies the maximum number of rows the Messages
-   Browser may have. If there are more rows then the rows are removed
-   from the beginning.
+  -  *Output Size* - Specifies the maximum number of rows the Messages
+     Browser may have. If there are more rows then the rows are removed
+     from the beginning.
 
--  *Reset messages number before simulation* – Resets the messages
-   counter before starting the simulation.
+  -  *Reset messages number before simulation* – Resets the messages
+     counter before starting the simulation.
 
 -  Font and Colors
 
--  *Font Family* – Sets the font for the messages.
+  -  *Font Family* – Sets the font for the messages.
 
--  *Font Size –* Sets the font size for the messages.
+  -  *Font Size –* Sets the font size for the messages.
 
--  *Notification Color* – Sets the text color for notification messages.
+  -  *Notification Color* – Sets the text color for notification messages.
 
--  *Warning Color* – Sets the text color for warning messages.
+  -  *Warning Color* – Sets the text color for warning messages.
 
--  *Error Color* – Sets the text color for error messages.
+  -  *Error Color* – Sets the text color for error messages.
 
 Notifications
 ~~~~~~~~~~~~~
 
 -  Notifications
 
--  *Always quit without prompt* – If true then OMEdit will quit without
-   prompting the user.
+  -  *Always quit without prompt* – If true then OMEdit will quit without
+     prompting the user.
 
--  *Show item dropped on itself message* – If true then a message will
-   pop-up when a class is dragged and dropped on itself.
+  -  *Show item dropped on itself message* – If true then a message will
+     pop-up when a class is dragged and dropped on itself.
 
--  *Show model is defined as partial and component will be added as
-   replaceable message* – If true then a message will pop-up when a
-   partial class is added to another class.
+  -  *Show model is defined as partial and component will be added as
+     replaceable message* – If true then a message will pop-up when a
+     partial class is added to another class.
 
--  *Show component is declared as inner message* – If true then a
-   message will pop-up when an inner component is added to another
-   class.
+  -  *Show component is declared as inner message* – If true then a
+     message will pop-up when an inner component is added to another
+     class.
 
--  *Show save model for bitmap insertion message* – If true then a
-   message will pop-up when user tries to insert a bitmap from a local
-   directory to an unsaved class.
+  -  *Show save model for bitmap insertion message* – If true then a
+     message will pop-up when user tries to insert a bitmap from a local
+     directory to an unsaved class.
 
 Line Style
 ~~~~~~~~~~
 
 -  Line Style
 
--  *Color* – Sets the line color.
+  -  *Color* – Sets the line color.
 
--  *Pattern* – Sets the line pattern.
+  -  *Pattern* – Sets the line pattern.
 
--  *Thickness* – Sets the line thickness.
+  -  *Thickness* – Sets the line thickness.
 
--  *Start Arrow* – Sets the line start arrow.
+  -  *Start Arrow* – Sets the line start arrow.
 
--  *End Arrow* – Sets the line end arrow.
+  -  *End Arrow* – Sets the line end arrow.
 
--  *Arrow Size* – Sets the start and end arrow size.
+  -  *Arrow Size* – Sets the start and end arrow size.
 
--  *Smooth* – If true then the line is drawn as a Bezier curve.
+  -  *Smooth* – If true then the line is drawn as a Bezier curve.
 
 Fill Style
 ~~~~~~~~~~
 
 -  Fill Style
 
--  *Color* – Sets the fill color.
+  -  *Color* – Sets the fill color.
 
--  *Pattern* – Sets the fill pattern.
+  -  *Pattern* – Sets the fill pattern.
 
 Plotting
 ~~~~~~~~
 
 -  General
 
--  *Auto Scale* – sets whether to auto scale the plots or not.
+  -  *Auto Scale* – sets whether to auto scale the plots or not.
 
 -  Plotting View Mode
 
--  *Tabbed View/SubWindow View* – Sets the view mode for plotting.
+  -  *Tabbed View/SubWindow View* – Sets the view mode for plotting.
 
 -  Curve Style
 
--  *Pattern* – Sets the curve pattern.
+  -  *Pattern* – Sets the curve pattern.
 
--  *Thickness* – Sets the curve thickness.
+  -  *Thickness* – Sets the curve thickness.
 
 Figaro
 ~~~~~~
 
 -  Figaro
 
--  *Figaro Library* – the Figaro library file path.
+  -  *Figaro Library* – the Figaro library file path.
 
--  *Tree generation options* – the Figaro tree generation options file path.
+  -  *Tree generation options* – the Figaro tree generation options file path.
 
--  *Figaro Processor* – the Figaro processor location.
+  -  *Figaro Processor* – the Figaro processor location.
 
 .. _omedit-settings-debugger :
 
@@ -817,31 +818,31 @@ Debugger
 
 -  Algorithmic Debugger
 
--  *GDB Path* – the gnu debugger path
+  -  *GDB Path* – the gnu debugger path
 
--  *GDB Command Timeout* – timeout for gdb commands.
+  -  *GDB Command Timeout* – timeout for gdb commands.
 
--  *GDB Output Limit* – limits the GDB output to N characters.
+  -  *GDB Output Limit* – limits the GDB output to N characters.
 
--  *Display C frames* – if true then shows the C stack frames.
+  -  *Display C frames* – if true then shows the C stack frames.
 
--  *Display unknown frames* – if true then shows the unknown stack
-   frames. Unknown stack frames means frames whose file path is unknown.
+  -  *Display unknown frames* – if true then shows the unknown stack
+     frames. Unknown stack frames means frames whose file path is unknown.
 
--  *Clear old output on a new run* – if true then clears the output
-   window on new run.
+  -  *Clear old output on a new run* – if true then clears the output
+     window on new run.
 
--  *Clear old log on new run* – if true then clears the log window on
-   new run.
+  -  *Clear old log on new run* – if true then clears the log window on
+     new run.
 
 -  Transformational Debugger
 
--  *Always show Transformational Debugger after compilation* – if true
-   then always open the Transformational Debugger window after model
-   compilation.
+  -  *Always show Transformational Debugger after compilation* – if true
+     then always open the Transformational Debugger window after model
+     compilation.
 
--  *Generate operations in the info xml* – if true then adds the
-   operations information in the info xml file.
+  -  *Generate operations in the info xml* – if true then adds the
+     operations information in the info xml file.
 
 .. _omedit-fmi-settings :
 
@@ -850,21 +851,21 @@ FMI
 
 -  Export
 
--  Version
+  -  Version
 
-  -  *1.0* – Sets the FMI export version to 1.0
+    -  *1.0* – Sets the FMI export version to 1.0
 
-  -  *2.0* – Sets the FMI export version to 2.0
+    -  *2.0* – Sets the FMI export version to 2.0
 
--  Type
+  -  Type
 
-  -  *Model Exchange* – Sets the FMI export type to Model Exchange.
+    -  *Model Exchange* – Sets the FMI export type to Model Exchange.
 
-  -  *Co-Simulation* – Sets the FMI export type to Co-Simulation.
+    -  *Co-Simulation* – Sets the FMI export type to Co-Simulation.
 
-  -  *Model Exchange and Co-Simulation* – Sets the FMI export type to Model Exchange and Co-Simulation.
+    -  *Model Exchange and Co-Simulation* – Sets the FMI export type to Model Exchange and Co-Simulation.
 
--  *FMU Name* – Sets a prefix for generated FMU file.
+  -  *FMU Name* – Sets a prefix for generated FMU file.
 
 Debugger
 --------
