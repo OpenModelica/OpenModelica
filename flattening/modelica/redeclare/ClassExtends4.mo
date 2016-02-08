@@ -41,6 +41,10 @@ package B
   Integer b = usePart(integer(time));
 end B;
 
+model ClassExtends4
+  Integer b = B.usePart(integer(time));
+end ClassExtends4;
+
 // Result:
 // function B.part
 //   input Integer a;
@@ -63,7 +67,7 @@ end B;
 //   b := B.part(a);
 // end B.usePart;
 //
-// class B
+// class ClassExtends4
 //   Integer b = B.usePart(integer(time));
-// end B;
+// end ClassExtends4;
 // endResult

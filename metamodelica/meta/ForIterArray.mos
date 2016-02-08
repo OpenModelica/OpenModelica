@@ -2,8 +2,8 @@
 
 setCommandLineOptions("+g=MetaModelica");
 loadString("function forIterArray
-  input Real time;
-  output Real r = time;
+  input Real x;
+  output Real r = x;
 protected
   array<Real> arr;
 algorithm
