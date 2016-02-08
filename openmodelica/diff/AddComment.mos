@@ -1,0 +1,35 @@
+// status: correct
+
+echo(false);
+s1 := "model    AddComment
+  Real r;
+end AddComment;";
+
+s2 := "model AddComment
+  // Linköping
+  Real r;
+end AddComment;";
+
+answer := "model    AddComment
+  // Linköping
+  Real r;
+end AddComment;";
+
+res := diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain);
+if answer<>res then
+  print("\nFailed \n");
+  print("\nStart model:\n\n" + s1 + "\n");
+  print("\nSecond model:\n\n" + s2 + "\n");
+  print("\nDiff:\n\n" + diffModelicaFileListings(s1, s2) + "\n");
+  print(getErrorString());
+  writeFile("AddComment.res", res);
+  writeFile("AddComment.expected", answer);
+  print("Wrote to files AddComment.res and AddComment.expected\n");
+  exit(1);
+end if;
+print(getErrorString());
+print("OK\n");
+
+// Result:
+// OK
+// endResult

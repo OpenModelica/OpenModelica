@@ -3,6 +3,7 @@ TEST = ../../rtest
 
 TESTFILES = \
 AddClassAnnotation1.mos \
+AddComment.mos \
 AddComponent.mos \
 AddComponent2.mos \
 AddDeleteComponent.mos \
