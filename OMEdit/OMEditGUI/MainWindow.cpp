@@ -240,10 +240,14 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   // set the index reduction methods.
   mpOMCProxy->setIndexReductionMethod(mpOptionsDialog->getSimulationPage()->getIndexReductionMethodComboBox()->currentText());
   // set the OMC Flags.
-  if (!mpOptionsDialog->getSimulationPage()->getOMCFlagsTextBox()->text().isEmpty())
+  if (!mpOptionsDialog->getSimulationPage()->getOMCFlagsTextBox()->text().isEmpty()) {
     mpOMCProxy->setCommandLineOptions(mpOptionsDialog->getSimulationPage()->getOMCFlagsTextBox()->text());
-  if (mpOptionsDialog->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked())
+  }
+  if (mpOptionsDialog->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked()) {
     mpOMCProxy->setCommandLineOptions("+d=infoXmlOperations");
+  }
+  mpOMCProxy->setCommandLineOptions(QString("+simCodeTarget=%1").arg(mpOptionsDialog->getSimulationPage()->getTargetLanguageComboBox()->currentText()));
+  mpOMCProxy->setCommandLineOptions(QString("+target=%1").arg(mpOptionsDialog->getSimulationPage()->getTargetCompilerComboBox()->currentText()));
   // restore OMEdit widgets state
   QSettings *pSettings = OpenModelica::getApplicationSettings();
   if (mpOptionsDialog->getGeneralSettingsPage()->getPreserveUserCustomizations())
