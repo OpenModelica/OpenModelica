@@ -1608,8 +1608,14 @@ QString OMCProxy::diffModelicaFileListings(QString before, QString after)
 {
   QString escapedBefore = StringHandler::escapeString(before);
   QString escapedAfter = StringHandler::escapeString(after);
-  // sendCommand("diffModelicaFileListings(\"" + escapedBefore + "\", \"" + escapedAfter + "\", OpenModelica.Scripting.DiffFormat.plain)");
-  QString result = after; // StringHandler::unparse(getResult());
+  QString result;
+  // only use the diffModelicaFileListings when preserve text indentation settings is true
+  if (mpMainWindow->getOptionsDialog()->getModelicaTextEditorPage()->getPreserveTextIndentationCheckBox()->isChecked()) {
+    sendCommand("diffModelicaFileListings(\"" + escapedBefore + "\", \"" + escapedAfter + "\", OpenModelica.Scripting.DiffFormat.plain)");
+    result = StringHandler::unparse(getResult());
+  } else {
+    result = after;
+  }
   if (mpMainWindow->isDebug()) {
     mpOMCDiffBeforeTextBox->setPlainText(before);
     mpOMCDiffAfterTextBox->setPlainText(after);

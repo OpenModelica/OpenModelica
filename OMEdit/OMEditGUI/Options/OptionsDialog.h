@@ -307,6 +307,7 @@ public:
   QComboBox *getTabPolicyComboBox() {return mpTabPolicyComboBox;}
   QSpinBox *getTabSizeSpinBox() {return mpTabSizeSpinBox;}
   QSpinBox *getIndentSpinBox() {return mpIndentSpinBox;}
+  QCheckBox *getPreserveTextIndentationCheckBox() {return mpPreserveTextIndentationCheckBox;}
   QCheckBox* getSyntaxHighlightingCheckbox() {return mpSyntaxHighlightingCheckbox;}
   QCheckBox* getMatchParenthesesCommentsQuotesCheckBox() {return mpMatchParenthesesCommentsQuotesCheckBox;}
   QCheckBox* getLineWrappingCheckbox() {return mpLineWrappingCheckbox;}
@@ -336,6 +337,7 @@ private:
   QSpinBox *mpTabSizeSpinBox;
   Label *mpIndentSizeLabel;
   QSpinBox *mpIndentSpinBox;
+  QCheckBox *mpPreserveTextIndentationCheckBox;
   QGroupBox *mpSyntaxHighlightAndTextWrappingGroupBox;
   QCheckBox *mpSyntaxHighlightingCheckbox;
   QCheckBox *mpMatchParenthesesCommentsQuotesCheckBox;
