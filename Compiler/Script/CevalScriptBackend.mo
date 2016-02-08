@@ -667,7 +667,7 @@ protected
 algorithm
   (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (inCache,inEnv,inFunctionName,inVals,inSt,msg)
     local
-      String omdev,simflags,s1,s2,s3,s4,str,str1,str2,str3,token,varid,cmd,executable,executable1,encoding,method_str,
+      String omdev,simflags,s1,s2,s3,s4,s5,str,str1,str2,str3,token,varid,cmd,executable,executable1,encoding,method_str,
              outputFormat_str,initfilename,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,
              call,str_1,mp,pathstr,name,cname,errMsg,errorStr,
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
@@ -881,9 +881,10 @@ algorithm
         if true then
           // Do a sanity check
           s3 := Dump.unparseStr(Parser.parsestring(s2));
-          s4 := Dump.unparseStr(Parser.parsestring(printActual(treeDiffs, SimpleModelicaParser.parseTreeNodeStr)));
+          s5 := printActual(treeDiffs, SimpleModelicaParser.parseTreeNodeStr);
+          s4 := Dump.unparseStr(Parser.parsestring(s5));
           if not StringUtil.equalIgnoreSpace(s3, s4) then
-            Error.addInternalError("After merging the strings, the semantics changed for some reason (will simply return s2):\n"+s3+"\n"+s4, sourceInfo());
+            Error.addInternalError("After merging the strings, the semantics changed for some reason (will simply return s2):\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5, sourceInfo());
             sanityCheckFailed := true;
           end if;
         end if;
