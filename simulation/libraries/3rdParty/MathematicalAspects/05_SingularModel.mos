@@ -37,12 +37,9 @@ simulate(SingularModel2, stopTime=10); getErrorString();
 // stdout            | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
 // stdout            | warning | Error solving linear system of equations (no. 6) at time 0.000000.
 // stdout            | warning | Solving linear system 6 fails at time 0. For more information use -lv LOG_LS.
-// stdout            | warning | Solving linear system 6 fails at time 0. For more information use -lv LOG_LS.
-// stdout            | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
-// stdout            | warning | Error solving linear system of equations (no. 7) at time 0.000000.
-// stdout            | warning | Solving linear system 7 fails at time 0. For more information use -lv LOG_LS.
-// stdout            | warning | Error in initialization. Storing results and exiting.
-// |                 | |       | Use -lv=LOG_INIT -w for more information.
+// assert            | debug   | Solving linear system 6 failed at time=1.65028238551781e-153.
+// |                 | |       | For more information please use -lv LOG_LS.
+// assert            | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.

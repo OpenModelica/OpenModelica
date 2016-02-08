@@ -1130,7 +1130,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <depends name=\"L\" />
 //       <depends name=\"Fo\" />
 //       <depends name=\"x\" />
-//       <rhs>2.0 * (-x) * Fo / L</rhs>
+//       <rhs>2.0 * (-x) * DIVISION(Fo, L)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"21\" lineEnd=\"21\" colStart=\"3\" colEnd=\"24\"/>
@@ -1143,7 +1143,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <depends name=\"L\" />
 //       <depends name=\"y\" />
 //       <depends name=\"Fo\" />
-//       <rhs>-9.82 - 2.0 * Fo * y / L</rhs>
+//       <rhs>-9.82 - 2.0 * Fo * DIVISION(y, L)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"22\" lineEnd=\"22\" colStart=\"3\" colEnd=\"33\"/>
@@ -1271,7 +1271,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <depends name=\"a\" />
 //       <depends name=\"v\" />
 //       <depends name=\"b\" />
-//       <rhs>b * v / a</rhs>
+//       <rhs>DIVISION(b * v, a)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"18\" lineEnd=\"18\" colStart=\"3\" colEnd=\"12\"/>

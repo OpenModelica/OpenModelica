@@ -57,8 +57,11 @@ val(i5,0.0); getErrorString();
 //  * Equation systems (linear and non-linear blocks): 0
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
-// Notification: Torn system details:
+// Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 1 {(4,68.8%) 6}
+//  * Non-linear torn systems: 0
+// Notification: Torn system details for casual tearing set:
+//  * Linear torn systems: 1 {(0,0.0%) 0}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
@@ -76,8 +79,11 @@ val(i5,0.0); getErrorString();
 //  * Equation systems (linear and non-linear blocks): 0
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
-// Notification: Torn system details:
+// Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 1 {(1,100.0%) 9}
+//  * Non-linear torn systems: 0
+// Notification: Torn system details for casual tearing set:
+//  * Linear torn systems: 1 {(0,0.0%) 0}
 //  * Non-linear torn systems: 0
 // "
 // 1.0

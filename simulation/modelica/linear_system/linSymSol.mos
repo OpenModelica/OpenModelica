@@ -64,25 +64,23 @@ val(res,1);
 // end SimulationResult;
 // ""
 // 0.0
-// 4.566680367190653e-14
+// 4.302897014391018e-14
 // true
 // record SimulationResult
 //     resultFile = "foo_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_LS -s euler'",
 //     messages = "LOG_LS            | info    | Start solving Linear System 2 (size 4) at time 0 with Lapack Solver
-// LOG_LS            | info    | ###  0.000053  time to set Matrix A and vector b.
-// LOG_LS            | info    | Solve System: 0.000113
+// LOG_LS            | info    | ###  0.000055  time to set Matrix A and vector b.
+// LOG_LS            | info    | Solve System: 0.000110
 // LOG_LS            | info    | Start solving Linear System 13 (size 1) at time 0 with Lapack Solver
-// LOG_LS            | info    | ###  0.000003  time to set Matrix A and vector b.
+// LOG_LS            | info    | ###  0.000004  time to set Matrix A and vector b.
 // LOG_LS            | info    | Solve System: 0.000003
 // LOG_LS            | info    | Start solving Linear System 20 (size 1) at time 0 with Lapack Solver
-// LOG_LS            | info    | ###  0.000003  time to set Matrix A and vector b.
+// LOG_LS            | info    | ###  0.000002  time to set Matrix A and vector b.
 // LOG_LS            | info    | Solve System: 0.000002
-// assert            | debug   | division by zero at time 1, (a=0) / (b=0), where divisor b expression is: __OMC__1$QR$R$3
-// stdout            | warning | Integrator attempt to handle a problem with a called assert.
 // "
 // end SimulationResult;
 // ""
 // 0.0
-// 9.075074025588508e-14
+// 8.129927894090501e-14
 // endResult

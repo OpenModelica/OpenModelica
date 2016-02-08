@@ -66,9 +66,12 @@ val(z,{0,1});
 //  * Linear Jacobian (size,density): 0
 //  * Non-linear Jacobian: 1 {1}
 //  * Without analytic Jacobian: 0
-// Notification: Torn system details:
+// Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 0
 //  * Non-linear torn systems: 1 {1 1}
+// Notification: Torn system details for casual tearing set:
+//  * Linear torn systems: 0
+//  * Non-linear torn systems: 1 {0 0}
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('+d=stateselection' for list of states)
@@ -85,9 +88,12 @@ val(z,{0,1});
 //  * Equation systems (linear and non-linear blocks): 0
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
-// Notification: Torn system details:
+// Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 0
 //  * Non-linear torn systems: 1 {1 1}
+// Notification: Torn system details for casual tearing set:
+//  * Linear torn systems: 0
+//  * Non-linear torn systems: 1 {0 0}
 // "
 // {0.0,-0.7061414637186959}
 // {0.5707963267948966,1.520669413132999}
