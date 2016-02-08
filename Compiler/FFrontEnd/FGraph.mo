@@ -905,6 +905,20 @@ algorithm
   end matchcontinue;
 end restrictionToScopeType;
 
+public function scopeTypeToRestriction
+  "Converts a ScopeType to a Restriction. Restriction is much more expressive
+   than ScopeType, so the returned Restriction is more of a rough indication of
+   what the original Restriction was."
+  input FCore.ScopeType inScopeType;
+  output SCode.Restriction outRestriction;
+algorithm
+  outRestriction := match inScopeType
+    case FCore.PARALLEL_SCOPE() then SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION());
+    case FCore.FUNCTION_SCOPE() then SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(false));
+    else SCode.R_CLASS();
+  end match;
+end scopeTypeToRestriction;
+
 public function isTopScope "Returns true if we are in the top-most scope"
   input Graph graph;
   output Boolean isTop;
@@ -1348,6 +1362,39 @@ algorithm
 
   end matchcontinue;
 end checkScopeType;
+
+public function lastScopeRestriction
+  input Graph inGraph;
+  output SCode.Restriction outRestriction;
+protected
+  Scope s;
+algorithm
+  FCore.G(scope = s) := inGraph;
+  outRestriction := getScopeRestriction(s);
+end lastScopeRestriction;
+
+public function getScopeRestriction
+  input Scope inScope;
+  output SCode.Restriction outRestriction;
+algorithm
+  outRestriction := matchcontinue inScope
+    local
+      Ref r;
+      FCore.ScopeType st;
+
+    case r :: _ guard(FNode.isRefClass(r))
+      then SCode.getClassRestriction(FNode.getElement(FNode.fromRef(r)));
+
+    case r :: _
+      algorithm
+        FCore.N(data = FCore.ND(SOME(st))) := FNode.fromRef(r);
+      then
+        scopeTypeToRestriction(st);
+
+    else getScopeRestriction(listRest(inScope));
+
+  end matchcontinue;
+end getScopeRestriction;
 
 public function getGraphPathNoImplicitScope
 "This function returns all partially instantiated parents as an Absyn.Path

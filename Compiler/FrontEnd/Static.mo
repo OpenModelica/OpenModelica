@@ -91,6 +91,11 @@ uniontype Slot
   end SLOT;
 end Slot;
 
+constant Option<tuple<DAE.Exp, DAE.Properties, DAE.Attributes>> BUILTIN_TIME =
+  SOME((DAE.CREF(DAE.CREF_IDENT("time", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT),
+        DAE.PROP(DAE.T_REAL_DEFAULT, DAE.C_VAR()),
+        DAE.dummyAttrInput));
+
 protected import Array;
 protected import BackendInterface;
 protected import Ceval;
@@ -10298,6 +10303,12 @@ algorithm
       then
         (cache, SOME((exp, DAE.PROP(t, DAE.C_CONST()), DAE.dummyAttrConst)));
 
+    case (_, _, Absyn.CREF_IDENT(name = "time"), _, _)
+      algorithm
+        res := if isValidTimeScope(inEnv, info) then BUILTIN_TIME else NONE();
+      then
+        (inCache, res);
+
     // MetaModelica arrays are only used in function context as IDENT, and at most one subscript
     // No vectorization is performed
     case (cache, env, Absyn.CREF_IDENT(name = id, subscripts = {Absyn.SUBSCRIPT(e)}), impl, pre)
@@ -10424,6 +10435,34 @@ algorithm
         (cache,NONE());
   end matchcontinue;
 end elabCref1;
+
+protected function isValidTimeScope
+  "Checks if time is allowed to be used in the current scope."
+  input FCore.Graph inEnv;
+  input SourceInfo inInfo;
+  output Boolean outIsValid;
+protected
+  SCode.Restriction res;
+algorithm
+  try
+    res := FGraph.lastScopeRestriction(inEnv);
+  else
+    outIsValid := true;
+    return;
+  end try;
+
+  outIsValid := match res
+    case SCode.R_CLASS() then true;
+    case SCode.R_OPTIMIZATION() then true;
+    case SCode.R_MODEL() then true;
+    case SCode.R_BLOCK() then true;
+    else
+      algorithm
+        Error.addSourceMessage(Error.INVALID_TIME_SCOPE, {}, inInfo);
+      then
+        false;
+  end match;
+end isValidTimeScope;
 
 protected function lookupFunctionsInEnvNoError
   input FCore.Cache inCache;

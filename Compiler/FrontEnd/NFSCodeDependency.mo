@@ -320,8 +320,6 @@ algorithm
       then
         ();
 
-    case (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = "time")), _) then ();
-
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -395,8 +393,6 @@ algorithm
         analyseRedeclaredClass(cls, env);
       then
         ();
-
-    case (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = "time")), _) then ();
 
     else
       equation

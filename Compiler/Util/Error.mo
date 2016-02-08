@@ -681,7 +681,7 @@ public constant Message TCOMPLEX_TUPLE_ONE_NAME = MESSAGE(276, TRANSLATION(), NO
 public constant Message ENUM_DUPLICATES = MESSAGE(277, TRANSLATION(), ERROR(),
   Util.gettext("Enumeration has duplicate names: %s in list of names %s."));
 public constant Message RESERVED_IDENTIFIER = MESSAGE(278, TRANSLATION(), ERROR(),
-  Util.gettext("Identifier %s is reserved for the built-in type with the same name."));
+  Util.gettext("Identifier %s is reserved for the built-in element with the same name."));
 public constant Message NOTIFY_IMPACT_FOUND = MESSAGE(279, SCRIPTING(), NOTIFICATION(),
   Util.gettext("The impact package manager downloaded package %s%s to directory %s."));
 public constant Message DERIVATIVE_FUNCTION_CONTEXT = MESSAGE(280, SCRIPTING(), ERROR(),
@@ -700,7 +700,8 @@ public constant Message SCANNER_ERROR = MESSAGE(286, SYNTAX(), ERROR(),
   Util.gettext("Syntax error, unrecognized input: %s."));
 public constant Message SCANNER_ERROR_LIMIT = MESSAGE(287, SYNTAX(), ERROR(),
   Util.gettext("Additional syntax errors were suppressed."));
-
+public constant Message INVALID_TIME_SCOPE = MESSAGE(288, TRANSLATION(), ERROR(),
+  Util.gettext("Built-in variable 'time' may only be used in a model or block."));
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),

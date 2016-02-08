@@ -1736,7 +1736,6 @@ algorithm
   imps := newImportTable();
   is_used := Util.makeStatefulBoolean(false);
 
-  tree := addDummyClassToTree("time", tree);
   tree := addDummyClassToTree("String", tree);
   tree := addDummyClassToTree("Integer", tree);
   tree := addDummyClassToTree("spliceFunction", tree);

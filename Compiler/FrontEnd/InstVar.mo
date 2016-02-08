@@ -137,6 +137,7 @@ algorithm
     case "Real" then true;
     case "Boolean" then true;
     case "String" then true;
+    case "time" then true;
     else false; end match then
     Error.addSourceMessage(Error.RESERVED_IDENTIFIER, {inIdent}, info);
     fail();
