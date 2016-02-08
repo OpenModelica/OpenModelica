@@ -99,15 +99,15 @@ echo(false);
 alarm("+ulimitOmc+");
 loadString(\"
 function cell
-  input Real time;
+  input Real elapsedTime;
   input Boolean greenOnOk := false;
   input String greenColor := \\\"#00FF00\\\";
   input String mdFile := \\\"\\\";
   output String str;
 algorithm
   str := if mdFile == \\\"\\\" then \\\"\\\" else \\\" <a href=\\\\\\\"files/mdpad_local.html?\\\"+mdFile+\\\"\\\\\\\"><img width=\\\\\\\"16px\\\\\\\" src=\\\\\\\"files/Modelica.Icons.Example.svg\\\\\\\"></img></a>\\\";
-  str := if time==-1.0 then \\\"<td bgcolor=\\\\\\\"#FF0000\\\\\\\">&nbsp;</td>\\\" else ((if greenOnOk then \\\"<td bgcolor=\\\\\\\"\\\" + greenColor + \\\"\\\\\\\">\\\" else \\\"<td>\\\") +
-    OpenModelica.Scripting.Internal.Time.readableTime(time)+str+\\\"</td>\\\");
+  str := if elapsedTime==-1.0 then \\\"<td bgcolor=\\\\\\\"#FF0000\\\\\\\">&nbsp;</td>\\\" else ((if greenOnOk then \\\"<td bgcolor=\\\\\\\"\\\" + greenColor + \\\"\\\\\\\">\\\" else \\\"<td>\\\") +
+    OpenModelica.Scripting.Internal.Time.readableTime(elapsedTime)+str+\\\"</td>\\\");
 end cell;
 function length input String str; output Integer len; external \\\"C\\\" len=ModelicaStrings_length(str); end length;
 function substring input String str; input Integer i1,i2; output String out; external \\\"C\\\" out=ModelicaStrings_substring(str,i1,i2); end substring;
@@ -122,7 +122,7 @@ algorithm
   out := matches[2];
 end csvFileToVariable;
 function testcase
-  input Real time;
+  input Real elapsedTime;
   input Boolean success;
   input String errNoXMLLong;
   output String str;
@@ -130,7 +130,7 @@ protected
   String errXML;
 algorithm
   errXML := OpenModelica.Scripting.escapeXML(firstPart(errNoXMLLong,16*1024)); // 16 kB log per test should be enough; increase if there is a good reason to do so
-  str:=\\\"<testcase name=\\\\\\\""+s+"\\\\\\\" time=\\\\\\\"\\\"+String(time)+\\\"\\\\\\\">\\\"+(
+  str:=\\\"<testcase name=\\\\\\\""+s+"\\\\\\\" elapsedTime=\\\\\\\"\\\"+String(elapsedTime)+\\\"\\\\\\\">\\\"+(
     if not success then \\\"<error type=\\\\\\\"Failure\\\\\\\" />\\\"
     else \\\"\\\"
   )+(
