@@ -59,6 +59,68 @@ uniontype ParseTree
   end LEAF;
 end ParseTree;
 
+function parseTreeStr
+  input list<ParseTree> trees;
+  output String str;
+protected
+  Integer i;
+algorithm
+  i := Print.saveAndClearBuf();
+  try
+    for tree in trees loop
+      parseTreeStrWork(tree);
+    end for;
+    str := Print.getString();
+    Print.restoreBuf(i);
+  else
+    Print.restoreBuf(i);
+    fail();
+  end try;
+end parseTreeStr;
+
+function treeDiff
+  input list<ParseTree> t1, t2;
+  input Integer nTokens "The number of tokens in the larger tree; used to allocate arrays. Should be enough with the smaller tree, but there are no additional bounds checks this way.";
+  output list<tuple<Diff,list<ParseTree>>> res;
+protected
+  list<tuple<Diff,list<ParseTree>>> res1, res2;
+  ParseTree within1, within2;
+  list<ParseTree> t2_updated;
+algorithm
+  within1 := findWithin(t1);
+  within2 := findWithin(t2);
+  // If the new file lacks a within that was in the first file, pretend it is there
+  // The other option is to preserve within in OMEdit...
+  t2_updated := match (within1,within2)
+    case (EMPTY(), EMPTY()) then t2;
+    case (_, EMPTY()) then within1::t2;
+    else t2;
+  end match;
+  res := treeDiffWork1(t1, t2_updated, nTokens);
+end treeDiff;
+
+partial function CmpParseTreeFunc
+  input ParseTree t1, t2;
+  output Boolean b;
+end CmpParseTreeFunc;
+
+function parseTreeNodeStr
+  input ParseTree tree;
+  output String str;
+protected
+  Integer i;
+algorithm
+  i := Print.saveAndClearBuf();
+  try
+    parseTreeStrWork(tree);
+    str := Print.getString();
+    Print.restoreBuf(i);
+  else
+    Print.restoreBuf(i);
+    fail();
+  end try;
+end parseTreeNodeStr;
+
 partial function partialParser
   input list<Token> inTokens;
   input list<ParseTree> inTree;
@@ -80,7 +142,7 @@ algorithm
       (tokens, tree) := name(tokens, tree);
     end if;
     (tokens, tree) := scan(tokens, tree, TokenId.SEMICOLON);
-    outTree := makeNode(listReverse(tree))::{};
+    outTree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, "$within")))::{};
     tree := {};
   else
     outTree := {};
@@ -101,17 +163,21 @@ algorithm
   if not listEmpty(tokens) then
     error(tokens, tree, {});
   end if;
-  outTree := makeNode(listReverse(listAppend(listAppend(tree, outTree), inTree)))::{};
+  outTree := makeNode(listReverse(listAppend(listAppend(tree, outTree), inTree)), label=LEAF(makeToken(TokenId.IDENT, "$program")))::{};
 end stored_definition;
+
+protected
 
 function class_definition
   extends partialParser;
+protected
+  ParseTree nodeName;
 algorithm
-  tree := inTree;
+  tree := {};
   (tokens, tree) := scanOpt(tokens, tree, TokenId.ENCAPSULATED);
   (tokens, tree) := class_prefixes(tokens, tree);
-  (tokens, tree) := class_specifier(tokens, tree);
-  outTree := tree;
+  (tokens, tree, nodeName) := class_specifier(tokens, tree);
+  outTree := makeNode(listReverse(tree), label=nodeName)::inTree;
 end class_definition;
 
 function class_prefixes
@@ -149,12 +215,14 @@ end class_prefixes;
 
 function class_specifier
   extends partialParser;
+  output ParseTree nodeName;
 protected
   TokenId id;
   Boolean b;
 algorithm
   tree := inTree;
   (tokens, tree, b) := scanOpt(tokens, tree, TokenId.IDENT);
+  nodeName::_ := tree;
   if b then
     (tokens, tree, b) := scanOpt(tokens, tree, TokenId.EQUALS);
     if b then
@@ -1415,26 +1483,24 @@ algorithm
   outTree := makeNodePrependTree(listReverse(tree), inTree);
 end _annotation;
 
-function parseTreeStr
-  input list<ParseTree> trees;
-  output String str;
 protected
-  Integer i;
-algorithm
-  i := Print.saveAndClearBuf();
-  try
-    for tree in trees loop
-      parseTreeStrWork(tree);
-    end for;
-    str := Print.getString();
-    Print.restoreBuf(i);
-  else
-    Print.restoreBuf(i);
-    fail();
-  end try;
-end parseTreeStr;
 
-function treeDiff
+function findWithin
+  input list<ParseTree> tree;
+  output ParseTree w=EMPTY();
+protected
+  Token tok, tok2;
+  TokenId id;
+  list<ParseTree> rest, rest2;
+algorithm
+  w := match tree
+    case NODE(label=LEAF(token=tok), nodes=(w as NODE(label=LEAF(token=tok2)))::rest)::rest2 guard tokenContent(tok)=="$program" and tokenContent(tok2)=="$within"
+      then w;
+    else EMPTY();
+  end match;
+end findWithin;
+
+function treeDiffWork1
   input list<ParseTree> t1, t2;
   input Integer nTokens "The number of tokens in the larger tree; used to allocate arrays. Should be enough with the smaller tree, but there are no additional bounds checks this way.";
   output list<tuple<Diff,list<ParseTree>>> res;
@@ -1442,6 +1508,14 @@ protected
   array<Token> diffSubtreeWorkArray1, diffSubtreeWorkArray2 "Used to handle diff of trees without using stack space or new allocations for every step";
   list<ParseTree> tree;
 algorithm
+  // Handle empty input
+  if listEmpty(t1) then
+    res := {(Diff.Add, t2)};
+    return;
+  elseif listEmpty(t2) then
+    res := {(Diff.Delete, t1)};
+    return;
+  end if;
   diffSubtreeWorkArray1 := MetaModelica.Dangerous.arrayCreateNoInit(nTokens, LexerModelicaDiff.noToken);
   diffSubtreeWorkArray2 := MetaModelica.Dangerous.arrayCreateNoInit(nTokens, LexerModelicaDiff.noToken);
   if parseTreeEq(makeNode(t1), makeNode(t2), diffSubtreeWorkArray1=diffSubtreeWorkArray1, diffSubtreeWorkArray2=diffSubtreeWorkArray2) then
@@ -1450,12 +1524,7 @@ algorithm
     return;
   end if;
   res := treeDiffWork(t1, t2, 1, function parseTreeEq(diffSubtreeWorkArray1=diffSubtreeWorkArray1, diffSubtreeWorkArray2=diffSubtreeWorkArray2));
-end treeDiff;
-
-partial function CmpParseTreeFunc
-  input ParseTree t1, t2;
-  output Boolean b;
-end CmpParseTreeFunc;
+end treeDiffWork1;
 
 function treeDiffWork
   input list<ParseTree> t1, t2;
@@ -1572,6 +1641,9 @@ algorithm
     // TODO: Move this into extractAdditionsDeletions?
     addedTrees := list(t for t guard isLabeledNode(t) in addedTrees);
     deletedTrees := list(t for t guard isLabeledNode(t) in deletedTrees);
+    if debug then
+      print("number of labeled nodes. add="+String(listLength(addedTrees))+" del="+String(listLength(deletedTrees))+"\n");
+    end if;
     // O(D*D)
     for added in addedTrees loop
       for deleted in deletedTrees loop
@@ -1597,25 +1669,6 @@ algorithm
     // print(DiffAlgorithm.printDiffTerminalColor(res, parseTreeNodeStr) + "\n");
   end if;
 end treeDiffWork;
-
-function parseTreeNodeStr
-  input ParseTree tree;
-  output String str;
-protected
-  Integer i;
-algorithm
-  i := Print.saveAndClearBuf();
-  try
-    parseTreeStrWork(tree);
-    str := Print.getString();
-    Print.restoreBuf(i);
-  else
-    Print.restoreBuf(i);
-    fail();
-  end try;
-end parseTreeNodeStr;
-
-protected
 
 function filterDiffWhitespace
   input list<tuple<Diff,list<ParseTree>>> inDiff;
@@ -1781,7 +1834,10 @@ end filterDiffWhitespace;
 function makeToken
   input TokenId id;
   input String str;
-  output Token token = LexerModelicaDiff.TOKEN("<dummy>", id, str, 1, stringLength(str), 0, 0, 0, 0);
+  output Token token;
+algorithm
+  token := LexerModelicaDiff.TOKEN("<dummy>", id, str, 1, stringLength(str), 0, 0, 0, 0);
+  annotation(__OpenModelica_EarlyInline=true);
 end makeToken;
 
 function replaceLabeledDiff
