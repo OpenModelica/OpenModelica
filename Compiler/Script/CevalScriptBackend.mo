@@ -931,17 +931,13 @@ algorithm
     case (cache, _, "exportToFigaro", _, st, _)
       then (cache, Values.BOOL(false), st);
 
-         case (cache,_, "inferBindings", {Values.CODE(Absyn.C_TYPENAME(classpath))},
+    case (cache,_, "inferBindings", {Values.CODE(Absyn.C_TYPENAME(classpath))},
        (st as GlobalScript.SYMBOLTABLE(p as Absyn.PROGRAM())),_)
        equation
-        absynClass = Interactive.getPathedClassInProgram(classpath, p);
-        Binding.inferBindings(absynClass, p);
-        //pnew = Interactive.updateProgram(pnew, p);
-        //newst = GlobalScriptUtil.setSymbolTableAST(st, pnew);
+        pnew = Binding.inferBindings(classpath, p);
+        newst = GlobalScriptUtil.setSymbolTableAST(st, pnew);
       then
-       // (FCore.emptyCache(),Values.BOOL(true), newst);
-         (cache,Values.BOOL(true), st);
-
+         (cache,Values.BOOL(true), newst);
 
     case (cache, _, "inferBindings", _, st, _)
       equation
