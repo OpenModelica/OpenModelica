@@ -111,11 +111,8 @@ protected function crefIsValidNode2
   input Boolean isFirst;
   input SourceInfo inInfo;
 algorithm
-  _ := matchcontinue(inType1, inType2, inFuncName, isFirst, inInfo)
-    case (_, _, _, _, _)
-      equation
-        true = Types.isConnector(inType1);
-        true = Types.isOverdeterminedType(inType2);
+  _ := match(inType1, inType2, inFuncName, isFirst, inInfo)
+    case (_, _, _, _, _) guard Types.isConnector(inType1) and Types.isOverdeterminedType(inType2)
       then
         ();
 
@@ -126,7 +123,7 @@ algorithm
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end crefIsValidNode2;
 
 public function checkComponentIsConnector
@@ -135,23 +132,19 @@ public function checkComponentIsConnector
   input DAE.ComponentRef inCref;
   input SourceInfo inInfo;
 algorithm
-  _ := matchcontinue(inComponent, inPrefixComponent, inCref, inInfo)
+  _ := match(inComponent, inPrefixComponent, inCref, inInfo)
     local
       String cref_str, ty_str;
       DAE.Type ty;
       Component comp;
 
-    case (_, _, _, _)
-      equation
-        true = NFInstUtil.isConnectorComponent(inComponent);
+    case (_, _, _, _) guard NFInstUtil.isConnectorComponent(inComponent)
       then
         ();
 
     // A component in an expandable connector is seen as a connector.
     case (_, SOME(comp), _, _)
-      equation
-        ty = NFInstUtil.getComponentType(comp);
-        true = Types.isComplexExpandableConnector(ty);
+      equation guard Types.isComplexExpandableConnector(NFInstUtil.getComponentType(comp))
       then
         ();
 
@@ -165,7 +158,7 @@ algorithm
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end checkComponentIsConnector;
 
 public function compatibleConnectors
@@ -217,20 +210,18 @@ protected function connectorStatus
   input ConnectorTuple inConnector;
   output ConnectorStatus outStatus;
 algorithm
-  outStatus := matchcontinue(inConnector)
+  outStatus := match(inConnector)
     local
       DAE.Type ty;
 
-    case ((ty, _, _, _))
-      equation
-        true = Types.isComplexExpandableConnector(ty);
+    case ((ty, _, _, _)) guard Types.isComplexExpandableConnector(ty)
       then
         EXPANDABLE_CONNECTOR();
 
     case ((_, NFConnect2.NO_TYPE(), _, _)) then POTENTIALLY_PRESENT();
     else SIMPLE_CONNECTOR();
 
-  end matchcontinue;
+  end match;
 end connectorStatus;
 
 protected function compatibleConnectors3
@@ -317,7 +308,7 @@ protected function compatibleConnectorTypes
   input ConnectorType inRhsType;
   input TupleErrorInfo inErrorInfo;
 algorithm
-  _ := matchcontinue(inLhsType, inRhsType, inErrorInfo)
+  _ := match(inLhsType, inRhsType, inErrorInfo)
     local
       DAE.ComponentRef lhs_cref, rhs_cref;
       SourceInfo info;
@@ -325,9 +316,7 @@ algorithm
       list<String> err_strl;
 
     // Equal connector types => ok.
-    case (_, _, _)
-      equation
-        true = NFConnectUtil2.connectorTypeEqual(inLhsType, inRhsType);
+    case (_, _, _) guard NFConnectUtil2.connectorTypeEqual(inLhsType, inRhsType)
       then
         ();
 
@@ -345,7 +334,7 @@ algorithm
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end compatibleConnectorTypes;
 
 protected function compatibleDirection
@@ -355,7 +344,7 @@ protected function compatibleDirection
   input DAE.VarDirection inRhsDirection;
   input TupleErrorInfo inErrorInfo;
 algorithm
-  _ := matchcontinue(inLhsDirection, inRhsDirection, inErrorInfo)
+  _ := match(inLhsDirection, inRhsDirection, inErrorInfo)
     local
       DAE.ComponentRef lhs_cref, rhs_cref;
       String cref_str1, cref_str2, dir_str1, dir_str2;
@@ -363,10 +352,8 @@ algorithm
       SourceInfo info;
 
     // None or both are input/output => ok.
-    case (_, _, _)
-      equation
-        true = boolEq(DAEUtil.isBidirVarDirection(inLhsDirection),
-                      DAEUtil.isBidirVarDirection(inRhsDirection));
+    case (_, _, _) guard boolEq(DAEUtil.isBidirVarDirection(inLhsDirection),
+                                DAEUtil.isBidirVarDirection(inRhsDirection))
       then
         ();
 
@@ -384,7 +371,7 @@ algorithm
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end compatibleDirection;
 
 public function compatibleVariability

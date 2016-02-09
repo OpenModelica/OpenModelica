@@ -517,7 +517,7 @@ protected function pushRedeclareIntoExtends2
   input list<NFSCodeEnv.Extends> inExtends;
   output list<NFSCodeEnv.Extends> outExtends;
 algorithm
-  outExtends := matchcontinue(inName, inRedeclare, inBaseClasses, inExtends)
+  outExtends := match(inName, inRedeclare, inBaseClasses, inExtends)
     local
       Absyn.Path bc1, bc2;
       list<Absyn.Path> rest_bc;
@@ -532,9 +532,9 @@ algorithm
     // See if the first base class path matches the first extends. Push the
     // redeclare into that extends if so.
     case (_, _, bc1 :: rest_bc, NFSCodeEnv.EXTENDS(bc2, redecls, index, info) :: rest_exts)
+        guard Absyn.pathEqual(bc1, bc2)
       equation
-        true = Absyn.pathEqual(bc1, bc2);
-        redecls = pushRedeclareIntoExtends3(inRedeclare, inName, redecls);
+        redecls = pushRedeclareIntoExtends3(inRedeclare, inName, redecls, {});
         rest_exts = pushRedeclareIntoExtends2(inName, inRedeclare, rest_bc, rest_exts);
       then
         NFSCodeEnv.EXTENDS(bc2, redecls, index, info) :: rest_exts;
@@ -561,7 +561,7 @@ algorithm
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end pushRedeclareIntoExtends2;
 
 protected function pushRedeclareIntoExtends3
@@ -571,9 +571,10 @@ protected function pushRedeclareIntoExtends3
   input Item inRedeclare;
   input String inName;
   input list<NFSCodeEnv.Redeclaration> inRedeclares;
+  input list<NFSCodeEnv.Redeclaration> inOutRedeclares;
   output list<NFSCodeEnv.Redeclaration> outRedeclares;
 algorithm
-  outRedeclares := matchcontinue(inRedeclare, inName, inRedeclares)
+  outRedeclares := match(inRedeclare, inName, inRedeclares)
     local
       Item item;
       NFSCodeEnv.Redeclaration redecl;
@@ -581,21 +582,17 @@ algorithm
       String name;
 
     case (_, _, NFSCodeEnv.PROCESSED_MODIFIER(modifier = item) :: rest_redecls)
-      equation
-        name = NFSCodeEnv.getItemName(item);
-        true = stringEqual(name, inName);
+        guard stringEqual(NFSCodeEnv.getItemName(item), inName)
       then
-        NFSCodeEnv.PROCESSED_MODIFIER(inRedeclare) :: rest_redecls;
+        listAppend(listReverse(inOutRedeclares), NFSCodeEnv.PROCESSED_MODIFIER(inRedeclare) :: rest_redecls);
 
     case (_, _, redecl :: rest_redecls)
-      equation
-        rest_redecls = pushRedeclareIntoExtends3(inRedeclare, inName, rest_redecls);
       then
-        redecl :: rest_redecls;
+        pushRedeclareIntoExtends3(inRedeclare, inName, rest_redecls, redecl :: inOutRedeclares);
 
-    case (_, _, {}) then {NFSCodeEnv.PROCESSED_MODIFIER(inRedeclare)};
+    case (_, _, {}) then listReverse(NFSCodeEnv.PROCESSED_MODIFIER(inRedeclare) :: inOutRedeclares);
 
-  end matchcontinue;
+  end match;
 end pushRedeclareIntoExtends3;
 
 public function replaceElementInScope

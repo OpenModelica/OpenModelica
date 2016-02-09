@@ -1024,18 +1024,16 @@ protected function compareQualifiedImportNames
   input Import inImport2;
   output Boolean outEqual;
 algorithm
-  outEqual := matchcontinue(inImport1, inImport2)
+  outEqual := match(inImport1, inImport2)
     local
       Absyn.Ident name1, name2;
 
-    case (Absyn.NAMED_IMPORT(name = name1), Absyn.NAMED_IMPORT(name = name2))
-      equation
-        true = stringEqual(name1, name2);
+    case (Absyn.NAMED_IMPORT(name = name1), Absyn.NAMED_IMPORT(name = name2)) guard stringEqual(name1, name2)
       then
         true;
 
     else false;
-  end matchcontinue;
+  end match;
 end compareQualifiedImportNames;
 
 protected function extendEnvWithEnumLiterals

@@ -184,22 +184,20 @@ public function connectorEqual
   input NFConnect2.Connector inConnector2;
   output Boolean outIsEqual;
 algorithm
-  outIsEqual := matchcontinue(inConnector1, inConnector2)
+  outIsEqual := match(inConnector1, inConnector2)
     local
       DAE.ComponentRef name1, name2;
       Face face1, face2;
 
     case (NFConnect2.CONNECTOR(name = name1, face = face1),
           NFConnect2.CONNECTOR(name = name2, face = face2))
-      equation
-        true = faceEqual(face1, face2);
-        true = ComponentReference.crefEqualNoStringCompare(name1, name2);
+        guard faceEqual(face1, face2) and ComponentReference.crefEqualNoStringCompare(name1, name2)
       then
         true;
 
     else false;
 
-  end matchcontinue;
+  end match;
 end connectorEqual;
 
 public function faceEqual

@@ -79,9 +79,7 @@ algorithm
       list<Connector> flows;
       list<Connection> connections, expconnl;
 
-    case (_, {})
-      equation
-        true = NFConnectUtil2.isEmptyConnections(inConnections);
+    case (_, {}) guard NFConnectUtil2.isEmptyConnections(inConnections)
       then
         DAE.emptyDae;
 
@@ -128,7 +126,7 @@ protected function addConnectionToSet
   input DisjointSets inSets;
   output DisjointSets outSets;
 algorithm
-  outSets := matchcontinue(inConnection, inSets)
+  outSets := match(inConnection, inSets)
     local
       DAE.VarKind var;
 
@@ -136,17 +134,16 @@ algorithm
     // have been generated during typing.
     case (NFConnect2.CONNECTION(lhs = NFConnect2.CONNECTOR(attr =
         NFConnect2.CONN_ATTR(variability = var))), _)
-      equation
         // Variability should have been checked already, so should be enough to
         // just check one since they should be the same.
-        true = DAEUtil.isParamOrConstVarKind(var);
+        guard DAEUtil.isParamOrConstVarKind(var)
       then
         inSets;
 
     else
       then NFConnectionSets.expandAddConnection(inConnection, inSets);
 
-  end matchcontinue;
+  end match;
 end addConnectionToSet;
 
 protected function generateEquation
@@ -562,16 +559,14 @@ protected function compareCrefStreamSet
   input Connector inElement;
   output Boolean outRes;
 algorithm
-  outRes := matchcontinue(inCref, inElement)
+  outRes := match(inCref, inElement)
     local
       DAE.ComponentRef cr;
-    case (_, NFConnect2.CONNECTOR(name = cr))
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(inCref, cr);
+    case (_, NFConnect2.CONNECTOR(name = cr)) guard ComponentReference.crefEqualNoStringCompare(inCref, cr)
       then
         true;
     else false;
-  end matchcontinue;
+  end match;
 end compareCrefStreamSet;
 
 public function generateAssertion
