@@ -12,6 +12,7 @@ LargeFileChange.mos \
 ListFile.mos \
 removeComponentModifiers.mos \
 TestDiffListAPI.mos \
+Ticket3619.mos \
 ticket3642.mos \
 UTF8.mos
 

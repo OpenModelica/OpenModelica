@@ -14,6 +14,11 @@ print(getErrorString());
 writeFile("old.mo", readFile(fileName));
 s := diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain);
 echo(true);
+if s == "" then
+  print("Failed to merge strings!\n");
+  print(getErrorString());
+  exit(1);
+end if;
 writeFile("merged.mo", s);
 writeFile("new.mo", s2);
 getErrorString();
@@ -27,9 +32,15 @@ system("diff -uZ old.mo merged.mo | egrep -v '^(@@|---|[+][+][+])'")
 // true
 // ""
 // true
+//
 // true
 // true
 // ""
+//  within Modelica.Electrical;
+// +
+//  package PowerConverters "Rectifiers, Inverters and DC/DC converters"
+//    extends Modelica.Icons.Package;
+//    package UsersGuide "User's Guide"
 //              each k=1,
 //              each x0Cos=0,
 //              each x0Sin=0,
