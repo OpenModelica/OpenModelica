@@ -522,7 +522,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   input ThermoPower.Gas.CombustionChamber$plant$CombustionChamber1.Exhaust.ThermodynamicState state;
 //   output Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.001, max = 0.25, nominal = 0.032);
 // algorithm
-//   MM := 0.0280134 / (state.X[1] + state.X[2] + state.X[3] + state.X[4] + state.X[5]);
+//   MM := 0.0319988 / (state.X[1] + state.X[2] + state.X[3] + state.X[4] + state.X[5]);
 // end ThermoPower.Gas.CombustionChamber$plant$CombustionChamber1.Exhaust.molarMass;
 //
 // function ThermoPower.Gas.CombustionChamber$plant$CombustionChamber1.Fuel.FluidConstants \"Automatically generated record constructor for ThermoPower.Gas.CombustionChamber$plant$CombustionChamber1.Fuel.FluidConstants\"
@@ -800,7 +800,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   input ThermoPower.Gas.Compressor$plant$compressor.Medium.ThermodynamicState state;
 //   output Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.001, max = 0.25, nominal = 0.032);
 // algorithm
-//   MM := 0.0280134 / (state.X[1] + state.X[2] + state.X[3] + state.X[4]);
+//   MM := 0.0319988 / (state.X[1] + state.X[2] + state.X[3] + state.X[4]);
 // end ThermoPower.Gas.Compressor$plant$compressor.Medium.molarMass;
 //
 // function ThermoPower.Gas.Compressor$plant$compressor.Medium.s_TX
@@ -1450,7 +1450,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   input ThermoPower.Gas.PressDrop$plant$PressDrop1.Medium.ThermodynamicState state;
 //   output Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.001, max = 0.25, nominal = 0.032);
 // algorithm
-//   MM := 0.0280134 / (state.X[1] + state.X[2] + state.X[3] + state.X[4] + state.X[5]);
+//   MM := 0.0319988 / (state.X[1] + state.X[2] + state.X[3] + state.X[4] + state.X[5]);
 // end ThermoPower.Gas.PressDrop$plant$PressDrop1.Medium.molarMass;
 //
 // function ThermoPower.Gas.PressDrop$plant$PressDrop1.squareReg
@@ -1513,7 +1513,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   input ThermoPower.Gas.PressDrop$plant$PressDrop2.Medium.ThermodynamicState state;
 //   output Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.001, max = 0.25, nominal = 0.032);
 // algorithm
-//   MM := 0.0280134 / (state.X[1] + state.X[2] + state.X[3] + state.X[4]);
+//   MM := 0.0319988 / (state.X[1] + state.X[2] + state.X[3] + state.X[4]);
 // end ThermoPower.Gas.PressDrop$plant$PressDrop2.Medium.molarMass;
 //
 // function ThermoPower.Gas.PressDrop$plant$PressDrop2.squareReg
@@ -1576,7 +1576,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   input ThermoPower.Gas.SinkPressure$plant$SinkP1.Medium.ThermodynamicState state;
 //   output Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.001, max = 0.25, nominal = 0.032);
 // algorithm
-//   MM := 0.0280134 / (state.X[1] + state.X[2] + state.X[3] + state.X[4] + state.X[5]);
+//   MM := 0.0319988 / (state.X[1] + state.X[2] + state.X[3] + state.X[4] + state.X[5]);
 // end ThermoPower.Gas.SinkPressure$plant$SinkP1.Medium.molarMass;
 //
 // function ThermoPower.Gas.SourceMassFlow$plant$SourceW1.Medium.FluidConstants \"Automatically generated record constructor for ThermoPower.Gas.SourceMassFlow$plant$SourceW1.Medium.FluidConstants\"
@@ -1631,7 +1631,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   input ThermoPower.Gas.SourceMassFlow$plant$SourceW1.Medium.ThermodynamicState state;
 //   output Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.001, max = 0.25, nominal = 0.032);
 // algorithm
-//   MM := 0.01604246 / (state.X[1] + state.X[2] + state.X[3]);
+//   MM := 0.0280134 / (state.X[1] + state.X[2] + state.X[3]);
 // end ThermoPower.Gas.SourceMassFlow$plant$SourceW1.Medium.molarMass;
 //
 // function ThermoPower.Gas.SourcePressure$plant$SourceP1.Medium.FluidConstants \"Automatically generated record constructor for ThermoPower.Gas.SourcePressure$plant$SourceP1.Medium.FluidConstants\"
@@ -1686,7 +1686,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   input ThermoPower.Gas.SourcePressure$plant$SourceP1.Medium.ThermodynamicState state;
 //   output Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.001, max = 0.25, nominal = 0.032);
 // algorithm
-//   MM := 0.0280134 / (state.X[1] + state.X[2] + state.X[3] + state.X[4]);
+//   MM := 0.0319988 / (state.X[1] + state.X[2] + state.X[3] + state.X[4]);
 // end ThermoPower.Gas.SourcePressure$plant$SourceP1.Medium.molarMass;
 //
 // function ThermoPower.Gas.Turbine$plant$turbine.Medium.FluidConstants \"Automatically generated record constructor for ThermoPower.Gas.Turbine$plant$turbine.Medium.FluidConstants\"
@@ -1934,7 +1934,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   input ThermoPower.Gas.Turbine$plant$turbine.Medium.ThermodynamicState state;
 //   output Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.001, max = 0.25, nominal = 0.032);
 // algorithm
-//   MM := 0.0280134 / (state.X[1] + state.X[2] + state.X[3] + state.X[4] + state.X[5]);
+//   MM := 0.0319988 / (state.X[1] + state.X[2] + state.X[3] + state.X[4] + state.X[5]);
 // end ThermoPower.Gas.Turbine$plant$turbine.Medium.molarMass;
 //
 // function ThermoPower.Gas.Turbine$plant$turbine.Medium.s_TX
@@ -2044,7 +2044,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   input ThermoPower.PowerPlants.HRSG.Components.StateReader_gas$plant$stateInletCC.Medium.ThermodynamicState state;
 //   output Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.001, max = 0.25, nominal = 0.032);
 // algorithm
-//   MM := 0.0280134 / (state.X[1] + state.X[2] + state.X[3] + state.X[4]);
+//   MM := 0.0319988 / (state.X[1] + state.X[2] + state.X[3] + state.X[4]);
 // end ThermoPower.PowerPlants.HRSG.Components.StateReader_gas$plant$stateInletCC.Medium.molarMass;
 //
 // function ThermoPower.PowerPlants.HRSG.Components.StateReader_gas$plant$stateOutletCC.Medium.FluidConstants \"Automatically generated record constructor for ThermoPower.PowerPlants.HRSG.Components.StateReader_gas$plant$stateOutletCC.Medium.FluidConstants\"
@@ -2099,7 +2099,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   input ThermoPower.PowerPlants.HRSG.Components.StateReader_gas$plant$stateOutletCC.Medium.ThermodynamicState state;
 //   output Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.001, max = 0.25, nominal = 0.032);
 // algorithm
-//   MM := 0.0280134 / (state.X[1] + state.X[2] + state.X[3] + state.X[4] + state.X[5]);
+//   MM := 0.0319988 / (state.X[1] + state.X[2] + state.X[3] + state.X[4] + state.X[5]);
 // end ThermoPower.PowerPlants.HRSG.Components.StateReader_gas$plant$stateOutletCC.Medium.molarMass;
 //
 // class ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator
