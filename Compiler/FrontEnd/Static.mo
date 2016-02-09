@@ -10838,10 +10838,10 @@ algorithm
     case (SCode.CONST(), _, DAE.EQBOUND(evaluatedExp = SOME(v), constant_ = DAE.C_CONST()),
         InstTypes.SPLICEDEXPDATA(SOME(DAE.CREF(componentRef = cr)), _))
       algorithm
-        {DAE.INDEX(DAE.CREF(componentRef = subCr2)), slice as DAE.SLICE()} := ComponentReference.crefLastSubs(cr);
+        {DAE.INDEX(DAE.CREF(componentRef = subCr2)), DAE.SLICE(exp = e)} := ComponentReference.crefLastSubs(cr);
         {DAE.INDEX(index as DAE.CREF(componentRef = subCr1))} := ComponentReference.crefLastSubs(inCref);
         true := ComponentReference.crefEqual(subCr1, subCr2);
-        DAE.SLICE(DAE.ARRAY()) := slice;
+        true := Expression.isArray(e) or Expression.isRange(e);
         e := ValuesUtil.valueExp(v);
         e := DAE.ASUB(e, {index});
       then
@@ -11196,16 +11196,37 @@ algorithm
     case( ((DAE.SLICE( DAE.ARRAY(_,_,expl1) )):: subs1),id,ety) // {1,2,3}
       equation
         exp2 = flattenSubscript2(subs1,id,ety);
-        expl2 = List.map3(expl1,applySubscript,exp2,id,ety);
-        exp3 = DAE.ARRAY(DAE.T_INTEGER_DEFAULT,false,expl2);
-        (iLst, scalar) = extractDimensionOfChild(exp3);
-        ety = Expression.arrayEltType(ety);
-        exp3 = DAE.ARRAY(DAE.T_ARRAY(ety, iLst, DAE.emptyTypeSource), scalar, expl2);
-        //exp3 = removeDoubleEmptyArrays(exp3);
       then
-        exp3;
+        flattenSubscript3(expl1, id, ety, exp2);
+
+    case ((sub1 as DAE.SLICE(exp = DAE.RANGE())) :: subs1, id, ety)
+      algorithm
+        expl1 := Expression.expandRange(sub1.exp);
+        exp2 := flattenSubscript2(subs1, id, ety);
+      then
+        flattenSubscript3(expl1, id, ety, exp2);
+
   end matchcontinue;
 end flattenSubscript2;
+
+protected function flattenSubscript3
+  input list<DAE.Exp> inSubscripts;
+  input String inName;
+  input DAE.Type inType;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
+protected
+  list<DAE.Exp> expl;
+  list<DAE.Dimension> dims;
+  Boolean scalar;
+  DAE.Type ty;
+algorithm
+  expl := list(applySubscript(e, inExp, inName, inType) for e in inSubscripts);
+  outExp := DAE.ARRAY(DAE.T_INTEGER_DEFAULT, false, expl);
+  (dims, scalar) := extractDimensionOfChild(outExp);
+  ty := Expression.arrayEltType(inType);
+  outExp := DAE.ARRAY(DAE.T_ARRAY(ty, dims, DAE.emptyTypeSource), scalar, expl);
+end flattenSubscript3;
 
 protected function removeDoubleEmptyArrays
 " A help function, to prevent the {{}} look of empty arrays."

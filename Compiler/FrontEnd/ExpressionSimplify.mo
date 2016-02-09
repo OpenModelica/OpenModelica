@@ -1749,7 +1749,7 @@ protected function simplifyCref
   input Type inType;
   output DAE.Exp exp;
 algorithm
-  exp := matchcontinue (origExp, inCREF, inType)
+  exp := matchcontinue inCREF
     local
       Type t,t2,t3;
       list<Subscript> ssl;
@@ -1759,32 +1759,21 @@ algorithm
       DAE.Exp expCref;
       Integer index;
 
-    case(_,DAE.CREF_IDENT(idn,t2,(ssl as ((DAE.SLICE(DAE.ARRAY(_,_,_))) :: _))),t)
+    case DAE.CREF_IDENT(idn,t2,(ssl as ((DAE.SLICE(DAE.ARRAY(_,_,_))) :: _)))
       equation
         cr = ComponentReference.makeCrefIdent(idn,t2,{});
-        expCref = Expression.makeCrefExp(cr,t);
+        expCref = Expression.makeCrefExp(cr, inType);
         exp = simplifyCref2(expCref,ssl);
       then exp;
 
-/*
-    case (_, DAE.CREF_QUAL(idn,t2 as DAE.T_METATYPE(DAE.T_METAARRAY()),ssl,DAE.CREF_IDENT(idn2,t3)),t)
-      equation
-        exp = DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(idn,t2,{}),t2), list(Expression.subscriptIndexExp(s) for s in ssl));
-        print(ExpressionDump.printExpStr(exp) + "\n");
-        index = match tt as Types.metaArrayElementType(t2)
-          // case DAE.T_METARECORD() then t2.fields;
-          case DAE.T_METAUNIONTYPE() then List.position(idn2, tt.singletonFields);
-        end match;
-        exp = DAE.RSUB(exp, index, idn2, t);
-        print(ExpressionDump.printExpStr(origExp) + "\n");
-        print(ExpressionDump.printExpStr(exp) + "\n");
-        print("CREF_QUAL: " + idn + "\n");
-        print("CREF_QUAL: " + Types.unparseType(t2) + "\n");
-        print("CREF_QUAL: " + Types.unparseType(t) + "\n");
-        print("CREF_QUAL: " + Types.unparseType(t3) + "\n");
-      then exp;
-*/
-    case (_, DAE.CREF_QUAL(idn, DAE.T_METATYPE(ty=t2), ssl, cr), t)
+    case DAE.CREF_IDENT(subscriptLst = DAE.SLICE(exp = DAE.RANGE()) :: _)
+      algorithm
+        cr := ComponentReference.crefStripSubs(inCREF);
+        expCref := Expression.makeCrefExp(cr, inType);
+      then
+        simplifyCref2(expCref, inCREF.subscriptLst);
+
+    case DAE.CREF_QUAL(idn, DAE.T_METATYPE(ty=t2), ssl, cr)
       equation
         exp = simplifyCrefMM1(idn, t2, ssl);
         exp = simplifyCrefMM(exp, Expression.typeof(exp), cr);
@@ -1826,6 +1815,18 @@ algorithm
         exp = simplifyCref2(DAE.ARRAY(DAE.T_ARRAY(t,{DAE.DIM_INTEGER(dim)},DAE.emptyTypeSource),true,expl),ssl);
       then
         exp;
+
+    case (DAE.CREF(cr as DAE.CREF_IDENT(), t),
+          (ss as DAE.SLICE(exp = DAE.RANGE())) :: ssl)
+      algorithm
+        subs := Expression.expandSliceExp(ss.exp);
+        crefs := list(ComponentReference.subscriptCref(cr, List.create(s)) for s in subs);
+        t := Types.unliftArray(t);
+        expl := list(Expression.makeCrefExp(cr, t) for cr in crefs);
+        dim := listLength(expl);
+        exp := DAE.ARRAY(DAE.T_ARRAY(t, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource), true, expl);
+      then
+        simplifyCref2(exp, ssl);
 
     case(DAE.ARRAY(tp,sc,expl), ssl )
       equation

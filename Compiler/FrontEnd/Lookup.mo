@@ -2644,8 +2644,9 @@ algorithm
       DAE.Type t,t_1;
       DAE.Dimension dim;
       DAE.TypeSource ts;
+      DAE.Subscript sub;
       list<DAE.Subscript> ys,s;
-      Integer sz,ind,dim_int;
+      Integer sz,ind,dim_int,step;
       list<DAE.Exp> se;
       DAE.Exp e;
 
@@ -2657,6 +2658,14 @@ algorithm
         t_1 = checkSubscripts(t, ys);
       then
         DAE.T_ARRAY(t_1,{dim},ts);
+
+    case (DAE.T_ARRAY(dims = {dim}, ty = t, source = ts),
+          DAE.SLICE(exp = e as DAE.RANGE()) :: ys)
+      algorithm
+        t_1 := checkSubscripts(t, ys);
+        dim_int := Expression.rangeSize(e);
+      then
+        DAE.T_ARRAY(t_1, {DAE.DIM_INTEGER(dim_int)}, ts);
 
     case (DAE.T_ARRAY(dims = {dim}, ty = t, source = ts),
           (DAE.SLICE(exp = DAE.ARRAY(array = se)) :: ys))
@@ -3032,15 +3041,13 @@ algorithm
 
     // Special case when addressing array[0].
     case DAE.DIM_INTEGER(integer = 0)
-      then
-        DAE.SLICE(DAE.ARRAY(DAE.T_INTEGER_DEFAULT, true, {DAE.ICONST(0)}));
+      then DAE.SLICE(DAE.ARRAY(DAE.T_INTEGER_DEFAULT, true, {DAE.ICONST(0)}));
 
     // Array with integer dimension.
     case DAE.DIM_INTEGER(integer = sz)
-      equation
-        expl = List.map(List.intRange(sz), Expression.makeIntegerExp);
-      then
-        DAE.SLICE(DAE.ARRAY(DAE.T_INTEGER_DEFAULT, true, expl));
+      then DAE.SLICE(DAE.RANGE(
+        DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(inDim.integer)}, DAE.emptyTypeSource),
+        DAE.ICONST(1), NONE(), DAE.ICONST(inDim.integer)));
 
     // Array with boolean dimension.
     case DAE.DIM_BOOLEAN()

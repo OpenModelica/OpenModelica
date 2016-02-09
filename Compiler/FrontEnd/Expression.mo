@@ -12310,7 +12310,7 @@ algorithm
     // That whole creating IM should be done the way checkModel works. but it's not. :( so
     // we have this.
     case DAE.INDEX(exp = DAE.ARRAY())
-      then expandSlice(inSubscript.exp);
+      then expandSliceExp(inSubscript.exp);
 
     // An index subscript, return it as an array.
     case DAE.INDEX() then {inSubscript};
@@ -12321,7 +12321,7 @@ algorithm
 
     // A slice subscript.
     case DAE.SLICE()
-      then expandSlice(inSubscript.exp);
+      then expandSliceExp(inSubscript.exp);
 
   end match;
 end expandSubscript;
@@ -12357,7 +12357,7 @@ algorithm
   end match;
 end expandDimension;
 
-protected function expandSlice
+public function expandSliceExp
   "Expands a slice subscript expression."
   input DAE.Exp inSliceExp;
   output list<DAE.Subscript> outSubscripts;
@@ -12370,8 +12370,11 @@ algorithm
     case DAE.ARRAY(array = expl)
       then List.map(expl, makeIndexSubscript);
 
+    case DAE.RANGE()
+      then List.map(Expression.expandRange(inSliceExp), makeIndexSubscript);
+
   end match;
-end expandSlice;
+end expandSliceExp;
 
 public function dimensionSizesSubscripts
   input list<Integer> inDimSizes;
@@ -12867,6 +12870,36 @@ algorithm
 
   outContinue := not outContainsCall;
 end containsAnyCall_traverser;
+
+public function rangeSize
+  "Tries to figure out the size of a range expression. Either return the size or
+   fails."
+  input DAE.Exp inRange;
+  output Integer outSize;
+algorithm
+  outSize := match inRange
+    local
+      Integer start, step, stop;
+
+    case DAE.RANGE(start = DAE.ICONST(start),
+                   step = NONE(),
+                   stop = DAE.ICONST(stop))
+      then max(stop - start, 0);
+
+    case DAE.RANGE(start = DAE.ICONST(start),
+                   step = SOME(DAE.ICONST(step)),
+                   stop = DAE.ICONST(stop))
+      algorithm
+        if step <> 0 then
+          outSize := max(realInt(floor(realDiv(stop - start, step))) + 1, 0);
+        else
+          fail();
+        end if;
+      then
+        outSize;
+
+  end match;
+end rangeSize;
 
 annotation(__OpenModelica_Interface="frontend");
 end Expression;

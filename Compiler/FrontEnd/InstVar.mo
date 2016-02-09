@@ -1614,7 +1614,7 @@ algorithm
     // Handle DIM_INTEGER, where the dimension is >0
     case (cache,env,ih,store,ci_state,_,_,_,(_,_),_,_,DAE.DIM_INTEGER(integer = stop),_,_,_,_,_,_,graph,csets)
       equation
-        (cache,env,ih,store,dae,csets,ty,graph) = instArrayDimInteger(cache,env,ih,store,ci_state,inMod,inPrefix,inIdent,inElement,inPrefixes,stop,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inComment,info,graph,csets,DAE.emptyDae);
+        (cache,env,ih,store,dae,csets,ty,graph) = instArrayDimInteger(cache,env,ih,store,ci_state,inMod,inPrefix,inIdent,inElement,inPrefixes,stop,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inComment,info,graph,csets);
       then
         (cache,env,ih,store,dae,csets,ty,graph);
 
@@ -1668,113 +1668,72 @@ Special case for DIM_INTEGER: tail-recursive implementation since the number of 
   input ClassInf.State inState;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
-  input String inIdent;
+  input String inName;
   input tuple<SCode.Element, SCode.Attributes> inElement;
   input SCode.Prefixes inPrefixes;
-  input Integer thisDim;
-  input DAE.Dimensions inDimensionLst;
-  input list<DAE.Subscript> inIntegerLst;
+  input Integer inDimensionSize;
+  input DAE.Dimensions inRestDimensions;
+  input list<DAE.Subscript> inSubscripts;
   input list<list<DAE.Dimension>> inInstDims;
-  input Boolean inBoolean;
+  input Boolean inImpl;
   input SCode.Comment inComment;
-  input SourceInfo info;
+  input SourceInfo inInfo;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
-  input DAE.DAElist accDae;
-  output FCore.Cache outCache;
-  output FCore.Graph outEnv;
-  output InnerOuter.InstHierarchy outIH;
-  output UnitAbsyn.InstStore outStore;
-  output DAE.DAElist outDae;
-  output Connect.Sets outSets;
-  output DAE.Type outType;
-  output ConnectionGraph.ConnectionGraph outGraph;
+  output FCore.Cache outCache = inCache;
+  output FCore.Graph outEnv = inEnv;
+  output InnerOuter.InstHierarchy outIH = inIH;
+  output UnitAbsyn.InstStore outStore = inStore;
+  output DAE.DAElist outDae = DAE.emptyDae;
+  output Connect.Sets outSets = inSets;
+  output DAE.Type outType = DAE.T_UNKNOWN_DEFAULT;
+  output ConnectionGraph.ConnectionGraph outGraph = inGraph;
+protected
+  SCode.Element c, cls;
+  DAE.Mod mod, imod;
+  Absyn.Path cls_path;
+  SCode.Mod smod;
+  SCode.Attributes attr;
+  DAE.Exp e;
+  DAE.Subscript s;
+  list<list<DAE.Dimension>> inst_dims;
+  DAE.DAElist dae;
 algorithm
-  (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph) :=
-  match (inCache,inEnv,inIH,inStore,inState,inMod,inPrefix,inIdent,inElement,inPrefixes,thisDim,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inComment,info,inGraph,inSets,accDae)
-    local
-      DAE.Exp e,lhs,rhs;
-      DAE.Properties p;
-      FCore.Cache cache;
-      FCore.Graph env_1,env_2,env,compenv;
-      Connect.Sets csets;
-      DAE.Type ty;
-      ClassInf.State st,ci_state;
-      DAE.ComponentRef cr;
-      DAE.Type ty_1;
-      DAE.Mod mod,mod_1,mod_2;
-      Prefix.Prefix pre;
-      String n, str1, str2, str3, str4;
-      SCode.Element cl;
-      SCode.Attributes attr;
-      Integer i,stop,i_1;
-      DAE.Dimension dim;
-      DAE.Dimensions dims;
-      list<DAE.Subscript> idxs;
-      InstDims inst_dims;
-      Boolean impl;
-      SCode.Comment comment;
-      DAE.DAElist dae,dae1,dae2,daeLst;
-      ConnectionGraph.ConnectionGraph graph;
-      InstanceHierarchy ih;
-      DAE.ElementSource source "the origin of the element";
-      DAE.Subscript s;
-      SCode.Element clBase;
-      Absyn.Path path;
-      SCode.Attributes absynAttr;
-      SCode.Mod scodeMod;
-      DAE.Mod mod2, mod3;
-      String lit;
-      list<String> l;
-      Integer enum_size;
-      Absyn.Path enum_type, enum_lit;
-      SCode.Prefixes pf;
-      UnitAbsyn.InstStore store;
-
-    // Stop=true
-    case (cache,env,ih,store,_,_,_,_,(_,_),_,0,_,_,_,_,_,_,graph,csets,dae) then (cache,env,ih,store,dae,csets,DAE.T_UNKNOWN_DEFAULT,graph);
-
-    // Stop=false
-
-    // adrpo: if a class is derived WITH AN ARRAY DIMENSION we should instVar2 the derived from type not the actual type!!!
-    case (cache,env,ih,store,ci_state,mod,pre,n,
-          (cl as SCode.CLASS(classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path,SOME(_)),
-                                                    modifications=scodeMod)),
-                                                    attr),
-          pf,i,dims,idxs,_,impl,comment,_,graph, _, _)
-      equation
-        true = i > 0;
-        (_,clBase,_) = Lookup.lookupClass(cache, env, path, SOME(cl.info));
+  (cls, mod, attr, inst_dims) := match inElement
+    // adrpo: if a class is derived WITH AN ARRAY DIMENSION we should instVar2
+    // the derived from type not the actual type!!!
+    case (c as SCode.CLASS(classDef = SCode.DERIVED(
+            typeSpec = Absyn.TPATH(cls_path, SOME(_)), modifications = smod)),
+          attr)
+      algorithm
+        (_, cls, _) := Lookup.lookupClass(outCache, outEnv, cls_path, SOME(c.info));
         /* adrpo: TODO: merge also the attributes, i.e.:
            type A = input discrete flow Integer[3];
            A x; <-- input discrete flow IS NOT propagated even if it should. FIXME!
          */
         //SOME(attr3) = SCode.mergeAttributes(attr,SOME(absynAttr));
 
-        scodeMod = InstUtil.chainRedeclares(mod, scodeMod);
-
-        (_,mod2) = Mod.elabMod(cache, env, ih, pre, scodeMod, impl, Mod.DERIVED(path), info);
-        mod3 = Mod.merge(mod, mod2);
-        e = DAE.ICONST(i);
-        mod_1 = Mod.lookupIdxModification(mod3, e);
-        s = DAE.INDEX(e);
-        (cache,env_1,ih,store,dae1,csets,ty,graph) = instVar2(cache,env,ih, store,ci_state, mod_1, pre, n, clBase, attr, pf, dims, (s :: idxs), {} /* inst_dims */, impl, comment, info, graph, inSets);
-        (cache,_,ih,store,daeLst,csets,_,graph) = instArrayDimInteger(cache, env, ih, store, ci_state, mod, pre, n, (cl,attr), pf, i - 1, dims, idxs, {} /* inst_dims */, impl, comment,info,graph, csets, DAEUtil.joinDaes(dae1, accDae));
+        smod := InstUtil.chainRedeclares(inMod, smod);
+        (_, mod) := Mod.elabMod(outCache, outEnv, outIH, inPrefix, smod, inImpl,
+          Mod.DERIVED(cls_path), inInfo);
+        mod := Mod.merge(inMod, mod);
       then
-        (cache,env_1,ih,store,daeLst,csets,ty,graph);
+        (cls, mod, attr, {});
 
-    case (cache,env,ih,store,ci_state,mod,pre,n,(cl,attr),pf,i,dims,idxs,inst_dims,impl,comment,_,graph,csets,_)
-      equation
-        true = i > 0;
-        e = DAE.ICONST(i);
-        mod_1 = Mod.lookupIdxModification(mod, e);
-        s = DAE.INDEX(e);
-        (cache,env_1,ih,store,dae1,csets,ty,graph) = instVar2(cache,env,ih, store,ci_state, mod_1, pre, n, cl, attr, pf,dims, (s :: idxs), inst_dims, impl, comment,info,graph, csets);
-        (cache,_,ih,store,daeLst,csets,_,graph) = instArrayDimInteger(cache,env,ih,store, ci_state, mod, pre, n, (cl,attr), pf, i - 1, dims, idxs, inst_dims, impl, comment,info,graph, csets, DAEUtil.joinDaes(dae1, accDae));
-      then
-        (cache,env_1,ih,store,daeLst,csets,ty,graph);
-
+    case (cls, attr) then (cls, inMod, attr, inInstDims);
   end match;
+
+  for i in inDimensionSize:-1:1 loop
+    e := DAE.ICONST(i);
+    imod := Mod.lookupIdxModification(mod, e);
+    s := DAE.INDEX(e);
+
+    (outCache, outEnv, outIH, outStore, dae, outSets, outType, outGraph) :=
+      instVar2(outCache, inEnv, outIH, outStore, inState, imod, inPrefix,
+        inName, cls, attr, inPrefixes, inRestDimensions, s :: inSubscripts,
+        inst_dims, inImpl, inComment, inInfo, outGraph, outSets);
+    outDae := DAEUtil.joinDaes(dae, outDae);
+  end for;
 end instArrayDimInteger;
 
 protected function instArrayDimEnum
