@@ -558,9 +558,12 @@ algorithm
         //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
       then
         (knvars,iCache,repl,repleval);
+
+    //waurich: if there is unevaluated binding, dont take the start value as a binding replacement. compute the unevaluated binding!
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),values=attr),_,_,_,_,_,_,_)
       equation
         true = BackendVariable.varFixed(var);
+        false = BackendVariable.varHasBindExp(var);
         e = DAEUtil.getStartAttrFail(attr);
         // apply replacements
         (e1,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
