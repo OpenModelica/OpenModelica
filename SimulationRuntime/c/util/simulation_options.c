@@ -415,6 +415,7 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
   "symEuler",
   "symEulerSsc",
   "heun",
+  "ida",
   "qss"
 };
 
@@ -433,6 +434,7 @@ const char *SOLVER_METHOD_DESC[S_MAX] = {
   "symEuler - symbolic implicit euler, [compiler flag +symEuler needed]",
   "symEulerSsc - symbolic implicit euler with step-size control, [compiler flag +symEuler needed]",
   "heun - Heun's method (Runge-Kutta fixed step, order 2)",
+  "ida - Sundials ida solver",
   "qss - A QSS solver [experimental]"
 };
 
