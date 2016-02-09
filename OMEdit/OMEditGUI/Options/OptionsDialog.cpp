@@ -2589,6 +2589,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
     mpTargetLanguageComboBox->setItemData(i, description, Qt::ToolTipRole);
     i++;
   }
+  mpTargetLanguageComboBox->setCurrentIndex(mpTargetLanguageComboBox->findText("C"));
   // Compiler
   mpCompilerLabel = new Label(tr("Target Compiler:"));
   OMCInterface::getConfigFlagValidOptions_res target = mpOptionsDialog->getMainWindow()->getOMCProxy()->getConfigFlagValidOptions("target");
