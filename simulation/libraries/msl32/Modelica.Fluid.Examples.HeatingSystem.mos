@@ -162,12 +162,20 @@ runScript(modelTesting);getErrorString();
 // => select value from tank.ports[2].p(start = 100000.0) for variable: tank.ports[2].p
 // Warning: Alias set with several free start values
 //  * candidate: radiator.statesFM[3].p(start = 5000000.0)
-//  * candidate: radiator.state_b.p(start = 5000000.0)
+//  * candidate: radiator.state_b.p(start = 110000.0)
 //  * candidate: radiator.port_b.p(start = 5000000.0)
 //  * candidate: tank.ports[1].p(start = 100000.0)
 //  * candidate: sensor_T_return.port.p(start = 5000000.0)
 //  * candidate: radiator.flowModel.states[3].p(start = 5000000.0)
 // => select value from radiator.statesFM[3].p(start = 5000000.0) for variable: radiator.statesFM[3].p
+// Warning: Alias set with several free start values
+//  * candidate: radiator.statesFM[1].p(start = 5000000.0)
+//  * candidate: radiator.state_a.p(start = 110000.0)
+//  * candidate: radiator.port_a.p(start = 5000000.0)
+//  * candidate: valve.port_b.p(start = 5000000.0)
+//  * candidate: valve.state_b.p(start = 5000000.0)
+//  * candidate: radiator.flowModel.states[1].p(start = 5000000.0)
+// => select value from radiator.statesFM[1].p(start = 5000000.0) for variable: radiator.statesFM[1].p
 // Warning: Alias set with several free start values
 //  * candidate: pump.port_b.m_flow(start = pump.m_flow_start)
 //  * candidate: heater.m_flows[1](start = 0.0)
