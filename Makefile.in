@@ -101,7 +101,7 @@ lis-clean:
 
 .PRECIOUS: Makefile
 
-Makefile: Makefile.in config.status common/m4/*.m4
+Makefile: Makefile.in config.status common/m4/*.m4 m4/*.m4
 	./config.status
 
 config.status: configure

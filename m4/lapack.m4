@@ -14,6 +14,14 @@ AC_DEFUN([OMC_AC_LAPACK], [
     AC_LANG_PUSH([C])
     AC_MSG_CHECKING([LAPACK/BLAS flags])
     OLDLIBS="$LIBS"
+
+    LAPACK_LINKER_FLAGS=""
+    for flag in -Wl,--no-undefined; do
+      LIBS="$LAPACK_LINKER_FLAGS $flag"
+      AC_TRY_LINK([], [return 0;], [LAPACK_LINKER_FLAGS="$LIBS"],[])
+    done
+    LIBS=""
+
     if test "$LD_LAPACK" = "auto"; then
       LD_LAPACK=""
       if test "$1" = "static" || test "$2" = "static"; then
@@ -26,7 +34,7 @@ AC_DEFUN([OMC_AC_LAPACK], [
       for flags in "-lopenblas" "`$PKGCONFIG lapack`" "`$PKGCONFIG lapack blas`" "-llapack -lblas" "-llapack -lblas -lm -latlas"; do
         for extra in "" "-lgfortran" "-lgfortran -lquadmath"; do
           THESELIBS="$LD_LAPACK_STATIC_HEAD $flags $extra $LD_LAPACK_STATIC_TAIL"
-          LIBS="-shared $THESELIBS -Wl,--no-undefined"
+          LIBS="-shared $THESELIBS $LAPACK_LINKER_FLAGS"
           AC_LINK_IFELSE([AC_LANG_CALL([], [dgesv_])],[
             AC_LINK_IFELSE([AC_LANG_CALL([], [dswap_])],[LD_LAPACK="$THESELIBS"],[])
           ],[])
@@ -41,7 +49,7 @@ AC_DEFUN([OMC_AC_LAPACK], [
 
         for extra_dynamic in "-lm" "-lpthread" "-lm -lpthread"; do
           THESELIBS="$LD_LAPACK_STATIC_HEAD $flags $LD_LAPACK_STATIC_TAIL $extra_dynamic"
-          LIBS="-shared $THESELIBS -Wl,--no-undefined"
+          LIBS="-shared $THESELIBS $LAPACK_LINKER_FLAGS"
           AC_LINK_IFELSE([AC_LANG_CALL([], [dgesv_])],[
             AC_LINK_IFELSE([AC_LANG_CALL([], [dswap_])],[LD_LAPACK="$THESELIBS"],[])
           ],[])
