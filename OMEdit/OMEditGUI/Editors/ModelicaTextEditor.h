@@ -79,6 +79,9 @@ public:
   QString getLastValidText() {return mLastValidText;}
   QStringList getClassNames(QString *errorString);
   bool validateText();
+  QString removeLeadingSpaces(QString contents);
+  void storeLeadingSpaces(QMap<int, int> leadingSpacesMap);
+  QString getPlainText();
 private:
   QString mLastValidText;
   bool mTextChanged;

@@ -304,7 +304,9 @@ LibraryTreeItem::LibraryTreeItem()
   setIcon(QIcon());
   setPixmap(QPixmap());
   setDragPixmap(QPixmap());
+  setClassTextBefore("");
   setClassText("");
+  setClassTextAfter("");
   setExpanded(false);
   setNonExisting(true);
 }
@@ -353,7 +355,9 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
       }
     }
   }
+  setClassTextBefore("");
   setClassText("");
+  setClassTextAfter("");
   setExpanded(false);
   setNonExisting(false);
   updateAttributes();
@@ -1343,7 +1347,6 @@ void LibraryTreeModel::updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
  * \param pLibraryTreeItem
  * \sa OMCProxy::listFile()
  * \sa OMCProxy::diffModelicaFileListings()
- *
  */
 void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem)
 {
@@ -1359,6 +1362,39 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
   QString before = pParentLibraryTreeItem->getClassText(this);
   QString after = pOMCProxy->listFile(pParentLibraryTreeItem->getNameStructure());
   QString contents = pOMCProxy->diffModelicaFileListings(before, after);
+  pParentLibraryTreeItem->setClassText(contents);
+  if (pParentLibraryTreeItem->getModelWidget()) {
+    pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getNameStructure()).append("*"));
+    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pParentLibraryTreeItem->getModelWidget()->getEditor());
+    if (pModelicaTextEditor) {
+      pModelicaTextEditor->setPlainText(contents);
+    }
+  }
+  // if we first updated the parent class then the child classes needs to be updated as well.
+  if (pParentLibraryTreeItem != pLibraryTreeItem) {
+    pOMCProxy->loadString(pParentLibraryTreeItem->getClassText(this), pParentLibraryTreeItem->getFileName(), Helper::utf8, false, false);
+    updateChildLibraryTreeItemClassText(pParentLibraryTreeItem, contents, pParentLibraryTreeItem->getFileName());
+    pParentLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pParentLibraryTreeItem->getNameStructure()));
+  }
+}
+
+/*!
+ * \brief LibraryTreeModel::updateLibraryTreeItemClassTextManually
+ * Updates the Parent Modelica class text after user has made changes manually in the text view.
+ * \param pLibraryTreeItem
+ * \param contents
+ */
+void LibraryTreeModel::updateLibraryTreeItemClassTextManually(LibraryTreeItem *pLibraryTreeItem, QString contents)
+{
+  // set the library node not saved.
+  pLibraryTreeItem->setIsSaved(false);
+  updateLibraryTreeItem(pLibraryTreeItem);
+  // update the containing parent LibraryTreeItem class text.
+  LibraryTreeItem *pParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
+  // we also mark the containing parent class unsaved because it is very important for saving of single file packages.
+  pParentLibraryTreeItem->setIsSaved(false);
+  updateLibraryTreeItem(pParentLibraryTreeItem);
+  OMCProxy *pOMCProxy = mpLibraryWidget->getMainWindow()->getOMCProxy();
   pParentLibraryTreeItem->setClassText(contents);
   if (pParentLibraryTreeItem->getModelWidget()) {
     pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getNameStructure()).append("*"));
@@ -1400,7 +1436,7 @@ void LibraryTreeModel::readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTre
       if (pLibraryTreeItem->isInPackageOneFile()) {
         LibraryTreeItem *pParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
         if (pParentLibraryTreeItem) {
-          pLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromText(pLibraryTreeItem, pParentLibraryTreeItem->getClassText(this)));
+          readLibraryTreeItemClassTextFromText(pLibraryTreeItem, pParentLibraryTreeItem->getClassText(this));
         }
       } else {
         pLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromFile(pLibraryTreeItem));
@@ -1624,7 +1660,7 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
   } else {
     QMessageBox::critical(mpLibraryWidget->getMainWindow(), QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(mpLibraryWidget->getMainWindow()->getOMCProxy()->getResult())
-                          .append(tr("while deleting ") + pLibraryTreeItem->getNameStructure()), Helper::ok);
+                          .append(tr(" while deleting ") + pLibraryTreeItem->getNameStructure()), Helper::ok);
     return false;
   }
 }
@@ -1679,16 +1715,17 @@ bool LibraryTreeModel::unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bo
 
 /*!
  * \brief LibraryTreeModel::unloadLibraryTreeItem
- * Removes the LibraryTreeItem and deletes the Modelica class.
+ * Removes the LibraryTreeItem and deletes the Modelica class if deleteClass argument is false.
  * \param pLibraryTreeItem
+ * \param deleteClass
  * \return
  */
-bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool deleteClass)
 {
   /* Delete the class in OMC.
    * If deleteClass is successful remove the class from Library Browser.
    */
-  if (mpLibraryWidget->getMainWindow()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
+  if (deleteClass || mpLibraryWidget->getMainWindow()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
     /* QSortFilterProxy::filterAcceptRows changes the expand/collapse behavior of indexes or I am using it in some stupid way.
      * If index is expanded and we delete it then the next sibling index automatically becomes expanded.
      * The following code overcomes this issue. It stores the next index expand state and then apply it after deletion.
@@ -1732,7 +1769,7 @@ bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   } else {
     QMessageBox::critical(mpLibraryWidget->getMainWindow(), QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(mpLibraryWidget->getMainWindow()->getOMCProxy()->getResult())
-                          .append(tr("while deleting ") + pLibraryTreeItem->getNameStructure()), Helper::ok);
+                          .append(tr(" while deleting ") + pLibraryTreeItem->getNameStructure()), Helper::ok);
     return false;
   }
 }
@@ -1951,7 +1988,7 @@ void LibraryTreeModel::updateChildLibraryTreeItemClassText(LibraryTreeItem *pLib
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
     if (pChildLibraryTreeItem && pChildLibraryTreeItem->getFileName().compare(fileName) == 0) {
       pChildLibraryTreeItem->setClassInformation(mpLibraryWidget->getMainWindow()->getOMCProxy()->getClassInformation(pChildLibraryTreeItem->getNameStructure()));
-      pChildLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromText(pChildLibraryTreeItem, contents));
+      readLibraryTreeItemClassTextFromText(pChildLibraryTreeItem, contents);
       if (pChildLibraryTreeItem->getModelWidget()) {
         ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pChildLibraryTreeItem->getModelWidget()->getEditor());
         if (pModelicaTextEditor) {
@@ -1971,32 +2008,28 @@ void LibraryTreeModel::updateChildLibraryTreeItemClassText(LibraryTreeItem *pLib
 /*!
  * \brief LibraryTreeModel::readLibraryTreeItemClassTextFromText
  * Reads the contents of the Modelica class nested in another class.
- * Removes the trailing spaces to make it look nice.
+ * \param pLibraryTreeItem
  * \param contents
- * \return
  */
-QString LibraryTreeModel::readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents)
+void LibraryTreeModel::readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents)
 {
-  QString text;
-  int startTrailingSpaces = 0;
-  int trailingSpaces = 0;
+  QString before, text, after;
   QTextStream textStream(&contents);
   int lineNumber = 1;
-  while (!textStream.atEnd() && lineNumber <= pLibraryTreeItem->mClassInformation.lineNumberEnd) {
+  while (!textStream.atEnd()) {
     QString currentLine = textStream.readLine();
-    if (pLibraryTreeItem->inRange(lineNumber)) {
-      // if reading the first line then determine the trailing spaces size.
-      if (pLibraryTreeItem->mClassInformation.lineNumberStart == lineNumber) {
-        startTrailingSpaces = StringHandler::getTrailingSpacesSize(currentLine);
-        trailingSpaces = startTrailingSpaces;
-      } else {
-        trailingSpaces = qMin(startTrailingSpaces, StringHandler::getTrailingSpacesSize(currentLine));
-      }
-      text += currentLine.mid(trailingSpaces) + "\n";
+    if (lineNumber < pLibraryTreeItem->mClassInformation.lineNumberStart) {
+      before += currentLine + "\n";
+    } else if (lineNumber > pLibraryTreeItem->mClassInformation.lineNumberEnd) {
+      after += currentLine + "\n";
+    } else if (pLibraryTreeItem->inRange(lineNumber)) {
+      text += currentLine + "\n";
     }
     lineNumber++;
   }
-  return text;
+  pLibraryTreeItem->setClassTextBefore(before);
+  pLibraryTreeItem->setClassText(text);
+  pLibraryTreeItem->setClassTextAfter(after);
 }
 
 /*!

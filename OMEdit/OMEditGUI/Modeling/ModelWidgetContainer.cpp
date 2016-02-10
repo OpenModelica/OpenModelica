@@ -2778,13 +2778,19 @@ bool ModelWidget::modelicaEditorTextChanged()
   }
   /* if no errors are found with the Modelica Text then load it in OMC */
   QString className = classNames.at(0);
-  QString modelicaText = pModelicaTextEditor->getPlainTextEdit()->toPlainText();
-  QString stringToLoad = modelicaText;
-  if (!modelicaText.startsWith("within")) {
-    stringToLoad = QString("within %1;%2").arg(mpLibraryTreeItem->parent()->getNameStructure()).arg(modelicaText);
-  }
-  if (!pOMCProxy->loadString(stringToLoad, mpLibraryTreeItem->getFileName(), Helper::utf8, true)) {
-    return false;
+  QString modelicaText = pModelicaTextEditor->getPlainText();
+  QString stringToLoad;
+  LibraryTreeItem *pParentLibraryTreeItem= mpModelWidgetContainer->getMainWindow()->getLibraryWidget()->getLibraryTreeModel()->getContainingFileParentLibraryTreeItem(mpLibraryTreeItem);
+  if (pParentLibraryTreeItem != mpLibraryTreeItem) {
+    stringToLoad = mpLibraryTreeItem->getClassTextBefore() + modelicaText + mpLibraryTreeItem->getClassTextAfter();
+    if (!pOMCProxy->loadString(stringToLoad, pParentLibraryTreeItem->getFileName(), Helper::utf8, true)) {
+      return false;
+    }
+  } else {
+    stringToLoad = modelicaText;
+    if (!pOMCProxy->loadString(stringToLoad, mpLibraryTreeItem->getFileName(), Helper::utf8, true)) {
+      return false;
+    }
   }
   /* if user has changed the class contents then refresh it. */
   if (className.compare(mpLibraryTreeItem->getNameStructure()) == 0) {
@@ -2792,7 +2798,7 @@ bool ModelWidget::modelicaEditorTextChanged()
     reDrawModelWidget();
     mpLibraryTreeItem->setClassText(modelicaText);
     if (mpLibraryTreeItem->isInPackageOneFile()) {
-      updateModelicaText();
+      updateModelicaTextManually(stringToLoad);
     }
     // update child classes
     updateChildClasses(mpLibraryTreeItem);
@@ -2801,7 +2807,7 @@ bool ModelWidget::modelicaEditorTextChanged()
      * Update the LibraryTreeItem with new class name and then refresh it.
      */
     int row = mpLibraryTreeItem->row();
-    pLibraryTreeModel->unloadLibraryTreeItem(mpLibraryTreeItem);
+    pLibraryTreeModel->unloadLibraryTreeItem(mpLibraryTreeItem, true);
     QString name = StringHandler::getLastWordAfterDot(className);
     LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(name, mpLibraryTreeItem->parent(), false, false, true, row);
     pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
@@ -2819,7 +2825,7 @@ bool ModelWidget::modelicaEditorTextChanged()
     setModelFilePathLabel(pLibraryTreeItem->getFileName());
     reDrawModelWidget();
     if (pLibraryTreeItem->isInPackageOneFile()) {
-      updateModelicaText();
+      updateModelicaTextManually(stringToLoad);
     }
   }
   return true;
@@ -2913,6 +2919,18 @@ void ModelWidget::updateModelicaText()
   setWindowTitle(QString(mpLibraryTreeItem->getNameStructure()).append("*"));
   LibraryTreeModel *pLibraryTreeModel = mpModelWidgetContainer->getMainWindow()->getLibraryWidget()->getLibraryTreeModel();
   pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
+}
+
+/*!
+ * \brief ModelWidget::updateModelicaTextManually
+ * Updates the Parent Modelica class text after user has made changes manually in the text view.
+ * \param contents
+ */
+void ModelWidget::updateModelicaTextManually(QString contents)
+{
+  setWindowTitle(QString(mpLibraryTreeItem->getNameStructure()).append("*"));
+  LibraryTreeModel *pLibraryTreeModel = mpModelWidgetContainer->getMainWindow()->getLibraryWidget()->getLibraryTreeModel();
+  pLibraryTreeModel->updateLibraryTreeItemClassTextManually(mpLibraryTreeItem, contents);
 }
 
 /*!
