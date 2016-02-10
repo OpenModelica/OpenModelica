@@ -38,11 +38,13 @@ uniontype Tree
   "The binary tree data structure."
 
   record NODE
-    Option<ValueNode> value "The value stored in the node.";
+    ValueNode value "The value stored in the node.";
     Integer height "Height of tree, used for balancing";
-    Option<Tree> left "Left subtree.";
-    Option<Tree> right "Right subtree.";
+    Tree left "Left subtree.";
+    Tree right "Right subtree.";
   end NODE;
+
+  record EMPTY end EMPTY;
 end Tree;
 
 uniontype ValueNode
@@ -76,7 +78,7 @@ end keyCompare;
 
 function new
   "Return an empty tree"
-  output Tree outTree = NODE(NONE(), 0, NONE(), NONE());
+  output Tree outTree = EMPTY();
   annotation(__OpenModelica_EarlyInline = true);
 end new;
 
@@ -94,26 +96,25 @@ algorithm
       Integer key_comp;
 
     // Empty tree.
-    case NODE(value = NONE(), left = NONE(), right = NONE())
-      then NODE(SOME(VALUE(inKey, inValue)), 1, NONE(), NONE());
+    case EMPTY()
+      then NODE(VALUE(inKey, inValue), 1, EMPTY(), EMPTY());
 
-    case NODE(value = SOME(VALUE(key = key)))
+    case NODE(value = VALUE(key = key))
       algorithm
         key_comp := keyCompare(inKey, key);
 
-        if key_comp == 0 then
-          // Replace node if allowed, otherwise fail.
-          if inReplaceExisting then
-            outTree.value := SOME(VALUE(inKey, inValue));
-          else
-            fail();
-          end if;
+        if key_comp == -1 then
+          // Replace left branch.
+          outTree.left := add(inKey, inValue, outTree.left, inReplaceExisting);
         elseif key_comp == 1 then
           // Replace right branch.
-          outTree.right := SOME(add(inKey, inValue, branchOrEmpty(outTree.right), inReplaceExisting));
-        elseif key_comp == -1 then
-          // Replace left branch.
-          outTree.left := SOME(add(inKey, inValue, branchOrEmpty(outTree.left), inReplaceExisting));
+          outTree.right := add(inKey, inValue, outTree.right, inReplaceExisting);
+        elseif inReplaceExisting then
+          // Replace node if allowed.
+          outTree.value := VALUE(inKey, inValue);
+        else
+          // Fail if not allowed to replace existing node.
+          fail();
         end if;
       then
         if key_comp == 0 then outTree else balance(outTree);
@@ -147,20 +148,38 @@ protected
   Integer key_comp;
   Tree tree;
 algorithm
-  NODE(value = SOME(VALUE(key = key))) := inTree;
+  NODE(value = VALUE(key = key)) := inTree;
   key_comp := keyCompare(inKey, key);
 
   outValue := match (key_comp, inTree)
-    case ( 0, NODE(value = SOME(VALUE(value = outValue)))) then outValue;
-    case ( 1, NODE(right = SOME(tree))) then get(tree, key);
-    case (-1, NODE(left = SOME(tree))) then get(tree, key);
+    case ( 0, NODE(value = VALUE(value = outValue))) then outValue;
+    case ( 1, NODE(right = tree)) then get(tree, inKey);
+    case (-1, NODE(left = tree)) then get(tree, inKey);
   end match;
 end get;
 
 function toList
   "Converts the tree to a flat list of key-value tuples."
   input Tree inTree;
-  output list<tuple<Key, Value>> outList = toList2(SOME(inTree));
+  input list<tuple<Key, Value>> inAccum = {};
+  output list<tuple<Key, Value>> outList;
+algorithm
+  outList := match inTree
+    local
+      Key key;
+      Value value;
+
+    case NODE(value = VALUE(key, value))
+      algorithm
+        outList := (key, value) :: inAccum;
+        outList := toList(inTree.left, outList);
+        outList := toList(inTree.right, outList);
+      then
+        outList;
+
+    else inAccum;
+
+  end match;
 end toList;
 
 function join
@@ -191,33 +210,26 @@ algorithm
       Value value, new_value;
       Tree branch, new_branch;
 
-    case NODE()
+    case NODE(value = VALUE(key, value))
       algorithm
-        if isSome(outTree.value) then
-          SOME(VALUE(key, value)) := outTree.value;
-          new_value := inFunc(key, value);
-          if not referenceEq(value, new_value) then
-            outTree.value := SOME(VALUE(key, new_value));
-          end if;
+        new_value := inFunc(key, value);
+        if not referenceEq(value, new_value) then
+          outTree.value := VALUE(key, new_value);
         end if;
 
-        if isSome(outTree.left) then
-          SOME(branch) := outTree.left;
-          new_branch := map(branch, inFunc);
-          if not referenceEq(branch, new_branch) then
-            outTree.left := SOME(new_branch);
-          end if;
+        new_branch := map(outTree.left, inFunc);
+        if not referenceEq(new_branch, outTree.left) then
+          outTree.left := new_branch;
         end if;
 
-        if isSome(outTree.right) then
-          SOME(branch) := outTree.right;
-          new_branch := map(branch, inFunc);
-          if not referenceEq(branch, new_branch) then
-            outTree.right := SOME(new_branch);
-          end if;
+        new_branch := map(outTree.right, inFunc);
+        if not referenceEq(new_branch, outTree.right) then
+          outTree.right := new_branch;
         end if;
       then
         outTree;
+
+    else inTree;
   end match;
 end map;
 
@@ -242,24 +254,15 @@ algorithm
       Value value;
       Tree branch;
 
-    case NODE()
+    case NODE(value = VALUE(key, value))
       algorithm
-        if isSome(inTree.value) then
-          SOME(VALUE(key, value)) := inTree.value;
-          outResult := inFunc(key, value, outResult);
-        end if;
-
-        if isSome(inTree.left) then
-          SOME(branch) := inTree.left;
-          outResult := fold(branch, inFunc, outResult);
-        end if;
-
-        if isSome(inTree.right) then
-          SOME(branch) := inTree.right;
-          outResult := fold(branch, inFunc, outResult);
-        end if;
+        outResult := inFunc(key, value, outResult);
+        outResult := fold(inTree.left, inFunc, outResult);
+        outResult := fold(inTree.right, inFunc, outResult);
       then
         outResult;
+
+    else outResult;
   end match;
 end fold;
 
@@ -269,8 +272,8 @@ function printTreeStr
   input Tree inTree;
   output String outString;
 protected
-  Option<ValueNode> val_node;
-  Option<Tree> left, right;
+  ValueNode val_node;
+  Tree left, right;
 algorithm
   NODE(value = val_node, left = left, right = right) := inTree;
   outString := printTreeStr2(left, true, "") +
@@ -280,79 +283,6 @@ end printTreeStr;
 
 protected
 
-function toList2
-  "Helper function to toList."
-  input Option<Tree> inTree;
-  input list<tuple<Key, Value>> inAccum = {};
-  output list<tuple<Key, Value>> outList = inAccum;
-protected
-  Option<ValueNode> ovalue;
-  Option<Tree> left, right;
-  Key key;
-  Value value;
-algorithm
-  if isSome(inTree) then
-    SOME(NODE(value = ovalue, left = left, right = right)) := inTree;
-
-    if isSome(ovalue) then
-      SOME(VALUE(key = key, value = value)) := ovalue;
-      outList := (key, value) :: outList;
-    end if;
-
-    outList := toList2(left, outList);
-    outList := toList2(right, outList);
-  end if;
-end toList2;
-
-function branchOrEmpty
-  "Returns the given branch, or an empty node if the node is NONE."
-  input Option<Tree> inBranch;
-  output Tree outBranch;
-algorithm
-  outBranch := match inBranch
-    case SOME(outBranch) then outBranch;
-    else NODE(NONE(), 0, NONE(), NONE());
-  end match;
-end branchOrEmpty;
-
-function printTreeStr2
-  "Helper function to printTreeStr."
-  input Option<Tree> inTree;
-  input Boolean isLeft;
-  input String inIndent;
-  output String outString;
-protected
-  Option<ValueNode> val_node;
-  Option<Tree> left, right;
-  String left_str, right_str;
-algorithm
-  if isNone(inTree) then
-    outString := "";
-  else
-    SOME(NODE(value = val_node, left = left, right = right)) := inTree;
-    outString := printTreeStr2(left, true, inIndent + (if isLeft then "     " else " │   ")) +
-                 inIndent + (if isLeft then " ┌" else " └") + "────" +
-                 printNodeStr(val_node) + "\n" +
-                 printTreeStr2(right, false, inIndent + (if isLeft then " │   " else "     "));
-  end if;
-end printTreeStr2;
-
-function printNodeStr
-  "Helper function to printTreeStr."
-  input Option<ValueNode> inNode;
-  output String outString;
-algorithm
-  outString := match inNode
-    local
-      Key key;
-      Value value;
-
-    case SOME(VALUE(key = key, value = value))
-      then "(" + keyStr(key) + ", " + valueStr(value) + ")";
-    else "()";
-  end match;
-end printNodeStr;
-
 function balance
   "Balances a Tree"
   input Tree inTree;
@@ -361,68 +291,55 @@ algorithm
   outTree := match outTree
     local
       Integer lh, rh, diff;
-      Tree child;
+      Tree child, balanced_tree;
 
     case NODE()
       algorithm
-        lh := getHeight(outTree.left);
-        rh := getHeight(outTree.right);
+        lh := height(outTree.left);
+        rh := height(outTree.right);
         diff := lh - rh;
 
         if diff < -1 then
-          if isSome(outTree.right) and differenceInHeight(outTree.right) > 0 then
-            SOME(child) := outTree.right;
-            outTree.right := SOME(rotateRight(child));
+          if calculateBalance(outTree.right) > 0 then
+            outTree.right := rotateRight(outTree.right);
           end if;
-          outTree := rotateLeft(outTree);
+          balanced_tree := rotateLeft(outTree);
         elseif diff > 1 then
-          if isSome(outTree.left) and differenceInHeight(outTree.left) < 0 then
-            SOME(child) := outTree.left;
-            outTree.left := SOME(rotateLeft(child));
+          if calculateBalance(outTree.left) < 0 then
+            outTree.left := rotateLeft(outTree.left);
           end if;
-          outTree := rotateRight(outTree);
+          balanced_tree := rotateRight(outTree);
         else
           outTree.height := max(lh, rh) + 1;
+          balanced_tree := outTree;
         end if;
       then
-        outTree;
+        balanced_tree;
 
   end match;
 end balance;
 
-function differenceInHeight
-  "Returns the difference in height for the given tree."
-  input Option<Tree> inNode;
-  output Integer outDiff;
+function height
+  input Tree inNode;
+  output Integer outHeight;
 algorithm
-  outDiff := match inNode
-    local
-      Tree node;
-
-    case SOME(node as NODE()) then getHeight(node.left) - getHeight(node.right);
+  outHeight := match inNode
+    case NODE() then inNode.height;
     else 0;
   end match;
-end differenceInHeight;
+end height;
 
-function rotateRight
-  "Performs an AVL right rotation on the given tree."
+function calculateBalance
   input Tree inNode;
-  output Tree outNode = inNode;
+  output Integer outBalance;
 algorithm
-  outNode := match outNode
-    local
-      Tree child;
+  outBalance := match inNode
+    case NODE()
+      then height(inNode.left) - height(inNode.right);
 
-    case NODE(right = SOME(child as NODE()))
-      algorithm
-        outNode.left := child.right;
-        outNode := balance(outNode);
-        child.right := SOME(outNode);
-      then
-        balance(child);
-
+    else 0;
   end match;
-end rotateRight;
+end calculateBalance;
 
 function rotateLeft
   "Performs an AVL left rotation on the given tree."
@@ -433,27 +350,75 @@ algorithm
     local
       Tree child;
 
-    case NODE(right = SOME(child as NODE()))
+    case NODE(right = child as NODE())
       algorithm
         outNode.right := child.left;
-        outNode := balance(outNode);
-        child.left := SOME(outNode);
+        outNode.height := max(height(outNode.left), height(outNode.right)) + 1;
+        child.left := outNode;
+        child.height := max(height(outNode), height(child.right)) + 1;
       then
-        balance(child);
+        child;
+
+    else inNode;
 
   end match;
 end rotateLeft;
 
-function getHeight
-  "Retrieves the height of a node."
-  input Option<Tree> inNode;
-  output Integer outHeight;
+function rotateRight
+  "Performs an AVL right rotation on the given tree."
+  input Tree inNode;
+  output Tree outNode = inNode;
 algorithm
-  outHeight := match inNode
-    case NONE() then 0;
-    case SOME(NODE(height = outHeight)) then outHeight;
+  outNode := match outNode
+    local
+      Tree child;
+
+    case NODE(left = child as NODE())
+      algorithm
+        outNode.left := child.right;
+        outNode.height := max(height(outNode.left), height(outNode.right)) + 1;
+        child.right := outNode;
+        child.height := max(height(child.left), height(outNode)) + 1;
+      then
+        child;
+
+    else inNode;
+
   end match;
-end getHeight;
+end rotateRight;
+
+function printTreeStr2
+  "Helper function to printTreeStr."
+  input Tree inTree;
+  input Boolean isLeft;
+  input String inIndent;
+  output String outString;
+protected
+  Option<ValueNode> val_node;
+  Option<Tree> left, right;
+  String left_str, right_str;
+algorithm
+  outString := match inTree
+    case NODE()
+      then printTreeStr2(inTree.left, true, inIndent + (if isLeft then "     " else " │   ")) +
+           inIndent + (if isLeft then " ┌" else " └") + "────" +
+           printNodeStr(inTree.value) + "\n" +
+           printTreeStr2(inTree.right, false, inIndent + (if isLeft then " │   " else "     "));
+
+    else "";
+  end match;
+end printTreeStr2;
+
+function printNodeStr
+  input ValueNode inNode;
+  output String outString;
+protected
+  Key key;
+  Value value;
+algorithm
+  VALUE(key = key, value = value) := inNode;
+  outString := "(" + keyStr(key) + ", " + valueStr(value) + ")";
+end printNodeStr;
 
 annotation(__OpenModelica_Interface="util", __OpenModelica_isBaseClass=true);
 end BaseAvlTree;
