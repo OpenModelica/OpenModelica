@@ -3,7 +3,7 @@ CXX=g++
 CFLAGS=-g -falign-functions
 TOP_DIR=../../
 OMHOME=$(OMBUILDDIR)
-LDFLAGS=-L./ -lomparse -lomcruntime -L"$(OMHOME)/lib/omc" \
+LDFLAGS=-L./ $(LOMPARSE) $(LCOMPILERRUNTIME) -L"$(OMHOME)/lib/omc" \
 -lOpenModelicaRuntimeC \
 -lModelicaExternalC -lm \
 -lomantlr3 -lmico2313 -lregex -lwsock32 -llpsolve55 -luuid -lole32 $(GSLIB) -lws2_32 \
