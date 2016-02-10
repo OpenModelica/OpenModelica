@@ -54,11 +54,9 @@ mkbuilddirs:
 release: omc
 
 bootstrap-dependencies: graphstream $(BOOTSTRAP_FMIL_DEP) $(MINGW_EXTRA_LIBS)
-	# NOTE: OpenModelicaBootstrappingHeader.h has to be regenerated without any other process writing to so/etc or you get bus errors
-	$(MAKE) -f $(defaultMakefileTarget) -C Compiler OpenModelicaBootstrappingHeader.h OMBUILDDIR=$(OMBUILDDIR)
-	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/runtime install OMBUILDDIR=$(OMBUILDDIR)
-	$(MAKE) -f $(defaultMakefileTarget) -C Compiler builtin install_scripts OMBUILDDIR=$(OMBUILDDIR)
-	$(MAKE) -f $(defaultMakefileTarget) -C Parser install OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/runtime install_bootstrapping BOOTSTRAPPING=1 OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C Compiler builtin OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C Parser install_bootstrapping OMBUILDDIR=$(OMBUILDDIR)
 
 sim-dependencies: fmi fmil opencl_rt lis metis fmi fmil
 

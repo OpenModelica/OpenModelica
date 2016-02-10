@@ -16,6 +16,11 @@ install: $(ANTLR_LIB) libomparse.a
 	cp $(ANTLR)/antlr3config.h $(ANTLR)/include/*.h $(OMBUILDDIR)/include/$(host_short)/omc/antlr3
 	cp $(ANTLR_LIB) libomparse.a $(OMBUILDDIR)/$(LIB_OMC)/
 
+install_bootstrapping: $(ANTLR_LIB) libomparse-boot.a
+	mkdir -p $(OMBUILDDIR)/include/$(host_short)/omc/antlr3
+	cp $(ANTLR)/antlr3config.h $(ANTLR)/include/*.h $(OMBUILDDIR)/include/$(host_short)/omc/antlr3
+	cp $(ANTLR_LIB) $(OMBUILDDIR)/$(LIB_OMC)/
+
 $(ANTLR)/antlr3config.h: $(ANTLR)/antlr3config.h.in $(ANTLR)/configure
 	(cd $(ANTLR) && ./configure $(ANTLR64) $(ANTLRDEBUG) $(host) CC="$(CC)" LDFLAGS="" CFLAGS="$(CFLAGS)" CPPFLAGS="")
 libomantlr3.a: $(ANTLR)/src/*.c $(ANTLR)/include/*.h $(ANTLR)/antlr3config.h
@@ -44,24 +49,29 @@ HFILES = \
   Modelica_3_Lexer_BaseModelica_Lexer.h \
   $(ANTLR)/antlr3config.h
 
-OBJS = \
+OBJS_BASE = \
 ParModelica_Lexer_BaseModelica_Lexer.o ParModelica_Lexer.o \
 MetaModelica_Lexer_BaseModelica_Lexer.o MetaModelica_Lexer.o \
 Modelica_3_Lexer_BaseModelica_Lexer.o Modelica_3_Lexer.o \
 MetaModelica_Lexer.o MetaModelica_Lexer_BaseModelica_Lexer.o \
 Modelica_3_Lexer.o Modelica_3_Lexer_BaseModelica_Lexer.o \
-ModelicaParser_omc.o ParModelica_Lexer.o \
+ParModelica_Lexer.o \
 ParModelica_Lexer_BaseModelica_Lexer.o \
-Parser_omc.o \
+Parser_omc.o
 
-ParModelica_Lexer.o: ParModelica_Lexer.h ParModelica_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h
-MetaModelica_Lexer.o: MetaModelica_Lexer.h MetaModelica_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h
-Modelica_3_Lexer.o: Modelica_3_Lexer.h Modelica_3_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h
-ParModelica_Lexer_BaseModelica_Lexer.o: ParModelica_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h
-MetaModelica_Lexer_BaseModelica_Lexer.o: MetaModelica_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h
-Modelica_3_Lexer_BaseModelica_Lexer.o: Modelica_3_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h
-ModelicaParser_omc.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h ../Compiler/OpenModelicaBootstrappingHeader.h ../Compiler/runtime/errorext.h
+OBJS = $(OBJS_BASE) ModelicaParser_omc.o
+OBJS_BOOT = $(OBJS_BASE) ModelicaParser_omc.boot.o
 
+ParModelica_Lexer.o: ParModelica_Lexer.h ParModelica_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h $(ANTLR)/antlr3config.h
+MetaModelica_Lexer.o: MetaModelica_Lexer.h MetaModelica_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h $(ANTLR)/antlr3config.h
+Modelica_3_Lexer.o: Modelica_3_Lexer.h Modelica_3_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h $(ANTLR)/antlr3config.h
+ParModelica_Lexer_BaseModelica_Lexer.o: ParModelica_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h $(ANTLR)/antlr3config.h
+MetaModelica_Lexer_BaseModelica_Lexer.o: MetaModelica_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h $(ANTLR)/antlr3config.h
+Modelica_3_Lexer_BaseModelica_Lexer.o: Modelica_3_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h $(ANTLR)/antlr3config.h
+ModelicaParser_omc.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h ../Compiler/OpenModelicaBootstrappingHeader.h ../Compiler/runtime/errorext.h $(ANTLR)/antlr3config.h
+	$(CC) -c -o $@ $< $(CFLAGS) $(CPPFLAGS) -I../Compiler
+ModelicaParser_omc.boot.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h ../Compiler/boot/tarball-include/OpenModelicaBootstrappingHeader.h ../Compiler/runtime/errorext.h $(ANTLR)/antlr3config.h
+	$(CC) -c -o $@ $< $(CFLAGS) $(CPPFLAGS) -I../Compiler/boot/tarball-include
 Parser_omc.o: $(HFILES) parse.c lookupTokenName.c
 
 $(OBJS) : $(HFILES)
@@ -69,6 +79,10 @@ $(OBJS) : $(HFILES)
 libomparse.a: $(OBJS)
 	rm -f $@
 	ar -ru $@ $(OBJS)
+	ranlib $@
+libomparse-boot.a: $(OBJS_BOOT)
+	rm -f $@
+	ar -ru $@ $(OBJS_BOOT)
 	ranlib $@
 
 parsergen = ModelicaParser.c ModelicaParser.h

@@ -19,11 +19,15 @@ else
 	configUnix =
 endif
 
-OMC_OBJ = Error_omc.o Print_omc.o System_omc.o Settings_omc.o serializer.o \
-  IOStreamExt_omc.o ErrorMessage.o FMI_omc.o systemimplmisc.o \
+OMC_OBJ_BOOT = Dynload_omc$(OBJEXT) Error_omc$(OBJEXT) FMI_omc$(OBJEXT) \
+  GraphStreamExt_omc$(OBJEXT) HpcOmSchedulerExt_omc$(OBJEXT) HpcOmBenchmarkExt_omc$(OBJEXT) \
+  ptolemyio_omc$(OBJEXT) SimulationResults_omc$(OBJEXT) System_omc$(OBJEXT) \
+  TaskGraphResults_omc$(OBJEXT)
+
+OMC_OBJ = $(OMC_OBJ_BOOT) Print_omc.o  Settings_omc.o serializer.o \
+  IOStreamExt_omc.o ErrorMessage.o systemimplmisc.o \
   UnitParserExt_omc.o unitparser.o BackendDAEEXT_omc.o Socket_omc.o matching.o matching_cheap.o \
-  Dynload_omc.o SimulationResults_omc.o TaskGraphResults_omc.o HpcOmSchedulerExt_omc.o HpcOmBenchmarkExt_omc.o ptolemyio_omc.o \
-  Lapack_omc.o getMemorySize.o GraphStreamExt_omc.o $(OMCCORBASRC)
+  Lapack_omc.o getMemorySize.o  $(OMCCORBASRC)
 
 # Database_omc.o
 
@@ -31,7 +35,25 @@ all: install
 .PHONY: all install
 install: libomcruntime.a
 	cp libomcruntime.a $(builddir_lib)/$(TRIPLE)/omc/
+OBJEXT=.o
+BOOTH=../OpenModelicaBootstrappingHeader.h
+ifeq ($(BOOTSTRAPPING),1)
+ifeq ($(wildcard $(OMC)),)
+OBJEXT=.boot.o
+BOOTH=../boot/tarball-include/OpenModelicaBootstrappingHeader.h
+CPPFLAGS += -I../boot/tarball-include
+install_bootstrapping: libomcruntime-boot.a
+else
+install_bootstrapping:
+	@echo "Skipping libomcruntime-boot.a since we already have an OMC executable"
+endif
+endif
+
 libomcruntime.a : $(OMC_OBJ)
+	rm -f $@
+	$(AR) -s -r $@ $(OMC_OBJ)
+
+libomcruntime-boot.a : $(OMC_OBJ)
 	rm -f $@
 	$(AR) -s -r $@ $(OMC_OBJ)
 
@@ -39,28 +61,35 @@ omc_communication.cc : omc_communication.idl
 	$(IDL) omc_communication.idl
 omc_communication.h: omc_communication.cc
 
+Print_omc.o : printimpl.c printimpl.h
+Settings_omc.o : settingsimpl.c omc_config.h $(configUnix)
 omc_communication_impl.o: omc_communication.h
 Corba_omc.o: omc_communication.h corbaimpl.cpp
-Dynload_omc.o: systemimpl.h errorext.h ../OpenModelicaBootstrappingHeader.h $(SimRuntimeCDir)/read_write.h $(SimRuntimeCDir)/memory_pool.h Dynload.cpp $(RML_COMPAT)
 Database_omc.o: Database.c Database_omc.c
-Print_omc.o : printimpl.c printimpl.h
-Error_omc.o : errorext.cpp ErrorMessage.hpp ../OpenModelicaBootstrappingHeader.h
-System_omc.o : System_omc.c systemimpl.c omc_config.h errorext.h printimpl.h $(configUnix) $(RML_COMPAT)
 Lapack_omc.o : lapackimpl.c omc_config.h $(configUnix) $(RML_COMPAT)
 IOStreamExt_omc.o : IOStreamExt.c
-Settings_omc.o : settingsimpl.c omc_config.h $(configUnix)
+ErrorMessage.o : ErrorMessage.cpp ErrorMessage.hpp errorext.h
+serializer.o: serializer.cpp
+Socket_omc.o : socketimpl.c
 UnitParserExt_omc.o : unitparserext.cpp unitparser.h
 BackendDAEEXT_omc.o : BackendDAEEXT.cpp $(RML_COMPAT) matching.c matchmaker.h matching_cheap.c
-Socket_omc.o : socketimpl.c
-SimulationResults_omc.o : SimulationResults.c SimulationResultsCmp.c SimulationResultsCmpTubes.c errorext.h $(SimRuntimeCDir)/read_matlab4.h
-TaskGraphResults_omc.o : TaskGraphResultsCmp.h TaskGraphResultsCmp.cpp
-HpcOmBenchmarkExt_omc.o : HpcOmBenchmarkExt.cpp
-HpcOmSchedulerExt_omc.o : TaskGraphResultsCmp.h HpcOmSchedulerExt.cpp
-ptolemyio_omc.o : ptolemyio.cpp errorext.h $(RML_COMPAT)
-ErrorMessage.o : ErrorMessage.cpp ErrorMessage.hpp errorext.h
-FMI_omc.o : FMIImpl.c ../OpenModelicaBootstrappingHeader.h
-GraphStreamExt_omc.o : ../OpenModelicaBootstrappingHeader.h GraphStreamExt_impl.cpp $(RML_COMPAT)
-serializer.o: serializer.cpp
+
+# Objects depending on BOOTH
+Dynload_omc$(OBJEXT): systemimpl.h errorext.h $(BOOTH) $(SimRuntimeCDir)/read_write.h $(SimRuntimeCDir)/memory_pool.h Dynload.cpp $(RML_COMPAT)
+Error_omc$(OBJEXT) : errorext.cpp ErrorMessage.hpp $(BOOTH)
+System_omc$(OBJEXT) : System_omc.c systemimpl.c omc_config.h errorext.h printimpl.h $(configUnix) $(RML_COMPAT) $(BOOTH)
+SimulationResults_omc$(OBJEXT) : SimulationResults.c SimulationResultsCmp.c SimulationResultsCmpTubes.c errorext.h $(SimRuntimeCDir)/read_matlab4.h $(BOOTH)
+TaskGraphResults_omc$(OBJEXT) : TaskGraphResultsCmp.h TaskGraphResultsCmp.cpp $(BOOTH)
+HpcOmBenchmarkExt_omc$(OBJEXT) : HpcOmBenchmarkExt.cpp $(BOOTH)
+HpcOmSchedulerExt_omc$(OBJEXT) : TaskGraphResultsCmp.h HpcOmSchedulerExt.cpp $(BOOTH)
+ptolemyio_omc$(OBJEXT) : ptolemyio.cpp errorext.h $(RML_COMPAT) $(BOOTH)
+FMI_omc$(OBJEXT) : FMIImpl.c $(BOOTH)
+GraphStreamExt_omc$(OBJEXT) : $(BOOTH) GraphStreamExt_impl.cpp $(RML_COMPAT)
+
+%.boot.o: %.c
+	$(CC) -c -o "$@" "$<" $(CFLAGS) $(CPPFLAGS)
+%.boot.o: %.cpp
+	$(CXX) -c -o "$@" "$<" $(CXXFLAGS) $(CPPFLAGS)
 
 clean:
 	$(RM) -rf *.a *.o omc_communication.cc omc_communication.h omc_communication-*

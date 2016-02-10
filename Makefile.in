@@ -78,11 +78,13 @@ $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
 
 omc-bootstrapped: mkbuilddirs
 	$(MAKE) bootstrap-dependencies interactive sim-dependencies
-	$(MAKE) -C Compiler/boot
+	$(MAKE) -C Compiler/boot OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts OMBUILDDIR=$(OMBUILDDIR)
+
 
 omc-no-sim:
 	$(MAKE) bootstrap-dependencies interactive-short
-	$(MAKE) -C Compiler/boot
+	$(MAKE) -C Compiler/boot OMBUILDDIR=$(OMBUILDDIR)
 
 lis: lis-configure
 	@echo Building Lis from sources

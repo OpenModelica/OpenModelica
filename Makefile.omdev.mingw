@@ -429,6 +429,7 @@ simulationruntimecmsvc: mkbuilddirs Umfpack_msvc CMinpack_msvc fmil_msvc sundial
 omc-bootstrapped:
 	$(MAKE) -f $(defaultMakefileTarget) CFLAGS="$(CFLAGS)" OMBUILDDIR=$(OMBUILDDIR) bootstrap-dependencies sim-dependencies
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/boot CFLAGS="$(CFLAGS)" OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts OMBUILDDIR=$(OMBUILDDIR)
 
 modelica3d:
 	cd 3rdParty/modelica3d && mkdir -p build

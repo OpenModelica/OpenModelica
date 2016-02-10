@@ -34,7 +34,6 @@
 #endif
 
 #include "meta_modelica.h"
-#include "OpenModelicaBootstrappingHeader.h"
 #include "parse.c"
 
 void* ParserExt_parse(const char* filename, const char* infoname, int acceptedGrammar, int langStd, const char* encoding, int runningTestsuite)

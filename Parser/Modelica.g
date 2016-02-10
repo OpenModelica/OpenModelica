@@ -107,6 +107,8 @@ goto rule ## func ## Ex; }}
 
 @members
 {
+  #include "meta_modelica.h"
+  #include "OpenModelicaBootstrappingHeader.h"
   parser_members members;
   void* mmc_mk_box_eat_all(int ix, ...) {return NULL;}
 }
