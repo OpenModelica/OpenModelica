@@ -226,6 +226,7 @@ public:
   bool moveClass(QString className, int offset);
   bool moveClassToTop(QString className);
   bool moveClassToBottom(QString className);
+  bool inferBindings(QString className);
 signals:
   void commandFinished();
 public slots:

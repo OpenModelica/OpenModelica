@@ -253,6 +253,7 @@ public:
   bool removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool up);
   void moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, bool top);
+  void updateBindings(LibraryTreeItem *pLibraryTreeItem);
   QString getUniqueTopLevelItemName(QString name, int number = 1);
   void emitDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight) {emit dataChanged(topLeft, bottomRight);}
 private:
@@ -303,6 +304,7 @@ private:
   QAction *mpExportFMUAction;
   QAction *mpExportXMLAction;
   QAction *mpExportFigaroAction;
+  QAction *mpUpdateBindingsAction;
   QAction *mpFetchInterfaceDataAction;
   QAction *mpTLMCoSimulationAction;
   void createActions();
@@ -334,6 +336,7 @@ public slots:
   void exportModelFMU();
   void exportModelXML();
   void exportModelFigaro();
+  void updateBindings();
   void fetchInterfaceData();
   void TLMSimulate();
 protected:

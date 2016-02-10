@@ -2472,6 +2472,19 @@ bool OMCProxy::moveClassToBottom(QString className)
 }
 
 /*!
+ * \brief OMCProxy::inferBindings
+ * Updates the bindings.
+ * \param className
+ * \return
+ */
+bool OMCProxy::inferBindings(QString className)
+{
+  bool result = mpOMCInterface->inferBindings(className);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
   \class CustomExpressionBox
   \brief A text box for executing OMC commands.
   */
