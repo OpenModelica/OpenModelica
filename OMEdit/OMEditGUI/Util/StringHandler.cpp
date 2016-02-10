@@ -1571,11 +1571,37 @@ QString StringHandler::toCamelCase(QString str)
 }
 
 /*!
- * \brief StringHandler::getTrailingSpacesSize
- * \param str
- * \return the number of trailing spaces in a string.
+ * \brief StringHandler::getLeadingSpaces
+ * Returns a map with line number and number of leading spaces in that line.
+ * \param contents
+ * \return
  */
-int StringHandler::getTrailingSpacesSize(QString str)
+QMap<int, int> StringHandler::getLeadingSpaces(QString contents)
+{
+  QMap<int, int> leadingSpacesMap;
+  int startLeadingSpaces, leadingSpaces = 0;
+  QTextStream textStream(&contents);
+  int lineNumber = 1;
+  while (!textStream.atEnd()) {
+    QString currentLine = textStream.readLine();
+    if (lineNumber == 1) {  // the first line
+      startLeadingSpaces = StringHandler::getLeadingSpacesSize(currentLine);
+      leadingSpaces = startLeadingSpaces;
+    } else {
+      leadingSpaces = qMin(startLeadingSpaces, StringHandler::getLeadingSpacesSize(currentLine));
+    }
+    leadingSpacesMap.insert(lineNumber, leadingSpaces);
+    lineNumber++;
+  }
+  return leadingSpacesMap;
+}
+
+/*!
+ * \brief StringHandler::getLeadingSpacesSize
+ * \param str
+ * \return the number of leading spaces in a string.
+ */
+int StringHandler::getLeadingSpacesSize(QString str)
 {
   int i = 0;
   while (i < str.size()) {

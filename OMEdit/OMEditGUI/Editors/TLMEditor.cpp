@@ -156,8 +156,9 @@ QString TLMEditor::getSimulationToolStartCommand(QString name)
     QDomElement subModel = subModelList.at(i).toElement();
     if (subModel.attribute("Name").compare(name) == 0) {
       return subModel.attribute("StartCommand");
-     }
-   }
+    }
+  }
+  return "";
 }
 
 /*!

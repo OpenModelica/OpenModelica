@@ -360,6 +360,7 @@ public:
   void clearSelection();
   void updateClassAnnotationIfNeeded();
   void updateModelicaText();
+  void updateModelicaTextManually(QString contents);
   void updateUndoRedoActions();
 private:
   ModelWidgetContainer *mpModelWidgetContainer;

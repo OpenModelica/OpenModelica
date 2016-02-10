@@ -223,6 +223,85 @@ bool ModelicaTextEditor::validateText()
 }
 
 /*!
+ * \brief ModelicaTextEditor::removeLeadingSpaces
+ * Removes the leading spaces from a nested class text to make it more readable.
+ * \param contents
+ * \return
+ */
+QString ModelicaTextEditor::removeLeadingSpaces(QString contents)
+{
+  QString text;
+  int startLeadingSpaces = 0;
+  int leadingSpaces = 0;
+  QTextStream textStream(&contents);
+  int lineNumber = 1;
+  while (!textStream.atEnd()) {
+    QString currentLine = textStream.readLine();
+    if (lineNumber == 1) {  // the first line
+      startLeadingSpaces = StringHandler::getLeadingSpacesSize(currentLine);
+      leadingSpaces = startLeadingSpaces;
+    } else {
+      leadingSpaces = qMin(startLeadingSpaces, StringHandler::getLeadingSpacesSize(currentLine));
+    }
+    text += currentLine.mid(leadingSpaces) + "\n";
+    lineNumber++;
+  }
+  return text;
+}
+
+/*!
+ * \brief ModelicaTextEditor::storeLeadingSpaces
+ * Stores the leading spaces information in the text block user data.
+ * \param leadingSpacesMap
+ */
+void ModelicaTextEditor::storeLeadingSpaces(QMap<int, int> leadingSpacesMap)
+{
+  QTextBlock block = mpPlainTextEdit->document()->firstBlock();
+  while (block.isValid()) {
+    TextBlockUserData *pTextBlockUserData = BaseEditorDocumentLayout::userData(block);
+    if (pTextBlockUserData) {
+      pTextBlockUserData->setLeadingSpaces(leadingSpacesMap.value(block.blockNumber() + 1, 0));
+    }
+    block = block.next();
+  }
+}
+
+/*!
+ * \brief ModelicaTextEditor::getPlainText
+ * Reads the leading spaces information from the text block user data and inserts them to the actual string.
+ * \return
+ */
+QString ModelicaTextEditor::getPlainText()
+{
+  if (mpModelWidget->getLibraryTreeItem()->isInPackageOneFile()) {
+    QString text;
+    QTextBlock block = mpPlainTextEdit->document()->firstBlock();
+    while (block.isValid()) {
+      TextBlockUserData *pTextBlockUserData = BaseEditorDocumentLayout::userData(block);
+      if (pTextBlockUserData) {
+        if (pTextBlockUserData->getLeadingSpaces() == -1) {
+          TextBlockUserData *pFirstBlockUserData = BaseEditorDocumentLayout::userData(mpPlainTextEdit->document()->firstBlock());
+          if (pFirstBlockUserData) {
+            pTextBlockUserData->setLeadingSpaces(pFirstBlockUserData->getLeadingSpaces());
+          } else {
+            pTextBlockUserData->setLeadingSpaces(0);
+          }
+        }
+        text += QString(pTextBlockUserData->getLeadingSpaces(), ' ');
+      }
+      text += block.text();
+      block = block.next();
+      if (block.isValid()) { // not last block
+        text += "\n";
+      }
+    }
+    return text;
+  } else {
+    return mpPlainTextEdit->toPlainText();
+  }
+}
+
+/*!
  * \brief ModelicaTextEditor::showContextMenu
  * Create a context menu.
  * \param point
@@ -241,11 +320,19 @@ void ModelicaTextEditor::showContextMenu(QPoint point)
 //! @param text the string to set.
 void ModelicaTextEditor::setPlainText(const QString &text)
 {
-  if (text != mpPlainTextEdit->toPlainText()) {
+  QString contents = text;
+  if (contents != mpPlainTextEdit->toPlainText()) {
     mForceSetPlainText = true;
-    mpPlainTextEdit->setPlainText(text);
+    if (mpModelWidget->getLibraryTreeItem()->isInPackageOneFile()) {
+      QMap<int, int> leadingSpacesMap = StringHandler::getLeadingSpaces(contents);
+      contents = removeLeadingSpaces(contents);
+      mpPlainTextEdit->setPlainText(contents);
+      storeLeadingSpaces(leadingSpacesMap);
+    } else {
+      mpPlainTextEdit->setPlainText(contents);
+    }
     mForceSetPlainText = false;
-    mLastValidText = text;
+    mLastValidText = contents;
   }
 }
 

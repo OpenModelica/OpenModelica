@@ -118,8 +118,12 @@ public:
   QPixmap getPixmap() {return mPixmap;}
   void setDragPixmap(QPixmap dragPixmap) {mDragPixmap = dragPixmap;}
   QPixmap getDragPixmap() {return mDragPixmap;}
+  void setClassTextBefore(QString classTextBefore) {mClassTextBefore = classTextBefore;}
+  QString getClassTextBefore() {return mClassTextBefore;}
   void setClassText(QString classText) {mClassText = classText;}
   QString getClassText(LibraryTreeModel *pLibraryTreeModel);
+  void setClassTextAfter(QString classTextAfter) {mClassTextAfter = classTextAfter;}
+  QString getClassTextAfter() {return mClassTextAfter;}
   void setExpanded(bool expanded) {mExpanded = expanded;}
   bool isExpanded() const {return mExpanded;}
   void setNonExisting(bool nonExisting) {mNonExisting = nonExisting;}
@@ -167,7 +171,9 @@ private:
   QIcon mIcon;
   QPixmap mPixmap;
   QPixmap mDragPixmap;
+  QString mClassTextBefore;
   QString mClassText;
+  QString mClassTextAfter;
   bool mExpanded;
   bool mNonExisting;
 signals:
@@ -233,6 +239,7 @@ public:
   void removeNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.removeOne(pLibraryTreeItem);}
   void updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
+  void updateLibraryTreeItemClassTextManually(LibraryTreeItem *pLibraryTreeItem, QString contents);
   void readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* getContainingFileParentLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeItem);
@@ -242,7 +249,7 @@ public:
   void showHideProtectedClasses();
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadTLMOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
-  bool unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  bool unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool deleteClass = false);
   bool removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool up);
   void moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, bool top);
@@ -256,7 +263,7 @@ private:
                                          const QModelIndex &parentIndex) const;
   LibraryTreeItem* getLibraryTreeItemFromFileHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName, int lineNumber);
   void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
-  QString readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents);
+  void readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents);
   QString readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem);
   void unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
   void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem);
