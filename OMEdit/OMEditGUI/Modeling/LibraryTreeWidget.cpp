@@ -1905,6 +1905,22 @@ void LibraryTreeModel::moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, boo
 }
 
 /*!
+ * \brief LibraryTreeModel::updateBindings
+ * Updates the bindings.
+ * \param pLibraryTreeItem
+ */
+void LibraryTreeModel::updateBindings(LibraryTreeItem *pLibraryTreeItem)
+{
+  if (mpLibraryWidget->getMainWindow()->getOMCProxy()->inferBindings(pLibraryTreeItem->getNameStructure())) {
+    if (pLibraryTreeItem->getModelWidget()) {
+      pLibraryTreeItem->getModelWidget()->updateModelicaText();
+    } else {
+      updateLibraryTreeItemClassText(pLibraryTreeItem);
+    }
+  }
+}
+
+/*!
  * \brief LibraryTreeModel::getUniqueTopLevelItemName
  * Finds the unique name for a new top level LibraryTreeItem based on the suggested name.
  * \param name
@@ -2250,6 +2266,10 @@ void LibraryTreeView::createActions()
   mpExportFigaroAction = new QAction(QIcon(":/Resources/icons/console.svg"), Helper::exportFigaro, this);
   mpExportFigaroAction->setStatusTip(Helper::exportFigaroTip);
   connect(mpExportFigaroAction, SIGNAL(triggered()), SLOT(exportModelFigaro()));
+  // Update Bindings Action
+  mpUpdateBindingsAction = new QAction(tr("Update Bindings"), this);
+  mpUpdateBindingsAction->setStatusTip(tr("updates the bindings"));
+  connect(mpUpdateBindingsAction, SIGNAL(triggered()), SLOT(updateBindings()));
   // fetch interface data
   mpFetchInterfaceDataAction = new QAction(QIcon(":/Resources/icons/interface-data.svg"), Helper::fetchInterfaceData, this);
   mpFetchInterfaceDataAction->setStatusTip(Helper::fetchInterfaceDataTip);
@@ -2385,6 +2405,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
         menu.addAction(mpExportFMUAction);
         menu.addAction(mpExportXMLAction);
         menu.addAction(mpExportFigaroAction);
+        menu.addSeparator();
+        menu.addAction(mpUpdateBindingsAction);
         break;
       case LibraryTreeItem::Text:
         menu.addAction(mpUnloadTLMFileAction);
@@ -2677,6 +2699,18 @@ void LibraryTreeView::exportModelFigaro()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     mpLibraryWidget->getMainWindow()->exportModelFigaro(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::updateBindings
+ * Updates the bindings.
+ */
+void LibraryTreeView::updateBindings()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->getLibraryTreeModel()->updateBindings(pLibraryTreeItem);
   }
 }
 
