@@ -111,6 +111,17 @@ goto rule ## func ## Ex; }}
   #include "OpenModelicaBootstrappingHeader.h"
   parser_members members;
   void* mmc_mk_box_eat_all(int ix, ...) {return NULL;}
+  #if defined(OMC_BOOTSTRAPPING)
+  /* The tarball version of OMC has a different order of fields in Absyn */
+  #define Absyn__ATTR__BOOTSTRAPPING(A1,A2,A3,A4,A5,FIELD,A6) Absyn__ATTR(A1,A2,A3,A4,A5,A6)
+  /* These do not exist in the bootstrapped version, but are returned in a grammar rule. Just do NULL. */
+  #define Absyn__FIELD NULL
+  #define Absyn__NONFIELD NULL
+  /* Treat PDE equations as normal equations */
+  #define Absyn__EQ_5fPDE(A1,A2,A3) Absyn__EQ_5fEQUALS(A1,A2)
+  #else
+  #define Absyn__ATTR__BOOTSTRAPPING Absyn__ATTR
+  #endif
 }
 
 /*------------------------------------------------------------------
@@ -228,7 +239,7 @@ class_specifier2 returns [void* ast, const char *s2]
 | SUBTYPEOF ts=type_specifier
    {
      $ast = Absyn__DERIVED(Absyn__TCOMPLEX(Absyn__IDENT(mmc_mk_scon("polymorphic")),mmc_mk_cons($ts.ast,mmc_mk_nil()),mmc_mk_nil()),
-                           Absyn__ATTR(MMC_FALSE,MMC_FALSE,Absyn__NON_5fPARALLEL,Absyn__VAR,Absyn__BIDIR,Absyn__NONFIELD,mmc_mk_nil()),mmc_mk_nil(),mmc_mk_none());
+                           Absyn__ATTR__BOOTSTRAPPING(MMC_FALSE,MMC_FALSE,Absyn__NON_5fPARALLEL,Absyn__VAR,Absyn__BIDIR,Absyn__NONFIELD,mmc_mk_nil()),mmc_mk_nil(),mmc_mk_none());
    }
 )
 ;
@@ -259,7 +270,7 @@ overloading returns [void* ast]
   ;
 
 base_prefix returns [void* ast] :
-  tp=type_prefix {ast = Absyn__ATTR(tp.flow, tp.stream, tp.parallelism, tp.variability, tp.direction, tp.field, mmc_mk_nil());}
+  tp=type_prefix {ast = Absyn__ATTR__BOOTSTRAPPING(tp.flow, tp.stream, tp.parallelism, tp.variability, tp.direction, tp.field, mmc_mk_nil());}
   ;
 
 name_list returns [void* ast]
@@ -515,7 +526,7 @@ component_clause returns [void* ast]
         }
       }
 
-      ast = Absyn__COMPONENTS(Absyn__ATTR(tp.flow, tp.stream, tp.parallelism, tp.variability, tp.direction, tp.field, arr), $path.ast, clst);
+      ast = Absyn__COMPONENTS(Absyn__ATTR__BOOTSTRAPPING(tp.flow, tp.stream, tp.parallelism, tp.variability, tp.direction, tp.field, arr), $path.ast, clst);
     }
   ;
 

@@ -8732,7 +8732,7 @@ end propagateModFinal;
 //------  PDE extension:  ------
 //------------------------------
 
-public type DomainFieldsLst = List<tuple<DAE.ComponentRef,List<Absyn.ComponentRef>>>;
+public type DomainFieldsLst = list<tuple<DAE.ComponentRef,list<Absyn.ComponentRef>>>;
 
 public function elabField
 //For field variables: finds the "domain" modifier,
@@ -8834,14 +8834,14 @@ protected function findN
 "a map function to find N in domain class modifiers"
   input DAE.Var inVar;
   output Option<Integer> optN;
-  algorithm
-    optN := match inVar
+algorithm
+  optN := match inVar
     local
       Integer N;
-      case DAE.TYPES_VAR(name="N",binding=DAE.Binding.EQBOUND(evaluatedExp=SOME(Values.INTEGER(N))))
-      then SOME(N);
-      else NONE();
-    end match;
+    case DAE.TYPES_VAR(name="N",binding=DAE.EQBOUND(evaluatedExp=SOME(Values.INTEGER(N))))
+    then SOME(N);
+    else NONE();
+  end match;
 end findN;
 
 protected function addEach
@@ -8923,84 +8923,84 @@ public function discretizePDE
   output List<SCode.Equation> outDiscretizedEQs;
   protected List<SCode.Equation> newDiscretizedEQs;
 algorithm
-	  newDiscretizedEQs := {inEQ};
-	  //TODO: fix:
+    newDiscretizedEQs := {inEQ};
+    //TODO: fix:
 
-	  newDiscretizedEQs := matchcontinue inEQ
-	    local
-	      Absyn.Exp lhs_exp, rhs_exp;
-	      Absyn.ComponentRef domainCr, domainCr1, fieldCr;
-	      SCode.Comment comment;
-	      SCode.SourceInfo info;
-	      Integer N;
-	      List<Absyn.ComponentRef> fieldLst;
-	      Absyn.Ident name;
-	      list<Absyn.Subscript> subscripts;
-	    //Normal equation withhout domain specified, no field variables present:
-	    case SCode.EQUATION(SCode.EQ_EQUALS())
-	    then {inEQ};
-	    //PDE with domain specified, allow for field variables:
-	    case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
-	                domain = domainCr as Absyn.CREF_IDENT(), comment = comment, info = info))
-	      equation
-	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr,info);
-//	      then list(newEQFun(i, lhs_exp, rhs_exp, domainCr, comment, info, fieldLst) for i in 2:N-1);
-	      then creatFieldEqs(lhs_exp, rhs_exp, domainCr, N, comment, info, fieldLst);
-	    //same as previous but with ".interior"
-	    case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
-	                domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="interior")),
-	                comment = comment, info = info))
-	      equation
-	        domainCr1 = Absyn.CREF_IDENT(name, subscripts);
-	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
-//	      then list(newEQFun(i, lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst) for i in 2:N-1);
-	      then creatFieldEqs(lhs_exp, rhs_exp, domainCr, N, comment, info, fieldLst);
+    newDiscretizedEQs := matchcontinue inEQ
+      local
+        Absyn.Exp lhs_exp, rhs_exp;
+        Absyn.ComponentRef domainCr, domainCr1, fieldCr;
+        SCode.Comment comment;
+        SCode.SourceInfo info;
+        Integer N;
+        List<Absyn.ComponentRef> fieldLst;
+        Absyn.Ident name;
+        list<Absyn.Subscript> subscripts;
+      //Normal equation withhout domain specified, no field variables present:
+      case SCode.EQUATION(SCode.EQ_EQUALS())
+      then {inEQ};
+      //PDE with domain specified, allow for field variables:
+      case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
+                  domain = domainCr as Absyn.CREF_IDENT(), comment = comment, info = info))
+        equation
+          (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr,info);
+//        then list(newEQFun(i, lhs_exp, rhs_exp, domainCr, comment, info, fieldLst) for i in 2:N-1);
+        then creatFieldEqs(lhs_exp, rhs_exp, domainCr, N, comment, info, fieldLst);
+      //same as previous but with ".interior"
+      case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
+                  domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="interior")),
+                  comment = comment, info = info))
+        equation
+          domainCr1 = Absyn.CREF_IDENT(name, subscripts);
+          (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
+//        then list(newEQFun(i, lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst) for i in 2:N-1);
+        then creatFieldEqs(lhs_exp, rhs_exp, domainCr, N, comment, info, fieldLst);
 
-	    //left boundary extrapolation
-	    case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
-	                domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="left")),
-	                comment = comment, info = info))
-	      equation
-//	        Absyn.CALL(function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}), functionArgs = Absyn.FUNCTIONARGS(args = {})) = rhs_exp;
-//	        Absyn.CREF(fieldCr as Absyn.CREF_IDENT()) = lhs_exp;
+      //left boundary extrapolation
+      case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
+                  domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="left")),
+                  comment = comment, info = info))
+        equation
+//          Absyn.CALL(function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}), functionArgs = Absyn.FUNCTIONARGS(args = {})) = rhs_exp;
+//          Absyn.CREF(fieldCr as Absyn.CREF_IDENT()) = lhs_exp;
           fieldCr = matchExtrapAndField(lhs_exp, rhs_exp);
-	        domainCr1 = Absyn.CREF_IDENT(name, subscripts);
-	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
-	      then
+          domainCr1 = Absyn.CREF_IDENT(name, subscripts);
+          (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
+        then
           {extrapolateFieldEq(false, fieldCr, domainCr1, N, comment, info, fieldLst)};
 
-	    //right boundary extrapolation
-	    case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
-	                domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="right")),
-	                comment = comment, info = info))
-	      equation
-//	        Absyn.CALL(function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}), functionArgs = Absyn.FUNCTIONARGS(args = {})) = rhs_exp;
-//	        Absyn.CREF(fieldCr as Absyn.CREF_IDENT()) = lhs_exp;
+      //right boundary extrapolation
+      case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
+                  domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="right")),
+                  comment = comment, info = info))
+        equation
+//          Absyn.CALL(function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}), functionArgs = Absyn.FUNCTIONARGS(args = {})) = rhs_exp;
+//          Absyn.CREF(fieldCr as Absyn.CREF_IDENT()) = lhs_exp;
           fieldCr = matchExtrapAndField(lhs_exp, rhs_exp);
-	        domainCr1 = Absyn.CREF_IDENT(name, subscripts);
-	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
-	      then
+          domainCr1 = Absyn.CREF_IDENT(name, subscripts);
+          (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
+        then
           {extrapolateFieldEq(true, fieldCr, domainCr1, N, comment, info, fieldLst)};
-	    //left boundary condition
-	    case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
-	                domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="left")),
-	                comment = comment, info = info))
-	      equation
-	        domainCr1 = Absyn.CREF_IDENT(name, subscripts);
-	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
-	      then
-	        {newEQFun(1, lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst)};
+      //left boundary condition
+      case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
+                  domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="left")),
+                  comment = comment, info = info))
+        equation
+          domainCr1 = Absyn.CREF_IDENT(name, subscripts);
+          (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
+        then
+          {newEQFun(1, lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst)};
       //right boundary condition
-	    case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
-	                domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="right")),
-	                comment = comment, info = info))
-	      equation
-	        domainCr1 = Absyn.CREF_IDENT(name, subscripts);
-	        (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
-	      then
-	        {newEQFun(N, lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst)};
+      case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
+                  domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="right")),
+                  comment = comment, info = info))
+        equation
+          domainCr1 = Absyn.CREF_IDENT(name, subscripts);
+          (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
+        then
+          {newEQFun(N, lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst)};
 
-	  end matchcontinue;
+    end matchcontinue;
 
   outDiscretizedEQs := listAppend(inDiscretizedEQs, newDiscretizedEQs);
 end discretizePDE;

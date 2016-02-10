@@ -71,7 +71,7 @@ Modelica_3_Lexer_BaseModelica_Lexer.o: Modelica_3_Lexer_BaseModelica_Lexer.h ../
 ModelicaParser_omc.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h ../Compiler/OpenModelicaBootstrappingHeader.h ../Compiler/runtime/errorext.h $(ANTLR)/antlr3config.h
 	$(CC) -c -o $@ $< $(CFLAGS) $(CPPFLAGS) -I../Compiler
 ModelicaParser_omc.boot.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h ../Compiler/boot/tarball-include/OpenModelicaBootstrappingHeader.h ../Compiler/runtime/errorext.h $(ANTLR)/antlr3config.h
-	$(CC) -c -o $@ $< $(CFLAGS) $(CPPFLAGS) -I../Compiler/boot/tarball-include
+	$(CC) -c -o $@ $< $(CFLAGS) $(CPPFLAGS) -DOMC_BOOTSTRAPPING -I../Compiler/boot/tarball-include
 Parser_omc.o: $(HFILES) parse.c lookupTokenName.c
 
 $(OBJS) : $(HFILES)
