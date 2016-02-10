@@ -797,7 +797,7 @@ algorithm
 end getScopePath;
 
 public function getGraphNameStr
-"Returns the FQ name of the environment, see also getGraphPath"
+"Returns the FQ name of the environment."
   input Graph inGraph;
   output String outString;
 algorithm
@@ -810,7 +810,7 @@ algorithm
 end getGraphNameStr;
 
 public function getGraphName
-"Returns the FQ name of the environment, see also getEnvPath"
+"Returns the FQ name of the environment."
   input Graph inGraph;
   output Absyn.Path outPath;
 protected
@@ -827,7 +827,7 @@ algorithm
 end getGraphName;
 
 public function getGraphNameNoImplicitScopes
-"Returns the FQ name of the environment, see also getEnvPath"
+"Returns the FQ name of the environment."
   input Graph inGraph;
   output Absyn.Path outPath;
 protected

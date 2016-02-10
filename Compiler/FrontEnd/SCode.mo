@@ -3109,6 +3109,16 @@ algorithm
   end match;
 end elementIsClass;
 
+public function elementIsImport
+  input Element inElement;
+  output Boolean outIsImport;
+algorithm
+  outIsImport := match inElement
+    case IMPORT() then true;
+    else false;
+  end match;
+end elementIsImport;
+
 public function elementIsPublicImport
   input Element el;
   output Boolean b;

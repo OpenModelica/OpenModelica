@@ -92,7 +92,7 @@ Author: BTH
 Create table that associates a state instance with its governing flat state machine.
 "
   input DAE.DAElist inDae;
-  output SMNodeToFlatSMGroupTable smNodeToFlatSMGroup = HashTableCG.emptyHashTable();
+  output SMNodeToFlatSMGroupTable smNodeToFlatSMGroup;
 protected
   list<DAE.Element> elementLst;
 
@@ -102,6 +102,13 @@ protected
   list<DAE.ComponentRef> initialStates;
   list<FlatSMGroup> flatSMGroup;
 algorithm
+  if intLt(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33) then
+    smNodeToFlatSMGroup := HashTableCG.emptyHashTableSized(1);
+    return;
+  else
+    smNodeToFlatSMGroup := HashTableCG.emptyHashTable();
+  end if;
+
   DAE.DAE(elementLst=elementLst) := inDae;
 
   smNodeTable := getSMNodeTable(elementLst);
@@ -160,7 +167,7 @@ algorithm
 
   DAE.DAE(elementLst=elementLst2) := inDae2;
   // extract transition and initialState statements
-  (smTransitionsLst, otherLst2) := List.extractOnTrue(elementLst2, isSMStatementBool);
+  (smTransitionsLst, otherLst2) := List.extractOnTrue(elementLst2, isSMStatement2);
 
   // Create list of FLAT_SM(..). Every FLAT_SM contains the components that constitute that flat state machine
   //flatSmLst := List.map2(smInitialCrefs, createFlatSM, smCompsLst, smNodeToFlatSMGroup);
@@ -768,69 +775,46 @@ extract the state arguments from them and collect them in the table."
 protected
   list<DAE.Element> elementLst2;
 algorithm
-  elementLst2 := List.filter(elementLst, isSMStatement2);
+  elementLst2 := list(e for e guard isSMStatement2(e) in elementLst);
   smNodeTable := List.fold(elementLst2,  extractSMStates2, HashTableSM1.emptyHashTable());
 end getSMNodeTable;
 
-
 protected function isSMStatement "
 Author: BTH
-Succeed if element is a state machine statement"
+Return true if element is a state machine statement, otherwise false"
   input SCode.Equation inElement;
+  output Boolean outIsSMStatement;
 algorithm
-  _ := match (inElement)
-    case SCode.EQUATION(eEquation=SCode.EQ_NORETCALL(exp=Absyn.CALL(function_=
-      Absyn.CREF_IDENT(name="transition"))))
-      equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
-      then ();
-    case SCode.EQUATION(eEquation=SCode.EQ_NORETCALL(exp=Absyn.CALL(function_=
-      Absyn.CREF_IDENT(name="initialState"))))
-      equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
-      then ();
+  outIsSMStatement := match inElement
+    local
+      String name;
+
+    case SCode.EQUATION(eEquation = SCode.EQ_NORETCALL(exp = Absyn.CALL(function_ =
+        Absyn.CREF_IDENT(name = name))))
+      then (name == "transition" or name == "initialState") and
+           intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+
+    else false;
   end match;
 end isSMStatement;
 
 protected function isSMStatement2 "
 Author: BTH
-Succeed if element is a state machine statement"
-  input  DAE.Element inElement;
+Return true if element is a state machine statement, otherwise false"
+  input DAE.Element inElement;
+  output Boolean outIsSMStatement;
 algorithm
-  _ := match (inElement)
+  outIsSMStatement := match inElement
     local
-      DAE.Exp exp;
-    case DAE.NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("initialState")))
-      equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
-      then ();
-    case DAE.NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("transition")))
-      equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
-      then ();
+      String name;
+
+    case DAE.NORETCALL(exp = DAE.CALL(path = Absyn.IDENT(name)))
+      then (name == "transition" or name == "initialState") and
+           intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+
+    else false;
   end match;
 end isSMStatement2;
-
-protected function isSMStatementBool "
-Author: BTH
-Return true if element is a state machine statement, otherwise false"
-  input  DAE.Element inElement;
-  output Boolean result;
-algorithm
-  result := match (inElement)
-    local
-      DAE.Exp exp;
-    case DAE.NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("initialState")))
-      equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
-      then true;
-    case DAE.NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("transition")))
-      equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
-      then true;
-    else then false;
-  end match;
-end isSMStatementBool;
 
 protected function extractSMStates2 "
 Author: BTH
@@ -898,7 +882,7 @@ protected
   list<list<Absyn.ComponentRef>> statesLL;
   list<Absyn.ComponentRef> initialStatesCR, statesCR;
 algorithm
-  eqns1 := List.filter(eqns, isSMStatement);
+  eqns1 := list(eq for eq guard isSMStatement(eq) in eqns);
   // Extract initial states
   initialStatesCR := List.filterMap(eqns1, extractInitialSMStates);
   initialStates := List.map(initialStatesCR, ComponentReference.toExpCref);
