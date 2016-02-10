@@ -735,7 +735,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   if(!data)
   {
     std::cerr << "Error: Could not initialize the global data structure file" << std::endl;
-    EXIT(0);
+    EXIT(1);
   }
 
   data->simulationInfo->nlsMethod = getNonlinearSolverMethod(argc, argv);
