@@ -144,7 +144,7 @@ algorithm
 
     // A component in an expandable connector is seen as a connector.
     case (_, SOME(comp), _, _)
-      equation guard Types.isComplexExpandableConnector(NFInstUtil.getComponentType(comp))
+      guard Types.isComplexExpandableConnector(NFInstUtil.getComponentType(comp))
       then
         ();
 
