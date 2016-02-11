@@ -31,7 +31,6 @@
  *
  * @author Adeel Asghar <adeel.asghar@liu.se>
  *
- * RCS: $Id: DebuggerSourceEditor.cpp 25882 2015-05-03 06:55:23Z sjoelund.se $
  *
  */
 

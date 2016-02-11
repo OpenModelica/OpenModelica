@@ -31,7 +31,6 @@
  *
  * @author Adeel Asghar <adeel.asghar@liu.se>
  *
- * RCS: $Id: GDBMIParser.cpp 25463 2015-04-09 10:00:04Z adeas31 $
  *
  */
 

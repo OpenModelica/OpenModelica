@@ -31,7 +31,6 @@
  *
  * @author Adeel Asghar <adeel.asghar@liu.se>
  *
- * RCS: $Id: BreakpointDialog.cpp 25246 2015-03-25 13:48:10Z adeas31 $
  *
  */
 

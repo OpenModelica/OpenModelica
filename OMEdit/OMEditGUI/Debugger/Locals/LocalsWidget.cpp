@@ -31,7 +31,6 @@
  *
  * @author Adeel Asghar <adeel.asghar@liu.se>
  *
- * RCS: $Id: LocalsWidget.cpp 24530 2015-02-11 14:25:29Z adeas31 $
  *
  */
 

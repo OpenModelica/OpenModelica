@@ -31,7 +31,6 @@
  *
  * @author Adeel Asghar <adeel.asghar@liu.se>
  *
- * RCS: $Id: DebuggerMainWindow.cpp 25565 2015-04-15 21:55:44Z adeas31 $
  *
  */
 
