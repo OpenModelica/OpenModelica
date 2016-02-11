@@ -53,6 +53,7 @@ protected import Util;
 protected import DAEDump;
 protected import Error;
 protected import HashTableCrToExpOption;
+protected import Flags;
 
 
 protected
@@ -1524,15 +1525,16 @@ algorithm
 
   (eqnLst, otherLst) := List.extractOnTrue(inElementLst, isEquation);
 
-  // == {initial(), sample(1.0, 1.0)} ==
+  // == {initial(), sample(DEFAULT_CLOCK_PERIOD, DEFAULT_CLOCK_PERIOD)} ==
   cond1 := DAE.CALL(Absyn.IDENT("initial"),
     {}, DAE.callAttrBuiltinImpureBool);
   cond2 := DAE.CALL(Absyn.IDENT("sample"),
-    {DAE.RCONST(1.0), DAE.RCONST(1.0)}, DAE.callAttrBuiltinImpureBool);
+    {DAE.RCONST(Flags.getConfigReal(Flags.DEFAULT_CLOCK_PERIOD)),
+     DAE.RCONST(Flags.getConfigReal(Flags.DEFAULT_CLOCK_PERIOD))}, DAE.callAttrBuiltinImpureBool);
   tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(2)}, DAE.emptyTypeSource);
   condition := DAE.ARRAY(tArrayBool, true, {cond1, cond2});
 
-  // when {initial(), sample(0.1, 0.1)} then .. end when;
+  // when {initial(), sample(DEFAULT_CLOCK_PERIOD, DEFAULT_CLOCK_PERIOD)} then .. end when;
   whenEq := DAE.WHEN_EQUATION(condition,
     eqnLst, NONE(), DAE.emptyElementSource);
 
