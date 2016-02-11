@@ -2405,8 +2405,10 @@ void LibraryTreeView::showContextMenu(QPoint point)
         menu.addAction(mpExportFMUAction);
         menu.addAction(mpExportXMLAction);
         menu.addAction(mpExportFigaroAction);
-        menu.addSeparator();
-        menu.addAction(mpUpdateBindingsAction);
+        if (pLibraryTreeItem->isSimulationAllowed()) {
+          menu.addSeparator();
+          menu.addAction(mpUpdateBindingsAction);
+        }
         break;
       case LibraryTreeItem::Text:
         menu.addAction(mpUnloadTLMFileAction);
