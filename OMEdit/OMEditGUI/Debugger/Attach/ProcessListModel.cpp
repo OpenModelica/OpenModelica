@@ -31,7 +31,6 @@
  *
  * @author Adeel Asghar <adeel.asghar@liu.se>
  *
- * RCS: $Id: ProcessListModel.cpp 24683 2015-02-21 14:33:33Z adeas31 $
  *
  */
 

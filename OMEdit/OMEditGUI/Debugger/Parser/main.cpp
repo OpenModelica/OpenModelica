@@ -31,7 +31,6 @@
  *
  * @author Adeel Asghar <adeel.asghar@liu.se>
  *
- * RCS: $Id: main.cpp 22008 2014-08-26 23:13:07Z hudson $
  *
  */
 

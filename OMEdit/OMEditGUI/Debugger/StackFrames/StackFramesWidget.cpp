@@ -31,7 +31,6 @@
  *
  * @author Adeel Asghar <adeel.asghar@liu.se>
  *
- * RCS: $Id: StackFramesWidget.cpp 23058 2014-10-29 23:00:02Z adeas31 $
  *
  */
 

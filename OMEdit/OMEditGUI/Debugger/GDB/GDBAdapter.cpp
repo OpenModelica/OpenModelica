@@ -31,7 +31,6 @@
  *
  * @author Adeel Asghar <adeel.asghar@liu.se>
  *
- * RCS: $Id: GDBAdapter.cpp 25451 2015-04-09 02:08:24Z adeas31 $
  *
  */
 

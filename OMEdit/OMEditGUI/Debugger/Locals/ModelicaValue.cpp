@@ -31,7 +31,6 @@
  *
  * @author Adeel Asghar <adeel.asghar@liu.se>
  *
- * RCS: $Id: ModelicaValue.cpp 22009 2014-08-26 23:13:38Z hudson $
  *
  */
 
