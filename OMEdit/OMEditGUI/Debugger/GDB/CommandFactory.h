@@ -31,7 +31,6 @@
  *
  * @author Adeel Asghar <adeel.asghar@liu.se>
  *
- * RCS: $Id: CommandFactory.h 24541 2015-02-11 22:50:34Z adeas31 $
  *
  */
 

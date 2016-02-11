@@ -32,7 +32,6 @@
  *
  * @author Adeel Asghar <adeel.asghar@liu.se>
  *
- * RCS: $Id$
  *
  */
 

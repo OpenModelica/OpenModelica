@@ -32,7 +32,6 @@
  *
  * @author Martin Sjölund <martin.sjolund@liu.se>
  *
- * RCS: $Id$
  *
  */
 
