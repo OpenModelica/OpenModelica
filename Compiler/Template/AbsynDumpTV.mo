@@ -325,6 +325,12 @@ package Absyn
       Exp rightSide;
     end EQ_EQUALS;
 
+    record EQ_PDE
+      Exp leftSide;
+      Exp rightSide;
+      ComponentRef domain;
+    end EQ_PDE;
+
     record EQ_CONNECT
       ComponentRef connector1;
       ComponentRef connector2;

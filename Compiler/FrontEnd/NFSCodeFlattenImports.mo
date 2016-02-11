@@ -34,7 +34,7 @@ encapsulated package NFSCodeFlattenImports
   package:     NFSCodeFlattenImports
   description: SCode flattening
 
-  RCS: $Id$
+  RCS: $Id: NFSCodeFlattenImports.mo 25211 2015-03-23 09:47:31Z jansilar $
 
   This module flattens the SCode representation by removing all extends, imports
   and redeclares, and fully qualifying class names.
@@ -264,10 +264,11 @@ protected
   SCode.Parallelism prl;
   SCode.Variability var;
   Absyn.Direction dir;
+  Absyn.IsField isf;
 algorithm
-  SCode.ATTR(ad, ct, prl, var, dir) := inAttributes;
+  SCode.ATTR(ad, ct, prl, var, dir, isf) := inAttributes;
   ad := List.map2(ad, flattenSubscript, inEnv, inInfo);
-  outAttributes := SCode.ATTR(ad, ct, prl, var, dir);
+  outAttributes := SCode.ATTR(ad, ct, prl, var, dir, isf);
 end flattenAttributes;
 
 protected function flattenTypeSpec

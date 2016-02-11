@@ -42,6 +42,7 @@ void* ParserExt_parse(const char* filename, const char* infoname, int acceptedGr
   if(acceptedGrammar == 2) flags |= PARSE_META_MODELICA;
   else if(acceptedGrammar == 3) flags |= PARSE_PARMODELICA;
   else if(acceptedGrammar == 4) flags |= PARSE_OPTIMICA;
+  else if(acceptedGrammar == 5) flags |= PARSE_PDEMODELICA;
 
   void *res = parseFile(filename, infoname, flags, encoding, langStd, runningTestsuite);
   if (res == NULL)
@@ -56,6 +57,7 @@ void* ParserExt_parseexp(const char* filename, const char* infoname, int accepte
   if(acceptedGrammar == 2) flags |= PARSE_META_MODELICA;
   else if(acceptedGrammar == 3) flags |= PARSE_PARMODELICA;
   else if(acceptedGrammar == 4) flags |= PARSE_OPTIMICA;
+  else if(acceptedGrammar == 5) flags |= PARSE_PDEMODELICA;
 
   void *res = parseFile(filename, infoname, flags, "UTF-8", langStd, runningTestsuite);
   if (res == NULL)
@@ -69,6 +71,7 @@ void* ParserExt_parsestring(const char* data, const char* filename, int accepted
   if(acceptedGrammar == 2) flags |= PARSE_META_MODELICA;
   else if(acceptedGrammar == 3) flags |= PARSE_PARMODELICA;
   else if(acceptedGrammar == 4) flags |= PARSE_OPTIMICA;
+  else if(acceptedGrammar == 5) flags |= PARSE_PDEMODELICA;
 
   void *res = parseString(data, filename, flags, langStd, runningTestsuite);
   if (res != NULL) {
@@ -84,6 +87,7 @@ void* ParserExt_parsestringexp(const char* data, const char* filename, int accep
   if(acceptedGrammar == 2) flags |= PARSE_META_MODELICA;
   else if(acceptedGrammar == 3) flags |= PARSE_PARMODELICA;
   else if(acceptedGrammar == 4) flags |= PARSE_OPTIMICA;
+  else if(acceptedGrammar == 5) flags |= PARSE_PDEMODELICA;
 
   void *res = parseString(data, filename, flags, langStd, runningTestsuite);
   if (res != NULL) {
@@ -99,6 +103,7 @@ void* ParserExt_stringPath(const char* data, const char* filename, int acceptedG
   if(acceptedGrammar == 2) flags |= PARSE_META_MODELICA;
   else if(acceptedGrammar == 3) flags |= PARSE_PARMODELICA;
   else if(acceptedGrammar == 4) flags |= PARSE_OPTIMICA;
+  else if(acceptedGrammar == 5) flags |= PARSE_PDEMODELICA;
 
   void *res = parseString(data, filename, flags, langStd, runningTestsuite);
   if (res != NULL) {
@@ -114,6 +119,7 @@ void* ParserExt_stringCref(const char* data, const char* filename, int acceptedG
   if(acceptedGrammar == 2) flags |= PARSE_META_MODELICA;
   else if(acceptedGrammar == 3) flags |= PARSE_PARMODELICA;
   else if(acceptedGrammar == 4) flags |= PARSE_OPTIMICA;
+  else if(acceptedGrammar == 5) flags |= PARSE_PDEMODELICA;
 
   void *res = parseString(data, filename, flags, langStd, runningTestsuite);
   if (res != NULL) {

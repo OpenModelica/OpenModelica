@@ -374,7 +374,7 @@ algorithm
                   SCode.COMPONENT(
                     id,
                     SCode.defaultPrefixes,
-                    SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
+                    SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NONFIELD()),
                     Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
                     SCode.noComment, NONE(), Absyn.dummyInfo),
                   DAE.NOMOD(),

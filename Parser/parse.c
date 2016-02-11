@@ -43,8 +43,8 @@
 #include <antlr3intstream.h>
 #include <antlr3config.h>
 
-#include "runtime/errorext.h"
-#include "runtime/systemimpl.h"
+#include "errorext.h"
+#include "systemimpl.h"
 
 pthread_once_t parser_once_create_key = PTHREAD_ONCE_INIT;
 pthread_key_t modelicaParserKey;

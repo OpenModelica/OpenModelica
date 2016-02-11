@@ -35,7 +35,7 @@ encapsulated package Absyn
   package:     Absyn
   description: Abstract syntax
 
-  RCS: $Id$
+  RCS: $Id: Absyn.mo 25819 2015-04-29 11:33:05Z jansilar $
 
   This file defines the abstract syntax for Modelica in MetaModelica Compiler (MMC).  It mainly
   contains uniontypes for constructing the abstract syntax tree
@@ -465,6 +465,12 @@ uniontype Equation "Information on one (kind) of equation, different constructor
     Exp rightSide "rightSide Connect stmt" ;
   end EQ_EQUALS;
 
+  record EQ_PDE
+    Exp leftSide "leftSide" ;
+    Exp rightSide "rightSide Connect stmt" ;
+    ComponentRef domain "domain for PDEs" ;
+  end EQ_PDE;
+
   record EQ_CONNECT
     ComponentRef connector1 "connector1" ;
     ComponentRef connector2 "connector2" ;
@@ -627,9 +633,16 @@ uniontype ElementAttributes "Element attributes"
     Parallelism parallelism "for OpenCL/CUDA parglobal, parlocal ...";
     Variability variability "parameter, constant etc.";
     Direction direction "input/output";
+    IsField isField "non-field / field";
     ArrayDim arrayDim "array dimensions";
-  end ATTR;
+   end ATTR;
 end ElementAttributes;
+
+public
+uniontype IsField "Is field"
+  record NONFIELD "variable is not a field"  end NONFIELD;
+  record FIELD "variable is a field"         end FIELD;
+end IsField;
 
 public
 uniontype Parallelism "Parallelism"
@@ -1447,6 +1460,26 @@ algorithm
   (outExp,outArg) := traverseExpBidir(inExp,dummyTraverseExp,inFunc,inArg);
 end traverseExp;
 
+public function traverseExpTopDown
+" Traverses all subexpressions of an Exp expression.
+  Takes a function and an extra argument passed through the traversal."
+  input Exp inExp;
+  input FuncType inFunc;
+  input Type_a inArg;
+  output Exp outExp;
+  output Type_a outArg;
+  partial function FuncType
+    input Exp inExp;
+    input Type_a inArg;
+    output Exp outExp;
+    output Type_a outArg;
+    replaceable type Type_a subtypeof Any;
+  end FuncType;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (outExp,outArg) := traverseExpBidir(inExp,inFunc,dummyTraverseExp,inArg);
+end traverseExpTopDown;
+
 public function traverseExpList
 "calls traverseExp on each element in the given list"
   input list<Exp> inExpList;
@@ -2177,6 +2210,13 @@ algorithm
         (e2, arg) = traverseExpBidir(e2, enterFunc, exitFunc, arg);
       then
         (EQ_EQUALS(e1, e2), arg);
+    case (EQ_PDE(leftSide = e1, rightSide = e2, domain = cref1), _, _, arg)
+      equation
+        (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
+        (e2, arg) = traverseExpBidir(e2, enterFunc, exitFunc, arg);
+        cref1 = traverseExpBidirCref(cref1, enterFunc, exitFunc, arg);
+      then
+        (EQ_PDE(e1, e2,cref1), arg);
 
     case (EQ_CONNECT(connector1 = cref1, connector2 = cref2), _, _, arg)
       equation
@@ -5350,6 +5390,19 @@ algorithm
     else false;
   end match;
 end directionEqual;
+
+public function isFieldEqual
+  input IsField isField1;
+  input IsField isField2;
+  output Boolean outEqual;
+algorithm
+  outEqual := match(isField1, isField2)
+    case (NONFIELD(), NONFIELD()) then true;
+    case (FIELD(), FIELD()) then true;
+    else false;
+  end match;
+end isFieldEqual;
+
 
 public function pathLt
   input Path path1;

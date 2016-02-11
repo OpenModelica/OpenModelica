@@ -490,6 +490,14 @@ package SCode
       SourceInfo info;
     end EQ_EQUALS;
 
+    record EQ_PDE
+      Absyn.Exp expLeft;
+      Absyn.Exp expRight;
+      ComponentRef domain;
+      Comment comment;
+      SourceInfo info;
+    end EQ_PDE;
+
     record EQ_CONNECT
       Absyn.ComponentRef crefLeft;
       Absyn.ComponentRef crefRight;

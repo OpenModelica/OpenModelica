@@ -318,18 +318,16 @@ protected function compareQualifiedImportNames
   input Import inImport2;
   output Boolean outEqual;
 algorithm
-  outEqual := matchcontinue(inImport1, inImport2)
+  outEqual := match(inImport1, inImport2)
     local
       Name name1, name2;
 
-    case (Absyn.NAMED_IMPORT(name = name1), Absyn.NAMED_IMPORT(name = name2))
-      equation
-        true = stringEqual(name1, name2);
+    case (Absyn.NAMED_IMPORT(name = name1), Absyn.NAMED_IMPORT(name = name2)) guard stringEqual(name1, name2)
       then
         true;
 
     else false;
-  end matchcontinue;
+  end match;
 end compareQualifiedImportNames;
 
 public function addChildRef
@@ -747,14 +745,12 @@ public function isEncapsulated
   input Node inNode;
   output Boolean b;
 algorithm
-  b := matchcontinue(inNode)
+  b := match(inNode)
     case FCore.N(data = FCore.CL(e = SCode.CLASS(encapsulatedPrefix = SCode.ENCAPSULATED()))) then true;
-    case FCore.N(data = FCore.CO())
-      equation
-        true = boolEq(Config.acceptMetaModelicaGrammar(), false) and boolNot(Flags.isSet(Flags.GRAPH_INST));
+    case FCore.N(data = FCore.CO()) guard boolEq(Config.acceptMetaModelicaGrammar(), false) and boolNot(Flags.isSet(Flags.GRAPH_INST))
       then true;
     else false;
-  end matchcontinue;
+  end match;
 end isEncapsulated;
 
 public function isReference
@@ -771,20 +767,19 @@ public function isUserDefined
   input Node inNode;
   output Boolean b;
 algorithm
-  b := matchcontinue(inNode)
+  b := match(inNode)
     local Ref p;
     case FCore.N(data = FCore.CL(kind = FCore.USERDEFINED())) then true;
     case FCore.N(data = FCore.CO(kind = FCore.USERDEFINED())) then true;
     // any parent is userdefined?
-    case _
+    case _ guard hasParents(inNode)
       equation
-        true = hasParents(inNode);
         p::_ = parents(inNode);
         b = isRefUserDefined(p);
       then
         b;
     else false;
-  end matchcontinue;
+  end match;
 end isUserDefined;
 
 public function isTop
@@ -914,34 +909,26 @@ public function isFunction
   input Node inNode;
   output Boolean b;
 algorithm
-  b := matchcontinue(inNode)
+  b := match(inNode)
     local
       SCode.Element e;
-    case FCore.N(data = FCore.CL(e = e))
-      equation
-        true = SCode.isFunction(e);
-      then true;
-    case FCore.N(data = FCore.CL(e = e))
-      equation
-        true = SCode.isOperator(e);
+    case FCore.N(data = FCore.CL(e = e)) guard SCode.isFunction(e) or SCode.isOperator(e)
       then true;
     else false;
-  end matchcontinue;
+  end match;
 end isFunction;
 
 public function isRecord
   input Node inNode;
-  output Boolean b;
+  output Boolean b = false;
 algorithm
-  b := matchcontinue(inNode)
+  b := match(inNode)
     local
       SCode.Element e;
-    case FCore.N(data = FCore.CL(e = e))
-      equation
-        true = SCode.isRecord(e);
+    case FCore.N(data = FCore.CL(e = e)) guard SCode.isRecord(e)
       then true;
     else false;
-  end matchcontinue;
+  end match;
 end isRecord;
 
 public function isSection
@@ -1052,17 +1039,13 @@ algorithm
 
     case ({}) then fail();
 
-    case (r::_)
-      equation
-        false = isRefImplicitScope(r);
+    case (r::_) guard not isRefImplicitScope(r)
       then
         r;
 
     case (_::rest)
-      equation
-        r = nonImplicitRefFromScope(rest);
       then
-        r;
+        nonImplicitRefFromScope(rest);
   end matchcontinue;
 end nonImplicitRefFromScope;
 
@@ -1094,34 +1077,28 @@ protected function namesUpToParentName_dispatch
   input Names acc;
   output Names outNames;
 algorithm
-   outNames := matchcontinue(inRef, inName, acc)
+   outNames := match(inRef, inName, acc)
     local
       Ref r;
       Names names;
       Name name;
 
     // bah, error!
-    case (r, _, _)
-      equation
-        true = isRefTop(r);
+    case (r, _, _) guard isRefTop(r)
       then
         {};
 
     // we're done, return
-    case (r, _, _)
-      equation
-        true = stringEq(inName, refName(r));
+    case (r, _, _) guard stringEq(inName, refName(r))
       then
         acc;
 
     // up the parent
     case (r, name, _)
-      equation
-        names = namesUpToParentName_dispatch(original(refParents(r)), name, refName(r) :: acc);
       then
-        names;
+        namesUpToParentName_dispatch(original(refParents(r)), name, refName(r) :: acc);
 
-  end matchcontinue;
+  end match;
 end namesUpToParentName_dispatch;
 
 public function getModifierTarget
@@ -1135,16 +1112,13 @@ algorithm
       Ref r;
 
     // bah, error!
-    case (r)
-      equation
-        true = isRefTop(r);
+    case (r) guard isRefTop(r)
       then
         fail();
 
     // we're done, return
-    case (r)
+    case (r) guard isRefModHolder(r)
       equation
-        true = isRefModHolder(r);
         // get his parent
         r = original(refParents(r));
         r::_ = refRefTargetScope(r);
@@ -1152,11 +1126,7 @@ algorithm
         r;
 
     // up the parent
-    case (r)
-      equation
-        r = getModifierTarget(original(refParents(r)));
-      then
-        r;
+    else getModifierTarget(original(refParents(inRef)));
 
   end matchcontinue;
 end getModifierTarget;
@@ -1185,15 +1155,13 @@ public function originalScope_dispatch
   input Scope inAcc;
   output Scope outScope;
 algorithm
-  outScope := matchcontinue(inRef, inAcc)
+  outScope := match(inRef, inAcc)
     local
       Scope acc;
       Ref r;
 
     // top
-    case (_, acc)
-      equation
-        true = isTop(fromRef(inRef));
+    case (_, acc) guard isTop(fromRef(inRef))
       then
         listReverse(inRef::acc);
 
@@ -1201,11 +1169,10 @@ algorithm
     case (_, acc)
       equation
         r = original(parents(fromRef(inRef)));
-        acc = originalScope_dispatch(r, inRef::acc);
       then
-        acc;
+        originalScope_dispatch(r, inRef::acc);
 
-  end matchcontinue;
+  end match;
 end originalScope_dispatch;
 
 public function original
@@ -1241,15 +1208,13 @@ public function contextualScope_dispatch
   input Scope inAcc;
   output Scope outScope;
 algorithm
-  outScope := matchcontinue(inRef, inAcc)
+  outScope := match(inRef, inAcc)
     local
       Scope acc;
       Ref r;
 
     // top
-    case (_, acc)
-      equation
-        true = isTop(fromRef(inRef));
+    case (_, acc) guard isTop(fromRef(inRef))
       then
         listReverse(inRef::acc);
 
@@ -1257,11 +1222,10 @@ algorithm
     case (_, acc)
       equation
         r = contextual(parents(fromRef(inRef)));
-        acc = contextualScope_dispatch(r, inRef::acc);
       then
-        acc;
+        contextualScope_dispatch(r, inRef::acc);
 
-  end matchcontinue;
+  end match;
 end contextualScope_dispatch;
 
 public function contextual
@@ -1859,18 +1823,15 @@ public function derivedRef
   input Ref inRef;
   output Refs outRefs;
 algorithm
-  outRefs := matchcontinue(inRef)
+  outRefs := match(inRef)
     local Ref r;
-    case (_)
-      equation
-        true = isRefDerived(inRef);
-        r = child(inRef, refNodeName);
+    case (_) guard isRefDerived(inRef)
       then
-        {r};
+        {child(inRef, refNodeName)};
 
     else {};
 
-  end matchcontinue;
+  end match;
 end derivedRef;
 
 
@@ -1878,14 +1839,12 @@ public function extendsRefs
   input Ref inRef;
   output Refs outRefs;
 algorithm
-  outRefs := matchcontinue(inRef)
+  outRefs := match(inRef)
     local
       Refs refs, rd;
 
-    case (_)
+    case (_) guard isRefClass(inRef) // we have a class
       equation
-        // we have a class
-        true = isRefClass(inRef);
         // get the derived ref
         rd = derivedRef(inRef);
         // get the extends
@@ -1897,7 +1856,7 @@ algorithm
 
     else {};
 
-  end matchcontinue;
+  end match;
 end extendsRefs;
 
 public function cloneRef
@@ -2355,17 +2314,15 @@ public function isImplicitRefName
   input Ref r;
   output Boolean b;
 algorithm
-  b := matchcontinue r
+  b := match r
 
-    case _
-      equation
-        false = isRefTop(r);
+    case _ guard not isRefTop(r)
       then
         FCore.isImplicitScope(refName(r));
 
     else false;
 
-  end matchcontinue;
+  end match;
 end isImplicitRefName;
 
 public function refInstVar

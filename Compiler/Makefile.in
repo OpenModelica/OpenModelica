@@ -81,7 +81,7 @@ endif
 $(SUSANMO): simcode
 
 builtin:
-	cp FrontEnd/ModelicaBuiltin.mo FrontEnd/MetaModelicaBuiltin.mo $(builddir_lib)
+	cp FrontEnd/ModelicaBuiltin.mo FrontEnd/MetaModelicaBuiltin.mo FrontEnd/PDEModelicaBuiltin.mo $(builddir_lib)
 
 .PRECIOUS: Makefile
 

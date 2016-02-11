@@ -2498,6 +2498,14 @@ uniontype EEquation
     builtin.SourceInfo info;
   end EQ_EQUALS;
 
+  record EQ_PDE "PDE or boundary condition"
+    Absyn.Exp expLeft  "the expression on the left side of the operator";
+    Absyn.Exp expRight "the expression on the right side of the operator";
+    ComponentRef domain;
+    Option<Comment> comment;
+    builtin.SourceInfo info;
+  end EQ_PDE;
+
   record EQ_CONNECT "the connect equation"
     Absyn.ComponentRef crefLeft  "the connector/component reference on the left side";
     Absyn.ComponentRef crefRight "the connector/component reference on the right side";

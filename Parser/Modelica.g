@@ -46,7 +46,7 @@ import MetaModelica_Lexer; /* Makes all tokens defined, imported in OptiMo_Lexer
   #include <time.h>
 
   #include "ModelicaParserCommon.h"
-  #include "runtime/errorext.h"
+  #include "errorext.h"
 
   #define ModelicaParserException 100
   #define ModelicaLexerException  200
@@ -111,6 +111,17 @@ goto rule ## func ## Ex; }}
   #include "OpenModelicaBootstrappingHeader.h"
   parser_members members;
   void* mmc_mk_box_eat_all(int ix, ...) {return NULL;}
+  #if defined(OMC_BOOTSTRAPPING)
+  /* The tarball version of OMC has a different order of fields in Absyn */
+  #define Absyn__ATTR__BOOTSTRAPPING(A1,A2,A3,A4,A5,FIELD,A6) Absyn__ATTR(A1,A2,A3,A4,A5,A6)
+  /* These do not exist in the bootstrapped version, but are returned in a grammar rule. Just do NULL. */
+  #define Absyn__FIELD NULL
+  #define Absyn__NONFIELD NULL
+  /* Treat PDE equations as normal equations */
+  #define Absyn__EQ_5fPDE(A1,A2,A3) Absyn__EQ_5fEQUALS(A1,A2)
+  #else
+  #define Absyn__ATTR__BOOTSTRAPPING Absyn__ATTR
+  #endif
 }
 
 /*------------------------------------------------------------------
@@ -228,7 +239,7 @@ class_specifier2 returns [void* ast, const char *s2]
 | SUBTYPEOF ts=type_specifier
    {
      $ast = Absyn__DERIVED(Absyn__TCOMPLEX(Absyn__IDENT(mmc_mk_scon("polymorphic")),mmc_mk_cons($ts.ast,mmc_mk_nil()),mmc_mk_nil()),
-                           Absyn__ATTR(MMC_FALSE,MMC_FALSE,Absyn__NON_5fPARALLEL,Absyn__VAR,Absyn__BIDIR,mmc_mk_nil()),mmc_mk_nil(),mmc_mk_none());
+                           Absyn__ATTR__BOOTSTRAPPING(MMC_FALSE,MMC_FALSE,Absyn__NON_5fPARALLEL,Absyn__VAR,Absyn__BIDIR,Absyn__NONFIELD,mmc_mk_nil()),mmc_mk_nil(),mmc_mk_none());
    }
 )
 ;
@@ -259,7 +270,7 @@ overloading returns [void* ast]
   ;
 
 base_prefix returns [void* ast] :
-  tp=type_prefix {ast = Absyn__ATTR(tp.flow, tp.stream, tp.parallelism, tp.variability, tp.direction, mmc_mk_nil());}
+  tp=type_prefix {ast = Absyn__ATTR__BOOTSTRAPPING(tp.flow, tp.stream, tp.parallelism, tp.variability, tp.direction, tp.field, mmc_mk_nil());}
   ;
 
 name_list returns [void* ast]
@@ -515,19 +526,20 @@ component_clause returns [void* ast]
         }
       }
 
-      ast = Absyn__COMPONENTS(Absyn__ATTR(tp.flow, tp.stream, tp.parallelism, tp.variability, tp.direction, arr), $path.ast, clst);
+      ast = Absyn__COMPONENTS(Absyn__ATTR__BOOTSTRAPPING(tp.flow, tp.stream, tp.parallelism, tp.variability, tp.direction, tp.field, arr), $path.ast, clst);
     }
   ;
 
-type_prefix returns [void* flow, void* stream, void* parallelism, void* variability, void* direction]
-@init { fl = 0; st = 0; srd = 0; glb = 0; di = 0; pa = 0; co = 0; in = 0; out = 0; } :
-  (fl=FLOW|st=STREAM)? (srd=T_LOCAL|glb=T_GLOBAL)? (di=DISCRETE|pa=PARAMETER|co=CONSTANT)? (in=T_INPUT|out=T_OUTPUT)?
+type_prefix returns [void* flow, void* stream, void* parallelism, void* variability, void* direction, void* field]
+@init { fl = 0; st = 0; srd = 0; glb = 0; di = 0; pa = 0; co = 0; in = 0; out = 0; fi = 0; nofi = 0;} :
+  (fl=FLOW|st=STREAM)? (srd=T_LOCAL|glb=T_GLOBAL)? (di=DISCRETE|pa=PARAMETER|co=CONSTANT)? (in=T_INPUT|out=T_OUTPUT)? (fi=FIELD|nofi=NONFIELD)?
     {
       $flow = mmc_mk_bcon(fl);
       $stream = mmc_mk_bcon(st);
       $parallelism = srd ? Absyn__PARLOCAL : glb ? Absyn__PARGLOBAL : Absyn__NON_5fPARALLEL;
       $variability = di ? Absyn__DISCRETE : pa ? Absyn__PARAM : co ? Absyn__CONST : Absyn__VAR;
       $direction = in ? Absyn__INPUT : out ? Absyn__OUTPUT : Absyn__BIDIR;
+      $field = fi ? Absyn__FIELD : nofi ? Absyn__NONFIELD : Absyn__NONFIELD;
     }
   ;
 
@@ -895,12 +907,16 @@ assign_clause_a returns [void* ast]
   ;
 
 equality_or_noretcall_equation returns [void* ast]
-@init { ass = 0; e1 = 0; ass = 0; e2.ast = 0; } :
+@init { ass = 0; e1 = 0; ass = 0; e2.ast = 0; cr.ast = 0;} :
   e1=simple_expression
-    (  (EQUALS | ass=ASSIGN) e2=expression[metamodelica_enabled()]
+    (  (EQUALS | ass=ASSIGN) e2=expression[metamodelica_enabled()] (INDOMAIN cr=component_reference2)?
       {
         modelicaParserAssert(ass==0,"Equations can not contain assignments (':='), use equality ('=') instead", equality_or_noretcall_equation, $ass->line, $ass->charPosition+1, $ass->line, $ass->charPosition+2);
-        $ast = Absyn__EQ_5fEQUALS(e1,e2.ast);
+        if (cr.ast != 0) {
+                $ast = Absyn__EQ_5fPDE(e1,e2.ast,mmc_mk_some(cr.ast));
+        } else {
+                $ast = Absyn__EQ_5fEQUALS(e1,e2.ast);
+        }
       }
     | {LA(1) != EQUALS && LA(1) != ASSIGN}? /* It has to be a CALL */
        {

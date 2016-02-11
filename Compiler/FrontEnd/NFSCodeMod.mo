@@ -629,14 +629,12 @@ protected function splitMod2
   output tuple<String, Modifier> outMod;
   output Boolean outFound;
 algorithm
-  (outMod, outFound) := matchcontinue(inExistingMod, inId, inNewMod, inPrefix)
+  (outMod, outFound) := match(inExistingMod, inId, inNewMod, inPrefix)
     local
       String id;
       Modifier mod;
 
-    case ((id, _), _, _, _)
-      equation
-        false = stringEq(id, inId);
+    case ((id, _), _, _, _) guard not stringEq(id, inId)
       then
         (inExistingMod, false);
 
@@ -646,7 +644,7 @@ algorithm
       then
         ((id, mod), true);
 
-  end matchcontinue;
+  end match;
 end splitMod2;
 
 protected function mergeModsInSameScope
@@ -724,15 +722,13 @@ protected function mergeSubModInSameScope2
   output Boolean outFound;
 algorithm
   (outMod, outFound) :=
-  matchcontinue(inExistingMod, inNewMod, inPrefix, inElementName)
+  match(inExistingMod, inNewMod, inPrefix, inElementName)
     local
       String id1, id2;
       Modifier mod;
 
     case (NFInstTypesOld.MODIFIER(name = id1),
-          NFInstTypesOld.MODIFIER(name = id2), _, _)
-      equation
-        false = stringEq(id1, id2);
+          NFInstTypesOld.MODIFIER(name = id2), _, _) guard not stringEq(id1, id2)
       then
         (inExistingMod, false);
 
@@ -743,7 +739,7 @@ algorithm
       then
         (mod, true);
 
-  end matchcontinue;
+  end match;
 end mergeSubModInSameScope2;
 
 public function getModifierBinding

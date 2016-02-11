@@ -34,7 +34,7 @@ encapsulated package Dump
   package:     Dump
   description: debug printing
 
-  RCS: $Id$
+  RCS: $Id: Dump.mo 25312 2015-03-30 08:35:17Z jansilar $
 
   Printing routines for debugging of the AST.  These functions do
   nothing but print the data structures to the standard output.
@@ -1417,6 +1417,7 @@ algorithm
   name := match eq
     case Absyn.EQ_IF() then "if";
     case Absyn.EQ_EQUALS() then "equals";
+    case Absyn.EQ_PDE() then "pde";
     case Absyn.EQ_CONNECT() then "connect";
     case Absyn.EQ_WHEN_E() then "when";
     case Absyn.EQ_NORETCALL() then "function call";
@@ -1459,6 +1460,17 @@ algorithm
         Print.printBuf(",");
         printExp(e2);
         Print.printBuf(")");
+      then
+        ();
+
+    case (Absyn.EQ_PDE(leftSide = e1,rightSide = e2,domain = cr))
+      equation
+        Print.printBuf("EQ_PDE(");
+        printExp(e1);
+        Print.printBuf(",");
+        printExp(e2);
+        Print.printBuf(") indomain ");
+        printComponentRef(cr);
       then
         ();
 
@@ -3916,7 +3928,7 @@ algorithm
     local
       Absyn.Exp ifExp,leftSide,rightSide,whenExp;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> elseIfBranches, elseWhenEquations;
-      Absyn.ComponentRef connector1,connector2,functionName;
+      Absyn.ComponentRef connector1,connector2,functionName,cr;
       Absyn.ForIterators iterators;
       list<Absyn.EquationItem> equationTrueItems,equationElseItems,forEquations,whenEquations;
       Absyn.FunctionArgs functionArgs;
@@ -3940,6 +3952,16 @@ algorithm
         Print.printBuf(", rightSide = ");
         printExpAsCorbaString(rightSide);
         Print.printBuf(" end Absyn.EQ_EQUALS;");
+      then ();
+    case Absyn.EQ_PDE(leftSide,rightSide,cr)
+      equation
+        Print.printBuf("record Absyn.EQ_PDE leftSide = ");
+        printExpAsCorbaString(leftSide);
+        Print.printBuf(", rightSide = ");
+        printExpAsCorbaString(rightSide);
+        Print.printBuf(", domain = ");
+        printComponentRefAsCorbaString(cr);
+        Print.printBuf(" end Absyn.EQ_PDE;");
       then ();
     case Absyn.EQ_CONNECT(connector1,connector2)
       equation
@@ -4247,7 +4269,8 @@ algorithm
       Absyn.Variability variability;
       Absyn.Direction direction;
       Absyn.ArrayDim arrayDim;
-    case Absyn.ATTR(flowPrefix,streamPrefix,parallelism,variability,direction,arrayDim)
+      Absyn.IsField isField;
+    case Absyn.ATTR(flowPrefix,streamPrefix,parallelism,variability,direction,isField,arrayDim)
       equation
         Print.printBuf("record Absyn.ATTR flowPrefix = ");
         Print.printBuf(boolString(flowPrefix));
@@ -4259,6 +4282,10 @@ algorithm
         printVariabilityAsCorbaString(variability);
         Print.printBuf(", direction = ");
         printDirectionAsCorbaString(direction);
+        if intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA) then
+          Print.printBuf(", isField = ");
+          printIsFieldAsCorbaString(isField);
+        end if;
         Print.printBuf(", arrayDim = ");
         printArrayDimAsCorbaString(arrayDim);
         Print.printBuf(" end Absyn.ATTR;");
@@ -4326,6 +4353,22 @@ algorithm
       then ();
   end match;
 end printDirectionAsCorbaString;
+
+protected function printIsFieldAsCorbaString
+  input Absyn.IsField isf;
+algorithm
+  _ := match isf
+    case Absyn.NONFIELD()
+      equation
+        Print.printBuf("record Absyn.NONFIELD end Absyn.NONFIELD;");
+      then ();
+    case Absyn.FIELD()
+      equation
+        Print.printBuf("record Absyn.FIELD end Absyn.FIELD;");
+      then ();
+  end match;
+end printIsFieldAsCorbaString;
+
 
 protected function printElementArgAsCorbaString
   input Absyn.ElementArg arg;

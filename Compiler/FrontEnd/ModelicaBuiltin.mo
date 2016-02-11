@@ -653,6 +653,7 @@ function inStream
 </html>"));
 end inStream;
 
+
 /* Extension for uncertainty computations */
 record Distribution
   String name "the name of the distibution, e.g \"normal\" ";

@@ -34,7 +34,7 @@ encapsulated package NFSCodeFlattenRedeclare
   package:     NFSCodeFlattenRedeclare
   description: SCode flattening
 
-  RCS: $Id$
+  RCS: $Id: NFSCodeFlattenRedeclare.mo 25211 2015-03-23 09:47:31Z jansilar $
 
   This module contains redeclare-specific functions used by SCodeFlatten to
   handle redeclares. Redeclares can be either modifiers or elements.
@@ -517,7 +517,7 @@ protected function pushRedeclareIntoExtends2
   input list<NFSCodeEnv.Extends> inExtends;
   output list<NFSCodeEnv.Extends> outExtends;
 algorithm
-  outExtends := matchcontinue(inName, inRedeclare, inBaseClasses, inExtends)
+  outExtends := match(inName, inRedeclare, inBaseClasses, inExtends)
     local
       Absyn.Path bc1, bc2;
       list<Absyn.Path> rest_bc;
@@ -532,9 +532,9 @@ algorithm
     // See if the first base class path matches the first extends. Push the
     // redeclare into that extends if so.
     case (_, _, bc1 :: rest_bc, NFSCodeEnv.EXTENDS(bc2, redecls, index, info) :: rest_exts)
+        guard Absyn.pathEqual(bc1, bc2)
       equation
-        true = Absyn.pathEqual(bc1, bc2);
-        redecls = pushRedeclareIntoExtends3(inRedeclare, inName, redecls);
+        redecls = pushRedeclareIntoExtends3(inRedeclare, inName, redecls, {});
         rest_exts = pushRedeclareIntoExtends2(inName, inRedeclare, rest_bc, rest_exts);
       then
         NFSCodeEnv.EXTENDS(bc2, redecls, index, info) :: rest_exts;
@@ -561,7 +561,7 @@ algorithm
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end pushRedeclareIntoExtends2;
 
 protected function pushRedeclareIntoExtends3
@@ -571,9 +571,10 @@ protected function pushRedeclareIntoExtends3
   input Item inRedeclare;
   input String inName;
   input list<NFSCodeEnv.Redeclaration> inRedeclares;
+  input list<NFSCodeEnv.Redeclaration> inOutRedeclares;
   output list<NFSCodeEnv.Redeclaration> outRedeclares;
 algorithm
-  outRedeclares := matchcontinue(inRedeclare, inName, inRedeclares)
+  outRedeclares := match(inRedeclare, inName, inRedeclares)
     local
       Item item;
       NFSCodeEnv.Redeclaration redecl;
@@ -581,21 +582,17 @@ algorithm
       String name;
 
     case (_, _, NFSCodeEnv.PROCESSED_MODIFIER(modifier = item) :: rest_redecls)
-      equation
-        name = NFSCodeEnv.getItemName(item);
-        true = stringEqual(name, inName);
+        guard stringEqual(NFSCodeEnv.getItemName(item), inName)
       then
-        NFSCodeEnv.PROCESSED_MODIFIER(inRedeclare) :: rest_redecls;
+        listAppend(listReverse(inOutRedeclares), NFSCodeEnv.PROCESSED_MODIFIER(inRedeclare) :: rest_redecls);
 
     case (_, _, redecl :: rest_redecls)
-      equation
-        rest_redecls = pushRedeclareIntoExtends3(inRedeclare, inName, rest_redecls);
       then
-        redecl :: rest_redecls;
+        pushRedeclareIntoExtends3(inRedeclare, inName, rest_redecls, redecl :: inOutRedeclares);
 
-    case (_, _, {}) then {NFSCodeEnv.PROCESSED_MODIFIER(inRedeclare)};
+    case (_, _, {}) then listReverse(NFSCodeEnv.PROCESSED_MODIFIER(inRedeclare) :: inOutRedeclares);
 
-  end matchcontinue;
+  end match;
 end pushRedeclareIntoExtends3;
 
 public function replaceElementInScope
@@ -763,15 +760,17 @@ protected
   SCode.Parallelism prl1,prl2;
   SCode.Variability var1, var2;
   Absyn.Direction dir1, dir2;
+  Absyn.IsField isf1, isf2;
 algorithm
-  SCode.ATTR(dims1, ct1, prl1, var1, dir1) := inOriginalAttributes;
-  SCode.ATTR(dims2, ct2, prl2, var2, dir2) := inNewAttributes;
+  SCode.ATTR(dims1, ct1, prl1, var1, dir1, isf1) := inOriginalAttributes;
+  SCode.ATTR(dims2, ct2, prl2, var2, dir2, isf2) := inNewAttributes;
   dims2 := propagateArrayDimensions(dims1, dims2);
   ct2 := propagateConnectorType(ct1, ct2);
   prl2 := propagateParallelism(prl1,prl2);
   var2 := propagateVariability(var1, var2);
   dir2 := propagateDirection(dir1, dir2);
-  outNewAttributes := SCode.ATTR(dims2, ct2, prl2, var2, dir2);
+  isf2 := propagateIsField(isf1, isf2);
+  outNewAttributes := SCode.ATTR(dims2, ct2, prl2, var2, dir2, isf2);
 end propagateAttributes;
 
 protected function propagateArrayDimensions
@@ -828,6 +827,17 @@ algorithm
     else inNewDirection;
   end match;
 end propagateDirection;
+
+protected function propagateIsField
+  input Absyn.IsField inOriginalIsField;
+  input Absyn.IsField inNewIsField;
+  output Absyn.IsField outNewIsField;
+algorithm
+  outNewIsField := match(inOriginalIsField, inNewIsField)
+    case (_, Absyn.NONFIELD()) then inOriginalIsField;
+    else inNewIsField;
+  end match;
+end propagateIsField;
 
 protected function traceReplaceElementInScope
 "@author: adrpo

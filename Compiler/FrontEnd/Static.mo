@@ -1211,6 +1211,11 @@ algorithm
         algItem2 = Absyn.ALGORITHMITEM(Absyn.ALG_IF(left,{algItem1},{},{}),comment,info);
       then {algItem2};
 
+    case Absyn.EQ_PDE()
+      equation
+        fail("PDE in Static.fromEquationToAlgAssignment() not handled");
+      then {};
+
     case Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("fail",_),_)
       equation
         algItem = Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("fail",{}),Absyn.FUNCTIONARGS({},{})),comment,info);

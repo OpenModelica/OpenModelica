@@ -76,7 +76,7 @@ bootstrap-from-tarball: $(PATCHES)
 runtime-depends:
 	@# NOTE: OpenModelicaBootstrappingHeader.h has to be regenerated without any other process writing to so/etc or you get bus errors
 	$(MAKE) -f $(defaultMakefileTarget) -C .. OpenModelicaBootstrappingHeader.h OMBUILDDIR=$(OMBUILDDIR)
-	$(MAKE) parser compilerruntime
+	$(MAKE) -f $(defaultMakefileTarget) parser compilerruntime
 parser:
 	$(MAKE) -f $(defaultMakefileTarget) -C ../../Parser install OMBUILDDIR=$(OMBUILDDIR)
 compilerruntime:

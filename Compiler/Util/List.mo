@@ -3429,6 +3429,86 @@ algorithm
   end for;
 end fold43;
 
+public function fold20<T, FT1, FT2>
+  "Takes a list and a function operating on list elements having two extra
+   arguments that are 'updated', thus returned from the function. fold will call
+   the function for each element in a sequence, updating the start value."
+  input list<T> inList;
+  input FoldFunc inFoldFunc;
+  input FT1 inStartValue1;
+  input FT2 inStartValue2;
+  output FT1 outResult1 = inStartValue1;
+  output FT2 outResult2 = inStartValue2;
+
+  partial function FoldFunc
+    input T inElement;
+    input FT1 inFoldArg1;
+    input FT2 inFoldArg2;
+    output FT1 outFoldArg1;
+    output FT2 outFoldArg2;
+  end FoldFunc;
+algorithm
+  for e in inList loop
+    (outResult1, outResult2) := inFoldFunc(e, outResult1,outResult2);
+  end for;
+end fold20;
+
+public function fold30<T, FT1, FT2, FT3>
+  "Takes a list and a function operating on list elements having three extra
+   arguments that are 'updated', thus returned from the function. fold will call
+   the function for each element in a sequence, updating the start value."
+  input list<T> inList;
+  input FoldFunc inFoldFunc;
+  input FT1 inStartValue1;
+  input FT2 inStartValue2;
+  input FT3 inStartValue3;
+  output FT1 outResult1 = inStartValue1;
+  output FT2 outResult2 = inStartValue2;
+  output FT3 outResult3 = inStartValue3;
+
+  partial function FoldFunc
+    input T inElement;
+    input FT1 inFoldArg1;
+    input FT2 inFoldArg2;
+    input FT3 inFoldArg3;
+    output FT1 outFoldArg1;
+    output FT2 outFoldArg2;
+    output FT3 outFoldArg3;
+  end FoldFunc;
+algorithm
+  for e in inList loop
+    (outResult1, outResult2, outResult3) := inFoldFunc(e, outResult1,outResult2,outResult3);
+  end for;
+end fold30;
+
+public function fold21<T, FT1, FT2, ArgT1>
+ "Takes a list and a function operating on list elements having two extra
+   argument that are 'updated', thus returned from the function, and one constant
+   argument that is not updated. fold will call the function for each element in
+   a sequence, updating the start value."
+  input list<T> inList;
+  input FoldFunc inFoldFunc;
+  input ArgT1 inExtraArg1;
+  input FT1 inStartValue1;
+  input FT2 inStartValue2;
+  output FT1 outResult1 = inStartValue1;
+  output FT2 outResult2 = inStartValue2;
+
+  partial function FoldFunc
+    input T inElement;
+    input ArgT1 inExtraArg1;
+    input FT1 inFoldArg1;
+    input FT2 inFoldArg2;
+    output FT1 outFoldArg1;
+    output FT2 outFoldArg2;
+  end FoldFunc;
+algorithm
+  for e in inList loop
+    (outResult1, outResult2) := inFoldFunc(e, inExtraArg1, outResult1,outResult2);
+  end for;
+end fold21;
+
+
 public function fold5<T, FT, ArgT1, ArgT2, ArgT3, ArgT4, ArgT5>
   "Takes a list and a function operating on list elements having an extra
    argument that is 'updated', thus returned from the function, and five constant
@@ -6109,6 +6189,58 @@ algorithm
     outList := listAppend(outList, rest);
   end if;
 end findMap3;
+
+public function findSome<T1,T2>
+  "Applies the given function over the list and returns first returned value that is not NONE()."
+  input list<T1> inList;
+  input FuncType inFunc;
+  output T2 outVal;
+
+  partial function FuncType
+    input T1 inElement;
+    output Option<T2> outValOpt;
+  end FuncType;
+protected
+  Option<T2> retOpt = NONE();
+  T1 e;
+  list<T1> rest = inList;
+algorithm
+  while isNone(retOpt)/*not listEmpty(rest) and not outFound*/ loop
+    e :: rest := rest;
+    retOpt := inFunc(e);
+  end while;
+  outVal := match retOpt
+    case SOME(outVal)
+      then outVal;
+    end match;
+end findSome;
+
+public function findSome1<T1,T2,Arg>
+  "Applies the given function with one extra argument over the list and returns first returned value that is not NONE()."
+  input list<T1> inList;
+  input FuncType inFunc;
+  input Arg inArg;
+  output T2 outVal;
+
+  partial function FuncType
+    input T1 inElement;
+    input Arg inArg;
+    output Option<T2> outValOpt;
+  end FuncType;
+protected
+  Option<T2> retOpt = NONE();
+  T1 e;
+  list<T1> rest = inList;
+algorithm
+  while isNone(retOpt)/*not listEmpty(rest) and not outFound*/ loop
+    e :: rest := rest;
+    retOpt := inFunc(e,inArg);
+  end while;
+  outVal := match retOpt
+    case SOME(outVal)
+      then outVal;
+    end match;
+end findSome1;
 
 public function splitEqualPrefix<T1, T2>
   input list<T1> inFullList;

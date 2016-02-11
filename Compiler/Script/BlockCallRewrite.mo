@@ -255,7 +255,7 @@ algorithm
       Absyn.EquationItem eqi, neqi;
       list<Absyn.EquationItem> leq1, leq2, nleq1, nleq2;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> tup1, ntup1;
-      Absyn.ComponentRef cr1, cr2;
+      Absyn.ComponentRef cr1, cr2, domain;
       Absyn.ForIterators fi;
       Absyn.FunctionArgs farg;
       list<Absyn.EquationItem> eqs1, eqs2, eqs3;
@@ -279,6 +279,16 @@ algorithm
        // print("EQ_Equals count1 " + intString(count1) + "\n");
       then
         (Absyn.EQ_EQUALS(nexp1, nexp2), eqs2, elems2, count1);
+
+    case(Absyn.EQ_PDE(exp1, exp2, domain))
+      equation
+        // print("EQUALS STATEMENT\n");
+        (nexp1, eqs1, elems1, count) = parseExpression(exp1, defs, oldEqs, oldElems, instNo);
+        (nexp2, eqs2, elems2, count1) = parseExpression(exp2, defs, eqs1, elems1, count);
+       // print("EQ_Equals count1 " + intString(count1) + "\n");
+      then
+        (Absyn.EQ_PDE(nexp1, nexp2, domain), eqs2, elems2, count1);
+
     case(Absyn.EQ_CONNECT(cr1, cr2))
     then
       (Absyn.EQ_CONNECT(cr1, cr2), oldEqs, oldElems, instNo);
@@ -444,9 +454,8 @@ algorithm
         elName = "_autogen_" + id + intString(instNo);
         //print("Parsed function call " + id + "\n");
         // create element, instert modifiers here
-        elem = Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE(), Absyn.NOT_INNER_OUTER(), Absyn.COMPONENTS(Absyn.ATTR(false, false, Absyn.NON_PARALLEL(), Absyn.VAR(), Absyn.BIDIR(), {}), Absyn.TPATH(Absyn.IDENT(id), NONE()),
-          {Absyn.COMPONENTITEM(Absyn.COMPONENT(elName,{}, SOME(Absyn.CLASSMOD(mods, Absyn.NOMOD()))), NONE(), NONE())}), Absyn.dummyInfo, NONE()));
-
+        elem = Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE(), Absyn.NOT_INNER_OUTER(), Absyn.COMPONENTS(Absyn.ATTR(false, false, Absyn.NON_PARALLEL(), Absyn.VAR(), Absyn.BIDIR(), Absyn.NONFIELD(), {}),
+                      Absyn.TPATH(Absyn.IDENT(id), NONE()), {Absyn.COMPONENTITEM(Absyn.COMPONENT(elName,{}, SOME(Absyn.CLASSMOD(mods, Absyn.NOMOD()))), NONE(), NONE())}), Absyn.dummyInfo, NONE()));
       then (Absyn.CREF(Absyn.CREF_QUAL(elName, {}, Absyn.CREF_IDENT("out", {}))),  eqs, elem::oldElems, count);
 
     case(Absyn.CALL(crf, fargs))

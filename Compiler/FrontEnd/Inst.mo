@@ -34,7 +34,7 @@ encapsulated package Inst
   package:     Inst
   description: Model instantiation
 
-  RCS: $Id$
+  RCS: $Id: Inst.mo 25819 2015-04-29 11:33:05Z jansilar $
 
   This module is responsible for instantiation of Modelica models.
   The instantation is the process of instantiating model components,
@@ -1141,7 +1141,7 @@ algorithm
         (cache,env_1,ih) = InstUtil.addComponentsToEnv(cache,env,ih, mods, pre, ci_state_1, comp, comp, {}, inst_dims, impl);
 
         // we should instantiate with no modifications, they don't belong to the class, they belong to the component!
-        (cache,env_2,ih,store,_,csets,ci_state_1,tys1,graph) =
+        (cache,env_2,ih,store,_,csets,ci_state_1,tys1,graph,_) =
           instElementList(cache,env_1,ih,store, /* DAE.NOMOD() */ mods, pre,
             ci_state_1, comp, inst_dims, impl,callscope,graph, inSets, true);
 
@@ -1905,7 +1905,7 @@ algorithm
         cdefelts_2 = cdefelts_1;
 
         //(cache, cdefelts_2) = removeConditionalComponents(cache, env2, cdefelts_2, pre);
-        (cache,env3,ih,store,dae1,csets,_,tys,graph) =
+        (cache,env3,ih,store,dae1,csets,_,tys,graph,_) =
           instElementList(cache, env2, ih, store, mods , pre, ci_state,
             cdefelts_2, inst_dims, impl, InstTypes.INNER_CALL(), graph, inSets, true);
         mods = Mod.removeFirstSubsRedecl(mods);
@@ -2039,6 +2039,9 @@ algorithm
       list<DAE.ComponentRef> smInitialCrefs "state machine crefs of initial states";
       FCore.Ref lastRef;
       InstStateMachineUtil.SMNodeToFlatSMGroupTable smCompToFlatSM;
+      //List<tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomLst;
+      InstUtil.DomainFieldsLst domainFieldsLst;
+//      list<tuple<String,Integer>> domainNLst;
 
     /*// uncomment for debugging
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,inClassDef6,
@@ -2219,7 +2222,7 @@ algorithm
         //ih = List.fold1(smCompCrefs, InnerOuter.updateSMHierarchy, inPrefix3, ih);
         ih = List.fold(smCompCrefs, InnerOuter.updateSMHierarchy, ih);
 
-        (cache,env5,ih,store,dae1,csets,ci_state2,vars,graph) =
+        (cache,env5,ih,store,dae1,csets,ci_state2,vars,graph,domainFieldsLst) =
           instElementList(cache, env4, ih, store, mods, pre, ci_state1,
             compelts_2, inst_dims, impl, callscope, graph, csets, true);
 
@@ -2244,11 +2247,20 @@ algorithm
         eqs_1 = InstUtil.addExpandable(eqs_1, expandableEqs);
         ErrorExt.rollBack("expandableConnectorsOrder");
 
+        //Discretization of PDEs:
+        if intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA) then
+          eqs_1 = List.fold1(eqs_1, InstUtil.discretizePDE, domainFieldsLst, {});
+        end if;
+
         //Instantiate equations (see function "instEquation")
         (cache,env5,ih,dae2,csets2,ci_state3,graph) =
           instList(cache, env5, ih, pre, csets1, ci_state2, InstSection.instEquation, eqs_1, impl, InstTypes.alwaysUnroll, graph);
         DAEUtil.verifyEquationsDAE(dae2);
 
+        //Discretization of initial equations of fields:
+        if intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA) then
+          initeqs_1 = List.fold1(initeqs_1, InstUtil.discretizePDE, domainFieldsLst,/* domainNLst,*/ {});
+        end if;
         //Instantiate inital equations (see function "instInitialEquation")
         (cache,env5,ih,dae3,csets3,ci_state4,graph) =
           instList(cache, env5, ih, pre, csets2, ci_state3, InstSection.instInitialEquation, initeqs_1, impl, InstTypes.alwaysUnroll, graph);
@@ -2739,7 +2751,7 @@ algorithm
                         SCode.R_TYPE(),
                         SCode.DERIVED(
                           tSpec,SCode.NOMOD(),
-                          SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR())),
+                          SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NONFIELD())),
                         SCode.noComment,
                         Absyn.dummyInfo);
         (cache,_,ih,_,_,csets,ty,_,oDA,_)=instClass(cache,env,ih,UnitAbsyn.noStore,DAE.NOMOD(),pre,c,dims,impl,InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, inSets);
@@ -2994,7 +3006,7 @@ algorithm
           inInstDims, false);
 
         // Instantiate constants.
-        (outCache, outEnv, outIH, _, _, _, outState, outVars) := instElementList(
+        (outCache, outEnv, outIH, _, _, _, outState, outVars, _, _) := instElementList(
           outCache, outEnv, outIH, UnitAbsyn.noStore, mod, inPrefix, outState,
           const_els, inInstDims, true, InstTypes.INNER_CALL(),
           ConnectionGraph.EMPTY, Connect.emptySet, false);
@@ -3089,6 +3101,8 @@ public function instElementList
   output ClassInf.State outState = inState;
   output list<DAE.Var> outVars;
   output ConnectionGraph.ConnectionGraph outGraph = inGraph;
+  //output List<tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomLst = {};
+  output InstUtil.DomainFieldsLst domainFieldsList = {};
 protected
   list<tuple<SCode.Element, DAE.Mod>> el;
   FCore.Cache cache;
@@ -3096,6 +3110,7 @@ protected
   list<DAE.Element> dae;
   list<list<DAE.Var>> varsl = {};
   list<list<DAE.Element>> dael = {};
+  Option<tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomOpt;
   list<Integer> element_order;
   array<tuple<SCode.Element, DAE.Mod>> el_arr;
   array<list<DAE.Var>> var_arr;
@@ -3121,11 +3136,14 @@ algorithm
 
     // Instantiate the elements.
     for idx in element_order loop
-      (cache, outEnv, outIH, outStore, dae, outSets, outState, vars, outGraph) :=
+      (cache, outEnv, outIH, outStore, dae, outSets, outState, vars, outGraph, fieldDomOpt) :=
         instElement2(cache, outEnv, outIH, outStore, inMod, inPrefix, outState, el_arr[idx],
           inInstDims, inImplInst, inCallingScope, outGraph, outSets, inStopOnError);
       arrayUpdate(var_arr, idx, vars);
       arrayUpdate(dae_arr, idx, dae);
+      if intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA) then
+        domainFieldsList := InstUtil.optAppendField(domainFieldsList,fieldDomOpt);
+      end if;
     end for;
 
     outVars := List.flatten(arrayList(var_arr));
@@ -3133,7 +3151,7 @@ algorithm
   else
     // For functions, use the sorted elements instead, otherwise things break.
     for e in el loop
-      (cache, outEnv, outIH, outStore, dae, outSets, outState, vars, outGraph) :=
+      (cache, outEnv, outIH, outStore, dae, outSets, outState, vars, outGraph, fieldDomOpt) :=
         instElement2(cache, outEnv, outIH, outStore, inMod, inPrefix, outState, e,
           inInstDims, inImplInst, inCallingScope, outGraph, outSets, inStopOnError);
       varsl := vars :: varsl;
@@ -3210,6 +3228,7 @@ public function instElement2
   output ClassInf.State outState = inState;
   output list<DAE.Var> outVars = {};
   output ConnectionGraph.ConnectionGraph outGraph = inGraph;
+  output Option<tuple<Absyn.ComponentRef,DAE.ComponentRef>> outFieldDomOpt;
 protected
   tuple<SCode.Element, DAE.Mod> elt;
   Boolean is_deleted;
@@ -3227,7 +3246,7 @@ algorithm
     ErrorExt.setCheckpoint("instElement2");
     (outCache, outEnv, outIH, {elt}) := updateCompeltsMods(inCache, outEnv,
       outIH, inPrefix, {inElement}, outState, inImplicit);
-    (outCache, outEnv, outIH, outStore, DAE.DAE(outDae), outSets, outState, outVars, outGraph) :=
+    (outCache, outEnv, outIH, outStore, DAE.DAE(outDae), outSets, outState, outVars, outGraph, outFieldDomOpt) :=
       instElement(outCache, outEnv, outIH, outStore, inMod, inPrefix, outState, elt, inInstDims,
         inImplicit, inCallingScope, outGraph, inSets);
     Error.updateCurrentComponent("", Absyn.dummyInfo);
@@ -3324,6 +3343,7 @@ public function instElement "
   output ClassInf.State outState;
   output list<DAE.Var> outVars;
   output ConnectionGraph.ConnectionGraph outGraph;
+  output Option<tuple<Absyn.ComponentRef,DAE.ComponentRef>> outFieldDomOpt = NONE();
 algorithm
   (outCache, outEnv, outIH, outUnitStore, outDae, outSets, outState, outVars, outGraph):=
   matchcontinue (inCache, inEnv, inIH, inUnitStore, inMod, inPrefix, inState,
@@ -3374,6 +3394,8 @@ algorithm
       HashSet.HashSet sm; // BTH
       Boolean isInSM; // BTH
       list<DAE.Element> elems; // BTH
+      Option<DAE.ComponentRef> domainCROpt;
+
 
     // Imports are simply added to the current frame, so that the lookup rule can find them.
     // Import have already been added to the environment so there is nothing more to do here.
@@ -3547,6 +3569,11 @@ algorithm
         (cache, dims) = InstUtil.elabArraydim(cache, env2, own_cref, t, ad, eq, impl,
           NONE(), true, is_function_input, pre, info, inst_dims);
 
+        //PDEModelica:
+        if intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA) then
+          (dims, mod_1, outFieldDomOpt) = InstUtil.elabField(inCache, inEnv, name, attr, dims, mod_1, info);
+        end if;
+
         // adrpo: 2011-11-18: see if the component is an INPUT or OUTPUT and class is a record
         //                    and add it to the cache!
         // (cache, _, _) = addRecordConstructorsToTheCache(cache, cenv, ih, mod_1, pre, ci_state, dir, cls, inst_dims);
@@ -3654,7 +3681,7 @@ algorithm
 
         cls = SCode.CLASS(id, SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(),
           SCode.NOT_PARTIAL(), SCode.R_TYPE(), SCode.DERIVED(ts, SCode.NOMOD(),
-          SCode.ATTR(ad, ct, SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR())), SCode.noComment, info);
+          SCode.ATTR(ad, ct, SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NONFIELD())), SCode.noComment, info);
 
         // The variable declaration and the (optional) equation modification are inspected for array dimensions.
         // Gather all the dimensions

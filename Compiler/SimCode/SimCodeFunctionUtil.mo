@@ -2851,7 +2851,7 @@ algorithm
   if Flags.isSet(Flags.EXEC_STAT) then
     t := System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT);
     total := System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);
-    gcStr := GC.profStatsStr(GC.getProfStats(), head="");
+    gcStr := GC.profStatsStr(GC.getProfStats(), head="", delimiter=" / ");
     timeStr := System.snprintff("%.4g", 20, t);
     totalTimeStr := System.snprintff("%.4g", 20, total);
     if Flags.isSet(Flags.GC_PROF) then
