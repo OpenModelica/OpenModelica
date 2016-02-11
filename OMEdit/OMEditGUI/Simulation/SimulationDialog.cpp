@@ -231,7 +231,7 @@ void SimulationDialog::setUpForm()
   mpNumberOfProcessorsLabel = new Label(tr("Number of Processors:"));
   mpNumberOfProcessorsSpinBox = new QSpinBox;
   mpNumberOfProcessorsSpinBox->setMinimum(1);
-  mpNumberOfProcessorsSpinBox->setValue(mpMainWindow->getOMCProxy()->numProcessors().toInt());
+  mpNumberOfProcessorsSpinBox->setValue(mpMainWindow->getOMCProxy()->numProcessors());
   mpNumberOfProcessorsNoteLabel = new Label(tr("Use 1 processor if you encounter problems during compilation."));
   // build only
   mpBuildOnlyCheckBox = new QCheckBox(tr("Build Only"));
@@ -580,12 +580,12 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     // if the class has experiment annotation then read it.
     if (mpMainWindow->getOMCProxy()->isExperiment(mClassName)) {
       // get the simulation options....
-      QStringList result = mpMainWindow->getOMCProxy()->getSimulationOptions(mClassName);
+      OMCInterface::getSimulationOptions_res simulationOptions = mpMainWindow->getOMCProxy()->getSimulationOptions(mClassName);
       // since we always get simulationOptions so just get the values from array
-      mpStartTimeTextBox->setText(QString::number(result.at(0).toFloat()));
-      mpStopTimeTextBox->setText(QString::number(result.at(1).toFloat()));
-      mpToleranceTextBox->setText(QString::number(result.at(2).toFloat()));
-      mpNumberofIntervalsSpinBox->setValue(result.at(3).toLong());
+      mpStartTimeTextBox->setText(QString::number(simulationOptions.startTime));
+      mpStopTimeTextBox->setText(QString::number(simulationOptions.stopTime));
+      mpToleranceTextBox->setText(QString::number(simulationOptions.tolerance));
+      mpNumberofIntervalsSpinBox->setValue(simulationOptions.numberOfIntervals);
     }
     mpCflagsTextBox->setEnabled(true);
     mpNumberofIntervalsSpinBox->setEnabled(true);
@@ -1015,12 +1015,12 @@ void SimulationDialog::saveSimulationOptions()
   // if the class has experiment annotation then read it.
   if (mpMainWindow->getOMCProxy()->isExperiment(mpLibraryTreeItem->getNameStructure())) {
     // get the simulation options....
-    QStringList result = mpMainWindow->getOMCProxy()->getSimulationOptions(mpLibraryTreeItem->getNameStructure());
+    OMCInterface::getSimulationOptions_res simulationOptions = mpMainWindow->getOMCProxy()->getSimulationOptions(mpLibraryTreeItem->getNameStructure());
     // since we always get simulationOptions so just get the values from array
-    oldExperimentAnnotation.append("StartTime=").append(QString::number(result.at(0).toFloat())).append(",");
-    oldExperimentAnnotation.append("StopTime=").append(QString::number(result.at(1).toFloat())).append(",");
-    oldExperimentAnnotation.append("Tolerance=").append(QString::number(result.at(2).toFloat())).append(",");
-    oldExperimentAnnotation.append("Interval=").append(QString::number(result.at(3).toFloat()));
+    oldExperimentAnnotation.append("StartTime=").append(QString::number(simulationOptions.startTime)).append(",");
+    oldExperimentAnnotation.append("StopTime=").append(QString::number(simulationOptions.stopTime)).append(",");
+    oldExperimentAnnotation.append("Tolerance=").append(QString::number(simulationOptions.tolerance)).append(",");
+    oldExperimentAnnotation.append("Interval=").append(QString::number(simulationOptions.interval));
   }
   oldExperimentAnnotation.append(")");
   QString newExperimentAnnotation;

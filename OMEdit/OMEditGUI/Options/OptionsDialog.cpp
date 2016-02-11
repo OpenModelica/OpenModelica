@@ -2553,26 +2553,26 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   // Matching Algorithm
   mpSimulationGroupBox = new QGroupBox(Helper::simulation);
   mpMatchingAlgorithmLabel = new Label(tr("Matching Algorithm:"));
-  QStringList matchingAlgorithmChoices, matchingAlgorithmComments;
-  mpOptionsDialog->getMainWindow()->getOMCProxy()->getAvailableMatchingAlgorithms(&matchingAlgorithmChoices, &matchingAlgorithmComments);
+  OMCInterface::getAvailableMatchingAlgorithms_res matchingAlgorithms;
+  matchingAlgorithms = mpOptionsDialog->getMainWindow()->getOMCProxy()->getAvailableMatchingAlgorithms();
   mpMatchingAlgorithmComboBox = new QComboBox;
   int i = 0;
-  foreach (QString matchingAlgorithmChoice, matchingAlgorithmChoices) {
+  foreach (QString matchingAlgorithmChoice, matchingAlgorithms.allChoices) {
     mpMatchingAlgorithmComboBox->addItem(matchingAlgorithmChoice);
-    mpMatchingAlgorithmComboBox->setItemData(i, matchingAlgorithmComments[i], Qt::ToolTipRole);
+    mpMatchingAlgorithmComboBox->setItemData(i, matchingAlgorithms.allComments[i], Qt::ToolTipRole);
     i++;
   }
   connect(mpMatchingAlgorithmComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateMatchingAlgorithmToolTip(int)));
   mpMatchingAlgorithmComboBox->setCurrentIndex(mpMatchingAlgorithmComboBox->findText(mpOptionsDialog->getMainWindow()->getOMCProxy()->getMatchingAlgorithm()));
   // Index Reduction Method
   mpIndexReductionMethodLabel = new Label(tr("Index Reduction Method:"));
-  QStringList indexReductionMethodChoices, indexReductionMethodComments;
-  mpOptionsDialog->getMainWindow()->getOMCProxy()->getAvailableIndexReductionMethods(&indexReductionMethodChoices, &indexReductionMethodComments);
+  OMCInterface::getAvailableIndexReductionMethods_res indexReductionMethods;
+  indexReductionMethods = mpOptionsDialog->getMainWindow()->getOMCProxy()->getAvailableIndexReductionMethods();
   mpIndexReductionMethodComboBox = new QComboBox;
   i = 0;
-  foreach (QString indexReductionChoice, indexReductionMethodChoices) {
+  foreach (QString indexReductionChoice, indexReductionMethods.allChoices) {
     mpIndexReductionMethodComboBox->addItem(indexReductionChoice);
-    mpIndexReductionMethodComboBox->setItemData(i, indexReductionMethodComments[i], Qt::ToolTipRole);
+    mpIndexReductionMethodComboBox->setItemData(i, indexReductionMethods.allComments[i], Qt::ToolTipRole);
     i++;
   }
   connect(mpIndexReductionMethodComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateIndexReductionToolTip(int)));
