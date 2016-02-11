@@ -39,7 +39,6 @@ encapsulated package BackendDAETransform
                - reduceIndexDummyDer
 
 
-  RCS: $Id$
 "
 
 public import BackendDAE;

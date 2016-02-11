@@ -34,7 +34,6 @@ encapsulated package Array
   package:     Array
   description: Array functions
 
-  RCS: $Id$
 "
 
 protected

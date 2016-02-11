@@ -34,7 +34,6 @@ encapsulated package NFInstUtil
   package:     NFInstUtil
   description: Utility functions for NFInstTypes.
 
-  RCS: $Id$
 
   Utility functions for operating on the types in NFInstTypes.
 "

@@ -34,7 +34,6 @@ encapsulated package BackendDAEFunc
   package:     BackendDAEFunc
   description: BackendDAEFunc defines the partial functions (interfaces) to function pointers that are sent around.
 
-  RCS: $Id: BackendDAEFunc.mo 17568 2013-10-07 01:59:38Z adrpo $
 "
 
 public import BackendDAE;

@@ -34,7 +34,6 @@ encapsulated package NFRedeclare
   package:     NFRedeclare
   description: Utility functions for redeclare.
 
-  RCS: $Id$
 
 "
 

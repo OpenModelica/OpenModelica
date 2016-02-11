@@ -37,7 +37,6 @@ encapsulated package Serializer
  @author:     Leonardo Laguna Ruiz [leonardo@wolfram.com]
  @date:       2015-05-19
 
- RCS: $Id$
 
  This package provides functions to serialize MetaModelica data.
  The external C implementation is in TOP/Compiler/runtime/Serializer.c"

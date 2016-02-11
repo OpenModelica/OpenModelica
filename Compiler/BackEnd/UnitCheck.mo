@@ -36,9 +36,8 @@ encapsulated package UnitCheck
                  - for all variables unspecified units get calculated if possible
                  - inconsistent equations get reported in a user friendly way
 
-               authors: Jan Hagemann and Lennart Ochel (FH Bielefeld, Germany)
+               authors: Jan Hagemann and Lennart Ochel (FH Bielefeld, Germany)"
 
-  RCS: $Id$"
 
 public import Absyn;
 public import BackendDAE;

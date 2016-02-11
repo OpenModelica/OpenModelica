@@ -34,7 +34,6 @@ encapsulated package FCore
   package:     FCore
   description: Structures to hold Modelica constructs
 
-  RCS: $Id: FCore.mo 14085 2012-11-27 12:12:40Z adrpo $
 
   This module holds types used in FNode, FGraph and all the other F* packages
 "

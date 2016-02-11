@@ -34,7 +34,6 @@ encapsulated package InstExtends
   package:     InstExtends
   description: Model instantiation
 
-  RCS: $Id: InstExtends.mo 25315 2015-03-30 13:26:21Z jansilar $
 
   This module is responsible for instantiation of the extends and
   class extends constructs in Modelica models.

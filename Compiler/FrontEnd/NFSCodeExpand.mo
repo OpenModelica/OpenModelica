@@ -34,7 +34,6 @@ encapsulated package NFSCodeExpand
   package:     NFSCodeExpand
   description: Expands the output from SCodeInst into DAE form.
 
-  RCS: $Id$
 
 "
 

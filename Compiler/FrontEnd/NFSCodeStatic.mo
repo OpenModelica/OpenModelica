@@ -34,7 +34,6 @@ encapsulated package NFSCodeStatic
   package:     NFSCodeStatic
   description: Static analysis of expressions
 
-  RCS: $Id: NFSCodeStatic.mo 13039 2012-09-25 09:53:50Z sjoelund.se $
 
   This module does static analysis on expressions."
 

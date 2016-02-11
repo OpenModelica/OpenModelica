@@ -40,7 +40,6 @@ encapsulated package HashTableCrToExpSourceTpl "
   package:     HashTableCrToExpSourceTpl
   description: DAE.CR to tuple<DAE.Exp,DAE.ElementSource>
 
-  RCS: $Id: HashTableCrToExpSourceTpl.mo 8796 2011-05-03 19:43:08Z adrpo $
 
   "
 

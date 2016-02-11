@@ -34,7 +34,6 @@ encapsulated package ConnectUtil
   package:     ConnectUtil
   description: Connection set management
 
-  RCS: $Id: ConnectUtil.mo 25082 2015-03-13 09:40:07Z lochel $
 
   Connections generate connection sets (datatype SET is described in Connect)
   which are constructed during instantiation.  When a connection

@@ -34,7 +34,6 @@ encapsulated package Types
   package:     Types
   description: Type system
 
-  RCS: $Id$
 
   This file specifies the type system, as defined in the modelica specification.
   It contains an MetaModelica Compiler (MMC) type called Type which defines types.

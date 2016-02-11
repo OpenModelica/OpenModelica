@@ -37,7 +37,6 @@ encapsulated package BaseHashSet
   description: BaseHashSet is a generic implementation of hashsets.
                See HashSet*.mo to see how to use it.
 
-  RCS: $Id: BaseHashSet.mo 12193 2012-06-23 08:33:08Z Frenkel TUD $
 
   This file is an extension to OpenModelica.
 

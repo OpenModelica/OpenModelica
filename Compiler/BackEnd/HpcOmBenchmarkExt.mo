@@ -34,7 +34,6 @@ encapsulated package HpcOmBenchmarkExt
   package:     HpcOmBenchmarkExt
   description: HpcOmBenchmarkExt is a adapter package to handle the benchmark-calculation in c/c++.
 
-  RCS: $Id: HpcOmBenchmarkExt.mo 15486 2013-05-24 11:12:35Z marcusw $
 "
 
 function requiredTimeForComm

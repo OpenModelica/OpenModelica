@@ -34,7 +34,6 @@ encapsulated package NFEnv
   package:     NFEnv
   description: Symbol table for lookup
 
-  RCS: $Id$
 
 "
 public import Absyn;

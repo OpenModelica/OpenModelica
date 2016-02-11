@@ -34,7 +34,6 @@ encapsulated package Patternm
   package:     Patternm
   description: Patternmatching
 
-  RCS: $Id$
 
   This module contains the patternmatch algorithm for the MetaModelica
   matchcontinue expression."

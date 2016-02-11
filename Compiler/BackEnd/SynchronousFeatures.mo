@@ -34,9 +34,8 @@ encapsulated package SynchronousFeatures
   package:     SynchronousFeatures
   description: This package contains functions that belong to synchronous features.
                - base-clock partitioning
-               - sub-clock partitioning
+               - sub-clock partitioning"
 
-  RCS: $Id: SynchronousFeatures.mo 21476 2014-07-11 12:08:20Z lochel $"
 
 public import Absyn;
 public import BackendDAE;

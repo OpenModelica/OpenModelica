@@ -32,9 +32,8 @@
 encapsulated package Matching
 " file:        Matching.mo
   package:     Matching
-  description: Matching contains functions for matching algorithms
+  description: Matching contains functions for matching algorithms"
 
-  RCS: $Id: Matching.mo $"
 
 
 public import BackendDAE;

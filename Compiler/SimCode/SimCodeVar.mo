@@ -34,7 +34,6 @@ encapsulated package SimCodeVar
   package:     SimCodeVar
   description: Package to store simcode variables. Moved out of SimCodeUtil to break circular dependency with HpcOmSimCode.
 
-  RCS: $Id: SimCodeVar.mo 22730 2014-10-16 09:09:01Z mwalther $
 "
 
 // public imports

@@ -34,7 +34,6 @@ encapsulated package StringUtil
   package:     StringUtil
   description: String utility functions.
 
-  RCS: $Id$
 
   This package contains various utility functions for handling the builtin
   MetaModelica String type."

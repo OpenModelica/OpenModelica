@@ -34,7 +34,6 @@ encapsulated package Inst
   package:     Inst
   description: Model instantiation
 
-  RCS: $Id: Inst.mo 25819 2015-04-29 11:33:05Z jansilar $
 
   This module is responsible for instantiation of Modelica models.
   The instantation is the process of instantiating model components,

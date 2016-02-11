@@ -34,7 +34,6 @@ encapsulated package FGraphDump
   package:     FGraphDump
   description: A graph for instantiation
 
-  RCS: $Id: FGraphDump.mo 14085 2012-11-27 12:12:40Z adrpo $
 
   This module builds a graph out of SCode
 "

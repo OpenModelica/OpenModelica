@@ -34,7 +34,6 @@ encapsulated package DumpGraphviz
   package:     DumpGraphviz
   description: Dumps the AST to a graph representation that can be read by the graphviz tool.
 
-  RCS: $Id$
 
 "
 

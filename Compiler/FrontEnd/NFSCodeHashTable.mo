@@ -35,7 +35,6 @@ encapsulated package NFSCodeHashTable
   package:     NFSCodeHashTable
   description: NFSCodeHashTable deals with hashing the elements in SCode
 
-  RCS: $Id: NFSCodeHashTable.mo 7705 2011-01-17 09:53:52Z sjoelund.se $
 
   NFSCodeHashTable deals with hashing the elements
   in SCode (Absyn.ComponentRef -> SCode.Element)

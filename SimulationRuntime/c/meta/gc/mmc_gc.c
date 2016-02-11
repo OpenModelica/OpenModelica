@@ -34,7 +34,6 @@
  * This file defines the MetaModelica garbage collector (GC) interface
  * We use Boehm GC mark-and-sweep collector.
  *
- * RCS: $Id: gc.c 8047 2011-03-01 10:19:49Z perost $
  *
  */
 

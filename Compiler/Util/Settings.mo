@@ -34,7 +34,6 @@ encapsulated package Settings
   package:     Settings
   description: This file contains settings for omc which are implemented in  C.
 
-  RCS: $Id$
   "
 
 public function getVersionNr "Returns the version number of this release"

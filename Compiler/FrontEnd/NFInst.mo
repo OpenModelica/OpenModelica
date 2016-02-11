@@ -34,7 +34,6 @@ encapsulated package NFInst
   package:     NFInst
   description: Instantiation
 
-  RCS: $Id: NFInst.mo 14780 2013-01-15 08:47:24Z mahge930 $
 
   New instantiation, enable with +d=scodeInst.
 "

@@ -34,7 +34,6 @@ encapsulated package Lapack
   package:     Lapack
   description: This file contains Lapack external functions.
 
-  RCS: $Id$
 
   This package contains Lapack external functions which are used by
   CevalFunction to evaluate functions that use these Lapack functions. The

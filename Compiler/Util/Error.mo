@@ -35,7 +35,6 @@ encapsulated package Error
   package:     Error
   description: Error handling
 
-  RCS: $Id$
 
   This file contains the Error handling for the Compiler. The following steps
   are used to add a new error message:

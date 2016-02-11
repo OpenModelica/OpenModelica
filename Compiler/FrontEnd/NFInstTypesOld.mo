@@ -34,7 +34,6 @@ encapsulated package NFInstTypesOld
   package:     NFInstTypes
   description: Types used by NFSCodeInst.
 
-  RCS: $Id: NFInstTypes.mo 14777 2013-01-15 06:52:32Z mahge930 $
 
   Types used by NFSCodeInst.
 "

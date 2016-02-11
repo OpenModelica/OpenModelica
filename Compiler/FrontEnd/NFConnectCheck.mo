@@ -34,7 +34,6 @@ encapsulated package NFConnectCheck
   package:     NFConnectCheck
   description: Connection checking functions
 
-  RCS: $Id$
 "
 
 public import Absyn;

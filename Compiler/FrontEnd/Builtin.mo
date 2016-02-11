@@ -34,7 +34,6 @@ encapsulated package Builtin
   package:     Builtin
   description: Builting tyepes and variables
 
-  RCS: $Id: Builtin.mo 25318 2015-03-30 14:09:51Z jansilar $
 
   This module defines the builtin types, variables and functions in Modelica.
 

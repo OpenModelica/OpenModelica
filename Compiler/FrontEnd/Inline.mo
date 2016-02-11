@@ -34,7 +34,6 @@ encapsulated package Inline
   package:     Inline
   description: inline functions
 
-  RCS: $Id$
 
   This module contains data structures and functions for inline functions.
 

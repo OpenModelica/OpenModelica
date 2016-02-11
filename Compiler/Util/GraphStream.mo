@@ -38,7 +38,6 @@ encapsulated package GraphStream
                  http://graphstream-project.org/doc/Tutorials/Storing-retrieving-and-displaying-data-in-graphs_1.0/
                  http://graphstream-project.org/doc/Tutorials/GraphStream-CSS-Reference_1.0/
 
-  RCS: $Id: GraphStream 2014-02-04 mwalther $
 
   Most of the implementation is external in GraphStreamExt.
 

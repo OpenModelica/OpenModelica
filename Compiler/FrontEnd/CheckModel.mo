@@ -34,7 +34,6 @@ encapsulated package CheckModel "
   package:     CheckModel
   description: Check the Model.
 
-  RCS: $Id: CheckModel.mo 8580 2011-04-11 09:33:31Z sjoelund.se $
 "
 
 public import Absyn;

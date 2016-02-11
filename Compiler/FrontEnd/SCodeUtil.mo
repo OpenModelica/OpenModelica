@@ -34,7 +34,6 @@ encapsulated package SCodeUtil
   package:     SCodeUtil
   description: SCodeUtil translates Absyn to SCode intermediate form
 
-  RCS: $Id: SCodeUtil.mo 25312 2015-03-30 08:35:17Z jansilar $
 
   This module contains functions to translate from
   an Absyn data representation to a simplified version

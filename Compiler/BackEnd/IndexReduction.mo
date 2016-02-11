@@ -36,7 +36,6 @@ encapsulated package IndexReduction
                index reduction
 
 
-  RCS: $Id: IndexReduction.mo 11707 2012-04-10 11:25:54Z Frenkel TUD $
 "
 
 public import BackendDAE;

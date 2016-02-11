@@ -34,7 +34,6 @@ encapsulated package HpcOmSimCodeMain
   package:     HpcOmSimCodeMain
   description: HpcOmSimCodeMain contains the logic to create a parallelized simcode.
 
-  RCS: $Id: HpcOmSimCodeMain.mo 15486 2013-05-24 11:12:35Z marcusw $
 "
 // public imports
 public import Absyn;

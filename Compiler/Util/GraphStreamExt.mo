@@ -35,7 +35,6 @@ encapsulated package GraphStreamExt
   description: GraphStreamExt contains functions to send the graph dynamically to a GraphStreamExt viewer.
 
 
-  RCS: $Id: GraphStreamExt.mo 2014-02-04 mwalther $
 
   The implementation is external.
 

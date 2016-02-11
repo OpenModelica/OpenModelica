@@ -32,9 +32,7 @@
 encapsulated package BackendInterface
 " file:        BackendInterface.mo
   package:     BackendInterface
-  description: Interface functions used to separate frontend and backend.
-
-  RCS: $Id$"
+  description: Interface functions used to separate frontend and backend."
 
 public import Absyn;
 public import DAE;

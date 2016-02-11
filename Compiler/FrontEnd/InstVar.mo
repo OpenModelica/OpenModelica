@@ -34,7 +34,6 @@ encapsulated package InstVar
   package:     InstVar
   description: Model instantiation
 
-  RCS: $Id: InstVar.mo 17556 2013-10-05 23:58:57Z adrpo $
 
   This module is responsible for instantiation of Modelica components.
 

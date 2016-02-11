@@ -34,7 +34,6 @@ encapsulated package Static
   package:     Static
   description: Static analysis of expressions
 
-  RCS: $Id$
 
   This module does static analysis on expressions.
   The analyzed expressions are built using the

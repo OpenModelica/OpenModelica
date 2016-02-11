@@ -36,7 +36,6 @@ encapsulated package ClockIndexes
     package to ease customisation (different indexes depending on
     back-end). Compiled as a utility package since Susan uses timers.
 
-  RCS: $Id$
 "
 
 public constant Integer RT_CLOCK_SIMULATE_TOTAL = 8;

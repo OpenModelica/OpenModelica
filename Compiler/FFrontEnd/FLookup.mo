@@ -34,7 +34,6 @@ encapsulated package FLookup
   package:     FLookup
   description: Scoping rules
 
-  RCS: $Id: FLookup.mo 18328 2013-11-28 03:05:41Z vitalij $
 
 "
 

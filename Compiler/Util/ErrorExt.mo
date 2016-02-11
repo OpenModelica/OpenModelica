@@ -35,7 +35,6 @@ encapsulated package ErrorExt
   package:     ErrorExt
   description: Error handling External interface
 
-  RCS: $Id$
 
   This file contains the external interface to the error handling.
   Error messages are stored externally, impl. in C++."

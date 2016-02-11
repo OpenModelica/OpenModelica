@@ -34,7 +34,6 @@ encapsulated package NFEnvExtends
   package:     NFEnvExtends
   description: Utility functions for extends in the environment.
 
-  RCS: $Id: NFEnvExtends.mo 14085 2012-11-27 12:12:40Z adrpo $
 
   This package contains functions for handling extends in the environment.
   Extends are added to the environment while the environment is built, and we

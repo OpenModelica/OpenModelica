@@ -34,7 +34,6 @@ encapsulated package DumpGraphML
   package:     DumpGraphML
   description: DumpGraphML contains dump GraphML stuff
 
-  RCS: $Id: DumpGraphML.mo $
 "
 
 public import BackendDAE;

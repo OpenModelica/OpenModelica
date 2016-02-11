@@ -31,7 +31,6 @@
 
 /*
  *
- *  RCS: $Id: IOStreamExt_omc.cpp 5482 2010-05-10 05:56:23Z adrpo $
  *
  *  This file is the external C implementation of TOP/Compiler/IOStreamExt.mo
  *

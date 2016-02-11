@@ -34,7 +34,6 @@ encapsulated package FBuiltin
   package:     FBuiltin
   description: Builting tyepes and variables
 
-  RCS: $Id: FBuiltin.mo 22324 2014-09-16 13:32:28Z adrpo $
 
   This module defines the builtin types, variables and functions in Modelica.
 

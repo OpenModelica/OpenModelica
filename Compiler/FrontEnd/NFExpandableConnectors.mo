@@ -34,7 +34,6 @@ encapsulated package NFExpandableConnectors
   package:     NFExpandableConnectors
   description: NFExpandableConnectors translates Absyn to SCode intermediate form
 
-  RCS: $Id$
 
   This module contains functions to handle expandable connectors:
 

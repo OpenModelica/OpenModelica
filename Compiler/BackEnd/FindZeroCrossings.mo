@@ -35,7 +35,6 @@ encapsulated package FindZeroCrossings
   description: This package contains all the functions to find zero crossings
                inside BackendDAE.
 
-  RCS: $Id$
 "
 
 public import Absyn;

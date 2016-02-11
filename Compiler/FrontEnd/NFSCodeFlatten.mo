@@ -34,7 +34,6 @@ encapsulated package NFSCodeFlatten
   package:     NFSCodeFlatten
   description: SCode flattening
 
-  RCS: $Id$
 
   This module flattens the SCode representation by removing all extends, imports
   and redeclares, and fully qualifying class names.

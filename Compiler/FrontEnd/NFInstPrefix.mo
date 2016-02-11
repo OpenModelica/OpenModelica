@@ -34,7 +34,6 @@ encapsulated package NFInstPrefix
   package:     NFInstPrefix
   description: Prefix type and utilities for NFInst.
 
-  RCS: $Id$
 
 "
 

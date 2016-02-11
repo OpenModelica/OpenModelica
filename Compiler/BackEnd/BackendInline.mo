@@ -34,7 +34,6 @@ encapsulated package BackendInline
   package:     BackendInline
   description: inline functions
 
-  RCS: $Id$
 
   This module contains data structures and functions for inline functions.
 

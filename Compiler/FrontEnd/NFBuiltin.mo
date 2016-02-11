@@ -35,7 +35,6 @@ encapsulated package NFBuiltin
   package:     NFBuiltin
   description: Builtin definitions.
 
-  RCS: $Id: NFSCodeMod.mo 7705 2011-01-17 09:53:52Z sjoelund.se $
 
   Definitions for various builtin Modelica types and variables that can't be
   defined by ModelicaBuiltin.mo.

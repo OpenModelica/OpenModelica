@@ -32,9 +32,8 @@
 encapsulated package OnRelaxation "
   file:        OnRelaxation.mo
   package:     OnRelaxation
-  description: Relaxation for MultiBody Systems
+  description: Relaxation for MultiBody Systems"
 
-  RCS: $Id: OnRelaxation.mo 12002 2012-06-08 07:26:09Z petar $"
 
 public import BackendDAE;
 public import DAE;

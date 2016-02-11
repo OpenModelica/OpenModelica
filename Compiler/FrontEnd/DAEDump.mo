@@ -34,7 +34,6 @@ encapsulated package DAEDump
   package:     DAEDump
   description: DAEDump output
 
-  RCS: $Id$
 
   This module implements functions to print the DAE AST."
 

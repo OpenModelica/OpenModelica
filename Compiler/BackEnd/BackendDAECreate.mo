@@ -34,7 +34,6 @@ encapsulated package BackendDAECreate
   package:     BackendDAECreate
   description: This file contains all functions for transforming the DAE structure to the BackendDAE.
 
-  RCS: $Id$
 
 "
 

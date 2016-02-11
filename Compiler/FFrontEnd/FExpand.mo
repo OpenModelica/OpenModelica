@@ -34,7 +34,6 @@ encapsulated package FExpand
   package:     FExpand
   description: Expanding parts of the graph
 
-  RCS: $Id: FExpand 18987 2014-02-05 16:24:53Z adrpo $
 
 "
 

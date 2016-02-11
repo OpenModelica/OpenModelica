@@ -34,7 +34,6 @@ encapsulated package SCodeSimplify
   package:     SCodeSimplify
   description: SCodeSimplify is used to further simplify SCode
 
-  RCS: $Id: SCodeSimplify.mo 8980 2011-05-13 09:12:21Z perost $
 
   For now SCodeSimplify has the following simplifications:
   - removes extends *Icons*

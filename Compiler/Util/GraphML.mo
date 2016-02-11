@@ -35,7 +35,6 @@ encapsulated package GraphML
   description: GraphML contains functions to generate a gaphML file for yED. The implementation is based on the GraphML-Package of Jens Frenkel.
 
 
-  RCS: $Id: GraphML 2014-02-04 mwalther $
 "
 
 protected import List;

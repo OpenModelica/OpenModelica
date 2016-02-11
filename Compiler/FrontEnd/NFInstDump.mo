@@ -34,7 +34,6 @@ encapsulated package NFInstDump
   package:     NFInstDump
   description: Dumping functions for the intermediary instantiation structures.
 
-  RCS: $Id$
 
   This package contains dumping functions for the intermediary instantiation
   structures, mostly wrappers for NFInstDumpTpl.

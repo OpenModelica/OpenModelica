@@ -35,7 +35,6 @@ encapsulated package NFMod
   package:     NFMod
   description: Modification handling for NFInst.
 
-  RCS: $Id: NFMod.mo 7705 2011-01-17 09:53:52Z sjoelund.se $
 
   Functions for handling modifications, used by NFInst.
   "

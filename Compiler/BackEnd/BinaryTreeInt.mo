@@ -34,7 +34,6 @@ encapsulated package BinaryTreeInt
   package:     BinaryTreeInt
   description: BinaryTreeInt comprises functions for BinaryTrees.
 
-  RCS: $Id: BinaryTreeInt.mo 12896 2012-09-12 15:18:26Z jfrenkel $
 
   BinaryTree."
 

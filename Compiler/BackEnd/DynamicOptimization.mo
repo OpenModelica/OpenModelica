@@ -35,7 +35,6 @@
   package:     DynamicOptimization
   description: DynamicOptimization contains the function that create dynamic optimization.
 
-  RCS: $Id: DynamicOptimization.mo  xxx$
 "
 public import DAE;
 public import BackendDAE;

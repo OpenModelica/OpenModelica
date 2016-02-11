@@ -34,7 +34,6 @@ encapsulated package TaskGraphResults
   package:     TaskGraphResults
   description: Checks if the given taskGraph has the same structure as the reference graph and correct node and edge values.
 
-  RCS: $Id: TaskGraphResults.mo 2013-06-11 marcusw $
 
   "
 

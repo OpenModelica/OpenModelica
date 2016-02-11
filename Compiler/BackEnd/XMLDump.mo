@@ -74,9 +74,8 @@
 encapsulated package XMLDump
 " file:        XMLDump.mo
   package:     XMLDump
-  description: Dumping of DAE as XML
+  description: Dumping of DAE as XML"
 
-  RCS: $Id$"
 
 public import Absyn;
 public import BackendDAE;

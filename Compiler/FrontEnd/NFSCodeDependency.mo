@@ -34,7 +34,6 @@ encapsulated package NFSCodeDependency
   package:     NFSCodeDependency
   description: SCode dependency analysis.
 
-  RCS: $Id$
 
   Dependency analysis for SCode.
 "

@@ -34,7 +34,6 @@ encapsulated package FGraphBuildEnv
   package:     FGraphBuildEnv
   description: A node builder for Modelica constructs
 
-  RCS: $Id: FGraphBuildEnv.mo 14085 2012-11-27 12:12:40Z adrpo $
 
   This module builds nodes out of SCode.
   The only difference between this and FGraphBuild.mo is that

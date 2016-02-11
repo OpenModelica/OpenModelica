@@ -34,7 +34,6 @@ encapsulated package DAEUtil
   package:     DAE
   description: DAE management and output
 
-  RCS: $Id$
 
   This module exports some helper functions to the DAE AST."
 

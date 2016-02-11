@@ -32,9 +32,8 @@
 encapsulated package SymbolicJacobian
 " file:        SymbolicJacobian.mo
   package:     SymbolicJacobian
-  description: This package contains stuff that is related to symbolic jacobian or sparsity structure.
+  description: This package contains stuff that is related to symbolic jacobian or sparsity structure."
 
-  RCS: $Id$"
 
 public import Absyn;
 public import BackendDAE;
@@ -2263,55 +2262,55 @@ protected
   list<Integer> otherEqnsInts, otherVarsInts;
 algorithm
 try
-	// get iteration vars
-	iterationvars := List.map1r(inIterationvarsInts, BackendVariable.getVarAt, inVars);
-	iterationvars := List.map(iterationvars, BackendVariable.transformXToXd);
-	outDiffVars := BackendVariable.listVar1(iterationvars);
+  // get iteration vars
+  iterationvars := List.map1r(inIterationvarsInts, BackendVariable.getVarAt, inVars);
+  iterationvars := List.map(iterationvars, BackendVariable.transformXToXd);
+  outDiffVars := BackendVariable.listVar1(iterationvars);
 
-	// debug
-	if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
-	  print("*** got iteration variables at time: " + realString(clock()) + "\n");
-	  BackendDump.printVarList(iterationvars);
-	end if;
-
-	// get residual eqns
-	reqns := BackendEquation.getEqns(inResidualequations, inEqns);
-	reqns := BackendEquation.replaceDerOpInEquationList(reqns);
-	outResidualEqns := BackendEquation.listEquation(reqns);
-	// create  residual equations
-	reqns := BackendEquation.traverseEquationArray(outResidualEqns, BackendEquation.traverseEquationToScalarResidualForm, {});
-	reqns := listReverse(reqns);
-	(reqns, resVarsLst) := convertResidualsIntoSolvedEquations(reqns);
-	outResidualVars := BackendVariable.listVar1(resVarsLst);
-	outResidualEqns := BackendEquation.listEquation(reqns);
-
-	// debug
-	if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
-	  print("*** got residual equation and created corresponding variables at time: " + realString(clock()) + "\n");
-	  print("Equations:\n");
-	  BackendDump.printEquationList(reqns);
-	end if;
-
-	// get other eqns
-	otherEqnsInts := List.map(inOtherEqnVarTpl, Util.tuple21);
-	otherEqnsLst := BackendEquation.getEqns(otherEqnsInts, inEqns);
-	otherEqnsLst := BackendEquation.replaceDerOpInEquationList(otherEqnsLst);
-	outOtherEqns := BackendEquation.listEquation(otherEqnsLst);
-
-	// get other vars
-	otherVarsIntsLst := List.map(inOtherEqnVarTpl, Util.tuple22);
-	otherVarsInts := List.flatten(otherVarsIntsLst);
-	ovarsLst := List.map1r(otherVarsInts, BackendVariable.getVarAt, inVars);
-	ovarsLst := List.map(ovarsLst, BackendVariable.transformXToXd);
-	outOtherVars := BackendVariable.listVar1(ovarsLst);
   // debug
-	if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
-	  print("*** got residual equation and created corresponding variables at time: " + realString(clock()) + "\n");
-	  print("other Equations:\n");
-	  BackendDump.printEquationList(otherEqnsLst);
-	  print("other Variables:\n");
-	  BackendDump.printVarList(ovarsLst);
-	end if;
+  if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
+    print("*** got iteration variables at time: " + realString(clock()) + "\n");
+    BackendDump.printVarList(iterationvars);
+  end if;
+
+  // get residual eqns
+  reqns := BackendEquation.getEqns(inResidualequations, inEqns);
+  reqns := BackendEquation.replaceDerOpInEquationList(reqns);
+  outResidualEqns := BackendEquation.listEquation(reqns);
+  // create  residual equations
+  reqns := BackendEquation.traverseEquationArray(outResidualEqns, BackendEquation.traverseEquationToScalarResidualForm, {});
+  reqns := listReverse(reqns);
+  (reqns, resVarsLst) := convertResidualsIntoSolvedEquations(reqns);
+  outResidualVars := BackendVariable.listVar1(resVarsLst);
+  outResidualEqns := BackendEquation.listEquation(reqns);
+
+  // debug
+  if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
+    print("*** got residual equation and created corresponding variables at time: " + realString(clock()) + "\n");
+    print("Equations:\n");
+    BackendDump.printEquationList(reqns);
+  end if;
+
+  // get other eqns
+  otherEqnsInts := List.map(inOtherEqnVarTpl, Util.tuple21);
+  otherEqnsLst := BackendEquation.getEqns(otherEqnsInts, inEqns);
+  otherEqnsLst := BackendEquation.replaceDerOpInEquationList(otherEqnsLst);
+  outOtherEqns := BackendEquation.listEquation(otherEqnsLst);
+
+  // get other vars
+  otherVarsIntsLst := List.map(inOtherEqnVarTpl, Util.tuple22);
+  otherVarsInts := List.flatten(otherVarsIntsLst);
+  ovarsLst := List.map1r(otherVarsInts, BackendVariable.getVarAt, inVars);
+  ovarsLst := List.map(ovarsLst, BackendVariable.transformXToXd);
+  outOtherVars := BackendVariable.listVar1(ovarsLst);
+  // debug
+  if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
+    print("*** got residual equation and created corresponding variables at time: " + realString(clock()) + "\n");
+    print("other Equations:\n");
+    BackendDump.printEquationList(otherEqnsLst);
+    print("other Variables:\n");
+    BackendDump.printVarList(ovarsLst);
+  end if;
 else
   fail();
 end try;

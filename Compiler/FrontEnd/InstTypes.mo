@@ -34,7 +34,6 @@ encapsulated package InstTypes
   package:     InstTypes
   description: Intermediate types used internally during model instantiation
 
-  RCS: $Id$
 "
 
 public

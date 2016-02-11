@@ -35,7 +35,6 @@ encapsulated package NFSCodeMod
   package:     NFSCodeMod
   description: Modification handling for NFSCodeInst.
 
-  RCS: $Id: NFSCodeMod.mo 7705 2011-01-17 09:53:52Z sjoelund.se $
 
   Functions for handling modifications, used by NFSCodeInst.
   "

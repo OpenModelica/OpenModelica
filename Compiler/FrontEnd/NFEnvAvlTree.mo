@@ -34,7 +34,6 @@ encapsulated package NFEnvAvlTree
   package:     NFEnvAvlTree
   description: AvlTree implementation for NFEnv
 
-  RCS: $Id$
 
   This package implements an AvlTree that's used by NFEnv.
 "

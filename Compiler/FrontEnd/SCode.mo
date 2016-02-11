@@ -34,7 +34,6 @@ encapsulated package SCode
   package:     SCode
   description: SCode intermediate form
 
-  RCS: $Id: SCode.mo 25211 2015-03-23 09:47:31Z jansilar $
 
   This module contains data structures to describe a Modelica
   model in a more convenient (canonical) way than the Absyn module does.

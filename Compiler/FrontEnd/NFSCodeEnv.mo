@@ -34,7 +34,6 @@ encapsulated package NFSCodeEnv
   package:     NFSCodeEnv
   description: SCode flattening
 
-  RCS: $Id: NFSCodeEnv.mo 25211 2015-03-23 09:47:31Z jansilar $
 
   This module flattens the SCode representation by removing all extends, imports
   and redeclares, and fully qualifying class names.

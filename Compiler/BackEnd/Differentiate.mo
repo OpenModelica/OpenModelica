@@ -34,7 +34,6 @@ encapsulated package Differentiate
   package:     Differentiate
   description: Differentiation of equations from BackendDAE.BackendDAE
 
-  RCS: $Id$
 
   This module is responsible for symbolic differentiation of equations and
   expressions.

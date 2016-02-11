@@ -55,10 +55,9 @@ encapsulated package EvaluateParameter
 
               - evaluate and replace parameters with final=true in equations, variables and parameters
               - evaluate and replace parameters with annotation(Evaluate=true) in equations, variables and parameters
-              - evaluate and replace parameters with final=true or annotation(Evaluate=true) in equations, variables and parameters
+              - evaluate and replace parameters with final=true or annotation(Evaluate=true) in equations, variables and parameters"
 
 
-  RCS: $Id: EvaluateParameter.mo 15281 2013-02-22 17:30:41Z jfrenkel $"
 
 public import Absyn;
 public import BackendDAE;
@@ -1229,12 +1228,12 @@ algorithm
     shared.externalObjects := extVars;
     shared.aliasVars := aliasVars;
     shared.eventInfo := eventInfo;
-	  // set remaining, not evaluated params
-	  shared.knownVars := BackendVariable.listVar(unknownVars);
-	  outDAE := BackendDAE.DAE(systs2,shared);
+    // set remaining, not evaluated params
+    shared.knownVars := BackendVariable.listVar(unknownVars);
+    outDAE := BackendDAE.DAE(systs2,shared);
   else
     outDAE := inDAE;
-	end if;
+  end if;
 end evaluateAllParameters_obsolete;
 
 

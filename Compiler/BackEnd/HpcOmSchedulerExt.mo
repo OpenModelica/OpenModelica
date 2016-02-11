@@ -34,7 +34,6 @@ encapsulated package HpcOmSchedulerExt
   package:     HpcOmSchedulerExt
   description: Reads schedule-informations from external files.
 
-  RCS: $Id: HpcOmSchedulerExt.mo 2013-09-27 marcusw $
 
   "
 

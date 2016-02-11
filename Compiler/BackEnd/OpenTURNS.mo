@@ -37,7 +37,6 @@ encapsulated package OpenTURNS "
   2. Generation and compilation of wrapper that calls the standard OpenModelica simulator and retrieves the final values
   (after simulation has stopped at endTime)
 
-  RCS: $Id: OpenTURNS.mo 10958 2012-01-25 01:12:35Z wbraun $
   "
 
 public

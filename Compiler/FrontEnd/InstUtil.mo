@@ -34,7 +34,6 @@ encapsulated package InstUtil
   package:     InstUtil
   description: Instantiation utilities
 
-  RCS: $Id: InstUtil.mo 17556 2013-10-05 23:58:57Z adrpo $
 
   This package supports Inst*.mo
 "

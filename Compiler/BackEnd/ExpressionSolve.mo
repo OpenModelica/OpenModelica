@@ -34,7 +34,6 @@ encapsulated package ExpressionSolve
   package:     ExpressionSolve
   description: ExpressionSolve
 
-  RCS: $Id$
 
   This file contains the module ExpressionSolve, which contains functions
   to solve a DAE.Exp for a DAE.Exp"

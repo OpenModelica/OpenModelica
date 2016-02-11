@@ -34,7 +34,6 @@ encapsulated package FMod
   package:     FMod
   description: Utilities for Modifier handling
 
-  RCS: $Id: FMod.mo 14085 2012-11-27 12:12:40Z adrpo $
 
   This module contains functions for modifier handling
 "

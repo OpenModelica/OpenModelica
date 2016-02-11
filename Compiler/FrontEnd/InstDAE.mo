@@ -34,7 +34,6 @@ encapsulated package InstDAE
   package:     InstDAE
   description: DAE generation
 
-  RCS: $Id: InstDAE.mo 17556 2013-10-05 23:58:57Z adrpo $
 
   This module is responsible for generating the DAE.
 

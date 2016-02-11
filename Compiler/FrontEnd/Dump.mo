@@ -34,7 +34,6 @@ encapsulated package Dump
   package:     Dump
   description: debug printing
 
-  RCS: $Id: Dump.mo 25312 2015-03-30 08:35:17Z jansilar $
 
   Printing routines for debugging of the AST.  These functions do
   nothing but print the data structures to the standard output.

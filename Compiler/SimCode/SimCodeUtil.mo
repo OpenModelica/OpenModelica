@@ -35,9 +35,8 @@ encapsulated package SimCodeUtil
   description: Code generation using Susan templates
 
   The entry points to this module are the functions createSimCode and
-  createFunctions.
+  createFunctions."
 
-  RCS: $Id$"
 
 // public imports
 import Absyn;

@@ -35,9 +35,8 @@ encapsulated package Tearing
   description: Tearing contains functions used for tear strong connected components.
                Implemented Methods are:
                - omc tearing developed by TU Dresden: Frenkel,Schubert
-               - Cellier Tearing
+               - Cellier Tearing"
 
-         RCS: $Id: Tearing.mo 13560 2012-10-22 23:00:33Z jfrenkel $"
 
 public import BackendDAE;
 public import DAE;

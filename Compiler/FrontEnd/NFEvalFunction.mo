@@ -35,7 +35,6 @@ encapsulated package NFEvalFunction
   description:  This module constant evaluates NFInstTypes.Function objects, i.e.
                 modelica functions defined by the user.
 
-  RCS: $Id$
 
   TODO:
     * Implement evaluation of MetaModelica statements.

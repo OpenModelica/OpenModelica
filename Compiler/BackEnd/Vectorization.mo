@@ -34,7 +34,6 @@ encapsulated package Vectorization
   package:     Vectorization
   description: Vectorization
 
-  RCS: $Id: Vectorization.mo 2013-05-24 11:12:35Z vwaurich $
 "
 public import BackendDAE;
 public import DAE;

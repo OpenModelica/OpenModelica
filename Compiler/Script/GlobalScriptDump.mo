@@ -34,7 +34,6 @@ encapsulated package GlobalScriptDump
   package:     GlobalScriptDump
   description: Dump functions for scripting types.
 
-  RCS: $Id$
 "
 
 public import Absyn;

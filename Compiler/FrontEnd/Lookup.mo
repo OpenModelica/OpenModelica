@@ -34,7 +34,6 @@ encapsulated package Lookup
   package:     Lookup
   description: Scoping rules
 
-  RCS: $Id: Lookup.mo 25819 2015-04-29 11:33:05Z jansilar $
 
   This module is responsible for the lookup mechanism in Modelica.
   It is responsible for looking up classes, variables, etc. in the

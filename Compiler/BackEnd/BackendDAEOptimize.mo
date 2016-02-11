@@ -38,9 +38,8 @@ encapsulated package BackendDAEOptimize
                - Tearing/Relaxation
                - Linearization
                - Inline Integration
-               - and so on ...
+               - and so on ..."
 
-  RCS: $Id$"
 
 public import Absyn;
 public import BackendDAE;
@@ -4197,7 +4196,7 @@ algorithm
     BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) := syst;
     BackendDAE.EQUATION_ARRAY(numberOfElement = n) := eqns;
     update := false;
-	indRemove := {};
+  indRemove := {};
     for i in 1:n loop
       eqn := BackendEquation.equationNth1(eqns, i);
       if BackendEquation.isComplexEquation(eqn) then
@@ -5682,17 +5681,17 @@ algorithm
       syst.m := SOME(m);
       syst.mT := SOME(mT);
       nVars := listLength(varLstNew);
-	    nEqs := listLength(eqLstNew);
-	    ass1 := arrayCreate(nVars, -1);
- 	    ass2 := arrayCreate(nEqs, -1);
-   	  Matching.matchingExternalsetIncidenceMatrix(nVars, nEqs, m);
+      nEqs := listLength(eqLstNew);
+      ass1 := arrayCreate(nVars, -1);
+      ass2 := arrayCreate(nEqs, -1);
+      Matching.matchingExternalsetIncidenceMatrix(nVars, nEqs, m);
       BackendDAEEXT.matching(nVars, nEqs, 5, -1, 0.0, 1);
-	    BackendDAEEXT.getAssignment(ass2, ass1);
-	    matching := BackendDAE.MATCHING(ass1,ass2,compsNew);
-	    syst.matching := matching;
+      BackendDAEEXT.getAssignment(ass2, ass1);
+      matching := BackendDAE.MATCHING(ass1,ass2,compsNew);
+      syst.matching := matching;
 
-	    (syst, _, _, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.NORMAL(), SOME(funcTree));
-	    syst := BackendDAETransform.strongComponentsScalar(syst,shared,mapEqnIncRow,mapIncRowEqn);
+      (syst, _, _, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.NORMAL(), SOME(funcTree));
+      syst := BackendDAETransform.strongComponentsScalar(syst,shared,mapEqnIncRow,mapIncRowEqn);
       syst.removedEqs := BackendEquation.emptyEqns();
     else
       print("No output variables in this system\n");

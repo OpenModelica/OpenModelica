@@ -32,9 +32,8 @@
 encapsulated package DAEQuery
 " file:        DAEQuery.mo
   package:     DAEQuery
-  description: DAEQuery contains functionality for query of Incidence Matrix.
+  description: DAEQuery contains functionality for query of Incidence Matrix."
 
-  RCS: $Id$"
 
 // public imports
 public import BackendDAE;

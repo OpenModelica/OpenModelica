@@ -34,7 +34,6 @@ encapsulated package NFFlatten
   package:     NFFlatten
   description: Flattening
 
-  RCS: $Id$
 
   New instantiation, enable with +d=scodeInst.
 "

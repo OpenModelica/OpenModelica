@@ -33,7 +33,6 @@ encapsulated package HpcOmScheduler
   package:     HpcOmScheduler
   description: HpcOmScheduler contains the logic to create a schedule for a taskgraph.
 
-  RCS: $Id: HpcOmScheduler.mo 15486 2013-08-07 12:46:00Z marcusw $
 "
 
 public import BackendDAE;

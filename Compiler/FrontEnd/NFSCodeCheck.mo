@@ -34,7 +34,6 @@ encapsulated package NFSCodeCheck
   package:     NFSCodeCheck
   description: SCode checking
 
-  RCS: $Id$
 
   This module checks the SCode representation for conformance "
 

@@ -34,7 +34,6 @@ encapsulated package NFSCodeLookup
   package:     NFSCodeLookup
   description: SCode flattening
 
-  RCS: $Id: NFSCodeLookup.mo 25819 2015-04-29 11:33:05Z jansilar $
 
   This module flattens the SCode representation by removing all extends, imports
   and redeclares, and fully qualifying class names.

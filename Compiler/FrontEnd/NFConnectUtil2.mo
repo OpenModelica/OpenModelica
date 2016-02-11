@@ -34,7 +34,6 @@ encapsulated package NFConnectUtil2
   package:     NFConnectUtil2
   description: Connection set utility functions
 
-  RCS: $Id$
 "
 
 public import Absyn;

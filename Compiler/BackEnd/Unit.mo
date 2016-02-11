@@ -34,9 +34,8 @@ encapsulated package Unit
   package:     Unit
   description:
 
-               authors: Jan Hagemann and Lennart Ochel (FH Bielefeld, Germany)
+               authors: Jan Hagemann and Lennart Ochel (FH Bielefeld, Germany)"
 
-  RCS: $Id$"
 
 public import DAE;
 

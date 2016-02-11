@@ -33,7 +33,6 @@ encapsulated package Sorting
 " file:        Sorting.mo
   package:     Sorting
 
-  RCS: $Id$
 "
 
 public import BackendDAE;

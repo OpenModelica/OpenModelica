@@ -34,7 +34,6 @@ encapsulated package FVisit
   package:     FVisit
   description: Visitation info for nodes
 
-  RCS: $Id: FVisit.mo 19292 2014-02-25 06:23:22Z adrpo $
 
 "
 

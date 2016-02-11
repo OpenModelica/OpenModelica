@@ -34,7 +34,6 @@ encapsulated package FResolve
   package:     FResolve
   description: Resolving of types paths, component references, class extends
 
-  RCS: $Id: FResolve 18987 2014-02-05 16:24:53Z adrpo $
 
 "
 

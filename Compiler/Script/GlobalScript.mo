@@ -34,7 +34,6 @@ encapsulated package GlobalScript
   package:     GlobalScript
   description: Types and constants for scripting modules
 
-  RCS: $Id$
 "
 
 public import Absyn;

@@ -33,7 +33,6 @@ encapsulated package HpcOmBenchmark
   package:     HpcOmBenchmark
   description: HpcOmBenchmark contains the whole logic to measure the communication and processing time.
 
-  RCS: $Id: HpcOmBenchmark.mo 15486 2013-06-10 11:12:35Z marcusw $
 "
 
 protected import HpcOmBenchmarkExt;

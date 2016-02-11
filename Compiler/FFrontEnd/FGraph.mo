@@ -34,7 +34,6 @@ encapsulated package FGraph
   package:     FGraph
   description: Graph of program
 
-  RCS: $Id: FGraph.mo 19292 2014-02-25 06:23:22Z adrpo $
 
 "
 

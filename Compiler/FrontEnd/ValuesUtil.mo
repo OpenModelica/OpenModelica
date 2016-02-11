@@ -34,7 +34,6 @@ encapsulated package ValuesUtil
   package:     ValuesUtil
   description: Evaluated expression values
 
-  RCS: $Id$
 
   The package Values contains utility functions for handling evaluated
   expression values."

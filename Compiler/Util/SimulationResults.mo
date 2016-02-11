@@ -34,7 +34,6 @@ encapsulated package SimulationResults
   package:     SimulationResults
   description: Read simulation results into the Values.Value structure.
 
-  RCS: $Id$
 
   "
 

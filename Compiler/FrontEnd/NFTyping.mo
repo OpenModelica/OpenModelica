@@ -34,7 +34,6 @@ encapsulated package NFTyping
   package:     NFTyping
   description: SCodeInst typing.
 
-  RCS: $Id$
 
   Functions used by SCodeInst for typing.
 "

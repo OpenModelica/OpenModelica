@@ -35,7 +35,6 @@ encapsulated package InlineSolver
   description: InlineSolver.mo contains everything needed to set up the
                BackendDAE for the inline solver
 
-  RCS: $Id$"
 
 public import Absyn;
 public import BackendDAE;

@@ -37,7 +37,6 @@
  *              using std::vector<bool> since such functionality is not available in
  *              MetaModelica Compiler (MMC).
  *
- * RCS: $Id$
  *
  */
 

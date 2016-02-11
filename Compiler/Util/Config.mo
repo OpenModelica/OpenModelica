@@ -34,7 +34,6 @@ encapsulated package Config
   package:     Config
   description: Functions for configurating the compiler.
 
-  RCS: $Id$
 
   This module contains functions which are mostly just wrappers for the Flags
   module, which makes it easier to manipulate the configuration of the compiler."

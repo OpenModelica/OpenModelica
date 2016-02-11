@@ -33,9 +33,8 @@ encapsulated package InlineArrayEquations
 " file:        InlineArrayEquations.mo
   package:     InlineArrayEquations
   description: This package contains functions for the optimization module
-               inlineArrayEqn.
+               inlineArrayEqn."
 
-  RCS: $Id$"
 
 public import BackendDAE;
 public import DAE;

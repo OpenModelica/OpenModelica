@@ -33,9 +33,8 @@ encapsulated package ResolveLoops
 " file:        ResolveLoops.mo
   package:     ResolveLoops
   description: This package contains functions for the optimization module
-               resolveLoops.
+               resolveLoops."
 
-  RCS: $Id$"
 
 public import BackendDAE;
 public import DAE;

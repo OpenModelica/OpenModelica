@@ -34,7 +34,6 @@ encapsulated package NFLookup
   package:     NFLookup
   description: Lookup functions for NFEnv
 
-  RCS: $Id$
 
 "
 

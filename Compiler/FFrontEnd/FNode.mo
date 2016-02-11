@@ -34,7 +34,6 @@ encapsulated package FNode
   package:     FNode
   description: A node structure to hold Modelica constructs
 
-  RCS: $Id: FNode.mo 14085 2012-11-27 12:12:40Z adrpo $
 
   This module builds nodes out of SCode
 "

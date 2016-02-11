@@ -35,7 +35,6 @@ encapsulated package Absyn
   package:     Absyn
   description: Abstract syntax
 
-  RCS: $Id: Absyn.mo 25819 2015-04-29 11:33:05Z jansilar $
 
   This file defines the abstract syntax for Modelica in MetaModelica Compiler (MMC).  It mainly
   contains uniontypes for constructing the abstract syntax tree

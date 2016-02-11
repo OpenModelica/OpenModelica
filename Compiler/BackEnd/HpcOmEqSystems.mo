@@ -34,7 +34,6 @@ encapsulated package HpcOmEqSystems
   package:     HpcOmEqSystems
   description: HpcOmEqSystems contains the logic to manipulate systems of equations for the parallel simulation.
 
-  RCS: $Id: HpcOmEqSystems.mo 15486 2013-05-24 11:12:35Z  $
 "
 // public imports
 

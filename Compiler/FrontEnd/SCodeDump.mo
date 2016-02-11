@@ -34,7 +34,6 @@ encapsulated package SCodeDump
   package:     SCodeDump
   description: SCodeDump intermediate form
 
-  RCS: $Id: SCodeDump.mo 8980 2011-05-13 09:12:21Z perost $
 
   This module functions for printing SCode."
 

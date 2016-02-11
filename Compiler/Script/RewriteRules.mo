@@ -34,7 +34,6 @@ encapsulated package RewriteRules
   package:     RewriteRules
   description: RewriteRules applies user given rewrite rules to the Absyn expressions
 
-  RCS: $Id: RewriteRules.mo 18167 2013-11-18 12:36:35Z perost $
 
 "
 

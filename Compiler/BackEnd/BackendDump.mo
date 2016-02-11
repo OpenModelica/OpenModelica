@@ -34,7 +34,6 @@ encapsulated package BackendDump
   package:     BackendDump
   description: Unparsing the BackendDAE structure
 
-  RCS: $Id$
 
   These file is subdivided into several section:
     - section for all print* functions

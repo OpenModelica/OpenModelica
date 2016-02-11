@@ -36,7 +36,6 @@ encapsulated package VisualXML
                This can be used additionally to the result file to visualize the system.
 
 
-  RCS: $Id: VisualXML 2014-02-04 waurich $
 
 "
 

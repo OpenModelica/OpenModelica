@@ -34,7 +34,6 @@ encapsulated package GlobalScriptUtil
   package:     GlobalScriptUtil
   description: Utility functions for the scripting types.
 
-  RCS: $Id: GlobalScript.mo 22496 2014-09-30 04:33:44Z adrpo $
 "
 
 public import Absyn;

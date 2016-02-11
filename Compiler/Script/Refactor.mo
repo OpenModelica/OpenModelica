@@ -34,7 +34,6 @@ encapsulated package Refactor
   package:     Refactor
   description: Refactoring package
 
-  RCS: $Id$
 
   This module contains functions for refactoring of Modelica/MetaModelica code.
   Right now there is support for old-style annotation refactoring to new-style

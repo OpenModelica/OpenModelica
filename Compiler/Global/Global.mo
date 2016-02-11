@@ -34,7 +34,6 @@ encapsulated package Global
   package:     Global
   description: Global contains structures that are available globally.
 
-  RCS: $Id$
 
   The Global package contains structures that are available globally."
 

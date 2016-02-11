@@ -34,7 +34,6 @@ encapsulated package NFConnectionSets
   package:     NFConnectionSets
   description: Data structure and utilities to store connection sets.
 
-  RCS: $Id$
 
   This module contains an implementation of a disjoint-set data structure using
   a disjoint-set forest. It's made for handling connection sets, but could

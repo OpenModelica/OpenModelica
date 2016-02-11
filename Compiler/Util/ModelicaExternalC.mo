@@ -34,7 +34,6 @@ encapsulated package ModelicaExternalC
   package:     ModelicaExternalC
   description: This file contains ModelicaExternalC external functions.
 
-  RCS: $Id$
 
   This package contains ModelicaExternalC functions which are used by
   Ceval to evaluate functions that use these ModelicaExternalC functions.

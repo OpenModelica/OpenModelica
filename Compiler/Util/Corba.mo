@@ -34,7 +34,6 @@ encapsulated package Corba
   package:     Corba
   description: Modelica Corba communication module
 
-  RCS: $Id$
 
   This is the CORBA connection module of the compiler
 

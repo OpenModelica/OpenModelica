@@ -34,7 +34,6 @@ encapsulated package FTraverse
   package:     FTraverse
   description: Graph of program management
 
-  RCS: $Id: FTraverse.mo 19292 2014-02-25 06:23:22Z adrpo $
 
 "
 

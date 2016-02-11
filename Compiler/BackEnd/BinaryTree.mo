@@ -34,7 +34,6 @@ encapsulated package BinaryTree
   package:     BinaryTree
   description: BinaryTree comprises functions for BinaryTrees.
 
-  RCS: $Id: BinaryTree.mo 12896 2012-09-12 15:18:26Z jfrenkel $
 
   BinaryTree."
 

@@ -39,7 +39,6 @@ encapsulated package Graphviz
                See
                   http://www.research.att.com/sw/tools/graphviz/.
 
-  RCS: $Id$
 
   Input: The tree constructed from data structures in Graphviz
   Output: Textual input to graphviz, written to stdout."

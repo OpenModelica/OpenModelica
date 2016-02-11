@@ -34,7 +34,6 @@ encapsulated package HpcOmTaskGraph
   package:     HpcOmTaskGraph
   description: HpcOmTaskGraph contains the whole logic to create a TaskGraph on BLT-Level
 
-  RCS: $Id: HpcOmTaskGraph.mo 2013-05-24 11:12:35Z marcusw $
 "
 public import BackendDAE;
 public import DAE;

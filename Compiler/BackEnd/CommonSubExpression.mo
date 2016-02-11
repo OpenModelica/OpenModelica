@@ -33,9 +33,8 @@ encapsulated package CommonSubExpression
 " file:        CommonSubExpression.mo
   package:     CommonSubExpression
   description: This package contains functions for the optimization module
-               CommonSubExpression.
+               CommonSubExpression."
 
-  RCS: $Id: CommonSubExpression.mo 23264 2014-11-07 07:01:20Z sjoelund.se $"
 
 public import BackendDAE;
 public import DAE;
@@ -358,9 +357,9 @@ algorithm
 end isRecordExp;
 
 protected function isZeroequalCall
-	input DAE.Exp inExp;
-	input DAE.Exp inExp2;
-	output Boolean outB;
+  input DAE.Exp inExp;
+  input DAE.Exp inExp2;
+  output Boolean outB;
 algorithm
    outB := match(inExp, inExp2)
 

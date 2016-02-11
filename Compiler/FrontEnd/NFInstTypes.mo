@@ -34,7 +34,6 @@ encapsulated package NFInstTypes
   package:     NFInstTypes
   description: Types used by NFInst.
 
-  RCS: $Id$
 
   Types used by NFInst.
 "

@@ -34,7 +34,6 @@ encapsulated package Connect
   package:     Connect
   description: Connection set management
 
-  RCS: $Id$
 
   Connections generate connection sets which are stored in the Sets type, which
   is then used to generate equations and evaluate stream operators during

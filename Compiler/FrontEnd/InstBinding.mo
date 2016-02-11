@@ -34,7 +34,6 @@ encapsulated package InstBinding
   package:     InstBinding
   description: Binding instantiation
 
-  RCS: $Id: InstBinding.mo 17556 2013-10-05 23:58:57Z adrpo $
 
   This module is responsible for instantiation of bindings.
 "

@@ -34,7 +34,6 @@ encapsulated package ExpressionSimplifyTypes
   package:     ExpressionSimplifyTypes
   description: ExpressionSimplifyTypes
 
-  RCS: $Id$
 
   This file contains types for the module ExpressionSimplify"
 

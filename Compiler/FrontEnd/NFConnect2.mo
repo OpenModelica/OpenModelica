@@ -34,7 +34,6 @@ encapsulated package NFConnect2
   package:     NFConnect2
   description: Connection set management
 
-  RCS: $Id$
 "
 
 public import DAE;

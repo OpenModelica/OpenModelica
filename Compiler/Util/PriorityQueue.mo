@@ -34,7 +34,6 @@ encapsulated package PriorityQueue
   package:     PriorityQueue
   description: ADT PriorityQueue
 
-  RCS: $Id$
 
 This data-structure is based on Brodal and Okasaki (1996)
 http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.48.973

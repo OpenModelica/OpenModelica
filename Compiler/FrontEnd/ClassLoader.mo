@@ -34,7 +34,6 @@ encapsulated package ClassLoader
   package:     ClassLoader
   description: Loading of classes from $OPENMODELICALIBRARY.
 
-  RCS: $Id$
 
   This module loads classes from $OPENMODELICALIBRARY. It exports several functions:
   loadClass function

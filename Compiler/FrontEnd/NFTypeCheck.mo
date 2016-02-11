@@ -34,7 +34,6 @@ encapsulated package NFTypeCheck
   package:     NFTypeCheck
   description: SCodeInst type checking.
 
-  RCS: $Id: NFTypeCheck.mo 12209 2012-06-26 14:57:43Z sjoelund.se $
 
   Functions used by SCodeInst for type checking and type conversion where needed.
 "

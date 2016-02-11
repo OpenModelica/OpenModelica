@@ -29,7 +29,6 @@
  */
 
 /*
- * RCS: $Id: GraphStreamExt_omc.cpp 2014-02-04 mwalther $
  */
 
 #include <stdio.h>

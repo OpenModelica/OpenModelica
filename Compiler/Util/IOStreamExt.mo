@@ -37,7 +37,6 @@ encapsulated package IOStreamExt
  @author:     Adrian Pop [adrpo@ida.liu.se]
  @date:       2010-05-19
 
- RCS: $Id$
 
  This package describes an external interface for streams.
  The external C implementation is in TOP/Compiler/runtime/IOStreamExt.c"

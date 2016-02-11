@@ -34,7 +34,6 @@ encapsulated package ExpressionDump
   package:     ExpressionDump
   description: ExpressionDump
 
-  RCS: $Id$
 
   This file contains the module ExpressionDump, which contains functions
   to dump and print DAE.Expression."

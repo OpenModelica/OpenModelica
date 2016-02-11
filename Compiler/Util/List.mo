@@ -34,7 +34,6 @@ encapsulated package List
   package:     List
   description: List functions
 
-  RCS: $Id$
 
   This package contains all functions that operate on the List type, such as
   mapping and filtering functions.

@@ -34,7 +34,6 @@ encapsulated package NFInstFlatten
   package:     NFInstFlatten
   description: Functionality for flattening the instantiated structure.
 
-  RCS: $Id: NFInstFlatten.mo 13687 2012-10-29 12:52:19Z perost $
 
 
 "

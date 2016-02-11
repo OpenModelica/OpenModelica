@@ -34,7 +34,6 @@ encapsulated package NFInstSymbolTable
   package:     NFInstSymbolTable
   description: Symboltable for NFInst.
 
-  RCS: $Id$
 
   A symboltable type and utility functions used by NFInst.
 "

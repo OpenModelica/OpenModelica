@@ -34,7 +34,6 @@ encapsulated package Mod
   package:     Mod
   description: Modification handling
 
-  RCS: $Id$
 
   Modifications are simply the same kind of modifications used in the Absyn module.
 

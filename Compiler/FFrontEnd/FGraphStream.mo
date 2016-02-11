@@ -36,7 +36,6 @@ encapsulated package FGraphStream
   package:     FGraphStream
   description: FGraphStream deals with visualizaion of the node using GraphStream
 
-  RCS: $Id: FGraphStream.mo 19292 2014-02-25 06:23:22Z adrpo $
 
 "
 

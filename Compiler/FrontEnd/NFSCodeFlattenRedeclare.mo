@@ -34,7 +34,6 @@ encapsulated package NFSCodeFlattenRedeclare
   package:     NFSCodeFlattenRedeclare
   description: SCode flattening
 
-  RCS: $Id: NFSCodeFlattenRedeclare.mo 25211 2015-03-23 09:47:31Z jansilar $
 
   This module contains redeclare-specific functions used by SCodeFlatten to
   handle redeclares. Redeclares can be either modifiers or elements.

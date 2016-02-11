@@ -34,7 +34,6 @@ encapsulated package DumpHTML
   package:     DumpHTML
   description: Generate HTML documents for Dump Issues
 
-  RCS: $Id: DumpHTML.mo 14019 2012-11-22 13:31:15Z jfrenkel $
 "
 
 public import BackendDAE;

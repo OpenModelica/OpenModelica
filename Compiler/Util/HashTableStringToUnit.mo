@@ -40,7 +40,6 @@ encapsulated package HashTableStringToUnit "
   package:     HashTableStringToUnit
   description: String to Unit.Unit
 
-  RCS: $Id: HashTableStringToUnit.mo 15213 2013-02-18 10:17:07Z petar $
 
   "
 

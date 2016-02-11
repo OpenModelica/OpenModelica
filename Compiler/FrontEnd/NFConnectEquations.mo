@@ -34,7 +34,6 @@ encapsulated package NFConnectEquations
   package:     NFConnectEquations
   description: Functions that generate connect equations.
 
-  RCS: $Id$
 "
 
 public import Absyn;

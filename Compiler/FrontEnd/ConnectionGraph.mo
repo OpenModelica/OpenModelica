@@ -34,7 +34,6 @@ encapsulated package ConnectionGraph
   package:     ConnectionGraph
   description: Constant propagation of expressions
 
-  RCS: $Id$
 
   This module contains a connection breaking algorithm and
   related data structures. The input of the algorithm is

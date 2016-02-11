@@ -31,9 +31,8 @@
 encapsulated package InnerOuter
 " file:        InnerOuter.mo
   package:     InnerOuter
-  description: Instance hierarchy and functionality to deal with Inner/Outer definitions
+  description: Instance hierarchy and functionality to deal with Inner/Outer definitions"
 
-  RCS: $Id$"
 
 import Absyn;
 import Connect;
