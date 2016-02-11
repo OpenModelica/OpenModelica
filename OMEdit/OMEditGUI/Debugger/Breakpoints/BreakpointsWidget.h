@@ -29,7 +29,6 @@
  */
 /*
  *
- * RCS: $Id: BreakpointsWidget.h 22254 2014-09-10 12:36:43Z adeas31 $
  *
  */
 
