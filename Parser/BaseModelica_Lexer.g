@@ -189,7 +189,7 @@ IDENT;
 
 @includes {
   #include "ModelicaParserCommon.h"
-  #include "runtime/errorext.h"
+  #include "errorext.h"
 }
 
 T_ALGORITHM : 'algorithm';

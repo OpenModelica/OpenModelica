@@ -46,7 +46,7 @@ import MetaModelica_Lexer; /* Makes all tokens defined, imported in OptiMo_Lexer
   #include <time.h>
 
   #include "ModelicaParserCommon.h"
-  #include "runtime/errorext.h"
+  #include "errorext.h"
 
   #define ModelicaParserException 100
   #define ModelicaLexerException  200
