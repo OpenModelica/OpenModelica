@@ -1,5 +1,5 @@
-// name:     EngineV6_evalParams
-// keywords: simulation evalAllParams
+// name:     Engine1a_evalOutputOnly
+// keywords: simulation evalOutputOnly
 // status: correct
 //
 loadModel(Modelica,{"3.2.1"});

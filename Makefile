@@ -84,6 +84,7 @@ ThermoPower.log \
 MathematicalAspects_simulation.log \
 PNlib_simulation.log \
 parallel.log \
+parameters.log \
 simoptions.log \
 annex60.log \
 gitlibraries.log
@@ -500,6 +501,9 @@ xml.log: omc-diff
 	@echo $@ done
 parallel.log: omc-diff
 	$(MAKE) -C simulation/modelica/parallel -f Makefile test > $@
+	@echo $@ done
+parameters.log: omc-diff
+	$(MAKE) -C simulation/modelica/parameters -f Makefile test > $@
 	@echo $@ done
 taskGraph.log: omc-diff
 	$(MAKE) -C simulation/modelica/hpcom -f Makefile test > $@
