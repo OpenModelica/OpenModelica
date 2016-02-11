@@ -193,15 +193,15 @@ public:
   bool ngspicetoModelica(QString fileName);
   QString checkAllModelsRecursive(QString className);
   bool isExperiment(QString className);
-  QStringList getSimulationOptions(QString className, double defaultTolerance = 1e-4);
+  OMCInterface::getSimulationOptions_res getSimulationOptions(QString className, double defaultTolerance = 1e-4);
   bool translateModelFMU(QString className, double version, QString type, QString fileNamePrefix);
   bool translateModelXML(QString className);
   QString importFMU(QString fmuName, QString outputDirectory, int logLevel, bool debugLogging, bool generateInputConnectors, bool generateOutputConnectors);
   QString getMatchingAlgorithm();
-  void getAvailableMatchingAlgorithms(QStringList *choices, QStringList *comments);
+  OMCInterface::getAvailableMatchingAlgorithms_res getAvailableMatchingAlgorithms();
   bool setMatchingAlgorithm(QString matchingAlgorithm);
   QString getIndexReductionMethod();
-  void getAvailableIndexReductionMethods(QStringList *choices, QStringList *comments);
+  OMCInterface::getAvailableIndexReductionMethods_res getAvailableIndexReductionMethods();
   bool setIndexReductionMethod(QString method);
   bool setCommandLineOptions(QString options);
   bool clearCommandLineOptions();
@@ -211,7 +211,7 @@ public:
   QStringList getAvailableLibraries();
   QString getDerivedClassModifierValue(QString className, QString modifierName);
   bool getDocumentationClassAnnotation(QString className);
-  QString numProcessors();
+  int numProcessors();
   QString help(QString topic);
   OMCInterface::getConfigFlagValidOptions_res getConfigFlagValidOptions(QString topic);
   bool setDebugFlags(QString flags);
