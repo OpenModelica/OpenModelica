@@ -1036,7 +1036,7 @@ protected function intRandom0
   "Returns a value in the intervals [0,RAND_MAX) using the C method rand()."
   output Integer ret;
 
-  external "C"  ret = rand();
+  external "C"  ret = rand() annotation(Include = "#include <stdlib.h>");
 end intRandom0;
 
 public function gettextInit
@@ -1125,7 +1125,7 @@ end launchParallelTasks;
 
 public function exit "Exits the compiler at this point with the given exit status."
   input Integer status;
-external "C" exit(status);
+external "C" exit(status) annotation(Include = "#include <stdlib.h>");
 end exit;
 
 public function threadWorkFailed "Exits the current thread with a failure."
