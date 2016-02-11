@@ -104,7 +104,12 @@ void externalInputallocate2(DATA* data, char *filename){
   char ** names;
   int * indx;
   const int nu = data->modelData->nInputVars;
-  const int nnu = modelica_integer_min(nu, res->numvars - 1);
+  const int nnu = modelica_integer_min(nu, res ? res->numvars - 1 : 0);
+
+  if (NULL == res) {
+    fprintf(stderr, "Failed to read CSV-file %s", filename);
+    EXIT(1);
+  }
 
   data->modelData->nInputVars = nu;
   data->simulationInfo->external_input.n = res->numsteps;
@@ -152,47 +157,47 @@ void externalInputallocate2(DATA* data, char *filename){
 }
 
 static inline void externalInputallocate1(DATA* data, FILE * pFile){
-	int n,m,c;
-	int i,j;
-	n = 0;
+  int n,m,c;
+  int i,j;
+  n = 0;
 
-	while(1) {
-		c = fgetc(pFile);
-		if (c==EOF) break;
-		if (c=='\n') ++n;
-	}
-	// check if csv file is empty!
-	if (n == 0)
-	{
-	  fprintf(stderr, "External input file: externalInput.csv is empty!\n"); fflush(NULL);
-	  EXIT(1);
-	}
+  while(1) {
+    c = fgetc(pFile);
+    if (c==EOF) break;
+    if (c=='\n') ++n;
+  }
+  // check if csv file is empty!
+  if (n == 0)
+  {
+    fprintf(stderr, "External input file: externalInput.csv is empty!\n"); fflush(NULL);
+    EXIT(1);
+  }
 
-	--n;
-	data->simulationInfo->external_input.n = n;
-	data->simulationInfo->external_input.N = data->simulationInfo->external_input.n;
-	rewind(pFile);
+  --n;
+  data->simulationInfo->external_input.n = n;
+  data->simulationInfo->external_input.N = data->simulationInfo->external_input.n;
+  rewind(pFile);
 
-	do{
-	  c = fgetc(pFile);
-	  if (c==EOF) break;
-	}while(c!='\n');
+  do{
+    c = fgetc(pFile);
+    if (c==EOF) break;
+  }while(c!='\n');
 
-	m = data->modelData->nInputVars;
-	data->simulationInfo->external_input.u = (modelica_real**)calloc(modelica_integer_max(1,n),sizeof(modelica_real*));
-	for(i = 0; i<data->simulationInfo->external_input.n; ++i)
-	  data->simulationInfo->external_input.u[i] = (modelica_real*)calloc(modelica_integer_max(1,m),sizeof(modelica_real));
-	data->simulationInfo->external_input.t = (modelica_real*)calloc(modelica_integer_max(1,data->simulationInfo->external_input.n),sizeof(modelica_real));
+  m = data->modelData->nInputVars;
+  data->simulationInfo->external_input.u = (modelica_real**)calloc(modelica_integer_max(1,n),sizeof(modelica_real*));
+  for(i = 0; i<data->simulationInfo->external_input.n; ++i)
+    data->simulationInfo->external_input.u[i] = (modelica_real*)calloc(modelica_integer_max(1,m),sizeof(modelica_real));
+  data->simulationInfo->external_input.t = (modelica_real*)calloc(modelica_integer_max(1,data->simulationInfo->external_input.n),sizeof(modelica_real));
 
-	for(i = 0; i < data->simulationInfo->external_input.n; ++i){
-	  c = fscanf(pFile, "%lf", &data->simulationInfo->external_input.t[i]);
-	  for(j = 0; j < m; ++j){
-		c = fscanf(pFile, "%lf", &data->simulationInfo->external_input.u[i][j]);
-	  }
-	  if(c<0)
-		data->simulationInfo->external_input.n = i;
-	}
-	fclose(pFile);
+  for(i = 0; i < data->simulationInfo->external_input.n; ++i){
+    c = fscanf(pFile, "%lf", &data->simulationInfo->external_input.t[i]);
+    for(j = 0; j < m; ++j){
+    c = fscanf(pFile, "%lf", &data->simulationInfo->external_input.u[i][j]);
+    }
+    if(c<0)
+    data->simulationInfo->external_input.n = i;
+  }
+  fclose(pFile);
 }
 
 int externalInputFree(DATA* data)
