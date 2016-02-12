@@ -6228,6 +6228,12 @@ algorithm
     e := listHead(inPosArgs);
     (outCache, exp, DAE.PROP(ty, c), _) :=
       elabExpInExpression(inCache, inEnv, e, inImplicit, NONE(), true, inPrefix, inInfo);
+
+    if Types.isMetaBoxedType(ty) then
+      ty := Types.unboxedType(ty);
+      exp := DAE.UNBOX(exp, ty);
+    end if;
+
     val_slot := SLOT(DAE.FUNCARG("x", ty, DAE.C_VAR(), DAE.NON_PARALLEL(),
       NONE()), false, NONE(), {}, 1, SLOT_NOT_EVALUATED);
 
