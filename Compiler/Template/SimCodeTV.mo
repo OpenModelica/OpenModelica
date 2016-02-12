@@ -8,6 +8,12 @@ package builtin
     output list<TypeVar> result;
   end listReverse;
 
+  function listEmpty
+    replaceable type TypeVar subtypeof Any;
+    input list<TypeVar> lst;
+    output Boolean b;
+  end listEmpty;
+
   function listLength "Return the length of the list"
     replaceable type TypeVar subtypeof Any;
     input list<TypeVar> lst;

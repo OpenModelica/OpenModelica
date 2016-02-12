@@ -3374,7 +3374,9 @@ template literalExpConst(Exp lit, Integer litindex, Text &preLit) "These should 
   case META_TUPLE(__) then
     /* We need to use #define's to be C-compliant. Yea, total crap :) */
     <<
-    static const MMC_DEFSTRUCTLIT(<%tmp%>,<%listLength(listExp)%>,0) {<%listExp |> exp hasindex i0 => literalExpConstBoxedVal(exp,litindex+"_"+i0, &preLit); separator=","%>}};
+    static const <%
+      if listEmpty(listExp) then 'MMC_DEFSTRUCT0LIT(<%tmp%>,0)' else 'MMC_DEFSTRUCTLIT(<%tmp%>,<%listLength(listExp)%>,0)'
+    %> {<%listExp |> exp hasindex i0 => literalExpConstBoxedVal(exp,litindex+"_"+i0, &preLit); separator=","%>}};
     #define <%name%> MMC_REFSTRUCTLIT(<%tmp%>)
     >>
   case META_OPTION(exp=SOME(exp)) then
@@ -6550,9 +6552,10 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
       let name = switchIndex(listGet(c.patterns,n),ea)
       (match name
         case "default" then
+          // MSVC dislikes goto labels before declarations, so we put it before the block
           <<
-          <%name%>: {
-            <%prefix%>_default: OMC_LABEL_UNUSED;
+          <%name%>:
+          <%prefix%>_default: OMC_LABEL_UNUSED; {
           >>
         else
           '<%name%>: {')

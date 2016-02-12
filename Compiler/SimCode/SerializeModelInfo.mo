@@ -770,24 +770,28 @@ algorithm
       File.write(file, "]}");
     then true;
 
-    case SimCode.SES_MIXED() equation
-      serializeEquation(file,eq.cont,section,withOperations,first=true);
-      min(serializeEquation(file,e,section,withOperations) for e in eq.discEqs);
-      File.write(file, ",\n{\"eqIndex\":");
-      File.write(file, intString(eq.index));
-      if parent <> 0 then
-        File.write(file, ",\"parent\":");
-        File.write(file, intString(parent));
-      end if;
-      File.write(file, ",\"section\":\"");
-      File.write(file, section);
-      File.write(file, "\",\"tag\":\"container\",\"display\":\"mixed\",\"defines\":[");
-      serializeUses(file,list(SimCodeFunctionUtil.varName(v) for v in eq.discVars));
-      File.write(file, "],\"equation\":[");
-      serializeEquationIndex(file,eq.cont);
-      list(match () case () equation File.write(file,","); serializeEquationIndex(file,e); then (); end match for e in eq.discEqs);
-      File.write(file, "]}");
-    then true;
+    case SimCode.SES_MIXED()
+      algorithm
+        serializeEquation(file,eq.cont,section,withOperations,first=true);
+        min(serializeEquation(file,e,section,withOperations) for e in eq.discEqs);
+        File.write(file, ",\n{\"eqIndex\":");
+        File.write(file, intString(eq.index));
+        if parent <> 0 then
+          File.write(file, ",\"parent\":");
+          File.write(file, intString(parent));
+        end if;
+        File.write(file, ",\"section\":\"");
+        File.write(file, section);
+        File.write(file, "\",\"tag\":\"container\",\"display\":\"mixed\",\"defines\":[");
+        serializeUses(file,list(SimCodeFunctionUtil.varName(v) for v in eq.discVars));
+        File.write(file, "],\"equation\":[");
+        serializeEquationIndex(file,eq.cont);
+        for e1 in eq.discEqs loop
+          File.write(file,",");
+          serializeEquationIndex(file,e1);
+        end for;
+        File.write(file, "]}");
+      then true;
 
     case SimCode.SES_WHEN() algorithm
       File.write(file, "\n{\"eqIndex\":");
