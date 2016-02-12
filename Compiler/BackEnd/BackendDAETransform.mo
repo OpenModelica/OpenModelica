@@ -290,17 +290,22 @@ algorithm
       vars_1 = BackendVariable.listVar1(var_lst_1);
       eqns_1 = BackendEquation.listEquation(eqn_lst1);
       (mixedSystem, _) = BackendEquation.iterationVarsinRelations(eqn_lst1, vars_1);
-      syst = BackendDAEUtil.createEqSystem(vars_1, eqns_1);
-      (m, mt) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(), NONE());
-      // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-      (jac, shared) = SymbolicJacobian.calculateJacobian(vars_1, eqns_1, m, true, ishared);
-      // Jacobian of a Linear System is always linear
-      (jac_tp, jacConstant) = SymbolicJacobian.analyzeJacobian(vars_1, eqns_1, jac);
+      if not Flags.isSet(Flags.DISABLE_JACSCC) then
+        syst = BackendDAEUtil.createEqSystem(vars_1, eqns_1);
+        (m, mt) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(), NONE());
+        // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
+        (jac, shared) = SymbolicJacobian.calculateJacobian(vars_1, eqns_1, m, true, ishared);
+        // Jacobian of a Linear System is always linear
+        (jac_tp, jacConstant) = SymbolicJacobian.analyzeJacobian(vars_1, eqns_1, jac);
 
-      // if Jacobian is constant, then check if it is singular
-      if jacConstant and isSome(jac) then
-        true = analyzeConstantJacobian(Util.getOption(jac), arrayLength(mt), var_lst, eqn_lst, shared);
-      end if;
+	      // if Jacobian is constant, then check if it is singular
+	      if jacConstant and isSome(jac) then
+	        true = analyzeConstantJacobian(Util.getOption(jac), arrayLength(mt), var_lst, eqn_lst, shared);
+	      end if;
+	    else
+	      jac = NONE();
+	      jac_tp = BackendDAE.JAC_NO_ANALYTIC();
+	    end if;
     then BackendDAE.EQUATIONSYSTEM(comp, varindxs, BackendDAE.FULL_JACOBIAN(jac), jac_tp, mixedSystem);
 
     case (_, eqn_lst, var_varindx_lst) equation

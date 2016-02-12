@@ -476,6 +476,8 @@ constant DebugFlag DUMP_EXCLUDED_EXP = DEBUG_FLAG(153, "dumpExcludedSymJacExps",
   Util.gettext("This flags dumps all expression that are excluded from differentiation of a symbolic Jacobian."));
 constant DebugFlag DEBUG_ALGLOOP_JACOBIAN = DEBUG_FLAG(154, "debugAlgebraicLoopsJacobian", false,
   Util.gettext("Dumps debug output while creating symbolic jacobians for non-linear systems."));
+constant DebugFlag DISABLE_JACSCC = DEBUG_FLAG(155, "disableJacsforSCC", false,
+  Util.gettext("Disables calculation of jacobians to detect if a SCC is linear or non-linear. By disabling all SCC will handled like non-linear."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -636,7 +638,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_DGESV,
   MULTIRATE_PARTITION,
   DUMP_EXCLUDED_EXP,
-  DEBUG_ALGLOOP_JACOBIAN
+  DEBUG_ALGLOOP_JACOBIAN,
+  DISABLE_JACSCC
 };
 
 public
