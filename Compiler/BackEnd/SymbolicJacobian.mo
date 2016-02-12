@@ -2393,7 +2393,7 @@ algorithm
 
       case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl), NONE(), linear=false, mixedSystem=mixedSystem), _, _, _)
         equation
-
+          false = Flags.isSet(Flags.DISABLE_NLS_ANALYTIC_JACOBIAN);
 
           // generate jacobian name
           name = "NLSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
@@ -2465,6 +2465,7 @@ algorithm
 
       case (BackendDAE.EQUATIONSYSTEM(eqns=residualequations, vars=iterationvarsInts, mixedSystem=mixedSystem), _, _, _)
         equation
+          false = Flags.isSet(Flags.DISABLE_NLS_ANALYTIC_JACOBIAN);
           //generate jacobian name
           name = "NLSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
 
