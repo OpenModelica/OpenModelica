@@ -13819,7 +13819,7 @@ algorithm
   outStringLst := match inElement
     local
       Absyn.ElementAttributes attr;
-      Absyn.Path p, env_path;
+      Absyn.Path p, env_path, pkg_path, tp_path;
       list<Absyn.ComponentItem> comps;
       FCore.Graph env;
       list<String> names, dims;
@@ -13830,20 +13830,50 @@ algorithm
     case Absyn.ELEMENT(specification = Absyn.COMPONENTS(
         attributes = attr, typeSpec = Absyn.TPATH(path = p), components = comps))
       algorithm
-        try
-          (_, _, env) := Lookup.lookupClass(FCore.emptyCache(), inEnv, p);
-          oenv_path := FGraph.getScopePath(env);
+        typename := matchcontinue ()
+          // Look up the full type path.
+          case ()
+            algorithm
+              (_, _, env) := Lookup.lookupClass(FCore.emptyCache(), inEnv, p);
+              oenv_path := FGraph.getScopePath(env);
 
-          if isSome(oenv_path) then
-            SOME(env_path) := FGraph.getScopePath(env);
-            tp_name := Absyn.pathLastIdent(p);
-            typename := Absyn.pathString(Absyn.suffixPath(env_path, tp_name));
-          else
-            typename := Absyn.pathString(p);
-          end if;
-        else
-          typename := "";
-        end try;
+              // If the type was found in a non-top scope, construct the fully
+              // qualified path of the type. Otherwise the type is already fully
+              // qualified, and we can use it as it is.
+              if isSome(oenv_path) then
+                SOME(env_path) := oenv_path;
+                tp_name := Absyn.pathLastIdent(p);
+                tp_path := Absyn.suffixPath(env_path, tp_name);
+              else
+                tp_path := p;
+              end if;
+            then
+              Absyn.pathString(tp_path);
+
+          // If the first case fails, i.e. if the type name doesn't reference an
+          // existing type, try to construct a fully qualified path to where the
+          // type should be, but isn't.
+          case ()
+            algorithm
+              // Look up the first identifier in the type name.
+              pkg_path := Absyn.pathFirstPath(p);
+              (_, _, env) := Lookup.lookupClass(FCore.emptyCache(), inEnv, pkg_path);
+              oenv_path := FGraph.getScopePath(env);
+
+              // Replace the first identifier in the type name with the path to
+              // the found class. If the class was found at top-scope, i.e. if
+              // oenv_path is NONE, then the type name is already fully qualified.
+              if isSome(oenv_path) then
+                SOME(env_path) := oenv_path;
+                tp_path := Absyn.joinPaths(env_path, p);
+              else
+                tp_path := p;
+              end if;
+            then
+              Absyn.pathString(tp_path);
+
+          else Absyn.pathString(p);
+        end matchcontinue;
 
         names := getComponentItemsName(comps, inQuoteNames);
         dims := getComponentitemsDimension(comps);
