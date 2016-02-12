@@ -101,6 +101,7 @@ ReturnInTryBlock.mos \
 Shadowing1.mos \
 Shadowing2.mos \
 Simplify1.mos \
+StringBoxed.mos \
 SwitchString.mos \
 TailRecursion.mo \
 TailRecursionNoretcall.mos \
