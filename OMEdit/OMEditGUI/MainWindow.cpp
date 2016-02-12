@@ -1771,6 +1771,23 @@ void MainWindow::exportModelFigaro()
   }
 }
 
+/*!
+ * \brief MainWindow::showOpenModelicaCommandPrompt
+ * Opens the command prompt to compile OpenModelica generated code with MinGW and run it.
+ */
+void MainWindow::showOpenModelicaCommandPrompt()
+{
+  QString commandPrompt = "cmd.exe";
+  QString promptBatch = QString("%1/share/omc/scripts/Prompt.bat").arg(Helper::OpenModelicaHome);
+  QStringList args;
+  args << "/K" << promptBatch;
+  if (!QProcess::startDetached(commandPrompt, args, mpOptionsDialog->getGeneralSettingsPage()->getWorkingDirectory())) {
+    QString errorString = tr("Unable to run command <b>%1</b> with arguments <b>%2</b>.").arg(commandPrompt).arg(args.join(" "));
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString, Helper::scriptingKind,
+                                                Helper::errorLevel));
+  }
+}
+
 //! Imports the model from FMU
 void MainWindow::importModelFMU()
 {
@@ -2586,8 +2603,12 @@ void MainWindow::createActions()
   mpShowOMCLoggerWidgetAction = new QAction(QIcon(":/Resources/icons/console.svg"), Helper::OpenModelicaCompilerCLI, this);
   mpShowOMCLoggerWidgetAction->setStatusTip(tr("Shows OpenModelica Compiler CLI"));
   connect(mpShowOMCLoggerWidgetAction, SIGNAL(triggered()), mpOMCProxy, SLOT(openOMCLoggerWidget()));
+  // show OpenModelica command prompt action
+  mpShowOpenModelicaCommandPromptAction = new QAction(QIcon(":/Resources/icons/console.svg"), tr("OpenModelica Command Prompt"), this);
+  mpShowOpenModelicaCommandPromptAction->setStatusTip(tr("Shows OpenModelica Compiler CLI"));
+  connect(mpShowOpenModelicaCommandPromptAction, SIGNAL(triggered()), SLOT(showOpenModelicaCommandPrompt()));
+  // show OMC Diff widget action
   if (isDebug()) {
-    // show OMC Diff widget action
     mpShowOMCDiffWidgetAction = new QAction(QIcon(":/Resources/icons/console.svg"), tr("OpenModelica Compiler Diff"), this);
     mpShowOMCDiffWidgetAction->setStatusTip(tr("Shows OpenModelica Compiler Diff"));
     connect(mpShowOMCDiffWidgetAction, SIGNAL(triggered()), mpOMCProxy, SLOT(openOMCDiffWidget()));
@@ -2881,6 +2902,9 @@ void MainWindow::createMenus()
   pToolsMenu->setTitle(tr("&Tools"));
   // add actions to Tools menu
   pToolsMenu->addAction(mpShowOMCLoggerWidgetAction);
+#ifdef Q_OS_WIN
+  pToolsMenu->addAction(mpShowOpenModelicaCommandPromptAction);
+#endif
   if (isDebug()) {
     pToolsMenu->addAction(mpShowOMCDiffWidgetAction);
   }

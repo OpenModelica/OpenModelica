@@ -273,6 +273,7 @@ private:
   QAction *mpExportFigaroAction;
   // Tools Menu
   QAction *mpShowOMCLoggerWidgetAction;
+  QAction *mpShowOpenModelicaCommandPromptAction;
   QAction *mpShowOMCDiffWidgetAction;
   QAction *mpExportToOMNotebookAction;
   QAction *mpImportFromOMNotebookAction;
@@ -367,6 +368,7 @@ public slots:
   void importModelFMU();
   void exportModelXML();
   void exportModelFigaro();
+  void showOpenModelicaCommandPrompt();
   void exportModelToOMNotebook();
   void importModelfromOMNotebook();
   void importNgspiceNetlist();
