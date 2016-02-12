@@ -28,6 +28,8 @@
  *
  */
 
+#if !defined(_MSC_VER)
+
 #include <list>
 #include <string>
 #include <sstream>
@@ -252,3 +254,5 @@ protected:
   static bool CompareGraphsLevel(Graph *referenceGraph, Graph *g2, NodeComparator nodeComparator, bool checkCalcTime, std::string *errorMsg);
 };
 #endif //TGRC_GRAPHCOMPARATOR
+
+#endif

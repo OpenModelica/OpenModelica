@@ -90,16 +90,17 @@ static void generateHighTube(privates *priv, double *x, double *y)
     /* new accumulated value of the saved interval is the terminal
      * value of the current interval
      * after that dismiss the current interval (3.2.6.3.2.2.) */
+    double x3,y3,x4,y4;
 
     priv->i0h[index-1] = priv->i0h[index]; /* Remove the second to last element */
     priv->countHigh--; /* Remove the last element for priv->i1h and priv->mh, priv->xHigh and priv->yHigh */
 
 
     /* calculation of the new slope (3.2.6.3.3) */
-    double x3 = x[priv->i0h[index - 1]];  /* = _dX1 */
-    double y3 = y[priv->i0h[index - 1]];  /* = _dY1 */
-    double x4 = x[priv->i1h[index - 1]];  /* < X3 */
-    double y4 = y[priv->i1h[index - 1]];
+    x3 = x[priv->i0h[index - 1]];  /* = _dX1 */
+    y3 = y[priv->i0h[index - 1]];  /* = _dY1 */
+    x4 = x[priv->i1h[index - 1]];  /* < X3 */
+    y4 = y[priv->i1h[index - 1]];
 
     /* write slope to the list of slopes */
     priv->mh[index - 1] = (y3 - y4) / (x3 - x4);
@@ -133,9 +134,9 @@ static void generateHighTube(privates *priv, double *x, double *y)
         priv->xHigh[index] = x3 - priv->delta;
         priv->yHigh[index] = priv->y2 + m1 * (priv->xHigh[index] - priv->x2) + priv->delta * sqrt((m1 * m1) + (priv->S * priv->S));
       } else { /* if it is not the first:  (3.2.6.7.3.5.2.) */
-        m2 = priv->mh[index - 1];
         double x3 = priv->xHigh[index - 1];
         double y3 = priv->yHigh[index - 1];
+        m2 = priv->mh[index - 1];
 
         priv->xHigh[index] = (m2 * x3 - m1 * priv->x2 + priv->y2 - y3 + priv->delta * sqrt((m1 * m1) + (priv->S * priv->S))) / (m2 - m1);
         priv->yHigh[index] = (m2 * m1 * (x3 - priv->x2) + m2 * (priv->y2 + priv->delta * sqrt((m1 * m1) + (priv->S * priv->S))) - m1 * y3) / (m2 - m1);
@@ -152,13 +153,14 @@ static void generateLowTube(privates *priv, double *x, double *y)
   priv->slopeDif = fabs(m1 - m2);
 
   if ((priv->slopeDif == 0) || ((priv->slopeDif < 2e-15 * fmax(fabs(m1), fabs(m2))) && (priv->i0l[priv->countLow - 1] - priv->i1l[priv->countLow - 2] < 100))) {
+    double x3,y3,x4,y4;
     priv->i0l[index-1] = priv->i0l[index];
     priv->countLow--;
 
-    double x3 = x[priv->i0l[index - 1]];  /* = _dX1 */
-    double y3 = y[priv->i0l[index - 1]];  /* = _dY1 */
-    double x4 = x[priv->i1l[index - 1]];  /* < X3 */
-    double y4 = y[priv->i1l[index - 1]];
+    x3 = x[priv->i0l[index - 1]];  /* = _dX1 */
+    y3 = y[priv->i0l[index - 1]];  /* = _dY1 */
+    x4 = x[priv->i1l[index - 1]];  /* < X3 */
+    y4 = y[priv->i1l[index - 1]];
 
     priv->ml[index - 1] = (y3 - y4) / (x3 - x4);
   } else {
@@ -187,9 +189,9 @@ static void generateLowTube(privates *priv, double *x, double *y)
         priv->xLow[index] = x3 - priv->delta;
         priv->yLow[index] = priv->y2 + m1 * (priv->xLow[index] - priv->x2) - priv->delta * sqrt((m1 * m1) + (priv->S * priv->S));
       } else {
-        m2 = priv->ml[index - 1];
         double x3 = priv->xLow[index - 1];
         double y3 = priv->yLow[index - 1];
+        m2 = priv->ml[index - 1];
         priv->xLow[index] = (m2 * x3 - m1 * priv->x2 + priv->y2 - y3 - priv->delta * sqrt((m1 * m1) + (priv->S * priv->S))) / (m2 - m1);
         priv->yLow[index] = (m2 * m1 * (x3 - priv->x2) + m2 * (priv->y2 - priv->delta * sqrt((m1 * m1) + (priv->S * priv->S))) - m1 * y3) / (m2 - m1);
       }
@@ -433,6 +435,7 @@ static addTargetEventTimesRes addTargetEventTimes(double* sourceTimeLine, double
 {
   addTargetEventTimesRes res;
   size_t i=0,j,count=0;
+  int iter=0;
   while ((i=findNextEvent(i+1,targetTimeLine,ntarget,xabstol))) {
     if (targetTimeLine[i] >= sourceTimeLine[nsource-1]) {
       break;
@@ -450,7 +453,6 @@ static addTargetEventTimesRes addTargetEventTimes(double* sourceTimeLine, double
   res.time = GC_malloc_atomic(sizeof(double)*res.size);
   i=0;
   count=0;
-  int iter=0;
   j=findNextEvent(1,targetTimeLine,ntarget,xabstol);
   while (j) {
     if (targetTimeLine[j] >= sourceTimeLine[nsource-1]) {
@@ -486,11 +488,11 @@ static addTargetEventTimesRes addTargetEventTimes(double* sourceTimeLine, double
 
 static addTargetEventTimesRes mergeTimelines(addTargetEventTimesRes ref, addTargetEventTimesRes actual, double xabstol)
 {
+  int i=0,j=0,count=0;
   addTargetEventTimesRes res;
   res.size = ref.size + actual.size;
   res.values = GC_malloc_atomic(sizeof(double)*res.size);
   res.time = GC_malloc_atomic(sizeof(double)*res.size);
-  int i=0,j=0,count=0;
   res.values[count] = ref.values[0];
   res.time[count++] = ref.time[0];
   for (i=1; i<ref.size; i++) {
@@ -646,6 +648,10 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   double xabstol = (reftime->data[reftime->n-1]-reftime->data[0])*(withTubes ? rangeDelta : 1e-3) / fmax(time->n,reftime->n);
   /* Calculate the tubes without additional events added */
   addTargetEventTimesRes ref,actual,actualoriginal;
+  privates *priv=NULL;
+  size_t n,maxn;
+  double *calibrated_values=NULL, *high=NULL, *low=NULL, *error=NULL,maxPlusTol,minMinusTol,abstol;
+
   ref.values = refdata->data;
   ref.time = reftime->data;
   ref.size = reftime->n;
@@ -659,23 +665,23 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   /* actual = removeUneventfulPoints(actual, reltol*reltol, xabstol); */
   /* assertMonotonic(ref); */
   /* assertMonotonic(actual); */
-  privates *priv = withTubes ? skipCalculateTubes(ref.time,ref.values,ref.size) : calculateTubes(ref.time,ref.values,ref.size,rangeDelta);
+  priv = withTubes ? skipCalculateTubes(ref.time,ref.values,ref.size) : calculateTubes(ref.time,ref.values,ref.size,rangeDelta);
   /* ref = mergeTimelines(ref,actual,xabstol); */
   /* assertMonotonic(ref); */
-  size_t n = ref.size;
-  double *calibrated_values = calibrateValues(ref.time,actual.time,actual.values,&n,actual.size,xabstol);
-  double maxPlusTol = priv->max + fabs(priv->max) * reltol;
-  double minMinusTol = priv->min - fabs(priv->min) * reltol;
-  double *high = calibrateValues(ref.time,priv->xHigh,priv->yHigh,&n,priv->countHigh,xabstol);
-  double *low  = calibrateValues(ref.time,priv->xLow,priv->yLow,&n,priv->countLow,xabstol);
+  n = ref.size;
+  calibrated_values = calibrateValues(ref.time,actual.time,actual.values,&n,actual.size,xabstol);
+  maxPlusTol = priv->max + fabs(priv->max) * reltol;
+  minMinusTol = priv->min - fabs(priv->min) * reltol;
+  high = calibrateValues(ref.time,priv->xHigh,priv->yHigh,&n,priv->countHigh,xabstol);
+  low  = calibrateValues(ref.time,priv->xLow,priv->yLow,&n,priv->countLow,xabstol);
   /* If all values in the reference are ~0 (and the same)... Allow reltolDiffMaxMin^2 as tolerance
    * Maybe we should just treat it differently though
    * Like not creating a tubes and simply check that the other file also has only identical points close to this
    */
-  double abstol = (priv->max-priv->min == 0 && priv->max < reltolDiffMaxMin*reltolDiffMaxMin) ? reltolDiffMaxMin*reltolDiffMaxMin : fabs((priv->max-priv->min)*reltolDiffMaxMin);
+  abstol = (priv->max-priv->min == 0 && priv->max < reltolDiffMaxMin*reltolDiffMaxMin) ? reltolDiffMaxMin*reltolDiffMaxMin : fabs((priv->max-priv->min)*reltolDiffMaxMin);
   addRelativeTolerance(high,ref.values,n,reltol,abstol,1);
   addRelativeTolerance(low ,ref.values,n,reltol,abstol,-1);
-  double *error = validate(n,ref,low,high,calibrated_values,reltol,abstol,xabstol);
+  error = validate(n,ref,low,high,calibrated_values,reltol,abstol,xabstol);
   if (isHtml ) {
 #if _XOPEN_SOURCE >= 700 || _POSIX_C_SOURCE >= 200809L
     size_t html_size=0;
@@ -729,7 +735,7 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
     sprintf(fname, "%s.%s.csv", prefix, varname);
     fout = fopen(fname,"w");
   }
-  size_t maxn = intmax(intmax(intmax(ref.size,actual.size),priv->countHigh),priv->countLow);
+  maxn = intmax(intmax(intmax(ref.size,actual.size),priv->countHigh),priv->countLow);
   if (fout) {
     int i;
     const char *empty = isHtml ? "null" : "";

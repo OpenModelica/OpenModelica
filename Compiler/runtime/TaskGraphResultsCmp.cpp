@@ -27,6 +27,9 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
+
+#if !defined(_MSC_VER)
+
 #include "TaskGraphResultsCmp.h"
 
 Node::Node() : id(""), name(""), calcTime(-1), threadId(""), taskNumber(-1), taskId(-1), simCodeEqs()
@@ -959,4 +962,6 @@ void* TaskGraphResultsCmp_checkCodeGraph(const char *filename, const char *codeF
 
   return res;
 }
+#endif
+
 #endif

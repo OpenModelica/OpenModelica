@@ -90,11 +90,12 @@ static void make_key()
 
 static print_members* getMembers(threadData_t *threadData)
 {
+  print_members *res;
   if (threadData && threadData->localRoots[LOCAL_ROOT_PRINT_MO]) {
     return threadData->localRoots[LOCAL_ROOT_PRINT_MO];
   }
   pthread_once(&printimpl_once_create_key,make_key);
-  print_members *res = (print_members*) pthread_getspecific(printimplKey);
+  res = (print_members*) pthread_getspecific(printimplKey);
   if (res != NULL) return res;
   res = (print_members*) calloc(1,sizeof(print_members));
   pthread_setspecific(printimplKey,res);

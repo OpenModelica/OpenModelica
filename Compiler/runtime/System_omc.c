@@ -575,12 +575,19 @@ extern void* System_regex(const char* str, const char* re, int maxn, int extende
 {
   void *res;
   int i = 0;
+#if !defined(_MSC_VER)
   void *matches[maxn];
+#else
+  void **matches = GC_malloc(sizeof(void*)*maxn);
+#endif
   *nmatch = OpenModelica_regexImpl(str,re,maxn,extended,sensitive,mmc_mk_scon,(void**)&matches);
   res = mmc_mk_nil();
   for (i=maxn-1; i>=0; i--) {
     res = mmc_mk_cons(matches[i],res);
   }
+#if defined(_MSC_VER)
+  GC_free(matches);
+#endif
   return res;
 }
 
@@ -772,12 +779,19 @@ static void* System_launchParallelTasksSerial(threadData_t *threadData, void *da
 extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads, void *dataLst, modelica_metatype (*fn)(threadData_t *,modelica_metatype))
 {
   int len = listLength(dataLst), i;
+  void *result = mmc_mk_nil();
+  thread_data data;
+#if !defined(_MSC_VER)
   void *commands[len];
   void *status[len];
   int ids[len];
-  void *result = mmc_mk_nil();
   pthread_t th[numThreads];
-  thread_data data;
+#else
+  void **commands = (void**) GC_malloc(sizeof(void*)*len);
+  void **status = (void**) GC_malloc(sizeof(void*)*len);
+  int *ids = (int*) GC_malloc_atomic(sizeof(int)*len);
+  pthread_t *th = (pthread_t*) GC_malloc(sizeof(pthread_t)*numThreads);
+#endif
   if (len == 0) {
     return mmc_mk_nil();
   } else if (numThreads == 1 || len == 1) {

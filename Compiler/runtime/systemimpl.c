@@ -39,6 +39,8 @@ extern "C" {
  */
 #if !defined(_MSC_VER)
 #include <libgen.h>
+#include <dirent.h>
+#include <unistd.h>
 #endif
 
 #include "meta_modelica.h"
@@ -52,8 +54,6 @@ extern "C" {
 #include <sys/types.h>
 #include <time.h>
 #include <math.h>
-#include <dirent.h>
-#include <unistd.h>
 
 #include "rtclock.h"
 #include "omc_config.h"
@@ -106,7 +106,9 @@ typedef void* iconv_t;
 #include <sys/types.h>
 #if defined(_MSC_VER)
   #include <win32_dirent.h>
+  #if !defined(PATH_MAX)
   #define PATH_MAX MAX_PATH
+  #endif
 #else
   #include <dirent.h>
 #endif
@@ -267,7 +269,6 @@ extern char* SystemImpl__pwd(void)
 {
   char buf[MAXPATHLEN];
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  char* buf2,buf3;
   int i;
   LPTSTR bufPtr=buf;
   DWORD bufLen = MAXPATHLEN;
@@ -292,8 +293,6 @@ extern char* SystemImpl__pwd(void)
 extern int SystemImpl__regularFileExists(const char* str)
 {
 #if defined(_MSC_VER)
-  int ret_val;
-  void *res;
   WIN32_FIND_DATA FileData;
   HANDLE sh;
 
@@ -773,8 +772,9 @@ void* SystemImpl__systemCallParallel(void *lst, int numThreads)
     int index = 0;
     pthread_mutex_t mutex;
     struct systemCallWorkerThreadArgs args = {&mutex,&index,sz,calls,results};
+    pthread_t *th = NULL;
     pthread_mutex_init(&mutex,NULL);
-    pthread_t *th = GC_malloc(sizeof(pthread_t)*numThreads);
+    th = GC_malloc(sizeof(pthread_t)*numThreads);
     /* Last element is NULL from GC_malloc */
     for (i=0; i<numThreads; i++) {
       GC_pthread_create(&th[i],NULL,systemCallWorkerThread,&args);
@@ -1883,9 +1883,9 @@ static int regularFileExistsInDirectory(const char *dir1, const char *dir2, cons
 static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, void *mps, int *numMatches)
 {
   int i = 0;
-  *numMatches = 0;
   modelicaPathEntry* res;
   void *save_mps = mps;
+  *numMatches = 0;
   while (MMC_NILHDR != MMC_GETHDR(mps)) {
     const char *mp = MMC_STRINGDATA(MMC_CAR(mps));
     DIR *dir = opendir(mp);
@@ -2108,18 +2108,19 @@ static void free_system_mo(void *data)
   free(members);
 }
 
-static void make_key()
+static void make_key(void)
 {
   pthread_key_create(&systemMoKey,free_system_mo);
 }
 
 static systemMoData* getSystemMoData(threadData_t *threadData)
 {
+  systemMoData *res;
   if (threadData && threadData->localRoots[LOCAL_ROOT_SYSTEM_MO]) {
     return (systemMoData*) threadData->localRoots[LOCAL_ROOT_SYSTEM_MO];
   }
   pthread_once(&system_once_create_key,make_key);
-  systemMoData *res = (systemMoData*) pthread_getspecific(systemMoKey);
+  res = (systemMoData*) pthread_getspecific(systemMoKey);
   if (res != NULL) return res;
   /* We use malloc instead of new because when we do dynamic loading of functions, C++ objects in TLS might be free'd upon return to the main process. */
   res = (systemMoData*) calloc(1,sizeof(systemMoData));
@@ -2187,7 +2188,7 @@ extern int SystemImpl_tmpTick(threadData_t *threadData)
 
 extern void SystemImpl_tmpTickReset(threadData_t *threadData, int start)
 {
-  return SystemImpl_tmpTickResetIndex(threadData,start,0);
+  SystemImpl_tmpTickResetIndex(threadData,start,0);
 }
 
 extern int SystemImpl__reopenStandardStream(int id,const char *filename)
@@ -2213,9 +2214,7 @@ extern int SystemImpl__reopenStandardStream(int id,const char *filename)
 char* SystemImpl__iconv__ascii(const char * str)
 {
   char *buf = 0;
-  char *in_str,*res;
-  size_t sz,out_sz;
-  iconv_t ic;
+  size_t sz;
   int i;
   sz = strlen(str);
   buf = GC_malloc_atomic(sz+1);
@@ -2301,7 +2300,7 @@ double SystemImpl__realRand(void)
  */
 int SystemImpl__intRand(int n)
 {
-  return SystemImpl__realRand()*n;
+  return (int) SystemImpl__realRand()*n;
 }
 
 /* Returns an integer [0,n) using the C function rand() */
@@ -2562,7 +2561,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
 
   if (return_path == NULL)
   {
-    const char *c_tokens[0]={};
     const char* fmt = "System.realpath failed on %s with errno: %d";
     char* msg = (char*)malloc(strlen(path) + strlen(fmt) + 10);
     sprintf(msg, fmt, path, errno);
@@ -2570,7 +2568,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
       ErrorType_scripting,
       ErrorLevel_warning,
       msg,
-      c_tokens,
+      NULL,
       0);
     resolved_path = (char*)path;
     return_path = (char*)path;
@@ -2957,12 +2955,15 @@ void SystemImpl__dladdr(void *symbol, const char **file, const char **name)
 
 const char* SystemImpl__createTemporaryDirectory(const char *templatePrefix)
 {
-  char template[strlen(templatePrefix) + 7];
+  char *template = (char*) GC_malloc_atomic(strlen(templatePrefix) + 7);
+  const char *c_tokens[2];
   sprintf(template, "%sXXXXXX", templatePrefix);
   if (template==mkdtemp(template)) {
-    return GC_strdup(template);
+    return template;
   }
-  const char *c_tokens[2]={strerror(errno),templatePrefix};
+  GC_free(template);
+  c_tokens[0]=strerror(errno);
+  c_tokens[1]=templatePrefix;
   c_add_message(NULL,85, /* ERROR_OPENING_FILE */
     ErrorType_scripting,
     ErrorLevel_error,

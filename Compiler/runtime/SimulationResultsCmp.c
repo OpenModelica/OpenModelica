@@ -553,18 +553,20 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   /*  fprintf(stderr, "Open File %s\n", filename); */
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename,&simresglob_c)) {
     char *str = (char*) GC_malloc(25+strlen(filename));
+    void *res = NULL;
     *str = 0;
     strcat(strcat(str,"Error opening file: "), filename);
-    void *res = mmc_mk_scon(str);
+    res = mmc_mk_scon(str);
     GC_free(str);
     return mmc_mk_cons(res,mmc_mk_nil());
   }
   /* fprintf(stderr, "Open File %s\n", reffilename); */
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(reffilename,&simresglob_ref)) {
     char *str = (char*) GC_malloc(35+strlen(reffilename));
+    void *res = NULL;
     *str = 0;
     strcat(strcat(str,"Error opening reference file: "), reffilename);
-    void *res = mmc_mk_scon(str);
+    res = mmc_mk_scon(str);
     GC_free(str);
     return mmc_mk_cons(res,mmc_mk_nil());
   }

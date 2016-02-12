@@ -2,17 +2,30 @@
 #include "meta_modelica.h"
 #define ADD_METARECORD_DEFINITIONS static
 #include "OpenModelicaBootstrappingHeader.h"
+
+#if !defined(_MSC_VER)
 #include "HpcOmSchedulerExt.cpp"
+#else
+#include "errorext.h"
+#define HPC_OM_VS() c_add_message(NULL, -1, ErrorType_scripting, ErrorLevel_error, "HpcOmScheduler not supported on Visual Studio.", NULL, 0);MMC_THROW();
+#endif
 
 extern "C" {
 
 extern void* HpcOmSchedulerExt_readScheduleFromGraphMl(const char *filename)
 {
+#if defined(_MSC_VER)
+  HPC_OM_VS();
+#else
   return HpcOmSchedulerExtImpl__readScheduleFromGraphMl(filename);
+#endif
 }
 
 extern void* HpcOmSchedulerExt_scheduleMetis(modelica_metatype xadjIn, modelica_metatype adjncyIn, modelica_metatype vwgtIn, modelica_metatype adjwgtIn, int npartsIn)
 {
+#if defined(_MSC_VER)
+  HPC_OM_VS();
+#else
   int xadjNelts = (int)MMC_HDRSLOTS(MMC_GETHDR(xadjIn)); //number of elements in xadj-array
   int adjncyNelts = (int)MMC_HDRSLOTS(MMC_GETHDR(adjncyIn)); //number of elements in adjncy-array
   int vwgtNelts = (int)MMC_HDRSLOTS(MMC_GETHDR(vwgtIn)); //number of elements in vwgt-array
@@ -91,7 +104,7 @@ extern void* HpcOmSchedulerExt_schedulehMetis(modelica_metatype xadjIn, modelica
     hewgts[i] = adjwgtElem;
   }
   return HpcOmSchedulerExtImpl__scheduleMetis(vwgts, eptr, eint, hewgts, vwgtsNelts, eptrNelts, nparts);
+#endif
 }
-
 
 }
