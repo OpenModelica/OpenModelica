@@ -6,11 +6,12 @@ echo '#define __META_MODELICA_STRING_LIT__H'
 echo 'extern void *mmc_emptystring;'
 echo 'extern void *mmc_strings_len1[256];'
 echo 'extern void *mmc_string_uninitialized;'
+echo 'extern void *mmc_strings_boolString[2];'
 echo '#endif'
 exit
 fi
 
-echo '#include "meta_modelica.h"'
+echo '#include "meta/meta_modelica.h"'
 HEX="0 1 2 3 4 5 6 7 8 9 A B C D E F"
 echo 'static const MMC_DEFSTRINGLIT(OMC_STRINGLIT_0,0,"");'
 echo 'void* mmc_emptystring = MMC_REFSTRINGLIT(OMC_STRINGLIT_0);'
@@ -36,6 +37,15 @@ echo
 
 echo 'static MMC_DEFSTRINGLIT(OMC_STRINGLIT_UNINITIALIZED,23,"$#*OMC_UNINITIALIZED*#$");'
 echo 'void* mmc_string_uninitialized = MMC_REFSTRINGLIT(OMC_STRINGLIT_UNINITIALIZED);'
+
+echo
+
+echo "static const MMC_DEFSTRINGLIT(OMC_STRINGLIT_BOOLSTRING_0,5,\"false\");"
+echo "static const MMC_DEFSTRINGLIT(OMC_STRINGLIT_BOOLSTRING_1,4,\"true\");"
+echo "void* mmc_strings_boolString[2] = {"
+echo "MMC_REFSTRINGLIT(OMC_STRINGLIT_BOOLSTRING_0),"
+echo "MMC_REFSTRINGLIT(OMC_STRINGLIT_BOOLSTRING_1)"
+echo "};"
 
 exit
 # The rest is not used because the gain is not known
@@ -110,6 +120,7 @@ done
 done
 
 echo "};"
+
 echo
 
 

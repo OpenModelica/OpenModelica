@@ -44,12 +44,17 @@ extern "C" {
 #endif
 
 #include "meta_modelica_builtin_boxptr.h"
+#include "util/modelica_string_lit.h"
 
 typedef modelica_metatype metamodelica_string;
 typedef const modelica_metatype metamodelica_string_const;
 
-extern metamodelica_string intString(modelica_integer);
+extern modelica_string intString(modelica_integer);
 extern modelica_string realString(modelica_real);
+static inline modelica_string boolString(modelica_integer i)
+{
+  return mmc_strings_boolString[i];
+}
 
 /* String Character Conversion */
 
